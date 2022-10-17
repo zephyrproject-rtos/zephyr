@@ -28,24 +28,56 @@
 #define BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS    0
 #endif
 
-#define BT_BAP_PA_STATE_NOT_SYNCED             0x00
-#define BT_BAP_PA_STATE_INFO_REQ               0x01
-#define BT_BAP_PA_STATE_SYNCED                 0x02
-#define BT_BAP_PA_STATE_FAILED                 0x03
-#define BT_BAP_PA_STATE_NO_PAST                0x04
+/** Periodic advertising state reported by the Scan Delegator */
+enum bt_bap_pa_state {
+	/** The periodic advertising has not been synchronized */
+	BT_BAP_PA_STATE_NOT_SYNCED = 0x00,
 
-#define BT_BAP_BIG_ENC_STATE_NO_ENC            0x00
-#define BT_BAP_BIG_ENC_STATE_BCODE_REQ         0x01
-#define BT_BAP_BIG_ENC_STATE_DEC               0x02
-#define BT_BAP_BIG_ENC_STATE_BAD_CODE          0x03
+	/** Waiting for SyncInfo from Broadcast Assistant */
+	BT_BAP_PA_STATE_INFO_REQ = 0x01,
 
-#define BT_BAP_BASS_ERR_OPCODE_NOT_SUPPORTED   0x80
-#define BT_BAP_BASS_ERR_INVALID_SRC_ID         0x81
+	/** Synchronized to periodic advertising */
+	BT_BAP_PA_STATE_SYNCED = 0x02,
 
+	/** Failed to synchronized to periodic advertising */
+	BT_BAP_PA_STATE_FAILED = 0x03,
+
+	/** No periodic advertising sync transfer receiver from Broadcast Assistant */
+	BT_BAP_PA_STATE_NO_PAST = 0x04,
+};
+
+/** Broadcast Isochronous Group encryption state reported by the Scan Delegator */
+enum bt_bap_big_enc_state {
+	/** The Broadcast Isochronous Group not encrypted */
+	BT_BAP_BIG_ENC_STATE_NO_ENC = 0x00,
+
+	/** The Broadcast Isochronous Group broadcast code requested */
+	BT_BAP_BIG_ENC_STATE_BCODE_REQ = 0x01,
+
+	/** The Broadcast Isochronous Group decrypted */
+	BT_BAP_BIG_ENC_STATE_DEC = 0x02,
+
+	/** The Broadcast Isochronous Group bad broadcast code */
+	BT_BAP_BIG_ENC_STATE_BAD_CODE = 0x03,
+};
+
+/** Broadcast Audio Scan Service (BASS) specific ATT error codes */
+enum bt_bap_bass_att_err {
+	/** Opcode not supported */
+	BT_BAP_BASS_ERR_OPCODE_NOT_SUPPORTED = 0x80,
+
+	/** Invalid source ID supplied */
+	BT_BAP_BASS_ERR_INVALID_SRC_ID = 0x81,
+};
+
+/** Value indicating that the periodic advertising interval is unknown */
 #define BT_BAP_PA_INTERVAL_UNKNOWN             0xFFFF
 
-#define BT_BAP_BROADCAST_MAX_ID                0xFFFFFF
-
+/** @brief Broadcast Assistant no BIS sync preference
+ *
+ * Value indicating that the Broadcast Assistant has no preference to which BIS
+ * the Scan Delegator syncs to
+ */
 #define BT_BAP_BIS_SYNC_NO_PREF                0xFFFFFFFF
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
@@ -223,35 +255,105 @@ struct bt_bap_unicast_group;
 struct bt_bap_ep;
 
 /* TODO: Replace with struct bt_bap_base_subgroup */
+/** Struct to hold subgroup specific information for the receive state */
 struct bt_bap_scan_delegator_subgroup {
+	/** BIS synced bitfield */
 	uint32_t bis_sync;
+
+	/** Requested BIS sync bitfield */
 	uint32_t requested_bis_sync;
+
+	/** Length of the metadata */
 	uint8_t metadata_len;
+
+	/** The metadata */
 	uint8_t metadata[BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN];
 };
 
-/* TODO: Only expose this as an opaque type */
+/** Represents the Broadcast Audio Scan Service receive state */
 struct bt_bap_scan_delegator_recv_state {
+	/** The source ID  */
 	uint8_t src_id;
+
+	/** The Bluetooth address */
 	bt_addr_le_t addr;
+
+	/** The advertising set ID*/
 	uint8_t adv_sid;
+
+	/** The requested periodic advertising sync value */
 	uint8_t req_pa_sync_value;
-	uint8_t pa_sync_state;
-	uint8_t encrypt_state;
-	uint32_t broadcast_id; /* 24 bits */
+
+	/** The periodic adverting sync state */
+	enum bt_bap_pa_state pa_sync_state;
+
+	/** The broadcast isochronous group encryption state */
+	enum bt_bap_big_enc_state encrypt_state;
+
+	/** The 24-bit broadcast ID */
+	uint32_t broadcast_id;
+
+	/** @brief The bad broadcast code
+	 *
+	 * Only valid if encrypt_state is @ref BT_BAP_BIG_ENC_STATE_BCODE_REQ
+	 */
 	uint8_t bad_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+
+	/** Number of subgroups */
 	uint8_t num_subgroups;
+
+	/** Subgroup specific information */
 	struct bt_bap_scan_delegator_subgroup subgroups[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
 };
 
 struct bt_bap_scan_delegator_cb {
+	/**
+	 * @brief Periodic advertising synced for receive state
+	 *
+	 * @param recv_state Pointer to the receive state that was synced.
+	 * @param info       Information about the sync event.
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
 	void (*pa_synced)(struct bt_bap_scan_delegator_recv_state *recv_state,
 			  const struct bt_le_per_adv_sync_synced_info *info);
+
+	/**
+	 * @brief Periodic advertising terminated for receive state
+	 *
+	 * @param recv_state Pointer to the receive state that was terminated.
+	 * @param info       Information about the sync terminate event.
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
 	void (*pa_term)(struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_term_info *info);
+
+	/**
+	 * @brief Periodic advertising data received for receive state
+	 *
+	 * @param recv_state Pointer to the receive state that received the
+	 *                   data.
+	 * @param info       Information about the periodic advertising event.
+	 * @param buf        Buffer containing the periodic advertising data.
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
 	void (*pa_recv)(struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_recv_info *info,
 			struct net_buf_simple *buf);
+
+	/**
+	 * @brief BIGInfo advertising report received.
+	 *
+	 * This callback notifies the application of a BIGInfo advertising
+	 * report. This is received if the advertiser is broadcasting
+	 * isochronous streams in a BIG. See iso.h for more information.
+	 *
+	 * @param recv_state  Pointer to the receive state that received the
+	 *                    BIGInfo.
+	 * @param biginfo     The BIGInfo report.
+	 */
 	void (*biginfo)(struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_iso_biginfo *biginfo);
 };
@@ -1556,31 +1658,6 @@ int bt_bap_scan_delegator_set_sync_state(uint8_t src_id, uint8_t pa_sync_state,
 /******************************** CLIENT API ********************************/
 
 /**
- * @brief Callback function for bt_bap_broadcast_assistant_discover.
- *
- * @param conn              The connection that was used to discover
- *                          Broadcast Audio Scan Service.
- * @param err               Error value. 0 on success,
- *                          GATT error or ERRNO on fail.
- * @param recv_state_count  Number of receive states on the server.
- */
-typedef void (*bt_bap_broadcast_assistant_discover_cb)(struct bt_conn *conn,
-						       int err,
-						       uint8_t recv_state_count);
-
-/**
- * @brief Callback function for Broadcast Audio Scan Service client scan results
- *
- * Called when the scanner finds an advertiser that advertises the
- * BT_UUID_BROADCAST_AUDIO UUID.
- *
- * @param info          Advertiser information.
- * @param broadcast_id  24-bit broadcast ID.
- */
-typedef void (*bt_bap_broadcast_assistant_scan_cb)(const struct bt_le_scan_recv_info *info,
-						   uint32_t broadcast_id);
-
-/**
  * @brief Callback function for when a receive state is read or updated
  *
  * Called whenever a receive state is read or updated.
@@ -1614,17 +1691,99 @@ typedef void (*bt_bap_broadcast_assistant_write_cb)(struct bt_conn *conn,
 						    int err);
 
 struct bt_bap_broadcast_assistant_cb {
-	bt_bap_broadcast_assistant_discover_cb        discover;
-	bt_bap_broadcast_assistant_scan_cb            scan;
-	bt_bap_broadcast_assistant_recv_state_cb      recv_state;
-	bt_bap_broadcast_assistant_recv_state_rem_cb  recv_state_removed;
+	/**
+	 * @brief Callback function for bt_bap_broadcast_assistant_discover.
+	 *
+	 * @param conn              The connection that was used to discover
+	 *                          Broadcast Audio Scan Service.
+	 * @param err               Error value. 0 on success,
+	 *                          GATT error or ERRNO on fail.
+	 * @param recv_state_count  Number of receive states on the server.
+	 */
+	void (*discover)(struct bt_conn *conn, int err,
+			 uint8_t recv_state_count);
 
-	bt_bap_broadcast_assistant_write_cb           scan_start;
-	bt_bap_broadcast_assistant_write_cb           scan_stop;
-	bt_bap_broadcast_assistant_write_cb           add_src;
-	bt_bap_broadcast_assistant_write_cb           mod_src;
-	bt_bap_broadcast_assistant_write_cb           broadcast_code;
-	bt_bap_broadcast_assistant_write_cb           rem_src;
+	/**
+	 * @brief Callback function for Broadcast Audio Scan Service client scan results
+	 *
+	 * Called when the scanner finds an advertiser that advertises the
+	 * BT_UUID_BROADCAST_AUDIO UUID.
+	 *
+	 * @param info          Advertiser information.
+	 * @param broadcast_id  24-bit broadcast ID.
+	 */
+	void (*scan)(const struct bt_le_scan_recv_info *info,
+		     uint32_t broadcast_id);
+
+	/**
+	 * @brief Callback function for when a receive state is read or updated
+	 *
+	 * Called whenever a receive state is read or updated.
+	 *
+	 * @param conn     The connection to the Broadcast Audio Scan Service server.
+	 * @param err      Error value. 0 on success, GATT error on fail.
+	 * @param state    The receive state.
+	 */
+	void (*recv_state)(struct bt_conn *conn, int err,
+			   const struct bt_bap_scan_delegator_recv_state *state);
+
+	/**
+	 * @brief Callback function for when a receive state is removed.
+	 *
+	 * @param conn     The connection to the Broadcast Audio Scan Service server.
+	 * @param err      Error value. 0 on success, GATT error on fail.
+	 * @param src_id   The receive state.
+	 */
+	void (*recv_state_removed)(struct bt_conn *conn, int err,
+				   uint8_t src_id);
+
+	/**
+	 * @brief Callback function for bt_bap_broadcast_assistant_scan_start().
+	 *
+	 * @param conn    The connection to the peer device.
+	 * @param err     Error value. 0 on success, GATT error on fail.
+	 */
+	void (*scan_start)(struct bt_conn *conn, int err);
+
+	/**
+	 * @brief Callback function for bt_bap_broadcast_assistant_scan_stop().
+	 *
+	 * @param conn    The connection to the peer device.
+	 * @param err     Error value. 0 on success, GATT error on fail.
+	 */
+	void (*scan_stop)(struct bt_conn *conn, int err);
+
+	/**
+	 * @brief Callback function for bt_bap_broadcast_assistant_add_src().
+	 *
+	 * @param conn    The connection to the peer device.
+	 * @param err     Error value. 0 on success, GATT error on fail.
+	 */
+	void (*add_src)(struct bt_conn *conn, int err);
+
+	/**
+	 * @brief Callback function for bt_bap_broadcast_assistant_mod_src().
+	 *
+	 * @param conn    The connection to the peer device.
+	 * @param err     Error value. 0 on success, GATT error on fail.
+	 */
+	void (*mod_src)(struct bt_conn *conn, int err);
+
+	/**
+	 * @brief Callback function for bt_bap_broadcast_assistant_broadcast_code().
+	 *
+	 * @param conn    The connection to the peer device.
+	 * @param err     Error value. 0 on success, GATT error on fail.
+	 */
+	void (*broadcast_code)(struct bt_conn *conn, int err);
+
+	/**
+	 * @brief Callback function for bt_bap_broadcast_assistant_rem_src().
+	 *
+	 * @param conn    The connection to the peer device.
+	 * @param err     Error value. 0 on success, GATT error on fail.
+	 */
+	void (*rem_src)(struct bt_conn *conn, int err);
 };
 
 /**
@@ -1675,20 +1834,26 @@ void bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb
 struct bt_bap_broadcast_assistant_add_src_param {
 	/** Address of the advertiser. */
 	bt_addr_le_t addr;
+
 	/** SID of the advertising set. */
 	uint8_t adv_sid;
+
 	/** Whether to sync to periodic advertisements. */
 	uint8_t pa_sync;
+
 	/** 24-bit broadcast ID */
 	uint32_t broadcast_id;
+
 	/**
 	 * @brief Periodic advertising interval in milliseconds.
 	 *
 	 * BT_BAP_PA_INTERVAL_UNKNOWN if unknown.
 	 */
 	uint16_t pa_interval;
+
 	/** Number of subgroups */
 	uint8_t num_subgroups;
+
 	/** Pointer to array of subgroups */
 	struct bt_bap_scan_delegator_subgroup *subgroups;
 };
@@ -1708,16 +1873,20 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 struct bt_bap_broadcast_assistant_mod_src_param {
 	/** Source ID of the receive state. */
 	uint8_t src_id;
+
 	/** Whether to sync to periodic advertisements. */
 	uint8_t pa_sync;
+
 	/**
 	 * @brief Periodic advertising interval.
 	 *
 	 * BT_BAP_PA_INTERVAL_UNKNOWN if unknown.
 	 */
 	uint16_t pa_interval;
+
 	/** Number of subgroups */
 	uint8_t num_subgroups;
+
 	/** Pointer to array of subgroups */
 	struct bt_bap_scan_delegator_subgroup *subgroups;
 };
