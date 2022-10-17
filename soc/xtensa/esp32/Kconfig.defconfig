@@ -5,9 +5,10 @@
 
 if SOC_ESP32
 
+config HAS_FLASH_LOAD_OFFSET
+	default y
+
 if BOOTLOADER_MCUBOOT
-	config HAS_FLASH_LOAD_OFFSET
-		default y
 
 	config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 		default y
