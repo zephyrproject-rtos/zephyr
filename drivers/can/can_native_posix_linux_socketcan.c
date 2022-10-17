@@ -35,6 +35,11 @@
 
 #include "can_native_posix_linux_socketcan.h"
 
+#ifndef CANFD_FDF
+/* Linux kernels before v5.14 do not define CANFD_FDF */
+#define CANFD_FDF 0x04
+#endif /* CANFD_FDF */
+
 int linux_socketcan_iface_open(const char *if_name)
 {
 	struct sockaddr_can addr;
