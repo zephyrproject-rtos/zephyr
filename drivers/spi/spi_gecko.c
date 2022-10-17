@@ -21,9 +21,14 @@ LOG_MODULE_REGISTER(spi_gecko);
 
 #include <stdbool.h>
 
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#else
 #ifndef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 #error "Individual pin location support is required"
 #endif
+#endif /* CONFIG_PINCTRL */
+
 
 #define CLOCK_USART(id) _CONCAT(cmuClock_USART, id)
 
@@ -38,12 +43,16 @@ struct spi_gecko_data {
 struct spi_gecko_config {
 	USART_TypeDef *base;
 	CMU_Clock_TypeDef clock;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#else
 	struct soc_gpio_pin pin_rx;
 	struct soc_gpio_pin pin_tx;
 	struct soc_gpio_pin pin_clk;
 	uint8_t loc_rx;
 	uint8_t loc_tx;
 	uint8_t loc_clk;
+#endif /* CONFIG_PINCTRL */
 };
 
 
@@ -184,6 +193,7 @@ static void spi_gecko_xfer(const struct device *dev,
 	spi_context_complete(ctx, dev, 0);
 }
 
+#ifndef CONFIG_PINCTRL
 static void spi_gecko_init_pins(const struct device *dev)
 {
 	const struct spi_gecko_config *config = dev->config;
@@ -208,6 +218,7 @@ static void spi_gecko_init_pins(const struct device *dev)
 	config->base->ROUTEPEN = USART_ROUTEPEN_RXPEN | USART_ROUTEPEN_TXPEN |
 		USART_ROUTEPEN_CLKPEN;
 }
+#endif /* !CONFIG_PINCTRL */
 
 
 /* API Functions */
@@ -241,8 +252,15 @@ static int spi_gecko_init(const struct device *dev)
 	/* Init USART */
 	USART_InitSync(config->base, &usartInit);
 
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+#else
 	/* Initialize USART pins */
 	spi_gecko_init_pins(dev);
+#endif /* CONFIG_PINCTRL */
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
@@ -300,6 +318,29 @@ static struct spi_driver_api spi_gecko_api = {
 	.release = spi_gecko_release,
 };
 
+#ifdef CONFIG_PINCTRL
+#define SPI_INIT2(n, usart)				    \
+	PINCTRL_DT_INST_DEFINE(n);			    \
+	static struct spi_gecko_data spi_gecko_data_##n = { \
+		SPI_CONTEXT_INIT_LOCK(spi_gecko_data_##n, ctx), \
+		SPI_CONTEXT_INIT_SYNC(spi_gecko_data_##n, ctx), \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
+	}; \
+	static struct spi_gecko_config spi_gecko_cfg_##n = { \
+	    .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
+	    .base = (USART_TypeDef *) \
+		 DT_INST_REG_ADDR(n), \
+	    .clock = CLOCK_USART(usart) \
+	}; \
+	DEVICE_DT_INST_DEFINE(n, \
+			spi_gecko_init, \
+			NULL, \
+			&spi_gecko_data_##n, \
+			&spi_gecko_cfg_##n, \
+			POST_KERNEL, \
+			CONFIG_SPI_INIT_PRIORITY, \
+			&spi_gecko_api);
+#else
 #define SPI_INIT2(n, usart)				    \
 	static struct spi_gecko_data spi_gecko_data_##n = { \
 		SPI_CONTEXT_INIT_LOCK(spi_gecko_data_##n, ctx), \
@@ -331,6 +372,7 @@ static struct spi_driver_api spi_gecko_api = {
 			POST_KERNEL, \
 			CONFIG_SPI_INIT_PRIORITY, \
 			&spi_gecko_api);
+#endif /* CONFIG_PINCTRL */
 
 #define SPI_ID(n) DT_INST_PROP(n, peripheral_id)
 
