@@ -31,6 +31,9 @@
 #define WDT_MAX_WINDOW 24U
 #define WDT_MIN_WINDOW 18U
 #define WDG_FEED_INTERVAL 12U
+#elif DT_HAS_COMPAT_STATUS_OKAY(intel_tco_wdt)
+#define WDT_ALLOW_CALLBACK 0
+#define WDT_MAX_WINDOW 3000U
 #endif
 
 #ifndef WDT_ALLOW_CALLBACK
