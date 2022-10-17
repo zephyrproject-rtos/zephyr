@@ -19,6 +19,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"

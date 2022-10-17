@@ -40,6 +40,7 @@
 #endif /* CONFIG_PM */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 
 /* This symbol takes the value 1 if one of the device instances */

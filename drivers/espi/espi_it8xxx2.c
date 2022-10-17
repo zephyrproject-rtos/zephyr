@@ -15,6 +15,7 @@
 #include "espi_utils.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 #define ESPI_IT8XXX2_GET_GCTRL_BASE \

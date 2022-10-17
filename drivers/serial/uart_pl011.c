@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/device_mmio.h>
+#include <zephyr/irq.h>
 #if IS_ENABLED(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif

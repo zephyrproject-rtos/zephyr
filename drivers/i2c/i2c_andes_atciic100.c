@@ -10,6 +10,7 @@
 
 #include <string.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/irq.h>
 #include "i2c_andes_atciic100.h"
 
 #define DT_DRV_COMPAT andestech_atciic100

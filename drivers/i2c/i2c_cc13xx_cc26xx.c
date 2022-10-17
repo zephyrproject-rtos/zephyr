@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(i2c_cc13xx_cc26xx);
 
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26X2.h>
+#include <zephyr/irq.h>
 
 #include "i2c-priv.h"
 

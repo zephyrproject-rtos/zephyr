@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #include <soc_dt.h>
 #include <errno.h>
 #include <assert.h>
+#include <zephyr/irq.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"

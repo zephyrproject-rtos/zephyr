@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 
 #include <gd32_dma.h>
+#include <zephyr/irq.h>
 
 #ifdef CONFIG_SOC_SERIES_GD32F4XX
 #define CHXCTL_PERIEN_OFFSET	  ((uint32_t)25U)

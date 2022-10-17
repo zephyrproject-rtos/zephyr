@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
+#include <zephyr/irq.h>
 
 volatile struct {
 	arch_cpustart_t fn;

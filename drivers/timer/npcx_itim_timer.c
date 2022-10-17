@@ -43,6 +43,7 @@
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(itim, LOG_LEVEL_ERR);
 
 #define NPCX_ITIM32_MAX_CNT 0xffffffff

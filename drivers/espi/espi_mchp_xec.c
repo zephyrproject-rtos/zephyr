@@ -12,6 +12,7 @@
 #include <zephyr/drivers/espi.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 #include "espi_utils.h"
 
 /* Minimum delay before acknowledging a virtual wire */

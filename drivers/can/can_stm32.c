@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #include "can_stm32.h"
 

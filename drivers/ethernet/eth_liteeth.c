@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_pkt.h>
 
 #include <zephyr/sys/printk.h>
+#include <zephyr/irq.h>
 
 #include "eth.h"
 

@@ -10,6 +10,7 @@
 #include <zephyr/arch/common/sys_io.h>
 
 #include <soc.h>
+#include <zephyr/irq.h>
 #include "ipm_cavs_idc.h"
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED

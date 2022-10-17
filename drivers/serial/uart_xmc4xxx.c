@@ -11,6 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/irq.h>
 
 struct uart_xmc4xxx_config {
 	XMC_USIC_CH_t *uart;

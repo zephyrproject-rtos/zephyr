@@ -15,6 +15,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <fsl_flexcan.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>

@@ -12,6 +12,7 @@
 #include <nrfx_spim.h>
 #include <nrfx_uarte.h>
 #include <drivers/src/prs/nrfx_prs.h>
+#include <zephyr/irq.h>
 
 #define TRANSFER_LENGTH 10
 

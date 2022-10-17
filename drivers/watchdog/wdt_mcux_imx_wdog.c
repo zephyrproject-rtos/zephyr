@@ -11,6 +11,7 @@
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(wdt_mcux_wdog);
 
 #define WDOG_TMOUT_SEC(x)  (((x * 2) / MSEC_PER_SEC) - 1)

@@ -14,6 +14,7 @@
 #include <zephyr/drivers/interrupt_controller/dw_ace.h>
 #include <soc.h>
 #include <adsp_interrupt.h>
+#include <zephyr/irq.h>
 #include "intc_dw.h"
 
 /* ACE device interrupts are all packed into a single line on Xtensa's

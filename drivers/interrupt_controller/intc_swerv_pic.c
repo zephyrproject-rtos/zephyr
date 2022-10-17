@@ -14,6 +14,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/init.h>
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/irq.h>
 
 #define SWERV_PIC_MAX_NUM	CONFIG_NUM_IRQS
 #define SWERV_PIC_MAX_ID	(SWERV_PIC_MAX_NUM + RISCV_MAX_GENERIC_IRQ)

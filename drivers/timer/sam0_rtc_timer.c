@@ -22,6 +22,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/irq.h>
 
 /* RTC registers. */
 #define RTC0 ((RtcMode0 *) DT_INST_REG_ADDR(0))

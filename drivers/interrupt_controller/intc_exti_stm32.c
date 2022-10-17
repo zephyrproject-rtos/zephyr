@@ -25,6 +25,7 @@
 #include <stm32_ll_exti.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/interrupt_controller/exti_stm32.h>
+#include <zephyr/irq.h>
 
 #include "stm32_hsem.h"
 
