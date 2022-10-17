@@ -412,6 +412,9 @@ Libraries / Subsystems
 
     Private headers for above areas can be accessed, when required, using paths:
     ``mgmt/mcumgr/mgmt/<mcumgr_subarea>/``.
+  * MCUmgr os_mgmt info command has been added that allows querying details on
+    the kernel and application, allowing application-level extensibility
+    see :ref:`mcumgr_os_application_info` for details.
 
  * MCUMgr :kconfig:option:`CONFIG_APP_LINK_WITH_MCUMGR` has been removed as
    it has not been doing anything.
