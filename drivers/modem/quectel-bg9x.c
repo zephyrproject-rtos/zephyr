@@ -991,6 +991,28 @@ static const struct setup_cmd setup_cmds[] = {
 
 };
 
+int mdm_bg9x_start_gnss(void)
+{
+	int ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+QGPS=1",
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int mdm_bg9x_stop_gnss(void)
+{
+	int ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+QGPSEND",
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		return -1;
+	}
+
+	return 0;
+}
+
 /* Func: modem_pdp_context_active
  * Desc: This helper function is called from modem_setup, and is
  * used to open the PDP context. If there is trouble activating the
