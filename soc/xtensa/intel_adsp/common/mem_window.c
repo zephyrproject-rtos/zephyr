@@ -3,9 +3,11 @@
  */
 
 #include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/arch.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <adsp_memory.h>
 #include <adsp_shim.h>
