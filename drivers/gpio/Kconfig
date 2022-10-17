@@ -158,4 +158,6 @@ source "drivers/gpio/Kconfig.tca6424a"
 
 source "drivers/gpio/Kconfig.npm6001"
 
+source "drivers/gpio/Kconfig.rt1718s"
+
 endif # GPIO
