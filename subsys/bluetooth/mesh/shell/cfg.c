@@ -16,10 +16,7 @@
 #define CID_NVAL 0xffff
 
 /* Default net & app key values, unless otherwise specified */
-static const uint8_t default_key[16] = {
-	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
-	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
-};
+extern const uint8_t bt_mesh_shell_default_key[16];
 
 static int cmd_reset(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -413,7 +410,7 @@ static int cmd_net_key_add(const struct shell *sh, size_t argc, char *argv[])
 		len = hex2bin(argv[3], strlen(argv[3]), key_val, sizeof(key_val));
 		(void)memset(key_val, 0, sizeof(key_val) - len);
 	} else {
-		memcpy(key_val, default_key, sizeof(key_val));
+		memcpy(key_val, bt_mesh_shell_default_key, sizeof(key_val));
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
@@ -475,7 +472,7 @@ static int cmd_net_key_update(const struct shell *sh, size_t argc, char *argv[])
 		len = hex2bin(argv[2], strlen(argv[2]), key_val, sizeof(key_val));
 		(void)memset(key_val, 0, sizeof(key_val) - len);
 	} else {
-		memcpy(key_val, default_key, sizeof(key_val));
+		memcpy(key_val, bt_mesh_shell_default_key, sizeof(key_val));
 	}
 
 	err = bt_mesh_cfg_cli_net_key_update(bt_mesh_shell_target_ctx.net_idx,
@@ -567,7 +564,7 @@ static int cmd_app_key_add(const struct shell *sh, size_t argc, char *argv[])
 		len = hex2bin(argv[3], strlen(argv[3]), key_val, sizeof(key_val));
 		(void)memset(key_val + len, 0, sizeof(key_val) - len);
 	} else {
-		memcpy(key_val, default_key, sizeof(key_val));
+		memcpy(key_val, bt_mesh_shell_default_key, sizeof(key_val));
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
@@ -632,7 +629,7 @@ static int cmd_app_key_upd(const struct shell *sh, size_t argc, char *argv[])
 		len = hex2bin(argv[3], strlen(argv[3]), key_val, sizeof(key_val));
 		(void)memset(key_val, 0, sizeof(key_val) - len);
 	} else {
-		memcpy(key_val, default_key, sizeof(key_val));
+		memcpy(key_val, bt_mesh_shell_default_key, sizeof(key_val));
 	}
 
 	err = bt_mesh_cfg_cli_app_key_update(bt_mesh_shell_target_ctx.net_idx,
