@@ -1007,8 +1007,7 @@ void bt_id_del(struct bt_keys *keys)
 
 		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
 		if (adv_enabled) {
-			bt_id_pending_keys_update_set(keys,
-						   BT_KEYS_ID_PENDING_ADD);
+			bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
 			return;
 		}
 	}
