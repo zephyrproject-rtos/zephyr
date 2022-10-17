@@ -28,6 +28,18 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO
+#include <stdio.h>
+#include <version.h>
+#include <os_mgmt_processor.h>
+#include <mgmt/mcumgr/util/zcbor_bulk.h>
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+#include <zephyr/net/hostname.h>
+#elif defined(CONFIG_BT)
+#include <zephyr/bluetooth/bluetooth.h>
+#endif
+#endif
+
 #ifdef CONFIG_REBOOT
 static void os_mgmt_reset_work_handler(struct k_work *work);
 static void os_mgmt_reset_cb(struct k_timer *timer);
@@ -52,6 +64,19 @@ struct thread_iterator_info {
 	int thread_idx;
 	bool ok;
 };
+#endif
+
+/* Specifies what the "all" ('a') of info parameter shows */
+#define OS_MGMT_INFO_FORMAT_ALL                                                               \
+	OS_MGMT_INFO_FORMAT_KERNEL_NAME | OS_MGMT_INFO_FORMAT_NODE_NAME |                     \
+		OS_MGMT_INFO_FORMAT_KERNEL_RELEASE | OS_MGMT_INFO_FORMAT_KERNEL_VERSION |     \
+		(IS_ENABLED(CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME) ?                      \
+			OS_MGMT_INFO_FORMAT_BUILD_DATE_TIME : 0) |                            \
+		OS_MGMT_INFO_FORMAT_MACHINE | OS_MGMT_INFO_FORMAT_PROCESSOR |                 \
+		OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM | OS_MGMT_INFO_FORMAT_OPERATING_SYSTEM
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
+extern uint8_t *MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME;
 #endif
 
 /**
@@ -318,6 +343,302 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 }
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO
+/**
+ * Command handler: os info
+ */
+static int os_mgmt_info(struct smp_streamer *ctxt)
+{
+	struct zcbor_string format = { 0 };
+	uint8_t output[CONFIG_MCUMGR_GRP_OS_INFO_MAX_RESPONSE_SIZE] = { 0 };
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	uint32_t format_bitmask = 0;
+	bool prior_output = false;
+	size_t i = 0;
+	size_t decoded;
+	bool custom_os_name = false;
+	int rc;
+	uint16_t output_length = 0;
+	uint16_t valid_formats = 0;
+
+	struct zcbor_map_decode_key_val fs_info_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_VAL(format, zcbor_tstr_decode, &format),
+	};
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+	struct os_mgmt_info_check check_data = {
+		.format = &format,
+		.format_bitmask = &format_bitmask,
+		.valid_formats = &valid_formats,
+		.custom_os_name = &custom_os_name,
+	};
+
+	struct os_mgmt_info_append append_data = {
+		.format_bitmask = &format_bitmask,
+		.all_format_specified = false,
+		.output = output,
+		.output_length = &output_length,
+		.buffer_size = sizeof(output),
+		.prior_output = &prior_output,
+	};
+#endif
+
+	if (zcbor_map_decode_bulk(zsd, fs_info_decode, ARRAY_SIZE(fs_info_decode), &decoded)) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	/* Process all input characters in format value */
+	while (i < format.len) {
+		switch (format.value[i]) {
+		case 'a': {
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+			append_data.all_format_specified = true;
+#endif
+
+			format_bitmask = OS_MGMT_INFO_FORMAT_ALL;
+			++valid_formats;
+			break;
+		}
+		case 's': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_KERNEL_NAME;
+			++valid_formats;
+			break;
+		}
+		case 'n': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_NODE_NAME;
+			++valid_formats;
+			break;
+		}
+		case 'r': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_KERNEL_RELEASE;
+			++valid_formats;
+			break;
+		}
+		case 'v': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_KERNEL_VERSION;
+			++valid_formats;
+			break;
+		}
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
+		case 'b': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_BUILD_DATE_TIME;
+			++valid_formats;
+			break;
+		}
+#endif
+		case 'm': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_MACHINE;
+			++valid_formats;
+			break;
+		}
+		case 'p': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_PROCESSOR;
+			++valid_formats;
+			break;
+		}
+		case 'i': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM;
+			++valid_formats;
+			break;
+		}
+		case 'o': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_OPERATING_SYSTEM;
+			++valid_formats;
+			break;
+		}
+		default: {
+			break;
+		}
+		}
+
+		++i;
+	}
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+	/* Run callbacks to see if any additional handlers will add options */
+	(void)mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_INFO_CHECK, &check_data,
+				   sizeof(check_data));
+#endif
+
+	if (valid_formats != format.len) {
+		/* A provided format specifier is not valid */
+		return MGMT_ERR_EINVAL;
+	} else if (format_bitmask == 0) {
+		/* If no value is provided, use default of kernel name */
+		format_bitmask = OS_MGMT_INFO_FORMAT_KERNEL_NAME;
+	}
+
+	/* Process all options in order and append to output string */
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_KERNEL_NAME) {
+		rc = snprintf(output, (sizeof(output) - output_length), "Zephyr");
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_NODE_NAME) {
+		/* Get hostname, if enabled */
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+		/* From network */
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), net_hostname_get());
+#elif defined(CONFIG_BT)
+		/* From Bluetooth */
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), bt_get_name());
+#else
+		/* Not available */
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      "%sunknown", (prior_output == true ? " " : ""));
+#endif
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_NODE_NAME;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_KERNEL_RELEASE) {
+#ifdef BUILD_VERSION
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), STRINGIFY(BUILD_VERSION));
+#else
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      "%sunknown", (prior_output == true ? " " : ""));
+#endif
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_KERNEL_RELEASE;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_KERNEL_VERSION) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), KERNEL_VERSION_STRING);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_KERNEL_VERSION;
+	}
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_BUILD_DATE_TIME) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"),
+			      MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_BUILD_DATE_TIME;
+	}
+#endif
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_MACHINE) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), CONFIG_ARCH);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_MACHINE;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_PROCESSOR) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), PROCESSOR_NAME);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_PROCESSOR;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s%s%s" : "%s%s%s"), CONFIG_BOARD,
+			      (sizeof(CONFIG_BOARD_REVISION) > 1 ? "@" : ""),
+			      CONFIG_BOARD_REVISION);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM;
+	}
+
+	/* If custom_os_name is not set (by extension code) then return the default OS name of
+	 * Zephyr
+	 */
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_OPERATING_SYSTEM && custom_os_name == false) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      "%sZephyr", (prior_output == true ? " " : ""));
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_OPERATING_SYSTEM;
+	}
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+	/* Call custom handler command for additional output/processing */
+	rc = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_INFO_APPEND, &append_data,
+				  sizeof(append_data));
+
+	if (rc != MGMT_ERR_EOK) {
+		return rc;
+	}
+#endif
+
+	if (zcbor_tstr_put_lit(zse, "output") &&
+	    zcbor_tstr_encode_ptr(zse, output, output_length)) {
+		return MGMT_ERR_EOK;
+	}
+
+fail:
+	return MGMT_ERR_EMSGSIZE;
+}
+#endif
+
 static const struct mgmt_handler os_mgmt_group_handlers[] = {
 #ifdef CONFIG_OS_MGMT_ECHO
 	[OS_MGMT_ID_ECHO] = {
@@ -337,6 +658,11 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 #ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
 	[OS_MGMT_ID_MCUMGR_PARAMS] = {
 		os_mgmt_mcumgr_params, NULL
+	},
+#endif
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO
+	[OS_MGMT_ID_INFO] = {
+		os_mgmt_info, NULL
 	},
 #endif
 };
