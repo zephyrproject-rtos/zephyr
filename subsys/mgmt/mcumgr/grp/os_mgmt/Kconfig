@@ -123,4 +123,39 @@ config OS_MGMT_ECHO
 config OS_MGMT_MCUMGR_PARAMS
 	bool "MCUMGR Parameters retrieval command"
 
+config MCUMGR_GRP_OS_INFO
+	bool "Support for info command"
+	help
+	  Can be used similarly to the unix/linux uname command for retrieving system information
+	  including kernel version, processor architecture and board name.
+
+if MCUMGR_GRP_OS_INFO
+
+config MCUMGR_GRP_OS_INFO_MAX_RESPONSE_SIZE
+	int "Maximum response size for info command"
+	default 256
+	range 32 512
+	help
+	  The maximum size of the response to the info command, will use a stack buffer of this
+	  size to store the data in. If the output response is too big then the output will not be
+	  present in the response, which will just contain the result code (rc) of memory error.
+
+config MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+	bool "Custom info hooks"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Supports adding custom command/character processing to the info command by using
+	  registered callbacks. Data can be appended to the struct provided in the callback.
+
+config MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
+	bool "Show build date and time"
+	help
+	  Will allow returning the build date and time of the firmware by using the info with
+	  format option 'b' (will also be returned with all responses by using 'a').
+
+	  Note: This will invalidate reproducible builds of the firmware as it will embed the
+	  build date/time in the output firmware image.
+
+endif
+
 endif
