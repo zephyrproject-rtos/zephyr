@@ -344,8 +344,22 @@ struct spi_config {
 	{								\
 		.frequency = DT_PROP(node_id, spi_max_frequency),	\
 		.operation = (operation_) |				\
+			DT_PROP_OR(node_id, operational_mode,0U)|	\
+			DT_PROP_OR(node_id, mode,0U)|			\
+			DT_PROP_OR(node_id, transfer,0U)|		\
+			DT_PROP_OR(node_id, word_size,0U)|		\		
 			DT_PROP(node_id, duplex) |			\
+			DT_PROP_OR(node_id, cs_hold,0U)|		\			
+			DT_PROP_OR(node_id, lock_on,0U)|		\
+			DT_PROP_OR(node_id, cs_active_high,0U)|		\
 			DT_PROP(node_id, frame_format),			\
+#if defined(CONFIG_SPI_EXTENDED_MODES)
+			DT_PROP(node_id, frame_format)|			\
+			DT_PROP_OR(node_id, lines,0U),			\				
+#else							
+			DT_PROP(node_id, frame_format),	
+#endif /* CONFIG_SPI_EXTENDED_MODES */
+				
 		.slave = DT_REG_ADDR(node_id),				\
 		.cs = COND_CODE_1(					\
 			DT_SPI_DEV_HAS_CS_GPIOS(node_id),		\
