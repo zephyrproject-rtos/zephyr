@@ -107,6 +107,7 @@ static void ascs_ep_unbind_audio_iso(struct bt_audio_ep *ep)
 void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 {
 	struct bt_audio_stream *stream;
+	bool state_changed;
 	uint8_t old_state;
 
 	if (!ep) {
@@ -117,6 +118,7 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 
 	old_state = ep->status.state;
 	ep->status.state = state;
+	state_changed = old_state != state;
 
 	BT_DBG("ep %p id 0x%02x %s -> %s", ep, ep->status.id,
 	       bt_audio_ep_state_str(old_state),
@@ -125,7 +127,7 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 	/* Notify clients*/
 	ase_status_changed(ep, old_state, state);
 
-	if (ep->stream == NULL || old_state == state) {
+	if (ep->stream == NULL) {
 		return;
 	}
 
@@ -212,8 +214,10 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				return;
 			}
 
-			if (ops->enabled != NULL) {
+			if (state_changed && ops->enabled != NULL) {
 				ops->enabled(stream);
+			} else if (!state_changed && ops->metadata_updated) {
+				ops->metadata_updated(stream);
 			}
 
 			break;
@@ -230,8 +234,10 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				return;
 			}
 
-			if (ops->started != NULL) {
+			if (state_changed && ops->started != NULL) {
 				ops->started(stream);
+			} else if (!state_changed && ops->metadata_updated) {
+				ops->metadata_updated(stream);
 			}
 
 			break;
@@ -292,7 +298,8 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 		}
 	}
 
-	if (state == BT_AUDIO_EP_STATE_CODEC_CONFIGURED &&
+	if (state_changed &&
+	    state == BT_AUDIO_EP_STATE_CODEC_CONFIGURED &&
 	    old_state != BT_AUDIO_EP_STATE_IDLE) {
 		ascs_ep_unbind_audio_iso(ep);
 	}
@@ -472,7 +479,9 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 	struct bt_audio_stream *stream = audio_iso->source_stream;
 	struct bt_audio_stream_ops *ops = stream->ops;
 
-	BT_DBG("stream %p ep %p", stream, stream->ep);
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+		BT_DBG("stream %p ep %p", stream, stream->ep);
+	}
 
 	if (ops != NULL && ops->sent != NULL) {
 		ops->sent(stream);

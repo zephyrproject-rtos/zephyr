@@ -163,7 +163,9 @@ static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixt
 
 	/* Skip tests if not all startup suite hasn't been executed */
 	if (strcmp(test->test_suite_name, "bt_keys_get_addr_startup")) {
-		zassume_true(all_startup_checks_executed == true, NULL);
+		if (all_startup_checks_executed != true) {
+			ztest_test_skip();
+		}
 	}
 
 	CONN_FFF_FAKES_LIST(RESET_FAKE);

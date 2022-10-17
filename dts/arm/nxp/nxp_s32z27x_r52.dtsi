@@ -1,0 +1,376 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-r.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <1>;
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <2>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <3>;
+		};
+
+		cpu@4 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <4>;
+		};
+
+		cpu@5 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <5>;
+		};
+
+		cpu@6 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <6>;
+		};
+
+		cpu@7 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <7>;
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8_timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,s32ze-pinctrl";
+		status = "okay";
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		gic: interrupt-controller@47800000 {
+			compatible = "arm,gic";
+			reg = <0x47800000 0x10000>,
+				<0x47900000 0x80000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+
+		sram0: memory@31780000 {
+			compatible = "mmio-sram";
+			reg = <0x31780000 DT_SIZE_M(1)>;
+		};
+
+		sram1: memory@35780000 {
+			compatible = "mmio-sram";
+			reg = <0x35780000 DT_SIZE_M(1)>;
+		};
+
+		uart0: uart@40170000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40170000 0x1000>;
+			interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart1: uart@40180000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40180000 0x1000>;
+			interrupts = <GIC_SPI 213 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart2: uart@40190000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40190000 0x1000>;
+			interrupts = <GIC_SPI 214 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart3: uart@40970000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40970000 0x1000>;
+			interrupts = <GIC_SPI 215 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart4: uart@40980000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40980000 0x1000>;
+			interrupts = <GIC_SPI 216 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart5: uart@40990000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40990000 0x1000>;
+			interrupts = <GIC_SPI 217 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart6: uart@42170000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42170000 0x1000>;
+			interrupts = <GIC_SPI 218 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart7: uart@42180000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42180000 0x1000>;
+			interrupts = <GIC_SPI 219 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart8: uart@42190000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42190000 0x1000>;
+			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart9: uart@42980000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42980000 0x1000>;
+			interrupts = <GIC_SPI 221 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart10: uart@42990000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42990000 0x1000>;
+			interrupts = <GIC_SPI 222 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart11: uart@429a0000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x429a0000 0x1000>;
+			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart12: uart@40330000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40330000 0x1000>;
+			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		siul2_0: siul2@40520000 {
+			reg = <0x40520000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioa: gpio@40521702 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40521702 0x02>, <0x40520240 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@40521700 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40521700 0x02>, <0x40520280 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <15>;
+				status = "disabled";
+			};
+
+			gpioo: gpio@40521716 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40521716 0x02>, <0x405204c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <14>;
+				gpio-reserved-ranges = <0 10>;
+				status = "disabled";
+			};
+		};
+
+		siul2_1: siul2@40d20000 {
+			reg = <0x40d20000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioc: gpio@40d21700 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40d21700 0x02>, <0x40d20280 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				gpio-reserved-ranges = <0 15>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@40d21706 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40d21706 0x02>, <0x40d202c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioe: gpio@40d21704 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40d21704 0x02>, <0x40d20300 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiof: gpio@40d2170a {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40d2170a 0x02>, <0x40d20340 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiog: gpio@40d21708 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40d21708 0x02>, <0x40d20380 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <12>;
+				status = "disabled";
+			};
+		};
+
+		siul2_3: siul2@41d20000 {
+			reg = <0x41d20000 0x10000>;
+		};
+
+		siul2_4: siul2@42520000 {
+			reg = <0x42520000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioh: gpio@42521708 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x42521708 0x02>, <0x42520380 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				gpio-reserved-ranges = <0 12>;
+				status = "disabled";
+			};
+
+			gpioi: gpio@4252170e {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4252170e 0x02>, <0x425203c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioj: gpio@4252170c {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4252170c 0x02>, <0x42520400 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiok: gpio@42521712 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x42521712 0x02>, <0x42520440 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiol: gpio@42521710 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x42521710 0x02>, <0x42520480 0x40>;
+				reg-names = "disr0", "direr0";
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				status = "disabled";
+			};
+		};
+
+		siul2_5: siul2@42d20000 {
+			reg = <0x42d20000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpiom: gpio@42d21710 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x42d21710 0x02>, <0x42d20480 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				gpio-reserved-ranges = <0 2>;
+				status = "disabled";
+			};
+
+			gpion: gpio@42d21716 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x42d21716 0x02>, <0x42d204c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <10>;
+				status = "disabled";
+			};
+		};
+	};
+};

@@ -143,6 +143,7 @@ static struct named_lc3_preset lc3_broadcast_presets[] = {
 
 /* Default to 16_2_1 */
 static struct named_lc3_preset *default_preset = &lc3_unicast_presets[3];
+static bool initialized;
 
 static uint32_t get_next_seq_num(uint32_t interval_us)
 {
@@ -826,6 +827,11 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	if (!initialized) {
+		shell_error(sh, "Not initialized");
+		return -ENOEXEC;
+	}
+
 	if (params.func) {
 		shell_error(sh, "Discover in progress");
 		return -ENOEXEC;
@@ -1387,10 +1393,38 @@ static void stream_stopped_cb(struct bt_audio_stream *stream)
 #endif /* CONFIG_LIBLC3 */
 }
 
+#if defined(CONFIG_BT_AUDIO_UNICAST)
+static void stream_released_cb(struct bt_audio_stream *stream)
+{
+	shell_print(ctx_shell, "Stream %p released\n", stream);
+
+#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+	/* The current shell application only supports a single stream in
+	 * the unicast group, so when that gets disconnected, we delete the
+	 * unicast group so that it can be recreated when settings the QoS
+	 */
+	if (default_unicast_group != NULL) {
+		int err = bt_audio_unicast_group_delete(default_unicast_group);
+
+		if (err != 0) {
+			shell_error(ctx_shell,
+				    "Failed to delete unicast group: %d",
+				    err);
+		} else {
+			default_unicast_group = NULL;
+		}
+	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+}
+#endif /* CONFIG_BT_AUDIO_UNICAST */
+
 static struct bt_audio_stream_ops stream_ops = {
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 	.recv = audio_recv,
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SINK */
+#if defined(CONFIG_BT_AUDIO_UNICAST)
+	.released = stream_released_cb,
+#endif /* CONFIG_BT_AUDIO_UNICAST */
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
 };
@@ -1465,14 +1499,21 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 static int cmd_start_broadcast(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
 	int err;
+
+	if (adv == NULL) {
+		shell_info(sh, "Extended advertising set is NULL");
+		return -ENOEXEC;
+	}
 
 	if (default_source == NULL) {
 		shell_info(sh, "Broadcast source not created");
 		return -ENOEXEC;
 	}
 
-	err = bt_audio_broadcast_source_start(default_source);
+	err = bt_audio_broadcast_source_start(default_source,
+					      adv_sets[selected_adv]);
 	if (err != 0) {
 		shell_error(sh, "Unable to start broadcast source: %d", err);
 		return err;
@@ -1530,6 +1571,11 @@ static int cmd_broadcast_scan(const struct shell *sh, size_t argc, char *argv[])
 			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 			.window     = BT_GAP_SCAN_FAST_WINDOW,
 			.timeout    = 0 };
+
+	if (!initialized) {
+		shell_error(sh, "Not initialized");
+		return -ENOEXEC;
+	}
 
 	if (strcmp(argv[1], "on") == 0) {
 		err =  bt_audio_broadcast_sink_scan_start(&param);
@@ -1696,10 +1742,9 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 	ctx_shell = sh;
 
-	err = bt_enable(NULL);
-	if (err && err != -EALREADY) {
-		shell_error(sh, "Bluetooth init failed (err %d)", err);
-		return err;
+	if (initialized) {
+		shell_print(sh, "Already initialized");
+		return -ENOEXEC;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER)) {
@@ -1758,6 +1803,9 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 					    &stream_ops);
 	}
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+
+	initialized = true;
+
 	return 0;
 }
 
@@ -1769,6 +1817,11 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	static uint8_t data[DATA_MTU - BT_ISO_CHAN_SEND_RESERVE];
 	int ret, len;
 	struct net_buf *buf;
+
+	if (default_stream->iso->qos->tx == NULL) {
+		shell_error(sh, "Stream %p cannot send", default_stream);
+		return -ENOEXEC;
+	}
 
 	if (argc > 1) {
 		len = hex2bin(argv[1], strlen(argv[1]), data, sizeof(data));

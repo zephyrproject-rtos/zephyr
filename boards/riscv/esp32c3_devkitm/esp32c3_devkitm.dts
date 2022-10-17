@@ -86,6 +86,14 @@
 	status = "disabled";
 };
 
+&twai {
+	/* requires external CAN transceiver or jumper on RX and TX pins for loopback testing */
+	status = "disabled";
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+};
+
 &flash0 {
 	status = "okay";
 	partitions {

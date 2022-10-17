@@ -387,8 +387,13 @@ static void lr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 	case LR_EVT_RUN:
 		ctx = llcp_lr_peek(conn);
 		if (ctx) {
+			/*
+			 * since the call to lr_act_run may release the context we need to remember
+			 * which procedure we are running
+			 */
+			const enum llcp_proc curr_proc = ctx->proc;
 			lr_act_run(conn);
-			if (ctx->proc != PROC_TERMINATE) {
+			if (curr_proc != PROC_TERMINATE) {
 				lr_set_state(conn, LR_STATE_ACTIVE);
 			} else {
 				lr_set_state(conn, LR_STATE_TERMINATE);
