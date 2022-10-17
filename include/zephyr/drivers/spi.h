@@ -352,7 +352,6 @@ struct spi_config {
 			DT_PROP_OR(node_id, cs_hold,0U)|		\			
 			DT_PROP_OR(node_id, lock_on,0U)|		\
 			DT_PROP_OR(node_id, cs_active_high,0U)|		\
-			DT_PROP(node_id, frame_format),			\
 #if defined(CONFIG_SPI_EXTENDED_MODES)
 			DT_PROP(node_id, frame_format)|			\
 			DT_PROP_OR(node_id, lines,0U),			\				
