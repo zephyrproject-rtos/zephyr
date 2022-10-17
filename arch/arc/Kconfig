@@ -338,6 +338,8 @@ config ARC_NORMAL_FIRMWARE
 	  resources of the ARC processors, and, therefore, it shall avoid
 	  accessing them.
 
+source "arch/arc/core/dsp/Kconfig"
+
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU
 

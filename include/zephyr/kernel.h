@@ -181,7 +181,8 @@ extern void k_thread_foreach_unlocked(
  * and restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_FPU_SHARING} is not enabled.
  */
-#define K_FP_REGS (BIT(1))
+#define K_FP_IDX 1
+#define K_FP_REGS (BIT(K_FP_IDX))
 #endif
 
 /**
@@ -212,6 +213,37 @@ extern void k_thread_foreach_unlocked(
  * Effectively it serves as a tiny bit of zero-overhead TLS data.
  */
 #define K_CALLBACK_STATE (BIT(4))
+
+#ifdef CONFIG_ARC
+/* ARC processor Bitmask definitions for threads user options */
+
+#if defined(CONFIG_ARC_DSP_SHARING)
+/**
+ * @brief DSP registers are managed by context switch
+ *
+ * @details
+ * This option indicates that the thread uses the CPU's DSP registers.
+ * This instructs the kernel to take additional steps to save and
+ * restore the contents of these registers when scheduling the thread.
+ * No effect if @kconfig{CONFIG_ARC_DSP_SHARING} is not enabled.
+ */
+#define K_DSP_IDX 6
+#define K_ARC_DSP_REGS (BIT(K_DSP_IDX))
+#endif
+
+#if defined(CONFIG_ARC_AGU_SHARING)
+/**
+ * @brief AGU registers are managed by context switch
+ *
+ * @details
+ * This option indicates that the thread uses the ARC processor's XY
+ * memory and DSP feature. Often used with @kconfig{CONFIG_ARC_AGU_SHARING}.
+ * No effect if @kconfig{CONFIG_ARC_AGU_SHARING} is not enabled.
+ */
+#define K_AGU_IDX 7
+#define K_ARC_AGU_REGS (BIT(K_AGU_IDX))
+#endif
+#endif
 
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
