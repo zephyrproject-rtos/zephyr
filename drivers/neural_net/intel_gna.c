@@ -25,6 +25,7 @@
 
 #define LOG_LEVEL CONFIG_NEURAL_NET_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(neural_net);
 
 #if LOG_LEVEL >= LOG_LEVEL_DBG

@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/random/rand32.h>
 
 #include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/irq.h>
 
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"

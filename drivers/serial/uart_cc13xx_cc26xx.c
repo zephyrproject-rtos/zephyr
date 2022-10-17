@@ -19,6 +19,7 @@
 
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26X2.h>
+#include <zephyr/irq.h>
 
 struct uart_cc13xx_cc26xx_config {
 	uint32_t reg;

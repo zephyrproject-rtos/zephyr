@@ -10,6 +10,7 @@
 #include <zephyr/sys/atomic.h>
 #include <soc.h>
 #include <hal/nrf_rng.h>
+#include <zephyr/irq.h>
 
 #define DT_DRV_COMPAT	nordic_nrf_rng
 

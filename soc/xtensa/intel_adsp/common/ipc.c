@@ -6,6 +6,7 @@
 #include <intel_adsp_ipc.h>
 #include <adsp_ipc_regs.h>
 #include <adsp_interrupt.h>
+#include <zephyr/irq.h>
 
 
 void intel_adsp_ipc_set_message_handler(const struct device *dev,

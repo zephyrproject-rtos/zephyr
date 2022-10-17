@@ -13,6 +13,7 @@
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/irq.h>
 
 #include "app_conf.h"
 #include "stm32_wpan_common.h"

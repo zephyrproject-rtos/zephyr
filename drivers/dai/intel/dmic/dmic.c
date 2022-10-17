@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/devicetree.h>
 
 #include <zephyr/drivers/dai.h>
+#include <zephyr/irq.h>
 
 #include "dmic.h"
 

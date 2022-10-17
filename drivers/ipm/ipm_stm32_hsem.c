@@ -14,6 +14,7 @@
 #include "stm32_hsem.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(ipm_stm32_hsem, CONFIG_IPM_LOG_LEVEL);
 
 #define HSEM_CPU1                   1

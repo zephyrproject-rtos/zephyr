@@ -19,6 +19,7 @@
 #endif
 #include <soc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(peci_mchp_xec, CONFIG_PECI_LOG_LEVEL);
 
 /* Maximum PECI core clock is the main clock 48Mhz */

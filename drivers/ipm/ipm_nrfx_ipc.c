@@ -13,6 +13,7 @@
 
 #define LOG_LEVEL CONFIG_IPM_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(ipm_nrfx_ipc);
 
 struct ipm_nrf_data {

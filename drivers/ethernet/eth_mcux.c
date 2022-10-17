@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/irq.h>
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 #include <zephyr/drivers/ptp_clock.h>

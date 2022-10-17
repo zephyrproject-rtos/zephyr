@@ -14,6 +14,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(peci_npcx, CONFIG_PECI_LOG_LEVEL);
 
 #define PECI_TIMEOUT		 K_MSEC(300)

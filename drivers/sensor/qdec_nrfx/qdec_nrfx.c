@@ -13,6 +13,7 @@
 #include <hal/nrf_gpio.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(qdec_nrfx, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_qdec

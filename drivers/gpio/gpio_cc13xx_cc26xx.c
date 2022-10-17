@@ -22,6 +22,7 @@
 
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26XX.h>
+#include <zephyr/irq.h>
 
 #include "gpio_utils.h"
 

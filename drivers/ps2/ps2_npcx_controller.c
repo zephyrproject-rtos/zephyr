@@ -20,6 +20,7 @@
 #include <zephyr/dt-bindings/clock/npcx_clock.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(ps2_npcx_ctrl, CONFIG_PS2_LOG_LEVEL);
 
 #define NPCX_PS2_CH_COUNT 4

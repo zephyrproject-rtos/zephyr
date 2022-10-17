@@ -12,6 +12,7 @@
 #include <cavs-idc.h>
 #include <adsp_shim.h>
 #include <adsp_interrupt.h>
+#include <zephyr/irq.h>
 
 #define DT_DRV_COMPAT intel_adsp_timer
 

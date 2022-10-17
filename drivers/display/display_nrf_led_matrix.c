@@ -17,6 +17,7 @@
 #endif
 #include <nrf_peripherals.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(nrf_led_matrix, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define MATRIX_NODE  DT_INST(0, nordic_nrf_led_matrix)
