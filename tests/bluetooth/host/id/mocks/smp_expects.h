@@ -39,3 +39,13 @@ void expect_single_call_bt_smp_le_oob_set_tk(struct bt_conn *conn, const uint8_t
 void expect_single_call_bt_smp_le_oob_set_sc_data(struct bt_conn *conn,
 						  const struct bt_le_oob_sc_data *oobd_local,
 						  const struct bt_le_oob_sc_data *oobd_remote);
+
+/*
+ *  Validate expected behaviour when bt_smp_le_oob_get_sc_data() is called
+ *
+ *  Expected behaviour:
+ *   - bt_smp_le_oob_get_sc_data() to be called once with correct parameters
+ */
+void expect_single_call_bt_smp_le_oob_get_sc_data(struct bt_conn *conn,
+						  const struct bt_le_oob_sc_data **oobd_local,
+						  const struct bt_le_oob_sc_data **oobd_remote);
