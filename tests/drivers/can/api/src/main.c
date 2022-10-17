@@ -122,6 +122,16 @@ const struct can_frame test_ext_rtr_frame_1 = {
 };
 
 /**
+ * @brief Standard (11-bit) CAN ID FD format frame 1.
+ */
+const struct can_frame test_std_fdf_frame_1 = {
+	.flags   = CAN_FRAME_FDF,
+	.id      = TEST_CAN_STD_ID_1,
+	.dlc     = 8,
+	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
+};
+
+/**
  * @brief Standard (11-bit) CAN ID filter 1. This filter matches
  * ``test_std_frame_1``.
  */
@@ -1013,6 +1023,17 @@ ZTEST_USER(can_api, test_send_invalid_dlc)
 
 	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
 	zassert_equal(err, -EINVAL, "sent a frame with an invalid DLC");
+}
+
+/**
+ * @brief Test that CAN-FD format frames are rejected in non-FD mode.
+ */
+ZTEST_USER(can_api, test_send_fd_format)
+{
+	int err;
+
+	err = can_send(can_dev, &test_std_fdf_frame_1, TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_equal(err, -ENOTSUP, "sent a CAN-FD format frame in non-FD mode");
 }
 
 /**
