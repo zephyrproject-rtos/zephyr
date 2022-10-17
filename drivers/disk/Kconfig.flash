@@ -4,6 +4,7 @@
 config DISK_DRIVER_FLASH
 	bool "Flash"
 	select FLASH
+	select FLASH_MAP
 	help
 	  Flash device is used for the file system.
 
