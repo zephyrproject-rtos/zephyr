@@ -354,9 +354,9 @@ struct device_state {
 	 *
 	 * Device initialization functions return a negative errno code if they
 	 * fail. In Zephyr, errno values do not exceed 255, so we can store the
-	 * positive result value in a uint8_t type.
+	 * positive result value using 8 bits.
 	 */
-	uint8_t init_res;
+	unsigned int init_res : 8;
 
 	/** Indicates the device initialization function has been
 	 * invoked.
