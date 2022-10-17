@@ -125,11 +125,11 @@ dsp_skip_save :
 	lr r13, [_ARC_V2_AGU_MOD20]
 	st r13, [sp, ___callee_saved_stack_t_agu_mod20_OFFSET]
 	lr r13, [_ARC_V2_AGU_MOD21]
-	st r13, [sp, ___callee_saved_stack_t_agu_mod21_OFFSET]
+	_st32_huge_offset r13, sp, ___callee_saved_stack_t_agu_mod21_OFFSET, r1
 	lr r13, [_ARC_V2_AGU_MOD22]
-	st r13, [sp, ___callee_saved_stack_t_agu_mod22_OFFSET]
+	_st32_huge_offset r13, sp, ___callee_saved_stack_t_agu_mod22_OFFSET, r1
 	lr r13, [_ARC_V2_AGU_MOD23]
-	st r13, [sp, ___callee_saved_stack_t_agu_mod23_OFFSET]
+	_st32_huge_offset r13, sp, ___callee_saved_stack_t_agu_mod23_OFFSET, r1
 #endif
 #endif
 agu_skip_save :
@@ -254,7 +254,7 @@ dsp_skip_load :
 	sr r13, [_ARC_V2_AGU_MOD21]
 	ld r13, [sp, ___callee_saved_stack_t_agu_mod22_OFFSET]
 	sr r13, [_ARC_V2_AGU_MOD22]
-	st r13, [sp, ___callee_saved_stack_t_agu_mod23_OFFSET]
+	ld r13, [sp, ___callee_saved_stack_t_agu_mod23_OFFSET]
 	sr r13, [_ARC_V2_AGU_MOD23]
 #endif
 #endif
