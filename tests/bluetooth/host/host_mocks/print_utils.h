@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <addr.h>
+#include <zephyr/bluetooth/addr.h>
 
 const char *bt_addr_str_real(const bt_addr_t *addr);
 const char *bt_addr_le_str_real(const bt_addr_le_t *addr);
