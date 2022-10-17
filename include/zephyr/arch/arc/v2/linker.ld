@@ -252,6 +252,22 @@ SECTIONS {
 	_estack = .;
 #endif /* __MWDT_LINKER_CMD__ */
 
+#ifdef CONFIG_ARC_XY_ENABLE
+	SECTION_PROLOGUE(xdata,,)
+	{
+		__xdata_start = .;
+		*(.Xdata*)
+		__xdata_end = .;
+	} GROUP_DATA_LINK_IN(XCCM, RAMABLE_REGION)
+
+	SECTION_PROLOGUE(ydata,,)
+	{
+		__ydata_start = .;
+		*(.Ydata*)
+		__ydata_end = .;
+	} GROUP_DATA_LINK_IN(YCCM, RAMABLE_REGION)
+#endif
+
 	GROUP_END(RAMABLE_REGION)
 
 /* Located in generated directory. This file is populated by the

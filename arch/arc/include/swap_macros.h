@@ -15,6 +15,8 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arc/tool-compat.h>
 #include <zephyr/arch/arc/asm-compat/assembler.h>
+#include <zephyr/kernel.h>
+#include "../core/dsp/swap_dsp_macros.h"
 
 #ifdef _ASMLANGUAGE
 
@@ -69,8 +71,7 @@
 
 #ifdef CONFIG_FPU_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
-	/* K_FP_REGS is bit 1 */
-	bbit0 r13, 1, 1f
+	bbit0 r13, K_FP_IDX, fpu_skip_save
 	lr r13, [_ARC_V2_FPU_STATUS]
 	st_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
 	lr r13, [_ARC_V2_FPU_CTRL]
@@ -86,9 +87,9 @@
 	lr r13, [_ARC_V2_FPU_DPFP2H]
 	st_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
 #endif
-1 :
 #endif
-
+fpu_skip_save :
+	_save_dsp_regs
 	/* save stack pointer in struct k_thread */
 	STR sp, r2, _thread_offset_to_sp
 .endm
@@ -107,8 +108,7 @@
 
 #ifdef CONFIG_FPU_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
-	/* K_FP_REGS is bit 1 */
-	bbit0 r13, 1, 2f
+	bbit0 r13, K_FP_IDX, fpu_skip_load
 
 	ld_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
 	sr r13, [_ARC_V2_FPU_STATUS]
@@ -125,9 +125,9 @@
 	ld_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
 	sr r13, [_ARC_V2_FPU_DPFP2H]
 #endif
-2 :
 #endif
-
+fpu_skip_load :
+	_load_dsp_regs
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
