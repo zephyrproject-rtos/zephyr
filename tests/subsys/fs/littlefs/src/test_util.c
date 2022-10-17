@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Tests of functions in testfs_util */
+/* Tests of functions in tests/subsys/fs/common/test_fs_util */
 
 #include <string.h>
 #include <zephyr/ztest.h>
 #include "testfs_tests.h"
-#include "testfs_util.h"
+#include "../../common/test_fs_util.h"
 
 #define MNT "/mnt"
 #define ELT1 "a"
