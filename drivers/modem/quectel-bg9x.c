@@ -981,6 +981,14 @@ static const struct setup_cmd setup_cmds[] = {
 #endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
 	SETUP_CMD_NOHANDLE("AT+QICSGP=1,1,\"" MDM_APN "\",\""
 			   MDM_USERNAME "\",\"" MDM_PASSWORD "\",1"),
+#ifdef CONFIG_MODEM_QUECTEL_BG9X_ENABLE_GNSS
+	SETUP_CMD_NOHANDLE("AT+QGPSCFG=\"outport\",\"" CONFIG_MODEM_QUECTEL_BG9X_GNSS_OUTPORT "\""),
+	SETUP_CMD_NOHANDLE("AT+QGPSCFG=\"gpsnmeatype\",31"),
+	SETUP_CMD_NOHANDLE("AT+QGPSCFG=\"glonassnmeatype\",7"),
+	SETUP_CMD_NOHANDLE("AT+QGPSCFG=\"galileonmeatype\",1"),
+	SETUP_CMD_NOHANDLE("AT+QGPSCFG=\"beidounmeatype\",3"),
+#endif
+
 };
 
 /* Func: modem_pdp_context_active

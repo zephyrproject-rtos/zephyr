@@ -63,4 +63,18 @@ config MODEM_QUECTEL_BG9X_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
+config MODEM_QUECTEL_BG9X_ENABLE_GNSS
+	bool "quectel BG9X driver GNSS enable"
+	default n
+	help
+	  Enable BG9x GNSS support such that it provides the current location
+
+config MODEM_QUECTEL_BG9X_GNSS_OUTPORT
+	string "quectel BG9X driver GNSS output port"
+	default "none"
+	help
+	  Select the output port on which the BG9x will send the nmea strings
+	  Choices are none, usbnmnea, uartnmea, auxnmea,
+	  cmux1, cmux2, cmux3, cmux4
+
 endif
