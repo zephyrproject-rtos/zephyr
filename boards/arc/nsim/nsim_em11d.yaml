@@ -4,6 +4,7 @@ type: sim
 simulation: nsim
 arch: arc
 toolchain:
+  - zephyr
   - arcmwdt
 testing:
   ignore_tags:
