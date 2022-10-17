@@ -26,6 +26,8 @@ OS management group defines following commands:
     +-------------------+-----------------------------------------------+
     | ``6``             | MCUMGR parameters                             |
     +-------------------+-----------------------------------------------+
+    | ``7``             | OS/Application info                           |
+    +-------------------+-----------------------------------------------+
 
 Echo command
 ************
@@ -542,3 +544,95 @@ where:
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`;          |
     |                       | may not appear if 0                               |
     +-----------------------+---------------------------------------------------+
+
+.. _mcumgr_os_application_info:
+
+OS/Application Info
+*******************
+
+Used to obtain information on running image, similar functionality to the linux
+uname command, allowing details such as kernel name, kernel version, build
+date/time, processor type and application-defined details to be returned. This
+functionality can be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO`.
+
+OS/Application Info Request
+===========================
+
+OS/Application info request header fields:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``0``  | ``0``        |  ``7``         |
+    +--------+--------------+----------------+
+
+CBOR data of request:
+
+.. code-block:: none
+
+    {
+        (str,opt)"format"      : (str)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +----------+-------------------------------------------------------------------+
+    | "format" | Format specifier of returned response, fields are appended in     |
+    |          | their natural ascending index order, not the order of             |
+    |          | characters that are received by the command. Format               |
+    |          | specifiers: |br|                                                  |
+    |          | * ``s`` Kernel name |br|                                          |
+    |          | * ``n`` Node name |br|                                            |
+    |          | * ``r`` Kernel release |br|                                       |
+    |          | * ``v`` Kernel version |br|                                       |
+    |          | * ``b`` Build date and time (requires                             |
+    |          | :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME`) |br| |
+    |          | * ``m`` Machine |br|                                              |
+    |          | * ``p`` Processor |br|                                            |
+    |          | * ``i`` Hardware platform |br|                                    |
+    |          | * ``o`` Operating system |br|                                     |
+    |          | * ``a`` All fields (shorthand for all above options) |br|         |
+    |          | If this option is not provided, the ``s`` Kernel name option      |
+    |          | will be used.                                                     |
+    +----------+-------------------------------------------------------------------+
+
+OS/Application Info Response
+============================
+
+OS/Application info response header fields
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``2``  | ``0``        |  ``7``         |
+    +--------+--------------+----------------+
+
+CBOR data of response:
+
+.. code-block:: none
+
+    {
+        (str)"output"       : (str)
+        (opt,str)"rc"       : (int)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +--------------+------------------------------------------------------------+
+    | "output"     | Text response including requested parameters               |
+    +--------------+------------------------------------------------------------+
+    | "rc"         | :ref:`mcumgr_smp_protocol_status_codes`; will not appear   |
+    |              | if 0                                                       |
+    +--------------+------------------------------------------------------------+
