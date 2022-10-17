@@ -29,21 +29,21 @@
 
 #define CID_NVAL   0xffff
 
-static const struct shell *ctx_shell;
+const struct shell *bt_mesh_shell_ctx_shell;
 
 struct bt_mesh_shell_target bt_mesh_shell_target_ctx = {
 	.dst = BT_MESH_ADDR_UNASSIGNED,
 };
 
-#define shell_print_ctx(_ft, ...)                                              \
-		do {                                                           \
-			if (ctx_shell != NULL) {                               \
-				shell_print(ctx_shell, _ft, ##__VA_ARGS__);    \
-			}                                                      \
+#define shell_print_ctx(_ft, ...)                                                            \
+		do {                                                                         \
+			if (bt_mesh_shell_ctx_shell != NULL) {                               \
+				shell_print(bt_mesh_shell_ctx_shell, _ft, ##__VA_ARGS__);    \
+			}                                                                    \
 		} while (0)
 
 /* Default net, app & dev key values, unless otherwise specified */
-static const uint8_t default_key[16] = {
+const uint8_t bt_mesh_shell_default_key[16] = {
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 };
@@ -204,7 +204,7 @@ struct bt_mesh_health_cli bt_mesh_shell_health_cli = {
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 
-	ctx_shell = sh;
+	bt_mesh_shell_ctx_shell = sh;
 	shell_print(sh, "Mesh shell initialized");
 
 	return 0;
@@ -452,8 +452,9 @@ static int output_number(bt_mesh_output_action_t action, uint32_t number)
 		shell_print_ctx("OOB display Number: %u", number);
 		break;
 	default:
-		if (ctx_shell != NULL) {
-			shell_error(ctx_shell, "Unknown Output action %u (number %u) requested!",
+		if (bt_mesh_shell_ctx_shell != NULL) {
+			shell_error(bt_mesh_shell_ctx_shell,
+				    "Unknown Output action %u (number %u) requested!",
 				    action, number);
 		}
 		return -EINVAL;
@@ -485,9 +486,9 @@ static int input(bt_mesh_input_action_t act, uint8_t size)
 		shell_print_ctx("\"Push\" a number (max %u digits) with: Input-num <num>", size);
 		break;
 	default:
-		if (ctx_shell != NULL) {
-			shell_error(ctx_shell, "Unknown Input action %u (size %u) requested!", act,
-				    size);
+		if (bt_mesh_shell_ctx_shell != NULL) {
+			shell_error(bt_mesh_shell_ctx_shell,
+				    "Unknown Input action %u (size %u) requested!", act, size);
 		}
 		return -EINVAL;
 	}
@@ -834,7 +835,7 @@ static int cmd_provision_adv(const struct shell *sh, size_t argc,
 
 static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[])
 {
-	const uint8_t *net_key = default_key;
+	const uint8_t *net_key = bt_mesh_shell_default_key;
 	uint16_t net_idx, addr;
 	uint32_t iv_index;
 	int err = 0;
@@ -867,7 +868,7 @@ static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[]
 	}
 
 	err = bt_mesh_provision(net_key, net_idx, 0, iv_index, addr,
-				default_key);
+				bt_mesh_shell_default_key);
 	if (err) {
 		shell_error(sh, "Provisioning failed (err %d)", err);
 	}
