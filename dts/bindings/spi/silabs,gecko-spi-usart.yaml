@@ -2,7 +2,7 @@ description: GECKO USART SPI
 
 compatible: "silabs,gecko-spi-usart"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -21,15 +21,12 @@ properties:
 
   location-rx:
     type: array
-    required: true
     description: RX pin configuration defined as <location port pin>
 
   location-tx:
     type: array
-    required: true
     description: TX pin configuration defined as <location port pin>
 
   location-clk:
     type: array
-    required: true
     description: CLK pin configuration defined as <location port pin>
