@@ -164,6 +164,7 @@ config BT_BAP_BROADCAST_SINK
 	select BT_AUDIO_RX
 	depends on BT_PERIPHERAL
 	depends on BT_PAC_SNK
+	depends on BT_BAP_SCAN_DELEGATOR
 	help
 	  This option enables support for Bluetooth Broadcast Sink Audio using
 	  Isochronous channels.
