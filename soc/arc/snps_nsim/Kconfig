@@ -15,6 +15,11 @@ config SOC_NSIM_EM7D_V22
 	select CPU_HAS_MPU
 	select CPU_HAS_FPU
 
+config SOC_NSIM_EM11D
+	bool "Synopsys ARC EM11D in nSIM"
+	select CPU_HAS_MPU
+	select ARC_HAS_DSP
+
 config SOC_NSIM_SEM
 	bool "Synopsys ARC SEM in nSIM"
 	select CPU_HAS_MPU
