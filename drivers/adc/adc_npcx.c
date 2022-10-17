@@ -19,6 +19,7 @@
 #include "adc_context.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(adc_npcx, CONFIG_ADC_LOG_LEVEL);
 
 /* ADC speed/delay values during initialization */

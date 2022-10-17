@@ -13,6 +13,7 @@
 #include <stm32wlxx_ll_rcc.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_DECLARE(sx126x, CONFIG_LORA_LOG_LEVEL);
 
 void sx126x_reset(struct sx126x_data *dev_data)

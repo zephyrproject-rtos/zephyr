@@ -12,6 +12,7 @@
 #include <zephyr/sys_clock.h>
 #include <hal/nrf_timer.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/irq.h>
 
 #define TIMER NRF_TIMER0
 

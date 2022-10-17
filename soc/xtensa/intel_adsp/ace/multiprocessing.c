@@ -13,6 +13,7 @@
 #include <adsp_ipc_regs.h>
 #include <adsp_memory.h>
 #include <adsp_interrupt.h>
+#include <zephyr/irq.h>
 
 #define CORE_POWER_CHECK_NUM 32
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))

@@ -26,6 +26,7 @@
 #include <zephyr/sys/timeutil.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #include "stm32_hsem.h"
 

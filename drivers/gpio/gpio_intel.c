@@ -26,6 +26,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/speculation.h>
+#include <zephyr/irq.h>
 
 #include "gpio_utils.h"
 

@@ -33,6 +33,7 @@
 #define LOG_DOMAIN dev_i2s_sam_ssc
 #define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #if __DCACHE_PRESENT == 1

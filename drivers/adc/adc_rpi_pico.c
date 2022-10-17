@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 
 #include <hardware/adc.h>
+#include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(adc_rpi, CONFIG_ADC_LOG_LEVEL);
 

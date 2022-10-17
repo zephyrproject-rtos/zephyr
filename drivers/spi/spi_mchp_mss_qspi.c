@@ -11,6 +11,7 @@
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(mss_qspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"

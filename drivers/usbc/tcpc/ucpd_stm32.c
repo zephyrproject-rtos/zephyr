@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(ucpd_stm32, CONFIG_USBC_LOG_LEVEL);
 #include <stddef.h>
 #include <zephyr/math/ilog2.h>
 #include <stm32g0xx_ll_system.h>
+#include <zephyr/irq.h>
 
 #include "ucpd_stm32_priv.h"
 

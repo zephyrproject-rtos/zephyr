@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
+#include <zephyr/irq.h>
 
 #include "spi_context.h"
 

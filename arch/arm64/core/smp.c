@@ -22,6 +22,7 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/sys/arch_interface.h>
+#include <zephyr/irq.h>
 #include "boot.h"
 
 #define SGI_SCHED_IPI	0

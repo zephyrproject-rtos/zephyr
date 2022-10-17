@@ -19,6 +19,7 @@
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(spi_mcux_dspi);
 
 #include "spi_context.h"

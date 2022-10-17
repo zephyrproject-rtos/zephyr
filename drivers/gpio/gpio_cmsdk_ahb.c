@@ -15,6 +15,7 @@
 #include <soc.h>
 #include <zephyr/drivers/clock_control/arm_clock_control.h>
 #include <zephyr/drivers/gpio/gpio_cmsdk_ahb.h>
+#include <zephyr/irq.h>
 
 #include "gpio_utils.h"
 

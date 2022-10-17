@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(usb_dc_sam0);
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <string.h>
+#include <zephyr/irq.h>
 
 #define NVM_USB_PAD_TRANSN_POS 45
 #define NVM_USB_PAD_TRANSN_SIZE 5

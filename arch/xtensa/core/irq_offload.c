@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/irq_offload.h>
 #include <zsr.h>
+#include <zephyr/irq.h>
 
 #define CURR_CPU (IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0)
 

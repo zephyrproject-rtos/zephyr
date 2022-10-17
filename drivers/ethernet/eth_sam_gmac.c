@@ -54,6 +54,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/net/gptp.h>
+#include <zephyr/irq.h>
 
 #ifdef __DCACHE_PRESENT
 static bool dcache_enabled;

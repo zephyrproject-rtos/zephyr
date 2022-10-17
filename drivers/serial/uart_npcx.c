@@ -19,6 +19,7 @@
 #include "soc_power.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(uart_npcx, CONFIG_UART_LOG_LEVEL);
 
 /* Driver config */

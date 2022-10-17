@@ -21,6 +21,7 @@
 #include <zephyr/drivers/ps2.h>
 #include <soc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #define LOG_LEVEL CONFIG_PS2_LOG_LEVEL
 LOG_MODULE_REGISTER(ps2_mchp_xec);

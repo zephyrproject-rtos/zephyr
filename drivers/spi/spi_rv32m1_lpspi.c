@@ -18,6 +18,7 @@
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(spi_rv32m1_lpspi);
 
 #include "spi_context.h"

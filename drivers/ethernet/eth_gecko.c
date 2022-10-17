@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(eth_gecko, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <em_cmu.h>
+#include <zephyr/irq.h>
 
 #include "phy_gecko.h"
 #include "eth_gecko_priv.h"

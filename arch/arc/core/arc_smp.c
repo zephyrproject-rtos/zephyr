@@ -14,6 +14,7 @@
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
 #include <zephyr/init.h>
+#include <zephyr/irq.h>
 
 #define MP_PRIMARY_CPU_ID 0
 

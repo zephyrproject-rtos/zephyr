@@ -20,6 +20,7 @@
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/irq.h>
 
 /* defined at the SoC layer */
 #define MCHP_FIRST_GIRQ			MCHP_FIRST_GIRQ_NOS
