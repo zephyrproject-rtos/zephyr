@@ -8,6 +8,15 @@
 
 / {
 	soc {
+		clocks {
+			clk_hsi48: clk-hsi48 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(48)>;
+				status = "disabled";
+			};
+		};
+
 		spi3: spi@40003c00 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
