@@ -46,7 +46,9 @@ void soc_mp_init(void)
 
 	irq_enable(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA));
 
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		/* DINT has one bit per IPC, unmask only IPC "Ax" on core "x" */
 		ACE_DINT[i].ie[ACE_INTL_IDCA] = BIT(i);
 
@@ -111,7 +113,9 @@ void arch_sched_ipi(void)
 	uint32_t curr = arch_proc_id();
 
 	/* Signal agent B[n] to cause an interrupt from agent A[n] */
-	for (int core = 0; core < CONFIG_MP_NUM_CPUS; core++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int core = 0; core < num_cpus; core++) {
 		if (core != curr && soc_cpus_active[core]) {
 			IDC[core].agents[1].ipc.idr = INTEL_ADSP_IPC_BUSY;
 		}

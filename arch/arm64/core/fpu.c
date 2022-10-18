@@ -96,7 +96,9 @@ static void flush_owned_fpu(struct k_thread *thread)
 	int i;
 
 	/* search all CPUs for the owner we want */
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0; i < num_cpus; i++) {
 		if (_kernel.cpus[i].arch.fpu_owner != thread) {
 			continue;
 		}
