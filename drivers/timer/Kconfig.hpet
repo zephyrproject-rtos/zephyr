@@ -12,6 +12,7 @@ config HPET_TIMER
 	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_CLOCK_LOCK_FREE_COUNT
 	help
 	  This option selects High Precision Event Timer (HPET) as a
 	  system timer.
