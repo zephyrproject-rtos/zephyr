@@ -20,7 +20,7 @@
 };
 
 &flash0 {
-	reg = <0xc000000 DT_SIZE_M(2)>;
+	reg = <0x8000000 DT_SIZE_M(2)>;
 	pages_layout: pages_layout {
 		pages_layout_16k: pages_layout_16k {
 			pages-count = <8>;
