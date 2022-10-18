@@ -11,6 +11,7 @@
 
 /* Define required for uart_mcumgr.h functionality reuse */
 #define CONFIG_UART_MCUMGR_RX_BUF_SIZE CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE
+#define MCUMGR_DUMMY_MAX_FRAME CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
@@ -581,7 +582,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 	}
 
 	while (1) {
-		if (dst_off >= MCUMGR_SERIAL_MAX_FRAME - 4) {
+		if (dst_off >= MCUMGR_DUMMY_MAX_FRAME - 4) {
 			/* Can't fit any more data in this frame. */
 			break;
 		}
