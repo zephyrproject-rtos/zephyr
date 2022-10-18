@@ -48,6 +48,12 @@
 		gpios = <&gpioa GECKO_PIN(5) GPIO_ACTIVE_LOW>;
 	};
 
+	spi_enable: peripheral-enable {
+		compatible = "regulator-fixed";
+		regulator-name = "spi-enable-ctrl";
+		enable-gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+	};
+
 };
 
 &cpu0 {
