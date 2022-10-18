@@ -31,6 +31,7 @@
 LOG_MODULE_REGISTER(adc_stm32);
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/irq.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
@@ -262,6 +263,7 @@ struct adc_stm32_cfg {
 	void (*irq_cfg_func)(void);
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
+	uint32_t clock_prescaler;
 	bool has_temp_channel;
 	bool has_vref_channel;
 	bool has_vbat_channel;
@@ -1103,6 +1105,8 @@ static int adc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+	LOG_DBG("ADC clock prescaler (0x%X)", config->clock_prescaler);
+
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
@@ -1148,31 +1152,28 @@ static int adc_stm32_init(const struct device *dev)
 	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+	LL_ADC_SetClock(adc, config->clock_prescaler);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
-	LL_ADC_SetClock(adc, LL_ADC_CLOCK_SYNC_PCLK_DIV4);
-#elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX) || \
+	(defined(CONFIG_SOC_SERIES_STM32WBX) && defined(ADC_SUPPORT_2_5_MSPS))
+	if (IS_LL_ADC_COMMON_CLOCK(config->clock_prescaler)) {
+		LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
+			      config->clock_prescaler);
+	} else {
+		LL_ADC_SetClock(adc, config->clock_prescaler);
+	}
+#elif defined(STM32F3X_ADC_V1_1) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X)
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L1X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	(defined(CONFIG_SOC_SERIES_STM32WBX) && !defined(ADC_SUPPORT_2_5_MSPS))
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			      LL_ADC_CLOCK_SYNC_PCLK_DIV4);
-#elif defined(STM32F3X_ADC_V1_1)
-	/*
-	 * Set the synchronous clock mode to HCLK/1 (DIV1) or HCLK/2 (DIV2)
-	 * Both are valid common clock setting values.
-	 * The HCLK/1(DIV1) is possible only if
-	 * the ahb-prescaler = <1> in the RCC_CFGR.
-	 */
-	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			      LL_ADC_CLOCK_SYNC_PCLK_DIV2);
-#elif defined(CONFIG_SOC_SERIES_STM32L1X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			LL_ADC_CLOCK_ASYNC_DIV4);
+			      config->clock_prescaler);
 #endif
 
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
@@ -1289,6 +1290,41 @@ static const struct adc_driver_api api_stm32_driver_api = {
 	.ref_internal = STM32_ADC_VREF_MV, /* VREF is usually connected to VDD */
 };
 
+/*
+ * Prefix default when not configured by the DTS
+ * depending on the serie (stm32F1 has none)
+ */
+#if defined(CONFIG_SOC_SERIES_STM32L1X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
+#define prescaler_default	LL_ADC_CLOCK_ASYNC_DIV
+#elif !defined(CONFIG_SOC_SERIES_STM32F1X)
+#define prescaler_default	LL_ADC_CLOCK_SYNC_PCLK_DIV
+#endif
+
+/* st_prescaler property requires 2 elements : clock ASYNC/SYNC and DIV */
+#define STM32_ADC_CLOCK(x)	DT_INST_PROP(x, st_adc_prescaler_type)
+#define STM32_ADC_DIV(x)	DT_INST_PROP(x, st_adc_prescaler)
+
+/* Macro to set the prefix depending on the 1st element: check if it is SYNC or ASYNC */
+#define STM32_ADC_PREFIX(x)				\
+	COND_CODE_1(IS_EQ(STM32_ADC_CLOCK(x), SYNC),	\
+		LL_ADC_CLOCK_SYNC_PCLK_DIV,		\
+		LL_ADC_CLOCK_ASYNC_DIV)
+
+/*
+ * Concat prefix (1st element) and DIV value (2nd element) of st,adc-prescaler
+ * not available for stm32F1 serie: set the config->clock_prescaler to 0 instead
+ * If the property is not defined, the default prescaler with DIV 4 is used.
+ */
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#define STM32_ADC_DT_PRESC(x) 0
+#else
+#define STM32_ADC_DT_PRESC(x)	\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(x, st_adc_prescaler),		\
+	_CONCAT(STM32_ADC_PREFIX(x), STM32_ADC_DIV(x)),			\
+	_CONCAT(prescaler_default, 4))
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
+
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
 
 bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
@@ -1334,6 +1370,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
+	.clock_prescaler = STM32_ADC_DT_PRESC(index),	\
 	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
 	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
 	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
@@ -1356,6 +1393,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
+	.clock_prescaler = STM32_ADC_DT_PRESC(index),	\
 	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
 	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
 	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
@@ -1365,6 +1403,8 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 #define STM32_ADC_INIT(index)						\
 									\
 PINCTRL_DT_INST_DEFINE(index);						\
+									\
+ADC_STM32_CHECK_PRESC(index)						\
 									\
 ADC_STM32_CONFIG(index)							\
 									\
