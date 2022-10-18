@@ -9,7 +9,7 @@ from unittest.mock import patch, call
 import pytest
 
 from runners.blackmagicprobe import BlackMagicProbeRunner
-from conftest import RC_KERNEL_ELF, RC_GDB
+from conftest import RC_KERNEL_HEX, RC_KERNEL_ELF, RC_GDB
 
 TEST_GDB_SERIAL = 'test-gdb-serial'
 
@@ -38,7 +38,7 @@ EXPECTED_COMMANDS = {
       '-ex', "target extended-remote {}".format(TEST_GDB_SERIAL),
       '-ex', "monitor swdp_scan",
       '-ex', "attach 1",
-      '-ex', "load {}".format(RC_KERNEL_ELF),
+      '-ex', "load \"{}\"".format(RC_KERNEL_HEX),
       '-ex', "kill",
       '-ex', "quit",
       '-silent'],),
@@ -56,8 +56,11 @@ def require_patch(program):
 @pytest.mark.parametrize('command', EXPECTED_COMMANDS)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_blackmagicprobe_init(cc, req, command, runner_config):
+def test_blackmagicprobe_init(cc, req, command, runner_config, tmpdir):
     '''Test commands using a runner created by constructor.'''
+    tmpdir.ensure(RC_KERNEL_HEX)
+    tmpdir.ensure(RC_KERNEL_ELF)
+    tmpdir.chdir()
     runner = BlackMagicProbeRunner(runner_config, TEST_GDB_SERIAL)
     runner.run(command)
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS[command]]
