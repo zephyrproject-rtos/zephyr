@@ -59,6 +59,13 @@
 			status = "disabled";
 		};
 
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+
 		clk_msi: clk-msi {
 			#clock-cells = <0>;
 			compatible = "st,stm32-msi-clock";
