@@ -1325,6 +1325,19 @@ static const struct adc_driver_api api_stm32_driver_api = {
 	_CONCAT(prescaler_default, 4))
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
+/*
+ * Macro to check the properties are valid with two elements:
+ * type : is SYNC or ASYNC if prescaler exists
+ * divider : is in range  if prescaler_type exists
+ */
+#define ADC_STM32_CHECK_PRESC(x)							\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(x, st_adc_prescaler),				\
+			(BUILD_ASSERT((DT_INST_NODE_HAS_PROP(x, st_adc_prescaler_type)),\
+				"Invalid ADC st_adc_prescaler_type property");))	\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(x, st_adc_prescaler_type),			\
+			(BUILD_ASSERT((DT_INST_NODE_HAS_PROP(x, st_adc_prescaler)),	\
+				"Invalid ADC st_adc_prescaler property");))
+
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
 
 bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
