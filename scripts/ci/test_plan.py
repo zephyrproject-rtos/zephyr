@@ -370,7 +370,7 @@ if __name__ == "__main__":
         logging.info(f'Total nodes to launch: {nodes}')
 
     header = ['test', 'arch', 'platform', 'status', 'extra_args', 'handler',
-            'handler_time', 'ram_size', 'rom_size']
+            'handler_time', 'used_ram', 'used_rom']
 
     # write plan
     if dup_free:
