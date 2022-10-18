@@ -337,8 +337,8 @@ endif()
 # Don't just test CONFIG_SMP, there is at least one test of the lower
 # level multiprocessor API that wants an auxiliary CPU but doesn't
 # want SMP using it.
-if(NOT CONFIG_MP_NUM_CPUS MATCHES "1")
-  list(APPEND QEMU_SMP_FLAGS -smp cpus=${CONFIG_MP_NUM_CPUS})
+if(NOT CONFIG_MP_MAX_NUM_CPUS MATCHES "1")
+  list(APPEND QEMU_SMP_FLAGS -smp cpus=${CONFIG_MP_MAX_NUM_CPUS})
 endif()
 
 # Use flags passed in from the environment
