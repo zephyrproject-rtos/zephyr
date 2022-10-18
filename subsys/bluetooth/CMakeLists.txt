@@ -5,6 +5,7 @@ add_library(subsys__bluetooth INTERFACE)
 target_include_directories(subsys__bluetooth INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(common)
+add_subdirectory(crypto_toolbox)
 add_subdirectory_ifdef(CONFIG_BT_HCI host)
 add_subdirectory_ifdef(CONFIG_BT_SHELL shell)
 add_subdirectory_ifdef(CONFIG_BT_CONN services)

@@ -122,3 +122,5 @@ if(CONFIG_BT_CONN_DISABLE_SECURITY)
   Do not use in production."
     )
 endif()
+
+zephyr_library_link_libraries(subsys__bluetooth__crypto_toolbox)

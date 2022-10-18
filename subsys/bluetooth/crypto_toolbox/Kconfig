@@ -1,0 +1,7 @@
+# config BT_CRYPTO_TOOLBOX
+#     bool ""
+#     select TINYCRYPT
+#     select TINYCRYPT_AES
+#     select TINYCRYPT_AES_CMAC
+#     help
+      

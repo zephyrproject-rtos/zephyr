@@ -316,9 +316,9 @@ config BT_REMOTE_INFO
 
 config BT_SMP
 	bool "Security Manager Protocol support"
-	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_AES_CMAC
+	# select TINYCRYPT
+	# select TINYCRYPT_AES
+	# select TINYCRYPT_AES_CMAC
 	select BT_RPA
 	select BT_ECC
 	help
@@ -1040,6 +1040,11 @@ config BT_PAGE_TIMEOUT
 	  (N * 0.625) ms.
 
 endif # BT_BREDR
+
+config BT_CRYPTO_TOOLBOX
+	bool ""
+	help
+	  Desc crypto_toolbox
 
 config BT_HCI_VS_EVT_USER
 	bool "User Vendor-Specific event handling"
