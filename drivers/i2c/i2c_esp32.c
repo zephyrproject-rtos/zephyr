@@ -91,6 +91,7 @@ struct i2c_esp32_config {
 
 	const uint32_t default_config;
 	const uint32_t bitrate;
+	const uint32_t scl_timeout;
 };
 
 /* I2C clock characteristic, The order is the same as i2c_sclk_t. */
@@ -238,6 +239,27 @@ static int i2c_esp32_recover(const struct device *dev)
 	return 0;
 }
 
+static void IRAM_ATTR i2c_esp32_configure_timeout(const struct device *dev)
+{
+	const struct i2c_esp32_config *config = dev->config;
+
+	if (config->scl_timeout > 0) {
+		i2c_sclk_t sclk = i2c_get_clk_src(config->bitrate);
+		uint32_t clk_freq_mhz = I2C_LL_CLK_SRC_FREQ(sclk);
+		uint32_t timeout_cycles = MIN(I2C_TIME_OUT_REG_V,
+					      clk_freq_mhz / MHZ(1) * config->scl_timeout);
+		sys_clear_bits(I2C_TO_REG(config->index), I2C_TIME_OUT_REG);
+		sys_set_bits(I2C_TO_REG(config->index), timeout_cycles << I2C_TIME_OUT_REG_S);
+		LOG_DBG("SCL timeout: %d us, value: %d", config->scl_timeout, timeout_cycles);
+	} else {
+		/* Disabling the timeout by clearing the I2C_TIME_OUT_EN bit does not seem to work,
+		 * at least for ESP32-C3 (tested with communication to bq76952 chip). So we set the
+		 * timeout to maximum supported value instead.
+		 */
+		sys_set_bits(I2C_TO_REG(config->index), I2C_TIME_OUT_REG);
+	}
+}
+
 static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_esp32_config *config = dev->config;
@@ -272,6 +294,7 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 	}
 
 	i2c_hal_set_bus_timing(&data->hal, config->bitrate, i2c_get_clk_src(config->bitrate));
+	i2c_esp32_configure_timeout(dev);
 	i2c_hal_update_config(&data->hal);
 
 	return 0;
@@ -709,6 +732,10 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #define I2C_ESP32_GET_PIN_INFO(idx)
 #endif /* SOC_I2C_SUPPORT_HW_CLR_BUS */
 
+#define I2C_ESP32_TIMEOUT(inst)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, scl_timeout_us),	\
+		    (DT_INST_PROP(inst, scl_timeout_us)), (0))
+
 #define I2C_ESP32_FREQUENCY(bitrate)					\
 	 (bitrate == I2C_BITRATE_STANDARD ? KHZ(100)			\
 	: bitrate == I2C_BITRATE_FAST     ? KHZ(400)			\
@@ -741,6 +768,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		},										   \
 		.irq_source = ETS_I2C_EXT##idx##_INTR_SOURCE,					   \
 		.bitrate = I2C_FREQUENCY(idx),							   \
+		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
 		.default_config = I2C_MODE_CONTROLLER,						   \
 	};											   \
 	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,		   \
