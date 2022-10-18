@@ -6,8 +6,8 @@
 #ifndef MMC_LL_H
 #define MMC_LL_H
 
-#include <cache.h>
-#include <zephyr.h>
+#include <zephyr/cache.h>
+#include <zephyr/kernel.h>
 
 /*
  * Intel SoC re-use Arm Trusted Firmware (ATF) driver code in Zephyr.

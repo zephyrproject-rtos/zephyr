@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT snps_designware_sdmmc
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <devicetree.h>
-#include <drivers/disk.h>
-#include <device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/disk.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include "mmc_dw_ll.h"
 #include "mmc_ll.h"
