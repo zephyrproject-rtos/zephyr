@@ -13,6 +13,6 @@ properties:
     required: true
     description: clock frequency information for DW SDMMC Controller
   label:
-    required: true
+    required: false
   reg:
     required: true
