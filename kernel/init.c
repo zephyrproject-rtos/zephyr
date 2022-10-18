@@ -343,7 +343,7 @@ static void init_idle_thread(int i)
 
 #ifdef CONFIG_THREAD_NAME
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	char tname[8];
 	snprintk(tname, 8, "idle %02d", i);
 #else
