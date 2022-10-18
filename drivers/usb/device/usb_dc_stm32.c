@@ -207,7 +207,10 @@ static int usb_dc_stm32_clock_enable(void)
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
-
+#if !STM32_HSI48_ENABLED
+	/* Deprecated: enable HSI48 using device tree */
+#warning USB device requires HSI48 clock to be enabled using device tree
+#endif /* ! STM32_HSI48_ENABLED*/
 	/*
 	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
 	 * with 48 MHz RC to be enabled.
@@ -226,6 +229,7 @@ static int usb_dc_stm32_clock_enable(void)
 
 	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
+	/* Keeping this sequence for legacy: */
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
 		/* Wait for HSI48 to become ready */

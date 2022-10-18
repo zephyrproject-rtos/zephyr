@@ -422,12 +422,16 @@ static void start_ble_rf(void)
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
 #endif
 
-	/* Set RNG on HSI48 */
+	/* HSI48 clock and CLK48 clock source are enabled using the device tree */
+#if !STM32_HSI48_ENABLED
+	/* Deprecated: enable HSI48 using device tree */
+#warning Bluetooth IPM requires HSI48 clock to be enabled using device tree
+	/* Keeping this sequence for legacy: */
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
 	}
 
-	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
+#endif /* !STM32_HSI48_ENABLED */
 }
 
 #ifdef CONFIG_BT_HCI_HOST
