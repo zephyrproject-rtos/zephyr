@@ -363,8 +363,14 @@
 		};
 	};
 
-
-
+	sc_timer: pwm@85000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x85000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+		prescaler = <2>;
+		#pwm-cells = <3>;
+	};
 };
 
 &nvic {
