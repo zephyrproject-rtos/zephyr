@@ -33,9 +33,13 @@
 
 #define PAC_NOTIFY_TIMEOUT	K_MSEC(10)
 
-NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
+static sys_slist_t snks;
+static sys_slist_t srcs;
 
-static const struct bt_audio_pacs_cb *pacs_cb;
+IF_ENABLED(CONFIG_BT_PAC_SNK, (static enum bt_audio_context sink_available_contexts;))
+IF_ENABLED(CONFIG_BT_PAC_SRC, (static enum bt_audio_context source_available_contexts;));
+
+NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
 
 static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
 			 struct bt_codec_data *data)
@@ -54,6 +58,37 @@ static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
 	}
 }
 
+static int publish_capability(struct bt_conn *conn, uint8_t dir,
+			      uint8_t index, struct bt_codec *codec)
+{
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+	uint8_t i;
+
+	if (dir == BT_AUDIO_DIR_SINK) {
+		lst = &snks;
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
+		lst = &srcs;
+	} else {
+		BT_ERR("Invalid endpoint dir: %u", dir);
+		return -EINVAL;
+	}
+
+	i = 0;
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
+		if (i != index) {
+			i++;
+			continue;
+		}
+
+		(void)memcpy(codec, cap->codec, sizeof(*codec));
+
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
 static void get_pac_records(struct bt_conn *conn, enum bt_audio_dir dir,
 			    struct net_buf_simple *buf)
 {
@@ -65,19 +100,13 @@ static void get_pac_records(struct bt_conn *conn, enum bt_audio_dir dir,
 	rsp = net_buf_simple_add(buf, sizeof(*rsp));
 	rsp->num_pac = 0;
 
-	if (pacs_cb == NULL ||
-	    pacs_cb->publish_capability == NULL) {
-		return;
-	}
-
 	while (true) {
 		struct bt_pac_meta *meta;
 		struct bt_codec codec;
 		struct bt_pac *pac;
 		int err;
 
-		err = pacs_cb->publish_capability(conn, dir, rsp->num_pac,
-						  &codec);
+		err = publish_capability(conn, dir, rsp->num_pac, &codec);
 		if (err != 0) {
 			break;
 		}
@@ -117,20 +146,35 @@ static void available_context_cfg_changed(const struct bt_gatt_attr *attr, uint1
 	BT_DBG("attr %p value 0x%04x", attr, value);
 }
 
+static int get_available_contexts(enum bt_audio_dir dir,
+				  enum bt_audio_context *contexts)
+{
+	IF_ENABLED(CONFIG_BT_PAC_SNK, (
+		if (dir == BT_AUDIO_DIR_SINK) {
+			*contexts = sink_available_contexts;
+			return 0;
+		}
+	));
+
+	IF_ENABLED(CONFIG_BT_PAC_SRC, (
+		if (dir == BT_AUDIO_DIR_SOURCE) {
+			*contexts = source_available_contexts;
+			return 0;
+		}
+	));
+
+	BT_ASSERT_PRINT_MSG("Invalid endpoint dir: %u", dir);
+
+	return -EINVAL;
+}
+
 static int available_contexts_get(struct bt_conn *conn, struct bt_pacs_context *context)
 {
 	enum bt_audio_context context_snk, context_src;
 	int err;
 
-	if (pacs_cb == NULL ||
-	    pacs_cb->get_available_contexts == NULL) {
-		BT_WARN("No callback for get_available_contexts");
-		return -ENODATA;
-	}
-
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
-		err = pacs_cb->get_available_contexts(conn, BT_AUDIO_DIR_SINK,
-						      &context_snk);
+		err = get_available_contexts(BT_AUDIO_DIR_SINK, &context_snk);
 		if (err) {
 			return err;
 		}
@@ -140,8 +184,7 @@ static int available_contexts_get(struct bt_conn *conn, struct bt_pacs_context *
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
-		err = pacs_cb->get_available_contexts(conn, BT_AUDIO_DIR_SOURCE,
-						      &context_src);
+		err = get_available_contexts(BT_AUDIO_DIR_SOURCE, &context_src);
 		if (err) {
 			return err;
 		}
@@ -210,18 +253,41 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
 static void pac_notify_loc(struct k_work *work);
 
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+static enum bt_audio_location sink_location;
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+static enum bt_audio_location source_location;
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+
+static int publish_location(struct bt_conn *conn,
+			    enum bt_audio_dir dir,
+			    enum bt_audio_location *location)
+{
+	if (0) {
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+	} else if (dir == BT_AUDIO_DIR_SINK) {
+		*location = sink_location;
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
+		*location = source_location;
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+	} else {
+		BT_ERR("Invalid endpoint dir: %u", dir);
+
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int get_pac_loc(struct bt_conn *conn, enum bt_audio_dir dir,
 		       enum bt_audio_location *location)
 {
 	int err;
 
-	if (pacs_cb == NULL ||
-	    pacs_cb->publish_location == NULL) {
-		BT_WARN("No callback for publish_location");
-		return -ENODATA;
-	}
-
-	err = pacs_cb->publish_location(conn, dir, location);
+	err = publish_location(conn, dir, location);
 	if (err != 0 || *location == 0) {
 		BT_DBG("err (%d) or invalid location value (%u)",
 		       err, *location);
@@ -287,6 +353,16 @@ static ssize_t snk_loc_read(struct bt_conn *conn,
 				 &location_32_le, sizeof(location_32_le));
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
+#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) || defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
+static int write_location(struct bt_conn *conn, enum bt_audio_dir dir,
+			  enum bt_audio_location location)
+{
+	return bt_audio_capability_set_location(dir, location);
+}
+#endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
+#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
+
 #if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE)
 static ssize_t snk_loc_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
@@ -303,19 +379,13 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	if (pacs_cb == NULL ||
-	    pacs_cb->write_location == NULL) {
-		BT_WARN("No callback for write_location");
-		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
-	}
-
 	location = (enum bt_audio_location)sys_get_le32(data);
 	if (location > BT_AUDIO_LOCATION_MASK || location == 0) {
 		BT_DBG("Invalid location value: 0x%08X", location);
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	err = pacs_cb->write_location(conn, BT_AUDIO_DIR_SINK, location);
+	err = write_location(conn, BT_AUDIO_DIR_SINK, location);
 	if (err != 0) {
 		BT_DBG("write_location returned %d", err);
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
@@ -402,19 +472,13 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	if (pacs_cb == NULL ||
-	    pacs_cb->write_location == NULL) {
-		BT_WARN("No callback for write_location");
-		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
-	}
-
 	location = (enum bt_audio_location)sys_get_le32(data);
 	if (location > BT_AUDIO_LOCATION_MASK || location == 0) {
 		BT_DBG("Invalid location value: 0x%08X", location);
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	err = pacs_cb->write_location(conn, BT_AUDIO_DIR_SOURCE, location);
+	err = write_location(conn, BT_AUDIO_DIR_SOURCE, location);
 	if (err != 0) {
 		BT_DBG("write_location returned %d", err);
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
@@ -585,7 +649,7 @@ static void pac_notify(struct k_work *work)
 	}
 }
 
-void bt_pacs_capabilities_changed(enum bt_audio_dir dir)
+static void bt_pacs_capabilities_changed(enum bt_audio_dir dir)
 {
 	struct k_work_delayable *work;
 
@@ -599,7 +663,7 @@ void bt_pacs_capabilities_changed(enum bt_audio_dir dir)
 
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
 /******* PUBLIC API *******/
-int bt_audio_pacs_location_changed(enum bt_audio_dir dir)
+static int bt_audio_pacs_location_changed(enum bt_audio_dir dir)
 {
 	struct k_work_delayable *work;
 
@@ -634,7 +698,7 @@ static void available_contexts_notify(struct k_work *work)
 
 static K_WORK_DELAYABLE_DEFINE(available_contexts_work, available_contexts_notify);
 
-int bt_pacs_available_contexts_changed(void)
+static int bt_pacs_available_contexts_changed(void)
 {
 	int err;
 
@@ -642,21 +706,6 @@ int bt_pacs_available_contexts_changed(void)
 	if (err < 0) {
 		return err;
 	}
-
-	return 0;
-}
-
-int bt_audio_pacs_register_cb(const struct bt_audio_pacs_cb *cb)
-{
-	CHECKIF(cb == NULL) {
-		return -EINVAL;
-	}
-
-	if (pacs_cb != NULL) {
-		return -EALREADY;
-	}
-
-	pacs_cb = cb;
 
 	return 0;
 }
@@ -679,4 +728,197 @@ bool bt_pacs_context_available(enum bt_audio_dir dir, uint16_t context)
 	}
 
 	return false;
+}
+
+static sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
+{
+	switch (dir) {
+	case BT_AUDIO_DIR_SINK:
+		return &snks;
+	case BT_AUDIO_DIR_SOURCE:
+		return &srcs;
+	}
+
+	return NULL;
+}
+
+void bt_audio_foreach_capability(enum bt_audio_dir dir, bt_audio_foreach_capability_func_t func,
+				 void *user_data)
+{
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+
+	CHECKIF(func == NULL) {
+		BT_ERR("func is NULL");
+		return;
+	}
+
+	lst = bt_audio_capability_get(dir);
+	if (!lst) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
+		if (!func(cap, user_data)) {
+			break;
+		}
+	}
+}
+
+/* Register Audio Capability */
+int bt_audio_capability_register(enum bt_audio_dir dir, struct bt_audio_capability *cap)
+{
+	sys_slist_t *lst;
+
+	if (!cap || !cap->codec) {
+		return -EINVAL;
+	}
+
+	lst = bt_audio_capability_get(dir);
+	if (!lst) {
+		return -EINVAL;
+	}
+
+	BT_DBG("cap %p dir 0x%02x codec 0x%02x codec cid 0x%04x "
+	       "codec vid 0x%04x", cap, dir, cap->codec->id,
+	       cap->codec->cid, cap->codec->vid);
+
+	sys_slist_append(lst, &cap->_node);
+
+#if defined(CONFIG_BT_PACS)
+	bt_pacs_capabilities_changed(dir);
+#endif /* CONFIG_BT_PACS */
+
+	return 0;
+}
+
+/* Unregister Audio Capability */
+int bt_audio_capability_unregister(enum bt_audio_dir dir, struct bt_audio_capability *cap)
+{
+	sys_slist_t *lst;
+
+	if (!cap) {
+		return -EINVAL;
+	}
+
+	lst = bt_audio_capability_get(dir);
+	if (!lst) {
+		return -EINVAL;
+	}
+
+	BT_DBG("cap %p dir 0x%02x", cap, dir);
+
+	if (!sys_slist_find_and_remove(lst, &cap->_node)) {
+		return -ENOENT;
+	}
+
+#if defined(CONFIG_BT_PACS)
+	bt_pacs_capabilities_changed(dir);
+#endif /* CONFIG_BT_PACS */
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
+int bt_audio_capability_set_location(enum bt_audio_dir dir,
+				     enum bt_audio_location location)
+{
+	if (0) {
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+	} else if (dir == BT_AUDIO_DIR_SINK) {
+		sink_location = location;
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
+		source_location = location;
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+	} else {
+		BT_ERR("Invalid endpoint dir: %u", dir);
+
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC) ||
+	    IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
+		int err;
+
+		err = bt_audio_pacs_location_changed(dir);
+		if (err) {
+			BT_DBG("Location for dir %d wasn't notified: %d",
+			       dir, err);
+
+			return err;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
+
+static int set_available_contexts(enum bt_audio_dir dir,
+				  enum bt_audio_context contexts)
+{
+	IF_ENABLED(CONFIG_BT_PAC_SNK, (
+		if (dir == BT_AUDIO_DIR_SINK) {
+			const enum bt_audio_context supported = CONFIG_BT_PACS_SNK_CONTEXT;
+
+			if (contexts & ~supported) {
+				return -ENOTSUP;
+			}
+
+			sink_available_contexts = contexts;
+			return 0;
+		}
+	));
+
+	IF_ENABLED(CONFIG_BT_PAC_SRC, (
+		if (dir == BT_AUDIO_DIR_SOURCE) {
+			const enum bt_audio_context supported = CONFIG_BT_PACS_SRC_CONTEXT;
+
+			if (contexts & ~supported) {
+				return -ENOTSUP;
+			}
+
+			source_available_contexts = contexts;
+			return 0;
+		}
+	));
+
+	BT_ERR("Invalid endpoint dir: %u", dir);
+
+	return -EINVAL;
+}
+
+int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
+					       enum bt_audio_context contexts)
+{
+	int err;
+
+	err = set_available_contexts(dir, contexts);
+	if (err) {
+		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PACS)) {
+		err = bt_pacs_available_contexts_changed();
+		if (err) {
+			BT_DBG("Available contexts weren't notified: %d", err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+enum bt_audio_context bt_audio_capability_get_available_contexts(enum bt_audio_dir dir)
+{
+	enum bt_audio_context contexts;
+	int err;
+
+	err = get_available_contexts(dir, &contexts);
+	if (err < 0) {
+		return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	}
+
+	return contexts;
 }
