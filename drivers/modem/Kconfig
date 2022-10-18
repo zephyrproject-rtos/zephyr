@@ -188,6 +188,13 @@ config MODEM_CELL_INFO
 	help
 	  Query for numerical operator id, location area code and cell id.
 
+config MODEM_GNSS_PARSER
+	bool "GNSS string parser for modems with GNSS support"
+	default n
+	help
+	  Parser functions for GNSS strings returned from modem GNSS position
+	  request commands.
+
 source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.quectel-bg9x"
 source "drivers/modem/Kconfig.wncm14a2a"

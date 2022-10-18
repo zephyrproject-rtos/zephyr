@@ -26,6 +26,7 @@
 #include "modem_cmd_handler.h"
 #include "modem_iface_uart.h"
 #include "modem_socket.h"
+#include "modem_gnss_parser.h"
 
 #define MDM_UART_DEV DEVICE_DT_GET(DT_INST_BUS(0))
 #define MDM_MAX_DATA_LENGTH 1024

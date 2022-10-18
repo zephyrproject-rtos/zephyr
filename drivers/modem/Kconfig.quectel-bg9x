@@ -65,9 +65,12 @@ config MODEM_QUECTEL_BG9X_INIT_PRIORITY
 
 config MODEM_QUECTEL_BG9X_ENABLE_GNSS
 	bool "quectel BG9X driver GNSS enable"
+	select MODEM_GNSS_PARSER
 	default n
 	help
 	  Enable BG9x GNSS support such that it provides the current location
+
+if MODEM_QUECTEL_BG9X_ENABLE_GNSS
 
 config MODEM_QUECTEL_BG9X_GNSS_OUTPORT
 	string "quectel BG9X driver GNSS output port"
@@ -77,4 +80,6 @@ config MODEM_QUECTEL_BG9X_GNSS_OUTPORT
 	  Choices are none, usbnmnea, uartnmea, auxnmea,
 	  cmux1, cmux2, cmux3, cmux4
 
-endif
+endif # MODEM_QUECTEL_BG9X_ENABLE_GNSS
+
+endif # MODEM_QUECTEL_BG9X

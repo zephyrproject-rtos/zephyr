@@ -22,6 +22,9 @@
 #include "modem_socket.h"
 #include "modem_cmd_handler.h"
 #include "modem_iface_uart.h"
+#ifdef CONFIG_MODEM_QUECTEL_BG9X_ENABLE_GNSS
+#include "modem_gnss_parser.h"
+#endif
 
 #define MDM_UART_DEV			  DEVICE_DT_GET(DT_INST_BUS(0))
 #define MDM_CMD_TIMEOUT			  K_SECONDS(10)
