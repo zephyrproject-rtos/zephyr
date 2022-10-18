@@ -11,9 +11,42 @@
 extern "C" {
 #endif
 
-#include <zephyr/kernel.h>
-#include <zephyr/zephyr.h>
-#include <zephyr/device.h>
+#define BG9X_GNSS_DATA_UTC_LEN      64
+
+struct bg9x_gnss_data {
+	/**
+	 * UTC in format ddmmyyhhmmss.s
+	 */
+	float utc[BG9X_GNSS_DATA_UTC_LEN];
+	/**
+	 * Latitude in 10^-5 degree.
+	 */
+	int32_t lat;
+	/**
+	 * Longitude in 10^-5 degree.
+	 */
+	int32_t lon;
+	/**
+	 * Altitude in mm.
+	 */
+	int32_t alt;
+	/**
+	 * Horizontal dilution of precision in 10^-1.
+	 */
+	uint16_t hdop;
+	/**
+	 * Course over ground in 10^-2 degree.
+	 */
+	uint16_t cog;
+	/**
+	 * Speed in 10^-1 km/h.
+	 */
+	uint16_t kmh;
+	/**
+	 * Number of satellites in use.
+	 */
+	uint16_t nsat;
+};
 
 
 /**

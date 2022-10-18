@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(modem_quectel_bg9x, CONFIG_MODEM_LOG_LEVEL);
 
 #include "quectel-bg9x.h"
+#include <zephyr/drivers/modem/quectel-bg9x.h>
 #include <fcntl.h>
 
 static struct k_thread	       modem_rx_thread;
@@ -1006,6 +1007,51 @@ int mdm_bg9x_stop_gnss(void)
 {
 	int ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+QGPSEND",
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
+ * Parses QGPSLOC response into the gnss_data structure.
+ *
+ * @param gps_buf Null terminated buffer containing the response.
+ * @return 0 on successful parse. Otherwise <0 is returned.
+ */
+static int parse_gnss_location(char *gps_buf)
+{
+    return 0;
+}
+
+/*
+ * Parses the +QGPSLOC GNSS response.
+ *
+ * The QGPSLOC command has the following parameters:
+ *
+ *  +QGPSLOC: <UTC Time>,<Latitude>,<Longitude>,<HDOP>,
+ *            <Altitude>,<Fix>,<Course Over Ground km/h>,
+ *            <Speed Over Ground knots>,<UTC Date>,
+ *            <GNSS Satellites in View>
+ *
+ */
+MODEM_CMD_DEFINE(on_cmd_gnss_loc)
+{
+	char gps_buf[MDM_GNSS_PARSER_MAX_LEN];
+	size_t out_len = net_buf_linearize(gps_buf, sizeof(gps_buf) - 1,
+					   data->rx_buf, 0, len);
+
+	gps_buf[out_len] = '\0';
+	return parse_gnss_location(gps_buf);
+}
+
+int mdm_bg9x_query_gnss(struct bg9x_gnss_data *data)
+{
+	struct modem_cmd cmd = MODEM_CMD("+QGPSLOC: ", on_cmd_gnss_loc, 0U, NULL);
+	int ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, "AT+QGPSLOC?",
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+
 	if (ret < 0) {
 		return -1;
 	}
