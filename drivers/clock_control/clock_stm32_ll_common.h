@@ -8,6 +8,10 @@
 #ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_STM32_LL_CLOCK_H_
 #define ZEPHYR_DRIVERS_CLOCK_CONTROL_STM32_LL_CLOCK_H_
 
+#include <stdint.h>
+
+#include <zephyr/device.h>
+
 #include <stm32_ll_utils.h>
 
 #if CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK
