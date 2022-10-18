@@ -29,6 +29,8 @@
 #include <zephyr/bluetooth/crypto_toolbox/f5.h>
 #include <zephyr/bluetooth/crypto_toolbox/f6.h>
 #include <zephyr/bluetooth/crypto_toolbox/g2.h>
+#include <zephyr/bluetooth/crypto_toolbox/h6.h>
+#include <zephyr/bluetooth/crypto_toolbox/h7.h>
 #include <zephyr/bluetooth/crypto_toolbox/aes_cmac.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SMP)
@@ -677,54 +679,6 @@ static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 #endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_BREDR)
-static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
-{
-	uint8_t ws[16];
-	uint8_t key_id_s[4];
-	int err;
-
-	BT_DBG("w %s", bt_hex(w, 16));
-	BT_DBG("key_id %s", bt_hex(key_id, 4));
-
-	sys_memcpy_swap(ws, w, 16);
-	sys_memcpy_swap(key_id_s, key_id, 4);
-
-	err = bt_crypto_toolbox_aes_cmac(ws, key_id_s, 4, res);
-	if (err) {
-		return err;
-	}
-
-	BT_DBG("res %s", bt_hex(res, 16));
-
-	sys_mem_swap(res, 16);
-
-	return 0;
-}
-
-static int smp_h7(const uint8_t salt[16], const uint8_t w[16], uint8_t res[16])
-{
-	uint8_t ws[16];
-	uint8_t salt_s[16];
-	int err;
-
-	BT_DBG("w %s", bt_hex(w, 16));
-	BT_DBG("salt %s", bt_hex(salt, 16));
-
-	sys_memcpy_swap(ws, w, 16);
-	sys_memcpy_swap(salt_s, salt, 16);
-
-	err = bt_crypto_toolbox_aes_cmac(salt_s, ws, 16, res);
-	if (err) {
-		return err;
-	}
-
-	BT_DBG("res %s", bt_hex(res, 16));
-
-	sys_mem_swap(res, 16);
-
-	return 0;
-}
-
 static void sc_derive_link_key(struct bt_smp *smp)
 {
 	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
@@ -753,7 +707,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 					       0x00, 0x00, 0x00, 0x00,
 					       0x00, 0x00, 0x00, 0x00 };
 
-		if (smp_h7(salt, conn->le.keys->ltk.val, ilk)) {
+		if (bt_crypto_toolbox_h7(salt, conn->le.keys->ltk.val, ilk)) {
 			bt_keys_link_key_clear(link_key);
 			return;
 		}
@@ -761,13 +715,13 @@ static void sc_derive_link_key(struct bt_smp *smp)
 		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
 		static const uint8_t tmp1[4] = { 0x31, 0x70, 0x6d, 0x74 };
 
-		if (smp_h6(conn->le.keys->ltk.val, tmp1, ilk)) {
+		if (bt_crypto_toolbox_h6(conn->le.keys->ltk.val, tmp1, ilk)) {
 			bt_keys_link_key_clear(link_key);
 			return;
 		}
 	}
 
-	if (smp_h6(ilk, lebr, link_key->val)) {
+	if (bt_crypto_toolbox_h6(ilk, lebr, link_key->val)) {
 		bt_keys_link_key_clear(link_key);
 	}
 
@@ -952,7 +906,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 					       0x00, 0x00, 0x00, 0x00,
 					       0x00, 0x00, 0x00, 0x00 };
 
-		if (smp_h7(salt, link_key->val, ilk)) {
+		if (bt_crypto_toolbox_h7(salt, link_key->val, ilk)) {
 			bt_keys_link_key_clear(link_key);
 			return;
 		}
@@ -960,13 +914,13 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
 		static const uint8_t tmp2[4] = { 0x32, 0x70, 0x6d, 0x74 };
 
-		if (smp_h6(link_key->val, tmp2, ilk)) {
+		if (bt_crypto_toolbox_h6(link_key->val, tmp2, ilk)) {
 			bt_keys_clear(keys);
 			return;
 		}
 	}
 
-	if (smp_h6(ilk, brle, keys->ltk.val)) {
+	if (bt_crypto_toolbox_h6(ilk, brle, keys->ltk.val)) {
 		bt_keys_clear(keys);
 		return;
 	}
@@ -5021,7 +4975,7 @@ static int smp_h6_test(void)
 	uint8_t res[16];
 	int err;
 
-	err = smp_h6(w, key_id, res);
+	err = bt_crypto_toolbox_h6(w, key_id, res);
 	if (err) {
 		return err;
 	}
@@ -5044,7 +4998,7 @@ static int smp_h7_test(void)
 	uint8_t res[16];
 	int err;
 
-	err = smp_h7(salt, w, res);
+	err = bt_crypto_toolbox_h7(salt, w, res);
 	if (err) {
 		return err;
 	}
