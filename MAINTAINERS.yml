@@ -2260,6 +2260,7 @@ West:
     - ifyall
   collaborators:
     - parthitce
+    - talih0
   files:
     - modules/Kconfig.infineon
   labels:
