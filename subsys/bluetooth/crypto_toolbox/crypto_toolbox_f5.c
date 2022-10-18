@@ -1,9 +1,11 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/crypto_toolbox/f5.h>
 
-#include "crypto_toolbox_aes_cmac.c"
+#include <zephyr/bluetooth/crypto_toolbox/aes_cmac.h>
 
-// #include "common/log.h"
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CRYPTO_TOOLBOX)
+#define LOG_MODULE_NAME bt_crypto_toolbox_f5
+#include "common/log.h"
 
 int bt_crypto_toolbox_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		                 const bt_addr_le_t *a1, const bt_addr_le_t *a2, 
@@ -24,9 +26,9 @@ int bt_crypto_toolbox_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	uint8_t t[16], ws[32];
 	int err;
 
-	// BT_DBG("w %s", bt_hex(w, 32));
-	// BT_DBG("n1 %s", bt_hex(n1, 16));
-	// BT_DBG("n2 %s", bt_hex(n2, 16));
+	BT_DBG("w %s", bt_hex(w, 32));
+	BT_DBG("n1 %s", bt_hex(n1, 16));
+	BT_DBG("n2 %s", bt_hex(n2, 16));
 
 	sys_memcpy_swap(ws, w, 32);
 
@@ -35,7 +37,7 @@ int bt_crypto_toolbox_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	// BT_DBG("t %s", bt_hex(t, 16));
+	BT_DBG("t %s", bt_hex(t, 16));
 
 	sys_memcpy_swap(m + 5, n1, 16);
 	sys_memcpy_swap(m + 21, n2, 16);
@@ -49,7 +51,7 @@ int bt_crypto_toolbox_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	// BT_DBG("mackey %1s", bt_hex(mackey, 16));
+	BT_DBG("mackey %1s", bt_hex(mackey, 16));
 
 	sys_mem_swap(mackey, 16);
 
@@ -61,7 +63,7 @@ int bt_crypto_toolbox_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	// BT_DBG("ltk %s", bt_hex(ltk, 16));
+	BT_DBG("ltk %s", bt_hex(ltk, 16));
 
 	sys_mem_swap(ltk, 16);
 

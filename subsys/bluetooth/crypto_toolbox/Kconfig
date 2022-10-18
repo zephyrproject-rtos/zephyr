@@ -1,7 +1,18 @@
-# config BT_CRYPTO_TOOLBOX
-#     bool ""
-#     select TINYCRYPT
-#     select TINYCRYPT_AES
-#     select TINYCRYPT_AES_CMAC
-#     help
+config BT_CRYPTO_TOOLBOX
+    bool "Cryptographic Toolbox"
+    select TINYCRYPT
+    select TINYCRYPT_AES
+    select TINYCRYPT_AES_CMAC
+    help
+      This option enable the Bluetooth Cryptographic Toolbox.
       
+config BT_DEBUG_CRYPTO_TOOLBOX
+	bool "Bluetooth Cryptographic Toolbox debug"
+	depends on BT_CRYPTO_TOOLBOX
+	help
+	  This option enables debug support for the Bluetooth
+	  Cryptographic Toolbox.
+
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged.

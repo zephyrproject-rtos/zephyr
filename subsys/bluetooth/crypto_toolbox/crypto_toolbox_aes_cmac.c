@@ -1,17 +1,11 @@
 #include <errno.h>
-#include <stdint.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/cmac_mode.h>
 
-/* Cypher based Message Authentication Code (CMAC) with AES 128 bit
- *
- * Input    : key    ( 128-bit key )
- *          : in     ( message to be authenticated )
- *          : len    ( length of the message in octets )
- * Output   : out    ( message authentication code )
- */
-static int bt_crypto_toolbox_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
-			   uint8_t *out)
+#include <zephyr/bluetooth/crypto_toolbox/aes_cmac.h>
+
+int bt_crypto_toolbox_aes_cmac(const uint8_t *key, const uint8_t *in, 
+							   size_t len, uint8_t *out)
 {
 	struct tc_aes_key_sched_struct sched;
 	struct tc_cmac_struct state;

@@ -319,6 +319,7 @@ config BT_SMP
 	# select TINYCRYPT
 	# select TINYCRYPT_AES
 	# select TINYCRYPT_AES_CMAC
+	select BT_CRYPTO_TOOLBOX
 	select BT_RPA
 	select BT_ECC
 	help
@@ -1040,11 +1041,6 @@ config BT_PAGE_TIMEOUT
 	  (N * 0.625) ms.
 
 endif # BT_BREDR
-
-config BT_CRYPTO_TOOLBOX
-	bool ""
-	help
-	  Desc crypto_toolbox
 
 config BT_HCI_VS_EVT_USER
 	bool "User Vendor-Specific event handling"

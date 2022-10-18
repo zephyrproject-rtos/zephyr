@@ -1,9 +1,11 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/crypto_toolbox/f6.h>
 
-#include "crypto_toolbox_aes_cmac.c"
+#include <zephyr/bluetooth/crypto_toolbox/aes_cmac.h>
 
-// #include "common/log.h"
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CRYPTO_TOOLBOX)
+#define LOG_MODULE_NAME bt_crypto_toolbox_f6
+#include "common/log.h"
 
 int bt_crypto_toolbox_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		                 const uint8_t *r, const uint8_t *iocap, 
@@ -14,13 +16,13 @@ int bt_crypto_toolbox_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	uint8_t m[65];
 	int err;
 
-	// BT_DBG("w %s", bt_hex(w, 16));
-	// BT_DBG("n1 %s", bt_hex(n1, 16));
-	// BT_DBG("n2 %s", bt_hex(n2, 16));
-	// BT_DBG("r %s", bt_hex(r, 16));
-	// BT_DBG("io_cap %s", bt_hex(iocap, 3));
-	// BT_DBG("a1 %s", bt_hex(a1, 7));
-	// BT_DBG("a2 %s", bt_hex(a2, 7));
+	BT_DBG("w %s", bt_hex(w, 16));
+	BT_DBG("n1 %s", bt_hex(n1, 16));
+	BT_DBG("n2 %s", bt_hex(n2, 16));
+	BT_DBG("r %s", bt_hex(r, 16));
+	BT_DBG("io_cap %s", bt_hex(iocap, 3));
+	BT_DBG("a1 %s", bt_hex(a1, 7));
+	BT_DBG("a2 %s", bt_hex(a2, 7));
 
 	sys_memcpy_swap(m, n1, 16);
 	sys_memcpy_swap(m + 16, n2, 16);
@@ -42,7 +44,7 @@ int bt_crypto_toolbox_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	// BT_DBG("res %s", bt_hex(check, 16));
+	BT_DBG("res %s", bt_hex(check, 16));
 
 	sys_mem_swap(check, 16);
 

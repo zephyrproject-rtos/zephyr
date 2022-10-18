@@ -34,6 +34,7 @@
 #include <zephyr/bluetooth/crypto_toolbox/f5.h>
 #include <zephyr/bluetooth/crypto_toolbox/f6.h>
 #include <zephyr/bluetooth/crypto_toolbox/g2.h>
+#include <zephyr/bluetooth/crypto_toolbox/aes_cmac.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SMP)
 #define LOG_MODULE_NAME bt_smp
@@ -4810,7 +4811,7 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 	sys_mem_swap(m, len + sizeof(cnt));
 	sys_memcpy_swap(key_s, key, 16);
 
-	// err = bt_smp_aes_cmac(key_s, m, len + sizeof(cnt), tmp);
+	err = bt_crypto_toolbox_aes_cmac(key_s, m, len + sizeof(cnt), tmp);
 	if (err) {
 		BT_ERR("Data signing failed");
 		return err;
