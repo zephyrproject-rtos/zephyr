@@ -706,3 +706,9 @@ test_i2c_wsen_pdus: wsen_pdus@6C {
 	reg = <0x6C>;
 	sensor-type = <3>;
 };
+
+test_i2c_veml7700: veml7700@6d {
+	compatible = "vishay,veml7700";
+	reg = <0x6d>;
+	psm-mode = <0x03>;
+};
