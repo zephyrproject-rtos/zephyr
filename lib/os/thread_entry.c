@@ -13,7 +13,7 @@
 
 #include <zephyr/kernel.h>
 
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(CONFIG_TRACING)
 __thread k_tid_t z_tls_current;
 #endif
 
@@ -30,7 +30,7 @@ __thread k_tid_t z_tls_current;
 FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 				 void *p1, void *p2, void *p3)
 {
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(CONFIG_TRACING)
 	z_tls_current = z_current_get();
 #endif
 	entry(p1, p2, p3);
