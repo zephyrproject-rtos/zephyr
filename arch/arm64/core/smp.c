@@ -160,7 +160,9 @@ static void broadcast_ipi(unsigned int ipi)
 	/*
 	 * Send SGI to all cores except itself
 	 */
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		uint64_t target_mpidr = cpu_node_list[i];
 		uint8_t aff0 = MPIDR_AFFLVL(target_mpidr, 0);
 

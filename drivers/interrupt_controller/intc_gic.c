@@ -138,9 +138,11 @@ static void gic_dist_init(void)
 
 	/*
 	 * Enable all global interrupts distributing to CPUs listed
-	 * in dts with the count of CONFIG_MP_NUM_CPUS.
+	 * in dts with the count of arch_num_cpus().
 	 */
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0; i < num_cpus; i++) {
 		cpu_mask |= BIT(cpu_mpid_list[i]);
 	}
 	reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16)

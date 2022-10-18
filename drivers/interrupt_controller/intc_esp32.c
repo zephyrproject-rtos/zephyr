@@ -202,7 +202,9 @@ static struct vector_desc_t *find_desc_for_source(int source, int cpu)
 
 void esp_intr_initialize(void)
 {
-	for (size_t i = 0; i < (ESP_INTC_INTS_NUM * CONFIG_MP_NUM_CPUS); ++i) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (size_t i = 0; i < (ESP_INTC_INTS_NUM * num_cpus); ++i) {
 		intr_alloc_table[i].handler = default_intr_handler;
 		intr_alloc_table[i].arg = (void *)i;
 	}

@@ -67,7 +67,9 @@ void arch_sched_ipi(void)
 	key = arch_irq_lock();
 
 	id = _current_cpu->id;
-	for (i = 0U; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0U; i < num_cpus; i++) {
 		if (i != id) {
 			volatile uint32_t *r = (uint32_t *)get_hart_msip(i);
 			*r = 1U;
