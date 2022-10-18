@@ -57,9 +57,17 @@ void main(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_SAMPLE_CAN_BABBLING_FD_MODE)) {
+		err = can_set_mode(dev, CAN_MODE_FD);
+		if (err != 0) {
+			printk("Error setting CAN-FD mode (err %d)", err);
+			return;
+		}
+	}
+
 	err = can_start(dev);
 	if (err != 0) {
-		printk("Error starting CAN controller [%d]", err);
+		printk("Error starting CAN controller (err %d)", err);
 		return;
 	}
 
