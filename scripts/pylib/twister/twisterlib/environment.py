@@ -514,7 +514,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "'--ninja' argument (to use Ninja build generator).")
 
     parser.add_argument(
-        "--show-footprint", action="store_true",
+        "--show-footprint",
+        action="store_true",
+        required = "--footprint-from-buildlog" in sys.argv,
         help="Show footprint statistics and deltas since last release."
     )
 
@@ -600,6 +602,12 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="Don't run twister. Instead, produce a report to "
              "stdout detailing RAM/ROM sizes on the specified filenames. "
              "All other command line arguments ignored.")
+
+    parser.add_argument(
+        "--footprint-from-buildlog",
+        action = "store_true",
+        help="Get information about memory footprint from generated build.log. "
+             "Requires using --show-footprint option.")
 
     options = parser.parse_args(args)
 

@@ -516,8 +516,10 @@ class TestPlan:
                 )
 
                 instance.metrics['handler_time'] = ts.get('execution_time', 0)
-                instance.metrics['ram_size'] = ts.get("ram_size", 0)
-                instance.metrics['rom_size']  = ts.get("rom_size",0)
+                instance.metrics['used_ram'] = ts.get("used_ram", 0)
+                instance.metrics['used_rom']  = ts.get("used_rom",0)
+                instance.metrics['available_ram'] = ts.get('available_ram', 0)
+                instance.metrics['available_rom'] = ts.get('available_rom', 0)
 
                 status = ts.get('status', None)
                 reason = ts.get("reason", "Unknown")

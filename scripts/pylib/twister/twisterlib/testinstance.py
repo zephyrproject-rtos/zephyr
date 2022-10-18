@@ -16,7 +16,6 @@ from twisterlib.error import BuildError
 from twisterlib.size_calc import SizeCalculator
 from twisterlib.handlers import BinaryHandler, QEMUHandler, DeviceHandler
 
-
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
@@ -256,7 +255,7 @@ class TestInstance:
 
         return content
 
-    def calculate_sizes(self):
+    def calculate_sizes(self, from_buildlog: bool = False, generate_warning: bool = True) -> SizeCalculator:
         """Get the RAM/ROM sizes of a test case.
 
         This can only be run after the instance has been executed by
@@ -264,13 +263,31 @@ class TestInstance:
 
         @return A SizeCalculator object
         """
+        elf_filepath = self.get_elf_file()
+        buildlog_filepath = self.get_buildlog_file() if from_buildlog else ''
+        return SizeCalculator(elf_filename=elf_filepath,
+        extra_sections=self.testsuite.extra_sections,
+        buildlog_filepath=buildlog_filepath,
+        generate_warning=generate_warning)
+
+    def get_elf_file(self) -> str:
         fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
         fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
         fns = [x for x in fns if '_pre' not in x]
         if len(fns) != 1:
             raise BuildError("Missing/multiple output ELF binary")
+        return fns[0]
 
-        return SizeCalculator(fns[0], self.testsuite.extra_sections)
+    def get_buildlog_file(self) -> str:
+        """Get path to build.log file.
+
+        @raises BuildError: Incorrect amount (!=1) of build logs.
+        @return: Path to build.log (str).
+        """
+        buildlog_paths = glob.glob(os.path.join(self.build_dir, "build.log"))
+        if len(buildlog_paths) != 1:
+            raise BuildError("Missing/multiple build.log file.")
+        return buildlog_paths[0]
 
     def __repr__(self):
         return "<TestSuite %s on %s>" % (self.testsuite.name, self.platform.name)

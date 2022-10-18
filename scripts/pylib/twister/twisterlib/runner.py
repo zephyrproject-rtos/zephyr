@@ -21,6 +21,7 @@ from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.log_helper import log_command
 from domains import Domains
+from twisterlib.testinstance import TestInstance
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -831,29 +832,34 @@ class ProjectBuilder(FilterBuilder):
 
         sys.stdout.flush()
 
-    def gather_metrics(self, instance):
+    def gather_metrics(self, instance: TestInstance):
         if self.options.enable_size_report and not self.options.cmake_only:
-            self.calc_one_elf_size(instance)
+            self.calc_size(instance=instance, from_buildlog=self.options.footprint_from_buildlog)
         else:
-            instance.metrics["ram_size"] = 0
-            instance.metrics["rom_size"] = 0
+            instance.metrics["used_ram"] = 0
+            instance.metrics["used_rom"] = 0
+            instance.metrics["available_rom"] = 0
+            instance.metrics["available_ram"] = 0
             instance.metrics["unrecognized"] = []
 
     @staticmethod
-    def calc_one_elf_size(instance):
+    def calc_size(instance: TestInstance, from_buildlog: bool):
         if instance.status not in ["error", "failed", "skipped"]:
-            if instance.platform.type != "native":
-                size_calc = instance.calculate_sizes()
-                instance.metrics["ram_size"] = size_calc.get_ram_size()
-                instance.metrics["rom_size"] = size_calc.get_rom_size()
+            if not instance.platform.type in ["native", "qemu"]:
+                generate_warning = bool(instance.platform.type == "mcu")
+                size_calc = instance.calculate_sizes(from_buildlog=from_buildlog, generate_warning=generate_warning)
+                instance.metrics["used_ram"] = size_calc.get_used_ram()
+                instance.metrics["used_rom"] = size_calc.get_used_rom()
+                instance.metrics["available_rom"] = size_calc.get_available_rom()
+                instance.metrics["available_ram"] = size_calc.get_available_ram()
                 instance.metrics["unrecognized"] = size_calc.unrecognized_sections()
             else:
-                instance.metrics["ram_size"] = 0
-                instance.metrics["rom_size"] = 0
+                instance.metrics["used_ram"] = 0
+                instance.metrics["used_rom"] = 0
+                instance.metrics["available_rom"] = 0
+                instance.metrics["available_ram"] = 0
                 instance.metrics["unrecognized"] = []
-
             instance.metrics["handler_time"] = instance.execution_time
-
 
 
 class TwisterRunner:
