@@ -2096,6 +2096,8 @@ USB:
   status: maintained
   maintainers:
     - jfischer-no
+  collaborators:
+    - desowin
   files:
     - drivers/usb/
     - dts/bindings/usb/
