@@ -1058,6 +1058,12 @@ void z_thread_mark_switched_out(void)
 #endif
 
 #ifdef CONFIG_TRACING
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/* Dummy thread won't have TLS set up to run arbitrary code */
+	if (!_current_cpu->current ||
+	    (_current_cpu->current->base.thread_state & _THREAD_DUMMY) != 0)
+		return;
+#endif
 	SYS_PORT_TRACING_FUNC(k_thread, switched_out);
 #endif
 }
