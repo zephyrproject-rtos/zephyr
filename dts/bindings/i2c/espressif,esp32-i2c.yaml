@@ -46,3 +46,13 @@ properties:
       type: boolean
       required: false
       description: Set I2C RX data as LSB
+
+    scl-timeout-us:
+      type: int
+      required: false
+      description: |
+        Timeout for unchanged SCL during clock stretching of the I2C target in
+        microseconds.
+
+        If not set or 0, the timeout is disabled or set to the maximum possible
+        value if the MCU does not support disabling the timeout.
