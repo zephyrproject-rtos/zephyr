@@ -197,8 +197,8 @@
 /CMakeLists.txt                           @tejlmand @nashif
 /doc/                                     @carlescufi
 /doc/develop/tools/coccinelle.rst                @himanshujha199640 @JuliaLawall
-/doc/services/device_mgmt/smp_protocol.rst  @de-nordic
-/doc/services/device_mgmt/smp_groups/       @de-nordic
+/doc/services/device_mgmt/smp_protocol.rst  @de-nordic @nordicjm
+/doc/services/device_mgmt/smp_groups/       @de-nordic @nordicjm
 /doc/CMakeLists.txt                       @carlescufi
 /doc/_scripts/                            @carlescufi
 /doc/connectivity/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
@@ -272,12 +272,12 @@
 /drivers/ethernet/*xlnx_gem*              @ibirnbaum
 /drivers/ethernet/phy/                    @rlubos @tbursztyka @arvinf
 /drivers/mdio/                            @rlubos @tbursztyka @arvinf
-/drivers/flash/                           @nashif @nvlsianpu
+/drivers/flash/                           @nashif @de-nordic
 /drivers/flash/*stm32_qspi*               @lmajewski
 /drivers/flash/*b91*                      @andy-liu-telink
 /drivers/flash/*cadence*                  @ngboonkhai
 /drivers/flash/*cc13xx_cc26xx*            @pepe2k
-/drivers/flash/*nrf*                      @nvlsianpu
+/drivers/flash/*nrf*                      @de-nordic
 /drivers/flash/*esp32*                    @glaubermaroto
 /drivers/fpga/                            @tgorochowik @kgugala
 /drivers/gpio/                            @mnkp
@@ -552,7 +552,7 @@
 /include/zephyr/drivers/dac.h                    @martinjaeger
 /include/zephyr/drivers/espi.h                   @albertofloyd @franciscomunoz @sjvasanth1
 /include/zephyr/drivers/bluetooth/               @alwa-nordic @jhedberg @Vudentz
-/include/zephyr/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
+/include/zephyr/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @de-nordic
 /include/zephyr/drivers/i2c_emul.h               @sjg20
 /include/zephyr/drivers/i3c.h                    @dcpleung
 /include/zephyr/drivers/i3c/                     @dcpleung
@@ -609,7 +609,7 @@
 /include/zephyr/dt-bindings/pwm/*it8xxx2*        @RuibinChang
 /include/zephyr/dt-bindings/usb/usb.h            @galak
 /include/zephyr/drivers/emul.h                   @sjg20
-/include/zephyr/fs/                              @nashif @nvlsianpu @de-nordic
+/include/zephyr/fs/                              @nashif @de-nordic
 /include/zephyr/init.h                           @nashif @andyross
 /include/zephyr/irq.h                            @dcpleung @nashif @andyross
 /include/zephyr/irq_offload.h                    @dcpleung @nashif @andyross
@@ -687,7 +687,7 @@
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
 /samples/subsys/logging/syst/             @dcpleung
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
-/samples/subsys/mgmt/mcumgr/smp_svr/      @aunsbjerg @nvlsianpu
+/samples/subsys/mgmt/mcumgr/              @de-nordic @nordicjm
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
 /samples/subsys/mgmt/osdp/                @sidcha
 /samples/subsys/usb/                      @jfischer-no
@@ -748,7 +748,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/debug/coredump/                   @dcpleung
 /subsys/debug/gdbstub/                    @ceolin
 /subsys/debug/gdbstub.c                   @ceolin
-/subsys/dfu/                              @nvlsianpu
+/subsys/dfu/                              @de-nordic @nordicjm
 /subsys/disk/                             @jfischer-no
 /subsys/tracing/                          @nashif
 /subsys/debug/asan_hacks.c                @aescolar @daor-oti
@@ -756,14 +756,13 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/emul/                             @sjg20
 /subsys/fb/                               @jfischer-no
 /subsys/fs/                               @nashif
-/subsys/fs/fcb/                           @nvlsianpu
 /subsys/fs/nvs/                           @Laczen
 /subsys/ipc/                              @carlocaione
 /subsys/logging/                          @nordic-krch
 /subsys/logging/log_backend_net.c         @nordic-krch @rlubos
 /subsys/lorawan/                          @Mani-Sadhasivam
 /subsys/mgmt/ec_host_cmd/                 @jettr
-/subsys/mgmt/mcumgr/                      @carlescufi @nvlsianpu @de-nordic
+/subsys/mgmt/mcumgr/                      @carlescufi @de-nordic @nordicjm
 /subsys/mgmt/hawkbit/                     @Navin-Sankar
 /subsys/mgmt/mcumgr/smp_udp.c             @aunsbjerg
 /subsys/mgmt/updatehub/                   @nandojve @otavio
@@ -786,18 +785,14 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/net/*/openthread/                 @rlubos
 /subsys/pm/                               @nashif @ceolin
 /subsys/random/                           @dleach02
-/subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jakub-uC @nordic-krch
 /subsys/shell/backends/shell_mqtt.c       @ycsin
-/subsys/stats/                            @nvlsianpu
-/subsys/storage/                          @nvlsianpu
 /subsys/sd/                               @danieldegrasse
 /subsys/task_wdt/                         @martinjaeger
 /subsys/testsuite/                        @nashif
 /subsys/testsuite/ztest/*/ztress*         @nordic-krch
 /subsys/timing/                           @nashif @dcpleung
 /subsys/usb/                              @jfischer-no
-/subsys/usb/device/class/dfu/usb_dfu.c    @nvlsianpu
 /tests/                                   @nashif
 /tests/arch/arm/                          @ioannisg @stephanosio
 /tests/benchmarks/cmsis_dsp/              @stephanosio
@@ -813,7 +808,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/drivers/can/                       @alexanderwachter @henrikbrixandersen
 /tests/drivers/counter/                   @nordic-krch
 /tests/drivers/eeprom/                    @henrikbrixandersen @sjg20
-/tests/drivers/flash_simulator/           @nvlsianpu
+/tests/drivers/flash_simulator/           @de-nordic
 /tests/drivers/gpio/                      @mnkp
 /tests/drivers/hwinfo/                    @alexanderwachter
 /tests/drivers/spi/                       @tbursztyka
@@ -832,11 +827,10 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/net/socket/socketpair/             @cfriedt
 /tests/net/socket/                        @rlubos @tbursztyka @pfalcon
 /tests/subsys/debug/coredump/             @dcpleung
-/tests/subsys/fs/                         @nashif @nvlsianpu @de-nordic
-/tests/subsys/mgmt/mcumgr/                @de-nordic
+/tests/subsys/fs/                         @nashif @de-nordic
+/tests/subsys/mgmt/mcumgr/                @de-nordic @nordicjm
 /tests/subsys/sd/                         @danieldegrasse
 /tests/subsys/rtio/                       @teburd
-/tests/subsys/settings/                   @nvlsianpu
 /tests/subsys/shell/                      @jakub-uC @nordic-krch
 # Get all docs reviewed
 *.rst                                     @nashif
