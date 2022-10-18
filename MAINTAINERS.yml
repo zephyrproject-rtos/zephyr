@@ -403,7 +403,8 @@ Device Driver Model:
 DFU:
   status: maintained
   maintainers:
-    - nvlsianpu
+    - de-nordic
+    - nordicjm
   files:
     - include/zephyr/dfu/
     - subsys/dfu/
@@ -737,7 +738,7 @@ Release Notes:
 "Drivers: Flash":
   status: maintained
   maintainers:
-    - nvlsianpu
+    - de-nordic
   files:
     - drivers/flash/
     - dts/bindings/flash_controller/
@@ -1179,9 +1180,8 @@ Xen Platform:
 Filesystems:
   status: maintained
   maintainers:
-    - nvlsianpu
-  collaborators:
     - de-nordic
+  collaborators:
     - Laczen
     - nashif
   files:
@@ -1631,9 +1631,9 @@ Twister:
     - "area: Twister"
 
 Settings:
-  status: maintained
-  maintainers:
-    - nvlsianpu
+  status: odd fixes
+  collaborators:
+    - de-nordic
   files:
     - include/zephyr/settings/
     - subsys/settings/
@@ -2028,9 +2028,7 @@ RTIO:
     - "area: RTIO"
 
 Storage:
-  status: maintained
-  maintainers:
-    - nvlsianpu
+  status: odd fixes
   files:
     - subsys/storage/
     - include/zephyr/storage/
@@ -2489,7 +2487,9 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
-    - nvlsianpu
+  collaborators:
+    - de-nordic
+    - nordicjm
   files:
     - modules/Kconfig.mcuboot_bootutil
   labels:
