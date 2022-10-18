@@ -11,8 +11,8 @@ endif()
 
 string(REPLACE "nsim" "mdb" MDB_ARGS "${BOARD}.args")
 
-board_runner_args(mdb-nsim "--cores=${CONFIG_MP_NUM_CPUS}" "--nsim_args=${MDB_ARGS}")
-board_runner_args(mdb-hw "--cores=${CONFIG_MP_NUM_CPUS}")
+board_runner_args(mdb-nsim "--cores=${CONFIG_MP_MAX_NUM_CPUS}" "--nsim_args=${MDB_ARGS}")
+board_runner_args(mdb-hw "--cores=${CONFIG_MP_MAX_NUM_CPUS}")
 
 board_finalize_runner_args(arc-nsim)
 include(${ZEPHYR_BASE}/boards/common/mdb-nsim.board.cmake)
