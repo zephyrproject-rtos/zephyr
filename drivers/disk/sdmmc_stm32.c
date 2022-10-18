@@ -154,13 +154,22 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 
 #if defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
-	/* By default the SDMMC clock source is set to 0 --> 48MHz, must be enabled */
+#if !STM32_HSI48_ENABLED
+	/* Deprecated: enable HSI48 using device tree */
+#warning USB device requires HSI48 clock to be enabled using device tree
+	/*
+	 * Keeping this sequence for legacy :
+	 * By default the SDMMC clock source is set to 0 --> 48MHz, must be enabled
+	 */
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
 	}
+#endif /* !STM32_HSI48_ENABLED */
 #endif /* CONFIG_SOC_SERIES_STM32L5X ||
 	* CONFIG_SOC_SERIES_STM32U5X
 	*/
+
+	/* HSI48 Clock is enabled through using the device tree */
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/* Enable the APB clock for stm32_sdmmc */
