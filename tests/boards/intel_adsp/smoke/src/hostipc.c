@@ -22,11 +22,12 @@ static bool ipc_message(const struct device *dev, void *arg,
 	return data == RETURN_MSG_SYNC_VAL;
 }
 
-static void ipc_done(const struct device *dev, void *arg)
+static bool ipc_done(const struct device *dev, void *arg)
 {
 	zassert_is_null(arg, "wrong done arg");
 	zassert_false(done_flag, "done called unexpectedly");
 	done_flag = true;
+	return false;
 }
 
 ZTEST(intel_adsp, test_host_ipc)
