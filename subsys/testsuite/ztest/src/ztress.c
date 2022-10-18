@@ -120,8 +120,9 @@ static void control_load(void)
 	uint64_t idle_cycles = 0;
 	k_thread_runtime_stats_t rt_stats_all;
 	int err = 0;
+	unsigned int num_cpus = arch_num_cpus();
 
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	for (int i = 0; i < num_cpus; i++) {
 		k_thread_runtime_stats_t thread_stats;
 
 		err = k_thread_runtime_stats_get(idle_tid[i], &thread_stats);

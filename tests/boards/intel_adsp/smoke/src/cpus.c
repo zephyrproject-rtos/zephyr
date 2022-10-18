@@ -139,7 +139,9 @@ static void core_smoke(void *arg)
 
 ZTEST(intel_adsp_boot, test_4th_cpu_behavior)
 {
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		printk("Per-CPU smoke test %d...\n", i);
 		run_on_cpu(i, core_smoke, (void *)i, true);
 	}
@@ -196,7 +198,9 @@ static void halt_and_restart(int cpu)
 
 void halt_and_restart_thread(void *p1, void *p2, void *p3)
 {
-	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 1; i < num_cpus; i++) {
 		halt_and_restart(i);
 	}
 }

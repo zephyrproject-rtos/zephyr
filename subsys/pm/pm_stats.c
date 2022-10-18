@@ -35,7 +35,9 @@ static int pm_stats_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	for (uint8_t i = 0U; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (uint8_t i = 0U; i < num_cpus; i++) {
 		for (uint8_t j = 0U; j < PM_STATE_COUNT; j++) {
 			snprintk(names[i][j], PM_STAT_NAME_LEN,
 				 "pm_cpu_%03d_state_%1d_stats", i, j);
