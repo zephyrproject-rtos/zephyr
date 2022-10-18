@@ -65,10 +65,19 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 		(regs->idd & INTEL_ADSP_IPC_DONE) : (regs->ida & INTEL_ADSP_IPC_DONE);
 
 	if (done) {
+		bool external_completion = false;
+
 		if (devdata->done_notify != NULL) {
-			devdata->done_notify(dev, devdata->done_arg);
+			external_completion = devdata->done_notify(dev, devdata->done_arg);
 		}
 		k_sem_give(&devdata->sem);
+
+		/* IPC completion registers will be set externally */
+		if (external_completion) {
+			k_spin_unlock(&devdata->lock, key);
+			return;
+		}
+
 		if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
 			regs->idd = INTEL_ADSP_IPC_DONE;
 		} else {
