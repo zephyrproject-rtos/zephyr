@@ -3536,13 +3536,7 @@ function(zephyr_linker_memory)
     endif()
   endforeach()
 
-  set(MEMORY)
-  zephyr_linker_arg_val_list(MEMORY "${single_args}")
-
-  string(REPLACE ";" "\;" MEMORY "${MEMORY}")
-  set_property(TARGET linker
-               APPEND PROPERTY MEMORY_REGIONS "{${MEMORY}}"
-  )
+  zephyr_linker_add_property(MEMORY MEMORY_REGIONS ${single_args})
 endfunction()
 
 # Usage:
@@ -3775,13 +3769,7 @@ function(zephyr_linker_group)
     endif()
   endif()
 
-  set(GROUP)
-  zephyr_linker_arg_val_list(GROUP "${single_args}")
-
-  string(REPLACE ";" "\;" GROUP "${GROUP}")
-  set_property(TARGET linker
-               APPEND PROPERTY GROUPS "{${GROUP}}"
-  )
+  zephyr_linker_add_property(GROUP GROUPS ${single_args})
 endfunction()
 
 # Usage:
@@ -3901,15 +3889,7 @@ function(zephyr_linker_section)
     endif()
   endif()
 
-  set(SECTION)
-  zephyr_linker_arg_val_list(SECTION "${single_args}")
-  zephyr_linker_arg_val_list(SECTION "${options}")
-  zephyr_linker_arg_val_list(SECTION "${multi_args}")
-
-  string(REPLACE ";" "\;" SECTION "${SECTION}")
-  set_property(TARGET linker
-               APPEND PROPERTY SECTIONS "{${SECTION}}"
-  )
+  zephyr_linker_add_property(SECTION SECTIONS ${single_args} ${options} ${multi_args})
 endfunction()
 
 # Usage:
@@ -4129,15 +4109,7 @@ function(zephyr_linker_section_configure)
     endif()
   endif()
 
-  set(SECTION)
-  zephyr_linker_arg_val_list(SECTION "${single_args}")
-  zephyr_linker_arg_val_list(SECTION "${options}")
-  zephyr_linker_arg_val_list(SECTION "${multi_args}")
-
-  string(REPLACE ";" "\;" SECTION "${SECTION}")
-  set_property(TARGET linker
-               APPEND PROPERTY SECTION_SETTINGS "{${SECTION}}"
-  )
+  zephyr_linker_add_property(SECTION SECTION_SETTINGS ${single_args} ${options} ${multi_args})
 endfunction()
 
 # Usage:
@@ -4167,13 +4139,7 @@ function(zephyr_linker_symbol)
     )
   endif()
 
-  set(SYMBOL)
-  zephyr_linker_arg_val_list(SYMBOL "${single_args}")
-
-  string(REPLACE ";" "\;" SYMBOL "${SYMBOL}")
-  set_property(TARGET linker
-               APPEND PROPERTY SYMBOLS "{${SYMBOL}}"
-  )
+  zephyr_linker_add_property(SYMBOL SYMBOLS ${single_args})
 endfunction()
 
 # Internal helper macro for zephyr_linker*() functions.
@@ -4297,4 +4263,17 @@ macro(zephyr_check_flags_exclusive function prefix)
         "argument: ${args_defined}"
       )
   endif()
+endmacro()
+
+# Internal helper macro for zephyr_linker*() functions.
+# The macro will append a ${list} of "argument;value" pairs to the linker TARGET
+# property named as ${linker_target_property}.
+# The var names within the list are passed as ARGN.
+macro(zephyr_linker_add_property list linker_target_property)
+  set(${list})
+  list(APPEND arguments ${ARGN})
+  zephyr_linker_arg_val_list(${list} "${arguments}")
+  string(REPLACE ";" "\;" ${list} "${${list}}")
+  set_property(TARGET linker
+               APPEND PROPERTY ${linker_target_property} "{${${list}}}")
 endmacro()
