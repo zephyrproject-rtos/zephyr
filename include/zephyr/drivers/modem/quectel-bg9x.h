@@ -17,7 +17,7 @@ struct bg9x_gnss_data {
 	/**
 	 * UTC in format ddmmyyhhmmss.s
 	 */
-	float utc[BG9X_GNSS_DATA_UTC_LEN];
+	char utc[BG9X_GNSS_DATA_UTC_LEN];
 	/**
 	 * Latitude in 10^-5 degree.
 	 */
