@@ -603,7 +603,11 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLL);
 #elif defined(RCC_CR2_HSI48ON) || defined(RCC_CR_HSI48ON) \
 	|| defined(RCC_CRRCR_HSI48ON)
+#if !STM32_HSI48_ENABLED
+	/* Deprecated: enable HSI48 using device tree */
+#warning RNG requires HSI48 clock to be enabled using device tree
 
+	/* Keeping this sequence for legacy: */
 #if CONFIG_SOC_SERIES_STM32L0X
 	/* We need SYSCFG to control VREFINT, so make sure it is clocked */
 	if (!LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
@@ -619,7 +623,12 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	while (!LL_RCC_HSI48_IsReady()) {
 		/* Wait for HSI48 to become ready */
 	}
+#else /* !STM32_HSI48_ENABLED */
+	/* HSI48 is enabled by the DTS : lock the HSI48 clock for RNG use */
+	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+#endif /* !STM32_HSI48_ENABLED */
 
+	/* HSI48 Clock is enabled through the DTS: set as RNG clock source */
 #if defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_CLK48);
 	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
