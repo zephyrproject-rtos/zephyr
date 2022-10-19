@@ -392,8 +392,9 @@ Adding Zephyr applications to sysbuild
 **************************************
 
 You can use the ``ExternalZephyrProject_Add()`` function to add Zephyr
-applications as sysbuild domains. Call this CMake function from your main
-:file:`CMakeLists.txt` file, or any other CMake file you know will run.
+applications as sysbuild domains. Call this CMake function from your
+application's :file:`sysbuild.cmake` file, or any other CMake file you know will
+run as part sysbuild CMake invocation.
 
 Targeting the same board
 ========================
