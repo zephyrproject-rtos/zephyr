@@ -148,7 +148,7 @@ x86_ap_start:
 
 	movl $x86_cpuboot, %ebp
 	xorl %ebx, %ebx
-1:	cmpl $CONFIG_MP_NUM_CPUS, %ebx
+1:	cmpl $CONFIG_MP_MAX_NUM_CPUS, %ebx
 	jz unknown_loapic_id
 	cmpb %al, x86_cpu_loapics(%ebx)
 	je go64				/* proceed to 64-bit mode */
