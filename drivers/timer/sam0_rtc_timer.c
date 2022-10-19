@@ -245,11 +245,10 @@ uint32_t sys_clock_cycle_get_32(void)
 	return rtc_count();
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
 	int retval;
 
-	ARG_UNUSED(dev);
 
 #ifdef MCLK
 	MCLK->APBAMASK.reg |= MCLK_APBAMASK_RTC;

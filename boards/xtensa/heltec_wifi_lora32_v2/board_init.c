@@ -9,9 +9,8 @@
 #define VEXT_PIN  DT_GPIO_PIN(DT_NODELABEL(vext), gpios)
 #define OLED_RST  DT_GPIO_PIN(DT_NODELABEL(oledrst), gpios)
 
-static int board_heltec_wifi_lora32_v2_init(const struct device *dev)
+static int board_heltec_wifi_lora32_v2_init(void)
 {
-	ARG_UNUSED(dev);
 	const struct device *gpio;
 
 	gpio = DEVICE_DT_GET(DT_NODELABEL(gpio0));

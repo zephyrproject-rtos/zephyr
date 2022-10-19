@@ -70,11 +70,10 @@
  *
  * @return 0
  */
-static int soc_b91_init(const struct device *arg)
+static int soc_b91_init(void)
 {
 	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
-	ARG_UNUSED(arg);
 
 	/* system init */
 	sys_init(POWER_MODE, VBAT_TYPE);

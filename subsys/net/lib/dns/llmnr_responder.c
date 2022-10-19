@@ -668,9 +668,8 @@ ipv4_out:
 	return !ok;
 }
 
-static int llmnr_responder_init(const struct device *dev)
+static int llmnr_responder_init(void)
 {
-	ARG_UNUSED(dev);
 
 	net_mgmt_init_event_callback(&mgmt_cb, llmnr_iface_event_handler,
 				     NET_EVENT_IF_UP);

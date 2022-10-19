@@ -442,9 +442,8 @@ void imxrt_post_init_display_interface(void)
  *
  * @return 0
  */
-static int nxp_rt500_init(const struct device *arg)
+static int nxp_rt500_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* old interrupt lock level */
 	unsigned int oldLevel;

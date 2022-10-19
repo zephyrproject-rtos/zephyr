@@ -62,11 +62,10 @@ static const uint16_t gd32_port_clkids[] = {
  *
  * @retval 0 Always
  */
-static int afio_init(const struct device *dev)
+static int afio_init(void)
 {
 	uint16_t clkid = DT_CLOCKS_CELL(AFIO_NODE, id);
 
-	ARG_UNUSED(dev);
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
 			       (clock_control_subsys_t)&clkid);

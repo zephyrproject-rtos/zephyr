@@ -210,9 +210,8 @@ void zperf_async_work_submit(struct k_work *work)
 	k_work_submit_to_queue(&zperf_work_q, work);
 }
 
-static int zperf_init(const struct device *unused)
+static int zperf_init(void)
 {
-	ARG_UNUSED(unused);
 
 	k_work_queue_init(&zperf_work_q);
 	k_work_queue_start(&zperf_work_q, zperf_work_q_stack,

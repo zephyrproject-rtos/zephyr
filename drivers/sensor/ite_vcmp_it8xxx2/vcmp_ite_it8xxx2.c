@@ -364,9 +364,8 @@ struct k_work_q vcmp_it8xxx2_work_q;
 static K_KERNEL_STACK_DEFINE(vcmp_it8xxx2_work_q_stack,
 			     CONFIG_VCMP_IT8XXX2_WORKQUEUE_STACK_SIZE);
 
-static int vcmp_it8xxx2_init_work_q(const struct device *dev)
+static int vcmp_it8xxx2_init_work_q(void)
 {
-	ARG_UNUSED(dev);
 	struct k_work_queue_config cfg = {
 		.name = "vcmp_work",
 		.no_yield = false,

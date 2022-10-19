@@ -15,9 +15,8 @@ LOG_MODULE_REGISTER(pine64_pinetime_key_out);
 
 static const struct gpio_dt_spec key_out = GPIO_DT_SPEC_GET(KEY_OUT_NODE, gpios);
 
-static int pinetime_key_out_init(const struct device *arg)
+static int pinetime_key_out_init(void)
 {
-	ARG_UNUSED(arg);
 	int ret;
 
 	if (!device_is_ready(key_out.port)) {

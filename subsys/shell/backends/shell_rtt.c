@@ -107,9 +107,8 @@ const struct shell_transport_api shell_rtt_transport_api = {
 	.read = read
 };
 
-static int enable_shell_rtt(const struct device *arg)
+static int enable_shell_rtt(void)
 {
-	ARG_UNUSED(arg);
 	bool log_backend = CONFIG_SHELL_RTT_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_RTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_RTT_INIT_LOG_LEVEL;

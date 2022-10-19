@@ -200,11 +200,10 @@ void net_conn_mgr_resend_status(void)
 	}
 }
 
-static int conn_mgr_init(const struct device *dev)
+static int conn_mgr_init(void)
 {
 	int i;
 
-	ARG_UNUSED(dev);
 
 	for (i = 0; i < ARRAY_SIZE(iface_states); i++) {
 		iface_states[i] = 0;

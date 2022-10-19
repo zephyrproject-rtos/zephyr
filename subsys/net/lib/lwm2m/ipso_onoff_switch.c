@@ -234,7 +234,7 @@ static struct lwm2m_engine_obj_inst *switch_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_switch_init(const struct device *dev)
+static int ipso_switch_init(void)
 {
 	onoff_switch.obj_id = IPSO_OBJECT_ONOFF_SWITCH_ID;
 	onoff_switch.version_major = SWITCH_VERSION_MAJOR;

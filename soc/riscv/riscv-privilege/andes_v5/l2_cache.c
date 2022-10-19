@@ -88,13 +88,12 @@ static void andes_v5_l2c_enable(void)
 	}
 }
 
-static int andes_v5_l2c_init(const struct device *dev)
+static int andes_v5_l2c_init(void)
 {
 #if DT_NODE_HAS_STATUS(DT_INST(0, syscon), okay)
 	uint32_t system_cfg;
 	const struct device *const syscon_dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 
-	ARG_UNUSED(dev);
 
 	if (device_is_ready(syscon_dev)) {
 		syscon_read_reg(syscon_dev, SMU_SYSTEMCFG, &system_cfg);

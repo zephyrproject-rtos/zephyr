@@ -148,9 +148,8 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_espi(const struct device *de
 }
 
 #if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_backend))
-static int host_cmd_init(const struct device *arg)
+static int host_cmd_init(void)
 {
-	ARG_UNUSED(arg);
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_host_cmd_backend));
 
 	ec_host_cmd_init(ec_host_cmd_backend_get_espi(dev));

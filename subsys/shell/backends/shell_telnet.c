@@ -526,9 +526,8 @@ const struct shell_transport_api shell_telnet_transport_api = {
 	.read = read
 };
 
-static int enable_shell_telnet(const struct device *arg)
+static int enable_shell_telnet(void)
 {
-	ARG_UNUSED(arg);
 
 	bool log_backend = CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?

@@ -197,9 +197,8 @@ void smp_timer_init(void)
 }
 #endif
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
 		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);

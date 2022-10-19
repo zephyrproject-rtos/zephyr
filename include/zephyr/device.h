@@ -906,13 +906,17 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @brief Define the init entry for a device.
  *
  * @param dev_id Device identifier.
- * @param init_fn Device init function.
+ * @param init_fn_ Device init function.
  * @param level Initialization level.
  * @param prio Initialization priority.
  */
-#define Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn, level, prio)               \
-	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_id), init_fn,                  \
-			    (&DEVICE_NAME_GET(dev_id)), level, prio)
+#define Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn_, level, prio)              \
+	static const Z_DECL_ALIGN(struct init_entry)                           \
+		Z_INIT_ENTRY_SECTION(level, prio) __used                       \
+		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                 \
+			.init_fn = {.dev = (init_fn_)},                        \
+			.dev = &DEVICE_NAME_GET(dev_id),                       \
+	}
 
 /**
  * @brief Define a @ref device and all other required objects.

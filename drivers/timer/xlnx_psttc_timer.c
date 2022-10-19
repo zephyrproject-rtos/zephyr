@@ -146,10 +146,9 @@ uint32_t sys_clock_cycle_get_32(void)
 	return read_count();
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
 	uint32_t reg_val;
-	ARG_UNUSED(dev);
 
 	/* Stop timer */
 	sys_write32(XTTCPS_CNT_CNTRL_DIS_MASK,

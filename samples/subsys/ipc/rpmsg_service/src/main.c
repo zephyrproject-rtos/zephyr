@@ -99,7 +99,7 @@ void main(void)
 }
 
 /* Make sure we register endpoint before RPMsg Service is initialized. */
-int register_endpoint(const struct device *arg)
+int register_endpoint(void)
 {
 	int status;
 

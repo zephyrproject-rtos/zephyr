@@ -19,11 +19,10 @@ void z_arm_platform_init(void)
 	}
 }
 
-static int gd32a50x_soc_init(const struct device *dev)
+static int gd32a50x_soc_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(dev);
 
 	key = irq_lock();
 

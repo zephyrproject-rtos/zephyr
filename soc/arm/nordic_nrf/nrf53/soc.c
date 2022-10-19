@@ -150,11 +150,9 @@ bool z_arm_on_enter_cpu_idle(void)
 }
 #endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND */
 
-static int nordicsemi_nrf53_init(const struct device *arg)
+static int nordicsemi_nrf53_init(void)
 {
 	uint32_t key;
-
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

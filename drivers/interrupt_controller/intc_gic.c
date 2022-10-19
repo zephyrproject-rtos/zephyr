@@ -228,9 +228,8 @@ static void gic_cpu_init(void)
 /**
  * @brief Initialize the GIC device driver
  */
-int arm_gic_init(const struct device *unused)
+int arm_gic_init(void)
 {
-	ARG_UNUSED(unused);
 
 	/* Init of Distributor interface registers */
 	gic_dist_init();

@@ -59,9 +59,8 @@ void posix_flush_stdout(void)
  *
  * @return 0 if successful, otherwise failed.
  */
-static int printk_init(const struct device *arg)
+static int printk_init(void)
 {
-	ARG_UNUSED(arg);
 
 	extern void __printk_hook_install(int (*fn)(int));
 	__printk_hook_install(print_char);

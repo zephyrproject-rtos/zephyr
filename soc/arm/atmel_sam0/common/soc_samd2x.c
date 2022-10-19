@@ -255,11 +255,10 @@ static inline void osc8m_disable(void)
 }
 #endif
 
-static int atmel_samd_init(const struct device *arg)
+static int atmel_samd_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

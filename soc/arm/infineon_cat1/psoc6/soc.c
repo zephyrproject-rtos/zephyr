@@ -54,9 +54,8 @@ cy_en_sysint_status_t Cy_SysInt_Init(const cy_stc_sysint_t *config, cy_israddres
 	return status;
 }
 
-static int init_cycfg_platform_wraper(const struct device *arg)
+static int init_cycfg_platform_wraper(void)
 {
-	ARG_UNUSED(arg);
 
 	/* Initializes the system */
 	SystemInit();

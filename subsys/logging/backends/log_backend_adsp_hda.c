@@ -358,9 +358,8 @@ void adsp_hda_log_cavstool_hook(uint32_t written)
 
 }
 
-int adsp_hda_log_cavstool_init(const struct device *dev)
+int adsp_hda_log_cavstool_init(void)
 {
-	ARG_UNUSED(dev);
 
 	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_RESET, CHANNEL, IPC_TIMEOUT);
 	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_CONFIG,

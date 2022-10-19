@@ -13,9 +13,8 @@
  *
  * @return 0
  */
-static int arm_musca_s1_init(const struct device *arg)
+static int arm_musca_s1_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/*
 	 * Install default handler that simply resets the CPU

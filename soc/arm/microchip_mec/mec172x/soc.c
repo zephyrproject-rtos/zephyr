@@ -38,9 +38,8 @@ static void configure_debug_interface(void)
 #endif /* CONFIG_SOC_MEC172X_DEBUG_DISABLED */
 }
 
-static int soc_init(const struct device *dev)
+static int soc_init(void)
 {
-	ARG_UNUSED(dev);
 
 	configure_debug_interface();
 

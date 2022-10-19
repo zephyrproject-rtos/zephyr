@@ -107,9 +107,8 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int nxp_lpc54114_init(const struct device *arg)
+static int nxp_lpc54114_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* old interrupt lock level */
 	unsigned int oldLevel;
@@ -166,11 +165,10 @@ void z_arm_platform_init(void)
  *
  */
 /* This function is also called at deep sleep resume. */
-int _slave_init(const struct device *arg)
+int _slave_init(void)
 {
 	int32_t temp;
 
-	ARG_UNUSED(arg);
 
 	/* Enable SRAM2, used by other core */
 	SYSCON->AHBCLKCTRLSET[0] = SYSCON_AHBCLKCTRL_SRAM2_MASK;

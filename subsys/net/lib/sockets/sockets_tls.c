@@ -335,9 +335,8 @@ static int dtls_get_remaining_timeout(struct tls_context *ctx)
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 /* Initialize TLS internals. */
-static int tls_init(const struct device *unused)
+static int tls_init(void)
 {
-	ARG_UNUSED(unused);
 
 #if !defined(CONFIG_ENTROPY_HAS_DRIVER)
 	NET_WARN("No entropy device on the system, "

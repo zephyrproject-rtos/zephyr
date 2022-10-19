@@ -31,11 +31,10 @@ LOG_MODULE_REGISTER(soc);
  *
  * @return 0
  */
-static int stm32u5_init(const struct device *arg)
+static int stm32u5_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

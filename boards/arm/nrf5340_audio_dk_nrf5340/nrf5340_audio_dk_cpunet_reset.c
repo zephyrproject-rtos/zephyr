@@ -49,11 +49,10 @@ static void remoteproc_mgr_config(void)
 #endif /* !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) */
 }
 
-static int remoteproc_mgr_boot(const struct device *dev)
+static int remoteproc_mgr_boot(void)
 {
 	int ret;
 
-	ARG_UNUSED(dev);
 
 	ret = core_config();
 	if (ret) {

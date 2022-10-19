@@ -74,9 +74,8 @@ static const size_t gpio_ports_cnt = ARRAY_SIZE(gpio_ports);
 
 #if REMAP_PA11 || REMAP_PA12 || REMAP_PA11_PA12
 
-int stm32_pinmux_init_remap(const struct device *dev)
+int stm32_pinmux_init_remap(void)
 {
-	ARG_UNUSED(dev);
 
 #if REMAP_PA11 || REMAP_PA12
 
@@ -117,9 +116,8 @@ SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
 #if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
 	(DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
 
-static int stm32f1_swj_cfg_init(const struct device *dev)
+static int stm32f1_swj_cfg_init(void)
 {
-	ARG_UNUSED(dev);
 
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 

@@ -53,10 +53,9 @@ static int create_free_list(struct k_mem_slab *slab)
  *
  * @return 0 on success, fails otherwise.
  */
-static int init_mem_slab_module(const struct device *dev)
+static int init_mem_slab_module(void)
 {
 	int rc = 0;
-	ARG_UNUSED(dev);
 
 	STRUCT_SECTION_FOREACH(k_mem_slab, slab) {
 		rc = create_free_list(slab);

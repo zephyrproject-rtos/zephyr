@@ -898,11 +898,10 @@ static void dfu_work_handler(struct k_work *item)
 	}
 }
 
-static int usb_dfu_init(const struct device *dev)
+static int usb_dfu_init(void)
 {
 	const struct flash_area *fa;
 
-	ARG_UNUSED(dev);
 
 	k_work_init(&dfu_work, dfu_work_handler);
 	k_poll_signal_init(&dfu_signal);

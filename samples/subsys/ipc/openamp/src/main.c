@@ -298,7 +298,7 @@ void main(void)
 /* Make sure we clear out the status flag very early (before we bringup the
  * secondary core) so the secondary core see's the proper status
  */
-int init_status_flag(const struct device *arg)
+int init_status_flag(void)
 {
 	virtio_set_status(NULL, 0);
 

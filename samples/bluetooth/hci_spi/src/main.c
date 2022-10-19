@@ -259,9 +259,8 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int hci_spi_init(const struct device *unused)
+static int hci_spi_init(void)
 {
-	ARG_UNUSED(unused);
 
 	LOG_DBG("");
 

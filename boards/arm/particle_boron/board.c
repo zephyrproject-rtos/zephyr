@@ -27,9 +27,8 @@ static inline void external_antenna(bool on)
 	gpio_pin_configure_dt(&ufl_gpio, (on ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
 
-static int board_particle_boron_init(const struct device *dev)
+static int board_particle_boron_init(void)
 {
-	ARG_UNUSED(dev);
 
 	external_antenna(false);
 

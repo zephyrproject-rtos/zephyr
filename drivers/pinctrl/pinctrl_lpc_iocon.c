@@ -50,9 +50,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #if defined(CONFIG_SOC_FAMILY_LPC) && !defined(CONFIG_SOC_SERIES_LPC11U6X)
 /* LPC family (except 11u6x) needs iocon clock to be enabled */
 
-static int pinctrl_clock_init(const struct device *dev)
+static int pinctrl_clock_init(void)
 {
-	ARG_UNUSED(dev);
 	/* Enable IOCon clock */
 	CLOCK_EnableClock(kCLOCK_Iocon);
 	return 0;

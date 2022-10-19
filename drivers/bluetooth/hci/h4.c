@@ -553,9 +553,8 @@ static const struct bt_hci_driver drv = {
 #endif
 };
 
-static int bt_uart_init(const struct device *unused)
+static int bt_uart_init(void)
 {
-	ARG_UNUSED(unused);
 
 	if (!device_is_ready(h4_dev)) {
 		return -ENODEV;

@@ -1686,7 +1686,7 @@ out:
  * This function configures the USB device stack based on USB descriptor and
  * usb_cfg_data.
  */
-static int usb_device_init(const struct device *dev)
+static int usb_device_init(void)
 {
 	uint8_t *device_descriptor;
 

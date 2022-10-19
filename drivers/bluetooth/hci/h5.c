@@ -767,9 +767,8 @@ static const struct bt_hci_driver drv = {
 	.send		= h5_queue,
 };
 
-static int bt_uart_init(const struct device *unused)
+static int bt_uart_init(void)
 {
-	ARG_UNUSED(unused);
 
 	if (!device_is_ready(h5_dev)) {
 		return -ENODEV;

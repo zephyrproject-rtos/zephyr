@@ -931,7 +931,7 @@ static int cdc_acm_config_get(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-static int usbd_cdc_acm_init_wq(const struct device *dev)
+static int usbd_cdc_acm_init_wq(void)
 {
 	k_work_queue_init(&cdc_acm_work_q);
 	k_work_queue_start(&cdc_acm_work_q, cdc_acm_stack,

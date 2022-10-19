@@ -62,9 +62,8 @@ static void xt_sim_console_hook_install(void)
  * @brief Initialize the console/debug port
  * @return 0 if successful, otherwise failed.
  */
-static int xt_sim_console_init(const struct device *arg)
+static int xt_sim_console_init(void)
 {
-	ARG_UNUSED(arg);
 	xt_sim_console_hook_install();
 	return 0;
 }
