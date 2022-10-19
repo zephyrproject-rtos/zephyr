@@ -165,3 +165,10 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 
 	return 0;
 }
+
+#ifdef ZTEST_UNITTEST
+struct tc_hmac_prng_struct *bt_crypto_get_hmac_prng_instance(void)
+{
+	return &prng;
+}
+#endif /* ZTEST_UNITTEST */
