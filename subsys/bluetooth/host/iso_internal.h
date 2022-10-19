@@ -11,8 +11,6 @@
 
 #include <zephyr/bluetooth/iso.h>
 
-#define BT_ISO_MAX_SEQ_NUM 0xFFFF
-
 struct iso_data {
 	/** BT_BUF_ISO_IN */
 	uint8_t  type;
