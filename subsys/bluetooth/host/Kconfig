@@ -316,9 +316,6 @@ config BT_REMOTE_INFO
 
 config BT_SMP
 	bool "Security Manager Protocol support"
-	# select TINYCRYPT
-	# select TINYCRYPT_AES
-	# select TINYCRYPT_AES_CMAC
 	select BT_CRYPTO_TOOLBOX
 	select BT_RPA
 	select BT_ECC
