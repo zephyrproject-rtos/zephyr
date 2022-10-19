@@ -51,7 +51,7 @@ struct x86_tss64 tss0 = {
 	.cpu = &(_kernel.cpus[0])
 };
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss1 = {
 #ifdef CONFIG_X86_KPTI
@@ -64,7 +64,7 @@ struct x86_tss64 tss1 = {
 };
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 2
+#if CONFIG_MP_MAX_NUM_CPUS > 2
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss2 = {
 #ifdef CONFIG_X86_KPTI
@@ -77,7 +77,7 @@ struct x86_tss64 tss2 = {
 };
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 3
+#if CONFIG_MP_MAX_NUM_CPUS > 3
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss3 = {
 #ifdef CONFIG_X86_KPTI
@@ -109,19 +109,19 @@ struct x86_cpuboot x86_cpuboot[] = {
 		.fn = z_x86_prep_c,
 		.arg = &x86_cpu_boot_arg,
 	},
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	{
 		.tr = X86_KERNEL_CPU1_TR,
 		.gs_base = &tss1
 	},
 #endif
-#if CONFIG_MP_NUM_CPUS > 2
+#if CONFIG_MP_MAX_NUM_CPUS > 2
 	{
 		.tr = X86_KERNEL_CPU2_TR,
 		.gs_base = &tss2
 	},
 #endif
-#if CONFIG_MP_NUM_CPUS > 3
+#if CONFIG_MP_MAX_NUM_CPUS > 3
 	{
 		.tr = X86_KERNEL_CPU3_TR,
 		.gs_base = &tss3
