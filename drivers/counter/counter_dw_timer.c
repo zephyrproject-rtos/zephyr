@@ -8,7 +8,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
-#include <soc.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/clock_control.h>
@@ -65,7 +64,7 @@ struct dw_timer_config {
 	DEVICE_MMIO_ROM;
 	uint32_t freq;
 	const struct device *clk_dev;
-	uint32_t clkid;
+	clock_control_subsys_t clkid;
 	const struct reset_dt_spec reset;
 	void (*irq_config)(void);
 };
@@ -241,6 +240,7 @@ uint32_t dw_timer_get_freq(const struct device *timer_dev)
 {
 	const struct dw_timer_config *timer_config = GET_DEV_CONFIG(timer_dev);
 	uint32_t freq = 0;
+	int ret = 0;
 
 	freq = timer_config->freq;
 
@@ -254,8 +254,12 @@ uint32_t dw_timer_get_freq(const struct device *timer_dev)
 			return -ENODEV;
 		}
 
-		clock_control_get_rate(timer_config->clk_dev,
-			(clock_control_subsys_t) &timer_config->clkid, &freq);
+		ret = clock_control_get_rate(timer_config->clk_dev,
+			timer_config->clkid, &freq);
+		if (ret != 0) {
+			LOG_ERR("Unable to get clock rate: err:%d", ret);
+			return ret;
+		}
 	}
 
 	return freq;
@@ -295,12 +299,12 @@ static int dw_timer_init(const struct device *timer_dev)
 		( \
 			.freq = DT_INST_PROP(inst, clock_frequency), \
 			.clk_dev = NULL, \
-			.clkid = 0, \
+			.clkid = (clock_control_subsys_t)0, \
 		), \
 		( \
 			.freq = 0, \
-			.clk_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, clocks)), \
-			.clkid = DT_INST_PHA_BY_IDX(inst, clocks, 0, clkid), \
+			.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)), \
+			.clkid = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid), \
 		) \
 	)
 
