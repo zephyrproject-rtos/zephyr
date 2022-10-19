@@ -22,5 +22,3 @@ if(CONFIG_BT_BREDR)
     crypto_toolbox_h7.c
   )
 endif()
-
-# zephyr_library_link_libraries(tinycrypt)
