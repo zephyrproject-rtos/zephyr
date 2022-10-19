@@ -11,7 +11,7 @@
  * @param len length of the message in octets
  * @param[out] out message authentication code
  * @retval 0 Computation was successful. @p res contains the result.
- * @retval @-EIO
+ * @retval -EIO
  */
 int bt_crypto_toolbox_aes_cmac(const uint8_t *key, const uint8_t *in, 
 							   size_t len, uint8_t *out);

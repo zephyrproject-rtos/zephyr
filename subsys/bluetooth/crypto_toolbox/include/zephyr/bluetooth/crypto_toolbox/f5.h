@@ -14,7 +14,7 @@
  * @param[out] mackey most significant 128-bit of the result
  * @param[out] ltk least significant 128-bit of the result
  * @retval 0 Computation was successful. @p res contains the result.
- * @retval @-EIO
+ * @retval -EIO
  */
 int bt_crypto_toolbox_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		                 const bt_addr_le_t *a1, const bt_addr_le_t *a2, 

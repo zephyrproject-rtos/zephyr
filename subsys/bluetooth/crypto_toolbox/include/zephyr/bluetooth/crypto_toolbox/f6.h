@@ -15,7 +15,7 @@
  * @param a2 56-bit
  * @param[out] check 
  * @retval 0 Computation was successful. @p res contains the result.
- * @retval @-EIO
+ * @retval -EIO
  */
 int bt_crypto_toolbox_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		                 const uint8_t *r, const uint8_t *iocap, 

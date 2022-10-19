@@ -4,13 +4,13 @@ config BT_CRYPTO_TOOLBOX
     select TINYCRYPT_AES
     select TINYCRYPT_AES_CMAC
     help
-      This option enable the Bluetooth Cryptographic Toolbox.
+      This option enables the Bluetooth Cryptographic Toolbox.
       
 config BT_DEBUG_CRYPTO_TOOLBOX
 	bool "Bluetooth Cryptographic Toolbox debug"
 	depends on BT_CRYPTO_TOOLBOX
 	help
-	  This option enables debug support for the Bluetooth
+	  This option enables debug log output for the Bluetooth
 	  Cryptographic Toolbox.
 
 	  WARNING: This option prints out private security keys such as
