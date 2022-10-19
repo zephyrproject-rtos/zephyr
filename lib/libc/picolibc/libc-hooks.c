@@ -181,7 +181,7 @@ SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static LIBC_BSS uintptr_t heap_sz;
 
-static int (*_stdout_hook)(int);
+static LIBC_DATA int (*_stdout_hook)(int);
 
 int z_impl_zephyr_fputc(int a, FILE *out)
 {
@@ -203,8 +203,8 @@ static int picolibc_put(char a, FILE *f)
 	return 0;
 }
 
-static FILE __stdout = FDEV_SETUP_STREAM(picolibc_put, NULL, NULL, 0);
-static FILE __stdin = FDEV_SETUP_STREAM(NULL, NULL, NULL, 0);
+static LIBC_DATA FILE __stdout = FDEV_SETUP_STREAM(picolibc_put, NULL, NULL, 0);
+static LIBC_DATA FILE __stdin = FDEV_SETUP_STREAM(NULL, NULL, NULL, 0);
 
 #ifdef __strong_reference
 #define STDIO_ALIAS(x) __strong_reference(stdout, x);
