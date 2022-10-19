@@ -24,7 +24,7 @@ enum {
 	THREAD_INFO_OFFSET_T_COOP_FLOAT,
 };
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 #error "This code doesn't work properly with multiple CPUs enabled"
 #endif
 
