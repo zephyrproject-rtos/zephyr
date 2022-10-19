@@ -309,7 +309,7 @@ SECTIONS {
   } >ucram
 
   .data SEGSTART_UNCACHED : {
-    _data_start = .;
+    __data_start = .;
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -326,7 +326,7 @@ SECTIONS {
     *(.trace_ctx)
     _trace_ctx_end = ABSOLUTE(.);
     *(.gna_model)
-    _data_end = .;
+    __data_end = .;
   } >ucram
 
   .lit4 SEGSTART_CACHED : {
