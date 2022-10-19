@@ -476,7 +476,7 @@ static int net_header_encode(struct bt_mesh_net_tx *tx, uint8_t nid,
 
 static int net_encrypt(struct net_buf_simple *buf,
 		       const struct bt_mesh_net_cred *cred, uint32_t iv_index,
-		       bool proxy)
+		       enum bt_mesh_nonce_type proxy)
 {
 	int err;
 
@@ -489,7 +489,7 @@ static int net_encrypt(struct net_buf_simple *buf,
 }
 
 int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
-		       bool proxy)
+		       enum bt_mesh_nonce_type type)
 {
 	const struct bt_mesh_net_cred *cred;
 	int err;
@@ -500,7 +500,7 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 		return err;
 	}
 
-	return net_encrypt(buf, cred, BT_MESH_NET_IVI_TX, proxy);
+	return net_encrypt(buf, cred, BT_MESH_NET_IVI_TX, type);
 }
 
 static int net_loopback(const struct bt_mesh_net_tx *tx, const uint8_t *data,
@@ -570,7 +570,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		goto done;
 	}
 
-	err = net_encrypt(&buf->b, cred, BT_MESH_NET_IVI_TX, false);
+	err = net_encrypt(&buf->b, cred, BT_MESH_NET_IVI_TX, BT_MESH_NONCE_NETWORK);
 	if (err) {
 		goto done;
 	}
@@ -743,7 +743,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	 * the normal TX IVI (which may be different) since the transport
 	 * layer nonce includes the IVI.
 	 */
-	if (net_encrypt(&buf->b, cred, BT_MESH_NET_IVI_RX(rx), false)) {
+	if (net_encrypt(&buf->b, cred, BT_MESH_NET_IVI_RX(rx), BT_MESH_NONCE_NETWORK)) {
 		LOG_ERR("Re-encrypting failed");
 		goto done;
 	}

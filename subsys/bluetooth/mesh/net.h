@@ -30,6 +30,7 @@
 #define BT_MESH_NET_MAX_PDU_LEN (BT_MESH_NET_HDR_LEN + 16 + 4)
 
 struct bt_mesh_net_cred;
+enum bt_mesh_nonce_type;
 
 struct bt_mesh_node {
 	uint16_t addr;
@@ -189,6 +190,7 @@ enum {
 	BT_MESH_FRIEND,
 	BT_MESH_PRIV_BEACON,
 	BT_MESH_PRIV_GATT_PROXY,
+	BT_MESH_OD_PRIV_PROXY,
 
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
@@ -231,6 +233,9 @@ struct bt_mesh_net {
 
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 	uint8_t dev_key_cand[16];
+#endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	uint8_t on_demand_state;
 #endif
 	struct bt_mesh_sar_tx sar_tx; /* Transport SAR Transmitter configuration */
 	struct bt_mesh_sar_rx sar_rx; /* Transport SAR Receiver configuration */
@@ -284,7 +289,7 @@ int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
 bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update);
 
 int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
-		       bool proxy);
+		       enum bt_mesh_nonce_type type);
 
 int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		     const struct bt_mesh_send_cb *cb, void *cb_data);

@@ -114,6 +114,14 @@
 #define OP_PRIV_NODE_ID_SET                BT_MESH_MODEL_OP_2(0x80, 0x67)
 #define OP_PRIV_NODE_ID_STATUS             BT_MESH_MODEL_OP_2(0x80, 0x68)
 
+#define OP_OD_PRIV_PROXY_GET               BT_MESH_MODEL_OP_2(0x80, 0x69)
+#define OP_OD_PRIV_PROXY_SET               BT_MESH_MODEL_OP_2(0x80, 0x6a)
+#define OP_OD_PRIV_PROXY_STATUS            BT_MESH_MODEL_OP_2(0x80, 0x6b)
+
+#define OP_SOL_PDU_RPL_ITEM_CLEAR          BT_MESH_MODEL_OP_2(0x80, 0x78)
+#define OP_SOL_PDU_RPL_ITEM_CLEAR_UNACKED  BT_MESH_MODEL_OP_2(0x80, 0x79)
+#define OP_SOL_PDU_RPL_ITEM_STATUS         BT_MESH_MODEL_OP_2(0x80, 0x7a)
+
 #define STATUS_SUCCESS                     0x00
 #define STATUS_INVALID_ADDRESS             0x01
 #define STATUS_INVALID_MODEL               0x02
