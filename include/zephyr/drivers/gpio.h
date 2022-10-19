@@ -331,7 +331,9 @@ struct gpio_dt_spec {
  * @brief Static initializer for a @p gpio_dt_spec
  *
  * This returns a static initializer for a @p gpio_dt_spec structure given a
- * devicetree node identifier, a property specifying a GPIO and an index.
+ * devicetree node identifier, a property specifying a GPIO and an index. If the
+ * given @p node_id is not found or not enabled, this returns an empty
+ * initializer.
  *
  * Example devicetree fragment:
  *
@@ -362,11 +364,13 @@ struct gpio_dt_spec {
  * @return static initializer for a struct gpio_dt_spec for the property
  */
 #define GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)			       \
-	{								       \
-		.port = DEVICE_DT_GET(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx)),\
-		.pin = DT_GPIO_PIN_BY_IDX(node_id, prop, idx),		       \
-		.dt_flags = DT_GPIO_FLAGS_BY_IDX(node_id, prop, idx),	       \
-	}
+	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),			       \
+		    ({							       \
+			.port = DEVICE_DT_GET(				       \
+				DT_GPIO_CTLR_BY_IDX(node_id, prop, idx)),      \
+			.pin = DT_GPIO_PIN_BY_IDX(node_id, prop, idx),	       \
+			.dt_flags = DT_GPIO_FLAGS_BY_IDX(node_id, prop, idx),  \
+		    }), ({}))
 
 /**
  * @brief Like GPIO_DT_SPEC_GET_BY_IDX(), with a fallback to a default value
