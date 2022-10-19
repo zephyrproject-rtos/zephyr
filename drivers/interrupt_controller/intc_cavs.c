@@ -13,7 +13,7 @@
 #include <zephyr/sys/arch_interface.h>
 #include "intc_cavs.h"
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 #if defined(CONFIG_SOC_INTEL_CAVS_V15)
 #define PER_CPU_OFFSET(x)	(0x40 * x)
 #elif defined(CONFIG_SOC_INTEL_CAVS_V18)
@@ -32,7 +32,7 @@
 static ALWAYS_INLINE
 struct cavs_registers *get_base_address(struct cavs_ictl_runtime *context)
 {
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 	return UINT_TO_POINTER(context->base_addr +
 			       PER_CPU_OFFSET(arch_curr_cpu()->id));
 #else

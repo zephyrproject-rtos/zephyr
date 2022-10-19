@@ -20,7 +20,7 @@
  * synchronous wake vs. a wake in a (offloaded) interrupt.
  */
 
-#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+#if defined(CONFIG_SMP) && CONFIG_MP_MAX_NUM_CPUS > 1
 #error Preemption test requires single-CPU operation
 #endif
 

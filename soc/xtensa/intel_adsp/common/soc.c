@@ -8,7 +8,7 @@
 extern void power_init(void);
 extern void cavs_clock_init(void);
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 extern void soc_mp_init(void);
 #endif
 
@@ -20,7 +20,7 @@ static __imr int soc_init(const struct device *dev)
 	cavs_clock_init();
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	soc_mp_init();
 #endif
 

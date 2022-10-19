@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/arch_interface.h>
 
-#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+#if defined(CONFIG_SMP) && CONFIG_MP_MAX_NUM_CPUS > 1
 #define SMP_TEST
 #endif
 

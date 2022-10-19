@@ -112,7 +112,7 @@ __start:
 	nop
 	nop
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 
 .code16
 .global x86_ap_start
@@ -159,7 +159,7 @@ x86_ap_start:
 unknown_loapic_id:
 	jmp unknown_loapic_id
 
-#endif /* CONFIG_MP_NUM_CPUS > 1 */
+#endif /* CONFIG_MP_MAX_NUM_CPUS > 1 */
 
 .code32
 .globl __start32
@@ -1090,21 +1090,21 @@ gdt:
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	.word __X86_TSS64_SIZEOF-1	/* 0x50: 64-bit TSS (16-byte entry) */
 	.word tss1
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 2
+#if CONFIG_MP_MAX_NUM_CPUS > 2
 	.word __X86_TSS64_SIZEOF-1	/* 0x60: 64-bit TSS (16-byte entry) */
 	.word tss2
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 3
+#if CONFIG_MP_MAX_NUM_CPUS > 3
 	.word __X86_TSS64_SIZEOF-1	/* 0x70: 64-bit TSS (16-byte entry) */
 	.word tss3
 	.word 0x8900
@@ -1135,7 +1135,7 @@ z_x86_exception_stack:
 z_x86_nmi_stack:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 .global z_x86_exception_stack1
 .align 16
 z_x86_exception_stack1:
@@ -1146,7 +1146,7 @@ z_x86_nmi_stack1:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 2
+#if CONFIG_MP_MAX_NUM_CPUS > 2
 .global z_x86_exception_stack2
 .align 16
 z_x86_exception_stack2:
@@ -1157,7 +1157,7 @@ z_x86_nmi_stack2:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 3
+#if CONFIG_MP_MAX_NUM_CPUS > 3
 .global z_x86_exception_stack3
 .align 16
 z_x86_exception_stack3:
@@ -1176,21 +1176,21 @@ z_x86_nmi_stack3:
 z_x86_trampoline_stack:
 	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 .global z_x86_trampoline_stack1
 .align 16
 z_x86_trampoline_stack1:
 	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 2
+#if CONFIG_MP_MAX_NUM_CPUS > 2
 .global z_x86_trampoline_stack2
 .align 16
 z_x86_trampoline_stack2:
 	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 3
+#if CONFIG_MP_MAX_NUM_CPUS > 3
 .global z_x86_trampoline_stack3
 .align 16
 z_x86_trampoline_stack3:
