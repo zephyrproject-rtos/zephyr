@@ -20,3 +20,6 @@ tests:
   tests.application_development.code_relocation.riscv:
     extra_args: CONF_FILE="prj_riscv.conf"
     platform_allow: qemu_riscv32 qemu_riscv64
+  tests.application_development.code_relocation.xtensa:
+    extra_args: CONF_FILE="prj_xtensa.conf"
+    platform_allow: qemu_xtensa

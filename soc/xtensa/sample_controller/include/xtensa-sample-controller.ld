@@ -16,7 +16,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
-#define RAMABLE_REGION sram0_seg :sram0_phdr
+#define RAMABLE_REGION RAM :sram0_phdr
 #define ROMABLE_REGION srom1_seg :srom1_phdr
 
 MEMORY
@@ -45,7 +45,7 @@ MEMORY
   iram0_19_seg :                      	org = 0x40000400, len = 0x1FC00
   srom0_seg :                         	org = 0x50000000, len = 0x300
   srom1_seg :                         	org = 0x50000300, len = 0xFFFD00
-  sram0_seg :                         	org = 0x60000000, len = 0x4000000
+  RAM :                         	org = 0x60000000, len = 0x4000000
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST : org = 0x3ffbe000, len = 0x2000
 #endif
@@ -408,6 +408,10 @@ SECTIONS
     _memmap_seg_srom0_end = ALIGN(0x8);
   } >srom0_seg :srom0_phdr
 
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_relocate.ld>
+#endif
+
   .srom.rodata : ALIGN(4)
   {
     _srom_rodata_start = ABSOLUTE(.);
@@ -430,7 +434,7 @@ SECTIONS
     _sram_rodata_start = ABSOLUTE(.);
     *(.sram.rodata)
     _sram_rodata_end = ABSOLUTE(.);
-  } >sram0_seg :sram0_phdr
+  } >RAM :sram0_phdr
 
 #include <zephyr/linker/common-rom.ld>
 
@@ -479,14 +483,14 @@ SECTIONS
     LONG(_bss_end)
     _bss_table_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
-  } >sram0_seg :sram0_phdr
+  } >RAM :sram0_phdr
 
   .sram.text : ALIGN(4)
   {
     _sram_text_start = ABSOLUTE(.);
     *(.sram.literal .sram.text)
     _sram_text_end = ABSOLUTE(.);
-  } >sram0_seg :sram0_phdr
+  } >RAM :sram0_phdr
 
   __text_region_start =  ALIGN(4);
   .text : ALIGN(4)
@@ -502,7 +506,7 @@ SECTIONS
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
     _etext = .;
-  } >sram0_seg :sram0_phdr
+  } >RAM :sram0_phdr
   __text_region_end = .;
 
   .sram.data : ALIGN(4)
@@ -510,19 +514,19 @@ SECTIONS
     _sram_data_start = ABSOLUTE(.);
     *(.sram.data)
     _sram_data_end = ABSOLUTE(.);
-  } >sram0_seg :sram0_phdr
+  } >RAM :sram0_phdr
 
   .noinit :  ALIGN(4)
   {
     *(.noinit)
     *(.noinit.*)
-  } >sram0_seg :sram0_phdr
+  } >RAM :sram0_phdr
 
 #include <snippets-sections.ld>
 
   .data : ALIGN(4)
   {
-    _data_start = ABSOLUTE(.);
+    __data_start = ABSOLUTE(.);
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -540,8 +544,13 @@ SECTIONS
     #include <snippets-rwdata.ld>
     . = ALIGN(4);
 
-    _data_end = ABSOLUTE(.);
-  } >sram0_seg :sram0_phdr
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_data_relocate.ld>
+#endif
+    . = ALIGN(4);
+
+    __data_end = ABSOLUTE(.);
+  } >RAM :sram0_phdr
 
 #include <snippets-data-sections.ld>
 
@@ -550,7 +559,7 @@ SECTIONS
   .tm_clone_table :
   {
     *(.tm_clone_table)
-  } >sram0_seg :sram0_phdr
+  } >RAM :sram0_phdr
 
 #include <snippets-ram-sections.ld>
 
@@ -572,6 +581,9 @@ SECTIONS
     *(.gnu.linkonce.b.*)
     *(COMMON)
     *(.sram.bss)
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
     _end = ALIGN(0x8);
@@ -579,7 +591,7 @@ SECTIONS
     PROVIDE(end = ALIGN(0x8));
     _stack_sentry = ALIGN(0x8);
     _memmap_seg_sram0_end = ALIGN(0x8);
-  } >sram0_seg :sram0_bss_phdr
+  } >RAM :sram0_bss_phdr
   __stack = 0x64000000;
   _heap_sentry = 0x64000000;
   .comment  0 :  { *(.comment) }
