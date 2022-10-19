@@ -32,7 +32,7 @@ ENTRY(rom_entry);
  *
  * These macros will set up a segment start address correctly,
  * including alignment to a cache line.  Be sure to also emit the
- * section to ">ram" or ">ucram" as appropriate, to prevent the linker
+ * section to ">RAM" or ">ucram" as appropriate, to prevent the linker
  * from filling in 512MB of sparse zeros.
  */
 #ifdef CONFIG_KERNEL_COHERENCE
@@ -42,7 +42,7 @@ ENTRY(rom_entry);
 #else
 #define SEGSTART_CACHED   .
 #define SEGSTART_UNCACHED .
-#define ucram ram
+#define ucram RAM
 #endif
 
 /* intlist.ld needs an IDT_LIST memory region */
@@ -117,7 +117,7 @@ MEMORY {
   imr :
         org = IMR_BOOT_LDR_TEXT_ENTRY_BASE,
         len = 0x100000
-  ram :
+  RAM :
 	org = RAM_BASE,
 	len = RAM_SIZE
 #ifdef CONFIG_KERNEL_COHERENCE
@@ -255,6 +255,10 @@ SECTIONS {
     _DoubleExceptionVector_text_end = .;
   } >vector_double_text
 
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_relocate.ld>
+#endif
+
   .text : {
     _text_start = .;
     *(.iram1 .iram1.*)
@@ -268,7 +272,7 @@ SECTIONS {
     KEEP(*(.fini))
     *(.gnu.version)
     _text_end = .;
-  } >ram
+  } >RAM
 
   .rodata : ALIGN(4096)
   {
@@ -308,22 +312,22 @@ SECTIONS {
     LONG(_bss_end)
     _bss_table_end = .;
     _rodata_end = .;
-  } >ram
+  } >RAM
 
   .module_init : {
     _module_init_start = .;
     *(*.initcall)
     _module_init_end = .;
-  } >ram
+  } >RAM
 
-#define RAMABLE_REGION ram
-#define ROMABLE_REGION ram
+#define RAMABLE_REGION RAM
+#define ROMABLE_REGION RAM
 #include <zephyr/linker/common-rom.ld>
 
   .fw_ready : {
     KEEP(*(".fw_ready"));
     KEEP (*(.fw_ready_metadata))
-  } >ram
+  } >RAM
 
   .noinit SEGSTART_UNCACHED : {
     *(.noinit)
@@ -348,6 +352,9 @@ SECTIONS {
     *(.trace_ctx)
     _trace_ctx_end = ABSOLUTE(.);
     *(.gna_model)
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_data_relocate.ld>
+#endif
     __data_end = .;
   } >ucram
 
@@ -357,7 +364,7 @@ SECTIONS {
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = .;
-  } >ram
+  } >RAM
 
 /* These values need to change in our scheme, where the common-ram
  * sections need to be linked in safe/uncached memory but common-rom
@@ -373,7 +380,7 @@ SECTIONS {
 
   .tm_clone_table : {
     *(.tm_clone_table)
-  } >ram
+  } >RAM
 
   /* This section is cached.  By default it contains only declared
   * thread stacks, but applications can put symbols here too.
@@ -382,7 +389,7 @@ SECTIONS {
     _cached_start = .;
     *(.cached .cached.*)
     _cached_end = .;
-  } >ram
+  } >RAM
 
   /* Rimage requires 4k alignment between "DATA" and "BSS", can't do
    * this in the section declaration below because we're also changing
@@ -408,6 +415,9 @@ SECTIONS {
     *(.bss.*)
     *(.gnu.linkonce.b.*)
     *(COMMON)
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
     . = ALIGN(8);
     _bss_end = .;
   } >ucram
@@ -456,6 +466,9 @@ SECTIONS {
     KEEP (*(.fw_metadata))
     . = ALIGN(16);
   } >noload
+
+
+#include <snippets-sections.ld>
 
 #include <zephyr/linker/debug-sections.ld>
 
