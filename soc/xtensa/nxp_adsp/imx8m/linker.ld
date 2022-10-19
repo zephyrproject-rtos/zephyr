@@ -376,7 +376,7 @@ SECTIONS
 
   .data : ALIGN(4)
   {
-    _data_start = ABSOLUTE(.);
+    __data_start = ABSOLUTE(.);
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -394,7 +394,7 @@ SECTIONS
     _trace_ctx_end = ABSOLUTE(.);
     . = ALIGN(4);
     *(.gna_model)
-    _data_end = ABSOLUTE(.);
+    __data_end = ABSOLUTE(.);
     . = ALIGN(4096);
   } >sdram0 :sdram0_phdr
 
