@@ -24,6 +24,7 @@ _west_cmds() {
 
   local -a zephyr_ext_cmds=(
   'completion[display shell completion scripts]'
+  'change[Update projects information]'
   'boards[display information about supported boards]'
   'build[compile a Zephyr application]'
   'sign[sign a Zephyr binary for bootloader chain-loading]'

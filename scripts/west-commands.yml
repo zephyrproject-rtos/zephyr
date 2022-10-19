@@ -5,6 +5,11 @@ west-commands:
       - name: completion
         class: Completion
         help: output shell completion scripts
+  - file: scripts/west_commands/change.py
+    commands:
+      - name: change
+        class: Change
+        help: Update projects information
   - file: scripts/west_commands/boards.py
     commands:
       - name: boards
