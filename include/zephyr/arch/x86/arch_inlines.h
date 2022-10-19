@@ -35,12 +35,12 @@ static ALWAYS_INLINE uint32_t arch_proc_id(void)
 	return arch_curr_cpu()->id;
 }
 
+#endif /* CONFIG_X86_64 */
+
 static ALWAYS_INLINE unsigned int arch_num_cpus(void)
 {
 	return CONFIG_MP_MAX_NUM_CPUS;
 }
-
-#endif /* CONFIG_X86_64 */
 
 #endif /* !_ASMLANGUAGE */
 
