@@ -8,7 +8,7 @@ config SOC
 	string
 	default "intel_ace15_mtpm"
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 3
 
 endif
