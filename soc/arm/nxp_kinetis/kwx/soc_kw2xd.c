@@ -147,9 +147,8 @@ static ALWAYS_INLINE void clock_init(void)
  *
  * @return 0
  */
-static int kw2xd_init(const struct device *arg)
+static int kw2xd_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
 

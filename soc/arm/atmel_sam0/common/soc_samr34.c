@@ -13,11 +13,10 @@
  * unexpected behavior and increased current consumption... see Chapter 10 of
  * DS70005356C. We also hold the radio in reset.
  */
-static int soc_pinconf_init(const struct device *dev)
+static int soc_pinconf_init(void)
 {
 	const struct device *const portb = DEVICE_DT_GET(DT_NODELABEL(portb));
 
-	ARG_UNUSED(dev);
 
 	if (!device_is_ready(portb)) {
 		return -ENODEV;

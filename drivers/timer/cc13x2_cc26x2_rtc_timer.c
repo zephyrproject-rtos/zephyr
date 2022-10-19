@@ -233,9 +233,8 @@ uint64_t sys_clock_cycle_get_64(void)
 	return AONRTCCurrent64BitValueGet() / RTC_COUNTS_PER_CYCLE;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	rtc_last = 0U;
 

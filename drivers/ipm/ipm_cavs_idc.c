@@ -228,7 +228,7 @@ DEVICE_DT_INST_DEFINE(0, &cavs_idc_init, NULL,
 		    &cavs_idc_driver_api);
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-int cavs_idc_smp_init(const struct device *dev)
+int cavs_idc_smp_init(void)
 {
 	/* Enable IDC for scheduler IPI */
 	cavs_idc_set_enabled(dev, 1);

@@ -65,9 +65,8 @@ static int actinius_board_set_charger_enable(void)
 }
 #endif /* CHARGER_ENABLE */
 
-static int actinius_board_init(const struct device *dev)
+static int actinius_board_init(void)
 {
-	ARG_UNUSED(dev);
 
 	int result = 0;
 

@@ -191,11 +191,10 @@ uint32_t sys_clock_cycle_get_32(void)
  *
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
-int sys_clock_driver_init(const struct device *dev)
+int sys_clock_driver_init(void)
 {
 	gpt_config_t gpt_config;
 
-	ARG_UNUSED(dev);
 	/* Configure ISR. Use instance 0 of the GPT timer */
 	IRQ_CONNECT(DT_IRQN(GPT_INST), DT_IRQ(GPT_INST, priority),
 		    mcux_imx_gpt_isr, NULL, 0);

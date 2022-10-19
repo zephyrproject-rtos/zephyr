@@ -517,9 +517,8 @@ static const struct bt_hci_driver drv = {
 	.send		= bt_spi_send,
 };
 
-static int bt_spi_init(const struct device *unused)
+static int bt_spi_init(void)
 {
-	ARG_UNUSED(unused);
 
 	if (!spi_is_ready_dt(&bus)) {
 		LOG_ERR("SPI device not ready");

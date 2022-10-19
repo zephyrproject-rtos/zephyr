@@ -341,9 +341,8 @@ void log_frontend_init(void)
 }
 
 /* Cannot be started in log_frontend_init because it is called before kernel is ready. */
-static int log_frontend_uart_start_timer(const struct device *unused)
+static int log_frontend_uart_start_timer(void)
 {
-	ARG_UNUSED(unused);
 	k_timeout_t t = K_MSEC(CONFIG_LOG_FRONTEND_DICT_UART_DROPPED_NOTIFY_PERIOD);
 
 	k_timer_start(&dropped_timer, t, t);

@@ -65,9 +65,8 @@ void sys_trace_idle(void)
 	SEGGER_SYSVIEW_OnIdle();
 }
 
-static int sysview_init(const struct device *arg)
+static int sysview_init(void)
 {
-	ARG_UNUSED(arg);
 
 	SEGGER_SYSVIEW_Conf();
 	if (IS_ENABLED(CONFIG_SEGGER_SYSTEMVIEW_BOOT_ENABLE)) {

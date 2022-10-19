@@ -18,9 +18,8 @@ BUILD_ASSERT(DT_PROP(DT_NODELABEL(tlclk), clock_div) == 2,
  * Switch the clock source to 1GHz PLL from 33.333MHz oscillator on the HiFive
  * Unleashed board.
  */
-static int fu540_clock_init(const struct device *dev)
+static int fu540_clock_init(void)
 {
-	ARG_UNUSED(dev);
 
 	PRCI_REG(PRCI_COREPLLCFG0) =
 		PLL_R(0) |   /* input divider: Fin / (0 + 1) = 33.33MHz */

@@ -25,9 +25,8 @@
  * before the threading system starts up between PRE_KERNEL_2 and
  * POST_KERNEL.  Do it at the start of PRE_KERNEL_2.
  */
-static int disable_ds_1(const struct device *dev)
+static int disable_ds_1(void)
 {
-	ARG_UNUSED(dev);
 
 	pm_policy_state_lock_get(PM_STATE_SOFT_OFF, PM_ALL_SUBSTATES);
 	return 0;

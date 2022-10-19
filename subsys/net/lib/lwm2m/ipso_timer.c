@@ -351,7 +351,7 @@ static struct lwm2m_engine_obj_inst *timer_inst_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_timer_init(const struct device *dev)
+static int ipso_timer_init(void)
 {
 	timer.obj_id = IPSO_OBJECT_TIMER_ID;
 	timer.version_major = TIMER_VERSION_MAJOR;

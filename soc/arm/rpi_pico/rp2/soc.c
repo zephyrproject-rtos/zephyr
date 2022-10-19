@@ -27,7 +27,7 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-static int rp2040_init(const struct device *arg)
+static int rp2040_init(void)
 {
 	uint32_t key;
 
@@ -44,7 +44,6 @@ static int rp2040_init(const struct device *arg)
 
 	unreset_block_wait(RESETS_RESET_BITS);
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

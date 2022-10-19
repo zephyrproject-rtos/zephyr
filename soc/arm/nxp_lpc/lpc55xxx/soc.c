@@ -232,9 +232,8 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
  * @return 0
  */
 
-static int nxp_lpc55xxx_init(const struct device *arg)
+static int nxp_lpc55xxx_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* old interrupt lock level */
 	unsigned int oldLevel;
@@ -295,11 +294,10 @@ SYS_INIT(nxp_lpc55xxx_init, PRE_KERNEL_1, 0);
  *
  */
 /* This function is also called at deep sleep resume. */
-int _second_core_init(const struct device *arg)
+int _second_core_init(void)
 {
 	int32_t temp;
 
-	ARG_UNUSED(arg);
 
 	/* Setup the reset handler pointer (PC) and stack pointer value.
 	 * This is used once the second core runs its startup code.

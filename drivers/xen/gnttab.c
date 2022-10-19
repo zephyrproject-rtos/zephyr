@@ -287,7 +287,7 @@ const char *gnttabop_error(int16_t status)
 	}
 }
 
-static int gnttab_init(const struct device *d)
+static int gnttab_init(void)
 {
 	grant_ref_t gref;
 	struct xen_add_to_physmap xatp;

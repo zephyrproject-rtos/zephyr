@@ -203,7 +203,7 @@ humidity_sensor_create(uint16_t obj_inst_id)
 	return &inst[index];
 }
 
-static int ipso_humidity_sensor_init(const struct device *dev)
+static int ipso_humidity_sensor_init(void)
 {
 	sensor.obj_id = IPSO_OBJECT_ID;
 	sensor.version_major = HUMIDITY_VERSION_MAJOR;

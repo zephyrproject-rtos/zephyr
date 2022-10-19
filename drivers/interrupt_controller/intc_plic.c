@@ -172,9 +172,8 @@ static void plic_irq_handler(const void *arg)
  *
  * @retval 0 on success.
  */
-static int plic_init(const struct device *dev)
+static int plic_init(void)
 {
-	ARG_UNUSED(dev);
 
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 	volatile uint32_t *prio = (volatile uint32_t *)PLIC_PRIO;

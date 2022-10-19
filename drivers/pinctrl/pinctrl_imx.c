@@ -60,9 +60,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 	return 0;
 }
 
-static int imx_pinctrl_init(const struct device *dev)
+static int imx_pinctrl_init(void)
 {
-	ARG_UNUSED(dev);
 #ifdef CONFIG_SOC_SERIES_IMX_RT
 	CLOCK_EnableClock(kCLOCK_Iomuxc);
 #ifdef CONFIG_SOC_SERIES_IMX_RT10XX

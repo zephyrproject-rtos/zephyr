@@ -1021,7 +1021,7 @@ int lwm2m_engine_resume(void)
 	return 0;
 }
 
-static int lwm2m_engine_init(const struct device *dev)
+static int lwm2m_engine_init(void)
 {
 	int i;
 

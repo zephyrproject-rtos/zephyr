@@ -315,11 +315,10 @@ void stm32_lptim_wait_ready(void)
 #endif
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
 	int err;
 
-	ARG_UNUSED(dev);
 
 	if (!device_is_ready(clk_ctrl)) {
 		return -ENODEV;

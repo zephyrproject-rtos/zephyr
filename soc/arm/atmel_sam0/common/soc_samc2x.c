@@ -43,11 +43,10 @@ static void gclks_init(void)
 			     | GCLK_GENCTRL_GENEN;
 }
 
-static int atmel_samc_init(const struct device *arg)
+static int atmel_samc_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

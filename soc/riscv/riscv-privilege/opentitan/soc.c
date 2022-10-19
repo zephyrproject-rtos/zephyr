@@ -10,9 +10,8 @@
 
 #define RV_TIMER_BASE (DT_REG_ADDR(DT_NODELABEL(mtimer)))
 
-static int soc_opentitan_init(const struct device *arg)
+static int soc_opentitan_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* Initialize the Machine Timer, so it behaves as a regular one. */
 	sys_write32(1u, RV_TIMER_BASE + RV_TIMER_CTRL_REG_OFFSET);

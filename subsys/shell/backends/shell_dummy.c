@@ -98,9 +98,8 @@ const struct shell_transport_api shell_dummy_transport_api = {
 	.read = read
 };
 
-static int enable_shell_dummy(const struct device *arg)
+static int enable_shell_dummy(void)
 {
-	ARG_UNUSED(arg);
 	bool log_backend = CONFIG_SHELL_DUMMY_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_DUMMY_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_DUMMY_INIT_LOG_LEVEL;

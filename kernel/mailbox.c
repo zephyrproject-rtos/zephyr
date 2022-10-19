@@ -49,10 +49,8 @@ static inline void mbox_async_free(struct k_mbox_async *async)
 /*
  * Do run-time initialization of mailbox object subsystem.
  */
-static int init_mbox_module(const struct device *dev)
+static int init_mbox_module(void)
 {
-	ARG_UNUSED(dev);
-
 	/* array of asynchronous message descriptors */
 	static struct k_mbox_async __noinit async_msg[CONFIG_NUM_MBOX_ASYNC_MSGS];
 

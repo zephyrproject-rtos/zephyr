@@ -874,9 +874,8 @@ void log_output_msg_syst_process(const struct log_output *output,
 	}
 }
 
-static int syst_init(const struct device *arg)
+static int syst_init(void)
 {
-	ARG_UNUSED(arg);
 
 	MIPI_SYST_INIT_STATE(&log_syst_header,
 			     mipi_syst_platform_init, (void *)0);

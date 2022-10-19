@@ -93,7 +93,7 @@ static struct lwm2m_engine_obj_inst *location_create(uint16_t obj_inst_id)
 	return &inst;
 }
 
-static int ipso_location_init(const struct device *dev)
+static int ipso_location_init(void)
 {
 	int ret;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;

@@ -185,9 +185,8 @@ static int smp_dummy_tx_pkt_int(struct net_buf *nb)
 	return rc;
 }
 
-static int smp_dummy_init(const struct device *dev)
+static int smp_dummy_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 

@@ -207,9 +207,8 @@ static void i3c_ibi_work_handler(struct k_work *work)
 	}
 }
 
-static int i3c_ibi_work_q_init(const struct device *dev)
+static int i3c_ibi_work_q_init(void)
 {
-	ARG_UNUSED(dev);
 	struct k_work_queue_config cfg = {
 		.name = "i3c_ibi_workq",
 		.no_yield = true,

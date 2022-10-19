@@ -148,23 +148,23 @@ static int add_init_record(bool pre_kernel)
 }
 
 __pinned_func
-static int pre1_fn(const struct device *dev)
+static int pre1_fn(void)
 {
 	return add_init_record(true);
 }
 
 __pinned_func
-static int pre2_fn(const struct device *dev)
+static int pre2_fn(void)
 {
 	return add_init_record(true);
 }
 
-static int post_fn(const struct device *dev)
+static int post_fn(void)
 {
 	return add_init_record(false);
 }
 
-static int app_fn(const struct device *dev)
+static int app_fn(void)
 {
 	return add_init_record(false);
 }
@@ -175,9 +175,8 @@ SYS_INIT(post_fn, POST_KERNEL, 0);
 SYS_INIT(app_fn, APPLICATION, 0);
 
 /* This is an error case which driver initializes failed in SYS_INIT .*/
-static int null_driver_init(const struct device *dev)
+static int null_driver_init(void)
 {
-	ARG_UNUSED(dev);
 	return -EINVAL;
 }
 
@@ -238,7 +237,7 @@ ZTEST(device, test_device_list)
 
 static int sys_init_counter;
 
-static int init_fn(const struct device *dev)
+static int init_fn(void)
 {
 	sys_init_counter++;
 	return 0;

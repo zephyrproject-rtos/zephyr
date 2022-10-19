@@ -1869,7 +1869,7 @@ int usb_dc_wakeup_request(void)
 	return 0;
 }
 
-static int usb_init(const struct device *arg)
+static int usb_init(void)
 {
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 	nrfx_err_t err;

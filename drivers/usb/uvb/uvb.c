@@ -316,7 +316,7 @@ static void uvb_work_handler(struct k_work *work)
 	}
 }
 
-static int uvb_init(const struct device *dev)
+static int uvb_init(void)
 {
 	STRUCT_SECTION_FOREACH(uvb_node, host) {
 		LOG_DBG("Host %p - %s", host, host->name);

@@ -172,9 +172,8 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int smp_udp_init(const struct device *dev)
+static int smp_udp_init(void)
 {
-	ARG_UNUSED(dev);
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	smp_transport_init(&configs.ipv4.smp_transport,

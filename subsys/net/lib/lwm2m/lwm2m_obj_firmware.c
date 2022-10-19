@@ -441,7 +441,7 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	return &inst[obj_inst_id];
 }
 
-static int lwm2m_firmware_init(const struct device *dev)
+static int lwm2m_firmware_init(void)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;

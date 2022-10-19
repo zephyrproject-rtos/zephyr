@@ -129,9 +129,8 @@ int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
 #endif
 
 /* Processes all registered MCUmgr handlers at start up and registers them */
-static int mcumgr_handlers_init(const struct device *dev)
+static int mcumgr_handlers_init(void)
 {
-	ARG_UNUSED(dev);
 
 	STRUCT_SECTION_FOREACH(mcumgr_handler, handler) {
 		if (handler->init) {

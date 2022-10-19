@@ -145,9 +145,8 @@ void arch_sched_ipi(void)
 	}
 }
 
-static int arc_smp_init(const struct device *dev)
+static int arc_smp_init(void)
 {
-	ARG_UNUSED(dev);
 	struct arc_connect_bcr bcr;
 
 	/* necessary master core init */

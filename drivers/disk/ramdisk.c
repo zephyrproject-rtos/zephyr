@@ -102,9 +102,8 @@ static struct disk_info ram_disk = {
 	.ops = &ram_disk_ops,
 };
 
-static int disk_ram_init(const struct device *dev)
+static int disk_ram_init(void)
 {
-	ARG_UNUSED(dev);
 
 	return disk_access_register(&ram_disk);
 }
