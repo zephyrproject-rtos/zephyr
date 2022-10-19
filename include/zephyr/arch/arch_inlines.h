@@ -24,6 +24,16 @@
 #include <zephyr/arch/xtensa/arch_inlines.h>
 #elif defined(CONFIG_RISCV)
 #include <zephyr/arch/riscv/arch_inlines.h>
+#elif defined(CONFIG_NIOS2)
+#include <zephyr/arch/nios2/arch_inlines.h>
+#elif defined(CONFIG_MIPS)
+#include <zephyr/arch/mips/arch_inlines.h>
+#elif defined(CONFIG_ARCH_POSIX)
+#include <zephyr/arch/posix/arch_inlines.h>
+#elif defined(CONFIG_SPARC)
+#include <zephyr/arch/sparc/arch_inlines.h>
+#else
+#error "Unknown Architecture"
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_INLINES_H_ */

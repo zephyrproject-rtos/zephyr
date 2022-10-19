@@ -460,6 +460,8 @@ static inline uint32_t arch_proc_id(void);
  */
 void arch_sched_ipi(void);
 
+#endif /* CONFIG_SMP */
+
 /**
  * @brief Returns the number of CPUs
  *
@@ -469,8 +471,6 @@ void arch_sched_ipi(void);
  * @return the number of CPUs
  */
 static inline unsigned int arch_num_cpus(void);
-
-#endif /* CONFIG_SMP */
 
 /** @} */
 
