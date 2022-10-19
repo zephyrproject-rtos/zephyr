@@ -95,7 +95,7 @@
  * @def TOOLCHAIN_HAS_C_GENERIC
  * @brief Indicate if toolchain supports C Generic.
  */
-#if __STDC_VERSION__ >= 201112L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 /* _Generic is introduced in C11, so it is supported. */
 # ifdef TOOLCHAIN_HAS_C_GENERIC
 #  undef TOOLCHAIN_HAS_C_GENERIC
