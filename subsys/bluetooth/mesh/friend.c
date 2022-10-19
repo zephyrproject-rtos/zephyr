@@ -514,7 +514,7 @@ static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
 
 	buf->data[0] = (cred->nid | (iv_index & 1) << 7);
 
-	if (bt_mesh_net_encrypt(cred->enc, &buf->b, iv_index, false)) {
+	if (bt_mesh_net_encrypt(cred->enc, &buf->b, iv_index, BT_MESH_NONCE_NETWORK)) {
 		LOG_ERR("Encrypting failed");
 		return -EINVAL;
 	}

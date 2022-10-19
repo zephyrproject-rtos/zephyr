@@ -144,6 +144,30 @@ int bt_mesh_default_ttl_set(uint8_t default_ttl);
  */
 uint8_t bt_mesh_default_ttl_get(void);
 
+/** @brief Get the current Mesh On-Demand Private Proxy state.
+ *
+ *  @retval 0 or positive value  represents On-Demand Private Proxy feature state
+ *  @retval -ENOTSUP  The On-Demand Private Proxy feature is not supported.
+ */
+int bt_mesh_od_priv_proxy_get(void);
+
+/** @brief Set state of Mesh On-Demand Private Proxy.
+ *
+ *  Support for the On-Demand Private Proxy state must be enabled with @c
+ *  BT_MESH_OD_PRIV_PROXY_SRV.
+ *
+ *  @param on_demand_proxy New Mesh On-Demand Private Proxy state. Value of 0x00 means that
+ *                         advertising with Private Network Identity cannot be enabled on demand.
+ *                         Values in range 0x01 - 0xFF set interval of this advertising after
+ *                         valid Solicitation PDU is received or client disconnects.
+ *
+ *  @retval 0         Successfully changed the Mesh On-Demand Private Proxy feature state.
+ *  @retval -ENOTSUP  The On-Demand Private Proxy feature is not supported.
+ *  @retval -EINVAL   Invalid parameter.
+ *  @retval -EALREADY Already in the given state.
+ */
+int bt_mesh_od_priv_proxy_set(uint8_t on_demand_proxy);
+
 /** @brief Set the Network Transmit parameters.
  *
  *  The Network Transmit parameters determine the parameters local messages are

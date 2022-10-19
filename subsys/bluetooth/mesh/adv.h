@@ -108,3 +108,6 @@ static inline void bt_mesh_adv_send_end(
 }
 
 int bt_mesh_scan_active_set(bool active);
+
+int bt_mesh_adv_bt_data_send(uint8_t num_events, uint16_t adv_interval,
+			     const struct bt_data *ad, size_t ad_len);

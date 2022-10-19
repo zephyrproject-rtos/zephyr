@@ -136,6 +136,10 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_OP_AGG_CLI                0x0011
 #define BT_MESH_MODEL_ID_LARGE_COMP_DATA_SRV       0x0012
 #define BT_MESH_MODEL_ID_LARGE_COMP_DATA_CLI       0x0013
+#define BT_MESH_MODEL_ID_SOL_PDU_RPL_SRV	   0x0014
+#define BT_MESH_MODEL_ID_SOL_PDU_RPL_CLI	   0x0015
+#define BT_MESH_MODEL_ID_ON_DEMAND_PROXY_SRV	   0x000c
+#define BT_MESH_MODEL_ID_ON_DEMAND_PROXY_CLI	   0x000d
 
 /* Models from the Mesh Model Specification */
 #define BT_MESH_MODEL_ID_GEN_ONOFF_SRV             0x1000

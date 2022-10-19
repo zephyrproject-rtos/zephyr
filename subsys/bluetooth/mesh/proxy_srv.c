@@ -31,6 +31,7 @@
 #include "access.h"
 #include "proxy.h"
 #include "proxy_msg.h"
+#include "crypto.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_PROXY_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -210,7 +211,7 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 
 	LOG_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
 
-	err = bt_mesh_net_encode(&tx, buf, true);
+	err = bt_mesh_net_encode(&tx, buf, BT_MESH_NONCE_PROXY);
 	if (err) {
 		LOG_ERR("Encoding Proxy cfg message failed (err %d)", err);
 		return;
@@ -615,6 +616,9 @@ static bool advertise_subnet(struct bt_mesh_subnet *sub)
 	}
 
 	return (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING ||
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+		sub->solicited ||
+#endif
 		bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED ||
 		bt_mesh_priv_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
 }
@@ -667,6 +671,37 @@ static int sub_count(void)
 
 	return count;
 }
+
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+static void gatt_proxy_solicited(struct bt_mesh_subnet *sub)
+{
+	int64_t now = k_uptime_get();
+	int64_t timeout = 0;
+	int32_t remaining;
+
+	if (sub->priv_net_id_sent > 0) {
+		timeout = sub->priv_net_id_sent + MSEC_PER_SEC * bt_mesh_od_priv_proxy_get();
+	}
+
+	remaining = MIN(timeout - now, INT32_MAX);
+	if ((timeout > 0 && now > timeout) || (remaining / MSEC_PER_SEC < 1)) {
+		LOG_DBG("Advertising Private Network ID timed out "
+			"after solicitation");
+		sub->priv_net_id_sent = 0;
+		sub->solicited = false;
+	} else {
+		LOG_DBG("Advertising Private Network ID for %ds"
+		       "(%d remaining)",
+		       bt_mesh_od_priv_proxy_get(),
+		       remaining / MSEC_PER_SEC);
+		priv_net_id_adv(sub, remaining);
+
+		if (!sub->priv_net_id_sent) {
+			sub->priv_net_id_sent = now;
+		}
+	}
+}
+#endif
 
 static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 {
@@ -754,6 +789,13 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 				err = net_id_adv(sub, remaining);
 				planned = true;
 			}
+
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+			else if (bt_mesh_od_priv_proxy_get() > 0 &&
+				sub->solicited) {
+				gatt_proxy_solicited(sub);
+			}
+#endif
 		}
 
 		beacon_sub = bt_mesh_subnet_next(sub);
@@ -970,6 +1012,14 @@ bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 	return relayed;
 }
 
+static void solicitation_reset(struct bt_mesh_subnet *sub)
+{
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	sub->solicited = false;
+	sub->priv_net_id_sent = 0;
+#endif
+}
+
 static void gatt_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct bt_mesh_proxy_client *client;
@@ -989,6 +1039,11 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 	(void)memset(client->filter, 0, sizeof(client->filter));
 	client->cli = bt_mesh_proxy_role_setup(conn, proxy_send,
 					       proxy_msg_recv);
+
+	/* If connection was formed after Proxy Solicitation we need to stop future
+	 * Private Network ID advertisements
+	 */
+	bt_mesh_subnet_foreach(solicitation_reset);
 
 	/* Try to re-enable advertising in case it's possible */
 	if (bt_mesh_proxy_has_avail_conn()) {
