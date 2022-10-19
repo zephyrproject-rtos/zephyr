@@ -5,7 +5,7 @@ if BOARD_UP_SQUARED
 config BOARD
 	default "up_squared"
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 2 if BOARD_UP_SQUARED
 
 config BUILD_OUTPUT_STRIPPED
