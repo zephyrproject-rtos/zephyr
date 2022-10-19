@@ -34,8 +34,8 @@
 struct k_mem_partition z_malloc_partition;
 # endif
 
-LIBC_BSS static unsigned char *heap_base;
-LIBC_BSS static size_t max_heap_size;
+static LIBC_BSS unsigned char *heap_base;
+static LIBC_BSS size_t max_heap_size;
 
 # define HEAP_BASE		((uintptr_t) heap_base)
 # define MAX_HEAP_SIZE		max_heap_size
@@ -91,7 +91,7 @@ K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #   define MALLOC_BSS	__noinit
 #  endif
 
-MALLOC_BSS static unsigned char __aligned(HEAP_ALIGN)
+static MALLOC_BSS unsigned char __aligned(HEAP_ALIGN)
 	heap_base[CONFIG_PICOLIBC_HEAP_SIZE];
 
 #  define HEAP_BASE	((uintptr_t) heap_base)
@@ -179,7 +179,7 @@ SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* USE_MALLOC_PREPARE */
 
-LIBC_BSS static uintptr_t heap_sz;
+static LIBC_BSS uintptr_t heap_sz;
 
 static int (*_stdout_hook)(int);
 
