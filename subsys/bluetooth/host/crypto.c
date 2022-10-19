@@ -35,6 +35,10 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 	int64_t extra;
 	int ret;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		return -EAGAIN;
+	}
+
 	ret = bt_hci_le_rand(seed, sizeof(seed));
 	if (ret) {
 		return ret;
@@ -56,6 +60,10 @@ int prng_init(void)
 {
 	uint8_t perso[8];
 	int ret;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		return -EAGAIN;
+	}
 
 	ret = bt_hci_le_rand(perso, sizeof(perso));
 	if (ret) {
@@ -96,6 +104,10 @@ int bt_rand(void *buf, size_t len)
 #else /* !CONFIG_BT_HOST_CRYPTO_PRNG */
 int bt_rand(void *buf, size_t len)
 {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		return -EAGAIN;
+	}
+
 	return bt_hci_le_rand(buf, len);
 }
 #endif /* CONFIG_BT_HOST_CRYPTO_PRNG */
