@@ -453,6 +453,8 @@ SECTIONS {
 
 #include <zephyr/linker/debug-sections.ld>
 
+   /DISCARD/ : { *(.note.GNU-stack) }
+
   .xtensa.info 0 : { *(.xtensa.info) }
   .xt.insn 0 : {
     KEEP (*(.xt.insn))
