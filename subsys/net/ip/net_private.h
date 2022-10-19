@@ -142,6 +142,7 @@ extern const char *net_proto2str(int family, int proto);
 extern char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 				    char *buf, int buflen);
+extern uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len);
 extern uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto);
 
 /**
