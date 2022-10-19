@@ -212,7 +212,8 @@ typedef int16_t device_handle_t;
  * @brief Get a @ref device reference from a devicetree node identifier.
  *
  * Returns a pointer to a device object created from a devicetree node, if any
- * device was allocated by a driver.
+ * device was allocated by a driver. If the Devicetree node is not enabled, this
+ * returns NULL.
  *
  * If no such device was allocated, this will fail at linker time. If you get an
  * error that looks like `undefined reference to __device_dts_ord_<N>`, that is
@@ -223,7 +224,9 @@ typedef int16_t device_handle_t;
  *
  * @return A pointer to the device object created for that node
  */
-#define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
+#define DEVICE_DT_GET(node_id) \
+	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),                         \
+		    ((&DEVICE_DT_NAME_GET(node_id))), (NULL))
 
 /**
  * @brief Get a @ref device reference for an instance of a `DT_DRV_COMPAT`
