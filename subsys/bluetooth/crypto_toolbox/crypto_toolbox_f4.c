@@ -1,10 +1,9 @@
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/crypto_toolbox/f4.h>
-
 #include <zephyr/bluetooth/crypto_toolbox/aes_cmac.h>
+#include <zephyr/bluetooth/crypto_toolbox/f4.h>
+#include <zephyr/sys/byteorder.h>
 
-int bt_crypto_toolbox_f4(const uint8_t *u, const uint8_t *v, 
-                                const uint8_t *x, uint8_t z, uint8_t res[16])
+int bt_crypto_toolbox_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x, uint8_t z,
+			 uint8_t res[16])
 {
 	uint8_t xs[16];
 	uint8_t m[65];

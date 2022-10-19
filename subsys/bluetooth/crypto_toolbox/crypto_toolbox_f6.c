@@ -1,16 +1,14 @@
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/crypto_toolbox/f6.h>
-
 #include <zephyr/bluetooth/crypto_toolbox/aes_cmac.h>
+#include <zephyr/bluetooth/crypto_toolbox/f6.h>
+#include <zephyr/sys/byteorder.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CRYPTO_TOOLBOX)
+#define BT_DBG_ENABLED	IS_ENABLED(CONFIG_BT_DEBUG_CRYPTO_TOOLBOX)
 #define LOG_MODULE_NAME bt_crypto_toolbox_f6
 #include "common/log.h"
 
-int bt_crypto_toolbox_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
-		                 const uint8_t *r, const uint8_t *iocap, 
-                         const bt_addr_le_t *a1, const bt_addr_le_t *a2, 
-                         uint8_t *check)
+int bt_crypto_toolbox_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2, const uint8_t *r,
+			 const uint8_t *iocap, const bt_addr_le_t *a1, const bt_addr_le_t *a2,
+			 uint8_t *check)
 {
 	uint8_t ws[16];
 	uint8_t m[65];

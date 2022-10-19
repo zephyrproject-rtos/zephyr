@@ -1,16 +1,15 @@
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/crypto_toolbox/g2.h>
 
 #include <zephyr/bluetooth/crypto_toolbox/aes_cmac.h>
+#include <zephyr/bluetooth/crypto_toolbox/g2.h>
+#include <zephyr/sys/byteorder.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CRYPTO_TOOLBOX)
+#define BT_DBG_ENABLED	IS_ENABLED(CONFIG_BT_DEBUG_CRYPTO_TOOLBOX)
 #define LOG_MODULE_NAME bt_crypto_toolbox_g2
 #include "common/log.h"
 
-int bt_crypto_toolbox_g2(const uint8_t u[32], const uint8_t v[32],
-		                 const uint8_t x[16], const uint8_t y[16], 
-                         uint32_t *passkey)
+int bt_crypto_toolbox_g2(const uint8_t u[32], const uint8_t v[32], const uint8_t x[16],
+			 const uint8_t y[16], uint32_t *passkey)
 {
 	uint8_t m[80], xs[16];
 	int err;

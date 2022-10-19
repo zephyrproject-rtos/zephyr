@@ -1,14 +1,12 @@
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/crypto_toolbox/h7.h>
-
 #include <zephyr/bluetooth/crypto_toolbox/aes_cmac.h>
+#include <zephyr/bluetooth/crypto_toolbox/h7.h>
+#include <zephyr/sys/byteorder.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CRYPTO_TOOLBOX)
+#define BT_DBG_ENABLED	IS_ENABLED(CONFIG_BT_DEBUG_CRYPTO_TOOLBOX)
 #define LOG_MODULE_NAME bt_crypto_toolbox_h7
 #include "common/log.h"
 
-int bt_crypto_toolbox_h7(const uint8_t salt[16], const uint8_t w[16], 
-                         uint8_t res[16])
+int bt_crypto_toolbox_h7(const uint8_t salt[16], const uint8_t w[16], uint8_t res[16])
 {
 	uint8_t ws[16];
 	uint8_t salt_s[16];
