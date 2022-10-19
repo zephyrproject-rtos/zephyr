@@ -10,7 +10,7 @@ rsource "Kconfig.defconfig.xc7z*"
 config SOC_SERIES
 	default "xc7zxxxs"
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 1
 
 endif # SOC_SERIES_XILINX_XC7ZXXXS
