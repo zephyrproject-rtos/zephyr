@@ -19,3 +19,4 @@ tests:
     timeout: 120
     extra_configs:
       - CONFIG_MP_NUM_CPUS=1
+      - CONFIG_MP_MAX_NUM_CPUS=1
