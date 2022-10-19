@@ -722,9 +722,8 @@ DEVICE_DT_INST_DEFINE(inst,                                        \
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ITE_DEV_CFG_DATA)
 
-static int gpio_it8xxx2_init_set(const struct device *arg)
+static int gpio_it8xxx2_init_set(void)
 {
-	ARG_UNUSED(arg);
 
 	if (IS_ENABLED(CONFIG_SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN)) {
 		const struct device *const gpiok = DEVICE_DT_GET(DT_NODELABEL(gpiok));

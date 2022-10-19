@@ -177,9 +177,8 @@ void osdp_refresh(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static int osdp_init(const struct device *arg)
+static int osdp_init(void)
 {
-	ARG_UNUSED(arg);
 	int len;
 	uint8_t c, *key = NULL, key_buf[16];
 	struct osdp *ctx;

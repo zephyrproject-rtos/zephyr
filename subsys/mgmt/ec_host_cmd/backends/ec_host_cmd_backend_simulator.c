@@ -76,9 +76,8 @@ int ec_host_cmd_backend_sim_data_received(const uint8_t *buffer, size_t len)
 	return 0;
 }
 
-static int host_cmd_init(const struct device *arg)
+static int host_cmd_init(void)
 {
-	ARG_UNUSED(arg);
 
 	ec_host_cmd_init(&ec_host_cmd_sim);
 	return 0;

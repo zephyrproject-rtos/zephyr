@@ -641,7 +641,7 @@ struct bt_ots *bt_ots_free_instance_get(void)
 	return &BT_GATT_OTS_INSTANCE_LIST_START[instance_cnt++];
 }
 
-static int bt_gatt_ots_instances_prepare(const struct device *dev)
+static int bt_gatt_ots_instances_prepare(void)
 {
 	uint32_t index;
 	struct bt_ots *instance;

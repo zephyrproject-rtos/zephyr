@@ -9,11 +9,10 @@
 
 #include <gd32vf103.h>
 
-static int gigadevice_gd32v_soc_init(const struct device *dev)
+static int gigadevice_gd32v_soc_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(dev);
 
 	key = irq_lock();
 

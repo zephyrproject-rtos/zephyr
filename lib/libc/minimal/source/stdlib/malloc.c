@@ -76,9 +76,8 @@ void *aligned_alloc(size_t alignment, size_t size)
 }
 #endif /* __STDC_VERSION__ >= 201112L */
 
-static int malloc_prepare(const struct device *unused)
+static int malloc_prepare(void)
 {
-	ARG_UNUSED(unused);
 
 	sys_heap_init(&z_malloc_heap, z_malloc_heap_mem, HEAP_BYTES);
 	sys_mutex_init(&z_malloc_heap_mutex);

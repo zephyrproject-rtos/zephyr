@@ -41,9 +41,8 @@ const RFCC26XX_HWAttrsV2 RFCC26XX_hwAttrs = {
 /**
  * Antenna switch GPIO init routine.
  */
-static int board_antenna_init(const struct device *dev)
+static int board_antenna_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* set all paths to low */
 	IOCPinTypeGpioOutput(BOARD_RF_HIGH_PA);

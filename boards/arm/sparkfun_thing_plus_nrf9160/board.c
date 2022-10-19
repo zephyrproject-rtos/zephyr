@@ -10,9 +10,8 @@
 #define GPIO0 DT_NODELABEL(gpio0)
 #define POWER_LATCH_PIN 31
 
-static int board_sparkfun_thing_plus_nrf9160_init(const struct device *dev)
+static int board_sparkfun_thing_plus_nrf9160_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* Get handle of the GPIO device. */
 	const struct device *const gpio = DEVICE_DT_GET(GPIO0);

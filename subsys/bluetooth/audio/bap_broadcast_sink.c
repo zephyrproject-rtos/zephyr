@@ -1756,7 +1756,7 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 	return 0;
 }
 
-static int broadcast_sink_init(const struct device *dev)
+static int broadcast_sink_init(void)
 {
 	static struct bt_le_per_adv_sync_cb cb = {
 		.synced = pa_synced,

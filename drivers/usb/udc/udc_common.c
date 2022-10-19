@@ -1081,9 +1081,8 @@ K_KERNEL_STACK_DEFINE(udc_work_q_stack, CONFIG_UDC_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q udc_work_q;
 
-static int udc_work_q_init(const struct device *dev)
+static int udc_work_q_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_work_queue_start(&udc_work_q,
 			   udc_work_q_stack,

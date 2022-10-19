@@ -113,9 +113,8 @@ ZTEST_SUITE(nrf_lf_clock_start, NULL, test_init, NULL, NULL, NULL);
  * started in PRE_KERNEL_2). Reading of the clock state in the ZTEST setup
  * function turns out to be too late.
  */
-static int get_lfclk_state(const struct device *dev)
+static int get_lfclk_state(void)
 {
-	ARG_UNUSED(dev);
 
 	/* Do clock state read as early as possible. When RC is already running
 	 * and XTAL has been started then LFSRCSTAT register content might be

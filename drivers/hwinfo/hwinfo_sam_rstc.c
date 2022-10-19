@@ -53,13 +53,12 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 	return 0;
 }
 
-static int hwinfo_rstc_init(const struct device *dev)
+static int hwinfo_rstc_init(void)
 {
 	Rstc *regs = (Rstc *)DT_INST_REG_ADDR(0);
 	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
 	uint32_t mode;
 
-	ARG_UNUSED(dev);
 
 	/* Enable RSTC in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,

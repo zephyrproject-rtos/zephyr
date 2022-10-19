@@ -88,9 +88,8 @@ enum tfm_status_e tfm_ns_interface_init(void)
 #include "psa_manifest/sid.h"
 #endif /* TFM_PSA_API */
 
-static int ns_interface_init(const struct device *arg)
+static int ns_interface_init(void)
 {
-	ARG_UNUSED(arg);
 
 	__ASSERT(tfm_ns_interface_init() == TFM_SUCCESS,
 		"TF-M NS interface init failed");

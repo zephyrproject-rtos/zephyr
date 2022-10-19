@@ -95,11 +95,10 @@ static void mcux_lptmr_timer_isr(const void *arg)
 	LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
 	lptmr_config_t config;
 
-	ARG_UNUSED(dev);
 
 	LPTMR_GetDefaultConfig(&config);
 	config.timerMode = kLPTMR_TimerModeTimeCounter;

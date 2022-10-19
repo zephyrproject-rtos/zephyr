@@ -135,9 +135,8 @@ uint64_t sys_clock_cycle_get_64(void)
 	return get_systimer_alarm();
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	esp_intr_alloc(DT_IRQN(DT_NODELABEL(systimer0)),
 		0,

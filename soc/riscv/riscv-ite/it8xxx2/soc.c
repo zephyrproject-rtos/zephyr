@@ -156,9 +156,8 @@ static void chip_configure_pll(const struct pll_config_t *pll)
 	}
 }
 
-static int chip_change_pll(const struct device *dev)
+static int chip_change_pll(void)
 {
-	ARG_UNUSED(dev);
 
 	if (IS_ENABLED(CONFIG_ITE_IT8XXX2_INTC)) {
 		ite_intc_save_and_disable_interrupts();
@@ -273,9 +272,8 @@ void soc_interrupt_init(void)
 	ite_intc_init();
 }
 
-static int ite_it8xxx2_init(const struct device *arg)
+static int ite_it8xxx2_init(void)
 {
-	ARG_UNUSED(arg);
 	struct gpio_it8xxx2_regs *const gpio_regs = GPIO_IT8XXX2_REG_BASE;
 	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 

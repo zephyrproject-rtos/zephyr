@@ -45,7 +45,7 @@ static int32_t board_calc_volt_level(void)
 	return volt;
 }
 
-static int board_config_pmic(const struct device *dev)
+static int board_config_pmic(void)
 {
 	uint32_t volt;
 	int ret = 0;
@@ -79,7 +79,7 @@ static int board_config_pmic(const struct device *dev)
 }
 #endif
 
-static int mimxrt595_evk_init(const struct device *dev)
+static int mimxrt595_evk_init(void)
 {
 	/* Set the correct voltage range according to the board. */
 	power_pad_vrange_t vrange = {

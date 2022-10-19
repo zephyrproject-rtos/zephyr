@@ -1556,10 +1556,8 @@ int lwm2m_rd_client_init(void)
 
 }
 
-static int sys_lwm2m_rd_client_init(const struct device *dev)
+static int sys_lwm2m_rd_client_init(void)
 {
-	ARG_UNUSED(dev);
-
 	return lwm2m_rd_client_init();
 }
 

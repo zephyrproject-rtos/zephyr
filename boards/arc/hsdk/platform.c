@@ -10,9 +10,8 @@
 #define HSDK_CREG_GPIO_MUX_REG	0xf0001484
 #define HSDK_CREG_GPIO_MUX_VAL	0x00000400
 
-static int hsdk_creg_gpio_mux_init(const struct device *dev)
+static int hsdk_creg_gpio_mux_init(void)
 {
-	ARG_UNUSED(dev);
 
 	sys_write32(HSDK_CREG_GPIO_MUX_REG, HSDK_CREG_GPIO_MUX_VAL);
 

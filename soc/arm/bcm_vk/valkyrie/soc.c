@@ -17,11 +17,10 @@
  *
  * @return 0
  */
-static int valkyrie_init(const struct device *arg)
+static int valkyrie_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

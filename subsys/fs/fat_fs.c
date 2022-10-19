@@ -521,9 +521,8 @@ static const struct fs_file_system_t fatfs_fs = {
 #endif
 };
 
-static int fatfs_init(const struct device *dev)
+static int fatfs_init(void)
 {
-	ARG_UNUSED(dev);
 
 	return fs_register(FS_FATFS, &fatfs_fs);
 }

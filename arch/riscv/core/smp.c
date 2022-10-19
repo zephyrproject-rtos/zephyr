@@ -118,9 +118,8 @@ static void ipi_handler(const void *unused)
 #endif
 }
 
-static int riscv_smp_init(const struct device *dev)
+static int riscv_smp_init(void)
 {
-	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(RISCV_MACHINE_SOFT_IRQ, 0, ipi_handler, NULL, 0);
 	irq_enable(RISCV_MACHINE_SOFT_IRQ);

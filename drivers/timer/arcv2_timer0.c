@@ -414,9 +414,8 @@ void smp_timer_init(void)
  *
  * @return 0
  */
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* ensure that the timer will not generate interrupts */
 	timer0_control_register_set(0);

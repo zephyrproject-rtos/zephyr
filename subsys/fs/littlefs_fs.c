@@ -1034,9 +1034,8 @@ static void mount_init(struct fs_mount_t *mp)
 	}
 }
 
-static int littlefs_init(const struct device *dev)
+static int littlefs_init(void)
 {
-	ARG_UNUSED(dev);
 	static struct fs_mount_t *partitions[] = {
 		DT_INST_FOREACH_STATUS_OKAY(REFERENCE_MOUNT)
 	};

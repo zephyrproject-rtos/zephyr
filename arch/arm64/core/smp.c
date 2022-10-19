@@ -226,9 +226,8 @@ void z_arm64_flush_fpu_ipi(unsigned int cpu)
 }
 #endif
 
-static int arm64_smp_init(const struct device *dev)
+static int arm64_smp_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/*
 	 * SGI0 is use for sched ipi, this might be changed to use Kconfig

@@ -139,9 +139,8 @@ void k_p4wq_add_thread(struct k_p4wq *queue, struct k_thread *thread,
 			queue->flags & K_P4WQ_DELAYED_START ? K_FOREVER : K_NO_WAIT);
 }
 
-static int static_init(const struct device *dev)
+static int static_init(void)
 {
-	ARG_UNUSED(dev);
 
 	STRUCT_SECTION_FOREACH(k_p4wq_initparam, pp) {
 		for (int i = 0; i < pp->num; i++) {

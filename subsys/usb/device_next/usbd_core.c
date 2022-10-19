@@ -202,7 +202,7 @@ int usbd_device_shutdown_core(struct usbd_contex *const uds_ctx)
 	return udc_shutdown(uds_ctx->dev);
 }
 
-static int usbd_pre_init(const struct device *unused)
+static int usbd_pre_init(void)
 {
 	k_thread_create(&usbd_thread_data, usbd_stack,
 			K_KERNEL_STACK_SIZEOF(usbd_stack),

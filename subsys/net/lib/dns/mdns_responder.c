@@ -679,9 +679,8 @@ ipv4_out:
 	return !ok;
 }
 
-static int mdns_responder_init(const struct device *dev)
+static int mdns_responder_init(void)
 {
-	ARG_UNUSED(dev);
 
 	net_mgmt_init_event_callback(&mgmt_cb, mdns_iface_event_handler,
 				     NET_EVENT_IF_UP);

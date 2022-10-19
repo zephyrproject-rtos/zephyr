@@ -495,9 +495,8 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 }
 
 #if defined(CONFIG_NET_CONFIG_AUTO_INIT)
-static int init_app(const struct device *dev)
+static int init_app(void)
 {
-	ARG_UNUSED(dev);
 
 	(void)net_config_init_app(NULL, "Initializing network");
 

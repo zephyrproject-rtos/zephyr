@@ -159,7 +159,7 @@ static int reset_pin_configure(void)
 }
 #endif /* USE_RESET_GPIO */
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int rc;
 
@@ -214,7 +214,7 @@ SYS_INIT(init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #define EXT_MEM_CTRL DT_NODELABEL(external_flash_pins_routing)
 #if DT_NODE_EXISTS(EXT_MEM_CTRL)
 
-static int early_init(const struct device *dev)
+static int early_init(void)
 {
 	/* As soon as possible after the system starts up, enable the analog
 	 * switch that routes signals to the external flash. Otherwise, the

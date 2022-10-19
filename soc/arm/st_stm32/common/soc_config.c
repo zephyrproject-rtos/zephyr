@@ -23,7 +23,7 @@
  *
  * @return 0
  */
-static int st_stm32_common_config(const struct device *dev)
+static int st_stm32_common_config(void)
 {
 #ifdef CONFIG_LOG_BACKEND_SWO
 	/* Enable SWO trace asynchronous mode */

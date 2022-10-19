@@ -27,11 +27,10 @@
  *
  * @return 0
  */
-static int st_stm32f7_init(const struct device *arg)
+static int st_stm32f7_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	/* Enable ART Flash cache accelerator */
 	LL_FLASH_EnableART();

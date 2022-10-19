@@ -342,9 +342,8 @@ void imxrt_usdhc_dat3_pull(bool pullup)
  * @return 0
  */
 
-static int nxp_rt600_init(const struct device *arg)
+static int nxp_rt600_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* old interrupt lock level */
 	unsigned int oldLevel;

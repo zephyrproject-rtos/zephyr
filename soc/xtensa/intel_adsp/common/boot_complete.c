@@ -10,9 +10,8 @@
 
 #include <mem_window.h>
 
-int boot_complete(const struct device *d)
+int boot_complete(void)
 {
-	ARG_UNUSED(d);
 	uint32_t *win;
 	const struct mem_win_config *config;
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(mem_window0));

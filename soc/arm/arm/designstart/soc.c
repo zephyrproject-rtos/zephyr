@@ -7,9 +7,8 @@
 #include <zephyr/device.h>
 #include <zephyr/arch/arm/aarch32/nmi.h>
 
-static int arm_designstart_init(const struct device *arg)
+static int arm_designstart_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/*
 	 * Install default handler that simply resets the CPU if

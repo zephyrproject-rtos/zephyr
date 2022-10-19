@@ -206,7 +206,7 @@ static struct lwm2m_engine_obj_inst *temp_sensor_create(uint16_t obj_inst_id)
 	return &inst[index];
 }
 
-static int ipso_temp_sensor_init(const struct device *dev)
+static int ipso_temp_sensor_init(void)
 {
 	temp_sensor.obj_id = IPSO_OBJECT_TEMP_SENSOR_ID;
 	temp_sensor.version_major = TEMP_VERSION_MAJOR;

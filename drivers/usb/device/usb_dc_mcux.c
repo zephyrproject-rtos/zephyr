@@ -883,9 +883,8 @@ static void usb_isr_handler(void)
 #endif
 }
 
-static int usb_mcux_init(const struct device *dev)
+static int usb_mcux_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_thread_create(&dev_state.thread, dev_state.thread_stack,
 			CONFIG_USB_MCUX_THREAD_STACK_SIZE,

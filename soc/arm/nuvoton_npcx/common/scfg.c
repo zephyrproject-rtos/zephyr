@@ -130,7 +130,7 @@ void npcx_host_interface_sel(enum npcx_hif_type hif_type)
 }
 
 /* Pin-control driver registration */
-static int npcx_scfg_init(const struct device *dev)
+static int npcx_scfg_init(void)
 {
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 

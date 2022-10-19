@@ -30,9 +30,8 @@ static inline void wait_controller_cycle(void)
  *
  * Note: Valid PLL VCO range is 2400MHz to 4800MHz
  */
-static int fu740_clock_init(const struct device *dev)
+static int fu740_clock_init(void)
 {
-	ARG_UNUSED(dev);
 
 	PRCI_REG(PRCI_COREPLLCFG) =
 		PLL_R(0) |   /* input divider: Fin / (0 + 1) = 26MHz */

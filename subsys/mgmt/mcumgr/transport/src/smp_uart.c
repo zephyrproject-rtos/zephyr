@@ -90,9 +90,8 @@ static int smp_uart_tx_pkt(struct net_buf *nb)
 	return rc;
 }
 
-static int smp_uart_init(const struct device *dev)
+static int smp_uart_init(void)
 {
-	ARG_UNUSED(dev);
 
 	smp_transport_init(&smp_uart_transport, smp_uart_tx_pkt,
 			   smp_uart_get_mtu, NULL, NULL, NULL);

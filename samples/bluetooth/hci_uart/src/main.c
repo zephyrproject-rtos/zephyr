@@ -326,7 +326,7 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
-static int hci_uart_init(const struct device *unused)
+static int hci_uart_init(void)
 {
 	LOG_DBG("");
 

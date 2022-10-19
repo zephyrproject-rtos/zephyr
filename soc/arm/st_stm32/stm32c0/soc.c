@@ -26,11 +26,10 @@
  *
  * @return 0
  */
-static int stm32c0_init(const struct device *arg)
+static int stm32c0_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

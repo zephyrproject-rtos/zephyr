@@ -710,11 +710,10 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 #endif
 }
 
-static int posix_thread_pool_init(const struct device *dev)
+static int posix_thread_pool_init(void)
 {
 	size_t i;
 
-	ARG_UNUSED(dev);
 
 	for (i = 0; i < CONFIG_MAX_PTHREAD_COUNT; ++i) {
 		posix_thread_pool[i].state = PTHREAD_EXITED;

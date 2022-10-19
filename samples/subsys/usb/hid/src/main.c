@@ -149,7 +149,7 @@ void main(void)
 	k_work_init(&report_send, send_report);
 }
 
-static int composite_pre_init(const struct device *dev)
+static int composite_pre_init(void)
 {
 	hdev = device_get_binding("HID_0");
 	if (hdev == NULL) {

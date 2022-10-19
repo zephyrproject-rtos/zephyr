@@ -513,9 +513,8 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_ite(void)
 }
 
 #if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_backend))
-static int host_cmd_init(const struct device *arg)
+static int host_cmd_init(void)
 {
-	ARG_UNUSED(arg);
 
 	ec_host_cmd_init(ec_host_cmd_backend_get_shi_ite());
 	return 0;

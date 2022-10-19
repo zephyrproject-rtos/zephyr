@@ -338,11 +338,10 @@ int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 	return ret;
 }
 
-static int init_mem_domain_module(const struct device *arg)
+static int init_mem_domain_module(void)
 {
 	int ret;
 
-	ARG_UNUSED(arg);
 	ARG_UNUSED(ret);
 
 	max_partitions = arch_mem_domain_max_partitions_get();

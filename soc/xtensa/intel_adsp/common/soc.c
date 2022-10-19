@@ -12,7 +12,7 @@ extern void adsp_clock_init(void);
 extern void soc_mp_init(void);
 #endif
 
-static __imr int soc_init(const struct device *dev)
+static __imr int soc_init(void)
 {
 	power_init();
 

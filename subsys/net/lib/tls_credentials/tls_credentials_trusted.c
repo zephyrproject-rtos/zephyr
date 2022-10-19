@@ -122,7 +122,7 @@ static unsigned int tls_credential_toc_find_slot(psa_storage_uid_t uid)
 	return CRED_MAX_SLOTS;
 }
 
-static int credentials_init(const struct device *unused)
+static int credentials_init(void)
 {
 	struct psa_storage_info_t info;
 	unsigned int sync = 0;

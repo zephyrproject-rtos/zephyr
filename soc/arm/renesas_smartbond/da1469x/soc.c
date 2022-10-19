@@ -15,9 +15,8 @@ void sys_arch_reboot(int type)
 	NVIC_SystemReset();
 }
 
-static int renesas_da14699_init(const struct device *dev)
+static int renesas_da14699_init(void)
 {
-	ARG_UNUSED(dev);
 
 	NMI_INIT();
 

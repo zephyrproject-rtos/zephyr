@@ -23,9 +23,8 @@ static void remoteproc_mgr_config(void)
 #endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
 
-static int remoteproc_mgr_boot(const struct device *dev)
+static int remoteproc_mgr_boot(void)
 {
-	ARG_UNUSED(dev);
 
 	/* Secure domain may configure permissions for the Network MCU. */
 	remoteproc_mgr_config();

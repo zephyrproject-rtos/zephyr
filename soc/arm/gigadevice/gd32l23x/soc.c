@@ -8,11 +8,10 @@
 #include <zephyr/irq.h>
 #include <soc.h>
 
-static int gd32l23x_init(const struct device *dev)
+static int gd32l23x_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(dev);
 
 	key = irq_lock();
 

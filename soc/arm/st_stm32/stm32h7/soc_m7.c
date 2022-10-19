@@ -24,7 +24,7 @@
 #include "stm32_hsem.h"
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
-static int stm32h7_m4_wakeup(const struct device *arg)
+static int stm32h7_m4_wakeup(void)
 {
 
 	/* HW semaphore and SysCfg Clock enable */
@@ -54,11 +54,10 @@ static int stm32h7_m4_wakeup(const struct device *arg)
  *
  * @return 0
  */
-static int stm32h7_init(const struct device *arg)
+static int stm32h7_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(efr32bg_sltb010a, CONFIG_BOARD_EFR32BG22_LOG_LEVEL);
 
 static int efr32bg_sltb010a_init_clocks(void);
 
-static int efr32bg_sltb010a_init(const struct device *dev)
+static int efr32bg_sltb010a_init(void)
 {
 	int ret;
 
@@ -26,7 +26,6 @@ static int efr32bg_sltb010a_init(const struct device *dev)
 	static struct gpio_dt_spec wake_up_gpio_dev =
 		GPIO_DT_SPEC_GET(DT_NODELABEL(wake_up_trigger), gpios);
 
-	ARG_UNUSED(dev);
 
 	if (!device_is_ready(wake_up_gpio_dev.port)) {
 		LOG_ERR("Wake-up GPIO device was not found!\n");

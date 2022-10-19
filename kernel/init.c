@@ -250,9 +250,9 @@ static void z_sys_init_run_level(enum init_level level)
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		const struct device *dev = entry->dev;
-		int rc = entry->init(dev);
 
 		if (dev != NULL) {
+			int rc = entry->init_fn.dev(dev);
 			/* Mark device initialized.  If initialization
 			 * failed, record the error condition.
 			 */
@@ -270,6 +270,8 @@ static void z_sys_init_run_level(enum init_level level)
 				/* Run automatic device runtime enablement */
 				(void)pm_device_runtime_auto_enable(dev);
 			}
+		} else {
+			(void)entry->init_fn.sys();
 		}
 	}
 }

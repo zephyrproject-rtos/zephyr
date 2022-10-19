@@ -148,9 +148,8 @@ static void SOC_ClockInit(void)
 	CLOCK_EnableClock(kCLOCK_Sec_Debug);
 }
 
-static int nxp_mimx8ml8_init(const struct device *arg)
+static int nxp_mimx8ml8_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* SoC specific RDC settings */
 	SOC_RdcInit();
