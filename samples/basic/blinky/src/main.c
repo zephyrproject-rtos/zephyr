@@ -13,6 +13,8 @@
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
+GPIO_DT_SPEC_DECLARE(LED0_NODE, gpios);
+
 /*
  * A build error on this line means your board is unsupported.
  * See the sample documentation for information on how to fix this.
