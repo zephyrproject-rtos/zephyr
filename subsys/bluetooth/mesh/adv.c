@@ -25,6 +25,7 @@
 #include "prov.h"
 #include "proxy.h"
 #include "pb_gatt_srv.h"
+#include "solicitation.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_ADV_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -305,6 +306,15 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
 #endif
 		case BT_DATA_MESH_BEACON:
 			bt_mesh_beacon_recv(buf);
+			break;
+		case BT_DATA_UUID16_SOME:
+			/* Fall through */
+		case BT_DATA_UUID16_ALL:
+			if (IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)) {
+				/* Restore buffer with Solicitation PDU */
+				net_buf_simple_restore(buf, &state);
+				bt_mesh_sol_recv(buf, len - 1);
+			}
 			break;
 		default:
 			break;

@@ -31,3 +31,5 @@ In addition to the foundation models defined in the Bluetooth mesh specification
 
    blob
    dfu
+   srpl
+   od

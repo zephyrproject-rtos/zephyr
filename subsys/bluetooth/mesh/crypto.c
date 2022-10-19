@@ -291,11 +291,10 @@ int bt_mesh_id128(const uint8_t n[16], const char *s, uint8_t out[16])
 static void create_proxy_nonce(uint8_t nonce[13], const uint8_t *pdu,
 			       uint32_t iv_index)
 {
+	memset(nonce, 0, 13);
+
 	/* Nonce Type */
 	nonce[0] = 0x03;
-
-	/* Pad */
-	nonce[1] = 0x00;
 
 	/* Sequence Number */
 	nonce[2] = pdu[2];
@@ -306,12 +305,25 @@ static void create_proxy_nonce(uint8_t nonce[13], const uint8_t *pdu,
 	nonce[5] = pdu[5];
 	nonce[6] = pdu[6];
 
-	/* Pad */
-	nonce[7] = 0U;
-	nonce[8] = 0U;
-
 	/* IV Index */
 	sys_put_be32(iv_index, &nonce[9]);
+}
+
+static void create_proxy_sol_nonce(uint8_t nonce[13], const uint8_t *pdu)
+{
+	memset(nonce, 0, 13);
+
+	/* Nonce Type */
+	nonce[0] = 0x04;
+
+	/* Sequence Number */
+	nonce[2] = pdu[2];
+	nonce[3] = pdu[3];
+	nonce[4] = pdu[4];
+
+	/* Source Address */
+	nonce[5] = pdu[5];
+	nonce[6] = pdu[6];
 }
 
 static void create_net_nonce(uint8_t nonce[13], const uint8_t *pdu,
@@ -367,7 +379,7 @@ int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
 }
 
 int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
-			uint32_t iv_index, bool proxy)
+			uint32_t iv_index, enum bt_mesh_nonce_type type)
 {
 	uint8_t mic_len = NET_MIC_LEN(buf->data);
 	uint8_t nonce[13];
@@ -376,8 +388,11 @@ int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
 	LOG_DBG("IVIndex %u EncKey %s mic_len %u", iv_index, bt_hex(key, 16), mic_len);
 	LOG_DBG("PDU (len %u) %s", buf->len, bt_hex(buf->data, buf->len));
 
-	if (IS_ENABLED(CONFIG_BT_MESH_PROXY) && proxy) {
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY) && type == BT_MESH_NONCE_PROXY) {
 		create_proxy_nonce(nonce, buf->data, iv_index);
+	} else if (IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV) &&
+		type == BT_MESH_NONCE_SOLICITATION) {
+		create_proxy_sol_nonce(nonce, buf->data);
 	} else {
 		create_net_nonce(nonce, buf->data, iv_index);
 	}
@@ -394,7 +409,7 @@ int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
 }
 
 int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
-			uint32_t iv_index, bool proxy)
+			uint32_t iv_index, enum bt_mesh_nonce_type type)
 {
 	uint8_t mic_len = NET_MIC_LEN(buf->data);
 	uint8_t nonce[13];
@@ -402,8 +417,11 @@ int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
 	LOG_DBG("PDU (%u bytes) %s", buf->len, bt_hex(buf->data, buf->len));
 	LOG_DBG("iv_index %u, key %s mic_len %u", iv_index, bt_hex(key, 16), mic_len);
 
-	if (IS_ENABLED(CONFIG_BT_MESH_PROXY) && proxy) {
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY) && type == BT_MESH_NONCE_PROXY) {
 		create_proxy_nonce(nonce, buf->data, iv_index);
+	} else if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) &&
+		type == BT_MESH_NONCE_SOLICITATION) {
+		create_proxy_sol_nonce(nonce, buf->data);
 	} else {
 		create_net_nonce(nonce, buf->data, iv_index);
 	}

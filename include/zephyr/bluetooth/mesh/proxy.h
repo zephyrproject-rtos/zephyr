@@ -92,6 +92,21 @@ int bt_mesh_proxy_connect(uint16_t net_idx);
  */
 int bt_mesh_proxy_disconnect(uint16_t net_idx);
 
+/** @brief Schedule advertising of Solicitation PDUs on Proxy Client .
+ *
+ *  Once called Proxy Client will schedule advertising Solicitation PDUs for the amount of time
+ *  defined by @c adv_int * (@c CONFIG_BT_MESH_SOL_ADV_XMIT + 1), where @c adv_int is 20ms
+ *  for Bluetooth v5.0 or higher, or 100ms otherwise.
+ *
+ *  If the number of advertised Solicitation PDUs reached 0xFFFFFF, the advertisements will
+ *  no longer be started until the node is reprovisioned.
+ *
+ *  @param net_idx  Network Key Index
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_proxy_solicit(uint16_t net_idx);
+
 #ifdef __cplusplus
 }
 #endif

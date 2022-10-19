@@ -38,6 +38,7 @@
 #include "pb_gatt_srv.h"
 #include "settings.h"
 #include "mesh.h"
+#include "solicitation.h"
 #include "gatt_cli.h"
 
 LOG_MODULE_REGISTER(bt_mesh_main, CONFIG_BT_MESH_LOG_LEVEL);
@@ -351,6 +352,10 @@ void bt_mesh_reset(void)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
 		bt_mesh_prov_reset();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION)) {
+		bt_mesh_sol_reset();
 	}
 }
 

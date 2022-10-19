@@ -73,6 +73,15 @@ struct bt_mesh_subnet {
 		uint8_t beacon[16];      /* BeaconKey */
 		uint8_t priv_beacon[16]; /* PrivateBeaconKey */
 	} keys[2];
+#if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
+	bool sol_tx;
+#endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	uint32_t priv_net_id_sent; /* Timestamp for Private Network ID advertising
+				    * started via Proxy Solicitation
+				    */
+	bool solicited;      /* Subnet received valid Solicitation PDU */
+#endif
 };
 
 /** Subnet callback structure. Instantiate with @ref BT_MESH_SUBNET_CB */

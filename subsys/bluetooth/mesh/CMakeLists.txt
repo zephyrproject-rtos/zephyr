@@ -108,3 +108,13 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_DFU_METADATA dfu_metadata.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_RPR_CLI rpr_cli.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_RPR_SRV rpr_srv.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI od_priv_proxy_cli.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV od_priv_proxy_srv.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOL_PDU_RPL_CLI sol_pdu_rpl_cli.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV sol_pdu_rpl_srv.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOLICITATION solicitation.c)

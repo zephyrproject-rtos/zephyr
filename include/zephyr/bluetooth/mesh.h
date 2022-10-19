@@ -42,5 +42,9 @@
 #include <zephyr/bluetooth/mesh/op_agg_cli.h>
 #include <zephyr/bluetooth/mesh/large_comp_data_srv.h>
 #include <zephyr/bluetooth/mesh/large_comp_data_cli.h>
+#include <zephyr/bluetooth/mesh/od_priv_proxy_srv.h>
+#include <zephyr/bluetooth/mesh/od_priv_proxy_cli.h>
+#include <zephyr/bluetooth/mesh/sol_pdu_rpl_srv.h>
+#include <zephyr/bluetooth/mesh/sol_pdu_rpl_cli.h>
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_ */

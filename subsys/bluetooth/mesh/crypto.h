@@ -5,6 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+enum bt_mesh_nonce_type {
+	BT_MESH_NONCE_NETWORK,
+	BT_MESH_NONCE_PROXY,
+	BT_MESH_NONCE_SOLICITATION,
+};
 
 int bt_mesh_s1(const char *m, size_t m_len, uint8_t salt[16]);
 
@@ -110,11 +115,10 @@ int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
 			  const uint8_t privacy_key[16]);
 
 int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
-			uint32_t iv_index, bool proxy);
+			uint32_t iv_index, enum bt_mesh_nonce_type type);
 
 int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
-			uint32_t iv_index, bool proxy);
-
+			uint32_t iv_index, enum bt_mesh_nonce_type type);
 
 struct bt_mesh_app_crypto_ctx {
 	bool dev_key;
