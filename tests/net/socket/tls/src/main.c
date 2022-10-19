@@ -581,12 +581,12 @@ ZTEST(net_socket_tls, test_v4_dtls_sendmsg)
 {
 	int client_sock;
 	int server_sock;
-	struct sockaddr_in6 client_addr;
-	struct sockaddr_in6 server_addr;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
 
-	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+	prepare_sock_dtls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
 			     &client_sock, &client_addr, IPPROTO_DTLS_1_2);
-	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+	prepare_sock_dtls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
 			     &server_sock, &server_addr, IPPROTO_DTLS_1_2);
 
 	test_dtls_sendmsg(client_sock, server_sock,
