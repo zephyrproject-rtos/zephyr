@@ -95,11 +95,6 @@ static int spi_config(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) {
-		LOG_ERR("Only supports CPOL=CPHA=0");
-		return -ENOTSUP;
-	}
-
 	if (config->operation & SPI_OP_MODE_SLAVE) {
 		LOG_ERR("Slave mode not supported");
 		return -ENOTSUP;
@@ -110,6 +105,20 @@ static int spi_config(const struct device *dev,
 		gecko_config->base->CTRL |= USART_CTRL_LOOPBK;
 	} else {
 		gecko_config->base->CTRL &= ~USART_CTRL_LOOPBK;
+	}
+
+	/* Set CPOL */
+	if (config->operation & SPI_MODE_CPOL) {
+		gecko_config->base->CTRL |= USART_CTRL_CLKPOL;
+	} else {
+		gecko_config->base->CTRL &= ~USART_CTRL_CLKPOL;
+	}
+
+	/* Set CPHA */
+	if (config->operation & SPI_MODE_CPHA) {
+		gecko_config->base->CTRL |= USART_CTRL_CLKPHA;
+	} else {
+		gecko_config->base->CTRL &= ~USART_CTRL_CLKPHA;
 	}
 
 	/* Set word size */
