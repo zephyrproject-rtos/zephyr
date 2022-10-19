@@ -63,6 +63,7 @@ static void prov_link_close(enum prov_bearer_link_status status)
 	BT_DBG("%u", status);
 	bt_mesh_prov_link.expect = PROV_NO_PDU;
 
+	bt_mesh_prov->input_complete();
 	bt_mesh_prov_link.bearer->link_close(status);
 }
 
@@ -626,6 +627,8 @@ static void prov_confirm(const uint8_t *data)
 static void prov_failed(const uint8_t *data)
 {
 	BT_WARN("Error: 0x%02x", data[0]);
+
+	bt_mesh_prov->input_complete();
 	reset_state();
 }
 
@@ -638,6 +641,7 @@ static void local_input_complete(void)
 
 static void prov_link_closed(void)
 {
+	bt_mesh_prov->input_complete();
 	reset_state();
 }
 
