@@ -50,6 +50,7 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x52005000 0x1000>;
 			interrupts = <92 0>;
+			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
@@ -61,6 +62,7 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x5200a000 0x1000>;
 			interrupts = <150 0>;
+			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x000080000>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
