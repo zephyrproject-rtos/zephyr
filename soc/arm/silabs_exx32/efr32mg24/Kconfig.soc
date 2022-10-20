@@ -1,0 +1,8 @@
+# Silicon Labs EFR32MG24 (Mighty Gecko) MCU line
+
+# Copyright (c) 2020 TriaGnoSys GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_PART_NUMBER_EFR32MG24B310F1536IM48
+	bool
+	depends on SOC_SERIES_EFR32MG24
