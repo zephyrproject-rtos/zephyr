@@ -1,0 +1,9 @@
+# EFR32XG24 DK2601B board
+
+# Copyright (c) 2021, Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFR32XG24_DK2601B
+	bool "Silicon Labs BRD2601B (Mighty Gecko Radio Board)"
+	depends on SOC_SERIES_EFR32MG24
+	select SOC_PART_NUMBER_EFR32MG24B310F1536IM48
