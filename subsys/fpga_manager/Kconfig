@@ -1,0 +1,36 @@
+# FPGA manager configuration option
+
+#Copyright (c) 2023, Intel Corporation.
+#SPDX-License-Identifier: Apache-2.0
+
+menuconfig FPGA_MANAGER
+	bool "FPGA Manager SUBSYSTEM"
+	help
+	  Enable support for FPGA MANAGER Subsystem.
+
+if FPGA_MANAGER
+
+module = FPGA_MANAGER
+module-str = fpga_manager
+source "subsys/logging/Kconfig.template.log_config"
+
+config FPGA_MANAGER_INTEL
+	bool "FPGA Manager for Intel devices"
+	depends on FILE_SYSTEM && ARM_SIP_SVC_SUBSYS && FPGA_BRIDGE && FPGA_BRIDGE_INTEL
+	help
+	  Enable FPGA Manager support for Intel devices.
+
+config FPGA_MANAGER_SHELL
+	bool "FPGA Manager shell"
+	depends on SHELL
+	help
+	  Enable FPGA Manager shell support.
+
+config FPGA_MANAGER_THREAD_STACK_SIZE
+	int "FPGA Manager thread stack size"
+	default 900
+	depends on FPGA_MANAGER_INTEL
+	help
+	  Stack size of the FPGA Manager thread
+
+endif # FPGA_MANAGER
