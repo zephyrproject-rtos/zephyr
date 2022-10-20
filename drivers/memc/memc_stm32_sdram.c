@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT st_stm32_fmc_sdram
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>

@@ -6,6 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 
 #include <driverlib/flash.h>
