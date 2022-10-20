@@ -700,6 +700,7 @@
 /include/zephyr/shared_irq.h                     @dcpleung @nashif @andyross
 /include/zephyr/shell/                           @jakub-uC @nordic-krch
 /include/zephyr/shell/shell_mqtt.h               @ycsin
+/include/zephyr/fpga_manager                     @sharmah1995
 /include/zephyr/sw_isr_table.h                   @dcpleung @nashif @andyross
 /include/zephyr/sd/                              @danieldegrasse
 /include/zephyr/sip_svc/                         @maheshraotm
@@ -872,6 +873,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/random/                           @dleach02
 /subsys/shell/                            @jakub-uC @nordic-krch
 /subsys/shell/backends/shell_mqtt.c       @ycsin
+/subsys/fpga_manager                      @sharmah1995
 /subsys/sd/                               @danieldegrasse
 /subsys/sip_svc/                          @maheshraotm
 /subsys/task_wdt/                         @martinjaeger

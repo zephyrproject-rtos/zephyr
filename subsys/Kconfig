@@ -48,4 +48,6 @@ source "subsys/usb/usb_c/Kconfig"
 source "subsys/zbus/Kconfig"
 source "subsys/sip_svc/Kconfig"
 
+source "subsys/fpga_manager/Kconfig"
+
 endmenu

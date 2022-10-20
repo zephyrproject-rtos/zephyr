@@ -300,7 +300,7 @@ config MAX_XLAT_TABLES
 	default 20 if USERSPACE && (ARM64_VA_BITS >= 40)
 	default 16 if USERSPACE
 	default 12 if (ARM64_VA_BITS >= 40)
-	default 8
+	default 16 if (ARM64_VA_BITS = 32)
 	help
 	  This option specifies the maximum numbers of translation tables.
 	  Based on this, translation tables are allocated at compile time and
