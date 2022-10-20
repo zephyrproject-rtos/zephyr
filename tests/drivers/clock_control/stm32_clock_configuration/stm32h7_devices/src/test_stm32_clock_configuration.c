@@ -74,6 +74,32 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_CLKP,
 					"Expected SPI src: PERCLK (0x%x). Actual: 0x%x",
 					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_CLKP);
+
+			/* Check perclk configuration */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(perck), okay)
+			uint32_t perclk_dt_domain_clk, perclk_actual_domain_clk;
+
+			perclk_dt_domain_clk = DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(perck), 0, bus);
+
+			perclk_actual_domain_clk = __HAL_RCC_GET_CLKP_SOURCE();
+
+			if (perclk_dt_domain_clk == STM32_SRC_HSI_KER) {
+				zassert_equal(perclk_actual_domain_clk, RCC_CLKPSOURCE_HSI,
+						"Expected PERCK src: HSI_KER (0x%x). Actual: 0x%x",
+						perclk_actual_domain_clk, RCC_CLKPSOURCE_HSI);
+			} else if (perclk_dt_domain_clk == STM32_SRC_CSI_KER) {
+				zassert_equal(perclk_actual_domain_clk, RCC_CLKPSOURCE_CSI,
+						"Expected PERCK src: CSI_KER (0x%x). Actual: 0x%x",
+						perclk_actual_domain_clk, RCC_CLKPSOURCE_CSI);
+			} else if (perclk_dt_domain_clk == STM32_SRC_HSE) {
+				zassert_equal(perclk_actual_domain_clk, RCC_CLKPSOURCE_HSE,
+						"Expected PERCK src: HSE (0x%x). Actual: 0x%x",
+						perclk_actual_domain_clk, RCC_CLKPSOURCE_HSE);
+			} else {
+				zassert_true(0, "Unexpected PERCK domain_clk src (0x%x)",
+									perclk_dt_domain_clk);
+			}
+#endif
 		} else {
 			zassert_true(0, "Unexpected domain_clk src(0x%x)", pclken[1].bus);
 		}
