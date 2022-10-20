@@ -172,6 +172,14 @@ config UTF8
 	  Enable the utf8 API. The API implements functions to specifically
 	  handle UTF-8 encoded strings.
 
+config IO32_MEM
+	bool "io32_memcpy()"
+	help
+	  Enable io32_memcpy(). This function is useful when word-wise
+	  copying is required, for example when copying from or to a
+	  memory-mapped peripheral. May be expanded with memset and
+	  similar in the future.
+
 rsource "Kconfig.cbprintf"
 
 rsource "Kconfig.heap"

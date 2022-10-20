@@ -498,6 +498,26 @@ char *utf8_trunc(char *utf8_str);
  */
 char *utf8_lcpy(char *dst, const char *src, size_t n);
 
+/**
+ * @brief Copy src to dest word-wise
+ *
+ * This function copies src to dest 32 bits at a time.
+ * If one calls this function without src and dst being aligned
+ * on a 4-byte boundary or if n is not a multiple of 4, it will
+ * do nothing and return NULL.
+ *
+ * NOTE: This function uses __ASSERT to enforce the requirements
+ * of each parameter given below.
+ *
+ * @param dest Destination address (must be aligned to a 4-byte boundary)
+ * @param src  Source address (must be aligned to a 4-byte boundary)
+ * @param n    number of bytes to copy (must be a multiple of 4)
+ *
+ * @return destination pointer or NULL on error
+ */
+volatile void *
+io32_memcpy(volatile void * dest, const volatile void * src, size_t n);
+
 #ifdef __cplusplus
 }
 #endif
