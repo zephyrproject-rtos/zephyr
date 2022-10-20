@@ -1011,7 +1011,7 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 		}
 	}
 
-	if (data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
+	if (data->oper_state == NPCX_I2C_ERROR_RECOVERY || ret == -ETIMEDOUT) {
 		int recovery_error = i2c_ctrl_recovery(i2c_dev);
 		/*
 		 * Recovery failed, return it immediately. Otherwise, the upper
