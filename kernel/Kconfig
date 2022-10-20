@@ -961,4 +961,18 @@ config HAS_DYNAMIC_DEVICE_HANDLES
 
 endmenu
 
+config DEVICE_DT_AUTO_DECLARE
+	bool "Automatically declare devicetree devices"
+	default y
+	help
+	  Devicetree devices are defined with external visibility. Therefore,
+	  they can be accessed from other modules provided you declare them
+	  first using DEVICE_DT_DECLARE. Declaration also comes with build-time
+	  assertions to inform about potential problems such as accessing
+	  non-existing or disabled devices. If using this option, all potential
+	  devicetree devices will be declared in zephyr/device.h, but then it is
+	  user responsability to use them properly or deal with build/link time
+	  issues. This option is now enabled by default since it has been the
+	  behavior in Zephyr since the introduction of devicetree devices.
+
 rsource "Kconfig.vm"
