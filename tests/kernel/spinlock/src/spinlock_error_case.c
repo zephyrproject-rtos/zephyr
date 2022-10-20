@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/spinlock.h>
 
-BUILD_ASSERT(CONFIG_MP_NUM_CPUS > 1);
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS > 1);
 
 static struct k_spinlock lock;
 static struct k_spinlock mylock;
