@@ -1827,6 +1827,7 @@ NXP Platforms:
     - yvanderv
     - EmilioCBen
     - decsny
+    - manuargue
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
