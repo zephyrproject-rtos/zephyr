@@ -20,7 +20,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include "../host/conn_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_PACS)
@@ -101,10 +101,10 @@ struct pac_records_build_data {
 	struct net_buf_simple *buf;
 };
 
-static bool build_pac_records(const struct bt_audio_capability *capability, void *user_data)
+static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 {
 	struct pac_records_build_data *data = user_data;
-	struct bt_codec *codec = capability->codec;
+	struct bt_codec *codec = cap->codec;
 	struct net_buf_simple *buf = data->buf;
 	struct net_buf_simple_state state;
 	struct bt_pac_ltv_data *cc, *meta;
@@ -153,17 +153,17 @@ static bool build_pac_records(const struct bt_audio_capability *capability, void
 	return true;
 
 fail:
-	__ASSERT(true, "No space for %p", capability);
+	__ASSERT(true, "No space for %p", cap);
 
 	net_buf_simple_restore(buf, &state);
 
 	return false;
 }
 
-static void foreach_capability(sys_slist_t *list, bt_audio_foreach_capability_func_t func,
-			       void *user_data)
+static void foreach_cap(sys_slist_t *list, bt_pacs_cap_foreach_func_t func,
+			void *user_data)
 {
-	struct bt_audio_capability *cap;
+	struct bt_pacs_cap *cap;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, cap, _node) {
 		if (!func(cap, user_data)) {
@@ -184,14 +184,13 @@ static void get_pac_records(struct bt_conn *conn, sys_slist_t *list,
 	data.rsp->num_pac = 0;
 	data.buf = buf;
 
-	foreach_capability(list, build_pac_records, &data);
+	foreach_cap(list, build_pac_records, &data);
 }
 
 static void available_context_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("attr %p value 0x%04x", attr, value);
 }
-
 
 static ssize_t available_contexts_read(struct bt_conn *conn,
 				       const struct bt_gatt_attr *attr, void *buf,
@@ -558,10 +557,10 @@ static void pac_notify_src_loc(struct k_work *work)
 #if defined(CONFIG_BT_PAC_SNK)
 static void pac_notify_snk(struct k_work *work)
 {
-	struct pacs *caps = CONTAINER_OF(work, struct pacs, work);
+	struct pacs *pac = CONTAINER_OF(work, struct pacs, work);
 	int err;
 
-	get_pac_records(NULL, &caps->list, &read_buf);
+	get_pac_records(NULL, &pac->list, &read_buf);
 
 	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SNK, pacs_svc.attrs,
 				  read_buf.data, read_buf.len);
@@ -574,10 +573,10 @@ static void pac_notify_snk(struct k_work *work)
 #if defined(CONFIG_BT_PAC_SRC)
 static void pac_notify_src(struct k_work *work)
 {
-	struct pacs *caps = CONTAINER_OF(work, struct pacs, work);
+	struct pacs *pac = CONTAINER_OF(work, struct pacs, work);
 	int err = 0;
 
-	get_pac_records(NULL, &caps->list, &read_buf);
+	get_pac_records(NULL, &pac->list, &read_buf);
 
 	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SRC, pacs_svc.attrs,
 				  read_buf.data, read_buf.len);
@@ -636,35 +635,34 @@ static struct pacs *pacs_get(enum bt_audio_dir dir)
 	}
 }
 
-void bt_audio_foreach_capability(enum bt_audio_dir dir, bt_audio_foreach_capability_func_t func,
-				 void *user_data)
+void bt_pacs_cap_foreach(enum bt_audio_dir dir, bt_pacs_cap_foreach_func_t func, void *user_data)
 {
-	struct pacs *caps;
+	struct pacs *pac;
 
 	CHECKIF(func == NULL) {
 		BT_ERR("func is NULL");
 		return;
 	}
 
-	caps = pacs_get(dir);
-	if (!caps) {
+	pac = pacs_get(dir);
+	if (!pac) {
 		return;
 	}
 
-	foreach_capability(&caps->list, func, user_data);
+	foreach_cap(&pac->list, func, user_data);
 }
 
 /* Register Audio Capability */
-int bt_audio_capability_register(enum bt_audio_dir dir, struct bt_audio_capability *cap)
+int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 {
-	struct pacs *caps;
+	struct pacs *pac;
 
 	if (!cap || !cap->codec) {
 		return -EINVAL;
 	}
 
-	caps = pacs_get(dir);
-	if (!caps) {
+	pac = pacs_get(dir);
+	if (!pac) {
 		return -EINVAL;
 	}
 
@@ -672,39 +670,39 @@ int bt_audio_capability_register(enum bt_audio_dir dir, struct bt_audio_capabili
 	       "codec vid 0x%04x", cap, dir, cap->codec->id,
 	       cap->codec->cid, cap->codec->vid);
 
-	sys_slist_append(&caps->list, &cap->_node);
+	sys_slist_append(&pac->list, &cap->_node);
 
-	pacs_changed(caps);
+	pacs_changed(pac);
 
 	return 0;
 }
 
 /* Unregister Audio Capability */
-int bt_audio_capability_unregister(enum bt_audio_dir dir, struct bt_audio_capability *cap)
+int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 {
-	struct pacs *caps;
+	struct pacs *pac;
 
 	if (!cap) {
 		return -EINVAL;
 	}
 
-	caps = pacs_get(dir);
-	if (!caps) {
+	pac = pacs_get(dir);
+	if (!pac) {
 		return -EINVAL;
 	}
 
 	BT_DBG("cap %p dir 0x%02x", cap, dir);
 
-	if (!sys_slist_find_and_remove(&caps->list, &cap->_node)) {
+	if (!sys_slist_find_and_remove(&pac->list, &cap->_node)) {
 		return -ENOENT;
 	}
 
-	pacs_changed(caps);
+	pacs_changed(pac);
 
 	return 0;
 }
 
-int bt_audio_capability_set_location(enum bt_audio_dir dir, enum bt_audio_location location)
+int bt_pacs_set_location(enum bt_audio_dir dir, enum bt_audio_location location)
 {
 	switch (dir) {
 	case BT_AUDIO_DIR_SINK:
@@ -716,8 +714,7 @@ int bt_audio_capability_set_location(enum bt_audio_dir dir, enum bt_audio_locati
 	return -EINVAL;
 }
 
-int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
-					       enum bt_audio_context contexts)
+int bt_pacs_set_available_contexts(enum bt_audio_dir dir, enum bt_audio_context contexts)
 {
 	switch (dir) {
 	case BT_AUDIO_DIR_SINK:
@@ -729,7 +726,7 @@ int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
 	return -EINVAL;
 }
 
-enum bt_audio_context bt_audio_capability_get_available_contexts(enum bt_audio_dir dir)
+enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir)
 {
 	switch (dir) {
 	case BT_AUDIO_DIR_SINK:

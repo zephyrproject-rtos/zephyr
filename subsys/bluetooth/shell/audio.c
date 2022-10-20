@@ -21,7 +21,7 @@
 
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 
 #include "bt.h"
 
@@ -684,11 +684,11 @@ static const struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.release = lc3_release,
 };
 
-static struct bt_audio_capability caps_sink = {
+static struct bt_pacs_cap cap_sink = {
 	.codec = &lc3_codec,
 };
 
-static struct bt_audio_capability caps_source = {
+static struct bt_pacs_cap cap_source = {
 	.codec = &lc3_codec,
 };
 
@@ -1697,7 +1697,7 @@ static int cmd_set_loc(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	loc = shell_strtoul(argv[2], 16, &err);
-	err = bt_audio_capability_set_location(dir, loc);
+	err = bt_pacs_set_location(dir, loc);
 	if (err) {
 		shell_error(ctx_shell, "Set available contexts err %d", err);
 		return -ENOEXEC;
@@ -1727,7 +1727,7 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	err = bt_audio_capability_set_available_contexts(dir, ctx);
+	err = bt_pacs_set_available_contexts(dir, ctx);
 	if (err) {
 		shell_error(ctx_shell, "Set available contexts err %d", err);
 		return err;
@@ -1753,26 +1753,28 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER) ||
 	    IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SINK)) {
-		bt_audio_capability_register(BT_AUDIO_DIR_SINK, &caps_sink);
+		bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER)) {
-		bt_audio_capability_register(BT_AUDIO_DIR_SOURCE, &caps_source);
+		bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK, LOCATION);
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, LOCATION);
 		__ASSERT(err == 0, "Failed to set sink location");
 
-		err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK, CONTEXT);
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
+						     CONTEXT);
 		__ASSERT(err == 0, "Failed to set sink available contexts");
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SOURCE, LOCATION);
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE, LOCATION);
 		__ASSERT(err == 0, "Failed to set source location");
 
-		err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE, CONTEXT);
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+						     CONTEXT);
 		__ASSERT(err == 0, "Failed to set source available contexts");
 	}
 
@@ -1971,10 +1973,10 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 		};
 		enum bt_audio_context snk_context, src_context;
 
-		snk_context = bt_audio_capability_get_available_contexts(BT_AUDIO_DIR_SINK);
+		snk_context = bt_pacs_get_available_contexts(BT_AUDIO_DIR_SINK);
 		sys_put_le16(snk_context, &ad_bap_announcement[3]);
 
-		src_context = bt_audio_capability_get_available_contexts(BT_AUDIO_DIR_SOURCE);
+		src_context = bt_pacs_get_available_contexts(BT_AUDIO_DIR_SOURCE);
 		sys_put_le16(snk_context, &ad_bap_announcement[5]);
 
 		/* Metadata length */
