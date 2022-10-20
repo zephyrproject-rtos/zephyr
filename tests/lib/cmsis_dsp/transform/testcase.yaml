@@ -207,7 +207,7 @@ tests:
       - native_posix
     tags: cmsis_dsp
     min_flash: 1024
-    min_ram: 96
+    min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF64=y
@@ -217,7 +217,7 @@ tests:
       - mps2_an521_remote
     tags: cmsis_dsp fpu
     min_flash: 1024
-    min_ram: 96
+    min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF64=y
