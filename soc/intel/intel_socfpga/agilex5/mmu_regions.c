@@ -34,6 +34,11 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_ADDR(DT_NODELABEL(its)),
 			      DT_REG_SIZE(DT_NODELABEL(its)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
+
+	MMU_REGION_FLAT_ENTRY("RESERVED_MEMORY",
+			DT_REG_ADDR(DT_NODELABEL(fpga_config)),
+			DT_REG_SIZE(DT_NODELABEL(fpga_config)),
+			MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
 };
 
 const struct arm_mmu_config mmu_config = {
