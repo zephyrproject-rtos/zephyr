@@ -69,14 +69,12 @@ static struct bt_gatt_discover_params avail_ctx_cc_disc[CONFIG_BT_MAX_CONN];
 static const struct bt_audio_unicast_client_cb *unicast_client_cbs;
 
 /* TODO: Move the functions to avoid these prototypes */
-static int unicast_client_ep_set_metadata(struct bt_audio_ep *ep,
-					  struct net_buf_simple *buf,
+static int unicast_client_ep_set_metadata(struct bt_audio_ep *ep, void *data,
 					  uint8_t len, struct bt_codec *codec);
 
 static int unicast_client_ep_set_codec(struct bt_audio_ep *ep, uint8_t id,
 				       uint16_t cid, uint16_t vid,
-				       struct net_buf_simple *buf,
-				       uint8_t len, struct bt_codec *codec);
+				       void *data, uint8_t len, struct bt_codec *codec);
 
 static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 				       const struct bt_iso_recv_info *info,
@@ -525,6 +523,7 @@ static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
 	struct bt_ascs_ase_status_config *cfg;
 	struct bt_codec_qos_pref *pref;
 	struct bt_audio_stream *stream;
+	void *cc;
 
 	if (buf->len < sizeof(*cfg)) {
 		BT_ERR("Config status too short");
@@ -555,6 +554,8 @@ static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
 		return;
 	}
 
+	cc = net_buf_simple_pull_mem(buf, cfg->cc_len);
+
 	pref = &stream->ep->qos_pref;
 
 	/* Convert to interval representation so they can be matched by QoS */
@@ -575,7 +576,7 @@ static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
 	unicast_client_ep_set_codec(ep, cfg->codec.id,
 				    sys_le16_to_cpu(cfg->codec.cid),
 				    sys_le16_to_cpu(cfg->codec.vid),
-				    buf, cfg->cc_len, NULL);
+				    cc, cfg->cc_len, NULL);
 
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->configured != NULL) {
@@ -663,6 +664,7 @@ static void unicast_client_ep_enabling_state(struct bt_audio_ep *ep,
 {
 	struct bt_ascs_ase_status_enable *enable;
 	struct bt_audio_stream *stream;
+	void *metadata;
 
 	if (buf->len < sizeof(*enable)) {
 		BT_ERR("Enabling status too short");
@@ -677,10 +679,18 @@ static void unicast_client_ep_enabling_state(struct bt_audio_ep *ep,
 
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
+	if (buf->len < enable->metadata_len) {
+		BT_ERR("Malformed PDU: remaining len %u expected %u",
+		       buf->len, enable->metadata_len);
+		return;
+	}
+
+	metadata = net_buf_simple_pull_mem(buf, enable->metadata_len);
+
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
 	       ep->dir, ep->cig_id, ep->cis_id);
 
-	unicast_client_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
+	unicast_client_ep_set_metadata(ep, metadata, enable->metadata_len, NULL);
 
 	/* Notify upper layer
 	 *
@@ -1024,7 +1034,7 @@ static bool unicast_client_codec_config_store(struct bt_data *data,
 
 static int unicast_client_ep_set_codec(struct bt_audio_ep *ep, uint8_t id,
 				       uint16_t cid, uint16_t vid,
-				       struct net_buf_simple *buf, uint8_t len,
+				       void *data, uint8_t len,
 				       struct bt_codec *codec)
 {
 	struct net_buf_simple ad;
@@ -1052,8 +1062,7 @@ static int unicast_client_ep_set_codec(struct bt_audio_ep *ep, uint8_t id,
 		return 0;
 	}
 
-	net_buf_simple_init_with_data(&ad, net_buf_simple_pull_mem(buf, len),
-				      len);
+	net_buf_simple_init_with_data(&ad, data, len);
 
 	/* Parse LTV entries */
 	bt_data_parse(&ad, unicast_client_codec_config_store, codec);
@@ -1107,8 +1116,7 @@ static bool unicast_client_codec_metadata_store(struct bt_data *data,
 	return true;
 }
 
-static int unicast_client_ep_set_metadata(struct bt_audio_ep *ep,
-					  struct net_buf_simple *buf,
+static int unicast_client_ep_set_metadata(struct bt_audio_ep *ep, void *data,
 					  uint8_t len, struct bt_codec *codec)
 {
 	struct net_buf_simple meta;
@@ -1132,8 +1140,7 @@ static int unicast_client_ep_set_metadata(struct bt_audio_ep *ep,
 		return 0;
 	}
 
-	net_buf_simple_init_with_data(&meta, net_buf_simple_pull_mem(buf, len),
-				      len);
+	net_buf_simple_init_with_data(&meta, data, len);
 
 	/* Parse LTV entries */
 	bt_data_parse(&meta, unicast_client_codec_metadata_store, codec);
@@ -2507,7 +2514,10 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 	while (rsp->num_pac) {
 		struct unicast_client_pac *bpac;
 		struct bt_pac *pac;
-		struct bt_pac_meta *meta;
+		struct bt_pac_ltv_data *meta, *cc;
+		void *cc_ltv, *meta_ltv;
+
+		BT_DBG("pac #%u", params->num_caps);
 
 		if (buf.len < sizeof(*pac)) {
 			BT_ERR("Malformed PAC: remaining len %u expected %zu",
@@ -2517,13 +2527,35 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 
 		pac = net_buf_simple_pull_mem(&buf, sizeof(*pac));
 
-		BT_DBG("pac #%u: cc len %u", params->num_caps, pac->cc_len);
-
-		if (buf.len < pac->cc_len) {
-			BT_ERR("Malformed PAC: buf->len %u < %u pac->cc_len",
-			       buf.len, pac->cc_len);
+		if (buf.len < sizeof(*cc)) {
+			BT_ERR("Malformed PAC: remaining len %u expected %zu",
+			       buf.len, sizeof(*cc));
 			break;
 		}
+
+		cc = net_buf_simple_pull_mem(&buf, sizeof(*cc));
+		if (buf.len < cc->len) {
+			BT_ERR("Malformed PAC: remaining len %u expected %zu",
+			       buf.len, cc->len);
+			break;
+		}
+
+		cc_ltv = net_buf_simple_pull_mem(&buf, cc->len);
+
+		if (buf.len < sizeof(*meta)) {
+			BT_ERR("Malformed PAC: remaining len %u expected %zu",
+			       buf.len, sizeof(*meta));
+			break;
+		}
+
+		meta = net_buf_simple_pull_mem(&buf, sizeof(*meta));
+		if (buf.len < meta->len) {
+			BT_ERR("Malformed PAC: remaining len %u expected %u",
+			       buf.len, meta->len);
+			break;
+		}
+
+		meta_ltv = net_buf_simple_pull_mem(&buf, meta->len);
 
 		bpac = unicast_client_pac_alloc(conn, params->dir);
 		if (!bpac) {
@@ -2538,22 +2570,13 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 		if (unicast_client_ep_set_codec(NULL, pac->codec.id,
 						sys_le16_to_cpu(pac->codec.cid),
 						sys_le16_to_cpu(pac->codec.vid),
-						&buf, pac->cc_len,
+						cc_ltv, cc->len,
 						&bpac->codec)) {
 			BT_ERR("Unable to parse Codec");
 			break;
 		}
 
-		meta = net_buf_simple_pull_mem(&buf, sizeof(*meta));
-
-		if (buf.len < meta->len) {
-			BT_ERR("Malformed PAC: remaining len %u expected %u",
-			       buf.len, meta->len);
-			break;
-		}
-
-		if (unicast_client_ep_set_metadata(NULL, &buf, meta->len,
-						   &bpac->codec)) {
+		if (unicast_client_ep_set_metadata(NULL, meta_ltv, meta->len, &bpac->codec)) {
 			BT_ERR("Unable to parse Codec Metadata");
 			break;
 		}
