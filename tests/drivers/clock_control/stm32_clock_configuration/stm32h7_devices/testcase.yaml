@@ -12,3 +12,5 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_per_ck_d1ppre_1.overlay"
   drivers.stm32_clock_configuration.h7_dev.spi1_per_ck_hsi:
     extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_per_ck_hsi.overlay"
+  drivers.stm32_clock_configuration.h7_dev.spi1_per_ck_hse:
+    extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_per_ck_hse.overlay"
