@@ -387,7 +387,7 @@ void flash_stm32_page_layout(const struct device *dev,
 		if (stm32_flash_layout[0].pages_count == 0) {
 			if ((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) {
 				/* flash with dualbank has 2k pages */
-				stm32_flash_layout[0].pages_count = FLASH_PAGE_NB;
+				stm32_flash_layout[0].pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
 				stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
 #if defined(CONFIG_SOC_SERIES_STM32L5X)
 			} else {
