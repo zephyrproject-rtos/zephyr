@@ -41,21 +41,29 @@ IF_ENABLED(CONFIG_BT_PAC_SRC, (static enum bt_audio_context source_available_con
 
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
 
-static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
-			 struct bt_codec_data *data)
+static ssize_t pac_data_add(struct net_buf_simple *buf, size_t count,
+			    struct bt_codec_data *data)
 {
-	for (uint8_t i = 0; i < num; i++) {
-		struct bt_pac_codec_capability *cc;
-		struct bt_data *d = &data[i].data;
+	size_t len = 0;
 
-		cc = net_buf_simple_add(buf, sizeof(*cc));
-		cc->len = d->data_len + sizeof(cc->type);
-		cc->type = d->type;
+	for (size_t i = 0; i < count; i++) {
+		struct bt_pac_ltv *ltv;
+		struct bt_data *d = &data[i].data;
+		const size_t ltv_len = sizeof(*ltv) + d->data_len;
+
+		if (net_buf_simple_tailroom(buf) < ltv_len) {
+			return -ENOMEM;
+		}
+
+		ltv = net_buf_simple_add(buf, sizeof(*ltv));
+		ltv->len = d->data_len + sizeof(ltv->type);
+		ltv->type = d->type;
 		net_buf_simple_add_mem(buf, d->data, d->data_len);
 
-		BT_DBG("  %u: type %u: %s",
-		       i, d->type, bt_hex(d->data, d->data_len));
+		len += ltv_len;
 	}
+
+	return len;
 }
 
 struct pac_records_build_data {
@@ -66,41 +74,60 @@ struct pac_records_build_data {
 static bool build_pac_records(const struct bt_audio_capability *capability, void *user_data)
 {
 	struct pac_records_build_data *data = user_data;
+	struct bt_codec *codec = capability->codec;
 	struct net_buf_simple *buf = data->buf;
-	struct bt_pac_meta *meta;
-	struct bt_codec *codec;
+	struct net_buf_simple_state state;
+	struct bt_pac_ltv_data *cc, *meta;
 	struct bt_pac *pac;
+	ssize_t len;
 
-	codec = capability->codec;
+	net_buf_simple_save(buf, &state);
+
+	if (net_buf_simple_tailroom(buf) < sizeof(*pac)) {
+		goto fail;
+	}
 
 	pac = net_buf_simple_add(buf, sizeof(*pac));
 	pac->codec.id = codec->id;
 	pac->codec.cid = sys_cpu_to_le16(codec->cid);
 	pac->codec.vid = sys_cpu_to_le16(codec->vid);
-	pac->cc_len = buf->len;
 
-	BT_DBG("Parsing codec config data");
-	pac_data_add(buf, codec->data_count, codec->data);
+	if (net_buf_simple_tailroom(buf) < sizeof(*cc)) {
+		goto fail;
+	}
 
-	/* Buffer size shall never be below PAC len since we are just
-	 * append data.
-	 */
-	__ASSERT_NO_MSG(buf->len >= pac->cc_len);
+	cc = net_buf_simple_add(buf, sizeof(*cc));
 
-	pac->cc_len = buf->len - pac->cc_len;
+	len = pac_data_add(buf, codec->data_count, codec->data);
+	if (len < 0 || len > UINT8_MAX) {
+		goto fail;
+	}
+
+	cc->len = len;
+
+	if (net_buf_simple_tailroom(buf) < sizeof(*meta)) {
+		goto fail;
+	}
 
 	meta = net_buf_simple_add(buf, sizeof(*meta));
-	meta->len = buf->len;
-	BT_DBG("Parsing metadata");
-	pac_data_add(buf, codec->meta_count, codec->meta);
-	meta->len = buf->len - meta->len;
 
-	BT_DBG("pac #%u: codec capability len %u metadata len %u",
-		data->rsp->num_pac, pac->cc_len, meta->len);
+	len = pac_data_add(buf, codec->meta_count, codec->meta);
+	if (len < 0 || len > UINT8_MAX) {
+		goto fail;
+	}
+
+	meta->len = len;
 
 	data->rsp->num_pac++;
 
 	return true;
+
+fail:
+	__ASSERT(true, "No space for %p", capability);
+
+	net_buf_simple_restore(buf, &state);
+
+	return false;
 }
 
 static void get_pac_records(struct bt_conn *conn, enum bt_audio_dir dir,
