@@ -570,6 +570,8 @@ static void pac_notify(struct k_work *work)
 
 #if defined(CONFIG_BT_PAC_SNK)
 	if (work == &snks_work.work) {
+		get_pac_records(NULL, BT_AUDIO_DIR_SINK, &read_buf);
+
 		err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SNK,
 					  pacs_svc.attrs, read_buf.data,
 					  read_buf.len);
@@ -578,6 +580,8 @@ static void pac_notify(struct k_work *work)
 
 #if defined(CONFIG_BT_PAC_SRC)
 	if (work == &srcs_work.work) {
+		get_pac_records(NULL, BT_AUDIO_DIR_SOURCE, &read_buf);
+
 		err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SRC,
 					  pacs_svc.attrs, read_buf.data,
 					  read_buf.len);
