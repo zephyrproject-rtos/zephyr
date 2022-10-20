@@ -3918,6 +3918,17 @@
 #define DT_COMPAT_ON_BUS_INTERNAL(compat, bus) \
 	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
 
+/**
+ * @brief Error message for node existence checks
+ *
+ * @param node_id Devicetree node identifier
+ */
+#define Z_DT_CHECK_MSG(node_id)                                                \
+	COND_CODE_1(DT_NODE_EXISTS(node_id),                                   \
+		    ("Node " DT_NODE_PATH(node_id) " is not enabled in "       \
+		     "devicetree"),                                            \
+		    ("Node " STRINGIFY(node_id) " not found in devicetree"))
+
 /** @endcond */
 
 /* have these last so they have access to all previously defined macros */
