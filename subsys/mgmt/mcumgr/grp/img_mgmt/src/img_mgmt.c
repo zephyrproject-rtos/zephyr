@@ -303,7 +303,8 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 		return rc;
 	}
 
-	if (zcbor_tstr_put_lit(zse, "rc") && zcbor_int32_put(zse, 0)) {
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR) && zcbor_tstr_put_lit(zse, "rc") &&
+	    zcbor_int32_put(zse, 0)) {
 		return MGMT_ERR_EOK;
 	}
 
@@ -314,12 +315,15 @@ static int
 img_mgmt_upload_good_rsp(struct smp_streamer *ctxt)
 {
 	zcbor_state_t *zse = ctxt->writer->zs;
-	bool ok;
+	bool ok = true;
 
-	ok = zcbor_tstr_put_lit(zse, "rc")			&&
-	     zcbor_int32_put(zse, MGMT_ERR_EOK)			&&
-	     zcbor_tstr_put_lit(zse, "off")			&&
-	     zcbor_size_put(zse, g_img_mgmt_state.off);
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
+		ok = zcbor_tstr_put_lit(zse, "rc")		&&
+		     zcbor_int32_put(zse, MGMT_ERR_EOK);
+	}
+
+	ok = ok && zcbor_tstr_put_lit(zse, "off")		&&
+		   zcbor_size_put(zse, g_img_mgmt_state.off);
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }

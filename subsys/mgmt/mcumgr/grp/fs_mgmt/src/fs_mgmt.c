@@ -112,14 +112,15 @@ static int fs_mgmt_filelen(const char *path, size_t *out_len)
  */
 static bool fs_mgmt_file_rsp(zcbor_state_t *zse, int rc, uint64_t off)
 {
-	bool ok;
+	bool ok = true;
 
-	ok = zcbor_tstr_put_lit(zse, "rc")	&&
-	     zcbor_int32_put(zse, rc)		&&
-	     zcbor_tstr_put_lit(zse, "off")	&&
-	     zcbor_uint64_put(zse, off);
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR) || rc != 0) {
+		ok = zcbor_tstr_put_lit(zse, "rc")	&&
+		     zcbor_int32_put(zse, rc);
+	}
 
-	return ok;
+	return ok && zcbor_tstr_put_lit(zse, "off")	&&
+		     zcbor_uint64_put(zse, off);
 }
 
 static int fs_mgmt_read(const char *path, size_t offset, size_t len,
@@ -425,16 +426,18 @@ static int fs_mgmt_file_status(struct smp_streamer *ctxt)
 	/* Retrieve file size */
 	rc = fs_mgmt_filelen(path, &file_len);
 
+	if (rc != 0) {
+		return rc;
+	}
+
 	/* Encode the response. */
-	if (rc == 0) {
-		/* No error, only encode file status (length) */
-		ok = zcbor_tstr_put_lit(zse, "len")	&&
-		     zcbor_uint64_put(zse, file_len);
-	} else {
-		/* Error, only encode error result code */
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
 		ok = zcbor_tstr_put_lit(zse, "rc")	&&
 		     zcbor_int32_put(zse, rc);
 	}
+
+	ok = ok && zcbor_tstr_put_lit(zse, "len")	&&
+		   zcbor_uint64_put(zse, file_len);
 
 	if (!ok) {
 		return MGMT_ERR_EMSGSIZE;
@@ -535,51 +538,50 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 
 	/* Encode the response */
 	if (rc != 0) {
-		ok = zcbor_tstr_put_lit(zse, "rc")	&&
-		     zcbor_int32_put(zse, rc);
+		return rc;
+	}
+
+	ok &= zcbor_tstr_put_lit(zse, "type")	&&
+	      zcbor_tstr_put_term(zse, type_arr);
+
+	if (off != 0) {
+		ok &= zcbor_tstr_put_lit(zse, "off")	&&
+		      zcbor_uint64_put(zse, off);
+	}
+
+	ok &= zcbor_tstr_put_lit(zse, "len")	&&
+	      zcbor_uint64_put(zse, file_len)	&&
+	      zcbor_tstr_put_lit(zse, "output");
+
+	if (group->byte_string == true) {
+		/* Output is a byte string */
+		ok &= zcbor_bstr_encode_ptr(zse, output, group->output_size);
 	} else {
-		ok = zcbor_tstr_put_lit(zse, "type")	&&
-		     zcbor_tstr_put_term(zse, type_arr);
+		/* Output is a number */
+		uint64_t tmp_val = 0;
 
-		if (off != 0) {
-			ok &= zcbor_tstr_put_lit(zse, "off")	&&
-			      zcbor_uint64_put(zse, off);
-		}
-
-		ok &= zcbor_tstr_put_lit(zse, "len")	&&
-		      zcbor_uint64_put(zse, file_len)	&&
-		      zcbor_tstr_put_lit(zse, "output");
-
-		if (group->byte_string == true) {
-			/* Output is a byte string */
-			ok &= zcbor_bstr_encode_ptr(zse, output, group->output_size);
-		} else {
-			/* Output is a number */
-			uint64_t tmp_val = 0;
-
-			if (group->output_size == sizeof(uint8_t)) {
-				tmp_val = (uint64_t)(*(uint8_t *)output);
+		if (group->output_size == sizeof(uint8_t)) {
+			tmp_val = (uint64_t)(*(uint8_t *)output);
 #if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 1
-			} else if (group->output_size == sizeof(uint16_t)) {
-				tmp_val = (uint64_t)(*(uint16_t *)output);
+		} else if (group->output_size == sizeof(uint16_t)) {
+			tmp_val = (uint64_t)(*(uint16_t *)output);
 #if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 2
-			} else if (group->output_size == sizeof(uint32_t)) {
-				tmp_val = (uint64_t)(*(uint32_t *)output);
+		} else if (group->output_size == sizeof(uint32_t)) {
+			tmp_val = (uint64_t)(*(uint32_t *)output);
 #if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 4
-			} else if (group->output_size == sizeof(uint64_t)) {
-				tmp_val = (*(uint64_t *)output);
+		} else if (group->output_size == sizeof(uint64_t)) {
+			tmp_val = (*(uint64_t *)output);
 #endif
 #endif
 #endif
-			} else {
-				LOG_ERR("Unable to handle numerical checksum size %u",
-					group->output_size);
+		} else {
+			LOG_ERR("Unable to handle numerical checksum size %u",
+				group->output_size);
 
-				return MGMT_ERR_EUNKNOWN;
-			}
-
-			ok &= zcbor_uint64_put(zse, tmp_val);
+			return MGMT_ERR_EUNKNOWN;
 		}
+
+		ok &= zcbor_uint64_put(zse, tmp_val);
 	}
 
 	if (!ok) {
