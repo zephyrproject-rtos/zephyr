@@ -1,0 +1,21 @@
+# EFR32XG24 DK2601B board
+
+# Copyright (c) 2021, Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EFR32XG24_DK2601B
+
+config BOARD
+	default "efr32xg24_dk2601b"
+
+config CMU_HFXO_FREQ
+	default 40000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+config FLASH_BASE_ADDRESS
+	hex
+	default 0x08000000
+
+endif # BOARD_EFR32XG24_DK2601B
