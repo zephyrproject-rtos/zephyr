@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <atmel/same70b.dtsi>
+#include "dma_atmel_same70.h"
+
+/ {
+	sram0: memory@20400000 {
+		reg = <0x20400000 DT_SIZE_K(256)>;
+	};
+
+	soc {
+		flash-controller@400e0c00 {
+			flash0: flash@400000 {
+				reg = <0x00400000 DT_SIZE_K(512)>;
+			};
+		};
+	};
+};
