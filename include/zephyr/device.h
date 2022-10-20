@@ -318,6 +318,21 @@ typedef int16_t device_handle_t;
 		extern const struct device DEVICE_DT_NAME_GET(node_id)
 
 /**
+ * @brief Declare a devicetree device object from a compatible.
+ *
+ * This macro will assert at build time if there is no device with the given
+ * @p compat is found enabled in Devicetree.
+ *
+ * @param compat Devicetree compatible.
+ */
+#define DEVICE_DT_DECLARE_ANY(compat)                                          \
+		BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(compat),                \
+			     "No device with " STRINGIFY(compat)               \
+			     " compatible found enabled in Devicetree");       \
+		extern const struct device DEVICE_DT_NAME_GET(                 \
+			DT_COMPAT_GET_ANY_STATUS_OKAY(compat))
+
+/**
  * @brief Declare a devicetree device object that may exist.
  *
  * This macro can be useful in cases where the device is optional. Application
