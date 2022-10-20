@@ -290,8 +290,10 @@ typedef int16_t device_handle_t;
  * @param node_id devicetree node identifier
  *
  * @return a @ref device reference for the node identifier, which may be `NULL`.
+ *
+ * @deprecated Use DEVICE_DT_GET() together with DEVICE_DT_DECLARE_MAYBE().
  */
-#define DEVICE_DT_GET_OR_NULL(node_id)                                         \
+#define DEVICE_DT_GET_OR_NULL(node_id) __DEPRECATED_MACRO                      \
 	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),                         \
 		    (DEVICE_DT_GET(node_id)), (NULL))
 
