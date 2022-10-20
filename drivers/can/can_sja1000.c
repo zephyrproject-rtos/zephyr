@@ -224,7 +224,6 @@ int can_sja1000_stop(const struct device *dev)
 
 int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 {
-	const struct can_sja1000_config *config = dev->config;
 	struct can_sja1000_data *data = dev->data;
 	uint8_t btr1;
 	uint8_t mod;
@@ -598,7 +597,6 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 {
 	struct can_sja1000_data *data = dev->data;
 	uint8_t sr;
-	int err;
 
 	sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
 	if ((sr & CAN_SJA1000_SR_BS) != 0) {
