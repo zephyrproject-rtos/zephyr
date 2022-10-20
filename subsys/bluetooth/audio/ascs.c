@@ -20,7 +20,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include "zephyr/bluetooth/iso.h"
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_ASCS)
 #define LOG_MODULE_NAME bt_ascs
@@ -1187,12 +1187,12 @@ struct codec_lookup_id_data {
 	struct bt_codec *codec;
 };
 
-static bool codec_lookup_id(const struct bt_audio_capability *capability, void *user_data)
+static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
 {
 	struct codec_lookup_id_data *data = user_data;
 
-	if (capability->codec->id == data->id) {
-		data->codec = capability->codec;
+	if (cap->codec->id == data->id) {
+		data->codec = cap->codec;
 
 		return false;
 	}
@@ -1216,7 +1216,7 @@ static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 	BT_DBG("ep %p dir %u codec id 0x%02x cid 0x%04x vid 0x%04x len %u",
 	       ep, ep->dir, id, cid, vid, len);
 
-	bt_audio_foreach_capability(ep->dir, codec_lookup_id, &lookup_data);
+	bt_pacs_cap_foreach(ep->dir, codec_lookup_id, &lookup_data);
 
 	if (lookup_data.codec == NULL) {
 		return -ENOENT;

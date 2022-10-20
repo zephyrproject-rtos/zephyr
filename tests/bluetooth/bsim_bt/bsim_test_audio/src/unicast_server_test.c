@@ -8,7 +8,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
 #include "unicast_common.h"
 
@@ -232,7 +232,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static void init(void)
 {
-	static struct bt_audio_capability caps = {
+	static struct bt_pacs_cap cap = {
 		.codec = &lc3_codec,
 	};
 	int err;
@@ -247,7 +247,7 @@ static void init(void)
 
 	bt_audio_unicast_server_register_cb(&unicast_server_cb);
 
-	err = bt_audio_capability_register(BT_AUDIO_DIR_SINK, &caps);
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err != 0) {
 		FAIL("Failed to register capabilities: %d", err);
 		return;
@@ -271,8 +271,8 @@ static void set_location(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-						       BT_AUDIO_LOCATION_FRONT_CENTER);
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					   BT_AUDIO_LOCATION_FRONT_CENTER);
 		if (err != 0) {
 			FAIL("Failed to set sink location (err %d)\n", err);
 			return;
@@ -280,9 +280,9 @@ static void set_location(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SOURCE,
-						       (BT_AUDIO_LOCATION_FRONT_LEFT |
-							BT_AUDIO_LOCATION_FRONT_RIGHT));
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+					   (BT_AUDIO_LOCATION_FRONT_LEFT |
+					    BT_AUDIO_LOCATION_FRONT_RIGHT));
 		if (err != 0) {
 			FAIL("Failed to set source location (err %d)\n", err);
 			return;
@@ -296,16 +296,16 @@ static void set_available_contexts(void)
 {
 	int err;
 
-	err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
-						BT_AUDIO_CONTEXT_TYPE_MEDIA |
-						BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
+	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
+					     BT_AUDIO_CONTEXT_TYPE_MEDIA |
+					     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
 		FAIL("Failed to set sink available contexts (err %d)\n", err);
 		return;
 	}
 
-	err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-						BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS);
+	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+					     BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS);
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC) && err != 0) {
 		FAIL("Failed to set source available contexts (err %d)\n", err);
 		return;

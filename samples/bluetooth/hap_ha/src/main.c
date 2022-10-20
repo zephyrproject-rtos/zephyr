@@ -11,7 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/csis.h>
 #include <zephyr/bluetooth/services/ias.h>
 
@@ -213,22 +213,22 @@ void main(void)
 		 * Front Left and the Front Right bits to a value of 0b1
 		 * in the Sink Audio Locations characteristic value.
 		 */
-		bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-						 (BT_AUDIO_LOCATION_FRONT_LEFT |
-						  BT_AUDIO_LOCATION_FRONT_RIGHT));
+		bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+				    (BT_AUDIO_LOCATION_FRONT_LEFT |
+				     BT_AUDIO_LOCATION_FRONT_RIGHT));
 	} else {
-		bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-						 BT_AUDIO_LOCATION_FRONT_LEFT);
+		bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+				     BT_AUDIO_LOCATION_FRONT_LEFT);
 	}
 
-	bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
-						   AVAILABLE_SINK_CONTEXT);
+	bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
+				       AVAILABLE_SINK_CONTEXT);
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
-		bt_audio_capability_set_location(BT_AUDIO_DIR_SOURCE,
-						 BT_AUDIO_LOCATION_FRONT_LEFT);
-		bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-							   AVAILABLE_SOURCE_CONTEXT);
+		bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+				     BT_AUDIO_LOCATION_FRONT_LEFT);
+		bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+					       AVAILABLE_SOURCE_CONTEXT);
 	}
 
 	k_work_init_delayable(&adv_work, adv_work_handler);
