@@ -43,7 +43,7 @@ ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
 {
 	unsigned int num_cpus = arch_num_cpus();
 
-	if (CONFIG_MP_NUM_CPUS < 2) {
+	if (arch_num_cpus() < 2) {
 		ztest_test_skip();
 	}
 
@@ -74,7 +74,7 @@ ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
 
 ZTEST(intel_adsp_boot, test_3rd_post_boot_ipi)
 {
-	if (CONFIG_MP_NUM_CPUS < 2) {
+	if (arch_num_cpus() < 2) {
 		ztest_test_skip();
 	}
 
