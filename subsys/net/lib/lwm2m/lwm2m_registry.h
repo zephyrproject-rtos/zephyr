@@ -212,6 +212,24 @@ struct lwm2m_time_series_resource {
 	struct ring_buf rb;
 };
 
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+
+#define LWM2M_LIMITED_TIMESERIES_RESOURCE_COUNT 20
+
+struct lwm2m_cache_read_entry {
+	struct lwm2m_time_series_resource *cache_data;
+	int32_t original_get_head;
+	int32_t original_get_tail;
+	int32_t original_get_base;
+};
+
+struct lwm2m_cache_read_info {
+	struct lwm2m_cache_read_entry read_info[CONFIG_LWM2M_MAX_CACHED_RESOURCES];
+	int entry_limit;
+	int entry_size;
+};
+#endif
+
 int lwm2m_engine_data_cache_init(void);
 struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_object(struct lwm2m_obj_path *obj_path);
 struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_string(char const *resource_path);
