@@ -155,12 +155,17 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 		return MGMT_ERR_EUNKNOWN;
 	}
 
-	ok = zcbor_tstr_put_lit(zse, "rc")		&&
-	     zcbor_int32_put(zse, MGMT_ERR_EOK)		&&
-	     zcbor_tstr_put_lit(zse, "name")		&&
-	     zcbor_tstr_encode(zse, &value)		&&
-	     zcbor_tstr_put_lit(zse, "fields")		&&
-	     zcbor_map_start_encode(zse, counter);
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
+		ok = zcbor_tstr_put_lit(zse, "rc")		&&
+		     zcbor_int32_put(zse, MGMT_ERR_EOK);
+	}
+
+	if (ok) {
+		ok = zcbor_tstr_put_lit(zse, "name")		&&
+		     zcbor_tstr_encode(zse, &value)		&&
+		     zcbor_tstr_put_lit(zse, "fields")		&&
+		     zcbor_map_start_encode(zse, counter);
+	}
 
 	if (ok) {
 		int rc = stat_mgmt_foreach_entry(zse, stat_name,

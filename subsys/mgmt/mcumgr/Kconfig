@@ -118,6 +118,18 @@ config MCUMGR_SMP_COMMAND_STATUS_HOOKS
 	  This will enable SMP command status notification hooks for when an SMP message is
 	  received or processed.
 
+config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
+	bool "Legacy rc (result code) response behaviour"
+	help
+	  This will enable legacy result code response behaviour of having rc
+	  present in responses when the status is 0. With this option disabled,
+	  mcumgr acts with new behaviour and will only return rc is the result
+	  code is non-zero (i.e. an error occurred).
+
+	  If a command only returns a result code, this will mean that the
+	  response will be empty with the new behaviour enabled, as opposed to
+	  the old behaviour where the rc field will be present in the response.
+
 menu "Command Handlers"
 
 rsource "grp/Kconfig"
