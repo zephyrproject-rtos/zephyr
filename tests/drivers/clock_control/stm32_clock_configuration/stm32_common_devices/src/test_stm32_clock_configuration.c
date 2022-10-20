@@ -75,7 +75,7 @@ ZTEST(stm32_common_devices_clocks, test_i2c_clk_config)
 					"Expected I2C src: SYSCLK (0x%lx). Actual I2C src: 0x%x",
 					RCC_I2C1CLKSOURCE_SYSCLK, dev_actual_clk_src);
 		} else {
-			zassert_true(0, "Unexpected domain clk (%d)", dev_actual_clk_src);
+			zassert_true(0, "Unexpected domain clk (0x%x)", dev_actual_clk_src);
 		}
 
 		/* Test get_rate(srce clk) */

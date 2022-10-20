@@ -64,18 +64,18 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 
 		if (pclken[1].bus == STM32_SRC_PLL1_Q) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL,
-					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
+					"Expected SPI src: PLL1 Q (0x%x). Actual: 0x%x",
 					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL);
 		} else if (pclken[1].bus == STM32_SRC_PLL3_P) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL3,
-					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
+					"Expected SPI src: PLL3 P (0x%x). Actual: 0x%x",
 					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL3);
 		} else if (pclken[1].bus == STM32_SRC_CKPER) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_CLKP,
-					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
+					"Expected SPI src: PERCLK (0x%x). Actual: 0x%x",
 					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_CLKP);
 		} else {
-			zassert_true(0, "Unexpected domain_clk src(%d)", pclken[1].bus);
+			zassert_true(0, "Unexpected domain_clk src(0x%x)", pclken[1].bus);
 		}
 
 		/* Test get_rate(domain_clk) */
@@ -86,7 +86,7 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 
 		spi1_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SPI1);
 		zassert_equal(spi1_dt_clk_freq, spi1_actual_clk_freq,
-				"Expected SPI clk: (%d). Actual SPI clk: %d",
+				"Expected SPI clk: 0x%x. Actual SPI clk: 0x%x",
 				spi1_dt_clk_freq, spi1_actual_clk_freq);
 	} else {
 		/* No domain clock available, get rate from reg_clk */
@@ -99,11 +99,11 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 
 		spi1_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SPI1);
 		zassert_equal(spi1_dt_clk_freq, spi1_actual_clk_freq,
-				"Expected SPI clk: (%d). Actual SPI clk: %d",
+				"Expected SPI clk: %d. Actual SPI clk: %d",
 				spi1_dt_clk_freq, spi1_actual_clk_freq);
 	}
 
-	TC_PRINT("SPI1 clock freq: %d(MHz)\n", spi1_actual_clk_freq / (1000*1000));
+	TC_PRINT("SPI1 clock freq: %d MHz\n", spi1_actual_clk_freq / (1000*1000));
 
 	/* Test clock_off(reg_clk) */
 	r = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
