@@ -10,6 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -77,6 +78,10 @@ int bt_rand(void *buf, size_t len)
 {
 	int ret;
 
+	CHECKIF(buf == NULL || len == 0) {
+		return -EINVAL;
+	}
+
 	ret = tc_hmac_prng_generate(buf, len, &prng);
 	if (ret == TC_HMAC_PRNG_RESEED_REQ) {
 		ret = prng_reseed(&prng);
@@ -96,6 +101,10 @@ int bt_rand(void *buf, size_t len)
 #else /* !CONFIG_BT_HOST_CRYPTO_PRNG */
 int bt_rand(void *buf, size_t len)
 {
+	CHECKIF(buf == NULL || len == 0) {
+		return -EINVAL;
+	}
+
 	return bt_hci_le_rand(buf, len);
 }
 #endif /* CONFIG_BT_HOST_CRYPTO_PRNG */
@@ -105,6 +114,10 @@ int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 {
 	struct tc_aes_key_sched_struct s;
 	uint8_t tmp[16];
+
+	CHECKIF(key == NULL || plaintext == NULL || enc_data == NULL) {
+		return -EINVAL;
+	}
 
 	BT_DBG("key %s", bt_hex(key, 16));
 	BT_DBG("plaintext %s", bt_hex(plaintext, 16));
@@ -132,6 +145,10 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 		  uint8_t enc_data[16])
 {
 	struct tc_aes_key_sched_struct s;
+
+	CHECKIF(key == NULL || plaintext == NULL || enc_data == NULL) {
+		return -EINVAL;
+	}
 
 	BT_DBG("key %s", bt_hex(key, 16));
 	BT_DBG("plaintext %s", bt_hex(plaintext, 16));
