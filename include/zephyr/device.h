@@ -318,6 +318,17 @@ typedef int16_t device_handle_t;
 		extern const struct device DEVICE_DT_NAME_GET(node_id)
 
 /**
+ * @brief Declare a devicetree device object that may exist.
+ *
+ * This macro can be useful in cases where the device is optional. Application
+ * should then be prepared to handle `NULL` from DEVICE_DT_GET().
+ *
+ * @param node_id Devicetree node identifier.
+ */
+#define DEVICE_DT_DECLARE_MAYBE(node_id)                                       \
+		extern const struct device DEVICE_DT_NAME_GET(node_id)
+
+/**
  * @brief Declare a static device object
  *
  * This macro can be used at the top-level to declare a device, such
