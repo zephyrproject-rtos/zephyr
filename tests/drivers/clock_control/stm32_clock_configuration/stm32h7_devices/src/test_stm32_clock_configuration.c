@@ -38,7 +38,7 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(spi1));
 	struct stm32_pclken spi1_reg_clk_cfg = pclken[0];
 
-	uint32_t spi1_actual_domain_clk, spi1_dt_domain_clk;
+	uint32_t spi1_actual_domain_clk;
 	uint32_t spi1_dt_clk_freq, spi1_actual_clk_freq;
 	int r;
 
@@ -60,27 +60,22 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 		zassert_true((r == 0), "Could not enable SPI domain_clk");
 		TC_PRINT("SPI1 domain_clk on\n");
 
-		/* Test domain_clk is configured as device's source clock */
-		spi1_dt_domain_clk = COND_CODE_1(DT_CLOCKS_HAS_NAME(DT_NODELABEL(spi1), kernel),
-						  (DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(spi1),
-									  kernel, bus)),
-						  (DT_NO_CLOCK));
 		spi1_actual_domain_clk = __HAL_RCC_GET_SPI1_SOURCE();
 
-		if (spi1_dt_domain_clk == STM32_SRC_PLL1_Q) {
+		if (pclken[1].bus == STM32_SRC_PLL1_Q) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL,
 					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
 					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL);
-		} else if (spi1_dt_domain_clk == STM32_SRC_PLL3_P) {
+		} else if (pclken[1].bus == STM32_SRC_PLL3_P) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL3,
 					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
 					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL3);
-		} else if (spi1_dt_domain_clk == STM32_SRC_CKPER) {
+		} else if (pclken[1].bus == STM32_SRC_CKPER) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_CLKP,
 					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
 					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_CLKP);
 		} else {
-			zassert_true(1, "Unexpected domain_clk src(%d)", spi1_dt_domain_clk);
+			zassert_true(0, "Unexpected domain_clk src(%d)", pclken[1].bus);
 		}
 
 		/* Test get_rate(domain_clk) */
