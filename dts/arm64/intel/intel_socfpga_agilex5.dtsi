@@ -100,6 +100,15 @@
 	fpga0: bridges {
 		compatible = "altr,socfpga-agilex-bridge";
 	};
+	
+	fpga_config: fpga@80900000 {
+	/* Reserve Memory For FPGA Config */
+		compatible = "zephyr,memory-region";
+		device_type = "memory";
+		reg = <0x80900000 DT_SIZE_M(16)>;
+		zephyr,memory-region = "FPGA_RESERVED";
+		status = "okay";
+	};
 
 	uart0: uart@10c02000 {
 		compatible = "ns16550";
