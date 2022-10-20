@@ -302,6 +302,32 @@ struct gpio_dt_spec {
 };
 
 /**
+ * @brief Declare GPIO controller device
+ *
+ * This macro will assert if either the @p node_id is not found or not enabled
+ * in devicetree, or, if the controller given in @p prop and @p idx is not found
+ * or not enabled in Devicetree.
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
+ */
+#define GPIO_DT_SPEC_DECLARE_BY_IDX(node_id, prop, idx)                        \
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id), Z_DT_CHECK_MSG(node_id));        \
+	DEVICE_DT_DECLARE(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx))
+
+/**
+ * @brief Declare GPIO controller device
+ *
+ * Equivalent to GPIO_DT_SPEC_DECLARE_BY_IDX(node_id, prop, 0).
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ */
+#define GPIO_DT_SPEC_DECLARE(node_id, prop)                                    \
+	GPIO_DT_SPEC_DECLARE_BY_IDX(node_id, prop, 0)
+
+/**
  * @brief Static initializer for a @p gpio_dt_spec
  *
  * This returns a static initializer for a @p gpio_dt_spec structure given a
