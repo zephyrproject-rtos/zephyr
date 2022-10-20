@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_imx_wdog
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/sys_clock.h>
 #include <fsl_wdog.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
