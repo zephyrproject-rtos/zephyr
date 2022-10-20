@@ -275,8 +275,10 @@ typedef int16_t device_handle_t;
  *
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device
+ *
+ * @deprecated Use DEVICE_DT_GET_ANY() together with DEVICE_DT_DECLARE().
  */
-#define DEVICE_DT_GET_ONE(compat)                                              \
+#define DEVICE_DT_GET_ONE(compat) __DEPRECATED_MACRO                           \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),                         \
 		    (DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(compat))),    \
 		    (ZERO_OR_COMPILE_ERROR(0)))
