@@ -41,6 +41,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | LINFlexD  | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
