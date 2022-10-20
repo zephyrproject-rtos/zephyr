@@ -29,19 +29,21 @@
 #define DMA1_CHANNEL1_PRIO	2
 #define UCPD_PRIO		2
 
+/* snooper model thread parameters */
 #define MODEL_THREAD_STACK_SIZE 500
 #define MODEL_THREAD_PRIORITY 5
 
 /* STM32 UCPD parameters */
 static LL_UCPD_InitTypeDef ucpd_params;
 
+/* Byte size of various portions of the packet */
 #define MOD_BUFFERS 20
-
 #define PACKET_HEADER_LEN 20
 #define PD_SAMPLES 488
 #define PACKET_BYTE_SIZE (PACKET_HEADER_LEN + PD_SAMPLES)
 #define MAX_PACKET_XFER_SIZE 64
 
+/* container for information of the type of packet to be sent */
 struct packet_type_t {
 	uint16_t unused1: 4;
 	uint16_t polarity: 2;
@@ -51,6 +53,7 @@ struct packet_type_t {
 	uint16_t type: 4;
 };
 
+/* container for header of the packet */
 struct header_t {
 	uint32_t sequence;
         uint16_t cc1_voltage;
@@ -63,12 +66,14 @@ struct header_t {
 	uint16_t unused;
 };
 
+/* container for the entire packet */
 struct packet_t {
 	struct header_t header;
 	uint8_t data[PD_SAMPLES];
 	uint32_t crc;
 };
 
+/* storage for all the information of the current state of the snooper */
 struct model_t {
 	const struct device *dev;
 	struct packet_t packet;
@@ -108,32 +113,33 @@ void set_role(uint8_t role_mask) {
 	if (role_mask & SINK_BIT) {
 		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1CC2);
 		LL_UCPD_SetSNKRole(UCPD1);
+		return;
 	}
-	else {
-		if (role_mask & CC1_CHANNEL_BIT) {
-			LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1);
-		}
-		else if (role_mask & CC2_CHANNEL_BIT) {
-			LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC2);
-		}
-		LL_UCPD_SetSRCRole(UCPD1);
 
-		uint8_t Rp = role_mask & PULL_RESISTOR_BITS;
-
-		switch (Rp) {
-		case 0:
-			LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_NONE);
-			break;
-		case 1:
-			LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_DEFAULT);
-			break;
-		case 2:
-			LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_1_5A);
-			break;
-		case 3:
-			LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_3_0A);
-		}
+	if (role_mask & CC1_CHANNEL_BIT) {
+		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1);
 	}
+	else if (role_mask & CC2_CHANNEL_BIT) {
+		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC2);
+	}
+	LL_UCPD_SetSRCRole(UCPD1);
+
+	uint8_t Rp = role_mask & PULL_RESISTOR_BITS;
+
+	switch (Rp) {
+	case 0:
+		LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_NONE);
+		break;
+	case 1:
+		LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_DEFAULT);
+		break;
+	case 2:
+		LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_1_5A);
+		break;
+	case 3:
+		LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_3_0A);
+	}
+
 }
 
 void set_empty_print(bool e) {

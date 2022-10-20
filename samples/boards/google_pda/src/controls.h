@@ -1,10 +1,16 @@
+/*
+ * Copyright (c) 2022 The Chromium OS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _CONTROLS_H_
 #define _CONTROLS_H_
 
 #include <stdbool.h>
 
 /**
- * @brief Initializes the cc pins
+ * @brief Initializes the control module, configure both cc enable pins as active
  *
  * @return 0 on success
  */

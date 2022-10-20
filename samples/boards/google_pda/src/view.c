@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(main);
 #define LED1_NODE DT_ALIAS(led1)
 #define LED2_NODE DT_ALIAS(led2)
 
+/* various flags for the current state of the snooper */
 #define FLAGS_SNOOP0		0
 #define FLAGS_SNOOP1		1
 #define FLAGS_SNOOP2		2

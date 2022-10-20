@@ -35,8 +35,10 @@ static const struct adc_dt_spec adc_vcon_c = ADC_DT_SPEC_GET(VCON_C_MEAS_NODE);
 #define VCON_C_R_MOHM 10
 #define VCON_C_GAIN 25
 
+/* buffer where the adc measurements are stored */
 static int32_t sample_buffer;
 
+/* Structure defining an ADC sampling sequence */
 struct adc_sequence sequence = {
 	.buffer = &sample_buffer,
 	/* buffer size in bytes, not number of samples */
@@ -44,46 +46,42 @@ struct adc_sequence sequence = {
 	.resolution = ADC_RESOLUTION,
 };
 
-void meas_vbus_v(int32_t *v)
+int meas_vbus_v(int32_t *v)
 {
 	int ret;
 
 	sequence.channels = BIT(adc_vbus_v.channel_id);
 	ret = adc_read(adc_vbus_v.dev, &sequence);
 	if (ret != 0) {
-		printk("vbus voltage reading failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
 	*v = sample_buffer;
 	ret = adc_raw_to_millivolts(ADC_REF_MV, ADC_GAIN, ADC_RESOLUTION, v);
 	if (ret != 0) {
-		printk("Scaling ADC voltage failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
 	/* voltage scaled by voltage divider values using DT binding */
 	*v = *v * DT_PROP(VBUS_V_MEAS_NODE, full_ohms) / DT_PROP(VBUS_V_MEAS_NODE, output_ohms);
 
-	return;
+	return 0;
 }
 
-void meas_vbus_c(int32_t *c)
+int meas_vbus_c(int32_t *c)
 {
 	int ret;
 
 	sequence.channels = BIT(adc_vbus_c.channel_id);
 	ret = adc_read(adc_vbus_c.dev, &sequence);
 	if (ret != 0) {
-		printk("vbus current reading failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
 	*c = sample_buffer;
 	ret = adc_raw_to_millivolts(ADC_REF_MV, ADC_GAIN, ADC_RESOLUTION, c);
 	if (ret != 0) {
-		printk("Scaling ADC current failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
 	/* multiplies by 1000 before dividing by shunt resistance
@@ -92,18 +90,17 @@ void meas_vbus_c(int32_t *c)
 	 */
 	*c = (*c - ADC_REF_MV / 2) * 1000 / VBUS_C_R_MOHM / VBUS_C_GAIN;
 
-	return;
+	return 0;
 }
 
-void meas_cc1_v(int32_t *v)
+int meas_cc1_v(int32_t *v)
 {
 	int ret;
 
 	sequence.channels = BIT(adc_cc1_v.channel_id);
 	ret = adc_read(adc_cc1_v.dev, &sequence);
 	if (ret != 0) {
-		printk("ADC voltage reading failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
 	/* cc pin measurements are one to one with actual voltage
@@ -112,22 +109,20 @@ void meas_cc1_v(int32_t *v)
 	*v = sample_buffer;
 	ret = adc_raw_to_millivolts(ADC_REF_MV, ADC_GAIN, ADC_RESOLUTION, v);
 	if (ret != 0) {
-		printk("Scaling ADC voltage failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
-	return;
+	return 0;
 }
 
-void meas_cc2_v(int32_t *v)
+int meas_cc2_v(int32_t *v)
 {
 	int ret;
 
 	sequence.channels = BIT(adc_cc2_v.channel_id);
 	ret = adc_read(adc_cc2_v.dev, &sequence);
 	if (ret != 0) {
-		printk("vbus voltage reading failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
 	/* cc pin measurements are one to one with actual voltage
@@ -136,29 +131,26 @@ void meas_cc2_v(int32_t *v)
 	*v = sample_buffer;
 	ret = adc_raw_to_millivolts(ADC_REF_MV, ADC_GAIN, ADC_RESOLUTION, v);
 	if (ret != 0) {
-		printk("Scaling ADC voltage failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
-	return;
+	return 0;
 }
 
-void meas_vcon_c(int32_t *c)
+int meas_vcon_c(int32_t *c)
 {
 	int ret;
 
 	sequence.channels = BIT(adc_vcon_c.channel_id);
 	ret = adc_read(adc_vcon_c.dev, &sequence);
 	if (ret != 0) {
-		printk("vbus current reading failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
 	*c = sample_buffer;
 	ret = adc_raw_to_millivolts(ADC_REF_MV, ADC_GAIN, ADC_RESOLUTION, c);
 	if (ret != 0) {
-		printk("Scaling ADC current failed with error %d.\n", ret);
-		return;
+		return ret;
 	}
 
 	/* multiplies by 1000 before dividing by shunt resistance
@@ -167,7 +159,7 @@ void meas_vcon_c(int32_t *c)
 	 */
 	*c *= *c * 1000 / VCON_C_R_MOHM / VCON_C_GAIN;
 
-	return;
+	return 0;
 }
 
 int meas_init(void)
