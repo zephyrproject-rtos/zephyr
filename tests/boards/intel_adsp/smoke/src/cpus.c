@@ -41,7 +41,7 @@ static uint32_t clk_ratios[CONFIG_MP_MAX_NUM_CPUS];
 
 static void run_on_cpu(int cpu, void (*fn)(void *), void *arg, bool wait)
 {
-	__ASSERT_NO_MSG(cpu < CONFIG_MP_NUM_CPUS);
+	__ASSERT_NO_MSG(cpu < arch_num_cpus());
 
 	/* Highest priority isn't actually guaranteed to preempt
 	 * whatever's running, but we assume the test hasn't laid
@@ -156,7 +156,7 @@ static void halt_and_restart(int cpu)
 {
 	printk("halt/restart core %d...\n", cpu);
 	static bool alive_flag;
-	uint32_t all_cpus = BIT(CONFIG_MP_NUM_CPUS) - 1;
+	uint32_t all_cpus = BIT(arch_num_cpus()) - 1;
 	int ret;
 
 	/* On older hardware we need to get the host to turn the core
