@@ -1814,20 +1814,15 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	int ret, len;
 	struct net_buf *buf;
 
-	if (default_stream->iso->qos->tx == NULL) {
-		shell_error(sh, "Stream %p cannot send", default_stream);
-		return -ENOEXEC;
-	}
-
 	if (argc > 1) {
 		len = hex2bin(argv[1], strlen(argv[1]), data, sizeof(data));
-		if (len > default_stream->iso->qos->tx->sdu) {
+		if (len > default_preset->preset.qos.sdu) {
 			shell_print(sh, "Unable to send: len %d > %u MTU",
-				    len, default_stream->iso->qos->tx->sdu);
+				    len, default_preset->preset.qos.sdu);
 			return -ENOEXEC;
 		}
 	} else {
-		len = MIN(default_stream->iso->qos->tx->sdu, sizeof(data));
+		len = MIN(default_preset->preset.qos.sdu, sizeof(data));
 		memset(data, 0xff, len);
 	}
 
