@@ -7,6 +7,7 @@
 config BT_EXT_ADV
 	bool "Extended Advertising and Scanning support"
 	depends on !BT_CTLR || BT_CTLR_ADV_EXT_SUPPORT
+	default y if BT_MESH
 	help
 	  Select this to enable Extended Advertising API support.
 	  This enables support for advertising with multiple advertising sets,

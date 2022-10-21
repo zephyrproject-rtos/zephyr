@@ -121,6 +121,8 @@ Bluetooth
 
 * Mesh
 
+  * Change default advertiser to be extended advertiser.
+
 * Controller
 
 * HCI Driver
