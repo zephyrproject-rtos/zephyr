@@ -35,26 +35,9 @@ static void pa_term(const struct bt_bap_scan_delegator_recv_state *recv_state,
 
 }
 
-static void pa_recv(const struct bt_bap_scan_delegator_recv_state *recv_state,
-		    const struct bt_le_per_adv_sync_recv_info *info,
-		    struct net_buf_simple *buf)
-{
-	char le_addr[BT_ADDR_LE_STR_LEN];
-	char hex[512];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	bin2hex(buf->data, buf->len, hex, sizeof(hex));
-	shell_print(ctx_shell, "Receive state %p: device %s, tx_power %i, "
-		    "RSSI %i, CTE %u, data length %u, data %s",
-		    recv_state, le_addr, info->tx_power,
-		    info->rssi, info->cte_type, buf->len, hex);
-
-}
-
 static struct bt_bap_scan_delegator_cb cbs = {
 	.pa_synced = pa_synced,
 	.pa_term = pa_term,
-	.pa_recv = pa_recv
 };
 
 static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,

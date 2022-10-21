@@ -16,7 +16,6 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/buf.h>
 
@@ -55,11 +54,6 @@ struct bass_recv_state_internal {
 	struct bt_le_per_adv_sync *pa_sync;
 	bool pa_sync_pending;
 	struct k_work_delayable pa_timer;
-	uint8_t biginfo_num_bis;
-	bool biginfo_received;
-	bool big_encrypted;
-	uint16_t iso_interval;
-	struct bt_iso_big *big;
 };
 
 struct bt_bap_scan_delegator_inst {
@@ -72,39 +66,6 @@ struct bt_bap_scan_delegator_inst {
 static bool conn_cb_registered;
 static struct bt_bap_scan_delegator_inst scan_delegator;
 static struct bt_bap_scan_delegator_cb *scan_delegator_cbs;
-
-static int bis_sync(struct bass_recv_state_internal *state);
-
-/* TODO: Integrate the following with the bt_audio (audio.h) API */
-static void iso_recv(struct bt_iso_chan *chan,
-		     const struct bt_iso_recv_info *info,
-		     struct net_buf *buf)
-{
-	printk("Incoming data channel %p len %u\n", chan, buf->len);
-}
-
-static void iso_connected(struct bt_iso_chan *chan)
-{
-	printk("ISO Channel %p connected\n", chan);
-}
-
-static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
-{
-	printk("ISO Channel %p disconnected with reason 0x%02x\n",
-	       chan, reason);
-}
-
-static struct bt_iso_chan_ops iso_ops = {
-	.recv		= iso_recv,
-	.connected	= iso_connected,
-	.disconnected	= iso_disconnected,
-};
-
-static struct bt_iso_chan_qos bis_iso_qos;
-static struct bt_iso_chan bis_iso_chan = {
-	.ops = &iso_ops,
-	.qos = &bis_iso_qos,
-};
 
 /**
  * @brief Returns whether a value's bits is a subset of another value's bits
@@ -138,17 +99,6 @@ static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs,
 	return (requested_bis_syncs & aggregated_bis_syncs) != 0 &&
 	       requested_bis_syncs != BT_BAP_BIS_SYNC_NO_PREF &&
 	       aggregated_bis_syncs != BT_BAP_BIS_SYNC_NO_PREF;
-}
-
-static uint32_t aggregated_bis_syncs_get(const struct bass_recv_state_internal *recv_state)
-{
-	uint32_t aggregated_bis_syncs = 0;
-
-	for (int i = 0; i < recv_state->state.num_subgroups; i++) {
-		aggregated_bis_syncs |= recv_state->state.subgroups[i].requested_bis_sync;
-	}
-
-	return aggregated_bis_syncs;
 }
 
 static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv_state)
@@ -428,67 +378,9 @@ static void pa_terminated(struct bt_le_per_adv_sync *sync,
 	}
 }
 
-static void pa_recv(struct bt_le_per_adv_sync *sync,
-		    const struct bt_le_per_adv_sync_recv_info *info,
-		    struct net_buf_simple *buf)
-{
-	struct bass_recv_state_internal *state = bass_lookup_pa_sync(sync);
-
-	if (state != NULL) {
-		if (scan_delegator_cbs  != NULL && scan_delegator_cbs->pa_recv != NULL) {
-			scan_delegator_cbs->pa_recv(&state->state, info, buf);
-		}
-	}
-}
-
-static void biginfo_recv(struct bt_le_per_adv_sync *sync,
-			 const struct bt_iso_biginfo *biginfo)
-{
-	struct bass_recv_state_internal *state = bass_lookup_pa_sync(sync);
-
-	if (state == NULL || state->biginfo_received) {
-		return;
-	}
-
-	state->big_encrypted = biginfo->encryption;
-	state->iso_interval = biginfo->iso_interval * 5 / 4; /* Convert to ms */
-	state->biginfo_num_bis = biginfo->num_bis;
-	state->biginfo_received = true;
-
-	if (state->big_encrypted) {
-		if (state->broadcast_code_received) {
-			/* TODO: For now assume that the BIG can be decrypted
-			 * given the broadcast code. When we have a proper
-			 * broadcast source, that should be in charge of
-			 * validating this.
-			 */
-			state->state.encrypt_state = BT_BAP_BIG_ENC_STATE_DEC;
-		} else {
-			/* Request broadcast code from assistant */
-			state->state.encrypt_state = BT_BAP_BIG_ENC_STATE_BCODE_REQ;
-		}
-
-		bt_debug_dump_recv_state(state);
-		net_buf_put_recv_state(state);
-		bass_notify_receive_state(state);
-	} else {
-		int err = bis_sync(state);
-
-		if (err != 0) {
-			LOG_DBG("BIS sync failed %d", err);
-		}
-	}
-
-	if (scan_delegator_cbs != NULL && scan_delegator_cbs->biginfo != NULL) {
-		scan_delegator_cbs->biginfo(&state->state, biginfo);
-	}
-}
-
 static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 	.synced = pa_synced,
 	.term = pa_terminated,
-	.recv = pa_recv,
-	.biginfo = biginfo_recv
 };
 
 static void pa_timer_handler(struct k_work *work)
@@ -517,86 +409,6 @@ static void pa_timer_handler(struct k_work *work)
 	bt_debug_dump_recv_state(recv_state);
 	net_buf_put_recv_state(recv_state);
 	bass_notify_receive_state(recv_state);
-}
-
-static int bis_sync(struct bass_recv_state_internal *state)
-{
-	int err;
-	struct bt_iso_big_sync_param param;
-	struct bt_iso_chan *bis_channels[1] = { &bis_iso_chan };
-
-	if (state->big != NULL) {
-		return -EALREADY;
-	}
-
-	bis_iso_qos.tx = NULL;
-
-	param.bis_channels = bis_channels;
-	param.num_bis = ARRAY_SIZE(bis_channels);
-	param.encryption = false;
-	param.bis_bitfield = aggregated_bis_syncs_get(state);
-	param.mse = 0;
-	param.sync_timeout = interval_to_sync_timeout(state->iso_interval);
-
-	LOG_DBG("Bitfield %x", param.bis_bitfield);
-
-	if (param.bis_bitfield == 0) {
-		/* Don't attempt to sync anything */
-		return 0;
-	} else if (param.bis_bitfield == BT_BAP_BIS_SYNC_NO_PREF) {
-		param.bis_bitfield = 0;
-		/* Attempt to sync to all BISes */
-		for (int i = 0; i < state->biginfo_num_bis; i++) {
-			param.bis_bitfield |= BIT(i);
-		}
-	} else {
-		/* Ensure that we don't attempt to sync to more BISes that is possible */
-		uint32_t max_bis_bitfield = 0;
-
-		for (int i = 0; i < state->biginfo_num_bis; i++) {
-			max_bis_bitfield |= BIT(i);
-		}
-
-		param.bis_bitfield &= max_bis_bitfield;
-	}
-
-	/* TODO: For now we only support syncing to a single BIS,
-	 * so only sync to first BIS
-	 */
-	for (int i = 0; i < state->biginfo_num_bis; i++) {
-		if (param.bis_bitfield & BIT(i)) {
-			param.bis_bitfield = BIT(i);
-			break;
-		}
-	}
-
-	err = bt_iso_big_sync(state->pa_sync, &param, &state->big);
-	if (err != 0) {
-		return err;
-	}
-
-	/* We could start a timer for BIG sync but there is no way to let the
-	 * assistant know if it has timed out, so it doesn't really matter.
-	 */
-	return 0;
-}
-
-static int bis_sync_cancel(struct bass_recv_state_internal *state)
-{
-	int err;
-
-	if (!state->big) {
-		return 0;
-	}
-
-	err = bt_iso_big_terminate(state->big);
-	if (err != 0) {
-		return err;
-	}
-
-	state->big = NULL;
-
-	return 0;
 }
 
 static void scan_delegator_pa_sync_past(struct bt_conn *conn,
@@ -851,7 +663,6 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		subgroups[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS] = { 0 };
 	uint8_t pa_sync;
 	uint32_t aggregated_bis_syncs = 0;
-	int err;
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bt_bap_bass_cp_mod_src) - 1) {
@@ -988,14 +799,6 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	internal_state->pa_interval = pa_interval;
 
 	if (need_synced) {
-		/* Terminated BIG first if existed */
-		err = bis_sync_cancel(internal_state);
-		if (err != 0) {
-			LOG_WRN("Could not terminate existing BIG %d", err);
-
-			return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-		}
-
 		/* Terminated PA let's re-sync later */
 		scan_delegator_pa_sync_cancel(internal_state);
 
@@ -1024,7 +827,6 @@ static int scan_delegator_broadcast_code(struct net_buf_simple *buf)
 	struct bass_recv_state_internal *internal_state;
 	uint8_t src_id;
 	uint8_t *broadcast_code;
-	int err;
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len != sizeof(struct bt_bap_bass_cp_broadcase_code) - 1) {
@@ -1050,24 +852,11 @@ static int scan_delegator_broadcast_code(struct net_buf_simple *buf)
 
 	internal_state->broadcast_code_received = true;
 
-	if (!internal_state->biginfo_received) {
-		return 0;
-	}
-
-	LOG_DBG("Syncing to BIS");
-
-	err = bis_sync(internal_state);
-	if (err != 0) {
-		LOG_DBG("BIS sync failed %d", err);
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-	}
-
 	return 0;
 }
 
 static int scan_delegator_rem_src(struct net_buf_simple *buf)
 {
-	int err;
 	struct bass_recv_state_internal *internal_state;
 	uint8_t src_id;
 
@@ -1094,22 +883,14 @@ static int scan_delegator_rem_src(struct net_buf_simple *buf)
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	err = bis_sync_cancel(internal_state);
-	if (err != 0) {
-		LOG_WRN("Could not terminate BIG %d", err);
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-	}
-
-	LOG_DBG("Index %u: Removed source with ID 0x%02x", internal_state->index, src_id);
+	LOG_DBG("Index %u: Removed source with ID 0x%02x",
+		internal_state->index, src_id);
 
 	internal_state->active = false;
 	(void)memset(&internal_state->state, 0, sizeof(internal_state->state));
 	(void)memset(internal_state->broadcast_code, 0,
 		     sizeof(internal_state->broadcast_code));
 	internal_state->pa_interval = 0;
-	internal_state->big_encrypted = 0;
-	internal_state->iso_interval = 0;
-	internal_state->biginfo_received = false;
 
 	(void)bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE,
 				  internal_state->attr, NULL, 0);
