@@ -64,14 +64,14 @@ static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_bap_scan_delegator_synced(const struct shell *sh, size_t argc,
+static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc,
 					 char **argv)
 {
 	uint32_t bis_syncs[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
 	unsigned long pa_sync_state;
 	unsigned long bis_synced;
+	unsigned long enc_state;
 	unsigned long src_id;
-	bool encrypted;
 	int result = 0;
 
 	src_id = shell_strtoul(argv[1], 0, &result);
@@ -117,15 +117,19 @@ static int cmd_bap_scan_delegator_synced(const struct shell *sh, size_t argc,
 		bis_syncs[i] = bis_synced;
 	}
 
-	encrypted = shell_strtobool(argv[4], 0, &result);
+	enc_state = shell_strtoul(argv[4], 0, &result);
 	if (result != 0) {
-		shell_error(sh, "Could not parse encrypted: %d", result);
+		shell_error(sh, "Could not parse enc_state: %d", result);
 
 		return -ENOEXEC;
 	}
 
-	result = bt_bap_scan_delegator_set_sync_state(src_id, pa_sync_state,
-						      bis_syncs, encrypted);
+	if (enc_state > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+		shell_error(sh, "Invalid enc_state %lu", enc_state);
+		return -ENOEXEC;
+	}
+
+	result = bt_bap_scan_delegator_set_bis_sync_state(src_id, bis_syncs, enc_state);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -151,8 +155,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_scan_delegator_cmds,
 		      "Initialize the service and register callbacks",
 		      cmd_bap_scan_delegator_init, 1, 0),
 	SHELL_CMD_ARG(synced, NULL,
-		      "Set server scan state <src_id> <pa_synced> <bis_syncs> "
-		      "<enc_state>", cmd_bap_scan_delegator_synced, 5, 0),
+		      "Set server scan state <src_id> <bis_syncs> <enc_state>",
+		      cmd_bap_scan_delegator_bis_synced, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 

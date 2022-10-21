@@ -1300,39 +1300,48 @@ void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb)
 	scan_delegator_cbs = cb;
 }
 
-int bt_bap_scan_delegator_set_sync_state(
-	uint8_t src_id, uint8_t pa_sync_state,
+int bt_bap_scan_delegator_set_bis_sync_state(
+	uint8_t src_id,
 	uint32_t bis_synced[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS],
-	uint8_t encrypt_state)
+	enum bt_bap_big_enc_state enc_state)
 {
 	struct bass_recv_state_internal *recv_state =
 		bass_lookup_src_id(src_id);
 	bool notify = false;
 
 	if (recv_state == NULL) {
-		return -EINVAL;
-	} else if (encrypt_state > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
-		return -EINVAL;
-	} else if (pa_sync_state > BT_BAP_PA_STATE_NO_PAST) {
+		LOG_DBG("Could not find recv_state by src_id %u", src_id);
 		return -EINVAL;
 	}
 
+	if (recv_state->state.pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
+		LOG_DBG("PA for src_id %u isn't synced, cannot be BIG synced",
+			src_id);
+		return -EINVAL;
+	}
+
+	/* Verify state for all subgroups before assigning any data */
 	for (int i = 0; i < recv_state->state.num_subgroups; i++) {
 		struct bt_bap_scan_delegator_subgroup *subgroup = &recv_state->state.subgroups[i];
 
-		if (bis_synced[i] != 0 &&
-		    pa_sync_state == BT_BAP_PA_STATE_NOT_SYNCED) {
-			LOG_DBG("Cannot set BIS sync when PA sync is not synced");
-
-			return -EINVAL;
+		if (i >= CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS) {
+			break;
 		}
 
-		if (bits_subset_of(bis_synced[i],
+		if (!bits_subset_of(bis_synced[i],
 				   subgroup->requested_bis_sync)) {
 			LOG_DBG("Subgroup[%d] invalid bis_sync value %x for %x", i, bis_synced[i],
 				subgroup->requested_bis_sync);
 
 			return -EINVAL;
+		}
+	}
+
+	for (int i = 0; i < recv_state->state.num_subgroups; i++) {
+		struct bt_bap_scan_delegator_subgroup *subgroup = &recv_state->state.subgroups[i];
+
+		if (i >= CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS) {
+			break;
 		}
 
 		if (bis_synced[i] != subgroup->bis_sync) {
@@ -1343,13 +1352,10 @@ int bt_bap_scan_delegator_set_sync_state(
 
 	LOG_DBG("Index %u: Source ID 0x%02x synced", recv_state->index, src_id);
 
-	if (recv_state->state.pa_sync_state != pa_sync_state ||
-	    recv_state->state.encrypt_state != encrypt_state) {
+	if (recv_state->state.encrypt_state != enc_state) {
+		recv_state->state.encrypt_state = enc_state;
 		notify = true;
 	}
-
-	recv_state->state.pa_sync_state = pa_sync_state;
-	recv_state->state.encrypt_state = encrypt_state;
 
 	if (recv_state->state.encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
 		(void)memcpy(recv_state->state.bad_code,
