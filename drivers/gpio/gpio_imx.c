@@ -18,7 +18,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 struct imx_gpio_config {
 	/* gpio_driver_config needs to be first */

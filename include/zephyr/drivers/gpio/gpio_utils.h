@@ -4,12 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file Header where utility code can be found for GPIO drivers
- */
 
-#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_
-#define ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_UTILS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_UTILS_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -83,4 +80,4 @@ static inline void gpio_fire_callbacks(sys_slist_t *list,
 	}
 }
 
-#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_UTILS_H_ */

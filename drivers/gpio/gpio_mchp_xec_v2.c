@@ -15,7 +15,7 @@
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #define XEC_GPIO_EDGE_DLY_COUNT		4
 

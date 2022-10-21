@@ -14,7 +14,7 @@
 #include <eoss3_hal_pads.h>
 #include <eoss3_hal_pad_config.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #define MAX_GPIOS		8U
 #define GPIOS_MASK		(BIT(MAX_GPIOS) - 1)

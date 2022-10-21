@@ -15,7 +15,7 @@
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <chip_chipregs.h>
 #include <soc_common.h>
