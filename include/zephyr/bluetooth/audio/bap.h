@@ -328,6 +328,18 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	void (*pa_term)(const struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_term_info *info);
+
+	/**
+	 * @brief Receive state updated
+	 *
+	 * @param conn       Pointer to the connection to a remove device if the
+	 *                   the change was caused by it, otherwise NULL.
+	 * @param recv_state Pointer to the receive state that was updated.
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
+	void (*recv_state_updated)(struct bt_conn *conn,
+				   const struct bt_bap_scan_delegator_recv_state *recv_state);
 };
 
 /** Structure holding information of audio stream endpoint */
