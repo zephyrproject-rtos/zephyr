@@ -40,6 +40,8 @@ static uint8_t pack_bt_codec_cc(const struct bt_codec *codec, uint8_t cc[])
 		 * and that based on the Kconfigs we can assume that the length
 		 * will always fit in `cc`
 		 */
+		cc[len++] = data->data_len + 1;
+		cc[len++] = data->type;
 		(void)memcpy(cc + len, data->data, data->data_len);
 		len += data->data_len;
 	}
