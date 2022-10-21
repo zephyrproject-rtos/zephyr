@@ -128,6 +128,36 @@
 			#interrupt-cells = <3>;
 		};
 
+		hdamlddmic: hdamlddmic@cc0 {
+			compatible = "intel,adsp-hda-dmic-cap";
+			reg = <0xcc0 0x40>;
+			status = "okay";
+		};
+
+		dmic0: dai-dmic0@10100 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10100 0x8000>;
+			shim = <0x10000>;
+			fifo = <0x0008>;
+			interrupts = <0x08 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		dmic1: dai-dmic1@10100 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10100 0x8000>;
+			shim = <0x10000>;
+			fifo = <0x0108>;
+			interrupts = <0x08 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		dmicvss: dmicvss@16000 {
+			compatible = "intel,adsp-dmic-vss";
+			reg = <0x16000 0x2000>;
+			status = "okay";
+		};
+
 		sspbase: ssp_base@28000 {
 			compatible = "intel,ssp-sspbase";
 			reg = <0x28000 0x1000>;
