@@ -12,5 +12,6 @@ supported:
   - nvs
   - netif:serial-net
   - eeprom
+  - can
 testing:
   default: true
