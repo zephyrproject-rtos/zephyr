@@ -81,7 +81,8 @@
 &spi0 {
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
-
+	dmas = <&xdmac 0 DMA_PERID_SPI0_TX>, <&xdmac 1 DMA_PERID_SPI0_RX>;
+	dma-names = "tx", "rx";
 	status = "okay";
 };
 
@@ -137,6 +138,11 @@ zephyr_udc0: &usbhs {
 &pwm0 {
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+
+&xdmac {
 	status = "okay";
 };
 
