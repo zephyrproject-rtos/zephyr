@@ -328,34 +328,6 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	void (*pa_term)(const struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_term_info *info);
-
-	/**
-	 * @brief Periodic advertising data received for receive state
-	 *
-	 * @param recv_state Pointer to the receive state that received the
-	 *                   data.
-	 * @param info       Information about the periodic advertising event.
-	 * @param buf        Buffer containing the periodic advertising data.
-	 *
-	 * @return 0 in case of success or negative value in case of error.
-	 */
-	void (*pa_recv)(const struct bt_bap_scan_delegator_recv_state *recv_state,
-			const struct bt_le_per_adv_sync_recv_info *info,
-			struct net_buf_simple *buf);
-
-	/**
-	 * @brief BIGInfo advertising report received.
-	 *
-	 * This callback notifies the application of a BIGInfo advertising
-	 * report. This is received if the advertiser is broadcasting
-	 * isochronous streams in a BIG. See iso.h for more information.
-	 *
-	 * @param recv_state  Pointer to the receive state that received the
-	 *                    BIGInfo.
-	 * @param biginfo     The BIGInfo report.
-	 */
-	void (*biginfo)(const struct bt_bap_scan_delegator_recv_state *recv_state,
-			const struct bt_iso_biginfo *biginfo);
 };
 
 /** Structure holding information of audio stream endpoint */

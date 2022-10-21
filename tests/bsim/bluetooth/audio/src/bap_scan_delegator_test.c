@@ -27,17 +27,9 @@ static void pa_term(const struct bt_bap_scan_delegator_recv_state *recv_state,
 	g_pa_synced = false;
 }
 
-static void pa_recv(const struct bt_bap_scan_delegator_recv_state *recv_state,
-		    const struct bt_le_per_adv_sync_recv_info *info,
-		    struct net_buf_simple *buf)
-{
-	printk("Receive state %p received data\n", recv_state);
-}
-
 static struct bt_bap_scan_delegator_cb scan_delegator_cb = {
 	.pa_synced = pa_synced,
 	.pa_term = pa_term,
-	.pa_recv = pa_recv
 };
 
 static void test_main(void)
