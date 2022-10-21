@@ -26,3 +26,13 @@ config SERIAL_ESP32_USB
 	  USB host. The USB stack is built into the chip and accessed
 	  by the firmware through a simplified API similar to a "normal"
 	  UART peripheral.
+
+config ESP_PHY_ENABLE_USB
+	bool "Enable USB when phy init"
+	depends on SERIAL_ESP32_USB
+	default y if SOC_ESP32C3
+	default n
+	help
+	  When using USB Serial/JTAG/OTG/CDC, PHY should enable USB, otherwise USB module
+	  can not work properly. Notice: Enabling this configuration option will slightly
+	  impact wifi performance.
