@@ -363,6 +363,10 @@ config BT_MESH_ADV_LEGACY
 	  advertising is significantly slower than the extended advertising, but
 	  is supported by all controllers.
 
+	  WARNING: The legacy advertiser can occasionally do more message
+	  retransmissions than requested because of limitations of HCI
+	  interface API.
+
 config BT_MESH_ADV_EXT
 	bool "Extended advertising"
 	depends on BT_CTLR_ADV_EXT || !BT_CTLR
