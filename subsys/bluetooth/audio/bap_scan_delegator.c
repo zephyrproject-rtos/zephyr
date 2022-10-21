@@ -1300,7 +1300,6 @@ void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb)
 	scan_delegator_cbs = cb;
 }
 
-#if defined(CONFIG_BT_TESTING)
 int bt_bap_scan_delegator_set_sync_state(
 	uint8_t src_id, uint8_t pa_sync_state,
 	uint32_t bis_synced[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS],
@@ -1367,7 +1366,6 @@ int bt_bap_scan_delegator_set_sync_state(
 
 	return 0;
 }
-#endif
 
 int bt_bap_scan_delegator_remove_source(uint8_t src_id)
 {
