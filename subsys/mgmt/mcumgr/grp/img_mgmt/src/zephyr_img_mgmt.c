@@ -13,12 +13,12 @@ LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
+#include <bootutil/bootutil_public.h>
+#include <assert.h>
+
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
-#include <assert.h>
-
-#include <bootutil/bootutil_public.h>
 
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_impl.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
@@ -431,6 +431,7 @@ img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 	/* align requested erase size to the erase-block-size */
 	const struct device *dev = flash_area_get_device(fa);
+
 	if (dev == NULL) {
 		rc = MGMT_ERR_EUNKNOWN;
 		goto end_fa;

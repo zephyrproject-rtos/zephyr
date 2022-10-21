@@ -13,6 +13,7 @@
 #include "../../../../../../subsys/mgmt/mcumgr/smp_reassembly.h"
 #include "../../../../../../subsys/mgmt/mcumgr/smp_internal.h"
 
+
 static struct smp_transport smpt;
 static uint8_t buff[CONFIG_MCUMGR_BUF_SIZE];
 #define TEST_FRAME_SIZE 256
