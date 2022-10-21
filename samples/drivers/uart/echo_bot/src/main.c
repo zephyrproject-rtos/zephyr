@@ -36,10 +36,12 @@ void serial_cb(const struct device *dev, void *user_data)
 		return;
 	}
 
-	while (uart_irq_rx_ready(uart_dev)) {
+	if (!uart_irq_rx_ready(uart_dev)) {
+		return;
+	}
 
-		uart_fifo_read(uart_dev, &c, 1);
-
+	/* read until FIFO empty */
+	while (uart_fifo_read(uart_dev, &c, 1) == 1) {
 		if ((c == '\n' || c == '\r') && rx_buf_pos > 0) {
 			/* terminate string */
 			rx_buf[rx_buf_pos] = '\0';
