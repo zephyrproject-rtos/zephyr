@@ -22,7 +22,7 @@
 
 #include <soc.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 /* Offset from syscon base address. */
 #define LPC11U6X_PINTSEL_REGS	0x178

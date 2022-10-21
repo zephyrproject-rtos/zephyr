@@ -16,7 +16,7 @@
 #include <fsl_common.h>
 #include <fsl_port.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 struct gpio_mcux_config {
 	/* gpio_driver_config needs to be first */

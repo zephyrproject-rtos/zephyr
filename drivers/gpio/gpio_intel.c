@@ -28,7 +28,7 @@
 #include <zephyr/sys/speculation.h>
 #include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 

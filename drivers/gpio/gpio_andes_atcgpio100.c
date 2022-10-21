@@ -19,7 +19,7 @@
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #define DT_DRV_COMPAT andestech_atcgpio100
 

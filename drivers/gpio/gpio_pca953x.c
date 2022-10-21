@@ -21,7 +21,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pca953x, CONFIG_GPIO_LOG_LEVEL);
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 /* PCA953X Register addresses */
 #define PCA953X_INPUT_PORT		0x00
