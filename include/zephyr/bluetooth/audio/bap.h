@@ -135,7 +135,7 @@ struct bt_bap_scan_delegator_cb {
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	void (*pa_synced)(struct bt_bap_scan_delegator_recv_state *recv_state,
+	void (*pa_synced)(const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  const struct bt_le_per_adv_sync_synced_info *info);
 
 	/**
@@ -146,7 +146,7 @@ struct bt_bap_scan_delegator_cb {
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	void (*pa_term)(struct bt_bap_scan_delegator_recv_state *recv_state,
+	void (*pa_term)(const struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_term_info *info);
 
 	/**
@@ -159,7 +159,7 @@ struct bt_bap_scan_delegator_cb {
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	void (*pa_recv)(struct bt_bap_scan_delegator_recv_state *recv_state,
+	void (*pa_recv)(const struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_recv_info *info,
 			struct net_buf_simple *buf);
 
@@ -174,7 +174,7 @@ struct bt_bap_scan_delegator_cb {
 	 *                    BIGInfo.
 	 * @param biginfo     The BIGInfo report.
 	 */
-	void (*biginfo)(struct bt_bap_scan_delegator_recv_state *recv_state,
+	void (*biginfo)(const struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_iso_biginfo *biginfo);
 };
 
