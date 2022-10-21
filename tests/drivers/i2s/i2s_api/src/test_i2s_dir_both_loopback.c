@@ -18,7 +18,11 @@
 static ZTEST_DMEM const struct device *dev_i2s;
 static ZTEST_DMEM bool dir_both_supported;
 
-void test_i2s_dir_both_transfer_configure_0(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_dir_both_user_loopback, test_i2s_dir_both_transfer_configure_0)
+#else
+ZTEST(net_i2s_dir_both_loopback, test_i2s_dir_both_transfer_configure_0)
+#endif
 {
 	int ret;
 
@@ -47,7 +51,11 @@ void test_i2s_dir_both_transfer_configure_0(void)
  * - Sending / receiving a short sequence of data returns success.
  * - DRAIN trigger empties the transmit queue and stops both streams.
  */
-void test_i2s_dir_both_transfer_short(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_dir_both_user_loopback, test_i2s_dir_both_transfer_short)
+#else
+ZTEST(net_i2s_dir_both_loopback, test_i2s_dir_both_transfer_short)
+#endif
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -102,7 +110,11 @@ void test_i2s_dir_both_transfer_short(void)
  * - Sending / receiving a long sequence of data returns success.
  * - DRAIN trigger empties the transmit queue and stops both streams.
  */
-void test_i2s_dir_both_transfer_long(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_dir_both_user_loopback, test_i2s_dir_both_transfer_long)
+#else
+ZTEST(net_i2s_dir_both_loopback, test_i2s_dir_both_transfer_long)
+#endif
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -147,7 +159,11 @@ void test_i2s_dir_both_transfer_long(void)
  *   consecutive START trigger restarts transfer / reception with the next data
  *   block.
  */
-void test_i2s_dir_both_transfer_restart(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_dir_both_user_loopback, test_i2s_dir_both_transfer_restart)
+#else
+ZTEST(net_i2s_dir_both_loopback, test_i2s_dir_both_transfer_restart)
+#endif
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -212,7 +228,11 @@ void test_i2s_dir_both_transfer_restart(void)
  * - Sending PREPARE trigger after the RX buffer overrun occurred changes
  *   the interface state to READY.
  */
-void test_i2s_dir_both_transfer_rx_overrun(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_dir_both_user_loopback, test_i2s_dir_both_transfer_rx_overrun)
+#else
+ZTEST(net_i2s_dir_both_loopback, test_i2s_dir_both_transfer_rx_overrun)
+#endif
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -281,7 +301,11 @@ void test_i2s_dir_both_transfer_rx_overrun(void)
  * - Sending PREPARE trigger after the TX buffer underrun occurred changes
  *   the interface state to READY.
  */
-void test_i2s_dir_both_transfer_tx_underrun(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_dir_both_user_loopback, test_i2s_dir_both_transfer_tx_underrun)
+#else
+ZTEST(net_i2s_dir_both_loopback, test_i2s_dir_both_transfer_tx_underrun)
+#endif
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");

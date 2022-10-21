@@ -13,7 +13,11 @@ static ZTEST_DMEM const struct device *dev_i2s_rx;
 static ZTEST_DMEM const struct device *dev_i2s_tx;
 
 /** Configure I2S TX transfer. */
-void test_i2s_tx_transfer_configure_1(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_user_states, test_i2s_tx_transfer_configure_1)
+#else
+ZTEST(net_i2s_states, test_i2s_tx_transfer_configure_1)
+#endif
 {
 	int ret;
 
@@ -25,7 +29,11 @@ void test_i2s_tx_transfer_configure_1(void)
 }
 
 /** Configure I2S RX transfer. */
-void test_i2s_rx_transfer_configure_1(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_user_states, test_i2s_rx_transfer_configure_1)
+#else
+ZTEST(net_i2s_states, test_i2s_rx_transfer_configure_1)
+#endif
 {
 	int ret;
 
@@ -43,7 +51,11 @@ void test_i2s_rx_transfer_configure_1(void)
  * - An attempt to read RX block in NOT_READY state returns failure.
  * - An attempt to write TX block in NOT_READY state returns failure.
  */
-void test_i2s_state_not_ready_neg(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_user_states, test_i2s_state_not_ready_neg)
+#else
+ZTEST(net_i2s_states, test_i2s_state_not_ready_neg)
+#endif
 {
 	struct i2s_config i2s_cfg;
 	size_t rx_size;
@@ -103,7 +115,11 @@ void test_i2s_state_not_ready_neg(void)
  *
  * - Sending DRAIN, STOP, PREPARE trigger in READY state returns failure.
  */
-void test_i2s_state_ready_neg(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_user_states, test_i2s_state_ready_neg)
+#else
+ZTEST(net_i2s_states, test_i2s_state_ready_neg)
+#endif
 {
 	int ret;
 
@@ -144,7 +160,11 @@ void test_i2s_state_ready_neg(void)
  *
  * - Sending START, PREPARE trigger in RUNNING state returns failure.
  */
-void test_i2s_state_running_neg(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_user_states, test_i2s_state_running_neg)
+#else
+ZTEST(net_i2s_states, test_i2s_state_running_neg)
+#endif
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
@@ -201,7 +221,11 @@ void test_i2s_state_running_neg(void)
  * - Sending START, STOP, DRAIN, PREPARE trigger in STOPPING state returns
  *   failure.
  */
-void test_i2s_state_stopping_neg(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_user_states, test_i2s_state_stopping_neg)
+#else
+ZTEST(net_i2s_states, test_i2s_state_stopping_neg)
+#endif
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
@@ -271,7 +295,11 @@ void test_i2s_state_stopping_neg(void)
  *
  * - Sending START, STOP, DRAIN trigger in ERROR state returns failure.
  */
-void test_i2s_state_error_neg(void)
+#ifdef CONFIG_TEST_USERSPACE
+ZTEST_USER(net_i2s_user_states, test_i2s_state_error_neg)
+#else
+ZTEST(net_i2s_states, test_i2s_state_error_neg)
+#endif
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");

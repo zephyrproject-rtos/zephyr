@@ -10,3 +10,18 @@ tests:
     harness: ztest
     harness_config:
       fixture: gpio_loopback
+  drivers.i2s.user:
+    depends_on: i2s
+    tags: drivers userspace
+    filter: not CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+  drivers.i2s.gpio_loopback.user:
+    depends_on: i2s
+    tags: drivers userspace
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
