@@ -23,14 +23,19 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
 #include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/logging/log.h>
 
 #if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 #include <zephyr/logging/log_ctrl.h>
 #endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
 
-#define BT_DBG_ENABLED 0
-#define LOG_MODULE_NAME hci_rpmsg
-#include "common/log.h"
+#ifdef CONFIG_BT_DEBUG_LOG
+#define LOG_LEVEL LOG_LEVEL_INF
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(hci_rpmsg, LOG_LEVEL);
 
 static struct ipc_ept hci_ept;
 
