@@ -88,7 +88,7 @@ void z_x86_early_serial_init(void)
 {
 #if defined(DEVICE_MMIO_IS_IN_RAM) && !defined(CONFIG_UART_NS16550_ACCESS_IOPORT)
 #ifdef X86_SOC_EARLY_SERIAL_PCIDEV
-	struct pcie_mbar mbar;
+	struct pcie_bar mbar;
 	pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0, &mbar);
 	pcie_set_cmd(X86_SOC_EARLY_SERIAL_PCIDEV, PCIE_CONF_CMDSTAT_MEM, true);
 	device_map(&mmio, mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);

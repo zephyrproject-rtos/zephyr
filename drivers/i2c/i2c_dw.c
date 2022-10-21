@@ -849,7 +849,7 @@ static int i2c_dw_initialize(const struct device *dev)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (rom->pcie) {
-		struct pcie_mbar mbar;
+		struct pcie_bar mbar;
 
 		if (!pcie_probe(rom->pcie_bdf, rom->pcie_id)) {
 			return -EINVAL;

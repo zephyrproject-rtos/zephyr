@@ -36,7 +36,7 @@ typedef uint32_t pcie_bdf_t;
  */
 typedef uint32_t pcie_id_t;
 
-struct pcie_mbar {
+struct pcie_bar {
 	uintptr_t phys_addr;
 	size_t size;
 };
@@ -91,18 +91,18 @@ extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
  * @brief Get the MBAR at a specific BAR index
  * @param bdf the PCI(e) endpoint
  * @param bar_index 0-based BAR index
- * @param mbar Pointer to struct pcie_mbar
+ * @param mbar Pointer to struct pcie_bar
  * @return true if the mbar was found and is valid, false otherwise
  */
 extern bool pcie_get_mbar(pcie_bdf_t bdf,
 			  unsigned int bar_index,
-			  struct pcie_mbar *mbar);
+			  struct pcie_bar *mbar);
 
 /**
  * @brief Probe the nth MMIO address assigned to an endpoint.
  * @param bdf the PCI(e) endpoint
  * @param index (0-based) index
- * @param mbar Pointer to struct pcie_mbar
+ * @param mbar Pointer to struct pcie_bar
  * @return true if the mbar was found and is valid, false otherwise
  *
  * A PCI(e) endpoint has 0 or more memory-mapped regions. This function
@@ -113,7 +113,35 @@ extern bool pcie_get_mbar(pcie_bdf_t bdf,
  */
 extern bool pcie_probe_mbar(pcie_bdf_t bdf,
 			    unsigned int index,
-			    struct pcie_mbar *mbar);
+			    struct pcie_bar *mbar);
+
+/**
+ * @brief Get the I/O BAR at a specific BAR index
+ * @param bdf the PCI(e) endpoint
+ * @param bar_index 0-based BAR index
+ * @param iobar Pointer to struct pcie_bar
+ * @return true if the I/O BAR was found and is valid, false otherwise
+ */
+extern bool pcie_get_iobar(pcie_bdf_t bdf,
+			   unsigned int bar_index,
+			   struct pcie_bar *iobar);
+
+/**
+ * @brief Probe the nth I/O BAR address assigned to an endpoint.
+ * @param bdf the PCI(e) endpoint
+ * @param index (0-based) index
+ * @param iobar Pointer to struct pcie_bar
+ * @return true if the I/O BAR was found and is valid, false otherwise
+ *
+ * A PCI(e) endpoint has 0 or more I/O regions. This function
+ * allows the caller to enumerate them by calling with index=0..n.
+ * Value of n has to be below 6, as there is a maximum of 6 BARs. The indices
+ * are order-preserving with respect to the endpoint BARs: e.g., index 0
+ * will return the lowest-numbered I/O BAR on the endpoint.
+ */
+extern bool pcie_probe_iobar(pcie_bdf_t bdf,
+			     unsigned int index,
+			     struct pcie_bar *iobar);
 
 /**
  * @brief Set or reset bits in the endpoint command/status register.

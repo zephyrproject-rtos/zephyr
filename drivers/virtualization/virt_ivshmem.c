@@ -108,7 +108,7 @@ static const struct ivshmem_reg no_reg;
 static bool ivshmem_configure(const struct device *dev)
 {
 	struct ivshmem *data = dev->data;
-	struct pcie_mbar mbar_regs, mbar_mem;
+	struct pcie_bar mbar_regs, mbar_mem;
 
 	if (!pcie_get_mbar(data->bdf, IVSHMEM_PCIE_REG_BAR_IDX, &mbar_regs)) {
 #ifdef CONFIG_IVSHMEM_DOORBELL
