@@ -1177,7 +1177,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 	z_init_timeout(&ctx->timeout);
 
 	len = get_ctx_data_length(ctx);
-	LOG_DBG("Send %d bytes to addr 0x%x and listen on 0x%x", len,
+	LOG_DBG("Send %zu bytes to addr 0x%x and listen on 0x%x", len,
 		ctx->tx_addr.ext_id, ctx->rx_addr.ext_id);
 	if (len > ISOTP_CAN_DL - (tx_addr->use_ext_addr ? 2 : 1)) {
 		ret = attach_fc_filter(ctx);
