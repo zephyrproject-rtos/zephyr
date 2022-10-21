@@ -1297,8 +1297,6 @@ struct bt_audio_stream {
 	const struct bt_codec *codec;
 	/** QoS Configuration */
 	struct bt_codec_qos *qos;
-	/** ISO channel reference */
-	struct bt_iso_chan *iso;
 	/** Audio stream operations */
 	struct bt_audio_stream_ops *ops;
 
