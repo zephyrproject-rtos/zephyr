@@ -885,6 +885,10 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		},							\
 		.reg_base = DT_INST_REG_ADDR_BY_IDX(n, 0),		\
 		.shim_base = DT_INST_PROP(n, shim),			\
+		IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(hdamlddmic)),	\
+			(.hdamldmic_base = DT_REG_ADDR(DT_NODELABEL(hdamlddmic)),))	\
+		IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(dmicvss)),	\
+			(.vshim_base = DT_REG_ADDR(DT_NODELABEL(dmicvss)),))	\
 		.irq = DT_INST_IRQN(n),					\
 		.fifo =							\
 		{							\
