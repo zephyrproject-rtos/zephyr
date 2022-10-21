@@ -1,8 +1,6 @@
 name: Manifest
 on:
   pull_request_target:
-    paths:
-      - 'west.yml'
 
 jobs:
   contribs:
