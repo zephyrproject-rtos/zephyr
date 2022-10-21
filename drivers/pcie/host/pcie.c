@@ -103,9 +103,19 @@ uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	return reg;
 }
 
-bool pcie_get_mbar(pcie_bdf_t bdf,
-		   unsigned int bar_index,
-		   struct pcie_mbar *mbar)
+/**
+ * @brief Get the BAR at a specific BAR index
+ *
+ * @param bdf the PCI(e) endpoint
+ * @param bar_index 0-based BAR index
+ * @param bar Pointer to struct pcie_bar
+ * @param io true for I/O BARs, false otherwise
+ * @return true if the BAR was found and is valid, false otherwise
+ */
+static bool pcie_get_bar(pcie_bdf_t bdf,
+			 unsigned int bar_index,
+			 struct pcie_bar *bar,
+			 bool io)
 {
 	uint32_t reg = bar_index + PCIE_CONF_BAR0;
 #ifdef CONFIG_PCIE_CONTROLLER
@@ -128,8 +138,7 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 
 	phys_addr = pcie_conf_read(bdf, reg);
 #ifndef CONFIG_PCIE_CONTROLLER
-	if (PCIE_CONF_BAR_IO(phys_addr)) {
-		/* Discard I/O bars */
+	if ((PCIE_CONF_BAR_MEM(phys_addr) && io) || (PCIE_CONF_BAR_IO(phys_addr) && !io)) {
 		return false;
 	}
 #endif
@@ -183,20 +192,36 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 					PCIE_CONF_BAR_MEM(phys_addr) ?
 						PCIE_CONF_BAR_ADDR(phys_addr)
 						: PCIE_CONF_BAR_IO_ADDR(phys_addr),
-					&mbar->phys_addr)) {
+					&bar->phys_addr)) {
 		return false;
 	}
 #else
-	mbar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
+	bar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
 #endif /* CONFIG_PCIE_CONTROLLER */
-	mbar->size = size & ~(size-1);
+	bar->size = size & ~(size-1);
 
 	return true;
 }
 
-bool pcie_probe_mbar(pcie_bdf_t bdf,
-		     unsigned int index,
-		     struct pcie_mbar *mbar)
+/**
+ * @brief Probe the nth BAR assigned to an endpoint.
+ *
+ * A PCI(e) endpoint has 0 or more BARs. This function
+ * allows the caller to enumerate them by calling with index=0..n.
+ * Value of n has to be below 6, as there is a maximum of 6 BARs. The indices
+ * are order-preserving with respect to the endpoint BARs: e.g., index 0
+ * will return the lowest-numbered BAR on the endpoint.
+ *
+ * @param bdf the PCI(e) endpoint
+ * @param index (0-based) index
+ * @param bar Pointer to struct pcie_bar
+ * @param io true for I/O BARs, false otherwise
+ * @return true if the BAR was found and is valid, false otherwise
+ */
+static bool pcie_probe_bar(pcie_bdf_t bdf,
+			   unsigned int index,
+			   struct pcie_bar *bar,
+			   bool io)
 {
 	uint32_t reg;
 
@@ -213,7 +238,35 @@ bool pcie_probe_mbar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	return pcie_get_mbar(bdf, reg - PCIE_CONF_BAR0, mbar);
+	return pcie_get_bar(bdf, reg - PCIE_CONF_BAR0, bar, io);
+}
+
+bool pcie_get_mbar(pcie_bdf_t bdf,
+		   unsigned int bar_index,
+		   struct pcie_bar *mbar)
+{
+	return pcie_get_bar(bdf, bar_index, mbar, false);
+}
+
+bool pcie_probe_mbar(pcie_bdf_t bdf,
+		     unsigned int index,
+		     struct pcie_bar *mbar)
+{
+	return pcie_probe_bar(bdf, index, mbar, false);
+}
+
+bool pcie_get_iobar(pcie_bdf_t bdf,
+		    unsigned int bar_index,
+		    struct pcie_bar *iobar)
+{
+	return pcie_get_bar(bdf, bar_index, iobar, true);
+}
+
+bool pcie_probe_iobar(pcie_bdf_t bdf,
+		      unsigned int index,
+		      struct pcie_bar *iobar)
+{
+	return pcie_probe_bar(bdf, index, iobar, true);
 }
 
 #ifndef CONFIG_PCIE_CONTROLLER

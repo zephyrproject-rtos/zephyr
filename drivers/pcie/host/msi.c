@@ -84,7 +84,7 @@ static bool map_msix_table_entries(pcie_bdf_t bdf,
 {
 	uint32_t table_offset;
 	uint8_t table_bir;
-	struct pcie_mbar bar;
+	struct pcie_bar bar;
 	uintptr_t mapped_table;
 	int i;
 
