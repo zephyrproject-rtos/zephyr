@@ -637,3 +637,8 @@ test_i2c_max31875: max31875@53 {
 	compatible = "maxim,max31875";
 	reg = <0x53>;
 };
+
+test_i2c_as5600: as5600@54 {
+	compatible = "ams,as5600";
+	reg = <0x54>;
+};
