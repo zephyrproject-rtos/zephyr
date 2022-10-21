@@ -13,21 +13,21 @@ extern enum bst_result_t bst_result;
 static volatile bool g_cb;
 static volatile bool g_pa_synced;
 
-static void pa_synced(struct bt_bap_scan_delegator_recv_state *recv_state,
+static void pa_synced(const struct bt_bap_scan_delegator_recv_state *recv_state,
 		      const struct bt_le_per_adv_sync_synced_info *info)
 {
 	printk("Receive state %p synced\n", recv_state);
 	g_pa_synced = true;
 }
 
-static void pa_term(struct bt_bap_scan_delegator_recv_state *recv_state,
+static void pa_term(const struct bt_bap_scan_delegator_recv_state *recv_state,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
 	printk("Receive state %p sync terminated\n", recv_state);
 	g_pa_synced = false;
 }
 
-static void pa_recv(struct bt_bap_scan_delegator_recv_state *recv_state,
+static void pa_recv(const struct bt_bap_scan_delegator_recv_state *recv_state,
 		    const struct bt_le_per_adv_sync_recv_info *info,
 		    struct net_buf_simple *buf)
 {
