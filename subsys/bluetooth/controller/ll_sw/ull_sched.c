@@ -430,6 +430,9 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 	uint8_t ticker_id;
 	uint16_t offset;
 
+	bool is_conn_interval = false;
+	bool is_after_conn_interval = false;
+
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 	if (conn_curr->ull.ticks_prepare_to_start & XON_BITMASK) {
@@ -560,6 +563,8 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 			if (is_select &&
 			    (conn->lll.interval != conn_interval)) {
 				ticks_slot_abs_curr += ticks_slot_abs;
+			} else if (is_select) {
+				is_conn_interval = true;
 			}
 
 			if (conn->lll.role) {
@@ -569,7 +574,8 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 			}
 		}
 
-		if (*ticks_to_offset_next < ticks_to_expire_normal) {
+		if ((!is_select || is_after_conn_interval) &&
+		    (*ticks_to_offset_next < ticks_to_expire_normal)) {
 			if (ticks_to_expire_prev <
 			    *ticks_to_offset_next) {
 				ticks_to_expire_prev =
@@ -605,6 +611,10 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 			*ticks_to_offset_next = ticks_to_expire_prev;
 		}
 
+		if (is_conn_interval) {
+			is_after_conn_interval = true;
+		}
+
 		ticks_slot_abs_curr += ticks_slot;
 
 		ticks_to_expire_prev = ticks_to_expire_normal;
@@ -621,7 +631,7 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 				(ticks_to_expire_prev + ticks_slot_abs_prev),
 				 HAL_TICKER_US_TO_TICKS(CONN_INT_UNIT_US));
 			if (offset >= conn_interval) {
-				if (!is_select) {
+				if (!is_select || !is_after_conn_interval) {
 					break;
 				}
 
