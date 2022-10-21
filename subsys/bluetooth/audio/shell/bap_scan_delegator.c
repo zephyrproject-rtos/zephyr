@@ -18,7 +18,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include "shell/bt.h"
 
-static void pa_synced(struct bt_bap_scan_delegator_recv_state *recv_state,
+static void pa_synced(const struct bt_bap_scan_delegator_recv_state *recv_state,
 		      const struct bt_le_per_adv_sync_synced_info *info)
 {
 	shell_print(ctx_shell,
@@ -26,7 +26,7 @@ static void pa_synced(struct bt_bap_scan_delegator_recv_state *recv_state,
 		    recv_state);
 }
 
-static void pa_term(struct bt_bap_scan_delegator_recv_state *recv_state,
+static void pa_term(const struct bt_bap_scan_delegator_recv_state *recv_state,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
 	shell_print(ctx_shell,
@@ -35,7 +35,7 @@ static void pa_term(struct bt_bap_scan_delegator_recv_state *recv_state,
 
 }
 
-static void pa_recv(struct bt_bap_scan_delegator_recv_state *recv_state,
+static void pa_recv(const struct bt_bap_scan_delegator_recv_state *recv_state,
 		    const struct bt_le_per_adv_sync_recv_info *info,
 		    struct net_buf_simple *buf)
 {
