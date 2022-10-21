@@ -32,7 +32,7 @@ Building and Running
 After providing a devicetree overlay that specifies the sensor location,
 build this sample app using:
 
-.. zepyr-app-commands::
+.. zephyr-app-commands::
     :zephyr-app: samples/sensor/ltr390
     :board: nucleo_f411re
     :goals: build flash

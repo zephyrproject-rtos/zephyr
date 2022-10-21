@@ -1,0 +1,11 @@
+sample:
+  name: Luminosity sensor polling sample
+tests:
+  sample.sensor.light_polling:
+    harness: sensor
+    tags: sensors
+    filter: dt_alias_exists("light0")
+    platform_allow: nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840 # ltr390
+      - nucleo_f411re # ltr390

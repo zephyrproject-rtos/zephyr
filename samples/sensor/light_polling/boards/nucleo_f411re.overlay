@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2022 Luke Holt
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		light0 = &ltr390;
+	};
+};
+
+&i2c1 {
+    ltr390: ltr390@53 {
+        compatible = "liteon,ltr390";
+        reg = <0x53>;
+
+        /*
+         * Resolution options 0-5
+         * 0: 20 Bit
+         * 1: 19 Bit
+         * 2: 18 Bit
+         * 3: 17 Bit
+         * 4: 16 Bit
+         * 5: 13 Bit
+         */
+        resolution = <2>;
+
+        /*
+         * Rate options 0-6
+         * 0: 25ms
+         * 1: 50ms
+         * 2: 100ms
+         * 3: 200ms
+         * 4: 500ms
+         * 5: 1000ms
+         * 6: 2000ms
+         */
+        rate = <2>;
+
+        /*
+         * Gain options 0-5
+         * 0: 1
+         * 1: 3
+         * 2: 6
+         * 3: 9
+         * 4: 18
+         */
+        gain = <1>;
+
+        int-gpios = <&gpiob 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+
+        /*
+         * Interrupt persist options range [1, 16]
+         */
+        int_persist = <1>;
+    };
+};
