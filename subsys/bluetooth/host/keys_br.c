@@ -47,7 +47,7 @@ struct bt_keys_link_key *bt_keys_find_link_key(const bt_addr_t *addr)
 	struct bt_keys_link_key *key;
 	int i;
 
-	LOG_DBG("%s", bt_addr_str(addr));
+	LOG_DBG("%s", bt_addr_str_real(addr));
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 		key = &key_pool[i];
@@ -95,11 +95,11 @@ struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr)
 		key->aging_counter = ++aging_counter_val;
 		last_keys_updated = key;
 #endif
-		LOG_DBG("created %p for %s", key, bt_addr_str(addr));
+		LOG_DBG("created %p for %s", key, bt_addr_str_real(addr));
 		return key;
 	}
 
-	LOG_DBG("unable to create keys for %s", bt_addr_str(addr));
+	LOG_DBG("unable to create keys for %s", bt_addr_str_real(addr));
 
 	return NULL;
 }
@@ -117,7 +117,7 @@ void bt_keys_link_key_clear(struct bt_keys_link_key *link_key)
 		settings_delete(key);
 	}
 
-	LOG_DBG("%s", bt_addr_str(&link_key->addr));
+	LOG_DBG("%s", bt_addr_str_real(&link_key->addr));
 	(void)memset(link_key, 0, sizeof(*link_key));
 }
 
@@ -183,7 +183,7 @@ static int link_key_set(const char *name, size_t len_rd,
 	}
 
 	LOG_DBG("name %s val %s", name,
-	       len ? bt_hex(val, sizeof(val)) : "(null)");
+	       len ? bt_hex_real(val, sizeof(val)) : "(null)");
 
 	err = bt_settings_decode_key(name, &le_addr);
 	if (err) {
@@ -195,10 +195,10 @@ static int link_key_set(const char *name, size_t len_rd,
 	if (len != BT_KEYS_LINK_KEY_STORAGE_LEN) {
 		if (link_key) {
 			bt_keys_link_key_clear(link_key);
-			LOG_DBG("Clear keys for %s", bt_addr_le_str(&le_addr));
+			LOG_DBG("Clear keys for %s", bt_addr_le_str_real(&le_addr));
 		} else {
 			LOG_WRN("Unable to find deleted keys for %s",
-				bt_addr_le_str(&le_addr));
+				bt_addr_le_str_real(&le_addr));
 		}
 
 		return 0;
@@ -206,7 +206,7 @@ static int link_key_set(const char *name, size_t len_rd,
 
 	memcpy(link_key->storage_start, val, len);
 	LOG_DBG("Successfully restored link key for %s",
-	       bt_addr_le_str(&le_addr));
+	       bt_addr_le_str_real(&le_addr));
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (aging_counter_val < link_key->aging_counter) {
 		aging_counter_val = link_key->aging_counter;
@@ -235,7 +235,7 @@ void bt_keys_link_key_update_usage(const bt_addr_t *addr)
 	link_key->aging_counter = ++aging_counter_val;
 	last_keys_updated = link_key;
 
-	LOG_DBG("Aging counter for %s is set to %u", bt_addr_str(addr),
+	LOG_DBG("Aging counter for %s is set to %u", bt_addr_str_real(addr),
 	       link_key->aging_counter);
 
 	if (IS_ENABLED(CONFIG_BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING)) {

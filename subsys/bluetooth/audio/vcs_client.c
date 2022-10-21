@@ -376,7 +376,7 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 		uint8_t conn_index = bt_conn_index(conn);
 
 		include = (struct bt_gatt_include *)attr->user_data;
-		LOG_DBG("Include UUID %s", bt_uuid_str(include->uuid));
+		LOG_DBG("Include UUID %s", bt_uuid_str_real(include->uuid));
 
 #if CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0
 		if (bt_uuid_cmp(include->uuid, BT_UUID_AICS) == 0 &&

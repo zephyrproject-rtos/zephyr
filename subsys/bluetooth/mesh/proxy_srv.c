@@ -209,7 +209,7 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 
 	net_buf_simple_add_be16(buf, filter_size);
 
-	LOG_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("%u bytes: %s", buf->len, bt_hex_real(buf->data, buf->len));
 
 	err = bt_mesh_net_encode(&tx, buf, true);
 	if (err) {
@@ -286,7 +286,7 @@ static void proxy_cfg(struct bt_mesh_proxy_role *role)
 	/* Remove network headers */
 	net_buf_simple_pull(&buf, BT_MESH_NET_HDR_LEN);
 
-	LOG_DBG("%u bytes: %s", buf.len, bt_hex(buf.data, buf.len));
+	LOG_DBG("%u bytes: %s", buf.len, bt_hex_real(buf.data, buf.len));
 
 	if (buf.len < 1) {
 		LOG_WRN("Too short proxy configuration PDU");
@@ -485,7 +485,7 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 	proxy_svc_data[2] = BT_MESH_ID_TYPE_NET;
 
 	LOG_DBG("Advertising with NetId %s",
-	       bt_hex(sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8));
+	       bt_hex_real(sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8));
 
 	memcpy(proxy_svc_data + 3, sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8);
 
@@ -889,7 +889,7 @@ static int proxy_send(struct bt_conn *conn,
 		      const void *data, uint16_t len,
 		      bt_gatt_complete_func_t end, void *user_data)
 {
-	LOG_DBG("%u bytes: %s", len, bt_hex(data, len));
+	LOG_DBG("%u bytes: %s", len, bt_hex_real(data, len));
 
 	struct bt_gatt_notify_params params = {
 		.data = data,

@@ -6762,7 +6762,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			(void)memcpy(addr.a.val, ptr, sizeof(bt_addr_t));
 			ptr += BDADDR_SIZE;
 
-			LOG_DBG("    AdvA: %s", bt_addr_le_str(&addr));
+			LOG_DBG("    AdvA: %s", bt_addr_le_str_real(&addr));
 		}
 
 		if (h->tgt_addr) {
@@ -6792,7 +6792,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			(void)memcpy(addr.a.val, direct_addr_curr,
 				     sizeof(bt_addr_t));
 
-			LOG_DBG("    TgtA: %s", bt_addr_le_str(&addr));
+			LOG_DBG("    TgtA: %s", bt_addr_le_str_real(&addr));
 		}
 
 		if (h->adi) {
@@ -7754,7 +7754,7 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 		rssi = -(node_rx->hdr.rx_ftr.rssi);
 
 		LOG_DBG("handle: %d, addr: %s, rssi: %d dB.",
-		       handle, bt_addr_le_str(&addr), rssi);
+		       handle, bt_addr_le_str_real(&addr), rssi);
 
 		return;
 	}

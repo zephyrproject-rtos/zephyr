@@ -451,7 +451,7 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	struct net_buf_simple_state state;
 	bt_addr_le_t id_addr;
 
-	LOG_DBG("%s event %u, len %u, rssi %d dBm", bt_addr_le_str(addr),
+	LOG_DBG("%s event %u, len %u, rssi %d dBm", bt_addr_le_str_real(addr),
 	       info->adv_type, len, info->rssi);
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&

@@ -107,7 +107,7 @@ int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
 
 	if (conn->required_sec_level == BT_SECURITY_L3 && len < 16) {
 		LOG_WRN("PIN code for %s is not 16 bytes wide",
-			bt_addr_str(&conn->br.dst));
+			bt_addr_str_real(&conn->br.dst));
 		return -EPERM;
 	}
 
@@ -432,7 +432,7 @@ void bt_hci_pin_code_req(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
@@ -447,17 +447,17 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
-	LOG_DBG("%s, link type 0x%02x", bt_addr_str(&evt->bdaddr), evt->key_type);
+	LOG_DBG("%s, link type 0x%02x", bt_addr_str_real(&evt->bdaddr), evt->key_type);
 
 	if (!conn->br.link_key) {
 		conn->br.link_key = bt_keys_get_link_key(&evt->bdaddr);
 	}
 	if (!conn->br.link_key) {
-		LOG_ERR("Can't update keys for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't update keys for %s", bt_addr_str_real(&evt->bdaddr));
 		bt_conn_unref(conn);
 		return;
 	}
@@ -558,11 +558,11 @@ void bt_hci_link_key_req(struct net_buf *buf)
 	struct bt_hci_evt_link_key_req *evt = (void *)buf->data;
 	struct bt_conn *conn;
 
-	LOG_DBG("%s", bt_addr_str(&evt->bdaddr));
+	LOG_DBG("%s", bt_addr_str_real(&evt->bdaddr));
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		link_key_neg_reply(&evt->bdaddr);
 		return;
 	}
@@ -616,7 +616,7 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 	struct bt_conn *conn;
 
 	LOG_DBG("remote %s, IOcapa 0x%02x, auth 0x%02x",
-	       bt_addr_str(&evt->bdaddr), evt->capability, evt->authentication);
+	       bt_addr_str_real(&evt->bdaddr), evt->capability, evt->authentication);
 
 	if (evt->authentication > BT_HCI_GENERAL_BONDING_MITM) {
 		LOG_ERR("Invalid remote authentication requirements");
@@ -634,7 +634,7 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Unable to find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
@@ -656,7 +656,7 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
@@ -702,7 +702,7 @@ void bt_hci_ssp_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
@@ -721,7 +721,7 @@ void bt_hci_user_confirm_req(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
@@ -738,7 +738,7 @@ void bt_hci_user_passkey_notify(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
@@ -753,7 +753,7 @@ void bt_hci_user_passkey_req(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 

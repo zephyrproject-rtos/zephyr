@@ -854,7 +854,7 @@ static uint8_t att_handle_rsp(struct bt_att_chan *chan, void *pdu, uint16_t len,
 	void *params;
 
 	LOG_DBG("chan %p err 0x%02x len %u: %s", chan, err, len,
-	       bt_hex(pdu, len));
+	       bt_hex_real(pdu, len));
 
 	/* Cancel timeout if ongoing */
 	k_work_cancel_delayable(&chan->timeout_work);
@@ -1459,7 +1459,7 @@ static uint8_t att_read_type_req(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	LOG_DBG("start_handle 0x%04x end_handle 0x%04x type %s",
-	       start_handle, end_handle, bt_uuid_str(&u.uuid));
+	       start_handle, end_handle, bt_uuid_str_real(&u.uuid));
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
 		send_err_rsp(chan, BT_ATT_OP_READ_TYPE_REQ, err_handle,
@@ -1882,7 +1882,7 @@ static uint8_t att_read_group_req(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	LOG_DBG("start_handle 0x%04x end_handle 0x%04x type %s",
-	       start_handle, end_handle, bt_uuid_str(&u.uuid));
+	       start_handle, end_handle, bt_uuid_str_real(&u.uuid));
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
 		send_err_rsp(chan, BT_ATT_OP_READ_GROUP_REQ, err_handle,

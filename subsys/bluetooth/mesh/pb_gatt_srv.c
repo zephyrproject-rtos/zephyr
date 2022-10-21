@@ -263,7 +263,7 @@ static int gatt_send(struct bt_conn *conn,
 		     const void *data, uint16_t len,
 		     bt_gatt_complete_func_t end, void *user_data)
 {
-	LOG_DBG("%u bytes: %s", len, bt_hex(data, len));
+	LOG_DBG("%u bytes: %s", len, bt_hex_real(data, len));
 
 	struct bt_gatt_notify_params params = {
 		.data = data,

@@ -61,7 +61,7 @@ static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
 		net_buf_simple_add_mem(buf, d->data, d->data_len);
 
 		LOG_DBG("  %u: type %u: %s",
-		       i, d->type, bt_hex(d->data, d->data_len));
+		       i, d->type, bt_hex_real(d->data, d->data_len));
 	}
 }
 

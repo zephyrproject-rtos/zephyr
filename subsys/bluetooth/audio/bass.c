@@ -166,12 +166,12 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 	LOG_DBG("Receive State[%d]: src ID %u, addr %s, adv_sid %u, "
 	       "broadcast_id %u, pa_sync_state %u, "
 	       "encrypt state %u%s%s, num_subgroups %u",
-	       recv_state->index, state->src_id, bt_addr_le_str(&state->addr),
+	       recv_state->index, state->src_id, bt_addr_le_str_real(&state->addr),
 	       state->adv_sid, state->broadcast_id, state->pa_sync_state,
 	       state->encrypt_state,
 	       state->encrypt_state == BT_BASS_BIG_ENC_STATE_BAD_CODE ? ", bad code" : "",
 	       state->encrypt_state == BT_BASS_BIG_ENC_STATE_BAD_CODE ?
-					bt_hex(state->bad_code, sizeof(state->bad_code)) : "",
+					bt_hex_real(state->bad_code, sizeof(state->bad_code)) : "",
 	       state->num_subgroups);
 
 	for (int i = 0; i < state->num_subgroups; i++) {
@@ -180,7 +180,7 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 		LOG_DBG("\tSubgroup[%d]: BIS sync %u (requested %u), metadata_len %u, metadata: %s",
 		       i, subgroup->bis_sync, subgroup->requested_bis_sync,
 		       subgroup->metadata_len,
-		       bt_hex(subgroup->metadata, subgroup->metadata_len));
+		       bt_hex_real(subgroup->metadata, subgroup->metadata_len));
 	}
 }
 
@@ -239,7 +239,7 @@ static void bass_disconnected(struct bt_conn *conn, uint8_t reason)
 
 	if (client != NULL) {
 		LOG_DBG("Instance %u with addr %s disconnected",
-		       i, bt_addr_le_str(bt_conn_get_dst(conn)));
+		       i, bt_addr_le_str_real(bt_conn_get_dst(conn)));
 		(void)memset(client, 0, sizeof(*client));
 	}
 }
@@ -654,7 +654,7 @@ static void bass_pa_sync_no_past(struct bass_recv_state_internal *state)
 		recv_state->pa_sync_state = BT_BASS_PA_STATE_FAILED;
 	} else {
 		LOG_DBG("PA sync pending for addr %s",
-		       bt_addr_le_str(&recv_state->addr));
+		       bt_addr_le_str_real(&recv_state->addr));
 		state->pa_sync_pending = true;
 		(void)k_work_reschedule(&state->pa_timer,
 					K_MSEC(param.timeout * 10));
@@ -1054,7 +1054,7 @@ static int bass_broadcast_code(struct net_buf_simple *buf)
 		     sizeof(internal_state->broadcast_code));
 
 	LOG_DBG("Index %u: broadcast code added: %s", internal_state->index,
-	       bt_hex(internal_state->broadcast_code,
+	       bt_hex_real(internal_state->broadcast_code,
 	       sizeof(internal_state->broadcast_code)));
 
 	internal_state->broadcast_code_received = true;

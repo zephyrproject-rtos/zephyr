@@ -204,7 +204,7 @@ int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
 
 	LOG_DBG("idx %u flags 0x%02x iv_index %u", idx, flags, iv_index);
 
-	LOG_DBG("NetKey %s", bt_hex(key, 16));
+	LOG_DBG("NetKey %s", bt_hex_real(key, 16));
 
 	if (BT_MESH_KEY_REFRESH(flags)) {
 		err = bt_mesh_subnet_set(idx, BT_MESH_KR_PHASE_2, NULL, key);
@@ -528,7 +528,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	LOG_DBG("src 0x%04x dst 0x%04x len %u headroom %zu tailroom %zu",
 	       tx->src, tx->ctx->addr, buf->len, net_buf_headroom(buf),
 	       net_buf_tailroom(buf));
-	LOG_DBG("Payload len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("Payload len %u: %s", buf->len, bt_hex_real(buf->data, buf->len));
 	LOG_DBG("Seq 0x%06x", bt_mesh.seq);
 
 	cred = net_tx_cred_get(tx);
@@ -774,7 +774,7 @@ int bt_mesh_net_decode(struct net_buf_simple *in, enum bt_mesh_net_if net_if,
 {
 	if (in->len < BT_MESH_NET_MIN_PDU_LEN) {
 		LOG_WRN("Dropping too short mesh packet (len %u)", in->len);
-		LOG_WRN("%s", bt_hex(in->data, in->len));
+		LOG_WRN("%s", bt_hex_real(in->data, in->len));
 		return -EINVAL;
 	}
 
@@ -787,7 +787,7 @@ int bt_mesh_net_decode(struct net_buf_simple *in, enum bt_mesh_net_if net_if,
 		return -EINVAL;
 	}
 
-	LOG_DBG("%u bytes: %s", in->len, bt_hex(in->data, in->len));
+	LOG_DBG("%u bytes: %s", in->len, bt_hex_real(in->data, in->len));
 
 	rx->net_if = net_if;
 
@@ -822,7 +822,7 @@ int bt_mesh_net_decode(struct net_buf_simple *in, enum bt_mesh_net_if net_if,
 
 	LOG_DBG("src 0x%04x dst 0x%04x ttl %u", rx->ctx.addr, rx->ctx.recv_dst,
 	       rx->ctx.recv_ttl);
-	LOG_DBG("PDU: %s", bt_hex(out->data, out->len));
+	LOG_DBG("PDU: %s", bt_hex_real(out->data, out->len));
 
 	msg_cache_add(rx);
 
@@ -959,7 +959,7 @@ static int net_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	bt_mesh_comp_provision(net.primary_addr);
 
 	LOG_DBG("Provisioned with primary address 0x%04x", net.primary_addr);
-	LOG_DBG("Recovered DevKey %s", bt_hex(bt_mesh.dev_key, 16));
+	LOG_DBG("Recovered DevKey %s", bt_hex_real(bt_mesh.dev_key, 16));
 
 	return 0;
 }
@@ -1092,7 +1092,7 @@ static void store_pending_net(void)
 	int err;
 
 	LOG_DBG("addr 0x%04x DevKey %s", bt_mesh_primary_addr(),
-	       bt_hex(bt_mesh.dev_key, 16));
+	       bt_hex_real(bt_mesh.dev_key, 16));
 
 	net.primary_addr = bt_mesh_primary_addr();
 	memcpy(net.dev_key, bt_mesh.dev_key, 16);

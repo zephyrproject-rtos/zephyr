@@ -158,7 +158,7 @@ int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
 
 	LOG_DBG("conn %p type 0x%02x len %u: %s", (void *)conn, type, msg->len,
-	       bt_hex(msg->data, msg->len));
+	       bt_hex_real(msg->data, msg->len));
 
 	/* ATT_MTU - OpCode (1 byte) - Handle (2 bytes) */
 	mtu = bt_gatt_get_mtu(conn) - 3;

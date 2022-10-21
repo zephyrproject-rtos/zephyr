@@ -124,7 +124,7 @@ static uint8_t generate_keys(void)
 	} while (memcmp(ecc.private_key_be, debug_private_key_be, BT_PRIV_KEY_LEN) == 0);
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		LOG_INF("SC private key 0x%s", bt_hex(ecc.private_key_be, BT_PRIV_KEY_LEN));
+		LOG_INF("SC private key 0x%s", bt_hex_real(ecc.private_key_be, BT_PRIV_KEY_LEN));
 	}
 
 	return 0;

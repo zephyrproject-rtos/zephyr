@@ -95,9 +95,9 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 	net_buf_simple_add_mem(buf, sub->auth, 8);
 
 	LOG_DBG("net_idx 0x%04x flags 0x%02x NetID %s", sub->net_idx,
-	       flags, bt_hex(keys->net_id, 8));
+	       flags, bt_hex_real(keys->net_id, 8));
 	LOG_DBG("IV Index 0x%08x Auth %s", bt_mesh.iv_index,
-	       bt_hex(sub->auth, 8));
+	       bt_hex_real(sub->auth, 8));
 }
 
 /* If the interval has passed or is within 5 seconds from now send a beacon */
@@ -223,7 +223,7 @@ static void unprovisioned_beacon_recv(struct net_buf_simple *buf)
 		uri_hash = &uri_hash_val;
 	}
 
-	LOG_DBG("uuid %s", bt_hex(uuid, 16));
+	LOG_DBG("uuid %s", bt_hex_real(uuid, 16));
 
 	prov->unprovisioned_beacon(uuid,
 				   (bt_mesh_prov_oob_info_t)oob_info,
@@ -303,7 +303,7 @@ static bool auth_match(struct bt_mesh_subnet_keys *keys,
 
 	if (memcmp(params->auth, net_auth, 8)) {
 		LOG_WRN("Authentication Value %s != %s",
-			bt_hex(params->auth, 8), bt_hex(net_auth, 8));
+			bt_hex_real(params->auth, 8), bt_hex_real(net_auth, 8));
 		return false;
 	}
 
@@ -350,7 +350,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 	params.auth = buf->data;
 
 	LOG_DBG("flags 0x%02x id %s iv_index 0x%08x",
-	       params.flags, bt_hex(params.net_id, 8), params.iv_index);
+	       params.flags, bt_hex_real(params.net_id, 8), params.iv_index);
 
 	sub = bt_mesh_subnet_find(subnet_by_id, &params);
 	if (!sub) {
@@ -398,7 +398,7 @@ void bt_mesh_beacon_recv(struct net_buf_simple *buf)
 {
 	uint8_t type;
 
-	LOG_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("%u bytes: %s", buf->len, bt_hex_real(buf->data, buf->len));
 
 	if (buf->len < 1) {
 		LOG_ERR("Too short beacon");

@@ -554,7 +554,7 @@ static int smp_d1(const uint8_t *key, uint16_t d, uint16_t r, uint8_t res[16])
 {
 	int err;
 
-	LOG_DBG("key %s d %u r %u", bt_hex(key, 16), d, r);
+	LOG_DBG("key %s d %u r %u", bt_hex_real(key, 16), d, r);
 
 	sys_put_le16(d, &res[0]);
 	sys_put_le16(r, &res[2]);
@@ -565,7 +565,7 @@ static int smp_d1(const uint8_t *key, uint16_t d, uint16_t r, uint8_t res[16])
 		return err;
 	}
 
-	LOG_DBG("res %s", bt_hex(res, 16));
+	LOG_DBG("res %s", bt_hex_real(res, 16));
 	return 0;
 }
 
@@ -576,9 +576,9 @@ static int smp_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x,
 	uint8_t m[65];
 	int err;
 
-	LOG_DBG("u %s", bt_hex(u, 32));
-	LOG_DBG("v %s", bt_hex(v, 32));
-	LOG_DBG("x %s z 0x%x", bt_hex(x, 16), z);
+	LOG_DBG("u %s", bt_hex_real(u, 32));
+	LOG_DBG("v %s", bt_hex_real(v, 32));
+	LOG_DBG("x %s z 0x%x", bt_hex_real(x, 16), z);
 
 	/*
 	 * U, V and Z are concatenated and used as input m to the function
@@ -602,7 +602,7 @@ static int smp_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x,
 
 	sys_mem_swap(res, 16);
 
-	LOG_DBG("res %s", bt_hex(res, 16));
+	LOG_DBG("res %s", bt_hex_real(res, 16));
 
 	return err;
 }
@@ -626,9 +626,9 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	uint8_t t[16], ws[32];
 	int err;
 
-	LOG_DBG("w %s", bt_hex(w, 32));
-	LOG_DBG("n1 %s", bt_hex(n1, 16));
-	LOG_DBG("n2 %s", bt_hex(n2, 16));
+	LOG_DBG("w %s", bt_hex_real(w, 32));
+	LOG_DBG("n1 %s", bt_hex_real(n1, 16));
+	LOG_DBG("n2 %s", bt_hex_real(n2, 16));
 
 	sys_memcpy_swap(ws, w, 32);
 
@@ -637,7 +637,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	LOG_DBG("t %s", bt_hex(t, 16));
+	LOG_DBG("t %s", bt_hex_real(t, 16));
 
 	sys_memcpy_swap(m + 5, n1, 16);
 	sys_memcpy_swap(m + 21, n2, 16);
@@ -651,7 +651,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	LOG_DBG("mackey %1s", bt_hex(mackey, 16));
+	LOG_DBG("mackey %1s", bt_hex_real(mackey, 16));
 
 	sys_mem_swap(mackey, 16);
 
@@ -663,7 +663,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	LOG_DBG("ltk %s", bt_hex(ltk, 16));
+	LOG_DBG("ltk %s", bt_hex_real(ltk, 16));
 
 	sys_mem_swap(ltk, 16);
 
@@ -678,13 +678,13 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	uint8_t m[65];
 	int err;
 
-	LOG_DBG("w %s", bt_hex(w, 16));
-	LOG_DBG("n1 %s", bt_hex(n1, 16));
-	LOG_DBG("n2 %s", bt_hex(n2, 16));
-	LOG_DBG("r %s", bt_hex(r, 16));
-	LOG_DBG("io_cap %s", bt_hex(iocap, 3));
-	LOG_DBG("a1 %s", bt_hex(a1, 7));
-	LOG_DBG("a2 %s", bt_hex(a2, 7));
+	LOG_DBG("w %s", bt_hex_real(w, 16));
+	LOG_DBG("n1 %s", bt_hex_real(n1, 16));
+	LOG_DBG("n2 %s", bt_hex_real(n2, 16));
+	LOG_DBG("r %s", bt_hex_real(r, 16));
+	LOG_DBG("io_cap %s", bt_hex_real(iocap, 3));
+	LOG_DBG("a1 %s", bt_hex_real(a1, 7));
+	LOG_DBG("a2 %s", bt_hex_real(a2, 7));
 
 	sys_memcpy_swap(m, n1, 16);
 	sys_memcpy_swap(m + 16, n2, 16);
@@ -706,7 +706,7 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	LOG_DBG("res %s", bt_hex(check, 16));
+	LOG_DBG("res %s", bt_hex_real(check, 16));
 
 	sys_mem_swap(check, 16);
 
@@ -719,10 +719,10 @@ static int smp_g2(const uint8_t u[32], const uint8_t v[32],
 	uint8_t m[80], xs[16];
 	int err;
 
-	LOG_DBG("u %s", bt_hex(u, 32));
-	LOG_DBG("v %s", bt_hex(v, 32));
-	LOG_DBG("x %s", bt_hex(x, 16));
-	LOG_DBG("y %s", bt_hex(y, 16));
+	LOG_DBG("u %s", bt_hex_real(u, 32));
+	LOG_DBG("v %s", bt_hex_real(v, 32));
+	LOG_DBG("x %s", bt_hex_real(x, 16));
+	LOG_DBG("y %s", bt_hex_real(y, 16));
 
 	sys_memcpy_swap(m, u, 32);
 	sys_memcpy_swap(m + 32, v, 32);
@@ -735,7 +735,7 @@ static int smp_g2(const uint8_t u[32], const uint8_t v[32],
 	if (err) {
 		return err;
 	}
-	LOG_DBG("res %s", bt_hex(xs, 16));
+	LOG_DBG("res %s", bt_hex_real(xs, 16));
 
 	memcpy(passkey, xs + 12, 4);
 	*passkey = sys_be32_to_cpu(*passkey) % 1000000;
@@ -897,8 +897,8 @@ static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
 	uint8_t key_id_s[4];
 	int err;
 
-	LOG_DBG("w %s", bt_hex(w, 16));
-	LOG_DBG("key_id %s", bt_hex(key_id, 4));
+	LOG_DBG("w %s", bt_hex_real(w, 16));
+	LOG_DBG("key_id %s", bt_hex_real(key_id, 4));
 
 	sys_memcpy_swap(ws, w, 16);
 	sys_memcpy_swap(key_id_s, key_id, 4);
@@ -908,7 +908,7 @@ static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
 		return err;
 	}
 
-	LOG_DBG("res %s", bt_hex(res, 16));
+	LOG_DBG("res %s", bt_hex_real(res, 16));
 
 	sys_mem_swap(res, 16);
 
@@ -921,8 +921,8 @@ static int smp_h7(const uint8_t salt[16], const uint8_t w[16], uint8_t res[16])
 	uint8_t salt_s[16];
 	int err;
 
-	LOG_DBG("w %s", bt_hex(w, 16));
-	LOG_DBG("salt %s", bt_hex(salt, 16));
+	LOG_DBG("w %s", bt_hex_real(w, 16));
+	LOG_DBG("salt %s", bt_hex_real(salt, 16));
 
 	sys_memcpy_swap(ws, w, 16);
 	sys_memcpy_swap(salt_s, salt, 16);
@@ -932,7 +932,7 @@ static int smp_h7(const uint8_t salt[16], const uint8_t w[16], uint8_t res[16])
 		return err;
 	}
 
-	LOG_DBG("res %s", bt_hex(res, 16));
+	LOG_DBG("res %s", bt_hex_real(res, 16));
 
 	sys_mem_swap(res, 16);
 
@@ -1155,7 +1155,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 
 	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
 	if (!keys) {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+		LOG_ERR("Unable to get keys for %s", bt_addr_le_str_real(&addr));
 		return;
 	}
 
@@ -1245,7 +1245,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 
 	keys = bt_keys_get_addr(conn->id, &addr);
 	if (!keys) {
-		LOG_ERR("No keys space for %s", bt_addr_le_str(&addr));
+		LOG_ERR("No keys space for %s", bt_addr_le_str_real(&addr));
 		return;
 	}
 
@@ -1504,7 +1504,7 @@ static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 
 	keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &addr);
 	if (!keys) {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+		LOG_ERR("Unable to get keys for %s", bt_addr_le_str_real(&addr));
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1522,7 +1522,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
 	bt_addr_le_t addr;
 
-	LOG_DBG("identity %s", bt_addr_le_str(&req->addr));
+	LOG_DBG("identity %s", bt_addr_le_str_real(&req->addr));
 
 	/*
 	 * For dual mode device identity address must be same as BR/EDR address
@@ -1574,7 +1574,7 @@ static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 
 	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, conn->id, &addr);
 	if (!keys) {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+		LOG_ERR("Unable to get keys for %s", bt_addr_le_str_real(&addr));
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2055,12 +2055,12 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	uint8_t p1[16], p2[16];
 	int err;
 
-	LOG_DBG("k %s", bt_hex(k, 16));
-	LOG_DBG("r %s", bt_hex(r, 16));
-	LOG_DBG("ia %s", bt_addr_le_str(ia));
-	LOG_DBG("ra %s", bt_addr_le_str(ra));
-	LOG_DBG("preq %s", bt_hex(preq, 7));
-	LOG_DBG("pres %s", bt_hex(pres, 7));
+	LOG_DBG("k %s", bt_hex_real(k, 16));
+	LOG_DBG("r %s", bt_hex_real(r, 16));
+	LOG_DBG("ia %s", bt_addr_le_str_real(ia));
+	LOG_DBG("ra %s", bt_addr_le_str_real(ra));
+	LOG_DBG("preq %s", bt_hex_real(preq, 7));
+	LOG_DBG("pres %s", bt_hex_real(pres, 7));
 
 	/* pres, preq, rat and iat are concatenated to generate p1 */
 	p1[0] = ia->type;
@@ -2068,7 +2068,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	memcpy(p1 + 2, preq, 7);
 	memcpy(p1 + 9, pres, 7);
 
-	LOG_DBG("p1 %s", bt_hex(p1, 16));
+	LOG_DBG("p1 %s", bt_hex_real(p1, 16));
 
 	/* c1 = e(k, e(k, r XOR p1) XOR p2) */
 
@@ -2085,7 +2085,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	memcpy(p2 + 6, ia->a.val, 6);
 	(void)memset(p2 + 12, 0, 4);
 
-	LOG_DBG("p2 %s", bt_hex(p2, 16));
+	LOG_DBG("p2 %s", bt_hex_real(p2, 16));
 
 	xor_128(enc_data, p2, enc_data);
 
@@ -2220,7 +2220,7 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 	struct bt_keys *keys = conn->le.keys;
 
 	if (!keys) {
-		LOG_ERR("No keys space for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERR("No keys space for %s", bt_addr_le_str_real(&conn->le.dst));
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2533,8 +2533,8 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	LOG_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
-	LOG_DBG("cfm %s", bt_hex(tmp, 16));
+	LOG_DBG("pcnf %s", bt_hex_real(smp->pcnf, 16));
+	LOG_DBG("cfm %s", bt_hex_real(tmp, 16));
 
 	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf))) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
@@ -2585,7 +2585,7 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 		}
 
 		memcpy(smp->tk, tmp, sizeof(smp->tk));
-		LOG_DBG("generated STK %s", bt_hex(smp->tk, 16));
+		LOG_DBG("generated STK %s", bt_hex_real(smp->tk, 16));
 
 		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 
@@ -2661,7 +2661,7 @@ static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 		keys = bt_keys_get_type(BT_KEYS_LTK, conn->id, &conn->le.dst);
 		if (!keys) {
 			LOG_ERR("Unable to get keys for %s",
-			       bt_addr_le_str(&conn->le.dst));
+			       bt_addr_le_str_real(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2687,7 +2687,7 @@ static uint8_t smp_central_ident(struct bt_smp *smp, struct net_buf *buf)
 		keys = bt_keys_get_type(BT_KEYS_LTK, conn->id, &conn->le.dst);
 		if (!keys) {
 			LOG_ERR("Unable to get keys for %s",
-			       bt_addr_le_str(&conn->le.dst));
+			       bt_addr_le_str_real(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2776,7 +2776,7 @@ static int smp_init(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	LOG_DBG("prnd %s", bt_hex(smp->prnd, 16));
+	LOG_DBG("prnd %s", bt_hex_real(smp->prnd, 16));
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
@@ -3063,7 +3063,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
 		if (!conn->le.keys) {
 			LOG_DBG("Unable to get keys for %s",
-			       bt_addr_le_str(&conn->le.dst));
+			       bt_addr_le_str_real(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 	}
@@ -3696,8 +3696,8 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	LOG_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
-	LOG_DBG("cfm %s", bt_hex(cfm, 16));
+	LOG_DBG("pcnf %s", bt_hex_real(smp->pcnf, 16));
+	LOG_DBG("cfm %s", bt_hex_real(cfm, 16));
 
 	if (memcmp(smp->pcnf, cfm, 16)) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
@@ -3929,7 +3929,7 @@ static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 		keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &conn->le.dst);
 		if (!keys) {
 			LOG_ERR("Unable to get keys for %s",
-			       bt_addr_le_str(&conn->le.dst));
+			       bt_addr_le_str_real(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -3947,11 +3947,11 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
 	uint8_t err;
 
-	LOG_DBG("identity %s", bt_addr_le_str(&req->addr));
+	LOG_DBG("identity %s", bt_addr_le_str_real(&req->addr));
 
 	if (!bt_addr_le_is_identity(&req->addr)) {
-		LOG_ERR("Invalid identity %s", bt_addr_le_str(&req->addr));
-		LOG_ERR(" for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERR("Invalid identity %s", bt_addr_le_str_real(&req->addr));
+		LOG_ERR(" for %s", bt_addr_le_str_real(&conn->le.dst));
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
@@ -3974,7 +3974,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &conn->le.dst);
 		if (!keys) {
 			LOG_ERR("Unable to get keys for %s",
-			       bt_addr_le_str(&conn->le.dst));
+			       bt_addr_le_str_real(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4049,7 +4049,7 @@ static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 					&conn->le.dst);
 		if (!keys) {
 			LOG_ERR("Unable to get keys for %s",
-			       bt_addr_le_str(&conn->le.dst));
+			       bt_addr_le_str_real(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4802,8 +4802,8 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 	uint8_t key_s[16], tmp[16];
 	int err;
 
-	LOG_DBG("Signing msg %s len %u key %s", bt_hex(msg, len), len,
-	       bt_hex(key, 16));
+	LOG_DBG("Signing msg %s len %u key %s", bt_hex_real(msg, len), len,
+	       bt_hex_real(key, 16));
 
 	sys_mem_swap(m, len + sizeof(cnt));
 	sys_memcpy_swap(key_s, key, 16);
@@ -4822,7 +4822,7 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 
 	memcpy(sig, tmp + 4, 12);
 
-	LOG_DBG("sig %s", bt_hex(sig, 12));
+	LOG_DBG("sig %s", bt_hex_real(sig, 12));
 
 	return 0;
 }
@@ -4842,7 +4842,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	keys = bt_keys_find(BT_KEYS_REMOTE_CSRK, conn->id, &conn->le.dst);
 	if (!keys) {
 		LOG_ERR("Unable to find Remote CSRK for %s",
-		       bt_addr_le_str(&conn->le.dst));
+		       bt_addr_le_str_real(&conn->le.dst));
 		return -ENOENT;
 	}
 
@@ -4851,19 +4851,19 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	memcpy(net_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
 
 	LOG_DBG("Sign data len %zu key %s count %u", buf->len - sizeof(sig),
-	       bt_hex(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
+	       bt_hex_real(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
 
 	err = smp_sign_buf(keys->remote_csrk.val, buf->data,
 			   buf->len - sizeof(sig));
 	if (err) {
 		LOG_ERR("Unable to create signature for %s",
-		       bt_addr_le_str(&conn->le.dst));
+		       bt_addr_le_str_real(&conn->le.dst));
 		return -EIO;
 	}
 
 	if (memcmp(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig))) {
 		LOG_ERR("Unable to verify signature for %s",
-		       bt_addr_le_str(&conn->le.dst));
+		       bt_addr_le_str_real(&conn->le.dst));
 		return -EBADMSG;
 	}
 
@@ -4881,7 +4881,7 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	keys = bt_keys_find(BT_KEYS_LOCAL_CSRK, conn->id, &conn->le.dst);
 	if (!keys) {
 		LOG_ERR("Unable to find local CSRK for %s",
-		       bt_addr_le_str(&conn->le.dst));
+		       bt_addr_le_str_real(&conn->le.dst));
 		return -ENOENT;
 	}
 
@@ -4893,12 +4893,12 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	memcpy(net_buf_tail(buf) - 12, &cnt, sizeof(cnt));
 
 	LOG_DBG("Sign data len %u key %s count %u", buf->len,
-	       bt_hex(keys->local_csrk.val, 16), keys->local_csrk.cnt);
+	       bt_hex_real(keys->local_csrk.val, 16), keys->local_csrk.cnt);
 
 	err = smp_sign_buf(keys->local_csrk.val, buf->data, buf->len - 12);
 	if (err) {
 		LOG_ERR("Unable to create signature for %s",
-		       bt_addr_le_str(&conn->le.dst));
+		       bt_addr_le_str_real(&conn->le.dst));
 		return -EIO;
 	}
 
@@ -5037,8 +5037,8 @@ static int sign_test(const char *prefix, const uint8_t *key, const uint8_t *m,
 		LOG_DBG("%s: Original message intact", prefix);
 	} else {
 		LOG_ERR("%s: Original message modified", prefix);
-		LOG_DBG("%s: orig %s", prefix, bt_hex(orig, sizeof(orig)));
-		LOG_DBG("%s: msg %s", prefix, bt_hex(msg, sizeof(msg)));
+		LOG_DBG("%s: orig %s", prefix, bt_hex_real(orig, sizeof(orig)));
+		LOG_DBG("%s: msg %s", prefix, bt_hex_real(msg, sizeof(msg)));
 		return -1;
 	}
 
@@ -5456,7 +5456,7 @@ int bt_smp_le_oob_set_tk(struct bt_conn *conn, const uint8_t *tk)
 		return -EINVAL;
 	}
 
-	LOG_DBG("%s", bt_hex(tk, 16));
+	LOG_DBG("%s", bt_hex_real(tk, 16));
 
 	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_USER)) {
 		return -EINVAL;
@@ -5466,7 +5466,7 @@ int bt_smp_le_oob_set_tk(struct bt_conn *conn, const uint8_t *tk)
 		uint8_t oob[16];
 
 		sys_memcpy_swap(oob, tk, 16);
-		LOG_INF("Legacy OOB data 0x%s", bt_hex(oob, 16));
+		LOG_INF("Legacy OOB data 0x%s", bt_hex_real(oob, 16));
 	}
 
 	memcpy(smp->tk, tk, 16*sizeof(uint8_t));
@@ -5800,7 +5800,7 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
 	if (!conn->le.keys) {
 		LOG_ERR("Unable to get keys for %s",
-		       bt_addr_le_str(&conn->le.dst));
+		       bt_addr_le_str_real(&conn->le.dst));
 		smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 		return;
 	}
@@ -5856,7 +5856,7 @@ void bt_smp_update_keys(struct bt_conn *conn)
 
 			sys_memcpy_swap(ltk, smp->tk, conn->le.keys->enc_size);
 			LOG_INF("SC LTK: 0x%s (No bonding)",
-				bt_hex(ltk, conn->le.keys->enc_size));
+				bt_hex_real(ltk, conn->le.keys->enc_size));
 		}
 	} else {
 		conn->le.keys->flags &= ~BT_KEYS_SC;

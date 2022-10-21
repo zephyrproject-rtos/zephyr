@@ -185,7 +185,7 @@ static void handle_event(uint8_t event, struct net_buf *buf, const struct event_
 	err = handle_event_common(event, buf, handlers, num_handlers);
 	if (err == -EOPNOTSUPP) {
 		LOG_WRN("Unhandled event 0x%02x len %u: %s", event, buf->len,
-			bt_hex(buf->data, buf->len));
+			bt_hex_real(buf->data, buf->len));
 	}
 
 	/* Other possible errors are handled by handle_event_common function */
@@ -198,7 +198,7 @@ static void handle_vs_event(uint8_t event, struct net_buf *buf,
 
 	err = handle_event_common(event, buf, handlers, num_handlers);
 	if (err == -EOPNOTSUPP) {
-		LOG_WRN("Unhandled vendor-specific event: %s", bt_hex(buf->data, buf->len));
+		LOG_WRN("Unhandled vendor-specific event: %s", bt_hex_real(buf->data, buf->len));
 	}
 
 	/* Other possible errors are handled by handle_event_common function */
@@ -595,7 +595,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
-			LOG_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
+			LOG_DBG("Using resp_addr %s", bt_addr_le_str_real(peer_addr));
 		}
 
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
@@ -668,7 +668,7 @@ static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
-			LOG_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
+			LOG_DBG("Using resp_addr %s", bt_addr_le_str_real(peer_addr));
 		}
 
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
@@ -1186,9 +1186,9 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	struct bt_conn *conn;
 
 	LOG_DBG("status 0x%02x handle %u role %u peer %s peer RPA %s",
-	       evt->status, handle, evt->role, bt_addr_le_str(&evt->peer_addr),
-	       bt_addr_str(&evt->peer_rpa));
-	LOG_DBG("local RPA %s", bt_addr_str(&evt->local_rpa));
+	       evt->status, handle, evt->role, bt_addr_le_str_real(&evt->peer_addr),
+	       bt_addr_str_real(&evt->peer_rpa));
+	LOG_DBG("local RPA %s", bt_addr_str_real(&evt->local_rpa));
 
 #if defined(CONFIG_BT_SMP)
 	bt_id_pending_keys_update();
@@ -1254,7 +1254,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	if (!conn) {
 		LOG_ERR("No pending conn for peer %s",
-		       bt_addr_le_str(&evt->peer_addr));
+		       bt_addr_le_str_real(&evt->peer_addr));
 		bt_hci_disconnect(handle, BT_HCI_ERR_UNSPECIFIED);
 		return;
 	}
@@ -1399,7 +1399,7 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 	struct bt_hci_evt_le_enh_conn_complete enh;
 
 	LOG_DBG("status 0x%02x role %u %s", evt->status, evt->role,
-	       bt_addr_le_str(&evt->peer_addr));
+	       bt_addr_le_str_real(&evt->peer_addr));
 
 	enh.status         = evt->status;
 	enh.handle         = evt->handle;
@@ -3165,7 +3165,7 @@ static void bt_dev_show_info(void)
 	int i;
 
 	LOG_INF("Identity%s: %s", bt_dev.id_count > 1 ? "[0]" : "",
-		bt_addr_le_str(&bt_dev.id_addr[0]));
+		bt_addr_le_str_real(&bt_dev.id_addr[0]));
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
 #if defined(CONFIG_BT_PRIVACY)
@@ -3173,20 +3173,20 @@ static void bt_dev_show_info(void)
 
 		sys_memcpy_swap(irk, bt_dev.irk[0], 16);
 		LOG_INF("IRK%s: 0x%s", bt_dev.id_count > 1 ? "[0]" : "",
-			bt_hex(irk, 16));
+			bt_hex_real(irk, 16));
 #endif
 	}
 
 	for (i = 1; i < bt_dev.id_count; i++) {
 		LOG_INF("Identity[%d]: %s",
-			i, bt_addr_le_str(&bt_dev.id_addr[i]));
+			i, bt_addr_le_str_real(&bt_dev.id_addr[i]));
 
 		if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
 #if defined(CONFIG_BT_PRIVACY)
 			uint8_t irk[16];
 
 			sys_memcpy_swap(irk, bt_dev.irk[i], 16);
-			LOG_INF("IRK[%d]: 0x%s", i, bt_hex(irk, 16));
+			LOG_INF("IRK[%d]: 0x%s", i, bt_hex_real(irk, 16));
 #endif
 		}
 	}

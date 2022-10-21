@@ -188,7 +188,7 @@ static int buf_send(struct bt_mesh_ext_adv *adv, struct net_buf *buf)
 	duration = start.num_events * (adv_int + 10);
 
 	LOG_DBG("type %u len %u: %s", BT_MESH_ADV(buf)->type,
-	       buf->len, bt_hex(buf->data, buf->len));
+	       buf->len, bt_hex_real(buf->data, buf->len));
 	LOG_DBG("count %u interval %ums duration %ums",
 	       BT_MESH_TRANSMIT_COUNT(BT_MESH_ADV(buf)->xmit) + 1, adv_int,
 	       duration);

@@ -81,14 +81,14 @@ int bt_csis_sih(const uint8_t sirk[BT_CSIS_SET_SIRK_SIZE], uint32_t r,
 		LOG_DBG("Invalid r %0x06x", (uint32_t)(r & BT_CSIS_R_MASK));
 	}
 
-	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIS_SET_SIRK_SIZE));
+	LOG_DBG("SIRK %s", bt_hex_real(sirk, BT_CSIS_SET_SIRK_SIZE));
 	LOG_DBG("r 0x%06x", r);
 
 	/* r' = padding || r */
 	(void)memset(res, 0, BT_CSIS_CRYPTO_PADDING_SIZE);
 	sys_put_be24(r, res + BT_CSIS_CRYPTO_PADDING_SIZE);
 
-	LOG_DBG("BE: r' %s", bt_hex(res, sizeof(res)));
+	LOG_DBG("BE: r' %s", bt_hex_real(res, sizeof(res)));
 
 	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
 		/* Swap to Big Endian (BE) */
@@ -110,7 +110,7 @@ int bt_csis_sih(const uint8_t sirk[BT_CSIS_SET_SIRK_SIZE], uint32_t r,
 	 * result of sih.
 	 */
 
-	LOG_DBG("BE: res %s", bt_hex(res, sizeof(res)));
+	LOG_DBG("BE: res %s", bt_hex_real(res, sizeof(res)));
 
 	/* Result is the lowest 3 bytes */
 	*out = sys_get_be24(res + 13);
@@ -151,13 +151,13 @@ static int k1(const uint8_t *n, size_t n_size,
 	 * k1(N, SALT, P) = AES-CMAC_T(P)
 	 */
 
-	LOG_DBG("BE: n %s", bt_hex(n, n_size));
-	LOG_DBG("BE: salt %s", bt_hex(salt, BT_CSIS_CRYPTO_SALT_SIZE));
-	LOG_DBG("BE: p %s", bt_hex(p, p_size));
+	LOG_DBG("BE: n %s", bt_hex_real(n, n_size));
+	LOG_DBG("BE: salt %s", bt_hex_real(salt, BT_CSIS_CRYPTO_SALT_SIZE));
+	LOG_DBG("BE: p %s", bt_hex_real(p, p_size));
 
 	err = aes_cmac(salt, n, n_size, t);
 
-	LOG_DBG("BE: t %s", bt_hex(t, sizeof(t)));
+	LOG_DBG("BE: t %s", bt_hex_real(t, sizeof(t)));
 
 	if (err) {
 		return err;
@@ -165,7 +165,7 @@ static int k1(const uint8_t *n, size_t n_size,
 
 	err = aes_cmac(t, p, p_size, out);
 
-	LOG_DBG("BE: out %s", bt_hex(out, 16));
+	LOG_DBG("BE: out %s", bt_hex_real(out, 16));
 
 	return err;
 }
@@ -188,13 +188,13 @@ static int s1(const uint8_t *m, size_t m_size,
 	 * s1(M) = AES-CMAC_zero(M)
 	 */
 
-	LOG_DBG("BE: m %s", bt_hex(m, m_size));
+	LOG_DBG("BE: m %s", bt_hex_real(m, m_size));
 
 	memset(zero, 0, sizeof(zero));
 
 	err = aes_cmac(zero, m, m_size, out);
 
-	LOG_DBG("BE: out %s", bt_hex(out, 16));
+	LOG_DBG("BE: out %s", bt_hex_real(out, 16));
 
 	return err;
 }
@@ -214,7 +214,7 @@ int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
 	 * sef(K, SIRK) = k1(K, s1("SIRKenc"), "csis") ^ SIRK
 	 */
 
-	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIS_SET_SIRK_SIZE));
+	LOG_DBG("SIRK %s", bt_hex_real(sirk, BT_CSIS_SET_SIRK_SIZE));
 
 	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
 		/* Swap because aes_cmac is big endian
@@ -224,21 +224,21 @@ int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
 	} else {
 		(void)memcpy(k1_tmp, k, sizeof(k1_tmp));
 	}
-	LOG_DBG("BE: k %s", bt_hex(k1_tmp, sizeof(k1_tmp)));
+	LOG_DBG("BE: k %s", bt_hex_real(k1_tmp, sizeof(k1_tmp)));
 
 	err = s1(m, sizeof(m), s1_out);
 	if (err) {
 		return err;
 	}
 
-	LOG_DBG("BE: s1 result %s", bt_hex(s1_out, sizeof(s1_out)));
+	LOG_DBG("BE: s1 result %s", bt_hex_real(s1_out, sizeof(s1_out)));
 
 	err = k1(k1_tmp, sizeof(k1_tmp), s1_out, p, sizeof(p), k1_out);
 	if (err) {
 		return err;
 	}
 
-	LOG_DBG("BE: k1 result %s", bt_hex(k1_out, sizeof(k1_out)));
+	LOG_DBG("BE: k1 result %s", bt_hex_real(k1_out, sizeof(k1_out)));
 
 	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
 		/* Swap result back to little endian */
@@ -246,7 +246,7 @@ int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
 	}
 
 	xor_128(k1_out, sirk, out_sirk);
-	LOG_DBG("out %s", bt_hex(out_sirk, BT_CSIS_SET_SIRK_SIZE));
+	LOG_DBG("out %s", bt_hex_real(out_sirk, BT_CSIS_SET_SIRK_SIZE));
 
 	return 0;
 }

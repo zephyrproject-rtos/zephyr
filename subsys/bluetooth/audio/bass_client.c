@@ -525,7 +525,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
 	LOG_DBG("Found BIS advertiser with address %s",
-	       bt_addr_le_str(info->addr));
+	       bt_addr_le_str_real(info->addr));
 
 	if (bass_cbs != NULL && bass_cbs->scan != NULL) {
 		bass_cbs->scan(info, broadcast_id);

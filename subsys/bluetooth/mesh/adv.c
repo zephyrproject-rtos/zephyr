@@ -212,7 +212,7 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 		      void *cb_data)
 {
 	LOG_DBG("type 0x%02x len %u: %s", BT_MESH_ADV(buf)->type, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	BT_MESH_ADV(buf)->cb = cb;
 	BT_MESH_ADV(buf)->cb_data = cb_data;
@@ -254,7 +254,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
 		return;
 	}
 
-	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("len %u: %s", buf->len, bt_hex_real(buf->data, buf->len));
 
 	while (buf->len > 1) {
 		struct net_buf_simple_state state;

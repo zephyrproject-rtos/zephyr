@@ -59,8 +59,8 @@ const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr)
 		keys = bt_keys_find_irk(id, addr);
 		if (keys) {
 			LOG_DBG("Identity %s matched RPA %s",
-			       bt_addr_le_str(&keys->addr),
-			       bt_addr_le_str(addr));
+			       bt_addr_le_str_real(&keys->addr),
+			       bt_addr_le_str_real(addr));
 			return &keys->addr;
 		}
 	}
@@ -132,7 +132,7 @@ static int set_random_address(const bt_addr_t *addr)
 	struct net_buf *buf;
 	int err;
 
-	LOG_DBG("%s", bt_addr_str(addr));
+	LOG_DBG("%s", bt_addr_str_real(addr));
 
 	/* Do nothing if we already have the right address */
 	if (!bt_addr_cmp(addr, &bt_dev.random_addr.a)) {
@@ -172,7 +172,7 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 		return set_random_address(addr);
 	}
 
-	LOG_DBG("%s", bt_addr_str(addr));
+	LOG_DBG("%s", bt_addr_str_real(addr));
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_PARAMS_SET)) {
 		bt_addr_copy(&adv->random_addr.a, addr);
@@ -299,7 +299,7 @@ int bt_id_set_private_addr(uint8_t id)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		LOG_INF("RPA: %s", bt_addr_str(&rpa));
+		LOG_INF("RPA: %s", bt_addr_str_real(&rpa));
 	}
 
 	return 0;
@@ -360,7 +360,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		LOG_INF("RPA: %s", bt_addr_str(&rpa));
+		LOG_INF("RPA: %s", bt_addr_str_real(&rpa));
 	}
 
 	return 0;
@@ -388,7 +388,7 @@ int bt_id_set_private_addr(uint8_t id)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		LOG_INF("NRPA: %s", bt_addr_str(&nrpa));
+		LOG_INF("NRPA: %s", bt_addr_str_real(&nrpa));
 	}
 
 	return 0;
@@ -416,7 +416,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		LOG_INF("NRPA: %s", bt_addr_str(&nrpa));
+		LOG_INF("NRPA: %s", bt_addr_str_real(&nrpa));
 	}
 
 	return 0;
@@ -740,7 +740,7 @@ static int le_set_privacy_mode(const bt_addr_le_t *addr, uint8_t mode)
 		return 0;
 	}
 
-	LOG_DBG("addr %s mode 0x%02x", bt_addr_le_str(addr), mode);
+	LOG_DBG("addr %s mode 0x%02x", bt_addr_le_str_real(addr), mode);
 
 	bt_addr_le_copy(&cp.id_addr, addr);
 	cp.mode = mode;
@@ -786,7 +786,7 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 		return -EINVAL;
 	}
 
-	LOG_DBG("addr %s", bt_addr_le_str(addr));
+	LOG_DBG("addr %s", bt_addr_le_str_real(addr));
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_RL, sizeof(*cp));
 	if (!buf) {
@@ -848,7 +848,7 @@ void bt_id_add(struct bt_keys *keys)
 	struct bt_conn *conn;
 	int err;
 
-	LOG_DBG("addr %s", bt_addr_le_str(&keys->addr));
+	LOG_DBG("addr %s", bt_addr_le_str_real(&keys->addr));
 
 	/* Nothing to be done if host-side resolving is used */
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
@@ -972,7 +972,7 @@ static int hci_id_del(const bt_addr_le_t *addr)
 	struct bt_hci_cp_le_rem_dev_from_rl *cp;
 	struct net_buf *buf;
 
-	LOG_DBG("addr %s", bt_addr_le_str(addr));
+	LOG_DBG("addr %s", bt_addr_le_str_real(addr));
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_RL, sizeof(*cp));
 	if (!buf) {
@@ -994,7 +994,7 @@ void bt_id_del(struct bt_keys *keys)
 		return;
 	}
 
-	LOG_DBG("addr %s", bt_addr_le_str(&keys->addr));
+	LOG_DBG("addr %s", bt_addr_le_str_real(&keys->addr));
 
 	if (!bt_dev.le.rl_size ||
 	    bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) {

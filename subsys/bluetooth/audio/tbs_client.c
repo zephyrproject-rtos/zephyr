@@ -860,7 +860,7 @@ static uint8_t read_current_calls_cb(struct bt_conn *conn, uint8_t err,
 
 	if (data != NULL) {
 		LOG_DBG("Current calls read (offset %u): %s",
-		       params->single.offset, bt_hex(data, length));
+		       params->single.offset, bt_hex_real(data, length));
 
 		if (inst->net_buf.size < inst->net_buf.len + length) {
 			LOG_DBG("Could not read all data, aborting");
@@ -1029,7 +1029,7 @@ static uint8_t read_call_state_cb(struct bt_conn *conn, uint8_t err,
 
 	if (data != NULL) {
 		LOG_DBG("Call states read (offset %u): %s",
-		       params->single.offset, bt_hex(data, length));
+		       params->single.offset, bt_hex_real(data, length));
 
 		if (inst->net_buf.size < inst->net_buf.len + length) {
 			LOG_DBG("Could not read all data, aborting");

@@ -275,9 +275,9 @@ static void send_confirm(void)
 	PROV_BUF(cfm, PDU_LEN_CONFIRM);
 	uint8_t *inputs = (uint8_t *)&bt_mesh_prov_link.conf_inputs;
 
-	LOG_DBG("ConfInputs[0]   %s", bt_hex(inputs, 64));
-	LOG_DBG("ConfInputs[64]  %s", bt_hex(&inputs[64], 64));
-	LOG_DBG("ConfInputs[128] %s", bt_hex(&inputs[128], 17));
+	LOG_DBG("ConfInputs[0]   %s", bt_hex_real(inputs, 64));
+	LOG_DBG("ConfInputs[64]  %s", bt_hex_real(&inputs[64], 64));
+	LOG_DBG("ConfInputs[128] %s", bt_hex_real(&inputs[128], 17));
 
 	if (bt_mesh_prov_conf_salt(inputs, bt_mesh_prov_link.conf_salt)) {
 		LOG_ERR("Unable to generate confirmation salt");
@@ -285,7 +285,7 @@ static void send_confirm(void)
 		return;
 	}
 
-	LOG_DBG("ConfirmationSalt: %s", bt_hex(bt_mesh_prov_link.conf_salt, 16));
+	LOG_DBG("ConfirmationSalt: %s", bt_hex_real(bt_mesh_prov_link.conf_salt, 16));
 
 	if (bt_mesh_prov_conf_key(bt_mesh_prov_link.dhkey,
 				  bt_mesh_prov_link.conf_salt, bt_mesh_prov_link.conf_key)) {
@@ -294,7 +294,7 @@ static void send_confirm(void)
 		return;
 	}
 
-	LOG_DBG("ConfirmationKey: %s", bt_hex(bt_mesh_prov_link.conf_key, 16));
+	LOG_DBG("ConfirmationKey: %s", bt_hex_real(bt_mesh_prov_link.conf_key, 16));
 
 	if (bt_rand(bt_mesh_prov_link.rand, 16)) {
 		LOG_ERR("Unable to generate random number");
@@ -302,7 +302,7 @@ static void send_confirm(void)
 		return;
 	}
 
-	LOG_DBG("LocalRandom: %s", bt_hex(bt_mesh_prov_link.rand, 16));
+	LOG_DBG("LocalRandom: %s", bt_hex_real(bt_mesh_prov_link.rand, 16));
 
 	bt_mesh_prov_buf_init(&cfm, PROV_CONFIRM);
 
@@ -354,7 +354,7 @@ static void send_pub_key(void)
 	sys_memcpy_swap(net_buf_simple_add(&buf, BT_PUB_KEY_COORD_LEN), &key[BT_PUB_KEY_COORD_LEN],
 			BT_PUB_KEY_COORD_LEN);
 
-	LOG_DBG("Local Public Key: %s", bt_hex(buf.data + 1, BT_PUB_KEY_LEN));
+	LOG_DBG("Local Public Key: %s", bt_hex_real(buf.data + 1, BT_PUB_KEY_LEN));
 
 	/* PublicKeyProvisioner */
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_provisioner, &buf.data[1], PDU_LEN_PUB_KEY);
@@ -379,7 +379,7 @@ static void prov_dh_key_cb(const uint8_t dhkey[BT_DH_KEY_LEN])
 
 	sys_memcpy_swap(bt_mesh_prov_link.dhkey, dhkey, BT_DH_KEY_LEN);
 
-	LOG_DBG("DHkey: %s", bt_hex(bt_mesh_prov_link.dhkey, BT_DH_KEY_LEN));
+	LOG_DBG("DHkey: %s", bt_hex_real(bt_mesh_prov_link.dhkey, BT_DH_KEY_LEN));
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, WAIT_STRING) ||
 	    atomic_test_bit(bt_mesh_prov_link.flags, WAIT_NUMBER) ||
@@ -426,7 +426,7 @@ static void prov_dh_key_gen(void)
 
 static void prov_pub_key(const uint8_t *data)
 {
-	LOG_DBG("Remote Public Key: %s", bt_hex(data, BT_PUB_KEY_LEN));
+	LOG_DBG("Remote Public Key: %s", bt_hex_real(data, BT_PUB_KEY_LEN));
 
 	atomic_set_bit(bt_mesh_prov_link.flags, REMOTE_PUB_KEY);
 
@@ -487,7 +487,7 @@ static void send_prov_data(void)
 		return;
 	}
 
-	LOG_DBG("SessionKey: %s", bt_hex(session_key, 16));
+	LOG_DBG("SessionKey: %s", bt_hex_real(session_key, 16));
 
 	err = bt_mesh_prov_nonce(bt_mesh_prov_link.dhkey,
 				 bt_mesh_prov_link.prov_salt, nonce);
@@ -497,7 +497,7 @@ static void send_prov_data(void)
 		return;
 	}
 
-	LOG_DBG("Nonce: %s", bt_hex(nonce, 13));
+	LOG_DBG("Nonce: %s", bt_hex_real(nonce, 13));
 
 	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
 			      bt_mesh_prov_link.prov_salt, prov_device.node->dev_key);
@@ -507,7 +507,7 @@ static void send_prov_data(void)
 		return;
 	}
 
-	LOG_DBG("DevKey: %s", bt_hex(prov_device.node->dev_key, 16));
+	LOG_DBG("DevKey: %s", bt_hex_real(prov_device.node->dev_key, 16));
 
 	sub = bt_mesh_cdb_subnet_get(prov_device.node->net_idx);
 	if (sub == NULL) {
@@ -550,7 +550,7 @@ static void prov_complete(const uint8_t *data)
 	struct bt_mesh_cdb_node *node = prov_device.node;
 
 	LOG_DBG("key %s, net_idx %u, num_elem %u, addr 0x%04x",
-	       bt_hex(node->dev_key, 16), node->net_idx, node->num_elem,
+	       bt_hex_real(node->dev_key, 16), node->net_idx, node->num_elem,
 	       node->addr);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
@@ -585,7 +585,7 @@ static void prov_random(const uint8_t *data)
 {
 	uint8_t conf_verify[16];
 
-	LOG_DBG("Remote Random: %s", bt_hex(data, 16));
+	LOG_DBG("Remote Random: %s", bt_hex_real(data, 16));
 	if (!memcmp(data, bt_mesh_prov_link.rand, 16)) {
 		LOG_ERR("Random value is identical to ours, rejecting.");
 		prov_fail(PROV_ERR_CFM_FAILED);
@@ -601,8 +601,8 @@ static void prov_random(const uint8_t *data)
 
 	if (memcmp(conf_verify, bt_mesh_prov_link.conf, 16)) {
 		LOG_ERR("Invalid confirmation value");
-		LOG_DBG("Received:   %s", bt_hex(bt_mesh_prov_link.conf, 16));
-		LOG_DBG("Calculated: %s",  bt_hex(conf_verify, 16));
+		LOG_DBG("Received:   %s", bt_hex_real(bt_mesh_prov_link.conf, 16));
+		LOG_DBG("Calculated: %s",  bt_hex_real(conf_verify, 16));
 		prov_fail(PROV_ERR_CFM_FAILED);
 		return;
 	}
@@ -614,14 +614,14 @@ static void prov_random(const uint8_t *data)
 		return;
 	}
 
-	LOG_DBG("ProvisioningSalt: %s", bt_hex(bt_mesh_prov_link.prov_salt, 16));
+	LOG_DBG("ProvisioningSalt: %s", bt_hex_real(bt_mesh_prov_link.prov_salt, 16));
 
 	send_prov_data();
 }
 
 static void prov_confirm(const uint8_t *data)
 {
-	LOG_DBG("Remote Confirm: %s", bt_hex(data, 16));
+	LOG_DBG("Remote Confirm: %s", bt_hex_real(data, 16));
 
 	if (!memcmp(data, bt_mesh_prov_link.conf, 16)) {
 		LOG_ERR("Confirm value is identical to ours, rejecting.");
@@ -751,7 +751,7 @@ static int bt_mesh_provisioner_open(const struct prov_bearer *bearer,
 	struct bt_uuid_128 uuid_repr = { .uuid = { BT_UUID_TYPE_128 } };
 
 	memcpy(uuid_repr.val, uuid, 16);
-	LOG_DBG("Provisioning %s", bt_uuid_str(&uuid_repr.uuid));
+	LOG_DBG("Provisioning %s", bt_uuid_str_real(&uuid_repr.uuid));
 
 	atomic_set_bit(bt_mesh_prov_link.flags, PROVISIONER);
 	memcpy(prov_device.uuid, uuid, 16);

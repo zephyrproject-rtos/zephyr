@@ -760,7 +760,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 	 */
 	if (broadcast_id != INVALID_BROADCAST_ID) {
 		LOG_DBG("Found broadcast source with address %s and id 0x%6X",
-		       bt_addr_le_str(info->addr), broadcast_id);
+		       bt_addr_le_str_real(info->addr), broadcast_id);
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 			if (listener->scan_recv != NULL) {

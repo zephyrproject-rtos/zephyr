@@ -120,7 +120,7 @@ int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 		hex2bin(&key[i * 2], 2, &addr->a.val[5 - i], 1);
 	}
 
-	LOG_DBG("Decoded %s as %s", key, bt_addr_le_str(addr));
+	LOG_DBG("Decoded %s as %s", key, bt_addr_le_str_real(addr));
 
 	return 0;
 }
@@ -174,7 +174,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 			bt_dev.id_count = len / sizeof(bt_dev.id_addr[0]);
 			for (i = 0; i < bt_dev.id_count; i++) {
 				LOG_DBG("ID[%d] %s", i,
-				       bt_addr_le_str(&bt_dev.id_addr[i]));
+				       bt_addr_le_str_real(&bt_dev.id_addr[i]));
 			}
 		}
 
@@ -229,7 +229,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 			count = len / sizeof(bt_dev.irk[0]);
 			for (i = 0; i < count; i++) {
 				LOG_DBG("IRK[%d] %s", i,
-				       bt_hex(bt_dev.irk[i], 16));
+				       bt_hex_real(bt_dev.irk[i], 16));
 			}
 		}
 

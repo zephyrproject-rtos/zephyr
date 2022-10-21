@@ -505,7 +505,7 @@ static void handle_csis_disconnect(struct bt_csis *csis, struct bt_conn *conn)
 static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_DBG("Disconnected: %s (reason %u)",
-	       bt_addr_le_str(bt_conn_get_dst(conn)), reason);
+	       bt_addr_le_str_real(bt_conn_get_dst(conn)), reason);
 
 	for (int i = 0; i < ARRAY_SIZE(csis_insts); i++) {
 		handle_csis_disconnect(&csis_insts[i], conn);
@@ -585,7 +585,7 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 	 */
 
 	LOG_DBG("%s paired (%sbonded)",
-	       bt_addr_le_str(bt_conn_get_dst(conn)), bonded ? "" : "not ");
+	       bt_addr_le_str_real(bt_conn_get_dst(conn)), bonded ? "" : "not ");
 
 	if (!bonded) {
 		return;

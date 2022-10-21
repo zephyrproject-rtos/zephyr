@@ -58,7 +58,7 @@ static int health_fault_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	test_id = net_buf_simple_pull_u8(buf);
 	cid = net_buf_simple_pull_le16(buf);
@@ -111,7 +111,7 @@ static int health_current_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	test_id = net_buf_simple_pull_u8(buf);
 	cid = net_buf_simple_pull_le16(buf);
@@ -141,7 +141,7 @@ static int health_period_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	divisor = net_buf_simple_pull_u8(buf);
 
@@ -176,7 +176,7 @@ static int health_attention_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	attention = net_buf_simple_pull_u8(buf);
 

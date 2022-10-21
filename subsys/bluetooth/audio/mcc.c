@@ -1160,7 +1160,7 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 
 		/* We have found an included service */
 		include = (struct bt_gatt_include *)attr->user_data;
-		LOG_DBG("Include UUID %s", bt_uuid_str(include->uuid));
+		LOG_DBG("Include UUID %s", bt_uuid_str_real(include->uuid));
 
 		if (bt_uuid_cmp(include->uuid, BT_UUID_OTS)) {
 			/* But it is not OTS - continue search */
@@ -1521,7 +1521,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		chrc = (struct bt_gatt_chrc *)attr->user_data;
 
 		if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYER_NAME)) {
-			LOG_DBG("Player name, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Player name, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->player_name_handle = chrc->value_handle;
 			/* Use discovery params pointer as subscription flag */
 			cur_mcs_inst->player_name_sub_params.disc_params = NULL;
@@ -1530,49 +1530,49 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			}
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_OBJ_ID)) {
-			LOG_DBG("Icon Object, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Icon Object, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->icon_obj_id_handle = chrc->value_handle;
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_URL)) {
-			LOG_DBG("Icon URL, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Icon URL, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->icon_url_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_CHANGED)) {
-			LOG_DBG("Track Changed, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Track Changed, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->track_changed_handle = chrc->value_handle;
 			cur_mcs_inst->track_changed_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				cur_mcs_inst->track_changed_sub_params.value = BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_TITLE)) {
-			LOG_DBG("Track Title, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Track Title, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->track_title_handle = chrc->value_handle;
 			cur_mcs_inst->track_title_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				cur_mcs_inst->track_title_sub_params.value = BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_DURATION)) {
-			LOG_DBG("Track Duration, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Track Duration, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->track_duration_handle = chrc->value_handle;
 			cur_mcs_inst->track_duration_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				cur_mcs_inst->track_duration_sub_params.value = BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_POSITION)) {
-			LOG_DBG("Track Position, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Track Position, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->track_position_handle = chrc->value_handle;
 			cur_mcs_inst->track_position_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				cur_mcs_inst->track_position_sub_params.value = BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYBACK_SPEED)) {
-			LOG_DBG("Playback Speed, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Playback Speed, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->playback_speed_handle = chrc->value_handle;
 			cur_mcs_inst->playback_speed_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				cur_mcs_inst->playback_speed_sub_params.value = BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEEKING_SPEED)) {
-			LOG_DBG("Seeking Speed, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Seeking Speed, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->seeking_speed_handle = chrc->value_handle;
 			cur_mcs_inst->seeking_speed_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
@@ -1580,10 +1580,10 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			}
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID)) {
-			LOG_DBG("Track Segments Object, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Track Segments Object, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->segments_obj_id_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_CURRENT_TRACK_OBJ_ID)) {
-			LOG_DBG("Current Track Object, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Current Track Object, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->current_track_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->current_track_obj_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
@@ -1591,14 +1591,14 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 					BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_NEXT_TRACK_OBJ_ID)) {
-			LOG_DBG("Next Track Object, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Next Track Object, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->next_track_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->next_track_obj_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				cur_mcs_inst->next_track_obj_sub_params.value = BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PARENT_GROUP_OBJ_ID)) {
-			LOG_DBG("Parent Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Parent Group Object, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->parent_group_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->parent_group_obj_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
@@ -1606,7 +1606,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 					BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID)) {
-			LOG_DBG("Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Group Object, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->current_group_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->current_group_obj_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
@@ -1615,24 +1615,24 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			}
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDER)) {
-			LOG_DBG("Playing Order, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Playing Order, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->playing_order_handle = chrc->value_handle;
 			cur_mcs_inst->playing_order_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				cur_mcs_inst->playing_order_sub_params.value = BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDERS)) {
-			LOG_DBG("Playing Orders supported, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Playing Orders supported, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->playing_orders_supported_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_STATE)) {
-			LOG_DBG("Media State, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Media State, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->media_state_handle = chrc->value_handle;
 			cur_mcs_inst->media_state_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				cur_mcs_inst->media_state_sub_params.value = BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_CONTROL_POINT)) {
-			LOG_DBG("Media Control Point, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Media Control Point, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->cp_handle = chrc->value_handle;
 			cur_mcs_inst->cp_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
@@ -1640,7 +1640,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_CONTROL_OPCODES)) {
 			LOG_DBG("Media control opcodes supported, UUID: %s",
-			       bt_uuid_str(chrc->uuid));
+			       bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->opcodes_supported_handle = chrc->value_handle;
 			cur_mcs_inst->opcodes_supported_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
@@ -1649,14 +1649,14 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			}
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_CONTROL_POINT)) {
-			LOG_DBG("Search control point, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Search control point, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->scp_handle = chrc->value_handle;
 			cur_mcs_inst->scp_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				cur_mcs_inst->scp_sub_params.value = BT_GATT_CCC_NOTIFY;
 			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID)) {
-			LOG_DBG("Search Results object, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Search Results object, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->search_results_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->search_results_obj_sub_params.disc_params = NULL;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
@@ -1665,7 +1665,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			}
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_CCID)) {
-			LOG_DBG("Content Control ID, UUID: %s", bt_uuid_str(chrc->uuid));
+			LOG_DBG("Content Control ID, UUID: %s", bt_uuid_str_real(chrc->uuid));
 			cur_mcs_inst->content_control_id_handle = chrc->value_handle;
 		}
 
@@ -1725,9 +1725,9 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 		/* We have found an attribute, and it is a primary service */
 		/* (Must be GMCS, since that is the one we searched for.) */
 		LOG_DBG("Primary discovery complete");
-		LOG_DBG("UUID: %s", bt_uuid_str(attr->uuid));
+		LOG_DBG("UUID: %s", bt_uuid_str_real(attr->uuid));
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
-		LOG_DBG("UUID: %s", bt_uuid_str(prim_service->uuid));
+		LOG_DBG("UUID: %s", bt_uuid_str_real(prim_service->uuid));
 
 		cur_mcs_inst = &mcs_inst;
 		cur_mcs_inst->start_handle = attr->handle + 1;

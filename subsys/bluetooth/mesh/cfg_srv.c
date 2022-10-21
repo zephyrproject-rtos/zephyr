@@ -139,7 +139,7 @@ static int dev_comp_data_get(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	page = net_buf_simple_pull_u8(buf);
 	if (page != 0U) {
@@ -494,7 +494,7 @@ static int beacon_get(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	bt_mesh_model_msg_init(&msg, OP_BEACON_STATUS);
 	net_buf_simple_add_u8(&msg, bt_mesh_beacon_enabled());
@@ -514,7 +514,7 @@ static int beacon_set(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	if (buf->data[0] != 0x00 && buf->data[0] != 0x01) {
 		LOG_WRN("Invalid Config Beacon value 0x%02x", buf->data[0]);
@@ -541,7 +541,7 @@ static int default_ttl_get(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	bt_mesh_model_msg_init(&msg, OP_DEFAULT_TTL_STATUS);
 	net_buf_simple_add_u8(&msg, bt_mesh_default_ttl_get());
@@ -562,7 +562,7 @@ static int default_ttl_set(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	err = bt_mesh_default_ttl_set(buf->data[0]);
 	if (err) {
@@ -601,7 +601,7 @@ static int gatt_proxy_get(struct bt_mesh_model *model,
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	return send_gatt_proxy_status(model, ctx);
 }
@@ -612,7 +612,7 @@ static int gatt_proxy_set(struct bt_mesh_model *model,
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	if (buf->data[0] != 0x00 && buf->data[0] != 0x01) {
 		LOG_WRN("Invalid GATT Proxy value 0x%02x", buf->data[0]);
@@ -632,7 +632,7 @@ static int net_transmit_get(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	bt_mesh_model_msg_init(&msg, OP_NET_TRANSMIT_STATUS);
 	net_buf_simple_add_u8(&msg, bt_mesh_net_transmit_get());
@@ -652,7 +652,7 @@ static int net_transmit_set(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	LOG_DBG("Transmit 0x%02x (count %u interval %ums)", buf->data[0],
 	       BT_MESH_TRANSMIT_COUNT(buf->data[0]),
@@ -678,7 +678,7 @@ static int relay_get(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	bt_mesh_model_msg_init(&msg, OP_RELAY_STATUS);
 	net_buf_simple_add_u8(&msg, bt_mesh_relay_get());
@@ -699,7 +699,7 @@ static int relay_set(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	if (buf->data[0] != 0x00 && buf->data[0] != 0x01) {
 		LOG_WRN("Invalid Relay value 0x%02x", buf->data[0]);
@@ -1814,7 +1814,7 @@ static int node_identity_get(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	idx = net_buf_simple_pull_le16(buf);
 	if (idx > 0xfff) {
@@ -1836,7 +1836,7 @@ static int node_identity_set(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	idx = net_buf_simple_pull_le16(buf);
 	if (idx > 0xfff) {
@@ -2110,7 +2110,7 @@ static int node_reset(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	bt_mesh_model_msg_init(&msg, OP_NODE_RESET_STATUS);
 
@@ -2142,7 +2142,7 @@ static int friend_get(struct bt_mesh_model *model,
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	return send_friend_status(model, ctx);
 }
@@ -2153,7 +2153,7 @@ static int friend_set(struct bt_mesh_model *model,
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	if (buf->data[0] != 0x00 && buf->data[0] != 0x01) {
 		LOG_WRN("Invalid Friend value 0x%02x", buf->data[0]);

@@ -205,7 +205,7 @@ static uint8_t micp_discover_include_func(
 	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
 		struct bt_gatt_include *include = (struct bt_gatt_include *)attr->user_data;
 
-		LOG_DBG("Include UUID %s", bt_uuid_str(include->uuid));
+		LOG_DBG("Include UUID %s", bt_uuid_str_real(include->uuid));
 
 		if (bt_uuid_cmp(include->uuid, BT_UUID_AICS) == 0 &&
 		    mic_ctlr->aics_inst_cnt < CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST) {

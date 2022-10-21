@@ -92,7 +92,7 @@ static void protocol_timeout(struct k_work *work)
 
 int bt_mesh_pb_gatt_recv(struct bt_conn *conn, struct net_buf_simple *buf)
 {
-	LOG_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("%u bytes: %s", buf->len, bt_hex_real(buf->data, buf->len));
 
 	if (link.conn != conn || !link.cb) {
 		LOG_WRN("Data for unexpected connection");
@@ -173,7 +173,7 @@ int bt_mesh_pb_gatt_cli_open(struct bt_conn *conn)
 static int prov_link_open(const uint8_t uuid[16], k_timeout_t timeout,
 			  const struct prov_bearer_cb *cb, void *cb_data)
 {
-	LOG_DBG("uuid %s", bt_hex(uuid, 16));
+	LOG_DBG("uuid %s", bt_hex_real(uuid, 16));
 
 	link.cb = cb;
 	link.cb_data = cb_data;

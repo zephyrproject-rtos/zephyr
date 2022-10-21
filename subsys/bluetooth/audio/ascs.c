@@ -1656,7 +1656,7 @@ static bool ascs_codec_store_metadata(struct bt_data *data, void *user_data)
 
 	LOG_DBG("#%zu: data: %s",
 	       codec->meta_count,
-	       bt_hex(meta->value, data->data_len));
+	       bt_hex_real(meta->value, data->data_len));
 
 	codec->meta_count++;
 

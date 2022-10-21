@@ -247,7 +247,7 @@ uint8_t bt_mesh_app_key_add(uint16_t app_idx, uint16_t net_idx,
 	struct app_key *app;
 
 	LOG_DBG("net_idx 0x%04x app_idx %04x val %s", net_idx, app_idx,
-	       bt_hex(key, 16));
+	       bt_hex_real(key, 16));
 
 	if (!bt_mesh_subnet_get(net_idx)) {
 		return STATUS_INVALID_NETKEY;
@@ -298,7 +298,7 @@ uint8_t bt_mesh_app_key_update(uint16_t app_idx, uint16_t net_idx,
 	struct bt_mesh_subnet *sub;
 
 	LOG_DBG("net_idx 0x%04x app_idx %04x val %s", net_idx, app_idx,
-	       bt_hex(key, 16));
+	       bt_hex_real(key, 16));
 
 	app = app_get(app_idx);
 	if (!app) {

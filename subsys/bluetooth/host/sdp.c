@@ -1799,7 +1799,7 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (frame_len == 2U && cstate->length == 0U &&
 		    session->cstate.length == 0U) {
 			LOG_DBG("record for UUID 0x%s not found",
-				bt_uuid_str(session->param->uuid));
+				bt_uuid_str_real(session->param->uuid));
 			/* Call user UUID handler */
 			sdp_client_notify_result(session, UUID_NOT_RESOLVED);
 			net_buf_pull(buf, frame_len + sizeof(cstate->length));
@@ -1836,7 +1836,7 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 		net_buf_pull(buf, sizeof(cstate->length));
 
-		LOG_DBG("UUID 0x%s resolved", bt_uuid_str(session->param->uuid));
+		LOG_DBG("UUID 0x%s resolved", bt_uuid_str_real(session->param->uuid));
 		sdp_client_notify_result(session, UUID_RESOLVED);
 iterate:
 		/* Get next UUID and start resolving it */
@@ -2426,7 +2426,7 @@ static int sdp_get_uuid_data(const struct bt_sdp_attr_item *attr,
 			pd->params = p;
 			pd->params_len = left;
 
-			LOG_DBG("UUID 0x%s found", bt_uuid_str(&pd->uuid));
+			LOG_DBG("UUID 0x%s found", bt_uuid_str_real(&pd->uuid));
 			if (proto_profile_index > 0U) {
 				proto_profile_index--;
 				p += left;
@@ -2455,7 +2455,7 @@ static int sdp_get_param_item(struct bt_sdp_uuid_desc *pd_item, uint16_t *param)
 
 	BT_ASSERT(p);
 
-	LOG_DBG("Getting UUID's 0x%s params", bt_uuid_str(&pd_item->uuid));
+	LOG_DBG("Getting UUID's 0x%s params", bt_uuid_str_real(&pd_item->uuid));
 
 	switch (p[0]) {
 	case BT_SDP_UINT8:

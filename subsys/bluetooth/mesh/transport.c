@@ -554,7 +554,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 		len = MIN(sdu->len, seg_len(!!ctl_op));
 		memcpy(buf, net_buf_simple_pull_mem(sdu, len), len);
 
-		LOG_DBG("seg %u: %s", seg_o, bt_hex(buf, len));
+		LOG_DBG("seg %u: %s", seg_o, bt_hex_real(buf, len));
 
 		tx->seg[seg_o] = buf;
 
@@ -678,7 +678,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->sub->net_idx,
 	       tx->ctx->app_idx, tx->ctx->addr);
-	LOG_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
+	LOG_DBG("len %u: %s", msg->len, bt_hex_real(msg->data, msg->len));
 
 	tx->xmit = bt_mesh_net_transmit_get();
 	tx->aid = aid;
@@ -1054,7 +1054,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
 
 	LOG_DBG("src 0x%04x dst 0x%04x ttl 0x%02x ctl 0x%02x", tx->src,
 	       tx->ctx->addr, tx->ctx->send_ttl, ctl_op);
-	LOG_DBG("len %zu: %s", data_len, bt_hex(data, data_len));
+	LOG_DBG("len %zu: %s", data_len, bt_hex_real(data, data_len));
 
 	if (tx->ctx->send_rel) {
 		return send_seg(tx, &buf, cb, cb_data, &ctl_op);
@@ -1574,7 +1574,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	/* Remove network headers */
 	net_buf_simple_pull(buf, BT_MESH_NET_HDR_LEN);
 
-	LOG_DBG("Payload %s", bt_hex(buf->data, buf->len));
+	LOG_DBG("Payload %s", bt_hex_real(buf->data, buf->len));
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
 		bt_test_mesh_net_recv(rx->ctx.recv_ttl, rx->ctl, rx->ctx.addr,
@@ -1771,7 +1771,7 @@ uint8_t *bt_mesh_va_label_get(uint16_t addr)
 	for (i = 0; i < ARRAY_SIZE(virtual_addrs); i++) {
 		if (virtual_addrs[i].ref && virtual_addrs[i].addr == addr) {
 			LOG_DBG("Found Label UUID for 0x%04x: %s", addr,
-			       bt_hex(virtual_addrs[i].uuid, 16));
+			       bt_hex_real(virtual_addrs[i].uuid, 16));
 			return virtual_addrs[i].uuid;
 		}
 	}

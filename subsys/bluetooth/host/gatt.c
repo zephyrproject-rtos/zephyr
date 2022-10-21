@@ -321,7 +321,7 @@ static struct db_hash {
 
 static struct gatt_sc_cfg *find_sc_cfg(uint8_t id, const bt_addr_le_t *addr)
 {
-	LOG_DBG("id: %u, addr: %s", id, bt_addr_le_str(addr));
+	LOG_DBG("id: %u, addr: %s", id, bt_addr_le_str_real(addr));
 
 	for (size_t i = 0; i < ARRAY_SIZE(sc_cfg); i++) {
 		if (id == sc_cfg[i].id &&
@@ -356,7 +356,7 @@ static void sc_store(struct gatt_sc_cfg *cfg)
 	}
 
 	LOG_DBG("stored SC for %s (%s, 0x%04x-0x%04x)",
-	       bt_addr_le_str(&cfg->peer), key, cfg->data.start,
+	       bt_addr_le_str_real(&cfg->peer), key, cfg->data.start,
 	       cfg->data.end);
 }
 
@@ -395,7 +395,7 @@ static int bt_gatt_clear_sc(uint8_t id, const bt_addr_le_t *addr)
 			LOG_ERR("failed to delete SC (err %d)", err);
 		} else {
 			LOG_DBG("deleted SC for %s (%s)",
-			       bt_addr_le_str(&cfg->peer),
+			       bt_addr_le_str_real(&cfg->peer),
 			       key);
 		}
 	}
@@ -426,7 +426,7 @@ static void sc_clear(struct bt_conn *conn)
 
 static void sc_reset(struct gatt_sc_cfg *cfg)
 {
-	LOG_DBG("peer %s", bt_addr_le_str(&cfg->peer));
+	LOG_DBG("peer %s", bt_addr_le_str_real(&cfg->peer));
 
 	memset(&cfg->data, 0, sizeof(cfg->data));
 
@@ -463,7 +463,7 @@ static void sc_save(uint8_t id, bt_addr_le_t *peer, uint16_t start, uint16_t end
 	struct gatt_sc_cfg *cfg;
 	bool modified = false;
 
-	LOG_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str(peer), start,
+	LOG_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str_real(peer), start,
 	       end);
 
 	cfg = find_sc_cfg(id, peer);
@@ -969,7 +969,7 @@ static int bt_gatt_store_cf(struct bt_conn *conn)
 		return err;
 	}
 
-	LOG_DBG("Stored CF for %s (%s)", bt_addr_le_str(&conn->le.dst), key);
+	LOG_DBG("Stored CF for %s (%s)", bt_addr_le_str_real(&conn->le.dst), key);
 #endif /* CONFIG_BT_GATT_CACHING */
 	return 0;
 
@@ -1133,7 +1133,7 @@ populate:
 		}
 
 		LOG_DBG("attr %p handle 0x%04x uuid %s perm 0x%02x",
-		       attrs, attrs->handle, bt_uuid_str(attrs->uuid),
+		       attrs, attrs->handle, bt_uuid_str_real(attrs->uuid),
 		       attrs->perm);
 	}
 
@@ -1180,7 +1180,7 @@ static void sc_indicate_rsp(struct bt_conn *conn,
 		cfg = find_cf_cfg(conn);
 		if (cfg && CF_ROBUST_CACHING(cfg)) {
 			atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-			LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+			LOG_DBG("%s change-aware", bt_addr_le_str_real(&cfg->peer));
 		}
 	}
 #endif /* CONFIG_BT_GATT_CACHING */
@@ -1427,7 +1427,7 @@ static void db_changed(void)
 			if (atomic_test_and_clear_bit(cfg->flags,
 						      CF_CHANGE_AWARE)) {
 				LOG_DBG("%s change-unaware",
-				       bt_addr_le_str(&cfg->peer));
+				       bt_addr_le_str_real(&cfg->peer));
 			}
 		}
 	}
@@ -2961,7 +2961,7 @@ static void sc_restore_rsp(struct bt_conn *conn,
 		cfg = find_cf_cfg(conn);
 		if (cfg && CF_ROBUST_CACHING(cfg)) {
 			atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-			LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+			LOG_DBG("%s change-aware", bt_addr_le_str_real(&cfg->peer));
 		}
 	}
 #endif /* CONFIG_BT_GATT_CACHING */
@@ -2993,7 +2993,7 @@ static void sc_restore(struct bt_conn *conn)
 		return;
 	}
 
-	LOG_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str(&cfg->peer),
+	LOG_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str_real(&cfg->peer),
 	       cfg->data.start, cfg->data.end);
 
 	sc_range[0] = sys_cpu_to_le16(cfg->data.start);
@@ -3589,7 +3589,7 @@ static int gatt_find_type_encode(struct net_buf *buf, size_t len,
 	req->type = sys_cpu_to_le16(uuid_val);
 
 	LOG_DBG("uuid %s start_handle 0x%04x end_handle 0x%04x",
-	       bt_uuid_str(params->uuid), params->start_handle,
+	       bt_uuid_str_real(params->uuid), params->start_handle,
 	       params->end_handle);
 
 	switch (params->uuid->type) {
@@ -3656,7 +3656,7 @@ static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
 
 	LOG_DBG("handle 0x%04x uuid %s start_handle 0x%04x "
 	       "end_handle 0x%04x\n", params->_included.attr_handle,
-	       bt_uuid_str(&u.uuid), value.start_handle, value.end_handle);
+	       bt_uuid_str_real(&u.uuid), value.start_handle, value.end_handle);
 
 	/* Skip if UUID is set but doesn't match */
 	if (params->uuid && bt_uuid_cmp(&u.uuid, params->uuid)) {
@@ -3764,7 +3764,7 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 		}
 
 		LOG_DBG("handle 0x%04x uuid %s start_handle 0x%04x "
-		       "end_handle 0x%04x\n", handle, bt_uuid_str(&u.uuid),
+		       "end_handle 0x%04x\n", handle, bt_uuid_str_real(&u.uuid),
 		       value.start_handle, value.end_handle);
 
 		/* Skip if UUID is set but doesn't match */
@@ -3842,7 +3842,7 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		}
 
 		LOG_DBG("handle 0x%04x uuid %s properties 0x%02x", handle,
-		       bt_uuid_str(&u.uuid), chrc->properties);
+		       bt_uuid_str_real(&u.uuid), chrc->properties);
 
 		/* Skip if UUID is set but doesn't match */
 		if (params->uuid && bt_uuid_cmp(&u.uuid, params->uuid)) {
@@ -4072,7 +4072,7 @@ static uint16_t parse_service(struct bt_conn *conn, const void *pdu,
 		}
 
 		LOG_DBG("start_handle 0x%04x end_handle 0x%04x uuid %s",
-		       start_handle, end_handle, bt_uuid_str(&u.uuid));
+		       start_handle, end_handle, bt_uuid_str_real(&u.uuid));
 
 		uuid_svc.uuid.type = BT_UUID_TYPE_16;
 		if (params->type == BT_GATT_DISCOVER_PRIMARY) {
@@ -4227,7 +4227,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, uint8_t err,
 			break;
 		}
 
-		LOG_DBG("handle 0x%04x uuid %s", handle, bt_uuid_str(&u.uuid));
+		LOG_DBG("handle 0x%04x uuid %s", handle, bt_uuid_str_real(&u.uuid));
 
 		/* Skip if UUID is set but doesn't match */
 		if (params->uuid && bt_uuid_cmp(&u.uuid, params->uuid)) {
@@ -4492,7 +4492,7 @@ static int gatt_read_uuid(struct bt_conn *conn,
 {
 	LOG_DBG("start_handle 0x%04x end_handle 0x%04x uuid %s",
 		params->by_uuid.start_handle, params->by_uuid.end_handle,
-		bt_uuid_str(params->by_uuid.uuid));
+		bt_uuid_str_real(params->by_uuid.uuid));
 
 	return gatt_req_send(conn, gatt_read_rsp, params,
 			     gatt_read_uuid_encode, BT_ATT_OP_READ_TYPE_REQ,
@@ -5421,7 +5421,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 		LOG_DBG("Restored CCC for id:%" PRIu8 " addr:%s",
 		       load.addr_with_id.id,
-		       bt_addr_le_str(load.addr_with_id.addr));
+		       bt_addr_le_str_real(load.addr_with_id.addr));
 	}
 
 	return 0;
@@ -5584,7 +5584,7 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 	if (atomic_test_and_clear_bit(cfg->flags, CF_DB_HASH_READ)) {
 		bt_att_clear_out_of_sync_sent(conn);
 		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-		LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+		LOG_DBG("%s change-aware", bt_addr_le_str_real(&cfg->peer));
 		return true;
 	}
 
@@ -5600,7 +5600,7 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 		atomic_clear_bit(cfg->flags, CF_DB_HASH_READ);
 		bt_att_clear_out_of_sync_sent(conn);
 		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-		LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+		LOG_DBG("%s change-aware", bt_addr_le_str_real(&cfg->peer));
 		return true;
 	}
 
@@ -5702,7 +5702,7 @@ int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 		return err;
 	}
 
-	LOG_DBG("Stored CCCs for %s (%s)", bt_addr_le_str(addr),
+	LOG_DBG("Stored CCCs for %s (%s)", bt_addr_le_str_real(addr),
 	       key);
 	if (len) {
 		for (size_t i = 0; i < save.count; i++) {
@@ -5775,12 +5775,12 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 		LOG_DBG("Read SC: len %zd", len);
 
-		LOG_DBG("Restored SC for %s", bt_addr_le_str(&addr));
+		LOG_DBG("Restored SC for %s", bt_addr_le_str_real(&addr));
 	} else if (cfg) {
 		/* Clear configuration */
 		memset(cfg, 0, sizeof(*cfg));
 
-		LOG_DBG("Removed SC for %s", bt_addr_le_str(&addr));
+		LOG_DBG("Removed SC for %s", bt_addr_le_str_real(&addr));
 	}
 
 	return 0;
@@ -5862,7 +5862,7 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		clear_cf_cfg(cfg);
 	}
 
-	LOG_DBG("Restored CF for %s", bt_addr_le_str(&addr));
+	LOG_DBG("Restored CF for %s", bt_addr_le_str_real(&addr));
 
 	return 0;
 }

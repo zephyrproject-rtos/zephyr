@@ -560,7 +560,7 @@ int bt_mesh_access_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx.ctx->net_idx,
 	       tx.ctx->app_idx, tx.ctx->addr);
-	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("len %u: %s", buf->len, bt_hex_real(buf->data, buf->len));
 
 	if (!bt_mesh_is_provisioned()) {
 		LOG_ERR("Local node is not yet provisioned");
@@ -699,7 +699,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	LOG_DBG("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
 	       rx->ctx.addr, rx->ctx.recv_dst);
-	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("len %u: %s", buf->len, bt_hex_real(buf->data, buf->len));
 
 	if (get_opcode(buf, &opcode) < 0) {
 		LOG_WRN("Unable to decode OpCode");

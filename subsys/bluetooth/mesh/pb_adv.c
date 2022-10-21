@@ -609,7 +609,7 @@ static void send_reliable(void)
 			continue;
 		}
 
-		LOG_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
+		LOG_DBG("%u bytes: %s", buf->len, bt_hex_real(buf->data, buf->len));
 
 		bt_mesh_adv_send(buf, NULL, NULL);
 	}
@@ -717,7 +717,7 @@ static int prov_send_adv(struct net_buf_simple *msg,
 	LOG_DBG("xact_id: 0x%x len: %u", link.tx.id, msg->len);
 
 	seg_len = MIN(msg->len, START_PAYLOAD_MAX);
-	LOG_DBG("seg 0 len %u: %s", seg_len, bt_hex(msg->data, seg_len));
+	LOG_DBG("seg 0 len %u: %s", seg_len, bt_hex_real(msg->data, seg_len));
 	net_buf_add_mem(start, msg->data, seg_len);
 	net_buf_simple_pull(msg, seg_len);
 
@@ -740,7 +740,7 @@ static int prov_send_adv(struct net_buf_simple *msg,
 		seg_len = MIN(msg->len, CONT_PAYLOAD_MAX);
 
 		LOG_DBG("seg %u len %u: %s", seg_id, seg_len,
-		       bt_hex(msg->data, seg_len));
+		       bt_hex_real(msg->data, seg_len));
 
 		net_buf_add_be32(buf, link.id);
 		net_buf_add_u8(buf, link.tx.id);
@@ -861,7 +861,7 @@ static int prov_link_open(const uint8_t uuid[16], k_timeout_t timeout,
 {
 	int err;
 
-	LOG_DBG("uuid %s", bt_hex(uuid, 16));
+	LOG_DBG("uuid %s", bt_hex_real(uuid, 16));
 
 	err = bt_mesh_adv_enable();
 	if (err) {

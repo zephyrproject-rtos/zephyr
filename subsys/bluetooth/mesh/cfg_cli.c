@@ -60,7 +60,7 @@ static int comp_data_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	page = net_buf_simple_pull_u8(buf);
 
@@ -90,7 +90,7 @@ static uint8_t state_status_u8(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 			ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-			bt_hex(buf->data, buf->len));
+			bt_hex_real(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 
@@ -183,7 +183,7 @@ static int krp_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 	net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
@@ -223,7 +223,7 @@ static int relay_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 	transmit = net_buf_simple_pull_u8(buf);
@@ -279,7 +279,7 @@ static int net_key_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 	net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
@@ -324,7 +324,7 @@ static int net_key_list(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NET_KEY_LIST, ctx->addr,
 				      (void **)&param)) {
@@ -398,7 +398,7 @@ static int app_key_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 	key_idx_unpack(buf, &net_idx, &app_idx);
@@ -448,7 +448,7 @@ static int app_key_list(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 	net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
@@ -508,7 +508,7 @@ static int mod_app_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	if ((buf->len != 7U) && (buf->len != 9U)) {
 		LOG_ERR("The message size for the application opcode is incorrect.");
@@ -624,7 +624,7 @@ static int mod_app_list(struct bt_mesh_model *model,
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	return mod_member_list_handle(ctx, buf, OP_SIG_MOD_APP_LIST, false);
 }
@@ -635,7 +635,7 @@ static int mod_app_list_vnd(struct bt_mesh_model *model,
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	return mod_member_list_handle(ctx, buf, OP_VND_MOD_APP_LIST, true);
 }
@@ -659,7 +659,7 @@ static int mod_pub_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	if ((buf->len != 12U) && (buf->len != 14U)) {
 		LOG_ERR("The message size for the application opcode is incorrect.");
@@ -731,7 +731,7 @@ static int mod_sub_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	if ((buf->len != 7U) && (buf->len != 9U)) {
 		LOG_ERR("The message size for the application opcode is incorrect.");
@@ -785,7 +785,7 @@ static int mod_sub_list(struct bt_mesh_model *model,
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	return mod_member_list_handle(ctx, buf, OP_MOD_SUB_LIST, false);
 }
@@ -796,7 +796,7 @@ static int mod_sub_list_vnd(struct bt_mesh_model *model,
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	return mod_member_list_handle(ctx, buf, OP_MOD_SUB_LIST_VND, true);
 }
@@ -816,7 +816,7 @@ static int hb_sub_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 	sub.src = net_buf_simple_pull_le16(buf);
@@ -856,7 +856,7 @@ static int hb_pub_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 	pub.dst = net_buf_simple_pull_le16(buf);
@@ -897,7 +897,7 @@ static int node_identity_status(struct bt_mesh_model *model,
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 	net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
@@ -939,7 +939,7 @@ static int lpn_timeout_status(struct bt_mesh_model *model, struct bt_mesh_msg_ct
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	       bt_hex_real(buf->data, buf->len));
 
 	unicast_addr = net_buf_simple_pull_le16(buf);
 	polltimeout = net_buf_simple_pull_le24(buf);
@@ -2198,7 +2198,7 @@ static int mod_sub_va(uint32_t op, uint16_t net_idx, uint16_t addr, uint16_t ele
 	};
 
 	LOG_DBG("net_idx 0x%04x addr 0x%04x elem_addr 0x%04x label %s", net_idx, addr, elem_addr,
-	       bt_hex(label, 16));
+	       bt_hex_real(label, 16));
 	LOG_DBG("mod_id 0x%04x cid 0x%04x", mod_id, cid);
 
 	bt_mesh_model_msg_init(&msg, op);

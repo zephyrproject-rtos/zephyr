@@ -473,7 +473,7 @@ static void store_cdb_subnet(const struct bt_mesh_cdb_subnet *sub)
 	int err;
 
 	LOG_DBG("NetKeyIndex 0x%03x NetKey %s", sub->net_idx,
-	       bt_hex(sub->keys[0].net_key, 16));
+	       bt_hex_real(sub->keys[0].net_key, 16));
 
 	memcpy(&key.val[0], sub->keys[0].net_key, 16);
 	memcpy(&key.val[1], sub->keys[1].net_key, 16);

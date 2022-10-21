@@ -309,8 +309,8 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys,
 	memcpy(keys->net, key, 16);
 
 	LOG_DBG("NID 0x%02x EncKey %s", keys->msg.nid,
-	       bt_hex(keys->msg.enc, 16));
-	LOG_DBG("PrivacyKey %s", bt_hex(keys->msg.privacy, 16));
+	       bt_hex_real(keys->msg.enc, 16));
+	LOG_DBG("PrivacyKey %s", bt_hex_real(keys->msg.privacy, 16));
 
 	err = bt_mesh_k3(key, keys->net_id);
 	if (err) {
@@ -318,7 +318,7 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys,
 		return err;
 	}
 
-	LOG_DBG("NetID %s", bt_hex(keys->net_id, 8));
+	LOG_DBG("NetID %s", bt_hex_real(keys->net_id, 8));
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	err = bt_mesh_identity_key(key, keys->identity);
@@ -327,7 +327,7 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys,
 		return err;
 	}
 
-	LOG_DBG("IdentityKey %s", bt_hex(keys->identity, 16));
+	LOG_DBG("IdentityKey %s", bt_hex_real(keys->identity, 16));
 #endif /* GATT_PROXY */
 
 	err = bt_mesh_beacon_key(key, keys->beacon);
@@ -336,7 +336,7 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys,
 		return err;
 	}
 
-	LOG_DBG("BeaconKey %s", bt_hex(keys->beacon, 16));
+	LOG_DBG("BeaconKey %s", bt_hex_real(keys->beacon, 16));
 
 	keys->valid = 1U;
 

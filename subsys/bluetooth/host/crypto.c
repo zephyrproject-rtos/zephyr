@@ -117,8 +117,8 @@ int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 	struct tc_aes_key_sched_struct s;
 	uint8_t tmp[16];
 
-	LOG_DBG("key %s", bt_hex(key, 16));
-	LOG_DBG("plaintext %s", bt_hex(plaintext, 16));
+	LOG_DBG("key %s", bt_hex_real(key, 16));
+	LOG_DBG("plaintext %s", bt_hex_real(plaintext, 16));
 
 	sys_memcpy_swap(tmp, key, 16);
 
@@ -134,7 +134,7 @@ int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 
 	sys_mem_swap(enc_data, 16);
 
-	LOG_DBG("enc_data %s", bt_hex(enc_data, 16));
+	LOG_DBG("enc_data %s", bt_hex_real(enc_data, 16));
 
 	return 0;
 }
@@ -144,8 +144,8 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 {
 	struct tc_aes_key_sched_struct s;
 
-	LOG_DBG("key %s", bt_hex(key, 16));
-	LOG_DBG("plaintext %s", bt_hex(plaintext, 16));
+	LOG_DBG("key %s", bt_hex_real(key, 16));
+	LOG_DBG("plaintext %s", bt_hex_real(plaintext, 16));
 
 	if (tc_aes128_set_encrypt_key(&s, key) == TC_CRYPTO_FAIL) {
 		return -EINVAL;
@@ -155,7 +155,7 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 		return -EINVAL;
 	}
 
-	LOG_DBG("enc_data %s", bt_hex(enc_data, 16));
+	LOG_DBG("enc_data %s", bt_hex_real(enc_data, 16));
 
 	return 0;
 }

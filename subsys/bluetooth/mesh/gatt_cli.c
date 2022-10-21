@@ -174,7 +174,7 @@ int bt_mesh_gatt_send(struct bt_conn *conn,
 {
 	struct bt_mesh_gatt_server *server = get_server(conn);
 
-	LOG_DBG("%u bytes: %s", len, bt_hex(data, len));
+	LOG_DBG("%u bytes: %s", len, bt_hex_real(data, len));
 
 	return bt_gatt_write_without_response_cb(conn, server->data_in_handle,
 						 data, len, false, end, user_data);

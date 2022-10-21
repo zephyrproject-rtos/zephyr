@@ -224,9 +224,9 @@ int bt_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
 {
 	uint8_t *mic = enc_data + len;
 
-	LOG_DBG("key %s", bt_hex(key, 16));
-	LOG_DBG("nonce %s", bt_hex(nonce, 13));
-	LOG_DBG("msg (len %zu) %s", len, bt_hex(plaintext, len));
+	LOG_DBG("key %s", bt_hex_real(key, 16));
+	LOG_DBG("nonce %s", bt_hex_real(nonce, 13));
+	LOG_DBG("msg (len %zu) %s", len, bt_hex_real(plaintext, len));
 	LOG_DBG("aad_len %zu mic_size %zu", aad_len, mic_size);
 
 	/* Unsupported AAD size */

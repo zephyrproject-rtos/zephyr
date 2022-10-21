@@ -122,7 +122,7 @@ static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 
 	if (accept_sco_conn(&evt->bdaddr, sco_conn)) {
 		LOG_ERR("Error accepting connection from %s",
-		       bt_addr_str(&evt->bdaddr));
+		       bt_addr_str_real(&evt->bdaddr));
 		reject_conn(&evt->bdaddr, BT_HCI_ERR_UNSPECIFIED);
 		bt_sco_cleanup(sco_conn);
 		return;
@@ -138,7 +138,7 @@ void bt_hci_conn_req(struct net_buf *buf)
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
 	struct bt_conn *conn;
 
-	LOG_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr),
+	LOG_DBG("conn req from %s, type 0x%02x", bt_addr_str_real(&evt->bdaddr),
 	       evt->link_type);
 
 	if (evt->link_type != BT_HCI_ACL) {
@@ -250,7 +250,7 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 
 	sco_conn = bt_conn_lookup_addr_sco(&evt->bdaddr);
 	if (!sco_conn) {
-		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Unable to find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
@@ -278,7 +278,7 @@ void bt_hci_conn_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Unable to find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
@@ -472,7 +472,7 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr,
 
 	if (result) {
 		LOG_DBG("Reusing slot (old %s rssi %d dBm)",
-		       bt_addr_str(&result->addr), result->rssi);
+		       bt_addr_str_real(&result->addr), result->rssi);
 
 		bt_addr_copy(&result->addr, addr);
 	}
@@ -501,7 +501,7 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 		}
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
-		LOG_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
+		LOG_DBG("%s rssi %d dBm", bt_addr_str_real(&evt->addr), evt->rssi);
 
 		result = get_result_slot(&evt->addr, evt->rssi);
 		if (!result) {
@@ -530,7 +530,7 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 		return;
 	}
 
-	LOG_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
+	LOG_DBG("%s rssi %d dBm", bt_addr_str_real(&evt->addr), evt->rssi);
 
 	result = get_result_slot(&evt->addr, evt->rssi);
 	if (!result) {
@@ -695,7 +695,7 @@ void bt_hci_role_change(struct net_buf *buf)
 	struct bt_conn *conn;
 
 	LOG_DBG("status 0x%02x role %u addr %s", evt->status, evt->role,
-	       bt_addr_str(&evt->bdaddr));
+	       bt_addr_str_real(&evt->bdaddr));
 
 	if (evt->status) {
 		return;
@@ -703,7 +703,7 @@ void bt_hci_role_change(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str_real(&evt->bdaddr));
 		return;
 	}
 
