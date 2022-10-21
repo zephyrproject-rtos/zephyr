@@ -1321,10 +1321,12 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 					   log_level);
 	}
 
-	/* Enable shell and print prompt. */
-	err = shell_start(shell);
-	if (err != 0) {
-		return;
+	if (IS_ENABLED(CONFIG_SHELL_AUTOSTART)) {
+		/* Enable shell and print prompt. */
+		err = shell_start(shell);
+		if (err != 0) {
+			return;
+		}
 	}
 
 	while (true) {
