@@ -21,9 +21,21 @@
 #include <zephyr/bluetooth/avdtp.h>
 #include <zephyr/bluetooth/a2dp.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_A2DP)
-#define LOG_MODULE_NAME bt_a2dp
-#include "common/log.h"
+#define LOG_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_A2DP)
+#include "common/assert.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_A2DP
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_a2dp, LOG_LEVEL);
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -51,14 +63,14 @@ struct bt_a2dp *get_new_connection(struct bt_conn *conn)
 	free = A2DP_NO_SPACE;
 
 	if (!conn) {
-		BT_ERR("Invalid Input (err: %d)", -EINVAL);
+		LOG_ERR("Invalid Input (err: %d)", -EINVAL);
 		return NULL;
 	}
 
 	/* Find a space */
 	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
 		if (connection[i].session.br_chan.chan.conn == conn) {
-			BT_DBG("Conn already exists");
+			LOG_DBG("Conn already exists");
 			return NULL;
 		}
 
@@ -69,7 +81,7 @@ struct bt_a2dp *get_new_connection(struct bt_conn *conn)
 	}
 
 	if (free == A2DP_NO_SPACE) {
-		BT_DBG("More connection cannot be supported");
+		LOG_DBG("More connection cannot be supported");
 		return NULL;
 	}
 
@@ -89,7 +101,7 @@ int a2dp_accept(struct bt_conn *conn, struct bt_avdtp **session)
 	}
 
 	*session = &(a2dp_conn->session);
-	BT_DBG("session: %p", &(a2dp_conn->session));
+	LOG_DBG("session: %p", &(a2dp_conn->session));
 
 	return 0;
 }
@@ -112,11 +124,11 @@ int bt_a2dp_init(void)
 	/* Register event handlers with AVDTP */
 	err = bt_avdtp_register(&avdtp_cb);
 	if (err < 0) {
-		BT_ERR("A2DP registration failed");
+		LOG_ERR("A2DP registration failed");
 		return err;
 	}
 
-	BT_DBG("A2DP Initialized successfully.");
+	LOG_DBG("A2DP Initialized successfully.");
 	return 0;
 }
 
@@ -127,7 +139,7 @@ struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
 
 	a2dp_conn = get_new_connection(conn);
 	if (!a2dp_conn) {
-		BT_ERR("Cannot allocate memory");
+		LOG_ERR("Cannot allocate memory");
 		return NULL;
 	}
 
@@ -135,11 +147,11 @@ struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
 	if (err < 0) {
 		/* If error occurs, undo the saving and return the error */
 		a2d_reset(a2dp_conn);
-		BT_DBG("AVDTP Connect failed");
+		LOG_DBG("AVDTP Connect failed");
 		return NULL;
 	}
 
-	BT_DBG("Connect request sent");
+	LOG_DBG("Connect request sent");
 	return a2dp_conn;
 }
 

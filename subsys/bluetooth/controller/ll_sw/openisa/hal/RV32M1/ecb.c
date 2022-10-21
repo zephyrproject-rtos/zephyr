@@ -8,13 +8,22 @@
 
 #include <string.h>
 
+#include <zephyr/bluetooth/hci.h>
+
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/ecb.h"
 
-#define LOG_MODULE_NAME bt_ctlr_rv32m1_ecb
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#define LOG_LEVEL LOG_LEVEL_INF
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_ctlr_rv32m1_ecb, LOG_LEVEL);
 #include "hal/debug.h"
 #include "fsl_cau3_ble.h"
 

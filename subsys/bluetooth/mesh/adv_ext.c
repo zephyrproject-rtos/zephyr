@@ -13,9 +13,20 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ADV)
-#define LOG_MODULE_NAME bt_mesh_adv_ext
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_ADV
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_adv_ext, LOG_LEVEL);
 
 #include "host/hci_core.h"
 
@@ -122,19 +133,19 @@ static int adv_start(struct bt_mesh_ext_adv *adv,
 	int err;
 
 	if (!adv->instance) {
-		BT_ERR("Mesh advertiser not enabled");
+		LOG_ERR("Mesh advertiser not enabled");
 		return -ENODEV;
 	}
 
 	if (atomic_test_and_set_bit(adv->flags, ADV_FLAG_ACTIVE)) {
-		BT_ERR("Advertiser is busy");
+		LOG_ERR("Advertiser is busy");
 		return -EBUSY;
 	}
 
 	if (atomic_test_bit(adv->flags, ADV_FLAG_UPDATE_PARAMS)) {
 		err = bt_le_ext_adv_update_param(adv->instance, param);
 		if (err) {
-			BT_ERR("Failed updating adv params: %d", err);
+			LOG_ERR("Failed updating adv params: %d", err);
 			atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 			return err;
 		}
@@ -145,7 +156,7 @@ static int adv_start(struct bt_mesh_ext_adv *adv,
 
 	err = bt_le_ext_adv_set_data(adv->instance, ad, ad_len, sd, sd_len);
 	if (err) {
-		BT_ERR("Failed setting adv data: %d", err);
+		LOG_ERR("Failed setting adv data: %d", err);
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 		return err;
 	}
@@ -154,7 +165,7 @@ static int adv_start(struct bt_mesh_ext_adv *adv,
 
 	err = bt_le_ext_adv_start(adv->instance, start);
 	if (err) {
-		BT_ERR("Advertising failed: err %d", err);
+		LOG_ERR("Advertising failed: err %d", err);
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 	}
 
@@ -176,9 +187,9 @@ static int buf_send(struct bt_mesh_ext_adv *adv, struct net_buf *buf)
 	/* Upper boundary estimate: */
 	duration = start.num_events * (adv_int + 10);
 
-	BT_DBG("type %u len %u: %s", BT_MESH_ADV(buf)->type,
+	LOG_DBG("type %u len %u: %s", BT_MESH_ADV(buf)->type,
 	       buf->len, bt_hex(buf->data, buf->len));
-	BT_DBG("count %u interval %ums duration %ums",
+	LOG_DBG("count %u interval %ums duration %ums",
 	       BT_MESH_TRANSMIT_COUNT(BT_MESH_ADV(buf)->xmit) + 1, adv_int,
 	       duration);
 
@@ -218,7 +229,7 @@ static void send_pending_adv(struct k_work *work)
 		 */
 		int64_t duration = k_uptime_delta(&adv->timestamp);
 
-		BT_DBG("Advertising stopped after %u ms", (uint32_t)duration);
+		LOG_DBG("Advertising stopped after %u ms", (uint32_t)duration);
 
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 		atomic_clear_bit(adv->flags, ADV_FLAG_PROXY);
@@ -358,7 +369,7 @@ static void adv_sent(struct bt_le_ext_adv *instance,
 	struct bt_mesh_ext_adv *adv = adv_instance_find(instance);
 
 	if (!adv) {
-		BT_WARN("Unexpected adv instance");
+		LOG_WRN("Unexpected adv instance");
 		return;
 	}
 
@@ -423,7 +434,7 @@ int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param,
 		.timeout = (duration == SYS_FOREVER_MS) ? 0 : MAX(1, duration / 10),
 	};
 
-	BT_DBG("Start advertising %d ms", duration);
+	LOG_DBG("Start advertising %d ms", duration);
 
 	atomic_set_bit(adv->flags, ADV_FLAG_UPDATE_PARAMS);
 

@@ -9,8 +9,15 @@
 
 #include <zephyr/bluetooth/mesh.h>
 
-#define LOG_MODULE_NAME bt_mesh_test
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#define LOG_LEVEL LOG_LEVEL_INF
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_test, LOG_LEVEL);
 
 #include "mesh.h"
 #include "test.h"

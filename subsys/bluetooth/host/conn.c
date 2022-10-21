@@ -25,9 +25,20 @@
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <zephyr/bluetooth/att.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CONN)
-#define LOG_MODULE_NAME bt_conn
-#include "common/log.h"
+#include "common/assert.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_CONN
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_conn, LOG_LEVEL);
 
 #include "hci_core.h"
 #include "id.h"
@@ -186,7 +197,7 @@ static void tx_free(struct bt_conn_tx *tx)
 
 static void tx_notify(struct bt_conn *conn)
 {
-	BT_DBG("conn %p", conn);
+	LOG_DBG("conn %p", conn);
 
 	while (1) {
 		struct bt_conn_tx *tx = NULL;
@@ -205,7 +216,7 @@ static void tx_notify(struct bt_conn *conn)
 			return;
 		}
 
-		BT_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
+		LOG_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
 
 		/* Copy over the params */
 		cb = tx->cb;
@@ -269,11 +280,11 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	switch (flags) {
 	case BT_ACL_START:
 		if (conn->rx) {
-			BT_ERR("Unexpected first L2CAP frame");
+			LOG_ERR("Unexpected first L2CAP frame");
 			bt_conn_reset_rx_state(conn);
 		}
 
-		BT_DBG("First, len %u final %u", buf->len,
+		LOG_DBG("First, len %u final %u", buf->len,
 		       (buf->len < sizeof(uint16_t)) ?
 		       0 : sys_get_le16(buf->data));
 
@@ -281,20 +292,20 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 		break;
 	case BT_ACL_CONT:
 		if (!conn->rx) {
-			BT_ERR("Unexpected L2CAP continuation");
+			LOG_ERR("Unexpected L2CAP continuation");
 			bt_conn_reset_rx_state(conn);
 			net_buf_unref(buf);
 			return;
 		}
 
 		if (!buf->len) {
-			BT_DBG("Empty ACL_CONT");
+			LOG_DBG("Empty ACL_CONT");
 			net_buf_unref(buf);
 			return;
 		}
 
 		if (buf->len > net_buf_tailroom(conn->rx)) {
-			BT_ERR("Not enough buffer space for L2CAP data");
+			LOG_ERR("Not enough buffer space for L2CAP data");
 
 			/* Frame is not complete but we still pass it to L2CAP
 			 * so that it may handle error on protocol level
@@ -314,7 +325,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 		 * LE-U from Controller to Host.
 		 * Only BT_ACL_POINT_TO_POINT is supported.
 		 */
-		BT_ERR("Unexpected ACL flags (0x%02x)", flags);
+		LOG_ERR("Unexpected ACL flags (0x%02x)", flags);
 		bt_conn_reset_rx_state(conn);
 		net_buf_unref(buf);
 		return;
@@ -335,7 +346,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	}
 
 	if (conn->rx->len > acl_total_len) {
-		BT_ERR("ACL len mismatch (%u > %u)",
+		LOG_ERR("ACL len mismatch (%u > %u)",
 		       conn->rx->len, acl_total_len);
 		bt_conn_reset_rx_state(conn);
 		return;
@@ -345,7 +356,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	buf = conn->rx;
 	conn->rx = NULL;
 
-	BT_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
+	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
 	bt_l2cap_recv(conn, buf, true);
 }
 
@@ -356,7 +367,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	 */
 	tx_notify(conn);
 
-	BT_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
+	LOG_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
 	if ((IS_ENABLED(CONFIG_BT_ISO_UNICAST) ||
 	     IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) &&
@@ -387,7 +398,7 @@ static struct bt_conn_tx *conn_tx_alloc(void)
 			return tx;
 		}
 
-		BT_WARN("Unable to get an immediate free conn_tx");
+		LOG_WRN("Unable to get an immediate free conn_tx");
 	}
 
 	return k_fifo_get(&free_tx, K_FOREVER);
@@ -398,24 +409,24 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 {
 	struct bt_conn_tx *tx;
 
-	BT_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle,
+	LOG_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle,
 	       buf->len, cb, user_data);
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		BT_ERR("not connected!");
+		LOG_ERR("not connected!");
 		return -ENOTCONN;
 	}
 
 	if (cb) {
 		tx = conn_tx_alloc();
 		if (!tx) {
-			BT_ERR("Unable to allocate TX context");
+			LOG_ERR("Unable to allocate TX context");
 			return -ENOBUFS;
 		}
 
 		/* Verify that we're still connected after blocking */
 		if (conn->state != BT_CONN_CONNECTED) {
-			BT_WARN("Disconnected while allocating context");
+			LOG_WRN("Disconnected while allocating context");
 			tx_free(tx);
 			return -ENOTCONN;
 		}
@@ -505,7 +516,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	unsigned int key;
 	int err = 0;
 
-	BT_DBG("conn %p buf %p len %u flags 0x%02x", conn, buf, buf->len,
+	LOG_DBG("conn %p buf %p len %u flags 0x%02x", conn, buf, buf->len,
 	       flags);
 
 	/* Wait until the controller can accept ACL packets */
@@ -543,7 +554,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	}
 
 	if (err) {
-		BT_ERR("Unable to send to driver (err %d)", err);
+		LOG_ERR("Unable to send to driver (err %d)", err);
 		key = irq_lock();
 		/* Roll back the pending TX info */
 		if (tx) {
@@ -633,7 +644,7 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
 
-	BT_DBG("conn %p buf %p len %u", conn, buf, buf->len);
+	LOG_DBG("conn %p buf %p len %u", conn, buf, buf->len);
 
 	/* Send directly if the packet fits the ACL MTU */
 	if (buf->len <= conn_mtu(conn)) {
@@ -715,7 +726,7 @@ static int conn_prepare_events(struct bt_conn *conn,
 		return -ENOTCONN;
 	}
 
-	BT_DBG("Adding conn %p to poll list", conn);
+	LOG_DBG("Adding conn %p to poll list", conn);
 
 	k_poll_event_init(&events[0],
 			K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -731,7 +742,7 @@ int bt_conn_prepare_events(struct k_poll_event events[])
 	int i, ev_count = 0;
 	struct bt_conn *conn;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	k_poll_signal_init(&conn_change);
 
@@ -765,11 +776,11 @@ void bt_conn_process_tx(struct bt_conn *conn)
 {
 	struct net_buf *buf;
 
-	BT_DBG("conn %p", conn);
+	LOG_DBG("conn %p", conn);
 
 	if (conn->state == BT_CONN_DISCONNECTED &&
 	    atomic_test_and_clear_bit(conn->flags, BT_CONN_CLEANUP)) {
-		BT_DBG("handle %u disconnected - cleaning up", conn->handle);
+		LOG_DBG("handle %u disconnected - cleaning up", conn->handle);
 		conn_cleanup(conn);
 		return;
 	}
@@ -862,10 +873,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
 	bt_conn_state_t old_state;
 
-	BT_DBG("%s -> %s", state2str(conn->state), state2str(state));
+	LOG_DBG("%s -> %s", state2str(conn->state), state2str(state));
 
 	if (conn->state == state) {
-		BT_WARN("no transition %s", state2str(state));
+		LOG_WRN("no transition %s", state2str(state));
 		return;
 	}
 
@@ -995,7 +1006,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		case BT_CONN_DISCONNECTING:
 		case BT_CONN_DISCONNECTED:
 			/* Cannot happen. */
-			BT_WARN("Invalid (%u) old state", state);
+			LOG_WRN("Invalid (%u) old state", state);
 			break;
 		}
 		break;
@@ -1029,7 +1040,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		process_unack_tx(conn);
 		break;
 	default:
-		BT_WARN("no valid (%u) state was set", state);
+		LOG_WRN("no valid (%u) state was set", state);
 
 		break;
 	}
@@ -1135,7 +1146,7 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 		}
 	} while (!atomic_cas(&conn->ref, old, old + 1));
 
-	BT_DBG("handle %u ref %ld -> %ld", conn->handle, old, old + 1);
+	LOG_DBG("handle %u ref %ld -> %ld", conn->handle, old, old + 1);
 
 	return conn;
 }
@@ -1146,7 +1157,7 @@ void bt_conn_unref(struct bt_conn *conn)
 
 	old = atomic_dec(&conn->ref);
 
-	BT_DBG("handle %u ref %ld -> %ld", conn->handle, old,
+	LOG_DBG("handle %u ref %ld -> %ld", conn->handle, old,
 	       atomic_get(&conn->ref));
 
 	__ASSERT(old > 0, "Conn reference counter is 0");
@@ -1224,7 +1235,7 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 		buf = net_buf_alloc(pool, K_NO_WAIT);
 #endif
 		if (!buf) {
-			BT_WARN("Unable to allocate buffer with K_NO_WAIT");
+			LOG_WRN("Unable to allocate buffer with K_NO_WAIT");
 #if defined(CONFIG_NET_BUF_LOG)
 			buf = net_buf_alloc_fixed_debug(pool, timeout, func,
 							line);
@@ -1242,7 +1253,7 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	}
 
 	if (!buf) {
-		BT_WARN("Unable to allocate buffer within timeout");
+		LOG_WRN("Unable to allocate buffer within timeout");
 		return NULL;
 	}
 
@@ -1258,7 +1269,7 @@ static void tx_complete_work(struct k_work *work)
 	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
 					    tx_complete_work);
 
-	BT_DBG("conn %p", conn);
+	LOG_DBG("conn %p", conn);
 
 	tx_notify(conn);
 }
@@ -1377,7 +1388,7 @@ void notify_remote_info(struct bt_conn *conn)
 
 	err = bt_conn_get_remote_info(conn, &remote_info);
 	if (err) {
-		BT_DBG("Notify remote info failed %d", err);
+		LOG_DBG("Notify remote info failed %d", err);
 		return;
 	}
 
@@ -1514,7 +1525,7 @@ bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 static int send_conn_le_param_update(struct bt_conn *conn,
 				const struct bt_le_conn_param *param)
 {
-	BT_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
+	LOG_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
 	       conn->le.features[0], param->interval_min,
 	       param->interval_max, param->latency, param->timeout);
 
@@ -1580,7 +1591,7 @@ static void deferred_work(struct k_work *work)
 	struct bt_conn *conn = CONTAINER_OF(dwork, struct bt_conn, deferred_work);
 	const struct bt_le_conn_param *param;
 
-	BT_DBG("conn %p", conn);
+	LOG_DBG("conn %p", conn);
 
 	if (conn->state == BT_CONN_DISCONNECTED) {
 #if defined(CONFIG_BT_ISO_UNICAST)
@@ -1770,7 +1781,7 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
 
 	(void)memset(cp, 0, sizeof(*cp));
 
-	BT_ERR("handle : %x", sco_conn->sco.acl->handle);
+	LOG_ERR("handle : %x", sco_conn->sco.acl->handle);
 
 	cp->handle = sco_conn->sco.acl->handle;
 	cp->pkt_type = sco_conn->sco.pkt_type;
@@ -2142,7 +2153,7 @@ bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 		 * still has valid references. The last reference of the stack
 		 * is released after the disconnected callback.
 		 */
-		BT_WARN("Found valid connection in %s state",
+		LOG_WRN("Found valid connection in %s state",
 			state2str(conn->state));
 		bt_conn_unref(conn);
 		return true;
@@ -2435,7 +2446,7 @@ int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
-	BT_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
+	LOG_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
 	       conn->le.features[0], param->interval_min,
 	       param->interval_max, param->latency, param->timeout);
 
@@ -2608,7 +2619,7 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 
 	err = bt_le_create_conn(conn);
 	if (err) {
-		BT_ERR("Failed to start filtered scan");
+		LOG_ERR("Failed to start filtered scan");
 		conn->err = 0;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		bt_conn_unref(conn);
@@ -2646,7 +2657,7 @@ int bt_conn_create_auto_stop(void)
 
 	err = bt_le_create_conn_cancel();
 	if (err) {
-		BT_ERR("Failed to stop initiator");
+		LOG_ERR("Failed to stop initiator");
 		return err;
 	}
 
@@ -3051,18 +3062,18 @@ void bt_hci_le_df_connection_iq_report_common(uint8_t event, struct net_buf *buf
 	if (event == BT_HCI_EVT_LE_CONNECTION_IQ_REPORT) {
 		err = hci_df_prepare_connection_iq_report(buf, &iq_report, &conn);
 		if (err) {
-			BT_ERR("Prepare CTE conn IQ report failed %d", err);
+			LOG_ERR("Prepare CTE conn IQ report failed %d", err);
 			return;
 		}
 	} else if (IS_ENABLED(CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES) &&
 		   event == BT_HCI_EVT_VS_LE_CONNECTION_IQ_REPORT) {
 		err = hci_df_vs_prepare_connection_iq_report(buf, &iq_report, &conn);
 		if (err) {
-			BT_ERR("Prepare CTE conn IQ report failed %d", err);
+			LOG_ERR("Prepare CTE conn IQ report failed %d", err);
 			return;
 		}
 	} else {
-		BT_ERR("Unhandled VS connection IQ report");
+		LOG_ERR("Unhandled VS connection IQ report");
 		return;
 	}
 
@@ -3105,7 +3116,7 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 
 	err = hci_df_prepare_conn_cte_req_failed(buf, &iq_report, &conn);
 	if (err) {
-		BT_ERR("Prepare CTE REQ failed IQ report failed %d", err);
+		LOG_ERR("Prepare CTE REQ failed IQ report failed %d", err);
 		return;
 	}
 

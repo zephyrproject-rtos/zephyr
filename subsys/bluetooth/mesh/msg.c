@@ -6,9 +6,19 @@
 
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ACCESS)
-#define LOG_MODULE_NAME bt_mesh_msg
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_ACCESS
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_msg, LOG_LEVEL);
 
 #include "msg.h"
 
@@ -32,7 +42,7 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, uint32_t opcode)
 		net_buf_simple_add_le16(msg, opcode & 0xffff);
 		break;
 	default:
-		BT_WARN("Unknown opcode format");
+		LOG_WRN("Unknown opcode format");
 		break;
 	}
 }
@@ -48,7 +58,7 @@ int bt_mesh_msg_ack_ctx_prepare(struct bt_mesh_msg_ack_ctx *ack,
 				uint32_t op, uint16_t dst, void *user_data)
 {
 	if (ack->op) {
-		BT_WARN("Another synchronous operation pending");
+		LOG_WRN("Another synchronous operation pending");
 		return -EBUSY;
 	}
 

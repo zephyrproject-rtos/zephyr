@@ -23,9 +23,19 @@
 #include "audio_internal.h"
 #include "vcs_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_VCS)
-#define LOG_MODULE_NAME bt_vcs
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_VCS
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_vcs, LOG_LEVEL);
 
 static bool valid_vocs_inst(struct bt_vcs *vcs, struct bt_vocs *vocs)
 {
@@ -75,14 +85,14 @@ static struct bt_vcs vcs_inst;
 static void volume_state_cfg_changed(const struct bt_gatt_attr *attr,
 				     uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 
 static ssize_t read_vol_state(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
-	BT_DBG("Volume %u, mute %u, counter %u",
+	LOG_DBG("Volume %u, mute %u, counter %u",
 	       vcs_inst.srv.state.volume, vcs_inst.srv.state.mute,
 	       vcs_inst.srv.state.change_counter);
 
@@ -110,7 +120,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 
 	/* Check opcode before length */
 	if (!VALID_VCS_OPCODE(cp_val->cp.opcode)) {
-		BT_DBG("Invalid opcode %u", cp_val->cp.opcode);
+		LOG_DBG("Invalid opcode %u", cp_val->cp.opcode);
 		return BT_GATT_ERR(BT_VCS_ERR_OP_NOT_SUPPORTED);
 	}
 
@@ -123,7 +133,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 
 	opcode = cp_val->cp.opcode;
 
-	BT_DBG("Opcode %u, counter %u", opcode, cp_val->cp.counter);
+	LOG_DBG("Opcode %u, counter %u", opcode, cp_val->cp.counter);
 
 	if (cp_val->cp.counter != vcs_inst.srv.state.change_counter) {
 		return BT_GATT_ERR(BT_VCS_ERR_INVALID_COUNTER);
@@ -131,7 +141,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 
 	switch (opcode) {
 	case BT_VCS_OPCODE_REL_VOL_DOWN:
-		BT_DBG("Relative Volume Down (0x%x)", opcode);
+		LOG_DBG("Relative Volume Down (0x%x)", opcode);
 		if (vcs_inst.srv.state.volume > 0) {
 			vcs_inst.srv.state.volume = VOLUME_DOWN(vcs_inst.srv.state.volume);
 			notify = true;
@@ -139,7 +149,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_REL_VOL_UP:
-		BT_DBG("Relative Volume Up (0x%x)", opcode);
+		LOG_DBG("Relative Volume Up (0x%x)", opcode);
 		if (vcs_inst.srv.state.volume != UINT8_MAX) {
 			vcs_inst.srv.state.volume = VOLUME_UP(vcs_inst.srv.state.volume);
 			notify = true;
@@ -147,7 +157,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_UNMUTE_REL_VOL_DOWN:
-		BT_DBG("(Unmute) relative Volume Down (0x%x)", opcode);
+		LOG_DBG("(Unmute) relative Volume Down (0x%x)", opcode);
 		if (vcs_inst.srv.state.volume > 0) {
 			vcs_inst.srv.state.volume = VOLUME_DOWN(vcs_inst.srv.state.volume);
 			notify = true;
@@ -159,7 +169,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_UNMUTE_REL_VOL_UP:
-		BT_DBG("(Unmute) relative Volume Up (0x%x)", opcode);
+		LOG_DBG("(Unmute) relative Volume Up (0x%x)", opcode);
 		if (vcs_inst.srv.state.volume != UINT8_MAX) {
 			vcs_inst.srv.state.volume = VOLUME_UP(vcs_inst.srv.state.volume);
 			notify = true;
@@ -171,7 +181,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_SET_ABS_VOL:
-		BT_DBG("Set Absolute Volume (0x%x) %u",
+		LOG_DBG("Set Absolute Volume (0x%x) %u",
 		       opcode, vcs_inst.srv.state.volume);
 		if (vcs_inst.srv.state.volume != cp_val->volume) {
 			vcs_inst.srv.state.volume = cp_val->volume;
@@ -180,27 +190,27 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_UNMUTE:
-		BT_DBG("Unmute (0x%x)", opcode);
+		LOG_DBG("Unmute (0x%x)", opcode);
 		if (vcs_inst.srv.state.mute) {
 			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		break;
 	case BT_VCS_OPCODE_MUTE:
-		BT_DBG("Mute (0x%x)", opcode);
+		LOG_DBG("Mute (0x%x)", opcode);
 		if (vcs_inst.srv.state.mute == BT_VCS_STATE_UNMUTED) {
 			vcs_inst.srv.state.mute = BT_VCS_STATE_MUTED;
 			notify = true;
 		}
 		break;
 	default:
-		BT_DBG("Unknown opcode (0x%x)", opcode);
+		LOG_DBG("Unknown opcode (0x%x)", opcode);
 		return BT_GATT_ERR(BT_VCS_ERR_OP_NOT_SUPPORTED);
 	}
 
 	if (notify) {
 		vcs_inst.srv.state.change_counter++;
-		BT_DBG("New state: volume %u, mute %u, counter %u",
+		LOG_DBG("New state: volume %u, mute %u, counter %u",
 		       vcs_inst.srv.state.volume, vcs_inst.srv.state.mute,
 		       vcs_inst.srv.state.change_counter);
 
@@ -231,13 +241,13 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 
 static void flags_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 
 static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t len, uint16_t offset)
 {
-	BT_DBG("0x%02x", vcs_inst.srv.flags);
+	LOG_DBG("0x%02x", vcs_inst.srv.flags);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &vcs_inst.srv.flags,
 				 sizeof(vcs_inst.srv.flags));
 }
@@ -283,7 +293,7 @@ static int prepare_vocs_inst(struct bt_vcs_register_param *param)
 			vcs_inst.srv.vocs_insts[j] = bt_vocs_free_instance_get();
 
 			if (vcs_inst.srv.vocs_insts[j] == NULL) {
-				BT_ERR("Could not get free VOCS instances[%d]",
+				LOG_ERR("Could not get free VOCS instances[%d]",
 				       j);
 				return -ENOMEM;
 			}
@@ -291,7 +301,7 @@ static int prepare_vocs_inst(struct bt_vcs_register_param *param)
 			err = bt_vocs_register(vcs_inst.srv.vocs_insts[j],
 					       &param->vocs_param[j]);
 			if (err != 0) {
-				BT_DBG("Could not register VOCS instance[%d]: %d",
+				LOG_DBG("Could not register VOCS instance[%d]: %d",
 				       j, err);
 				return err;
 			}
@@ -325,7 +335,7 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 			vcs_inst.srv.aics_insts[j] = bt_aics_free_instance_get();
 
 			if (vcs_inst.srv.aics_insts[j] == NULL) {
-				BT_ERR("Could not get free AICS instances[%d]",
+				LOG_ERR("Could not get free AICS instances[%d]",
 				       j);
 				return -ENOMEM;
 			}
@@ -333,7 +343,7 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 			err = bt_aics_register(vcs_inst.srv.aics_insts[j],
 					       &param->aics_param[j]);
 			if (err != 0) {
-				BT_DBG("Could not register AICS instance[%d]: %d",
+				LOG_DBG("Could not register AICS instance[%d]: %d",
 				       j, err);
 				return err;
 			}
@@ -341,7 +351,7 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 			vcs_attrs[i].user_data = bt_aics_svc_decl_get(vcs_inst.srv.aics_insts[j]);
 			j++;
 
-			BT_DBG("AICS P %p", vcs_attrs[i].user_data);
+			LOG_DBG("AICS P %p", vcs_attrs[i].user_data);
 
 			if (j == CONFIG_BT_VCS_AICS_INSTANCE_COUNT) {
 				break;
@@ -362,17 +372,17 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 	int err;
 
 	CHECKIF(param == NULL) {
-		BT_DBG("param is NULL");
+		LOG_DBG("param is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(param->mute > BT_VCS_STATE_MUTED) {
-		BT_DBG("Invalid mute value: %u", param->mute);
+		LOG_DBG("Invalid mute value: %u", param->mute);
 		return -EINVAL;
 	}
 
 	CHECKIF(param->step == 0) {
-		BT_DBG("Invalid step value: %u", param->step);
+		LOG_DBG("Invalid step value: %u", param->step);
 		return -EINVAL;
 	}
 
@@ -407,7 +417,7 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 
 	err = bt_gatt_service_register(&vcs_svc);
 	if (err != 0) {
-		BT_DBG("VCS service register failed: %d", err);
+		LOG_DBG("VCS service register failed: %d", err);
 	}
 
 	vcs_inst.srv.cb = param->cb;
@@ -421,12 +431,12 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 int bt_vcs_aics_deactivate(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
 	CHECKIF(inst == NULL) {
-		BT_DBG("NULL aics instance");
+		LOG_DBG("NULL aics instance");
 		return -EINVAL;
 	}
 
@@ -440,12 +450,12 @@ int bt_vcs_aics_deactivate(struct bt_vcs *vcs, struct bt_aics *inst)
 int bt_vcs_aics_activate(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
 	CHECKIF(inst == NULL) {
-		BT_DBG("NULL aics instance");
+		LOG_DBG("NULL aics instance");
 		return -EINVAL;
 	}
 
@@ -461,7 +471,7 @@ int bt_vcs_aics_activate(struct bt_vcs *vcs, struct bt_aics *inst)
 int bt_vcs_included_get(struct bt_vcs *vcs, struct bt_vcs_included *included)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -504,7 +514,7 @@ int bt_vcs_vol_step_set(uint8_t volume_step)
 int bt_vcs_vol_get(struct bt_vcs *vcs)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -527,7 +537,7 @@ int bt_vcs_vol_get(struct bt_vcs *vcs)
 int bt_vcs_flags_get(struct bt_vcs *vcs)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -549,7 +559,7 @@ int bt_vcs_flags_get(struct bt_vcs *vcs)
 int bt_vcs_vol_down(struct bt_vcs *vcs)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -573,7 +583,7 @@ int bt_vcs_vol_down(struct bt_vcs *vcs)
 int bt_vcs_vol_up(struct bt_vcs *vcs)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -597,7 +607,7 @@ int bt_vcs_vol_up(struct bt_vcs *vcs)
 int bt_vcs_unmute_vol_down(struct bt_vcs *vcs)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -621,7 +631,7 @@ int bt_vcs_unmute_vol_down(struct bt_vcs *vcs)
 int bt_vcs_unmute_vol_up(struct bt_vcs *vcs)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -645,7 +655,7 @@ int bt_vcs_unmute_vol_up(struct bt_vcs *vcs)
 int bt_vcs_vol_set(struct bt_vcs *vcs, uint8_t volume)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -672,7 +682,7 @@ int bt_vcs_vol_set(struct bt_vcs *vcs, uint8_t volume)
 int bt_vcs_unmute(struct bt_vcs *vcs)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -696,7 +706,7 @@ int bt_vcs_unmute(struct bt_vcs *vcs)
 int bt_vcs_mute(struct bt_vcs *vcs)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -720,7 +730,7 @@ int bt_vcs_mute(struct bt_vcs *vcs)
 int bt_vcs_vocs_state_get(struct bt_vcs *vcs, struct bt_vocs *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -739,7 +749,7 @@ int bt_vcs_vocs_state_get(struct bt_vcs *vcs, struct bt_vocs *inst)
 int bt_vcs_vocs_location_get(struct bt_vcs *vcs, struct bt_vocs *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -759,7 +769,7 @@ int bt_vcs_vocs_location_set(struct bt_vcs *vcs, struct bt_vocs *inst,
 			     uint8_t location)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -779,7 +789,7 @@ int bt_vcs_vocs_state_set(struct bt_vcs *vcs, struct bt_vocs *inst,
 			  int16_t offset)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -798,7 +808,7 @@ int bt_vcs_vocs_state_set(struct bt_vcs *vcs, struct bt_vocs *inst,
 int bt_vcs_vocs_description_get(struct bt_vcs *vcs, struct bt_vocs *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -818,7 +828,7 @@ int bt_vcs_vocs_description_set(struct bt_vcs *vcs, struct bt_vocs *inst,
 				const char *description)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -837,7 +847,7 @@ int bt_vcs_vocs_description_set(struct bt_vcs *vcs, struct bt_vocs *inst,
 int bt_vcs_aics_state_get(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -856,7 +866,7 @@ int bt_vcs_aics_state_get(struct bt_vcs *vcs, struct bt_aics *inst)
 int bt_vcs_aics_gain_setting_get(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -875,7 +885,7 @@ int bt_vcs_aics_gain_setting_get(struct bt_vcs *vcs, struct bt_aics *inst)
 int bt_vcs_aics_type_get(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -894,7 +904,7 @@ int bt_vcs_aics_type_get(struct bt_vcs *vcs, struct bt_aics *inst)
 int bt_vcs_aics_status_get(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -913,7 +923,7 @@ int bt_vcs_aics_status_get(struct bt_vcs *vcs, struct bt_aics *inst)
 int bt_vcs_aics_unmute(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -932,7 +942,7 @@ int bt_vcs_aics_unmute(struct bt_vcs *vcs, struct bt_aics *inst)
 int bt_vcs_aics_mute(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -951,7 +961,7 @@ int bt_vcs_aics_mute(struct bt_vcs *vcs, struct bt_aics *inst)
 int bt_vcs_aics_manual_gain_set(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -970,7 +980,7 @@ int bt_vcs_aics_manual_gain_set(struct bt_vcs *vcs, struct bt_aics *inst)
 int bt_vcs_aics_automatic_gain_set(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -990,7 +1000,7 @@ int bt_vcs_aics_gain_set(struct bt_vcs *vcs, struct bt_aics *inst,
 			 int8_t gain)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -1009,7 +1019,7 @@ int bt_vcs_aics_gain_set(struct bt_vcs *vcs, struct bt_aics *inst,
 int bt_vcs_aics_description_get(struct bt_vcs *vcs, struct bt_aics *inst)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 
@@ -1029,7 +1039,7 @@ int bt_vcs_aics_description_set(struct bt_vcs *vcs, struct bt_aics *inst,
 				const char *description)
 {
 	CHECKIF(vcs == NULL) {
-		BT_DBG("NULL vcs instance");
+		LOG_DBG("NULL vcs instance");
 		return -EINVAL;
 	}
 

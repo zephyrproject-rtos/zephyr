@@ -6,9 +6,20 @@
 
 #include <zephyr/kernel.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_central_iso
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_HCI_DRIVER
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_ctlr_ull_central_iso, LOG_LEVEL);
 #include "hal/debug.h"
 
 uint8_t ll_cig_parameters_open(uint8_t cig_id,

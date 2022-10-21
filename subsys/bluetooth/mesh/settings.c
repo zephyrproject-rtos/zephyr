@@ -11,9 +11,19 @@
 
 #include <zephyr/settings/settings.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_SETTINGS)
-#define LOG_MODULE_NAME bt_mesh_settings
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_SETTINGS
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_settings, LOG_LEVEL);
 
 #include "host/hci_core.h"
 #include "mesh.h"
@@ -47,14 +57,14 @@ int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 
 	len = read_cb(cb_arg, out, read_len);
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %zd)", len);
+		LOG_ERR("Failed to read value (err %zd)", len);
 		return len;
 	}
 
-	BT_HEXDUMP_DBG(out, len, "val");
+	LOG_HEXDUMP_DBG((const uint8_t *) out, len, "val");
 
 	if (len != read_len) {
-		BT_ERR("Unexpected value length (%zd != %zu)", len, read_len);
+		LOG_ERR("Unexpected value length (%zd != %zu)", len, read_len);
 		return -EINVAL;
 	}
 
@@ -126,7 +136,7 @@ void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 	}
 
 	remaining_ms = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&pending_store));
-	BT_DBG("Waiting %u ms vs rem %u ms", timeout_ms, remaining_ms);
+	LOG_DBG("Waiting %u ms vs rem %u ms", timeout_ms, remaining_ms);
 
 	/* If the new deadline is sooner, override any existing
 	 * deadline; otherwise schedule without changing any existing
@@ -146,7 +156,7 @@ void bt_mesh_settings_store_cancel(enum bt_mesh_settings_flag flag)
 
 static void store_pending(struct k_work *work)
 {
-	BT_DBG("");
+	LOG_DBG("");
 
 	if (IS_ENABLED(CONFIG_BT_MESH_RPL_STORAGE_MODE_SETTINGS) &&
 	    atomic_test_and_clear_bit(pending_flags, BT_MESH_SETTINGS_RPL_PENDING)) {

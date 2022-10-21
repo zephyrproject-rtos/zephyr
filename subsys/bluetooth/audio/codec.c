@@ -14,16 +14,26 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO)
-#define LOG_MODULE_NAME bt_audio
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_AUDIO
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_audio, LOG_LEVEL);
 
 bool bt_codec_get_val(const struct bt_codec *codec,
 		      uint8_t type,
 		      const struct bt_codec_data **data)
 {
 	CHECKIF(codec == NULL) {
-		BT_DBG("codec is NULL");
+		LOG_DBG("codec is NULL");
 		return false;
 	}
 
@@ -43,7 +53,7 @@ int bt_codec_cfg_get_freq(const struct bt_codec *codec)
 	const struct bt_codec_data *element;
 
 	CHECKIF(codec == NULL) {
-		BT_DBG("codec is NULL");
+		LOG_DBG("codec is NULL");
 		return BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM;
 	}
 
@@ -89,7 +99,7 @@ int bt_codec_cfg_get_frame_duration_us(const struct bt_codec *codec)
 	const struct bt_codec_data *element;
 
 	CHECKIF(codec == NULL) {
-		BT_DBG("codec is NULL");
+		LOG_DBG("codec is NULL");
 		return BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM;
 	}
 
@@ -113,7 +123,7 @@ int bt_codec_cfg_get_chan_allocation_val(const struct bt_codec *codec,
 	const struct bt_codec_data *element;
 
 	CHECKIF(codec == NULL) {
-		BT_DBG("codec is NULL");
+		LOG_DBG("codec is NULL");
 		return BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM;
 	}
 
@@ -137,7 +147,7 @@ int bt_codec_cfg_get_octets_per_frame(const struct bt_codec *codec)
 	const struct bt_codec_data *element;
 
 	CHECKIF(codec == NULL) {
-		BT_DBG("codec is NULL");
+		LOG_DBG("codec is NULL");
 		return BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM;
 	}
 
@@ -154,7 +164,7 @@ int bt_codec_cfg_get_frame_blocks_per_sdu(const struct bt_codec *codec, bool fal
 	const struct bt_codec_data *element;
 
 	CHECKIF(codec == NULL) {
-		BT_DBG("codec is NULL");
+		LOG_DBG("codec is NULL");
 		return BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM;
 	}
 

@@ -25,7 +25,7 @@
 #include "ll_test.h"
 
 #include "hal/debug.h"
-#include "common/log.h"
+#include "common/assert.h"
 
 #define CNTR_MIN_DELTA 3
 

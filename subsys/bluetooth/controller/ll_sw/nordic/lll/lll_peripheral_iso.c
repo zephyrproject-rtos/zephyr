@@ -18,8 +18,15 @@
 #include "lll_conn_iso.h"
 #include "lll_peripheral_iso.h"
 
-#define LOG_MODULE_NAME bt_ctlr_lll_peripheral_iso
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#define LOG_LEVEL LOG_LEVEL_INF
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_ctlr_lll_peripheral_iso, LOG_LEVEL);
 #include "hal/debug.h"
 
 int lll_peripheral_iso_init(void)

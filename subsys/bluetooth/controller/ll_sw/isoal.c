@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "util/memq.h"
 #include "pdu.h"
@@ -24,8 +25,16 @@
 #include "isoal.h"
 #include "ull_iso_types.h"
 
-#define LOG_MODULE_NAME bt_ctlr_isoal
-#include "common/log.h"
+#include "common/assert.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#define LOG_LEVEL LOG_LEVEL_INF
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_ctlr_isoal, LOG_LEVEL);
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
@@ -723,7 +732,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 		} else  {
 			/* Unsupported case */
 			err = ISOAL_STATUS_ERR_UNSPECIFIED;
-			BT_ERR("Invalid unframed LLID (%d)", llid);
+			LOG_ERR("Invalid unframed LLID (%d)", llid);
 			LL_ASSERT(0);
 		}
 		break;
@@ -1148,7 +1157,7 @@ static isoal_status_t isoal_check_source_hdl_valid(isoal_source_handle_t hdl)
 		return ISOAL_STATUS_OK;
 	}
 
-	BT_ERR("Invalid source handle (0x%02x)", hdl);
+	LOG_ERR("Invalid source handle (0x%02x)", hdl);
 
 	return ISOAL_STATUS_ERR_UNSPECIFIED;
 }
@@ -1329,7 +1338,7 @@ static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
 		/* If it fails, the node will be released and no further attempt
 		 * will be possible
 		 */
-		BT_ERR("Failed to enqueue node (%p)", node_tx);
+		LOG_ERR("Failed to enqueue node (%p)", node_tx);
 		source_ctx->session.pdu_release(node_tx, handle, status);
 	}
 

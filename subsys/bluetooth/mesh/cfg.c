@@ -17,9 +17,19 @@
 #include "cfg.h"
 #include "adv.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_CFG)
-#define LOG_MODULE_NAME bt_mesh_cfg
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_CFG
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_cfg, LOG_LEVEL);
 
 /* Miscellaneous configuration server model states */
 struct cfg_val {
@@ -301,13 +311,13 @@ static int cfg_set(const char *name, size_t len_rd,
 	int err;
 
 	if (len_rd == 0) {
-		BT_DBG("Cleared configuration state");
+		LOG_DBG("Cleared configuration state");
 		return 0;
 	}
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &cfg, sizeof(cfg));
 	if (err) {
-		BT_ERR("Failed to set \'cfg\'");
+		LOG_ERR("Failed to set \'cfg\'");
 		return err;
 	}
 
@@ -318,7 +328,7 @@ static int cfg_set(const char *name, size_t len_rd,
 	bt_mesh_friend_set(cfg.frnd);
 	bt_mesh_default_ttl_set(cfg.default_ttl);
 
-	BT_DBG("Restored configuration state");
+	LOG_DBG("Restored configuration state");
 
 	return 0;
 }
@@ -331,9 +341,9 @@ static void clear_cfg(void)
 
 	err = settings_delete("bt/mesh/Cfg");
 	if (err) {
-		BT_ERR("Failed to clear configuration");
+		LOG_ERR("Failed to clear configuration");
 	} else {
-		BT_DBG("Cleared configuration");
+		LOG_DBG("Cleared configuration");
 	}
 }
 
@@ -352,10 +362,10 @@ static void store_pending_cfg(void)
 
 	err = settings_save_one("bt/mesh/Cfg", &val, sizeof(val));
 	if (err) {
-		BT_ERR("Failed to store configuration value");
+		LOG_ERR("Failed to store configuration value");
 	} else {
-		BT_DBG("Stored configuration value");
-		BT_HEXDUMP_DBG(&val, sizeof(val), "raw value");
+		LOG_DBG("Stored configuration value");
+		LOG_HEXDUMP_DBG((const uint8_t *) &val, sizeof(val), "raw value");
 	}
 }
 

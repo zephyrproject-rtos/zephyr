@@ -15,9 +15,20 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROXY)
-#define LOG_MODULE_NAME bt_mesh_gatt_client
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_PROXY
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_gatt_client, LOG_LEVEL);
 
 #include "mesh.h"
 #include "adv.h"
@@ -60,13 +71,13 @@ static uint8_t notify_func(struct bt_conn *conn,
 	const uint8_t *val = data;
 
 	if (!data) {
-		BT_WARN("[UNSUBSCRIBED]");
+		LOG_WRN("[UNSUBSCRIBED]");
 		params->value_handle = 0U;
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (length < 1) {
-		BT_WARN("Too small Proxy PDU");
+		LOG_WRN("Too small Proxy PDU");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -81,11 +92,11 @@ static void notify_enabled(struct bt_conn *conn, uint8_t err,
 	struct bt_mesh_gatt_server *server = get_server(conn);
 
 	if (err != 0) {
-		BT_WARN("Enable notify failed(err:%d)", err);
+		LOG_WRN("Enable notify failed(err:%d)", err);
 		return;
 	}
 
-	BT_DBG("[SUBSCRIBED]");
+	LOG_DBG("[SUBSCRIBED]");
 
 	server->gatt->link_open(conn);
 }
@@ -98,12 +109,12 @@ static uint8_t discover_func(struct bt_conn *conn,
 	struct bt_mesh_gatt_server *server = get_server(conn);
 
 	if (!attr) {
-		BT_DBG("GATT Services Discover complete");
+		LOG_DBG("GATT Services Discover complete");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
-	BT_DBG("[ATTRIBUTE UUID 0x%04x] handle %u",
+	LOG_DBG("[ATTRIBUTE UUID 0x%04x] handle %u",
 		BT_UUID_16(server->discover.uuid)->val, attr->handle);
 
 	if (!bt_uuid_cmp(server->discover.uuid, &server->gatt->srv_uuid.uuid)) {
@@ -115,7 +126,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 
 		err = bt_gatt_discover(conn, &server->discover);
 		if (err) {
-			BT_DBG("Discover GATT data in char failed (err %d)", err);
+			LOG_DBG("Discover GATT data in char failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(server->discover.uuid,
 				&server->gatt->data_in_uuid.uuid)) {
@@ -127,7 +138,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 
 		err = bt_gatt_discover(conn, &server->discover);
 		if (err) {
-			BT_DBG("Discover GATT data out char failed (err %d)", err);
+			LOG_DBG("Discover GATT data out char failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(server->discover.uuid,
 				&server->gatt->data_out_uuid.uuid)) {
@@ -137,7 +148,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 
 		err = bt_gatt_discover(conn, &server->discover);
 		if (err) {
-			BT_DBG("Discover GATT CCCD failed (err %d)", err);
+			LOG_DBG("Discover GATT CCCD failed (err %d)", err);
 		}
 	} else {
 		(void)memset(&server->subscribe, 0, sizeof(server->subscribe));
@@ -150,7 +161,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 
 		err = bt_gatt_subscribe(conn, &server->subscribe);
 		if (err && err != -EALREADY) {
-			BT_DBG("Subscribe failed (err %d)", err);
+			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	}
 
@@ -163,7 +174,7 @@ int bt_mesh_gatt_send(struct bt_conn *conn,
 {
 	struct bt_mesh_gatt_server *server = get_server(conn);
 
-	BT_DBG("%u bytes: %s", len, bt_hex(data, len));
+	LOG_DBG("%u bytes: %s", len, bt_hex(data, len));
 
 	return bt_gatt_write_without_response_cb(conn, server->data_in_handle,
 						 data, len, false, end, user_data);
@@ -182,7 +193,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 	}
 
 	if (conn_err) {
-		BT_ERR("Failed to connect GATT Services(%u)", conn_err);
+		LOG_ERR("Failed to connect GATT Services(%u)", conn_err);
 
 		bt_conn_unref(server->conn);
 		server->conn = NULL;
@@ -192,7 +203,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 		return;
 	}
 
-	BT_DBG("conn %p err 0x%02x", (void *)conn, conn_err);
+	LOG_DBG("conn %p err 0x%02x", (void *)conn, conn_err);
 
 	server->gatt->connected(conn, server->user_data);
 
@@ -205,7 +216,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 	server->discover.type = BT_GATT_DISCOVER_PRIMARY;
 	err = bt_gatt_discover(conn, &server->discover);
 	if (err) {
-		BT_ERR("Unable discover GATT Services (err %d)", err);
+		LOG_ERR("Unable discover GATT Services (err %d)", err);
 	}
 }
 
@@ -247,12 +258,12 @@ int bt_mesh_gatt_cli_connect(const bt_addr_le_t *addr,
 		return err;
 	}
 
-	BT_DBG("Try to connect services");
+	LOG_DBG("Try to connect services");
 
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
 				BT_LE_CONN_PARAM_DEFAULT, &conn);
 	if (err) {
-		BT_ERR("Connection failed (err:%d)", err);
+		LOG_ERR("Connection failed (err:%d)", err);
 
 		(void)bt_mesh_scan_enable();
 
@@ -316,7 +327,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		}
 
 		if (len > buf->len) {
-			BT_WARN("AD malformed");
+			LOG_WRN("AD malformed");
 			return;
 		}
 

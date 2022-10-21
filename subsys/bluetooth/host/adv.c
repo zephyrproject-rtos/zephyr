@@ -17,9 +17,20 @@
 #include "id.h"
 #include "scan.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
-#define LOG_MODULE_NAME bt_adv
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_HCI_CORE
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_adv, LOG_LEVEL);
 
 enum adv_name_type {
 	ADV_NAME_TYPE_NONE,
@@ -498,7 +509,7 @@ static int set_data_add_complete(uint8_t *set_data, uint8_t set_data_len_max,
 
 				if (!(type == BT_DATA_NAME_COMPLETE &&
 				      shortened_len > 0)) {
-					BT_ERR("Too big advertising data");
+					LOG_ERR("Too big advertising data");
 					return -EINVAL;
 				}
 
@@ -1054,7 +1065,7 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 
 	err = bt_le_adv_set_enable(adv, true);
 	if (err) {
-		BT_ERR("Failed to start advertiser");
+		LOG_ERR("Failed to start advertiser");
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
@@ -1298,7 +1309,7 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 
 	err = bt_le_adv_set_enable_ext(adv, true, &start_param);
 	if (err) {
-		BT_ERR("Failed to start advertiser");
+		LOG_ERR("Failed to start advertiser");
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
@@ -1368,7 +1379,7 @@ int bt_le_adv_stop(void)
 	int err;
 
 	if (!adv) {
-		BT_ERR("No valid legacy adv");
+		LOG_ERR("No valid legacy adv");
 		return 0;
 	}
 
@@ -1434,7 +1445,7 @@ void bt_le_adv_resume(void)
 	int err;
 
 	if (!adv) {
-		BT_DBG("No valid legacy adv");
+		LOG_DBG("No valid legacy adv");
 		return;
 	}
 
@@ -1449,11 +1460,11 @@ void bt_le_adv_resume(void)
 
 	err = le_adv_start_add_conn(adv, &conn);
 	if (err) {
-		BT_DBG("Host cannot resume connectable advertising (%d)", err);
+		LOG_DBG("Host cannot resume connectable advertising (%d)", err);
 		return;
 	}
 
-	BT_DBG("Resuming connectable advertising");
+	LOG_DBG("Resuming connectable advertising");
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
@@ -1462,7 +1473,7 @@ void bt_le_adv_resume(void)
 
 	err = bt_le_adv_set_enable(adv, true);
 	if (err) {
-		BT_DBG("Controller cannot resume connectable advertising (%d)",
+		LOG_DBG("Controller cannot resume connectable advertising (%d)",
 		       err);
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
@@ -1597,7 +1608,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 
 	err = bt_le_adv_set_enable_ext(adv, true, param);
 	if (err) {
-		BT_ERR("Failed to start advertiser");
+		LOG_ERR("Failed to start advertiser");
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
@@ -1681,7 +1692,7 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REMOVE_ADV_SET, sizeof(*cp));
 	if (!buf) {
-		BT_WARN("No HCI buffers");
+		LOG_WRN("No HCI buffers");
 		return -ENOBUFS;
 	}
 
@@ -1718,7 +1729,7 @@ static void adv_timeout(struct k_work *work)
 #else
 	err = bt_le_adv_stop();
 #endif
-	BT_WARN("Failed to stop advertising: %d", err);
+	LOG_WRN("Failed to stop advertising: %d", err);
 }
 
 #if defined(CONFIG_BT_PER_ADV)
@@ -1928,12 +1939,12 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 	adv = bt_adv_lookup_handle(evt->adv_handle);
 	conn_handle = sys_le16_to_cpu(evt->conn_handle);
 
-	BT_DBG("status 0x%02x adv_handle %u conn_handle 0x%02x num %u",
+	LOG_DBG("status 0x%02x adv_handle %u conn_handle 0x%02x num %u",
 	       evt->status, evt->adv_handle, conn_handle,
 	       evt->num_completed_ext_adv_evts);
 
 	if (!adv) {
-		BT_ERR("No valid adv");
+		LOG_ERR("No valid adv");
 		return;
 	}
 
@@ -2033,10 +2044,10 @@ void bt_hci_le_scan_req_received(struct net_buf *buf)
 	evt = (void *)buf->data;
 	adv = bt_adv_lookup_handle(evt->handle);
 
-	BT_DBG("handle %u peer %s", evt->handle, bt_addr_le_str(&evt->addr));
+	LOG_DBG("handle %u peer %s", evt->handle, bt_addr_le_str(&evt->addr));
 
 	if (!adv) {
-		BT_ERR("No valid adv");
+		LOG_ERR("No valid adv");
 		return;
 	}
 

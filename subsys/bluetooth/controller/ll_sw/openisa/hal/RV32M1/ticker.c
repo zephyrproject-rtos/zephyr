@@ -15,8 +15,16 @@
 
 #include "ticker/ticker.h"
 
-#define LOG_MODULE_NAME bt_ctlr_rv32m1_ticker
-#include "common/log.h"
+#include "common/assert.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#define LOG_LEVEL LOG_LEVEL_INF
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_ctlr_rv32m1_ticker, LOG_LEVEL);
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)

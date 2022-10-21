@@ -14,9 +14,20 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
-#define LOG_MODULE_NAME bt_mesh_pb_gatt_srv
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_PROV
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_pb_gatt_srv, LOG_LEVEL);
 
 #include "mesh.h"
 #include "adv.h"
@@ -59,12 +70,12 @@ static void proxy_msg_recv(struct bt_mesh_proxy_role *role)
 {
 	switch (role->msg_type) {
 	case BT_MESH_PROXY_PROV:
-		BT_DBG("Mesh Provisioning PDU");
+		LOG_DBG("Mesh Provisioning PDU");
 		bt_mesh_pb_gatt_recv(role->conn, &role->buf);
 		break;
 
 	default:
-		BT_WARN("Unhandled Message Type 0x%02x", role->msg_type);
+		LOG_WRN("Unhandled Message Type 0x%02x", role->msg_type);
 		break;
 	}
 }
@@ -76,17 +87,17 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 	const uint8_t *data = buf;
 
 	if (cli->conn != conn) {
-		BT_ERR("No PB-GATT Client found");
+		LOG_ERR("No PB-GATT Client found");
 		return -ENOTCONN;
 	}
 
 	if (len < 1) {
-		BT_WARN("Too small Proxy PDU");
+		LOG_WRN("Too small Proxy PDU");
 		return -EINVAL;
 	}
 
 	if (PDU_TYPE(data) != BT_MESH_PROXY_PROV) {
-		BT_WARN("Proxy PDU type doesn't match GATT service");
+		LOG_WRN("Proxy PDU type doesn't match GATT service");
 		return -EINVAL;
 	}
 
@@ -105,7 +116,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 
 	cli = bt_mesh_proxy_role_setup(conn, gatt_send, proxy_msg_recv);
 
-	BT_DBG("conn %p err 0x%02x", (void *)conn, err);
+	LOG_DBG("conn %p err 0x%02x", (void *)conn, err);
 }
 
 static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
@@ -132,21 +143,21 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 
 static void prov_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 
 static ssize_t prov_ccc_write(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, uint16_t value)
 {
 	if (cli->conn != conn) {
-		BT_ERR("No PB-GATT Client found");
+		LOG_ERR("No PB-GATT Client found");
 		return -ENOTCONN;
 	}
 
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 
 	if (value != BT_GATT_CCC_NOTIFY) {
-		BT_WARN("Client wrote 0x%04x instead enabling notify", value);
+		LOG_WRN("Client wrote 0x%04x instead enabling notify", value);
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
@@ -178,7 +189,7 @@ static struct bt_gatt_service prov_svc = BT_GATT_SERVICE(prov_attrs);
 
 int bt_mesh_pb_gatt_srv_enable(void)
 {
-	BT_DBG("");
+	LOG_DBG("");
 
 	if (bt_mesh_is_provisioned()) {
 		return -ENOTSUP;
@@ -197,7 +208,7 @@ int bt_mesh_pb_gatt_srv_enable(void)
 
 int bt_mesh_pb_gatt_srv_disable(void)
 {
-	BT_DBG("");
+	LOG_DBG("");
 
 	if (!service_registered) {
 		return -EALREADY;
@@ -237,7 +248,7 @@ static size_t gatt_prov_adv_create(struct bt_data prov_sd[1])
 	uri_len = strlen(prov->uri);
 	if (uri_len > 29) {
 		/* There's no way to shorten an URI */
-		BT_WARN("Too long URI to fit advertising packet");
+		LOG_WRN("Too long URI to fit advertising packet");
 		return 0;
 	}
 
@@ -252,7 +263,7 @@ static int gatt_send(struct bt_conn *conn,
 		     const void *data, uint16_t len,
 		     bt_gatt_complete_func_t end, void *user_data)
 {
-	BT_DBG("%u bytes: %s", len, bt_hex(data, len));
+	LOG_DBG("%u bytes: %s", len, bt_hex(data, len));
 
 	struct bt_gatt_notify_params params = {
 		.data = data,
@@ -267,7 +278,7 @@ static int gatt_send(struct bt_conn *conn,
 
 int bt_mesh_pb_gatt_srv_adv_start(void)
 {
-	BT_DBG("");
+	LOG_DBG("");
 
 	if (!service_registered || bt_mesh_is_provisioned()) {
 		return -ENOTSUP;
@@ -294,7 +305,7 @@ int bt_mesh_pb_gatt_srv_adv_start(void)
 					      ARRAY_SIZE(prov_ad), prov_sd, prov_sd_len);
 	}
 
-	BT_DBG("remaining fast adv time (%lld ms)", (FAST_ADV_TIME - elapsed_time));
+	LOG_DBG("remaining fast adv time (%lld ms)", (FAST_ADV_TIME - elapsed_time));
 	/* Advertise 60 seconds using fast interval */
 	return bt_mesh_adv_gatt_start(&fast_adv_param, (FAST_ADV_TIME - elapsed_time),
 				      prov_ad, ARRAY_SIZE(prov_ad),

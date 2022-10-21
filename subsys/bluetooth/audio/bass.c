@@ -20,9 +20,20 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/buf.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_BASS)
-#define LOG_MODULE_NAME bt_bass
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_BASS
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_bass, LOG_LEVEL);
 
 #include "audio_internal.h"
 #include "bass_internal.h"
@@ -152,7 +163,7 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 {
 	const struct bt_bass_recv_state *state = &recv_state->state;
 
-	BT_DBG("Receive State[%d]: src ID %u, addr %s, adv_sid %u, "
+	LOG_DBG("Receive State[%d]: src ID %u, addr %s, adv_sid %u, "
 	       "broadcast_id %u, pa_sync_state %u, "
 	       "encrypt state %u%s%s, num_subgroups %u",
 	       recv_state->index, state->src_id, bt_addr_le_str(&state->addr),
@@ -166,7 +177,7 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bass_subgroup *subgroup = &state->subgroups[i];
 
-		BT_DBG("\tSubgroup[%d]: BIS sync %u (requested %u), metadata_len %u, metadata: %s",
+		LOG_DBG("\tSubgroup[%d]: BIS sync %u (requested %u), metadata_len %u, metadata: %s",
 		       i, subgroup->bis_sync, subgroup->requested_bis_sync,
 		       subgroup->metadata_len,
 		       bt_hex(subgroup->metadata, subgroup->metadata_len));
@@ -179,7 +190,7 @@ static void bass_notify_receive_state(const struct bass_recv_state_internal *sta
 				      state->attr, read_buf.data, read_buf.len);
 
 	if (err != 0) {
-		BT_DBG("Could not notify receive state: %d", err);
+		LOG_DBG("Could not notify receive state: %d", err);
 	}
 }
 
@@ -227,7 +238,7 @@ static void bass_disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 
 	if (client != NULL) {
-		BT_DBG("Instance %u with addr %s disconnected",
+		LOG_DBG("Instance %u with addr %s disconnected",
 		       i, bt_addr_le_str(bt_conn_get_dst(conn)));
 		(void)memset(client, 0, sizeof(*client));
 	}
@@ -259,7 +270,7 @@ static void bass_security_changed(struct bt_conn *conn, bt_security_t level,
 					  state->attr, read_buf.data,
 					  read_buf.len);
 		if (err != 0) {
-			BT_WARN("Could not notify receive state[%d] to reconnecting client: %d",
+			LOG_WRN("Could not notify receive state[%d] to reconnecting client: %d",
 				i, err);
 		}
 	}
@@ -374,7 +385,7 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 {
 	struct bass_recv_state_internal *state;
 
-	BT_DBG("Synced%s", info->conn ? " via PAST" : "");
+	LOG_DBG("Synced%s", info->conn ? " via PAST" : "");
 
 	if (info->conn != NULL) {
 		state = bass_lookup_addr(info->addr);
@@ -383,7 +394,7 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 	}
 
 	if (state == NULL) {
-		BT_DBG("BASS receive state not found");
+		LOG_DBG("BASS receive state not found");
 		return;
 	}
 
@@ -408,7 +419,7 @@ static void pa_terminated(struct bt_le_per_adv_sync *sync,
 {
 	struct bass_recv_state_internal *state = bass_lookup_pa_sync(sync);
 
-	BT_DBG("Terminated");
+	LOG_DBG("Terminated");
 
 	if (state != NULL) {
 		state->state.pa_sync_state = BT_BASS_PA_STATE_NOT_SYNCED;
@@ -471,7 +482,7 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 		int err = bis_sync(state);
 
 		if (err != 0) {
-			BT_DBG("BIS sync failed %d", err);
+			LOG_DBG("BIS sync failed %d", err);
 		}
 	}
 
@@ -493,7 +504,7 @@ static void pa_timer_handler(struct k_work *work)
 	struct bass_recv_state_internal *recv_state = CONTAINER_OF(
 		dwork, struct bass_recv_state_internal, pa_timer);
 
-	BT_DBG("PA timeout");
+	LOG_DBG("PA timeout");
 
 	__ASSERT(recv_state, "NULL receive state");
 
@@ -503,7 +514,7 @@ static void pa_timer_handler(struct k_work *work)
 		int err = bt_le_per_adv_sync_delete(recv_state->pa_sync);
 
 		if (err != 0) {
-			BT_ERR("Could not delete BASS pa_sync");
+			LOG_ERR("Could not delete BASS pa_sync");
 		}
 
 		recv_state->state.pa_sync_state = BT_BASS_PA_STATE_FAILED;
@@ -534,7 +545,7 @@ static int bis_sync(struct bass_recv_state_internal *state)
 	param.mse = 0;
 	param.sync_timeout = interval_to_sync_timeout(state->iso_interval);
 
-	BT_DBG("Bitfield %x", param.bis_bitfield);
+	LOG_DBG("Bitfield %x", param.bis_bitfield);
 
 	if (param.bis_bitfield == 0) {
 		/* Don't attempt to sync anything */
@@ -625,7 +636,7 @@ static void bass_pa_sync_no_past(struct bass_recv_state_internal *state)
 	struct bt_le_per_adv_sync_param param = { 0 };
 
 	if (state->pa_sync_pending) {
-		BT_DBG("PA sync pending");
+		LOG_DBG("PA sync pending");
 		return;
 	}
 
@@ -639,10 +650,10 @@ static void bass_pa_sync_no_past(struct bass_recv_state_internal *state)
 	 */
 	err = bt_le_per_adv_sync_create(&param, &state->pa_sync);
 	if (err != 0) {
-		BT_WARN("Could not sync per adv: %d", err);
+		LOG_WRN("Could not sync per adv: %d", err);
 		recv_state->pa_sync_state = BT_BASS_PA_STATE_FAILED;
 	} else {
-		BT_DBG("PA sync pending for addr %s",
+		LOG_DBG("PA sync pending for addr %s",
 		       bt_addr_le_str(&recv_state->addr));
 		state->pa_sync_pending = true;
 		(void)k_work_reschedule(&state->pa_timer,
@@ -663,7 +674,7 @@ static void bass_pa_sync_cancel(struct bass_recv_state_internal *state)
 
 	err = bt_le_per_adv_sync_delete(state->pa_sync);
 	if (err != 0) {
-		BT_WARN("Could not delete per adv sync: %d", err);
+		LOG_WRN("Could not delete per adv sync: %d", err);
 	} else {
 		state->pa_sync_pending = false;
 		state->pa_sync = NULL;
@@ -676,7 +687,7 @@ static void bass_pa_sync(struct bt_conn *conn, struct bass_recv_state_internal *
 {
 	struct bt_bass_recv_state *recv_state = &state->state;
 
-	BT_DBG("pa_past %u, pa_interval 0x%04x", pa_past, state->pa_interval);
+	LOG_DBG("pa_past %u, pa_interval 0x%04x", pa_past, state->pa_interval);
 
 	if (recv_state->pa_sync_state == BT_BASS_PA_STATE_SYNCED ||
 	    recv_state->pa_sync_state == BT_BASS_PA_STATE_INFO_REQ) {
@@ -703,7 +714,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bt_bass_cp_add_src) - 1) {
-		BT_DBG("Invalid length %u", buf->size);
+		LOG_DBG("Invalid length %u", buf->size);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -717,7 +728,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	if (internal_state == NULL) {
-		BT_DBG("Could not add src");
+		LOG_DBG("Could not add src");
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
@@ -726,7 +737,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 	state->src_id = next_src_id();
 	state->addr.type = net_buf_simple_pull_u8(buf);
 	if (state->addr.type > BT_ADDR_LE_RANDOM) {
-		BT_DBG("Invalid address type %u", state->addr.type);
+		LOG_DBG("Invalid address type %u", state->addr.type);
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
@@ -735,7 +746,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	state->adv_sid = net_buf_simple_pull_u8(buf);
 	if (state->adv_sid > BT_GAP_SID_MAX) {
-		BT_DBG("Invalid adv SID %u", state->adv_sid);
+		LOG_DBG("Invalid adv SID %u", state->adv_sid);
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
@@ -743,7 +754,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	pa_sync = net_buf_simple_pull_u8(buf);
 	if (pa_sync > BT_BASS_PA_REQ_SYNC) {
-		BT_DBG("Invalid PA sync value %u", pa_sync);
+		LOG_DBG("Invalid PA sync value %u", pa_sync);
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
@@ -751,7 +762,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	state->num_subgroups = net_buf_simple_pull_u8(buf);
 	if (state->num_subgroups > CONFIG_BT_BASS_MAX_SUBGROUPS) {
-		BT_WARN("Too many subgroups %u/%u",
+		LOG_WRN("Too many subgroups %u/%u",
 			state->num_subgroups, CONFIG_BT_BASS_MAX_SUBGROUPS);
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
@@ -761,7 +772,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 		uint8_t *metadata;
 
 		if (buf->len < (sizeof(subgroup->bis_sync) + sizeof(subgroup->metadata_len))) {
-			BT_DBG("Invalid length %u", buf->size);
+			LOG_DBG("Invalid length %u", buf->size);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
@@ -769,14 +780,14 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 
 		if (subgroup->requested_bis_sync &&
 		    pa_sync == BT_BASS_PA_REQ_NO_SYNC) {
-			BT_DBG("Cannot sync to BIS without PA");
+			LOG_DBG("Cannot sync to BIS without PA");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
 		/* Verify that the request BIS sync indexes are unique or no preference */
 		if (bis_syncs_unique_or_no_pref(subgroup->requested_bis_sync,
 						aggregated_bis_syncs)) {
-			BT_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
+			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
 			       i, subgroup->requested_bis_sync,
 			       aggregated_bis_syncs);
 
@@ -791,14 +802,14 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 		subgroup->metadata_len = net_buf_simple_pull_u8(buf);
 
 		if (buf->len < subgroup->metadata_len) {
-			BT_DBG("Invalid length %u", buf->size);
+			LOG_DBG("Invalid length %u", buf->size);
 
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
 
 		if (subgroup->metadata_len > CONFIG_BT_BASS_MAX_METADATA_LEN) {
-			BT_WARN("Metadata too long %u/%u",
+			LOG_WRN("Metadata too long %u/%u",
 				subgroup->metadata_len,
 				CONFIG_BT_BASS_MAX_METADATA_LEN);
 
@@ -810,7 +821,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	if (buf->len != 0) {
-		BT_DBG("Invalid length %u", buf->size);
+		LOG_DBG("Invalid length %u", buf->size);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -823,7 +834,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 			     (pa_sync == BT_BASS_PA_REQ_SYNC_PAST));
 	}
 
-	BT_DBG("Index %u: New source added: ID 0x%02x",
+	LOG_DBG("Index %u: New source added: ID 0x%02x",
 	       internal_state->index, state->src_id);
 
 	bt_debug_dump_recv_state(internal_state);
@@ -850,7 +861,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bt_bass_cp_mod_src) - 1) {
-		BT_DBG("Invalid length %u", buf->size);
+		LOG_DBG("Invalid length %u", buf->size);
 
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -859,14 +870,14 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	internal_state = bass_lookup_src_id(src_id);
 
 	if (internal_state == NULL) {
-		BT_DBG("Could not find state by src id %u", src_id);
+		LOG_DBG("Could not find state by src id %u", src_id);
 
 		return BT_GATT_ERR(BT_BASS_ERR_INVALID_SRC_ID);
 	}
 
 	pa_sync = net_buf_simple_pull_u8(buf);
 	if (pa_sync > BT_BASS_PA_REQ_SYNC) {
-		BT_DBG("Invalid PA sync value %u", pa_sync);
+		LOG_DBG("Invalid PA sync value %u", pa_sync);
 
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
@@ -875,7 +886,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	num_subgroups = net_buf_simple_pull_u8(buf);
 	if (num_subgroups > CONFIG_BT_BASS_MAX_SUBGROUPS) {
-		BT_WARN("Too many subgroups %u/%u",
+		LOG_WRN("Too many subgroups %u/%u",
 			num_subgroups, CONFIG_BT_BASS_MAX_SUBGROUPS);
 
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
@@ -886,20 +897,20 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 		uint8_t *metadata;
 
 		if (buf->len < (sizeof(subgroup->bis_sync) + sizeof(subgroup->metadata_len))) {
-			BT_DBG("Invalid length %u", buf->len);
+			LOG_DBG("Invalid length %u", buf->len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
 		subgroup->requested_bis_sync = net_buf_simple_pull_le32(buf);
 		if (subgroup->requested_bis_sync && pa_sync == BT_BASS_PA_REQ_NO_SYNC) {
-			BT_DBG("Cannot sync to BIS without PA");
+			LOG_DBG("Cannot sync to BIS without PA");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
 		/* Verify that the request BIS sync indexes are unique or no preference */
 		if (bis_syncs_unique_or_no_pref(subgroup->requested_bis_sync,
 						aggregated_bis_syncs)) {
-			BT_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
+			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
 			       i, subgroup->requested_bis_sync,
 			       aggregated_bis_syncs);
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -913,12 +924,12 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 		subgroup->metadata_len = net_buf_simple_pull_u8(buf);
 
 		if (buf->len < subgroup->metadata_len) {
-			BT_DBG("Invalid length %u", buf->len);
+			LOG_DBG("Invalid length %u", buf->len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
 		if (subgroup->metadata_len > CONFIG_BT_BASS_MAX_METADATA_LEN) {
-			BT_WARN("Metadata too long %u/%u",
+			LOG_WRN("Metadata too long %u/%u",
 				subgroup->metadata_len,
 				CONFIG_BT_BASS_MAX_METADATA_LEN);
 			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
@@ -931,7 +942,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	if (buf->len != 0) {
-		BT_DBG("Invalid length %u", buf->size);
+		LOG_DBG("Invalid length %u", buf->size);
 
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -987,7 +998,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 		/* Terminated BIG first if existed */
 		err = bis_sync_cancel(internal_state);
 		if (err != 0) {
-			BT_WARN("Could not terminate existing BIG %d", err);
+			LOG_WRN("Could not terminate existing BIG %d", err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 		}
@@ -1003,7 +1014,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	state_changed |= old_pa_sync_state != state->pa_sync_state;
 
-	BT_DBG("Index %u: Source modified: ID 0x%02x",
+	LOG_DBG("Index %u: Source modified: ID 0x%02x",
 	       internal_state->index, state->src_id);
 	bt_debug_dump_recv_state(internal_state);
 
@@ -1025,7 +1036,7 @@ static int bass_broadcast_code(struct net_buf_simple *buf)
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len != sizeof(struct bt_bass_cp_broadcase_code) - 1) {
-		BT_DBG("Invalid length %u", buf->size);
+		LOG_DBG("Invalid length %u", buf->size);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -1033,7 +1044,7 @@ static int bass_broadcast_code(struct net_buf_simple *buf)
 	internal_state = bass_lookup_src_id(src_id);
 
 	if (internal_state == NULL) {
-		BT_DBG("Could not find state by src id %u", src_id);
+		LOG_DBG("Could not find state by src id %u", src_id);
 		return BT_GATT_ERR(BT_BASS_ERR_INVALID_SRC_ID);
 	}
 
@@ -1042,7 +1053,7 @@ static int bass_broadcast_code(struct net_buf_simple *buf)
 	(void)memcpy(internal_state->broadcast_code, broadcast_code,
 		     sizeof(internal_state->broadcast_code));
 
-	BT_DBG("Index %u: broadcast code added: %s", internal_state->index,
+	LOG_DBG("Index %u: broadcast code added: %s", internal_state->index,
 	       bt_hex(internal_state->broadcast_code,
 	       sizeof(internal_state->broadcast_code)));
 
@@ -1052,11 +1063,11 @@ static int bass_broadcast_code(struct net_buf_simple *buf)
 		return 0;
 	}
 
-	BT_DBG("Syncing to BIS");
+	LOG_DBG("Syncing to BIS");
 
 	err = bis_sync(internal_state);
 	if (err != 0) {
-		BT_DBG("BIS sync failed %d", err);
+		LOG_DBG("BIS sync failed %d", err);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
@@ -1071,7 +1082,7 @@ static int bass_rem_src(struct net_buf_simple *buf)
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len != sizeof(struct bt_bass_cp_rem_src) - 1) {
-		BT_DBG("Invalid length %u", buf->size);
+		LOG_DBG("Invalid length %u", buf->size);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -1079,7 +1090,7 @@ static int bass_rem_src(struct net_buf_simple *buf)
 	internal_state = bass_lookup_src_id(src_id);
 
 	if (internal_state == NULL) {
-		BT_DBG("Could not find state by src id %u", src_id);
+		LOG_DBG("Could not find state by src id %u", src_id);
 		return BT_GATT_ERR(BT_BASS_ERR_INVALID_SRC_ID);
 	}
 
@@ -1088,17 +1099,17 @@ static int bass_rem_src(struct net_buf_simple *buf)
 
 	/* Check if successful */
 	if (internal_state->pa_sync) {
-		BT_WARN("Could not terminate PA sync");
+		LOG_WRN("Could not terminate PA sync");
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
 	err = bis_sync_cancel(internal_state);
 	if (err != 0) {
-		BT_WARN("Could not terminate BIG %d", err);
+		LOG_WRN("Could not terminate BIG %d", err);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	BT_DBG("Index %u: Removed source with ID 0x%02x",
+	LOG_DBG("Index %u: Removed source with ID 0x%02x",
 	       internal_state->index, src_id);
 
 	internal_state->active = false;
@@ -1146,64 +1157,64 @@ static ssize_t write_control_point(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	BT_HEXDUMP_DBG(data, len, "Data");
+	LOG_HEXDUMP_DBG((const uint8_t *) data, len, "Data");
 
 	switch (opcode) {
 	case BT_BASS_OP_SCAN_STOP:
-		BT_DBG("Client stopping scanning");
+		LOG_DBG("Client stopping scanning");
 
 		if (buf.len != 0) {
-			BT_DBG("Invalid length %u", buf.size);
+			LOG_DBG("Invalid length %u", buf.size);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
 		bass_client->scanning = false;
 		break;
 	case BT_BASS_OP_SCAN_START:
-		BT_DBG("Client starting scanning");
+		LOG_DBG("Client starting scanning");
 
 		if (buf.len != 0) {
-			BT_DBG("Invalid length %u", buf.size);
+			LOG_DBG("Invalid length %u", buf.size);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 		bass_client->scanning = true;
 		break;
 	case BT_BASS_OP_ADD_SRC:
-		BT_DBG("Client adding source");
+		LOG_DBG("Client adding source");
 
 		err = bass_add_source(conn, &buf);
 		if (err != 0) {
-			BT_DBG("Could not add source %d", err);
+			LOG_DBG("Could not add source %d", err);
 			return err;
 		}
 
 		break;
 	case BT_BASS_OP_MOD_SRC:
-		BT_DBG("Client modifying source");
+		LOG_DBG("Client modifying source");
 
 		err = bass_mod_src(conn, &buf);
 		if (err != 0) {
-			BT_DBG("Could not modify source %d", err);
+			LOG_DBG("Could not modify source %d", err);
 			return err;
 		}
 
 		break;
 	case BT_BASS_OP_BROADCAST_CODE:
-		BT_DBG("Client setting broadcast code");
+		LOG_DBG("Client setting broadcast code");
 
 		err = bass_broadcast_code(&buf);
 		if (err != 0) {
-			BT_DBG("Could not set broadcast code");
+			LOG_DBG("Could not set broadcast code");
 			return err;
 		}
 
 		break;
 	case BT_BASS_OP_REM_SRC:
-		BT_DBG("Client removing source");
+		LOG_DBG("Client removing source");
 
 		err = bass_rem_src(&buf);
 		if (err != 0) {
-			BT_DBG("Could not remove source %d", err);
+			LOG_DBG("Could not remove source %d", err);
 			return err;
 		}
 
@@ -1218,7 +1229,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 static void recv_state_cfg_changed(const struct bt_gatt_attr *attr,
 				   uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 
 static ssize_t read_recv_state(struct bt_conn *conn,
@@ -1230,7 +1241,7 @@ static ssize_t read_recv_state(struct bt_conn *conn,
 	struct bt_bass_recv_state *state = &recv_state->state;
 
 	if (recv_state->active) {
-		BT_DBG("Index %u: Source ID 0x%02x", idx, state->src_id);
+		LOG_DBG("Index %u: Source ID 0x%02x", idx, state->src_id);
 
 		bt_debug_dump_recv_state(recv_state);
 
@@ -1239,7 +1250,7 @@ static ssize_t read_recv_state(struct bt_conn *conn,
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
 					 read_buf.data, read_buf.len);
 	} else {
-		BT_DBG("Index %u: Not active", idx);
+		LOG_DBG("Index %u: Not active", idx);
 
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
 	}
@@ -1320,14 +1331,14 @@ int bt_bass_set_sync_state(uint8_t src_id, uint8_t pa_sync_state,
 
 		if (bis_synced[i] != 0 &&
 		    pa_sync_state == BT_BASS_PA_STATE_NOT_SYNCED) {
-			BT_DBG("Cannot set BIS sync when PA sync is not synced");
+			LOG_DBG("Cannot set BIS sync when PA sync is not synced");
 
 			return -EINVAL;
 		}
 
 		if (bits_subset_of(bis_synced[i],
 				   subgroup->requested_bis_sync)) {
-			BT_DBG("Subgroup[%d] invalid bis_sync value %x for %x",
+			LOG_DBG("Subgroup[%d] invalid bis_sync value %x for %x",
 			       i, bis_synced[i], subgroup->requested_bis_sync);
 
 			return -EINVAL;
@@ -1339,7 +1350,7 @@ int bt_bass_set_sync_state(uint8_t src_id, uint8_t pa_sync_state,
 		}
 	}
 
-	BT_DBG("Index %u: Source ID 0x%02x synced", recv_state->index, src_id);
+	LOG_DBG("Index %u: Source ID 0x%02x synced", recv_state->index, src_id);
 
 	if (recv_state->state.pa_sync_state != pa_sync_state ||
 	    recv_state->state.encrypt_state != encrypt_state) {

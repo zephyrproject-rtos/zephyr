@@ -15,9 +15,19 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROXY)
-#define LOG_MODULE_NAME bt_mesh_proxy_client
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_PROXY
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_proxy_client, LOG_LEVEL);
 
 #include "mesh.h"
 #include "adv.h"
@@ -105,19 +115,19 @@ static void proxy_msg_recv(struct bt_mesh_proxy_role *role)
 {
 	switch (role->msg_type) {
 	case BT_MESH_PROXY_NET_PDU:
-		BT_DBG("Mesh Network PDU");
+		LOG_DBG("Mesh Network PDU");
 		bt_mesh_net_recv(&role->buf, 0, BT_MESH_NET_IF_PROXY);
 		break;
 	case BT_MESH_PROXY_BEACON:
-		BT_DBG("Mesh Beacon PDU");
+		LOG_DBG("Mesh Beacon PDU");
 		bt_mesh_beacon_recv(&role->buf);
 		break;
 	case BT_MESH_PROXY_CONFIG:
-		BT_DBG("Mesh Configuration PDU");
+		LOG_DBG("Mesh Configuration PDU");
 		/* TODO */
 		break;
 	default:
-		BT_WARN("Unhandled Message Type 0x%02x", role->msg_type);
+		LOG_WRN("Unhandled Message Type 0x%02x", role->msg_type);
 		break;
 	}
 }

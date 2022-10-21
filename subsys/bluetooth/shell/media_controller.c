@@ -20,9 +20,19 @@
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include "../audio/media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
-#define LOG_MODULE_NAME bt_media_controller_shell
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_MCS
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_media_controller_shell, LOG_LEVEL);
 
 static struct media_proxy_ctrl_cbs cbs;
 
@@ -767,7 +777,7 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 
 	search.len = strlen(argv[1]);
 	memcpy(search.search, argv[1], search.len);
-	BT_DBG("Search string: %s", argv[1]);
+	LOG_DBG("Search string: %s", argv[1]);
 
 	err = media_proxy_ctrl_send_search(current_player, &search);
 	if (err) {

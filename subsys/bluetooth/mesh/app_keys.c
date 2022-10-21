@@ -21,9 +21,20 @@
 #include "foundation.h"
 #include "access.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_KEYS)
-#define LOG_MODULE_NAME bt_mesh_app_keys
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_KEYS
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_app_keys, LOG_LEVEL);
 
 /* Tracking of what storage changes are pending for App Keys. We track this in
  * a separate array here instead of within the respective bt_mesh_app_key
@@ -82,9 +93,9 @@ static void clear_app_key(uint16_t app_idx)
 	snprintk(path, sizeof(path), "bt/mesh/AppKey/%x", app_idx);
 	err = settings_delete(path);
 	if (err) {
-		BT_ERR("Failed to clear AppKeyIndex 0x%03x", app_idx);
+		LOG_ERR("Failed to clear AppKeyIndex 0x%03x", app_idx);
 	} else {
-		BT_DBG("Cleared AppKeyIndex 0x%03x", app_idx);
+		LOG_DBG("Cleared AppKeyIndex 0x%03x", app_idx);
 	}
 }
 
@@ -99,7 +110,7 @@ static void store_app_key(uint16_t app_idx)
 
 	app = app_get(app_idx);
 	if (!app) {
-		BT_WARN("ApKeyIndex 0x%03x not found", app_idx);
+		LOG_WRN("ApKeyIndex 0x%03x not found", app_idx);
 		return;
 	}
 
@@ -111,9 +122,9 @@ static void store_app_key(uint16_t app_idx)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		BT_ERR("Failed to store AppKey %s value", path);
+		LOG_ERR("Failed to store AppKey %s value", path);
 	} else {
-		BT_DBG("Stored AppKey %s value", path);
+		LOG_DBG("Stored AppKey %s value", path);
 	}
 }
 
@@ -147,7 +158,7 @@ static void update_app_key_settings(uint16_t app_idx, bool store)
 	struct app_key_update *update, *free_slot;
 	uint8_t clear = store ? 0U : 1U;
 
-	BT_DBG("AppKeyIndex 0x%03x", app_idx);
+	LOG_DBG("AppKeyIndex 0x%03x", app_idx);
 
 	update = app_key_update_find(app_idx, &free_slot);
 	if (update) {
@@ -200,7 +211,7 @@ static struct app_key *app_key_alloc(uint16_t app_idx)
 
 static void app_key_del(struct app_key *app)
 {
-	BT_DBG("AppIdx 0x%03x", app->app_idx);
+	LOG_DBG("AppIdx 0x%03x", app->app_idx);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		update_app_key_settings(app->app_idx, false);
@@ -235,7 +246,7 @@ uint8_t bt_mesh_app_key_add(uint16_t app_idx, uint16_t net_idx,
 {
 	struct app_key *app;
 
-	BT_DBG("net_idx 0x%04x app_idx %04x val %s", net_idx, app_idx,
+	LOG_DBG("net_idx 0x%04x app_idx %04x val %s", net_idx, app_idx,
 	       bt_hex(key, 16));
 
 	if (!bt_mesh_subnet_get(net_idx)) {
@@ -263,7 +274,7 @@ uint8_t bt_mesh_app_key_add(uint16_t app_idx, uint16_t net_idx,
 		return STATUS_CANNOT_SET;
 	}
 
-	BT_DBG("AppIdx 0x%04x AID 0x%02x", app_idx, app->keys[0].id);
+	LOG_DBG("AppIdx 0x%04x AID 0x%02x", app_idx, app->keys[0].id);
 
 	app->net_idx = net_idx;
 	app->app_idx = app_idx;
@@ -271,7 +282,7 @@ uint8_t bt_mesh_app_key_add(uint16_t app_idx, uint16_t net_idx,
 	memcpy(app->keys[0].val, key, 16);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		BT_DBG("Storing AppKey persistently");
+		LOG_DBG("Storing AppKey persistently");
 		update_app_key_settings(app->app_idx, true);
 	}
 
@@ -286,7 +297,7 @@ uint8_t bt_mesh_app_key_update(uint16_t app_idx, uint16_t net_idx,
 	struct app_key *app;
 	struct bt_mesh_subnet *sub;
 
-	BT_DBG("net_idx 0x%04x app_idx %04x val %s", net_idx, app_idx,
+	LOG_DBG("net_idx 0x%04x app_idx %04x val %s", net_idx, app_idx,
 	       bt_hex(key, 16));
 
 	app = app_get(app_idx);
@@ -324,13 +335,13 @@ uint8_t bt_mesh_app_key_update(uint16_t app_idx, uint16_t net_idx,
 		return STATUS_CANNOT_UPDATE;
 	}
 
-	BT_DBG("app_idx 0x%04x AID 0x%02x", app_idx, app->keys[1].id);
+	LOG_DBG("app_idx 0x%04x AID 0x%02x", app_idx, app->keys[1].id);
 
 	app->updated = true;
 	memcpy(app->keys[1].val, key, 16);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		BT_DBG("Storing AppKey persistently");
+		LOG_DBG("Storing AppKey persistently");
 		update_app_key_settings(app->app_idx, true);
 	}
 
@@ -343,7 +354,7 @@ uint8_t bt_mesh_app_key_del(uint16_t app_idx, uint16_t net_idx)
 {
 	struct app_key *app;
 
-	BT_DBG("AppIdx 0x%03x", app_idx);
+	LOG_DBG("AppIdx 0x%03x", app_idx);
 
 	if (net_idx != BT_MESH_KEY_UNUSED && !bt_mesh_subnet_get(net_idx)) {
 		return STATUS_INVALID_NETKEY;
@@ -380,7 +391,7 @@ int bt_mesh_app_key_set(uint16_t app_idx, uint16_t net_idx,
 		return 0;
 	}
 
-	BT_DBG("AppIdx 0x%04x AID 0x%02x", app_idx, app->keys[0].id);
+	LOG_DBG("AppIdx 0x%04x AID 0x%02x", app_idx, app->keys[0].id);
 
 	memcpy(app->keys[0].val, old_key, 16);
 	if (bt_mesh_app_id(old_key, &app->keys[0].id)) {
@@ -455,7 +466,7 @@ int bt_mesh_keys_resolve(struct bt_mesh_msg_ctx *ctx,
 		 */
 		*sub = bt_mesh_subnet_get(ctx->net_idx);
 		if (!*sub) {
-			BT_WARN("Unknown NetKey 0x%03x", ctx->net_idx);
+			LOG_WRN("Unknown NetKey 0x%03x", ctx->net_idx);
 			return -EINVAL;
 		}
 
@@ -464,13 +475,13 @@ int bt_mesh_keys_resolve(struct bt_mesh_msg_ctx *ctx,
 			struct bt_mesh_cdb_node *node;
 
 			if (!IS_ENABLED(CONFIG_BT_MESH_CDB)) {
-				BT_WARN("No DevKey for 0x%04x", ctx->addr);
+				LOG_WRN("No DevKey for 0x%04x", ctx->addr);
 				return -EINVAL;
 			}
 
 			node = bt_mesh_cdb_node_get(ctx->addr);
 			if (!node) {
-				BT_WARN("No DevKey for 0x%04x", ctx->addr);
+				LOG_WRN("No DevKey for 0x%04x", ctx->addr);
 				return -EINVAL;
 			}
 
@@ -485,13 +496,13 @@ int bt_mesh_keys_resolve(struct bt_mesh_msg_ctx *ctx,
 
 	app = app_get(ctx->app_idx);
 	if (!app) {
-		BT_WARN("Unknown AppKey 0x%03x", ctx->app_idx);
+		LOG_WRN("Unknown AppKey 0x%03x", ctx->app_idx);
 		return -EINVAL;
 	}
 
 	*sub = bt_mesh_subnet_get(app->net_idx);
 	if (!*sub) {
-		BT_WARN("Unknown NetKey 0x%03x", app->net_idx);
+		LOG_WRN("Unknown NetKey 0x%03x", app->net_idx);
 		return -EINVAL;
 	}
 
@@ -625,7 +636,7 @@ static int app_key_set(const char *name, size_t len_rd,
 	int err;
 
 	if (!name) {
-		BT_ERR("Insufficient number of arguments");
+		LOG_ERR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -643,11 +654,11 @@ static int app_key_set(const char *name, size_t len_rd,
 	err = bt_mesh_app_key_set(app_idx, key.net_idx, key.val[0],
 			      key.updated ? key.val[1] : NULL);
 	if (err) {
-		BT_ERR("Failed to set \'app-key\'");
+		LOG_ERR("Failed to set \'app-key\'");
 		return err;
 	}
 
-	BT_DBG("AppKeyIndex 0x%03x recovered from storage", app_idx);
+	LOG_DBG("AppKeyIndex 0x%03x recovered from storage", app_idx);
 
 	return 0;
 }

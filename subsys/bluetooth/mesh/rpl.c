@@ -19,9 +19,19 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_RPL)
-#define LOG_MODULE_NAME bt_mesh_rpl
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_RPL
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_rpl, LOG_LEVEL);
 
 #include "mesh.h"
 #include "adv.h"
@@ -56,9 +66,9 @@ static void clear_rpl(struct bt_mesh_rpl *rpl)
 	snprintk(path, sizeof(path), "bt/mesh/RPL/%x", rpl->src);
 	err = settings_delete(path);
 	if (err) {
-		BT_ERR("Failed to clear RPL");
+		LOG_ERR("Failed to clear RPL");
 	} else {
-		BT_DBG("Cleared RPL");
+		LOG_DBG("Cleared RPL");
 	}
 
 	(void)memset(rpl, 0, sizeof(*rpl));
@@ -152,13 +162,13 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx,
 		}
 	}
 
-	BT_ERR("RPL is full!");
+	LOG_ERR("RPL is full!");
 	return true;
 }
 
 void bt_mesh_rpl_clear(void)
 {
-	BT_DBG("");
+	LOG_DBG("");
 
 	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		(void)memset(replay_list, 0, sizeof(replay_list));
@@ -245,7 +255,7 @@ static int rpl_set(const char *name, size_t len_rd,
 	uint16_t src;
 
 	if (!name) {
-		BT_ERR("Insufficient number of arguments");
+		LOG_ERR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -253,11 +263,11 @@ static int rpl_set(const char *name, size_t len_rd,
 	entry = bt_mesh_rpl_find(src);
 
 	if (len_rd == 0) {
-		BT_DBG("val (null)");
+		LOG_DBG("val (null)");
 		if (entry) {
 			(void)memset(entry, 0, sizeof(*entry));
 		} else {
-			BT_WARN("Unable to find RPL entry for 0x%04x", src);
+			LOG_WRN("Unable to find RPL entry for 0x%04x", src);
 		}
 
 		return 0;
@@ -266,21 +276,21 @@ static int rpl_set(const char *name, size_t len_rd,
 	if (!entry) {
 		entry = bt_mesh_rpl_alloc(src);
 		if (!entry) {
-			BT_ERR("Unable to allocate RPL entry for 0x%04x", src);
+			LOG_ERR("Unable to allocate RPL entry for 0x%04x", src);
 			return -ENOMEM;
 		}
 	}
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &rpl, sizeof(rpl));
 	if (err) {
-		BT_ERR("Failed to set `net`");
+		LOG_ERR("Failed to set `net`");
 		return err;
 	}
 
 	entry->seq = rpl.seq;
 	entry->old_iv = rpl.old_iv;
 
-	BT_DBG("RPL entry for 0x%04x: Seq 0x%06x old_iv %u", entry->src,
+	LOG_DBG("RPL entry for 0x%04x: Seq 0x%06x old_iv %u", entry->src,
 	       entry->seq, entry->old_iv);
 
 	return 0;
@@ -298,7 +308,7 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 		return;
 	}
 
-	BT_DBG("src 0x%04x seq 0x%06x old_iv %u", entry->src, entry->seq,
+	LOG_DBG("src 0x%04x seq 0x%06x old_iv %u", entry->src, entry->seq,
 	       entry->old_iv);
 
 	rpl.seq = entry->seq;
@@ -308,9 +318,9 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 
 	err = settings_save_one(path, &rpl, sizeof(rpl));
 	if (err) {
-		BT_ERR("Failed to store RPL %s value", path);
+		LOG_ERR("Failed to store RPL %s value", path);
 	} else {
-		BT_DBG("Stored RPL %s value", path);
+		LOG_DBG("Stored RPL %s value", path);
 	}
 }
 

@@ -18,9 +18,20 @@
 #include <tinycrypt/ccm_mode.h>
 #include <zephyr/sys/byteorder.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIS_CRYPTO)
-#define LOG_MODULE_NAME bt_csis_crypto
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_CSIS_CRYPTO
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_csis_crypto, LOG_LEVEL);
 
 #define BT_CSIS_CRYPTO_PADDING_SIZE 13
 #define BT_CSIS_R_SIZE              3 /* r is 24 bit / 3 octet */
@@ -67,17 +78,17 @@ int bt_csis_sih(const uint8_t sirk[BT_CSIS_SET_SIRK_SIZE], uint32_t r,
 	uint8_t sirk_tmp[BT_CSIS_SET_SIRK_SIZE];
 
 	if ((r & BIT(23)) || ((r & BIT(22)) == 0)) {
-		BT_DBG("Invalid r %0x06x", (uint32_t)(r & BT_CSIS_R_MASK));
+		LOG_DBG("Invalid r %0x06x", (uint32_t)(r & BT_CSIS_R_MASK));
 	}
 
-	BT_DBG("SIRK %s", bt_hex(sirk, BT_CSIS_SET_SIRK_SIZE));
-	BT_DBG("r 0x%06x", r);
+	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIS_SET_SIRK_SIZE));
+	LOG_DBG("r 0x%06x", r);
 
 	/* r' = padding || r */
 	(void)memset(res, 0, BT_CSIS_CRYPTO_PADDING_SIZE);
 	sys_put_be24(r, res + BT_CSIS_CRYPTO_PADDING_SIZE);
 
-	BT_DBG("BE: r' %s", bt_hex(res, sizeof(res)));
+	LOG_DBG("BE: r' %s", bt_hex(res, sizeof(res)));
 
 	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
 		/* Swap to Big Endian (BE) */
@@ -99,12 +110,12 @@ int bt_csis_sih(const uint8_t sirk[BT_CSIS_SET_SIRK_SIZE], uint32_t r,
 	 * result of sih.
 	 */
 
-	BT_DBG("BE: res %s", bt_hex(res, sizeof(res)));
+	LOG_DBG("BE: res %s", bt_hex(res, sizeof(res)));
 
 	/* Result is the lowest 3 bytes */
 	*out = sys_get_be24(res + 13);
 
-	BT_DBG("sih 0x%06x", *out);
+	LOG_DBG("sih 0x%06x", *out);
 
 	return 0;
 }
@@ -140,13 +151,13 @@ static int k1(const uint8_t *n, size_t n_size,
 	 * k1(N, SALT, P) = AES-CMAC_T(P)
 	 */
 
-	BT_DBG("BE: n %s", bt_hex(n, n_size));
-	BT_DBG("BE: salt %s", bt_hex(salt, BT_CSIS_CRYPTO_SALT_SIZE));
-	BT_DBG("BE: p %s", bt_hex(p, p_size));
+	LOG_DBG("BE: n %s", bt_hex(n, n_size));
+	LOG_DBG("BE: salt %s", bt_hex(salt, BT_CSIS_CRYPTO_SALT_SIZE));
+	LOG_DBG("BE: p %s", bt_hex(p, p_size));
 
 	err = aes_cmac(salt, n, n_size, t);
 
-	BT_DBG("BE: t %s", bt_hex(t, sizeof(t)));
+	LOG_DBG("BE: t %s", bt_hex(t, sizeof(t)));
 
 	if (err) {
 		return err;
@@ -154,7 +165,7 @@ static int k1(const uint8_t *n, size_t n_size,
 
 	err = aes_cmac(t, p, p_size, out);
 
-	BT_DBG("BE: out %s", bt_hex(out, 16));
+	LOG_DBG("BE: out %s", bt_hex(out, 16));
 
 	return err;
 }
@@ -177,13 +188,13 @@ static int s1(const uint8_t *m, size_t m_size,
 	 * s1(M) = AES-CMAC_zero(M)
 	 */
 
-	BT_DBG("BE: m %s", bt_hex(m, m_size));
+	LOG_DBG("BE: m %s", bt_hex(m, m_size));
 
 	memset(zero, 0, sizeof(zero));
 
 	err = aes_cmac(zero, m, m_size, out);
 
-	BT_DBG("BE: out %s", bt_hex(out, 16));
+	LOG_DBG("BE: out %s", bt_hex(out, 16));
 
 	return err;
 }
@@ -203,7 +214,7 @@ int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
 	 * sef(K, SIRK) = k1(K, s1("SIRKenc"), "csis") ^ SIRK
 	 */
 
-	BT_DBG("SIRK %s", bt_hex(sirk, BT_CSIS_SET_SIRK_SIZE));
+	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIS_SET_SIRK_SIZE));
 
 	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
 		/* Swap because aes_cmac is big endian
@@ -213,21 +224,21 @@ int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
 	} else {
 		(void)memcpy(k1_tmp, k, sizeof(k1_tmp));
 	}
-	BT_DBG("BE: k %s", bt_hex(k1_tmp, sizeof(k1_tmp)));
+	LOG_DBG("BE: k %s", bt_hex(k1_tmp, sizeof(k1_tmp)));
 
 	err = s1(m, sizeof(m), s1_out);
 	if (err) {
 		return err;
 	}
 
-	BT_DBG("BE: s1 result %s", bt_hex(s1_out, sizeof(s1_out)));
+	LOG_DBG("BE: s1 result %s", bt_hex(s1_out, sizeof(s1_out)));
 
 	err = k1(k1_tmp, sizeof(k1_tmp), s1_out, p, sizeof(p), k1_out);
 	if (err) {
 		return err;
 	}
 
-	BT_DBG("BE: k1 result %s", bt_hex(k1_out, sizeof(k1_out)));
+	LOG_DBG("BE: k1 result %s", bt_hex(k1_out, sizeof(k1_out)));
 
 	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
 		/* Swap result back to little endian */
@@ -235,7 +246,7 @@ int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
 	}
 
 	xor_128(k1_out, sirk, out_sirk);
-	BT_DBG("out %s", bt_hex(out_sirk, BT_CSIS_SET_SIRK_SIZE));
+	LOG_DBG("out %s", bt_hex(out_sirk, BT_CSIS_SET_SIRK_SIZE));
 
 	return 0;
 }
@@ -252,6 +263,6 @@ int bt_csis_sdf(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
 	 * sdf(K, EncSIRK) = k1(K, s1("SIRKenc"), "csis") ^ EncSIRK
 	 */
 
-	BT_DBG("Running SDF as SEF");
+	LOG_DBG("Running SDF as SEF");
 	return bt_csis_sef(k, enc_sirk, out_sirk);
 }

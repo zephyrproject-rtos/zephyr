@@ -15,9 +15,20 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ADV)
-#define LOG_MODULE_NAME bt_mesh_adv_legacy
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_ADV
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_adv_legacy, LOG_LEVEL);
 
 #include "host/hci_core.h"
 
@@ -75,9 +86,9 @@ static inline void adv_send(struct net_buf *buf)
 		duration += BT_MESH_SCAN_WINDOW_MS;
 	}
 
-	BT_DBG("type %u len %u: %s", BT_MESH_ADV(buf)->type,
+	LOG_DBG("type %u len %u: %s", BT_MESH_ADV(buf)->type,
 	       buf->len, bt_hex(buf->data, buf->len));
-	BT_DBG("count %u interval %ums duration %ums",
+	LOG_DBG("count %u interval %ums duration %ums",
 	       BT_MESH_TRANSMIT_COUNT(BT_MESH_ADV(buf)->xmit) + 1, adv_int,
 	       duration);
 
@@ -104,26 +115,26 @@ static inline void adv_send(struct net_buf *buf)
 	bt_mesh_adv_send_start(duration, err, BT_MESH_ADV(buf));
 
 	if (err) {
-		BT_ERR("Advertising failed: err %d", err);
+		LOG_ERR("Advertising failed: err %d", err);
 		return;
 	}
 
-	BT_DBG("Advertising started. Sleeping %u ms", duration);
+	LOG_DBG("Advertising started. Sleeping %u ms", duration);
 
 	k_sleep(K_MSEC(duration));
 
 	err = bt_le_adv_stop();
 	if (err) {
-		BT_ERR("Stopping advertising failed: err %d", err);
+		LOG_ERR("Stopping advertising failed: err %d", err);
 		return;
 	}
 
-	BT_DBG("Advertising stopped (%u ms)", (uint32_t) k_uptime_delta(&time));
+	LOG_DBG("Advertising stopped (%u ms)", (uint32_t) k_uptime_delta(&time));
 }
 
 static void adv_thread(void *p1, void *p2, void *p3)
 {
-	BT_DBG("started");
+	LOG_DBG("started");
 
 	while (1) {
 		struct net_buf *buf;

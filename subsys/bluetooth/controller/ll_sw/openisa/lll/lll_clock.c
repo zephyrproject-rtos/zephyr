@@ -9,8 +9,15 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_openisa_lll_clock
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#define LOG_LEVEL LOG_LEVEL_INF
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_ctlr_llsw_openisa_lll_clock, LOG_LEVEL);
 #include "hal/debug.h"
 
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};

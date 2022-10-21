@@ -22,9 +22,20 @@
 
 #include "pacs_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CAPABILITIES)
-#define LOG_MODULE_NAME bt_audio_capability
-#include "common/log.h"
+#include "common/assert.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_AUDIO_DEBUG_CAPABILITIES
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_audio_capability, LOG_LEVEL);
 
 static sys_slist_t snks;
 static sys_slist_t srcs;
@@ -44,7 +55,7 @@ static int publish_capability_cb(struct bt_conn *conn, uint8_t dir,
 	} else if (dir == BT_AUDIO_DIR_SOURCE) {
 		lst = &srcs;
 	} else {
-		BT_ERR("Invalid endpoint dir: %u", dir);
+		LOG_ERR("Invalid endpoint dir: %u", dir);
 		return -EINVAL;
 	}
 
@@ -86,7 +97,7 @@ static int publish_location_cb(struct bt_conn *conn,
 		*location = source_location;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	} else {
-		BT_ERR("Invalid endpoint dir: %u", dir);
+		LOG_ERR("Invalid endpoint dir: %u", dir);
 
 		return -EINVAL;
 	}
@@ -141,7 +152,7 @@ void bt_audio_foreach_capability(enum bt_audio_dir dir, bt_audio_foreach_capabil
 	sys_slist_t *lst;
 
 	CHECKIF(func == NULL) {
-		BT_ERR("func is NULL");
+		LOG_ERR("func is NULL");
 		return;
 	}
 
@@ -172,7 +183,7 @@ int bt_audio_capability_register(enum bt_audio_dir dir, struct bt_audio_capabili
 		return -EINVAL;
 	}
 
-	BT_DBG("cap %p dir 0x%02x codec 0x%02x codec cid 0x%04x "
+	LOG_DBG("cap %p dir 0x%02x codec 0x%02x codec cid 0x%04x "
 	       "codec vid 0x%04x", cap, dir, cap->codec->id,
 	       cap->codec->cid, cap->codec->vid);
 
@@ -181,7 +192,7 @@ int bt_audio_capability_register(enum bt_audio_dir dir, struct bt_audio_capabili
 
 		err = bt_audio_pacs_register_cb(&pacs_cb);
 		if (err != 0) {
-			BT_DBG("Failed to register PACS callbacks: %d",
+			LOG_DBG("Failed to register PACS callbacks: %d",
 			       err);
 			return err;
 		}
@@ -212,7 +223,7 @@ int bt_audio_capability_unregister(enum bt_audio_dir dir, struct bt_audio_capabi
 		return -EINVAL;
 	}
 
-	BT_DBG("cap %p dir 0x%02x", cap, dir);
+	LOG_DBG("cap %p dir 0x%02x", cap, dir);
 
 	if (!sys_slist_find_and_remove(lst, &cap->_node)) {
 		return -ENOENT;
@@ -239,7 +250,7 @@ int bt_audio_capability_set_location(enum bt_audio_dir dir,
 		source_location = location;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	} else {
-		BT_ERR("Invalid endpoint dir: %u", dir);
+		LOG_ERR("Invalid endpoint dir: %u", dir);
 
 		return -EINVAL;
 	}
@@ -250,7 +261,7 @@ int bt_audio_capability_set_location(enum bt_audio_dir dir,
 
 		err = bt_audio_pacs_location_changed(dir);
 		if (err) {
-			BT_DBG("Location for dir %d wasn't notified: %d",
+			LOG_DBG("Location for dir %d wasn't notified: %d",
 			       dir, err);
 
 			return err;
@@ -290,7 +301,7 @@ static int set_available_contexts(enum bt_audio_dir dir,
 		}
 	));
 
-	BT_ERR("Invalid endpoint dir: %u", dir);
+	LOG_ERR("Invalid endpoint dir: %u", dir);
 
 	return -EINVAL;
 }
@@ -330,7 +341,7 @@ int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
 	if (IS_ENABLED(CONFIG_BT_PACS)) {
 		err = bt_pacs_available_contexts_changed();
 		if (err) {
-			BT_DBG("Available contexts weren't notified: %d", err);
+			LOG_DBG("Available contexts weren't notified: %d", err);
 			return err;
 		}
 	}

@@ -14,9 +14,20 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ACCESS)
-#define LOG_MODULE_NAME bt_mesh_access
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_MESH_DEBUG_ACCESS
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mesh_access, LOG_LEVEL);
 
 #include "mesh.h"
 #include "adv.h"
@@ -118,7 +129,7 @@ static int32_t next_period(struct bt_mesh_model *mod)
 	uint32_t elapsed;
 
 	elapsed = k_uptime_get_32() - pub->period_start;
-	BT_DBG("Publishing took %ums", elapsed);
+	LOG_DBG("Publishing took %ums", elapsed);
 
 	if (mod->pub->count) {
 		/* If a message is to be retransmitted, period should include time since the first
@@ -128,7 +139,7 @@ static int32_t next_period(struct bt_mesh_model *mod)
 		period *= BT_MESH_PUB_MSG_NUM(mod->pub);
 
 		if (period && elapsed >= period) {
-			BT_WARN("Retransmission interval is too short");
+			LOG_WRN("Retransmission interval is too short");
 			/* Return smallest positive number since 0 means disabled */
 			return 1;
 		}
@@ -142,7 +153,7 @@ static int32_t next_period(struct bt_mesh_model *mod)
 	}
 
 	if (elapsed >= period) {
-		BT_WARN("Publication sending took longer than the period");
+		LOG_WRN("Publication sending took longer than the period");
 		/* Return smallest positive number since 0 means disabled */
 		return 1;
 	}
@@ -155,12 +166,12 @@ static void publish_sent(int err, void *user_data)
 	struct bt_mesh_model *mod = user_data;
 	int32_t delay;
 
-	BT_DBG("err %d, time %u", err, k_uptime_get_32());
+	LOG_DBG("err %d, time %u", err, k_uptime_get_32());
 
 	delay = next_period(mod);
 
 	if (delay) {
-		BT_DBG("Publishing next time in %dms", delay);
+		LOG_DBG("Publishing next time in %dms", delay);
 		/* Using schedule() in case the application has already called
 		 * bt_mesh_publish, and a publication is pending.
 		 */
@@ -171,7 +182,7 @@ static void publish_sent(int err, void *user_data)
 static void publish_start(uint16_t duration, int err, void *user_data)
 {
 	if (err) {
-		BT_ERR("Failed to publish: err %d", err);
+		LOG_ERR("Failed to publish: err %d", err);
 		publish_sent(err, user_data);
 		return;
 	}
@@ -218,7 +229,7 @@ static int pub_period_start(struct bt_mesh_model_pub *pub)
 
 	if (err) {
 		/* Skip this publish attempt. */
-		BT_DBG("Update failed, skipping publish (err: %d)", err);
+		LOG_DBG("Update failed, skipping publish (err: %d)", err);
 		pub->count = 0;
 		publish_sent(err, pub->mod);
 		return err;
@@ -243,7 +254,7 @@ static void mod_publish(struct k_work *work)
 		return;
 	}
 
-	BT_DBG("%u", k_uptime_get_32());
+	LOG_DBG("%u", k_uptime_get_32());
 
 	if (pub->count) {
 		pub->count--;
@@ -266,7 +277,7 @@ static void mod_publish(struct k_work *work)
 
 	err = publish_transmit(pub->mod);
 	if (err) {
-		BT_ERR("Failed to publish (err %d)", err);
+		LOG_ERR("Failed to publish (err %d)", err);
 		publish_sent(err, pub->mod);
 	}
 }
@@ -281,7 +292,7 @@ struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_t mod_
 	struct bt_mesh_elem *elem;
 
 	if (elem_idx >= dev_comp->elem_count) {
-		BT_ERR("Invalid element index %u", elem_idx);
+		LOG_ERR("Invalid element index %u", elem_idx);
 		return NULL;
 	}
 
@@ -289,14 +300,14 @@ struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_t mod_
 
 	if (vnd) {
 		if (mod_idx >= elem->vnd_model_count) {
-			BT_ERR("Invalid vendor model index %u", mod_idx);
+			LOG_ERR("Invalid vendor model index %u", mod_idx);
 			return NULL;
 		}
 
 		return &elem->vnd_models[mod_idx];
 	} else {
 		if (mod_idx >= elem->model_count) {
-			BT_ERR("Invalid SIG model index %u", mod_idx);
+			LOG_ERR("Invalid SIG model index %u", mod_idx);
 			return NULL;
 		}
 
@@ -317,7 +328,7 @@ static int bt_mesh_vnd_mod_msg_cid_check(struct bt_mesh_model *mod)
 			continue;
 		}
 
-		BT_ERR("Invalid vendor model(company:0x%04x"
+		LOG_ERR("Invalid vendor model(company:0x%04x"
 		       " id:0x%04x) message opcode 0x%08x",
 		       mod->vnd.company, mod->vnd.id, op->opcode);
 
@@ -390,21 +401,21 @@ void bt_mesh_comp_provision(uint16_t addr)
 
 	dev_primary_addr = addr;
 
-	BT_DBG("addr 0x%04x elem_count %zu", addr, dev_comp->elem_count);
+	LOG_DBG("addr 0x%04x elem_count %zu", addr, dev_comp->elem_count);
 
 	for (i = 0; i < dev_comp->elem_count; i++) {
 		struct bt_mesh_elem *elem = &dev_comp->elem[i];
 
 		elem->addr = addr++;
 
-		BT_DBG("addr 0x%04x mod_count %u vnd_mod_count %u",
+		LOG_DBG("addr 0x%04x mod_count %u vnd_mod_count %u",
 		       elem->addr, elem->model_count, elem->vnd_model_count);
 	}
 }
 
 void bt_mesh_comp_unprovision(void)
 {
-	BT_DBG("");
+	LOG_DBG("");
 
 	dev_primary_addr = BT_MESH_ADDR_UNASSIGNED;
 }
@@ -547,12 +558,12 @@ int bt_mesh_access_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf,
 		.src = src_addr,
 	};
 
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx.ctx->net_idx,
+	LOG_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx.ctx->net_idx,
 	       tx.ctx->app_idx, tx.ctx->addr);
-	BT_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	if (!bt_mesh_is_provisioned()) {
-		BT_ERR("Local node is not yet provisioned");
+		LOG_ERR("Local node is not yet provisioned");
 		return -EAGAIN;
 	}
 
@@ -647,7 +658,7 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 	case 0x00:
 	case 0x01:
 		if (buf->data[0] == 0x7f) {
-			BT_ERR("Ignoring RFU OpCode");
+			LOG_ERR("Ignoring RFU OpCode");
 			return -EINVAL;
 		}
 
@@ -655,7 +666,7 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 		return 0;
 	case 0x02:
 		if (buf->len < 2) {
-			BT_ERR("Too short payload for 2-octet OpCode");
+			LOG_ERR("Too short payload for 2-octet OpCode");
 			return -EINVAL;
 		}
 
@@ -663,7 +674,7 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 		return 0;
 	case 0x03:
 		if (buf->len < 3) {
-			BT_ERR("Too short payload for 3-octet OpCode");
+			LOG_ERR("Too short payload for 3-octet OpCode");
 			return -EINVAL;
 		}
 
@@ -686,23 +697,23 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	uint32_t opcode;
 	int i;
 
-	BT_DBG("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
+	LOG_DBG("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
 	       rx->ctx.addr, rx->ctx.recv_dst);
-	BT_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	if (get_opcode(buf, &opcode) < 0) {
-		BT_WARN("Unable to decode OpCode");
+		LOG_WRN("Unable to decode OpCode");
 		return;
 	}
 
-	BT_DBG("OpCode 0x%08x", opcode);
+	LOG_DBG("OpCode 0x%08x", opcode);
 
 	for (i = 0; i < dev_comp->elem_count; i++) {
 		struct net_buf_simple_state state;
 
 		op = find_op(&dev_comp->elem[i], opcode, &model);
 		if (!op) {
-			BT_DBG("No OpCode 0x%08x for elem %d", opcode, i);
+			LOG_DBG("No OpCode 0x%08x for elem %d", opcode, i);
 			continue;
 		}
 
@@ -715,10 +726,10 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		}
 
 		if ((op->len >= 0) && (buf->len < (size_t)op->len)) {
-			BT_ERR("Too short message for OpCode 0x%08x", opcode);
+			LOG_ERR("Too short message for OpCode 0x%08x", opcode);
 			continue;
 		} else if ((op->len < 0) && (buf->len != (size_t)(-op->len))) {
-			BT_ERR("Invalid message size for OpCode 0x%08x",
+			LOG_ERR("Invalid message size for OpCode 0x%08x",
 			       opcode);
 			continue;
 		}
@@ -742,7 +753,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
 	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
-		BT_ERR("Model not bound to AppKey 0x%04x", ctx->app_idx);
+		LOG_ERR("Model not bound to AppKey 0x%04x", ctx->app_idx);
 		return -EINVAL;
 	}
 
@@ -757,31 +768,31 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 		return -ENOTSUP;
 	}
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	if (pub->addr == BT_MESH_ADDR_UNASSIGNED) {
 		return -EADDRNOTAVAIL;
 	}
 
 	if (!pub->msg || !pub->msg->len) {
-		BT_ERR("No publication message");
+		LOG_ERR("No publication message");
 		return -EINVAL;
 	}
 
 	if (pub->msg->len + BT_MESH_MIC_SHORT > BT_MESH_TX_SDU_MAX) {
-		BT_ERR("Message does not fit maximum SDU size");
+		LOG_ERR("Message does not fit maximum SDU size");
 		return -EMSGSIZE;
 	}
 
 	if (pub->count) {
-		BT_WARN("Clearing publish retransmit timer");
+		LOG_WRN("Clearing publish retransmit timer");
 	}
 
 	/* Account for initial transmission */
 	pub->count = BT_MESH_PUB_MSG_TOTAL(pub);
 	pub->period_start = k_uptime_get_32();
 
-	BT_DBG("Publish Retransmit Count %u Interval %ums", pub->count,
+	LOG_DBG("Publish Retransmit Count %u Interval %ums", pub->count,
 	       BT_MESH_PUB_TRANSMIT_INT(pub->retransmit));
 
 	k_work_reschedule(&pub->timer, K_NO_WAIT);
@@ -903,19 +914,19 @@ static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 	}
 
 	if (len_rd == 0) {
-		BT_DBG("Cleared bindings for model");
+		LOG_DBG("Cleared bindings for model");
 		return 0;
 	}
 
 	len = read_cb(cb_arg, mod->keys, sizeof(mod->keys));
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %zd)", len);
+		LOG_ERR("Failed to read value (err %zd)", len);
 		return len;
 	}
 
-	BT_HEXDUMP_DBG(mod->keys, len, "val");
+	LOG_HEXDUMP_DBG((const uint8_t *) mod->keys, len, "val");
 
-	BT_DBG("Decoded %zu bound keys for model", len / sizeof(mod->keys[0]));
+	LOG_DBG("Decoded %zu bound keys for model", len / sizeof(mod->keys[0]));
 	return 0;
 }
 
@@ -928,19 +939,19 @@ static int mod_set_sub(struct bt_mesh_model *mod, size_t len_rd,
 	(void)memset(mod->groups, 0, sizeof(mod->groups));
 
 	if (len_rd == 0) {
-		BT_DBG("Cleared subscriptions for model");
+		LOG_DBG("Cleared subscriptions for model");
 		return 0;
 	}
 
 	len = read_cb(cb_arg, mod->groups, sizeof(mod->groups));
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %zd)", len);
+		LOG_ERR("Failed to read value (err %zd)", len);
 		return len;
 	}
 
-	BT_HEXDUMP_DBG(mod->groups, len, "val");
+	LOG_HEXDUMP_DBG((const uint8_t *) mod->groups, len, "val");
 
-	BT_DBG("Decoded %zu subscribed group addresses for model",
+	LOG_DBG("Decoded %zu subscribed group addresses for model",
 	       len / sizeof(mod->groups[0]));
 	return 0;
 }
@@ -952,7 +963,7 @@ static int mod_set_pub(struct bt_mesh_model *mod, size_t len_rd,
 	int err;
 
 	if (!mod->pub) {
-		BT_WARN("Model has no publication context!");
+		LOG_WRN("Model has no publication context!");
 		return -EINVAL;
 	}
 
@@ -965,7 +976,7 @@ static int mod_set_pub(struct bt_mesh_model *mod, size_t len_rd,
 		mod->pub->retransmit = 0U;
 		mod->pub->count = 0U;
 
-		BT_DBG("Cleared publication for model");
+		LOG_DBG("Cleared publication for model");
 		return 0;
 	}
 
@@ -975,7 +986,7 @@ static int mod_set_pub(struct bt_mesh_model *mod, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &pub, sizeof(pub));
 	if (err) {
-		BT_ERR("Failed to set \'model-pub\'");
+		LOG_ERR("Failed to set \'model-pub\'");
 		return err;
 	}
 
@@ -988,7 +999,7 @@ static int mod_set_pub(struct bt_mesh_model *mod, size_t len_rd,
 	mod->pub->period_div = pub.period_div;
 	mod->pub->count = 0U;
 
-	BT_DBG("Restored model publication, dst 0x%04x app_idx 0x%03x",
+	LOG_DBG("Restored model publication, dst 0x%04x app_idx 0x%03x",
 	       pub.addr, pub.key);
 
 	return 0;
@@ -1020,7 +1031,7 @@ static int mod_set(bool vnd, const char *name, size_t len_rd,
 	const char *next;
 
 	if (!name) {
-		BT_ERR("Insufficient number of arguments");
+		LOG_ERR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -1028,12 +1039,12 @@ static int mod_set(bool vnd, const char *name, size_t len_rd,
 	elem_idx = mod_key >> 8;
 	mod_idx = mod_key;
 
-	BT_DBG("Decoded mod_key 0x%04x as elem_idx %u mod_idx %u",
+	LOG_DBG("Decoded mod_key 0x%04x as elem_idx %u mod_idx %u",
 	       mod_key, elem_idx, mod_idx);
 
 	mod = bt_mesh_model_get(vnd, elem_idx, mod_idx);
 	if (!mod) {
-		BT_ERR("Failed to get model for elem_idx %u mod_idx %u",
+		LOG_ERR("Failed to get model for elem_idx %u mod_idx %u",
 		       elem_idx, mod_idx);
 		return -ENOENT;
 	}
@@ -1041,7 +1052,7 @@ static int mod_set(bool vnd, const char *name, size_t len_rd,
 	len = settings_name_next(name, &next);
 
 	if (!next) {
-		BT_ERR("Insufficient number of arguments");
+		LOG_ERR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -1061,7 +1072,7 @@ static int mod_set(bool vnd, const char *name, size_t len_rd,
 		return mod_data_set(mod, next, len_rd, read_cb, cb_arg);
 	}
 
-	BT_WARN("Unknown module key %s", next);
+	LOG_WRN("Unknown module key %s", next);
 	return -ENOENT;
 }
 
@@ -1102,7 +1113,7 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 	for (i = 0, count = 0; i < ARRAY_SIZE(mod->keys); i++) {
 		if (mod->keys[i] != BT_MESH_KEY_UNUSED) {
 			keys[count++] = mod->keys[i];
-			BT_DBG("model key 0x%04x", mod->keys[i]);
+			LOG_DBG("model key 0x%04x", mod->keys[i]);
 		}
 	}
 
@@ -1115,9 +1126,9 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		BT_ERR("Failed to store %s value", path);
+		LOG_ERR("Failed to store %s value", path);
 	} else {
-		BT_DBG("Stored %s value", path);
+		LOG_DBG("Stored %s value", path);
 	}
 }
 
@@ -1143,9 +1154,9 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		BT_ERR("Failed to store %s value", path);
+		LOG_ERR("Failed to store %s value", path);
 	} else {
-		BT_DBG("Stored %s value", path);
+		LOG_DBG("Stored %s value", path);
 	}
 }
 
@@ -1172,9 +1183,9 @@ static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		BT_ERR("Failed to store %s value", path);
+		LOG_ERR("Failed to store %s value", path);
 	} else {
-		BT_DBG("Stored %s value", path);
+		LOG_DBG("Stored %s value", path);
 	}
 }
 
@@ -1245,9 +1256,9 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 	}
 
 	if (err) {
-		BT_ERR("Failed to store %s value", path);
+		LOG_ERR("Failed to store %s value", path);
 	} else {
-		BT_DBG("Stored %s value", path);
+		LOG_DBG("Stored %s value", path);
 	}
 	return err;
 }
@@ -1260,7 +1271,7 @@ static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		int32_t ms = bt_mesh_model_pub_period_get(mod);
 
 		if (ms > 0) {
-			BT_DBG("Starting publish timer (period %u ms)", ms);
+			LOG_DBG("Starting publish timer (period %u ms)", ms);
 			k_work_schedule(&mod->pub->timer, K_MSEC(ms));
 		}
 	}

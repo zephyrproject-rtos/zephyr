@@ -13,21 +13,31 @@
 #include "pacs_internal.h"
 #include "endpoint.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_UNICAST_SERVER)
-#define LOG_MODULE_NAME bt_unicast_server
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_AUDIO_DEBUG_UNICAST_SERVER
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_unicast_server, LOG_LEVEL);
 
 const struct bt_audio_unicast_server_cb *unicast_server_cb;
 
 int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb *cb)
 {
 	CHECKIF(cb == NULL) {
-		BT_DBG("cb is NULL");
+		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}
 
 	if (unicast_server_cb != NULL) {
-		BT_DBG("callback structure already registered");
+		LOG_DBG("callback structure already registered");
 		return -EALREADY;
 	}
 
@@ -39,12 +49,12 @@ int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb 
 int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_cb *cb)
 {
 	CHECKIF(cb == NULL) {
-		BT_DBG("cb is NULL");
+		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}
 
 	if (unicast_server_cb != cb) {
-		BT_DBG("callback structure not registered");
+		LOG_DBG("callback structure not registered");
 		return -EINVAL;
 	}
 

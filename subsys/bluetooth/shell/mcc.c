@@ -21,9 +21,19 @@
 #include "../services/ots/ots_client_internal.h"
 #include "../audio/media_proxy_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCC)
-#define LOG_MODULE_NAME bt_mcc_shell
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_MCC
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(bt_mcc_shell, LOG_LEVEL);
 
 static struct bt_mcc_cb cb;
 
@@ -975,7 +985,7 @@ int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc, char *argv[])
 
 	search.len = strlen(argv[1]);
 	memcpy(search.search, argv[1], search.len);
-	BT_DBG("Search string: %s", argv[1]);
+	LOG_DBG("Search string: %s", argv[1]);
 
 	result = bt_mcc_send_search(default_conn, &search);
 	if (result) {
