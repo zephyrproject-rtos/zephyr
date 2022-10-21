@@ -6,31 +6,26 @@
 
 #define DT_DRV_COMPAT liteon_ltr390
 
+#include "ltr390.h"
+
 #include <errno.h>
-#include <zephyr/kernel.h>
+
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "ltr390.h"
-
 LOG_MODULE_REGISTER(LTR390, CONFIG_SENSOR_LOG_LEVEL);
 
-
-int ltr390_read_register(const struct ltr390_config *cfg,
-						 const uint8_t addr,
-						 uint8_t *value)
+int ltr390_read_register(const struct ltr390_config *cfg, const uint8_t addr, uint8_t *value)
 {
 	return i2c_write_read_dt(&cfg->i2c, &addr, sizeof(addr), value, sizeof(*value));
 }
 
-
-int ltr390_write_register(const struct ltr390_config *cfg,
-						  const uint8_t addr,
-						  const uint8_t value)
+int ltr390_write_register(const struct ltr390_config *cfg, const uint8_t addr, const uint8_t value)
 {
-	uint8_t buf[] = { addr, value };
+	uint8_t buf[] = {addr, value};
 
 	return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 }
@@ -73,7 +68,6 @@ static inline void ltr390_wait_for_measurement(enum ltr390_resolution res)
 	k_sleep(K_MSEC(10));
 }
 
-
 /**
  * @brief Send enable command for selected mode (either light or uvi),
  *        and read data registers once measurement is ready.
@@ -83,10 +77,8 @@ static inline void ltr390_wait_for_measurement(enum ltr390_resolution res)
  * @param buf Buffer to write the 3 data bytes into.
  * @return int errno
  */
-static int ltr390_trigger_and_read(
-	const struct ltr390_config *cfg,
-	enum ltr390_mode mode,
-	void *buf)
+static int ltr390_trigger_and_read(const struct ltr390_config *cfg, enum ltr390_mode mode,
+				   void *buf)
 {
 	int rc;
 	uint8_t mode_registers[3];
@@ -135,10 +127,7 @@ static int ltr390_trigger_and_read(
 	return 0;
 }
 
-
-static int ltr390_fetch_measurement_data(
-	const struct ltr390_config *cfg,
-	struct ltr390_data *data)
+static int ltr390_fetch_measurement_data(const struct ltr390_config *cfg, struct ltr390_data *data)
 {
 	int rc;
 	uint8_t als_buf[3], uvs_buf[3];
@@ -159,9 +148,7 @@ static int ltr390_fetch_measurement_data(
 	return 0;
 }
 
-
-static int ltr390_sample_fetch(const struct device *dev,
-							   enum sensor_channel chan)
+static int ltr390_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct ltr390_config *cfg = dev->config;
 	struct ltr390_data *data = dev->data;
@@ -178,6 +165,21 @@ static int ltr390_sample_fetch(const struct device *dev,
 	}
 }
 
+void sv_div(struct sensor_value *val, uint32_t div)
+{
+	val->val2 = (val->val1 % div) * 1000000 / div;
+	val->val1 /= div;
+}
+
+void sv_mult(struct sensor_value *val, uint32_t mult)
+{
+	val->val2 *= mult;
+	val->val1 *= mult;
+	if (val->val2 > 999999) {
+		val->val1++;
+		val->val2 -= 1000000;
+	}
+}
 
 /**
  * @brief Convert raw bytes into ambient light measurement in lux.
@@ -187,61 +189,57 @@ static int ltr390_sample_fetch(const struct device *dev,
  * @param val Ambient light value after conversion
  * @param als_raw Raw measurement bytes obtained from sensor
  */
-static inline void ltr390_als_bytes_to_value(
-	const struct ltr390_config *cfg,
-	struct sensor_value *val,
-	uint32_t als_raw)
+static inline void ltr390_als_bytes_to_value(const struct ltr390_config *cfg,
+					     struct sensor_value *val, uint32_t als_raw)
 {
-	double l = (int)als_raw;
+	val->val1 = als_raw;
+	val->val2 = 0;
 
-	/* Divide by configured */
+	/* Divide by configured gain */
 	switch (cfg->gain) {
 	case LTR390_GAIN_1:
-		l /= 1;
+		/* nothing */
 		break;
 	case LTR390_GAIN_3:
-		l /= 3;
+		sv_div(val, 3);
 		break;
 	case LTR390_GAIN_6:
-		l /= 6;
+		sv_div(val, 6);
 		break;
 	case LTR390_GAIN_9:
-		l /= 9;
+		sv_div(val, 9);
 		break;
 	case LTR390_GAIN_18:
-		l /= 18;
+		sv_div(val, 18);
 		break;
 	}
 
-	/* Divide by the appropriate integration time according to the configured resolution */
+	/* Divide by appropriate integration time according to configured resolution */
 	switch (cfg->resolution) {
 	case LTR390_RESOLUTION_20BIT:
-		l /= 4;
+		sv_div(val, 4);
 		break;
 	case LTR390_RESOLUTION_19BIT:
-		l /= 2;
+		sv_div(val, 2);
 		break;
 	case LTR390_RESOLUTION_18BIT:
-		l /= 1;
+		/* nothing */
 		break;
 	case LTR390_RESOLUTION_17BIT:
-		l /= 0.5;
+		sv_mult(val, 2); /* divide by 0.5 */
 		break;
 	case LTR390_RESOLUTION_16BIT:
-		l /= 0.25;
+		sv_mult(val, 4); /* divide by 0.25 */
 		break;
 	case LTR390_RESOLUTION_13BIT:
-		l /= 0.125;
+		sv_mult(val, 8); /* divide by 0.125 */
 		break;
 	}
 
-	l *= 0.6;
-	val->val1 = (int)l;
-	l -= val->val1;
-	l *= 1000000;
-	val->val2 = l;
+	/* multiply by 0.6 */
+	sv_mult(val, 3);
+	sv_div(val, 5);
 }
-
 
 /**
  * @brief Convert raw bytes into UV index measurement.
@@ -251,24 +249,17 @@ static inline void ltr390_als_bytes_to_value(
  * @param val UV index value after conversion
  * @param uvs_raw Raw measurement bytes obtained from sensor
  */
-static inline void ltr390_uvs_bytes_to_value(
-	const struct ltr390_config *cfg,
-	struct sensor_value *val,
-	uint32_t uvs_raw)
+static inline void ltr390_uvs_bytes_to_value(const struct ltr390_config *cfg,
+					     struct sensor_value *val, uint32_t uvs_raw)
 {
-	double u = (int)uvs_raw;
+	val->val1 = uvs_raw;
+	val->val2 = 0;
 
-	u /= 2300;
-	val->val1 = (int)u;
-	u -= val->val1;
-	u *= 1000000;
-	val->val2 = u;
+	sv_div(val, 2300);
 }
 
-
-static int ltr390_channel_get(const struct device *dev,
-							  enum sensor_channel chan,
-							  struct sensor_value *val)
+static int ltr390_channel_get(const struct device *dev, enum sensor_channel chan,
+			      struct sensor_value *val)
 {
 	const struct ltr390_config *cfg = dev->config;
 	struct ltr390_data *data = dev->data;
@@ -285,7 +276,6 @@ static int ltr390_channel_get(const struct device *dev,
 	}
 }
 
-
 static const struct sensor_driver_api ltr390_driver_api = {
 	.sample_fetch = ltr390_sample_fetch,
 	.channel_get = ltr390_channel_get,
@@ -294,7 +284,6 @@ static const struct sensor_driver_api ltr390_driver_api = {
 	.trigger_set = ltr390_trigger_set,
 #endif
 };
-
 
 /**
  * @brief Set registers with values in ltr390_config struct. Reset others.
@@ -383,7 +372,6 @@ static int ltr390_write_config(const struct ltr390_config *cfg)
 	return 0;
 }
 
-
 static int ltr390_init(const struct device *dev)
 {
 	const struct ltr390_config *cfg = dev->config;
@@ -413,26 +401,17 @@ static int ltr390_init(const struct device *dev)
 	return 0;
 }
 
-
-#define LTR390_INST(inst)	\
-	static struct ltr390_data ltr390_data_##inst;	\
-	static const struct ltr390_config ltr390_config_##inst = {	\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),	\
-		.resolution = DT_INST_PROP(inst, resolution),	\
-		.rate = DT_INST_PROP(inst, rate),	\
-		.gain = DT_INST_PROP(inst, gain),	\
-		IF_ENABLED(CONFIG_LTR390_TRIGGER,	\
-			(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(	\
-				inst, int_gpios, { 0 }),	\
-			.int_persist = DT_INST_PROP(inst, int_persist)))	\
-	};	\
-	DEVICE_DT_INST_DEFINE(inst,		\
-						  ltr390_init,	\
-						  NULL,		\
-						  &ltr390_data_##inst,	\
-						  &ltr390_config_##inst,	\
-						  POST_KERNEL,	\
-						  CONFIG_SENSOR_INIT_PRIORITY,	\
-						  &ltr390_driver_api);
+#define LTR390_INST(inst)                                                                          \
+	static struct ltr390_data ltr390_data_##inst;                                              \
+	static const struct ltr390_config ltr390_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.resolution = DT_INST_PROP(inst, resolution),                                      \
+		.rate = DT_INST_PROP(inst, rate),                                                  \
+		.gain = DT_INST_PROP(inst, gain),                                                  \
+		IF_ENABLED(CONFIG_LTR390_TRIGGER,                                                  \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),            \
+			    .int_persist = DT_INST_PROP(inst, int_persist)))};                     \
+	DEVICE_DT_INST_DEFINE(inst, ltr390_init, NULL, &ltr390_data_##inst, &ltr390_config_##inst, \
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &ltr390_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LTR390_INST)

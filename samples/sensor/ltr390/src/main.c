@@ -3,23 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <stdio.h>
+
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
-
-#include <stdio.h>
+#include <zephyr/kernel.h>
 
 #ifdef CONFIG_LTR390_TRIGGER
 
-#define INITIAL_LIGHT_LEVEL     100.0
-#define LIGHT_LEVEL_VARIANCE    3
+#define INITIAL_LIGHT_LEVEL  100.0
+#define LIGHT_LEVEL_VARIANCE 3
 
 static struct sensor_trigger trigger;
 
-static int set_window(const struct device *dev,
-					  enum sensor_channel chan,
-					  const double light_level)
+static int set_window(const struct device *dev, enum sensor_channel chan, const double light_level)
 {
 	int rc;
 
@@ -48,14 +46,13 @@ static int set_window(const struct device *dev,
 		return rc;
 	}
 
-	printf("Alert on ambient light [%d.%06d, %d.%06d] lux\n",
-		lower.val1, lower.val2, upper.val1, upper.val2);
+	printf("Alert on ambient light [%d.%06d, %d.%06d] lux\n", lower.val1, lower.val2,
+	       upper.val1, upper.val2);
 
 	return 0;
 }
 
-static void trigger_handler(const struct device *dev,
-							const struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	struct sensor_value val;
 	static size_t cnt;
@@ -99,7 +96,6 @@ void main(void)
 
 	printk("Found device \"%s\"\n", dev->name);
 
-
 #ifdef CONFIG_LTR390_TRIGGER
 	rc = set_window(dev, SENSOR_CHAN_LIGHT, INITIAL_LIGHT_LEVEL);
 	if (rc < 0) {
@@ -113,7 +109,6 @@ void main(void)
 		}
 	}
 #endif
-
 
 	while (1) {
 		struct sensor_value light, uvi;
@@ -134,8 +129,8 @@ void main(void)
 		}
 
 		if (rc == 0) {
-			printf("Light: \t%d.%06d lux\tUVI: \t%d.%06d\n",
-				light.val1, light.val2, uvi.val1, uvi.val2);
+			printf("Light: \t%d.%06d lux\tUVI: \t%d.%06d\n", light.val1, light.val2,
+			       uvi.val1, uvi.val2);
 		}
 
 		k_sleep(K_MSEC(5000));
