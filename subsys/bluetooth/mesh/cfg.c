@@ -365,7 +365,7 @@ static void store_pending_cfg(void)
 		LOG_ERR("Failed to store configuration value");
 	} else {
 		LOG_DBG("Stored configuration value");
-		LOG_HEXDUMP_DBG((const uint8_t *) &val, sizeof(val), "raw value");
+		LOG_HEXDUMP_DBG(&val, sizeof(val), "raw value");
 	}
 }
 

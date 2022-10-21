@@ -570,7 +570,7 @@ static ssize_t write_search_control_point(struct bt_conn *conn,
 	memcpy(&search.search, (char *)buf, len);
 	search.len = len;
 	LOG_DBG("Search length: %d", len);
-	LOG_HEXDUMP_DBG((const uint8_t *) &search.search, search.len, "Search content");
+	LOG_HEXDUMP_DBG(&search.search, search.len, "Search content");
 
 	media_proxy_sctrl_send_search(&search);
 

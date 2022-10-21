@@ -162,7 +162,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 				       " (err %zd)", len);
 			} else {
 				LOG_ERR("Invalid length ID address in storage");
-				LOG_HEXDUMP_DBG((const uint8_t *) &bt_dev.id_addr, len,
+				LOG_HEXDUMP_DBG(&bt_dev.id_addr, len,
 					       "data read");
 			}
 			(void)memset(bt_dev.id_addr, 0,

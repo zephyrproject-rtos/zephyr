@@ -811,7 +811,7 @@ static void db_hash_gen(bool store)
 	 */
 	sys_mem_swap(db_hash.hash, sizeof(db_hash.hash));
 
-	LOG_HEXDUMP_DBG((const uint8_t *) db_hash.hash, sizeof(db_hash.hash), "Hash: ");
+	LOG_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash), "Hash: ");
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 		db_hash_store();
@@ -841,7 +841,7 @@ static void db_hash_process(struct k_work *work)
 			return;
 		}
 
-		LOG_HEXDUMP_DBG((const uint8_t *) db_hash.hash, sizeof(db_hash.hash),
+		LOG_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash),
 			       "New Hash: ");
 
 		/* GATT database has been modified since last boot, likely due
@@ -5880,7 +5880,7 @@ static int db_hash_set(const char *name, size_t len_rd,
 		return len;
 	}
 
-	LOG_HEXDUMP_DBG((const uint8_t *) db_hash.stored_hash, sizeof(db_hash.stored_hash),
+	LOG_HEXDUMP_DBG(db_hash.stored_hash, sizeof(db_hash.stored_hash),
 		       "Stored Hash: ");
 
 	return 0;

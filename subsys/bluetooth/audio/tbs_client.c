@@ -549,7 +549,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 
 		LOG_DBG("Index %u", inst_index);
 
-		LOG_HEXDUMP_DBG((const uint8_t *) data, length, "notify handler value");
+		LOG_HEXDUMP_DBG(data, length, "notify handler value");
 
 		if (handle == tbs_inst->call_state_sub_params.value_handle) {
 			call_state_notify_handler(conn, tbs_inst, data, length);
@@ -711,7 +711,7 @@ static uint8_t read_technology_cb(struct bt_conn *conn, uint8_t err,
 	if (err != 0) {
 		LOG_DBG("err: 0x%02X", err);
 	} else if (data != NULL) {
-		LOG_HEXDUMP_DBG((const uint8_t *) data, length, "Data read");
+		LOG_HEXDUMP_DBG(data, length, "Data read");
 		if (length == sizeof(technology)) {
 			(void)memcpy(&technology, data, length);
 			LOG_DBG("%s (0x%02x)", bt_tbs_technology_str(technology), technology);
@@ -779,7 +779,7 @@ static uint8_t read_signal_strength_cb(struct bt_conn *conn, uint8_t err,
 	if (err != 0) {
 		LOG_DBG("err: 0x%02X", err);
 	} else if (data != NULL) {
-		LOG_HEXDUMP_DBG((const uint8_t *) data, length, "Data read");
+		LOG_HEXDUMP_DBG(data, length, "Data read");
 		if (length == sizeof(signal_strength)) {
 			(void)memcpy(&signal_strength, data, length);
 			LOG_DBG("0x%02x", signal_strength);
@@ -816,7 +816,7 @@ static uint8_t read_signal_interval_cb(struct bt_conn *conn, uint8_t err,
 	if (err != 0) {
 		LOG_DBG("err: 0x%02X", err);
 	} else if (data != NULL) {
-		LOG_HEXDUMP_DBG((const uint8_t *) data, length, "Data read");
+		LOG_HEXDUMP_DBG(data, length, "Data read");
 		if (length == sizeof(signal_interval)) {
 			(void)memcpy(&signal_interval, data, length);
 			LOG_DBG("0x%02x", signal_interval);
@@ -916,7 +916,7 @@ static uint8_t read_ccid_cb(struct bt_conn *conn, uint8_t err,
 	if (err != 0) {
 		LOG_DBG("err: 0x%02X", err);
 	} else if (data != NULL) {
-		LOG_HEXDUMP_DBG((const uint8_t *) data, length, "Data read");
+		LOG_HEXDUMP_DBG(data, length, "Data read");
 		if (length == sizeof(ccid)) {
 			(void)memcpy(&ccid, data, length);
 			LOG_DBG("0x%02x", ccid);
@@ -953,7 +953,7 @@ static uint8_t read_status_flags_cb(struct bt_conn *conn, uint8_t err,
 	if (err != 0) {
 		LOG_DBG("err: 0x%02X", err);
 	} else if (data != NULL) {
-		LOG_HEXDUMP_DBG((const uint8_t *) data, length, "Data read");
+		LOG_HEXDUMP_DBG(data, length, "Data read");
 		if (length == sizeof(status_flags)) {
 			(void)memcpy(&status_flags, data, length);
 			LOG_DBG("0x%04x", status_flags);
@@ -1103,7 +1103,7 @@ static uint8_t read_optional_opcodes_cb(struct bt_conn *conn, uint8_t err,
 	if (err != 0) {
 		LOG_DBG("err: 0x%02X", err);
 	} else if (data != NULL) {
-		LOG_HEXDUMP_DBG((const uint8_t *) data, length, "Data read");
+		LOG_HEXDUMP_DBG(data, length, "Data read");
 		if (length == sizeof(optional_opcodes)) {
 			(void)memcpy(&optional_opcodes, data, length);
 			LOG_DBG("0x%04x", optional_opcodes);

@@ -250,7 +250,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 			}
 
 			sirk = &enc_sirk;
-			LOG_HEXDUMP_DBG((const uint8_t *) enc_sirk.value, sizeof(enc_sirk.value),
+			LOG_HEXDUMP_DBG(enc_sirk.value, sizeof(enc_sirk.value),
 				       "Encrypted Set SIRK");
 		} else if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_REJECT) {
 			return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
@@ -267,7 +267,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 
 	LOG_DBG("Set sirk %sencrypted",
 	       sirk->type ==  BT_CSIS_SIRK_TYPE_PLAIN ? "not " : "");
-	LOG_HEXDUMP_DBG((const uint8_t *) csis->srv.set_sirk.value,
+	LOG_HEXDUMP_DBG(csis->srv.set_sirk.value,
 		       sizeof(csis->srv.set_sirk.value), "Set SIRK");
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 sirk, sizeof(*sirk));
@@ -773,6 +773,6 @@ int bt_csis_lock(struct bt_csis *csis, bool lock, bool force)
 
 void bt_csis_print_sirk(const struct bt_csis *csis)
 {
-	LOG_HEXDUMP_DBG((const uint8_t *) &csis->srv.set_sirk, sizeof(csis->srv.set_sirk),
+	LOG_HEXDUMP_DBG(&csis->srv.set_sirk, sizeof(csis->srv.set_sirk),
 		       "Set SIRK");
 }

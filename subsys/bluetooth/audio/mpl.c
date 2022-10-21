@@ -353,7 +353,7 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 			seg = seg->next;
 		}
 
-		LOG_HEXDUMP_DBG((const uint8_t *) obj.content->data, obj.content->len,
+		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len,
 			       "Segments Object");
 		LOG_DBG("Segments object length: %d", obj.content->len);
 	} else {
@@ -416,7 +416,7 @@ static uint32_t setup_parent_group_object(struct mpl_group *group)
 		if (next_size > obj.content->size) {
 			LOG_WRN("Not room for full group in object");
 		}
-		LOG_HEXDUMP_DBG((const uint8_t *) obj.content->data, obj.content->len,
+		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len,
 			       "Parent Group Object");
 		LOG_DBG("Group object length: %d", obj.content->len);
 	}
@@ -449,7 +449,7 @@ static uint32_t setup_group_object(struct mpl_group *group)
 		if (next_size > obj.content->size) {
 			LOG_WRN("Not room for full group in object");
 		}
-		LOG_HEXDUMP_DBG((const uint8_t *) obj.content->data, obj.content->len,
+		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len,
 			       "Group Object");
 		LOG_DBG("Group object length: %d", obj.content->len);
 	}
@@ -2661,7 +2661,7 @@ static void parse_search(const struct mpl_search *search)
 			index += sci.len - 1;
 
 			LOG_DBG("SCI # %d: type: %d", sci_num, sci.type);
-			LOG_HEXDUMP_DBG((const uint8_t *) sci.param, sci.len-1, "param:");
+			LOG_HEXDUMP_DBG(sci.param, sci.len-1, "param:");
 			sci_num++;
 		}
 	}
@@ -2687,7 +2687,7 @@ void send_search(const struct mpl_search *search)
 		LOG_WRN("Search too long: %d", search->len);
 	}
 
-	LOG_HEXDUMP_DBG((const uint8_t *) search->search, search->len, "Search");
+	LOG_HEXDUMP_DBG(search->search, search->len, "Search");
 
 	parse_search(search);
 }

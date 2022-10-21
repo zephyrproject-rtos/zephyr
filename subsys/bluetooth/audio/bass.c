@@ -1157,7 +1157,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	LOG_HEXDUMP_DBG((const uint8_t *) data, len, "Data");
+	LOG_HEXDUMP_DBG(data, len, "Data");
 
 	switch (opcode) {
 	case BT_BASS_OP_SCAN_STOP:

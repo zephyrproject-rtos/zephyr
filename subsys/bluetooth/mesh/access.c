@@ -924,7 +924,7 @@ static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 		return len;
 	}
 
-	LOG_HEXDUMP_DBG((const uint8_t *) mod->keys, len, "val");
+	LOG_HEXDUMP_DBG(mod->keys, len, "val");
 
 	LOG_DBG("Decoded %zu bound keys for model", len / sizeof(mod->keys[0]));
 	return 0;
@@ -949,7 +949,7 @@ static int mod_set_sub(struct bt_mesh_model *mod, size_t len_rd,
 		return len;
 	}
 
-	LOG_HEXDUMP_DBG((const uint8_t *) mod->groups, len, "val");
+	LOG_HEXDUMP_DBG(mod->groups, len, "val");
 
 	LOG_DBG("Decoded %zu subscribed group addresses for model",
 	       len / sizeof(mod->groups[0]));

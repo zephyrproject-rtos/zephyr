@@ -322,7 +322,7 @@ static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
 		LOG_DBG("Description read failed: %d", err);
 	} else {
 		if (data) {
-			LOG_HEXDUMP_DBG((const uint8_t *) data, length, "Output description read");
+			LOG_HEXDUMP_DBG(data, length, "Output description read");
 
 			if (length > sizeof(desc) - 1) {
 				LOG_DBG("Description truncated from %u to %zu octets",

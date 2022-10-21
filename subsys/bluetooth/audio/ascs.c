@@ -326,7 +326,7 @@ static void ascs_codec_data_add(struct net_buf_simple *buf, const char *prefix,
 
 		LOG_DBG("#%u: %s type 0x%02x len %u", i, prefix, d->type,
 		       d->data_len);
-		LOG_HEXDUMP_DBG((const uint8_t *) d->data, d->data_len, prefix);
+		LOG_HEXDUMP_DBG(d->data, d->data_len, prefix);
 
 		cc = net_buf_simple_add(buf, sizeof(*cc));
 		cc->len = d->data_len + sizeof(cc->type);
@@ -1186,7 +1186,7 @@ static bool ascs_codec_config_store(struct bt_data *data, void *user_data)
 	cdata->data.data = cdata->value;
 	(void)memcpy(cdata->value, data->data, data->data_len);
 
-	LOG_HEXDUMP_DBG((const uint8_t *) cdata->value, data->data_len, "data");
+	LOG_HEXDUMP_DBG(cdata->value, data->data_len, "data");
 
 	codec->data_count++;
 

@@ -61,7 +61,7 @@ int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 		return len;
 	}
 
-	LOG_HEXDUMP_DBG((const uint8_t *) out, len, "val");
+	LOG_HEXDUMP_DBG(out, len, "val");
 
 	if (len != read_len) {
 		LOG_ERR("Unexpected value length (%zd != %zu)", len, read_len);
