@@ -37,9 +37,20 @@ PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
 static void syscmd_status_not(SHCI_TL_CmdStatus_t status);
 static void sysevt_received(void *pdata);
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME hci_ipm
-#include "common/log.h"
+#include "common/string.h"
+#include <zephyr/logging/log.h>
+
+#ifdef CONFIG_BT_DEBUG_LOG
+#ifdef CONFIG_BT_DEBUG_HCI_DRIVER
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL LOG_LEVEL_INF
+#endif
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
+
+LOG_MODULE_REGISTER(hci_ipm, LOG_LEVEL);
 
 #define HCI_CMD                 0x01
 #define HCI_ACL                 0x02
@@ -117,7 +128,7 @@ static void sysevt_received(void *pdata)
 
 static void syscmd_status_not(SHCI_TL_CmdStatus_t status)
 {
-	BT_DBG("status:%d", status);
+	LOG_DBG("status:%d", status);
 }
 
 /*
@@ -143,7 +154,7 @@ static void tryfix_event(TL_Evt_t *tev)
 			(void *)((uint8_t *)mev + (sizeof(*mev)));
 
 	if (!bt_addr_cmp(&evt->peer_addr.a, BT_ADDR_NONE)) {
-		BT_WARN("Invalid peer addr %s", bt_addr_le_str(&evt->peer_addr));
+		LOG_WRN("Invalid peer addr %s", bt_addr_le_str_real(&evt->peer_addr));
 		bt_addr_copy(&evt->peer_addr.a, &evt->peer_rpa);
 		evt->peer_addr.type = BT_ADDR_LE_RANDOM;
 	}
@@ -173,12 +184,12 @@ static void bt_ipm_rx_thread(void)
 
 		switch (hcievt->evtserial.type) {
 		case HCI_EVT:
-			BT_DBG("EVT: hcievt->evtserial.evt.evtcode: 0x%02x",
+			LOG_DBG("EVT: hcievt->evtserial.evt.evtcode: 0x%02x",
 			       hcievt->evtserial.evt.evtcode);
 			switch (hcievt->evtserial.evt.evtcode) {
 			case BT_HCI_EVT_VENDOR:
 				/* Vendor events are currently unsupported */
-				BT_ERR("Unknown evtcode type 0x%02x",
+				LOG_ERR("Unknown evtcode type 0x%02x",
 				       hcievt->evtserial.evt.evtcode);
 				TL_MM_EvtDone(hcievt);
 				goto end_loop;
@@ -194,7 +205,7 @@ static void bt_ipm_rx_thread(void)
 					hcievt->evtserial.evt.evtcode,
 					discardable, timeout);
 				if (!buf) {
-					BT_DBG("Discard adv report due to insufficient buf");
+					LOG_DBG("Discard adv report due to insufficient buf");
 					goto end_loop;
 				}
 			}
@@ -204,7 +215,7 @@ static void bt_ipm_rx_thread(void)
 			buf_tailroom = net_buf_tailroom(buf);
 			buf_add_len = hcievt->evtserial.evt.plen + 2;
 			if (buf_tailroom < buf_add_len) {
-				BT_ERR("Not enough space in buffer %zu/%zu",
+				LOG_ERR("Not enough space in buffer %zu/%zu",
 				       buf_add_len, buf_tailroom);
 				net_buf_unref(buf);
 				goto end_loop;
@@ -218,14 +229,14 @@ static void bt_ipm_rx_thread(void)
 			buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 			acl_hdr.handle = acl->handle;
 			acl_hdr.len = acl->length;
-			BT_DBG("ACL: handle %x, len %x",
+			LOG_DBG("ACL: handle %x, len %x",
 			       acl_hdr.handle, acl_hdr.len);
 			net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
 
 			buf_tailroom = net_buf_tailroom(buf);
 			buf_add_len = acl_hdr.len;
 			if (buf_tailroom < buf_add_len) {
-				BT_ERR("Not enough space in buffer %zu/%zu",
+				LOG_ERR("Not enough space in buffer %zu/%zu",
 				       buf_add_len, buf_tailroom);
 				net_buf_unref(buf);
 				goto end_loop;
@@ -235,7 +246,7 @@ static void bt_ipm_rx_thread(void)
 					buf_add_len);
 			break;
 		default:
-			BT_ERR("Unknown BT buf type %d",
+			LOG_ERR("Unknown BT buf type %d",
 			       hcievt->evtserial.type);
 			TL_MM_EvtDone(hcievt);
 			goto end_loop;
@@ -316,12 +327,12 @@ void transport_init(void)
 	TL_BLE_InitConf_t tl_ble_config;
 	SHCI_TL_HciInitConf_t shci_init_config;
 
-	BT_DBG("BleCmdBuffer: %p", (void *)&BleCmdBuffer);
-	BT_DBG("HciAclDataBuffer: %p", (void *)&HciAclDataBuffer);
-	BT_DBG("SystemCmdBuffer: %p", (void *)&SystemCmdBuffer);
-	BT_DBG("EvtPool: %p", (void *)&EvtPool);
-	BT_DBG("SystemSpareEvtBuffer: %p", (void *)&SystemSpareEvtBuffer);
-	BT_DBG("BleSpareEvtBuffer: %p", (void *)&BleSpareEvtBuffer);
+	LOG_DBG("BleCmdBuffer: %p", (void *)&BleCmdBuffer);
+	LOG_DBG("HciAclDataBuffer: %p", (void *)&HciAclDataBuffer);
+	LOG_DBG("SystemCmdBuffer: %p", (void *)&SystemCmdBuffer);
+	LOG_DBG("EvtPool: %p", (void *)&EvtPool);
+	LOG_DBG("SystemSpareEvtBuffer: %p", (void *)&SystemSpareEvtBuffer);
+	LOG_DBG("BleSpareEvtBuffer: %p", (void *)&BleSpareEvtBuffer);
 
 	/**< Reference table initialization */
 	TL_Init();
@@ -356,7 +367,7 @@ static int bt_ipm_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		BT_DBG("ACL: buf %p type %u len %u", buf, bt_buf_get_type(buf),
+		LOG_DBG("ACL: buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		       buf->len);
 		k_sem_take(&acl_data_ack, K_FOREVER);
 		net_buf_push_u8(buf, HCI_ACL);
@@ -366,7 +377,7 @@ static int bt_ipm_send(struct net_buf *buf)
 		TL_BLE_SendAclData(NULL, 0);
 		break;
 	case BT_BUF_CMD:
-		BT_DBG("CMD: buf %p type %u len %u", buf, bt_buf_get_type(buf),
+		LOG_DBG("CMD: buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		       buf->len);
 		ble_cmd_buff->cmdserial.type = HCI_CMD;
 		ble_cmd_buff->cmdserial.cmd.plen = buf->len;
@@ -376,7 +387,7 @@ static int bt_ipm_send(struct net_buf *buf)
 		break;
 	default:
 		k_sem_give(&ipm_busy);
-		BT_ERR("Unsupported type");
+		LOG_ERR("Unsupported type");
 		return -EINVAL;
 	}
 
@@ -505,7 +516,7 @@ static int bt_ipm_ble_init(void)
 
 	err = bt_ipm_set_addr();
 	if (err) {
-		BT_ERR("Can't set BLE UID addr");
+		LOG_ERR("Can't set BLE UID addr");
 	}
 	/* Send ACI_WRITE_SET_TX_POWER_LEVEL */
 	buf = bt_hci_cmd_create(ACI_WRITE_SET_TX_POWER_LEVEL, 3);
@@ -540,7 +551,7 @@ static int c2_reset(void)
 	if (k_sem_take(&c2_started, STM32WB_C2_LOCK_TIMEOUT)) {
 		return -ETIMEDOUT;
 	}
-	BT_DBG("C2 unlocked");
+	LOG_DBG("C2 unlocked");
 
 	stm32wb_start_ble();
 
@@ -579,7 +590,7 @@ static int bt_ipm_open(void)
 	}
 #endif /* CONFIG_BT_HCI_HOST */
 
-	BT_DBG("IPM Channel Open Completed");
+	LOG_DBG("IPM Channel Open Completed");
 
 	return 0;
 }
@@ -592,7 +603,7 @@ static int bt_ipm_close(void)
 
 	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, &rsp);
 	if (err) {
-		BT_ERR("IPM Channel Close Issue");
+		LOG_ERR("IPM Channel Close Issue");
 		return err;
 	}
 	net_buf_unref(rsp);
@@ -605,7 +616,7 @@ static int bt_ipm_close(void)
 
 	k_thread_abort(&ipm_rx_thread_data);
 
-	BT_DBG("IPM Channel Close Completed");
+	LOG_DBG("IPM Channel Close Completed");
 
 	return err;
 }
