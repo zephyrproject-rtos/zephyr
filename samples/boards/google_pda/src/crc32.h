@@ -9,8 +9,6 @@
 
 /**
  * @brief Initializes the crc32 module
- *
- * @param vs enumerator that describes which cc lines should be monitored
  */
 void crc32_init(void);
 

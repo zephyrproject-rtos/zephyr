@@ -35,22 +35,20 @@ static const struct adc_dt_spec adc_vcon_c = ADC_DT_SPEC_GET(VCON_C_MEAS_NODE);
 #define VCON_C_R_MOHM 10
 #define VCON_C_GAIN 25
 
-/* buffer where the adc measurements are stored */
-static int32_t sample_buffer;
-
-/* Structure defining an ADC sampling sequence */
-struct adc_sequence sequence = {
-	.buffer = &sample_buffer,
-	/* buffer size in bytes, not number of samples */
-	.buffer_size = sizeof(sample_buffer),
-	.resolution = ADC_RESOLUTION,
-};
-
 int meas_vbus_v(int32_t *v)
 {
 	int ret;
+	int32_t sample_buffer;
 
-	sequence.channels = BIT(adc_vbus_v.channel_id);
+	/* Structure defining an ADC sampling sequence */
+	struct adc_sequence sequence = {
+		.buffer = &sample_buffer,
+		/* buffer size in bytes, not number of samples */
+		.buffer_size = sizeof(sample_buffer),
+		.resolution = ADC_RESOLUTION,
+		.channels = BIT(adc_vbus_v.channel_id),
+	};
+
 	ret = adc_read(adc_vbus_v.dev, &sequence);
 	if (ret != 0) {
 		return ret;
@@ -71,8 +69,17 @@ int meas_vbus_v(int32_t *v)
 int meas_vbus_c(int32_t *c)
 {
 	int ret;
+	int32_t sample_buffer;
 
-	sequence.channels = BIT(adc_vbus_c.channel_id);
+	/* Structure defining an ADC sampling sequence */
+	struct adc_sequence sequence = {
+		.buffer = &sample_buffer,
+		/* buffer size in bytes, not number of samples */
+		.buffer_size = sizeof(sample_buffer),
+		.resolution = ADC_RESOLUTION,
+		.channels = BIT(adc_vbus_c.channel_id),
+	};
+
 	ret = adc_read(adc_vbus_c.dev, &sequence);
 	if (ret != 0) {
 		return ret;
@@ -96,8 +103,17 @@ int meas_vbus_c(int32_t *c)
 int meas_cc1_v(int32_t *v)
 {
 	int ret;
+	int32_t sample_buffer;
 
-	sequence.channels = BIT(adc_cc1_v.channel_id);
+	/* Structure defining an ADC sampling sequence */
+	struct adc_sequence sequence = {
+		.buffer = &sample_buffer,
+		/* buffer size in bytes, not number of samples */
+		.buffer_size = sizeof(sample_buffer),
+		.resolution = ADC_RESOLUTION,
+		.channels = BIT(adc_cc1_v.channel_id),
+	};
+
 	ret = adc_read(adc_cc1_v.dev, &sequence);
 	if (ret != 0) {
 		return ret;
@@ -118,8 +134,17 @@ int meas_cc1_v(int32_t *v)
 int meas_cc2_v(int32_t *v)
 {
 	int ret;
+	int32_t sample_buffer;
 
-	sequence.channels = BIT(adc_cc2_v.channel_id);
+	/* Structure defining an ADC sampling sequence */
+	struct adc_sequence sequence = {
+		.buffer = &sample_buffer,
+		/* buffer size in bytes, not number of samples */
+		.buffer_size = sizeof(sample_buffer),
+		.resolution = ADC_RESOLUTION,
+		.channels = BIT(adc_cc2_v.channel_id),
+	};
+
 	ret = adc_read(adc_cc2_v.dev, &sequence);
 	if (ret != 0) {
 		return ret;
@@ -140,8 +165,17 @@ int meas_cc2_v(int32_t *v)
 int meas_vcon_c(int32_t *c)
 {
 	int ret;
+	int32_t sample_buffer;
 
-	sequence.channels = BIT(adc_vcon_c.channel_id);
+	/* Structure defining an ADC sampling sequence */
+	struct adc_sequence sequence = {
+		.buffer = &sample_buffer,
+		/* buffer size in bytes, not number of samples */
+		.buffer_size = sizeof(sample_buffer),
+		.resolution = ADC_RESOLUTION,
+		.channels = BIT(adc_vcon_c.channel_id),
+	};
+
 	ret = adc_read(adc_vcon_c.dev, &sequence);
 	if (ret != 0) {
 		return ret;
@@ -157,7 +191,7 @@ int meas_vcon_c(int32_t *c)
 	 * in milliohms to keep everything as an integer
 	 * mathematically equivalent to dividing by ohms directly.
 	 */
-	*c *= *c * 1000 / VCON_C_R_MOHM / VCON_C_GAIN;
+	*c = *c * 1000 / VCON_C_R_MOHM / VCON_C_GAIN;
 
 	return 0;
 }

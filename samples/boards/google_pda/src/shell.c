@@ -14,6 +14,7 @@
 #include "view.h"
 #include "meas.h"
 #include "model.h"
+#include "mask.h"
 
 static int cmd_meas_cc2(const struct shell *shell, size_t argc, char **argv) {
 	int32_t out;
@@ -120,7 +121,7 @@ static int cmd_stop(const struct shell *shell, size_t argc, char**argv)
 SHELL_CMD_REGISTER(stop, NULL, "Stop snooper", cmd_stop);
 
 static int cmd_role(const struct shell *shell, size_t argc, char**argv, void* data) {
-	uint8_t pull_mask = (uint32_t) data;
+	snooper_mask_t pull_mask = (uint32_t) data;
 
 	set_role(pull_mask);
 
@@ -134,7 +135,7 @@ SHELL_SUBCMD_DICT_SET_CREATE(role_options, cmd_role,
 SHELL_CMD_REGISTER(role, &role_options, "Sets role as sink or source", cmd_role);
 
 static int cmd_cc1_pull(const struct shell *shell, size_t argc, char**argv, void* data) {
-	uint8_t pull_mask = (uint32_t) data;
+	snooper_mask_t pull_mask = (uint32_t) data;
 
 	set_role(pull_mask & CC1_CHANNEL_BIT);
 
@@ -142,7 +143,7 @@ static int cmd_cc1_pull(const struct shell *shell, size_t argc, char**argv, void
 }
 
 static int cmd_cc2_pull(const struct shell *shell, size_t argc, char**argv, void* data) {
-	uint8_t pull_mask = (uint32_t) data;
+	snooper_mask_t pull_mask = (uint32_t) data;
 
 	set_role(pull_mask & CC2_CHANNEL_BIT);
 

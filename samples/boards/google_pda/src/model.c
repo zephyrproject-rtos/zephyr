@@ -109,7 +109,7 @@ void reset_snooper() {
 	model.packet.header.sequence = 0;
 }
 
-void set_role(uint8_t role_mask) {
+void set_role(snooper_mask_t role_mask) {
 	if (role_mask & SINK_BIT) {
 		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1CC2);
 		LL_UCPD_SetSNKRole(UCPD1);

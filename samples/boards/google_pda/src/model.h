@@ -8,17 +8,7 @@
 #define _MODEL_H_
 
 #include <zephyr/kernel.h>
-
-/* @defgroup Bitmask for snooper state
- * Bit positions for the bitmask for setting the role,
- * active CC line, and pull resistors of the Twinkie
- * @{
- */
-#define PULL_RESISTOR_BITS 	(BIT(0) | BIT(1))
-#define SINK_BIT 		BIT(2)
-#define CC1_CHANNEL_BIT 	BIT(3)
-#define CC2_CHANNEL_BIT 	BIT(4)
-/** @} */
+#include "mask.h"
 
 /**
  * @brief Initializes the snooper model
@@ -39,7 +29,7 @@ void reset_snooper();
  *
  * @param role_mask a bit mask of the role to be set
  */
-void set_role(uint8_t role_mask);
+void set_role(snooper_mask_t role_mask);
 
 /**
  * @brief Starts or stops the snooper by setting the snoop status

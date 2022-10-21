@@ -61,7 +61,7 @@ uint8_t get_view_snoop() {
 	return 0;
 }
 
-void view_set_connection(uint8_t vc)
+int view_set_connection(snooper_mask_t vc)
 {
 	switch (vc) {
 	case 0:
@@ -79,10 +79,13 @@ void view_set_connection(uint8_t vc)
 		atomic_clear_bit(&view_obj.flags, FLAGS_CC1_CONNECTION);
 		atomic_set_bit(&view_obj.flags, FLAGS_CC2_CONNECTION);
 		break;
+	default:
+	 	return -EIO;
 	}
+	return 0;
 }
 
-void view_set_snoop(uint8_t vs)
+int view_set_snoop(snooper_mask_t vs)
 {
 	switch (vs) {
 	case 0:
@@ -109,9 +112,12 @@ void view_set_snoop(uint8_t vs)
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP2);
 		atomic_set_bit(&view_obj.flags, FLAGS_SNOOP3);
 		break;
+	default:
+	 	return -EIO;
 	}
 
 	view_set_connection(0);
+	return 0;
 }
 
 static void set_led(enum led_t led)
