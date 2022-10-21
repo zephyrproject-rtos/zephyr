@@ -1645,15 +1645,15 @@ void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb);
  * @brief Set the sync state of a receive state in the server
  *
  * @param src_id         The source id used to identify the receive state.
- * @param pa_sync_state  The sync state of the PA.
  * @param bis_synced     Array of bitfields to set the BIS sync state for each
  *                       subgroup.
- * @param encrypted      The BIG encryption state.
+ * @param enc_state      The BIG encryption state.
  * @return int           Error value. 0 on success, ERRNO on fail.
  */
-int bt_bap_scan_delegator_set_sync_state(uint8_t src_id, uint8_t pa_sync_state,
-					 uint32_t bis_synced[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS],
-					 uint8_t encrypted);
+int bt_bap_scan_delegator_set_bis_sync_state(
+	uint8_t src_id,
+	uint32_t bis_synced[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS],
+	enum bt_bap_big_enc_state enc_state);
 
 /******************************** CLIENT API ********************************/
 
