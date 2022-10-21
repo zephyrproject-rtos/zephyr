@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT renesas_smartbond_gpio
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <stdint.h>
 #include <zephyr/drivers/gpio.h>

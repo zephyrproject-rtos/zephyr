@@ -12,7 +12,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/snps-designware-gpio.h>
 #include "gpio_dw.h"
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>

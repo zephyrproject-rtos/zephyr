@@ -18,7 +18,7 @@
 
 #include <soc.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #define SUPPORTED_FLAGS (GPIO_INPUT | GPIO_OUTPUT | \
 			GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH | \

@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(gpio_neorv32, CONFIG_GPIO_LOG_LEVEL);
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 /* Maximum number of GPIOs supported */
 #define MAX_GPIOS 32

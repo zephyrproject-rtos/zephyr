@@ -17,7 +17,7 @@
 #include <zephyr/drivers/gpio/gpio_cmsdk_ahb.h>
 #include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 /**
  * @brief GPIO driver for ARM CMSDK AHB GPIO

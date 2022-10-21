@@ -25,7 +25,7 @@
 
 #include "stm32_hsem.h"
 #include "gpio_stm32.h"
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 /**
  * @brief Common GPIO driver for STM32 MCUs.

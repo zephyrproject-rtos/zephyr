@@ -15,7 +15,7 @@
 #include <zephyr/dt-bindings/gpio/atmel-sam-gpio.h>
 #include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 typedef void (*config_func_t)(const struct device *dev);
 
