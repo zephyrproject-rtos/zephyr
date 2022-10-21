@@ -333,7 +333,7 @@ static int uart_ns16550_configure(const struct device *dev,
 #ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (dev_cfg->pcie) {
-		struct pcie_mbar mbar;
+		struct pcie_bar mbar;
 
 		if (!pcie_probe(dev_cfg->pcie_bdf, dev_cfg->pcie_id)) {
 			ret = -EINVAL;

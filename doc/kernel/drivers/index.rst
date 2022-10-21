@@ -606,7 +606,7 @@ may be used directly:
    void some_init_code(...)
    {
       ...
-      struct pcie_mbar mbar;
+      struct pcie_bar mbar;
       bool bar_found = pcie_get_mbar(bdf, index, &mbar);
 
       device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
