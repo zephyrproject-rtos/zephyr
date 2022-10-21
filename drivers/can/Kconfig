@@ -89,6 +89,15 @@ config CAN_AUTO_BUS_OFF_RECOVERY
 	  recessive bits). When this option is enabled, the recovery API is not
 	  available.
 
+config CAN_QEMU_IFACE_NAME
+	string "SocketCAN interface name for QEMU"
+	default ""
+	depends on QEMU_TARGET
+	help
+	  The SocketCAN interface name for QEMU. This value, if set, is given as "if" parameter to
+	  the "-object can-host-socketcan" qemu command line option. The CAN interface must be
+	  configured before starting QEMU.
+
 source "drivers/can/Kconfig.sam"
 source "drivers/can/Kconfig.stm32"
 source "drivers/can/Kconfig.stm32fd"
