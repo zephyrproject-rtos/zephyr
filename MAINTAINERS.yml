@@ -1058,6 +1058,8 @@ Release Notes:
   status: maintained
   maintainers:
     - tbursztyka
+  collaborators:
+    - teburd
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
@@ -1071,6 +1073,7 @@ Release Notes:
     - andyross
   collaborators:
     - KangJianX
+    - teburd
   files:
     - drivers/timer/
     - include/zephyr/drivers/timer/
