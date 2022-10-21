@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/settings/settings.h>
 
 #include <zephyr/logging/log.h>
