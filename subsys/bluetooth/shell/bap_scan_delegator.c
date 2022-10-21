@@ -64,14 +64,13 @@ static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_bap_scan_delegator_synced(const struct shell *sh, size_t argc,
+static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc,
 					 char **argv)
 {
 	int result;
 	long src_id;
-	long pa_sync_state;
 	long bis_synced;
-	long encrypted;
+	long enc_state;
 	uint32_t bis_syncs[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
 
 	src_id = strtol(argv[1], NULL, 0);
@@ -79,15 +78,7 @@ static int cmd_bap_scan_delegator_synced(const struct shell *sh, size_t argc,
 		shell_error(sh, "adv_sid shall be 0x00-0xff");
 		return -ENOEXEC;
 	}
-
-	pa_sync_state = strtol(argv[2], NULL, 0);
-	if (pa_sync_state < 0 ||
-	    pa_sync_state > BT_BAP_PA_STATE_NO_PAST) {
-		shell_error(sh, "Invalid pa_sync_state %ld", pa_sync_state);
-		return -ENOEXEC;
-	}
-
-	bis_synced = strtol(argv[3], NULL, 0);
+	bis_synced = strtol(argv[2], NULL, 0);
 	if (bis_synced < 0 || bis_synced > UINT32_MAX) {
 		shell_error(sh, "Invalid bis_synced %ld", bis_synced);
 		return -ENOEXEC;
@@ -96,10 +87,14 @@ static int cmd_bap_scan_delegator_synced(const struct shell *sh, size_t argc,
 		bis_syncs[i] = bis_synced;
 	}
 
-	encrypted = strtol(argv[4], NULL, 0);
+	enc_state = strtol(argv[3], NULL, 0);
+	if (enc_state < 0 || enc_state > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+		shell_error(sh, "Invalid enc_state %ld", enc_state);
+		return -ENOEXEC;
+	}
 
-	result = bt_bap_scan_delegator_set_sync_state(src_id, pa_sync_state,
-						      bis_syncs, encrypted);
+	result = bt_bap_scan_delegator_set_bis_sync_state(src_id, bis_syncs,
+							  enc_state);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -125,8 +120,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_scan_delegator_cmds,
 		      "Initialize the service and register callbacks",
 		      cmd_bap_scan_delegator_init, 1, 0),
 	SHELL_CMD_ARG(synced, NULL,
-		      "Set server scan state <src_id> <pa_synced> <bis_syncs> "
-		      "<enc_state>", cmd_bap_scan_delegator_synced, 5, 0),
+		      "Set server scan state <src_id> <bis_syncs> <enc_state>",
+		      cmd_bap_scan_delegator_bis_synced, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 
