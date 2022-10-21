@@ -8,7 +8,7 @@
 #ifndef H_MCUMGR_IMG_MGMT_CALLBACKS_
 #define H_MCUMGR_IMG_MGMT_CALLBACKS_
 
-#include <img_mgmt/img_mgmt.h>
+#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {

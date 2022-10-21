@@ -4,9 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-target_include_directories(MCUMGR INTERFACE
-    include
-)
+target_include_directories(mgmt_mcumgr INTERFACE include)
 
 zephyr_library_sources(
     src/img_mgmt.c
