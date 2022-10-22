@@ -52,6 +52,33 @@ ZTEST(common, test_version)
 
 }
 
+/**
+ * @brief Test sys_gnu_build_id_get() functionality
+ *
+ * @ingroup kernel_common_tests
+ *
+ * @see sys_gnu_build_id_get()
+ */
+ZTEST(common, test_build_id)
+{
+#ifdef CONFIG_LINKER_GNU_BUILD_ID
+	const uint8_t *build_id = sys_gnu_build_id_get();
+	bool not_zero = false;
+
+	zassert_not_null(build_id);
+
+	printk("GNU Build ID: ");
+	for (int i = 0; i < 20; i++) {
+		printk("%02x", build_id[i]);
+		if (build_id[i]) {
+			not_zero = true;
+		}
+	}
+	printk("\n");
+	zassert_true(not_zero, "GNU Build ID all 0's");
+#endif /* CONFIG_LINKER_GNU_BUILD_ID */
+}
+
 ZTEST(common, test_bounds_check_mitigation)
 {
 	/* Very hard to test against speculation attacks, but we can
