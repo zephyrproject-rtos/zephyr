@@ -265,7 +265,7 @@ enum i3c_sdr_target_error_codes {
 /** Write message to I3C bus. */
 #define I3C_MSG_WRITE			(0U << 0U)
 
-/** Read message from I2C bus. */
+/** Read message from I3C bus. */
 #define I3C_MSG_READ			BIT(0)
 
 /** @cond INTERNAL_HIDDEN */
@@ -288,6 +288,9 @@ enum i3c_sdr_target_error_codes {
 
 /** Transfer use HDR mode */
 #define I3C_MSG_HDR			BIT(3)
+
+/** Skip I3C broadcast header. Private Transfers only. */
+#define I3C_MSG_NBCH			BIT(4)
 
 /** I3C HDR Mode 0 */
 #define I3C_MSG_HDR_MODE0		BIT(0)
