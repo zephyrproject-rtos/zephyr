@@ -348,15 +348,15 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target)
 	}
 
 	/* GETMRL */
-	ret = i3c_ccc_do_getmrl(target, &mrl);
-	if (ret != 0) {
-		goto out;
+	if (i3c_ccc_do_getmrl(target, &mrl) != 0) {
+		/* GETMRL may be optionally supported if no settable limit */
+		LOG_DBG("No settable limit for GETMRL");
 	}
 
 	/* GETMWL */
-	ret = i3c_ccc_do_getmwl(target, &mwl);
-	if (ret != 0) {
-		goto out;
+	if (i3c_ccc_do_getmwl(target, &mwl) != 0) {
+		/* GETMWL may be optionally supported if no settable limit */
+		LOG_DBG("No settable limit for GETMWL");
 	}
 
 	target->dcr = dcr.dcr;
