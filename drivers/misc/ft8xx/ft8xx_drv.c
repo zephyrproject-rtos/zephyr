@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define DT_DRV_COMPAT ftdi_ft800
-#define NODE_ID DT_INST(0, DT_DRV_COMPAT)
+//#define NODE_ID DT_INST(0, DT_DRV_COMPAT)
 
 /* SPI device */
 /*

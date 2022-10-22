@@ -26,6 +26,8 @@ int ft8xx_drv_read(const union ft8xx_bus *bus, uint32_t address, uint8_t *data, 
 int ft8xx_drv_write(const union ft8xx_bus *bus, uint32_t address, const uint8_t *data, unsigned int length);
 int ft8xx_drv_command(const union ft8xx_bus *bus, uint8_t command);
 
+
+
 extern void ft8xx_drv_irq_triggered(const struct device *dev,
 		struct gpio_callback *cb, uint32_t pins);
 

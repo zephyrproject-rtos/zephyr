@@ -22,6 +22,13 @@ extern "C" {
 #include <zephyr/device.h>
 #include <errno.h>
 
+/**
+ * @brief FT8xx audio engine functions
+ * @defgroup ft8xx_audio FT8xx Audio Engine
+ * @ingroup ft8xx_interface
+ * @{
+ */
+
 
 
 enum ft8xx_audio_formats_t {
@@ -182,6 +189,66 @@ enum ft8xx_audio_synth_tone_t {
     FT8xx_AUDIO_SYNTH_TONE_B7           = 0x6B, // 3951.1Hz
     FT8xx_AUDIO_SYNTH_TONE_C8           = 0x6C, // 4186Hz
 }
+
+/**
+ * @brief Load Audio Sample to FT8xx memory
+ *
+ * @param dev Pointer to device
+ * @param start_address Location in G_RAM to store sample (Must be 64 bit aligned)
+ * @param sample Pointer to Sample
+ * @param sample_length Size of sample in bytes (Must be 64 bit aligned)
+ */
+ int ft8xx_audio_load(const struct device *dev, uint32_t start_address, uint8_t* sample, uint32_t sample_length);
+ 
+/**
+ * @brief Play audio stored in memory
+ *
+ * @param dev Pointer to device
+ * @param start_address Location in G_RAM of sample
+ * @param sample_length Size of sample in bytes
+ * @param audio_format Format of audio sample
+ * @param sample_freq Format of audio sample 
+ * @param vol playback volume
+ * @param loop Loop playback 
+ */ 
+ int ft8xx_audio_play(const struct device *dev, uint32_t start_address, uint32_t sample_length, uint8_t audio_format, uint16_t sample_freq, uint8_t vol, bool loop);
+ 
+/**
+ * @brief Get audio playback status
+ *
+ * @param dev Pointer to device
+ */ 
+ int ft8xx_audio_get_status(const struct device *dev);
+ 
+ /**
+ * @brief Stop audio playback
+ *
+ * @param dev Pointer to device
+ */ 
+ int ft8xx_audio_stop(const struct device *dev);
+
+ /**
+ * @brief Synthesize audio
+ *
+ * @param dev Pointer to device
+ * @param sound Sound to Synthesize
+ * @param note Note to use Synthesizing (not all sound support tone adjustment)
+ */ 
+ int ft8xx_audio_synth_start(const struct device *dev, uint8_t sound, uint8_t note, uint8_t vol);
+ 
+ /**
+ * @brief Get audio Synthesis status
+ *
+ * @param dev Pointer to device
+ */ 
+ int ft8xx_audio_synth_get_status(const struct device *dev);
+ 
+  /**
+ * @brief Stop audio Synthesis
+ *
+ * @param dev Pointer to device
+ */ 
+ int ft8xx_audio_synth_stop(const struct device *dev);
 
 
 

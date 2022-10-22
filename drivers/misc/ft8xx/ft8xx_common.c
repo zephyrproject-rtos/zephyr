@@ -37,6 +37,17 @@ void ft8xx_wr32(union ft8xx_bus bus, uint32_t address, uint32_t data)
 	__ASSERT(err == 0, "Writing FT8xx data at 0x%x failed", address);
 }
 
+void ft8xx_wrblock(union ft8xx_bus bus, uint32_t address, uint8_t *data unsigned int data_length)
+{
+	int err;
+
+	err = ft8xx_drv_write(bus, address, data, data_length);
+	__ASSERT(err == 0, "Writing FT8xx data at 0x%x failed", address);
+}
+
+
+
+
 uint8_t ft8xx_rd8(union ft8xx_bus bus, uint32_t address)
 {
 	int err;
@@ -69,3 +80,6 @@ uint32_t ft8xx_rd32(union ft8xx_bus bus, uint32_t address)
 
 	return sys_le32_to_cpu(*(const uint32_t *)buffer);
 }
+
+
+

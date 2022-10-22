@@ -21,6 +21,8 @@
 #include <zephyr/drivers/misc/ft8xx/ft8xx_common.h>
 #include <zephyr/drivers/misc/ft8xx/ft8xx_dl.h>
 #include <zephyr/drivers/misc/ft8xx/ft8xx_memory.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_audio.h>
+
 
 #include "ft8xx_drv.h"
 #include "ft8xx_host_commands.h"
@@ -68,6 +70,8 @@ struct ft8xx_data {
 	struct ft8xx_memory_map_t *memory_map;
 	struct ft8xx_register_address_map_t *register_map;
 
+	struct ft8xx_touch_transform *ctrform;
+
 	static uint16_t reg_cmd_read;
 	static uint16_t reg_cmd_write;
 };
@@ -79,17 +83,78 @@ static struct ft8xx_data ft8xx_data = {
 	.chip_type = 0,
 	.memory_map = NULL,
 	.register_map = NULL,
+	.ctrform = NULL,
 };
 
 static struct ft8xx_api {
    
-   .do_this = generic_do_this,
+    ft8xx_calibrate 		= ft8xx_calibrate, 
+    ft8xx_get_transform 	= ft8xx_touch_transform_get,
+    ft8xx_set_transform 	= ft8xx_touch_transform_set,
+	ft8xx_get_touch_tag		= ft8xx_get_touch_tag,
+	ft8xx_register_int		= ft8xx_register_int,
+    ft8xx_host_command		= ft8xx_host_command,
+    ft8xx_command			= ft8xx_command,
 
+	ft8xx_audio_load			= ,
+	ft8xx_audio_play			= ,
+	ft8xx_audio_get_status		= ,
+	ft8xx_audio_stop			= ,
 
+	ft8xx_audio_synth_start			= ,
+	ft8xx_audio_synth_get_status	= ,
+	ft8xx_audio_synth_stop 			= ,
 
+	ft8xx_copro_cmd_dlstart			= , 
+	ft8xx_copro_cmd_swap 			= ,
+	ft8xx_copro_cmd_coldstart		= ,
+	ft8xx_copro_cmd_interrupt		= ,
+	ft8xx_copro_cmd_append			= ,
+	ft8xx_copro_cmd_regread			= ,
+	ft8xx_copro_cmd_memwrite		= ,
+	ft8xx_copro_cmd_inflate			= ,
+	ft8xx_copro_cmd_loadimage		= ,
+	ft8xx_copro_cmd_memcrc			= ,
+	ft8xx_copro_cmd_memzero			= ,
+	ft8xx_copro_cmd_memset			= ,
+	ft8xx_copro_cmd_memcpy			= ,
+	ft8xx_copro_cmd_button			= ,
+	ft8xx_copro_cmd_clock			= ,
+	ft8xx_copro_cmd_fgcolor			= ,
+	ft8xx_copro_cmd_bgcolor			= ,
+	ft8xx_copro_cmd_gradcolor		= ,
+	ft8xx_copro_cmd_gauge			= ,
+	ft8xx_copro_cmd_gradient		= ,
+	ft8xx_copro_cmd_keys			= ,
+	ft8xx_copro_cmd_progress		= ,
+	ft8xx_copro_cmd_scrollbar		= ,
+	ft8xx_copro_cmd_slider			= ,
+	ft8xx_copro_cmd_dial			= ,
+	ft8xx_copro_cmd_toggle			= ,
+	ft8xx_copro_cmd_text			= ,
+	ft8xx_copro_cmd_number			= ,
+	ft8xx_copro_cmd_setmatrix		= ,
+	ft8xx_copro_cmd_getmatrix		= ,
+	ft8xx_copro_cmd_getptr			= ,
+	ft8xx_copro_cmd_getprops		= ,
+	ft8xx_copro_cmd_scale			= ,
+	ft8xx_copro_cmd_rotate			= ,
+	ft8xx_copro_cmd_translate		= ,
+	ft8xx_copro_cmd_calibrate		= ,
+	ft8xx_copro_cmd_spinner			= ,
+	ft8xx_copro_cmd_screensaver		= ,
+	ft8xx_copro_cmd_sketch			= ,
+	ft8xx_copro_cmd_stop			= ,
+	ft8xx_copro_cmd_setfont			= ,
+	ft8xx_copro_cmd_track			= ,
+	ft8xx_copro_cmd_snapshot		= ,
+	ft8xx_copro_cmd_logo			= ,
 
-   
 };
+
+
+
+
 
 
 static void host_command(const struct device *dev, uint8_t cmd)
@@ -192,6 +257,34 @@ static int identify_chip(dev)
 	return id;
 }
 
+#ifdef CONFIG_SPI_EXTENDED_MODES
+static void set_spi_mode(const struct device *dev)
+{
+	const struct ft8xx_config *config = dev->config;
+	union ft8xx_bus *bus = config->bus;	
+	const struct spi_dt_spec *spi = config->spi;
+	const struct spi_config spi_config = spi->config;
+	
+	if (spi_config.operation == )
+	{
+		// try quad spi mode
+		 
+
+	}
+	else if (spi_config.operation == )
+	{
+		// try dual spi mode 
+
+
+	}
+
+
+
+}
+#endif
+
+
+
 static void setup_chip(const struct device *dev)
 {
   // assign register maps
@@ -211,6 +304,7 @@ static void setup_chip(const struct device *dev)
 					data->register_map = &ft81x_register_address_map;					
 				}
 		}
+
 }
 
 static int ft8xx_init(const struct device *dev)
@@ -248,11 +342,11 @@ static int ft8xx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	setup_chip(dev)
+	setup_chip(dev);
 
-
-
-
+#ifdef CONFIG_SPI_EXTENDED_MODES
+	set_spi_mode(dev);
+#endif
 
 	/* Disable LCD */
 	ft8xx_wr8(bus, data->register_map->REG_GPIO, 0);
@@ -309,10 +403,6 @@ int ft8xx_get_touch_tag(const struct device *dev)
 	return (int)ft8xx_rd8(bus, data->register_map->REG_TOUCH_TAG);
 }
 
-
-
-
-
 void ft8xx_drv_irq_triggered(const struct device *dev, struct gpio_callback *cb,
 			      uint32_t pins)
 {
@@ -352,6 +442,17 @@ void ft8xx_calibrate(const struct device *dev, struct ft8xx_touch_transform *trf
 		ft8xx_copro_cmd_calibrate(&result);
 	} while (result == 0);
 
+	ft8xx_touch_transform_get(dev,trform);
+}
+
+
+void ft8xx_touch_transform_get(const struct device *dev, struct ft8xx_touch_transform *trform)
+{
+	const struct ft8xx_config *config = dev->config;
+	const struct ft8xx_data *data = dev->data;
+	union ft8xx_bus *bus = config->bus;
+	uint32_t result = 0;
+
 	trform->a = ft8xx_rd32(bus, data->register_map->REG_TOUCH_TRANSFORM_A);
 	trform->b = ft8xx_rd32(bus, data->register_map->REG_TOUCH_TRANSFORM_B);
 	trform->c = ft8xx_rd32(bus, data->register_map->REG_TOUCH_TRANSFORM_C);
@@ -380,6 +481,7 @@ void ft8xx_touch_transform_set(const struct device *dev, const struct ft8xx_touc
 		.bus.spi = SPI_DT_SPEC_INST_GET(	
 			inst, FT8XX_SPI_OPERATION, 0),	
 		.bus_io = &ft8xx_bus_io_spi,		
+
 		/* Initializes struct ft8xx_config for an GPIO interupt. */
 		.irq_gpio = GPIO_DT_SPEC_INST_GET(inst, irq_gpios);	
 	

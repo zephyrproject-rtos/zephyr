@@ -47,6 +47,12 @@ struct ft8xx_bus_io {
 };
 
 #define FT8XX_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER)
+
+#ifdef CONFIG_SPI_EXTENDED_MODES
+
+#endif
+
+
 extern const struct ft8xx_bus_io ft8xx_bus_io_spi;
 
 

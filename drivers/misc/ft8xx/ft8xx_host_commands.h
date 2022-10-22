@@ -29,6 +29,10 @@ enum ft800_command_t {
 	CORERST = 0x68
 };
 
+
+
+
+
 #ifdef __cplusplus
 }
 #endif

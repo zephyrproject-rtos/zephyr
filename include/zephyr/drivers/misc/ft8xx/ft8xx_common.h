@@ -56,6 +56,18 @@ void ft8xx_wr16(union ft8xx_bus bus, uint32_t address, uint16_t data);
 void ft8xx_wr32(union ft8xx_bus bus, uint32_t address, uint32_t data);
 
 /**
+ * @brief Write Block of bytes to FT8xx memory
+ *
+ * @param bus bus which to interact with
+ *
+ * @param address Memory address to write to
+ * @param data data to write
+ * @param data_length length of data
+ */
+void ft8xx_wrblock(union ft8xx_bus bus, uint32_t address, uint32_t data);
+
+
+/**
  * @brief Read 1 byte (8 bits) from FT8xx memory
  *
  * @param bus bus which to interact with
