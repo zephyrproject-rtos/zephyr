@@ -331,6 +331,7 @@ config BOOT_BANNER
 
 config BOOT_DELAY
 	int "Boot delay in milliseconds"
+	depends on MULTITHREADING
 	default 0
 	help
 	  This option delays bootup for the specified amount of
