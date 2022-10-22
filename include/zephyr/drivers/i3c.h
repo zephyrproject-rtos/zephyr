@@ -372,10 +372,10 @@ enum i3c_config_type {
  */
 struct i3c_config_controller {
 	/**
-	 * True if the controller is to be the primary controller
-	 * of the bus. False to be the secondary controller.
+	 * True if the controller is to be the secondary controller
+	 * of the bus. False to be the primary controller.
 	 */
-	bool is_primary;
+	bool is_secondary;
 
 	struct {
 		/** SCL frequency (in Hz) for I3C transfers. */
