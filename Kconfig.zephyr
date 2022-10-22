@@ -200,6 +200,18 @@ config KERNEL_ENTRY
 	help
 	  Code entry symbol, to be set at linking phase.
 
+config TOOLCHAIN_SUPPORTS_GNU_BUILD_ID
+	bool
+	default y
+
+config LINKER_GNU_BUILD_ID
+	bool "Generate a GNU build ID for the binary"
+	depends on TOOLCHAIN_SUPPORTS_GNU_BUILD_ID
+	help
+	  This turns on the linker flag to generate a 160 bit SHA1 hash of
+	  the final `zephyr.elf` contents. This hash can be used to uniquely
+	  identify a firmware image. Total structure size is 36 bytes.
+
 config LINKER_SORT_BY_ALIGNMENT
 	bool "Sort input sections by alignment"
 	default y

@@ -17,8 +17,13 @@ macro(toolchain_ld_base)
 
   zephyr_ld_options(
     ${LINKERFLAGPREFIX},--gc-sections
-    ${LINKERFLAGPREFIX},--build-id=none
   )
+
+  if(CONFIG_LINKER_GNU_BUILD_ID)
+    zephyr_ld_options(${LINKERFLAGPREFIX},--build-id)
+  else()
+    zephyr_ld_options(${LINKERFLAGPREFIX},--build-id=none)
+  endif()
 
   # Sort the common symbols and each input section by alignment
   # in descending order to minimize padding between these symbols.

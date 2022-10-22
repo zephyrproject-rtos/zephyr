@@ -1,6 +1,10 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config TOOLCHAIN_SUPPORTS_GNU_BUILD_ID
+	bool
+	default n
+
 config LD_LINKER_SCRIPT_SUPPORTED
 	bool
 	default n
