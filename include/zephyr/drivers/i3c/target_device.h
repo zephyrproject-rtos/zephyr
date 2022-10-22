@@ -217,6 +217,42 @@ struct i3c_target_driver_api {
 };
 
 /**
+ * @brief Writes to the Target's TX FIFO
+ *
+ * Write to the TX FIFO @p dev I3C bus driver using the provided
+ * buffer and length. Some I3C targets will NACK read requests until data
+ * is written to the TX FIFO. This function will write as much as it can
+ * to the FIFO return the total number of bytes written. It is then up to
+ * the application to utalize the target callbacks to write the remaining
+ * data. Negative returns indicate error.
+ *
+ * Most of the existing hardware allows simultaneous support for master
+ * and target mode. This is however not guaranteed.
+ *
+ * @param dev Pointer to the device structure for an I3C controller
+ *            driver configured in target mode.
+ * @param buf Pointer to the buffer
+ * @param len Length of the buffer
+ *
+ * @retval Total number of bytes written
+ * @retval -ENOTSUP Not in Target Mode
+ * @retval -ENOSPC No space in Tx FIFO
+ * @retval -ENOSYS If target mode is not implemented
+ */
+static inline int i3c_target_tx_write(const struct device *dev,
+				      uint8_t *buf, uint16_t len)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)dev->api;
+
+	if (api->target_tx_write == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->target_tx_write(dev, buf, len);
+}
+
+/**
  * @brief Registers the provided config as target device of a controller.
  *
  * Enable I3C target mode for the @p dev I3C bus driver using the provided

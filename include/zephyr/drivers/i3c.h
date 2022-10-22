@@ -625,6 +625,24 @@ __subsystem struct i3c_driver_api {
 	 */
 	int (*target_unregister)(const struct device *dev,
 				 struct i3c_target_config *cfg);
+
+	/**
+	 * Write to the TX FIFO
+	 *
+	 * This writes to the target tx fifo
+	 *
+	 * Target device only API.
+	 *
+	 * @see i3c_target_tx_write
+	 *
+	 * @param dev Pointer to the controller device driver instance.
+	 * @param buf Pointer to the buffer
+	 * @param len Length of the buffer
+	 *
+	 * @return @see i3c_target_tx_write
+	 */
+	int (*target_tx_write)(const struct device *dev,
+				 uint8_t *buf, uint16_t len);
 };
 
 /**
