@@ -6,6 +6,7 @@ add_library(mocks STATIC
             mocks/net_buf.c
             mocks/net_buf_expects.c
             mocks/hci_core.c
+            mocks/hci_core_expects.c
             mocks/ecc_help_utils.c
 
             ${ZEPHYR_BASE}/subsys/bluetooth/host/ecc.c
