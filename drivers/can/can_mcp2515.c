@@ -1018,35 +1018,34 @@ static int mcp2515_init(const struct device *dev)
 	return ret;
 }
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#define MCP2515_INIT(inst)                                                                         \
+	static K_KERNEL_STACK_DEFINE(mcp2515_int_thread_stack_##inst,                              \
+				     CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE);                    \
+                                                                                                   \
+	static struct mcp2515_data mcp2515_data_##inst = {                                         \
+		.int_thread_stack = mcp2515_int_thread_stack_##inst,                               \
+		.tx_busy_map = 0U,                                                                 \
+		.filter_usage = 0U,                                                                \
+	};                                                                                         \
+                                                                                                   \
+	static const struct mcp2515_config mcp2515_config_##inst = {                               \
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
+		.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,                 \
+		.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,                         \
+		.tq_sjw = DT_INST_PROP(inst, sjw),                                                 \
+		.tq_prop = DT_INST_PROP_OR(inst, prop_seg, 0),                                     \
+		.tq_bs1 = DT_INST_PROP_OR(inst, phase_seg1, 0),                                    \
+		.tq_bs2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                                    \
+		.bus_speed = DT_INST_PROP(inst, bus_speed),                                        \
+		.osc_freq = DT_INST_PROP(inst, osc_freq),                                          \
+		.sample_point = DT_INST_PROP_OR(inst, sample_point, 0),                            \
+		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)),                         \
+		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000),                 \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &mcp2515_init, NULL, &mcp2515_data_##inst,                     \
+			      &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,       \
+			      &can_api_funcs);
 
-static K_KERNEL_STACK_DEFINE(mcp2515_int_thread_stack,
-			     CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE);
-
-static struct mcp2515_data mcp2515_data_1 = {
-	.int_thread_stack = mcp2515_int_thread_stack,
-	.tx_busy_map = 0U,
-	.filter_usage = 0U,
-};
-
-static const struct mcp2515_config mcp2515_config_1 = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-	.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,
-	.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,
-	.tq_sjw = DT_INST_PROP(0, sjw),
-	.tq_prop = DT_INST_PROP_OR(0, prop_seg, 0),
-	.tq_bs1 = DT_INST_PROP_OR(0, phase_seg1, 0),
-	.tq_bs2 = DT_INST_PROP_OR(0, phase_seg2, 0),
-	.bus_speed = DT_INST_PROP(0, bus_speed),
-	.osc_freq = DT_INST_PROP(0, osc_freq),
-	.sample_point = DT_INST_PROP_OR(0, sample_point, 0),
-	.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phys)),
-	.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(0, 1000000),
-};
-
-DEVICE_DT_INST_DEFINE(0, &mcp2515_init, NULL,
-		    &mcp2515_data_1, &mcp2515_config_1, POST_KERNEL,
-		    CONFIG_CAN_INIT_PRIORITY, &can_api_funcs);
-
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+DT_INST_FOREACH_STATUS_OKAY(MCP2515_INIT)
