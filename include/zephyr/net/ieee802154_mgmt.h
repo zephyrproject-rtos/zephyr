@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 /**
- * @brief IEEE 802.15.4 library
- * @defgroup ieee802154_mgmt IEEE 802.15.4 Library
+ * @brief IEEE 802.15.4 net management library
+ * @defgroup ieee802154_mgmt IEEE 802.15.4 Net Management Library
  * @ingroup networking
  * @{
  */
