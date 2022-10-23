@@ -51,6 +51,18 @@ struct vl53l0x_data {
 	VL53L0X_RangingMeasurementData_t measurement;
 };
 
+static inline bool vl53l0x_supports_chan(enum sensor_channel chan)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ALL:
+	case SENSOR_CHAN_DISTANCE:
+	case SENSOR_CHAN_PROX:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static int vl53l0x_setup_single_shot(const struct device *dev)
 {
 	struct vl53l0x_data *drv_data = dev->data;
@@ -220,8 +232,9 @@ static int vl53l0x_sample_fetch(const struct device *dev, enum sensor_channel ch
 	VL53L0X_Error ret;
 	int r;
 
-	__ASSERT_NO_MSG((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_DISTANCE) ||
-			(chan == SENSOR_CHAN_PROX));
+	if (!vl53l0x_supports_chan(chan)) {
+		return -ENOTSUP;
+	}
 
 	if (!drv_data->started) {
 		r = vl53l0x_start(dev);
