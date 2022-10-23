@@ -48,7 +48,7 @@ struct vl53l0x_config {
 struct vl53l0x_data {
 	bool started;
 	VL53L0X_Dev_t vl53l0x;
-	VL53L0X_RangingMeasurementData_t RangingMeasurementData;
+	VL53L0X_RangingMeasurementData_t measurement;
 };
 
 static int vl53l0x_setup_single_shot(const struct device *dev)
@@ -230,8 +230,7 @@ static int vl53l0x_sample_fetch(const struct device *dev, enum sensor_channel ch
 		}
 	}
 
-	ret = VL53L0X_PerformSingleRangingMeasurement(&drv_data->vl53l0x,
-						      &drv_data->RangingMeasurementData);
+	ret = VL53L0X_PerformSingleRangingMeasurement(&drv_data->vl53l0x, &drv_data->measurement);
 	if (ret < 0) {
 		LOG_ERR("[%s] Could not perform measurment (error=%d)", dev->name, ret);
 		return -EINVAL;
@@ -246,16 +245,15 @@ static int vl53l0x_channel_get(const struct device *dev, enum sensor_channel cha
 	struct vl53l0x_data *drv_data = dev->data;
 
 	if (chan == SENSOR_CHAN_PROX) {
-		if (drv_data->RangingMeasurementData.RangeMilliMeter <=
-		    CONFIG_VL53L0X_PROXIMITY_THRESHOLD) {
+		if (drv_data->measurement.RangeMilliMeter <= CONFIG_VL53L0X_PROXIMITY_THRESHOLD) {
 			val->val1 = 1;
 		} else {
 			val->val1 = 0;
 		}
 		val->val2 = 0;
 	} else if (chan == SENSOR_CHAN_DISTANCE) {
-		val->val1 = drv_data->RangingMeasurementData.RangeMilliMeter / 1000;
-		val->val2 = (drv_data->RangingMeasurementData.RangeMilliMeter % 1000) * 1000;
+		val->val1 = drv_data->measurement.RangeMilliMeter / 1000;
+		val->val2 = (drv_data->measurement.RangeMilliMeter % 1000) * 1000;
 	} else {
 		return -ENOTSUP;
 	}
