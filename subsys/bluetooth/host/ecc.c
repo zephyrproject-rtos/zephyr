@@ -61,6 +61,7 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 			LOG_WRN("ECC Debug keys HCI command not available");
 		} else {
 			atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+			__ASSERT_NO_MSG(new_cb->func != NULL);
 			new_cb->func(debug_public_key);
 			return 0;
 		}
