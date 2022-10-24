@@ -338,6 +338,11 @@ Devicetree
 Libraries / Subsystems
 **********************
 
+* File systems
+
+  * Added new API call `fs_mkfs`.
+  * Added new sample `samples/subsys/fs/format`.
+
 * Management
 
   * MCUmgr functionality deprecated in 3.1 has been removed:
