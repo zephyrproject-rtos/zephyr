@@ -1454,7 +1454,7 @@ uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
 	}
 
 	for (i = 0; i < cnt; i++) {
-		memcpy(&addrs[i], rp->a, sizeof(struct bt_hci_vs_static_addr));
+		memcpy(&addrs[i], &rp->a[i], sizeof(struct bt_hci_vs_static_addr));
 	}
 
 	net_buf_unref(rsp);
