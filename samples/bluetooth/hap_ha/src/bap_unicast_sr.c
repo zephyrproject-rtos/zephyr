@@ -31,14 +31,14 @@ static struct k_work_delayable audio_send_work;
 static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 static struct bt_audio_source {
 	struct bt_audio_stream *stream;
-	uint32_t seq_num;
+	uint16_t seq_num;
 } source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
 static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02,
 								   10, 20000, 40000, 20000, 40000);
 
-static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
+static uint16_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
 {
 	for (size_t i = 0U; i < configured_source_stream_count; i++) {
 		if (stream == source_streams[i].stream) {

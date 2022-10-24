@@ -89,7 +89,7 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
-			 uint32_t seq_num, uint32_t ts)
+			 uint16_t seq_num, uint32_t ts)
 {
 	struct bt_audio_ep *ep;
 

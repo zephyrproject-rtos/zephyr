@@ -27,7 +27,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  TOTAL_BUF_NEEDED,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
-static uint32_t seq_num;
+static uint16_t seq_num;
 static bool stopping;
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));

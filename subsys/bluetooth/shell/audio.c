@@ -61,7 +61,7 @@ static struct bt_audio_stream broadcast_sink_streams[BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_broadcast_sink *default_sink;
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 static struct bt_audio_stream *default_stream;
-static uint32_t seq_num;
+static uint16_t seq_num;
 static bool connecting;
 
 struct named_lc3_preset {
@@ -145,7 +145,7 @@ static struct named_lc3_preset lc3_broadcast_presets[] = {
 static struct named_lc3_preset *default_preset = &lc3_unicast_presets[3];
 static bool initialized;
 
-static uint32_t get_next_seq_num(uint32_t interval_us)
+static uint16_t get_next_seq_num(uint32_t interval_us)
 {
 	static int64_t last_ticks;
 	int64_t uptime_ticks, delta_ticks;
@@ -164,7 +164,7 @@ static uint32_t get_next_seq_num(uint32_t interval_us)
 	seq_num_incr = delta_us / interval_us;
 	next_seq_num = (seq_num_incr + seq_num);
 
-	return (uint32_t)next_seq_num;
+	return (uint16_t)next_seq_num;
 }
 
 #if defined(CONFIG_LIBLC3)

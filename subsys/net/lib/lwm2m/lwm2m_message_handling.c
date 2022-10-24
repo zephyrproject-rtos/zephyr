@@ -749,6 +749,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 	size_t total_size = 0;
 	int64_t temp64 = 0;
 	int32_t temp32 = 0;
+	time_t temp_time = 0;
 	int ret = 0;
 	bool last_block = true;
 	void *write_buf;
@@ -821,12 +822,22 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 			break;
 
 		case LWM2M_RES_TYPE_TIME:
-			ret = engine_get_time(&msg->in, &temp64);
+			ret = engine_get_time(&msg->in, &temp_time);
 			if (ret < 0) {
 				break;
 			}
-			*(uint32_t *)write_buf = temp64;
-			len = 4;
+
+			if (write_buf_len == sizeof(time_t)) {
+				*(time_t *)write_buf = temp_time;
+				len = 8;
+			} else if (write_buf_len == sizeof(uint32_t)) {
+				*(uint32_t *)write_buf = (uint32_t)temp_time;
+				len = 4;
+			} else {
+				LOG_ERR("Time resource buf len not supported %d", write_buf_len);
+				ret = -EINVAL;
+			}
+
 			break;
 
 		case LWM2M_RES_TYPE_U32:
@@ -1002,7 +1013,16 @@ static int lwm2m_read_resource_data(struct lwm2m_message *msg, void *data_ptr, s
 		break;
 
 	case LWM2M_RES_TYPE_TIME:
-		ret = engine_put_time(&msg->out, &msg->path, (int64_t) *(uint32_t *)data_ptr);
+		if (data_len == sizeof(time_t)) {
+			ret = engine_put_time(&msg->out, &msg->path, *(time_t *)data_ptr);
+		} else if (data_len == sizeof(uint32_t)) {
+			ret = engine_put_time(&msg->out, &msg->path,
+					      (time_t) *((uint32_t *)data_ptr));
+		} else {
+			LOG_ERR("Resource time length not supported %d", data_len);
+			ret = -EINVAL;
+		}
+
 		break;
 
 	case LWM2M_RES_TYPE_BOOL:
@@ -1083,7 +1103,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 			break;
 
 		case LWM2M_RES_TYPE_TIME:
-			ret = engine_put_time(&msg->out, &msg->path, (int64_t)buf.u32);
+			ret = engine_put_time(&msg->out, &msg->path, buf.time);
 			break;
 
 		default:
