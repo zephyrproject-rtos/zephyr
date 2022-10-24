@@ -376,9 +376,8 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 				if (IS_ENABLED(CONFIG_BT_CSIS_CLIENT_ENC_SIRK_SUPPORT)) {
 					int err;
 
-					BT_HEXDUMP_DBG(sirk->value,
-						       sizeof(*sirk),
-						       "Encrypted Set SIRK");
+					LOG_HEXDUMP_DBG(sirk->value, sizeof(*sirk),
+							"Encrypted Set SIRK");
 					err = sirk_decrypt(conn, sirk->value,
 							   dst_sirk);
 					if (err != 0) {
@@ -393,8 +392,7 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 				(void)memcpy(dst_sirk, sirk->value, sizeof(sirk->value));
 			}
 
-			BT_HEXDUMP_DBG(dst_sirk, BT_CSIS_SET_SIRK_SIZE,
-				       "Set SIRK");
+			LOG_HEXDUMP_DBG(dst_sirk, BT_CSIS_SET_SIRK_SIZE, "Set SIRK");
 
 			/* TODO: Notify app */
 		} else {
@@ -449,7 +447,7 @@ static uint8_t size_notify_func(struct bt_conn *conn,
 	} else {
 		BT_DBG("Notification/Indication on unknown CSIS inst");
 	}
-	BT_HEXDUMP_DBG(data, length, "Value");
+	LOG_HEXDUMP_DBG(data, length, "Value");
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -505,7 +503,7 @@ static uint8_t lock_notify_func(struct bt_conn *conn,
 	} else {
 		BT_DBG("Notification/Indication on unknown CSIS inst");
 	}
-	BT_HEXDUMP_DBG(data, length, "Value");
+	LOG_HEXDUMP_DBG(data, length, "Value");
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -818,7 +816,7 @@ static uint8_t csis_client_discover_insts_read_rank_cb(struct bt_conn *conn,
 
 		discover_complete(client, err);
 	} else if (data != NULL) {
-		BT_HEXDUMP_DBG(data, length, "Data read");
+		LOG_HEXDUMP_DBG(data, length, "Data read");
 
 		if (length == 1) {
 			(void)memcpy(&client->csis_insts[cur_inst->cli.idx].cli.rank,
@@ -854,7 +852,7 @@ static uint8_t csis_client_discover_insts_read_set_size_cb(struct bt_conn *conn,
 	} else if (data != NULL) {
 		struct bt_csis_client_set_info *set_info;
 
-		BT_HEXDUMP_DBG(data, length, "Data read");
+		LOG_HEXDUMP_DBG(data, length, "Data read");
 
 		set_info = &client->set_member.insts[cur_inst->cli.idx].info;
 
@@ -889,8 +887,8 @@ static int parse_sirk(struct bt_csis_client_inst *client,
 			if (IS_ENABLED(CONFIG_BT_CSIS_CLIENT_ENC_SIRK_SUPPORT)) {
 				int err;
 
-				BT_HEXDUMP_DBG(sirk->value, sizeof(sirk->value),
-					       "Encrypted Set SIRK");
+				LOG_HEXDUMP_DBG(sirk->value, sizeof(sirk->value),
+						"Encrypted Set SIRK");
 				err = sirk_decrypt(client->conn, sirk->value,
 						   set_sirk);
 				if (err != 0) {
@@ -908,8 +906,7 @@ static int parse_sirk(struct bt_csis_client_inst *client,
 		}
 
 		if (set_sirk != NULL) {
-			BT_HEXDUMP_DBG(set_sirk, BT_CSIS_SET_SIRK_SIZE,
-				       "Set SIRK");
+			LOG_HEXDUMP_DBG(set_sirk, BT_CSIS_SET_SIRK_SIZE, "Set SIRK");
 		}
 	} else {
 		BT_DBG("Invalid length");
@@ -936,7 +933,7 @@ static uint8_t csis_client_discover_insts_read_set_sirk_cb(struct bt_conn *conn,
 
 		discover_complete(client, err);
 	} else if (data != NULL) {
-		BT_HEXDUMP_DBG(data, length, "Data read");
+		LOG_HEXDUMP_DBG(data, length, "Data read");
 
 		cb_err = parse_sirk(client, data, length);
 

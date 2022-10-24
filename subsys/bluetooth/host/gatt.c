@@ -800,7 +800,7 @@ static void db_hash_gen(bool store)
 	 */
 	sys_mem_swap(db_hash.hash, sizeof(db_hash.hash));
 
-	BT_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash), "Hash: ");
+	LOG_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash), "Hash: ");
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 		db_hash_store();
@@ -830,8 +830,7 @@ static void db_hash_process(struct k_work *work)
 			return;
 		}
 
-		BT_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash),
-			       "New Hash: ");
+		LOG_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash), "New Hash: ");
 
 		/* GATT database has been modified since last boot, likely due
 		 * to a firmware update or a dynamic service that was not
@@ -5869,8 +5868,7 @@ static int db_hash_set(const char *name, size_t len_rd,
 		return len;
 	}
 
-	BT_HEXDUMP_DBG(db_hash.stored_hash, sizeof(db_hash.stored_hash),
-		       "Stored Hash: ");
+	LOG_HEXDUMP_DBG(db_hash.stored_hash, sizeof(db_hash.stored_hash), "Stored Hash: ");
 
 	return 0;
 }

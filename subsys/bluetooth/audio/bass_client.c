@@ -186,7 +186,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	BT_HEXDUMP_DBG(data, length, "Receive state notification:");
+	LOG_HEXDUMP_DBG(data, length, "Receive state notification:");
 
 	index = lookup_index_by_handle(handle);
 	if (index < 0) {

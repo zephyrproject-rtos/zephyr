@@ -759,7 +759,7 @@ static ssize_t read_current_calls(struct bt_conn *conn,
 	}
 
 	if (offset == 0) {
-		BT_HEXDUMP_DBG(read_buf.data, read_buf.len, "Current calls");
+		LOG_HEXDUMP_DBG(read_buf.data, read_buf.len, "Current calls");
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
@@ -881,7 +881,7 @@ static ssize_t read_call_state(struct bt_conn *conn,
 	}
 
 	if (offset == 0) {
-		BT_HEXDUMP_DBG(read_buf.data, read_buf.len, "Call state");
+		LOG_HEXDUMP_DBG(read_buf.data, read_buf.len, "Call state");
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
