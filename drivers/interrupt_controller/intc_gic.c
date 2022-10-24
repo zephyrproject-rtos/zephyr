@@ -20,8 +20,8 @@ static const uint64_t cpu_mpid_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
 };
 
-BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_NUM_CPUS,
-		"The count of CPU Cores nodes in dts is less than CONFIG_MP_NUM_CPUS\n");
+BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_MAX_NUM_CPUS,
+		"The count of CPU Cores nodes in dts is less than CONFIG_MP_MAX_NUM_CPUS\n");
 
 void arm_gic_irq_enable(unsigned int irq)
 {

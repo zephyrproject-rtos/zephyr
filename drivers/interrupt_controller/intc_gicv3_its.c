@@ -198,7 +198,8 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 			page_cnt = ROUND_UP(entry_size << device_ids, page_size) / page_size;
 			break;
 		case GITS_BASER_TYPE_COLLECTION:
-			page_cnt = ROUND_UP(entry_size * CONFIG_MP_NUM_CPUS, page_size) / page_size;
+			page_cnt =
+				ROUND_UP(entry_size * CONFIG_MP_MAX_NUM_CPUS, page_size)/page_size;
 			break;
 		default:
 			continue;
