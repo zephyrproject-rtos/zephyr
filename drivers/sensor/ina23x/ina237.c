@@ -16,21 +16,14 @@
 
 LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
 
-/**
- * @brief Internal fixed value of INA237 that is used to ensure
- *	  scaling is properly maintained.
- *
- */
-#define INA237_INTERNAL_FIXED_SCALING_VALUE 8192
+/** @brief Calibration scaling value (scaled by 10^-5) */
+#define INA237_CAL_SCALING 8192U
 
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
 #define INA237_BUS_VOLTAGE_UV_LSB 3125
 
-/**
- * @brief The LSB value for the power register.
- *
- */
-#define INA237_POWER_VALUE_LSB 2
+/** @brief Power scaling (scaled by 10) */
+#define INA237_POWER_SCALING 2
 
 static int ina237_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
@@ -38,7 +31,8 @@ static int ina237_channel_get(const struct device *dev,
 {
 	struct ina237_data *data = dev->data;
 	const struct ina237_config *config = dev->config;
-	uint32_t bus_uv;
+	uint32_t bus_uv, current_ua, power_uw;
+	int32_t sign;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
@@ -49,40 +43,30 @@ static int ina237_channel_get(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_CURRENT:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			/**
-			 * If current is negative, convert it to a
-			 * magnitude and return the negative of that
-			 * magnitude.
-			 */
-			if (data->current & INA23X_CURRENT_SIGN_BIT) {
-				uint16_t current_mag = (~data->current + 1);
-
-				val->val1 = -(current_mag / 10000U);
-				val->val2 = -(current_mag % 10000) * 100;
-
-			} else {
-				val->val1 = data->current / 10000U;
-				val->val2 = (data->current % 10000) * 100;
-			}
+		if (data->current & INA23X_CURRENT_SIGN_BIT) {
+			current_ua = ~data->current + 1U;
+			sign = -1;
 		} else {
-			val->val1 = data->current;
-			val->val2 = 0;
+			current_ua = data->current;
+			sign = 1;
 		}
+
+		/* see datasheet "Current and Power calculations" section */
+		current_ua = current_ua * config->current_lsb;
+
+		/* convert to fractional amperes */
+		val->val1 = sign * (int32_t)(current_ua / 1000000U);
+		val->val2 = sign * (int32_t)(current_ua % 1000000U);
 		break;
 
 	case SENSOR_CHAN_POWER:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			uint32_t power_mw = ((data->power *
-					 config->current_lsb *
-					 INA237_POWER_VALUE_LSB) / 10);
+		/* see datasheet "Current and Power calculations" section */
+		power_uw = (data->power * INA237_POWER_SCALING *
+			    config->current_lsb) / 10000U;
 
-			val->val1 = power_mw / 10000U;
-			val->val2 = (power_mw % 10000) * 100;
-		} else {
-			val->val1 = data->power;
-			val->val2 = 0;
-		}
+		/* convert to fractional watts */
+		val->val1 = (int32_t)(power_uw / 1000000U);
+		val->val2 = (int32_t)(power_uw % 1000000U);
 		break;
 
 	default:
@@ -259,7 +243,9 @@ static int ina237_calibrate(const struct device *dev)
 	uint16_t val;
 	int ret;
 
-	val = ((INA237_INTERNAL_FIXED_SCALING_VALUE * config->current_lsb * config->rshunt) / 100);
+	/* see datasheet "Current and Power calculations" section */
+	val = (INA237_CAL_SCALING * config->current_lsb * config->rshunt) /
+	       10000000U;
 
 	ret = ina23x_reg_write(&config->bus, INA237_REG_CALIB, val);
 	if (ret < 0) {
@@ -393,7 +379,7 @@ static const struct sensor_driver_api ina237_driver_api = {
 		.bus = I2C_DT_SPEC_INST_GET(inst),				\
 		.config = DT_INST_PROP(inst, config),				\
 		.adc_config = DT_INST_PROP(inst, adc_config),			\
-		.current_lsb = DT_INST_PROP(inst, current_lsb),			\
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),	\
 		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),			\
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),	\
 		.gpio_alert = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),	\
