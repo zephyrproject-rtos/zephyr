@@ -30,11 +30,15 @@ LOG_MODULE_REGISTER(bt_bap_scan_delegator, CONFIG_BT_BAP_SCAN_DELEGATOR_LOG_LEVE
 #include "../host/conn_internal.h"
 #include "../host/hci_core.h"
 
-#define PA_SYNC_SKIP              5
-#define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
 #define PAST_TIMEOUT              K_SECONDS(10)
 
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
+
+enum bass_recv_state_internal_flag {
+	BASS_RECV_STATE_INTERNAL_FLAG_NOTIFY_PEND,
+
+	BASS_RECV_STATE_INTERNAL_FLAG_NUM,
+};
 
 struct broadcast_assistant {
 	struct bt_conn *conn;
@@ -49,11 +53,9 @@ struct bass_recv_state_internal {
 	uint8_t index;
 	struct bt_bap_scan_delegator_recv_state state;
 	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
-	uint16_t pa_interval;
-	bool broadcast_code_received;
 	struct bt_le_per_adv_sync *pa_sync;
-	bool pa_sync_pending;
-	struct k_work_delayable pa_timer;
+
+	ATOMIC_DEFINE(flags, BASS_RECV_STATE_INTERNAL_FLAG_NUM);
 };
 
 struct bt_bap_scan_delegator_inst {
@@ -175,6 +177,12 @@ static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_s
 static void receive_state_updated(struct bt_conn *conn,
 				  const struct bass_recv_state_internal *internal_state)
 {
+	/* If something is holding the NOTIFY_PEND flag we should not notify now */
+	if (atomic_test_bit(internal_state->flags,
+			    BASS_RECV_STATE_INTERNAL_FLAG_NOTIFY_PEND)) {
+		return;
+	}
+
 	bt_debug_dump_recv_state(internal_state);
 	net_buf_put_recv_state(internal_state);
 	bass_notify_receive_state(internal_state);
@@ -320,29 +328,6 @@ static struct bass_recv_state_internal *bass_lookup_addr(const bt_addr_le_t *add
 	return NULL;
 }
 
-static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
-{
-	uint16_t pa_timeout;
-
-	if (pa_interval == BT_BAP_PA_INTERVAL_UNKNOWN) {
-		/* Use maximum value to maximize chance of success */
-		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
-	} else {
-		/* Ensure that the following calculation does not overflow silently */
-		__ASSERT(SYNC_RETRY_COUNT < 10,
-			 "SYNC_RETRY_COUNT shall be less than 10");
-
-		/* Add retries and convert to unit in 10's of ms */
-		pa_timeout = ((uint32_t)pa_interval * SYNC_RETRY_COUNT) / 10;
-
-		/* Enforce restraints */
-		pa_timeout = CLAMP(pa_timeout, BT_GAP_PER_ADV_MIN_TIMEOUT,
-				   BT_GAP_PER_ADV_MAX_TIMEOUT);
-	}
-
-	return pa_timeout;
-}
-
 static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
@@ -350,28 +335,17 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 
 	LOG_DBG("Synced%s", info->conn ? " via PAST" : "");
 
-	if (info->conn != NULL) {
-		internal_state = bass_lookup_addr(info->addr);
-	} else {
-		internal_state = bass_lookup_pa_sync(sync);
-	}
-
+	internal_state = bass_lookup_addr(info->addr);
 	if (internal_state == NULL) {
 		LOG_DBG("BASS receive state not found");
 		return;
 	}
 
-	/* Update pointer if PAST */
 	internal_state->pa_sync = sync;
 
-	(void)k_work_cancel_delayable(&internal_state->pa_timer);
-	internal_state->state.pa_sync_state = BT_BAP_PA_STATE_SYNCED;
-	internal_state->pa_sync_pending = false;
-
-	receive_state_updated(info->conn, internal_state);
-
-	if (scan_delegator_cbs != NULL && scan_delegator_cbs->pa_synced != NULL) {
-		scan_delegator_cbs->pa_synced(&internal_state->state, info);
+	if (internal_state->state.pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
+		internal_state->state.pa_sync_state = BT_BAP_PA_STATE_SYNCED;
+		receive_state_updated(info->conn, internal_state);
 	}
 }
 
@@ -381,17 +355,16 @@ static void pa_terminated(struct bt_le_per_adv_sync *sync,
 	struct bass_recv_state_internal *internal_state = bass_lookup_pa_sync(sync);
 
 	LOG_DBG("Terminated");
+	if (internal_state == NULL) {
+		LOG_DBG("BASS receive state not found");
+		return;
+	}
 
-	if (internal_state != NULL) {
-		internal_state->pa_sync = NULL;
+	internal_state->pa_sync = NULL;
+
+	if (internal_state->state.pa_sync_state != BT_BAP_PA_STATE_NOT_SYNCED) {
 		internal_state->state.pa_sync_state = BT_BAP_PA_STATE_NOT_SYNCED;
-		internal_state->pa_sync_pending = false;
-
 		receive_state_updated(NULL, internal_state);
-
-		if (scan_delegator_cbs != NULL && scan_delegator_cbs->pa_term != NULL) {
-			scan_delegator_cbs->pa_term(&internal_state->state, info);
-		}
 	}
 }
 
@@ -400,129 +373,42 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 	.term = pa_terminated,
 };
 
-static void pa_timer_handler(struct k_work *work)
+static bool supports_past(struct bt_conn *conn, uint8_t pa_sync_val)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct bass_recv_state_internal *internal_state = CONTAINER_OF(
-		dwork, struct bass_recv_state_internal, pa_timer);
-
-	LOG_DBG("PA timeout");
-
-	__ASSERT(internal_state, "NULL receive state");
-
-	if (internal_state->state.pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
-		internal_state->state.pa_sync_state = BT_BAP_PA_STATE_NO_PAST;
-	} else {
-		int err = bt_le_per_adv_sync_delete(internal_state->pa_sync);
-
-		if (err != 0) {
-			LOG_ERR("Could not delete BASS pa_sync");
-		}
-
-		internal_state->state.pa_sync_state = BT_BAP_PA_STATE_FAILED;
-	}
-	internal_state->pa_sync_pending = false;
-
-	receive_state_updated(NULL, internal_state);
+	return pa_sync_val == BT_BAP_BASS_PA_REQ_SYNC_PAST &&
+	       BT_FEAT_LE_PAST_SEND(conn->le.features) &&
+	       BT_FEAT_LE_PAST_RECV(bt_dev.le.features);
 }
 
-static void scan_delegator_pa_sync_past(struct bt_conn *conn,
-					struct bass_recv_state_internal *internal_state)
+static int pa_sync_request(struct bt_conn *conn,
+			   const struct bt_bap_scan_delegator_recv_state *state,
+			   uint8_t pa_sync_val, uint16_t pa_interval)
 {
-	struct bt_bap_scan_delegator_recv_state *recv_state = &internal_state->state;
-	int err;
-	struct bt_le_per_adv_sync_transfer_param param = { 0 };
+	int err = -EACCES;
 
-	param.skip = PA_SYNC_SKIP;
-	param.timeout = interval_to_sync_timeout(internal_state->pa_interval);
+	if (scan_delegator_cbs != NULL &&
+	    scan_delegator_cbs->pa_sync_req != NULL) {
+		const bool past_supported = supports_past(conn, pa_sync_val);
 
-	err = bt_le_per_adv_sync_transfer_subscribe(conn, &param);
-	if (err != 0) {
-		recv_state->pa_sync_state = BT_BAP_PA_STATE_FAILED;
-	} else {
-		recv_state->pa_sync_state = BT_BAP_PA_STATE_INFO_REQ;
-		internal_state->pa_sync_pending = true;
-
-		/* Multiply by 10 as param.timeout is in unit of 10ms */
-		(void)k_work_reschedule(&internal_state->pa_timer,
-					K_MSEC(param.timeout * 10));
+		err = scan_delegator_cbs->pa_sync_req(conn, state,
+						      past_supported,
+						      pa_interval);
 	}
+
+	return err;
 }
 
-static void scan_delegator_pa_sync_no_past(struct bass_recv_state_internal *internal_state)
+static int pa_sync_term_request(struct bt_conn *conn,
+				const struct bt_bap_scan_delegator_recv_state *state)
 {
-	struct bt_bap_scan_delegator_recv_state *recv_state = &internal_state->state;
-	int err;
-	struct bt_le_per_adv_sync_param param = { 0 };
+	int err = -EACCES;
 
-	if (internal_state->pa_sync_pending) {
-		LOG_DBG("PA sync pending");
-		return;
+	if (scan_delegator_cbs != NULL &&
+	    scan_delegator_cbs->pa_sync_req != NULL) {
+		err = scan_delegator_cbs->pa_sync_term_req(conn, state);
 	}
 
-	bt_addr_le_copy(&param.addr, &recv_state->addr);
-	param.sid = recv_state->adv_sid;
-	param.skip = PA_SYNC_SKIP;
-	param.timeout = interval_to_sync_timeout(internal_state->pa_interval);
-
-	/* TODO: Validate that the advertise is broadcasting the same
-	 * broadcast_id that the receive state has
-	 */
-	err = bt_le_per_adv_sync_create(&param, &internal_state->pa_sync);
-	if (err != 0) {
-		LOG_WRN("Could not sync per adv: %d", err);
-		recv_state->pa_sync_state = BT_BAP_PA_STATE_FAILED;
-	} else {
-		LOG_DBG("PA sync pending for addr %s",
-		       bt_addr_le_str(&recv_state->addr));
-		internal_state->pa_sync_pending = true;
-		(void)k_work_reschedule(&internal_state->pa_timer,
-					K_MSEC(param.timeout * 10));
-	}
-}
-
-static void scan_delegator_pa_sync_cancel(struct bass_recv_state_internal *internal_state)
-{
-	struct bt_bap_scan_delegator_recv_state *recv_state = &internal_state->state;
-	int err;
-
-	(void)k_work_cancel_delayable(&internal_state->pa_timer);
-
-	if (internal_state->pa_sync == NULL) {
-		return;
-	}
-
-	err = bt_le_per_adv_sync_delete(internal_state->pa_sync);
-	if (err != 0) {
-		LOG_WRN("Could not delete per adv sync: %d", err);
-	} else {
-		internal_state->pa_sync_pending = false;
-		internal_state->pa_sync = NULL;
-		recv_state->pa_sync_state = BT_BAP_PA_STATE_NOT_SYNCED;
-	}
-}
-
-static void scan_delegator_pa_sync(struct bt_conn *conn,
-				   struct bass_recv_state_internal *internal_state,
-				   bool pa_past)
-{
-	struct bt_bap_scan_delegator_recv_state *recv_state = &internal_state->state;
-
-	LOG_DBG("pa_past %u, pa_interval 0x%04x",
-		pa_past, internal_state->pa_interval);
-
-	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
-	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
-		return;
-	}
-
-	if (conn != NULL && pa_past &&
-	    BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-	    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
-		scan_delegator_pa_sync_past(conn, internal_state);
-	} else {
-		scan_delegator_pa_sync_no_past(internal_state);
-	}
+	return err;
 }
 
 static int scan_delegator_add_source(struct bt_conn *conn,
@@ -545,7 +431,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		struct bass_recv_state_internal *free_internal_state =
 			&scan_delegator.recv_states[i];
 
-		if (!internal_state->active) {
+		if (!free_internal_state->active) {
 			internal_state = free_internal_state;
 			break;
 		}
@@ -648,16 +534,35 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	internal_state->active = true;
-	state->req_pa_sync_value = pa_sync;
-	internal_state->pa_interval = pa_interval;
-
 	if (pa_sync != BT_BAP_BASS_PA_REQ_NO_SYNC) {
-		scan_delegator_pa_sync(conn, internal_state,
-				       (pa_sync == BT_BAP_BASS_PA_REQ_SYNC_PAST));
+		int err;
+
+		/* Set NOTIFY_PEND flag to ensure that we only send 1
+		 * notification in case that the upper layer calls another
+		 * function that changes the state in the pa_sync_request
+		 * callback
+		 */
+		atomic_set_bit(internal_state->flags,
+			       BASS_RECV_STATE_INTERNAL_FLAG_NOTIFY_PEND);
+		err = pa_sync_request(conn, state, pa_sync, pa_interval);
+
+		if (err != 0) {
+			(void)memset(state, 0, sizeof(*state));
+
+			LOG_DBG("PA sync %u from %p was reject with reason %d",
+				pa_sync, conn, err);
+
+			return err;
+		}
 	}
 
-	LOG_DBG("Index %u: New source added: ID 0x%02x", internal_state->index, state->src_id);
+	internal_state->active = true;
+
+	LOG_DBG("Index %u: New source added: ID 0x%02x",
+		internal_state->index, state->src_id);
+
+	atomic_clear_bit(internal_state->flags,
+			 BASS_RECV_STATE_INTERNAL_FLAG_NOTIFY_PEND);
 
 	receive_state_updated(conn, internal_state);
 
@@ -667,18 +572,18 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 static int scan_delegator_mod_src(struct bt_conn *conn,
 				  struct net_buf_simple *buf)
 {
+	struct bt_bap_scan_delegator_recv_state backup_state;
 	struct bass_recv_state_internal *internal_state;
 	struct bt_bap_scan_delegator_recv_state *state;
 	uint8_t src_id;
-	uint8_t old_pa_sync_state;
 	bool state_changed = false;
-	bool need_synced = false;
 	uint16_t pa_interval;
 	uint8_t num_subgroups;
 	struct bt_bap_scan_delegator_subgroup
 		subgroups[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS] = { 0 };
 	uint8_t pa_sync;
 	uint32_t aggregated_bis_syncs = 0;
+
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bt_bap_bass_cp_mod_src) - 1) {
@@ -689,6 +594,8 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 
 	src_id = net_buf_simple_pull_u8(buf);
 	internal_state = bass_lookup_src_id(src_id);
+
+	LOG_DBG("src_id %u", src_id);
 
 	if (internal_state == NULL) {
 		LOG_DBG("Could not find state by src id %u", src_id);
@@ -769,12 +676,13 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 
 	/* All input has been validated; update receive state and check for changes */
 	state = &internal_state->state;
-	old_pa_sync_state = state->pa_sync_state;
+
+	/* Store backup in case upper layers rejects */
+	(void)memcpy(&backup_state, state, sizeof(backup_state));
 
 	if (state->num_subgroups != num_subgroups) {
 		state->num_subgroups = num_subgroups;
 		state_changed = true;
-		need_synced = true;
 	}
 
 	for (int i = 0; i < num_subgroups; i++) {
@@ -782,7 +690,6 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		    subgroups[i].requested_bis_sync) {
 			state->subgroups[i].requested_bis_sync =
 				subgroups[i].requested_bis_sync;
-			need_synced = true;
 			state_changed = true;
 		}
 
@@ -806,31 +713,31 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		}
 	}
 
-	if (state->req_pa_sync_value != pa_sync) {
-		state->req_pa_sync_value = pa_sync;
-		need_synced = true;
-		state_changed = true;
-	}
+	/* Only send the sync request to upper layers if it is requested, and
+	 * we are not already synced to the device
+	 */
+	if (pa_sync != BT_BAP_BASS_PA_REQ_NO_SYNC &&
+	    (state_changed || state->pa_sync_state != BT_BAP_PA_STATE_SYNCED)) {
+		const int err = pa_sync_request(conn, state, pa_sync,
+						pa_interval);
 
-	internal_state->pa_interval = pa_interval;
+		if (err != 0) {
+			/* Restore backup */
+			(void)memcpy(state, &backup_state,
+				     sizeof(backup_state));
 
-	if (need_synced) {
-		/* Terminated PA let's re-sync later */
-		scan_delegator_pa_sync_cancel(internal_state);
+			LOG_DBG("PA sync %u from %p was reject with reason %d",
+				pa_sync, conn, err);
 
-		if (pa_sync != BT_BAP_BASS_PA_REQ_NO_SYNC) {
-			scan_delegator_pa_sync(conn, internal_state,
-					       (pa_sync == BT_BAP_BASS_PA_REQ_SYNC_PAST));
+			return err;
 		}
 	}
 
-	state_changed |= old_pa_sync_state != state->pa_sync_state;
-
-	LOG_DBG("Index %u: Source modified: ID 0x%02x",
-		internal_state->index, state->src_id);
-
 	/* Notify if changed */
 	if (state_changed) {
+		LOG_DBG("Index %u: Source modified: ID 0x%02x",
+			internal_state->index, state->src_id);
+
 		receive_state_updated(conn, internal_state);
 	}
 
@@ -865,8 +772,6 @@ static int scan_delegator_broadcast_code(struct net_buf_simple *buf)
 	LOG_DBG("Index %u: broadcast code added: %s", internal_state->index,
 		bt_hex(internal_state->broadcast_code, sizeof(internal_state->broadcast_code)));
 
-	internal_state->broadcast_code_received = true;
-
 	return 0;
 }
 
@@ -874,6 +779,7 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 				  struct net_buf_simple *buf)
 {
 	struct bass_recv_state_internal *internal_state;
+	struct bt_bap_scan_delegator_recv_state *state;
 	uint8_t src_id;
 
 	/* subtract 1 as the opcode has already been pulled */
@@ -890,13 +796,20 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_BAP_BASS_ERR_INVALID_SRC_ID);
 	}
 
-	/* Terminate PA sync */
-	scan_delegator_pa_sync_cancel(internal_state);
+	state = &internal_state->state;
 
-	/* Check if successful */
-	if (internal_state->pa_sync) {
-		LOG_WRN("Could not terminate PA sync");
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
+	    state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
+		int err;
+
+		/* Terminate PA sync */
+		err = pa_sync_term_request(conn, &internal_state->state);
+		if (err != 0) {
+			LOG_DBG("PA sync term from %p was reject with reason %d",
+				conn, err);
+
+			return err;
+		}
 	}
 
 	LOG_DBG("Index %u: Removed source with ID 0x%02x",
@@ -906,7 +819,6 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 	(void)memset(&internal_state->state, 0, sizeof(internal_state->state));
 	(void)memset(internal_state->broadcast_code, 0,
 		     sizeof(internal_state->broadcast_code));
-	internal_state->pa_interval = 0;
 
 	receive_state_updated(conn, internal_state);
 
@@ -1079,10 +991,7 @@ static int bt_bap_scan_delegator_init(const struct device *unused)
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 1 */
 
 	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
-	for (int i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
-		k_work_init_delayable(&scan_delegator.recv_states[i].pa_timer,
-				      pa_timer_handler);
-	}
+
 	return 0;
 }
 
@@ -1094,6 +1003,27 @@ DEVICE_DEFINE(bt_bap_scan_delegator, "bt_bap_scan_delegator",
 void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb)
 {
 	scan_delegator_cbs = cb;
+}
+
+int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,
+				       enum bt_bap_pa_state pa_state)
+{
+	struct bass_recv_state_internal *internal_state = bass_lookup_src_id(src_id);
+	struct bt_bap_scan_delegator_recv_state *recv_state;
+
+	if (internal_state == NULL) {
+		LOG_DBG("Could not find recv_state by src_id %u", src_id);
+		return -EINVAL;
+	}
+
+	recv_state = &internal_state->state;
+
+	if (recv_state->pa_sync_state != pa_state) {
+		recv_state->pa_sync_state = pa_state;
+		receive_state_updated(NULL, internal_state);
+	}
+
+	return 0;
 }
 
 int bt_bap_scan_delegator_set_bis_sync_state(

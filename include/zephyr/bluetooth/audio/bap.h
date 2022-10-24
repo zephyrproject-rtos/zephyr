@@ -281,9 +281,6 @@ struct bt_bap_scan_delegator_recv_state {
 	/** The advertising set ID*/
 	uint8_t adv_sid;
 
-	/** The requested periodic advertising sync value */
-	uint8_t req_pa_sync_value;
-
 	/** The periodic adverting sync state */
 	enum bt_bap_pa_state pa_sync_state;
 
@@ -308,31 +305,9 @@ struct bt_bap_scan_delegator_recv_state {
 
 struct bt_bap_scan_delegator_cb {
 	/**
-	 * @brief Periodic advertising synced for receive state
-	 *
-	 * @param recv_state Pointer to the receive state that was synced.
-	 * @param info       Information about the sync event.
-	 *
-	 * @return 0 in case of success or negative value in case of error.
-	 */
-	void (*pa_synced)(const struct bt_bap_scan_delegator_recv_state *recv_state,
-			  const struct bt_le_per_adv_sync_synced_info *info);
-
-	/**
-	 * @brief Periodic advertising terminated for receive state
-	 *
-	 * @param recv_state Pointer to the receive state that was terminated.
-	 * @param info       Information about the sync terminate event.
-	 *
-	 * @return 0 in case of success or negative value in case of error.
-	 */
-	void (*pa_term)(const struct bt_bap_scan_delegator_recv_state *recv_state,
-			const struct bt_le_per_adv_sync_term_info *info);
-
-	/**
 	 * @brief Receive state updated
 	 *
-	 * @param conn       Pointer to the connection to a remove device if the
+	 * @param conn       Pointer to the connection to a remote device if
 	 *                   the change was caused by it, otherwise NULL.
 	 * @param recv_state Pointer to the receive state that was updated.
 	 *
@@ -340,6 +315,47 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	void (*recv_state_updated)(struct bt_conn *conn,
 				   const struct bt_bap_scan_delegator_recv_state *recv_state);
+
+	/**
+	 * @brief Periodic advertising sync request
+	 *
+	 * Request from peer device to synchronize with the periodic advertiser
+	 * denoted by the @p recv_state. To notify the Broadcast Assistant about
+	 * any pending sync
+	 *
+	 * @param[in]  conn        Pointer to the connection requesting the
+	 *                         periodic advertising sync.
+	 * @param[in]  recv_state  Pointer to the receive state that is being
+	 *                         requested for periodic advertising sync.
+	 * @param[in]  past_avail  True if periodic advertising sync transfer is
+	 *                         available.
+	 * @param[in]  pa_interval The periodic advertising interval.
+	 * @param[out] past_sync   Set to true if syncing via periodic
+	 *                         advertising sync transfer, false otherwise.
+	 *                         If @p past_avail is false, this value is
+	 *                         ignored.
+	 *
+	 * @return 0 in case of accept, or other value to reject.
+	 */
+	int (*pa_sync_req)(struct bt_conn *conn,
+			   const struct bt_bap_scan_delegator_recv_state *recv_state,
+			   bool past_avail, uint16_t pa_interval);
+
+	/**
+	 * @brief Periodic advertising sync termination request
+	 *
+	 * Request from peer device to terminate the periodic advertiser sync
+	 * denoted by the @p recv_state.
+	 *
+	 * @param conn        Pointer to the connection requesting the periodic
+	 *                    advertising sync termination.
+	 * @param recv_state  Pointer to the receive state that is being
+	 *                    requested for periodic advertising sync.
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
+	int (*pa_sync_term_req)(struct bt_conn *conn,
+				const struct bt_bap_scan_delegator_recv_state *recv_state);
 };
 
 /** Structure holding information of audio stream endpoint */
@@ -1624,6 +1640,22 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink);
  * @param cb Pointer to the callback struct
  */
 void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb);
+
+/**
+ * @brief Set the periodic advertising sync state to syncing
+ *
+ * Set the periodic advertising sync state for a receive state to syncing,
+ * notifying Broadcast Assistants.
+ *
+ * @param src_id    The source id used to identify the receive state.
+ * @param pa_state  The Periodic Advertising sync state to set.
+ *                  BT_BAP_PA_STATE_NOT_SYNCED and BT_BAP_PA_STATE_SYNCED is
+ *                  not necessary to provide, as they are handled internally.
+ *
+ * @return int    Error value. 0 on success, errno on fail.
+ */
+int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,
+				       enum bt_bap_pa_state pa_state);
 
 /**
  * @brief Set the sync state of a receive state in the server
