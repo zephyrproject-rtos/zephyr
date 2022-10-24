@@ -24,3 +24,19 @@ The following commands build and flash the sample.
    :board: nucleo_wl55jc
    :goals: build flash
    :compact:
+
+Extended Configuration
+**********************
+
+This sample can be configured to run the application-layer clock
+synchronization service in the background.
+
+The following commands build and flash the sample with clock synchronization
+enabled.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/lorawan/class_a
+   :board: nucleo_wl55jc
+   :goals: build flash
+   :gen-args: -DOVERLAY_CONFIG=overlay-clock-sync.conf
+   :compact:
