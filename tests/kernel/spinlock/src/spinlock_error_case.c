@@ -14,6 +14,24 @@ static struct k_spinlock lock;
 static struct k_spinlock mylock;
 static k_spinlock_key_t key;
 
+/* Like all spin locks in Zephyr (and things that directly hold them), this must
+ * be placed globally in code paths that intel_adsp runs to be valid. Even if
+ * only used in a local function context as is the case here when SPIN_VALIDATE
+ * and KERNEL_COHERENCE are enabled.
+ *
+ * When both are enabled a check to verify that a spin lock is placed
+ * in coherent (uncached) memory is done and asserted on. Spin locks placed
+ * on a stack will fail on platforms where KERNEL_COHERENCE is needed such
+ * as intel_adsp.
+ *
+ * See kernel/Kconfig KERNEL_COHERENCE and subsys/debug/Kconfig SPIN_VALIDATE
+ * for more details.
+ */
+#ifdef CONFIG_SPIN_LOCK_TIME_LIMIT
+	static struct k_spinlock timeout_lock;
+#endif
+
+
 static ZTEST_DMEM volatile bool valid_assert;
 static ZTEST_DMEM volatile bool unlock_after_assert;
 
@@ -126,6 +144,7 @@ ZTEST(spinlock, test_spinlock_release_error)
 	ztest_test_fail();
 }
 
+
 /**
  * @brief Test unlocking spinlock held over the time limit
  *
@@ -148,7 +167,6 @@ ZTEST(spinlock, test_spinlock_lock_time_limit)
 	}
 
 
-	struct k_spinlock timeout_lock;
 
 	TC_PRINT("testing lock time limit, limit is %d!\n", CONFIG_SPIN_LOCK_TIME_LIMIT);
 
