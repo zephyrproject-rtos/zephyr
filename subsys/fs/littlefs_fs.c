@@ -58,10 +58,10 @@ BUILD_ASSERT((CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE % 8) == 0);
 
 static K_HEAP_DEFINE(file_cache_heap, CONFIG_FS_LITTLEFS_FC_HEAP_SIZE);
 
-static inline bool littlefs_on_blkdev(struct fs_mount_t *mountp)
+static inline bool littlefs_on_blkdev(int flags)
 {
 	return IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) &&
-		mountp->flags & FS_MOUNT_FLAG_USE_DISK_ACCESS;
+		flags & FS_MOUNT_FLAG_USE_DISK_ACCESS;
 }
 
 static inline void *fc_allocate(size_t size)
@@ -619,10 +619,9 @@ static lfs_size_t get_block_size(const struct flash_area *fa)
 	return ctx.max_size;
 }
 
-static int littlefs_flash_init(struct fs_mount_t *mountp)
+static int littlefs_flash_init(struct fs_littlefs *fs, uintptr_t dev_id)
 {
-	unsigned int area_id = (uintptr_t)mountp->storage_dev;
-	struct fs_littlefs *fs = mountp->fs_data;
+	unsigned int area_id = (uintptr_t)dev_id;
 	const struct flash_area **fap = (const struct flash_area **)&fs->backend;
 	const struct device *dev;
 	int ret;
@@ -648,37 +647,29 @@ static int littlefs_flash_init(struct fs_mount_t *mountp)
 	return 0;
 }
 
-static int littlefs_mount(struct fs_mount_t *mountp)
+static int littlefs_init_backend(struct fs_littlefs *fs, uintptr_t dev_id, int flags)
 {
 	int ret = 0;
-	struct fs_littlefs *fs = mountp->fs_data;
-	bool block_dev = littlefs_on_blkdev(mountp);
 
-	LOG_INF("LittleFS version %u.%u, disk version %u.%u",
-		LFS_VERSION_MAJOR, LFS_VERSION_MINOR,
-		LFS_DISK_VERSION_MAJOR, LFS_DISK_VERSION_MINOR);
-
-	if (fs->backend) {
-		return -EBUSY;
-	}
-
-	/* Create and take mutex. */
-	k_mutex_init(&fs->mutex);
-	fs_lock(fs);
-
-	if (IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) && block_dev) {
-		fs->backend = mountp->storage_dev;
+	if (littlefs_on_blkdev(flags)) {
+		fs->backend = (void *) dev_id;
 		ret = disk_access_init((char *) fs->backend);
 		if (ret < 0) {
 			LOG_ERR("Storage init ERROR!");
-			goto out;
+			return ret;
 		}
 	} else {
-		ret = littlefs_flash_init(mountp);
+		ret = littlefs_flash_init(fs, dev_id);
 		if (ret < 0) {
-			goto out;
+			return ret;
 		}
 	}
+	return 0;
+}
+
+static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
+{
+	int ret = 0;
 
 	BUILD_ASSERT(CONFIG_FS_LITTLEFS_READ_SIZE > 0);
 	BUILD_ASSERT(CONFIG_FS_LITTLEFS_PROG_SIZE > 0);
@@ -708,13 +699,13 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	lfs_size_t block_size = lcp->block_size;
 
 	if (block_size == 0) {
-		if (IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) && block_dev) {
+		if (littlefs_on_blkdev(flags)) {
 			ret = disk_access_ioctl((char *) fs->backend,
 						DISK_IOCTL_GET_SECTOR_SIZE,
 						&block_size);
 			if (ret < 0) {
 				LOG_ERR("Unable to get sector size");
-				goto out;
+				return ret;
 			}
 		} else {
 			block_size = get_block_size((struct flash_area *)fs->backend);
@@ -723,8 +714,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 	if (block_size == 0) {
 		__ASSERT_NO_MSG(block_size != 0);
-		ret = -EINVAL;
-		goto out;
+		return -EINVAL;
 	}
 
 	int32_t block_cycles = lcp->block_cycles;
@@ -752,14 +742,13 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	/* No, you don't get to override this. */
 	lfs_size_t block_count;
 
-	if (IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) && block_dev) {
+	if (littlefs_on_blkdev(flags)) {
 		ret = disk_access_ioctl((char *) fs->backend,
 					DISK_IOCTL_GET_SECTOR_COUNT,
 					&block_count);
 		if (ret < 0) {
 			LOG_ERR("Unable to get sector count!");
-			ret = -EINVAL;
-			goto out;
+			return -EINVAL;
 		}
 		LOG_INF("FS at %s: is %u 0x%x-byte blocks with %u cycle",
 			(char *) fs->backend, block_count, block_size,
@@ -789,7 +778,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 	lcp->context = fs->backend;
 	/* Set the validated/defaulted values. */
-	if (IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) && block_dev) {
+	if (littlefs_on_blkdev(flags)) {
 		lcp->read = lfs_api_read_blk;
 		lcp->prog = lfs_api_prog_blk;
 		lcp->erase = lfs_api_erase_blk;
@@ -821,6 +810,46 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	lcp->block_size = block_size;
 	lcp->block_count = block_count;
 	lcp->block_cycles = block_cycles;
+	return 0;
+}
+
+static int littlefs_init_fs(struct fs_littlefs *fs, int dev_id, int flags)
+{
+	int ret = 0;
+
+	LOG_INF("LittleFS version %u.%u, disk version %u.%u",
+		LFS_VERSION_MAJOR, LFS_VERSION_MINOR,
+		LFS_DISK_VERSION_MAJOR, LFS_DISK_VERSION_MINOR);
+
+	if (fs->backend) {
+		return -EBUSY;
+	}
+
+	ret = littlefs_init_backend(fs, dev_id, flags);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = littlefs_init_cfg(fs, flags);
+	if (ret < 0) {
+		return ret;
+	}
+	return 0;
+}
+
+static int littlefs_mount(struct fs_mount_t *mountp)
+{
+	int ret = 0;
+	struct fs_littlefs *fs = mountp->fs_data;
+
+	/* Create and take mutex. */
+	k_mutex_init(&fs->mutex);
+	fs_lock(fs);
+
+	ret = littlefs_init_fs(fs, (uintptr_t)mountp->storage_dev, mountp->flags);
+	if (ret < 0) {
+		goto out;
+	}
 
 	/* Mount it, formatting if needed. */
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
@@ -860,6 +889,44 @@ out:
 	return ret;
 }
 
+#if defined(CONFIG_FILE_SYSTEM_MKFS)
+
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(fs_cfg);
+
+static int littlefs_mkfs(uintptr_t dev_id, void *cfg, int flags)
+{
+	int ret = 0;
+	struct fs_littlefs *fs = &fs_cfg;
+
+	if (cfg != NULL) {
+		fs = (struct fs_littlefs *)cfg;
+	}
+
+	fs->backend = NULL;
+
+	/* Create and take mutex. */
+	k_mutex_init(&fs->mutex);
+	fs_lock(fs);
+
+	ret = littlefs_init_fs(fs, dev_id, flags);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = lfs_format(&fs->lfs, &fs->cfg);
+	if (ret < 0) {
+		LOG_ERR("format failed (LFS %d)", ret);
+		ret = lfs_to_errno(ret);
+		goto out;
+	}
+out:
+	fs->backend = NULL;
+	fs_unlock(fs);
+	return ret;
+}
+
+#endif /* CONFIG_FILE_SYSTEM_MKFS */
+
 static int littlefs_unmount(struct fs_mount_t *mountp)
 {
 	struct fs_littlefs *fs = mountp->fs_data;
@@ -868,7 +935,7 @@ static int littlefs_unmount(struct fs_mount_t *mountp)
 
 	lfs_unmount(&fs->lfs);
 
-	if (!littlefs_on_blkdev(mountp)) {
+	if (!littlefs_on_blkdev(mountp->flags)) {
 		flash_area_close(fs->backend);
 	}
 
@@ -900,6 +967,9 @@ static const struct fs_file_system_t littlefs_fs = {
 	.mkdir = littlefs_mkdir,
 	.stat = littlefs_stat,
 	.statvfs = littlefs_statvfs,
+#if defined(CONFIG_FILE_SYSTEM_MKFS)
+	.mkfs = littlefs_mkfs,
+#endif
 };
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
