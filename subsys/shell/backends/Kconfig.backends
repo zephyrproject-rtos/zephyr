@@ -25,10 +25,17 @@ config SHELL_BACKEND_SERIAL
 
 if SHELL_BACKEND_SERIAL
 
+config SHELL_BACKEND_SERIAL_AUTOSTART
+	bool "Auto-start shell serial backend at boot"
+	default y
+	help
+	  If enabled, shell serial backend will be automatically started.
+
 config SHELL_BACKEND_SERIAL_INIT_PRIORITY
 	int "Initialization priority"
 	default 0
 	range 0 99
+	depends on SHELL_BACKEND_SERIAL_AUTOSTART
 	help
 	  Initialization priority for UART backend. This must be bigger than
 	  the initialization priority of the used serial device.

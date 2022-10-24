@@ -332,15 +332,24 @@ static int enable_shell_uart(const struct device *arg)
 		smp_shell_init();
 	}
 
-	shell_init(&shell_uart, dev, cfg_flags, log_backend, level);
-
-	return 0;
+	return shell_init(&shell_uart, dev, cfg_flags, log_backend, level);
 }
 
+#if CONFIG_SHELL_BACKEND_SERIAL_AUTOSTART
 SYS_INIT(enable_shell_uart, POST_KERNEL,
 	 CONFIG_SHELL_BACKEND_SERIAL_INIT_PRIORITY);
+#endif
 
 const struct shell *shell_backend_uart_get_ptr(void)
 {
 	return &shell_uart;
+}
+
+int shell_backend_uart_enable(void)
+{
+#if CONFIG_SHELL_BACKEND_SERIAL_AUTOSTART
+	return 0;
+#else
+	return enable_shell_uart(NULL);
+#endif
 }

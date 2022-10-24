@@ -81,6 +81,16 @@ struct shell_uart {
  */
 const struct shell *shell_backend_uart_get_ptr(void);
 
+/**
+ * @brief This function enables shell uart backend
+ *
+ * Function can be used to enable uart shell, useful when
+ * SHELL_BACKEND_SERIAL_AUTOSTART is disabled.
+ *
+ * @returns Standard error code.
+ */
+int shell_backend_uart_enable(void);
+
 #ifdef __cplusplus
 }
 #endif
