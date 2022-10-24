@@ -458,6 +458,33 @@ static int fatfs_unmount(struct fs_mount_t *mountp)
 	return translate_error(res);
 }
 
+#if defined(CONFIG_FILE_SYSTEM_MKFS)
+
+static MKFS_PARM def_cfg = {
+	.fmt = FM_ANY | FM_SFD,	/* Any suitable FAT */
+	.n_fat = 1,		/* One FAT fs table */
+	.align = 0,		/* Get sector size via diskio query */
+	.n_root = CONFIG_FS_FATFS_MAX_ROOT_ENTRIES,
+	.au_size = 0		/* Auto calculate cluster size */
+};
+
+static int fatfs_mkfs(uintptr_t dev_id, void *cfg, int flags)
+{
+	FRESULT res;
+	uint8_t work[FF_MAX_SS];
+	MKFS_PARM *mkfs_opt = &def_cfg;
+
+	if (cfg != NULL) {
+		mkfs_opt = (MKFS_PARM *)cfg;
+	}
+
+	res = f_mkfs((char *)dev_id, mkfs_opt, work, sizeof(work));
+
+	return translate_error(res);
+}
+
+#endif /* CONFIG_FILE_SYSTEM_MKFS */
+
 /* File system interface */
 static const struct fs_file_system_t fatfs_fs = {
 	.open = fatfs_open,
@@ -478,6 +505,9 @@ static const struct fs_file_system_t fatfs_fs = {
 	.mkdir = fatfs_mkdir,
 	.stat = fatfs_stat,
 	.statvfs = fatfs_statvfs,
+#if defined(CONFIG_FILE_SYSTEM_MKFS)
+	.mkfs = fatfs_mkfs,
+#endif
 };
 
 static int fatfs_init(const struct device *dev)
