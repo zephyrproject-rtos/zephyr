@@ -273,7 +273,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	}
 
 	cpus_active[0] = true;
-	cpus_active[CONFIG_MP_NUM_CPUS - 1] = true;
+	cpus_active[cpu_num] = true;
 
 	esp_intr_alloc(DT_IRQN(DT_NODELABEL(ipi0)),
 		ESP_INTR_FLAG_IRAM,
