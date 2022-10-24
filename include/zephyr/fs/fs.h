@@ -605,6 +605,23 @@ int fs_stat(const char *path, struct fs_dirent *entry);
  */
 int fs_statvfs(const char *path, struct fs_statvfs *stat);
 
+#if defined(CONFIG_FILE_SYSTEM_MKFS)
+
+/**
+ * @brief Create fresh file system
+ *
+ * @param fs_type Type of file system to create.
+ * @param dev_id Id of storage device.
+ * @param cfg Backend dependent init object. If NULL then default configuration is used.
+ * @param flags Additional flags for file system implementation.
+ *
+ * @retval 0 on success;
+ * @retval <0 negative errno code on error.
+ */
+int fs_mkfs(int fs_type, uintptr_t dev_id, void *cfg, int flags);
+
+#endif /* CONFIG_FILE_SYSTEM_MKFS */
+
 /**
  * @brief Register a file system
  *
