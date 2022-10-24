@@ -977,7 +977,7 @@ static void unicast_client_codec_data_add(struct net_buf_simple *buf,
 
 		BT_DBG("#%u: %s type 0x%02x len %u", i, prefix, d->type,
 		       d->data_len);
-		BT_HEXDUMP_DBG(d->data, d->data_len, prefix);
+		LOG_HEXDUMP_DBG(d->data, d->data_len, prefix);
 
 		cc = net_buf_simple_add(buf, sizeof(*cc));
 		cc->len = d->data_len + sizeof(cc->type);
@@ -1015,7 +1015,7 @@ static bool unicast_client_codec_config_store(struct bt_data *data,
 	cdata->data.data = cdata->value;
 	(void)memcpy(cdata->value, data->data, data->data_len);
 
-	BT_HEXDUMP_DBG(cdata->value, data->data_len, "data");
+	LOG_HEXDUMP_DBG(cdata->value, data->data_len, "data");
 
 	codec->data_count++;
 
@@ -1100,7 +1100,7 @@ static bool unicast_client_codec_metadata_store(struct bt_data *data,
 	meta->data.data = meta->value;
 	(void)memcpy(meta->value, data->data, data->data_len);
 
-	BT_HEXDUMP_DBG(meta->value, data->data_len, "data");
+	LOG_HEXDUMP_DBG(meta->value, data->data_len, "data");
 
 	codec->meta_count++;
 
