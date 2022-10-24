@@ -41,7 +41,7 @@ SECTION_FUNC(TEXT, __initialize)
 	csrr a0, mhartid
 	beqz a0, boot_first_core
 
-	li t0, CONFIG_MP_NUM_CPUS
+	li t0, CONFIG_MP_MAX_NUM_CPUS
 	blt a0, t0, boot_secondary_core
 
 loop_unconfigured_cores:
