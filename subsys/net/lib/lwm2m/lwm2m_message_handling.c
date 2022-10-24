@@ -829,10 +829,10 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 
 			if (write_buf_len == sizeof(time_t)) {
 				*(time_t *)write_buf = temp_time;
-				len = 8;
+				len = sizeof(time_t);
 			} else if (write_buf_len == sizeof(uint32_t)) {
 				*(uint32_t *)write_buf = (uint32_t)temp_time;
-				len = 4;
+				len = sizeof(uint32_t);
 			} else {
 				LOG_ERR("Time resource buf len not supported %d", write_buf_len);
 				ret = -EINVAL;
