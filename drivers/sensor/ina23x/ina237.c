@@ -6,12 +6,13 @@
 
 #define DT_DRV_COMPAT ti_ina237
 
+#include "ina237.h"
+#include "ina23x_common.h"
+
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/dt-bindings/sensor/ina237.h>
 #include <zephyr/sys/byteorder.h>
-#include "ina237.h"
-#include "ina23x_common.h"
 
 LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
 
