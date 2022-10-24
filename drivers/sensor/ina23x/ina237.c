@@ -395,9 +395,6 @@ static const struct sensor_driver_api ina237_driver_api = {
 	.channel_get = ina237_channel_get,
 };
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
-	     "No compatible ina237 instances found");
-
 #define INA237_DRIVER_INIT(inst)						\
 	static struct ina237_data ina237_data_##inst;				\
 	static const struct ina237_config ina237_config_##inst = {		\

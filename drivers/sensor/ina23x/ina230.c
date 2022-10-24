@@ -277,9 +277,6 @@ static const struct sensor_driver_api ina230_driver_api = {
 	.channel_get = ina230_channel_get,
 };
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
-	     "No compatible ina230 instances found");
-
 #ifdef CONFIG_INA230_TRIGGER
 #define INA230_CFG_IRQ(inst)				\
 	.trig_enabled = true,				\
