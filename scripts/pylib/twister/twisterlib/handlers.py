@@ -162,6 +162,7 @@ class BinaryHandler(Handler):
 
         self.call_west_flash = False
         self.seed = None
+        self.line = b""
 
     def try_kill_process_by_pid(self):
         if self.pid_fn:
@@ -181,40 +182,39 @@ class BinaryHandler(Handler):
             harness.handle(None)
             return
 
-        log_out_fp = open(self.log, "wt")
-        timeout_extended = False
-        timeout_time = time.time() + self.timeout
-        while True:
-            this_timeout = timeout_time - time.time()
-            if this_timeout < 0:
-                break
-            reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
-            reader_t.start()
-            reader_t.join(this_timeout)
-            if not reader_t.is_alive():
-                line_decoded = self.line.decode('utf-8', "replace")
-                logger.debug("OUTPUT: {0}".format(line_decoded.rstrip()))
-                log_out_fp.write(line_decoded)
-                log_out_fp.flush()
-                harness.handle(line_decoded.rstrip())
-                if harness.state:
-                    if not timeout_extended or harness.capture_coverage:
-                        timeout_extended = True
-                        if harness.capture_coverage:
-                            timeout_time = time.time() + 30
-                        else:
-                            timeout_time = time.time() + 2
-            else:
-                reader_t.join(0)
-                break
-        try:
-            # POSIX arch based ztests end on their own,
-            # so let's give it up to 100ms to do so
-            proc.wait(0.1)
-        except subprocess.TimeoutExpired:
-            self.terminate(proc)
-
-        log_out_fp.close()
+        with open(self.log, "wt") as log_out_fp:
+            timeout_extended = False
+            timeout_time = time.time() + self.timeout
+            while True:
+                this_timeout = timeout_time - time.time()
+                if this_timeout < 0:
+                    break
+                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+                reader_t.start()
+                reader_t.join(this_timeout)
+                if not reader_t.is_alive() and self.line != b"":
+                    line_decoded = self.line.decode('utf-8', "replace")
+                    stripped_line = line_decoded.rstrip()
+                    logger.debug("OUTPUT: %s", stripped_line)
+                    log_out_fp.write(line_decoded)
+                    log_out_fp.flush()
+                    harness.handle(stripped_line)
+                    if harness.state:
+                        if not timeout_extended or harness.capture_coverage:
+                            timeout_extended = True
+                            if harness.capture_coverage:
+                                timeout_time = time.time() + 30
+                            else:
+                                timeout_time = time.time() + 2
+                else:
+                    reader_t.join(0)
+                    break
+            try:
+                # POSIX arch based ztests end on their own,
+                # so let's give it up to 100ms to do so
+                proc.wait(0.1)
+            except subprocess.TimeoutExpired:
+                self.terminate(proc)
 
     def handle(self):
 
