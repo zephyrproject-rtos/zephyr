@@ -37,6 +37,10 @@
 #define B91_CCA_TIME_MAX_US                 (200)
 #define B91_LOGIC_CHANNEL_TO_PHYSICAL(p)    (((p) - 10) * 5)
 #define B91_ACK_IE_MAX_SIZE                 (16)
+#define B91_MAC_KEYS_ITEMS                  (3)
+#ifndef IEEE802154_CRYPTO_LENGTH_AES_BLOCK
+#define IEEE802154_CRYPTO_LENGTH_AES_BLOCK  (16)
+#endif
 
 #define ZB_RADIO_TIMESTAMP_GET(p)           (uint32_t)(    \
 	(p[rf_zigbee_dma_rx_offset_time_stamp(p)])           | \
@@ -104,7 +108,7 @@ struct b91_src_match_table {
 #endif /* CONFIG_OPENTHREAD_FTD */
 
 #ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
-/* radio source match table type */
+/* radio ACK table type */
 struct b91_enh_ack_table {
 	struct {
 		bool valid;
@@ -115,6 +119,19 @@ struct b91_enh_ack_table {
 	} item[CONFIG_OPENTHREAD_MAX_CHILDREN];
 };
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
+
+#ifdef CONFIG_IEEE802154_2015
+/* radio MAC keys type */
+struct b91_mac_keys {
+	struct {
+		uint8_t key_id;
+		uint8_t key[IEEE802154_CRYPTO_LENGTH_AES_BLOCK];
+		uint32_t frame_cnt;
+		bool frame_cnt_local;
+	} item[B91_MAC_KEYS_ITEMS];
+	uint32_t frame_cnt;
+};
+#endif /* CONFIG_IEEE802154_2015 */
 
 /* data structure */
 struct b91_data {
@@ -142,6 +159,9 @@ struct b91_data {
 	atomic_t current_pm_lock;
 #endif /* CONFIG_PM_DEVICE */
 	ieee802154_event_cb_t event_handler;
+#ifdef CONFIG_IEEE802154_2015
+	struct b91_mac_keys *mac_keys;
+#endif /* CONFIG_IEEE802154_2015 */
 };
 
 #endif
