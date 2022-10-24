@@ -14,8 +14,6 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 
-#define LOG_MODULE_NAME bt_ctlr_rv32m1_mayfly
-#include "common/log.h"
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)

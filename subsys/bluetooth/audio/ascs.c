@@ -25,6 +25,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_ASCS)
 #define LOG_MODULE_NAME bt_ascs
 #include "common/log.h"
+#include "common/assert.h"
 
 #include "../host/hci_core.h"
 #include "../host/conn_internal.h"
