@@ -972,6 +972,9 @@ class TwisterRunner:
 
             if instance.status not in no_retry_statuses:
                 logger.debug(f"adding {instance.name}")
+                if instance.status:
+                    instance.retries += 1
+
                 instance.status = None
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})

@@ -40,6 +40,7 @@ class TestInstance:
         self.handler = None
         self.outdir = outdir
         self.execution_time = 0
+        self.retries = 0
 
         self.name = os.path.join(platform.name, testsuite.name)
         self.run_id = self._get_run_id()
