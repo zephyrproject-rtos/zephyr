@@ -174,7 +174,7 @@ static int arc_smp_init(const struct device *dev)
 		z_arc_connect_gfrc_enable();
 
 		/* when all cores halt, gfrc halt */
-		z_arc_connect_gfrc_core_set((1 << CONFIG_MP_NUM_CPUS) - 1);
+		z_arc_connect_gfrc_core_set((1 << arch_num_cpus()) - 1);
 		z_arc_connect_gfrc_clear();
 	} else {
 		__ASSERT(0,
