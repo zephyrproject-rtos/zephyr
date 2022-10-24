@@ -293,7 +293,7 @@ static const struct sensor_driver_api ina230_driver_api = {
 		.bus = I2C_DT_SPEC_INST_GET(inst),		    \
 		.config = DT_INST_PROP(inst, config),		    \
 		.current_lsb = DT_INST_PROP(inst, current_lsb),	    \
-		.rshunt = DT_INST_PROP(inst, rshunt),		    \
+		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),	    \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios), \
 			    (INA230_CFG_IRQ(inst)), ())		    \
 	};							    \
