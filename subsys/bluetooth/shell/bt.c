@@ -731,6 +731,11 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
+{
+	return bt_disable();
+}
+
 #ifdef CONFIG_SETTINGS
 static int cmd_settings_load(const struct shell *sh, size_t argc,
 			     char *argv[])
@@ -3491,6 +3496,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_scan_filter_clear_cmds,
 SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(init, NULL, "[no-settings-load], [sync]",
 		      cmd_init, 1, 2),
+	SHELL_CMD_ARG(disable, NULL, HELP_NONE, cmd_disable, 1, 0),
 #if defined(CONFIG_SETTINGS)
 	SHELL_CMD_ARG(settings-load, NULL, HELP_NONE, cmd_settings_load, 1, 0),
 #endif
