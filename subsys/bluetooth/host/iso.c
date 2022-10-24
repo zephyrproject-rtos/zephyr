@@ -23,6 +23,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_ISO)
 #define LOG_MODULE_NAME bt_iso
 #include "common/log.h"
+#include "common/assert.h"
 
 #define iso_chan(_iso) ((_iso)->iso.chan);
 

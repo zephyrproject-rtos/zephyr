@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ #include "common/assert.h"
+
 #ifdef CONFIG_BT_CTLR_ASSERT_HANDLER
 void bt_ctlr_assert_handle(char *file, uint32_t line);
 #define LL_ASSERT(cond) \

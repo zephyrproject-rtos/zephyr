@@ -25,6 +25,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CAPABILITIES)
 #define LOG_MODULE_NAME bt_audio_capability
 #include "common/log.h"
+#include "common/assert.h"
 
 static sys_slist_t snks;
 static sys_slist_t srcs;
