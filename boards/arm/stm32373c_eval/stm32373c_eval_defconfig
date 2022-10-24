@@ -6,9 +6,6 @@ CONFIG_SOC_SERIES_STM32F3X=y
 # Platform Configuration
 CONFIG_SOC_STM32F373XC=y
 
-# Floating Point Options
-CONFIG_FPU=y
-
 # Enable MPU
 CONFIG_ARM_MPU=y
 
