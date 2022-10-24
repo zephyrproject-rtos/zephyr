@@ -115,7 +115,7 @@ static void notify_clients(struct bt_csis *csis,
 		}
 	}
 
-	bt_conn_foreach(BT_CONN_TYPE_ALL, notify_client, &data);
+	bt_conn_foreach(BT_CONN_TYPE_LE, notify_client, &data);
 }
 
 static int sirk_encrypt(struct bt_conn *conn,
