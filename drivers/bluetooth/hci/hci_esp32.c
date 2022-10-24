@@ -191,7 +191,7 @@ static int hci_esp_host_rcv_pkt(uint8_t *data, uint16_t len)
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
 
-	BT_HEXDUMP_DBG(data, len, "host packet data:");
+	LOG_HEXDUMP_DBG(data, len, "host packet data:");
 
 	pkt_indicator = *data++;
 	remaining -= sizeof(pkt_indicator);
@@ -256,7 +256,7 @@ static int bt_esp32_send(struct net_buf *buf)
 	}
 	net_buf_push_u8(buf, pkt_indicator);
 
-	BT_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
 	if (!esp_vhci_host_check_send_available()) {
 		BT_WARN("Controller not ready to receive packets");
