@@ -3737,6 +3737,7 @@ int bt_enable(bt_ready_cb_t cb)
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* RX thread */
+	k_work_queue_init(&bt_workq);
 	k_work_queue_start(&bt_workq, rx_thread_stack,
 			   CONFIG_BT_RX_STACK_SIZE,
 			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
@@ -3808,6 +3809,10 @@ int bt_disable(void)
 #if defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
 #endif /* CONFIG_BT_EXT_ADV || CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_PRIVACY)
+	k_work_cancel_delayable(&bt_dev.rpa_update);
+#endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 	bt_periodic_sync_disable();
