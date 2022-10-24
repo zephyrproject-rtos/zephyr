@@ -7,10 +7,11 @@
 
 #define DT_DRV_COMPAT ti_ina230
 
-#include <zephyr/logging/log.h>
-#include <zephyr/drivers/sensor.h>
 #include "ina230.h"
 #include "ina23x_common.h"
+
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor.h>
 
 LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 

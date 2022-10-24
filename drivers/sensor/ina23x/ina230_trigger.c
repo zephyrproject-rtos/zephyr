@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "ina230.h"
+
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
-
-#include "ina230.h"
 
 LOG_MODULE_DECLARE(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
