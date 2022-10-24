@@ -23,6 +23,15 @@ Changes in this release
   and :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER` have been
   added to enable the PAST implementation rather than
   :kconfig:option:`CONFIG_BT_CONN`.
+* Flashdisk: :kconfig:option:`CONFIG_DISK_FLASH_VOLUME_NAME`,
+  :kconfig:option:`CONFIG_DISK_FLASH_DEV_NAME`,
+  :kconfig:option:`CONFIG_DISK_FLASH_START`,
+  :kconfig:option:`CONFIG_DISK_FLASH_MAX_RW_SIZE`,
+  :kconfig:option:`CONFIG_DISK_ERASE_BLOCK_SIZE`,
+  :kconfig:option:`CONFIG_DISK_FLASH_ERASE_ALIGNMENT`,
+  :kconfig:option:`CONFIG_DISK_VOLUME_SIZE` and
+  :kconfig:option:`CONFIG_DISK_FLASH_SECTOR_SIZE` Kconfig options have been
+  removed in favor of new :dtcompatible:`zephyr,flash-disk` devicetree binding.
 
 - Starting from this release ``zephyr-`` prefixed tags won't be created
   anymore. The project will continue using ``v`` tags, for example ``v3.3.0``.
@@ -243,6 +252,12 @@ USB
 
 Devicetree
 **********
+
+* Bindings
+
+  * New:
+
+    * :dtcompatible:`zephyr,flash-disk`
 
 Libraries / Subsystems
 **********************
