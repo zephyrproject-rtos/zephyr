@@ -69,6 +69,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
 
+/* references counter to physical pages */
 static int hpsram_ref[L2_SRAM_BANK_NUM];
 
 /* declare L2 physical memory block */
@@ -86,6 +87,8 @@ SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(
  */
 __attribute__((__section__(".unused_ram_start_marker")))
 static int unused_l2_sram_start_marker = 0xba0babce;
+#define UNUSED_L2_START_ALIGNED ROUND_UP(POINTER_TO_UINT(&unused_l2_sram_start_marker), \
+					 CONFIG_MM_DRV_PAGE_SIZE)
 
 /**
  * Calculate TLB entry based on physical address.
@@ -206,7 +209,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	k_spinlock_key_t key;
 	uint32_t entry_idx, bank_idx;
 	uint16_t entry;
-	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
+	volatile uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
 	int ret = 0;
 	void *phys_block_ptr;
 
@@ -229,7 +232,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	}
 
 	/* Check bounds of virtual address space */
-	CHECKIF((va < CONFIG_KERNEL_VM_BASE) ||
+	CHECKIF((va <= UNUSED_L2_START_ALIGNED) ||
 		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
 		ret = -EINVAL;
 		goto out;
@@ -371,7 +374,7 @@ int sys_mm_drv_unmap_page(void *virt)
 	uintptr_t va = POINTER_TO_UINT(z_soc_cached_ptr(virt));
 
 	/* Check bounds of virtual address space */
-	CHECKIF((va < CONFIG_KERNEL_VM_BASE) ||
+	CHECKIF((va <= UNUSED_L2_START_ALIGNED) ||
 		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
 		ret = -EINVAL;
 		goto out;
@@ -678,15 +681,11 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	 * find virtual address range which are unused
 	 * in the system
 	 */
-	uintptr_t unused_l2_start_aligned =
-		ROUND_UP(POINTER_TO_UINT(&unused_l2_sram_start_marker),
-					 CONFIG_MM_DRV_PAGE_SIZE);
-
-	if (unused_l2_start_aligned < L2_SRAM_BASE ||
-	    unused_l2_start_aligned > L2_SRAM_BASE + L2_SRAM_SIZE) {
+	if (L2_SRAM_BASE + L2_SRAM_SIZE < UNUSED_L2_START_ALIGNED ||
+	    L2_SRAM_BASE > UNUSED_L2_START_ALIGNED) {
 		__ASSERT(false,
 			 "unused l2 pointer is outside of l2 sram range %p\n",
-			 unused_l2_start_aligned);
+			 UNUSED_L2_START_ALIGNED);
 		return -EFAULT;
 	}
 
@@ -695,9 +694,9 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	 * virtual address space to save power
 	 */
 	size_t unused_size = CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE -
-			     unused_l2_start_aligned;
+			     UNUSED_L2_START_ALIGNED;
 
-	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(unused_l2_start_aligned),
+	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
 				      unused_size);
 
 	return 0;
