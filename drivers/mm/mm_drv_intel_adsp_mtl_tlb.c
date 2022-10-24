@@ -36,11 +36,16 @@
 #include <adsp_memory.h>
 
 #include "mm_drv_common.h"
+#include <drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
 
 DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
 
+/* base address of TLB table */
 #define TLB_BASE \
 	((mm_reg_t)DEVICE_MMIO_TOPLEVEL_GET(tlb_regs))
+
+/* size of TLB table */
+#define TLB_SIZE DT_REG_SIZE_BY_IDX(DT_INST(0, intel_adsp_mtl_tlb), 0)
 
 /*
  * Number of significant bits in the page index (defines the size of
@@ -702,4 +707,125 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(sys_mm_drv_mm_init, POST_KERNEL, 0);
+static void adsp_mm_save_context(void *storage_buffer)
+{
+	uint16_t entry;
+	uint32_t entry_idx;
+	int page_idx;
+	uint32_t phys_addr;
+	volatile uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
+	uint8_t *location = (uint8_t *) storage_buffer;
+
+	/* first, store the existing TLB */
+	memcpy(location, UINT_TO_POINTER(TLB_BASE), TLB_SIZE);
+	location += TLB_SIZE;
+
+	/* save context of all the pages */
+	for (page_idx = 0; page_idx < L2_SRAM_PAGES_NUM; page_idx++) {
+		phys_addr = POINTER_TO_UINT(L2_SRAM_BASE) +
+				CONFIG_MM_DRV_PAGE_SIZE * page_idx;
+		if (sys_mem_blocks_is_region_free(
+				&L2_PHYS_SRAM_REGION,
+				UINT_TO_POINTER(phys_addr), 1)) {
+			/* skip a free page */
+			continue;
+		}
+
+		/* map the physical addr 1:1 to virtual address */
+		entry_idx = get_tlb_entry_idx(phys_addr);
+		entry = pa_to_tlb_entry(phys_addr);
+
+		if ((tlb_entries[entry_idx] & TLB_PADDR_MASK) != entry) {
+			/* this page needs remapping, invalidate cache to avoid stalled data
+			 * all cache data has been flushed before
+			 * do this for pages to remap only
+			 */
+			z_xtensa_cache_inv(UINT_TO_POINTER(phys_addr), CONFIG_MM_DRV_PAGE_SIZE);
+
+			/* Enable the translation in the TLB entry */
+			entry |= TLB_ENABLE_BIT;
+
+			/* map the page 1:1 virtual to physical */
+			tlb_entries[entry_idx] = entry;
+		}
+
+		/* save physical address */
+		*((uint32_t *) location) = phys_addr;
+		location += sizeof(uint32_t);
+
+		/* save the page */
+		memcpy(location,
+			UINT_TO_POINTER(phys_addr),
+			CONFIG_MM_DRV_PAGE_SIZE);
+		location += CONFIG_MM_DRV_PAGE_SIZE;
+	}
+
+	/* write end marker - a null address */
+	*((uint32_t *) location) = 0;
+	location += sizeof(uint32_t);
+
+	z_xtensa_cache_flush(
+		storage_buffer,
+		(uint32_t)location - (uint32_t)storage_buffer);
+
+
+	/* system state is frozen, ready to poweroff, no further changes will be stored */
+}
+
+__imr void adsp_mm_restore_context(void *storage_buffer)
+{
+	/* at this point system must be in a startup state
+	 * TLB must be set to initial state
+	 * Note! the stack must NOT be in the area being restored
+	 */
+	uint32_t phys_addr;
+	uint8_t *location;
+
+	/* restore context of all the pages */
+	location = (uint8_t *) storage_buffer + TLB_SIZE;
+
+	phys_addr = *((uint32_t *) location);
+
+	while (phys_addr != 0) {
+		uint32_t phys_addr_uncached =
+				POINTER_TO_UINT(z_soc_uncached_ptr(UINT_TO_POINTER(phys_addr)));
+		uint32_t phys_offset = phys_addr - L2_SRAM_BASE;
+		uint32_t bank_idx = (phys_offset / SRAM_BANK_SIZE);
+
+		location += sizeof(uint32_t);
+
+		/* turn on memory bank power, wait till the power is on */
+		__ASSERT_NO_MSG(bank_idx <= ace_hpsram_get_bank_count());
+		HPSRAM_REGS(bank_idx)->HSxPGCTL = 0;
+		while (HPSRAM_REGS(bank_idx)->HSxPGISTS == 1) {
+			/* k_busy_wait cannot be used here - not available */
+		}
+
+		/* copy data to uncached alias and invalidate cache */
+		bmemcpy(UINT_TO_POINTER(phys_addr_uncached),
+			location,
+			CONFIG_MM_DRV_PAGE_SIZE);
+		z_xtensa_cache_inv(UINT_TO_POINTER(phys_addr), CONFIG_MM_DRV_PAGE_SIZE);
+
+		location += CONFIG_MM_DRV_PAGE_SIZE;
+		phys_addr = *((uint32_t *) location);
+	}
+
+	/* restore original TLB table */
+	bmemcpy(UINT_TO_POINTER(TLB_BASE), storage_buffer, TLB_SIZE);
+
+	/* HPSRAM memory is restored */
+}
+
+static const struct intel_adsp_tlb_api adsp_tlb_api_func = {
+	.save_context = adsp_mm_save_context
+};
+
+DEVICE_DT_DEFINE(DT_INST(0, intel_adsp_mtl_tlb),
+		sys_mm_drv_mm_init,
+		NULL,
+		NULL,
+		NULL,
+		POST_KERNEL,
+		0,
+		&adsp_tlb_api_func);
