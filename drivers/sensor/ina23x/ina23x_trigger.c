@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
 #include "ina23x_trigger.h"
+
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(INA23X_TRIGGER, CONFIG_SENSOR_LOG_LEVEL);
 
