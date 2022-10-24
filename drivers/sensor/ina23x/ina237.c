@@ -402,7 +402,7 @@ static const struct sensor_driver_api ina237_driver_api = {
 		.config = DT_INST_PROP(inst, config),				\
 		.adc_config = DT_INST_PROP(inst, adc_config),			\
 		.current_lsb = DT_INST_PROP(inst, current_lsb),			\
-		.rshunt = DT_INST_PROP(inst, rshunt),				\
+		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),			\
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),	\
 		.gpio_alert = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),	\
 	};							    \
