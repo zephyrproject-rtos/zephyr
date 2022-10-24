@@ -524,6 +524,7 @@ class TestPlan:
                 if status in ["error", "failed"]:
                     instance.status = None
                     instance.reason = None
+                    instance.retries += 1
                 # test marked as passed (built only) but can run when
                 # --test-only is used. Reset status to capture new results.
                 elif status == 'passed' and instance.run and self.options.test_only:
