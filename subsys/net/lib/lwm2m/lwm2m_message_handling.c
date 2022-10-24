@@ -448,7 +448,7 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 		coap_pending_cycle(msg->pending);
 	}
 
-	rc = send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
+	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
 
 	if (rc < 0) {
 		LOG_ERR("Failed to send packet, err %d", errno);
@@ -2665,7 +2665,7 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 {
 	struct http_parser_url parser;
 #if defined(CONFIG_LWM2M_DNS_SUPPORT)
-	struct addrinfo *res, hints = {0};
+	struct zsock_addrinfo *res, hints = {0};
 #endif
 	int ret;
 	uint16_t off, len;
@@ -2750,7 +2750,7 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 		hints.ai_family = AF_UNSPEC;
 #endif /* defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4) */
 		hints.ai_socktype = SOCK_DGRAM;
-		ret = getaddrinfo(url + off, NULL, &hints, &res);
+		ret = zsock_getaddrinfo(url + off, NULL, &hints, &res);
 		if (ret != 0) {
 			LOG_ERR("Unable to resolve address");
 			/* DNS error codes don't align with normal errors */
@@ -2760,7 +2760,7 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 
 		memcpy(&client_ctx->remote_addr, res->ai_addr, sizeof(client_ctx->remote_addr));
 		client_ctx->remote_addr.sa_family = res->ai_family;
-		freeaddrinfo(res);
+		zsock_freeaddrinfo(res);
 #else
 		goto cleanup;
 #endif /* CONFIG_LWM2M_DNS_SUPPORT */
