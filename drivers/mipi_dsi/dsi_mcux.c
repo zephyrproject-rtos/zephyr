@@ -11,6 +11,8 @@
 #include <fsl_clock.h>
 #include <zephyr/logging/log.h>
 
+#include <soc.h>
+
 LOG_MODULE_REGISTER(dsi_mcux, CONFIG_MIPI_DSI_LOG_LEVEL);
 
 #define MIPI_DPHY_REF_CLK DT_INST_PROP(0, dphy_ref_frequency)
