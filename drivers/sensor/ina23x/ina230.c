@@ -22,11 +22,8 @@ LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
  */
 #define INA230_INTERNAL_FIXED_SCALING_VALUE 5120
 
-/**
- * @brief The LSB value for the bus voltage register.
- *
- */
-#define INA230_BUS_VOLTAGE_LSB 125
+/** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
+#define INA230_BUS_VOLTAGE_UV_LSB 1250U
 
 /**
  * @brief The LSB value for the power register.
@@ -40,19 +37,15 @@ static int ina230_channel_get(const struct device *dev,
 {
 	struct ina230_data *data = dev->data;
 	const struct ina230_config *const config = dev->config;
+	uint32_t bus_uv;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			uint32_t bus_mv = ((data->bus_voltage *
-					 INA230_BUS_VOLTAGE_LSB) / 100);
+		bus_uv = data->bus_voltage * INA230_BUS_VOLTAGE_UV_LSB;
 
-			val->val1 = bus_mv / 1000U;
-			val->val2 = (bus_mv % 1000) * 1000;
-		} else {
-			val->val1 = data->bus_voltage;
-			val->val2 = 0;
-		}
+		/* convert to fractional volts (units for voltage channel) */
+		val->val1 = bus_uv / 1000000U;
+		val->val2 = bus_uv % 1000000U;
 		break;
 
 	case SENSOR_CHAN_CURRENT:
