@@ -48,7 +48,7 @@ struct ina237_config {
 	struct i2c_dt_spec bus;
 	uint16_t config;
 	uint16_t adc_config;
-	uint16_t current_lsb;
+	uint32_t current_lsb;
 	uint16_t rshunt;
 	const struct gpio_dt_spec gpio_alert;
 	uint16_t alert_config;

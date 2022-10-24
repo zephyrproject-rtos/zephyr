@@ -15,21 +15,14 @@
 
 LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
-/**
- * @brief Internal fixed value of INA230 that is used to ensure
- *	  scaling is properly maintained.
- *
- */
-#define INA230_INTERNAL_FIXED_SCALING_VALUE 5120
+/** @brief Calibration scaling value (value scaled by 100000) */
+#define INA230_CAL_SCALING 512U
 
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
 #define INA230_BUS_VOLTAGE_UV_LSB 1250U
 
-/**
- * @brief The LSB value for the power register.
- *
- */
-#define INA230_POWER_VALUE_LSB 25
+/** @brief The scaling for the power register. */
+#define INA230_POWER_SCALING 25
 
 static int ina230_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
@@ -37,7 +30,8 @@ static int ina230_channel_get(const struct device *dev,
 {
 	struct ina230_data *data = dev->data;
 	const struct ina230_config *const config = dev->config;
-	uint32_t bus_uv;
+	uint32_t bus_uv, current_ua, power_uw;
+	int32_t sign;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
@@ -49,37 +43,31 @@ static int ina230_channel_get(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_CURRENT:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			/**
-			 * If current is negative, convert it to a
-			 * magnitude and return the negative of that
-			 * magnitude.
-			 */
-			if (data->current & INA23X_CURRENT_SIGN_BIT) {
-				uint16_t current_mag = (~data->current + 1);
-
-				val->val1 = -(current_mag / 1000U);
-				val->val2 = -(current_mag % 1000) * 1000;
-			} else {
-				val->val1 = data->current / 1000U;
-				val->val2 = (data->current % 1000) * 1000;
-			}
+		if (data->current & INA23X_CURRENT_SIGN_BIT) {
+			current_ua = ~data->current + 1U;
+			sign = -1;
 		} else {
-			val->val1 = data->current;
-			val->val2 = 0;
+			current_ua = data->current;
+			sign = 1;
 		}
+
+		/* see datasheet "Programming" section for reference */
+		current_ua = current_ua * config->current_lsb;
+
+		/* convert to fractional amperes */
+		val->val1 = sign * (int32_t)(current_ua / 1000000U);
+		val->val2 = sign * (int32_t)(current_ua % 1000000U);
+
 		break;
 
 	case SENSOR_CHAN_POWER:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			uint32_t power_mw = data->power * INA230_POWER_VALUE_LSB;
+		power_uw = data->power * INA230_POWER_SCALING
+			   * config->current_lsb;
 
-			val->val1 = power_mw / 1000U;
-			val->val2 = (power_mw % 1000) * 1000;
-		} else {
-			val->val1 = data->power;
-			val->val2 = 0;
-		}
+		/* convert to fractional watts */
+		val->val1 = (int32_t)(power_uw / 1000000U);
+		val->val2 = (int32_t)(power_uw % 1000000U);
+
 		break;
 
 	default:
@@ -202,7 +190,9 @@ static int ina230_calibrate(const struct device *dev)
 	uint16_t val;
 	int ret;
 
-	val = (INA230_INTERNAL_FIXED_SCALING_VALUE / (config->current_lsb * config->rshunt));
+	/* See datasheet "Programming" section */
+	val = (INA230_CAL_SCALING * 10000U) /
+	      (config->current_lsb * config->rshunt);
 
 	ret = ina23x_reg_write(&config->bus, INA230_REG_CALIB, val);
 	if (ret < 0) {
@@ -285,7 +275,7 @@ static const struct sensor_driver_api ina230_driver_api = {
 	static const struct ina230_config drv_config_##inst = {	    \
 		.bus = I2C_DT_SPEC_INST_GET(inst),		    \
 		.config = DT_INST_PROP(inst, config),		    \
-		.current_lsb = DT_INST_PROP(inst, current_lsb),	    \
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),\
 		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),	    \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios), \
 			    (INA230_CFG_IRQ(inst)), ())		    \
