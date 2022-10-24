@@ -83,7 +83,7 @@ static struct intr_alloc_table_entry intr_alloc_table[ESP_INTC_INTS_NUM * CONFIG
 static void set_interrupt_handler(int n, intc_handler_t f, void *arg)
 {
 	irq_disable(n);
-	intr_alloc_table[n * CONFIG_MP_NUM_CPUS].handler = f;
+	intr_alloc_table[n * CONFIG_MP_MAX_NUM_CPUS].handler = f;
 	irq_connect_dynamic(n, n, (intc_dyn_handler_t)f, arg, 0);
 	irq_enable(n);
 }
@@ -215,7 +215,7 @@ int esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 	if (intno >= ESP_INTC_INTS_NUM) {
 		return -EINVAL;
 	}
-	if (cpu >= CONFIG_MP_NUM_CPUS) {
+	if (cpu >= arch_num_cpus()) {
 		return -EINVAL;
 	}
 
@@ -240,7 +240,7 @@ int esp_intr_reserve(int intno, int cpu)
 	if (intno >= ESP_INTC_INTS_NUM) {
 		return -EINVAL;
 	}
-	if (cpu >= CONFIG_MP_NUM_CPUS) {
+	if (cpu >= arch_num_cpus()) {
 		return -EINVAL;
 	}
 
@@ -260,7 +260,11 @@ int esp_intr_reserve(int intno, int cpu)
 /* Returns true if handler for interrupt is not the default unhandled interrupt handler */
 static bool intr_has_handler(int intr, int cpu)
 {
-	return (intr_alloc_table[intr * CONFIG_MP_NUM_CPUS + cpu].handler != default_intr_handler);
+	bool r;
+
+	r = intr_alloc_table[intr * CONFIG_MP_MAX_NUM_CPUS + cpu].handler != default_intr_handler;
+
+	return r;
 }
 
 static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)
