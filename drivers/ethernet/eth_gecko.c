@@ -441,8 +441,10 @@ static void eth_init_pins(const struct device *dev)
 	eth->ROUTEPEN = 0;
 
 #if DT_INST_NODE_HAS_PROP(0, location_rmii)
+	struct soc_gpio_pin *pin;
 	for (idx = 0; idx < ARRAY_SIZE(cfg->pin_list->rmii); idx++)
-		soc_gpio_configure(&cfg->pin_list->rmii[idx]);
+		pin = &cfg->pin_list->rmii[idx];
+		GPIO_PinModeSet(pin->port, pin->pin, pin->mode, pin->out);
 
 	eth->ROUTELOC1 |= (DT_INST_PROP(0, location_rmii) <<
 			   _ETH_ROUTELOC1_RMIILOC_SHIFT);
@@ -450,8 +452,10 @@ static void eth_init_pins(const struct device *dev)
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, location_mdio)
+	struct soc_gpio_pin *pin;
 	for (idx = 0; idx < ARRAY_SIZE(cfg->pin_list->mdio); idx++)
-		soc_gpio_configure(&cfg->pin_list->mdio[idx]);
+		pin = &cfg->pin_list->mdio[idx];
+		GPIO_PinModeSet(pin->port, pin->pin, pin->mode, pin->out);
 
 	eth->ROUTELOC1 |= (DT_INST_PROP(0, location_mdio) <<
 			   _ETH_ROUTELOC1_MDIOLOC_SHIFT);
