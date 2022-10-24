@@ -364,6 +364,12 @@ Libraries / Subsystems
     Private headers for above areas can be accessed, when required, using paths:
     ``mgmt/mcumgr/mgmt/<mcumgr_subarea>/``.
 
+  * MCUmgr responses where ``rc`` (result code) is 0 (no error) will no longer
+    be present in responses and in cases where there is only an ``rc`` result,
+    the resultant response will now be an empty CBOR map. The old behaviour can
+    be restored by enabling
+    :kconfig:option:`CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR`.
+
 * LwM2M
 
   * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
