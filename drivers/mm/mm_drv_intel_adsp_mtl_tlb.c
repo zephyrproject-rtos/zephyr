@@ -643,6 +643,15 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	/*
+	 * Change size of avalible physical memory according to fw register information
+	 * in runtime.
+	 */
+
+	uint32_t avalible_memory_size = ace_hpsram_get_bank_count() * SRAM_BANK_SIZE;
+
+	L2_PHYS_SRAM_REGION.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
+
+	/*
 	 * Initialize memblocks that will store physical
 	 * page usage. Initially all physical pages are
 	 * mapped in linear way to virtual address space
