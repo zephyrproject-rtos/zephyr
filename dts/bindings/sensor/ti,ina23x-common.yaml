@@ -27,7 +27,7 @@ properties:
         results in Current, Voltage, and Power registers
         being read in counts.
 
-    rshunt:
+    rshunt-milliohms:
       type: int
       required: true
       description: Shunt resistor value in milliohms
