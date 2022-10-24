@@ -21,7 +21,7 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(CONFIG_ADSP_CLOCK clk.c)
 
-if(CONFIG_SMP OR CONFIG_MP_NUM_CPUS GREATER 1)
+if(CONFIG_SMP OR CONFIG_MP_MAX_NUM_CPUS GREATER 1)
   zephyr_library_sources(multiprocessing.c)
 endif()
 

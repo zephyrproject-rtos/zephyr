@@ -130,7 +130,7 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-	CHECKIF(id <= 0 || id >= CONFIG_MP_NUM_CPUS) {
+	CHECKIF(id <= 0 || id >= arch_num_cpus()) {
 		return -EINVAL;
 	}
 
