@@ -1220,3 +1220,25 @@ This has been fixed in main for v3.1.0
 
 - `PR 45796 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/45796>`_
+
+CVE-2022-2741
+--------------
+
+can: denial-of-service can be triggered by a crafted CAN frame
+
+This has been fixed in main for v3.2.0
+
+- `Zephyr project bug tracker GHSA-hx5v-j59q-c3j8
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hx5v-j59q-c3j8>`_
+
+- `PR 47903 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/47903>`_
+
+- `PR 47957 fix for v3.1.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/47957>`_
+
+- `PR 47958 fix for v3.0.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/47958>`_
+
+- `PR 47959 fix for v2.7.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/47959>`_
