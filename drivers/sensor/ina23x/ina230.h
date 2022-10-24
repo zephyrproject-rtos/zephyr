@@ -48,7 +48,7 @@ struct ina230_data {
 struct ina230_config {
 	struct i2c_dt_spec bus;
 	uint16_t config;
-	uint16_t current_lsb;
+	uint32_t current_lsb;
 	uint16_t rshunt;
 #ifdef CONFIG_INA230_TRIGGER
 	bool trig_enabled;
