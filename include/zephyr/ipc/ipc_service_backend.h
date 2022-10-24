@@ -16,8 +16,9 @@ extern "C" {
 #endif
 
 /**
- * @brief IPC Service backend
- * @ingroup ipc_service_api
+ * @brief IPC service backend
+ * @defgroup ipc_service_backend IPC service backend
+ * @ingroup ipc
  * @{
  */
 

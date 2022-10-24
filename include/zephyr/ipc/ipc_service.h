@@ -21,12 +21,22 @@ extern "C" {
  * @{
  * @}
  */
+
 /**
  * @brief IPC Service API
  * @defgroup ipc_service_api IPC service APIs
  * @ingroup ipc
  * @{
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
  *
+ * These are for internal use only, so skip these in
+ * public documentation.
+ */
+
+/**
  * Some terminology:
  *
  * - INSTANCE: an instance is the external representation of a physical
@@ -120,6 +130,10 @@ extern "C" {
  *    # We can also drop it if needed
  *    ipc_service_drop_tx_buffer()
  *
+ */
+
+/**
+ * @endcond
  */
 
 /** @brief Event callback structure.
