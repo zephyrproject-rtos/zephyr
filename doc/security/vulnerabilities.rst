@@ -1178,7 +1178,21 @@ Under embargo until 2022/06/19
 CVE-2022-1042
 --------------
 
-Under embargo until 2022/06/19
+Out-of-bound write vulnerability in the Bluetooth mesh core stack can be triggered during provisioning
+
+This has been fixed in main for v3.1.0
+
+- `Zephyr project bug tracker GHSA-j7v7-w73r-mm5x
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-j7v7-w73r-mm5x>`_
+
+- `PR 45066 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45066>`_
+
+- `PR 45135 fix for v3.0.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45135>`_
+
+- `PR 45134 fix for v2.7.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45134>`_
 
 CVE-2022-1841
 --------------
