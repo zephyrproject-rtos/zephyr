@@ -1183,4 +1183,12 @@ Under embargo until 2022/06/19
 CVE-2022-1841
 --------------
 
-Under embargo until 2022/08/18
+Out-of-Bound Write in tcp_flags
+
+This has been fixed in main for v3.1.0
+
+- `Zephyr project bug tracker GHSA-5c3j-p8cr-2pgh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-5c3j-p8cr-2pgh>`_
+
+- `PR 45796 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45796>`_
