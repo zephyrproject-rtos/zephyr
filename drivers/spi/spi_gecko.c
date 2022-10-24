@@ -188,9 +188,12 @@ static void spi_gecko_init_pins(const struct device *dev)
 {
 	const struct spi_gecko_config *config = dev->config;
 
-	soc_gpio_configure(&config->pin_rx);
-	soc_gpio_configure(&config->pin_tx);
-	soc_gpio_configure(&config->pin_clk);
+	GPIO_PinModeSet(config->pin_rx.port, config->pin_rx.pin,
+			 config->pin_rx.mode, config->pin_rx.out);
+	GPIO_PinModeSet(config->pin_tx.port, config->pin_tx.pin,
+			 config->pin_tx.mode, config->pin_tx.out);
+	GPIO_PinModeSet(config->pin_clk.port, config->pin_clk.pin,
+			 config->pin_clk.mode, config->pin_clk.out);
 
 	/* disable all pins while configuring */
 	config->base->ROUTEPEN = 0;

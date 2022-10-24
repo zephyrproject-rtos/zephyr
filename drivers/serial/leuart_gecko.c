@@ -245,8 +245,10 @@ static void leuart_gecko_init_pins(const struct device *dev)
 	const struct leuart_gecko_config *config = dev->config;
 	LEUART_TypeDef *base = DEV_BASE(dev);
 
-	soc_gpio_configure(&config->pin_rx);
-	soc_gpio_configure(&config->pin_tx);
+	GPIO_PinModeSet(config->pin_rx.port, config->pin_rx.pin,
+			 config->pin_rx.mode, config->pin_rx.out);
+	GPIO_PinModeSet(config->pin_tx.port, config->pin_tx.pin,
+			 config->pin_tx.mode, config->pin_tx.out);
 
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 	base->ROUTEPEN = LEUART_ROUTEPEN_RXPEN | LEUART_ROUTEPEN_TXPEN;

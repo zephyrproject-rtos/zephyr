@@ -168,7 +168,7 @@ static void swo_init(void)
 #endif
 #endif /* _SILICON_LABS_32B_SERIES_2 */
 
-	soc_gpio_configure(&pin_swo);
+	GPIO_PinModeSet(pin_swo.port, pin_swo.pin, pin_swo.mode, pin_swo.out);
 }
 #endif /* CONFIG_LOG_BACKEND_SWO */
 

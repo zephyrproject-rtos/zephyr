@@ -297,8 +297,10 @@ static void uart_gecko_init_pins(const struct device *dev)
 	const struct uart_gecko_config *config = dev->config;
 
 	/* Configure RX and TX */
-	soc_gpio_configure(&config->pin_rx);
-	soc_gpio_configure(&config->pin_tx);
+	GPIO_PinModeSet(config->pin_rx.port, config->pin_rx.pin,
+			config->pin_rx.mode, config->pin_rx.out);
+	GPIO_PinModeSet(config->pin_tx.port, config->pin_tx.pin,
+			config->pin_tx.mode, config->pin_tx.out);
 
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 	/* For SOCs with configurable pin locations (set in SOC Kconfig) */
@@ -325,8 +327,10 @@ static void uart_gecko_init_pins(const struct device *dev)
 #ifdef UART_GECKO_HW_FLOW_CONTROL
 	/* Configure HW flow control (RTS, CTS) */
 	if (config->hw_flowcontrol) {
-		soc_gpio_configure(&config->pin_rts);
-		soc_gpio_configure(&config->pin_cts);
+		GPIO_PinModeSet(config->pin_rts.port, config->pin_rts.pin,
+				config->pin_rts.mode, config->pin_rts.out);
+		GPIO_PinModeSet(config->pin_cts.port, config->pin_cts.pin,
+				config->pin_cts.mode, config->pin_cts.out);
 
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 		config->base->ROUTEPEN =
