@@ -35,12 +35,6 @@ LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
  */
 #define INA237_POWER_VALUE_LSB 2
 
-/**
- * @brief sensor value get
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- */
 static int ina237_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
@@ -217,13 +211,6 @@ static int ina237_sample_fetch(const struct device *dev,
 	}
 }
 
-/**
- * @brief sensor attribute set
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- * @retval -EIO for i2c write failure
- */
 static int ina237_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
@@ -242,13 +229,6 @@ static int ina237_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-/**
- * @brief sensor attribute get
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- * @retval -EIO for i2c read failure
- */
 static int ina237_attr_get(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   struct sensor_value *val)
@@ -281,12 +261,6 @@ static int ina237_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-/**
- * @brief sensor calibrate
- *
- * @retval 0 for success
- * @retval -EIO for i2c write failure
- */
 static int ina237_calibrate(const struct device *dev)
 {
 	const struct ina237_config *config = dev->config;
@@ -303,10 +277,6 @@ static int ina237_calibrate(const struct device *dev)
 	return 0;
 }
 
-/**
- * @brief sensor trigger work handler
- *
- */
 static void ina237_trigger_work_handler(struct k_work *work)
 {
 	struct ina23x_trigger *trigg = CONTAINER_OF(work, struct ina23x_trigger, conversion_work);
@@ -334,12 +304,6 @@ static void ina237_trigger_work_handler(struct k_work *work)
 	}
 }
 
-/**
- * @brief Initialize the INA237
- *
- * @retval 0 for success
- * @retval negative errno code on fail
- */
 static int ina237_init(const struct device *dev)
 {
 	struct ina237_data *data = dev->data;
@@ -407,12 +371,6 @@ static int ina237_init(const struct device *dev)
 	return 0;
 }
 
-/**
- * @brief sensor trigger set
- *
- * @retval 0 for success
- * @retval negative errno code on fail
- */
 static int ina237_trigger_set(const struct device *dev,
 			      const struct sensor_trigger *trig,
 			      sensor_trigger_handler_t handler)
