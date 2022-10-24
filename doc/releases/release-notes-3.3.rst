@@ -429,6 +429,12 @@ Libraries / Subsystems
  * MCUMgr :kconfig:option:`CONFIG_APP_LINK_WITH_MCUMGR` has been removed as
    it has not been doing anything.
 
+  * MCUmgr responses where ``rc`` (result code) is 0 (no error) will no longer
+    be present in responses and in cases where there is only an ``rc`` result,
+    the resultant response will now be an empty CBOR map. The old behaviour can
+    be restored by enabling
+    :kconfig:option:`CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR`.
+
 * LwM2M
 
   * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
