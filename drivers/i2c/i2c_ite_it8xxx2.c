@@ -128,23 +128,36 @@ enum i2c_reset_cause {
 
 static int i2c_parsing_return_value(const struct device *dev)
 {
+	const struct i2c_it8xxx2_config *config = dev->config;
 	struct i2c_it8xxx2_data *data = dev->data;
 
 	if (!data->err) {
 		return 0;
 	}
 
-	/* Connection timed out */
 	if (data->err == ETIMEDOUT) {
-		return -ETIMEDOUT;
+		/* Connection timed out */
+		LOG_ERR("I2C ch%d Address:0x%X Transaction time out.",
+			config->port, data->addr_16bit);
+	} else {
+		LOG_ERR("I2C ch%d Address:0x%X Host error bits message:",
+			config->port, data->addr_16bit);
+		/* Host error bits message*/
+		if (data->err & HOSTA_TMOE) {
+			LOG_ERR("Time-out error: hardware time-out error.");
+		}
+		if (data->err & HOSTA_NACK) {
+			LOG_ERR("NACK error: device does not response ACK.");
+		}
+		if (data->err & HOSTA_FAIL) {
+			LOG_ERR("Fail: a processing transmission is killed.");
+		}
+		if (data->err & HOSTA_BSER) {
+			LOG_ERR("BUS error: SMBus has lost arbitration.");
+		}
 	}
 
-	/* The device does not respond ACK */
-	if (data->err == HOSTA_NACK) {
-		return -ENXIO;
-	} else {
-		return -EIO;
-	}
+	return -EIO;
 }
 
 static int i2c_get_line_levels(const struct device *dev)
