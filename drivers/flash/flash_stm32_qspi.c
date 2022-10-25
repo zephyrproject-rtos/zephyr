@@ -552,7 +552,7 @@ static void qspi_dma_callback(const struct device *dev, void *arg,
 {
 	DMA_HandleTypeDef *hdma = arg;
 
-	if (status != 0) {
+	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 
 	}

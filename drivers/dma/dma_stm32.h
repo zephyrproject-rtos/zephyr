@@ -26,7 +26,7 @@ struct dma_stm32_stream {
 	uint32_t src_size;
 	uint32_t dst_size;
 	void *user_data; /* holds the client data */
-	dma_callback_t dma_callback;
+	dma_callback_t dma_callback; /* with status = 1 for half-complete transfer */
 };
 
 struct dma_stm32_data {

@@ -180,7 +180,7 @@ static void stm32_sdmmc_dma_cb(const struct device *dev, void *arg,
 {
 	DMA_HandleTypeDef *hdma = arg;
 
-	if (status != 0) {
+	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 
 	}
