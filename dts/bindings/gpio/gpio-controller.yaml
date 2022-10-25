@@ -40,3 +40,63 @@ properties:
     description: |
         This is an array of strings defining the names of the GPIO lines
         going out of the GPIO controller
+
+child-binding:
+  description: |
+    Optional GPIO hog configuration.
+
+    Each GPIO controller may contain GPIO hog definitions. GPIO hogging is a mechanism for
+    providing automatic GPIO configuration during driver initialization when Kconfig
+    CONFIG_GPIO_HOGS is enabled.
+
+    Each GPIO hog is represented as a child node of the GPIO controller.
+
+    Example:
+      &gpio1 {
+        mux-hog {
+          gpio-hog;
+          gpios = <10 GPIO_ACTIVE_HIGH>, <11 GPIO_ACTIVE_HIGH>;
+          output-high;
+        };
+      };
+
+      &gpio2 {
+        test-hog {
+          gpio-hog;
+          gpios = <26 GPIO_ACTIVE_HIGH>;
+          output-low;
+          line-name = "test";
+      };
+    };
+
+  properties:
+    gpio-hog:
+      type: boolean
+      required: true
+      description: |
+        Conveys this node is a GPIO hog.
+    gpios:
+      type: array
+      required: true
+      description: |
+        This is an array of GPIO specifiers (e.g. pin, flags) to be hogged. The number of array
+        entries must be an integer multiple of the number of GPIO specifier cells for the parent
+        GPIO controller.
+    input:
+      type: boolean
+      description: |
+        If this property is set, the GPIO is configured as an input. This property takes
+        precedence over the output-low and output-high properties.
+    output-low:
+      type: boolean
+      description: |
+        If this property is set, the GPIO is configured as an output set to logical low. This
+        property takes precedence over the output-high property.
+    output-high:
+      type: boolean
+      description: |
+        If this property is set, the GPIO is configured as an output set to logical high.
+    line-name:
+      type: string
+      description: |
+        Optional GPIO line name.
