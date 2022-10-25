@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/addr.h>
 #include <host/keys.h>
@@ -11,10 +12,23 @@
 #include "mocks/conn.h"
 #include "mocks/hci_core.h"
 #include "mocks/keys_help_utils.h"
-#include "host_mocks/print_utils.h"
 #include "testing_common_defs.h"
+#include "common/bt_str.h"
 
 DEFINE_FFF_GLOBALS;
+
+/* Define snprintk to use libc since we are not compiling the whole kernel. */
+int snprintk(char *str, size_t size, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = snprintf(str, size, fmt, ap);
+	va_end(ap);
+
+	return ret;
+}
 
 /* This LUT contains different combinations of ID and Address pairs */
 const struct id_addr_pair testing_id_addr_pair_lut[] = {
