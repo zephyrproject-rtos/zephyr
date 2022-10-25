@@ -3027,6 +3027,7 @@ int bt_conn_init(void)
 {
 	int err, i;
 
+	k_fifo_init(&free_tx);
 	for (i = 0; i < ARRAY_SIZE(conn_tx); i++) {
 		k_fifo_put(&free_tx, &conn_tx[i]);
 	}
