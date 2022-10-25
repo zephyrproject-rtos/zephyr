@@ -23,6 +23,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_BASS)
 #define LOG_MODULE_NAME bt_bass
 #include "common/log.h"
+#include "common/bt_to_str.h"
 
 #include "audio_internal.h"
 #include "bass_internal.h"

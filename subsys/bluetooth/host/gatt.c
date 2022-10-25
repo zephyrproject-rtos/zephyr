@@ -36,6 +36,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_GATT)
 #define LOG_MODULE_NAME bt_gatt
 #include "common/log.h"
+#include "common/bt_to_str.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"

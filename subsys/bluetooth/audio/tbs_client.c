@@ -24,6 +24,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_TBS_CLIENT)
 #define LOG_MODULE_NAME bt_tbs_client
 #include "common/log.h"
+#include "common/bt_to_str.h"
 
 #define MAX_URI_SCHEME_LIST_SIZE   64
 #if IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS)

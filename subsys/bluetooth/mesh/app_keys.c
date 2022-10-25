@@ -24,6 +24,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_mesh_app_keys
 #include "common/log.h"
+#include "common/bt_to_str.h"
 
 /* Tracking of what storage changes are pending for App Keys. We track this in
  * a separate array here instead of within the respective bt_mesh_app_key

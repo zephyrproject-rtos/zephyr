@@ -14,6 +14,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_aes_ccm
 #include "common/log.h"
+#include "common/bt_to_str.h"
 
 static inline void xor16(uint8_t *dst, const uint8_t *a, const uint8_t *b)
 {

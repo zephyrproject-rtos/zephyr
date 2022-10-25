@@ -92,6 +92,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_hci
 #include "common/log.h"
+#include "common/bt_to_str.h"
 #include "hal/debug.h"
 
 #define STR_NULL_TERMINATOR 0x00

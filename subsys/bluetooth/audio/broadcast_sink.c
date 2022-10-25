@@ -23,6 +23,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_BROADCAST_SINK)
 #define LOG_MODULE_NAME bt_audio_broadcast_sink
 #include "common/log.h"
+#include "common/bt_to_str.h"
 
 #define PA_SYNC_SKIP              5
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */

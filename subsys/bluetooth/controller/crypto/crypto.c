@@ -7,6 +7,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_crypto
 #include "common/log.h"
+#include "common/bt_to_str.h"
 
 #include "util/memq.h"
 

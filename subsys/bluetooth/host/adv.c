@@ -20,6 +20,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_adv
 #include "common/log.h"
+#include "common/bt_to_str.h"
 
 enum adv_name_type {
 	ADV_NAME_TYPE_NONE,

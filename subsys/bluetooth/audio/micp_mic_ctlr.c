@@ -23,6 +23,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MICP_MIC_CTLR)
 #define LOG_MODULE_NAME bt_micp_mic_ctlr
 #include "common/log.h"
+#include "common/bt_to_str.h"
 
 /* Callback functions */
 static struct bt_micp_mic_ctlr_cb *micp_mic_ctlr_cb;
