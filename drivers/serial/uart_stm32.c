@@ -873,6 +873,27 @@ static inline void async_evt_rx_rdy(struct uart_stm32_data *data)
 {
 	LOG_DBG("rx_rdy: (%d %d)", data->dma_rx.offset, data->dma_rx.counter);
 
+	/* If the DMA buffer is cyclic, the offset index might be at a higher location
+	 * than the counter index (data wrapped-around to the beginning of the buffer).
+	 * The UART API expects a continuous chunk of memory, so it is needed to
+	 * report 2 separate events
+	 */
+	if (data->dma_rx.dma_cfg.cyclic && data->dma_rx.counter < data->dma_rx.offset) {
+		struct uart_event event = {
+			.type = UART_RX_RDY,
+			.data.rx.buf = data->dma_rx.buffer,
+			.data.rx.len = data->dma_rx.buffer_length - data->dma_rx.offset,
+			.data.rx.offset = data->dma_rx.offset
+		};
+
+		/* update the current pos for next chunk */
+		data->dma_rx.offset = 0;
+
+		if (event.data.rx.len > 0) {
+			async_user_callback(data, &event);
+		}
+	}
+
 	struct uart_event event = {
 		.type = UART_RX_RDY,
 		.data.rx.buf = data->dma_rx.buffer,
@@ -972,15 +993,16 @@ static void uart_stm32_dma_rx_flush(const struct device *dev)
 	struct dma_status stat;
 	struct uart_stm32_data *data = dev->data;
 
-	if (dma_get_status(data->dma_rx.dma_dev,
-				data->dma_rx.dma_channel, &stat) == 0) {
-		size_t rx_rcv_len = data->dma_rx.buffer_length -
-					stat.pending_length;
-		if (rx_rcv_len > data->dma_rx.offset) {
-			data->dma_rx.counter = rx_rcv_len;
+	size_t rx_rcv_len = 0;
 
-			async_evt_rx_rdy(data);
-		}
+	if (dma_get_status(data->dma_rx.dma_dev,
+				   data->dma_rx.dma_channel, &stat) == 0) {
+		rx_rcv_len = data->dma_rx.buffer_length -
+			     stat.pending_length;
+
+		data->dma_rx.counter = rx_rcv_len;
+
+		async_evt_rx_rdy(data);
 	}
 }
 
@@ -1224,10 +1246,7 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 
 	(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
-	/* true since this functions occurs when buffer if full */
-	data->dma_rx.counter = data->dma_rx.buffer_length;
-
-	async_evt_rx_rdy(data);
+	uart_stm32_dma_rx_flush(data->uart_dev);
 
 	if (data->rx_next_buffer != NULL) {
 		async_evt_rx_buf_release(data);
@@ -1237,8 +1256,9 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		 * one.
 		 */
 		uart_stm32_dma_replace_buffer(uart_dev);
-	} else {
-		/* Buffer full without valid next buffer,
+	} else if (data->dma_rx.dma_cfg.cyclic == 0) {
+		/* Buffer full without valid next buffer
+		 * and not using cyclic rx buffer,
 		 * an UART_RX_DISABLED event must be generated,
 		 * but uart_stm32_async_rx_disable() cannot be
 		 * called in ISR context. So force the RX timeout
@@ -1359,7 +1379,9 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 
 	LL_USART_EnableIT_ERROR(config->usart);
 
-	/* Request next buffer */
+	/* Request next buffer,
+	 * likely not useful if cyclic mode is used
+	 */
 	async_evt_rx_buf_request(data);
 
 	LOG_DBG("async rx enabled");
@@ -1493,7 +1515,7 @@ static int uart_stm32_async_init(const struct device *dev)
 		data->dma_rx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	}
 
-	/* RX disable circular buffer */
+	/* RX disable circular buffer by default */
 	data->dma_rx.blk_cfg.source_reload_en  = 0;
 	data->dma_rx.blk_cfg.dest_reload_en = 0;
 	data->dma_rx.blk_cfg.fifo_mode_control = data->dma_rx.fifo_threshold;
@@ -1818,7 +1840,9 @@ static int uart_stm32_pm_action(const struct device *dev,
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(	\
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),                            \
+		.cyclic = STM32_DMA_CONFIG_CYCLIC(	\
+			STM32_DMA_CHANNEL_CONFIG(index, dir)),\
 		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(\
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(\
