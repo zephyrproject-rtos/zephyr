@@ -31,17 +31,23 @@ Current supported displays
 Requirements
 ************
 
-This shield can only be used with a board which provides a configuration
-for Arduino connectors and defines a node alias for the I2C interface
-(see :ref:`shields` for more details).
+This shield can be used with a board which provides a configuration
+for Arduino or Feather connectors and defines a node alias for the I2C
+interface (see :ref:`shields` for more details).
 
 Programming
 ***********
 
-Set ``-DSHIELD=ssd1306_128x64`` when you invoke ``west build``. For example:
+Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
    :board: frdm_k64f
-   :shield: ssd1306_128x64
+   :shield: ssd1306_128x64_arduino
+   :goals: build
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: adafruit_feather_m0
+   :shield: ssd1306_128x64_feather
    :goals: build

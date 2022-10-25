@@ -5,9 +5,13 @@ sample:
   description: Character framebuffer shell test
   name: cfb shell sample
 tests:
-  sample.display.cfb_shell.ssd1306:
+  sample.display.cfb_shell.ssd1306_arduino:
     platform_allow: frdm_k64f
-    extra_args: SHIELD=ssd1306_128x32
+    extra_args: SHIELD=ssd1306_128x32_arduino
+    tags: shield
+  sample.display.cfb_shell.ssd1306_feather:
+    platform_allow:  adafruit_feather_m0_basic_proto
+    extra_args: SHIELD=ssd1306_128x32_feather
     tags: shield
   sample.display.cfb_shell.ssd16xx:
     platform_allow: reel_board

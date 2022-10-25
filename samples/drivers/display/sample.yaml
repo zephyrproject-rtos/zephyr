@@ -10,16 +10,30 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
-  sample.display.shield.ssd1306_128x32:
+  sample.display.shield.ssd1306_128x32_arduino:
     platform_allow: nrf52840dk_nrf52840
-    extra_args: SHIELD=ssd1306_128x32
+    extra_args: SHIELD=ssd1306_128x32_arduino
     tags: display shield
     harness: console
     harness_config:
       fixture: fixture_display
-  sample.display.shield.ssd1306_128x64:
+  sample.display.shield.ssd1306_128x64_arduino:
     platform_allow: nrf52840dk_nrf52840
-    extra_args: SHIELD=ssd1306_128x64
+    extra_args: SHIELD=ssd1306_128x64_arduino
+    tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.shield.ssd1306_128x32_feather:
+    platform_allow: adafruit_feather_m0_basic_proto
+    extra_args: SHIELD=ssd1306_128x32_feather
+    tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.shield.ssd1306_128x64_feather:
+    platform_allow: adafruit_feather_m0_basic_proto
+    extra_args: SHIELD=ssd1306_128x64_feather
     tags: display shield
     harness: console
     harness_config:

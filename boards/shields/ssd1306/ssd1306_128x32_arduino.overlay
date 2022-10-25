@@ -5,7 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * This file is intentionally empty. Please confer with shield documentation
- * for instructions to use this shield.
- */
+/ {
+	chosen {
+		zephyr,display = &ssd1306_ssd1306_128x32;
+	};
+};
+
+&arduino_i2c {
+	status = "okay";
+
+	#include <ssd1306_128x32_common.dtsi>
+};
