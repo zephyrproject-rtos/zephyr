@@ -26,6 +26,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_PACS)
 #define LOG_MODULE_NAME bt_pacs
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "audio_internal.h"
 #include "pacs_internal.h"

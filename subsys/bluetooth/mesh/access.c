@@ -17,6 +17,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ACCESS)
 #define LOG_MODULE_NAME bt_mesh_access
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "mesh.h"
 #include "adv.h"

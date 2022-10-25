@@ -21,6 +21,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROVISIONER)
 #define LOG_MODULE_NAME bt_mesh_provisioner
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "host/ecc.h"
 #include "host/testing.h"
