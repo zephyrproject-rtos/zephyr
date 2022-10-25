@@ -46,10 +46,17 @@ static struct k_spinlock latency_lock;
 static sys_slist_t latency_reqs;
 /** Maximum CPU latency in us */
 static int32_t max_latency_us = SYS_FOREVER_US;
-/** Maximum CPU latency in ticks */
-static int32_t max_latency_ticks = K_TICKS_FOREVER;
+/** Maximum CPU latency in cycles */
+static int32_t max_latency_cyc = -1;
 /** List of latency change subscribers. */
 static sys_slist_t latency_subs;
+
+/** Lock to synchronize access to the events list. */
+static struct k_spinlock events_lock;
+/** List of events. */
+static sys_slist_t events_list;
+/** Next event, in absolute cycles (<0: none, [0, UINT32_MAX]: cycles) */
+static int64_t next_event_cyc = -1;
 
 /** @brief Update maximum allowed latency. */
 static void update_max_latency(void)
@@ -66,49 +73,112 @@ static void update_max_latency(void)
 
 	if (max_latency_us != new_max_latency_us) {
 		struct pm_policy_latency_subscription *sreq;
-		int32_t new_max_latency_ticks = K_TICKS_FOREVER;
+		int32_t new_max_latency_cyc = -1;
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&latency_subs, sreq, node) {
 			sreq->cb(new_max_latency_us);
 		}
 
 		if (new_max_latency_us != SYS_FOREVER_US) {
-			new_max_latency_ticks = (int32_t)k_us_to_ticks_ceil32(new_max_latency_us);
+			new_max_latency_cyc = (int32_t)k_us_to_cyc_ceil32(new_max_latency_us);
 		}
 
 		max_latency_us = new_max_latency_us;
-		max_latency_ticks = new_max_latency_ticks;
+		max_latency_cyc = new_max_latency_cyc;
 	}
+}
+
+/** @brief Update next event. */
+static void update_next_event(uint32_t cyc)
+{
+	int64_t new_next_event_cyc = -1;
+	struct pm_policy_event *evt;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&events_list, evt, node) {
+		uint64_t cyc_evt = evt->value_cyc;
+
+		/*
+		 * cyc value is a 32-bit rolling counter:
+		 *
+		 * |---------------->-----------------------|
+		 * 0               cyc                  UINT32_MAX
+		 *
+		 * Values from [0, cyc) are events happening later than
+		 * [cyc, UINT32_MAX], so pad [0, cyc) with UINT32_MAX + 1 to do
+		 * the comparison.
+		 */
+		if (cyc_evt < cyc) {
+			cyc_evt += UINT32_MAX + 1U;
+		}
+
+		if ((new_next_event_cyc < 0) ||
+		    (cyc_evt < new_next_event_cyc)) {
+			new_next_event_cyc = cyc_evt;
+		}
+	}
+
+	/* undo padding for events in the [0, cyc) range */
+	if (new_next_event_cyc > UINT32_MAX) {
+		new_next_event_cyc -= UINT32_MAX + 1U;
+	}
+
+	next_event_cyc = new_next_event_cyc;
 }
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
+	int64_t cyc = -1;
 	uint8_t num_cpu_states;
 	const struct pm_state_info *cpu_states;
 
+	if (ticks != K_TICKS_FOREVER) {
+		cyc = k_ticks_to_cyc_ceil32(ticks);
+	}
+
 	num_cpu_states = pm_state_cpu_get_all(cpu, &cpu_states);
+
+	if (next_event_cyc >= 0) {
+		uint32_t cyc_curr = k_cycle_get_32();
+		int64_t cyc_evt = next_event_cyc - cyc_curr;
+
+		/* event happening after cycle counter max value, pad */
+		if (next_event_cyc <= cyc_curr) {
+			cyc_evt += UINT32_MAX;
+		}
+
+		if (cyc_evt > 0) {
+			/* if there's no system wakeup event always wins,
+			 * otherwise, who comes earlier wins
+			 */
+			if (cyc < 0) {
+				cyc = cyc_evt;
+			} else {
+				cyc = MIN(cyc, cyc_evt);
+			}
+		}
+	}
 
 	for (int16_t i = (int16_t)num_cpu_states - 1; i >= 0; i--) {
 		const struct pm_state_info *state = &cpu_states[i];
-		uint32_t min_residency, exit_latency;
+		uint32_t min_residency_cyc, exit_latency_cyc;
 
 		/* check if there is a lock on state + substate */
 		if (pm_policy_state_lock_is_active(state->state, state->substate_id)) {
 			continue;
 		}
 
-		min_residency = k_us_to_ticks_ceil32(state->min_residency_us);
-		exit_latency = k_us_to_ticks_ceil32(state->exit_latency_us);
+		min_residency_cyc = k_us_to_cyc_ceil32(state->min_residency_us);
+		exit_latency_cyc = k_us_to_cyc_ceil32(state->exit_latency_us);
 
 		/* skip state if it brings too much latency */
-		if ((max_latency_ticks != K_TICKS_FOREVER) &&
-		    (exit_latency >= max_latency_ticks)) {
+		if ((max_latency_cyc >= 0) &&
+		    (exit_latency_cyc >= max_latency_cyc)) {
 			continue;
 		}
 
-		if ((ticks == K_TICKS_FOREVER) ||
-		    (ticks >= (min_residency + exit_latency))) {
+		if ((cyc < 0) ||
+		    (cyc >= (min_residency_cyc + exit_latency_cyc))) {
 			return state;
 		}
 	}
@@ -208,4 +278,37 @@ void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription
 	(void)sys_slist_find_and_remove(&latency_subs, &req->node);
 
 	k_spin_unlock(&latency_lock, key);
+}
+
+void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us)
+{
+	k_spinlock_key_t key = k_spin_lock(&events_lock);
+	uint32_t cyc = k_cycle_get_32();
+
+	evt->value_cyc = cyc + k_us_to_cyc_ceil32(time_us);
+	sys_slist_append(&events_list, &evt->node);
+	update_next_event(cyc);
+
+	k_spin_unlock(&events_lock, key);
+}
+
+void pm_policy_event_update(struct pm_policy_event *evt, uint32_t time_us)
+{
+	k_spinlock_key_t key = k_spin_lock(&events_lock);
+	uint32_t cyc = k_cycle_get_32();
+
+	evt->value_cyc = cyc + k_us_to_cyc_ceil32(time_us);
+	update_next_event(cyc);
+
+	k_spin_unlock(&events_lock, key);
+}
+
+void pm_policy_event_unregister(struct pm_policy_event *evt)
+{
+	k_spinlock_key_t key = k_spin_lock(&events_lock);
+
+	(void)sys_slist_find_and_remove(&events_list, &evt->node);
+	update_next_event(k_cycle_get_32());
+
+	k_spin_unlock(&events_lock, key);
 }
