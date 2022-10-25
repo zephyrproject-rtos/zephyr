@@ -948,27 +948,24 @@ static int b91_tx(const struct device *dev,
 
 	/* start transmission */
 	rf_set_txmode();
-	uint32_t tx_wait_us = 0;
+	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
 	if (mode == IEEE802154_TX_MODE_TXTIME_CCA) {
-		tx_wait_us = net_pkt_txtime(pkt) / NSEC_PER_USEC -
-			k_ticks_to_us_near64(k_uptime_ticks());
+		uint64_t tx_at = k_ns_to_ticks_near64(net_pkt_txtime(pkt));
 
-		rf_start_stx(b91->tx_buffer, tx_wait_us * SYSTEM_TIMER_TICK_1US);
-	} else
-#endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
-	{
-		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
-		rf_tx_pkt(b91->tx_buffer);
+		while (k_uptime_ticks() < tx_at) {
+		}
 	}
+#endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
+
+	rf_tx_pkt(b91->tx_buffer);
 	if (b91->event_handler) {
 		b91->event_handler(dev, IEEE802154_EVENT_TX_STARTED, (void *)frag);
 	}
 
 	/* wait for tx done */
-	if (k_sem_take(&b91->tx_wait,
-		K_MSEC(B91_TX_WAIT_TIME_MS + tx_wait_us / USEC_PER_MSEC)) != 0) {
+	if (k_sem_take(&b91->tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
 		rf_set_rxmode();
 		status = -EIO;
 	}
