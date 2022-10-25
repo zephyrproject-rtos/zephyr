@@ -54,6 +54,16 @@ struct pm_policy_latency_request {
 	uint32_t value_us;
 };
 
+/**
+ * @brief Event.
+ *
+ * @note All fields in this structure are meant for private usage.
+ */
+struct pm_policy_event {
+	sys_snode_t node;
+	uint32_t value_cyc;
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 /**
@@ -164,6 +174,45 @@ void pm_policy_latency_changed_subscribe(struct pm_policy_latency_subscription *
  */
 void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription *req);
 
+/**
+ * @brief Register an event.
+ *
+ * Events in the power-management policy context are defined as any source that
+ * will wake up the system at a known time in the future. By registering such
+ * event, the policy manager will be able to decide whether certain power states
+ * are worth entering or not.
+ *
+ * @note It is mandatory to unregister events once they have happened by using
+ * pm_policy_event_unregister(). Not doing so is an API contract violation,
+ * because the system would continue to consider them as valid events in the
+ * *far* future, that is, after the cycle counter rollover.
+ *
+ * @param evt Event.
+ * @param time_us When the event will occur, in microseconds from now.
+ *
+ * @see pm_policy_event_unregister
+ */
+void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us);
+
+/**
+ * @brief Update an event.
+ *
+ * @param evt Event.
+ * @param time_us When the event will occur, in microseconds from now.
+ *
+ * @see pm_policy_event_register
+ */
+void pm_policy_event_update(struct pm_policy_event *evt, uint32_t time_us);
+
+/**
+ * @brief Unregister an event.
+ *
+ * @param evt Event.
+ *
+ * @see pm_policy_event_register
+ */
+void pm_policy_event_unregister(struct pm_policy_event *evt);
+
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
@@ -203,6 +252,25 @@ static inline void pm_policy_latency_request_remove(
 	struct pm_policy_latency_request *req)
 {
 	ARG_UNUSED(req);
+}
+
+static inline void pm_policy_event_register(struct pm_policy_event *evt,
+					    uint32_t time_us)
+{
+	ARG_UNUSED(evt);
+	ARG_UNUSED(time_us);
+}
+
+static inline void pm_policy_event_update(struct pm_policy_event *evt,
+					  uint32_t time_us)
+{
+	ARG_UNUSED(evt);
+	ARG_UNUSED(time_us);
+}
+
+static inline void pm_policy_event_unregister(struct pm_policy_event *evt)
+{
+	ARG_UNUSED(evt);
 }
 #endif /* CONFIG_PM */
 
