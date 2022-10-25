@@ -817,8 +817,20 @@ __imr void adsp_mm_restore_context(void *storage_buffer)
 	/* HPSRAM memory is restored */
 }
 
+static uint32_t adsp_mm_get_storage_size(void)
+{
+	/*
+	 * FIXME - currently the function returns a maximum possible size of the buffer
+	 * as L3 memory is generally a huge area its OK (and fast)
+	 * in future the function may go through the mapping and calculate a required size
+	 */
+	return	L2_SRAM_SIZE + TLB_SIZE + (L2_SRAM_PAGES_NUM * sizeof(void *))
+		+ sizeof(void *);
+}
+
 static const struct intel_adsp_tlb_api adsp_tlb_api_func = {
-	.save_context = adsp_mm_save_context
+	.save_context = adsp_mm_save_context,
+	.get_storage_size = adsp_mm_get_storage_size
 };
 
 DEVICE_DT_DEFINE(DT_INST(0, intel_adsp_mtl_tlb),
