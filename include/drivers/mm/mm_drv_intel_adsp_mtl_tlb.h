@@ -27,6 +27,12 @@
 typedef void (*mm_save_context)(void *storage_buffer);
 
 /*
+ * This function will return a required size of storage buffer needed to perform context save
+ *
+ */
+typedef uint32_t (*mm_get_storage_size)(void);
+
+/*
  * This function will restore the contents and power state of the physical memory banks
  * and recreate physical to virtual mappings
  *
@@ -40,6 +46,7 @@ void adsp_mm_restore_context(void *storage_buffer);
 
 struct intel_adsp_tlb_api {
 	mm_save_context save_context;
+	mm_get_storage_size get_storage_size;
 };
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTEL_ADSP_MTL_TLB */
