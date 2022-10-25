@@ -490,6 +490,32 @@
 			status = "disabled";
 		};
 
+        epwm0: epwm@40058000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x40058000 0x37c>;
+			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
+            interrupt-names = "brake", "pair0", "pair1", "pair2";
+            reset = <EPWM0_RST>;
+            prescaler = <19>;
+			label = "EPWM_0";
+			clocks = <&pcc EPWM0_MODULE CLK_CLKSEL2_EPWM0SEL_PCLK0 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+        epwm1: epwm@40059000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x40059000 0x37c>;
+			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
+            interrupt-names = "brake", "pair0", "pair1", "pair2";
+            reset = <EPWM1_RST>;
+            prescaler = <19>;
+			label = "EPWM_1";
+			clocks = <&pcc EPWM1_MODULE CLK_CLKSEL2_EPWM1SEL_PCLK1 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
 	};
 };
 

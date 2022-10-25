@@ -1,0 +1,35 @@
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NuMaker PWM controller
+
+compatible: "nuvoton,numaker-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    reset:
+      required: true
+      type: int
+
+    clocks:
+      required: true
+
+    prescaler:
+     type: int
+     required: true
+     description: Set the PWM prescale 0 ~ 4095
+
+    "#pwm-cells":
+     const: 3
+
+pwm-cells:
+    - channel
+    - period
+    - flags

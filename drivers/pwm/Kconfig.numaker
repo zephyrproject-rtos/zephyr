@@ -1,0 +1,13 @@
+# NUMAKER PWM Driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_NUMAKER
+	bool "Nuvoton NUMAKER MCU PWM driver"
+	depends on SOC_FAMILY_NUMAKER
+    select HAS_NUMAKER_PWM
+    default y
+	help
+	  This option enables the PWM driver for Nuvoton NUMAKER family of processors. Say y if you wish to enable NUMAKER PWM.
+
