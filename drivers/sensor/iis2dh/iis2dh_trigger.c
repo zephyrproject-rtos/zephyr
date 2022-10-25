@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/iis2dh.pdf
  */
 
+#define DT_DRV_COMPAT st_iis2dh
+
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
