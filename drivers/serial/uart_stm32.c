@@ -947,20 +947,38 @@ static inline void async_timer_start(struct k_work_delayable *work,
 	}
 }
 
-static void uart_stm32_dma_rx_flush(const struct device *dev)
+static void uart_stm32_dma_rx_flush(const struct device *dev, int status)
 {
 	struct dma_status stat;
 	struct uart_stm32_data *data = dev->data;
 
-	if (dma_get_status(data->dma_rx.dma_dev,
-				data->dma_rx.dma_channel, &stat) == 0) {
-		size_t rx_rcv_len = data->dma_rx.buffer_length -
-					stat.pending_length;
-		if (rx_rcv_len > data->dma_rx.offset) {
-			data->dma_rx.counter = rx_rcv_len;
+	size_t rx_rcv_len = 0;
 
-			async_evt_rx_rdy(data);
+	/* status informs about the context and allows us to use the DMA buffer size
+	 * instead of polling the current status which might have changed since interrupt
+	 * fired
+	 */
+	switch (status) {
+	case 0:
+		/* fully complete */
+		rx_rcv_len = data->dma_rx.buffer_length;
+		break;
+	case 1:
+		/* half complete */
+		rx_rcv_len = data->dma_rx.buffer_length / 2;
+		break;
+	default:
+		if (dma_get_status(data->dma_rx.dma_dev,
+				   data->dma_rx.dma_channel, &stat) == 0) {
+			rx_rcv_len = data->dma_rx.buffer_length -
+				     stat.pending_length;
 		}
+	}
+
+	if (rx_rcv_len > data->dma_rx.offset) {
+		data->dma_rx.counter = rx_rcv_len;
+
+		async_evt_rx_rdy(data);
 	}
 }
 
@@ -1015,7 +1033,7 @@ static void uart_stm32_isr(const struct device *dev)
 							data->dma_rx.timeout);
 
 		if (data->dma_rx.timeout == 0) {
-			uart_stm32_dma_rx_flush(dev);
+			uart_stm32_dma_rx_flush(dev, 2);
 		}
 	} else if (LL_USART_IsEnabledIT_TC(config->usart) &&
 			LL_USART_IsActiveFlag_TC(config->usart)) {
@@ -1105,7 +1123,7 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 
 	LL_USART_DisableIT_IDLE(config->usart);
 
-	uart_stm32_dma_rx_flush(dev);
+	uart_stm32_dma_rx_flush(dev, 2);
 
 	async_evt_rx_buf_release(data);
 
@@ -1196,12 +1214,9 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 
 	(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
-	/* true since this functions occurs when buffer if full */
-	data->dma_rx.counter = data->dma_rx.buffer_length;
+	uart_stm32_dma_rx_flush(data->uart_dev, status);
 
-	async_evt_rx_rdy(data);
-
-	if (data->rx_next_buffer != NULL) {
+	if (data->rx_next_buffer != NULL && status == 0) {
 		async_evt_rx_buf_release(data);
 
 		/* replace the buffer when the current
@@ -1209,14 +1224,10 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		 * one.
 		 */
 		uart_stm32_dma_replace_buffer(uart_dev);
-	} else {
-		/* Buffer full without valid next buffer,
-		 * an UART_RX_DISABLED event must be generated,
-		 * but uart_stm32_async_rx_disable() cannot be
-		 * called in ISR context. So force the RX timeout
-		 * to minimum value and let the RX timeout to do the job.
-		 */
-		k_work_reschedule(&data->dma_rx.timeout_work, K_TICKS(1));
+	} else if (status == 0) {
+		/* full so reset offset and counter for next read */
+		data->dma_rx.offset = 0;
+		data->dma_rx.counter = 0;
 	}
 }
 
@@ -1331,7 +1342,7 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 
 	LL_USART_EnableIT_ERROR(config->usart);
 
-	/* Request next buffer */
+	/* Request next buffer in case user wants to use different circular buffers */
 	async_evt_rx_buf_request(data);
 
 	LOG_DBG("async rx enabled");
@@ -1375,7 +1386,7 @@ static void uart_stm32_async_rx_timeout(struct k_work *work)
 	if (data->dma_rx.counter == data->dma_rx.buffer_length) {
 		uart_stm32_async_rx_disable(dev);
 	} else {
-		uart_stm32_dma_rx_flush(dev);
+		uart_stm32_dma_rx_flush(dev, 2);
 	}
 }
 
@@ -1462,7 +1473,7 @@ static int uart_stm32_async_init(const struct device *dev)
 		data->dma_rx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	}
 
-	/* RX disable circular buffer */
+	/* RX disable circular buffer by default */
 	data->dma_rx.blk_cfg.source_reload_en  = 0;
 	data->dma_rx.blk_cfg.dest_reload_en = 0;
 	data->dma_rx.blk_cfg.fifo_mode_control = data->dma_rx.fifo_threshold;
@@ -1775,7 +1786,9 @@ static int uart_stm32_pm_action(const struct device *dev,
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(	\
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),                            \
+		.cyclic = STM32_DMA_CONFIG_CYCLIC(	\
+			STM32_DMA_CHANNEL_CONFIG(index, dir)),\
 		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(\
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(\

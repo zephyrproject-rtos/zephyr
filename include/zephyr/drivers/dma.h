@@ -195,7 +195,7 @@ struct dma_config {
 	uint32_t  source_chaining_en :   1;
 	uint32_t  dest_chaining_en :     1;
 	uint32_t  linked_channel   :     7;
-	uint32_t  cyclic :				 1;
+	uint32_t  cyclic :		 1;
 	uint32_t  reserved :             3;
 	uint32_t  source_data_size :    16;
 	uint32_t  dest_data_size :      16;
