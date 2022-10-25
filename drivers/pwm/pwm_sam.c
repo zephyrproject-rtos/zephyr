@@ -49,14 +49,10 @@ static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	const struct sam_pwm_config *config = dev->config;
 
 	Pwm * const pwm = config->regs;
+	uint32_t cmr;
 
 	if (channel >= PWMCHNUM_NUMBER) {
 		return -EINVAL;
-	}
-
-	if (flags) {
-		/* PWM polarity not supported (yet?) */
-		return -ENOTSUP;
 	}
 
 	if (period_cycles == 0U) {
@@ -68,13 +64,26 @@ static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	/* Select clock A */
-	pwm->PWM_CH_NUM[channel].PWM_CMR = PWM_CMR_CPRE_CLKA;
+	cmr = PWM_CMR_CPRE_CLKA;
 
-	/* Update period and pulse using the update registers, so that the
-	 * change is triggered at the next PWM period.
-	 */
-	pwm->PWM_CH_NUM[channel].PWM_CPRDUPD = period_cycles;
-	pwm->PWM_CH_NUM[channel].PWM_CDTYUPD = pulse_cycles;
+	if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_NORMAL) {
+		cmr |= PWM_CMR_CPOL;
+	}
+
+	/* Disable the output if changing polarity (or clock) */
+	if (pwm->PWM_CH_NUM[channel].PWM_CMR != cmr) {
+		pwm->PWM_DIS = 1 << channel;
+
+		pwm->PWM_CH_NUM[channel].PWM_CMR = cmr;
+		pwm->PWM_CH_NUM[channel].PWM_CPRD = period_cycles;
+		pwm->PWM_CH_NUM[channel].PWM_CDTY = pulse_cycles;
+	} else {
+		/* Update period and pulse using the update registers, so that the
+		 * change is triggered at the next PWM period.
+		 */
+		pwm->PWM_CH_NUM[channel].PWM_CPRDUPD = period_cycles;
+		pwm->PWM_CH_NUM[channel].PWM_CDTYUPD = pulse_cycles;
+	}
 
 	/* Enable the output */
 	pwm->PWM_ENA = 1 << channel;
