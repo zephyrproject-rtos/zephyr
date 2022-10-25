@@ -282,7 +282,7 @@
 			status = "disabled";
 			prescaler = <10>;
 			divider = <1>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm1: pwm1@4005c000 {
@@ -293,7 +293,7 @@
 			status = "disabled";
 			prescaler = <10>;
 			divider = <1>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		usbhs: usbd@40038000 {
