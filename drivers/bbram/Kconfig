@@ -12,6 +12,12 @@ module = BBRAM
 module-str = bbram
 source "subsys/logging/Kconfig.template.log_config"
 
+config BBRAM_SHELL
+	bool "Battery-backed RAM shell"
+	depends on SHELL
+	help
+	  Enable the BBRAM shell with read and write commands.
+
 config BBRAM_INIT_PRIORITY
 	int "Init priority"
 	# In STM32, BBRAM is a part of RTC. In this case init priority must be
