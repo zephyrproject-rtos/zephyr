@@ -32,6 +32,8 @@ LOG_MODULE_REGISTER(tls_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 /** @brief Stack size for the server thread */
 #define STACK_SIZE 8192
 
+#define MY_IPV4_ADDR "127.0.0.1"
+
 /** @brief TCP port for the server thread */
 #define PORT 4242
 
@@ -349,10 +351,10 @@ static void test_common(int peer_verify)
 		zassert_not_equal(r, -1, "failed to set TLS_HOSTNAME (%d)", errno);
 	}
 
-	r = inet_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &sa.sin_addr.s_addr);
+	r = inet_pton(AF_INET, MY_IPV4_ADDR, &sa.sin_addr.s_addr);
 	zassert_not_equal(-1, r, "inet_pton() failed (%d)", errno);
-	zassert_not_equal(0, r, "%s is not a valid IPv4 address", CONFIG_NET_CONFIG_MY_IPV4_ADDR);
-	zassert_equal(1, r, "inet_pton() failed to convert %s", CONFIG_NET_CONFIG_MY_IPV4_ADDR);
+	zassert_not_equal(0, r, "%s is not a valid IPv4 address", MY_IPV4_ADDR);
+	zassert_equal(1, r, "inet_pton() failed to convert %s", MY_IPV4_ADDR);
 
 	memset(addrstr, '\0', sizeof(addrstr));
 	addrstrp = (char *)inet_ntop(AF_INET, &sa.sin_addr,
