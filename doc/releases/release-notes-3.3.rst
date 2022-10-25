@@ -243,16 +243,19 @@ Libraries / Subsystems
 
 * Management
 
-  * MCUMGR functionality deprecated in 3.1 has been removed:
+  * MCUmgr functionality deprecated in 3.1 has been removed:
     CONFIG_FS_MGMT_UL_CHUNK_SIZE, CONFIG_IMG_MGMT_UL_CHUNK_SIZE,
     CONFIG_OS_MGMT_ECHO_LENGTH
-  * MCUMGR fs_mgmt issue with erasing a file prior to writing the first block
+  * MCUmgr fs_mgmt issue with erasing a file prior to writing the first block
     of data has been worked around by only truncating/deleting the file data
     if the file exists. This can help work around an issue whereby logging is
     enabled and the command is sent on the same UART as the logging system, in
     which a filesystem error was emitted.
   * A MCUmgr bug when using the smp_svr sample with Bluetooth transport that
     could have caused a stack overflow has been fixed.
+  * A MCUmgr issue with Bluetooth transport that could cause a deadlock of the
+    mcumgr thread if the remote device disconnected before the output message
+    was sent has been fixed.
 
 * LwM2M
 
