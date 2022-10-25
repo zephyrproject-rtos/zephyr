@@ -41,6 +41,17 @@
 		compatible = "intel,pcie";
 		ranges;
 
+		smbus0: smbus@fc00 {
+			compatible = "intel,pch-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x1f,4) PCIE_ID(0x8086,0x7a23)>;
+			interrupts = <18 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
 		i2c0: i2c0 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
