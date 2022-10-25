@@ -251,6 +251,8 @@ Libraries / Subsystems
     if the file exists. This can help work around an issue whereby logging is
     enabled and the command is sent on the same UART as the logging system, in
     which a filesystem error was emitted.
+  * A MCUmgr bug when using the smp_svr sample with Bluetooth transport that
+    could have caused a stack overflow has been fixed.
 
 * LwM2M
 
