@@ -24,7 +24,7 @@ _ASM_FILE_PROLOGUE
  * ISR and/or context switch.
  */
 
-.macro z_arm64_enter_exc xreg0, xreg1
+.macro z_arm64_enter_exc xreg0, xreg1, el
 	/*
 	 * Two things can happen to the remaining registers:
 	 *
@@ -111,12 +111,12 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SP0 / Synchronous */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_sync_exc
 
 	/* Current EL with SP0 / IRQ */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	b 	_isr_wrapper
 #else
@@ -129,17 +129,17 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SP0 / SError */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_serror
 
 	/* Current EL with SPx / Synchronous */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_sync_exc
 
 	/* Current EL with SPx / IRQ */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	b 	_isr_wrapper
 #else
@@ -152,17 +152,17 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SPx / SError */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_serror
 
 	/* Lower EL using AArch64 / Synchronous */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el0
 	b	z_arm64_sync_exc
 
 	/* Lower EL using AArch64 / IRQ */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el0
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	b 	_isr_wrapper
 #else
@@ -175,7 +175,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Lower EL using AArch64 / SError */
 	.align 7
-	z_arm64_enter_exc x0, x1
+	z_arm64_enter_exc x0, x1, el0
 	b	z_arm64_serror
 
 	/* Lower EL using AArch32 / Synchronous */
