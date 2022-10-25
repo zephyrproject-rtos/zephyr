@@ -4,7 +4,6 @@
 
 add_library(host_mocks STATIC
             host_mocks/assert.c
-            host_mocks/print_utils.c
 )
 
 target_include_directories(host_mocks PUBLIC
