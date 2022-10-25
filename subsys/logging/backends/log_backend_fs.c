@@ -501,5 +501,6 @@ static const struct log_backend_api log_backend_fs_api = {
 	.format_set = format_set,
 };
 
-LOG_BACKEND_DEFINE(log_backend_fs, log_backend_fs_api, true);
+LOG_BACKEND_DEFINE(log_backend_fs, log_backend_fs_api,
+		   IS_ENABLED(CONFIG_LOG_BACKEND_FS_AUTOSTART));
 #endif

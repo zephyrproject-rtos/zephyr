@@ -17,6 +17,13 @@ backend = FS
 backend-str = fs
 source "subsys/logging/Kconfig.template.log_format_config"
 
+config LOG_BACKEND_FS_AUTOSTART
+	bool "Automatically start fs backend"
+	default y
+	help
+	  When enabled automatically start the file system backend on
+	  application start.
+
 config LOG_BACKEND_FS_OVERWRITE
 	bool "Old log files overwrite"
 	default y
