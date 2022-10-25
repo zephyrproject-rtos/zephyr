@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2022 Jamie McCrae
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  depends_on: netif
+tests:
+  net.ipv4.fragment:
+    tags: net ipv4 fragment
