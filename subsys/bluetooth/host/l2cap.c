@@ -2713,7 +2713,10 @@ void bt_l2cap_init(void)
 	}
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	k_fifo_init(&free_l2cap_tx_meta_data);
 	for (size_t i = 0; i < ARRAY_SIZE(l2cap_tx_meta_data_storage); i++) {
+		(void)memset(&l2cap_tx_meta_data_storage[i], 0,
+					sizeof(l2cap_tx_meta_data_storage[i]));
 		k_fifo_put(&free_l2cap_tx_meta_data, &l2cap_tx_meta_data_storage[i]);
 	}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
