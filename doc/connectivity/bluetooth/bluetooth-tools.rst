@@ -119,6 +119,10 @@ one additional step using ``btproxy``:
    You might need to replace :literal:`-i 0` with the index of the Controller
    you wish to proxy.
 
+   If you see ``Received unknown host packet type 0x00`` when running QEMU, then
+   add :literal:`-z` to the ``btproxy`` command line to ignore any null bytes
+   transmitted at startup.
+
 Once the hardware is connected and ready to use, you can then proceed to
 building and running a sample:
 
