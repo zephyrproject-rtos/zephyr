@@ -3,7 +3,7 @@ name: Adafruit Feather M0 Basic Proto
 type: mcu
 arch: arm
 ram: 32
-flash: 256
+flash: 232
 toolchain:
   - zephyr
   - gnuarmemb
