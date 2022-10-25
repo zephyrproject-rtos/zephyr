@@ -23,19 +23,12 @@ struct flashdisk_data {
 	struct disk_info info;
 	const unsigned int area_id;
 	const off_t offset;
+	uint8_t *const cache;
+	const size_t cache_size;
 	const size_t size;
 	const size_t sector_size;
 	size_t page_size;
 };
-
-#define DT_DRV_COMPAT zephyr_flash_disk
-
-#define DEFINE_BUFFER(n) uint8_t _buf##n[DT_INST_PROP(n, cache_size)];
-#define MAX_BUF_SIZE sizeof(union{DT_INST_FOREACH_STATUS_OKAY(DEFINE_BUFFER)})
-
-/* flash read-copy-erase-write operation */
-static uint8_t __aligned(4) read_copy_buf[MAX_BUF_SIZE];
-static K_MUTEX_DEFINE(read_copy_buf_lock);
 
 /* calculate number of blocks required for a given size */
 #define GET_NUM_BLOCK(total_size, block_size) \
@@ -83,9 +76,9 @@ static int disk_flash_access_init(struct disk_info *disk)
 	LOG_INF("offset %lx, sector size %zu, page size %zu, volume size %zu",
 		(long)ctx->offset, ctx->sector_size, ctx->page_size, ctx->size);
 
-	if (ctx->page_size > ARRAY_SIZE(read_copy_buf)) {
-		LOG_ERR("Buffer too small (%zu needs %zu)",
-			ARRAY_SIZE(read_copy_buf), ctx->page_size);
+	if (ctx->page_size > ctx->cache_size) {
+		LOG_ERR("Cache too small (%zu needs %zu)",
+			ctx->cache_size, ctx->page_size);
 		flash_area_close(fap);
 		return -ENOMEM;
 	}
@@ -232,12 +225,10 @@ static int update_flash_block(struct disk_info *disk, off_t start_addr,
 		rc = overwrite_flash_block(disk, fl_addr, buff);
 	} else {
 		/* partial block, perform read-copy with user data */
-		k_mutex_lock(&read_copy_buf_lock, K_FOREVER);
-		rc = read_copy_flash_block(disk, start_addr, size, buff, read_copy_buf);
+		rc = read_copy_flash_block(disk, start_addr, size, buff, ctx->cache);
 		if (rc == 0) {
-			rc = overwrite_flash_block(disk, fl_addr, read_copy_buf);
+			rc = overwrite_flash_block(disk, fl_addr, ctx->cache);
 		}
-		k_mutex_unlock(&read_copy_buf_lock);
 	}
 
 	return rc == 0 ? 0 : -EIO;
@@ -347,7 +338,13 @@ static const struct disk_operations flash_disk_ops = {
 	.ioctl = disk_flash_access_ioctl,
 };
 
+#define DT_DRV_COMPAT zephyr_flash_disk
+
 #define PARTITION_PHANDLE(n) DT_PHANDLE_BY_IDX(DT_DRV_INST(n), partition, 0)
+
+#define DEFINE_FLASHDISKS_CACHE(n) \
+	static uint8_t __aligned(4) flashdisk##n##_cache[DT_INST_PROP(n, cache_size)];
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_CACHE)
 
 #define DEFINE_FLASHDISKS_DEVICE(n)						\
 {										\
@@ -357,6 +354,8 @@ static const struct disk_operations flash_disk_ops = {
 	},									\
 	.area_id = DT_FIXED_PARTITION_ID(PARTITION_PHANDLE(n)),			\
 	.offset = DT_REG_ADDR(PARTITION_PHANDLE(n)),				\
+	.cache = flashdisk##n##_cache,						\
+	.cache_size = DT_INST_PROP(n, cache_size),				\
 	.size = DT_REG_SIZE(PARTITION_PHANDLE(n)),				\
 	.sector_size = DT_INST_PROP(n, sector_size),				\
 },
