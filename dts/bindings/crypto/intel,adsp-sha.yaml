@@ -1,9 +1,9 @@
 # Copyright (c) 2022, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Intel Crypto SHA accelerator.
+description: Intel ADSP Crypto SHA accelerator.
 
-compatible: "intel,sha"
+compatible: "intel,adsp-sha"
 
 include: base.yaml
 
