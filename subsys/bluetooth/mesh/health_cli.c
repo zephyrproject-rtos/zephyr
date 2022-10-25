@@ -19,6 +19,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_MODEL)
 #define LOG_MODULE_NAME bt_mesh_health_cli
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "net.h"
 #include "foundation.h"

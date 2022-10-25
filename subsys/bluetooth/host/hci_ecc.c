@@ -26,6 +26,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_hci_ecc
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "hci_ecc.h"
 #include "ecc.h"

@@ -21,6 +21,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIS_CRYPTO)
 #define LOG_MODULE_NAME bt_csis_crypto
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #define BT_CSIS_CRYPTO_PADDING_SIZE 13
 #define BT_CSIS_R_SIZE              3 /* r is 24 bit / 3 octet */

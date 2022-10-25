@@ -32,6 +32,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_id
 #include "common/log.h"
+#include "common/bt_str.h"
 
 struct bt_adv_id_check_data {
 	uint8_t id;

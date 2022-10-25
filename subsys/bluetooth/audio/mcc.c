@@ -40,6 +40,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCC)
 #define LOG_MODULE_NAME bt_mcc
 #include "common/log.h"
+#include "common/bt_str.h"
 
 struct mcs_instance_t {
 	uint16_t start_handle;
