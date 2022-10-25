@@ -16,6 +16,11 @@
 
 LOG_MODULE_REGISTER(pwm_sam, CONFIG_PWM_LOG_LEVEL);
 
+/* Some SoCs use a slightly different naming scheme */
+#if !defined(PWMCHNUM_NUMBER) && defined(PWMCH_NUM_NUMBER)
+#define PWMCHNUM_NUMBER PWMCH_NUM_NUMBER
+#endif
+
 struct sam_pwm_config {
 	Pwm *regs;
 	const struct pinctrl_dev_config *pcfg;
@@ -63,7 +68,7 @@ static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	/* Select clock A */
-	pwm->PWM_CH_NUM[channel].PWM_CMR = PWM_CMR_CPRE_CLKA_Val;
+	pwm->PWM_CH_NUM[channel].PWM_CMR = PWM_CMR_CPRE_CLKA;
 
 	/* Update period and pulse using the update registers, so that the
 	 * change is triggered at the next PWM period.
