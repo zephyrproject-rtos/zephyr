@@ -387,9 +387,26 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 		.data = nb->data,
 	};
 	bool sent = false;
+	struct bt_conn_info info;
 
 	conn = smp_bt_conn_from_pkt(nb);
 	if (conn == NULL) {
+		rc = MGMT_ERR_ENOENT;
+		goto cleanup;
+	}
+
+	/* Verify that the device is connected, the necessity for this check is that the remote
+	 * device might have sent a command and disconnected before the command has been processed
+	 * completely, if this happens then the the connection details will still be valid due to
+	 * the incremented connection reference count, but the connection has actually been
+	 * dropped, this avoids waiting for a semaphore that will never be given which would
+	 * otherwise cause a deadlock.
+	 */
+	rc = bt_conn_get_info(conn, &info);
+
+	if (rc != 0 || info.state != BT_CONN_STATE_CONNECTED) {
+		/* Remote device has disconnected */
+		bt_conn_unref(conn);
 		rc = MGMT_ERR_ENOENT;
 		goto cleanup;
 	}
@@ -414,7 +431,6 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 		notify_param.len = mtu_size;
 
 		rc = bt_gatt_notify_cb(conn, &notify_param);
-		k_sem_take(&smp_notify_sem, K_FOREVER);
 
 		if (rc == -ENOMEM) {
 			if (sent == false) {
@@ -443,7 +459,10 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 			off += mtu_size;
 			notify_param.data = &nb->data[off];
 			sent = true;
+
+			k_sem_take(&smp_notify_sem, K_FOREVER);
 		} else {
+			/* No connection, cannot continue */
 			rc = MGMT_ERR_EUNKNOWN;
 			break;
 		}
