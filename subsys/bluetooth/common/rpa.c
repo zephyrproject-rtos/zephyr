@@ -18,6 +18,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_RPA)
 #define LOG_MODULE_NAME bt_rpa
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include <zephyr/bluetooth/crypto.h>
 

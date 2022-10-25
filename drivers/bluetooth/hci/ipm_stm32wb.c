@@ -40,6 +40,7 @@ static void sysevt_received(void *pdata);
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME hci_ipm
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #define HCI_CMD                 0x01
 #define HCI_ACL                 0x02

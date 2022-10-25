@@ -23,6 +23,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_keys
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "common/rpa.h"
 #include "conn_internal.h"

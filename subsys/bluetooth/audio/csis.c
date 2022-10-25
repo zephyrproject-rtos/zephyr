@@ -35,6 +35,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIS)
 #define LOG_MODULE_NAME bt_csis
 #include "common/log.h"
+#include "common/bt_str.h"
 
 static struct bt_csis csis_insts[CONFIG_BT_CSIS_MAX_INSTANCE_COUNT];
 static bt_addr_le_t server_dummy_addr; /* 0'ed address */
