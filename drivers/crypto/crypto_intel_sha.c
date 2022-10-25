@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(SHA);
 
-#define DT_DRV_COMPAT intel_sha
+#define DT_DRV_COMPAT intel_adsp_sha
 
 static struct sha_session sha_sessions[SHA_MAX_SESSIONS];
 
