@@ -78,7 +78,7 @@ static int intel_sha_regs_cpy(void *dst, const void *src, size_t len)
 }
 
 /* ! Perform SHA computation over requested region. */
-static int intel_sha_device_run(struct device *dev, const void *buf_in, size_t buf_in_size,
+static int intel_sha_device_run(const struct device *dev, const void *buf_in, size_t buf_in_size,
 				size_t max_buff_len, uint32_t state)
 {
 	int err;
@@ -177,7 +177,7 @@ static int intel_sha_copy_hash(struct sha_container *const self, void *dst, size
 	return err;
 }
 
-static int intel_sha_device_get_hash(struct device *dev, void *buf_out, size_t buf_out_size)
+static int intel_sha_device_get_hash(const struct device *dev, void *buf_out, size_t buf_out_size)
 {
 	int err;
 	struct sha_container *const self = dev->data;
@@ -281,7 +281,7 @@ static int intel_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 	return ret;
 }
 
-static int intel_sha_device_set_hash_type(struct device *dev, struct hash_ctx *ctx,
+static int intel_sha_device_set_hash_type(const struct device *dev, struct hash_ctx *ctx,
 					  enum hash_algo algo)
 {
 	int ret;
@@ -313,7 +313,7 @@ static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)
 	struct sha_container *self = (struct sha_container *const)(dev)->data;
 	struct sha_session *session = (struct sha_session *)ctx->drv_sessn_state;
 
-	(void)memset(self->dfsha, 0, sizeof(struct sha_hw_regs));
+	(void)memset((void *)self->dfsha, 0, sizeof(struct sha_hw_regs));
 	(void)memset(&session->sha_ctx, 0, sizeof(struct sha_context));
 	(void)memset(&session->state, 0, sizeof(union sha_state));
 	session->in_use = 0;
@@ -321,7 +321,7 @@ static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)
 	return 0;
 }
 
-static int intel_sha_device_init(struct device *dev)
+static int intel_sha_device_init(const struct device *dev)
 {
 	return 0;
 }
