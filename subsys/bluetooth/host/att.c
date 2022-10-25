@@ -3646,6 +3646,7 @@ static void bt_eatt_init(void)
 
 void bt_att_init(void)
 {
+	k_fifo_init(&free_att_tx_meta_data);
 	for (size_t i = 0; i < ARRAY_SIZE(tx_meta_data); i++) {
 		k_fifo_put(&free_att_tx_meta_data, &tx_meta_data[i]);
 	}
