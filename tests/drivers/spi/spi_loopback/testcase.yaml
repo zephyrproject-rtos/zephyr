@@ -16,6 +16,13 @@ tests:
     harness_config:
       fixture: spi_loopback
     platform_allow: frdm_k64f
+  drivers.sam_spi_dma.loopback:
+    tags: dma
+    harness: ztest
+    extra_args: OVERLAY_CONFIG="overlay-sam-spi-dma.conf" DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
+    harness_config:
+      fixture: spi_loopback
+    platform_allow: sam_e70_xplained sam_v71_xult tdk_robokit1
   drivers.stm32_spi_dma.loopback:
     tags: dma
     harness: ztest
