@@ -22,6 +22,8 @@
 	};
 
 	intc: ioapic@fec00000  {
+		#address-cells = <1>;
+		#size-cells = <1>;
 		compatible = "intel,ioapic";
 		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
