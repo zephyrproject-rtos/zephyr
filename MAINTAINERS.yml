@@ -1940,6 +1940,7 @@ Espressif Platforms:
     - uLipe
   collaborators:
     - LucasTambor
+    - marekmatej
   files:
     - drivers/*/*esp32*.c
     - boards/xtensa/esp32*/
