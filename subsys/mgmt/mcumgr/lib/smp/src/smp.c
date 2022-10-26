@@ -20,9 +20,7 @@
 #include "smp/smp.h"
 #include "../../../smp_internal.h"
 
-static void
-cbor_nb_reader_init(struct cbor_nb_reader *cnr,
-		    struct net_buf *nb)
+static void cbor_nb_reader_init(struct cbor_nb_reader *cnr, struct net_buf *nb)
 {
 	/* Skip the smp_hdr */
 	void *new_ptr = net_buf_pull(nb, sizeof(struct smp_hdr));
@@ -32,8 +30,7 @@ cbor_nb_reader_init(struct cbor_nb_reader *cnr,
 			       cnr->nb->len, 1);
 }
 
-static void
-cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
+static void cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
 {
 	net_buf_reset(nb);
 	cnw->nb = nb;
@@ -45,8 +42,7 @@ cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
 /**
  * Converts a request opcode to its corresponding response opcode.
  */
-static uint8_t
-smp_rsp_op(uint8_t req_op)
+static uint8_t smp_rsp_op(uint8_t req_op)
 {
 	if (req_op == MGMT_OP_READ) {
 		return MGMT_OP_READ_RSP;
@@ -132,9 +128,8 @@ static int smp_build_err_rsp(struct smp_streamer *streamer, const struct smp_hdr
  *
  * @return A MGMT_ERR_[...] error code.
  */
-static int
-smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct smp_hdr *req_hdr,
-			  bool *handler_found)
+static int smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct smp_hdr *req_hdr,
+				     bool *handler_found)
 {
 	const struct mgmt_handler *handler;
 	mgmt_handler_fn handler_fn;
@@ -189,9 +184,8 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct smp_hdr *req_hdr,
  *
  * @return A MGMT_ERR_[...] error code.
  */
-static int
-smp_handle_single_req(struct smp_streamer *streamer, const struct smp_hdr *req_hdr,
-		      bool *handler_found, const char **rsn)
+static int smp_handle_single_req(struct smp_streamer *streamer, const struct smp_hdr *req_hdr,
+				 bool *handler_found, const char **rsn)
 {
 	struct mgmt_ctxt cbuf;
 	struct smp_hdr rsp_hdr;
@@ -230,9 +224,8 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct smp_hdr *req_h
  * @param rsn		The text explanation to @status encoded as "rsn" into CBOR
  *			response.
  */
-static void
-smp_on_err(struct smp_streamer *streamer, const struct smp_hdr *req_hdr,
-		   void *req, void *rsp, int status, const char *rsn)
+static void smp_on_err(struct smp_streamer *streamer, const struct smp_hdr *req_hdr,
+		       void *req, void *rsp, int status, const char *rsn)
 {
 	int rc;
 
@@ -279,8 +272,7 @@ smp_on_err(struct smp_streamer *streamer, const struct smp_hdr *req_hdr,
  *         is not enough bytes to process header, or other MGMT_ERR_[...] code on
  *         failure.
  */
-int
-smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
+int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 {
 	struct smp_hdr req_hdr;
 	struct mgmt_evt_op_cmd_done_arg cmd_done_arg;
