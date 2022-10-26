@@ -7,6 +7,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/fff.h>
+
+DEFINE_FFF_GLOBALS;
 
 /* Rows count equals number of types */
 #define TEST_PARAMETERS_LUT_ROWS_COUNT		7

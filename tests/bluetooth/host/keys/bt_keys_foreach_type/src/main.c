@@ -4,11 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <host/keys.h>
+#include <zephyr/fff.h>
 #include "mocks/keys_help_utils.h"
 #include "testing_common_defs.h"
+
+DEFINE_FFF_GLOBALS;
 
 /* This LUT contains different combinations of ID, Address with no key type */
 static const struct id_addr_type testing_id_addr_type_no_type_lut[] = {

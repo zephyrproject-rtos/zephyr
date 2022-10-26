@@ -8,8 +8,11 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
 #include <host/keys.h>
+#include <zephyr/fff.h>
 #include "mocks/keys_help_utils.h"
 #include "testing_common_defs.h"
+
+DEFINE_FFF_GLOBALS;
 
 /* This LUT contains different combinations of ID and Address pairs */
 const struct id_addr_pair testing_id_addr_pair_lut[] = {
