@@ -469,6 +469,10 @@ conn_is_valid:
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
+	// Checkme: Workaround to use DLE with multiple peripherals
+	max_tx_time = PDU_DC_PAYLOAD_TIME_MAX; /* 2120 us */
+	max_rx_time = PDU_DC_PAYLOAD_TIME_MAX; /* 2120 us */
+
 	conn->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
