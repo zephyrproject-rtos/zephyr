@@ -15,6 +15,7 @@ extern enum bst_result_t bst_result;
 
 static volatile bool g_cb;
 static volatile bool g_pa_synced;
+CREATE_FLAG(flag_broadcast_code_received);
 static struct bt_conn *g_conn;
 static bool g_connected;
 
@@ -23,6 +24,7 @@ struct sync_state {
 	bool pa_syncing;
 	struct k_work_delayable pa_timer;
 	struct bt_le_per_adv_sync *pa_sync;
+	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
 } sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
 static struct sync_state *sync_state_get(const struct bt_bap_scan_delegator_recv_state *recv_state)
@@ -255,10 +257,32 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 	return pa_sync_term(state);
 }
 
+static void broadcast_code_cb(struct bt_conn *conn,
+			      const struct bt_bap_scan_delegator_recv_state *recv_state,
+			      const uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE])
+{
+	struct sync_state *state;
+
+	printk("Broadcast code received for %p\n", recv_state);
+
+	state = sync_state_get(recv_state);
+	if (state == NULL) {
+		FAIL("Could not get state\n");
+
+		return;
+	}
+
+	(void)memcpy(state->broadcast_code, broadcast_code,
+		     BT_BAP_BROADCAST_CODE_SIZE);
+
+	SET_FLAG(flag_broadcast_code_received);
+}
+
 static struct bt_bap_scan_delegator_cb scan_delegator_cb = {
 	.recv_state_updated = recv_state_updated_cb,
 	.pa_sync_req = pa_sync_req_cb,
 	.pa_sync_term_req = pa_sync_term_req_cb,
+	.broadcast_code = broadcast_code_cb,
 };
 
 static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
@@ -350,6 +374,8 @@ static void test_main(void)
 	WAIT_FOR_COND(g_connected);
 
 	WAIT_FOR_COND(g_pa_synced);
+
+	WAIT_FOR_FLAG(flag_broadcast_code_received);
 
 	WAIT_FOR_COND(!g_pa_synced);
 

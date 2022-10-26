@@ -744,11 +744,12 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	return 0;
 }
 
-static int scan_delegator_broadcast_code(struct net_buf_simple *buf)
+static int scan_delegator_broadcast_code(struct bt_conn *conn,
+					 struct net_buf_simple *buf)
 {
 	struct bass_recv_state_internal *internal_state;
 	uint8_t src_id;
-	uint8_t *broadcast_code;
+	const uint8_t *broadcast_code;
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len != sizeof(struct bt_bap_bass_cp_broadcase_code) - 1) {
@@ -771,6 +772,12 @@ static int scan_delegator_broadcast_code(struct net_buf_simple *buf)
 
 	LOG_DBG("Index %u: broadcast code added: %s", internal_state->index,
 		bt_hex(internal_state->broadcast_code, sizeof(internal_state->broadcast_code)));
+
+	if (scan_delegator_cbs != NULL &&
+	    scan_delegator_cbs->broadcast_code != NULL) {
+		scan_delegator_cbs->broadcast_code(conn, &internal_state->state,
+						   broadcast_code);
+	}
 
 	return 0;
 }
@@ -900,7 +907,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 	case BT_BAP_BASS_OP_BROADCAST_CODE:
 		LOG_DBG("Assistant setting broadcast code");
 
-		err = scan_delegator_broadcast_code(&buf);
+		err = scan_delegator_broadcast_code(conn, &buf);
 		if (err != 0) {
 			LOG_DBG("Could not set broadcast code");
 			return err;
