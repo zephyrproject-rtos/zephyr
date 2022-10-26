@@ -51,6 +51,14 @@
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 		};
+
+		rtc@58004000 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <32>;
+				status = "disabled";
+			};
+		};
 	};
 	/*
 	* The RAM memories placed here can be used by both cores M4/M7

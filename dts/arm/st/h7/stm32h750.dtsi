@@ -31,6 +31,14 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
 			status = "disabled";
 		};
+
+		rtc@58004000 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <32>;
+				status = "disabled";
+			};
+		};
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */

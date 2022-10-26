@@ -113,6 +113,14 @@
 				status = "disabled";
 			};
 		};
+
+		rtc@58004000 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <32>;
+				status = "disabled";
+			};
+		};
 	};
 
 	/* D1 domain, AXI SRAM (128KB with shared ITCM 192KB as `TCM_AXI_SHARED` is `000`) */
