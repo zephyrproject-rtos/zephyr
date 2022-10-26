@@ -35,4 +35,9 @@ config HAS_XMCLIB_DMA
 	help
 	  Enable XMCLIB DMA
 
+config HAS_XMCLIB_SPI
+	bool
+	help
+	  Enable XMCLIB SPI
+
 endif # HAS_XMCLIB
