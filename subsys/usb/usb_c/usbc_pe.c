@@ -679,7 +679,7 @@ static uint32_t policy_get_request_data_object(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 
 	/* This callback must be implemented */
-	__ASSERT(data->policy_cb_get_request_data_object != NULL,
+	__ASSERT(data->policy_cb_get_rdo != NULL,
 		 "Callback pointer should not be NULL");
 
 	return data->policy_cb_get_rdo(dev);
