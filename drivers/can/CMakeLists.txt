@@ -4,6 +4,7 @@ zephyr_library()
 zephyr_sources_ifdef(CONFIG_CAN_MCUX_MCAN    can_mcux_mcan.c)
 
 zephyr_library_sources_ifdef(CONFIG_CAN              can_common.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_FAKE         can_fake.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_LOOPBACK     can_loopback.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_MCAN         can_mcan.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_MCP2515      can_mcp2515.c)
