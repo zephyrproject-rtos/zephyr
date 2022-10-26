@@ -265,3 +265,24 @@ int intel_adsp_hda_dma_init(const struct device *dev)
 
 	return 0;
 }
+
+int intel_adsp_hda_dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
+{
+	switch (type) {
+	case DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT:
+		*value = DMA_BUF_ADDR_ALIGNMENT(
+				DT_COMPAT_GET_ANY_STATUS_OKAY(intel_adsp_hda_link_out));
+		break;
+	case DMA_ATTR_BUFFER_SIZE_ALIGNMENT:
+		*value = DMA_BUF_SIZE_ALIGNMENT(
+				DT_COMPAT_GET_ANY_STATUS_OKAY(intel_adsp_hda_link_out));
+		break;
+	case DMA_ATTR_COPY_ALIGNMENT:
+		*value = DMA_COPY_ALIGNMENT(DT_COMPAT_GET_ANY_STATUS_OKAY(intel_adsp_hda_link_out));
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
