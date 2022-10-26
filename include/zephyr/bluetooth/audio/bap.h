@@ -356,6 +356,21 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	int (*pa_sync_term_req)(struct bt_conn *conn,
 				const struct bt_bap_scan_delegator_recv_state *recv_state);
+
+	/**
+	 * @brief Broadcast code received
+	 *
+	 * Broadcast code received from a broadcast assistant
+	 *
+	 * @param conn           Pointer to the connection providing the
+	 *                       broadcast code.
+	 * @param recv_state     Pointer to the receive state the broadcast code
+	 *                       is being provided for.
+	 * @param broadcast_code The 16-octet broadcast code
+	 */
+	void (*broadcast_code)(struct bt_conn *conn,
+			       const struct bt_bap_scan_delegator_recv_state *recv_state,
+			       const uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE]);
 };
 
 /** Structure holding information of audio stream endpoint */
