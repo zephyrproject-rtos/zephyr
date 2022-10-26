@@ -32,7 +32,7 @@ enum tc_state_t {
 	TC_DISABLED_STATE,
 	/** Error Recovery State */
 	TC_ERROR_RECOVERY_STATE,
-	/** Unnattached Sink State */
+	/** Unattached Sink State */
 	TC_UNATTACHED_SNK_STATE,
 	/** Attach Wait Sink State */
 	TC_ATTACH_WAIT_SNK_STATE,
