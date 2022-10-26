@@ -1002,7 +1002,9 @@ void ticker_worker(void *param)
 		 * with other ticker nodes
 		 */
 		if (ticker->ticks_slot != 0U &&
-		   (slot_reserved || ticker_resolve_collision(node, ticker))) {
+		   (slot_reserved ||
+		    (instance->ticks_slot_previous > ticks_expired) ||
+		    ticker_resolve_collision(node, ticker))) {
 #if defined(CONFIG_BT_TICKER_EXT)
 			struct ticker_ext *ext_data = ticker->ext_data;
 
