@@ -8,9 +8,12 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <host/hci_core.h>
+#include <zephyr/fff.h>
 #include "mocks/net_buf.h"
 #include "mocks/net_buf_expects.h"
 #include "mocks/buf_help_utils.h"
+
+DEFINE_FFF_GLOBALS;
 
 static void tc_setup(void *f)
 {

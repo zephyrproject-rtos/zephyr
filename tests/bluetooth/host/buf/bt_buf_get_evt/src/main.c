@@ -6,9 +6,12 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/fff.h>
 #include "mocks/net_buf.h"
 #include "mocks/net_buf_expects.h"
 #include "mocks/buf_help_utils.h"
+
+DEFINE_FFF_GLOBALS;
 
 /* Rows count equals number of events x 2 */
 #define TEST_PARAMETERS_LUT_ROWS_COUNT		60
