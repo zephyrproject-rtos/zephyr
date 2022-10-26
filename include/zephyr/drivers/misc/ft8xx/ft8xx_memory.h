@@ -832,7 +832,7 @@ const static struct ft8xx_register_address_map_t bt81X_register_address_map
 	.REG_TOUCH_TRANSFORM_F     	= BT81X_REG_TOUCH_TRANSFORM_F,
 	.REG_TOUCH_CONFIG    		= BT81X_REG_TOUCH_CONFIG,
 	.REG_CTOUCH_TOUCH4_X    	= BT81X_REG_CTOUCH_TOUCH4_X,
-	.REG_EHOST_TOUCH_ACK		= 0, // not present on ft81x
+	.REG_EHOST_TOUCH_ACK		= BT81X_REG_EHOST_TOUCH_ACK,
 	.REG_BIST_EN    			= BT81X_REG_BIST_EN,
 	.REG_TRIM    				= BT81X_REG_TRIM,
 	.REG_ANA_COMP     			= BT81X_REG_ANA_COMP,
@@ -842,9 +842,9 @@ const static struct ft8xx_register_address_map_t bt81X_register_address_map
 	.REG_DATESTAMP    			= BT81X_REG_DATESTAMP,
 	.REG_CMDB_SPACE     		= BT81X_REG_CMDB_SPACE,
 	.REG_CMDB_WRITE    			= BT81X_REG_CMDB_WRITE,
-	.REG_ADAPTIVE_FRAMERATE		= 0, // not present on ft81x
-	.REG_PLAYBACK_PAUSE			= 0, // not present on ft81x
-	.REG_FLASH_STATUS			= 0, // not present on ft81x	
+	.REG_ADAPTIVE_FRAMERATE		= BT81X_REG_ADAPTIVE_FRAMERATE,
+	.REG_PLAYBACK_PAUSE			= BT81X_REG_PLAYBACK_PAUSE,
+	.REG_FLASH_STATUS			= BT81X_REG_FLASH_STATUS,	
 	.REG_TRACKER        		= BT81X_REG_TRACKER,
 	.REG_TRACKER1       		= BT81X_REG_TRACKER1,
 	.REG_TRACKER2   			= BT81X_REG_TRACKER2,
@@ -852,9 +852,9 @@ const static struct ft8xx_register_address_map_t bt81X_register_address_map
 	.REG_TRACKER4   			= BT81X_REG_TRACKER4,
 	.REG_MEDIAFIFO_READ     	= BT81X_REG_MEDIAFIFO_READ,
 	.REG_MEDIAFIFO_WRITE 		= BT81X_REG_MEDIAFIFO_WRITE,
-	.REG_PLAY_CONTROL 			= 0, // not present on ft81x
-	.REG_ANIM_ACTIVE			= 0, // not present on ft81x
-	.REG_COPRO_PATCH_PTR		= 0, // not present on ft81x	
+	.REG_PLAY_CONTROL 			= BT81X_REG_PLAY_CONTROL,
+	.REG_ANIM_ACTIVE			= BT81X_REG_ANIM_ACTIVE,
+	.REG_COPRO_PATCH_PTR		= BT81X_REG_COPRO_PATCH_PTR,	
 }
 
 
