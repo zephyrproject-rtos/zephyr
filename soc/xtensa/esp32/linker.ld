@@ -343,10 +343,12 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     *libesp32.a:panic.*(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
+#if !defined(CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM)
     *libsubsys__net__l2__ethernet.a:(.literal .text .literal.* .text.*)
     *libsubsys__net__lib__config.a:(.literal .text .literal.* .text.*)
     *libsubsys__net__ip.a:(.literal .text .literal.* .text.*)
     *libsubsys__net.a:(.literal .text .literal.* .text.*)
+#endif
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
