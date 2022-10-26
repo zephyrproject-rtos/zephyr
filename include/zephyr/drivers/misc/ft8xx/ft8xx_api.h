@@ -93,7 +93,7 @@ typedef void (*ft8xx_copro_cmd_coldstart_t)(const struct device *dev);
 typedef void (*ft8xx_copro_cmd_interrupt_t)(const struct device *dev,uint32_t ms );
 typedef void (*ft8xx_copro_cmd_append_t)(const struct device *dev,uint32_t ptr, uint32_t num );
 typedef void (*ft8xx_copro_cmd_regread_t)(const struct device *dev,uint32_t ptr, uint32_t result );
-typedef void (*ft8xx_copro_cmd_memwrite_t)(const struct device *dev,uint32_t ptr, uint32_t num );
+typedef void (*ft8xx_copro_cmd_memwrite_t)(const struct device *dev,uint32_t ptr, uint32_t num, uint32_t *src);
 typedef void (*ft8xx_copro_cmd_inflate_t)(const struct device *dev,uint32_t ptr );
 typedef void (*ft8xx_copro_cmd_loadimage_t)(const struct device *dev,uint32_t ptr, uint32_t options );
 typedef void (*ft8xx_copro_cmd_memcrc_t)(const struct device *dev,uint32_t ptr, uint32_t num, uint32_t result );
@@ -115,6 +115,7 @@ typedef void (*ft8xx_copro_cmd_dial_t)(const struct device *dev,int16_t x, int16
 typedef void (*ft8xx_copro_cmd_toggle_t)(const struct device *dev,int16_t x, int16_t y, int16_t w, int16_t font, uint16_t options, uint16_t state, const char* s );
 typedef void (*ft8xx_copro_cmd_text_t)(const struct device *dev,int16_t x, int16_t y, int16_t font, uint16_t options, const char* s );
 typedef void (*ft8xx_copro_cmd_number_t)(const struct device *dev,int16_t x, int16_t y, int16_t font, uint16_t options, int32_t n );
+typedef void (*ft8xx_copro_cmd_loadidentity_t)(const struct device *dev);
 typedef void (*ft8xx_copro_cmd_setmatrix_t)(const struct device *dev);
 typedef void (*ft8xx_copro_cmd_getmatrix_t)(const struct device *dev,int32_t a, int32_t b, int32_t c, int32_t d, int32_t e, int32_t f );
 typedef void (*ft8xx_copro_cmd_getptr_t)(const struct device *dev,uint32_t result);
@@ -141,86 +142,101 @@ typedef const struct flash_parameters* (*ft8xx_ram_g_parameters_t)(const struct 
 
 
 struct ft8xx_api {
-    ft8xx_calibrate_t               ft8xx_calibrate;
-    ft8xx_touch_transform_get_t     ft8xx_get_transform;
-    ft8xx_touch_transform_set_t     ft8xx_set_transform;
-	ft8xx_get_touch_tag_t			ft8xx_get_touch_tag;
-	ft8xx_register_int_t			ft8xx_register_int;
-    ft8xx_host_command_t            ft8xx_host_command;
-    ft8xx_command_t                 ft8xx_command;
+    ft8xx_calibrate_t               ft8xx_calibrate,
+    ft8xx_touch_transform_get_t     ft8xx_get_transform,
+    ft8xx_touch_transform_set_t     ft8xx_set_transform,
+	ft8xx_get_touch_tag_t			ft8xx_get_touch_tag,
+	ft8xx_register_int_t			ft8xx_register_int,
+    ft8xx_host_command_t            ft8xx_host_command,
+    ft8xx_command_t                 ft8xx_command,
 
+// audio functions
 
+    ft8xx_audio_load_t              ft8xx_audio_load,
+    ft8xx_audio_play_t              ft8xx_audio_play,
+    ft8xx_audio_get_status_t        ft8xx_audio_get_status,
+    ft8xx_audio_stop_t              ft8xx_audio_stop,
 
-    ft8xx_audio_load_t              ft8xx_audio_load;
-    ft8xx_audio_play_t              ft8xx_audio_play;
-    ft8xx_audio_get_status_t        ft8xx_audio_get_status;
-    ft8xx_audio_stop_t              ft8xx_audio_stop;
+    ft8xx_audio_synth_start_t       ft8xx_audio_synth_start,
+    ft8xx_audio_synth_get_status_t  ft8xx_audio_synth_get_status,
+    ft8xx_audio_synth_stop_t        ft8xx_audio_synth_stop,
 
+// coprocessor functions
 
-    ft8xx_audio_synth_start_t       ft8xx_audio_synth_start;
-    ft8xx_audio_synth_get_status_t  ft8xx_audio_synth_get_status;
-    ft8xx_audio_synth_stop_t        ft8xx_audio_synth_stop;
+    ft8xx_copro_cmd_dlstart_t       ft8xx_copro_cmd_dlstart, 
+    ft8xx_copro_cmd_swap_t          ft8xx_copro_cmd_swap,
 
+// coprocessor graphics objects
 
+    ft8xx_copro_cmd_button_t        ft8xx_copro_cmd_button,
+    ft8xx_copro_cmd_clock_t         ft8xx_copro_cmd_clock,
+    ft8xx_copro_cmd_fgcolor_t       ft8xx_copro_cmd_fgcolor,
+    ft8xx_copro_cmd_bgcolor_t       ft8xx_copro_cmd_bgcolor,
+    ft8xx_copro_cmd_gradcolor_t     ft8xx_copro_cmd_gradcolor,
+    ft8xx_copro_cmd_gauge_t         ft8xx_copro_cmd_gauge,
+    ft8xx_copro_cmd_gradient_t      ft8xx_copro_cmd_gradient,
+    ft8xx_copro_cmd_keys_t          ft8xx_copro_cmd_keys,
+    ft8xx_copro_cmd_progress_t      ft8xx_copro_cmd_progress,
+    ft8xx_copro_cmd_scrollbar_t     ft8xx_copro_cmd_scrollbar,
+    ft8xx_copro_cmd_slider_t        ft8xx_copro_cmd_slider,
+    ft8xx_copro_cmd_dial_t          ft8xx_copro_cmd_dial,
+    ft8xx_copro_cmd_toggle_t        ft8xx_copro_cmd_toggle,
+    ft8xx_copro_cmd_text_t          ft8xx_copro_cmd_text,
+    ft8xx_copro_cmd_number_t        ft8xx_copro_cmd_number,
 
+//  coprocessor memory operation functions
 
-    ft8xx_copro_cmd_dlstart_t       ft8xx_copro_cmd_dlstart; 
-    ft8xx_copro_cmd_swap_t          ft8xx_copro_cmd_swap;
-    ft8xx_copro_cmd_coldstart_t     ft8xx_copro_cmd_coldstart;
-    ft8xx_copro_cmd_interrupt_t     ft8xx_copro_cmd_interrupt;
-    ft8xx_copro_cmd_append_t        ft8xx_copro_cmd_append;
-    ft8xx_copro_cmd_regread_t       ft8xx_copro_cmd_regread;
-    ft8xx_copro_cmd_memwrite_t      ft8xx_copro_cmd_memwrite;
-    ft8xx_copro_cmd_inflate_t       ft8xx_copro_cmd_inflate;
-    ft8xx_copro_cmd_loadimage_t     ft8xx_copro_cmd_loadimage;
-    ft8xx_copro_cmd_memcrc_t        ft8xx_copro_cmd_memcrc;
-    ft8xx_copro_cmd_memzero_t       ft8xx_copro_cmd_memzero;
-    ft8xx_copro_cmd_memset_t        ft8xx_copro_cmd_memset;
-    ft8xx_copro_cmd_memcpy_t        ft8xx_copro_cmd_memcpy;
-    ft8xx_copro_cmd_button_t        ft8xx_copro_cmd_button;
-    ft8xx_copro_cmd_clock_t         ft8xx_copro_cmd_clock;
-    ft8xx_copro_cmd_fgcolor_t       ft8xx_copro_cmd_fgcolor;
-    ft8xx_copro_cmd_bgcolor_t       ft8xx_copro_cmd_bgcolor;
-    ft8xx_copro_cmd_gradcolor_t     ft8xx_copro_cmd_gradcolor;
-    ft8xx_copro_cmd_gauge_t         ft8xx_copro_cmd_gauge;
-    ft8xx_copro_cmd_gradient_t      ft8xx_copro_cmd_gradient;
-    ft8xx_copro_cmd_keys_t          ft8xx_copro_cmd_keys;
-    ft8xx_copro_cmd_progress_t      ft8xx_copro_cmd_progress;
-    ft8xx_copro_cmd_scrollbar_t     ft8xx_copro_cmd_scrollbar;
-    ft8xx_copro_cmd_slider_t        ft8xx_copro_cmd_slider;
-    ft8xx_copro_cmd_dial_t          ft8xx_copro_cmd_dial;
-    ft8xx_copro_cmd_toggle_t        ft8xx_copro_cmd_toggle;
-    ft8xx_copro_cmd_text_t          ft8xx_copro_cmd_text;
-    ft8xx_copro_cmd_number_t        ft8xx_copro_cmd_number;
-    ft8xx_copro_cmd_setmatrix_t     ft8xx_copro_cmd_setmatrix;
-    ft8xx_copro_cmd_getmatrix_t     ft8xx_copro_cmd_getmatrix;
-    ft8xx_copro_cmd_getptr_t        ft8xx_copro_cmd_getptr;
-    ft8xx_copro_cmd_getprops_t      ft8xx_copro_cmd_getprops;
-    ft8xx_copro_cmd_scale_t         ft8xx_copro_cmd_scale;
-    ft8xx_copro_cmd_rotate_t        ft8xx_copro_cmd_rotate;
-    ft8xx_copro_cmd_translate_t     ft8xx_copro_cmd_translate;
-    ft8xx_copro_cmd_calibrate_t     ft8xx_copro_cmd_calibrate;
-    ft8xx_copro_cmd_spinner_t       ft8xx_copro_cmd_spinner;
-    ft8xx_copro_cmd_screensaver_t   ft8xx_copro_cmd_screensaver;
-    ft8xx_copro_cmd_sketch_t        ft8xx_copro_cmd_sketch;
-    ft8xx_copro_cmd_stop_t          ft8xx_copro_cmd_stop;
-    ft8xx_copro_cmd_setfont_t       ft8xx_copro_cmd_setfont;
-    ft8xx_copro_cmd_track_t         ft8xx_copro_cmd_track;
-    ft8xx_copro_cmd_snapshot_t      ft8xx_copro_cmd_snapshot;
-    ft8xx_copro_cmd_logo_t          ft8xx_copro_cmd_logo;
+    ft8xx_copro_cmd_memcrc_t        ft8xx_copro_cmd_memcrc,
+    ft8xx_copro_cmd_memzero_t       ft8xx_copro_cmd_memzero,
+    ft8xx_copro_cmd_memset_t        ft8xx_copro_cmd_memset,
+    ft8xx_copro_cmd_memwrite_t      ft8xx_copro_cmd_memwrite,
+    ft8xx_copro_cmd_memcpy_t        ft8xx_copro_cmd_memcpy,
+    ft8xx_copro_cmd_append_t        ft8xx_copro_cmd_append,
+
+//  coprocessor image loading functions
+
+    ft8xx_copro_cmd_inflate_t       ft8xx_copro_cmd_inflate,
+    ft8xx_copro_cmd_loadimage_t     ft8xx_copro_cmd_loadimage,
+    ft8xx_copro_cmd_getptr_t        ft8xx_copro_cmd_getptr,
+    ft8xx_copro_cmd_getprops_t      ft8xx_copro_cmd_getprops,
+
+// coprocessor bitmap transform functions
+
+    ft8xx_copro_cmd_loadidentity_t  ft8xx_copro_cmd_loadidentity,
+    ft8xx_copro_cmd_translate_t     ft8xx_copro_cmd_translate,
+    ft8xx_copro_cmd_scale_t         ft8xx_copro_cmd_scale,
+    ft8xx_copro_cmd_rotate_t        ft8xx_copro_cmd_rotate,
+    ft8xx_copro_cmd_setmatrix_t     ft8xx_copro_cmd_setmatrix,
+    ft8xx_copro_cmd_getmatrix_t     ft8xx_copro_cmd_getmatrix,
+
+// coprocessor other functions
+
+    ft8xx_copro_cmd_coldstart_t     ft8xx_copro_cmd_coldstart,
+    ft8xx_copro_cmd_interrupt_t     ft8xx_copro_cmd_interrupt,
+    ft8xx_copro_cmd_regread_t       ft8xx_copro_cmd_regread,
+    ft8xx_copro_cmd_calibrate_t     ft8xx_copro_cmd_calibrate,
+    ft8xx_copro_cmd_spinner_t       ft8xx_copro_cmd_spinner,
+    ft8xx_copro_cmd_screensaver_t   ft8xx_copro_cmd_screensaver,
+    ft8xx_copro_cmd_sketch_t        ft8xx_copro_cmd_sketch,
+    ft8xx_copro_cmd_stop_t          ft8xx_copro_cmd_stop,
+    ft8xx_copro_cmd_snapshot_t      ft8xx_copro_cmd_snapshot,
+    ft8xx_copro_cmd_logo_t          ft8xx_copro_cmd_logo,
+    ft8xx_copro_cmd_setfont_t       ft8xx_copro_cmd_setfont,
+    ft8xx_copro_cmd_track_t         ft8xx_copro_cmd_track,
+
 
 //  memory access api (equivelent to flash ram api)
 
-	ft8xx_ram_g_read_t              read;
-	ft8xx_ram_g_write_t             write;
-	ft8xx_ram_g_erase_t             erase;
-	ft8xx_ram_g_parameters_t        get_parameters;
+	ft8xx_ram_g_read_t              read,
+	ft8xx_ram_g_write_t             write,
+	ft8xx_ram_g_erase_t             erase,
+	ft8xx_ram_g_parameters_t        get_parameters,
 
 
 
 
 
-};
+}
 
 
 

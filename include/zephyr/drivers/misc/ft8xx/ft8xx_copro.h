@@ -65,19 +65,162 @@ extern "C" {
 /**
  * @brief Execute a display list command by co-processor engine
  *
+ * @param dev Device pointer
  * @param cmd Display list command to execute
  */
-void ft8xx_copro_cmd(uint32_t cmd);
+void ft8xx_copro_cmd(const struct device *dev, uint32_t cmd);
 
 /**
  * @brief Start a new display list
+ *
+ * @param dev Device pointer
  */
-void ft8xx_copro_cmd_dlstart(void);
+void ft8xx_copro_cmd_dlstart(const struct device *dev);
 
 /**
  * @brief Swap the current display list
+ *
+ * @param dev Device pointer
  */
-void ft8xx_copro_cmd_swap(void);
+void ft8xx_copro_cmd_swap(const struct device *dev);
+
+
+/**
+ * @brief Sets co-processor engine to reset default states.
+ *
+ * @param dev Device pointer
+ */
+void ft8xx_copro_cmd_coldstart(const struct device *dev);
+
+/**
+ * @brief triggers interrupt INT_CMDFLAG.
+ *
+ * @param dev Device pointer
+ * @param ms Delay before interrupt triggers, in milliseconds.
+ 
+ */
+void ft8xx_copro_cmd_interrupt(const struct device *dev, uint32_t ms );
+
+/**
+ * @brief - append memory to display list.
+ *
+ * @param dev Device pointer
+ * @param ptr Start of source commands in device main memory
+ * @param num Number of bytes to copy. This must be a multiple of 4.
+ */
+void ft8xx_copro_cmd_append(const struct device *dev, uint32_t ptr, 
+			uint32_t num );
+
+/**
+ * @brief - read a register value.
+ *
+ * @param dev Device pointer
+ * @param ptr Address of register to read
+ * @param result The register value to be read at ptr address.
+ */
+void ft8xx_copro_cmd_regread(const struct device *dev, uint32_t ptr,
+			uint32_t result );
+
+
+/**
+ * @brief - write bytes into memory.
+ *
+ * @param dev Device pointer
+ * @param ptr Address of memory to write to
+ * @param num Number of bytes to be written
+ * @param src pointer to data
+ */
+void ft8xx_copro_cmd_memwrite(const struct device *dev, uint32_t ptr, 
+			uint32_t num, uint32_t *src );
+
+
+/**
+ * @brief - decompress data into memory.
+ *
+ * @param dev Device pointer
+ * @param ptr Address of memory to write to
+ * @param src Pointer to DEFLATE commpressed data
+ * @param len length of compressed data
+ */
+void ft8xx_copro_cmd_inflate(const struct device *dev, uint32_t ptr,#
+			uint32_t *src, uint32_t len );
+
+/**
+ * @brief - load a JPEG image into memory.
+ *
+ * @param dev Device pointer
+ * @param ptr Address of memory to write to
+ * @param options image processing options 
+ * @param src Pointer to JPEG(JFIF) image data
+ * @param len length of JPEG(JFIF) image data
+ */
+void ft8xx_copro_cmd_loadimage(const struct device *dev, uint32_t ptr,
+				uint32_t options, uint32_t *src, uint32_t len );
+
+/**
+ * @brief - Computes a CRC-32 for a block of FT8XX memory
+ *
+ * @param dev Device pointer
+ * @param ptr Start address of memory block
+ * @param num Size of memory block
+ * @param result address for crc output
+ */
+void ft8xx_copro_cmd_memcrc(const struct device *dev, uint32_t ptr,
+				uint32_t num, uint32_t result );
+
+/**
+ * @brief - write zero to a block of memory
+ *
+ * @param dev Device pointer
+ * @param ptr Start address of memory block
+ * @param num Size of memory block
+ */
+void ft8xx_copro_cmd_memzero(const struct device *dev, uint32_t ptr,
+				uint32_t num);
+
+/**
+ * @brief Write a value to a block of memory
+ *
+ * @param dev Device pointer
+ * @param ptr Start address of memory block
+ * @param value value to be written
+ * @param num Size of memory block
+ */
+void ft8xx_copro_cmd_memset(const struct device *dev, uint32_t ptr,
+				uint32_t value, uint32_t num);
+
+/**
+ * @brief - copy block of memory
+ *
+ * @param dev Device pointer
+ * @param dest Start address of destination memory block
+ * @param src Start address of source memory block
+ * @param num Size of memory block
+ */
+void ft8xx_copro_cmd_memcpy(const struct device *dev, uint32_t dest, 
+				uint32_t src, uint32_t num);
+
+/**
+ * @brief Draw a button
+ *
+ * @param dev Device pointer
+ * @param x x-coordinate of button top-left, in pixels
+ * @param y y-coordinate of button top-left, in pixels
+ * @param font Font to use for text, 0-31. 16-31 are ROM fonts
+ * @param options Options to apply
+ * @param s Button label, terminated with a null character
+ */
+void ft8xx_copro_cmd_button(const struct device *dev, ( int16_t x,
+				int16_t y,
+				int16_t w,
+				int16_t h,
+				int16_t font,
+				uint16_t options,
+				const char* s );
+
+
+
+
 
 /**
  * @brief Draw text
@@ -88,13 +231,14 @@ void ft8xx_copro_cmd_swap(void);
  * the text in both directions. @ref FT8XX_OPT_RIGHTX right-justifies the text,
  * so that the @p x is the rightmost pixel.
  *
+ * @param dev Device pointer
  * @param x x-coordinate of text base, in pixels
  * @param y y-coordinate of text base, in pixels
  * @param font Font to use for text, 0-31. 16-31 are ROM fonts
  * @param options Options to apply
  * @param s Character string to display, terminated with a null character
  */
-void ft8xx_copro_cmd_text(int16_t x,
+void ft8xx_copro_cmd_text(const struct device *dev, int16_t x,
 			   int16_t y,
 			   int16_t font,
 			   uint16_t options,
@@ -113,13 +257,19 @@ void ft8xx_copro_cmd_text(int16_t x,
  * If @ref FT8XX_OPT_SIGNED is given, the number is treated as signed, and
  * prefixed by a minus sign if negative.
  *
+ * @param dev Device pointer
  * @param x x-coordinate of text base, in pixels
  * @param y y-coordinate of text base, in pixels
  * @param font Font to use for text, 0-31. 16-31 are ROM fonts
  * @param options Options to apply
  * @param n The number to display.
  */
-void ft8xx_copro_cmd_number(int16_t x,
+
+
+
+
+
+void ft8xx_copro_cmd_number(const struct device *dev, int16_t x,
 			     int16_t y,
 			     int16_t font,
 			     uint16_t options,
@@ -134,9 +284,10 @@ void ft8xx_copro_cmd_number(int16_t x,
  * engine overlays the touch targets on the current display list, gathers the
  * calibration input and updates REG_TOUCH_TRANSFORM_A-F.
  *
+ * @param dev Device pointer
  * @param result Calibration result, written with 0 on failure of calibration
  */
-void ft8xx_copro_cmd_calibrate(uint32_t *result);
+void ft8xx_copro_cmd_calibrate(const struct device *dev, uint32_t *result);
 
 /**
  * @}

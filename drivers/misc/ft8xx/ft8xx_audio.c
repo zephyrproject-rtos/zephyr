@@ -50,10 +50,6 @@ int ft8xx_audio_load(const struct device *dev, uint32_t start_address, uint8_t* 
 
         ft8xx_wrblock(bus, data->memory_map->FT800_RAM_G, start_address,sample,sample_length );   
 
-
-
-
-
 }
 
 int ft8xx_audio_play(const struct device *dev, uint32_t start_address, uint32_t sample_length, uint8_t audio_format, uint16_t sample_freq, uint8_t vol, bool loop)

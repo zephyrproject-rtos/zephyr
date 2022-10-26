@@ -182,6 +182,9 @@ static bool check_chiptype(int chiptype)
 		case FT8xx_CHIP_ID_FT811:
 		case FT8xx_CHIP_ID_FT812:
 		case FT8xx_CHIP_ID_FT813:
+		case FT8xx_CHIP_ID_BT815:
+		case FT8xx_CHIP_ID_BT816:
+
 			{
 				return 1;
 			}
@@ -236,6 +239,8 @@ static bool verify_chip(const struct device *dev)
 		case FT8xx_CHIP_ID_FT811:
 		case FT8xx_CHIP_ID_FT812:
 		case FT8xx_CHIP_ID_FT813:
+		case FT8xx_CHIP_ID_BT815:		
+		case FT8xx_CHIP_ID_BT816:
 			{
 			uint32_t id = ft8xx_rd32(bus,FT81x_REG_ID);
 			data->chip_id = data->chip_type;
@@ -293,6 +298,7 @@ static void setup_chip(const struct device *dev)
 				{
 					data->memory_map = 	&ft800_memory_map;		
 					data->register_map = &ft800_register_address_map;					
+					break;
 				}
 
 			case FT8xx_CHIP_ID_FT810:
@@ -301,8 +307,19 @@ static void setup_chip(const struct device *dev)
 			case FT8xx_CHIP_ID_FT813:
 				{
 					data->memory_map = 	&ft81x_memory_map;		
-					data->register_map = &ft81x_register_address_map;					
+					data->register_map = &ft81x_register_address_map;		
+					break;			
 				}
+
+
+			case FT8xx_CHIP_ID_BT815:
+			case FT8xx_CHIP_ID_BT816:
+				{
+					data->memory_map = 	&bt81x_memory_map;		
+					data->register_map = &bt81x_register_address_map;					
+					break;
+				}
+
 		}
 
 }
