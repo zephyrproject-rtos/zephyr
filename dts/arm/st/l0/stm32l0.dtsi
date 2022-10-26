@@ -85,6 +85,12 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
 			prescaler = <32768>;
 			status = "disabled";
+
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <5>;
+				status = "disabled";
+			};
 		};
 
 		flash: flash-controller@40022000 {
