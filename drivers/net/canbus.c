@@ -7,6 +7,8 @@
  *
  */
 
+#define DT_DRV_COMPAT net_canbus
+
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/canbus.h>
 #include <zephyr/net/socketcan.h>
@@ -158,6 +160,19 @@ static const struct net_canbus_config net_canbus_cfg = {
 	.can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))
 };
 
-NET_DEVICE_INIT(net_canbus, "NET_CANBUS", net_canbus_init, NULL, &net_canbus_ctx, &net_canbus_cfg,
-		CONFIG_NET_CANBUS_INIT_PRIORITY, &net_canbus_api, CANBUS_RAW_L2,
-		NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
+#define NET_CANBUS_INIT(n)					\
+static struct net_canbus_context net_canbus##n##_ctx;		\
+								\
+static const struct net_canbus_config net_canbus##n##_cfg = {	\
+	.can_dev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(n)))	\
+};								\
+								\
+NET_DEVICE_DT_INST_DEFINE(n, net_canbus_init, NULL,		\
+			&net_canbus##n##_ctx,			\
+			&net_canbus##n##_cfg,			\
+			CONFIG_NET_CANBUS_INIT_PRIORITY,	\
+			&net_canbus_api, CANBUS_RAW_L2,		\
+			NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2),	\
+			CAN_MTU);				\
+
+DT_INST_FOREACH_STATUS_OKAY(NET_CANBUS_INIT)

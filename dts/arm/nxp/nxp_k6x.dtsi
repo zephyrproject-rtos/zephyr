@@ -506,6 +506,10 @@
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
+			net_canbus0 {
+				compatible = "net-canbus";
+				status = "okay";
+			};
 		};
 
 		edma0: dma-controller@40008000 {
