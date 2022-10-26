@@ -95,3 +95,16 @@ properties:
 
       This value, when present, identifies bits in the status register
       that should be cleared when the device is initialized.
+
+  mxicy,mx25r-power-mode:
+    type: string
+    enum:
+      - "low-power"
+      - "high-performance"
+    description:
+      Select to configure flash to use ultra low power mode or high
+      performance mode (L/H switch). The high performance mode has
+      faster write and erase performance, but use more power than ultra
+      low power mode.
+
+      Only supported on Macronix MX25R Ultra Low Power series.
