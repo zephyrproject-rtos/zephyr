@@ -1024,8 +1024,16 @@ static int spi_nor_configure(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Might be in DPD if system restarted without power cycle. */
-	exit_dpd(dev);
+	/* After a soft-reset the flash might be in DPD or busy writing/erasing.
+	 * Exit DPD and wait until flash is ready.
+	 */
+	acquire_device(dev);
+	rc = spi_nor_rdsr(dev);
+	if (rc > 0 && (rc & SPI_NOR_WIP_BIT)) {
+		LOG_WRN("Waiting until flash is ready");
+		spi_nor_wait_until_ready(dev);
+	}
+	release_device(dev);
 
 	/* now the spi bus is configured, we can verify SPI
 	 * connectivity by reading the JEDEC ID.
