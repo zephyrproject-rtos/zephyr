@@ -107,6 +107,9 @@ Bluetooth
 
 * Host
 
+  * Fixed missing calls to bt_le_per_adv_sync_cb.term when deleting a periodic
+    advertising sync object.
+
 * Mesh
 
 * Controller
