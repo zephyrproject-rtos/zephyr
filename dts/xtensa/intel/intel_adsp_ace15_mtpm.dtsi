@@ -89,6 +89,11 @@
 		zephyr,memory-region = "IMR1";
 	};
 
+	sha: adsp-sha@17DF00 {
+		compatible = "intel,adsp-sha";
+		reg = <0x17DF00 0xd0>;
+	};
+
 	soc {
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
