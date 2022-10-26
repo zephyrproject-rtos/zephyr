@@ -251,10 +251,6 @@ int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx)
 			return ret;
 		}
 
-		if (!client_ctx->use_dtls) {
-			return 0;
-		}
-
 		LOG_DBG("Resume suspended connection");
 		return lwm2m_socket_start(client_ctx);
 	}
