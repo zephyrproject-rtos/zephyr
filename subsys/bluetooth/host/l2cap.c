@@ -772,7 +772,7 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
+struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm)
 {
 	struct bt_l2cap_server *server;
 
@@ -798,7 +798,7 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 		}
 
 		/* Check if given PSM is already in use */
-		if (l2cap_server_lookup_psm(server->psm)) {
+		if (bt_l2cap_server_lookup_psm(server->psm)) {
 			BT_DBG("PSM already registered");
 			return -EADDRINUSE;
 		}
@@ -807,7 +807,7 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 
 		for (psm = L2CAP_LE_PSM_DYN_START;
 		     psm <= L2CAP_LE_PSM_DYN_END; psm++) {
-			if (!l2cap_server_lookup_psm(psm)) {
+			if (!bt_l2cap_server_lookup_psm(psm)) {
 				break;
 			}
 		}
@@ -1171,7 +1171,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	(void)memset(rsp, 0, sizeof(*rsp));
 
 	/* Check if there is a server registered */
-	server = l2cap_server_lookup_psm(psm);
+	server = bt_l2cap_server_lookup_psm(psm);
 	if (!server) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_LE_ERR_PSM_NOT_SUPP);
 		goto rsp;
@@ -1253,7 +1253,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	/* Check if there is a server registered */
-	server = l2cap_server_lookup_psm(psm);
+	server = bt_l2cap_server_lookup_psm(psm);
 	if (!server) {
 		result = BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
 		goto response;
