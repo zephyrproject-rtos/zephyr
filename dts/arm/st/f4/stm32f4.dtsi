@@ -469,6 +469,12 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
 			prescaler = <32768>;
 			status = "disabled";
+
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <20>;
+				status = "disabled";
+			};
 		};
 
 		adc1: adc@40012000 {
