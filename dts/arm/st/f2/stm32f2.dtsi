@@ -187,6 +187,12 @@
 			interrupts = <41 0>;
 			prescaler = <32768>;
 			status = "disabled";
+
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <20>;
+				status = "disabled";
+			};
 		};
 
 		iwdg: watchdog@40003000 {
