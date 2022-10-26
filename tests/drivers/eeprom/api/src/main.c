@@ -181,8 +181,19 @@ static void run_tests_on_eeprom(const struct device *dev)
 	ztest_run_all(NULL);
 }
 
+#define DEVICE_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
+
 void test_main(void)
 {
+	const struct device * const devices[] = {
+		/* List all devices without comma */
+		DT_FOREACH_STATUS_OKAY(atmel_at24, DEVICE_AND_COMMA)
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
+		run_tests_on_eeprom(devices[i]);
+	}
+
 	run_tests_on_eeprom(DEVICE_DT_GET(DT_ALIAS(eeprom_0)));
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom_1), okay)
