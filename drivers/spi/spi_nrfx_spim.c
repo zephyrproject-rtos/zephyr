@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/spi.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
@@ -348,6 +349,14 @@ static void transfer_next_chunk(const struct device *dev)
 
 	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+		/* TODO: remove once nrfx automatically disables the device */
+		nrfx_spim_uninit(&dev_config->spim);
+		dev_data->initialized = false;
+#endif
+
+	(void)pm_device_runtime_put_async(dev);
 }
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
@@ -377,6 +386,8 @@ static int transceive(const struct device *dev,
 	int error;
 
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
+
+	(void)pm_device_runtime_get(dev);
 
 	error = configure(dev, spi_cfg);
 	if (error == 0) {
@@ -446,8 +457,9 @@ static int spim_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
 	int ret = 0;
-	struct spi_nrfx_data *dev_data = dev->data;
+#ifdef CONFIG_PINCTRL
 	const struct spi_nrfx_config *dev_config = dev->config;
+#endif
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -458,17 +470,9 @@ static int spim_nrfx_pm_action(const struct device *dev,
 			return ret;
 		}
 #endif
-		/* nrfx_spim_init() will be called at configuration before
-		 * the next transfer.
-		 */
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (dev_data->initialized) {
-			nrfx_spim_uninit(&dev_config->spim);
-			dev_data->initialized = false;
-		}
-
 #ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_SLEEP);
@@ -494,10 +498,18 @@ static int spi_nrfx_init(const struct device *dev)
 	int err;
 
 #ifdef CONFIG_PINCTRL
-	err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+	err = pinctrl_apply_state(dev_config->pcfg,
+				  COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME,
+					      (PINCTRL_STATE_SLEEP),
+					      (PINCTRL_STATE_DEFAULT)));
 	if (err < 0) {
 		return err;
 	}
+#endif
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_init_suspended(dev);
+	pm_device_runtime_enable(dev);
 #endif
 
 	dev_config->irq_connect();
