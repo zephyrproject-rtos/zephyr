@@ -150,11 +150,10 @@ struct tcphdr {
 	uint16_t th_dport;
 	uint32_t th_seq;
 	uint32_t th_ack;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t th_x2:4;	/* unused */
 	uint8_t th_off:4;	/* data offset, in units of 32-bit words */
-#endif
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 	uint8_t th_off:4;
 	uint8_t th_x2:4;
 #endif

@@ -488,12 +488,10 @@ int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 #endif /* CONFIG_USERSPACE */
 
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 #define CHECKSUM_BIG_ENDIAN 0
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define CHECKSUM_BIG_ENDIAN 1
 #else
-#error "Unknown byte order"
+#define CHECKSUM_BIG_ENDIAN 1
 #endif
 
 static uint16_t offset_based_swap8(const uint8_t *data)
