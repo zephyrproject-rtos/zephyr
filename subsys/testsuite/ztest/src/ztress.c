@@ -274,14 +274,14 @@ static void ztress_thread(void *data, void *prio, void *unused)
 static void thread_cb(const struct k_thread *cthread, void *user_data)
 {
 #define GET_IDLE_TID(i, tid) do {\
-	if (strcmp(tname, (CONFIG_MP_NUM_CPUS == 1) ? "idle" : "idle 0" STRINGIFY(i)) == 0) { \
+	if (strcmp(tname, (CONFIG_MP_MAX_NUM_CPUS == 1) ? "idle" : "idle 0" STRINGIFY(i)) == 0) { \
 		idle_tid[i] = tid; \
 	} \
 } while (0)
 
 	const char *tname = k_thread_name_get((struct k_thread *)cthread);
 
-	LISTIFY(CONFIG_MP_NUM_CPUS, GET_IDLE_TID, (;), (k_tid_t)cthread);
+	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, GET_IDLE_TID, (;), (k_tid_t)cthread);
 }
 
 static void ztress_init(struct ztress_context_data *thread_data)
