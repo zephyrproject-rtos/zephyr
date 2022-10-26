@@ -6562,6 +6562,12 @@ sub process {
 			      "Use of the '$1' macro makes the build non-deterministic\n" . $herecurr);
 		}
 
+# check for uses of __BYTE_ORDER__
+		while ($line =~ /\b(__BYTE_ORDER__)\b/g) {
+			ERROR("BYTE_ORDER",
+			      "Use of the '$1' macro is disallowed. Use CONFIG_BIG_ENDIAN instead\n" . $herecurr);
+		}
+
 # check for use of yield()
 		if ($line =~ /\byield\s*\(\s*\)/) {
 			WARN("YIELD",
