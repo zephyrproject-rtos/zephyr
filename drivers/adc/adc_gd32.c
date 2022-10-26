@@ -174,7 +174,9 @@ static int adc_gd32_configure_sampt(const struct adc_gd32_config *cfg,
 {
 	uint8_t index = 0, offset;
 
-	if (acq_time != ADC_ACQ_TIME_DEFAULT) {
+	if (acq_time == ADC_ACQ_TIME_MAX) {
+		index = ARRAY_SIZE(acq_time_tbl) - 1;
+	} else if (acq_time != ADC_ACQ_TIME_DEFAULT) {
 		/* Acquisition time unit is adc clock cycle. */
 		if (ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
 			return -EINVAL;

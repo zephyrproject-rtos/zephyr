@@ -260,6 +260,13 @@
 			label = "EXTI";
 		};
 
+		fwdgt: watchdog@40003000 {
+			compatible = "gd,gd32-fwdgt";
+			reg = <0x40003000 0x400>;
+			label = "FWDGT";
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40020000 {
 			compatible = "gd,gd32-pinctrl-af";
 			reg = <0x40020000 0x2400>;

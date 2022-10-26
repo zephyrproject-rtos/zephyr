@@ -182,6 +182,7 @@ static int eeprom_at2x_write(const struct device *dev, off_t offset,
 
 	while (len) {
 		ret = config->write_fn(dev, offset, pbuf, len);
+		k_msleep(10);
 		if (ret < 0) {
 			LOG_ERR("failed to write to EEPROM (err %d)", ret);
 #if ANY_INST_HAS_WP_GPIOS
