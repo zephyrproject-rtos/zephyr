@@ -246,7 +246,7 @@ static int sirk_decrypt(struct bt_conn *conn,
 
 		BT_DBG("Decrypting with sample data K");
 
-		if (!swapped && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
+		if (!swapped && IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
 			/* Swap test_k to little endian */
 			sys_mem_swap(test_k, 16);
 			swapped = true;

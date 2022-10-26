@@ -86,7 +86,7 @@ enum ieee802154_version {
  */
 struct ieee802154_fcf_seq {
 	struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 		uint16_t frame_type : 3;
 		uint16_t security_enabled : 1;
 		uint16_t frame_pending : 1;
@@ -98,7 +98,7 @@ struct ieee802154_fcf_seq {
 		uint16_t dst_addr_mode : 2;
 		uint16_t frame_version : 2;
 		uint16_t src_addr_mode : 2;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 		uint16_t reserved : 1;
 		uint16_t pan_id_comp : 1;
 		uint16_t ar : 1;
@@ -173,11 +173,11 @@ enum ieee802154_key_id_mode {
 
 /* See section 7.6.2.2 */
 struct ieee802154_security_control_field {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t security_level : 3;
 	uint8_t key_id_mode : 2;
 	uint8_t reserved : 3;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 	uint8_t reserved : 3;
 	uint8_t key_id_mode : 2;
 	uint8_t security_level : 3;
@@ -233,10 +233,10 @@ struct ieee802154_mfr {
 };
 
 struct ieee802154_gts_dir {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t mask : 7;
 	uint8_t reserved : 1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 	uint8_t reserved : 1;
 	uint8_t mask : 7;
 #endif
@@ -244,23 +244,23 @@ struct ieee802154_gts_dir {
 
 struct ieee802154_gts {
 	uint16_t short_address;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t starting_slot : 4;
 	uint8_t length : 4;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 	uint8_t length : 4;
 	uint8_t starting_slot : 4;
 #endif
 } __packed;
 
 struct ieee802154_gts_spec {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	/* Descriptor Count */
 	uint8_t desc_count : 3;
 	uint8_t reserved : 4;
 	/* GTS Permit */
 	uint8_t permit : 1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 	/* GTS Permit */
 	uint8_t permit : 1;
 	uint8_t reserved : 4;
@@ -270,14 +270,14 @@ struct ieee802154_gts_spec {
 } __packed;
 
 struct ieee802154_pas_spec {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	/* Number of Short Addresses Pending */
 	uint8_t nb_sap : 3;
 	uint8_t reserved_1 : 1;
 	/* Number of Extended Addresses Pending */
 	uint8_t nb_eap : 3;
 	uint8_t reserved_2 : 1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 	uint8_t reserved_1 : 1;
 	/* Number of Extended Addresses Pending */
 	uint8_t nb_eap : 3;
@@ -288,7 +288,7 @@ struct ieee802154_pas_spec {
 } __packed;
 
 struct ieee802154_beacon_sf {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	/* Beacon Order*/
 	uint16_t bc_order : 4;
 	/* Superframe Order*/
@@ -302,7 +302,7 @@ struct ieee802154_beacon_sf {
 	uint16_t coordinator : 1;
 	/* Association Permit */
 	uint16_t association : 1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 	/* Superframe Order*/
 	uint16_t sf_order : 4;
 	/* Beacon Order*/
@@ -329,7 +329,7 @@ struct ieee802154_beacon {
 /* See section 7.3.1 */
 struct ieee802154_cmd_assoc_req {
 	struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 		uint8_t reserved_1 : 1;
 		uint8_t dev_type : 1;
 		uint8_t power_src : 1;
@@ -337,7 +337,7 @@ struct ieee802154_cmd_assoc_req {
 		uint8_t reserved_2 : 2;
 		uint8_t sec_capability : 1;
 		uint8_t alloc_addr : 1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 		uint8_t alloc_addr : 1;
 		uint8_t sec_capability : 1;
 		uint8_t reserved_2 : 2;
@@ -396,12 +396,12 @@ struct ieee802154_cmd_coord_realign {
 /* GTS request, see section 7.3.9 */
 struct ieee802154_gts_request {
 	struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 		uint8_t length : 4;
 		uint8_t direction : 1;
 		uint8_t type : 1;
 		uint8_t reserved : 2;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 		uint8_t reserved : 2;
 		uint8_t type : 1;
 		uint8_t direction : 1;

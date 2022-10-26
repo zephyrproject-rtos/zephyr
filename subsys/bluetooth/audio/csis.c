@@ -133,7 +133,7 @@ static int sirk_encrypt(struct bt_conn *conn,
 					   0x3c, 0xe5, 0xce, 0xd9};
 		static bool swapped;
 
-		if (!swapped && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)) {
+		if (!swapped && IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
 			/* Swap test_k to little endian */
 			sys_mem_swap(test_k, 16);
 			swapped = true;
