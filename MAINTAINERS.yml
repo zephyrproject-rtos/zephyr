@@ -457,7 +457,6 @@ Display drivers:
   status: odd fixes
   collaborators:
     - jfischer-no
-    - gmarull
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -859,7 +858,6 @@ Release Notes:
     - albertofloyd
   collaborators:
     - VenkatKotakonda
-    - gmarull
   files:
     - drivers/kscan/
     - include/zephyr/drivers/kscan.h
@@ -1014,7 +1012,6 @@ Release Notes:
     - anangl
   collaborators:
     - henrikbrixandersen
-    - gmarull
   files:
     - drivers/pwm/
     - dts/bindings/pwm/
@@ -1043,7 +1040,6 @@ Release Notes:
     - MaureenHelm
   collaborators:
     - avisconti
-    - gmarull
     - teburd
   files:
     - drivers/sensor/
@@ -1701,8 +1697,8 @@ GD32 Platforms:
   status: maintained
   maintainers:
     - nandojve
-    - gmarull
   collaborators:
+    - gmarull
     - soburi
     - cameled
   files:
@@ -1917,7 +1913,6 @@ STM32 Platforms:
   collaborators:
     - ABOSTM
     - FRASTM
-    - gmarull
     - GeorgeCGV
   files:
     - boards/arm/nucleo_*/
@@ -2266,8 +2261,8 @@ West:
   status: maintained
   maintainers:
     - nandojve
-    - gmarull
   collaborators:
+    - gmarull
     - soburi
   files:
     - modules/hal_gigadevice/
@@ -2416,7 +2411,6 @@ West:
   status: odd fixes
   collaborators:
     - cfriedt
-    - gmarull
   files: []
   labels:
     - manifest-hal_ti
