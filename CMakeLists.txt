@@ -1717,6 +1717,11 @@ if(CONFIG_BOOTLOADER_MCUBOOT)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
 endif()
 
+# Generate USB-C VIF policies in XML format
+if (CONFIG_BUILD_OUTPUT_VIF)
+  include(${CMAKE_CURRENT_LIST_DIR}/cmake/vif.cmake)
+endif()
+
 get_property(extra_post_build_commands
   GLOBAL PROPERTY
   extra_post_build_commands
