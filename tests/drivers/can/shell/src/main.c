@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fake_can.h"
-
 #include <string.h>
 
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/can_fake.h>
 #include <zephyr/fff.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>

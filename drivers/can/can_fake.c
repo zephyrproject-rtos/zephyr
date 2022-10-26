@@ -6,15 +6,14 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/can_fake.h>
 #include <zephyr/fff.h>
 
 #ifdef CONFIG_ZTEST_NEW_API
 #include <zephyr/ztest.h>
 #endif /* CONFIG_ZTEST_NEW_API */
 
-#include "fake_can.h"
-
-#define DT_DRV_COMPAT test_fake_can
+#define DT_DRV_COMPAT zephyr_fake_can
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_start, const struct device *);
 

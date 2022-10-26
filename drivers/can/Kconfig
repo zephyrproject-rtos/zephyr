@@ -111,6 +111,7 @@ source "drivers/can/Kconfig.native_posix_linux"
 source "drivers/can/Kconfig.sja1000"
 source "drivers/can/Kconfig.esp32"
 source "drivers/can/Kconfig.kvaser"
+source "drivers/can/Kconfig.fake"
 
 source "drivers/can/transceiver/Kconfig"
 
