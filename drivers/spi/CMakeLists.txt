@@ -34,6 +34,7 @@ zephyr_library_sources_ifdef(CONFIG_SPI_MCHP_QSPI	spi_mchp_mss_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_PL022		spi_pl022.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_ANDES_ATCSPI200	spi_andes_atcspi200.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_S32_SPI spi_nxp_s32.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_XMC4XXX     spi_xmc4xxx.c)
 
 zephyr_library_sources_ifdef(CONFIG_SPI_ASYNC spi_signal.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		spi_handlers.c)

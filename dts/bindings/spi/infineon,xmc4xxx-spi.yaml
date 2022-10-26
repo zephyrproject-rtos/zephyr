@@ -1,0 +1,43 @@
+# Copyright (c) 2022 Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+description: INFINEON XMC4XXX SPI controller
+
+compatible: "infineon,xmc4xxx-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  miso-src:
+    description: |
+      Connects the SPI miso line (USIC DX0 input) to a specific GPIO pin.
+      The USIC DX0 input is a multiplexer which connects to different GPIO pins.
+      Refer to the XMC4XXX reference manual for the GPIO pin/mux mappings. DX0G
+      is the loopback input line.
+    type: string
+    required: true
+    enum:
+      - "DX0A"
+      - "DX0B"
+      - "DX0C"
+      - "DX0D"
+      - "DX0E"
+      - "DX0F"
+      - "DX0G"
+
+  interrupts:
+    description: |
+      IRQ number and priority to use for interrupt driven UART.
+      USIC0..2 have their own interrupt range as follows:
+      USIC0 = [84, 89]
+      USIC1 = [90, 95]
+      USIC2 = [96, 101]
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
