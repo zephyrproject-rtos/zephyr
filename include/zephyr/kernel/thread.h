@@ -89,10 +89,10 @@ struct _thread_base {
 	 */
 	union {
 		struct {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#ifdef CONFIG_BIG_ENDIAN
 			uint8_t sched_locked;
 			int8_t prio;
-#else /* LITTLE and PDP */
+#else /* Little Endian */
 			int8_t prio;
 			uint8_t sched_locked;
 #endif

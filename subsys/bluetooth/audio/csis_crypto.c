@@ -79,7 +79,7 @@ int bt_csis_sih(const uint8_t sirk[BT_CSIS_SET_SIRK_SIZE], uint32_t r,
 
 	BT_DBG("BE: r' %s", bt_hex(res, sizeof(res)));
 
-	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
+	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
 		/* Swap to Big Endian (BE) */
 		sys_memcpy_swap(sirk_tmp, sirk, BT_CSIS_SET_SIRK_SIZE);
 	} else {
@@ -205,7 +205,7 @@ int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
 
 	BT_DBG("SIRK %s", bt_hex(sirk, BT_CSIS_SET_SIRK_SIZE));
 
-	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
+	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
 		/* Swap because aes_cmac is big endian
 		 * and we are little endian
 		 */
@@ -229,7 +229,7 @@ int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
 
 	BT_DBG("BE: k1 result %s", bt_hex(k1_out, sizeof(k1_out)));
 
-	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
+	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
 		/* Swap result back to little endian */
 		sys_mem_swap(k1_out, sizeof(k1_out));
 	}

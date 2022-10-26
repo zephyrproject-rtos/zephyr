@@ -73,11 +73,11 @@ struct net_icmpv6_nd_opt_6co {
 struct net_icmpv6_nd_opt_route_info {
 	uint8_t prefix_len;
 	struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 		uint8_t reserved_2 :3;
 		uint8_t prf        :2;
 		uint8_t reserved_1 :3;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 		uint8_t reserved_1 :3;
 		uint8_t prf        :2;
 		uint8_t reserved_2 :3;

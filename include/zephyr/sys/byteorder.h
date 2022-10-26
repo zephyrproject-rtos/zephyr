@@ -168,7 +168,7 @@
  *  @return 48-bit integer in big-endian format.
  */
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 #define sys_le16_to_cpu(val) (val)
 #define sys_cpu_to_le16(val) (val)
 #define sys_le24_to_cpu(val) (val)
@@ -189,7 +189,7 @@
 #define sys_cpu_to_be48(val) __bswap_48(val)
 #define sys_be64_to_cpu(val) __bswap_64(val)
 #define sys_cpu_to_be64(val) __bswap_64(val)
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 #define sys_le16_to_cpu(val) __bswap_16(val)
 #define sys_cpu_to_le16(val) __bswap_16(val)
 #define sys_le24_to_cpu(val) __bswap_24(val)
@@ -210,8 +210,6 @@
 #define sys_cpu_to_be48(val) (val)
 #define sys_be64_to_cpu(val) (val)
 #define sys_cpu_to_be64(val) (val)
-#else
-#error "Unknown byte order"
 #endif
 
 /**
