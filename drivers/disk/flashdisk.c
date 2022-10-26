@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(flashdisk, CONFIG_FLASHDISK_LOG_LEVEL);
 
 struct flashdisk_data {
 	struct disk_info info;
+	struct k_mutex lock;
 	const unsigned int area_id;
 	const off_t offset;
 	uint8_t *const cache;
@@ -61,13 +62,14 @@ static int disk_flash_access_init(struct disk_info *disk)
 		return rc;
 	}
 
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
 	disk->dev = flash_area_get_device(fap);
 
 	rc = flash_get_page_info_by_offs(disk->dev, ctx->offset, &page);
 	if (rc < 0) {
 		LOG_ERR("Error %d while getting page info", rc);
-		flash_area_close(fap);
-		return rc;
+		goto end;
 	}
 
 	ctx->page_size = page.size;
@@ -78,8 +80,8 @@ static int disk_flash_access_init(struct disk_info *disk)
 	if (ctx->page_size > ctx->cache_size) {
 		LOG_ERR("Cache too small (%zu needs %zu)",
 			ctx->cache_size, ctx->page_size);
-		flash_area_close(fap);
-		return -ENOMEM;
+		rc = -ENOMEM;
+		goto end;
 	}
 
 	if (ctx->cache_valid && ctx->cache_dirty) {
@@ -87,7 +89,14 @@ static int disk_flash_access_init(struct disk_info *disk)
 		ctx->cache_valid = false;
 	}
 
-	return 0;
+	rc = 0;
+end:
+	if (rc < 0) {
+		flash_area_close(fap);
+	}
+	k_mutex_unlock(&ctx->lock);
+
+	return rc;
 }
 
 static bool sectors_in_range(struct flashdisk_data *ctx,
@@ -115,6 +124,7 @@ static int disk_flash_access_read(struct disk_info *disk, uint8_t *buff,
 	uint32_t remaining;
 	uint32_t offset;
 	uint32_t len;
+	int rc = 0;
 
 	ctx = CONTAINER_OF(disk, struct flashdisk_data, info);
 
@@ -124,6 +134,8 @@ static int disk_flash_access_read(struct disk_info *disk, uint8_t *buff,
 
 	fl_addr = ctx->offset + start_sector * ctx->sector_size;
 	remaining = (sector_count * ctx->sector_size);
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
 
 	/* Operate on page addresses to easily check for cached data */
 	offset = fl_addr & (ctx->page_size - 1);
@@ -139,7 +151,8 @@ static int disk_flash_access_read(struct disk_info *disk, uint8_t *buff,
 		if (ctx->cache_valid && ctx->cached_addr == fl_addr) {
 			memcpy(buff, &ctx->cache[offset], len);
 		} else if (flash_read(disk->dev, fl_addr + offset, buff, len) < 0) {
-			return -EIO;
+			rc = -EIO;
+			goto end;
 		}
 
 		fl_addr += ctx->page_size;
@@ -151,7 +164,10 @@ static int disk_flash_access_read(struct disk_info *disk, uint8_t *buff,
 		offset = 0;
 	}
 
-	return 0;
+end:
+	k_mutex_unlock(&ctx->lock);
+
+	return rc;
 }
 
 static int flashdisk_cache_commit(struct flashdisk_data *ctx)
@@ -252,6 +268,7 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 	off_t fl_addr;
 	uint32_t remaining;
 	uint32_t size;
+	int rc = 0;
 
 	ctx = CONTAINER_OF(disk, struct flashdisk_data, info);
 
@@ -261,6 +278,8 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 
 	fl_addr = ctx->offset + start_sector * ctx->sector_size;
 	remaining = (sector_count * ctx->sector_size);
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
 
 	/* check if start address is erased-aligned address  */
 	if (fl_addr & (ctx->page_size - 1)) {
@@ -273,9 +292,9 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 		if ((fl_addr + remaining) <= block_bnd) {
 			/* not over block boundary (a partial block also) */
 			if (flashdisk_cache_write(ctx, fl_addr, remaining, buff) < 0) {
-				return -EIO;
+				rc = -EIO;
 			}
-			return 0;
+			goto end;
 		}
 
 		/* write goes over block boundary */
@@ -283,7 +302,8 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 
 		/* write first partial block */
 		if (flashdisk_cache_write(ctx, fl_addr, size, buff) < 0) {
-			return -EIO;
+			rc = -EIO;
+			goto end;
 		}
 
 		fl_addr += size;
@@ -298,7 +318,8 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 		}
 
 		if (flashdisk_cache_write(ctx, fl_addr, ctx->page_size, buff) < 0) {
-			return -EIO;
+			rc = -EIO;
+			goto end;
 		}
 
 		fl_addr += ctx->page_size;
@@ -309,22 +330,30 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 	/* remaining partial block */
 	if (remaining) {
 		if (flashdisk_cache_write(ctx, fl_addr, remaining, buff) < 0) {
-			return -EIO;
+			rc = -EIO;
+			goto end;
 		}
 	}
+
+end:
+	k_mutex_unlock(&ctx->lock);
 
 	return 0;
 }
 
 static int disk_flash_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 {
+	int rc;
 	struct flashdisk_data *ctx;
 
 	ctx = CONTAINER_OF(disk, struct flashdisk_data, info);
 
 	switch (cmd) {
 	case DISK_IOCTL_CTRL_SYNC:
-		return flashdisk_cache_commit(ctx);
+		k_mutex_lock(&ctx->lock, K_FOREVER);
+		rc = flashdisk_cache_commit(ctx);
+		k_mutex_unlock(&ctx->lock);
+		return rc;
 	case DISK_IOCTL_GET_SECTOR_COUNT:
 		*(uint32_t *)buff = ctx->size / ctx->sector_size;
 		return 0;
@@ -332,7 +361,9 @@ static int disk_flash_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 		*(uint32_t *)buff = ctx->sector_size;
 		return 0;
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ: /* in sectors */
+		k_mutex_lock(&ctx->lock, K_FOREVER);
 		*(uint32_t *)buff = ctx->page_size / ctx->sector_size;
+		k_mutex_unlock(&ctx->lock);
 		return 0;
 	default:
 		break;
@@ -388,6 +419,8 @@ static int disk_flash_init(const struct device *dev)
 
 	for (int i = 0; i < ARRAY_SIZE(flash_disks); i++) {
 		int rc;
+
+		k_mutex_init(&flash_disks[i].lock);
 
 		rc = disk_access_register(&flash_disks[i].info);
 		if (rc < 0) {
