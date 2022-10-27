@@ -91,22 +91,22 @@ static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 		/* check for 64K erase possibility, then check for 32K and so on.. */
 		if ((page_nums >= BLOCK_64K_PAGES) && ((offset % BLOCK_64K_SIZE) == 0)) {
 			/* erase 64K block */
-			flash_erase_64kblock(offset);
+			flash_erase_64kblock(CONFIG_FLASH_BASE_ADDRESS + offset);
 			page_nums -= BLOCK_64K_PAGES;
 			offset += BLOCK_64K_SIZE;
 		} else if ((page_nums >= BLOCK_32K_PAGES) && ((offset % BLOCK_32K_SIZE) == 0)) {
 			/* erase 32K block */
-			flash_erase_32kblock(offset);
+			flash_erase_32kblock(CONFIG_FLASH_BASE_ADDRESS + offset);
 			page_nums -= BLOCK_32K_PAGES;
 			offset += BLOCK_32K_SIZE;
 		} else if ((page_nums >= SECTOR_PAGES) && ((offset % SECTOR_SIZE) == 0)) {
 			/* erase sector */
-			flash_erase_sector(offset);
+			flash_erase_sector(CONFIG_FLASH_BASE_ADDRESS + offset);
 			page_nums -= SECTOR_PAGES;
 			offset += SECTOR_SIZE;
 		} else {
 			/* erase page */
-			flash_erase_page(offset);
+			flash_erase_page(CONFIG_FLASH_BASE_ADDRESS + offset);
 			page_nums--;
 			offset += PAGE_SIZE;
 		}
@@ -158,7 +158,7 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 	}
 
 	/* write flash */
-	flash_write_page(offset, len, (unsigned char *)data);
+	flash_write_page(CONFIG_FLASH_BASE_ADDRESS + offset, len, (unsigned char *)data);
 
 	/* if ram memory is allocated for flash writing it should be free */
 	if (buf != NULL) {
@@ -188,7 +188,7 @@ static int flash_b91_read(const struct device *dev, off_t offset,
 	}
 
 	/* read flash */
-	flash_read_page(offset, len, (unsigned char *)data);
+	flash_read_page(CONFIG_FLASH_BASE_ADDRESS + offset, len, (unsigned char *)data);
 
 	return 0;
 }
