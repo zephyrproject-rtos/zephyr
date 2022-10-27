@@ -1625,46 +1625,6 @@ static void unicast_client_ep_reset(struct bt_conn *conn)
 	}
 }
 
-void bt_unicast_client_ep_attach(struct bt_audio_ep *ep,
-				 struct bt_audio_stream *stream)
-{
-	BT_DBG("ep %p stream %p", ep, stream);
-
-	if (ep == NULL || stream == NULL || ep->stream == stream) {
-		return;
-	}
-
-	if (ep->stream) {
-		BT_ERR("ep %p attached to another stream %p", ep, ep->stream);
-		return;
-	}
-
-	ep->stream = stream;
-	stream->ep = ep;
-
-	if (stream->iso == NULL) {
-		stream->iso = &ep->iso->iso_chan;
-	}
-}
-
-void bt_unicast_client_ep_detach(struct bt_audio_ep *ep,
-				 struct bt_audio_stream *stream)
-{
-	BT_DBG("ep %p stream %p", ep, stream);
-
-	if (ep == NULL || stream == NULL || !ep->stream) {
-		return;
-	}
-
-	if (ep->stream != stream) {
-		BT_ERR("ep %p attached to another stream %p", ep, ep->stream);
-		return;
-	}
-
-	ep->stream = NULL;
-	stream->ep = NULL;
-}
-
 int bt_unicast_client_config(struct bt_audio_stream *stream,
 			     const struct bt_codec *codec)
 {
