@@ -197,6 +197,12 @@ struct proc_ctx {
 		} pu;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		struct {
+			uint8_t ntf_dle;
+		} dle;
+#endif
+
 		/* Connection Update & Connection Parameter Request */
 		struct {
 			uint8_t error;

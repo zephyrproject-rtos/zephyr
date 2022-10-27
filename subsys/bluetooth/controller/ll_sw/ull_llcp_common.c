@@ -942,11 +942,12 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 		llcp_pdu_decode_length_req(conn, pdu);
 		/* On reception of REQ mark RSP open for local piggy-back
-		 * Pause data tx, to ensure we can later (on RSP tx ack) update DLE without
+		 * Pause data tx, to ensure we can later (on RSP tx ack) update TX DLE without
 		 * conflicting with out-going LL Data PDUs
 		 * See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
 		 */
 		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH);
+		ctx->data.dle.ntf_dle = ull_dle_update_eff_rx(conn);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -1276,8 +1277,9 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		case PROC_DATA_LENGTH_UPDATE: {
 			/* Apply changes in data lengths/times */
-			uint8_t dle_changed = ull_dle_update_eff(conn);
+			uint8_t dle_changed = ull_dle_update_eff_tx(conn);
 
+			dle_changed |= ctx->data.dle.ntf_dle;
 			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH);
 
 			if (dle_changed && !llcp_ntf_alloc_is_available()) {
