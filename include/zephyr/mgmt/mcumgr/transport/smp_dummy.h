@@ -14,7 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/buf.h>
 #include <mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/serial.h>
+#include <zephyr/mgmt/mcumgr/transport/serial.h>
 
 #ifdef __cplusplus
 extern "C" {

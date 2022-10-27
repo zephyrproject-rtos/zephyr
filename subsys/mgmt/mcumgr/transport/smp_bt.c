@@ -9,17 +9,16 @@
  * @brief Bluetooth transport for the mcumgr SMP protocol.
  */
 
-#include <errno.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/mgmt/mcumgr/transport/smp.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_bt.h>
+#include <errno.h>
 
-#include <zephyr/mgmt/mcumgr/smp_bt.h>
-
-#include <zephyr/mgmt/mcumgr/smp.h>
 #include <mgmt/mgmt.h>
 #include "smp/smp.h"
 #include "../smp_internal.h"

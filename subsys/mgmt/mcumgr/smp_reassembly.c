@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net/buf.h>
-#include <zephyr/mgmt/mcumgr/smp.h>
+#include <zephyr/mgmt/mcumgr/transport/smp.h>
 #include <mgmt/mgmt.h>
 #include <smp/smp.h>
 #include "smp_internal.h"
