@@ -53,7 +53,7 @@ struct view_obj_t {
 	atomic_t flags;
 } view_obj;
 
-uint8_t get_view_snoop() {
+snooper_mask_t get_view_snoop() {
 	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP0)) return 0;
 	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP1)) return CC1_CHANNEL_BIT;
 	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP2)) return CC2_CHANNEL_BIT;

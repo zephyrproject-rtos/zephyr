@@ -50,7 +50,7 @@ static int cmd_meas_cc1(const struct shell *shell, size_t argc, char **argv) {
 	int32_t out;
 
 	meas_cc1_v(&out);
-	shell_print(shell, "voltage of cc1: %i\n", out);
+	shell_print(shell, "voltage of cc1: %i", out);
 
 	return 0;
 }
@@ -62,7 +62,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_meas,
         SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(meas, &sub_meas, "Reads current and voltage of all lines", NULL);
+SHELL_CMD_REGISTER(meas, &sub_meas, "Reads current or voltage of the selected line", NULL);
 
 static int cmd_version(const struct shell *shell, size_t argc, char**argv) {
 	ARG_UNUSED(argc);
@@ -87,15 +87,18 @@ static int cmd_reset(const struct shell *shell, size_t argc, char**argv) {
 SHELL_CMD_REGISTER(reset, NULL, "Resets the Twinkie device", cmd_reset);
 
 static int cmd_snoop(const struct shell *shell, size_t argc, char**argv) {
-	if (argc >= 2 && *argv[1] <= '3' && *argv[1] >= '0') {
-		switch ((*argv[1] - '0')) {
-		case 0:
+	if (argc >= 2) {
+		switch (*argv[1]) {
+		case '0':
 			view_set_snoop(0);
-		case 1:
+			break;
+		case '1':
 			view_set_snoop(CC1_CHANNEL_BIT);
-		case 2:
+			break;
+		case '2':
 			view_set_snoop(CC2_CHANNEL_BIT);
-		case 3:
+			break;
+		case '3':
 			view_set_snoop(CC1_CHANNEL_BIT | CC2_CHANNEL_BIT);
 		}
 

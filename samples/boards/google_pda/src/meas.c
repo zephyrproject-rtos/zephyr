@@ -38,7 +38,7 @@ static const struct adc_dt_spec adc_vcon_c = ADC_DT_SPEC_GET(VCON_C_MEAS_NODE);
 int meas_vbus_v(int32_t *v)
 {
 	int ret;
-	int32_t sample_buffer;
+	int32_t sample_buffer = 0;
 
 	/* Structure defining an ADC sampling sequence */
 	struct adc_sequence sequence = {
@@ -69,7 +69,7 @@ int meas_vbus_v(int32_t *v)
 int meas_vbus_c(int32_t *c)
 {
 	int ret;
-	int32_t sample_buffer;
+	int32_t sample_buffer = 0;
 
 	/* Structure defining an ADC sampling sequence */
 	struct adc_sequence sequence = {
@@ -103,7 +103,7 @@ int meas_vbus_c(int32_t *c)
 int meas_cc1_v(int32_t *v)
 {
 	int ret;
-	int32_t sample_buffer;
+	int32_t sample_buffer = 0;
 
 	/* Structure defining an ADC sampling sequence */
 	struct adc_sequence sequence = {
@@ -134,7 +134,7 @@ int meas_cc1_v(int32_t *v)
 int meas_cc2_v(int32_t *v)
 {
 	int ret;
-	int32_t sample_buffer;
+	int32_t sample_buffer = 0;
 
 	/* Structure defining an ADC sampling sequence */
 	struct adc_sequence sequence = {
@@ -165,7 +165,7 @@ int meas_cc2_v(int32_t *v)
 int meas_vcon_c(int32_t *c)
 {
 	int ret;
-	int32_t sample_buffer;
+	int32_t sample_buffer = 0;
 
 	/* Structure defining an ADC sampling sequence */
 	struct adc_sequence sequence = {

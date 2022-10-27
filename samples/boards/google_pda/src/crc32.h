@@ -21,14 +21,14 @@ void crc32_init(void);
 void crc32_hash(const void *buf, int size);
 
 /**
- * @brief Creates a hash of a 32 bit unsigned integer
+ * @brief Creates a hash of a 32 bit unsigned integer and stores the hash internally
  *
  * @param val value to be hashed
  */
 void crc32_hash32(uint32_t val);
 
 /**
- * @brief Creates a hash of a 16 bit unsigned integer
+ * @brief Creates a hash of a 16 bit unsigned integer and stores the hash internally
  *
  * @param val value to be hashed
  */

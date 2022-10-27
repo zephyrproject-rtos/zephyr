@@ -30,10 +30,10 @@ int view_set_snoop(snooper_mask_t vs);
 int view_set_connection(snooper_mask_t vc);
 
 /**
- * @brief Returns the value of the cc line currently being snooped. 0 for neither, 3 for both
+ * @brief Returns the value of the cc line currently being snooped. 
  *
- * @return 0 - 3 for the current view status
+ * @return bitmask for the current view status
  */
-uint8_t get_view_snoop();
+snooper_mask_t get_view_snoop();
 
 #endif
