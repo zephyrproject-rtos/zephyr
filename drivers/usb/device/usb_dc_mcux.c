@@ -457,6 +457,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	}
 
 	dev_state.eps[ep_abs_idx].ep_enabled = false;
+	dev_state.eps[ep_abs_idx].ep_occupied = false;
 
 	return 0;
 }
