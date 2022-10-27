@@ -29,7 +29,7 @@ struct sync_state {
 	struct bt_conn *conn;
 	struct bt_le_per_adv_sync *pa_sync;
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
-	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 } sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
 static bool past_preference;
@@ -279,7 +279,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
 {
 	struct sync_state *state;
 
@@ -292,8 +292,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 		return;
 	}
 
-	(void)memcpy(state->broadcast_code, broadcast_code,
-		     BT_BAP_BROADCAST_CODE_SIZE);
+	(void)memcpy(state->broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
 }
 
 static struct bt_bap_scan_delegator_cb scan_delegator_cb = {
