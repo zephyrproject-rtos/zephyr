@@ -45,6 +45,14 @@
 			status = "disabled";
 		};
 
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			interrupts = <53 0>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@48000000 {
 
 			gpioe: gpio@48001000 {
@@ -126,7 +134,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
 			interrupts = <18 0>;
 			status = "disabled";
-			vref-mv = <3300>;
+			vref-mv = <3000>;
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;

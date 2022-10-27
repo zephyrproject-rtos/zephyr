@@ -143,17 +143,8 @@ Debugging
 ---------
 
 As with much custom hardware, the ESP32 modules require patches to
-OpenOCD that are not upstreamed. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained by running the following extension:
-
-.. code-block:: console
-
-   west espressif install
-
-.. note::
-
-   By default, the OpenOCD will be downloaded and installed under $HOME/.espressif/tools/zephyr directory
-   (%USERPROFILE%/.espressif/tools/zephyr on Windows).
+OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
+the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
@@ -185,3 +176,6 @@ You can debug an application in the usual way. Here is an example for the :ref:`
 
 .. _ESP32-WROOM32-E/UE Datasheet:
    https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf
+
+.. _OpenOCD ESP32:
+   https://github.com/espressif/openocd-esp32/releases

@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/interrupt_util.h>
+#include <zephyr/irq.h>
 
 /*
  * Other arch has already been tested in testcase of gen_isr_table,

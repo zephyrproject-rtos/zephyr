@@ -7,7 +7,7 @@ description: |
 
 compatible: "bosch,bma280"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
   int1-gpios:

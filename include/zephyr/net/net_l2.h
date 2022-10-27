@@ -34,7 +34,7 @@ enum net_l2_flags {
 	/** IP multicast supported */
 	NET_L2_MULTICAST			= BIT(0),
 
-	/** Do not joint solicited node multicast group */
+	/** Do not join solicited node multicast group */
 	NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE	= BIT(1),
 
 	/** Is promiscuous mode supported */

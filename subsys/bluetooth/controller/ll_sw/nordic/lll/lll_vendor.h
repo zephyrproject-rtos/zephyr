@@ -8,14 +8,48 @@
 #define EVENT_OVERHEAD_PREEMPT_US     0    /* if <= min, then dynamic preempt */
 #define EVENT_OVERHEAD_PREEMPT_MIN_US 0
 #define EVENT_OVERHEAD_PREEMPT_MAX_US EVENT_OVERHEAD_XTAL_US
-#define EVENT_OVERHEAD_START_US       750
+
+/* Measurement based on drifting roles that can overlap leading to collision
+ * resolutions that consume CPU time between radio events.
+ * Value include max end, start and scheduling CPU usage times.
+ * Measurements based on central_gatt_write and peripheral_gatt_write sample on
+ * nRF52833 SoC.
+ */
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_OBSERVER)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+/* Active connection in peripheral role with extended scanning on 1M and Coded
+ * PHY, scheduling and receiving auxiliary PDUs.
+ */
+#define EVENT_OVERHEAD_START_US       458
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+/* Active connection in peripheral role with extended scanning on 1M only,
+ * scheduling and receiving auxiliary PDUs.
+ */
+#define EVENT_OVERHEAD_START_US       428
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+#else /* !CONFIG_BT_OBSERVER */
+/* Active connection in peripheral role with legacy scanning on 1M.
+ */
+#define EVENT_OVERHEAD_START_US       275
+#endif /* !CONFIG_BT_OBSERVER */
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+/* Active connection in peripheral role with additional advertising state.
+ */
+#define EVENT_OVERHEAD_START_US       275
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 /* Worst-case time margin needed after event end-time in the air
  * (done/preempt race margin + power-down/chain delay)
  */
 #define EVENT_OVERHEAD_END_US         100
+
+/* Sleep Clock Accuracy */
 #define EVENT_JITTER_US               16
+
 /* Inter-Event Space (IES) */
 #define EVENT_TIES_US                 625
+
 /* Ticker resolution margin
  * Needed due to the lack of fine timing resolution in ticker_start
  * and ticker_update. Set to 32 us, which is ~1 tick with 32768 Hz

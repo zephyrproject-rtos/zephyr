@@ -40,7 +40,7 @@ config ISR_STACK_SIZE
 config HEAP_MEM_POOL_SIZE
 	default 32768
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 1
 
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE

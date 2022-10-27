@@ -206,7 +206,7 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 			k_poll(&evt, 1, K_FOREVER);
 		}
 	}
-	return 0;
+	return ret;
 }
 
 int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,

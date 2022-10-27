@@ -75,11 +75,15 @@ ZTEST(no_multithreading, test_cpu_idle)
 	zassert_within(diff, 10, 2, "Unexpected time passed: %d ms", (int)diff);
 }
 
+#define IDX_PRE_KERNEL_1 0
+#define IDX_PRE_KERNEL_2 1
+#define IDX_POST_KERNEL 2
+
 #define SYS_INIT_CREATE(level) \
 	static int pre_kernel_##level##_init_func(const struct device *dev) \
 	{ \
 		ARG_UNUSED(dev); \
-		if (init_order != _SYS_INIT_LEVEL_##level && sys_init_result == 0) { \
+		if (init_order != IDX_##level && sys_init_result == 0) { \
 			sys_init_result = -1; \
 			return -EIO; \
 		} \
@@ -95,7 +99,7 @@ FOR_EACH(SYS_INIT_CREATE, (;), PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL);
 
 ZTEST(no_multithreading, test_sys_init)
 {
-	zassert_equal(init_order, 3, "SYS_INIT failed");
+	zassert_equal(init_order, 3, "SYS_INIT failed: %d", init_order);
 }
 
 ZTEST_SUITE(no_multithreading, NULL, NULL, NULL, NULL, NULL);

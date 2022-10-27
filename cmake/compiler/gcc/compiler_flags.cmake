@@ -28,9 +28,8 @@ set_compiler_property(PROPERTY optimization_size  -Os)
 # GCC Option standard warning base in Zephyr
 check_set_compiler_property(PROPERTY warning_base
     -Wall
-    -Wformat
-    -Wformat-security
-    -Wno-format-zero-length
+    "SHELL:-Wformat -Wformat-security"
+    "SHELL:-Wformat -Wno-format-zero-length"
     -Wno-main
 )
 

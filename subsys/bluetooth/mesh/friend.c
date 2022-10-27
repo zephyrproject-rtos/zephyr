@@ -1147,6 +1147,11 @@ static void buf_send_start(uint16_t duration, int err, void *user_data)
 
 	BT_DBG("err %d", err);
 
+	if (!frnd->pending_buf) {
+		BT_WARN("Attempt of sending to removed friend");
+		return;
+	}
+
 	frnd->pending_buf = 0U;
 
 	/* Friend Offer doesn't follow the re-sending semantics */
@@ -1162,7 +1167,7 @@ static void buf_send_end(int err, void *user_data)
 
 	BT_DBG("err %d", err);
 
-	if (frnd->pending_req) {
+	if (frnd->pending_req || frnd->pending_buf) {
 		BT_WARN("Another request before previous completed sending");
 		return;
 	}

@@ -387,7 +387,7 @@ tests:
   logging.log_api_deferred_override_level.tagged_args:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
-    platform_allow: qemu_cortex_m3 qemu_cortex_a9
+    platform_allow: qemu_cortex_m3 qemu_cortex_a9 native_posix
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -397,7 +397,7 @@ tests:
   logging.log_api_deferred_override_level_rt_filtering.tagged_args:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
-    platform_allow: qemu_cortex_m3 qemu_cortex_a9
+    platform_allow: qemu_cortex_m3 qemu_cortex_a9 native_posix
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y

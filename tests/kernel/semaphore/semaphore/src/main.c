@@ -175,7 +175,7 @@ void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 /* First function for mutual exclusion test */
 void sem_queue_mutual_exclusion1(void *p1, void *p2, void *p3)
 {
-	for (int i = 0; i < 10000; i++) {
+	for (int i = 0; i < 1000; i++) {
 		expect_k_sem_take_nomsg(&mut_sem, K_FOREVER, 0);
 
 		/* in that function critical section makes critical var +1 */
@@ -194,7 +194,7 @@ void sem_queue_mutual_exclusion1(void *p1, void *p2, void *p3)
 /* Second function for mutual exclusion test */
 void sem_queue_mutual_exclusion2(void *p1, void *p2, void *p3)
 {
-	for (int i = 0; i < 10000; i++) {
+	for (int i = 0; i < 1000; i++) {
 		expect_k_sem_take_nomsg(&mut_sem, K_FOREVER, 0);
 
 		/* in that function critical section makes critical var 0 */

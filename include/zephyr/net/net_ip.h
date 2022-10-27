@@ -201,23 +201,23 @@ struct sockaddr_in_ptr {
 
 /** Socket address struct for packet socket. */
 struct sockaddr_ll {
-	sa_family_t sll_family;   /* Always AF_PACKET        */
-	uint16_t    sll_protocol; /* Physical-layer protocol */
-	int         sll_ifindex;  /* Interface number        */
-	uint16_t    sll_hatype;   /* ARP hardware type       */
-	uint8_t     sll_pkttype;  /* Packet type             */
-	uint8_t     sll_halen;    /* Length of address       */
-	uint8_t     sll_addr[8];  /* Physical-layer address  */
+	sa_family_t sll_family;   /* Always AF_PACKET                   */
+	uint16_t    sll_protocol; /* Physical-layer protocol            */
+	int         sll_ifindex;  /* Interface number                   */
+	uint16_t    sll_hatype;   /* ARP hardware type                  */
+	uint8_t     sll_pkttype;  /* Packet type                        */
+	uint8_t     sll_halen;    /* Length of address                  */
+	uint8_t     sll_addr[8];  /* Physical-layer address, big endian */
 };
 
 struct sockaddr_ll_ptr {
-	sa_family_t sll_family;   /* Always AF_PACKET        */
-	uint16_t    sll_protocol; /* Physical-layer protocol */
-	int         sll_ifindex;  /* Interface number        */
-	uint16_t    sll_hatype;   /* ARP hardware type       */
-	uint8_t     sll_pkttype;  /* Packet type             */
-	uint8_t     sll_halen;    /* Length of address       */
-	uint8_t     *sll_addr;    /* Physical-layer address  */
+	sa_family_t sll_family;   /* Always AF_PACKET                   */
+	uint16_t    sll_protocol; /* Physical-layer protocol            */
+	int         sll_ifindex;  /* Interface number                   */
+	uint16_t    sll_hatype;   /* ARP hardware type                  */
+	uint8_t     sll_pkttype;  /* Packet type                        */
+	uint8_t     sll_halen;    /* Length of address                  */
+	uint8_t     *sll_addr;    /* Physical-layer address, big endian */
 };
 
 struct sockaddr_can_ptr {
@@ -233,7 +233,7 @@ struct iovec {
 #endif
 
 struct msghdr {
-	void         *msg_name;       /* optional socket address */
+	void         *msg_name;       /* optional socket address, big endian */
 	socklen_t     msg_namelen;    /* size of socket address */
 	struct iovec *msg_iov;        /* scatter/gather array */
 	size_t        msg_iovlen;     /* number of elements in msg_iov */

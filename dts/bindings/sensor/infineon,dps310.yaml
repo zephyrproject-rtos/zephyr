@@ -6,6 +6,6 @@
 
 description: Infineon DPS310 temperature and pressure sensor
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 compatible: "infineon,dps310"

@@ -28,25 +28,27 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"Root-level operation is unsupported"
 #define LWM2M_HELP_EXEC "Execute a resource\nexec PATH\n"
 #define LWM2M_HELP_READ "Read value from LwM2M resource\nread PATH [OPTIONS]\n" \
-	"-s \tRead value as string(default)\n" \
+	"-s \tRead value as string (default)\n" \
 	"-b \tRead value as bool (1/0)\n" \
 	"-uX\tRead value as uintX_t\n" \
 	"-sX\tRead value as intX_t\n" \
 	"-f \tRead value as float\n"
 #define LWM2M_HELP_WRITE "Write into LwM2M resource\nwrite PATH [OPTIONS] VALUE\n" \
-	"-s \tValue as string(default)\n" \
+	"-s \tValue as string (default)\n" \
 	"-b \tValue as bool\n" \
 	"-uX\tValue as uintX_t\n" \
 	"-sX\tValue as intX_t\n" \
 	"-f \tValue as float\n"
 #define LWM2M_HELP_START "Start the LwM2M RD (Registration / Discovery) Client\n" \
-	"start EP_NAME [OPTIONS] [BOOTSTRAP FLAG]\n" \
+	"start EP_NAME [BOOTSTRAP FLAG]\n" \
 	"-b \tSet the bootstrap flag (default 0)\n"
 #define LWM2M_HELP_STOP "Stop the LwM2M RD (De-register) Client\nstop [OPTIONS]\n" \
 	"-f \tForce close the connection\n"
 #define LWM2M_HELP_UPDATE "Trigger Registration Update of the LwM2M RD Client\n"
 #define LWM2M_HELP_PAUSE "LwM2M engine thread pause"
 #define LWM2M_HELP_RESUME "LwM2M engine thread resume"
+#define LWM2M_HELP_LOCK "Lock the LwM2M registry"
+#define LWM2M_HELP_UNLOCK "Unlock the LwM2M registry"
 
 static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 {
@@ -117,8 +119,8 @@ static int cmd_exec(const struct shell *sh, size_t argc, char **argv)
 
 	struct lwm2m_engine_res *res = lwm2m_engine_get_res(&path);
 
-	if (ret < 0) {
-		shell_error(sh, "Resource not found (err %d)\n", ret);
+	if (res == NULL) {
+		shell_error(sh, "Resource not found\n");
 		return -EINVAL;
 	}
 
@@ -453,6 +455,26 @@ static int cmd_resume(const struct shell *sh, size_t argc, char **argv)
 	return lwm2m_engine_resume();
 }
 
+static int cmd_lock(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	lwm2m_registry_lock();
+	return 0;
+}
+
+static int cmd_unlock(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	lwm2m_registry_unlock();
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lwm2m,
 	SHELL_COND_CMD_ARG(CONFIG_LWM2M_VERSION_1_1, send, NULL,
@@ -465,6 +487,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(update, NULL, LWM2M_HELP_UPDATE, cmd_update, 1, 0),
 	SHELL_CMD_ARG(pause, NULL, LWM2M_HELP_PAUSE, cmd_pause, 1, 0),
 	SHELL_CMD_ARG(resume, NULL, LWM2M_HELP_RESUME, cmd_resume, 1, 0),
+	SHELL_CMD_ARG(lock, NULL, LWM2M_HELP_LOCK, cmd_lock, 1, 0),
+	SHELL_CMD_ARG(unlock, NULL, LWM2M_HELP_UNLOCK, cmd_unlock, 1, 0),
+
 	SHELL_SUBCMD_SET_END);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_LWM2M_SHELL, lwm2m, &sub_lwm2m,
 			    LWM2M_HELP_CMD, NULL, 1, 0);

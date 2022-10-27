@@ -158,7 +158,7 @@ Reset the board and you will see this message written to the serial port:
    https://www.silabs.com/documents/public/user-guides/ug255-stk3400-user-guide.pdf
 
 .. _EFM32HG-SLSTK3400A Schematics:
-   https://www.silabs.com/documents/public/schematic-files/EFM32HG_BRD2012A_B01_schematic.PDF
+   https://www.silabs.com/documents/public/schematic-files/BRD2012A-B01-schematic.pdf
 
 .. _EFM32HG Website:
    https://www.silabs.com/products/mcu/32-bit/efm32-happy-gecko

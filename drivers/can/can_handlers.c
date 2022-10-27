@@ -129,12 +129,12 @@ static inline int z_vrfy_can_set_bitrate_data(const struct device *dev,
 
 #endif /* CONFIG_CAN_FD_MODE */
 
-static inline int z_vrfy_can_get_max_filters(const struct device *dev, enum can_ide id_type)
+static inline int z_vrfy_can_get_max_filters(const struct device *dev, bool ide)
 {
 	/* Optional API function */
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
-	return z_impl_can_get_max_filters(dev, id_type);
+	return z_impl_can_get_max_filters(dev, ide);
 }
 #include <syscalls/can_get_max_filters_mrsh.c>
 
@@ -146,6 +146,22 @@ static inline int z_vrfy_can_get_capabilities(const struct device *dev, can_mode
 	return z_impl_can_get_capabilities(dev, cap);
 }
 #include <syscalls/can_get_capabilities_mrsh.c>
+
+static inline int z_vrfy_can_start(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, start));
+
+	return z_impl_can_start(dev);
+}
+#include <syscalls/can_start_mrsh.c>
+
+static inline int z_vrfy_can_stop(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, stop));
+
+	return z_impl_can_stop(dev);
+}
+#include <syscalls/can_stop_mrsh.c>
 
 static inline int z_vrfy_can_set_mode(const struct device *dev, can_mode_t mode)
 {

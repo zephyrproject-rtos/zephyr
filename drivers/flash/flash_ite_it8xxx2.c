@@ -10,31 +10,26 @@
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 #define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 
+#include <string.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
+
+#include <ilm.h>
 #include <soc.h>
-#include <string.h>
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_ite_it8xxx2);
-
-/* RAM code start address */
-extern char _ram_code_start[];
-#define FLASH_RAMCODE_START ((uint32_t)&_ram_code_start)
-#define	FLASH_RAMCODE_START_BIT19      BIT(19)
-/* RAM code section */
-#define __ram_code __attribute__((section(".__ram_code")))
 
 #define FLASH_IT8XXX2_REG_BASE \
 		((struct flash_it8xxx2_regs *)DT_INST_REG_ADDR(0))
 
 struct flash_it8xxx2_dev_data {
 	struct k_sem sem;
-	int flash_static_cache_enabled;
 };
 
 /*
@@ -48,8 +43,6 @@ struct flash_it8xxx2_dev_data {
 #define CHIP_FLASH_SIZE_BYTES          DT_REG_SIZE(DT_NODELABEL(flash0))
 /* protect bank size */
 #define CHIP_FLASH_BANK_SIZE           0x00001000
-/* base+0000h~base+0FFF */
-#define CHIP_RAMCODE_BASE              0x80100000
 
 /*
  * This is the block size of the ILM on the it8xxx2 chip.
@@ -98,7 +91,7 @@ static const struct flash_parameters flash_it8xxx2_parameters = {
 	.erase_value = 0xff,
 };
 
-void __ram_code ramcode_reset_i_cache(void)
+void __soc_ram_code ramcode_reset_i_cache(void)
 {
 	/* I-Cache tag sram reset */
 	IT83XX_GCTRL_MCCR |= IT83XX_GCTRL_ICACHE_RESET;
@@ -109,7 +102,7 @@ void __ram_code ramcode_reset_i_cache(void)
 	__asm__ volatile ("fence.i" ::: "memory");
 }
 
-void __ram_code ramcode_flash_follow_mode(void)
+void __soc_ram_code ramcode_flash_follow_mode(void)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
 	/*
@@ -130,7 +123,7 @@ void __ram_code ramcode_flash_follow_mode(void)
 	flash_regs->SMFI_ECINDDR = 0x00;
 }
 
-void __ram_code ramcode_flash_follow_mode_exit(void)
+void __soc_ram_code ramcode_flash_follow_mode_exit(void)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
 
@@ -139,7 +132,7 @@ void __ram_code ramcode_flash_follow_mode_exit(void)
 	flash_regs->SMFI_ECINDAR2 = 0x00;
 }
 
-void __ram_code ramcode_flash_fsce_high(void)
+void __soc_ram_code ramcode_flash_fsce_high(void)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
 
@@ -162,7 +155,7 @@ void __ram_code ramcode_flash_fsce_high(void)
 	flash_regs->SMFI_ECINDDR = 0x00;
 }
 
-void __ram_code ramcode_flash_write_dat(uint8_t wdata)
+void __soc_ram_code ramcode_flash_write_dat(uint8_t wdata)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
 
@@ -170,9 +163,8 @@ void __ram_code ramcode_flash_write_dat(uint8_t wdata)
 	flash_regs->SMFI_ECINDDR = wdata;
 }
 
-void __ram_code ramcode_flash_transaction(int wlen, uint8_t *wbuf, int rlen,
-					  uint8_t *rbuf,
-					  enum flash_transaction_cmd cmd_end)
+void __soc_ram_code ramcode_flash_transaction(int wlen, uint8_t *wbuf, int rlen, uint8_t *rbuf,
+					      enum flash_transaction_cmd cmd_end)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
 	int i;
@@ -193,8 +185,8 @@ void __ram_code ramcode_flash_transaction(int wlen, uint8_t *wbuf, int rlen,
 	}
 }
 
-void __ram_code ramcode_flash_cmd_read_status(enum flash_status_mask mask,
-					      enum flash_status_mask target)
+void __soc_ram_code ramcode_flash_cmd_read_status(enum flash_status_mask mask,
+						  enum flash_status_mask target)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
 	uint8_t cmd_rs[] = {FLASH_CMD_RS};
@@ -218,7 +210,7 @@ void __ram_code ramcode_flash_cmd_read_status(enum flash_status_mask mask,
 	ramcode_flash_fsce_high();
 }
 
-void __ram_code ramcode_flash_cmd_write_enable(void)
+void __soc_ram_code ramcode_flash_cmd_write_enable(void)
 {
 	uint8_t cmd_we[] = {FLASH_CMD_WREN};
 
@@ -232,7 +224,7 @@ void __ram_code ramcode_flash_cmd_write_enable(void)
 	ramcode_flash_follow_mode_exit();
 }
 
-void __ram_code ramcode_flash_cmd_write_disable(void)
+void __soc_ram_code ramcode_flash_cmd_write_disable(void)
 {
 	uint8_t cmd_wd[] = {FLASH_CMD_WRDI};
 
@@ -246,21 +238,21 @@ void __ram_code ramcode_flash_cmd_write_disable(void)
 	ramcode_flash_follow_mode_exit();
 }
 
-int __ram_code ramcode_flash_verify(int addr, int size, const char *data)
+int __soc_ram_code ramcode_flash_verify(int addr, int size, const char *data)
 {
 	int i;
 	uint8_t *wbuf = (uint8_t *)data;
 	uint8_t *flash = (uint8_t *)addr;
 
-	/* verify for erase */
 	if (data == NULL) {
+		/* verify for erase */
 		for (i = 0; i < size; i++) {
 			if (flash[i] != 0xFF) {
 				return -EINVAL;
 			}
 		}
-	/* verify for write */
 	} else {
+		/* verify for write */
 		for (i = 0; i < size; i++) {
 			if (flash[i] != wbuf[i]) {
 				return -EINVAL;
@@ -271,7 +263,7 @@ int __ram_code ramcode_flash_verify(int addr, int size, const char *data)
 	return 0;
 }
 
-void __ram_code ramcode_flash_cmd_write(int addr, int wlen, uint8_t *wbuf)
+void __soc_ram_code ramcode_flash_cmd_write(int addr, int wlen, uint8_t *wbuf)
 {
 	int i;
 	uint8_t flash_write[] = {FLASH_CMD_WRITE, ((addr >> 16) & 0xFF),
@@ -315,14 +307,14 @@ void __ram_code ramcode_flash_cmd_write(int addr, int wlen, uint8_t *wbuf)
 	ramcode_flash_follow_mode_exit();
 }
 
-void __ram_code ramcode_flash_write(int addr, int wlen, const char *wbuf)
+void __soc_ram_code ramcode_flash_write(int addr, int wlen, const char *wbuf)
 {
 	ramcode_flash_cmd_write_enable();
 	ramcode_flash_cmd_write(addr, wlen, (uint8_t *)wbuf);
 	ramcode_flash_cmd_write_disable();
 }
 
-void __ram_code ramcode_flash_cmd_erase(int addr, int cmd)
+void __soc_ram_code ramcode_flash_cmd_erase(int addr, int cmd)
 {
 	uint8_t cmd_erase[] = {cmd, ((addr >> 16) & 0xFF),
 		((addr >> 8) & 0xFF), (addr & 0xFF)};
@@ -337,7 +329,7 @@ void __ram_code ramcode_flash_cmd_erase(int addr, int cmd)
 	ramcode_flash_follow_mode_exit();
 }
 
-void __ram_code ramcode_flash_erase(int addr, int cmd)
+void __soc_ram_code ramcode_flash_erase(int addr, int cmd)
 {
 	ramcode_flash_cmd_write_enable();
 	ramcode_flash_cmd_erase(addr, cmd);
@@ -345,8 +337,8 @@ void __ram_code ramcode_flash_erase(int addr, int cmd)
 }
 
 /* Read data from flash */
-static int __ram_code flash_it8xxx2_read(const struct device *dev, off_t offset,
-					 void *data, size_t len)
+static int __soc_ram_code flash_it8xxx2_read(const struct device *dev, off_t offset, void *data,
+					     size_t len)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
 	uint8_t *data_t = data;
@@ -371,8 +363,8 @@ static int __ram_code flash_it8xxx2_read(const struct device *dev, off_t offset,
 }
 
 /* Write data to the flash, page by page */
-static int __ram_code flash_it8xxx2_write(const struct device *dev, off_t offset,
-					  const void *src_data, size_t len)
+static int __soc_ram_code flash_it8xxx2_write(const struct device *dev, off_t offset,
+					      const void *src_data, size_t len)
 {
 	struct flash_it8xxx2_dev_data *data = dev->data;
 	int ret = -EINVAL;
@@ -388,7 +380,7 @@ static int __ram_code flash_it8xxx2_write(const struct device *dev, off_t offset
 	if ((len % FLASH_WRITE_BLK_SZ) != 0) {
 		return -EINVAL;
 	}
-	if (data->flash_static_cache_enabled == 0) {
+	if (!it8xxx2_is_ilm_configured()) {
 		return -EACCES;
 	}
 
@@ -414,8 +406,7 @@ static int __ram_code flash_it8xxx2_write(const struct device *dev, off_t offset
 }
 
 /* Erase multiple blocks */
-static int __ram_code flash_it8xxx2_erase(const struct device *dev,
-					  off_t offset, size_t len)
+static int __soc_ram_code flash_it8xxx2_erase(const struct device *dev, off_t offset, size_t len)
 {
 	struct flash_it8xxx2_dev_data *data = dev->data;
 	int v_size = len, v_addr = offset, ret = -EINVAL;
@@ -431,7 +422,7 @@ static int __ram_code flash_it8xxx2_erase(const struct device *dev,
 	if ((len % FLASH_ERASE_BLK_SZ) != 0) {
 		return -EINVAL;
 	}
-	if (data->flash_static_cache_enabled == 0) {
+	if (!it8xxx2_is_ilm_configured()) {
 		return -EACCES;
 	}
 
@@ -468,42 +459,6 @@ flash_it8xxx2_get_parameters(const struct device *dev)
 	return &flash_it8xxx2_parameters;
 }
 
-static void flash_code_static_cache(const struct device *dev)
-{
-	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
-	struct flash_it8xxx2_dev_data *data = dev->data;
-	unsigned int key;
-
-	/* Make sure no interrupt while enable static cache */
-	key = irq_lock();
-
-	/* invalid static cache first */
-	IT83XX_GCTRL_RVILMCR0 &= ~ILMCR_ILM0_ENABLE;
-
-	flash_regs->SMFI_SCAR0H = IT8XXX2_SMFI_SCAR0H_ENABLE;
-
-	memcpy((void *)CHIP_RAMCODE_BASE, (const void *)FLASH_RAMCODE_START,
-		IT8XXX2_ILM_BLOCK_SIZE);
-
-	/* RISCV ILM 0 Enable */
-	IT83XX_GCTRL_RVILMCR0 |= ILMCR_ILM0_ENABLE;
-
-	/* Enable ILM */
-	flash_regs->SMFI_SCAR0L = FLASH_RAMCODE_START & GENMASK(7, 0);
-	flash_regs->SMFI_SCAR0M = (FLASH_RAMCODE_START >> 8) & GENMASK(7, 0);
-	flash_regs->SMFI_SCAR0H = (FLASH_RAMCODE_START >> 16) & GENMASK(2, 0);
-
-	if (FLASH_RAMCODE_START & FLASH_RAMCODE_START_BIT19) {
-		flash_regs->SMFI_SCAR0H |= IT8XXX2_SMFI_SC0A19;
-	} else {
-		flash_regs->SMFI_SCAR0H &= ~IT8XXX2_SMFI_SC0A19;
-	}
-
-	data->flash_static_cache_enabled = 0x01;
-
-	irq_unlock(key);
-}
-
 static int flash_it8xxx2_init(const struct device *dev)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
@@ -521,8 +476,6 @@ static int flash_it8xxx2_init(const struct device *dev)
 
 	/* Initialize mutex for flash controller */
 	k_sem_init(&data->sem, 1, 1);
-
-	flash_code_static_cache(dev);
 
 	return 0;
 }

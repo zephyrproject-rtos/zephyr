@@ -17,10 +17,10 @@
 #include <zephyr/bluetooth/gatt.h>
 
 #include <zephyr/mgmt/mcumgr/smp_bt.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <mgmt/mgmt.h>
+#include "smp/smp.h"
 #include "../smp_internal.h"
 #include "../smp_reassembly.h"
 
@@ -76,7 +76,7 @@ struct conn_param_data {
 	uint8_t state;
 };
 
-static struct zephyr_smp_transport smp_bt_transport;
+static struct smp_transport smp_bt_transport;
 static struct conn_param_data conn_data[CONFIG_BT_MAX_CONN];
 
 K_SEM_DEFINE(smp_notify_sem, 0, 1);
@@ -188,12 +188,12 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	int ret;
 	bool started;
 
-	started = (zephyr_smp_reassembly_expected(&smp_bt_transport) >= 0);
+	started = (smp_reassembly_expected(&smp_bt_transport) >= 0);
 
 	LOG_DBG("started = %s, buf len = %d", started ? "true" : "false", len);
 	LOG_HEXDUMP_DBG(buf, len, "buf = ");
 
-	ret = zephyr_smp_reassembly_collect(&smp_bt_transport, buf, len);
+	ret = smp_reassembly_collect(&smp_bt_transport, buf, len);
 	LOG_DBG("collect = %d", ret);
 
 	/*
@@ -208,14 +208,14 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 		 * error.
 		 */
 		struct smp_bt_user_data *ud =
-			(struct smp_bt_user_data *)zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+			(struct smp_bt_user_data *)smp_reassembly_get_ud(&smp_bt_transport);
 
 		if (ud != NULL) {
 			bt_conn_unref(ud->conn);
 			ud->conn = NULL;
 		}
 
-		zephyr_smp_reassembly_drop(&smp_bt_transport);
+		smp_reassembly_drop(&smp_bt_transport);
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
@@ -224,7 +224,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 		 * Transport context is attached to the buffer after first fragment
 		 * has been collected.
 		 */
-		struct smp_bt_user_data *ud = zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
 
 		if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
 			conn_param_smp_enable(conn);
@@ -235,7 +235,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 
 	/* No more bytes are expected for this packet */
 	if (ret == 0) {
-		zephyr_smp_reassembly_complete(&smp_bt_transport, false);
+		smp_reassembly_complete(&smp_bt_transport, false);
 	}
 
 	/* BT expects entire len to be consumed */
@@ -244,7 +244,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	struct smp_bt_user_data *ud;
 	struct net_buf *nb;
 
-	nb = mcumgr_buf_alloc();
+	nb = smp_packet_alloc();
 	if (!nb) {
 		LOG_DBG("failed net_buf alloc for SMP packet");
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
@@ -253,7 +253,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	if (net_buf_tailroom(nb) < len) {
 		LOG_DBG("SMP packet len (%" PRIu16 ") > net_buf len (%zu)",
 			len, net_buf_tailroom(nb));
-		mcumgr_buf_free(nb);
+		smp_packet_free(nb);
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
@@ -266,7 +266,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 		conn_param_smp_enable(conn);
 	}
 
-	zephyr_smp_rx_req(&smp_bt_transport, nb);
+	smp_rx_req(&smp_bt_transport, nb);
 
 	return len;
 #endif
@@ -275,13 +275,13 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 #ifdef CONFIG_MCUMGR_SMP_REASSEMBLY_BT
-	if (zephyr_smp_reassembly_expected(&smp_bt_transport) >= 0 && value == 0) {
-		struct smp_bt_user_data *ud = zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+	if (smp_reassembly_expected(&smp_bt_transport) >= 0 && value == 0) {
+		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
 
 		bt_conn_unref(ud->conn);
 		ud->conn = NULL;
 
-		zephyr_smp_reassembly_drop(&smp_bt_transport);
+		smp_reassembly_drop(&smp_bt_transport);
 	}
 #endif
 }
@@ -387,9 +387,26 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 		.data = nb->data,
 	};
 	bool sent = false;
+	struct bt_conn_info info;
 
 	conn = smp_bt_conn_from_pkt(nb);
 	if (conn == NULL) {
+		rc = MGMT_ERR_ENOENT;
+		goto cleanup;
+	}
+
+	/* Verify that the device is connected, the necessity for this check is that the remote
+	 * device might have sent a command and disconnected before the command has been processed
+	 * completely, if this happens then the the connection details will still be valid due to
+	 * the incremented connection reference count, but the connection has actually been
+	 * dropped, this avoids waiting for a semaphore that will never be given which would
+	 * otherwise cause a deadlock.
+	 */
+	rc = bt_conn_get_info(conn, &info);
+
+	if (rc != 0 || info.state != BT_CONN_STATE_CONNECTED) {
+		/* Remote device has disconnected */
+		bt_conn_unref(conn);
 		rc = MGMT_ERR_ENOENT;
 		goto cleanup;
 	}
@@ -414,7 +431,6 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 		notify_param.len = mtu_size;
 
 		rc = bt_gatt_notify_cb(conn, &notify_param);
-		k_sem_take(&smp_notify_sem, K_FOREVER);
 
 		if (rc == -ENOMEM) {
 			if (sent == false) {
@@ -443,7 +459,10 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 			off += mtu_size;
 			notify_param.data = &nb->data[off];
 			sent = true;
+
+			k_sem_take(&smp_notify_sem, K_FOREVER);
 		} else {
+			/* No connection, cannot continue */
 			rc = MGMT_ERR_EUNKNOWN;
 			break;
 		}
@@ -455,7 +474,7 @@ cleanup:
 	}
 
 	smp_bt_ud_free(net_buf_user_data(nb));
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return rc;
 }
@@ -515,9 +534,9 @@ static int smp_bt_init(const struct device *dev)
 		conn_param_control_init();
 	}
 
-	zephyr_smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
-				  smp_bt_get_mtu, smp_bt_ud_copy,
-				  smp_bt_ud_free);
+	smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
+			   smp_bt_get_mtu, smp_bt_ud_copy,
+			   smp_bt_ud_free);
 	return 0;
 }
 

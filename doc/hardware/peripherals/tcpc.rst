@@ -6,11 +6,11 @@ TCPC
 Overview
 ********
 
-`TCPC <tcpc-specification>`_ (USB Type-C Port Controller)
+`TCPC <tcpc-specification_>`_ (USB Type-C Port Controller)
 The TCPC is a device used to simplify the implementation of a USB-C system
 by providing the following three function:
 
-* VBUS and VCONN control `USB Type-C <usb-type-c-specification>`_:
+* VBUS and VCONN control `USB Type-C <usb-type-c-specification_>`_:
   The TCPC may provide a Source device, the mechanism to control VBUS sourcing,
   and a Sink device, the mechanism to control VBUS sinking. A similar mechanism
   is provided for the control of VCONN.
@@ -20,7 +20,7 @@ by providing the following three function:
   resistors. It also provides a way to sense and report what resistors are
   present on the CC pin.
 
-* Power Delivery message reception and transmission `USB Power Delivery <usb-pd-specification>`_:
+* Power Delivery message reception and transmission `USB Power Delivery <usb-pd-specification_>`_:
   The TCPC sends and receives messages constructed in the TCPM and places them
   on the CC lines.
 

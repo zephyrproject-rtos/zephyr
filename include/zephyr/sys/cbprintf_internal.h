@@ -91,10 +91,17 @@ extern "C" {
 #else
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic((x) + 0, \
+		/* char * */ \
 		char * : 1, \
 		const char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile char * : 1, \
 		const volatile char * : 1, \
+		/* unsigned char * */ \
+		unsigned char * : 1, \
+		const unsigned char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
+		volatile unsigned char * : 1, \
+		const volatile unsigned char * : 1,\
+		/* wchar_t * */ \
 		wchar_t * : 1, \
 		const wchar_t * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile wchar_t * : 1, \
@@ -171,15 +178,15 @@ extern "C" {
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
-	__auto_type _v = (v) + 0; \
+	__auto_type __v = (v) + 0; \
 	/* Static code analysis may complain about unused variable. */ \
-	(void)_v; \
-	size_t _arg_size = _Generic((v), \
+	(void)__v; \
+	size_t __arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
-			sizeof((_v)) \
+			sizeof((__v)) \
 		); \
-	_arg_size; \
+	__arg_size; \
 })
 #endif
 
@@ -305,6 +312,7 @@ do { \
 		if (_cros_en) { \
 			if (Z_CBPRINTF_IS_X_PCHAR(arg_idx, _arg, _flags)) { \
 				if (_rws_pos_en) { \
+					_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
 					_rws_buffer[_rws_pos_idx++] = _loc; \
 				} \
 			} else { \
@@ -313,6 +321,7 @@ do { \
 				} \
 			} \
 		} else if (_rws_pos_en) { \
+			_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
 			_rws_buffer[_rws_pos_idx++] = _idx / sizeof(int); \
 		} \
 	} \
@@ -417,7 +426,7 @@ do { \
 	uint8_t *_ros_pos_buf; \
 	Z_CBPRINTF_ON_STACK_ALLOC(_ros_pos_buf, _ros_cnt); \
 	uint8_t *_rws_buffer; \
-	Z_CBPRINTF_ON_STACK_ALLOC(_rws_buffer, _rws_cnt); \
+	Z_CBPRINTF_ON_STACK_ALLOC(_rws_buffer, 2 * _rws_cnt); \
 	size_t _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
 	int _pkg_len = 0; \
 	int _total_len = 0; \
@@ -441,14 +450,14 @@ do { \
 	_total_len = _pkg_len; \
 	/* Append string indexes to the package. */ \
 	_total_len += _ros_cnt; \
-	_total_len += _rws_cnt; \
+	_total_len += 2 * _rws_cnt; \
 	if (_pbuf != NULL) { \
 		/* Append string locations. */ \
 		uint8_t *_pbuf_loc = &_pbuf[_pkg_len]; \
 		for (size_t i = 0; i < _ros_cnt; i++) { \
 			*_pbuf_loc++ = _ros_pos_buf[i]; \
 		} \
-		for (size_t i = 0; i < _rws_cnt; i++) { \
+		for (size_t i = 0; i < (2 * _rws_cnt); i++) { \
 			*_pbuf_loc++ = _rws_buffer[i]; \
 		} \
 	} \

@@ -1,6 +1,7 @@
 # vim: set syntax=python ts=4 :
 #
 # Copyright (c) 2018-2022 Intel Corporation
+# Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -183,9 +184,8 @@ class TestInstance:
     # Global testsuite parameters
     def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[]):
 
-        # right now we only support building on windows. running is still work
-        # in progress.
-        if os.name == 'nt':
+        # running on simulators is currently not supported on Windows
+        if os.name == 'nt' and self.platform.simulation != 'na':
             return False
 
         # we asked for build-only on the command line

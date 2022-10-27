@@ -12,7 +12,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/snps-designware-gpio.h>
 #include "gpio_dw.h"
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
@@ -20,6 +20,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 
 #ifdef CONFIG_IOAPIC
 #include <zephyr/drivers/interrupt_controller/ioapic.h>

@@ -237,7 +237,7 @@ static int iis3dhhc_init(const struct device *dev)
 					    SPI_WORD_SET(8), 0U),				\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, iis3dhhc_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis3dhhc_init, NULL,					\
 			      &iis3dhhc_data_##inst, &iis3dhhc_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &iis3dhhc_api_funcs);		\
 

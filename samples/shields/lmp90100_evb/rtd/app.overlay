@@ -4,6 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&lmp90100 {
+&lmp90100_lmp90100_evb {
 	rtd-current = <1000>;
 };

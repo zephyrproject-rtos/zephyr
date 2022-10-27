@@ -6,6 +6,7 @@
 #define DT_DRV_COMPAT ite_it8xxx2_watchdog
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/irq.h>
 #include <errno.h>
 #include <soc.h>
 

@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
 
 #include "mgmt/mgmt.h"
-#include <zephyr/mgmt/mcumgr/buf.h>
-#include <zcbor_encode.h>
-#include <zcbor_common.h>
+#include "smp/smp.h"
 
 static mgmt_on_evt_cb evt_cb;
 static sys_slist_t mgmt_group_list =
@@ -63,25 +62,6 @@ void
 mgmt_register_group(struct mgmt_group *group)
 {
 	sys_slist_append(&mgmt_group_list, &group->node);
-}
-
-int
-mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
-{
-	bool ok;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
-
-	zcbor_tstr_put_lit(zse, "rc");
-	ok = zcbor_int32_put(zse, errcode);
-
-#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
-	if (ok && MGMT_CTXT_RC_RSN(ctxt) != NULL) {
-		ok = zcbor_tstr_put_lit(zse, "rsn")			&&
-		     zcbor_tstr_put_term(zse, MGMT_CTXT_RC_RSN(ctxt));
-	}
-#endif
-
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 void

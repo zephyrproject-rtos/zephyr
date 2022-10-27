@@ -1328,7 +1328,12 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 	 *	Offset and Length field are UINT32 Length
 	 */
 	CHECKIF(len > UINT32_MAX) {
-		BT_ERR("length exceed UINT32");
+		BT_ERR("length exceeds UINT32");
+		return -EINVAL;
+	}
+
+	CHECKIF(len == 0) {
+		BT_ERR("length equals zero");
 		return -EINVAL;
 	}
 
@@ -1337,16 +1342,28 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 		return -EINVAL;
 	}
 
+	CHECKIF(offset > otc_inst->cur_object.size.cur) {
+		BT_ERR("offset %ld exceeds cur size %zu", offset, otc_inst->cur_object.size.cur);
+		return -EINVAL;
+	}
+
+	CHECKIF((offset < otc_inst->cur_object.size.cur) &&
+		!BT_OTS_OBJ_GET_PROP_PATCH(otc_inst->cur_object.props)) {
+		BT_ERR("Patch is not supported");
+		return -EACCES;
+	}
+
+	CHECKIF(((len + offset) > otc_inst->cur_object.size.alloc) &&
+		!BT_OTS_OBJ_GET_PROP_APPEND(otc_inst->cur_object.props)) {
+		BT_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu."
+		, (len + offset), otc_inst->cur_object.size.alloc);
+		return -EINVAL;
+	}
+
 	inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 	if (!inst) {
 		BT_ERR("Invalid OTC instance");
-		return -EINVAL;
-	}
-
-	if ((len > (otc_inst->cur_object.size.alloc - otc_inst->cur_object.size.cur)) ||
-		len == 0) {
-		BT_ERR("Invalid write len: %zu", len);
 		return -EINVAL;
 	}
 

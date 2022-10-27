@@ -38,7 +38,7 @@ struct ll_adv_set {
 #endif
 	uint16_t event_counter;
 	uint16_t max_events;
-	uint32_t ticks_remain_duration;
+	uint32_t remain_duration_us;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	uint16_t interval;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
@@ -60,7 +60,7 @@ struct ll_adv_set {
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint32_t delay;
-	uint32_t delay_remain;
+	uint32_t delay_at_expire;
 	uint32_t ticks_at_expire;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 };

@@ -11,8 +11,8 @@ config REGULATOR_PMIC
 
 config PMIC_REGULATOR_INIT_PRIORITY
 	int "Regulator Init priority"
-	depends on REGULATOR_PMIC
 	default 75
+	depends on REGULATOR_PMIC
 	help
 	  I2C based regulator init priority.
 	  Must be greater than KERNEL_INIT_PRIORITY_DEVICE so I2C is initialized,

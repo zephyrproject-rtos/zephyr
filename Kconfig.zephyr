@@ -266,6 +266,32 @@ config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 
 	  If unsure, say Y.
 
+config LINKER_LAST_SECTION_ID
+	bool "Last section identifier"
+	default y
+	depends on ARM || ARM64 || RISCV
+	help
+	  If enabled, the last section will contain an identifier.
+	  This ensures that the '_flash_used' linker symbol will always be
+	  correctly calculated, even in cases where the location counter may
+	  have been incremented for alignment purposes but no data is placed
+	  after alignment.
+
+	  Note: in cases where the flash is fully used, for example application
+	  specific data is written at the end of the flash area, then writing a
+	  last section identifier may cause rom region overflow.
+	  In such cases this setting should be disabled.
+
+config LINKER_LAST_SECTION_ID_PATTERN
+	hex "Last section identifier pattern"
+	default "0xE015E015"
+	depends on LINKER_LAST_SECTION_ID
+	help
+	  Pattern to fill into last section as identifier.
+	  Default pattern is 0xE015 (end of last section), but any pattern can
+	  be used.
+	  The size of the pattern must not exceed 4 bytes.
+
 endmenu # "Linker Sections"
 
 endmenu

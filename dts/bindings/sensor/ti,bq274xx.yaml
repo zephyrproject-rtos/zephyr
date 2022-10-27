@@ -8,7 +8,7 @@ description: Texas Instruments BQ274xx Fuel Gauge
 
 compatible: "ti,bq274xx"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     design-voltage:

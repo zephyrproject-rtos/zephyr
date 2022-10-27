@@ -5,7 +5,7 @@ description: FXAS21002 3-axis gyroscope sensor
 
 compatible: "nxp,fxas21002"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int1-gpios:

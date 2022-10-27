@@ -8,9 +8,21 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <host/hci_core.h>
+#include <zephyr/fff.h>
 #include "mocks/net_buf.h"
 #include "mocks/net_buf_expects.h"
 #include "mocks/buf_help_utils.h"
+
+DEFINE_FFF_GLOBALS;
+
+static void tc_setup(void *f)
+{
+	/* Register resets */
+	NET_BUF_FFF_FAKES_LIST(RESET_FAKE);
+}
+
+ZTEST_SUITE(bt_buf_get_cmd_complete_returns_not_null, NULL, NULL, tc_setup, NULL, NULL);
+ZTEST_SUITE(bt_buf_get_cmd_complete_returns_null, NULL, NULL, tc_setup, NULL, NULL);
 
 /*
  *  Return value from bt_buf_get_cmd_complete() should be NULL
@@ -28,7 +40,7 @@
  *   - bt_dev.sent_cmd value isn't changed after calling bt_buf_get_cmd_complete()
  *   - bt_buf_get_cmd_complete() returns NULL
  */
-void test_returns_null_sent_cmd_is_null(void)
+ZTEST(bt_buf_get_cmd_complete_returns_null, test_returns_null_sent_cmd_is_null)
 {
 	struct net_buf *returned_buf;
 	struct net_buf *sent_cmd_not_changing_value;
@@ -75,7 +87,7 @@ void test_returns_null_sent_cmd_is_null(void)
  *   - bt_buf_get_cmd_complete() returns the same value returned by net_buf_alloc_fixed()
  *   - Return buffer type is set to BT_BUF_EVT
  */
-void test_returns_not_null_sent_cmd_is_null(void)
+ZTEST(bt_buf_get_cmd_complete_returns_not_null, test_returns_not_null_sent_cmd_is_null)
 {
 	static struct net_buf expected_buf;
 	struct net_buf *returned_buf;
@@ -127,7 +139,7 @@ void test_returns_not_null_sent_cmd_is_null(void)
  *   - bt_buf_get_cmd_complete() returns the same value set to bt_dev.sent_cmd
  *   - Return buffer type is set to BT_BUF_EVT
  */
-void test_returns_not_null_sent_cmd_is_not_null(void)
+ZTEST(bt_buf_get_cmd_complete_returns_not_null, test_returns_not_null_sent_cmd_is_not_null)
 {
 	static struct net_buf expected_buf;
 	struct net_buf *returned_buf;
@@ -156,30 +168,4 @@ void test_returns_not_null_sent_cmd_is_not_null(void)
 
 	zassert_equal(bt_dev.sent_cmd, sent_cmd_not_changing_value,
 		     "bt_buf_get_cmd_complete() caused bt_dev.sent_cmd value to be changed");
-}
-
-/* Setup test variables */
-static void unit_test_setup(void)
-{
-	/* Register resets */
-	NET_BUF_FFF_FAKES_LIST(RESET_FAKE);
-}
-
-void test_main(void)
-{
-
-	ztest_test_suite(
-		bt_buf_get_cmd_complete_returns_not_null,
-		ztest_unit_test_setup(test_returns_not_null_sent_cmd_is_null, unit_test_setup),
-		ztest_unit_test_setup(test_returns_not_null_sent_cmd_is_not_null, unit_test_setup)
-		);
-
-	ztest_run_test_suite(bt_buf_get_cmd_complete_returns_not_null);
-
-	ztest_test_suite(
-		bt_buf_get_cmd_complete_returns_null,
-		ztest_unit_test_setup(test_returns_null_sent_cmd_is_null, unit_test_setup)
-		);
-
-	ztest_run_test_suite(bt_buf_get_cmd_complete_returns_null);
 }

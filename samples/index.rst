@@ -8,6 +8,7 @@ Samples and Demos
    :maxdepth: 2
    :glob:
 
+   sample_definition_and_criteria
    classic
    basic/*
    userspace/*

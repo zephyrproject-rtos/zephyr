@@ -7,7 +7,7 @@
 &arduino_spi {
 	status = "okay";
 
-	lmp90100: lmp90100@0 {
+	lmp90100_lmp90100_evb: lmp90100@0 {
 		compatible = "ti,lmp90100";
 		reg = <0x0>;
 		spi-max-frequency = <1000000>;
@@ -28,7 +28,7 @@
 &arduino_i2c {
 	status = "okay";
 
-	eeprom0: eeprom@57 {
+	eeprom0_lmp90100_evb: eeprom@57 {
 		compatible = "atmel,at24";
 		reg = <0x57>;
 		size = <256>;

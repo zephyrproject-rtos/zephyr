@@ -210,9 +210,8 @@ of the build folder and run ``cmake`` and then ``ninja`` again.
 
    If you add or remove a file from the documentation, you need to re-run CMake.
 
-On Unix platforms a convenience :zephyr_file:`Makefile` at the ``doc`` folder
-of the Zephyr repository can be used to build the documentation directly from
-there:
+On Unix platforms a convenience :zephyr_file:`doc/Makefile` can be used to
+build the documentation directly from there:
 
 .. code-block:: console
 

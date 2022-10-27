@@ -8,7 +8,7 @@
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 
-	dac80508: dac80508@0 {
+	dac80508_dac80508_evm: dac80508@0 {
 		compatible = "ti,dac80508";
 		reg = <0x0>;
 		spi-max-frequency = <1000000>;

@@ -16,6 +16,7 @@
 #define LOG_LEVEL	CONFIG_LWM2M_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/ring_buffer.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_engine.h"
@@ -29,6 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <zephyr/types.h>
 
@@ -61,6 +63,10 @@ sys_slist_t *lwm2m_engine_obj_list(void) { return &engine_obj_list; }
 
 sys_slist_t *lwm2m_engine_obj_inst_list(void) { return &engine_obj_inst_list; }
 
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field, const char *pathstr,
+				     const void *value, uint16_t len);
+#endif
 /* Engine object */
 
 void lwm2m_register_obj(struct lwm2m_engine_obj *obj)
@@ -473,7 +479,20 @@ int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data
 	return lwm2m_engine_set_res_buf(pathstr, data_ptr, data_len, data_len, data_flags);
 }
 
-static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
+static bool lwm2m_validate_time_resource_lenghts(uint16_t resource_length, uint16_t buf_length)
+{
+	if (resource_length != sizeof(time_t) && resource_length != sizeof(uint32_t)) {
+		return false;
+	}
+
+	if (buf_length != sizeof(time_t) && buf_length != sizeof(uint32_t)) {
+		return false;
+	}
+
+	return true;
+}
+
+static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len)
 {
 	struct lwm2m_obj_path path;
 	struct lwm2m_engine_obj_inst *obj_inst;
@@ -551,7 +570,7 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 #if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 	if (res->validate_cb) {
 		ret = res->validate_cb(obj_inst->obj_inst_id, res->res_id, res_inst->res_inst_id,
-				       value, len, false, 0);
+				       (uint8_t *)value, len, false, 0);
 		if (ret < 0) {
 			k_mutex_unlock(&registry_lock);
 			return -EINVAL;
@@ -571,7 +590,6 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 		break;
 
 	case LWM2M_RES_TYPE_U32:
-	case LWM2M_RES_TYPE_TIME:
 		*((uint32_t *)data_ptr) = *(uint32_t *)value;
 		break;
 
@@ -581,6 +599,32 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 
 	case LWM2M_RES_TYPE_U8:
 		*((uint8_t *)data_ptr) = *(uint8_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_TIME:
+		if (!lwm2m_validate_time_resource_lenghts(max_data_len, len)) {
+			LOG_ERR("Time Set: buffer length %u  max data len %u not supported", len,
+				max_data_len);
+			return -EINVAL;
+		}
+
+		if (max_data_len == sizeof(time_t)) {
+			if (len == sizeof(time_t)) {
+				*((time_t *)data_ptr) = *(time_t *)value;
+			} else {
+				*((time_t *)data_ptr) = (time_t) *((uint32_t *)value);
+			}
+		} else {
+			LOG_WRN("Converting time to 32bit may cause integer overflow on resource "
+				"%s",
+				pathstr);
+			if (len == sizeof(uint32_t)) {
+				*((uint32_t *)data_ptr) = *(uint32_t *)value;
+			} else {
+				*((uint32_t *)data_ptr) = (uint32_t) *((time_t *)value);
+			}
+		}
+
 		break;
 
 	case LWM2M_RES_TYPE_S64:
@@ -619,6 +663,11 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 
 	res_inst->data_len = len;
 
+	/* Cache Data Write */
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	lwm2m_engine_cache_write(obj_field, pathstr, value, len);
+#endif
+
 	if (res->post_write_cb) {
 		ret = res->post_write_cb(obj_inst->obj_inst_id, res->res_id, res_inst->res_inst_id,
 					 data_ptr, len, false, 0);
@@ -631,12 +680,12 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 	return ret;
 }
 
-int lwm2m_engine_set_opaque(const char *pathstr, char *data_ptr, uint16_t data_len)
+int lwm2m_engine_set_opaque(const char *pathstr, const char *data_ptr, uint16_t data_len)
 {
 	return lwm2m_engine_set(pathstr, data_ptr, data_len);
 }
 
-int lwm2m_engine_set_string(const char *pathstr, char *data_ptr)
+int lwm2m_engine_set_string(const char *pathstr, const char *data_ptr)
 {
 	return lwm2m_engine_set(pathstr, data_ptr, strlen(data_ptr));
 }
@@ -688,14 +737,19 @@ int lwm2m_engine_set_bool(const char *pathstr, bool value)
 	return lwm2m_engine_set(pathstr, &temp, 1);
 }
 
-int lwm2m_engine_set_float(const char *pathstr, double *value)
+int lwm2m_engine_set_float(const char *pathstr, const double *value)
 {
 	return lwm2m_engine_set(pathstr, value, sizeof(double));
 }
 
-int lwm2m_engine_set_objlnk(const char *pathstr, struct lwm2m_objlnk *value)
+int lwm2m_engine_set_objlnk(const char *pathstr, const struct lwm2m_objlnk *value)
 {
 	return lwm2m_engine_set(pathstr, value, sizeof(struct lwm2m_objlnk));
+}
+
+int lwm2m_engine_set_time(const char *pathstr, time_t value)
+{
+	return lwm2m_engine_set(pathstr, &value, sizeof(time_t));
 }
 
 int lwm2m_engine_set_res_data_len(const char *pathstr, uint16_t data_len)
@@ -835,8 +889,34 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 			break;
 
 		case LWM2M_RES_TYPE_U32:
-		case LWM2M_RES_TYPE_TIME:
 			*(uint32_t *)buf = *(uint32_t *)data_ptr;
+			break;
+		case LWM2M_RES_TYPE_TIME:
+			if (!lwm2m_validate_time_resource_lenghts(data_len, buflen)) {
+				LOG_ERR("Time get buffer length %u  data len %u not supported",
+					buflen, data_len);
+				return -EINVAL;
+			}
+
+			if (data_len == sizeof(time_t)) {
+				if (buflen == sizeof(time_t)) {
+					*((time_t *)buf) = *(time_t *)data_ptr;
+				} else {
+					/* In this case get operation may not got correct value */
+					LOG_WRN("Converting time to 32bit may cause integer "
+						"overflow:%s",
+						pathstr);
+					*((uint32_t *)buf) = (uint32_t) *((time_t *)data_ptr);
+				}
+			} else {
+				LOG_WRN("Converting time to 32bit may cause integer overflow:%s",
+					pathstr);
+				if (buflen == sizeof(uint32_t)) {
+					*((uint32_t *)buf) = *(uint32_t *)data_ptr;
+				} else {
+					*((time_t *)buf) = (time_t) *((uint32_t *)data_ptr);
+				}
+			}
 			break;
 
 		case LWM2M_RES_TYPE_U16:
@@ -956,6 +1036,11 @@ int lwm2m_engine_get_float(const char *pathstr, double *buf)
 int lwm2m_engine_get_objlnk(const char *pathstr, struct lwm2m_objlnk *buf)
 {
 	return lwm2m_engine_get(pathstr, buf, sizeof(struct lwm2m_objlnk));
+}
+
+int lwm2m_engine_get_time(const char *pathstr, time_t *buf)
+{
+	return lwm2m_engine_get(pathstr, buf, sizeof(time_t));
 }
 
 int lwm2m_engine_get_resource(const char *pathstr, struct lwm2m_engine_res **res)
@@ -1343,4 +1428,336 @@ bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj)
 	}
 
 	return obj->version_major != 1 || obj->version_minor != 0;
+}
+
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+static sys_slist_t lwm2m_timed_cache_list;
+static struct lwm2m_time_series_resource lwm2m_cache_entries[CONFIG_LWM2M_MAX_CACHED_RESOURCES];
+
+static void lwm2m_cache_add_path_to_list(struct lwm2m_time_series_resource *new_entry)
+{
+	struct lwm2m_time_series_resource *prev = NULL;
+	struct lwm2m_time_series_resource *entry;
+
+	if (!sys_slist_is_empty(&lwm2m_timed_cache_list)) {
+
+		/* Keep list Alphabetical order */
+		SYS_SLIST_FOR_EACH_CONTAINER(&lwm2m_timed_cache_list, entry, node) {
+
+			if (strcmp(entry->path, new_entry->path) < 0) {
+				/* Current entry have  */
+				prev = entry;
+				continue;
+			}
+
+			if (prev) {
+				sys_slist_insert(&lwm2m_timed_cache_list, &prev->node,
+						 &new_entry->node);
+			} else {
+				sys_slist_prepend(&lwm2m_timed_cache_list, &new_entry->node);
+			}
+			return;
+		}
+	}
+
+	/* Add First or new tail entry */
+	sys_slist_append(&lwm2m_timed_cache_list, &new_entry->node);
+}
+
+static struct lwm2m_time_series_resource *lwm2m_cache_entry_allocate(char const *resource_path)
+{
+	int i;
+	struct lwm2m_time_series_resource *entry;
+
+	entry = lwm2m_cache_entry_get_by_string(resource_path);
+	if (entry) {
+		return entry;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(lwm2m_cache_entries); i++) {
+		if (lwm2m_cache_entries[i].path == NULL) {
+			lwm2m_cache_entries[i].path = resource_path;
+			lwm2m_cache_add_path_to_list(&lwm2m_cache_entries[i]);
+			return &lwm2m_cache_entries[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field, const char *pathstr,
+				     const void *value, uint16_t len)
+{
+	struct lwm2m_time_series_resource *cache_entry;
+	struct lwm2m_time_series_elem elements;
+
+	cache_entry = lwm2m_cache_entry_get_by_string(pathstr);
+	if (!cache_entry) {
+		return;
+	}
+
+	elements.t = time(NULL);
+
+	if (elements.t  <= 0) {
+		LOG_WRN("Time() not available");
+		return;
+	}
+
+	switch (obj_field->data_type) {
+	case LWM2M_RES_TYPE_U32:
+		elements.u32 = *(uint32_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_U16:
+		elements.u16 = *(uint16_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_U8:
+		elements.u8 = *(uint8_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_S64:
+		elements.i64 = *(int64_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_TIME:
+		if (len == sizeof(time_t)) {
+			elements.time = *(time_t *)value;
+		} else if (len == sizeof(uint32_t)) {
+			elements.time = (time_t) *((uint32_t *)value);
+		} else {
+			LOG_ERR("Not supporting size %d bytes for time", len);
+			return;
+		}
+		break;
+
+	case LWM2M_RES_TYPE_S32:
+		elements.i32 = *(int32_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_S16:
+		elements.i16 = *(int16_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_S8:
+		elements.i8 = *(int8_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_BOOL:
+		elements.b = *(bool *)value;
+		break;
+
+	default:
+		elements.f = *(double *)value;
+		break;
+	}
+
+	if (!lwm2m_cache_write(cache_entry, &elements)) {
+		LOG_WRN("Data cache full");
+	}
+}
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+
+struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_string(char const *resource_path)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	if (!sys_slist_is_empty(&lwm2m_timed_cache_list)) {
+		int ret;
+		struct lwm2m_time_series_resource *entry;
+
+		/* Keep list Alphabetical order */
+		SYS_SLIST_FOR_EACH_CONTAINER(&lwm2m_timed_cache_list, entry, node) {
+			ret = strcmp(entry->path, resource_path);
+			if (ret == 0) {
+				return entry;
+			} else if (ret > 0) {
+				return NULL;
+			}
+		}
+	}
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+	return NULL;
+}
+
+struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_object(struct lwm2m_obj_path *obj_path)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	char obj_path_str[25];
+	char const *resource_path;
+
+	if (!obj_path || obj_path->level < LWM2M_PATH_LEVEL_RESOURCE) {
+		LOG_ERR("Path level wrong for cache %u", obj_path->level);
+		return NULL;
+	}
+
+	/* Decode path to string */
+	resource_path = lwm2m_path_log_buf(obj_path_str, obj_path);
+
+	return lwm2m_cache_entry_get_by_string(resource_path);
+#else
+	return NULL;
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+}
+
+int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
+			    size_t cache_len)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	struct lwm2m_obj_path path;
+	struct lwm2m_engine_obj_inst *obj_inst;
+	struct lwm2m_engine_obj_field *obj_field;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
+	struct lwm2m_time_series_resource *cache_entry;
+	int ret = 0;
+	size_t cache_entry_size = sizeof(struct lwm2m_time_series_elem);
+
+	/* translate path -> path_obj */
+	ret = lwm2m_string_to_path(resource_path, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (path.level < 3) {
+		LOG_ERR("path must have at least 3 parts");
+		return -EINVAL;
+	}
+
+	/* look up resource obj */
+	ret = path_to_objs(&path, &obj_inst, &obj_field, NULL, &res_inst);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!res_inst) {
+		LOG_ERR("res instance %d not found", path.res_inst_id);
+		return -ENOENT;
+	}
+
+	switch (obj_field->data_type) {
+	case LWM2M_RES_TYPE_U32:
+	case LWM2M_RES_TYPE_TIME:
+	case LWM2M_RES_TYPE_U16:
+	case LWM2M_RES_TYPE_U8:
+	case LWM2M_RES_TYPE_S64:
+	case LWM2M_RES_TYPE_S32:
+	case LWM2M_RES_TYPE_S16:
+	case LWM2M_RES_TYPE_S8:
+	case LWM2M_RES_TYPE_BOOL:
+	case LWM2M_RES_TYPE_FLOAT:
+		/* Support only fixed width resource types */
+		cache_entry = lwm2m_cache_entry_allocate(resource_path);
+		break;
+	default:
+		cache_entry = NULL;
+		break;
+	}
+
+	if (!cache_entry) {
+		return -ENODATA;
+	}
+
+	ring_buf_init(&cache_entry->rb, cache_entry_size * cache_len, (uint8_t *)data_cache);
+
+	return 0;
+#else
+	LOG_ERR("LwM2M resource cache is only supported for "
+		"CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT");
+	return -ENOTSUP;
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+}
+
+int lwm2m_engine_data_cache_init(void)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	int i;
+
+	sys_slist_init(&lwm2m_timed_cache_list);
+
+	for (i = 0; i < ARRAY_SIZE(lwm2m_cache_entries); i++) {
+		lwm2m_cache_entries[i].path = NULL;
+	}
+#endif
+	return 0;
+}
+
+bool lwm2m_cache_write(struct lwm2m_time_series_resource *cache_entry,
+		       struct lwm2m_time_series_elem *buf)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	uint32_t length;
+	uint8_t *buf_ptr;
+	uint32_t element_size = sizeof(struct lwm2m_time_series_elem);
+
+	if (ring_buf_space_get(&cache_entry->rb) < element_size) {
+		/* No space  */
+		if (IS_ENABLED(CONFIG_LWM2M_CACHE_DROP_LATEST)) {
+			return false;
+		}
+		/* Free entry */
+		length = ring_buf_get_claim(&cache_entry->rb, &buf_ptr, element_size);
+		ring_buf_get_finish(&cache_entry->rb, length);
+	}
+
+	length = ring_buf_put_claim(&cache_entry->rb, &buf_ptr, element_size);
+
+	if (length != element_size) {
+		ring_buf_put_finish(&cache_entry->rb, 0);
+		LOG_ERR("Allocation failed %u", length);
+		return false;
+	}
+
+	ring_buf_put_finish(&cache_entry->rb, length);
+	/* Store data */
+	memcpy(buf_ptr, buf, element_size);
+	return true;
+#else
+	return NULL;
+#endif
+}
+
+bool lwm2m_cache_read(struct lwm2m_time_series_resource *cache_entry,
+		      struct lwm2m_time_series_elem *buf)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	uint32_t length;
+	uint8_t *buf_ptr;
+	uint32_t element_size = sizeof(struct lwm2m_time_series_elem);
+
+	if (ring_buf_is_empty(&cache_entry->rb)) {
+		return false;
+	}
+
+	length = ring_buf_get_claim(&cache_entry->rb, &buf_ptr, element_size);
+
+	if (length != element_size) {
+		LOG_ERR("Cache read fail %u", length);
+		ring_buf_get_finish(&cache_entry->rb, 0);
+		return false;
+	}
+
+	/* Read Data */
+	memcpy(buf, buf_ptr, element_size);
+	ring_buf_get_finish(&cache_entry->rb, length);
+	return true;
+
+#else
+	return NULL;
+#endif
+}
+
+size_t lwm2m_cache_size(struct lwm2m_time_series_resource *cache_entry)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	uint32_t bytes_available;
+
+	if (ring_buf_is_empty(&cache_entry->rb)) {
+		return 0;
+	}
+
+	bytes_available = ring_buf_size_get(&cache_entry->rb);
+
+	return (bytes_available / sizeof(struct lwm2m_time_series_elem));
+#else
+	return 0;
+#endif
 }

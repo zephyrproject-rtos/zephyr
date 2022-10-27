@@ -12,6 +12,7 @@
 #include <zephyr/types.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 
 #define BMA280_REG_CHIP_ID		0x00
 #if DT_INST_PROP(0, is_bmc150)

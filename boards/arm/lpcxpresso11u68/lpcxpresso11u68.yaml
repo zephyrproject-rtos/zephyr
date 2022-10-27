@@ -7,7 +7,6 @@ toolchain:
 supported:
   - arduino_serial
   - clock_controller
-  - pinmux
   - gpio
   - i2c
   - serial

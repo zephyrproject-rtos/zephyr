@@ -42,6 +42,7 @@ LOG_MODULE_REGISTER(spi_dw);
 #endif
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/irq.h>
 
 #include "spi_dw.h"
 #include "spi_context.h"

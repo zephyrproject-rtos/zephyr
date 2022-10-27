@@ -7,4 +7,4 @@ description: |
 
 compatible: "bosch,bmm150"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

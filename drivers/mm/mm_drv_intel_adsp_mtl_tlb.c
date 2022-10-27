@@ -34,7 +34,6 @@
 
 #include <soc.h>
 #include <adsp_memory.h>
-#include <ace_v1x-regs.h>
 
 #include "mm_drv_common.h"
 
@@ -187,7 +186,7 @@ static uint16_t tlb_perms_to_flags(uint16_t perms)
 static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocking)
 {
 #if defined(CONFIG_SOC_SERIES_INTEL_ACE)
-	if (bank_idx > mtl_hpsram_get_bank_count()) {
+	if (bank_idx > ace_hpsram_get_bank_count()) {
 		return -1;
 	}
 

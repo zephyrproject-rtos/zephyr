@@ -30,9 +30,9 @@ typedef void (*fsm_state)(void);
 static int64_t last_mode_change;
 
 static const struct device *const sensors[] = {
-	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_l)),
-	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_c)),
-	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_r)),
+	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_l_x_nucleo_53l0a1)),
+	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_c_x_nucleo_53l0a1)),
+	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_r_x_nucleo_53l0a1)),
 };
 
 static void mode_show_distance(void)

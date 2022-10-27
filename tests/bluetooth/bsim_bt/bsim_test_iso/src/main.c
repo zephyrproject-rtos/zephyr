@@ -86,7 +86,7 @@ static struct bt_iso_chan bis_iso_chan = {
 
 #define BIS_ISO_CHAN_COUNT 1
 static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
-static uint32_t seq_num;
+static uint16_t seq_num;
 
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
@@ -106,12 +106,13 @@ static isoal_status_t test_sink_sdu_alloc(const struct isoal_sink    *sink_ctx,
 }
 
 
-static isoal_status_t test_sink_sdu_emit(const struct isoal_sink         *sink_ctx,
-					 const struct isoal_sdu_produced *valid_sdu)
+static isoal_status_t test_sink_sdu_emit(const struct isoal_sink             *sink_ctx,
+					 const struct isoal_emitted_sdu_frag *sdu_frag,
+					 const struct isoal_emitted_sdu      *sdu)
 {
-	printk("Vendor sink SDU len %u, seq_num %u, ts %u\n",
-		sink_ctx->sdu_production.sdu_written, valid_sdu->seqn,
-		valid_sdu->timestamp);
+	printk("Vendor sink SDU fragment size %u / %u, seq_num %u, ts %u\n",
+		sdu_frag->sdu_frag_size, sdu->total_sdu_size, sdu_frag->sdu.seqn,
+		sdu_frag->sdu.timestamp);
 	is_iso_vs_emitted = true;
 
 	return ISOAL_STATUS_OK;

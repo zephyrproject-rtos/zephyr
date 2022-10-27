@@ -152,7 +152,8 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	 * logic views it as one "job") and cause other test failures.
 	 */
 	dt = k_uptime_get_32() - start_ms;
-	zassert_true(dt < 3000, "1cpu test took too long (%d ms)", dt);
+	zassert_true(dt < CONFIG_ZTEST_CPU_HOLD_TIME_MS,
+		     "1cpu test took too long (%d ms)", dt);
 	arch_irq_unlock(key);
 }
 
@@ -291,6 +292,15 @@ static inline const char *get_friendly_phase_name(enum ztest_phase phase)
 	}
 }
 
+static bool current_test_failed_assumption;
+void ztest_skip_failed_assumption(void)
+{
+	if (IS_ENABLED(CONFIG_ZTEST_FAIL_ON_ASSUME)) {
+		current_test_failed_assumption = true;
+	}
+	ztest_test_skip();
+}
+
 #ifndef KERNEL
 
 /* Static code analysis tool can raise a violation that the standard header
@@ -325,7 +335,7 @@ void ztest_test_fail(void)
 	case TEST_PHASE_AFTER:
 	case TEST_PHASE_TEARDOWN:
 	case TEST_PHASE_FRAMEWORK:
-		PRINT(" ERROR: cannot fail in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		longjmp(stack_fail, 1);
 	}
@@ -336,7 +346,8 @@ void ztest_test_pass(void)
 	if (phase == TEST_PHASE_TEST) {
 		longjmp(test_pass, 1);
 	}
-	PRINT(" ERROR: cannot pass in test '%s()', bailing\n", get_friendly_phase_name(phase));
+	PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
+	      get_friendly_phase_name(phase));
 	longjmp(stack_fail, 1);
 }
 
@@ -348,7 +359,7 @@ void ztest_test_skip(void)
 	case TEST_PHASE_TEST:
 		longjmp(test_skip, 1);
 	default:
-		PRINT(" ERROR: cannot skip in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		longjmp(stack_fail, 1);
 	}
@@ -399,6 +410,9 @@ out:
 
 	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
+	if (ret == TC_SKIP && current_test_failed_assumption) {
+		test_status = 1;
+	}
 
 	return ret;
 }
@@ -436,7 +450,7 @@ void ztest_test_fail(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot fail in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
@@ -451,7 +465,7 @@ void ztest_test_pass(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot pass in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		if (phase == TEST_PHASE_BEFORE) {
@@ -472,7 +486,7 @@ void ztest_test_skip(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot skip in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
@@ -509,6 +523,9 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 {
 	int ret = TC_PASS;
 
+#if CONFIG_ZTEST_TEST_DELAY_MS > 0
+	k_busy_wait(CONFIG_ZTEST_TEST_DELAY_MS * USEC_PER_MSEC);
+#endif
 	TC_START(test->name);
 
 	phase = TEST_PHASE_BEFORE;
@@ -576,6 +593,9 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 
 	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
+	if (ret == TC_SKIP && current_test_failed_assumption) {
+		test_status = 1;
+	}
 
 	return ret;
 }
@@ -610,17 +630,22 @@ struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_un
 #ifdef CONFIG_ZTEST_SHUFFLE
 static void z_ztest_shuffle(void *dest[], intptr_t start, size_t num_items, size_t element_size)
 {
+	void *tmp;
+
+	/* Initialize dest array */
 	for (size_t i = 0; i < num_items; ++i) {
-		int pos = sys_rand32_get() % num_items;
-		const int start_pos = pos;
+		dest[i] = (void *)(start + (i * element_size));
+	}
 
-		/* Get the next valid position */
-		while (dest[pos] != NULL) {
-			pos = (pos + 1) % num_items;
-			__ASSERT_NO_MSG(pos != start_pos);
+	/* Shuffle dest array */
+	for (size_t i = num_items - 1; i > 0; i--) {
+		int j = sys_rand32_get() % (i + 1);
+
+		if (i != j) {
+			tmp = dest[j];
+			dest[j] = dest[i];
+			dest[i] = tmp;
 		}
-
-		dest[pos] = (void *)(start + (i * element_size));
 	}
 }
 #endif /* CONFIG_ZTEST_SHUFFLE */
@@ -653,6 +678,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 #endif
 
 	TC_SUITE_START(suite->name);
+	current_test_failed_assumption = false;
 	test_result = ZTEST_RESULT_PENDING;
 	phase = TEST_PHASE_SETUP;
 #ifndef KERNEL

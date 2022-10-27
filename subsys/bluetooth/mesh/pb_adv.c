@@ -238,7 +238,7 @@ static void close_link(enum prov_bearer_link_status reason)
 	void *cb_data = link.cb_data;
 
 	reset_adv_link();
-	cb->link_closed(&pb_adv, cb_data, reason);
+	cb->link_closed(&bt_mesh_pb_adv, cb_data, reason);
 }
 
 static struct net_buf *adv_buf_create(uint8_t retransmits)
@@ -270,7 +270,7 @@ static bool ack_pending(void)
 static void prov_failed(uint8_t err)
 {
 	BT_DBG("%u", err);
-	link.cb->error(&pb_adv, link.cb_data, err);
+	link.cb->error(&bt_mesh_pb_adv, link.cb_data, err);
 	atomic_set_bit(link.flags, ADV_LINK_INVALID);
 }
 
@@ -292,7 +292,7 @@ static void prov_msg_recv(void)
 		return;
 	}
 
-	link.cb->recv(&pb_adv, link.cb_data, link.rx.buf);
+	link.cb->recv(&bt_mesh_pb_adv, link.cb_data, link.rx.buf);
 }
 
 static void protocol_timeout(struct k_work *work)
@@ -786,7 +786,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
-	link.cb->link_opened(&pb_adv, link.cb_data);
+	link.cb->link_opened(&bt_mesh_pb_adv, link.cb_data);
 }
 
 static void link_ack(struct prov_rx *rx, struct net_buf_simple *buf)
@@ -800,7 +800,7 @@ static void link_ack(struct prov_rx *rx, struct net_buf_simple *buf)
 
 		prov_clear_tx();
 
-		link.cb->link_opened(&pb_adv, link.cb_data);
+		link.cb->link_opened(&bt_mesh_pb_adv, link.cb_data);
 	}
 }
 
@@ -912,18 +912,18 @@ static void prov_link_close(enum prov_bearer_link_status status)
 	bearer_ctl_send_unacked(ctl_buf_create(LINK_CLOSE, &status, 1, RETRANSMITS_LINK_CLOSE));
 }
 
-void pb_adv_init(void)
+void bt_mesh_pb_adv_init(void)
 {
 	k_work_init_delayable(&link.prot_timer, protocol_timeout);
 	k_work_init_delayable(&link.tx.retransmit, prov_retransmit);
 }
 
-void pb_adv_reset(void)
+void bt_mesh_pb_adv_reset(void)
 {
 	reset_adv_link();
 }
 
-const struct prov_bearer pb_adv = {
+const struct prov_bearer bt_mesh_pb_adv = {
 	.type = BT_MESH_PROV_ADV,
 	.link_open = prov_link_open,
 	.link_accept = prov_link_accept,

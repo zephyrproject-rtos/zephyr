@@ -355,8 +355,8 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	max_tx_time = lll->max_tx_time;
 	max_rx_time = lll->max_rx_time;
 #else
-	max_tx_time = lll->dle.local.max_tx_time;
-	max_rx_time = lll->dle.local.max_rx_time;
+	max_tx_time = lll->dle.eff.max_tx_time;
+	max_rx_time = lll->dle.eff.max_rx_time;
 #endif
 #else /* !CONFIG_BT_CTLR_PHY */
 	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);

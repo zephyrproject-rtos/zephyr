@@ -33,15 +33,15 @@ static void run_on_cpu_threadfn(void *a, void *b, void *c)
 static struct k_thread thread_har;
 static K_THREAD_STACK_DEFINE(tstack_har, HAR_STACKSZ);
 
-static struct k_thread run_on_threads[CONFIG_MP_NUM_CPUS];
-static K_THREAD_STACK_ARRAY_DEFINE(run_on_stacks, CONFIG_MP_NUM_CPUS, RUN_ON_STACKSZ);
-static volatile bool run_on_flags[CONFIG_MP_NUM_CPUS];
+static struct k_thread run_on_threads[CONFIG_MP_MAX_NUM_CPUS];
+static K_THREAD_STACK_ARRAY_DEFINE(run_on_stacks, CONFIG_MP_MAX_NUM_CPUS, RUN_ON_STACKSZ);
+static volatile bool run_on_flags[CONFIG_MP_MAX_NUM_CPUS];
 
-static uint32_t clk_ratios[CONFIG_MP_NUM_CPUS];
+static uint32_t clk_ratios[CONFIG_MP_MAX_NUM_CPUS];
 
 static void run_on_cpu(int cpu, void (*fn)(void *), void *arg, bool wait)
 {
-	__ASSERT_NO_MSG(cpu < CONFIG_MP_NUM_CPUS);
+	__ASSERT_NO_MSG(cpu < arch_num_cpus());
 
 	/* Highest priority isn't actually guaranteed to preempt
 	 * whatever's running, but we assume the test hasn't laid
@@ -139,7 +139,9 @@ static void core_smoke(void *arg)
 
 ZTEST(intel_adsp_boot, test_4th_cpu_behavior)
 {
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		printk("Per-CPU smoke test %d...\n", i);
 		run_on_cpu(i, core_smoke, (void *)i, true);
 	}
@@ -154,7 +156,7 @@ static void halt_and_restart(int cpu)
 {
 	printk("halt/restart core %d...\n", cpu);
 	static bool alive_flag;
-	uint32_t all_cpus = BIT(CONFIG_MP_NUM_CPUS) - 1;
+	uint32_t all_cpus = BIT(arch_num_cpus()) - 1;
 	int ret;
 
 	/* On older hardware we need to get the host to turn the core
@@ -196,7 +198,9 @@ static void halt_and_restart(int cpu)
 
 void halt_and_restart_thread(void *p1, void *p2, void *p3)
 {
-	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 1; i < num_cpus; i++) {
 		halt_and_restart(i);
 	}
 }

@@ -164,6 +164,14 @@ config BT_DATA_LEN_UPDATE
 	depends on !BT_CTLR || BT_CTLR_DATA_LEN_UPDATE_SUPPORT
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
+
+config BT_PER_ADV_SYNC_TRANSFER_RECEIVER
+	bool "Periodic Advertising Sync Transfer receiver"
+	depends on !BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+
+config BT_PER_ADV_SYNC_TRANSFER_SENDER
+	bool "Periodic Advertising Sync Transfer sender"
+	depends on !BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
 endif # BT_CONN
 
 rsource "Kconfig.iso"

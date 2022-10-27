@@ -194,7 +194,7 @@ static const struct pwm_driver_api pwm_mcux_sctimer_driver_api = {
 			      NULL,							\
 			      &pwm_mcux_sctimer_data_##n,				\
 			      &pwm_mcux_sctimer_config_##n,				\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,			\
 			      &pwm_mcux_sctimer_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_MCUX_SCTIMER_DEVICE_INIT_MCUX)

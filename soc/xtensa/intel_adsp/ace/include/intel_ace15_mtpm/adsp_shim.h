@@ -25,101 +25,53 @@ struct cavs_shim {
 	uint32_t dspwct1c_lo;
 	uint32_t dspwct1c_hi;
 	uint32_t _unused2[14];
-	uint32_t clkctl;
-	uint32_t clksts;
-	uint32_t hspgctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t lspgctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t hsrmctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t lsrmctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
+	uint32_t clkctl;   /* Offset: 0x78 */
+	uint32_t clksts;   /* Offset: 0x7C */
+	uint32_t _unused3[4];
 	uint16_t pwrctl;
 	uint16_t pwrsts;
 	uint32_t lpsctl;
 	uint32_t lpsdmas0;
 	uint32_t lpsdmas1;
-	uint32_t spsreq;
-	uint32_t ldoctl;
-	uint32_t _unused3[2];
-	union {
-		/* cAVS 1.5 */
-		struct {
-			uint32_t hspgists;
-			uint32_t lspgists;
-			uint32_t _unused4[2];
-		};
-		/* cAVS 1.8+ */
-		struct {
-			uint32_t lpsalhss0;
-			uint32_t lpsalhss1;
-			uint32_t lpsalhss2;
-			uint32_t lpsalhss3;
-		};
-	};
+	uint32_t spsreq;  /* Offset: 0xA0 */
+	uint32_t _unused4[3]; /* Offset: 0xA4 */
+	uint32_t lpsalhss0;
+	uint32_t lpsalhss1;
+	uint32_t lpsalhss2;
+	uint32_t lpsalhss3;
 	uint32_t _unused5[4];
 	uint32_t l2mecs;
 	uint32_t l2mpat;
 	uint32_t _unused6[2];
-	uint32_t ltrc;
+	uint32_t ltrc;  /* Offset: 0xe0 */
 	uint32_t _unused8[3];
-	uint32_t dbgo;
-	uint32_t svcfg;
+	uint32_t dbgo; /* Offset: 0xf0 */
+	uint32_t svcfg; /* Offset: 0xf4 */
 	uint32_t _unused9[2];
 };
 #define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
 
 
+#define ADSP_TTSCAP_OFFSET	0x00
+#define ADSP_RTCWC_OFFSET	0x08
+#define ADSP_DSPWCCTL_OFFSET	0x10
+#define ADSP_DSPWCSTS_OFFSET	0x12
+#define ADSP_DSPWCAV_OFFSET	0x18
+#define ADSP_DSPWC_OFFSET	0x20
+#define ADSP_DSPWCTCS_OFFSET	0x28
+#define ADSP_DSPWCT0C_OFFSET	0x30
+#define ADSP_DSPWCT1C_OFFSET	0x38
+#define ADSP_TSCTRL_OFFSET	0x40
+#define ADSP_ISCS_OFFSET	0x44
+#define ADSP_LSCS_OFFSET	0x48
+#define ADSP_DWCCS_OFFSET	0x50
+#define ADSP_ARTCS_OFFSET	0x58
+#define ADSP_LWCCS_OFFSET	0x60
+#define ADSP_CLTSYNC_OFFSET	0x70
 
-struct clk64 {
-	uint32_t lo;
-	uint32_t hi;
-};
 
-
-/* Timers & Time Stamping register block */
-struct adsp_tftts {
-	uint32_t		ttscap;
-	uint32_t		unused0;
-	struct clk64	rtcwc;
-	uint16_t		wcctl;
-	uint16_t		wcsts;
-	uint32_t		unused1;
-	struct clk64	wcav;
-	struct clk64	wc;
-	uint32_t		wctcs;
-	uint32_t		unused2;
-	struct			clk64 wctc[2];
-};
-
-/* These registers are for timers / time stamping usages under DSP FW management. */
-#define ADSP_DFTTS_REG			0x72000
-#define ADSP_DFTTS			(*(volatile struct adsp_tftts *)ADSP_DFTTS_REG)
-
-#define ADSP_SHIM_DSPWCTS (&ADSP_DFTTS.wctcs)
-#define ADSP_SHIM_DSPWCH  (&ADSP_DFTTS.wc.hi)
-#define ADSP_SHIM_DSPWCL  (&ADSP_DFTTS.wc.lo)
-#define ADSP_SHIM_COMPARE_HI(idx)  (&ADSP_DFTTS.wctc[idx].hi)
-#define ADSP_SHIM_COMPARE_LO(idx) (&ADSP_DFTTS.wctc[idx].lo)
 
 #define ADSP_SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
-
-/* L2 Local Memory control (cAVS 1.8+) */
-struct cavs_l2lm {
-	uint32_t l2lmcap;
-	uint32_t l2lmpat;
-	uint32_t _unused0[2];
-	uint32_t hspgctl0;
-	uint32_t hsrmctl0;
-	uint32_t hspgists0;
-	uint32_t _unused1;
-	uint32_t hspgctl1;
-	uint32_t hsrmctl1;
-	uint32_t hspgists1;
-	uint32_t _unused2[9];
-	uint32_t lspgctl;
-	uint32_t lsrmctl;
-	uint32_t lspgists;
-};
-
-#define CAVS_L2LM (*((volatile struct cavs_l2lm *)DT_REG_ADDR(DT_NODELABEL(l2lm))))
 
 /* Host memory window control.  Not strictly part of the shim block. */
 struct cavs_win {
@@ -155,8 +107,8 @@ struct cavs_win {
 #define SHIM_LDOCTL_LPSRAM_LDO_ON     (3 << 2)
 #define SHIM_LDOCTL_LPSRAM_LDO_BYPASS BIT(2)
 
-#define CAVS_DMWBA_ENABLE   BIT(0)
-#define CAVS_DMWBA_READONLY BIT(1)
+#define ADSP_DMWBA_ENABLE   BIT(0)
+#define ADSP_DMWBA_READONLY BIT(1)
 
 #define CAVS_CLKCTL_OSC_SOURCE_MASK  BIT_MASK(2)
 #define CAVS_CLKCTL_OSC_REQUEST_MASK (~BIT_MASK(28))

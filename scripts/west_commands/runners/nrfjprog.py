@@ -22,6 +22,7 @@ except ImportError:
 
 # https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
 UnavailableOperationBecauseProtectionError = 16
+VerifyError = 55
 
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
@@ -180,11 +181,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                 return True
         return False
 
-    def check_force_uicr(self):
-        # On SoCs without --sectoranduicrerase, we want to fail by
-        # default if the application contains UICR data and we're not sure
-        # that the flash will succeed.
-
+    def hex_has_uicr_content(self):
         # A map from SoCs which need this check to their UICR address
         # ranges. If self.family isn't in here, do nothing.
         uicr_ranges = {
@@ -193,23 +190,12 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             'NRF91': ((0x00FF8000, 0x00FF8800),),
         }
 
-        if self.uicr_data_ok or self.family not in uicr_ranges:
+        if self.family not in uicr_ranges:
             return
 
         for region_start, region_end in uicr_ranges[self.family]:
             if self.hex_refers_region(region_start, region_end):
-                # Hex file has UICR contents, and that's not OK.
-                raise RuntimeError(
-                    'The hex file contains data placed in the UICR, which '
-                    'needs a full erase before reprogramming. Run west '
-                    'flash again with --force, --erase, or --recover.')
-
-    @property
-    def uicr_data_ok(self):
-        # True if it's OK to try to flash even with UICR data
-        # in the image; False otherwise.
-
-        return self.force or self.erase or self.recover
+                return True
 
     def recover_target(self):
         if self.family == 'NRF53':
@@ -284,6 +270,15 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                     'must be recovered.\n'
                     '  To fix, run "west flash --recover" instead.\n' +
                     family_help)
+            if cpe.returncode == VerifyError:
+                # If there are data in  the UICR region it is likely that the
+                # verify failed du to the UICR not been erased before, so giving
+                # a warning here will hopefully enhance UX.
+                if self.hex_has_uicr_content():
+                    self.logger.warning(
+                        'The hex file contains data placed in the UICR, which '
+                        'may require a full erase before reprogramming. Run '
+                        'west flash again with --erase, or --recover.')
             raise
 
     def program_hex_nrf53(self, erase_arg, qspi_erase_opt, program_commands):
@@ -387,7 +382,6 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
         self.ensure_snr()
         self.ensure_family()
-        self.check_force_uicr()
 
         if self.recover:
             self.recover_target()

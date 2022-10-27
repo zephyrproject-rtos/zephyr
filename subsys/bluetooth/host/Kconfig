@@ -466,6 +466,43 @@ config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	  to create a new bond the old bond has to be explicitly deleted with
 	  bt_unpair.
 
+config BT_ID_UNPAIR_MATCHING_BONDS
+	bool "Delete bond with same peer with other local identity when bonding"
+	help
+	  When a bond is about to complete, find any other bond with the same
+	  peer address (or IRK) and `bt_unpair` that bond before the event
+	  `pairing_complete`.
+
+	  Important: If this option is not enabled, the current implementation
+	  will automatically fail the bonding. See "RL limitation" below.
+
+	  Important: If this option is not enabled, as Peripheral, it may be too
+	  late to abort the bonding. The pairing is failed locally, but it may
+	  still be reported as successful on the Central. When this situation
+	  occurs, the Zephyr Peripheral will immediately disconnect. See "SMP
+	  limitation" below.
+
+	  [RL limitation]:
+	  The Host implementors have considered it unlikely that applications
+	  would ever want to have multiple bonds with the same peer. The
+	  implementors prioritize the simplicity of the implementation over this
+	  capability.
+
+	  The Resolve List on a Controller is not able to accommodate multiple
+	  local addresses/IRKs for a single remote address. This would prevent
+	  the Host from setting up a one-to-one correspondence between the Host
+	  bond database and the Controller Resolve List. The implementation
+	  relies on that capability when using the Resolve List. For performance
+	  reasons, there is the wish to not fallback to Host Address Resolution
+	  in this case.
+
+	  [SMP Limitation]:
+	  The Paring Failed command of the Security Manager Protocol cannot be
+	  sent outside of a Pairing Process. A Pairing Process ends when the
+	  last Transport Specific Key to be distributed is acknowledged at
+	  link-layer. The Host does not have control over this acknowledgment,
+	  and the order of distribution is fixed by the specification.
+
 config BT_SMP_USB_HCI_CTLR_WORKAROUND
 	bool "Workaround for USB HCI controller out-of-order events"
 	depends on BT_TESTING

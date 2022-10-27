@@ -34,6 +34,7 @@ struct eth_bridge {
 	struct k_mutex lock;
 	sys_slist_t interfaces;
 	sys_slist_t listeners;
+	bool initialized;
 };
 
 #define ETH_BRIDGE_INITIALIZER(obj) \

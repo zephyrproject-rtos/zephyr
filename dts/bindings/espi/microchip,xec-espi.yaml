@@ -5,7 +5,7 @@ description: Microchip ESPI controller
 
 compatible: "microchip,xec-espi"
 
-include: espi-controller.yaml
+include: [espi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -25,4 +25,10 @@ properties:
     pc_girq:
       type: int
       description: soc group irq index for eSPI peripheral channel
+      required: true
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
       required: true

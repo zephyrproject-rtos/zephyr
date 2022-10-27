@@ -8,3 +8,12 @@ tests:
     depends_on: arduino_spi arduino_gpio
     extra_args: SHIELD=dfrobot_can_bus_v2_0
     build_only: true
+  drivers.can.api.twai:
+    tags: drivers can
+    extra_args: DTC_OVERLAY_FILE="twai-enable.overlay"
+    harness: console
+    harness_config:
+      # actual CAN transceiver or shorted CAN RX/TX pins required for board testing
+      fixture: can_transceiver
+    filter: dt_compat_enabled("espressif,esp32-twai")
+    platform_allow: esp32c3_devkitm

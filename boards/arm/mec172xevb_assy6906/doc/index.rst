@@ -427,6 +427,35 @@ Troubleshooting
 
 #. If Dediprog can't detect the onboard flash, press the board's Reset button and try again.
 
+PCA9555 Enabling
+================
+#. To enable PCA9555PW and test the I2C on mec172xevb_assy6906, additional works are needed:
+
+   As the I2C slave device NXP pca95xx on mec172xevb_assy6906 is connected to I2C00 port,
+   however, I2C00 port is shared with UART2 RS232 to TTL converter used to catch serial log,
+   so it's not possible to use UART2 and I2C00 port simultaneously. We need to change to use
+   I2C01 port by making some jumpers setting as below:
+
+    +---------+---------+------------------------------------------+
+    |  Pin 1  | Pin 2   |                Comment                   |
+    +=========+=========+==========================================+
+    | JP49.1  | JP49.2  | Connect PCA9555 VCC to +3.3V_STBY        |
+    +---------+---------+------------------------------------------+
+    | JP53.1  | JP53.2  | Select address 0100b, which means 0x26   |
+    +---------+---------+------------------------------------------+
+    | JP12.13 | JP12.14 | Connect I2C01_SDA from CPU to header J20 |
+    +---------+---------+------------------------------------------+
+    | JP12.4  | JP12.5  | Connect I2C01_SCL from CPU to header J20 |
+    +---------+---------+------------------------------------------+
+    | JP77.7  | JP77.8  | External pull-up for I2C01_SDA           |
+    +---------+---------+------------------------------------------+
+    | JP77.9  | JP77.10 | External pull-up for I2C01_SCL           |
+    +---------+---------+------------------------------------------+
+    | JP58.1  | JP20.1  | Connect NXP PCA9555 SCL to I2C01         |
+    +---------+---------+------------------------------------------+
+    | JP58.3  | JP20.3  | Connect NXP PCA9555 SDA to I2C01         |
+    +---------+---------+------------------------------------------+
+
 References
 **********
 

@@ -5,7 +5,7 @@ description: CCS811 digital air quality sensor
 
 compatible: "ams,ccs811"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     wake-gpios:

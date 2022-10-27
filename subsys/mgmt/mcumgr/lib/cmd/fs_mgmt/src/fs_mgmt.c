@@ -14,9 +14,9 @@
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include "zcbor_bulk/zcbor_bulk_priv.h"
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/fs/fs.h>
 #include "mgmt/mgmt.h"
+#include <smp/smp.h>
 #include "fs_mgmt/fs_mgmt.h"
 #include "fs_mgmt/fs_mgmt_impl.h"
 #include "fs_mgmt/fs_mgmt_config.h"
@@ -420,12 +420,18 @@ fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 
 			if (group->output_size == sizeof(uint8_t)) {
 				tmp_val = (uint64_t)(*(uint8_t *)output);
+#if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 1
 			} else if (group->output_size == sizeof(uint16_t)) {
 				tmp_val = (uint64_t)(*(uint16_t *)output);
+#if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 2
 			} else if (group->output_size == sizeof(uint32_t)) {
 				tmp_val = (uint64_t)(*(uint32_t *)output);
+#if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 4
 			} else if (group->output_size == sizeof(uint64_t)) {
 				tmp_val = (*(uint64_t *)output);
+#endif
+#endif
+#endif
 			} else {
 				LOG_ERR("Unable to handle numerical checksum size %u",
 					group->output_size);

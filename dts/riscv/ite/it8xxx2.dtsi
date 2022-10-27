@@ -309,9 +309,37 @@
 			};
 		};
 
-		sram0: memory@80101000 {
+		sram0: memory@80100000 {
 			compatible = "mmio-sram";
-			reg = <0x80101000 DT_SIZE_K(56)>;
+			reg = <0x80100000 DT_SIZE_K(60)>;
+		};
+		ilm: ilm@f0205d {
+			compatible = "ite,it8xxx2-ilm";
+			reg = <0xf0205d 3	/* RVILMCR0..2 */
+			       0xf01040 3	/* SCAR0 */
+			       0xf01043 3
+			       0xf01046 3
+			       0xf01049 3
+			       0xf0104c 3	/* SCAR4 */
+			       0xf01081 3	/* SCAR5 */
+			       0xf01084 3
+			       0xf01087 3
+			       0xf0108a 3
+			       0xf0108d 3
+			       0xf01090 3
+			       0xf01093 3
+			       0xf01096 3	/* SCAR12 */
+			       0xf010b0 3	/* SCAR13 */
+			       0xf010b3 3
+			       0xf010b6 3
+			       0xf010b9 3
+			       0xf010bc 3
+			       0xf010bf 3
+			       0xf010c2 3
+			       0xf010c5 3
+			       0xf010c8 3
+			       0xf010cb 3
+			       0xf010ce 3>;	/* SCAR23 */
 		};
 		wuc1: wakeup-controller@f01b00 {
 			compatible = "ite,it8xxx2-wuc";
@@ -934,10 +962,11 @@
 			interrupts = <IT8XXX2_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <0>;
+			port-num = <SMB_CHANNEL_A>;
 			scl-gpios = <&gpiob 3 0>;
 			sda-gpios = <&gpiob 4 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBA>;
+			fifo-enable;   /* FIFO1 */
 		};
 
 		i2c1: i2c@f01c80 {
@@ -945,14 +974,15 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00f01c80 0x0040   /* Base address */
-					0 0x0001>; /* Not supported */
+			       0x00f01c0f 0x0001>; /* MSTFCTRL2 */
 			interrupts = <IT8XXX2_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <1>;
+			port-num = <SMB_CHANNEL_B>;
 			scl-gpios = <&gpioc 1 0>;
 			sda-gpios = <&gpioc 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBB>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
 		};
 
 		i2c2: i2c@f01cc0 {
@@ -964,10 +994,11 @@
 			interrupts = <IT8XXX2_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <2>;
+			port-num = <SMB_CHANNEL_C>;
 			scl-gpios = <&gpiof 6 0>;
 			sda-gpios = <&gpiof 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBC>;
+			fifo-enable;   /* FIFO2 */
 		};
 
 		i2c3: i2c@f03680 {
@@ -978,7 +1009,7 @@
 			interrupts = <IT8XXX2_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <3>;
+			port-num = <I2C_CHANNEL_D>;
 			scl-gpios = <&gpioh 1 0>;
 			sda-gpios = <&gpioh 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBD>;
@@ -992,7 +1023,7 @@
 			interrupts = <IT8XXX2_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <4>;
+			port-num = <I2C_CHANNEL_E>;
 			scl-gpios = <&gpioe 0 0>;
 			sda-gpios = <&gpioe 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBE>;
@@ -1006,7 +1037,7 @@
 			interrupts = <IT8XXX2_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <5>;
+			port-num = <I2C_CHANNEL_F>;
 			scl-gpios = <&gpioa 4 0>;
 			sda-gpios = <&gpioa 5 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBF>;

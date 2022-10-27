@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
@@ -117,6 +118,9 @@ static bool i2c_sam0_terminate_on_error(const struct device *dev)
 	wait_synchronization(i2c);
 
 	i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
+	if (i2c->INTFLAG.reg & (SERCOM_I2CM_INTFLAG_MB | SERCOM_I2CM_INTFLAG_SB)) {
+		i2c->CTRLB.bit.CMD = 3;
+	}
 	k_sem_give(&data->sem);
 	return true;
 }
@@ -151,6 +155,7 @@ static void i2c_sam0_isr(const struct device *dev)
 	if (status & SERCOM_I2CM_INTFLAG_MB) {
 		if (!data->msg.size) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
+			i2c->CTRLB.bit.CMD = 3;
 			k_sem_give(&data->sem);
 			return;
 		}
@@ -166,6 +171,7 @@ static void i2c_sam0_isr(const struct device *dev)
 			 * require write synchronization.
 			 */
 			i2c->CTRLB.bit.ACKACT = 1;
+			i2c->CTRLB.bit.CMD = 3;
 		}
 
 		*data->msg.buffer = i2c->DATA.reg;
@@ -484,9 +490,6 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->msg.status) {
-			/* return the bus to idle */
-			i2c->CTRLB.bit.CMD = 3;
-
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					dev->name);
@@ -498,23 +501,6 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 				dev->name, data->msg.status);
 			ret = -EIO;
 			goto unlock;
-		}
-
-		/*
-		 * Only send a stop if after this message:
-		 *   - it is explicitly requested that we send a stop, or
-		 *   - we are not conducting a restart, with more messages to follow
-		 *
-		 * Note: nothing validates the flags, so default to a stop if a stop is
-		 * requested... do not let a restart request override it
-		 */
-		bool send_stop = (data->msgs->flags & I2C_MSG_STOP)
-			|| !((data->msgs->flags & I2C_MSG_RESTART) && (data->num_msgs > 1));
-
-		if (send_stop) {
-			while (!i2c->STATUS.bit.CLKHOLD) {
-			}
-			i2c->CTRLB.bit.CMD = 3;
 		}
 
 		data->num_msgs--;

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/init.h>
 
 #define HSDK_CREG_GPIO_MUX_REG	0xf0001484

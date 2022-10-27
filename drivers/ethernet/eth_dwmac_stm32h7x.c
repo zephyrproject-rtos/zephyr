@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
 
 #include "eth_dwmac_priv.h"
 

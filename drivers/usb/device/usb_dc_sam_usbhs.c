@@ -7,6 +7,8 @@
 #define DT_DRV_COMPAT atmel_sam_usbhs
 
 #include <zephyr/usb/usb_device.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <string.h>
 
@@ -244,6 +246,16 @@ static void usb_dc_isr(void)
 		/* Acknowledge the interrupt */
 		USBHS->USBHS_DEVICR = USBHS_DEVICR_EORSTC;
 
+		if (!usb_dc_ep_is_configured(0) && dev_data.ep_data[0].mps) {
+			/* Restore EP0 configuration to previously set mps */
+			struct usb_dc_ep_cfg_data cfg = {
+				.ep_addr = 0,
+				.ep_mps = dev_data.ep_data[0].mps,
+				.ep_type = USB_DC_EP_CONTROL,
+			};
+			usb_dc_ep_configure(&cfg);
+			usb_dc_ep_enable(0);
+		}
 		if (usb_dc_ep_is_enabled(0)) {
 			/* The device clears some of the configuration of EP0
 			 * when it receives the EORST.  Re-enable interrupts.
@@ -348,7 +360,7 @@ int usb_dc_attach(void)
 int usb_dc_detach(void)
 {
 	/* Detach the device */
-	USBHS->USBHS_DEVCTRL &= ~USBHS_DEVCTRL_DETACH;
+	USBHS->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH;
 
 	/* Disable the USB clock */
 	usb_dc_disable_clock();

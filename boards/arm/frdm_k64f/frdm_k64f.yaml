@@ -26,5 +26,3 @@ supported:
   - spi
   - usb_device
   - watchdog
-testing:
-  default: true

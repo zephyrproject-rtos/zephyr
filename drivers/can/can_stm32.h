@@ -25,8 +25,6 @@
 struct can_stm32_mailbox {
 	can_tx_callback_t tx_callback;
 	void *callback_arg;
-	struct k_sem tx_int_sem;
-	int error;
 };
 
 struct can_stm32_data {
@@ -42,6 +40,7 @@ struct can_stm32_data {
 	can_state_change_callback_t state_change_cb;
 	void *state_change_cb_data;
 	enum can_state state;
+	bool started;
 };
 
 struct can_stm32_config {

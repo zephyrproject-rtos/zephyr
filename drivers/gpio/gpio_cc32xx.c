@@ -24,8 +24,9 @@
 #include <driverlib/gpio.h>
 #include <driverlib/rom_map.h>
 #include <driverlib/interrupt.h>
+#include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 /* Reserved */
 #define PIN_XX  0xFF

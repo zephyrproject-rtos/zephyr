@@ -242,6 +242,7 @@ struct bt_dev_le {
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_ISO)
 	uint16_t		iso_mtu;
+	uint8_t			iso_limit;
 	struct k_sem		iso_pkts;
 #endif /* CONFIG_BT_ISO */
 
@@ -422,6 +423,8 @@ int bt_send(struct net_buf *buf);
 struct bt_keys;
 void bt_id_add(struct bt_keys *keys);
 void bt_id_del(struct bt_keys *keys);
+
+struct bt_keys *bt_id_find_conflict(struct bt_keys *candidate);
 
 int bt_setup_random_id_addr(void);
 int bt_setup_public_id_addr(void);

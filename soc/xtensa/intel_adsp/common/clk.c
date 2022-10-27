@@ -3,12 +3,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/device.h>
 
-#include <cavs-clk.h>
+#include <errno.h>
+
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/spinlock.h>
+
+#include <adsp-clk.h>
 #include <adsp_shim.h>
 
-static struct cavs_clock_info platform_clocks[CONFIG_MP_NUM_CPUS];
+static struct cavs_clock_info platform_clocks[CONFIG_MP_MAX_NUM_CPUS];
 static struct k_spinlock lock;
 
 int cavs_clock_freq_enc[] = CAVS_CLOCK_FREQ_ENC;
@@ -61,7 +66,10 @@ int cavs_clock_set_freq(uint32_t freq_idx)
 	k = k_spin_lock(&lock);
 
 	select_cpu_clock_hw(freq_idx);
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0; i < num_cpus; i++) {
 		platform_clocks[i].current_freq = freq_idx;
 	}
 
@@ -89,7 +97,9 @@ void cavs_clock_init(void)
 	}
 #endif
 
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0; i < num_cpus; i++) {
 		platform_clocks[i].default_freq = CAVS_CLOCK_FREQ_DEFAULT;
 		platform_clocks[i].current_freq = CAVS_CLOCK_FREQ_DEFAULT;
 		platform_clocks[i].lowest_freq = platform_lowest_freq_idx;

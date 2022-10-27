@@ -13,31 +13,24 @@
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include "zcbor_bulk/zcbor_bulk_priv.h"
 #include "mgmt/mgmt.h"
+#include "smp/smp.h"
 
 #include "img_mgmt/image.h"
 #include "img_mgmt/img_mgmt.h"
-#include "img_mgmt/img_mgmt_impl.h"
-#include "img_mgmt_priv.h"
 #include "img_mgmt/img_mgmt_config.h"
+#include "img_mgmt_priv.h"
+
+#ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+#include <zephyr/dfu/flash_img.h>
+#endif
 
 static img_mgmt_upload_fn img_mgmt_upload_cb;
 
 const struct img_mgmt_dfu_callbacks_t *img_mgmt_dfu_callbacks_fn;
 
 struct img_mgmt_state g_img_mgmt_state;
-
-#if SIZE_MAX == UINT32_MAX
-#define zcbor_size_decode	zcbor_uint32_decode
-#define zcbor_size_put		zcbor_uint32_put
-#elif SIZE_MAX == UINT64_MAX
-#define zcbor_size_decode	zcbor_uint64_decode
-#define zcbor_size_put		zcbor_uint64_put
-#else
-#error "Unsupported size_t encoding"
-#endif
 
 #ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
 const char *img_mgmt_err_str_app_reject = "app reject";
@@ -61,7 +54,7 @@ img_mgmt_find_tlvs(int slot, size_t *start_off, size_t *end_off,
 	struct image_tlv_info tlv_info;
 	int rc;
 
-	rc = img_mgmt_impl_read(slot, *start_off, &tlv_info, sizeof(tlv_info));
+	rc = img_mgmt_read(slot, *start_off, &tlv_info, sizeof(tlv_info));
 	if (rc != 0) {
 		/* Read error. */
 		return MGMT_ERR_EUNKNOWN;
@@ -118,12 +111,12 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 	uint32_t erased_val_32;
 	int rc;
 
-	rc = img_mgmt_impl_erased_val(image_slot, &erased_val);
+	rc = img_mgmt_erased_val(image_slot, &erased_val);
 	if (rc != 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
 
-	rc = img_mgmt_impl_read(image_slot, 0, &hdr, sizeof(hdr));
+	rc = img_mgmt_read(image_slot, 0, &hdr, sizeof(hdr));
 	if (rc != 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
@@ -168,7 +161,7 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 
 	hash_found = false;
 	while (data_off + sizeof(tlv) <= data_end) {
-		rc = img_mgmt_impl_read(image_slot, data_off, &tlv, sizeof(tlv));
+		rc = img_mgmt_read(image_slot, data_off, &tlv, sizeof(tlv));
 		if (rc != 0) {
 			return MGMT_ERR_EUNKNOWN;
 		}
@@ -192,7 +185,7 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 			if (data_off + IMAGE_HASH_LEN > data_end) {
 				return MGMT_ERR_EUNKNOWN;
 			}
-			rc = img_mgmt_impl_read(image_slot, data_off, hash,
+			rc = img_mgmt_read(image_slot, data_off, hash,
 									IMAGE_HASH_LEN);
 			if (rc != 0) {
 				return MGMT_ERR_EUNKNOWN;
@@ -288,16 +281,17 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 		}
 	}
 
-	rc = img_mgmt_impl_erase_slot(slot);
-
+	rc = img_mgmt_erase_slot(slot);
 	if (rc != 0) {
 		img_mgmt_dfu_stopped();
+		return rc;
 	}
 
-	ok = zcbor_tstr_put_lit(zse, "rc")	&&
-	     zcbor_int32_put(zse, rc);
+	if (zcbor_tstr_put_lit(zse, "rc") && zcbor_int32_put(zse, 0)) {
+		return MGMT_ERR_EOK;
+	}
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	return MGMT_ERR_EMSGSIZE;
 }
 
 static int
@@ -330,10 +324,6 @@ img_mgmt_upload_log(bool is_first, bool is_last, int status)
 	const uint8_t *hashp;
 	int rc;
 
-	if (is_first) {
-		return img_mgmt_impl_log_upload_start(status);
-	}
-
 	if (is_last || status != 0) {
 		/* Log the image hash if we know it. */
 		rc = img_mgmt_read_info(1, NULL, hash, NULL);
@@ -342,11 +332,8 @@ img_mgmt_upload_log(bool is_first, bool is_last, int status)
 		} else {
 			hashp = hash;
 		}
-
-		return img_mgmt_impl_log_upload_done(status, hashp);
 	}
 
-	/* Nothing to log. */
 	return 0;
 }
 
@@ -391,7 +378,7 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 	}
 
 	/* Determine what actions to take as a result of this request. */
-	rc = img_mgmt_impl_upload_inspect(&req, &action);
+	rc = img_mgmt_upload_inspect(&req, &action);
 	if (rc != 0) {
 		img_mgmt_dfu_stopped();
 		MGMT_CTXT_SET_RC_RSN(ctxt, IMG_MGMT_UPLOAD_ACTION_RC_RSN(&action));
@@ -425,6 +412,11 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 		/*
 		 * New upload.
 		 */
+#ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+		struct flash_img_context ctx;
+		struct flash_img_check fic;
+#endif
+
 		g_img_mgmt_state.off = 0;
 
 		img_mgmt_dfu_started();
@@ -440,10 +432,27 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 		memset(&g_img_mgmt_state.data_sha[req.data_sha.len], 0,
 			   IMG_MGMT_DATA_SHA_LEN - req.data_sha.len);
 
+#ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+		/* Check if the existing image hash matches the hash of the underlying data */
+		fic.match = g_img_mgmt_state.data_sha;
+		fic.clen = g_img_mgmt_state.size;
+
+		if (flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id) == 0) {
+			/* Underlying data already matches, no need to upload any more, set offset
+			 * to image size so client knows upload has finished.
+			 */
+			g_img_mgmt_state.off = g_img_mgmt_state.size;
+			img_mgmt_dfu_pending();
+			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+			g_img_mgmt_state.area_id = -1;
+			goto end;
+		}
+#endif
+
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
 		/* erase the entire req.size all at once */
 		if (action.erase) {
-			rc = img_mgmt_impl_erase_image_data(0, req.size);
+			rc = img_mgmt_erase_image_data(0, req.size);
 			if (rc != 0) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 					img_mgmt_err_str_flash_erase_failed);
@@ -462,7 +471,7 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 			last = true;
 		}
 
-		rc = img_mgmt_impl_write_image_data(req.off, req.img_data.value, action.write_bytes,
+		rc = img_mgmt_write_image_data(req.off, req.img_data.value, action.write_bytes,
 						    last);
 		if (rc == 0) {
 			g_img_mgmt_state.off += action.write_bytes;

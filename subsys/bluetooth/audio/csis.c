@@ -48,11 +48,11 @@ static bool is_last_client_to_write(const struct bt_csis *csis,
 				    const struct bt_conn *conn)
 {
 	if (conn != NULL) {
-		return !bt_addr_le_cmp(bt_conn_get_dst(conn),
-				       &csis->srv.lock_client_addr);
+		return bt_addr_le_eq(bt_conn_get_dst(conn),
+				     &csis->srv.lock_client_addr);
 	} else {
-		return !bt_addr_le_cmp(&server_dummy_addr,
-				       &csis->srv.lock_client_addr);
+		return bt_addr_le_eq(&server_dummy_addr,
+				     &csis->srv.lock_client_addr);
 	}
 }
 
@@ -82,8 +82,7 @@ static void notify_client(struct bt_conn *conn, void *data)
 		pend_notify = &csis->srv.pend_notify[i];
 
 		if (pend_notify->pending &&
-		    bt_addr_le_cmp(bt_conn_get_dst(conn),
-				   &pend_notify->addr) == 0) {
+		    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
 			pend_notify->pending = false;
 			break;
 		}
@@ -108,8 +107,7 @@ static void notify_clients(struct bt_csis *csis,
 
 		if (pend_notify->active) {
 			if (excluded_client != NULL &&
-			    bt_addr_le_cmp(bt_conn_get_dst(excluded_client),
-					   &pend_notify->addr) == 0) {
+			    bt_addr_le_eq(bt_conn_get_dst(excluded_client), &pend_notify->addr)) {
 				continue;
 			}
 
@@ -117,7 +115,7 @@ static void notify_clients(struct bt_csis *csis,
 		}
 	}
 
-	bt_conn_foreach(BT_CONN_TYPE_ALL, notify_client, &data);
+	bt_conn_foreach(BT_CONN_TYPE_LE, notify_client, &data);
 }
 
 static int sirk_encrypt(struct bt_conn *conn,
@@ -241,8 +239,8 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 			}
 
 			sirk = &enc_sirk;
-			BT_HEXDUMP_DBG(enc_sirk.value, sizeof(enc_sirk.value),
-				       "Encrypted Set SIRK");
+			LOG_HEXDUMP_DBG(enc_sirk.value, sizeof(enc_sirk.value),
+					"Encrypted Set SIRK");
 		} else if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_REJECT) {
 			return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
 		} else if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_OOB_ONLY) {
@@ -258,8 +256,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 
 	BT_DBG("Set sirk %sencrypted",
 	       sirk->type ==  BT_CSIS_SIRK_TYPE_PLAIN ? "not " : "");
-	BT_HEXDUMP_DBG(csis->srv.set_sirk.value,
-		       sizeof(csis->srv.set_sirk.value), "Set SIRK");
+	LOG_HEXDUMP_DBG(csis->srv.set_sirk.value, sizeof(csis->srv.set_sirk.value), "Set SIRK");
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 sirk, sizeof(*sirk));
 }
@@ -453,8 +450,7 @@ static void csis_security_changed(struct bt_conn *conn, bt_security_t level,
 			pend_notify = &csis->srv.pend_notify[j];
 
 			if (pend_notify->pending &&
-			    bt_addr_le_cmp(bt_conn_get_dst(conn),
-					   &pend_notify->addr) == 0) {
+			    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
 				notify_lock_value(csis, conn);
 				pend_notify->pending = false;
 				break;
@@ -487,8 +483,7 @@ static void handle_csis_disconnect(struct bt_csis *csis, struct bt_conn *conn)
 
 		pend_notify = &csis->srv.pend_notify[i];
 
-		if (bt_addr_le_cmp(bt_conn_get_dst(conn),
-				   &pend_notify->addr) == 0) {
+		if (bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
 			(void)memset(pend_notify, 0, sizeof(*pend_notify));
 			break;
 		}
@@ -515,8 +510,7 @@ static void handle_csis_auth_complete(struct bt_csis *csis,
 		pend_notify = &csis->srv.pend_notify[i];
 
 		if (pend_notify->active &&
-		    bt_addr_le_cmp(bt_conn_get_dst(conn),
-				   &pend_notify->addr) == 0) {
+		    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 			pend_notify->age = csis->srv.age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
@@ -601,7 +595,7 @@ static void csis_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 			pend_notify = &csis->srv.pend_notify[j];
 
 			if (pend_notify->active &&
-			    bt_addr_le_cmp(peer, &pend_notify->addr) == 0) {
+			    bt_addr_le_eq(peer, &pend_notify->addr)) {
 				(void)memset(pend_notify, 0,
 					     sizeof(*pend_notify));
 				break;
@@ -767,6 +761,5 @@ int bt_csis_lock(struct bt_csis *csis, bool lock, bool force)
 
 void bt_csis_print_sirk(const struct bt_csis *csis)
 {
-	BT_HEXDUMP_DBG(&csis->srv.set_sirk, sizeof(csis->srv.set_sirk),
-		       "Set SIRK");
+	LOG_HEXDUMP_DBG(&csis->srv.set_sirk, sizeof(csis->srv.set_sirk), "Set SIRK");
 }

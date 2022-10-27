@@ -351,7 +351,7 @@ Finally, to flash the board, run:
 
 .. code-block:: bash
 
-   $ west flash --hex-file build/tfm_merged.hex
+   $ west flash
 
 Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts
 (``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``

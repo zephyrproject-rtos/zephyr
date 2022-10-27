@@ -25,6 +25,11 @@ menuconfig MCUMGR_CMD_SHELL_MGMT
 
 if MCUMGR_CMD_SHELL_MGMT
 
+# Show dummy shell buffer size here, will show help text of original prompt so
+# nothing extra is needed here, nor a default value.
+config SHELL_BACKEND_DUMMY_BUF_SIZE
+	int "Shell output buffer size (Size of dummy buffer size)"
+
 config MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE
 	bool "Legacy behaviour: Use rc field for shell function return code"
 	help

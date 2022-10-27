@@ -27,7 +27,6 @@ class SizeCalculator:
         "_static_thread_data_area",
         "k_timer_area",
         "k_mem_slab_area",
-        "k_mem_pool_area",
         "sw_isr_table",
         "k_sem_area",
         "k_mutex_area",

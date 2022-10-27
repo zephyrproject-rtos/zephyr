@@ -255,6 +255,180 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	return result;
 }
 
+static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
+{
+	static bool in_use;
+
+	if (bypass && in_use) {
+		shell_error(sh, "flash load supports setting bypass on a single instance.");
+
+		return -EBUSY;
+	}
+
+	/* Mark that we have set or unset the bypass function */
+	in_use = bypass != NULL;
+
+	if (in_use) {
+		shell_print(sh, "Loading...");
+	}
+
+	shell_set_bypass(sh, bypass);
+
+	return 0;
+}
+
+#define FLASH_LOAD_BUF_MAX 256
+
+static const struct device *flash_load_dev;
+static uint32_t flash_load_buf_size;
+static uint32_t flash_load_addr;
+static uint32_t flash_load_total;
+static uint32_t flash_load_written;
+static uint32_t flash_load_chunk;
+
+static uint32_t flash_load_boff;
+static uint8_t flash_load_buf[FLASH_LOAD_BUF_MAX];
+
+static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
+{
+	uint32_t left_to_read = flash_load_total - flash_load_written - flash_load_boff;
+	uint32_t to_copy = MIN(len, left_to_read);
+	uint32_t copied = 0;
+
+	while (copied < to_copy) {
+
+		uint32_t buf_copy = MIN(to_copy, flash_load_buf_size - flash_load_boff);
+
+		memcpy(flash_load_buf + flash_load_boff, recv + copied, buf_copy);
+
+		flash_load_boff += buf_copy;
+		copied += buf_copy;
+
+		/* Buffer is full. Write data to memory. */
+		if (flash_load_boff == flash_load_buf_size) {
+			uint32_t addr = flash_load_addr + flash_load_written;
+			int rc = flash_write(flash_load_dev, addr, flash_load_buf,
+					flash_load_buf_size);
+
+			if (rc != 0) {
+				shell_error(sh, "Write to addr %x on dev %p ERROR!",
+						addr, flash_load_dev);
+			}
+
+			shell_print(sh, "Written chunk %d", flash_load_chunk);
+
+			flash_load_written += flash_load_buf_size;
+			flash_load_chunk++;
+			flash_load_boff = 0;
+		}
+	}
+
+	/* When data is not aligned to flash_load_buf_size there may be partial write
+	 * at the end.
+	 */
+	if (flash_load_written < flash_load_total &&
+			flash_load_written + flash_load_boff >= flash_load_total) {
+
+		uint32_t addr = flash_load_addr + flash_load_written;
+		int rc = flash_write(flash_load_dev, addr, flash_load_buf, flash_load_boff);
+
+		if (rc != 0) {
+			set_bypass(sh, NULL);
+			shell_error(sh, "Write to addr %x on dev %p ERROR!",
+					addr, flash_load_dev);
+			return;
+		}
+
+		shell_print(sh, "Written chunk %d", flash_load_chunk);
+		flash_load_written += flash_load_boff;
+		flash_load_chunk++;
+	}
+
+	if (flash_load_written >= flash_load_total) {
+		set_bypass(sh, NULL);
+		shell_print(sh, "Read all");
+	}
+}
+
+static int cmd_load(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *flash_dev;
+	int result;
+	uint32_t addr;
+	uint32_t size;
+	ssize_t write_block_size;
+
+	result = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
+	if (result) {
+		return result;
+	}
+
+	size = strtoul(argv[2], NULL, 0);
+
+	write_block_size = flash_get_write_block_size(flash_dev);
+
+	/* Check if size is aligned */
+	if (size % write_block_size != 0) {
+		shell_error(sh, "Size must be %zu bytes aligned", write_block_size);
+		return -EIO;
+	}
+
+	/* Align buffer size to write_block_size */
+	flash_load_buf_size = FLASH_LOAD_BUF_MAX;
+
+	if (flash_load_buf_size < write_block_size) {
+		shell_error(sh, "Size of buffer is too small to be aligned to %zu.",
+				write_block_size);
+		return -ENOSPC;
+	}
+
+	/* If buffer size is not aligned then change its size. */
+	if (flash_load_buf_size % write_block_size != 0) {
+		flash_load_buf_size -= flash_load_buf_size % write_block_size;
+
+		shell_warn(sh, "Load buffer was not aligned to %zu.", write_block_size);
+		shell_warn(sh, "Effective load buffer size was set from %d to %d",
+				FLASH_LOAD_BUF_MAX, flash_load_buf_size);
+	}
+
+	/* Prepare data for callback. */
+	flash_load_dev = flash_dev;
+	flash_load_addr = addr;
+	flash_load_total = size;
+	flash_load_written = 0;
+	flash_load_boff = 0;
+	flash_load_chunk = 0;
+
+	shell_print(sh, "Loading %d bytes starting at address %x", size, addr);
+
+	set_bypass(sh, bypass_cb);
+	return 0;
+}
+
+static int cmd_page_info(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *flash_dev;
+	struct flash_pages_info info;
+	int result;
+	uint32_t addr;
+
+	result = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
+	if (result) {
+		return result;
+	}
+
+	result = flash_get_page_info_by_offs(flash_dev, addr, &info);
+
+	if (result != 0) {
+		shell_error(sh, "Could not determine page size, error code %d.", result);
+		return -EINVAL;
+	}
+
+	shell_print(sh, "Page for address 0x%x:\nstart offset: 0x%lx\nsize: %zu\nindex: %d",
+			addr, info.start_offset, info.size, info.index);
+	return 0;
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
@@ -282,6 +456,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
 	SHELL_CMD_ARG(write, &dsub_device_name,
 		"[<device>] <address> <dword> [<dword>...]",
 		cmd_write, 3, BUF_ARRAY_CNT),
+	SHELL_CMD_ARG(load, &dsub_device_name,
+		"[<device>] <address> <size>",
+		cmd_load, 3, 1),
+	SHELL_CMD_ARG(page_info, &dsub_device_name,
+		"[<device>] <address>",
+		cmd_page_info, 2, 1),
 	SHELL_SUBCMD_SET_END
 );
 

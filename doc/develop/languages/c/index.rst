@@ -63,6 +63,19 @@ application.
 
 .. _`C Standard Library`: https://en.wikipedia.org/wiki/C_standard_library
 
+.. _c_library_formatted_output:
+
+Formatted Output
+****************
+
+C defines standard formatted output functions such as ``printf`` and
+``sprintf`` and these functions are implemented by the C standard
+libraries.
+
+Each C standard library has its own set of requirements and configurations for
+selecting the formatted output modes and capabilities. Refer to each C standard
+library documentation for more details.
+
 .. _c_library_dynamic_mem:
 
 Dynamic Memory Management

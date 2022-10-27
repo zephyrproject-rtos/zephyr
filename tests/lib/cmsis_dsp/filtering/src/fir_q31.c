@@ -18,7 +18,7 @@
 
 #define COEFF_PADDING		(4)
 
-static void test_arm_fir_q31(void)
+ZTEST(filtering_fir_q31, test_arm_fir_q31)
 {
 	size_t sample_index, block_index;
 	size_t block_size, tap_count;
@@ -102,11 +102,4 @@ static void test_arm_fir_q31(void)
 	free(output_buf);
 }
 
-void test_filtering_fir_q31(void)
-{
-	ztest_test_suite(filtering_fir_q31,
-		ztest_unit_test(test_arm_fir_q31)
-		);
-
-	ztest_run_test_suite(filtering_fir_q31);
-}
+ZTEST_SUITE(filtering_fir_q31, NULL, NULL, NULL, NULL, NULL);

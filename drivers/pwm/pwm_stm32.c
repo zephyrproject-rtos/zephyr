@@ -22,6 +22,7 @@
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
 
@@ -729,7 +730,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)        \
 	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL,                    \
 			    &pwm_stm32_data_##index,                           \
 			    &pwm_stm32_config_##index, POST_KERNEL,            \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                \
+			    CONFIG_PWM_INIT_PRIORITY,                          \
 			    &pwm_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT)

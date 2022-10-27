@@ -54,8 +54,12 @@ these references:
 Supported Features
 ==================
 
-The mimxrt1010_evk board configuration supports the following hardware
-features:
+The mimxrt1010_evk board configuration supports the hardware features listed
+below.  For additional features not yet supported, please also refer to the
+:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+already supported, which can also be re-used on this mimxrt1010_evk board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -200,7 +204,7 @@ see the following message in the terminal:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1010EVKHUG
 
 .. _MIMXRT1010-EVK Design Files:
-   https://www.nxp.com/downloads/en/printed-circuit-boards/IMXRT1010-EVK-DESIGN-FILES.7z
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1010-EVK-DESIGN-FILES
 
 .. _i.MX RT1010 Website:
    https://www.nxp.com/imxrt1010

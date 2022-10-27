@@ -9,6 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -24,224 +25,13 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CAPABILITIES)
 #define LOG_MODULE_NAME bt_audio_capability
 #include "common/log.h"
+#include "common/assert.h"
 
 static sys_slist_t snks;
 static sys_slist_t srcs;
 
 IF_ENABLED(CONFIG_BT_PAC_SNK, (static enum bt_audio_context sink_available_contexts;))
 IF_ENABLED(CONFIG_BT_PAC_SRC, (static enum bt_audio_context source_available_contexts;));
-
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_ASCS)
-/* TODO: The unicast server callbacks uses `const` for many of the pointers,
- * wheras the capabilities callbacks do no. The latter should be updated to use
- * `const` where possible.
- */
-static int unicast_server_config_cb(struct bt_conn *conn,
-				    const struct bt_audio_ep *ep,
-				    enum bt_audio_dir dir,
-				    const struct bt_codec *codec,
-				    struct bt_audio_stream **stream,
-				    struct bt_codec_qos_pref *const pref)
-{
-	struct bt_audio_capability *cap;
-	sys_slist_t *lst;
-
-	if (dir == BT_AUDIO_DIR_SINK) {
-		lst = &snks;
-	} else if (dir == BT_AUDIO_DIR_SOURCE) {
-		lst = &srcs;
-	} else {
-		BT_ERR("Invalid endpoint dir: %u", dir);
-		return -EINVAL;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
-		/* Skip if capabilities don't match */
-		if (codec->id != cap->codec->id) {
-			continue;
-		}
-
-		if (cap->ops == NULL || cap->ops->config == NULL) {
-			return -EACCES;
-		}
-
-		*stream = cap->ops->config(conn, (struct bt_audio_ep *)ep,
-					   dir, cap, (struct bt_codec *)codec);
-
-		if (*stream == NULL) {
-			return -ENOMEM;
-		}
-
-		pref->unframed_supported =
-			cap->pref.framing == BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED;
-		pref->phy = cap->pref.phy;
-		pref->rtn = cap->pref.rtn;
-		pref->latency = cap->pref.latency;
-		pref->pd_min = cap->pref.pd_min;
-		pref->pd_max = cap->pref.pd_max;
-		pref->pref_pd_min = cap->pref.pref_pd_min;
-		pref->pref_pd_max = cap->pref.pref_pd_max;
-
-		(*stream)->user_data = cap;
-
-		return 0;
-	}
-
-	BT_ERR("No capability for dir %u and codec ID %u", dir, codec->id);
-
-	return -EOPNOTSUPP;
-}
-
-static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
-				      enum bt_audio_dir dir,
-				      const struct bt_codec *codec,
-				      struct bt_codec_qos_pref *const pref)
-{
-	struct bt_audio_capability *cap;
-	sys_slist_t *lst;
-
-	if (dir == BT_AUDIO_DIR_SINK) {
-		lst = &snks;
-	} else if (dir == BT_AUDIO_DIR_SOURCE) {
-		lst = &srcs;
-	} else {
-		BT_ERR("Invalid endpoint dir: %u", dir);
-		return -EINVAL;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
-		int err;
-
-		if (codec->id != cap->codec->id) {
-			continue;
-		}
-
-		if (cap->ops == NULL || cap->ops->reconfig == NULL) {
-			return -EACCES;
-		}
-
-		pref->unframed_supported =
-			cap->pref.framing == BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED;
-		pref->phy = cap->pref.phy;
-		pref->rtn = cap->pref.rtn;
-		pref->latency = cap->pref.latency;
-		pref->pd_min = cap->pref.pd_min;
-		pref->pd_max = cap->pref.pd_max;
-		pref->pref_pd_min = cap->pref.pref_pd_min;
-		pref->pref_pd_max = cap->pref.pref_pd_max;
-
-		err = cap->ops->reconfig(stream, cap,
-					  (struct bt_codec *)codec);
-		if (err != 0) {
-			return err;
-		}
-
-		stream->user_data = cap;
-
-		return 0;
-	}
-
-	BT_ERR("No capability for dir %u and codec ID %u", dir, codec->id);
-
-	return -EOPNOTSUPP;
-}
-
-static int unicast_server_qos_cb(struct bt_audio_stream *stream,
-				 const struct bt_codec_qos *qos)
-{
-	struct bt_audio_capability *cap = stream->user_data;
-
-	if (cap->ops == NULL || cap->ops->qos == NULL) {
-		return -EACCES;
-	}
-
-	return cap->ops->qos(stream, (struct bt_codec_qos *)qos);
-}
-
-static int unicast_server_enable_cb(struct bt_audio_stream *stream,
-				    const struct bt_codec_data *meta,
-				    size_t meta_count)
-{
-	struct bt_audio_capability *cap = stream->user_data;
-
-	if (cap->ops == NULL || cap->ops->enable == NULL) {
-		return -EACCES;
-	}
-
-	return cap->ops->enable(stream, (struct bt_codec_data *)meta,
-				meta_count);
-}
-
-static int unicast_server_start_cb(struct bt_audio_stream *stream)
-{
-	struct bt_audio_capability *cap = stream->user_data;
-
-	if (cap->ops == NULL || cap->ops->start == NULL) {
-		return -EACCES;
-	}
-
-	return cap->ops->start(stream);
-}
-
-static int unicast_server_metadata_cb(struct bt_audio_stream *stream,
-				      const struct bt_codec_data *meta,
-				      size_t meta_count)
-{
-	struct bt_audio_capability *cap = stream->user_data;
-
-	if (cap->ops == NULL || cap->ops->metadata == NULL) {
-		return -EACCES;
-	}
-
-	return cap->ops->metadata(stream, (struct bt_codec_data *)meta,
-				  meta_count);
-}
-
-static int unicast_server_disable_cb(struct bt_audio_stream *stream)
-{
-	struct bt_audio_capability *cap = stream->user_data;
-
-	if (cap->ops == NULL || cap->ops->disable == NULL) {
-		return -EACCES;
-	}
-
-	return cap->ops->disable(stream);
-}
-
-static int unicast_server_stop_cb(struct bt_audio_stream *stream)
-{
-	struct bt_audio_capability *cap = stream->user_data;
-
-	if (cap->ops == NULL || cap->ops->stop == NULL) {
-		return -EACCES;
-	}
-
-	return cap->ops->stop(stream);
-}
-
-static int unicast_server_release_cb(struct bt_audio_stream *stream)
-{
-	struct bt_audio_capability *cap = stream->user_data;
-
-	if (cap->ops == NULL || cap->ops->release == NULL) {
-		return -EACCES;
-	}
-
-	return cap->ops->release(stream);
-}
-
-static struct bt_audio_unicast_server_cb unicast_server_cb = {
-	.config = unicast_server_config_cb,
-	.reconfig = unicast_server_reconfig_cb,
-	.qos = unicast_server_qos_cb,
-	.enable = unicast_server_enable_cb,
-	.start = unicast_server_start_cb,
-	.metadata = unicast_server_metadata_cb,
-	.disable = unicast_server_disable_cb,
-	.stop = unicast_server_stop_cb,
-	.release = unicast_server_release_cb
-};
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
 
 static int publish_capability_cb(struct bt_conn *conn, uint8_t dir,
 				 uint8_t index, struct bt_codec *codec)
@@ -333,7 +123,7 @@ static struct bt_audio_pacs_cb pacs_cb = {
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
 };
 
-sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
+static sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
 {
 	switch (dir) {
 	case BT_AUDIO_DIR_SINK:
@@ -345,8 +135,31 @@ sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
 	return NULL;
 }
 
+void bt_audio_foreach_capability(enum bt_audio_dir dir, bt_audio_foreach_capability_func_t func,
+				 void *user_data)
+{
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+
+	CHECKIF(func == NULL) {
+		BT_ERR("func is NULL");
+		return;
+	}
+
+	lst = bt_audio_capability_get(dir);
+	if (!lst) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
+		if (!func(cap, user_data)) {
+			break;
+		}
+	}
+}
+
 /* Register Audio Capability */
-int bt_audio_capability_register(struct bt_audio_capability *cap)
+int bt_audio_capability_register(enum bt_audio_dir dir, struct bt_audio_capability *cap)
 {
 	static bool pacs_cb_registered;
 	sys_slist_t *lst;
@@ -355,13 +168,13 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 		return -EINVAL;
 	}
 
-	lst = bt_audio_capability_get(cap->dir);
+	lst = bt_audio_capability_get(dir);
 	if (!lst) {
 		return -EINVAL;
 	}
 
 	BT_DBG("cap %p dir 0x%02x codec 0x%02x codec cid 0x%04x "
-	       "codec vid 0x%04x", cap, cap->dir, cap->codec->id,
+	       "codec vid 0x%04x", cap, dir, cap->codec->id,
 	       cap->codec->cid, cap->codec->vid);
 
 	if (!pacs_cb_registered) {
@@ -377,39 +190,17 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 		pacs_cb_registered = true;
 	}
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_ASCS)
-	/* Using the capabilities instead of the unicast server directly will
-	 * require the capabilities to register the callbacks, which not only
-	 * will forward the unicast server callbacks, but also ensure that the
-	 * unicast server callbacks are not registered elsewhere
-	 */
-	static bool unicast_server_cb_registered;
-
-	if (!unicast_server_cb_registered) {
-		int err;
-
-		err = bt_audio_unicast_server_register_cb(&unicast_server_cb);
-		if (err != 0) {
-			BT_DBG("Failed to register unicast server callbacks: %d",
-			       err);
-			return err;
-		}
-
-		unicast_server_cb_registered = true;
-	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
-
 	sys_slist_append(lst, &cap->_node);
 
 #if defined(CONFIG_BT_PACS)
-	bt_pacs_add_capability(cap->dir);
+	bt_pacs_capabilities_changed(dir);
 #endif /* CONFIG_BT_PACS */
 
 	return 0;
 }
 
 /* Unregister Audio Capability */
-int bt_audio_capability_unregister(struct bt_audio_capability *cap)
+int bt_audio_capability_unregister(enum bt_audio_dir dir, struct bt_audio_capability *cap)
 {
 	sys_slist_t *lst;
 
@@ -417,35 +208,19 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 		return -EINVAL;
 	}
 
-	lst = bt_audio_capability_get(cap->dir);
+	lst = bt_audio_capability_get(dir);
 	if (!lst) {
 		return -EINVAL;
 	}
 
-	BT_DBG("cap %p dir 0x%02x", cap, cap->dir);
+	BT_DBG("cap %p dir 0x%02x", cap, dir);
 
 	if (!sys_slist_find_and_remove(lst, &cap->_node)) {
 		return -ENOENT;
 	}
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_ASCS)
-	/* If we are removing the last audio capability as the unicast
-	 * server, we unregister the callbacks.
-	 */
-	if (sys_slist_is_empty(&snks) && sys_slist_is_empty(&srcs)) {
-		int err;
-
-		err = bt_audio_unicast_server_unregister_cb(&unicast_server_cb);
-		if (err != 0) {
-			BT_DBG("Failed to register unicast server callbacks: %d",
-			       err);
-			return err;
-		}
-	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
-
 #if defined(CONFIG_BT_PACS)
-	bt_pacs_remove_capability(cap->dir);
+	bt_pacs_capabilities_changed(dir);
 #endif /* CONFIG_BT_PACS */
 
 	return 0;

@@ -18,6 +18,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"

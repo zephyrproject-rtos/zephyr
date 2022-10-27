@@ -97,6 +97,11 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, intel_hpet));
  */
 static inline uint64_t hpet_counter_get(void)
 {
+#ifdef CONFIG_64BIT
+	uint64_t val = sys_read64(MAIN_COUNTER_LOW_REG);
+
+	return val;
+#else
 	uint32_t high;
 	uint32_t low;
 
@@ -106,6 +111,7 @@ static inline uint64_t hpet_counter_get(void)
 	} while (high != sys_read32(MAIN_COUNTER_HIGH_REG));
 
 	return ((uint64_t)high << 32) | low;
+#endif
 }
 
 /**

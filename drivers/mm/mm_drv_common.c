@@ -469,3 +469,24 @@ out:
 
 __weak FUNC_ALIAS(sys_mm_drv_simple_update_region_flags,
 		  sys_mm_drv_update_region_flags, int);
+
+const struct sys_mm_drv_region *sys_mm_drv_simple_query_memory_regions(void)
+{
+	const static struct sys_mm_drv_region empty[] = {
+		{ }
+	};
+
+	return empty;
+}
+
+__weak FUNC_ALIAS(sys_mm_drv_simple_query_memory_regions,
+		  sys_mm_drv_query_memory_regions,
+		  const struct sys_mm_drv_region *);
+
+void sys_mm_drv_simple_query_memory_regions_free(const struct sys_mm_drv_region *regions)
+{
+	ARG_UNUSED(regions);
+}
+
+__weak FUNC_ALIAS(sys_mm_drv_simple_query_memory_regions_free,
+		  sys_mm_drv_query_memory_regions_free, void);

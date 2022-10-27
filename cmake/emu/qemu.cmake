@@ -54,6 +54,8 @@ else()
   list(APPEND QEMU_FLAGS qemu${QEMU_INSTANCE}.pid)
 endif()
 
+# If running with sysbuild, we need to ensure this variable is populated
+zephyr_get(QEMU_PIPE)
 # Set up chardev for console.
 if(QEMU_PTY)
   # Redirect console to a pseudo-tty, used for running automated tests.
@@ -337,8 +339,8 @@ endif()
 # Don't just test CONFIG_SMP, there is at least one test of the lower
 # level multiprocessor API that wants an auxiliary CPU but doesn't
 # want SMP using it.
-if(NOT CONFIG_MP_NUM_CPUS MATCHES "1")
-  list(APPEND QEMU_SMP_FLAGS -smp cpus=${CONFIG_MP_NUM_CPUS})
+if(NOT CONFIG_MP_MAX_NUM_CPUS MATCHES "1")
+  list(APPEND QEMU_SMP_FLAGS -smp cpus=${CONFIG_MP_MAX_NUM_CPUS})
 endif()
 
 # Use flags passed in from the environment

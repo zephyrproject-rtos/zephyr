@@ -27,8 +27,10 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/coredump.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/dac.h>
+#include <zephyr/drivers/dai.h>
 #include <zephyr/drivers/disk.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/dma.h>
@@ -48,6 +50,7 @@
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/kscan.h>
 #include <zephyr/drivers/led.h>
@@ -55,6 +58,7 @@
 #include <zephyr/drivers/lora.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/drivers/mdio.h>
+#include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/peci.h>
 /* drivers/pinctrl.h requires SoC specific header */
 #include <zephyr/drivers/pm_cpu_ops.h>
@@ -63,10 +67,12 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/regulator.h>
 /* drivers/reset.h conflicts with assert() for certain platforms */
+#include <zephyr/drivers/sdhc.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi_emul.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_hid.h>

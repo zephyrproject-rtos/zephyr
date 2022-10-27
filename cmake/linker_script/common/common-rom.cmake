@@ -1,6 +1,7 @@
 # originates from common-rom.ld
 
 zephyr_linker_section(NAME init KVMA RAM_REGION GROUP RODATA_REGION)
+zephyr_linker_section_obj_level(SECTION init LEVEL EARLY)
 zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_1)
 zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_2)
 zephyr_linker_section_obj_level(SECTION init LEVEL POST_KERNEL)
@@ -8,6 +9,7 @@ zephyr_linker_section_obj_level(SECTION init LEVEL APPLICATION)
 zephyr_linker_section_obj_level(SECTION init LEVEL SMP)
 
 zephyr_linker_section(NAME device KVMA RAM_REGION GROUP RODATA_REGION)
+zephyr_linker_section_obj_level(SECTION device LEVEL EARLY)
 zephyr_linker_section_obj_level(SECTION device LEVEL PRE_KERNEL_1)
 zephyr_linker_section_obj_level(SECTION device LEVEL PRE_KERNEL_2)
 zephyr_linker_section_obj_level(SECTION device LEVEL POST_KERNEL)

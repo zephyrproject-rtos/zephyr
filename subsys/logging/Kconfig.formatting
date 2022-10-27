@@ -24,6 +24,7 @@ endmenu
 menuconfig LOG_MIPI_SYST_ENABLE
 	bool "MIPI SyS-T format output"
 	select MIPI_SYST_LIB
+	select LOG_OUTPUT
 	help
 	  Enable MIPI SyS-T format output for the logger system.
 
@@ -102,6 +103,13 @@ config LOG_DICTIONARY_SUPPORT
 	  the log output when there are long format strings to be logged.
 
 	  This should be selected by the backend automatically.
+
+config LOG_CUSTOM_FORMAT_SUPPORT
+	bool "Custom format support"
+	default n
+	help
+	  Enable support for custom formatter.
+	  Allows custom format callbacks registering for logging backend.
 
 config LOG_IMMEDIATE_CLEAN_OUTPUT
 	bool "Clean log output"

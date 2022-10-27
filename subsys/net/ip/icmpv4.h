@@ -62,6 +62,8 @@ int net_icmpv4_send_error(struct net_pkt *pkt, uint8_t type, uint8_t code);
  * to this Echo Request. May be zero.
  * @param sequence A sequence number to aid in matching Echo Replies
  * to this Echo Request. May be zero.
+ * @param tos IPv4 Type-of-service field value. Represents combined DSCP and ECN
+ * values.
  * @param data Arbitrary payload data that will be included in the
  * Echo Reply verbatim. May be zero.
  * @param data_size Size of the Payload Data in bytes. May be zero.
@@ -73,6 +75,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
 				 uint16_t identifier,
 				 uint16_t sequence,
+				 uint8_t tos,
 				 const void *data,
 				 size_t data_size);
 #else
@@ -80,6 +83,7 @@ static inline int net_icmpv4_send_echo_request(struct net_if *iface,
 					       struct in_addr *dst,
 					       uint16_t identifier,
 					       uint16_t sequence,
+					       uint8_t tos,
 					       const void *data,
 					       size_t data_size)
 {
@@ -87,6 +91,7 @@ static inline int net_icmpv4_send_echo_request(struct net_if *iface,
 	ARG_UNUSED(dst);
 	ARG_UNUSED(identifier);
 	ARG_UNUSED(sequence);
+	ARG_UNUSED(tos);
 	ARG_UNUSED(data);
 	ARG_UNUSED(data_size);
 

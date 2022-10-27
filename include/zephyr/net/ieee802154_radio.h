@@ -90,9 +90,9 @@ typedef void (*ieee802154_event_cb_t)(const struct device *dev,
 struct ieee802154_filter {
 /** @cond ignore */
 	union {
-		uint8_t *ieee_addr;
-		uint16_t short_addr;
-		uint16_t pan_id;
+		uint8_t *ieee_addr; /* in little endian */
+		uint16_t short_addr; /* in CPU byte order */
+		uint16_t pan_id; /* in CPU byte order */
 	};
 /* @endcond */
 };
@@ -142,7 +142,7 @@ enum ieee802154_config_type {
 	 *  determine whether to set the bit or not based on the information
 	 *  provided with ``IEEE802154_CONFIG_ACK_FPB`` config and FPB address
 	 *  matching mode specified. Otherwise, Frame Pending bit should be set
-	 *  to ``1``(see IEEE Std 802.15.4-2006, 7.2.2.3.1).
+	 *  to ``1`` (see IEEE Std 802.15.4-2006, 7.2.2.3.1).
 	 */
 	IEEE802154_CONFIG_AUTO_ACK_FPB,
 
@@ -233,7 +233,7 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_ACK_FPB`` */
 		struct {
-			uint8_t *addr;
+			uint8_t *addr; /* in little endian for both, short and extended address */
 			bool extended;
 			bool enabled;
 		} ack_fpb;
@@ -271,24 +271,30 @@ struct ieee802154_config {
 		} rx_slot;
 
 		/** ``IEEE802154_CONFIG_CSL_PERIOD`` */
-		uint32_t csl_period;
+		uint32_t csl_period; /* in CPU byte order */
 
 		/** ``IEEE802154_CONFIG_CSL_RX_TIME`` */
-		uint32_t csl_rx_time;
+		uint32_t csl_rx_time; /* in microseconds,
+				       * based on ieee802154_radio_api.get_time()
+				       */
 
 		/** ``IEEE802154_CONFIG_ENH_ACK_HEADER_IE`` */
 		struct {
-			const uint8_t *data;
+			const uint8_t *data; /* header IEs to be added to the Enh-Ack frame in
+					      * little endian byte order
+					      */
 			uint16_t data_len;
-			uint16_t short_addr;
+			uint16_t short_addr; /* in CPU byte order */
 			/**
 			 * The extended address is expected to be passed starting
-			 * with the leftmost octet and ending with the rightmost octet.
+			 * with the most significant octet and ending with the
+			 * least significant octet.
 			 * A device with an extended address 01:23:45:67:89:ab:cd:ef
-			 * should provide a pointer to array containing values in the
-			 * same exact order.
+			 * as written in the usual big-endian hex notation should
+			 * provide a pointer to an array containing values in the
+			 * exact same order.
 			 */
-			const uint8_t *ext_addr;
+			const uint8_t *ext_addr; /* in big endian */
 		} ack_ie;
 	};
 };
@@ -312,7 +318,7 @@ struct ieee802154_radio_api {
 	/** Clear Channel Assessment - Check channel's activity */
 	int (*cca)(const struct device *dev);
 
-	/** Set current channel */
+	/** Set current channel, channel is in CPU byte order. */
 	int (*set_channel)(const struct device *dev, uint16_t channel);
 
 	/** Set/Unset filters (for IEEE802154_HW_FILTER ) */

@@ -151,4 +151,4 @@ corresponding devicetree overlay.
 .. _DS3231:
    https://www.maximintegrated.com/en/products/analog/real-time-clocks/DS3231.html
 .. _Chronodot:
-   http://macetech.com/store/index.php?main_page=product_info&products_id=8
+   https://www.adafruit.com/product/255

@@ -6,7 +6,7 @@ common:
   tags: net mqtt
 tests:
   sample.net.mqtt_publisher:
-    platform_allow: frdm_k64f qemu_x86 pinnacle_100_dvk
+    platform_allow: frdm_k64f qemu_x86 pinnacle_100_dvk mg100
   sample.net.mqtt_publisher.userspace:
     platform_allow: frdm_k64f qemu_x86
     extra_args: CONFIG_USERSPACE=y

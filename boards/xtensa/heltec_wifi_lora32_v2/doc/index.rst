@@ -77,17 +77,8 @@ Debugging
 ---------
 
 As with much custom hardware, the ESP32 modules require patches to
-OpenOCD that are not upstreamed. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained by running the following extension:
-
-.. code-block:: console
-
-   west espressif install
-
-.. note::
-
-   By default, the OpenOCD will be downloaded and installed under $HOME/.espressif/tools/zephyr directory
-   (%USERPROFILE%/.espressif/tools/zephyr on Windows).
+OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
+the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
@@ -131,5 +122,6 @@ References
 - `Heltec WiFi LoRa (v2) Schematic Diagrams <https://resource.heltec.cn/download/WiFi_LoRa_32/V2>`_
 - `ESP32 Toolchain <https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/api-guides/tools/idf-tools.html#xtensa-esp32-elf>`_
 - `esptool documentation <https://github.com/espressif/esptool/blob/master/README.md>`_
+- `OpenOCD ESP32 <https://github.com/espressif/openocd-esp32/releases>`_
 
 .. [1] https://heltec.org/project/wifi-lora-32/

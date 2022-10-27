@@ -21,3 +21,4 @@ supported:
   - dma
   - watchdog
   - nvs
+  - lora

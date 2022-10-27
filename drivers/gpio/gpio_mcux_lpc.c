@@ -17,9 +17,10 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_common.h>
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include <fsl_gpio.h>
 #include <fsl_pint.h>
 #include <fsl_inputmux.h>

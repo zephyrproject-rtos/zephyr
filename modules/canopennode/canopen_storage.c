@@ -137,7 +137,7 @@ static int canopen_settings_set(const char *key, size_t len_rd,
 		len = read_cb(cb_arg, &eeprom, sizeof(eeprom));
 		if (len < 0) {
 			LOG_ERR("failed to restore object dictionary EEPROM"
-				" entries (err %d)", len);
+				" entries (err %zu)", len);
 			canopen_storage_eeprom_error = len;
 		} else {
 			if ((eeprom.FirstWord == CO_OD_FIRST_LAST_WORD) &&
@@ -160,7 +160,7 @@ static int canopen_settings_set(const char *key, size_t len_rd,
 		len = read_cb(cb_arg, &rom, sizeof(rom));
 		if (len < 0) {
 			LOG_ERR("failed to restore object dictionary ROM"
-				" entries (err %d)", len);
+				" entries (err %zu)", len);
 			canopen_storage_rom_error = len;
 		} else {
 			if ((rom.FirstWord == CO_OD_FIRST_LAST_WORD) &&

@@ -8,6 +8,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/irq.h>
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000

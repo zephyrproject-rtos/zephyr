@@ -21,6 +21,10 @@
 
 /* All specification references in this file refer to IEEE 802.15.4-2006
  * unless otherwise noted.
+ *
+ * Note: All structs and attributes (e.g. PAN id, ext address and short
+ * address) in this file that directly represent IEEE 802.15.4 frames
+ * are in LITTLE ENDIAN, see section 4, especially section 4.3.
  */
 
 #define IEEE802154_MIN_LENGTH	     3
@@ -42,15 +46,16 @@
 #define IEEE802154_BEACON_GTS_RX	  1
 #define IEEE802154_BEACON_GTS_TX	  0
 
-/* See section 7.2.1.1.1 */
+/* See section 7.2.1.1.1 and IEEE 802.15.4-2020, section 7.2.2.2 */
 enum ieee802154_frame_type {
 	IEEE802154_FRAME_TYPE_BEACON = 0x0,
 	IEEE802154_FRAME_TYPE_DATA = 0x1,
 	IEEE802154_FRAME_TYPE_ACK = 0x2,
 	IEEE802154_FRAME_TYPE_MAC_COMMAND = 0x3,
-	IEEE802154_FRAME_TYPE_LLDN = 0x4,
+	IEEE802154_FRAME_TYPE_RESERVED = 0x4,
 	IEEE802154_FRAME_TYPE_MULTIPURPOSE = 0x5,
-	IEEE802154_FRAME_TYPE_RESERVED = 0x6,
+	IEEE802154_FRAME_TYPE_FRAK = 0x6,
+	IEEE802154_FRAME_TYPE_EXTENDED = 0x7,
 };
 
 /* See section 7.2.1.1.6 */
@@ -383,7 +388,7 @@ struct ieee802154_cmd_coord_realign {
 	uint16_t coordinator_short_addr;
 	uint8_t channel;
 	uint16_t short_addr;
-	uint8_t channel_page; /* Optional */
+	uint8_t channel_page; /* optional */
 } __packed;
 
 #define IEEE802154_CMD_COORD_REALIGN_LENGTH 3
@@ -453,16 +458,16 @@ struct ieee802154_mpdu {
 struct ieee802154_frame_params {
 	struct {
 		union {
-			uint8_t *ext_addr;
-			uint16_t short_addr;
+			uint8_t *ext_addr; /* in big endian */
+			uint16_t short_addr; /* in CPU byte order */
 		};
 
 		uint16_t len;
-		uint16_t pan_id;
+		uint16_t pan_id; /* in CPU byte order */
 	} dst;
 
-	uint16_t short_addr;
-	uint16_t pan_id;
+	uint16_t short_addr; /* in CPU byte order */
+	uint16_t pan_id; /* in CPU byte order */
 } __packed;
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY

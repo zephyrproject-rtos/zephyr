@@ -36,9 +36,16 @@
 		};
 	};
 
+
 	zephyr,user {
-		pull-up-gpios = <&gpioe 4 GPIO_PULL_UP>;
-		no-pull-gpios = <&gpioe 6 GPIO_PUSH_PULL>;
+		dischrg-gpios = <&gpioe 6 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+
+	supply-3v3 {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		regulator-name = "supply-3v3";
+		enable-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
 	};
 
 	aliases {

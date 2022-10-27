@@ -332,8 +332,10 @@ int lll_adv_data_release(struct lll_adv_pdu *pdu)
 
 	last = pdu->last;
 	p = pdu->pdu[last];
-	pdu->pdu[last] = NULL;
-	mem_release(p, &mem_pdu.free);
+	if (p) {
+		pdu->pdu[last] = NULL;
+		mem_release(p, &mem_pdu.free);
+	}
 
 	last++;
 	if (last == DOUBLE_BUFFER_SIZE) {
@@ -1375,8 +1377,12 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* If no auxiliary PDUs scheduled, generate primary radio event done */
-	if (!lll->aux) {
+	if (!lll->aux)
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	{
 		struct event_done_extra *extra;
 
 		extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV);

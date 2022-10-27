@@ -9,14 +9,10 @@
 
 #include <inttypes.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* MTU for newtmgr responses */
-#define MGMT_MAX_MTU		1024
 
 /** Opcodes; encoded in first byte of header. */
 #define MGMT_OP_READ		0
@@ -132,15 +128,6 @@ typedef void *(*mgmt_alloc_rsp_fn)(const void *src_buf, void *arg);
 typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
 
 /**
- * @brief Decodes requests and encodes responses for any mcumgr protocol.
- */
-struct mgmt_streamer {
-	void *cb_arg;
-	struct cbor_nb_reader *reader;
-	struct cbor_nb_writer *writer;
-};
-
-/**
  * @brief Context required by command handlers for parsing requests and writing
  *		responses.
  */
@@ -195,30 +182,6 @@ struct mgmt_group {
 };
 
 /**
- * @brief Uses the specified streamer to trim data from the front of a buffer.
- *
- * If the amount to trim exceeds the size of the buffer, the buffer is
- * truncated to a length of 0.
- *
- * @param streamer	The streamer providing the callback.
- * @param buf		The buffer to trim.
- * @param len		The number of bytes to remove.
- */
-void mgmt_streamer_trim_front(struct mgmt_streamer *streamer, void *buf, size_t len);
-
-/**
- * @brief Uses the specified streamer to initialize a CBOR reader.
- *
- * @param streamer	The streamer providing the callback.
- * @param reader	The reader to initialize.
- * @param buf		The buffer to configure the reader with.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-int mgmt_streamer_init_reader(struct mgmt_streamer *streamer, void *buf);
-
-
-/**
  * @brief Registers a full command group.
  *
  * @param group The group to register.
@@ -242,16 +205,6 @@ void mgmt_unregister_group(struct mgmt_group *group);
  *		NULL on failure.
  */
 const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command_id);
-
-/**
- * @brief Encodes a response status into the specified management context.
- *
- * @param ctxt		The management context to encode into.
- * @param status	The response status to write.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-int mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int status);
 
 /**
  * @brief Byte-swaps an mcumgr header from network to host byte order.

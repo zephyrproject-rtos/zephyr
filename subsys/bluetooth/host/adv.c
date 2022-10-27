@@ -269,11 +269,11 @@ void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 }
 
-static struct bt_le_ext_adv *adv_new_legacy(void)
+static struct bt_le_ext_adv *adv_get_legacy(void)
 {
 #if defined(CONFIG_BT_EXT_ADV)
 	if (bt_dev.adv) {
-		return NULL;
+		return bt_dev.adv;
 	}
 
 	bt_dev.adv = adv_new();
@@ -425,7 +425,7 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 	}
 
 	if (param->id >= bt_dev.id_count ||
-	    !bt_addr_le_cmp(&bt_dev.id_addr[param->id], BT_ADDR_LE_ANY)) {
+	    bt_addr_le_eq(&bt_dev.id_addr[param->id], BT_ADDR_LE_ANY)) {
 		return false;
 	}
 
@@ -896,7 +896,7 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 
 	bt_dev.adv_conn_id = adv->id;
 
-	if (!bt_addr_le_cmp(&adv->target_addr, BT_ADDR_LE_ANY)) {
+	if (bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY)) {
 		/* Undirected advertising */
 		conn = bt_conn_add_le(adv->id, BT_ADDR_LE_NONE);
 		if (!conn) {
@@ -926,7 +926,7 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 {
 	struct bt_conn *conn;
 
-	if (!bt_addr_le_cmp(&adv->target_addr, BT_ADDR_LE_ANY)) {
+	if (bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY)) {
 		conn = bt_conn_lookup_state_le(adv->id, BT_ADDR_LE_NONE,
 					       BT_CONN_CONNECTING_ADV);
 	} else {
@@ -1335,7 +1335,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
-	struct bt_le_ext_adv *adv = adv_new_legacy();
+	struct bt_le_ext_adv *adv = adv_get_legacy();
 	int err;
 
 	if (!adv) {
@@ -1879,7 +1879,7 @@ int bt_le_per_adv_stop(struct bt_le_ext_adv *adv)
 	return bt_le_per_adv_enable(adv, false);
 }
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
 				    const struct bt_conn *conn,
 				    uint16_t service_data)
@@ -1910,7 +1910,7 @@ int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER, buf,
 				    NULL);
 }
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 #endif /* CONFIG_BT_PER_ADV */
 
 #if defined(CONFIG_BT_EXT_ADV)

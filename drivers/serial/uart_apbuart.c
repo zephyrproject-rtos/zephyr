@@ -7,6 +7,8 @@
 #define DT_DRV_COMPAT gaisler_apbuart
 
 #include <zephyr/drivers/uart.h>
+#include <zephyr/irq.h>
+#include <zephyr/sys/time_units.h>
 #include <errno.h>
 
 /* APBUART registers

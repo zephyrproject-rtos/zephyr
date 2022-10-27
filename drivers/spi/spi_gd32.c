@@ -17,6 +17,7 @@
 #include <gd32_spi.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(spi_gd32);
 
 #include "spi_context.h"

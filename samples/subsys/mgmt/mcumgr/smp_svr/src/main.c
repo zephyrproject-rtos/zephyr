@@ -27,9 +27,6 @@
 #ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
 #include "shell_mgmt/shell_mgmt.h"
 #endif
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-#include "fs_mgmt/fs_mgmt.h"
-#endif
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <zephyr/logging/log.h>

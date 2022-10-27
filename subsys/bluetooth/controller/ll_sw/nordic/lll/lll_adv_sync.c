@@ -399,7 +399,8 @@ static void isr_tx(void *param)
 	}
 }
 
-static void switch_radio_complete_and_b2b_tx(const struct lll_adv_sync *lll, uint8_t phy_s)
+static void switch_radio_complete_and_b2b_tx(const struct lll_adv_sync *lll,
+					     uint8_t phy_s)
 {
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (lll->cte_started) {

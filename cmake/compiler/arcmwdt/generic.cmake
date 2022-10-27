@@ -29,7 +29,7 @@ endif()
 execute_process(
   COMMAND ${CMAKE_C_COMPILER} --version
   RESULT_VARIABLE ret
-  OUTPUT_QUIET
+  OUTPUT_VARIABLE full_version_output
   ERROR_QUIET
   )
 
@@ -37,4 +37,19 @@ if(ret)
   message(FATAL_ERROR "Executing the below command failed. Are permissions set correctly?
   '${CMAKE_C_COMPILER} --version'"
   )
+else()
+  set(ARCMWDT_MIN_REQUIRED_VERS "2022.06")
+#
+# Regular version have format: "T-2022.06"
+# Engineering builds: "ENG-2022.06-001"
+#
+  string(REGEX MATCH "\ (ENG|[A-Z])-[0-9][0-9][0-9][0-9]\.[0-9][0-9]+((\ |\n|\r|\t)|(-[0-9][0-9][0-9]))"
+   vers_string "${full_version_output}")
+
+  string(REGEX MATCH "[0-9][0-9][0-9][0-9]\.[0-9][0-9]"
+     reduced_version "${vers_string}")
+
+  if("${reduced_version}" VERSION_LESS ${ARCMWDT_MIN_REQUIRED_VERS})
+    message(FATAL_ERROR "Could NOT find ccac: Found unsuitable version \"${reduced_version}\", but required is at least \"${ARCMWDT_MIN_REQUIRED_VERS}\" (found ${CROSS_COMPILE}ccac)")
+  endif()
 endif()

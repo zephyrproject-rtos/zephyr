@@ -404,13 +404,6 @@ directly upgraded to.
 
 .. tip::
 
-    The maximum size of a chunk communicated between the client and server is set
-    with :kconfig:option:`CONFIG_IMG_MGMT_UL_CHUNK_SIZE`. The default is 512 but can be
-    decreased for systems with low amount of RAM down to 128. When this value is
-    changed, the ``mtu`` of the port must be smaller than or equal to this value.
-
-.. tip::
-
     Building with :kconfig:option:`CONFIG_IMG_MGMT_VERBOSE_ERR` enables better error
     messages when failures happen (but increases the application size).
 

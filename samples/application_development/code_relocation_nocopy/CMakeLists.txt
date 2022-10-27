@@ -12,8 +12,8 @@ target_sources_ifdef(CONFIG_NRFX_QSPI app PRIVATE boards/nrf5340dk_nrf5340_cpuap
 # Run ext_code from the external flash (XIP). No need to copy.
 zephyr_code_relocate(src/ext_code.c EXTFLASH_TEXT NOCOPY)
 
-# But still relocate (copy) the data to SRAM
-zephyr_code_relocate(src/ext_code.c SRAM_DATA)
+# But still relocate (copy) the data to RAM
+zephyr_code_relocate(src/ext_code.c RAM_DATA)
 
 # sram_code instead runs entirely from SRAM after being copied there.
-zephyr_code_relocate(src/sram_code.c SRAM)
+zephyr_code_relocate(src/sram_code.c RAM)

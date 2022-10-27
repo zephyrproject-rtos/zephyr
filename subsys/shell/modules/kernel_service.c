@@ -20,6 +20,12 @@
 #include <zephyr/logging/log_ctrl.h>
 #endif
 
+#if defined(CONFIG_THREAD_MAX_NAME_LEN)
+#define THREAD_MAX_NAM_LEN CONFIG_THREAD_MAX_NAME_LEN
+#else
+#define THREAD_MAX_NAM_LEN 10
+#endif
+
 static int cmd_kernel_version(const struct shell *shell,
 			      size_t argc, char **argv)
 {
@@ -181,14 +187,13 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 	/* Calculate the real size reserved for the stack */
 	pcnt = ((size - unused) * 100U) / size;
 
-	shell_print((const struct shell *)user_data,
-		"%p %-10s (real size %zu):\tunused %zu\tusage %zu / %zu (%u %%)",
-		      thread,
-		      tname ? tname : "NA",
-		      size, unused, size - unused, size, pcnt);
+	shell_print(
+		(const struct shell *)user_data, "%p %-" STRINGIFY(THREAD_MAX_NAM_LEN) "s "
+		"(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%u %%)",
+		thread, tname ? tname : "NA", size, unused, size - unused, size, pcnt);
 }
 
-K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
 static int cmd_kernel_stacks(const struct shell *shell,
@@ -196,13 +201,19 @@ static int cmd_kernel_stacks(const struct shell *shell,
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+	char pad[THREAD_MAX_NAM_LEN] = { 0 };
+
+	memset(pad, ' ', MAX((THREAD_MAX_NAM_LEN - strlen("IRQ 00")), 1));
+
 	k_thread_foreach(shell_stack_dump, (void *)shell);
 
 	/* Placeholder logic for interrupt stack until we have better
 	 * kernel support, including dumping arch-specific exception-related
 	 * stack buffers.
 	 */
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		size_t unused;
 		const uint8_t *buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
 		size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
@@ -212,10 +223,9 @@ static int cmd_kernel_stacks(const struct shell *shell,
 		__ASSERT_NO_MSG(err == 0);
 
 		shell_print(shell,
-			"%p IRQ %02d     (real size %zu):\tunused %zu\tusage %zu / %zu (%zu %%)",
-			      &z_interrupt_stacks[i], i, size, unused,
-			      size - unused, size,
-			      ((size - unused) * 100U) / size);
+			    "%p IRQ %02d %s(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%zu %%)",
+			    &z_interrupt_stacks[i], i, pad, size, unused, size - unused, size,
+			    ((size - unused) * 100U) / size);
 	}
 
 	return 0;

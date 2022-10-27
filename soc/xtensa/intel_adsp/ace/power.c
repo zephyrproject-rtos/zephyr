@@ -8,15 +8,15 @@
 #include <cpu_init.h>
 
 #include <xtensa/corebits.h>
-
-#include <ace_v1x-regs.h>
+#include <adsp_boot.h>
+#include <adsp_power.h>
 
 #define LPSRAM_MAGIC_VALUE      0x13579BDF
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
 #define SRAM_ALIAS_BASE         0xA0000000
 #define SRAM_ALIAS_MASK         0xF0000000
-#define MEMCTL_INIT_BIT         BIT(23)
-#define MEMCTL_DEFAULT_VALUE    (MEMCTL_L0IBUF_EN | MEMCTL_INIT_BIT)
+#define MEMCTL_DEFAULT_VALUE    (MEMCTL_INV_EN | MEMCTL_ICWU_MASK | MEMCTL_DCWA_MASK | \
+				 MEMCTL_DCWU_MASK | MEMCTL_L0IBUF_EN)
 
 __imr void power_init(void)
 {
@@ -67,7 +67,7 @@ struct core_state {
 	uint32_t intenable;
 };
 
-static struct core_state core_desc[CONFIG_MP_NUM_CPUS] = { 0 };
+static struct core_state core_desc[CONFIG_MP_MAX_NUM_CPUS] = { 0 };
 
 struct lpsram_header {
 	uint32_t alt_reset_vector;
@@ -122,7 +122,7 @@ void power_gate_entry(uint32_t core_id)
 	lpsheader->adsp_lpsram_magic = LPSRAM_MAGIC_VALUE;
 	lpsheader->lp_restore_vector = &dsp_restore_vector;
 	soc_cpus_active[core_id] = false;
-	xthal_dcache_all_writeback();
+	z_xtensa_cache_flush_inv_all();
 	z_xt_ints_on(ALL_USED_INT_LEVELS_MASK);
 	k_cpu_idle();
 	z_xt_ints_off(0xffffffff);

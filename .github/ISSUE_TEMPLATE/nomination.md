@@ -17,8 +17,9 @@ with the lowest [GitHub Permission Level] of Read. For example, Contributors
 with Read permission do not have the permission to add reviewers to a pull
 request.
 
-Use this template to nominate a GitHub user for an elevated permission level in
-the Contributor role.
+Use this template to nominate a GitHub user for the Contributor role with
+Triage permission level, which allows the user to add reviewers to a pull
+request and be added as a reviewer by other users.
 
 # Nomination
 
@@ -38,4 +39,4 @@ Zephyr project.
 
 
 [TSC Project Roles]: <https://docs.zephyrproject.org/latest/project/project_roles.html>
-[GitHub Permission Level]: <https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization>
+[GitHub Permission Level]: <https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization>

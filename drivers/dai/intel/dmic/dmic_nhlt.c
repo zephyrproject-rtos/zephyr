@@ -25,11 +25,12 @@ static const uint32_t coef_base_b[4] = {PDM0_COEFFICIENT_B, PDM1_COEFFICIENT_B,
 					PDM2_COEFFICIENT_B, PDM3_COEFFICIENT_B};
 
 static inline void dai_dmic_write(const struct dai_intel_dmic *dmic,
-			   uint32_t reg, uint32_t val)
+				  uint32_t reg, uint32_t val)
 {
 	sys_write32(val, dmic->reg_base + reg);
 }
 
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
 				    struct nhlt_pdm_ctrl_cfg **pdm_cfg,
 				    int *count, int pdm_count, int stereo,
@@ -53,9 +54,9 @@ static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
 }
 
 static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
-				    int32_t *outcontrol,
-				    struct nhlt_pdm_ctrl_cfg **pdm_cfg,
-				    struct nhlt_pdm_ctrl_fir_cfg **fir_cfg)
+					int32_t *outcontrol,
+					struct nhlt_pdm_ctrl_cfg **pdm_cfg,
+					struct nhlt_pdm_ctrl_fir_cfg **fir_cfg)
 {
 	uint32_t outcontrol_val = outcontrol[dmic->dai_config_params.dai_index];
 	int num_pdm;
@@ -81,7 +82,8 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
 
 	num_pdm = OUTCONTROL0_IPM_GET(outcontrol_val);
 	if (num_pdm > CONFIG_DAI_DMIC_HW_CONTROLLERS) {
-		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM PDM controllers count");
+		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM PDM controllers count %d",
+			num_pdm);
 		return -EINVAL;
 	}
 
@@ -122,6 +124,86 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
 
 	return 0;
 }
+#else
+static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
+					int32_t *outcontrol,
+					struct nhlt_pdm_ctrl_cfg **pdm_cfg,
+					struct nhlt_pdm_ctrl_fir_cfg **fir_cfg)
+{
+	int fir_stereo[2];
+	int mic_swap;
+
+	switch (OUTCONTROL0_OF_GET(outcontrol[dmic->dai_config_params.dai_index])) {
+	case 0:
+	case 1:
+		dmic->dai_config_params.format = DAI_DMIC_FRAME_S16_LE;
+		break;
+	case 2:
+		dmic->dai_config_params.format = DAI_DMIC_FRAME_S32_LE;
+		break;
+	default:
+		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal OF bit field");
+		return -EINVAL;
+	}
+
+	switch (OUTCONTROL0_IPM_GET(outcontrol[dmic->dai_config_params.dai_index])) {
+	case 0:
+		if (!fir_cfg[0])
+			return -EINVAL;
+
+		fir_stereo[0] = FIR_CONTROL_A_STEREO_GET(fir_cfg[0]->fir_control);
+		if (fir_stereo[0]) {
+			dmic->dai_config_params.channels = 2;
+			dmic->enable[0] = 0x3; /* PDM0 MIC A and B */
+			dmic->enable[1] = 0x0;	/* PDM1 none */
+
+		} else {
+			dmic->dai_config_params.channels = 1;
+			mic_swap = MIC_CONTROL_PDM_CLK_EDGE_GET(pdm_cfg[0]->mic_control);
+			dmic->enable[0] = mic_swap ? 0x2 : 0x1; /* PDM0 MIC B or MIC A */
+			dmic->enable[1] = 0x0;	/* PDM1 */
+		}
+		break;
+	case 1:
+		if (!fir_cfg[1])
+			return -EINVAL;
+
+		fir_stereo[1] = FIR_CONTROL_A_STEREO_GET(fir_cfg[1]->fir_control);
+		if (fir_stereo[1]) {
+			dmic->dai_config_params.channels = 2;
+			dmic->enable[0] = 0x0; /* PDM0 none */
+			dmic->enable[1] = 0x3;	/* PDM1 MIC A and B */
+		} else {
+			dmic->dai_config_params.channels = 1;
+			dmic->enable[0] = 0x0; /* PDM0 none */
+			mic_swap = MIC_CONTROL_PDM_CLK_EDGE_GET(pdm_cfg[1]->mic_control);
+			dmic->enable[1] = mic_swap ? 0x2 : 0x1; /* PDM1 MIC B or MIC A */
+		}
+		break;
+	case 2:
+		if (!fir_cfg[0] || !fir_cfg[0])
+			return -EINVAL;
+
+		fir_stereo[0] = FIR_CONTROL_A_STEREO_GET(fir_cfg[0]->fir_control);
+		fir_stereo[1] = FIR_CONTROL_A_STEREO_GET(fir_cfg[1]->fir_control);
+		if (fir_stereo[0] == fir_stereo[1]) {
+			dmic->dai_config_params.channels = 4;
+			dmic->enable[0] = 0x3; /* PDM0 MIC A and B */
+			dmic->enable[1] = 0x3;	/* PDM1 MIC A and B */
+			LOG_INF("nhlt_dmic_dai_params_get(): set 4ch pdm0 and pdm1");
+		} else {
+			LOG_ERR("nhlt_dmic_dai_params_get(): Illegal 4ch configuration");
+			return -EINVAL;
+		}
+		break;
+	default:
+		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal OF bit field");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif
 
 int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cfg)
 {
@@ -148,7 +230,9 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	int comb_count;
 	int fir_decimation, fir_shift, fir_length;
 	int bf1, bf2, bf3, bf4, bf5, bf6, bf7, bf8;
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	int bf9, bf10, bf11, bf12, bf13;
+#endif
 	int bfth;
 	int ret;
 	int p_mcic = 0;
@@ -201,6 +285,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			return -EINVAL;
 		}
 
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 		bf9 = OUTCONTROL0_IPM_SOURCE_1_GET(val);
 		bf10 = OUTCONTROL0_IPM_SOURCE_2_GET(val);
 		bf11 = OUTCONTROL0_IPM_SOURCE_3_GET(val);
@@ -214,6 +299,11 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			OUTCONTROL0_IPM_SOURCE_2(bf10) | OUTCONTROL0_IPM_SOURCE_3(bf11) |
 			OUTCONTROL0_IPM_SOURCE_4(bf12) | OUTCONTROL0_TH(bf8) |
 			OUTCONTROL0_IPM_SOURCE_MODE(bf13);
+#else
+		ref = OUTCONTROL0_TIE(bf1) | OUTCONTROL0_SIP(bf2) | OUTCONTROL0_FINIT(bf3) |
+			OUTCONTROL0_FCI(bf4) | OUTCONTROL0_BFTH(bf5) | OUTCONTROL0_OF(bf6) |
+			OUTCONTROL0_IPM(bf7) | OUTCONTROL0_TH(bf8);
+#endif
 		if (ref != val) {
 			LOG_ERR("dmic_set_config_nhlt(): illegal OUTCONTROL%d = 0x%08x",
 				n, val);
@@ -499,5 +589,11 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	LOG_INF("dmic_set_config_nhlt(): rate = %d, channels = %d, format = %d",
 		 dmic->dai_config_params.rate, dmic->dai_config_params.channels,
 		 dmic->dai_config_params.format);
+
+	LOG_INF("dmic_set_config_nhlt(): io_clk %u, rate_div %d",
+		 CONFIG_DAI_DMIC_HW_IOCLK, rate_div);
+
+	LOG_INF("dmic_set_config_nhlt(): enable0 %u, enable1 %u",
+		dmic->enable[0], dmic->enable[1]);
 	return 0;
 }

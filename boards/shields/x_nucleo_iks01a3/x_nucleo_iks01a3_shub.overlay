@@ -6,20 +6,20 @@
 
 / {
 	aliases {
-		accel0 = &lis2dw12_19;
-		accel1 = &lsm6dso_6b;
+		accel0 = &lis2dw12_19_x_nucleo_iks01a3_shub;
+		accel1 = &lsm6dso_6b_x_nucleo_iks01a3_shub;
 	};
 };
 
 &arduino_i2c {
 
-	lis2dw12_19: lis2dw12@19 {
+	lis2dw12_19_x_nucleo_iks01a3_shub: lis2dw12@19 {
 		compatible = "st,lis2dw12";
 		reg = <0x19>;
 		irq-gpios =  <&arduino_header 3 GPIO_ACTIVE_HIGH>; /* A3 */
 	};
 
-	lsm6dso_6b: lsm6dso@6b {
+	lsm6dso_6b_x_nucleo_iks01a3_shub: lsm6dso@6b {
 		compatible = "st,lsm6dso";
 		reg = <0x6b>;
 		irq-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 */

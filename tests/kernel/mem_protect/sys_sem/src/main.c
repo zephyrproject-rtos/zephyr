@@ -242,7 +242,7 @@ ZTEST_USER(sys_sem, test_sem_take_no_wait_fails)
 /**
  * @brief Test sys_sem_take() with timeout expiry
  */
-void test_sem_take_timeout_fails(void)
+ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_fails)
 {
 	int32_t ret_value;
 

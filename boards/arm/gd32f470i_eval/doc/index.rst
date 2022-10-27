@@ -160,7 +160,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
    https://www.gigadevice.com/microcontroller/gd32f470ikh6/
 
 .. _GD32F470xx Datasheet:
-   https://gd32mcu.21ic.com/data/documents/shujushouce/GD32F470xx_Datasheet_Rev1.1.pdf
+   https://gd32mcu.com/data/documents/datasheet/GD32F470xx_Datasheet_Rev1.3.pdf
 
 .. _GD32F4xx User Manual:
-   https://www.gd32mcu.com/data/documents/yingyongbiji/GD32F4xx_User_Manual_Rev2.6.pdf
+   https://gd32mcu.com/data/documents/userManual/GD32F4xx_User_Manual_Rev2.7.pdf

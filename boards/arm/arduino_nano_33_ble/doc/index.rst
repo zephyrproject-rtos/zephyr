@@ -127,10 +127,10 @@ References
 .. target-notes::
 
 .. _BLE:
-    https://store.arduino.cc/usa/nano-33-ble/
+    https://store.arduino.cc/products/arduino-nano-33-ble
 
 .. _BLE SENSE:
-    https://store.arduino.cc/usa/nano-33-ble-sense/
+    https://store.arduino.cc/products/arduino-nano-33-ble-sense
 
 .. _pinouts:
     https://learn.adafruit.com/introducing-the-adafruit-nrf52840-feather/pinouts

@@ -35,6 +35,7 @@
 #include "i2c_dw_registers.h"
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"

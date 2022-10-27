@@ -49,7 +49,7 @@ static bool fragmented_advertisers_equal(const struct fragmented_advertiser *a,
 					 const bt_addr_le_t *addr, uint8_t sid)
 {
 	/* Two advertisers are equal if they are the same adv set from the same device */
-	return a->sid == sid && bt_addr_le_cmp(&a->addr, addr) == 0;
+	return a->sid == sid && bt_addr_le_eq(&a->addr, addr);
 }
 
 /* Sets the address and sid of the advertiser to be reassembled. */
@@ -892,7 +892,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	    (!atomic_test_bit(pending_per_adv_sync->flags,
 			      BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
 	     ((pending_per_adv_sync->sid != evt->sid) ||
-	      bt_addr_le_cmp(&pending_per_adv_sync->addr, &evt->adv_addr)))) {
+	      !bt_addr_le_eq(&pending_per_adv_sync->addr, &evt->adv_addr)))) {
 		BT_ERR("Unexpected per adv sync established event");
 		/* Request terminate of pending periodic advertising in controller */
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->handle));
@@ -1345,6 +1345,15 @@ uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync)
 	return (uint8_t)index;
 }
 
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_index(uint8_t index)
+{
+	if (index >= ARRAY_SIZE(per_adv_sync_pool)) {
+		return NULL;
+	}
+
+	return &per_adv_sync_pool[index];
+}
+
 int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
 				struct bt_le_per_adv_sync_info *info)
 {
@@ -1371,7 +1380,7 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
 			continue;
 		}
 
-		if (!bt_addr_le_cmp(&sync->addr, adv_addr) && sync->sid == sid) {
+		if (bt_addr_le_eq(&sync->addr, adv_addr) && sync->sid == sid) {
 			return sync;
 		}
 	}
@@ -1638,7 +1647,7 @@ int bt_le_per_adv_sync_recv_disable(struct bt_le_per_adv_sync *per_adv_sync)
 	return bt_le_set_per_adv_recv_enable(per_adv_sync, false);
 }
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 				const struct bt_conn *conn,
 				uint16_t service_data)
@@ -1669,7 +1678,9 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf,
 				    NULL);
 }
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
 static bool valid_past_param(
 	const struct bt_le_per_adv_sync_transfer_param *param)
 {
@@ -1785,7 +1796,7 @@ int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn)
 					      0x0a, 0);
 	}
 }
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 
 int bt_le_per_adv_list_add(const bt_addr_le_t *addr, uint8_t sid)
 {

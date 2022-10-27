@@ -158,19 +158,19 @@ void validate_base_message_set(const struct log_source_const_data *source,
 	size_t len0, len1, len2;
 	union log_msg_generic *msg0, *msg1, *msg2;
 
-	msg0 = z_log_msg_claim();
+	msg0 = z_log_msg_claim(NULL);
 	zassert_true(msg0, "Unexpected null message");
 	len0 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg0);
 	msg0 = msg_copy_and_free(msg0, buf0, sizeof(buf0));
 	clear_pkg_flags(&msg0->log);
 
-	msg1 = z_log_msg_claim();
+	msg1 = z_log_msg_claim(NULL);
 	zassert_true(msg1, "Unexpected null message");
 	len1 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg1);
 	msg1 = msg_copy_and_free(msg1, buf1, sizeof(buf1));
 	clear_pkg_flags(&msg1->log);
 
-	msg2 = z_log_msg_claim();
+	msg2 = z_log_msg_claim(NULL);
 	zassert_true(msg2, "Unexpected null message");
 	len2 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg2);
 	msg2 = msg_copy_and_free(msg2, buf2, sizeof(buf2));
@@ -357,7 +357,7 @@ static void get_msg_validate_length(uint32_t exp_len)
 	uint32_t len;
 	union log_msg_generic *msg;
 
-	msg = z_log_msg_claim();
+	msg = z_log_msg_claim(NULL);
 	len = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg);
 
 	zassert_equal(len, exp_len, "Unexpected message length %d (exp:%d)",
@@ -571,12 +571,12 @@ ZTEST(log_msg, test_saturate)
 	zassert_equal(z_log_dropped_read_and_clear(), 3, "No dropped messages.");
 
 	for (int i = 0; i < exp_capacity; i++) {
-		msg = z_log_msg_claim();
+		msg = z_log_msg_claim(NULL);
 		zassert_equal(log_msg_get_timestamp(&msg->log), i,
 				"Unexpected timestamp used for message id");
 	}
 
-	msg = z_log_msg_claim();
+	msg = z_log_msg_claim(NULL);
 	zassert_equal(msg, NULL, "Expected no pending messages");
 }
 

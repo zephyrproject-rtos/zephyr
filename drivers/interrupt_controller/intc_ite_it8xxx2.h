@@ -7,6 +7,7 @@
 #define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_ITE_IT8XXX2_H_
 
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
+#include <ilm.h>
 #include <soc.h>
 
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_ITE_IT8XXX2_H_ */

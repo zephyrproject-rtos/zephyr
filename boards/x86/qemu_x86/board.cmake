@@ -9,7 +9,7 @@ endif()
 if(CONFIG_X86_64)
   set(QEMU_binary_suffix x86_64)
   set(QEMU_CPU_TYPE_${ARCH} qemu64,+x2apic)
-  if("${CONFIG_MP_NUM_CPUS}" STREQUAL "1")
+  if("${CONFIG_MP_MAX_NUM_CPUS}" STREQUAL "1")
     # icount works with 1 CPU so we can enable it here.
     # FIXME: once this works across configs, remove this line and set
     # CONFIG_QEMU_ICOUNT_SHIFT in defconfig instead.

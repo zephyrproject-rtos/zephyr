@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <zephyr/arch/cpu.h>
 #include <zephyr/init.h>
 #define MIO_PIN_18	0xff180048
 #define MIO_PIN_19	0xff18004c

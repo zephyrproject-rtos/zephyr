@@ -5,12 +5,11 @@
  */
 
 #include <zephyr/init.h>
-#include <zephyr/kernel_structs.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
 #include <zephyr/arch/x86/msr.h>
 #include <zephyr/arch/x86/cpuid.h>
-#include <zephyr/kernel.h>
 
 /*
  * See:

@@ -14,6 +14,7 @@
 #include <soc.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #include "spi_nor.h"

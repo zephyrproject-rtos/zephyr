@@ -1,0 +1,32 @@
+# ESP32-ETHERNET-KIT board configuration
+
+# Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "esp32_ethernet_kit"
+	depends on BOARD_ESP32_ETHERNET_KIT
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR
+
+config ESP_SPIRAM
+	default y
+
+choice SPIRAM_TYPE
+	default SPIRAM_TYPE_ESPPSRAM64
+endchoice
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+config ENTROPY_GENERATOR
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT

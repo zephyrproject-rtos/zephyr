@@ -68,12 +68,14 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 
 	if (scan_result == 1U) {
 		print(context.sh, SHELL_NORMAL,
-		      "\n%-4s | %-32s %-5s | %-4s | %-4s | %-15s | %s\n",
-		      "Num", "SSID", "(len)", "Chan", "RSSI", "Security", "BSSID");
+		      "\n%-4s | %-32s %-5s | %-13s | %-4s | %-15s | %s\n",
+		      "Num", "SSID", "(len)", "Chan (Band)", "RSSI", "Security", "BSSID");
 	}
 
-	print(context.sh, SHELL_NORMAL, "%-4d | %-32s %-5u | %-4u | %-4d | %-15s | %s\n",
-	      scan_result, entry->ssid, entry->ssid_length, entry->channel, entry->rssi,
+	print(context.sh, SHELL_NORMAL, "%-4d | %-32s %-5u | %-4u (%-6s) | %-4d | %-15s | %s\n",
+	      scan_result, entry->ssid, entry->ssid_length, entry->channel,
+	      wifi_band_txt(entry->band),
+	      entry->rssi,
 	      wifi_security_txt(entry->security),
 	      ((entry->mac_length) ?
 		      net_sprint_ll_addr_buf(entry->mac, WIFI_MAC_ADDR_LEN, mac_string_buf,
@@ -163,7 +165,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	params->ssid_length = strlen(params->ssid);
 
 	/* Channel (optional) */
-	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
+	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
 		params->channel = strtol(argv[idx], &endptr, 10);
 		if (*endptr != '\0') {
 			return -EINVAL;
@@ -182,7 +184,9 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	if (idx < argc) {
 		params->psk = argv[idx];
 		params->psk_length = strlen(argv[idx]);
+		/* Defaults */
 		params->security = WIFI_SECURITY_TYPE_PSK;
+		params->mfp = WIFI_MFP_OPTIONAL;
 		idx++;
 
 		/* Security type (optional) */
@@ -193,21 +197,21 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 				params->security = security;
 			}
 			idx++;
+
+			/* MFP (optional) */
+			if (idx < argc) {
+				unsigned int mfp = strtol(argv[idx], &endptr, 10);
+
+				if (mfp <= WIFI_MFP_REQUIRED) {
+					params->mfp = mfp;
+				}
+				idx++;
+			}
 		}
 	} else {
 		params->security = WIFI_SECURITY_TYPE_NONE;
 	}
 
-	/* MFP (optional) */
-	params->mfp = WIFI_MFP_OPTIONAL;
-	if (idx < argc) {
-		unsigned int mfp = strtol(argv[idx], &endptr, 10);
-
-		if (mfp <= WIFI_MFP_REQUIRED) {
-			params->mfp = mfp;
-		}
-		idx++;
-	}
 
 	return 0;
 }
@@ -216,7 +220,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
-	static struct wifi_connect_req_params cnx_params;
+	struct wifi_connect_req_params cnx_params = { 0 };
 
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
 		shell_help(sh);
@@ -431,13 +435,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(connect, NULL,
-		  "Connect to a Wi-Fi AP"
-		  "\"<SSID>\"\n<channel number (optional), "
-		  "0 means all>\n"
+		  "Connect to a Wi-Fi AP\n"
+		  "\"<SSID>\"\n"
+		  "<channel number (optional), 0 means all>\n"
 		  "<PSK (optional: valid only for secure SSIDs)>\n"
 		  "<Security type (optional: valid only for secure SSIDs)>\n"
 		  "0:None, 1:PSK, 2:PSK-256, 3:SAE\n"
-		  "<MFP (optional): 0:Disable, 1:Optional, 2:Required",
+		  "<MFP (optional: needs security type to be specified)>\n"
+		  ": 0:Disable, 1:Optional, 2:Required",
 		  cmd_wifi_connect),
 	SHELL_CMD(disconnect, NULL, "Disconnect from the Wi-Fi AP",
 		  cmd_wifi_disconnect),

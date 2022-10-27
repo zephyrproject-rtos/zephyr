@@ -358,4 +358,12 @@ config EFI_CONSOLE
 	help
 	  Enable this option to use EFI console output.
 
+config WINSTREAM_CONSOLE
+	bool "Use Winstream console"
+	depends on WINSTREAM
+	help
+	  Use winstream as a console.
+
+	  See the WINSTREAM Kconfig help for more information.
+
 endif # CONSOLE

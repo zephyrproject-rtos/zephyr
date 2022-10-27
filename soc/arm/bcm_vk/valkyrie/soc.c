@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/irq.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.

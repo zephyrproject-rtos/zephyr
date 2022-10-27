@@ -410,9 +410,9 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     /* BAD SYSCALL path */
     /* fixup stack frame on the privileged stack, adding ssf */
     mov r1, sp
-    push {r4,r5}
     /* ssf is present in r1 (sp) */
     push {r1,lr}
+    push {r4,r5}
     /* restore r0, r1 */
     mov r0, ip
     mov r1, lr

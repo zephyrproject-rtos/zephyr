@@ -7,7 +7,7 @@
 #include "flash_gd32.h"
 
 #include <zephyr/logging/log.h>
-
+#include <zephyr/kernel.h>
 #include <gd32_fmc.h>
 
 LOG_MODULE_DECLARE(flash_gd32);

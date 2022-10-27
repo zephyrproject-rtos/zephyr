@@ -8,7 +8,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
 #include "unicast_common.h"
 
@@ -323,7 +323,7 @@ static size_t release_streams(size_t stream_cnt)
 
 		UNSET_FLAG(flag_stream_released);
 
-		err = bt_audio_stream_release(&g_streams[i], false);
+		err = bt_audio_stream_release(&g_streams[i]);
 		if (err != 0) {
 			FAIL("Unable to release stream[%zu]: %d", i, err);
 			return 0;

@@ -6,6 +6,8 @@ description: |
 
 compatible: "nuvoton,adc-cmp"
 
+include: sensor-device.yaml
+
 properties:
     io-channels:
       type: phandle-array

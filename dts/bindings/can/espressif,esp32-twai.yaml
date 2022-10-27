@@ -26,14 +26,8 @@ properties:
     clkout-divider:
       type: int
       required: false
-      enum:
-        - 1
-        - 2
-        - 4
-        - 6
-        - 8
-        - 10
-        - 12
-        - 14
       description: |
         Clock divider for the CLKOUT signal. If not set, the CLKOUT signal is turned off.
+
+        Valid values are 1 or any even number from 2 to 14 for ESP32 and 2 to 490 for newer
+        Espressif MCUs like ESP32-C3.

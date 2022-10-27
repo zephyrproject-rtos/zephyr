@@ -14,6 +14,8 @@
 #include <zephyr/init.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
+#include <zephyr/irq.h>
 #include <zephyr/linker/linker-defs.h>
 #include <string.h>
 #if defined(SYSCFG_CFGR1_UCPD1_STROBE) || defined(SYSCFG_CFGR1_UCPD2_STROBE)

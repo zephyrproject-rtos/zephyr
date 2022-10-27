@@ -248,10 +248,10 @@ the following message:
 
 
 .. _V2M Beetle Website:
-   https://www.arm.com/products/tools/development-boards/versatile-express/beetle_iot_evaluation_platform.php
+   https://developer.arm.com/Tools%20and%20Software/Beetle%20IoT%20Evaluation%20Platform
 
 .. _Beetle Technical Reference Manual (TRM):
-   https://developer.arm.com/-/media/developer/products/system-design-tools/versatile-express-family/V2M-Beetle_TRM_draft.pdf?la=en
+   https://developer.arm.com/documentation/100417/latest/
 
 .. _CMSIS-DAP Website:
-   https://github.com/mbedmicro/CMSIS-DAP
+   https://arm-software.github.io/CMSIS_5/DAP/html/index.html

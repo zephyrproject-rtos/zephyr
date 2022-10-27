@@ -68,6 +68,7 @@
 		pwm-led0 = &pwm_led;
 		eeprom-0 = &eeprom0;
 		spi-flash0 = &nor_flash;
+		watchdog0 = &fwdgt;
 	};
 };
 
@@ -144,4 +145,8 @@
 		status = "okay";
 		jedec-id = [c8 40 15];
 	};
+};
+
+&fwdgt {
+	status = "okay";
 };

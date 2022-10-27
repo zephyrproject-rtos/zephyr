@@ -36,15 +36,17 @@ struct intel_adsp_ipc {
 	uint32_t idd;
 };
 
+#define INTEL_ADSP_IPC_BUSY BIT(31)
+#define INTEL_ADSP_IPC_DONE BIT(31)
+
 /**
- * @brief Set TDA busy bit.
+ * @brief Clear TDA busy bit.
  *
  * On ACE SoC family boards TDA bit 31 (BUSY) during IPC doorbell acknowledgment
  * must be cleared (!), not set (in contrary to CAVS SoC family boards).
  * This clears BUSY on the other side of the connection in IDR register.
  */
-#define INTEL_ADSP_IPC_BUSY BIT(31)
-#define INTEL_ADSP_IPC_DONE 0
+#define INTEL_ADSP_IPC_ACE1X_TDA_DONE 0
 
 #define INTEL_ADSP_IPC_CTL_TBIE BIT(0)
 #define INTEL_ADSP_IPC_CTL_IDIE BIT(1)

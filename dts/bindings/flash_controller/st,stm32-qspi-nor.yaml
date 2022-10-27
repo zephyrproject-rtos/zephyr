@@ -41,6 +41,15 @@ properties:
       type: int
       required: false
       description: The duration (in ms) for the flash memory reset pulse
+    reset-cmd:
+      type: boolean
+      required: false
+      description: Send reset command on initialization
+    reset-cmd-wait:
+      type: int
+      default: 10
+      required: false
+      description: The duration (in us) to wait after reset command
     spi-bus-width:
       type: int
       required: false

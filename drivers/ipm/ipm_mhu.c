@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <soc.h>
+#include <zephyr/irq.h>
 #include "ipm_mhu.h"
 
 #define IPM_MHU_REGS(dev) \

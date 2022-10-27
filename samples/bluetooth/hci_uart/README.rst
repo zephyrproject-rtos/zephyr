@@ -143,3 +143,8 @@ You can use following targets:
 * ``nrf52833dk_nrf52833@df``
 
 Check the :ref:`bluetooth_direction_finding_connectionless_rx` and the :ref:`bluetooth_direction_finding_connectionless_tx` for more details.
+
+Using a USB CDC ACM UART
+========================
+
+The sample can be configured to use a USB UART instead. See :zephyr_file:`samples/bluetooth/hci_uart/nrf52840dongle_nrf52840.conf` and :zephyr_file:`samples/bluetooth/hci_uart/nrf52840dongle_nrf52840.overlay`.

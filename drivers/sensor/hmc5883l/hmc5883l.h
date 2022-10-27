@@ -12,6 +12,7 @@
 #include <zephyr/types.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 
 #define HMC5883L_REG_CONFIG_A           0x00
 #define HMC5883L_ODR_SHIFT              2

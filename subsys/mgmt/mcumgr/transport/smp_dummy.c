@@ -22,9 +22,9 @@
 #include <zephyr/drivers/console/uart_mcumgr.h>
 #include <mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/serial.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
-#include <mgmt/mcumgr/smp_dummy.h>
+#include <zephyr/mgmt/mcumgr/smp_dummy.h>
+#include <smp/smp.h>
 #include "../smp_internal.h"
 
 BUILD_ASSERT(CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE != 0,
@@ -33,7 +33,7 @@ BUILD_ASSERT(CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE != 0,
 struct device;
 static struct mcumgr_serial_rx_ctxt smp_dummy_rx_ctxt;
 static struct mcumgr_serial_rx_ctxt smp_dummy_tx_ctxt;
-static struct zephyr_smp_transport smp_dummy_transport;
+static struct smp_transport smp_dummy_transport;
 static bool enable_dummy_smp;
 static struct k_sem smp_data_ready_sem;
 static uint8_t smp_send_buffer[CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE];
@@ -102,7 +102,7 @@ static void smp_dummy_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
 	 * processing.
 	 */
 	if (nb != NULL) {
-		zephyr_smp_rx_req(&smp_dummy_transport, nb);
+		smp_rx_req(&smp_dummy_transport, nb);
 	}
 }
 
@@ -178,7 +178,7 @@ static int smp_dummy_tx_pkt_int(struct net_buf *nb)
 	int rc;
 
 	rc = mcumgr_dummy_tx_pkt(nb->data, nb->len, dummy_mcumgr_send_raw);
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return rc;
 }
@@ -189,8 +189,8 @@ static int smp_dummy_init(const struct device *dev)
 
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 
-	zephyr_smp_transport_init(&smp_dummy_transport, smp_dummy_tx_pkt_int,
-				  smp_dummy_get_mtu, NULL, NULL);
+	smp_transport_init(&smp_dummy_transport, smp_dummy_tx_pkt_int,
+			   smp_dummy_get_mtu, NULL, NULL);
 	dummy_mgumgr_recv_cb = smp_dummy_rx_frag;
 
 	return 0;
@@ -279,7 +279,7 @@ void dummy_mcumgr_add_data(uint8_t *data, uint16_t data_size)
 static void mcumgr_dummy_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 {
 	if (rx_ctxt->nb != NULL) {
-		mcumgr_buf_free(rx_ctxt->nb);
+		smp_packet_free(rx_ctxt->nb);
 		rx_ctxt->nb = NULL;
 	}
 }
@@ -356,7 +356,7 @@ static struct net_buf *mcumgr_dummy_process_frag(
 	int rc;
 
 	if (rx_ctxt->nb == NULL) {
-		rx_ctxt->nb = mcumgr_buf_alloc();
+		rx_ctxt->nb = smp_packet_alloc();
 		if (rx_ctxt->nb == NULL) {
 			return NULL;
 		}
@@ -441,7 +441,7 @@ static struct net_buf *mcumgr_dummy_process_frag_outgoing(
 	int rc;
 
 	if (tx_ctxt->nb == NULL) {
-		tx_ctxt->nb = mcumgr_buf_alloc();
+		tx_ctxt->nb = smp_packet_alloc();
 		if (tx_ctxt->nb == NULL) {
 			return NULL;
 		}

@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <stm32_ll_rcc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #include "can_mcan.h"
 
@@ -101,6 +102,8 @@ static int can_stm32h7_init(const struct device *dev)
 
 static const struct can_driver_api can_stm32h7_driver_api = {
 	.get_capabilities = can_mcan_get_capabilities,
+	.start = can_mcan_start,
+	.stop = can_mcan_stop,
 	.set_mode = can_mcan_set_mode,
 	.set_timing = can_mcan_set_timing,
 	.send = can_mcan_send,

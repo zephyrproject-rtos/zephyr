@@ -35,7 +35,7 @@
 				 <PC7B_USART2_RTS>;
 			bias-pull-up;
 		};
-		group1 {
+		group2 {
 			pinmux = <PA7B_USART0_TXD>,
 				 <PC8E_USART2_CTS>;
 		};

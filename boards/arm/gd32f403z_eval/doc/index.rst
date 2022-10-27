@@ -207,10 +207,10 @@ is :code:`$HOME/.local/bin`.
 	https://www.gigadevice.com/products/microcontrollers/gd32/arm-cortex-m4/high-performance-line/gd32f403-series/
 
 .. _GD32F403 Datasheet:
-	http://www.gd32mcu.com/data/documents/shujushouce/GD32F403xx_Datasheet_Rev1.3.pdf
+	https://gd32mcu.com/data/documents/datasheet/GD32F403xx_Datasheet_Rev1.3.pdf
 
 .. _GD32F403 Reference Manual:
-	http://www.gd32mcu.com/data/documents/yingyongbiji/GD32F403_User_Manual_Rev2.4.pdf
+	https://gd32mcu.com/data/documents/userManual/GD32F403_User_Manual_Rev2.6.pdf
 
 .. _GD32F403Z Eval Schematics:
 	http://www.gd32mcu.com/download/down/document_id/270/path_type/1

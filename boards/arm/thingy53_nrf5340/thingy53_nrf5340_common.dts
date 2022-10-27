@@ -114,6 +114,8 @@
 		magn0 = &bmm150;
 		watchdog0 = &wdt0;
 		accel0 = &adxl362;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &blue_led;
 	};
 };
 
@@ -167,6 +169,11 @@
 		reg = <0x38>;
 		int-gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
+
+	bme688@76 {
+		compatible = "bosch,bme680";
+		reg = <0x76>;
+	};
 };
 
 &spi3 {
@@ -191,7 +198,6 @@
 		status = "disabled";
 		spi-max-frequency = <8000000>;
 		reg = <1>;
-		int1-gpios = <&gpio0 23 0>;
 	};
 
 	nrf_radio_fem_spi: fem_spi@2 {

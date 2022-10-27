@@ -5,6 +5,7 @@ common:
   depends_on: usb_device
   tags: net ieee802154 usb
   harness: net
+  platform_exclude: pinnacle_100_dvk
 tests:
   sample.net.wpanusb:
     filter: dt_chosen_enabled("zephyr,ieee802154")

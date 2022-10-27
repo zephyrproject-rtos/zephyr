@@ -616,8 +616,8 @@ static void cc2520_rx(void *arg)
 			goto flush;
 		}
 
-		pkt = net_pkt_alloc_with_buffer(cc2520->iface, pkt_len,
-						AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(cc2520->iface, pkt_len,
+						   AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No pkt available");
 			goto flush;

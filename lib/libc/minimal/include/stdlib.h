@@ -23,6 +23,8 @@ long long strtoll(const char *nptr, char **endptr, int base);
 int atoi(const char *s);
 
 void *malloc(size_t size);
+void *aligned_alloc(size_t alignment, size_t size); /* From C11 */
+
 void free(void *ptr);
 void *calloc(size_t nmemb, size_t size);
 void *realloc(void *ptr, size_t size);

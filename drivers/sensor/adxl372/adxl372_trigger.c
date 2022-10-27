@@ -125,7 +125,7 @@ int adxl372_trigger_set(const struct device *dev,
 		int_en = 0U;
 	}
 
-	ret = adxl372_reg_write_mask(dev, ADXL372_INT1_MAP, int_mask, int_en);
+	ret = drv_data->hw_tf->write_reg_mask(dev, ADXL372_INT1_MAP, int_mask, int_en);
 	if (ret < 0) {
 		return ret;
 	}

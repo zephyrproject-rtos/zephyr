@@ -196,6 +196,8 @@ source "drivers/sensor/qdec_nrfx/Kconfig"
 
 source "drivers/sensor/qdec_sam/Kconfig"
 
+source "drivers/sensor/qdec_stm32/Kconfig"
+
 source "drivers/sensor/sbs_gauge/Kconfig"
 
 source "drivers/sensor/sgp40/Kconfig"

@@ -14,13 +14,14 @@
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
 #include <zephyr/init.h>
+#include <zephyr/irq.h>
 
 #define MP_PRIMARY_CPU_ID 0
 
 volatile struct {
 	arch_cpustart_t fn;
 	void *arg;
-} arc_cpu_init[CONFIG_MP_NUM_CPUS];
+} arc_cpu_init[CONFIG_MP_MAX_NUM_CPUS];
 
 /*
  * arc_cpu_wake_flag is used to sync up master core and slave cores
@@ -36,7 +37,7 @@ volatile char *arc_cpu_sp;
  * _curr_cpu is used to record the struct of _cpu_t of each cpu.
  * for efficient usage in assembly
  */
-volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
+volatile _cpu_t *_curr_cpu[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Called from Zephyr initialization */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
@@ -50,7 +51,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	 * arc_cpu_wake_flag will protect arc_cpu_sp that
 	 * only one slave cpu can read it per time
 	 */
-	arc_cpu_sp = Z_THREAD_STACK_BUFFER(stack) + sz;
+	arc_cpu_sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 
 	arc_cpu_wake_flag = cpu_num;
 
@@ -132,7 +133,9 @@ void arch_sched_ipi(void)
 	/* broadcast sched_ipi request to other cores
 	 * if the target is current core, hardware will ignore it
 	 */
-	for (i = 0U; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0U; i < num_cpus; i++) {
 		z_arc_connect_ici_generate(i);
 	}
 }

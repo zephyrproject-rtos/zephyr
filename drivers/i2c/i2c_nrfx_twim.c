@@ -15,6 +15,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_TRANSFER_TIMEOUT_MSEC		K_MSEC(500)
@@ -289,8 +290,10 @@ static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 
 	/* restore peripheral if it was active before */
 	if (state == PM_DEVICE_STATE_ACTIVE) {
+#ifdef CONFIG_PINCTRL
 		(void)pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_DEFAULT);
+#endif
 		nrfx_twim_enable(&dev_config->twim);
 	}
 
@@ -307,9 +310,7 @@ static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
 static int twim_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
-#ifdef CONFIG_PINCTRL
 	const struct i2c_nrfx_twim_config *dev_config = dev->config;
-#endif
 	int ret = 0;
 
 	switch (action) {

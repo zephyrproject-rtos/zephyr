@@ -8,9 +8,11 @@
 #include <xtensa/hal.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #include <adsp_shim.h>
 #include <cavs-idc.h>
+#include <adsp_interrupt.h>
 #include "soc.h"
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

@@ -32,6 +32,28 @@ static inline int z_cbprintf_cxx_is_pchar(const volatile char *, bool const_as_f
 	return 1;
 }
 
+static inline int z_cbprintf_cxx_is_pchar(unsigned char *, bool const_as_fixed)
+{
+	ARG_UNUSED(const_as_fixed);
+	return 1;
+}
+
+static inline int z_cbprintf_cxx_is_pchar(const unsigned char *, bool const_as_fixed)
+{
+	return const_as_fixed ? 0 : 1;
+}
+
+static inline int z_cbprintf_cxx_is_pchar(volatile unsigned char *, bool const_as_fixed)
+{
+	ARG_UNUSED(const_as_fixed);
+	return 1;
+}
+
+static inline int z_cbprintf_cxx_is_pchar(const volatile unsigned char *, bool const_as_fixed)
+{
+	ARG_UNUSED(const_as_fixed);
+	return 1;
+}
 static inline int z_cbprintf_cxx_is_pchar(wchar_t *, bool const_as_fixed)
 {
 	ARG_UNUSED(const_as_fixed);

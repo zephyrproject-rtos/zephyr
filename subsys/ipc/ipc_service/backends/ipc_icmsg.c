@@ -65,14 +65,6 @@ static void mbox_callback_process(struct k_work *item)
 		if (dev_data->cfg->cb.received) {
 			dev_data->cfg->cb.received(cb_buffer, len, dev_data->cfg->priv);
 		}
-
-		/* Reading with NULL buffer to know if there are data in the
-		 * buffer to be read.
-		 */
-		len = spsc_pbuf_read(dev_data->rx_ib, NULL, 0);
-		if (len > 0) {
-			(void)k_work_submit(&dev_data->mbox_work);
-		}
 	} else {
 		__ASSERT_NO_MSG(state == ICMSG_STATE_BUSY);
 		if (len != sizeof(magic) || memcmp(magic, cb_buffer, len)) {
@@ -85,6 +77,19 @@ static void mbox_callback_process(struct k_work *item)
 		}
 
 		atomic_set(&dev_data->state, ICMSG_STATE_READY);
+	}
+
+	/* Reading with NULL buffer to know if there are data in the
+	 * buffer to be read.
+	 */
+	len = spsc_pbuf_read(dev_data->rx_ib, NULL, 0);
+	if (len > 0) {
+		if (k_work_submit(&dev_data->mbox_work) < 0) {
+			/* The mbox processing work is never canceled.
+			 * The negative error code should never be seen.
+			 */
+			__ASSERT_NO_MSG(false);
+		}
 	}
 }
 
@@ -112,6 +117,27 @@ static int mbox_init(const struct device *instance)
 	return mbox_set_enabled(&conf->mbox_rx, 1);
 }
 
+static int mbox_deinit(const struct device *instance)
+{
+	const struct backend_config_t *conf = instance->config;
+	struct backend_data_t *dev_data = instance->data;
+	int err;
+
+	err = mbox_set_enabled(&conf->mbox_rx, 0);
+	if (err != 0) {
+		return err;
+	}
+
+	err = mbox_register_callback(&conf->mbox_rx, NULL, NULL);
+	if (err != 0) {
+		return err;
+	}
+
+	(void)k_work_cancel(&dev_data->mbox_work);
+
+	return 0;
+}
+
 static int register_ept(const struct device *instance, void **token,
 			const struct ipc_ept_cfg *cfg)
 {
@@ -133,8 +159,18 @@ static int register_ept(const struct device *instance, void **token,
 		return ret;
 	}
 
+	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr,
+					 conf->tx_shm_size,
+					 SPSC_PBUF_CACHE);
+	dev_data->rx_ib = (void *)conf->rx_shm_addr;
+
 	ret = spsc_pbuf_write(dev_data->tx_ib, magic, sizeof(magic));
-	if (ret < sizeof(magic)) {
+	if (ret < 0) {
+		__ASSERT_NO_MSG(false);
+		return ret;
+	}
+
+	if (ret < (int)sizeof(magic)) {
 		__ASSERT_NO_MSG(ret == sizeof(magic));
 		return ret;
 	}
@@ -148,6 +184,23 @@ static int register_ept(const struct device *instance, void **token,
 	if (ret > 0) {
 		(void)k_work_submit(&dev_data->mbox_work);
 	}
+
+	return 0;
+}
+
+static int deregister_ept(const struct device *instance, void *token)
+{
+	struct backend_data_t *dev_data = instance->data;
+	int ret;
+
+	ret = mbox_deinit(instance);
+	if (ret) {
+		return ret;
+	}
+
+	dev_data->cfg = NULL;
+
+	atomic_set(&dev_data->state, ICMSG_STATE_OFF);
 
 	return 0;
 }
@@ -182,21 +235,12 @@ static int send(const struct device *instance, void *token,
 
 const static struct ipc_service_backend backend_ops = {
 	.register_endpoint = register_ept,
+	.deregister_endpoint = deregister_ept,
 	.send = send,
 };
 
 static int backend_init(const struct device *instance)
 {
-	const struct backend_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-
-	__ASSERT_NO_MSG(conf->tx_shm_size > sizeof(struct spsc_pbuf));
-
-	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr,
-					 conf->tx_shm_size,
-					 SPSC_PBUF_CACHE);
-	dev_data->rx_ib = (void *)conf->rx_shm_addr;
-
 	return 0;
 }
 
@@ -210,6 +254,8 @@ static int backend_init(const struct device *instance)
 		.mbox_rx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), rx),		\
 	};									\
 										\
+	BUILD_ASSERT(DT_REG_SIZE(DT_INST_PHANDLE(i, tx_region)) >		\
+			sizeof(struct spsc_pbuf));				\
 	static struct backend_data_t backend_data_##i;				\
 										\
 	DEVICE_DT_INST_DEFINE(i,						\

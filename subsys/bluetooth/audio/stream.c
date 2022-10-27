@@ -40,6 +40,8 @@ static uint8_t pack_bt_codec_cc(const struct bt_codec *codec, uint8_t cc[])
 		 * and that based on the Kconfigs we can assume that the length
 		 * will always fit in `cc`
 		 */
+		cc[len++] = data->data_len + 1;
+		cc[len++] = data->type;
 		(void)memcpy(cc + len, data->data, data->data_len);
 		len += data->data_len;
 	}
@@ -75,7 +77,7 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 
 	if (conn != NULL) {
 		__ASSERT(stream->conn == NULL || stream->conn == conn,
-			 "stream->conn already attached");
+			 "stream->conn %p already attached", stream->conn);
 		stream->conn = bt_conn_ref(conn);
 	}
 	stream->codec = codec;
@@ -89,7 +91,7 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
-			 uint32_t seq_num, uint32_t ts)
+			 uint16_t seq_num, uint32_t ts)
 {
 	struct bt_audio_ep *ep;
 
@@ -334,6 +336,11 @@ int bt_audio_stream_config(struct bt_conn *conn,
 	CHECKIF(conn == NULL || stream == NULL || codec == NULL) {
 		BT_DBG("NULL value(s) supplied)");
 		return -EINVAL;
+	}
+
+	if (stream->conn != NULL) {
+		BT_DBG("Stream already configured for conn %p", stream->conn);
+		return -EALREADY;
 	}
 
 	role = conn->role;
@@ -714,7 +721,6 @@ int bt_audio_stream_connect(struct bt_audio_stream *stream)
 	case BT_ISO_STATE_DISCONNECTED:
 		return bt_iso_chan_connect(&param, 1);
 	case BT_ISO_STATE_CONNECTING:
-		return 0;
 	case BT_ISO_STATE_CONNECTED:
 		return -EALREADY;
 	default:
@@ -1185,13 +1191,13 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
+int bt_audio_stream_release(struct bt_audio_stream *stream)
 {
 	uint8_t state;
 	uint8_t role;
 	int err;
 
-	BT_DBG("stream %p cache %s", stream, cache ? "true" : "false");
+	BT_DBG("stream %p", stream);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
 		BT_DBG("Invalid stream");
@@ -1222,7 +1228,7 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
 		err = bt_unicast_client_release(stream);
 	} else if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER) &&
 		   role == BT_HCI_ROLE_PERIPHERAL) {
-		err = bt_unicast_server_release(stream, cache);
+		err = bt_unicast_server_release(stream);
 	} else {
 		err = -EOPNOTSUPP;
 	}

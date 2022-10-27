@@ -690,14 +690,13 @@
 			#size-cells = <0>;
 		};
 		spi0: spi@40070000 {
-			compatible = "microchip,xec-qmspi-ldma";
 			reg = <0x40070000 0x400>;
 			interrupts = <91 2>;
 			girqs = < MCHP_XEC_ECIA(18, 1, 10, 91) >;
 			pcrs = <4 8>;
 			clock-frequency = <12000000>;
 			lines = <1>;
-			chip_select = <0>;
+			chip-select = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";

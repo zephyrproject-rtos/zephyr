@@ -13,6 +13,7 @@
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/logging/log.h>
 #include <hal/nrf_temp.h>
+#include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(temp_nrf5, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -136,7 +137,7 @@ static int temp_nrf5_init(const struct device *dev)
 #define NRF_TEMP_DEFINE(inst)								\
 	static struct temp_nrf5_data temp_nrf5_data_##inst;				\
 											\
-	DEVICE_DT_INST_DEFINE(inst, temp_nrf5_init, NULL,				\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, temp_nrf5_init, NULL,			\
 			      &temp_nrf5_data_##inst, NULL, POST_KERNEL,		\
 			      CONFIG_SENSOR_INIT_PRIORITY, &temp_nrf5_driver_api);	\
 

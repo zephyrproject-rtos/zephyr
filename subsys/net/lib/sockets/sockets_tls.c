@@ -52,7 +52,9 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "sockets_internal.h"
 #include "tls_internal.h"
 
-#include "zephyr_mbedtls_priv.h"
+#if defined(CONFIG_MBEDTLS_BUILTIN)
+#include <zephyr_mbedtls_priv.h>
+#endif
 
 #if defined(CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS)
 #define ALPN_MAX_PROTOCOLS (CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS + 1)

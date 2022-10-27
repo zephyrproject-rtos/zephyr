@@ -54,8 +54,6 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	sda-gpios = <&gpio0 1 GPIO_OPEN_DRAIN>;
-	scl-gpios = <&gpio0 3 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
@@ -86,6 +84,14 @@
 
 &timer1 {
 	status = "disabled";
+};
+
+&twai {
+	/* requires external CAN transceiver or jumper on RX and TX pins for loopback testing */
+	status = "disabled";
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
 };
 
 &flash0 {

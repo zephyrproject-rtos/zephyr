@@ -98,8 +98,10 @@ void z_sched_usage_start(struct k_thread *thread)
 
 void z_sched_usage_stop(void)
 {
-	struct _cpu     *cpu = _current_cpu;
 	k_spinlock_key_t k   = k_spin_lock(&usage_lock);
+
+	struct _cpu     *cpu = _current_cpu;
+
 	uint32_t u0 = cpu->usage0;
 
 	if (u0 != 0) {
@@ -122,8 +124,9 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 	k_spinlock_key_t  key;
 	struct _cpu *cpu;
 
-	cpu = _current_cpu;
 	key = k_spin_lock(&usage_lock);
+	cpu = _current_cpu;
+
 
 	if (&_kernel.cpus[cpu_id] == cpu) {
 		uint32_t  now = usage_now();
@@ -173,8 +176,9 @@ void z_sched_thread_usage(struct k_thread *thread,
 	struct _cpu *cpu;
 	k_spinlock_key_t  key;
 
-	cpu = _current_cpu;
 	key = k_spin_lock(&usage_lock);
+	cpu = _current_cpu;
+
 
 	if (thread == cpu->current) {
 		uint32_t now = usage_now();
@@ -245,7 +249,6 @@ int k_thread_runtime_stats_enable(k_tid_t  thread)
 
 int k_thread_runtime_stats_disable(k_tid_t  thread)
 {
-	struct _cpu *cpu = _current_cpu;
 	k_spinlock_key_t key;
 
 	CHECKIF(thread == NULL) {
@@ -253,6 +256,8 @@ int k_thread_runtime_stats_disable(k_tid_t  thread)
 	}
 
 	key = k_spin_lock(&usage_lock);
+	struct _cpu *cpu = _current_cpu;
+
 	if (thread->base.usage.track_usage) {
 		thread->base.usage.track_usage = false;
 
@@ -291,7 +296,9 @@ void k_sys_runtime_stats_enable(void)
 
 	/* Enable gathering of runtime stats on each CPU */
 
-	for (uint8_t i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (uint8_t i = 0; i < num_cpus; i++) {
 		_kernel.cpus[i].usage.track_usage = true;
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 		_kernel.cpus[i].usage.num_windows++;
@@ -323,7 +330,9 @@ void k_sys_runtime_stats_disable(void)
 
 	uint32_t now = usage_now();
 
-	for (uint8_t i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (uint8_t i = 0; i < num_cpus; i++) {
 		cpu = &_kernel.cpus[i];
 		if (cpu->usage0 != 0) {
 			sched_cpu_update_usage(cpu, now - cpu->usage0);

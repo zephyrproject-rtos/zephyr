@@ -344,6 +344,10 @@ static ALWAYS_INLINE void arch_nop(void)
 	__builtin_arc_nop();
 }
 
+#ifndef CONFIG_XIP
+extern char __arc_rw_sram_size[];
+#endif /* CONFIG_XIP */
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

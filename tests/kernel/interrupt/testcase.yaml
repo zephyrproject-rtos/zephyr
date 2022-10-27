@@ -2,8 +2,6 @@ tests:
   arch.interrupt:
     # nios2 excluded, see #22956
     arch_exclude: nios2
-    # FIXME: qemu_cortex_a53 is excluded, see #49491
-    platform_exclude: qemu_cortex_a53 qemu_cortex_a53_smp
     tags: kernel interrupt
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
 

@@ -110,6 +110,10 @@ class EDT:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some Node to a vendor name parsed from vendor_prefixes.
 
+    compat2model:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some Node to a model name parsed from that compatible.
+
     label2node:
       A collections.OrderedDict that maps a node label to the node with
       that label.
@@ -455,6 +459,7 @@ class EDT:
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
         self.compat2vendor = defaultdict(str)
+        self.compat2model = defaultdict(str)
 
         for node in self.nodes:
             for label in node.labels:
@@ -477,9 +482,10 @@ class EDT:
                          f"'{compat_re}'")
 
                 if ',' in compat and self._vendor_prefixes:
-                    vendor = compat.split(',', 1)[0]
+                    vendor, model = compat.split(',', 1)
                     if vendor in self._vendor_prefixes:
                         self.compat2vendor[compat] = self._vendor_prefixes[vendor]
+                        self.compat2model[compat] = model
 
                     # As an exception, the root node can have whatever
                     # compatibles it wants. Other nodes get checked.
@@ -1604,8 +1610,8 @@ class Property:
       Convenience for spec.name.
 
     description:
-      Convenience for spec.name with leading and trailing whitespace
-      (including newlines) removed.
+      Convenience for spec.description with leading and trailing whitespace
+      (including newlines) removed. May be None.
 
     type:
       Convenience for spec.type.
@@ -1649,7 +1655,7 @@ class Property:
     @property
     def description(self):
         "See the class docstring"
-        return self.spec.description.strip()
+        return self.spec.description.strip() if self.spec.description else None
 
     @property
     def type(self):
@@ -1689,7 +1695,7 @@ class Binding:
       The absolute path to the file defining the binding.
 
     description:
-      The free-form description of the binding.
+      The free-form description of the binding, or None.
 
     compatible:
       The compatible string the binding matches.
@@ -1818,12 +1824,13 @@ class Binding:
             compat = f" for compatible '{self.compatible}'"
         else:
             compat = ""
-        return f"<Binding {os.path.basename(self.path)}" + compat + ">"
+        basename = os.path.basename(self.path or "")
+        return f"<Binding {basename}" + compat + ">"
 
     @property
     def description(self):
         "See the class docstring"
-        return self.raw['description']
+        return self.raw.get('description')
 
     @property
     def compatible(self):

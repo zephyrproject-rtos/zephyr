@@ -1,0 +1,22 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 GPIO node
+
+compatible: "nxp,s32-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    reg-names:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags

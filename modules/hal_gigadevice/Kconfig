@@ -53,6 +53,32 @@ config GD32_HXTAL_25MHZ
 
 endchoice
 
+config GD32_HAS_IRC_32K
+	bool
+	help
+	  Use 32KHz oscillator for low speed internal RC Oscillator
+
+config GD32_HAS_IRC_40K
+	bool
+	help
+	  Use 40KHz oscillator for low speed internal RC Oscillator
+
+config GD32_LOW_SPEED_IRC_FREQUENCY
+	int
+	default 32000 if GD32_HAS_IRC_32K
+	default 40000 if GD32_HAS_IRC_40K
+	help
+	  Define value of low speed internal RC oscillator (IRC) in Hz
+
+config GD32_DBG_SUPPORT
+	bool "Use GD32 Debug features"
+	select USE_GD32_DBG
+	default y
+	help
+	  Enable GD32 Debug features.
+	  This option makes allows using functions that access to
+	  DBG_CTL register such as dbg_periph_enable().
+
 config USE_GD32_ADC
 	bool
 	help

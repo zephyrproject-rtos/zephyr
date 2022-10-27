@@ -8,7 +8,7 @@
 #include "pm_stats.h"
 
 #include <zephyr/init.h>
-#include <zephyr/kernel_structs.h>
+#include <zephyr/kernel.h>
 #include <zephyr/stats/stats.h>
 #include <zephyr/sys/printk.h>
 
@@ -24,18 +24,20 @@ STATS_NAME(pm_stats, state_last_cycles)
 STATS_NAME(pm_stats, state_total_cycles)
 STATS_NAME_END(pm_stats);
 
-static STATS_SECT_DECL(pm_stats) stats[CONFIG_MP_NUM_CPUS][PM_STATE_COUNT];
+static STATS_SECT_DECL(pm_stats) stats[CONFIG_MP_MAX_NUM_CPUS][PM_STATE_COUNT];
 
 #define PM_STAT_NAME_LEN sizeof("pm_cpu_XXX_state_X_stats")
-static char names[CONFIG_MP_NUM_CPUS][PM_STATE_COUNT][PM_STAT_NAME_LEN];
-static uint32_t time_start[CONFIG_MP_NUM_CPUS];
-static uint32_t time_stop[CONFIG_MP_NUM_CPUS];
+static char names[CONFIG_MP_MAX_NUM_CPUS][PM_STATE_COUNT][PM_STAT_NAME_LEN];
+static uint32_t time_start[CONFIG_MP_MAX_NUM_CPUS];
+static uint32_t time_stop[CONFIG_MP_MAX_NUM_CPUS];
 
 static int pm_stats_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	for (uint8_t i = 0U; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (uint8_t i = 0U; i < num_cpus; i++) {
 		for (uint8_t j = 0U; j < PM_STATE_COUNT; j++) {
 			snprintk(names[i][j], PM_STAT_NAME_LEN,
 				 "pm_cpu_%03d_state_%1d_stats", i, j);
