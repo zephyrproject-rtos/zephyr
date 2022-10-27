@@ -930,12 +930,15 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 			const uint8_t reason = unexpected_evt ? BT_HCI_ERR_UNSPECIFIED
 							      : evt->status;
 
-			/* Store the event data in the sync object for the
-			 * callback
-			 */
-			bt_addr_le_copy(&pending_per_adv_sync->addr,
-					&evt->adv_addr);
-			pending_per_adv_sync->sid = evt->sid;
+			if (atomic_test_bit(pending_per_adv_sync->flags,
+					    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
+				/* Update the addr and sid for the callback
+				 * Already set if not using the sync list
+				 */
+				bt_addr_le_copy(&pending_per_adv_sync->addr,
+						&evt->adv_addr);
+				pending_per_adv_sync->sid = evt->sid;
+			}
 
 			per_adv_sync_terminated(pending_per_adv_sync, reason);
 		}
