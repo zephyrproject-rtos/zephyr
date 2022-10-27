@@ -728,6 +728,49 @@ struct _static_thread_data {
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
+ * @brief Statically define and initialize a thread intended to run only in kernel mode.
+ *
+ * The thread may be scheduled for immediate execution or a delayed start.
+ *
+ * Thread options are architecture-specific, and can include K_ESSENTIAL,
+ * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
+ * them using "|" (the logical OR operator).
+ *
+ * The ID of the thread can be accessed using:
+ *
+ * @code extern const k_tid_t <name>; @endcode
+ *
+ * @note Threads defined by this can only run in kernel mode, and cannot be
+ *       transformed into user thread via k_thread_user_mode_enter().
+ *
+ * @warning Depending on the architecture, the stack size (@p stack_size)
+ *          may need to be multiples of CONFIG_MMU_PAGE_SIZE (if MMU)
+ *          or in power-of-two size (if MPU).
+ *
+ * @param name Name of the thread.
+ * @param stack_size Stack size in bytes.
+ * @param entry Thread entry function.
+ * @param p1 1st entry point parameter.
+ * @param p2 2nd entry point parameter.
+ * @param p3 3rd entry point parameter.
+ * @param prio Thread priority.
+ * @param options Thread options.
+ * @param delay Scheduling delay (in milliseconds), zero for no delay.
+ */
+#define K_KERNEL_THREAD_DEFINE(name, stack_size,			\
+			       entry, p1, p2, p3,			\
+			       prio, options, delay)			\
+	K_KERNEL_STACK_DEFINE(_k_thread_stack_##name, stack_size);	\
+	struct k_thread _k_thread_obj_##name;				\
+	STRUCT_SECTION_ITERABLE(_static_thread_data,			\
+				_k_thread_data_##name) =		\
+		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		\
+				     _k_thread_stack_##name, stack_size,\
+				     entry, p1, p2, p3, prio, options,	\
+				     delay, name);			\
+	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+
+/**
  * @brief Get a thread's priority.
  *
  * This routine gets the priority of @a thread.
