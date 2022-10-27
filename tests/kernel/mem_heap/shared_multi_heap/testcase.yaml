@@ -4,5 +4,5 @@
 tests:
   kernel.shared_multi_heap:
     platform_allow: qemu_cortex_a53 mps2_an521
-    tags: board multi_heap
+    tags: kernel multi_heap
     harness: ztest
