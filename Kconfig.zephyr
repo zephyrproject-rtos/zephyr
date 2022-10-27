@@ -575,6 +575,7 @@ endif # BUILD_OUTPUT_UF2
 
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
+	default y
 	help
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
