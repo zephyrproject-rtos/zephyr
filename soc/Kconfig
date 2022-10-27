@@ -53,3 +53,9 @@ config SOC_HAS_TIMING_FUNCTIONS
 	help
 	  Should be selected if SoC provides custom method for retrieving
 	  timestamps and cycle count.
+
+config SOC_HAS_RUNTIME_NUM_CPUS
+	bool
+	help
+	  Should be selected if SoC handles determining the number of CPUs
+	  at runtime.
