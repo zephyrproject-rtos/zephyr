@@ -60,6 +60,7 @@ endif()
 set(QEMU_FLAGS_${ARCH}
   -m ${QEMU_MEMORY_SIZE_MB}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}${QEMU_CPU_FLAGS}
+  -machine q35
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${REBOOT_FLAG}
   -nographic
