@@ -367,7 +367,7 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	void (*broadcast_code)(struct bt_conn *conn,
 			       const struct bt_bap_scan_delegator_recv_state *recv_state,
-			       const uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE]);
+			       const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
 };
 
 /** Structure holding information of audio stream endpoint */
@@ -1682,6 +1682,47 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 	uint8_t src_id,
 	uint32_t bis_synced[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS],
 	enum bt_bap_big_enc_state enc_state);
+
+struct bt_bap_scan_delegator_add_src_param {
+	/** The periodic adverting sync */
+	struct bt_le_per_adv_sync *pa_sync;
+
+	/** The broadcast isochronous group encryption state */
+	enum bt_bap_big_enc_state encrypt_state;
+
+	/** The 24-bit broadcast ID */
+	uint32_t broadcast_id;
+
+	/** Number of subgroups */
+	uint8_t num_subgroups;
+
+	/** Subgroup specific information */
+	struct bt_bap_scan_delegator_subgroup subgroups[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
+};
+
+/**
+ * @brief Add a receive state source locally
+ *
+ * This will notify any connected clients about the new source. This allows them
+ * to modify and even remove it.
+ *
+ * @param param The parameters for adding the new source
+ *
+ * @return int  errno on failure, or source ID on success.
+ */
+int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_param *param);
+
+/**
+ * @brief Remove a receive state source
+ *
+ * This will remove the receive state. If the receive state periodic advertising
+ * is synced, bt_bap_scan_delegator_cb.pa_sync_term_req() will be called.
+ *
+ * @param src_id The source ID to remove
+ *
+ * @return int   Error value. 0 on success, errno on fail.
+ */
+int bt_bap_scan_delegator_rem_src(uint8_t src_id);
 
 /******************************** CLIENT API ********************************/
 
