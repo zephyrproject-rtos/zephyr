@@ -13,9 +13,9 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/base64.h>
-#include <zephyr/mgmt/mcumgr/serial.h>
 #include "mgmt/mgmt.h"
 #include "smp/smp.h"
+#include <zephyr/mgmt/mcumgr/transport/serial.h>
 
 static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 {

@@ -26,7 +26,7 @@
 #define H_SMP_
 
 #include <zephyr/net/buf.h>
-#include <zephyr/mgmt/mcumgr/smp.h>
+#include <zephyr/mgmt/mcumgr/transport/smp.h>
 #include <zcbor_common.h>
 
 #ifdef __cplusplus

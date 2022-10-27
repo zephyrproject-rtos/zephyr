@@ -20,10 +20,10 @@
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/base64.h>
 #include <zephyr/drivers/console/uart_mcumgr.h>
+#include <zephyr/mgmt/mcumgr/transport/smp.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_dummy.h>
+#include <zephyr/mgmt/mcumgr/transport/serial.h>
 #include <mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/serial.h>
-#include <zephyr/mgmt/mcumgr/smp.h>
-#include <zephyr/mgmt/mcumgr/smp_dummy.h>
 #include <smp/smp.h>
 #include "../smp_internal.h"
 
