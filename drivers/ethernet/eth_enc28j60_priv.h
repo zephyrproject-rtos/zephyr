@@ -154,6 +154,7 @@
 #define ENC28J60_BIT_EIR_PKTIF     (0x40)
 #define ENC28J60_BIT_EIE_TXIE      (0x08)
 #define ENC28J60_BIT_EIE_PKTIE     (0x40)
+#define ENC28J60_BIT_EIE_LINKIE    (0x10)
 #define ENC28J60_BIT_EIE_INTIE     (0x80)
 #define ENC28J60_BIT_EIR_PKTIF     (0x40)
 #define ENC28J60_BIT_EIR_DMAIF     (0x20)
@@ -166,6 +167,9 @@
 #define ENC28J60_BIT_ESTAT_LATECOL (0x10)
 #define ENC28J60_BIT_PHCON1_PDPXMD (0x0100)
 #define ENC28J60_BIT_PHCON2_HDLDIS (0x0001)
+#define ENC28J60_BIT_PHSTAT2_LSTAT (0x0400)
+#define ENC28J60_BIT_PHIE_PGEIE    (0x0002)
+#define ENC28J60_BIT_PHIE_PLNKIE   (0x0010)
 
 /* Driver Static Configuration */
 
@@ -230,6 +234,7 @@ struct eth_enc28j60_runtime {
 	struct gpio_callback gpio_cb;
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
+	bool iface_initialized : 1;
 };
 
 #endif /*_ENC28J60_*/
