@@ -725,6 +725,48 @@ struct _static_thread_data {
 				name);					 \
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
+
+/**
+ * @brief Statically define and initialize a thread intended to run in supervisory mode.
+ *
+ * The thread may be scheduled for immediate execution or a delayed start.
+ *
+ * Thread options are architecture-specific, and can include K_ESSENTIAL,
+ * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
+ * them using "|" (the logical OR operator).
+ *
+ * The ID of the thread can be accessed using:
+ *
+ * @code extern const k_tid_t <name>; @endcode
+ *
+ * @param name Name of the thread.
+ * @param stack_size Stack size in bytes.
+ * @param entry Thread entry function.
+ * @param p1 1st entry point parameter.
+ * @param p2 2nd entry point parameter.
+ * @param p3 3rd entry point parameter.
+ * @param prio Thread priority.
+ * @param options Thread options.
+ * @param delay Scheduling delay (in milliseconds), zero for no delay.
+ *
+ *
+ * @internal It has been observed that the x86 compiler by default aligns
+ * these _static_thread_data structures to 32-byte boundaries, thereby
+ * wasting space. To work around this, force a 4-byte alignment.
+ *
+ */
+#define K_KERNEL_THREAD_DEFINE(name, stack_size,                                \
+			entry, p1, p2, p3,                               \
+			prio, options, delay)                            \
+	K_KERNEL_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
+	struct k_thread _k_thread_obj_##name;				 \
+	STRUCT_SECTION_ITERABLE(_static_thread_data, _k_thread_data_##name) = \
+		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
+				    _k_thread_stack_##name, stack_size,  \
+				entry, p1, p2, p3, prio, options, delay, \
+				name);					 \
+	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+
 /**
  * @brief Get a thread's priority.
  *
