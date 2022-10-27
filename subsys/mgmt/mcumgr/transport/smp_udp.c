@@ -17,11 +17,13 @@
 #else
 #include <zephyr/net/socket.h>
 #endif
+#include <zephyr/mgmt/mcumgr/transport/smp.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_udp.h>
 #include <errno.h>
+#include <errno.h>
+
 #include <mgmt/mgmt.h>
 #include "smp/smp.h"
-#include <zephyr/mgmt/mcumgr/smp_udp.h>
-#include <zephyr/mgmt/mcumgr/smp.h>
 #include "../smp_internal.h"
 
 #define LOG_LEVEL CONFIG_MCUMGR_LOG_LEVEL

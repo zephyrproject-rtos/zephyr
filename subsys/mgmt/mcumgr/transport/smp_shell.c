@@ -12,15 +12,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/net/buf.h>
+#include <zephyr/drivers/uart.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_uart.h>
-#include <zephyr/drivers/uart.h>
+#include <zephyr/mgmt/mcumgr/transport/smp.h>
+#include <zephyr/mgmt/mcumgr/transport/serial.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_shell.h>
 #include <syscalls/uart.h>
+#include <string.h>
+
 #include "mgmt/mgmt.h"
 #include "smp/smp.h"
-#include <zephyr/mgmt/mcumgr/serial.h>
-#include <zephyr/mgmt/mcumgr/smp.h>
-#include <zephyr/mgmt/mcumgr/smp_shell.h>
 #include "../smp_internal.h"
 
 #include <zephyr/logging/log.h>

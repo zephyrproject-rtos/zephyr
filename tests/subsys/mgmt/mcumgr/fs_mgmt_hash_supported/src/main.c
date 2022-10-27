@@ -9,8 +9,8 @@
 #include <zephyr/net/buf.h>
 #include <zephyr/net/net_ip.h>
 #include <mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/smp_dummy.h>
 #include <fs_mgmt/fs_mgmt.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_dummy.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <smp_internal.h>
