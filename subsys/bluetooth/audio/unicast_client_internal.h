@@ -33,10 +33,6 @@ int bt_unicast_client_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 int bt_unicast_client_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 		   struct net_buf_simple *buf);
 
-void bt_unicast_client_ep_attach(struct bt_audio_ep *ep, struct bt_audio_stream *stream);
-
-void bt_unicast_client_ep_detach(struct bt_audio_ep *ep, struct bt_audio_stream *stream);
-
 /**
  * @brief Get a new a audio_iso that is a match for the provided stream
  *
