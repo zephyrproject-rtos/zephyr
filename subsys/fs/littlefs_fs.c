@@ -18,9 +18,13 @@
 
 #include <lfs.h>
 #include <zephyr/fs/littlefs.h>
+#ifdef CONFIG_FS_LITTLEFS_FLASH_DEV
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
+#endif
+#ifdef CONFIG_FS_LITTLEFS_BLK_DEV
 #include <zephyr/storage/disk_access.h>
+#endif
 
 #include "fs_impl.h"
 
@@ -56,12 +60,14 @@ BUILD_ASSERT((CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE % 8) == 0);
 	CONFIG_FS_LITTLEFS_NUM_FILES)
 #endif /* CONFIG_FS_LITTLEFS_FC_HEAP_SIZE */
 
+BUILD_ASSERT(IS_ENABLED(CONFIG_FS_LITTLEFS_FLASH_DEV) || IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV),
+	     "LittleFS requires flash storage, disk access or both to be enabled");
+
 static K_HEAP_DEFINE(file_cache_heap, CONFIG_FS_LITTLEFS_FC_HEAP_SIZE);
 
 static inline bool littlefs_on_blkdev(struct fs_mount_t *mountp)
 {
-	return IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) &&
-		mountp->flags & FS_MOUNT_FLAG_USE_DISK_ACCESS;
+	return mountp->flags & FS_MOUNT_FLAG_USE_DISK_ACCESS;
 }
 
 static inline void *fc_allocate(size_t size)
@@ -158,8 +164,8 @@ static int errno_to_lfs(int error)
 	}
 }
 
-
-static int lfs_api_read(const struct lfs_config *c, lfs_block_t block,
+#ifdef CONFIG_FS_LITTLEFS_FLASH_DEV
+static int lfs_api_read_flash(const struct lfs_config *c, lfs_block_t block,
 			lfs_off_t off, void *buffer, lfs_size_t size)
 {
 	const struct flash_area *fa = c->context;
@@ -170,7 +176,7 @@ static int lfs_api_read(const struct lfs_config *c, lfs_block_t block,
 	return errno_to_lfs(rc);
 }
 
-static int lfs_api_prog(const struct lfs_config *c, lfs_block_t block,
+static int lfs_api_prog_flash(const struct lfs_config *c, lfs_block_t block,
 			lfs_off_t off, const void *buffer, lfs_size_t size)
 {
 	const struct flash_area *fa = c->context;
@@ -181,7 +187,7 @@ static int lfs_api_prog(const struct lfs_config *c, lfs_block_t block,
 	return errno_to_lfs(rc);
 }
 
-static int lfs_api_erase(const struct lfs_config *c, lfs_block_t block)
+static int lfs_api_erase_flash(const struct lfs_config *c, lfs_block_t block)
 {
 	const struct flash_area *fa = c->context;
 	size_t offset = block * c->block_size;
@@ -190,6 +196,12 @@ static int lfs_api_erase(const struct lfs_config *c, lfs_block_t block)
 
 	return errno_to_lfs(rc);
 }
+
+static int lfs_api_sync_flash(const struct lfs_config *c)
+{
+	return LFS_ERR_OK;
+}
+#endif /* CONFIG_FS_LITTLEFS_FLASH_DEV */
 
 #ifdef CONFIG_FS_LITTLEFS_BLK_DEV
 static int lfs_api_read_blk(const struct lfs_config *c, lfs_block_t block,
@@ -211,6 +223,11 @@ static int lfs_api_prog_blk(const struct lfs_config *c, lfs_block_t block,
 	return errno_to_lfs(rc);
 }
 
+static int lfs_api_erase_blk(const struct lfs_config *c, lfs_block_t block)
+{
+	return 0;
+}
+
 static int lfs_api_sync_blk(const struct lfs_config *c)
 {
 	const char *disk = c->context;
@@ -218,33 +235,7 @@ static int lfs_api_sync_blk(const struct lfs_config *c)
 
 	return errno_to_lfs(rc);
 }
-#else
-static int lfs_api_read_blk(const struct lfs_config *c, lfs_block_t block,
-			    lfs_off_t off, void *buffer, lfs_size_t size)
-{
-	return 0;
-}
-
-static int lfs_api_prog_blk(const struct lfs_config *c, lfs_block_t block,
-			    lfs_off_t off, const void *buffer, lfs_size_t size)
-{
-	return 0;
-}
-
-static int lfs_api_sync_blk(const struct lfs_config *c)
-{
-	return 0;
-}
 #endif /* CONFIG_FS_LITTLEFS_BLK_DEV */
-static int lfs_api_erase_blk(const struct lfs_config *c, lfs_block_t block)
-{
-	return 0;
-}
-
-static int lfs_api_sync(const struct lfs_config *c)
-{
-	return LFS_ERR_OK;
-}
 
 static void release_file_data(struct fs_file_t *fp)
 {
@@ -569,6 +560,7 @@ static int littlefs_statvfs(struct fs_mount_t *mountp,
 	return lfs_to_errno(ret);
 }
 
+#ifdef CONFIG_FS_LITTLEFS_FLASH_DEV
 /* Return maximum page size in a flash area.  There's no flash_area
  * API to implement this, so we have to make one here.
  */
@@ -647,6 +639,7 @@ static int littlefs_flash_init(struct fs_mount_t *mountp)
 	fs->backend = (void *) *fap;
 	return 0;
 }
+#endif
 
 static int littlefs_mount(struct fs_mount_t *mountp)
 {
@@ -666,18 +659,30 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	k_mutex_init(&fs->mutex);
 	fs_lock(fs);
 
-	if (IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) && block_dev) {
+	if (block_dev) {
+#ifdef CONFIG_FS_LITTLEFS_BLK_DEV
 		fs->backend = mountp->storage_dev;
 		ret = disk_access_init((char *) fs->backend);
 		if (ret < 0) {
 			LOG_ERR("Storage init ERROR!");
 			goto out;
 		}
+#else
+		LOG_ERR("LittleFS disc access not enabled");
+		ret = -ENOSYS;
+		goto out;
+#endif
 	} else {
+#ifdef CONFIG_FS_LITTLEFS_FLASH_DEV
 		ret = littlefs_flash_init(mountp);
 		if (ret < 0) {
 			goto out;
 		}
+#else
+		LOG_ERR("LittleFS flash storage not enabled");
+		ret = -ENOSYS;
+		goto out;
+#endif
 	}
 
 	BUILD_ASSERT(CONFIG_FS_LITTLEFS_READ_SIZE > 0);
@@ -708,7 +713,8 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	lfs_size_t block_size = lcp->block_size;
 
 	if (block_size == 0) {
-		if (IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) && block_dev) {
+		if (block_dev) {
+#ifdef CONFIG_FS_LITTLEFS_BLK_DEV
 			ret = disk_access_ioctl((char *) fs->backend,
 						DISK_IOCTL_GET_SECTOR_SIZE,
 						&block_size);
@@ -716,8 +722,11 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 				LOG_ERR("Unable to get sector size");
 				goto out;
 			}
+#endif
 		} else {
+#ifdef CONFIG_FS_LITTLEFS_FLASH_DEV
 			block_size = get_block_size((struct flash_area *)fs->backend);
+#endif
 		}
 	}
 
@@ -752,7 +761,8 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	/* No, you don't get to override this. */
 	lfs_size_t block_count;
 
-	if (IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) && block_dev) {
+	if (block_dev) {
+#ifdef CONFIG_FS_LITTLEFS_BLK_DEV
 		ret = disk_access_ioctl((char *) fs->backend,
 					DISK_IOCTL_GET_SECTOR_COUNT,
 					&block_count);
@@ -764,9 +774,11 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		LOG_INF("FS at %s: is %u 0x%x-byte blocks with %u cycle",
 			(char *) fs->backend, block_count, block_size,
 			block_cycles);
+#endif
 	} else {
+#ifdef CONFIG_FS_LITTLEFS_FLASH_DEV
 		block_count = ((struct flash_area *)fs->backend)->fa_size
-			/ block_size;
+			      / block_size;
 		const struct device *dev =
 			flash_area_get_device((struct flash_area *)fs->backend);
 		LOG_INF("FS at %s:0x%x is %u 0x%x-byte blocks with %u cycle",
@@ -775,6 +787,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 			block_count, block_size, block_cycles);
 		LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
 			read_size, prog_size, cache_size, lookahead_size);
+#endif
 	}
 
 	__ASSERT_NO_MSG(prog_size != 0);
@@ -789,7 +802,8 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 	lcp->context = fs->backend;
 	/* Set the validated/defaulted values. */
-	if (IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) && block_dev) {
+	if (block_dev) {
+#ifdef CONFIG_FS_LITTLEFS_BLK_DEV
 		lcp->read = lfs_api_read_blk;
 		lcp->prog = lfs_api_prog_blk;
 		lcp->erase = lfs_api_erase_blk;
@@ -803,19 +817,22 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
 			lcp->read_size, lcp->prog_size, lcp->cache_size,
 			lcp->lookahead_size);
+#endif
 	} else {
+#ifdef CONFIG_FS_LITTLEFS_FLASH_DEV
 		__ASSERT((((struct flash_area *)fs->backend)->fa_size %
 			  block_size) == 0,
 			 "partition size must be multiple of block size");
-		lcp->read = lfs_api_read;
-		lcp->prog = lfs_api_prog;
-		lcp->erase = lfs_api_erase;
+		lcp->read = lfs_api_read_flash;
+		lcp->prog = lfs_api_prog_flash;
+		lcp->erase = lfs_api_erase_flash;
 
 		lcp->read_size = read_size;
 		lcp->prog_size = prog_size;
 		lcp->cache_size = cache_size;
 		lcp->lookahead_size = lookahead_size;
-		lcp->sync = lfs_api_sync;
+		lcp->sync = lfs_api_sync_flash;
+#endif
 	}
 
 	lcp->block_size = block_size;
@@ -869,7 +886,12 @@ static int littlefs_unmount(struct fs_mount_t *mountp)
 	lfs_unmount(&fs->lfs);
 
 	if (!littlefs_on_blkdev(mountp)) {
+#ifdef CONFIG_FS_LITTLEFS_FLASH_DEV
 		flash_area_close(fs->backend);
+#else
+		LOG_ERR("LittleFS flash storage not enabled");
+		/* It is not fatal error, continue to release backend and unlock */
+#endif
 	}
 
 	fs->backend = NULL;
