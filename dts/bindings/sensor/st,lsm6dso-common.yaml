@@ -6,7 +6,6 @@ include: sensor-device.yaml
 properties:
     irq-gpios:
       type: phandle-array
-      required: false
       description: |
         DRDY pin
 
@@ -16,7 +15,6 @@ properties:
 
     int-pin:
       type: int
-      required: false
       default: 1
       enum:
         - 1 # drdy is generated from INT1
@@ -31,7 +29,6 @@ properties:
 
     accel-pm:
       type: int
-      required: false
       default: 0
       description: |
         Specify the accelerometer power mode.
@@ -43,7 +40,6 @@ properties:
 
     accel-range:
       type: int
-      required: false
       default: 0
       description: |
         Range in g. Default is power-up configuration.
@@ -55,7 +51,6 @@ properties:
 
     accel-odr:
       type: int
-      required: false
       default: 0
       description: |
         Specify the default accelerometer output data rate expressed in samples per second (Hz).
@@ -75,7 +70,6 @@ properties:
 
     gyro-pm:
       type: int
-      required: false
       default: 0
       description: |
         Specify the gyrometer power mode.
@@ -86,7 +80,6 @@ properties:
 
     gyro-range:
       type: int
-      required: false
       default: 0
       description: |
         Range in dps. Default is power-up configuration.
@@ -99,7 +92,6 @@ properties:
 
     gyro-odr:
       type: int
-      required: false
       default: 0
       description: |
         Specify the default gyro output data rate expressed in samples per second (Hz).

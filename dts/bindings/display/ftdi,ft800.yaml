@@ -10,7 +10,6 @@ include: spi-device.yaml
 properties:
     irq-gpios:
       type: phandle-array
-      required: false
       description: Optional IRQ line of FT800 controller
 
     pclk:

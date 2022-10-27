@@ -46,14 +46,12 @@ properties:
 
     div-p:
       type: int
-      required: false
       description: |
           PLL division factor for PLL P output
           Valid range: 2 - 32
 
     div-q:
       type: int
-      required: false
       description: |
           PLL division factor for PLL Q output
           Valid range: 2 - 8

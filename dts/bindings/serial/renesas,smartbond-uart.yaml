@@ -38,5 +38,4 @@ properties:
 
     hw-flow-control-supported:
       type: boolean
-      required: false
       description: Set to indicate RTS/CTS flow control is supported.

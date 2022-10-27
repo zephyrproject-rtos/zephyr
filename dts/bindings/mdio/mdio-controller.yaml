@@ -9,7 +9,6 @@ bus: mdio
 
 properties:
     protocol:
-      required: false
       type: string
       description: |
         MDIO bus framing protocol to use for communication. Most devices

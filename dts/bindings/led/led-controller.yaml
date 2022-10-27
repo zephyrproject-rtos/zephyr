@@ -7,11 +7,9 @@ child-binding:
     description: LED child node
     properties:
         label:
-          required: false
           type: string
           description: Human readable string describing the LED
         index:
-          required: false
           type: int
           description: |
             Index of the LED on a controller. It can be used by drivers or
@@ -21,7 +19,6 @@ child-binding:
             the controller.
         color-mapping:
           type: array
-          required: false
           description: |
             Channel to color mapping of a multicolor LED. If a LED supports
             several colors, then the color-mapping property can be used to

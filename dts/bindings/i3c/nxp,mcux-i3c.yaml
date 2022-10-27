@@ -18,7 +18,6 @@ properties:
 
     i3c-od-scl-hz:
       type: int
-      required: false
       description: |
         Open Drain Frequency for the I3C controller. When undefined, use
         the controller default or as specified by the I3C specification.

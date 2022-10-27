@@ -6,7 +6,6 @@ include: sensor-device.yaml
 properties:
     drdy-gpios:
       type: phandle-array
-      required: false
       description: DRDY pin
 
         This pin defaults to active high when produced by the sensor.
@@ -15,7 +14,6 @@ properties:
 
     int-pin:
       type: int
-      required: false
       default: 1
       enum:
         - 1 # drdy is generated from INT1
@@ -29,7 +27,6 @@ properties:
 
     range:
       type: int
-      required: false
       default: 3
       description: Range in g. Default is power-up configuration.
       enum:
@@ -40,7 +37,6 @@ properties:
 
     odr:
       type: int
-      required: false
       default: 0
       description:
           Specify the default accelerometer output data rate expressed in samples per second (Hz).

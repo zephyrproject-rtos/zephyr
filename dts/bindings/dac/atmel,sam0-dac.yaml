@@ -21,7 +21,6 @@ properties:
 
     reference:
       type: string
-      required: false
       description: Reference voltage source
       enum:
         - "intref"

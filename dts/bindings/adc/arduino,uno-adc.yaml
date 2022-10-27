@@ -22,11 +22,9 @@ properties:
 
     io-channel-map-mask:
       type: compound
-      required: false
 
     io-channel-map-pass-thru:
       type: compound
-      required: false
 
     "#io-channel-cells":
       type: int

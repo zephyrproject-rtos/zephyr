@@ -10,7 +10,6 @@ description: Pseudo-device to help capturing desired data into core dumps
 properties:
     memory-regions:
       type: array
-      required: false
       description: Start address and size of memory regions to be collected in a core dump
 
     coredump-type:

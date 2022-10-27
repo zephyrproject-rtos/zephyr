@@ -6,7 +6,6 @@ include: sensor-device.yaml
 properties:
     drdy-gpios:
       type: phandle-array
-      required: false
       description: |
         Data-ready interrupt pin.
         Interrupt is active high by default.

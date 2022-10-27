@@ -18,15 +18,12 @@ properties:
         required: true
     sample-clk:
         type: int
-        required: false
         description: |
           sampling clock frequency of tachometer. Please notice that it must be
           fixed to 32768 if bus in clocks property is NPCX_CLOCK_BUS_LFCLK.
     port:
         type: int
-        required: false
         description: selected port of tachometer (port-A is 0 and port-B is 1)
     pulses-per-round:
         type: int
-        required: false
         description: number of pulses (holes) per round of tachometer's input (encoder)

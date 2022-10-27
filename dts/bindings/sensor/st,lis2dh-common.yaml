@@ -6,7 +6,6 @@ include: sensor-device.yaml
 properties:
     irq-gpios:
       type: phandle-array
-      required: false
       description: |
         The INT1 and (optional) INT2 signal connections.  These signals
         are active-high as produced by the sensor.
@@ -33,7 +32,6 @@ properties:
 
     anym-mode:
       type: int
-      required: false
       default: 0
       description: |
         Select the interrupt mode for any movement.

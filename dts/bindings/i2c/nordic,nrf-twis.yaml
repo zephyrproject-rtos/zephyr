@@ -32,10 +32,8 @@ include: nordic,nrf-twi-common.yaml
 properties:
     address-0:
       type: int
-      required: false
       description: TWI slave address 0
 
     address-1:
       type: int
-      required: false
       description: TWI slave address 1

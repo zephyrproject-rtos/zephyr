@@ -38,7 +38,6 @@ properties:
 
     try-power-role:
         type: string
-        required: false
         enum:
           - "sink"
           - "source"
@@ -48,7 +47,6 @@ properties:
 
     data-role:
         type: string
-        required: false
         enum:
           - "host"
           - "device"
@@ -61,7 +59,6 @@ properties:
 
     typec-power-opmode:
         type: string
-        required: false
         enum:
           - "default"
           - "1.5A"
@@ -78,13 +75,11 @@ properties:
 
     pd-disable:
         type: boolean
-        required: false
         description: |
           Disables power delivery when true
 
     source-pdos:
         type: array
-        required: false
         description: |
           An array of source Power Data Objects (PDOs).
           Use tht following macros to define the PDOs, defined in
@@ -97,7 +92,6 @@ properties:
 
     sink-pdos:
         type: array
-        required: false
         description: |
           An array of sink Power Data Objects (PDOs).
           Use tht following macros to define the PDOs, defined in
@@ -110,7 +104,6 @@ properties:
 
     sink-vdos:
         type: array
-        required: false
         description: |
           An array of sink Vendor Defined Objects (VDOs).
           Use tht following macros to define the VDOs, defined in
@@ -127,7 +120,6 @@ properties:
 
     sink-vdos-v1:
         type: array
-        required: false
         description: |
           An array of sink Vendor Defined Objects (VDOs).
           Use tht following macros to define the VDOs, defined in
@@ -141,7 +133,6 @@ properties:
 
     op-sink-microwatt:
         type: int
-        required: false
         description: |
           Minimum power, in microwatts, needed by the sink. A Capability
           Mismatch is sent to the Source if the power can't be met.
