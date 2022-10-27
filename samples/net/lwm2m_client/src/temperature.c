@@ -13,45 +13,48 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>
+#include <zephyr/kernel.h>
+#include <zephyr/random/rand32.h>
+#include <stdint.h>
 
-static void *temperature_get_buf(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
-				 size_t *data_len)
+static struct k_work_delayable temp_work;
+#define PERIOD K_MINUTES(2)
+
+static void temp_work_cb(struct k_work *work)
 {
-	/* Last read temperature value, will use 25.5C if no sensor available */
-	static double v = 25.5;
-	const struct device *dev = NULL;
+	double v;
 
-#if defined(CONFIG_FXOS8700_TEMP)
-	dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("%s: device not ready.", dev->name);
-		return;
-	}
-#endif
-
-	if (dev != NULL) {
+	if (IS_ENABLED(CONFIG_FXOS8700_TEMP)) {
+		const struct device *dev = device_get_binding("nxp_fxos8700");
 		struct sensor_value val;
 
+		if (!dev) {
+			LOG_ERR("device not ready.");
+			goto out;
+		}
 		if (sensor_sample_fetch(dev)) {
 			LOG_ERR("temperature data update failed");
+			goto out;
 		}
 
 		sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP, &val);
 
 		v = sensor_value_to_double(&val);
-
-		LOG_DBG("LWM2M temperature set to %f", v);
+	} else {
+		/* Generate dummy temperature data */
+		v = 20.0 + (double)sys_rand32_get() / UINT32_MAX * 5.0;
 	}
 
-	/* echo the value back through the engine to update min/max values */
 	lwm2m_engine_set_float("3303/0/5700", &v);
-	*data_len = sizeof(v);
-	return &v;
+
+out:
+	k_work_schedule(&temp_work, PERIOD);
 }
 
 void init_temp_sensor(void)
 {
-	lwm2m_engine_create_obj_inst("3303/0");
-	lwm2m_engine_register_read_callback("3303/0/5700", temperature_get_buf);
+	if (lwm2m_engine_create_obj_inst("3303/0") == 0) {
+		k_work_init_delayable(&temp_work, temp_work_cb);
+		k_work_schedule(&temp_work, K_NO_WAIT);
+	}
 }
