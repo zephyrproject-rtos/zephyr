@@ -6,5 +6,5 @@ tests:
     platform_allow: qemu_x86_64
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y
-    tags: kernel smp ignore_faults linker_generator
+    tags: ignore_faults linker_generator
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
