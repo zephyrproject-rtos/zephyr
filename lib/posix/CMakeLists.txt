@@ -4,7 +4,7 @@
 zephyr_interface_library_named(posix_subsys)
 
 if(CONFIG_POSIX_API)
-  target_include_directories(posix_subsys INTERFACE ${ZEPHYR_BASE}/include/zephyr/posix)
+  zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
 endif()
 
 if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_CLOCK OR
