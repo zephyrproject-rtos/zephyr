@@ -99,7 +99,6 @@ child-binding:
 
         invert-input:
           description: Inverts the input.
-          required: false
           type: boolean
 
         hwctrl:

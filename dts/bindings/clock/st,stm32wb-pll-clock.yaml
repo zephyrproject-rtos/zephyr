@@ -51,14 +51,12 @@ properties:
 
     div-p:
       type: int
-      required: false
       description: |
           Main PLL division factor for PLLPCLK
           Valid range: 2 - 32
 
     div-q:
       type: int
-      required: false
       description: |
           Main PLL division factor for PLLQCLK
           Valid range: 2 - 8

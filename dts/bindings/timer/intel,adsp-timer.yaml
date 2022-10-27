@@ -8,12 +8,6 @@ compatible: "intel,adsp-timer"
 include: base.yaml
 
 properties:
-    reg:
-      required: false
-
-    interrupts:
-      required: false
-
     syscon:
       type: phandle
       required: true

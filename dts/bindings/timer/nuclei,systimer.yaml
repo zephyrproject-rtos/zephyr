@@ -20,7 +20,6 @@ properties:
 
     clk-divider:
       type: int
-      required: false
       description: |
         clk-divider specifies the division ratio to the CPU frequency that
         clock used by the system timer.

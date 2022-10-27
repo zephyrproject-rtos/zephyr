@@ -34,7 +34,6 @@ properties:
 
     lines:
       type: int
-      required: false
       description: |
         QMSPI data lines 1, 2, or 4. 1 data line is full-duplex
         MOSI and MISO or half-duplex on MOSI only. Lines set to 2
@@ -47,7 +46,6 @@ properties:
 
     port-sel:
       type: int
-      required: false
       description: |
         SPI Port 0, 1, or 2. Port 0 is the shared SPI, port 1 is
         the private SPI, and port 2 is the internal SPI port for
@@ -56,14 +54,12 @@ properties:
 
     chip-select:
       type: int
-      required: false
       description: |
         Use QMSPI CS0# or CS1#. Port 0 supports both chip selects.
         Ports 1 and 2 implement CS0# only. Defaults to CS0#.
 
     dcsckon:
       type: int
-      required: false
       description: |
         Delay in QMSPI main clocks from CS# assertion to first clock edge.
         If not present use hardware default value. Refer to chip documention
@@ -71,7 +67,6 @@ properties:
 
     dckcsoff:
       type: int
-      required: false
       description: |
         Delay in QMSPI main clocks from last clock edge to CS# de-assertion.
         If not presetn use hardware default value. Refer to chip documention
@@ -79,7 +74,6 @@ properties:
 
     dldh:
       type: int
-      required: false
       description: |
         Delay in QMSPI main clocks from CS# de-assertion to driving HOLD#
         and WP#. If not present use hardware default value. Refer to chip
@@ -87,7 +81,6 @@ properties:
 
     dcsda:
       type: int
-      required: false
       description: |
         Delay in QMSPI main clocks from CS# de-assertion to CS# assertion.
         If not present use hardware default value. Refer to chip documention
@@ -95,21 +88,18 @@ properties:
 
     cs1-freq:
       type: int
-      required: false
       description: |
         Allows different frequencies for CS#0 and CS1# devices. This applies
         to ports implementing CS1#.
 
     tctradj:
       type: int
-      required: false
       description: |
         An optional signed 8-bit value for adjusting the QMSPI control signal
         timing tap.
 
     tsckadj:
       type: int
-      required: false
       description: |
         An optional signed 8-bit value for adjusting the QMSPI clock signal
         timing tap.

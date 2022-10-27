@@ -10,7 +10,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
     int-gpios:
       type: phandle-array
-      required: false
       description: DRDY/INT pin.
 
         The DRDY/INT pin of HDC20xx sensor is open-drain, active low. If

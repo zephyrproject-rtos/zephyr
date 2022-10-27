@@ -10,13 +10,11 @@ properties:
 
     center-aligned:
       type: boolean
-      required: false
       description: Set this to use center-aligned (up and down) counter mode.
 
     ch0-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -36,7 +34,6 @@ properties:
     ch0-inverted:
       type: boolean
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -48,7 +45,6 @@ properties:
     ch1-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -59,7 +55,6 @@ properties:
     ch1-inverted:
       type: boolean
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -71,7 +66,6 @@ properties:
     ch2-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -82,7 +76,6 @@ properties:
     ch2-inverted:
       type: boolean
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -94,7 +87,6 @@ properties:
     ch3-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -105,7 +97,6 @@ properties:
     ch3-inverted:
       type: boolean
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.

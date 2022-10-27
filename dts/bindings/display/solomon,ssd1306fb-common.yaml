@@ -26,17 +26,14 @@ properties:
 
     segment-remap:
       type: boolean
-      required: false
       description: Last column address is mapped to first segment
 
     com-invdir:
       type: boolean
-      required: false
       description: Scan direction is from last COM output to first COM output
 
     com-sequential:
       type: boolean
-      required: false
       description: Sequential COM pin configuration
 
     prechargep:
@@ -46,7 +43,6 @@ properties:
 
     reset-gpios:
       type: phandle-array
-      required: false
       description: RESET pin.
 
         The RESET pin of SSD1306 is active low.

@@ -12,7 +12,6 @@ properties:
 
     prescaler:
       type: int
-      required: false
       default: 1
       description: prescaling factor from the HFPERCLK clock
       enum:

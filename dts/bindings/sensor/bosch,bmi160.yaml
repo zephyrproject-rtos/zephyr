@@ -8,7 +8,6 @@ include: sensor-device.yaml
 properties:
     int-gpios:
       type: phandle-array
-      required: false
       description: |
         This property specifies the connection for INT1, because the
         Zephyr driver maps all interrupts to INT1.  The signal defaults

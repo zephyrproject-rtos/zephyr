@@ -30,7 +30,6 @@ properties:
 
     swj-cfg:
         type: string
-        required: false
         default: "full" # reset state
         enum:
           - "full"
@@ -104,7 +103,6 @@ child-binding:
             };
 
         slew-rate:
-          required: false
           type: string
           default: "max-speed-10mhz"
           enum:

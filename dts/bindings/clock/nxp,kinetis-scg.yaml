@@ -14,7 +14,6 @@ properties:
     sosc-mode:
       type: int
       description: system oscillator mode
-      required: false
 
     "#clock-cells":
       const: 1

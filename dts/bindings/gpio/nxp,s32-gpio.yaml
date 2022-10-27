@@ -15,7 +15,6 @@ properties:
       required: true
 
     interrupts:
-      required: false
       description: |
         For GPIO ports that have pins can be used for processing
         external interrupt signal, this is a list of GPIO pins and

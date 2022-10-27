@@ -16,7 +16,6 @@ include:
 properties:
     cpu2-prescaler:
       type: int
-      required: false
       enum:
         - 1
         - 2

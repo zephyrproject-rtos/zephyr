@@ -17,13 +17,11 @@ properties:
 
     threshold-mv:
       type: int
-      required: false
       description: |
         Value in millivolts present on ADC data as threshold assert.
 
     comparison:
       type: string
-      required: false
       description: |
         Determines the condition to be met between ADC data and
         threshold assert value that will trigger comparator event.
