@@ -9,6 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/device.h>
@@ -331,6 +332,20 @@ static struct bass_recv_state_internal *bass_lookup_addr(const bt_addr_le_t *add
 	return NULL;
 }
 
+static struct bass_recv_state_internal *get_free_recv_state(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+		struct bass_recv_state_internal *free_internal_state =
+			&scan_delegator.recv_states[i];
+
+		if (!free_internal_state->active) {
+			return free_internal_state;
+		}
+	}
+
+	return NULL;
+}
+
 static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
@@ -430,16 +445,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
-		struct bass_recv_state_internal *free_internal_state =
-			&scan_delegator.recv_states[i];
-
-		if (!free_internal_state->active) {
-			internal_state = free_internal_state;
-			break;
-		}
-	}
-
+	internal_state = get_free_recv_state();
 	if (internal_state == NULL) {
 		LOG_DBG("Could not add src");
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
@@ -1101,7 +1107,119 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 	return 0;
 }
 
-int bt_bap_scan_delegator_remove_source(uint8_t src_id)
+static bool valid_bt_bap_scan_delegator_add_src_param(
+	const struct bt_bap_scan_delegator_add_src_param *param)
+{
+	uint32_t aggregated_bis_syncs = 0U;
+
+	if (param->broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
+		LOG_DBG("Invalid broadcast_id: %u", param->broadcast_id);
+
+		return false;
+	}
+
+	if (param->pa_sync == NULL) {
+		LOG_DBG("NULL pa_sync");
+
+		return false;
+	}
+
+	if (param->num_subgroups > CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS) {
+		LOG_WRN("Too many subgroups %u/%u",
+			param->num_subgroups,
+			CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS);
+
+		return false;
+	}
+
+	for (uint8_t i = 0U; i < param->num_subgroups; i++) {
+		const struct bt_bap_scan_delegator_subgroup *subgroup = &param->subgroups[i];
+
+		if (!bis_syncs_unique_or_no_pref(subgroup->bis_sync,
+						 aggregated_bis_syncs)) {
+			LOG_DBG("Invalid BIS sync: %u", subgroup->bis_sync);
+
+			return false;
+		}
+
+		if (subgroup->metadata_len > BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN) {
+			LOG_DBG("subgroup[%u]: Invalid metadata_len: %u",
+				i, subgroup->metadata_len);
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_param *param)
+{
+	struct bass_recv_state_internal *internal_state = NULL;
+	struct bt_bap_scan_delegator_recv_state *state;
+	struct bt_le_per_adv_sync_info sync_info;
+	int err;
+
+	CHECKIF(!valid_bt_bap_scan_delegator_add_src_param(param)) {
+		return -EINVAL;
+	}
+
+	internal_state = bass_lookup_pa_sync(param->pa_sync);
+	if (internal_state != NULL) {
+		LOG_DBG("PA Sync already in a receive state with src_id %u",
+			internal_state->state.src_id);
+
+		return -EALREADY;
+	}
+
+	internal_state = get_free_recv_state();
+	if (internal_state == NULL) {
+		LOG_DBG("Could not add src");
+
+		return -ENOMEM;
+	}
+
+	err = bt_le_per_adv_sync_get_info(param->pa_sync, &sync_info);
+	if (err != 0) {
+		LOG_DBG("Failed to get sync info: %d", err);
+
+		return err;
+	}
+
+	state = &internal_state->state;
+
+	state->src_id = next_src_id();
+	bt_addr_le_copy(&state->addr, &sync_info.addr);
+	state->adv_sid = sync_info.sid;
+	state->broadcast_id = param->broadcast_id;
+	state->pa_sync_state = BT_BAP_PA_STATE_SYNCED;
+	state->num_subgroups = param->num_subgroups;
+	if (state->num_subgroups > 0U) {
+		(void)memcpy(state->subgroups, param->subgroups,
+			     sizeof(state->subgroups));
+	} else {
+		(void)memset(state->subgroups, 0, sizeof(state->subgroups));
+	}
+
+	internal_state->active = true;
+	internal_state->pa_sync = param->pa_sync;
+
+	/* Set all requested_bis_sync to BT_BAP_BIS_SYNC_NO_PREF, as no
+	 * Broadcast Assistant has set any requests yet
+	 */
+	for (size_t i = 0U; i < ARRAY_SIZE(internal_state->requested_bis_sync); i++) {
+		internal_state->requested_bis_sync[i] = BT_BAP_BIS_SYNC_NO_PREF;
+	}
+
+	LOG_DBG("Index %u: New source added: ID 0x%02x",
+		internal_state->index, state->src_id);
+
+	receive_state_updated(NULL, internal_state);
+
+	return state->src_id;
+}
+
+int bt_bap_scan_delegator_rem_src(uint8_t src_id)
 {
 	struct net_buf_simple buf;
 
