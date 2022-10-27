@@ -4,7 +4,6 @@ tests:
     tags: kernel xip
   arch.common.xip.linker_generator:
     platform_allow: qemu_cortex_m3
-    filter: CONFIG_XIP
-    tags: kernel xip linker_generator
+    tags: linker_generator
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y
