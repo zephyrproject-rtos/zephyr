@@ -162,8 +162,12 @@ config BT_AUDIO_BROADCAST_SINK
 if BT_AUDIO_BROADCAST_SINK
 
 config BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
-	int # hidden: TODO: Update once the API supports it
+	int "Basic Audio Profile Broadcast Sink subgroup count"
 	default 1
+	range 1 BT_ISO_MAX_CHAN
+	help
+	  This option sets the maximum number of subgroups per broadcast sink
+	  to support.
 
 config BT_AUDIO_BROADCAST_SNK_COUNT
 	int "Basic Audio Broadcaster Sink count"
