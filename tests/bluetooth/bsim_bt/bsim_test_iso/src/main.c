@@ -58,6 +58,7 @@ static const struct bt_data per_ad_data2[] = {
 static uint8_t chan_map[] = { 0x1F, 0XF1, 0x1F, 0xF1, 0x1F };
 
 static bool volatile is_iso_connected;
+static bool volatile deleting_pa_sync;
 static void iso_connected(struct bt_iso_chan *chan);
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason);
 static void iso_recv(struct bt_iso_chan *chan,
@@ -395,7 +396,11 @@ static void pa_terminated_cb(struct bt_le_per_adv_sync *sync,
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr);
 
-	FAIL("PA terminated unexpectedly\n");
+	if (!deleting_pa_sync) {
+		FAIL("PA terminated unexpectedly\n");
+	} else {
+		deleting_pa_sync = false;
+	}
 }
 
 static bool volatile is_sync_recv;
@@ -618,6 +623,7 @@ static void test_iso_recv_main(void)
 	k_sleep(K_MSEC(5000));
 
 	printk("Deleting Periodic Advertising Sync...");
+	deleting_pa_sync = true;
 	err = bt_le_per_adv_sync_delete(sync);
 	if (err) {
 		FAIL("Failed to delete periodic advertising sync (err %d)\n",
@@ -766,6 +772,7 @@ static void test_iso_recv_main(void)
 	printk("success.\n");
 
 	printk("Deleting Periodic Advertising Sync...");
+	deleting_pa_sync = true;
 	err = bt_le_per_adv_sync_delete(sync);
 	if (err) {
 		FAIL("Failed to delete periodic advertising sync (err %d)\n",
@@ -923,6 +930,7 @@ static void test_iso_recv_vs_dp_main(void)
 	printk("success.\n");
 
 	printk("Deleting Periodic Advertising Sync... ");
+	deleting_pa_sync = true;
 	err = bt_le_per_adv_sync_delete(sync);
 	if (err) {
 		FAIL("Failed to delete periodic advertising sync (err %d)\n",
