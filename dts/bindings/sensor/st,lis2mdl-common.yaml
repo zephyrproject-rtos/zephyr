@@ -6,7 +6,6 @@ include: sensor-device.yaml
 properties:
     irq-gpios:
       type: phandle-array
-      required: false
       description: IRQ pin
 
         This pin defaults to active high when produced by the sensor.

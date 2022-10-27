@@ -11,17 +11,12 @@ properties:
     reg:
       required: true
 
-    interrupts:
-      required: false
-
     rdc:
      type: int
-     required: false
      description: Set the RDC permission for this peripheral
 
     pinmux:
       type: phandles
-      required: false
       description: |
         IMX pin selection peripheral does not follow specific
         pattern for which GPIO port uses which pinmux. Use this property to specify

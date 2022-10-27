@@ -21,7 +21,6 @@ properties:
 
     slow-clock-div:
       type: int
-      required: false
       description: |
         PWM and TACH clock domain divided down from 48 MHz AHB clock. The
         default value is 480 for 100 kHz.
@@ -38,7 +37,6 @@ properties:
 
     xtal-single-ended:
       type: boolean
-      required: false
       description: Use single ended crystal connection to XTAL2 pin.
 
     "#clock-cells":

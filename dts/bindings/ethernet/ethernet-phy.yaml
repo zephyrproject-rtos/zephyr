@@ -20,11 +20,9 @@ properties:
       description: MDIO driver node
     no-reset:
       type: boolean
-      required: false
       description: Do not reset the PHY during initialization
     fixed-link:
       type: string
-      required: false
       description: This link is fixed and does not require PHY configuration
       enum:
         - "10BASE-T Half-Duplex"

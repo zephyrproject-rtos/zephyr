@@ -6,7 +6,6 @@ include: sensor-device.yaml
 properties:
     irq-gpios:
       type: phandle-array
-      required: false
       description: |
         DRDY pin
 
@@ -16,7 +15,6 @@ properties:
 
     int-pin:
       type: int
-      required: false
       default: 1
       enum:
         - 1
@@ -34,7 +32,6 @@ properties:
 
     range:
       type: int
-      required: false
       default: 2
       description: |
         Range in g. Default is power-up configuration.
@@ -52,7 +49,6 @@ properties:
 
     odr:
       type: int
-      required: false
       description: |
         Output data rate in Hz. Default value is 12.5Hz if this is not set.
         The output data rates which are represented with fractional
@@ -74,7 +70,6 @@ properties:
 
     bw-filt:
       type: int
-      required: false
       default: 0
       description: |
         Digital filtering cutoff bandwidth. Default is power-up configuration.
@@ -92,7 +87,6 @@ properties:
 
     power-mode:
       type: int
-      required: false
       default: 0
       description: |
         Specify the sensor power mode. Default is power-up configuration.
@@ -116,7 +110,6 @@ properties:
 
     tap-mode:
       type: int
-      required: false
       default: 0
       description: |
         Tap mode. Default is power-up configuration.
@@ -130,7 +123,6 @@ properties:
 
     tap-threshold:
       type: array
-      required: false
       default: [0, 0, 0]
       description: |
         Tap X/Y/Z axes threshold. Default is power-up configuration.
@@ -150,7 +142,6 @@ properties:
 
     tap-shock:
       type: int
-      required: false
       default: 0x0
       description: |
         Tap shock value. Default is power-up configuration.
@@ -161,7 +152,6 @@ properties:
 
     tap-latency:
       type: int
-      required: false
       default: 0x0
       description: |
         Tap latency. Default is power-up configuration.
@@ -172,7 +162,6 @@ properties:
 
     tap-quiet:
       type: int
-      required: false
       default: 0x0
       description: |
         Expected quiet time after a tap detection. Default is power-up configuration.
@@ -219,7 +208,6 @@ properties:
     ff-duration:
       type: int
       default: 30
-      required: false
       description: |
         The freefall duration value represented in milliseconds.
         If the accelerometer readings of the all axes are lower
@@ -234,7 +222,6 @@ properties:
     ff-threshold:
       type: int
       default: 3
-      required: false
       description: |
         The freefall threshold value represented in mg.
         If the accelerometer readings of the all axes are lower

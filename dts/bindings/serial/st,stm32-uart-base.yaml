@@ -18,7 +18,6 @@ properties:
 
     single-wire:
       type: boolean
-      required: false
       description: |
         Enable the single wire half-duplex communication.
         Using this mode, TX and RX lines are internally connected and
@@ -27,20 +26,17 @@ properties:
 
     tx-rx-swap:
       type: boolean
-      required: false
       description:
         Swap the TX and RX pins. Used in case of a cross wired connection.
 
     tx-invert:
       type: boolean
-      required: false
       description: |
         Invert the binary logic of tx pin. When enabled, physical logic levels are inverted and
         we use 1=Low, 0=High instead of 1=High, 0=Low.
 
     rx-invert:
       type: boolean
-      required: false
       description: |
         Invert the binary logic of rx pin. When enabled, physical logic levels are inverted and
         we use 1=Low, 0=High instead of 1=High, 0=Low.
@@ -53,7 +49,6 @@ properties:
 
     wakeup-line:
       type: int
-      required: false
       description: |
         EXTI line number matching the device wakeup interrupt mask register.
         This property is required on stm32 devices where the wakeup interrupt signal could be

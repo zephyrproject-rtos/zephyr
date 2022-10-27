@@ -23,7 +23,6 @@ properties:
 
     full-ohms:
       type: int
-      required: false
       description: |
         Resistance of the full path through the voltage divider.
 
@@ -32,7 +31,6 @@ properties:
 
     power-gpios:
       type: phandle-array
-      required: false
       description: |
         Control power to the voltage divider inputs.
 

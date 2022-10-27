@@ -9,7 +9,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     irq-gpios:
-      required: false
       type: phandle-array
       description: DRDY pin
 

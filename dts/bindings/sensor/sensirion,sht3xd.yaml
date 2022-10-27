@@ -10,7 +10,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
     alert-gpios:
       type: phandle-array
-      required: false
       description: |
         ALERT pin.
 

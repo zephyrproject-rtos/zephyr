@@ -12,4 +12,3 @@ include: [base.yaml, voltage-divider.yaml]
 properties:
     discharge-gpios:
        type: phandle-array
-       required: false

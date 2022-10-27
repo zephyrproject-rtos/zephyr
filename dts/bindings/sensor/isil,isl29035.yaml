@@ -12,7 +12,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
     int-gpios:
       type: phandle-array
-      required: false
       description: |
         The INT pin defaults to active low when produced by the sensor.
         The property value should ensure the flags properly describe the

@@ -25,7 +25,6 @@ properties:
 
     clkout-divider:
       type: int
-      required: false
       description: |
         Clock divider for the CLKOUT signal. If not set, the CLKOUT signal is turned off.
 

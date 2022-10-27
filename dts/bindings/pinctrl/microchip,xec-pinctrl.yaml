@@ -93,7 +93,6 @@ child-binding:
             description: Pinmux selection
 
         slew-rate:
-          required: false
           type: string
           default: "low-speed"
           enum:
@@ -106,7 +105,6 @@ child-binding:
             slew rate adjustment.
 
         drive-strength:
-          required: false
           type: string
           default: "1x"
           enum:

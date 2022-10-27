@@ -10,7 +10,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
     sd-gpios:
       type: phandle-array
-      required: false
       description: |
         The SD pin defaults to active high when consumed by the sensor.
         The property value should ensure the flags properly describe
@@ -18,7 +17,6 @@ properties:
 
     intb-gpios:
       type: phandle-array
-      required: false
       description: |
         The INTB pin defaults to active low when produced by the sensor.
         The property value should ensure the flags properly describe
@@ -51,7 +49,6 @@ properties:
 
     rr-sequence:
       type: int
-      required: false
       default: 0
       description: |
         Auto-Scan Sequence Configuration.
@@ -72,7 +69,6 @@ properties:
 
     active-channel:
       type: int
-      required: false
       default: 0
       description: |
         Selects channel for continuous conversions.
@@ -110,7 +106,6 @@ properties:
 
     sensor-activate-sel:
       type: string
-      required: false
       default: "low-power"
       description: |
         Sensor Activation Mode Selection.
@@ -129,7 +124,6 @@ properties:
 
     ref-clk-src:
       type: string
-      required: false
       default: "internal"
       description: |
         Select Reference Frequency Source.
@@ -144,7 +138,6 @@ properties:
 
     current-drive:
       type: string
-      required: false
       default: "normal"
       description: |
         Select Current Sensor Drive.
@@ -163,7 +156,6 @@ properties:
 
     output-gain:
       type: int
-      required: false
       default: 0
       description: |
         Output gain control (FDC2112, FDC2114 only)
@@ -195,7 +187,6 @@ child-binding:
 
       offset:
         type: int
-        required: false
         default: 0
         description: |
           Channel X Conversion Offset (FDC2112 and FDC2212 only).

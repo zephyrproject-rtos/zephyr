@@ -30,7 +30,6 @@ properties:
 
     rcu-clock-source:
       type: int
-      required: false
       description: |
         Some GD32 ADC have additional clock source, like IRC14M or IRC28M.
         This property used to select the clock and related prescaler, valid

@@ -77,7 +77,6 @@ child-binding:
           0 FAST — Fast Frequency Slew Rate
           1 SLOW — Slow Frequency Slew Rate
       bias-pull-up-value:
-        required: false
         type: string
         default: "100k"
         enum:
