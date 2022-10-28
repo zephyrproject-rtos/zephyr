@@ -20,6 +20,7 @@
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
 		pwm-led2 = &blue_pwm_led;
+		magn0 = &bmm150;
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
@@ -297,6 +298,23 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+
+	/*
+	 * This board does not have a BME280, it has a BMP280.
+	 * The two parts are incredibly similar, so the BME280 driver works for
+	 * BMP280 as well.
+	 */
+	bme280@76 {
+		compatible = "bosch,bme280";
+		status = "okay";
+		reg = <0x76>;
+	};
+
+	bmm150: bmm150@10 {
+		compatible = "bosch,bmm150";
+		status = "okay";
+		reg = <0x10>;
+	};
 };
 
 /* f-ram spi port */
