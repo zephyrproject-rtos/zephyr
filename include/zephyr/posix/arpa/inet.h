@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+
 static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 			      size_t size)
 {
@@ -22,6 +24,8 @@ static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 {
 	return zsock_inet_pton(family, src, dst);
 }
+
+#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
 
 #ifdef __cplusplus
 }
