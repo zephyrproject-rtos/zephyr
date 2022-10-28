@@ -19,12 +19,12 @@ extern "C" {
 
 typedef void *mqd_t;
 
-typedef struct mq_attr {
+struct mq_attr {
 	long mq_flags;
 	long mq_maxmsg;
 	long mq_msgsize;
 	long mq_curmsgs;	/* Number of messages currently queued. */
-} mq_attr;
+};
 
 mqd_t mq_open(const char *name, int oflags, ...);
 int mq_close(mqd_t mqdes);
