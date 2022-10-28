@@ -56,6 +56,19 @@ void vprintk(const char *fmt, va_list ap)
 {
 	vprintf(fmt, ap);
 }
+
+int snprintk(char *str, size_t size, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = snprintf(str, size, fmt, ap);
+	va_end(ap);
+
+	return ret;
+}
+
 #else
 
 /*
