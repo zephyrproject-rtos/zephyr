@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_POSIX_SYS_IOCTL_H_
 
 #define FIONBIO 0x5421
+#define FIONREAD 0x541B
 
 #ifdef __cplusplus
 extern "C" {
