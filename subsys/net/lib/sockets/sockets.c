@@ -2167,6 +2167,9 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 		}
 
+		case SO_LINGER:
+			/* ignored. for compatibility purposes only */
+			return 0;
 		}
 
 		break;
