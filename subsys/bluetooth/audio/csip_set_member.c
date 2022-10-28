@@ -237,6 +237,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	if (svc_inst->cb != NULL && svc_inst->cb->sirk_read_req != NULL) {
+		ssize_t gatt_err = BT_GATT_ERR(BT_ATT_ERR_SUCCESS);
 		uint8_t cb_rsp;
 
 		/* Ask higher layer for what SIRK to return, if any */
@@ -253,19 +254,24 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 			if (err != 0) {
 				BT_ERR("Could not encrypt SIRK: %d",
 					err);
-				return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+				gatt_err = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+			} else {
+				sirk = &enc_sirk;
+				LOG_HEXDUMP_DBG(enc_sirk.value,
+						sizeof(enc_sirk.value),
+						"Encrypted Set SIRK");
 			}
-
-			sirk = &enc_sirk;
-			LOG_HEXDUMP_DBG(enc_sirk.value, sizeof(enc_sirk.value),
-					"Encrypted Set SIRK");
 		} else if (cb_rsp == BT_CSIP_READ_SIRK_REQ_RSP_REJECT) {
-			return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+			gatt_err = BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
 		} else if (cb_rsp == BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY) {
-			return BT_GATT_ERR(BT_CSIP_ERROR_SIRK_OOB_ONLY);
+			gatt_err = BT_GATT_ERR(BT_CSIP_ERROR_SIRK_OOB_ONLY);
 		} else {
 			BT_ERR("Invalid callback response: %u", cb_rsp);
-			return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+			gatt_err = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		}
+
+		if (gatt_err != BT_GATT_ERR(BT_ATT_ERR_SUCCESS)) {
+			return gatt_err;
 		}
 	} else {
 		sirk = &svc_inst->set_sirk;
