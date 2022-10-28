@@ -4,8 +4,8 @@ config $(module)_LOG_MESSAGE_QUEUE_SIZE
 	int "Log message queue size"
 	default $(default-size)
 	help
-	  Amount of messages that can enqueued in order to be processed by shell
-	  thread. Too small queue may lead to logger thread being blocked
+	  Size of buffer for messages that can be enqueued in order to be processed
+	  by shell thread. Too small queue may lead to the logger thread being blocked
 	  (see $(module)_LOG_MESSAGE_QUEUE_TIMEOUT). Too big queue on relatively
-	  slow shell transport may lead to situation where logs are dropped
+	  slow shell transport may lead to situations where logs are dropped
 	  because all log messages are enqueued.
