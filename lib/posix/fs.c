@@ -123,7 +123,9 @@ int open(const char *name, int flags, ...)
 	return fd;
 }
 
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_PICOLIBC)
 FUNC_ALIAS(open, _open, int);
+#endif
 
 static int fs_close_vmeth(void *obj)
 {
