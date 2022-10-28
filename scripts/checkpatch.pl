@@ -6565,7 +6565,7 @@ sub process {
 # check for uses of __BYTE_ORDER__
 		while ($line =~ /\b(__BYTE_ORDER__)\b/g) {
 			ERROR("BYTE_ORDER",
-			      "Use of the '$1' macro is disallowed. Use CONFIG_BIG_ENDIAN instead\n" . $herecurr);
+			      "Use of the '$1' macro is disallowed. Use CONFIG_(BIG|LITTLE)_ENDIAN instead\n" . $herecurr);
 		}
 
 # check for use of yield()
