@@ -24,6 +24,10 @@ static volatile bool g_pa_synced;
 static volatile bool g_state_synced;
 static volatile uint8_t g_src_id;
 static volatile uint32_t g_broadcast_id;
+static volatile uint8_t g_recv_state_count;
+CREATE_FLAG(flag_recv_state_read);
+CREATE_FLAG(flag_recv_state_updated);
+CREATE_FLAG(flag_recv_state_removed);
 
 static volatile bool g_cb;
 
@@ -52,6 +56,7 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 	}
 
 	printk("BASS discover done with %u recv states\n", recv_state_count);
+	g_recv_state_count = recv_state_count;
 	g_discovery_complete = true;
 }
 
@@ -96,6 +101,13 @@ static void bap_broadcast_assistant_recv_state_cb(
 		return;
 	}
 
+	SET_FLAG(flag_recv_state_read);
+
+	if (state == NULL) {
+		/* Empty receive state */
+		return;
+	}
+
 	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 	(void)bin2hex(state->bad_code, BT_AUDIO_BROADCAST_CODE_SIZE, bad_code,
 		      sizeof(bad_code));
@@ -131,6 +143,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 	g_src_id = state->src_id;
 	g_cb = true;
+
+	SET_FLAG(flag_recv_state_updated);
 }
 
 static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, int err,
@@ -143,6 +157,8 @@ static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, 
 
 	printk("BASS recv state %u removed\n", src_id);
 	g_cb = true;
+
+	SET_FLAG(flag_recv_state_removed);
 }
 
 static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
@@ -287,6 +303,25 @@ static void test_bass_discover(void)
 	printk("Discovery complete\n");
 }
 
+static void test_bass_read_receive_states(void)
+{
+	for (uint8_t i = 0U; i < g_recv_state_count; i++) {
+		int err;
+
+		UNSET_FLAG(flag_recv_state_read);
+		err = bt_bap_broadcast_assistant_read_recv_state(default_conn, i);
+		if (err != 0) {
+			FAIL("Failed to read receive state with idx %u: %d\n",
+			     i, err);
+			return;
+		}
+
+		WAIT_FOR_FLAG(flag_recv_state_read);
+	}
+
+	printk("Receive state read complete\n");
+}
+
 static void test_bass_scan_start(void)
 {
 	int err;
@@ -428,7 +463,7 @@ static void test_bass_remove_source(void)
 	printk("Source removed\n");
 }
 
-static void test_main(void)
+static int common_init(void)
 {
 	int err;
 
@@ -436,7 +471,7 @@ static void test_main(void)
 
 	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	bt_gatt_cb_register(&gatt_callbacks);
@@ -447,7 +482,7 @@ static void test_main(void)
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	printk("Scanning successfully started\n");
@@ -456,6 +491,21 @@ static void test_main(void)
 
 	test_exchange_mtu();
 	test_bass_discover();
+	test_bass_read_receive_states();
+
+	return 0;
+}
+
+static void test_main_client_sync(void)
+{
+	int err;
+
+	err = common_init();
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
 	test_bass_scan_start();
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
@@ -464,15 +514,64 @@ static void test_main(void)
 	test_bass_broadcast_code();
 	test_bass_remove_source();
 
-	PASS("BAP broadcast assistant Passed\n");
+	PASS("BAP Broadcast Assistant Client Sync Passed\n");
+}
+
+static void test_main_server_sync_client_rem(void)
+{
+	int err;
+
+	err = common_init();
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	test_bass_broadcast_code();
+	test_bass_remove_source();
+
+	PASS("BAP Broadcast Assistant Server Sync Passed\n");
+}
+
+static void test_main_server_sync_server_rem(void)
+{
+	int err;
+
+	err = common_init();
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	test_bass_broadcast_code();
+
+	WAIT_FOR_FLAG(flag_recv_state_removed);
+
+	PASS("BAP Broadcast Assistant Server Sync Passed\n");
 }
 
 static const struct bst_test_instance test_bass[] = {
 	{
-		.test_id = "bap_broadcast_assistant",
+		.test_id = "bap_broadcast_assistant_client_sync",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main
+		.test_main_f = test_main_client_sync,
+	},
+	{
+		.test_id = "bap_broadcast_assistant_server_sync_client_rem",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_server_sync_client_rem,
+	},
+	{
+		.test_id = "bap_broadcast_assistant_server_sync_server_rem",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_server_sync_server_rem,
 	},
 	BSTEST_END_MARKER
 };

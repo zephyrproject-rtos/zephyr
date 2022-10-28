@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="bass"
+SIMULATION_ID="bass_client_sync"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=20
 
@@ -12,15 +12,15 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
-printf "\n\n======== Running BASS and BASS client test =========\n\n"
+printf "\n\n======== Running Running BASS Client Sync =========\n\n"
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=bap_scan_delegator \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=bap_scan_delegator_client_sync \
   -rs=24
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 \
-  -testid=bap_broadcast_assistant -rs=46
+  -testid=bap_broadcast_assistant_client_sync -rs=46
 
   Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=bass_broadcaster -rs=69
