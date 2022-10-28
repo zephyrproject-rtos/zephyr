@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+
 #define addrinfo zsock_addrinfo
 
 static inline int getaddrinfo(const char *host, const char *service,
@@ -38,6 +40,8 @@ static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 	return zsock_getnameinfo(addr, addrlen, host, hostlen,
 				 serv, servlen, flags);
 }
+
+#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
 
 #ifdef __cplusplus
 }
