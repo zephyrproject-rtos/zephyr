@@ -5,7 +5,6 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
-#include <zephyr/posix/pthread_key.h>
 
 #include "posix_internal.h"
 
