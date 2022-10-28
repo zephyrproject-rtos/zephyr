@@ -9,6 +9,7 @@
 #include <nxp/nxp_k66.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "rddrone_fmuk66-pinctrl.dtsi"
+#include <freq.h>
 
 / {
 	model = "NXP RDDRONE FMUK66 board";
@@ -329,6 +330,24 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	/*
+	 * cs-gpios needs to be populated as per the schematics
+	 * fxos8700  - CS#0
+	 */
+	cs-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
+	clock-frequency = <DT_FREQ_M(1)>;
+
+
+	fxos8700@0 {
+		compatible = "nxp,fxos8700";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-gpios = <&gpioa 25 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
 };
 
 /* external spi */
