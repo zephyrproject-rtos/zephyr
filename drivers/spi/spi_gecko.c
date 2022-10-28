@@ -29,8 +29,46 @@ LOG_MODULE_REGISTER(spi_gecko);
 #endif
 #endif /* CONFIG_PINCTRL */
 
-
+#if DT_NODE_HAS_PROP(n, peripheral_id)
 #define CLOCK_USART(id) _CONCAT(cmuClock_USART, id)
+#define GET_GECKO_USART_CLOCK(n) CLOCK_USART(DT_INST_PROP(n, peripheral_id))
+#else
+#if (USART_COUNT <= 2)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : -1)
+#elif (USART_COUNT == 3)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : ((ref) == USART2) ? cmuClock_USART2 \
+			       : -1)
+#elif (USART_COUNT == 4)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : ((ref) == USART2) ? cmuClock_USART2 \
+			       : ((ref) == USART3) ? cmuClock_USART3 \
+			       : -1)
+#elif (USART_COUNT == 5)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : ((ref) == USART2) ? cmuClock_USART2 \
+			       : ((ref) == USART3) ? cmuClock_USART3 \
+			       : ((ref) == USART4) ? cmuClock_USART4 \
+			       : -1)
+#elif (USART_COUNT == 6)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : ((ref) == USART2) ? cmuClock_USART2 \
+			       : ((ref) == USART3) ? cmuClock_USART3 \
+			       : ((ref) == USART4) ? cmuClock_USART4 \
+			       : ((ref) == USART5) ? cmuClock_USART5 \
+			       : -1)
+#else
+#error "Undefined number of USARTs."
+#endif /* USART_COUNT */
+#define GET_GECKO_USART_CLOCK(id) CLOCK_USART((USART_TypeDef *)DT_INST_REG_ADDR(id))
+#endif /* DT_NODE_HAS_PROP(n, peripheral_id) */
+
 
 #define SPI_WORD_SIZE 8
 
@@ -328,7 +366,7 @@ static struct spi_driver_api spi_gecko_api = {
 };
 
 #ifdef CONFIG_PINCTRL
-#define SPI_INIT2(n, usart)				    \
+#define SPI_INIT(n)				    \
 	PINCTRL_DT_INST_DEFINE(n);			    \
 	static struct spi_gecko_data spi_gecko_data_##n = { \
 		SPI_CONTEXT_INIT_LOCK(spi_gecko_data_##n, ctx), \
@@ -339,7 +377,7 @@ static struct spi_driver_api spi_gecko_api = {
 	    .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 	    .base = (USART_TypeDef *) \
 		 DT_INST_REG_ADDR(n), \
-	    .clock = CLOCK_USART(usart) \
+	    .clock = GET_GECKO_USART_CLOCK(n) \
 	}; \
 	DEVICE_DT_INST_DEFINE(n, \
 			spi_gecko_init, \
@@ -350,7 +388,7 @@ static struct spi_driver_api spi_gecko_api = {
 			CONFIG_SPI_INIT_PRIORITY, \
 			&spi_gecko_api);
 #else
-#define SPI_INIT2(n, usart)				    \
+#define SPI_INIT(n)				    \
 	static struct spi_gecko_data spi_gecko_data_##n = { \
 		SPI_CONTEXT_INIT_LOCK(spi_gecko_data_##n, ctx), \
 		SPI_CONTEXT_INIT_SYNC(spi_gecko_data_##n, ctx), \
@@ -359,7 +397,7 @@ static struct spi_driver_api spi_gecko_api = {
 	static struct spi_gecko_config spi_gecko_cfg_##n = { \
 	    .base = (USART_TypeDef *) \
 		 DT_INST_REG_ADDR(n), \
-	    .clock = CLOCK_USART(usart), \
+	    .clock = GET_GECKO_USART_CLOCK(n), \
 	    .pin_rx = { DT_INST_PROP_BY_IDX(n, location_rx, 1), \
 			DT_INST_PROP_BY_IDX(n, location_rx, 2), \
 			gpioModeInput, 1},				\
@@ -382,9 +420,5 @@ static struct spi_driver_api spi_gecko_api = {
 			CONFIG_SPI_INIT_PRIORITY, \
 			&spi_gecko_api);
 #endif /* CONFIG_PINCTRL */
-
-#define SPI_ID(n) DT_INST_PROP(n, peripheral_id)
-
-#define SPI_INIT(n) SPI_INIT2(n, SPI_ID(n))
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)
