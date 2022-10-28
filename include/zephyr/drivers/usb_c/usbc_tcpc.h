@@ -24,6 +24,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <errno.h>
 
 #include "usbc_tc.h"
 #include "usbc_pd.h"
