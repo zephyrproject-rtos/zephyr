@@ -34,6 +34,8 @@ extern int unlink(const char *path);
 extern int stat(const char *path, struct stat *buf);
 extern int mkdir(const char *path, mode_t mode);
 
+FUNC_NORETURN void _exit(int status);
+
 #ifdef CONFIG_NETWORKING
 static inline int gethostname(char *buf, size_t len)
 {
