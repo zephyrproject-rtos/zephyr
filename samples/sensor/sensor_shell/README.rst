@@ -25,9 +25,11 @@ Shell Module Command Help
 
    sensor - Sensor commands
    Subcommands:
-     get  :Get sensor data. Channel names are optional. All channels are read when
-           no channels are provided. Syntax:
-           <device_name> <channel name 0> .. <channel name N>
+     get   :Get sensor data. Channel names are optional. All channels are read when
+            no channels are provided. Syntax:
+            <device_name> <channel name 0> .. <channel name N>
+     info  :Get sensor info, such as vendor and model name, for all sensors.
+
 
 **get**: prints all the sensor channels data for a given sensor device name.
 Optionally, a single channel name or index can be passed to be printed out. The
@@ -54,3 +56,14 @@ Output example (reel_board):
    undefined behavior like hardware exception. This happens because the shell
    subsystem runs in supervisor mode where API callbacks are not checked before
    being called.
+
+**info**: prints vendor, model, and friendly name information for all sensors.
+This command depends on enabling :kconfig:option:`CONFIG_SENSOR_INFO`.
+
+.. code-block:: console
+
+   uart:~$ sensor info
+   device name: apds9960@39, vendor: [Avago Technologies], model: [apds9960], friendly name: []
+   device name: mma8652fc@1d, vendor: [NXP Semiconductors], model: [fxos8700], friendly name: []
+   device name: ti_hdc@43, vendor: [Texas Instruments], model: [hdc], friendly name: []
+   device name: temp@4000c000, vendor: [Nordic Semiconductor], model: [nrf-temp], friendly name: []
