@@ -546,6 +546,20 @@ uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+uint8_t ll_req_peer_sca(uint16_t handle)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	return ull_cp_req_peer_sca(conn);
+}
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
 static bool is_valid_disconnect_reason(uint8_t reason)
 {
 	switch (reason) {
@@ -7905,6 +7919,57 @@ uint16_t ull_conn_event_counter(struct ll_conn *conn)
 
 	return event_counter;
 }
+static void ull_conn_update_ticker(struct ll_conn *conn,
+				   uint32_t ticks_win_offset,
+				   uint32_t ticks_slot_overhead,
+				   uint32_t periodic_us,
+				   uint32_t ticks_at_expire)
+{
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* disable ticker job, in order to chain stop and start
+	 * to avoid RTC being stopped if no tickers active.
+	 */
+	uint32_t mayfly_was_enabled =
+		mayfly_is_enabled(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW);
+
+	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 0U);
+#endif /* CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO */
+
+	/* start periph/central with new timings */
+	uint8_t ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
+	uint32_t ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				    ticker_id_conn, ticker_stop_conn_op_cb, (void *)conn);
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		  (ticker_status == TICKER_STATUS_BUSY));
+	ticker_status = ticker_start(
+		TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH, ticker_id_conn, ticks_at_expire,
+		ticks_win_offset, HAL_TICKER_US_TO_TICKS(periodic_us),
+		HAL_TICKER_REMAINDER(periodic_us),
+#if defined(CONFIG_BT_TICKER_LOW_LAT)
+		TICKER_NULL_LAZY,
+#else /* !CONFIG_BT_TICKER_LOW_LAT */
+		TICKER_LAZY_MUST_EXPIRE_KEEP,
+#endif /* CONFIG_BT_TICKER_LOW_LAT */
+		(ticks_slot_overhead + conn->ull.ticks_slot),
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
+		conn->lll.role == BT_HCI_ROLE_PERIPHERAL ?
+		ull_periph_ticker_cb : ull_central_ticker_cb,
+#elif defined(CONFIG_BT_PERIPHERAL)
+		ull_periph_ticker_cb,
+#else
+		ull_central_ticker_cb,
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CENTRAL */
+		conn, ticker_start_conn_op_cb, (void *)conn);
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		  (ticker_status == TICKER_STATUS_BUSY));
+
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* enable ticker job, if disabled in this function */
+	if (mayfly_was_enabled) {
+		mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1U);
+	}
+#endif /* CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO */
+}
 
 void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_t win_size,
 				uint16_t win_offset_us, uint16_t interval, uint16_t latency,
@@ -7916,8 +7981,6 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	uint16_t conn_interval_old;
 	uint16_t conn_interval_new;
 	uint32_t conn_interval_us;
-	uint8_t ticker_id_conn;
-	uint32_t ticker_status;
 	uint32_t periodic_us;
 	uint16_t latency_upd;
 	uint16_t instant_latency;
@@ -7980,10 +8043,9 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 			lll->periph.window_widening_periodic_us * instant_latency;
 
 		lll->periph.window_widening_periodic_us =
-			(((lll_clock_ppm_local_get() + lll_clock_ppm_get(conn->periph.sca)) *
-			  conn_interval_us) +
-			 (1000000U - 1U)) /
-			1000000U;
+			ceiling_fraction(((lll_clock_ppm_local_get() +
+					   lll_clock_ppm_get(conn->periph.sca)) *
+					  conn_interval_us), 1000000U);
 		lll->periph.window_widening_max_us = (conn_interval_us >> 1U) - EVENT_IFS_US;
 		lll->periph.window_size_prepare_us = win_size * CONN_INT_UNIT_US;
 
@@ -8042,52 +8104,40 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		conn->supervision_expire = 0U;
 	}
 
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-	/* disable ticker job, in order to chain stop and start
-	 * to avoid RTC being stopped if no tickers active.
-	 */
-	uint32_t mayfly_was_enabled =
-		mayfly_is_enabled(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW);
-	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 0U);
-#endif /* CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO */
-
-	/* start periph/central with new timings */
-	ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
-	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_conn, ticker_stop_conn_op_cb, (void *)conn);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
-	ticker_status = ticker_start(
-		TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH, ticker_id_conn, ticks_at_expire,
-		ticks_win_offset, HAL_TICKER_US_TO_TICKS(periodic_us),
-		HAL_TICKER_REMAINDER(periodic_us),
-#if defined(CONFIG_BT_TICKER_LOW_LAT)
-		TICKER_NULL_LAZY,
-#else /* !CONFIG_BT_TICKER_LOW_LAT */
-		TICKER_LAZY_MUST_EXPIRE_KEEP,
-#endif /* CONFIG_BT_TICKER_LOW_LAT */
-		(ticks_slot_overhead + conn->ull.ticks_slot),
-#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
-		lll->role == BT_HCI_ROLE_PERIPHERAL ? ull_periph_ticker_cb : ull_central_ticker_cb,
-#elif defined(CONFIG_BT_PERIPHERAL)
-		ull_periph_ticker_cb,
-#else
-		ull_central_ticker_cb,
-#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CENTRAL */
-		conn, ticker_start_conn_op_cb, (void *)conn);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
-
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-	/* enable ticker job, if disabled in this function */
-	if (mayfly_was_enabled) {
-		mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1U);
-	}
-#endif /* CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO */
-
+	/* Update ACL ticker */
+	ull_conn_update_ticker(conn, ticks_win_offset, ticks_slot_overhead, periodic_us,
+			       ticks_at_expire);
 	/* Signal that the prepare needs to be canceled */
 	conn->cancel_prepare = 1U;
 }
+
+#if defined(CONFIG_BT_PERIPHERAL)
+void ull_conn_update_peer_sca(struct ll_conn *conn)
+{
+	struct lll_conn *lll;
+
+	uint32_t conn_interval_us;
+	uint32_t periodic_us;
+
+	lll = &conn->lll;
+
+	/* calculate the window widening and interval */
+	conn_interval_us = lll->interval * CONN_INT_UNIT_US;
+	periodic_us = conn_interval_us;
+
+	lll->periph.window_widening_periodic_us =
+		ceiling_fraction(((lll_clock_ppm_local_get() +
+				   lll_clock_ppm_get(conn->periph.sca)) *
+				  conn_interval_us), 1000000U);
+
+	periodic_us -= lll->periph.window_widening_periodic_us;
+
+	/* Update ACL ticker */
+	ull_conn_update_ticker(conn, HAL_TICKER_US_TO_TICKS(periodic_us), 0, periodic_us,
+				   conn->llcp.prep.ticks_at_expire);
+
+}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 void ull_conn_chan_map_set(struct ll_conn *conn, const uint8_t chm[5])
 {

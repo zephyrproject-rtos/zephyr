@@ -85,6 +85,8 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
 				uint16_t interval, uint16_t latency,
 				uint16_t timeout, uint16_t instant);
 
+void ull_conn_update_peer_sca(struct ll_conn *conn);
+
 void ull_conn_default_tx_octets_set(uint16_t tx_octets);
 
 void ull_conn_default_tx_time_set(uint16_t tx_time);
