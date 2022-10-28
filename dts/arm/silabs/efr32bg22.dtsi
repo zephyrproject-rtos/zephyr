@@ -109,7 +109,6 @@
 			gpioa: gpio@5003c000 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C000 0x30>;
-				peripheral-id = <0>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -118,7 +117,6 @@
 			gpiob: gpio@5003c030 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C030 0x30>;
-				peripheral-id = <1>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -127,7 +125,6 @@
 			gpioc: gpio@5003c060 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C060 0x30>;
-				peripheral-id = <2>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -136,7 +133,6 @@
 			gpiod: gpio@5003c090 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C090 0x30>;
-				peripheral-id = <3>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -145,7 +141,6 @@
 			gpiof: gpio@5003c0c0 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C0C0 0x30>;
-				peripheral-id = <3>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
