@@ -1,6 +1,6 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,13 +138,15 @@ smp_transport_init(struct smp_transport *smpt,
 		   smp_transport_out_fn output_func,
 		   smp_transport_get_mtu_fn get_mtu_func,
 		   smp_transport_ud_copy_fn ud_copy_func,
-		   smp_transport_ud_free_fn ud_free_func)
+		   smp_transport_ud_free_fn ud_free_func,
+		   smp_transport_query_valid_check_fn query_valid_check_func)
 {
 	*smpt = (struct smp_transport) {
 		.output = output_func,
 		.get_mtu = get_mtu_func,
 		.ud_copy = ud_copy_func,
 		.ud_free = ud_free_func,
+		.query_valid_check = query_valid_check_func,
 	};
 
 #ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
@@ -169,6 +171,60 @@ smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
 {
 	net_buf_put(&smpt->fifo, nb);
 	k_work_submit_to_queue(&smp_work_queue, &smpt->work);
+}
+
+void smp_rx_remove_invalid(struct smp_transport *zst, void *arg)
+{
+	struct net_buf *nb;
+	struct k_fifo temp_fifo;
+
+	if (zst->query_valid_check == NULL) {
+		/* No check check function registered, abort check */
+		return;
+	}
+
+	/* Cancel current work-queue if ongoing */
+	if (k_work_busy_get(&zst->work) & (K_WORK_RUNNING | K_WORK_QUEUED)) {
+		k_work_cancel(&zst->work);
+	}
+
+	/* Run callback function and remove all buffers that are no longer needed. Store those
+	 * that are in a temporary FIFO
+	 */
+	k_fifo_init(&temp_fifo);
+
+	while ((nb = net_buf_get(&zst->fifo, K_NO_WAIT)) != NULL) {
+		if (!zst->query_valid_check(nb, arg)) {
+			smp_free_buf(nb, zst);
+		} else {
+			net_buf_put(&temp_fifo, nb);
+		}
+	}
+
+	/* Re-insert the remaining queued operations into the original FIFO */
+	while ((nb = net_buf_get(&temp_fifo, K_NO_WAIT)) != NULL) {
+		net_buf_put(&zst->fifo, nb);
+	}
+
+	/* If at least one entry remains, queue the workqueue for running */
+	if (!k_fifo_is_empty(&zst->fifo)) {
+		k_work_submit_to_queue(&smp_work_queue, &zst->work);
+	}
+}
+
+void smp_rx_clear(struct smp_transport *zst)
+{
+	struct net_buf *nb;
+
+	/* Cancel current work-queue if ongoing */
+	if (k_work_busy_get(&zst->work) & (K_WORK_RUNNING | K_WORK_QUEUED)) {
+		k_work_cancel(&zst->work);
+	}
+
+	/* Drain the FIFO of all entries without re-adding any */
+	while ((nb = net_buf_get(&zst->fifo, K_NO_WAIT)) != NULL) {
+		smp_free_buf(nb, zst);
+	}
 }
 
 static int smp_init(const struct device *dev)

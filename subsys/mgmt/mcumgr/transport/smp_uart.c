@@ -94,7 +94,7 @@ static int smp_uart_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	smp_transport_init(&smp_uart_transport, smp_uart_tx_pkt,
-			   smp_uart_get_mtu, NULL, NULL);
+			   smp_uart_get_mtu, NULL, NULL, NULL);
 	uart_mcumgr_register(smp_uart_rx_frag);
 
 	return 0;
