@@ -333,8 +333,10 @@ zephyr_udc0: &usbotg {
 	/*
 	 * cs-gpios needs to be populated as per the schematics
 	 * fxos8700  - CS#0
+	 * fxas21002 - CS#1
 	 */
-	cs-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>,
+		   <&gpiob 9 GPIO_ACTIVE_LOW>;
 	clock-frequency = <DT_FREQ_M(1)>;
 
 
@@ -345,6 +347,16 @@ zephyr_udc0: &usbotg {
 		reset-gpios = <&gpioa 25 GPIO_ACTIVE_HIGH>;
 		int1-gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	fxas21002@1 {
+		compatible = "nxp,fxas21002";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-gpios = <&gpiod 12 GPIO_ACTIVE_LOW>;
+		int1-gpios = <&gpioe 7 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
 
