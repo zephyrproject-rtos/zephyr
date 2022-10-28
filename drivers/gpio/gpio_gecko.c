@@ -22,6 +22,21 @@
 	CONFIG_GPIO_INIT_PRIORITY.
 #endif
 
+#if DT_NODE_HAS_PROP(id, peripheral_id)
+#define GET_GECKO_GPIO_INDEX(id) DT_INST_PROP(id, peripheral_id)
+#else
+#if defined(CONFIG_SOC_SERIES_EFR32BG22) || defined(CONFIG_SOC_SERIES_EFR32MG21)
+#define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_PORT_TypeDef)
+#else
+#define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_P_TypeDef)
+#endif /* defined(CONFIG_SOC_SERIES_EFM32HG) || defined(CONFIG_SOC_SERIES_EFM32WG) */
+/* Assumption for calculating gpio index:
+ * 1. Address space of the first GPIO port is the address space for GPIO port A
+ */
+#define GET_GECKO_GPIO_INDEX(id) (DT_INST_REG_ADDR(id) - DT_REG_ADDR(DT_NODELABEL(gpioa))) \
+	/ GECKO_GPIO_PORT_ADDR_SPACE_SIZE
+#endif /* DT_NODE_HAS_PROP(id, peripheral_id) */
+
 /*
  * Macros to set the GPIO MODE registers
  *
@@ -401,7 +416,7 @@ static const struct gpio_gecko_config gpio_gecko_port##idx##_config = { \
 	.common = { \
 		.port_pin_mask = (gpio_port_pins_t)(-1), \
 	}, \
-	.gpio_index = DT_INST_PROP(idx, peripheral_id), \
+	.gpio_index = GET_GECKO_GPIO_INDEX(idx), \
 }; \
 \
 static struct gpio_gecko_data gpio_gecko_port##idx##_data; \
