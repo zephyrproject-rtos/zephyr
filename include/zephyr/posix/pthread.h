@@ -13,7 +13,7 @@
 #include <zephyr/posix/unistd.h>
 #include "posix_types.h"
 #include <zephyr/posix/sched.h>
-#include <zephyr/posix/pthread_key.h>
+#include "pthread_key.h"
 #include <stdlib.h>
 #include <string.h>
 
