@@ -29,6 +29,7 @@ if(CONFIG_SETTINGS)
   src/settings_test_backend.c
   src/test_persistence.c
   src/test_replay_cache.c
+  src/test_provision.c
  )
 
  if(CONFIG_BT_MESH_V1d1)
