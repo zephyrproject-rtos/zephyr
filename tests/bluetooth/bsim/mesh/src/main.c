@@ -10,6 +10,7 @@
 #if defined(CONFIG_SETTINGS)
 extern struct bst_test_list *test_persistence_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_rpc_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_provision_pst_install(struct bst_test_list *tests);
 #if defined(CONFIG_BT_MESH_V1d1)
 extern struct bst_test_list *test_dfu_install(struct bst_test_list *test);
 #endif /* defined(CONFIG_BT_MESH_V1d1) */
@@ -38,6 +39,7 @@ bst_test_install_t test_installers[] = {
 	test_persistence_install,
 	test_rpc_install,
 #if defined(CONFIG_BT_MESH_V1d1)
+	test_provision_pst_install,
 	test_dfu_install,
 #endif /* defined(CONFIG_BT_MESH_V1d1) */
 #elif defined(CONFIG_BT_MESH_GATT_PROXY)
