@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
 
@@ -86,6 +87,8 @@ struct counter_stm32_data {
 	uint32_t guard_period;
 	atomic_t cc_int_pending;
 	uint32_t freq;
+	/* Reset controller device configuration */
+	const struct reset_dt_spec reset;
 };
 
 struct counter_stm32_ch_data {
@@ -473,6 +476,14 @@ static int counter_stm32_init_timer(const struct device *dev)
 	}
 	data->freq = tim_clk / (cfg->prescaler + 1U);
 
+	if (!device_is_ready(data->reset.dev)) {
+		LOG_ERR("reset controller not ready");
+		return -ENODEV;
+	}
+
+	/* Reset timer to default state using RCC */
+	reset_line_toggle_dt(&data->reset);
+
 	/* config/enable IRQ */
 	cfg->irq_config_func(dev);
 
@@ -617,7 +628,9 @@ void counter_stm32_irq_handler(const struct device *dev)
 	BUILD_ASSERT(NUM_CH(TIM(idx)) <= TIMER_MAX_CH,				  \
 		     "TIMER too many channels");				  \
 										  \
-	static struct counter_stm32_data counter##idx##_data;			  \
+	static struct counter_stm32_data counter##idx##_data = {		  \
+		.reset = RESET_DT_SPEC_GET(TIMER(idx)),				  \
+	};									  \
 	static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH]; \
 										  \
 	static void counter_##idx##_stm32_irq_config(const struct device *dev)	  \
