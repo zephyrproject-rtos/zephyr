@@ -207,8 +207,10 @@ static void init_objects(void)
 #endif
 }
 
-static void start_threads(void)
+
+static void run_threads(void)
 {
+	k_tid_t philosophers[NUM_PHIL];
 	/*
 	 * create two coop. threads (prios -2/-1) and four preemptive threads
 	 * : (prios 0-3)
@@ -216,7 +218,7 @@ static void start_threads(void)
 	for (int i = 0; i < NUM_PHIL; i++) {
 		int prio = new_prio(i);
 
-		k_thread_create(&threads[i], &stacks[i][0], STACK_SIZE,
+		philosophers[i] = k_thread_create(&threads[i], &stacks[i][0], STACK_SIZE,
 				philosopher, INT_TO_POINTER(i), NULL, NULL,
 				prio, K_USER, K_FOREVER);
 #ifdef CONFIG_THREAD_NAME
@@ -229,6 +231,10 @@ static void start_threads(void)
 		k_object_access_grant(fork((i + 1) % NUM_PHIL), &threads[i]);
 
 		k_thread_start(&threads[i]);
+	}
+
+	for (int i = 0; i < NUM_PHIL; i++) {
+		k_thread_join(philosophers[i], K_FOREVER);
 	}
 }
 
@@ -257,7 +263,7 @@ void main(void)
 #endif
 
 	init_objects();
-	start_threads();
+	run_threads();
 
 #ifdef CONFIG_COVERAGE
 	/* Wait a few seconds before main() exit, giving the sample the
