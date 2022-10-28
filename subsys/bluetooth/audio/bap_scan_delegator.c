@@ -54,6 +54,8 @@ struct bass_recv_state_internal {
 	struct bt_bap_scan_delegator_recv_state state;
 	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 	struct bt_le_per_adv_sync *pa_sync;
+	/** Requested BIS sync bitfield for each subgroup */
+	uint32_t requested_bis_sync[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
 
 	ATOMIC_DEFINE(flags, BASS_RECV_STATE_INTERNAL_FLAG_NUM);
 };
@@ -122,7 +124,8 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
 
 		LOG_DBG("\tSubgroup[%d]: BIS sync %u (requested %u), metadata_len %u, metadata: %s",
-			i, subgroup->bis_sync, subgroup->requested_bis_sync, subgroup->metadata_len,
+			i, subgroup->bis_sync, recv_state->requested_bis_sync[i],
+			subgroup->metadata_len,
 			bt_hex(subgroup->metadata, subgroup->metadata_len));
 	}
 }
@@ -486,27 +489,28 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
-		subgroup->requested_bis_sync = net_buf_simple_pull_le32(buf);
+		internal_state->requested_bis_sync[i] = net_buf_simple_pull_le32(buf);
 
-		if (subgroup->requested_bis_sync &&
+		if (internal_state->requested_bis_sync[i] &&
 		    pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC) {
 			LOG_DBG("Cannot sync to BIS without PA");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
 		/* Verify that the request BIS sync indexes are unique or no preference */
-		if (bis_syncs_unique_or_no_pref(subgroup->requested_bis_sync,
+		if (bis_syncs_unique_or_no_pref(internal_state->requested_bis_sync[i],
 						aggregated_bis_syncs)) {
-			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)", i,
-				subgroup->requested_bis_sync, aggregated_bis_syncs);
+			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
+				i, internal_state->requested_bis_sync[i],
+				aggregated_bis_syncs);
 
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
-		if (!valid_bis_syncs(subgroup->requested_bis_sync)) {
+		if (!valid_bis_syncs(internal_state->requested_bis_sync[i])) {
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
-		aggregated_bis_syncs |= subgroup->requested_bis_sync;
+		aggregated_bis_syncs |= internal_state->requested_bis_sync[i];
 
 		subgroup->metadata_len = net_buf_simple_pull_u8(buf);
 
@@ -629,25 +633,27 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
-		subgroup->requested_bis_sync = net_buf_simple_pull_le32(buf);
-		if (subgroup->requested_bis_sync &&
+		internal_state->requested_bis_sync[i] = net_buf_simple_pull_le32(buf);
+		if (internal_state->requested_bis_sync[i] &&
 		    pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC) {
 			LOG_DBG("Cannot sync to BIS without PA");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
 		/* Verify that the request BIS sync indexes are unique or no preference */
-		if (bis_syncs_unique_or_no_pref(subgroup->requested_bis_sync,
+		if (bis_syncs_unique_or_no_pref(internal_state->requested_bis_sync[i],
 						aggregated_bis_syncs)) {
-			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)", i,
-				subgroup->requested_bis_sync, aggregated_bis_syncs);
+			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
+				i, internal_state->requested_bis_sync[i],
+				aggregated_bis_syncs);
+
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
-		if (!valid_bis_syncs(subgroup->requested_bis_sync)) {
+		if (!valid_bis_syncs(internal_state->requested_bis_sync[i])) {
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
-		aggregated_bis_syncs |= subgroup->requested_bis_sync;
+		aggregated_bis_syncs |= internal_state->requested_bis_sync[i];
 
 		subgroup->metadata_len = net_buf_simple_pull_u8(buf);
 
@@ -686,13 +692,6 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	}
 
 	for (int i = 0; i < num_subgroups; i++) {
-		if (state->subgroups[i].requested_bis_sync !=
-		    subgroups[i].requested_bis_sync) {
-			state->subgroups[i].requested_bis_sync =
-				subgroups[i].requested_bis_sync;
-			state_changed = true;
-		}
-
 		/* If the metadata len is 0, we shall not overwrite the existing metadata */
 		if (subgroups[i].metadata_len == 0) {
 			continue;
@@ -1054,17 +1053,14 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 
 	/* Verify state for all subgroups before assigning any data */
 	for (uint8_t i = 0U; i < internal_state->state.num_subgroups; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup =
-			&internal_state->state.subgroups[i];
-
 		if (i >= CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS) {
 			break;
 		}
 
 		if (!bits_subset_of(bis_synced[i],
-				   subgroup->requested_bis_sync)) {
+				    internal_state->requested_bis_sync[i])) {
 			LOG_DBG("Subgroup[%u] invalid bis_sync value %x for %x",
-				i, bis_synced[i], subgroup->requested_bis_sync);
+				i, bis_synced[i], internal_state->requested_bis_sync[i]);
 
 			return -EINVAL;
 		}
