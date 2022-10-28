@@ -47,12 +47,72 @@ static int disk_flash_access_status(struct disk_info *disk)
 	return DISK_STATUS_OK;
 }
 
+static int flashdisk_init_runtime(struct flashdisk_data *ctx,
+				  const struct flash_area *fap)
+{
+	int rc;
+	struct flash_pages_info page;
+	off_t offset;
+
+	rc = flash_get_page_info_by_offs(ctx->info.dev, ctx->offset, &page);
+	if (rc < 0) {
+		LOG_ERR("Error %d while getting page info", rc);
+		return rc;
+	}
+
+	ctx->page_size = page.size;
+	LOG_INF("Initialize device %s", ctx->info.name);
+	LOG_INF("offset %lx, sector size %zu, page size %zu, volume size %zu",
+		(long)ctx->offset, ctx->sector_size, ctx->page_size, ctx->size);
+
+	if (ctx->cache_size == 0) {
+		/* Read-only flashdisk, no flash partition constraints */
+		LOG_INF("%s is read-only", ctx->info.name);
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_FLASHDISK_VERIFY_PAGE_LAYOUT)) {
+		if (ctx->offset != page.start_offset) {
+			LOG_ERR("Disk %s does not start at page boundary",
+				ctx->info.name);
+			return -EINVAL;
+		}
+
+		offset = ctx->offset + page.size;
+		while (offset < ctx->offset + ctx->size) {
+			rc = flash_get_page_info_by_offs(ctx->info.dev, offset, &page);
+			if (rc < 0) {
+				LOG_ERR("Error %d while getting page info", rc);
+				return rc;
+			}
+			if (page.size != ctx->page_size) {
+				LOG_ERR("Non-uniform page size is not supported");
+				return rc;
+			}
+			offset += page.size;
+		}
+
+		if (offset != ctx->offset + ctx->size) {
+			LOG_ERR("Last page crossess disk %s boundary",
+				ctx->info.name);
+			return -EINVAL;
+		}
+	}
+
+	if (ctx->page_size > ctx->cache_size) {
+		LOG_ERR("Cache too small (%zu needs %zu)",
+			ctx->cache_size, ctx->page_size);
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
 static int disk_flash_access_init(struct disk_info *disk)
 {
 	struct flashdisk_data *ctx;
 	const struct flash_area *fap;
 	int rc;
-	struct flash_pages_info page;
 
 	ctx = CONTAINER_OF(disk, struct flashdisk_data, info);
 
@@ -66,33 +126,7 @@ static int disk_flash_access_init(struct disk_info *disk)
 
 	disk->dev = flash_area_get_device(fap);
 
-	rc = flash_get_page_info_by_offs(disk->dev, ctx->offset, &page);
-	if (rc < 0) {
-		LOG_ERR("Error %d while getting page info", rc);
-		goto end;
-	}
-
-	ctx->page_size = page.size;
-	LOG_INF("Initialize device %s", disk->name);
-	LOG_INF("offset %lx, sector size %zu, page size %zu, volume size %zu",
-		(long)ctx->offset, ctx->sector_size, ctx->page_size, ctx->size);
-
-	if (ctx->cache_size == 0) {
-		LOG_INF("%s is read-only", disk->name);
-	} else if (ctx->page_size > ctx->cache_size) {
-		LOG_ERR("Cache too small (%zu needs %zu)",
-			ctx->cache_size, ctx->page_size);
-		rc = -ENOMEM;
-		goto end;
-	}
-
-	if (ctx->cache_valid && ctx->cache_dirty) {
-		LOG_ERR("Discarding %s dirty cache", disk->name);
-		ctx->cache_valid = false;
-	}
-
-	rc = 0;
-end:
+	rc = flashdisk_init_runtime(ctx, fap);
 	if (rc < 0) {
 		flash_area_close(fap);
 	}
