@@ -260,9 +260,6 @@ struct bt_bap_scan_delegator_subgroup {
 	/** BIS synced bitfield */
 	uint32_t bis_sync;
 
-	/** Requested BIS sync bitfield */
-	uint32_t requested_bis_sync;
-
 	/** Length of the metadata */
 	uint8_t metadata_len;
 
