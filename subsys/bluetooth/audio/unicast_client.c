@@ -2334,19 +2334,19 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 
 	while (rsp->num_pac) {
 		struct unicast_client_pac *bpac;
-		struct bt_pac *pac;
+		struct bt_pac_codec *pac_codec;
 		struct bt_pac_ltv_data *meta, *cc;
 		void *cc_ltv, *meta_ltv;
 
 		BT_DBG("pac #%u", params->num_caps);
 
-		if (buf.len < sizeof(*pac)) {
+		if (buf.len < sizeof(*pac_codec)) {
 			BT_ERR("Malformed PAC: remaining len %u expected %zu",
-			       buf.len, sizeof(*pac));
+			       buf.len, sizeof(*pac_codec));
 			break;
 		}
 
-		pac = net_buf_simple_pull_mem(&buf, sizeof(*pac));
+		pac_codec = net_buf_simple_pull_mem(&buf, sizeof(*pac_codec));
 
 		if (buf.len < sizeof(*cc)) {
 			BT_ERR("Malformed PAC: remaining len %u expected %zu",
@@ -2384,9 +2384,9 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 			break;
 		}
 
-		if (unicast_client_ep_set_codec(NULL, pac->codec.id,
-						sys_le16_to_cpu(pac->codec.cid),
-						sys_le16_to_cpu(pac->codec.vid),
+		if (unicast_client_ep_set_codec(NULL, pac_codec->id,
+						sys_le16_to_cpu(pac_codec->cid),
+						sys_le16_to_cpu(pac_codec->vid),
 						cc_ltv, cc->len,
 						&bpac->codec)) {
 			BT_ERR("Unable to parse Codec");
@@ -2398,8 +2398,8 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 			break;
 		}
 
-		BT_DBG("pac %p codec 0x%02x config count %u meta count %u ",
-		       pac, bpac->codec.id, bpac->codec.data_count,
+		BT_DBG("codec 0x%02x config count %u meta count %u ",
+		       bpac->codec.id, bpac->codec.data_count,
 		       bpac->codec.meta_count);
 
 		params->func(conn, &bpac->codec, NULL, params);

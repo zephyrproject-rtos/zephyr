@@ -109,19 +109,19 @@ static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 	struct net_buf_simple *buf = data->buf;
 	struct net_buf_simple_state state;
 	struct bt_pac_ltv_data *cc, *meta;
-	struct bt_pac *pac;
+	struct bt_pac_codec *pac_codec;
 	ssize_t len;
 
 	net_buf_simple_save(buf, &state);
 
-	if (net_buf_simple_tailroom(buf) < sizeof(*pac)) {
+	if (net_buf_simple_tailroom(buf) < sizeof(*pac_codec)) {
 		goto fail;
 	}
 
-	pac = net_buf_simple_add(buf, sizeof(*pac));
-	pac->codec.id = codec->id;
-	pac->codec.cid = sys_cpu_to_le16(codec->cid);
-	pac->codec.vid = sys_cpu_to_le16(codec->vid);
+	pac_codec = net_buf_simple_add(buf, sizeof(*pac_codec));
+	pac_codec->id = codec->id;
+	pac_codec->cid = sys_cpu_to_le16(codec->cid);
+	pac_codec->vid = sys_cpu_to_le16(codec->vid);
 
 	if (net_buf_simple_tailroom(buf) < sizeof(*cc)) {
 		goto fail;
