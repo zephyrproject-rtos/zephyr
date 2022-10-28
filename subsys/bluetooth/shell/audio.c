@@ -1923,10 +1923,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_CMD_ARG(stop_sine, NULL, "Stop sending a LC3 encoded sine wave",
 			   cmd_stop_sine, 1, 0),
 #endif /* CONFIG_LIBLC3 */
-	SHELL_COND_CMD_ARG(CONFIG_BT_AUDIO_CAPABILITY, set_location, NULL,
+	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_location, NULL,
 			   "<direction: sink, source> <location bitmask>",
 			   cmd_set_loc, 3, 0),
-	SHELL_COND_CMD_ARG(CONFIG_BT_AUDIO_CAPABILITY, add_context, NULL,
+	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, add_context, NULL,
 			   "<direction: sink, source> <context bitmask>",
 			   cmd_context, 3, 0),
 	SHELL_SUBCMD_SET_END
