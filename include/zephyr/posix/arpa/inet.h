@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_POSIX_ARPA_INET_H_
 
 #include <zephyr/net/socket.h>
+#include <zephyr/posix/arpa/inet.h>
 
 #ifdef __cplusplus
 extern "C" {
