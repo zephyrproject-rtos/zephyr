@@ -166,6 +166,14 @@ config BIG_ENDIAN
 	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
 	  and command line option for gen_isr_tables.py.
 
+config LITTLE_ENDIAN
+	# Hidden Kconfig option representing the default little-endian architecture
+	# This is just the opposite of BIG_ENDIAN and is used for non-negative
+	# conditional compilation
+	bool
+	depends on !BIG_ENDIAN
+	default y
+
 config 64BIT
 	bool
 	help
