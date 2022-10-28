@@ -9,6 +9,7 @@
 #include "mesh/access.h"
 #include "mesh/net.h"
 #include "argparse.h"
+#include "settings_test_backend.h"
 #include <bs_pc_backchannel.h>
 #include <time_machine.h>
 
@@ -114,6 +115,21 @@ static const struct bt_mesh_comp rpr_srv_comp = {
 				     BT_MESH_MODEL_NONE),
 		},
 	.elem_count = 1,
+};
+
+static const struct bt_mesh_comp rpr_srv_comp_2_elem = {
+	.elem =
+		(struct bt_mesh_elem[]){
+			BT_MESH_ELEM(1,
+				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+						BT_MESH_MODEL_RPR_SRV),
+				     BT_MESH_MODEL_NONE),
+			BT_MESH_ELEM(2,
+				     MODEL_LIST(BT_MESH_MODEL_CB(TEST_MOD_ID, BT_MESH_MODEL_NO_OPS,
+								 NULL, NULL, NULL)),
+				     BT_MESH_MODEL_NONE),
+		},
+	.elem_count = 2,
 };
 #endif /* IS_RPR_PRESENT */
 
@@ -716,6 +732,36 @@ static void provisioner_pb_remote_client_setup(void)
 	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key));
 }
 
+static void device_pb_remote_server_setup(const struct bt_mesh_comp *comp, bool pb_adv_prov)
+{
+	k_sem_init(&prov_sem, 0, 1);
+	k_sem_init(&reprov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, comp);
+
+	if (pb_adv_prov) {
+		ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+
+		LOG_INF("Waiting for being provisioned...");
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
+	} else {
+		ASSERT_TRUE(bt_mesh_is_provisioned());
+	}
+
+	LOG_INF("Enabling PB-Remote server");
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_REMOTE));
+}
+
+static void device_pb_remote_server_setup_unproved(const struct bt_mesh_comp *comp)
+{
+	device_pb_remote_server_setup(comp, true);
+}
+
+static void device_pb_remote_server_setup_proved(const struct bt_mesh_comp *comp)
+{
+	device_pb_remote_server_setup(comp, false);
+}
+
 /** @brief Verify that the provisioner can provision a device multiple times after resets using
  * PB-Remote and RPR models.
  */
@@ -725,7 +771,7 @@ static void test_provisioner_pb_remote_client_reprovision(void)
 
 	provisioner_pb_remote_client_setup();
 
-	/* Only provision the second device over PB-ADV. This device has RPR Server. */
+	/* Provision the 2nd device over PB-Adv. */
 	ASSERT_OK(provision_adv(1, &pb_remote_server_addr));
 
 	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
@@ -759,7 +805,7 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
 
 	provisioner_pb_remote_client_setup();
 
-	/* Only provision the second device over PB-ADV. This device has RPR Server. */
+	/* Provision the 2nd device over PB-Adv. */
 	ASSERT_OK(provision_adv(1, &pb_remote_server_addr));
 
 	/* Provision a remote device with RPR Server. */
@@ -869,23 +915,26 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
 	PASS();
 }
 
-/** @brief A device running a Remote Provisioning server that can be used to provision
- * unprovisioned devices.
+/** @brief A device running a Remote Provisioning server that is used to provision unprovisioned
+ * devices over PB-Remote. Always starts unprovisioned.
  */
-static void test_device_pb_remote_server(void)
+static void test_device_pb_remote_server_unproved(void)
 {
-	k_sem_init(&prov_sem, 0, 1);
+#if defined(CONFIG_BT_SETTINGS)
+	settings_test_backend_clear();
+#endif
 
-	bt_mesh_device_setup(&prov, &rpr_srv_comp);
+	device_pb_remote_server_setup_unproved(&rpr_srv_comp);
 
-	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+	PASS();
+}
 
-	LOG_INF("Mesh initialized\n");
-
-	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(10)));
-
-	LOG_INF("Enabling PB-Remote server");
-	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_REMOTE));
+/** @brief A device running a Remote Provisioning server that is used to provision unprovisioned
+ * devices over PB-Remote. Starts provisioned.
+ */
+static void test_device_pb_remote_server_proved(void)
+{
+	device_pb_remote_server_setup_proved(&rpr_srv_comp);
 
 	PASS();
 }
@@ -972,6 +1021,181 @@ static void test_device_pb_remote_server_nppi_robustness(void)
 
 	PASS();
 }
+
+/** @brief Test Node Composition Refresh procedure on Remote Provisioning client:
+ * - provision a device over PB-Adv,
+ * - provision a remote device over PB-Remote.
+ */
+static void test_provisioner_pb_remote_client_ncrp_provision(void)
+{
+	uint16_t pb_remote_server_addr;
+	uint8_t status;
+
+	settings_test_backend_clear();
+	provisioner_pb_remote_client_setup();
+
+	/* Provision the 2nd device over PB-Adv. */
+	ASSERT_OK(provision_adv(1, &pb_remote_server_addr));
+
+	/* Provision the 3rd device over PB-Remote. */
+	struct bt_mesh_rpr_node srv = {
+		.addr = pb_remote_server_addr,
+		.net_idx = 0,
+		.ttl = 3,
+	};
+
+	ASSERT_OK(provision_remote(&srv, 2, &srv.addr));
+
+	/* Check device key by adding appkey. */
+	ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, pb_remote_server_addr, 0, 0, test_app_key,
+					      &status));
+	ASSERT_OK(status);
+
+	PASS();
+}
+
+/** @brief Test Node Composition Refresh procedure on Remote Provisioning client:
+ * - initiate Node Composition Refresh procedure on a 3rd device.
+ */
+static void test_provisioner_pb_remote_client_ncrp(void)
+{
+	NET_BUF_SIMPLE_DEFINE(dev_comp_p0, BT_MESH_RX_SDU_MAX);
+	NET_BUF_SIMPLE_DEFINE(dev_comp_p128, BT_MESH_RX_SDU_MAX);
+	uint16_t pb_remote_server_addr = 0x0003;
+	uint8_t page;
+
+	k_sem_init(&prov_sem, 0, 1);
+	k_sem_init(&reprov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &rpr_cli_comp);
+
+	/* Store Composition Data Page 0 and 128. */
+	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, pb_remote_server_addr, 0, &page, &dev_comp_p0));
+	ASSERT_EQUAL(0, page);
+	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, pb_remote_server_addr, 128, &page,
+						&dev_comp_p128));
+	ASSERT_EQUAL(128, page);
+	ASSERT_TRUE(dev_comp_p0.len != dev_comp_p128.len);
+
+	LOG_INF("Start Node Composition Refresh procedure...\n");
+	struct bt_mesh_rpr_node srv = {
+		.addr = pb_remote_server_addr,
+		.net_idx = 0,
+		.ttl = 3,
+	};
+
+	/* Swap callback to catch when device reprovisioned. */
+	prov.node_added = prov_node_added_rpr;
+
+	ASSERT_OK(bt_mesh_reprovision_remote(&rpr_cli, &srv, pb_remote_server_addr, true));
+	ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(20)));
+
+	/* Check that Composition Data Page 128 is now Page 0. */
+	net_buf_simple_reset(&dev_comp_p0);
+	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, pb_remote_server_addr, 0, &page, &dev_comp_p0));
+	ASSERT_EQUAL(0, page);
+	ASSERT_EQUAL(dev_comp_p0.len, dev_comp_p128.len);
+	if (memcmp(dev_comp_p0.data, dev_comp_p128.data, dev_comp_p0.len)) {
+		FAIL("Wrong composition data page 0");
+	}
+
+	net_buf_simple_reset(&dev_comp_p128);
+	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, pb_remote_server_addr, 128, &page,
+						&dev_comp_p128));
+	ASSERT_EQUAL(0, page);
+	ASSERT_EQUAL(dev_comp_p0.len, dev_comp_p128.len);
+	if (memcmp(dev_comp_p0.data, dev_comp_p128.data, dev_comp_p0.len)) {
+		FAIL("Wrong composition data page 128");
+	}
+
+	PASS();
+}
+
+/** @brief Test Node Composition Refresh procedure on Remote Provisioning client:
+ * - verify that Composition Data Page 0 is updated after reboot.
+ */
+static void test_provisioner_pb_remote_client_ncrp_second_time(void)
+{
+	NET_BUF_SIMPLE_DEFINE(dev_comp_p0, BT_MESH_RX_SDU_MAX);
+	NET_BUF_SIMPLE_DEFINE(dev_comp_p128, BT_MESH_RX_SDU_MAX);
+	uint16_t pb_remote_server_addr = 0x0003;
+	uint8_t page;
+	int err;
+
+	k_sem_init(&prov_sem, 0, 1);
+	k_sem_init(&reprov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &rpr_cli_comp);
+
+	/* Check Composition Data Page 0 and 128. */
+	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, pb_remote_server_addr, 0, &page, &dev_comp_p0));
+	ASSERT_EQUAL(0, page);
+	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, pb_remote_server_addr, 128, &page,
+						&dev_comp_p128));
+	ASSERT_EQUAL(0, page);
+	ASSERT_TRUE(dev_comp_p0.len == dev_comp_p128.len);
+
+	LOG_INF("Start Node Composition Refresh procedure...\n");
+	struct bt_mesh_rpr_node srv = {
+		.addr = pb_remote_server_addr,
+		.net_idx = 0,
+		.ttl = 3,
+	};
+
+	/* Swap callback to catch when device reprovisioned. */
+	prov.node_added = prov_node_added_rpr;
+
+	ASSERT_OK(bt_mesh_reprovision_remote(&rpr_cli, &srv, pb_remote_server_addr, true));
+	err = k_sem_take(&reprov_sem, K_SECONDS(20));
+	ASSERT_EQUAL(-EAGAIN, err);
+
+	PASS();
+}
+
+/** @brief Test Node Composition Refresh procedure on Remote Provisioning server:
+ * - wait for being provisioned over PB-Adv,
+ * - prepare Composition Data Page 128.
+ */
+static void test_device_pb_remote_server_ncrp_prepare(void)
+{
+	settings_test_backend_clear();
+	device_pb_remote_server_setup_unproved(&rpr_srv_comp);
+
+	LOG_INF("Preparing for Composition Data change");
+	bt_mesh_comp_change_prepare();
+
+	PASS();
+}
+
+/** @brief Test Node Composition Refresh procedure on Remote Provisioning server:
+ * - start device with new Composition Data
+ * - wait for being re-provisioned.
+ */
+static void test_device_pb_remote_server_ncrp(void)
+{
+	device_pb_remote_server_setup_proved(&rpr_srv_comp_2_elem);
+
+	LOG_INF("Waiting for being re-provisioned.");
+	ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(30)));
+
+	PASS();
+}
+
+/** @brief Test Node Composition Refresh procedure on Remote Provisioning server:
+ * - verify that Composition Data Page 128 is erased after being re-provisioned and rebooted.
+ */
+static void test_device_pb_remote_server_ncrp_second_time(void)
+{
+	int err;
+
+	device_pb_remote_server_setup_proved(&rpr_srv_comp_2_elem);
+
+	LOG_INF("Wait to verify that node is not re-provisioned...");
+	err = k_sem_take(&reprov_sem, K_SECONDS(30));
+	ASSERT_EQUAL(-EAGAIN, err);
+
+	PASS();
+}
 #endif /* IS_RPR_PRESENT */
 
 #define TEST_CASE(role, name, description)                                     \
@@ -993,10 +1217,10 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(device, pb_adv_reprovision,
 		  "Device: pb-adv provisioning, reprovision"),
 #if IS_RPR_PRESENT
-	TEST_CASE(device, pb_remote_server,
-		  "Device: pb-adv provisioning, running pb-remote server"),
+	TEST_CASE(device, pb_remote_server_unproved,
+		  "Device: used for remote provisioning, starts unprovisioned"),
 	TEST_CASE(device, pb_remote_server_nppi_robustness,
-		  "Device: pb-adv provisioning, running pb-remote server, NPPI robustness"),
+		  "Device: pb-remote reprovisioning, NPPI robustness"),
 #endif
 
 	TEST_CASE(provisioner, pb_adv_no_oob,
@@ -1017,10 +1241,9 @@ static const struct bst_test_instance test_connect[] = {
 		  "Provisioner: pb-adv provisioning, resetting and reprovisioning multiple times."),
 #if IS_RPR_PRESENT
 	TEST_CASE(provisioner, pb_remote_client_reprovision,
-		  "Provisioner: pb-remote client provisioning, resetting and reprovisioning "
-		  "multiple times."),
+		  "Provisioner: pb-remote provisioning, resetting and reprov-ing multiple times."),
 	TEST_CASE(provisioner, pb_remote_client_nppi_robustness,
-		  "Provisioner: pb-remote client provisioning, NPPI robustness testing."),
+		  "Provisioner: pb-remote provisioning, NPPI robustness."),
 #endif
 
 	BSTEST_END_MARKER
@@ -1031,3 +1254,34 @@ struct bst_test_list *test_provision_install(struct bst_test_list *tests)
 	tests = bst_add_tests(tests, test_connect);
 	return tests;
 }
+
+#if IS_RPR_PRESENT
+static const struct bst_test_instance test_connect_pst[] = {
+	TEST_CASE(device, pb_remote_server_unproved,
+		  "Device: used for remote provisioning, starts unprovisioned"),
+	TEST_CASE(device, pb_remote_server_proved,
+		  "Device: used for remote provisioning, starts provisioned"),
+
+	TEST_CASE(device, pb_remote_server_ncrp_prepare,
+		  "Device: NCRP test, prepares for Composition Data change."),
+	TEST_CASE(device, pb_remote_server_ncrp,
+		  "Device: NCRP test, Composition Data change."),
+	TEST_CASE(device, pb_remote_server_ncrp_second_time,
+		  "Device: NCRP test, Composition Data change after reboot."),
+
+	TEST_CASE(provisioner, pb_remote_client_ncrp_provision,
+		  "Provisioner: NCRP test, devices provisioning."),
+	TEST_CASE(provisioner, pb_remote_client_ncrp,
+		  "Provisioner: NCRP test, initiates Node Composition Refresh procedure."),
+	TEST_CASE(provisioner, pb_remote_client_ncrp_second_time,
+		  "Provisioner: NCRP test, initiates NCR procedure the second time."),
+
+	BSTEST_END_MARKER
+};
+
+struct bst_test_list *test_provision_pst_install(struct bst_test_list *tests)
+{
+	tests = bst_add_tests(tests, test_connect_pst);
+	return tests;
+}
+#endif /* IS_RPR_PRESENT */
