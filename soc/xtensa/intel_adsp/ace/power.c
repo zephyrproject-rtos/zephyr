@@ -85,6 +85,7 @@ struct core_state {
 	uint32_t excsave3;
 	uint32_t thread_ptr;
 	uint32_t intenable;
+	uint32_t bctl;
 };
 
 static struct core_state core_desc[CONFIG_MP_MAX_NUM_CPUS] = { 0 };
@@ -205,6 +206,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* save interrupt state and turn off all interrupts */
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
+		core_desc[cpu].bctl = DFDSPBRCP.bootctl[cpu].bctl;
 		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESTART_COMMAND;
 		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = false;
