@@ -84,6 +84,7 @@ SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(
 		L2_SRAM_PAGES_NUM,
 		(uint8_t *) L2_SRAM_BASE);
 
+#ifdef CONFIG_MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
 /* Define a marker which is placed by the linker script just after
  * last explicitly defined section. All .text, .data, .bss and .heap
  * sections should be placed before this marker in the memory.
@@ -94,6 +95,14 @@ __attribute__((__section__(".unused_ram_start_marker")))
 static int unused_l2_sram_start_marker = 0xba0babce;
 #define UNUSED_L2_START_ALIGNED ROUND_UP(POINTER_TO_UINT(&unused_l2_sram_start_marker), \
 					 CONFIG_MM_DRV_PAGE_SIZE)
+#else
+/* If memory is not going to be remaped (and thus powered off by)
+ * the driver, just define the unused memory start as the end of
+ * the memory.
+ */
+#define UNUSED_L2_START_ALIGNED ROUND_UP((L2_SRAM_BASE + L2_SRAM_SIZE), \
+					 CONFIG_MM_DRV_PAGE_SIZE)
+#endif
 
 /**
  * Calculate TLB entry based on physical address.
@@ -682,6 +691,7 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 		hpsram_ref[i] = SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
 	}
 
+#ifdef CONFIG_MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
 	/*
 	 * find virtual address range which are unused
 	 * in the system
@@ -703,6 +713,7 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
 				      unused_size);
+#endif
 
 	return 0;
 }
