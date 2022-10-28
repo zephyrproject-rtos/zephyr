@@ -5,7 +5,10 @@
  */
 
 #ifdef CONFIG_BT_BAP_SCAN_DELEGATOR
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/sys/byteorder.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -16,8 +19,11 @@ extern enum bst_result_t bst_result;
 static volatile bool g_cb;
 static volatile bool g_pa_synced;
 CREATE_FLAG(flag_broadcast_code_received);
+CREATE_FLAG(flag_recv_state_updated);
+static volatile uint32_t g_broadcast_id;
 
 struct sync_state {
+	uint8_t src_id;
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	bool pa_syncing;
 	struct k_work_delayable pa_timer;
@@ -45,6 +51,10 @@ static struct sync_state *sync_state_get_or_new(
 		if (sync_states[i].recv_state == NULL &&
 		    free_state == NULL) {
 			free_state = &sync_states[i];
+
+			if (recv_state == NULL) {
+				return free_state;
+			}
 		}
 
 		if (sync_states[i].recv_state == recv_state) {
@@ -59,6 +69,17 @@ static struct sync_state *sync_state_get_by_pa(struct bt_le_per_adv_sync *sync)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
 		if (sync_states[i].pa_sync == sync) {
+			return &sync_states[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct sync_state *sync_state_get_by_src_id(uint8_t src_id)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		if (sync_states[i].src_id == src_id) {
 			return &sync_states[i];
 		}
 	}
@@ -144,6 +165,7 @@ static int pa_sync_no_past(struct sync_state *state,
 	int err;
 
 	recv_state = state->recv_state;
+	state->src_id = recv_state->src_id;
 
 	bt_addr_le_copy(&param.addr, &recv_state->addr);
 	param.sid = recv_state->adv_sid;
@@ -196,7 +218,27 @@ static int pa_sync_term(struct sync_state *state)
 static void recv_state_updated_cb(struct bt_conn *conn,
 				  const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
+	struct sync_state *state;
+
 	printk("Receive state with ID %u updated\n", recv_state->src_id);
+
+	state = sync_state_get_by_src_id(recv_state->src_id);
+	if (state == NULL) {
+		FAIL("Could not get state");
+		return;
+	}
+
+	if (state->recv_state != NULL) {
+		if (state->recv_state != recv_state) {
+			FAIL("Sync state receive state mismatch: %p - %p",
+			     state->recv_state, recv_state);
+			return;
+		}
+	} else {
+		state->recv_state = recv_state;
+	}
+
+	SET_FLAG(flag_recv_state_updated);
 }
 
 static int pa_sync_req_cb(struct bt_conn *conn,
@@ -216,6 +258,7 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	}
 
 	state->recv_state = recv_state;
+	state->src_id = recv_state->src_id;
 
 	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
 	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
@@ -316,14 +359,172 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 	.term = pa_term_cb,
 };
 
-static void test_main(void)
+static bool broadcast_source_found(struct bt_data *data, void *user_data)
+{
+	struct bt_le_per_adv_sync_param sync_create_param = { 0 };
+	const struct bt_le_scan_recv_info *info = user_data;
+	char addr_str[BT_ADDR_LE_STR_LEN];
+	struct bt_uuid_16 adv_uuid;
+	struct sync_state *state;
+	int err;
+
+
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true;
+	}
+
+	if (data->data_len < BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE) {
+		return true;
+	}
+
+	if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
+		return true;
+	}
+
+	if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO) != 0) {
+		return true;
+	}
+
+	g_broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+
+	printk("Found BAP broadcast source with address %s and ID 0x%06X\n",
+	       addr_str, g_broadcast_id);
+
+	state = sync_state_get_or_new(NULL);
+	if (state == NULL) {
+		FAIL("Failed to get sync state");
+		return true;
+	}
+
+	printk("Creating Periodic Advertising Sync\n");
+	bt_addr_le_copy(&sync_create_param.addr, info->addr);
+	sync_create_param.sid = info->sid;
+	sync_create_param.timeout = 0xa;
+
+	err = bt_le_per_adv_sync_create(&sync_create_param,
+					&state->pa_sync);
+	if (err != 0) {
+		FAIL("Could not create PA sync (err %d)\n", err);
+		return true;
+	}
+
+	state->pa_syncing = true;
+
+	return false;
+}
+
+static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
+			 struct net_buf_simple *ad)
+{
+	/* We are only interested in non-connectable periodic advertisers */
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0 ||
+	    info->interval == 0) {
+		return;
+	}
+
+	bt_data_parse(ad, broadcast_source_found, (void *)info);
+}
+
+static struct bt_le_scan_cb scan_cb = {
+	.recv = scan_recv_cb
+};
+
+static int add_source(struct sync_state *state)
+{
+	struct bt_bap_scan_delegator_add_src_param param;
+	int res;
+
+	UNSET_FLAG(flag_recv_state_updated);
+
+	param.broadcast_id = g_broadcast_id;
+
+	param.pa_sync = state->pa_sync;
+	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
+	param.broadcast_id = g_broadcast_id;
+	param.num_subgroups = 0U;
+
+	res = bt_bap_scan_delegator_add_src(&param);
+	if (res < 0) {
+		return res;
+	}
+
+	state->src_id = (uint8_t)res;
+
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	return res;
+}
+
+static void add_all_sources(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		struct sync_state *state = &sync_states[i];
+
+		if (state->pa_sync != NULL) {
+			int res;
+
+			printk("[%zu]: Adding source\n", i);
+
+			res = add_source(state);
+			if (res < 0) {
+				FAIL("[%zu]: Add source failed (err %d)\n", i, res);
+				return;
+			}
+
+			printk("[%zu]: Source added with id %u\n",
+			       i, state->src_id);
+		}
+	}
+}
+
+static int remove_source(struct sync_state *state)
+{
+	int err;
+
+	UNSET_FLAG(flag_recv_state_updated);
+
+	/* We don't actually need to sync to the BIG/BISes */
+	err = bt_bap_scan_delegator_rem_src(state->src_id);
+	if (err) {
+		return err;
+	}
+
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	return 0;
+}
+
+static void remove_all_sources(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		struct sync_state *state = &sync_states[i];
+
+		if (state->recv_state != NULL) {
+			int err;
+
+			printk("[%zu]: Removing source\n", i);
+
+			err = remove_source(state);
+			if (err) {
+				FAIL("[%zu]: Remove source failed (err %d)\n", err);
+				return;
+			}
+
+			printk("[%zu]: Source removed with id %u\n",
+			       i, state->src_id);
+		}
+	}
+}
+
+static int common_init(void)
 {
 	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -334,28 +535,125 @@ static void test_main(void)
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	printk("Advertising successfully started\n");
 
 	WAIT_FOR_FLAG(flag_connected);
 
+	return 0;
+}
+
+static void test_main_client_sync(void)
+{
+	int err;
+
+	err = common_init();
+	if (err) {
+		FAIL("common init failed (err %d)\n", err);
+		return;
+	}
+
+	/* Wait for broadcast assistant to request us to sync to PA */
 	WAIT_FOR_COND(g_pa_synced);
 
+	/* Wait for broadcast assistant to send us broadcast code */
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
 
+	/* Wait for broadcast assistant to remove source and terminate PA sync */
 	WAIT_FOR_COND(!g_pa_synced);
 
-	PASS("BAP Scan Delegator passed\n");
+	PASS("BAP Scan Delegator Client Sync passed\n");
+}
+
+static void test_main_server_sync_client_rem(void)
+{
+	int err;
+
+	err = common_init();
+	if (err) {
+		FAIL("common init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_le_scan_cb_register(&scan_cb);
+
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err != 0) {
+		FAIL("Could not start scan (%d)", err);
+		return;
+	}
+
+	/* Wait for PA to sync */
+	WAIT_FOR_COND(g_pa_synced);
+
+	/* Add PAs as receive state sources */
+	add_all_sources();
+
+	/* Wait for broadcast assistant to send us broadcast code */
+	WAIT_FOR_FLAG(flag_broadcast_code_received);
+
+	/* For for client to remove source and thus terminate the PA */
+	WAIT_FOR_COND(!g_pa_synced);
+
+	PASS("BAP Scan Delegator Server Sync Client Remove passed\n");
+}
+
+static void test_main_server_sync_server_rem(void)
+{
+	int err;
+
+	err = common_init();
+	if (err) {
+		FAIL("common init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_le_scan_cb_register(&scan_cb);
+
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err != 0) {
+		FAIL("Could not start scan (%d)", err);
+		return;
+	}
+
+	/* Wait for PA to sync */
+	WAIT_FOR_COND(g_pa_synced);
+
+	/* Add PAs as receive state sources */
+	add_all_sources();
+
+	/* Wait for broadcast assistant to send us broadcast code */
+	WAIT_FOR_FLAG(flag_broadcast_code_received);
+
+	/* Remote all sources, causing PA sync term request to trigger */
+	remove_all_sources();
+
+	/* Wait for PA sync to be terminated */
+	WAIT_FOR_COND(!g_pa_synced);
+
+	PASS("BAP Scan Delegator Server Sync Server Remove passed\n");
 }
 
 static const struct bst_test_instance test_scan_delegator[] = {
 	{
-		.test_id = "bap_scan_delegator",
+		.test_id = "bap_scan_delegator_client_sync",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main
+		.test_main_f = test_main_client_sync,
+	},
+	{
+		.test_id = "bap_scan_delegator_server_sync_client_rem",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_server_sync_client_rem,
+	},
+	{
+		.test_id = "bap_scan_delegator_server_sync_server_rem",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_server_sync_server_rem,
 	},
 	BSTEST_END_MARKER
 };

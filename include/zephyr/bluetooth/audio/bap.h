@@ -1791,7 +1791,7 @@ struct bt_bap_broadcast_assistant_cb {
 	 *
 	 * @param conn     The connection to the Broadcast Audio Scan Service server.
 	 * @param err      Error value. 0 on success, GATT error on fail.
-	 * @param state    The receive state.
+	 * @param state    The receive state or NULL if the receive state is empty.
 	 */
 	void (*recv_state)(struct bt_conn *conn, int err,
 			   const struct bt_bap_scan_delegator_recv_state *state);
