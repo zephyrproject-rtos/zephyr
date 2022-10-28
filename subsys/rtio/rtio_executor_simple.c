@@ -24,13 +24,20 @@ LOG_MODULE_REGISTER(rtio_executor_simple, CONFIG_RTIO_LOG_LEVEL);
  */
 int rtio_simple_submit(struct rtio *r)
 {
-	/* TODO For each submission queue entry chain,
-	 * submit the chain to the first iodev
-	 */
+	struct rtio_simple_executor *exc = (struct rtio_simple_executor *)r->executor;
+
+	/* Task is already running */
+	if (exc->task.sqe != NULL) {
+		return 0;
+	}
+
 	struct rtio_sqe *sqe = rtio_spsc_consume(r->sq);
 
+	exc->task.sqe = sqe;
+	exc->task.r = r;
+
 	if (sqe != NULL) {
-		rtio_iodev_submit(sqe, r);
+		rtio_iodev_submit(&exc->task);
 	}
 
 	return 0;
@@ -39,11 +46,22 @@ int rtio_simple_submit(struct rtio *r)
 /**
  * @brief Callback from an iodev describing success
  */
-void rtio_simple_ok(struct rtio *r, const struct rtio_sqe *sqe, int result)
+void rtio_simple_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
 {
+	struct rtio *r = iodev_sqe->r;
+	const struct rtio_sqe *sqe = iodev_sqe->sqe;
+
+#ifdef CONFIG_ASSERT
+	struct rtio_simple_executor *exc =
+		(struct rtio_simple_executor *)r->executor;
+
+	__ASSERT_NO_MSG(iodev_sqe == &exc->task);
+#endif
+
 	void *userdata = sqe->userdata;
 
 	rtio_spsc_release(r->sq);
+	iodev_sqe->sqe = NULL;
 	rtio_cqe_submit(r, result, userdata);
 	rtio_simple_submit(r);
 }
@@ -51,13 +69,24 @@ void rtio_simple_ok(struct rtio *r, const struct rtio_sqe *sqe, int result)
 /**
  * @brief Callback from an iodev describing error
  */
-void rtio_simple_err(struct rtio *r, const struct rtio_sqe *sqe, int result)
+void rtio_simple_err(struct rtio_iodev_sqe *iodev_sqe, int result)
 {
-	struct rtio_sqe *nsqe;
+	const struct rtio_sqe *nsqe;
+	struct rtio *r = iodev_sqe->r;
+		const struct rtio_sqe *sqe = iodev_sqe->sqe;
 	void *userdata = sqe->userdata;
 	bool chained = sqe->flags & RTIO_SQE_CHAINED;
 
+#ifdef CONFIG_ASSERT
+	struct rtio_simple_executor *exc =
+		(struct rtio_simple_executor *)r->executor;
+
+	__ASSERT_NO_MSG(iodev_sqe == &exc->task);
+#endif
+
+
 	rtio_spsc_release(r->sq);
+	iodev_sqe->sqe = NULL;
 	rtio_cqe_submit(r, result, sqe->userdata);
 
 	if (chained) {
@@ -71,7 +100,9 @@ void rtio_simple_err(struct rtio *r, const struct rtio_sqe *sqe, int result)
 		}
 
 		if (nsqe != NULL) {
-			rtio_iodev_submit(nsqe, r);
+
+			iodev_sqe->sqe = nsqe;
+			rtio_iodev_submit(iodev_sqe);
 		}
 
 	} else {

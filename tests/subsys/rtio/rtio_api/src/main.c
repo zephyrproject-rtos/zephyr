@@ -321,11 +321,13 @@ static void mpsc_consumer(void *p1, void *p2, void *p3)
 {
 	struct rtio_mpsc_node *n;
 	struct mpsc_node *nn;
-	uint32_t start_t = k_cycle_get_32();
 
 	for (int i = 0; i < (MPSC_ITERATIONS)*(MPSC_THREADS_NUM - 1); i++) {
 		do {
 			n = rtio_mpsc_pop(&mpsc_q);
+			if (n == NULL) {
+				k_yield();
+			}
 		} while (n == NULL);
 
 		zassert_not_equal(n, &mpsc_q.stub, "mpsc should not produce stub");
@@ -335,13 +337,6 @@ static void mpsc_consumer(void *p1, void *p2, void *p3)
 		rtio_spsc_acquire(&node_q[nn->id]);
 		rtio_spsc_produce(&node_q[nn->id]);
 	}
-
-	uint32_t diff = k_cycle_get_32() - start_t;
-
-	uint32_t us = k_cyc_to_us_floor32(diff);
-
-	TC_PRINT("%d mpsc consumes and spsc produces in %u cycles (%u microseconds)\n",
-		 (MPSC_ITERATIONS)*(MPSC_THREADS_NUM-1), diff, us);
 }
 
 static void mpsc_producer(void *p1, void *p2, void *p3)
@@ -352,6 +347,9 @@ static void mpsc_producer(void *p1, void *p2, void *p3)
 	for (int i = 0; i < MPSC_ITERATIONS; i++) {
 		do {
 			n = rtio_spsc_consume(&node_q[id]);
+			if (n == NULL) {
+				k_yield();
+			}
 		} while (n == NULL);
 
 		rtio_spsc_release(&node_q[id]);
@@ -409,7 +407,7 @@ RTIO_DEFINE(r_simple_simp, (struct rtio_executor *)&simple_exec_simp, 4, 4);
 RTIO_EXECUTOR_CONCURRENT_DEFINE(simple_exec_con, 1);
 RTIO_DEFINE(r_simple_con, (struct rtio_executor *)&simple_exec_con, 4, 4);
 
-RTIO_IODEV_TEST_DEFINE(iodev_test_simple, 1);
+RTIO_IODEV_TEST_DEFINE(iodev_test_simple);
 
 /**
  * @brief Test the basics of the RTIO API
@@ -456,9 +454,9 @@ RTIO_DEFINE(r_chain_simp, (struct rtio_executor *)&chain_exec_simp, 4, 4);
 RTIO_EXECUTOR_CONCURRENT_DEFINE(chain_exec_con, 1);
 RTIO_DEFINE(r_chain_con, (struct rtio_executor *)&chain_exec_con, 4, 4);
 
-RTIO_IODEV_TEST_DEFINE(iodev_test_chain0, 1);
-RTIO_IODEV_TEST_DEFINE(iodev_test_chain1, 1);
-const struct rtio_iodev *iodev_test_chain[] = {&iodev_test_chain0, &iodev_test_chain1};
+RTIO_IODEV_TEST_DEFINE(iodev_test_chain0);
+RTIO_IODEV_TEST_DEFINE(iodev_test_chain1);
+struct rtio_iodev *iodev_test_chain[] = {&iodev_test_chain0, &iodev_test_chain1};
 
 /**
  * @brief Test chained requests
@@ -485,7 +483,9 @@ void test_rtio_chain_(struct rtio *r)
 	/* Clear the last one */
 	sqe->flags = 0;
 
+	TC_PRINT("submitting\n");
 	res = rtio_submit(r, 4);
+	TC_PRINT("checking cq\n");
 	zassert_ok(res, "Should return ok from rtio_execute");
 	zassert_equal(rtio_spsc_consumable(r->cq), 4, "Should have 4 pending completions");
 
@@ -501,6 +501,8 @@ void test_rtio_chain_(struct rtio *r)
 
 ZTEST(rtio_api, test_rtio_chain)
 {
+	TC_PRINT("initializing iodev test devices\n");
+
 	for (int i = 0; i < 2; i++) {
 		rtio_iodev_test_init(iodev_test_chain[i]);
 	}
@@ -518,9 +520,9 @@ RTIO_DEFINE(r_multi_simp, (struct rtio_executor *)&multi_exec_simp, 4, 4);
 RTIO_EXECUTOR_CONCURRENT_DEFINE(multi_exec_con, 2);
 RTIO_DEFINE(r_multi_con, (struct rtio_executor *)&multi_exec_con, 4, 4);
 
-RTIO_IODEV_TEST_DEFINE(iodev_test_multi0, 1);
-RTIO_IODEV_TEST_DEFINE(iodev_test_multi1, 1);
-const struct rtio_iodev *iodev_test_multi[] = {&iodev_test_multi0, &iodev_test_multi1};
+RTIO_IODEV_TEST_DEFINE(iodev_test_multi0);
+RTIO_IODEV_TEST_DEFINE(iodev_test_multi1);
+struct rtio_iodev *iodev_test_multi[] = {&iodev_test_multi0, &iodev_test_multi1};
 
 /**
  * @brief Test multiple asynchronous chains against one iodev
@@ -601,7 +603,7 @@ uint8_t syscall_bufs[4];
 
 RTIO_EXECUTOR_SIMPLE_DEFINE(syscall_simple);
 RTIO_DEFINE(r_syscall, (struct rtio_executor *)&syscall_simple, 4, 4);
-RTIO_IODEV_TEST_DEFINE(iodev_test_syscall, 1);
+RTIO_IODEV_TEST_DEFINE(iodev_test_syscall);
 
 void rtio_syscall_test(void *p1, void *p2, void *p3)
 {

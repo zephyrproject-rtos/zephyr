@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/kernel.h>
 
 /**
  * @brief RTIO Multiple Producer Single Consumer (MPSC) Queue API
@@ -51,6 +52,21 @@ struct rtio_mpsc {
 	struct rtio_mpsc_node *tail;
 	struct rtio_mpsc_node stub;
 };
+
+
+/**
+ * @brief Static initializer for a mpsc queue
+ *
+ * Since the queue is
+ *
+ * @param symbol name of the queue
+ */
+#define RTIO_MPSC_INIT(symbol)                                 \
+	{                                                      \
+		.head = (struct rtio_mpsc_node *)&symbol.stub, \
+		.tail = (struct rtio_mpsc_node *)&symbol.stub, \
+		.stub.next = NULL,                             \
+	}
 
 /**
  * @brief Initialize queue
