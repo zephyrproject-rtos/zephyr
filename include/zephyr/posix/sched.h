@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_POSIX_POSIX_SCHED_H_
-#define ZEPHYR_INCLUDE_POSIX_POSIX_SCHED_H_
+#ifndef ZEPHYR_INCLUDE_POSIX_SCHED_H_
+#define ZEPHYR_INCLUDE_POSIX_SCHED_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,4 +40,4 @@ int sched_get_priority_max(int policy);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_POSIX_POSIX_SCHED_H_ */
+#endif /* ZEPHYR_INCLUDE_POSIX_SCHED_H_ */
