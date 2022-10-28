@@ -87,7 +87,7 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
 		return -EINVAL;
 	}
 
-	stereo_pdm = 1;
+	stereo_pdm = OUTCONTROL0_IPM_SOURCE_MODE_GET(outcontrol_val);
 
 	dmic->dai_config_params.channels = (stereo_pdm + 1) * num_pdm;
 	for (n = 0; n < CONFIG_DAI_DMIC_HW_CONTROLLERS; n++)
