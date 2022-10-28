@@ -8,6 +8,11 @@
 
 #include <zephyr/net/socket.h>
 
+#ifndef NI_MAXSERV
+/** Provide a reasonable size for apps using getnameinfo */
+#define NI_MAXSERV 32
+#endif
+
 #define EAI_BADFLAGS DNS_EAI_BADFLAGS
 #define EAI_NONAME DNS_EAI_NONAME
 #define EAI_AGAIN DNS_EAI_AGAIN
