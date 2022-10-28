@@ -77,6 +77,35 @@
 		standby-gpios = <&gpioc 18 GPIO_ACTIVE_HIGH>;
 		#phy-cells = <0>;
 	};
+
+	/* This regulator enables the 3V3_S line, which powers sensors on-board. */
+	reg-3v3-s {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-s";
+		enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <2000>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the onboard Ethernet PHY */
+	reg-3v3-neth {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-neth";
+		enable-gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the onboard SD card support */
+	reg-3v3-sd {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sd";
+		enable-gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+
 };
 
 &sim {
