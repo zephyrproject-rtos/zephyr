@@ -9,9 +9,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/posix/time.h>
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
+#include <zephyr/posix/sys/stat.h>
 #include "posix_types.h"
-#include "sys/stat.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,12 +19,12 @@ extern "C" {
 
 typedef void *mqd_t;
 
-typedef struct mq_attr {
+struct mq_attr {
 	long mq_flags;
 	long mq_maxmsg;
 	long mq_msgsize;
 	long mq_curmsgs;	/* Number of messages currently queued. */
-} mq_attr;
+};
 
 mqd_t mq_open(const char *name, int oflags, ...);
 int mq_close(mqd_t mqdes);
