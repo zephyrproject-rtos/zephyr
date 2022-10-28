@@ -20,6 +20,9 @@
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
 		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 	};
 
 	chosen {
@@ -105,7 +108,6 @@
 		regulator-always-on;
 		status = "okay";
 	};
-
 };
 
 &sim {
