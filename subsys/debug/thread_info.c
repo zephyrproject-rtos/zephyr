@@ -22,6 +22,7 @@ enum {
 	THREAD_INFO_OFFSET_T_ARCH,
 	THREAD_INFO_OFFSET_T_PREEMPT_FLOAT,
 	THREAD_INFO_OFFSET_T_COOP_FLOAT,
+	THREAD_INFO_OFFSET_T_ARM_EXC_RETURN,
 };
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
@@ -121,6 +122,16 @@ size_t _kernel_thread_info_offsets[] = {
 	/* Version is still 1, but existence of following elements must be
 	 * checked with _kernel_thread_info_num_offsets.
 	 */
+#ifdef CONFIG_ARM_STORE_EXC_RETURN
+	/* ARM overwrites the LSB of the Link Register on the stack when
+	 * this option is enabled. If this offset is not THREAD_INFO_UNIMPLEMENTED
+	 * then the LSB needs to be restored from mode_exc_return.
+	 */
+	[THREAD_INFO_OFFSET_T_ARM_EXC_RETURN] = offsetof(struct _thread_arch,
+							 mode_exc_return),
+#else
+	[THREAD_INFO_OFFSET_T_ARM_EXC_RETURN] = THREAD_INFO_UNIMPLEMENTED,
+#endif /* CONFIG_ARM_STORE_EXC_RETURN */
 };
 extern size_t __attribute__((alias("_kernel_thread_info_offsets")))
 		_kernel_openocd_offsets;
