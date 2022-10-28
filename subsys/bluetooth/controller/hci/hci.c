@@ -2418,6 +2418,20 @@ static void le_reject_cis(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+static void le_req_peer_sca(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_req_peer_sca *cmd = (void *)buf->data;
+	uint16_t handle;
+	uint8_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = ll_req_peer_sca(handle);
+
+	*evt = cmd_status(status);
+}
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4347,6 +4361,12 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case BT_OCF(BT_HCI_OP_LE_REQ_PEER_SC):
+		le_req_peer_sca(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 	case BT_OCF(BT_HCI_OP_LE_SETUP_ISO_PATH):
@@ -8014,6 +8034,31 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, uint16_t handle,
 	sep->rx_phy = find_lsb_set(pu->rx);
 }
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+static void le_req_peer_sca_complete(struct pdu_data *pdu, uint16_t handle,
+				struct net_buf *buf)
+{
+	struct bt_hci_evt_le_req_peer_sca_complete *sep;
+	struct node_rx_sca *scau;
+
+	scau = (void *)pdu;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_REQ_PEER_SCA_COMPLETE)) {
+		BT_WARN("handle: 0x%04x, status: %x, sca: %x.", handle,
+			scau->status,
+			scau->sca);
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_REQ_PEER_SCA_COMPLETE, sizeof(*sep));
+
+	sep->status = scau->status;
+	sep->handle = sys_cpu_to_le16(handle);
+	sep->sca = scau->sca;
+}
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -8180,6 +8225,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		le_cis_established(pdu_data, node_rx, buf);
 		return;
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE:
+		le_req_peer_sca_complete(pdu_data, handle, buf);
+		return;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
@@ -8636,6 +8687,10 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 		case NODE_RX_TYPE_CIS_REQUEST:
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+		case NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE:
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_CIS_ESTABLISHED:

@@ -33,7 +33,9 @@
 #include "isoal.h"
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
+#include "ull_iso_internal.h"
 #include "ull_conn_iso_internal.h"
+#include "ull_peripheral_iso_internal.h"
 
 #include "ull_conn_types.h"
 #include "ull_chan_internal.h"
@@ -544,6 +546,17 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->data.sca_update.error_code = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 			/* Fall through to complete procedure */
 		case PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP:
+#if defined(CONFIG_BT_PERIPHERAL)
+			if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL &&
+			    !ctx->data.sca_update.error_code &&
+			    conn->periph.sca != ctx->data.sca_update.sca) {
+				conn->periph.sca = ctx->data.sca_update.sca;
+				ull_conn_update_peer_sca(conn);
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+				ull_peripheral_iso_update_peer_sca(conn);
+#endif /* defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+			}
+#endif /* CONFIG_BT_PERIPHERAL */
 			lp_sca_ntf(conn, ctx);
 			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
@@ -1394,6 +1407,15 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 		case PROC_SCA_UPDATE: {
 			ctx->tx_ack = NULL;
+#if defined(CONFIG_BT_PERIPHERAL)
+			if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
+				conn->periph.sca = ctx->data.sca_update.sca;
+				ull_conn_update_peer_sca(conn);
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+				ull_peripheral_iso_update_peer_sca(conn);
+#endif /* defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+			}
+#endif /* CONFIG_BT_PERIPHERAL */
 			llcp_rr_complete(conn);
 			ctx->state = RP_COMMON_STATE_IDLE;
 		}
