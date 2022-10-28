@@ -1425,13 +1425,21 @@ endfunction()
 
 # 2.1 Misc
 #
-# import_kconfig(<prefix> <kconfig_fragment> [<keys>])
+# import_kconfig(<prefix> <kconfig_fragment> [<keys>] [TARGET <target>])
 #
 # Parse a KConfig fragment (typically with extension .config) and
 # introduce all the symbols that are prefixed with 'prefix' into the
 # CMake namespace. List all created variable names in the 'keys'
 # output variable if present.
+#
+# <prefix>          : symbol prefix of settings in the Kconfig fragment.
+# <kconfig_fragment>: absolute path to the config fragment file.
+# <keys>            : output variable which will be populated with variable
+#                     names loaded from the kconfig fragment.
+# TARGET <target>   : set all symbols on <target> instead of adding them to the
+#                     CMake namespace.
 function(import_kconfig prefix kconfig_fragment)
+  cmake_parse_arguments(IMPORT_KCONFIG "" "TARGET" "" ${ARGN})
   # Parse the lines prefixed with 'prefix' in ${kconfig_fragment}
   file(
     STRINGS
@@ -1457,16 +1465,23 @@ function(import_kconfig prefix kconfig_fragment)
       set(CONF_VARIABLE_VALUE ${CMAKE_MATCH_1})
     endif()
 
-    set("${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}" PARENT_SCOPE)
+    if(DEFINED IMPORT_KCONFIG_TARGET)
+      set_property(TARGET ${IMPORT_KCONFIG_TARGET} APPEND PROPERTY "kconfigs" "${CONF_VARIABLE_NAME}")
+      set_property(TARGET ${IMPORT_KCONFIG_TARGET} PROPERTY "${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}")
+    else()
+      set("${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}" PARENT_SCOPE)
+    endif()
     list(APPEND keys "${CONF_VARIABLE_NAME}")
   endforeach()
 
-  if(ARGC GREATER 2)
-    if(ARGC GREATER 3)
+  list(LENGTH IMPORT_KCONFIG_UNPARSED_ARGUMENTS unparsed_length)
+  if(unparsed_length GREATER 0)
+    if(unparsed_length GREATER 1)
     # Two mandatory arguments and one optional, anything after that is an error.
-      message(FATAL_ERROR "Unexpected argument after '<keys>': import_kconfig(... ${ARGV3})")
+      list(GET IMPORT_KCONFIG_UNPARSED_ARGUMENTS 1 first_invalid)
+      message(FATAL_ERROR "Unexpected argument after '<keys>': import_kconfig(... ${first_invalid})")
     endif()
-    set(${ARGV2} "${keys}" PARENT_SCOPE)
+    set(${IMPORT_KCONFIG_UNPARSED_ARGUMENTS} "${keys}" PARENT_SCOPE)
   endif()
 endfunction()
 
