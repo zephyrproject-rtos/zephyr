@@ -141,18 +141,9 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 	}
 }
 
-static void unicast_client_ep_iso_connected(struct bt_iso_chan *chan)
+static void unicast_client_ep_iso_connected(struct bt_audio_ep *ep)
 {
-	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
 	struct bt_audio_stream *stream;
-	struct bt_audio_ep *ep;
-
-	/* FIXME: Handle both EP's */
-	ep = iso->tx.ep != NULL ? iso->tx.ep : iso->rx.ep;
-	if (ep == NULL) {
-		BT_ERR("iso %p not bound with ep", chan);
-		return;
-	}
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		BT_DBG("endpoint not in enabling state: %s",
@@ -169,19 +160,28 @@ static void unicast_client_ep_iso_connected(struct bt_iso_chan *chan)
 	BT_DBG("stream %p ep %p dir %u", stream, ep, ep->dir);
 }
 
-static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
-					       uint8_t reason)
+static void unicast_client_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
-	struct bt_audio_stream *stream;
-	struct bt_audio_ep *ep;
 
-	/* FIXME: Handle both EP's */
-	ep = iso->tx.ep != NULL ? iso->tx.ep : iso->rx.ep;
-	if (ep == NULL) {
+	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
 		BT_ERR("iso %p not bound with ep", chan);
 		return;
 	}
+
+	if (iso->rx.ep != NULL) {
+		unicast_client_ep_iso_connected(iso->rx.ep);
+	}
+
+	if (iso->tx.ep != NULL) {
+		unicast_client_ep_iso_connected(iso->tx.ep);
+	}
+}
+
+static void unicast_client_ep_iso_disconnected(struct bt_audio_ep *ep,
+					       uint8_t reason)
+{
+	struct bt_audio_stream *stream;
 
 	stream = ep->stream;
 	if (stream == NULL) {
@@ -198,11 +198,30 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 	}
 }
 
+static void unicast_client_iso_disconnected(struct bt_iso_chan *chan,
+					    uint8_t reason)
+{
+	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
+
+	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
+		BT_ERR("iso %p not bound with ep", chan);
+		return;
+	}
+
+	if (iso->rx.ep != NULL) {
+		unicast_client_ep_iso_disconnected(iso->rx.ep, reason);
+	}
+
+	if (iso->tx.ep != NULL) {
+		unicast_client_ep_iso_disconnected(iso->tx.ep, reason);
+	}
+}
+
 static struct bt_iso_chan_ops unicast_client_iso_ops = {
 	.recv		= unicast_client_ep_iso_recv,
 	.sent		= unicast_client_ep_iso_sent,
-	.connected	= unicast_client_ep_iso_connected,
-	.disconnected	= unicast_client_ep_iso_disconnected,
+	.connected	= unicast_client_iso_connected,
+	.disconnected	= unicast_client_iso_disconnected,
 };
 
 static void unicast_client_ep_init(struct bt_audio_ep *ep, uint16_t handle,
