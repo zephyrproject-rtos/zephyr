@@ -13,6 +13,11 @@
 extern "C" {
 #endif
 
+struct linger {
+	int  l_onoff;
+	int  l_linger;
+};
+
 #ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
 
 static inline int socket(int family, int type, int proto)
