@@ -40,6 +40,8 @@ void main(void)
 {
 	int err;
 	char count_str[11] = {0};
+	uint32_t zephyr_version = sys_kernel_version_get();
+	char version_str[65] = {0};
 	const struct device *display_dev;
 	lv_obj_t *hello_world_label;
 	lv_obj_t *count_label;
@@ -86,7 +88,12 @@ void main(void)
 		hello_world_label = lv_label_create(lv_scr_act());
 	}
 
-	lv_label_set_text(hello_world_label, "Hello world!");
+	sprintf(version_str, "Hello world!\nLVGL version: %d.%d.%d\nZephyr version: %d.%d.%d",
+			LVGL_VERSION_MAJOR, LVGL_VERSION_MINOR, LVGL_VERSION_PATCH,
+			SYS_KERNEL_VER_MAJOR(zephyr_version),
+			SYS_KERNEL_VER_MINOR(zephyr_version),
+			SYS_KERNEL_VER_PATCHLEVEL(zephyr_version));
+	lv_label_set_text(hello_world_label, version_str);
 	lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);
 
 	count_label = lv_label_create(lv_scr_act());
