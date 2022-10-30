@@ -36,11 +36,6 @@ jobs:
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
-      - name: Cleanup
-        run: |
-          # hotfix, until we have a better way to deal with existing data
-          rm -rf zephyr zephyr-testing
-
       - name: Clone cached Zephyr repository
         if: github.event_name == 'pull_request_target'
         continue-on-error: true
@@ -133,11 +128,6 @@ jobs:
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
-      - name: Cleanup
-        run: |
-          # hotfix, until we have a better way to deal with existing data
-          rm -rf zephyr zephyr-testing
-
       - name: Clone cached Zephyr repository
         continue-on-error: true
         run: |
