@@ -7,6 +7,8 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/pthread_key.h>
 
+#include "posix_internal.h"
+
 struct k_sem pthread_key_sem;
 
 K_SEM_DEFINE(pthread_key_sem, 1, 1);
@@ -77,7 +79,7 @@ int pthread_key_delete(pthread_key_t key)
 int pthread_setspecific(pthread_key_t key, const void *value)
 {
 	pthread_key_obj *key_obj = (pthread_key_obj *)key;
-	struct posix_thread *thread = (struct posix_thread *)pthread_self();
+	struct posix_thread *thread = to_posix_thread(pthread_self());
 	pthread_key_data *key_data;
 	pthread_thread_data *thread_spec_data;
 	sys_snode_t *node_l;
@@ -139,7 +141,7 @@ out:
 void *pthread_getspecific(pthread_key_t key)
 {
 	pthread_key_obj *key_obj = (pthread_key_obj *)key;
-	struct posix_thread *thread = (struct posix_thread *)pthread_self();
+	struct posix_thread *thread = to_posix_thread(pthread_self());
 	pthread_thread_data *thread_spec_data;
 	void *value = NULL;
 	sys_snode_t *node_l;
