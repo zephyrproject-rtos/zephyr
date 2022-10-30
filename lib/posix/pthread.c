@@ -369,7 +369,6 @@ void pthread_exit(void *retval)
 
 	pthread_mutex_lock(&self->state_lock);
 	if (self->state == PTHREAD_JOINABLE) {
-		self->retval = retval;
 		self->state = PTHREAD_EXITED;
 		self->retval = retval;
 		pthread_cond_broadcast(&self->state_cond);
