@@ -17,12 +17,12 @@ concurrency:
 
 jobs:
   twister-build-prep:
-    runs-on: zephyr_runner
+    runs-on: zephyr-runner-linux-x64-4xlarge
     container:
       image: zephyrprojectrtos/ci:v0.18.4
       options: '--entrypoint /bin/bash'
       volumes:
-        - /home/runners/zephyrproject:/github/cache/zephyrproject
+        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
@@ -104,14 +104,14 @@ jobs:
           echo "size=${size}" >> $GITHUB_OUTPUT
 
   twister-build:
-    runs-on: zephyr_runner
+    runs-on: zephyr-runner-linux-x64-4xlarge
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
       image: zephyrprojectrtos/ci:v0.18.4
       options: '--entrypoint /bin/bash'
       volumes:
-        - /home/runners/zephyrproject:/github/cache/zephyrproject
+        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
