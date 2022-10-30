@@ -33,7 +33,7 @@ typedef unsigned long timer_t;
 
 #ifdef CONFIG_PTHREAD_IPC
 /* Thread attributes */
-typedef struct pthread_attr_t {
+typedef struct pthread_attr {
 	int priority;
 	void *stack;
 	size_t stacksize;
