@@ -46,11 +46,6 @@ jobs:
           #        GitHub comes up with a fundamental fix for this problem.
           git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
-      - name: Cleanup
-        run: |
-          # hotfix, until we have a better way to deal with existing data
-          rm -rf zephyr zephyr-testing
-
       - name: Clone cached Zephyr repository
         if: github.event_name == 'pull_request_target'
         continue-on-error: true
@@ -146,11 +141,6 @@ jobs:
           #        Actions runner is implemented. Remove this workaround when
           #        GitHub comes up with a fundamental fix for this problem.
           git config --global --add safe.directory ${GITHUB_WORKSPACE}
-
-      - name: Cleanup
-        run: |
-          # hotfix, until we have a better way to deal with existing data
-          rm -rf zephyr zephyr-testing
 
       - name: Clone cached Zephyr repository
         continue-on-error: true
