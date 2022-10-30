@@ -14,6 +14,8 @@ jobs:
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
       options: '--entrypoint /bin/bash'
+      volumes:
+        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
@@ -33,6 +35,12 @@ jobs:
       - name: Update PATH for west
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone /github/cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: checkout
         uses: actions/checkout@v3
