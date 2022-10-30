@@ -34,11 +34,6 @@ jobs:
           #        GitHub comes up with a fundamental fix for this problem.
           git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
-      - name: Cleanup
-        run: |
-          # hotfix, until we have a better way to deal with existing data
-          rm -rf zephyr zephyr-testing
-
       - name: Clone cached Zephyr repository
         continue-on-error: true
         run: |
