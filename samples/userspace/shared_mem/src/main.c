@@ -192,6 +192,7 @@ void main(void)
 
 	k_thread_start(&ct_thread);
 	k_sem_give(&allforone);
+	k_yield();
 	printk("CT thread started\n");
 }
 
@@ -243,6 +244,7 @@ void enc(void)
 
 		}
 		k_sem_give(&allforone);
+		k_yield();
 	}
 }
 
@@ -265,6 +267,7 @@ void pt(void)
 			fBUFIN = 1;
 		}
 		k_sem_give(&allforone);
+		k_yield();
 		k_sem_take(&allforone, K_FOREVER);
 		if (fBUFIN == 0) { /* send message to decode  */
 			printk("\nPT Sending Message 1'\n");
@@ -296,5 +299,6 @@ void ct(void)
 			printk("CT MSG: %s\n", (char *)&tbuf);
 		}
 		k_sem_give(&allforone);
+		k_yield();
 	}
 }
