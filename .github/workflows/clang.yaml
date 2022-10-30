@@ -8,12 +8,12 @@ concurrency:
 
 jobs:
   clang-build:
-    runs-on: zephyr_runner
+    runs-on: zephyr-runner-linux-x64-4xlarge
     container:
       image: zephyrprojectrtos/ci:v0.21.0
       options: '--entrypoint /bin/bash'
       volumes:
-        - /home/runners/zephyrproject:/github/cache/zephyrproject
+        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
