@@ -447,11 +447,7 @@ int pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
  *
  * See IEEE 1003.1
  */
-static inline pthread_t pthread_self(void)
-{
-	return (pthread_t)k_current_get();
-}
-
+pthread_t pthread_self(void);
 
 /**
  * @brief Compare thread IDs.

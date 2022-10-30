@@ -44,14 +44,14 @@ typedef struct pthread_attr {
 	uint32_t initialized;
 } pthread_attr_t;
 
-typedef void *pthread_t;
+typedef uint32_t pthread_t;
 
 /* Semaphore */
 typedef struct k_sem sem_t;
 
 /* Mutex */
 typedef struct pthread_mutex {
-	pthread_t owner;
+	k_tid_t owner;
 	uint16_t lock_count;
 	int type;
 	_wait_q_t wait_q;
