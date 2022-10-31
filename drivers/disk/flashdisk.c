@@ -77,7 +77,9 @@ static int disk_flash_access_init(struct disk_info *disk)
 	LOG_INF("offset %lx, sector size %zu, page size %zu, volume size %zu",
 		(long)ctx->offset, ctx->sector_size, ctx->page_size, ctx->size);
 
-	if (ctx->page_size > ctx->cache_size) {
+	if (ctx->cache_size == 0) {
+		LOG_INF("%s is read-only", disk->name);
+	} else if (ctx->page_size > ctx->cache_size) {
 		LOG_ERR("Cache too small (%zu needs %zu)",
 			ctx->cache_size, ctx->page_size);
 		rc = -ENOMEM;
@@ -272,6 +274,10 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 
 	ctx = CONTAINER_OF(disk, struct flashdisk_data, info);
 
+	if (ctx->cache_size == 0) {
+		return -ENOTSUP;
+	}
+
 	if (!sectors_in_range(ctx, start_sector, sector_count)) {
 		return -EINVAL;
 	}
@@ -383,9 +389,11 @@ static const struct disk_operations flash_disk_ops = {
 #define DT_DRV_COMPAT zephyr_flash_disk
 
 #define PARTITION_PHANDLE(n) DT_PHANDLE_BY_IDX(DT_DRV_INST(n), partition, 0)
+/* Force cache size to 0 if partition is read-only */
+#define CACHE_SIZE(n) (DT_INST_PROP(n, cache_size) * !DT_PROP(PARTITION_PHANDLE(n), read_only))
 
 #define DEFINE_FLASHDISKS_CACHE(n) \
-	static uint8_t __aligned(4) flashdisk##n##_cache[DT_INST_PROP(n, cache_size)];
+	static uint8_t __aligned(4) flashdisk##n##_cache[CACHE_SIZE(n)];
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_CACHE)
 
 #define DEFINE_FLASHDISKS_DEVICE(n)						\
@@ -397,7 +405,7 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_CACHE)
 	.area_id = DT_FIXED_PARTITION_ID(PARTITION_PHANDLE(n)),			\
 	.offset = DT_REG_ADDR(PARTITION_PHANDLE(n)),				\
 	.cache = flashdisk##n##_cache,						\
-	.cache_size = DT_INST_PROP(n, cache_size),				\
+	.cache_size = sizeof(flashdisk##n##_cache),				\
 	.size = DT_REG_SIZE(PARTITION_PHANDLE(n)),				\
 	.sector_size = DT_INST_PROP(n, sector_size),				\
 },
@@ -405,6 +413,14 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_CACHE)
 static struct flashdisk_data flash_disks[] = {
 	DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_DEVICE)
 };
+
+#define VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY(n)			\
+	COND_CODE_1(DT_PROP(PARTITION_PHANDLE(n), read_only),			\
+		(/* cache-size is not used for read-only disks */),		\
+		(BUILD_ASSERT(DT_INST_PROP(n, cache_size) != 0,			\
+		"Devicetree node " DT_NODE_PATH(DT_DRV_INST(n))			\
+		" must have non-zero cache-size");))
+DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY)
 
 #define VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE(n)					\
 	BUILD_ASSERT(DT_INST_PROP(n, cache_size) % DT_INST_PROP(n, sector_size) == 0,	\
