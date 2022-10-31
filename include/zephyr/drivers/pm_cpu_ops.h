@@ -20,6 +20,11 @@
 extern "C" {
 #endif
 
+/* System Reset */
+
+#define SYS_WARM_RESET 0
+#define SYS_COLD_RESET 1
+
 /**
  * @defgroup power_management_cpu_api CPU Power Management
  * @ingroup subsys_pm
@@ -52,6 +57,17 @@ int pm_cpu_off(void);
  */
 int pm_cpu_on(unsigned long cpuid, uintptr_t entry_point);
 
+/**
+ * @brief System Reset
+ *
+ * This call is used to System reset
+ *
+ * @param reset SYS_WARM_RESET or SYS_COLD_RESET
+ *
+ * @retval 0 on success, a negative errno otherwise
+ */
+
+int pm_system_reset(unsigned char reset);
 /**
  * @brief Power down the system
  *
