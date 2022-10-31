@@ -27,6 +27,7 @@
 LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <errno.h>
 #include <stdbool.h>
