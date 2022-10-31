@@ -40,17 +40,14 @@ static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
 	{
 		/* STDIN */
 		.vtable = &stdinout_fd_op_vtable,
-		.refcount = ATOMIC_INIT(1)
 	},
 	{
 		/* STDOUT */
 		.vtable = &stdinout_fd_op_vtable,
-		.refcount = ATOMIC_INIT(1)
 	},
 	{
 		/* STDERR */
 		.vtable = &stdinout_fd_op_vtable,
-		.refcount = ATOMIC_INIT(1)
 	},
 #else
 	{
@@ -95,8 +92,9 @@ static int z_fd_unref(int fd)
 static int _find_fd_entry(void)
 {
 	int fd;
+	const int min = IS_ENABLED(CONFIG_POSIX_API) ? 3 : 0;
 
-	for (fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
+	for (fd = min; fd < ARRAY_SIZE(fdtable); fd++) {
 		if (!atomic_get(&fdtable[fd].refcount)) {
 			return fd;
 		}
@@ -114,6 +112,15 @@ static int _check_fd(int fd)
 	}
 
 	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
+
+	/* lazy-init the mutex in the static descriptors */
+	if (IS_ENABLED(CONFIG_POSIX_API) && fd < 3) {
+		if (atomic_cas(&fdtable[fd].refcount, 0, 1)) {
+			(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
+			k_mutex_init(&fdtable[fd].lock);
+			k_mutex_unlock(&fdtable_lock);
+		}
+	}
 
 	if (!atomic_get(&fdtable[fd].refcount)) {
 		errno = EBADF;
