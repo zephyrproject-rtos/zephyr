@@ -2079,7 +2079,6 @@ Tracing:
     - nashif
   collaborators:
     - teburd
-    - tleksell-pe
   files:
     - subsys/tracing/
     - include/zephyr/tracing/
@@ -2635,7 +2634,7 @@ West:
 "West project: TraceRecorderSource":
   status: maintained
   maintainers:
-    - tleksell-pe
+    - eriktamlin
   files:
     - modules/TraceRecorder/
   labels:
