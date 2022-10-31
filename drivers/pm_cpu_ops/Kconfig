@@ -29,4 +29,11 @@ config PM_CPU_OPS_PSCI
 	  0022A ("Power State Coordination Interface System Software on
 	  ARM processors").
 
+config PSCI_SHELL
+	bool "PSCI SHELL"
+	default y
+	depends on SHELL && PM_CPU_OPS_PSCI
+	help
+		Enable PSCI SHELL
+
 endif
