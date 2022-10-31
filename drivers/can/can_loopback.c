@@ -72,6 +72,12 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 
 	while (1) {
 		k_msgq_get(&data->tx_msgq, &frame, K_FOREVER);
+		frame.cb(dev, 0, frame.cb_arg);
+
+		if (!data->loopback) {
+			continue;
+		}
+
 		k_mutex_lock(&data->mtx, K_FOREVER);
 
 		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
@@ -83,7 +89,6 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 		k_mutex_unlock(&data->mtx);
-		frame.cb(dev, 0, frame.cb_arg);
 	}
 }
 
@@ -132,10 +137,6 @@ static int can_loopback_send(const struct device *dev,
 
 	if (!data->started) {
 		return -ENETDOWN;
-	}
-
-	if (!data->loopback) {
-		return 0;
 	}
 
 	loopback_frame.frame = *frame;
