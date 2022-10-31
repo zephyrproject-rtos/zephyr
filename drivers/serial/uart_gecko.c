@@ -18,10 +18,54 @@
 #include <em_gpio.h>
 #endif /* CONFIG_PINCTRL */
 
+#if DT_NODE_HAS_PROP(id, peripheral_id)
 #define USART_PREFIX cmuClock_USART
 #define UART_PREFIX cmuClock_UART
 #define CLOCK_USART(id) _CONCAT(USART_PREFIX, id)
 #define CLOCK_UART(id) _CONCAT(UART_PREFIX, id)
+#define GET_GECKO_USART_CLOCK(id) CLOCK_USART(DT_INST_PROP(id, peripheral_id))
+#define GET_GECKO_UART_CLOCK(id) CLOCK_UART(DT_INST_PROP(id, peripheral_id))
+#else
+#if (USART_COUNT <= 2)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : -1)
+#elif (USART_COUNT == 3)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : ((ref) == USART2) ? cmuClock_USART2 \
+			       : -1)
+#elif (USART_COUNT == 4)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : ((ref) == USART2) ? cmuClock_USART2 \
+			       : ((ref) == USART3) ? cmuClock_USART3 \
+			       : -1)
+#elif (USART_COUNT == 5)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : ((ref) == USART2) ? cmuClock_USART2 \
+			       : ((ref) == USART3) ? cmuClock_USART3 \
+			       : ((ref) == USART4) ? cmuClock_USART4 \
+			       : -1)
+#elif (USART_COUNT == 6)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : ((ref) == USART1) ? cmuClock_USART1 \
+			       : ((ref) == USART2) ? cmuClock_USART2 \
+			       : ((ref) == USART3) ? cmuClock_USART3 \
+			       : ((ref) == USART4) ? cmuClock_USART4 \
+			       : ((ref) == USART5) ? cmuClock_USART5 \
+			       : -1)
+#else
+#error "Undefined number of USARTs."
+#endif /* USART_COUNT */
+
+#define CLOCK_UART(ref)		(((ref) == UART0) ? cmuClock_UART0  \
+			       : ((ref) == UART1) ? cmuClock_UART1  \
+			       : -1)
+#define GET_GECKO_USART_CLOCK(id) CLOCK_USART((USART_TypeDef *)DT_INST_REG_ADDR(id))
+#define GET_GECKO_UART_CLOCK(id) CLOCK_UART((USART_TypeDef *)DT_INST_REG_ADDR(id))
+#endif /* DT_NODE_HAS_PROP(id, peripheral_id) */
 
 /* Helper define to determine if SOC supports hardware flow control */
 #if ((_SILICON_LABS_32B_SERIES > 0) ||					\
@@ -566,7 +610,7 @@ static const struct uart_driver_api uart_gecko_driver_api = {
 									       \
 	static const struct uart_gecko_config uart_gecko_cfg_##idx = {	       \
 		.base = (USART_TypeDef *)DT_INST_REG_ADDR(idx),		       \
-		.clock = CLOCK_UART(DT_INST_PROP(idx, peripheral_id)),	       \
+		.clock = GET_GECKO_UART_CLOCK(idx),			       \
 		.baud_rate = DT_INST_PROP(idx, current_speed),		       \
 		GECKO_UART_HW_FLOW_CONTROL(idx)				       \
 		GECKO_UART_RX_TX_PINS(idx)				       \
@@ -624,7 +668,7 @@ DT_INST_FOREACH_STATUS_OKAY(GECKO_UART_INIT)
 	static const struct uart_gecko_config usart_gecko_cfg_##idx = {        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),		       \
 		.base = (USART_TypeDef *)DT_INST_REG_ADDR(idx),		       \
-		.clock = CLOCK_USART(DT_INST_PROP(idx, peripheral_id)),        \
+		.clock = GET_GECKO_USART_CLOCK(idx),			       \
 		.baud_rate = DT_INST_PROP(idx, current_speed),		       \
 		GECKO_USART_IRQ_HANDLER_FUNC(idx)			       \
 		};							       \
@@ -647,7 +691,7 @@ DT_INST_FOREACH_STATUS_OKAY(GECKO_UART_INIT)
 									       \
 	static const struct uart_gecko_config usart_gecko_cfg_##idx = {        \
 		.base = (USART_TypeDef *)DT_INST_REG_ADDR(idx),		       \
-		.clock = CLOCK_USART(DT_INST_PROP(idx, peripheral_id)),        \
+		.clock = GET_GECKO_USART_CLOCK(idx),			       \
 		.baud_rate = DT_INST_PROP(idx, current_speed),		       \
 		GECKO_UART_HW_FLOW_CONTROL(idx)				       \
 		GECKO_UART_RX_TX_PINS(idx)				       \
