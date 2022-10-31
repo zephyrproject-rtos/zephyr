@@ -255,6 +255,8 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 		}
 
 		memset(&contexts[i], 0, sizeof(contexts[i]));
+		k_mutex_init(&contexts[i].lock);
+
 		/* FIXME - Figure out a way to get the correct network interface
 		 * as it is not known at this point yet.
 		 */
@@ -311,8 +313,6 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 		if (IS_ENABLED(CONFIG_NET_CONTEXT_SYNC_RECV)) {
 			k_sem_init(&contexts[i].recv_data_wait, 1, K_SEM_MAX_LIMIT);
 		}
-
-		k_mutex_init(&contexts[i].lock);
 
 		contexts[i].flags |= NET_CONTEXT_IN_USE;
 		*context = &contexts[i];
