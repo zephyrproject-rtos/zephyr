@@ -11,8 +11,4 @@ config SOC
 config FPU
 	default y
 
-config IPM_IMX
-	default y
-	depends on IPM
-
 endif # SOC_MCIMX6X_M4

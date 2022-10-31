@@ -4,9 +4,6 @@
 # Copyright (c) 2021 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-config IPM_NRFX
-	default IPM
-
 config MBOX_NRFX_IPC
 	default MBOX
 
