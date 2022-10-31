@@ -182,30 +182,41 @@ typedef void (*ft8xx_copro_cmd_snapshot2_t)(const struct device *dev,  uint32_t 
 typedef void (*ft8xx_copro_cmd_setbitmap_t)(const struct device *dev, uint32_t source, uint16_t fmt, uint16_t width, uint16_t height); //ft81x
 typedef void (*ft8xx_copro_cmd_logo_t)(const struct device *dev);
 
-typedef void (*ft8xx_copro_cmd_cmd_flasherase_t)
-typedef void (*ft8xx_copro_cmd_cmd_flashwrite_t)
-typedef void (*ft8xx_copro_cmd_cmd_flashupdate_t)
-typedef void (*ft8xx_copro_cmd_cmd_flashdetach_t)
-typedef void (*ft8xx_copro_cmd_cmd_flashattach_t)
-typedef void (*ft8xx_copro_cmd_cmd_flashfast_t)
-typedef void (*ft8xx_copro_cmd_cmd_flashspidesel_t)
-typedef void (*ft8xx_copro_cmd_cmd_flashtx_t)
-typedef void (*ft8xx_copro_cmd_cmd_flashrx_t)
-typedef void (*ft8xx_copro_cmd_cmd_clearcache_t)
-typedef void (*ft8xx_copro_cmd_cmd_flashsource_t)
-typedef void (*ft8xx_copro_cmd_cmd_videostartf_t)
-typedef void (*ft8xx_copro_cmd_cmd_appendf_t)
+//bt81x
+typedef void (*ft8xx_copro_cmd_cmd_flasherase_t)(const struct device *dev); 
+typedef void (*ft8xx_copro_cmd_cmd_flashwrite_t)(const struct device *dev, uint32_t ptr, uint32_t num );
+typedef void (*ft8xx_copro_cmd_cmd_flashprogram_t)(const struct device *dev, uint32_t dest, uint32_t src, uint32_t num );
+typedef void (*ft8xx_copro_cmd_cmd_flashread_t)(const struct device *dev, uint32_t dest, uint32_t src, uint32_t num );
+typedef void (*ft8xx_copro_cmd_cmd_appendf_t)(const struct device *dev, uint32_t ptr,uint32_t num);
+typedef void (*ft8xx_copro_cmd_cmd_flashupdate_t)(const struct device *dev, uint32_t dest, uint32_t src, uint32_t num );
+typedef void (*ft8xx_copro_cmd_cmd_flashdetach_t)(const struct device *dev);
+typedef void (*ft8xx_copro_cmd_cmd_flashattach_t)(const struct device *dev);
+typedef void (*ft8xx_copro_cmd_cmd_flashfast_t)(const struct device *dev, uint32_t result );
+typedef void (*ft8xx_copro_cmd_cmd_flashspidesel_t)(const struct device *dev);
+typedef void (*ft8xx_copro_cmd_cmd_flashspitx_t)(const struct device *dev, uint32_t num, unt8_t *data );
+typedef void (*ft8xx_copro_cmd_cmd_flashspirx_t)(const struct device *dev, uint32_t ptr, uint32_t num );
+typedef void (*ft8xx_copro_cmd_cmd_clearcache_t)(const struct device *dev);
 
-typedef void (*ft8xx_copro_cmd_cmd_videostart_t)
-typedef void (*ft8xx_copro_cmd_cmd_videostartf_t)
-typedef void (*ft8xx_copro_cmd_cmd_videoframe_t)
-typedef void (*ft8xx_copro_cmd_cmd_playvideo_t)
-typedef void (*ft8xx_copro_cmd_cmd_animframe_t)
-typedef void (*ft8xx_copro_cmd_cmd_animframeram_t)
-typedef void (*ft8xx_copro_cmd_cmd_animstart_t)
-typedef void (*ft8xx_copro_cmd_cmd_animstop_t)
-typedef void (*ft8xx_copro_cmd_cmd_animxy_t)
-typedef void (*ft8xx_copro_cmd_cmd_animdraw_t)
+//bt81x
+typedef void (*ft8xx_copro_cmd_cmd_flashsource_t)(const struct device *dev, uint32_t ptr);
+typedef void (*ft8xx_copro_cmd_cmd_videostartf_t)(const struct device *dev,);
+typedef void (*ft8xx_copro_cmd_cmd_animstart_t)(const struct device *dev, int32_t ch, uint32_t aoptr, uint32_t loop);
+typedef void (*ft8xx_copro_cmd_cmd_animstartram_t)(const struct device *dev, int32_t ch, uint32_t aoptr, uint32_t loop);
+typedef void (*ft8xx_copro_cmd_cmd_animstop_t)(const struct device *dev, int32_t ch);
+typedef void (*ft8xx_copro_cmd_cmd_animxy_t)(const struct device *dev, int32_t ch, int16_t x, int16_t y );
+typedef void (*ft8xx_copro_cmd_cmd_animdraw_t)(const struct device *dev, int32_t ch);
+typedef void (*ft8xx_copro_cmd_cmd_animframe_t)(const struct device *dev, int16_t x, int16_t y, uint32_t aoptr, uint32_t frame );
+typedef void (*ft8xx_copro_cmd_cmd_animframeram_t)(const struct device *dev, int16_t x, int16_t y, uint32_t aoptr, uint32_t frame );
+
+
+typedef void (*ft8xx_copro_cmd_sync_t)(const struct device *dev); //bt81x
+typedef void (*ft8xx_copro_cmd_bitmap_transform_t)(const struct device *dev, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t tx0, int32_t ty0, int32_t tx1, int32_t ty1, int32_t tx2, int32_t ty2, uint16_t result ); //bt81x
+typedef void (*ft8xx_copro_cmd_testcard_t)(const struct device *dev); //bt817/8
+typedef void (*ft8xx_copro_cmd_wait_t)(const struct device *dev, uint32_t us); //bt817/8
+typedef void (*ft8xx_copro_cmd_fontcache_t)(const struct device *dev, uint32_t font, int32_t ptr, uint32_t num); //bt817/8
+typedef void (*ft8xx_copro_cmd_fontcachequery_t)(const struct device *dev, uint32_t total, int32_t used);  //bt817/8
+typedef void (*ft8xx_copro_cmd_hsf_t)(const struct device *dev, uint32_t w );  //bt817/8
+typedef void (*ft8xx_copro_cmd_pclkfreq_t)(const struct device *dev, uint32_t ftarget, int32_t rounding, uint32_t factual ); //bt817/8
 
 
 
@@ -246,9 +257,9 @@ struct ft8xx_api {
 // coprocessor commamd list functions (bt817/8)
 
     ft8xx_copro_cmd_newlist_t       ft8xx_copro_cmd_newlist, 
+    ft8xx_copro_cmd_endlist_t       ft8xx_copro_cmd_endlist, 
     ft8xx_copro_cmd_calllist_t      ft8xx_copro_cmd_calllist, 
     ft8xx_copro_cmd_return_t        ft8xx_copro_cmd_return, 
-    ft8xx_copro_cmd_endlist_t       ft8xx_copro_cmd_endlist, 
 
 
 // coprocessor displaylist functions
@@ -290,7 +301,7 @@ struct ft8xx_api {
     ft8xx_copro_cmd_inflate2_t      ft8xx_copro_cmd_inflate2,   //bt81x only
     ft8xx_copro_cmd_loadimage_t     ft8xx_copro_cmd_loadimage,
     ft8xx_copro_cmd_mediafifo_t     ft8xx_copro_cmd_mediafifo,  //ft81x 
-    ft8xx_copro_cmd_videoframe_t    ft8xx_copro_cmd_videoframe, //bt81x only
+    ft8xx_copro_cmd_videoframe_t    ft8xx_copro_cmd_videoframe, //ft81x
     ft8xx_copro_cmd_getptr_t        ft8xx_copro_cmd_getptr,
     ft8xx_copro_cmd_getprops_t      ft8xx_copro_cmd_getprops,
     ft8xx_copro_cmd_getimage_t      ft8xx_copro_cmd_getimage,   //bt81x only
@@ -319,41 +330,44 @@ struct ft8xx_api {
     ft8xx_copro_cmd_setfont_t       ft8xx_copro_cmd_setfont,
     ft8xx_copro_cmd_track_t         ft8xx_copro_cmd_track,
 
-    ft8xx_copro_cmd_apilevel_t          ft8xx_copro_cmd_apilevel,        //bt817/8 only
-    ft8xx_copro_cmd_wait_t              ft8xx_copro_cmd_wait,            //bt817/8 only
+    ft8xx_copro_cmd_sync_t              ft8xx_copro_cmd_sync,            //bt81x
+    ft8xx_copro_cmd_bitmap_transform_t  ft8xx_copro_cmd_bitmap_transform //bt81x
     ft8xx_copro_cmd_testcard_t          ft8xx_copro_cmd_testcard,        //bt817/8 only
+    ft8xx_copro_cmd_wait_t              ft8xx_copro_cmd_wait,            //bt817/8 only
+    ft8xx_copro_cmd_apilevel_t          ft8xx_copro_cmd_apilevel,        //bt817/8 only
+    ft8xx_copro_cmd_fontcache_t         ft8xx_copro_cmd_fontcache,       //bt817/8 only  
     ft8xx_copro_cmd_fontcachequery_t    ft8xx_copro_cmd_fontcachequery,  //bt817/8 only
     ft8xx_copro_cmd_hsf_t               ft8xx_copro_cmd_hsf,             //bt817/8 only
     ft8xx_copro_cmd_pclkfreq_t          ft8xx_copro_cmd_pclkfreq,        //bt817/8 only
 
-// flash operation
+// flash operation (bt81x)
 
     ft8xx_copro_cmd_cmd_flasherase_t	ft8xx_copro_cmd_cmd_flasherase,
     ft8xx_copro_cmd_cmd_flashwrite_t	ft8xx_copro_cmd_cmd_flashwrite,
+    ft8xx_copro_cmd_cmd_flashwprogram_t	ft8xx_copro_cmd_cmd_flashprogram,
+    ft8xx_copro_cmd_cmd_flashread_t	    ft8xx_copro_cmd_cmd_flashread,
+    ft8xx_copro_cmd_cmd_appendf_t	    ft8xx_copro_cmd_cmd_appendf,
     ft8xx_copro_cmd_cmd_flashupdate_t	ft8xx_copro_cmd_cmd_flashupdate,
     ft8xx_copro_cmd_cmd_flashdetach_t	ft8xx_copro_cmd_cmd_flashdetach,
     ft8xx_copro_cmd_cmd_flashattach_t	ft8xx_copro_cmd_cmd_flashattach,
     ft8xx_copro_cmd_cmd_flashfast_t	    ft8xx_copro_cmd_cmd_flashfast,
     ft8xx_copro_cmd_cmd_flashspidesel_t	ft8xx_copro_cmd_cmd_flashspidesel,
-    ft8xx_copro_cmd_cmd_flashtx_t	    ft8xx_copro_cmd_cmd_flashtx,
-    ft8xx_copro_cmd_cmd_flashrx_t	    ft8xx_copro_cmd_cmd_flashrx,
+    ft8xx_copro_cmd_cmd_flashspitx_t	ft8xx_copro_cmd_cmd_flashtx,
+    ft8xx_copro_cmd_cmd_flashspirx_t	ft8xx_copro_cmd_cmd_flashrx,
     ft8xx_copro_cmd_cmd_clearcache_t	ft8xx_copro_cmd_cmd_clearcache,
-    ft8xx_copro_cmd_cmd_flashsource_t	ft8xx_copro_cmd_cmd_flashsource,
-    ft8xx_copro_cmd_cmd_videostartf_t	ft8xx_copro_cmd_cmd_videostartf,
-    ft8xx_copro_cmd_cmd_appendf_t	    ft8xx_copro_cmd_cmd_appendf,
 
-// video playback (bt81x only)
-
-    ft8xx_copro_cmd_cmd_videostart_t	ft8xx_copro_cmd_cmd_videostart,
-    ft8xx_copro_cmd_cmd_videostartf_t	ft8xx_copro_cmd_cmd_videostartf,
-    ft8xx_copro_cmd_cmd_videoframe_t	ft8xx_copro_cmd_cmd_videoframe,
-    ft8xx_copro_cmd_cmd_playvideo_t	    ft8xx_copro_cmd_cmd_playvideo,	
-    ft8xx_copro_cmd_cmd_animframe_t	    ft8xx_copro_cmd_cmd_animframe,
-    ft8xx_copro_cmd_cmd_animframeram_t	ft8xx_copro_cmd_cmd_animframeram,
-    ft8xx_copro_cmd_cmd_animstart_t	    ft8xx_copro_cmd_cmd_animstart,
-    ft8xx_copro_cmd_cmd_animstop_t	    ft8xx_copro_cmd_cmd_animstop,
-    ft8xx_copro_cmd_cmd_animxy_t	    ft8xx_copro_cmd_cmd_animxy,
-    ft8xx_copro_cmd_cmd_animdraw_t	    ft8xx_copro_cmd_cmd_animdraw,
+// video playback 
+    ft8xx_copro_cmd_cmd_videostart_t	ft8xx_copro_cmd_cmd_videostart, //ft81x
+    ft8xx_copro_cmd_cmd_flashsource_t	ft8xx_copro_cmd_cmd_flashsource, //bt81x
+    ft8xx_copro_cmd_cmd_videostartf_t	ft8xx_copro_cmd_cmd_videostartf, //bt81x
+    ft8xx_copro_cmd_cmd_videoframe_t	ft8xx_copro_cmd_cmd_videoframe, //ft81x
+    ft8xx_copro_cmd_cmd_playvideo_t	    ft8xx_copro_cmd_cmd_playvideo,	//ft81x
+    ft8xx_copro_cmd_cmd_animframe_t	    ft8xx_copro_cmd_cmd_animframe,  //bt81x
+    ft8xx_copro_cmd_cmd_animframeram_t	ft8xx_copro_cmd_cmd_animframeram, //bt81x
+    ft8xx_copro_cmd_cmd_animstart_t	    ft8xx_copro_cmd_cmd_animstart, //bt81x
+    ft8xx_copro_cmd_cmd_animstop_t	    ft8xx_copro_cmd_cmd_animstop, //bt81x
+    ft8xx_copro_cmd_cmd_animxy_t	    ft8xx_copro_cmd_cmd_animxy, //bt81x
+    ft8xx_copro_cmd_cmd_animdraw_t	    ft8xx_copro_cmd_cmd_animdraw, //bt81x
 
 
 //  memory access api (equivelent to flash ram api)
