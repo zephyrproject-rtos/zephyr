@@ -16,6 +16,8 @@ config CAVS_TIMER
 
 config INTEL_ADSP_TIMER
 	bool "Intel Audio DSP timer"
+	default y
+	depends on DT_HAS_INTEL_ADSP_TIMER_ENABLED
 	select CAVS_TIMER
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
