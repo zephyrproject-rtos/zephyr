@@ -22,6 +22,7 @@ static struct arc_mpu_region mpu_regions[] = {
 			 REGION_IO_ATTR),
 #endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
 
+#ifdef CONFIG_HARVARD
 #if DT_REG_SIZE(DT_INST(0, arc_iccm)) > 0
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
@@ -36,7 +37,25 @@ static struct arc_mpu_region mpu_regions[] = {
 			 DT_REG_SIZE(DT_INST(0, arc_dccm)),
 			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
 #endif
+#else
 
+#if DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) > 0
+	/* Region RAM */
+	MPU_REGION_ENTRY("RAM",
+			 DT_REG_ADDR(DT_CHOSEN(zephyr_sram)),
+			 DT_REG_SIZE(DT_CHOSEN(zephyr_sram)),
+			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
+#endif
+
+#if DT_REG_SIZE(DT_CHOSEN(zephyr_flash)) > 0
+	/* Region FLASH */
+	MPU_REGION_ENTRY("FLASH",
+			 DT_REG_ADDR(DT_CHOSEN(zephyr_flash)),
+			 DT_REG_SIZE(DT_CHOSEN(zephyr_flash)),
+			 REGION_ROM_ATTR),
+#endif
+
+#endif
 /*
  * Region peripheral is shared by secure world and normal world by default,
  * no need a static mpu entry. If some peripherals belong to secure world,
