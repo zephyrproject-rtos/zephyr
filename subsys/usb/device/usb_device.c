@@ -739,6 +739,57 @@ static bool usb_set_configuration(struct usb_setup_packet *setup)
 }
 
 /*
+ * @brief Get 32-bit endpoint bit-mask for specified iface/alt_setting
+ *
+ * Iterate through the USB interface descriptor and accumulate
+ * a bit-mask representing all the endpoints used by by the specified
+ * interface and alternate-setting combination. OUT endpoints are
+ * represented by the lower 16 bit-positions, while the upper 16
+ * bit-positions indicate IN endpoints
+ *
+ * @param [in] iface        The USB interface of interest
+ *        [in] alt_setting  The alternate setting of above interface for
+ *                          which endpoint bit-mask should be accumulated
+ *
+ * @return The accumulated 32-bit endpoint bit-mask
+ */
+static uint32_t get_ep_bm_for_alt_setting(uint8_t iface, uint8_t alt_setting)
+{
+	const uint8_t *p = usb_dev.descriptors;
+	struct usb_ep_descriptor *ep = NULL;
+	bool alt_setting_match = false;
+	uint32_t ep_bm = 0;
+
+	while (p[DESC_bLength] != 0U) {
+		switch (p[DESC_bDescriptorType]) {
+		case USB_DESC_INTERFACE:
+			if (iface == p[INTF_DESC_bInterfaceNumber] &&
+			    alt_setting == p[INTF_DESC_bAlternateSetting]) {
+				alt_setting_match = true;
+			} else {
+				alt_setting_match = false;
+			}
+
+			break;
+		case USB_DESC_ENDPOINT:
+			if (alt_setting_match) {
+				ep = (struct usb_ep_descriptor *) p;
+				ep_bm |= get_ep_bm_from_addr(ep->bEndpointAddress);
+			}
+
+			break;
+		default:
+			break;
+		}
+
+		/* skip to next descriptor */
+		p += p[DESC_bLength];
+	}
+
+	return ep_bm;
+}
+
+/*
  * @brief set USB interface
  *
  * @param [in] setup        The setup packet
@@ -753,8 +804,13 @@ static bool usb_set_interface(struct usb_setup_packet *setup)
 	uint8_t cur_alt_setting = 0xFF;
 	uint8_t cur_iface = 0xFF;
 	bool ret = false;
+	uint32_t ep_bm_reconfigured = 0;
+	uint32_t ep_bm_active;
+	uint32_t ep_bm;
 
 	LOG_DBG("Set Interface %u alternate %u", setup->wIndex, setup->wValue);
+
+	ep_bm_active = get_ep_bm_for_alt_setting(setup->wIndex, setup->wValue);
 
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
@@ -776,8 +832,21 @@ static bool usb_set_interface(struct usb_setup_packet *setup)
 		case USB_DESC_ENDPOINT:
 			if (cur_iface == setup->wIndex) {
 				ep = (struct usb_ep_descriptor *)p;
-				ret = usb_eps_reconfigure(ep, cur_alt_setting,
-							  setup->wValue);
+
+				/*
+				 * only reconfigure endpoint if it hasn't previously
+				 * been reconfigured; AND:
+				 * a) currently iterating over selected alt_setting; OR
+				 * b) endpoint not used in selected alt_setting
+				 */
+				ep_bm = get_ep_bm_from_addr(ep->bEndpointAddress);
+				if (((ep_bm & ep_bm_reconfigured) == 0) &&
+				    (cur_alt_setting == setup->wValue ||
+				     (ep_bm_active & ep_bm) == 0)) {
+					ret = usb_eps_reconfigure(
+						ep, cur_alt_setting, setup->wValue);
+					ep_bm_reconfigured |= ep_bm;
+				}
 			}
 			break;
 		default:
