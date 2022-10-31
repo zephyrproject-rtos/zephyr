@@ -72,6 +72,13 @@ static int ipm_dummy_send(const struct device *d, int wait, uint32_t id,
 
 	irq_offload(ipm_dummy_isr, (const void *)d);
 
+	if (IS_ENABLED(CONFIG_ARC)) {
+		/* ARC's irq_offload doesn't switch threads, so we
+		 * need to do it manually.  See #51814
+		 */
+		k_yield();
+	}
+
 	if (wait) {
 		while (driver_data->regs.busy) {
 			/* busy-wait */
