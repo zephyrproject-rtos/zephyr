@@ -256,3 +256,21 @@ int bt_crypto_h7(const uint8_t salt[16], const uint8_t w[16], uint8_t res[16])
 
 	return 0;
 }
+
+int bt_crypto_h8(const uint8_t k[16], const uint8_t s[16], const uint8_t key_id[4], uint8_t res[16])
+{
+	int err;
+	uint8_t ik[16];
+
+	err = bt_crypto_aes_cmac(s, k, 16, ik);
+	if (err) {
+		return err;
+	}
+
+	err = bt_crypto_aes_cmac(ik, key_id, 4, res);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
