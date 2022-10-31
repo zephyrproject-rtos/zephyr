@@ -504,6 +504,8 @@ struct hl7800_iface_ctx {
 	enum mdm_hl7800_sleep sleep_state;
 	enum hl7800_lpm low_power_mode;
 	enum mdm_hl7800_network_state network_state;
+	bool network_dropped;
+	bool dns_ready;
 	enum net_operator_status operator_status;
 	struct tm local_time;
 	int32_t local_time_offset;
@@ -1831,7 +1833,7 @@ static void dns_work_cb(struct k_work *work)
 #endif
 						       NULL };
 
-	if (ictx.iface && net_if_is_up(ictx.iface)) {
+	if (ictx.iface && net_if_is_up(ictx.iface) && !ictx.dns_ready) {
 		/* set new DNS addr in DNS resolver */
 		LOG_DBG("Refresh DNS resolver");
 		dnsCtx = dns_resolve_get_default();
@@ -1841,6 +1843,7 @@ static void dns_work_cb(struct k_work *work)
 			LOG_ERR("dns_resolve_init fail (%d)", ret);
 			return;
 		}
+		ictx.dns_ready = true;
 	}
 #endif
 }
@@ -2021,7 +2024,13 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	/* store new dns */
 	addr_start = delims[4] + 1;
 	addr_len = delims[5] - addr_start;
+	strncpy(temp_addr_str, addr_start, addr_len);
+	temp_addr_str[addr_len] = 0;
 	if (is_ipv4) {
+		ret = strncmp(temp_addr_str, ictx.dns_v4_string, addr_len);
+		if (ret != 0) {
+			ictx.dns_ready = false;
+		}
 		strncpy(ictx.dns_v4_string, addr_start, addr_len);
 		ictx.dns_v4_string[addr_len] = 0;
 		ret = net_addr_pton(AF_INET, ictx.dns_v4_string, &ictx.dns_v4);
@@ -2029,6 +2038,10 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	}
 #ifdef CONFIG_NET_IPV6
 	else {
+		ret = strncmp(temp_addr_str, ictx.dns_v6_string, addr_len);
+		if (ret != 0) {
+			ictx.dns_ready = false;
+		}
 		/* store HL7800 formatted IPv6 DNS string temporarily */
 		strncpy(ictx.dns_v6_string, addr_start, addr_len);
 
@@ -3162,6 +3175,7 @@ static void iface_status_work_cb(struct k_work *work)
 {
 	int ret;
 	hl7800_lock();
+	enum mdm_hl7800_network_state state;
 
 	if (!ictx.initialized && ictx.restarting) {
 		LOG_DBG("Wait for driver init, process network state later");
@@ -3191,6 +3205,15 @@ static void iface_status_work_cb(struct k_work *work)
 
 	LOG_DBG("Updating network state...");
 
+	state = ictx.network_state;
+	/* Ensure we bring the network interface down and then re-check the current state */
+	if (ictx.network_dropped) {
+		ictx.network_dropped = false;
+		state = HL7800_OUT_OF_COVERAGE;
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.iface_status_work,
+					    IFACE_WORK_DELAY);
+	}
+
 	/* Query operator selection */
 	ret = send_at_cmd(NULL, "AT+COPS?", MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
@@ -3198,7 +3221,7 @@ static void iface_status_work_cb(struct k_work *work)
 	}
 
 	/* bring iface up/down */
-	switch (ictx.network_state) {
+	switch (state) {
 	case HL7800_HOME_NETWORK:
 	case HL7800_ROAMING:
 		if (ictx.iface) {
@@ -3210,14 +3233,14 @@ static void iface_status_work_cb(struct k_work *work)
 	default:
 		if (ictx.iface && (ictx.low_power_mode != HL7800_LPM_PSM)) {
 			LOG_DBG("HL7800 iface DOWN");
+			ictx.dns_ready = false;
 			net_if_carrier_off(ictx.iface);
 		}
 		break;
 	}
 
 	if ((ictx.iface && !net_if_is_up(ictx.iface)) ||
-	    (ictx.low_power_mode == HL7800_LPM_PSM &&
-	     ictx.network_state == HL7800_OUT_OF_COVERAGE)) {
+	    (ictx.low_power_mode == HL7800_LPM_PSM && state == HL7800_OUT_OF_COVERAGE)) {
 		hl7800_stop_rssi_work();
 		notify_all_tcp_sockets_closed();
 	} else if (ictx.iface && net_if_is_up(ictx.iface)) {
@@ -3755,7 +3778,11 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 
 	id = strtol(value, NULL, 10);
 	notif_val = strtol(delim + 1, NULL, 10);
-	LOG_DBG("+K**P_NOTIF: %d,%d", id, notif_val);
+	if (notif_val == HL7800_TCP_DISCON) {
+		LOG_DBG("+K**P_NOTIF: %d,%d", id, notif_val);
+	} else {
+		LOG_WRN("+K**P_NOTIF: %d,%d", id, notif_val);
+	}
 	sock = socket_from_id(id);
 	if (!sock) {
 		goto done;
@@ -3772,6 +3799,7 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 		sock->error = -ENOTCONN;
 		break;
 	default:
+		ictx.network_dropped = true;
 		err = true;
 		sock->error = -EIO;
 		break;
@@ -3787,6 +3815,11 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 		k_work_reschedule_for_queue(&hl7800_workq, &sock->notif_work, MDM_SOCK_NOTIF_DELAY);
 		if (trigger_sem) {
 			k_sem_give(&sock->sock_send_sem);
+		}
+
+		if (ictx.network_dropped) {
+			k_work_reschedule_for_queue(&hl7800_workq, &ictx.iface_status_work,
+						    IFACE_WORK_DELAY);
 		}
 	}
 done:
