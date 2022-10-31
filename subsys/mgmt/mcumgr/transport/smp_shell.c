@@ -191,7 +191,7 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 int smp_shell_init(void)
 {
 	zephyr_smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
-				  smp_shell_get_mtu, NULL, NULL);
+				  smp_shell_get_mtu, NULL, NULL, NULL);
 
 	return 0;
 }
