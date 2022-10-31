@@ -13,7 +13,7 @@ properties:
 
     peripheral-id:
       type: int
-      required: true
+      required: false
       description: peripheral ID
 
     # Note: Not all SoC series support setting individual pin location. If this

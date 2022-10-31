@@ -58,7 +58,6 @@
 			reg = <0x5005C000 0x400>;
 			interrupts = <13 0>, <14 0>;
 			interrupt-names = "rx", "tx";
-			peripheral-id = <0>;
 			status = "disabled";
 		};
 
@@ -67,7 +66,6 @@
 			reg = <0x50060000 0x400>;
 			interrupts = <15 0>, <16 0>;
 			interrupt-names = "rx", "tx";
-			peripheral-id = <1>;
 			status = "disabled";
 		};
 
