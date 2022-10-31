@@ -9,9 +9,6 @@ config THINGY53_INIT_PRIORITY
 	help
 	  Initialization priority of the Thingy:53.
 
-config IPM_NRFX
-	default IPM
-
 config MBOX_NRFX_IPC
 	default MBOX
 
