@@ -46,9 +46,9 @@ struct can_loopback_data {
 		      CONFIG_CAN_LOOPBACK_TX_THREAD_STACK_SIZE);
 };
 
-static void dispatch_frame(const struct device *dev,
-			   const struct can_frame *frame,
-			   struct can_loopback_filter *filter)
+static void receive_frame(const struct device *dev,
+			  const struct can_frame *frame,
+			  struct can_loopback_filter *filter)
 {
 	struct can_frame frame_tmp = *frame;
 
@@ -82,9 +82,9 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 
 		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
 			filter = &data->filters[i];
-			if (filter->rx_cb &&
+			if (filter->rx_cb != NULL &&
 			    can_utils_filter_match(&frame.frame, &filter->filter)) {
-				dispatch_frame(dev, &frame.frame, filter);
+				receive_frame(dev, &frame.frame, filter);
 			}
 		}
 
