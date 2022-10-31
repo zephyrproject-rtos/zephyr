@@ -5,7 +5,6 @@ tests:
     tags: can
     depends_on: can
     filter: dt_chosen_enabled("zephyr,canbus")
-    platform_exclude: native_posix native_posix_64
     harness: console
     harness_config:
       type: one_line
