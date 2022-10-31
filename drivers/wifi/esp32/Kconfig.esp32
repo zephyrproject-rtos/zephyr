@@ -240,4 +240,10 @@ config ESP32_WIFI_NET_ALLOC_SPIRAM
 	  Allocate memory of WiFi and NET stack in SPIRAM, increasing available RAM memory space
 	  for application stack.
 
+config ESP_WIFI_SOFTAP_SUPPORT
+	bool
+	default y
+	help
+	  Hidden option to enable Wi-Fi SoftAP functions in WPA supplicant and RF libraries.
+
 endif # WIFI_ESP32
