@@ -1696,11 +1696,11 @@ State machine framework:
 GD32 Platforms:
   status: maintained
   maintainers:
+    - cameled
     - nandojve
   collaborators:
     - gmarull
     - soburi
-    - cameled
   files:
     - boards/arm/gd32*/
     - boards/riscv/gd32*/
