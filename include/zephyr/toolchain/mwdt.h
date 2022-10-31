@@ -82,6 +82,9 @@
 
 #define __no_optimization __attribute__((optnone))
 
+#define TOOLCHAIN_HAS_C_GENERIC                 1
+#define TOOLCHAIN_HAS_C_AUTO_TYPE               1
+
 #include <zephyr/toolchain/gcc.h>
 
 #undef BUILD_ASSERT
