@@ -203,6 +203,11 @@ static void can_loopback_remove_rx_filter(const struct device *dev, int filter_i
 {
 	struct can_loopback_data *data = dev->data;
 
+	if (filter_id >= ARRAY_SIZE(data->filters)) {
+		LOG_ERR("filter ID %d out-of-bounds", filter_id);
+		return;
+	}
+
 	LOG_DBG("Remove filter ID: %d", filter_id);
 	k_mutex_lock(&data->mtx, K_FOREVER);
 	data->filters[filter_id].rx_cb = NULL;
