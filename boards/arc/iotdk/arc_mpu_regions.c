@@ -19,6 +19,20 @@ static struct arc_mpu_region mpu_regions[] = {
 			 DT_REG_ADDR(DT_INST(0, arc_dccm)),
 			 DT_REG_SIZE(DT_INST(0, arc_dccm)),
 			 REGION_KERNEL_RAM_ATTR),
+	/* Region XCCM */
+#if DT_REG_SIZE(DT_INST(0, arc_xccm)) > 0
+	MPU_REGION_ENTRY("XCCM",
+			 DT_REG_ADDR(DT_INST(0, arc_xccm)),
+			 DT_REG_SIZE(DT_INST(0, arc_xccm)),
+			 REGION_KERNEL_RAM_ATTR),
+#endif
+	/* Region YCCM */
+#if DT_REG_SIZE(DT_INST(0, arc_yccm)) > 0
+	MPU_REGION_ENTRY("YCCM",
+			 DT_REG_ADDR(DT_INST(0, arc_yccm)),
+			 DT_REG_SIZE(DT_INST(0, arc_yccm)),
+			 REGION_KERNEL_RAM_ATTR),
+#endif
 	/* Region DDR RAM */
 	MPU_REGION_ENTRY("SRAM",
 			CONFIG_SRAM_BASE_ADDRESS,
