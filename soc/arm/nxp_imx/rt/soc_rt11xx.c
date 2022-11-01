@@ -16,7 +16,9 @@
 #include <fsl_dcdc.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
+#endif
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
