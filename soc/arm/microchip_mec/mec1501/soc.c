@@ -7,6 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
@@ -14,6 +15,8 @@
 /* MEC devices IDs with special PLL handling */
 #define MCHP_GCFG_DID_DEV_ID_MEC150x    0x0020U
 #define MCHP_TRIM_ENABLE_INT_OSCILLATOR 0x06U
+
+#define TEST_CLK_OUT_PIN_COUNT		1
 
 /*
  * Make sure PCR sleep enables are clear except for crypto
@@ -130,9 +133,36 @@ static int soc_ecia_init(void)
 	return 0;
 }
 
+static void configure_debug_interface(void)
+{
+	/* No debug support */
+	ECS_REGS->DEBUG_CTRL = 0;
+	ECS_REGS->ETM_CTRL = 0;
+
+#ifdef CONFIG_SOC_MEC1501_DEBUG_WITHOUT_TRACING
+	/* Release JTAG TDI and JTAG TDO pins so they can be
+	 * controlled by their respective PCR register (UART2).
+	 * For more details see table 44-1
+	 */
+	ECS_REGS->DEBUG_CTRL = (MCHP_ECS_DCTRL_DBG_EN |
+				MCHP_ECS_DCTRL_MODE_SWD);
+#elif defined(CONFIG_SOC_MEC1501_DEBUG_AND_TRACING)
+	#if defined(CONFIG_SOC_MEC1501_DEBUG_AND_ETM_TRACING)
+	#pragma error "TRACE DATA are not exposed in HW connector"
+	#elif defined(CONFIG_SOC_MEC1501_DEBUG_AND_SWV_TRACING)
+		ECS_REGS->DEBUG_CTRL = (MCHP_ECS_DCTRL_DBG_EN |
+				MCHP_ECS_DCTRL_MODE_SWD_SWV);
+	#endif /* CONFIG_SOC_MEC1501_DEBUG_AND_TRACING */
+
+#endif /* CONFIG_SOC_MEC1501_DEBUG_WITHOUT_TRACING */
+}
+
 static int soc_init(const struct device *dev)
 {
 	uint32_t isave;
+#ifdef CONFIG_SOC_MEC1501_TEST_CLK_OUT
+	const pinctrl_soc_pin_t test_clk_out_pin = {MCHP_XEC_PINMUX(060, MCHP_AF2), 0};
+#endif
 
 	ARG_UNUSED(dev);
 
@@ -153,6 +183,25 @@ static int soc_init(const struct device *dev)
 	PCR_REGS->PROC_CLK_CTRL = CONFIG_SOC_MEC1501_PROC_CLK_DIV;
 
 	soc_ecia_init();
+
+	/* Configure GPIO bank before usage
+	 * VTR1 is not configurable
+	 * VTR2 doesn't need configuration if setting VTR2_STRAP
+	 */
+#ifdef CONFIG_SOC_MEC1501_VTR3_1_8V
+	ECS_REGS->GPIO_BANK_PWR |= MCHP_ECS_VTR3_LVL_18;
+#endif
+
+	configure_debug_interface();
+
+#ifdef CONFIG_SOC_MEC1501_TEST_CLK_OUT
+	/*
+	 * Deep sleep testing: Enable TEST_CLK_OUT on GPIO_060 function 2.
+	 * TEST_CLK_OUT is the PLL 48MHz conditioned output.
+	 */
+
+	pinctrl_configure_pins(&test_clk_out_pin, TEST_CLK_OUT_PIN_COUNT, 0);
+#endif
 
 	if (!isave) {
 		__enable_irq();
