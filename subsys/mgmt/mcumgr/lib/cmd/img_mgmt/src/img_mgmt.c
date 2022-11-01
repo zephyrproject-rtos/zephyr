@@ -242,6 +242,15 @@ img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 	return -1;
 }
 
+/*
+ * Resets upload status to defaults (no upload in progress)
+ */
+void img_mgmt_reset_upload(void)
+{
+	memset(&g_img_mgmt_state, 0, sizeof(g_img_mgmt_state));
+	g_img_mgmt_state.area_id = -1;
+}
+
 /**
  * Command handler: image erase
  */
@@ -282,6 +291,8 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 	}
 
 	rc = img_mgmt_erase_slot(slot);
+	img_mgmt_reset_upload();
+
 	if (rc != 0) {
 		img_mgmt_dfu_stopped();
 		return rc;
@@ -358,6 +369,7 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 	int rc;
 	struct img_mgmt_upload_action action;
 	bool last = false;
+	bool reset = false;
 
 	struct zcbor_map_decode_key_val image_upload_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_VAL(image, zcbor_uint32_decode, &req.image),
@@ -444,7 +456,7 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 			g_img_mgmt_state.off = g_img_mgmt_state.size;
 			img_mgmt_dfu_pending();
 			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
-			g_img_mgmt_state.area_id = -1;
+			reset = true;
 			goto end;
 		}
 #endif
@@ -478,9 +490,9 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 		} else {
 			/* Write failed, currently not able to recover from this */
 			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
-			g_img_mgmt_state.area_id = -1;
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 				img_mgmt_err_str_flash_write_failed);
+			reset = true;
 			goto end;
 		}
 
@@ -488,7 +500,7 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 			/* Done */
 			img_mgmt_dfu_pending();
 			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
-			g_img_mgmt_state.area_id = -1;
+			reset = true;
 		}
 	}
 end:
@@ -502,7 +514,14 @@ end:
 		return rc;
 	}
 
-	return img_mgmt_upload_good_rsp(ctxt);
+	rc = img_mgmt_upload_good_rsp(ctxt);
+
+	if (reset) {
+		/* Reset the upload state struct back to default */
+		img_mgmt_reset_upload();
+	}
+
+	return rc;
 }
 
 void
