@@ -2747,7 +2747,7 @@ uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 	instance->trigger_set_cb = trigger_set_cb;
 
 	instance->ticker_id_head = TICKER_NULL;
-	instance->ticks_current = 0U;
+	instance->ticks_current = cntr_cnt_get();
 	instance->ticks_elapsed_first = 0U;
 	instance->ticks_elapsed_last = 0U;
 
