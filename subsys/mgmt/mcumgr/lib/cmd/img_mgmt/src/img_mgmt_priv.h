@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include "img_mgmt/img_mgmt.h"
+#include "smp/smp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -134,12 +135,11 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 
 #define ERASED_VAL_32(x) (((x) << 24) | ((x) << 16) | ((x) << 8) | (x))
 int img_mgmt_erased_val(int slot, uint8_t *erased_val);
-struct mgmt_ctxt;
 
 int img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver);
 int img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash);
-int img_mgmt_state_read(struct mgmt_ctxt *ctxt);
-int img_mgmt_state_write(struct mgmt_ctxt *njb);
+int img_mgmt_state_read(struct smp_streamer *ctxt);
+int img_mgmt_state_write(struct smp_streamer *njb);
 
 #ifdef __cplusplus
 }

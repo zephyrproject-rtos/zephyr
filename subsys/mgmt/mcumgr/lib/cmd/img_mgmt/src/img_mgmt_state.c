@@ -192,7 +192,7 @@ err:
  * Command handler: image state read
  */
 int
-img_mgmt_state_read(struct mgmt_ctxt *ctxt)
+img_mgmt_state_read(struct smp_streamer *ctxt)
 {
 	char vers_str[IMG_MGMT_VER_MAX_STR_LEN];
 	uint8_t hash[IMAGE_HASH_LEN]; /* SHA256 hash */
@@ -200,7 +200,7 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 	uint32_t flags;
 	uint8_t state_flags;
 	int i;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
 	bool ok;
 	struct zcbor_string zhash = { .value = hash, .len = IMAGE_HASH_LEN };
 
@@ -260,7 +260,7 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
  * Command handler: image state write
  */
 int
-img_mgmt_state_write(struct mgmt_ctxt *ctxt)
+img_mgmt_state_write(struct smp_streamer *ctxt)
 {
 	bool confirm = false;
 	int slot;
@@ -274,7 +274,7 @@ img_mgmt_state_write(struct mgmt_ctxt *ctxt)
 		ZCBOR_MAP_DECODE_KEY_VAL(confirm, zcbor_bool_decode, &confirm)
 	};
 
-	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
 
 	ok = zcbor_map_decode_bulk(zsd, image_list_decode,
 		ARRAY_SIZE(image_list_decode), &decoded) == 0;

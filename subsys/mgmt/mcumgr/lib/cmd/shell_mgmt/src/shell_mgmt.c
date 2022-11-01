@@ -38,15 +38,15 @@ shell_get_output(size_t *len)
  * Command handler: shell exec
  */
 static int
-shell_mgmt_exec(struct mgmt_ctxt *ctxt)
+shell_mgmt_exec(struct smp_streamer *ctxt)
 {
 	int rc;
 	bool ok;
 	char line[SHELL_MGMT_MAX_LINE_LEN + 1];
 	size_t len = 0;
 	struct zcbor_string cmd_out;
-	zcbor_state_t *zsd = ctxt->cnbd->zs;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
 
 	if (!zcbor_map_start_decode(zsd)) {
 		return MGMT_ERR_EINVAL;

@@ -9,6 +9,7 @@
 
 #include <inttypes.h>
 #include <zephyr/sys/slist.h>
+#include <smp/smp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,18 +110,6 @@ typedef void *(*mgmt_alloc_rsp_fn)(const void *src_buf, void *arg);
  */
 typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
 
-/**
- * @brief Context required by command handlers for parsing requests and writing
- *		responses.
- */
-struct mgmt_ctxt {
-	struct cbor_nb_writer *cnbe;
-	struct cbor_nb_reader *cnbd;
-#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
-	const char *rc_rsn;
-#endif
-};
-
 #ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
 #define MGMT_CTXT_SET_RC_RSN(mc, rsn) ((mc->rc_rsn) = (rsn))
 #define MGMT_CTXT_RC_RSN(mc) ((mc)->rc_rsn)
@@ -138,7 +127,7 @@ struct mgmt_ctxt {
  *
  * @return 0 if a response was successfully encoded, MGMT_ERR_[...] code on failure.
  */
-typedef int (*mgmt_handler_fn)(struct mgmt_ctxt *ctxt);
+typedef int (*mgmt_handler_fn)(struct smp_streamer *ctxt);
 
 /**
  * @brief Read handler and write handler for a single command ID.
