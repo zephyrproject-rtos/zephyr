@@ -31,6 +31,11 @@ int mutex_lock_unlock(void)
 	timing_t timestamp_start;
 	timing_t timestamp_end;
 
+	if (!IS_ENABLED(CONFIG_ZYNC_RECURSIVE)) {
+		PRINT_STATS_AVG("Average time to lock a mutex (N/A)", 0, 1);
+		return 0;
+	}
+
 	timing_start();
 
 	timestamp_start = timing_counter_get();
