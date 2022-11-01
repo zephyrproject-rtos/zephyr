@@ -282,73 +282,9 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 	return vfprintf(&s.f, fp, ap);
 }
 
-#ifndef CONFIG_POSIX_API
-int _read(int fd, char *buf, int nbytes)
-{
-	ARG_UNUSED(fd);
-
-	return z_impl_zephyr_read_stdin(buf, nbytes);
-}
-__weak FUNC_ALIAS(_read, read, int);
-
-int _write(int fd, const void *buf, int nbytes)
-{
-	ARG_UNUSED(fd);
-
-	return z_impl_zephyr_write_stdout(buf, nbytes);
-}
-__weak FUNC_ALIAS(_write, write, int);
-
-int _open(const char *name, int mode)
-{
-	return -1;
-}
-__weak FUNC_ALIAS(_open, open, int);
-
-int _close(int file)
-{
-	return -1;
-}
-__weak FUNC_ALIAS(_close, close, int);
-
-int _lseek(int file, int ptr, int dir)
-{
-	return 0;
-}
-__weak FUNC_ALIAS(_lseek, lseek, int);
-#else
-extern ssize_t write(int file, const char *buffer, size_t count);
-#define _write	write
-#endif
-
-int _isatty(int file)
-{
-	return 1;
-}
-__weak FUNC_ALIAS(_isatty, isatty, int);
-
-int _kill(int i, int j)
-{
-	return 0;
-}
-__weak FUNC_ALIAS(_kill, kill, int);
-
-int _getpid(void)
-{
-	return 0;
-}
-__weak FUNC_ALIAS(_getpid, getpid, int);
-
-int _fstat(int file, struct stat *st)
-{
-	st->st_mode = S_IFCHR;
-	return 0;
-}
-__weak FUNC_ALIAS(_fstat, fstat, int);
-
 __weak void _exit(int status)
 {
-	_write(1, "exit\n", 5);
+	printk("exit\n");
 	while (1) {
 		;
 	}
@@ -356,7 +292,7 @@ __weak void _exit(int status)
 
 static LIBC_DATA SYS_SEM_DEFINE(heap_sem, 1, 1);
 
-void *_sbrk(intptr_t incr)
+void *sbrk(intptr_t incr)
 {
 	void *ret = (void *) -1;
 	char *brk;
@@ -386,7 +322,6 @@ out:
 
 	return ret;
 }
-__weak FUNC_ALIAS(_sbrk, sbrk, void *);
 
 #ifdef CONFIG_MULTITHREADING
 #define _LOCK_T void *
@@ -512,19 +447,9 @@ void __retarget_lock_release_recursive(_LOCK_T lock)
  */
 __weak FUNC_NORETURN void __chk_fail(void)
 {
-	static const char chk_fail_msg[] = "* buffer overflow detected *\n";
-
-	_write(2, chk_fail_msg, sizeof(chk_fail_msg) - 1);
+	printk("* buffer overflow detected *\n");
 	z_except_reason(K_ERR_STACK_CHK_FAIL);
 	CODE_UNREACHABLE;
-}
-
-int _gettimeofday(struct timeval *__tp, void *__tzp)
-{
-	ARG_UNUSED(__tp);
-	ARG_UNUSED(__tzp);
-
-	return -1;
 }
 
 #include <stdlib.h>
