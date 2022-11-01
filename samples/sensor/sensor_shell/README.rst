@@ -14,7 +14,7 @@ Build the sample app by choosing the target board that has sensors drivers
 enabled, for example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/shell/sensor_module
+   :zephyr-app: samples/sensor/sensor_shell
    :board: reel_board
    :goals: build flash
 
