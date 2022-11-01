@@ -1,0 +1,16 @@
+description: |
+    The BMP581 is a Barometric pressure sensor. See more info at:
+    https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp581/
+
+compatible: "bosch,bmp581"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: false
+    description: Interrupt pin.
+
+      The interrupt pin of BMP581 is open-drain, active low. If connected directly to the MCU,
+      the pin should be configured as pull-up, active low.
