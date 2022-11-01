@@ -58,6 +58,8 @@ source "drivers/adc/Kconfig.sam0"
 
 source "drivers/adc/Kconfig.stm32"
 
+source "drivers/adc/Kconfig.esp32"
+
 source "drivers/adc/Kconfig.xec"
 
 source "drivers/adc/Kconfig.lmp90xxx"

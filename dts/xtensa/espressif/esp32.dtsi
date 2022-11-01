@@ -364,6 +364,24 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
-	};
 
+		adc0: adc@3ff48800 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x3ff48800 10>;
+			unit = <1>;
+			channel-count = <8>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@3ff48890 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x3ff48890 10>;
+			unit = <2>;
+			channel-count = <10>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+	};
 };
