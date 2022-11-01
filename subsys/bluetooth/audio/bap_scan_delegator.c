@@ -101,9 +101,16 @@ static bool valid_bis_syncs(uint32_t bis_sync)
 static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs,
 					uint32_t aggregated_bis_syncs)
 {
-	return (requested_bis_syncs & aggregated_bis_syncs) != 0 &&
-	       requested_bis_syncs != BT_BAP_BIS_SYNC_NO_PREF &&
-	       aggregated_bis_syncs != BT_BAP_BIS_SYNC_NO_PREF;
+	if (requested_bis_syncs == 0U || aggregated_bis_syncs == 0U) {
+		return true;
+	}
+
+	if (requested_bis_syncs == BT_BAP_BIS_SYNC_NO_PREF &&
+	    aggregated_bis_syncs == BT_BAP_BIS_SYNC_NO_PREF) {
+		return true;
+	}
+
+	return (requested_bis_syncs & aggregated_bis_syncs) != 0U;
 }
 
 static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv_state)
@@ -504,8 +511,8 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		}
 
 		/* Verify that the request BIS sync indexes are unique or no preference */
-		if (bis_syncs_unique_or_no_pref(internal_state->requested_bis_sync[i],
-						aggregated_bis_syncs)) {
+		if (!bis_syncs_unique_or_no_pref(internal_state->requested_bis_sync[i],
+						 aggregated_bis_syncs)) {
 			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
 				i, internal_state->requested_bis_sync[i],
 				aggregated_bis_syncs);
@@ -647,8 +654,8 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		}
 
 		/* Verify that the request BIS sync indexes are unique or no preference */
-		if (bis_syncs_unique_or_no_pref(internal_state->requested_bis_sync[i],
-						aggregated_bis_syncs)) {
+		if (!bis_syncs_unique_or_no_pref(internal_state->requested_bis_sync[i],
+						 aggregated_bis_syncs)) {
 			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
 				i, internal_state->requested_bis_sync[i],
 				aggregated_bis_syncs);
