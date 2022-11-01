@@ -246,12 +246,12 @@ img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
  * Command handler: image erase
  */
 static int
-img_mgmt_erase(struct mgmt_ctxt *ctxt)
+img_mgmt_erase(struct smp_streamer *ctxt)
 {
 	struct image_version ver;
 	int rc;
-	zcbor_state_t *zsd = ctxt->cnbd->zs;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
 	bool ok;
 	uint32_t slot = 1;
 	size_t decoded = 0;
@@ -295,9 +295,9 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 }
 
 static int
-img_mgmt_upload_good_rsp(struct mgmt_ctxt *ctxt)
+img_mgmt_upload_good_rsp(struct smp_streamer *ctxt)
 {
-	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
 	bool ok;
 
 	ok = zcbor_tstr_put_lit(zse, "rc")			&&
@@ -341,10 +341,10 @@ img_mgmt_upload_log(bool is_first, bool is_last, int status)
  * Command handler: image upload
  */
 static int
-img_mgmt_upload(struct mgmt_ctxt *ctxt)
+img_mgmt_upload(struct smp_streamer *ctxt)
 {
 	struct mgmt_evt_op_cmd_status_arg cmd_status_arg;
-	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok;
 	size_t decoded = 0;
 	struct img_mgmt_upload_req req = {

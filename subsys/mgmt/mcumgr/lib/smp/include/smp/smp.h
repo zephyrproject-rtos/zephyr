@@ -68,6 +68,10 @@ struct smp_streamer {
 	struct smp_transport *smpt;
 	struct cbor_nb_reader *reader;
 	struct cbor_nb_writer *writer;
+
+#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+	const char *rc_rsn;
+#endif
 };
 
 /**

@@ -92,7 +92,7 @@ fs_mgmt_file_rsp(zcbor_state_t *zse, int rc, uint64_t off)
  * Command handler: fs file (read)
  */
 static int
-fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
+fs_mgmt_file_download(struct smp_streamer *ctxt)
 {
 	uint8_t file_data[FS_MGMT_DL_CHUNK_SIZE];
 	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
@@ -100,8 +100,8 @@ fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
 	size_t bytes_read;
 	size_t file_len;
 	int rc;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
-	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok;
 	struct zcbor_string name = { 0 };
 	size_t decoded;
@@ -163,7 +163,7 @@ fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
  * Command handler: fs file (write)
  */
 static int
-fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
+fs_mgmt_file_upload(struct smp_streamer *ctxt)
 {
 	char file_name[CONFIG_FS_MGMT_PATH_SIZE + 1];
 	unsigned long long len = ULLONG_MAX;
@@ -171,8 +171,8 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 	size_t new_off;
 	bool ok;
 	int rc;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
-	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
 	struct zcbor_string name = { 0 };
 	struct zcbor_string file_data = { 0 };
 	size_t decoded = 0;
@@ -256,13 +256,13 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
  * Command handler: fs stat (read)
  */
 static int
-fs_mgmt_file_status(struct mgmt_ctxt *ctxt)
+fs_mgmt_file_status(struct smp_streamer *ctxt)
 {
 	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
 	size_t file_len;
 	int rc;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
-	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok;
 	struct zcbor_string name = { 0 };
 	size_t decoded;
@@ -309,7 +309,7 @@ fs_mgmt_file_status(struct mgmt_ctxt *ctxt)
  * Command handler: fs hash/checksum (read)
  */
 static int
-fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
+fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 {
 	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
 	char type_arr[HASH_CHECKSUM_TYPE_SIZE + 1] = FS_MGMT_CHECKSUM_HASH_DEFAULT;
@@ -318,8 +318,8 @@ fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 	uint64_t off = 0;
 	size_t file_len;
 	int rc;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
-	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok;
 	struct zcbor_string type = { 0 };
 	struct zcbor_string name = { 0 };

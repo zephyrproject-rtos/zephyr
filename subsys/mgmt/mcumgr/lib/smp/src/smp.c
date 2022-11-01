@@ -133,7 +133,7 @@ smp_build_err_rsp(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
  * @return A MGMT_ERR_[...] error code.
  */
 static int
-smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr,
+smp_handle_single_payload(struct smp_streamer *cbuf, const struct mgmt_hdr *req_hdr,
 			  bool *handler_found)
 {
 	const struct mgmt_handler *handler;
@@ -160,14 +160,14 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 
 	if (handler_fn) {
 		*handler_found = true;
-		zcbor_map_start_encode(cbuf->cnbe->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES);
+		zcbor_map_start_encode(cbuf->writer->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES);
 		mgmt_evt(MGMT_EVT_OP_CMD_RECV, req_hdr->nh_group, req_hdr->nh_id, NULL);
 
 		MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
 		rc = handler_fn(cbuf);
 
 		/* End response payload. */
-		if (!zcbor_map_end_encode(cbuf->cnbe->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES) &&
+		if (!zcbor_map_end_encode(cbuf->writer->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES) &&
 		    rc == 0) {
 			rc = MGMT_ERR_EMSGSIZE;
 		}
@@ -193,20 +193,15 @@ static int
 smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 		      bool *handler_found, const char **rsn)
 {
-	struct mgmt_ctxt cbuf;
 	struct mgmt_hdr rsp_hdr;
 	struct cbor_nb_writer *nbw = streamer->writer;
-	struct cbor_nb_reader *nbr = streamer->reader;
 	zcbor_state_t *zsp = nbw->zs;
 	int rc;
 
-	cbuf.cnbe = nbw;
-	cbuf.cnbd = nbr;
-
 	/* Process the request and write the response payload. */
-	rc = smp_handle_single_payload(&cbuf, req_hdr, handler_found);
+	rc = smp_handle_single_payload(streamer, req_hdr, handler_found);
 	if (rc != 0) {
-		*rsn = MGMT_CTXT_RC_RSN(&cbuf);
+		*rsn = MGMT_CTXT_RC_RSN(cbuf);
 		return rc;
 	}
 
