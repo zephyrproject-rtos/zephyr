@@ -5,11 +5,17 @@ name: Zephyr West Command Tests
 
 on:
   push:
+    branches:
+    - main
+    - v*-branch
     paths:
     - 'scripts/west-commands.yml'
     - 'scripts/west_commands/**'
     - '.github/workflows/west_cmds.yml'
   pull_request:
+    branches:
+    - main
+    - v*-branch
     paths:
     - 'scripts/west-commands.yml'
     - 'scripts/west_commands/**'
