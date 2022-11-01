@@ -16,7 +16,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
-const char *bt_hex_real(const void *buf, size_t len)
+const char *bt_hex(const void *buf, size_t len)
 {
 	static const char hex[] = "0123456789abcdef";
 	static char str[129];
@@ -35,7 +35,7 @@ const char *bt_hex_real(const void *buf, size_t len)
 	return str;
 }
 
-const char *bt_addr_str_real(const bt_addr_t *addr)
+const char *bt_addr_str(const bt_addr_t *addr)
 {
 	static char str[BT_ADDR_STR_LEN];
 
@@ -44,7 +44,7 @@ const char *bt_addr_str_real(const bt_addr_t *addr)
 	return str;
 }
 
-const char *bt_addr_le_str_real(const bt_addr_le_t *addr)
+const char *bt_addr_le_str(const bt_addr_le_t *addr)
 {
 	static char str[BT_ADDR_LE_STR_LEN];
 
@@ -53,7 +53,7 @@ const char *bt_addr_le_str_real(const bt_addr_le_t *addr)
 	return str;
 }
 
-const char *bt_uuid_str_real(const struct bt_uuid *uuid)
+const char *bt_uuid_str(const struct bt_uuid *uuid)
 {
 	static char str[BT_UUID_STR_LEN];
 
