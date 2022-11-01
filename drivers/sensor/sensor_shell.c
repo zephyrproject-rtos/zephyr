@@ -216,12 +216,16 @@ static int cmd_get_sensor_info(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argv);
 
 #ifdef CONFIG_SENSOR_INFO
+	const char *null_str = "(null)";
+
 	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
 		shell_print(sh,
-			    "device name: %s, vendor: [%s], model: [%s], "
-			    "friendly name: [%s]",
-			    sensor->dev->name, sensor->vendor, sensor->model,
-			    sensor->friendly_name);
+			    "device name: %s, vendor: %s, model: %s, "
+			    "friendly name: %s",
+			    sensor->dev->name,
+			    sensor->vendor ? sensor->vendor : null_str,
+			    sensor->model ? sensor->model : null_str,
+			    sensor->friendly_name ? sensor->friendly_name : null_str);
 	}
 	return 0;
 #else
