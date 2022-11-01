@@ -67,6 +67,10 @@
 	};
 
 	soc {
+		ecs: ecs@4000fc00 {
+			compatible = "microchip,xec-ecs";
+			reg = <0x4000fc00 0x200>;
+		};
 		pcr: pcr@40080100 {
 			reg = <0x40080100 0x100 0x4000a400 0x100>;
 			reg-names = "pcrr", "vbatr";
