@@ -1104,12 +1104,8 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 int bt_bap_scan_delegator_remove_source(uint8_t src_id)
 {
 	struct net_buf_simple buf;
-	struct bt_bap_bass_cp_rem_src cp = {
-		.opcode = BT_BAP_BASS_OP_REM_SRC,
-		.src_id = src_id
-	};
 
-	net_buf_simple_init_with_data(&buf, (void *)&cp, sizeof(cp));
+	net_buf_simple_init_with_data(&buf, (void *)&src_id, sizeof(src_id));
 
 	if (scan_delegator_rem_src(NULL, &buf) == 0) {
 		return 0;
