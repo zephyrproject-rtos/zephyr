@@ -148,7 +148,7 @@ Here is an example for the :ref:`hello_world` application.
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! nrf52_adafruit_feather" in your terminal.
 
 
 Debugging
