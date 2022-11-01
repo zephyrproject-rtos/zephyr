@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2022 Badgerd Technologies B.V and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BMP581
+	bool "BMP581 barometric pressure sensor"
+	depends on DT_HAS_BOSCH_BMP581_ENABLED
+	select I2C
+	default y
