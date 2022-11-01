@@ -66,12 +66,9 @@
 			};
 		};
 
-	};
-
-	soc {
-		eth0: eth@febc0000 {
+		eth0: eth@1000 {
 			compatible = "intel,e1000";
-			reg = <0xfebc0000 0x100>;
+			reg = <PCIE_BDF(0, 2, 0) PCIE_ID(0x8086, 0x100e)>;
 			interrupts = <11 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 
