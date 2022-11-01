@@ -21,21 +21,6 @@ LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 #define CAN_INIT_TIMEOUT (100)
 #define CAN_DIV_CEIL(val, div) (((val) + (div) - 1) / (div))
 
-static void memcpy32_volatile(volatile void *dst_, const volatile void *src_,
-			      size_t len)
-{
-	volatile uint32_t *dst = dst_;
-	const volatile uint32_t *src = src_;
-
-	__ASSERT(len % 4 == 0, "len must be a multiple of 4!");
-	len /= sizeof(uint32_t);
-
-	while (len--) {
-		*dst = *src;
-		++dst;
-		++src;
-	}
-}
 
 static void memset32_volatile(volatile void *dst_, uint32_t val, size_t len)
 {
@@ -625,7 +610,8 @@ static void can_mcan_get_message(const struct device *dev,
 
 		sys_cache_data_invd_range((void *)&fifo[get_idx].hdr,
 					  sizeof(struct can_mcan_rx_fifo_hdr));
-		memcpy32_volatile(&hdr, &fifo[get_idx].hdr,
+
+		io32_memcpy(&hdr, &fifo[get_idx].hdr,
 				  sizeof(struct can_mcan_rx_fifo_hdr));
 
 		frame.dlc = hdr.dlc;
@@ -670,7 +656,8 @@ static void can_mcan_get_message(const struct device *dev,
 			/* Data needs to be written in 32 bit blocks! */
 			sys_cache_data_invd_range((void *)fifo[get_idx].data_32,
 						  ROUND_UP(data_length, sizeof(uint32_t)));
-			memcpy32_volatile(frame.data_32, fifo[get_idx].data_32,
+
+			io32_memcpy(frame.data_32, fifo[get_idx].data_32,
 					  ROUND_UP(data_length, sizeof(uint32_t)));
 
 			if ((frame.flags & CAN_FRAME_IDE) != 0) {
@@ -892,8 +879,9 @@ int can_mcan_send(const struct device *dev,
 		tx_hdr.std_id = frame->id & CAN_STD_ID_MASK;
 	}
 
-	memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
-	memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32,
+	BUILD_ASSERT(sizeof(msg_ram->tx_buffer[put_idx].hdr) == sizeof(tx_hdr));
+	io32_memcpy(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
+	io32_memcpy(msg_ram->tx_buffer[put_idx].data_32, frame->data_32,
 			  ROUND_UP(data_length, 4));
 	sys_cache_data_flush_range((void *)&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr));
 	sys_cache_data_flush_range((void *)&msg_ram->tx_buffer[put_idx].data_32,
@@ -966,7 +954,8 @@ int can_mcan_add_rx_filter_std(const struct device *dev,
 	filter_element.sfce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
+	BUILD_ASSERT(sizeof(msg_ram->std_filt[0]) == sizeof(filter_element));
+	io32_memcpy(&msg_ram->std_filt[filter_id], &filter_element,
 			 sizeof(struct can_mcan_std_filter));
 	sys_cache_data_flush_range((void *)&msg_ram->std_filt[filter_id],
 				   sizeof(struct can_mcan_std_filter));
@@ -1030,7 +1019,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev,
 	filter_element.efce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
+	io32_memcpy(&msg_ram->ext_filt[filter_id], &filter_element,
 			  sizeof(struct can_mcan_ext_filter));
 	sys_cache_data_flush_range((void *)&msg_ram->ext_filt[filter_id],
 				   sizeof(struct can_mcan_ext_filter));
