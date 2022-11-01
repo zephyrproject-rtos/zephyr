@@ -11,6 +11,7 @@
 #include "img_mgmt_config.h"
 #include "image.h"
 #include "mgmt/mgmt.h"
+#include "smp/smp.h"
 #include <zcbor_common.h>
 
 struct image_version;
@@ -253,7 +254,7 @@ int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b
 #ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
 #define IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, rsn) ((action)->rc_rsn = (rsn))
 #define IMG_MGMT_UPLOAD_ACTION_RC_RSN(action) ((action)->rc_rsn)
-int img_mgmt_error_rsp(struct mgmt_ctxt *ctxt, int rc, const char *rsn);
+int img_mgmt_error_rsp(struct smp_streamer *ctxt, int rc, const char *rsn);
 extern const char *img_mgmt_err_str_app_reject;
 extern const char *img_mgmt_err_str_hdr_malformed;
 extern const char *img_mgmt_err_str_magic_mismatch;
