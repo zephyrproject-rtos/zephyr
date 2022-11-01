@@ -437,12 +437,18 @@ static int add_source(struct sync_state *state)
 
 	UNSET_FLAG(flag_recv_state_updated);
 
-	param.broadcast_id = g_broadcast_id;
-
 	param.pa_sync = state->pa_sync;
 	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
 	param.broadcast_id = g_broadcast_id;
-	param.num_subgroups = 0U;
+	param.num_subgroups = 1U;
+
+	for (uint8_t i = 0U; i < param.num_subgroups; i++) {
+		struct bt_bap_scan_delegator_subgroup *subgroup_param = &param.subgroups[i];
+
+		subgroup_param->bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
+		subgroup_param->metadata_len = 0U;
+		(void)memset(subgroup_param->metadata, 0, sizeof(subgroup_param->metadata));
+	}
 
 	res = bt_bap_scan_delegator_add_src(&param);
 	if (res < 0) {
@@ -517,6 +523,46 @@ static void remove_all_sources(void)
 	}
 }
 
+static int sync_broadcast(struct sync_state *state)
+{
+	int err;
+
+	UNSET_FLAG(flag_recv_state_updated);
+
+	/* We don't actually need to sync to the BIG/BISes */
+	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id,
+						       (uint32_t []){ BIT(1) },
+						       BT_BAP_BIG_ENC_STATE_NO_ENC);
+	if (err) {
+		return err;
+	}
+
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	return 0;
+}
+
+static void sync_all_broadcasts(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		struct sync_state *state = &sync_states[i];
+
+		if (state->pa_sync != NULL) {
+			int res;
+
+			printk("[%zu]: Setting broadcast sync state\n", i);
+
+			res = sync_broadcast(state);
+			if (res < 0) {
+				FAIL("[%zu]: Broadcast sync state set failed (err %d)\n", i, res);
+				return;
+			}
+
+			printk("[%zu]: Broadcast sync state set\n", i);
+		}
+	}
+}
+
 static int common_init(void)
 {
 	int err;
@@ -561,6 +607,9 @@ static void test_main_client_sync(void)
 	/* Wait for broadcast assistant to send us broadcast code */
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
 
+	/* Set the BIS sync state */
+	sync_all_broadcasts();
+
 	/* Wait for broadcast assistant to remove source and terminate PA sync */
 	WAIT_FOR_COND(!g_pa_synced);
 
@@ -594,6 +643,9 @@ static void test_main_server_sync_client_rem(void)
 	/* Wait for broadcast assistant to send us broadcast code */
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
 
+	/* Set the BIS sync state */
+	sync_all_broadcasts();
+
 	/* For for client to remove source and thus terminate the PA */
 	WAIT_FOR_COND(!g_pa_synced);
 
@@ -626,6 +678,9 @@ static void test_main_server_sync_server_rem(void)
 
 	/* Wait for broadcast assistant to send us broadcast code */
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
+
+	/* Set the BIS sync state */
+	sync_all_broadcasts();
 
 	/* Remote all sources, causing PA sync term request to trigger */
 	remove_all_sources();
