@@ -279,6 +279,9 @@ Libraries / Subsystems
   * A MCUmgr issue with Bluetooth transport that could cause a deadlock of the
     mcumgr thread if the remote device disconnected before the output message
     was sent has been fixed.
+  * A MCUmgr img_mgmt bug whereby the state of an image upload could persist
+    when it was no longer valid (e.g. after an image erase command) has been
+    fixed.
 
 * LwM2M
 
