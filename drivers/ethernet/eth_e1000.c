@@ -230,18 +230,16 @@ static void e1000_isr(const struct device *ddev)
 	}
 }
 
-#define PCI_VENDOR_ID_INTEL	0x8086
-#define PCI_DEVICE_ID_I82540EM	0x100e
 
 int e1000_probe(const struct device *ddev)
 {
-	const pcie_bdf_t bdf = PCIE_BDF(0, 2, 0);
+	/* PCI ID is decoded into REG_SIZE */
+	pcie_bdf_t bdf = pcie_bdf_lookup(DT_INST_REG_SIZE(0));
 	struct e1000_dev *dev = ddev->data;
 	uint32_t ral, rah;
 	struct pcie_bar mbar;
 
-	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_I82540EM))) {
+	if (bdf == PCIE_BDF_NONE) {
 		return -ENODEV;
 	}
 
