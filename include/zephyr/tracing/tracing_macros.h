@@ -87,24 +87,6 @@
 	#define sys_port_trace_type_mask_k_work_poll(trace_call)
 #endif
 
-#if defined(CONFIG_TRACING_SEMAPHORE)
-	#define sys_port_trace_type_mask_k_sem(trace_call) trace_call
-#else
-	#define sys_port_trace_type_mask_k_sem(trace_call)
-#endif
-
-#if defined(CONFIG_TRACING_MUTEX)
-	#define sys_port_trace_type_mask_k_mutex(trace_call) trace_call
-#else
-	#define sys_port_trace_type_mask_k_mutex(trace_call)
-#endif
-
-#if defined(CONFIG_TRACING_CONDVAR)
-	#define sys_port_trace_type_mask_k_condvar(trace_call) trace_call
-#else
-	#define sys_port_trace_type_mask_k_condvar(trace_call)
-#endif
-
 #if defined(CONFIG_TRACING_QUEUE)
 	#define sys_port_trace_type_mask_k_queue(trace_call) trace_call
 #else

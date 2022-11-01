@@ -13,8 +13,6 @@ void dummy_fn(struct k_timer *timer)
 
 K_TIMER_DEFINE(timer_s, dummy_fn, NULL);
 K_MEM_SLAB_DEFINE(slab_s, 8, 2, 8);
-K_SEM_DEFINE(sem_s, 0, 1);
-K_MUTEX_DEFINE(mutex_s);
 K_STACK_DEFINE(stack_s, 64);
 K_MSGQ_DEFINE(msgq_s, sizeof(int), 2, 4);
 K_MBOX_DEFINE(mbox_s);
@@ -30,8 +28,6 @@ ZTEST(obj_tracking, test_obj_tracking_sanity)
 {
 	struct k_timer timer;
 	struct k_mem_slab slab;
-	struct k_sem sem;
-	struct k_mutex mutex;
 	struct k_stack stack;
 	struct k_msgq msgq;
 	struct k_mbox mbox;
@@ -61,28 +57,6 @@ ZTEST(obj_tracking, test_obj_tracking_sanity)
 		list = SYS_PORT_TRACK_NEXT((struct k_mem_slab *)list);
 	}
 	zassert_equal(count, 2, "Wrong number of mem_slab objects");
-
-	k_sem_init(&sem, 1, 2);
-	count = 0;
-	list = _track_list_k_sem;
-	while (list != NULL) {
-		if (list == &sem || list == &sem_s) {
-			count++;
-		}
-		list = SYS_PORT_TRACK_NEXT((struct k_sem *)list);
-	}
-	zassert_equal(count, 2, "Wrong number of semaphore objects");
-
-	k_mutex_init(&mutex);
-	count = 0;
-	list = _track_list_k_mutex;
-	while (list != NULL) {
-		if (list == &mutex || list == &mutex_s) {
-			count++;
-		}
-		list = SYS_PORT_TRACK_NEXT((struct k_mutex *)list);
-	}
-	zassert_equal(count, 2, "Wrong number of mutex objects");
 
 	k_stack_init(&stack, stack_array, 20);
 	count = 0;

@@ -224,24 +224,6 @@ config TRACING_ISR
 	  Enable tracing ISRs. This requires the backend to be
 	  very low-latency.
 
-config TRACING_SEMAPHORE
-	bool "Tracing Semaphores"
-	default y
-	help
-	  Enable tracing Semaphores.
-
-config TRACING_MUTEX
-	bool "Tracing Mutexes"
-	default y
-	help
-	  Enable tracing Mutexes.
-
-config TRACING_CONDVAR
-	bool "Tracing Condition Variables"
-	default y
-	help
-	  Enable tracing Condition Variables
-
 config TRACING_QUEUE
 	bool "Tracing Queues"
 	default y

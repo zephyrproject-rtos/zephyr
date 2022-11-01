@@ -382,8 +382,8 @@ all initialized mutexes, one can write::
 
 To enable object tracking, enable :kconfig:option:`CONFIG_TRACING_OBJECT_TRACKING`.
 Note that each list can be enabled or disabled via their tracing
-configuration. For example, to disable tracking of semaphores, one can
-disable :kconfig:option:`CONFIG_TRACING_SEMAPHORE`.
+configuration. For example, to disable tracking of FIFOs, one can
+disable :kconfig:option:`CONFIG_TRACING_FIFO`.
 
 Object tracking is behind tracing configuration as it currently leverages
 tracing infrastructure to perform the tracking.

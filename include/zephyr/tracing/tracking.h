@@ -35,8 +35,6 @@
 
 extern struct k_timer *_track_list_k_timer;
 extern struct k_mem_slab *_track_list_k_mem_slab;
-extern struct k_sem *_track_list_k_sem;
-extern struct k_mutex *_track_list_k_mutex;
 extern struct k_stack *_track_list_k_stack;
 extern struct k_msgq *_track_list_k_msgq;
 extern struct k_mbox *_track_list_k_mbox;
