@@ -286,6 +286,9 @@ int e1000_probe(const struct device *ddev)
 	return 0;
 }
 
+BUILD_ASSERT(DT_INST_IRQN(0) != PCIE_IRQ_DETECT,
+	     "Dynamic IRQ allocation is not supported");
+
 static void e1000_iface_init(struct net_if *iface)
 {
 	struct e1000_dev *dev = net_if_get_device(iface)->data;
