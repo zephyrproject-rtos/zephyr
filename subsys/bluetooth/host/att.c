@@ -3517,7 +3517,7 @@ static void eatt_auto_connect(struct bt_conn *conn, bt_security_t level,
 	if (eatt_err < 0) {
 		BT_WARN("Automatic creation of EATT bearers failed on "
 			"connection %s with error %d",
-			bt_addr_le_str_real(bt_conn_get_dst(conn)), eatt_err);
+			bt_addr_le_str(bt_conn_get_dst(conn)), eatt_err);
 	}
 }
 
