@@ -6,10 +6,14 @@ name: Devicetree script tests
 
 on:
   push:
+    branches:
+    - v2.7-branch
     paths:
     - 'scripts/dts/**'
     - '.github/workflows/devicetree_checks.yml'
   pull_request:
+    branches:
+    - v2.7-branch
     paths:
     - 'scripts/dts/**'
     - '.github/workflows/devicetree_checks.yml'

@@ -5,12 +5,16 @@ name: Twister TestSuite
 
 on:
   push:
+    branches:
+    - v2.7-branch
     paths:
     - 'scripts/pylib/twister/**'
     - 'scripts/twister'
     - 'scripts/tests/twister/**'
     - '.github/workflows/twister_tests.yml'
   pull_request:
+    branches:
+    - v2.7-branch
     paths:
     - 'scripts/pylib/twister/**'
     - 'scripts/twister'
