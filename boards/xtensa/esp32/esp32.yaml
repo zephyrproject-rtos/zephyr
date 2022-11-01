@@ -5,6 +5,8 @@ arch: xtensa
 toolchain:
   - zephyr
 supported:
+  - adc
+  - dac
   - gpio
   - i2c
   - watchdog

@@ -4,6 +4,13 @@ type: mcu
 arch: xtensa
 toolchain:
   - zephyr
+supported:
+  - adc
+  - dac
+  - gpio
+  - i2c
+  - watchdog
+  - uart
 testing:
   ignore_tags:
     - net
