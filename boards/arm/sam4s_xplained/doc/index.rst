@@ -153,7 +153,7 @@ Visualizing the message
 
 #. Press reset button
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! sam4s_xplained" in your terminal.
 
 
 Debugging
