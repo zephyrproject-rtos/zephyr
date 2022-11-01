@@ -483,8 +483,8 @@ test_i2c_mpr: mpr@18 {
 };
 
 test_i2c_dps310: dps310@48 {
-		compatible = "infineon,dps310";
-		reg = <0x48>;
+	compatible = "infineon,dps310";
+	reg = <0x48>;
 };
 
 test_i2c_iis2dh: iis2dh@18 {
@@ -574,6 +574,12 @@ test_i2c_fdc2x1x: fdc2x1x@2a {
 test_i2c_bmp388: bmp388@4c {
 	compatible = "bosch,bmp388";
 	reg = <0x4c>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_bmp581: bmp581@46 {
+	compatible = "bosch,bmp581";
+	reg = <0x46>;
 	int-gpios = <&test_gpio 0 0>;
 };
 

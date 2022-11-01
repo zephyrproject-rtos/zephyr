@@ -1,0 +1,12 @@
+description: |
+    The BMP581 is a Barometric pressure sensor. See more info at:
+    https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp581/
+
+compatible: "bosch,bmp581"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false
