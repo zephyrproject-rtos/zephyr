@@ -10,7 +10,7 @@ Domain class.
 
 import yaml
 import pykwalify.core
-from west import log
+import logging
 
 DOMAINS_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
@@ -41,6 +41,12 @@ mapping:
 '''
 
 schema = yaml.safe_load(DOMAINS_SCHEMA)
+logger = logging.getLogger('build_helpers')
+# Configure simple logging backend.
+formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 class Domains:
@@ -53,7 +59,7 @@ class Domains:
         self._build_dir = data.get('build_dir')
         domain_list = data.get('domains')
         if not domain_list:
-            log.wrn("no domains defined; this probably won't work")
+            logger.warning("no domains defined; this probably won't work")
 
         for d in domain_list:
             domain = Domain(d['name'], d['build_dir'])
@@ -73,13 +79,15 @@ class Domains:
             with open(domains_file, 'r') as f:
                 domains = yaml.safe_load(f.read())
         except FileNotFoundError:
-            log.die(f'domains.yaml file not found: {domains_file}')
+            logger.critical(f'domains.yaml file not found: {domains_file}')
+            exit(1)
 
         try:
             pykwalify.core.Core(source_data=domains, schema_data=schema)\
                 .validate()
         except pykwalify.errors.SchemaError:
-            log.die(f'ERROR: Malformed yaml in file: {domains_file}')
+            logger.critical(f'ERROR: Malformed yaml in file: {domains_file}')
+            exit(1)
 
         return Domains(domains)
 
@@ -105,8 +113,9 @@ class Domains:
             # Getting here means the domain was not found.
             # Todo: throw an error.
             if not found:
-                log.die(f'domain {n} not found, '
+                logger.critical(f'domain {n} not found, '
                         f'valid domains are:', *self._domain_names)
+                exit(1)
         return ret
 
     def get_default_domain(self):
