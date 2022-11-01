@@ -889,3 +889,9 @@ test_i2c_ags10: ags10@7e {
 	compatible = "aosong,ags10";
 	reg = <0x7e>;
 };
+
+test_i2c_bmp581: bmp581@7f {
+	compatible = "bosch,bmp581";
+	reg = <0x7f>;
+	int-gpios = <&test_gpio 0 0>;
+};
