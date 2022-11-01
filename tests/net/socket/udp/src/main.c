@@ -924,7 +924,7 @@ static struct eth_fake_context eth_fake_data;
 static ZTEST_BMEM struct sockaddr_in6 server_addr;
 
 /* The semaphore is there to wait the data to be received. */
-static ZTEST_BMEM SYS_MUTEX_DEFINE(wait_data);
+K_SEM_DEFINE(wait_data, 0, K_SEM_MAX_LIMIT);
 
 static struct net_if *eth_iface;
 static ZTEST_BMEM bool test_started;
@@ -974,7 +974,7 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 		test_failed = false;
 	}
 
-	sys_mutex_unlock(&wait_data);
+	k_sem_give(&wait_data);
 
 	return 0;
 }
@@ -1090,7 +1090,7 @@ ZTEST_USER(net_socket_udp, test_18_v6_sendmsg_with_txtime)
 	rv = close(client_sock);
 	zassert_equal(rv, 0, "close failed");
 
-	if (sys_mutex_lock(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		zassert_true(false, "Timeout DNS query not received");
 	}
 
@@ -1294,4 +1294,10 @@ ZTEST(net_socket_udp, test_23_v6_dgram_overflow)
 			    BUF_AND_SIZE(test_str_all_tx_bufs));
 }
 
-ZTEST_SUITE(net_socket_udp, NULL, NULL, NULL, NULL, NULL);
+static void *suite_setup(void)
+{
+	k_object_access_grant(&wait_data, k_current_get());
+	return NULL;
+}
+
+ZTEST_SUITE(net_socket_udp, NULL, suite_setup, NULL, NULL, NULL);
