@@ -225,7 +225,7 @@ static void set_baud(volatile struct apbuart_regs *const regs, uint32_t baud)
 	core_clk_hz = sys_clock_hw_cycles_per_sec();
 
 	/* Calculate Baud rate generator "scaler" number */
-	scaler = (((core_clk_hz * 10) / (baud * 8)) - 5) / 10;
+	scaler = (core_clk_hz / (baud * 8)) - 1;
 
 	/* Set new baud rate by setting scaler */
 	regs->scaler = scaler;
