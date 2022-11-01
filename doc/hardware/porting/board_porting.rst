@@ -129,6 +129,15 @@ board directory in the zephyr repository, but it's the easiest way to get
 started. See :ref:`custom_board_definition` for documentation on moving your
 board directory to a separate repository once it's working.)
 
+.. note::
+
+  The board directory name does not need to match the name of the board.
+  Multiple boards can even defined be in one directory.
+  For example, for boards with multi-core SoC, a logical board might be created
+  for each core following the naming scheme `<board>_<soc-core>`, with definitions
+  for all of these different boards defined inside the same directory. This and
+  similar schemes are common for upstream vendor boards.
+
 Your board directory should look like this:
 
 .. code-block:: none
