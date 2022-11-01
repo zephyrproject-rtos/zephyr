@@ -235,7 +235,7 @@ static void e1000_isr(const struct device *ddev)
 
 int e1000_probe(const struct device *ddev)
 {
-	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);
+	const pcie_bdf_t bdf = PCIE_BDF(0, 2, 0);
 	struct e1000_dev *dev = ddev->data;
 	uint32_t ral, rah;
 	struct pcie_bar mbar;
