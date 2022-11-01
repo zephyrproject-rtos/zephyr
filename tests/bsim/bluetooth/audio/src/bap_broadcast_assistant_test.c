@@ -27,6 +27,7 @@ static volatile uint32_t g_broadcast_id;
 static volatile uint8_t g_recv_state_count;
 CREATE_FLAG(flag_recv_state_read);
 CREATE_FLAG(flag_recv_state_updated);
+CREATE_FLAG(flag_recv_state_updated_with_bis_sync);
 CREATE_FLAG(flag_recv_state_removed);
 
 static volatile bool g_cb;
@@ -127,8 +128,11 @@ static void bap_broadcast_assistant_recv_state_cb(
 		net_buf_simple_init_with_data(&buf, (void *)subgroup->metadata,
 					      subgroup->metadata_len);
 		bt_data_parse(&buf, metadata_entry, NULL);
-	}
 
+		if (subgroup->bis_sync != 0) {
+			SET_FLAG(flag_recv_state_updated_with_bis_sync);
+		}
+	}
 
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
@@ -413,7 +417,7 @@ static void test_bass_mod_source(void)
 	mod_src_param.pa_sync = true;
 	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
-	subgroup.bis_sync = 0;
+	subgroup.bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
 	subgroup.metadata_len = 0;
 	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
 	if (err != 0) {
@@ -512,6 +516,9 @@ static void test_main_client_sync(void)
 	test_bass_add_source();
 	test_bass_mod_source();
 	test_bass_broadcast_code();
+
+	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
+
 	test_bass_remove_source();
 
 	PASS("BAP Broadcast Assistant Client Sync Passed\n");
@@ -530,6 +537,9 @@ static void test_main_server_sync_client_rem(void)
 	WAIT_FOR_FLAG(flag_recv_state_updated);
 
 	test_bass_broadcast_code();
+
+	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
+
 	test_bass_remove_source();
 
 	PASS("BAP Broadcast Assistant Server Sync Passed\n");
@@ -548,6 +558,8 @@ static void test_main_server_sync_server_rem(void)
 	WAIT_FOR_FLAG(flag_recv_state_updated);
 
 	test_bass_broadcast_code();
+
+	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	WAIT_FOR_FLAG(flag_recv_state_removed);
 
