@@ -142,6 +142,11 @@
 	pinctrl-names = "default";
 };
 
+&semc {
+	pinctrl-0 = <&pinmux_semc>;
+	pinctrl-names = "default";
+};
+
 &usdhc1 {
 	pinctrl-0 = <&pinmux_usdhc1>;
 	pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;

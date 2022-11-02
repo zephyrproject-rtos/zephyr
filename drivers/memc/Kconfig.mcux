@@ -14,3 +14,10 @@ config MEMC_MCUX_FLEXSPI
 	bool
 
 endif
+
+if HAS_MCUX_SEMC
+
+config MEMC_MCUX_SEMC
+	bool
+
+endif

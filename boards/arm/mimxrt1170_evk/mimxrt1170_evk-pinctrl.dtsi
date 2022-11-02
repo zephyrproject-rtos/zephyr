@@ -103,6 +103,27 @@
 		};
 	};
 
+        pinmux_semc: pinmux_semc {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b1_00_semc_data00>,
+				<&iomuxc_gpio_emc_b1_01_semc_data01>,
+				<&iomuxc_gpio_emc_b1_02_semc_data02>,
+				<&iomuxc_gpio_emc_b1_03_semc_data03>,
+				<&iomuxc_gpio_emc_b1_04_semc_data04>,
+				<&iomuxc_gpio_emc_b1_05_semc_data05>,
+				<&iomuxc_gpio_emc_b1_06_semc_data06>,
+				<&iomuxc_gpio_emc_b1_07_semc_data07>,
+				<&iomuxc_gpio_emc_b1_18_semc_addr09>,
+				<&iomuxc_gpio_emc_b1_19_semc_addr11>,
+				<&iomuxc_gpio_emc_b1_20_semc_addr12>,
+				<&iomuxc_gpio_emc_b1_22_semc_ba1>,
+				<&iomuxc_gpio_emc_b1_40_semc_rdy>,
+				<&iomuxc_gpio_emc_b1_41_semc_csx00>;
+			bias-pull-down;
+			input-enable;
+		};
+	};
+
 	/* interrupt gpios for fxos8700 */
 	pinmux_fxos8700_int: pinmux_fxos8700_int {
 		group0 {

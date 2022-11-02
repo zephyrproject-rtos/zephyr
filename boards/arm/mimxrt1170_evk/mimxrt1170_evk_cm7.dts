@@ -163,6 +163,20 @@
 	};
 };
 
+&semc {
+	status = "okay";
+	mx30lf2ge8ab: mx30lf2ge8ab@0 {
+		reg = <0 1>;
+		compatible = "nxp,onfi-nand";
+		label = "MX30LF2GE8AB";
+		block_size = <131072>;
+		block_offset = <262144>;
+		page_size = <2048>;
+		page_offset = <2112>;
+		status = "okay";
+        };
+};
+
 &lpadc0 {
 	status = "okay";
 };

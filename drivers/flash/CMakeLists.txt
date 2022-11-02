@@ -5,6 +5,8 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC13XX_CC26XX soc_flash_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_TELINK_B91 soc_flash_b91.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
+zephyr_library_sources_ifdef(CONFIG_ONFI_NAND onfi_nand.c)
+zephyr_library_sources_ifdef(CONFIG_ONFI_NAND bch.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_SIMULATOR flash_simulator.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT45 spi_flash_at45.c)
@@ -72,6 +74,11 @@ endif()
 
 zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_NOR
+  ${ZEPHYR_BASE}/drivers/memc
+)
+
+zephyr_library_include_directories_ifdef(
+  CONFIG_ONFI_NAND
   ${ZEPHYR_BASE}/drivers/memc
 )
 
