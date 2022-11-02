@@ -47,6 +47,12 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 #define IT8XXX2_ESPI_VW_INTERRUPT_ENABLE       BIT(7)
 #define IT8XXX2_ESPI_INTERRUPT_PUT_PC          BIT(7)
 
+/*
+ * VWCTRL2 register:
+ * bit4 = 1b: Refers to ESPI_RESET# for PLTRST#.
+ */
+#define IT8XXX2_ESPI_VW_RESET_PLTRST           BIT(4)
+
 #define IT8XXX2_ESPI_UPSTREAM_ENABLE           BIT(7)
 #define IT8XXX2_ESPI_UPSTREAM_GO               BIT(6)
 #define IT8XXX2_ESPI_UPSTREAM_INTERRUPT_ENABLE BIT(5)
@@ -1869,6 +1875,9 @@ static int espi_it8xxx2_init(const struct device *dev)
 	IRQ_CONNECT(IT8XXX2_ESPI_VW_IRQ, 0, espi_it8xxx2_vw_isr,
 			DEVICE_DT_INST_GET(0), 0);
 	irq_enable(IT8XXX2_ESPI_VW_IRQ);
+
+	/* Reset PLTRST# virtual wire signal during eSPI reset */
+	vw_reg->VWCTRL2 |= IT8XXX2_ESPI_VW_RESET_PLTRST;
 
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	espi_it8xxx2_oob_init(dev);
