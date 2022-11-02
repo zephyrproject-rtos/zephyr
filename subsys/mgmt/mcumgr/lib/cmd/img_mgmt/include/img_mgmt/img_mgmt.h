@@ -23,25 +23,8 @@ extern "C" {
 #define IMG_MGMT_HASH_LEN	32
 #define IMG_MGMT_DATA_SHA_LEN	32 /* SHA256 */
 
-/*
- * Image state flags
- */
-#define IMG_MGMT_STATE_F_PENDING	0x01
-#define IMG_MGMT_STATE_F_CONFIRMED	0x02
-#define IMG_MGMT_STATE_F_ACTIVE		0x04
-#define IMG_MGMT_STATE_F_PERMANENT	0x08
-
 /* 255.255.65535.4294967295\0 */
 #define IMG_MGMT_VER_MAX_STR_LEN	(sizeof("255.255.65535.4294967295"))
-
-/*
- * Swap Types for image management state machine
- */
-#define IMG_MGMT_SWAP_TYPE_NONE		0
-#define IMG_MGMT_SWAP_TYPE_TEST		1
-#define IMG_MGMT_SWAP_TYPE_PERM		2
-#define IMG_MGMT_SWAP_TYPE_REVERT	3
-#define IMG_MGMT_SWAP_TYPE_UNKNOWN	255
 
 /**
  * Command IDs for image management group.
@@ -82,6 +65,7 @@ struct img_mgmt_state {
 	uint8_t data_sha_len;
 	uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
 } __packed;
+
 
 /** Describes what to do during processing of an upload request. */
 struct img_mgmt_upload_action {
@@ -141,52 +125,6 @@ int img_mgmt_my_version(struct image_version *ver);
  * @return Non-negative on success, negative value on error.
  */
 int img_mgmt_ver_str(const struct image_version *ver, char *dst);
-
-/**
- * @brief Check if the image slot is in use
- *
- * @param slot Slot to check if its in use
- *
- * @return 0 on success, non-zero on failure
- */
-int img_mgmt_slot_in_use(int slot);
-
-/**
- * @brief Check if the DFU status is pending
- *
- * @return 1 if there's pending DFU otherwise 0.
- */
-int img_mgmt_state_any_pending(void);
-
-/**
- * @brief Collects information about the specified image slot
- *
- * @param query_slot Slot to read state flags from
- *
- * @return return the state flags
- */
-uint8_t img_mgmt_state_flags(int query_slot);
-
-/**
- * @brief Sets the pending flag for the specified image slot.  That is, the system
- * will swap to the specified image on the next reboot.  If the permanent
- * argument is specified, the system doesn't require a confirm after the swap
- * occurs.
- *
- * @param slot	   Image slot to set pending
- * @param permanent  If set no confirm is required after image swap
- *
- * @return 0 on success, non-zero on failure
- */
-int img_mgmt_state_set_pending(int slot, int permanent);
-
-/**
- * Confirms the current image state.  Prevents a fallback from occurring on the
- * next reboot if the active image is currently being tested.
- *
- * @return 0 on success, non -zero on failure
- */
-int img_mgmt_state_confirm(void);
 
 /** @brief Generic callback function for events */
 typedef void (*img_mgmt_dfu_cb)(void);

@@ -19,6 +19,7 @@
 
 #include "img_mgmt/image.h"
 #include "img_mgmt/img_mgmt.h"
+#include "img_mgmt/image_state.h"
 #include "img_mgmt/img_mgmt_config.h"
 #include "img_mgmt_priv.h"
 

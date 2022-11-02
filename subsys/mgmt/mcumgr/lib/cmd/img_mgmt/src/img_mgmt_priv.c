@@ -17,8 +17,8 @@ LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
 #include <mgmt/mgmt.h>
-#include <img_mgmt/img_mgmt.h>
 #include <img_mgmt/image.h>
+#include <img_mgmt/image_state.h>
 #include "img_mgmt_priv.h"
 
 #define SLOT0_PARTITION		slot0_partition
