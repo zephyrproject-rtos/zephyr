@@ -269,7 +269,7 @@ elseif(QEMU_NET_STACK)
   endif()
 endif(QEMU_PIPE_STACK)
 
-if(CONFIG_CAN)
+if(CONFIG_CAN AND NOT (CONFIG_NIOS2 OR CONFIG_SOC_LEON3))
   # Add CAN bus 0
   list(APPEND QEMU_FLAGS -object can-bus,id=canbus0)
 
