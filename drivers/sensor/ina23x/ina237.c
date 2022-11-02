@@ -333,7 +333,7 @@ static int ina237_init(const struct device *dev)
 
 		k_work_init(&data->trigger.conversion_work, ina237_trigger_work_handler);
 
-		ret = ina23x_trigger_mode_init(&data->trigger, &config->gpio_alert);
+		ret = ina23x_trigger_mode_init(&data->trigger, &config->alert_gpio);
 		if (ret < 0) {
 			LOG_ERR("Failed to init trigger mode");
 			return ret;
@@ -382,7 +382,7 @@ static const struct sensor_driver_api ina237_driver_api = {
 		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),	\
 		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),			\
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),	\
-		.gpio_alert = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),	\
+		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),	\
 	};							    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,			    \
 			      &ina237_init,			    \

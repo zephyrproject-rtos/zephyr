@@ -38,3 +38,8 @@ properties:
       type: int
       required: true
       description: Shunt resistor value in milliohms
+
+    alert-gpios:
+      type: phandle-array
+      required: false
+      description: Alert pin
