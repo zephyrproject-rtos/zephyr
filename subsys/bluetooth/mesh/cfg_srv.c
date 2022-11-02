@@ -279,14 +279,14 @@ static uint8_t mod_bind(struct bt_mesh_model *model, uint16_t key_idx)
 		return STATUS_INVALID_APPKEY;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
+	for (i = 0; i < model->keys_cnt; i++) {
 		/* Treat existing binding as success */
 		if (model->keys[i] == key_idx) {
 			return STATUS_SUCCESS;
 		}
 	}
 
-	for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
+	for (i = 0; i < model->keys_cnt; i++) {
 		if (model->keys[i] == BT_MESH_KEY_UNUSED) {
 			model->keys[i] = key_idx;
 
@@ -311,7 +311,7 @@ static uint8_t mod_unbind(struct bt_mesh_model *model, uint16_t key_idx, bool st
 		return STATUS_INVALID_APPKEY;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
+	for (i = 0; i < model->keys_cnt; i++) {
 		if (model->keys[i] != key_idx) {
 			continue;
 		}
@@ -874,7 +874,7 @@ static size_t mod_sub_list_clear(struct bt_mesh_model *mod)
 	int i;
 
 	/* Unref stored labels related to this model */
-	for (i = 0, clear_count = 0; i < ARRAY_SIZE(mod->groups); i++) {
+	for (i = 0, clear_count = 0; i < mod->groups_cnt; i++) {
 		if (!BT_MESH_ADDR_IS_VIRTUAL(mod->groups[i])) {
 			if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
 				mod->groups[i] = BT_MESH_ADDR_UNASSIGNED;
@@ -1156,7 +1156,7 @@ send_status:
 static enum bt_mesh_walk mod_sub_clear_visitor(struct bt_mesh_model *mod, void *user_data)
 {
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(mod->groups));
+		bt_mesh_lpn_group_del(mod->groups, mod->groups_cnt);
 	}
 
 	mod_sub_list_clear(mod);
@@ -1212,7 +1212,7 @@ static int mod_sub_overwrite(struct bt_mesh_model *model,
 	}
 
 
-	if (ARRAY_SIZE(mod->groups) > 0) {
+	if (mod->groups_cnt > 0) {
 		bt_mesh_model_extensions_walk(mod, mod_sub_clear_visitor, NULL);
 
 		mod->groups[0] = sub_addr;
@@ -1303,7 +1303,7 @@ static enum bt_mesh_walk mod_sub_list_visitor(struct bt_mesh_model *mod, void *c
 		return BT_MESH_WALK_CONTINUE;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
+	for (i = 0; i < mod->groups_cnt; i++) {
 		if (mod->groups[i] == BT_MESH_ADDR_UNASSIGNED) {
 			continue;
 		}
@@ -1637,7 +1637,7 @@ static int mod_sub_va_overwrite(struct bt_mesh_model *model,
 	}
 
 
-	if (ARRAY_SIZE(mod->groups) > 0) {
+	if (mod->groups_cnt > 0) {
 
 		status = bt_mesh_va_add(label_uuid, &sub_addr);
 		if (status == STATUS_SUCCESS) {
@@ -2061,7 +2061,7 @@ send_list:
 	if (mod) {
 		int i;
 
-		for (i = 0; i < ARRAY_SIZE(mod->keys); i++) {
+		for (i = 0; i < mod->keys_cnt; i++) {
 			if (mod->keys[i] != BT_MESH_KEY_UNUSED) {
 				net_buf_simple_add_le16(&msg, mod->keys[i]);
 			}

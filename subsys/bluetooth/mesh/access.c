@@ -344,7 +344,7 @@ static void mod_init(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		k_work_init_delayable(&mod->pub->timer, mod_publish);
 	}
 
-	for (i = 0; i < ARRAY_SIZE(mod->keys); i++) {
+	for (i = 0; i < mod->keys_cnt; i++) {
 		mod->keys[i] = BT_MESH_KEY_UNUSED;
 	}
 
@@ -419,7 +419,7 @@ static uint16_t *model_group_get(struct bt_mesh_model *mod, uint16_t addr)
 {
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
+	for (i = 0; i < mod->groups_cnt; i++) {
 		if (mod->groups[i] == addr) {
 			return &mod->groups[i];
 		}
@@ -569,7 +569,7 @@ bool bt_mesh_model_has_key(struct bt_mesh_model *mod, uint16_t key)
 {
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(mod->keys); i++) {
+	for (i = 0; i < mod->keys_cnt; i++) {
 		if (mod->keys[i] == key ||
 		    (mod->keys[i] == BT_MESH_KEY_DEV_ANY &&
 		     BT_MESH_IS_DEV_KEY(key))) {
@@ -899,7 +899,7 @@ static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 	int i;
 
 	/* Start with empty array regardless of cleared or set value */
-	for (i = 0; i < ARRAY_SIZE(mod->keys); i++) {
+	for (i = 0; i < mod->keys_cnt; i++) {
 		mod->keys[i] = BT_MESH_KEY_UNUSED;
 	}
 
@@ -908,7 +908,7 @@ static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 		return 0;
 	}
 
-	len = read_cb(cb_arg, mod->keys, sizeof(mod->keys));
+	len = read_cb(cb_arg, mod->keys, mod->keys_cnt * sizeof(mod->keys[0]));
 	if (len < 0) {
 		BT_ERR("Failed to read value (err %zd)", len);
 		return len;
@@ -923,17 +923,18 @@ static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 static int mod_set_sub(struct bt_mesh_model *mod, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
+	size_t size = mod->groups_cnt * sizeof(mod->groups[0]);
 	ssize_t len;
 
 	/* Start with empty array regardless of cleared or set value */
-	(void)memset(mod->groups, 0, sizeof(mod->groups));
+	(void)memset(mod->groups, 0, size);
 
 	if (len_rd == 0) {
 		BT_DBG("Cleared subscriptions for model");
 		return 0;
 	}
 
-	len = read_cb(cb_arg, mod->groups, sizeof(mod->groups));
+	len = read_cb(cb_arg, mod->groups, size);
 	if (len < 0) {
 		BT_ERR("Failed to read value (err %zd)", len);
 		return len;
@@ -1100,7 +1101,7 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 	char path[20];
 	int i, count, err;
 
-	for (i = 0, count = 0; i < ARRAY_SIZE(mod->keys); i++) {
+	for (i = 0, count = 0; i < mod->keys_cnt; i++) {
 		if (mod->keys[i] != BT_MESH_KEY_UNUSED) {
 			keys[count++] = mod->keys[i];
 			BT_DBG("model key 0x%04x", mod->keys[i]);
@@ -1128,7 +1129,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 	char path[20];
 	int i, count, err;
 
-	for (i = 0, count = 0; i < CONFIG_BT_MESH_MODEL_GROUP_COUNT; i++) {
+	for (i = 0, count = 0; i < mod->groups_cnt; i++) {
 		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
 			groups[count++] = mod->groups[i];
 		}
@@ -1270,7 +1271,7 @@ static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		return;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(mod->groups); i++) {
+	for (int i = 0; i < mod->groups_cnt; i++) {
 		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
 			bt_mesh_lpn_group_add(mod->groups[i]);
 		}
