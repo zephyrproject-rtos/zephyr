@@ -820,10 +820,12 @@ uint8_t ll_iso_receive_test(uint16_t handle, uint8_t payload_type)
 		}
 
 		err = isoal_sink_create(handle, cig->lll.role, cis->framed,
-					cis->lll.rx.burst_number, cis->lll.rx.flush_timeout,
+					cis->lll.rx.burst_number,
+					cis->lll.rx.flush_timeout,
 					sdu_interval, cig->iso_interval,
 					cis->sync_delay, cig->sync_delay,
-					ll_iso_test_sdu_alloc, ll_iso_test_sdu_emit,
+					ll_iso_test_sdu_alloc,
+					ll_iso_test_sdu_emit,
 					sink_sdu_write_hci, &sink_handle);
 		if (err) {
 			/* Error creating test source - cleanup source and datapath */
@@ -1106,12 +1108,17 @@ uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
 		}
 
 		/* Setup the test source */
-		err = isoal_source_create(handle, cig->lll.role, cis->framed,
-					  cis->lll.rx.burst_number, cis->lll.rx.flush_timeout,
-					  cis->lll.rx.max_octets, sdu_interval, cig->iso_interval,
+		err = isoal_source_create(handle, cig->lll.role,
+					  cis->framed,
+					  cis->lll.rx.burst_number,
+					  cis->lll.rx.flush_timeout,
+					  cis->lll.rx.max_octets, sdu_interval,
+					  cig->iso_interval,
 					  cis->sync_delay, cig->sync_delay,
-					  ll_iso_pdu_alloc, ll_iso_pdu_write, ll_iso_pdu_emit,
-					  ll_iso_test_pdu_release, &source_handle);
+					  ll_iso_pdu_alloc, ll_iso_pdu_write,
+					  ll_iso_pdu_emit,
+					  ll_iso_test_pdu_release,
+					  &source_handle);
 
 		if (err) {
 			/* Error creating test source - cleanup source and datapath */
