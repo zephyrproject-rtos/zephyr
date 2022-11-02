@@ -102,7 +102,9 @@ struct lll_conn {
 		struct data_pdu_length local;
 		struct data_pdu_length remote;
 		struct data_pdu_length eff;
+#if defined(CONFIG_BT_CTLR_PHY)
 		uint16_t default_tx_time;
+#endif
 		uint16_t default_tx_octets;
 		uint8_t update;
 	} dle;
@@ -133,6 +135,11 @@ struct lll_conn {
 	struct ccm ccm_rx;
 	struct ccm ccm_tx;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_PHY)
+	uint8_t evt_len_upd:1;
+	uint8_t evt_len_upd_delayed:1;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH || CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	uint8_t  rssi_latest;
