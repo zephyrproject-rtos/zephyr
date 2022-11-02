@@ -54,6 +54,8 @@ source "drivers/adc/Kconfig.nrfx"
 
 source "drivers/adc/Kconfig.sam_afec"
 
+source "drivers/adc/Kconfig.sam"
+
 source "drivers/adc/Kconfig.sam0"
 
 source "drivers/adc/Kconfig.stm32"
