@@ -1226,6 +1226,112 @@ int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_par
 	return state->src_id;
 }
 
+static bool valid_bt_bap_scan_delegator_mod_src_param(
+	const struct bt_bap_scan_delegator_mod_src_param *param)
+{
+	uint32_t aggregated_bis_syncs = 0U;
+
+	if (param->broadcast_id > BT_BAP_BROADCAST_ID_MAX) {
+		LOG_DBG("Invalid broadcast_id: %u", param->broadcast_id);
+
+		return false;
+	}
+
+	if (param->num_subgroups > CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS) {
+		LOG_WRN("Too many subgroups %u/%u",
+			param->num_subgroups,
+			CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS);
+
+		return false;
+	}
+
+	for (uint8_t i = 0U; i < param->num_subgroups; i++) {
+		const struct bt_bap_scan_delegator_subgroup *subgroup = &param->subgroups[i];
+
+		if (!bis_syncs_unique_or_no_pref(subgroup->bis_sync,
+						 aggregated_bis_syncs)) {
+			LOG_DBG("Invalid BIS sync: %u", subgroup->bis_sync);
+
+			return false;
+		}
+
+		if (subgroup->metadata_len > BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN) {
+			LOG_DBG("subgroup[%u]: Invalid metadata_len: %u",
+				i, subgroup->metadata_len);
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_param *param)
+{
+	struct bass_recv_state_internal *internal_state = NULL;
+	struct bt_bap_scan_delegator_recv_state *state;
+	static bool state_changed;
+
+	CHECKIF(!valid_bt_bap_scan_delegator_mod_src_param(param)) {
+		return -EINVAL;
+	}
+
+	internal_state = bass_lookup_src_id(param->src_id);
+	if (internal_state == NULL) {
+		LOG_DBG("Could not find receive state with src_id %u", param->src_id);
+
+		return -ENOENT;
+	}
+
+	state = &internal_state->state;
+
+	if (state->broadcast_id != param->broadcast_id) {
+		state->broadcast_id = param->broadcast_id;
+		state_changed = true;
+	}
+
+	if (state->num_subgroups != param->num_subgroups) {
+		state->num_subgroups = param->num_subgroups;
+		state_changed = true;
+	}
+
+	for (uint8_t i = 0U; i < state->num_subgroups; i++) {
+		const struct bt_bap_scan_delegator_subgroup *param_subgroup = &param->subgroups[i];
+		struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
+
+		subgroup->bis_sync = param_subgroup->bis_sync;
+
+		/* If the metadata len is 0, we shall not overwrite the existing metadata */
+		if (param_subgroup->metadata_len == 0U) {
+			continue;
+		}
+
+		if (subgroup->metadata_len != param_subgroup->metadata_len) {
+			subgroup->metadata_len = param_subgroup->metadata_len;
+			state_changed = true;
+		}
+
+		if (subgroup->metadata_len != param_subgroup->metadata_len ||
+		    memcmp(subgroup->metadata, param_subgroup->metadata,
+			   param_subgroup->metadata_len) != 0) {
+			(void)memcpy(subgroup->metadata,
+				     param_subgroup->metadata,
+				     param_subgroup->metadata_len);
+			subgroup->metadata_len = param_subgroup->metadata_len;
+			state_changed = true;
+		}
+	}
+
+	if (state_changed) {
+		LOG_DBG("Index %u: Source modified: ID 0x%02x",
+			internal_state->index, state->src_id);
+
+		receive_state_updated(NULL, internal_state);
+	}
+
+	return 0;
+}
+
 int bt_bap_scan_delegator_rem_src(uint8_t src_id)
 {
 	struct net_buf_simple buf;
