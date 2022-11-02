@@ -218,7 +218,8 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
-	for (handle = LL_CIS_HANDLE_BASE; handle <= LAST_VALID_CIS_HANDLE; handle++) {
+	for (handle = LL_CIS_HANDLE_BASE; handle <= LL_CIS_HANDLE_LAST;
+	     handle++) {
 		cis = ll_iso_stream_connected_get(handle);
 		if (cis && cis->group && cis->cis_id == req->cis_id) {
 			/* CIS ID already in use */
