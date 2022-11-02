@@ -15,6 +15,8 @@
 #define DT_DRV_COMPAT atmel_sam_afec
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_adc)
 #define DT_DRV_COMPAT espressif_esp32_adc
+#elif DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_adc)
+#define DT_DRV_COMPAT atmel_sam_adc
 #elif DT_HAS_COMPAT_STATUS_OKAY(atmel_sam0_adc)
 #define DT_DRV_COMPAT atmel_sam0_adc
 #elif DT_HAS_COMPAT_STATUS_OKAY(ite_it8xxx2_adc)
