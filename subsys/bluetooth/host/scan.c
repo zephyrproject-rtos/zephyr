@@ -22,10 +22,11 @@
 #include "direction_internal.h"
 #include "id.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
-#define LOG_MODULE_NAME bt_scan
-#include "common/log.h"
 #include "common/bt_str.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_scan);
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 static sys_slist_t scan_cbs = SYS_SLIST_STATIC_INIT(&scan_cbs);
@@ -441,14 +442,14 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	struct net_buf_simple_state state;
 	bt_addr_le_t id_addr;
 
-	BT_DBG("%s event %u, len %u, rssi %d dBm", bt_addr_le_str(addr),
-	       info->adv_type, len, info->rssi);
+	LOG_DBG("%s event %u, len %u, rssi %d dBm", bt_addr_le_str(addr), info->adv_type, len,
+		info->rssi);
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN) &&
 	    (info->adv_props & BT_HCI_LE_ADV_PROP_DIRECT)) {
-		BT_DBG("Dropped direct adv report");
+		LOG_DBG("Dropped direct adv report");
 		return;
 	}
 
@@ -580,7 +581,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
 
-	BT_DBG("Adv number of reports %u", num_reports);
+	LOG_DBG("Adv number of reports %u", num_reports);
 
 	while (num_reports--) {
 		struct bt_hci_evt_le_ext_advertising_info *evt;
@@ -591,7 +592,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		bool is_new_advertiser;
 
 		if (buf->len < sizeof(*evt)) {
-			BT_ERR("Unexpected end of buffer");
+			LOG_ERR("Unexpected end of buffer");
 			break;
 		}
 
@@ -623,7 +624,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		}
 
 		if (is_new_advertiser && reassembling_advertiser.state == FRAG_ADV_REASSEMBLING) {
-			BT_WARN("Received an incomplete advertising report while reassembling "
+			LOG_WRN("Received an incomplete advertising report while reassembling "
 				"advertising reports from a different advertiser. The advertising "
 				"report is discarded and future scan results may be incomplete. "
 				"Interleaving of fragmented advertising reports from different "
@@ -772,7 +773,7 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 	struct bt_le_per_adv_sync_recv_info info;
 
 	if (buf->len < sizeof(*evt)) {
-		BT_ERR("Unexpected end of buffer");
+		LOG_ERR("Unexpected end of buffer");
 		return;
 	}
 
@@ -781,14 +782,14 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->handle));
 
 	if (!per_adv_sync) {
-		BT_ERR("Unknown handle 0x%04X for periodic advertising report",
-		       sys_le16_to_cpu(evt->handle));
+		LOG_ERR("Unknown handle 0x%04X for periodic advertising report",
+			sys_le16_to_cpu(evt->handle));
 		return;
 	}
 
 	if (atomic_test_bit(per_adv_sync->flags,
 			    BT_PER_ADV_SYNC_RECV_DISABLED)) {
-		BT_ERR("Received PA adv report when receive disabled");
+		LOG_ERR("Received PA adv report when receive disabled");
 		return;
 	}
 
@@ -809,7 +810,7 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 		} else {
 			if (net_buf_simple_tailroom(&per_adv_sync->reassembly) < evt->length) {
 				/* The buffer is too small for the entire report. Drop it */
-				BT_WARN("Buffer is too small to reassemble the report. "
+				LOG_WRN("Buffer is too small to reassemble the report. "
 					"Use CONFIG_BT_PER_ADV_SYNC_BUF_SIZE to change "
 					"the buffer size.");
 
@@ -897,7 +898,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		err = bt_le_scan_update(false);
 
 		if (err) {
-			BT_ERR("Could not update scan (%d)", err);
+			LOG_ERR("Could not update scan (%d)", err);
 		}
 	}
 
@@ -906,7 +907,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		if (pending_per_adv_sync) {
 			per_adv_sync_delete(pending_per_adv_sync);
 		} else {
-			BT_ERR("Unexpected per adv sync cancelled event");
+			LOG_ERR("Unexpected per adv sync cancelled event");
 		}
 
 		return;
@@ -917,7 +918,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 			      BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
 	     ((pending_per_adv_sync->sid != evt->sid) ||
 	      !bt_addr_le_eq(&pending_per_adv_sync->addr, &evt->adv_addr)))) {
-		BT_ERR("Unexpected per adv sync established event");
+		LOG_ERR("Unexpected per adv sync established event");
 		/* Request terminate of pending periodic advertising in controller */
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->handle));
 
@@ -1002,8 +1003,8 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->handle));
 
 	if (!per_adv_sync) {
-		BT_ERR("Unknown handle 0x%04Xfor periodic adv sync lost",
-		       sys_le16_to_cpu(evt->handle));
+		LOG_ERR("Unknown handle 0x%04Xfor periodic adv sync lost",
+			sys_le16_to_cpu(evt->handle));
 		return;
 	}
 
@@ -1022,7 +1023,7 @@ void bt_hci_le_past_received(struct net_buf *buf)
 
 	if (evt->status) {
 		/* No sync created, don't notify app */
-		BT_DBG("PAST receive failed with status 0x%02X", evt->status);
+		LOG_DBG("PAST receive failed with status 0x%02X", evt->status);
 		return;
 	}
 
@@ -1030,14 +1031,14 @@ void bt_hci_le_past_received(struct net_buf *buf)
 				sys_le16_to_cpu(evt->conn_handle));
 
 	if (!sync_info.conn) {
-		BT_ERR("Could not lookup connection handle from PAST");
+		LOG_ERR("Could not lookup connection handle from PAST");
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->sync_handle));
 		return;
 	}
 
 	per_adv_sync = per_adv_sync_new();
 	if (!per_adv_sync) {
-		BT_WARN("Could not allocate new PA sync from PAST");
+		LOG_WRN("Could not allocate new PA sync from PAST");
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->sync_handle));
 		return;
 	}
@@ -1078,8 +1079,8 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->sync_handle));
 
 	if (!per_adv_sync) {
-		BT_ERR("Unknown handle 0x%04X for periodic advertising report",
-		       sys_le16_to_cpu(evt->sync_handle));
+		LOG_ERR("Unknown handle 0x%04X for periodic advertising report",
+			sys_le16_to_cpu(evt->sync_handle));
 		return;
 	}
 
@@ -1117,18 +1118,18 @@ static void bt_hci_le_df_connectionless_iq_report_common(uint8_t event, struct n
 	if (event == BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT) {
 		err = hci_df_prepare_connectionless_iq_report(buf, &cte_report, &per_adv_sync);
 		if (err) {
-			BT_ERR("Prepare CTE conn IQ report failed %d", err);
+			LOG_ERR("Prepare CTE conn IQ report failed %d", err);
 			return;
 		}
 	} else if (IS_ENABLED(CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES) &&
 		   event == BT_HCI_EVT_VS_LE_CONNECTIONLESS_IQ_REPORT) {
 		err = hci_df_vs_prepare_connectionless_iq_report(buf, &cte_report, &per_adv_sync);
 		if (err) {
-			BT_ERR("Prepare CTE conn IQ report failed %d", err);
+			LOG_ERR("Prepare CTE conn IQ report failed %d", err);
 			return;
 		}
 	} else {
-		BT_ERR("Unhandled VS connectionless IQ report");
+		LOG_ERR("Unhandled VS connectionless IQ report");
 		return;
 	}
 
@@ -1160,13 +1161,13 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 	uint8_t num_reports = net_buf_pull_u8(buf);
 	struct bt_hci_evt_le_advertising_info *evt;
 
-	BT_DBG("Adv number of reports %u",  num_reports);
+	LOG_DBG("Adv number of reports %u",  num_reports);
 
 	while (num_reports--) {
 		struct bt_le_scan_recv_info adv_info;
 
 		if (buf->len < sizeof(*evt)) {
-			BT_ERR("Unexpected end of buffer");
+			LOG_ERR("Unexpected end of buffer");
 			break;
 		}
 
@@ -1824,7 +1825,7 @@ int bt_le_per_adv_list_add(const bt_addr_le_t *addr, uint8_t sid)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST, buf,
 				   NULL);
 	if (err) {
-		BT_ERR("Failed to add device to periodic advertiser list");
+		LOG_ERR("Failed to add device to periodic advertiser list");
 
 		return err;
 	}
@@ -1855,7 +1856,7 @@ int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST, buf,
 				   NULL);
 	if (err) {
-		BT_ERR("Failed to remove device from periodic advertiser list");
+		LOG_ERR("Failed to remove device from periodic advertiser list");
 		return err;
 	}
 
@@ -1872,7 +1873,7 @@ int bt_le_per_adv_list_clear(void)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_PER_ADV_LIST, NULL, NULL);
 	if (err) {
-		BT_ERR("Failed to clear periodic advertiser list");
+		LOG_ERR("Failed to clear periodic advertiser list");
 		return err;
 	}
 

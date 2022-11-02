@@ -16,14 +16,15 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_MODEL)
-#define LOG_MODULE_NAME bt_mesh_health_cli
-#include "common/log.h"
 #include "common/bt_str.h"
 
 #include "net.h"
 #include "foundation.h"
 #include "msg.h"
+
+#define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_mesh_health_cli);
 
 static int32_t msg_timeout;
 
@@ -46,9 +47,8 @@ static int health_fault_status(struct bt_mesh_model *model,
 	uint8_t test_id;
 	uint16_t cid;
 
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
+		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	test_id = net_buf_simple_pull_u8(buf);
 	cid = net_buf_simple_pull_le16(buf);
@@ -71,7 +71,7 @@ static int health_fault_status(struct bt_mesh_model *model,
 
 		if (param->faults && param->fault_count) {
 			if (buf->len > *param->fault_count) {
-				BT_WARN("Got more faults than there's space for");
+				LOG_WRN("Got more faults than there's space for");
 			} else {
 				*param->fault_count = buf->len;
 			}
@@ -99,15 +99,13 @@ static int health_current_status(struct bt_mesh_model *model,
 	uint8_t test_id;
 	uint16_t cid;
 
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
+		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	test_id = net_buf_simple_pull_u8(buf);
 	cid = net_buf_simple_pull_le16(buf);
 
-	BT_DBG("Test ID 0x%02x Company ID 0x%04x Fault Count %u", test_id, cid,
-	       buf->len);
+	LOG_DBG("Test ID 0x%02x Company ID 0x%04x Fault Count %u", test_id, cid, buf->len);
 
 	if (cli->current_status) {
 		cli->current_status(cli, ctx->addr, test_id, cid,
@@ -129,9 +127,8 @@ static int health_period_status(struct bt_mesh_model *model,
 	struct health_period_param *param;
 	uint8_t divisor;
 
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
+		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	divisor = net_buf_simple_pull_u8(buf);
 
@@ -164,9 +161,8 @@ static int health_attention_status(struct bt_mesh_model *model,
 	struct health_attention_param *param;
 	uint8_t attention;
 
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
+		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	attention = net_buf_simple_pull_u8(buf);
 
@@ -540,7 +536,7 @@ void bt_mesh_health_cli_timeout_set(int32_t timeout)
 int bt_mesh_health_cli_set(struct bt_mesh_model *model)
 {
 	if (!model->user_data) {
-		BT_ERR("No Health Client context for given model");
+		LOG_ERR("No Health Client context for given model");
 		return -EINVAL;
 	}
 
@@ -554,10 +550,10 @@ static int health_cli_init(struct bt_mesh_model *model)
 {
 	struct bt_mesh_health_cli *cli = model->user_data;
 
-	BT_DBG("primary %u", bt_mesh_model_in_primary(model));
+	LOG_DBG("primary %u", bt_mesh_model_in_primary(model));
 
 	if (!cli) {
-		BT_ERR("No Health Client context provided");
+		LOG_ERR("No Health Client context provided");
 		return -EINVAL;
 	}
 
