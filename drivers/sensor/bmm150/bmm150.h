@@ -9,6 +9,47 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMM150_BMM150_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMM150_BMM150_H_
 
+#include <zephyr/types.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
+
+#define DT_DRV_COMPAT bosch_bmm150
+
+#define BMM150_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BMM150_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+
+union bmm150_bus {
+#if BMM150_BUS_SPI
+	struct spi_dt_spec spi;
+#endif
+#if BMM150_BUS_I2C
+	struct i2c_dt_spec i2c;
+#endif
+};
+
+typedef int (*bmm150_bus_check_fn)(const union bmm150_bus *bus);
+typedef int (*bmm150_reg_read_fn)(const union bmm150_bus *bus,
+				  uint8_t start, uint8_t *buf, int size);
+typedef int (*bmm150_reg_write_fn)(const union bmm150_bus *bus,
+				   uint8_t reg, uint8_t val);
+
+struct bmm150_bus_io {
+	bmm150_bus_check_fn check;
+	bmm150_reg_read_fn read;
+	bmm150_reg_write_fn write;
+};
+
+#if BMM150_BUS_SPI
+#define BMM150_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB |	\
+			      SPI_MODE_CPOL | SPI_MODE_CPHA)
+extern const struct bmm150_bus_io bmm150_bus_io_spi;
+#endif
+
+#if BMM150_BUS_I2C
+extern const struct bmm150_bus_io bmm150_bus_io_i2c;
+#endif
 
 #include <zephyr/types.h>
 #include <zephyr/drivers/i2c.h>
@@ -92,11 +133,6 @@
 	#define BMM150_MAGN_SET_ATTR
 #endif
 
-
-struct bmm150_config {
-	struct i2c_dt_spec i2c;
-};
-
 struct bmm150_trim_regs {
 	int8_t x1;
 	int8_t y1;
@@ -153,4 +189,4 @@ enum bmm150_presets {
 	#define BMM150_DEFAULT_PRESET BMM150_HIGH_ACCURACY_PRESET
 #endif
 
-#endif /* __SENSOR_BMM150_H__ */
+#endif
