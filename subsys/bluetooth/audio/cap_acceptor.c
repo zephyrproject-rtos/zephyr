@@ -10,9 +10,9 @@
 #include <zephyr/bluetooth/audio/csip.h>
 #include "cap_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CAP_ACCEPTOR)
-#define LOG_MODULE_NAME bt_cap_acceptor
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_cap_acceptor, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)
 
@@ -29,7 +29,7 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 
 	err = bt_csip_set_member_register(param, svc_inst);
 	if (err != 0) {
-		BT_DBG("Failed to register CSIP");
+		LOG_DBG("Failed to register CSIP");
 		return err;
 	}
 
@@ -40,7 +40,7 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 
 	err = bt_gatt_service_register(&cas);
 	if (err) {
-		BT_DBG("Failed to register CAS");
+		LOG_DBG("Failed to register CAS");
 		return err;
 	}
 

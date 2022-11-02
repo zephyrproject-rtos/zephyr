@@ -41,17 +41,20 @@
 #include "ull_conn_iso_internal.h"
 #include "lll_peripheral_iso.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_peripheral_iso
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
+
 #include "hal/debug.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_ctlr_ull_peripheral_iso);
 
 static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *error)
 {
 	struct ll_conn *acl_conn = NULL;
 
 	if (!IS_CIS_HANDLE(handle) || ll_conn_iso_stream_get(handle)->group == NULL) {
-		BT_ERR("Unknown CIS handle %u", handle);
+		LOG_ERR("Unknown CIS handle %u", handle);
 		*error = BT_HCI_ERR_UNKNOWN_CONN_ID;
 		return NULL;
 	}
@@ -72,13 +75,13 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 	}
 
 	if (!acl_conn) {
-		BT_ERR("No connection found for handle %u", handle);
+		LOG_ERR("No connection found for handle %u", handle);
 		*error = BT_HCI_ERR_CMD_DISALLOWED;
 		return NULL;
 	}
 
 	if (acl_conn->lll.role == BT_CONN_ROLE_CENTRAL) {
-		BT_ERR("Not allowed for central");
+		LOG_ERR("Not allowed for central");
 		*error = BT_HCI_ERR_CMD_DISALLOWED;
 		return NULL;
 	}
@@ -88,7 +91,7 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 #else
 	if (!ull_cp_cc_awaiting_reply(acl_conn)) {
 #endif
-		BT_ERR("Not allowed in current procedure state");
+		LOG_ERR("Not allowed in current procedure state");
 		*error = BT_HCI_ERR_CMD_DISALLOWED;
 		return NULL;
 	}

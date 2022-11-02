@@ -37,9 +37,6 @@
 #include "ull_internal.h"
 #include "lll/lll_vendor.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_conn_iso
-#include "common/log.h"
 #include "hal/debug.h"
 
 static struct ll_conn_iso_group cig = { 0 };

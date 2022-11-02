@@ -32,10 +32,11 @@
 #define BT_CSIP_SIH_HASH_SIZE           3
 #define CSIP_SET_LOCK_TIMER_VALUE       K_SECONDS(60)
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIP_SET_MEMBER)
-#define LOG_MODULE_NAME bt_csip_set_member
-#include "common/log.h"
 #include "common/bt_str.h"
+
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_csip_set_member, CONFIG_BT_CSIP_SET_MEMBER_LOG_LEVEL);
 
 struct bt_csip_set_member_svc_inst {
 	struct bt_csip_set_sirk set_sirk;
@@ -155,7 +156,7 @@ static int sirk_encrypt(struct bt_conn *conn,
 			sys_mem_swap(test_k, 16);
 			swapped = true;
 		}
-		BT_DBG("Encrypting test SIRK");
+		LOG_DBG("Encrypting test SIRK");
 		k = test_k;
 	} else {
 		k = conn->le.keys->ltk.val;
@@ -211,14 +212,14 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 		res = generate_prand(&prand);
 
 		if (res != 0) {
-			BT_WARN("Could not generate new prand");
+			LOG_WRN("Could not generate new prand");
 			return res;
 		}
 	}
 
 	res = bt_csip_sih(svc_inst->set_sirk.value, prand, &hash);
 	if (res != 0) {
-		BT_WARN("Could not generate new RSI");
+		LOG_WRN("Could not generate new RSI");
 		return res;
 	}
 
@@ -252,7 +253,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 			err = sirk_encrypt(conn, &svc_inst->set_sirk,
 					   &enc_sirk);
 			if (err != 0) {
-				BT_ERR("Could not encrypt SIRK: %d",
+				LOG_ERR("Could not encrypt SIRK: %d",
 					err);
 				gatt_err = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 			} else {
@@ -266,7 +267,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 		} else if (cb_rsp == BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY) {
 			gatt_err = BT_GATT_ERR(BT_CSIP_ERROR_SIRK_OOB_ONLY);
 		} else {
-			BT_ERR("Invalid callback response: %u", cb_rsp);
+			LOG_ERR("Invalid callback response: %u", cb_rsp);
 			gatt_err = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 		}
 
@@ -278,7 +279,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 	}
 
 
-	BT_DBG("Set sirk %sencrypted",
+	LOG_DBG("Set sirk %sencrypted",
 	       sirk->type ==  BT_CSIP_SIRK_TYPE_PLAIN ? "not " : "");
 	LOG_HEXDUMP_DBG(svc_inst->set_sirk.value,
 			sizeof(svc_inst->set_sirk.value), "Set SIRK");
@@ -289,7 +290,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 static void set_sirk_cfg_changed(const struct bt_gatt_attr *attr,
 				 uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 
 static ssize_t read_set_size(struct bt_conn *conn,
@@ -298,7 +299,7 @@ static ssize_t read_set_size(struct bt_conn *conn,
 {
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
-	BT_DBG("%u", svc_inst->set_size);
+	LOG_DBG("%u", svc_inst->set_size);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &svc_inst->set_size,
@@ -308,7 +309,7 @@ static ssize_t read_set_size(struct bt_conn *conn,
 static void set_size_cfg_changed(const struct bt_gatt_attr *attr,
 				 uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 
 static ssize_t read_set_lock(struct bt_conn *conn,
@@ -317,7 +318,7 @@ static ssize_t read_set_lock(struct bt_conn *conn,
 {
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
-	BT_DBG("%u", svc_inst->set_lock);
+	LOG_DBG("%u", svc_inst->set_lock);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &svc_inst->set_lock,
@@ -372,7 +373,7 @@ static uint8_t set_lock(struct bt_conn *conn,
 		(void)k_work_cancel_delayable(&svc_inst->set_lock_timer);
 	}
 
-	BT_DBG("%u", svc_inst->set_lock);
+	LOG_DBG("%u", svc_inst->set_lock);
 
 	if (notify) {
 		/*
@@ -420,7 +421,7 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 static void set_lock_cfg_changed(const struct bt_gatt_attr *attr,
 				 uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 
 static ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -428,7 +429,7 @@ static ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
-	BT_DBG("%u", svc_inst->rank);
+	LOG_DBG("%u", svc_inst->rank);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &svc_inst->rank,
@@ -445,7 +446,7 @@ static void set_lock_timer_handler(struct k_work *work)
 	svc_inst = CONTAINER_OF(delayable, struct bt_csip_set_member_svc_inst,
 				set_lock_timer);
 
-	BT_DBG("Lock timeout, releasing");
+	LOG_DBG("Lock timeout, releasing");
 	svc_inst->set_lock = BT_CSIP_RELEASE_VALUE;
 	notify_clients(svc_inst, NULL);
 
@@ -488,7 +489,7 @@ static void csip_security_changed(struct bt_conn *conn, bt_security_t level,
 static void handle_csip_disconnect(struct bt_csip_set_member_svc_inst *svc_inst,
 				   struct bt_conn *conn)
 {
-	BT_DBG("Non-bonded device");
+	LOG_DBG("Non-bonded device");
 	if (is_last_client_to_write(svc_inst, conn)) {
 		(void)memset(&svc_inst->lock_client_addr, 0,
 			     sizeof(svc_inst->lock_client_addr));
@@ -519,8 +520,7 @@ static void handle_csip_disconnect(struct bt_csip_set_member_svc_inst *svc_inst,
 
 static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	BT_DBG("Disconnected: %s (reason %u)",
-	       bt_addr_le_str(bt_conn_get_dst(conn)), reason);
+	LOG_DBG("Disconnected: %s (reason %u)", bt_addr_le_str(bt_conn_get_dst(conn)), reason);
 
 	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
 		handle_csip_disconnect(&svc_insts[i], conn);
@@ -581,7 +581,7 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 	oldest->active = true;
 	oldest->age = svc_inst->age_counter++;
 #else
-	BT_WARN("Could not add device to pending notification list");
+	LOG_WRN("Could not add device to pending notification list");
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 
 }
@@ -599,8 +599,8 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 	 *    the oldest entry, following the behavior of the key storage.
 	 */
 
-	BT_DBG("%s paired (%sbonded)",
-	       bt_addr_le_str(bt_conn_get_dst(conn)), bonded ? "" : "not ");
+	LOG_DBG("%s paired (%sbonded)", bt_addr_le_str(bt_conn_get_dst(conn)),
+		bonded ? "" : "not ");
 
 	if (!bonded) {
 		return;
@@ -677,19 +677,19 @@ void *bt_csip_set_member_svc_decl_get(const struct bt_csip_set_member_svc_inst *
 static bool valid_register_param(const struct bt_csip_set_member_register_param *param)
 {
 	if (param->lockable && param->rank == 0) {
-		BT_DBG("Rank cannot be 0 if service is lockable");
+		LOG_DBG("Rank cannot be 0 if service is lockable");
 		return false;
 	}
 
 	if (param->rank > 0 && param->rank > param->set_size) {
-		BT_DBG("Invalid rank: %u (shall be less than set_size: %u)",
-		       param->set_size, param->set_size);
+		LOG_DBG("Invalid rank: %u (shall be less than set_size: %u)", param->set_size,
+			param->set_size);
 		return false;
 	}
 
 #if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1
 	if (param->parent == NULL) {
-		BT_DBG("Parent service not provided");
+		LOG_DBG("Parent service not provided");
 		return false;
 	}
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1 */
@@ -709,12 +709,12 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	}
 
 	CHECKIF(param == NULL) {
-		BT_DBG("NULL param");
+		LOG_DBG("NULL param");
 		return -EINVAL;
 	}
 
 	CHECKIF(!valid_register_param(param)) {
-		BT_DBG("Invalid parameters");
+		LOG_DBG("Invalid parameters");
 		return -EINVAL;
 	}
 
@@ -727,7 +727,7 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 
 	err = bt_gatt_service_register(inst->service_p);
 	if (err != 0) {
-		BT_DBG("CSIS service register failed: %d", err);
+		LOG_DBG("CSIS service register failed: %d", err);
 		return err;
 	}
 
@@ -747,7 +747,7 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 
 		(void)memcpy(inst->set_sirk.value, test_sirk,
 			     sizeof(test_sirk));
-		BT_DBG("CSIP SIRK was overwritten by sample data SIRK");
+		LOG_DBG("CSIP SIRK was overwritten by sample data SIRK");
 	} else {
 		(void)memcpy(inst->set_sirk.value, param->set_sirk,
 			     sizeof(inst->set_sirk.value));

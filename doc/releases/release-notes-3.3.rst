@@ -40,6 +40,11 @@ Changes in this release
 * Starting from this release ``zephyr-`` prefixed tags won't be created
   anymore. The project will continue using ``v`` tags, for example ``v3.3.0``.
 
+* Bluetooth: Deprecate the Bluetooth logging subsystem in favor of the Zephyr
+  standard logging system. To enable debugging for a particular module in the
+  Bluetooth subsystem, enable `CONFIG_BT_(module name)_LOG_LEVEL_DBG` instead of
+  `CONFIG_BT_DEBUG_(module name)`.
+
 Removed APIs in this release
 ============================
 

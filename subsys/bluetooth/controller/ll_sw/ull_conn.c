@@ -70,10 +70,11 @@
 #include "ull_llcp_features.h"
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_conn
-#include "common/log.h"
 #include "hal/debug.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_ctlr_ull_conn);
 
 static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
@@ -343,8 +344,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 			force_md_cnt = force_md_cnt_calc(&conn->lll, tx_rate);
 			previous = lll_conn_force_md_cnt_set(force_md_cnt);
 			if (previous != force_md_cnt) {
-				BT_INFO("force_md_cnt: old= %u, new= %u.",
-					previous, force_md_cnt);
+				LOG_INF("force_md_cnt: old= %u, new= %u.", previous, force_md_cnt);
 			}
 		}
 #endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
@@ -372,8 +372,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 	cycle_stamp = k_cycle_get_32();
 	delta = k_cyc_to_ns_floor64(cycle_stamp - last_cycle_stamp);
 	if (delta > BT_CTLR_THROUGHPUT_PERIOD) {
-		BT_INFO("incoming Tx: count= %u, len= %u, rate= %u bps.",
-			tx_cnt, tx_len, tx_rate);
+		LOG_INF("incoming Tx: count= %u, len= %u, rate= %u bps.", tx_cnt, tx_len, tx_rate);
 
 		last_cycle_stamp = cycle_stamp;
 		tx_cnt = 0U;
@@ -7878,7 +7877,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 				   EVENT_IFS_US) << 1;
 		force_md_cnt = (delta + (time_keep_alive - 1)) /
 			       time_keep_alive;
-		BT_DBG("Time: incoming= %u, expected outgoing= %u, delta= %u, "
+		LOG_DBG("Time: incoming= %u, expected outgoing= %u, delta= %u, "
 		       "keepalive= %u, force_md_cnt = %u.",
 		       time_incoming, time_outgoing, delta, time_keep_alive,
 		       force_md_cnt);
