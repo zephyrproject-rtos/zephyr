@@ -484,6 +484,66 @@ static void add_all_sources(void)
 	}
 }
 
+static int mod_source(struct sync_state *state)
+{
+	const uint16_t pref_context = BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL;
+	struct bt_bap_scan_delegator_mod_src_param param;
+	uint8_t pref_context_metadata[4] = {
+		0x03, /* length of the type and value */
+		BT_AUDIO_METADATA_TYPE_PREF_CONTEXT,
+		((pref_context >> 0) & 0xFF),
+		((pref_context >> 8) & 0xFF),
+	};
+	int err;
+
+	UNSET_FLAG(flag_recv_state_updated);
+
+	param.src_id = state->src_id;
+	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
+	param.broadcast_id = g_broadcast_id;
+	param.num_subgroups = 1U;
+
+	for (uint8_t i = 0U; i < param.num_subgroups; i++) {
+		struct bt_bap_scan_delegator_subgroup *subgroup_param = &param.subgroups[i];
+
+		subgroup_param->bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
+		subgroup_param->metadata_len = sizeof(pref_context_metadata);
+		(void)memcpy(subgroup_param->metadata, pref_context_metadata,
+			     subgroup_param->metadata_len);
+	}
+
+	err = bt_bap_scan_delegator_mod_src(&param);
+	if (err < 0) {
+		return err;
+	}
+
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	return 0;
+}
+
+static void mod_all_sources(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		struct sync_state *state = &sync_states[i];
+
+		if (state->pa_sync != NULL) {
+			int err;
+
+			printk("[%zu]: Modifying source\n", i);
+
+			err = mod_source(state);
+			if (err < 0) {
+				FAIL("[%zu]: Modify source failed (err %d)\n", i, err);
+				return;
+			}
+
+			printk("[%zu]: Source id modifed %u\n",
+			       i, state->src_id);
+		}
+	}
+}
+
 static int remove_source(struct sync_state *state)
 {
 	int err;
@@ -607,6 +667,9 @@ static void test_main_client_sync(void)
 	/* Wait for broadcast assistant to send us broadcast code */
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
 
+	/* Mod all sources by modifying the metadata */
+	mod_all_sources();
+
 	/* Set the BIS sync state */
 	sync_all_broadcasts();
 
@@ -643,6 +706,9 @@ static void test_main_server_sync_client_rem(void)
 	/* Wait for broadcast assistant to send us broadcast code */
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
 
+	/* Mod all sources by modifying the metadata */
+	mod_all_sources();
+
 	/* Set the BIS sync state */
 	sync_all_broadcasts();
 
@@ -678,6 +744,9 @@ static void test_main_server_sync_server_rem(void)
 
 	/* Wait for broadcast assistant to send us broadcast code */
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
+
+	/* Mod all sources by modifying the metadata */
+	mod_all_sources();
 
 	/* Set the BIS sync state */
 	sync_all_broadcasts();
