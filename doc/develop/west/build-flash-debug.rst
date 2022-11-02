@@ -386,6 +386,15 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
            to the source directory. If the current working directory is inside
            the source directory this will be set to an empty string.
          - ``app``: The name of the source directory.
+   * - ``build.gdb``
+     - String. If present and nonempty, this is the path to the GDB executable
+       that will be used by default if you use commands like ``west debug`` and
+       ``west attach`` on the generated build directory. For example, you can
+       set this to the path to the ``arm-zephyr-eabi-gdb-py`` executable in the
+       :ref:`toolchain_zephyr_sdk` to debug Arm Cortex-M applications with
+       Python available from within GDB by default. Be careful with this option
+       if you switch architectures often, as GDB binaries for different target
+       architectures than the board you are currently debugging will not work.
    * - ``build.generator``
      - String, default ``Ninja``. The `CMake Generator`_ to use to create a
        build system. (To set a generator for a single build, see the

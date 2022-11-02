@@ -458,6 +458,11 @@ class Build(Forceable):
             cmake_opts = ['-DBOARD={}'.format(board)]
         else:
             cmake_opts = []
+
+        gdb = config_get('gdb', None)
+        if gdb:
+            cmake_opts.append(f'-DCMAKE_GDB={gdb}')
+
         if self.args.cmake_opts:
             cmake_opts.extend(self.args.cmake_opts)
 
