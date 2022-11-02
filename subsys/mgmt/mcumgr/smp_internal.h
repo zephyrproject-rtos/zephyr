@@ -8,13 +8,12 @@
 #ifndef MGMT_MCUMGR_SMP_INTERNAL_H_
 #define MGMT_MCUMGR_SMP_INTERNAL_H_
 
+#include <zephyr/net/buf.h>
+#include <zephyr/mgmt/mcumgr/smp.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct smp_transport;
-struct zephyr_smp_transport;
-struct net_buf;
 
 /**
  * @brief Enqueues an incoming SMP request packet for processing.
