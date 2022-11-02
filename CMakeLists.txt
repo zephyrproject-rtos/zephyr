@@ -1679,6 +1679,7 @@ if(CONFIG_BUILD_OUTPUT_STRIPPED)
             $<TARGET_PROPERTY:bintools,strip_flag_infile>${KERNEL_ELF_NAME}
             $<TARGET_PROPERTY:bintools,strip_flag_outfile>${KERNEL_STRIP_NAME}
             $<TARGET_PROPERTY:bintools,strip_flag_final>
+    COMMAND ${CMAKE_COMMAND} -E sha256sum ${KERNEL_STRIP_NAME}
     )
   list(APPEND
     post_build_byproducts
