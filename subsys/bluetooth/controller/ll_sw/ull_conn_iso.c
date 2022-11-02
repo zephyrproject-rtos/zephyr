@@ -54,10 +54,12 @@
 
 static int init_reset(void);
 static void ticker_update_cig_op_cb(uint32_t status, void *param);
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 static void ticker_resume_op_cb(uint32_t status, void *param);
 static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			     uint32_t remainder, uint16_t lazy, uint8_t force,
 			     void *param);
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 static void cis_disabled_cb(void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void cig_disable(void *param);
@@ -363,6 +365,7 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
 				      uint16_t cis_handle,
 				      uint32_t ticks_anchor,
@@ -425,6 +428,7 @@ void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 int ull_conn_iso_init(void)
 {
@@ -492,6 +496,7 @@ static void ticker_update_cig_op_cb(uint32_t status, void *param)
 		  param == ull_disable_mark_get());
 }
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 static void ticker_resume_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
@@ -531,6 +536,7 @@ static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	LL_ASSERT(!ret);
 }
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 static void cis_disabled_cb(void *param)
 {
@@ -597,6 +603,7 @@ static void cis_disabled_cb(void *param)
 			ll_rx_put(node_terminate->hdr.link, node_terminate);
 			ll_rx_sched();
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 			if (cig->lll.resume_cis == cis->lll.handle) {
 				/* Resume pending for terminating CIS - stop ticker */
 				(void)ticker_stop(TICKER_INSTANCE_ID_CTLR,
@@ -607,6 +614,7 @@ static void cis_disabled_cb(void *param)
 
 				cig->lll.resume_cis = LLL_HANDLE_INVALID;
 			}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 			/* We need to flush TX nodes in LLL before releasing the stream.
 			 * More than one CIG may be terminating at the same time, so
@@ -751,7 +759,10 @@ static void disable(uint16_t handle)
 	LL_ASSERT(err == 0 || err == -EALREADY);
 
 	cig->lll.handle = LLL_HANDLE_INVALID;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	cig->lll.resume_cis = LLL_HANDLE_INVALID;
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 }
 
 /* An ISO interval has elapsed for a Connected Isochronous Group */

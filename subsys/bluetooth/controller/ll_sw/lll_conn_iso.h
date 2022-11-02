@@ -54,10 +54,12 @@ struct lll_conn_iso_group {
 
 	uint8_t framing:1;
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	uint8_t  paused : 1;  /* 1: CIG is paused */
 
 	/* Resumption information */
 	uint16_t resume_cis;  /* CIS handle to schedule at resume */
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 };
 
 int lll_conn_iso_init(void);
