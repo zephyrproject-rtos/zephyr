@@ -77,6 +77,11 @@
 #error "Unsupported configuration: ARC_FIRQ_STACK and (RGF_NUM_BANKS < 2)"
 #endif
 
+/* In case of ARC 2+2 secure mode enabled the firq are not supported by HW */
+#if defined(CONFIG_ARC_FIRQ) && defined(CONFIG_ARC_HAS_SECURE)
+#error "Unsupported configuration: ARC_FIRQ and ARC_HAS_SECURE"
+#endif
+
 #if defined(CONFIG_SMP) && !defined(CONFIG_MULTITHREADING)
 #error "Non-multithreading mode isn't supported on SMP targets"
 #endif
@@ -343,6 +348,10 @@ static ALWAYS_INLINE void arch_nop(void)
 {
 	__builtin_arc_nop();
 }
+
+#ifndef CONFIG_XIP
+extern char __arc_rw_sram_size[];
+#endif /* CONFIG_XIP */
 
 #endif /* _ASMLANGUAGE */
 

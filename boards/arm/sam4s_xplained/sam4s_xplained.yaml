@@ -9,6 +9,7 @@ toolchain:
 supported:
   - gpio
   - memc
+  - pwm
   - spi
   - watchdog
   - xplained_gpio

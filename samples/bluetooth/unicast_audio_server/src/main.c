@@ -13,7 +13,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/sys/byteorder.h>
 
 #define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
@@ -41,7 +41,7 @@ static struct k_work_delayable audio_send_work;
 static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 static struct bt_audio_source {
 	struct bt_audio_stream *stream;
-	uint32_t seq_num;
+	uint16_t seq_num;
 	uint16_t max_sdu;
 	size_t len_to_send;
 } source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
@@ -69,7 +69,7 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
 
-static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
+static uint16_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
 {
 	for (size_t i = 0U; i < configured_source_stream_count; i++) {
 		if (stream == source_streams[i].stream) {
@@ -563,11 +563,11 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-static struct bt_audio_capability caps_sink = {
+static struct bt_pacs_cap cap_sink = {
 	.codec = &lc3_codec,
 };
 
-static struct bt_audio_capability caps_source = {
+static struct bt_pacs_cap cap_source = {
 	.codec = &lc3_codec,
 };
 
@@ -576,8 +576,8 @@ static int set_location(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-						       BT_AUDIO_LOCATION_FRONT_CENTER);
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					   BT_AUDIO_LOCATION_FRONT_CENTER);
 		if (err != 0) {
 			printk("Failed to set sink location (err %d)\n", err);
 			return err;
@@ -585,9 +585,9 @@ static int set_location(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SOURCE,
-						       (BT_AUDIO_LOCATION_FRONT_LEFT |
-							BT_AUDIO_LOCATION_FRONT_RIGHT));
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+					   (BT_AUDIO_LOCATION_FRONT_LEFT |
+					    BT_AUDIO_LOCATION_FRONT_RIGHT));
 		if (err != 0) {
 			printk("Failed to set source location (err %d)\n", err);
 			return err;
@@ -604,8 +604,8 @@ static int set_available_contexts(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
-		err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
-							AVAILABLE_SINK_CONTEXT);
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
+						     AVAILABLE_SINK_CONTEXT);
 		if (err != 0) {
 			printk("Failed to set sink available contexts (err %d)\n", err);
 			return err;
@@ -613,8 +613,8 @@ static int set_available_contexts(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
-		err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-							AVAILABLE_SOURCE_CONTEXT);
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+						     AVAILABLE_SOURCE_CONTEXT);
 		if (err != 0) {
 			printk("Failed to set source available contexts (err %d)\n", err);
 			return err;
@@ -640,8 +640,8 @@ void main(void)
 
 	bt_audio_unicast_server_register_cb(&unicast_server_cb);
 
-	bt_audio_capability_register(BT_AUDIO_DIR_SINK, &caps_sink);
-	bt_audio_capability_register(BT_AUDIO_DIR_SOURCE, &caps_source);
+	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
 
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);

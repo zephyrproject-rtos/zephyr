@@ -89,6 +89,19 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 
 	ARG_UNUSED(dev);
 
+#ifdef CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP
+	/* Drop packets based on the loopback_packet_drop_ratio
+	 * a ratio of 0.2 will drop one every 5 packets
+	 */
+	loopback_packet_drop_state += loopback_packet_drop_ratio;
+	if (loopback_packet_drop_state >= 1.0f) {
+		/* Administrate we dropped a packet */
+		loopback_packet_drop_state -= 1.0f;
+		loopback_packet_dropped_count++;
+		return 0;
+	}
+#endif
+
 	if (!pkt->frags) {
 		LOG_ERR("No data to send");
 		return -ENODATA;
@@ -125,24 +138,6 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 		goto out;
 	}
 
-#ifdef CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP
-	/* Drop packets based on the loopback_packet_drop_ratio
-	 * a ratio of 0.2 will drop one every 5 packets
-	 */
-	loopback_packet_drop_state += loopback_packet_drop_ratio;
-	if (loopback_packet_drop_state >= 1.0f) {
-		/* Administrate we dropped a packet */
-		loopback_packet_drop_state -= 1.0f;
-		loopback_packet_dropped_count++;
-
-		/* Clean up the packet */
-		net_pkt_unref(cloned);
-		/* Pretent everything was fine */
-		res = 0;
-
-		goto out;
-	}
-#endif
 	res = net_recv_data(net_pkt_iface(cloned), cloned);
 	if (res < 0) {
 		LOG_ERR("Data receive failed.");
@@ -165,4 +160,4 @@ NET_DEVICE_INIT(loopback, "lo",
 		loopback_dev_init, NULL, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&loopback_api, DUMMY_L2,
-		NET_L2_GET_CTX_TYPE(DUMMY_L2), 576);
+		NET_L2_GET_CTX_TYPE(DUMMY_L2), CONFIG_NET_LOOPBACK_MTU);

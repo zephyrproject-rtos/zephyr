@@ -184,7 +184,9 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	if (idx < argc) {
 		params->psk = argv[idx];
 		params->psk_length = strlen(argv[idx]);
+		/* Defaults */
 		params->security = WIFI_SECURITY_TYPE_PSK;
+		params->mfp = WIFI_MFP_OPTIONAL;
 		idx++;
 
 		/* Security type (optional) */
@@ -195,21 +197,21 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 				params->security = security;
 			}
 			idx++;
+
+			/* MFP (optional) */
+			if (idx < argc) {
+				unsigned int mfp = strtol(argv[idx], &endptr, 10);
+
+				if (mfp <= WIFI_MFP_REQUIRED) {
+					params->mfp = mfp;
+				}
+				idx++;
+			}
 		}
 	} else {
 		params->security = WIFI_SECURITY_TYPE_NONE;
 	}
 
-	/* MFP (optional) */
-	params->mfp = WIFI_MFP_OPTIONAL;
-	if (idx < argc) {
-		unsigned int mfp = strtol(argv[idx], &endptr, 10);
-
-		if (mfp <= WIFI_MFP_REQUIRED) {
-			params->mfp = mfp;
-		}
-		idx++;
-	}
 
 	return 0;
 }
@@ -433,13 +435,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(connect, NULL,
-		  "Connect to a Wi-Fi AP"
-		  "\"<SSID>\"\n<channel number (optional), "
-		  "0 means all>\n"
+		  "Connect to a Wi-Fi AP\n"
+		  "\"<SSID>\"\n"
+		  "<channel number (optional), 0 means all>\n"
 		  "<PSK (optional: valid only for secure SSIDs)>\n"
 		  "<Security type (optional: valid only for secure SSIDs)>\n"
 		  "0:None, 1:PSK, 2:PSK-256, 3:SAE\n"
-		  "<MFP (optional): 0:Disable, 1:Optional, 2:Required",
+		  "<MFP (optional: needs security type to be specified)>\n"
+		  ": 0:Disable, 1:Optional, 2:Required",
 		  cmd_wifi_connect),
 	SHELL_CMD(disconnect, NULL, "Disconnect from the Wi-Fi AP",
 		  cmd_wifi_disconnect),

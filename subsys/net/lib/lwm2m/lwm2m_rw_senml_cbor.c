@@ -385,7 +385,7 @@ static int put_s64(struct lwm2m_output_context *out, struct lwm2m_obj_path *path
 	return put_value(out, path, value);
 }
 
-static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, int64_t value)
+static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, time_t value)
 {
 	int ret = put_name_nth_ri(out, path);
 
@@ -397,7 +397,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 
 	/* Write the value */
 	record->_record_union._record_union_choice = _union_vi;
-	record->_record_union._union_vi = value;
+	record->_record_union._union_vi = (int64_t)value;
 	record->_record_union_present = 1;
 
 	return 0;
@@ -548,6 +548,17 @@ static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 	fd->current = NULL;
 
 	return 0;
+}
+
+static int get_time(struct lwm2m_input_context *in, time_t *value)
+{
+	int64_t temp64;
+	int ret;
+
+	ret = get_s64(in, &temp64);
+	*value = (time_t)temp64;
+
+	return ret;
 }
 
 static int get_float(struct lwm2m_input_context *in, double *value)
@@ -739,7 +750,7 @@ const struct lwm2m_writer senml_cbor_writer = {
 const struct lwm2m_reader senml_cbor_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
-	.get_time = get_s64,
+	.get_time = get_time,
 	.get_string = get_string,
 	.get_float = get_float,
 	.get_bool = get_bool,

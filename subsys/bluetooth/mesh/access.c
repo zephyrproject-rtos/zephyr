@@ -17,6 +17,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ACCESS)
 #define LOG_MODULE_NAME bt_mesh_access
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "mesh.h"
 #include "adv.h"
@@ -539,8 +540,8 @@ void bt_mesh_msg_cb_set(void (*cb)(uint32_t opcode, struct bt_mesh_msg_ctx *ctx,
 }
 #endif
 
-int bt_mesh_msg_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t src_addr,
-		const struct bt_mesh_send_cb *cb, void *cb_data)
+int bt_mesh_access_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t src_addr,
+			const struct bt_mesh_send_cb *cb, void *cb_data)
 {
 	struct bt_mesh_net_tx tx = {
 		.ctx = ctx,
@@ -746,7 +747,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		return -EINVAL;
 	}
 
-	return bt_mesh_msg_send(ctx, msg, bt_mesh_model_elem(model)->addr, cb, cb_data);
+	return bt_mesh_access_send(ctx, msg, bt_mesh_model_elem(model)->addr, cb, cb_data);
 }
 
 int bt_mesh_model_publish(struct bt_mesh_model *model)
@@ -913,7 +914,7 @@ static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 		return len;
 	}
 
-	BT_HEXDUMP_DBG(mod->keys, len, "val");
+	LOG_HEXDUMP_DBG(mod->keys, len, "val");
 
 	BT_DBG("Decoded %zu bound keys for model", len / sizeof(mod->keys[0]));
 	return 0;
@@ -938,7 +939,7 @@ static int mod_set_sub(struct bt_mesh_model *mod, size_t len_rd,
 		return len;
 	}
 
-	BT_HEXDUMP_DBG(mod->groups, len, "val");
+	LOG_HEXDUMP_DBG(mod->groups, len, "val");
 
 	BT_DBG("Decoded %zu subscribed group addresses for model",
 	       len / sizeof(mod->groups[0]));

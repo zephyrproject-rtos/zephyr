@@ -21,6 +21,9 @@
 #include <zephyr/net/net_context.h>
 
 #define NET_IPV4_IHL_MASK 0x0F
+#define NET_IPV4_DSCP_MASK 0xFC
+#define NET_IPV4_DSCP_OFFSET 2
+#define NET_IPV4_ECN_MASK 0x03
 
 /* IPv4 Options */
 #define NET_IPV4_OPTS_EO   0   /* End of Options */
@@ -203,5 +206,53 @@ static inline int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 	return -ENOTSUP;
 }
 #endif
+
+/**
+ * @brief Decode DSCP value from ToS field.
+ *
+ * @param tos ToS field value from the IPv4 header.
+ *
+ * @return Decoded DSCP value.
+ */
+static inline uint8_t net_ipv4_get_dscp(uint8_t tos)
+{
+	return (tos & NET_IPV4_DSCP_MASK) >> NET_IPV4_DSCP_OFFSET;
+}
+
+/**
+ * @brief Encode DSCP value into ToS field.
+ *
+ * @param tos A pointer to the ToS field.
+ * @param dscp DSCP value to set.
+ */
+static inline void net_ipv4_set_dscp(uint8_t *tos, uint8_t dscp)
+{
+	*tos &= ~NET_IPV4_DSCP_MASK;
+	*tos |= (dscp << NET_IPV4_DSCP_OFFSET) & NET_IPV4_DSCP_MASK;
+}
+
+/**
+ * @brief Decode ECN value from ToS field.
+ *
+ * @param tos ToS field value from the IPv4 header.
+ *
+ * @return Decoded ECN value.
+ */
+static inline uint8_t net_ipv4_get_ecn(uint8_t tos)
+{
+	return tos & NET_IPV4_ECN_MASK;
+}
+
+/**
+ * @brief Encode ECN value into ToS field.
+ *
+ * @param tos A pointer to the ToS field.
+ * @param ecn ECN value to set.
+ */
+static inline void net_ipv4_set_ecn(uint8_t *tos, uint8_t ecn)
+{
+	*tos &= ~NET_IPV4_ECN_MASK;
+	*tos |= ecn & NET_IPV4_ECN_MASK;
+}
 
 #endif /* __IPV4_H */

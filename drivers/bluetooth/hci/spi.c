@@ -168,8 +168,10 @@ static void bt_spi_isr(const struct device *unused1,
 	k_sem_give(&sem_request);
 }
 
-static void bt_spi_handle_vendor_evt(uint8_t *rxmsg)
+static bool bt_spi_handle_vendor_evt(uint8_t *rxmsg)
 {
+	bool handled = false;
+
 	switch (bt_spi_get_evt(rxmsg)) {
 	case EVT_BLUE_INITIALIZED:
 		k_sem_give(&sem_initialised);
@@ -177,9 +179,11 @@ static void bt_spi_handle_vendor_evt(uint8_t *rxmsg)
 		/* force BlueNRG to be on controller mode */
 		bt_spi_send_aci_config_data_controller_mode();
 #endif
+		handled = true;
 	default:
 		break;
 	}
+	return handled;
 }
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
@@ -328,9 +332,12 @@ static void bt_spi_rx_thread(void)
 			case HCI_EVT:
 				switch (rxmsg[EVT_HEADER_EVENT]) {
 				case BT_HCI_EVT_VENDOR:
-					/* Vendor events are currently unsupported */
-					bt_spi_handle_vendor_evt(rxmsg);
-					continue;
+					/* Run event through interface handler */
+					if (bt_spi_handle_vendor_evt(rxmsg)) {
+						continue;
+					};
+					/* Event has not yet been handled */
+					__fallthrough;
 				default:
 					if (rxmsg[1] == BT_HCI_EVT_LE_META_EVENT &&
 					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {

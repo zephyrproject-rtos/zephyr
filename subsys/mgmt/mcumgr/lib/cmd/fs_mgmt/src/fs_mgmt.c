@@ -14,9 +14,9 @@
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include "zcbor_bulk/zcbor_bulk_priv.h"
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/fs/fs.h>
 #include "mgmt/mgmt.h"
+#include <smp/smp.h>
 #include "fs_mgmt/fs_mgmt.h"
 #include "fs_mgmt/fs_mgmt_impl.h"
 #include "fs_mgmt/fs_mgmt_config.h"

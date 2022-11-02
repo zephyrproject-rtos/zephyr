@@ -3,6 +3,8 @@
 
 # Common fields for BMP388
 
+include: sensor-device.yaml
+
 properties:
     int-gpios:
       type: phandle-array

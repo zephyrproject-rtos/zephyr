@@ -6,10 +6,11 @@
 
 #define DT_DRV_COMPAT nxp_pcf8574
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcf8574, CONFIG_GPIO_LOG_LEVEL);
 

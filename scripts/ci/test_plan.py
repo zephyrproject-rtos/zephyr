@@ -316,6 +316,7 @@ if __name__ == "__main__":
 
     args = parse_args()
     files = []
+    errors = 0
     if args.commits:
         repo = Repo(repository_path)
         commit = repo.git.diff("--name-only", args.commits)
@@ -342,11 +343,12 @@ if __name__ == "__main__":
         n = ts.get("name")
         a = ts.get("arch")
         p = ts.get("platform")
+        if ts.get('status') == 'error':
+            logging.info(f"Error found: {n} on {p} ({ts.get('reason')})")
+            errors += 1
         if (n, a, p,) not in dup_free_set:
             dup_free.append(ts)
             dup_free_set.add((n, a, p,))
-        else:
-            logging.info(f"skipped {n} on {p}")
 
     logging.info(f'Total tests to be run: {len(dup_free)}')
     with open(".testplan", "w") as tp:
@@ -376,3 +378,5 @@ if __name__ == "__main__":
         data['testsuites'] = dup_free
         with open(args.output_file, 'w', newline='') as json_file:
             json.dump(data, json_file, indent=4, separators=(',',':'))
+
+    sys.exit(errors)

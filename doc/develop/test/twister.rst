@@ -31,9 +31,6 @@ only builds a test and doesn't run it:
 - You or some higher level automation invoked twister with
   ``--build-only``.
 
-These also affect the outputs of ``--testcase-report`` and
-``--detailed-report``, see their respective ``--help`` sections.
-
 To run the script in the local tree, follow the steps below:
 
 .. tabs::

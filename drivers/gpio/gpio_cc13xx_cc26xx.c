@@ -22,8 +22,9 @@
 
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26XX.h>
+#include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 /* bits 16-18 in iocfg registers correspond to interrupt settings */
 #define IOCFG_INT_MASK    0x00070000

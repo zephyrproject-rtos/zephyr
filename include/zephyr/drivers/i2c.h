@@ -19,8 +19,12 @@
  * @{
  */
 
+#include <errno.h>
+
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

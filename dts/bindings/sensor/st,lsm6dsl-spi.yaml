@@ -7,7 +7,7 @@ description: |
 
 compatible: "st,lsm6dsl"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
     irq-gpios:

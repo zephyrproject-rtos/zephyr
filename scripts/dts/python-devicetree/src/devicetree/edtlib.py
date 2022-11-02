@@ -1610,8 +1610,8 @@ class Property:
       Convenience for spec.name.
 
     description:
-      Convenience for spec.name with leading and trailing whitespace
-      (including newlines) removed.
+      Convenience for spec.description with leading and trailing whitespace
+      (including newlines) removed. May be None.
 
     type:
       Convenience for spec.type.
@@ -1655,7 +1655,7 @@ class Property:
     @property
     def description(self):
         "See the class docstring"
-        return self.spec.description.strip()
+        return self.spec.description.strip() if self.spec.description else None
 
     @property
     def type(self):
@@ -1695,7 +1695,7 @@ class Binding:
       The absolute path to the file defining the binding.
 
     description:
-      The free-form description of the binding.
+      The free-form description of the binding, or None.
 
     compatible:
       The compatible string the binding matches.
@@ -1824,12 +1824,13 @@ class Binding:
             compat = f" for compatible '{self.compatible}'"
         else:
             compat = ""
-        return f"<Binding {os.path.basename(self.path)}" + compat + ">"
+        basename = os.path.basename(self.path or "")
+        return f"<Binding {basename}" + compat + ">"
 
     @property
     def description(self):
         "See the class docstring"
-        return self.raw['description']
+        return self.raw.get('description')
 
     @property
     def compatible(self):

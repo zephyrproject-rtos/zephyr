@@ -687,16 +687,43 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		 * scan response data. Existing sets keep whatever data was set.
 		 */
 		if (is_pdu_type_changed) {
+			uint8_t err;
+
+			/* Make sure the scan response PDU is allocated from the right pool */
+			(void)lll_adv_data_release(&adv->lll.scan_rsp);
+			lll_adv_data_reset(&adv->lll.scan_rsp);
+			err = lll_adv_aux_data_init(&adv->lll.scan_rsp);
+			if (err) {
+				return err;
+			}
+
 			pdu = lll_adv_scan_rsp_peek(&adv->lll);
 			pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
 			pdu->len = 0;
 		}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	} else {
+		pdu = lll_adv_scan_rsp_peek(&adv->lll);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (is_pdu_type_changed || !pdu) {
+			uint8_t err;
+
+			/* Make sure the scan response PDU is allocated from the right pool */
+			(void)lll_adv_data_release(&adv->lll.scan_rsp);
+			lll_adv_data_reset(&adv->lll.scan_rsp);
+			err = lll_adv_data_init(&adv->lll.scan_rsp);
+			if (err) {
+				return err;
+			}
+
+			pdu = lll_adv_scan_rsp_peek(&adv->lll);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 		/* Make sure legacy advertising set has scan response data
 		 * initialized.
 		 */
-		pdu = lll_adv_scan_rsp_peek(&adv->lll);
 		pdu->type = PDU_ADV_TYPE_SCAN_RSP;
 		pdu->rfu = 0;
 		pdu->chan_sel = 0;
@@ -891,6 +918,25 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 	pdu_adv = lll_adv_data_peek(lll);
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (!pdu_scan) {
+		uint8_t err;
+
+		if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
+			/* Should never happen */
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		err = lll_adv_data_init(&adv->lll.scan_rsp);
+		if (err) {
+			return err;
+		}
+
+		pdu_scan = lll_adv_scan_rsp_peek(lll);
+		init_pdu(pdu_scan, PDU_ADV_TYPE_SCAN_RSP);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	/* Update Bluetooth Device address in advertising and scan response
 	 * PDUs.
@@ -1854,6 +1900,18 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 
 	/* update scan pdu fields. */
 	prev = lll_adv_scan_rsp_peek(&adv->lll);
+	if (!prev) {
+		uint8_t err;
+
+		err = lll_adv_data_init(&adv->lll.scan_rsp);
+		if (err) {
+			return err;
+		}
+
+		prev = lll_adv_scan_rsp_peek(&adv->lll);
+		init_pdu(prev, PDU_ADV_TYPE_SCAN_RSP);
+	}
+
 	pdu = lll_adv_scan_rsp_alloc(&adv->lll, &idx);
 	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
 	pdu->rfu = 0;
@@ -2156,7 +2214,14 @@ static int init_reset(void)
 
 	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
 		lll_adv_data_init(&ll_adv[handle].lll.adv_data);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		/* scan_rsp is not init'ed until we know if it is a legacy or extended scan rsp */
+		memset(&ll_adv[handle].lll.scan_rsp, 0, sizeof(ll_adv[handle].lll.scan_rsp));
+#else
 		lll_adv_data_init(&ll_adv[handle].lll.scan_rsp);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 		/* Pointer to DF configuration must be cleared on reset. In other case it will point
 		 * to a memory pool address that should be released. It may be used by the pool
@@ -2960,5 +3025,8 @@ static void init_set(struct ll_adv_set *adv)
 #endif /* ONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	init_pdu(lll_adv_data_peek(&ll_adv[0].lll), PDU_ADV_TYPE_ADV_IND);
+
+#if !defined(CONFIG_BT_CTLR_ADV_EXT)
 	init_pdu(lll_adv_scan_rsp_peek(&ll_adv[0].lll), PDU_ADV_TYPE_SCAN_RSP);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 }

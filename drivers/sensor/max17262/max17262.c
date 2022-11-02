@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max17262, CONFIG_SENSOR_LOG_LEVEL);
@@ -330,7 +331,7 @@ static const struct sensor_driver_api max17262_battery_driver_api = {
 		.charge_voltage = DT_INST_PROP(n, charge_voltage),	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init,		\
 			    NULL,					\
 			    &max17262_data_##n,				\
 			    &max17262_config_##n, POST_KERNEL,		\

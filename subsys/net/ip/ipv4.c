@@ -75,7 +75,14 @@ int net_ipv4_create(struct net_pkt *pkt,
 		    const struct in_addr *src,
 		    const struct in_addr *dst)
 {
-	return net_ipv4_create_full(pkt, src, dst, 0U, 0U, 0U, 0U,
+	uint8_t tos = 0;
+
+	if (IS_ENABLED(CONFIG_NET_IP_DSCP_ECN)) {
+		net_ipv4_set_dscp(&tos, net_pkt_ip_dscp(pkt));
+		net_ipv4_set_ecn(&tos, net_pkt_ip_ecn(pkt));
+	}
+
+	return net_ipv4_create_full(pkt, src, dst, tos, 0U, 0U, 0U,
 				    net_pkt_ipv4_ttl(pkt));
 }
 
@@ -247,6 +254,11 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	}
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+
+	if (IS_ENABLED(CONFIG_NET_IP_DSCP_ECN)) {
+		net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(hdr->tos));
+		net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(hdr->tos));
+	}
 
 	opts_len = hdr_len - sizeof(struct net_ipv4_hdr);
 	if (opts_len > NET_IPV4_HDR_OPTNS_MAX_LEN) {

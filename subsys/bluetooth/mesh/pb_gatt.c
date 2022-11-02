@@ -19,6 +19,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
 #define LOG_MODULE_NAME bt_mesh_pb_gatt
 #include "common/log.h"
+#include "common/bt_str.h"
 
 struct prov_bearer_send_cb {
 	prov_bearer_send_complete_t cb;

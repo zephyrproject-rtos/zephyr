@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fake_can.h"
-
 #include <string.h>
 
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/can_fake.h>
 #include <zephyr/fff.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>
@@ -41,20 +40,15 @@ static void assert_can_timing_equal(const struct can_timing *t1, const struct ca
 
 static void assert_can_filter_equal(const struct can_filter *f1, const struct can_filter *f2)
 {
-	zassert_equal(f1->id_type, f2->id_type, "id_type mismatch");
+	zassert_equal(f1->flags, f2->flags, "flags mismatch");
 	zassert_equal(f1->id, f2->id, "id mismatch");
-	zassert_equal(f1->id_mask, f2->id_mask, "id_mask mismatch");
-	zassert_equal(f1->rtr, f2->rtr, "rtr mismatch");
-	zassert_equal(f1->rtr_mask, f2->rtr_mask, "rtr_mask mismatch");
+	zassert_equal(f1->mask, f2->mask, "mask mismatch");
 }
 
 static void assert_can_frame_equal(const struct can_frame *f1, const struct can_frame *f2)
 {
-	zassert_equal(f1->id_type, f2->id_type, "id_type mismatch");
+	zassert_equal(f1->flags, f2->flags, "flags mismatch");
 	zassert_equal(f1->id, f2->id, "id mismatch");
-	zassert_equal(f1->rtr, f2->rtr, "rtr mismatch");
-	zassert_equal(f1->fd, f2->fd, "fd mismatch");
-	zassert_equal(f1->brs, f2->brs, "brs mismatch");
 	zassert_equal(f1->dlc, f2->dlc, "dlc mismatch");
 	zassert_mem_equal(f1->data, f2->data, can_dlc_to_bytes(f1->dlc), "data mismatch");
 }
@@ -318,11 +312,8 @@ static void can_shell_test_send(const char *cmd, const struct can_frame *expecte
 ZTEST(can_shell, test_can_send_std_id)
 {
 	const struct can_frame expected = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.flags = 0,
 		.id = 0x010,
-		.rtr = CAN_DATAFRAME,
-		.fd = 0,
-		.brs = 0,
 		.dlc = can_bytes_to_dlc(2),
 		.data = { 0xaa, 0x55 },
 	};
@@ -333,11 +324,8 @@ ZTEST(can_shell, test_can_send_std_id)
 ZTEST(can_shell, test_can_send_ext_id)
 {
 	const struct can_frame expected = {
-		.id_type = CAN_EXTENDED_IDENTIFIER,
+		.flags = CAN_FRAME_IDE,
 		.id = 0x1024,
-		.rtr = CAN_DATAFRAME,
-		.fd = 0,
-		.brs = 0,
 		.dlc = can_bytes_to_dlc(4),
 		.data = { 0xde, 0xad, 0xbe, 0xef },
 	};
@@ -348,11 +336,8 @@ ZTEST(can_shell, test_can_send_ext_id)
 ZTEST(can_shell, test_can_send_no_data)
 {
 	const struct can_frame expected = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.flags = 0,
 		.id = 0x133,
-		.rtr = CAN_DATAFRAME,
-		.fd = 0,
-		.brs = 0,
 		.dlc = can_bytes_to_dlc(0),
 		.data = { },
 	};
@@ -363,11 +348,8 @@ ZTEST(can_shell, test_can_send_no_data)
 ZTEST(can_shell, test_can_send_rtr)
 {
 	const struct can_frame expected = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.flags = CAN_FRAME_RTR,
 		.id = 0x7ff,
-		.rtr = CAN_REMOTEREQUEST,
-		.fd = 0,
-		.brs = 0,
 		.dlc = can_bytes_to_dlc(0),
 		.data = { },
 	};
@@ -378,11 +360,8 @@ ZTEST(can_shell, test_can_send_rtr)
 ZTEST(can_shell, test_can_send_fd)
 {
 	const struct can_frame expected = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.flags = CAN_FRAME_FDF,
 		.id = 0x123,
-		.rtr = CAN_DATAFRAME,
-		.fd = 1,
-		.brs = 0,
 		.dlc = can_bytes_to_dlc(8),
 		.data = { 0xaa, 0x55, 0xaa, 0x55, 0x11, 0x22, 0x33, 0x44 },
 	};
@@ -393,11 +372,8 @@ ZTEST(can_shell, test_can_send_fd)
 ZTEST(can_shell, test_can_send_fd_brs)
 {
 	const struct can_frame expected = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.flags = CAN_FRAME_FDF | CAN_FRAME_BRS,
 		.id = 0x321,
-		.rtr = CAN_DATAFRAME,
-		.fd = 1,
-		.brs = 1,
 		.dlc = can_bytes_to_dlc(7),
 		.data = { 0xaa, 0x55, 0xaa, 0x55, 0x11, 0x22, 0x33 },
 	};
@@ -408,11 +384,8 @@ ZTEST(can_shell, test_can_send_fd_brs)
 ZTEST(can_shell, test_can_send_data_all_options)
 {
 	const struct can_frame expected = {
-		.id_type = CAN_EXTENDED_IDENTIFIER,
+		.flags = CAN_FRAME_IDE | CAN_FRAME_FDF | CAN_FRAME_BRS | CAN_FRAME_RTR,
 		.id = 0x1024,
-		.rtr = CAN_REMOTEREQUEST,
-		.fd = 1,
-		.brs = 1,
 		.dlc = can_bytes_to_dlc(0),
 		.data = { },
 	};
@@ -449,11 +422,9 @@ static void can_shell_test_filter_add(const char *cmd, const struct can_filter *
 ZTEST(can_shell, test_can_filter_add_std_id)
 {
 	struct can_filter expected = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.flags = CAN_FILTER_DATA,
 		.id = 0x010,
-		.id_mask = CAN_STD_ID_MASK,
-		.rtr = CAN_DATAFRAME,
-		.rtr_mask = 0,
+		.mask = CAN_STD_ID_MASK,
 	};
 
 	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " 010", &expected);
@@ -462,11 +433,9 @@ ZTEST(can_shell, test_can_filter_add_std_id)
 ZTEST(can_shell, test_can_filter_add_std_id_mask)
 {
 	struct can_filter expected = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.flags = CAN_FILTER_DATA,
 		.id = 0x010,
-		.id_mask = 0x020,
-		.rtr = CAN_DATAFRAME,
-		.rtr_mask = 0,
+		.mask = 0x020,
 	};
 
 	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " 010 020", &expected);
@@ -475,11 +444,9 @@ ZTEST(can_shell, test_can_filter_add_std_id_mask)
 ZTEST(can_shell, test_can_filter_add_ext_id)
 {
 	struct can_filter expected = {
-		.id_type = CAN_EXTENDED_IDENTIFIER,
+		.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
 		.id = 0x1024,
-		.id_mask = CAN_EXT_ID_MASK,
-		.rtr = CAN_DATAFRAME,
-		.rtr_mask = 0,
+		.mask = CAN_EXT_ID_MASK,
 	};
 
 	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -e 1024", &expected);
@@ -488,11 +455,9 @@ ZTEST(can_shell, test_can_filter_add_ext_id)
 ZTEST(can_shell, test_can_filter_add_ext_id_mask)
 {
 	struct can_filter expected = {
-		.id_type = CAN_EXTENDED_IDENTIFIER,
+		.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
 		.id = 0x1024,
-		.id_mask = 0x2048,
-		.rtr = CAN_DATAFRAME,
-		.rtr_mask = 0,
+		.mask = 0x2048,
 	};
 
 	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -e 1024 2048", &expected);
@@ -501,24 +466,20 @@ ZTEST(can_shell, test_can_filter_add_ext_id_mask)
 ZTEST(can_shell, test_can_filter_add_rtr)
 {
 	struct can_filter expected = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.flags = CAN_FILTER_DATA | CAN_FILTER_RTR,
 		.id = 0x022,
-		.id_mask = CAN_STD_ID_MASK,
-		.rtr = CAN_REMOTEREQUEST,
-		.rtr_mask = 0,
+		.mask = CAN_STD_ID_MASK,
 	};
 
 	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -r 022", &expected);
 }
 
-ZTEST(can_shell, test_can_filter_add_rtr_mask)
+ZTEST(can_shell, test_can_filter_add_rtr_only)
 {
 	struct can_filter expected = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.flags = CAN_FILTER_RTR,
 		.id = 0x322,
-		.id_mask = CAN_STD_ID_MASK,
-		.rtr = CAN_DATAFRAME,
-		.rtr_mask = 1,
+		.mask = CAN_STD_ID_MASK,
 	};
 
 	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -R 322", &expected);
@@ -527,11 +488,9 @@ ZTEST(can_shell, test_can_filter_add_rtr_mask)
 ZTEST(can_shell, test_can_filter_add_all_options)
 {
 	struct can_filter expected = {
-		.id_type = CAN_EXTENDED_IDENTIFIER,
+		.flags = CAN_FILTER_RTR | CAN_FILTER_IDE,
 		.id = 0x2048,
-		.id_mask = 0x4096,
-		.rtr = CAN_REMOTEREQUEST,
-		.rtr_mask = 1,
+		.mask = 0x4096,
 	};
 
 	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -e -r -R 2048 4096", &expected);

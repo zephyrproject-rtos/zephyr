@@ -267,6 +267,8 @@ class Reporting:
             if rom_size:
                 suite["rom_size"] = rom_size
 
+            suite['retries'] = instance.retries
+
             if instance.status in ["error", "failed"]:
                 suite['status'] = instance.status
                 suite["reason"] = instance.reason

@@ -146,8 +146,8 @@ struct isotp_msg_id {
 	};
 	/** ISO-TP extended address (if used) */
 	uint8_t ext_addr;
-	/** Indicates the CAN identifier type (standard or extended) */
-	uint8_t id_type : 1;
+	/** Indicates the CAN identifier type (0 for standard or 1 for extended) */
+	uint8_t ide : 1;
 	/** Indicates if ISO-TP extended addressing is used */
 	uint8_t use_ext_addr : 1;
 	/** Indicates if ISO-TP fixed addressing (acc. to SAE J1939) is used */

@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT zephyr_gpio_emul_sdl
 
 #include <zephyr/drivers/gpio/gpio_emul.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 #include <SDL.h>

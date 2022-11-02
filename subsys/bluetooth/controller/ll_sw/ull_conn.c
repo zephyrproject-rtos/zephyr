@@ -8141,49 +8141,80 @@ void ull_dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 	return dle_max_time_get(conn, max_rx_time, max_tx_time);
 }
 
+/*
+ * TODO: this probably can be optimised for ex. by creating a macro for the
+ * ull_dle_update_eff function
+ */
 uint8_t ull_dle_update_eff(struct ll_conn *conn)
 {
 	uint8_t dle_changed = 0U;
 
-	const uint16_t eff_tx_octets =
-		MAX(MIN(conn->lll.dle.local.max_tx_octets, conn->lll.dle.remote.max_rx_octets),
-		    PDU_DC_PAYLOAD_SIZE_MIN);
+	/* Note that we must use bitwise or and not logical or */
+	dle_changed = ull_dle_update_eff_rx(conn);
+	dle_changed |= ull_dle_update_eff_tx(conn);
+
+	return dle_changed;
+}
+
+uint8_t ull_dle_update_eff_rx(struct ll_conn *conn)
+{
+	uint8_t dle_changed = 0U;
+
 	const uint16_t eff_rx_octets =
 		MAX(MIN(conn->lll.dle.local.max_rx_octets, conn->lll.dle.remote.max_tx_octets),
 		    PDU_DC_PAYLOAD_SIZE_MIN);
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	unsigned int min_eff_tx_time = (conn->lll.phy_tx == PHY_CODED) ?
-			PDU_DC_PAYLOAD_TIME_MIN_CODED : PDU_DC_PAYLOAD_TIME_MIN;
 	unsigned int min_eff_rx_time = (conn->lll.phy_rx == PHY_CODED) ?
 			PDU_DC_PAYLOAD_TIME_MIN_CODED : PDU_DC_PAYLOAD_TIME_MIN;
 
-	const uint16_t eff_tx_time =
-		MAX(MIN(conn->lll.dle.local.max_tx_time, conn->lll.dle.remote.max_rx_time),
-		    min_eff_tx_time);
 	const uint16_t eff_rx_time =
 		MAX(MIN(conn->lll.dle.local.max_rx_time, conn->lll.dle.remote.max_tx_time),
 		    min_eff_rx_time);
 
-	if (eff_tx_time != conn->lll.dle.eff.max_tx_time) {
-		conn->lll.dle.eff.max_tx_time = eff_tx_time;
-		dle_changed = 1;
-	}
 	if (eff_rx_time != conn->lll.dle.eff.max_rx_time) {
 		conn->lll.dle.eff.max_rx_time = eff_rx_time;
 		dle_changed = 1;
 	}
 #else
 	conn->lll.dle.eff.max_rx_time = PDU_DC_MAX_US(eff_rx_octets, PHY_1M);
+#endif
+
+	if (eff_rx_octets != conn->lll.dle.eff.max_rx_octets) {
+		conn->lll.dle.eff.max_rx_octets = eff_rx_octets;
+		dle_changed = 1;
+	}
+
+	return dle_changed;
+}
+
+uint8_t ull_dle_update_eff_tx(struct ll_conn *conn)
+
+{
+	uint8_t dle_changed = 0U;
+
+	const uint16_t eff_tx_octets =
+		MAX(MIN(conn->lll.dle.local.max_tx_octets, conn->lll.dle.remote.max_rx_octets),
+		    PDU_DC_PAYLOAD_SIZE_MIN);
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	unsigned int min_eff_tx_time = (conn->lll.phy_tx == PHY_CODED) ?
+			PDU_DC_PAYLOAD_TIME_MIN_CODED : PDU_DC_PAYLOAD_TIME_MIN;
+
+	const uint16_t eff_tx_time =
+		MAX(MIN(conn->lll.dle.local.max_tx_time, conn->lll.dle.remote.max_rx_time),
+		    min_eff_tx_time);
+
+	if (eff_tx_time != conn->lll.dle.eff.max_tx_time) {
+		conn->lll.dle.eff.max_tx_time = eff_tx_time;
+		dle_changed = 1;
+	}
+#else
 	conn->lll.dle.eff.max_tx_time = PDU_DC_MAX_US(eff_tx_octets, PHY_1M);
 #endif
 
 	if (eff_tx_octets != conn->lll.dle.eff.max_tx_octets) {
 		conn->lll.dle.eff.max_tx_octets = eff_tx_octets;
-		dle_changed = 1;
-	}
-	if (eff_rx_octets != conn->lll.dle.eff.max_rx_octets) {
-		conn->lll.dle.eff.max_rx_octets = eff_rx_octets;
 		dle_changed = 1;
 	}
 
@@ -8258,7 +8289,7 @@ void ull_dle_init(struct ll_conn *conn, uint8_t phy)
 	 * Part B, section 4.5.10 we can call ull_dle_update_eff
 	 * for initialisation
 	 */
-	ull_dle_update_eff(conn);
+	(void)ull_dle_update_eff(conn);
 
 	/* Check whether the controller should perform a data length update after
 	 * connection is established

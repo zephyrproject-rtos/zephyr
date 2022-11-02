@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 /**
- * @brief IEEE 802.15.4 library
- * @defgroup ieee802154_mgmt IEEE 802.15.4 Library
+ * @brief IEEE 802.15.4 net management library
+ * @defgroup ieee802154_mgmt IEEE 802.15.4 Net Management Library
  * @ingroup networking
  * @{
  */
@@ -42,14 +42,14 @@ enum net_request_ieee802154_cmd {
 	NET_REQUEST_IEEE802154_CMD_CANCEL_SCAN,
 	NET_REQUEST_IEEE802154_CMD_ASSOCIATE,
 	NET_REQUEST_IEEE802154_CMD_DISASSOCIATE,
-	NET_REQUEST_IEEE802154_CMD_SET_CHANNEL,
-	NET_REQUEST_IEEE802154_CMD_GET_CHANNEL,
-	NET_REQUEST_IEEE802154_CMD_SET_PAN_ID,
-	NET_REQUEST_IEEE802154_CMD_GET_PAN_ID,
-	NET_REQUEST_IEEE802154_CMD_SET_EXT_ADDR,
-	NET_REQUEST_IEEE802154_CMD_GET_EXT_ADDR,
-	NET_REQUEST_IEEE802154_CMD_SET_SHORT_ADDR,
-	NET_REQUEST_IEEE802154_CMD_GET_SHORT_ADDR,
+	NET_REQUEST_IEEE802154_CMD_SET_CHANNEL, /* in CPU byte order */
+	NET_REQUEST_IEEE802154_CMD_GET_CHANNEL, /* in CPU byte order */
+	NET_REQUEST_IEEE802154_CMD_SET_PAN_ID, /* in CPU byte order */
+	NET_REQUEST_IEEE802154_CMD_GET_PAN_ID, /* in CPU byte order */
+	NET_REQUEST_IEEE802154_CMD_SET_EXT_ADDR, /* in big endian byte order */
+	NET_REQUEST_IEEE802154_CMD_GET_EXT_ADDR, /* in big endian byte order */
+	NET_REQUEST_IEEE802154_CMD_SET_SHORT_ADDR, /* in CPU byte order */
+	NET_REQUEST_IEEE802154_CMD_GET_SHORT_ADDR, /* in CPU byte order */
 	NET_REQUEST_IEEE802154_CMD_GET_TX_POWER,
 	NET_REQUEST_IEEE802154_CMD_SET_TX_POWER,
 	NET_REQUEST_IEEE802154_CMD_SET_SECURITY_SETTINGS,
@@ -191,14 +191,14 @@ struct ieee802154_req_params {
 	uint32_t duration;
 
 	/** Current channel in use as a result */
-	uint16_t channel;
+	uint16_t channel; /* in CPU byte order */
 	/** Current pan_id in use as a result */
-	uint16_t pan_id;
+	uint16_t pan_id; /* in CPU byte order */
 
 	/** Result address */
 	union {
-		uint8_t addr[IEEE802154_MAX_ADDR_LENGTH];
-		uint16_t short_addr;
+		uint8_t addr[IEEE802154_MAX_ADDR_LENGTH]; /* in big endian */
+		uint16_t short_addr; /* in CPU byte order */
 	};
 
 	/** length of address */

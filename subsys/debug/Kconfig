@@ -261,6 +261,16 @@ config SPIN_VALIDATE
 	  enabled. It adds a relatively hefty overhead (about 3k or so) to
 	  kernel code size, don't use on platforms known to be small.
 
+config SPIN_LOCK_TIME_LIMIT
+	int "Spin lock holding time limit in cycles"
+	default 0
+	depends on SPIN_VALIDATE
+	depends on SYSTEM_CLOCK_LOCK_FREE_COUNT
+	help
+	  Assert at the time of unlocking the number of system clock cycles
+	  the lock has been held is less than the configured value. Requires
+	  the timer driver sys_clock_get_cycles_32() be lock free.
+
 endif # ASSERT
 
 config FORCE_NO_ASSERT

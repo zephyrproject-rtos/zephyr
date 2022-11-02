@@ -91,8 +91,6 @@ enum pm_device_action {
 	PM_DEVICE_ACTION_TURN_ON,
 };
 
-/** @cond INTERNAL_HIDDEN */
-
 /**
  * @brief Device PM action callback.
  *
@@ -144,6 +142,8 @@ struct pm_device {
 	/** Device PM action callback */
 	pm_device_action_cb_t action_cb;
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)			\

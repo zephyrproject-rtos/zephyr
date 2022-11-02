@@ -1,0 +1,344 @@
+;*******************************************************************************
+;   Copyright 2022 NXP                                                         *
+;   SPDX-License-Identifier: Apache-2.0                                        *
+;                                                                              *
+;   Lauterbach Trace32 start-up script for S32Z27x / Cortex-R52                *
+;                                                                              *
+;   Parameters:                                                                *
+;   - command     operation to execute                                         *
+;                 valid values: flash, debug                                   *
+;                 default: debug                                               *
+;   - elfFile     filepath of ELF to load                                      *
+;   - rtu         Real-Time Unit (RTU) index                                   *
+;                 valid values: 0, 1                                           *
+;                 default: 0                                                   *
+;   - core        core index, relative to the RTU                              *
+;                 valid values: 0 to 3                                         *
+;                 default: 0                                                   *
+;   - lockstep    set to "yes" to start the core in lock-step mode             *
+;                 in Lockstep mode:                                            *
+;                  - Core0 and Core2 (redundancy) operate as a lockstep pair   *
+;                  - Core1 and Core3 (redundancy) operate as a lockstep pair   *
+;                 default: yes                                                 *
+;   - thumb       set to "yes" to select the T32 instruction set at reset      *
+;                 default: no                                                 *
+;                                                                              *
+;*******************************************************************************
+
+ENTRY %LINE &args
+LOCAL &rtuStartAddr &cfgCoreAddr &coreId &rtuId &thumbBit &spltLckBit
+
+&command=STRing.SCANAndExtract("&args","command=","debug")
+&elfFile=STRing.SCANAndExtract("&args","elfFile=","")
+&rtu=STRing.SCANAndExtract("&args","rtu=","0")
+&core=STRing.SCANAndExtract("&args","core=","0")
+&lockstep=STRing.SCANAndExtract("&args","lockstep=","yes")
+&thumb=STRing.SCANAndExtract("&args","thumb=","no")
+
+IF ("&elfFile"=="")
+(
+  PRINT %ERROR "Missing ELF file path"
+  PLIST
+  STOP
+  ENDDO
+)
+
+IF (&rtu<0||&rtu>1)
+(
+  PRINT %ERROR "Invalid rtu number: &rtu"
+  PLIST
+  STOP
+  ENDDO
+)
+
+IF (&core<0||&core>3)
+(
+  PRINT %ERROR "Invalid core number: &core"
+  PLIST
+  STOP
+  ENDDO
+)
+
+; select ARMv8 instruction set at reset for all Cortex-R52 cores (CFG_CORE.THUMB bit)
+IF ("&thumb"=="yes")
+  &thumbBit="1"
+ELSE
+  &thumbBit="0"
+
+; select lock-step or split-lock mode (CFG_CORE.SPLT_LCK bit)
+IF ("&lockstep"=="yes")
+  &spltLckBit="0"
+ELSE
+  &spltLckBit="1"
+
+IF ("&rtu"=="0")
+(
+  &rtuStartAddr = 0x79900000
+  &cfgCoreAddr = 0x76120000
+)
+ELSE
+(
+  &rtuStartAddr = 0x7D900000
+  &cfgCoreAddr = 0x76920000
+)
+
+; Trace32 indexes are offset by 1
+&coreId=&core+1
+&rtuId=&rtu+1
+
+; Reset
+ON.ERROR.CONTinue
+JTAG.PIN NRESET 0
+JTAG.PIN NTRST 0
+WAIT 10ms
+JTAG.PIN NRESET 1
+JTAG.PIN NTRST 1
+WAIT 10ms
+ON.ERROR.DEFault
+
+; Initialize debugger
+SYStem.Down
+SYStem.CPU S32Z270-M33-SMU
+SYStem.CONFIG.DEBUGPORTTYPE JTAG
+SYStem.Option.DUALPORT ON
+SYStem.MemAccess DAP
+SYStem.JtagClock 40MHz
+Trace.DISable
+ETM.OFF
+ITM.OFF
+
+SYStem.Mode Prepare
+WAIT 1.s
+
+; Disable Functional Reset Escalation Threshold
+Data.Set EAXI:0x41850014 %LE %Long 0x0
+Data.Set EAXI:0x41850018 %LE %Long 0x0
+Data.Set EAXI:0x4185001C %LE %Long 0x0
+
+; Configure Miscellaneous Debug Module AP (MDM-AP) for RTU's
+Data.Set DP:0x1C100c0 %LE %Long 0x3cf3cf00
+Data.Set DP:0x1C100c8 %LE %Long 0x3cf3cf00
+
+; RTU subsystems out of reset logic
+GOSUB EnableRTU0
+GOSUB EnableRTU1
+
+; Init RTU SRAM
+DO ~~/demo/arm/hardware/s32z27/misc/s32z27_init_rtu&(rtu)_sram.cmm
+
+; Set reset value for TE bit and split-lock mode
+Data.Set EZAXI:&cfgCoreAddr %Long 0yXXXXxxxxXXXXxxxxXXXXxxxxXXXXx&(thumbBit)x&(spltLckBit)  ; CFG_CORE
+
+; Write loop to self instruction
+Data.Set EAXI:&rtuStartAddr %Long 0xFFFEF7FF
+
+; Wake up core
+GOSUB EnableR52_&(rtu)_&(core)
+
+; Reconfigure debugger
+SYStem.CPU S32Z270-R52-RTU&(rtu)
+CORE.ASSIGN &coreId
+SYStem.CONFIG.CORE &coreId &rtuId
+SYStem.Option.DUALPORT ON
+SYStem.Option.ResBreak OFF
+SYStem.Option.EnReset  OFF
+Trace.DISable
+ETM.OFF
+STM.OFF
+
+WAIT 200ms
+SYStem.Attach
+
+IF STATE.RUN()
+  Break
+
+; Load application to SRAM, running from flash is not yet supported
+Data.LOAD.Elf &elfFile EAXI:
+
+SYStem.MemAccess.AXI
+
+SYStem.CONFIG.AHBAP1.Base DP:0x1C80000
+SYStem.CONFIG.APBAP1.Base DP:0x1C30000
+SYStem.CONFIG.AXIAP1.Base DP:0x1C21000
+
+Register.Set PC __start
+
+IF ("&command"=="flash")
+(
+  ; Execute the application and quit
+  Go
+  QUIT
+)
+ELSE
+(
+  ; Setup minimal debug environment
+  WinCLEAR
+  SETUP.Var.%SpotLight
+  WinPOS 0. 0. 120. 30.
+  List.auto
+  WinPOS 125. 0. 80. 10.
+  Frame.view
+  WinPOS 125. 18.
+  Register.view /SpotLight
+)
+
+ENDDO
+
+EnableRTU0:
+(
+  ; RTU0 subsystem out of reset logic (MC_ME)
+  Data.Set EAXI:0x41900300 %LE %Long 0x5
+  Data.Set EAXI:0x41900304 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  WAIT 100ms
+
+  ; Deactivate RTU fencing logic (GPR3)
+  Data.Set EAXI:0x4186005c %LE %Long 0x0
+
+  ; Enable the interconnect interface of reset domain
+  Data.Set EAXI:0x41890004 %LE %Long 0x80000000
+  Data.Set EAXI:0x41890004 %LE %Long 0x80000007
+
+  ; Assert reset (RGM)
+  Data.Set EAXI:0x41850048 %LE %Long 0x1E
+
+  ; Clear OSSE bit and set clock update (MC_ME)
+  Data.Set EAXI:0x41900300 %LE %Long 0x1
+  Data.Set EAXI:0x41900304 %LE %Long 0x4
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  WAIT 200ms
+
+  RETURN
+)
+
+EnableRTU1:
+(
+  ; RTU1 subsystem out of reset logic (MC_ME)
+  Data.Set EAXI:0x41900500 %LE %Long 0x5
+  Data.Set EAXI:0x41900504 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  WAIT 100ms
+
+  ; Deactivate RTU fencing logic (GPR3)
+  Data.Set EAXI:0x41860064 %LE %Long 0x0
+
+  ; Enable the interconnect interface of reset domain
+  Data.Set EAXI:0x418A0004 %LE %Long 0x80000000
+  Data.Set EAXI:0x418A0004 %LE %Long 0x80000007
+
+  ; Assert reset (RGM)
+  Data.Set EAXI:0x41850050 %LE %Long 0x1E
+
+  ; Clear OSSE bit and set clock update (MC_ME)
+  Data.Set EAXI:0x41900500 %LE %Long 0x1
+  Data.Set EAXI:0x41900504 %LE %Long 0x4
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  WAIT 200ms
+
+  ; Enable RTU1 NIC
+  Data.Set EAXI:0x75400000 %LE %Long 0x2    ; RTUM_NIC
+  Data.Set EAXI:0x75500000 %LE %Long 0x2    ; RTUF_NIC
+  Data.Set EAXI:0x75600000 %LE %Long 0x2    ; RTUP_NIC
+  Data.Set EAXI:0x75700000 %LE %Long 0x2    ; RTUE_NIC
+
+  RETURN
+)
+
+; EnableR52_<core>_<rtu> - routines for waking up the RTU cores:
+; - set boot address (MC_ME_PRTNy_COREx_ADDR)
+; - enable core clock
+; - trigger the clock update
+; - store key for starting the hw process
+; - force core reset
+
+EnableR52_0_0:
+(
+  Data.Set EAXI:0x4190034C %LE %Long &rtuStartAddr
+  Data.Set EAXI:0x41900340 %LE %Long 0x1
+  Data.Set EAXI:0x41900344 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  Data.Set EAXI:0x41850048 %LE %Long 0x1C
+  RETURN
+)
+
+EnableR52_0_1:
+(
+  Data.Set EAXI:0x4190036C %LE %Long &rtuStartAddr
+  Data.Set EAXI:0x41900360 %LE %Long 0x1
+  Data.Set EAXI:0x41900364 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  Data.Set EAXI:0x41850048 %LE %Long 0x18
+  RETURN
+)
+
+EnableR52_0_2:
+(
+  Data.Set EAXI:0x4190038C %LE %Long &rtuStartAddr
+  Data.Set EAXI:0x41900380 %LE %Long 0x1
+  Data.Set EAXI:0x41900384 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  Data.Set EAXI:0x41850048 %LE %Long 0x10
+  RETURN
+)
+
+EnableR52_0_3:
+(
+  Data.Set EAXI:0x419003AC %LE %Long &rtuStartAddr
+  Data.Set EAXI:0x419003A0 %LE %Long 0x1
+  Data.Set EAXI:0x419003A4 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  Data.Set EAXI:0x41850048 %LE %Long 0x0
+  RETURN
+)
+
+EnableR52_1_0:
+(
+  Data.Set EAXI:0x4190054C %LE %Long &rtuStartAddr
+  Data.Set EAXI:0x41900540 %LE %Long 0x1
+  Data.Set EAXI:0x41900544 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  Data.Set EAXI:0x41850050 %LE %Long 0x1C
+  RETURN
+)
+
+EnableR52_1_1:
+(
+  Data.Set EAXI:0x4190056C %LE %Long &rtuStartAddr
+  Data.Set EAXI:0x41900560 %LE %Long 0x1
+  Data.Set EAXI:0x41900564 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  Data.Set EAXI:0x41850050 %LE %Long 0x18
+  RETURN
+)
+
+EnableR52_1_2:
+(
+  Data.Set EAXI:0x4190058C %LE %Long &rtuStartAddr
+  Data.Set EAXI:0x41900580 %LE %Long 0x1
+  Data.Set EAXI:0x41900584 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  Data.Set EAXI:0x41850050 %LE %Long 0x10
+  RETURN
+)
+
+EnableR52_1_3:
+(
+  Data.Set EAXI:0x419005A0 %LE %Long 0x1
+  Data.Set EAXI:0x419005A4 %LE %Long 0x1
+  Data.Set EAXI:0x41900000 %LE %Long 0x5AF0
+  Data.Set EAXI:0x41900000 %LE %Long 0xA50F
+  Data.Set EAXI:0x419005AC %LE %Long &rtuStartAddr
+  Data.Set EAXI:0x41850050 %LE %Long 0x0
+  RETURN
+)

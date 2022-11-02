@@ -302,7 +302,7 @@ static const struct sensor_driver_api ina219_api = {
 								\
 	PM_DEVICE_DT_INST_DEFINE(n, ina219_pm_action);		\
 								\
-	DEVICE_DT_INST_DEFINE(n,				\
+	SENSOR_DEVICE_DT_INST_DEFINE(n,				\
 			      ina219_init,			\
 			      PM_DEVICE_DT_INST_GET(n),		\
 			      &ina219_data_##n,			\

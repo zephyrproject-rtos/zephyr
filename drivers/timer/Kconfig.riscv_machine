@@ -17,6 +17,8 @@ config RISCV_MACHINE_TIMER
 	  This module implements a kernel device driver for the generic RISCV machine
 	  timer driver. It provides the standard "system clock driver" interfaces.
 
+if RISCV_MACHINE_TIMER
+
 config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
 	int
 	default 0
@@ -41,3 +43,5 @@ config RISCV_MACHINE_TIMER_MIN_DELAY
 	  Specifies the minimum number of machine cycles before the RISC-V machine
 	  time compare register is allowed to be updated by the RISC-V machine timer
 	  driver.
+
+endif

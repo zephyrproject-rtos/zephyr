@@ -23,6 +23,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_keys
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "common/rpa.h"
 #include "conn_internal.h"
@@ -91,11 +92,11 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 		keys = &key_pool[i];
 
-		if (keys->id == id && !bt_addr_le_cmp(&keys->addr, addr)) {
+		if (keys->id == id && bt_addr_le_eq(&keys->addr, addr)) {
 			return keys;
 		}
 		if (first_free_slot == ARRAY_SIZE(key_pool) &&
-		    !bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
+		    bt_addr_le_eq(&keys->addr, BT_ADDR_LE_ANY)) {
 			first_free_slot = i;
 		}
 	}
@@ -126,7 +127,7 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 		/* Use a copy as bt_unpair will clear the oldest key. */
 		bt_addr_le_copy(&oldest_addr, &oldest->addr);
 		bt_unpair(oldest->id, &oldest_addr);
-		if (!bt_addr_le_cmp(&oldest->addr, BT_ADDR_LE_ANY)) {
+		if (bt_addr_le_eq(&oldest->addr, BT_ADDR_LE_ANY)) {
 			first_free_slot = oldest - &key_pool[0];
 		}
 	}
@@ -193,7 +194,7 @@ struct bt_keys *bt_keys_find(enum bt_keys_type type, uint8_t id, const bt_addr_l
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 		if ((key_pool[i].keys & type) && key_pool[i].id == id &&
-		    !bt_addr_le_cmp(&key_pool[i].addr, addr)) {
+		    bt_addr_le_eq(&key_pool[i].addr, addr)) {
 			return &key_pool[i];
 		}
 	}
@@ -285,7 +286,7 @@ struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr)
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 		if (key_pool[i].id == id &&
-		    !bt_addr_le_cmp(&key_pool[i].addr, addr)) {
+		    bt_addr_le_eq(&key_pool[i].addr, addr)) {
 			return &key_pool[i];
 		}
 	}

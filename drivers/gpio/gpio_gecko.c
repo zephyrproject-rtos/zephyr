@@ -8,10 +8,11 @@
 
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <em_gpio.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #if CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY >= CONFIG_GPIO_INIT_PRIORITY
 #error CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY must be less than \

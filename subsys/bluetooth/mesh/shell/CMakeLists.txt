@@ -5,6 +5,6 @@ zephyr_library_sources(
 	utils.c
 	)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_HEALTH_CLI health_cli.c)
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_HEALTH_CLI health.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_CFG_CLI cfg_cli.c)
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_CFG_CLI cfg.c)

@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys_clock.h>
 
 #include <gd32_fwdgt.h>
 

@@ -6,7 +6,6 @@ menuconfig LWM2M
 	select COAP
 	select HTTP_PARSER_URL
 	select NET_SOCKETS
-	select NET_SOCKETS_POSIX_NAMES
 	help
 	  This option adds logic for managing OMA LWM2M data
 

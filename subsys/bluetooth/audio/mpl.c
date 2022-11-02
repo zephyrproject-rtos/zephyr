@@ -343,8 +343,7 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 			seg = seg->next;
 		}
 
-		BT_HEXDUMP_DBG(obj.content->data, obj.content->len,
-			       "Segments Object");
+		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len, "Segments Object");
 		BT_DBG("Segments object length: %d", obj.content->len);
 	} else {
 		BT_ERR("No seg!");
@@ -406,8 +405,7 @@ static uint32_t setup_parent_group_object(struct mpl_group *group)
 		if (next_size > obj.content->size) {
 			BT_WARN("Not room for full group in object");
 		}
-		BT_HEXDUMP_DBG(obj.content->data, obj.content->len,
-			       "Parent Group Object");
+		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len, "Parent Group Object");
 		BT_DBG("Group object length: %d", obj.content->len);
 	}
 	return obj.content->len;
@@ -439,8 +437,7 @@ static uint32_t setup_group_object(struct mpl_group *group)
 		if (next_size > obj.content->size) {
 			BT_WARN("Not room for full group in object");
 		}
-		BT_HEXDUMP_DBG(obj.content->data, obj.content->len,
-			       "Group Object");
+		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len, "Group Object");
 		BT_DBG("Group object length: %d", obj.content->len);
 	}
 	return obj.content->len;
@@ -2651,7 +2648,7 @@ static void parse_search(const struct mpl_search *search)
 			index += sci.len - 1;
 
 			BT_DBG("SCI # %d: type: %d", sci_num, sci.type);
-			BT_HEXDUMP_DBG(sci.param, sci.len-1, "param:");
+			LOG_HEXDUMP_DBG(sci.param, sci.len - 1, "param:");
 			sci_num++;
 		}
 	}
@@ -2677,7 +2674,7 @@ void send_search(const struct mpl_search *search)
 		BT_WARN("Search too long: %d", search->len);
 	}
 
-	BT_HEXDUMP_DBG(search->search, search->len, "Search");
+	LOG_HEXDUMP_DBG(search->search, search->len, "Search");
 
 	parse_search(search);
 }
@@ -2781,6 +2778,7 @@ int media_proxy_pl_init(void)
 	pl.calls.get_playing_orders_supported = get_playing_orders_supported;
 	pl.calls.get_media_state              = get_media_state;
 	pl.calls.send_command                 = send_command;
+	pl.calls.get_commands_supported       = get_commands_supported;
 #ifdef CONFIG_BT_MPL_OBJECTS
 	pl.calls.send_search                  = send_search;
 	pl.calls.get_search_results_id        = get_search_results_id;

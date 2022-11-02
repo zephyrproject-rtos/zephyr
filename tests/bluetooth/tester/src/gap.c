@@ -84,7 +84,7 @@ static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 	bt_conn_get_info(conn, &info);
 
 	for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-		if (bt_addr_le_cmp(info.le.dst, &cars[i].addr) == 0) {
+		if (bt_addr_le_eq(info.le.dst, &cars[i].addr)) {
 			cars[i].supported = supported;
 			break;
 		}
@@ -375,7 +375,7 @@ static void oob_data_request(struct bt_conn *conn,
 		}
 
 		if (oobd_local &&
-		    bt_addr_le_cmp(info.le.local, &oob_sc_local.addr)) {
+		    !bt_addr_le_eq(info.le.local, &oob_sc_local.addr)) {
 			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
 			LOG_DBG("No OOB data available for local %s",
 				addr);
@@ -590,7 +590,7 @@ static void start_directed_advertising(const uint8_t *data, uint16_t len)
 #if defined(CONFIG_BT_PRIVACY)
 		/* check if peer supports Central Address Resolution */
 		for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-			if (bt_addr_le_cmp(peer, &cars[i].addr) == 0) {
+			if (bt_addr_le_eq(peer, &cars[i].addr)) {
 				if (cars[i].supported) {
 					adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 				}
@@ -725,7 +725,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 		 * Advertisement, but if not if send stored event and ignore
 		 * this one
 		 */
-		if (bt_addr_le_cmp(addr, &a)) {
+		if (!bt_addr_le_eq(addr, &a)) {
 			LOG_INF("Address does not match, skipping");
 			goto done;
 		}
@@ -813,7 +813,7 @@ static void connect(const uint8_t *data, uint16_t len)
 	uint8_t status;
 	int err;
 
-	if (bt_addr_le_cmp(addr, BT_ADDR_LE_ANY) != 0) {
+	if (!bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		struct bt_conn *conn;
 
 		err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,

@@ -186,7 +186,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-names = "default", "slow", "med", "fast";
 	cd-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
 	pwr-gpios = <&gpio3 24 GPIO_ACTIVE_HIGH>;
-	mmc {
+	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
 	};

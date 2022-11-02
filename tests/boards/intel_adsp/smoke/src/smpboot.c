@@ -41,11 +41,13 @@ static void thread_fn(void *a, void *b, void *c)
  */
 ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
 {
-	if (CONFIG_MP_NUM_CPUS < 2) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	if (arch_num_cpus() < 2) {
 		ztest_test_skip();
 	}
 
-	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
+	for (int i = 1; i < num_cpus; i++) {
 		printk("Launch cpu%d\n", i);
 		mp_flag = false;
 		k_thread_create(&cpu_thr, thr_stack, K_THREAD_STACK_SIZEOF(thr_stack),
@@ -72,7 +74,7 @@ ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
 
 ZTEST(intel_adsp_boot, test_3rd_post_boot_ipi)
 {
-	if (CONFIG_MP_NUM_CPUS < 2) {
+	if (arch_num_cpus() < 2) {
 		ztest_test_skip();
 	}
 

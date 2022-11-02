@@ -95,7 +95,7 @@
  * @def TOOLCHAIN_HAS_C_GENERIC
  * @brief Indicate if toolchain supports C Generic.
  */
-#if __STDC_VERSION__ >= 201112L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 /* _Generic is introduced in C11, so it is supported. */
 # ifdef TOOLCHAIN_HAS_C_GENERIC
 #  undef TOOLCHAIN_HAS_C_GENERIC
@@ -117,14 +117,21 @@
 
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
- * as these are often used without checking for definition and doing so can
- * cause unexpected behaviours.
+ * and that they match the Kconfig option that is used in the code itself to
+ * check for endianness.
  */
 #ifndef _LINKER
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_BIG_ENDIAN__) || \
     !defined(__ORDER_LITTLE_ENDIAN__)
 
 #error "__BYTE_ORDER__ is not defined"
+
+#else
+
+#if (defined(CONFIG_BIG_ENDIAN) && (__BYTE_ORDER__ != __ORDER_BIG_ENDIAN__)) || \
+    (defined(CONFIG_LITTLE_ENDIAN) && (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__))
+#error "Endiannes mismatch"
+#endif
 
 #endif
 #endif /* !_LINKER */

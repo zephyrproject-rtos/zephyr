@@ -19,32 +19,32 @@
 
 #include <zephyr/net/net_event.h>
 
-/* Maximum size of "struct net_event_ipv6_addr" or
- * "struct net_event_ipv6_nbr" or "struct net_event_ipv6_route".
- * NOTE: Update comments here and calculate which struct occupies max size.
- */
-
-#ifdef CONFIG_NET_L2_WIFI_MGMT
-
+/* For struct wifi_scan_result */
 #include <zephyr/net/wifi_mgmt.h>
-#define NET_EVENT_INFO_MAX_SIZE sizeof(struct wifi_scan_result)
 
-#else
-
+#define DEFAULT_NET_EVENT_INFO_SIZE 32
+/* NOTE: Update this union with all *big* event info structs */
+union net_mgmt_events {
 #if defined(CONFIG_NET_DHCPV4)
-#define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_if_dhcpv4)
-#else
-#define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_event_ipv6_route)
-#endif
-
+	struct net_if_dhcpv4 dhcpv4;
+#endif /* CONFIG_NET_DHCPV4 */
+#if defined(CONFIG_NET_L2_WIFI_MGMT)
+	struct wifi_scan_result wifi_scan_result;
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
-#endif /* CONFIG_NET_MGMT_EVENT_INFO */
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV6_MLD)
+	struct net_event_ipv6_route ipv6_route;
+#endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV6_MLD */
+	char default_event[DEFAULT_NET_EVENT_INFO_SIZE];
+};
+
+#define NET_EVENT_INFO_MAX_SIZE sizeof(union net_mgmt_events)
+
+#endif
 
 #include "connection.h"
 
 extern void net_if_init(void);
 extern void net_if_post_init(void);
-extern void net_if_carrier_down(struct net_if *iface);
 extern void net_if_stats_reset(struct net_if *iface);
 extern void net_if_stats_reset_all(void);
 extern void net_process_rx_packet(struct net_pkt *pkt);
@@ -142,6 +142,7 @@ extern const char *net_proto2str(int family, int proto);
 extern char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 				    char *buf, int buflen);
+extern uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len);
 extern uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto);
 
 /**

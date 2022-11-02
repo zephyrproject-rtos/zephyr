@@ -33,7 +33,7 @@ the following devices:
 
      Electronut Labs Papyr (Credit: Electronut Labs)
 
-More information about the board is available at https://docs.electronut.in/papyr/.
+More information about the board is available at https://gitlab.com/electronutlabs-public/papyr.
 
 Hardware
 ********

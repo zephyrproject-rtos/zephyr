@@ -48,8 +48,8 @@ static bool container_full[MAX_INSTANCE_COUNT];
 static double low_threshold[MAX_INSTANCE_COUNT];
 static bool container_empty[MAX_INSTANCE_COUNT];
 static double average_fill_speed[MAX_INSTANCE_COUNT];
-static int64_t forecast_full_date[MAX_INSTANCE_COUNT];
-static int64_t forecast_empty_date[MAX_INSTANCE_COUNT];
+static time_t forecast_full_date[MAX_INSTANCE_COUNT];
+static time_t forecast_empty_date[MAX_INSTANCE_COUNT];
 static bool container_out_of_location[MAX_INSTANCE_COUNT];
 static bool container_out_of_position[MAX_INSTANCE_COUNT];
 

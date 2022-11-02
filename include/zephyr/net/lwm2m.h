@@ -17,7 +17,8 @@
  *
  * @note The implementation assumes UDP module is enabled.
  *
- * @note LwM2M 1.0.x is currently the only supported version.
+ * @note For more information refer to Technical Specification
+ * OMA-TS-LightweightM2M_Core-V1_1_1-20190617-A
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
@@ -30,10 +31,8 @@
 #include <zephyr/net/lwm2m_path.h>
 
 /**
- * @brief LwM2M Objects managed by OMA for LwM2M tech specification.  Objects
- * in this range have IDs from 0 to 1023.
- * For more information refer to Technical Specification
- * OMA-TS-LightweightM2M-V1_0_2-20180209-A
+ * @brief LwM2M Objects managed by OMA for LwM2M tech specification. Objects in this range have IDs
+ * from 0 to 1023.
  */
 
 /* clang-format off */
@@ -188,9 +187,8 @@ struct lwm2m_ctx {
 	/** Current index of Server Object used in this context. */
 	int srv_obj_inst;
 
-	/** Flag to enable BOOTSTRAP interface.  See Section 5.2
-	 *  "Bootstrap Interface" of LwM2M Technical Specification 1.0.2
-	 *  for more information.
+	/** Flag to enable BOOTSTRAP interface. See Section "Bootstrap Interface"
+	 *  of LwM2M Technical Specification for more information.
 	 */
 	bool bootstrap_mode;
 
@@ -231,6 +229,7 @@ struct lwm2m_time_series_elem {
 		int16_t i16;
 		int32_t i32;
 		int64_t i64;
+		time_t time;
 		double f;
 		bool b;
 	};
@@ -812,6 +811,16 @@ int lwm2m_engine_set_float(const char *pathstr, const double *value);
 int lwm2m_engine_set_objlnk(const char *pathstr, const struct lwm2m_objlnk *value);
 
 /**
+ * @brief Set resource (instance) value (Time)
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[in] value Epoch timestamp
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_set_time(const char *pathstr, time_t value);
+
+/**
  * @brief Get resource (instance) value (opaque buffer)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
@@ -942,6 +951,16 @@ int lwm2m_engine_get_float(const char *pathstr, double *buf);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_get_objlnk(const char *pathstr, struct lwm2m_objlnk *buf);
+
+/**
+ * @brief Get resource (instance) value (Time)
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[out] buf time_t pointer to copy data
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_get_time(const char *pathstr, time_t *buf);
 
 
 /**
@@ -1301,7 +1320,7 @@ enum lwm2m_rd_client_event {
  *
  * The RD client sits just above the LwM2M engine and performs the necessary
  * actions to implement the "Registration interface".
- * For more information see Section 5.3 "Client Registration Interface" of the
+ * For more information see Section "Client Registration Interface" of
  * LwM2M Technical Specification.
  *
  * NOTE: lwm2m_engine_start() is called automatically by this function.
@@ -1326,7 +1345,7 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  *
  * The RD client sits just above the LwM2M engine and performs the necessary
  * actions to implement the "Registration interface".
- * For more information see Section 5.3 "Client Registration Interface" of the
+ * For more information see Section "Client Registration Interface" of the
  * LwM2M Technical Specification.
  *
  * @param[in] client_ctx LwM2M context

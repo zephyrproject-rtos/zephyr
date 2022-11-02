@@ -15,6 +15,7 @@
 	#size-cells = <1>;
 
 	chosen {
+		zephyr,canbus = &twai;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
 	};
@@ -180,6 +181,17 @@
 		trng0: trng@3ff700b0 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x3FF700B0 0x4>;
+			status = "disabled";
+		};
+
+		twai: can@6002b000 {
+			compatible = "espressif,esp32-twai";
+			reg = <0x6002b000 DT_SIZE_K(4)>;
+			interrupts = <TWAI_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TWAI_MODULE>;
+			sjw = <1>;
+			sample-point = <875>;
 			status = "disabled";
 		};
 

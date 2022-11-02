@@ -295,7 +295,7 @@ static void eth_esp32_iface_init(struct net_if *iface)
 	}
 
 	/* Do not start the interface until PHY link is up */
-	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	net_if_carrier_off(iface);
 }
 
 static const struct ethernet_api eth_esp32_api = {

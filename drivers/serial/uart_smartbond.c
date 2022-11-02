@@ -9,9 +9,11 @@
 #include <errno.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/byteorder.h>
 #include <DA1469xAB.h>
+#include <zephyr/irq.h>
 
 #define IIR_NO_INTR		1
 #define IIR_THR_EMPTY		2

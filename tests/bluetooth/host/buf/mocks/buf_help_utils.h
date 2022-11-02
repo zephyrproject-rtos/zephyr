@@ -22,10 +22,3 @@ struct testing_params {
 };
 
 #define TEST_PARAM_PAIR_DEFINE(EVT) {EVT, true}, {EVT, false}
-
-/* Repeat test entries */
-#define REGISTER_SETUP_TEARDOWN(i, ...) \
-	ztest_unit_test_setup_teardown(__VA_ARGS__, unit_test_setup, unit_test_noop)
-
-#define ztest_unit_test_setup(fn, setup) \
-	ztest_unit_test_setup_teardown(fn, setup, unit_test_noop)

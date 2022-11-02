@@ -65,7 +65,7 @@ sys_slist_t *lwm2m_engine_obj_inst_list(void) { return &engine_obj_inst_list; }
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field, const char *pathstr,
-				     void *value);
+				     const void *value, uint16_t len);
 #endif
 /* Engine object */
 
@@ -479,6 +479,19 @@ int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data
 	return lwm2m_engine_set_res_buf(pathstr, data_ptr, data_len, data_len, data_flags);
 }
 
+static bool lwm2m_validate_time_resource_lenghts(uint16_t resource_length, uint16_t buf_length)
+{
+	if (resource_length != sizeof(time_t) && resource_length != sizeof(uint32_t)) {
+		return false;
+	}
+
+	if (buf_length != sizeof(time_t) && buf_length != sizeof(uint32_t)) {
+		return false;
+	}
+
+	return true;
+}
+
 static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len)
 {
 	struct lwm2m_obj_path path;
@@ -577,7 +590,6 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 		break;
 
 	case LWM2M_RES_TYPE_U32:
-	case LWM2M_RES_TYPE_TIME:
 		*((uint32_t *)data_ptr) = *(uint32_t *)value;
 		break;
 
@@ -587,6 +599,32 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 
 	case LWM2M_RES_TYPE_U8:
 		*((uint8_t *)data_ptr) = *(uint8_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_TIME:
+		if (!lwm2m_validate_time_resource_lenghts(max_data_len, len)) {
+			LOG_ERR("Time Set: buffer length %u  max data len %u not supported", len,
+				max_data_len);
+			return -EINVAL;
+		}
+
+		if (max_data_len == sizeof(time_t)) {
+			if (len == sizeof(time_t)) {
+				*((time_t *)data_ptr) = *(time_t *)value;
+			} else {
+				*((time_t *)data_ptr) = (time_t) *((uint32_t *)value);
+			}
+		} else {
+			LOG_WRN("Converting time to 32bit may cause integer overflow on resource "
+				"%s",
+				pathstr);
+			if (len == sizeof(uint32_t)) {
+				*((uint32_t *)data_ptr) = *(uint32_t *)value;
+			} else {
+				*((uint32_t *)data_ptr) = (uint32_t) *((time_t *)value);
+			}
+		}
+
 		break;
 
 	case LWM2M_RES_TYPE_S64:
@@ -627,7 +665,7 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 
 	/* Cache Data Write */
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-	lwm2m_engine_cache_write(obj_field, pathstr, value);
+	lwm2m_engine_cache_write(obj_field, pathstr, value, len);
 #endif
 
 	if (res->post_write_cb) {
@@ -707,6 +745,11 @@ int lwm2m_engine_set_float(const char *pathstr, const double *value)
 int lwm2m_engine_set_objlnk(const char *pathstr, const struct lwm2m_objlnk *value)
 {
 	return lwm2m_engine_set(pathstr, value, sizeof(struct lwm2m_objlnk));
+}
+
+int lwm2m_engine_set_time(const char *pathstr, time_t value)
+{
+	return lwm2m_engine_set(pathstr, &value, sizeof(time_t));
 }
 
 int lwm2m_engine_set_res_data_len(const char *pathstr, uint16_t data_len)
@@ -846,8 +889,34 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 			break;
 
 		case LWM2M_RES_TYPE_U32:
-		case LWM2M_RES_TYPE_TIME:
 			*(uint32_t *)buf = *(uint32_t *)data_ptr;
+			break;
+		case LWM2M_RES_TYPE_TIME:
+			if (!lwm2m_validate_time_resource_lenghts(data_len, buflen)) {
+				LOG_ERR("Time get buffer length %u  data len %u not supported",
+					buflen, data_len);
+				return -EINVAL;
+			}
+
+			if (data_len == sizeof(time_t)) {
+				if (buflen == sizeof(time_t)) {
+					*((time_t *)buf) = *(time_t *)data_ptr;
+				} else {
+					/* In this case get operation may not got correct value */
+					LOG_WRN("Converting time to 32bit may cause integer "
+						"overflow:%s",
+						pathstr);
+					*((uint32_t *)buf) = (uint32_t) *((time_t *)data_ptr);
+				}
+			} else {
+				LOG_WRN("Converting time to 32bit may cause integer overflow:%s",
+					pathstr);
+				if (buflen == sizeof(uint32_t)) {
+					*((uint32_t *)buf) = *(uint32_t *)data_ptr;
+				} else {
+					*((time_t *)buf) = (time_t) *((uint32_t *)data_ptr);
+				}
+			}
 			break;
 
 		case LWM2M_RES_TYPE_U16:
@@ -967,6 +1036,11 @@ int lwm2m_engine_get_float(const char *pathstr, double *buf)
 int lwm2m_engine_get_objlnk(const char *pathstr, struct lwm2m_objlnk *buf)
 {
 	return lwm2m_engine_get(pathstr, buf, sizeof(struct lwm2m_objlnk));
+}
+
+int lwm2m_engine_get_time(const char *pathstr, time_t *buf)
+{
+	return lwm2m_engine_get(pathstr, buf, sizeof(time_t));
 }
 
 int lwm2m_engine_get_resource(const char *pathstr, struct lwm2m_engine_res **res)
@@ -1412,7 +1486,7 @@ static struct lwm2m_time_series_resource *lwm2m_cache_entry_allocate(char const 
 }
 
 static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field, const char *pathstr,
-				     void *value)
+				     const void *value, uint16_t len)
 {
 	struct lwm2m_time_series_resource *cache_entry;
 	struct lwm2m_time_series_elem elements;
@@ -1431,7 +1505,6 @@ static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field, c
 
 	switch (obj_field->data_type) {
 	case LWM2M_RES_TYPE_U32:
-	case LWM2M_RES_TYPE_TIME:
 		elements.u32 = *(uint32_t *)value;
 		break;
 
@@ -1445,6 +1518,17 @@ static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field, c
 
 	case LWM2M_RES_TYPE_S64:
 		elements.i64 = *(int64_t *)value;
+		break;
+
+	case LWM2M_RES_TYPE_TIME:
+		if (len == sizeof(time_t)) {
+			elements.time = *(time_t *)value;
+		} else if (len == sizeof(uint32_t)) {
+			elements.time = (time_t) *((uint32_t *)value);
+		} else {
+			LOG_ERR("Not supporting size %d bytes for time", len);
+			return;
+		}
 		break;
 
 	case LWM2M_RES_TYPE_S32:

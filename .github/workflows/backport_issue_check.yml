@@ -9,10 +9,11 @@ jobs:
   backport:
     name: Backport Issue Check
     runs-on: ubuntu-20.04
+    if: github.repository == 'zephyrproject-rtos/zephyr'
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Python dependencies
         run: |

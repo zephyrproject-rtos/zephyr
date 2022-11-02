@@ -8,8 +8,10 @@
 
 #define FLASH_WRITE_BLK_SZ DT_PROP(DT_INST(0, infineon_xmc4xxx_nv_flash), write_block_size)
 
+#include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/kernel.h>
 
 #include <xmc_flash.h>
 

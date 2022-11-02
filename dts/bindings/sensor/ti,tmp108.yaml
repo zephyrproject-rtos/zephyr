@@ -8,7 +8,7 @@ description: |
 
 compatible: "ti,tmp108"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     alert-gpios:

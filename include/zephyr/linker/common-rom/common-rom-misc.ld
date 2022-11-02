@@ -8,6 +8,10 @@
 	ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
 
+#if defined(CONFIG_SENSOR_INFO)
+	ITERABLE_SECTION_ROM(sensor_info, 4)
+#endif
+
 #if defined(CONFIG_EMUL)
 	SECTION_DATA_PROLOGUE(emulators_section,,)
 	{

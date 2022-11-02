@@ -36,7 +36,7 @@ config ARCV2_TIMER_IRQ_PRIORITY
 config ARC_CONNECT
 	default y
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 4
 
 config UART_NS16550_ACCESS_WORD_ONLY

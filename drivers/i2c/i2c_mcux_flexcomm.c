@@ -16,6 +16,7 @@
 #endif
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(mcux_flexcomm);
 
 #include "i2c-priv.h"

@@ -8,6 +8,5 @@ config GPIO_LPC11U6X
 	default y
 	depends on DT_HAS_NXP_LPC11U6X_GPIO_ENABLED
 	depends on CLOCK_CONTROL_LPC11U6X
-	depends on PINMUX_LPC11U6X
 	help
 	  Enable GPIO driver for LPC11U6x MCUs.

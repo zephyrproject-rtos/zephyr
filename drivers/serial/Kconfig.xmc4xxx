@@ -8,5 +8,19 @@ config UART_XMC4XXX
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_UART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the XMC4XX UART driver, for UART_0.
+
+if UART_XMC4XXX
+
+config UART_XMC4XXX_RX_FIFO_INT_TRIGGER
+	bool "Continue to trigger fifo rx interrupt"
+	default n
+	help
+	  When this option is enabled, an interrupt will continue to trigger
+	  if there is data in the receive fifo. Otherwise, an interrupt will
+	  trigger only once on the first received byte. The receive fifo will
+	  need to be fully flushed so that the interrupt will trigger again.
+
+endif

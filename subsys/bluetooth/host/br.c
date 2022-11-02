@@ -15,6 +15,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_br
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"

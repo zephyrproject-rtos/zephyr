@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2022 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <quicklogic/quicklogic_eos_s3.dtsi>
+
+/ {
+	model = "QuickLogic Qomu board";
+	compatible = "quicklogic,eos_s3";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,uart-pipe = &uart1;
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &green_led;
+		led2 = &red_led;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led_0 {
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+
+		red_led: led_2 {
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			label = "LED 2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Push Button 0";
+		};
+	};
+
+	fpga0: fpga {
+		status = "okay";
+	};
+};
+
+&cpu0 {
+	clock-frequency = <61440000>;
+};
+
+&gpio {
+	status = "okay";
+};
+
+&uart0 {
+	status = "disabled";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};

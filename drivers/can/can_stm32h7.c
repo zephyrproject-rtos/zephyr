@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <stm32_ll_rcc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #include "can_mcan.h"
 

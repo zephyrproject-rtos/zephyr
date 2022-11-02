@@ -32,6 +32,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/irq.h>
 
 /* Clock source is 1.8432 MHz derived from PLL 48 MHz */
 #define XEC_UART_CLK_SRC_1P8M		0

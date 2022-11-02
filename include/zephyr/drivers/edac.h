@@ -12,6 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EDAC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_EDAC_H_
 
+#include <errno.h>
+
 #include <sys/types.h>
 
 typedef void (*edac_notify_callback_f)(const struct device *dev, void *data);

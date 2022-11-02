@@ -87,7 +87,7 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
 		return -EINVAL;
 	}
 
-	stereo_pdm = 1;
+	stereo_pdm = OUTCONTROL0_IPM_SOURCE_MODE_GET(outcontrol_val);
 
 	dmic->dai_config_params.channels = (stereo_pdm + 1) * num_pdm;
 	for (n = 0; n < CONFIG_DAI_DMIC_HW_CONTROLLERS; n++)
@@ -347,8 +347,12 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	for (n = 0; n < CONFIG_DAI_DMIC_HW_CONTROLLERS; n++) {
 		fir_cfg_a[n] = NULL;
 		fir_cfg_b[n] = NULL;
-		if (!(pdm_ctrl_mask & (1 << n)))
+
+		if (!(pdm_ctrl_mask & (1 << n))) {
+			/* Set MIC_MUTE bit to unused PDM */
+			dai_dmic_write(dmic, base[n] + CIC_CONTROL, CIC_CONTROL_MIC_MUTE(1));
 			continue;
+		}
 
 		LOG_DBG("dmic_set_config_nhlt(): PDM%d", n);
 
@@ -385,9 +389,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 				return -EINVAL;
 			}
 
-			/* Clear CIC_START_A and CIC_START_B, set SOF_RESET and MIC_MUTE*/
-			val = (val & ~(CIC_CONTROL_CIC_START_A_BIT | CIC_CONTROL_CIC_START_A_BIT)) |
-				CIC_CONTROL_SOFT_RESET_BIT | CIC_CONTROL_MIC_MUTE_BIT;
+			/* Clear CIC_START_A and CIC_START_B */
+			val = (val & ~(CIC_CONTROL_CIC_START_A_BIT | CIC_CONTROL_CIC_START_B_BIT));
 			dai_dmic_write(dmic, base[n] + CIC_CONTROL, val);
 			LOG_DBG("dmic_set_config_nhlt(): CIC_CONTROL = %08x", val);
 
@@ -436,15 +439,17 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			val = fir_cfg_a[n]->fir_control;
 			bf1 = FIR_CONTROL_A_START_GET(val);
 			bf2 = FIR_CONTROL_A_ARRAY_START_EN_GET(val);
-			bf3 = FIR_CONTROL_A_DCCOMP_GET(val);
-			bf4 = FIR_CONTROL_A_MUTE_GET(val);
-			bf5 = FIR_CONTROL_A_STEREO_GET(val);
+			bf3 = FIR_CONTROL_A_PERIODIC_START_EN_GET(val);
+			bf4 = FIR_CONTROL_A_DCCOMP_GET(val);
+			bf5 = FIR_CONTROL_A_MUTE_GET(val);
+			bf6 = FIR_CONTROL_A_STEREO_GET(val);
 			LOG_DBG("dmic_set_config_nhlt(): FIR_CONTROL_A = %08x", val);
-			LOG_DBG("  start=%d, array_start_en=%d, dccomp=%d", bf1, bf2, bf3);
-			LOG_DBG("  mute=%d, stereo=%d", bf4, bf5);
+			LOG_DBG("  start=%d, array_start_en=%d, periodic_start_en=%d",
+				bf1, bf2, bf3);
+			LOG_DBG("  dccomp=%d, mute=%d, stereo=%d", bf4, bf5, bf6);
 			ref = FIR_CONTROL_A_START(bf1) | FIR_CONTROL_A_ARRAY_START_EN(bf2) |
-				FIR_CONTROL_A_DCCOMP(bf3) | FIR_CONTROL_A_MUTE(bf4) |
-				FIR_CONTROL_A_STEREO(bf5);
+				FIR_CONTROL_A_PERIODIC_START_EN(bf3) | FIR_CONTROL_A_DCCOMP(bf4) |
+				FIR_CONTROL_A_MUTE(bf5) | FIR_CONTROL_A_STEREO(bf6);
 
 			if (ref != val) {
 				LOG_ERR("dmic_set_config_nhlt(): illegal FIR_CONTROL = 0x%08x",
@@ -496,12 +501,14 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			val = fir_cfg_b[n]->fir_control;
 			bf1 = FIR_CONTROL_B_START_GET(val);
 			bf2 = FIR_CONTROL_B_ARRAY_START_EN_GET(val);
-			bf3 = FIR_CONTROL_B_DCCOMP_GET(val);
+			bf3 = FIR_CONTROL_B_PERIODIC_START_EN_GET(val);
+			bf4 = FIR_CONTROL_B_DCCOMP_GET(val);
 			bf5 = FIR_CONTROL_B_MUTE_GET(val);
 			bf6 = FIR_CONTROL_B_STEREO_GET(val);
 			LOG_DBG("dmic_set_config_nhlt(): FIR_CONTROL_B = %08x", val);
-			LOG_DBG("  start=%d, array_start_en=%d, dccomp=%d", bf1, bf2, bf3);
-			LOG_DBG("  mute=%d, stereo=%d", bf5, bf6);
+			LOG_DBG("  start=%d, array_start_en=%d, periodic_start_en=%d",
+				bf1, bf2, bf3);
+			LOG_DBG("  dccomp=%d, mute=%d, stereo=%d", bf4, bf5, bf6);
 
 			/* Clear START, set MUTE */
 			fir_control = (val & ~FIR_CONTROL_B_START_BIT) | FIR_CONTROL_B_MUTE_BIT;

@@ -12,15 +12,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/net/buf.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_uart.h>
+#include <zephyr/drivers/uart.h>
+#include <syscalls/uart.h>
 #include "mgmt/mgmt.h"
+#include "smp/smp.h"
 #include <zephyr/mgmt/mcumgr/serial.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <zephyr/mgmt/mcumgr/smp_shell.h>
-#include <zephyr/drivers/uart.h>
-#include "syscalls/uart.h"
-#include <zephyr/shell/shell.h>
-#include <zephyr/shell/shell_uart.h>
 #include "../smp_internal.h"
 
 #include <zephyr/logging/log.h>
@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(smp_shell);
 
 BUILD_ASSERT(CONFIG_MCUMGR_SMP_SHELL_MTU != 0, "CONFIG_MCUMGR_SMP_SHELL_MTU must be > 0");
 
-static struct zephyr_smp_transport smp_shell_transport;
+static struct smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
 
@@ -150,7 +150,7 @@ void smp_shell_process(struct smp_shell_data *data)
 						buf->data,
 						buf->len);
 		if (nb != NULL) {
-			zephyr_smp_rx_req(&smp_shell_transport, nb);
+			smp_rx_req(&smp_shell_transport, nb);
 		}
 
 		net_buf_unref(buf);
@@ -183,15 +183,15 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 	int rc;
 
 	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw);
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return rc;
 }
 
 int smp_shell_init(void)
 {
-	zephyr_smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
-				  smp_shell_get_mtu, NULL, NULL);
+	smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
+			   smp_shell_get_mtu, NULL, NULL);
 
 	return 0;
 }

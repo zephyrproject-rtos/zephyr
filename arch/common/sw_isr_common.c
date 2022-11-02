@@ -6,6 +6,7 @@
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys/__assert.h>
 /*
  * Common code for arches that use software ISR tables (CONFIG_GEN_ISR_TABLES)

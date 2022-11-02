@@ -16,6 +16,7 @@
 
 #define LOG_MODULE_NAME counter_rtc
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 
 #define ERR(...) LOG_INST_ERR( \

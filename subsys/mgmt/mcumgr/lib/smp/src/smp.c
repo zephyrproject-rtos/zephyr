@@ -10,13 +10,35 @@
 #include <string.h>
 
 #include <zephyr/net/buf.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
+#include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include "smp/smp.h"
 #include "../../../smp_internal.h"
+
+static void
+cbor_nb_reader_init(struct cbor_nb_reader *cnr,
+		    struct net_buf *nb)
+{
+	/* Skip the mgmt_hdr */
+	void *new_ptr = net_buf_pull(nb, sizeof(struct mgmt_hdr));
+
+	cnr->nb = nb;
+	zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), new_ptr,
+			       cnr->nb->len, 1);
+}
+
+static void
+cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
+{
+	net_buf_reset(nb);
+	cnw->nb = nb;
+	cnw->nb->len = sizeof(struct mgmt_hdr);
+	zcbor_new_encode_state(cnw->zs, 2, nb->data + sizeof(struct mgmt_hdr),
+			       net_buf_tailroom(nb), 0);
+}
 
 /**
  * Converts a request opcode to its corresponding response opcode.
@@ -228,13 +250,13 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	/* Build and transmit the error response. */
 	rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
 	if (rc == 0) {
-		streamer->smpt->zst_output(rsp);
+		streamer->smpt->output(rsp);
 		rsp = NULL;
 	}
 
 	/* Free any extra buffers. */
-	zephyr_smp_free_buf(req, streamer->smpt);
-	zephyr_smp_free_buf(rsp, streamer->smpt);
+	smp_free_buf(req, streamer->smpt);
+	smp_free_buf(rsp, streamer->smpt);
 }
 
 /**
@@ -290,7 +312,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			break;
 		}
 
-		rsp = zephyr_smp_alloc_rsp(req, streamer->smpt);
+		rsp = smp_alloc_rsp(req, streamer->smpt);
 		if (rsp == NULL) {
 			rc = MGMT_ERR_ENOMEM;
 			break;
@@ -306,7 +328,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		}
 
 		/* Send the response. */
-		rc = streamer->smpt->zst_output(rsp);
+		rc = streamer->smpt->output(rsp);
 		rsp = NULL;
 		if (rc != 0) {
 			break;
@@ -332,8 +354,8 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		return rc;
 	}
 
-	zephyr_smp_free_buf(req, streamer->smpt);
-	zephyr_smp_free_buf(rsp, streamer->smpt);
+	smp_free_buf(req, streamer->smpt);
+	smp_free_buf(rsp, streamer->smpt);
 
 	return rc;
 }

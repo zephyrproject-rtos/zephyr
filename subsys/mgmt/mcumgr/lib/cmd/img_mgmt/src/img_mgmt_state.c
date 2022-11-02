@@ -10,14 +10,14 @@
 
 #include <string.h>
 #include "img_mgmt/img_mgmt.h"
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include "img_mgmt/image.h"
 #include "img_mgmt_priv.h"
 #include "img_mgmt/img_mgmt_impl.h"
-#include <mgmt/mgmt.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
+#include <mgmt/mgmt.h>
+#include "smp/smp.h"
 #include "zcbor_bulk/zcbor_bulk_priv.h"
 
 /* The value here sets how many "characteristics" that describe image is
@@ -54,7 +54,7 @@ img_mgmt_state_flags(int query_slot)
 	/* Determine if this is is pending or confirmed (only applicable for
 	 * unified images and loaders.
 	 */
-	swap_type = img_mgmt_impl_swap_type(query_slot);
+	swap_type = img_mgmt_swap_type(query_slot);
 	switch (swap_type) {
 	case IMG_MGMT_SWAP_TYPE_NONE:
 		if (query_slot == IMG_MGMT_BOOT_CURR_SLOT) {
@@ -147,7 +147,7 @@ img_mgmt_state_set_pending(int slot, int permanent)
 		goto done;
 	}
 
-	rc = img_mgmt_impl_write_pending(slot, permanent);
+	rc = img_mgmt_write_pending(slot, permanent);
 	if (rc != 0) {
 		rc = MGMT_ERR_EUNKNOWN;
 	}
@@ -158,12 +158,6 @@ done:
 		hashp = NULL;
 	} else {
 		hashp = hash;
-	}
-
-	if (permanent) {
-		(void) img_mgmt_impl_log_confirm(rc, hashp);
-	} else {
-		(void) img_mgmt_impl_log_pending(rc, hashp);
 	}
 
 	return rc;
@@ -184,14 +178,14 @@ img_mgmt_state_confirm(void)
 		goto err;
 	}
 
-	rc = img_mgmt_impl_write_confirmed();
+	rc = img_mgmt_write_confirmed();
 	if (rc != 0) {
 		rc = MGMT_ERR_EUNKNOWN;
 	}
 
 	img_mgmt_dfu_confirmed();
 err:
-	return img_mgmt_impl_log_confirm(rc, NULL);
+	return 0;
 }
 
 /**

@@ -9,13 +9,13 @@
 #include <stdio.h>
 
 #include <zephyr/stats/stats.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
-#include <mgmt/mgmt.h>
-#include <stat_mgmt/stat_mgmt_config.h>
-#include <stat_mgmt/stat_mgmt.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
+#include <mgmt/mgmt.h>
+#include <smp/smp.h>
+#include <stat_mgmt/stat_mgmt_config.h>
+#include <stat_mgmt/stat_mgmt.h>
 
 static struct mgmt_handler stat_mgmt_handlers[];
 

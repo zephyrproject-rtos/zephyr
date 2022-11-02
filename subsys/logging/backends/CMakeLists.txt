@@ -64,3 +64,13 @@ zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_XTENSA_SIM
   log_backend_xtensa_sim.c
 )
+
+zephyr_sources_ifdef(
+  CONFIG_LOG_MULTIDOMAIN_BACKEND
+  log_multidomain_backend.c
+)
+
+zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_IPC_SERVICE
+  log_backend_ipc_service.c
+)

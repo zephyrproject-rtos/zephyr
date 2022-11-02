@@ -5,7 +5,9 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     CONFIG_LOG
     log_core.c
     log_mgmt.c
+    log_cache.c
     log_msg.c
+    log_cache.c
   )
 
   zephyr_sources_ifdef(
@@ -62,6 +64,17 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   if(CONFIG_LOG_CUSTOM_FORMAT_SUPPORT)
     zephyr_sources(log_output_custom.c)
   endif()
+
+  zephyr_sources_ifdef(
+    CONFIG_LOG_MULTIDOMAIN_LINK
+    log_multidomain_link.c
+  )
+
+  zephyr_sources_ifdef(
+    CONFIG_LOG_LINK_IPC_SERVICE
+    log_link_ipc_service.c
+  )
+
 
 else()
   zephyr_sources(log_minimal.c)

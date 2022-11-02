@@ -175,7 +175,7 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
-+-------------+------------+-----------------------------------+
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |

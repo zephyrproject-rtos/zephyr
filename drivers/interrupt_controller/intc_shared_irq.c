@@ -13,6 +13,7 @@
 #include <zephyr/shared_irq.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/irq.h>
 
 #ifdef CONFIG_IOAPIC
 #include <zephyr/drivers/interrupt_controller/ioapic.h>

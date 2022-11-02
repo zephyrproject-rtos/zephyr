@@ -4,28 +4,24 @@ on:
   schedule:
     - cron: '25 */3 * * 1-5'
 
-jobs:
-  codecov-prep:
-    runs-on: ubuntu-20.04
-    if: github.repository == 'zephyrproject-rtos/zephyr'
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.6.0
-        with:
-          access_token: ${{ github.token }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
+jobs:
   codecov:
-    runs-on: zephyr_runner
-    needs: codecov-prep
+    runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.3
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.5
       options: '--entrypoint /bin/bash'
+      volumes:
+        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
         platform: ["native_posix", "qemu_x86", "unit_testing"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.1
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -39,8 +35,14 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone /github/cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -60,7 +62,7 @@ jobs:
         run: |
           string(REPLACE "/" "_" repo ${{github.repository}})
           string(REPLACE "-" "_" repo2 ${repo})
-          message("::set-output name=repo::${repo2}")
+          file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
 
       - name: use cache
         id: cache-ccache
@@ -100,7 +102,7 @@ jobs:
 
       - name: Upload Coverage Results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Coverage Data (Subset ${{ matrix.platform }})
           path: coverage/reports/${{ matrix.platform }}.info
@@ -114,7 +116,7 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Download Artifacts
@@ -150,8 +152,8 @@ jobs:
               set(MERGELIST "${MERGELIST} -a ${f}")
             endif()
           endforeach()
-          message("::set-output name=mergefiles::${MERGELIST}")
-          message("::set-output name=covfiles::${FILELIST}")
+          file(APPEND $ENV{GITHUB_OUTPUT} "mergefiles=${MERGELIST}\n")
+          file(APPEND $ENV{GITHUB_OUTPUT} "covfiles=${FILELIST}\n")
 
       - name: Merge coverage files
         run: |

@@ -224,7 +224,6 @@ int can_sja1000_stop(const struct device *dev)
 
 int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 {
-	const struct can_sja1000_config *config = dev->config;
 	struct can_sja1000_data *data = dev->data;
 	uint8_t btr1;
 	uint8_t mod;
@@ -284,9 +283,7 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 	info = can_sja1000_read_reg(dev, CAN_SJA1000_FRAME_INFO);
 
 	if ((info & CAN_SJA1000_FRAME_INFO_RTR) != 0) {
-		frame->rtr = CAN_REMOTEREQUEST;
-	} else {
-		frame->rtr = CAN_DATAFRAME;
+		frame->flags |= CAN_FRAME_RTR;
 	}
 
 	frame->dlc = CAN_SJA1000_FRAME_INFO_DLC_GET(info);
@@ -296,7 +293,7 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 	}
 
 	if ((info & CAN_SJA1000_FRAME_INFO_FF) != 0) {
-		frame->id_type = CAN_EXTENDED_IDENTIFIER;
+		frame->flags |= CAN_FRAME_IDE;
 
 		frame->id = FIELD_PREP(GENMASK(28, 21),
 				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
@@ -311,8 +308,6 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 			frame->data[i] = can_sja1000_read_reg(dev, CAN_SJA1000_EFF_DATA + i);
 		}
 	} else {
-		frame->id_type = CAN_STANDARD_IDENTIFIER;
-
 		frame->id = FIELD_PREP(GENMASK(10, 3),
 				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
 		frame->id |= FIELD_PREP(GENMASK(2, 0),
@@ -331,17 +326,17 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 
 	info = CAN_SJA1000_FRAME_INFO_DLC_PREP(frame->dlc);
 
-	if (frame->rtr == CAN_REMOTEREQUEST) {
+	if ((frame->flags & CAN_FRAME_RTR) != 0) {
 		info |= CAN_SJA1000_FRAME_INFO_RTR;
 	}
 
-	if (frame->id_type == CAN_EXTENDED_IDENTIFIER) {
+	if ((frame->flags & CAN_FRAME_IDE) != 0) {
 		info |= CAN_SJA1000_FRAME_INFO_FF;
 	}
 
 	can_sja1000_write_reg(dev, CAN_SJA1000_FRAME_INFO, info);
 
-	if (frame->id_type == CAN_EXTENDED_IDENTIFIER) {
+	if ((frame->flags & CAN_FRAME_IDE) != 0) {
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID1,
 				FIELD_GET(GENMASK(28, 21), frame->id));
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID2,
@@ -378,6 +373,11 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("TX frame DLC %u exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
+	}
+
+	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
+		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		return -ENOTSUP;
 	}
 
 	if (!data->started) {
@@ -425,6 +425,11 @@ int can_sja1000_add_rx_filter(const struct device *dev, can_rx_callback_t callba
 	struct can_sja1000_data *data = dev->data;
 	int filter_id = -ENOSPC;
 	int i;
+
+	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		return -ENOTSUP;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(data->filters); i++) {
 		if (!atomic_test_and_set_bit(data->rx_allocs, i)) {
@@ -535,10 +540,10 @@ void can_sja1000_set_state_change_callback(const struct device *dev,
 	data->state_change_cb_data = user_data;
 }
 
-int can_sja1000_get_max_filters(const struct device *dev, enum can_ide id_type)
+int can_sja1000_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(id_type);
+	ARG_UNUSED(ide);
 
 	return CONFIG_CAN_MAX_FILTER;
 }
@@ -598,7 +603,6 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 {
 	struct can_sja1000_data *data = dev->data;
 	uint8_t sr;
-	int err;
 
 	sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
 	if ((sr & CAN_SJA1000_SR_BS) != 0) {
@@ -729,7 +733,7 @@ int can_sja1000_init(const struct device *dev)
 	}
 
 	/* Configure timing */
-	err = can_sja1000_set_timing(dev, &timing);
+	err = can_set_timing(dev, &timing);
 	if (err != 0) {
 		LOG_ERR("timing parameters cannot be met (err %d)", err);
 		return err;

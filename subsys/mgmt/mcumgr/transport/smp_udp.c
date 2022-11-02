@@ -19,8 +19,8 @@
 #endif
 #include <errno.h>
 #include <mgmt/mgmt.h>
+#include "smp/smp.h"
 #include <zephyr/mgmt/mcumgr/smp_udp.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "../smp_internal.h"
 
@@ -33,7 +33,7 @@ BUILD_ASSERT(CONFIG_MCUMGR_SMP_UDP_MTU != 0, "CONFIG_MCUMGR_SMP_UDP_MTU must be 
 struct config {
 	int sock;
 	const char *proto;
-	struct zephyr_smp_transport smp_transport;
+	struct smp_transport smp_transport;
 	char recv_buffer[CONFIG_MCUMGR_SMP_UDP_MTU];
 	struct k_thread thread;
 	K_KERNEL_STACK_MEMBER(stack, CONFIG_MCUMGR_SMP_UDP_STACK_SIZE);
@@ -77,7 +77,7 @@ static int smp_udp4_tx(struct net_buf *nb)
 		ret = MGMT_ERR_EOK;
 	}
 
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return ret;
 }
@@ -97,7 +97,7 @@ static int smp_udp6_tx(struct net_buf *nb)
 		ret = MGMT_ERR_EOK;
 	}
 
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return ret;
 }
@@ -142,7 +142,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 			struct net_buf *nb;
 
 			/* store sender address in user data for reply */
-			nb = mcumgr_buf_alloc();
+			nb = smp_packet_alloc();
 			if (!nb) {
 				LOG_ERR("Failed to allocate mcumgr buffer");
 				/* No free space, drop smp frame */
@@ -152,7 +152,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 			ud = net_buf_user_data(nb);
 			net_ipaddr_copy(ud, &addr);
 
-			zephyr_smp_rx_req(&conf->smp_transport, nb);
+			smp_rx_req(&conf->smp_transport, nb);
 		} else if (len < 0) {
 			LOG_ERR("recvfrom error (%s): %i", conf->proto, errno);
 		}
@@ -164,15 +164,15 @@ static int smp_udp_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
-	zephyr_smp_transport_init(&configs.ipv4.smp_transport,
-				  smp_udp4_tx, smp_udp_get_mtu,
-				  smp_udp_ud_copy, NULL);
+	smp_transport_init(&configs.ipv4.smp_transport,
+			   smp_udp4_tx, smp_udp_get_mtu,
+			   smp_udp_ud_copy, NULL);
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
-	zephyr_smp_transport_init(&configs.ipv6.smp_transport,
-				  smp_udp6_tx, smp_udp_get_mtu,
-				  smp_udp_ud_copy, NULL);
+	smp_transport_init(&configs.ipv6.smp_transport,
+			   smp_udp6_tx, smp_udp_get_mtu,
+			   smp_udp_ud_copy, NULL);
 #endif
 
 	return MGMT_ERR_EOK;

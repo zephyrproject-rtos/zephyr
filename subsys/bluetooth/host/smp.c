@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
@@ -33,6 +34,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SMP)
 #define LOG_MODULE_NAME bt_smp
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "hci_core.h"
 #include "ecc.h"
@@ -1522,7 +1524,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
 
-	if (bt_addr_le_cmp(&addr, &req->addr)) {
+	if (!bt_addr_le_eq(&addr, &req->addr)) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1984,12 +1986,32 @@ static int smp_error(struct bt_smp *smp, uint8_t reason)
 {
 	struct bt_smp_pairing_fail *rsp;
 	struct net_buf *buf;
+	bool remote_already_completed;
+
+	/* By spec, SMP "pairing process" completes successfully when the last
+	 * key to distribute is acknowledged at link-layer.
+	 */
+	remote_already_completed = (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR) &&
+				    !smp->local_dist && !smp->remote_dist);
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) ||
 	    atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING) ||
 	    atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
 		/* reset context and report */
 		smp_pairing_complete(smp, reason);
+	}
+
+	if (remote_already_completed) {
+		BT_WARN("SMP does not allow a pairing failure at this point. Known issue. "
+			"Disconnecting instead.");
+		/* We are probably here because we are, as a peripheral, rejecting a pairing based
+		 * on the central's identity address information, but that was the last key to
+		 * be transmitted. In that case, the pairing process is already completed.
+		 * The SMP protocol states that the pairing process is completed the moment the
+		 * peripheral link-layer confirmed the reception of the PDU with the last key.
+		 */
+		bt_conn_disconnect(smp->chan.chan.conn, BT_HCI_ERR_AUTH_FAIL);
+		return 0;
 	}
 
 	buf = smp_create_pdu(smp, BT_SMP_CMD_PAIRING_FAIL, sizeof(*rsp));
@@ -3930,6 +3952,46 @@ static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
+static uint8_t smp_id_add_replace(struct bt_smp *smp, struct bt_keys *new_bond)
+{
+	struct bt_keys *conflict;
+
+	/* Sanity check: It does not make sense to finalize a bond before we
+	 * have the remote identity.
+	 */
+	__ASSERT_NO_MSG(!(smp->remote_dist & BT_SMP_DIST_ID_KEY));
+
+	conflict = bt_id_find_conflict(new_bond);
+	if (conflict) {
+		BT_DBG("New bond conflicts with a bond on id %d.", conflict->id);
+	}
+
+	if (conflict && !IS_ENABLED(CONFIG_BT_ID_UNPAIR_MATCHING_BONDS)) {
+		BT_WARN("Refusing new pairing. The old bond must be unpaired first.");
+		return BT_SMP_ERR_AUTH_REQUIREMENTS;
+	}
+
+	if (conflict && IS_ENABLED(CONFIG_BT_ID_UNPAIR_MATCHING_BONDS)) {
+		bool trust_ok;
+		int unpair_err;
+
+		trust_ok = update_keys_check(smp, conflict);
+		if (!trust_ok) {
+			BT_WARN("Refusing new pairing. The old bond has more trust.");
+			return BT_SMP_ERR_AUTH_REQUIREMENTS;
+		}
+
+		BT_DBG("Un-pairing old conflicting bond and finalizing new.");
+
+		unpair_err = bt_unpair(conflict->id, &conflict->addr);
+		__ASSERT_NO_MSG(!unpair_err);
+	}
+
+	__ASSERT_NO_MSG(!bt_id_find_conflict(new_bond));
+	bt_id_add(new_bond);
+	return 0;
+}
+
 static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -3938,13 +4000,15 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_DBG("identity %s", bt_addr_le_str(&req->addr));
 
+	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
+
 	if (!bt_addr_le_is_identity(&req->addr)) {
 		BT_ERR("Invalid identity %s", bt_addr_le_str(&req->addr));
 		BT_ERR(" for %s", bt_addr_le_str(&conn->le.dst));
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
-	if (bt_addr_le_cmp(&conn->le.dst, &req->addr) != 0) {
+	if (!bt_addr_le_eq(&conn->le.dst, &req->addr)) {
 		struct bt_keys *keys = bt_keys_find_addr(conn->id, &req->addr);
 
 		if (keys) {
@@ -3997,10 +4061,11 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 			}
 		}
 
-		bt_id_add(keys);
+		err = smp_id_add_replace(smp, keys);
+		if (err) {
+			return err;
+		}
 	}
-
-	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
 
 	if (smp->remote_dist & BT_SMP_DIST_SIGN) {
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
@@ -4741,14 +4806,34 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
+	/* This is the last point that is common for all code paths in the
+	 * pairing process (during which we still have the option to send
+	 * Pairing Failed). That makes it convenient to update the RL here. We
+	 * want to update the RL during the pairing process so that we can fail
+	 * it in case there is a conflict with an existing bond.
+	 *
+	 * We can do the update here only if the peer does not intend to send us
+	 * any identity information. In this case we already have everything
+	 * that goes into the RL.
+	 *
+	 * We need an entry in the RL despite the remote not using privacy. This
+	 * is because we are using privacy locally and need to associate correct
+	 * local IRK with the peer.
+	 *
+	 * If the peer does intend to send us identity information, we must wait
+	 * for that information to enter it in the RL. In that case, we call
+	 * `smp_id_add_replace` not here, but later. If neither we nor the peer
+	 * are using privacy, there is no need for an entry in the RL.
+	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    !(smp->remote_dist & BT_SMP_DIST_ID_KEY)) {
-		/* To resolve directed advertising we need our local IRK
-		 * in the controllers resolving list, add it now since the
-		 * peer has no identity key.
-		 */
-		bt_id_add(conn->le.keys);
+		uint8_t smp_err;
+
+		smp_err = smp_id_add_replace(smp, conn->le.keys);
+		if (smp_err) {
+			smp_pairing_complete(smp, smp_err);
+		}
 	}
 
 	atomic_set_bit(smp->flags, SMP_FLAG_KEYS_DISTR);

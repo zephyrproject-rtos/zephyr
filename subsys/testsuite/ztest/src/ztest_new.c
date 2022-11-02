@@ -104,15 +104,13 @@ static int cleanup_test(struct ztest_unit_test *test)
 }
 
 #ifdef KERNEL
-#ifdef CONFIG_SMP
-#define NUM_CPUHOLD (CONFIG_MP_NUM_CPUS - 1)
-#else
-#define NUM_CPUHOLD 0
-#endif
-#define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-static struct k_thread cpuhold_threads[NUM_CPUHOLD];
-K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
+#ifdef CONFIG_SMP
+#define MAX_NUM_CPUHOLD (CONFIG_MP_MAX_NUM_CPUS - 1)
+#define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+static struct k_thread cpuhold_threads[MAX_NUM_CPUHOLD];
+K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, MAX_NUM_CPUHOLD, CPUHOLD_STACK_SZ);
+
 static struct k_sem cpuhold_sem;
 volatile int cpuhold_active;
 
@@ -152,12 +150,17 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	 * logic views it as one "job") and cause other test failures.
 	 */
 	dt = k_uptime_get_32() - start_ms;
-	zassert_true(dt < 3000, "1cpu test took too long (%d ms)", dt);
+	zassert_true(dt < CONFIG_ZTEST_CPU_HOLD_TIME_MS,
+		     "1cpu test took too long (%d ms)", dt);
 	arch_irq_unlock(key);
 }
+#endif /* CONFIG_SMP */
 
 void z_impl_z_test_1cpu_start(void)
 {
+#ifdef CONFIG_SMP
+	unsigned int num_cpus = arch_num_cpus();
+
 	cpuhold_active = 1;
 	char tname[CONFIG_THREAD_MAX_NAME_LEN];
 
@@ -165,12 +168,8 @@ void z_impl_z_test_1cpu_start(void)
 
 	/* Spawn N-1 threads to "hold" the other CPUs, waiting for
 	 * each to signal us that it's locked and spinning.
-	 *
-	 * Note that NUM_CPUHOLD can be a value that causes coverity
-	 * to flag the following loop as DEADCODE so suppress the warning.
 	 */
-	/* coverity[DEADCODE] */
-	for (int i = 0; i < NUM_CPUHOLD; i++) {
+	for (int i = 0; i < num_cpus - 1; i++) {
 		k_thread_create(&cpuhold_threads[i], cpuhold_stacks[i], CPUHOLD_STACK_SZ,
 				(k_thread_entry_t)cpu_hold, NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO,
 				0, K_NO_WAIT);
@@ -180,19 +179,20 @@ void z_impl_z_test_1cpu_start(void)
 		}
 		k_sem_take(&cpuhold_sem, K_FOREVER);
 	}
+#endif
 }
 
 void z_impl_z_test_1cpu_stop(void)
 {
+#ifdef CONFIG_SMP
+	unsigned int num_cpus = arch_num_cpus();
+
 	cpuhold_active = 0;
 
-	/* Note that NUM_CPUHOLD can be a value that causes coverity
-	 * to flag the following loop as DEADCODE so suppress the warning.
-	 */
-	/* coverity[DEADCODE] */
-	for (int i = 0; i < NUM_CPUHOLD; i++) {
+	for (int i = 0; i < num_cpus - 1; i++) {
 		k_thread_abort(&cpuhold_threads[i]);
 	}
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -291,6 +291,15 @@ static inline const char *get_friendly_phase_name(enum ztest_phase phase)
 	}
 }
 
+static bool current_test_failed_assumption;
+void ztest_skip_failed_assumption(void)
+{
+	if (IS_ENABLED(CONFIG_ZTEST_FAIL_ON_ASSUME)) {
+		current_test_failed_assumption = true;
+	}
+	ztest_test_skip();
+}
+
 #ifndef KERNEL
 
 /* Static code analysis tool can raise a violation that the standard header
@@ -325,7 +334,7 @@ void ztest_test_fail(void)
 	case TEST_PHASE_AFTER:
 	case TEST_PHASE_TEARDOWN:
 	case TEST_PHASE_FRAMEWORK:
-		PRINT(" ERROR: cannot fail in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		longjmp(stack_fail, 1);
 	}
@@ -336,7 +345,8 @@ void ztest_test_pass(void)
 	if (phase == TEST_PHASE_TEST) {
 		longjmp(test_pass, 1);
 	}
-	PRINT(" ERROR: cannot pass in test '%s()', bailing\n", get_friendly_phase_name(phase));
+	PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
+	      get_friendly_phase_name(phase));
 	longjmp(stack_fail, 1);
 }
 
@@ -348,7 +358,7 @@ void ztest_test_skip(void)
 	case TEST_PHASE_TEST:
 		longjmp(test_skip, 1);
 	default:
-		PRINT(" ERROR: cannot skip in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		longjmp(stack_fail, 1);
 	}
@@ -399,6 +409,9 @@ out:
 
 	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
+	if (ret == TC_SKIP && current_test_failed_assumption) {
+		test_status = 1;
+	}
 
 	return ret;
 }
@@ -436,7 +449,7 @@ void ztest_test_fail(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot fail in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
@@ -451,7 +464,7 @@ void ztest_test_pass(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot pass in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		if (phase == TEST_PHASE_BEFORE) {
@@ -472,7 +485,7 @@ void ztest_test_skip(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot skip in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
@@ -579,6 +592,9 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 
 	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
+	if (ret == TC_SKIP && current_test_failed_assumption) {
+		test_status = 1;
+	}
 
 	return ret;
 }
@@ -661,6 +677,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 #endif
 
 	TC_SUITE_START(suite->name);
+	current_test_failed_assumption = false;
 	test_result = ZTEST_RESULT_PENDING;
 	phase = TEST_PHASE_SETUP;
 #ifndef KERNEL

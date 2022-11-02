@@ -331,6 +331,9 @@ void ztest_test_pass(void);
  */
 void ztest_test_skip(void);
 
+
+void ztest_skip_failed_assumption(void);
+
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
 	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn;                       \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \

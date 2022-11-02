@@ -597,7 +597,7 @@ static int bmm150_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(inst, bmm150_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmm150_init, NULL,				\
 			      &bmm150_data_##inst, &bmm150_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &bmm150_api_funcs);		\
 

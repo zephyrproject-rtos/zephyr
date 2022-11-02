@@ -876,10 +876,13 @@ struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
 {
 	int i;
 
+	k_mutex_lock(&lock, K_FOREVER);
+
 	if ((!net_if_flag_is_set(iface, NET_IF_FORWARD_MULTICASTS)) ||
 			(!net_ipv6_is_addr_mcast(group)) ||
 			(net_ipv6_is_addr_mcast_iface(group)) ||
 			(net_ipv6_is_addr_mcast_link(group))) {
+		k_mutex_unlock(&lock);
 		return NULL;
 	}
 
@@ -898,6 +901,7 @@ struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
 		}
 	}
 
+	k_mutex_unlock(&lock);
 	return NULL;
 }
 

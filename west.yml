@@ -88,7 +88,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 708c95825b0d5279620935a1356299fff5dfbc6e
+      revision: 9bc1e797921b2a4b246ce7647dc426549985e76a
       path: modules/hal/nxp
       groups:
         - hal
@@ -135,7 +135,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 000b944a788b6005d7776198e1348f5c8a657259
+      revision: a5ffc6dc73c2ee4c4eaa813418453cd3094c33dd
       path: modules/hal/ti
       groups:
         - hal
@@ -166,7 +166,7 @@ manifest:
       revision: ce57712f3e426bbbb13acaec97b45369f716f43a
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: af95bdfcf6784edd958ea08139c713e2d3dee7af
+      revision: 5ab83099854719ed326b6ecb9b09b07b1eee4818
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
@@ -253,7 +253,7 @@ manifest:
       revision: e8920192b66db4f909eb9cd3f155d5245c1ae825
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: a0d6981f14d4001d6f0d608d1a427f9bc6bb6d02
+      revision: 0.6.0
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib

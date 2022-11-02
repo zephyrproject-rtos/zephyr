@@ -9,14 +9,10 @@
 
 #include <inttypes.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* MTU for newtmgr responses */
-#define MGMT_MAX_MTU		1024
 
 /** Opcodes; encoded in first byte of header. */
 #define MGMT_OP_READ		0
@@ -66,11 +62,10 @@ extern "C" {
 #define MGMT_EVT_OP_CMD_DONE	0x03
 
 struct mgmt_hdr {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
 	uint8_t  _res1:5;
-#endif
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 	uint8_t  _res1:5;
 	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
 #endif

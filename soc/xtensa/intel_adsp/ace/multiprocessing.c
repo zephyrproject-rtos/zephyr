@@ -8,11 +8,15 @@
 #include <zephyr/sys/check.h>
 
 #include <soc.h>
-#include <ace_v1x-regs.h>
+#include <adsp_boot.h>
+#include <adsp_power.h>
 #include <adsp_ipc_regs.h>
 #include <adsp_memory.h>
+#include <adsp_interrupt.h>
+#include <zephyr/irq.h>
 
 #define CORE_POWER_CHECK_NUM 32
+#define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
 static void ipc_isr(void *arg)
 {
@@ -38,13 +42,15 @@ static void ipc_isr(void *arg)
 
 void soc_mp_init(void)
 {
-	IRQ_CONNECT(MTL_IRQ_TO_ZEPHYR(MTL_INTL_IDCA), 0, ipc_isr, 0, 0);
+	IRQ_CONNECT(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA), 0, ipc_isr, 0, 0);
 
-	irq_enable(MTL_IRQ_TO_ZEPHYR(MTL_INTL_IDCA));
+	irq_enable(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA));
 
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		/* DINT has one bit per IPC, unmask only IPC "Ax" on core "x" */
-		MTL_DINT[i].ie[MTL_INTL_IDCA] = BIT(i);
+		ACE_DINT[i].ie[ACE_INTL_IDCA] = BIT(i);
 
 		/* Agent A should signal only BUSY interrupts */
 		IDC[i].agents[0].ipc.ctl = BIT(0); /* IPCTBIE */
@@ -107,7 +113,9 @@ void arch_sched_ipi(void)
 	uint32_t curr = arch_proc_id();
 
 	/* Signal agent B[n] to cause an interrupt from agent A[n] */
-	for (int core = 0; core < CONFIG_MP_NUM_CPUS; core++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int core = 0; core < num_cpus; core++) {
 		if (core != curr && soc_cpus_active[core]) {
 			IDC[core].agents[1].ipc.idr = INTEL_ADSP_IPC_BUSY;
 		}
@@ -122,7 +130,7 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-	CHECKIF(id <= 0 || id >= CONFIG_MP_NUM_CPUS) {
+	CHECKIF(id <= 0 || id >= arch_num_cpus()) {
 		return -EINVAL;
 	}
 

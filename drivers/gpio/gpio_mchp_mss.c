@@ -12,8 +12,9 @@
 #include <soc.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 
 #define MSS_GPIO_INPUT_MODE               0x02

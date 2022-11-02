@@ -230,9 +230,28 @@ i2s1: &flexcomm3 {
 
 	pca9420: pca9420@61 {
 		reg = <0x61>;
-
+		compatible = "regulator-pmic";
+		/*
+		 * This mode-reg setting will permit mode control by
+		 * pins, a feature of the PCA9240. If mode control via
+		 * I2C is desired, the following settings
+		 * should be used:
+		 * regulator-initial-mode = <PCA9420_MODECFG0_I2C>;
+		 * regulator-allowed-modes = <PCA9420_MODECFG0_I2C>,
+		 *			<PCA9420_MODECFG1_I2C>,
+		 *			<PCA9420_MODECFG2_I2C>,
+		 *			<PCA9420_MODECFG3_I2C>;
+		 * modesel-reg = <PCA9420_TOP_CNTL3>;
+		 * modesel-mask = <PCA9420_TOP_CNTL3_MODE_I2C_MASK>;
+		 */
+		regulator-allowed-modes = <PCA9420_MODECFG0_PIN>,
+					<PCA9420_MODECFG1_PIN>,
+					<PCA9420_MODECFG2_PIN>,
+					<PCA9420_MODECFG3_PIN>;
+		regulator-initial-mode = <PCA9420_MODECFG0_PIN>;
+		modesel-reg = <PCA9420_MODECFG_0_0>;
+		modesel-mask = <PCA9420_MODECFG_0_MODE_CTRL_SEL_MASK>;
 		pca9420_sw1: sw1_buck {
-			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_SW1_VOLTAGE_RANGE>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
 			num-voltages = <42>;
@@ -246,10 +265,10 @@ i2s1: &flexcomm3 {
 			enable-val = <PCA9420_MODECFG_2_SW1_EN_VAL>;
 			min-uV = <500000>;
 			max-uV = <1800000>;
+			regulator-boot-on;
 		};
 
 		pca9420_sw2: sw2_buck {
-			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_SW2_VOLTAGE_RANGE>;
 			num-voltages = <50>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
@@ -263,10 +282,10 @@ i2s1: &flexcomm3 {
 			enable-val = <PCA9420_MODECFG_2_SW2_EN_VAL>;
 			min-uV = <1500000>;
 			max-uV = <3300000>;
+			regulator-boot-on;
 		};
 
 		pca9420_ldo1: ldo1_reg {
-			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_LDO1_VOLTAGE_RANGE>;
 			num-voltages = <9>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
@@ -280,12 +299,12 @@ i2s1: &flexcomm3 {
 			enable-val = <PCA9420_MODECFG_2_LDO1_EN_VAL>;
 			min-uV = <1700000>;
 			max-uV = <1900000>;
+			regulator-boot-on;
 		};
 
 		pca9420_ldo2: ldo2_reg {
-			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_LDO2_VOLTAGE_RANGE>;
-			num-voltages = <50>;
+			num-voltages = <51>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
 			ilim-reg = <PCA9420_TOP_CNTL0>;
 			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
@@ -297,6 +316,7 @@ i2s1: &flexcomm3 {
 			enable-val = <PCA9420_MODECFG_2_LDO2_EN_VAL>;
 			min-uV = <1500000>;
 			max-uV = <3300000>;
+			regulator-boot-on;
 		};
 
 
@@ -414,7 +434,7 @@ i2s1: &flexcomm3 {
 	no-1-8-v;
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
-	mmc {
+	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
 	};

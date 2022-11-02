@@ -489,6 +489,11 @@ following in your source::
 
     #include <zephyr/fff.h>
 
+Zephyr provides several FFF-based fake drivers which can be used as either stubs or mocks. Fake
+driver instances are configured via :ref:`devicetree` and :ref:`kconfig`. See the following
+devicetree bindings for more information:
+
+ - :dtcompatible:`zephyr,fake-can`
 
 Customizing Test Output
 ***********************

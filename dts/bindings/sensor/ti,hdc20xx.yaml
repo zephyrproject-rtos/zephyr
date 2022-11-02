@@ -5,7 +5,7 @@ description: Texas Instruments HDC20XX Temperature and Humidity Sensor
 
 compatible: "ti,hdc20xx"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:

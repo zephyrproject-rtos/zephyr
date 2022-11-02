@@ -79,4 +79,24 @@ config SOC_IT8XXX2_EXT_32K
 
 endchoice
 
+config SOC_IT8XXX2_USE_ILM
+	bool
+	default y
+	help
+	  If enabled, Instruction Local Memory (ILM) will be configured to execute
+	  code placed in the .__ram_code section out of RAM. This consumes RAM in
+	  blocks of 4 kilobytes, but performance of code in ILM is much more
+	  predictable than executing from Flash directly, and some code (such as code
+	  that writes to the internal Flash) must execute out of RAM.
+
+config SOC_IT8XXX2_EXCEPTIONS_IN_RAM
+	bool "Place exception handling code in RAM"
+	default y
+	select SOC_IT8XXX2_USE_ILM
+	help
+	  Place exception handling (ISR entry/exit and related) code in ILM, which
+	  has more reliable performance characteristics than executing directly from
+	  Flash. This can significantly improve performance when under I-cache
+	  pressure.
+
 endif # SOC_IT8XXX2

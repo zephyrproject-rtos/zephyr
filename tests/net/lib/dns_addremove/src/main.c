@@ -157,6 +157,15 @@ static void *test_init(void)
 {
 	struct net_if_addr *ifaddr;
 
+#if defined(CONFIG_NET_IPV4)
+	dns_resolve_init(&resv_ipv4, NULL, NULL);
+	dns_resolve_init(&resv_ipv4_2, NULL, NULL);
+#endif
+#if defined(CONFIG_NET_IPV6)
+	dns_resolve_init(&resv_ipv6, NULL, NULL);
+	dns_resolve_init(&resv_ipv6_2, NULL, NULL);
+#endif
+
 	iface1 = net_if_get_by_index(0);
 	zassert_is_null(iface1, "iface1");
 

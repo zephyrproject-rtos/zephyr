@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_IPC_SERVICE_IPC_SERVICE_BACKEND_H_
 
 #include <zephyr/ipc/ipc_service.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 
 #ifdef __cplusplus

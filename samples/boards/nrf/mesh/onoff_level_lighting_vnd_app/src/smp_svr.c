@@ -6,16 +6,14 @@
  */
 
 #include <zephyr/sys/__assert.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
-#include <zephyr/mgmt/mcumgr/smp_bt.h>
 #include <zephyr/stats/stats.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/kernel.h>
 
+#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
+#include "fs_mgmt/fs_mgmt.h"
+#endif
 #ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
 #include "img_mgmt/img_mgmt.h"
 #endif

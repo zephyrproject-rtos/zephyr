@@ -98,6 +98,8 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 +-----------+------------+-------------------------------------+
 | FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

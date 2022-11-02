@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+struct bt_mesh_model;
+
 /** Length of a short Mesh MIC. */
 #define BT_MESH_MIC_SHORT 4
 /** Length of a long Mesh MIC. */

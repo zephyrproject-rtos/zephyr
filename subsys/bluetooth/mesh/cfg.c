@@ -355,7 +355,7 @@ static void store_pending_cfg(void)
 		BT_ERR("Failed to store configuration value");
 	} else {
 		BT_DBG("Stored configuration value");
-		BT_HEXDUMP_DBG(&val, sizeof(val), "raw value");
+		LOG_HEXDUMP_DBG(&val, sizeof(val), "raw value");
 	}
 }
 

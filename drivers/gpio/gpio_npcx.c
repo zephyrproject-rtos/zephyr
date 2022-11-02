@@ -11,7 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <soc.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include "soc_gpio.h"
 #include "soc_miwu.h"
 

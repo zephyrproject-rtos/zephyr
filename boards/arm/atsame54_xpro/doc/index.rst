@@ -168,7 +168,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! atsame54_xpro" in your terminal.
 
 References
 **********

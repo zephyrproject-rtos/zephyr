@@ -14,9 +14,9 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CMSIS_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CMSIS_H_
 
-#include <soc.h>
-
 #include <zephyr/arch/arm/aarch32/cortex_m/nvic.h>
+
+#include <soc.h>
 
 #ifdef __cplusplus
 extern "C" {

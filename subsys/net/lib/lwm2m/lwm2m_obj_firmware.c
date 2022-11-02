@@ -301,9 +301,8 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	uint8_t state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
 
 	if (state == STATE_IDLE) {
-		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
-
 		if (data_len > 0) {
+			lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
 			lwm2m_firmware_start_transfer(obj_inst_id, package_uri[obj_inst_id]);
 		}
 	} else if (state == STATE_DOWNLOADED && data_len == 0U) {

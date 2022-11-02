@@ -5,7 +5,7 @@ description: Texas Instruments Bidirectional Current/Power Sensor
 
 compatible: "ti,ina219"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     lsb-microamp:

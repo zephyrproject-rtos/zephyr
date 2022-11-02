@@ -403,7 +403,8 @@ Device Driver Model:
 DFU:
   status: maintained
   maintainers:
-    - nvlsianpu
+    - de-nordic
+    - nordicjm
   files:
     - include/zephyr/dfu/
     - subsys/dfu/
@@ -456,7 +457,6 @@ Display drivers:
   status: odd fixes
   collaborators:
     - jfischer-no
-    - gmarull
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -737,7 +737,7 @@ Release Notes:
 "Drivers: Flash":
   status: maintained
   maintainers:
-    - nvlsianpu
+    - de-nordic
   files:
     - drivers/flash/
     - dts/bindings/flash_controller/
@@ -858,7 +858,6 @@ Release Notes:
     - albertofloyd
   collaborators:
     - VenkatKotakonda
-    - gmarull
   files:
     - drivers/kscan/
     - include/zephyr/drivers/kscan.h
@@ -1013,7 +1012,6 @@ Release Notes:
     - anangl
   collaborators:
     - henrikbrixandersen
-    - gmarull
   files:
     - drivers/pwm/
     - dts/bindings/pwm/
@@ -1042,7 +1040,6 @@ Release Notes:
     - MaureenHelm
   collaborators:
     - avisconti
-    - gmarull
     - teburd
   files:
     - drivers/sensor/
@@ -1057,6 +1054,8 @@ Release Notes:
   status: maintained
   maintainers:
     - tbursztyka
+  collaborators:
+    - teburd
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
@@ -1070,6 +1069,7 @@ Release Notes:
     - andyross
   collaborators:
     - KangJianX
+    - teburd
   files:
     - drivers/timer/
     - include/zephyr/drivers/timer/
@@ -1179,9 +1179,8 @@ Xen Platform:
 Filesystems:
   status: maintained
   maintainers:
-    - nvlsianpu
-  collaborators:
     - de-nordic
+  collaborators:
     - Laczen
     - nashif
   files:
@@ -1631,9 +1630,9 @@ Twister:
     - "area: Twister"
 
 Settings:
-  status: maintained
-  maintainers:
-    - nvlsianpu
+  status: odd fixes
+  collaborators:
+    - de-nordic
   files:
     - include/zephyr/settings/
     - subsys/settings/
@@ -1697,11 +1696,11 @@ State machine framework:
 GD32 Platforms:
   status: maintained
   maintainers:
-    - nandojve
-    - gmarull
-  collaborators:
-    - soburi
     - cameled
+    - nandojve
+  collaborators:
+    - gmarull
+    - soburi
   files:
     - boards/arm/gd32*/
     - boards/riscv/gd32*/
@@ -1827,6 +1826,7 @@ NXP Platforms:
     - yvanderv
     - EmilioCBen
     - decsny
+    - manuargue
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
@@ -1913,7 +1913,6 @@ STM32 Platforms:
   collaborators:
     - ABOSTM
     - FRASTM
-    - gmarull
     - GeorgeCGV
   files:
     - boards/arm/nucleo_*/
@@ -1941,6 +1940,7 @@ Espressif Platforms:
     - uLipe
   collaborators:
     - LucasTambor
+    - marekmatej
   files:
     - drivers/*/*esp32*.c
     - boards/xtensa/esp32*/
@@ -2028,9 +2028,7 @@ RTIO:
     - "area: RTIO"
 
 Storage:
-  status: maintained
-  maintainers:
-    - nvlsianpu
+  status: odd fixes
   files:
     - subsys/storage/
     - include/zephyr/storage/
@@ -2096,6 +2094,8 @@ USB:
   status: maintained
   maintainers:
     - jfischer-no
+  collaborators:
+    - desowin
   files:
     - drivers/usb/
     - dts/bindings/usb/
@@ -2106,6 +2106,22 @@ USB:
     - tests/subsys/usb/
   labels:
     - "area: USB"
+
+USB-C:
+  status: maintained
+  maintainers:
+    - sambhurst
+  collaborators:
+    - keith-zephyr
+  files:
+    - drivers/usb_c/
+    - dts/bindings/usb-c/
+    - include/zephyr/*/usb_c/
+    - include/zephyr/usb_c/
+    - samples/subsys/usb_c/
+    - subsys/usb/usb_c/
+  labels:
+    - "area: USB-C"
 
 Userspace:
   status: maintained
@@ -2246,8 +2262,8 @@ West:
   status: maintained
   maintainers:
     - nandojve
-    - gmarull
   collaborators:
+    - gmarull
     - soburi
   files:
     - modules/hal_gigadevice/
@@ -2260,6 +2276,7 @@ West:
     - ifyall
   collaborators:
     - parthitce
+    - talih0
   files:
     - modules/Kconfig.infineon
   labels:
@@ -2347,8 +2364,11 @@ West:
     - manifest-hal_rpi_pico
 
 "West project: hal_silabs":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - fkokosinski
   collaborators:
+    - sateeshkotapati
     - yonsch
     - mnkp
   files:
@@ -2392,7 +2412,6 @@ West:
   status: odd fixes
   collaborators:
     - cfriedt
-    - gmarull
   files: []
   labels:
     - manifest-hal_ti
@@ -2489,7 +2508,9 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
-    - nvlsianpu
+  collaborators:
+    - de-nordic
+    - nordicjm
   files:
     - modules/Kconfig.mcuboot_bootutil
   labels:

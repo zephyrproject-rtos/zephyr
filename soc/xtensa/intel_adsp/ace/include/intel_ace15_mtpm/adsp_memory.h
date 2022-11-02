@@ -9,6 +9,7 @@
 
 #include <zephyr/devicetree.h>
 #include <adsp-vectors.h>
+#include <mem_window.h>
 
 #define L2_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram0)))
 #define L2_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram0)))
@@ -21,15 +22,6 @@
 /* Linker-usable RAM region */
 #define RAM_BASE (L2_SRAM_BASE + CONFIG_HP_SRAM_RESERVE + VECTOR_TBL_SIZE)
 #define RAM_SIZE (L2_SRAM_SIZE - CONFIG_HP_SRAM_RESERVE - VECTOR_TBL_SIZE)
-
-/* Host shared memory windows */
-#define HP_SRAM_WIN0_BASE (L2_SRAM_BASE + CONFIG_ADSP_WIN0_OFFSET)
-#define HP_SRAM_WIN0_SIZE 0x2000
-#define HP_SRAM_WIN2_BASE (L2_SRAM_BASE + CONFIG_ADSP_WIN2_OFFSET)
-/* window 2 size is variable */
-#define HP_SRAM_WIN2_SIZE (CONFIG_ADSP_WIN3_OFFSET - CONFIG_ADSP_WIN2_OFFSET)
-#define HP_SRAM_WIN3_BASE (L2_SRAM_BASE + CONFIG_ADSP_WIN3_OFFSET)
-#define HP_SRAM_WIN3_SIZE 0x2000
 
 /* The rimage tool produces two blob addresses we need to find: one is
  * our bootloader code block which starts at its entry point, the
@@ -64,5 +56,68 @@
 #define ADSP_CxL1CCAP_DCMWC ((ADSP_CxL1CCAP_REG >> 16) & 7)
 /* The number of set associative cache way supported on L1 Instruction Cache */
 #define ADSP_CxL1CCAP_ICMWC ((ADSP_CxL1CCAP_REG >> 20) & 7)
+
+#ifndef _LINKER
+/* L2 Local Memory Management */
+
+/* These registers are for the L2 memory control and status. */
+#define DFL2MM_REG 0x71d00
+
+struct ace_l2mm {
+	uint32_t l2mcap;
+	uint32_t l2mpat;
+	uint32_t l2mecap;
+	uint32_t l2mecs;
+	uint32_t l2hsbpmptr;
+	uint32_t l2usbpmptr;
+	uint32_t l2usbmrpptr;
+	uint32_t l2ucmrpptr;
+	uint32_t l2ucmrpdptr;
+};
+
+#define ACE_L2MM ((volatile struct ace_l2mm *)DFL2MM_REG)
+
+/* DfL2MCAP */
+struct ace_l2mcap {
+	uint32_t l2hss  : 8;
+	uint32_t l2uss  : 4;
+	uint32_t l2hsbs : 4;
+	uint32_t l2hs2s : 8;
+	uint32_t l2usbs : 5;
+	uint32_t l2se   : 1;
+	uint32_t el2se  : 1;
+	uint32_t rsvd32 : 1;
+};
+
+#define ACE_L2MCAP ((volatile struct ace_l2mcap *)DFL2MM_REG)
+
+static ALWAYS_INLINE uint32_t ace_hpsram_get_bank_count(void)
+{
+	return ACE_L2MCAP->l2hss;
+}
+
+static ALWAYS_INLINE uint32_t ace_lpsram_get_bank_count(void)
+{
+	return ACE_L2MCAP->l2uss;
+}
+
+struct ace_hpsram_regs {
+	/** @brief power gating control */
+	uint8_t HSxPGCTL;
+	/** @brief retention mode control */
+	uint8_t HSxRMCTL;
+	uint8_t reserved[2];
+	/** @brief power gating status */
+	uint8_t HSxPGISTS;
+	uint8_t reserved1[3];
+};
+#endif
+
+/* These registers are for the L2 HP SRAM bank power management control and status.*/
+#define L2HSBPM_REG					0x17A800
+#define L2HSBPM_REG_SIZE			0x0008
+
+#define HPSRAM_REGS(block_idx)		((volatile struct ace_hpsram_regs *const) \
+	(L2HSBPM_REG + L2HSBPM_REG_SIZE * (block_idx)))
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_ */

@@ -14,13 +14,13 @@ import queue
 import time
 import multiprocessing
 import traceback
-import scl
 from colorama import Fore
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.log_helper import log_command
+from domains import Domains
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -364,15 +364,11 @@ class FilterBuilder(CMake):
             return {}
 
         if self.testsuite.sysbuild:
-            # We must parse the domains.yaml file to determine the
-            # default sysbuild application
+            # Load domain yaml to get default domain build directory
             domain_path = os.path.join(self.build_dir, "domains.yaml")
-            domain_yaml = scl.yaml_load(domain_path)
+            domains = Domains.from_file(domain_path)
             logger.debug("Loaded sysbuild domain data from %s" % (domain_path))
-            default_domain = domain_yaml['default']
-            for domain in domain_yaml['domains']:
-                if domain['name'] == default_domain:
-                    domain_build = domain['build_dir']
+            domain_build = domains.get_default_domain().build_dir
             cmake_cache_path = os.path.join(domain_build, "CMakeCache.txt")
             defconfig_path = os.path.join(domain_build, "zephyr", ".config")
             edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")
@@ -783,8 +779,9 @@ class ProjectBuilder(FilterBuilder):
             args += instance.handler.args
 
         # merge overlay files into one variable
+        # overlays with prefixes won't be merged but pass to cmake as they are
         def extract_overlays(args):
-            re_overlay = re.compile('OVERLAY_CONFIG=(.*)')
+            re_overlay = re.compile(r'^\s*OVERLAY_CONFIG=(.*)')
             other_args = []
             overlays = []
             for arg in args:
@@ -943,6 +940,8 @@ class TwisterRunner:
                 self.results.skipped_filter += 1
                 self.results.skipped_configs += 1
                 self.results.skipped_cases += len(instance.testsuite.testcases)
+            elif instance.status == 'error':
+                self.results.error += 1
 
     def update_counting_after_pipeline(self):
         '''
@@ -973,6 +972,9 @@ class TwisterRunner:
 
             if instance.status not in no_retry_statuses:
                 logger.debug(f"adding {instance.name}")
+                if instance.status:
+                    instance.retries += 1
+
                 instance.status = None
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})

@@ -12,9 +12,12 @@
 #ifndef ZEPHYR_INCLUDE_ESPI_H_
 #define ZEPHYR_INCLUDE_ESPI_H_
 
+#include <errno.h>
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,6 +117,7 @@ enum espi_bus_event {
 	ESPI_BUS_EVENT_VWIRE_RECEIVED       = BIT(2),
 	ESPI_BUS_EVENT_OOB_RECEIVED         = BIT(3),
 	ESPI_BUS_PERIPHERAL_NOTIFICATION    = BIT(4),
+	ESPI_BUS_SAF_NOTIFICATION           = BIT(5),
 };
 
 /**

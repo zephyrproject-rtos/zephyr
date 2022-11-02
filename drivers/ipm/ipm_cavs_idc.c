@@ -10,6 +10,7 @@
 #include <zephyr/arch/common/sys_io.h>
 
 #include <soc.h>
+#include <zephyr/irq.h>
 #include "ipm_cavs_idc.h"
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
@@ -35,7 +36,9 @@ static void cavs_idc_isr(const struct device *dev)
 	bool do_sched_ipi = false;
 #endif
 
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0; i < num_cpus; i++) {
 		if (i == curr_cpu_id) {
 			/* skip current core */
 			continue;
@@ -93,7 +96,9 @@ static int cavs_idc_send(const struct device *dev, int wait, uint32_t id,
 
 	/* Check if any core is still busy */
 	busy = false;
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0; i < num_cpus; i++) {
 		if (i == curr_cpu_id) {
 			/* skip current core */
 			continue;
@@ -115,7 +120,7 @@ static int cavs_idc_send(const struct device *dev, int wait, uint32_t id,
 	ext &= IPC_IDCIETC_MSG_MASK;
 	ext |= IPC_IDCIETC_DONE; /* always clear DONE bit */
 
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	for (i = 0; i < num_cpus; i++) {
 		if (i == curr_cpu_id) {
 			/* skip current core */
 			continue;
@@ -172,11 +177,13 @@ static int cavs_idc_set_enabled(const struct device *dev, int enable)
 	}
 #endif
 
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0; i < num_cpus; i++) {
 		mask = 0;
 
 		if (enable) {
-			for (j = 0; j < CONFIG_MP_NUM_CPUS; j++) {
+			for (j = 0; j < num_cpus; j++) {
 				if (i == j) {
 					continue;
 				}
