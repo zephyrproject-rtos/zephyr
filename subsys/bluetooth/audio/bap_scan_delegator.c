@@ -180,7 +180,7 @@ static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_s
 
 		(void)net_buf_simple_add_le32(&read_buf, subgroup->bis_sync);
 		(void)net_buf_simple_add_u8(&read_buf, subgroup->metadata_len);
-		(void)net_buf_simple_add_mem(&read_buf, subgroup,
+		(void)net_buf_simple_add_mem(&read_buf, subgroup->metadata,
 					     subgroup->metadata_len);
 	}
 }
