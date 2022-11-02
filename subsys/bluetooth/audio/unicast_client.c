@@ -1600,7 +1600,7 @@ static void unicast_client_reset(struct bt_audio_ep *ep)
 
 	bt_audio_stream_reset(ep->stream);
 
-	(void)memset(ep, 0, offsetof(struct bt_audio_ep, subscribe));
+	(void)memset(ep, 0, sizeof(*ep));
 }
 
 static void unicast_client_ep_reset(struct bt_conn *conn)
