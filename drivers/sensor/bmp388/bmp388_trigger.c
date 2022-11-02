@@ -8,11 +8,7 @@
  * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp388-ds001.pdf
  */
 
-#define DT_DRV_COMPAT bosch_bmp388
-
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/logging/log.h>
 
