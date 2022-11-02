@@ -6,49 +6,7 @@
 #ifndef ZEPHYR_SOC_INTEL_ADSP_SHIM_H_
 #define ZEPHYR_SOC_INTEL_ADSP_SHIM_H_
 
-/* The "shim" block contains most of the general system control
- * registers on cAVS platforms.  While the base address changes, it
- * has remained largely, but not perfectly, compatible between
- * versions.
- */
-
 #ifndef _ASMLANGUAGE
-struct cavs_shim {
-	uint32_t skuid;
-	uint32_t _unused0[7];
-	uint32_t dspwc_lo;
-	uint32_t dspwc_hi;
-	uint32_t dspwctcs;
-	uint32_t _unused1[1];
-	uint32_t dspwct0c_lo;
-	uint32_t dspwct0c_hi;
-	uint32_t dspwct1c_lo;
-	uint32_t dspwct1c_hi;
-	uint32_t _unused2[14];
-	uint32_t clkctl;   /* Offset: 0x78 */
-	uint32_t clksts;   /* Offset: 0x7C */
-	uint32_t _unused3[4];
-	uint16_t pwrctl;
-	uint16_t pwrsts;
-	uint32_t lpsctl;
-	uint32_t lpsdmas0;
-	uint32_t lpsdmas1;
-	uint32_t spsreq;  /* Offset: 0xA0 */
-	uint32_t _unused4[3]; /* Offset: 0xA4 */
-	uint32_t lpsalhss0;
-	uint32_t lpsalhss1;
-	uint32_t lpsalhss2;
-	uint32_t lpsalhss3;
-	uint32_t _unused5[4];
-	uint32_t l2mecs;
-	uint32_t l2mpat;
-	uint32_t _unused6[2];
-	uint32_t ltrc;  /* Offset: 0xe0 */
-	uint32_t _unused8[3];
-	uint32_t dbgo; /* Offset: 0xf0 */
-	uint32_t svcfg; /* Offset: 0xf4 */
-	uint32_t _unused9[2];
-};
 
 /**
  * DfPMCCH
@@ -107,7 +65,6 @@ struct ace_dfpmccu {
 	uint32_t _unused5[10];
 };
 
-#define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
 #define ACE_DfPMCCH (*((volatile struct ace_dfpmcch *)DT_REG_ADDR(DT_NODELABEL(dfpmcch))))
 #define ACE_DfPMCCU (*((volatile struct ace_dfpmccu *)DT_REG_ADDR(DT_NODELABEL(dfpmccu))))
 
@@ -133,33 +90,9 @@ struct ace_dfpmccu {
 
 #define ADSP_SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
 
-/* Host memory window control.  Not strictly part of the shim block. */
-struct cavs_win {
-	uint32_t dmwba;
-	uint32_t dmwlo;
-};
-
-#define CAVS_WIN ((volatile struct cavs_win *)DT_REG_ADDR(DT_NODELABEL(win)))
-
 #endif /* _ASMLANGUAGE */
 
-
-
-/* cAVS 1.8+ CLKCTL bits */
-#define CAVS_CLKCTL_RHROSCC   BIT(31)	  /* Request HP RING oscillator */
-#define CAVS_CLKCTL_RXOSCC    BIT(30)	  /* Request XTAL oscillator */
-#define CAVS_CLKCTL_RLROSCC   BIT(29)	  /* Request LP RING oscillator */
-#define CAVS_CLKCTL_SLIMFDCGB BIT(25)	  /* Slimbus force dynamic clock gating*/
-#define CAVS_CLKCTL_TCPLCG(x) BIT(16 + x) /* Set bit: prevent clock gating on core x */
-#define CAVS_CLKCTL_SLIMCSS   BIT(6)	  /* Slimbus clock (0: XTAL, 1: Audio) */
-#define CAVS_CLKCTL_WOVCRO    BIT(4)	  /* Request WOVCRO clock */
-#define CAVS_CLKCTL_WOVCROSC  BIT(3)	  /* WOVCRO select */
-#define CAVS_CLKCTL_OCS	      BIT(2)	  /* Oscillator clock (0: LP, 1: HP) */
-#define CAVS_CLKCTL_LMCS      BIT(1)	  /* LP mem divisor (0: div/2, 1: div/4) */
-#define CAVS_CLKCTL_HMCS      BIT(0)	  /* HP mem divisor (0: div/2, 1: div/4) */
-
-#define CAVS_PWRCTL_TCPDSPPG(x) BIT(x)
-#define CAVS_PWRSTS_PDSPPGS(x)	BIT(x)
+#define ACE_CLKCTL_WOVCRO    BIT(4)	  /* Request WOVCRO clock */
 
 #define SHIM_LDOCTL_HPSRAM_LDO_ON     (3 << 0)
 #define SHIM_LDOCTL_HPSRAM_LDO_BYPASS BIT(0)
@@ -170,8 +103,8 @@ struct cavs_win {
 #define ADSP_DMWBA_ENABLE   BIT(0)
 #define ADSP_DMWBA_READONLY BIT(1)
 
-#define CAVS_CLKCTL_OSC_SOURCE_MASK  BIT_MASK(2)
-#define CAVS_CLKCTL_OSC_REQUEST_MASK (~BIT_MASK(28))
+#define ADSP_CLKCTL_OSC_SOURCE_MASK  (3<<2)
+#define ADSP_CLKCTL_OSC_REQUEST_MASK (~BIT_MASK(28))
 
 /** LDO Control */
 #define ADSP_DSPRA_ADDRESS        (0x71A60)
