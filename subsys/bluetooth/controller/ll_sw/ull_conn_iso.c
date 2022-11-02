@@ -227,7 +227,7 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_gr
 	handle_start = (handle_iter == NULL) || ((*handle_iter) == UINT16_MAX) ?
 			LL_CIS_HANDLE_BASE : (*handle_iter) + 1;
 
-	for (handle = handle_start; handle <= LAST_VALID_CIS_HANDLE; handle++) {
+	for (handle = handle_start; handle <= LL_CIS_HANDLE_LAST; handle++) {
 		cis = ll_conn_iso_stream_get(handle);
 		if (cis->group == cig) {
 			if (handle_iter) {
@@ -557,7 +557,8 @@ static int init_reset(void)
 		cig->lll.num_cis = 0;
 	}
 
-	for (handle = LL_CIS_HANDLE_BASE; handle <= LAST_VALID_CIS_HANDLE; handle++) {
+	for (handle = LL_CIS_HANDLE_BASE; handle <= LL_CIS_HANDLE_LAST;
+	     handle++) {
 		cis = ll_conn_iso_stream_get(handle);
 		cis->cis_id = 0;
 		cis->group  = NULL;
