@@ -818,9 +818,7 @@ class Node:
     def spi_cs_gpio(self):
         "See the class docstring"
 
-        # We know on_buses is always a list, but pylint doesn't.
-        # So ignore the error.
-        if not ("spi" in self.on_buses # pylint: disable=unsupported-membership-test
+        if not ("spi" in self.on_buses
                 and "cs-gpios" in self.bus_node.props):
             return None
 
@@ -873,9 +871,7 @@ class Node:
                 # works the same way in Zephyr as it does elsewhere.
                 binding = None
 
-                # We know on_buses is always a list, but pylint doesn't.
-                # So ignore the error.
-                for bus in on_buses: # pylint: disable=not-an-iterable
+                for bus in on_buses:
                     if (compat, bus) in self.edt._compat2binding:
                         binding = self.edt._compat2binding[compat, bus]
                         break
