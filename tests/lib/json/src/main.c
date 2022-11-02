@@ -27,6 +27,8 @@ struct test_struct {
 	int another_array[10];		 /* JSON: "another-array" */
 	size_t another_array_len;
 	struct test_nested xnother_nexx; /* JSON: "4nother_ne$+" */
+	struct test_nested nested_obj_array[2];
+	size_t obj_array_len;
 };
 
 struct elt {
@@ -69,6 +71,8 @@ static const struct json_obj_descr test_descr[] = {
 				   JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_OBJECT_NAMED(struct test_struct, "4nother_ne$+",
 				    xnother_nexx, nested_descr),
+	JSON_OBJ_DESCR_OBJ_ARRAY(struct test_struct, nested_obj_array, 2,
+				 obj_array_len, nested_descr, ARRAY_SIZE(nested_descr)),
 };
 
 static const struct json_obj_descr elt_descr[] = {
@@ -146,6 +150,11 @@ ZTEST(lib_json_test, test_json_encoding)
 			.nested_bool = true,
 			.nested_string = "no escape necessary",
 		},
+		.nested_obj_array = {
+			{1, true, "true"},
+			{0, false, "false"}
+		},
+		.obj_array_len = 2
 	};
 	char encoded[] = "{\"some_string\":\"zephyr 123\uABCD\","
 		"\"some_int\":42,\"some_bool\":true,"
@@ -158,7 +167,10 @@ ZTEST(lib_json_test, test_json_encoding)
 		"\"another-array\":[2,3,5,7],"
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
-		"\"nested_string\":\"no escape necessary\"}"
+		"\"nested_string\":\"no escape necessary\"},"
+		"\"nested_obj_array\":["
+		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\"},"
+		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\"}]"
 		"}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -193,7 +205,10 @@ ZTEST(lib_json_test, test_json_decoding)
 		"\"another-array\":[2,3,5,7],"
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
-		"\"nested_string\":\"no escape necessary\"}"
+		"\"nested_string\":\"no escape necessary\"},"
+		"\"nested_obj_array\":["
+		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\"},"
+		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\"}]"
 		"}\n";
 	const int expected_array[] = { 11, 22, 33, 45, 299 };
 	const int expected_other_array[] = { 2, 3, 5, 7 };
@@ -237,6 +252,20 @@ ZTEST(lib_json_test, test_json_decoding)
 	zassert_true(!strcmp(ts.xnother_nexx.nested_string,
 			     "no escape necessary"),
 		     "Named nested string not decoded correctly");
+	zassert_equal(ts.obj_array_len, 2,
+		      "Array of objects does not have correct number of items");
+	zassert_equal(ts.nested_obj_array[0].nested_int, 1,
+		      "Integer in first object array element not decoded correctly");
+	zassert_equal(ts.nested_obj_array[0].nested_bool, true,
+		      "Boolean value in first object array element not decoded correctly");
+	zassert_true(!strcmp(ts.nested_obj_array[0].nested_string, "true"),
+		     "String in first object array element not decoded correctly");
+	zassert_equal(ts.nested_obj_array[1].nested_int, 0,
+		      "Integer in second object array element not decoded correctly");
+	zassert_equal(ts.nested_obj_array[1].nested_bool, false,
+		      "Boolean value in second object array element not decoded correctly");
+	zassert_true(!strcmp(ts.nested_obj_array[1].nested_string, "false"),
+		     "String in second object array element not decoded correctly");
 }
 
 ZTEST(lib_json_test, test_json_limits)
