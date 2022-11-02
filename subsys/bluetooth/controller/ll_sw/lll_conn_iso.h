@@ -27,7 +27,7 @@ struct lll_conn_iso_stream {
 	struct lll_conn_iso_stream_rxtx tx; /* TX parameters */
 
 	/* Event and payload counters */
-	uint64_t event_count : 39;       /* cisEventCount */
+	uint64_t event_count:39;    /* cisEventCount */
 
 	/* Acknowledgment and flow control */
 	uint8_t sn:1;               /* Sequence number */
@@ -49,25 +49,26 @@ struct lll_conn_iso_stream {
 struct lll_conn_iso_group {
 	struct lll_hdr hdr;
 
-	uint16_t handle;        /* CIG handle (internal) */
-	uint8_t  num_cis : 5;   /* Number of CISes in this CIG */
-	uint8_t  role : 1;      /* 0: CENTRAL, 1: PERIPHERAL*/
-	uint8_t  paused : 1;    /* 1: CIG is paused */
+	uint16_t handle;      /* CIG handle (internal) */
+	uint8_t  num_cis:5;   /* Number of CISes in this CIG */
+	uint8_t  role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
+	uint8_t  paused:1;    /* 1: CIG is paused */
 
 	/* Resumption information */
-	uint16_t resume_cis;    /* CIS handle to schedule at resume */
+	uint16_t resume_cis;  /* CIS handle to schedule at resume */
 
 	/* Window widening. Relies on vendor specific conversion macros, e.g.
 	 * EVENT_US_FRAC_TO_TICKS().
 	 */
-	uint32_t window_widening_periodic_us_frac; /* Widening in us fractions per
-						    * ISO interval.
+	uint32_t window_widening_periodic_us_frac; /* Widening in us fractions
+						    * per ISO interval.
 						    */
-	uint32_t window_widening_prepare_us_frac;  /* Widening in us fractions for
-						    * active prepare.
+	uint32_t window_widening_prepare_us_frac;  /* Widening in us fractions
+						    * for active prepare.
 						    */
-	uint32_t window_widening_event_us_frac;    /* Accumulated widening in us
-						    * fractions for active event.
+	uint32_t window_widening_event_us_frac;    /* Accumulated widening in
+						    * us fractions for active
+						    * event.
 						    */
 	uint32_t window_widening_max_us;	   /* Maximum widening in us */
 };
