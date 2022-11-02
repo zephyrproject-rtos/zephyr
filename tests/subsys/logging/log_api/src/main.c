@@ -25,13 +25,13 @@ LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 #ifdef CONFIG_LOG_USE_TAGGED_ARGUMENTS
 /* The extra sizeof(int) is the end of arguments tag. */
 #define LOG_SIMPLE_MSG_LEN \
-	ROUND_UP(sizeof(struct log_msg_hdr) + \
+	ROUND_UP(sizeof(struct log_msg) + \
 		 sizeof(struct cbprintf_package_hdr_ext) + \
-		 sizeof(int), sizeof(long long))
+		 sizeof(int), CBPRINTF_PACKAGE_ALIGNMENT)
 #else
 #define LOG_SIMPLE_MSG_LEN \
-	ROUND_UP(sizeof(struct log_msg_hdr) + \
-		 sizeof(struct cbprintf_package_hdr_ext), sizeof(long long))
+	ROUND_UP(sizeof(struct log_msg) + \
+		 sizeof(struct cbprintf_package_hdr_ext), CBPRINTF_PACKAGE_ALIGNMENT)
 #endif
 
 #ifdef CONFIG_LOG_TIMESTAMP_64BIT
@@ -352,10 +352,10 @@ static size_t get_long_hexdump(void)
 		/* First message */
 		ROUND_UP(LOG_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d %d") +
 			 extra_msg_sz,
-			 sizeof(long long)) -
+			 CBPRINTF_PACKAGE_ALIGNMENT) -
 		/* Hexdump message excluding data */
 		ROUND_UP(LOG_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
-			 sizeof(long long)) - 2 * sizeof(int);
+			 CBPRINTF_PACKAGE_ALIGNMENT) - CBPRINTF_PACKAGE_ALIGNMENT;
 }
 
 /*
