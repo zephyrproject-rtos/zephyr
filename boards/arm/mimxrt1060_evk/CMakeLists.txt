@@ -16,7 +16,11 @@ if(CONFIG_NXP_IMX_RT_BOOT_HEADER)
     set(FLASH_CONF evkmimxrt1060_flexspi_nor_config.c)
     set(BOARD_NAME evkmimxrt1060)
   elseif(CONFIG_BOARD_MIMXRT1060_EVK_HYPERFLASH)
-    message(ERROR "This board appears to lack a flash configuration block")
+    # No flash configuration block exists for the RT1060 with HyperFlash in
+    # the SDK, but we can reuse the block for the RT1050 as both boards use
+    # the same HyperFlash chip
+    set(FLASH_CONF evkbimxrt1050_flexspi_nor_config.c)
+    set(BOARD_NAME evkbimxrt1050)
   elseif(CONFIG_BOARD_MIMXRT1060_EVKB)
     set(FLASH_CONF evkbmimxrt1060_flexspi_nor_config.c)
     set(BOARD_NAME evkbmimxrt1060)
