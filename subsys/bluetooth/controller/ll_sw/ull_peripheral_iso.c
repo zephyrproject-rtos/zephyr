@@ -22,26 +22,28 @@
 
 #include "lll.h"
 #include "lll/lll_vendor.h"
+#include "lll_clock.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
-#include "lll_clock.h"
+#include "lll_peripheral_iso.h"
 
-#include "isoal.h"
-#include "ull_iso_types.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ull_tx_queue.h"
 #endif
 
 #include "ull_conn_types.h"
-#include "ull_conn_iso_types.h"
-#include "ull_internal.h"
-#include "ull_llcp.h"
-#include "ull_llcp_internal.h"
 
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+
+#include "ull_llcp.h"
+
+#include "ull_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
-#include "lll_peripheral_iso.h"
+#include "ull_llcp_internal.h"
 
 #include <zephyr/bluetooth/hci.h>
 
