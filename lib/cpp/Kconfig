@@ -85,7 +85,7 @@ config MINIMAL_LIBCPP
 config GLIBCXX_LIBCPP
 	bool "GNU C++ Standard Library"
 	depends on !NATIVE_APPLICATION
-	depends on NEWLIB_LIBC || (PICOLIBC && !PICOLIBC_USE_MODULE)
+	depends on NEWLIB_LIBC || PICOLIBC
 	help
 	  Build with GNU C++ Standard Library (libstdc++) provided by the GNU
 	  Compiler Collection (GCC)-based toolchain.
