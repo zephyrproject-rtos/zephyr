@@ -1712,6 +1712,40 @@ struct bt_bap_scan_delegator_add_src_param {
  */
 int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_param *param);
 
+struct bt_bap_scan_delegator_mod_src_param {
+	/** The periodic adverting sync */
+	uint8_t src_id;
+
+	/** The broadcast isochronous group encryption state */
+	enum bt_bap_big_enc_state encrypt_state;
+
+	/** The 24-bit broadcast ID */
+	uint32_t broadcast_id;
+
+	/** Number of subgroups */
+	uint8_t num_subgroups;
+
+	/**
+	 * @brief Subgroup specific information
+	 *
+	 * If a subgroup's metadata_len is set to 0, the existing metadata
+	 * for the subgroup will remain unchanged
+	 */
+	struct bt_bap_scan_delegator_subgroup subgroups[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
+};
+
+/**
+ * @brief Add a receive state source locally
+ *
+ * This will notify any connected clients about the new source. This allows them
+ * to modify and even remove it.
+ *
+ * @param param The parameters for adding the new source
+ *
+ * @return int  errno on failure, or source ID on success.
+ */
+int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_param *param);
+
 /**
  * @brief Remove a receive state source
  *
