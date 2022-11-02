@@ -29,11 +29,11 @@ static int acquire_mutex(pthread_mutex_t *m, k_timeout_t timeout)
 
 	if (m->lock_count == 0U && m->owner == NULL) {
 		m->lock_count++;
-		m->owner = pthread_self();
+		m->owner = k_current_get();
 
 		k_spin_unlock(&z_pthread_spinlock, key);
 		return 0;
-	} else if (m->owner == pthread_self()) {
+	} else if (m->owner == k_current_get()) {
 		if (m->type == PTHREAD_MUTEX_RECURSIVE &&
 		    m->lock_count < MUTEX_MAX_REC_LOCK) {
 			m->lock_count++;
@@ -128,7 +128,7 @@ int pthread_mutex_unlock(pthread_mutex_t *m)
 
 	k_tid_t thread;
 
-	if (m->owner != pthread_self()) {
+	if (m->owner != k_current_get()) {
 		k_spin_unlock(&z_pthread_spinlock, key);
 		return EPERM;
 	}
@@ -143,7 +143,7 @@ int pthread_mutex_unlock(pthread_mutex_t *m)
 	if (m->lock_count == 0U) {
 		thread = z_unpend_first_thread(&m->wait_q);
 		if (thread) {
-			m->owner = (pthread_t)thread;
+			m->owner = thread;
 			m->lock_count++;
 			arch_thread_return_value_set(thread, 0);
 			z_ready_thread(thread);

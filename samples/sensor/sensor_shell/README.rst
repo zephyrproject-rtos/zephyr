@@ -14,7 +14,7 @@ Build the sample app by choosing the target board that has sensors drivers
 enabled, for example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/shell/sensor_module
+   :zephyr-app: samples/sensor/sensor_shell
    :board: reel_board
    :goals: build flash
 
@@ -63,7 +63,7 @@ This command depends on enabling :kconfig:option:`CONFIG_SENSOR_INFO`.
 .. code-block:: console
 
    uart:~$ sensor info
-   device name: apds9960@39, vendor: [Avago Technologies], model: [apds9960], friendly name: []
-   device name: mma8652fc@1d, vendor: [NXP Semiconductors], model: [fxos8700], friendly name: []
-   device name: ti_hdc@43, vendor: [Texas Instruments], model: [hdc], friendly name: []
-   device name: temp@4000c000, vendor: [Nordic Semiconductor], model: [nrf-temp], friendly name: []
+   device name: apds9960@39, vendor: Avago Technologies, model: apds9960, friendly name: (null)
+   device name: mma8652fc@1d, vendor: NXP Semiconductors, model: fxos8700, friendly name: (null)
+   device name: ti_hdc@43, vendor: Texas Instruments, model: hdc, friendly name: (null)
+   device name: temp@4000c000, vendor: Nordic Semiconductor, model: nrf-temp, friendly name: (null)

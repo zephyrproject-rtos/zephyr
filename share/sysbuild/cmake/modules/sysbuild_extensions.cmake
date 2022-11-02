@@ -39,7 +39,7 @@ function(load_cache)
 endfunction()
 
 # Usage:
-#   sysbuild_get(<variable> IMAGE <image> [VAR <image-variable>])
+#   sysbuild_get(<variable> IMAGE <image> [VAR <image-variable>] <KCONFIG|CACHE>)
 #
 # This function will return the variable found in the CMakeCache.txt file
 # identified by image.
@@ -50,20 +50,26 @@ endfunction()
 # The result will be returned in `<variable>`.
 #
 # Example use:
-#   sysbuild_get(PROJECT_NAME IMAGE my_sample)
+#   sysbuild_get(PROJECT_NAME IMAGE my_sample CACHE)
 #     will lookup PROJECT_NAME from the CMakeCache identified by `my_sample` and
 #     and return the value in the local variable `PROJECT_NAME`.
 #
-#   sysbuild_get(my_sample_PROJECT_NAME IMAGE my_sample VAR PROJECT_NAME)
+#   sysbuild_get(my_sample_PROJECT_NAME IMAGE my_sample VAR PROJECT_NAME CACHE)
 #     will lookup PROJECT_NAME from the CMakeCache identified by `my_sample` and
 #     and return the value in the local variable `my_sample_PROJECT_NAME`.
+#
+#   sysbuild_get(my_sample_CONFIG_FOO IMAGE my_sample VAR CONFIG_FOO KCONFIG)
+#     will lookup CONFIG_FOO from the KConfig identified by `my_sample` and
+#     and return the value in the local variable `my_sample_CONFIG_FOO`.
 #
 # <variable>: variable used for returning CMake cache value. Also used as lookup
 #             variable if `VAR` is not provided.
 # IMAGE:      image name identifying the cache to use for variable lookup.
 # VAR:        name of the CMake cache variable name to lookup.
+# KCONFIG:    Flag indicating that a Kconfig setting should be fetched.
+# CACHE:      Flag indicating that a CMake cache variable should be fetched.
 function(sysbuild_get variable)
-  cmake_parse_arguments(GET_VAR "" "IMAGE;VAR" "" ${ARGN})
+  cmake_parse_arguments(GET_VAR "CACHE;KCONFIG" "IMAGE;VAR" "" ${ARGN})
 
   if(NOT DEFINED GET_VAR_IMAGE)
     message(FATAL_ERROR "sysbuild_get(...) requires IMAGE.")
@@ -81,7 +87,16 @@ function(sysbuild_get variable)
     set(GET_VAR_VAR ${variable})
   endif()
 
-  get_property(${GET_VAR_IMAGE}_${GET_VAR_VAR} TARGET ${GET_VAR_IMAGE}_cache PROPERTY ${GET_VAR_VAR})
+  if(GET_VAR_KCONFIG)
+    set(variable_target ${GET_VAR_IMAGE})
+  elseif(GET_VAR_CACHE)
+    set(variable_target ${GET_VAR_IMAGE}_cache)
+  else()
+    message(WARNING "<CACHE> or <KCONFIG> not specified, defaulting to CACHE")
+    set(variable_target ${GET_VAR_IMAGE}_cache)
+  endif()
+
+  get_property(${GET_VAR_IMAGE}_${GET_VAR_VAR} TARGET ${variable_target} PROPERTY ${GET_VAR_VAR})
   if(DEFINED ${GET_VAR_IMAGE}_${GET_VAR_VAR})
     set(${variable} ${${GET_VAR_IMAGE}_${GET_VAR_VAR}} PARENT_SCOPE)
   endif()
@@ -260,4 +275,5 @@ function(ExternalZephyrProject_Add)
     BUILD_ALWAYS True
     USES_TERMINAL_BUILD True
   )
+  import_kconfig(CONFIG_ ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}/zephyr/.config TARGET ${ZBUILD_APPLICATION})
 endfunction()

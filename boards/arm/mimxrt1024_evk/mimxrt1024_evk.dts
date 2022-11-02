@@ -186,7 +186,7 @@ zephyr_udc0: &usb1 {
 	cd-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
 	pwr-gpios = <&gpio3 30 GPIO_ACTIVE_HIGH>;
 	no-1-8-v;
-	mmc {
+	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
 	};
