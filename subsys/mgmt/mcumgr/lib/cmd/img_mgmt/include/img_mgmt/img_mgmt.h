@@ -60,9 +60,6 @@ extern "C" {
 #define IMG_MGMT_ID_UPLOAD_STATUS_ONGOING	1
 #define IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE	2
 
-extern int boot_current_slot;
-extern struct img_mgmt_state g_img_mgmt_state;
-
 /** Represents an individual upload request. */
 struct img_mgmt_upload_req {
 	uint32_t image;	/* 0 by default */

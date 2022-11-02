@@ -16,6 +16,8 @@
 extern "C" {
 #endif
 
+extern struct img_mgmt_state g_img_mgmt_state;
+
 /**
  * @brief Ensures the spare slot (slot 1) is fully erased.
  *
