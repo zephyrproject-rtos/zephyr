@@ -112,6 +112,10 @@ function(zephyr_link_libraries)
   target_link_libraries(zephyr_interface INTERFACE ${ARGV})
 endfunction()
 
+function(zephyr_libc_link_libraries)
+  set_property(TARGET zephyr_interface APPEND PROPERTY LIBC_LINK_LIBRARIES ${ARGV})
+endfunction()
+
 # See this file section 3.1. target_cc_option
 function(zephyr_cc_option)
   foreach(arg ${ARGV})
