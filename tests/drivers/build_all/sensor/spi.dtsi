@@ -354,3 +354,9 @@ test_spi_max31865: max31865@2a {
 	high-threshold = <32767>;
 	filter-50hz;
 };
+
+test_spi_bmm150: bmm150@2b {
+	compatible = "bosch,bmm150";
+	reg = <0x2b>;
+	spi-max-frequency = <0>;
+};
