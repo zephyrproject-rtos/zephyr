@@ -549,6 +549,10 @@ static int spi_flash_at45_init(const struct device *dev)
 
 #if ANY_INST_HAS_RESET_GPIOS
 	if (dev_config->reset) {
+		if (!device_is_ready(dev_config->reset->port)) {
+			LOG_ERR("Reset pin not ready");
+			return -ENODEV;
+		}
 		if (gpio_pin_configure_dt(dev_config->reset, GPIO_OUTPUT_ACTIVE)) {
 			LOG_ERR("Couldn't configure reset pin");
 			return -ENODEV;
@@ -559,6 +563,10 @@ static int spi_flash_at45_init(const struct device *dev)
 
 #if ANY_INST_HAS_WP_GPIOS
 	if (dev_config->wp) {
+		if (!device_is_ready(dev_config->wp->port)) {
+			LOG_ERR("Write protect pin not ready");
+			return -ENODEV;
+		}
 		if (gpio_pin_configure_dt(dev_config->wp, GPIO_OUTPUT_ACTIVE)) {
 			LOG_ERR("Couldn't configure write protect pin");
 			return -ENODEV;
