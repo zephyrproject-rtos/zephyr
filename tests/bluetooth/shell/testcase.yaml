@@ -29,6 +29,11 @@ tests:
     extra_args: CONFIG_BT_PRIVACY=n
     platform_allow: native_posix
     tags: bluetooth
+  bluetooth.shell.log_defaults:
+    build_only: true
+    platform_allow: native_posix
+    extra_args: CONF_FILE="log.conf"
+    tags: bluetooth
 
 # Bluetooth Audio Compile validation tests
   bluetooth.shell.audio:

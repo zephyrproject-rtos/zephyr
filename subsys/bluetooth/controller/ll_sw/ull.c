@@ -81,9 +81,6 @@
 #include "ll_test.h"
 #include "ll_settings.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull
-#include "common/log.h"
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_BROADCASTER)

@@ -66,9 +66,6 @@
 #include "ull_llcp.h"
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_adv
-#include "common/log.h"
 #include "hal/debug.h"
 
 inline struct ll_adv_set *ull_adv_set_get(uint8_t handle);

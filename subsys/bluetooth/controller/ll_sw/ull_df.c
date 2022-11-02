@@ -53,9 +53,6 @@
 
 #include "ll.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
-#define LOG_MODULE_NAME bt_ctlr_ull_df
-#include "common/log.h"
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) || \
