@@ -51,7 +51,7 @@
 		compatible = "intel,pcie";
 		ranges;
 
-		can0: can@1800 {
+		can0: can@1000 {
 			compatible = "kvaser,pcican";
 			status = "okay";
 			reg = <PCIE_BDF(0,2,0) PCIE_ID(0x10e8,0x8406)>;
