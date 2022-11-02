@@ -23,9 +23,15 @@ config PICOLIBC_SUPPORTED
 	help
 	  Selected when the target has support for picolibc.
 
+config PICOLIBC_PREFERRED
+	bool "Prefer Picolibc"
+	help
+	  Prefer to use picolibc if supported
+
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
 	default EXTERNAL_LIBC if NATIVE_APPLICATION
+	default PICOLIBC if PICOLIBC_PREFERRED && PICOLIBC_SUPPORTED
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
 
