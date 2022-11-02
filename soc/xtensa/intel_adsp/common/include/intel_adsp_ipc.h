@@ -69,6 +69,7 @@ struct intel_adsp_ipc_data {
 	void *handler_arg;
 	intel_adsp_ipc_done_t done_notify;
 	void *done_arg;
+	bool tx_ack_pending;
 };
 
 void z_intel_adsp_ipc_isr(const void *devarg);

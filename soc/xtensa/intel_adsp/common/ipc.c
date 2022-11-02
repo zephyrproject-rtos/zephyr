@@ -70,6 +70,7 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 		if (devdata->done_notify != NULL) {
 			external_completion = devdata->done_notify(dev, devdata->done_arg);
 		}
+		devdata->tx_ack_pending = false;
 		k_sem_give(&devdata->sem);
 
 		/* IPC completion registers will be set externally */
@@ -138,12 +139,13 @@ bool intel_adsp_ipc_send_message(const struct device *dev,
 	struct intel_adsp_ipc_data *devdata = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&devdata->lock);
 
-	if ((config->regs->idr & INTEL_ADSP_IPC_BUSY) != 0) {
+	if ((config->regs->idr & INTEL_ADSP_IPC_BUSY) != 0 || devdata->tx_ack_pending) {
 		k_spin_unlock(&devdata->lock, key);
 		return false;
 	}
 
 	k_sem_init(&devdata->sem, 0, 1);
+	devdata->tx_ack_pending = true;
 	config->regs->idd = ext_data;
 	config->regs->idr = data | INTEL_ADSP_IPC_BUSY;
 	k_spin_unlock(&devdata->lock, key);
