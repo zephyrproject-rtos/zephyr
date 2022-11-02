@@ -59,8 +59,6 @@ source "drivers/ethernet/Kconfig.cyclonev"
 
 source "drivers/ethernet/phy/Kconfig"
 
-endif # "Ethernet Drivers"
-
 config ETH_INIT_PRIORITY
 	int "Ethernet driver init priority"
 	default 80
@@ -69,3 +67,5 @@ config ETH_INIT_PRIORITY
 	  Do not mess with it unless you know what you are doing.
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
+
+endif # "Ethernet Drivers"
