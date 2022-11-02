@@ -595,7 +595,7 @@ test_i2c_ina230: ina230@4f {
 	rshunt-milliohms = <0>;
 	mask = <0>;
 	alert-limit = <0>;
-	irq-gpios = <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_lm77: lm77@50 {
@@ -612,7 +612,7 @@ test_i2c_ina231: ina231@51 {
 	rshunt-milliohms = <0>;
 	mask = <0>;
 	alert-limit = <0>;
-	irq-gpios = <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_ina237: ina237@52 {
@@ -623,7 +623,7 @@ test_i2c_ina237: ina237@52 {
 	adc-config = <0>;
 	rshunt-milliohms = <0>;
 	alert-config = <0>;
-	irq-gpios = <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_max31875: max31875@53 {
