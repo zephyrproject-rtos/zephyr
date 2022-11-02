@@ -32,6 +32,7 @@
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
+#include "lll/lll_vendor.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ull_tx_queue.h"
@@ -1483,6 +1484,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 {
 	uint32_t ticks_drift_minus;
 	uint32_t ticks_drift_plus;
+	uint32_t ticks_slot_minus;
+	uint32_t ticks_slot_plus;
 	uint16_t latency_event;
 	uint16_t elapsed_event;
 	struct lll_conn *lll;
@@ -1616,6 +1619,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 	 */
 	ticks_drift_plus = 0U;
 	ticks_drift_minus = 0U;
+	ticks_slot_plus = 0U;
+	ticks_slot_minus = 0U;
+
 	if (done->extra.trx_cnt) {
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -1865,8 +1871,56 @@ void ull_conn_done(struct node_rx_event_done *done)
 		lazy = lll->latency_event + 1U;
 	}
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_PHY)
+	if (lll->evt_len_upd) {
+		uint32_t ready_delay, rx_time, tx_time, ticks_slot;
+
+		lll->evt_len_upd = 0;
+#if defined(CONFIG_BT_CTLR_PHY)
+		ready_delay = (lll->role) ?
+			lll_radio_rx_ready_delay_get(lll->phy_rx, PHY_FLAGS_S8) :
+			lll_radio_tx_ready_delay_get(lll->phy_tx, lll->phy_flags);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		tx_time = lll->dle.eff.max_tx_time;
+		rx_time = lll->dle.eff.max_rx_time;
+#else /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+		tx_time = MAX(PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, 0),
+			      PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_tx));
+		rx_time = MAX(PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, 0),
+			      PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_rx));
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#else /* CONFIG_BT_CTLR_PHY */
+		ready_delay = (lll->role) ?
+			lll_radio_rx_ready_delay_get(0, 0) :
+			lll_radio_tx_ready_delay_get(0, 0);
+		tx_time = PDU_DC_MAX_US(lll->dle.eff.max_tx_octets, 0);
+		rx_time = PDU_DC_MAX_US(lll->dle.eff.max_rx_octets, 0);
+#endif /* CONFIG_BT_CTLR_PHY */
+		ticks_slot = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+						    ready_delay +
+						    EVENT_IFS_US +
+						    rx_time +
+						    tx_time +
+						    4);
+		if (ticks_slot > conn->ull.ticks_slot) {
+			ticks_slot_plus = ticks_slot - conn->ull.ticks_slot;
+		} else {
+			ticks_slot_minus = conn->ull.ticks_slot - ticks_slot;
+		}
+		conn->ull.ticks_slot = ticks_slot;
+	}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH || CONFIG_BT_CTLR_PHY */
+#else /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+	ticks_slot_plus = 0;
+	ticks_slot_minus = 0;
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+
 	/* update conn ticker */
-	if (ticks_drift_plus || ticks_drift_minus || lazy || force) {
+	if (ticks_drift_plus || ticks_drift_minus ||
+	    ticks_slot_plus || ticks_slot_minus ||
+	    lazy || force) {
 		uint8_t ticker_id = TICKER_ID_CONN_BASE + lll->handle;
 		struct ll_conn *conn = lll->hdr.parent;
 		uint32_t ticker_status;
@@ -1880,8 +1934,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
 					      TICKER_USER_ID_ULL_HIGH,
 					      ticker_id,
-					      ticks_drift_plus,
-					      ticks_drift_minus, 0, 0,
+					      ticks_drift_plus, ticks_drift_minus,
+					      ticks_slot_plus, ticks_slot_minus,
 					      lazy, force,
 					      ticker_update_conn_op_cb,
 					      conn);
@@ -8222,6 +8276,10 @@ uint8_t ull_dle_update_eff(struct ll_conn *conn)
 	/* Note that we must use bitwise or and not logical or */
 	dle_changed = ull_dle_update_eff_rx(conn);
 	dle_changed |= ull_dle_update_eff_tx(conn);
+	if (dle_changed) {
+		conn->lll.evt_len_upd = 1U;
+	}
+
 
 	return dle_changed;
 }
@@ -8244,7 +8302,7 @@ uint8_t ull_dle_update_eff_rx(struct ll_conn *conn)
 
 	if (eff_rx_time != conn->lll.dle.eff.max_rx_time) {
 		conn->lll.dle.eff.max_rx_time = eff_rx_time;
-		dle_changed = 1;
+		dle_changed = 1U;
 	}
 #else
 	conn->lll.dle.eff.max_rx_time = PDU_DC_MAX_US(eff_rx_octets, PHY_1M);
@@ -8252,7 +8310,11 @@ uint8_t ull_dle_update_eff_rx(struct ll_conn *conn)
 
 	if (eff_rx_octets != conn->lll.dle.eff.max_rx_octets) {
 		conn->lll.dle.eff.max_rx_octets = eff_rx_octets;
-		dle_changed = 1;
+		dle_changed = 1U;
+	}
+	/* we delay the update of event length to after the DLE procedure is finishede */
+	if (dle_changed) {
+		conn->lll.evt_len_upd_delayed = 1;
 	}
 
 	return dle_changed;
@@ -8277,7 +8339,7 @@ uint8_t ull_dle_update_eff_tx(struct ll_conn *conn)
 
 	if (eff_tx_time != conn->lll.dle.eff.max_tx_time) {
 		conn->lll.dle.eff.max_tx_time = eff_tx_time;
-		dle_changed = 1;
+		dle_changed = 1U;
 	}
 #else
 	conn->lll.dle.eff.max_tx_time = PDU_DC_MAX_US(eff_tx_octets, PHY_1M);
@@ -8285,8 +8347,14 @@ uint8_t ull_dle_update_eff_tx(struct ll_conn *conn)
 
 	if (eff_tx_octets != conn->lll.dle.eff.max_tx_octets) {
 		conn->lll.dle.eff.max_tx_octets = eff_tx_octets;
-		dle_changed = 1;
+		dle_changed = 1U;
 	}
+
+	if (dle_changed) {
+		conn->lll.evt_len_upd = 1U;
+	}
+	conn->lll.evt_len_upd |= conn->lll.evt_len_upd_delayed;
+	conn->lll.evt_len_upd_delayed = 0;
 
 	return dle_changed;
 }
