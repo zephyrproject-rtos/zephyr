@@ -190,12 +190,14 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	}
 
 	cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
+
 	/* Read 20-bit SDU intervals (mask away RFU bits) */
 	cig->c_sdu_interval = sys_get_le24(req->c_sdu_interval) & 0x0FFFFF;
 	cig->p_sdu_interval = sys_get_le24(req->p_sdu_interval) & 0x0FFFFF;
 
+	cig->lll.framing = (req->c_max_sdu_packed[1] & BIT(7)) >> 7;
+
 	cis->cis_id = req->cis_id;
-	cis->framed = (req->c_max_sdu_packed[1] & BIT(7)) >> 7;
 	cis->established = 0;
 	cis->group = cig;
 	cis->teardown = 0;

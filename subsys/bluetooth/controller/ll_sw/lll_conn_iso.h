@@ -48,13 +48,16 @@ struct lll_conn_iso_stream {
 struct lll_conn_iso_group {
 	struct lll_hdr hdr;
 
-	uint16_t handle;        /* CIG handle (internal) */
-	uint8_t  num_cis : 5;   /* Number of CISes in this CIG */
-	uint8_t  role : 1;      /* 0: CENTRAL, 1: PERIPHERAL*/
-	uint8_t  paused : 1;    /* 1: CIG is paused */
+	uint16_t handle;      /* CIG handle (internal) */
+	uint8_t  num_cis:5;   /* Number of CISes in this CIG */
+	uint8_t  role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
+
+	uint8_t framing:1;
+
+	uint8_t  paused : 1;  /* 1: CIG is paused */
 
 	/* Resumption information */
-	uint16_t resume_cis;    /* CIS handle to schedule at resume */
+	uint16_t resume_cis;  /* CIS handle to schedule at resume */
 };
 
 int lll_conn_iso_init(void);

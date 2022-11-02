@@ -377,7 +377,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	iso_interval = cig->iso_interval;
 	stream_sync_delay = cis->sync_delay;
 	group_sync_delay = cig->sync_delay;
-	framed = cis->framed;
+	framed = cig->lll.framing;
 
 	if (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
 		/* Create sink for RX data path */
@@ -812,11 +812,13 @@ uint8_t ll_iso_receive_test(uint16_t handle, uint8_t payload_type)
 			sdu_interval = cig->p_sdu_interval;
 		}
 
-		err = isoal_sink_create(handle, cig->lll.role, cis->framed,
-					cis->lll.rx.burst_number, cis->lll.rx.flush_timeout,
+		err = isoal_sink_create(handle, cig->lll.role, cig->lll.framing,
+					cis->lll.rx.burst_number,
+					cis->lll.rx.flush_timeout,
 					sdu_interval, cig->iso_interval,
 					cis->sync_delay, cig->sync_delay,
-					ll_iso_test_sdu_alloc, ll_iso_test_sdu_emit,
+					ll_iso_test_sdu_alloc,
+					ll_iso_test_sdu_emit,
 					sink_sdu_write_hci, &sink_handle);
 		if (err) {
 			/* Error creating test source - cleanup source and datapath */
@@ -1001,7 +1003,7 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 			 */
 			if ((sdu.size >= ISO_TEST_PACKET_COUNTER_SIZE) &&
 			    ((sdu.sdu_state == BT_ISO_START) || (sdu.sdu_state == BT_ISO_SINGLE))) {
-				if (cis->framed) {
+				if (cig->lll.framing) {
 					sdu_counter = (uint32_t)cis->hdr.test_mode.tx_sdu_counter;
 				} else {
 					/* Unframed. Get the next payload counter.
@@ -1099,12 +1101,17 @@ uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
 		}
 
 		/* Setup the test source */
-		err = isoal_source_create(handle, cig->lll.role, cis->framed,
-					  cis->lll.rx.burst_number, cis->lll.rx.flush_timeout,
-					  cis->lll.rx.max_octets, sdu_interval, cig->iso_interval,
+		err = isoal_source_create(handle, cig->lll.role,
+					  cig->lll.framing,
+					  cis->lll.rx.burst_number,
+					  cis->lll.rx.flush_timeout,
+					  cis->lll.rx.max_octets, sdu_interval,
+					  cig->iso_interval,
 					  cis->sync_delay, cig->sync_delay,
-					  ll_iso_pdu_alloc, ll_iso_pdu_write, ll_iso_pdu_emit,
-					  ll_iso_test_pdu_release, &source_handle);
+					  ll_iso_pdu_alloc, ll_iso_pdu_write,
+					  ll_iso_pdu_emit,
+					  ll_iso_test_pdu_release,
+					  &source_handle);
 
 		if (err) {
 			/* Error creating test source - cleanup source and datapath */
