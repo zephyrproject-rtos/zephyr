@@ -81,6 +81,7 @@
 
 
 #define __no_optimization __attribute__((optnone))
+#define __fallthrough     __attribute__((fallthrough))
 
 #define TOOLCHAIN_HAS_C_GENERIC                 1
 #define TOOLCHAIN_HAS_C_AUTO_TYPE               1
