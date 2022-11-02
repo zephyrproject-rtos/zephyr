@@ -10,8 +10,9 @@
 
 #include <string.h>
 #include "img_mgmt/img_mgmt.h"
-#include "img_mgmt/image_state.h"
 #include "img_mgmt/image.h"
+#include "img_mgmt/image_state.h"
+#include "img_mgmt/image_info.h"
 #include "img_mgmt_priv.h"
 #include "img_mgmt/img_mgmt_impl.h"
 #include <zcbor_common.h>

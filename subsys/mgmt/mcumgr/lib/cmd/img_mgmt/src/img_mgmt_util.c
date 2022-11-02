@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "img_mgmt/image.h"
-#include "img_mgmt/img_mgmt.h"
+#include "img_mgmt/image_info.h"
 
 int
 img_mgmt_ver_str(const struct image_version *ver, char *dst)
