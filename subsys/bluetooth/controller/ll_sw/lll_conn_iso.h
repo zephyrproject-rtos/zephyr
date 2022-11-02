@@ -53,6 +53,11 @@ struct lll_conn_iso_group {
 	uint8_t  role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
 
 	uint8_t framing:1;
+	uint8_t packing:1;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	uint8_t wc_sca:3;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	uint8_t  paused : 1;  /* 1: CIG is paused */

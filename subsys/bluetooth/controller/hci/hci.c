@@ -1980,26 +1980,33 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 	uint32_t p_interval;
 	uint16_t c_latency;
 	uint16_t p_latency;
+	uint8_t num_cis;
+	uint8_t cig_id;
 	uint8_t status;
 	uint8_t i;
 
+	/* NOTE: Use local variables to backup values as same command buffer
+	 *       is used as response buffer.
+	 */
+	cig_id = cmd->cig_id;
+	num_cis = cmd->num_cis;
 	c_interval = sys_get_le24(cmd->c_interval);
 	p_interval = sys_get_le24(cmd->p_interval);
 	c_latency = sys_le16_to_cpu(cmd->c_latency);
 	p_latency = sys_le16_to_cpu(cmd->p_latency);
 
 	/* Create CIG or start modifying existing CIG */
-	status = ll_cig_parameters_open(cmd->cig_id, c_interval, p_interval,
+	status = ll_cig_parameters_open(cig_id, c_interval, p_interval,
 					cmd->sca, cmd->packing, cmd->framing,
-					c_latency, p_latency, cmd->num_cis);
+					c_latency, p_latency, num_cis);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp) +
 				   cmd->num_cis * sizeof(uint16_t));
-	rp->cig_id = cmd->cig_id;
-	rp->num_handles = cmd->num_cis;
+	rp->cig_id = cig_id;
+	rp->num_handles = num_cis;
 
 	/* Configure individual CISes */
-	for (i = 0; !status && i < cmd->num_cis; i++) {
+	for (i = 0; !status && i < num_cis; i++) {
 		struct bt_hci_cis_params *params = cmd->cis;
 		uint16_t handle;
 		uint16_t c_sdu;
@@ -2008,7 +2015,8 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 		c_sdu = sys_le16_to_cpu(params->c_sdu);
 		p_sdu = sys_le16_to_cpu(params->p_sdu);
 
-		status = ll_cis_parameters_set(params->cis_id, c_sdu, p_sdu,
+		status = ll_cis_parameters_set(cig_id, params->cis_id,
+					       c_sdu, p_sdu,
 					       params->c_phy, params->p_phy,
 					       params->c_rtn, params->p_rtn,
 					       &handle);
@@ -2017,7 +2025,7 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 
 	/* Only apply parameters if all went well */
 	if (!status) {
-		status = ll_cig_parameters_commit(cmd->cig_id);
+		status = ll_cig_parameters_commit(cig_id);
 	}
 
 	rp->status = status;
@@ -2111,7 +2119,7 @@ static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 	}
 	*evt = cmd_status(status);
 
-	if (!status) {
+	if (status) {
 		return;
 	}
 

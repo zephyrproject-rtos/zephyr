@@ -144,7 +144,7 @@ uint8_t ll_cig_parameters_open(uint8_t cig_id,
 			       uint8_t sca, uint8_t packing, uint8_t framing,
 			       uint16_t c_latency, uint16_t p_latency,
 			       uint8_t num_cis);
-uint8_t ll_cis_parameters_set(uint8_t cis_id,
+uint8_t ll_cis_parameters_set(uint8_t cig_id, uint8_t cis_id,
 			      uint16_t c_sdu, uint16_t p_sdu,
 			      uint8_t c_phy, uint8_t p_phy,
 			      uint8_t c_rtn, uint8_t p_rtn,
