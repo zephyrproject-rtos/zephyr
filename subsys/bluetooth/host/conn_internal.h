@@ -410,6 +410,9 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve,
 /* Initialize connection management */
 int bt_conn_init(void);
 
+/* Reset states of connections and set state to BT_CONN_DISCONNECTED. */
+void bt_conn_cleanup_all(void);
+
 /* Selects based on connection type right semaphore for ACL packets */
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 

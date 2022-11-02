@@ -720,6 +720,11 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason)
 }
 
 static uint16_t disconnected_handles[CONFIG_BT_MAX_CONN];
+static void disconnected_handles_reset(void)
+{
+	(void)memset(disconnected_handles, 0, sizeof(disconnected_handles));
+}
+
 static void conn_handle_disconnected(uint16_t handle)
 {
 	for (int i = 0; i < ARRAY_SIZE(disconnected_handles); i++) {
@@ -3788,6 +3793,10 @@ int bt_disable(void)
 	bt_periodic_sync_disable();
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
+#if defined(CONFIG_BT_CONN)
+	bt_conn_cleanup_all();
+	disconnected_handles_reset();
+#endif /* CONFIG_BT_CONN */
 	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
 	 * completed.
 	 */
