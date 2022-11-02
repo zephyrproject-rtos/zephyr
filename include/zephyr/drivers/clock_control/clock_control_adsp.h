@@ -6,6 +6,6 @@
 #ifndef CLOCK_CONTROL_ADSP_H_
 #define CLOCK_CONTROL_ADSP_H_
 
-#include <adsp-clk.h>
+#include <adsp_clk.h>
 
 #endif /* CLOCK_CONTROL_ADSP_H_ */
