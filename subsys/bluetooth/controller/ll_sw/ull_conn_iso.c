@@ -359,8 +359,7 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 		}
 	}
 
-	if (done->extra.trx_performed_mask &&
-	    IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO) && lll->role) {
+	if (IS_PERIPHERAL(cig) && done->extra.trx_performed_mask) {
 		ull_drift_ticks_get(done, &ticks_drift_plus,
 				    &ticks_drift_minus);
 	}
@@ -647,14 +646,23 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.param = &cig->lll;
 	mfy.param = &p;
 
-#if !defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-	mfy.fp = lll_central_iso_prepare;
-#elif !defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-	mfy.fp = lll_peripheral_iso_prepare;
-#else
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) && \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	mfy.fp = IS_PERIPHERAL(cig) ? lll_peripheral_iso_prepare : lll_central_iso_prepare;
-#endif
 
+#elif defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	mfy.fp = lll_central_iso_prepare;
+
+#elif defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	mfy.fp = lll_peripheral_iso_prepare;
+
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO && !CONFIG_BT_CTLR_PERIPHERAL_ISO */
+	LL_ASSERT(0);
+
+	return;
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO && !CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	if (IS_PERIPHERAL(cig) && cig->sca_update) {
 		/* CIG/ACL affilaition established */
 		uint32_t iso_interval_us_frac =
@@ -669,6 +677,7 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		ull_peripheral_iso_update_ticker(cig, ticks_at_expire, iso_interval_us_frac);
 		cig->sca_update = 0;
 	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 	/* Kick LLL prepare */
 	err = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0, &mfy);
@@ -743,7 +752,10 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 	cig->cig_ref_point += EVENT_OVERHEAD_START_US;
 	cig->cig_ref_point += acl_to_cig_ref_point;
 
-	if (IS_PERIPHERAL(cig)) {
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	} else if (IS_PERIPHERAL(cig)) {
 		uint32_t iso_interval_us_frac;
 
 		/* Calculate interval in fractional microseconds for highest precision when
@@ -762,12 +774,19 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 		cig_offset_us += (acl->lll.interval * CONN_INT_UNIT_US);
 
 		cig->cig_ref_point += (acl->lll.interval * CONN_INT_UNIT_US);
-	} else {
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+	} else if (IS_CENTRAL(cig)) {
 		uint32_t iso_interval_us;
 
 		iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
 		ticks_periodic  = HAL_TICKER_US_TO_TICKS(iso_interval_us);
 		ticks_remainder = HAL_TICKER_REMAINDER(iso_interval_us);
+
+	} else {
+		LL_ASSERT(0);
+
+		return;
 	}
 
 	/* Make sure we have time to service first subevent. TODO: Improve
@@ -1060,9 +1079,13 @@ static void cig_disabled_cb(void *param)
 
 	if (IS_PERIPHERAL(cig) || cig->cis_count == 0) {
 		ll_conn_iso_group_release(cig);
-	} else {
+
+	} else if (IS_CENTRAL(cig)) {
 		/* CIG shall be released by ll_cig_remove */
 		cig->started = 0;
+
+	} else {
+		LL_ASSERT(0);
 	}
 }
 
@@ -1102,12 +1125,18 @@ void ull_conn_iso_transmit_test_cig_interval(uint16_t handle, uint32_t ticks_at_
 
 	handle_iter = UINT16_MAX;
 
-	if (cig->lll.role) {
+	if (IS_PERIPHERAL(cig)) {
 		/* Peripheral */
 		sdu_interval = cig->p_sdu_interval;
-	} else {
+
+	} else if (IS_CENTRAL(cig)) {
 		/* Central */
 		sdu_interval = cig->c_sdu_interval;
+
+	} else {
+		LL_ASSERT(0);
+
+		return;
 	}
 
 	iso_interval = cig->iso_interval * PERIODIC_INT_UNIT_US;

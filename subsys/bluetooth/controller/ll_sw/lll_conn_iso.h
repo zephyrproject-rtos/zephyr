@@ -57,6 +57,7 @@ struct lll_conn_iso_group {
 	/* Resumption information */
 	uint16_t resume_cis;  /* CIS handle to schedule at resume */
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	/* Window widening. Relies on vendor specific conversion macros, e.g.
 	 * EVENT_US_FRAC_TO_TICKS().
 	 */
@@ -71,6 +72,7 @@ struct lll_conn_iso_group {
 						    * event.
 						    */
 	uint32_t window_widening_max_us;	   /* Maximum widening in us */
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 };
 
 int lll_conn_iso_init(void);
