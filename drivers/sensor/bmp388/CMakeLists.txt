@@ -5,5 +5,5 @@
 #
 
 zephyr_library()
-zephyr_library_sources(bmp388.c)
+zephyr_library_sources(bmp388.c bmp388_i2c.c bmp388_spi.c)
 zephyr_library_sources_ifdef(CONFIG_BMP388_TRIGGER bmp388_trigger.c)
