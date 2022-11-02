@@ -249,6 +249,11 @@ Drivers and Sensors
 Networking
 **********
 
+IPv4 packet fragmentation support has been added, this allows large packets to
+be split up before sending or reassembled during receive for packets that are
+larger than the network device MTU. This is disabled by default but can be
+enabled with :kconfig:option:`CONFIG_NET_IPV4_FRAGMENT`.
+
 USB
 ***
 
