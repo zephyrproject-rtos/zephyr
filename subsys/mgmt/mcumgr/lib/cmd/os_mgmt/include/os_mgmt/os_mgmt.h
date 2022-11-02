@@ -23,6 +23,9 @@ extern "C" {
 #define OS_MGMT_ID_RESET		5
 #define OS_MGMT_ID_MCUMGR_PARAMS	6
 
+/* Test for async - not to be committed */
+#define OS_MGMT_ID_ASYNC_TEST		10
+
 #ifdef CONFIG_OS_MGMT_RESET_HOOK
 /** @typedef os_mgmt_on_reset_evt_cb
  * @brief Function to be called on os mgmt reset event.

@@ -85,6 +85,89 @@ os_mgmt_echo(struct smp_streamer *ctxt)
 }
 #endif
 
+struct async_t {
+	struct k_timer send_timer;
+	struct net_buf *output;
+	bool used;
+	smp_transport_out_fn out_fn;
+};
+
+struct timer_info {
+	struct k_work work;
+	struct async_t *ctx;
+} timer_data;
+
+struct async_t async_array[3];
+
+void async_cb_handler(struct k_work *work)
+{
+        struct timer_info *data = CONTAINER_OF(work, struct timer_info, work);
+        struct async_t *ctx = data->ctx;
+
+	/* Test data is plain text for demonstration purpose, not CBOR */
+	uint8_t test_data[] = "hello, test data";
+
+	memcpy(&ctx->output->data[ctx->output->len], test_data, (sizeof(test_data)-1));
+	ctx->output->len += sizeof(test_data);
+	ctx->out_fn(ctx->output);
+
+	/* This freezes here when using bluetooth as it cannot perform this action in a system
+	 * workqueue thread and would need to be moved to a custom one
+	 */
+	smp_packet_free(ctx->output);
+
+	ctx->used = false;
+	ctx->out_fn = NULL;
+	ctx->output = NULL;
+}
+
+void async_timer_function(struct k_timer *dummy)
+{
+        struct async_t *ctx = CONTAINER_OF(dummy, struct async_t, send_timer);
+
+	timer_data.ctx = ctx;
+	k_work_submit(&timer_data.work);
+}
+
+/**
+ * Command handler: async test (write)
+ */
+static int os_mgmt_async_test(struct smp_streamer *ctxt)
+{
+	bool ok;
+	zcbor_state_t *zse = ctxt->writer->zs;
+
+	uint8_t i = 0;
+	while (i < sizeof(async_array)) {
+		if (async_array[i].used == false) {
+			break;
+		}
+		++i;
+	}
+
+	if (i < sizeof(async_array)) {
+		/* Create net buf and copy user data (if any) */
+		async_array[i].output = smp_packet_alloc();
+		async_array[i].out_fn = ctxt->smpt->output;
+		async_array[i].used = true;
+
+		if (ctxt->smpt->ud_copy) {
+			ctxt->smpt->ud_copy(async_array[i].output, ctxt->reader->nb);
+		}
+
+		k_timer_start(&async_array[i].send_timer, K_SECONDS(3), K_NO_WAIT);
+
+		ok = zcbor_tstr_put_lit(zse, "status")		&&
+		     zcbor_int32_put(zse, 0);
+	} else {
+		ok = zcbor_tstr_put_lit(zse, "status")		&&
+		     zcbor_int32_put(zse, -1);
+	}
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+}
+
+
 #ifdef CONFIG_OS_MGMT_TASKSTAT
 
 #ifdef CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
@@ -323,6 +406,9 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 		os_mgmt_mcumgr_params, NULL
 	},
 #endif
+	[OS_MGMT_ID_ASYNC_TEST] = {
+		NULL, os_mgmt_async_test
+	},
 };
 
 #define OS_MGMT_GROUP_SZ ARRAY_SIZE(os_mgmt_group_handlers)
@@ -336,6 +422,17 @@ static struct mgmt_group os_mgmt_group = {
 void
 os_mgmt_register_group(void)
 {
+	/* Setup aysnc test */
+	uint8_t i = 0;
+	while (i < sizeof(async_array)/sizeof(async_array[0])) {
+		k_timer_init(&async_array[i].send_timer, async_timer_function, NULL);
+		async_array[i].output = NULL;
+		async_array[i].used = false;
+		++i;
+	}
+
+	k_work_init(&timer_data.work, async_cb_handler);
+
 	mgmt_register_group(&os_mgmt_group);
 }
 
