@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nxp_s32_gpio
 
 #include <zephyr/drivers/gpio.h>
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <Siul2_Port_Ip.h>
 #include <Siul2_Dio_Ip.h>
