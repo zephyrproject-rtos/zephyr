@@ -27,9 +27,9 @@
 #include <zephyr/dfu/flash_img.h>
 #endif
 
-static img_mgmt_upload_fn img_mgmt_upload_cb;
-
-const struct img_mgmt_dfu_callbacks_t *img_mgmt_dfu_callbacks_fn;
+#ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
+#include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
+#endif
 
 struct img_mgmt_state g_img_mgmt_state;
 
@@ -295,7 +295,9 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 	img_mgmt_reset_upload();
 
 	if (rc != 0) {
-		img_mgmt_dfu_stopped();
+#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0);
+#endif
 		return rc;
 	}
 
@@ -355,7 +357,6 @@ img_mgmt_upload_log(bool is_first, bool is_last, int status)
 static int
 img_mgmt_upload(struct smp_streamer *ctxt)
 {
-	struct mgmt_evt_op_cmd_status_arg cmd_status_arg;
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok;
 	size_t decoded = 0;
@@ -381,6 +382,20 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 		ZCBOR_MAP_DECODE_KEY_VAL(upgrade, zcbor_bool_decode, &req.upgrade)
 	};
 
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+	struct mgmt_evt_op_cmd_arg cmd_status_arg = {
+		.group = MGMT_GROUP_ID_IMAGE,
+		.id = IMG_MGMT_ID_UPLOAD,
+	};
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK)
+	struct img_mgmt_upload_check upload_check_data = {
+		.action = &action,
+		.req = &req,
+	};
+#endif
+
 	ok = zcbor_map_decode_bulk(zsd, image_upload_decode,
 		ARRAY_SIZE(image_upload_decode), &decoded) == 0;
 
@@ -393,7 +408,10 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 	/* Determine what actions to take as a result of this request. */
 	rc = img_mgmt_upload_inspect(&req, &action);
 	if (rc != 0) {
-		img_mgmt_dfu_stopped();
+#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0);
+#endif
+
 		MGMT_CTXT_SET_RC_RSN(ctxt, IMG_MGMT_UPLOAD_ACTION_RC_RSN(&action));
 		return rc;
 	}
@@ -405,17 +423,18 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 		return img_mgmt_upload_good_rsp(ctxt);
 	}
 
+#if defined(CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK)
 	/* Request is valid.  Give the application a chance to reject this upload
 	 * request.
 	 */
-	if (img_mgmt_upload_cb != NULL) {
-		rc = img_mgmt_upload_cb(req, action);
+	rc = mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK, &upload_check_data,
+				  sizeof(upload_check_data));
 
-		if (rc != 0) {
-			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action, img_mgmt_err_str_app_reject);
-			goto end;
-		}
+	if (rc != MGMT_ERR_EOK) {
+		IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action, img_mgmt_err_str_app_reject);
+		goto end;
 	}
+#endif
 
 	/* Remember flash area ID and image size for subsequent upload requests. */
 	g_img_mgmt_state.area_id = action.area_id;
@@ -432,8 +451,13 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 
 		g_img_mgmt_state.off = 0;
 
-		img_mgmt_dfu_started();
+#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STARTED, NULL, 0);
+#endif
+
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_START;
+#endif
 
 		/*
 		 * We accept SHA trimmed to any length by client since it's up to client
@@ -456,8 +480,12 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 			 */
 			g_img_mgmt_state.off = g_img_mgmt_state.size;
 			img_mgmt_dfu_pending();
-			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
 			reset = true;
+
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+#endif
+
 			goto end;
 		}
 #endif
@@ -474,7 +502,9 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 		}
 #endif
 	} else {
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_ONGOING;
+#endif
 	}
 
 	/* Write the image data to flash. */
@@ -490,18 +520,30 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 			g_img_mgmt_state.off += action.write_bytes;
 		} else {
 			/* Write failed, currently not able to recover from this */
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+#endif
+
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 				img_mgmt_err_str_flash_write_failed);
 			reset = true;
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
+				img_mgmt_err_str_flash_write_failed);
+
 			goto end;
 		}
 
 		if (g_img_mgmt_state.off == g_img_mgmt_state.size) {
 			/* Done */
-			img_mgmt_dfu_pending();
-			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+			(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_PENDING, NULL, 0);
+#endif
+
 			reset = true;
+
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+#endif
 		}
 	}
 end:
@@ -509,12 +551,15 @@ end:
 	img_mgmt_upload_log(req.off == 0, g_img_mgmt_state.off == g_img_mgmt_state.size, rc);
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-	(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_STATUS, MGMT_GROUP_ID_IMAGE,
-				   IMG_MGMT_ID_UPLOAD, &cmd_status_arg, false);
+	(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_STATUS, &cmd_status_arg,
+				   sizeof(cmd_status_arg));
 #endif
 
 	if (rc != 0) {
-		img_mgmt_dfu_stopped();
+#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0);
+#endif
+
 		return rc;
 	}
 
@@ -526,50 +571,6 @@ end:
 	}
 
 	return rc;
-}
-
-void
-img_mgmt_dfu_stopped(void)
-{
-	if (img_mgmt_dfu_callbacks_fn && img_mgmt_dfu_callbacks_fn->dfu_stopped_cb) {
-		img_mgmt_dfu_callbacks_fn->dfu_stopped_cb();
-	}
-}
-
-void
-img_mgmt_dfu_started(void)
-{
-	if (img_mgmt_dfu_callbacks_fn && img_mgmt_dfu_callbacks_fn->dfu_started_cb) {
-		img_mgmt_dfu_callbacks_fn->dfu_started_cb();
-	}
-}
-
-void
-img_mgmt_dfu_pending(void)
-{
-	if (img_mgmt_dfu_callbacks_fn && img_mgmt_dfu_callbacks_fn->dfu_pending_cb) {
-		img_mgmt_dfu_callbacks_fn->dfu_pending_cb();
-	}
-}
-
-void
-img_mgmt_dfu_confirmed(void)
-{
-	if (img_mgmt_dfu_callbacks_fn && img_mgmt_dfu_callbacks_fn->dfu_confirmed_cb) {
-		img_mgmt_dfu_callbacks_fn->dfu_confirmed_cb();
-	}
-}
-
-void
-img_mgmt_set_upload_cb(img_mgmt_upload_fn cb)
-{
-	img_mgmt_upload_cb = cb;
-}
-
-void
-img_mgmt_register_callbacks(const struct img_mgmt_dfu_callbacks_t *cb_struct)
-{
-	img_mgmt_dfu_callbacks_fn = cb_struct;
 }
 
 int
