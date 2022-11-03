@@ -41,7 +41,6 @@ struct bt_pac {
 
 struct bt_pacs_read_rsp {
 	uint8_t  num_pac;		/* Number of PAC Records*/
-	struct bt_pac pac[0];
 } __packed;
 
 struct bt_pacs_context {
