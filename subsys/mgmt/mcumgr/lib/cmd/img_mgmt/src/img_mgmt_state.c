@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +20,10 @@
 #include <mgmt/mgmt.h>
 #include "smp/smp.h"
 #include "zcbor_bulk/zcbor_bulk_priv.h"
+
+#ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
+#include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
+#endif
 
 /* The value here sets how many "characteristics" that describe image is
  * encoded into a map per each image (like bootable flags, and so on).
@@ -183,7 +188,10 @@ img_mgmt_state_confirm(void)
 		rc = MGMT_ERR_EUNKNOWN;
 	}
 
-	img_mgmt_dfu_confirmed();
+#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+	(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0);
+#endif
+
 err:
 	return 0;
 }
