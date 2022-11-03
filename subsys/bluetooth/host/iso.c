@@ -2524,7 +2524,6 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 {
 	struct bt_iso_chan *bis;
 	int err;
-	bool broadcaster;
 
 	if (!atomic_test_bit(big->flags, BT_BIG_INITIALIZED) || !big->num_bis) {
 		BT_DBG("BIG not initialized");
@@ -2534,10 +2533,8 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 	bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis_channels, bis, node);
 	__ASSERT(bis != NULL, "bis was NULL");
 
-	/* They all have the same QOS dir so we can just check the first */
-	broadcaster = bis->qos->tx ? true : false;
-
-	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && broadcaster) {
+	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
+	    bis->iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER) {
 		err = hci_le_terminate_big(big);
 
 		/* Wait for BT_HCI_EVT_LE_BIG_TERMINATE before cleaning up
@@ -2548,7 +2545,8 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 				bt_iso_chan_set_state(bis, BT_ISO_STATE_DISCONNECTING);
 			}
 		}
-	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) {
+	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
+		   bis->iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
 		err = hci_le_big_sync_term(big);
 
 		if (!err) {
