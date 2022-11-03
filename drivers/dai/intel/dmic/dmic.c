@@ -746,7 +746,6 @@ static int dai_dmic_set_config(const struct device *dev,
 		return -EINVAL;
 	}
 
-	__ASSERT_NO_MSG(dmic->created);
 	key = k_spin_lock(&dmic->lock);
 
 #if CONFIG_DAI_INTEL_DMIC_TPLG_PARAMS
