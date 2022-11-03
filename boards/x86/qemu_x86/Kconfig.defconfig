@@ -1,5 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if BOARD_QEMU_X86 || BOARD_QEMU_X86_64 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
+
+# The EEPROM emulator must be initialized after the flash simulator
+config EEPROM_INIT_PRIORITY
+	default 60
+	depends on EEPROM
+
+endif # BOARD_QEMU_X86 || BOARD_QEMU_X86_64 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
+
 if BOARD_QEMU_X86
 
 config BUILD_OUTPUT_BIN
