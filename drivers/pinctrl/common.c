@@ -9,6 +9,10 @@
 int pinctrl_lookup_state(const struct pinctrl_dev_config *config, uint8_t id,
 			 const struct pinctrl_state **state)
 {
+	if (config->state_cnt == 0) {
+		return -ENOENT;
+	}
+	
 	*state = &config->states[0];
 	while (*state <= &config->states[config->state_cnt - 1U]) {
 		if (id == (*state)->id) {
