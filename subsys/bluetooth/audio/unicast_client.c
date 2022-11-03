@@ -2384,10 +2384,6 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 			break;
 		}
 
-		bpac->codec.id = pac->codec.id;
-		bpac->codec.cid = sys_le16_to_cpu(pac->codec.cid);
-		bpac->codec.vid = sys_le16_to_cpu(pac->codec.vid);
-
 		if (unicast_client_ep_set_codec(NULL, pac->codec.id,
 						sys_le16_to_cpu(pac->codec.cid),
 						sys_le16_to_cpu(pac->codec.vid),
