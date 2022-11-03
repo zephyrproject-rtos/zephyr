@@ -535,6 +535,94 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
+					  char **argv)
+{
+	struct bt_bap_scan_delegator_subgroup *subgroup_param;
+	struct bt_bap_scan_delegator_mod_src_param param;
+	unsigned long broadcast_id;
+	unsigned long src_id;
+	int err;
+
+	err = 0;
+
+	src_id = shell_strtoul(argv[1], 16, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse src_id from %s", argv[1]);
+
+		return -EINVAL;
+	}
+
+	if (src_id > UINT8_MAX) {
+		shell_error(sh, "Invalid src_id %lu", src_id);
+
+		return -EINVAL;
+	}
+
+	broadcast_id = shell_strtoul(argv[2], 16, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse broadcast_id from %s", argv[2]);
+
+		return -EINVAL;
+	}
+
+	if (broadcast_id > BT_BAP_BROADCAST_ID_MAX) {
+		shell_error(sh, "Invalid broadcast_id %lu", broadcast_id);
+
+		return -EINVAL;
+	}
+
+	/* TODO: Support multiple subgroups */
+	subgroup_param = &param.subgroups[0];
+	if (argc > 3) {
+		unsigned long bis_sync;
+
+		bis_sync = shell_strtoul(argv[3], 16, &err);
+		if (err != 0) {
+			shell_error(sh, "Failed to parse bis_sync from %s", argv[3]);
+
+			return -EINVAL;
+		}
+
+		if (bis_sync > BT_BAP_BIS_SYNC_NO_PREF) {
+			shell_error(sh, "Invalid bis_sync %lu", bis_sync);
+
+			return -EINVAL;
+		}
+	} else {
+		subgroup_param->bis_sync = 0U;
+	}
+
+	if (argc > 3) {
+		subgroup_param->metadata_len = hex2bin(argv[4], strlen(argv[4]),
+						       subgroup_param->metadata,
+						       sizeof(subgroup_param->metadata));
+
+		if (subgroup_param->metadata_len == 0U) {
+			shell_error(sh, "Could not parse metadata");
+
+			return -EINVAL;
+		}
+	} else {
+		subgroup_param->metadata_len = 0U;
+	}
+
+
+	param.src_id = (uint8_t)src_id;
+	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
+	param.broadcast_id = broadcast_id;
+	param.num_subgroups = 1U;
+
+	err = bt_bap_scan_delegator_mod_src(&param);
+	if (err < 0) {
+		shell_error(ctx_shell, "Failed to modify source: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc,
 					 char **argv)
 {
@@ -634,6 +722,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_scan_delegator_cmds,
 	SHELL_CMD_ARG(add_src, NULL,
 		      "Add a PA as source <broadcast_id> [bis_sync [metadata]]",
 		      cmd_bap_scan_delegator_add_src, 2, 2),
+	SHELL_CMD_ARG(mod_src, NULL,
+		      "Modify source <src_id> <broadcast_id> [bis_sync [metadata]]",
+		      cmd_bap_scan_delegator_mod_src, 3, 2),
 	SHELL_CMD_ARG(synced, NULL,
 		      "Set server scan state <src_id> <bis_syncs> <enc_state>",
 		      cmd_bap_scan_delegator_bis_synced, 4, 0),
