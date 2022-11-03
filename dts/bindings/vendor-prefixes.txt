@@ -566,6 +566,7 @@ solidrun	SolidRun
 solomon	Solomon Systech Limited
 sony	Sony Corporation
 spansion	Spansion Inc.
+sparkfun	SparkFun Electronics
 sprd	Spreadtrum Communications Inc.
 sst	Silicon Storage Technology, Inc.
 sstar	Xiamen Xingchen(SigmaStar) Technology Co., Ltd. (formerly part of MStar Semiconductor, Inc.)
