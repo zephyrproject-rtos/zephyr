@@ -354,7 +354,8 @@
 #define ADC_1ST_CHANNEL_ID	0
 #define ADC_2ND_CHANNEL_ID  1
 
-#elif defined(CONFIG_BOARD_RPI_PICO)
+#elif defined(CONFIG_BOARD_RPI_PICO) || \
+	defined(CONFIG_BOARD_ADAFRUIT_KB2040)
 #define ADC_DEVICE_NODE		DT_INST(0, raspberrypi_pico_adc)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
