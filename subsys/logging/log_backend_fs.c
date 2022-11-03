@@ -446,7 +446,7 @@ static int del_oldest_log(void)
 	return rc;
 }
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
+BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG1_IMMEDIATE),
 	     "Immediate logging is not supported by LOG FS backend.");
 
 #ifndef CONFIG_LOG_BACKEND_FS_TESTSUITE
