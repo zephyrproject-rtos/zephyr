@@ -494,6 +494,7 @@ driver instances are configured via :ref:`devicetree` and :ref:`kconfig`. See th
 devicetree bindings for more information:
 
  - :dtcompatible:`zephyr,fake-can`
+ - :dtcompatible:`zephyr,fake-eeprom`
 
 Customizing Test Output
 ***********************
