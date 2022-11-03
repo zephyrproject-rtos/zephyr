@@ -54,7 +54,7 @@ static uint8_t smp_rsp_op(uint8_t req_op)
 static void smp_make_rsp_hdr(const struct smp_hdr *req_hdr, struct smp_hdr *rsp_hdr, size_t len)
 {
 	*rsp_hdr = (struct smp_hdr) {
-		.nh_len = sys_cpu_to_be16(req_hdr->nh_len),
+		.nh_len = sys_cpu_to_be16(len),
 		.nh_flags = 0,
 		.nh_op = smp_rsp_op(req_hdr->nh_op),
 		.nh_group = sys_cpu_to_be16(req_hdr->nh_group),
