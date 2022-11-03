@@ -24,6 +24,7 @@
 struct sync_state {
 	bool pa_syncing;
 	bool past_avail;
+	uint8_t src_id;
 	uint16_t pa_interval;
 	struct k_work_delayable pa_timer;
 	struct bt_conn *conn;
@@ -75,13 +76,21 @@ static struct sync_state *sync_state_get_by_pa(struct bt_le_per_adv_sync *sync)
 	return NULL;
 }
 
+static struct sync_state *sync_state_new(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		if (sync_states[i].recv_state == NULL) {
+			return &sync_states[i];
+		}
+	}
+
+	return NULL;
+}
+
 static struct sync_state *sync_state_get_by_src_id(uint8_t src_id)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
-		const struct bt_bap_scan_delegator_recv_state *recv_state =
-			sync_states[i].recv_state;
-
-		if (recv_state != NULL && recv_state->src_id == src_id) {
+		if (sync_states[i].src_id == src_id) {
 			return &sync_states[i];
 		}
 	}
@@ -242,6 +251,7 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	}
 
 	state->recv_state = recv_state;
+	state->src_id = recv_state->src_id;
 
 	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
 	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
@@ -311,9 +321,9 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 
 	state = sync_state_get_by_pa(sync);
 	if (state == NULL) {
-		shell_error(ctx_shell,
-			    "Could not get sync state from PA sync %p",
-			    sync);
+		shell_info(ctx_shell,
+			   "Could not get sync state from PA sync %p",
+			   sync);
 		return;
 	}
 
@@ -405,7 +415,7 @@ static int cmd_bap_scan_delegator_sync_pa(const struct shell *sh, size_t argc,
 	if (state == NULL) {
 		shell_error(ctx_shell, "Could not get state");
 
-		return -1;
+		return -ENOEXEC;
 	}
 
 	if (past_preference &&
@@ -436,6 +446,91 @@ static int cmd_bap_scan_delegator_sync_pa(const struct shell *sh, size_t argc,
 
 		return -ENOEXEC;
 	}
+
+	return 0;
+}
+
+static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
+					  char **argv)
+{
+	/* TODO: Add support to select which PA sync to BIG sync to */
+	struct bt_le_per_adv_sync *pa_sync = per_adv_syncs[0];
+	struct bt_bap_scan_delegator_subgroup *subgroup_param;
+	struct bt_bap_scan_delegator_add_src_param param;
+	unsigned long broadcast_id;
+	struct sync_state *state;
+	int err;
+
+	err = 0;
+
+	broadcast_id = shell_strtoul(argv[1], 16, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse broadcast_id from %s", argv[1]);
+
+		return -EINVAL;
+	}
+
+	if (broadcast_id > BT_BAP_BROADCAST_ID_MAX) {
+		shell_error(sh, "Invalid broadcast_id %lu", broadcast_id);
+
+		return -EINVAL;
+	}
+
+	/* TODO: Support multiple subgroups */
+	subgroup_param = &param.subgroups[0];
+	if (argc > 2) {
+		unsigned long bis_sync;
+
+		bis_sync = shell_strtoul(argv[2], 16, &err);
+		if (err != 0) {
+			shell_error(sh, "Failed to parse bis_sync from %s", argv[2]);
+
+			return -EINVAL;
+		}
+
+		if (bis_sync > BT_BAP_BIS_SYNC_NO_PREF) {
+			shell_error(sh, "Invalid bis_sync %lu", bis_sync);
+
+			return -EINVAL;
+		}
+	} else {
+		subgroup_param->bis_sync = 0U;
+	}
+
+	if (argc > 3) {
+		subgroup_param->metadata_len = hex2bin(argv[3], strlen(argv[3]),
+						       subgroup_param->metadata,
+						       sizeof(subgroup_param->metadata));
+
+		if (subgroup_param->metadata_len == 0U) {
+			shell_error(sh, "Could not parse metadata");
+
+			return -EINVAL;
+		}
+	} else {
+		subgroup_param->metadata_len = 0U;
+	}
+
+	state = sync_state_new();
+	if (state == NULL) {
+		shell_error(ctx_shell, "Could not get new state");
+
+		return -ENOEXEC;
+	}
+
+	param.pa_sync = pa_sync;
+	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
+	param.broadcast_id = broadcast_id;
+	param.num_subgroups = 1U;
+
+	err = bt_bap_scan_delegator_add_src(&param);
+	if (err < 0) {
+		shell_error(ctx_shell, "Failed to add source: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	state->src_id = (uint8_t)err;
 
 	return 0;
 }
@@ -536,6 +631,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_scan_delegator_cmds,
 	SHELL_CMD_ARG(sync_pa, NULL,
 		      "Sync to PA <src_id>",
 		      cmd_bap_scan_delegator_sync_pa, 2, 0),
+	SHELL_CMD_ARG(add_src, NULL,
+		      "Add a PA as source <broadcast_id> [bis_sync [metadata]]",
+		      cmd_bap_scan_delegator_add_src, 2, 2),
 	SHELL_CMD_ARG(synced, NULL,
 		      "Set server scan state <src_id> <bis_syncs> <enc_state>",
 		      cmd_bap_scan_delegator_bis_synced, 4, 0),
