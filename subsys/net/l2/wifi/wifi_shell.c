@@ -29,7 +29,8 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #define WIFI_SHELL_MGMT_EVENTS (NET_EVENT_WIFI_SCAN_RESULT |		\
 				NET_EVENT_WIFI_SCAN_DONE |		\
 				NET_EVENT_WIFI_CONNECT_RESULT |		\
-				NET_EVENT_WIFI_DISCONNECT_RESULT)
+				NET_EVENT_WIFI_DISCONNECT_RESULT |  \
+				NET_EVENT_WIFI_TWT)
 
 static struct {
 	const struct shell *sh;
@@ -57,6 +58,24 @@ static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
 			printk(fmt, ##__VA_ARGS__);			\
 		}							\
 	} while (false)
+
+static bool parse_number(const struct shell *sh, long *param, char *str, int min, int max)
+{
+	char *endptr;
+	char *str_tmp = str;
+	long num = strtol(str_tmp, &endptr, 10);
+
+	if (*endptr != '\0') {
+		print(sh, SHELL_ERROR, "Invalid number: %s", str_tmp);
+		return false;
+	}
+	if ((num) < (min) || (num) > (max)) {
+		print(sh, SHELL_WARNING, "Value out of range: %s, (%d-%d)", str_tmp, min, max);
+		return false;
+	}
+	*param = num;
+	return true;
+}
 
 static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 {
@@ -129,6 +148,24 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 	}
 }
 
+static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_twt_params *resp =
+		(const struct wifi_twt_params *)cb->info;
+
+	print(context.sh, SHELL_NORMAL, "TWT response: %s for dialog: %d and flow: %d\n",
+	      wifi_twt_setup_cmd2str[resp->setup_cmd], resp->dialog_token, resp->flow_id);
+
+	/* If accepted, then no need to print TWT params */
+	if (resp->setup_cmd != WIFI_TWT_SETUP_CMD_ACCEPT) {
+		print(context.sh, SHELL_NORMAL,
+		      "TWT parameters: trigger: %s wake_interval_ms: %d, interval_ms: %d\n",
+		      resp->setup.trigger ? "trigger" : "no_trigger",
+		      resp->setup.twt_wake_interval_ms,
+		      resp->setup.twt_interval_ms);
+	}
+}
+
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
 {
@@ -144,6 +181,9 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 		break;
 	case NET_EVENT_WIFI_DISCONNECT_RESULT:
 		handle_wifi_disconnect_result(cb);
+		break;
+	case NET_EVENT_WIFI_TWT:
+		handle_wifi_twt_event(cb);
 		break;
 	default:
 		break;
@@ -383,6 +423,277 @@ static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_ps_params params = { 0 };
+
+	context.sh = sh;
+
+	if (argc > 2) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		return -ENOEXEC;
+	}
+
+	if (argc == 1) {
+		struct wifi_ps_config config = { 0 };
+
+		if (net_mgmt(NET_REQUEST_WIFI_PS_CONFIG, iface,
+				&config, sizeof(config))) {
+			shell_fprintf(sh, SHELL_WARNING, "Failed to get PS config\n");
+			return -ENOEXEC;
+		}
+
+		shell_fprintf(sh, SHELL_NORMAL, "PS status: %s\n",
+				wifi_ps_mode2str[config.enabled]);
+		if (config.enabled) {
+			shell_fprintf(sh, SHELL_NORMAL, "PS mode: %s\n",
+					wifi_ps_mode2str[config.mode]);
+		}
+
+		if (config.num_twt_flows == 0) {
+			shell_fprintf(sh, SHELL_NORMAL, "No TWT flows\n");
+		} else {
+			for (int i = 0; i < config.num_twt_flows; i++) {
+				shell_fprintf(sh, SHELL_NORMAL, "TWT Dialog token: %d\n",
+					config.twt_flows[i].dialog_token);
+				shell_fprintf(sh, SHELL_NORMAL, "TWT flow ID: %d\n",
+					config.twt_flows[i].flow_id);
+				shell_fprintf(sh, SHELL_NORMAL, "TWT negotiation type: %s\n",
+					wifi_twt_negotiation_type2str[
+					config.twt_flows[i].negotiation_type]);
+				shell_fprintf(sh, SHELL_NORMAL, "TWT responder: %s\n",
+					config.twt_flows[i].responder ? "true" : "false");
+				shell_fprintf(sh, SHELL_NORMAL, "TWT implicit: %s\n",
+					config.twt_flows[i].implicit ? "true" : "false");
+				shell_fprintf(sh, SHELL_NORMAL, "TWT trigger: %s\n",
+					config.twt_flows[i].trigger ? "true" : "false");
+				shell_fprintf(sh, SHELL_NORMAL, "TWT announce: %s\n",
+					config.twt_flows[i].announce ? "true" : "false");
+				shell_fprintf(sh, SHELL_NORMAL, "TWT wake interval: %d ms\n",
+					config.twt_flows[i].twt_wake_interval_ms);
+				shell_fprintf(sh, SHELL_NORMAL, "TWT interval: %d ms\n",
+					config.twt_flows[i].twt_interval_ms);
+				shell_fprintf(sh, SHELL_NORMAL, "========================\n");
+			}
+		}
+		return 0;
+	}
+
+	if (!strncmp(argv[1], "on", 2)) {
+		params.enabled = WIFI_PS_ENABLED;
+	} else if (!strncmp(argv[1], "off", 3)) {
+		params.enabled = WIFI_PS_DISABLED;
+	} else {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "Power save %s failed\n",
+			params.enabled ? "enable" : "disable");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n", wifi_ps2str[params.enabled]);
+
+	return 0;
+}
+
+static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_ps_mode_params params = { 0 };
+
+	context.sh = sh;
+
+	if (argc != 2) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		return -ENOEXEC;
+	}
+
+	if (!strncmp(argv[1], "legacy", 6)) {
+		params.mode = WIFI_PS_MODE_LEGACY;
+	} else if (!strncmp(argv[1], "wmm", 3)) {
+		params.mode = WIFI_PS_MODE_WMM;
+	} else {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid power save mode\n");
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_PS_MODE, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "%s failed\n", wifi_ps_mode2str[params.mode]);
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n", wifi_ps_mode2str[params.mode]);
+
+	return 0;
+}
+
+static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
+			      char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_twt_params params = { 0 };
+	int idx = 1;
+
+	context.sh = sh;
+
+	if (argc != 3) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	/* Sensible defaults */
+	params.operation = WIFI_TWT_SETUP;
+	params.negotiation_type = WIFI_TWT_INDIVIDUAL;
+	params.setup_cmd = WIFI_TWT_SETUP_CMD_REQUEST;
+	params.dialog_token = 1;
+	params.flow_id = 1;
+	params.setup.responder = 0;
+	params.setup.implicit = 1;
+	params.setup.trigger = 1;
+	params.setup.announce = 0;
+
+	if (!parse_number(sh, (long *)&params.setup.twt_wake_interval_ms, argv[idx++], 1, 255) ||
+	    !parse_number(sh, (long *)&params.setup.twt_interval_ms, argv[idx++], 1,
+			  WIFI_MAX_TWT_INTERVAL_MS))
+		return -EINVAL;
+
+	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed\n",
+			wifi_twt_operation2str[params.operation],
+			wifi_twt_negotiation_type2str[params.negotiation_type]);
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d requested\n",
+		wifi_twt_operation2str[params.operation],
+		params.dialog_token, params.flow_id);
+
+	return 0;
+}
+
+
+static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
+			      char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_twt_params params = { 0 };
+	int idx = 1;
+	long neg_type;
+	long setup_cmd;
+
+	context.sh = sh;
+
+	if (argc != 11) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	params.operation = WIFI_TWT_SETUP;
+
+	if (!parse_number(sh, &neg_type, argv[idx++], WIFI_TWT_INDIVIDUAL,
+			  WIFI_TWT_WAKE_TBTT) ||
+	    !parse_number(sh, &setup_cmd, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
+			  WIFI_TWT_SETUP_CMD_DEMAND) ||
+	    !parse_number(sh, (long *)&params.dialog_token, argv[idx++], 1, 255) ||
+	    !parse_number(sh, (long *)&params.flow_id, argv[idx++], 1, WIFI_MAX_TWT_FLOWS) ||
+	    !parse_number(sh, (long *)&params.setup.responder, argv[idx++], 0, 1) ||
+	    !parse_number(sh, (long *)&params.setup.trigger, argv[idx++], 0, 1) ||
+	    !parse_number(sh, (long *)&params.setup.implicit, argv[idx++], 0, 1) ||
+	    !parse_number(sh, (long *)&params.setup.announce, argv[idx++], 0, 1) ||
+	    !parse_number(sh, (long *)&params.setup.twt_wake_interval_ms, argv[idx++], 1, 255) ||
+	    !parse_number(sh, (long *)&params.setup.twt_interval_ms, argv[idx++], 1,
+			  WIFI_MAX_TWT_INTERVAL_MS))
+		return -EINVAL;
+
+	params.negotiation_type = neg_type;
+	params.setup_cmd = setup_cmd;
+
+	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed\n",
+			wifi_twt_operation2str[params.operation],
+			wifi_twt_negotiation_type2str[params.negotiation_type]);
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d requested\n",
+		wifi_twt_operation2str[params.operation],
+		params.dialog_token, params.flow_id);
+
+	return 0;
+}
+
+static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
+			      char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_twt_params params = { 0 };
+	long neg_type = 0;
+	long setup_cmd = 0;
+
+	context.sh = sh;
+	int idx = 1;
+
+	if (argc != 5) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	params.operation = WIFI_TWT_TEARDOWN;
+	neg_type = params.negotiation_type;
+	setup_cmd = params.setup_cmd;
+
+	if (!parse_number(sh, &neg_type, argv[idx++], WIFI_TWT_INDIVIDUAL,
+			  WIFI_TWT_WAKE_TBTT) ||
+	    !parse_number(sh, &setup_cmd, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
+			  WIFI_TWT_SETUP_CMD_DEMAND) ||
+	    !parse_number(sh, (long *)&params.dialog_token, argv[idx++], 1, 255) ||
+	    !parse_number(sh, (long *)&params.flow_id, argv[idx++], 1, WIFI_MAX_TWT_FLOWS))
+		return -EINVAL;
+
+	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed\n",
+			wifi_twt_operation2str[params.operation],
+			wifi_twt_negotiation_type2str[params.negotiation_type]);
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d requested\n",
+		wifi_twt_operation2str[params.operation],
+		params.dialog_token, params.flow_id);
+
+	return 0;
+}
+
+static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
+			      char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_twt_params params = { 0 };
+
+	context.sh = sh;
+
+	params.operation = WIFI_TWT_TEARDOWN;
+	params.teardown.teardown_all = 1;
+
+	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed\n",
+			wifi_twt_operation2str[params.operation],
+			wifi_twt_negotiation_type2str[params.negotiation_type]);
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s all flows\n",
+		wifi_twt_operation2str[params.operation]);
+
+	return 0;
+}
 
 static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 			      char *argv[])
@@ -433,6 +744,26 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
+	SHELL_CMD(quick_setup, NULL, " Start a TWT flow with defaults:\n"
+		"<twt_wake_interval_ms: 1-256ms> <twt_interval_ms: 1ms-2^32ms>\n",
+		cmd_wifi_twt_setup_quick),
+	SHELL_CMD(setup, NULL, " Start a TWT flow:\n"
+		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
+		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
+		"<dialog_token: 1-255> <flow_id: 1-255> <responder: 0/1> <trigger: 0/1> <implicit:0/1> "
+		"<announce: 0/1> <twt_wake_interval_ms: 1-256ms> <twt_interval_ms: 1ms-2^32ms>\n",
+		cmd_wifi_twt_setup),
+	SHELL_CMD(teardown, NULL, " Teardown a TWT flow:\n"
+		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
+		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
+		"<dialog_token: 1-255> <flow_id: 1-255>\n",
+		cmd_wifi_twt_teardown),
+	SHELL_CMD(teardown_all, NULL, " Teardown all TWT flows\n",
+		cmd_wifi_twt_teardown_all),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
 	SHELL_CMD(connect, NULL,
@@ -447,9 +778,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  cmd_wifi_connect),
 	SHELL_CMD(disconnect, NULL, "Disconnect from the Wi-Fi AP",
 		  cmd_wifi_disconnect),
+	SHELL_CMD(ps, NULL, "Configure Wi-Fi power save on/off, no arguments will dump config",
+		  cmd_wifi_ps),
+	SHELL_CMD(ps_mode, NULL, "Configure Wi-Fi power save mode legacy/wmm", cmd_wifi_ps_mode),
 	SHELL_CMD(scan, NULL, "Scan for Wi-Fi APs", cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
+	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows", NULL),
 	SHELL_SUBCMD_SET_END
 );
 
