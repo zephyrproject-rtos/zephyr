@@ -11,6 +11,10 @@
 #include <zephyr/sys/slist.h>
 #include <mgmt/mgmt.h>
 
+#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
+#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_callbacks.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -66,6 +70,8 @@ typedef int32_t (*mgmt_cb)(uint32_t event, int32_t rc, bool *abort_more, void *d
 enum mgmt_cb_groups {
 	MGMT_EVT_GRP_ALL			= 0,
 	MGMT_EVT_GRP_SMP,
+	MGMT_EVT_GRP_IMG,
+	MGMT_EVT_GRP_FS,
 
 	MGMT_EVT_GRP_USER_CUSTOM_START		= MGMT_GROUP_ID_PERUSER,
 };
@@ -93,6 +99,40 @@ enum smp_group_events {
 
 	/** Used to enable all smp_group events. */
 	MGMT_EVT_OP_CMD_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_SMP),
+};
+
+/**
+ * MGMT event opcodes for filesystem management group.
+ */
+enum fs_mgmt_group_events {
+	/** Callback when a file has been accessed, data is fs_mgmt_file_access. */
+	MGMT_EVT_OP_FS_MGMT_FILE_ACCESS		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_FS, 0),
+
+	/** Used to enable all fs_mgmt_group events. */
+	MGMT_EVT_OP_FS_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_FS),
+};
+
+/**
+ * MGMT event opcodes for image management group.
+ */
+enum img_mgmt_group_events {
+	/** Callback when a client sends a file upload chunk, data is img_mgmt_upload_check. */
+	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 0),
+
+	/** Callback when a DFU operation is stopped. */
+	MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 1),
+
+	/** Callback when a DFU operation is started. */
+	MGMT_EVT_OP_IMG_MGMT_DFU_STARTED	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 2),
+
+	/** Callback when a DFU operation has finished being transferred. */
+	MGMT_EVT_OP_IMG_MGMT_DFU_PENDING	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 3),
+
+	/** Callback when an image has been confirmed. */
+	MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 4),
+
+	/** Used to enable all img_mgmt_group events. */
+	MGMT_EVT_OP_IMG_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_IMG),
 };
 
 /**
