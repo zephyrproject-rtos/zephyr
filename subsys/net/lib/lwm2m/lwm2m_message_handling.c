@@ -3041,12 +3041,14 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	}
 	/* Clear path which are part are part of recursive path /1 will include /1/0/1 */
 	lwm2m_engine_clear_duplicate_path(&lwm2m_path_list, &lwm2m_path_free_list);
+	lwm2m_registry_lock();
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 msg_alloc:
 #endif
 	/* Allocate Message buffer */
 	msg = lwm2m_get_message(ctx);
 	if (!msg) {
+		lwm2m_registry_unlock();
 		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
@@ -3087,9 +3089,7 @@ msg_init:
 	}
 
 	/* Write requested path data */
-	lwm2m_registry_lock();
 	ret = do_send_op(msg, content_format, &lwm2m_path_list);
-	lwm2m_registry_unlock();
 	if (ret < 0) {
 		if (lwm2m_timeseries_data_rebuild(msg, ret)) {
 			/* Message Build fail by ENOMEM and data include timeseries data.
@@ -3120,9 +3120,10 @@ msg_init:
 		}
 	}
 #endif
-
+	lwm2m_registry_unlock();
 	return 0;
 cleanup:
+	lwm2m_registry_unlock();
 	lwm2m_reset_message(msg, true);
 	return ret;
 #else
