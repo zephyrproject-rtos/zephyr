@@ -1,0 +1,23 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+description: INTEL BLINKY PWM
+
+compatible: "intel,blinky-pwm"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    clock-frequency:
+      type: int
+      required: true
+      description: PWM Peripheral Clock frequency in Hz
+
+    max-pins:
+      type: int
+      required: true
+      description: Maximum number of pins supported by platform

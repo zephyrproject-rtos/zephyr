@@ -85,4 +85,5 @@ source "drivers/pwm/Kconfig.test"
 
 source "drivers/pwm/Kconfig.rpi_pico"
 
+source "drivers/pwm/Kconfig.pch_blinky"
 endif # PWM

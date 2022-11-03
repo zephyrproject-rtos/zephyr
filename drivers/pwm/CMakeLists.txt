@@ -30,6 +30,7 @@ zephyr_library_sources_ifdef(CONFIG_PWM_PCA9685 	pwm_pca9685.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_TEST		pwm_test.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_RPI_PICO	pwm_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_BBLED_XEC	pwm_mchp_xec_bbled.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_BLINKY_INTEL	pwm_pch_blinky.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   pwm_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_CAPTURE pwm_capture.c)
