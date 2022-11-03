@@ -42,11 +42,9 @@ struct clock_control_gd32_config {
 /* timer identifiers */
 #define TIMER_ID_OR_NONE(nodelabel)                                            \
 	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(nodelabel), okay),         \
-		    (GD32_CLOCK_ID_BIT(                                        \
-			     DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id)),),   \
-		    ())
+		    (DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id),), ())
 
-static const uint8_t timer_ids[] = {
+static const uint16_t timer_ids[] = {
 	TIMER_ID_OR_NONE(timer0)  /* */
 	TIMER_ID_OR_NONE(timer1)  /* */
 	TIMER_ID_OR_NONE(timer2)  /* */
@@ -131,7 +129,7 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 #if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer)
 	/* handle timer clocks */
 	for (size_t i = 0U; i < ARRAY_SIZE(timer_ids); i++) {
-		if (GD32_CLOCK_ID_BIT(id) != timer_ids[i]) {
+		if (id != timer_ids[i]) {
 			continue;
 		}
 
