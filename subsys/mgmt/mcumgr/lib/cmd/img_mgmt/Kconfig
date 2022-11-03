@@ -84,6 +84,22 @@ config IMG_MGMT_FRUGAL_LIST
 	  a device but requires support in client software, which has to default omitted values.
 	  Works correctly with mcumgr-cli.
 
+config MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK
+	bool "Upload check hook"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  This will enable the upload check hook which will send image upload requests to
+	  registered callbacks to check with the user application if an upload should be accepted
+	  or rejected.
+
+config MCUMGR_GRP_IMG_STATUS_HOOKS
+	bool "Status hooks"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  This will enable DFU status hooks which can be checked by the application to monitor DFU
+	  uploads. Note that these are status checking only, to allow inspecting of a file upload
+	  or prevent it, CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK must be used.
+
 module = MCUMGR_IMG_MGMT
 module-str = mcumgr_img_mgmt
 source "subsys/logging/Kconfig.template.log_config"
