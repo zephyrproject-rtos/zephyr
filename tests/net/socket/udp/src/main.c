@@ -992,7 +992,7 @@ static int eth_fake_init(const struct device *dev)
 }
 
 ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
-		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &eth_fake_data, NULL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &eth_fake_api_funcs, NET_ETH_MTU);
 
 static void iface_cb(struct net_if *iface, void *user_data)
