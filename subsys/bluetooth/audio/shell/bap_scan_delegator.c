@@ -623,6 +623,38 @@ static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int cmd_bap_scan_delegator_rem_src(const struct shell *sh, size_t argc,
+					  char **argv)
+{
+	unsigned long src_id;
+	int err;
+
+	err = 0;
+
+	src_id = shell_strtoul(argv[1], 16, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse src_id from %s", argv[1]);
+
+		return -EINVAL;
+	}
+
+	if (src_id > UINT8_MAX) {
+		shell_error(sh, "Invalid src_id %lu", src_id);
+
+		return -EINVAL;
+	}
+
+	err = bt_bap_scan_delegator_rem_src((uint8_t)src_id);
+	if (err < 0) {
+		shell_error(ctx_shell, "Failed to remove source source: %d",
+			    err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc,
 					 char **argv)
 {
@@ -725,6 +757,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_scan_delegator_cmds,
 	SHELL_CMD_ARG(mod_src, NULL,
 		      "Modify source <src_id> <broadcast_id> [bis_sync [metadata]]",
 		      cmd_bap_scan_delegator_mod_src, 3, 2),
+	SHELL_CMD_ARG(rem_src, NULL,
+		      "Remove source <src_id>",
+		      cmd_bap_scan_delegator_rem_src, 2, 0),
 	SHELL_CMD_ARG(synced, NULL,
 		      "Set server scan state <src_id> <bis_syncs> <enc_state>",
 		      cmd_bap_scan_delegator_bis_synced, 4, 0),
