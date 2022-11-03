@@ -357,7 +357,6 @@ struct bt_tbs_instance {
 	struct bt_gatt_subscribe_params termination_sub_params;
 	struct bt_gatt_discover_params termination_sub_disc_params;
 	struct bt_gatt_read_params read_params;
-	uint8_t read_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
 	struct net_buf_simple net_buf;
 };
 #endif /* CONFIG_BT_TBS_CLIENT */
