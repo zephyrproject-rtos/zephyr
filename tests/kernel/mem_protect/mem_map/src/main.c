@@ -59,19 +59,39 @@ ZTEST(mem_map, test_z_phys_map_rw)
 	z_phys_map(&mapped_rw, z_mem_phys_addr(buf),
 		   BUF_SIZE, BASE_FLAGS | K_MEM_PERM_RW);
 
-	/* Initialize buf with some bytes */
-	for (int i = 0; i < BUF_SIZE; i++) {
-		mapped_rw[i] = (uint8_t)(i % 256);
-	}
-
 	/* Map again this time only allowing reads */
 	z_phys_map(&mapped_ro, z_mem_phys_addr(buf),
 		   BUF_SIZE, BASE_FLAGS);
 
-	/* Check that the mapped area contains the expected data. */
+	/* Initialize read-write buf with some bytes */
 	for (int i = 0; i < BUF_SIZE; i++) {
+		mapped_rw[i] = (uint8_t)(i % 256);
+	}
+
+	/* Check that the backing buffer contains the expected data. */
+	for (int i = 0; i < BUF_SIZE; i++) {
+		uint8_t expected_val = (uint8_t)(i % 256);
+
+		zassert_equal(expected_val, buf[i],
+			      "unexpected byte at buffer index %d (%u != %u)",
+			      i, expected_val, buf[i]);
+
+		zassert_equal(buf[i], mapped_rw[i],
+			      "unequal byte at RW index %d (%u != %u)",
+			      i, buf[i], mapped_rw[i]);
+	}
+
+	/* Check that the read-only mapped area contains the expected data. */
+	for (int i = 0; i < BUF_SIZE; i++) {
+		uint8_t expected_val = (uint8_t)(i % 256);
+
+		zassert_equal(expected_val, mapped_ro[i],
+			      "unexpected byte at RO index %d (%u != %u)",
+			      i, expected_val, mapped_ro[i]);
+
 		zassert_equal(buf[i], mapped_ro[i],
-			      "unequal byte at index %d", i);
+			      "unequal byte at RO index %d (%u != %u)",
+			      i, buf[i], mapped_ro[i]);
 	}
 
 	/* This should explode since writes are forbidden */
