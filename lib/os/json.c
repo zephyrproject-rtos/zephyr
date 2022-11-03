@@ -535,12 +535,10 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 		size_t i;
 
 		for (i = 0; i < descr->object.sub_descr_len; i++) {
-			ptrdiff_t s = get_elem_size(&descr->object.sub_descr[i]);
-
-			total += ROUND_UP(s, 1 << descr->align_shift);
+			total += get_elem_size(&descr->object.sub_descr[i]);
 		}
 
-		return total;
+		return ROUND_UP(total, 1 << descr->align_shift);
 	}
 	default:
 		return -EINVAL;
