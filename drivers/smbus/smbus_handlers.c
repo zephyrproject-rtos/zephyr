@@ -144,22 +144,38 @@ static inline int z_vrfy_smbus_block_pcall(const struct device *dev,
 }
 #include <syscalls/smbus_block_pcall_mrsh.c>
 
-static inline int z_vrfy_smbus_manage_smbalert_cb(const struct device *dev,
-						  struct smbus_callback *cb,
-						  bool set)
+static inline int z_vrfy_smbus_smbalert_set_cb(const struct device *dev,
+					       struct smbus_callback *cb)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SMBUS));
 
-	return z_impl_smbus_manage_smbalert_cb(dev, cb, set);
+	return z_impl_smbus_smbalert_set_cb(dev, cb);
 }
-#include <syscalls/smbus_manage_smbalert_cb_mrsh.c>
+#include <syscalls/smbus_smbalert_set_cb_mrsh.c>
 
-static inline int z_vrfy_smbus_manage_host_notify_cb(const struct device *dev,
-						     struct smbus_callback *cb,
-						     bool set)
+static inline int z_vrfy_smbus_smbalert_remove_cb(const struct device *dev,
+						  struct smbus_callback *cb)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SMBUS));
 
-	return z_impl_smbus_manage_host_notify_cb(dev, cb, set);
+	return z_impl_smbus_smbalert_remove_cb(dev, cb);
 }
-#include <syscalls/smbus_manage_host_notify_cb_mrsh.c>
+#include <syscalls/smbus_smbalert_remove_cb_mrsh.c>
+
+static inline int z_vrfy_smbus_host_notify_set_cb(const struct device *dev,
+						  struct smbus_callback *cb)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SMBUS));
+
+	return z_impl_smbus_host_notify_set_cb(dev, cb);
+}
+#include <syscalls/smbus_host_notify_set_cb_mrsh.c>
+
+static inline int z_vrfy_smbus_host_notify_remove_cb(const struct device *dev,
+						     struct smbus_callback *cb)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SMBUS));
+
+	return z_impl_smbus_host_notify_remove_cb(dev, cb);
+}
+#include <syscalls/smbus_host_notify_remove_cb_mrsh.c>

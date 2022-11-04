@@ -58,16 +58,32 @@ ZTEST_USER(test_smbus_general, test_smbus_callback_api)
 
 	zassert_true(device_is_ready(dev), "Device is not ready");
 
+	/* Smbalert callbacks */
+
 	/* Try to remove not existing callback */
-	ret = smbus_manage_smbalert_cb(dev, &callback, false);
+	ret = smbus_smbalert_remove_cb(dev, &callback);
 	zassert_equal(ret, -ENOENT, "Callback remove failed");
 
 	/* Set callback */
-	ret = smbus_manage_smbalert_cb(dev, &callback, true);
+	ret = smbus_smbalert_set_cb(dev, &callback);
 	zassert_ok(ret, "Callback set failed");
 
 	/* Remove existing callback */
-	ret = smbus_manage_smbalert_cb(dev, &callback, false);
+	ret = smbus_smbalert_remove_cb(dev, &callback);
+	zassert_ok(ret, "Callback remove failed");
+
+	/* Host Notify callbacks */
+
+	/* Try to remove not existing callback */
+	ret = smbus_host_notify_remove_cb(dev, &callback);
+	zassert_equal(ret, -ENOENT, "Callback remove failed");
+
+	/* Set callback */
+	ret = smbus_host_notify_set_cb(dev, &callback);
+	zassert_ok(ret, "Callback set failed");
+
+	/* Remove existing callback */
+	ret = smbus_host_notify_remove_cb(dev, &callback);
 	zassert_ok(ret, "Callback remove failed");
 }
 
