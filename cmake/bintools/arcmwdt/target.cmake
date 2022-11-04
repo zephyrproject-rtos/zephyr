@@ -22,17 +22,18 @@ find_program(CMAKE_GDB     ${CROSS_COMPILE}mdb     PATHS ${TOOLCHAIN_HOME} NO_DE
 
 # MWDT binutils don't support required features like section renaming, so we
 # temporarily had to use GNU objcopy instead
-find_program(CMAKE_OBJCOPY arc-elf32-objcopy)
-if (NOT CMAKE_OBJCOPY)
-  find_program(CMAKE_OBJCOPY arc-linux-objcopy)
+if(CONFIG_ISA_ARCV3)
+  set(ARCMWDT_Z_HELPER_TARGET       arc64-zephyr-elf)
+else()
+  set(ARCMWDT_Z_HELPER_TARGET         arc-zephyr-elf)
 endif()
 
-if (NOT CMAKE_OBJCOPY)
-  find_program(CMAKE_OBJCOPY objcopy)
-endif()
+set(ARCMWDT_Z_HELPER_PATH ${ZEPHYR_SDK_INSTALL_DIR}/${ARCMWDT_Z_HELPER_TARGET}/bin)
 
+find_program(CMAKE_OBJCOPY ${ARCMWDT_Z_HELPER_TARGET}-objcopy PATHS ${ARCMWDT_Z_HELPER_PATH})
 if(NOT CMAKE_OBJCOPY)
-  message(FATAL_ERROR "Zephyr unable to find any GNU objcopy (ARC or host one)")
+  message(FATAL_ERROR "Zephyr unable to find any GNU objcopy from Zephyr SDK. Please check that \
+  you have specified ZEPHYR_SDK_INSTALL_DIR correctly. Current value: '${ZEPHYR_SDK_INSTALL_DIR}'")
 endif()
 
 include(${ZEPHYR_BASE}/cmake/bintools/arcmwdt/target_bintools.cmake)

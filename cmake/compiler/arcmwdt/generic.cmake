@@ -4,18 +4,20 @@
 
 # MWDT compiler (CCAC) can't be used for preprocessing the DTS sources as it has
 # weird restrictions about file extensions. Synopsys Jira issue: P10019563-38578
-# Let's temporarily use GNU compiler instead.
-find_program(CMAKE_DTS_PREPROCESSOR arc-elf32-gcc)
-if (NOT CMAKE_DTS_PREPROCESSOR)
-  find_program(CMAKE_DTS_PREPROCESSOR arc-linux-gcc)
+# Let's temporarily use GNU compiler instead. The preferred comiler is from Zephyr SDK
+if(CONFIG_ISA_ARCV3)
+  set(ARCMWDT_Z_HELPER_TARGET       arc64-zephyr-elf)
+else()
+  set(ARCMWDT_Z_HELPER_TARGET         arc-zephyr-elf)
 endif()
 
-if (NOT CMAKE_DTS_PREPROCESSOR)
-  find_program(CMAKE_DTS_PREPROCESSOR gcc)
-endif()
+set(ARCMWDT_Z_HELPER_PATH ${ZEPHYR_SDK_INSTALL_DIR}/${ARCMWDT_Z_HELPER_TARGET}/bin)
 
+find_program(CMAKE_DTS_PREPROCESSOR ${ARCMWDT_Z_HELPER_TARGET}-gcc PATHS ${ARCMWDT_Z_HELPER_PATH})
 if(NOT CMAKE_DTS_PREPROCESSOR)
-  message(FATAL_ERROR "Zephyr was unable to find any GNU compiler (ARC or host one) for DTS preprocessing")
+  message(FATAL_ERROR "Zephyr was unable to find GNU compiler from Zephyr SDK for DTS \
+  preprocessing. Please check that you have specified ZEPHYR_SDK_INSTALL_DIR correctly. \
+  Current value: '${ZEPHYR_SDK_INSTALL_DIR}'")
 endif()
 
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}ccac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
