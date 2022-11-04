@@ -1,0 +1,49 @@
+# Copyright (c) 2022 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic I3C mux
+
+  Each channel is represented by a separate devicetree child node.
+  The channel node can then be used as a standard i3c bus controller
+  like in the following simplified example:
+
+      /* The imx3112 node must be a child of an i3c controller */
+      mux: imx3112@77 {
+          compatible = "renesas,imx3112-i3c";
+          reg = <0x77 0xabcd 0x02345678>;
+          status = "okay";
+          #address-cells = <1>;
+          #size-cells = <0>;
+
+          mux_i3c@0 {
+              compatible: "renesas,imx3112-channel"
+              reg = <0>;
+              #address-cells = <3>;
+              #size-cells = <0>;
+              lps22hh0: lps22hh@10 {
+                      compatible = "st,lps22hh";
+                      reg = <0x10 0xabcd 0x12345678>;
+              };
+          };
+
+          mux_i3c@1 {
+            compatible: "renesas,imx3112-channel"
+              reg = <1>;
+              #address-cells = <3>;
+              #size-cells = <0>;
+              lps22hh1: lps22hh@10 {
+                      compatible = "st,lps22hh";
+                      reg = <0x10 0xabcd 0x12345678>;
+              };
+          };
+      };
+
+on-bus: i3c
+
+include: [i3c-device.yaml]
+
+child-binding:
+  description: Generic switch channel node
+  include: [i3c-controller.yaml]
+  on-bus: i3c

@@ -35,3 +35,8 @@ zephyr_library_sources_ifdef(
   CONFIG_I3C_TEST
   i3c_test.c
 )
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3C_RENESAS_IMX3112
+  mux/i3c_renesas_imx3112.c
+)
