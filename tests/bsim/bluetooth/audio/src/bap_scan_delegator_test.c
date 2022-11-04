@@ -591,8 +591,7 @@ static int sync_broadcast(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id,
-						       (uint32_t []){ BIT(1) },
-						       BT_BAP_BIG_ENC_STATE_NO_ENC);
+						       (uint32_t []){ BIT(1) });
 	if (err) {
 		return err;
 	}
