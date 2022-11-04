@@ -226,6 +226,7 @@ struct dma_status {
 	uint32_t free;
 	uint32_t write_position;
 	uint32_t read_position;
+	uint64_t total_copied;
 };
 
 /**
