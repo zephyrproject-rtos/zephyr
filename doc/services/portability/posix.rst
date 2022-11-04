@@ -1,3 +1,5 @@
+.. _posix_support:
+
 POSIX Support
 #############
 
