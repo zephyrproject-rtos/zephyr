@@ -1756,6 +1756,40 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
  */
 int bt_bap_scan_delegator_rem_src(uint8_t src_id);
 
+enum bt_bap_scan_delegator_iter {
+	BT_BAP_SCAN_DELEGATOR_ITER_STOP = 0,
+	BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE,
+};
+
+/** Callback function for Scan Delegator receive state search functions
+ *
+ * @param recv_state The receive state.
+ * @param user_data  User data.
+ *
+ * @return @ref BT_BAP_SCAN_DELEGATOR_ITER_STOP to stop iterating or
+ *         @ref BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE to continue.
+ */
+typedef enum bt_bap_scan_delegator_iter (*bt_bap_scan_delegator_state_func_t)(
+	const struct bt_bap_scan_delegator_recv_state *recv_state, void *user_data);
+
+/** @brief Iterate through all existing receive states
+ *
+ * @param func      The callback function
+ * @param user_data User specified data that sent to the callback function
+ */
+void bt_bap_scan_delegator_foreach_state(bt_bap_scan_delegator_state_func_t func,
+					 void *user_data);
+
+/** @brief Find and return a receive state based on a compare function
+ *
+ * @param func      The compare callback function
+ * @param user_data User specified data that sent to the callback function
+ *
+ * @return The first receive state where the @p func returned true, or NULL
+ */
+const struct bt_bap_scan_delegator_recv_state *bt_bap_scan_delegator_find_state(
+	bt_bap_scan_delegator_state_func_t func, void *user_data);
+
 /******************************** CLIENT API ********************************/
 
 /**

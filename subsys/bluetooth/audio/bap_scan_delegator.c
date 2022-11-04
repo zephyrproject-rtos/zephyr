@@ -1338,3 +1338,65 @@ int bt_bap_scan_delegator_rem_src(uint8_t src_id)
 		return -EINVAL;
 	}
 }
+
+void bt_bap_scan_delegator_foreach_state(bt_bap_scan_delegator_state_func_t func, void *user_data)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+		if (scan_delegator.recv_states[i].active) {
+			enum bt_bap_scan_delegator_iter iter;
+
+			iter = func(&scan_delegator.recv_states[i].state, user_data);
+			if (iter == BT_BAP_SCAN_DELEGATOR_ITER_STOP) {
+				return;
+			}
+		}
+	}
+}
+
+struct scan_delegator_state_find_state_param {
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
+	bt_bap_scan_delegator_state_func_t func;
+	void *user_data;
+};
+
+static enum bt_bap_scan_delegator_iter
+scan_delegator_state_find_state_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
+				   void *user_data)
+{
+	struct scan_delegator_state_find_state_param *param = user_data;
+	bool found;
+
+	found = param->func(recv_state, param->user_data);
+	if (found) {
+		param->recv_state = recv_state;
+
+		return BT_BAP_SCAN_DELEGATOR_ITER_STOP;
+	}
+
+	return BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE;
+}
+
+const struct bt_bap_scan_delegator_recv_state *
+bt_bap_scan_delegator_find_state(bt_bap_scan_delegator_state_func_t func, void *user_data)
+{
+	struct scan_delegator_state_find_state_param param = {
+		.recv_state = NULL,
+		.func = func,
+		.user_data = user_data,
+	};
+
+	bt_bap_scan_delegator_foreach_state(scan_delegator_state_find_state_cb, &param);
+
+	return param.recv_state;
+}
+
+const struct bt_bap_scan_delegator_recv_state *bt_bap_scan_delegator_lookup_src_id(uint8_t src_id)
+{
+	const struct bass_recv_state_internal *internal_state = bass_lookup_src_id(src_id);
+
+	if (internal_state != NULL) {
+		return &internal_state->state;
+	}
+
+	return NULL;
+}
