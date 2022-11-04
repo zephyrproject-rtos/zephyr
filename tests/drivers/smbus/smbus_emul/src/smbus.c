@@ -294,11 +294,11 @@ ZTEST(test_smbus_emul, test_alert)
 	zassert_not_null(dev, "Device not found");
 
 	/* Try to remove not existing callback */
-	ret = smbus_manage_smbalert_cb(dev, &smbalert_callback, false);
+	ret = smbus_smbalert_remove_cb(dev, &smbalert_callback);
 	zassert_equal(ret, -ENOENT, "Callback remove failed");
 
 	/* Set callback */
-	ret = smbus_manage_smbalert_cb(dev, &smbalert_callback, true);
+	ret = smbus_smbalert_set_cb(dev, &smbalert_callback);
 	zassert_ok(ret, "Callback set failed");
 
 	/* Emulate SMBus alert from peripheral device */
@@ -338,11 +338,11 @@ ZTEST(test_smbus_emul, test_host_notify)
 	zassert_not_null(dev, "Device not found");
 
 	/* Try to remove not existing callback */
-	ret = smbus_manage_host_notify_cb(dev, &notify_callback, false);
+	ret = smbus_host_notify_remove_cb(dev, &notify_callback);
 	zassert_equal(ret, -ENOENT, "Callback remove failed");
 
 	/* Set callback */
-	ret = smbus_manage_host_notify_cb(dev, &notify_callback, true);
+	ret = smbus_host_notify_set_cb(dev, &notify_callback);
 	zassert_ok(ret, "Callback set failed");
 
 	/* Emulate SMBus alert from peripheral device */

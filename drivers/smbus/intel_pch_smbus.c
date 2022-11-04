@@ -148,26 +148,44 @@ static void smbalert_work(struct k_work *work)
 	} while (true);
 }
 
-static int pch_smbus_manage_smbalert_cb(const struct device *dev,
-					struct smbus_callback *cb,
-					bool set)
+static int pch_smbus_smbalert_set_sb(const struct device *dev,
+				     struct smbus_callback *cb)
 {
 	struct pch_data *data = dev->data;
 
-	LOG_DBG("dev %p cb %p set %d", dev, cb, set);
+	LOG_DBG("dev %p cb %p", dev, cb);
 
-	return smbus_manage_smbus_callback(&data->smbalert_cbs, cb, set);
+	return smbus_callback_set(&data->smbalert_cbs, cb);
 }
 
-static int pch_smbus_manage_host_notify_cb(const struct device *dev,
-					   struct smbus_callback *cb,
-					   bool set)
+static int pch_smbus_smbalert_remove_sb(const struct device *dev,
+					struct smbus_callback *cb)
 {
 	struct pch_data *data = dev->data;
 
-	LOG_DBG("dev %p cb %p set %d", dev, cb, set);
+	LOG_DBG("dev %p cb %p", dev, cb);
 
-	return smbus_manage_smbus_callback(&data->host_notify_cbs, cb, set);
+	return smbus_callback_remove(&data->smbalert_cbs, cb);
+}
+
+static int pch_smbus_host_notify_set_cb(const struct device *dev,
+					struct smbus_callback *cb)
+{
+	struct pch_data *data = dev->data;
+
+	LOG_DBG("dev %p cb %p", dev, cb);
+
+	return smbus_callback_set(&data->host_notify_cbs, cb);
+}
+
+static int pch_smbus_host_notify_remove_cb(const struct device *dev,
+					   struct smbus_callback *cb)
+{
+	struct pch_data *data = dev->data;
+
+	LOG_DBG("dev %p cb %p", dev, cb);
+
+	return smbus_callback_remove(&data->host_notify_cbs, cb);
 }
 
 static int pch_configure(const struct device *dev, uint32_t config)
@@ -902,8 +920,10 @@ static const struct smbus_driver_api funcs = {
 	.smbus_block_write = pch_smbus_block_write,
 	.smbus_block_read = pch_smbus_block_read,
 	.smbus_block_pcall = pch_smbus_block_pcall,
-	.smbus_manage_smbalert_cb = pch_smbus_manage_smbalert_cb,
-	.smbus_manage_host_notify_cb = pch_smbus_manage_host_notify_cb,
+	.smbus_smbalert_set_cb = pch_smbus_smbalert_set_sb,
+	.smbus_smbalert_remove_cb = pch_smbus_smbalert_remove_sb,
+	.smbus_host_notify_set_cb = pch_smbus_host_notify_set_cb,
+	.smbus_host_notify_remove_cb = pch_smbus_host_notify_remove_cb,
 };
 
 static void smbus_isr(const struct device *dev)
