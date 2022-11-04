@@ -10,7 +10,7 @@ tests:
       nucleo_f091rc nucleo_f207zg stm32f3_disco nucleo_f429zi nucleo_f746zg
       nucleo_f767zi nucleo_g071rb nucleo_g431rb nucleo_g474re nucleo_h743zi
       nucleo_l073rz nucleo_l152re disco_l475_iot1 stm32l562e_dk nucleo_l552ze_q
-      b_u585i_iot02a nucleo_wl55jc
+      b_u585i_iot02a nucleo_wl55jc esp32 esp32s2_saola
     depends_on: dac
     harness: console
     harness_config:
