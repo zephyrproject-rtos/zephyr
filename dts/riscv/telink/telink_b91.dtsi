@@ -222,7 +222,7 @@
 
 		usbd: usbd@80100800 {
 			compatible = "telink,b91-usbd";
-			reg = <80100800 0x40>;
+			reg = <0x80100800 0x40>;
 			interrupts = <19 1>, <20 1>, <21 1>, <22 1>, <23 1>, <36 1>, <47 1>;
 			interrupt-parent = <&plic0>;
 			num-bidir-endpoints = <1>;
