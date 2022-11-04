@@ -206,9 +206,9 @@ static int flash_sam0_commit(const struct device *dev)
 	int page;
 	off_t offset = ctx->offset;
 
-	ctx->offset = 0;
+	ctx->offset = -1;
 
-	if (offset == 0) {
+	if (offset == -1) {
 		return 0;
 	}
 
@@ -472,7 +472,11 @@ static const struct flash_driver_api flash_sam0_api = {
 #endif
 };
 
-static struct flash_sam0_data flash_sam0_data_0;
+static struct flash_sam0_data flash_sam0_data_0 = {
+#if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
+	.offset = -1,
+#endif
+};
 
 DEVICE_DT_INST_DEFINE(0, flash_sam0_init, NULL,
 		    &flash_sam0_data_0, NULL, POST_KERNEL,

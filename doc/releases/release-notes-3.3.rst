@@ -193,6 +193,7 @@ Drivers and Sensors
 * Flash
 
   * NRF: Added CONFIG_SOC_FLASH_NRF_TIMEOUT_MULTIPLIER to allow tweaking the timeout of flash operations.
+  * SAM0: Fixes flash to write date at first block.
 
 * GPIO
 
