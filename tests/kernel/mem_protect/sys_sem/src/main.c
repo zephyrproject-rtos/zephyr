@@ -570,6 +570,7 @@ ZTEST_USER(sys_sem_1cpu, test_sem_multiple_threads_wait)
 
 void *sys_sem_setup(void)
 {
+#ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
 			      &stack_1, &stack_2, &stack_3,
 			      &sem_tid, &sem_tid_1, &sem_tid_2);
@@ -578,6 +579,7 @@ void *sys_sem_setup(void)
 		k_thread_access_grant(k_current_get(),
 			&multiple_tid[i], &multiple_stack[i]);
 	}
+#endif
 
 	return NULL;
 }
