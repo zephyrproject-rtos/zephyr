@@ -1384,7 +1384,6 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 			  uint8_t cig_id,
 			  uint8_t cis_id)
 {
-	struct bt_audio_iso *iso;
 	struct bt_audio_ep *ep;
 
 	BT_DBG("stream %p ep %p qos %p", stream, stream->ep, qos);
@@ -1425,21 +1424,30 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 		}
 	}
 
-	iso = audio_iso_get_or_new(ascs, cig_id, cis_id);
-	if (iso == NULL) {
-		BT_ERR("Could not allocate audio_iso");
-		return -ENOMEM;
+	/* QoS->QoS transition. Unbind ISO if CIG/CIS changed. */
+	if (ep->iso != NULL && (ep->cig_id != cig_id || ep->cis_id != cis_id)) {
+		bt_audio_iso_unbind_ep(ep->iso, ep);
 	}
 
-	if (bt_audio_iso_get_ep(iso, ep->dir) != NULL) {
-		BT_ERR("iso %p already in use in dir %u",
-		       &iso->chan, ep->dir);
+	if (ep->iso == NULL) {
+		struct bt_audio_iso *iso;
+
+		iso = audio_iso_get_or_new(ascs, cig_id, cis_id);
+		if (iso == NULL) {
+			BT_ERR("Could not allocate audio_iso");
+			return -ENOMEM;
+		}
+
+		if (bt_audio_iso_get_ep(iso, ep->dir) != NULL) {
+			BT_ERR("iso %p already in use in dir %u",
+			       &iso->chan, ep->dir);
+			bt_audio_iso_unref(iso);
+			return -EALREADY;
+		}
+
+		bt_audio_iso_bind_ep(iso, ep);
 		bt_audio_iso_unref(iso);
-		return -EALREADY;
 	}
-
-	bt_audio_iso_bind_ep(iso, ep);
-	bt_audio_iso_unref(iso);
 
 	stream->qos = qos;
 
