@@ -23,5 +23,5 @@ jobs:
           checkout-path: 'zephyrproject/zephyr'
           label-prefix: 'manifest-'
           verbosity-level: '1'
-          labels: 'manifest, west'
+          labels: 'manifest'
           dnm-labels: 'DNM'
