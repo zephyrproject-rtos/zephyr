@@ -108,3 +108,9 @@ properties:
         - 8  # 1667Hz
         - 9  # 3333Hz
         - 10 # 6667Hz
+
+    drdy-pulsed:
+      type: boolean
+      description: |
+        Selects the pulsed mode for data-ready interrupt when enabled,
+        and the latched mode when disabled.
