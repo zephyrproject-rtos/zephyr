@@ -354,6 +354,16 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 		};
+
+		dac: dac@3ff48800 {
+			compatible = "espressif,esp32-dac";
+			reg = <0x3ff48800 0x100>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_SARADC_MODULE>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 
 };

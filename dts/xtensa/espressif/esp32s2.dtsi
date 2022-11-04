@@ -254,6 +254,16 @@
 			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			status = "disabled";
 		};
+
+		dac: dac@3f408800 {
+			compatible = "espressif,esp32-dac";
+			reg = <0x3f408800 0x100>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_PERIPH_SARADC_MODULE>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 
 };
