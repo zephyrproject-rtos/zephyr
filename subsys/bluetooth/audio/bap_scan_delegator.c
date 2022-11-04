@@ -1225,7 +1225,7 @@ static bool valid_bt_bap_scan_delegator_mod_src_param(
 {
 	uint32_t aggregated_bis_syncs = 0U;
 
-	if (param->broadcast_id > BT_BAP_BROADCAST_ID_MAX) {
+	if (param->broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
 		LOG_DBG("Invalid broadcast_id: %u", param->broadcast_id);
 
 		return false;
