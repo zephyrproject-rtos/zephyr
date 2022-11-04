@@ -933,6 +933,9 @@ static void ase_process(struct k_work *work)
 	if (ep_state == BT_AUDIO_EP_STATE_RELEASING) {
 		if (ep->iso == NULL ||
 		    ep->iso->chan.state == BT_ISO_STATE_DISCONNECTED) {
+			if (ep->iso != NULL) {
+				bt_audio_iso_unbind_ep(ep->iso, ep);
+			}
 			bt_audio_stream_detach(stream);
 			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
 		} else {
