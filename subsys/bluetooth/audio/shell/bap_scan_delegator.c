@@ -471,7 +471,7 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 
-	if (broadcast_id > BT_BAP_BROADCAST_ID_MAX) {
+	if (broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
 		shell_error(sh, "Invalid broadcast_id %lu", broadcast_id);
 
 		return -EINVAL;
@@ -581,7 +581,7 @@ static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 
-	if (broadcast_id > BT_BAP_BROADCAST_ID_MAX) {
+	if (broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
 		shell_error(sh, "Invalid broadcast_id %lu", broadcast_id);
 
 		return -EINVAL;

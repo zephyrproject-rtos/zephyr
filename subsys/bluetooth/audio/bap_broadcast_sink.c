@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/audio/bap.h>
 
 #include "../host/conn_internal.h"
 #include "../host/iso_internal.h"
@@ -54,9 +55,115 @@ static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
 
 static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink);
 
-static void broadcast_sink_clear_big(struct bt_bap_broadcast_sink *sink)
+static enum bt_bap_scan_delegator_iter
+find_recv_state_by_sink_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
+			   void *user_data)
+{
+	const struct bt_bap_broadcast_sink *sink = user_data;
+
+	if (sink->bass_src_id_valid && sink->bass_src_id == recv_state->src_id) {
+		return BT_BAP_SCAN_DELEGATOR_ITER_STOP;
+	}
+
+	return BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE;
+}
+
+static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sink)
+{
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
+	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
+	const struct bt_bap_base *base;
+	int err;
+
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	if (recv_state == NULL) {
+		LOG_WRN("Failed to find receive state for sink %p", sink);
+
+		return;
+	}
+
+	base = &sink->base;
+
+	mod_src_param.num_subgroups = base->subgroup_count;
+	for (uint8_t i = 0U; i < base->subgroup_count; i++) {
+		struct bt_bap_scan_delegator_subgroup *subgroup_param = &mod_src_param.subgroups[i];
+		const struct bt_bap_base_subgroup *subgroup = &base->subgroups[i];
+
+		/* Update the BIS sync indexes for the subgroup */
+		for (size_t j = 0U; j < subgroup->bis_count; j++) {
+			const struct bt_bap_base_bis_data *bis_data = &subgroup->bis_data[j];
+
+			subgroup_param->bis_sync |= BIT(bis_data->index);
+		}
+	}
+
+	if (recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ) {
+		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_DEC;
+	} else {
+		mod_src_param.encrypt_state = recv_state->encrypt_state;
+	}
+
+	/* Since the mod_src_param struct is 0-initialized the metadata won't
+	 * be modified by this
+	 */
+
+	/* Copy existing unchanged data */
+	mod_src_param.src_id = recv_state->src_id;
+	mod_src_param.broadcast_id = recv_state->broadcast_id;
+
+	err = bt_bap_scan_delegator_mod_src(&mod_src_param);
+	if (err != 0) {
+		LOG_WRN("Failed to modify Receive State for sink %p: %d", sink, err);
+	}
+}
+
+static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *sink,
+					  uint8_t reason)
+{
+	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
+	int err;
+
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	if (recv_state == NULL) {
+		LOG_WRN("Failed to find receive state for sink %p", sink);
+
+		return;
+	}
+
+	if (recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ &&
+	    reason == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL) {
+		/* Sync failed due to bad broadcast code */
+		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_BAD_CODE;
+	} else {
+		mod_src_param.encrypt_state = recv_state->encrypt_state;
+	}
+
+	/* BIS syncs will be automatically cleared since the mod_src_param
+	 * struct is 0-initialized
+	 *
+	 * Since the metadata_len is also 0, then the metadata won't be
+	 * modified by the operation either.
+	 */
+
+	/* Copy existing unchanged data */
+	mod_src_param.num_subgroups = recv_state->num_subgroups;
+	mod_src_param.src_id = recv_state->src_id;
+	mod_src_param.broadcast_id = recv_state->broadcast_id;
+
+	err = bt_bap_scan_delegator_mod_src(&mod_src_param);
+	if (err != 0) {
+		LOG_WRN("Failed to modify Receive State for sink %p: %d",
+			sink, err);
+	}
+}
+
+static void broadcast_sink_clear_big(struct bt_bap_broadcast_sink *sink,
+				     uint8_t reason)
 {
 	sink->big = NULL;
+
+	update_recv_state_big_cleared(sink, reason);
 }
 
 static struct bt_bap_broadcast_sink *broadcast_sink_lookup_iso_chan(
@@ -158,8 +265,10 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 	const struct bt_bap_stream_ops *ops;
+	struct bt_bap_broadcast_sink *sink;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->rx.ep;
+	bool all_connected;
 
 	if (ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -176,12 +285,32 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 
 	LOG_DBG("stream %p", stream);
 
+	sink = broadcast_sink_lookup_iso_chan(chan);
+	if (sink == NULL) {
+		LOG_ERR("Could not lookup sink by iso %p", chan);
+		return;
+	}
+
 	broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_STREAMING);
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
 	} else {
 		LOG_WRN("No callback for connected set");
+	}
+
+	all_connected = true;
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
+		__ASSERT(stream->ep, "Endpoint is NULL");
+
+		if (stream->ep->status.state != BT_BAP_EP_STATE_STREAMING) {
+			all_connected = false;
+			break;
+		}
+	}
+
+	if (all_connected) {
+		update_recv_state_big_synced(sink);
 	}
 }
 
@@ -193,6 +322,7 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->rx.ep;
 	struct bt_bap_broadcast_sink *sink;
+	bool all_disconnected;
 
 	if (ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -223,12 +353,18 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 		return;
 	}
 
+	all_disconnected = true;
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
+		/* stream->ep is cleared when the steam disconnects */
+		if (stream->ep != NULL) {
+			all_disconnected = false;
+			break;
+		}
+	}
+
 	/* Clear sink->big if not already cleared */
-	if (sink->big) {
-		/* When a BIS disconnects, it means that all BIS disconnected,
-		 * and we can do the clearing on the first
-		 */
-		broadcast_sink_clear_big(sink);
+	if (all_disconnected && sink->big) {
+		broadcast_sink_clear_big(sink, reason);
 	}
 }
 
@@ -276,8 +412,10 @@ static struct bt_bap_broadcast_sink *broadcast_sink_get_by_pa(struct bt_le_per_a
 static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
+	struct bt_bap_scan_delegator_add_src_param add_src_param;
 	struct bt_bap_broadcast_sink_cb *listener;
 	struct bt_bap_broadcast_sink *sink;
+	int err;
 
 	sink = broadcast_sink_syncing_get();
 	if (sink == NULL || sync != sink->pa_sync) {
@@ -289,7 +427,26 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 
 	sink->syncing = false;
 
-	bt_bap_broadcast_sink_scan_stop();
+	err = bt_bap_broadcast_sink_scan_stop();
+	if (err != 0) {
+		LOG_WRN("Failed to stop sink scan: %d", err);
+		/* Even if we cannot stop scanning here, we can still move on */
+	}
+
+	add_src_param.pa_sync = sync;
+	add_src_param.broadcast_id = sink->broadcast_id;
+	/* Will be updated when we receive the BASE */
+	add_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
+	add_src_param.num_subgroups = 0U;
+
+	err = bt_bap_scan_delegator_add_src(&add_src_param);
+	if (err < 0) {
+		LOG_WRN("Failed to add sync as Receive State for sink %p: %d",
+			sink, err);
+	} else {
+		sink->bass_src_id = (uint8_t)err;
+		sink->bass_src_id_valid = true;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->pa_synced != NULL) {
@@ -329,6 +486,73 @@ static void pa_term(struct bt_le_per_adv_sync *sync,
 		if (listener->pa_sync_lost != NULL) {
 			listener->pa_sync_lost(sink);
 		}
+	}
+}
+
+static void update_recv_state_base_copy_meta(const struct bt_bap_base *base,
+					     struct bt_bap_scan_delegator_mod_src_param *param)
+{
+	for (uint8_t i = 0U; i < base->subgroup_count; i++) {
+		struct bt_bap_scan_delegator_subgroup *subgroup_param = &param->subgroups[i];
+		const struct bt_bap_base_subgroup *subgroup = &base->subgroups[i];
+		uint8_t *metadata_param = subgroup_param->metadata;
+		size_t total_len;
+
+		/* Copy metadata into subgroup_param, changing it from an array
+		 * of bt_codec_data to a uint8_t buffer
+		 */
+		total_len = 0U;
+		for (size_t j = 0; j < subgroup->codec.meta_count; j++) {
+			const struct bt_codec_data *meta = &subgroup->codec.meta[j];
+			const struct bt_data *data = &meta->data;
+			const uint8_t len = data->data_len;
+			const uint8_t type = data->type;
+			const size_t ltv_len = sizeof(len) + sizeof(type) + len;
+
+			if (total_len + ltv_len > sizeof(subgroup_param->metadata)) {
+				LOG_WRN("Could not fit entire metadata for subgroup[%u]", i);
+
+				return;
+			}
+
+			metadata_param[total_len++] = len + 1;
+			metadata_param[total_len++] = type;
+			(void)memcpy(&metadata_param[total_len], data->data,
+				     len);
+			total_len += len;
+		}
+
+		subgroup_param->metadata_len = total_len;
+	}
+}
+
+static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink)
+{
+	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
+	const struct bt_bap_base *base;
+	int err;
+
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	if (recv_state == NULL) {
+		LOG_WRN("Failed to find receive state for sink %p", sink);
+
+		return;
+	}
+
+	base = &sink->base;
+
+	mod_src_param.num_subgroups = base->subgroup_count;
+	update_recv_state_base_copy_meta(base, &mod_src_param);
+
+	/* Copy existing unchanged data */
+	mod_src_param.src_id = recv_state->src_id;
+	mod_src_param.encrypt_state = recv_state->encrypt_state;
+	mod_src_param.broadcast_id = recv_state->broadcast_id;
+
+	err = bt_bap_scan_delegator_mod_src(&mod_src_param);
+	if (err != 0) {
+		LOG_WRN("Failed to modify Receive State for sink %p: %d", sink, err);
 	}
 }
 
@@ -600,11 +824,18 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 		}
 	}
 
-	/* We only overwrite the sink->base data once the base has successfully
-	 * been decoded to avoid overwriting it with invalid data
-	 */
-	(void)memcpy(&sink->base, &base, sizeof(base));
 	sink->codec_qos.pd = base.pd;
+	if (memcmp(&sink->base, &base, sizeof(base)) != 0) {
+		/* We only overwrite the sink->base data once the base has
+		 * successfully been decoded to avoid overwriting it with
+		 * invalid data
+		 */
+		(void)memcpy(&sink->base, &base, sizeof(base));
+
+		if (sink->bass_src_id_valid) {
+			update_recv_state_base(sink);
+		}
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->base_recv != NULL) {
@@ -629,6 +860,48 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 	bt_data_parse(buf, pa_decode_base, (void *)sink);
 }
 
+static void update_recv_state_encryption(const struct bt_bap_broadcast_sink *sink)
+{
+	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
+	int err;
+
+	__ASSERT(sink->big == NULL, "Encryption state shall not be updated while synced");
+
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	if (recv_state == NULL) {
+		LOG_WRN("Failed to find receive state for sink %p", sink);
+
+		return;
+	}
+
+	/* Only change the encrypt state, and leave the rest as is */
+	if (sink->big_encrypted) {
+		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_BCODE_REQ;
+	} else {
+		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
+	}
+
+	if (mod_src_param.encrypt_state == recv_state->encrypt_state) {
+		/* No change, abort*/
+		return;
+	}
+
+	/* Copy existing data */
+	/* TODO: Maybe we need more refined functions to set only specific fields? */
+	mod_src_param.src_id = recv_state->src_id;
+	mod_src_param.broadcast_id = recv_state->broadcast_id;
+	mod_src_param.num_subgroups = recv_state->num_subgroups;
+	(void)memcpy(mod_src_param.subgroups,
+		     recv_state->subgroups,
+		     sizeof(recv_state->num_subgroups));
+
+	err = bt_bap_scan_delegator_mod_src(&mod_src_param);
+	if (err != 0) {
+		LOG_WRN("Failed to modify Receive State for sink %p: %d", sink, err);
+	}
+}
+
 static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 			 const struct bt_iso_biginfo *biginfo)
 {
@@ -649,7 +922,13 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 	sink->biginfo_received = true;
 	sink->iso_interval = biginfo->iso_interval;
 	sink->biginfo_num_bis = biginfo->num_bis;
-	sink->big_encrypted = biginfo->encryption;
+	if (sink->big_encrypted != biginfo->encryption) {
+		sink->big_encrypted = biginfo->encryption;
+
+		if (sink->bass_src_id_valid) {
+			update_recv_state_encryption(sink);
+		}
+	}
 
 	sink->codec_qos.framing = biginfo->framing;
 	sink->codec_qos.phy = biginfo->phy;
@@ -902,7 +1181,7 @@ int bt_bap_broadcast_sink_scan_stop(void)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->scan_term != NULL) {
-			listener->scan_term(0);
+			listener->scan_term(err);
 		}
 	}
 
@@ -1004,6 +1283,18 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 
 static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink)
 {
+	if (sink->bass_src_id_valid) {
+		int err;
+
+		err = bt_bap_scan_delegator_rem_src(sink->bass_src_id);
+		if (err != 0) {
+			LOG_WRN("Failed to remove Receive State for sink %p: %d",
+				sink, err);
+		}
+
+		sink->bass_src_id_valid = false;
+	}
+
 	broadcast_sink_cleanup_streams(sink);
 	(void)memset(sink, 0, sizeof(*sink));
 }
@@ -1214,7 +1505,7 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 		return err;
 	}
 
-	broadcast_sink_clear_big(sink);
+	broadcast_sink_clear_big(sink, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	/* Channel states will be updated in the broadcast_sink_iso_disconnected function */
 
 	return 0;
