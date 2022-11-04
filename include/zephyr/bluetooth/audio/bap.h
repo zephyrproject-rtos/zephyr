@@ -250,6 +250,9 @@ struct bt_bap_scan_delegator_add_src_param {
  * This will notify any connected clients about the new source. This allows them
  * to modify and even remove it.
  *
+ * If @kconfig{CONFIG_BT_AUDIO_BROADCAST_SINK} is enabled, any Broadcast Sink
+ * sources are autonomously added.
+ *
  * @param param The parameters for adding the new source
  *
  * @return int  errno on failure, or source ID on success.
@@ -284,6 +287,9 @@ struct bt_bap_scan_delegator_mod_src_param {
  * This will notify any connected clients about the new source. This allows them
  * to modify and even remove it.
  *
+ * If @kconfig{CONFIG_BT_AUDIO_BROADCAST_SINK} is enabled, any Broadcast Sink
+ * sources are autonomously modifed.
+ *
  * @param param The parameters for adding the new source
  *
  * @return int  errno on failure, or source ID on success.
@@ -295,6 +301,9 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
  *
  * This will remove the receive state. If the receive state periodic advertising
  * is synced, bt_bap_scan_delegator_cb.pa_sync_term_req() will be called.
+ *
+ * If @kconfig{CONFIG_BT_AUDIO_BROADCAST_SINK} is enabled, any Broadcast Sink
+ * sources are autonomously removed.
  *
  * @param src_id The source ID to remove
  *
