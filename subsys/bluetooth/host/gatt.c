@@ -2157,6 +2157,16 @@ static int gatt_notify_flush(struct bt_conn *conn)
 	return err;
 }
 
+static void cleanup_notify(struct bt_conn *conn)
+{
+	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
+
+	if (*buf) {
+		net_buf_unref(*buf);
+		*buf = NULL;
+	}
+}
+
 static void gatt_add_nfy_to_buf(struct net_buf *buf,
 				uint16_t handle,
 				struct bt_gatt_notify_params *params)
@@ -6055,6 +6065,11 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 {
 	BT_DBG("conn %p", conn);
 	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
+
+#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
+	/* Clear pending notifications */
+	cleanup_notify(conn);
+#endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
 	gatt_ccc_conn_unqueue(conn);
