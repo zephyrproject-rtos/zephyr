@@ -459,6 +459,7 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 	struct bt_bap_scan_delegator_add_src_param param;
 	unsigned long broadcast_id;
 	struct sync_state *state;
+	unsigned long enc_state;
 	int err;
 
 	err = 0;
@@ -476,14 +477,27 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 
+	enc_state = shell_strtoul(argv[2], 16, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse enc_state from %s", argv[2]);
+
+		return -EINVAL;
+	}
+
+	if (enc_state > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+		shell_error(sh, "Invalid enc_state %lu", enc_state);
+
+		return -EINVAL;
+	}
+
 	/* TODO: Support multiple subgroups */
 	subgroup_param = &param.subgroups[0];
-	if (argc > 2) {
+	if (argc > 3) {
 		unsigned long bis_sync;
 
-		bis_sync = shell_strtoul(argv[2], 16, &err);
+		bis_sync = shell_strtoul(argv[3], 16, &err);
 		if (err != 0) {
-			shell_error(sh, "Failed to parse bis_sync from %s", argv[2]);
+			shell_error(sh, "Failed to parse bis_sync from %s", argv[3]);
 
 			return -EINVAL;
 		}
@@ -497,8 +511,8 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 		subgroup_param->bis_sync = 0U;
 	}
 
-	if (argc > 3) {
-		subgroup_param->metadata_len = hex2bin(argv[3], strlen(argv[3]),
+	if (argc > 4) {
+		subgroup_param->metadata_len = hex2bin(argv[4], strlen(argv[4]),
 						       subgroup_param->metadata,
 						       sizeof(subgroup_param->metadata));
 
@@ -519,7 +533,7 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 	}
 
 	param.pa_sync = pa_sync;
-	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
+	param.encrypt_state = (enum bt_bap_big_enc_state)enc_state;
 	param.broadcast_id = broadcast_id;
 	param.num_subgroups = 1U;
 
@@ -541,6 +555,7 @@ static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
 	struct bt_bap_scan_delegator_subgroup *subgroup_param;
 	struct bt_bap_scan_delegator_mod_src_param param;
 	unsigned long broadcast_id;
+	unsigned long enc_state;
 	unsigned long src_id;
 	int err;
 
@@ -572,14 +587,27 @@ static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 
+	enc_state = shell_strtoul(argv[3], 16, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse enc_state from %s", argv[3]);
+
+		return -EINVAL;
+	}
+
+	if (enc_state > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+		shell_error(sh, "Invalid enc_state %lu", enc_state);
+
+		return -EINVAL;
+	}
+
 	/* TODO: Support multiple subgroups */
 	subgroup_param = &param.subgroups[0];
-	if (argc > 3) {
+	if (argc > 4) {
 		unsigned long bis_sync;
 
-		bis_sync = shell_strtoul(argv[3], 16, &err);
+		bis_sync = shell_strtoul(argv[4], 16, &err);
 		if (err != 0) {
-			shell_error(sh, "Failed to parse bis_sync from %s", argv[3]);
+			shell_error(sh, "Failed to parse bis_sync from %s", argv[4]);
 
 			return -EINVAL;
 		}
@@ -593,8 +621,8 @@ static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
 		subgroup_param->bis_sync = 0U;
 	}
 
-	if (argc > 3) {
-		subgroup_param->metadata_len = hex2bin(argv[4], strlen(argv[4]),
+	if (argc > 5) {
+		subgroup_param->metadata_len = hex2bin(argv[5], strlen(argv[5]),
 						       subgroup_param->metadata,
 						       sizeof(subgroup_param->metadata));
 
@@ -609,7 +637,7 @@ static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
 
 
 	param.src_id = (uint8_t)src_id;
-	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
+	param.encrypt_state = (enum bt_bap_big_enc_state)enc_state;
 	param.broadcast_id = broadcast_id;
 	param.num_subgroups = 1U;
 
@@ -661,7 +689,6 @@ static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc
 	uint32_t bis_syncs[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
 	unsigned long pa_sync_state;
 	unsigned long bis_synced;
-	unsigned long enc_state;
 	unsigned long src_id;
 	int result = 0;
 
@@ -708,19 +735,7 @@ static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc
 		bis_syncs[i] = bis_synced;
 	}
 
-	enc_state = shell_strtoul(argv[4], 0, &result);
-	if (result != 0) {
-		shell_error(sh, "Could not parse enc_state: %d", result);
-
-		return -ENOEXEC;
-	}
-
-	if (enc_state > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
-		shell_error(sh, "Invalid enc_state %lu", enc_state);
-		return -ENOEXEC;
-	}
-
-	result = bt_bap_scan_delegator_set_bis_sync_state(src_id, bis_syncs, enc_state);
+	result = bt_bap_scan_delegator_set_bis_sync_state(src_id, bis_syncs);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -752,17 +767,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_scan_delegator_cmds,
 		      "Sync to PA <src_id>",
 		      cmd_bap_scan_delegator_sync_pa, 2, 0),
 	SHELL_CMD_ARG(add_src, NULL,
-		      "Add a PA as source <broadcast_id> [bis_sync [metadata]]",
-		      cmd_bap_scan_delegator_add_src, 2, 2),
+		      "Add a PA as source <broadcast_id> <enc_state> [bis_sync [metadata]]",
+		      cmd_bap_scan_delegator_add_src, 3, 2),
 	SHELL_CMD_ARG(mod_src, NULL,
-		      "Modify source <src_id> <broadcast_id> [bis_sync [metadata]]",
-		      cmd_bap_scan_delegator_mod_src, 3, 2),
+		      "Modify source <src_id> <broadcast_id> <enc_state> [bis_sync [metadata]]",
+		      cmd_bap_scan_delegator_mod_src, 4, 2),
 	SHELL_CMD_ARG(rem_src, NULL,
 		      "Remove source <src_id>",
 		      cmd_bap_scan_delegator_rem_src, 2, 0),
 	SHELL_CMD_ARG(synced, NULL,
-		      "Set server scan state <src_id> <bis_syncs> <enc_state>",
-		      cmd_bap_scan_delegator_bis_synced, 4, 0),
+		      "Set server scan state <src_id> <bis_syncs>",
+		      cmd_bap_scan_delegator_bis_synced, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
