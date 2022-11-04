@@ -66,6 +66,13 @@ enum dma_channel_filter {
 	DMA_CHANNEL_PERIODIC, /* can be triggered by periodic sources */
 };
 
+/* DMA attributes */
+enum dma_attribute_type {
+	DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT,
+	DMA_ATTR_BUFFER_SIZE_ALIGNMENT,
+	DMA_ATTR_COPY_ALIGNMENT,
+};
+
 /**
  * @struct dma_block_config
  * @brief DMA block configuration structure.
@@ -276,6 +283,8 @@ typedef int (*dma_api_resume)(const struct device *dev, uint32_t channel);
 typedef int (*dma_api_get_status)(const struct device *dev, uint32_t channel,
 				  struct dma_status *status);
 
+typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, uint32_t *value);
+
 /**
  * @typedef dma_chan_filter
  * @brief channel filter function call
@@ -300,6 +309,7 @@ __subsystem struct dma_driver_api {
 	dma_api_suspend suspend;
 	dma_api_resume resume;
 	dma_api_get_status get_status;
+	dma_api_get_attribute get_attribute;
 	dma_api_chan_filter chan_filter;
 };
 /**
@@ -578,6 +588,32 @@ static inline int dma_get_status(const struct device *dev, uint32_t channel,
 
 	if (api->get_status) {
 		return api->get_status(dev, channel, stat);
+	}
+
+	return -ENOSYS;
+}
+
+/**
+ * @brief get attribute of a dma controller
+ *
+ * This function allows to get a device specific static or runtime attribute like required address
+ * and size alignment of a buffer.
+ * Implementations must check the validity of the type passed in and
+ * return -EINVAL if it is invalid or -ENOSYS if not supported.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param type    Numeric identification of the attribute
+ * @param value   A non-NULL pointer to the variable where the read value is to be placed
+ *
+ * @retval non-negative if successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
+{
+	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+
+	if (api->get_attribute) {
+		return api->get_attribute(dev, type, value);
 	}
 
 	return -ENOSYS;
