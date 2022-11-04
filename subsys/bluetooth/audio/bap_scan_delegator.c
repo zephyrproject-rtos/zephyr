@@ -1047,8 +1047,7 @@ int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,
 
 int bt_bap_scan_delegator_set_bis_sync_state(
 	uint8_t src_id,
-	uint32_t bis_synced[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS],
-	enum bt_bap_big_enc_state enc_state)
+	uint32_t bis_synced[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS])
 {
 	struct bass_recv_state_internal *internal_state = bass_lookup_src_id(src_id);
 	bool notify = false;
@@ -1095,11 +1094,6 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 
 	LOG_DBG("Index %u: Source ID 0x%02x synced",
 		internal_state->index, src_id);
-
-	if (internal_state->state.encrypt_state != enc_state) {
-		internal_state->state.encrypt_state = enc_state;
-		notify = true;
-	}
 
 	if (internal_state->state.encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
 		(void)memcpy(internal_state->state.bad_code,
