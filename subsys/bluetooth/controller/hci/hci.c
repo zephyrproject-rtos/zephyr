@@ -4215,13 +4215,13 @@ static void le_cis_established(struct pdu_data *pdu_data,
 	sys_put_le24(cig->p_latency, sep->p_latency);
 	sep->c_phy = lll_cis_c->phy;
 	sep->p_phy = lll_cis_p->phy;
-	sep->nse = lll_cis->num_subevents;
-	sep->c_bn = lll_cis_c->burst_number;
-	sep->p_bn = lll_cis_p->burst_number;
-	sep->c_ft = lll_cis_c->flush_timeout;
-	sep->p_ft = lll_cis_p->flush_timeout;
-	sep->c_max_pdu = sys_cpu_to_le16(lll_cis_c->max_octets);
-	sep->p_max_pdu = sys_cpu_to_le16(lll_cis_p->max_octets);
+	sep->nse = lll_cis->nse;
+	sep->c_bn = lll_cis_c->bn;
+	sep->p_bn = lll_cis_p->bn;
+	sep->c_ft = lll_cis_c->ft;
+	sep->p_ft = lll_cis_p->ft;
+	sep->c_max_pdu = sys_cpu_to_le16(lll_cis_c->max_pdu);
+	sep->p_max_pdu = sys_cpu_to_le16(lll_cis_p->max_pdu);
 	sep->interval = sys_cpu_to_le16(cig->iso_interval);
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
@@ -5734,7 +5734,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		 * reference, FT and event_count.
 		 */
 		sdu_frag_tx.target_event = cis->lll.event_count +
-			(cis->lll.tx.flush_timeout > 1 ? 0 : 1);
+					   ((cis->lll.tx.ft > 1U) ? 0U : 1U);
 
 		sdu_frag_tx.grp_ref_point = cig->cig_ref_point;
 

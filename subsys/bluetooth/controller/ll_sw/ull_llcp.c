@@ -892,18 +892,18 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 	ctx->data.cis_create.p_phy = cis->lll.rx.phy;
 	ctx->data.cis_create.c_sdu_interval = cig->c_sdu_interval;
 	ctx->data.cis_create.p_sdu_interval = cig->p_sdu_interval;
-	ctx->data.cis_create.c_max_pdu = cis->lll.tx.max_octets;
-	ctx->data.cis_create.p_max_pdu = cis->lll.rx.max_octets;
+	ctx->data.cis_create.c_max_pdu = cis->lll.tx.max_pdu;
+	ctx->data.cis_create.p_max_pdu = cis->lll.rx.max_pdu;
 	ctx->data.cis_create.c_max_sdu = cis->c_max_sdu;
 	ctx->data.cis_create.p_max_sdu = cis->p_max_sdu;
 	ctx->data.cis_create.iso_interval = cig->iso_interval;
 	ctx->data.cis_create.framed = cis->framed;
-	ctx->data.cis_create.nse = cis->lll.num_subevents;
+	ctx->data.cis_create.nse = cis->lll.nse;
 	ctx->data.cis_create.sub_interval = cis->lll.sub_interval;
-	ctx->data.cis_create.c_bn = cis->lll.tx.burst_number;
-	ctx->data.cis_create.p_bn = cis->lll.rx.burst_number;
-	ctx->data.cis_create.c_ft = cis->lll.tx.flush_timeout;
-	ctx->data.cis_create.p_ft = cis->lll.rx.flush_timeout;
+	ctx->data.cis_create.c_bn = cis->lll.tx.bn;
+	ctx->data.cis_create.p_bn = cis->lll.rx.bn;
+	ctx->data.cis_create.c_ft = cis->lll.tx.ft;
+	ctx->data.cis_create.p_ft = cis->lll.rx.ft;
 
 	ctx->data.cis_create.conn_event_count =
 		ull_central_iso_cis_offset_get(cis->lll.handle,
