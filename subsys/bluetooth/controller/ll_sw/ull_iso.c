@@ -336,7 +336,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	 * transparent air mode, the Controller shall return the error code
 	 * Invalid HCI Command Parameters (0x12).
 	 */
-	if (codec_config_len && vs_codec_id == BT_HCI_CODING_FORMAT_TRANSPARENT) {
+	if (codec_config_len &&
+	    (vs_codec_id == BT_HCI_CODING_FORMAT_TRANSPARENT)) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
@@ -382,9 +383,9 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 	if (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
 		/* Create sink for RX data path */
-		burst_number  = cis->lll.rx.burst_number;
-		flush_timeout = cis->lll.rx.flush_timeout;
-		max_octets    = cis->lll.rx.max_octets;
+		burst_number  = cis->lll.rx.bn;
+		flush_timeout = cis->lll.rx.ft;
+		max_octets    = cis->lll.rx.max_pdu;
 
 		if (role) {
 			/* peripheral */
@@ -397,13 +398,18 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		cis->hdr.datapath_out = dp;
 
 		if (path_id == BT_HCI_DATAPATH_ID_HCI) {
-			/* Not vendor specific, thus alloc and emit functions known */
+			/* Not vendor specific, thus alloc and emit functions
+			 * known
+			 */
 			err = isoal_sink_create(handle, role, framed,
 						burst_number, flush_timeout,
 						sdu_interval, iso_interval,
-						stream_sync_delay, group_sync_delay,
-						sink_sdu_alloc_hci, sink_sdu_emit_hci,
-						sink_sdu_write_hci, &sink_handle);
+						stream_sync_delay,
+						group_sync_delay,
+						sink_sdu_alloc_hci,
+						sink_sdu_emit_hci,
+						sink_sdu_write_hci,
+						&sink_handle);
 		} else {
 			/* Set up vendor specific data path */
 			isoal_sink_sdu_alloc_cb sdu_alloc;
@@ -411,13 +417,17 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			isoal_sink_sdu_write_cb sdu_write;
 
 			/* Request vendor sink callbacks for path */
-			if (ll_data_path_sink_create(handle, dp, &sdu_alloc, &sdu_emit,
-						     &sdu_write)) {
+			if (ll_data_path_sink_create(handle, dp, &sdu_alloc,
+						     &sdu_emit, &sdu_write)) {
 				err = isoal_sink_create(handle, role, framed,
-							burst_number, flush_timeout,
-							sdu_interval, iso_interval,
-							stream_sync_delay, group_sync_delay,
-							sdu_alloc, sdu_emit, sdu_write,
+							burst_number,
+							flush_timeout,
+							sdu_interval,
+							iso_interval,
+							stream_sync_delay,
+							group_sync_delay,
+							sdu_alloc, sdu_emit,
+							sdu_write,
 							&sink_handle);
 			} else {
 				return BT_HCI_ERR_CMD_DISALLOWED;
@@ -432,9 +442,9 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		}
 	} else  {
 		/* path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR */
-		burst_number  = cis->lll.tx.burst_number;
-		flush_timeout = cis->lll.tx.flush_timeout;
-		max_octets    = cis->lll.tx.max_octets;
+		burst_number  = cis->lll.tx.bn;
+		flush_timeout = cis->lll.tx.ft;
+		max_octets    = cis->lll.tx.max_pdu;
 
 		if (role) {
 			/* peripheral */
@@ -463,13 +473,14 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		if (path_is_vendor_specific(path_id)) {
 			if (!ll_data_path_source_create(handle, dp,
 							&pdu_alloc, &pdu_write,
-							&pdu_emit, &pdu_release)) {
+							&pdu_emit,
+							&pdu_release)) {
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
 		}
 
-		err = isoal_source_create(handle, role, framed,
-					  burst_number, flush_timeout, max_octets,
+		err = isoal_source_create(handle, role, framed, burst_number,
+					  flush_timeout, max_octets,
 					  sdu_interval, iso_interval,
 					  stream_sync_delay, group_sync_delay,
 					  pdu_alloc, pdu_write, pdu_emit,
@@ -512,11 +523,13 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		isoal_sink_sdu_write_cb sdu_write;
 
 		/* Request vendor sink callbacks for path */
-		if (ll_data_path_sink_create(handle, dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
+		if (ll_data_path_sink_create(handle, dp, &sdu_alloc, &sdu_emit,
+					     &sdu_write)) {
 			err = isoal_sink_create(handle, role, framed,
 						burst_number, flush_timeout,
 						sdu_interval, iso_interval,
-						stream_sync_delay, group_sync_delay,
+						stream_sync_delay,
+						group_sync_delay,
 						sdu_alloc, sdu_emit, sdu_write,
 						&sink_handle);
 		} else {
@@ -555,9 +568,9 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		hdr = &cis->hdr;
 	}
 
-	/* If the Host issues this command with a Connection_Handle that does not exist
-	 * or is not for a CIS or a BIS, the Controller shall return the error code Unknown
-	 * Connection Identifier (0x02).
+	/* If the Host issues this command with a Connection_Handle that does
+	 * not exist or is not for a CIS or a BIS, the Controller shall return
+	 * the error code Unknown Connection Identifier (0x02).
 	 */
 	if (!cis) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
@@ -785,7 +798,7 @@ uint8_t ll_iso_receive_test(uint16_t handle, uint8_t payload_type)
 			return BT_HCI_ERR_UNKNOWN_CONN_ID;
 		}
 
-		if (cis->lll.rx.burst_number == 0) {
+		if (cis->lll.rx.bn == 0) {
 			/* CIS is not configured for RX */
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
@@ -820,15 +833,16 @@ uint8_t ll_iso_receive_test(uint16_t handle, uint8_t payload_type)
 		}
 
 		err = isoal_sink_create(handle, cig->lll.role, cis->framed,
-					cis->lll.rx.burst_number,
-					cis->lll.rx.flush_timeout,
+					cis->lll.rx.bn,	cis->lll.rx.ft,
 					sdu_interval, cig->iso_interval,
 					cis->sync_delay, cig->sync_delay,
 					ll_iso_test_sdu_alloc,
 					ll_iso_test_sdu_emit,
 					sink_sdu_write_hci, &sink_handle);
 		if (err) {
-			/* Error creating test source - cleanup source and datapath */
+			/* Error creating test source - cleanup source and
+			 * datapath
+			 */
 			isoal_sink_destroy(sink_handle);
 			ull_iso_datapath_release(dp);
 			cis->hdr.datapath_out = NULL;
@@ -996,7 +1010,7 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 		sdu.dbuf = tx_buffer;
 		sdu.grp_ref_point = cig->cig_ref_point;
 		sdu.target_event = cis->lll.event_count +
-					(cis->lll.tx.flush_timeout > 1U ? 0U : 1U);
+					(cis->lll.tx.ft > 1U ? 0U : 1U);
 		sdu.iso_sdu_length = remaining_tx;
 
 		/* Send all SDU fragments */
@@ -1024,7 +1038,7 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 
 					sdu_counter = MAX(pdu_production->payload_number,
 							  (sdu.target_event *
-							   cis->lll.tx.burst_number));
+							   cis->lll.tx.bn));
 				}
 
 				sys_put_le32(sdu_counter, tx_buffer);
@@ -1073,7 +1087,7 @@ uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
 			return BT_HCI_ERR_UNKNOWN_CONN_ID;
 		}
 
-		if (cis->lll.tx.burst_number == 0U) {
+		if (cis->lll.tx.bn == 0U) {
 			/* CIS is not configured for TX */
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
@@ -1108,15 +1122,12 @@ uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
 		}
 
 		/* Setup the test source */
-		err = isoal_source_create(handle, cig->lll.role,
-					  cis->framed,
-					  cis->lll.rx.burst_number,
-					  cis->lll.rx.flush_timeout,
-					  cis->lll.rx.max_octets, sdu_interval,
-					  cig->iso_interval,
-					  cis->sync_delay, cig->sync_delay,
-					  ll_iso_pdu_alloc, ll_iso_pdu_write,
-					  ll_iso_pdu_emit,
+		err = isoal_source_create(handle, cig->lll.role, cis->framed,
+					  cis->lll.rx.bn, cis->lll.rx.ft,
+					  cis->lll.rx.max_pdu, sdu_interval,
+					  cig->iso_interval, cis->sync_delay,
+					  cig->sync_delay, ll_iso_pdu_alloc,
+					  ll_iso_pdu_write, ll_iso_pdu_emit,
 					  ll_iso_test_pdu_release,
 					  &source_handle);
 
@@ -1381,7 +1392,7 @@ static void iso_rx_cig_ref_point_update(struct ll_conn_iso_group *cig,
 	role = cig->lll.role;
 	cig_sync_delay = cig->sync_delay;
 	cis_sync_delay = cis->sync_delay;
-	burst_number = cis->lll.rx.burst_number;
+	burst_number = cis->lll.rx.bn;
 	event_count = cis->lll.event_count;
 
 	if (role) {
