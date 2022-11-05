@@ -124,16 +124,35 @@
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_BIG_ENDIAN__) || \
     !defined(__ORDER_LITTLE_ENDIAN__)
 
-#error "__BYTE_ORDER__ is not defined"
+/*
+ * Displaying values unfortunately requires #pragma message which can't
+ * be taken for granted + STRINGIFY() which is not available in this .h
+ * file.
+ */
+#error "At least one byte _ORDER_ macro is not defined"
 
 #else
 
 #if (defined(CONFIG_BIG_ENDIAN) && (__BYTE_ORDER__ != __ORDER_BIG_ENDIAN__)) || \
     (defined(CONFIG_LITTLE_ENDIAN) && (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__))
-#error "Endiannes mismatch"
-#endif
 
-#endif
+#  error "Kconfig/toolchain endianness mismatch:"
+
+#  if (__BYTE_ORDER__ != __ORDER_BIG_ENDIAN__) && (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__)
+#    error "Unknown __BYTE_ORDER__ value"
+#  else
+#    ifdef CONFIG_BIG_ENDIAN
+#      error "CONFIG_BIG_ENDIAN but __ORDER_LITTLE_ENDIAN__"
+#    endif
+#    ifdef CONFIG_LITTLE_ENDIAN
+#      error "CONFIG_LITTLE_ENDIAN but __ORDER_BIG_ENDIAN__"
+#   endif
+# endif
+
+#endif  /* Endianness mismatch */
+
+#endif /* all _ORDER_ macros defined */
+
 #endif /* !_LINKER */
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_H_ */
