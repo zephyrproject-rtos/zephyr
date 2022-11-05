@@ -5,11 +5,13 @@
  */
 
 struct lll_conn_iso_stream_rxtx {
-	uint64_t payload_number:39; /* cisPayloadNumber */
-	uint8_t  phy;               /* PHY */
-	uint8_t  burst_number;      /* Burst number (BN) */
-	uint8_t  flush_timeout;     /* Flush timeout (FT) */
-	uint8_t  max_octets;        /* Maximum PDU size */
+	uint64_t payload_count:39; /* cisPayloadCounter */
+	uint64_t phy_flags:1;      /* S2 or S8 coding scheme */
+	uint64_t max_pdu:8;        /* Maximum PDU size */
+	uint64_t ft:8;             /* Flush timeout (FT) */
+	uint64_t bn:4;             /* Burst number (BN) */
+	uint64_t phy:3;            /* PHY */
+	uint64_t rfu:1;
 };
 
 struct lll_conn_iso_stream {
@@ -22,7 +24,7 @@ struct lll_conn_iso_stream {
 	uint8_t  access_addr[4];    /* Access address */
 	uint32_t offset;            /* Offset of CIS from start of CIG in us */
 	uint32_t sub_interval;      /* Interval between subevents in us */
-	uint8_t  num_subevents;     /* Number of subevents */
+	uint8_t  nse:5;             /* Number of subevents */
 	struct lll_conn_iso_stream_rxtx rx; /* RX parameters */
 	struct lll_conn_iso_stream_rxtx tx; /* TX parameters */
 
