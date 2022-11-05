@@ -237,7 +237,9 @@ class Reporting:
         report = {}
         report["environment"] = {"os": os.name,
                                  "zephyr_version": version,
-                                 "toolchain": self.env.toolchain
+                                 "toolchain": self.env.toolchain,
+                                 "commit_date": self.env.commit_date,
+                                 "run_date": self.env.run_date
                                  }
         suites = []
 
