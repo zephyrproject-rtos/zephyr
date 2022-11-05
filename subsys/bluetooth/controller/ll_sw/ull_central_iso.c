@@ -159,13 +159,13 @@ uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
 	ll_iso_setup.stream[cis_idx].cis_id = cis_id;
 	ll_iso_setup.stream[cis_idx].c_max_sdu = c_sdu;
 	ll_iso_setup.stream[cis_idx].p_max_sdu = p_sdu;
-	ll_iso_setup.stream[cis_idx].lll.num_subevents = nse;
-	ll_iso_setup.stream[cis_idx].lll.tx.max_octets = c_bn ? c_pdu : 0;
-	ll_iso_setup.stream[cis_idx].lll.rx.max_octets = p_bn ? p_pdu : 0;
+	ll_iso_setup.stream[cis_idx].lll.nse = nse;
+	ll_iso_setup.stream[cis_idx].lll.tx.max_pdu = c_bn ? c_pdu : 0;
+	ll_iso_setup.stream[cis_idx].lll.rx.max_pdu = p_bn ? p_pdu : 0;
 	ll_iso_setup.stream[cis_idx].lll.tx.phy = c_phy;
 	ll_iso_setup.stream[cis_idx].lll.rx.phy = p_phy;
-	ll_iso_setup.stream[cis_idx].lll.tx.burst_number = c_bn;
-	ll_iso_setup.stream[cis_idx].lll.rx.burst_number = p_bn;
+	ll_iso_setup.stream[cis_idx].lll.tx.bn = c_bn;
+	ll_iso_setup.stream[cis_idx].lll.rx.bn = p_bn;
 	ll_iso_setup.cis_idx++;
 
 	return BT_HCI_ERR_SUCCESS;
@@ -309,52 +309,69 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		cis->lll.handle = ll_conn_iso_stream_handle_get(cis);
 
 		if (cig->central.test) {
-			cis->lll.tx.flush_timeout = ll_iso_setup.c_ft;
-			cis->lll.rx.flush_timeout = ll_iso_setup.p_ft;
+			cis->lll.tx.ft = ll_iso_setup.c_ft;
+			cis->lll.rx.ft = ll_iso_setup.p_ft;
 
-			tx = cis->lll.tx.burst_number && cis->lll.tx.max_octets;
-			rx = cis->lll.rx.burst_number && cis->lll.rx.max_octets;
+			tx = cis->lll.tx.bn && cis->lll.tx.max_pdu;
+			rx = cis->lll.rx.bn && cis->lll.rx.max_pdu;
 		} else {
 			LL_ASSERT(iso_interval_us >= cig->c_sdu_interval);
 
 			tx = cig->c_sdu_interval && cis->c_max_sdu;
 			rx = cig->p_sdu_interval && cis->p_max_sdu;
 
-			/* Use Max_PDU = MIN(<buffer_size>, Max_SDU) as default. May be changed by
-			 * set_bn_max_pdu.
+			/* Use Max_PDU = MIN(<buffer_size>, Max_SDU) as default.
+			 * May be changed by set_bn_max_pdu.
 			 */
-			cis->lll.tx.max_octets = MIN(CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,
-						     cis->c_max_sdu);
-			cis->lll.rx.max_octets = MIN(251, cis->p_max_sdu);
+			cis->lll.tx.max_pdu =
+					MIN(CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,
+					    cis->c_max_sdu);
+			cis->lll.rx.max_pdu = MIN(251, cis->p_max_sdu);
 
-			/* Calculate BN and Max_PDU (framed) for both directions */
+			/* Calculate BN and Max_PDU (framed) for both
+			 * directions
+			 */
 			if (tx) {
-				set_bn_max_pdu(cis->framed, iso_interval_us, cig->c_sdu_interval,
-					       cis->c_max_sdu, &cis->lll.tx.burst_number,
-					       &cis->lll.tx.max_octets);
+				uint8_t max_pdu;
+				uint8_t bn;
+
+				bn = cis->lll.tx.bn;
+				max_pdu = cis->lll.tx.max_pdu;
+				set_bn_max_pdu(cis->framed, iso_interval_us,
+					       cig->c_sdu_interval,
+					       cis->c_max_sdu, &bn, &max_pdu);
+				cis->lll.tx.bn = bn;
+				cis->lll.tx.max_pdu = max_pdu;
 			} else {
-				cis->lll.tx.burst_number = 0;
+				cis->lll.tx.bn = 0;
 			}
 
 			if (rx) {
-				set_bn_max_pdu(cis->framed, iso_interval_us, cig->p_sdu_interval,
-					       cis->p_max_sdu, &cis->lll.rx.burst_number,
-					       &cis->lll.rx.max_octets);
+				uint8_t max_pdu;
+				uint8_t bn;
+
+				bn = cis->lll.rx.bn;
+				max_pdu = cis->lll.rx.max_pdu;
+				set_bn_max_pdu(cis->framed, iso_interval_us,
+					       cig->p_sdu_interval,
+					       cis->p_max_sdu, &bn, &max_pdu);
+				cis->lll.rx.bn = bn;
+				cis->lll.rx.max_pdu = max_pdu;
 			} else {
-				cis->lll.rx.burst_number = 0;
+				cis->lll.rx.bn = 0;
 			}
 		}
 
 		/* Calculate SE_Length */
-		mpt_c = PDU_CIS_MAX_US(cis->lll.tx.max_octets, tx ? 1 : 0, cis->lll.tx.phy);
-		mpt_p = PDU_CIS_MAX_US(cis->lll.rx.max_octets, rx ? 1 : 0, cis->lll.rx.phy);
+		mpt_c = PDU_CIS_MAX_US(cis->lll.tx.max_pdu, tx ? 1 : 0, cis->lll.tx.phy);
+		mpt_p = PDU_CIS_MAX_US(cis->lll.rx.max_pdu, rx ? 1 : 0, cis->lll.rx.phy);
 
 		se[i].length = mpt_c + EVENT_IFS_US + mpt_p + EVENT_MSS_US;
 		max_se_length = MAX(max_se_length, se[i].length);
 
 		/* Total number of subevents needed */
-		se[i].total_count = MAX((cis->central.c_rtn + 1) * cis->lll.tx.burst_number,
-					(cis->central.p_rtn + 1) * cis->lll.rx.burst_number);
+		se[i].total_count = MAX((cis->central.c_rtn + 1) * cis->lll.tx.bn,
+					(cis->central.p_rtn + 1) * cis->lll.rx.bn);
 
 		/* Initialize TX link */
 		cis->lll.link_tx_free = &cis->lll.link_tx;
@@ -406,8 +423,8 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		if (!cig->central.test) {
 #if defined(CONFIG_BT_CTLR_CONN_ISO_LOW_LATENCY_POLICY)
 			/* Use symmetric flush timeout */
-			cis->lll.tx.flush_timeout = ceiling_fraction(total_time, iso_interval_us);
-			cis->lll.rx.flush_timeout = cis->lll.tx.flush_timeout;
+			cis->lll.tx.ft = ceiling_fraction(total_time, iso_interval_us);
+			cis->lll.rx.ft = cis->lll.tx.ft;
 
 #elif defined(CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY)
 			/* Utilize Max_Transmission_latency */
@@ -415,41 +432,41 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 				/* TL = CIG_Sync_Delay + FT x ISO_Interval + SDU_Interval.
 				 * SDU_Interval <= CIG_Sync_Delay
 				 */
-				cis->lll.tx.flush_timeout =
+				cis->lll.tx.ft =
 					ceiling_fraction(cig->c_latency - cig->c_sdu_interval -
 							iso_interval_us, iso_interval_us);
-				cis->lll.rx.flush_timeout =
+				cis->lll.rx.ft =
 					ceiling_fraction(cig->p_latency - cig->p_sdu_interval -
 							iso_interval_us, iso_interval_us);
 			} else {
 				/* TL = CIG_Sync_Delay + FT x ISO_Interval - SDU_Interval.
 				 * SDU_Interval <= CIG_Sync_Delay
 				 */
-				cis->lll.tx.flush_timeout =
+				cis->lll.tx.ft =
 					ceiling_fraction(cig->c_latency + cig->c_sdu_interval -
 							iso_interval_us, iso_interval_us);
-				cis->lll.rx.flush_timeout =
+				cis->lll.rx.ft =
 					ceiling_fraction(cig->p_latency + cig->p_sdu_interval -
 							iso_interval_us, iso_interval_us);
 			}
 #else
 			LL_ASSERT(0);
 #endif
-			cis->lll.num_subevents = ceiling_fraction(se[i].total_count,
-								  cis->lll.tx.flush_timeout);
+			cis->lll.nse = ceiling_fraction(se[i].total_count,
+								  cis->lll.tx.ft);
 		}
 
 		if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
 			/* Accumulate CIG sync delay for sequential CISes */
 			cis->lll.sub_interval = MAX(400, se[i].length);
-			cig_sync_delay += cis->lll.num_subevents * cis->lll.sub_interval;
+			cig_sync_delay += cis->lll.nse * cis->lll.sub_interval;
 		} else {
 			/* For interleaved CISes, offset each CIS by a fraction of a subinterval,
 			 * positioning them evenly within the subinterval.
 			 */
 			cis->lll.sub_interval = MAX(400, cis_count * max_se_length);
 			cig_sync_delay = MAX(cig_sync_delay,
-					     (cis->lll.num_subevents * cis->lll.sub_interval) +
+					     (cis->lll.nse * cis->lll.sub_interval) +
 					     (i * cis->lll.sub_interval / cis_count));
 		}
 	}
@@ -472,19 +489,19 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		if (cis->framed) {
 			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval + SDU_Interval */
 			c_latency = cig->sync_delay +
-				    (cis->lll.tx.flush_timeout * iso_interval_us) +
+				    (cis->lll.tx.ft * iso_interval_us) +
 				    cig->c_sdu_interval;
 			p_latency = cig->sync_delay +
-				    (cis->lll.rx.flush_timeout * iso_interval_us) +
+				    (cis->lll.rx.ft * iso_interval_us) +
 				    cig->p_sdu_interval;
 
 		} else {
 			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval - SDU_Interval */
 			c_latency = cig->sync_delay +
-				    (cis->lll.tx.flush_timeout * iso_interval_us) -
+				    (cis->lll.tx.ft * iso_interval_us) -
 				    cig->c_sdu_interval;
 			p_latency = cig->sync_delay +
-				    (cis->lll.rx.flush_timeout * iso_interval_us) -
+				    (cis->lll.rx.ft * iso_interval_us) -
 				    cig->p_sdu_interval;
 		}
 
@@ -500,14 +517,14 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
 			/* Distribute CISes sequentially */
 			cis->sync_delay = cig_sync_delay;
-			cig_sync_delay -= cis->lll.num_subevents * cis->lll.sub_interval;
+			cig_sync_delay -= cis->lll.nse * cis->lll.sub_interval;
 		} else {
 			/* Distribute CISes interleaved */
 			cis->sync_delay = cig_sync_delay;
 			cig_sync_delay -= (cis->lll.sub_interval / cis_count);
 		}
 
-		if (cis->lll.num_subevents <= 1) {
+		if (cis->lll.nse <= 1) {
 			cis->lll.sub_interval = 0;
 		}
 	}
