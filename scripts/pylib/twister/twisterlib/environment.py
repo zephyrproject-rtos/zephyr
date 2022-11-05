@@ -698,8 +698,13 @@ class TwisterEnv:
                                      universal_newlines=True,
                                      cwd=ZEPHYR_BASE)
             if subproc.returncode == 0:
-                self.version = subproc.stdout.strip()
-                logger.info(f"Zephyr version: {self.version}")
+                _version = subproc.stdout.strip()
+                if _version:
+                    self.version = _version
+                    logger.info(f"Zephyr version: {self.version}")
+                else:
+                    self.version = "Unknown"
+                    logger.error("Coult not determine version")
         except OSError:
             logger.info("Cannot read zephyr version.")
 
