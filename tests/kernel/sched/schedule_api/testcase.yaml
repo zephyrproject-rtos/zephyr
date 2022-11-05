@@ -33,6 +33,7 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=n
   kernel.scheduler.linker_generator:
+    filter: not CONFIG_SCHED_MULTIQ
     platform_allow: qemu_cortex_m3
     extra_configs:
       - CONFIG_TIMESLICING=y
