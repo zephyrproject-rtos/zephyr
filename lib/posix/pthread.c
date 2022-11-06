@@ -37,7 +37,7 @@ static const pthread_attr_t init_pthread_attrs = {
 };
 
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
-PTHREAD_MUTEX_DEFINE(pthread_pool_lock);
+static struct k_spinlock pthread_pool_lock;
 
 pthread_t pthread_self(void)
 {
@@ -150,6 +150,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		   void *(*threadroutine)(void *), void *arg)
 {
 	int32_t prio;
+	k_spinlock_key_t key;
 	uint32_t pthread_num;
 	pthread_condattr_t cond_attr;
 	struct posix_thread *thread;
@@ -164,7 +165,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		return EINVAL;
 	}
 
-	pthread_mutex_lock(&pthread_pool_lock);
+	key = k_spin_lock(&pthread_pool_lock);
 	for (pthread_num = 0;
 	    pthread_num < CONFIG_MAX_PTHREAD_COUNT; pthread_num++) {
 		thread = &posix_thread_pool[pthread_num];
@@ -173,7 +174,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 			break;
 		}
 	}
-	pthread_mutex_unlock(&pthread_pool_lock);
+	k_spin_unlock(&pthread_pool_lock, key);
 
 	if (pthread_num >= CONFIG_MAX_PTHREAD_COUNT) {
 		return EAGAIN;
