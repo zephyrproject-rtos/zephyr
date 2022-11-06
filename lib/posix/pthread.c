@@ -181,7 +181,6 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 
 	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
 
-	thread = &posix_thread_pool[pthread_num];
 	/*
 	 * Ignore return value, as we know that Zephyr implementation
 	 * cannot fail.
