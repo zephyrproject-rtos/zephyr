@@ -30,7 +30,7 @@ struct posix_thread {
 	/* Pthread cancellation */
 	int cancel_state;
 	int cancel_pending;
-	pthread_mutex_t cancel_lock;
+	struct k_spinlock cancel_lock;
 
 	/* Pthread State */
 	enum pthread_state state;
