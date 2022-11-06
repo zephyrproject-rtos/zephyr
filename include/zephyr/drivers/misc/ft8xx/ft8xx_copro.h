@@ -71,19 +71,39 @@ extern "C" {
 void ft8xx_copro_cmd(const struct device *dev, uint32_t cmd);
 
 /**
+ * @brief Execute a display list command, with uint32 parameter by co-processor engine
+ *
+ * @param dev Device pointer
+ * @param cmd Display list command to execute
+ * @param param command parameter
+ */
+void ft8xx_copro_cmd_uint(const struct device *dev, uint32_t cmd, uint32_t param);
+
+/**
+ * @brief Execute a display list command, with two uint32 parameter by co-processor engine
+ *
+ * @param dev Device pointer
+ * @param cmd Display list command to execute
+ * @param param  1st command parameter
+ * @param param2 2nd command parameter
+ */
+void ft8xx_copro_cmd_uint_uint(const struct device *dev, uint32_t cmd, uint32_t param, uint32_t param2);
+
+/**
+ * @brief Set API Level (bt817/8)
+ *
+ * @param dev Device pointer
+ * @param level API level
+ * @return 0 or -ENOTSUP if not supported by device 
+ */
+int ft8xx_copro_cmd_apilevel(const struct device *dev, uint32_t level );
+
+/**
  * @brief Start a new display list
  *
  * @param dev Device pointer
  */
 void ft8xx_copro_cmd_dlstart(const struct device *dev);
-
-/**
- * @brief Swap the current display list
- *
- * @param dev Device pointer
- */
-void ft8xx_copro_cmd_swap(const struct device *dev);
-
 
 /**
  * @brief Sets co-processor engine to reset default states.
@@ -102,13 +122,21 @@ void ft8xx_copro_cmd_coldstart(const struct device *dev);
 void ft8xx_copro_cmd_interrupt(const struct device *dev, uint32_t ms );
 
 /**
+ * @brief Swap the current display list
+ *
+ * @param dev Device pointer
+ */
+void ft8xx_copro_cmd_swap(const struct device *dev);
+
+/**
  * @brief - append memory to display list.
  *
  * @param dev Device pointer
  * @param ptr Start of source commands in device main memory
  * @param num Number of bytes to copy. This must be a multiple of 4.
+ * @return 0 or -ENOTSUP if invalid number of bytes, or outside memory.
  */
-void ft8xx_copro_cmd_append(const struct device *dev, uint32_t ptr, 
+int ft8xx_copro_cmd_append(const struct device *dev, uint32_t ptr, 
 			uint32_t num );
 
 /**
@@ -129,9 +157,10 @@ void ft8xx_copro_cmd_regread(const struct device *dev, uint32_t ptr,
  * @param ptr Address of memory to write to
  * @param num Number of bytes to be written
  * @param src pointer to data
+ * @return 0 or -ENOTSUP if outside memory.
  */
-void ft8xx_copro_cmd_memwrite(const struct device *dev, uint32_t ptr, 
-			uint32_t num, uint32_t *src );
+int ft8xx_copro_cmd_memwrite(const struct device *dev, uint32_t ptr, 
+			uint32_t num, uint8_t *src );
 
 
 /**
@@ -142,8 +171,22 @@ void ft8xx_copro_cmd_memwrite(const struct device *dev, uint32_t ptr,
  * @param src Pointer to DEFLATE commpressed data
  * @param len length of compressed data
  */
-void ft8xx_copro_cmd_inflate(const struct device *dev, uint32_t ptr,#
+void ft8xx_copro_cmd_inflate(const struct device *dev, uint32_t ptr,
 			uint32_t *src, uint32_t len );
+
+/**
+ * @brief - decompress data into memory. with options
+ *
+ * @param dev Device pointer
+ * @param ptr Address of memory to write to
+ * @param options options for inflate command
+ * @param src Pointer to DEFLATE commpressed data
+ * @param len length of compressed data
+* @return 0 or -ENOTSUP not supported by device.
+ */
+int ft8xx_copro_cmd_inflate2(const struct device *dev, uint32_t ptr,
+			uint32_t options, uint32_t *src, uint32_t len );
+
 
 /**
  * @brief - load a JPEG image into memory.
@@ -151,11 +194,37 @@ void ft8xx_copro_cmd_inflate(const struct device *dev, uint32_t ptr,#
  * @param dev Device pointer
  * @param ptr Address of memory to write to
  * @param options image processing options 
- * @param src Pointer to JPEG(JFIF) image data
- * @param len length of JPEG(JFIF) image data
+ * @param src Pointer to JPEG(JFIF)/PNG image data
+ * @param len length of JPEG(JFIF)/PNG image data
+ * @return 0 or -ENOTSUP if invalid options for device.
  */
-void ft8xx_copro_cmd_loadimage(const struct device *dev, uint32_t ptr,
+int ft8xx_copro_cmd_loadimage(const struct device *dev, uint32_t ptr,
 				uint32_t options, uint32_t *src, uint32_t len );
+
+/**
+ * @brief - setup media streaming FIFO (ft81x)
+ *
+ * @param dev Device pointer
+ * @param ptr Address of FIFO start in memory (4 byte aligned)
+ * @param size size of FIFO (4 byte aligned)
+ * @return 0 or -ENOTSUP if invalid options for device.
+ */
+int ft8xx_copro_cmd_mediafifo(const struct device *dev, uint32_t ptr,
+				uint32_t size);
+
+/**
+ * @brief - play video
+ *
+ * @param dev Device pointer
+ * @param options video playback options
+ * @param src Pointer to video data (ignored if using fifo or flash)
+ * @param len length of video data (ignored if using fifo or flash)
+ * @return 0 or -ENOTSUP if invalid options for device.
+ */
+int ft8xx_copro_cmd_playvideo(const struct device *dev )uint32_t options,
+				uint32_t *src, uint32_t len) ;
+
+
 
 /**
  * @brief - Computes a CRC-32 for a block of FT8XX memory

@@ -53,17 +53,21 @@ enum FT81x_memory_map_t {
 
 /** Main parts of bt81x memory map */
 enum BT81x_memory_map_t {
-	BT81x_RAM_G         = 0x000000,
-	BT81x_RAM_G_END     = 0x0FFFFF,	
-	BT81x_ROM_CHIPID    = 0x0C0000,	
-	BT81x_ROM_FONT      = 0x1E0000,
-	BT81x_ROM_FONT_ADDR = 0x2FFFFC,
-	BT81x_RAM_DL        = 0x300000,
-	BT81x_REG           = 0x302000,
-	BT81x_RAM_CMD       = 0x308000,
-	BT81x_FLASH       	= 0x800000,
-	BT81x_FLASH_MAX    	= 0x107FFFF
+	BT81x_RAM_G         	= 0x000000,
+	BT81x_RAM_G_END     	= 0x0FFFFF,	
+	BT81x_ROM_CHIPID    	= 0x0C0000,	
+	BT81x_ROM_FONT      	= 0x1E0000,
+	BT81x_ROM_FONT_ADDR 	= 0x2FFFFC,
+	BT81x_RAM_DL        	= 0x300000,
+	BT81x_REG           	= 0x302000,
+	BT81x_RAM_CMD       	= 0x308000,
+	BT81x_RAM_ERR_REPORT	= 0x309800, 
+	BT81x_RAM_JTBOOT 		= 0x30B000,
+	BT81x_FLASH       		= 0x800000,
+	BT81x_FLASH_MAX    		= 0x107FFFF
 };
+
+
 
 /** FT800 register addresses */
 enum ft800_register_address_t {
@@ -366,7 +370,11 @@ enum BT81x_register_address_t {
 	BT81x_REG_ADAPTIVE_FRAMERATE = 0x30257C,
 	BT81x_REG_PLAYBACK_PAUSE = 0x3025EC,
 	BT81x_REG_FLASH_STATUS = 0x3025F0,
-	
+	// 0x3025F4- 0x302608	 Reserved
+	BT81x_REG_UNDERRUN = 0x30260C, //bt817/8 
+	BT81x_REG_AH_HCYCLE_MAX = 0x302610, //bt817/8
+	BT81x_REG_PCLK_FREQ = 0x302614, //bt817/8
+	BT81x_REG_PCLK_2X = 0x302618, //bt817/8
 	// special registers
 	BT81x_REG_TRACKER    = 0x309000,
 	BT81x_REG_TRACKER1   = 0x309004,
@@ -375,8 +383,9 @@ enum BT81x_register_address_t {
 	BT81x_REG_TRACKER4   = 0x309010,
 	BT81x_REG_MEDIAFIFO_READ = 0x309014,
 	BT81x_REG_MEDIAFIFO_WRITE = 0x309018,
-	BT81x_REG_PLAY_CONTROL = 0x30914E,
+	BT81x_REG_REG_FLASH_SIZE = 0x309024,
 	BT81x_REG_ANIM_ACTIVE = 0x30902C,
+	BT81x_REG_PLAY_CONTROL = 0x30914E,
 	BT81x_REG_COPRO_PATCH_PTR = 0x309162,
 }
 
@@ -394,8 +403,10 @@ struct ft8xx_memory_map_t
 	uint32_t RAM_PAL,      // not present on ft81x 
 	uint32_t REG,           
 	uint32_t RAM_CMD,        
-	uint32_t FLASH,       // external NOR Flash Ram
-	uint32_t FLASH_MAX,       // maximum external NOR Flash Ram
+	uint32_t RAM_ERR_REPORT,  // bt817/8 
+	uint32_t RAM_JTBOOT,	// bt817/8
+	uint32_t FLASH,       // bt81x external NOR Flash Ram
+	uint32_t FLASH_MAX,   // bt81x maximum external NOR Flash Ram
 
 }
 
@@ -410,8 +421,10 @@ const static struct ft8xx_memory_map_t ft800_memory_map =
 	.RAM_PAL 			= FT800_RAM_PAL, 
 	.REG 				= FT800_REG,           
 	.RAM_CMD 			= FT800_RAM_CMD, 
-	.FLASH				= 0, //not present on ft81x 
-	.FLASH_MAX			= 0 //not present on ft81x 	
+	.RAM_ERR_REPORT		= 0, //not present on ft800
+	.RAM_JTBOOT			= 0, //not present on ft800
+	.FLASH				= 0, //not present on ft800 
+	.FLASH_MAX			= 0 //not present on ft800	
 }
 
 const static struct ft8xx_memory_map_t ft81x_memory_map =
@@ -425,6 +438,8 @@ const static struct ft8xx_memory_map_t ft81x_memory_map =
 	.RAM_PAL 			= 0, // not present on ft81x 
 	.REG 				= FT81X_REG,           
 	.RAM_CMD 			= FT81X_RAM_CMD,
+	.RAM_ERR_REPORT		= 0, //not present on ft81x
+	.RAM_JTBOOT			= 0, //not present on ft81x	
 	.FLASH				= 0, // not present on ft81x
 	.FLASH_MAX			= 0 // not present on ft81x 
 }
@@ -440,6 +455,8 @@ const static struct ft8xx_memory_map_t bt81x_memory_map =
 	.RAM_PAL 			= 0 // not present on ft81x 
 	.REG 				= BT81X_REG,           
 	.RAM_CMD 			= BT81X_RAM_CMD,
+	.RAM_ERR_REPORT		= BT81X_RAM_ERR_REPORT,
+	.RAM_JTBOOT			= BT81X_RAM_JTBOOT,
 	.FLASH				= BT81X_FLASH,
 	.FLASH_MAX			= BT81X_FLASH_MAX
 }
@@ -535,6 +552,10 @@ struct ft8xx_register_address_map_t
 	uint32_t REG_ADAPTIVE_FRAMERATE,
 	uint32_t REG_PLAYBACK_PAUSE,
 	uint32_t REG_FLASH_STATUS,	
+	uint32_t REG_UNDERRUN,
+	uint32_t REG_AH_HCYCLE_MAX,
+	uint32_t REG_PCLK_FREQ,
+	uint32_t REG_PCLK_2X,
 	uint32_t REG_TRACKER,
 	uint32_t REG_TRACKER1,
 	uint32_t REG_TRACKER2,
@@ -638,6 +659,10 @@ const static struct ft8xx_register_address_map_t ft800_register_address_map
 	.REG_ADAPTIVE_FRAMERATE		= 0, // not present on ft800
 	.REG_PLAYBACK_PAUSE			= 0, // not present on ft800
 	.REG_FLASH_STATUS			= 0, // not present on ft800
+	.REG_UNDERRUN				= 0, // not present on ft800
+	.REG_AH_HCYCLE_MAX			= 0, // not present on ft800
+	.REG_PCLK_FREQ				= 0, // not present on ft800
+	.REG_PCLK_2X				= 0, // not present on ft800
 	.REG_TRACKER        		= FT800_REG_TRACKER,
 	.REG_TRACKER1       		= 0, // not present on ft800
 	.REG_TRACKER2   			= 0, // not present on ft800
@@ -741,7 +766,11 @@ const static struct ft8xx_register_address_map_t ft81X_register_address_map
 	.REG_CMDB_WRITE    			= FT81x_REG_CMDB_WRITE,
 	.REG_ADAPTIVE_FRAMERATE		= 0, // not present on ft81x
 	.REG_PLAYBACK_PAUSE			= 0, // not present on ft81x
-	.REG_FLASH_STATUS			= 0, // not present on ft81x	
+	.REG_FLASH_STATUS			= 0, // not present on ft81x
+	.REG_UNDERRUN				= 0, // not present on ft81x
+	.REG_AH_HCYCLE_MAX			= 0, // not present on ft81x
+	.REG_PCLK_FREQ				= 0, // not present on ft81x
+	.REG_PCLK_2X				= 0, // not present on ft81x	
 	.REG_TRACKER        		= FT81X_REG_TRACKER,
 	.REG_TRACKER1       		= FT81x_REG_TRACKER1,
 	.REG_TRACKER2   			= FT81x_REG_TRACKER2,
@@ -844,7 +873,11 @@ const static struct ft8xx_register_address_map_t bt81X_register_address_map
 	.REG_CMDB_WRITE    			= BT81X_REG_CMDB_WRITE,
 	.REG_ADAPTIVE_FRAMERATE		= BT81X_REG_ADAPTIVE_FRAMERATE,
 	.REG_PLAYBACK_PAUSE			= BT81X_REG_PLAYBACK_PAUSE,
-	.REG_FLASH_STATUS			= BT81X_REG_FLASH_STATUS,	
+	.REG_FLASH_STATUS			= BT81X_REG_FLASH_STATUS,
+	.REG_UNDERRUN				= BT81X_REG_UNDERRUN,
+	.REG_AH_HCYCLE_MAX			= BT81X_REG_AH_HCYCLE_MAX,
+	.REG_PCLK_FREQ				= BT81X_REG_PCLK_FREQ,
+	.REG_PCLK_2X				= BT81X_REG_PCLK_2X,
 	.REG_TRACKER        		= BT81X_REG_TRACKER,
 	.REG_TRACKER1       		= BT81X_REG_TRACKER1,
 	.REG_TRACKER2   			= BT81X_REG_TRACKER2,

@@ -121,8 +121,8 @@ typedef int (*ft8xx_audio_synth_stop_t)(const struct device *dev);
 // coprocessor commands
 typedef void (*ft8xx_copro_cmd_apilevel_t)(const struct device *dev, uint32_t level);   //bt817/8 only
 typedef void (*ft8xx_copro_cmd_dlstart_t)(const struct device *dev);
-typedef void (*ft8xx_copro_cmd_interrupt_t)(const struct device *dev, uint32_t ms );
 typedef void (*ft8xx_copro_cmd_coldstart_t)(const struct device *dev);
+typedef void (*ft8xx_copro_cmd_interrupt_t)(const struct device *dev, uint32_t ms );
 typedef void (*ft8xx_copro_cmd_swap_t)(const struct device *dev);
 typedef void (*ft8xx_copro_cmd_append_t)(const struct device *dev, uint32_t ptr, uint32_t num );
 typedef void (*ft8xx_copro_cmd_regread_t)(const struct device *dev, uint32_t ptr, uint32_t result );
@@ -254,7 +254,9 @@ struct ft8xx_api {
     ft8xx_audio_synth_get_status_t  ft8xx_audio_synth_get_status,
     ft8xx_audio_synth_stop_t        ft8xx_audio_synth_stop,
 
-// coprocessor commamd list functions (bt817/8)
+
+// coprocessor commands
+// coprocessor command list functions (bt817/8)
 
     ft8xx_copro_cmd_newlist_t       ft8xx_copro_cmd_newlist, 
     ft8xx_copro_cmd_endlist_t       ft8xx_copro_cmd_endlist, 
