@@ -1863,6 +1863,7 @@ Microchip SAM Platforms:
   maintainers:
     - nandojve
   collaborators:
+    - attie-argentum
     - mnkp
     - stephanosio
   files:
