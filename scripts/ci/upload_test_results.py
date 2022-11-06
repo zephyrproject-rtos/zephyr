@@ -27,8 +27,7 @@ def main():
             ssl_assert_hostname = False,
             ssl_show_warn = False,
     )
-    # Create an index with non-default settings.
-    index_name = 'zephyr-main-2'
+    index_name = args.index
 
     for f in args.files:
         with open(f, "r") as j:
@@ -50,6 +49,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--user', help='username')
     parser.add_argument('-p', '--password', help='password')
+    parser.add_argument('-i', '--index', help='index to push to.', required=True)
     parser.add_argument('files', metavar='FILE', nargs='+', help='file with test data.')
 
     args = parser.parse_args()

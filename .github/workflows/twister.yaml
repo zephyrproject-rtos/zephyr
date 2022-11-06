@@ -288,11 +288,15 @@ jobs:
         with:
           path: artifacts
 
-      - if: github.event_name == 'push'
+      - if: github.event_name == 'push' || github.event_name == 'schdule'
         name: Upload to opensearch
         run: |
           pip3 install opensearch-py
-          python3 ./scripts/ci/upload_test_results.py artifacts/*/*/twister.json
+          if [ "${{github.event_name}}" = "push" ]; then
+            python3 ./scripts/ci/upload_test_results.py --index zephyr-main-2 artifacts/*/*/twister.json
+          elif [ "${{github.event_name}}" = "schedule" ]; then
+            python3 ./scripts/ci/upload_test_results.py --index zephyr-weekly artifacts/*/*/twister.json
+          fi
 
       - name: Merge Test Results
         run: |
