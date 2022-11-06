@@ -15,7 +15,6 @@
  */
 
 #define DT_DRV_COMPAT   altr_uart
-
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 
