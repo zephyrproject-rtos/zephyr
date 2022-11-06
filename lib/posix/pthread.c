@@ -19,7 +19,7 @@
 
 #define LOWEST_POSIX_THREAD_PRIORITY 1
 
-PTHREAD_MUTEX_DEFINE(pthread_key_lock);
+K_MUTEX_DEFINE(pthread_key_lock);
 
 static const pthread_attr_t init_pthread_attrs = {
 	.priority = LOWEST_POSIX_THREAD_PRIORITY,
@@ -346,17 +346,14 @@ int pthread_getschedparam(pthread_t pthread, int *policy,
  */
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
-	pthread_mutex_lock(&pthread_key_lock);
+	k_mutex_lock(&pthread_key_lock, K_FOREVER);
 
-	if (*once != PTHREAD_ONCE_INIT) {
-		pthread_mutex_unlock(&pthread_key_lock);
-		return 0;
+	if (*once == PTHREAD_ONCE_INIT) {
+		init_func();
+		*once = 0;
 	}
 
-	init_func();
-	*once = 0;
-
-	pthread_mutex_unlock(&pthread_key_lock);
+	k_mutex_unlock(&pthread_key_lock);
 
 	return 0;
 }
