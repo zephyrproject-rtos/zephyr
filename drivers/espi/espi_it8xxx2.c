@@ -241,8 +241,8 @@ static const struct ec2i_t smfi_settings[] = {
 static void smfi_it8xxx2_init(const struct device *dev)
 {
 	const struct espi_it8xxx2_config *const config = dev->config;
-	struct flash_it8xxx2_regs *const smfi_reg =
-		(struct flash_it8xxx2_regs *)config->base_smfi;
+	struct smfi_it8xxx2_regs *const smfi_reg =
+		(struct smfi_it8xxx2_regs *)config->base_smfi;
 	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
 	uint8_t h2ram_offset;
 
