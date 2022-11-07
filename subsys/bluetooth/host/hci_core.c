@@ -3794,6 +3794,9 @@ int bt_disable(void)
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
 #if defined(CONFIG_BT_CONN)
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		bt_pub_key_hci_disrupted();
+	}
 	bt_conn_cleanup_all();
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
