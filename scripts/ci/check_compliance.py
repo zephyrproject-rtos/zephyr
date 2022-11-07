@@ -122,7 +122,7 @@ class ComplianceTest:
         test code.
         """
         if self.case.result:
-            msg += "\n\nFailures before error: " + self.case.result[0]._elem.text
+            msg += "\n\nFailures before error: " + self.case.result[0].text
 
         self.case.result = [Error(msg, "error")]
 
@@ -140,7 +140,7 @@ class ComplianceTest:
         test code.
         """
         if self.case.result:
-            msg += "\n\nFailures before skip: " + self.case.result[0]._elem.text
+            msg += "\n\nFailures before skip: " + self.case.result[0].text
 
         self.case.result = [Skipped(msg, "skipped")]
 
@@ -154,10 +154,10 @@ class ComplianceTest:
         if not self.case.result:
             # First reported failure
             self.case.result = [Failure(self.name + " issues", "failure")]
-            self.case.result[0]._elem.text = msg.rstrip()
+            self.case.result[0].text = msg.rstrip()
         else:
             # If there are multiple Failures, concatenate their messages
-            self.case.result[0]._elem.text += "\n\n" + msg.rstrip()
+            self.case.result[0].text += "\n\n" + msg.rstrip()
 
     def add_info(self, msg):
         """
@@ -1138,9 +1138,7 @@ def _main(args):
     if n_fails:
         print("{} checks failed".format(n_fails))
         for case in failed_cases:
-            # not clear why junitxml doesn't clearly expose the most
-            # important part of its underlying etree.Element
-            errmsg = case.result[0]._elem.text
+            errmsg = case.result[0].text
             logging.error("Test %s failed: %s", case.name,
                           errmsg.strip() if errmsg else case.result[0].message)
 
