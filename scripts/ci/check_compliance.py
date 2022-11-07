@@ -575,9 +575,9 @@ UNDEF_KCONFIG_WHITELIST = {
     "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
 }
 
-class KconfigBasicCheck(KconfigCheck, ComplianceTest):
+class KconfigBasicCheck(KconfigCheck):
     """
-    Checks is we are introducing any new warnings/errors with Kconfig,
+    Checks if we are introducing any new warnings/errors with Kconfig,
     for example using undefined Kconfig variables.
     This runs the basic Kconfig test, which is checking only for undefined
     references inside the Kconfig tree.
@@ -978,6 +978,17 @@ def init_logs(cli_arg):
                  logging.getLevelName(logger.getEffectiveLevel()))
 
 
+def inheritors(klass):
+    subclasses = set()
+    work = [klass]
+    while work:
+        parent = work.pop()
+        for child in parent.__subclasses__():
+            if child not in subclasses:
+                subclasses.add(child)
+                work.append(child)
+    return subclasses
+
 
 def parse_args():
 
@@ -1023,7 +1034,7 @@ def _main(args):
     logger.info(f'Running tests on commit range {COMMIT_RANGE}')
 
     if args.list:
-        for testcase in ComplianceTest.__subclasses__():
+        for testcase in inheritors(ComplianceTest):
             print(testcase.name)
         return 0
 
@@ -1046,7 +1057,7 @@ def _main(args):
     else:
         suite = TestSuite("Compliance")
 
-    for testcase in ComplianceTest.__subclasses__():
+    for testcase in inheritors(ComplianceTest):
         # "Modules" and "testcases" are the same thing. Better flags would have
         # been --tests and --exclude-tests or the like, but it's awkward to
         # change now.
@@ -1075,7 +1086,7 @@ def _main(args):
 
     failed_cases = []
     name2doc = {testcase.name: testcase.doc
-                            for testcase in ComplianceTest.__subclasses__()}
+						for testcase in inheritors(ComplianceTest)}
 
     for case in suite:
         if case.result:
