@@ -43,6 +43,7 @@
 		zephyr,flash-controller = &sim_flash;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,canbus = &can0;
+		zephyr,ppp-uart = &uart1;
 	};
 
 	pcie0 {
