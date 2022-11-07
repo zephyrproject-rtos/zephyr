@@ -1,0 +1,42 @@
+#include <zephyr/dt-bindings/led/led.h>
+
+/* Wiring:
+ * - M1.S connected to GND
+ * - SDOUT connected to M1.D
+ * - ~300 ohm resistor between M1.D and TP5 (5V / Vbus)
+ */
+
+&pinctrl {
+	i2s0_default_alt: i2s0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(I2S_SCK_M, 0, 20)>,
+				<NRF_PSEL(I2S_LRCK_M, 0, 19)>,
+				<NRF_PSEL(I2S_SDOUT, 0, 18)>,
+				<NRF_PSEL(I2S_SDIN, 0, 21)>;
+		};
+	};
+};
+
+i2s_led: &i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default_alt>;
+	pinctrl-names = "default";
+};
+
+/ {
+	led_strip: ws2812 {
+		compatible = "worldsemi,ws2812-i2s";
+
+		i2s-dev = < &i2s_led >;
+		chain-length = <10>; /* arbitrary; change at will */
+		color-mapping = <LED_COLOR_ID_GREEN
+					LED_COLOR_ID_RED
+					LED_COLOR_ID_BLUE>;
+		out-active-low;
+		reset-delay = <120>;
+	};
+
+	aliases {
+		led-strip = &led_strip;
+	};
+};
