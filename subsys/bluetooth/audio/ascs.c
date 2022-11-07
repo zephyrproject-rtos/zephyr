@@ -2343,8 +2343,12 @@ BT_GATT_SERVICE_DEFINE(ascs_svc,
 		      BT_GATT_PERM_WRITE_ENCRYPT,
 		      NULL, ascs_cp_write, NULL),
 	BT_AUDIO_CCC(ascs_cp_cfg_changed),
+#if CONFIG_BT_ASCS_ASE_SNK_COUNT > 0
 	LISTIFY(CONFIG_BT_ASCS_ASE_SNK_COUNT, BT_ASCS_ASE_SNK_DEFINE, (,)),
+#endif /* CONFIG_BT_ASCS_ASE_SNK_COUNT > 0 */
+#if CONFIG_BT_ASCS_ASE_SRC_COUNT > 0
 	LISTIFY(CONFIG_BT_ASCS_ASE_SRC_COUNT, BT_ASCS_ASE_SRC_DEFINE, (,)),
+#endif /* CONFIG_BT_ASCS_ASE_SRC_COUNT > 0 */
 );
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len)
