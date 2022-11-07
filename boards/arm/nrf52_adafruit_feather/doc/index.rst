@@ -170,7 +170,6 @@ the board are working properly with Zephyr:
 - :ref:`button-sample`
 - :ref:`fade-led-sample`
 - :ref:`blink-led-sample`
-- :ref:`96b_carbon_multi_thread_blinky`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
