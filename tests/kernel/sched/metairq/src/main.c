@@ -190,6 +190,7 @@ ZTEST(suite_preempt_metairq, test_preempt_metairq)
 
 	/* Kick off meta-IRQ */
 	k_sem_give(&metairq_sem);
+	k_yield();
 
 	/* Wait for all threads to finish */
 	k_sem_take(&coop_sem2, K_FOREVER);
