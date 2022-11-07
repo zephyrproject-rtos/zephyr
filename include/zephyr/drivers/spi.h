@@ -252,13 +252,14 @@ struct spi_cs_control {
  * This macro is not available in C++.
  *
  * @param node_id Devicetree node identifier for a device on a SPI bus
- * @param delay_ The @p delay field to set in the @p spi_cs_control
+ * @param delay_ The default @p delay field to set in the @p spi_cs_control, if
+ *   the value is not specified in the device tree.
  * @return a pointer to the @p spi_cs_control structure
  */
 #define SPI_CS_CONTROL_PTR_DT(node_id, delay_)			  \
 	(&(struct spi_cs_control) {				  \
 		.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),	  \
-		.delay = (delay_),				  \
+		.delay = DT_PROP_OR(node_id, spi_cs_delay_us, (delay_)), \
 	})
 
 /**
@@ -273,7 +274,8 @@ struct spi_cs_control {
  * This macro is not available in C++.
  *
  * @param inst Devicetree node instance number
- * @param delay_ The @p delay field to set in the @p spi_cs_control
+ * @param delay_ The default @p delay field to set in the @p spi_cs_control,
+ *   if the value is not specified in the device tree.
  * @return a pointer to the @p spi_cs_control structure
  */
 #define SPI_CS_CONTROL_PTR_DT_INST(inst, delay_)		\
@@ -337,8 +339,9 @@ struct spi_config {
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_config to create an initializer for
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
+ * @param delay_ the default @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one.  This can be specified in the
+ *               device tree, which will override the default supplied here.
  */
 #define SPI_CONFIG_DT(node_id, operation_, delay_)			\
 	{								\
@@ -363,8 +366,9 @@ struct spi_config {
  *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
+ * @param delay_ the default @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one.  This can be specified in the
+ *               device tree, which will override the default supplied here.
  */
 #define SPI_CONFIG_DT_INST(inst, operation_, delay_)	\
 	SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
@@ -398,8 +402,9 @@ struct spi_dt_spec {
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_dt_spec to create an initializer for
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
+ * @param delay_ the default @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one.  This can be specified in the
+ *               device tree, which will override the default supplied here.
  */
 #define SPI_DT_SPEC_GET(node_id, operation_, delay_)		     \
 	{							     \
@@ -417,8 +422,9 @@ struct spi_dt_spec {
  *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
+ * @param delay_ the default @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one.  This can be specified in the
+ *               device tree, which will override the default supplied here.
  */
 #define SPI_DT_SPEC_INST_GET(inst, operation_, delay_) \
 	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)

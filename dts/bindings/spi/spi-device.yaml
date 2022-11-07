@@ -42,3 +42,10 @@ properties:
       enum:
         - 0
         - 32768
+    spi-cs-delay-us:
+       type: int
+       description: |
+         Additional delay, in microseconds, to add after asserting CS and before
+         de-asserting CS.  SPI drivers may specify this delay in their code as
+         well.  The value in the device tree, if present, will override the
+         default from driver or application code.
