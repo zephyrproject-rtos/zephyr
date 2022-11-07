@@ -80,10 +80,6 @@ class MyCase(TestCase):
     XML attributes. These will be preserved when tests are saved and loaded.
     """
     classname = Attr()
-    # Remembers informational messages. These can appear on successful tests
-    # too, where TestCase.result isn't set.
-    info_msg = Attr()
-
 
 class ComplianceTest:
     """
@@ -158,27 +154,6 @@ class ComplianceTest:
         else:
             # If there are multiple Failures, concatenate their messages
             self.case.result[0].text += "\n\n" + msg.rstrip()
-
-    def add_info(self, msg):
-        """
-        Adds an informational message without failing the test. The message is
-        shown on GitHub, and is shown regardless of whether the test passes or
-        fails. If the test fails, then both the informational message and the
-        failure message are shown.
-
-        Can be called many times within the same test to add multiple messages.
-        """
-        def escape(s):
-            # Hack to preserve e.g. newlines and tabs in the attribute when
-            # tests are saved to .xml and reloaded. junitparser doesn't seem to
-            # handle it correctly, though it does escape stuff like quotes.
-            # unicode-escape replaces newlines with \n (two characters), etc.
-            return s.encode("unicode-escape").decode("utf-8")
-
-        if not self.case.info_msg:
-            self.case.info_msg = escape(msg)
-        else:
-            self.case.info_msg += r"\n\n" + escape(msg)
 
 
 class EndTest(Exception):
