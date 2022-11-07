@@ -11,7 +11,7 @@ import os
 from email.utils import parseaddr
 import logging
 import argparse
-from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure, Attr
+from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
 import tempfile
 import traceback
 import magic
@@ -74,13 +74,6 @@ def get_shas(refspec):
                refspec).split()
 
 
-class MyCase(TestCase):
-    """
-    Custom junitparser.TestCase for our tests that adds some extra <testcase>
-    XML attributes. These will be preserved when tests are saved and loaded.
-    """
-    classname = Attr()
-
 class ComplianceTest:
     """
     Base class for tests. Inheriting classes should have a run() method and set
@@ -103,8 +96,7 @@ class ComplianceTest:
       them to GitHub.
     """
     def __init__(self):
-        self.case = MyCase(self.name)
-        self.case.classname = "Guidelines"
+        self.case = TestCase(type(self).name, "Guidelines")
 
     def error(self, msg):
         """
@@ -149,7 +141,7 @@ class ComplianceTest:
         """
         if not self.case.result:
             # First reported failure
-            self.case.result = [Failure(self.name + " issues", "failure")]
+            self.case.result = [Failure(type(self).name + " issues", "failure")]
             self.case.result[0].text = msg.rstrip()
         else:
             # If there are multiple Failures, concatenate their messages
