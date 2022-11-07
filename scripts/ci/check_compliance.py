@@ -104,15 +104,10 @@ class ComplianceTest:
 
         Raises an exception internally, so you do not need to put a 'return'
         after error().
-
-        Any failures generated prior to the error() are included automatically
-        in the message. Usually, any failures would indicate problems with the
-        test code.
         """
-        if self.case.result:
-            msg += "\n\nFailures before error: " + self.case.result[0].text
-
-        self.case.result = [Error(msg, "error")]
+        err = Error(type(self).name + " error", "error")
+        err.text = msg.rstrip()
+        self.case.result += [err]
 
         raise EndTest
 
@@ -122,15 +117,10 @@ class ComplianceTest:
 
         Raises an exception internally, so you do not need to put a 'return'
         after skip().
-
-        Any failures generated prior to the skip() are included automatically
-        in the message. Usually, any failures would indicate problems with the
-        test code.
         """
-        if self.case.result:
-            msg += "\n\nFailures before skip: " + self.case.result[0].text
-
-        self.case.result = [Skipped(msg, "skipped")]
+        skpd = Skipped(type(self).name + " skipped", "skipped")
+        skpd.text = msg.rstrip()
+        self.case.result += [skpd]
 
         raise EndTest
 
@@ -139,13 +129,9 @@ class ComplianceTest:
         Signals that the test failed, with message 'msg'. Can be called many
         times within the same test to report multiple failures.
         """
-        if not self.case.result:
-            # First reported failure
-            self.case.result = [Failure(type(self).name + " issues", "failure")]
-            self.case.result[0].text = msg.rstrip()
-        else:
-            # If there are multiple Failures, concatenate their messages
-            self.case.result[0].text += "\n\n" + msg.rstrip()
+        failure = Failure(type(self).name + " issues", "failure")
+        failure.text = msg.rstrip()
+        self.case.result += [failure]
 
 
 class EndTest(Exception):
@@ -1092,8 +1078,8 @@ def _main(args):
 
     for case in suite:
         if case.result:
-            if case.result[0].type == 'skipped':
-                logging.warning("Skipped %s, %s", case.name, case.result[0].message)
+            if case.is_skipped:
+                logging.warning("Skipped %s", case.name)
             else:
                 failed_cases.append(case)
         else:
@@ -1105,14 +1091,14 @@ def _main(args):
     if n_fails:
         print("{} checks failed".format(n_fails))
         for case in failed_cases:
-            errmsg = case.result[0].text
-            logging.error("Test %s failed: %s", case.name,
-                          errmsg.strip() if errmsg else case.result[0].message)
-
+            errmsg = ""
             with open(f"{case.name}.txt", "w") as f:
                 docs = name2doc.get(case.name)
                 f.write(f"{docs}\n\n")
-                f.write(errmsg.strip() if errmsg else case.result[0].message)
+                for res in case.result:
+                    errmsg = res.text.strip()
+                    logging.error("Test %s failed: \n%s", case.name, errmsg)
+                    f.write(errmsg)
 
     print("\nComplete results in " + args.output)
     return n_fails
