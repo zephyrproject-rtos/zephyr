@@ -218,8 +218,8 @@ class ImgtoolSigner(Signer):
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
         edt = self.edt_load(b, args.quiet)
-        flash = self.edt_flash_node(edt)
-        align, addr, size = self.edt_flash_params(flash)
+        primary, secondary = self.edt_mcuboot_partitions(edt)
+        align, addr, size = self.edt_flash_params(primary, secondary)
 
         if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
             log.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
@@ -331,41 +331,36 @@ class ImgtoolSigner(Signer):
         return edt
 
     @staticmethod
-    def edt_flash_node(edt):
-        # By convention, the zephyr,flash chosen node contains the
-        # partition information about the zephyr image to sign.
-        flash = edt.chosen_node('zephyr,flash')
-        if not flash:
-            log.die('devicetree has no chosen zephyr,flash node;',
-                    "can't infer flash write block or image-0 slot sizes")
+    def edt_mcuboot_partitions(edt):
+        # Get the primary and secondary image partitions.
 
-        return flash
-
-    @staticmethod
-    def edt_flash_params(flash):
-        # Get the flash device's write alignment and offset from the
-        # image-0 partition and the size from image-1 partition, out of the
-        # build directory's devicetree. image-1 partition size is used,
-        # when available, because in swap-move mode it can be one sector
-        # smaller. When not available, fallback to image-0 (single image dfu).
-
-        # The node must have a "partitions" child node, which in turn
-        # must have child node labeled "image-0" and may have a child node
-        # named "image-1". By convention, the slots for consumption by
-        # imgtool are linked into these partitions.
-        if 'partitions' not in flash.children:
-            log.die("DT zephyr,flash chosen node has no partitions,",
-                    "can't find partitions for MCUboot slots")
-
-        partitions = flash.children['partitions']
-        images = {
-            node.label: node for node in partitions.children.values()
+        # Find all fixed-partition nodes
+        partition_nodes = edt.compat2okay['fixed-partitions']
+        # Assume that `image-0` and `image-1` labels correspond with the
+        # primary and secondary partitions.
+        partitions = {
+            node.label: node for p in partition_nodes for node in p.children.values()
             if node.label in set(['image-0', 'image-1'])
         }
-
-        if 'image-0' not in images:
+        # Validate that the primary image exists.
+        if 'image-0' not in partitions:
             log.die("DT zephyr,flash chosen node has no image-0 partition,",
                     "can't determine its address")
+        # Return the retrieved partitions.
+        return partitions['image-0'], partitions.get('image-1', None)
+
+    @staticmethod
+    def edt_flash_params(primary_image, secondary_image):
+        # Get the flash device's write alignment and offset from the
+        # primary partition and the size from secondary partition.
+        #
+        # The secondary partition size is used, when available, because in
+        # swap-move mode it can be one sector smaller than the primary.
+        # When not available, fallback to primary image (single image dfu).
+        if secondary_image is None:
+            secondary_image = primary_image
+
+        flash = primary_image.parent.parent
 
         # Die on missing or zero alignment or slot_size.
         if "write-block-size" not in flash.props:
@@ -376,19 +371,11 @@ class ImgtoolSigner(Signer):
             log.die('expected nonzero flash alignment, but got '
                     'DT flash device write-block-size {}'.format(align))
 
-        # The partitions node, and its subnode, must provide
-        # the size of image-1 or image-0 partition via the regs property.
-        image_key = 'image-1' if 'image-1' in images else 'image-0'
-        if not images[image_key].regs:
-            log.die(f'{image_key} flash partition has no regs property;',
-                    "can't determine size of image")
-
-        # always use addr of image-0, which is where images are run
-        addr = images['image-0'].regs[0].addr
-
-        size = images[image_key].regs[0].size
+        # Always use addr of the primary image, which is where images are run
+        addr = primary_image.regs[0].addr
+        size = secondary_image.regs[0].size
         if size == 0:
-            log.die('expected nonzero slot size for {}'.format(image_key))
+            log.die('expected nonzero slot size for {}'.format(secondary_image.label))
 
         return (align, addr, size)
 
