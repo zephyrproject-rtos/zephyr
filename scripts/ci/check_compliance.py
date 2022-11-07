@@ -98,40 +98,41 @@ class ComplianceTest:
     def __init__(self):
         self.case = TestCase(type(self).name, "Guidelines")
 
-    def error(self, msg):
+    def _result(self, res, text):
+        res.text = text.rstrip()
+        self.case.result += [res]
+
+    def error(self, text, msg=None, type_="error"):
         """
         Signals a problem with running the test, with message 'msg'.
 
         Raises an exception internally, so you do not need to put a 'return'
         after error().
         """
-        err = Error(type(self).name + " error", "error")
-        err.text = msg.rstrip()
-        self.case.result += [err]
+        err = Error(msg or (type(self).name + " error"), type_)
+        self._result(err, text)
 
         raise EndTest
 
-    def skip(self, msg):
+    def skip(self, text, msg=None, type_="skip"):
         """
         Signals that the test should be skipped, with message 'msg'.
 
         Raises an exception internally, so you do not need to put a 'return'
         after skip().
         """
-        skpd = Skipped(type(self).name + " skipped", "skipped")
-        skpd.text = msg.rstrip()
-        self.case.result += [skpd]
+        skpd = Skipped(msg or (type(self).name + " skipped"), type_)
+        self._result(skpd, text)
 
         raise EndTest
 
-    def add_failure(self, msg):
+    def add_failure(self, text, msg=None, type_="failure"):
         """
         Signals that the test failed, with message 'msg'. Can be called many
         times within the same test to report multiple failures.
         """
-        failure = Failure(type(self).name + " issues", "failure")
-        failure.text = msg.rstrip()
-        self.case.result += [failure]
+        fail= Failure(msg or (type(self).name + " issues"), type_)
+        self._result(fail, text)
 
 
 class EndTest(Exception):
