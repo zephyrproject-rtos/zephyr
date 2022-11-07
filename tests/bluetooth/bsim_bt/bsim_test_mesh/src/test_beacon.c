@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 #define GROUP_ADDR 0xc000
 #define WAIT_TIME 60 /*seconds*/
+#define MULT_NETKEYS_WAIT_TIME 350 /*seconds*/
+#define BEACON_INTERVAL_WAIT_TIME 750 /*seconds*/
 #define BEACON_INTERVAL 10 /*seconds*/
 
 #define BEACON_TYPE_SECURE 0x01
@@ -683,7 +685,7 @@ static void test_tx_multiple_netkeys(void)
 	NET_BUF_SIMPLE_DEFINE(buf, 22);
 	int err;
 
-	bt_mesh_test_cfg_set(&tx_cfg, 340);
+	bt_mesh_test_cfg_set(&tx_cfg, MULT_NETKEYS_WAIT_TIME);
 	k_sem_init(&observer_sem, 0, 1);
 
 	err = bt_enable(NULL);
@@ -769,7 +771,7 @@ static void test_rx_multiple_netkeys(void)
 	uint8_t status;
 	int err;
 
-	bt_mesh_test_cfg_set(&rx_cfg, 340);
+	bt_mesh_test_cfg_set(&rx_cfg, MULT_NETKEYS_WAIT_TIME);
 	bt_mesh_test_setup();
 	bt_mesh_iv_update_test(true);
 
@@ -827,12 +829,12 @@ static void secure_beacon_send(struct k_work *work)
 	 * Sending SNB(secure network beacon) faster to guarantee
 	 * at least one beacon is received by tx node in 10s period.
 	 */
-	k_work_schedule(&beacon_timer, K_SECONDS(4));
+	k_work_schedule(&beacon_timer, K_SECONDS(2));
 }
 
 static void test_tx_secure_beacon_interval(void)
 {
-	bt_mesh_test_cfg_set(&tx_cfg, 750);
+	bt_mesh_test_cfg_set(&tx_cfg, BEACON_INTERVAL_WAIT_TIME);
 	k_sleep(K_SECONDS(2));
 	bt_mesh_test_setup();
 	PASS();
@@ -845,7 +847,7 @@ static void test_rx_secure_beacon_interval(void)
 	int64_t beacon_recv_time;
 	int64_t delta;
 
-	bt_mesh_test_cfg_set(&rx_cfg, 750);
+	bt_mesh_test_cfg_set(&rx_cfg, BEACON_INTERVAL_WAIT_TIME);
 	k_sem_init(&observer_sem, 0, 1);
 	k_work_init_delayable(&beacon_timer, secure_beacon_send);
 
@@ -862,7 +864,7 @@ static void test_rx_secure_beacon_interval(void)
 
 	/**
 	 * Sending 2 SNB 20ms apart by only sending for even values of loop variable.
-	 * And verify that tx node adapts to 20ms SNB interval after sending enough
+	 * And verify that tx node adapts to 20s SNB interval after sending enough
 	 * beacons in for loop.
 	 */
 	for (size_t i = 1; i < 5; i++) {
@@ -875,7 +877,7 @@ static void test_rx_secure_beacon_interval(void)
 	}
 
 	/**
-	 * Verify that tx node keeps the 20ms SNB interval until adapts itself and
+	 * Verify that tx node keeps the 20s SNB interval until adapts itself and
 	 * sends SNB in 10s again.
 	 */
 	ASSERT_FALSE(wait_for_beacon(NULL, NULL));
@@ -888,11 +890,10 @@ static void test_rx_secure_beacon_interval(void)
 	/**
 	 * Send SNB so that the tx node stays silent and eventually sends
 	 * an SNB after 600s, which is the maximum time for SNB interval.
-	 * Sending beacon with 4sec interval, therefore 150 beacons are enough
-	 * to cover 600s and +1 is to be sure that we push the boundary.
+	 * Sending beacon with 2sec interval.
 	 */
 	delta = 0;
-	for (size_t i = 0; i < 151; i++) {
+	for (size_t i = 0; i < 60; i++) {
 		if (wait_for_beacon(NULL, NULL)) {
 			delta = k_uptime_delta(&beacon_recv_time);
 			break;
