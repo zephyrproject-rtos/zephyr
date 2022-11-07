@@ -254,7 +254,7 @@ should see the following message in the terminal:
    https://www.nxp.com/webapp/Download?colCode=MKW41Z512RM
 
 .. _OpenSDA DAPLink FRDM-KW41Z Firmware:
-   https://www.nxp.com/assets/downloads/data/en/reference-applications/OpenSDAv2.2_DAPLink_frdmkw41z_rev0241.zip
+   https://www.nxp.com/downloads/en/reference-applications/OpenSDAv2.2_DAPLink_frdmkw41z_rev0241.zip
 
 .. _OpenSDA J-Link FRDM-KW41Z Firmware:
    https://www.segger.com/downloads/jlink/OpenSDA_FRDM-KW41Z

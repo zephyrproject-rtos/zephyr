@@ -14,6 +14,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)

@@ -31,11 +31,11 @@ static void threads_suspend_resume(int prio)
 	k_thread_suspend(tid);
 	k_msleep(100);
 	/* checkpoint: created thread shouldn't be executed after suspend */
-	zassert_false(last_prio == create_prio, NULL);
+	zassert_false(last_prio == create_prio);
 	k_thread_resume(tid);
 	k_msleep(100);
 	/* checkpoint: created thread should be executed after resume */
-	zassert_true(last_prio == create_prio, NULL);
+	zassert_true(last_prio == create_prio);
 }
 
 /*test cases*/
@@ -165,19 +165,19 @@ ZTEST(threads_lifecycle, test_resume_unsuspend_thread)
 
 	/* Resume an unsuspend thread will not change the thread state. */
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "queued") == 0, NULL);
+	zassert_true(strcmp(str, "queued") == 0);
 	k_thread_resume(tid);
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "queued") == 0, NULL);
+	zassert_true(strcmp(str, "queued") == 0);
 
 	/* suspend created thread */
 	k_thread_suspend(tid);
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "suspended") == 0, NULL);
+	zassert_true(strcmp(str, "suspended") == 0);
 
 	/* Resume an suspend thread will make it to be next eligible.*/
 	k_thread_resume(tid);
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "queued") == 0, NULL);
+	zassert_true(strcmp(str, "queued") == 0);
 	k_thread_abort(tid);
 }

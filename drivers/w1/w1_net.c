@@ -183,7 +183,7 @@ int z_impl_w1_search_bus(const struct device *dev, uint8_t command,
 		 * Only big-endian targets need to swap, such that struct's
 		 * bytes are stored in big-endian byte order.
 		 */
-		if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) {
+		if (IS_ENABLED(CONFIG_BIG_ENDIAN)) {
 			sys_memcpy_swap(&found_rom, &found_rom_inv_64, 8);
 		} else {
 			*(uint64_t *)&found_rom = found_rom_inv_64;

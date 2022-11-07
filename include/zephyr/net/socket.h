@@ -983,9 +983,16 @@ struct ifreq {
 /** sockopt: Disable TCP buffering (ignored, for compatibility) */
 #define TCP_NODELAY 1
 
+/* Socket options for IPPROTO_IP level */
+/** sockopt: Set or receive the Type-Of-Service value for an outgoing packet. */
+#define IP_TOS 1
+
 /* Socket options for IPPROTO_IPV6 level */
 /** sockopt: Don't support IPv4 access (ignored, for compatibility) */
 #define IPV6_V6ONLY 26
+
+/** sockopt: Set or receive the traffic class value for an outgoing packet. */
+#define IPV6_TCLASS 67
 
 /** sockopt: Socket priority */
 #define SO_PRIORITY 12

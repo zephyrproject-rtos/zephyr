@@ -13,6 +13,7 @@
 #include <zephyr/sys_clock.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 
 BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,

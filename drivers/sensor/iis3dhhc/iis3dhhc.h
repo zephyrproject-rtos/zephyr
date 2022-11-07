@@ -15,6 +15,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 #include "iis3dhhc_reg.h"

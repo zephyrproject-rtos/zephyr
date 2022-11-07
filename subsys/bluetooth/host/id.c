@@ -5,13 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/sys/__assert.h>
 
 #include "hci_core.h"
 #include "id.h"
@@ -27,6 +32,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_id
 #include "common/log.h"
+#include "common/bt_str.h"
 
 struct bt_adv_id_check_data {
 	uint8_t id;
@@ -36,6 +42,10 @@ struct bt_adv_id_check_data {
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_BROADCASTER)
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr)
 {
+	CHECKIF(id >= CONFIG_BT_ID_MAX || addr == NULL) {
+		return NULL;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		struct bt_keys *keys;
 
@@ -146,6 +156,10 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 	struct net_buf *buf;
 	int err;
 
+	CHECKIF(adv == NULL || addr == NULL) {
+		return -EINVAL;
+	}
+
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		return set_random_address(addr);
@@ -254,6 +268,10 @@ int bt_id_set_private_addr(uint8_t id)
 	bt_addr_t rpa;
 	int err;
 
+	CHECKIF(id >= CONFIG_BT_ID_MAX) {
+		return -EINVAL;
+	}
+
 	/* check if RPA is valid */
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID)) {
 		return 0;
@@ -285,6 +303,10 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	bt_addr_t rpa;
 	int err;
 
+	CHECKIF(adv == NULL) {
+		return -EINVAL;
+	}
+
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		return bt_id_set_private_addr(adv->id);
@@ -295,7 +317,9 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 		return 0;
 	}
 
-	if (adv == bt_le_adv_lookup_legacy() && adv->id == BT_ID_DEFAULT) {
+	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) &&
+	    (adv == bt_le_adv_lookup_legacy()) && (adv->id == BT_ID_DEFAULT)) {
 		/* Make sure that a Legacy advertiser using default ID has same
 		 * RPA address as scanner roles.
 		 */
@@ -340,6 +364,10 @@ int bt_id_set_private_addr(uint8_t id)
 	bt_addr_t nrpa;
 	int err;
 
+	CHECKIF(id >= CONFIG_BT_ID_MAX) {
+		return -EINVAL;
+	}
+
 	err = bt_rand(nrpa.val, sizeof(nrpa.val));
 	if (err) {
 		return err;
@@ -363,6 +391,10 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 {
 	bt_addr_t nrpa;
 	int err;
+
+	CHECKIF(adv == NULL) {
+		return -EINVAL;
+	}
 
 	err = bt_rand(nrpa.val, sizeof(nrpa.val));
 	if (err) {
@@ -401,7 +433,12 @@ static void adv_disable_rpa(struct bt_le_ext_adv *adv, void *data)
 	/* Disable advertising sets to prepare them for RPA update. */
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
-		bt_le_adv_set_enable_ext(adv, false, NULL);
+		int err;
+
+		err = bt_le_adv_set_enable_ext(adv, false, NULL);
+		if (err) {
+			BT_ERR("Failed to disable advertising (err %d)", err);
+		}
 
 		adv_disabled[adv_index] = true;
 	}
@@ -430,7 +467,10 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 				err);
 		}
 
-		bt_le_adv_set_enable_ext(adv, true, NULL);
+		err = bt_le_adv_set_enable_ext(adv, true, NULL);
+		if (err) {
+			BT_ERR("Failed to enable advertising (err %d)", err);
+		}
 	}
 }
 #endif /* defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY) */
@@ -615,6 +655,10 @@ bool bt_id_scan_random_addr_check(void)
 
 bool bt_id_adv_random_addr_check(const struct bt_le_adv_param *param)
 {
+	CHECKIF(param == NULL) {
+		return false;
+	}
+
 	if (!IS_ENABLED(CONFIG_BT_OBSERVER) ||
 	    (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	     BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
@@ -788,12 +832,73 @@ void bt_id_pending_keys_update(void)
 	}
 }
 
+struct bt_id_conflict {
+	struct bt_keys *candidate;
+	struct bt_keys *found;
+};
+
+/* The Controller Resolve List is constrained by 7.8.38 "LE Add Device To
+ * Resolving List command". The Host is designed with the assumption that all
+ * local bonds can be put in the resolve list if there is room. Therefore we
+ * must refuse bonds that conflict in the resolve list. Notably, this prevents
+ * multiple local identities to bond with the same remote identity.
+ */
+void find_rl_conflict(struct bt_keys *resident, void *user_data)
+{
+	struct bt_id_conflict *conflict = user_data;
+	bool addr_conflict;
+	bool irk_conflict;
+
+	__ASSERT_NO_MSG(conflict != NULL);
+	__ASSERT_NO_MSG(conflict->candidate != NULL);
+	__ASSERT_NO_MSG(resident != NULL);
+	/* Only uncommitted bonds can be in conflict with committed bonds. */
+	__ASSERT_NO_MSG((conflict->candidate->state & BT_KEYS_ID_ADDED) == 0);
+
+	if (conflict->found) {
+		return;
+	}
+
+	/* Test against committed bonds only. */
+	if ((resident->state & BT_KEYS_ID_ADDED) == 0) {
+		return;
+	}
+
+	addr_conflict = bt_addr_le_eq(&conflict->candidate->addr, &resident->addr);
+
+	/* All-zero IRK is "no IRK", and does not conflict with other Zero-IRKs. */
+	irk_conflict = (!bt_irk_eq(&conflict->candidate->irk, &(struct bt_irk){}) &&
+			bt_irk_eq(&conflict->candidate->irk, &resident->irk));
+
+	if (addr_conflict || irk_conflict) {
+		conflict->found = resident;
+	}
+}
+
+struct bt_keys *bt_id_find_conflict(struct bt_keys *candidate)
+{
+	struct bt_id_conflict conflict = {
+		.candidate = candidate,
+	};
+
+	bt_keys_foreach_type(BT_KEYS_IRK, find_rl_conflict, &conflict);
+
+	return conflict.found;
+}
+
 void bt_id_add(struct bt_keys *keys)
 {
+	CHECKIF(keys == NULL) {
+		return;
+	}
+
 	struct bt_conn *conn;
 	int err;
 
 	BT_DBG("addr %s", bt_addr_le_str(&keys->addr));
+
+	__ASSERT_NO_MSG(keys != NULL);
+	/* We assume (and could assert) !bt_id_find_conflict(keys) here. */
 
 	/* Nothing to be done if host-side resolving is used */
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
@@ -935,11 +1040,18 @@ void bt_id_del(struct bt_keys *keys)
 	struct bt_conn *conn;
 	int err;
 
+	CHECKIF(keys == NULL) {
+		return;
+	}
+
 	BT_DBG("addr %s", bt_addr_le_str(&keys->addr));
 
 	if (!bt_dev.le.rl_size ||
 	    bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) {
-		bt_dev.le.rl_entries--;
+		__ASSERT_NO_MSG(bt_dev.le.rl_entries > 0);
+		if (bt_dev.le.rl_entries > 0) {
+			bt_dev.le.rl_entries--;
+		}
 		keys->state &= ~BT_KEYS_ID_ADDED;
 		return;
 	}
@@ -957,8 +1069,7 @@ void bt_id_del(struct bt_keys *keys)
 
 		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
 		if (adv_enabled) {
-			bt_id_pending_keys_update_set(keys,
-						   BT_KEYS_ID_PENDING_ADD);
+			bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
 			return;
 		}
 	}
@@ -1045,7 +1156,7 @@ static int id_find(const bt_addr_le_t *addr)
 	uint8_t id;
 
 	for (id = 0U; id < bt_dev.id_count; id++) {
-		if (!bt_addr_le_cmp(addr, &bt_dev.id_addr[id])) {
+		if (bt_addr_le_eq(addr, &bt_dev.id_addr[id])) {
 			return id;
 		}
 	}
@@ -1055,7 +1166,7 @@ static int id_find(const bt_addr_le_t *addr)
 
 static int id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
-	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+	if (addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		bt_addr_le_copy(&bt_dev.id_addr[id], addr);
 	} else {
 		bt_addr_le_t new_addr;
@@ -1113,7 +1224,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 {
 	int new_id, err;
 
-	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+	if (addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM ||
 		    !BT_ADDR_IS_STATIC(&addr->a)) {
 			BT_ERR("Only static random identity address supported");
@@ -1137,7 +1248,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
 		uint8_t zero_irk[16] = { 0 };
 
-		if (!(addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY))) {
+		if (!(addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY))) {
 			return -EINVAL;
 		}
 
@@ -1147,10 +1258,12 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 		}
 	}
 
-	new_id = bt_dev.id_count++;
+	new_id = bt_dev.id_count;
 	err = id_create(new_id, addr, irk);
 	if (err) {
 		return err;
+	} else {
+		bt_dev.id_count++;
 	}
 
 	return new_id;
@@ -1160,7 +1273,7 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
 	int err;
 
-	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+	if (addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM ||
 		    !BT_ADDR_IS_STATIC(&addr->a)) {
 			BT_ERR("Only static random identity address supported");
@@ -1193,7 +1306,7 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN) &&
-	    bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+	    !bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
 		err = bt_unpair(id, NULL);
 		if (err) {
 			return err;
@@ -1214,7 +1327,7 @@ int bt_id_delete(uint8_t id)
 		return -EINVAL;
 	}
 
-	if (!bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+	if (bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
 		return -EALREADY;
 	}
 
@@ -1298,6 +1411,11 @@ uint8_t bt_id_read_public_addr(bt_addr_le_t *addr)
 	struct bt_hci_rp_read_bd_addr *rp;
 	struct net_buf *rsp;
 	int err;
+
+	CHECKIF(addr == NULL) {
+		BT_WARN("Invalid input parameters");
+		return 0U;
+	}
 
 	/* Read Bluetooth Address */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
@@ -1398,7 +1516,7 @@ uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
 	}
 
 	for (i = 0; i < cnt; i++) {
-		memcpy(&addrs[i], rp->a, sizeof(struct bt_hci_vs_static_addr));
+		memcpy(&addrs[i], &rp->a[i], sizeof(struct bt_hci_vs_static_addr));
 	}
 
 	net_buf_unref(rsp);
@@ -1485,6 +1603,10 @@ int bt_id_set_create_conn_own_addr(bool use_filter, uint8_t *own_addr_type)
 {
 	int err;
 
+	CHECKIF(own_addr_type == NULL) {
+		return -EINVAL;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 		if (use_filter || rpa_timeout_valid_check()) {
 			err = bt_id_set_private_addr(BT_ID_DEFAULT);
@@ -1548,6 +1670,10 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 {
 	int err;
 
+	CHECKIF(own_addr_type == NULL) {
+		return -EINVAL;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 		err = bt_id_set_private_addr(BT_ID_DEFAULT);
 		if (err) {
@@ -1602,6 +1728,10 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 {
 	const bt_addr_le_t *id_addr;
 	int err = 0;
+
+	CHECKIF(adv == NULL || own_addr_type == NULL) {
+		return -EINVAL;
+	}
 
 	/* Set which local identity address we're advertising with */
 	id_addr = &bt_dev.id_addr[adv->id];
@@ -1692,6 +1822,10 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 #if defined(CONFIG_BT_BREDR)
 int bt_br_oob_get_local(struct bt_br_oob *oob)
 {
+	CHECKIF(oob == NULL) {
+		return -EINVAL;
+	}
+
 	bt_addr_copy(&oob->addr, &bt_dev.id_addr[0].a);
 
 	return 0;
@@ -1702,6 +1836,10 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 {
 	struct bt_le_ext_adv *adv = NULL;
 	int err;
+
+	CHECKIF(oob == NULL) {
+		return -EINVAL;
+	}
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
@@ -1778,6 +1916,10 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 {
 	int err;
 
+	CHECKIF(adv == NULL || oob == NULL) {
+		return -EINVAL;
+	}
+
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
@@ -1831,6 +1973,10 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const uint8_t *tk)
 {
+	CHECKIF(conn == NULL || tk == NULL) {
+		return -EINVAL;
+	}
+
 	return bt_smp_le_oob_set_tk(conn, tk);
 }
 #endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
@@ -1840,6 +1986,10 @@ int bt_le_oob_set_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data *oobd_local,
 			  const struct bt_le_oob_sc_data *oobd_remote)
 {
+	CHECKIF(conn == NULL) {
+		return -EINVAL;
+	}
+
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
@@ -1851,6 +2001,10 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_local,
 			  const struct bt_le_oob_sc_data **oobd_remote)
 {
+	CHECKIF(conn == NULL) {
+		return -EINVAL;
+	}
+
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}

@@ -6,8 +6,11 @@
 
 #define DT_DRV_COMPAT nxp_os_timer
 
+#include <limits.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include "fsl_ostimer.h"
@@ -120,7 +123,9 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	base = (OSTIMER_Type *)DT_INST_REG_ADDR(0);
 
-	EnableDeepSleepIRQ(DT_INST_IRQN(0));
+	if (DT_INST_PROP(0, wakeup_source)) {
+		EnableDeepSleepIRQ(DT_INST_IRQN(0));
+	}
 
 	/* Initialize the OS timer, setting clock configuration. */
 	OSTIMER_Init(base);

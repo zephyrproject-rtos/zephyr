@@ -47,8 +47,11 @@ For more information about the LPC55S69 SoC and LPCXPRESSO55S69 board, see:
 Supported Features
 ==================
 
-The lpcxpresso55s69 board configuration supports the following hardware
-features:
+NXP considers the LPCXpresso55S69 as the superset board for the LPC55xx
+series of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire LPC55xx series.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The lpcxpresso55s69 board
+configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -65,7 +68,8 @@ features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling                 |
+| USART     | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | WWDT      | on-chip    | windowed watchdog timer             |
 +-----------+------------+-------------------------------------+
@@ -375,7 +379,7 @@ should see the following message in the terminal:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/lpc-cortex-m-mcus/lpc5500-cortex-m33/high-efficiency-arm-cortex-m33-based-microcontroller-family:LPC55S6x
 
 .. _LPC55S69 Datasheet:
-   https://www.nxp.com/docs/en/data-sheet/LPC55S6x.pdf
+   https://www.nxp.com/docs/en/nxp/data-sheets/LPC55S6x_DS.pdf
 
 .. _LPC55S69 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=UM11126

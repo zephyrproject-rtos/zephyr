@@ -5,7 +5,7 @@ description: ITE, it8xxx2 Voltage Comparator node
 
 compatible: "ite,it8xxx2-vcmp"
 
-include: base.yaml
+include: sensor-device.yaml
 
 properties:
   reg:

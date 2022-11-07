@@ -15,6 +15,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SETTINGS)
 #define LOG_MODULE_NAME bt_settings
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "hci_core.h"
 #include "settings.h"
@@ -150,8 +151,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 				       " (err %zd)", len);
 			} else {
 				BT_ERR("Invalid length ID address in storage");
-				BT_HEXDUMP_DBG(&bt_dev.id_addr, len,
-					       "data read");
+				LOG_HEXDUMP_DBG(&bt_dev.id_addr, len, "data read");
 			}
 			(void)memset(bt_dev.id_addr, 0,
 				     sizeof(bt_dev.id_addr));

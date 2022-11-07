@@ -12,7 +12,11 @@
  * hardware for the RT5XX platforms.
  */
 
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <zephyr/init.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/irq.h>
+#include <zephyr/linker/sections.h>
 #include <soc.h>
 #include "flash_clock_setup.h"
 #include "fsl_power.h"
@@ -20,7 +24,7 @@
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
-#include "usb_dc_mcux.h"
+#include "usb.h"
 #endif
 
 /* Board System oscillator settling time in us */
@@ -195,7 +199,7 @@ void z_arm_platform_init(void)
 	SystemInit();
 }
 
-void clock_init(void)
+static void clock_init(void)
 {
 	/* Configure LPOSC 1M */
 	/* Power on LPOSC (1MHz) */
@@ -242,9 +246,6 @@ void clock_init(void)
 	CLOCK_InitAudioPll(&g_audioPllConfig_clock_init);
 	/* Enable Audio PLL clock */
 	CLOCK_InitAudioPfd(kCLOCK_Pfd0, 26);
-
-	/* Set MAINPLLCLKDIV divider to value 5 */
-	CLOCK_SetClkDiv(kCLOCK_DivMainPllClk, 5U);
 
 	/* Set SYSCPUAHBCLKDIV divider to value 2 */
 	CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 2U);
@@ -321,7 +322,6 @@ void clock_init(void)
  *
  * @return 0
  */
-
 static int nxp_rt500_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);

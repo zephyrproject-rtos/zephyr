@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/irq.h>
 
 #include "phy_xlnx_gem.h"
 

@@ -67,6 +67,12 @@ endif()
 
 if(CONFIG_ARCH_POSIX_LIBFUZZER)
   list(APPEND LLVM_SANITIZERS "fuzzer")
+  if(NOT CONFIG_64BIT)
+    # On i386, libfuzzer seems to dynamically relocate the binary, so
+    # we need to emit PIC code.  This limitation is undocumented and
+    # poorly understood...
+    zephyr_compile_options(-fPIC)
+  endif()
 endif()
 
 list(JOIN LLVM_SANITIZERS "," LLVM_SANITIZERS_ARG)

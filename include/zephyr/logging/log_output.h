@@ -61,6 +61,8 @@ extern "C" {
 
 #define LOG_OUTPUT_DICT 2
 
+#define LOG_OUTPUT_CUSTOM 3
+
 /**
  * @brief Prototype of the function processing output data.
  *

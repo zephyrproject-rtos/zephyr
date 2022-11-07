@@ -460,14 +460,14 @@ static void futex_wait_wake(void *p1, void *p2, void *p3)
 	 * Use assertion to verify k_futex_wait() returns 0
 	 */
 	ret_value = k_futex_wait(&simple_futex, 13, K_FOREVER);
-	zassert_equal(ret_value, 0, NULL);
+	zassert_equal(ret_value, 0);
 
 	/* Test user thread can make wake without error
 	 * Use assertion to verify k_futex_wake() returns 1,
 	 * because only 1 thread wakes
 	 */
 	ret_value = k_futex_wake(&simple_futex, false);
-	zassert_equal(ret_value, 1, NULL);
+	zassert_equal(ret_value, 1);
 }
 
 static void futex_wake(void *p1, void *p2, void *p3)
@@ -478,7 +478,7 @@ static void futex_wake(void *p1, void *p2, void *p3)
 	k_futex_wake(&simple_futex, false);
 
 	ret_value = k_futex_wait(&simple_futex, 13, K_FOREVER);
-	zassert_equal(ret_value, 0, NULL);
+	zassert_equal(ret_value, 0);
 
 	/* Test user can write to the futex value
 	 * Use assertion to verify subtraction correctness
@@ -486,7 +486,7 @@ static void futex_wake(void *p1, void *p2, void *p3)
 	 */
 	atomic_sub(&simple_futex.val, 1);
 	atomic_ret_val = atomic_get(&simple_futex.val);
-	zassert_equal(atomic_ret_val, 12, NULL);
+	zassert_equal(atomic_ret_val, 12);
 }
 
 /**

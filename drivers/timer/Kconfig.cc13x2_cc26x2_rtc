@@ -5,7 +5,8 @@
 
 config CC13X2_CC26X2_RTC_TIMER
 	bool "TI SimpleLink CC13x2/CC26x2 RTC timer"
-	depends on SOC_SERIES_CC13X2_CC26X2
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_RTC_ENABLED
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help

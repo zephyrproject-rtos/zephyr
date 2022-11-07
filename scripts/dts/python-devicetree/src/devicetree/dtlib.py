@@ -954,6 +954,10 @@ class DT:
         # Parses the '{ ... };' part of 'node-name { ... };'. Returns the new
         # Node.
 
+        # We need to track which child nodes were defined in this set
+        # of curly braces in order to reject duplicate node names.
+        current_child_names = set()
+
         self._expect_token("{")
         while True:
             labels, omit_if_no_ref = self._parse_propnode_labels()
@@ -965,8 +969,13 @@ class DT:
 
                     # Fetch the existing node if it already exists. This
                     # happens when overriding nodes.
-                    child = node.nodes.get(tok.val) or \
-                        Node(name=tok.val, parent=node, dt=self)
+                    child = node.nodes.get(tok.val)
+                    if child:
+                        if child.name in current_child_names:
+                            self._parse_error(f'{child.path}: duplicate node name')
+                    else:
+                        child = Node(name=tok.val, parent=node, dt=self)
+                        current_child_names.add(tok.val)
 
                     for label in labels:
                         _append_no_dup(child.labels, label)

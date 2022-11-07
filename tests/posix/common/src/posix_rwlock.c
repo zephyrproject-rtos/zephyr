@@ -65,14 +65,14 @@ ZTEST(posix_apis, test_posix_rw_lock)
 	time.tv_sec = 1;
 	time.tv_nsec = 0;
 
-	zassert_equal(pthread_rwlock_destroy(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_rdlock(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_wrlock(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_trywrlock(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_tryrdlock(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_timedwrlock(&rwlock, &time), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_timedrdlock(&rwlock, &time), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_unlock(&rwlock), EINVAL, NULL);
+	zassert_equal(pthread_rwlock_destroy(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_rdlock(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_wrlock(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_trywrlock(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_tryrdlock(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_timedwrlock(&rwlock, &time), EINVAL);
+	zassert_equal(pthread_rwlock_timedrdlock(&rwlock, &time), EINVAL);
+	zassert_equal(pthread_rwlock_unlock(&rwlock), EINVAL);
 
 	zassert_false(pthread_rwlock_init(&rwlock, NULL),
 		      "Failed to create rwlock");

@@ -8,12 +8,6 @@ compatible: "maxim,ds2484"
 include: [i2c-device.yaml, w1-master.yaml]
 
 properties:
-  active-pullup:
-    type: boolean
-    description: |
-      Controls whether an active pullup or a passive pullup is used to drive a
-      1-Wire line from low to high.
-
   slpz-gpios:
     type: phandle-array
     required: false

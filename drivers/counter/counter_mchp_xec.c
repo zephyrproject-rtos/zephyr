@@ -22,6 +22,7 @@
  *   when the counters reach zero.
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -46,7 +47,7 @@ struct counter_xec_data {
 };
 
 #define COUNTER_XEC_REG_BASE(_dev)			\
-	((BTMR_Type *)					\
+	((struct btmr_regs *)					\
 	 ((const struct counter_xec_config * const)	\
 	  _dev->config)->base_address)
 
@@ -59,7 +60,7 @@ struct counter_xec_data {
 
 static int counter_xec_start(const struct device *dev)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 
 	if (counter->CTRL & MCHP_BTMR_CTRL_ENABLE) {
 		return -EALREADY;
@@ -74,7 +75,7 @@ static int counter_xec_start(const struct device *dev)
 
 static int counter_xec_stop(const struct device *dev)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 	uint32_t reg;
 
 	if (!(counter->CTRL & MCHP_BTMR_CTRL_ENABLE)) {
@@ -100,7 +101,7 @@ static int counter_xec_stop(const struct device *dev)
 
 static int counter_xec_get_value(const struct device *dev, uint32_t *ticks)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 
 	*ticks = counter->CNT;
 	return 0;
@@ -109,7 +110,7 @@ static int counter_xec_get_value(const struct device *dev, uint32_t *ticks)
 static int counter_xec_set_alarm(const struct device *dev, uint8_t chan_id,
 				 const struct counter_alarm_cfg *alarm_cfg)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
 
 	if (chan_id != 0) {
@@ -153,7 +154,7 @@ static int counter_xec_set_alarm(const struct device *dev, uint8_t chan_id,
 
 static int counter_xec_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
 
 	if (chan_id != 0) {
@@ -174,14 +175,14 @@ static int counter_xec_cancel_alarm(const struct device *dev, uint8_t chan_id)
 
 static uint32_t counter_xec_get_pending_int(const struct device *dev)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 
 	return counter->STS;
 }
 
 static uint32_t counter_xec_get_top_value(const struct device *dev)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 
 	return counter->PRLD;
 }
@@ -189,7 +190,7 @@ static uint32_t counter_xec_get_top_value(const struct device *dev)
 static int counter_xec_set_top_value(const struct device *dev,
 				     const struct counter_top_cfg *cfg)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
 	int ret = 0;
@@ -243,14 +244,19 @@ static int counter_xec_set_top_value(const struct device *dev,
 
 static void counter_xec_isr(const struct device *dev)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
 	counter_alarm_callback_t alarm_cb;
 	void *user_data;
 
 	counter->STS = MCHP_BTMR_STS_ACTIVE;
+
+#if defined(CONFIG_SOC_MEC172X_NSZ)
+	mchp_soc_ecia_girq_src_clr(counter_cfg->girq_id, counter_cfg->girq_bit);
+#else
 	MCHP_GIRQ_SRC(counter_cfg->girq_id) = BIT(counter_cfg->girq_bit);
+#endif
 
 	LOG_DBG("%p Counter ISR", dev);
 
@@ -281,7 +287,7 @@ static const struct counter_driver_api counter_xec_api = {
 
 static int counter_xec_init(const struct device *dev)
 {
-	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
 
 	counter_xec_stop(dev);
@@ -294,7 +300,11 @@ static int counter_xec_init(const struct device *dev)
 	counter->PRLD = counter_cfg->info.max_top_value;
 	counter->CNT = counter_cfg->info.max_top_value;
 
+#if defined(CONFIG_SOC_MEC172X_NSZ)
+	mchp_soc_ecia_girq_src_en(counter_cfg->girq_id, counter_cfg->girq_bit);
+#else
 	MCHP_GIRQ_ENSET(counter_cfg->girq_id) = BIT(counter_cfg->girq_bit);
+#endif
 
 	counter_cfg->config_func();
 

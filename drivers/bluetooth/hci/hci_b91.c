@@ -142,7 +142,7 @@ static void hci_b91_host_rcv_pkt(uint8_t *data, uint16_t len)
 	uint8_t pkt_indicator;
 	struct net_buf *buf;
 
-	BT_HEXDUMP_DBG(data, len, "host packet data:");
+	LOG_HEXDUMP_DBG(data, len, "host packet data:");
 
 	pkt_indicator = *data++;
 	len -= sizeof(pkt_indicator);
@@ -198,7 +198,7 @@ static int bt_b91_send(struct net_buf *buf)
 		goto done;
 	}
 
-	BT_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
 	if (k_sem_take(&hci_send_sem, HCI_BT_B91_TIMEOUT) == 0) {
 		b91_bt_host_send_packet(type, buf->data, buf->len);

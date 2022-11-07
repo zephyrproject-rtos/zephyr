@@ -1,0 +1,7 @@
+sample:
+  description: Sample application to test ESP32 Ethernet
+  name: ESP32 Ethernet
+tests:
+  sample.board.esp32.ethernet:
+    platform_allow: esp32_ethernet_kit
+    tags: esp32

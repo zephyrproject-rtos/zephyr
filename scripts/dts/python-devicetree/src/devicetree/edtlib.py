@@ -110,6 +110,10 @@ class EDT:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some Node to a vendor name parsed from vendor_prefixes.
 
+    compat2model:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some Node to a model name parsed from that compatible.
+
     label2node:
       A collections.OrderedDict that maps a node label to the node with
       that label.
@@ -455,6 +459,7 @@ class EDT:
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
         self.compat2vendor = defaultdict(str)
+        self.compat2model = defaultdict(str)
 
         for node in self.nodes:
             for label in node.labels:
@@ -477,9 +482,10 @@ class EDT:
                          f"'{compat_re}'")
 
                 if ',' in compat and self._vendor_prefixes:
-                    vendor = compat.split(',', 1)[0]
+                    vendor, model = compat.split(',', 1)
                     if vendor in self._vendor_prefixes:
                         self.compat2vendor[compat] = self._vendor_prefixes[vendor]
+                        self.compat2model[compat] = model
 
                     # As an exception, the root node can have whatever
                     # compatibles it wants. Other nodes get checked.
@@ -642,16 +648,18 @@ class Node:
       node, sorted by index. The list is empty if the node does not have any
       pinctrl-<index> properties.
 
-    bus:
+    buses:
       If the node is a bus node (has a 'bus:' key in its binding), then this
-      attribute holds the bus type, e.g. "i2c" or "spi". If the node is not a
-      bus node, then this attribute is None.
+      attribute holds the list of supported bus types, e.g. ["i2c"], ["spi"]
+      or ["i3c", "i2c"] if multiple protocols are supported via the same bus.
+      If the node is not a bus node, then this attribute is an empty list.
 
-    on_bus:
-      The bus the node appears on, e.g. "i2c" or "spi". The bus is determined
+    on_buses:
+      The bus the node appears on, e.g. ["i2c"], ["spi"] or ["i3c", "i2c"] if
+      multiple protocols are supported via the same bus. The bus is determined
       by searching upwards for a parent node whose binding has a 'bus:' key,
       returning the value of the first 'bus:' key found. If none of the node's
-      parents has a 'bus:' key, this attribute is None.
+      parents has a 'bus:' key, this attribute is an empty list.
 
     bus_node:
       Like on_bus, but contains the Node for the bus controller, or None if the
@@ -777,17 +785,17 @@ class Node:
                 if node is self._node]
 
     @property
-    def bus(self):
+    def buses(self):
         "See the class docstring"
         if self._binding:
-            return self._binding.bus
-        return None
+            return self._binding.buses
+        return []
 
     @property
-    def on_bus(self):
+    def on_buses(self):
         "See the class docstring"
         bus_node = self.bus_node
-        return bus_node.bus if bus_node else None
+        return bus_node.buses if bus_node else []
 
     @property
     def flash_controller(self):
@@ -812,7 +820,10 @@ class Node:
     def spi_cs_gpio(self):
         "See the class docstring"
 
-        if not (self.on_bus == "spi" and "cs-gpios" in self.bus_node.props):
+        # We know on_buses is always a list, but pylint doesn't.
+        # So ignore the error.
+        if not ("spi" in self.on_buses # pylint: disable=unsupported-membership-test
+                and "cs-gpios" in self.bus_node.props):
             return None
 
         if not self.regs:
@@ -854,7 +865,7 @@ class Node:
             return
 
         if self.compats:
-            on_bus = self.on_bus
+            on_buses = self.on_buses
 
             for compat in self.compats:
                 # When matching, respect the order of the 'compatible' entries,
@@ -862,12 +873,20 @@ class Node:
                 # specified bus (if any) and then against any bus. This is so
                 # that matching against bindings which do not specify a bus
                 # works the same way in Zephyr as it does elsewhere.
-                if (compat, on_bus) in self.edt._compat2binding:
-                    binding = self.edt._compat2binding[compat, on_bus]
-                elif (compat, None) in self.edt._compat2binding:
-                    binding = self.edt._compat2binding[compat, None]
-                else:
-                    continue
+                binding = None
+
+                # We know on_buses is always a list, but pylint doesn't.
+                # So ignore the error.
+                for bus in on_buses: # pylint: disable=not-an-iterable
+                    if (compat, bus) in self.edt._compat2binding:
+                        binding = self.edt._compat2binding[compat, bus]
+                        break
+
+                if not binding:
+                    if (compat, None) in self.edt._compat2binding:
+                        binding = self.edt._compat2binding[compat, None]
+                    else:
+                        continue
 
                 self.binding_path = binding.path
                 self.matching_compat = compat
@@ -965,7 +984,7 @@ class Node:
         if support_fixed_partitions_on_any_bus and "fixed-partitions" in self.compats:
             return None
 
-        if self.parent.bus:
+        if self.parent.buses:
             # The parent node is a bus node
             return self.parent
 
@@ -1591,8 +1610,8 @@ class Property:
       Convenience for spec.name.
 
     description:
-      Convenience for spec.name with leading and trailing whitespace
-      (including newlines) removed.
+      Convenience for spec.description with leading and trailing whitespace
+      (including newlines) removed. May be None.
 
     type:
       Convenience for spec.type.
@@ -1636,7 +1655,7 @@ class Property:
     @property
     def description(self):
         "See the class docstring"
-        return self.spec.description.strip()
+        return self.spec.description.strip() if self.spec.description else None
 
     @property
     def type(self):
@@ -1676,7 +1695,7 @@ class Binding:
       The absolute path to the file defining the binding.
 
     description:
-      The free-form description of the binding.
+      The free-form description of the binding, or None.
 
     compatible:
       The compatible string the binding matches.
@@ -1709,7 +1728,17 @@ class Binding:
 
     bus:
       If nodes with this binding's 'compatible' describe a bus, a string
-      describing the bus type (like "i2c"). None otherwise.
+      describing the bus type (like "i2c") or a list describing supported
+      protocols (like ["i3c", "i2c"]). None otherwise.
+
+      Note that this is the raw value from the binding where it can be
+      a string or a list. Use "buses" instead unless you need the raw
+      value, where "buses" is always a list.
+
+    buses:
+      Deprived property from 'bus' where 'buses' is a list of bus(es),
+      for example, ["i2c"] or ["i3c", "i2c"]. Or an empty list if there is
+      no 'bus:' in this binding.
 
     on_bus:
       If nodes with this binding's 'compatible' appear on a bus, a string
@@ -1795,12 +1824,13 @@ class Binding:
             compat = f" for compatible '{self.compatible}'"
         else:
             compat = ""
-        return f"<Binding {os.path.basename(self.path)}" + compat + ">"
+        basename = os.path.basename(self.path or "")
+        return f"<Binding {basename}" + compat + ">"
 
     @property
     def description(self):
         "See the class docstring"
-        return self.raw['description']
+        return self.raw.get('description')
 
     @property
     def compatible(self):
@@ -1811,6 +1841,14 @@ class Binding:
     def bus(self):
         "See the class docstring"
         return self.raw.get('bus')
+
+    @property
+    def buses(self):
+        "See the class docstring"
+        if self.raw.get('bus') is not None:
+            return self._buses
+        else:
+            return []
 
     @property
     def on_bus(self):
@@ -1945,11 +1983,24 @@ class Binding:
                 _err(f"unknown key '{key}' in {self.path}, "
                      "expected one of {', '.join(ok_top)}, or *-cells")
 
-        for bus_key in "bus", "on-bus":
-            if bus_key in raw and \
-               not isinstance(raw[bus_key], str):
-                _err(f"malformed '{bus_key}:' value in {self.path}, "
-                     "expected string")
+        if "bus" in raw:
+            bus = raw["bus"]
+            if not isinstance(bus, str) and \
+               (not isinstance(bus, list) and \
+                not all(isinstance(elem, str) for elem in bus)):
+                _err(f"malformed 'bus:' value in {self.path}, "
+                     "expected string or list of strings")
+
+            if isinstance(bus, list):
+                self._buses = bus
+            else:
+                # Convert bus into a list
+                self._buses = [bus]
+
+        if "on-bus" in raw and \
+           not isinstance(raw["on-bus"], str):
+            _err(f"malformed 'on-bus:' value in {self.path}, "
+                 "expected string")
 
         self._check_properties()
 

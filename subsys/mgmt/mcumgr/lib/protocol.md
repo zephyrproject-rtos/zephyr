@@ -34,11 +34,10 @@ Frames in SMP have the following header format:
 
 ```
 struct mgmt_hdr {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
     uint8_t  nh_op:3;           /* MGMT_OP_[...] */
     uint8_t  _res1:5;
-#endif
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
     uint8_t  _res1:5;
     uint8_t  nh_op:3;           /* MGMT_OP_[...] */
 #endif

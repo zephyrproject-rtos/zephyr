@@ -13,4 +13,9 @@ config IPC_SERVICE_BACKEND_ICMSG_CB_BUF_SIZE
 	  data bigger than some size, you can safely change this option to
 	  reduce RAM consumption in your application.
 
+# The Icmsg backend in its simplicity requires the system workqueue to execute
+# at a cooperative priority.
+config SYSTEM_WORKQUEUE_PRIORITY
+	range -256 -1
+
 endif # IPC_SERVICE_BACKEND_ICMSG

@@ -97,7 +97,7 @@ int z_xtensa_backtrace_print(int depth, int *interrupted_stack)
 		mask = stk_frame.pc & 0xc0000000;
 	}
 	printk("\r\n\r\nBacktrace:");
-	printk("0x%08X:0x%08X ",
+	printk("0x%08x:0x%08x ",
 			z_xtensa_cpu_process_stack_pc(stk_frame.pc),
 			stk_frame.sp);
 
@@ -115,7 +115,7 @@ int z_xtensa_backtrace_print(int depth, int *interrupted_stack)
 		if (!z_xtensa_backtrace_get_next_frame(&stk_frame)) {
 			corrupted = true;
 		}
-		printk("0x%08X:0x%08X ", z_xtensa_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
+		printk("0x%08x:0x%08x ", z_xtensa_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
 	}
 
 	/* Print backtrace termination marker */

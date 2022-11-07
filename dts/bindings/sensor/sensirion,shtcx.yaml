@@ -5,7 +5,7 @@ description: Sensirion SHTCx humidity and temperature sensor
 
 compatible: "sensirion,shtcx"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
   chip:

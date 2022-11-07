@@ -11,6 +11,10 @@
 #include <mem.h>
 
 / {
+	chosen {
+		zephyr,entropy = &css;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -225,18 +229,24 @@
 		#size-cells = <0>;
 	};
 
+	css: css@4003000 {
+		compatible = "nxp,css-v2";
+		reg = <0x4003000 0x200>;
+		status = "okay";
+	};
+
 	can0: can@4009d000 {
 		compatible = "nxp,lpc-mcan";
 		reg = <0x4009d000 0x1000>;
 		reg-names = "m_can";
 		interrupts = <43 0>, <44 0>;
 		clocks = <&syscon MCUX_MCAN_CLK>;
-		std-filter-elements = <128>;
-		ext-filter-elements = <64>;
-		rx-fifo0-elements = <64>;
-		rx-fifo1-elements = <64>;
-		rx-buffer-elements = <64>;
-		tx-buffer-elements = <32>;
+		std-filter-elements = <15>;
+		ext-filter-elements = <15>;
+		rx-fifo0-elements = <8>;
+		rx-fifo1-elements = <8>;
+		rx-buffer-elements = <8>;
+		tx-buffer-elements = <15>;
 		sjw = <1>;
 		sample-point = <875>;
 		sjw-data = <1>;
@@ -244,6 +254,123 @@
 		status = "disabled";
 	};
 
+	flexpwm0: flexpwm@400C3000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x400C3000 0x1000>;
+		interrupt-names = "INPUT-CAPTURE", "FAULT", "RELOAD-ERROR";
+		interrupts = <80 0>, <81 0>, <82 0>;
+		flexpwm0_pwm0: pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupt-names = "COMPARE-SUB0", "RELOAD-SUB0";
+			interrupts = <83 0>, <84 0>;
+			#pwm-cells = <2>;
+			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm0_pwm1: pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupt-names = "COMPARE-SUB1", "RELOAD-SUB1";
+			interrupts = <85 0>, <86 0>;
+			#pwm-cells = <2>;
+			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm0_pwm2: pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupt-names = "COMPARE-SUB2", "RELOAD-SUB2";
+			interrupts = <87 0>, <88 0>;
+			#pwm-cells = <2>;
+			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm0_pwm3: pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupt-names = "COMPARE-SUB3", "RELOAD-SUB3";
+			interrupts = <89 0>, <90 0>;
+			#pwm-cells = <2>;
+			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+	};
+
+
+	flexpwm1: flexpwm@400C5000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x400C5000 0x1000>;
+		interrupt-names = "INPUT-CAPTURE", "FAULT", "RELOAD-ERROR";
+		interrupts = <91 0>, <92 0>, <93 0>;
+		flexpwm1_pwm0: pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupt-names = "COMPARE-SUB0", "RELOAD-SUB0";
+			interrupts = <94 0>, <95 0>;
+			#pwm-cells = <2>;
+			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm1_pwm1: pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupt-names = "COMPARE-SUB1", "RELOAD-SUB1";
+			interrupts = <96 0>, <97 0>;
+			#pwm-cells = <2>;
+			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm1_pwm2: pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupt-names = "COMPARE-SUB2", "RELOAD-SUB2";
+			interrupts = <98 0>, <99 0>;
+			#pwm-cells = <2>;
+			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm1_pwm3: pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupt-names = "COMPARE-SUB3", "RELOAD-SUB3";
+			interrupts = <100 0>, <101 0>;
+			#pwm-cells = <2>;
+			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+	};
+
+	sc_timer: pwm@85000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x85000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+		prescaler = <2>;
+		#pwm-cells = <3>;
+	};
 };
 
 &nvic {

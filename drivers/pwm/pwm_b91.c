@@ -134,7 +134,7 @@ static const struct pwm_driver_api pwm_b91_driver_api = {
 									       \
 	DEVICE_DT_INST_DEFINE(n, pwm_b91_init,				       \
 			      NULL, NULL, &config##n,			       \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,	       \
 			      &pwm_b91_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_B91_INIT)

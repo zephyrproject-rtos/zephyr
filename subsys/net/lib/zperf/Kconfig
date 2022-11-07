@@ -16,4 +16,10 @@ module-str = Log level for zperf
 module-help = Enable debug message of zperf libray.
 source "subsys/net/Kconfig.template.log_config.net"
 
+config NET_ZPERF_MAX_PACKET_SIZE
+	int "Maximum packet size"
+	default 1024
+	help
+	  Upper size limit for packets sent by zperf.
+
 endif

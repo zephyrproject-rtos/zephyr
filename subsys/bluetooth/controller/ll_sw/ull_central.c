@@ -454,13 +454,19 @@ conn_is_valid:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-	/* TODO(thoh-ot): Not entirely sure this is correct */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	ull_dle_max_time_get(conn, &max_rx_time, &max_tx_time);
-#else /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	conn->lll.dle.eff.max_tx_time = MAX(conn->lll.dle.eff.max_tx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+	conn->lll.dle.eff.max_rx_time = MAX(conn->lll.dle.eff.max_rx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	max_tx_time = conn_lll->dle.eff.max_tx_time;
+	max_rx_time = conn_lll->dle.eff.max_rx_time;
+#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	conn->ull.ticks_slot =
@@ -835,6 +841,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	struct pdu_adv *pdu_tx;
 	uint8_t peer_addr_type;
 	uint32_t ticker_status;
+	uint32_t ticks_at_stop;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
 	memq_link_t *link;
@@ -982,10 +989,13 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	/* Stop Scanner */
 	ticker_id_scan = TICKER_ID_SCAN_BASE + ull_scan_handle_get(scan);
-	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
-				    TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_scan, ticker_op_stop_scan_cb,
-				    scan);
+	ticks_at_stop = ftr->ticks_anchor +
+			HAL_TICKER_US_TO_TICKS(conn_offset_us) -
+			ticks_slot_offset;
+	ticker_status = ticker_stop_abs(TICKER_INSTANCE_ID_CTLR,
+					TICKER_USER_ID_ULL_HIGH,
+					ticker_id_scan, ticks_at_stop,
+					ticker_op_stop_scan_cb, scan);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 

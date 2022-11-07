@@ -157,8 +157,18 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_str
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_strict_aliasing>>)
 
 # @Intent: Set compiler flags to enable buffer overflow checks in libc functions
-# @config in CONFIG_NO_OPTIMIZATIONS optional : Optimizations may affect security
-zephyr_compile_definitions($<TARGET_PROPERTY:compiler,security_fortify> )
+# @details:
+#  Kconfig.zephyr "Detect buffer overflows in libc calls" is a kconfig choice,
+#  ensuring at most *one* of CONFIG_FORTIFY_SOURCE_{COMPILE_TIME,RUN_TIME} is
+#  set. Refer to Kconfig.zephyr for selection logic and description of these
+#  choices. Toolchains set both of the security_fortify_{compile_time,run_time}
+#  properties and the Kconfig settings are used here to select between those.
+#
+if(CONFIG_FORTIFY_SOURCE_RUN_TIME)
+  zephyr_compile_definitions($<TARGET_PROPERTY:compiler,security_fortify_run_time> )
+elseif(CONFIG_FORTIFY_SOURCE_COMPILE_TIME)
+  zephyr_compile_definitions($<TARGET_PROPERTY:compiler,security_fortify_compile_time> )
+endif()
 
 # @Intent: Set compiler flags to detect general stack overflows across all functions
 if(CONFIG_STACK_CANARIES)
@@ -273,6 +283,11 @@ if(NOT CONFIG_PICOLIBC)
   # @Intent: Set compiler specific flag for bare metal freestanding option
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,freestanding>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:compiler,freestanding>>)
+endif()
+
+if (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_IO_FLOAT)
+  # @Intent: Set compiler specific flag to disable printf-related optimizations
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_printf_return_value>>)
 endif()
 
 # @Intent: Set compiler specific flag for tentative definitions, no-common

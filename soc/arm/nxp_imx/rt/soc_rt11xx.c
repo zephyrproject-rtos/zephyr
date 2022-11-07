@@ -20,7 +20,7 @@
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
-#include "usb_dc_mcux.h"
+#include "usb.h"
 #endif
 
 #if CONFIG_USB_DC_NXP_EHCI /* USB PHY configuration */

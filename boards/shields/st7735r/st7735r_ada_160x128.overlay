@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,display = &st7735r;
+		zephyr,display = &st7735r_st7735r_ada_160x128;
 	};
 };
 
@@ -14,7 +14,7 @@
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 
-	st7735r: st7735r@0 {
+	st7735r_st7735r_ada_160x128: st7735r@0 {
 		compatible = "sitronix,st7735r";
 		spi-max-frequency = <20000000>;
 		reg = <0>;

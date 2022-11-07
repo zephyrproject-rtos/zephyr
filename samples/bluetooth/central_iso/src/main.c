@@ -24,7 +24,7 @@ static void start_scan(void);
 static struct bt_conn *default_conn;
 static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
-static uint32_t seq_num;
+static uint16_t seq_num;
 static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8,
 			  NULL);

@@ -59,7 +59,7 @@ extern "C" {
  *         0 otherwise.
  */
 #define DT_HAS_FIXED_PARTITION_LABEL(label) \
-	IS_ENABLED(DT_COMPAT_fixed_partitions_LABEL_##label##_EXISTS)
+	IS_ENABLED(DT_CAT3(DT_COMPAT_fixed_partitions_LABEL_, label, _EXISTS))
 
 /**
  * @brief Test if fixed-partition compatible node exists

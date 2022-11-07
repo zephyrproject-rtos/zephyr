@@ -312,8 +312,6 @@ struct bt_tbs_instance {
 
 	bool busy;
 	uint8_t subscribe_cnt;
-	uint8_t index;
-	bool gtbs;
 #if defined(CONFIG_BT_TBS_CLIENT_CCID)
 	uint8_t ccid;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CCID) */

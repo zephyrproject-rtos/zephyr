@@ -7,43 +7,42 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net/buf.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <mgmt/mgmt.h>
 #include <smp/smp.h>
 #include "smp_internal.h"
 
-void zephyr_smp_reassembly_init(struct zephyr_smp_transport *zst)
+void smp_reassembly_init(struct smp_transport *smpt)
 {
-	zst->__reassembly.current = NULL;
-	zst->__reassembly.expected = 0;
+	smpt->__reassembly.current = NULL;
+	smpt->__reassembly.expected = 0;
 }
 
-int zephyr_smp_reassembly_expected(const struct zephyr_smp_transport *zst)
+int smp_reassembly_expected(const struct smp_transport *smpt)
 {
-	if (zst->__reassembly.current == NULL) {
+	if (smpt->__reassembly.current == NULL) {
 		return -EINVAL;
 	}
 
-	return zst->__reassembly.expected;
+	return smpt->__reassembly.expected;
 }
 
-int zephyr_smp_reassembly_collect(struct zephyr_smp_transport *zst, const void *buf, uint16_t len)
+int smp_reassembly_collect(struct smp_transport *smpt, const void *buf, uint16_t len)
 {
-	if (zst->__reassembly.current == NULL) {
+	if (smpt->__reassembly.current == NULL) {
 		/*
 		 * Collecting the first fragment: need to allocate buffer for it and prepare
 		 * the reassembly context.
 		 */
-		if (len >= sizeof(struct mgmt_hdr)) {
-			uint16_t expected = sys_be16_to_cpu(((struct mgmt_hdr *)buf)->nh_len);
+		if (len >= sizeof(struct smp_hdr)) {
+			uint16_t expected = sys_be16_to_cpu(((struct smp_hdr *)buf)->nh_len);
 
 			/*
 			 * The length field in the header does not count the header size,
 			 * but the reassembly does so the size needs to be added to the number of
 			 * expected bytes.
 			 */
-			expected += sizeof(struct mgmt_hdr);
+			expected += sizeof(struct smp_hdr);
 
 			/* Joining net_bufs not supported yet */
 			if (len > CONFIG_MCUMGR_BUF_SIZE || expected > CONFIG_MCUMGR_BUF_SIZE) {
@@ -54,9 +53,9 @@ int zephyr_smp_reassembly_collect(struct zephyr_smp_transport *zst, const void *
 				return -EOVERFLOW;
 			}
 
-			zst->__reassembly.current = mcumgr_buf_alloc();
-			if (zst->__reassembly.current != NULL) {
-				zst->__reassembly.expected = expected;
+			smpt->__reassembly.current = smp_packet_alloc();
+			if (smpt->__reassembly.current != NULL) {
+				smpt->__reassembly.expected = expected;
 			} else {
 				return -ENOMEM;
 			}
@@ -67,9 +66,9 @@ int zephyr_smp_reassembly_collect(struct zephyr_smp_transport *zst, const void *
 	}
 
 	/* len is expected to be > 0 */
-	if (zst->__reassembly.expected >= len) {
-		net_buf_add_mem(zst->__reassembly.current, buf, len);
-		zst->__reassembly.expected -= len;
+	if (smpt->__reassembly.expected >= len) {
+		net_buf_add_mem(smpt->__reassembly.current, buf, len);
+		smpt->__reassembly.expected -= len;
 	} else {
 		/*
 		 * A fragment is longer than the expected size and will not fit into the buffer.
@@ -77,43 +76,43 @@ int zephyr_smp_reassembly_collect(struct zephyr_smp_transport *zst, const void *
 		return -EOVERFLOW;
 	}
 
-	return zst->__reassembly.expected;
+	return smpt->__reassembly.expected;
 }
 
-int zephyr_smp_reassembly_complete(struct zephyr_smp_transport *zst, bool force)
+int smp_reassembly_complete(struct smp_transport *smpt, bool force)
 {
-	if (zst->__reassembly.current == NULL) {
+	if (smpt->__reassembly.current == NULL) {
 		return -EINVAL;
 	}
 
-	if (zst->__reassembly.expected == 0 || force) {
-		int expected = zst->__reassembly.expected;
+	if (smpt->__reassembly.expected == 0 || force) {
+		int expected = smpt->__reassembly.expected;
 
-		zephyr_smp_rx_req(zst, zst->__reassembly.current);
-		zst->__reassembly.expected = 0;
-		zst->__reassembly.current = NULL;
+		smp_rx_req(smpt, smpt->__reassembly.current);
+		smpt->__reassembly.expected = 0;
+		smpt->__reassembly.current = NULL;
 		return expected;
 	}
 	return -ENODATA;
 }
 
-int zephyr_smp_reassembly_drop(struct zephyr_smp_transport *zst)
+int smp_reassembly_drop(struct smp_transport *smpt)
 {
-	if (zst->__reassembly.current == NULL) {
+	if (smpt->__reassembly.current == NULL) {
 		return -EINVAL;
 	}
 
-	mcumgr_buf_free(zst->__reassembly.current);
-	zst->__reassembly.expected = 0;
-	zst->__reassembly.current = NULL;
+	smp_packet_free(smpt->__reassembly.current);
+	smpt->__reassembly.expected = 0;
+	smpt->__reassembly.current = NULL;
 
 	return 0;
 }
 
-void *zephyr_smp_reassembly_get_ud(const struct zephyr_smp_transport *zst)
+void *smp_reassembly_get_ud(const struct smp_transport *smpt)
 {
-	if (zst->__reassembly.current != NULL) {
-		return net_buf_user_data(zst->__reassembly.current);
+	if (smpt->__reassembly.current != NULL) {
+		return net_buf_user_data(smpt->__reassembly.current);
 	}
 
 	return NULL;

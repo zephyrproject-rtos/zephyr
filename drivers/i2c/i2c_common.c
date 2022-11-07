@@ -32,8 +32,11 @@ void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
 	for (unsigned int i = 0; i < num_msgs; i++) {
 		const struct i2c_msg *msg = &msgs[i];
 
-		LOG_DBG("   %c len=%02x: ",
-			msg->flags & I2C_MSG_READ ? 'R' : 'W', msg->len);
+		LOG_DBG("   %c %s%s len=%02x: ",
+			msg->flags & I2C_MSG_READ ? 'R' : 'W',
+			msg->flags & I2C_MSG_RESTART ? "Sr " : "",
+			msg->flags & I2C_MSG_STOP ? "P" : "",
+			msg->len);
 		if (!(msg->flags & I2C_MSG_READ)) {
 			LOG_HEXDUMP_DBG(msg->buf, msg->len, "contents:");
 		}

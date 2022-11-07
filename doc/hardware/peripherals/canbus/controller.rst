@@ -152,8 +152,7 @@ a mailbox. When a transmitting mailbox is assigned, sending cannot be canceled.
 .. code-block:: C
 
   struct can_frame frame = {
-          .id_type = CAN_STANDARD_IDENTIFIER,
-          .rtr = CAN_DATAFRAME,
+          .flags = 0,
           .id = 0x123,
           .dlc = 8,
           .data = {1,2,3,4,5,6,7,8}
@@ -187,8 +186,7 @@ occurred. It does not block until the message is sent like the example above.
   int send_function(const struct device *can_dev)
   {
           struct can_frame frame = {
-                  .id_type = CAN_EXTENDED_IDENTIFIER,
-                  .rtr = CAN_DATAFRAME,
+                  .flags = CAN_FRAME_IDE,
                   .id = 0x1234567,
                   .dlc = 2
           };
@@ -227,10 +225,8 @@ The filter for this example is configured to match the identifier 0x123 exactly.
 .. code-block:: C
 
   const struct can_filter my_filter = {
-          .id_type = CAN_STANDARD_IDENTIFIER,
-          .rtr = CAN_DATAFRAME,
+          .flags = CAN_FILTER_DATA,
           .id = 0x123,
-          .rtr_mask = 1,
           .id_mask = CAN_STD_ID_MASK
   };
   int filter_id;
@@ -252,10 +248,8 @@ The filter for this example is configured to match the extended identifier
 .. code-block:: C
 
   const struct can_filter my_filter = {
-          .id_type = CAN_EXTENDED_IDENTIFIER,
-          .rtr = CAN_DATAFRAME,
+          .flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
           .id = 0x1234567,
-          .rtr_mask = 1,
           .id_mask = CAN_EXT_ID_MASK
   };
   CAN_MSGQ_DEFINE(my_can_msgq, 2);
@@ -305,9 +299,19 @@ The following example sets the bitrate to 250k baud with the sampling point at
     return;
   }
 
+  ret = can_stop(can_dev);
+  if (ret != 0) {
+    LOG_ERR("Failed to stop CAN controller");
+  }
+
   ret = can_set_timing(can_dev, &timing);
   if (ret != 0) {
     LOG_ERR("Failed to set timing");
+  }
+
+  ret = can_start(can_dev);
+  if (ret != 0) {
+    LOG_ERR("Failed to start CAN controller");
   }
 
 A similar API exists for calculating and setting the timing for the data phase for CAN-FD capable

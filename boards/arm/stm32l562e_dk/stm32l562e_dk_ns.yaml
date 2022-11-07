@@ -12,5 +12,6 @@ supported:
   - dac
   - spi
   - arduino_spi
+  - sdhc
 ram: 192
 flash: 512

@@ -74,6 +74,8 @@ set_property(TARGET compiler-cpp PROPERTY no_exceptions)
 # Flag for disabling rtti in C++
 set_property(TARGET compiler-cpp PROPERTY no_rtti)
 
+# Flag for disabling optimizations around printf return value
+set_compiler_property(PROPERTY no_printf_return_value)
 
 ###################################################
 # This section covers all remaining C / C++ flags #
@@ -85,7 +87,8 @@ set_compiler_property(PROPERTY coverage)
 # Security canaries flags.
 set_compiler_property(PROPERTY security_canaries)
 
-set_compiler_property(PROPERTY security_fortify)
+set_compiler_property(PROPERTY security_fortify_compile_time)
+set_compiler_property(PROPERTY security_fortify_run_time)
 
 # Flag for a hosted (no-freestanding) application
 set_compiler_property(PROPERTY hosted)

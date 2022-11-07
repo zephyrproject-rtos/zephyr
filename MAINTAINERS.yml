@@ -198,6 +198,7 @@ Bluetooth:
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh_*/
     - tests/bluetooth/mesh/
+    - tests/bluetooth/shell/audio*
   labels:
     - "area: Bluetooth"
 
@@ -228,6 +229,7 @@ Bluetooth Mesh:
     - jhedberg
     - LingaoM
     - alxelax
+    - Andrewpini
   files:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
@@ -240,7 +242,6 @@ Bluetooth Audio:
   status: maintained
   maintainers:
     - Thalley
-    - asbjornsabo
   collaborators:
     - Vudentz
     - jhedberg
@@ -248,10 +249,12 @@ Bluetooth Audio:
     - MariuszSkamra
     - rymanluk
     - sjanc
+    - asbjornsabo
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
     - tests/bluetooth/bsim_bt/bsim_test_audio/
+    - tests/bluetooth/shell/audio*
   labels:
     - "area: Bluetooth Audio"
     - "area: Bluetooth"
@@ -280,6 +283,7 @@ Build system:
     - stephanosio
   collaborators:
     - alexanderwachter
+    - cfriedt
   files:
     - subsys/cpp/
     - tests/subsys/cpp/
@@ -399,7 +403,8 @@ Device Driver Model:
 DFU:
   status: maintained
   maintainers:
-    - nvlsianpu
+    - de-nordic
+    - nordicjm
   files:
     - include/zephyr/dfu/
     - subsys/dfu/
@@ -411,11 +416,9 @@ Devicetree:
   status: maintained
   maintainers:
     - mbolivar-nordic
-  collaborators:
     - galak
   files:
     - scripts/dts/
-    - dts/bindings/
     - dts/common/
     - tests/lib/devicetree/
     - doc/build/dts/
@@ -423,6 +426,15 @@ Devicetree:
     - scripts/kconfig/kconfigfunctions.py
   labels:
     - "area: Devicetree"
+
+Devicetree Bindings:
+  status: maintained
+  maintainers:
+    - galak
+  files:
+    - dts/bindings/
+  labels:
+    - "area: Devicetree Binding"
 
 Disk:
   status: maintained
@@ -445,7 +457,6 @@ Display drivers:
   status: odd fixes
   collaborators:
     - jfischer-no
-    - gmarull
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -463,18 +474,42 @@ Documentation:
     - carlescufi
   collaborators:
     - nashif
-    - utzig
-    - gmarull
   files:
-    - doc/
-    - doc/_static/
-    - doc/_templates/
-    - doc/_doxygen/
-    - doc/_scripts/
+    - doc/contribute/
+    - doc/develop/
+    - doc/introduction/
+    - doc/project/
+    - doc/releases/
+    - doc/security/
     - README.rst
-    - doc/Makefile
   labels:
     - "area: Documentation"
+
+Documentation Infrastructure:
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - carlescufi
+    - nashif
+  files:
+    - doc/_*/
+    - doc/CMakeLists.txt
+    - doc/conf.py
+    - doc/Makefile
+    - doc/zephyr.doxyfile.in
+  labels:
+    - "area: Documentation Infrastructure"
+
+Release Notes:
+  status: maintained
+  maintainers:
+    - laurenmurphyx64
+    - stephanosio
+  files:
+    - doc/releases/release-notes-*
+  labels:
+    - "Release Notes"
 
 "Drivers: ADC":
   status: maintained
@@ -702,7 +737,7 @@ Documentation:
 "Drivers: Flash":
   status: maintained
   maintainers:
-    - nvlsianpu
+    - de-nordic
   files:
     - drivers/flash/
     - dts/bindings/flash_controller/
@@ -768,6 +803,18 @@ Documentation:
   labels:
     - "area: I2S"
 
+"Drivers: I3C":
+  status: maintained
+  maintainers:
+    - dcpleung
+  files:
+    - drivers/i3c/
+    - dts/bindings/i3c/
+    - include/zephyr/drivers/i3c.h
+    - include/zephyr/drivers/i3c/
+  labels:
+    - "area: I3C"
+
 "Drivers: IEEE 802.15.4":
   status: maintained
   maintainers:
@@ -811,7 +858,6 @@ Documentation:
     - albertofloyd
   collaborators:
     - VenkatKotakonda
-    - gmarull
   files:
     - drivers/kscan/
     - include/zephyr/drivers/kscan.h
@@ -966,7 +1012,6 @@ Documentation:
     - anangl
   collaborators:
     - henrikbrixandersen
-    - gmarull
   files:
     - drivers/pwm/
     - dts/bindings/pwm/
@@ -995,7 +1040,6 @@ Documentation:
     - MaureenHelm
   collaborators:
     - avisconti
-    - gmarull
     - teburd
   files:
     - drivers/sensor/
@@ -1010,6 +1054,8 @@ Documentation:
   status: maintained
   maintainers:
     - tbursztyka
+  collaborators:
+    - teburd
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
@@ -1023,6 +1069,7 @@ Documentation:
     - andyross
   collaborators:
     - KangJianX
+    - teburd
   files:
     - drivers/timer/
     - include/zephyr/drivers/timer/
@@ -1132,9 +1179,8 @@ Xen Platform:
 Filesystems:
   status: maintained
   maintainers:
-    - nvlsianpu
-  collaborators:
     - de-nordic
+  collaborators:
     - Laczen
     - nashif
   files:
@@ -1251,6 +1297,7 @@ Laird Connectivity platforms:
     - boards/arm/bt510/
     - boards/arm/bt610/
     - boards/arm/pinnacle_100_dvk/
+    - boards/arm/mg100/
   labels:
     - "platform: Laird Connectivity"
 
@@ -1318,6 +1365,7 @@ MCU Manager:
     - subsys/mgmt/mcumgr/
     - include/zephyr/mgmt/mcumgr/
     - samples/subsys/mgmt/mcumgr/
+    - tests/subsys/mgmt/mcumgr/
   labels:
     - "area: mcumgr"
 
@@ -1534,6 +1582,7 @@ Power management:
     - mengxianglinx
     - gmarull
     - teburd
+    - yinfangw
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
@@ -1545,11 +1594,10 @@ Power management:
 RISCV arch:
   status: maintained
   maintainers:
+    - fkokosinski
     - kgugala
-    - pgielda
     - tgorochowik
   collaborators:
-    - fkokosinski
     - mgielda
     - katsuster
     - edersondisouza
@@ -1582,9 +1630,9 @@ Twister:
     - "area: Twister"
 
 Settings:
-  status: maintained
-  maintainers:
-    - nvlsianpu
+  status: odd fixes
+  collaborators:
+    - de-nordic
   files:
     - include/zephyr/settings/
     - subsys/settings/
@@ -1648,11 +1696,11 @@ State machine framework:
 GD32 Platforms:
   status: maintained
   maintainers:
-    - nandojve
-    - gmarull
-  collaborators:
-    - soburi
     - cameled
+    - nandojve
+  collaborators:
+    - gmarull
+    - soburi
   files:
     - boards/arm/gd32*/
     - boards/riscv/gd32*/
@@ -1721,8 +1769,6 @@ Nuvoton Numicro Platforms:
 
 SiLabs Platforms:
   status: odd fixes
-  collaborators:
-    - chrta
   files:
     - soc/arm/silabs_*/
     - boards/arm/ef*/
@@ -1780,6 +1826,7 @@ NXP Platforms:
     - yvanderv
     - EmilioCBen
     - decsny
+    - manuargue
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
@@ -1866,7 +1913,6 @@ STM32 Platforms:
   collaborators:
     - ABOSTM
     - FRASTM
-    - gmarull
     - GeorgeCGV
   files:
     - boards/arm/nucleo_*/
@@ -1894,6 +1940,7 @@ Espressif Platforms:
     - uLipe
   collaborators:
     - LucasTambor
+    - marekmatej
   files:
     - drivers/*/*esp32*.c
     - boards/xtensa/esp32*/
@@ -1981,9 +2028,7 @@ RTIO:
     - "area: RTIO"
 
 Storage:
-  status: maintained
-  maintainers:
-    - nvlsianpu
+  status: odd fixes
   files:
     - subsys/storage/
     - include/zephyr/storage/
@@ -2034,7 +2079,6 @@ Tracing:
     - nashif
   collaborators:
     - teburd
-    - tleksell-pe
   files:
     - subsys/tracing/
     - include/zephyr/tracing/
@@ -2049,6 +2093,8 @@ USB:
   status: maintained
   maintainers:
     - jfischer-no
+  collaborators:
+    - desowin
   files:
     - drivers/usb/
     - dts/bindings/usb/
@@ -2059,6 +2105,22 @@ USB:
     - tests/subsys/usb/
   labels:
     - "area: USB"
+
+USB-C:
+  status: maintained
+  maintainers:
+    - sambhurst
+  collaborators:
+    - keith-zephyr
+  files:
+    - drivers/usb_c/
+    - dts/bindings/usb-c/
+    - include/zephyr/*/usb_c/
+    - include/zephyr/usb_c/
+    - samples/subsys/usb_c/
+    - subsys/usb/usb_c/
+  labels:
+    - "area: USB-C"
 
 Userspace:
   status: maintained
@@ -2199,8 +2261,8 @@ West:
   status: maintained
   maintainers:
     - nandojve
-    - gmarull
   collaborators:
+    - gmarull
     - soburi
   files:
     - modules/hal_gigadevice/
@@ -2213,6 +2275,7 @@ West:
     - ifyall
   collaborators:
     - parthitce
+    - talih0
   files:
     - modules/Kconfig.infineon
   labels:
@@ -2282,6 +2345,14 @@ West:
   labels:
     - manifest-hal_quicklogic
 
+"West project: hal_renesas":
+  status: maintained
+  maintainers:
+    - andrzej-kaczmarek
+  files: []
+  labels:
+    - manifest-hal_renesas
+
 "West project: hal_rpi_pico":
   status: maintained
   maintainers:
@@ -2292,11 +2363,13 @@ West:
     - manifest-hal_rpi_pico
 
 "West project: hal_silabs":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - fkokosinski
   collaborators:
+    - sateeshkotapati
     - yonsch
     - mnkp
-    - chrta
   files:
     - modules/Kconfig.silabs
   labels:
@@ -2338,10 +2411,18 @@ West:
   status: odd fixes
   collaborators:
     - cfriedt
-    - gmarull
   files: []
   labels:
     - manifest-hal_ti
+
+"West project: hal_wurthelektronik":
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+  files:
+    - modules/Kconfig.wurthelektronik
+  labels:
+    - manifest-hal_wurthelektronik
 
 "West project: hal_xtensa":
   status: maintained
@@ -2426,7 +2507,9 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
-    - nvlsianpu
+  collaborators:
+    - de-nordic
+    - nordicjm
   files:
     - modules/Kconfig.mcuboot_bootutil
   labels:
@@ -2521,7 +2604,6 @@ West:
     - marc-hb
   files:
     - modules/Kconfig.sof
-    - samples/modules/sof/
   labels:
     - manifest-sof
 
@@ -2552,7 +2634,7 @@ West:
 "West project: TraceRecorderSource":
   status: maintained
   maintainers:
-    - tleksell-pe
+    - eriktamlin
   files:
     - modules/TraceRecorder/
   labels:
@@ -2582,6 +2664,18 @@ West:
   files: []
   labels:
     - manifest-tf-m-tests
+
+"West project: trusted-firmware-a":
+  status: maintained
+  maintainers:
+    - povergoing
+    - sgrrzhf
+  collaborators:
+    - carlocaione
+  files:
+    - modules/trusted-firmware-a/
+  labels:
+    - manifest-trusted-firmware-a
 
 "West project: psa-arch-tests":
   status: maintained

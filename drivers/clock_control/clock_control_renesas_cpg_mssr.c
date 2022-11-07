@@ -7,6 +7,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 #include <zephyr/dt-bindings/clock/renesas_cpg_mssr.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 #include "clock_control_renesas_cpg_mssr.h"
 
 static void rcar_cpg_reset(uint32_t base_address, uint32_t reg, uint32_t bit)

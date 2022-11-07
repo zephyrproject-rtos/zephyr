@@ -112,7 +112,7 @@ static struct k_thread alt_thread_data;
  */
 ZTEST_USER(stackprot, test_stackprot)
 {
-	zassert_true(ret == TC_PASS, NULL);
+	zassert_true(ret == TC_PASS);
 	print_loop(__func__);
 }
 

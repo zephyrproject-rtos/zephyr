@@ -47,10 +47,10 @@ ZTEST(ipc_service, test_ipc_service)
 	ept_cfg.priv = (void *) 20;
 
 	ret = ipc_service_register_endpoint(dev_10, &ept_10, &ept_cfg);
-	zassert_ok(ret, "ipc_service_register_endpoint() failed", NULL);
+	zassert_ok(ret, "ipc_service_register_endpoint() failed");
 
 	ret = ipc_service_send(&ept_10, &msg, sizeof(msg));
-	zassert_ok(ret, "ipc_service_send() failed", NULL);
+	zassert_ok(ret, "ipc_service_send() failed");
 
 	/*
 	 * We send 10 again this time through the ipc20 instance so we expect
@@ -63,10 +63,20 @@ ZTEST(ipc_service, test_ipc_service)
 	ept_cfg.priv = (void *) 30;
 
 	ret = ipc_service_register_endpoint(dev_20, &ept_20, &ept_cfg);
-	zassert_ok(ret, "ipc_service_register_endpoint() failed", NULL);
+	zassert_ok(ret, "ipc_service_register_endpoint() failed");
 
 	ret = ipc_service_send(&ept_20, &msg, sizeof(msg));
-	zassert_ok(ret, "ipc_service_send() failed", NULL);
+	zassert_ok(ret, "ipc_service_send() failed");
+
+	/*
+	 * Deregister the endpoint and ensure that we fail
+	 * correctly
+	 */
+	ret = ipc_service_deregister_endpoint(&ept_10);
+	zassert_ok(ret, "ipc_service_deregister_endpoint() failed");
+
+	ret = ipc_service_send(&ept_10, &msg, sizeof(msg));
+	zassert_equal(ret, -ENOENT, "ipc_service_send() should return -ENOENT");
 }
 
 ZTEST_SUITE(ipc_service, NULL, NULL, NULL, NULL, NULL);

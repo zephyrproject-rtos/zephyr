@@ -24,6 +24,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_ATT)
 #define LOG_MODULE_NAME bt_att
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -2998,6 +2999,20 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 	sys_slist_prepend(&att->chans, &chan->node);
 }
 
+#if defined(CONFIG_BT_EATT)
+static void cap_eatt_mtu(struct bt_l2cap_le_chan *le_chan)
+{
+	if (le_chan->tx.mtu > le_chan->rx.mtu) {
+		BT_DBG("chan %p (0x%04x): saturating TX MTU to ATT buffer size (%d)",
+		       le_chan, le_chan->tx.cid, CONFIG_BT_L2CAP_TX_MTU);
+	}
+
+	le_chan->tx.mps = MIN(le_chan->tx.mps,
+			      BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU));
+	le_chan->tx.mtu = MIN(le_chan->tx.mtu, CONFIG_BT_L2CAP_TX_MTU);
+}
+#endif
+
 static void bt_att_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
@@ -3007,7 +3022,12 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
 
-	if (!atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
+	if (0) {
+#if defined(CONFIG_BT_EATT)
+	} else if (atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
+		cap_eatt_mtu(le_chan);
+#endif
+	} else {
 		le_chan->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
 		le_chan->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
 	}
@@ -3177,6 +3197,8 @@ static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
 
 	BT_DBG("chan %p", att_chan);
 
+	cap_eatt_mtu(BT_L2CAP_LE_CHAN(l2cap_chan));
+
 	att_chan_mtu_updated(att_chan);
 }
 #endif /* CONFIG_BT_EATT */
@@ -3206,7 +3228,7 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 		}
 
 		if (quota == ATT_CHAN_MAX) {
-			BT_WARN("Maximum number of channels reached: %d", quota);
+			BT_DBG("Maximum number of channels reached: %d", quota);
 			return NULL;
 		}
 	}
@@ -3257,7 +3279,11 @@ static void att_enhanced_connection_work_handler(struct k_work *work)
 	const struct bt_att *att = CONTAINER_OF(dwork, struct bt_att, eatt.connection_work);
 	const int err = bt_eatt_connect(att->conn, att->eatt.chans_to_connect);
 
-	if (err < 0) {
+	if (err == -ENOMEM) {
+		BT_DBG("Failed to connect %d EATT channels, central has probably "
+		       "already established some.",
+		       att->eatt.chans_to_connect);
+	} else if (err < 0) {
 		BT_WARN("Failed to connect %d EATT channels (err: %d)",
 			att->eatt.chans_to_connect, err);
 	}
@@ -3491,7 +3517,7 @@ static void eatt_auto_connect(struct bt_conn *conn, bt_security_t level,
 	if (eatt_err < 0) {
 		BT_WARN("Automatic creation of EATT bearers failed on "
 			"connection %s with error %d",
-			bt_addr_le_str_real(bt_conn_get_dst(conn)), eatt_err);
+			bt_addr_le_str(bt_conn_get_dst(conn)), eatt_err);
 	}
 }
 

@@ -42,3 +42,10 @@ tests:
       - CONFIG_BT_CTLR_DF=y
       - CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT=y
     tags: uart bluetooth
+  sample.bluetooth.hci_uart.nrf52833.all:
+    harness: bluetooth
+    platform_allow: nrf52833dk_nrf52833
+    integration_platforms:
+      - nrf52833dk_nrf52833
+    extra_args: OVERLAY_CONFIG=overlay-all-bt_ll_sw_split.conf DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
+    tags: uart bluetooth

@@ -13,6 +13,7 @@ import subprocess
 import shutil
 import re
 import argparse
+from datetime import datetime, timezone
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -662,6 +663,8 @@ class TwisterEnv:
     def __init__(self, options=None) -> None:
         self.version = None
         self.toolchain = None
+        self.commit_date = None
+        self.run_date = None
         self.options = options
         if options and options.ninja:
             self.generator_cmd = "ninja"
@@ -690,6 +693,7 @@ class TwisterEnv:
     def discover(self):
         self.check_zephyr_version()
         self.get_toolchain()
+        self.run_date = datetime.now(timezone.utc).isoformat(timespec='seconds')
 
     def check_zephyr_version(self):
         try:
@@ -698,11 +702,24 @@ class TwisterEnv:
                                      universal_newlines=True,
                                      cwd=ZEPHYR_BASE)
             if subproc.returncode == 0:
-                self.version = subproc.stdout.strip()
-                logger.info(f"Zephyr version: {self.version}")
+                _version = subproc.stdout.strip()
+                if _version:
+                    self.version = _version
+                    logger.info(f"Zephyr version: {self.version}")
+                else:
+                    self.version = "Unknown"
+                    logger.error("Coult not determine version")
         except OSError:
             logger.info("Cannot read zephyr version.")
 
+        subproc = subprocess.run(["git", "show", "-s", "--format=%cI", "HEAD"],
+                                     stdout=subprocess.PIPE,
+                                     universal_newlines=True,
+                                     cwd=ZEPHYR_BASE)
+        if subproc.returncode == 0:
+            self.commit_date = subproc.stdout.strip()
+        else:
+            self.commit_date = "Unknown"
 
     @staticmethod
     def run_cmake_script(args=[]):

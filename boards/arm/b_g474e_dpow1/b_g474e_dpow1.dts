@@ -110,6 +110,24 @@
 	status = "okay";
 };
 
+&adc2 {
+	pinctrl-0 = <&adc2_in8_pc2>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
 &ucpd1 {
 	status = "okay";
 
@@ -137,6 +155,8 @@
 	 */
 	psc-ucpdclk = <1>;
 	hbitclkdiv = <27>;
+	pinctrl-0 = <&ucpd1_cc1_pb6 &ucpd1_cc2_pb4>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usb {

@@ -44,6 +44,6 @@ void test_littlefs_mount(void)
 #ifdef CONFIG_FILE_SYSTEM_SHELL
 	test_fs_littlefs_mount();
 #else
-	zassert_true(test_mount() == TC_PASS, NULL);
+	zassert_true(test_mount() == TC_PASS);
 #endif
 }

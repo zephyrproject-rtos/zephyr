@@ -11,6 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #include "can_mcan.h"
 
@@ -77,6 +78,8 @@ static int mcux_mcan_init(const struct device *dev)
 
 static const struct can_driver_api mcux_mcan_driver_api = {
 	.get_capabilities = can_mcan_get_capabilities,
+	.start = can_mcan_start,
+	.stop = can_mcan_stop,
 	.set_mode = can_mcan_set_mode,
 	.set_timing = can_mcan_set_timing,
 	.send = can_mcan_send,

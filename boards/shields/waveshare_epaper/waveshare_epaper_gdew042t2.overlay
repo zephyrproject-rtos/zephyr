@@ -7,12 +7,12 @@
 
 / {
 	chosen {
-		zephyr,display = &uc8176;
+		zephyr,display = &uc8176_waveshare_epaper_gdew042t2;
 	};
 };
 
 &arduino_spi {
-	uc8176: uc8176@0 {
+	uc8176_waveshare_epaper_gdew042t2: uc8176@0 {
 		compatible = "gooddisplay,gdew042t2", "ultrachip,uc8176";
 		spi-max-frequency = <4000000>;
 		reg = <0>;

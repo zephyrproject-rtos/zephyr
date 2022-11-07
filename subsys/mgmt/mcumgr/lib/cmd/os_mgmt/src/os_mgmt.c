@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  * Copyright (c) 2022 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -16,11 +16,21 @@
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
+#ifdef CONFIG_REBOOT
+#include <zephyr/sys/reboot.h>
+#endif
 
 #include "mgmt/mgmt.h"
+#include <smp/smp.h>
 #include "os_mgmt/os_mgmt.h"
-#include "os_mgmt/os_mgmt_impl.h"
+
+#ifdef CONFIG_REBOOT
+static void os_mgmt_reset_work_handler(struct k_work *work);
+static void os_mgmt_reset_cb(struct k_timer *timer);
+
+K_WORK_DEFINE(os_mgmt_reset_work, os_mgmt_reset_work_handler);
+static K_TIMER_DEFINE(os_mgmt_reset_timer, os_mgmt_reset_cb, NULL);
+#endif
 
 /* This is passed to zcbor_map_start/end_endcode as a number of
  * expected "columns" (tid, priority, and so on)
@@ -47,9 +57,8 @@ struct thread_iterator_info {
 /**
  * Command handler: os echo
  */
-#if CONFIG_OS_MGMT_ECHO
-static int
-os_mgmt_echo(struct mgmt_ctxt *ctxt)
+#ifdef CONFIG_OS_MGMT_ECHO
+static int os_mgmt_echo(struct mgmt_ctxt *ctxt)
 {
 	struct zcbor_string value = { 0 };
 	struct zcbor_string key;
@@ -85,9 +94,9 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 }
 #endif
 
-#if CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_OS_MGMT_TASKSTAT
 
-#if defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME)
+#ifdef CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
 static inline bool
 os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 				    const struct k_thread *thread)
@@ -158,7 +167,8 @@ os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 }
 
 static inline bool
-os_mgmt_taskstat_encode_runtime_info(zcbor_state_t *zse, const struct k_thread *thread)
+os_mgmt_taskstat_encode_runtime_info(zcbor_state_t *zse,
+				     const struct k_thread *thread)
 {
 	bool ok = true;
 
@@ -177,8 +187,7 @@ os_mgmt_taskstat_encode_runtime_info(zcbor_state_t *zse, const struct k_thread *
 	return ok;
 }
 
-static inline bool
-os_mgmt_taskstat_encode_unsupported(zcbor_state_t *zse)
+static inline bool os_mgmt_taskstat_encode_unsupported(zcbor_state_t *zse)
 {
 	bool ok = true;
 
@@ -262,11 +271,22 @@ static int os_mgmt_taskstat_read(struct mgmt_ctxt *ctxt)
 }
 #endif /* CONFIG_OS_MGMT_TASKSTAT */
 
+#ifdef CONFIG_REBOOT
 /**
  * Command handler: os reset
  */
-static int
-os_mgmt_reset(struct mgmt_ctxt *ctxt)
+static void os_mgmt_reset_work_handler(struct k_work *work)
+{
+	sys_reboot(SYS_REBOOT_WARM);
+}
+
+static void os_mgmt_reset_cb(struct k_timer *timer)
+{
+	/* Reboot the system from the system workqueue thread. */
+	k_work_submit(&os_mgmt_reset_work);
+}
+
+static int os_mgmt_reset(struct mgmt_ctxt *ctxt)
 {
 #ifdef CONFIG_OS_MGMT_RESET_HOOK
 	int rc;
@@ -281,10 +301,13 @@ os_mgmt_reset(struct mgmt_ctxt *ctxt)
 	}
 #endif
 
-	return os_mgmt_impl_reset(CONFIG_OS_MGMT_RESET_MS);
+	k_timer_start(&os_mgmt_reset_timer, K_MSEC(CONFIG_OS_MGMT_RESET_MS),
+		      K_NO_WAIT);
+	return 0;
 }
+#endif
 
-#if CONFIG_OS_MGMT_MCUMGR_PARAMS
+#ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
 static int
 os_mgmt_mcumgr_params(struct mgmt_ctxt *ctxt)
 {
@@ -301,20 +324,22 @@ os_mgmt_mcumgr_params(struct mgmt_ctxt *ctxt)
 #endif
 
 static const struct mgmt_handler os_mgmt_group_handlers[] = {
-#if CONFIG_OS_MGMT_ECHO
+#ifdef CONFIG_OS_MGMT_ECHO
 	[OS_MGMT_ID_ECHO] = {
 		os_mgmt_echo, os_mgmt_echo
 	},
 #endif
-#if CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_OS_MGMT_TASKSTAT
 	[OS_MGMT_ID_TASKSTAT] = {
 		os_mgmt_taskstat_read, NULL
 	},
 #endif
+#ifdef CONFIG_REBOOT
 	[OS_MGMT_ID_RESET] = {
 		NULL, os_mgmt_reset
 	},
-#if CONFIG_OS_MGMT_MCUMGR_PARAMS
+#endif
+#ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
 	[OS_MGMT_ID_MCUMGR_PARAMS] = {
 		os_mgmt_mcumgr_params, NULL
 	},
@@ -329,14 +354,12 @@ static struct mgmt_group os_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_OS,
 };
 
-void
-os_mgmt_register_group(void)
+void os_mgmt_register_group(void)
 {
 	mgmt_register_group(&os_mgmt_group);
 }
 
-void
-os_mgmt_module_init(void)
+void os_mgmt_module_init(void)
 {
 	os_mgmt_register_group();
 }

@@ -305,6 +305,10 @@ void *_sbrk(intptr_t count)
 __weak FUNC_ALIAS(_sbrk, sbrk, void *);
 
 #ifdef CONFIG_MULTITHREADING
+
+/* Make sure _RETARGETABLE_LOCKING is enabled in toolchain */
+BUILD_ASSERT(IS_ENABLED(_RETARGETABLE_LOCKING), "Retargetable locking must be enabled");
+
 /*
  * Newlib Retargetable Locking Interface Implementation
  *
@@ -557,7 +561,7 @@ void *_sbrk_r(struct _reent *r, int count)
 
 int _gettimeofday(struct timeval *__tp, void *__tzp)
 {
-#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_CLOCK
 	return gettimeofday(__tp, __tzp);
 #else
 	/* Non-posix systems should not call gettimeofday() here as it will

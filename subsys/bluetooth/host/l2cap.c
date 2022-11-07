@@ -76,7 +76,7 @@ struct l2cap_tx_meta {
 	struct l2cap_tx_meta_data *data;
 };
 
-static struct l2cap_tx_meta_data l2cap_tx_meta_data[CONFIG_BT_CONN_TX_MAX];
+static struct l2cap_tx_meta_data l2cap_tx_meta_data_storage[CONFIG_BT_CONN_TX_MAX];
 K_FIFO_DEFINE(free_l2cap_tx_meta_data);
 
 static struct l2cap_tx_meta_data *alloc_tx_meta_data(void)
@@ -917,6 +917,12 @@ static void l2cap_chan_tx_process(struct k_work *work)
 		if (sent < 0) {
 			if (sent == -EAGAIN) {
 				ch->tx_buf = buf;
+				/* If we don't reschedule, and the app doesn't nudge l2cap (e.g. by
+				 * sending another SDU), the channel will be stuck in limbo. To
+				 * prevent this, we attempt to re-schedule the work item for every
+				 * channel on every connection when an SDU has successfully been
+				 * sent.
+				 */
 			} else {
 				net_buf_unref(buf);
 			}
@@ -966,8 +972,15 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	/* Cancel ongoing work. Since the channel can be re-used after this
 	 * we need to sync to make sure that the kernel does not have it
 	 * in its queue anymore.
+	 *
+	 * In the case where we are in the context of executing the rtx_work
+	 * item, we don't sync as it will deadlock the workqueue.
 	 */
-	k_work_cancel_delayable_sync(&le_chan->rtx_work, &le_chan->rtx_sync);
+	if (k_current_get() != &le_chan->rtx_work.queue->thread) {
+		k_work_cancel_delayable_sync(&le_chan->rtx_work, &le_chan->rtx_sync);
+	} else {
+		k_work_cancel_delayable(&le_chan->rtx_work);
+	}
 
 	if (le_chan->tx_buf) {
 		net_buf_unref(le_chan->tx_buf);
@@ -1773,13 +1786,20 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	bt_l2cap_chan_del(&chan->chan);
 }
 
-static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
+static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2cap_le_chan *ch)
 {
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	struct net_buf *seg;
 
-	/* Try to use original pool if possible */
-	seg = net_buf_alloc(pool, K_NO_WAIT);
+	/* Use the dedicated segment callback if registered */
+	if (ch->chan.ops->alloc_seg) {
+		seg = ch->chan.ops->alloc_seg(&ch->chan);
+		__ASSERT_NO_MSG(seg);
+	} else {
+		/* Try to use original pool if possible */
+		seg = net_buf_alloc(pool, K_NO_WAIT);
+	}
+
 	if (seg) {
 		net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
 		return seg;
@@ -1816,7 +1836,8 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 	}
 
 segment:
-	seg = l2cap_alloc_seg(buf);
+	seg = l2cap_alloc_seg(buf, ch);
+
 	if (!seg) {
 		return NULL;
 	}
@@ -1846,6 +1867,17 @@ static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 
 	k_work_submit(&ch->tx_work);
 }
+
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+static void resume_all_channels(struct bt_conn *conn, void *data)
+{
+	struct bt_l2cap_chan *chan;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
+	}
+}
+#endif
 
 static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 {
@@ -1881,7 +1913,15 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 		cb(conn, cb_user_data, 0);
 	}
 
+	/* Resume the current channel */
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
+
+	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)) {
+		/* Resume all other channels in case one might be stuck.
+		 * The current channel has already been given priority.
+		 */
+		bt_conn_foreach(BT_CONN_TYPE_LE, resume_all_channels, NULL);
+	}
 }
 
 static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data, int err)
@@ -1971,12 +2011,12 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 		BT_WARN("Unable to send seg %d", err);
 		atomic_inc(&ch->tx.credits);
 
-		/* If the segment is not the original buffer release it since it
-		 * won't be needed anymore.
+		/* The host takes ownership of the reference in seg when
+		 * bt_l2cap_send_cb is successful. The call returned an error,
+		 * so we must get rid of the reference that was taken in
+		 * l2cap_chan_create_seg.
 		 */
-		if (seg != buf) {
-			net_buf_unref(seg);
-		}
+		net_buf_unref(seg);
 
 		if (err == -ENOBUFS) {
 			/* Restore state since segment could not be sent */
@@ -2190,7 +2230,7 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		}
 		__fallthrough;
 	default:
-		BT_WARN("Unknown L2CAP PDU code 0x%02x", hdr->code);
+		BT_WARN("Rejecting unknown L2CAP PDU code 0x%02x", hdr->code);
 		l2cap_send_reject(chan->conn, hdr->ident,
 				  BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 		break;
@@ -2258,12 +2298,19 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 				    struct net_buf *buf, uint16_t credits)
 {
 	struct bt_l2cap_le_credits *ev;
+	uint16_t old_credits;
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 
 	/* Cap the number of credits given */
 	if (credits > chan->rx.init_credits) {
 		credits = chan->rx.init_credits;
+	}
+
+	/* Don't send back more than the initial amount. */
+	old_credits = atomic_get(&chan->rx.credits);
+	if (credits + old_credits > chan->rx.init_credits) {
+		credits = chan->rx.init_credits - old_credits;
 	}
 
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_LE_CREDITS, get_ident(),
@@ -2297,6 +2344,8 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
 	/* Restore enough credits to complete the sdu */
 	credits = ((chan->_sdu_len - net_buf_frags_len(buf)) +
 		   (chan->rx.mps - 1)) / chan->rx.mps;
+
+	BT_DBG("cred %d old %d", credits, (int)old_credits);
 
 	if (credits < old_credits) {
 		return;
@@ -2664,8 +2713,8 @@ void bt_l2cap_init(void)
 	}
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	for (size_t i = 0; i < ARRAY_SIZE(l2cap_tx_meta_data); i++) {
-		k_fifo_put(&free_l2cap_tx_meta_data, &l2cap_tx_meta_data[i]);
+	for (size_t i = 0; i < ARRAY_SIZE(l2cap_tx_meta_data_storage); i++) {
+		k_fifo_put(&free_l2cap_tx_meta_data, &l2cap_tx_meta_data_storage[i]);
 	}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 }

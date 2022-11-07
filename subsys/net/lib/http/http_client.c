@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_http, CONFIG_NET_HTTP_LOG_LEVEL);
 
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/net/http_client.h>
+#include <zephyr/net/http/client.h>
 
 #include "net_private.h"
 

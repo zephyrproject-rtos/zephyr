@@ -18,11 +18,13 @@
 #include "../host/conn_internal.h"
 #include "../host/iso_internal.h"
 
+#include "audio_iso.h"
 #include "endpoint.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_BROADCAST_SINK)
 #define LOG_MODULE_NAME bt_audio_broadcast_sink
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #define PA_SYNC_SKIP              5
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
@@ -35,8 +37,6 @@
  */
 #define INVALID_BROADCAST_ID 0xFFFFFFFF
 
-static struct bt_audio_iso broadcast_sink_iso
-	[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT][BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_ep broadcast_sink_eps
 	[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT][BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_broadcast_sink broadcast_sinks[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT];
@@ -119,16 +119,19 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 				    const struct bt_iso_recv_info *info,
 				    struct net_buf *buf)
 {
-	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
-						      iso_chan);
-	struct bt_audio_stream *stream = audio_iso->sink_stream;
+	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
 	const struct bt_audio_stream_ops *ops;
+	struct bt_audio_stream *stream;
+	struct bt_audio_ep *ep = iso->rx.ep;
 
-	if (stream == NULL) {
-		BT_ERR("Could not lookup stream by iso %p", chan);
+	if (ep == NULL) {
+		BT_ERR("iso %p not bound with ep", chan);
 		return;
-	} else if (stream->ep == NULL) {
-		BT_ERR("Stream not associated with an ep");
+	}
+
+	stream = ep->stream;
+	if (stream == NULL) {
+		BT_ERR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -136,7 +139,7 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
 		BT_DBG("stream %p ep %p len %zu",
-		       stream, stream->ep, net_buf_frags_len(buf));
+		       stream, ep, net_buf_frags_len(buf));
 	}
 
 	if (ops != NULL && ops->recv != NULL) {
@@ -148,16 +151,19 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 
 static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 {
-	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
-						      iso_chan);
-	struct bt_audio_stream *stream = audio_iso->sink_stream;
+	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
 	const struct bt_audio_stream_ops *ops;
+	struct bt_audio_stream *stream;
+	struct bt_audio_ep *ep = iso->rx.ep;
 
-	if (stream == NULL) {
-		BT_ERR("Could not lookup stream by iso %p", chan);
+	if (ep == NULL) {
+		BT_ERR("iso %p not bound with ep", chan);
 		return;
-	} else if (stream->ep == NULL) {
-		BT_ERR("Stream not associated with an ep");
+	}
+
+	stream = ep->stream;
+	if (stream == NULL) {
+		BT_ERR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -165,7 +171,7 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 
 	BT_DBG("stream %p", stream);
 
-	broadcast_sink_set_ep_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
+	broadcast_sink_set_ep_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
@@ -177,25 +183,28 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 					    uint8_t reason)
 {
-	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
-						      iso_chan);
-	struct bt_audio_stream *stream = audio_iso->sink_stream;
+	struct bt_audio_iso *iso = CONTAINER_OF(chan, struct bt_audio_iso, chan);
 	const struct bt_audio_stream_ops *ops;
+	struct bt_audio_stream *stream;
+	struct bt_audio_ep *ep = iso->rx.ep;
 	struct bt_audio_broadcast_sink *sink;
 
-	if (stream == NULL) {
-		BT_ERR("Could not lookup ep by iso %p", chan);
+	if (ep == NULL) {
+		BT_ERR("iso %p not bound with ep", chan);
 		return;
-	} else if (stream->ep == NULL) {
-		BT_ERR("Stream not associated with an ep");
+	}
+
+	stream = ep->stream;
+	if (stream == NULL) {
+		BT_ERR("No stream for ep %p", ep);
 		return;
 	}
 
 	ops = stream->ops;
 
-	BT_DBG("stream %p ep %p reason 0x%02x", stream, stream->ep, reason);
+	BT_DBG("stream %p ep %p reason 0x%02x", stream, ep, reason);
 
-	broadcast_sink_set_ep_state(stream->ep, BT_AUDIO_EP_STATE_IDLE);
+	broadcast_sink_set_ep_state(ep, BT_AUDIO_EP_STATE_IDLE);
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream);
@@ -346,8 +355,7 @@ static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
 }
 
 static bool net_buf_decode_bis_data(struct net_buf_simple *buf,
-				    struct bt_audio_base_bis_data *bis,
-				    bool codec_data_already_found)
+				    struct bt_audio_base_bis_data *bis)
 {
 	uint8_t len;
 
@@ -373,19 +381,6 @@ static bool net_buf_decode_bis_data(struct net_buf_simple *buf,
 	if (len > 0) {
 		struct net_buf_simple ltv_buf;
 		void *ltv_data;
-
-		if (codec_data_already_found) {
-			/* Codec config can either be specific to each
-			 *  BIS or for all, but not both
-			 */
-			BT_DBG("BASE contains both codec config data and BIS "
-			       "codec config data. Aborting.");
-			return false;
-		}
-
-		/* TODO: Support codec configuration data per bis */
-		BT_WARN("BIS specific codec config data of length %u "
-			"was found but is not supported yet", len);
 
 		/* Use an extra net_buf_simple to be able to decode until it
 		 * is empty (len = 0)
@@ -496,8 +491,7 @@ static bool net_buf_decode_subgroup(struct net_buf_simple *buf,
 	}
 
 	for (int i = 0; i < subgroup->bis_count; i++) {
-		if (!net_buf_decode_bis_data(buf, &subgroup->bis_data[i],
-					     codec->data_count > 0)) {
+		if (!net_buf_decode_bis_data(buf, &subgroup->bis_data[i])) {
 			BT_DBG("Failed to decode BIS data for bis %d", i);
 			return false;
 		}
@@ -888,23 +882,13 @@ bool bt_audio_ep_is_broadcast_snk(const struct bt_audio_ep *ep)
 	return false;
 }
 
-static void broadcast_sink_ep_init(struct bt_audio_ep *ep,
-				   struct bt_audio_iso *iso)
+static void broadcast_sink_ep_init(struct bt_audio_ep *ep)
 {
-	struct bt_iso_chan *iso_chan;
-
 	BT_DBG("ep %p", ep);
 
 	(void)memset(ep, 0, sizeof(*ep));
 	ep->dir = BT_AUDIO_DIR_SINK;
-	ep->iso = iso;
-
-	iso_chan = &iso->iso_chan;
-
-	iso_chan->ops = &broadcast_sink_iso_ops;
-	iso_chan->qos = &ep->iso->iso_qos;
-	iso_chan->qos->rx = &iso->sink_io_qos;
-	iso_chan->qos->tx = NULL;
+	ep->iso = NULL;
 }
 
 static struct bt_audio_ep *broadcast_sink_new_ep(uint8_t index)
@@ -914,11 +898,7 @@ static struct bt_audio_ep *broadcast_sink_new_ep(uint8_t index)
 
 		/* If ep->stream is NULL the endpoint is unallocated */
 		if (ep->stream == NULL) {
-			/* Initialize - It is up to the caller to allocate the
-			 * stream pointer.
-			 */
-			broadcast_sink_ep_init(ep,
-					       &broadcast_sink_iso[index][i]);
+			broadcast_sink_ep_init(ep);
 			return ep;
 		}
 	}
@@ -930,8 +910,8 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 						struct bt_audio_stream *stream,
 						struct bt_codec *codec)
 {
-	static struct bt_iso_chan_io_qos sink_chan_io_qos;
 	static struct bt_codec_qos codec_qos;
+	struct bt_audio_iso *iso;
 	struct bt_audio_ep *ep;
 
 	if (stream->group != NULL) {
@@ -945,18 +925,22 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 		return -ENOMEM;
 	}
 
+	iso = bt_audio_iso_new();
+	if (iso == NULL) {
+		BT_DBG("Could not allocate iso");
+		return -ENOMEM;
+	}
+
+	bt_audio_iso_init(iso, &broadcast_sink_iso_ops);
+	bt_audio_iso_bind_ep(iso, ep);
+
+	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->rx, &codec_qos);
+	bt_audio_codec_to_iso_path(iso->chan.qos->rx->path, codec);
+
+	bt_audio_iso_unref(iso);
+
 	bt_audio_stream_attach(NULL, stream, ep, codec);
-	ep->iso->sink_stream = stream;
-	/* TODO: The values of sink_chan_io_qos and codec_qos are not used,
-	 * but the `rx` and `qos` pointers need to be set. This should be fixed.
-	 */
-	stream->iso->qos->rx = &sink_chan_io_qos;
-	stream->iso->qos->rx->path = &ep->iso->sink_path;
-	stream->iso->qos->rx->path->cc = ep->iso->sink_path_cc;
-	stream->iso->qos->tx = NULL;
 	stream->qos = &codec_qos;
-	bt_audio_codec_qos_to_iso_qos(stream->iso->qos->rx, &codec_qos);
-	bt_audio_codec_to_iso_path(stream->iso->qos->rx->path, codec);
 
 	return 0;
 }
@@ -967,13 +951,13 @@ static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sink->streams, stream, next, _node) {
 		if (stream->ep != NULL) {
+			bt_audio_iso_unbind_ep(stream->ep->iso, stream->ep);
 			stream->ep->stream = NULL;
 			stream->ep = NULL;
 		}
 
 		stream->qos = NULL;
 		stream->codec = NULL;
-		stream->iso = NULL;
 		stream->group = NULL;
 
 		sys_slist_remove(&sink->streams, NULL, &stream->_node);
@@ -1059,7 +1043,10 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		if ((indexes_bitfield & BIT(i)) != 0) {
 			struct bt_codec *codec = codec_from_base_by_index(&sink->base, i);
 
-			__ASSERT(codec != NULL, "Codec[%d] was NULL", i);
+			if (codec == NULL) {
+				BT_DBG("Index %d not found in BASE", i);
+				return -EINVAL;
+			}
 
 			codecs[stream_count++] = codec;
 
@@ -1078,6 +1065,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		}
 	}
 
+	sink->stream_count = 0U;
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_audio_stream *stream;
 		struct bt_codec *codec;
@@ -1093,7 +1081,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 			return err;
 		}
 
-		sink->bis[i] = &stream->ep->iso->iso_chan;
+		sink->bis[i] = bt_audio_stream_iso_chan_get(stream);
 		sys_slist_append(&sink->streams, &stream->_node);
 		sink->stream_count++;
 	}

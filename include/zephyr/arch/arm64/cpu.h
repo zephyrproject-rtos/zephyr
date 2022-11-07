@@ -73,12 +73,13 @@
 #define MPIDR_AFF2_SHIFT	(16)
 #define MPIDR_AFF3_SHIFT	(32)
 
+#define MPIDR_AFF_MASK		(GENMASK(23, 0) | GENMASK(39, 32))
+
 #define MPIDR_AFFLVL(mpidr, aff_level) \
 		(((mpidr) >> MPIDR_AFF##aff_level##_SHIFT) & MPIDR_AFFLVL_MASK)
 
 #define GET_MPIDR()		read_sysreg(mpidr_el1)
-#define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
-#define IS_PRIMARY_CORE()	(!MPIDR_TO_CORE(GET_MPIDR()))
+#define MPIDR_TO_CORE(mpidr)	(mpidr & MPIDR_AFF_MASK)
 
 #define MODE_EL_SHIFT		(0x2)
 #define MODE_EL_MASK		(0x3)

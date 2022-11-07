@@ -145,14 +145,6 @@ SECTIONS
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
 #include <zephyr/linker/kobject-text.ld>
-#ifdef CONFIG_SOC_FLASH_RAMCODE_SECTION
-		. = ALIGN(0x1000);
-		_ram_code_start = .;
-		KEEP(*(.__ram_code))
-		__ram_code_size = . - _ram_code_start;
-		ASSERT((__ram_code_size <= 0x1000),
-			"__ram_code_size <= 4k bytes");
-#endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
     __text_region_end = .;
@@ -399,13 +391,18 @@ GROUP_END(DTCM)
  */
 #ifdef CONFIG_XIP
 /* Must be last in romable region */
-SECTION_PROLOGUE(.last_section,(NOLOAD),)
+SECTION_PROLOGUE(.last_section,,)
 {
+#ifdef CONFIG_LINKER_LAST_SECTION_ID
+  /* Fill last section with a word to ensure location counter and actual rom
+   * region data usage match. */
+  LONG(CONFIG_LINKER_LAST_SECTION_ID_PATTERN)
+#endif
 } GROUP_LINK_IN(ROMABLE_REGION)
 
 /* To provide the image size as a const expression,
  * calculate this value here. */
-__rom_region_end = LOADADDR(.last_section);
+__rom_region_end = LOADADDR(.last_section) + SIZEOF(.last_section);
 __rom_region_size = __rom_region_end - __rom_region_start;
 #endif
 

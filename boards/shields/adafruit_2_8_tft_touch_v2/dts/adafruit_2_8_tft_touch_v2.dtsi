@@ -36,7 +36,7 @@
 		ngamctrl = [00 0e 14 03 11 07 31 c1 48 08 0f 0c 31 36 0f];
 	};
 
-	sdhc0: sdhc@1 {
+	adafruit_2_8_tft_touch_v2_sdhc: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";

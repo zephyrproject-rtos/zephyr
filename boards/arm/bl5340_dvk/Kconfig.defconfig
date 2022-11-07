@@ -13,16 +13,8 @@ config BOARD
 config FLASH
 	default y
 
-if BOARD_BL5340_DVK_CPUAPP
-
-if DAC
-
 config I2C
-	default y
-
-endif # DAC
-
-endif # BOARD_BL5340_DVK_CPUAPP
+	default GPIO || DAC
 
 # By default, if we build for a Non-Secure version of the board,
 # enable building with TF-M as the Secure Execution Environment.
@@ -86,9 +78,6 @@ config FLASH_LOAD_SIZE
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 endif # BOARD_BL5340_DVK_CPUAPP_NS
-
-config I2C
-	default $(dt_compat_on_bus,$(DT_COMPAT_TI_TCA9538),i2c)
 
 endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 

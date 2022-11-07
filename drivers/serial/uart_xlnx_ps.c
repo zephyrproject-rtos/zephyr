@@ -32,6 +32,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/irq.h>
 
 #ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>

@@ -423,7 +423,7 @@ static void test_advx_main(void)
 	printk("Start advertising using extended commands (duration)...");
 	is_sent = false;
 	num_sent_actual = 0;
-	num_sent_expected = 4;
+	num_sent_expected = 5;
 	ext_adv_param.timeout = 50;
 	ext_adv_param.num_events = 0;
 	err = bt_le_ext_adv_start(adv, &ext_adv_param);
@@ -493,11 +493,11 @@ static void test_advx_main(void)
 	printk("Re-enable advertising using extended commands (duration)...");
 	is_sent = false;
 	num_sent_actual = 0;
-	num_sent_expected = 4;      /* 4 advertising events of (100 ms +
+	num_sent_expected = 5;      /* 5 advertising events with a spacing of (100 ms +
 				     * random_delay of upto 10 ms) transmit in
 				     * the range of 400 to 440 ms
 				     */
-	ext_adv_param.timeout = 50; /* Check there is atmost 4 advertising
+	ext_adv_param.timeout = 50; /* Check there is atmost 5 advertising
 				     * events in a timeout of 500 ms
 				     */
 	ext_adv_param.num_events = 0;
@@ -1200,7 +1200,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 			bt_addr_le_copy(&per_addr, info->addr);
 		} else {
 			if ((per_sid == info->sid) &&
-			    !bt_addr_le_cmp(&per_addr, info->addr)) {
+			    bt_addr_le_eq(&per_addr, info->addr)) {
 				per_adv_evt_cnt_actual++;
 
 				printk("per_adv_evt_cnt_actual %u\n",

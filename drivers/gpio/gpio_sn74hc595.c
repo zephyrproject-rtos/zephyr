@@ -16,7 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_sn74hc595, CONFIG_GPIO_LOG_LEVEL);

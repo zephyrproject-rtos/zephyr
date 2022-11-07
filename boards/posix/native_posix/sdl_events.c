@@ -4,14 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <SDL.h>
 #include "posix_board_if.h"
-#include <zephyr/arch/posix/posix_trace.h>
-#include "posix_arch_internal.h"
 #include "soc.h"
-#include "hw_models_top.h"
+#include <zephyr/arch/posix/posix_trace.h>
+#include <zephyr/kernel.h>
 
-uint64_t sdl_event_timer;
+#include <SDL.h>
 
 static void sdl_handle_window_event(const SDL_Event *event)
 {
@@ -37,25 +35,30 @@ static void sdl_handle_window_event(const SDL_Event *event)
 	}
 }
 
-void sdl_handle_events(void)
+static void sdl_handle_events(void *p1, void *p2, void *p3)
 {
 	SDL_Event event;
 
-	sdl_event_timer = hwm_get_time() + 10000;
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
-	while (SDL_PollEvent(&event)) {
-		switch (event.type) {
-		case SDL_WINDOWEVENT:
-			sdl_handle_window_event(&event);
-			break;
-		case SDL_QUIT:
-			posix_exit(0);
-			break;
-		default:
-			break;
+	for (;;) {
+		while (SDL_PollEvent(&event)) {
+			switch (event.type) {
+			case SDL_WINDOWEVENT:
+				sdl_handle_window_event(&event);
+				break;
+			case SDL_QUIT:
+				posix_exit(0);
+				break;
+			default:
+				break;
+			}
 		}
-	}
 
+		k_msleep(CONFIG_SDL_THREAD_INTERVAL);
+	}
 }
 
 static void sdl_init(void)
@@ -73,3 +76,7 @@ static void sdl_cleanup(void)
 
 NATIVE_TASK(sdl_init, PRE_BOOT_2, 1);
 NATIVE_TASK(sdl_cleanup, ON_EXIT, 2);
+
+K_THREAD_DEFINE(sdl, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE,
+		sdl_handle_events, NULL, NULL, NULL,
+		CONFIG_SDL_THREAD_PRIORITY, K_ESSENTIAL, 0);

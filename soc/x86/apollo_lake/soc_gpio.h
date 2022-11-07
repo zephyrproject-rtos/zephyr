@@ -15,6 +15,10 @@
 #ifndef __SOC_GPIO_H_
 #define __SOC_GPIO_H_
 
+#define REG_PAD_OWNER_BASE              0x0020
+#define REG_GPI_INT_STS_BASE            0x0100
+#define PAD_CFG0_PMODE_MASK             (0x0F << 10)
+
 #define APL_GPIO_DEV_N_0		DT_NODELABEL(gpio_n_000_031)
 #define APL_GPIO_0			0
 #define APL_GPIO_1			1

@@ -22,6 +22,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_BASS_CLIENT)
 #define LOG_MODULE_NAME bt_bass_client
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "bass_internal.h"
 #include "../host/conn_internal.h"
@@ -186,7 +187,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	BT_HEXDUMP_DBG(data, length, "Receive state notification:");
+	LOG_HEXDUMP_DBG(data, length, "Receive state notification:");
 
 	index = lookup_index_by_handle(handle);
 	if (index < 0) {

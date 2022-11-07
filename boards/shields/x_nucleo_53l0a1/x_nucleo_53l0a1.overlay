@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 &arduino_i2c {
-	expander1: stmpe1600@42 {
+	expander1_x_nucleo_53l0a1: stmpe1600@42 {
 		compatible = "st,stmpe1600";
 		reg = <0x42>;
 		ngpios = <16>;
 		gpio-controller;
 		#gpio-cells = <2>;
 	};
-	expander2: stmpe1600@43 {
+	expander2_x_nucleo_53l0a1: stmpe1600@43 {
 		compatible = "st,stmpe1600";
 		reg = <0x43>;
 		ngpios = <16>;
@@ -20,21 +20,21 @@
 	};
 
 	/* Center sensor soldered on the shield */
-	vl53l0x_c: vl53l0x@30 {
+	vl53l0x_c_x_nucleo_53l0a1: vl53l0x@30 {
 		compatible = "st,vl53l0x";
 		reg = <0x30>;
-		xshut-gpios = <&expander1 15 0>;
+		xshut-gpios = <&expander1_x_nucleo_53l0a1 15 0>;
 	};
 
 	/* Satellites optional sensors */
-	vl53l0x_l: vl53l0x@31 {
+	vl53l0x_l_x_nucleo_53l0a1: vl53l0x@31 {
 		compatible = "st,vl53l0x";
 		reg = <0x31>;
-		xshut-gpios = <&expander2 14 0>;
+		xshut-gpios = <&expander2_x_nucleo_53l0a1 14 0>;
 	};
-	vl53l0x_r: vl53l0x@32 {
+	vl53l0x_r_x_nucleo_53l0a1: vl53l0x@32 {
 		compatible = "st,vl53l0x";
 		reg = <0x32>;
-		xshut-gpios = <&expander2 15 0>;
+		xshut-gpios = <&expander2_x_nucleo_53l0a1 15 0>;
 	};
 };

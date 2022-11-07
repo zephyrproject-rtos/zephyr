@@ -31,6 +31,8 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_hci_core
 #include "common/log.h"
+#include "common/bt_str.h"
+#include "common/assert.h"
 
 #include "common/rpa.h"
 #include "keys.h"
@@ -580,7 +582,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (bt_addr_le_cmp(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
 			BT_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
@@ -653,7 +655,7 @@ static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (bt_addr_le_cmp(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
 			BT_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
@@ -1731,7 +1733,7 @@ int bt_unpair(uint8_t id, const bt_addr_le_t *addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP) &&
-	    (!addr || !bt_addr_le_cmp(addr, BT_ADDR_LE_ANY))) {
+	    (!addr || bt_addr_le_eq(addr, BT_ADDR_LE_ANY))) {
 		bt_foreach_bond(id, unpair_remote, &id);
 		return 0;
 	}
@@ -2618,6 +2620,7 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 		bt_dev.le.iso_mtu);
 
 	k_sem_init(&bt_dev.le.iso_pkts, rp->iso_max_num, rp->iso_max_num);
+	bt_dev.le.iso_limit = rp->iso_max_num;
 #endif /* CONFIG_BT_ISO */
 }
 
@@ -4020,7 +4023,7 @@ void bt_data_parse(struct net_buf_simple *ad,
 		}
 
 		if (len > ad->len) {
-			BT_WARN("Malformed data");
+			BT_WARN("malformed advertising data");
 			return;
 		}
 

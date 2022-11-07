@@ -9,14 +9,10 @@
 
 #include <inttypes.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* MTU for newtmgr responses */
-#define MGMT_MAX_MTU		1024
 
 /** Opcodes; encoded in first byte of header. */
 #define MGMT_OP_READ		0
@@ -65,24 +61,6 @@ extern "C" {
 #define MGMT_EVT_OP_CMD_STATUS	0x02
 #define MGMT_EVT_OP_CMD_DONE	0x03
 
-struct mgmt_hdr {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
-	uint8_t  _res1:5;
-#endif
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t  _res1:5;
-	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
-#endif
-	uint8_t  nh_flags;		/* Reserved for future flags */
-	uint16_t nh_len;		/* Length of the payload */
-	uint16_t nh_group;		/* MGMT_GROUP_ID_[...] */
-	uint8_t  nh_seq;		/* Sequence number */
-	uint8_t  nh_id;			/* Message ID within group */
-};
-
-#define nmgr_hdr mgmt_hdr
-
 /*
  * MGMT_EVT_OP_CMD_STATUS argument
  */
@@ -130,15 +108,6 @@ typedef void *(*mgmt_alloc_rsp_fn)(const void *src_buf, void *arg);
  * @param arg	Optional streamer argument.
  */
 typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
-
-/**
- * @brief Decodes requests and encodes responses for any mcumgr protocol.
- */
-struct mgmt_streamer {
-	void *cb_arg;
-	struct cbor_nb_reader *reader;
-	struct cbor_nb_writer *writer;
-};
 
 /**
  * @brief Context required by command handlers for parsing requests and writing
@@ -195,30 +164,6 @@ struct mgmt_group {
 };
 
 /**
- * @brief Uses the specified streamer to trim data from the front of a buffer.
- *
- * If the amount to trim exceeds the size of the buffer, the buffer is
- * truncated to a length of 0.
- *
- * @param streamer	The streamer providing the callback.
- * @param buf		The buffer to trim.
- * @param len		The number of bytes to remove.
- */
-void mgmt_streamer_trim_front(struct mgmt_streamer *streamer, void *buf, size_t len);
-
-/**
- * @brief Uses the specified streamer to initialize a CBOR reader.
- *
- * @param streamer	The streamer providing the callback.
- * @param reader	The reader to initialize.
- * @param buf		The buffer to configure the reader with.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-int mgmt_streamer_init_reader(struct mgmt_streamer *streamer, void *buf);
-
-
-/**
  * @brief Registers a full command group.
  *
  * @param group The group to register.
@@ -242,30 +187,6 @@ void mgmt_unregister_group(struct mgmt_group *group);
  *		NULL on failure.
  */
 const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command_id);
-
-/**
- * @brief Encodes a response status into the specified management context.
- *
- * @param ctxt		The management context to encode into.
- * @param status	The response status to write.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-int mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int status);
-
-/**
- * @brief Byte-swaps an mcumgr header from network to host byte order.
- *
- * @param hdr The mcumgr header to byte-swap.
- */
-void mgmt_ntoh_hdr(struct mgmt_hdr *hdr);
-
-/**
- * @brief Byte-swaps an mcumgr header from host to network byte order.
- *
- * @param hdr The mcumgr header to byte-swap.
- */
-void mgmt_hton_hdr(struct mgmt_hdr *hdr);
 
 /**
  * @brief Register event callback function.

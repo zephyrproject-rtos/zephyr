@@ -28,6 +28,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CONN)
 #define LOG_MODULE_NAME bt_conn
 #include "common/log.h"
+#include "common/assert.h"
 
 #include "hci_core.h"
 #include "id.h"
@@ -136,7 +137,7 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 	 * dedicated ISO buffers.
 	 */
 	if (conn->type == BT_CONN_TYPE_ISO) {
-		if (bt_dev.le.iso_mtu && bt_dev.le.iso_pkts.limit) {
+		if (bt_dev.le.iso_mtu && bt_dev.le.iso_limit != 0) {
 			return &bt_dev.le.iso_pkts;
 		}
 
@@ -1120,6 +1121,8 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
 	atomic_val_t old;
 
+	__ASSERT_NO_MSG(conn);
+
 	/* Reference counter must be checked to avoid incrementing ref from
 	 * zero, then we should return NULL instead.
 	 * Loop on clear-and-set in case someone has modified the reference
@@ -1150,7 +1153,7 @@ void bt_conn_unref(struct bt_conn *conn)
 	__ASSERT(old > 0, "Conn reference counter is 0");
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->type == BT_CONN_TYPE_LE &&
-	    atomic_get(&conn->ref) == 0) {
+	    conn->role == BT_CONN_ROLE_PERIPHERAL && atomic_get(&conn->ref) == 0) {
 		bt_le_adv_resume();
 	}
 }
@@ -2178,16 +2181,16 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 	}
 
 	/* Check against conn dst address as it may be the identity address */
-	if (!bt_addr_le_cmp(peer, &conn->le.dst)) {
+	if (bt_addr_le_eq(peer, &conn->le.dst)) {
 		return true;
 	}
 
 	/* Check against initial connection address */
 	if (conn->role == BT_HCI_ROLE_CENTRAL) {
-		return bt_addr_le_cmp(peer, &conn->le.resp_addr) == 0;
+		return bt_addr_le_eq(peer, &conn->le.resp_addr);
 	}
 
-	return bt_addr_le_cmp(peer, &conn->le.init_addr) == 0;
+	return bt_addr_le_eq(peer, &conn->le.init_addr);
 }
 
 struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)

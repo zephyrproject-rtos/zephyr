@@ -55,6 +55,20 @@ struct lll_conn_iso_group {
 
 	/* Resumption information */
 	uint16_t resume_cis;    /* CIS handle to schedule at resume */
+
+	/* Window widening. Relies on vendor specific conversion macros, e.g.
+	 * EVENT_US_FRAC_TO_TICKS().
+	 */
+	uint32_t window_widening_periodic_us_frac; /* Widening in us fractions per
+						    * ISO interval.
+						    */
+	uint32_t window_widening_prepare_us_frac;  /* Widening in us fractions for
+						    * active prepare.
+						    */
+	uint32_t window_widening_event_us_frac;    /* Accumulated widening in us
+						    * fractions for active event.
+						    */
+	uint32_t window_widening_max_us;	   /* Maximum widening in us */
 };
 
 int lll_conn_iso_init(void);

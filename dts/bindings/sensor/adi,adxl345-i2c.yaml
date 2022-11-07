@@ -5,4 +5,4 @@ description: ADXL345 3-axis I2C accelerometer
 
 compatible: "adi,adxl345"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

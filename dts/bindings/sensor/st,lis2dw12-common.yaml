@@ -1,6 +1,8 @@
 # Copyright (c) 2021 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+include: sensor-device.yaml
+
 properties:
     irq-gpios:
       type: phandle-array
@@ -47,6 +49,28 @@ properties:
         -  8
         -  4
         -  2
+
+    odr:
+      type: int
+      required: false
+      description: |
+        Output data rate in Hz. Default value is 12.5Hz if this is not set.
+        The output data rates which are represented with fractional
+        numbers are converted into their integer parts (1.65Hz -> 1, 12.5Hz -> 12).
+        If 0 selected as the odr, the accelerometer initializes into
+        power off state.
+
+      enum:
+        -  0
+        -  1
+        -  12
+        -  25
+        -  50
+        -  100
+        -  200
+        -  400
+        -  800
+        -  1600
 
     bw-filt:
       type: int
@@ -159,7 +183,6 @@ properties:
 
     low-noise:
       type: boolean
-      required: false
       description: |
         Enables the LOW_NOISE flag in the CTRL6 register.
         This influences the noise density and the current consumption.
@@ -167,7 +190,6 @@ properties:
 
     hp-filter-path:
       type: boolean
-      required: false
       description: |
         Sets the Filtered Data Selection bit in the CTRL6 register.
         When enabled, the high-pass filter path is selected.
@@ -177,7 +199,6 @@ properties:
 
     hp-ref-mode:
       type: boolean
-      required: false
       description: |
         Enables the high-pass filter reference mode in the CTRL7 register.
         When the high-pass filter is configured in reference mode,
@@ -190,8 +211,51 @@ properties:
 
     drdy-pulsed:
       type: boolean
-      required: false
       description: |
         Selects the pulsed mode for data-ready interrupt when enabled,
         and the latched mode when disabled.
         Sets the corresponding DRDY_PULSED bit in the CTRL7 register.
+
+    ff-duration:
+      type: int
+      default: 30
+      required: false
+      description: |
+        The freefall duration value represented in milliseconds.
+        If the accelerometer readings of the all axes are lower
+        than the freefall threshold value for the freefall duration long,
+        then a freefall trigger occurs. This value is 5 bits long in the
+        register and 1 LSB = 1 * 1/ODR. This value depends on the ODR.
+        if the data rate change in code with SENSOR ATTR SAMPLING FREQUENCY,
+        It must be set again with SENSOR_ATT_FF_DUR attribute. ST propose
+        100Hz ODR and 30ms ff-duration for recognize freefall detection
+        refer to ST DT0100 design tip document.
+
+    ff-threshold:
+      type: int
+      default: 3
+      required: false
+      description: |
+        The freefall threshold value represented in mg.
+        If the accelerometer readings of the all axes are lower
+        than the freefall threshold value for the freefall duration long,
+        then a freefall trigger occurs. This value is 3 bits long.
+        Default value chosen 3 (312 mg) refer to ST DT0100 design tip document.
+        0 # ~156mg
+        1 # ~219mg
+        2 # ~250mg
+        3 # ~312mg
+        4 # ~344mg
+        5 # ~406mg
+        6 # ~469mg
+        7 # ~500mg
+
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7

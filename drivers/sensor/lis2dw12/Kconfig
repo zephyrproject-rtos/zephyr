@@ -73,5 +73,8 @@ config LIS2DW12_THRESHOLD
 	  be bigger than the threshold. See ST AN5038 for more details about
 	  the feature.
 
-
+config LIS2DW12_FREEFALL
+	bool "Free Fall detection (via interrupt)"
+	help
+	  Enable freefall detection via interrupt.
 endif # LIS2DW12

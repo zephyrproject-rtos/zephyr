@@ -3,11 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <limits.h>
+
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/irq.h>
 
 /* andestech,machine-timer */
 #if DT_HAS_COMPAT_STATUS_OKAY(andestech_machine_timer)

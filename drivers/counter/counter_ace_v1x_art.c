@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <devicetree.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/counter.h>
 #include <soc.h>
-#include <ace_v1x-regs.h>
 #include <counter/counter_ace_v1x_art_regs.h>
 
 static struct k_spinlock lock;

@@ -71,7 +71,7 @@ ZTEST_USER(clock, test_clock_uptime)
 	/**TESTPOINT: uptime straddled ms boundary*/
 	t32 = k_uptime_get_32();
 	ALIGN_MS_BOUNDARY;
-	zassert_true(k_uptime_get_32() > t32, NULL);
+	zassert_true(k_uptime_get_32() > t32);
 
 	/**TESTPOINT: uptime delta*/
 	d64 = k_uptime_delta(&d64);
@@ -231,8 +231,8 @@ ZTEST(clock, test_ms_time_duration)
 
 	/** TESTPOINT: waiting time less than duration and check the count*/
 	k_busy_wait(LESS_DURATION * 1000);
-	zassert_true(tdata.duration_count == 0, NULL);
-	zassert_true(tdata.stop_count == 0, NULL);
+	zassert_true(tdata.duration_count == 0);
+	zassert_true(tdata.stop_count == 0);
 
 	/** TESTPOINT: proving duration in millisecond */
 	init_data_count();

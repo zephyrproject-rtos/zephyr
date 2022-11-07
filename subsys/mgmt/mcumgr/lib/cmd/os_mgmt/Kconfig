@@ -9,9 +9,11 @@ menuconfig MCUMGR_CMD_OS_MGMT
 	  Enables mcumgr handlers for OS management
 
 if MCUMGR_CMD_OS_MGMT
+
 config OS_MGMT_RESET_MS
 	int "Delay before executing reset command (ms)"
 	default 250
+	depends on REBOOT
 	help
 	  When a reset command is received, the system waits this many milliseconds
 	  before performing the reset.  This delay allows time for the mcumgr
@@ -19,6 +21,7 @@ config OS_MGMT_RESET_MS
 
 config OS_MGMT_RESET_HOOK
 	bool "Reset hook"
+	depends on REBOOT
 	help
 	  Allows applications to control and get notifications of when a reset
 	  command has been issued via an mcumgr command. With this option
@@ -115,20 +118,6 @@ config OS_MGMT_ECHO
 	bool "Support for echo command"
 	default y
 	select MGMT_MIN_DECODING_LEVEL_2
-
-if OS_MGMT_ECHO
-
-config OS_MGMT_ECHO_LENGTH
-	int "Echo buffer (DEPRECATED)"
-	default 128
-	help
-	  DEPRECATED: The echo sentence is no longer copied into intermediate
-	  buffer, instead a transport buffer is used to directly copy echo
-	  sentence to response. Echo may still respond with not enough
-	  memory error, in case when it would not be possible to fit source
-	  sentence into response buffer limited by MCUMGR_BUF_SIZE.
-
-endif
 
 config OS_MGMT_MCUMGR_PARAMS
 	bool "MCUMGR Parameters retrieval command"

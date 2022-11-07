@@ -17,6 +17,7 @@ supported:
   - dma
   - usart
   - arduino_spi
+  - sdhc
   - usb
   - nvs
 ram: 192

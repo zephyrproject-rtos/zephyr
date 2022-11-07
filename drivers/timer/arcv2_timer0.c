@@ -9,6 +9,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/arch/arc/v2/aux_regs.h>
+#include <zephyr/irq.h>
 /*
  * note: This implementation assumes Timer0 is present. Be sure
  * to build the ARC CPU with Timer0.
@@ -52,7 +53,7 @@
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
 
-#define SMP_TIMER_DRIVER (CONFIG_SMP && CONFIG_MP_NUM_CPUS > 1)
+#define SMP_TIMER_DRIVER (CONFIG_SMP && CONFIG_MP_MAX_NUM_CPUS > 1)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = IRQ_TIMER0;
@@ -212,7 +213,7 @@ static void timer_int_handler(const void *unused)
 	ARG_UNUSED(unused);
 	uint32_t dticks;
 
-#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+#if defined(CONFIG_SMP) && CONFIG_MP_MAX_NUM_CPUS > 1
 	uint64_t curr_time;
 	k_spinlock_key_t key;
 

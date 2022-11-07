@@ -11,3 +11,4 @@ supported:
   - gpio
   - i2c
   - eeprom
+  - lora

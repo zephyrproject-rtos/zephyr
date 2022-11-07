@@ -80,19 +80,19 @@ static int test_disable_enable_callback(void)
 	return TC_PASS;
 }
 
-void test_init_callback(void)
+ZTEST(kscan_basic, test_init_callback)
 {
 	/* Configure kscan matrix with an appropriate callback */
-	zassert_true(test_kb_callback() == TC_PASS, NULL);
+	zassert_true(test_kb_callback() == TC_PASS);
 	k_sleep(K_MSEC(1000));
 
 	/* Configure kscan with a null callback */
-	zassert_true(test_null_callback() == TC_PASS, NULL);
+	zassert_true(test_null_callback() == TC_PASS);
 }
 
-void test_control_callback(void)
+ZTEST(kscan_basic, test_control_callback)
 {
 	/* Disable/enable notifications to user */
-	zassert_true(test_disable_enable_callback() == TC_PASS, NULL);
+	zassert_true(test_disable_enable_callback() == TC_PASS);
 	k_sleep(K_MSEC(1000));
 }

@@ -33,15 +33,18 @@ if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
 endif()
 
-if(NOT SOURCES)
+if(NOT SOURCES AND EXISTS main.c)
   set(SOURCES main.c)
 endif()
 
 add_executable(testbinary ${SOURCES})
+find_package(Deprecated COMPONENTS SOURCES)
+add_library(test_interface INTERFACE)
+target_link_libraries(testbinary PRIVATE test_interface)
 
 set(KOBJ_TYPES_H_TARGET kobj_types_h_target)
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
-add_dependencies(testbinary ${KOBJ_TYPES_H_TARGET})
+add_dependencies(test_interface ${KOBJ_TYPES_H_TARGET})
 gen_kobj(KOBJ_GEN_DIR)
 
 list(APPEND INCLUDE
@@ -67,7 +70,7 @@ endif(M64_MODE)
 
 endif()
 
-target_compile_options(testbinary PRIVATE
+target_compile_options(test_interface INTERFACE
   -imacros ${AUTOCONF_H}
   -Wall
   -I ${KOBJ_GEN_DIR}
@@ -86,7 +89,7 @@ target_link_libraries(testbinary PRIVATE
   )
 
 if(COVERAGE)
-  target_compile_options(testbinary PRIVATE
+  target_compile_options(test_interface INTERFACE
     -fno-default-inline
     -fno-inline
     -fprofile-arcs
@@ -116,10 +119,10 @@ else()
       )
 endif()
 
-target_compile_definitions(testbinary PRIVATE ZTEST_UNITTEST)
+target_compile_definitions(test_interface INTERFACE ZTEST_UNITTEST)
 
 foreach(inc ${INCLUDE})
-  target_include_directories(testbinary PRIVATE ${ZEPHYR_BASE}/${inc})
+  target_include_directories(test_interface INTERFACE ${ZEPHYR_BASE}/${inc})
 endforeach()
 
 find_program(VALGRIND_PROGRAM valgrind)

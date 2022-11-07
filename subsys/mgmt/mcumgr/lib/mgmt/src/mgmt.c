@@ -1,16 +1,13 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/byteorder.h>
-#include <string.h>
-
+#include <zephyr/sys/slist.h>
 #include "mgmt/mgmt.h"
-#include <zephyr/mgmt/mcumgr/buf.h>
-#include <zcbor_encode.h>
-#include <zcbor_common.h>
+#include "smp/smp.h"
 
 static mgmt_on_evt_cb evt_cb;
 static sys_slist_t mgmt_group_list =
@@ -63,39 +60,6 @@ void
 mgmt_register_group(struct mgmt_group *group)
 {
 	sys_slist_append(&mgmt_group_list, &group->node);
-}
-
-int
-mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
-{
-	bool ok;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
-
-	zcbor_tstr_put_lit(zse, "rc");
-	ok = zcbor_int32_put(zse, errcode);
-
-#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
-	if (ok && MGMT_CTXT_RC_RSN(ctxt) != NULL) {
-		ok = zcbor_tstr_put_lit(zse, "rsn")			&&
-		     zcbor_tstr_put_term(zse, MGMT_CTXT_RC_RSN(ctxt));
-	}
-#endif
-
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
-}
-
-void
-mgmt_ntoh_hdr(struct mgmt_hdr *hdr)
-{
-	hdr->nh_len = sys_be16_to_cpu(hdr->nh_len);
-	hdr->nh_group = sys_be16_to_cpu(hdr->nh_group);
-}
-
-void
-mgmt_hton_hdr(struct mgmt_hdr *hdr)
-{
-	hdr->nh_len = sys_cpu_to_be16(hdr->nh_len);
-	hdr->nh_group = sys_cpu_to_be16(hdr->nh_group);
 }
 
 void

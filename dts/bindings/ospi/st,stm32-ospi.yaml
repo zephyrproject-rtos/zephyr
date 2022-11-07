@@ -12,6 +12,9 @@ description: |
                          &octospi_io4_pe16 &octospi_io5_pe17
                          &octospi_io6_pe18 &octospi_io7_pe19>;
 
+            dmas = <&dma1 5 41 0x10000>;
+            dma-names = "tx_rx";
+
             status = "okay";
         };
 
@@ -33,3 +36,33 @@ properties:
 
     pinctrl-names:
       required: true
+
+    dmas:
+      description: |
+        Optional DMA channel specifier, required for DMA transactions.
+        For example dmas for TX/RX on OSPI
+           dmas = <&dma1 5 41 0x10000>;
+
+        With, in each cell of the dmas specifier:
+        - &dma1: dma controller phandle
+        - 5: channel number (0 to Max-Channel minus 1). From 0 to 15 on stm32u5x.
+        - 41: slot number (request which could be given by the DMAMUX)
+        - 0x10000: channel configuration (only for srce/dest data size, priority)
+
+        Notes:
+          - On series supporting DMAMUX, the DMA phandle should be provided
+            but DMAMUX node should also be enabled in the DTS.
+          - For channel configuration, only the config bits priority and
+            periph/mem datasize are used. The periph/mem datasize must be equal,
+            0 is a correct value.
+           - There is no Fifo used by this DMA peripheral.
+
+        For example dmas for TX/RX on OSPI
+           dmas = <&dma1 5 41 0x10000>;
+
+    dma-names:
+      description: |
+        DMA channel name. If DMA should be used, expected value is "tx_rx".
+
+        For example
+           dma-names = "tx_rx";

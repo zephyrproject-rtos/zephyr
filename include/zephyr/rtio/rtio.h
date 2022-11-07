@@ -391,6 +391,16 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
 #define RTIO_CQ_DEFINE(name, len)			\
 	static RTIO_SPSC_DEFINE(name, struct rtio_cqe, len)
 
+
+/**
+ * @brief Statically define and initialize a fixed length iodev submission queue
+ *
+ * @param name Name of the queue.
+ * @param len Queue length, power of 2 required
+ */
+#define RTIO_IODEV_SQ_DEFINE(name, len) \
+	static RTIO_SPSC_DEFINE(name, struct rtio_iodev_sqe, len)
+
 /**
  * @brief Statically define and initialize an RTIO context
  *

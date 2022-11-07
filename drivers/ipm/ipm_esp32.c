@@ -234,7 +234,7 @@ static const struct ipm_driver_api esp32_ipm_driver_api = {
 										\
 static struct esp32_ipm_config esp32_ipm_device_cfg_##idx = {	\
 	.irq_source_pro_cpu = DT_INST_IRQN(idx),		\
-	.irq_source_pro_cpu = DT_INST_IRQN(idx) + 1,	\
+	.irq_source_app_cpu = DT_INST_IRQN(idx) + 1,	\
 };	\
 	\
 static struct esp32_ipm_data esp32_ipm_device_data_##idx = {	\

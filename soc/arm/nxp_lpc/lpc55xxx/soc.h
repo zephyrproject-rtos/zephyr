@@ -16,7 +16,6 @@
 #define _SOC__H_
 
 #ifndef _ASMLANGUAGE
-#include <zephyr/sys/util.h>
 #include <fsl_common.h>
 
 
@@ -32,6 +31,8 @@
 #define IOCON_PIO_FUNC7 0x07u         /*!<@brief Selects pin function 7 */
 #define IOCON_PIO_FUNC9 0x09u         /*!<@brief Selects pin function 9 */
 #define IOCON_PIO_FUNC10 0x0Au        /*!<@brief Selects pin function 10 */
+#define IOCON_PIO_FUNC11 0x0Bu        /*!<@brief Selects pin function 11 */
+
 #define IOCON_PIO_INV_DI 0x00u        /*!<@brief Input function not inverted */
 #define IOCON_PIO_MODE_INACT 0x00u    /*!<@brief No addition pin function */
 #define IOCON_PIO_OPENDRAIN_DI 0x00u  /*!<@brief Open drain is disabled */

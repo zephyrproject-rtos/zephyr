@@ -36,6 +36,9 @@ config SENSOR_SHELL_BATTERY
 	  in a convenient format. It makes use of a fuel gauge to read its
 	  information.
 
+config SENSOR_INFO
+	bool "Sensor Info iterable section"
+
 comment "Device Drivers"
 
 source "drivers/sensor/adt7420/Kconfig"
@@ -195,6 +198,8 @@ source "drivers/sensor/pms7003/Kconfig"
 source "drivers/sensor/qdec_nrfx/Kconfig"
 
 source "drivers/sensor/qdec_sam/Kconfig"
+
+source "drivers/sensor/qdec_stm32/Kconfig"
 
 source "drivers/sensor/sbs_gauge/Kconfig"
 

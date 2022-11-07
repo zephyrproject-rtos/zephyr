@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_core.h>
@@ -486,32 +487,99 @@ int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 #include <syscalls/net_addr_pton_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static uint16_t calc_chksum(uint16_t sum, const uint8_t *data, size_t len)
+
+#ifdef CONFIG_LITTLE_ENDIAN
+#define CHECKSUM_BIG_ENDIAN 0
+#else
+#define CHECKSUM_BIG_ENDIAN 1
+#endif
+
+static uint16_t offset_based_swap8(const uint8_t *data)
 {
-	const uint8_t *end;
-	uint16_t tmp;
+	uint16_t data16 = (uint16_t)*data;
 
-	end = data + len - 1;
+	if (((uintptr_t)(data) & 1) == CHECKSUM_BIG_ENDIAN) {
+		return data16;
+	} else {
+		return data16 << 8;
+	}
+}
 
-	while (data < end) {
-		tmp = (data[0] << 8) + data[1];
-		sum += tmp;
-		if (sum < tmp) {
-			sum++;
-		}
+/* Word based checksum calculation based on:
+ * https://blogs.igalia.com/dpino/2018/06/14/fast-checksum-computation/
+ * It’s not necessary to add octets as 16-bit words. Due to the associative property of addition,
+ * it is possible to do parallel addition using larger word sizes such as 32-bit or 64-bit words.
+ * In those cases the variable that stores the accumulative sum has to be bigger too.
+ * Once the sum is computed a final step folds the sum to a 16-bit word (adding carry if any).
+ */
+uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
+{
+	uint64_t sum;
+	uint32_t *p;
+	size_t i = 0;
+	size_t pending = len;
+	int odd_start = ((uintptr_t)data & 0x01);
 
-		data += 2;
+	/* Sum in is in host endiannes, working order endiannes is both dependent on endianness
+	 * and the offset of starting
+	 */
+	if (odd_start == CHECKSUM_BIG_ENDIAN) {
+		sum = __bswap_16(sum_in);
+	} else {
+		sum = sum_in;
 	}
 
-	if (data == end) {
-		tmp = data[0] << 8;
-		sum += tmp;
-		if (sum < tmp) {
-			sum++;
-		}
+	/* Process up to 3 data elements up front, so the data is aligned further down the line */
+	if ((((uintptr_t)data & 0x01) != 0) && (pending >= 1)) {
+		sum += offset_based_swap8(data);
+		data++;
+		pending--;
+	}
+	if ((((uintptr_t)data & 0x02) != 0) && (pending >= sizeof(uint16_t))) {
+		pending -= sizeof(uint16_t);
+		sum = sum + *((uint16_t *)data);
+		data += sizeof(uint16_t);
+	}
+	p = (uint32_t *)data;
+
+	/* Do loop unrolling for the very large data sets */
+	while (pending >= sizeof(uint32_t) * 4) {
+		uint64_t sum_a = p[i];
+		uint64_t sum_b = p[i + 1];
+
+		pending -= sizeof(uint32_t) * 4;
+		sum_a += p[i + 2];
+		sum_b += p[i + 3];
+		i += 4;
+		sum += sum_a + sum_b;
+	}
+	while (pending >= sizeof(uint32_t)) {
+		pending -= sizeof(uint32_t);
+		sum = sum + p[i++];
+	}
+	data = (uint8_t *)(p + i);
+	if (pending >= 2) {
+		pending -= sizeof(uint16_t);
+		sum = sum + *((uint16_t *)data);
+		data += sizeof(uint16_t);
+	}
+	if (pending == 1) {
+		sum += offset_based_swap8(data);
 	}
 
-	return sum;
+	/* Fold sum into 16-bit word. */
+	while (sum >> 16) {
+		sum = (sum & 0xffff) + (sum >> 16);
+	}
+
+	/* Sum in is in host endiannes, working order endiannes is both dependent on endianness
+	 * and the offset of starting
+	 */
+	if (odd_start == CHECKSUM_BIG_ENDIAN) {
+		return __bswap_16((uint16_t)sum);
+	} else {
+		return sum;
+	}
 }
 
 static inline uint16_t pkt_calc_chksum(struct net_pkt *pkt, uint16_t sum)

@@ -3,6 +3,106 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Usage:
+#   load_cache(IMAGE <image> BINARY_DIR <dir>)
+#
+# This function will load the CMakeCache.txt file from the binary directory
+# given by the BINARY_DIR argument.
+#
+# All CMake cache variables are stored in a custom target which is identified by
+# the name given as value to the IMAGE argument.
+#
+# IMAGE:      image name identifying the cache for later sysbuild_get() lookup calls.
+# BINARY_DIR: binary directory (build dir) containing the CMakeCache.txt file to load.
+function(load_cache)
+  set(single_args IMAGE BINARY_DIR)
+  cmake_parse_arguments(LOAD_CACHE "" "${single_args}" "" ${ARGN})
+
+  if(NOT TARGET ${LOAD_CACHE_IMAGE}_cache)
+    add_custom_target(${LOAD_CACHE_IMAGE}_cache)
+  endif()
+  file(STRINGS "${LOAD_CACHE_BINARY_DIR}/CMakeCache.txt" cache_strings)
+  foreach(str ${cache_strings})
+    # Using a regex for matching whole 'VAR_NAME:TYPE=VALUE' will strip semi-colons
+    # thus resulting in lists to become strings.
+    # Therefore we first fetch VAR_NAME and TYPE, and afterwards extract
+    # remaining of string into a value that populates the property.
+    # This method ensures that both quoted values and ;-separated list stays intact.
+    string(REGEX MATCH "([^:]*):([^=]*)=" variable_identifier ${str})
+    if(NOT "${variable_identifier}" STREQUAL "")
+      string(LENGTH ${variable_identifier} variable_identifier_length)
+      string(SUBSTRING "${str}" ${variable_identifier_length} -1 variable_value)
+      set_property(TARGET ${LOAD_CACHE_IMAGE}_cache APPEND PROPERTY "CACHE:VARIABLES" "${CMAKE_MATCH_1}")
+      set_property(TARGET ${LOAD_CACHE_IMAGE}_cache PROPERTY "${CMAKE_MATCH_1}:TYPE" "${CMAKE_MATCH_2}")
+      set_property(TARGET ${LOAD_CACHE_IMAGE}_cache PROPERTY "${CMAKE_MATCH_1}" "${variable_value}")
+    endif()
+  endforeach()
+endfunction()
+
+# Usage:
+#   sysbuild_get(<variable> IMAGE <image> [VAR <image-variable>] <KCONFIG|CACHE>)
+#
+# This function will return the variable found in the CMakeCache.txt file
+# identified by image.
+# If `VAR` is provided, the name given as parameter will be looked up, but if
+# `VAR` is not given, the `<variable>` name provided will be used both for
+# lookup and value return.
+#
+# The result will be returned in `<variable>`.
+#
+# Example use:
+#   sysbuild_get(PROJECT_NAME IMAGE my_sample CACHE)
+#     will lookup PROJECT_NAME from the CMakeCache identified by `my_sample` and
+#     and return the value in the local variable `PROJECT_NAME`.
+#
+#   sysbuild_get(my_sample_PROJECT_NAME IMAGE my_sample VAR PROJECT_NAME CACHE)
+#     will lookup PROJECT_NAME from the CMakeCache identified by `my_sample` and
+#     and return the value in the local variable `my_sample_PROJECT_NAME`.
+#
+#   sysbuild_get(my_sample_CONFIG_FOO IMAGE my_sample VAR CONFIG_FOO KCONFIG)
+#     will lookup CONFIG_FOO from the KConfig identified by `my_sample` and
+#     and return the value in the local variable `my_sample_CONFIG_FOO`.
+#
+# <variable>: variable used for returning CMake cache value. Also used as lookup
+#             variable if `VAR` is not provided.
+# IMAGE:      image name identifying the cache to use for variable lookup.
+# VAR:        name of the CMake cache variable name to lookup.
+# KCONFIG:    Flag indicating that a Kconfig setting should be fetched.
+# CACHE:      Flag indicating that a CMake cache variable should be fetched.
+function(sysbuild_get variable)
+  cmake_parse_arguments(GET_VAR "CACHE;KCONFIG" "IMAGE;VAR" "" ${ARGN})
+
+  if(NOT DEFINED GET_VAR_IMAGE)
+    message(FATAL_ERROR "sysbuild_get(...) requires IMAGE.")
+  endif()
+
+  if(DEFINED ${variable})
+    message(WARNING "Return variable ${variable} already defined with a value. "
+                    "sysbuild_get(${variable} ...) may overwrite existing value. "
+		    "Please use sysbuild_get(<variable> ... VAR <image-variable>) "
+		    "where <variable> is undefined."
+    )
+  endif()
+
+  if(NOT DEFINED GET_VAR_VAR)
+    set(GET_VAR_VAR ${variable})
+  endif()
+
+  if(GET_VAR_KCONFIG)
+    set(variable_target ${GET_VAR_IMAGE})
+  elseif(GET_VAR_CACHE)
+    set(variable_target ${GET_VAR_IMAGE}_cache)
+  else()
+    message(WARNING "<CACHE> or <KCONFIG> not specified, defaulting to CACHE")
+    set(variable_target ${GET_VAR_IMAGE}_cache)
+  endif()
+
+  get_property(${GET_VAR_IMAGE}_${GET_VAR_VAR} TARGET ${variable_target} PROPERTY ${GET_VAR_VAR})
+  if(DEFINED ${GET_VAR_IMAGE}_${GET_VAR_VAR})
+    set(${variable} ${${GET_VAR_IMAGE}_${GET_VAR_VAR}} PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Usage:
 #   ExternalZephyrProject_Add(APPLICATION <name>
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board>]
@@ -32,6 +132,39 @@ function(ExternalZephyrProject_Add)
     )
   endif()
 
+  set(sysbuild_image_conf_dir ${APP_DIR}/sysbuild)
+  set(sysbuild_image_name_conf_dir ${APP_DIR}/sysbuild/${ZBUILD_APPLICATION})
+  # User defined `-D<image>_CONF_FILE=<file.conf>` takes precedence over anything else.
+  if (NOT ${ZBUILD_APPLICATION}_CONF_FILE)
+    if(EXISTS ${sysbuild_image_name_conf_dir})
+      set(${ZBUILD_APPLICATION}_APPLICATION_CONFIG_DIR ${sysbuild_image_name_conf_dir}
+          CACHE INTERNAL "Application configuration dir controlled by sysbuild"
+      )
+    endif()
+
+     # Check for sysbuild related configuration fragments.
+     # The contents of these are appended to the image existing configuration
+     # when user is not specifying custom fragments.
+    if(NOT "${CONF_FILE_BUILD_TYPE}" STREQUAL "")
+      set(sysbuil_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${CONF_FILE_BUILD_TYPE}.conf)
+    else()
+      set(sysbuild_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.conf)
+    endif()
+
+    if (NOT ${ZBUILD_APPLICATION}_OVERLAY_CONFIG AND EXISTS ${sysbuild_image_conf_fragment})
+      set(${ZBUILD_APPLICATION}_OVERLAY_CONFIG ${sysbuild_image_conf_fragment}
+          CACHE INTERNAL "Kconfig fragment defined by main application"
+      )
+    endif()
+
+    # Check for overlay named <ZBUILD_APPLICATION>.overlay.
+    set(sysbuild_image_dts_overlay ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.overlay)
+    if (NOT ${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE AND EXISTS ${sysbuild_image_dts_overlay})
+      set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${sysbuild_image_dts_overlay}
+          CACHE INTERNAL "devicetree overlay file defined by main application"
+      )
+    endif()
+  endif()
   # CMake variables which must be known by all Zephyr CMake build systems
   # Those are settings which controls the build and must be known to CMake at
   # invocation time, and thus cannot be passed though the sysbuild cache file.
@@ -112,6 +245,7 @@ function(ExternalZephyrProject_Add)
             "Location: ${ZBUILD_SOURCE_DIR}"
     )
   endif()
+  load_cache(IMAGE ${ZBUILD_APPLICATION} BINARY_DIR ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
 
   foreach(kconfig_target
       menuconfig
@@ -141,4 +275,5 @@ function(ExternalZephyrProject_Add)
     BUILD_ALWAYS True
     USES_TERMINAL_BUILD True
   )
+  import_kconfig(CONFIG_ ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}/zephyr/.config TARGET ${ZBUILD_APPLICATION})
 endfunction()

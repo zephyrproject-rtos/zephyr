@@ -45,8 +45,7 @@ static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
 static int virtual_enable(struct net_if *iface, bool state)
 {
 	const struct virtual_interface_api *virt;
-	struct virtual_interface_context *ctx, *tmp, *ctx_up, *ctx_orig;
-	sys_slist_t *interfaces;
+	struct virtual_interface_context *ctx;
 
 	virt = net_if_get_device(iface)->api;
 	if (!virt) {
@@ -85,27 +84,6 @@ static int virtual_enable(struct net_if *iface, bool state)
 		}
 
 		return 0;
-	}
-
-	/* Propagate the status upstream */
-	if (ctx->virtual_iface) {
-		interfaces = &ctx->virtual_iface->config.virtual_interfaces;
-		ctx_orig = ctx;
-
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(interfaces, ctx_up, tmp,
-						  node) {
-			if (!net_if_is_up(ctx->iface)) {
-				continue;
-			}
-
-			net_if_down(ctx_up->virtual_iface);
-		}
-
-		if (net_if_is_up(ctx_orig->virtual_iface)) {
-			NET_DBG("Taking iface %d down",
-				net_if_get_by_iface(ctx_orig->virtual_iface));
-			net_if_carrier_down(ctx_orig->virtual_iface);
-		}
 	}
 
 	if (virt->stop) {
@@ -231,12 +209,28 @@ void net_virtual_disable(struct net_if *iface)
 
 	interfaces = &iface->config.virtual_interfaces;
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(interfaces, ctx, tmp, node) {
-		const struct net_l2 *l2;
+		NET_DBG("Iface %d down, setting virtual iface %d carrier off",
+			net_if_get_by_iface(iface),
+			net_if_get_by_iface(ctx->virtual_iface));
+		net_if_carrier_off(ctx->virtual_iface);
+	}
+}
 
-		l2 = net_if_l2(ctx->virtual_iface);
-		if (l2 && l2->enable) {
-			l2->enable(ctx->virtual_iface, false);
-		}
+void net_virtual_enable(struct net_if *iface)
+{
+	struct virtual_interface_context *ctx, *tmp;
+	sys_slist_t *interfaces;
+
+	if (net_if_get_by_iface(iface) < 0) {
+		return;
+	}
+
+	interfaces = &iface->config.virtual_interfaces;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(interfaces, ctx, tmp, node) {
+		NET_DBG("Iface %d up, setting virtual iface %d carrier on",
+			net_if_get_by_iface(iface),
+			net_if_get_by_iface(ctx->virtual_iface));
+		net_if_carrier_on(ctx->virtual_iface);
 	}
 }
 

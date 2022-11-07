@@ -14,7 +14,7 @@ See `BlueST protocol`_ document for details of how to add a new service.
 Requirements
 ************
 
-* `ST BLE Sensor Android app <ST BLE Sensor app>`_
+* `ST BLE Sensor Android app`_
 * A board with BLE support
 
 Building and Running
@@ -30,17 +30,8 @@ Push SW0 button on embedded device to test button service.
 
 See :ref:`bluetooth samples section <bluetooth-samples>` for details.
 
-.. _ST BLE Sensor app:
+.. _ST BLE Sensor Android app:
     https://play.google.com/store/apps/details?id=com.st.bluems
-
-.. _ST Nucleo WB55RG:
-    https://www.st.com/en/microcontrollers-microprocessors/stm32wb55rg.html
-
-.. _STM32CubeProgrammer:
-    https://www.st.com/en/development-tools/stm32cubeprog.html
 
 .. _BlueST protocol:
     https://www.st.com/resource/en/user_manual/dm00550659.pdf
-
-.. _STM32WB github:
-    https://github.com/STMicroelectronics/STM32CubeWB/tree/master/Projects/STM32WB_Copro_Wireless_Binaries

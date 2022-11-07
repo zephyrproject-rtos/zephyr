@@ -5,4 +5,4 @@ description: BME280 integrated environmental sensor
 
 compatible: "bosch,bme280"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]

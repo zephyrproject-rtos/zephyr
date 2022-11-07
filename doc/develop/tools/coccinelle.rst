@@ -68,7 +68,7 @@ Supplemental documentation
 
 For Semantic Patch Language(SmPL) grammar documentation refer to:
 
-http://coccinelle.lip6.fr/documentation.php
+https://coccinelle.gitlabpages.inria.fr/website/documentation.html
 
 Using Coccinelle on Zephyr
 **************************

@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include <zephyr/net/http_parser_url.h>
+#include <zephyr/net/http/parser_url.h>
 #include <zephyr/toolchain.h>
 
 #ifndef BIT_AT

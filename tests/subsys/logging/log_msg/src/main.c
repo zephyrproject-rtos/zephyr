@@ -83,22 +83,22 @@ static void basic_validate(struct log_msg *msg,
 	char buf[256];
 	struct test_buf tbuf = { .buf = buf, .idx = 0 };
 
-	zassert_equal(log_msg_get_source(msg), (void *)source, NULL);
-	zassert_equal(log_msg_get_domain(msg), domain, NULL);
-	zassert_equal(log_msg_get_level(msg), level, NULL);
-	zassert_equal(log_msg_get_timestamp(msg), t, NULL);
+	zassert_equal(log_msg_get_source(msg), (void *)source);
+	zassert_equal(log_msg_get_domain(msg), domain);
+	zassert_equal(log_msg_get_level(msg), level);
+	zassert_equal(log_msg_get_timestamp(msg), t);
 
 	d = log_msg_get_data(msg, &len);
-	zassert_equal(len, data_len, NULL);
+	zassert_equal(len, data_len);
 	if (len) {
 		rv = memcmp(d, data, data_len);
-		zassert_equal(rv, 0, NULL);
+		zassert_equal(rv, 0);
 	}
 
 	d = log_msg_get_package(msg, &len);
 	if (str) {
 		rv = cbpprintf(out, &tbuf, d);
-		zassert_true(rv > 0, NULL);
+		zassert_true(rv > 0);
 		buf[rv] = '\0';
 
 		rv = strncmp(buf, str, sizeof(buf));
@@ -112,7 +112,7 @@ union log_msg_generic *msg_copy_and_free(union log_msg_generic *msg,
 	size_t len = sizeof(int) *
 		     log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg);
 
-	zassert_true(len < buf_len, NULL);
+	zassert_true(len < buf_len);
 
 	memcpy(buf, msg, len);
 
@@ -158,19 +158,19 @@ void validate_base_message_set(const struct log_source_const_data *source,
 	size_t len0, len1, len2;
 	union log_msg_generic *msg0, *msg1, *msg2;
 
-	msg0 = z_log_msg_claim();
+	msg0 = z_log_msg_claim(NULL);
 	zassert_true(msg0, "Unexpected null message");
 	len0 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg0);
 	msg0 = msg_copy_and_free(msg0, buf0, sizeof(buf0));
 	clear_pkg_flags(&msg0->log);
 
-	msg1 = z_log_msg_claim();
+	msg1 = z_log_msg_claim(NULL);
 	zassert_true(msg1, "Unexpected null message");
 	len1 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg1);
 	msg1 = msg_copy_and_free(msg1, buf1, sizeof(buf1));
 	clear_pkg_flags(&msg1->log);
 
-	msg2 = z_log_msg_claim();
+	msg2 = z_log_msg_claim(NULL);
 	zassert_true(msg2, "Unexpected null message");
 	len2 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg2);
 	msg2 = msg_copy_and_free(msg2, buf2, sizeof(buf2));
@@ -184,7 +184,7 @@ void validate_base_message_set(const struct log_source_const_data *source,
 	 * Runtime created message (msg2) may have strings copied in and thus
 	 * different length.
 	 */
-	zassert_equal(len0, len1, NULL);
+	zassert_equal(len0, len1);
 
 	int rv = memcmp(msg0, msg1, sizeof(int) * len0);
 
@@ -211,11 +211,11 @@ ZTEST(log_msg, test_log_msg_0_args_msg)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level,
 			  NULL, 0, TEST_MSG);
-	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
+	zassert_equal(mode, EXP_MODE(ZERO_COPY));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level,
 			  NULL, 0, TEST_MSG);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, source,
 				  level, NULL, 0, 0, TEST_MSG);
@@ -244,11 +244,11 @@ ZTEST(log_msg, test_log_msg_various_args)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, s8, u, lld, (void *)str, lld, (void *)iarray);
-	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
+	zassert_equal(mode, EXP_MODE(ZERO_COPY));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, s8, u, lld, (void *)str, lld, (void *)iarray);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, (void *)source, level, NULL,
 				  0, 0, TEST_MSG, s8, u, lld, str, lld, iarray);
@@ -271,11 +271,11 @@ ZTEST(log_msg, test_log_msg_only_data)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, array,
 			   sizeof(array));
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, array,
 			   sizeof(array));
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, (void *)source, level, array,
 				  sizeof(array), 0, NULL);
@@ -300,11 +300,11 @@ ZTEST(log_msg, test_log_msg_string_and_data)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, array,
 			   sizeof(array), TEST_MSG);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, array,
 			   sizeof(array), TEST_MSG);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, (void *)source, level, array,
 				  sizeof(array), 0, TEST_MSG);
@@ -337,11 +337,11 @@ ZTEST(log_msg, test_log_msg_fp)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, i, lli, (double)f, &i, d, source);
-	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
+	zassert_equal(mode, EXP_MODE(ZERO_COPY));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, i, lli, (double)f, &i, d, source);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, (void *)source, level, NULL, 0, 0,
 				  TEST_MSG, i, lli, (double)f, &i, d, source);
@@ -357,7 +357,7 @@ static void get_msg_validate_length(uint32_t exp_len)
 	uint32_t len;
 	union log_msg_generic *msg;
 
-	msg = z_log_msg_claim();
+	msg = z_log_msg_claim(NULL);
 	len = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg);
 
 	zassert_equal(len, exp_len, "Unexpected message length %d (exp:%d)",
@@ -571,12 +571,12 @@ ZTEST(log_msg, test_saturate)
 	zassert_equal(z_log_dropped_read_and_clear(), 3, "No dropped messages.");
 
 	for (int i = 0; i < exp_capacity; i++) {
-		msg = z_log_msg_claim();
+		msg = z_log_msg_claim(NULL);
 		zassert_equal(log_msg_get_timestamp(&msg->log), i,
 				"Unexpected timestamp used for message id");
 	}
 
-	msg = z_log_msg_claim();
+	msg = z_log_msg_claim(NULL);
 	zassert_equal(msg, NULL, "Expected no pending messages");
 }
 

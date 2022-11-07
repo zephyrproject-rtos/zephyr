@@ -184,7 +184,7 @@ static void load_store_low(void)
 		}
 
 		/* Terminate if a test error has been reported */
-		zassert_false(error, NULL);
+		zassert_false(error);
 
 		/*
 		 * After every 1000 iterations (arbitrarily chosen), explicitly

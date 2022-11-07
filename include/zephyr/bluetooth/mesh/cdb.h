@@ -70,6 +70,7 @@ enum {
 
 struct bt_mesh_cdb {
 	uint32_t iv_index;
+	uint16_t lowest_avail_addr;
 
 	ATOMIC_DEFINE(flags, BT_MESH_CDB_FLAG_COUNT);
 
@@ -123,14 +124,21 @@ void bt_mesh_cdb_iv_update(uint32_t iv_index, bool iv_update);
  *  @param num_elem Number of elements that the node has.
  *  @param net_idx NetIdx that the node was provisioned to.
  *
- *  @return The new node or NULL if it cannot be allocated.
+ *  @return The new node or NULL if CDB has already allocated
+ *  :kconfig:option:`CONFIG_BT_MESH_CDB_NODE_COUNT` nodes, or reached the
+ *  end of the unicast address range, or if @c addr is non-zero and less
+ *  than the lowest available address or collide with the allocated addresses.
  */
 struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t addr,
 						uint8_t num_elem, uint16_t net_idx);
 
 /** @brief Delete a node.
  *
- *  Delete a node from the CDB.
+ *  Delete a node from the CDB. When deleting the node and the address of the
+ *  last element of the deleted node is greater than the lowest available
+ *  address, CDB will update the lowest available address. The lowest
+ *  available address is reset and the deleted addresses can be reused only
+ *  after IV Index update.
  *
  *  @param node The node to be deleted.
  *  @param store If true, the node will be cleared from persistent storage.

@@ -73,8 +73,15 @@ size_t calculate_buff_size(struct gcov_info *info)
 	uint32_t iter;
 	uint32_t iter_1;
 	uint32_t iter_2;
-	/* few Fixed values at the start version, stamp and magic number. */
+
+	/* Few fixed values at the start: magic number,
+	 * version, stamp, and checksum.
+	 */
+#ifdef GCOV_12_FORMAT
+	uint32_t size = sizeof(uint32_t) * 4;
+#else
 	uint32_t size = sizeof(uint32_t) * 3;
+#endif
 
 	for (iter = 0U; iter < info->n_functions; iter++) {
 		/* space for TAG_FUNCTION and FUNCTION_LENGTH
@@ -137,6 +144,12 @@ size_t populate_buffer(uint8_t *buffer, struct gcov_info *info)
 		       &buffer_write_position,
 		       info->stamp);
 
+#ifdef GCOV_12_FORMAT
+	buff_write_u32(buffer,
+		       &buffer_write_position,
+		       info->checksum);
+#endif
+
 	for (iter_functions = 0U;
 	     iter_functions < info->n_functions;
 	     iter_functions++) {
@@ -178,9 +191,16 @@ size_t populate_buffer(uint8_t *buffer, struct gcov_info *info)
 				       &buffer_write_position,
 				       GCOV_TAG_FOR_COUNTER(iter_counts));
 
+#ifdef GCOV_12_FORMAT
+			/* GCOV 12 counts the length by bytes */
+			buff_write_u32(buffer,
+				       &buffer_write_position,
+				       counters_per_func->num * 2U * 4);
+#else
 			buff_write_u32(buffer,
 				       &buffer_write_position,
 				       counters_per_func->num * 2U);
+#endif
 
 			for (iter_counter_values = 0U;
 			     iter_counter_values < counters_per_func->num;

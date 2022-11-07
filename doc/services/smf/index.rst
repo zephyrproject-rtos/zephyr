@@ -52,7 +52,7 @@ enum. For example, the following creates three flat states::
 
    enum demo_state { S0, S1, S2 };
 
-   const struct smf_state demo_states {
+   const struct smf_state demo_states[] = {
       [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit),
       [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit),
       [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit)
@@ -62,7 +62,7 @@ And this example creates three hierarchical states::
 
    enum demo_state { S0, S1, S2 };
 
-   const struct smf_state demo_states {
+   const struct smf_state demo_states[] = {
       [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit, parent_s0),
       [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit, parent_s12),
       [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit, parent_s12)

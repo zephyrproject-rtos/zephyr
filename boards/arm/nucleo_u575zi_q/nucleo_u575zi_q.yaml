@@ -10,6 +10,8 @@ supported:
   - arduino_i2c
   - arduino_serial
   - arduino_spi
+  - can
+  - canfd
   - dac
   - gpio
   - i2c

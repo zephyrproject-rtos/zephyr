@@ -18,9 +18,6 @@ source "soc/arm/microchip_mec/mec1501/Kconfig.defconfig.mec1501*"
 
 if RTOS_TIMER
 
-config MCHP_XEC_RTOS_TIMER
-	default y
-
 config SOC_HAS_TIMING_FUNCTIONS
 	default y if !CORTEX_M_DWT
 
@@ -30,7 +27,6 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 endif # RTOS_TIMER
 
 config CORTEX_M_SYSTICK
-	default y
 	depends on !RTOS_TIMER
 
 endif # SOC_SERIES_MEC1501X

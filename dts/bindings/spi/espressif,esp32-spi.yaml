@@ -38,10 +38,20 @@ properties:
 
         Use MOSI for both sending and receiving data
 
-    dma:
+    dma-enabled:
       type: boolean
       required: false
       description: Enable SPI DMA support
+
+    dma-clk:
+      type: int
+      required: false
+      description: DMA clock source
+
+    dma-host:
+      type: int
+      required: false
+      description: DMA Host - 0 -> SPI2, 1 -> SPI3
 
     clk-as-cs:
       type: boolean

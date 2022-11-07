@@ -27,7 +27,7 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
 	k_thread_abort(k_current_get());
 	/*unreachable*/
 	execute_flag = 2;
-	zassert_true(1 == 0, NULL);
+	zassert_true(1 == 0);
 }
 /**
  * @ingroup kernel_thread_tests
@@ -46,7 +46,7 @@ ZTEST_USER(threads_lifecycle, test_threads_abort_self)
 			NULL, NULL, NULL, 0, K_USER, K_NO_WAIT);
 	k_msleep(100);
 	/**TESTPOINT: spawned thread executed but abort itself*/
-	zassert_true(execute_flag == 1, NULL);
+	zassert_true(execute_flag == 1);
 }
 
 /**
@@ -69,7 +69,7 @@ ZTEST_USER(threads_lifecycle, test_threads_abort_others)
 	k_thread_abort(tid);
 	k_msleep(100);
 	/**TESTPOINT: check not-started thread is aborted*/
-	zassert_true(execute_flag == 0, NULL);
+	zassert_true(execute_flag == 0);
 
 	tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			      thread_entry, NULL, NULL, NULL,
@@ -77,9 +77,9 @@ ZTEST_USER(threads_lifecycle, test_threads_abort_others)
 	k_msleep(50);
 	k_thread_abort(tid);
 	/**TESTPOINT: check running thread is aborted*/
-	zassert_true(execute_flag == 1, NULL);
+	zassert_true(execute_flag == 1);
 	k_msleep(1000);
-	zassert_true(execute_flag == 1, NULL);
+	zassert_true(execute_flag == 1);
 }
 
 /**

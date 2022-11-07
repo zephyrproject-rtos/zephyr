@@ -40,7 +40,7 @@ static ZTEST_DMEM int tp = 10;
  */
 ZTEST(threads_lifecycle, test_systhreads_main)
 {
-	zassert_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY, NULL);
+	zassert_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY);
 }
 
 /**
@@ -65,7 +65,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
 		/* relinquish cpu for a while */
 		k_msleep(50);
 		/** TESTPOINT: custom data comparison */
-		zassert_equal(data, (long)k_thread_custom_data_get(), NULL);
+		zassert_equal(data, (long)k_thread_custom_data_get());
 		data++;
 	}
 }
@@ -309,7 +309,7 @@ void do_join_from_isr(const void *arg)
 {
 	int *ret = (int *)arg;
 
-	zassert_true(k_is_in_isr(), NULL);
+	zassert_true(k_is_in_isr());
 	printk("isr: joining join_thread\n");
 	*ret = k_thread_join(&join_thread, K_NO_WAIT);
 	printk("isr: k_thread_join() returned with %d\n", *ret);
@@ -486,16 +486,16 @@ ZTEST_USER(threads_lifecycle, test_thread_timeout_remaining_expires)
 	e = k_thread_timeout_expires_ticks(tid);
 	TC_PRINT("thread_expires_ticks: %d, expect: %d\n", (int)e,
 		(int)expected_expires_ticks);
-	zassert_true(e >= expected_expires_ticks, NULL);
+	zassert_true(e >= expected_expires_ticks);
 
 	k_msleep(10);
 	r = k_thread_timeout_remaining_ticks(tid);
-	zassert_true(r < ticks, NULL);
+	zassert_true(r < ticks);
 	r1 = r;
 
 	k_msleep(10);
 	r = k_thread_timeout_remaining_ticks(tid);
-	zassert_true(r < r1, NULL);
+	zassert_true(r < r1);
 
 	k_thread_abort(tid);
 }
@@ -512,9 +512,9 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
 
 	/* Check NULL parameters */
 	ret = k_thread_runtime_stats_get(NULL, &stats);
-	zassert_true(ret == -EINVAL, NULL);
+	zassert_true(ret == -EINVAL);
 	ret = k_thread_runtime_stats_get((k_tid_t)thread, NULL);
-	zassert_true(ret == -EINVAL, NULL);
+	zassert_true(ret == -EINVAL);
 
 	k_thread_runtime_stats_get((k_tid_t)thread, &stats);
 	((k_thread_runtime_stats_t *)user_data)->execution_cycles +=
@@ -536,11 +536,11 @@ ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
 
 	/* Check NULL parameters */
 	ret = k_thread_runtime_stats_all_get(NULL);
-	zassert_true(ret == -EINVAL, NULL);
+	zassert_true(ret == -EINVAL);
 
 	k_thread_runtime_stats_all_get(&stats_all);
 
-	zassert_true(stats.execution_cycles <= stats_all.execution_cycles, NULL);
+	zassert_true(stats.execution_cycles <= stats_all.execution_cycles);
 }
 
 ZTEST(threads_lifecycle, test_k_busy_wait)
@@ -559,7 +559,7 @@ ZTEST(threads_lifecycle, test_k_busy_wait)
 	 * their cycle rate)
 	 */
 	dt = test_stats.execution_cycles - cycles;
-	zassert_true(dt < k_ms_to_cyc_ceil64(10), NULL);
+	zassert_true(dt < k_ms_to_cyc_ceil64(10));
 
 	cycles = test_stats.execution_cycles;
 	k_busy_wait(100);
@@ -567,7 +567,7 @@ ZTEST(threads_lifecycle, test_k_busy_wait)
 
 	/* execution_cycles increases correctly */
 	dt = test_stats.execution_cycles - cycles;
-	zassert_true(dt >= k_us_to_cyc_floor64(100), NULL);
+	zassert_true(dt >= k_us_to_cyc_floor64(100));
 }
 
 static void tp_entry(void *p1, void *p2, void *p3)
@@ -585,11 +585,11 @@ ZTEST_USER(threads_lifecycle_1cpu, test_k_busy_wait_user)
 	/* this is a 1cpu test case, the new thread has no chance to be
 	 * scheduled and value of tp not changed
 	 */
-	zassert_false(tp == 100, NULL);
+	zassert_false(tp == 100);
 
 	/* give up cpu, the new thread will change value of tp to 100 */
 	k_msleep(100);
-	zassert_true(tp == 100, NULL);
+	zassert_true(tp == 100);
 	k_thread_abort(tid);
 }
 
@@ -625,7 +625,7 @@ ZTEST_USER(threads_lifecycle, test_k_thread_stack_space_get_user)
 	 * but it is not the case in native_posix, qemu_leon3 and
 	 * qemu_cortex_a53. Relax check condition here
 	 */
-	zassert_true(b <= a, NULL);
+	zassert_true(b <= a);
 }
 
 void *thread_test_setup(void)

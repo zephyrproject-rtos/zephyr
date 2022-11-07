@@ -237,7 +237,9 @@ class Reporting:
         report = {}
         report["environment"] = {"os": os.name,
                                  "zephyr_version": version,
-                                 "toolchain": self.env.toolchain
+                                 "toolchain": self.env.toolchain,
+                                 "commit_date": self.env.commit_date,
+                                 "run_date": self.env.run_date
                                  }
         suites = []
 
@@ -266,6 +268,8 @@ class Reporting:
                 suite["ram_size"] = ram_size
             if rom_size:
                 suite["rom_size"] = rom_size
+
+            suite['retries'] = instance.retries
 
             if instance.status in ["error", "failed"]:
                 suite['status'] = instance.status

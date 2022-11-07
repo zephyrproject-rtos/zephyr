@@ -173,7 +173,7 @@ ZTEST_SUITE(posix_fs_file_test, NULL, test_mount, NULL, after_fn,
 ZTEST(posix_fs_file_test, test_fs_open)
 {
 	/* FIXME: restructure tests as per #46897 */
-	zassert_true(test_file_open() == TC_PASS, NULL);
+	zassert_true(test_file_open() == TC_PASS);
 }
 
 /**
@@ -184,8 +184,8 @@ ZTEST(posix_fs_file_test, test_fs_open)
 ZTEST(posix_fs_file_test, test_fs_write)
 {
 	/* FIXME: restructure tests as per #46897 */
-	zassert_true(test_file_open() == TC_PASS, NULL);
-	zassert_true(test_file_write() == TC_PASS, NULL);
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_write() == TC_PASS);
 }
 
 /**
@@ -196,9 +196,9 @@ ZTEST(posix_fs_file_test, test_fs_write)
 ZTEST(posix_fs_file_test, test_fs_read)
 {
 	/* FIXME: restructure tests as per #46897 */
-	zassert_true(test_file_open() == TC_PASS, NULL);
-	zassert_true(test_file_write() == TC_PASS, NULL);
-	zassert_true(test_file_read() == TC_PASS, NULL);
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_write() == TC_PASS);
+	zassert_true(test_file_read() == TC_PASS);
 }
 
 /**
@@ -209,8 +209,8 @@ ZTEST(posix_fs_file_test, test_fs_read)
 ZTEST(posix_fs_file_test, test_fs_close)
 {
 	/* FIXME: restructure tests as per #46897 */
-	zassert_true(test_file_open() == TC_PASS, NULL);
-	zassert_true(test_file_close() == TC_PASS, NULL);
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_close() == TC_PASS);
 }
 
 /**
@@ -220,8 +220,8 @@ ZTEST(posix_fs_file_test, test_fs_close)
  */
 ZTEST(posix_fs_file_test, test_fs_unlink)
 {
-	zassert_true(test_file_open() == TC_PASS, NULL);
-	zassert_true(test_file_delete() == TC_PASS, NULL);
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_delete() == TC_PASS);
 }
 
 ZTEST(posix_fs_file_test, test_fs_fd_leak)
@@ -231,11 +231,11 @@ ZTEST(posix_fs_file_test, test_fs_fd_leak)
 
 	for (int i = 0; i < reps; i++) {
 		if (i > 0) {
-			zassert_true(test_file_open() == TC_PASS, NULL);
+			zassert_true(test_file_open() == TC_PASS);
 		}
 
 		if (i < reps - 1) {
-			zassert_true(test_file_close() == TC_PASS, NULL);
+			zassert_true(test_file_close() == TC_PASS);
 		}
 	}
 }

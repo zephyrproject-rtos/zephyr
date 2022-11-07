@@ -34,7 +34,7 @@ BUILD_ASSERT((DT_REG_SIZE(DT_NODELABEL(sram0)) % SRAM_BANK_SIZE) == 0,
  */
 static __imr void hp_sram_pm_banks(uint32_t banks)
 {
-#ifdef PLATFORM_INIT_HPSRAM
+#ifdef CONFIG_ADSP_INIT_HPSRAM
 	uint32_t status, ebb_mask0, ebb_mask1, ebb_avail_mask0, ebb_avail_mask1,
 		total_banks_count = PLATFORM_HPSRAM_EBB_COUNT;
 
@@ -129,7 +129,12 @@ __imr void lp_sram_init(void)
 	/* Add some delay before writing power registers */
 	z_idelay(DELAY_COUNT);
 
+	/* FIXME */
+#if !defined(CONFIG_SOC_INTEL_CAVS_V15)
+	CAVS_L2LM.lspgctl = CAVS_L2LM.lspgists & ~LPSRAM_MASK(0);
+#else
 	CAVS_SHIM.lspgctl = CAVS_SHIM.lspgists & ~LPSRAM_MASK(0);
+#endif
 
 	/* Add some delay before checking the status */
 	z_idelay(DELAY_COUNT);
@@ -139,9 +144,16 @@ __imr void lp_sram_init(void)
 	 * to check whether it has been powered up. A few
 	 * cycles are needed for it to be powered up
 	 */
+	/* FIXME */
+#if !defined(CONFIG_SOC_INTEL_CAVS_V15)
+	while (CAVS_L2LM.lspgists && timeout_counter--) {
+		z_idelay(DELAY_COUNT);
+	}
+#else
 	while (CAVS_SHIM.lspgists && timeout_counter--) {
 		z_idelay(DELAY_COUNT);
 	}
+#endif
 
 	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
 	bbzero((void *)LP_SRAM_BASE, LP_SRAM_SIZE);

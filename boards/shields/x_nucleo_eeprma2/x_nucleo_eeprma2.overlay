@@ -9,8 +9,8 @@
 
 / {
 	aliases {
-		eeprom-0 = &eeprom0;
-		eeprom-1 = &eeprom4;
+		eeprom-0 = &eeprom0_x_nucleo_eeprma2;
+		eeprom-1 = &eeprom4_x_nucleo_eeprma2;
 	};
 };
 
@@ -18,7 +18,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	eeprom0: eeprom@54 {
+	eeprom0_x_nucleo_eeprma2: eeprom@54 {
 		/* M24C02-FMC6TG aka U1 (2 kbit eeprom in DFN8 package) */
 		compatible = "st,m24xxx", "atmel,at24";
 		reg = <0x54>;
@@ -31,7 +31,7 @@
 		/* wp-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>; */
 	};
 
-	eeprom1: eeprom@55 {
+	eeprom1_x_nucleo_eeprma2: eeprom@55 {
 		/* M24256-DFDW6TP aka U2 (256 kbit eeprom in TSSOP package) */
 		compatible = "st,m24xxx", "atmel,at24";
 		reg = <0x55>;
@@ -44,7 +44,7 @@
 		/* wp-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>; */
 	};
 
-	eeprom2: eeprom@56 {
+	eeprom2_x_nucleo_eeprma2: eeprom@56 {
 		/* M24M01-DFMN6TP aka U3 (1 Mbit eeprom in SO8N package) */
 		compatible = "st,m24xxx", "atmel,at24";
 		reg = <0x56>;
@@ -80,7 +80,7 @@
 	 * via an open solder bridge.
 	 */
 
-	eeprom4: eeprom_m95040@0 {
+	eeprom4_x_nucleo_eeprma2: eeprom_m95040@0 {
 		/* M95040-RMC6TG aka U5 (4 kbit eeprom in DFN8 package) */
 		compatible = "st,m95xxx", "atmel,at25";
 		reg = <0x00>;
@@ -94,7 +94,7 @@
 		/* wp-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>; */
 	};
 
-	eeprom5: eeprom_m95256@1 {
+	eeprom5_x_nucleo_eeprma2: eeprom_m95256@1 {
 		/* M95256-DFDW6TP aka U6 (256 kbit eeprom in TSSOP package) */
 		compatible = "st,m95xxx", "atmel,at25";
 		reg = <0x01>;
@@ -108,7 +108,7 @@
 		/* wp-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>; */
 	};
 
-	eeprom6: eeprom_m95m04@2 {
+	eeprom6_x_nucleo_eeprma2: eeprom_m95m04@2 {
 		/* M95M04-DRMN6TP aka U7 (4 Mbit eeprom in SON8 package) */
 		compatible = "st,m95xxx", "atmel,at25";
 		reg = <0x02>;

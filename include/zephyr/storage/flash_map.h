@@ -257,19 +257,19 @@ const struct device *flash_area_get_device(const struct flash_area *fa);
  */
 uint8_t flash_area_erased_val(const struct flash_area *fa);
 
-#define FLASH_AREA_LABEL_EXISTS(label) \
+#define FLASH_AREA_LABEL_EXISTS(label) __DEPRECATED_MACRO \
 	DT_HAS_FIXED_PARTITION_LABEL(label)
 
-#define FLASH_AREA_LABEL_STR(lbl) \
+#define FLASH_AREA_LABEL_STR(lbl) __DEPRECATED_MACRO \
 	DT_PROP(DT_NODE_BY_FIXED_PARTITION_LABEL(lbl), label)
 
-#define FLASH_AREA_ID(label) \
+#define FLASH_AREA_ID(label) __DEPRECATED_MACRO \
 	DT_FIXED_PARTITION_ID(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
 
-#define FLASH_AREA_OFFSET(label) \
+#define FLASH_AREA_OFFSET(label) __DEPRECATED_MACRO \
 	DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
 
-#define FLASH_AREA_SIZE(label) \
+#define FLASH_AREA_SIZE(label) __DEPRECATED_MACRO \
 	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
 
 /**

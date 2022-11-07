@@ -14,11 +14,15 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config POWER_DOMAIN_GPIO
 	bool "GPIO controlled power domain"
+	default y
+	depends on DT_HAS_POWER_DOMAIN_GPIO_ENABLED
 	depends on GPIO
 	depends on TIMEOUT_64BIT
 
 config POWER_DOMAIN_INTEL_ADSP
 	bool "Use Intel ADSP power gating mechanisms"
+	default y
+	depends on DT_HAS_INTEL_ADSP_POWER_DOMAIN_ENABLED
 	help
 	  Include Intel ADSP power domain control mechanisms
 

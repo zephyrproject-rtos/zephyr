@@ -102,7 +102,7 @@ static void *gpio_basic_setup(void)
 ZTEST_SUITE(gpio_port, NULL, gpio_basic_setup, NULL, NULL, NULL);
 
 /* Test GPIO callback management */
-ZTEST_SUITE(gpio_cb_mgnt, NULL, gpio_basic_setup, NULL, NULL, NULL);
+ZTEST_SUITE(gpio_port_cb_mgmt, NULL, gpio_basic_setup, NULL, NULL, NULL);
 
 /* Test GPIO callbacks */
-ZTEST_SUITE(gpio_cb_vari, NULL, gpio_basic_setup, NULL, NULL, NULL);
+ZTEST_SUITE(gpio_port_cb_vari, NULL, gpio_basic_setup, NULL, NULL, NULL);

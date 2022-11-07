@@ -29,7 +29,12 @@ if(ARMFVP AND (DEFINED ARMFVP_MIN_VERSION))
   endif()
 endif()
 
-if(CONFIG_ARMV8_A_NS)
+if(CONFIG_BUILD_WITH_TFA)
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    -C bp.secureflashloader.fname=${APPLICATION_BINARY_DIR}/tfa${FVP_SECURE_FLASH_FILE}
+    -C bp.flashloader0.fname=${APPLICATION_BINARY_DIR}/tfa${FVP_FLASH_FILE}
+    )
+elseif(CONFIG_ARMV8_A_NS)
   foreach(filetype BL1 FIP)
     if ((NOT DEFINED ARMFVP_${filetype}_FILE) AND (EXISTS "$ENV{ARMFVP_${filetype}_FILE}"))
       set(ARMFVP_${filetype}_FILE "$ENV{ARMFVP_${filetype}_FILE}" CACHE FILEPATH

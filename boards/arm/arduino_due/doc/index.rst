@@ -196,7 +196,7 @@ listen for output. For example, under Linux, the terminal should be
 The -o option tells minicom not to send the modem initialization
 string.
 
-Now press the Reset button and you should see "Hello World!" in your terminal.
+Now press the Reset button and you should see "Hello World! arduino_due" in your terminal.
 
 .. note::
    Make sure your terminal program is closed before flashing the binary image,

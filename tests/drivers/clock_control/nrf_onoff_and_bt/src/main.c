@@ -27,10 +27,10 @@ static uint32_t iteration;
 static void before(void *data)
 {
 	ARG_UNUSED(data);
-	zassert_true(device_is_ready(entropy), NULL);
+	zassert_true(device_is_ready(entropy));
 
 	hf_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
-	zassert_true(hf_mgr, NULL);
+	zassert_true(hf_mgr);
 
 	iteration = 0;
 }
@@ -115,12 +115,12 @@ ZTEST(nrf_onoff_and_bt, test_onoff_interrupted)
 		iteration++;
 
 		err = entropy_get_entropy(entropy, &rand, 1);
-		zassert_equal(err, 0, NULL);
+		zassert_equal(err, 0);
 		backoff = 3 * rand;
 
 		sys_notify_init_spinwait(&cli.notify);
 		err = onoff_request(hf_mgr, &cli);
-		zassert_true(err >= 0, NULL);
+		zassert_true(err >= 0);
 
 		k_busy_wait(backoff);
 
@@ -129,7 +129,7 @@ ZTEST(nrf_onoff_and_bt, test_onoff_interrupted)
 		}
 
 		err = onoff_cancel_or_release(hf_mgr, &cli);
-		zassert_true(err >= 0, NULL);
+		zassert_true(err >= 0);
 
 		elapsed = k_uptime_get() - start_time;
 		if (elapsed > checkpoint) {
@@ -158,7 +158,7 @@ static void onoff_timeout_handler(struct k_timer *timer)
 	if (on) {
 		on = false;
 		err = onoff_cancel_or_release(hf_mgr, &cli);
-		zassert_true(err >= 0, NULL);
+		zassert_true(err >= 0);
 	} else {
 		on = true;
 		sys_notify_init_spinwait(&cli.notify);
@@ -208,7 +208,7 @@ ZTEST(nrf_onoff_and_bt, test_bt_interrupted)
 		iteration++;
 
 		err = entropy_get_entropy(entropy, &rand, 1);
-		zassert_equal(err, 0, NULL);
+		zassert_equal(err, 0);
 		backoff = 3 * rand;
 
 		z_nrf_clock_bt_ctlr_hf_request();

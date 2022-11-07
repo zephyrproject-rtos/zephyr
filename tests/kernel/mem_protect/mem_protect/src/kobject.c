@@ -1040,12 +1040,12 @@ static void thread_stack_init_objects(void *p1, void *p2, void *p3)
 	/* check that thread is initialized when running */
 	ko = z_object_find(&child_thread);
 	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_TRUE);
-	zassert_equal(ret, _OBJ_INIT_TRUE, NULL);
+	zassert_equal(ret, _OBJ_INIT_TRUE);
 
 	/* check that stack is initialized when running */
 	ko = z_object_find(child_stack);
 	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_TRUE);
-	zassert_equal(ret, _OBJ_INIT_TRUE, NULL);
+	zassert_equal(ret, _OBJ_INIT_TRUE);
 }
 
 /**
@@ -1078,12 +1078,12 @@ ZTEST(mem_protect_kobj, test_mark_thread_exit_uninitialized)
 	/* check thread is uninitialized after its exit */
 	ko = z_object_find(&child_thread);
 	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_FALSE);
-	zassert_equal(ret, _OBJ_INIT_FALSE, NULL);
+	zassert_equal(ret, _OBJ_INIT_FALSE);
 
 	/* check stack is uninitialized after thread exit */
 	ko = z_object_find(child_stack);
 	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_FALSE);
-	zassert_equal(ret, _OBJ_INIT_FALSE, NULL);
+	zassert_equal(ret, _OBJ_INIT_FALSE);
 }
 
 /****************************************************************************/

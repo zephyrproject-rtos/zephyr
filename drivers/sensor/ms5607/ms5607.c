@@ -345,7 +345,7 @@ static const struct sensor_driver_api ms5607_api_funcs = {
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (MS5607_CONFIG_SPI(inst)),			\
 			    (MS5607_CONFIG_I2C(inst)));			\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			ms5607_init,					\
 			NULL,						\
 			&ms5607_data_##inst,				\

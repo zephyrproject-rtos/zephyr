@@ -1,6 +1,6 @@
 identifier: nsim_hs_mpuv6
 name: HS (with MPU v6) nSIM simulator
-type: mcu
+type: sim
 simulation: nsim
 arch: arc
 toolchain:

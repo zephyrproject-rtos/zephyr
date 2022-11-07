@@ -7,7 +7,7 @@ description: |
 
 compatible: "ti,tmp112"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
   conversion-rate:

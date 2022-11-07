@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_PCA9420_I2C_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_PCA9420_I2C_H_
 
+#include "pmic_i2c.h"
+
 /*
  * Voltage Ranges should be defined without commas, spaces, or brackets. These
  * ranges will be inserted directly into the devicetree as arrays, so that the
@@ -33,7 +35,7 @@
 	925000 0x11		/* SW1 output voltage 0.925V. */\
 	950000 0x12		/* SW1 output voltage 0.950V. */\
 	975000 0x13		/* SW1 output voltage 0.975V. */\
-	1000000 0x14		/* SW1 output voltage 1.000V. */\
+	1000000 0x14		/* SW1 output voltage 1.000V. (Default) */\
 	1025000 0x15		/* SW1 output voltage 1.025V. */\
 	1050000 0x16		/* SW1 output voltage 1.050V. */\
 	1075000 0x17		/* SW1 output voltage 1.075V. */\
@@ -69,7 +71,7 @@
 	1725000 0x09		/* SW2 output voltage 1.725V. */\
 	1750000 0x0A		/* SW2 output voltage 1.750V. */\
 	1775000 0x0B		/* SW2 output voltage 1.775V. */\
-	1800000 0x0C		/* SW2 output voltage 1.800V. */\
+	1800000 0x0C		/* SW2 output voltage 1.800V. (Default) */\
 	1825000 0x0D		/* SW2 output voltage 1.825V. */\
 	1850000 0x0E		/* SW2 output voltage 1.850V. */\
 	1875000 0x0F		/* SW2 output voltage 1.875V. */\
@@ -113,7 +115,7 @@
 	1725000 0x10		/* LDO1 output voltage 1.725V. */\
 	1750000 0x20		/* LDO1 output voltage 1.750V. */\
 	1775000 0x30		/* LDO1 output voltage 1.775V. */\
-	1800000 0x40		/* LDO1 output voltage 1.800V. */\
+	1800000 0x40		/* LDO1 output voltage 1.800V. (Default) */\
 	1825000 0x50		/* LDO1 output voltage 1.825V. */\
 	1850000 0x60		/* LDO1 output voltage 1.850V. */\
 	1875000 0x70		/* LDO1 output voltage 1.875V. */\
@@ -170,6 +172,7 @@
 	3250000 0x36		/* LDO2 output voltage 3.250V. */\
 	3275000 0x37		/* LDO2 output voltage 3.275V. */\
 	3300000 0x38		/* LDO2 output voltage 3.300V. */\
+	3300000 0x39		/* LDO2 output voltage 3.300V. (Default) */\
 
 #define PCA9420_CURRENT_LIMIT_LEVELS \
 	85000 0x00		/* min: 74mA, typ: 85mA, max: 98mA */\
@@ -180,7 +183,29 @@
 	935000 0xA0		/* min: 813mA, typ: 935mA, max: 1075mA */\
 	1105000 0xC0		/* min: 961mA, typ: 1105mA, max: 1271mA */\
 
+#define PCA9420_MODECFG0 \
+	(PMIC_MODE(0x0, 0x0, 0x0)) /* ModeCfg 0, selected via I2C */
+#define PCA9420_MODECFG1 \
+	(PMIC_MODE(0x4, 0x0, 0x8)) /* ModeCfg 1, selected via I2C */
+#define PCA9420_MODECFG2 \
+	(PMIC_MODE(0x8, 0x0, 0x10)) /* ModeCfg 2, selected via I2C */
+#define PCA9420_MODECFG3 \
+	(PMIC_MODE(0xC, 0x0, 0x18)) /* ModeCfg 3, selected via I2C */
 
+/* ModeCfg 0, selected via PIN */
+#define PCA9420_MODECFG0_PIN \
+	(PMIC_MODE(0x0, PMIC_MODE_FLAG_MODESEL_MULTI_REG, 0x40))
+/* ModeCfg 1, selected via PIN */
+#define PCA9420_MODECFG1_PIN \
+	(PMIC_MODE(0x4, PMIC_MODE_FLAG_MODESEL_MULTI_REG, 0x40))
+/* ModeCfg 2, selected via PIN */
+#define PCA9420_MODECFG2_PIN \
+	(PMIC_MODE(0x8, PMIC_MODE_FLAG_MODESEL_MULTI_REG, 0x40))
+/* ModeCfg 3, selected via PIN */
+#define PCA9420_MODECFG3_PIN \
+	(PMIC_MODE(0xC, PMIC_MODE_FLAG_MODESEL_MULTI_REG, 0x40))
+
+#define PCA9420_MODE_OFFSET 0x4
 
 /** Register memory map. See datasheet for more details. */
 /** General purpose registers */

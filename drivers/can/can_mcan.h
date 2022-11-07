@@ -170,7 +170,6 @@ struct can_mcan_data {
 	struct k_mutex inst_mutex;
 	struct k_sem tx_sem;
 	struct k_mutex tx_mtx;
-	struct k_sem tx_fin_sem[NUM_TX_BUF_ELEMENTS];
 	can_tx_callback_t tx_fin_cb[NUM_TX_BUF_ELEMENTS];
 	void *tx_fin_cb_arg[NUM_TX_BUF_ELEMENTS];
 	can_rx_callback_t rx_cb_std[NUM_STD_FILTER_DATA];
@@ -184,6 +183,7 @@ struct can_mcan_data {
 	uint8_t ext_filt_rtr;
 	uint8_t ext_filt_rtr_mask;
 	struct can_mcan_mm mm;
+	bool started;
 	void *custom;
 } __aligned(4);
 
@@ -259,6 +259,10 @@ struct can_mcan_reg;
 
 int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap);
 
+int can_mcan_start(const struct device *dev);
+
+int can_mcan_stop(const struct device *dev);
+
 int can_mcan_set_mode(const struct device *dev, can_mode_t mode);
 
 int can_mcan_set_timing(const struct device *dev,
@@ -279,7 +283,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame,
 		  k_timeout_t timeout, can_tx_callback_t callback,
 		  void *user_data);
 
-int can_mcan_get_max_filters(const struct device *dev, enum can_ide id_type);
+int can_mcan_get_max_filters(const struct device *dev, bool ide);
 
 int can_mcan_add_rx_filter(const struct device *dev,
 			   can_rx_callback_t callback, void *user_data,

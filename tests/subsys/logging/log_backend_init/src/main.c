@@ -8,6 +8,7 @@
 #include <zephyr/tc_util.h>
 #include <stdbool.h>
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -111,7 +112,10 @@ LOG_BACKEND_DEFINE(backend2, backend_api, true, &context2);
  */
 ZTEST(log_backend_init, test_log_backends_initialization)
 {
-	if (log_backend_count_get() != 2) {
+	int cnt;
+
+	STRUCT_SECTION_COUNT(log_backend, &cnt);
+	if (cnt != 2) {
 		/* Other backends should not be enabled. */
 		ztest_test_skip();
 	}
@@ -127,13 +131,13 @@ ZTEST(log_backend_init, test_log_backends_initialization)
 	LOG_INF("test1");
 
 	/* Backends are not yet active. */
-	zassert_false(context1.active, NULL);
-	zassert_false(context2.active, NULL);
+	zassert_false(context1.active);
+	zassert_false(context2.active);
 
 	k_msleep(context2.delay + 100);
 
-	zassert_true(context1.active, NULL);
-	zassert_true(context2.active, NULL);
+	zassert_true(context1.active);
+	zassert_true(context2.active);
 
 	LOG_INF("test2");
 
@@ -143,7 +147,7 @@ ZTEST(log_backend_init, test_log_backends_initialization)
 	 * because when first was processed it was not yet active.
 	 */
 	zassert_equal(context1.cnt, 2, "Unexpected value:%d (exp: %d)", context1.cnt, 2);
-	zassert_equal(context2.cnt, 1, NULL);
+	zassert_equal(context2.cnt, 1);
 }
 
 ZTEST_SUITE(log_backend_init, NULL, NULL, NULL, NULL, NULL);

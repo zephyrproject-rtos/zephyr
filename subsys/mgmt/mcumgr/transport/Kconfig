@@ -1,0 +1,49 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUMGR_SMP_REASSEMBLY
+	bool
+	help
+	  Enable structures and functions needed for packet reassembly by SMP backend.
+
+config MCUMGR_BUF_COUNT
+	int "Number of mcumgr buffers"
+	default 2 if MCUMGR_SMP_UDP
+	default 4
+	help
+	  The number of net_bufs to allocate for mcumgr.  These buffers are
+	  used for both requests and responses.
+
+config MCUMGR_BUF_SIZE
+	int "Size of each mcumgr buffer"
+	default 2048 if MCUMGR_SMP_UDP
+	default 384
+	help
+	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
+	  the following relation:
+	  MCUMGR_BUF_SIZE >= transport-specific-MTU + transport-overhead
+	  In case when MCUMGR_SMP_SHELL is enabled this value should be set to
+	  at least SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
+
+config MCUMGR_BUF_USER_DATA_SIZE
+	int "Size of mcumgr buffer user data"
+	default 24 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV6
+	default 8 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV4
+	default 4
+	help
+	  The size, in bytes, of user data to allocate for each mcumgr buffer.
+
+	  Different mcumgr transports impose different requirements for this
+	  setting. A value of 4 is sufficient for UART, shell, and bluetooth.
+	  For UDP, the userdata must be large enough to hold a IPv4/IPv6 address.
+
+rsource "Kconfig.dummy"
+
+rsource "Kconfig.bluetooth"
+
+rsource "Kconfig.shell"
+
+rsource "Kconfig.uart"
+
+rsource "Kconfig.udp"

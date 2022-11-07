@@ -4,9 +4,6 @@
 # Copyright (c) 2021 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-config IPM_NRFX
-	default IPM
-
 config MBOX_NRFX_IPC
 	default MBOX
 
@@ -39,6 +36,8 @@ config BT_HCI_VS
 
 config BOARD_ENABLE_CPUNET
 	bool "NRF53 Network MCU"
+	select SOC_NRF_GPIO_FORWARDER_FOR_NRF5340 if \
+		$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIO_FORWARDER))
 	help
 	  This option enables releasing the Network 'force off' signal, which
 	  as a consequence will power up the Network MCU during system boot.

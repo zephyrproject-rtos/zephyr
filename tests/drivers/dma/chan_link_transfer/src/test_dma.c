@@ -141,15 +141,15 @@ static int test_task(int minor, int major)
 /* export test cases */
 ZTEST(dma_m2m_link, test_dma_m2m_chan0_1_major_link)
 {
-	zassert_true((test_task(0, 1) == TC_PASS), NULL);
+	zassert_true((test_task(0, 1) == TC_PASS));
 }
 
 ZTEST(dma_m2m_link, test_dma_m2m_chan0_1_minor_link)
 {
-	zassert_true((test_task(1, 0) == TC_PASS), NULL);
+	zassert_true((test_task(1, 0) == TC_PASS));
 }
 
 ZTEST(dma_m2m_link, test_dma_m2m_chan0_1_minor_major_link)
 {
-	zassert_true((test_task(1, 1) == TC_PASS), NULL);
+	zassert_true((test_task(1, 1) == TC_PASS));
 }

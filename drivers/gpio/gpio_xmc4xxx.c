@@ -12,7 +12,7 @@
 #include <zephyr/dt-bindings/gpio/infineon-xmc4xxx-gpio.h>
 #include <xmc_gpio.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 struct gpio_xmc4xxx_config {
 	/* gpio_driver_config needs to be first, required by Zephyr */

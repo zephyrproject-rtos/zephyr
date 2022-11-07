@@ -8,6 +8,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/irq.h>
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 

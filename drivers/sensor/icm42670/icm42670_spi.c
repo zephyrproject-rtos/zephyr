@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include "icm42670_spi.h"
 #include "icm42670_reg.h"

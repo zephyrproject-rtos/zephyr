@@ -1,5 +1,6 @@
 common:
   tags: bluetooth
+  skip: yes
 tests:
   bluetooth.isoal.test:
     testcases:

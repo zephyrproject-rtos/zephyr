@@ -82,7 +82,6 @@ if NEWLIB_LIBC
 config NEWLIB_LIBC_NANO
 	bool "Build with newlib-nano C library"
 	depends on HAS_NEWLIB_LIBC_NANO
-	default y
 	help
 	  Build with newlib-nano library, for small embedded apps.
 	  The newlib-nano library for ARM embedded processors is a part of the

@@ -92,6 +92,10 @@
 #define WDT_NODE DT_INST(0, ti_cc32xx_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_wdog)
 #define WDT_NODE DT_INST(0, nxp_imx_wdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_wwdgt)
+#define WDT_NODE DT_INST(0, gd_gd32_wwdgt)
+#elif DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_fwdgt)
+#define WDT_NODE DT_INST(0, gd_gd32_fwdgt)
 #elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_counter_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
 #endif
@@ -355,24 +359,24 @@ static int test_wdt_bad_window_max(void)
 ZTEST(wdt_basic_test_suite, test_wdt)
 {
 	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)) {
-		zassert_true(test_wdt_no_callback() == TC_PASS, NULL);
+		zassert_true(test_wdt_no_callback() == TC_PASS);
 	}
 	if (m_testcase_index == 1U) {
 #if TEST_WDT_CALLBACK_1
-		zassert_true(test_wdt_callback_1() == TC_PASS, NULL);
+		zassert_true(test_wdt_callback_1() == TC_PASS);
 #else
 		m_testcase_index++;
 #endif
 	}
 	if (m_testcase_index == 2U) {
 #if TEST_WDT_CALLBACK_2
-		zassert_true(test_wdt_callback_2() == TC_PASS, NULL);
+		zassert_true(test_wdt_callback_2() == TC_PASS);
 #else
 		m_testcase_index++;
 #endif
 	}
 	if (m_testcase_index == 3U) {
-		zassert_true(test_wdt_bad_window_max() == TC_PASS, NULL);
+		zassert_true(test_wdt_bad_window_max() == TC_PASS);
 		m_testcase_index++;
 	}
 	if (m_testcase_index > 3) {

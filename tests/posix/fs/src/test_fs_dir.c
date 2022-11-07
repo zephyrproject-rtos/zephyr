@@ -110,7 +110,7 @@ ZTEST_SUITE(posix_fs_dir_test, NULL, test_mount, NULL, after_fn,
 ZTEST(posix_fs_dir_test, test_fs_mkdir)
 {
 	/* FIXME: restructure tests as per #46897 */
-	zassert_true(test_mkdir() == TC_PASS, NULL);
+	zassert_true(test_mkdir() == TC_PASS);
 }
 
 /**
@@ -123,6 +123,6 @@ ZTEST(posix_fs_dir_test, test_fs_mkdir)
 ZTEST(posix_fs_dir_test, test_fs_readdir)
 {
 	/* FIXME: restructure tests as per #46897 */
-	zassert_true(test_mkdir() == TC_PASS, NULL);
-	zassert_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
+	zassert_true(test_mkdir() == TC_PASS);
+	zassert_true(test_lsdir(TEST_DIR) == TC_PASS);
 }

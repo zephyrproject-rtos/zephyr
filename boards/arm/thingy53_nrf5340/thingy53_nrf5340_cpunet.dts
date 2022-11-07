@@ -19,6 +19,7 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
 		zephyr,code-partition = &slot0_partition;
@@ -58,6 +59,7 @@
 		mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		supply-voltage-mv = <3000>;
 	};
 
 	aliases {

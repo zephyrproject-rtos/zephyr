@@ -22,7 +22,7 @@ extern "C" {
 
 extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
-K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
 static ALWAYS_INLINE void arch_kernel_init(void)

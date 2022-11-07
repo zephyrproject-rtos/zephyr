@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/device.h>
-
 #include <zephyr/pm/device.h>
+#include "kernel_internal.h"
 
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
@@ -95,6 +95,8 @@ GEN_OFFSET_SYM(_thread_t, tls);
 #endif
 
 GEN_ABSOLUTE_SYM(K_THREAD_SIZEOF, sizeof(struct k_thread));
+
+GEN_ABSOLUTE_SYM(__z_interrupt_stack_SIZEOF, sizeof(z_interrupt_stacks[0]));
 
 /* size of the device structure. Used by linker scripts */
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_SIZEOF, sizeof(const struct device));

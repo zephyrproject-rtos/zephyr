@@ -242,7 +242,7 @@ ZTEST_USER(sys_sem, test_sem_take_no_wait_fails)
 /**
  * @brief Test sys_sem_take() with timeout expiry
  */
-void test_sem_take_timeout_fails(void)
+ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_fails)
 {
 	int32_t ret_value;
 
@@ -570,6 +570,7 @@ ZTEST_USER(sys_sem_1cpu, test_sem_multiple_threads_wait)
 
 void *sys_sem_setup(void)
 {
+#ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
 			      &stack_1, &stack_2, &stack_3,
 			      &sem_tid, &sem_tid_1, &sem_tid_2);
@@ -578,6 +579,7 @@ void *sys_sem_setup(void)
 		k_thread_access_grant(k_current_get(),
 			&multiple_tid[i], &multiple_stack[i]);
 	}
+#endif
 
 	return NULL;
 }

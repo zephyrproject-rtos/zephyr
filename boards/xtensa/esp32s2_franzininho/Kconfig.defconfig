@@ -1,0 +1,11 @@
+# ESP32S2 Franzininho board configuration
+
+# Copyright (c) 2022 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "esp32s2_franzininho"
+	depends on BOARD_ESP32S2_FRANZININHO
+
+config ENTROPY_GENERATOR
+	default y

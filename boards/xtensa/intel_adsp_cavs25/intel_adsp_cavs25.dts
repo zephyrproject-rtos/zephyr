@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <intel/intel_cavs25.dtsi>
+#include <intel/intel_adsp_cavs25.dtsi>
 
 / {
 	model = "intel_adsp_cavs25";
@@ -18,5 +18,6 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,console = &mem_window3;
 	};
 };

@@ -31,3 +31,6 @@ CONFIG_GPIO_AS_PINRESET=y
 
 # using pinctrl
 CONFIG_PINCTRL=y
+
+# using rc for slow clock
+CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y

@@ -44,6 +44,11 @@ pairs:
     Extra configuration options to be merged with a master prj.conf
     when building or running the test case.
 
+  sysbuild: <True|False> (default False)
+    If true, build the sample using the sysbuild infrastructure. Filtering
+    will only be enabled for the main project, and is not supported for
+    other projects included by sysbuild.
+
   build_only: <True|False> (default False)
     If true, don't try to run the test even if the selected platform
     supports it.
@@ -188,6 +193,7 @@ if not ZEPHYR_BASE:
     print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 
 from twisterlib.testplan import TestPlan
 from twisterlib.environment import TwisterEnv, parse_arguments

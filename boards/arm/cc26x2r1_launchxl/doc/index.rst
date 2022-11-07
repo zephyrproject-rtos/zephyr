@@ -53,6 +53,8 @@ features:
 +-----------+------------+----------------------+
 | SPI       | on-chip    | spi                  |
 +-----------+------------+----------------------+
+| AUX_ADC   | on-chip    | adc                  |
++-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.
 

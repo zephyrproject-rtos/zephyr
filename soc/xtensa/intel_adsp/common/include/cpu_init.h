@@ -16,11 +16,10 @@ static ALWAYS_INLINE void cpu_early_init(void)
 {
 	uint32_t reg;
 
-#ifdef CONFIG_SOC_INTEL_CAVS_V25
-	/* First, on cAVS 2.5 we need to power the cache SRAM banks
-	 * on!  Write a bit for each cache way in the bottom half of
-	 * the L1CCFG register and poll the top half for them to turn
-	 * on.
+#ifdef CONFIG_ADSP_NEED_POWER_ON_CACHE
+	/* First, we need to power the cache SRAM banks on!  Write a bit
+	 * for each cache way in the bottom half of the L1CCFG register
+	 * and poll the top half for them to turn on.
 	 */
 	uint32_t dmask = BIT(ADSP_CxL1CCAP_DCMWC) - 1;
 	uint32_t imask = BIT(ADSP_CxL1CCAP_ICMWC) - 1;
@@ -81,7 +80,7 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * are still disabled at this stage and will remain so
 	 * consistently until Zephyr switches into the main thread.
 	 */
-	reg = XCHAL_VECBASE_RESET_PADDR_SRAM;
+	reg = VECBASE_RESET_PADDR_SRAM;
 	__asm__ volatile("wsr %0, VECBASE" :: "r"(reg));
 }
 

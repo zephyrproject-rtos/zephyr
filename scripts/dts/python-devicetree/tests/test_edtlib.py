@@ -273,28 +273,36 @@ def test_bus():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert edt.get_node("/buses/foo-bus").bus == "foo"
+    assert isinstance(edt.get_node("/buses/foo-bus").buses, list)
+    assert "foo" in edt.get_node("/buses/foo-bus").buses
 
     # foo-bus does not itself appear on a bus
-    assert edt.get_node("/buses/foo-bus").on_bus is None
+    assert isinstance(edt.get_node("/buses/foo-bus").on_buses, list)
+    assert not edt.get_node("/buses/foo-bus").on_buses
     assert edt.get_node("/buses/foo-bus").bus_node is None
 
     # foo-bus/node1 is not a bus node...
-    assert edt.get_node("/buses/foo-bus/node1").bus is None
+    assert isinstance(edt.get_node("/buses/foo-bus/node1").buses, list)
+    assert not edt.get_node("/buses/foo-bus/node1").buses
     # ...but is on a bus
-    assert edt.get_node("/buses/foo-bus/node1").on_bus == "foo"
+    assert isinstance(edt.get_node("/buses/foo-bus/node1").on_buses, list)
+    assert "foo" in edt.get_node("/buses/foo-bus/node1").on_buses
     assert edt.get_node("/buses/foo-bus/node1").bus_node.path == \
         "/buses/foo-bus"
 
     # foo-bus/node2 is not a bus node...
-    assert edt.get_node("/buses/foo-bus/node2").bus is None
+    assert isinstance(edt.get_node("/buses/foo-bus/node2").buses, list)
+    assert not edt.get_node("/buses/foo-bus/node2").buses
     # ...but is on a bus
-    assert edt.get_node("/buses/foo-bus/node2").on_bus == "foo"
+    assert isinstance(edt.get_node("/buses/foo-bus/node2").on_buses, list)
+    assert "foo" in edt.get_node("/buses/foo-bus/node2").on_buses
 
     # no-bus-node is not a bus node...
-    assert edt.get_node("/buses/no-bus-node").bus is None
+    assert isinstance(edt.get_node("/buses/no-bus-node").buses, list)
+    assert not edt.get_node("/buses/no-bus-node").buses
     # ... and is not on a bus
-    assert edt.get_node("/buses/no-bus-node").on_bus is None
+    assert isinstance(edt.get_node("/buses/no-bus-node").on_buses, list)
+    assert not edt.get_node("/buses/no-bus-node").on_buses
 
     # Same compatible string, but different bindings from being on different
     # buses
@@ -308,7 +316,8 @@ def test_bus():
         hpath("test-bindings/device-on-any-bus.yaml")
 
     # foo-bus/node/nested also appears on the foo-bus bus
-    assert edt.get_node("/buses/foo-bus/node1/nested").on_bus == "foo"
+    assert isinstance(edt.get_node("/buses/foo-bus/node1/nested").on_buses, list)
+    assert "foo" in edt.get_node("/buses/foo-bus/node1/nested").on_buses
     assert str(edt.get_node("/buses/foo-bus/node1/nested").binding_path) == \
         hpath("test-bindings/device-on-foo-bus.yaml")
 

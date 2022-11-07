@@ -91,6 +91,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_XLNX_AXI_TIMER
 	DEVS_FOR_DT_COMPAT(xlnx_xps_timer_1_00_a)
 #endif
+#ifdef CONFIG_COUNTER_TMR_ESP32
+	DEVS_FOR_DT_COMPAT(espressif_esp32_timer)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -157,6 +160,7 @@ static void counter_tear_down_instance(const struct device *dev)
 static void test_all_instances(counter_test_func_t func,
 				counter_capability_func_t capability_check)
 {
+	zassert_true(ARRAY_SIZE(devices) > 0, "No device found");
 	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
 		counter_setup_instance(devices[i]);
 		if ((capability_check == NULL) ||

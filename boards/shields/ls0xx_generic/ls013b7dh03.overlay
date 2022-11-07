@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,display = &ls0xx;
+		zephyr,display = &ls0xx_ls013b7dh03;
 	};
 };
 
@@ -14,7 +14,7 @@
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_HIGH>; /* D10 */
 
-	ls0xx: ls0xx@0 {
+	ls0xx_ls013b7dh03: ls0xx@0 {
 		compatible = "sharp,ls0xx";
 		spi-max-frequency = <2000000>;
 		reg = <0>;

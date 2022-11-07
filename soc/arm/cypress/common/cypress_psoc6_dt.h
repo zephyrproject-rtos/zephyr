@@ -13,6 +13,7 @@
 #define _CYPRESS_PSOC6_DT_H_
 
 #include <zephyr/devicetree.h>
+#include <zephyr/irq.h>
 
 /*
  * Devicetree macros related to interrupt

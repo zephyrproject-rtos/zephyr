@@ -10,6 +10,8 @@
 #define LOG_MODULE_NAME bt_mesh_msg
 #include "common/log.h"
 
+#include "msg.h"
+
 void bt_mesh_model_msg_init(struct net_buf_simple *msg, uint32_t opcode)
 {
 	net_buf_simple_init(msg, 0);
@@ -83,4 +85,50 @@ bool bt_mesh_msg_ack_ctx_match(const struct bt_mesh_msg_ack_ctx *ack,
 	}
 
 	return true;
+}
+
+int bt_mesh_msg_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		     struct net_buf_simple *buf)
+{
+	if (!ctx && !model->pub) {
+		return -ENOTSUP;
+	}
+
+	if (ctx) {
+		return bt_mesh_model_send(model, ctx, buf, NULL, 0);
+	}
+
+	net_buf_simple_reset(model->pub->msg);
+	net_buf_simple_add_mem(model->pub->msg, buf->data, buf->len);
+
+	return bt_mesh_model_publish(model);
+}
+
+int bt_mesh_msg_ackd_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf, const struct bt_mesh_msg_rsp_ctx *rsp)
+{
+	int err;
+
+	if (rsp) {
+		err = bt_mesh_msg_ack_ctx_prepare(rsp->ack, rsp->op,
+						  ctx ? ctx->addr : model->pub->addr,
+						  rsp->user_data);
+		if (err) {
+			return err;
+		}
+	}
+
+	err = bt_mesh_msg_send(model, ctx, buf);
+
+	if (!rsp) {
+		return err;
+	}
+
+	if (!err) {
+		return bt_mesh_msg_ack_ctx_wait(rsp->ack, K_MSEC(rsp->timeout));
+	}
+
+	bt_mesh_msg_ack_ctx_clear(rsp->ack);
+
+	return err;
 }

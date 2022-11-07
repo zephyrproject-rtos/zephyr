@@ -193,6 +193,14 @@ config EXCEPTION_DEBUG
 config XIP
 	select AARCH64_IMAGE_HEADER
 
+config ARM64_SET_VMPIDR_EL2
+	bool "Set VMPIDR_EL2 at EL2 stage"
+	help
+	  VMPIDR_EL2 holds the value of the Virtualization Multiprocessor ID.
+	  This is the value returned by EL1 reads of MPIDR_EL1.
+	  This register may already be set by bootloader at the EL2 stage, if
+	  not, Zephyr should set it.
+
 if ARM_MMU
 
 config MMU_PAGE_SIZE

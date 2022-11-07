@@ -110,7 +110,7 @@ void test_feat_exchange_central_loc(void)
 
 		/* Initiate a Feature Exchange Procedure */
 		err = ull_cp_feature_exchange(&conn);
-		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 		event_prepare(&conn);
 		/* Tx Queue should have one LL Control PDU */
@@ -176,7 +176,7 @@ void test_feat_exchange_central_loc_invalid_rsp(void)
 
 	/* Initiate a Feature Exchange Procedure */
 	err = ull_cp_feature_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -210,7 +210,7 @@ void test_feat_exchange_central_loc_invalid_rsp(void)
 
 	/* Initiate another Feature Exchange Procedure */
 	err = ull_cp_feature_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -245,7 +245,7 @@ void test_feat_exchange_central_loc_2(void)
 
 	err = ull_cp_feature_exchange(&conn);
 	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
-		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS);
 		err = ull_cp_feature_exchange(&conn);
 	}
 
@@ -372,7 +372,7 @@ void test_feat_exchange_central_rem_2(void)
 		sys_put_le64(ut_exp_featureset[feat_count], ut_feature_rsp.features);
 
 		err = ull_cp_feature_exchange(&conn);
-		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 		event_prepare(&conn);
 		lt_tx(LL_PERIPH_FEAT_XCHG, &conn, &remote_feature_req);
@@ -435,7 +435,7 @@ void test_peripheral_feat_exchange_periph_loc(void)
 
 	/* Initiate a Feature Exchange Procedure */
 	err = ull_cp_feature_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -496,7 +496,7 @@ void test_feat_exchange_periph_loc_unknown_rsp(void)
 
 	event_prepare(&conn);
 	err = ull_cp_feature_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 	event_done(&conn);
 
 	event_prepare(&conn);

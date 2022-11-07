@@ -229,19 +229,19 @@ void test_hci_apto(void)
 	conn_from_pool->apto_reload = 100;
 	conn_from_pool->lll.interval = 10;
 	err = ll_apto_get(conn_handle, &apto);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 	zassert_equal(apto, 125, "Apto is %d", apto);
 
 	err = ll_apto_get(conn_handle + 1, &apto);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID);
 
 	err = ll_apto_set(conn_handle, 1000);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 	zassert_equal(conn_from_pool->apto_reload, 800, "Apto reload is %d",
 		      conn_from_pool->apto_reload);
 
 	err = ll_apto_get(conn_handle + 1, 0x00);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID);
 }
 
 void test_hci_phy(void)
@@ -258,7 +258,7 @@ void test_hci_phy(void)
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
 	err = ll_phy_req_send(conn_handle + 1, 0x00, 0x00, 0x00);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID);
 	conn_from_pool->llcp.fex.features_used = 0x00;
 	conn_from_pool->llcp.fex.valid = 1;
 	err = ll_phy_req_send(conn_handle, 0x03, 0xFF, 0x03);
@@ -268,27 +268,27 @@ void test_hci_phy(void)
 	err = ll_phy_req_send(conn_handle, 0x03, 0xFF, 0x03);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 	err = ll_phy_get(conn_handle + 1, &phy_tx, &phy_rx);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID);
 
 	conn_from_pool->lll.phy_rx = 0x3;
 	conn_from_pool->lll.phy_tx = 0x7;
 	err = ll_phy_get(conn_handle, &phy_tx, &phy_rx);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-	zassert_equal(phy_tx, 0x07, NULL);
-	zassert_equal(phy_rx, 0x03, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+	zassert_equal(phy_tx, 0x07);
+	zassert_equal(phy_rx, 0x03);
 
 	err = ll_phy_default_set(0x00, 0x00);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 	phy_tx = ull_conn_default_phy_tx_get();
 	phy_rx = ull_conn_default_phy_rx_get();
-	zassert_equal(phy_tx, 0x00, NULL);
-	zassert_equal(phy_rx, 0x00, NULL);
+	zassert_equal(phy_tx, 0x00);
+	zassert_equal(phy_rx, 0x00);
 	err = ll_phy_default_set(0x01, 0x03);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 	phy_tx = ull_conn_default_phy_tx_get();
 	phy_rx = ull_conn_default_phy_rx_get();
-	zassert_equal(phy_tx, 0x01, NULL);
-	zassert_equal(phy_rx, 0x03, NULL);
+	zassert_equal(phy_tx, 0x01);
+	zassert_equal(phy_rx, 0x03);
 }
 
 void test_hci_dle(void)
@@ -317,25 +317,25 @@ void test_hci_dle(void)
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 
 	ll_length_max_get(&max_tx_octets, &max_tx_time, &max_rx_octets, &max_rx_time);
-	zassert_equal(max_tx_octets, LL_LENGTH_OCTETS_RX_MAX, NULL);
-	zassert_equal(max_rx_octets, LL_LENGTH_OCTETS_RX_MAX, NULL);
+	zassert_equal(max_tx_octets, LL_LENGTH_OCTETS_RX_MAX);
+	zassert_equal(max_rx_octets, LL_LENGTH_OCTETS_RX_MAX);
 	zassert_equal(max_tx_time, 17040, "Actual time is %d", max_tx_time);
 	zassert_equal(max_rx_time, 17040, "Actual time is %d", max_rx_time);
 
 	err = ll_length_default_set(0x00, 0x00);
 	ll_length_default_get(&max_tx_octets, &max_tx_time);
-	zassert_equal(err, 00, NULL);
-	zassert_equal(max_tx_octets, 0x00, NULL);
-	zassert_equal(max_tx_time, 0x00, NULL);
+	zassert_equal(err, 00);
+	zassert_equal(max_tx_octets, 0x00);
+	zassert_equal(max_tx_time, 0x00);
 	err = ll_length_default_set(0x10, 0x3FF);
 	ll_length_default_get(&max_tx_octets, &max_tx_time);
-	zassert_equal(err, 00, NULL);
-	zassert_equal(max_tx_octets, 0x10, NULL);
-	zassert_equal(max_tx_time, 0x3FF, NULL);
+	zassert_equal(err, 00);
+	zassert_equal(max_tx_octets, 0x10);
+	zassert_equal(max_tx_time, 0x3FF);
 	max_tx_octets = ull_conn_default_tx_octets_get();
 	max_tx_time = ull_conn_default_tx_time_get();
-	zassert_equal(max_tx_octets, 0x10, NULL);
-	zassert_equal(max_tx_time, 0x3FF, NULL);
+	zassert_equal(max_tx_octets, 0x10);
+	zassert_equal(max_tx_time, 0x3FF);
 }
 
 void test_hci_terminate(void)

@@ -20,6 +20,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_NET)
 #define LOG_MODULE_NAME bt_mesh_net
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "crypto.h"
 #include "adv.h"
@@ -119,14 +120,20 @@ static bool check_dup(struct net_buf_simple *data)
 
 	val = sys_get_be32(tail - 4) ^ sys_get_be32(tail - 8);
 
-	for (i = 0; i < ARRAY_SIZE(dup_cache); i++) {
-		if (dup_cache[i] == val) {
+	for (i = dup_cache_next; i > 0;) {
+		if (dup_cache[--i] == val) {
 			return true;
 		}
 	}
 
-	dup_cache[dup_cache_next++] = val;
+	for (i = ARRAY_SIZE(dup_cache); i > dup_cache_next;) {
+		if (dup_cache[--i] == val) {
+			return true;
+		}
+	}
+
 	dup_cache_next %= ARRAY_SIZE(dup_cache);
+	dup_cache[dup_cache_next++] = val;
 
 	return false;
 }
@@ -135,8 +142,15 @@ static bool msg_cache_match(struct net_buf_simple *pdu)
 {
 	uint16_t i;
 
-	for (i = 0U; i < ARRAY_SIZE(msg_cache); i++) {
-		if (msg_cache[i].src == SRC(pdu->data) &&
+	for (i = msg_cache_next; i > 0U;) {
+		if (msg_cache[--i].src == SRC(pdu->data) &&
+		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17))) {
+			return true;
+		}
+	}
+
+	for (i = ARRAY_SIZE(msg_cache); i > msg_cache_next;) {
+		if (msg_cache[--i].src == SRC(pdu->data) &&
 		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17))) {
 			return true;
 		}
@@ -147,10 +161,10 @@ static bool msg_cache_match(struct net_buf_simple *pdu)
 
 static void msg_cache_add(struct bt_mesh_net_rx *rx)
 {
-	rx->msg_cache_idx = msg_cache_next++;
-	msg_cache[rx->msg_cache_idx].src = rx->ctx.addr;
-	msg_cache[rx->msg_cache_idx].seq = rx->seq;
 	msg_cache_next %= ARRAY_SIZE(msg_cache);
+	msg_cache[msg_cache_next].src = rx->ctx.addr;
+	msg_cache[msg_cache_next].seq = rx->seq;
+	msg_cache_next++;
 }
 
 static void store_iv(bool only_duration)
@@ -687,7 +701,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_RELAY_ADV,
 				 transmit, K_NO_WAIT);
 	if (!buf) {
-		BT_WARN("Out of relay buffers");
+		BT_DBG("Out of relay buffers");
 		return;
 	}
 
@@ -848,9 +862,9 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 	 */
 	if (bt_mesh_trans_recv(&buf, &rx) == -EAGAIN) {
 		BT_WARN("Removing rejected message from Network Message Cache");
-		msg_cache[rx.msg_cache_idx].src = BT_MESH_ADDR_UNASSIGNED;
 		/* Rewind the next index now that we're not using this entry */
-		msg_cache_next = rx.msg_cache_idx;
+		msg_cache[--msg_cache_next].src = BT_MESH_ADDR_UNASSIGNED;
+		dup_cache[--dup_cache_next] = 0;
 	}
 
 	/* Relay if this was a group/virtual address, or if the destination

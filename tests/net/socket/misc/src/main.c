@@ -51,6 +51,11 @@ ZTEST_USER(socket_misc_test_suite, test_inet_pton)
 	zassert_equal(res, 0, "");
 }
 
+#define TEST_MY_IPV4_ADDR "192.0.2.1"
+#define TEST_PEER_IPV4_ADDR "192.0.2.2"
+#define TEST_MY_IPV6_ADDR "2001:db8::1"
+#define TEST_PEER_IPV6_ADDR "2001:db8::2"
+
 static struct in6_addr my_ipv6_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
@@ -297,7 +302,7 @@ void test_ipv4_so_bindtodevice(void)
 
 	peer_addr.sin_family = AF_INET;
 	peer_addr.sin_port = htons(DST_PORT);
-	ret = inet_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
+	ret = inet_pton(AF_INET, TEST_PEER_IPV4_ADDR,
 			&peer_addr.sin_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
@@ -325,7 +330,7 @@ void test_ipv6_so_bindtodevice(void)
 
 	peer_addr.sin6_family = AF_INET6;
 	peer_addr.sin6_port = htons(DST_PORT);
-	ret = inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
+	ret = inet_pton(AF_INET6, TEST_PEER_IPV6_ADDR,
 			&peer_addr.sin6_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
@@ -350,11 +355,11 @@ void test_getpeername(int family)
 	srv_addr.sa_family = family;
 	if (family == AF_INET) {
 		net_sin(&srv_addr)->sin_port = htons(DST_PORT);
-		ret = inet_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR,
+		ret = inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
 				&net_sin(&srv_addr)->sin_addr);
 	} else {
 		net_sin6(&srv_addr)->sin6_port = htons(DST_PORT);
-		ret = inet_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR,
+		ret = inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
 				&net_sin6(&srv_addr)->sin6_addr);
 	}
 	zassert_equal(ret, 1, "inet_pton failed");

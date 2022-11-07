@@ -28,14 +28,14 @@ void test_fat_write(void)
 
 void test_fat_read(void)
 {
-	zassert_true(test_file_read(&test_file, test_str) == TC_PASS, NULL);
+	zassert_true(test_file_read(&test_file, test_str) == TC_PASS);
 }
 
 void test_fat_close(void)
 {
-	zassert_true(test_file_close(&test_file) == TC_PASS, NULL);
+	zassert_true(test_file_close(&test_file) == TC_PASS);
 }
 void test_fat_unlink(void)
 {
-	zassert_true(test_file_delete(TEST_FILE_PATH) == TC_PASS, NULL);
+	zassert_true(test_file_delete(TEST_FILE_PATH) == TC_PASS);
 }

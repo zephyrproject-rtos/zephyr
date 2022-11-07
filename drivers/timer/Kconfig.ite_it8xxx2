@@ -5,7 +5,8 @@
 
 config ITE_IT8XXX2_TIMER
 	bool "ITE it8xxx2 timer driver"
-	depends on SOC_IT8XXX2
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_TIMER_ENABLED
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the ITE it8xxx2

@@ -393,19 +393,6 @@ enum mchp_gpio_drv_str {
 	MCHP_GPIO_DRV_STR_12MA,
 };
 
-/** @brief All GPIO register as arrays of registers */
-struct gpio_regs {
-	volatile uint32_t  CTRL[174];
-	uint32_t  RESERVED[18];
-	volatile uint32_t  PARIN[6];
-	uint32_t  RESERVED1[26];
-	volatile uint32_t  PAROUT[6];
-	uint32_t  RESERVED2[20];
-	volatile uint32_t  LOCK[6];
-	uint32_t  RESERVED3[64];
-	volatile uint32_t  CTRL2[174];
-};
-
 /** @brief GPIO control registers by pin name */
 struct gpio_ctrl_regs {
 	volatile uint32_t CTRL_0000;

@@ -342,11 +342,11 @@ static int test_loop_suspend_resume(void)
 /* export test cases */
 ZTEST(dma_m2m_loop, test_dma_m2m_loop)
 {
-	zassert_true((test_loop() == TC_PASS), NULL);
+	zassert_true((test_loop() == TC_PASS));
 }
 
 /* export test cases */
 ZTEST(dma_m2m_loop, test_dma_m2m_loop_suspend_resume)
 {
-	zassert_true((test_loop_suspend_resume() == TC_PASS), NULL);
+	zassert_true((test_loop_suspend_resume() == TC_PASS));
 }

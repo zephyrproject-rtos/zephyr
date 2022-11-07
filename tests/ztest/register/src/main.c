@@ -106,50 +106,50 @@ static void test_verify_execution(void)
 	case PHASE_NULL_PREDICATE_0:
 		/* Verify that only remove_first_node suite was run and removed. */
 		stats = find_snapshot("run_null_predicate_once");
-		zassert_equal(1, execution_results.test_run_count, NULL);
-		zassert_equal(1, stats->run_count, NULL);
-		zassert_equal(0, stats->skip_count, NULL);
-		zassert_equal(0, stats->fail_count, NULL);
+		zassert_equal(1, execution_results.test_run_count);
+		zassert_equal(1, stats->run_count);
+		zassert_equal(0, stats->skip_count);
+		zassert_equal(0, stats->fail_count);
 		break;
 	case PHASE_NULL_PREDICATE_1:
 		/* Verify that only remove_first_two_nodes_* were run. */
-		zassert_equal(0, execution_results.test_run_count, NULL);
+		zassert_equal(0, execution_results.test_run_count);
 		stats = find_snapshot("run_null_predicate_once");
-		zassert_equal(0, stats->run_count, NULL);
-		zassert_equal(1, stats->skip_count, NULL);
-		zassert_equal(0, stats->fail_count, NULL);
+		zassert_equal(0, stats->run_count);
+		zassert_equal(1, stats->skip_count);
+		zassert_equal(0, stats->fail_count);
 		break;
 	case PHASE_STEPS_0:
 		/* Verify that steps_0 and steps_all suites were run. */
-		zassert_equal(2, execution_results.test_run_count, NULL);
+		zassert_equal(2, execution_results.test_run_count);
 		stats = find_snapshot("test_step_0");
-		zassert_equal(1, stats->run_count, NULL);
-		zassert_equal(0, stats->skip_count, NULL);
-		zassert_equal(0, stats->fail_count, NULL);
+		zassert_equal(1, stats->run_count);
+		zassert_equal(0, stats->skip_count);
+		zassert_equal(0, stats->fail_count);
 		stats = find_snapshot("test_step_1");
-		zassert_equal(0, stats->run_count, NULL);
-		zassert_equal(1, stats->skip_count, NULL);
-		zassert_equal(0, stats->fail_count, NULL);
+		zassert_equal(0, stats->run_count);
+		zassert_equal(1, stats->skip_count);
+		zassert_equal(0, stats->fail_count);
 		stats = find_snapshot("test_step_all");
-		zassert_equal(1, stats->run_count, NULL);
-		zassert_equal(0, stats->skip_count, NULL);
-		zassert_equal(0, stats->fail_count, NULL);
+		zassert_equal(1, stats->run_count);
+		zassert_equal(0, stats->skip_count);
+		zassert_equal(0, stats->fail_count);
 		break;
 	case PHASE_STEPS_1:
 		/* Verify that steps_1 and steps_all suites were run. */
-		zassert_equal(2, execution_results.test_run_count, NULL);
+		zassert_equal(2, execution_results.test_run_count);
 		stats = find_snapshot("test_step_0");
-		zassert_equal(0, stats->run_count, NULL);
-		zassert_equal(1, stats->skip_count, NULL);
-		zassert_equal(0, stats->fail_count, NULL);
+		zassert_equal(0, stats->run_count);
+		zassert_equal(1, stats->skip_count);
+		zassert_equal(0, stats->fail_count);
 		stats = find_snapshot("test_step_1");
-		zassert_equal(1, stats->run_count, NULL);
-		zassert_equal(0, stats->skip_count, NULL);
-		zassert_equal(0, stats->fail_count, NULL);
+		zassert_equal(1, stats->run_count);
+		zassert_equal(0, stats->skip_count);
+		zassert_equal(0, stats->fail_count);
 		stats = find_snapshot("test_step_all");
-		zassert_equal(1, stats->run_count, NULL);
-		zassert_equal(0, stats->skip_count, NULL);
-		zassert_equal(0, stats->fail_count, NULL);
+		zassert_equal(1, stats->run_count);
+		zassert_equal(0, stats->skip_count);
+		zassert_equal(0, stats->fail_count);
 		break;
 	default:
 		ztest_test_fail();

@@ -96,10 +96,10 @@ void tThread_entry_lock_timeout(void const *arg)
 	 * other thread. Try with and without timeout.
 	 */
 	status = osMutexWait((osMutexId)arg, 0);
-	zassert_true(status == osErrorResource, NULL);
+	zassert_true(status == osErrorResource);
 
 	status = osMutexWait((osMutexId)arg, TIMEOUT - 100);
-	zassert_true(status == osErrorTimeoutResource, NULL);
+	zassert_true(status == osErrorTimeoutResource);
 
 	/* At this point, mutex is held by the other thread.
 	 * Trying to release it here should fail.
@@ -116,7 +116,7 @@ void tThread_entry_lock_timeout(void const *arg)
 	 * and release it.
 	 */
 	status = osMutexWait((osMutexId)arg, TIMEOUT);
-	zassert_true(status == osOK, NULL);
+	zassert_true(status == osOK);
 	osMutexRelease((osMutexId)arg);
 }
 

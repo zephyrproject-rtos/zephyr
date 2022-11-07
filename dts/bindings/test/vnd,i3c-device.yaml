@@ -1,0 +1,18 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test I3C device
+
+compatible: "vnd,i3c-device"
+
+include:
+  - name: i3c-device.yaml
+    property-blocklist:
+      - label
+
+properties:
+    label:
+        type: string
+        required: false

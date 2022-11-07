@@ -220,6 +220,7 @@
 		reg = <0x144000 0x1000>;
 		interrupts = <50 1>;
 		num-bidir-endpoints = <6>;
+		usb-controller-index = "LpcIp3511Hs0";
 		status = "disabled";
 	};
 
@@ -398,6 +399,19 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+	};
+
+	i3c0: i3c@36000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x36000 0x1000>;
+		interrupts = <49 0>;
+		clocks = <&clkctl1 MCUX_I3C_CLK>;
+		clk-divider = <2>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
 	};
 };
 

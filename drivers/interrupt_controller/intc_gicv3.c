@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
@@ -14,7 +15,7 @@
 #include <string.h>
 
 /* Redistributor base addresses for each core */
-mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
+mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 
 #if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 #define IGROUPR_VAL	0xFFFFFFFFU
@@ -477,12 +478,81 @@ static void gicv3_dist_init(void)
 #endif
 }
 
+static uint64_t arm_gic_mpidr_to_affinity(uint64_t mpidr)
+{
+	uint64_t aff3, aff2, aff1, aff0;
+
+#if defined(CONFIG_ARM)
+	/* There is no Aff3 in AArch32 MPIDR */
+	aff3 = 0;
+#else
+	aff3 = MPIDR_AFFLVL(mpidr, 3);
+#endif
+
+	aff2 = MPIDR_AFFLVL(mpidr, 2);
+	aff1 = MPIDR_AFFLVL(mpidr, 1);
+	aff0 = MPIDR_AFFLVL(mpidr, 0);
+
+	return (aff3 << 24 | aff2 << 16 | aff1 << 8 | aff0);
+}
+
+static bool arm_gic_aff_matching(uint64_t gicr_aff, uint64_t aff)
+{
+#if defined(CONFIG_GIC_V3_RDIST_MATCHING_AFF0_ONLY)
+	uint64_t mask = BIT64_MASK(8);
+
+	return (gicr_aff & mask) == (aff & mask);
+#else
+	return gicr_aff == aff;
+#endif
+}
+
+static inline uint64_t arm_gic_get_typer(mem_addr_t addr)
+{
+	uint64_t val;
+
+#if defined(CONFIG_ARM)
+	val = sys_read32(addr);
+	val |= (uint64_t)sys_read32(addr + 4) << 32;
+#else
+	val = sys_read64(addr);
+#endif
+
+	return val;
+}
+
+static mem_addr_t arm_gic_iterate_rdists(void)
+{
+	uint64_t aff = arm_gic_mpidr_to_affinity(GET_MPIDR());
+
+	for (mem_addr_t rdist_addr = GIC_RDIST_BASE;
+		rdist_addr < GIC_RDIST_BASE + GIC_RDIST_SIZE;
+		rdist_addr += 0x20000) {
+		uint64_t val = arm_gic_get_typer(rdist_addr + GICR_TYPER);
+		uint64_t gicr_aff = GICR_TYPER_AFFINITY_VALUE_GET(val);
+
+		if (arm_gic_aff_matching(gicr_aff, aff)) {
+			return rdist_addr;
+		}
+
+		if (GICR_TYPER_LAST_GET(val) == 1) {
+			return (mem_addr_t)NULL;
+		}
+	}
+
+	return (mem_addr_t)NULL;
+}
+
 static void __arm_gic_init(void)
 {
 	uint8_t cpu;
+	mem_addr_t gic_rd_base;
 
 	cpu = arch_curr_cpu()->id;
-	gic_rdists[cpu] = GIC_RDIST_BASE + MPIDR_TO_CORE(GET_MPIDR()) * 0x20000;
+	gic_rd_base = arm_gic_iterate_rdists();
+	__ASSERT(gic_rd_base != (mem_addr_t)NULL, "");
+
+	gic_rdists[cpu] = gic_rd_base;
 
 #ifdef CONFIG_GIC_V3_ITS
 	/* Enable LPIs in Redistributor */

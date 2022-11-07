@@ -71,7 +71,7 @@ static ZTEST_BMEM struct timer_data tdata;
 	do {					 \
 		if (!(exp)) {			 \
 			k_timer_stop(tmr);	 \
-			zassert_true(exp, NULL); \
+			zassert_true(exp); \
 		}				 \
 	} while (0)
 
@@ -516,11 +516,11 @@ ZTEST_USER(timer_api, test_timer_status_sync)
 	init_timer_data();
 	k_timer_start(&status_sync_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	busy_wait_ms(PERIOD*2);
-	zassert_true(k_timer_status_sync(&status_sync_timer), NULL);
+	zassert_true(k_timer_status_sync(&status_sync_timer));
 
 	/* cleanup environment */
 	k_timer_stop(&status_sync_timer);
-	zassert_false(k_timer_status_sync(&status_sync_timer), NULL);
+	zassert_false(k_timer_status_sync(&status_sync_timer));
 }
 
 /**
@@ -633,7 +633,7 @@ ZTEST_USER(timer_api, test_timer_user_data)
 				      (void *)user_data[ii]);
 		check = (intptr_t)k_timer_user_data_get(user_data_timer[ii]);
 
-		zassert_true(check == user_data[ii], NULL);
+		zassert_true(check == user_data[ii]);
 	}
 
 	for (ii = 0; ii < 5; ii++) {
@@ -656,7 +656,7 @@ ZTEST_USER(timer_api, test_timer_user_data)
 	}
 
 	for (ii = 0; ii < 5; ii++) {
-		zassert_true(user_data_correct[ii], NULL);
+		zassert_true(user_data_correct[ii]);
 	}
 }
 
@@ -741,16 +741,16 @@ ZTEST_USER(timer_api, test_timeout_abs)
 	 * the same (whiteboxed) converted values
 	 */
 	t2 = K_TIMEOUT_ABS_MS(exp_ms);
-	zassert_true(t2.ticks == t.ticks, NULL);
+	zassert_true(t2.ticks == t.ticks);
 
 	t2 = K_TIMEOUT_ABS_US(1000 * exp_ms);
-	zassert_true(t2.ticks == t.ticks, NULL);
+	zassert_true(t2.ticks == t.ticks);
 
 	t2 = K_TIMEOUT_ABS_NS(1000 * 1000 * exp_ms);
-	zassert_true(t2.ticks == t.ticks, NULL);
+	zassert_true(t2.ticks == t.ticks);
 
 	t2 = K_TIMEOUT_ABS_CYC(k_ms_to_cyc_ceil64(exp_ms));
-	zassert_true(t2.ticks == t.ticks, NULL);
+	zassert_true(t2.ticks == t.ticks);
 
 	/* Now set the timeout and make sure the expiration time is
 	 * correct vs. current time.  Tick units and tick alignment

@@ -8,11 +8,12 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/sys_io.h>
 #include <soc.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #define XEC_GPIO_EDGE_DLY_COUNT		4
 

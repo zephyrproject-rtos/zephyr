@@ -35,8 +35,12 @@
 
 #include <stm32_ll_usart.h>
 #include <stm32_ll_lpuart.h>
+#if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
+#include <stm32_ll_exti.h>
+#endif /* CONFIG_PM */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 
 /* This symbol takes the value 1 if one of the device instances */
@@ -159,6 +163,13 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 				      presc_val,
 #endif
 				      baud_rate);
+		/* Check BRR is greater than or equal to 0x300 */
+		__ASSERT(LL_LPUART_ReadReg(config->usart, BRR) >= 0x300U,
+			 "BaudRateReg >= 0x300");
+
+		/* Check BRR is lower than or equal to 0xFFFFF */
+		__ASSERT(LL_LPUART_ReadReg(config->usart, BRR) < 0x000FFFFFU,
+			 "BaudRateReg < 0xFFFF");
 	} else {
 #endif /* HAS_LPUART_1 */
 #ifdef USART_CR1_OVER8
@@ -174,6 +185,9 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 				     LL_USART_OVERSAMPLING_16,
 #endif
 				     baud_rate);
+		/* Check BRR is greater than or equal to 16d */
+		__ASSERT(LL_USART_ReadReg(config->usart, BRR) > 16,
+			 "BaudRateReg >= 16");
 
 #if HAS_LPUART_1
 	}
@@ -1133,6 +1147,14 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 
+	if (data->rx_next_buffer) {
+		struct uart_event rx_next_buf_release_evt = {
+			.type = UART_RX_BUF_RELEASED,
+			.data.rx_buf.buf = data->rx_next_buffer,
+		};
+		async_user_callback(data, &rx_next_buf_release_evt);
+	}
+
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0;
 
@@ -1695,6 +1717,10 @@ static int uart_stm32_init(const struct device *dev)
 		 * CONFIG_PM_DEVICE=y : Controlled by pm_device_wakeup_enable()
 		 */
 		LL_USART_EnableInStopMode(config->usart);
+		if (config->wakeup_line != STM32_EXTI_LINE_NONE) {
+			/* Prepare the WAKEUP with the expected EXTI line */
+			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
+		}
 	}
 #endif /* CONFIG_PM */
 
@@ -1846,8 +1872,11 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #endif
 
 #ifdef CONFIG_PM
-#define STM32_UART_PM_WAKEUP(index)					\
-	.wakeup_source = DT_INST_PROP(index, wakeup_source),
+#define STM32_UART_PM_WAKEUP(index)						\
+	.wakeup_source = DT_INST_PROP(index, wakeup_source),			\
+	.wakeup_line = COND_CODE_1(DT_INST_NODE_HAS_PROP(index, wakeup_line),	\
+			(DT_INST_PROP(index, wakeup_line)),			\
+			(STM32_EXTI_LINE_NONE)),
 #else
 #define STM32_UART_PM_WAKEUP(index) /* Not used */
 #endif

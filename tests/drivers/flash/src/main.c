@@ -55,7 +55,7 @@ static void *flash_driver_setup(void)
 {
 	int rc;
 
-	zassert_true(device_is_ready(flash_dev), NULL);
+	zassert_true(device_is_ready(flash_dev));
 
 	const struct flash_parameters *flash_params =
 			flash_get_parameters(flash_dev);

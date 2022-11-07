@@ -63,7 +63,7 @@ coprocessor directory:
 
 - :file:`overlay-tri-n4m-br.conf`
   This is an overlay for the dedicated Thread Border Router hardware
-  https://www.tridonic.com/com/en/products/net4more-borderROUTER-PoE-Thread.asp.
+  https://www.tridonic.com/com/en/download/data_sheets/net4more_Borderrouter_PoE-Thread_en.pdf.
   The board support is not part of the Zephyr repositories, but the
   product is based on NXP K64 and AT86RF233. This file can be used as an
   example for a development set-up based on development boards.

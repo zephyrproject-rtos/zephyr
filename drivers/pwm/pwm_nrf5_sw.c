@@ -385,5 +385,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    &pwm_nrf5_sw_0_data,
 		    &pwm_nrf5_sw_0_config,
 		    POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_PWM_INIT_PRIORITY,
 		    &pwm_nrf5_sw_drv_api_funcs);

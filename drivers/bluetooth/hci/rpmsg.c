@@ -45,6 +45,17 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 		switch (subevt_type) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 			return true;
+#if defined(CONFIG_BT_EXT_ADV)
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
+		{
+			const struct bt_hci_evt_le_ext_advertising_report *ext_adv =
+				(void *)&evt_data[3];
+
+			return (ext_adv->num_reports == 1) &&
+				   ((ext_adv->adv_info[0].evt_type &
+					 BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0);
+		}
+#endif
 		default:
 			return false;
 		}
@@ -196,7 +207,7 @@ static void bt_rpmsg_rx(const uint8_t *data, size_t len)
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
 
-	BT_HEXDUMP_DBG(data, len, "RPMsg data:");
+	LOG_HEXDUMP_DBG(data, len, "RPMsg data:");
 
 	pkt_indicator = *data++;
 	remaining -= sizeof(pkt_indicator);
@@ -224,7 +235,7 @@ static void bt_rpmsg_rx(const uint8_t *data, size_t len)
 
 		bt_recv(buf);
 
-		BT_HEXDUMP_DBG(buf->data, buf->len, "RX buf payload:");
+		LOG_HEXDUMP_DBG(buf->data, buf->len, "RX buf payload:");
 	}
 }
 
@@ -251,7 +262,7 @@ static int bt_rpmsg_send(struct net_buf *buf)
 	}
 	net_buf_push_u8(buf, pkt_indicator);
 
-	BT_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 	err = ipc_service_send(&hci_ept, buf->data, buf->len);
 	if (err < 0) {
 		BT_ERR("Failed to send (err %d)", err);

@@ -17,6 +17,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROXY)
 #define LOG_MODULE_NAME bt_mesh_gatt
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "mesh.h"
 #include "adv.h"
@@ -590,7 +591,7 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 			uint32_t active = k_uptime_get_32() - sub->node_id_start;
 
 			if (active < NODE_ID_TIMEOUT) {
-				remaining = NODE_ID_TIMEOUT - active;
+				remaining = MIN(remaining, NODE_ID_TIMEOUT - active);
 				BT_DBG("Node ID active for %u ms, %d ms remaining",
 				       active, remaining);
 				err = node_id_adv(sub, remaining);
@@ -632,6 +633,7 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 		}
 	} else {
 		bt_mesh_proxy_beacon_send(sub);
+		bt_mesh_adv_gatt_update();
 	}
 }
 

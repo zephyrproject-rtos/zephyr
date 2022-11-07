@@ -21,8 +21,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define FIRMWARE_VERSION_MAJOR 1
 #define FIRMWARE_VERSION_MINOR 0
 
-#if defined(LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT_MULTIPLE)
-#define MAX_INSTANCE_COUNT LWM2M_FIRMWARE_UPDATE_OBJ_INSTANCE_COUNT
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT_MULTIPLE)
+#define MAX_INSTANCE_COUNT CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_INSTANCE_COUNT
 #else
 #define MAX_INSTANCE_COUNT 1
 #endif
@@ -301,9 +301,8 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	uint8_t state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
 
 	if (state == STATE_IDLE) {
-		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
-
 		if (data_len > 0) {
+			lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
 			lwm2m_firmware_start_transfer(obj_inst_id, package_uri[obj_inst_id]);
 		}
 	} else if (state == STATE_DOWNLOADED && data_len == 0U) {

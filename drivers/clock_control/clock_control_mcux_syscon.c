@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT nxp_lpc_syscon
 #include <errno.h>
-#include <soc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <soc.h>
 #include <fsl_clock.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
@@ -148,6 +148,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 	case MCUX_BUS_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
 		break;
+
+#if defined(CONFIG_I3C_MCUX)
+	case MCUX_I3C_CLK:
+		*rate = CLOCK_GetI3cClkFreq();
+		break;
+#endif
 	}
 
 	return 0;

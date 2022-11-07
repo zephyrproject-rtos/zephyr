@@ -582,7 +582,7 @@ static void hexdump_line_print(const uint8_t *data, uint32_t length,
 		}
 
 		if (i < length) {
-			char c = (char)data[i];
+			unsigned char c = (unsigned char)data[i];
 
 			*buf = isprint((int)c) ? c : '.';
 		} else {

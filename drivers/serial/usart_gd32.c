@@ -12,6 +12,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/irq.h>
 
 #include <gd32_usart.h>
 

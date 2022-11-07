@@ -40,18 +40,6 @@
 #define DAI_INTEL_SSP_PLATFORM_DEFAULT_DELAY	12
 #define DAI_INTEL_SSP_DEFAULT_TRY_TIMES		8
 
-#if CONFIG_SOC_INTEL_CAVS_V15
-/** \brief Number of 'base' SSP ports available */
-#define DAI_INTEL_SSP_NUM_BASE			4
-/** \brief Number of 'extended' SSP ports available */
-#define DAI_INTEL_SSP_NUM_EXT			2
-#else
-/** \brief Number of 'base' SSP ports available */
-#define DAI_INTEL_SSP_NUM_BASE			6
-/** \brief Number of 'extended' SSP ports available */
-#define DAI_INTEL_SSP_NUM_EXT			0
-#endif
-
 /** \brief Number of SSP MCLKs available */
 #define DAI_INTEL_SSP_NUM_MCLK			2
 
@@ -235,14 +223,19 @@
 #define SHIM_CLKCTL_I2SFDCGB(x)		BIT(20 + x)
 #define SHIM_CLKCTL_I2SEFDCGB(x)	BIT(18 + x)
 
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 /** \brief Offset of MCLK Divider Control Register. */
+#define MN_MDIVCTRL 0x100
+
+/** \brief Offset of MCLK Divider x Ratio Register. */
+#define MN_MDIVR(x) (0x180 + (x) * 0x4)
+#else
 #define MN_MDIVCTRL 0x0
+#define MN_MDIVR(x) (0x80 + (x) * 0x4)
+#endif
 
 /** \brief Enables the output of MCLK Divider. */
 #define MN_MDIVCTRL_M_DIV_ENABLE(x) BIT(x)
-
-/** \brief Offset of MCLK Divider x Ratio Register. */
-#define MN_MDIVR(x) (0x80 + (x) * 0x4)
 
 /** \brief Bits for setting MCLK source clock. */
 #define MCDSS(x)	DAI_INTEL_SSP_SET_BITS(17, 16, x)
@@ -288,7 +281,8 @@ struct dai_intel_ssp_mn {
 	int mclk_source_clock;
 
 #if CONFIG_INTEL_MN
-	enum bclk_source bclk_sources[(DAI_INTEL_SSP_NUM_BASE + DAI_INTEL_SSP_NUM_EXT)];
+	enum bclk_source bclk_sources[(CONFIG_DAI_INTEL_SSP_NUM_BASE +
+				       CONFIG_DAI_INTEL_SSP_NUM_EXT)];
 	int bclk_source_mn_clock;
 #endif
 

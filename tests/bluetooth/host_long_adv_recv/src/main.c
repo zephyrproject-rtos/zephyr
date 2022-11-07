@@ -430,7 +430,7 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 	send_adv_report(&report_a_2);
 	send_adv_report(&report_b_1);
 	send_adv_report(&report_b_2);
-	zassert_equal(2, get_expected_report_fake.call_count, NULL);
+	zassert_equal(2, get_expected_report_fake.call_count);
 	RESET_FAKE(get_expected_report);
 	FFF_RESET_HISTORY();
 
@@ -441,7 +441,7 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 	send_adv_report(&report_a_1);
 	send_adv_report(&report_c); /* Interleaved legacy adv report */
 	send_adv_report(&report_a_2);
-	zassert_equal(2, get_expected_report_fake.call_count, NULL);
+	zassert_equal(2, get_expected_report_fake.call_count);
 	RESET_FAKE(get_expected_report);
 	FFF_RESET_HISTORY();
 
@@ -452,7 +452,7 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 	send_adv_report(&report_a_1);
 	send_adv_report(&report_b_2); /* Interleaved short extended adv report */
 	send_adv_report(&report_a_2);
-	zassert_equal(2, get_expected_report_fake.call_count, NULL);
+	zassert_equal(2, get_expected_report_fake.call_count);
 	RESET_FAKE(get_expected_report);
 	FFF_RESET_HISTORY();
 
@@ -466,7 +466,7 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 	send_adv_report(&report_b_1); /* Interleaved fragmented adv report, NOT SUPPORTED */
 	send_adv_report(&report_a_2);
 	send_adv_report(&report_b_2);
-	zassert_equal(2, get_expected_report_fake.call_count, NULL);
+	zassert_equal(2, get_expected_report_fake.call_count);
 	RESET_FAKE(get_expected_report);
 	FFF_RESET_HISTORY();
 
@@ -486,5 +486,5 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 	/* Check that reports from a different advertiser works after truncation */
 	send_adv_report(&report_b_1);
 	send_adv_report(&report_b_2);
-	zassert_equal(1, get_expected_report_fake.call_count, NULL);
+	zassert_equal(1, get_expected_report_fake.call_count);
 }

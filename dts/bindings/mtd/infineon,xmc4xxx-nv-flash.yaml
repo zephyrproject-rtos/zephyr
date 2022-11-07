@@ -1,0 +1,22 @@
+# Copyright (c) 2022, Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+description: XMC4XXX flash
+
+compatible: "infineon,xmc4xxx-nv-flash"
+
+include: soc-nv-flash.yaml
+
+child-binding:
+    description: Flash page layout description
+    child-binding:
+        description: Individual flash page layout entry
+        properties:
+            pages-count:
+              description: Number of consecutive pages with size pages-size bytes
+              type: int
+              required: true
+
+            pages-size:
+              type: int
+              required: true

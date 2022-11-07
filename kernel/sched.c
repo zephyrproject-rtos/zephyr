@@ -279,7 +279,7 @@ static void signal_pending_ipi(void)
 	 * this code.
 	 */
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	if (CONFIG_MP_NUM_CPUS > 1) {
+	if (arch_num_cpus() > 1) {
 		if (_kernel.pending_ipi) {
 			_kernel.pending_ipi = false;
 			arch_sched_ipi();
@@ -593,7 +593,9 @@ static bool thread_active_elsewhere(struct k_thread *thread)
 #ifdef CONFIG_SMP
 	int currcpu = _current_cpu->id;
 
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		if ((i != currcpu) &&
 		    (_kernel.cpus[i].current == thread)) {
 			return true;
@@ -606,7 +608,7 @@ static bool thread_active_elsewhere(struct k_thread *thread)
 static void flag_ipi(void)
 {
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	if (CONFIG_MP_NUM_CPUS > 1) {
+	if (arch_num_cpus() > 1) {
 		_kernel.pending_ipi = true;
 	}
 #endif
@@ -755,17 +757,13 @@ static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 	}
 }
 
-static void pend(struct k_thread *thread, _wait_q_t *wait_q,
-		 k_timeout_t timeout)
+static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
+			k_timeout_t timeout)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(wait_q == NULL || arch_mem_coherent(wait_q));
 #endif
-
-	LOCKED(&sched_spinlock) {
-		add_to_waitq_locked(thread, wait_q);
-	}
-
+	add_to_waitq_locked(thread, wait_q);
 	add_thread_timeout(thread, timeout);
 }
 
@@ -773,7 +771,9 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout)
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
-	pend(thread, wait_q, timeout);
+	LOCKED(&sched_spinlock) {
+		pend_locked(thread, wait_q, timeout);
+	}
 }
 
 static inline void unpend_thread_no_timeout(struct k_thread *thread)
@@ -815,7 +815,12 @@ void z_thread_timeout(struct _timeout *timeout)
 
 int z_pend_curr_irqlock(uint32_t key, _wait_q_t *wait_q, k_timeout_t timeout)
 {
-	pend(_current, wait_q, timeout);
+	/* This is a legacy API for pre-switch architectures and isn't
+	 * correctly synchronized for multi-cpu use
+	 */
+	__ASSERT_NO_MSG(!IS_ENABLED(CONFIG_SMP));
+
+	pend_locked(_current, wait_q, timeout);
 
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
@@ -838,8 +843,20 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif
-	pend(_current, wait_q, timeout);
-	return z_swap(lock, key);
+	__ASSERT_NO_MSG(sizeof(sched_spinlock) == 0 || lock != &sched_spinlock);
+
+	/* We do a "lock swap" prior to calling z_swap(), such that
+	 * the caller's lock gets released as desired.  But we ensure
+	 * that we hold the scheduler lock and leave local interrupts
+	 * masked until we reach the context swich.  z_swap() itself
+	 * has similar code; the duplication is because it's a legacy
+	 * API that doesn't expect to be called with scheduler lock
+	 * held.
+	 */
+	(void) k_spin_lock(&sched_spinlock);
+	pend_locked(_current, wait_q, timeout);
+	k_spin_release(lock);
+	return z_swap(&sched_spinlock, key);
 }
 
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
@@ -1276,7 +1293,9 @@ void init_ready_q(struct _ready_q *rq)
 void z_sched_init(void)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		init_ready_q(&_kernel.cpus[i].ready_q);
 	}
 #else
@@ -1592,7 +1611,7 @@ static inline int z_vrfy_k_is_preempt_thread(void)
 #ifdef CONFIG_SCHED_CPU_MASK
 # ifdef CONFIG_SMP
 /* Right now we use a single byte for this mask */
-BUILD_ASSERT(CONFIG_MP_NUM_CPUS <= 8, "Too many CPUs for mask word");
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 8, "Too many CPUs for mask word");
 # endif
 
 
@@ -1601,8 +1620,8 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 	int ret = 0;
 
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	__ASSERT((thread->base.thread_state != _THREAD_PRESTART),
-		 "Only PRESTARTED threads can change CPU pin");
+	__ASSERT(z_is_thread_prevented_from_running(thread),
+		 "Running threads cannot change CPU pin");
 #endif
 
 	LOCKED(&sched_spinlock) {

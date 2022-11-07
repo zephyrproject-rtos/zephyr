@@ -17,6 +17,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HFP_HF)
 #define LOG_MODULE_NAME bt_hfp_hf
 #include "common/log.h"
+#include "common/assert.h"
 
 #include <zephyr/bluetooth/rfcomm.h>
 #include <zephyr/bluetooth/hfp_hf.h>

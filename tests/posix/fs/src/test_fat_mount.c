@@ -54,5 +54,5 @@ void test_unmount(void *unused)
 ZTEST(posix_fs_test, test_fs_mount)
 {
 	/* FIXME: restructure tests as per #46897 */
-	zassert_equal(fatfs_mnt.flags, FS_MOUNT_FLAG_USE_DISK_ACCESS, NULL);
+	zassert_equal(fatfs_mnt.flags, FS_MOUNT_FLAG_USE_DISK_ACCESS);
 }

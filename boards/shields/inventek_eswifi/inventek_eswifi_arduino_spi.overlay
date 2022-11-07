@@ -10,7 +10,7 @@
 	/* D10 */
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;
 
-	wifi0: iwin@0 {
+	wifi0_inventek_eswifi_arduino_spi: iwin@0 {
 		status = "okay";
 		compatible = "inventek,eswifi";
 		spi-max-frequency = <2000000>;

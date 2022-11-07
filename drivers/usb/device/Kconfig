@@ -156,6 +156,11 @@ config USB_DC_MSG_QUEUE_LEN
 	  Maximum number of messages USB device controller interrupt can queue
 	  for callback thread
 
+config USB_MCUX_THREAD_STACK_SIZE
+	int "Stack size for the USB driver"
+	default 1024
+	help
+	  Size of the stack used for the internal USB thread.
 
 endif # USB_MCUX
 

@@ -45,9 +45,9 @@ ZTEST(crc, test_crc32_ieee)
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 	uint8_t test3[] = { 'Z', 'e', 'p', 'h', 'y', 'r' };
 
-	zassert_equal(crc32_ieee(test1, sizeof(test1)), 0xD3D99E8B, NULL);
-	zassert_equal(crc32_ieee(test2, sizeof(test2)), 0xCBF43926, NULL);
-	zassert_equal(crc32_ieee(test3, sizeof(test3)), 0x20089AA4, NULL);
+	zassert_equal(crc32_ieee(test1, sizeof(test1)), 0xD3D99E8B);
+	zassert_equal(crc32_ieee(test2, sizeof(test2)), 0xCBF43926);
+	zassert_equal(crc32_ieee(test3, sizeof(test3)), 0x20089AA4);
 }
 
 ZTEST(crc, test_crc16)
@@ -59,13 +59,13 @@ ZTEST(crc, test_crc16)
 	 * check=0x2189
 	 * poly is 0x1021, reflected 0x8408
 	 */
-	zassert_equal(crc16_reflect(0x8408, 0x0, test, sizeof(test)), 0x2189, NULL);
+	zassert_equal(crc16_reflect(0x8408, 0x0, test, sizeof(test)), 0x2189);
 
 	/* CRC-16/DECT-X
 	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-dect-x
 	 * check=0x007f
 	 */
-	zassert_equal(crc16(0x0589, 0x0, test, sizeof(test)), 0x007f, NULL);
+	zassert_equal(crc16(0x0589, 0x0, test, sizeof(test)), 0x007f);
 }
 
 ZTEST(crc, test_crc16_ansi)
@@ -79,8 +79,8 @@ ZTEST(crc, test_crc16_ansi)
 	 * check=0x4b37
 	 * poly is 0x1021, reflected 0xA001
 	 */
-	zassert_equal(crc16_c, 0x4b37, NULL);
-	zassert_equal(crc16_reflect(0xA001, 0xffff, test, sizeof(test)), crc16_c, NULL);
+	zassert_equal(crc16_c, 0x4b37);
+	zassert_equal(crc16_reflect(0xA001, 0xffff, test, sizeof(test)), crc16_c);
 }
 
 ZTEST(crc, test_crc16_ccitt)
@@ -91,13 +91,13 @@ ZTEST(crc, test_crc16_ccitt)
 	uint8_t test3[] = { 'Z', 'e', 'p', 'h', 'y', 'r', 0, 0 };
 	uint16_t crc;
 
-	zassert_equal(crc16_ccitt(0, test0, sizeof(test0)), 0x0, NULL);
-	zassert_equal(crc16_ccitt(0, test1, sizeof(test1)), 0x538d, NULL);
+	zassert_equal(crc16_ccitt(0, test0, sizeof(test0)), 0x0);
+	zassert_equal(crc16_ccitt(0, test1, sizeof(test1)), 0x538d);
 	/* CRC-16/CCITT, CRC-16/CCITT-TRUE, CRC-16/KERMIT
 	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-kermit
 	 * check=0x2189
 	 */
-	zassert_equal(crc16_ccitt(0, test2, sizeof(test2)), 0x2189, NULL);
+	zassert_equal(crc16_ccitt(0, test2, sizeof(test2)), 0x2189);
 	/* CRC-16/X-25, CRC-16/IBM-SDLC, CRC-16/ISO-HDLC
 	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-ibm-sdlc
 	 * check=0x906e
@@ -112,7 +112,7 @@ ZTEST(crc, test_crc16_ccitt)
 	test3[sizeof(test3)-2] = (uint8_t)(crc >> 0);
 	test3[sizeof(test3)-1] = (uint8_t)(crc >> 8);
 
-	zassert_equal(crc16_ccitt(0, test3, sizeof(test3)), 0, NULL);
+	zassert_equal(crc16_ccitt(0, test3, sizeof(test3)), 0);
 }
 
 ZTEST(crc, test_crc16_ccitt_for_ppp)
@@ -142,17 +142,17 @@ ZTEST(crc, test_crc16_itu_t)
 	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-xmodem
 	 * check=0x31c3
 	 */
-	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)), 0x31c3, NULL);
+	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)), 0x31c3);
 	/* CRC16/CCITT-FALSE, CRC-16/IBM-3740, CRC-16/AUTOSAR
 	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-ibm-3740
 	 * check=0x29b1
 	 */
-	zassert_equal(crc16_itu_t(0xffff, test2, sizeof(test2)), 0x29b1, NULL);
+	zassert_equal(crc16_itu_t(0xffff, test2, sizeof(test2)), 0x29b1);
 	/* CRC-16/GSM
 	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-gsm
 	 * check=0xce3c
 	 */
-	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)) ^ 0xffff, 0xce3c, NULL);
+	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)) ^ 0xffff, 0xce3c);
 
 }
 
@@ -176,9 +176,9 @@ ZTEST(crc, test_crc7_be)
 	uint8_t test1[] = { 'A' };
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert_equal(crc7_be(0, test0, sizeof(test0)), 0, NULL);
-	zassert_equal(crc7_be(0, test1, sizeof(test1)), 0xDA, NULL);
-	zassert_equal(crc7_be(0, test2, sizeof(test2)), 0xEA, NULL);
+	zassert_equal(crc7_be(0, test0, sizeof(test0)), 0);
+	zassert_equal(crc7_be(0, test1, sizeof(test1)), 0xDA);
+	zassert_equal(crc7_be(0, test2, sizeof(test2)), 0xEA);
 }
 
 ZTEST(crc, test_crc8)

@@ -85,9 +85,9 @@ Thread Resource Pools
 A small subset of kernel APIs, invoked as system calls, require heap memory
 allocations. This memory is used only by the kernel and is not accessible
 directly by user mode. In order to use these system calls, invoking threads
-must assign themselves to a resource pool, which is a k_mem_pool object.
-Memory is drawn from a thread's resource pool using :c:func:`z_thread_malloc`
-and freed with :c:func:`k_free`.
+must assign themselves to a resource pool, which is a :c:struct:`k_heap`
+object. Memory is drawn from a thread's resource pool using
+:c:func:`z_thread_malloc` and freed with :c:func:`k_free`.
 
 The APIs which use resource pools are as follows, with any alternatives
 noted for users who do not want heap allocations within their application:
@@ -305,7 +305,7 @@ There are a few memory partitions which are pre-defined by the system:
 
  - ``z_libc_partition`` - Contains globals required by the C library and runtime.
    Required when using either the Minimal C library or the Newlib C Library.
-   Required when option:`CONFIG_STACK_CANARIES` is enabled.
+   Required when :kconfig:option:`CONFIG_STACK_CANARIES` is enabled.
 
 Library-specific partitions are listed in ``include/app_memory/partitions.h``.
 For example, to use the MBEDTLS library from user mode, the

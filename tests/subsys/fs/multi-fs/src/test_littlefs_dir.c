@@ -13,15 +13,15 @@
 
 void test_littlefs_mkdir(void)
 {
-	zassert_true(test_mkdir(TEST_DIR_PATH, TEST_FILE) == TC_PASS, NULL);
+	zassert_true(test_mkdir(TEST_DIR_PATH, TEST_FILE) == TC_PASS);
 }
 
 void test_littlefs_readdir(void)
 {
-	zassert_true(test_lsdir(TEST_DIR_PATH) == TC_PASS, NULL);
+	zassert_true(test_lsdir(TEST_DIR_PATH) == TC_PASS);
 }
 
 void test_littlefs_rmdir(void)
 {
-	zassert_true(test_rmdir(TEST_DIR_PATH) == TC_PASS, NULL);
+	zassert_true(test_rmdir(TEST_DIR_PATH) == TC_PASS);
 }

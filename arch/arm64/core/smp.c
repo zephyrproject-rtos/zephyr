@@ -22,6 +22,7 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/sys/arch_interface.h>
+#include <zephyr/irq.h>
 #include "boot.h"
 
 #define SGI_SCHED_IPI	0
@@ -47,7 +48,6 @@ volatile struct boot_params __aligned(L1_CACHE_BYTES) arm64_cpu_boot_params = {
 static const uint64_t cpu_node_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
 };
-static uint16_t target_list_mask;
 
 extern void z_arm64_mm_init(bool is_primary_core);
 
@@ -64,8 +64,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	master_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
 
 	cpu_count = ARRAY_SIZE(cpu_node_list);
-	__ASSERT(cpu_count == CONFIG_MP_NUM_CPUS,
-		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_NUM_CPUS\n");
+	__ASSERT(cpu_count == CONFIG_MP_MAX_NUM_CPUS,
+		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_MAX_NUM_CPUS\n");
 
 	for (i = 0, j = 0; i < cpu_count; i++) {
 		if (cpu_node_list[i] == master_core_mpid) {
@@ -106,8 +106,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	while (arm64_cpu_boot_params.fn) {
 		wfe();
 	}
-	/* Set secondary cores bit mask */
-	target_list_mask |= 1 << MPIDR_TO_CORE(cpu_mpid);
 	printk("Secondary CPU core %d (MPID:%#llx) is up\n", cpu_num, cpu_mpid);
 }
 
@@ -157,14 +155,23 @@ void z_arm64_secondary_start(void)
 
 static void broadcast_ipi(unsigned int ipi)
 {
-	const uint64_t mpidr = GET_MPIDR();
+	uint64_t mpidr = MPIDR_TO_CORE(GET_MPIDR());
 
 	/*
 	 * Send SGI to all cores except itself
-	 * Note: Assume only one Cluster now.
 	 */
-	gic_raise_sgi(ipi, mpidr, target_list_mask &
-		      ~(1 << MPIDR_TO_CORE(mpidr)));
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
+		uint64_t target_mpidr = cpu_node_list[i];
+		uint8_t aff0 = MPIDR_AFFLVL(target_mpidr, 0);
+
+		if (mpidr == target_mpidr) {
+			continue;
+		}
+
+		gic_raise_sgi(ipi, target_mpidr, 1 << aff0);
+	}
 }
 
 void sched_ipi_handler(const void *unused)
@@ -211,17 +218,15 @@ void flush_fpu_ipi_handler(const void *unused)
 void z_arm64_flush_fpu_ipi(unsigned int cpu)
 {
 	const uint64_t mpidr = cpu_node_list[cpu];
+	uint8_t aff0 = MPIDR_AFFLVL(mpidr, 0);
 
-	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << MPIDR_TO_CORE(mpidr));
+	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
 }
 #endif
 
 static int arm64_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-
-	/* Seting the primary core bit mask */
-	target_list_mask |= 1 << MPIDR_TO_CORE(GET_MPIDR());
 
 	/*
 	 * SGI0 is use for sched ipi, this might be changed to use Kconfig

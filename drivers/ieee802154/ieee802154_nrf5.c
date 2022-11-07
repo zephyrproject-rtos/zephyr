@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/random/rand32.h>
 
 #include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/irq.h>
 
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
@@ -379,8 +380,8 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 		ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
 	}
 
-	ack_pkt = net_pkt_alloc_with_buffer(nrf5_radio->iface, ack_len,
-					    AF_UNSPEC, 0, K_NO_WAIT);
+	ack_pkt = net_pkt_rx_alloc_with_buffer(nrf5_radio->iface, ack_len,
+					       AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
@@ -441,14 +442,14 @@ static bool nrf5_tx_immediate(struct net_pkt *pkt, uint8_t *payload, bool cca)
 {
 	nrf_802154_transmit_metadata_t metadata = {
 		.frame_props = {
-			.is_secured = pkt->ieee802154_frame_secured,
-			.dynamic_data_is_set = pkt->ieee802154_mac_hdr_rdy,
+			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
+			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = pkt->ieee802154_txpwr,
+			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
 	};
@@ -461,13 +462,13 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 {
 	nrf_802154_transmit_csma_ca_metadata_t metadata = {
 		.frame_props = {
-			.is_secured = pkt->ieee802154_frame_secured,
-			.dynamic_data_is_set = pkt->ieee802154_mac_hdr_rdy,
+			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
+			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = pkt->ieee802154_txpwr,
+			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
 	};
@@ -548,15 +549,15 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 {
 	nrf_802154_transmit_at_metadata_t metadata = {
 		.frame_props = {
-			.is_secured = pkt->ieee802154_frame_secured,
-			.dynamic_data_is_set = pkt->ieee802154_mac_hdr_rdy,
+			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
+			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
 		.channel = nrf_802154_channel_get(),
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = pkt->ieee802154_txpwr,
+			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
 	};
@@ -940,9 +941,10 @@ static int nrf5_configure(const struct device *dev,
 		sys_put_le16(config->ack_ie.short_addr, short_addr_le);
 		/**
 		 * The extended address field passed to this function starts
-		 * with the leftmost octet and ends with the rightmost octet.
+		 * with the most significant octet and ends with the least
+		 * significant octet (i.e. big endian byte order).
 		 * The IEEE 802.15.4 transmission order mandates this order to be
-		 * reversed in a transmitted frame.
+		 * reversed (i.e. little endian byte order) in a transmitted frame.
 		 *
 		 * The nrf_802154_ack_data_set expects extended address in transmission
 		 * order.

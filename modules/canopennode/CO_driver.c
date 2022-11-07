@@ -124,15 +124,16 @@ static void canopen_tx_retry(struct k_work *item)
 	int err;
 	uint16_t i;
 
+	memset(&frame, 0, sizeof(frame));
+
 	CO_LOCK_CAN_SEND();
 
 	for (i = 0; i < CANmodule->tx_size; i++) {
 		buffer = &CANmodule->tx_array[i];
 		if (buffer->bufferFull) {
-			frame.id_type = CAN_STANDARD_IDENTIFIER;
 			frame.id = buffer->ident;
 			frame.dlc = buffer->DLC;
-			frame.rtr = (buffer->rtr ? 1 : 0);
+			frame.flags |= (buffer->rtr ? CAN_FRAME_RTR : 0);
 			memcpy(frame.data, buffer->data, buffer->DLC);
 
 			err = can_send(CANmodule->dev, &frame, K_NO_WAIT,
@@ -157,11 +158,25 @@ static void canopen_tx_retry(struct k_work *item)
 
 void CO_CANsetConfigurationMode(void *CANdriverState)
 {
-	/* No operation */
+	struct canopen_context *ctx = (struct canopen_context *)CANdriverState;
+	int err;
+
+	err = can_stop(ctx->dev);
+	if (err != 0 && err != -EALREADY) {
+		LOG_ERR("failed to stop CAN interface (err %d)", err);
+	}
 }
 
 void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule)
 {
+	int err;
+
+	err = can_start(CANmodule->dev);
+	if (err != 0 && err != -EALREADY) {
+		LOG_ERR("failed to start CAN interface (err %d)", err);
+		return;
+	}
+
 	CANmodule->CANnormal = true;
 }
 
@@ -183,7 +198,7 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 		return CO_ERROR_ILLEGAL_ARGUMENT;
 	}
 
-	max_filters = can_get_max_filters(ctx->dev, CAN_STANDARD_IDENTIFIER);
+	max_filters = can_get_max_filters(ctx->dev, false);
 	if (max_filters != -ENOSYS) {
 		if (max_filters < 0) {
 			LOG_ERR("unable to determine number of CAN RX filters");
@@ -250,8 +265,8 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 
 	canopen_detach_all_rx_filters(CANmodule);
 
-	err = can_set_mode(CANmodule->dev, CAN_MODE_LISTENONLY);
-	if (err) {
+	err = can_stop(CANmodule->dev);
+	if (err != 0 && err != -EALREADY) {
 		LOG_ERR("failed to disable CAN interface (err %d)", err);
 	}
 }
@@ -284,11 +299,9 @@ CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
 	buffer->object = object;
 	buffer->pFunct = pFunct;
 
-	filter.id_type = CAN_STANDARD_IDENTIFIER;
+	filter.flags = (rtr ? CAN_FILTER_RTR : CAN_FILTER_DATA);
 	filter.id = ident;
-	filter.id_mask = mask;
-	filter.rtr = (rtr ? 1 : 0);
-	filter.rtr_mask = 1;
+	filter.mask = mask;
 
 	if (buffer->filter_id != -ENOSPC) {
 		can_remove_rx_filter(CANmodule->dev, buffer->filter_id);
@@ -344,6 +357,8 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
 		return CO_ERROR_ILLEGAL_ARGUMENT;
 	}
 
+	memset(&frame, 0, sizeof(frame));
+
 	CO_LOCK_CAN_SEND();
 
 	if (buffer->bufferFull) {
@@ -355,10 +370,9 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
 		ret = CO_ERROR_TX_OVERFLOW;
 	}
 
-	frame.id_type = CAN_STANDARD_IDENTIFIER;
 	frame.id = buffer->ident;
 	frame.dlc = buffer->DLC;
-	frame.rtr = (buffer->rtr ? 1 : 0);
+	frame.flags = (buffer->rtr ? CAN_FRAME_RTR : 0);
 	memcpy(frame.data, buffer->data, buffer->DLC);
 
 	err = can_send(CANmodule->dev, &frame, K_NO_WAIT, canopen_tx_callback,

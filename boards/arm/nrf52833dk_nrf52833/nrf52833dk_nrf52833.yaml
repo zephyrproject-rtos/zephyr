@@ -19,3 +19,4 @@ supported:
   - pwm
   - watchdog
   - counter
+  - netif:openthread

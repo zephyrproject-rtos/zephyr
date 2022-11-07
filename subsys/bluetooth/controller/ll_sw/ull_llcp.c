@@ -60,14 +60,14 @@ sys_slist_t tx_buffer_wait_list;
 static uint8_t common_tx_buffer_alloc;
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * LLCP_TX_CTRL_BUF_COUNT];
+static uint8_t MALIGN(4) buffer_mem_tx[TX_CTRL_BUF_SIZE * LLCP_TX_CTRL_BUF_COUNT];
 static struct llcp_mem_pool mem_tx = { .pool = buffer_mem_tx };
 
-static uint8_t buffer_mem_local_ctx[PROC_CTX_BUF_SIZE *
+static uint8_t MALIGN(4) buffer_mem_local_ctx[PROC_CTX_BUF_SIZE *
 				    CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_local_ctx = { .pool = buffer_mem_local_ctx };
 
-static uint8_t buffer_mem_remote_ctx[PROC_CTX_BUF_SIZE *
+static uint8_t MALIGN(4) buffer_mem_remote_ctx[PROC_CTX_BUF_SIZE *
 				     CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_remote_ctx = { .pool = buffer_mem_remote_ctx };
 
@@ -293,6 +293,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 	ctx->proc = proc;
 	ctx->collision = 0U;
 	ctx->done = 0U;
+	ctx->rx_greedy = 0U;
 
 	/* Clear procedure data */
 	memset((void *)&ctx->data, 0, sizeof(ctx->data));
@@ -1767,7 +1768,7 @@ void test_int_mem_proc_ctx(void)
 	}
 
 	nr_of_free_ctx = local_ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, 0, NULL);
+	zassert_equal(nr_of_free_ctx, 0);
 
 	ctx2 = proc_ctx_acquire(&mem_local_ctx);
 
@@ -1776,7 +1777,7 @@ void test_int_mem_proc_ctx(void)
 
 	llcp_proc_ctx_release(ctx1);
 	nr_of_free_ctx = local_ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, 1, NULL);
+	zassert_equal(nr_of_free_ctx, 1);
 
 	ctx1 = proc_ctx_acquire(&mem_local_ctx);
 
@@ -1858,8 +1859,8 @@ void test_int_create_proc(void)
 	ctx = create_procedure(PROC_VERSION_EXCHANGE, &mem_local_ctx);
 	zassert_not_null(ctx, NULL);
 
-	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE, NULL);
-	zassert_equal(ctx->collision, 0, NULL);
+	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE);
+	zassert_equal(ctx->collision, 0);
 
 	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
 		zassert_not_null(ctx, NULL);
@@ -1881,8 +1882,8 @@ void test_int_llcp_init(void)
 
 	ull_llcp_init(&conn);
 
-	zassert_equal(conn.llcp.local.pause, 0, NULL);
-	zassert_equal(conn.llcp.remote.pause, 0, NULL);
+	zassert_equal(conn.llcp.local.pause, 0);
+	zassert_equal(conn.llcp.remote.pause, 0);
 }
 
 #endif

@@ -1,0 +1,64 @@
+# Copyright (c) 2017, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for I3C devices
+
+include: [base.yaml, power.yaml]
+
+on-bus: i3c
+
+properties:
+    reg:
+      required: true
+      description: |
+        Contains 3 fields.
+
+        For I3C devices, the 3 fields are static address, first half
+        of Provisioned ID, and the second half of the Provisioned ID.
+          1. The static address can be assigned to be the target device's
+             dynamic address before Dynamic Address Assignment (DAA)
+             starts. Can be zero if static address is not used, and
+             target address is determined via DAA.
+          2. First half of the Provisioned ID contains the manufacturer
+             ID left-shifted by 1, where the manufacturer ID is
+             the bits 33-47 (zero-based) of the 48-bit Provisioned ID.
+          3. Second half of the Provisioned ID contains the combination of
+             the part ID (bits 16-31 of the Provisioned ID) left-shifted
+             by 16, and the instance ID (bits 12-15 of the Provisioned ID)
+             left-shifted by 12. Basically, this is the lower 32 bits
+             of the Provisioned ID.
+
+        Note that the DT node of a I3C target device should be in format
+        "<node name>@<address + PID>", e.g. "sensor@4200001234012345678",
+        where the PID part is expanded to be a 64-bit integer.
+
+        For I2C devices, the 3 fields are static address, 0x00, and
+        value of the Legacy Virtual Register (LVR).
+           1. 7-bit address of the I2C device. (Note that 10-bit
+              addressing is not supported.)
+           2. Always 0x00.
+           3. LVR describes the I2C device where,
+              * bit[31:8]: unused.
+              * bit[7:5]: I2C device index:
+                  * Index 0: I2C device has a 50 ns spike filter where
+                             it is not affected by high frequency on SCL.
+                  * Index 1: I2C device does not have a 50 ns spike filter
+                             but can work with high frequency on SCL.
+                  * Index 2: I2C device does not have a 50 ns spike filter
+                             and cannot work with high frequency on SCL.
+                  * Other values are reserved.
+              * bit[4]: I2C mode indicator:
+                  * 0: FM+ mode
+                  * 1: FM mode
+              * bit[3:0]: reserved.
+
+        The DT node of a I2C device should be in format
+        "<node name>@<address + 00000000 + LVR>",
+        e.g. "sensor@5000000000000000FF", where the middle 0x00 and LVR
+        are both expanded to 32-bit integers.
+
+    assigned-address:
+      type: int
+      required: false
+      description: |
+        Dynamic address to be assigned to the device.

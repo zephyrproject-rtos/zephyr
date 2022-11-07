@@ -23,11 +23,11 @@ extern "C" {
 #endif
 
 struct usb_req_type_field {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t recipient : 5;
 	uint8_t type : 2;
 	uint8_t direction : 1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 	uint8_t direction : 1;
 	uint8_t type : 2;
 	uint8_t recipient : 5;

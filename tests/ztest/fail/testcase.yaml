@@ -50,3 +50,11 @@ tests:
     platform_allow: native_posix
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_PASS_TEARDOWN=y
+  testing.fail.unit.fail_on_bad_assumption:
+    type: unit
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_UNEXPECTED_ASSUME=y
+  testing.fail.zephyr.fail_on_bad_assumption:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_UNEXPECTED_ASSUME=y

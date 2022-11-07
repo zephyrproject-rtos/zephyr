@@ -35,7 +35,7 @@ void thread_sema(void const *arg)
 	 * and release it.
 	 */
 	tokens_available = osSemaphoreWait((osSemaphoreId)arg, 0);
-	zassert_true(tokens_available > 0, NULL);
+	zassert_true(tokens_available > 0);
 
 	zassert_true(osSemaphoreRelease((osSemaphoreId)arg) == osOK,
 			"Semaphore release failure");

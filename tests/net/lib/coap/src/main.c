@@ -995,4 +995,32 @@ ZTEST(coap, test_observer_client)
 	zassert_not_null(reply, "Couldn't find a matching waiting reply");
 }
 
+ZTEST(coap, test_handle_invalid_coap_req)
+{
+	struct coap_packet pkt;
+	uint8_t *data = data_buf[0];
+	struct coap_option options[4] = {};
+	uint8_t opt_num = 4;
+	int r;
+	const char *const *p;
+
+	r = coap_packet_init(&pkt, data, COAP_BUF_SIZE, COAP_VERSION_1,
+					COAP_TYPE_CON, 0, NULL, 0xFF, coap_next_id());
+
+	zassert_equal(r, 0, "Unable to init req");
+
+	for (p = server_resource_1_path; p && *p; p++) {
+		r = coap_packet_append_option(&pkt, COAP_OPTION_URI_PATH,
+					*p, strlen(*p));
+		zassert_equal(r, 0, "Unable to append option");
+	}
+
+	r = coap_packet_parse(&pkt, data, pkt.offset, options, opt_num);
+	zassert_equal(r, 0, "Could not parse req packet");
+
+	r = coap_handle_request(&pkt, server_resources, options, opt_num,
+					(struct sockaddr *) &dummy_addr, sizeof(dummy_addr));
+	zassert_equal(r, -ENOTSUP, "Request handling should fail with -ENOTSUP");
+}
+
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

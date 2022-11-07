@@ -101,20 +101,20 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 /* export test cases */
 ZTEST(dma_m2m, test_dma_m2m_chan0_burst8)
 {
-	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8) == TC_PASS), NULL);
+	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8) == TC_PASS));
 }
 
 ZTEST(dma_m2m, test_dma_m2m_chan1_burst8)
 {
-	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8) == TC_PASS), NULL);
+	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8) == TC_PASS));
 }
 
 ZTEST(dma_m2m, test_dma_m2m_chan0_burst16)
 {
-	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16) == TC_PASS), NULL);
+	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16) == TC_PASS));
 }
 
 ZTEST(dma_m2m, test_dma_m2m_chan1_burst16)
 {
-	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16) == TC_PASS), NULL);
+	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16) == TC_PASS));
 }

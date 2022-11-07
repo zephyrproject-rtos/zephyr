@@ -32,7 +32,7 @@
  */
 #if defined(CONFIG_ARC_FIRQ_STACK)
 #if defined(CONFIG_SMP)
-K_KERNEL_STACK_ARRAY_DEFINE(_firq_interrupt_stack, CONFIG_MP_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_DEFINE(_firq_interrupt_stack, CONFIG_MP_MAX_NUM_CPUS,
 			    CONFIG_ARC_FIRQ_STACK_SIZE);
 #else
 K_KERNEL_STACK_DEFINE(_firq_interrupt_stack, CONFIG_ARC_FIRQ_STACK_SIZE);

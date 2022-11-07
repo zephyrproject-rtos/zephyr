@@ -12,8 +12,6 @@ if ESPI
 
 source "drivers/espi/Kconfig.xec"
 
-source "drivers/espi/Kconfig.xec_v2"
-
 source "drivers/espi/Kconfig.npcx"
 
 source "drivers/espi/Kconfig.espi_emul"
@@ -177,5 +175,20 @@ config ESPI_OOB_CHANNEL_RX_ASYNC
 	help
 	  Enables asynchronous handling for host-initiated OOB traffic.
 	  Otherwise OOB traffic is assumed to be always client-initiated.
+
+config ESPI_SAF
+	bool "ESPI SAF driver"
+	depends on ESPI_FLASH_CHANNEL
+	help
+	  Enable Slave Attached Flash eSPI driver. SAF depends upon ESPI driver
+	  and flash channel.
+
+config ESPI_SAF_INIT_PRIORITY
+	int "ESPI SAF driver initialization priority"
+	depends on ESPI_SAF
+	default 4
+	help
+	  Driver initialization priority for eSPI SAF driver. SAF driver must
+	  initialize after the ESPI driver.
 
 endif # ESPI

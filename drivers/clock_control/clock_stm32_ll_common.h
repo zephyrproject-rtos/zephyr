@@ -8,6 +8,10 @@
 #ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_STM32_LL_CLOCK_H_
 #define ZEPHYR_DRIVERS_CLOCK_CONTROL_STM32_LL_CLOCK_H_
 
+#include <stdint.h>
+
+#include <zephyr/device.h>
+
 #include <stm32_ll_utils.h>
 
 #if CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK
@@ -61,6 +65,9 @@
 void config_pll_sysclock(void);
 uint32_t get_pllout_frequency(void);
 uint32_t get_pllsrc_frequency(void);
+#endif
+#if defined(STM32_PLL2_ENABLED)
+void config_pll2(void);
 #endif
 void config_enable_default_clocks(void);
 

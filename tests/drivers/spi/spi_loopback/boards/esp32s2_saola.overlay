@@ -8,11 +8,15 @@
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
-		spi-max-frequency = <500000>;
+		spi-max-frequency = <100000>;
 	};
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;
 		spi-max-frequency = <16000000>;
 	};
+};
+
+&spi3 {
+	dma-enabled;
 };

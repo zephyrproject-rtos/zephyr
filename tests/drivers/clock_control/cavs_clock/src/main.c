@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/ztest.h>
-#include <zephyr/drivers/clock_control/clock_control_cavs.h>
+#include <zephyr/drivers/clock_control/clock_control_adsp.h>
 #include <zephyr/drivers/clock_control.h>
 
 static void check_clocks(struct cavs_clock_info *clocks, uint32_t freq_idx)
 {
 	int i;
+	unsigned int num_cpus = arch_num_cpus();
 
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	for (i = 0; i < num_cpus; i++) {
 		zassert_equal(clocks[i].current_freq, freq_idx, "");
 	}
 }

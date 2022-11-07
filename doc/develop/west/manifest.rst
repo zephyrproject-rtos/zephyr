@@ -258,6 +258,9 @@ next.
 
        The default ``revision`` is ``master`` if not otherwise specified.
 
+       Using ``HEAD~0`` [#f1]_ as the ``revision`` will cause west to keep the current
+       state of the project.
+
    * - ``path``
      - Optional. Relative path specifying where to clone the repository
        locally, relative to the top directory in the west workspace. If missing,
@@ -291,6 +294,16 @@ next.
    * - ``userdata``
      - Optional. The value is an arbitrary YAML value. See
        :ref:`west-project-userdata`.
+
+.. rubric:: Footnotes
+
+.. [#f1] In git, HEAD is a reference, whereas HEAD~<n> is a valid revision but
+         not a reference. West fetches references, such as refs/heads/main or
+         HEAD, and commits not available locally, but will not fetch commits if
+         they are already available.
+         HEAD~0 is resolved to a specific commit that is locally available, and
+         therefore west will simply checkout the locally available commit,
+         identified by HEAD~0.
 
 .. _Git submodules: https://git-scm.com/book/en/v2/Git-Tools-Submodules
 

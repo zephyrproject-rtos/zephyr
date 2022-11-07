@@ -5,12 +5,18 @@ name: Twister TestSuite
 
 on:
   push:
+    branches:
+    - main
+    - v*-branch
     paths:
     - 'scripts/pylib/twister/**'
     - 'scripts/twister'
     - 'scripts/tests/twister/**'
     - '.github/workflows/twister_tests.yml'
   pull_request:
+    branches:
+    - main
+    - v*-branch
     paths:
     - 'scripts/pylib/twister/**'
     - 'scripts/twister'
@@ -27,14 +33,14 @@ jobs:
         os: [ubuntu-20.04]
     steps:
     - name: checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: cache-pip-linux
       if: startsWith(runner.os, 'Linux')
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}

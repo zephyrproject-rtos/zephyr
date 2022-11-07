@@ -4,7 +4,8 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/compiler_flags.cmake)
 # Now, let's overwrite the flags that are different in clang.
 
 # No property flag, clang doesn't understand fortify at all
-set_compiler_property(PROPERTY security_fortify)
+set_compiler_property(PROPERTY security_fortify_compile_time)
+set_compiler_property(PROPERTY security_fortify_run_time)
 
 # No property flag, this is used by the native_posix, clang has problems
 # compiling the native_posix with -fno-freestanding.
@@ -29,6 +30,7 @@ check_set_compiler_property(PROPERTY warning_base
                             -Wno-main
                             -Wno-unused-but-set-variable
                             -Wno-typedef-redefinition
+                            -Wno-deprecated-non-prototype
 )
 
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)

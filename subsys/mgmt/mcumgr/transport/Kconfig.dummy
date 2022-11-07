@@ -1,0 +1,21 @@
+# Copyright Laird Connectivity 2021. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUMGR_SMP_DUMMY
+	bool "Dummy SMP backend"
+	select BASE64
+	help
+	  Enables the dummy SMP backend which can be used for unit testing
+	  SMP functionality without needing a real interface or driver.
+
+if MCUMGR_SMP_DUMMY
+
+config MCUMGR_SMP_DUMMY_RX_BUF_SIZE
+	int "Size of receive buffer for dummy interface mcumgr fragments"
+	default 128
+	help
+	  Specifies the size of the mcumgr dummy backend receive buffer,
+	  in bytes. This value must be large enough to accommodate any
+	  line sent by an mcumgr client.
+
+endif # MCUMGR_SMP_DUMMY

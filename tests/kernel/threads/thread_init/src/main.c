@@ -73,10 +73,10 @@ static void thread_entry(void *p1, void *p2, void *p3)
 
 	k_tid_t tid = k_current_get();
 	/**TESTPOINT: check priority and params*/
-	zassert_equal(k_thread_priority_get(tid), expected.init_prio, NULL);
-	zassert_equal(p1, expected.init_p1, NULL);
-	zassert_equal(p2, expected.init_p2, NULL);
-	zassert_equal(p3, expected.init_p3, NULL);
+	zassert_equal(k_thread_priority_get(tid), expected.init_prio);
+	zassert_equal(p1, expected.init_p1);
+	zassert_equal(p2, expected.init_p2);
+	zassert_equal(p3, expected.init_p3);
 	/*option, stack size, not checked, no public API to get these values*/
 
 	k_sem_give(&end_sema);

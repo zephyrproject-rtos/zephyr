@@ -160,7 +160,7 @@ Flashing
       :board: tdk_robokit1
       :goals: build flash
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! tdk_robokit1" in your terminal.
 
 Debugging
 =========

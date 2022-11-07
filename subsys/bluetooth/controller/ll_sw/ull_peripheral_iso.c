@@ -22,6 +22,7 @@
 #include "lll/lll_vendor.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
+#include "lll_clock.h"
 
 #include "isoal.h"
 #include "ull_iso_types.h"
@@ -49,6 +50,12 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 {
 	struct ll_conn *acl_conn = NULL;
 
+	if (!IS_CIS_HANDLE(handle) || ll_conn_iso_stream_get(handle)->group == NULL) {
+		BT_ERR("Unknown CIS handle %u", handle);
+		*error = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		return NULL;
+	}
+
 	for (int h = 0; h < CONFIG_BT_MAX_CONN; h++) {
 		struct ll_conn *conn = ll_conn_get(h);
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
@@ -66,7 +73,7 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 
 	if (!acl_conn) {
 		BT_ERR("No connection found for handle %u", handle);
-		*error = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		*error = BT_HCI_ERR_CMD_DISALLOWED;
 		return NULL;
 	}
 
@@ -140,6 +147,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
+	uint32_t iso_interval_us;
 	uint16_t handle;
 
 	/* Get CIG by id */
@@ -154,10 +162,25 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 
 		memset(&cig->lll, 0, sizeof(cig->lll));
 
+		cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
+		iso_interval_us = cig->iso_interval * CONN_INT_UNIT_US;
+
 		cig->cig_id = req->cig_id;
 		cig->lll.handle = LLL_HANDLE_INVALID;
 		cig->lll.role = acl->lll.role;
 		cig->lll.resume_cis = LLL_HANDLE_INVALID;
+
+		/* Calculate CIG default maximum window widening. NOTE: This calculation
+		 * does not take into account that leading CIS with NSE>=3 must reduce
+		 * the maximum window widening to one sub-interval. This must be applied
+		 * in LLL (BT Core 5.3, Vol 6, Part B, section 4.2.4).
+		 */
+		cig->lll.window_widening_max_us = (iso_interval_us >> 1) -
+						  EVENT_IFS_US;
+		cig->lll.window_widening_periodic_us_frac =
+			ceiling_fraction(((lll_clock_ppm_local_get() +
+					 lll_clock_ppm_get(acl->periph.sca)) *
+					 EVENT_US_TO_US_FRAC(iso_interval_us)), USEC_PER_SEC);
 
 		ull_hdr_init(&cig->ull);
 		lll_hdr_init(&cig->lll, cig);
@@ -183,7 +206,6 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
-	cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
 	/* Read 20-bit SDU intervals (mask away RFU bits) */
 	cig->c_sdu_interval = sys_get_le24(req->c_sdu_interval) & 0x0FFFFF;
 	cig->p_sdu_interval = sys_get_le24(req->p_sdu_interval) & 0x0FFFFF;
@@ -307,6 +329,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 			leading_event_count = MAX(leading_event_count,
 						cis->lll.event_count);
+
+			ull_iso_lll_event_prepare(cis->lll.handle, cis->lll.event_count);
 		}
 
 		/* Latch datapath validity entering event */
@@ -358,8 +382,8 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 	struct ll_conn_iso_stream *cis;
 	uint32_t acl_to_cig_ref_point;
 	uint32_t cis_offs_to_cig_ref;
+	uint32_t iso_interval_us_frac;
 	uint32_t ready_delay_us;
-	uint32_t ticks_interval;
 	uint32_t ticker_status;
 	int32_t cig_offset_us;
 	uint8_t ticker_id;
@@ -381,10 +405,14 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 		return;
 	}
 
-	ticker_id = TICKER_ID_CONN_ISO_BASE +
-		    ll_conn_iso_group_handle_get(cig);
-	ticks_interval = HAL_TICKER_US_TO_TICKS(cig->iso_interval *
-						CONN_INT_UNIT_US);
+	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
+
+	/* Calculate interval in fractional microseconds for highest precision when
+	 * accumulating the window widening window size. Ticker interval is set lopsided,
+	 * with natural drift towards earlier timeout.
+	 */
+	iso_interval_us_frac = EVENT_US_TO_US_FRAC(cig->iso_interval * CONN_INT_UNIT_US) -
+		cig->lll.window_widening_periodic_us_frac;
 
 	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
 	 * (cis->offset) by the difference between CIG- and CIS sync delays.
@@ -400,7 +428,6 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 	/* Calculate initial ticker offset - we're one ACL interval early */
 	cig_offset_us  = acl_to_cig_ref_point;
 	cig_offset_us += (acl->lll.interval * CONN_INT_UNIT_US);
-	cig_offset_us -= EVENT_OVERHEAD_START_US;
 	cig_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	cig_offset_us -= EVENT_JITTER_US;
 	cig_offset_us -= ready_delay_us;
@@ -424,8 +451,8 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 				     ticker_id,
 				     ticks_at_expire,
 				     HAL_TICKER_US_TO_TICKS(cig_offset_us),
-				     ticks_interval,
-				     HAL_TICKER_REMAINDER(ticks_interval),
+				     EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac),
+				     EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac),
 				     TICKER_NULL_LAZY,
 				     0,
 				     ticker_cb, cig,

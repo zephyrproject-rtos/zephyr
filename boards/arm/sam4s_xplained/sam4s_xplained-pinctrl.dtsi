@@ -41,6 +41,13 @@
 				 <PA22A_USART1_TXD>;
 		};
 	};
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <PA12B_PWM_PWMH1>,
+				 <PA13B_PWM_PWMH2>,
+				 <PA14B_PWM_PWMH3>;
+		};
+	};
 	smc_default: smc_default {
 		group1 {
 			pinmux = <PC18A_EBI_A0>,

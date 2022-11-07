@@ -5,7 +5,7 @@ description: Honeywell HMC5883L 3-axis magnetometer sensor
 
 compatible: "honeywell,hmc5883l"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:

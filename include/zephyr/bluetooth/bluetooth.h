@@ -242,7 +242,7 @@ int bt_set_appearance(uint16_t new_appearance);
  * count of all available identities that can be retrieved with a
  * subsequent call to this function with non-NULL @a addrs parameter.
  *
- * @note Deleted identities may show up as BT_LE_ADDR_ANY in the returned
+ * @note Deleted identities may show up as @ref BT_ADDR_LE_ANY in the returned
  * array.
  *
  * @param addrs Array where to store the configured identities.
@@ -1416,6 +1416,20 @@ struct bt_le_per_adv_sync_param {
  * The range of the returned value is 0..CONFIG_BT_PER_ADV_SYNC_MAX-1
  */
 uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync);
+
+/**
+ * @brief Get a periodic advertising sync object from the array index.
+ *
+ * This function is to get the periodic advertising sync object from
+ * the array index.
+ * The array has CONFIG_BT_PER_ADV_SYNC_MAX elements.
+ *
+ * @param index The index of the periodic advertising sync object.
+ *              The range of the index value is 0..CONFIG_BT_PER_ADV_SYNC_MAX-1
+ *
+ * @return The periodic advertising sync object of the array index or NULL if invalid index.
+ */
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_index(uint8_t index);
 
 /** @brief Advertising set info structure. */
 struct bt_le_per_adv_sync_info {

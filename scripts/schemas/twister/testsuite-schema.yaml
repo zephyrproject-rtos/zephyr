@@ -130,6 +130,9 @@ mapping:
       "slow":
         type: bool
         required: false
+      "sysbuild":
+        type: bool
+        required: false
   # The sample descriptor, if present
   "sample":
     type: map
@@ -276,5 +279,8 @@ mapping:
             type: bool
             required: false
           "slow":
+            type: bool
+            required: false
+          "sysbuild":
             type: bool
             required: false

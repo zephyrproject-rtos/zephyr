@@ -118,11 +118,11 @@ static otError otPlatRadioReceiveDone_expected_error;
 void otPlatRadioReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
 {
 	zassert_equal(aInstance, ot, "Incorrect instance.");
-	zassert_equal(otPlatRadioReceiveDone_expected_aframe.mChannel, aFrame->mChannel, NULL);
-	zassert_equal(otPlatRadioReceiveDone_expected_aframe.mLength, aFrame->mLength, NULL);
+	zassert_equal(otPlatRadioReceiveDone_expected_aframe.mChannel, aFrame->mChannel);
+	zassert_equal(otPlatRadioReceiveDone_expected_aframe.mLength, aFrame->mLength);
 	zassert_mem_equal(otPlatRadioReceiveDone_expected_aframe.mPsdu, aFrame->mPsdu,
 			  aFrame->mLength, NULL);
-	zassert_equal(otPlatRadioReceiveDone_expected_error, aError, NULL);
+	zassert_equal(otPlatRadioReceiveDone_expected_error, aError);
 }
 
 FAKE_VOID_FUNC(otPlatRadioTxDone, otInstance *, otRadioFrame *, otRadioFrame *, otError);
@@ -171,19 +171,19 @@ ZTEST(openthread_radio, test_energy_scan_immediate_test)
 	scan_mock_fake.return_val = 0;
 	zassert_equal(otPlatRadioEnergyScan(ot, chan, dur), OT_ERROR_NONE,
 		      "Energy scan returned error.");
-	zassert_equal(1, scan_mock_fake.call_count, NULL);
-	zassert_equal(dur, scan_mock_fake.arg1_val, NULL);
+	zassert_equal(1, scan_mock_fake.call_count);
+	zassert_equal(dur, scan_mock_fake.arg1_val);
 	zassert_not_null(scan_mock_fake.arg2_val, "Scan callback not specified.");
-	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
-	zassert_equal(chan, set_channel_mock_fake.arg1_val, NULL);
+	zassert_equal(1, set_channel_mock_fake.call_count);
+	zassert_equal(chan, set_channel_mock_fake.arg1_val);
 
 	scan_mock_fake.arg2_val(radio, energy);
 	make_sure_sem_set(K_NO_WAIT);
 
 	platformRadioProcess(ot);
-	zassert_equal(1, otPlatRadioEnergyScanDone_fake.call_count, NULL);
+	zassert_equal(1, otPlatRadioEnergyScanDone_fake.call_count);
 	zassert_equal_ptr(ot, otPlatRadioEnergyScanDone_fake.arg0_val, NULL);
-	zassert_equal(energy, otPlatRadioEnergyScanDone_fake.arg1_val, NULL);
+	zassert_equal(energy, otPlatRadioEnergyScanDone_fake.arg1_val);
 }
 
 /**
@@ -204,11 +204,11 @@ ZTEST(openthread_radio, test_energy_scan_delayed_test)
 
 	zassert_equal(otPlatRadioEnergyScan(ot, chan, dur), OT_ERROR_NONE,
 		      "Energy scan returned error.");
-	zassert_equal(1, scan_mock_fake.call_count, NULL);
-	zassert_equal(dur, scan_mock_fake.arg1_val, NULL);
+	zassert_equal(1, scan_mock_fake.call_count);
+	zassert_equal(dur, scan_mock_fake.arg1_val);
 	zassert_not_null(scan_mock_fake.arg2_val, "Scan callback not specified.");
-	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
-	zassert_equal(chan, set_channel_mock_fake.arg1_val, NULL);
+	zassert_equal(1, set_channel_mock_fake.call_count);
+	zassert_equal(chan, set_channel_mock_fake.arg1_val);
 	make_sure_sem_set(K_NO_WAIT);
 
 	/* process reported event */
@@ -220,20 +220,20 @@ ZTEST(openthread_radio, test_energy_scan_delayed_test)
 	set_channel_mock_fake.return_val = 0;
 
 	platformRadioProcess(ot);
-	zassert_equal(1, scan_mock_fake.call_count, NULL);
-	zassert_equal(dur, scan_mock_fake.arg1_val, NULL);
+	zassert_equal(1, scan_mock_fake.call_count);
+	zassert_equal(dur, scan_mock_fake.arg1_val);
 	zassert_not_null(scan_mock_fake.arg2_val, "Scan callback not specified.");
-	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
-	zassert_equal(chan, set_channel_mock_fake.arg1_val, NULL);
+	zassert_equal(1, set_channel_mock_fake.call_count);
+	zassert_equal(chan, set_channel_mock_fake.arg1_val);
 
 	/* invoke scan done */
 	scan_mock_fake.arg2_val(radio, energy);
 	make_sure_sem_set(K_NO_WAIT);
 
 	platformRadioProcess(ot);
-	zassert_equal(1, otPlatRadioEnergyScanDone_fake.call_count, NULL);
+	zassert_equal(1, otPlatRadioEnergyScanDone_fake.call_count);
 	zassert_equal_ptr(ot, otPlatRadioEnergyScanDone_fake.arg0_val, NULL);
-	zassert_equal(energy, otPlatRadioEnergyScanDone_fake.arg1_val, NULL);
+	zassert_equal(energy, otPlatRadioEnergyScanDone_fake.arg1_val);
 }
 
 static void create_ack_frame(void)
@@ -277,11 +277,11 @@ ZTEST(openthread_radio, test_tx_test)
 
 	set_channel_mock_fake.return_val = 0;
 	zassert_equal(otPlatRadioReceive(ot, chan), OT_ERROR_NONE, "Failed to receive.");
-	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
-	zassert_equal(chan, set_channel_mock_fake.arg1_val, NULL);
-	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
-	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
-	zassert_equal(1, start_mock_fake.call_count, NULL);
+	zassert_equal(1, set_channel_mock_fake.call_count);
+	zassert_equal(chan, set_channel_mock_fake.arg1_val);
+	zassert_equal(1, set_txpower_mock_fake.call_count);
+	zassert_equal(power, set_txpower_mock_fake.arg1_val);
+	zassert_equal(1, start_mock_fake.call_count);
 	zassert_equal_ptr(radio, start_mock_fake.arg0_val, NULL);
 	RESET_FAKE(set_channel_mock);
 	RESET_FAKE(set_txpower_mock);
@@ -299,17 +299,17 @@ ZTEST(openthread_radio, test_tx_test)
 	make_sure_sem_set(Z_TIMEOUT_MS(100));
 
 	platformRadioProcess(ot);
-	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
-	zassert_equal(chan2, set_channel_mock_fake.arg1_val, NULL);
-	zassert_equal(1, cca_mock_fake.call_count, NULL);
+	zassert_equal(1, set_channel_mock_fake.call_count);
+	zassert_equal(chan2, set_channel_mock_fake.arg1_val);
+	zassert_equal(1, cca_mock_fake.call_count);
 	zassert_equal_ptr(radio, cca_mock_fake.arg0_val, NULL);
-	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
-	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
-	zassert_equal(1, tx_mock_fake.call_count, NULL);
+	zassert_equal(1, set_txpower_mock_fake.call_count);
+	zassert_equal(power, set_txpower_mock_fake.arg1_val);
+	zassert_equal(1, tx_mock_fake.call_count);
 	zassert_equal_ptr(frm->mPsdu, tx_mock_fake.arg3_val->data, NULL);
-	zassert_equal(1, otPlatRadioTxDone_fake.call_count, NULL);
+	zassert_equal(1, otPlatRadioTxDone_fake.call_count);
 	zassert_equal_ptr(ot, otPlatRadioTxDone_fake.arg0_val, NULL);
-	zassert_equal(OT_ERROR_NONE, otPlatRadioTxDone_fake.arg3_val, NULL);
+	zassert_equal(OT_ERROR_NONE, otPlatRadioTxDone_fake.arg3_val);
 	RESET_FAKE(set_channel_mock);
 	RESET_FAKE(set_txpower_mock);
 	RESET_FAKE(tx_mock);
@@ -325,15 +325,15 @@ ZTEST(openthread_radio, test_tx_test)
 	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE, "Transmit failed.");
 	make_sure_sem_set(Z_TIMEOUT_MS(100));
 	platformRadioProcess(ot);
-	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
-	zassert_equal(chan2, set_channel_mock_fake.arg1_val, NULL);
-	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
-	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
-	zassert_equal(1, tx_mock_fake.call_count, NULL);
+	zassert_equal(1, set_channel_mock_fake.call_count);
+	zassert_equal(chan2, set_channel_mock_fake.arg1_val);
+	zassert_equal(1, set_txpower_mock_fake.call_count);
+	zassert_equal(power, set_txpower_mock_fake.arg1_val);
+	zassert_equal(1, tx_mock_fake.call_count);
 	zassert_equal_ptr(frm->mPsdu, tx_mock_fake.arg3_val->data, NULL);
-	zassert_equal(1, otPlatRadioTxDone_fake.call_count, NULL);
+	zassert_equal(1, otPlatRadioTxDone_fake.call_count);
 	zassert_equal_ptr(ot, otPlatRadioTxDone_fake.arg0_val, NULL);
-	zassert_equal(OT_ERROR_NONE, otPlatRadioTxDone_fake.arg3_val, NULL);
+	zassert_equal(OT_ERROR_NONE, otPlatRadioTxDone_fake.arg3_val);
 }
 
 /**
@@ -381,7 +381,7 @@ static int custom_configure_match_mock(const struct device *dev, enum ieee802154
 				       const struct ieee802154_config *config)
 {
 	zassert_equal_ptr(dev, radio, "Device handle incorrect.");
-	zassert_equal(custom_configure_match_mock_expected_type, type, NULL);
+	zassert_equal(custom_configure_match_mock_expected_type, type);
 	switch (type) {
 	case IEEE802154_CONFIG_AUTO_ACK_FPB:
 		zassert_equal(custom_configure_match_mock_expected_config.auto_ack_fpb.mode,
@@ -510,8 +510,8 @@ ZTEST(openthread_radio, test_promiscuous_mode_set_test)
 	configure_promiscuous_mock_fake.custom_fake = custom_configure_promiscuous_mock;
 	otPlatRadioSetPromiscuous(ot, true);
 	zassert_true(otPlatRadioGetPromiscuous(ot), "Mode not enabled.");
-	zassert_equal(1, configure_promiscuous_mock_fake.call_count, NULL);
-	zassert_true(custom_configure_promiscuous_mock_promiscuous, NULL);
+	zassert_equal(1, configure_promiscuous_mock_fake.call_count);
+	zassert_true(custom_configure_promiscuous_mock_promiscuous);
 
 	RESET_FAKE(configure_promiscuous_mock);
 	FFF_RESET_HISTORY();
@@ -519,8 +519,8 @@ ZTEST(openthread_radio, test_promiscuous_mode_set_test)
 	configure_promiscuous_mock_fake.custom_fake = custom_configure_promiscuous_mock;
 	otPlatRadioSetPromiscuous(ot, false);
 	zassert_false(otPlatRadioGetPromiscuous(ot), "Mode still enabled.");
-	zassert_equal(1, configure_promiscuous_mock_fake.call_count, NULL);
-	zassert_false(custom_configure_promiscuous_mock_promiscuous, NULL);
+	zassert_equal(1, configure_promiscuous_mock_fake.call_count);
+	zassert_false(custom_configure_promiscuous_mock_promiscuous);
 
 	rapi.configure = configure_mock;
 }
@@ -640,13 +640,13 @@ ZTEST(openthread_radio, test_radio_state_test)
 	zassert_equal(platformRadioChannelGet(ot), channel, "Channel number not remembered.");
 
 	zassert_true(otPlatRadioIsEnabled(ot), "Radio reports as disabled.");
-	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
-	zassert_equal(channel, set_channel_mock_fake.arg1_val, NULL);
-	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
-	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
-	zassert_equal(1, start_mock_fake.call_count, NULL);
+	zassert_equal(1, set_channel_mock_fake.call_count);
+	zassert_equal(channel, set_channel_mock_fake.arg1_val);
+	zassert_equal(1, set_txpower_mock_fake.call_count);
+	zassert_equal(power, set_txpower_mock_fake.arg1_val);
+	zassert_equal(1, start_mock_fake.call_count);
 	zassert_equal_ptr(radio, start_mock_fake.arg0_val, NULL);
-	zassert_equal(1, stop_mock_fake.call_count, NULL);
+	zassert_equal(1, stop_mock_fake.call_count);
 	zassert_equal_ptr(radio, stop_mock_fake.arg0_val, NULL);
 }
 
@@ -691,27 +691,27 @@ ZTEST(openthread_radio, test_address_test)
 
 	filter_mock_fake.custom_fake = custom_filter_mock;
 	otPlatRadioSetPanId(ot, pan_id);
-	zassert_equal(1, filter_mock_fake.call_count, NULL);
-	zassert_true(filter_mock_fake.arg1_val, NULL);
-	zassert_equal(IEEE802154_FILTER_TYPE_PAN_ID, filter_mock_fake.arg2_val, NULL);
-	zassert_equal(pan_id, custom_filter_mock_pan_id, NULL);
+	zassert_equal(1, filter_mock_fake.call_count);
+	zassert_true(filter_mock_fake.arg1_val);
+	zassert_equal(IEEE802154_FILTER_TYPE_PAN_ID, filter_mock_fake.arg2_val);
+	zassert_equal(pan_id, custom_filter_mock_pan_id);
 	RESET_FAKE(filter_mock);
 	FFF_RESET_HISTORY();
 
 	filter_mock_fake.custom_fake = custom_filter_mock;
 	otPlatRadioSetShortAddress(ot, short_add);
-	zassert_equal(1, filter_mock_fake.call_count, NULL);
-	zassert_true(filter_mock_fake.arg1_val, NULL);
-	zassert_equal(IEEE802154_FILTER_TYPE_SHORT_ADDR, filter_mock_fake.arg2_val, NULL);
-	zassert_equal(short_add, custom_filter_mock_short_addr, NULL);
+	zassert_equal(1, filter_mock_fake.call_count);
+	zassert_true(filter_mock_fake.arg1_val);
+	zassert_equal(IEEE802154_FILTER_TYPE_SHORT_ADDR, filter_mock_fake.arg2_val);
+	zassert_equal(short_add, custom_filter_mock_short_addr);
 	RESET_FAKE(filter_mock);
 	FFF_RESET_HISTORY();
 
 	filter_mock_fake.custom_fake = custom_filter_mock;
 	otPlatRadioSetExtendedAddress(ot, &ieee_addr);
-	zassert_equal(1, filter_mock_fake.call_count, NULL);
-	zassert_true(filter_mock_fake.arg1_val, NULL);
-	zassert_equal(IEEE802154_FILTER_TYPE_IEEE_ADDR, filter_mock_fake.arg2_val, NULL);
+	zassert_equal(1, filter_mock_fake.call_count);
+	zassert_true(filter_mock_fake.arg1_val);
+	zassert_equal(IEEE802154_FILTER_TYPE_IEEE_ADDR, filter_mock_fake.arg2_val);
 	zassert_mem_equal(ieee_addr.m8, custom_filter_mock_ieee_addr, OT_EXT_ADDRESS_SIZE, NULL);
 }
 
@@ -765,11 +765,11 @@ ZTEST(openthread_radio, test_receive_test)
 
 	set_channel_mock_fake.return_val = 0;
 	zassert_equal(otPlatRadioReceive(ot, channel), OT_ERROR_NONE, "Failed to receive.");
-	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
-	zassert_equal(channel, set_channel_mock_fake.arg1_val, NULL);
-	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
-	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
-	zassert_equal(1, start_mock_fake.call_count, NULL);
+	zassert_equal(1, set_channel_mock_fake.call_count);
+	zassert_equal(channel, set_channel_mock_fake.arg1_val);
+	zassert_equal(1, set_txpower_mock_fake.call_count);
+	zassert_equal(power, set_txpower_mock_fake.arg1_val);
+	zassert_equal(1, start_mock_fake.call_count);
 	zassert_equal_ptr(radio, start_mock_fake.arg0_val, NULL);
 
 	/*
@@ -809,11 +809,11 @@ ZTEST(openthread_radio, test_net_pkt_transmit)
 
 	set_channel_mock_fake.return_val = 0;
 	zassert_equal(otPlatRadioReceive(ot, channel), OT_ERROR_NONE, "Failed to receive.");
-	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
-	zassert_equal(channel, set_channel_mock_fake.arg1_val, NULL);
-	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
-	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
-	zassert_equal(1, start_mock_fake.call_count, NULL);
+	zassert_equal(1, set_channel_mock_fake.call_count);
+	zassert_equal(channel, set_channel_mock_fake.arg1_val);
+	zassert_equal(1, set_txpower_mock_fake.call_count);
+	zassert_equal(power, set_txpower_mock_fake.arg1_val);
+	zassert_equal(1, start_mock_fake.call_count);
 	zassert_equal_ptr(radio, start_mock_fake.arg0_val, NULL);
 
 	notify_new_tx_frame(packet);
@@ -828,14 +828,14 @@ ZTEST(openthread_radio, test_net_pkt_transmit)
 	expected_data_ptrs[0] = buf->data;
 	expected_data_ptrs[1] = buf->frags->data;
 	platformRadioProcess(ot);
-	zassert_equal(2, otMessageAppend_fake.call_count, NULL);
+	zassert_equal(2, otMessageAppend_fake.call_count);
 	zassert_equal_ptr(ip_msg, otMessageAppend_fake.arg0_history[0], NULL);
 	zassert_equal_ptr(ip_msg, otMessageAppend_fake.arg0_history[1], NULL);
 	zassert_equal_ptr(expected_data_ptrs[0], otMessageAppend_fake.arg1_history[0], NULL);
 	zassert_equal_ptr(expected_data_ptrs[1], otMessageAppend_fake.arg1_history[1], NULL);
-	zassert_equal(len, otMessageAppend_fake.arg2_history[0], NULL);
-	zassert_equal(len, otMessageAppend_fake.arg2_history[1], NULL);
-	zassert_equal(1, otIp6Send_fake.call_count, NULL);
+	zassert_equal(len, otMessageAppend_fake.arg2_history[0]);
+	zassert_equal(len, otMessageAppend_fake.arg2_history[1]);
+	zassert_equal(1, otIp6Send_fake.call_count);
 	zassert_equal_ptr(ot, otIp6Send_fake.arg0_val, NULL);
 	zassert_equal_ptr(ip_msg, otIp6Send_fake.arg1_val, NULL);
 
@@ -855,10 +855,10 @@ ZTEST(openthread_radio, test_net_pkt_transmit)
 	expected_data_ptrs[0] = buf->data;
 
 	platformRadioProcess(ot);
-	zassert_equal(1, otMessageAppend_fake.call_count, NULL);
+	zassert_equal(1, otMessageAppend_fake.call_count);
 	zassert_equal_ptr(ip_msg, otMessageAppend_fake.arg0_val, NULL);
 	zassert_equal_ptr(expected_data_ptrs[0], otMessageAppend_fake.arg1_val, NULL);
-	zassert_equal(len, otMessageAppend_fake.arg2_val, NULL);
+	zassert_equal(len, otMessageAppend_fake.arg2_val);
 	zassert_equal_ptr(ip_msg, otMessageFree_fake.arg0_val, NULL);
 
 	RESET_FAKE(otMessageAppend);
@@ -879,11 +879,11 @@ ZTEST(openthread_radio, test_net_pkt_transmit)
 	/* Do not expect free in case of failure in send */
 
 	platformRadioProcess(ot);
-	zassert_equal(1, otMessageAppend_fake.call_count, NULL);
+	zassert_equal(1, otMessageAppend_fake.call_count);
 	zassert_equal_ptr(ip_msg, otMessageAppend_fake.arg0_val, NULL);
 	zassert_equal_ptr(expected_data_ptrs[0], otMessageAppend_fake.arg1_val, NULL);
-	zassert_equal(len, otMessageAppend_fake.arg2_val, NULL);
-	zassert_equal(1, otIp6Send_fake.call_count, NULL);
+	zassert_equal(len, otMessageAppend_fake.arg2_val);
+	zassert_equal(1, otIp6Send_fake.call_count);
 	zassert_equal_ptr(ot, otIp6Send_fake.arg0_val, NULL);
 	zassert_equal_ptr(ip_msg, otIp6Send_fake.arg1_val, NULL);
 }

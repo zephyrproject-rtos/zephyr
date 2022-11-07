@@ -99,8 +99,8 @@ void log_frontend_msg(const void *source,
 		return;
 	}
 
-	zassert_equal(desc.level, exp_msg->level, NULL);
-	zassert_equal(desc.domain, exp_msg->domain_id, NULL);
+	zassert_equal(desc.level, exp_msg->level);
+	zassert_equal(desc.domain, exp_msg->domain_id);
 
 	uint32_t source_id;
 
@@ -115,9 +115,9 @@ void log_frontend_msg(const void *source,
 	zassert_equal(source_id, exp_msg->source_id, "got: %d, exp: %d",
 			source_id, exp_msg->source_id);
 
-	zassert_equal(exp_msg->data_len, desc.data_len, NULL);
+	zassert_equal(exp_msg->data_len, desc.data_len);
 	if (exp_msg->data_len <= sizeof(exp_msg->data)) {
-		zassert_equal(memcmp(data, exp_msg->data, desc.data_len), 0, NULL);
+		zassert_equal(memcmp(data, exp_msg->data, desc.data_len), 0);
 	}
 
 	char str[128];

@@ -89,6 +89,11 @@
 		zephyr,memory-region = "IMR1";
 	};
 
+	sha: adsp-sha@17DF00 {
+		compatible = "intel,adsp-sha";
+		reg = <0x17DF00 0xd0>;
+	};
+
 	soc {
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
@@ -143,8 +148,19 @@
 		};
 
 		shim: shim@71f00 {
-			compatible = "intel,cavs-shim";
+			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
+		};
+
+		tts: tts@72000 {
+			compatible = "intel,adsp-tts";
+			reg = <0x72000 0x70>;
+			status = "okay";
+		};
+
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&tts>;
 		};
 
 		lps: lps@71ac0 {
@@ -157,14 +173,39 @@
 			reg = <0x28800 0x1000>;
 		};
 
-		win: win@70200 {
-			compatible = "intel,cavs-win";
-			reg = <0x70200 0x30>;
+		mem_window0: mem_window@70200 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70200 0x8>;
+			offset = <0x4000>;
+			memory = <&sram0>;
+			initialize;
+			read-only;
+		};
+		mem_window1: mem_window@70208 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70208 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window2: mem_window@70210 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70210 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window3: mem_window@70218 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70218 0x8>;
+			memory = <&sram0>;
+			read-only;
 		};
 
 		tlb: tlb@17e000 {
 			compatible = "intel,adsp-mtl-tlb";
 			reg = <0x17e000 0x1000>;
+			paddr-size = <12>;
+			exec-bit-idx = <14>;
+			write-bit-idx= <15>;
 		};
 
 		lpgpdma0: dma@7c000 {
@@ -310,6 +351,37 @@
 			reg = <0x00072600 0x20>;
 			dma-channels = <10>;
 			dma-buf-alignment = <128>;
+			status = "okay";
+		};
+
+		dmic0: dmic0@10000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10000 0x8000>;
+			shim = <0xC000>;
+			fifo = <0x0008>;
+			interrupts = <0x08 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		dmic1: dmic1@10000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10000 0x8000>;
+			shim = <0xC000>;
+			fifo = <0x0108>;
+			interrupts = <0x09 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		/*
+		 * FIXME this is modeling individual alh channels/instances
+		 * with node labels, which has problems. A better representation
+		 * is discussed here:
+		 *
+		 * https://github.com/zephyrproject-rtos/zephyr/pull/50287#discussion_r974591009
+		 */
+		alh0: alh1: alh@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
 			status = "okay";
 		};
 

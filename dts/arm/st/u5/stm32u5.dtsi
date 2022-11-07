@@ -75,7 +75,7 @@
 			#clock-cells = <0>;
 			compatible = "st,stm32-lse-clock";
 			clock-frequency = <32768>;
-			driving-capability = <0>;
+			driving-capability = <2>;
 			status = "disabled";
 		};
 

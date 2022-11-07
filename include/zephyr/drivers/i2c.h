@@ -19,8 +19,12 @@
  * @{
  */
 
+#include <errno.h>
+
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,6 +80,34 @@ struct i2c_dt_spec {
 };
 
 /**
+ * @brief Structure initializer for i2c_dt_spec from devicetree (on I3C bus)
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * i2c_dt_spec</tt> by reading the relevant bus and address data from
+ * the devicetree.
+ *
+ * @param node_id Devicetree node identifier for the I2C device whose
+ *                struct i2c_dt_spec to create an initializer for
+ */
+#define I2C_DT_SPEC_GET_ON_I3C(node_id)					\
+	.bus = DEVICE_DT_GET(DT_BUS(node_id)),				\
+	.addr = DT_PROP_BY_IDX(node_id, reg, 0)
+
+/**
+ * @brief Structure initializer for i2c_dt_spec from devicetree (on I2C bus)
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * i2c_dt_spec</tt> by reading the relevant bus and address data from
+ * the devicetree.
+ *
+ * @param node_id Devicetree node identifier for the I2C device whose
+ *                struct i2c_dt_spec to create an initializer for
+ */
+#define I2C_DT_SPEC_GET_ON_I2C(node_id)					\
+	.bus = DEVICE_DT_GET(DT_BUS(node_id)),				\
+	.addr = DT_REG_ADDR(node_id)
+
+/**
  * @brief Structure initializer for i2c_dt_spec from devicetree
  *
  * This helper macro expands to a static initializer for a <tt>struct
@@ -85,10 +117,11 @@ struct i2c_dt_spec {
  * @param node_id Devicetree node identifier for the I2C device whose
  *                struct i2c_dt_spec to create an initializer for
  */
-#define I2C_DT_SPEC_GET(node_id)		     \
-	{							     \
-		.bus = DEVICE_DT_GET(DT_BUS(node_id)),		     \
-		.addr = DT_REG_ADDR(node_id) \
+#define I2C_DT_SPEC_GET(node_id)					\
+	{								\
+		COND_CODE_1(DT_ON_BUS(node_id, i3c),			\
+			    (I2C_DT_SPEC_GET_ON_I3C(node_id)),		\
+			    (I2C_DT_SPEC_GET_ON_I2C(node_id)))		\
 	}
 
 /**
@@ -428,9 +461,9 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 /**
  * @brief Define a statically allocated and section assigned i2c device state
  */
-#define Z_I2C_DEVICE_STATE_DEFINE(node_id, dev_name)	\
-	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+#define Z_I2C_DEVICE_STATE_DEFINE(dev_id)				\
+	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_id)	\
+	__attribute__((__section__(".z_devstate")))
 
 /**
  * @brief Define an i2c device init wrapper function
@@ -438,8 +471,8 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * This does device instance specific initialization of common data (such as stats)
  * and calls the given init_fn
  */
-#define Z_I2C_INIT_FN(dev_name, init_fn)					\
-	static inline int UTIL_CAT(dev_name, _init)(const struct device *dev) \
+#define Z_I2C_INIT_FN(dev_id, init_fn)					\
+	static inline int UTIL_CAT(dev_id, _init)(const struct device *dev) \
 	{								\
 		struct i2c_device_state *state =			\
 			CONTAINER_OF(dev->state, struct i2c_device_state, devstate); \
@@ -462,11 +495,11 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  *
  * @param init_fn Name of the init function of the driver.
  *
- * @param pm_device PM device resources reference (NULL if device does not use PM).
+ * @param pm PM device resources reference (NULL if device does not use PM).
  *
- * @param data_ptr Pointer to the device's private data.
+ * @param data Pointer to the device's private data.
  *
- * @param cfg_ptr The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  *
  * @param level The initialization level. See SYS_INIT() for
@@ -475,21 +508,18 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * @param prio Priority within the selected initialization level. See
  * SYS_INIT() for details.
  *
- * @param api_ptr Provides an initial pointer to the API function struct
+ * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  */
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
-	Z_I2C_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)); \
-	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
+	Z_I2C_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
+	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
-			&UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _init), \
-			pm_device,					\
-			data_ptr, cfg_ptr, level, prio,			\
-			api_ptr,					\
-			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate), \
+			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
+			pm_device, data, config, level, prio, api,	\
+			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
 
 #else /* CONFIG_I2C_STATS */
@@ -502,12 +532,10 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	ARG_UNUSED(num_msgs);
 }
 
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
-	DEVICE_DT_DEFINE(node_id, &init_fn, pm_device,			\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, __VA_ARGS__)
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
+	DEVICE_DT_DEFINE(node_id, &init_fn, pm, data, config, level,	\
+			 prio, api, __VA_ARGS__)
 
 #endif /* CONFIG_I2C_STATS */
 
@@ -1294,6 +1322,7 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
  *
  * It looks something like this (with name "testing"):
  *
+ * @code
  * D: I2C msg: testing, addr=56
  * D:    W len=01:
  * D: contents:
@@ -1302,6 +1331,7 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
  * D: contents:
  * D: 00 01 02 03 04 05 06 07 |........
  * D: 08 09 0a 0b 0c 0d       |......
+ * @endcode
  *
  * @param name Name of this dump, displayed at the top.
  * @param msgs Array of messages to dump.

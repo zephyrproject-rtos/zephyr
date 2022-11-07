@@ -17,7 +17,7 @@ static void test_busy_sim(void)
 	k_busy_wait(1000 * ms);
 	t = k_uptime_get_32() - t;
 
-	zassert_true((t > (ms - delta)) && (t < (ms + delta)), NULL);
+	zassert_true((t > (ms - delta)) && (t < (ms + delta)));
 
 	/* Start busy simulator and check that k_busy_wait last longer */
 	t = k_uptime_get_32();
@@ -38,7 +38,7 @@ static void test_busy_sim(void)
 	t = k_uptime_get_32();
 	k_busy_wait(1000 * ms);
 	t = k_uptime_get_32() - t;
-	zassert_true((t > (ms - delta)) && (t < (ms + delta)), NULL);
+	zassert_true((t > (ms - delta)) && (t < (ms + delta)));
 }
 
 void test_main(void)

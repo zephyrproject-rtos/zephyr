@@ -12,6 +12,9 @@ before they can be used; these are discussed individually below. These macros
 are generally meant for use within :ref:`device drivers <device_model_api>`,
 though they can be used outside of drivers with appropriate care.
 
+.. contents:: Contents
+   :local:
+
 .. _devicetree-generic-apis:
 
 Generic APIs
@@ -185,8 +188,8 @@ implements support for. Here is an example devicetree fragment:
            current-speed = <115200>;
    };
 
-Example usage, assuming serial@40001000 is the only enabled node
-with compatible "vnd,serial":
+Example usage, assuming ``serial@40001000`` is the only enabled node
+with compatible ``vnd,serial``:
 
 .. code-block:: c
 

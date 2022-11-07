@@ -13,15 +13,15 @@ static void put_fail(struct k_msgq *q)
 {
 	int ret = k_msgq_put(q, (void *)&data[0], K_NO_WAIT);
 
-	zassert_false(ret, NULL);
+	zassert_false(ret);
 	ret = k_msgq_put(q, (void *)&data[0], K_NO_WAIT);
-	zassert_false(ret, NULL);
+	zassert_false(ret);
 	/**TESTPOINT: msgq put returns -ENOMSG*/
 	ret = k_msgq_put(q, (void *)&data[1], K_NO_WAIT);
-	zassert_equal(ret, -ENOMSG, NULL);
+	zassert_equal(ret, -ENOMSG);
 	/**TESTPOINT: msgq put returns -EAGAIN*/
 	ret = k_msgq_put(q, (void *)&data[0], TIMEOUT);
-	zassert_equal(ret, -EAGAIN, NULL);
+	zassert_equal(ret, -EAGAIN);
 
 	k_msgq_purge(q);
 }
@@ -33,10 +33,10 @@ static void get_fail(struct k_msgq *q)
 	/**TESTPOINT: msgq get returns -ENOMSG*/
 	int ret = k_msgq_get(q, &rx_data, K_NO_WAIT);
 
-	zassert_equal(ret, -ENOMSG, NULL);
+	zassert_equal(ret, -ENOMSG);
 	/**TESTPOINT: msgq get returns -EAGAIN*/
 	ret = k_msgq_get(q, &rx_data, TIMEOUT);
-	zassert_equal(ret, -EAGAIN, NULL);
+	zassert_equal(ret, -EAGAIN);
 }
 
 /**
@@ -65,7 +65,7 @@ ZTEST_USER(msgq_api, test_msgq_user_put_fail)
 
 	q = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(q, "couldn't alloc message queue");
-	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN));
 	put_fail(q);
 }
 #endif /* CONFIG_USERSPACE */
@@ -91,7 +91,7 @@ ZTEST_USER(msgq_api, test_msgq_user_get_fail)
 
 	q = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(q, "couldn't alloc message queue");
-	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN));
 	get_fail(q);
 }
 #endif /* CONFIG_USERSPACE */

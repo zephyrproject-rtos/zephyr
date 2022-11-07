@@ -23,6 +23,10 @@
 #include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#include <zephyr/drivers/i3c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c) */
+
 struct lps22hh_config {
 	stmdev_ctx_t ctx;
 	union {
@@ -32,10 +36,20 @@ struct lps22hh_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 		const struct spi_dt_spec spi;
 #endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+		struct i3c_device_desc **i3c;
+#endif
 	} stmemsc_cfg;
 	uint8_t odr;
 #ifdef CONFIG_LPS22HH_TRIGGER
 	struct gpio_dt_spec gpio_int;
+#endif
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	struct {
+		const struct device *bus;
+		const struct i3c_device_id dev_id;
+	} i3c;
 #endif
 };
 
@@ -53,12 +67,16 @@ struct lps22hh_data {
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LPS22HH_THREAD_STACK_SIZE);
 	struct k_thread thread;
-	struct k_sem gpio_sem;
+	struct k_sem intr_sem;
 #elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 #endif
 
 #endif /* CONFIG_LPS22HH_TRIGGER */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	struct i3c_device_desc *i3c_dev;
+#endif
 };
 
 #ifdef CONFIG_LPS22HH_TRIGGER

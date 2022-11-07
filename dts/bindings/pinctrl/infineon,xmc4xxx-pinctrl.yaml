@@ -1,0 +1,112 @@
+# Copyright (c) 2022, Andriy Gelman <andriy.gelman@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Infineon XMC4XXX pin controller is responsible for connecting peripheral outputs
+  to specific port/pins (also known as alternate functions) and configures pin properties.
+
+  The pinctrl settings are referenced in a device tree peripheral node. For example in a UART
+  node:
+
+  &usic1ch1 {
+      compatible = "infineon,xmc4xxx-uart";
+      pinctrl-0 = <&uart_tx_p0_1_u1c1 &uart_rx_p0_0_u1c1>;
+      pinctrl-names = "default";
+      input-src = "DX0D";
+      ...
+  };
+
+  pinctrl-0 is the phandle that stores the pin settings for two pins: &uart_tx_p0_1_u1c1
+  and &uart_rx_p0_0_u1c1. These nodes are pre-defined and their naming convention is designed
+  to help the user select the correct pin settings. Note the use of peripheral type,
+  pin direction, port/pin number and USIC in the name.
+
+  The pre-defined nodes only set the alternate function of the output pin. The
+  configuration for the pin (i.e. drive strength) should be set in the board setup.
+  The set of possible configurations are defined in the properties section below (in addition
+  to the inherited property-allowlist list from pincfg-node.yaml).
+
+  To create a new pin configuration, the user may append to the &pinctrl node, for example
+
+  #include <zephyr/dt-bindings/pinctrl/xmc4xxx-pinctrl.h>
+  &pinctrl {
+      my_node_config: my_node_config {
+      pinmux = <XMC4XXX_PINMUX_SET(0, 1, 2)>;
+      drive-push-pull;
+        ... other supported pin configurations ..
+  };
+  where XMC4XXX_PINMUX_SET(PORT, PIN, ALTERNATE_FUNCTION) is a helper macro for setting the
+  alternate function for a given port/pin. Setting ALTERNATE_FUNCTION = 0 means that no
+  alternate function is selected.
+
+  The pinctrl driver only sets the alternate function for output pins. The input mux is
+  handled by the peripheral drivers. For example the &usic1ch1 node has input-src property for
+  this purpose. There are no pre-defined nodes for the input mux and this must be properly set
+  by the user. Refer to the peripheral .yaml file (i.e. infineon,xmc4xxx-uart.yaml) and
+  XMC4XXX documentation.
+
+compatible: "infineon,xmc4xxx-pinctrl"
+
+include:
+    - name: base.yaml
+    - name: pincfg-node.yaml
+      child-binding:
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+          - drive-push-pull
+          - drive-open-drain
+          - output-high
+          - output-low
+
+properties:
+    "#address-cells":
+      required: true
+      const: 1
+    "#size-cells":
+      required: true
+      const: 1
+
+child-binding:
+    description: Each child node defines the configuration for a particular state.
+
+    properties:
+        pinmux:
+          description: |
+            Encodes port/pin and alternate function. See helper macro XMC4XX_PINMUX_SET().
+            Alternate function is only set for output pins; It selects  ALT1-ALT4
+            output line in the GPIO element. The alternate function for input pins is
+            handled separately by the peripheral. It is upto the peripheral to configure which
+            input pin to use (For example see parameter input-src in infineon,xmc4xxx-uart.yaml).
+          required: true
+          type: int
+
+        drive-strength:
+          description: |
+            Drive strength of the output pin. Following options as in XMC_GPIO_OUTPUT_STRENGTH
+            See xmc4_gpio.h. This only has an effect if the pin is in drive-push-pull mode.
+          required: true
+          type: string
+          enum:
+            - "strong-sharp-edge"
+            - "strong-medium-edge"
+            - "strong-soft-edge"
+            - "strong-slow-edge"
+            - "medium"
+            - "medium-unknown1-edge"
+            - "medium-unknown2-edge"
+            - "weak"
+
+        invert-input:
+          description: Inverts the input.
+          required: false
+          type: boolean
+
+        hwctrl:
+          description: Pre-assigns hardware control of the pin to a certain peripheral.
+          required: true
+          type: string
+          enum:
+            - "disabled"
+            - "periph1"
+            - "periph2"

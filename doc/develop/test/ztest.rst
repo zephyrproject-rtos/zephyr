@@ -114,27 +114,27 @@ Test result expectations
 ========================
 
 Some tests were made to be broken. In cases where the test is expected to fail or skip due to the
-nature of the code, it's possible to annotate the test as such. For example::
+nature of the code, it's possible to annotate the test as such. For example:
 
   .. code-block:: C
 
-  #include <zephyr/ztest.h>
+    #include <zephyr/ztest.h>
 
-  ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
+    ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
 
-  ZTEST_EXPECT_FAIL(my_suite, test_fail)
-  ZTEST(my_suite, test_fail)
-  {
-    /** This will fail the test */
-    zassert_true(false, NULL);
-  }
+    ZTEST_EXPECT_FAIL(my_suite, test_fail)
+    ZTEST(my_suite, test_fail)
+    {
+      /** This will fail the test */
+      zassert_true(false, NULL);
+    }
 
-  ZTEST_EXPECT_SKIP(my_suite, test_fail)
-  ZTEST(my_suite, test_skip)
-  {
-    /** This will skip the test */
-    zassume_true(false, NULL);
-  }
+    ZTEST_EXPECT_SKIP(my_suite, test_fail)
+    ZTEST(my_suite, test_skip)
+    {
+      /** This will skip the test */
+      zassume_true(false, NULL);
+    }
 
 In this example, the above tests should be marked as failed and skipped respectively. Instead,
 Ztest will mark both as passed due to the expectation.
@@ -489,6 +489,11 @@ following in your source::
 
     #include <zephyr/fff.h>
 
+Zephyr provides several FFF-based fake drivers which can be used as either stubs or mocks. Fake
+driver instances are configured via :ref:`devicetree` and :ref:`kconfig`. See the following
+devicetree bindings for more information:
+
+ - :dtcompatible:`zephyr,fake-can`
 
 Customizing Test Output
 ***********************

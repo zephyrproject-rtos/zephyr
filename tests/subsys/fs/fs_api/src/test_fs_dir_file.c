@@ -460,10 +460,10 @@ static int _test_lsdir(const char *path)
  */
 void test_lsdir(void)
 {
-	zassert_true(_test_lsdir(NULL) == TC_FAIL, NULL);
-	zassert_true(_test_lsdir("/") == TC_PASS, NULL);
-	zassert_true(_test_lsdir("/test") == TC_FAIL, NULL);
-	zassert_true(_test_lsdir(TEST_DIR) == TC_PASS, NULL);
+	zassert_true(_test_lsdir(NULL) == TC_FAIL);
+	zassert_true(_test_lsdir("/") == TC_PASS);
+	zassert_true(_test_lsdir("/test") == TC_FAIL);
+	zassert_true(_test_lsdir(TEST_DIR) == TC_PASS);
 }
 
 /**
@@ -574,7 +574,7 @@ static int _test_file_write(void)
  */
 void test_file_write(void)
 {
-	zassert_true(_test_file_write() == TC_PASS, NULL);
+	zassert_true(_test_file_write() == TC_PASS);
 }
 
 static int _test_file_sync(void)
@@ -647,7 +647,7 @@ static int _test_file_sync(void)
  */
 ZTEST(fs_api_dir_file, test_file_sync)
 {
-	zassert_true(_test_file_sync() == TC_PASS, NULL);
+	zassert_true(_test_file_sync() == TC_PASS);
 }
 
 /**
@@ -869,7 +869,7 @@ static int _test_file_truncate(void)
  */
 void test_file_truncate(void)
 {
-	zassert_true(_test_file_truncate() == TC_PASS, NULL);
+	zassert_true(_test_file_truncate() == TC_PASS);
 }
 
 /**

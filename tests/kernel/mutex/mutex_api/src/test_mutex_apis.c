@@ -35,7 +35,7 @@ static void tThread_entry_lock_forever(void *p1, void *p2, void *p3)
 
 static void tThread_entry_lock_no_wait(void *p1, void *p2, void *p3)
 {
-	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_NO_WAIT) != 0, NULL);
+	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_NO_WAIT) != 0);
 	TC_PRINT("bypass locked resource from spawn thread\n");
 }
 
@@ -62,7 +62,7 @@ static void tmutex_test_lock(struct k_mutex *pmutex,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0, NULL);
+	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0);
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
@@ -78,7 +78,7 @@ static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0, NULL);
+	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0);
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
@@ -385,6 +385,68 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 
 	/* wait for spawn thread t2 and t3 to take action */
 	k_msleep(TIMEOUT+1000);
+}
+
+static void tThread_mutex_lock_should_fail(void *p1, void *p2, void *p3)
+{
+	k_timeout_t timeout;
+	struct k_mutex *mutex = (struct k_mutex *)p1;
+
+	timeout.ticks = 0;
+	timeout.ticks |= (uint64_t)(uintptr_t)p2 << 32;
+	timeout.ticks |= (uint64_t)(uintptr_t)p3 << 0;
+
+	zassert_equal(-EAGAIN, k_mutex_lock(mutex, timeout), NULL);
+}
+
+/**
+ * @brief Test fix for subtle race during priority inversion
+ *
+ * - A low priority thread (Tlow) locks mutex A.
+ * - A high priority thread (Thigh) blocks on mutex A, boosting the priority
+ *   of Tlow.
+ * - Thigh times out waiting for mutex A.
+ * - Before Thigh has a chance to execute, Tlow unlocks mutex A (which now
+ *   has no owner) and drops its own priority.
+ * - Thigh now gets a chance to execute and finds that it timed out, and
+ *   then enters the block of code to lower the priority of the thread that
+ *   owns mutex A (now nobody).
+ * - Thigh tries to the dereference the owner of mutex A (which is nobody,
+ *   and thus it is NULL). This leads to an exception.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_lock()
+ */
+ZTEST(mutex_api_1cpu, test_mutex_timeout_race_during_priority_inversion)
+{
+	k_timeout_t timeout;
+	uintptr_t timeout_upper;
+	uintptr_t timeout_lower;
+	int helper_prio = k_thread_priority_get(k_current_get()) + 1;
+
+	k_mutex_init(&mutex);
+
+	/* align to tick boundary */
+	k_sleep(K_TICKS(1));
+
+	/* allow non-kobject data to be shared (via registers) */
+	timeout = K_TIMEOUT_ABS_TICKS(k_uptime_ticks()
+		+ CONFIG_TEST_MUTEX_API_THREAD_CREATE_TICKS);
+	timeout_upper = timeout.ticks >> 32;
+	timeout_lower = timeout.ticks & BIT64_MASK(32);
+
+	k_mutex_lock(&mutex, K_FOREVER);
+	k_thread_create(&tdata, tstack, K_THREAD_STACK_SIZEOF(tstack),
+			tThread_mutex_lock_should_fail, &mutex, (void *)timeout_upper,
+			(void *)timeout_lower, helper_prio,
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_priority_set(k_current_get(), K_HIGHEST_THREAD_PRIO);
+
+	k_sleep(timeout);
+
+	k_mutex_unlock(&mutex);
 }
 
 static void *mutex_api_tests_setup(void)

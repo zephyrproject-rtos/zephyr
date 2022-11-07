@@ -197,7 +197,7 @@ terminal session:
    https://www.silabs.com/documents/public/user-guides/ug257-stk3402-usersguide.pdf
 
 .. _EFM32PG-STK3402A Schematics:
-   https://www.silabs.com/documents/public/schematic-files/EFM32PG12-BRD2501A-A01-schematic.pdf
+   https://www.silabs.com/documents/public/schematic-files/BRD2501A-A01-schematic.pdf
 
 .. _EFM32PG Website:
    https://www.silabs.com/products/mcu/32-bit/efm32-pearl-gecko

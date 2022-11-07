@@ -152,7 +152,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! arduino_zero" in your terminal.
 
 References
 **********

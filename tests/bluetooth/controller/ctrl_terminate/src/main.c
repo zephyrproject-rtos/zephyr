@@ -112,7 +112,7 @@ void test_terminate_loc(uint8_t role)
 
 	/* Initiate an LE Ping Procedure */
 	err = ull_cp_terminate(&conn, 0x06);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);

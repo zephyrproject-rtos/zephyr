@@ -28,6 +28,7 @@ source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
 source "modules/Kconfig.nuvoton"
 source "modules/Kconfig.open-amp"
+source "modules/Kconfig.s32"
 source "modules/Kconfig.silabs"
 source "modules/Kconfig.simplelink"
 source "modules/Kconfig.sof"
@@ -74,6 +75,9 @@ comment "mbedtls module not available."
 comment "Trusted-firmware-m module not available."
 	depends on !ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
 
+comment "Trusted-firmware-a module not available."
+	depends on !ZEPHYR_TRUSTED_FIRMWARE_A_MODULE
+
 comment "Nanopb module not available."
 	depends on !ZEPHYR_NANOPB_MODULE
 
@@ -85,9 +89,6 @@ comment "loramac-node module not available."
 
 comment "CANopenNode module not available."
 	depends on !ZEPHYR_CANOPENNODE_MODULE
-
-comment "FFF module not available."
-	depends on !ZEPHYR_FFF_MODULE
 
 comment "zcbor module not available."
 	depends on !ZEPHYR_ZCBOR_MODULE

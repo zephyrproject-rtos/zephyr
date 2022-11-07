@@ -91,25 +91,23 @@ static const struct device *init_dac(void)
 /*
  * test_dac_write_value
  */
-static int test_task_write_value(void)
+ZTEST(dac, test_task_write_value)
 {
 	int ret;
 
 	const struct device *dac_dev = init_dac();
 
-	if (!dac_dev) {
-		return TC_FAIL;
-	}
-
 	/* write a value of half the full scale resolution */
 	ret = dac_write_value(dac_dev, DAC_CHANNEL_ID,
 						(1U << DAC_RESOLUTION) / 2);
 	zassert_equal(ret, 0, "dac_write_value() failed with code %d", ret);
-
-	return TC_PASS;
 }
 
-void test_dac_write_value(void)
+static void *dac_setup(void)
 {
-	zassert_true(test_task_write_value() == TC_PASS, NULL);
+	k_object_access_grant(get_dac_device(), k_current_get());
+
+	return NULL;
 }
+
+ZTEST_SUITE(dac, NULL, dac_setup, NULL, NULL, NULL);

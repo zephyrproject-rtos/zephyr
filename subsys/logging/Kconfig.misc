@@ -4,12 +4,12 @@
 menu "Misc"
 
 config LOG_DOMAIN_ID
-	int "Domain ID"
+	int "Domain ID [DEPRECATED]"
 	depends on !LOG_MODE_MINIMAL
 	default 0
 	range 0 7
 	help
-	  In multicore system each application/core must have unique domain ID.
+	  Deprecated. It is not used in the code.
 
 config LOG_CMDS
 	bool "Shell commands"
@@ -74,4 +74,33 @@ config LOG_MEM_UTILIZATION
 config LOG_DICTIONARY_DB
 	bool
 
+config LOG_MSG_APPEND_RO_STRING_LOC
+	bool
+	help
+	  Enable this option to force log messages to always append location of
+	  read-only string arguments in the package. This should be selected by
+	  backends if required.
+
+config LOG_FAILURE_REPORT_PERIOD
+	int "Failure report period (in milliseconds)"
+	default 1000
+	depends on LOG_MODE_DEFERRED
+	help
+	  Determines how often failures are reported. Report contains number
+	  of dropped messages. It may contain additional information depending
+	  on the mode.
+
+config LOG_DOMAIN_NAME
+	string "Domain name"
+	default ""
+
+if LOG_MULTIDOMAIN
+
+config LOG_REMOTE_DOMAIN_MAX_COUNT
+	int "Maximum number of link domains"
+	default 4
+	help
+	  Number of domains that can be handled by a link
+
+endif
 endmenu

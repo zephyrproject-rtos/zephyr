@@ -28,14 +28,14 @@ void test_littlefs_write(void)
 
 void test_littlefs_read(void)
 {
-	zassert_true(test_file_read(&test_file, test_str) == TC_PASS, NULL);
+	zassert_true(test_file_read(&test_file, test_str) == TC_PASS);
 }
 
 void test_littlefs_close(void)
 {
-	zassert_true(test_file_close(&test_file) == TC_PASS, NULL);
+	zassert_true(test_file_close(&test_file) == TC_PASS);
 }
 void test_littlefs_unlink(void)
 {
-	zassert_true(test_file_delete(TEST_FILE_PATH) == TC_PASS, NULL);
+	zassert_true(test_file_delete(TEST_FILE_PATH) == TC_PASS);
 }

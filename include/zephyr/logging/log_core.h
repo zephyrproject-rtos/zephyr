@@ -31,9 +31,8 @@ extern "C" {
 #define CONFIG_LOG_MAX_LEVEL 0U
 #endif
 
-#if !defined(CONFIG_LOG) || defined(CONFIG_LOG_MODE_MINIMAL)
-#define CONFIG_LOG_DOMAIN_ID 0U
-#endif
+/* Id of local domain. */
+#define Z_LOG_LOCAL_DOMAIN_ID 0
 
 #define LOG_FUNCTION_PREFIX_MASK \
 	(((uint32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) << \
@@ -238,7 +237,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 		(void *)_dsource : (void *)_source; \
 	Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
-			  CONFIG_LOG_DOMAIN_ID, _src, _level, NULL,\
+				  Z_LOG_LOCAL_DOMAIN_ID, _src, _level, NULL,\
 			  0, __VA_ARGS__); \
 	(void)_mode; \
 	if (false) { \
@@ -314,7 +313,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 		(void *)_dsource : (void *)_source; \
 	Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
-			  CONFIG_LOG_DOMAIN_ID, _src, _level, \
+				  Z_LOG_LOCAL_DOMAIN_ID, _src, _level, \
 			  _data, _len, \
 			COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
 				(), \
@@ -411,7 +410,7 @@ extern struct log_source_const_data __log_const_end[];
 		z_log_printf_arg_checker(__VA_ARGS__); \
 	} \
 	Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), _mode, \
-			  CONFIG_LOG_DOMAIN_ID, (uintptr_t)_is_raw, \
+			  Z_LOG_LOCAL_DOMAIN_ID, (uintptr_t)_is_raw, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
 
@@ -472,7 +471,7 @@ void z_log_printf_arg_checker(const char *fmt, ...)
  */
 static inline void log2_generic(uint8_t level, const char *fmt, va_list ap)
 {
-	z_log_msg_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL, level,
+	z_log_msg_runtime_vcreate(Z_LOG_LOCAL_DOMAIN_ID, NULL, level,
 				   NULL, 0, 0, fmt, ap);
 }
 

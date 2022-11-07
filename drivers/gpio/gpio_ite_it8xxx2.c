@@ -6,14 +6,21 @@
  */
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/ite-it8xxx2-gpio.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
+#include <zephyr/irq.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
+
+#include <chip_chipregs.h>
+#include <soc_common.h>
+
+LOG_MODULE_REGISTER(gpio_it8xxx2, LOG_LEVEL_ERR);
 
 #define DT_DRV_COMPAT ite_it8xxx2_gpio
 
@@ -366,6 +373,26 @@ static int gpio_ite_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (flags == GPIO_DISCONNECTED) {
+		*reg_gpcr = GPCR_PORT_PIN_MODE_TRISTATE;
+		/*
+		 * Since not all GPIOs can be to configured as tri-state,
+		 * prompt error if pin doesn't support the flag.
+		 */
+		if (*reg_gpcr != GPCR_PORT_PIN_MODE_TRISTATE) {
+			/* Go back to default setting (input) */
+			*reg_gpcr = GPCR_PORT_PIN_MODE_INPUT;
+			LOG_ERR("Cannot config GPIO-%c%d as tri-state",
+				(gpio_config->index + 'A'), pin);
+			return -ENOTSUP;
+		}
+		/*
+		 * The following configuration isn't necessary because the pin
+		 * was configured as disconnected.
+		 */
+		return 0;
+	}
+
 	/*
 	 * Select open drain first, so that we don't glitch the signal
 	 * when changing the line to an output.
@@ -590,7 +617,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		printk("Level trigger mode not supported.\r\n");
+		LOG_ERR("Level trigger mode not supported");
 		return -ENOTSUP;
 	}
 

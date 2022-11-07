@@ -160,8 +160,9 @@ struct net_if_router {
 	uint8_t _unused : 5;
 };
 
+/** Network interface flags. */
 enum net_if_flag {
-	/** Interface is up/ready to receive and transmit */
+	/** Interface is admin up. */
 	NET_IF_UP,
 
 	/** Interface is pointopoint */
@@ -193,11 +194,31 @@ enum net_if_flag {
 	/** Interface supports IPv6 */
 	NET_IF_IPV6,
 
+	/** Interface up and running (ready to receive and transmit). */
+	NET_IF_RUNNING,
+
+	/** Driver signals L1 is up. */
+	NET_IF_LOWER_UP,
+
+	/** Driver signals dormant. */
+	NET_IF_DORMANT,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
 /** @endcond */
 };
+
+/** Network interface operational status (RFC 2863). */
+enum net_if_oper_state {
+	NET_IF_OPER_UNKNOWN,
+	NET_IF_OPER_NOTPRESENT,
+	NET_IF_OPER_DOWN,
+	NET_IF_OPER_LOWERLAYERDOWN,
+	NET_IF_OPER_TESTING,
+	NET_IF_OPER_DORMANT,
+	NET_IF_OPER_UP,
+} __packed;
 
 #if defined(CONFIG_NET_OFFLOAD)
 struct net_offload;
@@ -468,6 +489,9 @@ struct net_if_dev {
 	 */
 	net_socket_create_t socket_offload;
 #endif /* CONFIG_NET_SOCKETS_OFFLOAD */
+
+	/** RFC 2863 operational status */
+	enum net_if_oper_state oper_state;
 };
 
 /**
@@ -543,6 +567,22 @@ static inline void net_if_flag_clear(struct net_if *iface,
 }
 
 /**
+ * @brief Test and clear a value in network interface flags
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ *
+ * @return true if the bit was set, false if it wasn't.
+ */
+static inline bool net_if_flag_test_and_clear(struct net_if *iface,
+					      enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	return atomic_test_and_clear_bit(iface->if_dev->flags, value);
+}
+
+/**
  * @brief Check if a value in network interface flags is set
  *
  * @param iface Pointer to network interface
@@ -558,6 +598,40 @@ static inline bool net_if_flag_is_set(struct net_if *iface,
 	}
 
 	return atomic_test_bit(iface->if_dev->flags, value);
+}
+
+/**
+ * @brief Set an operational state on an interface
+ *
+ * @param iface Pointer to network interface
+ * @param oper_state Operational state to set
+ *
+ * @return The new operational state of an interface
+ */
+static inline enum net_if_oper_state net_if_oper_state_set(
+	struct net_if *iface, enum net_if_oper_state oper_state)
+{
+	NET_ASSERT(iface);
+
+	if (oper_state >= NET_IF_OPER_UNKNOWN && oper_state <= NET_IF_OPER_UP) {
+		iface->if_dev->oper_state = oper_state;
+	}
+
+	return iface->if_dev->oper_state;
+}
+
+/**
+ * @brief Get an operational state of an interface
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return Operational state of an interface
+ */
+static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return iface->if_dev->oper_state;
 }
 
 /**
@@ -577,7 +651,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
  *
  * @return a pointer to the iface L2
  */
-static inline const struct net_l2 * const net_if_l2(struct net_if *iface)
+static inline const struct net_l2 *net_if_l2(struct net_if *iface)
 {
 	if (!iface || !iface->if_dev) {
 		return NULL;
@@ -2075,7 +2149,7 @@ void net_if_foreach(net_if_cb_t cb, void *user_data);
 int net_if_up(struct net_if *iface);
 
 /**
- * @brief Check if interface is up.
+ * @brief Check if interface is is up and running.
  *
  * @param iface Pointer to network interface
  *
@@ -2085,7 +2159,8 @@ static inline bool net_if_is_up(struct net_if *iface)
 {
 	NET_ASSERT(iface);
 
-	return net_if_flag_is_set(iface, NET_IF_UP);
+	return net_if_flag_is_set(iface, NET_IF_UP) &&
+	       net_if_flag_is_set(iface, NET_IF_RUNNING);
 }
 
 /**
@@ -2096,6 +2171,90 @@ static inline bool net_if_is_up(struct net_if *iface)
  * @return 0 on success
  */
 int net_if_down(struct net_if *iface);
+
+/**
+ * @brief Check if interface was brought up by the administrator.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is admin up, false otherwise.
+ */
+static inline bool net_if_is_admin_up(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return net_if_flag_is_set(iface, NET_IF_UP);
+}
+
+/**
+ * @brief Underlying network device has detected the carrier (cable connected).
+ *
+ * @details The function should be used by the respective network device driver
+ *          or L2 implementation to update its state on a network interface.
+ *
+ * @param iface Pointer to network interface
+ */
+void net_if_carrier_on(struct net_if *iface);
+
+/**
+ * @brief Underlying network device has lost the carrier (cable disconnected).
+ *
+ * @details The function should be used by the respective network device driver
+ *          or L2 implementation to update its state on a network interface.
+ *
+ * @param iface Pointer to network interface
+ */
+void net_if_carrier_off(struct net_if *iface);
+
+/**
+ * @brief Check if carrier is present on network device.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if carrier is present, false otherwise.
+ */
+static inline bool net_if_is_carrier_ok(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return net_if_flag_is_set(iface, NET_IF_LOWER_UP);
+}
+
+/**
+ * @brief Mark interface as dormant. Dormant state indicates that the interface
+ *        is not ready to pass packets yet, but is waiting for some event
+ *        (for example Wi-Fi network association).
+ *
+ * @details The function should be used by the respective network device driver
+ *          or L2 implementation to update its state on a network interface.
+ *
+ * @param iface Pointer to network interface
+ */
+void net_if_dormant_on(struct net_if *iface);
+
+/**
+ * @brief Mark interface as not dormant.
+ *
+ * @details The function should be used by the respective network device driver
+ *          or L2 implementation to update its state on a network interface.
+ *
+ * @param iface Pointer to network interface
+ */
+void net_if_dormant_off(struct net_if *iface);
+
+/**
+ * @brief Check if the interface is dormant.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is dormant, false otherwise.
+ */
+static inline bool net_if_is_dormant(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return net_if_flag_is_set(iface, NET_IF_DORMANT);
+}
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
 /**
@@ -2270,42 +2429,42 @@ struct net_if_api {
 		NET_IF_DHCPV4_INIT			\
 	}
 
-#define NET_IF_GET_NAME(dev_name, sfx) __net_if_##dev_name##_##sfx
-#define NET_IF_DEV_GET_NAME(dev_name, sfx) __net_if_dev_##dev_name##_##sfx
+#define NET_IF_GET_NAME(dev_id, sfx) __net_if_##dev_id##_##sfx
+#define NET_IF_DEV_GET_NAME(dev_id, sfx) __net_if_dev_##dev_id##_##sfx
 
-#define NET_IF_GET(dev_name, sfx)					\
-	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
+#define NET_IF_GET(dev_id, sfx)						\
+	((struct net_if *)&NET_IF_GET_NAME(dev_id, sfx))
 
-#define NET_IF_INIT(dev_name, sfx, _l2, _mtu, _num_configs)		\
+#define NET_IF_INIT(dev_id, sfx, _l2, _mtu, _num_configs)		\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
-				NET_IF_DEV_GET_NAME(dev_name, sfx)) = { \
-		.dev = &(DEVICE_NAME_GET(dev_name)),			\
+				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
+		.dev = &(DEVICE_NAME_GET(dev_id)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
-		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
+		.l2_data = &(NET_L2_GET_DATA(dev_id, sfx)),		\
 		.mtu = _mtu,						\
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
-		       NET_IF_GET_NAME(dev_name, sfx)[_num_configs]	\
-		       __used __in_section(_net_if, static,             \
-					   dev_name) = {                \
+		       NET_IF_GET_NAME(dev_id, sfx)[_num_configs]	\
+		       __used __in_section(_net_if, static,		\
+					   dev_id) = {			\
 		[0 ... (_num_configs - 1)] = {				\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
+			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
 			NET_IF_CONFIG_INIT				\
 		}							\
 	}
 
-#define NET_IF_OFFLOAD_INIT(dev_name, sfx, _mtu)			\
+#define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)				\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
-				NET_IF_DEV_GET_NAME(dev_name, sfx)) = {	\
-		.dev = &(DEVICE_NAME_GET(dev_name)),			\
+				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
+		.dev = &(DEVICE_NAME_GET(dev_id)),			\
 		.mtu = _mtu,						\
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
-		NET_IF_GET_NAME(dev_name, sfx)[NET_IF_MAX_CONFIGS]	\
-		       __used __in_section(_net_if, static,             \
-					   dev_name) = {                \
+		NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS]	\
+		       __used __in_section(_net_if, static,		\
+					   dev_id) = {			\
 		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
+			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
 			NET_IF_CONFIG_INIT				\
 		}							\
 	}
@@ -2314,28 +2473,26 @@ struct net_if_api {
 
 /* Network device initialization macros */
 
-#define Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
-			pm_action_cb, data, cfg, prio, api, l2,	\
-			l2_ctx_type, mtu)				\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
-			pm_action_cb, data,				\
-			cfg, POST_KERNEL, prio, api,			\
-			&Z_DEVICE_STATE_NAME(dev_name));		\
-	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);			\
-	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
+#define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
+			  config, prio, api, l2, l2_ctx_type, mtu)	\
+	Z_DEVICE_STATE_DEFINE(dev_id);					\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+			config, POST_KERNEL, prio, api,			\
+			&Z_DEVICE_STATE_NAME(dev_id));			\
+	NET_L2_DATA_INIT(dev_id, 0, l2_ctx_type);			\
+	NET_IF_INIT(dev_id, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * @brief Create a network interface and bind it to network device.
  *
- * @param dev_name Network device name.
- * @param drv_name The name this instance of the driver exposes to
+ * @param dev_id Network device id.
+ * @param name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -2344,12 +2501,10 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_action_cb,	\
-			data, cfg, prio, api, l2,			\
-			l2_ctx_type, mtu)				\
-	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
-			pm_action_cb, data, cfg, prio, api, l2,	\
-			l2_ctx_type, mtu)
+#define NET_DEVICE_INIT(dev_id, name, init_fn, pm, data, config, prio,	\
+			api, l2, l2_ctx_type, mtu)			\
+	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_id, name, init_fn, pm,	\
+			  data, config, prio, api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_INIT but taking metadata from a devicetree node.
@@ -2357,10 +2512,10 @@ struct net_if_api {
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -2369,12 +2524,11 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_action_cb, data, cfg,	\
-			   prio, api, l2, l2_ctx_type, mtu)		\
-	Z_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
-			  DEVICE_DT_NAME(node_id), init_fn,		\
-			  pm_action_cb, data, cfg, prio, api, l2,	\
-			  l2_ctx_type, mtu)
+#define NET_DEVICE_DT_DEFINE(node_id, init_fn, pm, data,		\
+			     config, prio, api, l2, l2_ctx_type, mtu)	\
+	Z_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_ID(node_id),	\
+			  DEVICE_DT_NAME(node_id), init_fn, pm, data,	\
+			  config, prio, api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT compatible
@@ -2387,16 +2541,15 @@ struct net_if_api {
 #define NET_DEVICE_DT_INST_DEFINE(inst, ...) \
 	NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
-#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_name, drv_name,		\
-				   instance, init_fn, pm_action_cb,	\
-				   data, cfg, prio, api, l2,		\
-				   l2_ctx_type, mtu)			\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
-			pm_action_cb, data, cfg, POST_KERNEL,		\
-			prio, api, &Z_DEVICE_STATE_NAME(dev_name));	\
-	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
+				   init_fn, pm, data, config, prio,	\
+				   api, l2, l2_ctx_type, mtu)		\
+	Z_DEVICE_STATE_DEFINE(dev_id);					\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+			config,	POST_KERNEL, prio, api,			\
+			&Z_DEVICE_STATE_NAME(dev_id));			\
+	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
+	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * @brief Create multiple network interfaces and bind them to network device.
@@ -2404,15 +2557,15 @@ struct net_if_api {
  * use this macro below and provide a different instance suffix each time
  * (0, 1, 2, ... or a, b, c ... whatever works for you)
  *
- * @param dev_name Network device name.
- * @param drv_name The name this instance of the driver exposes to
+ * @param dev_id Network device id.
+ * @param name The name this instance of the driver exposes to
  * the system.
  * @param instance Instance identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -2421,13 +2574,12 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT_INSTANCE(dev_name, drv_name, instance, init_fn,	\
-				 pm_action_cb, data, cfg, prio,	\
-				 api, l2, l2_ctx_type, mtu)		\
-	Z_NET_DEVICE_INIT_INSTANCE(DT_INVALID_NODE, dev_name, drv_name,	\
-				   instance, init_fn, pm_action_cb,	\
-				   data, cfg, prio, api, l2,		\
-				   l2_ctx_type, mtu)
+#define NET_DEVICE_INIT_INSTANCE(dev_id, name, instance, init_fn, pm,	\
+				 data, config, prio, api, l2,		\
+				 l2_ctx_type, mtu)			\
+	Z_NET_DEVICE_INIT_INSTANCE(DT_INVALID_NODE, dev_id, name,	\
+				   instance, init_fn, pm, data, config,	\
+				   prio, api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_OFFLOAD_INIT but taking metadata from a devicetree.
@@ -2439,10 +2591,10 @@ struct net_if_api {
  * @param node_id The devicetree node identifier.
  * @param instance Instance identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -2451,15 +2603,14 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_DEFINE_INSTANCE(node_id, instance, init_fn,	\
-				      pm_action_cb, data, cfg, prio,	\
-				      api, l2, l2_ctx_type, mtu)	\
+#define NET_DEVICE_DT_DEFINE_INSTANCE(node_id, instance, init_fn, pm,	\
+				      data, config, prio, api, l2,	\
+				      l2_ctx_type, mtu)			\
 	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
-				   Z_DEVICE_DT_DEV_NAME(node_id),	\
-				   DEVICE_DT_NAME(node_id),		\
-				   instance, init_fn,			\
-				   pm_action_cb, data, cfg, prio, api,	\
-				   l2, l2_ctx_type, mtu)
+				   Z_DEVICE_DT_DEV_ID(node_id),		\
+				   DEVICE_DT_NAME(node_id), instance,	\
+				   init_fn, pm, data, config, prio,	\
+				   api,	l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_DEFINE_INSTANCE for an instance of a DT_DRV_COMPAT
@@ -2473,39 +2624,38 @@ struct net_if_api {
 #define NET_DEVICE_DT_INST_DEFINE_INSTANCE(inst, ...) \
 	NET_DEVICE_DT_DEFINE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
 
-#define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_name, drv_name, init_fn,	\
-				  pm_action_cb, data, cfg, prio,	\
-				  api, mtu)				\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
-		pm_action_cb, data, cfg, POST_KERNEL, prio, api,	\
-		&Z_DEVICE_STATE_NAME(dev_name));			\
-	NET_IF_OFFLOAD_INIT(dev_name, 0, mtu)
+#define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_id, name, init_fn, pm,	\
+				  data, config, prio, api, mtu)		\
+	Z_DEVICE_STATE_DEFINE(dev_id);					\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+			config, POST_KERNEL, prio, api,			\
+			&Z_DEVICE_STATE_NAME(dev_id));			\
+	NET_IF_OFFLOAD_INIT(dev_id, 0, mtu)
 
 /**
  * @brief Create a offloaded network interface and bind it to network device.
  * The offloaded network interface is implemented by a device vendor HAL or
  * similar.
  *
- * @param dev_name Network device name.
- * @param drv_name The name this instance of the driver exposes to
+ * @param dev_id Network device id.
+ * @param name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_OFFLOAD_INIT(dev_name, drv_name, init_fn,		\
-				pm_action_cb, data, cfg, prio, api, mtu)\
-	Z_NET_DEVICE_OFFLOAD_INIT(DT_INVALID_NODE, dev_name, drv_name,	\
-				init_fn, pm_action_cb, data, cfg, prio,\
-				api, mtu)
+#define NET_DEVICE_OFFLOAD_INIT(dev_id, name, init_fn, pm, data,	\
+				config,	prio, api, mtu)			\
+	Z_NET_DEVICE_OFFLOAD_INIT(DT_INVALID_NODE, dev_id, name,	\
+				  init_fn, pm, data, config, prio, api,	\
+				  mtu)
 
 /**
  * @brief Like NET_DEVICE_OFFLOAD_INIT but taking metadata from a devicetree
@@ -2515,22 +2665,21 @@ struct net_if_api {
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm_action_cb,	\
-				   data, cfg, prio, api, mtu)		\
-	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id), \
-				  DEVICE_DT_NAME(node_id),		\
-				  init_fn, pm_action_cb, data, cfg,	\
-				  prio, api, mtu)
+#define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm, data,	\
+				     config, prio, api, mtu)		\
+	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_ID(node_id), \
+				  DEVICE_DT_NAME(node_id), init_fn, pm, \
+				  data, config,	prio, api, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_OFFLOAD_DEFINE for an instance of a DT_DRV_COMPAT

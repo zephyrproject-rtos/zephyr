@@ -43,7 +43,7 @@ ZTEST(kernel_apis, test_kernel_start)
 		/* When osFeature_MainThread is 0 the kernel requires
 		 * explicit start with osKernelStart.
 		 */
-		zassert_false(osKernelRunning(), NULL);
+		zassert_false(osKernelRunning());
 	}
 }
 

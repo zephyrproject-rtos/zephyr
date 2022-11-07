@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <freq.h>
 
@@ -334,6 +335,14 @@
 			reg = <0x40013000 0x400>;
 			interrupts = <59 5>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			status = "disabled";
+		};
+
+		sdmmc1: sdmmc@420c8000 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x420c8000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00400000>;
+			interrupts = <78 0>;
 			status = "disabled";
 		};
 

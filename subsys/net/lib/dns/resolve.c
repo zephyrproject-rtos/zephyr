@@ -1501,5 +1501,10 @@ void dns_init_resolver(void)
 	if (ret < 0) {
 		NET_WARN("Cannot initialize DNS resolver (%d)", ret);
 	}
+#else
+	/* We must always call init even if there are no servers configured so
+	 * that DNS mutex gets initialized properly.
+	 */
+	(void)dns_resolve_init(dns_resolve_get_default(), NULL, NULL);
 #endif
 }
