@@ -268,6 +268,7 @@ int lsm6dso_init_interrupt(const struct device *dev)
 			(k_thread_entry_t)lsm6dso_thread, lsm6dso,
 			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSO_THREAD_PRIORITY),
 			0, K_NO_WAIT);
+	k_thread_name_set(&lsm6dso->thread, "lsm6dso");
 #elif defined(CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD)
 	lsm6dso->work.handler = lsm6dso_work_cb;
 #endif /* CONFIG_LSM6DSO_TRIGGER_OWN_THREAD */
