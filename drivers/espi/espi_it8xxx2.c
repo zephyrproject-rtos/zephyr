@@ -1797,11 +1797,12 @@ void espi_it8xxx2_espi_reset_isr(const struct device *port,
 #define ESPI_IT8XXX2_ESPI_RESET_PIN  2
 static void espi_it8xxx2_enable_reset(void)
 {
+	struct gpio_it8xxx2_regs *const gpio_regs = GPIO_IT8XXX2_REG_BASE;
 	static struct gpio_callback espi_reset_cb;
 
 	/* eSPI reset is enabled on GPD2 */
-	IT8XXX2_GPIO_GCR =
-		(IT8XXX2_GPIO_GCR & ~IT8XXX2_GPIO_GCR_ESPI_RST_EN_MASK) |
+	gpio_regs->GPIO_GCR =
+		(gpio_regs->GPIO_GCR & ~IT8XXX2_GPIO_GCR_ESPI_RST_EN_MASK) |
 		(IT8XXX2_GPIO_GCR_ESPI_RST_D2 << IT8XXX2_GPIO_GCR_ESPI_RST_POS);
 	/* enable eSPI reset isr */
 	gpio_init_callback(&espi_reset_cb, espi_it8xxx2_espi_reset_isr,
