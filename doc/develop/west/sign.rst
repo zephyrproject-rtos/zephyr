@@ -7,6 +7,16 @@ The ``west sign`` :ref:`extension <west-extensions>` command can be used to
 sign a Zephyr application binary for consumption by a bootloader using an
 external tool. Run ``west sign -h`` for command line help.
 
+By default ``west sign`` will sign the image assuming that it is running in
+the partition with label ``image-0`` and limit the size of the binary to the
+size of the partition with label ``image-1``.
+
+If :kconfig:option:`CONFIG_USE_DT_CODE_PARTITION` ``=y``, ``west sign`` will
+use ``zephyr,code-partition`` as the location of the running image and an
+optional ``zephyr,secondary-code-partition`` as the size limit of the image.
+This can be required when building multi-image applications, see
+:literal:`tests/subsys/dfu/mcuboot_multi`.
+
 MCUboot / imgtool
 *****************
 
