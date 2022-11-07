@@ -29,7 +29,6 @@ __imr void hp_sram_init(uint32_t memory_size)
 	}
 	for (idx = 0; idx < hpsram_ebb_quantity; ++idx) {
 		while (*(status + idx * 8) != 0) {
-			z_idelay(DELAY_COUNT);
 		}
 	}
 
