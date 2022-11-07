@@ -325,6 +325,8 @@ static void mcux_ftm_capture_second_edge(const struct device *dev,
 				status = -ERANGE;
 			}
 		}
+	} else if (first_cnv > second_cnv) {
+		cycles = config->base->MOD - first_cnv + second_cnv;
 	} else {
 		cycles = second_cnv - first_cnv;
 	}
