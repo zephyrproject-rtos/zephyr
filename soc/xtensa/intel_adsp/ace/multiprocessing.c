@@ -133,6 +133,7 @@ void arch_sched_ipi(void)
 	}
 }
 
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 int soc_adsp_halt_cpu(int id)
 {
 	int retry = CORE_POWER_CHECK_NUM;
@@ -168,3 +169,4 @@ int soc_adsp_halt_cpu(int id)
 
 	return 0;
 }
+#endif
