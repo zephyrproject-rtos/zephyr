@@ -103,6 +103,21 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 	return 0;
 }
 
+void bt_pub_key_hci_disrupted(void)
+{
+	struct bt_pub_key_cb *cb;
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
+		if (cb->func) {
+			cb->func(NULL);
+		}
+	}
+
+	sys_slist_init(&pub_key_cb_slist);
+}
+
 const uint8_t *bt_pub_key_get(void)
 {
 	if (IS_ENABLED(CONFIG_BT_USE_DEBUG_KEYS) &&
