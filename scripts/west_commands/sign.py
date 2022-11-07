@@ -215,10 +215,12 @@ class ImgtoolSigner(Signer):
         imgtool = self.find_imgtool(command, args)
         # The vector table offset is set in Kconfig:
         vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
+        # Determine if devicetree is specifying the partition.
+        dt_code_partition = 'CONFIG_USE_DT_CODE_PARTITION' in build_conf
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
         edt = self.edt_load(b, args.quiet)
-        primary, secondary = self.edt_mcuboot_partitions(edt)
+        primary, secondary = self.edt_mcuboot_partitions(edt, dt_code_partition)
         align, addr, size = self.edt_flash_params(primary, secondary)
 
         if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
@@ -331,23 +333,28 @@ class ImgtoolSigner(Signer):
         return edt
 
     @staticmethod
-    def edt_mcuboot_partitions(edt):
+    def edt_mcuboot_partitions(edt, dt_code_partition):
         # Get the primary and secondary image partitions.
 
-        # Find all fixed-partition nodes
+        # Find all fixed-partition nodes.
         partition_nodes = edt.compat2okay['fixed-partitions']
-        # Assume that `image-0` and `image-1` labels correspond with the
-        # primary and secondary partitions.
         partitions = {
             node.label: node for p in partition_nodes for node in p.children.values()
-            if node.label in set(['image-0', 'image-1'])
         }
-        # Validate that the primary image exists.
-        if 'image-0' not in partitions:
-            log.die("DT zephyr,flash chosen node has no image-0 partition,",
-                    "can't determine its address")
+        # Determine the primary partition.
+        if dt_code_partition:
+            primary = edt.chosen_nodes['zephyr,code-partition']
+        else:
+            # Assume that `image-0` corresponds with the primary partition and
+            # check that it exists.
+            if 'image-0' not in partitions:
+                log.die("DT zephyr,flash chosen node has no image-0 partition,",
+                        "can't determine its address")
+            primary = partitions['image-0']
+        # Assume that `image-1` corresponds with secondary partition.
+        secondary = partitions.get('image-1', None)
         # Return the retrieved partitions.
-        return partitions['image-0'], partitions.get('image-1', None)
+        return primary, secondary
 
     @staticmethod
     def edt_flash_params(primary_image, secondary_image):
