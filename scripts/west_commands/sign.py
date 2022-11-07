@@ -341,9 +341,15 @@ class ImgtoolSigner(Signer):
         partitions = {
             node.label: node for p in partition_nodes for node in p.children.values()
         }
+        # Assume that `image-1` corresponds with secondary partition for now.
+        secondary = partitions.get('image-1', None)
         # Determine the primary partition.
         if dt_code_partition:
             primary = edt.chosen_nodes['zephyr,code-partition']
+            # Override the default secondary partition if
+            # `secondary-code-partition` exists
+            secondary = edt.chosen_nodes.get('zephyr,secondary-code-partition',
+                                             secondary)
         else:
             # Assume that `image-0` corresponds with the primary partition and
             # check that it exists.
@@ -351,8 +357,6 @@ class ImgtoolSigner(Signer):
                 log.die("DT zephyr,flash chosen node has no image-0 partition,",
                         "can't determine its address")
             primary = partitions['image-0']
-        # Assume that `image-1` corresponds with secondary partition.
-        secondary = partitions.get('image-1', None)
         # Return the retrieved partitions.
         return primary, secondary
 
