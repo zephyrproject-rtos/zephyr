@@ -33,7 +33,7 @@ option at the struct level, as shown below.
 Frames in SMP have the following header format:
 
 ```
-struct mgmt_hdr {
+struct smp_hdr {
 #ifdef CONFIG_LITTLE_ENDIAN
     uint8_t  nh_op:3;           /* MGMT_OP_[...] */
     uint8_t  _res1:5;
