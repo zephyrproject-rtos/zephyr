@@ -34,12 +34,16 @@
 #include "lll_adv_iso.h"
 #include "lll_iso_tx.h"
 
+#include "isoal.h"
+
 #include "ull_adv_types.h"
+#include "ull_iso_types.h"
 
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_sched_internal.h"
+#include "ull_iso_internal.h"
 
 #include "ll.h"
 #include "ll_feat.h"
@@ -209,6 +213,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 		stream = (void *)adv_iso_stream_acquire();
 		stream->big_handle = big_handle;
+		stream->dp = NULL;
 
 		if (!stream->link_tx_free) {
 			stream->link_tx_free = &stream->link_tx;
@@ -247,6 +252,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	 */
 	iso_interval_us = ((sdu_interval * lll_adv_iso->bn * sdu_per_event) /
 			   (bn * PERIODIC_INT_UNIT_US)) * PERIODIC_INT_UNIT_US;
+	lll_adv_iso->iso_interval = iso_interval_us;
 
 	/* Immediate Repetition Count (IRC), Mandatory IRC = 1 */
 	lll_adv_iso->irc = rtn + 1U;
@@ -324,6 +330,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			     sizeof(lll_adv_iso->base_crc_init));
 	lll_adv_iso->data_chan_count =
 		ull_chan_map_get(lll_adv_iso->data_chan_map);
+	lll_adv_iso->payload_count = 0U;
 	lll_adv_iso->latency_prepare = 0U;
 	lll_adv_iso->latency_event = 0U;
 	lll_adv_iso->term_req = 0U;
@@ -521,6 +528,9 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	struct node_rx_pdu *node_rx;
 	struct lll_adv *lll_adv;
 	struct ll_adv_set *adv;
+	uint16_t stream_handle;
+	uint16_t handle;
+	uint8_t num_bis;
 	uint8_t ter_idx;
 	uint8_t err;
 
@@ -537,6 +547,18 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 
 	if (lll_adv_iso->term_req) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Remove ISO data path, keeping data from entering Tx pipeline */
+	num_bis = lll_adv_iso->num_bis;
+	while (num_bis--) {
+		stream_handle = lll_adv_iso->stream_handle[num_bis];
+		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
+		err = ll_remove_iso_path(handle,
+					 BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+		if (err) {
+			return err;
+		}
 	}
 
 	lll_adv_sync = lll_adv->sync;
@@ -783,6 +805,7 @@ void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso)
 	lll = &adv_iso->lll;
 	while (lll->num_bis--) {
 		struct lll_adv_iso_stream *stream;
+		struct ll_iso_datapath *dp;
 		uint16_t stream_handle;
 		memq_link_t *link;
 
@@ -794,6 +817,13 @@ void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso)
 				   &stream->memq_tx.tail);
 		LL_ASSERT(link);
 		stream->link_tx_free = link;
+
+		dp = stream->dp;
+		if (dp) {
+			stream->dp = NULL;
+			isoal_source_destroy(dp->source_hdl);
+			ull_iso_datapath_release(dp);
+		}
 
 		mem_release(stream, &stream_free);
 	}

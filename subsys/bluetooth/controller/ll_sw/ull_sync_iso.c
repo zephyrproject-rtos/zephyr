@@ -316,10 +316,10 @@ void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 	while (lll->stream_count--) {
 		struct lll_sync_iso_stream *stream;
 		struct ll_iso_datapath *dp;
-		uint16_t handle;
+		uint16_t stream_handle;
 
-		handle = lll->stream_handle[lll->stream_count];
-		stream = ull_sync_iso_stream_get(handle);
+		stream_handle = lll->stream_handle[lll->stream_count];
+		stream = ull_sync_iso_stream_get(stream_handle);
 		LL_ASSERT(stream);
 
 		dp = stream->dp;

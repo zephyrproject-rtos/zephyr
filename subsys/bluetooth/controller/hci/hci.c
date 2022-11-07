@@ -5704,11 +5704,13 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	sdu_frag_tx.dbuf = buf->data;
 	sdu_frag_tx.size = len;
 
+	if (false) {
+
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* Extract source handle from CIS or BIS handle by way of header and
 	 * data path
 	 */
-	if (IS_CIS_HANDLE(handle)) {
+	} else if (IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_stream *cis =
 			ll_iso_stream_connected_get(handle);
 		if (!cis) {
@@ -5763,13 +5765,13 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 		/* TODO: Assign *evt if an immediate response is required */
 		return 0;
-	}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
-	if (IS_ADV_ISO_HANDLE(handle)) {
-		/* FIXME: Use ISOAL */
-		struct node_tx_iso *tx;
+	} else if (IS_ADV_ISO_HANDLE(handle)) {
+		struct lll_adv_iso_stream *stream;
+		struct ll_adv_iso_set *adv_iso;
+		struct lll_adv_iso *lll_iso;
 		uint16_t stream_handle;
 		uint16_t slen;
 
@@ -5783,21 +5785,12 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		}
 
 		/* Get BIS stream handle and stream context */
-		handle = bt_iso_handle(handle);
-		if (handle < BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE) {
-			return -EINVAL;
-		}
 		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
-
-		struct lll_adv_iso_stream *stream;
-
 		stream = ull_adv_iso_stream_get(stream_handle);
-		if (!stream) {
+		if (!stream || !stream->dp) {
 			LOG_ERR("Invalid BIS stream");
 			return -EINVAL;
 		}
-
-		struct ll_adv_iso_set *adv_iso;
 
 		adv_iso = ull_adv_iso_by_stream_get(stream_handle);
 		if (!adv_iso) {
@@ -5805,56 +5798,39 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 			return -EINVAL;
 		}
 
-		/* Get free node tx */
-		tx = ll_iso_tx_mem_acquire();
-		if (!tx) {
-			LOG_ERR("ISO Tx Buffer Overflow");
-			data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
-			return -ENOBUFS;
-		}
+		/* FIXME: convey group start */
+		sdu_frag_tx.grp_ref_point = 0;
 
-		struct pdu_bis *pdu = (void *)tx->pdu;
-
-		/* FIXME: Update to use correct LLID for BIS and CIS */
-		switch (bt_iso_flags_pb(flags)) {
-		case BT_ISO_SINGLE:
-			pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
-			break;
-		default:
-			ll_iso_tx_mem_release(tx);
-			return -EINVAL;
-		}
-
-		pdu->len = slen;
-		memcpy(pdu->payload, buf->data, slen);
-
-		struct lll_adv_iso *lll_iso;
-
+		/* FIXME: temporary interface to enable ISOAL data Tx
+		 * Create provide proper interface between client
+		 * (using ISOAL target_event) and ISOAL, preferably
+		 * without dependence on peeking at LL data.
+		 * Problem is that client must specify a value greater
+		 * than LL bisPayloadCounter or no data is sent.
+		 */
 		lll_iso = &adv_iso->lll;
+		sdu_frag_tx.target_event = (lll_iso->payload_count / lll_iso->bn);
 
-		uint64_t pkt_seq_num;
+		/* Start Fragmentation */
+		/* FIXME: need to ensure ISO-AL returns proper isoal_status.
+		 * Currently there are cases where ISO-AL calls LL_ASSERT.
+		 */
+		isoal_status_t isoal_status =
+			isoal_tx_sdu_fragment(stream->dp->source_hdl, &sdu_frag_tx);
 
-		pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
-		if (((pkt_seq_num - stream->pkt_seq_num) & BIT64_MASK(39)) <=
-		BIT64_MASK(38)) {
-			stream->pkt_seq_num = pkt_seq_num;
-		} else {
-			pkt_seq_num = stream->pkt_seq_num;
-		}
+		if (isoal_status) {
+			if (isoal_status & ISOAL_STATUS_ERR_PDU_ALLOC) {
+				data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
+				return -ENOBUFS;
+			}
 
-		tx->payload_count = pkt_seq_num * lll_iso->bn;
-
-		stream->pkt_seq_num++;
-
-		if (ll_iso_tx_mem_enqueue(handle, tx, NULL)) {
-			LOG_ERR("Invalid ISO Tx Enqueue");
-			ll_iso_tx_mem_release(tx);
 			return -EINVAL;
 		}
 
 		return 0;
-	}
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+	}
 
 	return -EINVAL;
 }
