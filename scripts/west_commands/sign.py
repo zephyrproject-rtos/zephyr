@@ -217,7 +217,8 @@ class ImgtoolSigner(Signer):
         vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
-        flash = self.edt_flash_node(b, args.quiet)
+        edt = self.edt_load(b, args.quiet)
+        flash = self.edt_flash_node(edt)
         align, addr, size = self.edt_flash_params(flash)
 
         if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
@@ -311,7 +312,7 @@ class ImgtoolSigner(Signer):
             return None
 
     @staticmethod
-    def edt_flash_node(b, quiet=False):
+    def edt_load(b, quiet=False):
         # Get the EDT Node corresponding to the zephyr,flash chosen DT
         # node; 'b' is the build directory as a pathlib object.
 
@@ -327,7 +328,10 @@ class ImgtoolSigner(Signer):
         # Load the devicetree.
         with open(edt_pickle, 'rb') as f:
             edt = pickle.load(f)
+        return edt
 
+    @staticmethod
+    def edt_flash_node(edt):
         # By convention, the zephyr,flash chosen node contains the
         # partition information about the zephyr image to sign.
         flash = edt.chosen_node('zephyr,flash')
