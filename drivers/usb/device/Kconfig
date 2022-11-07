@@ -183,6 +183,7 @@ config USB_TELINK_B91
 	bool "Telink Semiconductor USB Device Controller Driver"
 	default y
 	depends on SOC_RISCV_TELINK_B91
+	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  B91 USB Device Controller Driver
 
@@ -203,12 +204,6 @@ config USB_B91_WORK_QUEUE_STACK_SIZE
 	  Size of the stack for the work queue thread that is used in the driver
 	  for handling the events from the USBD ISR, i.e. executing endpoint
 	  callbacks and providing proper notifications to the USB device stack.
-
-config USB_B91_SUSPEND
-	bool "MCU suspend"
-	depends on USB_TELINK_B91
-	help
-	  MCU enter suspend while suspend irq occurs.
 
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
