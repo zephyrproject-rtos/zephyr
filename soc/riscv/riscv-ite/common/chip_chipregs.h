@@ -1665,4 +1665,94 @@ struct espi_queue1_regs {
 
 #endif /* !__ASSEMBLER__ */
 
+
+/**
+ *
+ * (3Axxh) SPI Slave Controller (SPISC) registers
+ *
+ */
+#ifndef __ASSEMBLER__
+struct spisc_it8xxx2_regs {
+	/* 0x00: SPI Slave General Control */
+	volatile uint8_t SPISC_SPISGCR;
+	/* 0x01: Tx/Rx FIFO Access */
+	volatile uint8_t SPISC_TXRXFAR;
+	/* 0x02: Tx FIFO Control */
+	volatile uint8_t SPISC_TXFCR;
+	/* 0x03: SPI Slave General Control 2 */
+	volatile uint8_t SPISC_SPISGCR2;
+	/* 0x04: Interrupt Mask */
+	volatile uint8_t SPISC_IMR;
+	/* 0x05: Interrupt Status */
+	volatile uint8_t SPISC_ISR;
+	/* 0x06: Tx FIFO Status */
+	volatile uint8_t SPISC_TXFSR;
+	/* 0x07: Rx FIFO Status */
+	volatile uint8_t SPISC_RXFSR;
+	/* 0x08: CPU Write Tx FIFO Data Byte0 */
+	volatile uint8_t SPISC_CPUWTXFDB0R;
+	/* 0x09: FIFO Control / CPU Write Tx FIFO Data Byte1 */
+	volatile uint8_t SPISC_FCR;
+	/* 0x0A: CPU Write Tx FIFO Data Byte2 */
+	volatile uint8_t SPISC_CPUWTXFDB2R;
+	/* 0x0B: SPI Slave Response Data / CPU Write Tx FIFO Data Byte3 */
+	volatile uint8_t SPISC_SPISRDR;
+	/* 0x0C: Rx FIFO Readout Data Byte0 */
+	volatile uint8_t SPISC_RXFRDRB0;
+	/* 0x0D: Rx FIFO Readout Data Byte1 */
+	volatile uint8_t SPISC_RXFRDRB1;
+	/* 0x0E: Rx FIFO Readout Data Byte2 */
+	volatile uint8_t SPISC_RXFRDRB2;
+	/* 0x0F: Rx FIFO Readout Data Byte3 */
+	volatile uint8_t SPISC_RXFRDRB3;
+	/* 0x10-0x17: Reserved1 */
+	volatile uint8_t reserved1[8];
+	/* 0x18: FIFO Target Count Byte0 */
+	volatile uint8_t SPISC_FTCB0R;
+	/* 0x19: FIFO Target Count Byte1 */
+	volatile uint8_t SPISC_FTCB1R;
+	/* 0x1A: Target Count Capture Byte0 */
+	volatile uint8_t SPISC_TCCB0;
+	/* 0x1B: Target Count Capture Byte1 */
+	volatile uint8_t SPISC_TCCB1;
+	/* 0x1C-0x1D: Reserved2 */
+	volatile uint8_t reserved2[2];
+	/* 0x1E: Hardware Parsing 2 */
+	volatile uint8_t SPISC_HPR2;
+	/* 0x1F-0x25: Reserved3 */
+	volatile uint8_t reserved3[7];
+	/* 0x26: Rx Valid Length Interrupt Status Mask */
+	volatile uint8_t SPISC_RXVLISMR;
+	/* 0x27: Rx Valid Length Interrupt Status */
+	volatile uint8_t SPISC_RXVLISR;
+};
+#endif /* !__ASSEMBLER__ */
+
+/* SPISC register fields */
+/* 0x00: SPI Slave General Control */
+#define IT8XXX2_SPISC_SPISCEN		BIT(0)
+/* 0x01: Tx/Rx FIFO Access */
+#define IT8XXX2_SPISC_CPURXF1A		BIT(3)
+#define IT8XXX2_SPISC_CPUTFA		BIT(1)
+/* 0x02: Tx FIFO Control */
+#define IT8XXX2_SPISC_TXFCMR		BIT(2)
+#define IT8XXX2_SPISC_TXFR		BIT(1)
+#define IT8XXX2_SPISC_TXFS		BIT(0)
+/* 0x03: SPI Slave General Control 2 */
+#define IT8XXX2_SPISC_RXF2OC		BIT(4)
+#define IT8XXX2_SPISC_RXF1OC		BIT(3)
+#define IT8XXX2_SPISC_RXFAR		BIT(0)
+/* 0x04: Interrupt Mask */
+#define IT8XXX2_SPISC_EDIM		BIT(2)
+/* 0x06: Tx FIFO Status */
+#define IT8XXX2_SPISC_ENDDETECTINT	BIT(2)
+/* 0x09: FIFO Control */
+#define IT8XXX2_SPISC_SPISRTXF		BIT(2)
+#define IT8XXX2_SPISC_RXFR		BIT(1)
+#define IT8XXX2_SPISC_RXFCMR		BIT(0)
+/* 0x26: Rx Valid Length Interrupt Status Mask */
+#define IT8XXX2_SPISC_RVLIM		BIT(0)
+/* 0x27: Rx Valid Length Interrupt Status */
+#define IT8XXX2_SPISC_RVLI		BIT(0)
+
 #endif /* CHIP_CHIPREGS_H */
