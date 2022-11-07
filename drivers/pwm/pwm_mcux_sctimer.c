@@ -73,11 +73,6 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 			base->OUTPUT |= (1UL << channel);
 		}
 
-		/* Make sure the PWM is setup */
-		if (data->period_cycles[channel] != 0) {
-			SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
-		}
-
 		return 0;
 	}
 
