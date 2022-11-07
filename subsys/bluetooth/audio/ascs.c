@@ -2037,7 +2037,7 @@ static ssize_t ascs_disable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		ase = ase_find(ascs, id);
 		if (!ase) {
 			ascs_cp_rsp_add(id, BT_ASCS_DISABLE_OP,
-					BT_ASCS_RSP_INVALID_ASE_STATE, 0);
+					BT_ASCS_RSP_INVALID_ASE, 0x00);
 			BT_WARN("Unknown ase 0x%02x", id);
 			continue;
 		}
