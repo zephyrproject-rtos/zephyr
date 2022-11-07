@@ -402,7 +402,8 @@ ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
 	k_sleep(K_MSEC(1));     /* Give thread_12 a chance to block on the mutex */
 
 	sys_mutex_unlock(&private_mutex);
-	sys_mutex_unlock(&private_mutex); /* thread_12 should now have lock */
+	sys_mutex_unlock(&private_mutex);
+	k_sleep(K_TICKS(1)); /* Let thread_12 run */
 
 	rv = sys_mutex_lock(&private_mutex, K_NO_WAIT);
 	zassert_equal(rv, -EBUSY, "Unexpectedly got lock on private mutex");

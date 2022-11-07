@@ -118,6 +118,8 @@ ZTEST(mutex_complex, test_mutex_multithread_competition)
 			&mutex, NULL, NULL,
 			prio + 2, 0, K_NO_WAIT);
 
+	k_sleep(K_TICKS(1));
+
 	/* Release mutex by current thread */
 	sys_mutex_unlock(&mutex);
 
