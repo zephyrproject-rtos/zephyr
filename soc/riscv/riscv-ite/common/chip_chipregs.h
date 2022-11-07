@@ -163,19 +163,6 @@
 #define GPCRH1			ECREG(EC_REG_BASE_ADDR + 0x1649)
 #define GPCRH2			ECREG(EC_REG_BASE_ADDR + 0x164A)
 
-#define GPCR_PORT_PIN_MODE_INPUT    BIT(7)
-#define GPCR_PORT_PIN_MODE_OUTPUT   BIT(6)
-#define GPCR_PORT_PIN_MODE_PULLUP   BIT(2)
-#define GPCR_PORT_PIN_MODE_PULLDOWN BIT(1)
-
-/*
- * If both PULLUP and PULLDOWN are set to 1b, the corresponding port would be
- * configured as tri-state.
- */
-#define GPCR_PORT_PIN_MODE_TRISTATE	(GPCR_PORT_PIN_MODE_INPUT | \
-					 GPCR_PORT_PIN_MODE_PULLUP | \
-					 GPCR_PORT_PIN_MODE_PULLDOWN)
-
 /*
  * IT8XXX2 register structure size/offset checking macro function to mitigate
  * the risk of unexpected compiling results.
@@ -437,12 +424,6 @@ enum ext_timer_idx {
 };
 #endif
 
-/**
- *
- * (20xxh) General Control (GCTRL)
- *
- */
-#define RPECI			BIT(4)
 
 /*
  *
@@ -587,44 +568,15 @@ struct smfi_it8xxx2_regs {
 /* Host RAM Window x Write Protect Enable (All protected) */
 #define SMFI_HRAMWXWPE_ALL     (BIT(5) | BIT(4))
 
-/* --- GPIO --- */
-#define IT8XXX2_GPIO_BASE  0x00F01600
-#define IT8XXX2_GPIO2_BASE 0x00F03E00
-
-/* TODO: create interface for accessing GPIO general control registers. */
-#define IT8XXX2_GPIO_GCR        ECREG(IT8XXX2_GPIO_BASE + 0x00)
-#define IT8XXX2_GPIO_GCR_ESPI_RST_D2      0x2
-#define IT8XXX2_GPIO_GCR_ESPI_RST_POS     1
-#define IT8XXX2_GPIO_GCR_ESPI_RST_EN_MASK (0x3 << IT8XXX2_GPIO_GCR_ESPI_RST_POS)
-
-#define IT8XXX2_GPIO_GCRX(offset) ECREG(IT8XXX2_GPIO_BASE + (offset))
-#define IT8XXX2_GPIO_GCR25_OFFSET 0xd1
-#define IT8XXX2_GPIO_GCR26_OFFSET 0xd2
-#define IT8XXX2_GPIO_GCR27_OFFSET 0xd3
-#define IT8XXX2_GPIO_GCR28_OFFSET 0xd4
-#define IT8XXX2_GPIO_GCR31_OFFSET 0xd5
-#define IT8XXX2_GPIO_GCR32_OFFSET 0xd6
-#define IT8XXX2_GPIO_GCR33_OFFSET 0xd7
-#define IT8XXX2_GPIO_GCR19_OFFSET 0xe4
-#define IT8XXX2_GPIO_GCR20_OFFSET 0xe5
-#define IT8XXX2_GPIO_GCR21_OFFSET 0xe6
-#define IT8XXX2_GPIO_GCR22_OFFSET 0xe7
-#define IT8XXX2_GPIO_GCR23_OFFSET 0xe8
-#define IT8XXX2_GPIO_GCR24_OFFSET 0xe9
-#define IT8XXX2_GPIO_GCR30_OFFSET 0xed
-#define IT8XXX2_GPIO_GCR29_OFFSET 0xee
-/* TODO: correct GRCx to GCRx */
-#define IT8XXX2_GPIO_GRC1       ECREG(IT8XXX2_GPIO_BASE + 0xF0)
-#define IT8XXX2_GPIO_GRC21      ECREG(IT8XXX2_GPIO_BASE + 0xE6)
-
-#define IT8XXX2_GPIO_GPCRP0     ECREG(IT8XXX2_GPIO2_BASE + 0x18)
-#define IT8XXX2_GPIO_GPCRP1     ECREG(IT8XXX2_GPIO2_BASE + 0x19)
 
 /**
  *
  * (16xxh) General Purpose I/O Port (GPIO) registers
  *
  */
+#define GPIO_IT8XXX2_REG_BASE \
+	((struct gpio_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(gpiogcr)))
+
 #ifndef __ASSEMBLER__
 struct gpio_it8xxx2_regs {
 	/* 0x00: General Control */
@@ -712,7 +664,57 @@ struct gpio_it8xxx2_regs {
 
 /* GPIO register fields */
 /* 0x00: General Control */
-#define IT8XXX2_GPIO_LPCRSTEN        (BIT(2) | BIT(1))
+#define IT8XXX2_GPIO_LPCRSTEN              (BIT(2) | BIT(1))
+#define IT8XXX2_GPIO_GCR_ESPI_RST_D2       0x2
+#define IT8XXX2_GPIO_GCR_ESPI_RST_POS      1
+#define IT8XXX2_GPIO_GCR_ESPI_RST_EN_MASK  (0x3 << IT8XXX2_GPIO_GCR_ESPI_RST_POS)
+/* 0xF0: General Control 1 */
+#define IT8XXX2_GPIO_U2CTRL_SIN1_SOUT1_EN  BIT(2)
+#define IT8XXX2_GPIO_U1CTRL_SIN0_SOUT0_EN  BIT(0)
+/* 0xE6: General Control 21 */
+#define IT8XXX2_GPIO_GPH1VS                BIT(1)
+#define IT8XXX2_GPIO_GPH2VS                BIT(0)
+
+#define GPCR_PORT_PIN_MODE_INPUT    BIT(7)
+#define GPCR_PORT_PIN_MODE_OUTPUT   BIT(6)
+#define GPCR_PORT_PIN_MODE_PULLUP   BIT(2)
+#define GPCR_PORT_PIN_MODE_PULLDOWN BIT(1)
+
+/*
+ * If both PULLUP and PULLDOWN are set to 1b, the corresponding port would be
+ * configured as tri-state.
+ */
+#define GPCR_PORT_PIN_MODE_TRISTATE	(GPCR_PORT_PIN_MODE_INPUT |  \
+					 GPCR_PORT_PIN_MODE_PULLUP | \
+					 GPCR_PORT_PIN_MODE_PULLDOWN)
+
+/* --- GPIO --- */
+#define IT8XXX2_GPIO_BASE  0x00F01600
+#define IT8XXX2_GPIO2_BASE 0x00F03E00
+
+#define IT8XXX2_GPIO_GCRX(offset) ECREG(IT8XXX2_GPIO_BASE + (offset))
+#define IT8XXX2_GPIO_GCR25_OFFSET 0xd1
+#define IT8XXX2_GPIO_GCR26_OFFSET 0xd2
+#define IT8XXX2_GPIO_GCR27_OFFSET 0xd3
+#define IT8XXX2_GPIO_GCR28_OFFSET 0xd4
+#define IT8XXX2_GPIO_GCR31_OFFSET 0xd5
+#define IT8XXX2_GPIO_GCR32_OFFSET 0xd6
+#define IT8XXX2_GPIO_GCR33_OFFSET 0xd7
+#define IT8XXX2_GPIO_GCR19_OFFSET 0xe4
+#define IT8XXX2_GPIO_GCR20_OFFSET 0xe5
+#define IT8XXX2_GPIO_GCR21_OFFSET 0xe6
+#define IT8XXX2_GPIO_GCR22_OFFSET 0xe7
+#define IT8XXX2_GPIO_GCR23_OFFSET 0xe8
+#define IT8XXX2_GPIO_GCR24_OFFSET 0xe9
+#define IT8XXX2_GPIO_GCR30_OFFSET 0xed
+#define IT8XXX2_GPIO_GCR29_OFFSET 0xee
+
+/*
+ * TODO: use pinctrl node instead of following register declarations
+ *       to fix in tcpm\it83xx_pd.h.
+ */
+#define IT8XXX2_GPIO_GPCRP0     ECREG(IT8XXX2_GPIO2_BASE + 0x18)
+#define IT8XXX2_GPIO_GPCRP1     ECREG(IT8XXX2_GPIO2_BASE + 0x19)
 
 
 /**
@@ -805,6 +807,10 @@ enum chip_pll_mode {
 	CHIP_PLL_DEEP_DOZE = 3,
 };
 #endif
+/*
+ * TODO: use ecpm_it8xxx2_regs instead of following register declarations
+ *       to fix in soc.c.
+ */
 #define IT8XXX2_ECPM_PLLCTRL    ECREG(IT8XXX2_ECPM_BASE + 0x03)
 #define IT8XXX2_ECPM_AUTOCG     ECREG(IT8XXX2_ECPM_BASE + 0x04)
 #define IT8XXX2_ECPM_CGCTRL3R   ECREG(IT8XXX2_ECPM_BASE + 0x05)
@@ -961,58 +967,26 @@ enum chip_pll_mode {
 /* 0x1C: Error Mask */
 #define IT8XXX2_I2C_EM_DEV1_IRQ       BIT(4)
 
+/*
+ * TODO: use gctrl_it8xxx2_regs instead of following register declarations
+ *       to fix in cros_flash_it8xxx2.c, cros_shi_it8xxx2.c and tcpm\it8xxx2.c.
+ */
 /* --- General Control (GCTRL) --- */
 #define IT83XX_GCTRL_BASE 0x00F02000
 
-#ifdef IT83XX_CHIP_ID_3BYTES
 #define IT83XX_GCTRL_CHIPID1         ECREG(IT83XX_GCTRL_BASE + 0x85)
 #define IT83XX_GCTRL_CHIPID2         ECREG(IT83XX_GCTRL_BASE + 0x86)
-#define IT83XX_GCTRL_CHIPID3         ECREG(IT83XX_GCTRL_BASE + 0x87)
-#else
-#define IT83XX_GCTRL_CHIPID1         ECREG(IT83XX_GCTRL_BASE + 0x00)
-#define IT83XX_GCTRL_CHIPID2         ECREG(IT83XX_GCTRL_BASE + 0x01)
-#endif
 #define IT83XX_GCTRL_CHIPVER         ECREG(IT83XX_GCTRL_BASE + 0x02)
-#define IT83XX_GCTRL_DBGROS          ECREG(IT83XX_GCTRL_BASE + 0x03)
-#define IT83XX_SMB_DBGR                    BIT(0)
-
-/*
- * Writing 00h to this register and the CPU program counter will be paused
- * until the next low to high transition of the 65.536 clock.
- */
-#define IT83XX_GCTRL_WNCKR           ECREG(IT83XX_GCTRL_BASE + 0x0B)
-#define IT83XX_GCTRL_RSTS            ECREG(IT83XX_GCTRL_BASE + 0x06)
-#define IT83XX_GCTRL_BADRSEL         ECREG(IT83XX_GCTRL_BASE + 0x0A)
-#define IT83XX_GCTRL_SPCTRL1         ECREG(IT83XX_GCTRL_BASE + 0x0D)
-#define IT83XX_GCTRL_RSTDMMC         ECREG(IT83XX_GCTRL_BASE + 0x10)
-#define IT83XX_GCTRL_RSTC4           ECREG(IT83XX_GCTRL_BASE + 0x11)
-#define IT83XX_GCTRL_SPCTRL4         ECREG(IT83XX_GCTRL_BASE + 0x1C)
 #define IT83XX_GCTRL_MCCR3           ECREG(IT83XX_GCTRL_BASE + 0x20)
 #define IT83XX_GCTRL_SPISLVPFE             BIT(6)
-#define IT83XX_GCTRL_RSTC5           ECREG(IT83XX_GCTRL_BASE + 0x21)
-#define IT83XX_GCTRL_MCCR            ECREG(IT83XX_GCTRL_BASE + 0x30)
-#define IT83XX_GCTRL_ICACHE_RESET          BIT(4)
-#define IT83XX_GCTRL_PMER1           ECREG(IT83XX_GCTRL_BASE + 0x32)
-#define IT83XX_GCTRL_PMER2           ECREG(IT83XX_GCTRL_BASE + 0x33)
-#define IT83XX_GCTRL_EPLR            ECREG(IT83XX_GCTRL_BASE + 0x37)
-#define IT83XX_GCTRL_EPLR_ENABLE           BIT(0)
-#define IT83XX_GCTRL_IVTBAR          ECREG(IT83XX_GCTRL_BASE + 0x41)
-#define IT83XX_GCTRL_MCCR2           ECREG(IT83XX_GCTRL_BASE + 0x44)
-#define IT83XX_GCTRL_PIN_MUX0        ECREG(IT83XX_GCTRL_BASE + 0x46)
-#define IT83XX_DLM14_ENABLE                BIT(5)
-#define IT83XX_GCTRL_SSCR            ECREG(IT83XX_GCTRL_BASE + 0x4A)
-#define IT83XX_GCTRL_ETWDUARTCR      ECREG(IT83XX_GCTRL_BASE + 0x4B)
-#define IT83XX_GCTRL_WMCR            ECREG(IT83XX_GCTRL_BASE + 0x4C)
-#define IT83XX_GCTRL_H2ROFSR         ECREG(IT83XX_GCTRL_BASE + 0x53)
-/* bit[0] = 0 or 1 : disable or enable ETWD hardware reset */
-#define ETWD_HW_RST_EN                     BIT(0)
-#define IT83XX_GCTRL_RVILMCR0        ECREG(IT83XX_GCTRL_BASE + 0x5D)
-#define ILMCR_ILM0_ENABLE                  BIT(0)
-#define ILMCR_ILM2_ENABLE                  BIT(2)
 #define IT83XX_GCTRL_EWPR0PFH(i)     ECREG(IT83XX_GCTRL_BASE + 0x60 + i)
 #define IT83XX_GCTRL_EWPR0PFD(i)     ECREG(IT83XX_GCTRL_BASE + 0xA0 + i)
 #define IT83XX_GCTRL_EWPR0PFEC(i)    ECREG(IT83XX_GCTRL_BASE + 0xC0 + i)
 
+/*
+ * TODO: use spisc_it8xxx2_regs instead of following register declarations
+ *       to fix in cros_shi_it8xxx2.c.
+ */
 /* Serial Peripheral Interface (SPI) */
 #define IT83XX_SPI_BASE  0x00F03A00
 
@@ -1069,6 +1043,9 @@ enum chip_pll_mode {
  * (20xxh) General Control (GCTRL) registers
  *
  */
+#define GCTRL_IT8XXX2_REGS_BASE \
+	((struct gctrl_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(gctrl)))
+
 #ifndef __ASSEMBLER__
 struct gctrl_it8xxx2_regs {
 	/* 0x00-0x01: Reserved1 */
@@ -1081,54 +1058,60 @@ struct gctrl_it8xxx2_regs {
 	volatile uint8_t GCTRL_RSTS;
 	/* 0x07-0x09: Reserved3 */
 	volatile uint8_t reserved3[3];
-	/* 0x0a: Base Address Select */
+	/* 0x0A: Base Address Select */
 	volatile uint8_t GCTRL_BADRSEL;
-	/* 0x0b: Wait Next Clock Rising */
+	/* 0x0B: Wait Next Clock Rising */
 	volatile uint8_t GCTRL_WNCKR;
-	/* 0x0c: Reserved3-1 */
-	volatile uint8_t reserved3_1;
-	/* 0x0d: Special Control 1 */
+	/* 0x0C: Reserved4 */
+	volatile uint8_t reserved4;
+	/* 0x0D: Special Control 1 */
 	volatile uint8_t GCTRL_SPCTRL1;
-	/* 0x0E-0x1B: Reserved3-2 */
-	volatile uint8_t reserved3_2[14];
+	/* 0x0E-0x0F: Reserved5 */
+	volatile uint8_t reserved5[2];
+	/* 0x10: Reset Control DMM */
+	volatile uint8_t GCTRL_RSTDMMC;
+	/* 0x11: Reset Control 4 */
+	volatile uint8_t GCTRL_RSTC4;
+	/* 0x12-0x1B: Reserved6 */
+	volatile uint8_t reserved6[10];
 	/* 0x1C: Special Control 4 */
 	volatile uint8_t GCTRL_SPCTRL4;
-	/* 0x1D-0x1F: Reserved4 */
-	volatile uint8_t reserved4[3];
+	/* 0x1D-0x1F: Reserved7 */
+	volatile uint8_t reserved7[3];
 	/* 0x20: Memory Controller Configuration 3 */
 	volatile uint8_t GCTRL_MCCR3;
 	/* 0x21: Reset Control 5 */
 	volatile uint8_t GCTRL_RSTC5;
-	/* 0x22-0x2F: Reserved5 */
-	volatile uint8_t reserved5[14];
+	/* 0x22-0x2F: Reserved8 */
+	volatile uint8_t reserved8[14];
 	/* 0x30: Memory Controller Configuration */
 	volatile uint8_t GCTRL_MCCR;
 	/* 0x31: Externel ILM/DLM Size */
 	volatile uint8_t GCTRL_EIDSR;
-	/* 0x32-0x36: Reserved6 */
-	volatile uint8_t reserved6[5];
+	/* 0x32-0x36: Reserved9 */
+	volatile uint8_t reserved9[5];
 	/* 0x37: Eflash Protect Lock */
 	volatile uint8_t GCTRL_EPLR;
-	/* 0x38-0x40: Reserved7 */
-	volatile uint8_t reserved7[9];
+	/* 0x38-0x40: Reserved10 */
+	volatile uint8_t reserved10[9];
 	/* 0x41: Interrupt Vector Table Base Address */
 	volatile uint8_t GCTRL_IVTBAR;
-	/* 0x42-0x43: Reserved8 */
-	volatile uint8_t reserved8[2];
+	/* 0x42-0x43: Reserved11 */
+	volatile uint8_t reserved11[2];
 	/* 0x44: Memory Controller Configuration 2 */
 	volatile uint8_t GCTRL_MCCR2;
-	/* 0x45: Reserved9 */
-	volatile uint8_t reserved9;
+	/* 0x45: Reserved12 */
+	volatile uint8_t reserved12;
 	/* 0x46: Pin Multi-function Enable 3 */
 	volatile uint8_t GCTRL_PMER3;
-	/* 0x47-0x4A: Reserved10 */
-	volatile uint8_t reserved10[4];
+	/* 0x47-0x4A: Reserved13 */
+	volatile uint8_t reserved13[4];
 	/* 0x4B: ETWD and UART Control */
 	volatile uint8_t GCTRL_ETWDUARTCR;
 	/* 0x4C: Wakeup MCU Control */
 	volatile uint8_t GCTRL_WMCR;
-	/* 0x4D-0x4F: Reserved11 */
-	volatile uint8_t reserved11[3];
+	/* 0x4D-0x4F: Reserved14 */
+	volatile uint8_t reserved14[3];
 	/* 0x50: Port 80h/81h Status Register */
 	volatile uint8_t GCTRL_P80H81HSR;
 	/* 0x51: Port 80h Data Register */
@@ -1137,8 +1120,12 @@ struct gctrl_it8xxx2_regs {
 	volatile uint8_t GCTRL_P81HDR;
 	/* 0x53: H2RAM Offset Register */
 	volatile uint8_t GCTRL_H2ROFSR;
-	/* 0x54-0x84: Reserved11-1 */
-	volatile uint8_t reserved11_1[49];
+	/* 0x54-0x5C: Reserved15 */
+	volatile uint8_t reserved15[9];
+	/* 0x5D: RISCV ILM Configuration 0 */
+	volatile uint8_t GCTRL_RVILMCR0;
+	/* 0x5E-0x84: Reserved16 */
+	volatile uint8_t reserved16[39];
 	/* 0x85: Chip ID Byte 1 */
 	volatile uint8_t GCTRL_ECHIPID1;
 	/* 0x86: Chip ID Byte 2 */
@@ -1152,16 +1139,29 @@ struct gctrl_it8xxx2_regs {
 /* 0x06: Reset Status */
 #define IT8XXX2_GCTRL_LRS		(BIT(1) | BIT(0))
 #define IT8XXX2_GCTRL_IWDTR		BIT(1)
+/* 0x10: Reset Control DMM */
+#define IT8XXX2_GCTRL_UART1SD		BIT(3)
+#define IT8XXX2_GCTRL_UART2SD		BIT(2)
+/* 0x11: Reset Control 4 */
+#define IT8XXX2_GCTRL_RPECI		BIT(4)
+#define IT8XXX2_GCTRL_RUART2		BIT(2)
+#define IT8XXX2_GCTRL_RUART1		BIT(1)
 /* 0x1C: Special Control 4 */
 #define IT8XXX2_GCTRL_LRSIWR		BIT(2)
 #define IT8XXX2_GCTRL_LRSIPWRSWTR	BIT(1)
 #define IT8XXX2_GCTRL_LRSIPGWR		BIT(0)
+/* 0x20: Memory Controller Configuration 3 */
+#define IT8XXX2_GCTRL_SPISLVPFE		BIT(6)
+/* 0x30: Memory Controller Configuration */
+#define IT8XXX2_GCTRL_ICACHE_RESET	BIT(4)
 /* 0x37: Eflash Protect Lock */
 #define IT8XXX2_GCTRL_EPLR_ENABLE	BIT(0)
 /* 0x46: Pin Multi-function Enable 3 */
 #define IT8XXX2_GCTRL_SMB3PSEL		BIT(6)
 /* 0x4B: ETWD and UART Control */
 #define IT8XXX2_GCTRL_ETWD_HW_RST_EN	BIT(0)
+/* 0x5D: RISCV ILM Configuration 0 */
+#define IT8XXX2_GCTRL_ILM0_ENABLE	BIT(0)
 /* Accept Port 80h Cycle */
 #define IT8XXX2_GCTRL_ACP80		BIT(6)
 

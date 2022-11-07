@@ -93,12 +93,14 @@ static const struct flash_parameters flash_it8xxx2_parameters = {
 
 void __soc_ram_code ramcode_reset_i_cache(void)
 {
+	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
+
 	/* I-Cache tag sram reset */
-	IT83XX_GCTRL_MCCR |= IT83XX_GCTRL_ICACHE_RESET;
+	gctrl_regs->GCTRL_MCCR |= IT8XXX2_GCTRL_ICACHE_RESET;
 	/* Make sure the I-Cache is reset */
 	__asm__ volatile ("fence.i" ::: "memory");
 
-	IT83XX_GCTRL_MCCR &= ~IT83XX_GCTRL_ICACHE_RESET;
+	gctrl_regs->GCTRL_MCCR &= ~IT8XXX2_GCTRL_ICACHE_RESET;
 	__asm__ volatile ("fence.i" ::: "memory");
 }
 
@@ -135,6 +137,7 @@ void __soc_ram_code ramcode_flash_follow_mode_exit(void)
 void __soc_ram_code ramcode_flash_fsce_high(void)
 {
 	struct smfi_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
+	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 
 	/* FSCE# high level */
 	flash_regs->SMFI_ECINDAR1 = (FLASH_FSCE_HIGH_ADDRESS >> 8) & GENMASK(7, 0);
@@ -148,8 +151,8 @@ void __soc_ram_code ramcode_flash_fsce_high(void)
 	 * So we perform 2 consecutive writes to WNCKR here to ensure the
 	 * minimum delay is 15us.
 	 */
-	IT83XX_GCTRL_WNCKR = 0;
-	IT83XX_GCTRL_WNCKR = 0;
+	gctrl_regs->GCTRL_WNCKR = 0;
+	gctrl_regs->GCTRL_WNCKR = 0;
 
 	/* Writing 0 to EC-indirect memory data register */
 	flash_regs->SMFI_ECINDDR = 0x00;

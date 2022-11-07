@@ -263,12 +263,14 @@ void soc_interrupt_init(void)
 static int ite_it8xxx2_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
+	struct gpio_it8xxx2_regs *const gpio_regs = GPIO_IT8XXX2_REG_BASE;
+	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 
 	/*
 	 * bit7: wake up CPU if it is in low power mode and
 	 * an interrupt is pending.
 	 */
-	IT83XX_GCTRL_WMCR |= BIT(7);
+	gctrl_regs->GCTRL_WMCR |= BIT(7);
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 	/* UART1 board init */
@@ -277,30 +279,30 @@ static int ite_it8xxx2_init(const struct device *arg)
 	IT8XXX2_ECPM_AUTOCG &= ~BIT(6);
 
 	/* bit3: UART1 belongs to the EC side. */
-	IT83XX_GCTRL_RSTDMMC |= BIT(3);
+	gctrl_regs->GCTRL_RSTDMMC |= IT8XXX2_GCTRL_UART1SD;
 	/* reset UART before config it */
-	IT83XX_GCTRL_RSTC4 = BIT(1);
+	gctrl_regs->GCTRL_RSTC4 = IT8XXX2_GCTRL_RUART1;
 
 	/* switch UART1 on without hardware flow control */
-	IT8XXX2_GPIO_GRC1 |= BIT(0);
+	gpio_regs->GPIO_GCR1 |= IT8XXX2_GPIO_U1CTRL_SIN0_SOUT0_EN;
 
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
 	/* UART2 board init */
 	/* setting voltage 3.3v */
-	IT8XXX2_GPIO_GRC21 &= ~(BIT(0) | BIT(1));
+	gpio_regs->GPIO_GCR21 &= ~(IT8XXX2_GPIO_GPH1VS | IT8XXX2_GPIO_GPH2VS);
 	/* bit2: clocks to UART2 modules are not gated. */
 	IT8XXX2_ECPM_CGCTRL3R &= ~BIT(2);
 	IT8XXX2_ECPM_AUTOCG &= ~BIT(5);
 
 	/* bit3: UART2 belongs to the EC side. */
-	IT83XX_GCTRL_RSTDMMC |= BIT(2);
+	gctrl_regs->GCTRL_RSTDMMC |= IT8XXX2_GCTRL_UART2SD;
 	/* reset UART before config it */
-	IT83XX_GCTRL_RSTC4 = BIT(2);
+	gctrl_regs->GCTRL_RSTC4 = IT8XXX2_GCTRL_RUART2;
 
 	/* switch UART2 on without hardware flow control */
-	IT8XXX2_GPIO_GRC1 |= BIT(2);
+	gpio_regs->GPIO_GCR1 |= IT8XXX2_GPIO_U2CTRL_SIN1_SOUT1_EN;
 
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) */
 
