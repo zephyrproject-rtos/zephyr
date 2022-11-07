@@ -103,8 +103,8 @@ An mcumgr request or response consists of the following two components:
 How these two components are encoded and parsed depends on the transfer
 encoding used.
 
-The mcumgr header structure is defined in `mgmt/include/mgmt/mgmt.h` as
-`struct mgmt_hdr`.
+The mcumgr header structure is defined in `subsys/mgmt/mcumgr/smp_internal.h`
+as `struct smp_hdr`.
 
 The contents of the CBOR key-value map are specified per command type.
 
