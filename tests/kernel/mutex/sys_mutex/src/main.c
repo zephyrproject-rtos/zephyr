@@ -62,9 +62,6 @@ ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_2);
 ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_3);
 ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_4);
 
-#ifdef CONFIG_USERSPACE
-static SYS_MUTEX_DEFINE(no_access_mutex);
-#endif
 static ZTEST_BMEM SYS_MUTEX_DEFINE(not_my_mutex);
 static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
 
@@ -442,20 +439,6 @@ ZTEST(mutex_complex, test_supervisor_access)
 	zassert_true(rv == -EPERM, "unlocked a mutex that wasn't owner");
 	rv = sys_mutex_unlock(&bad_count_mutex);
 	zassert_true(rv == -EINVAL, "mutex wasn't locked");
-}
-
-ZTEST_USER_OR_NOT(mutex_complex, test_user_access)
-{
-#ifdef CONFIG_USERSPACE
-	int rv;
-
-	rv = sys_mutex_lock(&no_access_mutex, K_NO_WAIT);
-	zassert_true(rv == -EACCES, "accessed mutex not in memory domain");
-	rv = sys_mutex_unlock(&no_access_mutex);
-	zassert_true(rv == -EACCES, "accessed mutex not in memory domain");
-#else
-	ztest_test_skip();
-#endif /* CONFIG_USERSPACE */
 }
 
 /*test case main entry*/
