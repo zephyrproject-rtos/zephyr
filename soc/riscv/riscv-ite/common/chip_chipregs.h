@@ -525,11 +525,13 @@ struct usbpd_it8xxx2_regs {
 #define IT8XXX2_USBPD_DISCONNECT_POWER_CC1		BIT(1)
 
 
-/* Shared Memory Flash Interface Bridge (SMFI) registers */
-
+/**
+ *
+ * (10xxh) Shared Memory Flash Interface Bridge (SMFI) registers
+ *
+ */
 #ifndef __ASSEMBLER__
-/* TODO: rename flash_it8xxx2_regs to smfi_regs */
-struct flash_it8xxx2_regs {
+struct smfi_it8xxx2_regs {
 	volatile uint8_t reserved1[59];
 	/* 0x3B: EC-Indirect memory address 0 */
 	volatile uint8_t SMFI_ECINDAR0;
@@ -566,7 +568,6 @@ struct flash_it8xxx2_regs {
 #endif /* !__ASSEMBLER__ */
 
 /* SMFI register fields */
-
 /* EC-Indirect read internal flash */
 #define EC_INDIRECT_READ_INTERNAL_FLASH BIT(6)
 /* Enable EC-indirect page program command */
