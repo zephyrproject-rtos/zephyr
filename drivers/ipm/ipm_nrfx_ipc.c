@@ -28,20 +28,15 @@ static void gipm_send(uint32_t id);
 
 #if IS_ENABLED(CONFIG_IPM_NRF_SINGLE_INSTANCE)
 
-static void nrfx_ipc_handler(uint32_t event_mask, void *p_context)
+static void nrfx_ipc_handler(uint8_t event_idx, void *p_context)
 {
 	if (nrfx_ipm_data.callback) {
-		while (event_mask) {
-			uint8_t event_idx = __CLZ(__RBIT(event_mask));
-
-			__ASSERT(event_idx < NRFX_IPC_ID_MAX_VALUE,
-				 "Illegal event_idx: %d", event_idx);
-			event_mask &= ~BIT(event_idx);
-			nrfx_ipm_data.callback(DEVICE_DT_INST_GET(0),
-					       nrfx_ipm_data.user_data,
-					       event_idx,
-					       NULL);
-		}
+		__ASSERT(event_idx < NRFX_IPC_ID_MAX_VALUE,
+			 "Illegal event_idx: %d", event_idx);
+		nrfx_ipm_data.callback(DEVICE_DT_INST_GET(0),
+				       nrfx_ipm_data.user_data,
+				       event_idx,
+				       NULL);
 	}
 }
 
@@ -124,21 +119,16 @@ struct vipm_nrf_data {
 
 static struct vipm_nrf_data nrfx_vipm_data;
 
-static void vipm_dispatcher(uint32_t event_mask, void *p_context)
+static void vipm_dispatcher(uint8_t event_idx, void *p_context)
 {
-	while (event_mask) {
-		uint8_t event_idx = __CLZ(__RBIT(event_mask));
-
-		__ASSERT(event_idx < NRFX_IPC_ID_MAX_VALUE,
-			 "Illegal event_idx: %d", event_idx);
-		event_mask &= ~BIT(event_idx);
-		if (nrfx_vipm_data.callback[event_idx] != NULL) {
-			nrfx_vipm_data.callback[event_idx]
-				(nrfx_vipm_data.ipm_device[event_idx],
-				 nrfx_vipm_data.user_data[event_idx],
-				 0,
-				 NULL);
-		}
+	__ASSERT(event_idx < NRFX_IPC_ID_MAX_VALUE,
+		 "Illegal event_idx: %d", event_idx);
+	if (nrfx_vipm_data.callback[event_idx] != NULL) {
+		nrfx_vipm_data.callback[event_idx]
+			(nrfx_vipm_data.ipm_device[event_idx],
+			 nrfx_vipm_data.user_data[event_idx],
+			 0,
+			 NULL);
 	}
 }
 
