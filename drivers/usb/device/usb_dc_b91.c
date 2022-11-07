@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(usb_b91);
 #define USBD_B91_IRQ_PRIORITY_BY_IDX(idx) DT_INST_IRQ_BY_IDX(0, idx, priority)
 
 #define IS_REQUESTTYPE_DEV_TO_HOST(bmRT) (bmRT & 0x80)
+#define IS_REQUESTTYPE_HOST_TO_DEV(bmRT) (!(bmRT & 0x80))
 
 #define CTRL_EP_NORMAL_PACKET_REG_VALUE 0x38
 #define CTRL_EP_ZLP_REG_VALUE		0x18
@@ -107,8 +108,9 @@ enum usbd_endpoint_index_e endpoint_out_idx[] = {USBD_OUT_EP5_IDX, USBD_OUT_EP6_
 /**
  * @brief Endpoint buffer information.
  *
- * @param init_list		ep_idx that has been configured with BUF address
- * @param init_num		Number of eps whose BUF address has been configured Max
+ * @param init_list			ep_idx that has been configured with BUF address
+ * @param seg_addr			Available starting address of the USB endpoint cache.
+ * @param init_num			Number of eps whose BUF address has been configured Max
  * packet size supported by endpoint.
  * @param remaining_size	The remaining available size of the USB endpoint cache.
  */
@@ -132,6 +134,7 @@ static struct ep_buf_t eps_buf_inf = {.init_list = {0, 0, 0, 0, 0, 0, 0, 0, 0},
  * @param en		Enable/Disable flag.
  * @param addr		Endpoint address.
  * @param type		Endpoint transfer type.
+ * @param stall		Endpoint stall flag.
  */
 struct b91_usbd_ep_cfg {
 	usb_dc_ep_callback cb;
@@ -139,7 +142,7 @@ struct b91_usbd_ep_cfg {
 	bool en;
 	uint8_t addr;
 	enum usb_dc_ep_transfer_type type;
-	uint8_t stall;
+	bool stall;
 };
 
 /**
@@ -148,16 +151,18 @@ struct b91_usbd_ep_cfg {
  * @param total_len		Total length to be read/written.
  * @param left_len		Remaining length to be read/written.
  * @param current_len	Length of this time to be read/written.
- * @param data			Data buffer for the endpoint.
+ * @param data			Pointer to data buffer for the endpoint.
  * @param current_pos	Pointer to the current offset in the endpoint buffer.
  */
 struct b91_usbd_ep_buf {
 	uint32_t total_len;
 	uint32_t left_len;
 	uint32_t current_len;
-	uint8_t data[EP_DATA_BUF_LEN];
+	uint8_t *data;
 	uint8_t *current_pos;
 };
+
+uint8_t ep_data_buf[USBD_EPOUT_CNT + 1][EP_DATA_BUF_LEN]; /* Only for EP0、EP5、EP6 */
 
 /**
  * @brief Endpoint context
@@ -177,9 +182,12 @@ struct b91_usbd_ep_ctx {
  *
  * @param status_cb			Status callback for USB DC notifications
  * @param setup				Setup packet for Control requests
+ * @param setup_Rsp			Response flag for Control requests
+ * @param ctrl_zlp			Control endpoint zlp flag
  * @param attached			USBD Attached flag
  * @param ready				USBD Ready flag set after pullup
  * @param suspend			Suspend flag
+ * @param suspend_ignore	Ignore suspend interrupt
  * @param usb_work			USBD work item
  * @param drv_lock			Mutex for thread-safe b91 driver use
  * @param ep_ctx			Endpoint contexts
@@ -187,25 +195,24 @@ struct b91_usbd_ep_ctx {
 struct b91_usbd_ctx {
 	usb_dc_status_callback status_cb;
 	struct usb_setup_packet setup;
+	bool setup_Rsp;
+	bool ctrl_zlp;
 	bool attached;
 	bool ready;
 	bool suspend;
+	bool suspend_ignore;
 	struct k_work usb_work;
 	struct k_mutex drv_lock;
 	struct b91_usbd_ep_ctx ep_ctx[USBD_EP_TOTAL_CNT];
 };
 
-#define USB_FIFO_NUM  10
-#define USB_FIFO_SIZE 128
-
-static uint8_t usb_fifo[USB_FIFO_NUM][USB_FIFO_SIZE];
-static uint8_t usb_ff_rptr;
-static uint8_t usb_ff_wptr;
-
 static struct b91_usbd_ctx usbd_ctx = {
+	.setup_Rsp = false,
+	.ctrl_zlp = false,
 	.attached = false,
 	.ready = false,
 	.suspend = true,
+	.suspend_ignore = false,
 };
 
 static inline struct b91_usbd_ctx *get_usbd_ctx(void)
@@ -276,13 +283,12 @@ static struct b91_usbd_ep_ctx *out_endpoint_ctx(const uint8_t ep)
 K_FIFO_DEFINE(usbd_evt_fifo);
 
 /** @brief Work queue used for handling the ISR events (i.e. for notifying the USB
- * device stack, for executing the endpoints callbacks, etc.) out of the ISR
- * context.
+ * device stack, for executing the endpoints callbacks, etc.) out of the ISR context.
  *
- * @details The system work queue cannot be used for this purpose as it might be used in
- * applications for scheduling USB transfers and this could lead to a deadlock
- * when the USB device stack would not be notified about certain event because
- * of a system work queue item waiting for a USB transfer to be finished.
+ * @details The system work queue cannot be used for this purpose as it might be used
+ * in applications for scheduling USB transfers and this could lead to a deadlock
+ * when the USB device stack would not be notified about certain event because of
+ * a system work queue item waiting for a USB transfer to be finished.
  */
 static struct k_work_q usbd_work_queue;
 static K_KERNEL_STACK_DEFINE(usbd_work_queue_stack, CONFIG_USB_B91_WORK_QUEUE_STACK_SIZE);
@@ -302,6 +308,7 @@ enum usbd_ep_event_type {
 enum usbd_event_type {
 	USBD_EVT_IRQ_EP,
 	USBD_EVT_EP_COMPLETE,
+	USBD_EVT_EP_BUSY,
 	USBD_EVT_REINIT,
 	USBD_EVT_SETUP,
 	USBD_EVT_DATA,
@@ -309,7 +316,6 @@ enum usbd_event_type {
 	USBD_EVT_RESET,
 	USBD_EVT_SUSPEND,
 	USBD_EVT_SLEEP,
-	USBD_EVT_FF /* event for ep write data fifo */
 };
 
 struct usbd_mem_block {
@@ -425,6 +431,8 @@ static void submit_usbd_event(enum usbd_event_type evt_type, uint8_t value)
 		ev->ep_bits = value;
 	} else if (ev->evt_type == USBD_EVT_EP_COMPLETE) {
 		ev->ep_idx = value;
+	} else if (ev->evt_type == USBD_EVT_EP_BUSY) {
+		ev->ep_idx = value;
 	}
 	usbd_evt_put(ev);
 
@@ -472,81 +480,58 @@ static void ep_buf_clear(uint8_t ep)
 
 static void ep_buf_init(uint8_t ep)
 {
+	struct b91_usbd_ep_ctx *ep_ctx = endpoint_ctx(ep);
+
+	if (USB_EP_GET_IDX(ep) == USBD_EP0_IDX) {
+		ep_ctx->buf.data = ep_data_buf[0];
+	} else if (USB_EP_GET_IDX(ep) == USBD_OUT_EP5_IDX) {
+		ep_ctx->buf.data = ep_data_buf[1];
+	} else if (USB_EP_GET_IDX(ep) == USBD_OUT_EP6_IDX) {
+		ep_ctx->buf.data = ep_data_buf[2];
+	} else {
+		ep_ctx->buf.data = NULL;
+	}
 	ep_buf_clear(ep);
 }
 
-static int ep_write(uint8_t ep, uint8_t *data, uint32_t data_len)
+static uint32_t ep_write(uint8_t ep, const uint8_t *data, uint32_t data_len)
 {
-	uint8_t *w_data = data;
 	uint16_t i;
-	uint16_t w_data_len;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	struct b91_usbd_ctx *ctx = get_usbd_ctx();
 	struct b91_usbd_ep_ctx *ep_ctx = endpoint_ctx(ep);
+	uint32_t valid_len = 0;
 
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
-	if (ep_idx == USBD_EP0_IDX) {
-		if (data_len > 8) {
-			w_data_len = 8;
-		} else {
-			w_data_len = data_len;
-		}
-		ep_ctx->buf.current_len = w_data_len;
-		ep_ctx->buf.current_pos += ep_ctx->buf.current_len;
-		ep_ctx->buf.left_len -= ep_ctx->buf.current_len;
-
-		usbhw_reset_ctrl_ep_ptr();
-		while (w_data_len-- > 0) {
-			usbhw_write_ctrl_ep_data(*w_data);
-			++w_data;
-		}
+	if (usbhw_is_ep_busy(ep_idx)) {
+		submit_usbd_event(USBD_EVT_EP_BUSY, ep_idx);
 	} else {
-		if (usbhw_is_ep_busy(ep_idx)) {
-			LOG_DBG("EP%d is BUSY.", ep_idx);
-			uint8_t *p = (uint8_t *)&usb_fifo[usb_ff_wptr++ & (USB_FIFO_NUM - 1)];
+		if (data_len > ep_ctx->cfg.max_sz) {
+			valid_len = ep_ctx->cfg.max_sz;
+		} else {
+			valid_len = data_len;
+		}
 
-			p[0] = ep;	 /* endpoint address */
-			p[1] = data_len; /* data length */
-			memcpy(p + 2, data, data_len);
+		if (ep_idx == USBD_EP0_IDX) {
+			ep_ctx->buf.current_len = valid_len;
+			reg_usb_sups_cyc_cali = CTRL_EP_NORMAL_PACKET_REG_VALUE;
+			usbhw_reset_ctrl_ep_ptr();
 
-			int fifo_use = (usb_ff_wptr - usb_ff_rptr) & (USB_FIFO_NUM * 2 - 1);
-
-			if (fifo_use > USB_FIFO_NUM) {
-				usb_ff_rptr++; /* fifo overflows */
+			for (i = 0; i < valid_len; i++) {
+				usbhw_write_ctrl_ep_data(data[i]);
 			}
-			k_mutex_unlock(&ctx->drv_lock);
-			submit_usbd_event(USBD_EVT_FF, 0);
-			return 0;
+		} else {
+			usbhw_reset_ep_ptr(ep_idx);
+			for (i = 0; i < valid_len; i++) {
+				reg_usb_ep_dat(ep_idx) = data[i];
+			}
+			ep_ctx->writing_len = valid_len;
+			usbhw_data_ep_ack(ep_idx);
+			submit_usbd_event(USBD_EVT_EP_COMPLETE, ep_idx);
 		}
-
-		usbhw_reset_ep_ptr(ep_idx);
-		for (i = 0; i < data_len; i++) {
-			reg_usb_ep_dat(ep_idx) = w_data[i];
-		}
-		ep_ctx->writing_len = data_len;
-		usbhw_data_ep_ack(ep_idx);
-		submit_usbd_event(USBD_EVT_EP_COMPLETE, ep_idx);
 	}
-
 	k_mutex_unlock(&ctx->drv_lock);
-	return 0;
-}
-
-static void usb_fifo_proc(void)
-{
-	if (usb_ff_rptr == usb_ff_wptr) {
-		return;
-	}
-
-	uint8_t *p = (uint8_t *)&usb_fifo[usb_ff_rptr & (USB_FIFO_NUM - 1)];
-
-	if (usbhw_is_ep_busy(p[0])) {
-		LOG_DBG("EP%d is BUSY.", USB_EP_GET_IDX(p[0]));
-		submit_usbd_event(USBD_EVT_FF, 0);
-		return;
-	}
-	ep_write(p[0], &p[2], p[1]);
-	usb_ff_rptr++;
+	return valid_len;
 }
 
 static void usb_irq_setup_handler(void)
@@ -568,8 +553,23 @@ static void usb_irq_setup_handler(void)
 		(uint32_t)ctx->setup.wValue, (uint32_t)ctx->setup.wIndex,
 		(uint32_t)ctx->setup.wLength);
 
+	if (get_usbd_ctx()->suspend) {
+		get_usbd_ctx()->suspend = false;
+		get_usbd_ctx()->suspend_ignore = true;
+		riscv_plic_irq_enable(USBD_B91_IRQN_BY_IDX(5) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
+		if (get_usbd_ctx()->status_cb) {
+			LOG_DBG("USB resume");
+			get_usbd_ctx()->status_cb(USB_DC_RESUME, NULL);
+		}
+	}
 	ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(USBD_EP0_IDX, USB_EP_DIR_OUT));
 
+	if (IS_REQUESTTYPE_DEV_TO_HOST(ctx->setup.bmRequestType) && ctx->setup.wLength) {
+		ctx->setup_Rsp = true;
+		ctx->ctrl_zlp = false;
+	} else {
+		ctx->setup_Rsp = false;
+	}
 	ep_ctx->cfg.cb(USB_EP_GET_ADDR(USBD_EP0_IDX, USB_EP_DIR_OUT), USB_DC_EP_SETUP);
 
 	if (ep_ctx->cfg.stall) {
@@ -624,20 +624,18 @@ static void usb_ctrl_data_write_handler(void)
 {
 	struct b91_usbd_ctx *ctx = get_usbd_ctx();
 	struct b91_usbd_ep_ctx *ep_ctx =
-		endpoint_ctx(USB_EP_GET_ADDR(USBD_EP0_IDX, USB_EP_DIR_OUT));
+		endpoint_ctx(USB_EP_GET_ADDR(USBD_EP0_IDX, USB_EP_DIR_IN));
 
-	reg_usb_sups_cyc_cali = CTRL_EP_NORMAL_PACKET_REG_VALUE;
-	usbhw_reset_ctrl_ep_ptr();
-	ep_write(USB_EP_GET_ADDR(USBD_EP0_IDX, USB_EP_DIR_OUT), ep_ctx->buf.current_pos,
-		 ep_ctx->buf.left_len);
+	ep_ctx->cfg.cb(USB_EP_GET_ADDR(USBD_EP0_IDX, USB_EP_DIR_IN), USB_DC_EP_DATA_IN);
 
 	if (ep_ctx->cfg.stall) {
 		usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_STALL);
+	} else if ((ep_ctx->buf.total_len % 8 == 0) && (ep_ctx->buf.current_len == 0) &&
+		    (ep_ctx->buf.total_len != ctx->setup.wLength) && !ctx->ctrl_zlp) {
+		reg_usb_sups_cyc_cali = CTRL_EP_ZLP_REG_VALUE;
+		ctx->ctrl_zlp = true;
+		usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_ACK);
 	} else {
-		if ((ep_ctx->buf.total_len % 8 == 0) && (ep_ctx->buf.current_len == 0) &&
-		    (ep_ctx->buf.total_len != ctx->setup.wLength)) {
-			reg_usb_sups_cyc_cali = CTRL_EP_ZLP_REG_VALUE;
-		}
 		usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_ACK);
 	}
 }
@@ -646,7 +644,7 @@ static void usb_irq_data_handler(void)
 {
 	struct b91_usbd_ctx *ctx = get_usbd_ctx();
 
-	if (!IS_REQUESTTYPE_DEV_TO_HOST(ctx->setup.bmRequestType)) {
+	if (IS_REQUESTTYPE_HOST_TO_DEV(ctx->setup.bmRequestType)) {
 		usb_ctrl_data_read_handler();
 		return;
 	}
@@ -658,20 +656,18 @@ static void usb_irq_status_handler(void)
 {
 	reg_usb_sups_cyc_cali = CTRL_EP_NORMAL_PACKET_REG_VALUE;
 	if (endpoint_ctx(USB_EP_GET_ADDR(USBD_EP0_IDX, USB_EP_DIR_OUT))->cfg.stall) {
-		endpoint_ctx(USB_EP_GET_ADDR(USBD_EP0_IDX, USB_EP_DIR_OUT))->cfg.stall = 0;
+		endpoint_ctx(USB_EP_GET_ADDR(USBD_EP0_IDX, USB_EP_DIR_OUT))->cfg.stall = false;
 	} else {
 		usbhw_write_ctrl_ep_ctrl(FLD_EP_STA_ACK);
 	}
 }
 
-static int usb_irq_reset_handler(void)
+static void usb_irq_reset_handler(void)
 {
 	uint32_t i;
-	struct b91_usbd_ep_ctx *ep_ctx;
 
 	for (i = 1; i <= 8; i++) {
 		reg_usb_ep_ctrl(i) = 0;
-		ep_ctx = &get_usbd_ctx()->ep_ctx[i];
 	}
 
 	if (get_usbd_ctx()->suspend) {
@@ -685,38 +681,28 @@ static int usb_irq_reset_handler(void)
 	}
 	if (get_usbd_ctx()->suspend) {
 		get_usbd_ctx()->suspend = false;
+		get_usbd_ctx()->suspend_ignore = true;
 		riscv_plic_irq_enable(USBD_B91_IRQN_BY_IDX(5) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		if (get_usbd_ctx()->status_cb) {
 			LOG_DBG("USB resume");
 			get_usbd_ctx()->status_cb(USB_DC_RESUME, NULL);
 		}
 	}
-	return 0;
 }
 
-static int usb_irq_suspend_handler(void)
+static void usb_irq_suspend_handler(void)
 {
 	if (dev_ready()) {
 		if (get_usbd_ctx()->status_cb) {
 			get_usbd_ctx()->status_cb(USB_DC_SUSPEND, NULL);
 		}
-		if (get_usbd_ctx()->status_cb) {
-			get_usbd_ctx()->status_cb(USB_DC_DISCONNECTED, NULL);
+		if (!(reg_usb_mdev & FLD_USB_MDEV_WAKE_FEA)) {
+			if (get_usbd_ctx()->status_cb) {
+				get_usbd_ctx()->status_cb(USB_DC_DISCONNECTED, NULL);
+			}
 		}
-#if (IS_ENABLED(CONFIG_USB_B91_SUSPEND))
-		/* enter suspend */
-		submit_usbd_event(USBD_EVT_SLEEP, 0);
-#endif
 	}
-	return 0;
 }
-
-#if (IS_ENABLED(CONFIG_USB_B91_SUSPEND))
-static void mcu_enter_suspend(void)
-{
-	pm_sleep_wakeup(SUSPEND_MODE, PM_WAKEUP_CORE, PM_TICK_STIMER_16M, 0);
-}
-#endif
 
 static void usb_irq_setup(void)
 {
@@ -748,7 +734,14 @@ static inline void usb_ep_send_zlp_if_needed(const uint8_t ep_idx)
 	}
 }
 
-static void irq_in_eps_handler(uint8_t in_eps)
+static inline void irq_in_ep_handler(usb_ep_irq_e ep_irq_bit, enum usbd_endpoint_index_e ep_idx)
+{
+	usbhw_clr_eps_irq(ep_irq_bit);
+	usbhw_reset_ep_ptr(ep_idx);
+	usb_ep_send_zlp_if_needed(ep_idx);
+}
+
+static inline void irq_in_eps_handler(uint8_t in_eps)
 {
 	if (!in_eps) {
 		return;
@@ -756,38 +749,26 @@ static void irq_in_eps_handler(uint8_t in_eps)
 
 	LOG_DBG("in_eps: 0x%02X", in_eps);
 	if (in_eps & FLD_USB_EDP1_IRQ) {
-		usbhw_clr_eps_irq(FLD_USB_EDP1_IRQ);
-		usbhw_reset_ep_ptr(USBD_IN_EP1_IDX);
-		usb_ep_send_zlp_if_needed(USBD_IN_EP1_IDX);
+		irq_in_ep_handler(FLD_USB_EDP1_IRQ, USBD_IN_EP1_IDX);
 	}
 	if (in_eps & FLD_USB_EDP2_IRQ) {
-		usbhw_clr_eps_irq(FLD_USB_EDP2_IRQ);
-		usbhw_reset_ep_ptr(USBD_IN_EP2_IDX);
-		usb_ep_send_zlp_if_needed(USBD_IN_EP2_IDX);
+		irq_in_ep_handler(FLD_USB_EDP2_IRQ, USBD_IN_EP2_IDX);
 	}
 	if (in_eps & FLD_USB_EDP3_IRQ) {
-		usbhw_clr_eps_irq(FLD_USB_EDP3_IRQ);
-		usbhw_reset_ep_ptr(USBD_IN_EP3_IDX);
-		usb_ep_send_zlp_if_needed(USBD_IN_EP3_IDX);
+		irq_in_ep_handler(FLD_USB_EDP3_IRQ, USBD_IN_EP3_IDX);
 	}
 	if (in_eps & FLD_USB_EDP4_IRQ) {
-		usbhw_clr_eps_irq(FLD_USB_EDP4_IRQ);
-		usbhw_reset_ep_ptr(USBD_IN_EP4_IDX);
-		usb_ep_send_zlp_if_needed(USBD_IN_EP4_IDX);
+		irq_in_ep_handler(FLD_USB_EDP4_IRQ, USBD_IN_EP4_IDX);
 	}
 	if (in_eps & FLD_USB_EDP7_IRQ) {
-		usbhw_clr_eps_irq(FLD_USB_EDP7_IRQ);
-		usbhw_reset_ep_ptr(USBD_IN_EP7_IDX);
-		usb_ep_send_zlp_if_needed(USBD_IN_EP7_IDX);
+		irq_in_ep_handler(FLD_USB_EDP7_IRQ, USBD_IN_EP7_IDX);
 	}
 	if (in_eps & FLD_USB_EDP8_IRQ) {
-		usbhw_clr_eps_irq(FLD_USB_EDP8_IRQ);
-		usbhw_reset_ep_ptr(USBD_IN_EP8_IDX);
-		usb_ep_send_zlp_if_needed(USBD_IN_EP8_IDX);
+		irq_in_ep_handler(FLD_USB_EDP8_IRQ, USBD_IN_EP8_IDX);
 	}
 }
 
-static void irq_out_eps_handler(uint8_t out_eps)
+static inline void irq_out_eps_handler(uint8_t out_eps)
 {
 	if (!out_eps) {
 		return;
@@ -814,39 +795,19 @@ static void usb_irq_reset(void)
 
 static void usb_irq_suspend(void)
 {
+	if (get_usbd_ctx()->suspend_ignore) {
+		get_usbd_ctx()->suspend_ignore = false;
+		return;
+	}
 	riscv_plic_irq_disable(USBD_B91_IRQN_BY_IDX(5) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
-	usbhw_clr_irq_status(USB_IRQ_SUSPEND_STATUS);
 	if (!get_usbd_ctx()->suspend) {
 		get_usbd_ctx()->suspend = true;
 		submit_usbd_event(USBD_EVT_SUSPEND, 0);
 	}
 }
 
-/**
- * @brief Attach USB for device connection
- *
- * @details Function to attach USB for device connection. Upon success, the USB PLL
- * is enabled, and the USB device is now capable of transmitting and receiving
- * on the USB bus and of generating interrupts.
- *
- * @return 0 on success, negative errno code on fail.
- */
-int usb_dc_attach(void)
+static int usb_irq_init(void)
 {
-	struct b91_usbd_ctx *ctx = get_usbd_ctx();
-	uint32_t i;
-
-	if (ctx->attached) {
-		return 0;
-	}
-
-	k_mutex_init(&ctx->drv_lock);
-
-	for (i = USBD_IN_EP1_IDX; i <= USBD_EP_IN_OUT_CNT; i++) {
-		usbhw_set_ep_en(ep_en_bit[i], 0);
-		ep_ctx_reset(i);
-	}
-
 	IRQ_CONNECT(USBD_B91_IRQN_BY_IDX(0), USBD_B91_IRQ_PRIORITY_BY_IDX(0), usb_irq_setup, 0, 0);
 	if (USBD_B91_IRQN_BY_IDX(0) < CONFIG_2ND_LVL_ISR_TBL_OFFSET) {
 		return -EINVAL;
@@ -887,6 +848,7 @@ int usb_dc_attach(void)
 	riscv_plic_irq_enable(USBD_B91_IRQN_BY_IDX(5) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 	riscv_plic_set_priority(USBD_B91_IRQN_BY_IDX(5) - CONFIG_2ND_LVL_ISR_TBL_OFFSET,
 				USBD_B91_IRQ_PRIORITY_BY_IDX(5));
+	get_usbd_ctx()->suspend_ignore = true;
 
 	IRQ_CONNECT(USBD_B91_IRQN_BY_IDX(6), USBD_B91_IRQ_PRIORITY_BY_IDX(6), usb_irq_reset, 0, 0);
 	if (USBD_B91_IRQN_BY_IDX(6) < CONFIG_2ND_LVL_ISR_TBL_OFFSET) {
@@ -896,15 +858,42 @@ int usb_dc_attach(void)
 	riscv_plic_set_priority(USBD_B91_IRQN_BY_IDX(6) - CONFIG_2ND_LVL_ISR_TBL_OFFSET,
 				USBD_B91_IRQ_PRIORITY_BY_IDX(6));
 
-	ctx->attached = true;
-	ctx->ready = true;
-
-	usbhw_enable_manual_interrupt(FLD_CTRL_EP_AUTO_STD | FLD_CTRL_EP_AUTO_DESC |
-				      FLD_CTRL_EP_AUTO_CFG);
+	usbhw_enable_manual_interrupt(FLD_CTRL_EP_AUTO_CFG | FLD_CTRL_EP_AUTO_DESC |
+				FLD_CTRL_EP_AUTO_FEAT | FLD_CTRL_EP_AUTO_STD);
 	core_interrupt_enable();
 	usbhw_set_irq_mask(USB_IRQ_RESET_MASK | USB_IRQ_SUSPEND_MASK);
-
 	usbhw_clr_irq_status(USB_IRQ_RESET_STATUS);
+
+	return 0;
+}
+
+/**
+ * @brief Attach USB for device connection
+ *
+ * @details Function to attach USB for device connection. Upon success, the USB PLL
+ * is enabled, and the USB device is now capable of transmitting and receiving on
+ * the USB bus and of generating interrupts.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usb_dc_attach(void)
+{
+	struct b91_usbd_ctx *ctx = get_usbd_ctx();
+	uint32_t i;
+
+	if (ctx->attached) {
+		return 0;
+	}
+
+	k_mutex_init(&ctx->drv_lock);
+
+	for (i = USBD_IN_EP1_IDX; i <= USBD_EP_IN_OUT_CNT; i++) {
+		usbhw_set_ep_en(ep_en_bit[i], 0);
+		ep_ctx_reset(i);
+	}
+
+	ctx->attached = true;
+	ctx->ready = true;
 
 	return 0;
 }
@@ -985,9 +974,9 @@ int usb_dc_set_address(const uint8_t addr)
 /**
  * @brief Set USB device controller status callback
  *
- * @details	Function to set USB device controller status callback. The registered
- * callback is used to report changes in the status of the device controller.
- * The status code are described by the usb_dc_status_code enumeration.
+ * @details Function to set USB device controller status callback. The registered
+ * callback is used to report changes in the status of the device controller. The
+ * status code are described by the usb_dc_status_code enumeration.
  *
  * @param[in] cb Callback function
  */
@@ -999,11 +988,10 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 /**
  * @brief check endpoint capabilities
  *
- * @details	Function to check capabilities of an endpoint. usb_dc_ep_cfg_data structure
- * provides the endpoint configuration parameters: endpoint address,
- * endpoint maximum packet size and endpoint type.
- * The driver should check endpoint capabilities and return 0 if the
- * endpoint configuration is possible.
+ * @details Function to check capabilities of an endpoint. usb_dc_ep_cfg_data structure
+ * provides the endpoint configuration parameters: endpoint address, endpoint maximum
+ * packet size and endpoint type. The driver should check endpoint capabilities and
+ * return 0 if the endpoint configuration is possible.
  *
  * @param[in] cfg Endpoint config
  *
@@ -1152,7 +1140,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	if (!ep_ctx) {
 		return -EINVAL;
 	}
-	ep_ctx->cfg.stall = 1;
+	ep_ctx->cfg.stall = true;
 	ep_buf_clear(ep);
 	LOG_DBG("Stall on ep%d", USB_EP_GET_IDX(ep));
 
@@ -1179,7 +1167,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	if (!ep_ctx) {
 		return -EINVAL;
 	}
-	ep_ctx->cfg.stall = 0;
+	ep_ctx->cfg.stall = false;
 	LOG_DBG("Unstall on EP 0x%02x", ep);
 	return 0;
 }
@@ -1231,7 +1219,7 @@ int usb_dc_ep_halt(const uint8_t ep)
 /**
  * @brief Enable the selected endpoint
  *
- * @details	Function to enable the selected endpoint. Upon success interrupts are
+ * @details Function to enable the selected endpoint. Upon success interrupts are
  * enabled for the corresponding endpoint and the endpoint is ready for
  * transmitting/receiving data.
  *
@@ -1257,7 +1245,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	ep_ctx->cfg.en = true;
 
 	if (dev_ready()) {
-		ep_ctx->cfg.stall = 0;
+		ep_ctx->cfg.stall = false;
 		usbhw_set_ep_en(ep_en_bit[USB_EP_GET_IDX(ep)], 1);
 	}
 	if ((ep_ctx->cfg.type == USB_DC_EP_BULK) && USB_EP_DIR_IS_OUT(ep_ctx->cfg.addr)) {
@@ -1269,9 +1257,9 @@ int usb_dc_ep_enable(const uint8_t ep)
 /**
  * @brief Disable the selected endpoint
  *
- * @details	Function to disable the selected endpoint. Upon success interrupts are
- * disabled for the corresponding endpoint and the endpoint is no longer able
- * for transmitting/receiving data.
+ * @details Function to disable the selected endpoint. Upon success interrupts are
+ * disabled for the corresponding endpoint and the endpoint is no longer able for
+ * transmitting/receiving data.
  *
  * @param[in] ep	Endpoint address corresponding to the one
  *					listed in the device configuration table
@@ -1298,7 +1286,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	LOG_DBG("EP disable: 0x%02x", ep);
 	usbhw_set_ep_en(ep_en_bit[USB_EP_GET_IDX(ep)], 0);
 	ep_ctx_reset(USB_EP_GET_IDX(ep));
-	ep_ctx->cfg.stall = 1;
+	ep_ctx->cfg.stall = true;
 	ep_ctx->cfg.en = false;
 	return 0;
 }
@@ -1306,7 +1294,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 /**
  * @brief Flush the selected endpoint
  *
- * @details	This function flushes the FIFOs for the selected endpoint.
+ * @details This function flushes the FIFOs for the selected endpoint.
  *
  * @param[in] ep	Endpoint address corresponding to the one
  *					listed in the device configuration table
@@ -1334,9 +1322,8 @@ int usb_dc_ep_flush(const uint8_t ep)
 /**
  * @brief Write data to the specified endpoint
  *
- * @details	This function is called to write data to the specified endpoint. The
- * supplied usb_ep_callback function will be called when data is transmitted
- * out.
+ * @details This function is called to write data to the specified endpoint. The
+ * supplied usb_ep_callback function will be called when data is transmitted out.
  *
  * @param[in]  ep			Endpoint address corresponding to the one
  *							listed in the device configuration table
@@ -1356,10 +1343,6 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data, const uint32_t 
 
 	LOG_DBG("ep 0x%02x, len %d", ep, data_len);
 
-	if (!data_len) {
-		LOG_DBG("empty packet");
-		return 0;
-	}
 	if (!dev_attached() || !dev_ready()) {
 		return -ENODEV;
 	}
@@ -1376,25 +1359,25 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data, const uint32_t 
 		LOG_ERR("Endpoint 0x%02x is not enabled", ep);
 		return -EINVAL;
 	}
-	LOG_HEXDUMP_DBG(data, data_len, "");
-	memcpy(ep_ctx->buf.data, data, data_len);
-	ep_ctx->buf.current_pos = ep_ctx->buf.data;
-	ep_ctx->buf.total_len = data_len;
-	ep_ctx->buf.left_len = data_len;
-	ep_ctx->cfg.stall = 0;
-	*ret_bytes = data_len;
-	ep_write(ep, ep_ctx->buf.current_pos, ep_ctx->buf.left_len);
+	if (get_usbd_ctx()->setup_Rsp) {
+		get_usbd_ctx()->setup_Rsp = false;
+		ep_ctx->cfg.stall = false;
+		ep_ctx->buf.total_len = data_len;
+		LOG_HEXDUMP_DBG(data, data_len, "");
+	}
+	*ret_bytes = ep_write(ep, data, data_len);
+
 	return 0;
 }
 
 /**
  * @brief Read data from the specified endpoint
  *
- * @details	This function is called by the endpoint handler function, after an OUT
+ * @details This function is called by the endpoint handler function, after an OUT
  * interrupt has been received for that EP. The application must only call this
  * function through the supplied usb_ep_callback function. This function clears
- * the ENDPOINT NAK, if all data in the endpoint FIFO has been read,
- * so as to accept more data from host.
+ * the ENDPOINT NAK, if all data in the endpoint FIFO has been read, so as to
+ * accept more data from host.
  *
  * @param[in]  ep			Endpoint address corresponding to the one
  *							listed in the device configuration table
@@ -1431,10 +1414,10 @@ int usb_dc_ep_read(const uint8_t ep, uint8_t *const data, const uint32_t max_dat
 /**
  * @brief Set callback function for the specified endpoint
  *
- * @details	Function to set callback function for notification of data received and
- * available to application or transmit done on the selected endpoint,
- * NULL if callback not required by application code. The callback status
- * code is described by usb_dc_ep_cb_status_code.
+ * @details Function to set callback function for notification of data received and
+ * available to application or transmit done on the selected endpoint, NULL if
+ * callback not required by application code. The callback status code is
+ * described by usb_dc_ep_cb_status_code.
  *
  * @param[in] ep	Endpoint address corresponding to the one
  *					listed in the device configuration table
@@ -1463,7 +1446,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 /**
  * @brief Read data from the specified endpoint
  *
- * @details	This is similar to usb_dc_ep_read, the difference being that, it doesn't
+ * @details This is similar to usb_dc_ep_read, the difference being that, it doesn't
  * clear the endpoint NAKs so that the consumer is not bogged down by further
  * upcalls till he is done with the processing of the data. The caller should
  * reactivate ep by invoking usb_dc_ep_read_continue() do so.
@@ -1530,10 +1513,9 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32
 /**
  * @brief Continue reading data from the endpoint
  *
- * @details	Clear the endpoint NAK and enable the endpoint to accept more data
- * from the host. Usually called after usb_dc_ep_read_wait() when the consumer
- * is fine to accept more data. Thus these calls together act as a flow control
- * mechanism.
+ * @details Clear the endpoint NAK and enable the endpoint to accept more data from
+ * the host. Usually called after usb_dc_ep_read_wait() when the consumer is fine
+ * to accept more data. Thus these calls together act as a flow control mechanism.
  *
  * @param[in]  ep	Endpoint address corresponding to the one
  *					listed in the device configuration table
@@ -1598,13 +1580,17 @@ int usb_dc_ep_mps(uint8_t ep)
 /**
  * @brief Start the host wake up procedure.
  *
- * @details	Function to wake up the host if it's currently in sleep mode.
+ * @details Function to wake up the host if it's currently in sleep mode.
  *
  * @return 0 on success, negative errno code on fail.
  */
 int usb_dc_wakeup_request(void)
 {
-	LOG_DBG("Remote wakeup not implemented");
+	LOG_DBG("Remote wakeup");
+	if (reg_usb_mdev & FLD_USB_MDEV_WAKE_FEA) {
+		reg_wakeup_en = FLD_USB_RESUME;
+		reg_wakeup_en = FLD_USB_PWDN_I;
+	}
 	return 0;
 }
 
@@ -1640,6 +1626,7 @@ static void ep_read(enum usbd_endpoint_index_e ep_idx)
 static void usbd_work_handler(struct k_work *item)
 {
 	struct b91_usbd_ctx *ctx;
+	struct b91_usbd_ep_ctx *ep_ctx;
 	struct usbd_event *ev;
 
 	ctx = CONTAINER_OF(item, struct b91_usbd_ctx, usb_work);
@@ -1663,8 +1650,6 @@ static void usbd_work_handler(struct k_work *item)
 
 		case USBD_EVT_EP_COMPLETE:
 			LOG_DBG("USBD_EVT_EP_COMPLETE");
-			struct b91_usbd_ep_ctx *ep_ctx;
-
 			if ((ev->ep_idx == USBD_OUT_EP5_IDX) || (ev->ep_idx == USBD_OUT_EP6_IDX)) {
 				ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev->ep_idx, USB_EP_DIR_OUT));
 				if (ep_ctx->cfg.cb) {
@@ -1674,6 +1659,28 @@ static void usbd_work_handler(struct k_work *item)
 				ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev->ep_idx, USB_EP_DIR_IN));
 				if (ep_ctx->cfg.cb) {
 					ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_DATA_IN);
+				}
+			}
+			break;
+
+		case USBD_EVT_EP_BUSY:
+			LOG_DBG("USBD_EVT_EP_BUSY");
+			ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev->ep_idx, USB_EP_DIR_IN));
+			if (ep_ctx->cfg.cb) {
+				ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_DATA_IN);
+			}
+			if (ev->ep_idx == USBD_EP0_IDX) {
+				if (ep_ctx->cfg.stall) {
+					usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_STALL);
+				} else if ((ep_ctx->buf.total_len % 8 == 0)
+						&& (ep_ctx->buf.current_len == 0)
+						&& (ep_ctx->buf.total_len != ctx->setup.wLength)
+						&& !ctx->ctrl_zlp) {
+					reg_usb_sups_cyc_cali = CTRL_EP_ZLP_REG_VALUE;
+					ctx->ctrl_zlp = true;
+					usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_ACK);
+				} else {
+					usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_ACK);
 				}
 			}
 			break;
@@ -1698,14 +1705,6 @@ static void usbd_work_handler(struct k_work *item)
 			usb_irq_suspend_handler();
 			break;
 
-#if (IS_ENABLED(CONFIG_USB_B91_SUSPEND))
-		case USBD_EVT_SLEEP:
-			usbd_evt_flush();
-			LOG_DBG("USBD_EVT_SLEEP");
-			mcu_enter_suspend();
-			return;
-#endif
-
 		case USBD_EVT_RESET:
 			LOG_DBG("USBD_EVT_RESET");
 			usb_irq_reset_handler();
@@ -1713,10 +1712,6 @@ static void usbd_work_handler(struct k_work *item)
 
 		case USBD_EVT_REINIT:
 			LOG_DBG("USBD_EVT_REINIT");
-			break;
-
-		case USBD_EVT_FF:
-			usb_fifo_proc();
 			break;
 
 		default:
@@ -1730,20 +1725,18 @@ static void usbd_work_handler(struct k_work *item)
 
 static int usb_init(const struct device *arg)
 {
-	usb_set_pin_en();
-#if (IS_ENABLED(CONFIG_USB_B91_SUSPEND))
-	gpio_set_up_down_res(GPIO_PA5, GPIO_PIN_PULLDOWN_100K);
-	write_reg8(reg_wakeup_en, 0x1d);
-	pm_set_suspend_power_cfg(PM_POWERON_USB);
-#endif
+	int ret;
 
+	reg_wakeup_en = 0;
+	usb_set_pin_en();
+	ret = usb_irq_init();
 	k_work_queue_start(&usbd_work_queue, usbd_work_queue_stack,
 			   K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
 			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
 
 	k_work_init(&get_usbd_ctx()->usb_work, usbd_work_handler);
 
-	return 0;
+	return ret;
 }
 
 SYS_INIT(usb_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
