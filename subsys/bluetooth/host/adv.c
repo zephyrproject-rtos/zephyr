@@ -270,6 +270,15 @@ void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 }
 
+void bt_adv_reset_adv_pool(void)
+{
+#if defined(CONFIG_BT_EXT_ADV)
+	(void)memset(&adv_pool, 0, sizeof(adv_pool));
+#endif /* defined(CONFIG_BT_EXT_ADV) */
+
+	(void)memset(&bt_dev.adv, 0, sizeof(bt_dev.adv));
+}
+
 static struct bt_le_ext_adv *adv_get_legacy(void)
 {
 #if defined(CONFIG_BT_EXT_ADV)
