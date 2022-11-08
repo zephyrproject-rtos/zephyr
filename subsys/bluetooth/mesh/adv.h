@@ -37,6 +37,7 @@ struct bt_mesh_adv {
 		  tag:4;
 
 	uint8_t      xmit;
+	uint8_t      prio;
 };
 
 struct bt_mesh_buf {
@@ -57,9 +58,11 @@ struct bt_mesh_buf *bt_mesh_buf_ref(struct bt_mesh_buf *buf);
 void bt_mesh_buf_unref(struct bt_mesh_buf *buf);
 
 /* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
-struct bt_mesh_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
-				       enum bt_mesh_adv_tag tag,
-				       uint8_t xmit, k_timeout_t timeout);
+struct bt_mesh_buf *bt_mesh_adv_main_create(enum bt_mesh_adv_type type,
+					    uint8_t xmit, k_timeout_t timeout);
+
+struct bt_mesh_buf *bt_mesh_adv_relay_create(uint8_t prio, uint8_t xmit);
+struct bt_mesh_buf *bt_mesh_adv_frnd_create(uint8_t xmit, k_timeout_t timeout);
 
 void bt_mesh_adv_send(struct bt_mesh_buf *buf, const struct bt_mesh_send_cb *cb,
 		      void *cb_data);

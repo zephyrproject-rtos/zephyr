@@ -90,6 +90,8 @@ struct bt_mesh_net bt_mesh = {
 	.local_queue = SYS_SLIST_STATIC_INIT(&bt_mesh.local_queue),
 };
 
+static bt_mesh_relay_prio_req_cb_t prio_cb;
+
 /* Mesh Profile Specification 3.10.6
  * The node shall not execute more than one IV Index Recovery within a period of
  * 192 hours.
@@ -648,6 +650,11 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 				   proxy) == 0;
 }
 
+void bt_mesh_relay_priority_cb_reg(bt_mesh_relay_prio_req_cb_t cb)
+{
+	prio_cb = cb;
+}
+
 #if defined(CONFIG_BT_MESH_FRIEND) || \
 	defined(CONFIG_BT_MESH_PROXY)
 static void outbound_bearer_all(struct net_buf_simple *sbuf,
@@ -661,8 +668,8 @@ static void outbound_bearer_all(struct net_buf_simple *sbuf,
 		return;
 	}
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
-				 bt_mesh_net_transmit_get(), K_NO_WAIT);
+	buf = bt_mesh_adv_main_create(BT_MESH_ADV_DATA,
+				      bt_mesh_net_transmit_get(), K_NO_WAIT);
 	if (!buf) {
 		LOG_DBG("Out of relay buffers");
 		return;
@@ -700,6 +707,7 @@ static void outbound_bearer_adv(struct net_buf_simple *sbuf,
 				struct bt_mesh_net_rx *rx)
 {
 	struct bt_mesh_buf *buf;
+	uint8_t prio = 0;
 
 	/* If the Relay feature is supported and enabled, the Network PDU shall be tagged
 	 * as relay, and the Network PDU shall be retransmitted to all network interfaces
@@ -709,8 +717,11 @@ static void outbound_bearer_adv(struct net_buf_simple *sbuf,
 		return;
 	}
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_RELAY_ADV,
-				 bt_mesh_relay_retransmit_get(), K_NO_WAIT);
+	if (IS_ENABLED(CONFIG_BT_MESH_RELAY_PRIORITY) && prio_cb) {
+		prio = prio_cb(&rx->ctx);
+	}
+
+	buf = bt_mesh_adv_relay_create(prio, bt_mesh_relay_retransmit_get());
 	if (!buf) {
 		LOG_DBG("Out of relay buffers");
 		return;
@@ -734,8 +745,8 @@ static void outbound_bearer_proxy(struct net_buf_simple *sbuf,
 		return;
 	}
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
-				 bt_mesh_net_transmit_get(), K_NO_WAIT);
+	buf = bt_mesh_adv_main_create(BT_MESH_ADV_DATA,
+				      bt_mesh_net_transmit_get(), K_NO_WAIT);
 	if (!buf) {
 		LOG_DBG("Out of relay buffers");
 		return;

@@ -247,9 +247,9 @@ static struct bt_mesh_buf *adv_buf_create(uint8_t retransmits)
 {
 	struct bt_mesh_buf *buf;
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_PROV, BT_MESH_LOCAL_ADV,
-				 BT_MESH_TRANSMIT(retransmits, 20),
-				 BUF_TIMEOUT);
+	buf = bt_mesh_adv_main_create(BT_MESH_ADV_PROV,
+				      BT_MESH_TRANSMIT(retransmits, 20),
+				      BUF_TIMEOUT);
 	if (!buf) {
 		LOG_ERR("Out of provisioning buffers");
 		return NULL;

@@ -38,6 +38,10 @@ LOG_MODULE_REGISTER(bt_mesh_adv);
 #define CONFIG_BT_MESH_RELAY_BUF_COUNT 0
 #endif
 
+#ifndef CONFIG_BT_MESH_FRIEND_LPN_COUNT
+#define CONFIG_BT_MESH_FRIEND_LPN_COUNT 0
+#endif
+
 const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES] = {
 	[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,
 	[BT_MESH_ADV_DATA]   = BT_DATA_MESH_MESSAGE,
@@ -181,10 +185,17 @@ struct bt_mesh_buf *bt_mesh_adv_main_create(enum bt_mesh_adv_type type,
 
 struct bt_mesh_buf *bt_mesh_adv_frnd_create(uint8_t xmit, k_timeout_t timeout)
 {
+	struct k_mem_slab *slab;
+
 	LOG_DBG("");
 
-	return adv_create_from_pool(&friend_buf_pool,
-				    BT_MESH_ADV_DATA, BT_MESH_FRIEND_ADV,
+	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)) {
+		slab = &friend_buf_pool;
+	} else {
+		slab = &adv_buf_pool;
+	}
+
+	return adv_create_from_pool(slab, BT_MESH_ADV_DATA, BT_MESH_FRIEND_ADV,
 				    xmit, 0, timeout);
 }
 
@@ -305,7 +316,7 @@ void bt_mesh_adv_buf_get_cancel(void)
 #endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)) {
-		k_fifo_cancel_wait(&bt_mesh_friend_queue);
+		k_queue_cancel_wait(&bt_mesh_friend_queue);
 	}
 }
 
@@ -437,4 +448,3 @@ int bt_mesh_scan_disable(void)
 
 	return 0;
 }
-
