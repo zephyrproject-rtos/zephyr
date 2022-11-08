@@ -8,6 +8,8 @@ identifier: mimxrt595_evk_cm33
 name: NXP MIMXRT595-EVK
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 toolchain:
   - zephyr
   - gnuarmemb

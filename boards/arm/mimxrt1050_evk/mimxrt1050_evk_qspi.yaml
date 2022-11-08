@@ -8,6 +8,8 @@ identifier: mimxrt1050_evk_qspi
 name: NXP MIMXRT1050-EVK-QSPI
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 toolchain:
   - zephyr
   - gnuarmemb

@@ -2,6 +2,8 @@ identifier: frdm_kw41z
 name: NXP FRDM-KW41Z
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 ram: 128
 flash: 512
 toolchain:

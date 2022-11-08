@@ -7,6 +7,8 @@
 identifier: lpcxpresso55s36
 name: NXP LPCXpresso55S36
 type: mcu
+board_vendor: nxp
+soc_vendor: nxp
 arch: arm
 ram: 96
 flash: 256

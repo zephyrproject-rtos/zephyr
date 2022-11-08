@@ -2,6 +2,8 @@ identifier: frdm_kl25z
 name: NXP FRDM-KL25Z
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 ram: 16
 flash: 128
 toolchain:

@@ -2,6 +2,8 @@ identifier: nxp_adsp_imx8x
 name: i.MX8X DSP
 type: mcu
 arch: xtensa
+board_vendor: nxp
+soc_vendor: nxp
 toolchain:
   - zephyr
 testing:

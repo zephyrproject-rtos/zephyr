@@ -8,6 +8,8 @@ identifier: mimx8mq_evk_cm4
 name: NXP i.MX8MQ EVK CM4
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 ram: 32
 flash: 32
 toolchain:

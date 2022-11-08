@@ -8,6 +8,8 @@ identifier: mimx8mm_evk
 name: NXP i.MX8M Mini EVK
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 ram: 32
 flash: 32
 toolchain:

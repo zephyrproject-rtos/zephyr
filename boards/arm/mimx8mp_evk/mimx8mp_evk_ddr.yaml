@@ -8,6 +8,8 @@ identifier: mimx8mp_evk_ddr
 name: NXP i.MX8M Plus EVK (DDR)
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 ram: 2048
 flash: 2048
 toolchain:

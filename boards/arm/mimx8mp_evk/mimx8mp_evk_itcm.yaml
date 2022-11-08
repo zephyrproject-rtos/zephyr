@@ -8,6 +8,8 @@ identifier: mimx8mp_evk_itcm
 name: NXP i.MX8M Plus EVK (ITCM)
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 ram: 128
 flash: 128
 toolchain:

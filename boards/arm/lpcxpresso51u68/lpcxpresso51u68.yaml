@@ -7,6 +7,8 @@
 identifier: lpcxpresso51u68
 name: NXP LPCXpresso51u68
 type: mcu
+board_vendor: nxp
+soc_vendor: nxp
 arch: arm
 ram: 64
 flash: 256

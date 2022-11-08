@@ -1,5 +1,7 @@
 identifier: lpcxpresso11u68
 name: NXP LPCxpresso 11U68
+board_vendor: nxp
+soc_vendor: nxp
 type: mcu
 arch: arm
 toolchain:

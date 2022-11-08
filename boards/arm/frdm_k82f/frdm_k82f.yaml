@@ -2,6 +2,8 @@ identifier: frdm_k82f
 name: NXP FRDM-K82F
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 toolchain:
   - zephyr
   - gnuarmemb

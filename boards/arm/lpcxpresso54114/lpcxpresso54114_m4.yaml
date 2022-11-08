@@ -7,6 +7,8 @@
 identifier: lpcxpresso54114_m4
 name: NXP LPCXpresso54114 M4
 type: mcu
+board_vendor: nxp
+soc_vendor: nxp
 arch: arm
 ram: 64
 flash: 256

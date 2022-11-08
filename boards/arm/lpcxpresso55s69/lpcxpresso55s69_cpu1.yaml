@@ -7,6 +7,8 @@
 identifier: lpcxpresso55s69_cpu1
 name: NXP LPCXpresso55S69
 type: mcu
+board_vendor: nxp
+soc_vendor: nxp
 arch: arm
 ram: 64
 flash: 256

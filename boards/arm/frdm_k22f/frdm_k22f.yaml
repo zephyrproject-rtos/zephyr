@@ -2,6 +2,8 @@ identifier: frdm_k22f
 name: NXP FRDM-K22F
 type: mcu
 arch: arm
+board_vendor: NXP
+soc_vendor: NXP
 ram: 64
 toolchain:
   - zephyr
