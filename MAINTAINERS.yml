@@ -266,6 +266,7 @@ Build system:
   collaborators:
     - jeremybettis
     - nashif
+    - nordicjm
   files:
     - cmake/
     - CMakeLists.txt

@@ -84,7 +84,7 @@ static int cleanup_test(struct unit_test *test)
 
 #ifdef KERNEL
 
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 #define MAX_NUM_CPUHOLD (CONFIG_MP_MAX_NUM_CPUS - 1)
 #define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 static struct k_thread cpuhold_threads[MAX_NUM_CPUHOLD];
@@ -132,11 +132,11 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 		     "1cpu test took too long (%d ms)", dt);
 	arch_irq_unlock(key);
 }
-#endif /* CONFIG_SMP */
+#endif /* CONFIG_SMP && (CONFIG_MP_MAX_NUM_CPUS > 1) */
 
 void z_impl_z_test_1cpu_start(void)
 {
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 	unsigned int num_cpus = arch_num_cpus();
 
 	cpuhold_active = 1;
@@ -164,7 +164,7 @@ void z_impl_z_test_1cpu_start(void)
 
 void z_impl_z_test_1cpu_stop(void)
 {
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 	unsigned int num_cpus = arch_num_cpus();
 
 	cpuhold_active = 0;
