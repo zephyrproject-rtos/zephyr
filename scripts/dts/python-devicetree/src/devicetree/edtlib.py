@@ -67,7 +67,7 @@ bindings_from_paths() helper function.
 #   @properties are documented in the class docstring, as if they were
 #   variables. See the existing @properties for a template.
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from copy import deepcopy
 import logging
 import os
@@ -115,19 +115,17 @@ class EDT:
       on some Node to a model name parsed from that compatible.
 
     label2node:
-      A collections.OrderedDict that maps a node label to the node with
-      that label.
+      A dict that maps a node label to the node with that label.
 
     dep_ord2node:
-      A collections.OrderedDict that maps an ordinal to the node with
-      that dependency ordinal.
+      A dict that maps an ordinal to the node with that dependency ordinal.
 
     chosen_nodes:
-      A collections.OrderedDict that maps the properties defined on the
-      devicetree's /chosen node to their values. 'chosen' is indexed by
-      property name (a string), and values are converted to Node objects.
-      Note that properties of the /chosen node which can't be converted
-      to a Node are not included in the value.
+      A dict that maps the properties defined on the devicetree's /chosen
+      node to their values. 'chosen' is indexed by property name (a string),
+      and values are converted to Node objects. Note that properties of the
+      /chosen node which can't be converted to a Node are not included in
+      the value.
 
     dts_path:
       The .dts path passed to __init__()
@@ -233,7 +231,7 @@ class EDT:
 
     @property
     def chosen_nodes(self):
-        ret = OrderedDict()
+        ret = {}
 
         try:
             chosen = self._dt.get_node("/chosen")
@@ -454,8 +452,8 @@ class EDT:
     def _init_luts(self):
         # Initialize node lookup tables (LUTs).
 
-        self.label2node = OrderedDict()
-        self.dep_ord2node = OrderedDict()
+        self.label2node = {}
+        self.dep_ord2node = {}
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
         self.compat2vendor = defaultdict(str)
@@ -632,7 +630,7 @@ class Node:
       A list of Register objects for the node's registers
 
     props:
-      A collections.OrderedDict that maps property names to Property objects.
+      A dict that maps property names to Property objects.
       Property objects are created for all devicetree properties on the node
       that are mentioned in 'properties:' in the binding.
 
@@ -730,8 +728,8 @@ class Node:
         # Could be initialized statically too to preserve identity, but not
         # sure if needed. Parent nodes being initialized before their children
         # would need to be kept in mind.
-        return OrderedDict((name, self.edt._node2enode[node])
-                           for name, node in self._node.nodes.items())
+        return {name: self.edt._node2enode[node]
+                for name, node in self._node.nodes.items()}
 
     def child_index(self, node):
         """Get the index of *node* in self.children.
@@ -742,7 +740,7 @@ class Node:
             # method is callable to handle parents needing to be
             # initialized before their chidlren. By the time we
             # return from __init__, 'self.children' is callable.
-            self._child2index = OrderedDict()
+            self._child2index = {}
             for index, child in enumerate(self.children.values()):
                 self._child2index[child] = index
 
@@ -820,9 +818,7 @@ class Node:
     def spi_cs_gpio(self):
         "See the class docstring"
 
-        # We know on_buses is always a list, but pylint doesn't.
-        # So ignore the error.
-        if not ("spi" in self.on_buses # pylint: disable=unsupported-membership-test
+        if not ("spi" in self.on_buses
                 and "cs-gpios" in self.bus_node.props):
             return None
 
@@ -875,9 +871,7 @@ class Node:
                 # works the same way in Zephyr as it does elsewhere.
                 binding = None
 
-                # We know on_buses is always a list, but pylint doesn't.
-                # So ignore the error.
-                for bus in on_buses: # pylint: disable=not-an-iterable
+                for bus in on_buses:
                     if (compat, bus) in self.edt._compat2binding:
                         binding = self.edt._compat2binding[compat, bus]
                         break
@@ -920,7 +914,7 @@ class Node:
             'properties': {},
         }
         for name, prop in self._node.props.items():
-            pp = OrderedDict()
+            pp = {}
             if prop.type == Type.EMPTY:
                 pp["type"] = "boolean"
             elif prop.type == Type.BYTES:
@@ -995,7 +989,7 @@ class Node:
         # Creates self.props. See the class docstring. Also checks that all
         # properties on the node are declared in its binding.
 
-        self.props = OrderedDict()
+        self.props = {}
 
         node = self._node
         if self._binding:
@@ -1417,7 +1411,7 @@ class Node:
                  f"{controller._node!r} - {len(cell_names)} "
                  f"instead of {len(data_list)}")
 
-        return OrderedDict(zip(cell_names, data_list))
+        return dict(zip(cell_names, data_list))
 
 
 class Range:
@@ -1705,11 +1699,11 @@ class Binding:
       using 'child-binding:' with no compatible.
 
     prop2specs:
-      A collections.OrderedDict mapping property names to PropertySpec objects
+      A dict mapping property names to PropertySpec objects
       describing those properties' values.
 
     specifier2cells:
-      A collections.OrderedDict that maps specifier space names (like "gpio",
+      A dict that maps specifier space names (like "gpio",
       "clock", "pwm", etc.) to lists of cell names.
 
       For example, if the binding YAML contains 'pin' and 'flags' cell names
@@ -1811,10 +1805,10 @@ class Binding:
         self._check(require_compatible, require_description)
 
         # Initialize look up tables.
-        self.prop2specs = OrderedDict()
+        self.prop2specs = {}
         for prop_name in self.raw.get("properties", {}).keys():
             self.prop2specs[prop_name] = PropertySpec(prop_name, self)
-        self.specifier2cells = OrderedDict()
+        self.specifier2cells = {}
         for key, val in self.raw.items():
             if key.endswith("-cells"):
                 self.specifier2cells[key[:-len("-cells")]] = val

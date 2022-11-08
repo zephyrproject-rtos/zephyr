@@ -185,21 +185,30 @@ int boot_request_upgrade_multi(int image_index, int permanent)
 
 bool boot_is_img_confirmed(void)
 {
+	struct boot_swap_state state;
 	const struct flash_area *fa;
 	int rc;
-	uint8_t flag_val;
 
 	rc = flash_area_open(FLASH_AREA_IMAGE_PRIMARY, &fa);
 	if (rc) {
 		return false;
 	}
 
-	rc = boot_read_image_ok(fa, &flag_val);
-	if (rc) {
+	rc = boot_read_swap_state(fa, &state);
+	if (rc != 0) {
 		return false;
 	}
 
-	return flag_val == BOOT_FLAG_SET;
+	if (state.magic == BOOT_MAGIC_UNSET) {
+		/* This is initial/preprogramed image.
+		 * Such image can neither be reverted nor physically confirmed.
+		 * Treat this image as confirmed which ensures consistency
+		 * with `boot_write_img_confirmed...()` procedures.
+		 */
+		return true;
+	}
+
+	return state.image_ok == BOOT_FLAG_SET;
 }
 
 int boot_write_img_confirmed(void)
