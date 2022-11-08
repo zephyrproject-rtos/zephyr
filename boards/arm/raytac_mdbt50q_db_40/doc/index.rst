@@ -178,12 +178,6 @@ the board are working properly with Zephyr:
    zephyr/samples/basic/blinky
    zephyr/samples/basic/button
 
-Testing the bluetooth advertising and connect in the MDBT50Q-DB-40
-***********************************************
-.. code-block:: console
-
-   nrf/samples/bluetooth/peripheral_uart
-   
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
 :zephyr_file:`boards/arm/raytac_mdbt50q_db_40/raytac_mdbt50q_db_40.dts`.
