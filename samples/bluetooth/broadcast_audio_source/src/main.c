@@ -64,6 +64,7 @@ static void stream_stopped_cb(struct bt_audio_stream *stream)
 static void stream_sent_cb(struct bt_audio_stream *stream)
 {
 	static uint32_t sent_cnt;
+	static uint8_t catchup;
 	struct net_buf *buf;
 	int ret;
 
@@ -74,7 +75,13 @@ static void stream_sent_cb(struct bt_audio_stream *stream)
 	if ((sent_cnt % 400) == 2) {
 		seq_num++;
 		sent_cnt++;
+		catchup++;
 		return;
+	}
+
+	if (catchup) {
+		catchup--;
+		stream_sent_cb(stream);
 	}
 
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
