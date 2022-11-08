@@ -108,6 +108,7 @@ static void broadcast_sink_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 		struct bt_audio_stream *stream = ep->stream;
 
 		if (stream != NULL) {
+			bt_audio_iso_unbind_ep(ep->iso, ep);
 			stream->ep = NULL;
 			stream->codec = NULL;
 			ep->stream = NULL;
