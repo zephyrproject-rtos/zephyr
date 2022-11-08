@@ -8,6 +8,8 @@ from collections import defaultdict
 import itertools
 from pathlib import Path
 from typing import NamedTuple
+import sys
+import yaml
 
 #
 # This is shared code between the build system's 'boards' target
@@ -40,7 +42,7 @@ def find_arch2board_set(args):
     ret = defaultdict(set)
 
     for root in args.board_roots:
-        for arch, boards in find_arch2board_set_in(root, arches).items():
+        for arch, boards in find_arch2board_set_in(root, arches, args.board_vendor, args.soc_vendor).items():
             ret[arch] |= boards
 
     return ret
@@ -68,9 +70,34 @@ def find_arches_in(root):
 
     return ret
 
-def find_arch2board_set_in(root, arches):
+def get_vendors(yaml_file):
+
+    vendors = ()
+
+    with open(yaml_file, "r") as stream:
+        try:
+            data = yaml.safe_load(stream)
+        except yaml.YAMLError:
+            sys.stderr.write("Error parsing yaml in " + str(yaml_file) + ". Skipping file\n")
+            return None
+
+        for v in ('board_vendor','soc_vendor'):
+            if v in data.keys():
+                vendors = vendors + (data[v].upper(),)
+            else:
+                vendors = vendors + (None,)
+
+    return vendors
+
+def find_arch2board_set_in(root, arches, board_vendor, soc_vendor):
     ret = defaultdict(set)
     boards = root / 'boards'
+    bvsv = ()
+
+    if board_vendor is not None:
+        board_vendor = board_vendor.upper()
+    if soc_vendor is not None:
+        soc_vendor = soc_vendor.upper()
 
     for arch in arches:
         if not (boards / arch).is_dir():
@@ -79,11 +106,30 @@ def find_arch2board_set_in(root, arches):
         for maybe_board in (boards / arch).iterdir():
             if not maybe_board.is_dir():
                 continue
-            for maybe_defconfig in maybe_board.iterdir():
-                file_name = maybe_defconfig.name
-                if file_name.endswith('_defconfig'):
-                    board_name = file_name[:-len('_defconfig')]
-                    ret[arch].add(Board(board_name, arch, maybe_board))
+            for maybe_yaml in maybe_board.iterdir():
+                bvsv = ()
+                file_name = maybe_yaml.name
+                if file_name.endswith('.yaml'):
+                    bvsv = get_vendors(maybe_board / file_name)
+                    if bvsv is None:
+                        continue
+
+                    if soc_vendor is None and board_vendor == bvsv[0]:
+                        board_name = file_name[:-len('.yaml')]
+                        ret[arch].add(Board(board_name, arch, maybe_board))
+                    elif board_vendor is None and soc_vendor == bvsv[1]:
+                        board_name = file_name[:-len('.yaml')]
+                        ret[arch].add(Board(board_name, arch, maybe_board))
+                    elif soc_vendor == bvsv[1] and board_vendor == bvsv[0]:
+                        board_name = file_name[:-len('.yaml')]
+                        ret[arch].add(Board(board_name, arch, maybe_board))
+                    elif soc_vendor is None and board_vendor is None:
+                        board_name = file_name[:-len('.yaml')]
+                        ret[arch].add(Board(board_name, arch, maybe_board))
+
+                    if bvsv == (board_vendor, soc_vendor):
+                        board_name = file_name[:-len('.yaml')]
+                        ret[arch].add(Board(board_name, arch, maybe_board))
 
     return ret
 
@@ -101,6 +147,11 @@ def add_args(parser):
     parser.add_argument("--board-root", dest='board_roots', default=[],
                         type=Path, action='append',
                         help='add a board root, may be given more than once')
+    parser.add_argument('--board-vendor', dest='board_vendor', default=None,
+                        help='''board vendor name''')
+    parser.add_argument('--soc-vendor', dest='soc_vendor', default=None,
+                        help='''SoC vendor name''')
+
 
 def dump_boards(arch2boards):
     for arch, boards in arch2boards.items():
