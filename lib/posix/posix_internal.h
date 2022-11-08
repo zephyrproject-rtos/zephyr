@@ -7,6 +7,19 @@
 #ifndef ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 #define ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 
+/*
+ * Bit used to mark a pthread_mutex_t as initialized. Initialization status is
+ * verified (against internal status) in lock / unlock / destroy functions.
+ */
+#define PTHREAD_MUTEX_MASK_INIT 0x80000000
+
+struct posix_mutex {
+	k_tid_t owner;
+	uint16_t lock_count;
+	int type;
+	_wait_q_t wait_q;
+};
+
 enum pthread_state {
 	/* The thread structure is unallocated and available for reuse. */
 	PTHREAD_TERMINATED = 0,
@@ -39,5 +52,26 @@ struct posix_thread {
 };
 
 struct posix_thread *to_posix_thread(pthread_t pthread);
+
+/* get and possibly initialize a posix_mutex */
+struct posix_mutex *to_posix_mutex(pthread_mutex_t *mu);
+
+/* get a previously initialized posix_mutex */
+struct posix_mutex *get_posix_mutex(pthread_mutex_t mut);
+
+static inline bool is_pthread_mutex_initialized(pthread_mutex_t mut)
+{
+	return (mut & PTHREAD_MUTEX_MASK_INIT) != 0;
+}
+
+static inline pthread_mutex_t mark_pthread_mutex_initialized(pthread_mutex_t mut)
+{
+	return mut | PTHREAD_MUTEX_MASK_INIT;
+}
+
+static inline pthread_mutex_t mark_pthread_mutex_uninitialized(pthread_mutex_t mut)
+{
+	return mut & ~PTHREAD_MUTEX_MASK_INIT;
+}
 
 #endif
