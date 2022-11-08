@@ -74,6 +74,28 @@ def get_shas(refspec):
                refspec).split()
 
 
+class FmtdFailure(Failure):
+
+    def __init__(self, severity, title, file, line, col=None, desc=""):
+        self.severity = severity
+        self.title = title
+        self.file = file
+        self.line = line
+        self.col = col
+        self.desc = desc
+        description = f':{desc}' if desc else ''
+        msg_body = desc or title
+
+        txt = f'\n{title}{description}\nFile:{file}\nLine:{line}' + \
+              (f'\nColumn:{col}' if col else '')
+        msg = f'{file}:{line} {msg_body}'
+        typ = severity.lower()
+
+        super().__init__(msg, typ)
+
+        self.text = txt
+
+
 class ComplianceTest:
     """
     Base class for tests. Inheriting classes should have a run() method and set
@@ -97,6 +119,10 @@ class ComplianceTest:
     """
     def __init__(self):
         self.case = TestCase(type(self).name, "Guidelines")
+        # This is necessary because Failure can be subclassed, but since it is
+        # always restored form the element tree, the subclass is lost upon
+        # restoring
+        self.fmtd_failures = []
 
     def _result(self, res, text):
         res.text = text.rstrip()
@@ -131,8 +157,18 @@ class ComplianceTest:
         Signals that the test failed, with message 'msg'. Can be called many
         times within the same test to report multiple failures.
         """
-        fail= Failure(msg or (type(self).name + " issues"), type_)
+        fail = Failure(msg or (type(self).name + " issues"), type_)
         self._result(fail, text)
+
+    def fmtd_failure(self, severity, title, file, line, col=None, desc=""):
+        """
+        Signals that the test failed, and store the information in a formatted
+        standardized manner. Can be called many times within the same test to
+        report multiple failures.
+        """
+        fail = FmtdFailure(severity, title, file, line, col, desc)
+        self._result(fail, fail.text)
+        self.fmtd_failures.append(fail)
 
 
 class EndTest(Exception):
@@ -171,7 +207,17 @@ class CheckPatch(ComplianceTest):
 
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
-            self.failure(output)
+            regex = r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+):(.+)(?:\n|\r\n?)+' \
+                     '^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
+
+            matches = re.findall(regex, output, re.MULTILINE)
+            for m in matches:
+                self.fmtd_failure(m[1].lower(), m[2], m[5], m[6], col=None,
+                        desc=m[3])
+
+            # If the regex has not matched add the whole output as a failure
+            if len(matches) == 0:
+                self.failure(output)
 
 
 class KconfigCheck(ComplianceTest):
@@ -1106,11 +1152,11 @@ def _main(args):
             errmsg = ""
             with open(f"{case.name}.txt", "w") as f:
                 docs = name2doc.get(case.name)
-                f.write(f"{docs}\n\n")
+                f.write(f"{docs}\n")
                 for res in case.result:
                     errmsg = res.text.strip()
                     logging.error("Test %s failed: \n%s", case.name, errmsg)
-                    f.write(errmsg)
+                    f.write('\n' + errmsg)
 
     print("\nComplete results in " + args.output)
     return n_fails
