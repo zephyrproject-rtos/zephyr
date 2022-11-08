@@ -1541,9 +1541,9 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 	uint32_t ssc0, sstsa, ssrsa;
 
 	/* set config only once for playback or capture */
-	if (dp->sref > 1) {
+	if (ssp->state[DAI_DIR_PLAYBACK] > DAI_STATE_READY ||
+	    ssp->state[DAI_DIR_CAPTURE] > DAI_STATE_READY)
 		return 0;
-	}
 
 	ssc0 = blob->i2s_driver_config.i2s_config.ssc0;
 	sstsa = blob->i2s_driver_config.i2s_config.sstsa;
