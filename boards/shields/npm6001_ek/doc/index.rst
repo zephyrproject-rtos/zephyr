@@ -28,7 +28,8 @@ Usage
 *****
 
 The shield can be used in any application by setting ``SHIELD`` to
-``npm6001_ek``.
+``npm6001_ek``. You can check :ref:`npm6001_ek_sample` for a comprehensive
+sample.
 
 References
 **********
