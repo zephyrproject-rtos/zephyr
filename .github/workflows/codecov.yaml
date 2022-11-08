@@ -39,7 +39,7 @@ jobs:
       - name: Clone cached Zephyr repository
         continue-on-error: true
         run: |
-          git clone /github/cache/zephyrproject/zephyr .
+          git clone --shared /github/cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: checkout
