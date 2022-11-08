@@ -50,12 +50,7 @@ typedef uint32_t pthread_t;
 typedef struct k_sem sem_t;
 
 /* Mutex */
-typedef struct pthread_mutex {
-	k_tid_t owner;
-	uint16_t lock_count;
-	int type;
-	_wait_q_t wait_q;
-} pthread_mutex_t;
+typedef uint32_t pthread_mutex_t;
 
 typedef struct pthread_mutexattr {
 	int type;
