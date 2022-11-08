@@ -130,6 +130,13 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
 }
 
 /**
+ * @brief Declare a mutex as initialized
+ *
+ * Initialize a mutex with the default mutex attributes.
+ */
+#define PTHREAD_MUTEX_INITIALIZER (-1)
+
+/**
  * @brief Declare a pthread mutex
  *
  * Declaration API for a pthread mutex.  This is not a POSIX API, it's
@@ -137,14 +144,9 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
  * kernel objects.
  *
  * @param name Symbol name of the mutex
+ * @deprecated Use @c PTHREAD_MUTEX_INITIALIZER instead.
  */
-#define PTHREAD_MUTEX_DEFINE(name) \
-	struct pthread_mutex name = \
-	{ \
-		.lock_count = 0, \
-		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),	\
-		.owner = NULL, \
-	}
+#define PTHREAD_MUTEX_DEFINE(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER
 
 /*
  *  Mutex attributes - type
