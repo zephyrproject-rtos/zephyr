@@ -797,8 +797,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
 		struct pdu_data_llctrl_cte_req cte_req;
 		struct pdu_data_llctrl_cte_rsp cte_rsp;
-		struct pdu_data_llctrl_clock_accuracy_req sca_req;
-		struct pdu_data_llctrl_clock_accuracy_rsp sca_rsp;
+		struct pdu_data_llctrl_clock_accuracy_req clock_accuracy_req;
+		struct pdu_data_llctrl_clock_accuracy_rsp clock_accuracy_rsp;
 		struct pdu_data_llctrl_cis_req cis_req;
 		struct pdu_data_llctrl_cis_rsp cis_rsp;
 		struct pdu_data_llctrl_cis_ind cis_ind;
