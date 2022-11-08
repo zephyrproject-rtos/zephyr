@@ -49,7 +49,67 @@ struct cavs_shim {
 	uint32_t svcfg; /* Offset: 0xf4 */
 	uint32_t _unused9[2];
 };
+
+/**
+ * DfPMCCH
+ * Power Management / Clock Control (HST) Registers
+ *
+ * These registers block (HST domain) are for general power management
+ * and clock control operation for DSP FW.
+ */
+struct ace_dfpmcch {
+	uint32_t dfspsreq;	/* Offset: 0x00 */
+	uint32_t _unused0[3];
+	uint32_t dfspsrsp;	/* Offset: 0x10 */
+	uint32_t _unused1[1];
+	uint32_t svcfg;		/* Offset: 0x18 */
+	uint32_t dfltrc;	/* Offset: 0x1c */
+	uint32_t _unused2[8];
+};
+
+/**
+ * DfPMCCU
+ * Power Management / Clock Control (ULP) Registers
+ *
+ * These registers block (ULP domain) are for general power management
+ * and clock control operation for DSP FW.
+ */
+struct ace_dfpmccu {
+	uint32_t dfpmccap;	/* Offset: 0x00 */
+	uint32_t dfhrosccf;	/* Offset: 0x04 */
+	uint32_t dfxosccf;	/* Offset: 0x08 */
+	uint32_t dflrosccf;	/* Offset: 0x0c */
+	uint32_t dfsiorosccf;	/* Offset: 0x10 */
+	uint32_t dfhsiorosccf;	/* Offset: 0x14 */
+	uint32_t dfipllrosccf;	/* Offset: 0x18 */
+	uint32_t dfirosccv;	/* Offset: 0x1c */
+	uint32_t dffbrcfd;	/* Offset: 0x20 */
+	uint32_t dfapllptr;	/* Offset: 0x24 */
+	uint32_t _unused0[20];
+	uint32_t dfclkctl;	/* Offset: 0x78 */
+	uint32_t dfclksts;	/* Offset: 0x7c */
+	uint32_t dfintclkctl;	/* Offset: 0x80 */
+	uint32_t dfcrosts;	/* Offset: 0x84 */
+	uint32_t dfcrodiv;	/* Offset: 0x88 */
+	uint32_t _unused1[1];
+	uint16_t dfpwrctl;	/* Offset: 0x90 */
+	uint16_t dfpwrsts;	/* Offset: 0x92 */
+	uint32_t _unused2[1];
+	uint32_t dflpsdmas0;	/* Offset: 0x98 */
+	uint32_t dflpsdmas1;	/* Offset: 0x9c */
+	uint32_t _unused3[1];
+	uint32_t dfldoctl;	/* Offset: 0xa4 */
+	uint32_t _unused4[2];
+	uint32_t dflpsalhsso;	/* Offset: 0xb0 */
+	uint32_t dflpsalhss1;	/* Offset: 0xb4 */
+	uint32_t dflpsalhss2;	/* Offset: 0xb8 */
+	uint32_t dflpsalhss3;	/* Offset: 0xbc */
+	uint32_t _unused5[10];
+};
+
 #define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
+#define ACE_DfPMCCH (*((volatile struct ace_dfpmcch *)DT_REG_ADDR(DT_NODELABEL(dfpmcch))))
+#define ACE_DfPMCCU (*((volatile struct ace_dfpmccu *)DT_REG_ADDR(DT_NODELABEL(dfpmccu))))
 
 
 #define ADSP_TTSCAP_OFFSET	0x00
