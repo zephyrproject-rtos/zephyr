@@ -724,16 +724,9 @@ static void dma_stm32_config_irq_0(const struct device *dev)
 	DMA_STM32_IRQ_CONNECT(0, 2);
 	DMA_STM32_IRQ_CONNECT(0, 3);
 	DMA_STM32_IRQ_CONNECT(0, 4);
-#if DT_INST_IRQ_HAS_IDX(0, 5)
 	DMA_STM32_IRQ_CONNECT(0, 5);
-#if DT_INST_IRQ_HAS_IDX(0, 6)
 	DMA_STM32_IRQ_CONNECT(0, 6);
-#if DT_INST_IRQ_HAS_IDX(0, 7)
 	DMA_STM32_IRQ_CONNECT(0, 7);
-#endif /* DT_INST_IRQ_HAS_IDX(0, 5) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 6) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 7) */
-/* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 	DMA_STM32_IRQ_CONNECT(0, 8);
 	DMA_STM32_IRQ_CONNECT(0, 9);
 	DMA_STM32_IRQ_CONNECT(0, 10);
