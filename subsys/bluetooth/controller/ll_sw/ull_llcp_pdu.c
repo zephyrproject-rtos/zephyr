@@ -912,10 +912,10 @@ void llcp_pdu_decode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pd
  */
 void llcp_pdu_encode_clock_accuracy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	struct pdu_data_llctrl_clock_accuracy_req *p = &pdu->llctrl.sca_req;
+	struct pdu_data_llctrl_clock_accuracy_req *p = &pdu->llctrl.clock_accuracy_req;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, sca_req) +
+	pdu->len = offsetof(struct pdu_data_llctrl, clock_accuracy_req) +
 		   sizeof(struct pdu_data_llctrl_clock_accuracy_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ;
 	/* Currently we do not support variable SCA, so we always 'report' current SCA */
@@ -924,10 +924,10 @@ void llcp_pdu_encode_clock_accuracy_req(struct proc_ctx *ctx, struct pdu_data *p
 
 void llcp_pdu_encode_clock_accuracy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	struct pdu_data_llctrl_clock_accuracy_rsp *p = &pdu->llctrl.sca_rsp;
+	struct pdu_data_llctrl_clock_accuracy_rsp *p = &pdu->llctrl.clock_accuracy_rsp;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, sca_rsp) +
+	pdu->len = offsetof(struct pdu_data_llctrl, clock_accuracy_rsp) +
 		   sizeof(struct pdu_data_llctrl_clock_accuracy_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP;
 	/* Currently we do not support variable SCA, so we always 'report' current SCA */
@@ -936,14 +936,14 @@ void llcp_pdu_encode_clock_accuracy_rsp(struct proc_ctx *ctx, struct pdu_data *p
 
 void llcp_pdu_decode_clock_accuracy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	struct pdu_data_llctrl_clock_accuracy_req *p = &pdu->llctrl.sca_req;
+	struct pdu_data_llctrl_clock_accuracy_req *p = &pdu->llctrl.clock_accuracy_req;
 
 	ctx->data.sca_update.sca = p->sca;
 }
 
 void llcp_pdu_decode_clock_accuracy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	struct pdu_data_llctrl_clock_accuracy_rsp *p = &pdu->llctrl.sca_rsp;
+	struct pdu_data_llctrl_clock_accuracy_rsp *p = &pdu->llctrl.clock_accuracy_rsp;
 
 	ctx->data.sca_update.sca = p->sca;
 }
