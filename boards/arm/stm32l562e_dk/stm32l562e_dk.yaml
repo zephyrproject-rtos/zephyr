@@ -19,6 +19,7 @@ supported:
   - arduino_spi
   - sdhc
   - usb
+  - usb_device
   - nvs
 ram: 192
 flash: 512
