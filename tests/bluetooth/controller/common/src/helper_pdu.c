@@ -485,10 +485,10 @@ void helper_pdu_encode_sca_req(struct pdu_data *pdu, void *param)
 	struct pdu_data_llctrl_clock_accuracy_req *p = param;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, sca_req) +
+	pdu->len = offsetof(struct pdu_data_llctrl, clock_accuracy_req) +
 		sizeof(struct pdu_data_llctrl_clock_accuracy_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ;
-	pdu->llctrl.sca_req.sca = p->sca;
+	pdu->llctrl.clock_accuracy_req.sca = p->sca;
 }
 
 void helper_pdu_encode_sca_rsp(struct pdu_data *pdu, void *param)
@@ -496,10 +496,10 @@ void helper_pdu_encode_sca_rsp(struct pdu_data *pdu, void *param)
 	struct pdu_data_llctrl_clock_accuracy_rsp *p = param;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, sca_rsp) +
+	pdu->len = offsetof(struct pdu_data_llctrl, clock_accuracy_rsp) +
 		sizeof(struct pdu_data_llctrl_clock_accuracy_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP;
-	pdu->llctrl.sca_rsp.sca = p->sca;
+	pdu->llctrl.clock_accuracy_rsp.sca = p->sca;
 }
 
 void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_data *pdu,
