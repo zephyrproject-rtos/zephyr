@@ -845,6 +845,92 @@ void llcp_pdu_encode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	p->conn_event_count = sys_cpu_to_le16(ctx->data.cis_create.conn_event_count);
 }
 #endif /* defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+void llcp_pdu_encode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_cis_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, cis_req) +
+			    sizeof(struct pdu_data_llctrl_cis_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_REQ;
+
+	p = &pdu->llctrl.cis_req;
+
+	p->cig_id = ctx->data.cis_create.cig_id;
+	p->cis_id = ctx->data.cis_create.cis_id;
+	p->c_phy = ctx->data.cis_create.c_phy;
+	p->p_phy = ctx->data.cis_create.p_phy;
+	p->nse = ctx->data.cis_create.nse;
+	p->c_bn = ctx->data.cis_create.c_bn;
+	p->p_bn = ctx->data.cis_create.p_bn;
+	p->c_ft = ctx->data.cis_create.c_ft;
+	p->p_ft = ctx->data.cis_create.p_ft;
+
+	sys_put_le24(ctx->data.cis_create.c_sdu_interval, p->c_sdu_interval);
+	sys_put_le24(ctx->data.cis_create.p_sdu_interval, p->p_sdu_interval);
+	sys_put_le24(ctx->data.cis_create.cis_offset_max, p->cis_offset_max);
+	sys_put_le24(ctx->data.cis_create.cis_offset_min, p->cis_offset_min);
+	sys_put_le24(ctx->data.cis_create.sub_interval, p->sub_interval);
+
+	p->c_max_pdu = sys_cpu_to_le16(ctx->data.cis_create.c_max_pdu);
+	p->p_max_pdu = sys_cpu_to_le16(ctx->data.cis_create.p_max_pdu);
+	p->iso_interval = sys_cpu_to_le16(ctx->data.cis_create.iso_interval);
+	p->conn_event_count = sys_cpu_to_le16(ctx->data.cis_create.conn_event_count);
+
+	p->c_max_sdu_packed[0] = ctx->data.cis_create.c_max_sdu & 0xFF;
+	p->c_max_sdu_packed[1] = ((ctx->data.cis_create.c_max_sdu >> 8) & 0x0F) |
+				  (ctx->data.cis_create.framed << 7);
+	p->p_max_sdu[0] = ctx->data.cis_create.p_max_sdu & 0xFF;
+	p->p_max_sdu[1] = (ctx->data.cis_create.p_max_sdu >> 8) & 0x0F;
+}
+
+void llcp_pdu_decode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	/* Limit response to valid range */
+	uint32_t cis_offset_min = sys_get_le24(pdu->llctrl.cis_rsp.cis_offset_min);
+	uint32_t cis_offset_max = sys_get_le24(pdu->llctrl.cis_rsp.cis_offset_max);
+
+	/* TODO: Fail procedure if offsets are invalid? */
+	if (cis_offset_min <= cis_offset_max &&
+	    cis_offset_min >= ctx->data.cis_create.cis_offset_min &&
+	    cis_offset_min <= ctx->data.cis_create.cis_offset_max &&
+	    cis_offset_max <= ctx->data.cis_create.cis_offset_max &&
+	    cis_offset_max >= ctx->data.cis_create.cis_offset_min) {
+		/* Offsets are valid */
+		ctx->data.cis_create.cis_offset_min = cis_offset_min;
+		ctx->data.cis_create.cis_offset_max = cis_offset_max;
+	}
+
+	ctx->data.cis_create.conn_event_count =
+		sys_le16_to_cpu(pdu->llctrl.cis_rsp.conn_event_count);
+}
+
+void llcp_pdu_encode_cis_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_cis_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, cis_ind) +
+			    sizeof(struct pdu_data_llctrl_cis_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_IND;
+
+	p = &pdu->llctrl.cis_ind;
+
+	p->aa[0] = ctx->data.cis_create.aa[0];
+	p->aa[1] = ctx->data.cis_create.aa[1];
+	p->aa[2] = ctx->data.cis_create.aa[2];
+	p->aa[3] = ctx->data.cis_create.aa[3];
+
+	sys_put_le24(ctx->data.cis_create.cis_offset_min, p->cis_offset);
+	sys_put_le24(ctx->data.cis_create.cig_sync_delay, p->cig_sync_delay);
+	sys_put_le24(ctx->data.cis_create.cis_sync_delay, p->cis_sync_delay);
+
+	p->conn_event_count = sys_cpu_to_le16(ctx->data.cis_create.conn_event_count);
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 void llcp_pdu_encode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
