@@ -392,6 +392,6 @@ static const struct gpio_driver_api pcf8574_drv_api = {
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, pcf8574_init, NULL, &pcf8574_data##idx, &pcf8574_cfg##idx,      \
-			      POST_KERNEL, CONFIG_GPIO_PCF8574_INIT_PRIORITY, &pcf8574_drv_api);
+			      POST_KERNEL, CONFIG_GPIO_I2C_INIT_PRIORITY, &pcf8574_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCF8574_INST);

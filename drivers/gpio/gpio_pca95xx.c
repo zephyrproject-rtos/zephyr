@@ -767,7 +767,7 @@ DEVICE_DT_INST_DEFINE(inst,						\
 	NULL,								\
 	&gpio_pca95xx_##inst##_drvdata,					\
 	&gpio_pca95xx_##inst##_cfg,					\
-	POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,			\
+	POST_KERNEL, CONFIG_GPIO_I2C_INIT_PRIORITY,			\
 	&gpio_pca95xx_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCA95XX_DEVICE_INSTANCE)

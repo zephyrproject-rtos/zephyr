@@ -434,7 +434,7 @@ static const struct gpio_driver_api gpio_fxl_driver = {
 	DEVICE_DT_INST_DEFINE(inst, gpio_fxl6408_init, NULL,                   \
 		&gpio_fxl6408_##inst##_drvdata,                                \
 		&gpio_fxl6408_##inst##_cfg, POST_KERNEL,                       \
-		CONFIG_GPIO_FXL6408_INIT_PRIORITY,                             \
+		CONFIG_GPIO_I2C_INIT_PRIORITY,                                 \
 		&gpio_fxl_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_FXL6408_DEVICE_INSTANCE)

@@ -12,19 +12,12 @@ menuconfig GPIO_RT1718S
 
 if GPIO_RT1718S
 
-config RT1718S_INIT_PRIORITY
-	int "RT1718S GPIO init priority"
-	default 60
-	help
-	  RT1718S device driver initialization priority. The priority should be
-	  lower than I2C device.
-
 config GPIO_RT1718S_PORT_INIT_PRIORITY
 	int "RT1718S GPIO port init priority"
 	default 61
 	help
 	  RT1718S GPIO driver initialization priority. The priority should be lower
-	  than I2C & RT1718S_INIT_PRIORITY device.
+	  than I2C & GPIO_I2C_INIT_PRIORITY device.
 
 config GPIO_RT1718S_INTERRUPT
 	bool "RT1718S alert handler"

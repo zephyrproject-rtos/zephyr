@@ -123,7 +123,7 @@ static int nct38xx_alert_init(const struct device *dev)
 }
 
 /* NCT38XX alert driver must be initialized after NCT38XX GPIO driver */
-BUILD_ASSERT(CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_PRIORITY);
+BUILD_ASSERT(CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY > CONFIG_GPIO_I2C_INIT_PRIORITY);
 
 #define NCT38XX_DEV_AND_COMMA(node_id, prop, idx)                                                  \
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),

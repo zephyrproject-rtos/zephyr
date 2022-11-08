@@ -481,7 +481,7 @@ static const struct gpio_driver_api api_table = {
 		&pca953x_drvdata_##n,						\
 		&pca953x_cfg_##n,						\
 		POST_KERNEL,							\
-		CONFIG_GPIO_PCA953X_INIT_PRIORITY,				\
+		CONFIG_GPIO_I2C_INIT_PRIORITY,					\
 		&api_table);
 
 #define DT_DRV_COMPAT ti_tca9538

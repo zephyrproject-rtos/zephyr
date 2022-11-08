@@ -139,6 +139,6 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 	};                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp23sxx_##inst##_drvdata,        \
 			      &mcp23sxx_##inst##_config, POST_KERNEL,                         \
-			      CONFIG_GPIO_MCP23SXX_INIT_PRIORITY, &gpio_mcp23xxx_api_table);
+			      CONFIG_GPIO_SPI_INIT_PRIORITY, &gpio_mcp23xxx_api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_MCP23SXX_DEVICE)

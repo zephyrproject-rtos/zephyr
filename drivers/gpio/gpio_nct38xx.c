@@ -90,6 +90,6 @@ static int nct38xx_gpio_init(const struct device *dev)
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, nct38xx_gpio_init, NULL, &gpio_nct38xx_data_##inst,            \
 			      &gpio_nct38xx_cfg_##inst, POST_KERNEL,                               \
-			      CONFIG_GPIO_NCT38XX_INIT_PRIORITY, NULL);
+			      CONFIG_GPIO_I2C_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NCT38XX_DEVICE_INSTANCE)

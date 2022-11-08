@@ -11,13 +11,6 @@ menuconfig GPIO_PCA95XX
 	help
 	  Enable driver for PCA95XX I2C-based GPIO chip.
 
-config GPIO_PCA95XX_INIT_PRIORITY
-	int "Init priority"
-	default 70
-	depends on GPIO_PCA95XX
-	help
-	  Device driver initialization priority.
-
 config GPIO_PCA95XX_INTERRUPT
 	bool "Interrupt enable"
 	depends on GPIO_PCA95XX

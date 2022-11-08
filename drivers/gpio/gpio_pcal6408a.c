@@ -625,7 +625,7 @@ static const struct gpio_driver_api pcal6408a_drv_api = {
 			      NULL,					   \
 			      &pcal6408a_data##idx, &pcal6408a_cfg##idx,   \
 			      POST_KERNEL,				   \
-			      CONFIG_GPIO_PCAL6408A_INIT_PRIORITY,	   \
+			      CONFIG_GPIO_I2C_INIT_PRIORITY,		   \
 			      &pcal6408a_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6408A_INST)

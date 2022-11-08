@@ -402,7 +402,7 @@ static int mcp23s17_init(const struct device *dev)
 			      &mcp23s17_##inst##_drvdata,		 \
 			      &mcp23s17_##inst##_config,		 \
 			      POST_KERNEL,				 \
-			      CONFIG_GPIO_MCP23S17_INIT_PRIORITY,	 \
+			      CONFIG_GPIO_SPI_INIT_PRIORITY,		 \
 			      &api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP23S17_INIT)

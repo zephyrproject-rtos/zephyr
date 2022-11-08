@@ -21,8 +21,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_sn74hc595, CONFIG_GPIO_LOG_LEVEL);
 
-#if CONFIG_SPI_INIT_PRIORITY >= CONFIG_GPIO_SN74HC595_INIT_PRIORITY
-#error SPI_INIT_PRIORITY must be lower than SN74HC595_INIT_PRIORITY
+#if CONFIG_SPI_INIT_PRIORITY >= CONFIG_GPIO_SPI_INIT_PRIORITY
+#error SPI_INIT_PRIORITY must be lower than GPIO_SPI_INIT_PRIORITY
 #endif
 
 struct gpio_sn74hc595_config {
@@ -206,6 +206,6 @@ static int gpio_sn74hc595_init(const struct device *dev)
 												\
 	DEVICE_DT_DEFINE(DT_DRV_INST(n), &gpio_sn74hc595_init, NULL,				\
 			 &sn74hc595_data_##n, &sn74hc595_config_##n, POST_KERNEL,		\
-			 CONFIG_GPIO_SN74HC595_INIT_PRIORITY, &gpio_sn74hc595_drv_api_funcs);
+			 CONFIG_GPIO_SPI_INIT_PRIORITY, &gpio_sn74hc595_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(SN74HC595_INIT)

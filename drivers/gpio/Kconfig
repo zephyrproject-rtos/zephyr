@@ -26,6 +26,20 @@ config GPIO_INIT_PRIORITY
 	help
 	  GPIO driver device initialization priority.
 
+config GPIO_I2C_INIT_PRIORITY
+	int "GPIO I2C devices init priority"
+	default 60
+	help
+	  Initialization priority for I2C GPIO devices, should be lower (higher
+	  value) than I2C_INIT_PRIORITY.
+
+config GPIO_SPI_INIT_PRIORITY
+	int "GPIO SPI devices init priority"
+	default 60
+	help
+	  Initialization priority for SPI GPIO devices, should be lower (higher
+	  value) than SPI_INIT_PRIORITY.
+
 config GPIO_GET_DIRECTION
 	bool "Support for querying GPIO direction [EXPERIMENTAL]"
 	select EXPERIMENTAL

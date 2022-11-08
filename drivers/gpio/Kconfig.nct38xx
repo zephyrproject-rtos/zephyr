@@ -13,19 +13,12 @@ config GPIO_NCT38XX
 
 if GPIO_NCT38XX
 
-config GPIO_NCT38XX_INIT_PRIORITY
-	int "NCT38XX GPIO init priority"
-	default 30
-	help
-	  Device driver initialization priority. The priority should be lower
-	  than I2C device.
-
 config GPIO_NCT38XX_PORT_INIT_PRIORITY
 	int "NCT38XX GPIO port init priority"
-	default 40
+	default 61
 	help
 	  Device driver initialization priority. The priority should be lower
-	  than I2C & GPIO_NCT38XX_INIT_PRIORITY device.
+	  than I2C & GPIO_I2C_INIT_PRIORITY device.
 
 config GPIO_NCT38XX_INTERRUPT
 	bool "NCT38XX GPIO interrupt"
@@ -34,7 +27,7 @@ config GPIO_NCT38XX_INTERRUPT
 
 config GPIO_NCT38XX_ALERT_INIT_PRIORITY
 	int "NCT38XX GPIO alert handler init priority"
-	default 40
+	default 61
 	depends on GPIO_NCT38XX_INTERRUPT
 	help
 	  NCT38XX alert handler initialization priority. This initialization

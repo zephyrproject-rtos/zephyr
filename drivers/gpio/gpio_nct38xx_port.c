@@ -576,7 +576,7 @@ static int gpio_nct38xx_port_init(const struct device *dev)
 }
 
 /* NCT38XX GPIO port driver must be initialized after NCT38XX GPIO driver */
-BUILD_ASSERT(CONFIG_GPIO_NCT38XX_PORT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_PRIORITY);
+BUILD_ASSERT(CONFIG_GPIO_NCT38XX_PORT_INIT_PRIORITY > CONFIG_GPIO_I2C_INIT_PRIORITY);
 
 #define GPIO_NCT38XX_PORT_DEVICE_INSTANCE(inst)                                                    \
 	static const struct gpio_nct38xx_port_config gpio_nct38xx_port_cfg_##inst = {              \

@@ -8,11 +8,3 @@ config GPIO_NPM6001
 	select I2C
 	help
 	  Enable the nPM6001 GPIO driver.
-
-config GPIO_NPM6001_INIT_PRIORITY
-	int "nPM6001 GPIO driver initialization priority"
-	depends on GPIO_NPM6001
-	default 60
-	help
-	  Initialization priority for the nPM6001 GPIO driver. It must be
-	  greater than the I2C controller init priority.

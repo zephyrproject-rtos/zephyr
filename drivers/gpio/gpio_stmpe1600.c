@@ -315,7 +315,7 @@ static const struct gpio_driver_api stmpe1600_drv_api = {
 			      &stmpe1600_##inst##_drvdata,	     \
 			      &stmpe1600_##inst##_config,	     \
 			      POST_KERNEL,			     \
-			      CONFIG_GPIO_STMPE1600_INIT_PRIORITY,   \
+			      CONFIG_GPIO_I2C_INIT_PRIORITY,	     \
 			      &stmpe1600_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STMPE1600_INIT)

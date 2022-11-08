@@ -361,7 +361,7 @@ static int gpio_rt1718s_port_init(const struct device *dev)
 }
 
 /* RT1718S GPIO port driver must be initialized after RT1718S chip driver */
-BUILD_ASSERT(CONFIG_GPIO_RT1718S_PORT_INIT_PRIORITY > CONFIG_RT1718S_INIT_PRIORITY);
+BUILD_ASSERT(CONFIG_GPIO_RT1718S_PORT_INIT_PRIORITY > GPIO_I2C_INIT_PRIORITY);
 
 #define GPIO_RT1718S_PORT_DEVICE_INSTANCE(inst)                                                    \
 	static const struct gpio_rt1718s_port_config gpio_rt1718s_port_cfg_##inst = {              \
