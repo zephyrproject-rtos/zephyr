@@ -126,7 +126,7 @@ class ComplianceTest:
 
         raise EndTest
 
-    def add_failure(self, text, msg=None, type_="failure"):
+    def failure(self, text, msg=None, type_="failure"):
         """
         Signals that the test failed, with message 'msg'. Can be called many
         times within the same test to report multiple failures.
@@ -171,7 +171,7 @@ class CheckPatch(ComplianceTest):
 
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
-            self.add_failure(output)
+            self.failure(output)
 
 
 class KconfigCheck(ComplianceTest):
@@ -301,7 +301,7 @@ class KconfigCheck(ComplianceTest):
             # some (other) warnings to never be printed.
             return kconfiglib.Kconfig()
         except kconfiglib.KconfigError as e:
-            self.add_failure(str(e))
+            self.failure(str(e))
             raise EndTest
 
     def check_top_menu_not_too_long(self, kconf):
@@ -321,7 +321,7 @@ class KconfigCheck(ComplianceTest):
             node = node.next
 
         if n_top_items > max_top_items:
-            self.add_failure("""
+            self.failure("""
 Expected no more than {} potentially visible items (items with prompts) in the
 top-level Kconfig menu, found {} items. If you're deliberately adding new
 entries, then bump the 'max_top_items' variable in {}.
@@ -332,7 +332,7 @@ entries, then bump the 'max_top_items' variable in {}.
 
         for node in kconf.node_iter():
             if "defconfig" in node.filename and (node.prompt or node.help):
-                self.add_failure(f"""
+                self.failure(f"""
 Kconfig node '{node.item.name}' found with prompt or help in {node.filename}.
 Options must not be defined in defconfig files.
 """)
@@ -357,7 +357,7 @@ Options must not be defined in defconfig files.
                 continue
 
             if re.match(r"^[Ee]nable.*", node.prompt[0]):
-                self.add_failure(f"""
+                self.failure(f"""
 Boolean option '{node.item.name}' prompt must not start with 'Enable...'. Please
 check Kconfig guidelines.
 """)
@@ -381,7 +381,7 @@ check Kconfig guidelines.
                 bad_mconfs.append(node)
 
         if bad_mconfs:
-            self.add_failure("""\
+            self.failure("""\
 Found pointless 'menuconfig' symbols without children. Use regular 'config'
 symbols instead. See
 https://docs.zephyrproject.org/latest/guides/kconfig/tips.html#menuconfig-symbols.
@@ -398,7 +398,7 @@ https://docs.zephyrproject.org/latest/guides/kconfig/tips.html#menuconfig-symbol
                                            if "undefined symbol" in warning)
 
         if undef_ref_warnings:
-            self.add_failure("Undefined Kconfig symbols:\n\n"
+            self.failure("Undefined Kconfig symbols:\n\n"
                              + undef_ref_warnings)
 
     def check_no_undef_outside_kconfig(self, kconf):
@@ -469,7 +469,7 @@ https://docs.zephyrproject.org/latest/guides/kconfig/tips.html#menuconfig-symbol
             "CONFIG_{:35} {}".format(sym_name, ", ".join(locs))
             for sym_name, locs in sorted(undef_to_locs.items()))
 
-        self.add_failure("""
+        self.failure("""
 Found references to undefined Kconfig symbols. If any of these are false
 positives, then add them to UNDEF_KCONFIG_WHITELIST in {} in the ci-tools repo.
 
@@ -624,7 +624,7 @@ class Codeowners(ComplianceTest):
 
                 match = re.match(r"^([^\s,]+)\s+[^\s]+", line)
                 if not match:
-                    self.add_failure(
+                    self.failure(
                         "Invalid CODEOWNERS line %d\n\t%s" %
                         (lineno, line))
                     continue
@@ -637,7 +637,7 @@ class Codeowners(ComplianceTest):
                     files.append(str(abs_path.relative_to(top_path)))
 
                 if not files:
-                    self.add_failure("Path '{}' not found in the tree but is listed in "
+                    self.failure("Path '{}' not found in the tree but is listed in "
                                      "CODEOWNERS".format(git_patrn))
 
                 pattern2files[git_patrn] = files
@@ -657,7 +657,7 @@ class Codeowners(ComplianceTest):
         if git_pattern.endswith("/"):
             ret = ret + "**/*"
         elif os.path.isdir(os.path.join(GIT_TOP, ret)):
-            self.add_failure("Expected '/' after directory '{}' "
+            self.failure("Expected '/' after directory '{}' "
                              "in CODEOWNERS".format(ret))
 
         return ret
@@ -715,7 +715,7 @@ class Codeowners(ComplianceTest):
                 new_not_owned.append(newf)
 
         if new_not_owned:
-            self.add_failure("New files added that are not covered in "
+            self.failure("New files added that are not covered in "
                              "CODEOWNERS:\n\n" + "\n".join(new_not_owned) +
                              "\n\nPlease add one or more entries in the "
                              "CODEOWNERS file to cover those files")
@@ -759,7 +759,7 @@ class Nits(ComplianceTest):
         # 'Kconfig - yada yada' has a copy-pasted redundant filename at the
         # top. This probably means all of the header was copy-pasted.
         if re.match(r"\s*#\s*(K|k)config[\w.-]*\s*-", contents):
-            self.add_failure("""
+            self.failure("""
 Please use this format for the header in '{}' (see
 https://docs.zephyrproject.org/latest/guides/kconfig/index.html#header-comments-and-other-nits):
 
@@ -786,7 +786,7 @@ failure.
                 f.read(), re.MULTILINE)
 
             if match:
-                self.add_failure("""
+                self.failure("""
 Redundant 'source "$(ZEPHYR_BASE)/{0}" in '{1}'. Just do 'source "{0}"'
 instead. The $srctree environment variable already points to the Zephyr root,
 and all 'source's are relative to it.""".format(match.group(1), fname))
@@ -796,7 +796,7 @@ and all 'source's are relative to it.""".format(match.group(1), fname))
 
         with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
             if re.search(r"^\.\.\.", f.read(), re.MULTILINE):
-                self.add_failure(f"""\
+                self.failure(f"""\
 Redundant '...' document separator in {fname}. Binding YAML files are never
 concatenated together, so no document separators are needed.""")
 
@@ -807,15 +807,15 @@ concatenated together, so no document separators are needed.""")
             contents = f.read()
 
         if not contents.endswith("\n"):
-            self.add_failure("Missing newline at end of '{}'. Check your text "
+            self.failure("Missing newline at end of '{}'. Check your text "
                              "editor settings.".format(fname))
 
         if contents.startswith("\n"):
-            self.add_failure("Please remove blank lines at start of '{}'"
+            self.failure("Please remove blank lines at start of '{}'"
                              .format(fname))
 
         if contents.endswith("\n\n"):
-            self.add_failure("Please remove blank lines at end of '{}'"
+            self.failure("Please remove blank lines at end of '{}'"
                              .format(fname))
 
 
@@ -840,7 +840,7 @@ class GitLint(ComplianceTest):
             msg = proc.stdout.read()
 
         if msg != "":
-            self.add_failure(msg.decode("utf-8"))
+            self.failure(msg.decode("utf-8"))
 
 
 class PyLint(ComplianceTest):
@@ -887,7 +887,7 @@ class PyLint(ComplianceTest):
         stdout, stderr = process.communicate()
         if process.returncode or stderr:
             # Issues found, or a problem with pylint itself
-            self.add_failure(stdout.decode("utf-8") + stderr.decode("utf-8"))
+            self.failure(stdout.decode("utf-8") + stderr.decode("utf-8"))
 
 
 def filter_py(root, fnames):
@@ -957,7 +957,7 @@ class Identity(ComplianceTest):
                 failure = error3
 
             if failure:
-                self.add_failure(failure)
+                self.failure(failure)
 
 
 def init_logs(cli_arg):
