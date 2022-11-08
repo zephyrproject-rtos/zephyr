@@ -17,9 +17,25 @@ BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least "
 	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT");
 
-static struct bt_audio_lc3_preset preset_16_2_1 =
-	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
-					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+#define BT_CODEC_LC3_CONFIG_48_4_CHANNELS_7p5MS \
+		BT_CODEC_LC3_CONFIG(BT_CODEC_CONFIG_LC3_FREQ_48KHZ, \
+				    BT_CODEC_CONFIG_LC3_DURATION_7_5, \
+				    (BT_AUDIO_LOCATION_FRONT_LEFT | \
+				     BT_AUDIO_LOCATION_FRONT_RIGHT | \
+				     BT_AUDIO_LOCATION_BACK_LEFT | \
+				     BT_AUDIO_LOCATION_BACK_RIGHT), \
+				    251u, \
+				    1, \
+				    BT_AUDIO_CONTEXT_TYPE_MEDIA)
+
+#define BT_AUDIO_LC3_UNICAST_PRESET_48_4_CHANNELS_7_5MS \
+		BT_AUDIO_LC3_PRESET( \
+			BT_CODEC_LC3_CONFIG_48_4_CHANNELS_7p5MS, \
+			BT_CODEC_LC3_QOS_7_5_UNFRAMED(251u, 0u, 10u, 40000u) \
+		)
+
+static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_48_4_CHANNELS_7_5MS;
+
 static struct bt_audio_stream streams[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_audio_broadcast_source *broadcast_source;
 
@@ -55,6 +71,12 @@ static void stream_sent_cb(struct bt_audio_stream *stream)
 		return;
 	}
 
+	if ((sent_cnt % 400) == 2) {
+		seq_num++;
+		sent_cnt++;
+		return;
+	}
+
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
 	if (buf == NULL) {
 		printk("Could not allocate buffer when sending on %p\n",
@@ -62,6 +84,7 @@ static void stream_sent_cb(struct bt_audio_stream *stream)
 		return;
 	}
 
+	mock_data[0] = sent_cnt & 0xff;
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, mock_data, preset_16_2_1.qos.sdu);
 	ret = bt_audio_stream_send(stream, buf, seq_num++,
