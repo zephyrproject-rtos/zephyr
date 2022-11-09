@@ -23,3 +23,8 @@ zephyr_library_sources_ifdef(
   CONFIG_I3C_MCUX
   i3c_mcux.c
 )
+
+zephyr_library_sources_ifdef(
+  CONFIG_NXP_S32_I3C
+  i3c_nxp_s32.c
+)

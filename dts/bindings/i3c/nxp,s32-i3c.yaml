@@ -1,0 +1,33 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 I3C controller
+
+compatible: "nxp,s32-i3c"
+
+include: [i3c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      Functional clock (in Hz) for I3C operation.
+
+  interrupts:
+    required: true
+
+  i3c-od-scl-hz:
+    type: int
+    required: false
+    description: |
+      Open Drain frequency (in Hz) for the I3C controller. The frequency
+      is fixed and cannot be changed. This is together with Push-pull and
+      I2c frequency which can be set via i3c_configure API to change the
+      baudrate at run time.
+
+      When undefined, the default value will be used as specified by the
+      I3C specification.

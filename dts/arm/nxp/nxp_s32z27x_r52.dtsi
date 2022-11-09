@@ -533,5 +533,32 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		i3c0: i3c@401d0000 {
+			compatible = "nxp,s32-i3c";
+			reg = <0x401d0000 0x10000>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 252 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		i3c1: i3c@409d0000 {
+			compatible = "nxp,s32-i3c";
+			reg = <0x409d0000 0x10000>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 253 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		i3c2: i3c@421d0000 {
+			compatible = "nxp,s32-i3c";
+			reg = <0x421d0000 0x10000>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 254 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
 	};
 };

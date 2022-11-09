@@ -17,3 +17,24 @@ config I3C_MCUX
 	default y
 	help
 	  Enable mcux I3C driver.
+
+module = NXP_S32_I3C
+module-str = nxp-s32-i3c
+source "subsys/logging/Kconfig.template.log_config"
+
+config NXP_S32_I3C
+	bool "NXP S32 I3C driver"
+	depends on DT_HAS_NXP_S32_I3C_ENABLED
+	default y
+	help
+	  Enable NXP S32 I3C driver.
+
+if NXP_S32_I3C
+
+config NXP_S32_I3C_INTERRUPT
+	bool "Set if using interrupt-mode for I3C communication"
+	default y
+	help
+	Set if using interrupt-mode for I3C communication
+
+endif
