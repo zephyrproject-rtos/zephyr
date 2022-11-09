@@ -555,7 +555,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	chan_data->state = DW_DMA_IDLE;
 
 out:
-	return 0;
+	return ret;
 }
 
 int dw_dma_resume(const struct device *dev, uint32_t channel)
