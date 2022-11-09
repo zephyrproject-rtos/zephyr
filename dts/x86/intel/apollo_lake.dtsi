@@ -41,12 +41,13 @@
 		compatible = "intel,pcie";
 		ranges;
 
-		uart0: uart@c000 {
+		uart0: uart0 {
 			compatible = "ns16550";
 
-			reg = <PCIE_BDF(0,0x18,0) PCIE_ID(0x8086,0x5abc)>;
-			reg-shift = <2>;
+			vendor-id = <0x8086>;
+			device-id = <0x5abc>;
 
+			reg-shift = <2>;
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -54,26 +55,13 @@
 			current-speed = <115200>;
 		};
 
-		uart1: uart@c100 {
+		uart1: uart1 {
 			compatible = "ns16550";
 
-			reg = <PCIE_BDF(0,0x18,1) PCIE_ID(0x8086,0x5abe)>;
+			vendor-id = <0x8086>;
+			device-id = <0x5abe>;
+
 			reg-shift = <2>;
-
-			clock-frequency = <1843200>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			status = "okay";
-			current-speed = <115200>;
-		};
-
-		uart2: uart@c200 {
-			compatible = "ns16550";
-
-			reg = <PCIE_BDF(0,0x18,2) PCIE_ID(0x8086,0x5ac0)>;
-			reg-shift = <2>;
-
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -82,12 +70,28 @@
 			current-speed = <115200>;
 		};
 
-		uart3: uart@c300 {
+		uart2: uart2 {
 			compatible = "ns16550";
 
-			reg = <PCIE_BDF(0,0x18,3) PCIE_ID(0x8086,0x5aee)>;
-			reg-shift = <2>;
+			vendor-id = <0x8086>;
+			device-id = <0x5ac0>;
 
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+			current-speed = <115200>;
+		};
+
+		uart3: uart3 {
+			compatible = "ns16550";
+
+			vendor-id = <0x8086>;
+			device-id = <0x5aee>;
+
+			reg-shift = <2>;
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
