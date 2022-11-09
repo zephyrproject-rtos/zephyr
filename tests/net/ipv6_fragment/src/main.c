@@ -901,6 +901,7 @@ static struct net_if *iface1;
 
 static bool test_failed;
 static bool test_started;
+static bool test_complete;
 static struct k_sem wait_data;
 
 static uint16_t pkt_data_len;
@@ -1100,6 +1101,8 @@ small:
 				pkt_data_len, pkt_recv_data_len);
 			return -EINVAL;
 		}
+
+		test_complete = true;
 	}
 
 	return 0;
@@ -1225,6 +1228,8 @@ large:
 			NET_DBG("Fragment More flag should be unset");
 			return -EINVAL;
 		}
+
+		test_complete = true;
 	}
 
 	return 0;
@@ -1322,6 +1327,8 @@ without:
 			NET_DBG("Fragment More flag should be unset");
 			return -EINVAL;
 		}
+
+		test_complete = true;
 	}
 
 	return 0;
@@ -1340,7 +1347,9 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 			NET_DBG("Fragments cannot be verified");
 			test_failed = true;
 		} else {
-			k_sem_give(&wait_data);
+			if (test_complete) {
+				k_sem_give(&wait_data);
+			}
 		}
 	}
 
@@ -1808,6 +1817,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment)
 	net_udp_finalize(pkt);
 
 	test_failed = false;
+	test_complete = false;
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
@@ -1817,7 +1827,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		NET_DBG("Timeout while waiting interface data");
-		zassert_equal(ret, 0, "Timeout");
+		zassert_true(false, "Timeout");
 	}
 }
 
@@ -1850,6 +1860,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_large_hbho)
 		total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
 
 	test_failed = false;
+	test_complete = false;
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
@@ -1859,7 +1870,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_large_hbho)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		NET_DBG("Timeout while waiting interface data");
-		zassert_equal(ret, 0, "Timeout");
+		zassert_true(false, "Timeout");
 	}
 }
 
@@ -1896,6 +1907,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_without_hbho)
 		total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
 
 	test_failed = false;
+	test_complete = false;
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
@@ -1905,7 +1917,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_without_hbho)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		NET_DBG("Timeout while waiting interface data");
-		zassert_equal(ret, 0, "Timeout");
+		zassert_true(false, "Timeout");
 	}
 }
 
