@@ -333,6 +333,36 @@ Libraries / Subsystems
     access with ``reader`` to successfully build.
   * MCUmgr callback system has been reworked with a unified singular interface
     which supports status passing to the handler (:ref:`mcumgr_callbacks`).
+  * MCUmgr subsystem directory structure has been flattened and contents of the
+    lib subdirectory has been redistributed into following directories:
+
+    .. table::
+       :align: center
+
+       +----------------+-------------------------------------------+
+       | Subdirectory   | MCUmgr area                               |
+       +================+===========================================+
+       | mgmt           | MCUmgr management functions, group        |
+       |                | registration, and so on;                  |
+       +----------------+-------------------------------------------+
+       | smp            | Simple Management Protocol processing;    |
+       +----------------+-------------------------------------------+
+       | transport      | Transport support and transport API;      |
+       +----------------+-------------------------------------------+
+       | grp            | Command groups, formerly lib/cmd;         |
+       |                | each group, which has Zephyr built in     |
+       |                | support has its own directory here;       |
+       +----------------+-------------------------------------------+
+       | util           | Utilities used by various subareas of     |
+       |                | MCUmgr.                                   |
+       +----------------+-------------------------------------------+
+
+    Public API interfaces for above areas are now exported through zephyr_interface,
+    and headers for them reside in ``zephyr/mgmt/mcumgr/<mcumgr_subarea>/``.
+    For example to access mgmt API include ``<zephyr/mgmt/mcumgr/mgmt/mgmt.h>``.
+
+    Private headers for above areas can be accessed, when required, using paths:
+    ``mgmt/mcumgr/mgmt/<mcumgr_subarea>/``.
 
 * LwM2M
 
