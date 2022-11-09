@@ -7,6 +7,18 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 
+#define BT_LE_EXT_ADV_BROADCAST_AUDIO \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+				BT_LE_ADV_OPT_USE_NAME, \
+				0x00E0, \
+				0x00E0, \
+				NULL)
+
+#define BT_LE_PER_ADV_BROADCAST_AUDIO \
+		BT_LE_PER_ADV_PARAM(0x0078, \
+				    0x0078, \
+				    BT_LE_PER_ADV_OPT_NONE)
+
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
  */
@@ -148,7 +160,8 @@ void main(void)
 		uint32_t broadcast_id;
 
 		/* Create a non-connectable non-scannable advertising set */
-		err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, &adv);
+		err = bt_le_ext_adv_create(BT_LE_EXT_ADV_BROADCAST_AUDIO, NULL,
+					   &adv);
 		if (err != 0) {
 			printk("Unable to create extended advertising set: %d\n",
 			       err);
@@ -156,7 +169,8 @@ void main(void)
 		}
 
 		/* Set periodic advertising parameters */
-		err = bt_le_per_adv_set_param(adv, BT_LE_PER_ADV_DEFAULT);
+		err = bt_le_per_adv_set_param(adv,
+					      BT_LE_PER_ADV_BROADCAST_AUDIO);
 		if (err) {
 			printk("Failed to set periodic advertising parameters"
 			" (err %d)\n", err);
