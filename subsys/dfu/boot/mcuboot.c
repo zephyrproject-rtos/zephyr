@@ -144,6 +144,11 @@ int boot_read_bank_header(uint8_t area_id,
 	return 0;
 }
 
+int boot_read_img_header(struct mcuboot_img_header *header, size_t header_size)
+{
+	return boot_read_bank_header(FLASH_AREA_IMAGE_PRIMARY, header, header_size);
+}
+
 int mcuboot_swap_type_multi(int image_index)
 {
 	return boot_swap_type_multi(image_index);
