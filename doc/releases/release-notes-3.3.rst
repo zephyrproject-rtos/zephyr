@@ -39,6 +39,16 @@ Changes in this release
 Removed APIs in this release
 ============================
 
+* Removed :kconfig:option:`CONFIG_COUNTER_RTC_STM32_LSE_DRIVE*`
+  This should now be configured using the ``driving_capability`` property of
+  LSE clock
+
+* Removed :kconfig:option:`CONFIG_COUNTER_RTC_STM32_LSE_BYPASS`
+  This should now be configured using the new ``lse_bypass`` property of
+  LSE clock
+
+* Removed :kconfig:option:`CONFIG_COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET`
+
 Deprecated in this release
 ==========================
 
@@ -84,6 +94,11 @@ Deprecated in this release
      +---------------------------------------------+---------------------------------------+
 
   NOTE: Only functions are marked as ``__deprecated``, type definitions are not.
+
+* STM32 RTC source clock should now be configured using devicetree.
+  Related Kconfig :kconfig:option:`CONFIG_COUNTER_RTC_STM32_CLOCK_LSI` and
+  :kconfig:option:`CONFIG_COUNTER_RTC_STM32_CLOCK_LSE` options are now
+  deprecated.
 
 Stable API changes in this release
 ==================================
@@ -169,6 +184,8 @@ Drivers and Sensors
 * Clock control
 
 * Counter
+
+  * STM32 RTC based counter should now be configured using device tree.
 
 * Crypto
 
@@ -265,6 +282,10 @@ Devicetree
   * New:
 
     * :dtcompatible:`zephyr,flash-disk`
+
+    * STM32 SoCs:
+
+      * :dtcompatible: `st,stm32-lse-clock`: new ``lse-bypass`` property
 
 Libraries / Subsystems
 **********************
