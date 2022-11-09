@@ -33,6 +33,10 @@ static inline bool can_utils_filter_match(const struct can_frame *frame,
 		return false;
 	}
 
+	if (((frame->flags & CAN_FRAME_FDF) != 0) && (filter->flags & CAN_FILTER_FDF) == 0) {
+		return false;
+	}
+
 	if ((frame->id ^ filter->id) & filter->mask) {
 		return false;
 	}
