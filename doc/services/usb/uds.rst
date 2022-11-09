@@ -104,21 +104,37 @@ The USB maintainer, if one is assigned, or otherwise the Zephyr Technical
 Steering Committee, may allocate other USB Product IDs based on well-motivated
 and documented requests.
 
-When adding a new sample, add a new entry in :file:`samples/subsys/usb/usb_pid.Kconfig`
-and a Kconfig file inside your sample subdirectory.
 The following Product IDs are currently used:
 
-* :kconfig:option:`CONFIG_USB_PID_CDC_ACM_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_CDC_ACM_COMPOSITE_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_HID_CDC_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_CONSOLE_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_DFU_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_HID_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_HID_MOUSE_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_MASS_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_TESTUSB_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_WEBUSB_SAMPLE`
-* :kconfig:option:`CONFIG_USB_PID_BLE_HCI_H4_SAMPLE`
++-------------------------------------+--------+
+| Sample                              | PID    |
++=====================================+========+
+| :ref:`usb_cdc-acm`                  | 0x0001 |
++-------------------------------------+--------+
+| :ref:`usb_cdc-acm_composite`        | 0x0002 |
++-------------------------------------+--------+
+| :ref:`usb_hid-cdc`                  | 0x0003 |
++-------------------------------------+--------+
+| :ref:`cdc-acm-console`              | 0x0004 |
++-------------------------------------+--------+
+| :ref:`usb_dfu`                      | 0x0005 |
++-------------------------------------+--------+
+| :ref:`usb_hid`                      | 0x0006 |
++-------------------------------------+--------+
+| :ref:`usb_hid-mouse`                | 0x0007 |
++-------------------------------------+--------+
+| :ref:`usb_mass`                     | 0x0008 |
++-------------------------------------+--------+
+| :ref:`testusb-app`                  | 0x0009 |
++-------------------------------------+--------+
+| :ref:`webusb-sample`                | 0x000A |
++-------------------------------------+--------+
+| :ref:`bluetooth-hci-usb-sample`     | 0x000B |
++-------------------------------------+--------+
+| :ref:`bluetooth-hci-usb-h4-sample`  | 0x000C |
++-------------------------------------+--------+
+| :ref:`wpanusb-sample`               | 0x000D |
++-------------------------------------+--------+
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents
 the Zephyr kernel major and minor versions as a binary coded decimal value.
