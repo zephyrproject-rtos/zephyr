@@ -618,6 +618,7 @@ static void can_mcan_get_message(const struct device *dev,
 	struct can_mcan_rx_fifo_hdr hdr;
 	bool rtr_filter_mask;
 	bool rtr_filter;
+	bool fd_frame_filter;
 
 	while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL)) {
 		get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >>
@@ -653,14 +654,20 @@ static void can_mcan_get_message(const struct device *dev,
 			frame.flags |= CAN_FRAME_IDE;
 			rtr_filter_mask = (data->ext_filt_rtr_mask & BIT(filt_idx)) != 0;
 			rtr_filter = (data->ext_filt_rtr & BIT(filt_idx)) != 0;
+			fd_frame_filter = (data->ext_filt_fd_frame & BIT(filt_idx)) != 0;
 		} else {
 			frame.id = hdr.std_id;
 			rtr_filter_mask = (data->std_filt_rtr_mask & BIT(filt_idx)) != 0;
 			rtr_filter = (data->std_filt_rtr & BIT(filt_idx)) != 0;
+			fd_frame_filter = (data->std_filt_fd_frame & BIT(filt_idx)) != 0;
 		}
 
 		if (rtr_filter_mask && (rtr_filter != ((frame.flags & CAN_FRAME_RTR) != 0))) {
 			/* RTR bit does not match filter RTR mask, drop frame */
+			*fifo_ack_reg = get_idx;
+			continue;
+		} else if (fd_frame_filter != ((frame.flags & CAN_FRAME_FDF) != 0)) {
+			/* FD bit does not match filter FD frame, drop frame */
 			*fifo_ack_reg = get_idx;
 			continue;
 		}
@@ -949,11 +956,6 @@ int can_mcan_add_rx_filter_std(const struct device *dev,
 	};
 	int filter_id;
 
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
-		return -ENOTSUP;
-	}
-
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	filter_id = can_mcan_get_free_std(msg_ram->std_filt);
 
@@ -986,6 +988,12 @@ int can_mcan_add_rx_filter_std(const struct device *dev,
 		data->std_filt_rtr_mask |= (1U << filter_id);
 	} else {
 		data->std_filt_rtr_mask &= ~(1U << filter_id);
+	}
+
+	if ((filter->flags & CAN_FILTER_FDF) != 0) {
+		data->std_filt_fd_frame |= (1U << filter_id);
+	} else {
+		data->std_filt_fd_frame &= ~(1U << filter_id);
 	}
 
 	data->rx_cb_std[filter_id] = callback;
@@ -1052,6 +1060,12 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev,
 		data->ext_filt_rtr_mask &= ~(1U << filter_id);
 	}
 
+	if ((filter->flags & CAN_FILTER_FDF) != 0) {
+		data->ext_filt_fd_frame |= (1U << filter_id);
+	} else {
+		data->ext_filt_fd_frame &= ~(1U << filter_id);
+	}
+
 	data->rx_cb_ext[filter_id] = callback;
 	data->cb_arg_ext[filter_id] = user_data;
 
@@ -1066,6 +1080,17 @@ int can_mcan_add_rx_filter(const struct device *dev,
 
 	if (callback == NULL) {
 		return -EINVAL;
+	}
+
+
+#ifdef CONFIG_CAN_FD_MODE
+	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA |
+							CAN_FILTER_RTR | CAN_FILTER_FDF)) != 0) {
+#else
+	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+#endif
+		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		return -ENOTSUP;
 	}
 
 	if ((filter->flags & CAN_FILTER_IDE) != 0) {
