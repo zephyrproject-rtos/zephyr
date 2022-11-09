@@ -13,4 +13,6 @@ source "drivers/disk/Kconfig.flash"
 source "drivers/disk/Kconfig.sdmmc"
 source "drivers/disk/Kconfig.mmc"
 
+rsource "nvme/Kconfig"
+
 endif # DISK_DRIVERS
