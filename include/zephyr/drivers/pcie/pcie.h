@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
 #include <stddef.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
 
@@ -35,6 +36,95 @@ typedef uint32_t pcie_bdf_t;
  * look to PCIE_ID_* macros in include/dt-bindings/pcie/pcie.h for more.
  */
 typedef uint32_t pcie_id_t;
+
+struct pcie_dev {
+	pcie_bdf_t bdf;
+	pcie_id_t  id;
+};
+
+#define Z_DEVICE_PCIE_NAME(node_id) _CONCAT(pcie_dev_, DT_DEP_ORD(node_id))
+
+/**
+ * @brief Get the PCIe Vendor and Device ID for a node
+ *
+ * @param node_id DTS node identifier
+ * @return The VID/DID combination as pcie_id_t
+ */
+#define PCIE_DT_ID(node_id) PCIE_ID(DT_PROP_OR(node_id, vendor_id, 0xffff), \
+				    DT_PROP_OR(node_id, device_id, 0xffff))
+
+/**
+ * @brief Get the PCIe Vendor and Device ID for a node
+ *
+ * This is equivalent to
+ * <tt>PCIE_DT_ID(DT_DRV_INST(inst))</tt>
+ *
+ * @param inst Devicetree instance number
+ * @return The VID/DID combination as pcie_id_t
+ */
+#define PCIE_DT_INST_ID(inst) PCIE_DT_ID(DT_DRV_INST(inst))
+
+/**
+ * @brief Declare a PCIe context variable for a DTS node
+ *
+ * Declares a PCIe context for a DTS node. This must be done before
+ * using the DEVICE_PCIE_INIT() macro for the same node.
+ *
+ * @param node_id DTS node identifier
+ */
+#define DEVICE_PCIE_DECLARE(node_id)                                        \
+	STRUCT_SECTION_ITERABLE(pcie_dev, Z_DEVICE_PCIE_NAME(node_id)) = {  \
+		.bdf = PCIE_BDF_NONE,                                       \
+		.id = PCIE_DT_ID(node_id),                                  \
+	}
+
+/**
+ * @brief Declare a PCIe context variable for a DTS node
+ *
+ * This is equivalent to
+ * <tt>DEVICE_PCIE_DECLARE(DT_DRV_INST(inst))</tt>
+ *
+ * @param inst Devicetree instance number
+ */
+#define DEVICE_PCIE_INST_DECLARE(inst) DEVICE_PCIE_DECLARE(DT_DRV_INST(inst))
+
+/**
+ * @brief Initialize a named struct member to point at a PCIe context
+ *
+ * Initialize PCIe-related information within a specific instance of
+ * a device config struct, using information from DTS. Using the macro
+ * requires having first created PCIe context struct using the
+ * DEVICE_PCIE_DECLARE() macro.
+ *
+ * Example for an instance of a driver belonging to the "foo" subsystem
+ *
+ * struct foo_config {
+ *	struct pcie_dev *pcie;
+ *	...
+ *};
+ *
+ * DEVICE_PCIE_ID_DECLARE(DT_DRV_INST(...));
+ * struct foo_config my_config = {
+	DEVICE_PCIE_INIT(pcie, DT_DRV_INST(...)),
+ *	...
+ * };
+ *
+ * @param node_id DTS node identifier
+ * @param name Member name within config for the MMIO region
+ */
+#define DEVICE_PCIE_INIT(node_id, name) .name = &Z_DEVICE_PCIE_NAME(node_id)
+
+/**
+ * @brief Initialize a named struct member to point at a PCIe context
+ *
+ * This is equivalent to
+ * <tt>DEVICE_PCIE_INIT(DT_DRV_INST(inst), name)</tt>
+ *
+ * @param inst Devicetree instance number
+ * @param name Name of the struct member (of type struct pcie_dev *)
+ */
+#define DEVICE_PCIE_INST_INIT(inst, name) \
+	DEVICE_PCIE_INIT(DT_DRV_INST(inst), name)
 
 struct pcie_bar {
 	uintptr_t phys_addr;
