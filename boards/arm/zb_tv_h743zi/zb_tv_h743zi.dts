@@ -42,19 +42,19 @@
 		compatible = "gpio-keys";
 		user_button_0: button_0 {
 			label = "User1";
-			gpios = <&gpiog 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;
 		};
 		user_button_1: button_1 {
 			label = "User2";
-			gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
 		};
 		user_button_2: button_2 {
 			label = "User3";
-			gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
 		};
 		user_button_3: button_3 {
 			label = "User4";
-			gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 1 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -83,6 +83,7 @@
         gpiof = &gpiof;
         spi3 = &spi3;
 		uart5 = &uart5;
+		usart3 = &usart3;
 	};
 
 /*
@@ -121,40 +122,66 @@
 	3V8_GOOD - PG7
 */
     zephyr,user {
-		lg_cmp-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+		lg_cmp-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 		imu_int1-gpios = <&gpiof 13 GPIO_ACTIVE_HIGH>;
 		imu_int2-gpios = <&gpiog 0 GPIO_ACTIVE_HIGH>;
-		battery-gpios = <&gpiof 4 GPIO_ACTIVE_HIGH>;
-		3v8_good-gpios = <&gpiog 7 GPIO_ACTIVE_HIGH>;
-		reset_mcu-gpios = <&gpiog 6 GPIO_ACTIVE_HIGH>;
-		pwrkey_mcu-gpios = <&gpiog 5 GPIO_ACTIVE_HIGH>;
-		pwr_out_ctrl-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
-		htr_ctrl-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
-		sel1-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
-		sel2-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
-		diag_en-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
-		led_ctrl-gpios = <&gpiof 11 GPIO_ACTIVE_HIGH>;
-		fan_ctrl-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
-		backlight_en-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
-		buzzer-gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+		battery-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		3v8_good-gpios = <&gpiof 10 GPIO_ACTIVE_HIGH>;
+		reset_mcu-gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+		pwrkey_mcu-gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
+		pwr_out_ctrl-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+		htr_ctrl-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+		sel1-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+		sel2-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+		diag_en-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+		led_ctrl-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+		fan_ctrl-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+		backlight_en-gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+		buzzer-gpios = <&gpioe 10 GPIO_ACTIVE_HIGH>;
 		lg_comp_ctrl-gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
-		lg_comp_ctrl1-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
-		lg_comp_ctrl2-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
-		nrf_lcd_cs-gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+		lg_comp_ctrl1-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+		lg_comp_ctrl2-gpios = <&gpiof 4 GPIO_ACTIVE_HIGH>;
+		nrf_lcd_cs-gpios = <&gpiog 5 GPIO_ACTIVE_HIGH>;
 		nrf_lcd_rstb-gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
 		ntc_adc-gpios = <&gpiof 5 GPIO_ACTIVE_HIGH>;
 		pwm1-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
-		gpio1-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
-		gpio2-gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
-		gpio3-gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>;
+		gpio1-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+		gpio2-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+		gpio3-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
     };
+
+/*
+    gpio_i2c0: gpio_i2c {
+        compatible = "gpio-i2c";
+        status = "okay";
+        clock-frequency = <I2C_BITRATE_STANDARD>;
+        //i2c2_scl_pf1 &i2c2_sda_pf0
+        sda-gpios = <&gpiof 0 (GPIO_OPEN_DRAIN)>;
+        scl-gpios = <&gpiof 1 (GPIO_OPEN_DRAIN)>;
+        label = "GPIO_I2C_0";
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        bq40zxx: bq40zxx@b {
+            compatible = "ti,bq40zxx";
+            reg = <0x0b>;
+            label = "BQ40ZXX";
+            design-voltage = <11100>;
+            design-capacity = <16400>;
+            taper-current = <130>;
+            terminate-voltage = <9000>;
+        };
+    };
+*/
 };
 
+/*
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15>;
     pinctrl-names = "default";
 	status = "okay";
 };
+*/
 
 /*
 &zephyr_udc0 {
@@ -227,7 +254,9 @@ zephyr_udc0: &usbotg_hs {
     quectel_bg95: quectel_bg95 {
         compatible = "quectel,bg95";
 	    label = "quectel-bg95";
-		mdm-power-gpios = <&gpiog 7 GPIO_ACTIVE_HIGH>;
+        // 3V8 power
+		mdm-power-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+        // pwr/rst
 		mdm-reset-gpios = <&gpioe 0 0>;
     };
 };
@@ -235,7 +264,7 @@ zephyr_udc0: &usbotg_hs {
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
     pinctrl-names = "default";
-	current-speed = <115200>;
+	current-speed = <9600>;
 	status = "okay";
 };
 
@@ -250,19 +279,33 @@ zephyr_udc0: &usbotg_hs {
 	status = "okay";
 };
 
-/*
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+    pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+
+    ti_tmp116_int: ti_tmp116@48 {
+		compatible = "ti,tmp116";
+		reg = <0x48>;
+		label = "TMP116_INT";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		eeprom: ti_tmp116_eeprom@0 {
+			compatible = "ti,tmp116-eeprom";
+			reg = <0x0>;
+			label = "TMP116_EEPROM";
+			read-only;
+        };
+	};
 };
-*/
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
     pinctrl-names = "default";
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
     bq40zxx: bq40zxx@b {
         compatible = "ti,bq40zxx";
         reg = <0x0b>;
@@ -279,12 +322,6 @@ zephyr_udc0: &usbotg_hs {
     pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-    
-    ti_tmp116_int: ti_tmp116@48 {
-		compatible = "ti,tmp116";
-		reg = <0x48>;
-		label = "TMP116_INT";
-	};
 };
 
 &i2c4 {
@@ -333,12 +370,12 @@ zephyr_udc0: &usbotg_hs {
 		//has-be32k;
         spi-max-frequency = <8000000>;
 		label = "S25-OR-MX25_65";
-		//jedec-id = [01 60 17];
-		jedec-id = [C2 28 17];
+		jedec-id = [01 60 17];
+		//jedec-id = [C2 28 17];
 		size = <67108864>;
-		has-dpd;
-		t-enter-dpd = <10000>;
-		t-exit-dpd = <35000>;
+		//has-dpd;
+		//t-enter-dpd = <4000>;
+		//t-exit-dpd = <6000>;
 	};
 };
 
@@ -346,13 +383,19 @@ zephyr_udc0: &usbotg_hs {
     // SPI LCD Display
 	status = "okay";
 	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+    ///delete-property/ clocks;
+	//clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
+	//	 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
     pinctrl-names = "default";
-	cs-gpios = <&gpioa 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	cs-gpios = <&gpiog 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 };
 
 &spi1 {
 	status = "okay";
 	pinctrl-0 = <&spi1_sck_pg11 &spi1_miso_pg9 &spi1_mosi_pd7>;
+    /delete-property/ clocks;
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
+		 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
     pinctrl-names = "default";
 	cs-gpios = <&gpiog 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 };
@@ -370,33 +413,34 @@ zephyr_udc0: &usbotg_hs {
 		/* 128KB for bootloader */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00020000>;
+			reg = <0x00000000 DT_SIZE_K(128)>;
 			read-only;
 		};
 
-		/* storage: 128KB for settings */
+		/* application image slot: 256KB */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(384)>;
+		};
+
+		/* backup slot: 256KB */
+		slot1_partition: partition@100000 {
+			label = "image-1";
+			reg = <0x00100000 DT_SIZE_K(384)>;
+		};
+
+		/* swap slot: 128KB */
+		scratch_partition: partition@160000 {
+			label = "image-scratch";
+			reg = <0x00160000 DT_SIZE_K(128)>;
+		};
+
+		/* storage: 128KB for settings
 		storage_partition: partition@20000 {
 			label = "storage";
 			reg = <0x00020000 0x00020000>;
 		};
-
-		/* application image slot: 256KB */
-		slot0_partition: partition@40000 {
-			label = "image-0";
-			reg = <0x00040000 0x00040000>;
-		};
-
-		/* backup slot: 256KB */
-		slot1_partition: partition@80000 {
-			label = "image-1";
-			reg = <0x00080000 0x00040000>;
-		};
-
-		/* swap slot: 128KB */
-		scratch_partition: partition@c0000 {
-			label = "image-scratch";
-			reg = <0x000c0000 0x00020000>;
-		};
+        */
 
         /* Storage partition will be used by nvs settings */
 		//settings_partition: partition@f8000 {
@@ -506,12 +550,12 @@ zephyr_udc0: &usbotg_hs {
 		/* Storage partition will be used by filesystem if enabled. */
 		fs_partition: partition@400000 {
 			label = "fs_storage";
-			reg = <0x00400000 0x003E0000>;
+			reg = <0x00400000 0x003C0000>;
 		};
 
 		settings_partition: partition@7e0000 {
 			label = "settings_store";
-			reg = <0x007e0000 0x00020000>;
+			reg = <0x007E0000 0x00020000>;
 		};
 	};
 };

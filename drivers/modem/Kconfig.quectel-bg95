@@ -1,0 +1,79 @@
+config MODEM_QUECTEL_BG95
+	bool "Enable QUECTEL BG95 modem driver"
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select MODEM_IFACE_UART
+	select MODEM_SOCKET
+	select NET_OFFLOAD
+	select NET_SOCKETS_OFFLOAD
+	imply GPIO
+	help
+	  Choose this setting to enable bg95 quectel modem
+	  driver.
+
+if MODEM_QUECTEL_BG95
+
+config MODEM_QUECTEL_BG95_NAME
+	string "Driver name"
+	default "MODEM_QUECTEL_BG95"
+
+config MODEM_QUECTEL_BG95_RX_STACK_SIZE
+	int "Stack size for the bg95 rda modem driver RX thread"
+	default 4096
+	help
+	  This stack is used by the bg95 rda RX thread.
+
+config MODEM_QUECTEL_BG95_APP_RESET
+	bool "Modem reset is delayed to the app call"
+	default n
+	help
+	  This setting is used to delay the modem reset call and
+	  leave it upto the app to call it before using modem
+	  functions, instead of the driver calling the reset.
+	  This allows the app to boot up quickly without modem
+	  delay and gives flexibility to the app to call it
+	  whenever it needs modem functionality. NOTE: modem reset
+	  has to be called before using any modem functions in the
+	  app.
+ 
+config MODEM_QUECTEL_BG95_RX_WORKQ_STACK_SIZE
+	int "Stack size for the bg95 rda modem driver work queue"
+	default 4096
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+config MODEM_SOCKET_MAX_HST_LEN
+	int "Socket maximum host url length"
+	default 128
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+config MODEM_MAXIMUM_TR_RC_SIZE
+	int "Maximum uart send or recv buf"
+    default 4096
+    help
+        This setting indicated the maximum buffer size used for transmit
+        and receive buffers in HTTP tranfers.
+
+config MODEM_QUECTEL_BG95_APN
+	string "APN for establishing network connection"
+	default "airtelgprs.com"
+	help
+	  This setting is used in the AT+CGDCONT command to set the APN name
+	  for the network connection context.  This value is specific to
+	  the network provider and may need to be changed.
+
+config MODEM_QUECTEL_BG95_INIT_PRIORITY
+	int "bg95 rda driver init priority"
+	default 85
+	help
+	  bg95 device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+endif # MODEM_QUECTEL_BG95

@@ -55,6 +55,8 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 	LL_I2C_Disable(i2c);
 	LL_I2C_SetMode(i2c, LL_I2C_MODE_I2C);
+    /* FIXME */
+    LL_I2C_EnableClockStretching(i2c);
 	ret = stm32_i2c_configure_timing(dev, clock);
 	k_sem_give(&data->bus_mutex);
 

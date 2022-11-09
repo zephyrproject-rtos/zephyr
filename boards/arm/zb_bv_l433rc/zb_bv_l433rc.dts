@@ -1,0 +1,220 @@
+/*
+ * Copyright (c) 2021 ZedBlox
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l4/stm32l433Xc.dtsi>
+#include <st/l4/stm32l433rctxp-pinctrl.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32L433RC-ZB-BV board";
+	compatible = "st,stm32l433rc-p-zb-bv";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &can1;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_lb: button_lb {
+			label = "User_lb";
+			gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+		};
+		user_button_lt: button_lt {
+			label = "User_lt";
+			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+		};
+		user_button_rt: button_rt {
+			label = "User_rt";
+			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+		};
+		user_button_rb: button_rb {
+			label = "User_rb";
+			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		sw0 = &user_button_lb;
+		sw1 = &user_button_lt;
+		sw2 = &user_button_rt;
+		sw3 = &user_button_rb;
+	};
+
+	vbatt {
+        status = "okay";
+		compatible = "voltage-divider";
+		io-channels = <&adc1 5>;
+		output-ohms = <47000>;
+		full-ohms = <(47000 + 220000)>;
+	};
+
+    zephyr,user {
+		gpioa_h = <&gpioa>;
+		gpiob_h = <&gpiob>;
+		fan-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+		cpwr-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+		buz-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+		//cadc-channels = <&adc1 9>;
+		//ntc-channels = <&adc1 1>;
+    };
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <20>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <4>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(80)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+//zephyr_udc0: &usb {
+//	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+//	status = "okay";
+//};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+    clock-frequency = <I2C_BITRATE_STANDARD>;
+	ti_tmp116: ti_tmp116@48 {
+		compatible = "ti,tmp116";
+		reg = <0x48>;
+		label = "TMP116_INT";
+	};
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+    clock-frequency = <I2C_BITRATE_FAST>;
+    /*
+	ti_tmp116: ti_tmp116@48 {
+		compatible = "ti,tmp116";
+		reg = <0x48>;
+		label = "TMP116_INT";
+	};
+    */
+};
+
+&spi1 {
+    pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+             &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	s25_mx25: s25_mx25_64@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+		label = "MX25R64";
+		//jedec-id = [c2 28 17];
+        jedec-id = [01 60 17];
+		size = <67108864>;
+		wp-gpios = <&gpiob 0 0>;
+		hold-gpios = <&gpioa 9 0>;
+    };
+};
+
+arduino_spi: &spi2 {
+    pinctrl-0 = <&spi2_nss_pb12 &spi2_mosi_pb15 &spi2_sck_pb13>;
+	pinctrl-names = "default";
+    //cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW)>;
+	status = "okay";
+
+    ssd1306@0 {
+        compatible = "solomon,ssd1306fb";
+        reg = <0x0>;
+        label = "SSD1306";
+        spi-max-frequency = <10000000>;
+        width = <128>;
+        height = <64>;
+        segment-offset = <0>;
+        page-offset = <0>;
+        display-offset = <0>;
+        multiplex-ratio = <63>;
+        segment-remap;
+        com-invdir;
+        prechargep = <0x22>;
+        data_cmd-gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+    };
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in5_pa0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/*
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac_out1_pa4>;
+};
+*/
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+        storage_partition: partition@3c000 {
+			label = "storage";
+			reg = <0x0003c000 0x00004000>;
+		};
+	};
+};
+
+/*
+&timers2 {
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa6>;
+        pinctrl-names = "default";
+	};
+};
+*/
+
+&dma1 {
+	status = "okay";
+};

@@ -1,0 +1,66 @@
+config MODEM_A9GRDA
+	bool "Enable A9G RDA modem driver"
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select MODEM_IFACE_UART
+	select MODEM_SOCKET
+	select NET_OFFLOAD
+	select NET_SOCKETS_OFFLOAD
+	imply GPIO
+	help
+	  Choose this setting to enable a9g rda modem
+	  driver.
+
+if MODEM_A9GRDA
+
+config MODEM_A9GRDA_NAME
+	string "Driver name"
+	default "MODEM_A9G"
+
+config MODEM_A9GRDA_RX_STACK_SIZE
+	int "Stack size for the a9g rda modem driver RX thread"
+	default 1028
+	help
+	  This stack is used by the a9g rda RX thread.
+
+config MODEM_A9GRDA_RX_WORKQ_STACK_SIZE
+	int "Stack size for the a9g rda modem driver work queue"
+	default 2048
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+config MODEM_SOCKET_MAX_HST_LEN
+	int "Socket maximum host url length"
+	default 128
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+config MODEM_MAXIMUM_TR_RC_SIZE
+	int "Maximum uart send or recv buf"
+    default 2048
+    help
+        This setting indicated the maximum buffer size used for transmit
+        and receive buffers in HTTP tranfers.
+
+config MODEM_A9GRDA_APN
+	string "APN for establishing network connection"
+	default "airtelgprs.com"
+	help
+	  This setting is used in the AT+CGDCONT command to set the APN name
+	  for the network connection context.  This value is specific to
+	  the network provider and may need to be changed.
+
+config MODEM_A9GRDA_INIT_PRIORITY
+	int "a9g rda driver init priority"
+	default 80
+	help
+	  a9g rda device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+endif # MODEM_A9G

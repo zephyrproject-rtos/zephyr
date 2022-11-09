@@ -1,0 +1,25 @@
+# HDC2080 temperature and humidity sensor configuration options
+
+# Copyright (c) 2020 ZedBlox Logitech Pvt Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HDC2080
+	bool "HDC2080 sensor"
+	depends on I2C
+	help
+	  Enable driver for HDC2080 I2C-based temperature and humidity sensor.
+
+if HDC2080
+
+choice
+	prompt "HDC2080 measurement rate"
+	default HDC2080_1HZ
+	help
+        HDC2080 measurement rate
+
+config HDC2080_1HZ
+    bool "1hz"
+
+endchoice
+
+endif # HDC2080

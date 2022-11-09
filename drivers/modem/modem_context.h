@@ -62,6 +62,9 @@ struct modem_context {
 	char *data_model;
 	char *data_revision;
 	char *data_imei;
+	char *data_timeval;
+    char *data_cellinfo;
+    uint32_t data_sys_timeval;
 #if defined(CONFIG_MODEM_SIM_NUMBERS)
 	char *data_imsi;
 	char *data_iccid;

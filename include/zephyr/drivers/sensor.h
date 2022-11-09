@@ -139,17 +139,48 @@ enum sensor_channel {
 
 	/** Revolutions per minute, in RPM. */
 	SENSOR_CHAN_RPM,
-
 	/** Voltage, in volts **/
 	SENSOR_CHAN_GAUGE_VOLTAGE,
 	/** Average current, in amps **/
 	SENSOR_CHAN_GAUGE_AVG_CURRENT,
-	/** Standby current, in amps **/
+	/** Standy current, in amps **/
 	SENSOR_CHAN_GAUGE_STDBY_CURRENT,
 	/** Max load current, in amps **/
 	SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT,
 	/** Gauge temperature  **/
 	SENSOR_CHAN_GAUGE_TEMP,
+	/** Design voltage of cell in V (max voltage)*/
+	SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE,
+	/** Desired voltage of cell in V (nominal voltage) */
+	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
+	/** Desired charging current in mA */
+	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
+	/** Time to full  **/
+	SENSOR_CHAN_GAUGE_TIME_TO_FULL,
+	/** Time to empty  **/
+	SENSOR_CHAN_GAUGE_TIME_TO_EMPTY,
+	/** Cycle count  **/
+	SENSOR_CHAN_GAUGE_CYCLE_COUNT,
+	/** Design capacity  **/
+	SENSOR_CHAN_GAUGE_DESIGN_CAPACITY,
+	/** Safety Alert  **/
+	SENSOR_CHAN_GAUGE_SAFETY_ALERT,
+	/** Safety Status  **/
+	SENSOR_CHAN_GAUGE_SAFETY_STATUS,
+	/** PF Alert  **/
+	SENSOR_CHAN_GAUGE_PF_ALERT,
+	/** PF Status  **/
+	SENSOR_CHAN_GAUGE_PF_STATUS,
+	/** Operation Status  **/
+	SENSOR_CHAN_GAUGE_OPERATING_STATUS,
+	/** Charging Status  **/
+	SENSOR_CHAN_GAUGE_CHARGING_STATUS,
+	/** Gauging Status  **/
+	SENSOR_CHAN_GAUGE_GAUGING_STATUS,
+	/** Manufacturing Status  **/
+	SENSOR_CHAN_GAUGE_MANUFACTURING_STATUS,
+	/** Gauge flags  **/
+	SENSOR_CHAN_GAUGE_FLAGS,
 	/** State of charge measurement in % **/
 	SENSOR_CHAN_GAUGE_STATE_OF_CHARGE,
 	/** Full Charge Capacity in mAh **/
@@ -164,18 +195,7 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_AVG_POWER,
 	/** State of health measurement in % **/
 	SENSOR_CHAN_GAUGE_STATE_OF_HEALTH,
-	/** Time to empty in minutes **/
-	SENSOR_CHAN_GAUGE_TIME_TO_EMPTY,
-	/** Time to full in minutes **/
-	SENSOR_CHAN_GAUGE_TIME_TO_FULL,
-	/** Cycle count (total number of charge/discharge cycles) **/
-	SENSOR_CHAN_GAUGE_CYCLE_COUNT,
-	/** Design voltage of cell in V (max voltage)*/
-	SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE,
-	/** Desired voltage of cell in V (nominal voltage) */
-	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
-	/** Desired charging current in mA */
-	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
+
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,

@@ -1,0 +1,9 @@
+# Copyright (c) 2020 ZedBlox
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BQ40ZXX
+	bool "BQ40Zxx Fuel Gauge"
+	depends on I2C
+	help
+	  Enable I2C-based driver for BQ40Zxx Fuel Gauge.

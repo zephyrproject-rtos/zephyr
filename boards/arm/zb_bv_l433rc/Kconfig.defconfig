@@ -1,0 +1,14 @@
+# STM32L433RC Nucleo board configuration
+
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ZB_BV_L433RC
+
+config BOARD
+	default "zb_bv_l433rc"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_ZB_BV_L433RC_P

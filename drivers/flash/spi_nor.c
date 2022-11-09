@@ -15,6 +15,7 @@
 #include <zephyr/init.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys_clock.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"
@@ -43,10 +44,6 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
  */
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
-
-#ifndef NSEC_PER_MSEC
-#define NSEC_PER_MSEC (NSEC_PER_USEC * USEC_PER_MSEC)
-#endif
 
 #if DT_INST_NODE_HAS_PROP(0, t_enter_dpd)
 #define T_DP_MS ceiling_fraction(DT_INST_PROP(0, t_enter_dpd), NSEC_PER_MSEC)
@@ -880,7 +877,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 	} u;
 	const struct jesd216_sfdp_header *hp = &u.sfdp;
 
-	rc = read_sfdp(dev, 0, u.raw, sizeof(u.raw));
+	rc = spi_nor_sfdp_read(dev, 0, u.raw, sizeof(u.raw));
 	if (rc != 0) {
 		LOG_ERR("SFDP read failed: %d", rc);
 		return rc;
@@ -913,7 +910,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 			} u;
 			const struct jesd216_bfp *bfp = &u.bfp;
 
-			rc = read_sfdp(dev, jesd216_param_addr(php), u.dw, sizeof(u.dw));
+			rc = spi_nor_sfdp_read(dev, jesd216_param_addr(php), u.dw, sizeof(u.dw));
 			if (rc == 0) {
 				rc = spi_nor_process_bfp(dev, php, bfp);
 			}

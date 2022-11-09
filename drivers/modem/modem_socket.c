@@ -15,6 +15,8 @@
 
 #include "modem_socket.h"
 
+#define MAX_SOCKET_RECV_WAIT_SEC   300
+
 /*
  * Packet Size Support Functions
  */
@@ -386,13 +388,14 @@ int modem_socket_poll_update(struct modem_socket *sock, struct zsock_pollfd *pfd
 	return 0;
 }
 
-void modem_socket_wait_data(struct modem_socket_config *cfg, struct modem_socket *sock)
+int modem_socket_wait_data(struct modem_socket_config *cfg, struct modem_socket *sock)
 {
 	k_sem_take(&cfg->sem_lock, K_FOREVER);
 	sock->is_waiting = true;
 	k_sem_give(&cfg->sem_lock);
 
-	k_sem_take(&sock->sem_data_ready, K_FOREVER);
+	return k_sem_take(&sock->sem_data_ready,
+            K_SECONDS(MAX_SOCKET_RECV_WAIT_SEC));
 }
 
 void modem_socket_data_ready(struct modem_socket_config *cfg, struct modem_socket *sock)

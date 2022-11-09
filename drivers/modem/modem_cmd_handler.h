@@ -100,6 +100,9 @@ struct modem_cmd_handler_data {
 	const struct modem_cmd *cmds[CMD_MAX];
 	size_t cmds_len[CMD_MAX];
 
+	char *read_buf;
+	size_t read_buf_len;
+
 	char *match_buf;
 	size_t match_buf_len;
 
@@ -118,6 +121,9 @@ struct modem_cmd_handler_data {
 	/* locks */
 	struct k_sem sem_tx_lock;
 	struct k_sem sem_parse_lock;
+
+    /* Process data fn ptr */
+    size_t (*process_data)(void *data, uint16_t len);
 };
 
 /**

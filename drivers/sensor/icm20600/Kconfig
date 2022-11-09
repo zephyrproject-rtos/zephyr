@@ -1,0 +1,67 @@
+# Kconfig - ICM20600 Six-Axis Motion Tracking device configuration options
+
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ICM20600
+	bool "ICM20600 Six-Axis Motion Tracking Device"
+	depends on I2C
+	help
+	  Enable driver for ICM20600 I2C-based six-axis motion tracking device.
+
+if ICM20600
+
+choice
+	prompt "Trigger mode"
+	default ICM20600_TRIGGER_NONE    #ICM20600_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config ICM20600_TRIGGER_NONE
+	bool "No trigger"
+
+config ICM20600_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select ICM20600_TRIGGER
+
+config ICM20600_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select ICM20600_TRIGGER
+
+endchoice
+
+config ICM20600_TRIGGER
+	bool
+
+config ICM20600_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on BMI160_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  The priority of the thread used for handling interrupts.
+
+config ICM20600_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on BMI160_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  The thread stack size.
+
+config ICM20600_ACCEL_FS
+	int "Accelerometer full-scale range"
+	default 2
+	help
+	  Magnetometer full-scale range.
+	  An X value for the config represents a range of +/- X g. Valid
+	  values are 2, 4, 8 and 16.
+
+config ICM20600_GYRO_FS
+	int "Gyroscope full-scale range"
+	default 250
+	help
+	  Gyroscope full-scale range.
+	  An X value for the config represents a range of +/- X degrees/second.
+	  Valid values are 250, 500, 1000, 2000.
+
+endif # ICM20600

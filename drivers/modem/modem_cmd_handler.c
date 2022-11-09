@@ -324,6 +324,14 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 	int ret;
 	uint16_t offset, len;
 
+    /* call extra data processing task and wait for it to finish */
+    if (data->process_data != NULL)
+    {
+        size_t sz = net_buf_frags_len(data->rx_buf);
+        size_t processed_len = data->process_data((void*) data, sz);
+        data->rx_buf = net_buf_skip(data->rx_buf, processed_len);
+    }
+
 	/* process all of the data in the net_buf */
 	while (data->rx_buf && data->rx_buf->len) {
 		skipcrlf(data);
@@ -379,7 +387,8 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 			LOG_DBG("match cmd [%s] (len:%zu)",
 				log_strdup(cmd->cmd), match_len);
 
-			ret = process_cmd(cmd, match_len, data);
+			//ret = process_cmd(cmd, match_len, data);
+			ret = process_cmd(cmd, len, data);
 			if (ret == -EAGAIN) {
 				k_sem_give(&data->sem_parse_lock);
 				break;
@@ -387,6 +396,14 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 				LOG_ERR("process cmd [%s] (len:%zu, ret:%d)",
 					log_strdup(cmd->cmd), match_len, ret);
 			}
+
+            /* break if extra processing required */
+            if (data->process_data != NULL)
+            {
+                data->rx_buf = net_buf_skip(data->rx_buf, match_len);
+				k_sem_give(&data->sem_parse_lock);
+                break;
+            }
 
 			/*
 			 * make sure we didn't run out of data during
