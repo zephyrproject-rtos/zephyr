@@ -437,8 +437,8 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	if (is_instant_reached_or_passed(start_event_count,
 					 cc_event_counter(conn))) {
 		/* Start CIS */
-		ull_peripheral_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-					 ctx->data.cis_create.cis_handle);
+		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
+				   ctx->data.cis_create.cis_handle);
 
 		/* Now we can wait for CIS to become established */
 		ctx->state = RP_CC_STATE_WAIT_CIS_ESTABLISHED;
@@ -816,8 +816,8 @@ static void lp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 
 	if (is_instant_reached_or_passed(ctx->data.cis_create.conn_event_count, event_counter)) {
 		/* Start CIS */
-		ull_central_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-					    ctx->data.cis_create.cis_handle);
+		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
+				   ctx->data.cis_create.cis_handle);
 
 		/* Now we can wait for CIS to become established */
 		ctx->state = LP_CC_STATE_WAIT_ESTABLISHED;
