@@ -12,4 +12,6 @@ zephyr_library_sources_ifdef(CONFIG_SDMMC_STM32 sdmmc_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_SDMMC_SUBSYS sdmmc_subsys.c)
 zephyr_library_sources_ifdef(CONFIG_MMC_SUBSYS mmc_subsys.c)
 
+add_subdirectory_ifdef(CONFIG_NVME nvme)
+
 endif()
