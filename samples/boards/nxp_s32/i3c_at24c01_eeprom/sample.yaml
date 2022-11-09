@@ -1,0 +1,14 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Sample for communitcate Microchip AT24C01C-XHM EEPROM through I3C driver.
+tests:
+  sample.boards.nxp_s32.i3c.at24c01c.eeprom:
+    tags: i3c
+    platform_allow: s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52
+    harness: console
+    harness_config:
+        type: one_line
+        regex:
+            - "EEPROM read/write successful"

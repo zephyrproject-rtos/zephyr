@@ -1,0 +1,8 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel AT24 (or compatible) I2C EEPROM on I3C bus
+
+compatible: "atmel,at24-i3c"
+
+include: [i3c-device.yaml]

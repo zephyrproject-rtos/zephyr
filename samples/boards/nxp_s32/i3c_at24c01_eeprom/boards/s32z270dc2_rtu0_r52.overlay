@@ -1,0 +1,34 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Pins 3 and 5, 4 and 6 of J32 must be connected on the board */
+&pinctrl {
+	i3c2_default: i3c2_default {
+		group1 {
+			pinmux = <(PJ11_I3C_2_SDA0_I | PJ11_I3C_2_SDA0_O)>,
+				<(PJ10_I3C_2_SCL_I | PJ10_I3C_2_SCL_O)>;
+			input-enable;
+			output-enable;
+			drive-open-drain;
+		};
+	};
+};
+
+&i3c2 {
+	/* Just configure to reach i2c rate around 400Khz */
+	i2c-scl-hz = <400000>;
+	i3c-scl-hz = <6000000>;
+	i3c-od-scl-hz = <2000000>;
+
+	pinctrl-0 = <&i3c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom: eeprom@500000000000000050 {
+		compatible = "atmel,at24-i3c";
+		reg = <0x50 00 0x50>;
+	};
+};
