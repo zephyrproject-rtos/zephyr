@@ -25,18 +25,23 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include "gpio_intel_socfpga.h"
 
-#define DEV_CFG(_dev) ((struct gpio_intel_socfpga_config *const)(_dev)->config)
+#define DEV_CFG(_dev) ((const struct gpio_intel_socfpga_config *)(_dev)->config)
+
+#define DEV_DATA(_dev) ((struct gpio_intel_socfpga_data *const)(_dev)->data)
 
 struct gpio_intel_socfpga_config {
-	DEVICE_MMIO_ROM;
-	const int port_pin_mask;
+	struct gpio_driver_config gpio_config;
+
+	DEVICE_MMIO_NAMED_ROM(gpio_mmio);
 	const int gpio_port;
 	uint32_t ngpios;
 	struct reset_dt_spec reset;
 };
 
 struct gpio_intel_socfpga_data {
-	DEVICE_MMIO_RAM;
+	struct gpio_driver_data gpio_data;
+
+	DEVICE_MMIO_NAMED_RAM(gpio_mmio);
 };
 
 static bool pmux_gpio_pin_is_valid(int port, uint32_t pin_mask,
@@ -82,10 +87,10 @@ static bool pmux_gpio_pin_is_valid(int port, uint32_t pin_mask,
 static int gpio_socfpga_configure(const struct device *dev,
 			      gpio_pin_t pin, gpio_flags_t flags)
 {
-	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
-	const int port_pin_mask = cfg->port_pin_mask;
+	const struct gpio_intel_socfpga_config *cfg = DEV_CFG(dev);
+	const int port_pin_mask = cfg->gpio_config.port_pin_mask;
 	const int gpio_port = cfg->gpio_port;
-	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, gpio_mmio);
 	uint32_t ngpios = cfg->ngpios;
 	uint32_t addr;
 
@@ -106,7 +111,7 @@ static int gpio_socfpga_configure(const struct device *dev,
 
 static int gpio_socfpga_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, gpio_mmio);
 	uint32_t addr;
 
 	addr = reg_base + GPIO_EXT_PORTA_OFFSET;
@@ -118,10 +123,10 @@ static int gpio_socfpga_port_get_raw(const struct device *dev, uint32_t *value)
 
 static int gpio_socfpga_port_set_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
-	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
-	const int port_pin_mask = cfg->port_pin_mask;
+	const struct gpio_intel_socfpga_config *cfg = DEV_CFG(dev);
+	const int port_pin_mask = cfg->gpio_config.port_pin_mask;
 	const int gpio_port = cfg->gpio_port;
-	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, gpio_mmio);
 	uint32_t ngpios = cfg->ngpios;
 
 	if (!pmux_gpio_pin_is_valid(gpio_port, mask, port_pin_mask, ngpios)) {
@@ -135,10 +140,10 @@ static int gpio_socfpga_port_set_bits_raw(const struct device *dev, gpio_port_pi
 
 static int gpio_socfpga_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
-	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
-	const int port_pin_mask = cfg->port_pin_mask;
+	const struct gpio_intel_socfpga_config *cfg = DEV_CFG(dev);
+	const int port_pin_mask = cfg->gpio_config.port_pin_mask;
 	const int gpio_port = cfg->gpio_port;
-	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, gpio_mmio);
 	uint32_t ngpios = cfg->ngpios;
 
 	if (!pmux_gpio_pin_is_valid(gpio_port, mask, port_pin_mask, ngpios)) {
@@ -152,9 +157,9 @@ static int gpio_socfpga_port_clear_bits_raw(const struct device *dev, gpio_port_
 
 static int gpio_init(const struct device *dev)
 {
-	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, gpio_mmio, K_MEM_CACHE_NONE);
 
-	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
+	const struct gpio_intel_socfpga_config *cfg = DEV_CFG(dev);
 
 	if (!device_is_ready(cfg->reset.dev)) {
 		return -ENODEV;
@@ -180,8 +185,8 @@ static const struct gpio_driver_api gpio_socfpga_driver_api = {
 #define CREATE_GPIO_DEVICE(_inst)						\
 	static struct gpio_intel_socfpga_data gpio_data_##_inst;		\
 	static struct gpio_intel_socfpga_config gpio_config_##_inst = {		\
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),			\
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_inst),	\
+		DEVICE_MMIO_NAMED_ROM_INIT(gpio_mmio, DT_DRV_INST(_inst)),			\
+		.gpio_config.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_inst),	\
 		.gpio_port = _inst,						\
 		.ngpios = DT_INST_PROP(_inst, ngpios),				\
 		.reset = RESET_DT_SPEC_INST_GET(_inst)			\
