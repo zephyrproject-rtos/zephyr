@@ -35,33 +35,13 @@ LOG_MODULE_REGISTER(dw_timer, CONFIG_COUNTER_LOG_LEVEL);
 #define USER_DEFINED_MODE       1
 #define FREE_RUNNING_MODE       0
 
-#define GET_DEV_CONFIG(_dev)	((const struct dw_timer_config *)(_dev)->config)
-#define GET_DEV_DATA(_dev)		((struct dw_timer_drv_data *const)(_dev)->data)
-
-/* conflict requirement of DEVICE_MMIO_ROM and struct counter_config_info to    *
- * be a first member of config structure of driver                              *
- */
-#define DEVICE_MMIO_ROM_OBJ(dev) (((struct dw_timer_config *)(dev->config))->_mmio)
-
-#ifdef DEVICE_MMIO_IS_IN_RAM
-#define DEVICE_MMIO_GET_TIMER(dev) DEVICE_MMIO_GET(dev)
-
-#define DEVICE_MMIO_MAP_TIMER(dev, flags) \
-	device_map(DEVICE_MMIO_RAM_PTR(dev), \
-			DEVICE_MMIO_ROM_OBJ(dev).phys_addr, \
-			DEVICE_MMIO_ROM_OBJ(dev).size, \
-			(flags))
-#else
-#define DEVICE_MMIO_GET_TIMER(dev) (uintptr_t)(DEVICE_MMIO_ROM_OBJ(dev).addr)
-
-#define DEVICE_MMIO_MAP_TIMER(dev, flags)
-#endif	/* DEVICE_MMIO_IS_IN_RAM */
+#define DEV_CFG(_dev)	((const struct dw_timer_config *)(_dev)->config)
+#define DEV_DATA(_dev)		((struct dw_timer_drv_data *const)(_dev)->data)
 
 struct dw_timer_config {
-	/* counter_config_info needs to be first */
 	struct counter_config_info info;
+	DEVICE_MMIO_NAMED_ROM(timer_mmio);
 
-	DEVICE_MMIO_ROM;
 	uint32_t freq;
 	const struct device *clk_dev;
 	clock_control_subsys_t clkid;
@@ -70,7 +50,7 @@ struct dw_timer_config {
 };
 
 struct dw_timer_drv_data {
-	DEVICE_MMIO_RAM;
+	DEVICE_MMIO_NAMED_RAM(timer_mmio);
 	struct k_spinlock lock;
 	counter_top_callback_t top_cb;
 	counter_alarm_callback_t alarm_cb;
@@ -79,8 +59,8 @@ struct dw_timer_drv_data {
 
 static void dw_timer_irq_handler(const struct device *timer_dev)
 {
-	struct dw_timer_drv_data *const data = GET_DEV_DATA(timer_dev);
-	uintptr_t reg_base = DEVICE_MMIO_GET_TIMER(timer_dev);
+	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	uint32_t ticks = 0;
 	k_spinlock_key_t key;
 
@@ -103,7 +83,7 @@ static void dw_timer_irq_handler(const struct device *timer_dev)
 
 static int dw_timer_start(const struct device *dev)
 {
-	uintptr_t reg_base = DEVICE_MMIO_GET_TIMER(dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, timer_mmio);
 
 	if (sys_test_bit(reg_base + CONTROLREG_OFST,
 					TIMER_CONTROL_ENABLE)) {
@@ -120,7 +100,7 @@ static int dw_timer_start(const struct device *dev)
 
 int dw_timer_disable(const struct device *dev)
 {
-	uintptr_t reg_base = DEVICE_MMIO_GET_TIMER(dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, timer_mmio);
 
 	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
 	return 0;
@@ -128,7 +108,7 @@ int dw_timer_disable(const struct device *dev)
 
 static uint32_t dw_timer_get_top_value(const struct device *timer_dev)
 {
-	const struct dw_timer_config *timer_config = GET_DEV_CONFIG(timer_dev);
+	const struct dw_timer_config *timer_config = DEV_CFG(timer_dev);
 	uint32_t top_val = 0;
 
 	top_val = timer_config->info.max_top_value;
@@ -139,7 +119,7 @@ static uint32_t dw_timer_get_top_value(const struct device *timer_dev)
 static int dw_timer_get_value(const struct device *timer_dev, uint32_t *ticks)
 {
 	uint32_t curr_val = 0, load_value = 0;
-	uintptr_t reg_base = DEVICE_MMIO_GET_TIMER(timer_dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 
 	curr_val = sys_read32(reg_base + CURRENTVAL_OFST);
 	load_value = sys_read32(reg_base + LOADCOUNT_OFST);
@@ -151,8 +131,8 @@ static int dw_timer_get_value(const struct device *timer_dev, uint32_t *ticks)
 static int dw_timer_set_top_value(const struct device *timer_dev,
 					const struct counter_top_cfg *top_cfg)
 {
-	struct dw_timer_drv_data *const data = GET_DEV_DATA(timer_dev);
-	uintptr_t reg_base = DEVICE_MMIO_GET_TIMER(timer_dev);
+	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	k_spinlock_key_t key;
 
 	/* Timer is already running. */
@@ -186,8 +166,8 @@ static int dw_timer_set_alarm(const struct device *timer_dev, uint8_t chan_id,
 				 const struct counter_alarm_cfg *alarm_cfg)
 {
 	ARG_UNUSED(chan_id);
-	struct dw_timer_drv_data *const data = GET_DEV_DATA(timer_dev);
-	uintptr_t reg_base = DEVICE_MMIO_GET_TIMER(timer_dev);
+	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	k_spinlock_key_t key;
 
 	/* is timer running already? */
@@ -220,8 +200,8 @@ static int dw_timer_set_alarm(const struct device *timer_dev, uint8_t chan_id,
 static int dw_timer_cancel_alarm(const struct device *timer_dev, uint8_t chan_id)
 {
 	ARG_UNUSED(chan_id);
-	uintptr_t reg_base = DEVICE_MMIO_GET_TIMER(timer_dev);
-	struct dw_timer_drv_data *const data = GET_DEV_DATA(timer_dev);
+	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
+	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
 	k_spinlock_key_t key;
 
 	sys_write32(0, reg_base + CONTROLREG_OFST);
@@ -238,7 +218,7 @@ static int dw_timer_cancel_alarm(const struct device *timer_dev, uint8_t chan_id
 
 uint32_t dw_timer_get_freq(const struct device *timer_dev)
 {
-	const struct dw_timer_config *timer_config = GET_DEV_CONFIG(timer_dev);
+	const struct dw_timer_config *timer_config = DEV_CFG(timer_dev);
 	uint32_t freq = 0;
 	int ret = 0;
 
@@ -278,8 +258,8 @@ static const struct counter_driver_api dw_timer_driver_api = {
 
 static int dw_timer_init(const struct device *timer_dev)
 {
-	DEVICE_MMIO_MAP_TIMER(timer_dev, K_MEM_CACHE_NONE);
-	const struct dw_timer_config *timer_config = GET_DEV_CONFIG(timer_dev);
+	DEVICE_MMIO_NAMED_MAP(timer_dev, timer_mmio, K_MEM_CACHE_NONE);
+	const struct dw_timer_config *timer_config = DEV_CFG(timer_dev);
 
 	if (!device_is_ready(timer_config->reset.dev)) {
 		LOG_ERR("Reset device node not found");
@@ -312,7 +292,7 @@ static int dw_timer_init(const struct device *timer_dev)
 	static void dw_timer_config_##inst(void); \
 	static struct dw_timer_drv_data timer_data_##inst; \
 	static struct dw_timer_config timer_config_##inst = { \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)), \
+		DEVICE_MMIO_NAMED_ROM_INIT(timer_mmio, DT_DRV_INST(inst)), \
 		DW_SNPS_TIMER_CLOCK_RATE_INIT(inst) \
 		.info = { \
 					.max_top_value = UINT32_MAX, \
