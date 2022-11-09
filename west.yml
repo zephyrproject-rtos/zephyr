@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: marekmatej
+      url-base: https://github.com/marekmatej
 
   #
   # Please add items below based on alphabetical order
@@ -57,7 +59,9 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 8c7ee781ea4c4a010740f5231709ce7b21ad96d6
+      remote: marekmatej
+      revision: fix/esp32/idf_config_dts
+      #revision: 8c7ee781ea4c4a010740f5231709ce7b21ad96d6
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
