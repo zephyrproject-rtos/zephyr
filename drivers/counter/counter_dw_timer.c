@@ -135,6 +135,8 @@ static int dw_timer_set_top_value(const struct device *timer_dev,
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	k_spinlock_key_t key;
 
+	key = k_spin_lock(&data->lock);
+
 	/* Timer is already running. */
 	if (sys_test_bit(reg_base + CONTROLREG_OFST,
 					TIMER_CONTROL_ENABLE)) {
@@ -147,17 +149,16 @@ static int dw_timer_set_top_value(const struct device *timer_dev,
 		return -EINVAL;
 	}
 
-	key = k_spin_lock(&data->lock);
-
 	data->top_cb = top_cfg->callback;
 	data->prv_data = top_cfg->user_data;
 
-	k_spin_unlock(&data->lock, key);
 
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_MODE);
 	sys_write32(top_cfg->ticks, reg_base + LOADCOUNT_OFST);
 
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -169,6 +170,8 @@ static int dw_timer_set_alarm(const struct device *timer_dev, uint8_t chan_id,
 	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
 
 	/* is timer running already? */
 	if (sys_test_bit(reg_base + CONTROLREG_OFST,
@@ -182,17 +185,15 @@ static int dw_timer_set_alarm(const struct device *timer_dev, uint8_t chan_id,
 		return -EINVAL;
 	}
 
-	key = k_spin_lock(&data->lock);
-
 	data->alarm_cb = alarm_cfg->callback;
 	data->prv_data = alarm_cfg->user_data;
-
-	k_spin_unlock(&data->lock, key);
 
 	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_MODE);
 	sys_write32(alarm_cfg->ticks, reg_base + LOADCOUNT_OFST);
 
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -204,9 +205,9 @@ static int dw_timer_cancel_alarm(const struct device *timer_dev, uint8_t chan_id
 	struct dw_timer_drv_data *const data = DEV_DATA(timer_dev);
 	k_spinlock_key_t key;
 
-	sys_write32(0, reg_base + CONTROLREG_OFST);
-
 	key = k_spin_lock(&data->lock);
+
+	sys_write32(0, reg_base + CONTROLREG_OFST);
 
 	data->alarm_cb = NULL;
 	data->prv_data = NULL;
