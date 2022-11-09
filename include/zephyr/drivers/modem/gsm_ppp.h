@@ -32,7 +32,9 @@ struct gsm_ppp_modem_info {
 
 /** @cond INTERNAL_HIDDEN */
 struct device;
+struct modem_context;
 typedef void (*gsm_modem_power_cb)(const struct device *, void *);
+typedef int (*gsm_setup_cb)(const struct modem_context *, struct k_sem *);
 
 void gsm_ppp_start(const struct device *dev);
 void gsm_ppp_stop(const struct device *dev);
@@ -52,6 +54,20 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
 					   gsm_modem_power_cb modem_on,
 					   gsm_modem_power_cb modem_off,
 					   void *user_data);
+
+/**
+ * @brief Register functions callbacks for custom modem setup
+ *
+ * @param dev: gsm modem device
+ * @param modem_on: callback function to
+ *		execute during gsm ppp configuring.
+ * @param modem_off: callback function to
+ *		execute during gsm ppp stopping.
+ * @param user_data: user specified data
+ */
+void gsm_ppp_register_setup_hooks(const struct device *dev,
+				  gsm_setup_cb setup_hook,
+				  gsm_setup_cb pre_connect_hook);
 
 /**
  * @brief Get GSM modem information.

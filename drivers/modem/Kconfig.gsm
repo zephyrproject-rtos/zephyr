@@ -118,4 +118,13 @@ config MODEM_GSM_FACTORY_RESET_AT_BOOT
 	  helpful if your modem has a tendency to get stuck due to cached
 	  state.
 
+config GSM_PPP_SETUP_HOOKS
+	bool "Enable app to hook the PPP setup"
+	help
+	  If this is enabled, the application can hook into the setup procedure at
+	  two points: right before activating PDP context (after populating
+	  potentially useful modem metadata) and right before enabling PPP. See
+	  prototypes in include/drivers/modem/gsm_ppp.h for details.
+
+
 endif
