@@ -826,7 +826,7 @@ attaching:
 		/* Read connection quality (RSSI) before PPP carrier is ON */
 		query_rssi_nolock(gsm);
 
-		if (!((gsm->minfo.mdm_rssi > 0) && (gsm->minfo.mdm_rssi != GSM_RSSI_INVALID) &&
+		if (!((gsm->minfo.mdm_rssi) && (gsm->minfo.mdm_rssi != GSM_RSSI_INVALID) &&
 			(gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL))) {
 
 			LOG_DBG("Not valid RSSI, %s", "retrying...");
