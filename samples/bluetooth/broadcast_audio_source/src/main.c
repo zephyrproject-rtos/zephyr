@@ -226,18 +226,18 @@ void main(void)
 			return;
 		}
 
-		/* Start extended advertising */
-		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-		if (err) {
-			printk("Failed to start extended advertising: %d\n",
-			       err);
-			return;
-		}
-
 		/* Enable Periodic Advertising */
 		err = bt_le_per_adv_start(adv);
 		if (err) {
 			printk("Failed to enable periodic advertising: %d\n",
+			       err);
+			return;
+		}
+
+		/* Start extended advertising */
+		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err) {
+			printk("Failed to start extended advertising: %d\n",
 			       err);
 			return;
 		}
