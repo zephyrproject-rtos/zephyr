@@ -9,4 +9,7 @@
 	url = git@github.com:zedblox/zb_bv_v1.0_l151c8_app.git
 [submodule "zb_actipod_app"]
 	path = zb_actipod_app
-	url = https://github.com/sviraaj/zb_actipod_app.git
+	url = git@github.com:sviraaj/zb_actipod_app.git
+[submodule "zbacrux_setup"]
+	path = zbacrux_setup
+	url = git@github.com:sviraaj/zbacrux_setup.git
