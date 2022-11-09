@@ -10,8 +10,10 @@ tests:
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
+      ordered: True
       regex:
+        - "No file system selected"
         - "The device is put in USB mass storage mode."
   sample.usb.mass_ram_fat:
     min_ram: 128
@@ -23,8 +25,10 @@ tests:
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
+      ordered: True
       regex:
+        - "End of files"
         - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_fatfs:
     min_ram: 32
@@ -39,8 +43,10 @@ tests:
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
+      ordered: True
       regex:
+        - "End of files"
         - "The device is put in USB mass storage mode."
   sample.usb.mass_sdhc_fatfs:
     min_ram: 32
@@ -53,9 +59,11 @@ tests:
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
       fixture: fixture_sdcard
+      type: multi_line
+      ordered: True
       regex:
+        - "End of files"
         - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_littlefs:
     modules:
@@ -70,6 +78,8 @@ tests:
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
+      ordered: True
       regex:
+        - "End of files"
         - "The device is put in USB mass storage mode."

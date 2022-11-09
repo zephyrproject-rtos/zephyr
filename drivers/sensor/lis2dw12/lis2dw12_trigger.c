@@ -496,11 +496,12 @@ int lis2dw12_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	/* set interrupt notification mode on int1/int2 */
+	/* set data ready mode on int1/int2 */
 	LOG_DBG("drdy_pulsed is %d", (int)cfg->drdy_pulsed);
-	lis2dw12_lir_t mode = cfg->drdy_pulsed ? LIS2DW12_INT_PULSED : LIS2DW12_INT_LATCHED;
+	lis2dw12_drdy_pulsed_t mode = cfg->drdy_pulsed ? LIS2DW12_DRDY_PULSED :
+							 LIS2DW12_DRDY_LATCHED;
 
-	ret = lis2dw12_int_notification_set(ctx, mode);
+	ret = lis2dw12_data_ready_mode_set(ctx, mode);
 	if (ret < 0) {
 		LOG_ERR("drdy_pulsed config error %d", (int)cfg->drdy_pulsed);
 		return ret;

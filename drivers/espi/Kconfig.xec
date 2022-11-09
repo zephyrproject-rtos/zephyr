@@ -63,13 +63,17 @@ config ESPI_FLASH_BUFFER_SIZE
 
 config ESPI_SAF_XEC
 	bool "XEC Microchip ESPI SAF driver"
+	default y
 	depends on SOC_SERIES_MEC1501X
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_ENABLED
 	help
 	  Enable the Microchip XEC SAF ESPI driver for MEC15xx family.
 
 config ESPI_SAF_XEC_V2
 	bool "XEC Microchip ESPI SAF V2 driver"
+	default y
 	depends on SOC_SERIES_MEC172X
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_V2_ENABLED
 	help
 	  Enable the Microchip XEC SAF ESPI driver for MEC172x series.
 

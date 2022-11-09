@@ -41,6 +41,11 @@ int lll_hfclock_off(void)
 	return 0;
 }
 
+uint8_t lll_clock_sca_local_get(void)
+{
+	return 0;
+}
+
 uint32_t lll_clock_ppm_local_get(void)
 {
 	return 0;

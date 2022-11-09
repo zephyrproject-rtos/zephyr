@@ -699,6 +699,22 @@ static void conn_cleanup(struct bt_conn *conn)
 	k_work_reschedule(&conn->deferred_work, K_NO_WAIT);
 }
 
+static void conn_destroy(struct bt_conn *conn, void *data)
+{
+	k_work_cancel_delayable(&conn->deferred_work);
+
+	conn->pending_no_cb = 0;
+
+	conn_cleanup(conn);
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+}
+
+void bt_conn_cleanup_all(void)
+{
+	bt_conn_foreach(BT_CONN_TYPE_ALL, conn_destroy, NULL);
+}
+
 static int conn_prepare_events(struct bt_conn *conn,
 			       struct k_poll_event *events)
 {
@@ -915,6 +931,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 		    conn->role == BT_CONN_ROLE_PERIPHERAL) {
+
+#if defined(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)
+			conn->le.conn_param_retry_countdown =
+				CONFIG_BT_CONN_PARAM_RETRY_COUNT;
+#endif /* CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS */
+
 			k_work_schedule(&conn->deferred_work,
 					CONN_UPDATE_TIMEOUT);
 		}
@@ -993,6 +1015,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_conn_unref(conn);
 			break;
 		case BT_CONN_CONNECTED:
+			/* Can only happen if bt_conn_cleanup_all is called
+			 * whilst in a connection.
+			 */
+			break;
 		case BT_CONN_DISCONNECTING:
 		case BT_CONN_DISCONNECTED:
 			/* Cannot happen. */
@@ -1643,19 +1669,38 @@ static void deferred_work(struct k_work *work)
 	/* if application set own params use those, otherwise use defaults. */
 	if (atomic_test_and_clear_bit(conn->flags,
 				      BT_CONN_PERIPHERAL_PARAM_SET)) {
+		int err;
+
 		param = BT_LE_CONN_PARAM(conn->le.interval_min,
 					 conn->le.interval_max,
 					 conn->le.pending_latency,
 					 conn->le.pending_timeout);
-		send_conn_le_param_update(conn, param);
+
+		err = send_conn_le_param_update(conn, param);
+		if (!err) {
+			atomic_clear_bit(conn->flags,
+					 BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
+		} else {
+			BT_WARN("Send LE param update failed (err %d)", err);
+		}
 	} else if (IS_ENABLED(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)) {
 #if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
+		int err;
+
 		param = BT_LE_CONN_PARAM(
 				CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
 				CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
 				CONFIG_BT_PERIPHERAL_PREF_LATENCY,
 				CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
-		send_conn_le_param_update(conn, param);
+
+		err = send_conn_le_param_update(conn, param);
+		if (!err) {
+			atomic_set_bit(conn->flags,
+				       BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
+		} else {
+			BT_WARN("Send auto LE param update failed (err %d)",
+				err);
+		}
 #endif
 	}
 
@@ -3002,6 +3047,7 @@ int bt_conn_init(void)
 {
 	int err, i;
 
+	k_fifo_init(&free_tx);
 	for (i = 0; i < ARRAY_SIZE(conn_tx); i++) {
 		k_fifo_put(&free_tx, &conn_tx[i]);
 	}

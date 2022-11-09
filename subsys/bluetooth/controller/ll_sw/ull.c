@@ -1305,6 +1305,10 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_CIS_REQUEST:
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE:
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	case NODE_RX_TYPE_CIS_ESTABLISHED:
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
@@ -1502,6 +1506,10 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_CIS_ESTABLISHED:
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+		case NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE:
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 		case NODE_RX_TYPE_ISO_PDU:

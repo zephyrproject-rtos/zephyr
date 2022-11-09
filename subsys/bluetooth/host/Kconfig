@@ -628,7 +628,6 @@ config BT_CONN_PARAM_UPDATE_TIMEOUT
 	int "Peripheral connection parameter update timeout in milliseconds"
 	default 5000
 	range 0 65535
-
 	help
 	  The value is a timeout used by peripheral device to wait until it
 	  starts the first connection parameters update procedure after a
@@ -640,6 +639,23 @@ config BT_CONN_PARAM_UPDATE_TIMEOUT
 	  Core specification: Core 4.2 Vol 3, Part C, 9.3.12.2:
 	  "The Peripheral device should not perform a Connection Parameter
 	  Update procedure within 5 seconds after establishing a connection."
+
+config BT_CONN_PARAM_RETRY_COUNT
+	int "Peripheral connection parameter update retry attempts"
+	default 3
+	range 0 255
+	help
+	  This value corresponds to number of times to retry connection
+	  parameter update to attain the preferred value set in GATT
+	  characteristics in the Peripheral.
+
+config BT_CONN_PARAM_RETRY_TIMEOUT
+	int "Peripheral connection parameter update retry timeout in milliseconds"
+	default 5000
+	range 0 65535
+	help
+	  The value is a timeout used by peripheral device to wait until retry
+	  to attempt requesting again the preferred connection parameters.
 
 endif # BT_CONN
 
