@@ -10,6 +10,7 @@
 #include <hardware/structs/usb.h>
 #include <hardware/resets.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
