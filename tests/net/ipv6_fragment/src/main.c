@@ -898,7 +898,6 @@ static unsigned char ipv6_frag_wo_hbho[] = {
 static int frag_count;
 
 static struct net_if *iface1;
-static struct net_if *iface2;
 
 static bool test_failed;
 static bool test_started;
@@ -1352,7 +1351,6 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 }
 
 struct net_if_test net_iface1_data;
-struct net_if_test net_iface2_data;
 
 static struct dummy_api net_iface_api = {
 	.iface_api.init = net_iface_init,
@@ -1373,20 +1371,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 &net_iface_api,
 			 _ETH_L2_LAYER,
 			 _ETH_L2_CTX_TYPE,
-			 127);
-
-NET_DEVICE_INIT_INSTANCE(net_iface2_test,
-			 "iface2",
-			 iface2,
-			 net_iface_dev_init,
-			 NULL,
-			 &net_iface2_data,
-			 NULL,
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-			 &net_iface_api,
-			 _ETH_L2_LAYER,
-			 _ETH_L2_CTX_TYPE,
-			 127);
+			 NET_IPV6_MTU);
 
 static void add_nbr(struct net_if *iface,
 		    struct in6_addr *addr,
@@ -1443,21 +1428,14 @@ static void *test_setup(void)
 	k_sem_init(&wait_data, 0, UINT_MAX);
 
 	iface1 = net_if_get_by_index(1);
-	iface2 = net_if_get_by_index(2);
 
 	((struct net_if_test *) net_if_get_device(iface1)->data)->idx =
 		net_if_get_by_iface(iface1);
-	((struct net_if_test *) net_if_get_device(iface2)->data)->idx =
-		net_if_get_by_iface(iface2);
 
 	idx = net_if_get_by_iface(iface1);
 	zassert_equal(idx, 1, "Invalid index iface1");
 
-	idx = net_if_get_by_iface(iface2);
-	zassert_equal(idx, 2, "Invalid index iface2");
-
 	zassert_not_null(iface1, "Interface 1");
-	zassert_not_null(iface2, "Interface 2");
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
@@ -1479,7 +1457,6 @@ static void *test_setup(void)
 	}
 
 	net_if_up(iface1);
-	net_if_up(iface2);
 
 	add_nbr(iface1, &my_addr2, &ll_addr2);
 
