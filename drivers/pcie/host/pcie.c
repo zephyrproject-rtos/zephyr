@@ -9,6 +9,7 @@
 LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <stdbool.h>
 #include <zephyr/drivers/pcie/pcie.h>
 
@@ -368,3 +369,48 @@ pcie_bdf_t pcie_bdf_lookup(pcie_id_t id)
 
 	return PCIE_BDF_NONE;
 }
+
+static int pcie_init(const struct device *dev)
+{
+	size_t dev_count, found;
+
+	ARG_UNUSED(dev);
+
+	STRUCT_SECTION_COUNT(pcie_dev, &dev_count);
+	found = 0;
+
+	for (int b = 0; b <= PCIE_MAX_BUS; b++) {
+		for (int d = 0; d <= PCIE_MAX_DEV; d++) {
+			for (int f = 0; f <= PCIE_MAX_FUNC; f++) {
+				pcie_bdf_t bdf = PCIE_BDF(b, d, f);
+				uint32_t id;
+
+				id = pcie_conf_read(bdf, PCIE_CONF_ID);
+				if (id == PCIE_ID_NONE) {
+					continue;
+				}
+
+				STRUCT_SECTION_FOREACH(pcie_dev, dev) {
+					if (dev->bdf != PCIE_BDF_NONE) {
+						continue;
+					}
+
+					if (dev->id == id) {
+						dev->bdf = bdf;
+						found++;
+						break;
+					}
+				}
+
+				if (found == dev_count) {
+					goto done;
+				}
+			}
+		}
+	}
+
+done:
+	return 0;
+}
+
+SYS_INIT(pcie_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
