@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nuvoton_nct38xx_gpio_port
 
 #include "gpio_nct38xx.h"
+#include "gpio_i2c_priority_check.h"
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <zephyr/drivers/gpio.h>

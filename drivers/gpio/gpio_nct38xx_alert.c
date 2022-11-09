@@ -13,6 +13,7 @@
 #include <zephyr/sys/util_macro.h>
 
 #include "gpio_nct38xx.h"
+#include "gpio_i2c_priority_check.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(gpio_ntc38xx, CONFIG_GPIO_LOG_LEVEL);

@@ -18,12 +18,10 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+#include "gpio_spi_priority_check.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_sn74hc595, CONFIG_GPIO_LOG_LEVEL);
-
-#if CONFIG_SPI_INIT_PRIORITY >= CONFIG_GPIO_SPI_INIT_PRIORITY
-#error SPI_INIT_PRIORITY must be lower than GPIO_SPI_INIT_PRIORITY
-#endif
 
 struct gpio_sn74hc595_config {
 	/* gpio_driver_config needs to be first */

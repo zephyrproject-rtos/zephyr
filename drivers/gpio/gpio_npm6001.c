@@ -15,6 +15,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include "gpio_i2c_priority_check.h"
+
 /* nPM6001 GPIO related registers */
 #define NPM6001_GPIOOUTSET 0x69U
 #define NPM6001_GPIOOUTCLR 0x6AU

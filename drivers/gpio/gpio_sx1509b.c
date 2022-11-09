@@ -25,6 +25,7 @@
 LOG_MODULE_REGISTER(sx1509b, CONFIG_GPIO_LOG_LEVEL);
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include "gpio_i2c_priority_check.h"
 
 /* Number of pins supported by the device */
 #define NUM_PINS 16

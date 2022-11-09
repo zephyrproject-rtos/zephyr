@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_pcf8574
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include "gpio_i2c_priority_check.h"
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>

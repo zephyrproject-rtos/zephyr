@@ -21,6 +21,7 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include "gpio_mcp23s17.h"
+#include "gpio_spi_priority_check.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <zephyr/logging/log.h>

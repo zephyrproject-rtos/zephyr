@@ -13,6 +13,8 @@
 #include <zephyr/sys/util.h>
 LOG_MODULE_REGISTER(gpio_tca6424a, CONFIG_GPIO_LOG_LEVEL);
 
+#include "gpio_i2c_priority_check.h"
+
 /* TCA6424A auto increment register addresses */
 #define TCA6424A_REG_INPUT			0x80
 #define TCA6424A_REG_OUTPUT			0x84

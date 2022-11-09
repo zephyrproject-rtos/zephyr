@@ -10,6 +10,8 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/logging/log.h>
 
+#include "gpio_i2c_priority_check.h"
+
 LOG_MODULE_REGISTER(fxl6408, CONFIG_FXL6408_LOG_LEVEL);
 #define DT_DRV_COMPAT             fcs_fxl6408
 

@@ -22,6 +22,7 @@
 LOG_MODULE_REGISTER(pca953x, CONFIG_GPIO_LOG_LEVEL);
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include "gpio_i2c_priority_check.h"
 
 /* PCA953X Register addresses */
 #define PCA953X_INPUT_PORT		0x00

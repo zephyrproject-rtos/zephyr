@@ -20,6 +20,7 @@
 LOG_MODULE_REGISTER(cy8c95xx, CONFIG_GPIO_LOG_LEVEL);
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include "gpio_i2c_priority_check.h"
 
 /** Cache of the output configuration and data of the pins. */
 struct cy8c95xx_pin_state {
