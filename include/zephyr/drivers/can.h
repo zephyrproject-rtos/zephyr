@@ -196,6 +196,9 @@ struct can_frame {
 /** Filter matches data frames */
 #define CAN_FILTER_DATA BIT(2)
 
+/** Filter matches CAN-FD frames (FDF) */
+#define CAN_FILTER_FDF BIT(3)
+
 /** @} */
 
 /**
@@ -212,7 +215,7 @@ struct can_filter {
 	 */
 	uint32_t mask         : 29;
 	/** Flags. @see @ref CAN_FILTER_FLAGS. */
-	uint8_t flags         : 3;
+	uint8_t flags;
 };
 
 /**
