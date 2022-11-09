@@ -10,7 +10,7 @@
 #include "pinctrl_soc_common.h"
 
 #if defined(CONFIG_SOC_S32Z27_R52)
-#include "S32Z27_SIUL2.h"
+#include "S32Z2_SIUL2.h"
 #else
 #error "SoC not supported"
 #endif
@@ -47,6 +47,6 @@
 	.receiverSel = PORT_RECEIVER_ENABLE_SINGLE_ENDED,			\
 	.currentReferenceControl = PORT_CURRENT_REFERENCE_CONTROL_DISABLED,	\
 	.rxCurrentBoost = PORT_RX_CURRENT_BOOST_DISABLED,			\
-	.safeMode = SIUL2_PORT_IP_SAFE_MODE_DISABLED,
+	.safeMode = PORT_SAFE_MODE_DISABLED,
 
 #endif /* ZEPHYR_SOC_ARM_NXP_S32_S32ZE_PINCTRL_SOC_H_ */
