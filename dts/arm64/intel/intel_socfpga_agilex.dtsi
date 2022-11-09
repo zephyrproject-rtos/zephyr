@@ -155,7 +155,6 @@
 		compatible = "intel,socfpga-gpio";
 		reg = <0xffc03200 0x100>;
 		gpio-controller;
-		label="GPIO_0";
 		#gpio-cells=<2>;
 		status = "disabled";
 		ngpios = <24>;   /* 0..23 */
@@ -166,7 +165,6 @@
 		compatible = "intel,socfpga-gpio";
 		reg = <0xffc03300 0x100>;
 		gpio-controller;
-		label="GPIO_1";
 		#gpio-cells=<2>;
 		status = "disabled";
 		ngpios = <24>;   /* 24..47 */
