@@ -28,15 +28,11 @@
 		};
 		led1: led_1 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
-			label = "Green LED 1";
+			label = "Red LED 1";
 		};
 		led2: led_2 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
-			label = "Green LED 2";
-		};
-		led3: led_3 {
-			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
-			label = "Green LED 3";
+			label = "Blue LED 2";
 		};
 	};
 
@@ -44,6 +40,15 @@
 		compatible = "pwm-leds";
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -72,8 +77,13 @@
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
-		led3 = &led3;
 		pwm-led0 = &pwm_led0;
+		pwm-led0 = &green_pwm_led;
+		pwm-led1 = &red_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
 		sw1 = &button1;
 		sw2 = &button2;
@@ -85,7 +95,45 @@
 	};
 };
 
+/ {
+	zephyr,user {
+		io-channels = <&adc 0>, <&adc 1>, <&adc 7>;
+	};
+};
+
 &adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN1>; /* P0.03 */
+		zephyr,resolution = <12>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_VDD>;
+		zephyr,resolution = <14>;
+		zephyr,oversampling = <8>;
+	};
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1_5";
+		zephyr,reference = "ADC_REF_VDD_1_4";
+		zephyr,vref-mv = <750>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN6>; /* P0.30 */
+		zephyr,input-negative = <NRF_SAADC_AIN7>; /* P0.31 */
+		zephyr,resolution = <12>;
+	};
 	status = "okay";
 };
 
