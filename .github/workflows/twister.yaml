@@ -129,9 +129,9 @@ jobs:
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.1
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
-      DAILY_OPTIONS: ' -M --build-only --all'
+      DAILY_OPTIONS: ' -M --build-only --all --show-footprint'
       PR_OPTIONS: ' --clobber-output --integration'
-      PUSH_OPTIONS: ' --clobber-output -M'
+      PUSH_OPTIONS: ' --clobber-output -M --show-footprint'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
