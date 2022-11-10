@@ -161,6 +161,25 @@
 			status = "okay";
 		};
 
+		i2c: i2c@50020600 {
+			compatible = "renesas,smartbond-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50020600 0x100>;
+			periph-clock-config = <0x0200>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@50020700 {
+			compatible = "renesas,smartbond-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50020700 0x100>;
+			periph-clock-config = <0x0800>;
+			interrupts = <9 0>;
+			status = "disabled";
+		};
 	};
 };
 
