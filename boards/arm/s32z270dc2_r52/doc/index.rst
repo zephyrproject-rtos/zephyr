@@ -43,6 +43,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| I3C       | on-chip    | i3c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
