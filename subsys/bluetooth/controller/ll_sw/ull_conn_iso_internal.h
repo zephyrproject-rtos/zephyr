@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define IS_PERIPHERAL(cig) \
+	(IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO) && \
+	 (cig->lll.role == BT_HCI_ROLE_PERIPHERAL))
+
+#define IS_CENTRAL(cig) \
+	(IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO) && \
+	 (cig->lll.role == BT_HCI_ROLE_CENTRAL))
+
 /* Helper functions to initialize and reset ull_conn_iso module */
 int ull_conn_iso_init(void);
 int ull_conn_iso_reset(void);
