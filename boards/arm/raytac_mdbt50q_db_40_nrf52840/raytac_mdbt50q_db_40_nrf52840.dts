@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Raytac Corporation
+// Copyright (c) 2022 Nordic Semiconductor ASA
 // SPDX-License-Identifier: Apache-2.0
 
 /dts-v1/;
@@ -6,8 +6,8 @@
 #include "raytac_mdbt50q_db_40_nrf52840-pinctrl.dtsi"
 
 / {
-	model = "Raytac MDBT50Q-DB-40";
-	compatible = "raytac,raytac_mdbt50q_db_40_nrf52840";
+	model = "Raytac MDBT50Q_DB_40_nRF52840";
+	compatible = "raytac,raytac-mdbt50q-db-40-nrf52840";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -78,9 +78,6 @@
 		sw1 = &button1;
 		sw2 = &button2;
 		sw3 = &button3;
-		bootloader-led0 = &led0;
-		mcuboot-button0 = &button0;
-		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
 	};
 };
@@ -171,14 +168,6 @@ arduino_i2c: &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-arduino_spi: &spi3 {
-	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
-	pinctrl-0 = <&spi3_default>;
-	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
