@@ -21,11 +21,32 @@ config IPC_SERVICE_BACKEND_ICMSG
 	default y
 	depends on MBOX
 	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ENABLED
-	select SPSC_PBUF
-	select SPSC_PBUF_USE_CACHE
+	select IPC_SERVICE_ICMSG
 	help
 	  Chosing this backend results in single endpoint implementation based
 	  on circular packet buffer.
+
+config IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR
+	bool "ICMSG backend with multi-endpoint support in initiator role"
+	depends on MBOX
+	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_INITIATOR_ENABLED
+	select IPC_SERVICE_ICMSG
+	select EVENTS
+	help
+	  Chosing this backend results in multi endpoint implementation based
+	  on circular packet buffer. This enables enpoint discovery initiator
+	  role.
+
+config IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER
+	bool "ICMSG backend with multi-endpoint support in follower role"
+	depends on MBOX
+	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_FOLLOWER_ENABLED
+	select IPC_SERVICE_ICMSG
+	select EVENTS
+	help
+	  Chosing this backend results in multi endpoint implementation based
+	  on circular packet buffer. This enables enpoint discovery follower
+	  role.
 
 config IPC_SERVICE_RPMSG
 	bool "RPMsg support library"
@@ -44,5 +65,29 @@ config IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
 	help
 	  Static VRINGs alignment
 
-rsource "Kconfig.icmsg"
+config IPC_SERVICE_ICMSG
+	bool
+	select SPSC_PBUF
+	select SPSC_PBUF_USE_CACHE
+	help
+	  Icmsg library
+
+config IPC_SERVICE_ICMSG_CB_BUF_SIZE
+	int "Size of callback buffer size"
+	depends on IPC_SERVICE_ICMSG
+	range 1 65535
+	default 255
+	help
+	  Size of callback buffer used for processing received data in work
+	  queue thread. If you are sure that your application never sends data
+	  data bigger than some size, you can safely change this option to
+	  reduce RAM consumption in your application.
+
+# The Icmsg library in its simplicity requires the system workqueue to execute
+# at a cooperative priority.
+config SYSTEM_WORKQUEUE_PRIORITY
+	depends on IPC_SERVICE_ICMSG
+	range -256 -1
+
+rsource "Kconfig.icmsg_me"
 rsource "Kconfig.rpmsg"

@@ -166,6 +166,52 @@
 		lps: lps@71ac0 {
 			compatible = "intel,adsp-lps";
 			reg = <0x00071ac0 0x100>;
+
+			hub_ulp_domain: hub_ulp_domain {
+				compatible = "intel,adsp-power-domain";
+				lps = <&lps>;
+				bit-position = <15>;
+			};
+			hub_hp_domain: hub_hpp_domain {
+				compatible = "intel,adsp-power-domain";
+				lps = <&lps>;
+				bit-position = <6>;
+			};
+			io0_domain: io0_domain {
+				compatible = "intel,adsp-power-domain";
+				lps = <&lps>;
+				bit-position = <8>;
+			};
+			io1_domain: io1_domain {
+				compatible = "intel,adsp-power-domain";
+				lps = <&lps>;
+				bit-position = <9>;
+			};
+			io2_domain: io2_domain {
+				compatible = "intel,adsp-power-domain";
+				lps = <&lps>;
+				bit-position = <10>;
+			};
+			io3_domain: io3_domain {
+				compatible = "intel,adsp-power-domain";
+				lps = <&lps>;
+				bit-position = <11>;
+			};
+			hst_domain: hst_domain {
+				compatible = "intel,adsp-power-domain";
+				lps = <&lps>;
+				bit-position = <4>;
+			};
+			ml0_domain: ml0_domain {
+				compatible = "intel,adsp-power-domain";
+				lps = <&lps>;
+				bit-position = <12>;
+			};
+			ml1_domain: ml1_domain {
+				compatible = "intel,adsp-power-domain";
+				lps = <&lps>;
+				bit-position = <13>;
+			};
 		};
 
 		sspbase: ssp_base@28800 {
@@ -379,56 +425,17 @@
 		 *
 		 * https://github.com/zephyrproject-rtos/zephyr/pull/50287#discussion_r974591009
 		 */
-		alh0: alh1: alh@24400 {
+		alh0: alh0@24400 {
 			compatible = "intel,alh-dai";
 			reg = <0x00024400 0x00024600>;
 			status = "okay";
 		};
 
-		hub_ulp_domain: hub_ulp_domain {
-			compatible = "intel,adsp-power-domain";
-			lps = <&lps>;
-			bit-position = <15>;
+		alh1: alh1@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
 		};
-		hub_hp_domain: hub_hpp_domain {
-			compatible = "intel,adsp-power-domain";
-			lps = <&lps>;
-			bit-position = <6>;
-		};
-		io0_domain: io0_domain {
-			compatible = "intel,adsp-power-domain";
-			lps = <&lps>;
-			bit-position = <8>;
-		};
-		io1_domain: io1_domain {
-			compatible = "intel,adsp-power-domain";
-			lps = <&lps>;
-			bit-position = <9>;
-		};
-		io2_domain: io2_domain {
-			compatible = "intel,adsp-power-domain";
-			lps = <&lps>;
-			bit-position = <10>;
-		};
-		io3_domain: io3_domain {
-			compatible = "intel,adsp-power-domain";
-			lps = <&lps>;
-			bit-position = <11>;
-		};
-		hst_domain: hst_domain {
-			compatible = "intel,adsp-power-domain";
-			lps = <&lps>;
-			bit-position = <4>;
-		};
-		ml0_domain: ml0_domain {
-			compatible = "intel,adsp-power-domain";
-			lps = <&lps>;
-			bit-position = <12>;
-		};
-		ml1_domain: ml1_domain {
-			compatible = "intel,adsp-power-domain";
-			lps = <&lps>;
-			bit-position = <13>;
-		};
+
 	};
 };

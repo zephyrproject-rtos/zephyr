@@ -287,7 +287,14 @@
 		 *
 		 * https://github.com/zephyrproject-rtos/zephyr/pull/50287#discussion_r974591009
 		 */
-		alh0: alh1: alh@71000 {
+		alh0: alh0@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+
+			status = "okay";
+		};
+
+		alh1: alh1@71000 {
 			compatible = "intel,alh-dai";
 			reg = <0x00071000 0x00071200>;
 
