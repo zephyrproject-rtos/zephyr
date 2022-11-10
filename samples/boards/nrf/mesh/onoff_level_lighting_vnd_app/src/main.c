@@ -16,7 +16,7 @@
 #include "transition.h"
 
 #if defined(CONFIG_MCUMGR)
-#include <zephyr/mgmt/mcumgr/smp_bt.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_bt.h>
 #include "smp_svr.h"
 #endif
 
