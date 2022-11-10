@@ -68,3 +68,24 @@
 &stm3 {
 	clock-frequency = <133333333>;
 };
+
+&swt0 {
+	clock-frequency = <48000000>;
+	status = "okay";
+};
+
+&swt1 {
+	clock-frequency = <48000000>;
+};
+
+&swt2 {
+	clock-frequency = <48000000>;
+};
+
+&swt3 {
+	clock-frequency = <48000000>;
+};
+
+&swt4 {
+	clock-frequency = <48000000>;
+};
