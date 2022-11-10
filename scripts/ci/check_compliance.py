@@ -1036,6 +1036,16 @@ def inheritors(klass):
     return subclasses
 
 
+def annotate(res):
+    """
+    https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#about-workflow-commands
+    """
+    notice = f'::{res.severity} file={res.file},line={res.line}' + \
+             (f',col={res.col}' if res.col else '') + \
+             f',title={res.title}::{res.message}'
+    print(notice)
+
+
 def parse_args():
 
     default_range = 'HEAD~1..HEAD'
@@ -1059,6 +1069,8 @@ def parse_args():
     parser.add_argument('-j', '--previous-run', default=None,
                         help='''Pre-load JUnit results in XML format
                         from a previous run and combine with new results.''')
+    parser.add_argument('--annotate', action="store_true",
+                        help="Print GitHub Actions-compatible annotations.")
 
     return parser.parse_args()
 
@@ -1122,6 +1134,11 @@ def _main(args):
             test.run()
         except EndTest:
             pass
+
+        # Annotate if required
+        if args.annotate:
+            for res in test.fmtd_failures:
+                annotate(res)
 
         suite.add_testcase(test.case)
 
