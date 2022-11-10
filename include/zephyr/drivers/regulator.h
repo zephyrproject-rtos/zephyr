@@ -41,7 +41,7 @@ __subsystem struct regulator_driver_api {
  *
  * @funcprops \isr_ok \pre_kernel_ok
  *
- * @param reg Regulator device instance
+ * @param dev Regulator device instance
  * @param cli On-off client instance. This is used to notify the caller when the
  * attempt to turn on the regulator has completed (can be `NULL`).
  *
@@ -49,13 +49,13 @@ __subsystem struct regulator_driver_api {
  * @retval -errno Negative errno in case of failure (can be from onoff_request()
  * or individual regulator drivers).
  */
-static inline int regulator_enable(const struct device *reg,
+static inline int regulator_enable(const struct device *dev,
 				   struct onoff_client *cli)
 {
 	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)reg->api;
+		(const struct regulator_driver_api *)dev->api;
 
-	return api->enable(reg, cli);
+	return api->enable(dev, cli);
 }
 
 /**
@@ -72,18 +72,18 @@ static inline int regulator_enable(const struct device *reg,
  *
  * @funcprops \isr_ok
  *
- * @param reg Regulator device instance.
+ * @param dev Regulator device instance.
  *
  * @retval 0 If enable request has been successfully initiated.
  * @retval -errno Negative errno in case of failure (can be from onoff_release()
  * or individual regulator drivers).
  */
-static inline int regulator_disable(const struct device *reg)
+static inline int regulator_disable(const struct device *dev)
 {
 	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)reg->api;
+		(const struct regulator_driver_api *)dev->api;
 
-	return api->disable(reg);
+	return api->disable(dev);
 }
 
 #ifdef __cplusplus
