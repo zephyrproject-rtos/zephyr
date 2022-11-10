@@ -1387,7 +1387,6 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 			  uint8_t cig_id,
 			  uint8_t cis_id)
 {
-	struct bt_audio_iso *iso;
 	struct bt_audio_ep *ep;
 
 	BT_DBG("stream %p ep %p qos %p", stream, stream->ep, qos);
@@ -1428,21 +1427,30 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 		}
 	}
 
-	iso = audio_iso_get_or_new(ascs, cig_id, cis_id);
-	if (iso == NULL) {
-		BT_ERR("Could not allocate audio_iso");
-		return -ENOMEM;
+	/* QoS->QoS transition. Unbind ISO if CIG/CIS changed. */
+	if (ep->iso != NULL && (ep->cig_id != cig_id || ep->cis_id != cis_id)) {
+		bt_audio_iso_unbind_ep(ep->iso, ep);
 	}
 
-	if (bt_audio_iso_get_ep(iso, ep->dir) != NULL) {
-		BT_ERR("iso %p already in use in dir %u",
-		       &iso->chan, ep->dir);
+	if (ep->iso == NULL) {
+		struct bt_audio_iso *iso;
+
+		iso = audio_iso_get_or_new(ascs, cig_id, cis_id);
+		if (iso == NULL) {
+			BT_ERR("Could not allocate audio_iso");
+			return -ENOMEM;
+		}
+
+		if (bt_audio_iso_get_ep(iso, ep->dir) != NULL) {
+			BT_ERR("iso %p already in use in dir %u",
+			       &iso->chan, ep->dir);
+			bt_audio_iso_unref(iso);
+			return -EALREADY;
+		}
+
+		bt_audio_iso_bind_ep(iso, ep);
 		bt_audio_iso_unref(iso);
-		return -EALREADY;
 	}
-
-	bt_audio_iso_bind_ep(iso, ep);
-	bt_audio_iso_unref(iso);
 
 	stream->qos = qos;
 
@@ -2037,7 +2045,7 @@ static ssize_t ascs_disable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		ase = ase_find(ascs, id);
 		if (!ase) {
 			ascs_cp_rsp_add(id, BT_ASCS_DISABLE_OP,
-					BT_ASCS_RSP_INVALID_ASE_STATE, 0);
+					BT_ASCS_RSP_INVALID_ASE, 0x00);
 			BT_WARN("Unknown ase 0x%02x", id);
 			continue;
 		}
@@ -2343,8 +2351,12 @@ BT_GATT_SERVICE_DEFINE(ascs_svc,
 		      BT_GATT_PERM_WRITE_ENCRYPT,
 		      NULL, ascs_cp_write, NULL),
 	BT_AUDIO_CCC(ascs_cp_cfg_changed),
+#if CONFIG_BT_ASCS_ASE_SNK_COUNT > 0
 	LISTIFY(CONFIG_BT_ASCS_ASE_SNK_COUNT, BT_ASCS_ASE_SNK_DEFINE, (,)),
+#endif /* CONFIG_BT_ASCS_ASE_SNK_COUNT > 0 */
+#if CONFIG_BT_ASCS_ASE_SRC_COUNT > 0
 	LISTIFY(CONFIG_BT_ASCS_ASE_SRC_COUNT, BT_ASCS_ASE_SRC_DEFINE, (,)),
+#endif /* CONFIG_BT_ASCS_ASE_SRC_COUNT > 0 */
 );
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len)

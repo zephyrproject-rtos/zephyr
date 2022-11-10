@@ -63,3 +63,4 @@ app=tests/bluetooth/bsim_bt/bsim_test_mesh compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh conf_file=prj_low_lat.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh conf_file=prj_pst.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh conf_file=prj_gatt.conf compile
+app=tests/bluetooth/bsim_bt/bsim_test_disable compile

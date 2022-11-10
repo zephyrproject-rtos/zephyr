@@ -373,12 +373,13 @@
 			status = "okay";
 		};
 
-		xdmac: dma-controller@40078000 {
+		xdmac: dma0: dma-controller@40078000 {
 			compatible = "atmel,sam-xdmac";
 			reg = <0x40078000 0x400>;
 			interrupts = <58 0>;
 			peripheral-id = <58>;
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		ssc: ssc@40004000 {

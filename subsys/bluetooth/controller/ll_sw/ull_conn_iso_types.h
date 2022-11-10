@@ -49,6 +49,7 @@ struct ll_conn_iso_group {
 	uint16_t iso_interval;
 	uint8_t  cig_id;
 	uint8_t  started:1;     /* 1 if CIG started and ticker is running */
+	uint8_t  sca_update:4;  /* (new SCA)+1 to trigger restart of ticker */
 };
 
 struct node_rx_conn_iso_req {

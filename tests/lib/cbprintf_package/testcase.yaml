@@ -38,6 +38,7 @@ tests:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
       - CONFIG_FPU=y
+      - CONFIG_MINIMAL_LIBC=y
 
   libraries.cbprintf_package_long_double_align_offset:
     filter: CONFIG_CPU_HAS_FPU
@@ -47,6 +48,7 @@ tests:
       - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
       - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
       - CONFIG_FPU=y
+      - CONFIG_MINIMAL_LIBC=y
 
   libraries.cbprintf_package_nano:
     extra_configs:
@@ -89,6 +91,7 @@ tests:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
       - CONFIG_FPU=y
+      - CONFIG_MINIMAL_LIBC=y
 
   libraries.cbprintf_package_long_double_align_offset_cpp:
     filter: CONFIG_CPU_HAS_FPU
@@ -99,6 +102,7 @@ tests:
       - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
       - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
       - CONFIG_FPU=y
+      - CONFIG_MINIMAL_LIBC=y
 
   libraries.cbprintf_package_nano_cpp:
     extra_configs:
@@ -130,29 +134,6 @@ tests:
       - CONFIG_FPU=y
       - CONFIG_PICOLIBC=y
 
-  libraries.cbprintf_package_long_double.picolibc:
-    filter: CONFIG_CPU_HAS_FPU
-    filter: CONFIG_PICOLIBC_SUPPORTED
-    tags: picolibc
-    extra_configs:
-      - CONFIG_CBPRINTF_FP_SUPPORT=y
-      - CONFIG_CBPRINTF_COMPLETE=y
-      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
-      - CONFIG_FPU=y
-      - CONFIG_PICOLIBC=y
-
-  libraries.cbprintf_package_long_double_align_offset:
-    filter: CONFIG_CPU_HAS_FPU
-    filter: CONFIG_PICOLIBC_SUPPORTED
-    tags: picolibc
-    extra_configs:
-      - CONFIG_CBPRINTF_FP_SUPPORT=y
-      - CONFIG_CBPRINTF_COMPLETE=y
-      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
-      - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
-      - CONFIG_FPU=y
-      - CONFIG_PICOLIBC=y
-
   # Same test but with test compiled as C++
   libraries.cbprintf_package_cpp.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
@@ -179,17 +160,5 @@ tests:
       - CONFIG_CPLUSPLUS=y
       - CONFIG_CBPRINTF_FP_SUPPORT=y
       - CONFIG_CBPRINTF_COMPLETE=y
-      - CONFIG_FPU=y
-      - CONFIG_PICOLIBC=y
-
-  libraries.cbprintf_package_long_double_cpp.picolibc:
-    filter: CONFIG_CPU_HAS_FPU
-    filter: CONFIG_PICOLIBC_SUPPORTED
-    tags: picolibc
-    extra_configs:
-      - CONFIG_CPLUSPLUS=y
-      - CONFIG_CBPRINTF_FP_SUPPORT=y
-      - CONFIG_CBPRINTF_COMPLETE=y
-      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
       - CONFIG_FPU=y
       - CONFIG_PICOLIBC=y

@@ -721,6 +721,11 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason)
 }
 
 static uint16_t disconnected_handles[CONFIG_BT_MAX_CONN];
+static void disconnected_handles_reset(void)
+{
+	(void)memset(disconnected_handles, 0, sizeof(disconnected_handles));
+}
+
 static void conn_handle_disconnected(uint16_t handle)
 {
 	for (int i = 0; i < ARRAY_SIZE(disconnected_handles); i++) {
@@ -1607,15 +1612,10 @@ static void le_conn_update_complete(struct net_buf *buf)
 		return;
 	}
 
-	if (!evt->status) {
-		conn->le.interval = sys_le16_to_cpu(evt->interval);
-		conn->le.latency = sys_le16_to_cpu(evt->latency);
-		conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
-		notify_le_param_updated(conn);
-	} else if (evt->status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE &&
-		   conn->role == BT_HCI_ROLE_PERIPHERAL &&
-		   !atomic_test_and_set_bit(conn->flags,
-					    BT_CONN_PERIPHERAL_PARAM_L2CAP)) {
+	if (evt->status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE &&
+	    conn->role == BT_HCI_ROLE_PERIPHERAL &&
+	    !atomic_test_and_set_bit(conn->flags,
+				     BT_CONN_PERIPHERAL_PARAM_L2CAP)) {
 		/* CPR not supported, let's try L2CAP CPUP instead */
 		struct bt_le_conn_param param;
 
@@ -1625,6 +1625,30 @@ static void le_conn_update_complete(struct net_buf *buf)
 		param.timeout = conn->le.pending_timeout;
 
 		bt_l2cap_update_conn_param(conn, &param);
+	} else {
+		if (!evt->status) {
+			conn->le.interval = sys_le16_to_cpu(evt->interval);
+			conn->le.latency = sys_le16_to_cpu(evt->latency);
+			conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
+
+#if defined(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)
+			atomic_clear_bit(conn->flags,
+					 BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
+		} else if (atomic_test_bit(conn->flags,
+					   BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE) &&
+			   evt->status == BT_HCI_ERR_UNSUPP_LL_PARAM_VAL &&
+			   conn->le.conn_param_retry_countdown) {
+			conn->le.conn_param_retry_countdown--;
+			k_work_schedule(&conn->deferred_work,
+					K_MSEC(CONFIG_BT_CONN_PARAM_RETRY_TIMEOUT));
+		} else {
+			atomic_clear_bit(conn->flags,
+					 BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
+#endif /* CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS */
+
+		}
+
+		notify_le_param_updated(conn);
 	}
 
 	bt_conn_unref(conn);
@@ -3713,6 +3737,7 @@ int bt_enable(bt_ready_cb_t cb)
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* RX thread */
+	k_work_queue_init(&bt_workq);
 	k_work_queue_start(&bt_workq, rx_thread_stack,
 			   CONFIG_BT_RX_STACK_SIZE,
 			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
@@ -3781,10 +3806,25 @@ int bt_disable(void)
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 
+#if defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_BROADCASTER)
+	bt_adv_reset_adv_pool();
+#endif /* CONFIG_BT_EXT_ADV || CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_PRIVACY)
+	k_work_cancel_delayable(&bt_dev.rpa_update);
+#endif /* CONFIG_BT_PRIVACY */
+
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 	bt_periodic_sync_disable();
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
+#if defined(CONFIG_BT_CONN)
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		bt_pub_key_hci_disrupted();
+	}
+	bt_conn_cleanup_all();
+	disconnected_handles_reset();
+#endif /* CONFIG_BT_CONN */
 	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
 	 * completed.
 	 */

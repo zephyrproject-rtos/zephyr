@@ -3627,12 +3627,17 @@ static void bt_eatt_init(void)
 		.sec_level = BT_SECURITY_L2,
 		.accept = bt_eatt_accept,
 	};
+	struct bt_l2cap_server *registered_server;
 
 	BT_DBG("");
 
-	err = bt_l2cap_server_register(&eatt_l2cap);
-	if (err < 0) {
-		BT_ERR("EATT Server registration failed %d", err);
+	/* Check if eatt_l2cap server has already been registered. */
+	registered_server = bt_l2cap_server_lookup_psm(eatt_l2cap.psm);
+	if (registered_server != &eatt_l2cap) {
+		err = bt_l2cap_server_register(&eatt_l2cap);
+		if (err < 0) {
+			BT_ERR("EATT Server registration failed %d", err);
+		}
 	}
 
 #if defined(CONFIG_BT_EATT)
@@ -3647,6 +3652,7 @@ static void bt_eatt_init(void)
 
 void bt_att_init(void)
 {
+	k_fifo_init(&free_att_tx_meta_data);
 	for (size_t i = 0; i < ARRAY_SIZE(tx_meta_data); i++) {
 		k_fifo_put(&free_att_tx_meta_data, &tx_meta_data[i]);
 	}
