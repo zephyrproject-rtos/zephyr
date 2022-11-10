@@ -225,6 +225,9 @@ struct flash_stm32_priv {
 				FLASH_STM32_SR_RDERR |			\
 				FLASH_STM32_SR_PGPERR)
 
+#define FLASH_STM32_RDP0 0xAA
+#define FLASH_STM32_RDP1 0x55
+#define FLASH_STM32_RDP2 0xCC
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline bool flash_stm32_range_exists(const struct device *dev,
@@ -271,11 +274,23 @@ int flash_stm32_update_wp_sectors(const struct device *dev,
 int flash_stm32_get_wp_sectors(const struct device *dev,
 			       uint32_t *protected_sectors);
 #endif
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+
+int flash_stm32_update_rdp(const struct device *dev, bool enable,
+			   bool permanent);
+
+int flash_stm32_get_rdp(const struct device *dev, bool *enabled,
+			bool *permanent);
+#endif
 
 /* Flash extended operations */
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 				void *out);
+#endif
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
+			  void *out);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_ */

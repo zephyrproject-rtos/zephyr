@@ -398,6 +398,11 @@ static int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		rv = flash_stm32_ex_op_sector_wp(dev, in, out);
 		break;
 #endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+	case FLASH_STM32_EX_OP_RDP:
+		rv = flash_stm32_ex_op_rdp(dev, in, out);
+		break;
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 	}
 
 	flash_stm32_sem_give(dev);
