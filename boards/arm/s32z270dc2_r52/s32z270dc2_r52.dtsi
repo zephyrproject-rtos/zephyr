@@ -52,3 +52,15 @@
 &spi9 {
 	clock-frequency = <100000000>;
 };
+
+&i3c0 {
+	clock-frequency = <133333333>;
+};
+
+&i3c1 {
+	clock-frequency = <133333333>;
+};
+
+&i3c2 {
+	clock-frequency = <133333333>;
+};
