@@ -3055,6 +3055,15 @@
 #define DT_DRV_INST(inst) DT_INST(inst, DT_DRV_COMPAT)
 
 /**
+ * @brief Get a `DT_DRV_COMPAT` grandparent's node identifier
+ * @param inst instance number
+ * @return a node identifier for the instance's grandparent
+ *
+ * @see DT_GPARENT
+ */
+#define DT_INST_GPARENT(inst) DT_GPARENT(DT_DRV_INST(inst))
+
+/**
  * @brief Get a node identifier for a child node of DT_DRV_INST(inst)
  *
  * @param inst instance number
