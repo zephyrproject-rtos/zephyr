@@ -289,6 +289,16 @@ Libraries / Subsystems
     fixed.
   * MCUmgr fs_mgmt command has been added that allows querying/listing the
     supported hash/checksum types.
+  * MCUmgr Bluetooth transport will now clear unprocessed commands sent if a
+    remote device disconnects instead of processing them.
+  * A new MCUmgr transport function pointer has been added which needs
+    registering in ``smp_transport_init`` for removing invalid packets for
+    connection-orientated transports. If this is unimplemented, the function
+    pointer can be set to NULL.
+  * MCUmgr command handler definitions have changed, the ``mgmt_ctxt`` struct
+    has been replaced with the ``smp_streamer`` struct, the zcbor objects need
+    to replace ``cnbe`` object access with ``writer`` and ``cnbd`` object
+    access with ``reader`` to successfully build.
 
 * LwM2M
 
