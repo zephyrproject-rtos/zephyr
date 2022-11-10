@@ -1,5 +1,3 @@
-# Raytac MDBT50Q_DB_40 board configuration
-
 // Copyright (c) 2022 Raytac Corporation
 // SPDX-License-Identifier: Apache-2.0
 
@@ -43,15 +41,6 @@
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
-		red_pwm_led: red_pwm_led {
-			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
-		};
-		green_pwm_led: green_pwm_led {
-			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
-		};
-		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
-		};
 	};
 
 	buttons {
@@ -80,12 +69,6 @@
 		led1 = &led1;
 		led2 = &led2;
 		pwm-led0 = &pwm_led0;
-		pwm-led0 = &green_pwm_led;
-		pwm-led1 = &red_pwm_led;
-		pwm-led2 = &blue_pwm_led;
-		red-pwm-led = &red_pwm_led;
-		green-pwm-led = &green_pwm_led;
-		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
 		sw1 = &button1;
 		sw2 = &button2;
@@ -119,22 +102,6 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-arduino_serial: &uart1 {
-	status = "okay";
-	current-speed = <115200>;
-	pinctrl-0 = <&uart1_default>;
-	pinctrl-1 = <&uart1_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-arduino_i2c: &i2c0 {
-	compatible = "nordic,nrf-twi";
-	status = "okay";
-	pinctrl-0 = <&i2c0_default>;
-	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
