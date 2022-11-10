@@ -366,6 +366,7 @@ static int shared_memory_prepare(const struct device *arg)
 	     backend_config < backend_configs + ARRAY_SIZE(backend_configs);
 	     backend_config++) {
 		icmsg_clear_tx_memory(backend_config);
+		icmsg_clear_rx_memory(backend_config);
 	}
 
 	return 0;

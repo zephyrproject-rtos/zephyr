@@ -246,3 +246,11 @@ int icmsg_clear_tx_memory(const struct icmsg_config_t *conf)
 
 	return 0;
 }
+
+int icmsg_clear_rx_memory(const struct icmsg_config_t *conf)
+{
+	/* Clear spsc_pbuf header and a part of the magic number. */
+	memset((void *)conf->rx_shm_addr, 0, sizeof(struct spsc_pbuf) + sizeof(int));
+
+	return 0;
+}
