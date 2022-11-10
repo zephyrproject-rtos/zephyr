@@ -29,6 +29,10 @@ const char *smf_action_names[] = {
 	"TERMINATED",
 };
 
+#else
+
+#define SMF_TRACE(state, action) while (0) {}
+
 #endif /* CONFIG_SMF_TRACING_SUPPORT */
 
 /*
