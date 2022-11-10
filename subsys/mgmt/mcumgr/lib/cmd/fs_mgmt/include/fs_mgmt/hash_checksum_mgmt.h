@@ -50,7 +50,7 @@ struct hash_checksum_mgmt_group {
 	hash_checksum_mgmt_handler_fn function;
 };
 
-/** @typedef hash_checksum_mgmt_handler_fn
+/** @typedef hash_checksum_mgmt_list_cb
  * @brief Function that gets called with hash/checksum details
  *
  * @param group         Details about a supported hash/checksum
