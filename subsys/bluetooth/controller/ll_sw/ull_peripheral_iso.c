@@ -258,6 +258,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.nesn = 0;
 	cis->lll.cie = 0;
 	cis->lll.flushed = 0;
+	cis->lll.active = 0;
 	cis->lll.datapath_ready_rx = 0;
 
 	cis->lll.rx.phy = req->c_phy;

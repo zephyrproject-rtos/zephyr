@@ -82,6 +82,9 @@ struct ll_conn_iso_group *ll_conn_iso_group_acquire(void)
 
 void ll_conn_iso_group_release(struct ll_conn_iso_group *cig)
 {
+	cig->cig_id  = 0xFF;
+	cig->started = 0;
+
 	mem_release(cig, &cig_free);
 }
 
@@ -489,7 +492,7 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			    void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = { 0, 0, &link, NULL, lll_peripheral_iso_prepare };
+	static struct mayfly mfy = { 0, 0, &link, NULL, NULL };
 	static struct lll_prepare_param p;
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
@@ -520,7 +523,7 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		 * ull_peripheral_iso_start, which means that its ACL instant
 		 * has been reached, and offset calculated.
 		 */
-		if (cis->lll.handle != 0xFFFF) {
+		if (cis->lll.handle != 0xFFFF && cis->lll.active) {
 			cis->lll.event_count++;
 
 			leading_event_count = MAX(leading_event_count,
@@ -555,7 +558,16 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.param = &cig->lll;
 	mfy.param = &p;
 
-	if (cig->sca_update) {
+#if !defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	mfy.fp = lll_central_iso_prepare;
+#elif !defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	mfy.fp = lll_peripheral_iso_prepare;
+#else
+	mfy.fp = (cig->lll.role == BT_HCI_ROLE_PERIPHERAL) ? lll_peripheral_iso_prepare :
+							     lll_central_iso_prepare;
+#endif
+
+	if (IS_PERIPHERAL(cig) && cig->sca_update) {
 		/* CIG/ACL affilaition established */
 		uint32_t iso_interval_us_frac =
 			EVENT_US_TO_US_FRAC(cig->iso_interval * CONN_INT_UNIT_US);
@@ -591,7 +603,8 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 	struct ll_conn_iso_stream *cis;
 	uint32_t acl_to_cig_ref_point;
 	uint32_t cis_offs_to_cig_ref;
-	uint32_t iso_interval_us_frac;
+	uint32_t ticks_remainder;
+	uint32_t ticks_periodic;
 	uint32_t ready_delay_us;
 	uint32_t ticker_status;
 	int32_t cig_offset_us;
@@ -604,6 +617,7 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 
 	cis->lll.offset = cis_offs_to_cig_ref;
 	cis->lll.handle = cis_handle;
+	cis->lll.active = 1U;
 
 	/* Check if another CIS was already started and CIG ticker is
 	 * running. If so, we just return with updated offset and
@@ -616,13 +630,6 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 
 	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
 
-	/* Calculate interval in fractional microseconds for highest precision when
-	 * accumulating the window widening window size. Ticker interval is set lopsided,
-	 * with natural drift towards earlier timeout.
-	 */
-	iso_interval_us_frac = EVENT_US_TO_US_FRAC(cig->iso_interval * CONN_INT_UNIT_US) -
-		cig->lll.window_widening_periodic_us_frac;
-
 	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
 	 * (cis->offset) by the difference between CIG- and CIS sync delays.
 	 */
@@ -634,26 +641,48 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 	ready_delay_us = lll_radio_rx_ready_delay_get(0, 0);
 #endif
 
-	/* Calculate initial ticker offset - we're one ACL interval early */
+	/* Calculate initial ticker offset */
 	cig_offset_us  = acl_to_cig_ref_point;
-	cig_offset_us += (acl->lll.interval * CONN_INT_UNIT_US);
-	cig_offset_us -= EVENT_TICKER_RES_MARGIN_US;
-	cig_offset_us -= EVENT_JITTER_US;
-	cig_offset_us -= ready_delay_us;
-
-	/* Make sure we have time to service first subevent. TODO: Improve
-	 * by skipping <n> interval(s) and incrementing event_count.
-	 */
-	LL_ASSERT(cig_offset_us > 0);
 
 	/* Calculate the CIG reference point of first CIG event. This
 	 * calculation is inaccurate. However it is the best estimate available
 	 * until the first anchor point for the leading CIS is available.
 	 */
 	cig->cig_ref_point = HAL_TICKER_TICKS_TO_US(ticks_at_expire);
-	cig->cig_ref_point += (acl->lll.interval * CONN_INT_UNIT_US);
 	cig->cig_ref_point += EVENT_OVERHEAD_START_US;
 	cig->cig_ref_point += acl_to_cig_ref_point;
+
+	if (IS_PERIPHERAL(cig)) {
+		uint32_t iso_interval_us_frac;
+
+		/* Calculate interval in fractional microseconds for highest precision when
+		 * accumulating the window widening window size. Ticker interval is set lopsided,
+		 * with natural drift towards earlier timeout.
+		 */
+		iso_interval_us_frac = EVENT_US_TO_US_FRAC(cig->iso_interval * ISO_INT_UNIT_US) -
+				       cig->lll.window_widening_periodic_us_frac;
+		ticks_periodic  = EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac);
+		ticks_remainder = EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac);
+
+		/* Adjust CIG offset and reference point ahead one interval */
+		cig_offset_us -= EVENT_TICKER_RES_MARGIN_US;
+		cig_offset_us -= EVENT_JITTER_US;
+		cig_offset_us -= ready_delay_us;
+		cig_offset_us += (acl->lll.interval * CONN_INT_UNIT_US);
+
+		cig->cig_ref_point += (acl->lll.interval * CONN_INT_UNIT_US);
+	} else {
+		uint32_t iso_interval_us;
+
+		iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+		ticks_periodic  = HAL_TICKER_US_TO_TICKS(iso_interval_us);
+		ticks_remainder = HAL_TICKER_REMAINDER(iso_interval_us);
+	}
+
+	/* Make sure we have time to service first subevent. TODO: Improve
+	 * by skipping <n> interval(s) and incrementing event_count.
+	 */
+	LL_ASSERT(cig_offset_us > 0);
 
 	/* Start CIS peripheral CIG ticker */
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
@@ -661,8 +690,8 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 				     ticker_id,
 				     ticks_at_expire,
 				     HAL_TICKER_US_TO_TICKS(cig_offset_us),
-				     EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac),
-				     EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac),
+				     ticks_periodic,
+				     ticks_remainder,
 				     TICKER_NULL_LAZY,
 				     0,
 				     ull_conn_iso_ticker_cb, cig,
@@ -842,7 +871,8 @@ static void cis_tx_lll_flush(void *param)
 	uint32_t ret;
 
 	lll = param;
-	lll->flushed = 1;
+	lll->flushed = 1U;
+	lll->active = 0U;
 
 	cis = ll_conn_iso_stream_get(lll->handle);
 	cig = cis->group;
@@ -921,10 +951,13 @@ static void cig_disabled_cb(void *param)
 	struct ll_conn_iso_group *cig;
 
 	cig = HDR_LLL2ULL(param);
-	cig->cig_id  = 0xFF;
-	cig->started = 0;
 
-	ll_conn_iso_group_release(cig);
+	if (IS_PERIPHERAL(cig)) {
+		ll_conn_iso_group_release(cig);
+	} else {
+		/* CIG shall be released by ll_cig_remove */
+		cig->started = 0;
+	}
 }
 
 static void disable(uint16_t handle)
