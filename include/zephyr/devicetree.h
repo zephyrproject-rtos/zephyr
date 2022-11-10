@@ -3928,7 +3928,6 @@
 #include <zephyr/devicetree/dma.h>
 #include <zephyr/devicetree/pwms.h>
 #include <zephyr/devicetree/fixed-partitions.h>
-#include <zephyr/devicetree/zephyr.h>
 #include <zephyr/devicetree/ordinals.h>
 #include <zephyr/devicetree/pinctrl.h>
 #include <zephyr/devicetree/can.h>
