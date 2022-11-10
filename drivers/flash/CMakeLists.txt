@@ -47,6 +47,7 @@ if(CONFIG_SOC_FLASH_STM32)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED flash_stm32h7x.c)
   else()
     zephyr_library_sources(flash_stm32.c)
+    zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_stm32_ex_op.c)
 
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F1_FLASH_CONTROLLER_ENABLED flash_stm32f1x.c)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F2_FLASH_CONTROLLER_ENABLED flash_stm32f2x.c)

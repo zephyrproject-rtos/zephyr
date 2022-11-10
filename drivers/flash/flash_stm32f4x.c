@@ -1,14 +1,18 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2023 Google Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/device.h>
 #include <string.h>
+
+#include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
 #include <soc.h>
 
 #include "flash_stm32.h"
@@ -202,6 +206,69 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 
 	return rc;
 }
+
+static __unused int write_optb(const struct device *dev, uint32_t mask,
+			       uint32_t value)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	int rc;
+
+	if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
+		return -EIO;
+	}
+
+	if ((regs->OPTCR & mask) == value) {
+		return 0;
+	}
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	regs->OPTCR = (regs->OPTCR & ~mask) | value;
+	regs->OPTCR |= FLASH_OPTCR_OPTSTRT;
+
+	/* Make sure previous write is completed. */
+	__DSB();
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+int flash_stm32_update_wp_sectors(const struct device *dev,
+				  uint32_t changed_sectors,
+				  uint32_t protected_sectors)
+{
+	changed_sectors <<= FLASH_OPTCR_nWRP_Pos;
+	protected_sectors <<= FLASH_OPTCR_nWRP_Pos;
+
+	if ((changed_sectors & FLASH_OPTCR_nWRP_Msk) != changed_sectors) {
+		return -EINVAL;
+	}
+
+	/* Sector is protected when bit == 0. Flip protected_sectors bits */
+	protected_sectors = ~protected_sectors & changed_sectors;
+
+	return write_optb(dev, changed_sectors, protected_sectors);
+}
+
+int flash_stm32_get_wp_sectors(const struct device *dev,
+			       uint32_t *protected_sectors)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	*protected_sectors =
+		(~regs->OPTCR & FLASH_OPTCR_nWRP_Msk) >> FLASH_OPTCR_nWRP_Pos;
+
+	return 0;
+}
+#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
 
 /*
  * Different SoC flash layouts are specified in across various
