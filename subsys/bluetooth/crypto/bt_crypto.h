@@ -2,6 +2,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef __BT_CRYPTO_H
+#define __BT_CRYPTO_H
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -143,3 +146,5 @@ int bt_crypto_h7(const uint8_t salt[16], const uint8_t w[16], uint8_t res[16]);
  */
 int bt_crypto_h8(const uint8_t k[16], const uint8_t s[16], const uint8_t key_id[4],
 		 uint8_t res[16]);
+
+#endif /* __BT_CRYPTO_H */
