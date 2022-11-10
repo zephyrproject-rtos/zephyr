@@ -5122,6 +5122,7 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  * timeout API, or K_NO_WAIT or K_FOREVER) waiting for memory to be
  * freed.  If the allocation cannot be performed by the expiration of
  * the timeout, NULL will be returned.
+ * Allocated memory is aligned on a multiple of pointer sizes.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
@@ -5250,6 +5251,7 @@ extern void *k_aligned_alloc(size_t align, size_t size);
  *
  * This routine provides traditional malloc() semantics. Memory is
  * allocated from the heap memory pool.
+ * Allocated memory is aligned on a multiple of pointer sizes.
  *
  * @param size Amount of memory requested (in bytes).
  *
