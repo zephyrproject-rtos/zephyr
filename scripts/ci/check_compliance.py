@@ -928,8 +928,22 @@ class PyLint(ComplianceTest):
                            cwd=GIT_TOP)
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
-            # Issues found, or a problem with pylint itself
-            self.failure(output)
+            regex = r'^\s*(\S+):(\d+):(\d+):\s*([A-Z]\d{4}):\s*(.*)$'
+
+            matches = re.findall(regex, output, re.MULTILINE)
+            for m in matches:
+                # https://pylint.pycqa.org/en/latest/user_guide/messages/messages_overview.html#
+                severity = 'unknown'
+                if m[3][0] in ('F', 'E'):
+                    severity = 'error'
+                elif m[3][0] in ('W','C', 'R', 'I'):
+                    severity = 'warning'
+                self.fmtd_failure(severity, m[3], m[0], m[1], col=m[2],
+                        desc=m[4])
+
+            # If the regex has not matched add the whole output as a failure
+            if len(matches) == 0:
+                self.failure(output)
 
 
 def filter_py(root, fnames):
