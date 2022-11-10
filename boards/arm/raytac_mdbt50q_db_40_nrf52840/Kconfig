@@ -1,9 +1,9 @@
-# Raytac MDBT50Q-DB-40 board configuration
+# nRF52840 DK NRF52840 board configuration
 
-# Copyright (c) 2022 Raytac
+# Copyright (c) 2016 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_RAYTAC_MDBT50Q_DB_40
+if BOARD_RAYTAC_MDBT50Q_DB_40_NRF52840
 
 config BOARD_ENABLE_DCDC
 	bool "DCDC mode"
@@ -15,4 +15,4 @@ config BOARD_ENABLE_DCDC_HV
 	select SOC_DCDC_NRF52X_HV
 	default y
 
-endif # BOARD_RAYTAC_MDBT50Q_DB_40
+endif # BOARD_RAYTAC_MDBT50Q_DB_40_NRF52840
