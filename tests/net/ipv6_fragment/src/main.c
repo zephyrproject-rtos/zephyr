@@ -2204,7 +2204,7 @@ static uint8_t ipv6_reass_frag1[] = {
 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 0x3a, 0x00, 0x00, 0x01, 0x7c, 0x8e, 0x53, 0x49,
-0x81, 0x00, 0xb1, 0xb2, 0x28, 0x5b, 0x00, 0x01
+0x81, 0x00, 0xda, 0x34, 0x28, 0x5b, 0x00, 0x01
 };
 
 static uint8_t ipv6_reass_frag2[] = {
@@ -2216,23 +2216,99 @@ static uint8_t ipv6_reass_frag2[] = {
 0x3a, 0x00, 0x04, 0xd0, 0x7c, 0x8e, 0x53, 0x49
 };
 
+#define ECHO_REPLY_H_LEN 8
+#define ECHO_REPLY_ID_OFFSET (NET_IPV6H_LEN + NET_IPV6_FRAGH_LEN + 4)
+#define ECHO_REPLY_SEQ_OFFSET (NET_IPV6H_LEN + NET_IPV6_FRAGH_LEN + 6)
+
+static uint16_t test_recv_payload_len = 1300U;
+
+static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
+					       struct net_ipv6_hdr *ip_hdr,
+					       struct net_icmp_hdr *icmp_hdr)
+{
+	const struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
+	uint8_t verify_buf[NET_IPV6H_LEN];
+	size_t expected_pkt_length = NET_IPV6H_LEN + ECHO_REPLY_H_LEN + test_recv_payload_len;
+	uint16_t expected_icmpv6_length = htons(test_recv_payload_len + ECHO_REPLY_H_LEN);
+	uint16_t i;
+	uint8_t expected_data = 0;
+
+	NET_DBG("Data %p received", pkt);
+
+	zassert_equal(net_pkt_get_len(pkt), expected_pkt_length, "Invalid packet length");
+
+	/* Verify IPv6 header is valid */
+	zassert_equal(hdr->vtc, ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, vtc)],
+		      "IPv6 header vtc mismatch");
+	zassert_equal(hdr->tcflow, ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, tcflow)],
+		      "IPv6 header tcflow mismatch");
+	zassert_mem_equal(&hdr->flow, &ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, flow)],
+			  sizeof(hdr->flow), "IPv6 header flow mismatch");
+	zassert_equal(hdr->len, expected_icmpv6_length, "IPv6 header len mismatch");
+	zassert_equal(hdr->nexthdr, IPPROTO_ICMPV6, "IPv6 header nexthdr mismatch");
+	zassert_equal(hdr->hop_limit, ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, hop_limit)],
+		      "IPv6 header hop_limit mismatch");
+	zassert_mem_equal(hdr->src, &ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, src)],
+			  NET_IPV6_ADDR_SIZE, "IPv6 header source IP mismatch");
+	zassert_mem_equal(hdr->dst, &ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, dst)],
+			  NET_IPV6_ADDR_SIZE, "IPv6 header destination IP mismatch");
+
+	/* Verify Echo Reply header is valid */
+	net_pkt_cursor_init(pkt);
+	net_pkt_read(pkt, verify_buf, NET_IPV6H_LEN);
+	net_pkt_read(pkt, verify_buf, ECHO_REPLY_H_LEN);
+
+	zassert_equal(verify_buf[0], NET_ICMPV6_ECHO_REPLY,
+		      "Echo reply header invalid type");
+	zassert_equal(verify_buf[1], 0, "Echo reply header invalid code");
+	zassert_equal(net_calc_chksum_icmpv6(pkt), 0,
+		      "Echo reply header invalid checksum");
+	zassert_mem_equal(verify_buf + 4, ipv6_reass_frag1 + ECHO_REPLY_ID_OFFSET, 2,
+			  "Echo reply header invalid identifier");
+	zassert_mem_equal(verify_buf + 6, ipv6_reass_frag1 + ECHO_REPLY_SEQ_OFFSET, 2,
+			  "Echo reply header invalid sequence");
+
+	/* Verify data is valid */
+	i = NET_IPV6H_LEN + ECHO_REPLY_H_LEN;
+	while (i < net_pkt_get_len(pkt)) {
+		uint8_t data;
+
+		net_pkt_read_u8(pkt, &data);
+		zassert_equal(data, expected_data,
+			      "Echo reply data verification failure");
+		expected_data++;
+		i++;
+	}
+
+	net_pkt_unref(pkt);
+
+	k_sem_give(&wait_data);
+
+	return NET_OK;
+}
+
 ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 {
 	struct net_ipv6_hdr ipv6_hdr;
 	struct net_pkt_cursor backup;
 	struct net_pkt *pkt1;
 	struct net_pkt *pkt2;
-	uint16_t total_payload_len;
 	uint16_t payload1_len;
 	uint16_t payload2_len;
 	uint8_t data;
 	int ret;
+	static struct net_icmpv6_handler ping6_handler = {
+		.type = NET_ICMPV6_ECHO_REPLY,
+		.code = 0,
+		.handler = handle_ipv6_echo_reply,
+	};
+
+	net_icmpv6_register_handler(&ping6_handler);
 
 	/* Fragment 1 */
 	data = 0U;
-	total_payload_len = 1300U;
 	payload1_len = NET_IPV6_MTU - sizeof(ipv6_reass_frag1);
-	payload2_len = total_payload_len - payload1_len;
+	payload2_len = test_recv_payload_len - payload1_len;
 
 	pkt1 = net_pkt_alloc_with_buffer(iface1, NET_IPV6_MTU, AF_UNSPEC,
 					 0, ALLOC_TIMEOUT);
@@ -2261,6 +2337,7 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 		zassert_true(ret == 0, "IPv6 header append failed");
 	}
 
+	net_pkt_set_ipv6_hdr_prev(pkt1, offsetof(struct net_ipv6_hdr, nexthdr));
 	net_pkt_set_ipv6_fragment_start(pkt1, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_overwrite(pkt1, true);
 
@@ -2300,6 +2377,7 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 		zassert_true(ret == 0, "IPv6 header append failed");
 	}
 
+	net_pkt_set_ipv6_hdr_prev(pkt2, offsetof(struct net_ipv6_hdr, nexthdr));
 	net_pkt_set_ipv6_fragment_start(pkt2, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_overwrite(pkt2, true);
 
@@ -2308,6 +2386,13 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 	ret = net_ipv6_handle_fragment_hdr(pkt2, &ipv6_hdr,
 					   NET_IPV6_NEXTHDR_FRAG);
 	zassert_true(ret == NET_OK, "IPv6 frag2 reassembly failed");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		NET_DBG("Timeout while waiting interface data");
+		zassert_true(false, "Timeout");
+	}
+
+	net_icmpv6_unregister_handler(&ping6_handler);
 }
 
 ZTEST_SUITE(net_ipv6_fragment, NULL, test_setup, NULL, NULL, NULL);
