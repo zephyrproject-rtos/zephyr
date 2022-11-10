@@ -359,12 +359,6 @@ identifier for a chosen node.
 .. doxygengroup:: devicetree-generic-chosen
    :project: Zephyr
 
-There are also conveniences for commonly used zephyr-specific properties of the
-``/chosen`` node.
-
-.. doxygengroup:: devicetree-zephyr
-   :project: Zephyr
-
 Zephyr-specific chosen nodes
 ****************************
 
