@@ -389,6 +389,25 @@ config BT_MESH_RELAY_ADV_SETS
 	  Maximum of simultaneous relay message support. Requires controller support
 	  multiple advertising sets.
 
+config BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET
+	bool "Use the main advertising set to relay messages"
+	depends on BT_MESH_RELAY_ADV_SETS > 0
+	help
+	  When this option is enabled, there is a message that needs to be
+	  relayed, all relay advertising sets defined by
+	  CONFIG_BT_MESH_RELAY_ADV_SETS are busy with relaying messages
+	  and the main advertising set is not busy with sending local
+	  messages, the stack will use the main advertising set to relay
+	  the message. This maximizes the utilization efficiency of
+	  advertising sets, which is helpful for the sending of dense
+	  relays. With CONFIG_BT_MESH_RELAY_RETRANSMIT_COUNT value
+	  greater than zero, this can noticeably delay transmission of
+	  local messages. When Friend feature is enabled and the node is
+	  in a friendship, this option can delay transmission of local
+	  messages thus requiring bigger CONFIG_BT_MESH_FRIEND_RECV_WIN
+	  value. This in turn will result in increase of the power
+	  consumption of the Low Power node.
+
 config BT_MESH_ADV_EXT_GATT_SEPARATE
 	bool "Use a separate extended advertising set for GATT Server Advertising"
 	depends on BT_MESH_GATT_SERVER
