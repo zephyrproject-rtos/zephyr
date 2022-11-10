@@ -190,7 +190,7 @@ static int smp_dummy_init(const struct device *dev)
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 
 	smp_transport_init(&smp_dummy_transport, smp_dummy_tx_pkt_int,
-			   smp_dummy_get_mtu, NULL, NULL);
+			   smp_dummy_get_mtu, NULL, NULL, NULL);
 	dummy_mgumgr_recv_cb = smp_dummy_rx_frag;
 
 	return 0;

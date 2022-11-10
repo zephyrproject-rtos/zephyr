@@ -34,7 +34,7 @@ static int storage_erase(void)
 	return rc;
 }
 
-static int storage_erase_handler(struct mgmt_ctxt *ctxt)
+static int storage_erase_handler(struct smp_streamer *ctxt)
 {
 	int rc = storage_erase();
 

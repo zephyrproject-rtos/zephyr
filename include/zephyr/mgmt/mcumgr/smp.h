@@ -1,5 +1,6 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +80,19 @@ typedef void (*smp_transport_ud_free_fn)(void *ud);
 /* use smp_transport_ud_free_fn instead */
 typedef void zephyr_smp_transport_ud_free_fn(void *ud);
 
+/** @typedef smp_transport_query_valid_check_fn
+ * @brief Function for checking if queued data is still valid.
+ *
+ * This function is used to check if queued SMP data is still valid e.g. on a remote device
+ * disconnecting, this is triggered when ``smp_rx_clear`` is called.
+ *
+ * @param nb			net buf containing queued request.
+ * @param arg			Argument provided when calling smp_rx_clear() function.
+ *
+ * @return			false if data is no longer valid/should be freed, true otherwise.
+ */
+typedef bool (*smp_transport_query_valid_check_fn)(struct net_buf *nb, void *arg);
+
 /**
  * @brief SMP transport object for sending SMP responses.
  */
@@ -93,6 +107,7 @@ struct smp_transport {
 	smp_transport_get_mtu_fn get_mtu;
 	smp_transport_ud_copy_fn ud_copy;
 	smp_transport_ud_free_fn ud_free;
+	smp_transport_query_valid_check_fn query_valid_check;
 
 #ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
 	/* Packet reassembly internal data, API access only */
@@ -128,17 +143,19 @@ struct zephyr_smp_transport {
 /**
  * @brief Initializes a Zephyr SMP transport object.
  *
- * @param smpt                  The transport to construct.
- * @param output_func           The transport's send function.
- * @param get_mtu_func          The transport's get-MTU function.
- * @param ud_copy_func          The transport buffer user_data copy function.
- * @param ud_free_func          The transport buffer user_data free function.
+ * @param smpt				The transport to construct.
+ * @param output_func			The transport's send function.
+ * @param get_mtu_func			The transport's get-MTU function.
+ * @param ud_copy_func			The transport buffer user_data copy function.
+ * @param ud_free_func			The transport buffer user_data free function.
+ * @param query_valid_check_func	The transport's check function for if a query is valid.
  */
 void smp_transport_init(struct smp_transport *smpt,
 			smp_transport_out_fn output_func,
 			smp_transport_get_mtu_fn get_mtu_func,
 			smp_transport_ud_copy_fn ud_copy_func,
-			smp_transport_ud_free_fn ud_free_func);
+			smp_transport_ud_free_fn ud_free_func,
+			smp_transport_query_valid_check_fn query_valid_check_func);
 
 __deprecated static inline
 void zephyr_smp_transport_init(struct zephyr_smp_transport *smpt,
@@ -151,8 +168,26 @@ void zephyr_smp_transport_init(struct zephyr_smp_transport *smpt,
 			   (smp_transport_out_fn)output_func,
 			   (smp_transport_get_mtu_fn)get_mtu_func,
 			   (smp_transport_ud_copy_fn)ud_copy_func,
-			   (smp_transport_ud_free_fn)ud_free_func);
+			   (smp_transport_ud_free_fn)ud_free_func, NULL);
 }
+
+/**
+ * @brief	Used to remove queued requests for an SMP transport that are no longer valid. A
+ *		``smp_transport_clear_check_fn`` function must be registered for this to function.
+ *		If the ``smp_transport_clear_check_fn`` function returns false during a callback,
+ *		the queried command will classed as invalid and dropped.
+ *
+ * @param zst	The transport to use.
+ * @param arg	Argument provided to callback ``smp_transport_clear_check_fn`` function.
+ */
+void smp_rx_remove_invalid(struct smp_transport *zst, void *arg);
+
+/**
+ * @brief	Used to clear pending queued requests for an SMP transport.
+ *
+ * @param zst	The transport to use.
+ */
+void smp_rx_clear(struct smp_transport *zst);
 
 #ifdef __cplusplus
 }

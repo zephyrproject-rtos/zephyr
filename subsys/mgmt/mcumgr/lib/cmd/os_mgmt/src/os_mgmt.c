@@ -58,13 +58,13 @@ struct thread_iterator_info {
  * Command handler: os echo
  */
 #ifdef CONFIG_OS_MGMT_ECHO
-static int os_mgmt_echo(struct mgmt_ctxt *ctxt)
+static int os_mgmt_echo(struct smp_streamer *ctxt)
 {
 	struct zcbor_string value = { 0 };
 	struct zcbor_string key;
 	bool ok;
-	zcbor_state_t *zsd = ctxt->cnbd->zs;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
 
 	if (!zcbor_map_start_decode(zsd)) {
 		return MGMT_ERR_EUNKNOWN;
@@ -247,9 +247,9 @@ static void os_mgmt_taskstat_encode_one(const struct k_thread *thread, void *use
 /**
  * Command handler: os taskstat
  */
-static int os_mgmt_taskstat_read(struct mgmt_ctxt *ctxt)
+static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
 {
-	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
 	struct thread_iterator_info iterator_ctx = {
 		.zse = zse,
 		.thread_idx = 0,
@@ -286,7 +286,7 @@ static void os_mgmt_reset_cb(struct k_timer *timer)
 	k_work_submit(&os_mgmt_reset_work);
 }
 
-static int os_mgmt_reset(struct mgmt_ctxt *ctxt)
+static int os_mgmt_reset(struct smp_streamer *ctxt)
 {
 #ifdef CONFIG_OS_MGMT_RESET_HOOK
 	int rc;
@@ -309,9 +309,9 @@ static int os_mgmt_reset(struct mgmt_ctxt *ctxt)
 
 #ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
 static int
-os_mgmt_mcumgr_params(struct mgmt_ctxt *ctxt)
+os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 {
-	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
 	bool ok;
 
 	ok = zcbor_tstr_put_lit(zse, "buf_size")		&&
