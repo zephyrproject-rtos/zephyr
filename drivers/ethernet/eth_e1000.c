@@ -234,17 +234,16 @@ static void e1000_isr(const struct device *ddev)
 int e1000_probe(const struct device *ddev)
 {
 	/* PCI ID is decoded into REG_SIZE */
-	pcie_bdf_t bdf = pcie_bdf_lookup(DT_INST_REG_SIZE(0));
 	struct e1000_dev *dev = ddev->data;
 	uint32_t ral, rah;
 	struct pcie_bar mbar;
 
-	if (bdf == PCIE_BDF_NONE) {
+	if (dev->pcie->bdf == PCIE_BDF_NONE) {
 		return -ENODEV;
 	}
 
-	pcie_probe_mbar(bdf, 0, &mbar);
-	pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MEM |
+	pcie_probe_mbar(dev->pcie->bdf, 0, &mbar);
+	pcie_set_cmd(dev->pcie->bdf, PCIE_CONF_CMDSTAT_MEM |
 		     PCIE_CONF_CMDSTAT_MASTER, true);
 
 	device_map(&dev->address, mbar.phys_addr, mbar.size,
@@ -317,7 +316,11 @@ static void e1000_iface_init(struct net_if *iface)
 	LOG_DBG("done");
 }
 
-static struct e1000_dev e1000_dev;
+DEVICE_PCIE_INST_DECLARE(0);
+
+static struct e1000_dev e1000_dev = {
+	DEVICE_PCIE_INST_INIT(0, pcie),
+};
 
 static const struct ethernet_api e1000_api = {
 	.iface_api.init		= e1000_iface_init,
