@@ -1981,6 +1981,8 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 	uint32_t p_interval;
 	uint16_t c_latency;
 	uint16_t p_latency;
+	uint8_t cis_count;
+	uint8_t cig_id;
 	uint8_t status;
 	uint8_t i;
 
@@ -1989,20 +1991,17 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 	c_latency = sys_le16_to_cpu(cmd->c_latency);
 	p_latency = sys_le16_to_cpu(cmd->p_latency);
 
-	/* Create CIG or start modifying existing CIG */
-	status = ll_cig_parameters_open(cmd->cig_id, c_interval, p_interval,
-					cmd->sca, cmd->packing, cmd->framing,
-					c_latency, p_latency, cmd->num_cis);
+	cig_id = cmd->cig_id;
+	cis_count = cmd->num_cis;
 
-	rp = hci_cmd_complete(evt, sizeof(*rp) +
-				   cmd->num_cis * sizeof(uint16_t));
-	rp->cig_id = cmd->cig_id;
-	rp->num_handles = cmd->num_cis;
+	/* Create CIG or start modifying existing CIG */
+	status = ll_cig_parameters_open(cig_id, c_interval, p_interval,
+					cmd->sca, cmd->packing, cmd->framing,
+					c_latency, p_latency, cis_count);
 
 	/* Configure individual CISes */
-	for (i = 0; !status && i < cmd->num_cis; i++) {
-		struct bt_hci_cis_params *params = cmd->cis;
-		uint16_t handle;
+	for (i = 0; !status && i < cis_count; i++) {
+		struct bt_hci_cis_params *params = &cmd->cis[i];
 		uint16_t c_sdu;
 		uint16_t p_sdu;
 
@@ -2011,14 +2010,29 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 
 		status = ll_cis_parameters_set(params->cis_id, c_sdu, p_sdu,
 					       params->c_phy, params->p_phy,
-					       params->c_rtn, params->p_rtn,
-					       &handle);
-		rp->handle[i] = sys_cpu_to_le16(handle);
+					       params->c_rtn, params->p_rtn);
 	}
+
+	rp = hci_cmd_complete(evt, sizeof(*rp) + cis_count * sizeof(uint16_t));
+	rp->cig_id = cig_id;
+	rp->num_handles = cis_count;
 
 	/* Only apply parameters if all went well */
 	if (!status) {
-		status = ll_cig_parameters_commit(cmd->cig_id);
+		status = ll_cig_parameters_commit(cig_id);
+
+		if (status == BT_HCI_ERR_SUCCESS) {
+			struct ll_conn_iso_group *cig;
+			uint16_t handle;
+
+			cig = ll_conn_iso_group_get_by_id(cig_id);
+			handle = UINT16_MAX;
+
+			for (uint8_t i = 0; i < cis_count; i++) {
+				(void)ll_conn_iso_stream_get_by_group(cig, &handle);
+				rp->handle[i] = sys_cpu_to_le16(handle);
+			}
+		}
 	}
 
 	rp->status = status;
@@ -2032,6 +2046,8 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 	uint32_t c_interval;
 	uint32_t p_interval;
 	uint16_t iso_interval;
+	uint8_t cis_count;
+	uint8_t cig_id;
 	uint8_t status;
 	uint8_t i;
 
@@ -2039,47 +2055,61 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 	p_interval = sys_get_le24(cmd->p_interval);
 	iso_interval = sys_le16_to_cpu(cmd->iso_interval);
 
+	cig_id = cmd->cig_id;
+	cis_count = cmd->num_cis;
+
 	/* Create CIG or start modifying existing CIG */
-	status = ll_cig_parameters_test_open(cmd->cig_id, c_interval,
+	status = ll_cig_parameters_test_open(cig_id, c_interval,
 					     p_interval, cmd->c_ft,
 					     cmd->p_ft, iso_interval,
 					     cmd->sca, cmd->packing,
 					     cmd->framing,
-					     cmd->num_cis);
-
-	rp = hci_cmd_complete(evt, sizeof(*rp) +
-				   cmd->num_cis * sizeof(uint16_t));
-	rp->cig_id = cmd->cig_id;
-	rp->num_handles = cmd->num_cis;
+					     cis_count);
 
 	/* Configure individual CISes */
-	for (i = 0; !status && i < cmd->num_cis; i++) {
-		struct bt_hci_cis_params_test *params = cmd->cis;
-		uint16_t handle;
+	for (i = 0; !status && i < cis_count; i++) {
+		struct bt_hci_cis_params_test *params = &cmd->cis[i];
 		uint16_t c_sdu;
 		uint16_t p_sdu;
 		uint16_t c_pdu;
 		uint16_t p_pdu;
+		uint8_t  nse;
 
+		nse   = params->nse;
 		c_sdu = sys_le16_to_cpu(params->c_sdu);
 		p_sdu = sys_le16_to_cpu(params->p_sdu);
 		c_pdu = sys_le16_to_cpu(params->c_pdu);
 		p_pdu = sys_le16_to_cpu(params->p_pdu);
 
-		status = ll_cis_parameters_test_set(params->cis_id,
+		status = ll_cis_parameters_test_set(params->cis_id, nse,
 						    c_sdu, p_sdu,
 						    c_pdu, p_pdu,
 						    params->c_phy,
 						    params->p_phy,
 						    params->c_bn,
-						    params->p_bn,
-						    &handle);
-		rp->handle[i] = sys_cpu_to_le16(handle);
+						    params->p_bn);
 	}
+
+	rp = hci_cmd_complete(evt, sizeof(*rp) + cis_count * sizeof(uint16_t));
+	rp->cig_id = cig_id;
+	rp->num_handles = cis_count;
 
 	/* Only apply parameters if all went well */
 	if (!status) {
-		status = ll_cig_parameters_commit(cmd->cig_id);
+		status = ll_cig_parameters_commit(cig_id);
+
+		if (status == BT_HCI_ERR_SUCCESS) {
+			struct ll_conn_iso_group *cig;
+			uint16_t handle;
+
+			cig = ll_conn_iso_group_get_by_id(cig_id);
+			handle = UINT16_MAX;
+
+			for (uint8_t i = 0; i < cis_count; i++) {
+				(void)ll_conn_iso_stream_get_by_group(cig, &handle);
+				rp->handle[i] = sys_cpu_to_le16(handle);
+			}
+		}
 	}
 
 	rp->status = status;
@@ -2110,9 +2140,9 @@ static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 		acl_handle = sys_le16_to_cpu(cmd->cis[i].acl_handle);
 		status = ll_cis_create_check(cis_handle, acl_handle);
 	}
-	*evt = cmd_status(status);
 
-	if (!status) {
+	if (status) {
+		*evt = cmd_status(status);
 		return;
 	}
 
@@ -2129,6 +2159,8 @@ static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 		acl_handle = sys_le16_to_cpu(cmd->cis[i].acl_handle);
 		ll_cis_create(cis_handle, acl_handle);
 	}
+
+	*evt = cmd_status(status);
 }
 
 static void le_remove_cig(struct net_buf *buf, struct net_buf **evt)
@@ -4155,10 +4187,6 @@ static void le_cis_established(struct pdu_data *pdu_data,
 
 	cis = node_rx->hdr.rx_ftr.param;
 	cig = cis->group;
-	lll_cis = &cis->lll;
-	is_central = cig->lll.role == BT_CONN_ROLE_CENTRAL;
-	lll_cis_c = is_central ? &lll_cis->tx : &lll_cis->rx;
-	lll_cis_p = is_central ? &lll_cis->rx : &lll_cis->tx;
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CIS_ESTABLISHED, sizeof(*sep));
 
@@ -4171,6 +4199,17 @@ static void le_cis_established(struct pdu_data *pdu_data,
 	est = node;
 	sep->status = est->status;
 	sep->conn_handle = sys_cpu_to_le16(est->cis_handle);
+
+	if (!cig) {
+		/* CIS was not established and instance was released */
+		return;
+	}
+
+	lll_cis = &cis->lll;
+	is_central = cig->lll.role == BT_CONN_ROLE_CENTRAL;
+	lll_cis_c = is_central ? &lll_cis->tx : &lll_cis->rx;
+	lll_cis_p = is_central ? &lll_cis->rx : &lll_cis->tx;
+
 	sys_put_le24(cig->sync_delay, sep->cig_sync_delay);
 	sys_put_le24(cis->sync_delay, sep->cis_sync_delay);
 	sys_put_le24(cig->c_latency, sep->c_latency);
