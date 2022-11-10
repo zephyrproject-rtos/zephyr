@@ -372,33 +372,6 @@ extern "C" {
 #define LISTIFY(LEN, F, sep, ...) UTIL_CAT(Z_UTIL_LISTIFY_, LEN)(F, sep, __VA_ARGS__)
 
 /**
- * @brief Generates a sequence of code. Deprecated, use @ref LISTIFY.
- *
- * @deprecated Use @ref LISTIFY instead.
- *
- * Example:
- *
- *     #define FOO(i, _) MY_PWM ## i ,
- *     { UTIL_LISTIFY(PWM_COUNT, FOO) }
- *
- * The above two lines expand to:
- *
- *    { MY_PWM0 , MY_PWM1 , }
- *
- * @param LEN The length of the sequence. Must be an integer literal less
- *            than 255.
- * @param F A macro function that accepts at least two arguments:
- *          <tt>F(i, ...)</tt>. @p F is called repeatedly in the expansion.
- *          Its first argument @p i is the index in the sequence, and
- *          the variable list of arguments passed to UTIL_LISTIFY are passed
- *          through to @p F.
- *
- * @note Calling UTIL_LISTIFY with undefined arguments has undefined
- * behavior.
- */
-#define UTIL_LISTIFY(LEN, F, ...) LISTIFY(LEN, F, (), __VA_ARGS__) __DEPRECATED_MACRO
-
-/**
  * @brief Call a macro @p F on each provided argument with a given
  *        separator between each call.
  *
