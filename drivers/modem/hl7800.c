@@ -972,7 +972,7 @@ static int send_at_cmd(struct hl7800_socket *sock, const uint8_t *data,
 			ictx.search_no_id_resp = true;
 		}
 
-		LOG_DBG("OUT: [%s]", data);
+		LOG_DBG("OUT: [%s]", (char *)data);
 		mdm_receiver_send(&ictx.mdm_ctx, data, strlen(data));
 		mdm_receiver_send(&ictx.mdm_ctx, "\r", 1);
 
@@ -5099,6 +5099,7 @@ static int modem_reset_and_configure(void)
 #endif
 
 	ictx.restarting = true;
+	ictx.dns_ready = false;
 	if (ictx.iface) {
 		net_if_carrier_off(ictx.iface);
 	}
@@ -5475,6 +5476,7 @@ static int hl7800_power_off(void)
 	}
 	/* bring the iface down */
 	if (ictx.iface) {
+		ictx.dns_ready = false;
 		net_if_carrier_off(ictx.iface);
 	}
 	LOG_INF("Modem powered off");
@@ -6032,17 +6034,12 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 	struct fs_dirent file_info;
 	char cmd1[sizeof("AT+WDSD=24643584")];
 
-	/* HL7800 will stay locked for the duration of the FW update */
-	hl7800_lock();
-
 	/* get file info */
 	ret = fs_stat(file_path, &file_info);
 	if (ret >= 0) {
-		LOG_DBG("file '%s' size %zu", file_info.name,
-			file_info.size);
+		LOG_DBG("file '%s' size %zu", file_info.name, file_info.size);
 	} else {
-		LOG_ERR("Failed to get file [%s] info: %d",
-			file_path, ret);
+		LOG_ERR("Failed to get file [%s] info: %d", file_path, ret);
 		goto err;
 	}
 
@@ -6058,25 +6055,30 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 		goto err;
 	}
 
+	notify_all_tcp_sockets_closed();
+	hl7800_stop_rssi_work();
+	k_work_cancel_delayable(&ictx.iface_status_work);
+	k_work_cancel_delayable(&ictx.dns_work);
+	k_work_cancel_delayable(&ictx.mdm_reset_work);
+	k_work_cancel_delayable(&ictx.allow_sleep_work);
+	k_work_cancel_delayable(&ictx.delete_untracked_socket_work);
+	ictx.dns_ready = false;
 	if (ictx.iface) {
 		LOG_DBG("HL7800 iface DOWN");
-		hl7800_stop_rssi_work();
 		net_if_carrier_off(ictx.iface);
-		notify_all_tcp_sockets_closed();
 	}
+
+	/* HL7800 will stay locked for the duration of the FW update */
+	hl7800_lock();
 
 	/* start firmware update process */
 	LOG_INF("Initiate FW update, total packets: %zd",
 		((file_info.size / XMODEM_DATA_SIZE) + 1));
 	set_fota_state(HL7800_FOTA_START);
-	snprintk(cmd1, sizeof(cmd1), "AT+WDSD=%zd", file_info.size);
-	send_at_cmd(NULL, cmd1, K_NO_WAIT, 0, false);
-
-	goto done;
+	(void)snprintk(cmd1, sizeof(cmd1), "AT+WDSD=%zd", file_info.size);
+	(void)send_at_cmd(NULL, cmd1, K_NO_WAIT, 0, false);
 
 err:
-	hl7800_unlock();
-done:
 	return ret;
 }
 #endif
