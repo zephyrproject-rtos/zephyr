@@ -28,6 +28,11 @@
 #define MBEDTLS_HAVE_ASM
 #endif
 
+#if defined(CONFIG_MBEDTLS_LMS)
+#define MBEDTLS_LMS_C
+#define PSA_WANT_ALG_SHA_256 1
+#endif
+
 #if defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
 #define MBEDTLS_HAVE_TIME
 #define MBEDTLS_HAVE_TIME_DATE
