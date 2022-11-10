@@ -921,19 +921,15 @@ class PyLint(ComplianceTest):
         pylintcmd = ["pylint", "--rcfile=" + pylintrc] + py_files
         logger.info(cmd2str(pylintcmd))
         try:
-            # Run pylint on added/modified Python files
-            process = subprocess.Popen(
-                pylintcmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=GIT_TOP)
-        except OSError as e:
-            self.error(f"Failed to run {cmd2str(pylintcmd)}: {e}")
-
-        stdout, stderr = process.communicate()
-        if process.returncode or stderr:
+            subprocess.run(pylintcmd,
+                           check=True,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
+                           cwd=GIT_TOP)
+        except subprocess.CalledProcessError as ex:
+            output = ex.output.decode("utf-8")
             # Issues found, or a problem with pylint itself
-            self.failure(stdout.decode("utf-8") + stderr.decode("utf-8"))
+            self.failure(output)
 
 
 def filter_py(root, fnames):
