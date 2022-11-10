@@ -109,7 +109,6 @@
 		interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL
 			     IRQ_DEFAULT_PRIORITY>;
 		clock-frequency = <50000000>;
-		label = "qspi";
 		status = "disabled";
 	};
 
