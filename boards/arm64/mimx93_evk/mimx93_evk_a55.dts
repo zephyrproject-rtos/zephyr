@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_mimx93_a55.dtsi>
+#include "mimx93_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX93 A55";
@@ -32,4 +33,7 @@
 &lpuart2 {
 	status = "okay";
 	current-speed = <115200>;
+	/* clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>; */
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
 };

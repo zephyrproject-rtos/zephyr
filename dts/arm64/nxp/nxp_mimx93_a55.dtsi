@@ -64,6 +64,10 @@
 		compatible = "nxp,imx-iomuxc";
 		reg = <0x443c0000 DT_SIZE_K(64)>;
 		status = "okay";
+		pinctrl: pinctrl {
+			status = "okay";
+			compatible = "nxp,imx93-pinctrl";
+		};
 	};
 
 	ana_pll: ana_pll@44480000 {
