@@ -13,8 +13,7 @@
  * @{
  */
 
-#include <zephyr/types.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
 #include <zephyr/sys/onoff.h>
 
 #ifdef __cplusplus
