@@ -1,7 +1,7 @@
 .. _raytac_mdbt50q_db_40:
 
 MDBT50Q-DB-40
-###########
+#############
 
 Overview
 ********
@@ -9,21 +9,21 @@ Overview
 The MDBT50Q-DB-40 hardware provides support for the
 Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 
-* ADC (Analog to Digital Converter)
+* :abbr:`ADC (Analog to Digital Converter)`
 * CLOCK
 * FLASH
-* GPIO (General Purpose Input Output)
-* I2C (Inter-Integrated Circuit)
-* MPU (Memory Protection Unit)
-* NVIC (Nested Vectored Interrupt Controller)
-* PWM (Pulse Width Modulation)
+* :abbr:`GPIO (General Purpose Input Output)`
+* :abbr:`I2C (Inter-Integrated Circuit)`
+* :abbr:`MPU (Memory Protection Unit)`
+* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
+* :abbr:`PWM (Pulse Width Modulation)`
 * RADIO (Bluetooth Low Energy and 802.15.4)
-* RTC (nRF RTC System Clock)
+* :abbr:`RTC (nRF RTC System Clock)`
 * Segger RTT (RTT Console)
-* SPI (Serial Peripheral Interface)
-* UART (Universal asynchronous receiver-transmitter)
-* USB (Universal Serial Bus)
-* WDT (Watchdog Timer)
+* :abbr:`SPI (Serial Peripheral Interface)`
+* :abbr:`UART (Universal asynchronous receiver-transmitter)`
+* :abbr:`USB (Universal Serial Bus)`
+* :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/mdbt50q_db_40.jpg
      :width: 442px
