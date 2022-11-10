@@ -1730,7 +1730,7 @@ static int ztls_socket(int family, int type, int proto)
 	ret = protocol_check(family, type, &proto);
 	if (ret < 0) {
 		errno = -ret;
-		return -1;
+		goto free_fd;
 	}
 
 	ctx = tls_alloc();

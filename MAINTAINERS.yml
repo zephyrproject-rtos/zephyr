@@ -1521,6 +1521,21 @@ Networking:
     - tests/net/lib/mqtt_*/
     - samples/net/cloud/mqtt_azure/
     - samples/net/mqtt_publisher/
+  files-exclude:
+    - tests/net/lib/mqtt_sn*/
+  labels:
+    - "area: Networking"
+
+"Networking: MQTT-SN":
+  status: maintained
+  maintainers:
+    - rlubos
+  collaborators:
+    - BeckmaR
+  files:
+    - subsys/net/lib/mqtt_sn/
+    - tests/net/lib/mqtt_sn*/
+    - samples/net/mqtt_sn_publisher/
   labels:
     - "area: Networking"
 

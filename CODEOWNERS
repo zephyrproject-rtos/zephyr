@@ -626,6 +626,7 @@
 /include/zephyr/net/coap*.h                      @rlubos
 /include/zephyr/net/lwm2m*.h                     @rlubos
 /include/zephyr/net/mqtt.h                       @rlubos
+/include/zephyr/net/mqtt_sn.h                    @rlubos @BeckmaR
 /include/zephyr/net/net_pkt_filter.h             @npitre
 /include/zephyr/posix/                           @pfalcon
 /include/zephyr/pm/pm.h                          @nashif @ceolin
@@ -680,6 +681,7 @@
 /samples/net/dns_resolve/                 @rlubos @tbursztyka @pfalcon
 /samples/net/lwm2m_client/                @rlubos
 /samples/net/mqtt_publisher/              @rlubos
+/samples/net/mqtt_sn_publisher/           @rlubos @BeckmaR
 /samples/net/sockets/coap_*/              @rlubos
 /samples/net/sockets/                     @rlubos @tbursztyka @pfalcon
 /samples/sensor/                          @MaureenHelm
@@ -776,6 +778,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/net/lib/lwm2m/                    @rlubos
 /subsys/net/lib/config/                   @rlubos @tbursztyka @pfalcon
 /subsys/net/lib/mqtt/                     @rlubos
+/subsys/net/lib/mqtt_sn/                  @rlubos @BeckmaR
 /subsys/net/lib/coap/                     @rlubos
 /subsys/net/lib/sockets/socketpair.c      @cfriedt
 /subsys/net/lib/sockets/                  @rlubos @tbursztyka @pfalcon
@@ -826,6 +829,8 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/net/lib/                           @rlubos @tbursztyka @pfalcon
 /tests/net/lib/http_header_fields/        @rlubos @tbursztyka
 /tests/net/lib/mqtt_packet/               @rlubos
+/tests/net/lib/mqtt_sn_packet/            @rlubos @BeckmaR
+/tests/net/lib/mqtt_sn_client/            @rlubos @BeckmaR
 /tests/net/lib/coap/                      @rlubos
 /tests/net/npf/                           @npitre
 /tests/net/socket/socketpair/             @cfriedt

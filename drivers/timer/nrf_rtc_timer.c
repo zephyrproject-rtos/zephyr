@@ -233,6 +233,7 @@ static uint32_t set_absolute_alarm(int32_t chan, uint32_t abs_val)
 	uint32_t now2;
 	uint32_t cc_val = abs_val & COUNTER_MAX;
 	uint32_t prev_cc = get_comparator(chan);
+	uint32_t tick_inc = 2;
 
 	do {
 		now = counter();
@@ -251,12 +252,16 @@ static uint32_t set_absolute_alarm(int32_t chan, uint32_t abs_val)
 			k_busy_wait(19);
 		}
 
-		/* If requested cc_val is in the past or next tick, set to 2
-		 * ticks from now. RTC may not generate event if CC is set for
-		 * 1 tick from now.
+		/* RTC may not generate event if CC is set for 1 tick from now.
+		 * Because of that if requested cc_val is in the past or next tick,
+		 * set CC to further in future. Start with 2 ticks from now but
+		 * if that fails go even futher. It may fail if operation got
+		 * interrupted and RTC counter progressed or if optimization is
+		 * turned off.
 		 */
 		if (counter_sub(cc_val, now + 2) > COUNTER_HALF_SPAN) {
-			cc_val = now + 2;
+			cc_val = now + tick_inc;
+			tick_inc++;
 		}
 
 		event_clear(chan);

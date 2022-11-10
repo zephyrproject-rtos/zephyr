@@ -170,7 +170,7 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 
 	__ASSERT_NO_MSG(ep != NULL);
 	__ASSERT_NO_MSG(iso != NULL);
-	__ASSERT(ep->iso, "ep %p not bound with iso", iso, ep);
+	__ASSERT(ep->iso == iso, "ep %p not bound with iso", iso, ep);
 	__ASSERT(ep->dir == BT_AUDIO_DIR_SINK || ep->dir == BT_AUDIO_DIR_SOURCE,
 		 "Invalid dir: %u", ep->dir);
 
