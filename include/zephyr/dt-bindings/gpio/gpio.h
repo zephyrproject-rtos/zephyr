@@ -79,27 +79,6 @@
 /* Note: Bits 15 downto 8 are reserved for SoC specific flags. */
 
 /**
- * @deprecated Use the GPIO controller/SoC specific `*_GPIO_VOLTAGE_*` flags instead.
- * @{
- */
-
-/** @cond INTERNAL_HIDDEN */
-#define GPIO_VOLTAGE_POS        11
-#define GPIO_VOLTAGE_MASK       (3U << GPIO_VOLTAGE_POS)
-/** @endcond */
-
-/** Set pin at the default voltage level */
-#define GPIO_VOLTAGE_DEFAULT    (0U << GPIO_VOLTAGE_POS)
-/** Set pin voltage level at 1.8 V */
-#define GPIO_VOLTAGE_1P8        (1U << GPIO_VOLTAGE_POS)
-/** Set pin voltage level at 3.3 V */
-#define GPIO_VOLTAGE_3P3        (2U << GPIO_VOLTAGE_POS)
-/** Set pin voltage level at 5.0 V */
-#define GPIO_VOLTAGE_5P0        (3U << GPIO_VOLTAGE_POS)
-
-/** @} */
-
-/**
  * @}
  */
 
