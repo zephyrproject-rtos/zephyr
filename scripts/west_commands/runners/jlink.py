@@ -99,7 +99,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             action=partial(depr_action,
                                            replacement='-i/--dev-id'),
                             help='Deprecated: use -i/--dev-id instead')
-        parser.add_argument('--remote', required=False, dest='ip',
+        parser.add_argument('--ip', required=False, dest='ip',
                             help='use a remote JLink Server')
         parser.add_argument('--iface', default='swd',
                             help='interface to use, default is swd')
