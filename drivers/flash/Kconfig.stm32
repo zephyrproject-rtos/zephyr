@@ -37,4 +37,28 @@ config FLASH_STM32_WRITE_PROTECT_DISABLE_PREVENTION
 	  If enabled, all requests to disable flash write protection will be
 	  blocked.
 
+config FLASH_STM32_READOUT_PROTECTION
+	bool "Extended operation for flash readout protection control"
+	depends on SOC_SERIES_STM32F4X
+	default n
+	help
+	  Enables flash extended operation for enabling/disabling flash readout
+	  protection.
+
+config FLASH_STM32_READOUT_PROTECTION_DISABLE_ALLOW
+	bool "Allow disabling readout protection"
+	depends on FLASH_STM32_READOUT_PROTECTION
+	default n
+	help
+	  With this option enabled it will be possible to disable readout
+	  protection. On STM32 devices it will trigger flash mass erase!
+
+config FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW
+	bool "Allow enabling readout protection permanently"
+	depends on FLASH_STM32_READOUT_PROTECTION
+	default n
+	help
+	  With this option enabled it will be possible to enable readout
+	  protection permanently.
+
 endif # SOC_FLASH_STM32

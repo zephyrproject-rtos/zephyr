@@ -21,6 +21,14 @@ enum stm32_ex_ops {
 	 * Output can be NULL if not needed.
 	 */
 	FLASH_STM32_EX_OP_SECTOR_WP = FLASH_EX_OP_VENDOR_BASE,
+	/*
+	 * STM32 sector readout protection control.
+	 *
+	 * As an input this operation takes structure with information about
+	 * desired RDP state. As an output the status after applying changes
+	 * is returned.
+	 */
+	FLASH_STM32_EX_OP_RDP,
 };
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
@@ -33,3 +41,10 @@ struct flash_stm32_ex_op_sector_wp_out {
 	uint32_t protected_mask;
 };
 #endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
+
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+struct flash_stm32_ex_op_rdp {
+	bool enable;
+	bool permanent;
+};
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
