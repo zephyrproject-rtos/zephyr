@@ -142,11 +142,12 @@ struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
 						K_POLL_MODE_NOTIFY_ONLY,
 						&bt_mesh_adv_queue,
 						0),
+#if defined(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 						K_POLL_MODE_NOTIFY_ONLY,
 						&bt_mesh_relay_queue,
 						0),
-
+#endif /* CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET */
 	};
 
 	err = k_poll(events, ARRAY_SIZE(events), timeout);
