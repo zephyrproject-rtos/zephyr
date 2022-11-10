@@ -149,6 +149,7 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		   void *(*threadroutine)(void *), void *arg)
 {
+	int rv;
 	int32_t prio;
 	k_spinlock_key_t key;
 	uint32_t pthread_num;
@@ -181,13 +182,15 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		return EAGAIN;
 	}
 
-	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
+	rv = pthread_mutex_init(&thread->state_lock, NULL);
+	if (rv != 0) {
+		key = k_spin_lock(&pthread_pool_lock);
+		thread->state = PTHREAD_EXITED;
+		k_spin_unlock(&pthread_pool_lock, key);
+		return rv;
+	}
 
-	/*
-	 * Ignore return value, as we know that Zephyr implementation
-	 * cannot fail.
-	 */
-	(void)pthread_mutex_init(&thread->state_lock, NULL);
+	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
 
 	cancel_key = k_spin_lock(&thread->cancel_lock);
 	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
@@ -402,6 +405,8 @@ void pthread_exit(void *retval)
 	}
 
 	pthread_mutex_unlock(&self->state_lock);
+	pthread_mutex_destroy(&self->state_lock);
+
 	k_thread_abort((k_tid_t)self);
 }
 
@@ -440,6 +445,10 @@ int pthread_join(pthread_t thread, void **status)
 	}
 
 	pthread_mutex_unlock(&pthread->state_lock);
+	if (pthread->state == PTHREAD_EXITED) {
+		pthread_mutex_destroy(&pthread->state_lock);
+	}
+
 	return ret;
 }
 
