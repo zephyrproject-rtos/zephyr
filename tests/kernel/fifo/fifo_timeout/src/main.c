@@ -185,7 +185,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 			} else {
 				TC_ERROR(
 				" *** thread %d woke up, expected %d\n",
-				data->timeout_order, ii);
+				data->q_order, j);
 				return TC_FAIL;
 			}
 		}
