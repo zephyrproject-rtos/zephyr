@@ -1,0 +1,6 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52833DK_NRF52833_MDBT
+	bool "NRF52833DK_NRF52833_MDBT"
+	depends on SOC_NRF52833_QIAA

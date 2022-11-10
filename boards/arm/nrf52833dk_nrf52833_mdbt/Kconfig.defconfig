@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52833DK_NRF52833_MDBT
+
+config BOARD
+	default "nrf52833dk_nrf52833_mdbt"
+
+config BT_CTLR
+   default BT
+
+endif
