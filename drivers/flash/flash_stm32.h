@@ -1,12 +1,15 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2017 BayLibre, SAS.
+ * Copyright (c) 2023 Google Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_
 #define ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_
+
+#include <zephyr/drivers/flash.h>
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
@@ -247,6 +250,8 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 
 int flash_stm32_wait_flash_idle(const struct device *dev);
 
+int flash_stm32_option_bytes_lock(const struct device *dev, bool enable);
+
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 int flash_stm32_check_status(const struct device *dev);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
@@ -255,6 +260,22 @@ int flash_stm32_check_status(const struct device *dev);
 void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size);
+#endif
+
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+
+int flash_stm32_update_wp_sectors(const struct device *dev,
+				  uint32_t changed_sectors,
+				  uint32_t protected_sectors);
+
+int flash_stm32_get_wp_sectors(const struct device *dev,
+			       uint32_t *protected_sectors);
+#endif
+
+/* Flash extended operations */
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
+				void *out);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_ */
