@@ -65,6 +65,9 @@
 #define CCIPR_REG		0x54
 #define CCIPR2_REG		0x58
 
+/** @brief RCC_BDCR register offset */
+#define BDCR_REG		0x5C
+
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR_REG)
@@ -86,7 +89,8 @@
 #define I2S2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR2_REG)
 #define FDCAN_SEL(val)		STM32_CLOCK(val, 3, 8, CCIPR2_REG)
 #define USB_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR2_REG)
-
+/** BDCR devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 
 
 

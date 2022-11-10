@@ -91,6 +91,9 @@
 #define D2CCIP2R_REG		0x54
 #define D3CCIPR_REG		0x58
 
+/** @brief RCC_BDCR register offset */
+#define BDCR_REG		0x70
+
 /** @brief Device domain clocks selection helpers (RM0399.pdf) */
 /** D1CCIPR devices */
 #define FMC_SEL(val)		STM32_CLOCK(val, 3, 0, D1CCIPR_REG)
@@ -126,5 +129,7 @@
 #define SAI4A_SEL(val)		STM32_CLOCK(val, 7, 21, D3CCIPR_REG)
 #define SAI4B_SEL(val)		STM32_CLOCK(val, 7, 24, D3CCIPR_REG)
 #define SPI6_SEL(val)		STM32_CLOCK(val, 7, 28, D3CCIPR_REG)
+/** BDCR devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_ */

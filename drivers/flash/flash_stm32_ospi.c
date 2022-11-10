@@ -80,10 +80,17 @@ struct stream {
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
+#define STM32_OSPI_NODE DT_INST_PARENT(0)
+
 struct flash_stm32_ospi_config {
 	OCTOSPI_TypeDef *regs;
-	const struct stm32_pclken *pclken; /* clock subsystem */
-	size_t pclk_len; /* number of clock subsystems */
+	const struct stm32_pclken pclken; /* clock subsystem */
+#if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_ker)
+	const struct stm32_pclken pclken_ker; /* clock subsystem */
+#endif
+#if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
+	const struct stm32_pclken pclken_mgr; /* clock subsystem */
+#endif
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;
@@ -1720,32 +1727,39 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken[0]) != 0) {
+			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
 		LOG_ERR("Could not enable OSPI clock");
 		return -EIO;
 	}
 	/* Alternate clock config for peripheral if any */
-	if (dev_cfg->pclk_len > 1) {
-		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken[1],
-					NULL) != 0) {
-			LOG_ERR("Could not select OSPI domain clock pclk[1]");
-			return -EIO;
-		}
-		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &dev_cfg->pclken[1],
-					   &ahb_clock_freq) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
-			return -EIO;
-		}
-	} else {
-		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &dev_cfg->pclken[0],
-					   &ahb_clock_freq) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
-			return -EIO;
-		}
+#if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_ker)
+	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &dev_cfg->pclken_ker,
+				NULL) != 0) {
+		LOG_ERR("Could not select OSPI domain clock");
+		return -EIO;
 	}
+	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					(clock_control_subsys_t) &dev_cfg->pclken_ker,
+					&ahb_clock_freq) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate(pclken_ker)");
+		return -EIO;
+	}
+#else
+	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					(clock_control_subsys_t) &dev_cfg->pclken,
+					&ahb_clock_freq) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate(pclken)");
+		return -EIO;
+	}
+#endif
+#if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
+	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			     (clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
+		LOG_ERR("Could not enable OSPI Manager clock");
+		return -EIO;
+	}
+#endif
 
 	for (; prescaler <= STM32_OSPI_CLOCK_PRESCALER_MAX; prescaler++) {
 		uint32_t clk = ahb_clock_freq / (prescaler + 1);
@@ -1787,7 +1801,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	/* OCTOSPI I/O manager init Function */
 	OSPIM_CfgTypeDef ospi_mgr_cfg = {0};
 
-	__HAL_RCC_OSPIM_CLK_ENABLE();
 	if (dev_data->hospi.Instance == OCTOSPI1) {
 		ospi_mgr_cfg.ClkPort = 1;
 		ospi_mgr_cfg.DQSPort = 1;
@@ -1962,16 +1975,20 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 static void flash_stm32_ospi_irq_config_func(const struct device *dev);
 
-#define STM32_OSPI_NODE DT_INST_PARENT(0)
-
 PINCTRL_DT_DEFINE(STM32_OSPI_NODE);
-
-static const struct stm32_pclken pclken_id[] = STM32_DT_CLOCKS(STM32_OSPI_NODE);
 
 static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 	.regs = (OCTOSPI_TypeDef *)DT_REG_ADDR(STM32_OSPI_NODE),
-	.pclken = pclken_id,
-	.pclk_len = DT_NUM_CLOCKS(STM32_OSPI_NODE),
+	.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_OSPI_NODE, ospix, bus),
+		   .enr = DT_CLOCKS_CELL_BY_NAME(STM32_OSPI_NODE, ospix, bits)},
+#if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_ker)
+	.pclken_ker = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_OSPI_NODE, ospi_ker, bus),
+		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_OSPI_NODE, ospi_ker, bits)},
+#endif
+#if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
+	.pclken_mgr = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_OSPI_NODE, ospi_mgr, bus),
+		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_OSPI_NODE, ospi_mgr, bits)},
+#endif
 	.irq_config = flash_stm32_ospi_irq_config_func,
 	.flash_size = DT_INST_PROP(0, size) / 8U,
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),

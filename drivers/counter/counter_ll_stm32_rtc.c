@@ -60,8 +60,8 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
 struct rtc_stm32_config {
 	struct counter_config_info counter_info;
-	struct stm32_pclken pclken;
 	LL_RTC_InitTypeDef ll_rtc_config;
+	const struct stm32_pclken *pclken;
 };
 
 struct rtc_stm32_data {
@@ -393,69 +393,23 @@ static int rtc_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken) != 0) {
+	/* Enable RTC bus clock */
+	if (clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken[0]) != 0) {
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
 
+	/* Enable Backup access */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
 	LL_PWR_EnableBkUpAccess();
 
-#if defined(CONFIG_COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET)
-	LL_RCC_ForceBackupDomainReset();
-	LL_RCC_ReleaseBackupDomainReset();
-#endif
-
-#if defined(CONFIG_COUNTER_RTC_STM32_CLOCK_LSI)
-
-#if defined(CONFIG_SOC_SERIES_STM32WBX)
-	LL_RCC_LSI1_Enable();
-	while (LL_RCC_LSI1_IsReady() != 1) {
+	/* Enable RTC clock source */
+	if (clock_control_configure(clk,
+				    (clock_control_subsys_t *) &cfg->pclken[1],
+				    NULL) != 0) {
+		LOG_ERR("clock configure failed\n");
+		return -EIO;
 	}
-#else
-	LL_RCC_LSI_Enable();
-	while (LL_RCC_LSI_IsReady() != 1) {
-	}
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-
-	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
-
-#else /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
-
-#if !defined(CONFIG_SOC_SERIES_STM32F4X) &&	\
-	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
-
-	LL_RCC_LSE_SetDriveCapability(
-		CONFIG_COUNTER_RTC_STM32_LSE_DRIVE_STRENGTH);
-
-#endif /*
-	* !CONFIG_SOC_SERIES_STM32F4X
-	* && !CONFIG_SOC_SERIES_STM32F2X
-	* && !CONFIG_SOC_SERIES_STM32F1X
-	* && !CONFIG_SOC_SERIES_STM32L1X
-	*/
-
-#if defined(CONFIG_COUNTER_RTC_STM32_LSE_BYPASS)
-	LL_RCC_LSE_EnableBypass();
-#endif /* CONFIG_COUNTER_RTC_STM32_LSE_BYPASS */
-
-	LL_RCC_LSE_Enable();
-
-	/* Wait until LSE is ready */
-	while (LL_RCC_LSE_IsReady() != 1) {
-	}
-
-#if STM32_MSI_PLL_MODE
-	/* Enable MSI hardware auto calibration */
-	LL_RCC_MSI_EnablePLLMode();
-#endif
-
-	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
-
-#endif /* CONFIG_COUNTER_RTC_STM32_CLOCK_SRC */
 
 	LL_RCC_EnableRTC();
 
@@ -495,6 +449,22 @@ static int rtc_stm32_init(const struct device *dev)
 
 static struct rtc_stm32_data rtc_data;
 
+#if DT_INST_NUM_CLOCKS(0) == 1
+#warning Kconfig COUNTER_RTC_STM32_CLOCK_LS* are deprecated. Please define clock source in dtsi file
+static const struct stm32_pclken rtc_clk[] = {
+	STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
+	/* Use Kconfig to configure source clocks fields */
+	/* Fortunately, values are consistent across enabled series */
+#ifdef COUNTER_RTC_STM32_CLOCK_LSI
+	{.bus = STM32_SRC_LSI, .enr = RTC_SEL(2)}
+#else
+	{.bus = STM32_SRC_LSE, .enr = RTC_SEL(1)}
+#endif
+};
+#else
+static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
+#endif
+
 static const struct rtc_stm32_config rtc_config = {
 	.counter_info = {
 		.max_top_value = UINT32_MAX,
@@ -502,33 +472,30 @@ static const struct rtc_stm32_config rtc_config = {
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 1,
 	},
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus),
-	},
 	.ll_rtc_config = {
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
 		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
-#if defined(CONFIG_COUNTER_RTC_STM32_CLOCK_LSI)
+#if DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSI
 		/* prescaler values for LSI @ 32 KHz */
 		.AsynchPrescaler = 0x7F,
 		.SynchPrescaler = 0x00F9,
-#else /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
+#else /* DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSE */
 		/* prescaler values for LSE @ 32768 Hz */
 		.AsynchPrescaler = 0x7F,
 		.SynchPrescaler = 0x00FF,
 #endif
 #else /* CONFIG_SOC_SERIES_STM32F1X */
-#if defined(CONFIG_COUNTER_RTC_STM32_CLOCK_LSI)
+#if DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSI
 		/* prescaler values for LSI @ 40 KHz */
 		.AsynchPrescaler = 0x9C3F,
-#else /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
+#else /* DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSE */
 		/* prescaler values for LSE @ 32768 Hz */
 		.AsynchPrescaler = 0x7FFF,
-#endif /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
+#endif /* DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSE */
 		.OutPutSource = LL_RTC_CALIB_OUTPUT_NONE,
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 	},
+	.pclken = rtc_clk,
 };
 
 

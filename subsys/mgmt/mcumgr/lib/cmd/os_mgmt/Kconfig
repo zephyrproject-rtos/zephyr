@@ -19,9 +19,10 @@ config OS_MGMT_RESET_MS
 	  before performing the reset.  This delay allows time for the mcumgr
 	  response to be delivered.
 
-config OS_MGMT_RESET_HOOK
+config MCUMGR_GRP_OS_OS_RESET_HOOK
 	bool "Reset hook"
 	depends on REBOOT
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
 	help
 	  Allows applications to control and get notifications of when a reset
 	  command has been issued via an mcumgr command. With this option

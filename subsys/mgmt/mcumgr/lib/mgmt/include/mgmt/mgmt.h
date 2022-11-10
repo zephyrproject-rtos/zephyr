@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,42 +52,10 @@ extern "C" {
 #define MGMT_ERR_ENOTSUP	8	/* Command not supported. */
 #define MGMT_ERR_ECORRUPT	9	/* Corrupt */
 #define MGMT_ERR_EBUSY		10	/* Command blocked by processing of other command */
+#define MGMT_ERR_EACCESSDENIED	11	/* Access to specific function or resource denied */
 #define MGMT_ERR_EPERUSER	256
 
 #define MGMT_HDR_SIZE		8
-
-/*
- * MGMT event opcodes.
- */
-#define MGMT_EVT_OP_CMD_RECV	0x01
-#define MGMT_EVT_OP_CMD_STATUS	0x02
-#define MGMT_EVT_OP_CMD_DONE	0x03
-
-/*
- * MGMT_EVT_OP_CMD_STATUS argument
- */
-struct mgmt_evt_op_cmd_status_arg {
-	int status;
-};
-
-/*
- * MGMT_EVT_OP_CMD_DONE argument
- */
-struct mgmt_evt_op_cmd_done_arg {
-	int err;			/* MGMT_ERR_[...] */
-};
-
-/** @typedef mgmt_on_evt_cb
- * @brief Function to be called on MGMT event.
- *
- * This callback function is used to notify application about mgmt event.
- *
- * @param opcode	MGMT_EVT_OP_[...].
- * @param group		MGMT_GROUP_ID_[...].
- * @param id		Message ID within group.
- * @param arg		Optional event argument.
- */
-typedef void (*mgmt_on_evt_cb)(uint8_t opcode, uint16_t group, uint8_t id, void *arg);
 
 /** @typedef mgmt_alloc_rsp_fn
  * @brief Allocates a buffer suitable for holding a response.
@@ -176,23 +145,6 @@ void mgmt_unregister_group(struct mgmt_group *group);
  *		NULL on failure.
  */
 const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command_id);
-
-/**
- * @brief Register event callback function.
- *
- * @param cb Callback function.
- */
-void mgmt_register_evt_cb(mgmt_on_evt_cb cb);
-
-/**
- * @brief This function is called to notify about mgmt event.
- *
- * @param opcode	MGMT_EVT_OP_[...].
- * @param group		MGMT_GROUP_ID_[...].
- * @param id		Message ID within group.
- * @param arg		Optional event argument.
- */
-void mgmt_evt(uint8_t opcode, uint16_t group, uint8_t id, void *arg);
 
 #ifdef __cplusplus
 }

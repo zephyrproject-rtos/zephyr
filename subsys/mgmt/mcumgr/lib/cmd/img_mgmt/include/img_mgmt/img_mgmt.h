@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -191,53 +192,6 @@ int img_mgmt_state_set_pending(int slot, int permanent);
  * @return 0 on success, non -zero on failure
  */
 int img_mgmt_state_confirm(void);
-
-/** @brief Generic callback function for events */
-typedef void (*img_mgmt_dfu_cb)(void);
-
-/** Callback function pointers */
-struct img_mgmt_dfu_callbacks_t {
-	img_mgmt_dfu_cb dfu_started_cb;
-	img_mgmt_dfu_cb dfu_stopped_cb;
-	img_mgmt_dfu_cb dfu_pending_cb;
-	img_mgmt_dfu_cb dfu_confirmed_cb;
-};
-
-/** @typedef img_mgmt_upload_fn
- * @brief Application callback that is executed when an image upload request is
- * received.
- *
- * The callback's return code determines whether the upload request is accepted
- * or rejected.  If the callback returns 0, processing of the upload request
- * proceeds.  If the callback returns nonzero, the request is rejected with a
- * response containing an `rc` value equal to the return code.
- *
- * @param req		Image upload request structure
- * @param action	Image upload action structure
- *
- * @return	0 if the upload request should be accepted; nonzero to reject
- *		the request with the specified status.
- */
-typedef int (*img_mgmt_upload_fn)(const struct img_mgmt_upload_req req,
-				  const struct img_mgmt_upload_action action);
-
-/**
- * @brief Configures a callback that gets called whenever a valid image upload
- * request is received.
- *
- * The callback's return code determines whether the upload request is accepted
- * or rejected.  If the callback returns 0, processing of the upload request
- * proceeds.  If the callback returns nonzero, the request is rejected with a
- * response containing an `rc` value equal to the return code.
- *
- * @param cb	The callback to execute on rx of an upload request.
- */
-void img_mgmt_set_upload_cb(img_mgmt_upload_fn cb);
-void img_mgmt_register_callbacks(const struct img_mgmt_dfu_callbacks_t *cb_struct);
-void img_mgmt_dfu_stopped(void);
-void img_mgmt_dfu_started(void);
-void img_mgmt_dfu_pending(void);
-void img_mgmt_dfu_confirmed(void);
 
 /**
  * Compares two image version numbers in a semver-compatible way.

@@ -20,6 +20,10 @@
 #include <zephyr/sys/reboot.h>
 #endif
 
+#ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
+#include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
+#endif
+
 #include "mgmt/mgmt.h"
 #include <smp/smp.h>
 #include "os_mgmt/os_mgmt.h"
@@ -40,10 +44,6 @@ static K_TIMER_DEFINE(os_mgmt_reset_timer, os_mgmt_reset_cb, NULL);
  * value otherwise zcbor_map_end_encode may return with error.
  */
 #define TASKSTAT_COLUMNS_MAX	20
-
-#ifdef CONFIG_OS_MGMT_RESET_HOOK
-static os_mgmt_on_reset_evt_cb os_reset_evt_cb;
-#endif
 
 #ifdef CONFIG_OS_MGMT_TASKSTAT
 /* Thread iterator information passing structure */
@@ -288,16 +288,11 @@ static void os_mgmt_reset_cb(struct k_timer *timer)
 
 static int os_mgmt_reset(struct smp_streamer *ctxt)
 {
-#ifdef CONFIG_OS_MGMT_RESET_HOOK
-	int rc;
+#if defined(CONFIG_MCUMGR_GRP_OS_OS_RESET_HOOK)
+	int rc = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_RESET, NULL, 0);
 
-	if (os_reset_evt_cb != NULL) {
-		/* Check with application prior to accepting reset */
-		rc = os_reset_evt_cb();
-
-		if (rc != 0) {
-			return rc;
-		}
+	if (rc != MGMT_ERR_EOK) {
+		return rc;
 	}
 #endif
 
@@ -363,10 +358,3 @@ void os_mgmt_module_init(void)
 {
 	os_mgmt_register_group();
 }
-
-#ifdef CONFIG_OS_MGMT_RESET_HOOK
-void os_mgmt_register_reset_evt_cb(os_mgmt_on_reset_evt_cb cb)
-{
-	os_reset_evt_cb = cb;
-}
-#endif

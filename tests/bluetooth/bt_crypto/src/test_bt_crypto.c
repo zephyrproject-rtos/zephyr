@@ -8,8 +8,7 @@
 #include <string.h>
 
 #include <zephyr/ztest.h>
-
-#include <bt_crypto.h>
+#include "bt_crypto.h"
 
 ZTEST_SUITE(bt_crypto, NULL, NULL, NULL, NULL, NULL);
 
