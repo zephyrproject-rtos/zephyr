@@ -3,11 +3,11 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
-#include "raytac_mdbt50q_db_40-pinctrl.dtsi"
+#include "raytac_mdbt50q_db_40_nrf52840-pinctrl.dtsi"
 
 / {
 	model = "Raytac MDBT50Q-DB-40";
-	compatible = "raytac-corporator,raytac-mdbt50q-db-40";
+	compatible = "raytac,raytac_mdbt50q_db_40_nrf52840";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -122,7 +122,6 @@
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
-		spi-flash0 = &mx25r64;
 	};
 };
 
@@ -252,26 +251,6 @@ arduino_i2c: &i2c0 {
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
-	mx25r64: mx25r6435f@0 {
-		compatible = "nordic,qspi-nor";
-		reg = <0>;
-		/* MX25R64 supports only pp and pp4io */
-		writeoc = "pp4io";
-		/* MX25R64 supports all readoc options */
-		readoc = "read4io";
-		sck-frequency = <8000000>;
-		jedec-id = [c2 28 17];
-		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
-			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
-		size = <67108864>;
-		has-dpd;
-		t-enter-dpd = <10000>;
-		t-exit-dpd = <35000>;
-	};
 };
 
 arduino_spi: &spi3 {
