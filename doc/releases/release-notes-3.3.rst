@@ -260,6 +260,12 @@ Drivers and Sensors
 
   * spi_nor: Added property mxicy,mx25r-power-mode to jedec,spi-nor binding for controlling low power/high performance mode on Macronix MX25R* Ultra Low Power flash devices.
 
+  * spi_nor: Added check if the flash is busy during init. This used to cause
+    the flash device to be unavailable until the system was restarted. The fix
+    waits for the flash to become ready before continuing. In cases where a
+    full flash erase was started before a restart, this might result in several
+    minutes of waiting time (depending on flash size and erase speed).
+
 * GPIO
 
 * I2C
