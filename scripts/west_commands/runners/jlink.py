@@ -35,6 +35,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for the J-Link GDB server.'''
 
     def __init__(self, cfg, device, dev_id=None,
+                 ip=None,
                  commander=DEFAULT_JLINK_EXE,
                  dt_flash=True, erase=True, reset_after_load=False,
                  iface='swd', speed='auto',
@@ -50,6 +51,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.device = device
         self.dev_id = dev_id
+        self.ip = ip
         self.commander = commander
         self.dt_flash = dt_flash
         self.erase = erase
@@ -97,6 +99,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             action=partial(depr_action,
                                            replacement='-i/--dev-id'),
                             help='Deprecated: use -i/--dev-id instead')
+        parser.add_argument('--remote', required=False, dest='ip',
+                            help='use a remote JLink Server')
         parser.add_argument('--iface', default='swd',
                             help='interface to use, default is swd')
         parser.add_argument('--speed', default='auto',
@@ -125,6 +129,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     def do_create(cls, cfg, args):
         return JLinkBinaryRunner(cfg, args.device,
                                  dev_id=args.dev_id,
+                                 ip=args.ip,
                                  commander=args.commander,
                                  dt_flash=args.dt_flash,
                                  erase=args.erase,
@@ -318,6 +323,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.logger.debug('JLink commander script:\n' +
                           '\n'.join(lines))
 
+
         # Don't use NamedTemporaryFile: the resulting file can't be
         # opened again on Windows.
         with tempfile.TemporaryDirectory(suffix='jlink') as d:
@@ -329,6 +335,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
             cmd = ([self.commander] +
                     # only USB connections supported
+                   (['-ip', f'{self.ip}'] if self.ip else []) +
                    (['-USB', f'{self.dev_id}'] if self.dev_id else []) +
                    (['-nogui', '1'] if self.supports_nogui else []) +
                    ['-if', self.iface,
@@ -337,6 +344,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     '-CommanderScript', fname] +
                    (['-nogui', '1'] if self.supports_nogui else []) +
                    self.tool_opt)
+            
+            self.logger.info('Command: {}'.format(cmd))
 
             self.logger.info('Flashing file: {}'.format(flash_file))
             kwargs = {}
