@@ -613,20 +613,20 @@ static void supported_hash_checksum_callback(const struct hash_checksum_mgmt_gro
  * Command handler: fs supported hash/checksum (read)
  */
 static int
-fs_mgmt_supported_hash_checksum(struct mgmt_ctxt *ctxt)
+fs_mgmt_supported_hash_checksum(struct smp_streamer *ctxt)
 {
-	zcbor_state_t *zse = ctxt->cnbe->zs;
-	struct hash_checksum_iterator_info ctx = {
+	zcbor_state_t *zse = ctxt->writer->zs;
+	struct hash_checksum_iterator_info itr_ctx = {
 		.zse = zse,
 	};
 
-	ctx.ok = zcbor_tstr_put_lit(zse, "types");
+	itr_ctx.ok = zcbor_tstr_put_lit(zse, "types");
 
 	zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES);
 
-	hash_checksum_mgmt_find_handlers(supported_hash_checksum_callback, &ctx);
+	hash_checksum_mgmt_find_handlers(supported_hash_checksum_callback, &itr_ctx);
 
-	if (!ctx.ok ||
+	if (!itr_ctx.ok ||
 	    !zcbor_map_end_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES)) {
 		return MGMT_ERR_EMSGSIZE;
 	}
