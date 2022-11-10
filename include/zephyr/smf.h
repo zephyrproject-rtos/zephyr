@@ -9,6 +9,8 @@
 #ifndef ZEPHYR_INCLUDE_SMF_H_
 #define ZEPHYR_INCLUDE_SMF_H_
 
+struct smf_ctx;
+
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 /**
  * @brief Macro to create a hierarchical state.
@@ -87,7 +89,37 @@ struct smf_state {
 	 *	that parent's exit and entry functions do not execute.
 	 */
 	const struct smf_state *parent;
+
+#ifdef CONFIG_SMF_TRACING_SUPPORT
+	const char *name;
+#endif /* CONFIG_SMF_TRACING_SUPPORT */
 };
+
+#ifdef CONFIG_SMF_TRACING_SUPPORT
+/**
+ * @brief State machine actions to trace
+ */
+enum smf_actions {
+	SMF_INITIALIZED,
+	SMF_ENTRY,
+	SMF_RUN,
+	SMF_EXIT,
+	SMF_PARENT_ENTRY,
+	SMF_PARENT_RUN,
+	SMF_PARENT_EXIT,
+	SMF_TERMINATED,
+};
+
+extern const char *smf_action_names[];
+
+/**
+ * @brief Function pointer that implements a user defined tracing method for SMF
+ *
+ * @param ctx       State machine context
+ * @param state     State related to the trace
+ */
+typedef void (*state_tracing)(struct smf_ctx *ctx, const struct smf_state *state, const enum smf_actions action);
+#endif /* CONFIG_SMF_TRACING_SUPPORT */
 
 /** Defines the current context of the state machine. */
 struct smf_ctx {
@@ -107,6 +139,11 @@ struct smf_ctx {
 	 * used to track state machine context
 	 */
 	uint32_t internal;
+
+#ifdef CONFIG_SMF_TRACING_SUPPORT
+	state_tracing trace;
+	const char *name;
+#endif /* CONFIG_SMF_TRACING_SUPPORT */
 };
 
 /**

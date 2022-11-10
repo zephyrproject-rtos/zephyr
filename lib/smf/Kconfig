@@ -13,4 +13,9 @@ config SMF_ANCESTOR_SUPPORT
 	help
 	   If y, then the state machine framework includes ancestor state support
 
+config SMF_TRACING_SUPPORT
+	bool "Add tracing support"
+	help
+	   If y, use user-defined callback function for tracing state execution
+
 endif # SMF

@@ -9,6 +9,28 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smf);
 
+#ifdef CONFIG_SMF_TRACING_SUPPORT
+
+#define SMF_TRACE(state, action) 					\
+	if (IS_ENABLED(CONFIG_SMF_TRACING_SUPPORT)) {	\
+		if (ctx != NULL && ctx->trace != NULL) {	\
+			ctx->trace(ctx, state, action);			\
+		}											\
+    }
+
+const char *smf_action_names[] = {
+	"INITIALIZED",
+	"ENTRY",
+	"RUN",
+	"EXIT",
+	"PARENT_ENTRY",
+	"PARENT_RUN",
+	"PARENT_EXIT",
+	"TERMINATED",
+};
+
+#endif /* CONFIG_SMF_TRACING_SUPPORT */
+
 /*
  * Private structure (to this file) used to track state machine context.
  * The structure is not used directly, but instead to cast the "internal"
@@ -83,6 +105,7 @@ __unused static bool smf_execute_ancestor_entry_actions(
 	     to_execute = get_child_of(target, to_execute)) {
 		/* Execute parent state's entry */
 		if (!last_state_share_paren(ctx, to_execute) && to_execute->entry) {
+			SMF_TRACE(to_execute, SMF_PARENT_ENTRY);
 			to_execute->entry(ctx);
 
 			/* No need to continue if terminate was set */
@@ -124,6 +147,7 @@ __unused static bool smf_execute_ancestor_run_actions(struct smf_ctx *ctx)
 	     tmp_state = tmp_state->parent) {
 		/* Execute parent run action */
 		if (tmp_state->run) {
+			SMF_TRACE(tmp_state, SMF_PARENT_RUN);
 			tmp_state->run(ctx);
 			/* No need to continue if terminate was set */
 			if (internal->terminate) {
@@ -160,6 +184,7 @@ __unused static bool smf_execute_ancestor_exit_actions(
 	     tmp_state != NULL;
 	     tmp_state = tmp_state->parent) {
 		if (!share_paren(target->parent, tmp_state) && tmp_state->exit) {
+			SMF_TRACE(tmp_state, SMF_PARENT_EXIT);
 			tmp_state->exit(ctx);
 
 			/* No need to continue if terminate was set */
@@ -181,6 +206,8 @@ void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state)
 	ctx->previous = NULL;
 	ctx->terminate_val = 0;
 
+	SMF_TRACE(NULL, SMF_INITIALIZED);
+
 	if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
 		internal->new_state = false;
 
@@ -191,6 +218,7 @@ void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state)
 
 	/* Now execute the initial state's entry action */
 	if (init_state->entry) {
+		SMF_TRACE(init_state, SMF_ENTRY);
 		init_state->entry(ctx);
 	}
 }
@@ -213,6 +241,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *target)
 
 	/* Execute the current states exit action */
 	if (ctx->current->exit) {
+		SMF_TRACE(ctx->current, SMF_EXIT);
 		ctx->current->exit(ctx);
 
 		/*
@@ -246,6 +275,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *target)
 
 	/* Now execute the target entry action */
 	if (ctx->current->entry) {
+		SMF_TRACE(ctx->current, SMF_ENTRY);
 		ctx->current->entry(ctx);
 		/*
 		 * If terminate was set, it will be handled in the
@@ -260,6 +290,8 @@ void smf_set_terminate(struct smf_ctx *ctx, int32_t val)
 
 	internal->terminate = true;
 	ctx->terminate_val = val;
+
+	SMF_TRACE(NULL, SMF_TERMINATED);
 }
 
 int32_t smf_run_state(struct smf_ctx *const ctx)
@@ -272,6 +304,7 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 	}
 
 	if (ctx->current->run) {
+		SMF_TRACE(ctx->current, SMF_RUN);
 		ctx->current->run(ctx);
 	}
 
