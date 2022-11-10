@@ -138,3 +138,14 @@
 &pll {
 	status = "okay";
 };
+&i2c {
+	status = "okay";
+	pinctrl-0 = <&i2c_default>;
+	pinctrl-names = "default";
+};
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+};
