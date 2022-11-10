@@ -13,10 +13,6 @@ toolchain:
   - xtools
 supported:
   - adc
-  - arduino_gpio
-  - arduino_i2c
-  - arduino_serial
-  - arduino_spi
   - ble
   - counter
   - gpio
