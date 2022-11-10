@@ -37,30 +37,6 @@ extern "C" {
  */
 
 /**
- * @deprecated Use the GPIO controller/SoC specific `*_GPIO_DEBOUNCE` flag instead.
- */
-#define GPIO_INT_DEBOUNCE (1U << 8) __DEPRECATED_MACRO
-
-/**
- * @deprecated Use the GPIO controller/SoC specific `*_GPIO_DS_*` flags instead.
- * @{
- */
-/** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_LOW_POS   9                                      __DEPRECATED_MACRO
-#define GPIO_DS_LOW_MASK  (0x1U << GPIO_DS_LOW_POS)              __DEPRECATED_MACRO
-#define GPIO_DS_HIGH_POS  10                                     __DEPRECATED_MACRO
-#define GPIO_DS_HIGH_MASK (0x1U << GPIO_DS_HIGH_POS)             __DEPRECATED_MACRO
-#define GPIO_DS_MASK      (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK) __DEPRECATED_MACRO
-/** @endcond */
-#define GPIO_DS_DFLT_LOW  (0x0U << GPIO_DS_LOW_POS)              __DEPRECATED_MACRO
-#define GPIO_DS_ALT_LOW   (0x1U << GPIO_DS_LOW_POS)              __DEPRECATED_MACRO
-#define GPIO_DS_DFLT_HIGH (0x0U << GPIO_DS_HIGH_POS)             __DEPRECATED_MACRO
-#define GPIO_DS_ALT_HIGH  (0x1U << GPIO_DS_HIGH_POS)             __DEPRECATED_MACRO
-#define GPIO_DS_DFLT      (GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH) __DEPRECATED_MACRO
-#define GPIO_DS_ALT       (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)   __DEPRECATED_MACRO
-/** @} */
-
-/**
  * @name GPIO input/output configuration flags
  * @{
  */
