@@ -89,6 +89,17 @@ static void allocate_all_array(struct bt_mesh_buf **buf, size_t num_buf, uint8_t
 	}
 }
 
+static void allocate_all_relay_array(struct bt_mesh_buf **buf, size_t num_buf,
+				     uint8_t xmit, uint8_t prio)
+{
+	for (int i = 0; i < num_buf; i++) {
+		*buf = bt_mesh_adv_relay_create(prio, xmit);
+
+		ASSERT_FALSE(!*buf, "Out of buffers");
+		buf++;
+	}
+}
+
 static void verify_adv_queue_overflow(void)
 {
 	struct bt_mesh_buf *dummy_buf;
@@ -96,6 +107,15 @@ static void verify_adv_queue_overflow(void)
 	/* Verity Queue overflow */
 	dummy_buf = bt_mesh_adv_main_create(BT_MESH_ADV_DATA,
 					    BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
+	ASSERT_TRUE(!dummy_buf, "Unexpected extra buffer");
+}
+
+static void verify_relay_queue_overflow(uint8_t prio)
+{
+	struct bt_mesh_buf *dummy_buf;
+
+	/* Verity Queue overflow */
+	dummy_buf = bt_mesh_adv_relay_create(prio, BT_MESH_TRANSMIT(2, 20));
 	ASSERT_TRUE(!dummy_buf, "Unexpected extra buffer");
 }
 
@@ -306,13 +326,8 @@ static void send_order_start_cb(uint16_t duration, int err, void *user_data)
 {
 	struct bt_mesh_buf *buf = (struct bt_mesh_buf *)user_data;
 
-<<<<<<< HEAD
-	ASSERT_OK_MSG(err, "Failed adv start cb err (%d)", err);
-	ASSERT_EQUAL(2, buf->len);
-=======
-	ASSERT_OK(err, "Failed adv start cb err (%d)", err);
+	ASSERT_OK(err);
 	ASSERT_EQUAL(2, buf->b.len);
->>>>>>> Bluetooth: Mesh: Replace net_buf to memslab
 
 	uint8_t current = buf->b.data[0];
 	uint8_t previous = buf->b.data[1];
@@ -325,14 +340,7 @@ static void send_order_start_cb(uint16_t duration, int err, void *user_data)
 
 static void send_order_end_cb(int err, void *user_data)
 {
-<<<<<<< HEAD
-	struct net_buf *buf = (struct net_buf *)user_data;
-
-	ASSERT_OK_MSG(err, "Failed adv start cb err (%d)", err);
-	ASSERT_TRUE(!buf->data, "Data not cleared!");
-=======
-	ASSERT_OK(err, "Failed adv start cb err (%d)", err);
->>>>>>> Bluetooth: Mesh: Replace net_buf to memslab
+	ASSERT_OK(err);
 	seq_checker++;
 	LOG_INF("tx end: seq(%d)", seq_checker);
 
@@ -668,6 +676,105 @@ static void test_tx_random_order(void)
 	PASS();
 }
 
+static void test_tx_relay_send_order(void)
+{
+	struct bt_mesh_buf *buf[CONFIG_BT_MESH_RELAY_BUF_COUNT];
+	uint8_t xmit = BT_MESH_TRANSMIT(2, 20);
+
+	bt_init();
+	adv_init();
+
+	previous_checker = 0xff;
+
+	/* Verify sending order */
+	allocate_all_relay_array(buf, ARRAY_SIZE(buf), xmit, 0);
+	verify_relay_queue_overflow(0);
+	send_adv_array(&buf[0], ARRAY_SIZE(buf), false);
+
+	/* Wait for no message receive window to end. */
+	ASSERT_OK(k_sem_take(&observer_sem, K_SECONDS(10)));
+
+	/* Verify buffer allocation/deallocation after sending */
+	allocate_all_relay_array(buf, ARRAY_SIZE(buf), xmit, 0);
+	verify_relay_queue_overflow(0);
+	for (int i = 0; i < CONFIG_BT_MESH_RELAY_BUF_COUNT; i++) {
+		bt_mesh_buf_unref(buf[i]);
+		buf[i] = NULL;
+	}
+	/* Check that it possible to add just one net buf. */
+	allocate_all_relay_array(buf, 1, xmit, 0);
+
+	PASS();
+}
+
+static void first_relay_send_start_cb(uint16_t duration, int err, void *user_data)
+{
+	struct bt_mesh_buf *buf = (struct bt_mesh_buf *)user_data;
+
+	ASSERT_EQUAL(2, buf->b.len);
+
+	uint8_t current = buf->b.data[0];
+	uint8_t previous = buf->b.data[1];
+
+	LOG_INF("tx start: current(%d) previous(%d)", current, previous);
+
+	ASSERT_EQUAL(-ECANCELED, err);
+}
+
+static struct bt_mesh_send_cb first_relay_cb = {
+	.start = first_relay_send_start_cb,
+};
+
+static void test_tx_prio_relay_send(void)
+{
+	struct bt_mesh_buf *buf[CONFIG_BT_MESH_RELAY_BUF_COUNT], *prio_buf;
+	uint8_t xmit = BT_MESH_TRANSMIT(0, 20);
+
+	bt_init();
+	adv_init();
+
+	/* Verify sending order */
+	for (int i = 0; i < CONFIG_BT_MESH_RELAY_BUF_COUNT; i++) {
+		buf[i] = bt_mesh_adv_relay_create(0, xmit);
+
+		ASSERT_FALSE(!buf[i], "Out of buffers");
+	}
+
+	verify_relay_queue_overflow(0);
+
+	(void)net_buf_simple_add_u8(&buf[0]->b, 0x00);
+	(void)net_buf_simple_add_u8(&buf[0]->b, 0x00);
+
+	bt_mesh_adv_send(buf[0], &first_relay_cb, buf[0]);
+	bt_mesh_buf_unref(buf[0]);
+
+	send_adv_array(&buf[1], ARRAY_SIZE(buf) - 1, false);
+
+	prio_buf = bt_mesh_adv_relay_create(1, xmit);
+
+	ASSERT_EQUAL(buf[0], prio_buf);
+
+	(void)net_buf_simple_add_u8(&buf[0]->b, 0xff);
+	(void)net_buf_simple_add_u8(&buf[0]->b, 0xff);
+	bt_mesh_adv_send(prio_buf, NULL, NULL);
+	bt_mesh_buf_unref(prio_buf);
+
+	/* Wait for no message receive window to end. */
+	ASSERT_OK(k_sem_take(&observer_sem, K_SECONDS(10)));
+
+	/* Verify buffer allocation/deallocation after sending */
+	allocate_all_relay_array(buf, ARRAY_SIZE(buf), xmit, 0);
+	verify_relay_queue_overflow(0);
+	for (int i = 0; i < CONFIG_BT_MESH_RELAY_BUF_COUNT; i++) {
+		bt_mesh_buf_unref(buf[i]);
+		buf[i] = NULL;
+	}
+	/* Check that it possible to add just one net buf. */
+	allocate_all_relay_array(buf, 1, xmit, 0);
+
+	PASS();
+}
+
 static void test_rx_receive_order(void)
 {
 	bt_init();
@@ -692,6 +799,73 @@ static void test_rx_random_order(void)
 	PASS();
 }
 
+static void test_rx_relay_receive_order(void)
+{
+	bt_init();
+
+	xmit_param.retr = 2;
+	xmit_param.interval = 20;
+
+	receive_order(CONFIG_BT_MESH_RELAY_BUF_COUNT);
+
+	PASS();
+}
+
+static void receive_prio_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+			struct net_buf_simple *buf)
+{
+	uint8_t length;
+	uint8_t current;
+	uint8_t previous;
+
+	length = net_buf_simple_pull_u8(buf);
+
+	ASSERT_EQUAL(buf->len, length);
+	ASSERT_EQUAL(BT_DATA_MESH_MESSAGE, net_buf_simple_pull_u8(buf));
+
+	current = net_buf_simple_pull_u8(buf);
+	previous = net_buf_simple_pull_u8(buf);
+
+	ASSERT_EQUAL(previous_checker, previous);
+
+	LOG_INF("rx: current(%d) previous(%d)", current, previous);
+
+	/* Add 1 initial transmit to the retransmit. */
+	if (check_delta_time(xmit_param.retr + 1, xmit_param.interval)) {
+		previous_checker = current;
+		k_sem_give(&observer_sem);
+	}
+}
+
+static void test_rx_prio_relay_receive(void)
+{
+	struct bt_le_scan_param scan_param = {
+		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.options    = BT_LE_SCAN_OPT_NONE,
+		.interval   = BT_MESH_ADV_SCAN_UNIT(1000),
+		.window     = BT_MESH_ADV_SCAN_UNIT(1000)
+	};
+	int err;
+
+	bt_init();
+
+	xmit_param.retr = 0;
+	xmit_param.interval = 20;
+
+	err = bt_le_scan_start(&scan_param, receive_prio_scan_cb);
+	ASSERT_FALSE(err && err != -EALREADY, "starting scan failed (err %d)", err);
+
+	for (int i = 0; i < CONFIG_BT_MESH_RELAY_BUF_COUNT; i++) {
+		err = k_sem_take(&observer_sem, K_SECONDS(10));
+		ASSERT_OK(err);
+	}
+
+	err = bt_le_scan_stop();
+	ASSERT_FALSE(err && err != -EALREADY, "stopping scan failed (err %d)", err);
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "adv_" #role "_" #name,             \
@@ -702,18 +876,21 @@ static void test_rx_random_order(void)
 	}
 
 static const struct bst_test_instance test_adv[] = {
-	TEST_CASE(tx, cb_single,     "ADV: tx cb parameter checker"),
-	TEST_CASE(tx, cb_multi,      "ADV: tx cb sequence checker"),
-	TEST_CASE(tx, proxy_mixin,   "ADV: proxy mix-in gatt adv"),
-	TEST_CASE(tx, send_order,    "ADV: tx send order"),
-	TEST_CASE(tx, reverse_order, "ADV: tx reversed order"),
-	TEST_CASE(tx, random_order,  "ADV: tx random order"),
+	TEST_CASE(tx, cb_single,		"ADV: tx cb parameter checker"),
+	TEST_CASE(tx, cb_multi,			"ADV: tx cb sequence checker"),
+	TEST_CASE(tx, proxy_mixin,		"ADV: proxy mix-in gatt adv"),
+	TEST_CASE(tx, send_order,		"ADV: tx send order"),
+	TEST_CASE(tx, reverse_order,		"ADV: tx reversed order"),
+	TEST_CASE(tx, random_order,		"ADV: tx random order"),
+	TEST_CASE(tx, relay_send_order,		"ADV: tx relay send order"),
+	TEST_CASE(tx, prio_relay_send,		"ADV: tx prio relay send"),
 
-	TEST_CASE(rx, xmit,          "ADV: xmit checker"),
-	TEST_CASE(rx, proxy_mixin,   "ADV: proxy mix-in scanner"),
-	TEST_CASE(rx, receive_order, "ADV: rx receive order"),
-	TEST_CASE(rx, random_order,  "ADV: rx random order"),
-
+	TEST_CASE(rx, xmit,			"ADV: xmit checker"),
+	TEST_CASE(rx, proxy_mixin,		"ADV: proxy mix-in scanner"),
+	TEST_CASE(rx, receive_order,		"ADV: rx receive order"),
+	TEST_CASE(rx, random_order,		"ADV: rx random order"),
+	TEST_CASE(rx, relay_receive_order,	"ADV: rx relay receive order"),
+	TEST_CASE(rx, prio_relay_receive,	"ADV: rx prio relay receive"),
 	BSTEST_END_MARKER
 };
 
