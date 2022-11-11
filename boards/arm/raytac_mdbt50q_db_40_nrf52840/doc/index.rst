@@ -1,4 +1,4 @@
-.. _raytac_mdbt50q_db_40:
+.. _raytac_mdbt50q_db_40_nrf52840:
 
 MDBT50Q-DB-40
 #############
@@ -156,7 +156,7 @@ The FW will be program to MDBT50Q-DB-40 demo board.
 
 .. code-block:: console
 
-   west build -b raytac_mdbt50q_db_40 ./zephyr/sample/basic/blinky --build-dir build_raytac_mdbt50q_db_40
+   west build -b raytac_mdbt50q_db_40_nrf52840 ./zephyr/sample/basic/blinky --build-dir build_raytac_mdbt50q_db_40
    west flash --build-dir build_raytac_mdbt50q_db_40
    
 
