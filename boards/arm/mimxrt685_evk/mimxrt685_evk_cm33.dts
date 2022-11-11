@@ -230,7 +230,7 @@ i2s1: &flexcomm3 {
 
 	pca9420: pca9420@61 {
 		reg = <0x61>;
-		compatible = "regulator-pmic";
+		compatible = "nxp,pca9420";
 		/*
 		 * This mode-reg setting will permit mode control by
 		 * pins, a feature of the PCA9240. If mode control via

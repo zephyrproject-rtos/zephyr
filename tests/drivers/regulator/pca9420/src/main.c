@@ -109,7 +109,7 @@ static int adc_get_reading(const struct device *adc_dev)
 	return mv_value;
 }
 
-ZTEST(regulator_pmic, test_basic)
+ZTEST(regulator_pca9420, test_basic)
 {
 	const struct device *reg_dev, *adc_dev;
 	int rc, adc_reading;
@@ -194,4 +194,4 @@ ZTEST(regulator_pmic, test_basic)
 		      "Regulator is on with no clients, ADC read %d mV", adc_reading);
 }
 
-ZTEST_SUITE(regulator_pmic, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(regulator_pca9420, NULL, NULL, NULL, NULL, NULL);
