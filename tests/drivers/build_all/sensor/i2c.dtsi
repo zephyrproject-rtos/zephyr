@@ -745,3 +745,25 @@ test_tcn75a: tcn75a@73 {
 	reg = <0x73>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_bmi08x_accel: bmi08x@74 {
+	compatible = "bosch,bmi08x-accel";
+	reg = <0x74>;
+	int-gpios = <&test_gpio 0 0>;
+	int1-map-io = <0x01>;
+	int2-map-io = <0x00>;
+	int1-conf-io = <0x0A>;
+	int2-conf-io = <0x17>;
+	accel-hz = "800";
+	accel-fs = <4>;
+};
+
+test_i2c_bmi08x_gyro: bmi08x@75 {
+	compatible = "bosch,bmi08x-gyro";
+	reg = <0x75>;
+	int-gpios = <&test_gpio 0 0>;
+	int3-4-map-io = <0x01>;
+	int3-4-conf-io = <0x01>;
+	gyro-hz = "1000_116";
+	gyro-fs = <1000>;
+};
