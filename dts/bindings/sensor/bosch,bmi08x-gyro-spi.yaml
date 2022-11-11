@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+description: BMI08X Gyro inertial measurement unit
+
+compatible: "bosch,bmi08x-gyro"
+
+include: [spi-device.yaml, "bosch,bmi08x-gyro.yaml"]
