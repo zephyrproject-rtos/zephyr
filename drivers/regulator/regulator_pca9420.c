@@ -36,8 +36,8 @@ struct regulator_config {
 	int num_modes;
 	uint8_t vsel_reg;
 	uint8_t vsel_mask;
-	int32_t max_uV;
-	int32_t min_uV;
+	int32_t max_uv;
+	int32_t min_uv;
 	uint8_t enable_reg;
 	uint8_t enable_mask;
 	uint8_t enable_val;
@@ -56,8 +56,8 @@ struct regulator_config {
 };
 
 static int regulator_pca9420_is_supported_voltage(const struct device *dev,
-						  int32_t min_uV,
-						  int32_t max_uV);
+						  int32_t min_uv,
+						  int32_t max_uv);
 
 /**
  * Reads a register from the PMIC
@@ -133,22 +133,22 @@ static int32_t regulator_get_voltage_offset(const struct device *dev,
  * another target mode.
  */
 static int regulator_set_voltage_offset(const struct device *dev,
-					int32_t min_uV, int32_t max_uV,
+					int32_t min_uv, int32_t max_uv,
 					uint32_t off)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
 	int i = 0;
 
-	if (!regulator_pca9420_is_supported_voltage(dev, min_uV, max_uV) ||
-		min_uV > max_uV) {
+	if (!regulator_pca9420_is_supported_voltage(dev, min_uv, max_uv) ||
+		min_uv > max_uv) {
 		return -EINVAL;
 	}
 	/* Find closest supported voltage */
-	while (i < config->num_voltages && min_uV > data->voltages[i].uV) {
+	while (i < config->num_voltages && min_uv > data->voltages[i].uV) {
 		i++;
 	}
-	if (data->voltages[i].uV > max_uV) {
+	if (data->voltages[i].uV > max_uv) {
 		LOG_DBG("Regulator could not satisfy voltage range, too narrow");
 		return -EINVAL;
 	}
@@ -207,12 +207,12 @@ static int32_t regulator_pca9420_list_voltages(const struct device *dev,
  * Returns true if the regulator supports a voltage in the given range.
  */
 static int regulator_pca9420_is_supported_voltage(const struct device *dev,
-						  int32_t min_uV,
-						  int32_t max_uV)
+						  int32_t min_uv,
+						  int32_t max_uv)
 {
 	const struct regulator_config *config = dev->config;
 
-	return !((config->max_uV < min_uV) || (config->min_uV > max_uV));
+	return !((config->max_uv < min_uv) || (config->min_uv > max_uv));
 }
 
 /**
@@ -220,9 +220,9 @@ static int regulator_pca9420_is_supported_voltage(const struct device *dev,
  * Sets the output voltage to the closest supported voltage value
  */
 static int regulator_pca9420_set_voltage(const struct device *dev,
-					 int32_t min_uV, int32_t max_uV)
+					 int32_t min_uv, int32_t max_uv)
 {
-	return regulator_set_voltage_offset(dev, min_uV, max_uV, 0);
+	return regulator_set_voltage_offset(dev, min_uv, max_uv, 0);
 }
 
 
@@ -240,7 +240,7 @@ static int32_t regulator_pca9420_get_voltage(const struct device *dev)
  * Set the current limit for this device
  */
 static int regulator_pca9420_set_current_limit(const struct device *dev,
-					       int32_t min_uA, int32_t max_uA)
+					       int32_t min_ua, int32_t max_ua)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -252,11 +252,11 @@ static int regulator_pca9420_set_current_limit(const struct device *dev,
 	}
 	/* Locate the desired current limit */
 	while (i < config->num_current_levels &&
-		min_uA > data->current_levels[i].uA) {
+		min_ua > data->current_levels[i].uA) {
 		i++;
 	}
 	if (i == config->num_current_levels ||
-		data->current_levels[i].uA > max_uA) {
+		data->current_levels[i].uA > max_ua) {
 		return -EINVAL;
 	}
 	/* Set the current limit */
@@ -301,8 +301,8 @@ static int regulator_pca9420_get_current_limit(const struct device *dev)
  * with the regulator_pca9420_set_mode api
  */
 static int regulator_pca9420_set_mode_voltage(const struct device *dev,
-					      uint32_t mode, int32_t min_uV,
-					      int32_t max_uV)
+					      uint32_t mode, int32_t min_uv,
+					      int32_t max_uv)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off;
@@ -322,7 +322,7 @@ static int regulator_pca9420_set_mode_voltage(const struct device *dev,
 		return -EINVAL;
 	}
 	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
-	return regulator_set_voltage_offset(dev, min_uV, max_uV, sel_off);
+	return regulator_set_voltage_offset(dev, min_uv, max_uv, sel_off);
 }
 
 /*
@@ -570,8 +570,8 @@ static const struct regulator_driver_api api = {
 		.enable_reg = DT_PROP(node, enable_reg),					\
 		.enable_mask = DT_PROP(node, enable_mask),					\
 		.enable_val = DT_PROP(node, enable_val),					\
-		.min_uV = DT_PROP(node, min_uv),						\
-		.max_uV = DT_PROP(node, max_uv),						\
+		.min_uv = DT_PROP(node, min_uv),						\
+		.max_uv = DT_PROP(node, max_uv),						\
 		.ilim_reg = DT_PROP_OR(node, ilim_reg, 0),					\
 		.ilim_mask = DT_PROP_OR(node, ilim_mask, 0),					\
 		.enable_inverted = DT_PROP(node, enable_inverted),				\
