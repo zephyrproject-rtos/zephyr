@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Thomas Stranger
+ * Copyright (c) 2022 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +12,7 @@
 };
 
 &rcc {
-	apb1-prescaler = <16>;
+	d2ppre1 = <16>;
 };
 
 &wwdg {

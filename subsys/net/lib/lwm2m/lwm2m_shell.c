@@ -24,7 +24,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LWM2M_HELP_CMD "LwM2M commands"
 #define LWM2M_HELP_SEND "LwM2M SEND operation\nsend [OPTION]... [PATH]...\n" \
 	"-n\t Send as non-confirmable\n" \
-	"Paths are inserted without leading '/'\n" \
 	"Root-level operation is unsupported"
 #define LWM2M_HELP_EXEC "Execute a resource\nexec PATH\n"
 #define LWM2M_HELP_READ "Read value from LwM2M resource\nread PATH [OPTIONS]\n" \
@@ -79,14 +78,6 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "no path(s)\n");
 		shell_help(sh);
 		return -EINVAL;
-	}
-
-	for (int idx = ignore_cnt; idx < argc; idx++) {
-		if (argv[idx][0] < '0' || argv[idx][0] > '9') {
-			shell_error(sh, "invalid path: %s\n", argv[idx]);
-			shell_help(sh);
-			return -EINVAL;
-		}
 	}
 
 	ret = lwm2m_engine_send(ctx, (const char **)&(argv[ignore_cnt]),

@@ -207,7 +207,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 #define CONN_TX_CTRL_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				     offsetof(struct pdu_data, llctrl) + \
-				     sizeof(struct pdu_data_llctrl))
+				     PDU_DC_CTRL_TX_SIZE_MAX)
 
 /* Terminate procedure state values */
 #define TERM_REQ   1
