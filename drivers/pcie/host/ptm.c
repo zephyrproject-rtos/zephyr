@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(pcie);
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
+#define DT_DRV_COMPAT ptm_root
+
 #include <zephyr/drivers/pcie/pcie.h>
 #include "ptm.h"
 
