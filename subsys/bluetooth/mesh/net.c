@@ -485,7 +485,7 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 	return net_encrypt(buf, cred, BT_MESH_NET_IVI_TX, proxy);
 }
 
-static int loopback(const struct bt_mesh_net_tx *tx, const uint8_t *data,
+static int net_loopback(const struct bt_mesh_net_tx *tx, const uint8_t *data,
 		    size_t len)
 {
 	int err;
@@ -530,7 +530,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
 	    bt_mesh_has_addr(tx->ctx->addr)) {
-		err = loopback(tx, buf->data, buf->len);
+		err = net_loopback(tx, buf->data, buf->len);
 
 		/* Local unicast messages should not go out to network */
 		if (BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr) ||
