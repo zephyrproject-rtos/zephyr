@@ -159,6 +159,15 @@ int on_icon_content(struct bt_ots_client *otc_inst,
 		    uint32_t len, uint8_t *data_p, bool is_complete);
 #endif /* CONFIG_BT_MCC_OTS */
 
+static struct mcs_instance_t *lookup_inst_by_conn(struct bt_conn *conn)
+{
+	if (conn == NULL) {
+		return NULL;
+	}
+
+	/* TODO: Expand when supporting more instances */
+	return &mcs_inst;
+}
 
 static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
 				       struct bt_gatt_read_params *params,
@@ -890,19 +899,28 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 				  const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
+	struct mcs_instance_t *inst;
 
-	if (conn == NULL) {
+	if (data == NULL) {
+		BT_DBG("[UNSUBSCRIBED] 0x%04X", params->value_handle);
+		params->value_handle = 0U;
+
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	inst = lookup_inst_by_conn(conn);
+	if (inst == NULL) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
 	BT_DBG("Notification, handle: %d", handle);
 
-	if (data) {
-		if (handle == cur_mcs_inst->player_name_handle) {
+	if (inst != NULL) {
+		if (handle == inst->player_name_handle) {
 			BT_DBG("Player Name notification");
 			mcc_read_player_name_cb(conn, 0, NULL, data, length);
 
-		} else if (handle == cur_mcs_inst->track_changed_handle) {
+		} else if (handle == inst->track_changed_handle) {
 			/* The Track Changed characteristic can only be */
 			/* notified, so that is handled directly here */
 
@@ -920,57 +938,57 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 				mcc_cb->track_changed_ntf(conn, cb_err);
 			}
 
-		} else if (handle == cur_mcs_inst->track_title_handle) {
+		} else if (handle == inst->track_title_handle) {
 			BT_DBG("Track Title notification");
 			mcc_read_track_title_cb(conn, 0, NULL, data, length);
 
-		} else if (handle == cur_mcs_inst->track_duration_handle) {
+		} else if (handle == inst->track_duration_handle) {
 			BT_DBG("Track Duration notification");
 			mcc_read_track_duration_cb(conn, 0, NULL, data, length);
 
-		} else if (handle == cur_mcs_inst->track_position_handle) {
+		} else if (handle == inst->track_position_handle) {
 			BT_DBG("Track Position notification");
 			mcc_read_track_position_cb(conn, 0, NULL, data, length);
 
-		} else if (handle == cur_mcs_inst->playback_speed_handle) {
+		} else if (handle == inst->playback_speed_handle) {
 			BT_DBG("Playback Speed notification");
 			mcc_read_playback_speed_cb(conn, 0, NULL, data, length);
 
-		} else if (handle == cur_mcs_inst->seeking_speed_handle) {
+		} else if (handle == inst->seeking_speed_handle) {
 			BT_DBG("Seeking Speed notification");
 			mcc_read_seeking_speed_cb(conn, 0, NULL, data, length);
 
 #ifdef CONFIG_BT_MCC_OTS
-		} else if (handle == cur_mcs_inst->current_track_obj_id_handle) {
+		} else if (handle == inst->current_track_obj_id_handle) {
 			BT_DBG("Current Track notification");
 			mcc_read_current_track_obj_id_cb(conn, 0, NULL, data,
 							 length);
 
-		} else if (handle == cur_mcs_inst->next_track_obj_id_handle) {
+		} else if (handle == inst->next_track_obj_id_handle) {
 			BT_DBG("Next Track notification");
 			mcc_read_next_track_obj_id_cb(conn, 0, NULL, data,
 						      length);
 
-		} else if (handle == cur_mcs_inst->parent_group_obj_id_handle) {
+		} else if (handle == inst->parent_group_obj_id_handle) {
 			BT_DBG("Parent Group notification");
 			mcc_read_parent_group_obj_id_cb(conn, 0, NULL, data,
 							 length);
 
-		} else if (handle == cur_mcs_inst->current_group_obj_id_handle) {
+		} else if (handle == inst->current_group_obj_id_handle) {
 			BT_DBG("Current Group notification");
 			mcc_read_current_group_obj_id_cb(conn, 0, NULL, data,
 							 length);
 #endif /* CONFIG_BT_MCC_OTS */
 
-		} else if (handle == cur_mcs_inst->playing_order_handle) {
+		} else if (handle == inst->playing_order_handle) {
 			BT_DBG("Playing Order notification");
 			mcc_read_playing_order_cb(conn, 0, NULL, data, length);
 
-		} else if (handle == cur_mcs_inst->media_state_handle) {
+		} else if (handle == inst->media_state_handle) {
 			BT_DBG("Media State notification");
 			mcc_read_media_state_cb(conn, 0, NULL, data, length);
 
-		} else if (handle == cur_mcs_inst->cp_handle) {
+		} else if (handle == inst->cp_handle) {
 			/* The control point is is a special case - only */
 			/* writable and notifiable.  Handle directly here. */
 
@@ -993,13 +1011,13 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 				mcc_cb->cmd_ntf(conn, cb_err, &ntf);
 			}
 
-		} else if (handle == cur_mcs_inst->opcodes_supported_handle) {
+		} else if (handle == inst->opcodes_supported_handle) {
 			BT_DBG("Opcodes Supported notification");
 			mcc_read_opcodes_supported_cb(conn, 0, NULL, data,
 						      length);
 
 #ifdef CONFIG_BT_MCC_OTS
-		} else if (handle == cur_mcs_inst->scp_handle) {
+		} else if (handle == inst->scp_handle) {
 			/* The search control point is a special case - only */
 			/* writable and notifiable.  Handle directly here. */
 
@@ -1019,7 +1037,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 				mcc_cb->search_ntf(conn, cb_err, result_code);
 			}
 
-		} else if (handle == cur_mcs_inst->search_results_obj_id_handle) {
+		} else if (handle == inst->search_results_obj_id_handle) {
 			BT_DBG("Search Results notification");
 			mcc_read_search_results_obj_id_cb(conn, 0, NULL, data,
 							  length);
@@ -1028,7 +1046,10 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 		} else {
 			BT_DBG("Unknown handle: %d (0x%04X)", handle, handle);
 		}
+	} else {
+		BT_DBG("Could not find MCS instance from conn %p", conn);
 	}
+
 	return BT_GATT_ITER_CONTINUE;
 }
 
@@ -1217,6 +1238,7 @@ static void subscribe_mcs_char_func(struct bt_conn *conn, uint8_t err,
 
 	if (err) {
 		BT_DBG("Subscription callback error: %u", err);
+		params->subscribe = NULL;
 		discovery_complete(conn, err);
 		return;
 	}
@@ -1228,6 +1250,7 @@ static void subscribe_mcs_char_func(struct bt_conn *conn, uint8_t err,
 	subscription_done = subscribe_next_mcs_char(conn);
 
 	if (subscription_done) {
+		params->subscribe = NULL;
 #ifdef CONFIG_BT_MCC_OTS
 		/* Start discovery of included services to find OTS */
 		discover_included(conn);
