@@ -12,10 +12,12 @@
 		compatible = "intel,pcie";
 		ranges;
 
-		ivshmem0: ivshmem@800 {
+		ivshmem0: ivshmem0 {
 			compatible = "qemu,ivshmem";
 
-			reg = <PCIE_BDF_NONE PCIE_ID(0x1af4,0x1110)>;
+			vendor-id = <0x1af4>;
+			device-id = <0x1110>;
+
 			status = "okay";
 		};
 	};
