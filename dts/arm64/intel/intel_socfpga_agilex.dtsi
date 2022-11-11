@@ -90,7 +90,6 @@
 		      <0xffd11000 0x1000>,
 		      <0xffd12000 0x1000>,
 		      <0xffd13000 0x1000>;
-		label = "periph";
 	};
 
 	/* This qspi setting included
