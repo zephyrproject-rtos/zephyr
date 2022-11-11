@@ -7,17 +7,13 @@
  * @file
  * @brief PMIC Regulator Driver
  * This driver implements the regulator API within Zephyr, and additionally
- * implements support for a broader API. Most consumers will want to use
- * the API provided in drivers/regulator/consumer.h to manipulate the voltage
- * levels of the regulator device.
- * manipulate.
+ * implements support for a broader API.
  */
 
 #define DT_DRV_COMPAT regulator_pmic
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/regulator.h>
-#include <zephyr/drivers/regulator/consumer.h>
 #include <zephyr/dt-bindings/regulator/pmic_i2c.h>
 #include <zephyr/drivers/i2c.h>
 #include <errno.h>

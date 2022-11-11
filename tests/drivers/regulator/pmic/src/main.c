@@ -13,7 +13,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/regulator.h>
-#include <zephyr/drivers/regulator/consumer.h>
 #include <zephyr/ztest.h>
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
