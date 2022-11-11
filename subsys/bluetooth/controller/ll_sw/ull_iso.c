@@ -609,16 +609,30 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
+<<<<<<< HEAD
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	} else if (IS_ADV_ISO_HANDLE(handle)) {
 		struct lll_adv_iso_stream *adv_stream;
 		struct ll_iso_datapath *dp;
 		uint16_t stream_handle;
+=======
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
+	uint16_t stream_handle;
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	struct lll_adv_iso_stream *adv_stream;
+
+	if (path_dir != BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+>>>>>>> Bluetooth: Controller: integrate ISOAL add role definition
 
 		if (path_dir != BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
+<<<<<<< HEAD
 		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
 		adv_stream = ull_adv_iso_stream_get(stream_handle);
 		if (!adv_stream) {
@@ -641,6 +655,32 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		struct lll_sync_iso_stream *sync_stream;
 			struct ll_iso_datapath *dp;
 		uint16_t stream_handle;
+=======
+	adv_stream = ull_adv_iso_stream_get(stream_handle);
+	if (!adv_stream) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	dp = adv_stream->dp;
+	if (dp) {
+		isoal_source_destroy(dp->source_hdl);
+		ull_iso_datapath_release(dp);
+		adv_stream->dp = NULL;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	struct lll_sync_iso_stream *stream;
+
+	if (path_dir != BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	if (handle < BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+	stream_handle = LL_BIS_SYNC_IDX_FROM_HANDLE(handle);
+>>>>>>> Bluetooth: Controller: integrate ISOAL add role definition
 
 		if (path_dir != BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
