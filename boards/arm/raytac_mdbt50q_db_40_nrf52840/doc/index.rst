@@ -147,7 +147,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`blinky` application.
+Here is an example for the :ref:`blinky-sample` application.
 
 Then build and flash the application in the usual way.
 
