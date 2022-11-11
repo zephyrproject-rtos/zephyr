@@ -8,9 +8,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/regulator.h>
-#if CONFIG_REGULATOR_PMIC
-#include <zephyr/drivers/regulator/consumer.h>
-#endif
 
 LOG_MODULE_REGISTER(regulator_shell, CONFIG_REGULATOR_LOG_LEVEL);
 
