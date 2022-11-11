@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
@@ -59,9 +60,28 @@ static bool find_recv_state_by_sink_cb(const struct bt_bap_scan_delegator_recv_s
 {
 	const struct bt_audio_broadcast_sink *sink = user_data;
 
-	return sink->bass_src_id_valid &&
+	return atomic_test_bit(sink->flags,
+			       BT_AUDIO_BROADCAST_SINK_FLAG_SRC_ID_VALID) &&
 	       sink->bass_src_id == recv_state->src_id;
 }
+
+static bool find_recv_state_by_pa_sync_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
+					  void *user_data)
+{
+	struct bt_le_per_adv_sync *sync = user_data;
+	struct bt_le_per_adv_sync_info sync_info;
+	int err;
+
+	err = bt_le_per_adv_sync_get_info(sync, &sync_info);
+	if (err != 0) {
+		BT_DBG("Failed to get sync info: %d", err);
+
+		return false;
+	}
+
+	return bt_addr_le_eq(&recv_state->addr, &sync_info.addr) &&
+	       recv_state->adv_sid == sync_info.sid;
+};
 
 static void update_recv_state_big_synced(const struct bt_audio_broadcast_sink *sink)
 {
@@ -377,7 +397,20 @@ static struct bt_iso_chan_ops broadcast_sink_iso_ops = {
 static struct bt_audio_broadcast_sink *broadcast_sink_syncing_get(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
-		if (broadcast_sinks[i].syncing) {
+		if (atomic_test_bit(broadcast_sinks[i].flags,
+				    BT_AUDIO_BROADCAST_SINK_FLAG_SYNCING)) {
+			return &broadcast_sinks[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_audio_broadcast_sink *broadcast_sink_scanning_get(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
+		if (atomic_test_bit(broadcast_sinks[i].flags,
+				    BT_AUDIO_BROADCAST_SINK_FLAG_SCANNING)) {
 			return &broadcast_sinks[i];
 		}
 	}
@@ -389,8 +422,11 @@ static struct bt_audio_broadcast_sink *broadcast_sink_free_get(void)
 {
 	/* Find free entry */
 	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
-		if (broadcast_sinks[i].pa_sync == NULL) {
+		if (!atomic_test_bit(broadcast_sinks[i].flags,
+				     BT_AUDIO_BROADCAST_SINK_FLAG_INITIALIZED)) {
 			broadcast_sinks[i].index = i;
+			broadcast_sinks[i].broadcast_id = INVALID_BROADCAST_ID;
+
 			return &broadcast_sinks[i];
 		}
 	}
@@ -409,30 +445,23 @@ static struct bt_audio_broadcast_sink *broadcast_sink_get_by_pa(struct bt_le_per
 	return NULL;
 }
 
-static void pa_synced(struct bt_le_per_adv_sync *sync,
-		      struct bt_le_per_adv_sync_synced_info *info)
+static struct bt_audio_broadcast_sink *broadcast_sink_get_by_broadcast_id(uint32_t broadcast_id)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sinks); i++) {
+		if (broadcast_sinks[i].broadcast_id == broadcast_id) {
+			return &broadcast_sinks[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void broadcast_sink_add_src(struct bt_audio_broadcast_sink *sink)
 {
 	struct bt_bap_scan_delegator_add_src_param add_src_param;
-	struct bt_audio_broadcast_sink_cb *listener;
-	struct bt_audio_broadcast_sink *sink;
 	int err;
 
-	sink = broadcast_sink_syncing_get();
-	if (sink == NULL || sync != sink->pa_sync) {
-		/* Not ours */
-		return;
-	}
-
-	LOG_DBG("Synced to broadcast source with ID 0x%06X", sink->broadcast_id);
-
-	sink->syncing = false;
-
-	err = bt_audio_broadcast_sink_scan_stop();
-	if (err != 0) {
-		LOG_WRN("Failed to stop sink scan: %d", err);
-	}
-
-	add_src_param.pa_sync = sync;
+	add_src_param.pa_sync = sink->pa_sync;
 	add_src_param.broadcast_id = sink->broadcast_id;
 	/* Will be updated when we receive the BASE */
 	add_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
@@ -444,8 +473,64 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 			sink, err);
 	} else {
 		sink->bass_src_id = (uint8_t)err;
-		sink->bass_src_id_valid = true;
+		atomic_set_bit(sink->flags,
+			       BT_AUDIO_BROADCAST_SINK_FLAG_SRC_ID_VALID);
 	}
+}
+
+static void handle_past_sync(struct bt_le_per_adv_sync *sync)
+{
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
+
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_pa_sync_cb,
+						      (void *)sync);
+	if (recv_state != NULL) {
+		/* If we receive a PAST transfer that fits a
+		 * known BASS Receive State, then we create it
+		 * as a Broadcast Sink
+		 *
+		 * The PA state in the Receive State will be
+		 * updated by the Scan Delegator
+		 */
+		int err;
+
+		err = bt_audio_broadcast_sink_create(sync,
+						     recv_state->broadcast_id);
+		if (err != 0) {
+			BT_WARN("Failed to create Broadcast Sink: %d",
+				err);
+		}
+	}
+}
+
+static void pa_synced(struct bt_le_per_adv_sync *sync,
+		      struct bt_le_per_adv_sync_synced_info *info)
+{
+	struct bt_audio_broadcast_sink_cb *listener;
+	struct bt_audio_broadcast_sink *sink;
+	int err;
+
+	sink = broadcast_sink_syncing_get();
+	if (sink == NULL || sync != sink->pa_sync) {
+		if (info->conn) { /* PAST */
+			handle_past_sync(sync);
+		} else {
+			/* Not ours */
+		}
+
+		return;
+	}
+
+	BT_DBG("Synced to broadcast source with ID 0x%06X", sink->broadcast_id);
+
+	atomic_clear_bit(sink->flags, BT_AUDIO_BROADCAST_SINK_FLAG_SYNCING);
+
+	err = bt_audio_broadcast_sink_scan_stop();
+	if (err != 0 && err != -EALREADY) {
+		BT_WARN("Failed to stop sink scan: %d", err);
+	}
+
+	broadcast_sink_add_src(sink);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->pa_synced != NULL) {
@@ -470,7 +555,9 @@ static void pa_term(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
-	LOG_DBG("PA sync with broadcast source with ID 0x%06X lost", sink->broadcast_id);
+	LOG_DBG("PA sync with broadcast source with ID 0x%06X lost",
+		sink->broadcast_id);
+
 	broadcast_sink_cleanup(sink);
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->pa_sync_lost != NULL) {
@@ -781,7 +868,8 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 		}
 	}
 
-	if (sink->biginfo_received) {
+	if (atomic_test_bit(sink->flags,
+			    BT_AUDIO_BROADCAST_SINK_FLAG_BIGINFO_RECEIVED)) {
 		uint8_t num_bis = 0;
 
 		for (int i = 0; i < base.subgroup_count; i++) {
@@ -801,7 +889,8 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 		 */
 		(void)memcpy(&sink->base, &base, sizeof(base));
 
-		if (sink->bass_src_id_valid) {
+		if (atomic_test_bit(sink->flags,
+				    BT_AUDIO_BROADCAST_SINK_FLAG_SRC_ID_VALID)) {
 			update_recv_state_base(sink);
 		}
 	}
@@ -846,7 +935,8 @@ static void update_recv_state_encryption(const struct bt_audio_broadcast_sink *s
 	}
 
 	/* Only change the encrypt state, and leave the rest as is */
-	if (sink->big_encrypted) {
+	if (atomic_test_bit(sink->flags,
+			    BT_AUDIO_BROADCAST_SINK_FLAG_BIG_ENCRYPTED)) {
 		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_BCODE_REQ;
 	} else {
 		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
@@ -890,13 +980,18 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
-	sink->biginfo_received = true;
+	atomic_set_bit(sink->flags,
+		       BT_AUDIO_BROADCAST_SINK_FLAG_BIGINFO_RECEIVED);
 	sink->iso_interval = biginfo->iso_interval;
 	sink->biginfo_num_bis = biginfo->num_bis;
-	if (sink->big_encrypted != biginfo->encryption) {
-		sink->big_encrypted = biginfo->encryption;
+	if (biginfo->encryption != atomic_test_bit(sink->flags,
+						   BT_AUDIO_BROADCAST_SINK_FLAG_BIG_ENCRYPTED)) {
+		atomic_set_bit_to(sink->flags,
+				  BT_AUDIO_BROADCAST_SINK_FLAG_BIG_ENCRYPTED,
+				  biginfo->encryption);
 
-		if (sink->bass_src_id_valid) {
+		if (atomic_test_bit(sink->flags,
+				    BT_AUDIO_BROADCAST_SINK_FLAG_SRC_ID_VALID)) {
 			update_recv_state_encryption(sink);
 		}
 	}
@@ -931,27 +1026,22 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 	struct bt_audio_broadcast_sink_cb *listener;
 	struct bt_le_per_adv_sync_param param;
 	struct bt_audio_broadcast_sink *sink;
-	static bool pa_cb_registered;
 	int err;
 
-	if (!pa_cb_registered) {
-		static struct bt_le_per_adv_sync_cb cb = {
-			.synced = pa_synced,
-			.recv = pa_recv,
-			.term = pa_term,
-			.biginfo = biginfo_recv
-		};
-
-		bt_le_per_adv_sync_cb_register(&cb);
-
-		pa_cb_registered = true;
-	}
-
-	sink = broadcast_sink_free_get();
-	/* Should never happen as we check for free entry before
-	 * scanning
+	sink = broadcast_sink_scanning_get();
+	/* Should never happen as we set the scanning flag before registering
+	 * the scanning callbacks
 	 */
 	__ASSERT(sink != NULL, "sink is NULL");
+
+	/* Unregister the callbacks to prevent broadcast_scan_recv to be called again */
+	bt_le_scan_cb_unregister(&broadcast_scan_cb);
+	err = bt_le_scan_stop();
+	if (err != 0) {
+		BT_ERR("Could not stop scan: %d", err);
+	} else {
+		atomic_clear_bit(sink->flags, BT_AUDIO_BROADCAST_SINK_FLAG_SCANNING);
+	}
 
 	bt_addr_le_copy(&param.addr, info->addr);
 	param.options = 0;
@@ -961,10 +1051,7 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 	err = bt_le_per_adv_sync_create(&param, &sink->pa_sync);
 	if (err != 0) {
 		LOG_ERR("Could not sync to PA: %d", err);
-		err = bt_le_scan_stop();
-		if (err != 0 && err != -EALREADY) {
-			LOG_ERR("Could not stop scan: %d", err);
-		}
+		broadcast_sink_cleanup(sink);
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 			if (listener->scan_term != NULL) {
@@ -972,8 +1059,8 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 			}
 		}
 	} else {
-		sink->syncing = true;
-		sink->pa_interval = info->interval;
+		atomic_set_bit(sink->flags,
+			       BT_AUDIO_BROADCAST_SINK_FLAG_SYNCING);
 		sink->broadcast_id = broadcast_id;
 	}
 }
@@ -1043,6 +1130,13 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 		LOG_DBG("Found broadcast source with address %s and id 0x%6X",
 			bt_addr_le_str(info->addr), broadcast_id);
 
+		if (broadcast_sink_get_by_broadcast_id(broadcast_id) != NULL) {
+			BT_DBG("Broadcast sink with broadcast_id 0x%X already exists",
+			       broadcast_id);
+
+			return;
+		}
+
 		SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 			if (listener->scan_recv != NULL) {
 				bool sync_pa;
@@ -1070,8 +1164,17 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 static void broadcast_scan_timeout(void)
 {
 	struct bt_audio_broadcast_sink_cb *listener;
+	struct bt_audio_broadcast_sink *sink;
 
 	bt_le_scan_cb_unregister(&broadcast_scan_cb);
+
+	sink = broadcast_sink_scanning_get();
+	/* Should never happen as we set the scanning flag before registering
+	 * the scanning callbacks
+	 */
+	__ASSERT(sink != NULL, "sink is NULL");
+
+	broadcast_sink_cleanup(sink);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->scan_term != NULL) {
@@ -1087,6 +1190,7 @@ void bt_audio_broadcast_sink_register_cb(struct bt_audio_broadcast_sink_cb *cb)
 
 int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
 {
+	struct bt_audio_broadcast_sink *sink;
 	int err;
 
 	CHECKIF(param == NULL) {
@@ -1107,7 +1211,14 @@ int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
 		return -EINVAL;
 	}
 
-	if (broadcast_sink_free_get() == NULL) {
+	if (broadcast_sink_scanning_get() != NULL) {
+		LOG_DBG("Already scanning");
+
+		return -EALREADY;
+	}
+
+	sink = broadcast_sink_free_get();
+	if (sink == NULL) {
 		LOG_DBG("No more free broadcast sinks");
 		return -ENOMEM;
 	}
@@ -1115,6 +1226,11 @@ int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
 	/* TODO: check for scan callback */
 	err = bt_le_scan_start(param, NULL);
 	if (err == 0) {
+		atomic_set_bit(sink->flags,
+			       BT_AUDIO_BROADCAST_SINK_FLAG_INITIALIZED);
+		atomic_set_bit(sink->flags,
+			       BT_AUDIO_BROADCAST_SINK_FLAG_SCANNING);
+
 		broadcast_scan_cb.recv = broadcast_scan_recv;
 		broadcast_scan_cb.timeout = broadcast_scan_timeout;
 		bt_le_scan_cb_register(&broadcast_scan_cb);
@@ -1129,16 +1245,22 @@ int bt_audio_broadcast_sink_scan_stop(void)
 	struct bt_audio_broadcast_sink *sink;
 	int err;
 
-	sink = broadcast_sink_syncing_get();
-	if (sink != NULL) {
+	sink = broadcast_sink_scanning_get();
+	if (sink == NULL) {
+		BT_DBG("Not scanning");
+
+		return -EALREADY;
+	}
+
+	if (sink->pa_sync != NULL) {
 		err = bt_le_per_adv_sync_delete(sink->pa_sync);
 		if (err != 0) {
 			LOG_DBG("Could not delete PA sync: %d", err);
 			return err;
 		}
-		sink->pa_sync = NULL;
-		sink->syncing = false;
 	}
+
+	broadcast_sink_cleanup(sink);
 
 	err = bt_le_scan_stop();
 	if (err == 0) {
@@ -1251,7 +1373,8 @@ static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 
 static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
 {
-	if (sink->bass_src_id_valid) {
+	if (atomic_test_bit(sink->flags,
+			    BT_AUDIO_BROADCAST_SINK_FLAG_SRC_ID_VALID)) {
 		int err;
 
 		err = bt_bap_scan_delegator_rem_src(sink->bass_src_id);
@@ -1259,12 +1382,13 @@ static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
 			LOG_WRN("Failed to remove Receive State for sink %p: %d",
 				sink, err);
 		}
-
-		sink->bass_src_id_valid = false;
 	}
 
-	broadcast_sink_cleanup_streams(sink);
-	(void)memset(sink, 0, sizeof(*sink));
+	if (sink->stream_count > 0U) {
+		broadcast_sink_cleanup_streams(sink);
+	}
+
+	(void)memset(sink, 0, sizeof(*sink)); /* also clears flags */
 }
 
 static struct bt_codec *codec_from_base_by_index(struct bt_audio_base *base,
@@ -1294,6 +1418,69 @@ static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
 	}
 
 	return true;
+}
+
+int bt_audio_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync,
+				   uint32_t broadcast_id)
+{
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
+	struct bt_audio_broadcast_sink_cb *listener;
+	struct bt_audio_broadcast_sink *sink;
+
+	CHECKIF(pa_sync == NULL) {
+		BT_DBG("pa_sync is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(broadcast_id > BT_BAP_BROADCAST_ID_MAX) {
+		BT_DBG("Invalid broadcast_id: 0x%X", broadcast_id);
+
+		return -EINVAL;
+	}
+
+	if (broadcast_sink_get_by_broadcast_id(broadcast_id) != NULL) {
+		BT_DBG("Broadcast sink with broadcast_id 0x%X already exists",
+		       broadcast_id);
+
+		return -EALREADY;
+	}
+
+	sink = broadcast_sink_free_get();
+	if (sink == NULL) {
+		BT_DBG("No more free broadcast sinks");
+
+		return -ENOMEM;
+	}
+
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_pa_sync_cb,
+						      (void *)pa_sync);
+	if (recv_state == NULL) {
+		broadcast_sink_add_src(sink);
+	} else {
+		/* The PA sync is known by the Scan Delegator */
+		if (recv_state->broadcast_id != broadcast_id) {
+			BT_DBG("Broadcast ID mismatch: 0x%X != 0x%X",
+			       recv_state->broadcast_id, broadcast_id);
+
+			return -EINVAL;
+		}
+
+		sink->bass_src_id = recv_state->src_id;
+	}
+
+	sink->broadcast_id = broadcast_id;
+	sink->pa_sync = pa_sync;
+	atomic_set_bit(sink->flags, BT_AUDIO_BROADCAST_SINK_FLAG_INITIALIZED);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
+		if (listener->pa_synced != NULL) {
+			listener->pa_synced(sink, sink->pa_sync,
+					    sink->broadcast_id);
+		}
+	}
+
+	return 0;
 }
 
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
@@ -1331,7 +1518,8 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		return -EINVAL;
 	}
 
-	if (!sink->biginfo_received) {
+	if (!atomic_test_bit(sink->flags,
+			     BT_AUDIO_BROADCAST_SINK_FLAG_BIGINFO_RECEIVED)) {
 		/* TODO: We could store the request to sync and start the sync
 		 * once the BIGInfo has been received, and then do the sync
 		 * then. This would be similar how LE Create Connection works.
@@ -1340,8 +1528,11 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		return -EAGAIN;
 	}
 
-	CHECKIF(sink->big_encrypted && broadcast_code == NULL) {
+	if (atomic_test_bit(sink->flags,
+			    BT_AUDIO_BROADCAST_SINK_FLAG_BIG_ENCRYPTED) &&
+	    broadcast_code == NULL) {
 		LOG_DBG("Broadcast code required");
+
 		return -EINVAL;
 	}
 
@@ -1414,7 +1605,8 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	param.bis_bitfield = indexes_bitfield;
 	param.mse = 0; /* Let controller decide */
 	param.sync_timeout = interval_to_sync_timeout(sink->iso_interval);
-	param.encryption = sink->big_encrypted; /* TODO */
+	param.encryption = atomic_test_bit(sink->flags,
+					   BT_AUDIO_BROADCAST_SINK_FLAG_BIG_ENCRYPTED);
 	if (param.encryption) {
 		memcpy(param.bcode, broadcast_code, sizeof(param.bcode));
 	} else {
@@ -1525,3 +1717,19 @@ int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 
 	return 0;
 }
+
+static int broadcast_sink_init(const struct device *dev)
+{
+	static struct bt_le_per_adv_sync_cb cb = {
+		.synced = pa_synced,
+		.recv = pa_recv,
+		.term = pa_term,
+		.biginfo = biginfo_recv
+	};
+
+	bt_le_per_adv_sync_cb_register(&cb);
+
+	return 0;
+}
+
+SYS_INIT(broadcast_sink_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

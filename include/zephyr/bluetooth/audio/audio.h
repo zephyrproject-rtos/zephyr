@@ -2199,6 +2199,26 @@ void bt_audio_broadcast_sink_register_cb(struct bt_audio_broadcast_sink_cb *cb);
  */
 int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param);
 
+/** @brief Create a Broadcast Sink from a periodic advertising sync
+ *
+ *  This should only be done after verifying that the periodic advertising sync
+ *  is from a Broadcast Source.
+ *
+ *  The created Broadcast Sink will need to supplied to
+ *  bt_audio_broadcast_sink_sync() in order to synchronize to the broadcast
+ *  audio.
+ *
+ *  bt_audio_broadcast_sink_cb.pa_synced() will be called with the Broadcast
+ *  Sink object created if this is successful.
+ *
+ *  @param  pa_sync       Pointer to the periodic advertising sync object.
+ *  @param  broadcast_id  24-bit broadcast ID.
+ *
+ *  @return 0 in case of success or errno value in case of error.
+ */
+int bt_audio_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync,
+				   uint32_t broadcast_id);
+
 /**
  * @brief Stop scan for broadcast sources.
  *

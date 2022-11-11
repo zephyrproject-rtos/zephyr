@@ -102,17 +102,35 @@ struct bt_audio_broadcast_source {
 	sys_slist_t subgroups;
 };
 
+enum bt_audio_broadcast_sink_flag {
+	/** Sink has been initialized */
+	BT_AUDIO_BROADCAST_SINK_FLAG_INITIALIZED,
+
+	/** BIGInfo has been received */
+	BT_AUDIO_BROADCAST_SINK_FLAG_BIGINFO_RECEIVED,
+
+	/** Periodic Advertising is syncing */
+	BT_AUDIO_BROADCAST_SINK_FLAG_SYNCING,
+
+	/** Broadcast sink instance is scanning */
+	BT_AUDIO_BROADCAST_SINK_FLAG_SCANNING,
+
+	/** The BIG is encrypted */
+	BT_AUDIO_BROADCAST_SINK_FLAG_BIG_ENCRYPTED,
+
+	/** The Scan Delegator Source ID is valid */
+	BT_AUDIO_BROADCAST_SINK_FLAG_SRC_ID_VALID,
+
+	/** Total number of flags */
+	BT_AUDIO_BROADCAST_SINK_FLAG_NUM_FLAGS,
+};
+
 struct bt_audio_broadcast_sink {
 	uint8_t index; /* index of broadcast_snks array */
 	uint8_t stream_count;
 	uint8_t bass_src_id;
-	uint16_t pa_interval;
 	uint16_t iso_interval;
 	uint16_t biginfo_num_bis;
-	bool biginfo_received;
-	bool syncing;
-	bool big_encrypted;
-	bool bass_src_id_valid;
 	uint32_t broadcast_id; /* 24 bit */
 	struct bt_audio_base base;
 	struct bt_le_per_adv_sync *pa_sync;
@@ -121,6 +139,9 @@ struct bt_audio_broadcast_sink {
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	/* The streams used to create the broadcast sink */
 	sys_slist_t streams;
+
+	/** Flags */
+	ATOMIC_DEFINE(flags, BT_AUDIO_BROADCAST_SINK_FLAG_NUM_FLAGS);
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)
