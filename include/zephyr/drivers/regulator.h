@@ -15,6 +15,7 @@
  * @{
  */
 
+#include <errno.h>
 #include <stdint.h>
 
 #include <zephyr/device.h>
@@ -30,6 +31,22 @@ extern "C" {
 __subsystem struct regulator_driver_api {
 	int (*enable)(const struct device *dev, struct onoff_client *cli);
 	int (*disable)(const struct device *dev);
+	int (*count_voltages)(const struct device *dev);
+	int (*count_modes)(const struct device *dev);
+	int (*list_voltages)(const struct device *dev, unsigned int selector);
+	int (*is_supported_voltage)(const struct device *dev, int min_uV,
+				    int max_uV);
+	int (*set_voltage)(const struct device *dev, int min_uV, int max_uV);
+	int (*get_voltage)(const struct device *dev);
+	int (*set_current_limit)(const struct device *dev, int min_uA,
+				 int max_uA);
+	int (*get_current_limit)(const struct device *dev);
+	int (*set_mode)(const struct device *dev, uint32_t mode);
+	int (*set_mode_voltage)(const struct device *dev, uint32_t mode,
+				uint32_t min_uV, uint32_t max_uV);
+	int (*get_mode_voltage)(const struct device *dev, uint32_t mode);
+	int (*mode_disable)(const struct device *dev, uint32_t mode);
+	int (*mode_enable)(const struct device *dev, uint32_t mode);
 };
 
 /** @endcond */
@@ -99,7 +116,17 @@ static inline int regulator_disable(const struct device *dev)
  * @param dev: Regulator device to count voltage levels for.
  * @return number of selectors, or negative errno.
  */
-int regulator_count_voltages(const struct device *dev);
+static inline int regulator_count_voltages(const struct device *dev)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->count_voltages == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->count_voltages(dev);
+}
 
 /**
  * @brief Return the number of supported regulator modes
@@ -110,7 +137,17 @@ int regulator_count_voltages(const struct device *dev);
  * @param dev: Regulator device to count supported regulator modes for
  * @return number of supported modes
  */
-int regulator_count_modes(const struct device *dev);
+static inline int regulator_count_modes(const struct device *dev)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->count_modes == NULL) {
+		return 0;
+	}
+
+	return api->count_modes(dev);
+}
 
 /**
  * @brief Return supported voltage
@@ -121,7 +158,18 @@ int regulator_count_modes(const struct device *dev);
  * @param selector: voltage selector code.
  * @return voltage level in uV, or zero if selector code can't be used.
  */
-int regulator_list_voltages(const struct device *dev, unsigned int selector);
+static inline int regulator_list_voltages(const struct device *dev,
+					  unsigned int selector)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->list_voltages == NULL) {
+		return 0;
+	}
+
+	return api->list_voltages(dev, selector);
+}
 
 /**
  * @brief Check if a voltage range can be supported.
@@ -131,7 +179,18 @@ int regulator_list_voltages(const struct device *dev, unsigned int selector);
  * @param max_uV: maximum voltage in microvolts
  * @returns boolean or negative error code.
  */
-int regulator_is_supported_voltage(const struct device *dev, int min_uV, int max_uV);
+static inline int regulator_is_supported_voltage(const struct device *dev,
+						 int min_uV, int max_uV)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->is_supported_voltage == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->is_supported_voltage(dev, min_uV, max_uV);
+}
 
 /**
  * @brief Set regulator output voltage.
@@ -140,7 +199,18 @@ int regulator_is_supported_voltage(const struct device *dev, int min_uV, int max
  * @param min_uV: Minimum acceptable voltage in microvolts
  * @param max_uV: Maximum acceptable voltage in microvolts
  */
-int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV);
+static inline int regulator_set_voltage(const struct device *dev, int min_uV,
+					int max_uV)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->set_voltage == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_voltage(dev, min_uV, max_uV);
+}
 
 /**
  * @brief Get regulator output voltage.
@@ -149,7 +219,17 @@ int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV);
  * @param dev: Regulator to query
  * @return voltage level in uV
  */
-int regulator_get_voltage(const struct device *dev);
+static inline int regulator_get_voltage(const struct device *dev)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->get_voltage == NULL) {
+		return 0;
+	}
+
+	return api->get_voltage(dev);
+}
 
 /**
  * @brief Set regulator output current limit
@@ -159,7 +239,18 @@ int regulator_get_voltage(const struct device *dev);
  * @param max_uA: maximum microamps
  * @return 0 on success, or errno on error
  */
-int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA);
+static inline int regulator_set_current_limit(const struct device *dev,
+					      int min_uA, int max_uA)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->set_current_limit == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_current_limit(dev, min_uA, max_uA);
+}
 
 /**
  * @brief Get regulator output current.
@@ -167,7 +258,17 @@ int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA
  * @param dev: Regulator to query
  * @return current limit in uA, or errno
  */
-int regulator_get_current_limit(const struct device *dev);
+static inline int regulator_get_current_limit(const struct device *dev)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->get_current_limit == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_current_limit(dev);
+}
 
 /**
  * @brief Select mode of regulator
@@ -179,7 +280,17 @@ int regulator_get_current_limit(const struct device *dev);
  * in the regulator-allowed-modes property are permitted.
  * @return 0 on success, or errno on error
  */
-int regulator_set_mode(const struct device *dev, uint32_t mode);
+static inline int regulator_set_mode(const struct device *dev, uint32_t mode)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->set_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_mode(dev, mode);
+}
 
 /**
  * @brief Set target voltage for regulator mode
@@ -194,8 +305,19 @@ int regulator_set_mode(const struct device *dev, uint32_t mode);
  * @param max_uV: maximum voltage acceptable, in uV
  * @return 0 on success, or errno on error
  */
-int regulator_set_mode_voltage(const struct device *dev, uint32_t mode,
-	uint32_t min_uV, uint32_t max_uV);
+static inline int regulator_set_mode_voltage(const struct device *dev,
+					     uint32_t mode, uint32_t min_uV,
+					     uint32_t max_uV)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->set_mode_voltage == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_mode_voltage(dev, mode, min_uV, max_uV);
+}
 
 /**
  * @brief Get target voltage for regulator mode
@@ -207,7 +329,18 @@ int regulator_set_mode_voltage(const struct device *dev, uint32_t mode,
  * @param mode: target mode to query voltage from
  * @return voltage level in uV
  */
-int regulator_get_mode_voltage(const struct device *dev, uint32_t mode);
+static inline int regulator_get_mode_voltage(const struct device *dev,
+					     uint32_t mode)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->get_mode_voltage == NULL) {
+		return 0;
+	}
+
+	return api->get_mode_voltage(dev, mode);
+}
 
 /**
  * @brief Disable regulator for a given mode
@@ -217,7 +350,18 @@ int regulator_get_mode_voltage(const struct device *dev, uint32_t mode);
  * @param dev: regulator to disable
  * @param mode: mode to change regulator state in
  */
-int regulator_mode_disable(const struct device *dev, uint32_t mode);
+static inline int regulator_mode_disable(const struct device *dev,
+					 uint32_t mode)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->mode_disable == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->mode_disable(dev, mode);
+}
 
 /**
  * @brief Enable regulator for a given mode
@@ -227,7 +371,18 @@ int regulator_mode_disable(const struct device *dev, uint32_t mode);
  * @param dev: regulator to enable
  * @param mode: mode to change regulator state in
  */
-int regulator_mode_enable(const struct device *dev, uint32_t mode);
+static inline int regulator_mode_enable(const struct device *dev,
+					uint32_t mode)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->mode_enable == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->mode_enable(dev, mode);
+}
 
 #ifdef __cplusplus
 }

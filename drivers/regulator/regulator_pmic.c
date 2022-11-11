@@ -62,6 +62,9 @@ struct regulator_config {
 	uint8_t modesel_mask;
 };
 
+static int regulator_pmic_is_supported_voltage(const struct device *dev,
+					       int min_uV, int max_uV);
+
 /**
  * Reads a register from the PMIC
  * Returns 0 on success, or errno on error
@@ -141,7 +144,7 @@ static int regulator_set_voltage_offset(const struct device *dev, int min_uV,
 	struct regulator_data *data = dev->data;
 	int i = 0;
 
-	if (!regulator_is_supported_voltage(dev, min_uV, max_uV) ||
+	if (!regulator_pmic_is_supported_voltage(dev, min_uV, max_uV) ||
 		min_uV > max_uV) {
 		return -EINVAL;
 	}
@@ -169,7 +172,7 @@ static int regulator_set_voltage_offset(const struct device *dev, int min_uV,
  * Part of the extended regulator consumer API
  * Returns the number of supported voltages
  */
-int regulator_count_voltages(const struct device *dev)
+static int regulator_pmic_count_voltages(const struct device *dev)
 {
 	const struct regulator_config *config = dev->config;
 
@@ -180,7 +183,7 @@ int regulator_count_voltages(const struct device *dev)
  * Part of the extended regulator consumer API
  * Counts the number of modes supported by a regulator
  */
-int regulator_count_modes(const struct device *dev)
+static int regulator_pmic_count_modes(const struct device *dev)
 {
 	const struct regulator_config *config = dev->config;
 
@@ -191,7 +194,8 @@ int regulator_count_modes(const struct device *dev)
  * Part of the extended regulator consumer API
  * Returns the supported voltage in uV for a given selector value
  */
-int regulator_list_voltages(const struct device *dev, unsigned int selector)
+static int regulator_pmic_list_voltages(const struct device *dev,
+					unsigned int selector)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -206,8 +210,8 @@ int regulator_list_voltages(const struct device *dev, unsigned int selector)
  * Part of the extended regulator consumer API
  * Returns true if the regulator supports a voltage in the given range.
  */
-int regulator_is_supported_voltage(const struct device *dev,
-		int min_uV, int max_uV)
+static int regulator_pmic_is_supported_voltage(const struct device *dev,
+					       int min_uV, int max_uV)
 {
 	const struct regulator_config *config = dev->config;
 
@@ -218,7 +222,8 @@ int regulator_is_supported_voltage(const struct device *dev,
  * Part of the extended regulator consumer API
  * Sets the output voltage to the closest supported voltage value
  */
-int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
+static int regulator_pmic_set_voltage(const struct device *dev, int min_uV,
+				 int max_uV)
 {
 	return regulator_set_voltage_offset(dev, min_uV, max_uV, 0);
 }
@@ -228,7 +233,7 @@ int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
  * Part of the extended regulator consumer API
  * Gets the current output voltage in uV
  */
-int regulator_get_voltage(const struct device *dev)
+static int regulator_pmic_get_voltage(const struct device *dev)
 {
 	return regulator_get_voltage_offset(dev, 0);
 }
@@ -237,7 +242,8 @@ int regulator_get_voltage(const struct device *dev)
  * Part of the extended regulator consumer API
  * Set the current limit for this device
  */
-int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA)
+static int regulator_pmic_set_current_limit(const struct device *dev, int min_uA,
+					    int max_uA)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -265,7 +271,7 @@ int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA
  * Part of the extended regulator consumer API
  * Gets the set current limit for the regulator
  */
-int regulator_get_current_limit(const struct device *dev)
+static int regulator_pmic_get_current_limit(const struct device *dev)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -295,10 +301,11 @@ int regulator_get_current_limit(const struct device *dev)
  * sets the target voltage for a given regulator mode. This mode does
  * not need to be the active mode. This API can be used to configure
  * voltages for a mode, then the regulator can be switched to that mode
- * with the regulator_set_mode api
+ * with the regulator_pmic_set_mode api
  */
-int regulator_set_mode_voltage(const struct device *dev, uint32_t mode,
-	uint32_t min_uV, uint32_t max_uV)
+static int regulator_pmic_set_mode_voltage(const struct device *dev,
+					   uint32_t mode, uint32_t min_uV,
+					   uint32_t max_uV)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off;
@@ -326,7 +333,7 @@ int regulator_set_mode_voltage(const struct device *dev, uint32_t mode,
  * Disables the regulator in a given mode. Does not implement the
  * onoff service, as this is incompatible with multiple mode operation
  */
-int regulator_mode_disable(const struct device *dev, uint32_t mode)
+static int regulator_pmic_mode_disable(const struct device *dev, uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off, dis_val;
@@ -356,7 +363,7 @@ int regulator_mode_disable(const struct device *dev, uint32_t mode)
  * Enables the regulator in a given mode. Does not implement the
  * onoff service, as this is incompatible with multiple mode operation
  */
-int regulator_mode_enable(const struct device *dev, uint32_t mode)
+static int regulator_pmic_mode_enable(const struct device *dev, uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off, en_val;
@@ -387,7 +394,8 @@ int regulator_mode_enable(const struct device *dev, uint32_t mode)
  * not need to be the active mode. This API can be used to read voltages
  * from a regulator mode other than the default.
  */
-int regulator_get_mode_voltage(const struct device *dev, uint32_t mode)
+static int regulator_pmic_get_mode_voltage(const struct device *dev,
+					   uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off;
@@ -415,7 +423,7 @@ int regulator_get_mode_voltage(const struct device *dev, uint32_t mode)
  * switches the regulator to a given mode. This API will apply a mode for
  * the regulator.
  */
-int regulator_set_mode(const struct device *dev, uint32_t mode)
+static int regulator_pmic_set_mode(const struct device *dev, uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
 	int rc;
@@ -450,7 +458,7 @@ int regulator_set_mode(const struct device *dev, uint32_t mode)
 	return rc;
 }
 
-static int enable_regulator(const struct device *dev, struct onoff_client *cli)
+static int regulator_pmic_enable(const struct device *dev, struct onoff_client *cli)
 {
 	k_spinlock_key_t key;
 	int rc;
@@ -473,7 +481,7 @@ static int enable_regulator(const struct device *dev, struct onoff_client *cli)
 	return onoff_sync_finalize(&data->srv, key, cli, rc, true);
 }
 
-static int disable_regulator(const struct device *dev)
+static int regulator_pmic_disable(const struct device *dev)
 {
 	struct regulator_data *data = dev->data;
 	const struct regulator_config *config = dev->config;
@@ -512,20 +520,32 @@ static int pmic_reg_init(const struct device *dev)
 		return -ENODEV;
 	}
 	if (config->boot_on) {
-		rc = enable_regulator(dev, NULL);
+		rc = regulator_pmic_enable(dev, NULL);
 	}
 	if (config->initial_mode) {
-		rc = regulator_set_mode(dev, config->initial_mode);
+		rc = regulator_pmic_set_mode(dev, config->initial_mode);
 	}
 	return rc;
 }
 
 
 static const struct regulator_driver_api api = {
-	.enable = enable_regulator,
-	.disable = disable_regulator
+	.enable = regulator_pmic_enable,
+	.disable = regulator_pmic_disable,
+	.count_voltages = regulator_pmic_count_voltages,
+	.count_modes = regulator_pmic_count_modes,
+	.list_voltages = regulator_pmic_list_voltages,
+	.is_supported_voltage = regulator_pmic_is_supported_voltage,
+	.set_voltage = regulator_pmic_set_voltage,
+	.get_voltage = regulator_pmic_get_voltage,
+	.set_current_limit = regulator_pmic_set_current_limit,
+	.get_current_limit = regulator_pmic_get_current_limit,
+	.set_mode = regulator_pmic_set_mode,
+	.set_mode_voltage = regulator_pmic_set_mode_voltage,
+	.get_mode_voltage = regulator_pmic_get_mode_voltage,
+	.mode_disable = regulator_pmic_mode_disable,
+	.mode_enable = regulator_pmic_mode_enable,
 };
-
 
 /*
  * Each regulator output will be initialized as a separate device struct,
