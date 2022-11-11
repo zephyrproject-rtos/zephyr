@@ -35,17 +35,17 @@ __subsystem struct regulator_driver_api {
 	int (*count_modes)(const struct device *dev);
 	int32_t (*list_voltages)(const struct device *dev,
 				 unsigned int selector);
-	int (*is_supported_voltage)(const struct device *dev, int32_t min_uV,
-				    int32_t max_uV);
-	int (*set_voltage)(const struct device *dev, int32_t min_uV,
-			   int32_t max_uV);
+	int (*is_supported_voltage)(const struct device *dev, int32_t min_uv,
+				    int32_t max_uv);
+	int (*set_voltage)(const struct device *dev, int32_t min_uv,
+			   int32_t max_uv);
 	int32_t (*get_voltage)(const struct device *dev);
-	int (*set_current_limit)(const struct device *dev, int32_t min_uA,
-				 int32_t max_uA);
+	int (*set_current_limit)(const struct device *dev, int32_t min_ua,
+				 int32_t max_ua);
 	int (*get_current_limit)(const struct device *dev);
 	int (*set_mode)(const struct device *dev, uint32_t mode);
 	int (*set_mode_voltage)(const struct device *dev, uint32_t mode,
-				int32_t min_uV, int32_t max_uV);
+				int32_t min_uv, int32_t max_uv);
 	int32_t (*get_mode_voltage)(const struct device *dev, uint32_t mode);
 	int (*mode_disable)(const struct device *dev, uint32_t mode);
 	int (*mode_enable)(const struct device *dev, uint32_t mode);
@@ -180,15 +180,15 @@ static inline int32_t regulator_list_voltages(const struct device *dev,
  * @brief Check if a voltage range is supported.
  *
  * @param dev Regulator device instance.
- * @param min_uV Minimum voltage in microvolts.
- * @param max_uV maximum voltage in microvolts.
+ * @param min_uv Minimum voltage in microvolts.
+ * @param max_uv maximum voltage in microvolts.
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
 static inline int regulator_is_supported_voltage(const struct device *dev,
-						 int32_t min_uV, int32_t max_uV)
+						 int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_driver_api *api =
 		(const struct regulator_driver_api *)dev->api;
@@ -197,7 +197,7 @@ static inline int regulator_is_supported_voltage(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->is_supported_voltage(dev, min_uV, max_uV);
+	return api->is_supported_voltage(dev, min_uv, max_uv);
 }
 
 /**
@@ -208,15 +208,15 @@ static inline int regulator_is_supported_voltage(const struct device *dev,
  * voltage.
  *
  * @param dev Regulator device instance.
- * @param min_uV Minimum acceptable voltage in microvolts.
- * @param max_uV Maximum acceptable voltage in microvolts.
+ * @param min_uv Minimum acceptable voltage in microvolts.
+ * @param max_uv Maximum acceptable voltage in microvolts.
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
 static inline int regulator_set_voltage(const struct device *dev,
-					int32_t min_uV, int32_t max_uV)
+					int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_driver_api *api =
 		(const struct regulator_driver_api *)dev->api;
@@ -225,7 +225,7 @@ static inline int regulator_set_voltage(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->set_voltage(dev, min_uV, max_uV);
+	return api->set_voltage(dev, min_uv, max_uv);
 }
 
 /**
@@ -251,15 +251,15 @@ static inline int32_t regulator_get_voltage(const struct device *dev)
  * @brief Set output current limit.
  *
  * @param dev Regulator device instance.
- * @param min_uA Minimum acceptable current limit in microamps.
- * @param max_uA Maximum acceptable current limit in microamps.
+ * @param min_ua Minimum acceptable current limit in microamps.
+ * @param max_ua Maximum acceptable current limit in microamps.
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
 static inline int regulator_set_current_limit(const struct device *dev,
-					      int32_t min_uA, int32_t max_uA)
+					      int32_t min_ua, int32_t max_ua)
 {
 	const struct regulator_driver_api *api =
 		(const struct regulator_driver_api *)dev->api;
@@ -268,7 +268,7 @@ static inline int regulator_set_current_limit(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->set_current_limit(dev, min_uA, max_uA);
+	return api->set_current_limit(dev, min_ua, max_ua);
 }
 
 /**
@@ -327,16 +327,16 @@ static inline int regulator_set_mode(const struct device *dev, uint32_t mode)
  *
  * @param dev Regulator device instance.
  * @param mode Regulator mode.
- * @param min_uV Minimum acceptable voltage in microvolts.
- * @param max_uV Maximum acceptable voltage in microvolts.
+ * @param min_uv Minimum acceptable voltage in microvolts.
+ * @param max_uv Maximum acceptable voltage in microvolts.
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
 static inline int regulator_set_mode_voltage(const struct device *dev,
-					     uint32_t mode, int32_t min_uV,
-					     int32_t max_uV)
+					     uint32_t mode, int32_t min_uv,
+					     int32_t max_uv)
 {
 	const struct regulator_driver_api *api =
 		(const struct regulator_driver_api *)dev->api;
@@ -345,7 +345,7 @@ static inline int regulator_set_mode_voltage(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->set_mode_voltage(dev, mode, min_uV, max_uV);
+	return api->set_mode_voltage(dev, mode, min_uv, max_uv);
 }
 
 /**
