@@ -20,6 +20,10 @@ struct posix_mutex {
 	_wait_q_t wait_q;
 };
 
+struct posix_cond {
+	_wait_q_t wait_q;
+};
+
 enum pthread_state {
 	/* The thread structure is unallocated and available for reuse. */
 	PTHREAD_TERMINATED = 0,
@@ -51,14 +55,6 @@ struct posix_thread {
 	pthread_cond_t state_cond;
 };
 
-struct posix_thread *to_posix_thread(pthread_t pthread);
-
-/* get and possibly initialize a posix_mutex */
-struct posix_mutex *to_posix_mutex(pthread_mutex_t *mu);
-
-/* get a previously initialized posix_mutex */
-struct posix_mutex *get_posix_mutex(pthread_mutex_t mut);
-
 static inline bool is_pthread_obj_initialized(uint32_t obj)
 {
 	return (obj & PTHREAD_OBJ_MASK_INIT) != 0;
@@ -73,5 +69,19 @@ static inline uint32_t mark_pthread_obj_uninitialized(uint32_t obj)
 {
 	return obj & ~PTHREAD_OBJ_MASK_INIT;
 }
+
+struct posix_thread *to_posix_thread(pthread_t pthread);
+
+/* get and possibly initialize a posix_mutex */
+struct posix_mutex *to_posix_mutex(pthread_mutex_t *mu);
+
+/* get a previously initialized posix_mutex */
+struct posix_mutex *get_posix_mutex(pthread_mutex_t mut);
+
+/* get and possibly initialize a posix_cond */
+struct posix_cond *to_posix_cond(pthread_cond_t *cvar);
+
+/* get a previously initialized posix_cond */
+struct posix_cond *get_posix_cond(pthread_cond_t cond);
 
 #endif
