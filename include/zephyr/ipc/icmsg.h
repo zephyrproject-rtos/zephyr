@@ -41,6 +41,12 @@ struct icmsg_data_t {
 	struct k_work_delayable notify_work;
 	struct k_work mbox_work;
 	atomic_t state;
+	uint8_t rx_buffer[CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE] __aligned(4);
+
+	/* No-copy */
+#ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
+	atomic_t rx_buffer_held;
+#endif
 };
 
 /** @brief Initialize an icmsg instance
@@ -133,6 +139,50 @@ int icmsg_close(const struct icmsg_config_t *conf,
 int icmsg_send(const struct icmsg_config_t *conf,
 	       struct icmsg_data_t *dev_data,
 	       const void *msg, size_t len);
+
+#ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
+/** @brief Hold RX buffer to be used outside of the received callback.
+ *
+ *  @param[in] conf Structure containing configuration parameters for the icmsg
+ *                  instance being created.
+ *  @param[inout] dev_data Structure containing run-time data used by the icmsg
+ *                         instance. The structure is initialized with
+ *                         @ref icmsg_init and its content must be preserved
+ *                         while the icmsg instance is active.
+ *  @param[in] data Pointer to the buffer to be held.
+ *
+ *  @retval 0 on success.
+ *  @retval -EBUSY when the instance has not finished handshake with the remote
+ *                 instance.
+ *  @retval -EINVAL when the @p data argument does not point to a valid RX
+ *                  buffer.
+ *  @retval -EALREADY when the buffer is already held.
+ */
+int icmsg_hold_rx_buffer(const struct icmsg_config_t *conf,
+			 struct icmsg_data_t *dev_data,
+			 const void *data);
+
+/** @brief Release RX buffer for future use.
+ *
+ *  @param[in] conf Structure containing configuration parameters for the icmsg
+ *                  instance being created.
+ *  @param[inout] dev_data Structure containing run-time data used by the icmsg
+ *                         instance. The structure is initialized with
+ *                         @ref icmsg_init and its content must be preserved
+ *                         while the icmsg instance is active.
+ *  @param[in] data Pointer to the buffer to be released.
+ *
+ *  @retval 0 on success.
+ *  @retval -EBUSY when the instance has not finished handshake with the remote
+ *                 instance.
+ *  @retval -EINVAL when the @p data argument does not point to a valid RX
+ *                  buffer.
+ *  @retval -EALREADY when the buffer is not held.
+ */
+int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
+			    struct icmsg_data_t *dev_data,
+			    const void *data);
+#endif
 
 /** @brief Clear memory in TX buffer.
  *

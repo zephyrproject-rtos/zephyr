@@ -11,6 +11,13 @@ config IPC_SERVICE_ICMSG_CB_BUF_SIZE
 	  data bigger than some size, you can safely change this option to
 	  reduce RAM consumption in your application.
 
+config IPC_SERVICE_ICMSG_NOCOPY_RX
+	bool
+	depends on IPC_SERVICE_ICMSG
+	help
+	  Enable nocopy feature for the icmsg library that might be used by
+	  backends based on icmsg.
+
 # The Icmsg library in its simplicity requires the system workqueue to execute
 # at a cooperative priority.
 config SYSTEM_WORKQUEUE_PRIORITY
