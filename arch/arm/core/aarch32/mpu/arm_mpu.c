@@ -180,9 +180,13 @@ void arm_core_mpu_disable(void)
 void arm_core_mpu_enable(void)
 {
 	/* Enable MPU and use the default memory map as a
-	 * background region for privileged software access.
+	 * background region for privileged software access if desired.
 	 */
+#if defined(CONFIG_MPU_DISABLE_BACKGROUND_MAP)
+	MPU->CTRL = MPU_CTRL_ENABLE_Msk;
+#else
 	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
+#endif
 
 	/* Make sure that all the registers are set before proceeding */
 	__DSB();
