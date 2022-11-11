@@ -36,8 +36,8 @@ struct regulator_config {
 	int num_modes;
 	uint8_t vsel_reg;
 	uint8_t vsel_mask;
-	uint32_t max_uV;
-	uint32_t min_uV;
+	int32_t max_uV;
+	int32_t min_uV;
 	uint8_t enable_reg;
 	uint8_t enable_mask;
 	uint8_t enable_val;
@@ -56,7 +56,8 @@ struct regulator_config {
 };
 
 static int regulator_pca9420_is_supported_voltage(const struct device *dev,
-						  int min_uV, int max_uV);
+						  int32_t min_uV,
+						  int32_t max_uV);
 
 /**
  * Reads a register from the PMIC
@@ -101,7 +102,8 @@ static int regulator_modify_register(const struct device *dev,
  * offset applied to the vsel_reg. Useful to support reading voltages
  * in another target mode
  */
-static int regulator_get_voltage_offset(const struct device *dev, uint32_t off)
+static int32_t regulator_get_voltage_offset(const struct device *dev,
+					    uint32_t off)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -130,8 +132,9 @@ static int regulator_get_voltage_offset(const struct device *dev, uint32_t off)
  * offset applied to the vsel_reg. Useful to support setting voltages in
  * another target mode.
  */
-static int regulator_set_voltage_offset(const struct device *dev, int min_uV,
-	int max_uV, uint32_t off)
+static int regulator_set_voltage_offset(const struct device *dev,
+					int32_t min_uV, int32_t max_uV,
+					uint32_t off)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -187,8 +190,8 @@ static int regulator_pca9420_count_modes(const struct device *dev)
  * Part of the extended regulator consumer API
  * Returns the supported voltage in uV for a given selector value
  */
-static int regulator_pca9420_list_voltages(const struct device *dev,
-					   unsigned int selector)
+static int32_t regulator_pca9420_list_voltages(const struct device *dev,
+					       unsigned int selector)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -204,7 +207,8 @@ static int regulator_pca9420_list_voltages(const struct device *dev,
  * Returns true if the regulator supports a voltage in the given range.
  */
 static int regulator_pca9420_is_supported_voltage(const struct device *dev,
-						  int min_uV, int max_uV)
+						  int32_t min_uV,
+						  int32_t max_uV)
 {
 	const struct regulator_config *config = dev->config;
 
@@ -215,8 +219,8 @@ static int regulator_pca9420_is_supported_voltage(const struct device *dev,
  * Part of the extended regulator consumer API
  * Sets the output voltage to the closest supported voltage value
  */
-static int regulator_pca9420_set_voltage(const struct device *dev, int min_uV,
-					 int max_uV)
+static int regulator_pca9420_set_voltage(const struct device *dev,
+					 int32_t min_uV, int32_t max_uV)
 {
 	return regulator_set_voltage_offset(dev, min_uV, max_uV, 0);
 }
@@ -226,7 +230,7 @@ static int regulator_pca9420_set_voltage(const struct device *dev, int min_uV,
  * Part of the extended regulator consumer API
  * Gets the current output voltage in uV
  */
-static int regulator_pca9420_get_voltage(const struct device *dev)
+static int32_t regulator_pca9420_get_voltage(const struct device *dev)
 {
 	return regulator_get_voltage_offset(dev, 0);
 }
@@ -236,7 +240,7 @@ static int regulator_pca9420_get_voltage(const struct device *dev)
  * Set the current limit for this device
  */
 static int regulator_pca9420_set_current_limit(const struct device *dev,
-					       int min_uA, int max_uA)
+					       int32_t min_uA, int32_t max_uA)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -297,8 +301,8 @@ static int regulator_pca9420_get_current_limit(const struct device *dev)
  * with the regulator_pca9420_set_mode api
  */
 static int regulator_pca9420_set_mode_voltage(const struct device *dev,
-					      uint32_t mode, uint32_t min_uV,
-					      uint32_t max_uV)
+					      uint32_t mode, int32_t min_uV,
+					      int32_t max_uV)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off;
@@ -389,8 +393,8 @@ static int regulator_pca9420_mode_enable(const struct device *dev,
  * not need to be the active mode. This API can be used to read voltages
  * from a regulator mode other than the default.
  */
-static int regulator_pca9420_get_mode_voltage(const struct device *dev,
-					      uint32_t mode)
+static int32_t regulator_pca9420_get_mode_voltage(const struct device *dev,
+						  uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off;
