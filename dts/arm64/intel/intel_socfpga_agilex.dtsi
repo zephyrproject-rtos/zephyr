@@ -145,7 +145,6 @@
 		interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
 		clock-frequency = <50000000>;
-		label = "sdmmc";
 		status = "disabled";
 	};
 
