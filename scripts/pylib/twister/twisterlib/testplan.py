@@ -483,7 +483,7 @@ class TestPlan:
                 plat = quar_dict['platforms']
                 self.verify_platforms_existence(plat, "quarantine-list")
             comment = quar_dict.get('comment', "NA")
-            quarantine_list.append([{".".join([p, s]): comment}
+            quarantine_list.append([{"/".join([p, s]): comment}
                                    for p in plat for s in quar_dict['scenarios']])
 
         # Flatten the quarantine_list
@@ -746,7 +746,7 @@ class TestPlan:
                 if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
 
-                test_configuration = ".".join([instance.platform.name,
+                test_configuration = "/".join([instance.platform.name,
                                                instance.testsuite.id])
                 # skip quarantined tests
                 if test_configuration in self.quarantine and not self.options.quarantine_verify:
@@ -811,6 +811,7 @@ class TestPlan:
 
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
                                       if p.status != "skipped" )
+
 
     def add_instances(self, instance_list):
         for instance in instance_list:
