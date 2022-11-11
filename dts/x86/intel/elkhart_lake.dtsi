@@ -46,10 +46,11 @@
 		compatible = "intel,pcie";
 		ranges;
 
-		ptm_root0: ptm_root@e000 {
+		ptm_root0: ptm_root0 {
 			compatible = "ptm-root";
 
-			reg = <PCIE_BDF(0,0x1c,0) PCIE_ID(0x8086,0x4b38)>;
+			vendor-id = <0x8086>;
+			device-id = <0x4b38>;
 
 			status = "okay";
 		};
