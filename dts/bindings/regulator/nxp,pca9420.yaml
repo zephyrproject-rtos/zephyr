@@ -1,10 +1,10 @@
 # Copyright (c), 2021 NXP
 # SPDX -License-Identifier: Apache-2.0
 
-description: PMIC controlled regulator
+description: NXP PCA9420 PMIC
 
 
-compatible: "regulator-pmic"
+compatible: "nxp,pca9420"
 
 include: base.yaml
 

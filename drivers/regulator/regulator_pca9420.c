@@ -3,14 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief PMIC Regulator Driver
- * This driver implements the regulator API within Zephyr, and additionally
- * implements support for a broader API.
- */
-
-#define DT_DRV_COMPAT regulator_pmic
+#define DT_DRV_COMPAT nxp_pca9420
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/regulator.h>
@@ -19,7 +12,7 @@
 #include <errno.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(pmic_regulator, CONFIG_REGULATOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(pca9420, CONFIG_REGULATOR_LOG_LEVEL);
 
 struct __packed voltage_range {
 	int uV; /* Voltage in uV */
@@ -62,8 +55,8 @@ struct regulator_config {
 	uint8_t modesel_mask;
 };
 
-static int regulator_pmic_is_supported_voltage(const struct device *dev,
-					       int min_uV, int max_uV);
+static int regulator_pca9420_is_supported_voltage(const struct device *dev,
+						  int min_uV, int max_uV);
 
 /**
  * Reads a register from the PMIC
@@ -144,7 +137,7 @@ static int regulator_set_voltage_offset(const struct device *dev, int min_uV,
 	struct regulator_data *data = dev->data;
 	int i = 0;
 
-	if (!regulator_pmic_is_supported_voltage(dev, min_uV, max_uV) ||
+	if (!regulator_pca9420_is_supported_voltage(dev, min_uV, max_uV) ||
 		min_uV > max_uV) {
 		return -EINVAL;
 	}
@@ -172,7 +165,7 @@ static int regulator_set_voltage_offset(const struct device *dev, int min_uV,
  * Part of the extended regulator consumer API
  * Returns the number of supported voltages
  */
-static int regulator_pmic_count_voltages(const struct device *dev)
+static int regulator_pca9420_count_voltages(const struct device *dev)
 {
 	const struct regulator_config *config = dev->config;
 
@@ -183,7 +176,7 @@ static int regulator_pmic_count_voltages(const struct device *dev)
  * Part of the extended regulator consumer API
  * Counts the number of modes supported by a regulator
  */
-static int regulator_pmic_count_modes(const struct device *dev)
+static int regulator_pca9420_count_modes(const struct device *dev)
 {
 	const struct regulator_config *config = dev->config;
 
@@ -194,8 +187,8 @@ static int regulator_pmic_count_modes(const struct device *dev)
  * Part of the extended regulator consumer API
  * Returns the supported voltage in uV for a given selector value
  */
-static int regulator_pmic_list_voltages(const struct device *dev,
-					unsigned int selector)
+static int regulator_pca9420_list_voltages(const struct device *dev,
+					   unsigned int selector)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -210,8 +203,8 @@ static int regulator_pmic_list_voltages(const struct device *dev,
  * Part of the extended regulator consumer API
  * Returns true if the regulator supports a voltage in the given range.
  */
-static int regulator_pmic_is_supported_voltage(const struct device *dev,
-					       int min_uV, int max_uV)
+static int regulator_pca9420_is_supported_voltage(const struct device *dev,
+						  int min_uV, int max_uV)
 {
 	const struct regulator_config *config = dev->config;
 
@@ -222,8 +215,8 @@ static int regulator_pmic_is_supported_voltage(const struct device *dev,
  * Part of the extended regulator consumer API
  * Sets the output voltage to the closest supported voltage value
  */
-static int regulator_pmic_set_voltage(const struct device *dev, int min_uV,
-				 int max_uV)
+static int regulator_pca9420_set_voltage(const struct device *dev, int min_uV,
+					 int max_uV)
 {
 	return regulator_set_voltage_offset(dev, min_uV, max_uV, 0);
 }
@@ -233,7 +226,7 @@ static int regulator_pmic_set_voltage(const struct device *dev, int min_uV,
  * Part of the extended regulator consumer API
  * Gets the current output voltage in uV
  */
-static int regulator_pmic_get_voltage(const struct device *dev)
+static int regulator_pca9420_get_voltage(const struct device *dev)
 {
 	return regulator_get_voltage_offset(dev, 0);
 }
@@ -242,8 +235,8 @@ static int regulator_pmic_get_voltage(const struct device *dev)
  * Part of the extended regulator consumer API
  * Set the current limit for this device
  */
-static int regulator_pmic_set_current_limit(const struct device *dev, int min_uA,
-					    int max_uA)
+static int regulator_pca9420_set_current_limit(const struct device *dev,
+					       int min_uA, int max_uA)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -271,7 +264,7 @@ static int regulator_pmic_set_current_limit(const struct device *dev, int min_uA
  * Part of the extended regulator consumer API
  * Gets the set current limit for the regulator
  */
-static int regulator_pmic_get_current_limit(const struct device *dev)
+static int regulator_pca9420_get_current_limit(const struct device *dev)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
@@ -301,11 +294,11 @@ static int regulator_pmic_get_current_limit(const struct device *dev)
  * sets the target voltage for a given regulator mode. This mode does
  * not need to be the active mode. This API can be used to configure
  * voltages for a mode, then the regulator can be switched to that mode
- * with the regulator_pmic_set_mode api
+ * with the regulator_pca9420_set_mode api
  */
-static int regulator_pmic_set_mode_voltage(const struct device *dev,
-					   uint32_t mode, uint32_t min_uV,
-					   uint32_t max_uV)
+static int regulator_pca9420_set_mode_voltage(const struct device *dev,
+					      uint32_t mode, uint32_t min_uV,
+					      uint32_t max_uV)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off;
@@ -333,7 +326,8 @@ static int regulator_pmic_set_mode_voltage(const struct device *dev,
  * Disables the regulator in a given mode. Does not implement the
  * onoff service, as this is incompatible with multiple mode operation
  */
-static int regulator_pmic_mode_disable(const struct device *dev, uint32_t mode)
+static int regulator_pca9420_mode_disable(const struct device *dev,
+					  uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off, dis_val;
@@ -363,7 +357,8 @@ static int regulator_pmic_mode_disable(const struct device *dev, uint32_t mode)
  * Enables the regulator in a given mode. Does not implement the
  * onoff service, as this is incompatible with multiple mode operation
  */
-static int regulator_pmic_mode_enable(const struct device *dev, uint32_t mode)
+static int regulator_pca9420_mode_enable(const struct device *dev,
+					 uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off, en_val;
@@ -394,8 +389,8 @@ static int regulator_pmic_mode_enable(const struct device *dev, uint32_t mode)
  * not need to be the active mode. This API can be used to read voltages
  * from a regulator mode other than the default.
  */
-static int regulator_pmic_get_mode_voltage(const struct device *dev,
-					   uint32_t mode)
+static int regulator_pca9420_get_mode_voltage(const struct device *dev,
+					      uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
 	uint8_t i, sel_off;
@@ -423,7 +418,7 @@ static int regulator_pmic_get_mode_voltage(const struct device *dev,
  * switches the regulator to a given mode. This API will apply a mode for
  * the regulator.
  */
-static int regulator_pmic_set_mode(const struct device *dev, uint32_t mode)
+static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
 	int rc;
@@ -458,7 +453,8 @@ static int regulator_pmic_set_mode(const struct device *dev, uint32_t mode)
 	return rc;
 }
 
-static int regulator_pmic_enable(const struct device *dev, struct onoff_client *cli)
+static int regulator_pca9420_enable(const struct device *dev,
+				    struct onoff_client *cli)
 {
 	k_spinlock_key_t key;
 	int rc;
@@ -481,7 +477,7 @@ static int regulator_pmic_enable(const struct device *dev, struct onoff_client *
 	return onoff_sync_finalize(&data->srv, key, cli, rc, true);
 }
 
-static int regulator_pmic_disable(const struct device *dev)
+static int regulator_pca9420_disable(const struct device *dev)
 {
 	struct regulator_data *data = dev->data;
 	const struct regulator_config *config = dev->config;
@@ -520,31 +516,31 @@ static int pmic_reg_init(const struct device *dev)
 		return -ENODEV;
 	}
 	if (config->boot_on) {
-		rc = regulator_pmic_enable(dev, NULL);
+		rc = regulator_pca9420_enable(dev, NULL);
 	}
 	if (config->initial_mode) {
-		rc = regulator_pmic_set_mode(dev, config->initial_mode);
+		rc = regulator_pca9420_set_mode(dev, config->initial_mode);
 	}
 	return rc;
 }
 
 
 static const struct regulator_driver_api api = {
-	.enable = regulator_pmic_enable,
-	.disable = regulator_pmic_disable,
-	.count_voltages = regulator_pmic_count_voltages,
-	.count_modes = regulator_pmic_count_modes,
-	.list_voltages = regulator_pmic_list_voltages,
-	.is_supported_voltage = regulator_pmic_is_supported_voltage,
-	.set_voltage = regulator_pmic_set_voltage,
-	.get_voltage = regulator_pmic_get_voltage,
-	.set_current_limit = regulator_pmic_set_current_limit,
-	.get_current_limit = regulator_pmic_get_current_limit,
-	.set_mode = regulator_pmic_set_mode,
-	.set_mode_voltage = regulator_pmic_set_mode_voltage,
-	.get_mode_voltage = regulator_pmic_get_mode_voltage,
-	.mode_disable = regulator_pmic_mode_disable,
-	.mode_enable = regulator_pmic_mode_enable,
+	.enable = regulator_pca9420_enable,
+	.disable = regulator_pca9420_disable,
+	.count_voltages = regulator_pca9420_count_voltages,
+	.count_modes = regulator_pca9420_count_modes,
+	.list_voltages = regulator_pca9420_list_voltages,
+	.is_supported_voltage = regulator_pca9420_is_supported_voltage,
+	.set_voltage = regulator_pca9420_set_voltage,
+	.get_voltage = regulator_pca9420_get_voltage,
+	.set_current_limit = regulator_pca9420_set_current_limit,
+	.get_current_limit = regulator_pca9420_get_current_limit,
+	.set_mode = regulator_pca9420_set_mode,
+	.set_mode_voltage = regulator_pca9420_set_mode_voltage,
+	.get_mode_voltage = regulator_pca9420_get_mode_voltage,
+	.mode_disable = regulator_pca9420_mode_disable,
+	.mode_enable = regulator_pca9420_mode_enable,
 };
 
 /*
@@ -589,7 +585,7 @@ static const struct regulator_driver_api api = {
 	DEVICE_DT_DEFINE(node, pmic_reg_init, NULL,						\
 			      &pmic_reg_##ord##_data,						\
 			      &pmic_reg_##ord##_cfg,						\
-			      POST_KERNEL, CONFIG_PMIC_REGULATOR_INIT_PRIORITY,			\
+			      POST_KERNEL, CONFIG_REGULATOR_PCA9420_INIT_PRIORITY,		\
 			      &api);								\
 /* Intermediate macros to extract DT node ordinal
  * (used as  a unique token for variable names)
