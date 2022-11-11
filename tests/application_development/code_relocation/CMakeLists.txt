@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright 2022 NXP
 
 cmake_minimum_required(VERSION 3.20.0)
 
@@ -18,15 +19,29 @@ zephyr_code_relocate(FILES src/test_file1.c ${SRAM2_PHDR} LOCATION SRAM2)
 
 zephyr_code_relocate(FILES src/test_file2.c ${RAM_PHDR} LOCATION RAM)
 
+# Add custom library that we can relocate code for
+add_subdirectory(test_lib)
+target_link_libraries(app PUBLIC test_lib)
+target_include_directories(app PUBLIC ${CMAKE_CURRENT_LIST_DIR}/test_lib)
+# Relocate library code
+zephyr_code_relocate(LIBRARY test_lib LOCATION SRAM2)
+
+# Test support for a simple generator expression to relocate two files
+set(reloc_files src/test_file4.c src/test_file5.c)
+set(genex_expr
+  ${CMAKE_CURRENT_LIST_DIR}/$<JOIN:${reloc_files},$<SEMICOLON>${CMAKE_CURRENT_LIST_DIR}/>)
+zephyr_code_relocate(FILES ${genex_expr} LOCATION SRAM2)
+
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_LITERAL)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_TEXT)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION RAM_DATA)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_BSS)
 
-zephyr_code_relocate(FILES ../../../kernel/sem.c ${RAM_PHDR} LOCATION RAM)
+
+zephyr_code_relocate(FILES ${ZEPHYR_BASE}/kernel/sem.c ${RAM_PHDR} LOCATION RAM)
 
 if (CONFIG_RELOCATE_TO_ITCM)
-zephyr_code_relocate(FILES ../../../lib/libc/minimal/source/string/string.c
+zephyr_code_relocate(FILES ${ZEPHYR_BASE}/lib/libc/minimal/source/string/string.c
 	LOCATION ITCM_TEXT)
 endif()
 
