@@ -13,8 +13,11 @@
 
 #define RX_BUF_SIZE	CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE
 #define BOND_NOTIFY_REPEAT_TO K_MSEC(CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS)
-#define BUFFER_RELEASED 0
-#define BUFFER_HELD     1
+
+#define RX_BUFFER_RELEASED	0
+#define RX_BUFFER_HELD		1
+#define SEND_BUFFER_UNUSED	0
+#define SEND_BUFFER_RESERVED	1
 
 static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
 				0x30, 0x72, 0x6e, 0x33, 0x6c, 0x69, 0x34};
@@ -66,10 +69,35 @@ static bool is_endpoint_ready(struct icmsg_data_t *dev_data)
 	return atomic_get(&dev_data->state) == ICMSG_STATE_READY;
 }
 
+static bool is_send_buffer_reserved(struct icmsg_data_t *dev_data)
+{
+	return atomic_get(&dev_data->send_buffer_reserved) ==
+			SEND_BUFFER_RESERVED;
+}
+
+static int reserve_send_buffer_if_unused(struct icmsg_data_t *dev_data)
+{
+	bool was_unused;
+
+	was_unused = atomic_cas(&dev_data->send_buffer_reserved,
+				  SEND_BUFFER_UNUSED, SEND_BUFFER_RESERVED);
+
+	return was_unused ? 0 : -EALREADY;
+}
+
+static int release_send_buffer(struct icmsg_data_t *dev_data)
+{
+	bool was_reserved;
+
+	was_reserved = atomic_cas(&dev_data->send_buffer_reserved,
+				  SEND_BUFFER_RESERVED, SEND_BUFFER_UNUSED);
+	return was_reserved ? 0 : -EALREADY;
+}
+
 static bool is_rx_buffer_free(struct icmsg_data_t *dev_data)
 {
 #ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
-	return atomic_get(&dev_data->rx_buffer_held) == BUFFER_RELEASED;
+	return atomic_get(&dev_data->rx_buffer_held) == RX_BUFFER_RELEASED;
 #else
 	return true;
 #endif
@@ -256,6 +284,8 @@ int icmsg_send(const struct icmsg_config_t *conf,
 	       const void *msg, size_t len)
 {
 	int ret;
+	int write_ret;
+	int release_ret;
 	int sent_bytes;
 
 	if (!is_endpoint_ready(dev_data)) {
@@ -267,13 +297,122 @@ int icmsg_send(const struct icmsg_config_t *conf,
 		return -ENODATA;
 	}
 
-	ret = spsc_pbuf_write(dev_data->tx_ib, msg, len);
-	if (ret < 0) {
-		return ret;
-	} else if (ret < len) {
+	ret = reserve_send_buffer_if_unused(dev_data);
+	if (ret) {
+		return -ENOBUFS;
+	}
+
+	write_ret = spsc_pbuf_write(dev_data->tx_ib, msg, len);
+	release_ret = release_send_buffer(dev_data);
+	__ASSERT_NO_MSG(!release_ret);
+
+	if (write_ret < 0) {
+		return write_ret;
+	} else if (write_ret < len) {
 		return -EBADMSG;
 	}
-	sent_bytes = ret;
+	sent_bytes = write_ret;
+
+	__ASSERT_NO_MSG(conf->mbox_tx.dev != NULL);
+
+	ret = mbox_send(&conf->mbox_tx, NULL);
+	if (ret) {
+		return ret;
+	}
+
+	return sent_bytes;
+}
+
+int icmsg_get_tx_buffer(const struct icmsg_config_t *conf,
+			struct icmsg_data_t *dev_data,
+			void **data, size_t *size)
+{
+	int ret;
+	int release_ret;
+	uint16_t requested_size;
+	int allocated_len;
+	char *allocated_buf;
+
+	if (*size == 0) {
+		/* Requested allocation of maximal size.
+		 * Try to allocate maximal buffer size from spsc,
+		 * potentially after wrapping marker.
+		 */
+		requested_size = SPSC_PBUF_MAX_LEN - 1;
+	} else {
+		requested_size = *size;
+	}
+
+	ret = reserve_send_buffer_if_unused(dev_data);
+	if (ret) {
+		return -ENOBUFS;
+	}
+
+	ret = spsc_pbuf_alloc(dev_data->tx_ib, requested_size, &allocated_buf);
+	if (ret < 0) {
+		release_ret = release_send_buffer(dev_data);
+		__ASSERT_NO_MSG(!release_ret);
+		return ret;
+	}
+	allocated_len = ret;
+
+	if (*size == 0) {
+		/* Requested allocation of maximal size.
+		 * Pass the buffer that was allocated.
+		 */
+		*size = allocated_len;
+		*data = allocated_buf;
+		return 0;
+	}
+
+	if (*size == allocated_len) {
+		/* Allocated buffer is of requested size. */
+		*data = allocated_buf;
+		return 0;
+	}
+
+	/* Allocated smaller buffer than requested.
+	 * Silently stop using the allocated buffer what is allowed by SPSC API
+	 */
+	release_send_buffer(dev_data);
+	*size = allocated_len;
+	return -ENOMEM;
+}
+
+int icmsg_drop_tx_buffer(const struct icmsg_config_t *conf,
+			 struct icmsg_data_t *dev_data,
+			 const void *data)
+{
+	/* Silently stop using the allocated buffer what is allowed by SPSC API
+	 */
+	return release_send_buffer(dev_data);
+}
+
+int icmsg_send_nocopy(const struct icmsg_config_t *conf,
+		      struct icmsg_data_t *dev_data,
+		      const void *msg, size_t len)
+{
+	int ret;
+	int sent_bytes;
+
+	if (!is_endpoint_ready(dev_data)) {
+		return -EBUSY;
+	}
+
+	/* Empty message is not allowed */
+	if (len == 0) {
+		return -ENODATA;
+	}
+
+	if (!is_send_buffer_reserved(dev_data)) {
+		return -ENXIO;
+	}
+
+	spsc_pbuf_commit(dev_data->tx_ib, len);
+	sent_bytes = len;
+
+	ret = release_send_buffer(dev_data);
+	__ASSERT_NO_MSG(!ret);
 
 	__ASSERT_NO_MSG(conf->mbox_tx.dev != NULL);
 
@@ -301,7 +440,7 @@ int icmsg_hold_rx_buffer(const struct icmsg_config_t *conf,
 	}
 
 	was_released = atomic_cas(&dev_data->rx_buffer_held,
-				  BUFFER_RELEASED, BUFFER_HELD);
+				  RX_BUFFER_RELEASED, RX_BUFFER_HELD);
 	if (!was_released) {
 		return -EALREADY;
 	}
@@ -324,7 +463,7 @@ int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
 	}
 
 	was_held = atomic_cas(&dev_data->rx_buffer_held,
-			      BUFFER_HELD, BUFFER_RELEASED);
+			      RX_BUFFER_HELD, RX_BUFFER_RELEASED);
 	if (!was_held) {
 		return -EALREADY;
 	}
