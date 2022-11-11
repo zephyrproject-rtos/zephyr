@@ -73,6 +73,12 @@ jobs:
         -m Identity -m Nits -m pylint -m checkpatch -m Kconfig \
         -c origin/${BASE_REF}..
 
+    - name: Setup debug session
+      if: always()
+      uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true
+
     - name: upload-results
       uses: actions/upload-artifact@v3
       continue-on-error: True
