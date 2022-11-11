@@ -44,12 +44,13 @@ Hardware
 - BT5.2&BT5.1&BT5 Bluetooth Specification Cerified
 - Supposts BT5 Long Range Features
 - Cerifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
-- 32-bit ARM Cortx M4F CPU
+- 32-bit ARM® Cortex™ M4F CPU
 - 1MB Flash Memory/256kB RAM
 - RoHs & Reach Compiant.
 - 48 GPIO
 - Chip Antenna
 - Interfaces: SPI, UART, I2C, I2S, PWM, ADC, NFC, and USB
+- Highly flexible multiprotocol SoC ideally suited for Bluetooth® Low Energy, ANT+, Zigbee, Thread (802.15.4) ultra low-power wireless applications.
 - 3 User LEDs
 - 4 User buttons
 - 1 Mini USB connector for power supply and USB communication
@@ -133,7 +134,7 @@ UART
 Programming and Debugging
 *************************
 
-Applications for the ``raytac_mdbt50q_db_40`` board configuration can be
+Applications for the ``_raytac_mdbt50q_db_40_nrf52840`` board configuration can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
@@ -147,7 +148,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :blinky application.
 
 Then build and flash the application in the usual way.
 
