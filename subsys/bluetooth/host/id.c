@@ -81,7 +81,6 @@ static void adv_id_check_func(struct bt_le_ext_adv *adv, void *data)
 	}
 }
 
-#if defined(CONFIG_BT_PRIVACY)
 static void adv_is_private_enabled(struct bt_le_ext_adv *adv, void *data)
 {
 	bool *adv_enabled = data;
@@ -91,7 +90,6 @@ static void adv_is_private_enabled(struct bt_le_ext_adv *adv, void *data)
 		*adv_enabled = true;
 	}
 }
-#endif /* defined(CONFIG_BT_PRIVACY) */
 
 #if defined(CONFIG_BT_SMP)
 static void adv_is_limited_enabled(struct bt_le_ext_adv *adv, void *data)
@@ -198,11 +196,30 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 	return 0;
 }
 
-static void adv_disabled_rpa_invalidate(struct bt_le_ext_adv *adv, void *data)
+static void adv_rpa_expired(struct bt_le_ext_adv *adv)
 {
-	/* Don't invalidate RPA of enabled advertising set. */
-	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+	bool rpa_invalid = true;
+
+#if defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY)
+	/* Notify the user about the RPA timeout and set the RPA validity. */
+	if (atomic_test_bit(adv->flags, BT_ADV_RPA_VALID) &&
+	    adv->cb && adv->cb->rpa_expired) {
+		rpa_invalid = adv->cb->rpa_expired(adv);
+	}
+#endif
+	if (rpa_invalid) {
 		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
+	}
+}
+
+static void adv_rpa_invalidate(struct bt_le_ext_adv *adv, void *data)
+{
+	/* RPA of Advertisers limited by timeot or number of packets only expire
+	 * when they are stopped.
+	 */
+	if (!atomic_test_bit(adv->flags, BT_ADV_LIMITED) &&
+	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+		adv_rpa_expired(adv);
 	}
 }
 
@@ -214,13 +231,8 @@ static void le_rpa_invalidate(void)
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 	}
 
-	/* Invalidate RPA of advertising sets that are disabled.
-	 *
-	 * Enabled advertising set have to call rpa_expired callback first to
-	 * determine if the RPA of the advertising set should be rotated.
-	 */
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
-		bt_le_ext_adv_foreach(adv_disabled_rpa_invalidate, NULL);
+		bt_le_ext_adv_foreach(adv_rpa_invalidate, NULL);
 	}
 }
 
@@ -320,6 +332,13 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 
 	/* check if RPA is valid */
 	if (atomic_test_bit(adv->flags, BT_ADV_RPA_VALID)) {
+		/* Schedule the RPA timer if it is not running.
+		 * The RPA may be valid without the timer running.
+		 */
+		if (!atomic_test_bit(adv->flags, BT_ADV_LIMITED)) {
+			le_rpa_timeout_submit();
+		}
+
 		return 0;
 	}
 
@@ -420,10 +439,9 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 }
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
-#if defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY)
-static void adv_disable_rpa(struct bt_le_ext_adv *adv, void *data)
+static void adv_pause_rpa(struct bt_le_ext_adv *adv, void *data)
 {
-	bool rpa_invalid = true;
+	bool *adv_enabled = data;
 
 	/* Disable advertising sets to prepare them for RPA update. */
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
@@ -437,21 +455,26 @@ static void adv_disable_rpa(struct bt_le_ext_adv *adv, void *data)
 		}
 
 		atomic_set_bit(adv->flags, BT_ADV_RPA_UPDATE);
+		*adv_enabled = true;
+	}
+}
 
-		/* Notify the user about the RPA timeout and set the RPA validity. */
-		if (adv->cb && adv->cb->rpa_expired) {
-			rpa_invalid = adv->cb->rpa_expired(adv);
-		}
+static bool le_adv_rpa_timeout(void)
+{
+	bool adv_enabled = false;
 
-		if (rpa_invalid) {
-			atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+		    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+			/* Pause all advertising sets using RPAs */
+			bt_le_ext_adv_foreach(adv_pause_rpa, &adv_enabled);
 		} else {
-			/* Submit the timeout in case no advertising set updates their RPA
-			 * in the current period. This makes sure that the RPA timer is running.
-			 */
-			le_rpa_timeout_submit();
+			/* Check if advertising set is enabled */
+			bt_le_ext_adv_foreach(adv_is_private_enabled, &adv_enabled);
 		}
 	}
+
+	return adv_enabled;
 }
 
 static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
@@ -471,16 +494,6 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 		}
 	}
 }
-#endif /* defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY) */
-
-static void adv_update_rpa_foreach(void)
-{
-#if defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY)
-	bt_le_ext_adv_foreach(adv_disable_rpa, NULL);
-
-	bt_le_ext_adv_foreach(adv_enable_rpa, NULL);
-#endif
-}
 
 static void le_update_private_addr(void)
 {
@@ -488,12 +501,6 @@ static void le_update_private_addr(void)
 	bool adv_enabled = false;
 	uint8_t id = BT_ID_DEFAULT;
 	int err;
-
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
-	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		adv_update_rpa_foreach();
-	}
 
 #if defined(CONFIG_BT_OBSERVER)
 	bool scan_enabled = false;
@@ -539,6 +546,12 @@ static void le_update_private_addr(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		bt_le_ext_adv_foreach(adv_enable_rpa, NULL);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
 	    adv && adv_enabled) {
 		bt_le_adv_set_enable_legacy(adv, true);
 	}
@@ -557,6 +570,7 @@ static void le_force_rpa_timeout(void)
 
 	k_work_cancel_delayable_sync(&bt_dev.rpa_update, &sync);
 #endif
+	(void)le_adv_rpa_timeout();
 	le_rpa_invalidate();
 	le_update_private_addr();
 }
@@ -564,7 +578,7 @@ static void le_force_rpa_timeout(void)
 #if defined(CONFIG_BT_PRIVACY)
 static void rpa_timeout(struct k_work *work)
 {
-	bool adv_enabled = false;
+	bool adv_enabled;
 
 	BT_DBG("");
 
@@ -579,11 +593,8 @@ static void rpa_timeout(struct k_work *work)
 		}
 	}
 
+	adv_enabled = le_adv_rpa_timeout();
 	le_rpa_invalidate();
-
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
-		bt_le_ext_adv_foreach(adv_is_private_enabled, &adv_enabled);
-	}
 
 	/* IF no roles using the RPA is running we can stop the RPA timer */
 	if (!(adv_enabled ||
@@ -709,6 +720,11 @@ bool bt_id_adv_random_addr_check(const struct bt_le_adv_param *param)
 	 * the error code to the application.
 	 */
 	return true;
+}
+
+void bt_id_adv_limited_stopped(struct bt_le_ext_adv *adv)
+{
+	adv_rpa_expired(adv);
 }
 
 #if defined(CONFIG_BT_SMP)
