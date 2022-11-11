@@ -57,6 +57,11 @@ class Filters:
     # in case a test suite is skipped intentionally .
     SKIP = 'Skip filter'
 
+class Quarantine:
+    tests = {}
+    platforms = []
+    architectures = []
+    simulation = []
 
 class TestPlan:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -79,7 +84,7 @@ class TestPlan:
 
         # Keep track of which test cases we've filtered out and why
         self.testsuites = {}
-        self.quarantine = {}
+        self.quarantine = Quarantine()
         self.platforms = []
         self.platform_names = []
         self.selected_platforms = []
@@ -473,10 +478,15 @@ class TestPlan:
         # Load yaml into quarantine_yaml
         quarantine_yaml = scl.yaml_load_verify(file, self.quarantine_schema)
 
+
+        self.quarantine.platforms = quarantine_yaml.get('platforms', [])
+        self.quarantine.architectures = quarantine_yaml.get('architectures', [])
+        self.quarantine.simulation = quarantine_yaml.get('simulation', [])
+
         # Create quarantine_list with a product of the listed
         # platforms and scenarios for each entry in quarantine yaml
         quarantine_list = []
-        for quar_dict in quarantine_yaml:
+        for quar_dict in quarantine_yaml['tests']:
             if quar_dict['platforms'][0] == "all":
                 plat = self.platform_names
             else:
@@ -490,7 +500,7 @@ class TestPlan:
         quarantine_list = [it for sublist in quarantine_list for it in sublist]
         # Change quarantine_list into a dictionary
         for d in quarantine_list:
-            self.quarantine.update(d)
+            self.quarantine.tests.update(d)
 
     def load_from_file(self, file, filter_platform=[]):
         with open(file, "r") as json_test_plan:
@@ -580,6 +590,8 @@ class TestPlan:
         default_platforms = False
         emulation_platforms = False
 
+        def search_comment(name, list_to_search):
+            return next(element.get('comment') for element in list_to_search if element['name'] == name)
 
         if all_filter:
             logger.info("Selecting all possible platforms per test case")
@@ -662,8 +674,16 @@ class TestPlan:
                             if ts.harness_config.get('fixture') in h.fixtures:
                                 instance.run = True
 
+                if plat.simulation in [q['name'] for q in self.quarantine.simulation]:
+                    comment = search_comment(plat.simulation, self.quarantine.simulation) or "no info"
+                    instance.add_filter(f"Simulation is quarantined: {comment}", Filters.QUARENTINE)
+
                 if not force_platform and plat.name in exclude_platform:
                     instance.add_filter("Platform is excluded on command line.", Filters.CMD_LINE)
+
+                if plat.name in [q['name'] for q in self.quarantine.platforms]:
+                    comment = search_comment(plat.name, self.quarantine.platforms) or ""
+                    instance.add_filter(f"Platform is quarantined: {comment}", Filters.QUARENTINE)
 
                 if (plat.arch == "unit") != (ts.type == "unit"):
                     # Discard silently
@@ -704,6 +724,10 @@ class TestPlan:
 
                     if ts.platform_exclude and plat.name in ts.platform_exclude:
                         instance.add_filter("In test case platform exclude", Filters.TESTSUITE)
+
+                if plat.arch in [q['name'] for q in self.quarantine.architectures]:
+                    comment = search_comment(plat.arch, self.quarantine.architectures) or ""
+                    instance.add_filter(f"Architecture is quarantined: {comment}", Filters.QUARENTINE)
 
                 if ts.toolchain_exclude and toolchain in ts.toolchain_exclude:
                     instance.add_filter("In test case toolchain exclude", Filters.TESTSUITE)
@@ -749,10 +773,10 @@ class TestPlan:
                 test_configuration = "/".join([instance.platform.name,
                                                instance.testsuite.id])
                 # skip quarantined tests
-                if test_configuration in self.quarantine and not self.options.quarantine_verify:
-                    instance.add_filter(f"Quarantine: {self.quarantine[test_configuration]}", Filters.QUARENTINE)
+                if test_configuration in self.quarantine.tests and not self.options.quarantine_verify:
+                    instance.add_filter(f"Quarantine: {self.quarantine.tests[test_configuration]}", Filters.QUARENTINE)
                 # run only quarantined test to verify their statuses (skip everything else)
-                if self.options.quarantine_verify and test_configuration not in self.quarantine:
+                if self.options.quarantine_verify and test_configuration not in self.quarantine.tests:
                     instance.add_filter("Not under quarantine", Filters.QUARENTINE)
 
                 # if nothing stopped us until now, it means this configuration

@@ -7,25 +7,70 @@
 # a YAML structure validator, to validate the YAML files that provide
 # a list of configurations (scenarios + platforms) under quarantine
 #
-type: seq
-matching: all
-sequence:
-  - type: map
-    required: yes
+type: map
+mapping:
+  'architectures':
+    type: seq
     matching: all
-    mapping:
-      "scenarios":
-        type: seq
-        required: true
-        sequence:
-          - type: str
-          - unique: True
-      "platforms":
-        required: true
-        type: seq
-        sequence:
-          - type: str
-          - unique: True
-      "comment":
-        type: str
-        required: false
+    sequence:
+      - type: map
+        required: yes
+        matching: all
+        mapping:
+          "name":
+            type: str
+            required: true
+          "comment":
+            type: str
+            required: false
+  'platforms':
+    type: seq
+    matching: all
+    sequence:
+      - type: map
+        required: yes
+        matching: all
+        mapping:
+          "name":
+            type: str
+            required: true
+          "comment":
+            type: str
+            required: false
+  'simulation':
+    type: seq
+    matching: all
+    sequence:
+      - type: map
+        required: yes
+        matching: all
+        mapping:
+          "name":
+            type: str
+            required: true
+          "comment":
+            type: str
+            required: false
+  'tests':
+    type: seq
+    matching: all
+    sequence:
+      - type: map
+        required: yes
+        matching: all
+        mapping:
+          "scenarios":
+            type: seq
+            required: true
+            sequence:
+              - type: str
+              - unique: True
+          "platforms":
+            required: true
+            type: seq
+            sequence:
+              - type: str
+              - unique: True
+          "comment":
+            type: str
+            required: false

@@ -868,11 +868,11 @@ using an external J-Link probe.  The "probe_id" keyword overrides the
 Quarantine
 ++++++++++
 
-Twister allows using user-defined yaml files defining the list of tests to be put
-under quarantine. Such tests will be skipped and marked accordingly in the output
-reports. This feature is especially useful when running larger test suits, where
-a failure of one test can affect the execution of other tests (e.g. putting the
-physical board in a corrupted state).
+Twister allows user to provide onfiguration files defining a list of tests or
+platforms to be put under quarantine. Such tests will be skipped and marked
+accordingly in the output reports. This feature is especially useful when
+running larger test suits, where a failure of one test can affect the execution
+of other tests (e.g. putting the physical board in a corrupted state).
 
 To use the quarantine feature one has to add the argument
 ``--quarantine-list <PATH_TO_QUARANTINE_YAML>`` to a twister call.
@@ -888,19 +888,28 @@ be added to the output reports.
 
 An example of entries in a quarantine yaml::
 
-    - scenarios:
-        - sample.basic.helloworld
-      platforms:
-        - all
-      comment: "Link to the issue: https://github.com/zephyrproject-rtos/zephyr/pull/33287"
+    tests:
+      - scenarios:
+          - sample.basic.helloworld
+        platforms:
+          - all
+        comment: "Link to the issue: https://github.com/zephyrproject-rtos/zephyr/pull/33287"
 
-    - scenarios:
-        - kernel.common
-        - kernel.common.misra
-        - kernel.common.nano64
-      platforms:
-        - qemu_cortex_m3
-        - native_posix
+      - scenarios:
+          - kernel.common
+          - kernel.common.misra
+          - kernel.common.nano64
+        platforms:
+          - qemu_cortex_m3
+          - native_posix
+
+To exclude a platform, use the following syntax::
+
+    platforms:
+      - name: qemu_x86
+        comment: "broken qemu"
+
+Additionally you can quarantine entire architectures or a specific simulator for executing tests.
 
 Running in Tests in Random Order
 ********************************
