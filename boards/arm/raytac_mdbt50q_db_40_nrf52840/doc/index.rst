@@ -168,7 +168,7 @@ Segger IC.
 
 
 Testing the LEDs and buttons in the MDBT50Q-DB-40
-***********************************************
+*************************************************
 
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
