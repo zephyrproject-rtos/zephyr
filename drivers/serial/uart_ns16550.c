@@ -34,7 +34,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 
-#include "uart_ns16550.h"
+#include <zephyr/drivers/serial/uart_ns16550.h>
 
 #define INST_HAS_PCP_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, pcp) ||
 #define INST_HAS_DLF_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, dlf) ||
