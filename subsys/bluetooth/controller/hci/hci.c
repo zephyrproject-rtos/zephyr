@@ -5813,7 +5813,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 			return -EINVAL;
 		}
 
-<<<<<<< HEAD
 		/* FIXME: convey group start */
 		sdu_frag_tx.grp_ref_point = 0;
 
@@ -5839,14 +5838,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		}
 
 		sdu_frag_tx.target_event = pkt_seq_num;
-=======
-		/* FIXME: convey group start, sequence number */
-		/*sdu_frag_tx.grp_ref_point = 0; */
-		sdu_frag_tx.target_event = 0;
-
-		isoal_source_handle_t source;
-		struct ll_iso_datapath *dp;
->>>>>>> Bluetooth: Controller: integrate ISOAL style fixes
 
 		stream->pkt_seq_num++;
 
