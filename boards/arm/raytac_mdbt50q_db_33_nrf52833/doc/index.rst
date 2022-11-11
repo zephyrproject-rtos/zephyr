@@ -38,19 +38,25 @@ The `MDBT50Q-DB-33 Schematic`_ contains the demo board's schematic.
 
 Hardware
 ********
-* Module Demo Board built by MDBT50Q-512K
-* Nordic nRF52833 SoC Solution
-* A recommended 3rd-party module by Nordic Semiconductor.
-* BT5.2 & BT5.1 & BT5 Bluetooth Specification Certified
-* Supports BT5 Long Range Feature
-* Certifications: FCC, IC, CE, Telec (MIC), KC, SRRC, NCC, RCM, WPC
-* 32-bit ARM® Cortex™ M4F CPU
-* 512kB Flash Memory / 128kB RAM
-* RoHS & Reach Compliant.
-* 42 GPIO
-* Chip Antenna
-* Interfaces: SPI, UART, I2C, I2S, PWM, ADC, NFC, and USB
-* Highly flexible multiprotocol SoC ideally suited for Bluetooth® Low Energy, ANT+, Zigbee, Thread (802.15.4) ultra low-power wireless applications.
+- Module Demo Board build by MDBT50Q-512K
+- Nordic nRF52833 SoC Solution
+- A recommnded 3rd-party module by Nordic Semiconductor.
+- BT5.2&BT5.1&BT5 Bluetooth Specification Cerified
+- Supposts BT5 Long Range Features
+- Cerifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
+- 32-bit ARM® Cortex™ M4F CPU
+- 512kB Flash Memory/128kB RAM
+- RoHs & Reach Compiant.
+- 42 GPIO
+- Chip Antenna
+- Interfaces: SPI, UART, I2C, I2S, PWM, ADC, NFC, and USB
+- Highly flexible multiprotocol SoC ideally suited for Bluetooth® Low Energy, ANT+, Zigbee, Thread (802.15.4) ultra low-power wireless applications.
+- 3 User LEDs
+- 4 User buttons
+- 1 Mini USB connector for power supply and USB communication
+- SWD connector for FW programing
+- J-Link interface for FW programing
+- UART interface for UART communication
 
 Supported Features
 ==================
@@ -107,6 +113,7 @@ LED
 * LED2 (red) = P0.14
 * LED3 (blue) = P0.15
 
+
 Push buttons
 ------------
 
@@ -125,7 +132,7 @@ UART
 Programming and Debugging
 *************************
 
-Applications for the ``raytac_mdbt50q_db_33`` board configuration can be
+Applications for the ``raytac_mdbt50q_db_33_nrf52833`` board configuration can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
@@ -139,7 +146,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :blinky application.
 
 Then build and flash the application in the usual way.
 
@@ -150,7 +157,7 @@ The FW will be program to MDBT50Q-DB-33 demo board.
 
    west build -b raytac_mdbt50q_db_33_nrf52833 ./zephyr/sample/basic/blinky --build-dir build_raytac_mdbt50q_db_33
    west flash --build-dir build_raytac_mdbt50q_db_33
-
+   
 
 Debugging
 =========
@@ -172,7 +179,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/raytac_mdbt50q_db_33/raytac_mdbt50q_db_33.dts`.
+:zephyr_file:`boards/arm/raytac_mdbt50q_db_33_nrf52833/raytac_mdbt50q_db_33_nrf52833.dts`.
 
 Using UART1
 ***********
@@ -231,12 +238,12 @@ References
 .. target-notes::
 
 .. _MDBT50Q-DB-33 website:
-	https://www.raytac.com/product/ins.php?index_id=97
-.. _MDBT50Q-DB-33 Specification：
-	https://www.raytac.com/download/index.php?index_id=46
-.. _MDBT50Q-DB-40 Schematic:
-	https://www.raytac.com/upload/catalog_b/da53e5bd46d899e68bd4c323716dfa82.jpg
+	https://www.raytac.com/product/ins.php?index_id=81
+.. _MDBT50Q-DB-33 Specification:
+	https://www.raytac.com/download/index.php?index_id=43
+.. _MDBT50Q-DB-33 Schematic:
+	https://www.raytac.com/upload/catalog_b/134ade06b5db3dd5803d27c5b17f22f3.jpg
 .. _J-Link Software and documentation pack:
 	https://www.segger.com/jlink-software.html
 .. _nRF52833 Product Specification:
-	https://infocenter.nordicsemi.com/pdf/nRF52833_PS_v1.0.pdf
+	http://infocenter.nordicsemi.com/pdf/nRF52833_PS_v1.0.pdf
