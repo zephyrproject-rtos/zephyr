@@ -19,6 +19,7 @@ API Changes
 
 Changes in this release
 =======================
+
 * Bluetooth: :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER`
   and :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER` have been
   added to enable the PAST implementation rather than
@@ -33,7 +34,10 @@ Changes in this release
   :kconfig:option:`CONFIG_DISK_FLASH_SECTOR_SIZE` Kconfig options have been
   removed in favor of new :dtcompatible:`zephyr,flash-disk` devicetree binding.
 
-- Starting from this release ``zephyr-`` prefixed tags won't be created
+* Regulator APIs previously located in ``<zephyr/drivers/regulator/consumer.h>``
+  are now part of ``<zerphyr/drivers/regulator.h>``.
+
+* Starting from this release ``zephyr-`` prefixed tags won't be created
   anymore. The project will continue using ``v`` tags, for example ``v3.3.0``.
 
 Removed APIs in this release
