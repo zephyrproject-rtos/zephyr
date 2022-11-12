@@ -45,6 +45,26 @@ static void bound(void *priv)
 	k_event_post(&dev_data->event, EVENT_BOUND);
 }
 
+static void *icmsg_buffer_to_user_buffer(const void *icmsg_buffer)
+{
+	return (void *)(((char *)icmsg_buffer) + sizeof(ept_id_t));
+}
+
+static void *user_buffer_to_icmsg_buffer(const void *user_buffer)
+{
+	return (void *)(((char *)user_buffer) - sizeof(ept_id_t));
+}
+
+static size_t icmsg_buffer_len_to_user_buffer_len(size_t icmsg_buffer_len)
+{
+	return icmsg_buffer_len - sizeof(ept_id_t);
+}
+
+static size_t user_buffer_len_to_icmsg_buffer_len(size_t user_buffer_len)
+{
+	return user_buffer_len + sizeof(ept_id_t);
+}
+
 static void set_ept_id_in_send_buffer(uint8_t *send_buffer, ept_id_t ept_id)
 {
 	send_buffer[0] = ept_id;
@@ -86,9 +106,10 @@ static void received(const void *data, size_t len, void *priv)
 			return;
 		}
 		if (dev_data->epts[i]->cb.received) {
-			dev_data->epts[i]->cb.received(id + 1,
-					len - sizeof(ept_id_t),
-					dev_data->epts[i]->priv);
+			dev_data->epts[i]->cb.received(
+				icmsg_buffer_to_user_buffer(data),
+				icmsg_buffer_len_to_user_buffer_len(len),
+				dev_data->epts[i]->priv);
 		}
 	}
 }
@@ -186,12 +207,12 @@ static int send(const struct device *instance, void *token,
 	 * scatter list also for SPSC buffer implementation.
 	 */
 	set_ept_id_in_send_buffer(dev_data->send_buffer, *id);
-	memcpy(dev_data->send_buffer + sizeof(ept_id_t), msg, len);
+	memcpy(icmsg_buffer_to_user_buffer(dev_data->send_buffer), msg, len);
 
 	r = icmsg_send(conf, &dev_data->icmsg_data, dev_data->send_buffer,
-			len + sizeof(ept_id_t));
+			user_buffer_len_to_icmsg_buffer_len(len));
 	if (r > 0) {
-		sent_bytes = r - sizeof(ept_id_t);;
+		sent_bytes = icmsg_buffer_len_to_user_buffer_len(r);
 	}
 
 	k_mutex_unlock(&dev_data->send_mutex);
@@ -203,37 +224,38 @@ static int send(const struct device *instance, void *token,
 	}
 }
 
-static size_t get_buffer_length_to_pass(size_t allocated_buffer_length)
+static size_t get_buffer_length_to_pass(size_t icmsg_buffer_len)
 {
-	if (allocated_buffer_length >= sizeof(ept_id_t)) {
-		return allocated_buffer_length - sizeof(ept_id_t);
+	if (icmsg_buffer_len >= sizeof(ept_id_t)) {
+		return icmsg_buffer_len_to_user_buffer_len(icmsg_buffer_len);
 	} else {
 		return 0;
 	}
 }
 
 static int get_tx_buffer(const struct device *instance, void *token,
-			 void **data, uint32_t *len, k_timeout_t wait)
+			 void **data, uint32_t *user_len, k_timeout_t wait)
 {
 	const struct icmsg_config_t *conf = instance->config;
 	struct backend_data_t *dev_data = instance->data;
-	char *allocated_buffer;
+	void *icmsg_buffer;
 	int r;
-	size_t len_to_allocate = *len;
+	size_t icmsg_len;
 
 	if (!K_TIMEOUT_EQ(wait, K_NO_WAIT)) {
 		return -ENOTSUP;
 	}
 
-	if (len_to_allocate) {
-		len_to_allocate += sizeof(ept_id_t);
+	if (*user_len) {
+		icmsg_len = user_buffer_len_to_icmsg_buffer_len(*user_len);
+	} else {
+		icmsg_len = 0;
 	}
 
-	r = icmsg_get_tx_buffer(conf, &dev_data->icmsg_data,
-				(void **)&allocated_buffer,
-				&len_to_allocate);
+	r = icmsg_get_tx_buffer(conf, &dev_data->icmsg_data, &icmsg_buffer,
+				&icmsg_len);
 	if (r == -ENOMEM) {
-		*len = get_buffer_length_to_pass(len_to_allocate);
+		*user_len = get_buffer_length_to_pass(icmsg_len);
 		return -ENOMEM;
 	}
 
@@ -241,19 +263,19 @@ static int get_tx_buffer(const struct device *instance, void *token,
 		return r;
 	}
 
-	*len = get_buffer_length_to_pass(len_to_allocate);
+	*user_len = get_buffer_length_to_pass(icmsg_len);
 	/* If requested max buffer length (*len == 0) allocated buffer might be
 	 * shorter than sizeof(ept_id_t). In such circumstances drop the buffer
 	 * and return error.
 	 */
 
-	if (*len) {
-		*data = allocated_buffer + sizeof(ept_id_t);
+	if (*user_len) {
+		*data = icmsg_buffer_to_user_buffer(icmsg_buffer);
 		return 0;
 	}
 
 	r = icmsg_drop_tx_buffer(conf, &dev_data->icmsg_data,
-				 allocated_buffer);
+				 icmsg_buffer);
 	__ASSERT_NO_MSG(!r);
 	return -ENOBUFS;
 }
@@ -263,9 +285,7 @@ static int drop_tx_buffer(const struct device *instance, void *token,
 {
 	const struct icmsg_config_t *conf = instance->config;
 	struct backend_data_t *dev_data = instance->data;
-	const char *buffer_to_drop = data;
-
-	buffer_to_drop -= sizeof(ept_id_t);
+	const void *buffer_to_drop = user_buffer_to_icmsg_buffer(data);
 
 	return icmsg_drop_tx_buffer(conf, &dev_data->icmsg_data, buffer_to_drop);
 }
@@ -276,23 +296,44 @@ static int send_nocopy(const struct device *instance, void *token,
 	const struct icmsg_config_t *conf = instance->config;
 	struct backend_data_t *dev_data = instance->data;
 	ept_id_t *id = token;
-	char *buffer_to_send = (void *)data;
-	size_t len_to_send = len;
+	void *buffer_to_send;
+	size_t len_to_send;
 	int r;
 
-	buffer_to_send -= sizeof(ept_id_t);
-	len_to_send += sizeof(ept_id_t);
+	buffer_to_send = user_buffer_to_icmsg_buffer(data);
+	len_to_send = user_buffer_len_to_icmsg_buffer_len(len);
 
 	set_ept_id_in_send_buffer(buffer_to_send, *id);
 
 	r = icmsg_send_nocopy(conf, &dev_data->icmsg_data, buffer_to_send,
 			      len_to_send);
 	if (r > 0) {
-		return r - sizeof(ept_id_t);
+		return icmsg_buffer_len_to_user_buffer_len(r);
 	} else {
 		return r;
 	}
 }
+
+#ifdef CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
+int hold_rx_buffer(const struct device *instance, void *token, void *data)
+{
+	const struct icmsg_config_t *conf = instance->config;
+	struct backend_data_t *dev_data = instance->data;
+	void *icmsg_buffer = user_buffer_to_icmsg_buffer(data);
+
+	return icmsg_hold_rx_buffer(conf, &dev_data->icmsg_data, icmsg_buffer);
+}
+
+int release_rx_buffer(const struct device *instance, void *token, void *data)
+{
+	const struct icmsg_config_t *conf = instance->config;
+	struct backend_data_t *dev_data = instance->data;
+	void *icmsg_buffer = user_buffer_to_icmsg_buffer(data);
+
+	return icmsg_release_rx_buffer(conf, &dev_data->icmsg_data,
+			icmsg_buffer);
+}
+#endif /* CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX */
 
 const static struct ipc_service_backend backend_ops = {
 	.open_instance = open,
@@ -302,6 +343,11 @@ const static struct ipc_service_backend backend_ops = {
 	.get_tx_buffer = get_tx_buffer,
 	.drop_tx_buffer = drop_tx_buffer,
 	.send_nocopy = send_nocopy,
+
+#ifdef CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
+	.hold_rx_buffer = hold_rx_buffer,
+	.release_rx_buffer = release_rx_buffer,
+#endif
 };
 
 static int backend_init(const struct device *instance)
