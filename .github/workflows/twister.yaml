@@ -288,7 +288,7 @@ jobs:
         with:
           path: artifacts
 
-      - if: github.event_name == 'push' || github.event_name == 'schdule'
+      - if: github.event_name == 'push' || github.event_name == 'schedule'
         name: Upload to opensearch
         run: |
           pip3 install opensearch-py
