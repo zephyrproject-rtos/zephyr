@@ -38,6 +38,8 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 		reg_val |= 0x01 << GPIO_P0_00_MODE_REG_PUPD_Pos;
 	} else if (pin->bias_pull_down) {
 		reg_val |= 0x02 << GPIO_P0_00_MODE_REG_PUPD_Pos;
+	} else if (pin->output_enable) {
+		reg_val |= 0x03 << GPIO_P0_00_MODE_REG_PUPD_Pos;
 	}
 
 	*reg = reg_val;
