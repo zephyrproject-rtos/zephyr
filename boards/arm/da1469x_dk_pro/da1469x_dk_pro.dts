@@ -149,3 +149,15 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
 };
+
+&spi {
+	status = "okay";
+	pinctrl-0 = <&spi_controller>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_controller>;
+	pinctrl-names = "default";
+};

@@ -178,6 +178,25 @@
 			reg = <0x50020700 0x100>;
 			periph-clock-config = <0x0800>;
 			interrupts = <9 0>;
+		};
+
+		spi: spi@50020300 {
+			compatible = "renesas,smartbond-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50020300 0x100>;
+			periph-clock-config = <0x20>;
+			interrupts = <10 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@50020400 {
+			compatible = "renesas,smartbond-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50020400 0x100>;
+			periph-clock-config = <0x80>;
+			interrupts = <11 0>;
 			status = "disabled";
 		};
 	};
