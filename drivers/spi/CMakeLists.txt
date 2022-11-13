@@ -35,6 +35,7 @@ zephyr_library_sources_ifdef(CONFIG_SPI_ANDES_ATCSPI200	spi_andes_atcspi200.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_S32_SPI spi_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_XMC4XXX     spi_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_PW		spi_pw.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_SMARTBOND   spi_smartbond.c)
 
 zephyr_library_sources_ifdef(CONFIG_SPI_RTIO spi_rtio.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_ASYNC spi_signal.c)
