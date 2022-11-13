@@ -6,6 +6,7 @@
 menu "Device Drivers"
 
 source "drivers/adc/Kconfig"
+source "drivers/auxdisplay/Kconfig"
 source "drivers/audio/Kconfig"
 source "drivers/bbram/Kconfig"
 source "drivers/bluetooth/Kconfig"
