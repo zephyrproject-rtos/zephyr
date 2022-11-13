@@ -240,3 +240,8 @@ set_compiler_property(PROPERTY warning_shadow_variables -Wshadow)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
+
+# Compiler flag to enable function instrumentation
+if(CONFIG_INSTRUMENTATION)
+set_compiler_property(PROPERTY func_instrumentation -finstrument-functions)
+endif()
