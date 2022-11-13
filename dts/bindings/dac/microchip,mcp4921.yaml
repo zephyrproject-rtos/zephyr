@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MCP4921 12-bit DAC
+
+compatible: "microchip,mcp4921"
+
+include: [dac-controller.yaml, spi-device.yaml]
+
+properties:
+    "#io-channel-cells":
+      const: 1
+      
+io-channel-cells:
+    - output
