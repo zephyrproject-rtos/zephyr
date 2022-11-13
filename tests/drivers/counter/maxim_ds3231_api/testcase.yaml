@@ -1,6 +1,6 @@
 tests:
   drivers.counter.maxim_ds3231:
-    tags: drivers
+    tags: drivers counter
     depends_on: counter i2c
     min_ram: 16
     timeout: 400

@@ -1,6 +1,6 @@
 common:
   build_only: true
-  tags: drivers
+  tags: drivers ethernet
 tests:
   net.ethernet.build:
     min_flash: 42
