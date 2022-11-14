@@ -28,6 +28,10 @@ if(CONFIG_MBEDTLS_BUILTIN)
     zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_CURRENT_MODULE_DIR}/library/=)
   endif()
 
+  zephyr_include_directories(
+    ${ZEPHYR_CURRENT_MODULE_DIR}/include
+  )
+
   zephyr_library_sources(
     zephyr_init.c
     ${mbedtls_sources}
