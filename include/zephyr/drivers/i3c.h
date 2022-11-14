@@ -682,6 +682,11 @@ struct i3c_device_desc {
 	/** Device Provisioned ID */
 	const uint64_t pid:48;
 
+	/** Pid[47:33](Manufacture ID) + Pid[32](Provisional ID Type Selector) */
+	uint32_t pid_h;
+	/** Pid[31:16](Part ID) + Pid[15:12](Instance ID) + Pid[11:0](extra info) */
+	uint32_t pid_l;
+
 	/**
 	 * Static address for this target device.
 	 *

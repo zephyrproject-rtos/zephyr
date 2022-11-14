@@ -1,0 +1,11 @@
+# Copyright (C) 2022 Samsung Electronics Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# This option signifies whether DesignWare I3C compatible HW is
+# available
+
+menuconfig I3C_DW
+	bool "DesignWare I3C controller driver support"
+	help
+	 Enables DesignWare I3C controller driver.
+	 Required to configure I3C in controller mode.

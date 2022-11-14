@@ -26,6 +26,9 @@ extern "C" {
 /** Maximum CCC ID for broadcast */
 #define I3C_CCC_BROADCAST_MAX_ID		0x7FU
 
+/** If its CCC Direct Command */
+#define I3C_CCC_DIRECT                          BIT(7)
+
 /**
  * Enable Events Command
  *
