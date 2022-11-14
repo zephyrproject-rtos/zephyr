@@ -807,6 +807,12 @@ static int transceive_dma(const struct device *dev,
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.channel);
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.channel);
 
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(&data->ctx) && !ret) {
+		ret = data->ctx.recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
+
 end:
 	spi_context_release(&data->ctx, ret);
 
