@@ -752,6 +752,10 @@ Release Notes:
   status: maintained
   maintainers:
     - cfriedt
+  collaborators:
+    - tgorochowik
+    - fkokosinski
+    - msierszulski
   files:
     - drivers/fpga/
     - dts/bindings/fpga/
