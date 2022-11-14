@@ -445,6 +445,36 @@ ZTEST(zync_tests, test_atom_set)
 	k_thread_abort(&wait_threads[0]);
 }
 
+/* Start a thread, let it pend on a zync, wake it up, but then kill it
+ * before it reacquires the zync spinlock and decrements the atom.
+ * Verify that the kernel wakes up another thread to take its place.
+ */
+ZTEST(zync_tests_1cpu, test_abort_recover)
+{
+	reset_zync(NULL);
+	awaiting_count = awoken_count = 0;
+
+	spawn_wait_thread(0, true);
+	k_sleep(K_TICKS(1));
+	spawn_wait_thread(1, true);
+
+	k_sleep(K_TICKS(2));
+	zassert_equal(awaiting_count, 2, "wrong count of wait threads");
+
+	k_tid_t kth = &wait_threads[0];
+
+	k_sched_lock();
+	k_zync(&zync, &mod_atom, false, 1, K_NO_WAIT);
+
+	zassert_true((kth->base.thread_state & _THREAD_PENDING) == 0, "still pended");
+	zassert_equal(awoken_count, 0, "someone woke up?");
+	k_thread_abort(kth);
+	k_sched_unlock();
+
+	k_sleep(K_TICKS(1));
+	zassert_equal(awoken_count, 1, "didn't wake up");
+}
+
 static void *suite_setup(void)
 {
 	z_object_init(&zync);
@@ -458,3 +488,5 @@ static void *suite_setup(void)
 }
 
 ZTEST_SUITE(zync_tests, NULL, suite_setup, NULL, NULL, NULL);
+ZTEST_SUITE(zync_tests_1cpu, NULL, suite_setup,
+	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
