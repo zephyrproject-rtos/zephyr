@@ -8,6 +8,7 @@
 
 
 #include <zephyr/devicetree.h>
+#include <zephyr/toolchain.h>
 #include <adsp-vectors.h>
 #include <mem_window.h>
 
