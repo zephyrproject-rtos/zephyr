@@ -27,6 +27,11 @@
 #include <sl_device_init_hfxo.h>
 #include <sl_device_init_nvic.h>
 
+#ifdef CONFIG_PM
+#include <sl_hfxo_manager.h>
+#include <sl_power_manager.h>
+#endif
+
 #endif
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -205,6 +210,12 @@ static int silabs_exx32_init(const struct device *arg)
 	sl_device_init_hfxo();
 	sl_device_init_dpll();
 	sl_device_init_emu();
+
+#ifdef CONFIG_PM
+	sl_power_manager_init();
+	sl_hfxo_manager_init();
+#endif
+
 #else
 
 #ifdef CONFIG_SOC_GECKO_EMU_DCDC
