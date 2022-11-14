@@ -1946,6 +1946,7 @@ STM32 Platforms:
   collaborators:
     - ABOSTM
     - FRASTM
+    - gautierg-st
     - GeorgeCGV
   files:
     - boards/arm/nucleo_*/
