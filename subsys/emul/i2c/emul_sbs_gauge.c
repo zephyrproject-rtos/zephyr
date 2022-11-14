@@ -6,9 +6,12 @@
  * Emulator for SBS 1.1 compliant smart battery fuel gauge.
  */
 
+#ifdef CONFIG_FUEL_GAUGE
+#define DT_DRV_COMPAT sbs_sbs_gauge_new_api
+#else
 #define DT_DRV_COMPAT sbs_sbs_gauge
+#endif /* CONFIG_FUEL_GAUGE */
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sbs_sbs_gauge);
 
