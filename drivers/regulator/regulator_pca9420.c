@@ -5,11 +5,12 @@
 
 #define DT_DRV_COMPAT nxp_pca9420
 
+#include <errno.h>
+
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/dt-bindings/regulator/pmic_i2c.h>
-#include <zephyr/drivers/i2c.h>
-#include <errno.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(pca9420, CONFIG_REGULATOR_LOG_LEVEL);
