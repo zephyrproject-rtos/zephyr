@@ -47,9 +47,9 @@ struct regulator_config {
 	uint8_t ilim_mask;
 	struct i2c_dt_spec i2c;
 	uint16_t initial_mode;
-	uint32_t *voltage_array;
-	uint32_t *current_array;
-	uint16_t *allowed_modes;
+	const uint32_t *voltage_array;
+	const uint32_t *current_array;
+	const uint16_t *allowed_modes;
 	uint8_t modesel_offset;
 	uint8_t modesel_reg;
 	uint8_t modesel_mask;
@@ -547,60 +547,55 @@ static const struct regulator_driver_api api = {
 	.mode_enable = regulator_pca9420_mode_enable,
 };
 
-/*
- * Each regulator output will be initialized as a separate device struct,
- * and implement the regulator API. Since the DT binding is defined for the
- * entire regulator, this macro will be called for each child node of the
- * regulator device. This allows the regulator to have common DTS properties
- * shared between each regulator output
- */
-#define CONFIGURE_REGULATOR_OUTPUT(node, ord)							\
-	static uint32_t pmic_reg_##ord##_cur_limits[] =						\
-		DT_PROP_OR(node, current_levels, {});						\
-	static uint32_t pmic_reg_##ord##_vol_range[] =						\
-		DT_PROP(node, voltage_range);							\
-	static uint16_t pmic_reg_##ord##_allowed_modes[] =					\
-		DT_PROP_OR(DT_PARENT(node), regulator_allowed_modes, {});			\
-	static struct regulator_data pmic_reg_##ord##_data;					\
-	static struct regulator_config pmic_reg_##ord##_cfg = {					\
-		.vsel_mask = DT_PROP(node, vsel_mask),						\
-		.vsel_reg = DT_PROP(node, vsel_reg),						\
-		.num_voltages = DT_PROP(node, num_voltages),					\
-		.num_current_levels = DT_PROP(node, num_current_levels),			\
-		.enable_reg = DT_PROP(node, enable_reg),					\
-		.enable_mask = DT_PROP(node, enable_mask),					\
-		.enable_val = DT_PROP(node, enable_val),					\
-		.min_uv = DT_PROP(node, min_uv),						\
-		.max_uv = DT_PROP(node, max_uv),						\
-		.ilim_reg = DT_PROP_OR(node, ilim_reg, 0),					\
-		.ilim_mask = DT_PROP_OR(node, ilim_mask, 0),					\
-		.enable_inverted = DT_PROP(node, enable_inverted),				\
-		.boot_on = DT_PROP_OR(node, regulator_boot_on, false),				\
-		.num_modes = ARRAY_SIZE(pmic_reg_##ord##_allowed_modes),			\
-		.initial_mode = DT_PROP_OR(DT_PARENT(node), regulator_initial_mode, 0),		\
-		.i2c = I2C_DT_SPEC_GET(DT_PARENT(node)),					\
-		.voltage_array = pmic_reg_##ord##_vol_range,					\
-		.current_array = pmic_reg_##ord##_cur_limits,					\
-		.allowed_modes = pmic_reg_##ord##_allowed_modes,				\
-		.modesel_offset = DT_PROP_OR(DT_PARENT(node), modesel_offset, 0),		\
-		.modesel_reg = DT_PROP_OR(DT_PARENT(node), modesel_reg, 0),			\
-		.modesel_mask = DT_PROP_OR(DT_PARENT(node), modesel_mask, 0),			\
-	};											\
-	DEVICE_DT_DEFINE(node, pmic_reg_init, NULL,						\
-			      &pmic_reg_##ord##_data,						\
-			      &pmic_reg_##ord##_cfg,						\
-			      POST_KERNEL, CONFIG_REGULATOR_PCA9420_INIT_PRIORITY,		\
-			      &api);								\
-/* Intermediate macros to extract DT node ordinal
- * (used as  a unique token for variable names)
- */
-#define _CONFIGURE_REGULATOR_OUTPUT(node, ord)							\
-	CONFIGURE_REGULATOR_OUTPUT(node, ord)
+#define REGULATOR_PCA9420_DEFINE(node_id, ord)                                 \
+	static const uint32_t curr_limits_##ord[] =                            \
+		DT_PROP_OR(node_id, current_levels, {});                       \
+	static const uint32_t vol_range_##ord[] =                              \
+		DT_PROP(node_id, voltage_range);                               \
+	static const uint16_t allowed_modes_##ord[] =                          \
+		DT_PROP_OR(DT_PARENT(node_id), regulator_allowed_modes, {});   \
+                                                                               \
+	static struct regulator_data data_##ord;                               \
+                                                                               \
+	static const struct regulator_config config_##ord = {                  \
+		.vsel_mask = DT_PROP(node_id, vsel_mask),                      \
+		.vsel_reg = DT_PROP(node_id, vsel_reg),                        \
+		.num_voltages = DT_PROP(node_id, num_voltages),                \
+		.num_current_levels = DT_PROP(node_id, num_current_levels),    \
+		.enable_reg = DT_PROP(node_id, enable_reg),                    \
+		.enable_mask = DT_PROP(node_id, enable_mask),                  \
+		.enable_val = DT_PROP(node_id, enable_val),                    \
+		.min_uv = DT_PROP(node_id, min_uv),                            \
+		.max_uv = DT_PROP(node_id, max_uv),                            \
+		.ilim_reg = DT_PROP_OR(node_id, ilim_reg, 0),                  \
+		.ilim_mask = DT_PROP_OR(node_id, ilim_mask, 0),                \
+		.enable_inverted = DT_PROP(node_id, enable_inverted),          \
+		.boot_on = DT_PROP_OR(node_id, regulator_boot_on, false),      \
+		.num_modes = ARRAY_SIZE(allowed_modes_##ord),                  \
+		.initial_mode = DT_PROP_OR(DT_PARENT(node_id),                 \
+					   regulator_initial_mode, 0),         \
+		.i2c = I2C_DT_SPEC_GET(DT_PARENT(node_id)),                    \
+		.voltage_array = vol_range_##ord,                              \
+		.current_array = curr_limits_##ord,                            \
+		.allowed_modes = allowed_modes_##ord,                          \
+		.modesel_offset =                                              \
+			DT_PROP_OR(DT_PARENT(node_id), modesel_offset, 0),     \
+		.modesel_reg = DT_PROP_OR(DT_PARENT(node_id), modesel_reg, 0), \
+		.modesel_mask =                                                \
+			DT_PROP_OR(DT_PARENT(node_id), modesel_mask, 0),       \
+	};                                                                     \
+                                                                               \
+	DEVICE_DT_DEFINE(node_id, pmic_reg_init, NULL, &data_##ord,            \
+			 &config_##ord, POST_KERNEL,                           \
+			 CONFIG_REGULATOR_PCA9420_INIT_PRIORITY, &api);
 
-#define __CONFIGURE_REGULATOR_OUTPUT(node)							\
-	_CONFIGURE_REGULATOR_OUTPUT(node, DT_DEP_ORD(node))
+#define _REGULATOR_PCA9420_DEFINE_ALL(node_id, ord)                            \
+	REGULATOR_PCA9420_DEFINE(node_id, ord)
 
-#define CONFIGURE_REGULATOR(id)									\
-	DT_INST_FOREACH_CHILD(id, __CONFIGURE_REGULATOR_OUTPUT)
+#define __REGULATOR_PCA9420_DEFINE_ALL(node_id)                                \
+	_REGULATOR_PCA9420_DEFINE_ALL(node_id, DT_DEP_ORD(node_id))
 
-DT_INST_FOREACH_STATUS_OKAY(CONFIGURE_REGULATOR)
+#define REGULATOR_PCA9420_DEFINE_ALL(inst)                                     \
+	DT_INST_FOREACH_CHILD(inst, __REGULATOR_PCA9420_DEFINE_ALL)
+
+DT_INST_FOREACH_STATUS_OKAY(REGULATOR_PCA9420_DEFINE_ALL)
