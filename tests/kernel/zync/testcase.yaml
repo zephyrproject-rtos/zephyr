@@ -12,6 +12,14 @@ tests:
   kernel.zync.prio_boost:
     extra_configs:
       - CONFIG_ZYNC_PRIO_BOOST=y
+  kernel.zync.strict_timeouts:
+    extra_configs:
+      - CONFIG_ZYNC_STRICT_TIMEOUTS=y
+      - CONFIG_TIMEOUT_64BIT=y
+  kernel.zync.strict_timeouts32:
+    extra_configs:
+      - CONFIG_ZYNC_STRICT_TIMEOUTS=y
+      - CONFIG_TIMEOUT_64BIT=n
   kernel.zync.nouser:
     extra_configs:
       - CONFIG_TEST_USERSPACE=n

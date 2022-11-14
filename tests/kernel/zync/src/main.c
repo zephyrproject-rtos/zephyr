@@ -19,6 +19,8 @@ ZTEST_DMEM atomic_t awoken_count, awaiting_count;
 
 K_MUTEX_USER_DEFINE(wrapped_mutex, ztest_mem_partition);
 
+K_SEM_DEFINE(wrapped_sem, 0, K_SEM_MAX_LIMIT);
+
 /* Resets the zync to a test initial-state, returns current config */
 static void reset_zync(struct k_zync_cfg *cfg)
 {
@@ -472,7 +474,52 @@ ZTEST(zync_tests_1cpu, test_abort_recover)
 	k_sched_unlock();
 
 	k_sleep(K_TICKS(1));
-	zassert_equal(awoken_count, 1, "didn't wake up");
+	zassert_equal(awoken_count, 1, "replacement thread didn't wake up");
+}
+
+static void timeout_wakeup(void *pa, void *pb, void *pc)
+{
+	int32_t ticks = k_ms_to_ticks_ceil32(300);
+	k_timeout_t timeout = K_TICKS(ticks);
+
+	int64_t start = k_uptime_ticks();
+	int32_t ret = k_sem_take(&wrapped_sem, timeout);
+	int64_t end = k_uptime_ticks();
+
+	zassert_equal(ret, -EAGAIN, "k_sem_take() should return -EAGAIN");
+
+	int64_t dt = end - start;
+
+	if (IS_ENABLED(CONFIG_ZYNC_STRICT_TIMEOUTS)) {
+		zassert_true(dt >= ticks, "didn't wait long enough: dt == %d", dt);
+	} else {
+		/* 3-tick threshold for 2 context switches and a 1
+		 * tick sleep in the main thread.
+		 */
+		zassert_true(dt <= 3, "should have woken up immediately");
+	}
+}
+
+/* Tests the zync pair retry behavior */
+ZTEST(zync_tests_1cpu, test_early_wakeup)
+{
+	/* Spawn the thread and let it pend */
+	k_thread_create(&wait_threads[0], wait_stacks[0],
+			K_THREAD_STACK_SIZEOF(wait_stacks[0]),
+			timeout_wakeup, NULL, NULL, NULL,
+			0, 0, K_NO_WAIT);
+	k_sleep(K_TICKS(1));
+
+	/* Hold the sched lock so it won't run, wake it up, but then
+	 * take the atom count ourselves
+	 */
+	k_sched_lock();
+	k_sem_give(&wrapped_sem);
+	zassert_equal(0, k_sem_take(&wrapped_sem, K_NO_WAIT),
+		      "failed to retake zync");
+	k_sched_unlock();
+
+	k_msleep(200);
 }
 
 static void *suite_setup(void)
