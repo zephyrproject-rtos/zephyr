@@ -255,8 +255,7 @@ void net_pkt_allocs_foreach(net_pkt_allocs_cb_t cb, void *user_data)
 #define net_pkt_alloc_find(alloc_data, func_free, line_free) false
 #endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC */
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
-	CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(NET_PKT_DEBUG_ENABLED)
 
 #define NET_FRAG_CHECK_IF_NOT_IN_USE(frag, ref)				\
 	do {								\
