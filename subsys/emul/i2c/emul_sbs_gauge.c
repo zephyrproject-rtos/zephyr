@@ -105,6 +105,10 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 			switch (msgs->len - 1) {
 			case 1:
 				rc = reg_read(target, reg, &val);
+				if (rc) {
+					/* Return before writing bad value to message buffer */
+					return rc;
+				}
 				msgs->buf[0] = val;
 				break;
 			default:
