@@ -2707,6 +2707,71 @@ extern struct k_work_q k_sys_work_q;
  * INTERNAL_HIDDEN @endcond
  */
 
+/* Wrapper for the zync utilities below.  Here in kernel.h because it
+ * needs to appear in both kernel and non-kernel contexts (i.e. can't
+ * be a simple function) AND needs to call out to external syscalls.
+ * Our include structure isn't friendly to this kind of usage.
+ */
+static inline int32_t z_pzyncmod(struct z_zync_pair *zp, int32_t mod,
+				 k_timeout_t timeout)
+{
+	int32_t ret;
+	int64_t start;
+	k_ticks_t t0;
+	bool retry, forever = K_TIMEOUT_EQ(timeout, Z_FOREVER);
+	bool ticking = !forever && !K_TIMEOUT_EQ(timeout, Z_TIMEOUT_NO_WAIT);
+
+	if (!IS_ENABLED(CONFIG_ZYNC_STRICT_TIMEOUTS)) {
+		ticking = false;
+	}
+
+	if (ticking) {
+		t0 = timeout.ticks;
+		start = k_uptime_ticks();
+#ifdef CONFIG_TIMEOUT_64BIT
+		if (Z_TICK_ABS(t0) < 0) {
+			timeout = K_TIMEOUT_ABS_TICKS(t0 + start);
+		}
+#endif
+	}
+
+	do {
+		if (IS_ENABLED(Z_ZYNC_ALWAYS_KERNEL)) {
+			ret = z_pzync(Z_PAIR_ZYNC(zp), mod, timeout);
+		} else if (k_zync_try_mod(Z_PAIR_ATOM(zp), mod)) {
+			return 0;
+		} else {
+			ret = k_zync(Z_PAIR_ZYNC(zp), Z_PAIR_ATOM(zp),
+				     false, mod, timeout);
+		}
+
+		retry = mod < 0 && ret == 0;
+		if (retry) {
+			if (ticking) {
+				int64_t dt = k_uptime_ticks() - start;
+
+				if (!IS_ENABLED(CONFIG_TIMEOUT_64BIT)) {
+					timeout = Z_TIMEOUT_TICKS(t0 - dt);
+				}
+				if (dt <= 0) {
+					retry = false;
+				}
+			} else {
+				retry = forever;
+			}
+		}
+	} while (retry);
+
+	/* Infuriating historical API requirements in test suite */
+	if (ret == 0) {
+		ret = -EAGAIN;
+	}
+	if (ret == -EAGAIN && K_TIMEOUT_EQ(timeout, Z_TIMEOUT_NO_WAIT)) {
+		ret = -EBUSY;
+	}
+	return ret < 0 ? ret : 0;
+}
+
 /**
  * @defgroup mutex_apis Mutex APIs
  * @ingroup kernel_apis

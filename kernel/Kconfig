@@ -403,6 +403,19 @@ config ZYNC_LEGACY
 	  Very few applications depend on this older behavior and most
 	  should select the various features individually.
 
+config ZYNC_STRICT_TIMEOUTS
+	bool "Add retries to k_zync-based timeouts"
+	help
+	  When set, zync-wrapped IPC primitives like k_sem and k_mutex
+	  will have a timeout-sensitive retry loop placed around their
+	  k_zync() invocation.  This will force them to wait for the
+	  specified time even in circumstances (like being
+	  suspended/restarted, or having their intended atom count
+	  "stolen" by a higher priority thread) where k_zync would
+	  naturally return early with -EAGAIN.  Optional; most code
+	  should be prepared to handle -EAGAIN on its own, where the
+	  app can make a better choice as to what to do.
+
 menu "Kernel Debugging and Metrics"
 
 config INIT_STACKS
