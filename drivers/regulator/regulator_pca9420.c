@@ -14,14 +14,14 @@
 
 LOG_MODULE_REGISTER(pca9420, CONFIG_REGULATOR_LOG_LEVEL);
 
-struct __packed voltage_range {
-	int uV; /* Voltage in uV */
-	int reg_val; /* Register value for voltage */
+struct voltage_range {
+	int32_t uV; /* Voltage in uV */
+	uint8_t reg_val; /* Register value for voltage */
 };
 
-struct __packed current_range {
-	int uA; /* Current limit in uA */
-	int reg_val; /* Register value for current limit */
+struct current_range {
+	int32_t uA; /* Current limit in uA */
+	uint8_t reg_val; /* Register value for current limit */
 };
 
 struct regulator_pca9420_data {
