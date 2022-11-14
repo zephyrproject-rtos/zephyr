@@ -73,8 +73,11 @@ K_MEM_SLAB_DEFINE(ase_slab, sizeof(struct bt_ascs_ase),
 		  __alignof__(struct bt_ascs_ase));
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
+NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
+static int ascs_ep_get_status(struct bt_audio_ep *ep,
+			      struct net_buf_simple *buf);
 
 static void bt_ascs_ase_return_to_slab(struct bt_ascs_ase *ase)
 {
@@ -100,7 +103,16 @@ static struct bt_ascs_ase *bt_ascs_ase_get_from_slab(void)
 static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 			       uint8_t state)
 {
-	k_work_submit(&ep->work);
+	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
+	struct bt_conn *conn = ase->ascs->conn;
+
+	LOG_DBG("ase %p, ep %p", ase, ep);
+
+	if (conn != NULL && conn->state == BT_CONN_CONNECTED) {
+		ascs_ep_get_status(ep, &ase_buf);
+
+		bt_gatt_notify(conn, ase->attr, ase_buf.data, ase_buf.len);
+	}
 }
 
 void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
@@ -222,6 +234,15 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				ops->metadata_updated(stream);
 			}
 
+			/* SINK ASEs can autonomously go into the streaming state if
+			 * the CIS is connected
+			 */
+			if (ep->dir == BT_AUDIO_DIR_SINK &&
+			    ep->iso != NULL &&
+			    ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
+				ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
+			}
+
 			break;
 		case BT_AUDIO_EP_STATE_STREAMING:
 			switch (old_state) {
@@ -293,7 +314,27 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				return;
 			}
 
-			break; /* no-op*/
+			if (ep->iso == NULL ||
+			    ep->iso->chan.state == BT_ISO_STATE_DISCONNECTED) {
+				if (ep->iso != NULL) {
+					bt_audio_iso_unbind_ep(ep->iso, ep);
+				}
+
+				bt_audio_stream_detach(stream);
+				ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
+			} else {
+				/* Either the client or the server may disconnect the
+				 * CISes when entering the releasing state.
+				 */
+				const int err = bt_audio_stream_disconnect(stream);
+
+				if (err != 0) {
+					LOG_ERR("Failed to disconnect stream %p: %d",
+						stream, err);
+				}
+			}
+
+			break;
 		default:
 			LOG_ERR("Invalid state: %u", state);
 			break;
@@ -553,6 +594,11 @@ static void ascs_ep_iso_connected(struct bt_audio_ep *ep)
 
 	if (ep->dir == BT_AUDIO_DIR_SOURCE && !ep->receiver_ready) {
 		return;
+	} else if (ep->dir == BT_AUDIO_DIR_SINK) {
+		/* SINK ASEs can autonomously go into the streaming state if
+		 * the CIS is connected
+		 */
+		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 	}
 
 	stream = ep->stream;
@@ -621,9 +667,8 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 
 	if (ep->status.state == BT_AUDIO_EP_STATE_RELEASING) {
 		bt_audio_iso_unbind_ep(ep->iso, ep);
-
-		/* Trigger a call to ase_process to handle the cleanup */
-		k_work_submit(&ep->work);
+		bt_audio_stream_detach(stream);
+		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
 	} else {
 		/* The ASE state machine goes into different states from this operation
 		 * based on whether it is a source or a sink ASE.
@@ -981,60 +1026,6 @@ static struct bt_ascs *ascs_get(struct bt_conn *conn)
 	return session;
 }
 
-NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
-
-static void ase_process(struct k_work *work)
-{
-	struct bt_audio_ep *ep = CONTAINER_OF(work, struct bt_audio_ep, work);
-	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-	struct bt_audio_stream *stream = ep->stream;
-	const uint8_t ep_state = ep->status.state;
-	struct bt_conn *conn = ase->ascs->conn;
-
-	LOG_DBG("ase %p, ep %p, ep.stream %p", ase, ep, stream);
-
-	if (conn != NULL && conn->state == BT_CONN_CONNECTED) {
-		ascs_ep_get_status(ep, &ase_buf);
-
-		bt_gatt_notify(conn, ase->attr,
-			       ase_buf.data, ase_buf.len);
-	}
-
-	/* Stream shall be NULL in the idle state, and non-NULL otherwise */
-	__ASSERT(ep_state == BT_AUDIO_EP_STATE_IDLE ?
-			stream == NULL : stream != NULL,
-		 "stream is NULL");
-
-	if (ep_state == BT_AUDIO_EP_STATE_RELEASING) {
-		if (ep->iso == NULL ||
-		    ep->iso->chan.state == BT_ISO_STATE_DISCONNECTED) {
-			if (ep->iso != NULL) {
-				bt_audio_iso_unbind_ep(ep->iso, ep);
-			}
-			bt_audio_stream_detach(stream);
-			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
-		} else {
-			/* Either the client or the server may disconnect the
-			 * CISes when entering the releasing state.
-			 */
-			const int err = bt_audio_stream_disconnect(stream);
-
-			if (err != 0) {
-				LOG_ERR("Failed to disconnect stream %p: %d", stream, err);
-			}
-		}
-	} else if (ep_state == BT_AUDIO_EP_STATE_ENABLING) {
-		/* SINK ASEs can autonomously go into the streaming state if
-		 * the CIS is connected
-		 */
-		if (ep->dir == BT_AUDIO_DIR_SINK &&
-		    ep->iso != NULL &&
-		    ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
-			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
-		}
-	}
-}
-
 static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			   void *user_data)
 {
@@ -1056,8 +1047,6 @@ void ascs_ep_init(struct bt_audio_ep *ep, uint8_t id)
 	(void)memset(ep, 0, sizeof(*ep));
 	ep->status.id = id;
 	ep->dir = ASE_DIR(id);
-
-	k_work_init(&ep->work, ase_process);
 }
 
 static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
@@ -1527,6 +1516,19 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 
 	stream->qos = qos;
 
+	/* We setup the data path here, as this is the earliest where
+	 * we have the ISO <-> EP coupling completed (due to setting
+	 * the CIS ID in the QoS procedure).
+	 */
+	if (ep->dir == BT_AUDIO_DIR_SINK) {
+		bt_audio_codec_to_iso_path(&ep->iso->rx.path, stream->codec);
+	} else {
+		bt_audio_codec_to_iso_path(&ep->iso->tx.path, stream->codec);
+	}
+
+	ep->cig_id = cig_id;
+	ep->cis_id = cis_id;
+
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 
 	bt_audio_stream_iso_listen(stream);
@@ -1589,22 +1591,7 @@ static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_QOS_OP,
 				      err, reason);
 		return;
-	} else {
-		/* We setup the data path here, as this is the earliest where
-		 * we have the ISO <-> EP coupling completed (due to setting
-		 * the CIS ID in the QoS procedure).
-		 */
-		if (ep->dir == BT_AUDIO_DIR_SINK) {
-			bt_audio_codec_to_iso_path(&ep->iso->rx.path,
-						   stream->codec);
-		} else {
-			bt_audio_codec_to_iso_path(&ep->iso->tx.path,
-						   stream->codec);
-		}
 	}
-
-	ep->cig_id = cig_id;
-	ep->cis_id = cis_id;
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_QOS_OP);
 }
