@@ -323,25 +323,49 @@ static inline void unpend_thread_no_timeout(struct k_thread *thread)
 	thread->base.pended_on = NULL;
 }
 
+/* Find a thread to wake up, must be followed by ready_thread() to schedule it */
 static struct k_thread *wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 {
 	struct k_thread *thread = _priq_wait_best(&wait_q->waitq);
 
 	if (thread != NULL) {
-		z_thread_return_value_set_with_data(thread,
-						    swap_retval,
-						    swap_data);
+		z_thread_return_value_set_with_data(thread, swap_retval, swap_data);
 		unpend_thread_no_timeout(thread);
 		(void)z_abort_thread_timeout(thread);
+	}
+	return thread;
+}
+
+static struct k_thread *zync_wake(_wait_q_t *wait_q, struct k_zync *zync)
+{
+	struct k_thread *thread = wake(&zync->waiters, 0, NULL);
+
+	if (thread != NULL) {
+		thread->base.zync_unpended = zync;
 		ready_thread(thread);
 	}
 	return thread;
+}
+
+bool z_zync_wake(_wait_q_t *wait_q, struct k_zync *zync)
+{
+	bool ret = false;
+
+	LOCKED(&sched_spinlock) {
+		ret = zync_wake(wait_q, zync) != NULL;
+	}
+	return ret;
 }
 
 static void unready_thread(struct k_thread *thread, bool recache)
 {
 	if (z_is_thread_queued(thread)) {
 		dequeue_thread(thread);
+	}
+	if (thread->base.zync_unpended != NULL) {
+		zync_wake(&thread->base.zync_unpended->waiters,
+			  thread->base.zync_unpended);
+		thread->base.zync_unpended = NULL;
 	}
 	update_cache(recache);
 }
@@ -1895,12 +1919,15 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
  */
 bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 {
-	bool ret;
+	struct k_thread *th = NULL;
 
 	LOCKED(&sched_spinlock) {
-		ret = wake(wait_q, swap_retval, swap_data) != NULL;
+		th = wake(wait_q, swap_retval, swap_data);
+		if (th != NULL) {
+			ready_thread(th);
+		}
 	}
-	return ret;
+	return th != NULL;
 }
 
 int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,

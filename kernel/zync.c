@@ -197,7 +197,7 @@ static int32_t zync_locked(struct k_zync *zync, k_zync_atom_t *mod_atom,
 
 	Z_WAIT_Q_LAZY_INIT(&zync->waiters);
 	for (woken = 0; woken < delta; woken++) {
-		if (!z_sched_wake(&zync->waiters, 0, NULL)) {
+		if (!z_zync_wake(&zync->waiters, zync)) {
 			break;
 		}
 		resched = true;
@@ -220,6 +220,7 @@ static int32_t zync_locked(struct k_zync *zync, k_zync_atom_t *mod_atom,
 			prio_boost(zync, _current->base.prio);
 			pendret = z_pend_curr(&zync->lock, key, &zync->waiters, timeout);
 			key = k_spin_lock(&zync->lock);
+			_current->base.zync_unpended = NULL;
 			prio_boost(zync, K_LOWEST_THREAD_PRIO);
 
 			mod -= delta;

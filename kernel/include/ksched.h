@@ -64,6 +64,7 @@ void z_ready_thread(struct k_thread *thread);
 void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
 void z_thread_abort(struct k_thread *thread);
+bool z_zync_wake(_wait_q_t *wait_q, struct k_zync *zync);
 
 static inline void z_pend_curr_unlocked(_wait_q_t *wait_q, k_timeout_t timeout)
 {

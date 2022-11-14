@@ -67,6 +67,13 @@ struct _thread_base {
 	 */
 	_wait_q_t *pended_on;
 
+	/* Zync object on which this thread was just unpended.  Stays
+	 * set until the thread runs and reaquires the zync's spinlock
+	 * so that the kernel can wake up a replacement thread if the
+	 * awoken thread is killed/suspended.
+	 */
+	struct k_zync *zync_unpended;
+
 	/* user facing 'thread options'; values defined in include/kernel.h */
 	uint8_t user_options;
 
