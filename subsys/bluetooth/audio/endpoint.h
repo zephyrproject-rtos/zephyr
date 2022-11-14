@@ -50,9 +50,6 @@ struct bt_audio_ep {
 	struct bt_audio_unicast_group *unicast_group;
 	struct bt_audio_broadcast_source *broadcast_source;
 	struct bt_audio_broadcast_sink *broadcast_sink;
-
-	/* ASCS ASE Control Point Work */
-	struct k_work work;
 };
 
 struct bt_audio_unicast_group {
