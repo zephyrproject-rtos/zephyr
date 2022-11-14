@@ -18,6 +18,11 @@ config NUM_IRQS
 config PM
 	select COUNTER
 
+choice PM_POLICY
+	default PM_POLICY_CUSTOM
+	depends on PM
+endchoice
+
 source "soc/arm/silabs_exx32/efr32bg22/Kconfig.defconfig.efr32bg22"
 
 endif # SOC_SERIES_EFR32BG22
