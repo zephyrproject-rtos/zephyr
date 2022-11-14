@@ -173,12 +173,12 @@ void zephyr_smp_transport_init(struct zephyr_smp_transport *smpt,
 
 /**
  * @brief	Used to remove queued requests for an SMP transport that are no longer valid. A
- *		``smp_transport_clear_check_fn`` function must be registered for this to function.
- *		If the ``smp_transport_clear_check_fn`` function returns false during a callback,
- *		the queried command will classed as invalid and dropped.
+ *		``smp_transport_query_valid_check_fn`` function must be registered for this to
+ *		function. If the ``smp_transport_query_valid_check_fn`` function returns false
+ *		during a callback, the queried command will classed as invalid and dropped.
  *
  * @param zst	The transport to use.
- * @param arg	Argument provided to callback ``smp_transport_clear_check_fn`` function.
+ * @param arg	Argument provided to callback ``smp_transport_query_valid_check_fn`` function.
  */
 void smp_rx_remove_invalid(struct smp_transport *zst, void *arg);
 
