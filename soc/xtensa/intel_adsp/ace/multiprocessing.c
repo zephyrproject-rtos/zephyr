@@ -47,12 +47,18 @@ static void ipc_isr(void *arg)
 
 unsigned int soc_num_cpus;
 
-void soc_mp_init(void)
+static __imr int soc_num_cpus_init(const struct device *dev)
 {
 	/* Need to set soc_num_cpus early to arch_num_cpus() works properly */
 	soc_num_cpus = ((sys_read32(DFIDCCP) >> CAP_INST_SHIFT) & CAP_INST_MASK) + 1;
 	soc_num_cpus = MIN(CONFIG_MP_MAX_NUM_CPUS, soc_num_cpus);
 
+	return 0;
+}
+SYS_INIT(soc_num_cpus_init, EARLY, 1);
+
+void soc_mp_init(void)
+{
 	IRQ_CONNECT(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA), 0, ipc_isr, 0, 0);
 
 	irq_enable(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA));
