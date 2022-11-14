@@ -8,13 +8,16 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_
 
+#include <stdint.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02
@@ -71,6 +74,56 @@
 #define BMI270_REG_PWR_CTRL        0x7D
 #define BMI270_REG_CMD             0x7E
 #define BMI270_REG_MASK            GENMASK(6, 0)
+
+#define BMI270_ANYMO_1_DURATION_POS	0
+#define BMI270_ANYMO_1_DURATION_MASK	BIT_MASK(12)
+#define BMI270_ANYMO_1_DURATION(n)	((n) << BMI270_ANYMO_1_DURATION_POS)
+#define BMI270_ANYMO_1_SELECT_X		BIT(13)
+#define BMI270_ANYMO_1_SELECT_Y		BIT(14)
+#define BMI270_ANYMO_1_SELECT_Z		BIT(15)
+#define BMI270_ANYMO_1_SELECT_XYZ	(BMI270_ANYMO_1_SELECT_X | \
+					 BMI270_ANYMO_1_SELECT_Y | \
+					 BMI270_ANYMO_1_SELECT_Y)
+#define BMI270_ANYMO_2_THRESHOLD_POS	0
+#define BMI270_ANYMO_2_THRESHOLD_MASK	BIT_MASK(10)
+#define BMI270_ANYMO_2_THRESHOLD(n)	((n) << BMI270_ANYMO_2_THRESHOLD_POS)
+#define BMI270_ANYMO_2_OUT_CONF_POS	11
+#define BMI270_ANYMO_2_OUT_CONF_MASK	(BIT(11) | BIT(12) | BIT(13) | BIT(14))
+#define BMI270_ANYMO_2_ENABLE		BIT(15)
+#define BMI270_ANYMO_2_OUT_CONF_OFF	(0x00 << BMI270_ANYMO_2_OUT_CONF_POS)
+#define BMI270_ANYMO_2_OUT_CONF_BIT_0	(0x01 << BMI270_ANYMO_2_OUT_CONF_POS)
+#define BMI270_ANYMO_2_OUT_CONF_BIT_1	(0x02 << BMI270_ANYMO_2_OUT_CONF_POS)
+#define BMI270_ANYMO_2_OUT_CONF_BIT_2	(0x03 << BMI270_ANYMO_2_OUT_CONF_POS)
+#define BMI270_ANYMO_2_OUT_CONF_BIT_3	(0x04 << BMI270_ANYMO_2_OUT_CONF_POS)
+#define BMI270_ANYMO_2_OUT_CONF_BIT_4	(0x05 << BMI270_ANYMO_2_OUT_CONF_POS)
+#define BMI270_ANYMO_2_OUT_CONF_BIT_5	(0x06 << BMI270_ANYMO_2_OUT_CONF_POS)
+#define BMI270_ANYMO_2_OUT_CONF_BIT_6	(0x07 << BMI270_ANYMO_2_OUT_CONF_POS)
+#define BMI270_ANYMO_2_OUT_CONF_BIT_8	(0x08 << BMI270_ANYMO_2_OUT_CONF_POS)
+
+#define BMI270_INT_IO_CTRL_LVL		BIT(1) /* Output level (0 = active low, 1 = active high) */
+#define BMI270_INT_IO_CTRL_OD		BIT(2) /* Open-drain (0 = push-pull, 1 = open-drain)*/
+#define BMI270_INT_IO_CTRL_OUTPUT_EN	BIT(3) /* Output enabled */
+#define BMI270_INT_IO_CTRL_INPUT_EN	BIT(4) /* Input enabled */
+
+/* Applies to INT1_MAP_FEAT, INT2_MAP_FEAT, INT_STATUS_0 */
+#define BMI270_INT_MAP_SIG_MOTION        BIT(0)
+#define BMI270_INT_MAP_STEP_COUNTER      BIT(1)
+#define BMI270_INT_MAP_ACTIVITY          BIT(2)
+#define BMI270_INT_MAP_WRIST_WEAR_WAKEUP BIT(3)
+#define BMI270_INT_MAP_WRIST_GESTURE     BIT(4)
+#define BMI270_INT_MAP_NO_MOTION         BIT(5)
+#define BMI270_INT_MAP_ANY_MOTION        BIT(6)
+
+#define BMI270_INT_MAP_DATA_FFULL_INT1		BIT(0)
+#define BMI270_INT_MAP_DATA_FWM_INT1		BIT(1)
+#define BMI270_INT_MAP_DATA_DRDY_INT1		BIT(2)
+#define BMI270_INT_MAP_DATA_ERR_INT1		BIT(3)
+#define BMI270_INT_MAP_DATA_FFULL_INT2		BIT(4)
+#define BMI270_INT_MAP_DATA_FWM_INT2		BIT(5)
+#define BMI270_INT_MAP_DATA_DRDY_INT2		BIT(6)
+#define BMI270_INT_MAP_DATA_ERR_INT2		BIT(7)
+
+#define BMI270_INT_STATUS_ANY_MOTION		BIT(6)
 
 #define BMI270_CHIP_ID 0x24
 
@@ -208,6 +261,44 @@ struct bmi270_data {
 	int16_t ax, ay, az, gx, gy, gz;
 	uint8_t acc_range, acc_odr, gyr_odr;
 	uint16_t gyr_range;
+
+#if CONFIG_BMI270_TRIGGER
+	const struct device *dev;
+	struct k_mutex trigger_mutex;
+	sensor_trigger_handler_t motion_handler;
+	struct sensor_trigger *motion_trigger;
+	sensor_trigger_handler_t drdy_handler;
+	struct sensor_trigger *drdy_trigger;
+	struct gpio_callback int1_cb;
+	struct gpio_callback int2_cb;
+	atomic_t int_flags;
+	uint16_t anymo_1;
+	uint16_t anymo_2;
+
+#if CONFIG_BMI270_TRIGGER_OWN_THREAD
+	struct k_sem trig_sem;
+
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_BMI270_THREAD_STACK_SIZE);
+	struct k_thread thread;
+
+#elif CONFIG_BMI270_TRIGGER_GLOBAL_THREAD
+	struct k_work trig_work;
+#endif
+#endif /* CONFIG_BMI270_TRIGGER */
+};
+
+struct bmi270_feature_reg {
+	/* Which feature page the register resides in */
+	uint8_t page;
+	uint8_t addr;
+};
+
+struct bmi270_feature_config {
+	const char *name;
+	const uint8_t *config_file;
+	size_t config_file_len;
+	struct bmi270_feature_reg *anymo_1;
+	struct bmi270_feature_reg *anymo_2;
 };
 
 union bmi270_bus {
@@ -237,6 +328,16 @@ struct bmi270_bus_io {
 	bmi270_bus_init_fn init;
 };
 
+struct bmi270_config {
+	union bmi270_bus bus;
+	const struct bmi270_bus_io *bus_io;
+	const struct bmi270_feature_config *feature;
+#if CONFIG_BMI270_TRIGGER
+	struct gpio_dt_spec int1;
+	struct gpio_dt_spec int2;
+#endif
+};
+
 #if CONFIG_BMI270_BUS_SPI
 #define BMI270_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB)
 #define BMI270_SPI_ACC_DELAY_US 2
@@ -245,6 +346,25 @@ extern const struct bmi270_bus_io bmi270_bus_io_spi;
 
 #if CONFIG_BMI270_BUS_I2C
 extern const struct bmi270_bus_io bmi270_bus_io_i2c;
+#endif
+
+int bmi270_reg_read(const struct device *dev, uint8_t reg, uint8_t *data, uint16_t length);
+
+int bmi270_reg_write(const struct device *dev, uint8_t reg,
+		     const uint8_t *data, uint16_t length);
+
+int bmi270_reg_write_with_delay(const struct device *dev,
+				uint8_t reg,
+				const uint8_t *data,
+				uint16_t length,
+				uint32_t delay_us);
+
+#ifdef CONFIG_BMI270_TRIGGER
+int bmi270_trigger_set(const struct device *dev,
+		       const struct sensor_trigger *trig,
+		       sensor_trigger_handler_t handler);
+
+int bmi270_init_interrupts(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_ */
