@@ -132,6 +132,7 @@
 	/* DDR4 - 2G, alternates non-secure/secure every 256M */
 	ddr4: memory@60000000 {
 		device_type = "memory";
+		compatible = "zephyr,memory-region";
 		reg = <0x60000000 DT_SIZE_M(256)
 		       0x70000000 DT_SIZE_M(256)
 		       0x80000000 DT_SIZE_M(256)
@@ -140,6 +141,7 @@
 		       0xb0000000 DT_SIZE_M(256)
 		       0xc0000000 DT_SIZE_M(256)
 		       0xd0000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4";
 	};
 
 	soc {
