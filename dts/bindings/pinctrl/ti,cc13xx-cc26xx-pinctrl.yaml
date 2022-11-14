@@ -59,18 +59,7 @@ description: |
 
 compatible: "ti,cc13xx-cc26xx-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-pull-down
-          - bias-pull-up
-          - drive-open-drain
-          - drive-open-source
-          - input-enable
-          - input-schmitt-enable
+include: base.yaml
 
 properties:
     reg:
@@ -80,6 +69,18 @@ child-binding:
   description: |
     This binding gives a base representation of the CC13XX/CC26XX
     pins configuration.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-open-drain
+        - drive-open-source
+        - input-enable
+        - input-schmitt-enable
+
   properties:
     pinmux:
       required: true

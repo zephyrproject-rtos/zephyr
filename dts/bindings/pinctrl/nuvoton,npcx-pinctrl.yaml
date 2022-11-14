@@ -40,18 +40,19 @@ description: |
 
 compatible: "nuvoton,npcx-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
+include: base.yaml
+
+child-binding:
+    description: |
+      NPCX pin controller pin configuration nodes
+
+    include:
+      - name: pincfg-node.yaml
         property-allowlist:
           - bias-pull-down
           - bias-pull-up
           - drive-open-drain
 
-child-binding:
-    description: |
-      NPCX pin controller pin configuration nodes
     properties:
       pinmux:
         type: phandle

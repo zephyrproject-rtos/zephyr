@@ -47,19 +47,7 @@ description: |
 
 compatible: "xlnx,pinctrl-zynq"
 
-include:
-  - name: base.yaml
-  - name: pincfg-node-group.yaml
-    child-binding:
-      child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-high-impedance
-          - bias-pull-up
-          - low-power-enable
-          - low-power-disable
-          - power-source
-          - slew-rate
+include: base.yaml
 
 properties:
   reg:
@@ -80,6 +68,17 @@ child-binding:
   child-binding:
     description: |
       Xilinx Zynq 7000 SoC pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-high-impedance
+          - bias-pull-up
+          - low-power-enable
+          - low-power-disable
+          - power-source
+          - slew-rate
 
     properties:
       groups:

@@ -2,9 +2,7 @@ description: Kinetis pinmux node
 
 compatible: "nxp,kinetis-pinmux"
 
-include:
-  - name: base.yaml
-  - name: pincfg-node.yaml
+include: base.yaml
 
 properties:
     reg:
@@ -12,3 +10,6 @@ properties:
 
     clocks:
       required: true
+
+child-binding:
+  include: pincfg-node.yaml

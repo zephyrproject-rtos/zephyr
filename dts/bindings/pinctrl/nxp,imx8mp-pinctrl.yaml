@@ -44,23 +44,23 @@ description: |
 
 compatible: "nxp,imx8mp-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - input-schmitt-enable
-            - drive-open-drain
-            - input-enable
-            - bias-pull-up
-            - bias-pull-down
+include: base.yaml
 
 child-binding:
   description: iMX pin controller pin group
   child-binding:
     description: |
       iMX pin controller pin configuration node.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-schmitt-enable
+          - drive-open-drain
+          - input-enable
+          - bias-pull-up
+          - bias-pull-down
+
     properties:
       pinmux:
         required: true

@@ -46,23 +46,23 @@ description: |
 
 compatible: "nxp,mcux-rt11xx-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - drive-open-drain
-            - input-enable
-            - bias-disable
-            - bias-pull-down
-            - bias-pull-up
+include: base.yaml
 
 child-binding:
   description: MCUX RT pin controller pin group
   child-binding:
     description: |
       MCUX RT pin controller pin configuration node.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-open-drain
+          - input-enable
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+
     properties:
       pinmux:
         required: true
