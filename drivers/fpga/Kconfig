@@ -21,6 +21,7 @@ config FPGA_SHELL
 	  Enable FPGA Shell support.
 
 source "drivers/fpga/Kconfig.eos_s3"
+source "drivers/fpga/Kconfig.ice40"
 source "drivers/fpga/Kconfig.zynqmp"
 
 endif # FPGA
