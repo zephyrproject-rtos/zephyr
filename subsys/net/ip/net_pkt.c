@@ -287,10 +287,7 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool)
 
 	return "EDATA";
 }
-#endif
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
-	CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 static inline int16_t get_frees(struct net_buf_pool *pool)
 {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
