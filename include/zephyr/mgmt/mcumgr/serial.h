@@ -8,7 +8,7 @@
  * @file
  * @brief Utility functions used by the UART and shell mcumgr transports.
  *
- * Mcumgr packets sent over serial are fragmented into frames of 128 bytes or
+ * Mcumgr packets sent over serial are fragmented into frames of 127 bytes or
  * fewer.
  *
  * The initial frame in a packet has the following format:
@@ -68,7 +68,7 @@ extern "C" {
 
 #define MCUMGR_SERIAL_HDR_PKT       0x0609
 #define MCUMGR_SERIAL_HDR_FRAG      0x0414
-#define MCUMGR_SERIAL_MAX_FRAME     128
+#define MCUMGR_SERIAL_MAX_FRAME     127
 
 #define MCUMGR_SERIAL_HDR_PKT_1     (MCUMGR_SERIAL_HDR_PKT >> 8)
 #define MCUMGR_SERIAL_HDR_PKT_2     (MCUMGR_SERIAL_HDR_PKT & 0xff)
