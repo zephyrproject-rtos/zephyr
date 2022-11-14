@@ -748,6 +748,18 @@ Release Notes:
   labels:
     - "area: Flash"
 
+"Drivers: FPGA":
+  status: maintained
+  maintainers:
+    - cfriedt
+  files:
+    - drivers/fpga/
+    - dts/bindings/fpga/
+    - include/zephyr/drivers/fpga.h
+    - samples/drivers/fpga/
+  labels:
+    - "area: FPGA"
+
 "Drivers: GPIO":
   status: maintained
   maintainers:
