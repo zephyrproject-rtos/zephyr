@@ -601,7 +601,7 @@ void llcp_rp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param);
 
 /* LLCP Local Procedure FSM states */
@@ -685,6 +685,10 @@ static void lp_cc_send_cis_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CC_STATE_WAIT_TX_CIS_REQ;
 	} else {
+		/* Update conn_event_count */
+		ctx->data.cis_create.conn_event_count =
+			ull_central_iso_cis_offset_get(ctx->data.cis_create.cis_handle, NULL, NULL);
+
 		lp_cc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CIS_REQ);
 
 		ctx->state = LP_CC_STATE_WAIT_RX_CIS_RSP;
@@ -821,9 +825,6 @@ static void lp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 
 		/* Now we can wait for CIS to become established */
 		ctx->state = LP_CC_STATE_WAIT_ESTABLISHED;
-
-		/* Stop procedure response timeout timer */
-		llcp_lr_prt_stop(conn);
 	}
 }
 
@@ -908,4 +909,4 @@ bool llcp_lp_cc_is_active(struct proc_ctx *ctx)
 {
 	return ctx->state != LP_CC_STATE_IDLE;
 }
-#endif /* CONFIG_BT_CENTRAL */
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
