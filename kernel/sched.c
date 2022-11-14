@@ -309,6 +309,14 @@ static inline bool is_aborting(struct k_thread *thread)
 }
 #endif
 
+static void unready_thread(struct k_thread *thread, bool recache)
+{
+	if (z_is_thread_queued(thread)) {
+		dequeue_thread(thread);
+	}
+	update_cache(recache);
+}
+
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 	struct k_thread *thread = runq_best();
@@ -669,11 +677,8 @@ void z_impl_k_thread_suspend(struct k_thread *thread)
 	(void)z_abort_thread_timeout(thread);
 
 	LOCKED(&sched_spinlock) {
-		if (z_is_thread_queued(thread)) {
-			dequeue_thread(thread);
-		}
+		unready_thread(thread, thread == _current);
 		z_mark_thread_as_suspended(thread);
-		update_cache(thread == _current);
 	}
 
 	if (thread == _current) {
@@ -728,18 +733,10 @@ static _wait_q_t *pended_on_thread(struct k_thread *thread)
 	return thread->base.pended_on;
 }
 
-static void unready_thread(struct k_thread *thread)
-{
-	if (z_is_thread_queued(thread)) {
-		dequeue_thread(thread);
-	}
-	update_cache(thread == _current);
-}
-
 /* sched_spinlock must be held */
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
-	unready_thread(thread);
+	unready_thread(thread, true);
 	z_mark_thread_as_pending(thread);
 
 	SYS_PORT_TRACING_FUNC(k_thread, sched_pend, thread);
@@ -1444,7 +1441,7 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif
-	unready_thread(_current);
+	unready_thread(_current, true);
 	z_add_thread_timeout(_current, timeout);
 	z_mark_thread_as_suspended(_current);
 
@@ -1700,15 +1697,12 @@ static void end_thread(struct k_thread *thread)
 	if ((thread->base.thread_state & _THREAD_DEAD) == 0U) {
 		thread->base.thread_state |= _THREAD_DEAD;
 		thread->base.thread_state &= ~_THREAD_ABORTING;
-		if (z_is_thread_queued(thread)) {
-			dequeue_thread(thread);
-		}
 		if (thread->base.pended_on != NULL) {
 			unpend_thread_no_timeout(thread);
 		}
 		(void)z_abort_thread_timeout(thread);
 		unpend_all(&thread->join_queue);
-		update_cache(1);
+		unready_thread(thread, true);
 
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
