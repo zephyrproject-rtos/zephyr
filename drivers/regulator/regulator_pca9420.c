@@ -24,13 +24,13 @@ struct __packed current_range {
 	int reg_val; /* Register value for current limit */
 };
 
-struct regulator_data {
+struct regulator_pca9420_data {
 	struct onoff_sync_service srv;
 	const struct voltage_range *voltages;
 	const struct current_range *current_levels;
 };
 
-struct regulator_config {
+struct regulator_pca9420_config {
 	int num_voltages;
 	int num_current_levels;
 	int num_modes;
@@ -63,10 +63,10 @@ static int regulator_pca9420_is_supported_voltage(const struct device *dev,
  * Reads a register from the PMIC
  * Returns 0 on success, or errno on error
  */
-static int regulator_read_register(const struct device *dev,
-	uint8_t reg, uint8_t *out)
+static int regulator_pca9420_read_register(const struct device *dev,
+					   uint8_t reg, uint8_t *out)
 {
-	const struct regulator_config *conf = dev->config;
+	const struct regulator_pca9420_config *conf = dev->config;
 	int ret;
 
 	ret = i2c_reg_read_byte_dt(&conf->i2c, reg, out);
@@ -78,14 +78,15 @@ static int regulator_read_register(const struct device *dev,
  * Modifies a register within the PMIC
  * Returns 0 on success, or errno on error
  */
-static int regulator_modify_register(const struct device *dev,
-		uint8_t reg, uint8_t reg_mask, uint8_t reg_val)
+static int regulator_pca9420_modify_register(const struct device *dev,
+					     uint8_t reg, uint8_t reg_mask,
+					     uint8_t reg_val)
 {
-	const struct regulator_config *conf = dev->config;
+	const struct regulator_pca9420_config *conf = dev->config;
 	uint8_t reg_current;
 	int rc;
 
-	rc = regulator_read_register(dev, reg, &reg_current);
+	rc = regulator_pca9420_read_register(dev, reg, &reg_current);
 	if (rc) {
 		return rc;
 	}
@@ -102,15 +103,16 @@ static int regulator_modify_register(const struct device *dev,
  * offset applied to the vsel_reg. Useful to support reading voltages
  * in another target mode
  */
-static int32_t regulator_get_voltage_offset(const struct device *dev,
-					    uint32_t off)
+static int32_t regulator_pca9420_get_voltage_offset(const struct device *dev,
+						    uint32_t off)
 {
-	const struct regulator_config *config = dev->config;
-	struct regulator_data *data = dev->data;
+	const struct regulator_pca9420_config *config = dev->config;
+	struct regulator_pca9420_data *data = dev->data;
 	int rc, i = 0;
 	uint8_t raw_reg;
 
-	rc = regulator_read_register(dev, config->vsel_reg + off, &raw_reg);
+	rc = regulator_pca9420_read_register(dev, config->vsel_reg + off,
+					     &raw_reg);
 	if (rc) {
 		return rc;
 	}
@@ -136,8 +138,8 @@ static int regulator_set_voltage_offset(const struct device *dev,
 					int32_t min_uv, int32_t max_uv,
 					uint32_t off)
 {
-	const struct regulator_config *config = dev->config;
-	struct regulator_data *data = dev->data;
+	const struct regulator_pca9420_config *config = dev->config;
+	struct regulator_pca9420_data *data = dev->data;
 	int i = 0;
 
 	if (!regulator_pca9420_is_supported_voltage(dev, min_uv, max_uv) ||
@@ -159,8 +161,9 @@ static int regulator_set_voltage_offset(const struct device *dev,
 	}
 	LOG_DBG("Setting regulator %s to %duV", dev->name,
 			data->voltages[i].uV);
-	return regulator_modify_register(dev, config->vsel_reg + off,
-			config->vsel_mask, data->voltages[i].reg_val);
+	return regulator_pca9420_modify_register(dev, config->vsel_reg + off,
+						 config->vsel_mask,
+						 data->voltages[i].reg_val);
 }
 
 
@@ -170,7 +173,7 @@ static int regulator_set_voltage_offset(const struct device *dev,
  */
 static int regulator_pca9420_count_voltages(const struct device *dev)
 {
-	const struct regulator_config *config = dev->config;
+	const struct regulator_pca9420_config *config = dev->config;
 
 	return config->num_voltages;
 }
@@ -181,7 +184,7 @@ static int regulator_pca9420_count_voltages(const struct device *dev)
  */
 static int regulator_pca9420_count_modes(const struct device *dev)
 {
-	const struct regulator_config *config = dev->config;
+	const struct regulator_pca9420_config *config = dev->config;
 
 	return config->num_modes;
 }
@@ -193,8 +196,8 @@ static int regulator_pca9420_count_modes(const struct device *dev)
 static int32_t regulator_pca9420_list_voltages(const struct device *dev,
 					       unsigned int selector)
 {
-	const struct regulator_config *config = dev->config;
-	struct regulator_data *data = dev->data;
+	const struct regulator_pca9420_config *config = dev->config;
+	struct regulator_pca9420_data *data = dev->data;
 
 	if (config->num_voltages <= selector) {
 		return -ENODEV;
@@ -210,7 +213,7 @@ static int regulator_pca9420_is_supported_voltage(const struct device *dev,
 						  int32_t min_uv,
 						  int32_t max_uv)
 {
-	const struct regulator_config *config = dev->config;
+	const struct regulator_pca9420_config *config = dev->config;
 
 	return !((config->max_uv < min_uv) || (config->min_uv > max_uv));
 }
@@ -232,7 +235,7 @@ static int regulator_pca9420_set_voltage(const struct device *dev,
  */
 static int32_t regulator_pca9420_get_voltage(const struct device *dev)
 {
-	return regulator_get_voltage_offset(dev, 0);
+	return regulator_pca9420_get_voltage_offset(dev, 0);
 }
 
 /**
@@ -242,8 +245,8 @@ static int32_t regulator_pca9420_get_voltage(const struct device *dev)
 static int regulator_pca9420_set_current_limit(const struct device *dev,
 					       int32_t min_ua, int32_t max_ua)
 {
-	const struct regulator_config *config = dev->config;
-	struct regulator_data *data = dev->data;
+	const struct regulator_pca9420_config *config = dev->config;
+	struct regulator_pca9420_data *data = dev->data;
 	int i = 0;
 
 	if (config->num_current_levels == 0) {
@@ -260,8 +263,9 @@ static int regulator_pca9420_set_current_limit(const struct device *dev,
 		return -EINVAL;
 	}
 	/* Set the current limit */
-	return regulator_modify_register(dev, config->ilim_reg,
-		config->ilim_mask, data->current_levels[i].reg_val);
+	return regulator_pca9420_modify_register(
+		dev, config->ilim_reg, config->ilim_mask,
+		data->current_levels[i].reg_val);
 }
 
 /**
@@ -270,15 +274,15 @@ static int regulator_pca9420_set_current_limit(const struct device *dev,
  */
 static int regulator_pca9420_get_current_limit(const struct device *dev)
 {
-	const struct regulator_config *config = dev->config;
-	struct regulator_data *data = dev->data;
+	const struct regulator_pca9420_config *config = dev->config;
+	struct regulator_pca9420_data *data = dev->data;
 	int rc, i = 0;
 	uint8_t raw_reg;
 
 	if (config->num_current_levels == 0) {
 		return -ENOTSUP;
 	}
-	rc = regulator_read_register(dev, config->ilim_reg, &raw_reg);
+	rc = regulator_pca9420_read_register(dev, config->ilim_reg, &raw_reg);
 	if (rc) {
 		return rc;
 	}
@@ -304,7 +308,7 @@ static int regulator_pca9420_set_mode_voltage(const struct device *dev,
 					      uint32_t mode, int32_t min_uv,
 					      int32_t max_uv)
 {
-	const struct regulator_config *config = dev->config;
+	const struct regulator_pca9420_config *config = dev->config;
 	uint8_t i, sel_off;
 
 	if (config->num_modes == 0) {
@@ -333,7 +337,7 @@ static int regulator_pca9420_set_mode_voltage(const struct device *dev,
 static int regulator_pca9420_mode_disable(const struct device *dev,
 					  uint32_t mode)
 {
-	const struct regulator_config *config = dev->config;
+	const struct regulator_pca9420_config *config = dev->config;
 	uint8_t i, sel_off, dis_val;
 
 	if (config->num_modes == 0) {
@@ -352,8 +356,9 @@ static int regulator_pca9420_mode_disable(const struct device *dev,
 	}
 	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
 	dis_val = config->enable_inverted ? config->enable_val : 0;
-	return regulator_modify_register(dev, config->enable_reg + sel_off,
-			config->enable_mask, dis_val);
+	return regulator_pca9420_modify_register(dev,
+						 config->enable_reg + sel_off,
+						 config->enable_mask, dis_val);
 }
 
 /*
@@ -364,7 +369,7 @@ static int regulator_pca9420_mode_disable(const struct device *dev,
 static int regulator_pca9420_mode_enable(const struct device *dev,
 					 uint32_t mode)
 {
-	const struct regulator_config *config = dev->config;
+	const struct regulator_pca9420_config *config = dev->config;
 	uint8_t i, sel_off, en_val;
 
 	if (config->num_modes == 0) {
@@ -383,8 +388,9 @@ static int regulator_pca9420_mode_enable(const struct device *dev,
 	}
 	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
 	en_val = config->enable_inverted ? 0 : config->enable_val;
-	return regulator_modify_register(dev, config->enable_reg + sel_off,
-			config->enable_mask, en_val);
+	return regulator_pca9420_modify_register(dev,
+						 config->enable_reg + sel_off,
+						 config->enable_mask, en_val);
 }
 
 /*
@@ -396,7 +402,7 @@ static int regulator_pca9420_mode_enable(const struct device *dev,
 static int32_t regulator_pca9420_get_mode_voltage(const struct device *dev,
 						  uint32_t mode)
 {
-	const struct regulator_config *config = dev->config;
+	const struct regulator_pca9420_config *config = dev->config;
 	uint8_t i, sel_off;
 
 	if (config->num_modes == 0) {
@@ -414,7 +420,7 @@ static int32_t regulator_pca9420_get_mode_voltage(const struct device *dev,
 		return -EINVAL;
 	}
 	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
-	return regulator_get_voltage_offset(dev, sel_off);
+	return regulator_pca9420_get_voltage_offset(dev, sel_off);
 }
 
 /*
@@ -424,7 +430,7 @@ static int32_t regulator_pca9420_get_mode_voltage(const struct device *dev,
  */
 static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
 {
-	const struct regulator_config *config = dev->config;
+	const struct regulator_pca9420_config *config = dev->config;
 	int rc;
 	uint8_t i, sel_off;
 
@@ -446,12 +452,13 @@ static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
 	/* Configure mode */
 	if (mode & PMIC_MODE_FLAG_MODESEL_MULTI_REG) {
 		/* Select mode with offset calculation */
-		rc = regulator_modify_register(dev,
-			config->modesel_reg + sel_off,
+		rc = regulator_pca9420_modify_register(
+			dev, config->modesel_reg + sel_off,
 			mode & PMIC_MODE_SELECTOR_MASK, config->modesel_mask);
 	} else {
 		/* Select mode without offset to modesel_reg */
-		rc = regulator_modify_register(dev, config->modesel_reg,
+		rc = regulator_pca9420_modify_register(
+			dev, config->modesel_reg,
 			mode & PMIC_MODE_SELECTOR_MASK, config->modesel_mask);
 	}
 	return rc;
@@ -463,8 +470,8 @@ static int regulator_pca9420_enable(const struct device *dev,
 	k_spinlock_key_t key;
 	int rc;
 	uint8_t en_val;
-	struct regulator_data *data = dev->data;
-	const struct regulator_config *config = dev->config;
+	struct regulator_pca9420_data *data = dev->data;
+	const struct regulator_pca9420_config *config = dev->config;
 
 	LOG_DBG("Enabling regulator");
 	rc = onoff_sync_lock(&data->srv, &key);
@@ -473,8 +480,8 @@ static int regulator_pca9420_enable(const struct device *dev,
 		return onoff_sync_finalize(&data->srv, key, cli, rc, true);
 	}
 	en_val = config->enable_inverted ? 0 : config->enable_val;
-	rc = regulator_modify_register(dev, config->enable_reg,
-			config->enable_mask, en_val);
+	rc = regulator_pca9420_modify_register(dev, config->enable_reg,
+					       config->enable_mask, en_val);
 	if (rc != 0) {
 		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
 	}
@@ -483,8 +490,8 @@ static int regulator_pca9420_enable(const struct device *dev,
 
 static int regulator_pca9420_disable(const struct device *dev)
 {
-	struct regulator_data *data = dev->data;
-	const struct regulator_config *config = dev->config;
+	struct regulator_pca9420_data *data = dev->data;
+	const struct regulator_pca9420_config *config = dev->config;
 	k_spinlock_key_t key;
 	uint8_t dis_val;
 	int rc;
@@ -497,16 +504,17 @@ static int regulator_pca9420_disable(const struct device *dev)
 	} else if (rc == 1) {
 		/* Disable regulator */
 		dis_val = config->enable_inverted ? config->enable_val : 0;
-		rc = regulator_modify_register(dev, config->enable_reg,
-				config->enable_mask, dis_val);
+		rc = regulator_pca9420_modify_register(dev, config->enable_reg,
+						       config->enable_mask,
+						       dis_val);
 	}
 	return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
 }
 
-static int pmic_reg_init(const struct device *dev)
+static int regulator_pca9420_init(const struct device *dev)
 {
-	const struct regulator_config *config = dev->config;
-	struct regulator_data *data = dev->data;
+	const struct regulator_pca9420_config *config = dev->config;
+	struct regulator_pca9420_data *data = dev->data;
 	int rc  = 0;
 
 	/* Cast the voltage array set at compile time to the voltage range
@@ -555,9 +563,9 @@ static const struct regulator_driver_api api = {
 	static const uint16_t allowed_modes_##ord[] =                          \
 		DT_PROP_OR(DT_PARENT(node_id), regulator_allowed_modes, {});   \
                                                                                \
-	static struct regulator_data data_##ord;                               \
+	static struct regulator_pca9420_data data_##ord;                       \
                                                                                \
-	static const struct regulator_config config_##ord = {                  \
+	static const struct regulator_pca9420_config config_##ord = {          \
 		.vsel_mask = DT_PROP(node_id, vsel_mask),                      \
 		.vsel_reg = DT_PROP(node_id, vsel_reg),                        \
 		.num_voltages = DT_PROP(node_id, num_voltages),                \
@@ -585,7 +593,7 @@ static const struct regulator_driver_api api = {
 			DT_PROP_OR(DT_PARENT(node_id), modesel_mask, 0),       \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_DEFINE(node_id, pmic_reg_init, NULL, &data_##ord,            \
+	DEVICE_DT_DEFINE(node_id, regulator_pca9420_init, NULL, &data_##ord,   \
 			 &config_##ord, POST_KERNEL,                           \
 			 CONFIG_REGULATOR_PCA9420_INIT_PRIORITY, &api);
 
