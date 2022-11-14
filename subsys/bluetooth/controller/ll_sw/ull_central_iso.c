@@ -212,7 +212,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 
 	if (!cig->central.test) {
 		/* TODO: Calculate ISO_Interval based on SDU_Interval and Max_SDU vs Max_PDU,
-		 * taking the policy into consideration. It may also be intersting to select an
+		 * taking the policy into consideration. It may also be interesting to select an
 		 * ISO_Interval which is less likely to collide with other connections.
 		 * For instance:
 		 *
@@ -250,9 +250,8 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	for (uint8_t i = 0; i < cis_count; i++) {
 		uint32_t mpt_c;
 		uint32_t mpt_p;
-
-		const bool tx = cig->c_sdu_interval > 0;
-		const bool rx = cig->p_sdu_interval > 0;
+		bool tx;
+		bool rx;
 
 		/* Acquire new CIS */
 		cis = ll_conn_iso_stream_acquire();
@@ -263,15 +262,22 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 
 		/* Transfer parameters from update cache */
 		memcpy(cis, &ll_iso_setup.stream[i], sizeof(struct ll_conn_iso_stream));
-		cis->group = cig;
+		cis->group  = cig;
+		cis->framed = cig->central.framing;
 
 		cis->lll.handle = ll_conn_iso_stream_handle_get(cis);
 
 		if (cig->central.test) {
 			cis->lll.tx.flush_timeout = ll_iso_setup.c_ft;
 			cis->lll.rx.flush_timeout = ll_iso_setup.p_ft;
+
+			tx = cis->lll.tx.burst_number && cis->lll.tx.max_octets;
+			rx = cis->lll.rx.burst_number && cis->lll.rx.max_octets;
 		} else {
 			LL_ASSERT(iso_interval_us >= cig->c_sdu_interval);
+
+			tx = cig->c_sdu_interval && cis->c_max_sdu;
+			rx = cig->p_sdu_interval && cis->p_max_sdu;
 
 			if (cis->framed) {
 				cis->lll.tx.max_octets =
@@ -300,10 +306,8 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		}
 
 		/* Calculate SE_Length */
-		mpt_c = PDU_CIS_MAX_US(tx ? cis->lll.tx.max_octets : 0, tx ? 1 : 0,
-				       cis->lll.tx.phy);
-		mpt_p = PDU_CIS_MAX_US(rx ? cis->lll.rx.max_octets : 0, rx ? 1 : 0,
-				       cis->lll.rx.phy);
+		mpt_c = PDU_CIS_MAX_US(cis->lll.tx.max_octets, tx ? 1 : 0, cis->lll.tx.phy);
+		mpt_p = PDU_CIS_MAX_US(cis->lll.rx.max_octets, rx ? 1 : 0, cis->lll.rx.phy);
 
 		se[i].length = mpt_c + EVENT_IFS_US + mpt_p + EVENT_MSS_US;
 		max_se_length = MAX(max_se_length, se[i].length);
@@ -366,10 +370,28 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 			cis->lll.rx.flush_timeout = cis->lll.tx.flush_timeout;
 
 #elif defined(CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY)
-			cis->lll.tx.flush_timeout = ceiling_fraction(cig->c_latency,
-								     iso_interval_us);
-			cis->lll.rx.flush_timeout = ceiling_fraction(cig->p_latency,
-								     iso_interval_us);
+			/* Utilize Max_Transmission_latency */
+			if (cis->framed) {
+				/* TL = CIG_Sync_Delay + FT x ISO_Interval + SDU_Interval.
+				 * SDU_Interval <= CIG_Sync_Delay
+				 */
+				cis->lll.tx.flush_timeout =
+					ceiling_fraction(cig->c_latency - cig->c_sdu_interval -
+							iso_interval_us, iso_interval_us);
+				cis->lll.rx.flush_timeout =
+					ceiling_fraction(cig->p_latency - cig->p_sdu_interval -
+							iso_interval_us, iso_interval_us);
+			} else {
+				/* TL = CIG_Sync_Delay + FT x ISO_Interval - SDU_Interval.
+				 * SDU_Interval <= CIG_Sync_Delay
+				 */
+				cis->lll.tx.flush_timeout =
+					ceiling_fraction(cig->c_latency + cig->c_sdu_interval -
+							iso_interval_us, iso_interval_us);
+				cis->lll.rx.flush_timeout =
+					ceiling_fraction(cig->p_latency + cig->p_sdu_interval -
+							iso_interval_us, iso_interval_us);
+			}
 #else
 			LL_ASSERT(0);
 #endif
@@ -459,11 +481,20 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	return BT_HCI_ERR_SUCCESS;
 }
 
+/* Core 5.3 Vol 6, Part B section 7.8.100:
+ * The HCI_LE_Remove_CIG command is used by the Central’s Host to remove the CIG
+ * identified by CIG_ID.
+ * This command shall delete the CIG_ID and also delete the Connection_Handles
+ * of the CIS configurations stored in the CIG.
+ * This command shall also remove the isochronous data paths that are associated
+ * with the Connection_Handles of the CIS configurations.
+ */
 uint8_t ll_cig_remove(uint8_t cig_id)
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	uint16_t handle_iter;
+	bool has_cis;
 
 	cig = ll_conn_iso_group_get_by_id(cig_id);
 	if (!cig) {
@@ -481,6 +512,10 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 		struct ll_conn *conn;
 
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		if (!cis) {
+			break;
+		}
+
 		conn = ll_connected_get(cis->lll.acl_handle);
 
 		if (conn) {
@@ -493,8 +528,13 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 
 	/* CIG exists and is not active */
 	handle_iter = UINT16_MAX;
+	has_cis = false;
+
 	for (int i = 0; i < cig->cis_count; i++)  {
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		if (!cis) {
+			break;
+		}
 
 		/* Remove data path and ISOAL sink/source associated with this CIS
 		 * for both directions.
@@ -502,10 +542,16 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 		ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
 		ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 
-		ll_conn_iso_stream_release(cis);
+		has_cis = true;
 	}
 
-	ll_conn_iso_group_release(cig);
+	if (has_cis) {
+		/* Clear configuration only - let CIS disconnection release instance */
+		cig->cis_count = 0;
+	} else {
+		/* No CISes associated with the CIG - release the instance */
+		ll_conn_iso_group_release(cig);
+	}
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -611,22 +657,29 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	return 0;
 }
 
-uint16_t ull_central_iso_cis_offset_get(struct ll_conn_iso_stream *cis, uint32_t *cis_offset_min,
+uint16_t ull_central_iso_cis_offset_get(uint16_t cis_handle, uint32_t *cis_offset_min,
 					uint32_t *cis_offset_max)
 {
-	struct ll_conn_iso_group *cig;
+	struct ll_conn_iso_stream *cis;
 	struct ll_conn *conn;
 
-	conn = ll_conn_get(cis->lll.acl_handle);
-	cig  = cis->group;
+	cis = ll_conn_iso_stream_get(cis_handle);
+	LL_ASSERT(cis);
 
-	/* Provide CIS offset range
-	 * CIS_Offset_Max < (connInterval - (CIG_Sync_Delay + T_MSS))
-	 */
-	*cis_offset_max = (conn->lll.interval * CONN_INT_UNIT_US) - cig->sync_delay;
-	*cis_offset_min = MAX(400, EVENT_OVERHEAD_CIS_SETUP_US);
+	conn = ll_conn_get(cis->lll.acl_handle);
+
+	if (cis_offset_min && cis_offset_max) {
+		struct ll_conn_iso_group *cig;
+
+		cig  = cis->group;
+
+		/* Provide CIS offset range
+		 * CIS_Offset_Max < (connInterval - (CIG_Sync_Delay + T_MSS))
+		 */
+		*cis_offset_max = (conn->lll.interval * CONN_INT_UNIT_US) - cig->sync_delay;
+		*cis_offset_min = MAX(400, EVENT_OVERHEAD_CIS_SETUP_US);
+	}
 
 	cis->central.instant = ull_conn_event_counter(conn) + 3;
-
 	return cis->central.instant;
 }

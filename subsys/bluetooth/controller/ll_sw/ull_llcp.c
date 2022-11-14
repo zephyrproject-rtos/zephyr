@@ -905,8 +905,9 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 	ctx->data.cis_create.p_ft = cis->lll.rx.flush_timeout;
 
 	ctx->data.cis_create.conn_event_count =
-		ull_central_iso_cis_offset_get(cis, &ctx->data.cis_create.cis_offset_min,
-						    &ctx->data.cis_create.cis_offset_max);
+		ull_central_iso_cis_offset_get(cis->lll.handle,
+					       &ctx->data.cis_create.cis_offset_min,
+					       &ctx->data.cis_create.cis_offset_max);
 
 	llcp_lr_enqueue(conn, ctx);
 

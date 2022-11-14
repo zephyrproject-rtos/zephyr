@@ -520,7 +520,7 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		/* New CIS may become available by creation prior to the CIG
 		 * event in which it has event_count == 0. Don't increment
 		 * event count until its handle is validated in
-		 * ull_peripheral_iso_start, which means that its ACL instant
+		 * ull_conn_iso_start, which means that its ACL instant
 		 * has been reached, and offset calculated.
 		 */
 		if (cis->lll.handle != 0xFFFF && cis->lll.active) {
@@ -538,7 +538,7 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Update the CIG reference point for this event. Event 0 for the
 	 * leading CIS in the CIG would have had it's reference point set in
-	 * ull_peripheral_iso_start(). The reference point should only be
+	 * ull_conn_iso_start(). The reference point should only be
 	 * updated from event 1 onwards. Although the cig reference point set
 	 * this way is not accurate, it is the best possible until the anchor
 	 * point for the leading CIS is available for this event.
@@ -952,7 +952,7 @@ static void cig_disabled_cb(void *param)
 
 	cig = HDR_LLL2ULL(param);
 
-	if (IS_PERIPHERAL(cig)) {
+	if (IS_PERIPHERAL(cig) || cig->cis_count == 0) {
 		ll_conn_iso_group_release(cig);
 	} else {
 		/* CIG shall be released by ll_cig_remove */
