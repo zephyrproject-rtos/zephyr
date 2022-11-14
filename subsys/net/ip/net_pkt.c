@@ -295,36 +295,6 @@ static inline int16_t get_frees(struct net_buf_pool *pool)
 	return 0;
 #endif
 }
-#endif
-
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-static inline const char *get_name(struct net_buf_pool *pool)
-{
-#if defined(CONFIG_NET_BUF_POOL_USAGE)
-	return pool->name;
-#else
-	return "?";
-#endif
-}
-
-static inline int16_t get_size(struct net_buf_pool *pool)
-{
-#if defined(CONFIG_NET_BUF_POOL_USAGE)
-	return pool->pool_size;
-#else
-	return 0;
-#endif
-}
-
-static inline const char *slab2str(struct k_mem_slab *slab)
-{
-	return net_pkt_slab2str(slab);
-}
-
-static inline const char *pool2str(struct net_buf_pool *pool)
-{
-	return net_pkt_pool2str(pool);
-}
 
 void net_pkt_print_frags(struct net_pkt *pkt)
 {
@@ -359,6 +329,36 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 	NET_INFO("Total data size %zu, occupied %d bytes, utilization %zu%%",
 		 total, count * frag_size,
 		 count ? (total * 100) / (count * frag_size) : 0);
+}
+#endif
+
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+static inline const char *get_name(struct net_buf_pool *pool)
+{
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	return pool->name;
+#else
+	return "?";
+#endif
+}
+
+static inline int16_t get_size(struct net_buf_pool *pool)
+{
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	return pool->pool_size;
+#else
+	return 0;
+#endif
+}
+
+static inline const char *slab2str(struct k_mem_slab *slab)
+{
+	return net_pkt_slab2str(slab);
+}
+
+static inline const char *pool2str(struct net_buf_pool *pool)
+{
+	return net_pkt_pool2str(pool);
 }
 #endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
