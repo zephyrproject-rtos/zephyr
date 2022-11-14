@@ -132,8 +132,13 @@ ZTEST(timer_tick_train, test_one_tick_timer_train)
 		k_timer_stop(&timers[i].tm);
 	}
 
-	const uint32_t expected_busy_loops = TEST_SECONDS*4;
-	const uint32_t acceptable_busy_loops = expected_busy_loops - expected_busy_loops/10;
+	const uint32_t maximum_busy_loops = TEST_SECONDS * 4;
+	/* On some platforms, where the tick period is short, like on nRF
+	 * platforms where it is ~30 us, execution of the timer handlers
+	 * can take significant part of the CPU time, so accept if at least
+	 * one-third of possible busy loop iterations is actually performed.
+	 */
+	const uint32_t acceptable_busy_loops = maximum_busy_loops / 3;
 
 	zassert_true(busy_loops > acceptable_busy_loops,
 		     "Expected thread to run while 1 tick timers are firing");
