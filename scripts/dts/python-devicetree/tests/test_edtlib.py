@@ -189,6 +189,15 @@ def test_include():
         "}"
     )
 
+    assert str(edt.get_node("/binding-include/child").props) == (
+        "{"
+        "'foo': <Property, name: foo, type: int, value: 0>, "
+        "'bar': <Property, name: bar, type: int, value: 1>, "
+        "'baz': <Property, name: baz, type: int, value: 2>, "
+        "'qaz': <Property, name: qaz, type: int, value: 3>"
+        "}"
+    )
+
 def test_include_filters():
     '''Test property-allowlist and property-blocklist in an include.'''
 
@@ -272,6 +281,13 @@ def test_include_filters():
         assert set(binding.prop2specs.keys()) == {'x'}
         assert set(child.prop2specs.keys()) == {'child-prop-2'}
         assert set(grandchild.prop2specs.keys()) == {'grandchild-prop-1'}
+
+        binding = edtlib.Binding("test-bindings-include/allow-and-blocklist-multilevel.yaml",
+                                 fname2path)
+        assert set(binding.prop2specs.keys()) == {'x'}  # 'x' is allowed
+        child = binding.child_binding
+        assert set(child.prop2specs.keys()) == {'child-prop-1', 'child-prop-2',
+                                                'x', 'z'}  # root level 'y' is blocked
 
 
 def test_bus():
