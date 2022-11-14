@@ -57,7 +57,7 @@ struct k_spinlock sched_spinlock;
 
 static void update_cache(int preempt_ok);
 static void end_thread(struct k_thread *thread);
-
+static void ready_thread(struct k_thread *thread);
 
 static inline int is_preempt(struct k_thread *thread)
 {
@@ -308,6 +308,35 @@ static inline bool is_aborting(struct k_thread *thread)
 	return (thread->base.thread_state & _THREAD_ABORTING) != 0U;
 }
 #endif
+
+static _wait_q_t *pended_on_thread(struct k_thread *thread)
+{
+	__ASSERT_NO_MSG(thread->base.pended_on);
+
+	return thread->base.pended_on;
+}
+
+static inline void unpend_thread_no_timeout(struct k_thread *thread)
+{
+	_priq_wait_remove(&pended_on_thread(thread)->waitq, thread);
+	z_mark_thread_as_not_pending(thread);
+	thread->base.pended_on = NULL;
+}
+
+static struct k_thread *wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
+{
+	struct k_thread *thread = _priq_wait_best(&wait_q->waitq);
+
+	if (thread != NULL) {
+		z_thread_return_value_set_with_data(thread,
+						    swap_retval,
+						    swap_data);
+		unpend_thread_no_timeout(thread);
+		(void)z_abort_thread_timeout(thread);
+		ready_thread(thread);
+	}
+	return thread;
+}
 
 static void unready_thread(struct k_thread *thread, bool recache)
 {
@@ -726,13 +755,6 @@ static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
 #include <syscalls/k_thread_resume_mrsh.c>
 #endif
 
-static _wait_q_t *pended_on_thread(struct k_thread *thread)
-{
-	__ASSERT_NO_MSG(thread->base.pended_on);
-
-	return thread->base.pended_on;
-}
-
 /* sched_spinlock must be held */
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
@@ -771,13 +793,6 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 	LOCKED(&sched_spinlock) {
 		pend_locked(thread, wait_q, timeout);
 	}
-}
-
-static inline void unpend_thread_no_timeout(struct k_thread *thread)
-{
-	_priq_wait_remove(&pended_on_thread(thread)->waitq, thread);
-	z_mark_thread_as_not_pending(thread);
-	thread->base.pended_on = NULL;
 }
 
 ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
@@ -1880,23 +1895,11 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
  */
 bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 {
-	struct k_thread *thread;
-	bool ret = false;
+	bool ret;
 
 	LOCKED(&sched_spinlock) {
-		thread = _priq_wait_best(&wait_q->waitq);
-
-		if (thread != NULL) {
-			z_thread_return_value_set_with_data(thread,
-							    swap_retval,
-							    swap_data);
-			unpend_thread_no_timeout(thread);
-			(void)z_abort_thread_timeout(thread);
-			ready_thread(thread);
-			ret = true;
-		}
+		ret = wake(wait_q, swap_retval, swap_data) != NULL;
 	}
-
 	return ret;
 }
 
