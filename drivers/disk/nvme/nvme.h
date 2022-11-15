@@ -423,6 +423,9 @@ struct nvme_controller {
 
 	msi_vector_t vectors[NVME_PCIE_MSIX_VECTORS];
 
+	struct nvme_controller_data cdata;
+
+	uint32_t num_io_queues;
 	struct nvme_cmd_qpair *adminq;
 	struct nvme_cmd_qpair *ioq;
 

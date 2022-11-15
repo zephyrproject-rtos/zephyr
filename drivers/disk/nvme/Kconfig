@@ -37,6 +37,21 @@ config NVME_IO_ENTRIES
 	  This sets the amount of allocated IO queue entries.
 	  Do not touch this unless you know what you are doing.
 
+config NVME_RETRY_COUNT
+	int "Retry count"
+	default 2
+	help
+	  This sets the amount of possible retries per-request.
+	  Do not touch this unless you know what you are doing.
+
+config NVME_REQUEST_TIMEOUT
+	int "Timeout period for NVMe request"
+	range 5 120
+	default 5
+	help
+	  This sets the waiting time for a request to succeed.
+	  Do not touch this unless you know what you are doing.
+
 config NVME_INT_PRIORITY
 	int "Interrupt priority"
 	default 2
