@@ -282,7 +282,7 @@ static void carrier_on_off(struct k_work *work)
 
 	if (ppp_carrier_up) {
 		ppp_mgmt_raise_carrier_on_event(ctx->iface);
-		net_if_carrier_on(ctx->iface);
+		net_if_up(ctx->iface);
 	} else {
 		if (ppp_lcp) {
 			ppp_lcp->close(ctx, "Shutdown");
@@ -291,7 +291,7 @@ static void carrier_on_off(struct k_work *work)
 			ppp_change_phase(ctx, PPP_DEAD);
 
 			ppp_mgmt_raise_carrier_off_event(ctx->iface);
-			net_if_carrier_off(ctx->iface);
+			net_if_down(ctx->iface);
 		}
 	}
 }
