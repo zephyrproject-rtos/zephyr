@@ -26,6 +26,7 @@
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		nxp,m4-partition = &slot1_partition;
+		zephyr,ipc = &mailbox_b;
 	};
 
 
@@ -54,5 +55,9 @@
 };
 
 &edma_lpsr0 {
+	status = "okay";
+};
+
+&mailbox_b {
 	status = "okay";
 };
