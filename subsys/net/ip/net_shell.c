@@ -3657,7 +3657,11 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 
 	net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
 
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	PR("Fragment length %d bytes\n", CONFIG_NET_BUF_DATA_SIZE);
+#else
+	PR("Fragment data pool size %d bytes\n", CONFIG_NET_BUF_DATA_POOL_SIZE);
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 	PR("Network buffer pools:\n");
 
