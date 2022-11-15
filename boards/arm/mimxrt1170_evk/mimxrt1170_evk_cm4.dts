@@ -26,6 +26,7 @@
 		zephyr,canbus = &flexcan2;
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
+		nxp,m4-partition = &slot1_partition;
 	};
 
 	sdram0: memory@80000000 {
