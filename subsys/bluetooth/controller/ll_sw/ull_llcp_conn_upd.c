@@ -304,8 +304,7 @@ static void lp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
+	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 
 static void lp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -760,8 +759,7 @@ static void rp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		pdu->timeout = conn->supervision_timeout;
 	}
 	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
+	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -781,8 +779,7 @@ static void rp_cu_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	llcp_pdu_encode_conn_param_req(ctx, pdu);
 
 	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
+	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 

@@ -1733,6 +1733,12 @@ void ll_rx_sched(void)
 	k_sem_give(sem_recv);
 }
 
+void ll_rx_put_sched(memq_link_t *link, void *rx)
+{
+	ll_rx_put(link, rx);
+	ll_rx_sched();
+}
+
 #if defined(CONFIG_BT_CONN)
 void *ll_pdu_rx_alloc_peek(uint8_t count)
 {
@@ -2745,8 +2751,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 		adv = (void *)((struct node_rx_pdu *)rx)->pdu;
 		if (adv->type != PDU_ADV_TYPE_EXT_IND) {
-			ll_rx_put(link, rx);
-			ll_rx_sched();
+			ll_rx_put_sched(link, rx);
 			break;
 		}
 
@@ -2779,8 +2784,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE:
 	{
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
-		ll_rx_put(link, rx);
-		ll_rx_sched();
+		ll_rx_put_sched(link, rx);
 	}
 	break;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
@@ -2805,8 +2809,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
 		if (rx) {
-			ll_rx_put(link, rx);
-			ll_rx_sched();
+			ll_rx_put_sched(link, rx);
 		}
 	}
 	break;
@@ -2855,8 +2858,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_RELEASE:
 	{
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
-		ll_rx_put(link, rx);
-		ll_rx_sched();
+		ll_rx_put_sched(link, rx);
 	}
 	break;
 #endif /* CONFIG_BT_OBSERVER ||

@@ -952,8 +952,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		}
 	}
 
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);

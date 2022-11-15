@@ -495,8 +495,7 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 	se = (void *)rx->pdu;
 	se->status = BT_HCI_ERR_SUCCESS;
 
-	ll_rx_put(rx->hdr.link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(rx->hdr.link, rx);
 
 	ull_sync_iso_done(done);
 }
@@ -804,6 +803,5 @@ static void disabled_cb(void *param)
 	rx->hdr.link = NULL;
 
 	/* Enqueue the BIG sync lost towards ULL context */
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 }
