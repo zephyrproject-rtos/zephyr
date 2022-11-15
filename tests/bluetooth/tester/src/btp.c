@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright (c) 2022 Codecoup
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +22,7 @@
 #define LOG_MODULE_NAME bttester
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include "bttester.h"
+#include "btp/btp.h"
 
 #define STACKSIZE 2048
 static K_THREAD_STACK_DEFINE(stack, STACKSIZE);

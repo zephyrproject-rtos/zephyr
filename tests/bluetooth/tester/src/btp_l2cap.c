@@ -17,7 +17,7 @@
 #define LOG_MODULE_NAME bttester_l2cap
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include "bttester.h"
+#include "btp/btp.h"
 
 #define CONTROLLER_INDEX 0
 #define DATA_MTU_INITIAL 128

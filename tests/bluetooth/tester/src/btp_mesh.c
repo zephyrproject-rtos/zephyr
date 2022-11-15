@@ -18,7 +18,7 @@
 #define LOG_MODULE_NAME bttester_mesh
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include "bttester.h"
+#include "btp/btp.h"
 
 #define CONTROLLER_INDEX 0
 #define CID_LOCAL 0x05F1

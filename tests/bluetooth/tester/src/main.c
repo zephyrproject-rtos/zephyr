@@ -14,7 +14,7 @@
 #define LOG_MODULE_NAME bttester_main
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include "bttester.h"
+#include "btp/btp.h"
 
 void main(void)
 {
