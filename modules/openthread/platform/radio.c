@@ -239,7 +239,8 @@ static void dataInit(void)
 	tx_pkt = net_pkt_alloc(K_NO_WAIT);
 	__ASSERT_NO_MSG(tx_pkt != NULL);
 
-	tx_payload = net_pkt_get_reserve_tx_data(K_NO_WAIT);
+	tx_payload = net_pkt_get_reserve_tx_data(IEEE802154_MAX_PHY_PACKET_SIZE,
+						 K_NO_WAIT);
 	__ASSERT_NO_MSG(tx_payload != NULL);
 
 	net_pkt_append_buffer(tx_pkt, tx_payload);

@@ -1394,16 +1394,18 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 		cursor = frag->data + diff;
 		memmove(cursor, frag->data, frag->len - diff);
 	} else {
+		size_t frag_len = nhc ? NET_IPV6UDPH_LEN : NET_IPV6H_LEN;
+
 		NET_DBG("Not enough tailroom. Get new fragment");
 		cursor =  pkt->buffer->data;
-		frag = net_pkt_get_frag(pkt, NET_6LO_RX_PKT_TIMEOUT);
+		frag = net_pkt_get_frag(pkt, frag_len, NET_6LO_RX_PKT_TIMEOUT);
 		if (!frag) {
 			NET_ERR("Can't get frag for uncompression");
 			return false;
 		}
 
 		net_buf_pull(pkt->buffer, compressed_hdr_size);
-		net_buf_add(frag, nhc ? NET_IPV6UDPH_LEN : NET_IPV6H_LEN);
+		net_buf_add(frag, frag_len);
 	}
 
 	ipv6 = (struct net_ipv6_hdr *)(frag->data);
@@ -1537,7 +1539,7 @@ static inline int compress_ipv6_header(struct net_pkt *pkt)
 		return 0;
 	}
 
-	buffer = net_pkt_get_frag(pkt, K_FOREVER);
+	buffer = net_pkt_get_frag(pkt, 1, K_FOREVER);
 	if (!buffer) {
 		return -ENOBUFS;
 	}

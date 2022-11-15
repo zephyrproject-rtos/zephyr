@@ -1322,30 +1322,33 @@ static inline bool net_pkt_filter_recv_ok(struct net_pkt *pkt)
  */
 
 struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
+					       size_t min_len,
 					       k_timeout_t timeout,
 					       const char *caller,
 					       int line);
 
-#define net_pkt_get_reserve_data(pool, timeout)				\
-	net_pkt_get_reserve_data_debug(pool, timeout, __func__, __LINE__)
+#define net_pkt_get_reserve_data(pool, min_len, timeout)				\
+	net_pkt_get_reserve_data_debug(pool, min_len, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_reserve_rx_data_debug(k_timeout_t timeout,
+struct net_buf *net_pkt_get_reserve_rx_data_debug(size_t min_len,
+						  k_timeout_t timeout,
 						  const char *caller,
 						  int line);
-#define net_pkt_get_reserve_rx_data(timeout)				\
-	net_pkt_get_reserve_rx_data_debug(timeout, __func__, __LINE__)
+#define net_pkt_get_reserve_rx_data(min_len, timeout)				\
+	net_pkt_get_reserve_rx_data_debug(min_len, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_reserve_tx_data_debug(k_timeout_t timeout,
+struct net_buf *net_pkt_get_reserve_tx_data_debug(size_t min_len,
+						  k_timeout_t timeout,
 						  const char *caller,
 						  int line);
-#define net_pkt_get_reserve_tx_data(timeout)				\
-	net_pkt_get_reserve_tx_data_debug(timeout, __func__, __LINE__)
+#define net_pkt_get_reserve_tx_data(min_len, timeout)				\
+	net_pkt_get_reserve_tx_data_debug(min_len, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_frag_debug(struct net_pkt *pkt,
+struct net_buf *net_pkt_get_frag_debug(struct net_pkt *pkt, size_t min_len,
 				       k_timeout_t timeout,
 				       const char *caller, int line);
-#define net_pkt_get_frag(pkt, timeout)					\
-	net_pkt_get_frag_debug(pkt, timeout, __func__, __LINE__)
+#define net_pkt_get_frag(pkt, min_len, timeout)					\
+	net_pkt_get_frag_debug(pkt, min_len, timeout, __func__, __LINE__)
 
 void net_pkt_unref_debug(struct net_pkt *pkt, const char *caller, int line);
 #define net_pkt_unref(pkt) net_pkt_unref_debug(pkt, __func__, __LINE__)
@@ -1404,6 +1407,7 @@ void net_pkt_print_frags(struct net_pkt *pkt);
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.
  *
+ * @param min_len Minimum length of the requested fragment.
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait up to the specified time.
@@ -1411,7 +1415,7 @@ void net_pkt_print_frags(struct net_pkt *pkt);
  * @return Network buffer if successful, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_reserve_rx_data(k_timeout_t timeout);
+struct net_buf *net_pkt_get_reserve_rx_data(size_t min_len, k_timeout_t timeout);
 #endif
 
 /**
@@ -1421,6 +1425,7 @@ struct net_buf *net_pkt_get_reserve_rx_data(k_timeout_t timeout);
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.
  *
+ * @param min_len Minimum length of the requested fragment.
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait up to the specified time.
@@ -1428,7 +1433,7 @@ struct net_buf *net_pkt_get_reserve_rx_data(k_timeout_t timeout);
  * @return Network buffer if successful, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_reserve_tx_data(k_timeout_t timeout);
+struct net_buf *net_pkt_get_reserve_tx_data(size_t min_len, k_timeout_t timeout);
 #endif
 
 /**
@@ -1436,6 +1441,7 @@ struct net_buf *net_pkt_get_reserve_tx_data(k_timeout_t timeout);
  * buffer pool or from global DATA pool.
  *
  * @param pkt Network packet.
+ * @param min_len Minimum length of the requested fragment.
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait up to the specified time.
@@ -1443,7 +1449,8 @@ struct net_buf *net_pkt_get_reserve_tx_data(k_timeout_t timeout);
  * @return Network buffer if successful, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, k_timeout_t timeout);
+struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, size_t min_len,
+				 k_timeout_t timeout);
 #endif
 
 /**
