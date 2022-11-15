@@ -31,6 +31,7 @@
 		zephyr,display = &lcdif;
 		zephyr,keyboard-scan = &touch_controller;
 		zephyr,cpu1-region = &ocram;
+		zephyr,ipc = &mailbox_a;
 	};
 
 	sdram0: memory@80000000 {
@@ -159,5 +160,9 @@
 };
 
 zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&mailbox_a {
 	status = "okay";
 };
