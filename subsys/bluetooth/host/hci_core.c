@@ -2465,6 +2465,13 @@ static void process_events(struct k_poll_event *ev, int count)
 		switch (ev->state) {
 		case K_POLL_STATE_SIGNALED:
 			break;
+		case K_POLL_STATE_SEM_AVAILABLE:
+			/* After this fn is exec'd, `bt_conn_prepare_events()`
+			 * will be called once again, and this time buffers will
+			 * be available, so the FIFO will be added to the poll
+			 * list instead of the ctlr buffers semaphore.
+			 */
+			break;
 		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
 			if (ev->tag == BT_EVENT_CMD_TX) {
 				send_cmd();
@@ -2524,6 +2531,7 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 		events[0].state = K_POLL_STATE_NOT_READY;
 		ev_count = 1;
 
+		/* This adds the FIFO per-connection */
 		if (IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_ISO)) {
 			ev_count += bt_conn_prepare_events(&events[1]);
 		}
