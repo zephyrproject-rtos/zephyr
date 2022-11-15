@@ -23,6 +23,7 @@
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,cpu1-region = &ocram;
 	};
 
 	sdram0: memory@80000000 {
