@@ -103,6 +103,15 @@ config FLASH_BASE_ADDRESS
 
 endif # CODE_SRAM0
 
+if CODE_OCRAM
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/ocram@20200000,0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/ocram@20200000)
+
+endif # CODE_OCRAM
 
 if CODE_FLEXSPI
 
