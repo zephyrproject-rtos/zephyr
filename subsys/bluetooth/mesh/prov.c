@@ -313,7 +313,7 @@ int bt_mesh_input_string(const char *str)
 		return -EINVAL;
 	}
 
-	strcpy((char *)bt_mesh_prov_link.auth, str);
+	memcpy(bt_mesh_prov_link.auth, str, strlen(str));
 
 	bt_mesh_prov_link.role->input_complete();
 
