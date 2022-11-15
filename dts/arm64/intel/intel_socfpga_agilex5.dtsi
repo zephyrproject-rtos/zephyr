@@ -23,8 +23,8 @@
 
 	gic: interrupt-controller@1d000000  {
 		compatible = "arm,gic";
-		reg = <0x1d000000 0x10000>,
-			  <0x1d060000 0x20000>;
+		reg = <0x1d000000 0x10000>, /* GICD */
+			  <0x1d060000 0x80000>; /* GICR */
 		interrupt-controller;
 		#interrupt-cells = <4>;
 		label = "GIC";
