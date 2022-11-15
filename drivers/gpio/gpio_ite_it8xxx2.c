@@ -616,10 +616,20 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	const struct gpio_ite_cfg *gpio_config = DEV_GPIO_CFG(dev);
 	uint8_t gpio_irq = gpio_config->gpio_irq[pin];
 
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	if (mode == GPIO_INT_MODE_DISABLED || mode == GPIO_INT_MODE_DISABLE_ONLY) {
+#else
 	if (mode == GPIO_INT_MODE_DISABLED) {
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 		/* Disable GPIO interrupt */
 		irq_disable(gpio_irq);
 		return 0;
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
+		/* Only enable GPIO interrupt */
+		irq_enable(gpio_irq);
+		return 0;
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 	}
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
