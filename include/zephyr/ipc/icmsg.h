@@ -37,6 +37,8 @@ struct icmsg_data_t {
 	void *ctx;
 
 	/* General */
+	const struct icmsg_config_t *cfg;
+	struct k_work_delayable notify_work;
 	struct k_work mbox_work;
 	atomic_t state;
 };
