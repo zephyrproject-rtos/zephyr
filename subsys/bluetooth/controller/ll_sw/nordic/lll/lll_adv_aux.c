@@ -817,8 +817,7 @@ static void isr_tx_connect_rsp(void *param)
 		}
 	}
 
-	ull_rx_put(rx->hdr.link, rx);
-	ull_rx_sched();
+	ull_rx_put_sched(rx->hdr.link, rx);
 
 	if (is_done) {
 		/* Stop further LLL radio events */

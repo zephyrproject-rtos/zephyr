@@ -2789,8 +2789,7 @@ static void tx_lll_flush(void *param)
 	rx->hdr.link = NULL;
 
 	/* Enqueue the terminate towards ULL context */
-	ull_rx_put(link, rx);
-	ull_rx_sched();
+	ull_rx_put_sched(link, rx);
 }
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)

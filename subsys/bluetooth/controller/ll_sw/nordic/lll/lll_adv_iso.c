@@ -714,8 +714,7 @@ static void isr_done_term(void *param)
 				rx->type = NODE_RX_TYPE_BIG_CHM_COMPLETE;
 				rx->rx_ftr.param = lll;
 
-				ull_rx_put(rx->link, rx);
-				ull_rx_sched();
+				ull_rx_put_sched(rx->link, rx);
 			}
 
 			/* Use new channel map */

@@ -1984,6 +1984,12 @@ void ull_rx_sched(void)
 	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1, &mfy);
 }
 
+void ull_rx_put_sched(memq_link_t *link, void *rx)
+{
+	ull_rx_put(link, rx);
+	ull_rx_sched();
+}
+
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 void ull_rx_put_done(memq_link_t *link, void *done)
 {
@@ -2165,8 +2171,7 @@ void *ull_event_done(void *param)
 	ull_rx_put_done(link, evdone);
 	ull_rx_sched_done();
 #else
-	ull_rx_put(link, evdone);
-	ull_rx_sched();
+	ull_rx_put_sched(link, evdone);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 	return evdone;
