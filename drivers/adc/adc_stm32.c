@@ -17,6 +17,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -1296,6 +1297,55 @@ static const struct adc_driver_api api_stm32_driver_api = {
 	.ref_internal = STM32_ADC_VREF_MV, /* VREF is usually connected to VDD */
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int adc_stm32_pm_action(const struct device *dev,
+				enum pm_device_action action)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	struct adc_stm32_data *data = dev->data;
+	int err;
+
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+
+		/* enable clock */
+		err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken);
+		if (err != 0) {
+			LOG_ERR("Could not enable (LP)UART clock");
+			return err;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Stop device clock. Note: fixed clocks are not handled yet. */
+		err = clock_control_off(data->clock, (clock_control_subsys_t)&config->pclken);
+		if (err != 0) {
+			LOG_ERR("Could not enable (LP)UART clock");
+			return err;
+		}
+
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (err == -ENOENT) {
+			/* Warn but don't block PM suspend */
+			LOG_WRN("(LP)UART pinctrl sleep state not available ");
+		} else if (err < 0) {
+			return err;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
 
 bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
@@ -1381,8 +1431,11 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),		\
 };									\
 									\
+PM_DEVICE_DT_INST_DEFINE(index, adc_stm32_pm_action);		        \
+									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &adc_stm32_init, NULL,				\
+		    &adc_stm32_init,					\
+		    PM_DEVICE_DT_INST_GET(index),			\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 		    &api_stm32_driver_api);
