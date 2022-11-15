@@ -951,8 +951,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		 * setup.
 		 */
 
-		ll_rx_put(rx_establ->hdr.link, rx_establ);
-		ll_rx_sched();
+		ll_rx_put_sched(rx_establ->hdr.link, rx_establ);
 	}
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
@@ -976,8 +975,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_scan_aux_setup(link, rx);
 	} else {
 		rx->type = NODE_RX_TYPE_RELEASE;
-		ll_rx_put(link, rx);
-		ll_rx_sched();
+		ll_rx_put_sched(link, rx);
 	}
 }
 
@@ -1367,8 +1365,7 @@ static void sync_expire(void *param)
 	/* NOTE: footer param has already been populated during sync setup */
 
 	/* Enqueue the sync failed to established towards ULL context */
-	ll_rx_put(rx->hdr.link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(rx->hdr.link, rx);
 }
 
 static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param)
@@ -1413,8 +1410,7 @@ static void sync_lost(void *param)
 	rx->hdr.rx_ftr.param = sync;
 
 	/* Enqueue the sync lost towards ULL context */
-	ll_rx_put(rx->hdr.link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(rx->hdr.link, rx);
 }
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)

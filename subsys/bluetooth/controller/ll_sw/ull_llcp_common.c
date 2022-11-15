@@ -412,8 +412,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
+	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 
 static void lp_comm_terminate_invalid_pdu(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -1178,8 +1177,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
+	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 

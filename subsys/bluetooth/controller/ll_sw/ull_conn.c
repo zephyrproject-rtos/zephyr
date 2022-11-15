@@ -1767,8 +1767,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 				rx->type = NODE_RX_TYPE_APTO;
 
 				/* enqueue apto event into rx queue */
-				ll_rx_put(rx->link, rx);
-				ll_rx_sched();
+				ll_rx_put_sched(rx->link, rx);
 			} else {
 				conn->apto_expire = 1U;
 			}
@@ -1844,8 +1843,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			pdu_data_rx->rssi = lll->rssi_reported;
 
 			/* enqueue connection RSSI structure into queue */
-			ll_rx_put(rx->hdr.link, rx);
-			ll_rx_sched();
+			ll_rx_put_sched(rx->hdr.link, rx);
 		}
 	}
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
@@ -3356,8 +3354,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			rx_hold_put(conn, rx->hdr.link, rx);
 #else /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 			/* enqueue rx node towards Thread */
-			ll_rx_put(rx->hdr.link, rx);
-			ll_rx_sched();
+			ll_rx_put_sched(rx->hdr.link, rx);
 #endif /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 
 		} else {
@@ -3365,8 +3362,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			/* enqueue rx node towards Thread */
-			ll_rx_put(rx->hdr.link, rx);
-			ll_rx_sched();
+			ll_rx_put_sched(rx->hdr.link, rx);
 		}
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
@@ -3696,8 +3692,7 @@ static inline void event_enc_prep(struct ll_conn *conn)
 			pdu->llctrl.enc_req.ediv[1] = conn->llcp_enc.ediv[1];
 
 			/* enqueue enc req structure into rx queue */
-			ll_rx_put(rx->hdr.link, rx);
-			ll_rx_sched();
+			ll_rx_put_sched(rx->hdr.link, rx);
 
 			/* Wait for LTK reply */
 			conn->llcp.encryption.state = LLCP_ENC_STATE_LTK_WAIT;
@@ -3862,8 +3857,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 			     pdu->llctrl.feature_req.features);
 
 		/* enqueue feature rsp structure into rx queue */
-		ll_rx_put(rx->hdr.link, rx);
-		ll_rx_sched();
+		ll_rx_put_sched(rx->hdr.link, rx);
 
 		return;
 	}
@@ -3975,8 +3969,7 @@ static inline void event_vex_prep(struct ll_conn *conn)
 			sys_cpu_to_le16(conn->llcp_version.sub_version_number);
 
 		/* enqueue version ind structure into rx queue */
-		ll_rx_put(rx->hdr.link, rx);
-		ll_rx_sched();
+		ll_rx_put_sched(rx->hdr.link, rx);
 	} else {
 		/* tx-ed but no rx, and new request placed */
 		LL_ASSERT(0);
@@ -4239,8 +4232,7 @@ static inline void event_conn_param_app_req(struct ll_conn *conn)
 	p->timeout = sys_cpu_to_le16(conn->llcp_conn_param.timeout);
 
 	/* enqueue connection parameter request into rx queue */
-	ll_rx_put(rx->hdr.link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(rx->hdr.link, rx);
 }
 
 static inline void event_conn_param_prep(struct ll_conn *conn,
@@ -4551,8 +4543,7 @@ static inline void event_len_prep(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* enqueue rx node towards Thread */
-		ll_rx_put(rx->hdr.link, rx);
-		ll_rx_sched();
+		ll_rx_put_sched(rx->hdr.link, rx);
 	}
 	break;
 
@@ -4759,8 +4750,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 				upd->rx = lll->phy_rx;
 
 				/* Enqueue Rx node */
-				ll_rx_put(rx->hdr.link, rx);
-				ll_rx_sched();
+				ll_rx_put_sched(rx->hdr.link, rx);
 			}
 		} else {
 			struct lll_conn *lll = &conn->lll;
@@ -4950,8 +4940,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 			rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			/* enqueue rx node towards Thread */
-			ll_rx_put(rx->hdr.link, rx);
-			ll_rx_sched();
+			ll_rx_put_sched(rx->hdr.link, rx);
 			return;
 		}
 		lll->max_tx_time = eff_tx_time;
