@@ -21,6 +21,8 @@
 #define STM32_SRC_HSE		0x002
 #define STM32_SRC_LSE		0x003
 #define STM32_SRC_LSI		0x004
+/** System clock */
+#define STM32_SRC_SYSCLK	0x005
 
 /**
  * @brief STM32 clock configuration bit field.
