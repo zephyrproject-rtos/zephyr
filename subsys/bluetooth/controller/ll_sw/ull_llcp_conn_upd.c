@@ -231,6 +231,34 @@ static bool cu_should_notify_host(struct proc_ctx *ctx)
 		(ctx->data.cu.params_changed != 0U));
 }
 
+static void cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	struct node_rx_pdu *ntf;
+	struct node_rx_cu *pdu;
+
+	/* Allocate ntf node */
+	ntf = llcp_ntf_alloc();
+	LL_ASSERT(ntf);
+
+	ntf->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
+	ntf->hdr.handle = conn->lll.handle;
+	pdu = (struct node_rx_cu *)ntf->pdu;
+
+	pdu->status = ctx->data.cu.error;
+	if (!ctx->data.cu.error) {
+		pdu->interval = ctx->data.cu.interval_max;
+		pdu->latency = ctx->data.cu.latency;
+		pdu->timeout = ctx->data.cu.timeout;
+	} else {
+		pdu->interval = conn->lll.interval;
+		pdu->latency = conn->lll.latency;
+		pdu->timeout = conn->supervision_timeout;
+	}
+
+	/* Enqueue notification towards LL */
+	ll_rx_put_sched(ntf->hdr.link, ntf);
+}
+
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
@@ -279,34 +307,6 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 }
 #endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-static void lp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	struct node_rx_pdu *ntf;
-	struct node_rx_cu *pdu;
-
-	/* Allocate ntf node */
-	ntf = llcp_ntf_alloc();
-	LL_ASSERT(ntf);
-
-	ntf->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
-	ntf->hdr.handle = conn->lll.handle;
-	pdu = (struct node_rx_cu *)ntf->pdu;
-
-	pdu->status = ctx->data.cu.error;
-	if (!ctx->data.cu.error) {
-		pdu->interval = ctx->data.cu.interval_max;
-		pdu->latency = ctx->data.cu.latency;
-		pdu->timeout = ctx->data.cu.timeout;
-	} else {
-		pdu->interval = conn->lll.interval;
-		pdu->latency = conn->lll.latency;
-		pdu->timeout = conn->supervision_timeout;
-	}
-
-	/* Enqueue notification towards LL */
-	ll_rx_put_sched(ntf->hdr.link, ntf);
-}
-
 static void lp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	llcp_lr_complete(conn);
@@ -326,7 +326,7 @@ static void lp_cu_wait_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	if (!llcp_ntf_alloc_is_available()) {
 		ctx->state = LP_CU_STATE_WAIT_NTF;
 	} else {
-		lp_cu_ntf(conn, ctx);
+		cu_ntf(conn, ctx);
 		lp_cu_complete(conn, ctx);
 	}
 }
@@ -735,33 +735,6 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }
 
-static void rp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	struct node_rx_pdu *ntf;
-	struct node_rx_cu *pdu;
-
-	/* Allocate ntf node */
-	ntf = llcp_ntf_alloc();
-	LL_ASSERT(ntf);
-
-	ntf->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
-	ntf->hdr.handle = conn->lll.handle;
-	pdu = (struct node_rx_cu *)ntf->pdu;
-
-	pdu->status = ctx->data.cu.error;
-	if (!ctx->data.cu.error) {
-		pdu->interval = ctx->data.cu.interval_max;
-		pdu->latency = ctx->data.cu.latency;
-		pdu->timeout = ctx->data.cu.timeout;
-	} else {
-		pdu->interval = conn->lll.interval;
-		pdu->latency = conn->lll.latency;
-		pdu->timeout = conn->supervision_timeout;
-	}
-	/* Enqueue notification towards LL */
-	ll_rx_put_sched(ntf->hdr.link, ntf);
-}
-
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void rp_cu_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 {
@@ -800,7 +773,7 @@ static void rp_cu_wait_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	if (!llcp_ntf_alloc_is_available()) {
 		ctx->state = RP_CU_STATE_WAIT_NTF;
 	} else {
-		rp_cu_ntf(conn, ctx);
+		cu_ntf(conn, ctx);
 		rp_cu_complete(conn, ctx);
 	}
 }
