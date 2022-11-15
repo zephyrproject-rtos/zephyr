@@ -94,8 +94,8 @@ static int nvme_controller_enable(const struct device *dev)
 {
 	struct nvme_controller *nvme_ctrlr = dev->data;
 	mm_reg_t regs = DEVICE_MMIO_GET(dev);
-	uint32_t cc, csts, aqa, qsize;
 	uint8_t enabled, ready;
+	uint32_t cc, csts;
 	int err;
 
 	cc = nvme_mmio_read_4(regs, cc);
@@ -119,17 +119,6 @@ static int nvme_controller_enable(const struct device *dev)
 		return err;
 	}
 
-	nvme_mmio_write_8(regs, asq, nvme_ctrlr->adminq->cmd_bus_addr);
-	nvme_mmio_write_8(regs, acq, nvme_ctrlr->adminq->cpl_bus_addr);
-
-	/* acqs and asqs are 0-based. */
-	qsize = CONFIG_NVME_ADMIN_ENTRIES - 1;
-	aqa = 0;
-	aqa = (qsize & NVME_AQA_REG_ACQS_MASK) << NVME_AQA_REG_ACQS_SHIFT;
-	aqa |= (qsize & NVME_AQA_REG_ASQS_MASK) << NVME_AQA_REG_ASQS_SHIFT;
-
-	nvme_mmio_write_4(regs, aqa, aqa);
-
 	/* Initialization values for CC */
 	cc = 0;
 	cc |= 1 << NVME_CC_REG_EN_SHIFT;
@@ -143,6 +132,119 @@ static int nvme_controller_enable(const struct device *dev)
 	nvme_mmio_write_4(regs, cc, cc);
 
 	return nvme_controller_wait_for_ready(dev, 1);
+}
+
+static int nvme_controller_setup_admin_queues(const struct device *dev)
+{
+	struct nvme_controller *nvme_ctrlr = dev->data;
+	mm_reg_t regs = DEVICE_MMIO_GET(dev);
+	uint32_t aqa, qsize;
+
+	nvme_cmd_qpair_reset(nvme_ctrlr->adminq);
+
+	/* Admin queue is always id 0 */
+	if (nvme_cmd_qpair_setup(nvme_ctrlr->adminq, nvme_ctrlr, 0) != 0) {
+		LOG_ERR("Admin cmd qpair setup failed");
+		return -EIO;
+	}
+
+	nvme_mmio_write_8(regs, asq, nvme_ctrlr->adminq->cmd_bus_addr);
+	nvme_mmio_write_8(regs, acq, nvme_ctrlr->adminq->cpl_bus_addr);
+
+	/* acqs and asqs are 0-based. */
+	qsize = CONFIG_NVME_ADMIN_ENTRIES - 1;
+	aqa = 0;
+	aqa = (qsize & NVME_AQA_REG_ACQS_MASK) << NVME_AQA_REG_ACQS_SHIFT;
+	aqa |= (qsize & NVME_AQA_REG_ASQS_MASK) << NVME_AQA_REG_ASQS_SHIFT;
+
+	nvme_mmio_write_4(regs, aqa, aqa);
+
+	return 0;
+}
+
+static int nvme_controller_setup_io_queues(const struct device *dev)
+{
+	struct nvme_controller *nvme_ctrlr = dev->data;
+	struct nvme_completion_poll_status status;
+	struct nvme_cmd_qpair *io_qpair;
+	int cq_allocated, sq_allocated;
+	int ret, idx;
+
+	nvme_cpl_status_poll_init(&status);
+
+	ret =  nvme_ctrlr_cmd_set_num_queues(nvme_ctrlr,
+					     nvme_ctrlr->num_io_queues,
+					     nvme_completion_poll_cb, &status);
+	if (ret != 0) {
+		return ret;
+	}
+
+	nvme_completion_poll(&status);
+	if (nvme_cpl_status_is_error(&status)) {
+		LOG_ERR("Could not set IO num queues to %u",
+			nvme_ctrlr->num_io_queues);
+		return -EIO;
+	}
+
+	/*
+	 * Data in cdw0 is 0-based.
+	 * Lower 16-bits indicate number of submission queues allocated.
+	 * Upper 16-bits indicate number of completion queues allocated.
+	 */
+	sq_allocated = (status.cpl.cdw0 & 0xFFFF) + 1;
+	cq_allocated = (status.cpl.cdw0 >> 16) + 1;
+
+	/*
+	 * Controller may allocate more queues than we requested,
+	 * so use the minimum of the number requested and what was
+	 * actually allocated.
+	 */
+	nvme_ctrlr->num_io_queues = MIN(nvme_ctrlr->num_io_queues,
+					sq_allocated);
+	nvme_ctrlr->num_io_queues = MIN(nvme_ctrlr->num_io_queues,
+					cq_allocated);
+
+	for (idx = 0; idx < nvme_ctrlr->num_io_queues; idx++) {
+		io_qpair = &nvme_ctrlr->ioq[idx];
+		if (nvme_cmd_qpair_setup(io_qpair, nvme_ctrlr, idx+1) != 0) {
+			LOG_ERR("IO cmd qpair %u setup failed", idx+1);
+			return -EIO;
+		}
+
+		nvme_cmd_qpair_reset(io_qpair);
+
+		nvme_cpl_status_poll_init(&status);
+
+		ret = nvme_ctrlr_cmd_create_io_cq(nvme_ctrlr, io_qpair,
+						  nvme_completion_poll_cb,
+						  &status);
+		if (ret != 0) {
+			return ret;
+		}
+
+		nvme_completion_poll(&status);
+		if (nvme_cpl_status_is_error(&status)) {
+			LOG_ERR("IO CQ creation failed");
+			return -EIO;
+		}
+
+		nvme_cpl_status_poll_init(&status);
+
+		ret = nvme_ctrlr_cmd_create_io_sq(nvme_ctrlr, io_qpair,
+						  nvme_completion_poll_cb,
+						  &status);
+		if (ret != 0) {
+			return ret;
+		}
+
+		nvme_completion_poll(&status);
+		if (nvme_cpl_status_is_error(&status)) {
+			LOG_ERR("IO CQ creation failed");
+			return -EIO;
+		}
+	}
+
+	return 0;
 }
 
 static void nvme_controller_gather_info(const struct device *dev)
@@ -262,10 +364,42 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 	return 0;
 }
 
+static int nvme_controller_identify(struct nvme_controller *nvme_ctrlr)
+{
+	struct nvme_completion_poll_status status =
+		NVME_CPL_STATUS_POLL_INIT(status);
+
+	nvme_ctrlr_cmd_identify_controller(nvme_ctrlr,
+					   nvme_completion_poll_cb, &status);
+	nvme_completion_poll(&status);
+
+	if (nvme_cpl_status_is_error(&status)) {
+		LOG_ERR("Could not identify the controller");
+		return -EIO;
+	}
+
+	nvme_controller_data_swapbytes(&nvme_ctrlr->cdata);
+
+	/*
+	 * Use MDTS to ensure our default max_xfer_size doesn't exceed what the
+	 * controller supports.
+	 */
+	if (nvme_ctrlr->cdata.mdts > 0) {
+		nvme_ctrlr->max_xfer_size =
+			MIN(nvme_ctrlr->max_xfer_size,
+			    1 << (nvme_ctrlr->cdata.mdts + NVME_MPS_SHIFT +
+				  NVME_CAP_HI_MPSMIN(nvme_ctrlr->cap_hi)));
+	}
+
+	return 0;
+}
+
 static int nvme_controller_init(const struct device *dev)
 {
 	struct nvme_controller *nvme_ctrlr = dev->data;
 	int ret;
+
+	nvme_cmd_init();
 
 	nvme_ctrlr->dev = dev;
 
@@ -282,9 +416,24 @@ static int nvme_controller_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = nvme_controller_setup_admin_queues(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
 	ret = nvme_controller_enable(dev);
 	if (ret != 0) {
 		LOG_ERR("Controller cannot be enabled");
+		return ret;
+	}
+
+	ret = nvme_controller_setup_io_queues(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = nvme_controller_identify(nvme_ctrlr);
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -293,9 +442,14 @@ static int nvme_controller_init(const struct device *dev)
 
 #define NVME_CONTROLLER_DEVICE_INIT(n)					\
 	DEVICE_PCIE_INST_DECLARE(n);					\
+	NVME_ADMINQ_ALLOCATE(n, CONFIG_NVME_ADMIN_ENTRIES);		\
+	NVME_IOQ_ALLOCATE(n, CONFIG_NVME_IO_ENTRIES);			\
 									\
 	static struct nvme_controller nvme_ctrlr_data_##n = {		\
 		.id = n,						\
+		.num_io_queues = CONFIG_NVME_IO_QUEUES,			\
+		.adminq = &admin_##n,					\
+		.ioq = &io_##n,						\
 	};								\
 									\
 	static struct nvme_controller_config nvme_ctrlr_cfg_##n =	\
