@@ -21,8 +21,6 @@ properties:
         Initial baud rate setting for UART. Only a fixed set of baud
         rates are selectable on these devices.
       enum:
-        - 1200
-        - 2400
         - 4800
         - 9600
         - 14400
@@ -32,9 +30,10 @@ properties:
         - 57600
         - 115200
         - 230400
-        - 460800
+        - 500000
         - 921600
         - 1000000
+        - 2000000
 
     hw-flow-control-supported:
       type: boolean
