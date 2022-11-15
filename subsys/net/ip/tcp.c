@@ -92,7 +92,7 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 		goto out;
 	}
 
-	buf = net_pkt_get_frag(pkt, TCP_PKT_ALLOC_TIMEOUT);
+	buf = net_pkt_get_frag(pkt, len, TCP_PKT_ALLOC_TIMEOUT);
 
 	if (!buf || buf->size < len) {
 		if (buf) {
