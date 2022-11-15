@@ -20,6 +20,8 @@ static volatile bool g_cb;
 static volatile bool g_pa_synced;
 CREATE_FLAG(flag_broadcast_code_received);
 CREATE_FLAG(flag_recv_state_updated);
+CREATE_FLAG(flag_bis_sync_requested);
+CREATE_FLAG(flag_bis_sync_term_requested);
 static volatile uint32_t g_broadcast_id;
 
 struct sync_state {
@@ -29,6 +31,7 @@ struct sync_state {
 	struct k_work_delayable pa_timer;
 	struct bt_le_per_adv_sync *pa_sync;
 	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
 } sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
 static struct sync_state *sync_state_get(const struct bt_bap_scan_delegator_recv_state *recv_state)
@@ -311,11 +314,46 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	SET_FLAG(flag_broadcast_code_received);
 }
 
+static int bis_sync_req_cb(struct bt_conn *conn,
+			   const struct bt_bap_scan_delegator_recv_state *recv_state,
+			   const uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS])
+{
+	struct sync_state *state;
+	bool sync_bis;
+
+	printk("BIS sync request received for %p\n", recv_state);
+	for (int i = 0; i < BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS; i++) {
+		if (bis_sync_req[i]) {
+			sync_bis = true;
+		}
+
+		printk("  [%d]: 0x%08x\n", i, bis_sync_req[i]);
+	}
+
+	state = sync_state_get(recv_state);
+	if (state == NULL) {
+		FAIL("Could not get state\n");
+		return -1;
+	}
+
+	(void)memcpy(state->bis_sync_req, bis_sync_req,
+		     sizeof(state->bis_sync_req));
+
+	if (sync_bis) {
+		SET_FLAG(flag_bis_sync_requested);
+	} else {
+		SET_FLAG(flag_bis_sync_term_requested);
+	}
+
+	return 0;
+}
+
 static struct bt_bap_scan_delegator_cb scan_delegator_cb = {
 	.recv_state_updated = recv_state_updated_cb,
 	.pa_sync_req = pa_sync_req_cb,
 	.pa_sync_term_req = pa_sync_term_req_cb,
 	.broadcast_code = broadcast_code_cb,
+	.bis_sync_req = bis_sync_req_cb,
 };
 
 static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
@@ -506,7 +544,7 @@ static int mod_source(struct sync_state *state)
 	for (uint8_t i = 0U; i < param.num_subgroups; i++) {
 		struct bt_bap_scan_delegator_subgroup *subgroup_param = &param.subgroups[i];
 
-		subgroup_param->bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
+		subgroup_param->bis_sync = 0U;
 		subgroup_param->metadata_len = sizeof(pref_context_metadata);
 		(void)memcpy(subgroup_param->metadata, pref_context_metadata,
 			     subgroup_param->metadata_len);
@@ -668,6 +706,9 @@ static void test_main_client_sync(void)
 
 	/* Mod all sources by modifying the metadata */
 	mod_all_sources();
+
+	/* Wait for broadcast assistant to tell us to BIS sync */
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
 
 	/* Set the BIS sync state */
 	sync_all_broadcasts();

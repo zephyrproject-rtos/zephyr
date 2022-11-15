@@ -205,6 +205,16 @@ static void receive_state_updated(struct bt_conn *conn,
 	}
 }
 
+static void bis_sync_request_updated(struct bt_conn *conn,
+				     const struct bass_recv_state_internal *internal_state)
+{
+	if (scan_delegator_cbs != NULL &&
+	    scan_delegator_cbs->bis_sync_req != NULL) {
+		scan_delegator_cbs->bis_sync_req(conn, &internal_state->state,
+						 internal_state->requested_bis_sync);
+	}
+}
+
 static void scan_delegator_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	int i;
@@ -445,6 +455,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 	uint8_t pa_sync;
 	uint16_t pa_interval;
 	uint32_t aggregated_bis_syncs = 0;
+	bool bis_sync_requested;
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bt_bap_bass_cp_add_src) - 1) {
@@ -493,6 +504,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
+	bis_sync_requested = false;
 	for (int i = 0; i < state->num_subgroups; i++) {
 		struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
 		uint8_t *metadata;
@@ -508,6 +520,10 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		    pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC) {
 			LOG_DBG("Cannot sync to BIS without PA");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
+
+		if (internal_state->requested_bis_sync[i] != 0U) {
+			bis_sync_requested = true;
 		}
 
 		/* Verify that the request BIS sync indexes are unique or no preference */
@@ -583,6 +599,10 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 
 	receive_state_updated(conn, internal_state);
 
+	if (bis_sync_requested) {
+		bis_sync_request_updated(conn, internal_state);
+	}
+
 	return 0;
 }
 
@@ -600,7 +620,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		subgroups[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS] = { 0 };
 	uint8_t pa_sync;
 	uint32_t aggregated_bis_syncs = 0;
-
+	bool bis_sync_change_requested;
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bt_bap_bass_cp_mod_src) - 1) {
@@ -637,8 +657,10 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
+	bis_sync_change_requested = false;
 	for (int i = 0; i < num_subgroups; i++) {
 		struct bt_bap_scan_delegator_subgroup *subgroup = &subgroups[i];
+		uint32_t old_bis_sync_req;
 		uint8_t *metadata;
 
 		if (buf->len < (sizeof(subgroup->bis_sync) + sizeof(subgroup->metadata_len))) {
@@ -646,11 +668,17 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
+		old_bis_sync_req = internal_state->requested_bis_sync[i];
+
 		internal_state->requested_bis_sync[i] = net_buf_simple_pull_le32(buf);
 		if (internal_state->requested_bis_sync[i] &&
 		    pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC) {
 			LOG_DBG("Cannot sync to BIS without PA");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
+
+		if (old_bis_sync_req != internal_state->requested_bis_sync[i]) {
+			bis_sync_change_requested = true;
 		}
 
 		/* Verify that the request BIS sync indexes are unique or no preference */
@@ -751,6 +779,10 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			internal_state->index, state->src_id);
 
 		receive_state_updated(conn, internal_state);
+	}
+
+	if (bis_sync_change_requested) {
+		bis_sync_request_updated(conn, internal_state);
 	}
 
 	return 0;
@@ -1069,7 +1101,8 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 			break;
 		}
 
-		if (!bits_subset_of(bis_synced[i],
+		if (bis_synced[i] == BT_BAP_BIS_SYNC_NO_PREF ||
+		    !bits_subset_of(bis_synced[i],
 				    internal_state->requested_bis_sync[i])) {
 			LOG_DBG("Subgroup[%u] invalid bis_sync value %x for %x",
 				i, bis_synced[i], internal_state->requested_bis_sync[i]);
@@ -1242,7 +1275,8 @@ static bool valid_bt_bap_scan_delegator_mod_src_param(
 	for (uint8_t i = 0U; i < param->num_subgroups; i++) {
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &param->subgroups[i];
 
-		if (!bis_syncs_unique_or_no_pref(subgroup->bis_sync,
+		if (subgroup->bis_sync == BT_BAP_BIS_SYNC_NO_PREF ||
+		    !bis_syncs_unique_or_no_pref(subgroup->bis_sync,
 						 aggregated_bis_syncs)) {
 			LOG_DBG("Invalid BIS sync: %u", subgroup->bis_sync);
 
@@ -1287,6 +1321,19 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
 	if (state->num_subgroups != param->num_subgroups) {
 		state->num_subgroups = param->num_subgroups;
 		state_changed = true;
+	}
+
+	/* Verify that the BIS sync values is acceptable for the receive state */
+	for (uint8_t i = 0U; i < state->num_subgroups; i++) {
+		const uint32_t bis_sync = param->subgroups[i].bis_sync;
+		const uint32_t bis_sync_requested = internal_state->requested_bis_sync[i];
+
+		if (!bits_subset_of(bis_sync, bis_sync_requested)) {
+			LOG_DBG("Subgroup[%d] invalid bis_sync value %x for %x",
+				i, bis_sync, bis_sync_requested);
+
+			return -EINVAL;
+		}
 	}
 
 	for (uint8_t i = 0U; i < state->num_subgroups; i++) {

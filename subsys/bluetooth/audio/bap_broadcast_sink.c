@@ -1178,7 +1178,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 
 		if (broadcast_sink_get_by_broadcast_id(broadcast_id) != NULL) {
 			LOG_DBG("Broadcast sink with broadcast_id 0x%X already exists",
-			       broadcast_id);
+				broadcast_id);
 
 			return;
 		}
@@ -1483,7 +1483,7 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 
 	if (broadcast_sink_get_by_broadcast_id(broadcast_id) != NULL) {
 		LOG_DBG("Broadcast sink with broadcast_id 0x%X already exists",
-		       broadcast_id);
+			broadcast_id);
 
 		return -EALREADY;
 	}
@@ -1503,7 +1503,7 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 		/* The PA sync is known by the Scan Delegator */
 		if (recv_state->broadcast_id != broadcast_id) {
 			LOG_DBG("Broadcast ID mismatch: 0x%X != 0x%X",
-			       recv_state->broadcast_id, broadcast_id);
+				recv_state->broadcast_id, broadcast_id);
 
 			return -EINVAL;
 		}

@@ -305,11 +305,25 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	(void)memcpy(state->broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
 }
 
+static int bis_sync_req_cb(struct bt_conn *conn,
+			   const struct bt_bap_scan_delegator_recv_state *recv_state,
+			   const uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS])
+{
+	printk("BIS sync request received for %p\n", recv_state);
+
+	for (int i = 0; i < BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS; i++) {
+		printk("  [%d]: 0x%08x\n", i, bis_sync_req[i]);
+	}
+
+	return 0;
+}
+
 static struct bt_bap_scan_delegator_cb scan_delegator_cb = {
 	.recv_state_updated = recv_state_updated_cb,
 	.pa_sync_req = pa_sync_req_cb,
 	.pa_sync_term_req = pa_sync_term_req_cb,
 	.broadcast_code = broadcast_code_cb,
+	.bis_sync_req = bis_sync_req_cb,
 };
 
 static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
