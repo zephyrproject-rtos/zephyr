@@ -710,6 +710,26 @@ struct pdu_data_llctrl_conn_param_rsp {
 	uint16_t offset5;
 } __packed;
 
+/*
+ * According to Spec Core v5.3, section 2.4.2.17
+ * LL_CONNECTION_PARAM_RSP and LL_CONNECTION_PARAM_REQ are identical
+ * This is utilized in pdu encode/decode, and for this is needed a common struct
+ */
+struct pdu_data_llctrl_conn_param_req_rsp_common {
+	uint16_t interval_min;
+	uint16_t interval_max;
+	uint16_t latency;
+	uint16_t timeout;
+	uint8_t  preferred_periodicity;
+	uint16_t reference_conn_event_count;
+	uint16_t offset0;
+	uint16_t offset1;
+	uint16_t offset2;
+	uint16_t offset3;
+	uint16_t offset4;
+	uint16_t offset5;
+} __packed;
+
 struct pdu_data_llctrl_reject_ext_ind {
 	uint8_t reject_opcode;
 	uint8_t error_code;
@@ -731,6 +751,18 @@ struct pdu_data_llctrl_length_req {
 } __packed;
 
 struct pdu_data_llctrl_length_rsp {
+	uint16_t max_rx_octets;
+	uint16_t max_rx_time;
+	uint16_t max_tx_octets;
+	uint16_t max_tx_time;
+} __packed;
+
+/*
+ * According to Spec Core v5.3, section 2.4.2.21
+ * LL_LENGTH_REQ and LL_LENGTH_RSP are identical
+ * This is utilized in pdu encode/decode, and for this is needed a common struct
+ */
+struct pdu_data_llctrl_length_req_rsp_common {
 	uint16_t max_rx_octets;
 	uint16_t max_rx_time;
 	uint16_t max_tx_octets;
