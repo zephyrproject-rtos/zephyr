@@ -259,6 +259,10 @@ void ull_rx_sched(void)
 {
 }
 
+void ull_rx_put_sched(memq_link_t *link, void *rx)
+{
+}
+
 /* Forward declaration */
 struct node_rx_event_done;
 void ull_drift_ticks_get(struct node_rx_event_done *done, uint32_t *ticks_drift_plus,

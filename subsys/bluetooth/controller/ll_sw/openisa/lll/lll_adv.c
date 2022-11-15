@@ -728,8 +728,7 @@ static void isr_done(void *param)
 		/* TODO: add other info by defining a payload struct */
 		node_rx->type = NODE_RX_TYPE_ADV_INDICATION;
 
-		ull_rx_put(node_rx->link, node_rx);
-		ull_rx_sched();
+		ull_rx_put_sched(node_rx->link, node_rx);
 	}
 #else /* !CONFIG_BT_CTLR_ADV_INDICATION */
 	ARG_UNUSED(node_rx);
@@ -940,8 +939,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 			ftr->extra = ull_pdu_rx_alloc();
 		}
 
-		ull_rx_put(rx->hdr.link, rx);
-		ull_rx_sched();
+		ull_rx_put_sched(rx->hdr.link, rx);
 
 		return 0;
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -1004,8 +1002,7 @@ static inline int isr_rx_sr_report(struct pdu_adv *pdu_adv_rx,
 	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
 						  0x7f;
 
-	ull_rx_put(node_rx->hdr.link, node_rx);
-	ull_rx_sched();
+	ull_rx_put_sched(node_rx->hdr.link, node_rx);
 
 	return 0;
 }
