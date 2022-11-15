@@ -19,6 +19,7 @@
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
 #include <zephyr/init.h>
+#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
