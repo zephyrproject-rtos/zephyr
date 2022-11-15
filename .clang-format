@@ -25,6 +25,7 @@ AttributeMacros:
   - __printf_like
   - __syscall
   - __subsystem
+BitFieldColonSpacing: After
 BreakBeforeBraces: Linux
 ColumnLimit: 100
 ConstructorInitializerIndentWidth: 8
