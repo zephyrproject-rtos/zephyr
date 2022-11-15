@@ -115,6 +115,12 @@ mapping:
         required: false
         sequence:
           - type: str
+      "platform_key":
+        required: false
+        type: seq
+        matching: "all"
+        sequence:
+          - type: str
       "tags":
         type: str
         required: false
@@ -270,6 +276,12 @@ mapping:
           "platform_type":
             type: seq
             required: false
+            sequence:
+              - type: str
+          "platform_key":
+            required: false
+            type: seq
+            matching: "all"
             sequence:
               - type: str
           "tags":
