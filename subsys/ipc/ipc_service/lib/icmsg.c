@@ -12,6 +12,7 @@
 #include <zephyr/sys/spsc_pbuf.h>
 
 #define CB_BUF_SIZE	CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE
+#define BOND_NOTIFY_REPEAT_TO K_MSEC(CONFIG_IPC_SERVICE_BACKEND_ICMSG_BOND_NOTIFY_REPEAT_TO_MS)
 
 static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
 				0x30, 0x72, 0x6e, 0x33, 0x6c, 0x69, 0x34};
@@ -34,8 +35,28 @@ static int mbox_deinit(const struct icmsg_config_t *conf,
 	}
 
 	(void)k_work_cancel(&dev_data->mbox_work);
+	(void)k_work_cancel_delayable(&dev_data->notify_work);
 
 	return 0;
+}
+
+static void notify_process(struct k_work *item)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct icmsg_data_t *dev_data =
+		CONTAINER_OF(dwork, struct icmsg_data_t, notify_work);
+
+	(void)mbox_send(&dev_data->cfg->mbox_tx, NULL);
+
+	atomic_t state = atomic_get(&dev_data->state);
+
+	if (state != ICMSG_STATE_READY) {
+		int ret;
+
+		ret = k_work_reschedule(dwork, BOND_NOTIFY_REPEAT_TO);
+		__ASSERT_NO_MSG(ret >= 0);
+		(void)ret;
+	}
 }
 
 static void mbox_callback_process(struct k_work *item)
@@ -61,6 +82,8 @@ static void mbox_callback_process(struct k_work *item)
 			dev_data->cb->received(cb_buffer, len, dev_data->ctx);
 		}
 	} else {
+		int ret;
+
 		__ASSERT_NO_MSG(state == ICMSG_STATE_BUSY);
 		if (len != sizeof(magic) || memcmp(magic, cb_buffer, len)) {
 			__ASSERT_NO_MSG(false);
@@ -72,6 +95,9 @@ static void mbox_callback_process(struct k_work *item)
 		}
 
 		atomic_set(&dev_data->state, ICMSG_STATE_READY);
+		ret = k_work_cancel_delayable(&dev_data->notify_work);
+		__ASSERT_NO_MSG(ret >= 0);
+		(void)ret;
 	}
 
 	/* Reading with NULL buffer to know if there are data in the
@@ -102,6 +128,7 @@ static int mbox_init(const struct icmsg_config_t *conf,
 	int err;
 
 	k_work_init(&dev_data->mbox_work, mbox_callback_process);
+	k_work_init_delayable(&dev_data->notify_work, notify_process);
 
 	err = mbox_register_callback(&conf->mbox_rx, mbox_callback, dev_data);
 	if (err != 0) {
@@ -137,6 +164,7 @@ int icmsg_open(const struct icmsg_config_t *conf,
 
 	dev_data->cb = cb;
 	dev_data->ctx = ctx;
+	dev_data->cfg = conf;
 
 	ret = mbox_init(conf, dev_data);
 	if (ret) {
@@ -154,14 +182,9 @@ int icmsg_open(const struct icmsg_config_t *conf,
 		return ret;
 	}
 
-	ret = mbox_send(&conf->mbox_tx, NULL);
-	if (ret) {
+	ret = k_work_schedule(&dev_data->notify_work, K_NO_WAIT);
+	if (ret < 0) {
 		return ret;
-	}
-
-	ret = spsc_pbuf_read(dev_data->rx_ib, NULL, 0);
-	if (ret > 0) {
-		(void)k_work_submit(&dev_data->mbox_work);
 	}
 
 	return 0;
