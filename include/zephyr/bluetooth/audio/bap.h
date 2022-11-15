@@ -368,6 +368,29 @@ struct bt_bap_scan_delegator_cb {
 	void (*broadcast_code)(struct bt_conn *conn,
 			       const struct bt_bap_scan_delegator_recv_state *recv_state,
 			       const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
+
+	/**
+	 * @brief Broadcast Isochronous Stream synchronize request
+	 *
+	 * Request from Broadcast Assistant device to modify the Broadcast
+	 * Isochronous Stream states. The request shall be fulfilled with
+	 * accordance to the @p bis_sync_req within reasonable time. The
+	 * Broadcast Assistant may also request fewer, or none, indexes to
+	 * be synchronized.
+	 *
+	 * @param[in]  conn          Pointer to the connection of the
+	 *                           Broadcast Assistant requesting the sync.
+	 * @param[in]  recv_state    Pointer to the receive state that is being
+	 *                           requested for the sync.
+	 * @param[in]  bis_sync_req  Array of bitfields of which BIS indexes
+	 *                           that is requested to sync for each subgroup
+	 *                           by the Broadcast Assistant.
+	 *
+	 * @return 0 in case of accept, or other value to reject.
+	 */
+	int (*bis_sync_req)(struct bt_conn *conn,
+			    const struct bt_bap_scan_delegator_recv_state *recv_state,
+			    const uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS]);
 };
 
 /** Structure holding information of audio stream endpoint */
