@@ -508,8 +508,11 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 {
 	struct net_buf *hdr_frag;
 	struct net_eth_hdr *hdr;
+	size_t hdr_len = IS_ENABLED(CONFIG_NET_VLAN) ?
+			 sizeof(struct net_eth_vlan_hdr) :
+			 sizeof(struct net_eth_hdr);
 
-	hdr_frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+	hdr_frag = net_pkt_get_frag(pkt, hdr_len, NET_BUF_TIMEOUT);
 	if (!hdr_frag) {
 		return NULL;
 	}
