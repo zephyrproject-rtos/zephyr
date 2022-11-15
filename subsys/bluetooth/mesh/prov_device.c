@@ -160,10 +160,10 @@ static void prov_start(const uint8_t *data)
 	}
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, OOB_STATIC_KEY)) {
-		memcpy(bt_mesh_prov_link.auth + 16 - bt_mesh_prov->static_val_len,
-		       bt_mesh_prov->static_val, bt_mesh_prov->static_val_len);
-		(void)memset(bt_mesh_prov_link.auth, 0,
-			     sizeof(bt_mesh_prov_link.auth) - bt_mesh_prov->static_val_len);
+		memcpy(bt_mesh_prov_link.auth, bt_mesh_prov->static_val,
+				bt_mesh_prov->static_val_len);
+		memset(bt_mesh_prov_link.auth + bt_mesh_prov->static_val_len, 0,
+				sizeof(bt_mesh_prov_link.auth) - bt_mesh_prov->static_val_len);
 	}
 }
 

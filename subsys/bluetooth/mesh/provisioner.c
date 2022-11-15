@@ -698,11 +698,9 @@ int bt_mesh_auth_method_set_static(const uint8_t *static_val, uint8_t size)
 
 	prov_set_method(AUTH_METHOD_STATIC, 0, 0);
 
-	memcpy(bt_mesh_prov_link.auth + 16 - size, static_val, size);
-	if (size < 16) {
-		(void)memset(bt_mesh_prov_link.auth, 0,
-			     sizeof(bt_mesh_prov_link.auth) - size);
-	}
+	memcpy(bt_mesh_prov_link.auth, static_val, size);
+	memset(bt_mesh_prov_link.auth + size, 0, sizeof(bt_mesh_prov_link.auth) - size);
+
 	return 0;
 }
 
