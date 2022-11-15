@@ -277,8 +277,7 @@ void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
 	est->status = 0;
 	est->cis_handle = cis->lll.handle;
 
-	ll_rx_put(node_rx->hdr.link, node_rx);
-	ll_rx_sched();
+	ll_rx_put_sched(node_rx->hdr.link, node_rx);
 #endif /* defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
 
 	cis->established = 1;
@@ -890,8 +889,7 @@ static void cis_disabled_cb(void *param)
 			node_terminate->hdr.type = NODE_RX_TYPE_TERMINATE;
 			*((uint8_t *)node_terminate->pdu) = cis->terminate_reason;
 
-			ll_rx_put(node_terminate->hdr.link, node_terminate);
-			ll_rx_sched();
+			ll_rx_put_sched(node_terminate->hdr.link, node_terminate);
 
 			if (cig->lll.resume_cis == cis->lll.handle) {
 				/* Resume pending for terminating CIS - stop ticker */

@@ -2526,8 +2526,7 @@ static void disabled_cb(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 }
 
 static void conn_release(struct ll_adv_set *adv)
@@ -2697,8 +2696,7 @@ static void ext_disabled_cb(void *param)
 
 	/* NOTE: parameters are already populated on disable, just enqueue here
 	 */
-	ll_rx_put(rx_hdr->link, rx_hdr);
-	ll_rx_sched();
+	ll_rx_put_sched(rx_hdr->link, rx_hdr);
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 

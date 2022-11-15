@@ -423,8 +423,7 @@ static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	pdu->tx = conn->lll.phy_tx;
 
 	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
+	ll_rx_put_sched(ntf->hdr.link, ntf);
 	ctx->data.pu.ntf_pu = 0;
 }
 
@@ -445,8 +444,7 @@ static void pu_dle_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	llcp_ntf_encode_length_change(conn, pdu);
 
 	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
+	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 #endif
 

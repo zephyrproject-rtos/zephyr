@@ -85,8 +85,7 @@ static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
 	pdu->status = ctx->data.cis_create.error;
 
 	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
+	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -212,8 +211,7 @@ static void rp_cc_ntf_create(struct ll_conn *conn, struct proc_ctx *ctx)
 	ctx->data.cis_create.host_request_to = 0U;
 
 	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
+	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 
 static void rp_cc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)

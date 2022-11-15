@@ -674,8 +674,7 @@ void ull_adv_iso_done_complete(struct node_rx_event_done *done)
 	rx->handle = lll->handle;
 	rx->rx_ftr.param = adv_iso;
 
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 }
 
 void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
