@@ -244,6 +244,7 @@ static const uint32_t table_samp_time[] = {
 struct adc_stm32_data {
 	struct adc_context ctx;
 	const struct device *dev;
+	const struct device *clock;
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
 
@@ -1079,13 +1080,13 @@ static int adc_stm32_init(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
 	const struct adc_stm32_cfg *config = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 	int err;
 
 	LOG_DBG("Initializing....");
 
-	if (!device_is_ready(clk)) {
+	data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	if (!device_is_ready(data->clock)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
@@ -1104,7 +1105,7 @@ static int adc_stm32_init(const struct device *dev)
 	data->acq_time_index = -1;
 #endif
 
-	if (clock_control_on(clk,
+	if (clock_control_on(data->clock,
 		(clock_control_subsys_t *) &config->pclken) != 0) {
 		return -EIO;
 	}
@@ -1226,7 +1227,7 @@ static int adc_stm32_init(const struct device *dev)
 	 */
 	uint32_t adc_rate, wait_cycles;
 
-	if (clock_control_get_rate(clk,
+	if (clock_control_get_rate(data->clock,
 		(clock_control_subsys_t *) &config->pclken, &adc_rate) < 0) {
 		LOG_ERR("ADC clock rate get error.");
 	}
