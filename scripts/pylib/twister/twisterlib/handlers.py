@@ -341,9 +341,16 @@ class DeviceHandler(Handler):
                 ser.close()
                 break
 
-            if not ser.in_waiting:
-                # no incoming bytes are waiting to be read from the serial
-                # input buffer, let other threads run
+            try:
+                if not ser.in_waiting:
+                    # no incoming bytes are waiting to be read from
+                    # the serial input buffer, let other threads run
+                    time.sleep(0.001)
+                    continue
+            # maybe the serial port is still in reset
+            # check status may cause error
+            # wait for more time
+            except OSError:
                 time.sleep(0.001)
                 continue
 
