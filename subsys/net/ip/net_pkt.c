@@ -85,6 +85,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 /* Make sure that IP + TCP/UDP/ICMP headers fit into one fragment. This
  * makes possible to cast a fragment pointer to protocol header struct.
  */
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 #if CONFIG_NET_BUF_DATA_SIZE < (MAX_IP_PROTO_LEN + MAX_NEXT_PROTO_LEN)
 #if defined(STRING2)
 #undef STRING2
@@ -98,6 +99,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #pragma message "Minimum len " STRING(MAX_IP_PROTO_LEN + MAX_NEXT_PROTO_LEN)
 #error "Too small net_buf fragment size"
 #endif
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 #if CONFIG_NET_PKT_RX_COUNT <= 0
 #error "Minimum value for CONFIG_NET_PKT_RX_COUNT is 1"
