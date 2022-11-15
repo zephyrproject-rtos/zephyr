@@ -1,0 +1,181 @@
+/*
+ * Copyright (c) 2018-2019 Linaro Limited
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This file is a system devicetree for the Arm MPS2 AN521 board.
+ * It pulls in the system devicetree include file (.sysdtsi) for
+ * the SoC, and provides board-level details that are common to
+ * all CPU clusters.
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/sys/armv8-m.h>
+#include <sys/arm/mps2_an521.sysdtsi>
+
+/ {
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+		sw0 = &button_0;
+		sw1 = &button_1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_0: led-0 {
+			gpios = <&gpio_led0 0>;
+			label = "USERLED0";
+		};
+		led_1: led-1 {
+			gpios = <&gpio_led0 1>;
+			label = "USERLED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button_0: button-0 {
+			label = "USERPB0";
+			gpios = <&gpio_button 0>;
+		};
+		button_1: button-1 {
+			label = "USERPB1";
+			gpios = <&gpio_button 1>;
+		};
+	};
+
+	domains {
+		/* TODO:
+		 *
+		 * - MCUboot
+		 * - TF-M
+		 */
+
+		/* Notes:
+		 *
+		 * - 'id' properties are currently required by
+		 *   the system DT spec, but zephyr isn't using them,
+		 *   so just ignore them. It's not clear what they're
+		 *   for, anyway.
+		 *
+		 * - 'memory', 'sram', etc properties are optional
+		 *   and not how zephyr is set up to configure application
+		 *   memory regions, so we don't use them.
+		 *
+		 * - For now, the defconfig for each domain is hard-coded
+	         *   to domains_{domain_name}_defconfig in the board
+		 *   directory.
+		 *
+		 *   For example, domain 'cpu0_ns' has defconfig
+		 *   'domain_cpu0_ns_defconfig'. Applying this to domains
+		 *   like MCUboot and TF-M will take some more build system
+		 *   engineering, but it's enough for a demo.
+		 */
+
+		domain_cpu0 {
+			compatible = "openamp,domain-v1";
+			cpus = <&cpu0 0x1 EXECUTION_LEVEL_SECURE>;
+			id = <1>;
+			chosen {
+				zephyr,console = &uart0;
+				zephyr,shell-uart = &uart0;
+				zephyr,flash = &cpu0_flash;
+				zephyr,sram = &cpu0_sram;
+			};
+		};
+		domain_cpu0_ns {
+			compatible = "openamp,domain-v1";
+			cpus = <&cpu0 0x1 EXECUTION_LEVEL_NONSECURE>;
+			id = <2>;
+			chosen {
+				zephyr,console = &uart0;
+				zephyr,shell-uart = &uart0;
+				zephyr,flash = &cpu0_ns_flash;
+				zephyr,sram = &cpu0_ns_sram;
+			};
+		};
+		domain_cpu1 {
+			compatible = "openamp,domain-v1";
+			cpus = <&cpu1 0x1 EXECUTION_LEVEL_NONSECURE>;
+			id = <3>;
+			chosen {
+				zephyr,console = &uart0;
+				zephyr,shell-uart = &uart0;
+				zephyr,flash = &cpu1_flash;
+				zephyr,sram = &cpu1_sram;
+			};
+		};
+	};
+
+	memory-partitions {
+		/*
+		 * The default memory partitions for different firmware
+		 * configurations for this board are all defined in child nodes.
+		 * Individual domains can refer to them as needed.
+		 *
+		 * Note: we're not bothering to define a compatible for
+		 *       this node, because our devicetree python tooling
+		 *       will generate the appropriate C macros for
+		 *       properties like 'reg' that are defined in the
+		 *       DT specification, and it seems likely that we'll
+		 *       need to revisit this approach at some point.
+		 */
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * cpu0 secure firmware
+		 *
+		 * If building firmware for the secure world,
+		 * dedicate all of the RAM to it. Be careful
+		 * if you're also going to use cpu1 ("remote");
+		 * conflicts are possible.
+		 */
+		cpu0_flash: memory-partition@10000000 {
+			reg = <0x10000000 DT_SIZE_M(4)>;
+		};
+
+		cpu0_sram: memory-partition@38000000 {
+			reg = <0x38000000 DT_SIZE_M(4)>;
+		};
+
+		/*
+		 * cpu0 non-secure firmware when running under TF-M.
+		 *
+		 * The memory regions defined below must match what the TF-M
+		 * project has defined for that board - a single image boot is
+		 * assumed. Please see the memory layout in:
+		 *
+		 * https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/tree/platform/ext/target/mps2/an521/partition/flash_layout.h
+		 */
+
+		cpu0_ns_flash: memory-partition@100000 {
+			reg = <0x00100000 DT_SIZE_K(512)>;
+		};
+
+		cpu0_ns_sram: memory-partition@28100000 {
+			reg = <0x28100000 DT_SIZE_K(512)>;
+		};
+
+		/*
+		 * cpu1 firmware
+		 *
+		 * The memory regions defined below are selected to remain
+		 * compatible with what TF-M has defined for a single boot image,
+		 * where 468 KB memory at the bottom of the 4 MB code region is
+		 * marked as 'Unused'.
+		 */
+		cpu1_flash: memory-partition@38b000 {
+			reg = <0x0038b000 DT_SIZE_K(468)>;
+		};
+
+		cpu1_sram: memory-partition@28180000 {
+			reg = <0x28180000 DT_SIZE_K(512)>;
+		};
+	};
+};

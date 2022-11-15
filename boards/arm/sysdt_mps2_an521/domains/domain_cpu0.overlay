@@ -1,0 +1,16 @@
+/* HACK
+ *
+ * This hack is just in place until we have better system devicetree
+ * support for the interrupts-extended property, so that we can
+ * filter out interrupt parents which aren't relevant after converting
+ * to a regular devicetree.
+ *
+ * We add an overlay to fix up the interrupt-parent as needed for
+ * interrupt generating nodes.
+ */
+
+/ {
+	peripherals {
+		interrupt-parent = <&cpu0_nvic>;
+	};
+};
