@@ -642,6 +642,7 @@ class TestPlan:
                     platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
                                              self.platforms))
 
+
             # list of instances per testsuite, aka configurations.
             instance_list = []
             for plat in platform_scope:
@@ -745,6 +746,11 @@ class TestPlan:
 
                 if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
+
+                # if --all or -K are not provided, only build/run on simulators superceding above
+                # logic
+                if ts.simulation_only and plat.simulation == 'na' and not force_platform and not all_filter:
+                    instance.add_filter("Excluded non-simulation platform (simulation_only)", Filters.PLATFORM)
 
                 test_configuration = ".".join([instance.platform.name,
                                                instance.testsuite.id])

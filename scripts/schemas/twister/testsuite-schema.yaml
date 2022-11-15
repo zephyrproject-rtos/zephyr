@@ -130,6 +130,9 @@ mapping:
       "type":
         type: str
         enum: ["unit"]
+      "simulation_only":
+        type: bool
+        required: false
       "skip":
         type: bool
         required: false
@@ -296,3 +299,6 @@ mapping:
           "sysbuild":
             type: bool
             required: false
+          "simulation_only":
+             type: bool
+             required: false
