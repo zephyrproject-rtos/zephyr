@@ -3,6 +3,7 @@ common:
     - qemu
     - native
   tags: log_api logging
+  simulation_only: True
   integration_platforms:
     - native_posix
 tests:
