@@ -89,5 +89,13 @@ config SYSTEM_WORKQUEUE_PRIORITY
 	depends on IPC_SERVICE_ICMSG
 	range -256 -1
 
+config IPC_SERVICE_BACKEND_ICMSG_BOND_NOTIFY_REPEAT_TO_MS
+	int "Bond notification timeout in miliseconds"
+	range 1 100
+	default 1
+	help
+	  Time to wait for remote bonding notification before the
+	  notification is repeated.
+
 rsource "Kconfig.icmsg_me"
 rsource "Kconfig.rpmsg"
