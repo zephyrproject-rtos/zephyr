@@ -361,6 +361,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="Upon test failure, print relevant log data to stdout "
              "instead of just a path to it.")
 
+    parser.add_argument("--ignore-platform-key", action="store_true",
+                        help="Do not filter based on platform key")
+
     parser.add_argument(
         "-j", "--jobs", type=int,
         help="Number of jobs for building, defaults to number of CPU threads, "

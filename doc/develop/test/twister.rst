@@ -388,6 +388,25 @@ harness: <string>
     Usually pertains to external dependency domains but can be anything such as
     console, sensor, net, keyboard, Bluetooth or pytest.
 
+platform_key: <list of platform attributes>
+    Often a test needs to only be built and run once to qualify as passing.
+    Imagine a library of code that depends on the platform architecture where
+    passing the test on a single platform for each arch is enough to qualify the
+    tests and code as passing. The platform_key attribute enables doing just
+    that.
+
+    For example to key on (arch, simulation) to ensure a test is run once
+    per arch and simulation (as would be most common)::
+
+      platform_key:
+        - arch
+        - simulation
+
+    Adding platform (board) attributes to include things such as soc name,
+    soc family, and perhaps sets of IP blocks implementing each peripheral
+    interface would enable other interesting uses. For example, this could enable
+    building and running SPI tests once for eacn unique IP block.
+
 harness_config: <harness configuration options>
     Extra harness configuration options to be used to select a board and/or
     for handling generic Console with regex matching. Config can announce
