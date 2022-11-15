@@ -310,8 +310,7 @@ static void isr_done(void *param)
 		rx->type = NODE_RX_TYPE_SYNC_CHM_COMPLETE;
 		rx->rx_ftr.param = lll;
 
-		ull_rx_put(rx->link, rx);
-		ull_rx_sched();
+		ull_rx_put_sched(rx->link, rx);
 	}
 
 	lll_isr_done(lll);
