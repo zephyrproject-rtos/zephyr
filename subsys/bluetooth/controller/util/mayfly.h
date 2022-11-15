@@ -30,3 +30,4 @@ extern void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id, uint8_t enabl
 extern uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id);
 extern uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id);
 extern void mayfly_pend(uint8_t caller_id, uint8_t callee_id);
+extern uint32_t mayfly_is_running(void);

@@ -31,3 +31,8 @@ uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain, str
 void mayfly_run(uint8_t callee_id)
 {
 }
+
+uint32_t mayfly_is_running(void)
+{
+	return 0U;
+}
