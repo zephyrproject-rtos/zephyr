@@ -723,6 +723,10 @@ config CODE_FLEXSPI2
 
 config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
+
+config CODE_OCRAM
+	bool "Link code into OCRAM memory (OCRAM-M4)"
+
 endchoice
 
 config OCRAM_NOCACHE
