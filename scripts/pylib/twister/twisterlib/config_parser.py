@@ -33,6 +33,7 @@ class TwisterConfigParser:
                        "platform_type": {"type": "list", "default": []},
                        "platform_exclude": {"type": "set"},
                        "platform_allow": {"type": "set"},
+                       "platform_key": {"type": "list", "default": []},
                        "toolchain_exclude": {"type": "set"},
                        "toolchain_allow": {"type": "set"},
                        "filter": {"type": "str"},
