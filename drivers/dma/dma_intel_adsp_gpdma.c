@@ -190,16 +190,24 @@ static void intel_adsp_gpdma_clock_enable(const struct device *dev)
 	sys_write32(val, reg);
 }
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 static void intel_adsp_gpdma_select_owner(const struct device *dev)
 {
+#ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
 	uint32_t reg = dev_cfg->shim + GPDMA_CTL_OFFSET;
 	uint32_t val = sys_read32(reg) | GPDMA_OSEL(0x3);
 
 	sys_write32(val, reg);
+#else
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
+	ARG_UNUSED(dev);
+#endif /* CONFIG_SOC_SERIES_INTEL_ACE */
+#endif /* CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP */
 }
 
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 static int intel_adsp_gpdma_enable(const struct device *dev)
 {
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
@@ -231,18 +239,11 @@ int intel_adsp_gpdma_init(const struct device *dev)
 	}
 #endif
 
-#ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
-#endif
+	/* DW DMA Owner Select to DSP */
+	intel_adsp_gpdma_select_owner(dev);
 
 	/* Disable dynamic clock gating appropriately before initializing */
 	intel_adsp_gpdma_clock_enable(dev);
-
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-	/* DW DMA Owner Select to DSP */
-	intel_adsp_gpdma_select_owner(dev);
-#endif
 
 	/* Disable all channels and Channel interrupts */
 	ret = dw_dma_setup(dev);
