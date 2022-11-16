@@ -71,6 +71,9 @@ features:
     * - SPI
       - on-chip
       - Serial Peripheral Interface ports
+    * - CAN
+      - on-chip
+      - CAN ports
 
 Other hardware features are not currently supported by Zephyr.
 
@@ -90,6 +93,10 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 - ADC0             : PB09
 - ADC1             : PA08
+- CAN0 TX          : PA24
+- CAN0 RX          : PA25
+- CAN1 TX          : PB14
+- CAN1 RX          : PB15
 - SERCOM0 USART TX : PB24
 - SERCOM0 USART RX : PB25
 - SERCOM1 I2C SDA  : PA16
