@@ -190,8 +190,9 @@ Artificially long but functional example:
 
     test_xor_subtest.add_argument(
         "-s", "--test", action="append",
-        help="Run only the specified testsuite scenario. These are named by "
-             "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
+        help="Run only the specified testsuite scenario. These can by find by using a test's canonical name "
+             "<path/relative/to/west/topdir/section.name.in.testcase.yaml> and also by just a scenario name"
+             "<section.name.in.testcase.yaml>")
 
     test_xor_subtest.add_argument(
         "--sub-test", action="append",
