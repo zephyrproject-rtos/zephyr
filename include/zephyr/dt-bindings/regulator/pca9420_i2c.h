@@ -205,68 +205,14 @@
 #define PCA9420_MODECFG3_PIN \
 	(PMIC_MODE(0xC, PMIC_MODE_FLAG_MODESEL_MULTI_REG, 0x40))
 
-#define PCA9420_MODE_OFFSET 0x4
-
 /** Register memory map. See datasheet for more details. */
 /** General purpose registers */
-/** @brief Device Information register */
-#define PCA9420_DEV_INFO      0x00U
-/** @brief Top level interrupt status */
-#define PCA9420_TOP_INT       0x01U
-/** @brief Sub level interrupt 0 indication */
-#define PCA9420_SUB_INT0      0x02U
-/*! @brief Sub level interrupt 0 mask */
-#define PCA9420_SUB_INT0_MASK 0x03U
-/** @brief Sub level interrupt 1 indication */
-#define PCA9420_SUB_INT1      0x04U
-/** @brief Sub level interrupt 1 mask */
-#define PCA9420_SUB_INT1_MASK 0x05U
-/** @brief Sub level interrupt 2 indication */
-#define PCA9420_SUB_INT2      0x06U
-/** @brief Sub level interrupt 2 mask */
-#define PCA9420_SUB_INT2_MASK 0x07U
 /** @brief Top level system ctrl 0 */
 #define PCA9420_TOP_CNTL0     0x09U
-/** @brief Top level system ctrl 1 */
-#define PCA9420_TOP_CNTL1     0x0AU
-/** @brief Top level system ctrl 2 */
-#define PCA9420_TOP_CNTL2     0x0BU
 /** @brief Top level system ctrl 3 */
 #define PCA9420_TOP_CNTL3     0x0CU
-/** @brief Top level system ctrl 4 */
-#define PCA9420_TOP_CNTL4     0x0DU
-
-/** Battery charger registers */
-/** @brief Charger cntl reg 0 */
-#define PCA9420_CHG_CNTL0    0x10U
-/** @brief Charger cntl reg 1 */
-#define PCA9420_CHG_CNTL1    0x11U
-/** @brief Charger cntl reg 2 */
-#define PCA9420_CHG_CNTL2    0x12U
-/** @brief Charger cntl reg 3 */
-#define PCA9420_CHG_CNTL3    0x13U
-/** @brief Charger cntl reg 4 */
-#define PCA9420_CHG_CNTL4    0x14U
-/** @brief Charger cntl reg 5 */
-#define PCA9420_CHG_CNTL5    0x15U
-/** @brief Charger cntl reg 6 */
-#define PCA9420_CHG_CNTL6    0x16U
-/** @brief Charger cntl reg 7 */
-#define PCA9420_CHG_CNTL7    0x17U
-/** @brief Charger status reg 0 */
-#define PCA9420_CHG_STATUS_0 0x18U
-/** @brief Charger status reg 1 */
-#define PCA9420_CHG_STATUS_1 0x19U
-/** @brief Charger status reg 2 */
-#define PCA9420_CHG_STATUS_2 0x1AU
-/** @brief Charger status reg 3 */
-#define PCA9420_CHG_STATUS_3 0x1BU
 
 /** Regulator status indication registers */
-/** @brief Regulator status indication */
-#define PCA9420_REG_STATUS           0x20U
-/** @brief Active discharge control register */
-#define PCA9420_ACT_DISCHARGE_CNTL_1 0x21U
 /** @brief Mode configuration for mode 0_0 */
 #define PCA9420_MODECFG_0_0          0x22U
 /** @brief Mode configuration for mode 0_1 */
@@ -275,50 +221,6 @@
 #define PCA9420_MODECFG_0_2          0x24U
 /** @brief Mode configuration for mode 0_3 */
 #define PCA9420_MODECFG_0_3          0x25U
-/** @brief Mode configuration for mode 1_0 */
-#define PCA9420_MODECFG_1_0          0x26U
-/** @brief Mode configuration for mode 1_1 */
-#define PCA9420_MODECFG_1_1          0x27U
-/** @brief Mode configuration for mode 1_2 */
-#define PCA9420_MODECFG_1_2          0x28U
-/** @brief Mode configuration for mode 1_3 */
-#define PCA9420_MODECFG_1_3          0x29U
-/** @brief Mode configuration for mode 2_0 */
-#define PCA9420_MODECFG_2_0          0x2AU
-/** @brief Mode configuration for mode 2_1 */
-#define PCA9420_MODECFG_2_1          0x2BU
-/** @brief Mode configuration for mode 2_2 */
-#define PCA9420_MODECFG_2_2          0x2CU
-/** @brief Mode configuration for mode 2_3 */
-#define PCA9420_MODECFG_2_3          0x2DU
-/** @brief Mode configuration for mode 3_0 */
-#define PCA9420_MODECFG_3_0          0x2EU
-/** @brief Mode configuration for mode 3_1 */
-#define PCA9420_MODECFG_3_1          0x2FU
-/** @brief Mode configuration for mode 3_2 */
-#define PCA9420_MODECFG_3_2          0x30U
-/** @brief Mode configuration for mode 3_3 */
-#define PCA9420_MODECFG_3_3          0x31U
-
-/** Define the Register Masks of PCA9420. */
-/** @brief Device ID mask */
-#define PCA9420_DEV_INFO_DEV_ID_MASK    0xF0U
-#define PCA9420_DEV_INFO_DEV_ID_SHIFT   0x04U
-/** @brief Device revision mask */
-#define PCA9420_DEV_INFO_DEV_REV_MASK    0x0FU
-#define PCA9420_DEV_INFO_DEV_REV_SHIFT   0x00U
-/** @brief System level interrupt trigger */
-#define PCA9420_TOP_INT_SYS_INT_MASK 0x01U
-#define PCA9420_TOP_INT_SYS_INT_SHIFT 0x03U
-/** @brief charger block interrupt trigger */
-#define PCA9420_TOP_INT_CHG_INT_MASK 0x01U
-#define PCA9420_TOP_INT_CHG_INT_SHIFT 0x02U
-/** @brief buck regulator interrupt trigger */
-#define PCA9420_TOP_INT_SW_INT_MASK 0x01U
-#define PCA9420_TOP_INT_SW_INT_SHIFT 0x01U
-/** @brief ldo block interrupt trigger */
-#define PCA9420_TOP_INT_LDO_INT_MASK 0x01U
-#define PCA9420_TOP_INT_LDO_INT_SHIFT 0x00U
 
 /** @brief VIN input current limit selection */
 #define PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK 0xE0U
@@ -327,8 +229,6 @@
 /** @brief I2C Mode control mask */
 #define PCA9420_TOP_CNTL3_MODE_I2C_MASK 0x18U
 #define PCA9420_TOP_CNTL3_MODE_I2C_SHIFT 0x03U
-/** @brief Mode ship enable mask */
-#define PCA9420_MODECFG_0_SHIP_EN_MASK       0x80U
 /*
  * @brief Mode control selection mask. When this bit is set, the external
  * PMIC pins MODESEL0 and MODESEL1 can be used to select the active mode
@@ -341,7 +241,6 @@
  * the device will switch to mode 0 when a valid falling edge is applied.
  * to the ON pin
  */
-#define PCA9420_MODECFG_1_ON_CFG_MASK        0x40U
 /** @brief SW2_OUT offset and voltage level mask */
 #define PCA9420_MODECFG_1_SW2_OUT_MASK       0x3FU
 /** @brief LDO1_OUT voltage level mask */
@@ -359,8 +258,6 @@
 /** @brief LDO2 Enable */
 #define PCA9420_MODECFG_2_LDO2_EN_MASK	     0x01U
 #define PCA9420_MODECFG_2_LDO2_EN_VAL	     0x01U
-/** @brief Watchdog timer setting mask */
-#define PCA9420_MODECFG_3_WDIMER_MASK      0xC0U
 /** @brief LDO2_OUT offset and voltage level mask */
 #define PCA9420_MODECFG_3_LDO2_OUT_MASK      0x3FU
 
