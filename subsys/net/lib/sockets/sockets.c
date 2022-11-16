@@ -6,7 +6,11 @@
  */
 
 /* libc headers */
+#ifdef CONFIG_ARCH_POSIX
 #include <fcntl.h>
+#else
+#include <zephyr/posix/fcntl.h>
+#endif
 
 /* Zephyr headers */
 #include <zephyr/logging/log.h>

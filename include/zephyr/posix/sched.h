@@ -20,9 +20,11 @@ extern "C" {
 #define SCHED_RR 1
 #endif /* SCHED_RR */
 
+#ifdef CONFIG_MINIMAL_LIBC
 struct sched_param {
 	int sched_priority;
 };
+#endif
 
 /**
  * @brief Yield the processor

@@ -15,10 +15,14 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_MINIMAL_LIBC
 typedef uint32_t pthread_once_t;
+#endif
 
 /* pthread_key */
+#ifdef CONFIG_MINIMAL_LIBC
 typedef void *pthread_key_t;
+#endif
 
 typedef struct pthread_key_obj {
 	/* List of pthread_key_data objects that contain thread

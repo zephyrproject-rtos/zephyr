@@ -7,23 +7,25 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 #define ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 
-#include <zephyr/kernel.h>
-#include <zephyr/wait_q.h>
-#include <zephyr/posix/time.h>
-#include <zephyr/posix/unistd.h>
 #include "posix_types.h"
-#include <zephyr/posix/sched.h>
 #include "pthread_key.h"
+
 #include <stdlib.h>
 #include <string.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/posix/sched.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/wait_q.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Pthread detach/joinable */
-#define PTHREAD_CREATE_JOINABLE     1
-#define PTHREAD_CREATE_DETACHED     2
+#define PTHREAD_CREATE_DETACHED 0
+#define PTHREAD_CREATE_JOINABLE 1
 
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
