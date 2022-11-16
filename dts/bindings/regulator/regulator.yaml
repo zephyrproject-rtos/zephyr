@@ -15,3 +15,7 @@ properties:
   regulator-boot-on:
     type: boolean
     description: regulator should be turned on at startup
+
+  regulator-name:
+    type: string
+    description: Descriptive name for regulator outputs.
