@@ -16,15 +16,6 @@ static int soc_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	if (IS_ENABLED(CONFIG_SOC_MEC172X_TEST_CLK_OUT)) {
-
-		struct gpio_regs * const regs =
-			(struct gpio_regs * const)DT_REG_ADDR(DT_NODELABEL(pinctrl));
-
-		regs->CTRL[MCHP_GPIO_0060_ID] = MCHP_GPIO_CTRL_MUX_F2 |
-						MCHP_GPIO_CTRL_IDET_DISABLE;
-	}
-
 	return 0;
 }
 
