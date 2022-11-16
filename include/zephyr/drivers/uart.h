@@ -108,6 +108,7 @@ enum uart_config_flow_control {
 	UART_CFG_FLOW_CTRL_NONE,
 	UART_CFG_FLOW_CTRL_RTS_CTS,
 	UART_CFG_FLOW_CTRL_DTR_DSR,
+	UART_CFG_FLOW_CTRL_RS485,
 };
 
 /**
