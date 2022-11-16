@@ -261,6 +261,8 @@ _west_sign() {
 typeset -a -g _west_runner_opts=(
   '(-H --context)'{-H,--context}'[print runner-specific options]'
   '--board-dir[board directory]:board dir:_directories'
+  '(-f --file)'{-f,--file}'[path to binary]:path to binary:_files'
+  '(-t --file-type)'{-t,--file-type}'[type of binary]:type of binary:(hex bin elf)'
   '--elf-file[path to zephyr.elf]:path to zephyr.elf:_files'
   '--hex-file[path to zephyr.hex]:path to zephyr.hex:_files'
   '--bin-file[path to zephyr.bin]:path to zephyr.bin:_files'
