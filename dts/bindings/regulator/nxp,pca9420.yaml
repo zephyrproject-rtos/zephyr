@@ -39,8 +39,17 @@ child-binding:
     - name: regulator.yaml
       property-allowlist:
         - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+
   description: Voltage output of PMIC controller regulator
   properties:
+      regulator-min-microvolt:
+        required: true
+
+      regulator-max-microvolt:
+          required: true
+
       voltage-range:
           type: array
           required: true
@@ -78,16 +87,6 @@ child-binding:
           description: |
             value to apply enable-mask to, and write to enable-reg in order
             to enable the regulator output.
-      min-uV:
-          type: int
-          required: true
-          description: |
-             Minimum voltage in microvolts that this regulator supports
-      max-uV:
-          type: int
-          required: true
-          description: |
-             Maximum voltage in microvolts that this regulator supports
       enable-inverted:
           type: boolean
           description: |
