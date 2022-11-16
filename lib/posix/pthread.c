@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/sys/atomic.h>
@@ -690,3 +691,18 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 	return 0;
 #endif
 }
+
+static int posix_thread_pool_init(const struct device *dev)
+{
+	size_t i;
+
+	ARG_UNUSED(dev);
+
+	for (i = 0; i < CONFIG_MAX_PTHREAD_COUNT; ++i) {
+		posix_thread_pool[i].state = PTHREAD_EXITED;
+	}
+
+	return 0;
+}
+
+SYS_INIT(posix_thread_pool_init, PRE_KERNEL_1, 0);

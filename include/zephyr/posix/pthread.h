@@ -22,8 +22,8 @@ extern "C" {
 #endif
 
 /* Pthread detach/joinable */
-#define PTHREAD_CREATE_JOINABLE     1
-#define PTHREAD_CREATE_DETACHED     2
+#define PTHREAD_CREATE_DETACHED 0
+#define PTHREAD_CREATE_JOINABLE 1
 
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
