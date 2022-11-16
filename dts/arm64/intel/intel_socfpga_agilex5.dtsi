@@ -142,7 +142,6 @@
 		reg = <0x10c03000 0x100>;
 		clock-frequency = <100000000>;
 		resets = <&reset RSTMGR_SPTIMER0_RSTLINE>;
-		label = "timer0";
 		status = "disabled";
 	};
 
@@ -154,7 +153,6 @@
 		reg = <0x10c03100 0x100>;
 		clock-frequency = <100000000>;
 		resets = <&reset RSTMGR_SPTIMER1_RSTLINE>;
-		label = "timer1";
 		status = "disabled";
 	};
 
@@ -166,7 +164,6 @@
 		reg = <0x10D00000 0x100>;
 		clock-frequency = <100000000>;
 		resets = <&reset RSTMGR_L4SYSTIMER0_RSTLINE>;
-		label = "timer2";
 		status = "disabled";
 	};
 
@@ -178,7 +175,6 @@
 		reg = <0x10D00100 0x100>;
 		clock-frequency = <100000000>;
 		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
-		label = "timer3";
 		status = "disabled";
 	};
 };
