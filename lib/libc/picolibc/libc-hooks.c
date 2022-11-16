@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
+#include <zephyr/posix/sys/stat.h>
 #include <sys/time.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/linker/linker-defs.h>
