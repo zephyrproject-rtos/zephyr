@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -72,13 +73,36 @@
 			reg = <0x4000fc00 0x200>;
 		};
 		pcr: pcr@40080100 {
+			compatible = "microchip,xec-pcr";
 			reg = <0x40080100 0x100 0x4000a400 0x100>;
 			reg-names = "pcrr", "vbatr";
+			core-clock-div = <1>;
+			/* MEC15xx requires both sources to be the same */
+			pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_SIL_OSC>;
+			periph-32k-src = <MCHP_XEC_PERIPH_CLK32K_SRC_SO_SO>;
+			clk32kmon-period-min = <1435>;
+			clk32kmon-period-max = <1495>;
+			clk32kmon-duty-cycle-var-max = <132>;
+			clk32kmon-valid-min = <4>;
+			xtal-enable-delay-ms = <300>;
+			pll-lock-timeout-ms = <30>;
+			/* pin configured only if the sources is set to PIN */
+			pinctrl-0 = <&clk_32khz_in_gpio165>;
+			pinctrl-names = "default";
+			#clock-cells = <2>;
 		};
 		ecia: ecia@4000e000 {
 			reg = <0x4000e000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			girq23: girq23@12c {
+				reg = <0x12c 0x14>;
+				interrupts = <14 0>;
+				girq-id = <15>;
+				sources = <0 1 2 4 5 10 16 17>;
+				status = "disabled";
+			};
 		};
 		pinctrl: pin-controller@40081000 {
 			compatible = "microchip,xec-pinctrl";
@@ -325,6 +349,16 @@
 			prescaler = <0>;
 			girqs = <23 5>;
 			pcrs = <3 24>;
+		};
+		hibtimer0: timer@40009800 {
+			reg = <0x40009800 0x20>;
+			interrupts = <112 0>;
+			girqs = <23 16>;
+		};
+		hibtimer1: timer@40009820 {
+			reg = <0x40009820 0x20>;
+			interrupts = <113 0>;
+			girqs = <23 17>;
 		};
 		ps2_0: ps2@40009000 {
 			compatible = "microchip,xec-ps2";

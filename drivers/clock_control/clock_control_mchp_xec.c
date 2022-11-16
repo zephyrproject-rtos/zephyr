@@ -118,7 +118,11 @@ struct pcr_hw_regs {
 #define XEC_CC_PCR_CLK32K_SRC_PIN	2
 #define XEC_CC_PCR_CLK32K_SRC_OFF	3
 
+#ifdef CONFIG_SOC_SERIES_MEC1501X
+#define XEC_CC_PCR3_CRYPTO_MASK		(BIT(26) | BIT(27) | BIT(28))
+#else
 #define XEC_CC_PCR3_CRYPTO_MASK		BIT(26)
+#endif
 
 /* VBAT powered hardware registers related to clock configuration */
 struct vbatr_hw_regs {
@@ -128,6 +132,17 @@ struct vbatr_hw_regs {
 	uint32_t RSVD2[2];
 	volatile uint32_t CLK32_TRIM;
 };
+
+/* MEC152x VBAT CLK32_SRC register defines */
+#define XEC_CC15_VBATR_USE_SIL_OSC		0u
+#define XEC_CC15_VBATR_USE_32KIN_PIN		BIT(1)
+#define XEC_CC15_VBATR_USE_PAR_CRYSTAL		BIT(2)
+#define XEC_CC15_VBATR_USE_SE_CRYSTAL		(BIT(2) | BIT(3))
+
+/* MEC150x special requirements */
+#define XEC_CC15_GCFG_DID_DEV_ID_MEC150x	0x0020U
+#define XEC_CC15_TRIM_ENABLE_INT_OSCILLATOR	0x06U
+
 
 /* MEC172x VBAT CLK32_SRC register defines */
 #define XEC_CC_VBATR_CS_SO_EN			BIT(0) /* enable and start silicon OSC */
@@ -204,6 +219,10 @@ static void pcr_slp_init(struct pcr_hw_regs *pcr)
  * We use the hibernation timer GIRQ interrupt status bit instead of reading
  * the timer's count register due to race condition of HW taking at least
  * one 32KHz cycle to move pre-load into count register.
+ * MEC15xx:
+ * Hibernation timer is using the chosen 32KHz source. If the external 32KHz source
+ * has a ramp up time, we make not get an accurate delay. This may only occur for
+ * the parallel crystal.
  */
 static int pll_wait_lock_periph(struct pcr_hw_regs *const pcr, uint16_t ms)
 {
@@ -227,6 +246,71 @@ static int pll_wait_lock_periph(struct pcr_hw_regs *const pcr, uint16_t ms)
 	return rc;
 }
 
+static int periph_clk_src_using_pin(enum periph_clk32k_src src)
+{
+	switch (src) {
+	case PERIPH_CLK32K_SRC_PIN_SO:
+	case PERIPH_CLK32K_SRC_PIN_XTAL:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+#ifdef CONFIG_SOC_SERIES_MEC1501X
+/* MEC15xx uses the same 32KHz source for both PLL and Peripheral 32K clock domains.
+ * We ignore the peripheral clock source.
+ * If XTAL is selected (parallel) or single-ended the external 32KHz MUST stay on
+ * even when when VTR goes off.
+ * If PIN(32KHZ_IN pin) as the external source, hardware can auto-switch to internal
+ * silicon OSC if the signal on the 32KHZ_PIN goes away.
+ * We ignore th
+ */
+static int soc_clk32_init(const struct device *dev,
+			  enum pll_clk32k_src pll_clk_src,
+			  enum periph_clk32k_src periph_clk_src,
+			  uint32_t flags)
+{
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
+	struct vbatr_hw_regs *const vbr = (struct vbatr_hw_regs *)devcfg->vbr_base;
+	uint32_t cken = 0U;
+	int rc = 0;
+
+	if (MCHP_DEVICE_ID() == XEC_CC15_GCFG_DID_DEV_ID_MEC150x) {
+		if (MCHP_REVISION_ID() == MCHP_GCFG_REV_B0) {
+			vbr->CLK32_TRIM = XEC_CC15_TRIM_ENABLE_INT_OSCILLATOR;
+		}
+	}
+
+	switch (pll_clk_src) {
+	case PLL_CLK32K_SRC_SO:
+		cken = XEC_CC15_VBATR_USE_SIL_OSC;
+		break;
+	case PLL_CLK32K_SRC_XTAL:
+		if (flags & CLK32K_FLAG_CRYSTAL_SE) {
+			cken = XEC_CC15_VBATR_USE_SE_CRYSTAL;
+		} else {
+			cken = XEC_CC15_VBATR_USE_PAR_CRYSTAL;
+		}
+		break;
+	case PLL_CLK32K_SRC_PIN: /* 32KHZ_IN pin falls back to Silicon OSC */
+		cken = XEC_CC15_VBATR_USE_32KIN_PIN;
+		break;
+	default: /* do not touch HW */
+		return -EINVAL;
+	}
+
+	if ((vbr->CLK32_SRC & 0xffU) != cken) {
+		vbr->CLK32_SRC = cken;
+	}
+
+	rc = pll_wait_lock_periph(pcr, devcfg->xtal_enable_delay_ms);
+
+	return rc;
+}
+#else
+
 static int periph_clk_src_using_si(enum periph_clk32k_src src)
 {
 	switch (src) {
@@ -242,17 +326,6 @@ static int periph_clk_src_using_xtal(enum periph_clk32k_src src)
 {
 	switch (src) {
 	case PERIPH_CLK32K_SRC_XTAL_XTAL:
-	case PERIPH_CLK32K_SRC_PIN_XTAL:
-		return 1;
-	default:
-		return 0;
-	}
-}
-
-static int periph_clk_src_using_pin(enum periph_clk32k_src src)
-{
-	switch (src) {
-	case PERIPH_CLK32K_SRC_PIN_SO:
 	case PERIPH_CLK32K_SRC_PIN_XTAL:
 		return 1;
 	default:
@@ -661,6 +734,7 @@ static int soc_clk32_init(const struct device *dev,
 
 	return rc;
 }
+#endif
 
 /*
  * MEC172x Errata document DS80000913C
@@ -812,6 +886,11 @@ static inline int xec_clock_control_off(const struct device *dev,
  */
 static uint32_t get_turbo_clock(const struct device *dev)
 {
+#ifdef CONFIG_SOC_SERIES_MEC1501X
+	ARG_UNUSED(dev);
+
+	return MHZ(48);
+#else
 	const struct xec_pcr_config * const devcfg = dev->config;
 	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
 
@@ -820,6 +899,7 @@ static uint32_t get_turbo_clock(const struct device *dev)
 	}
 
 	return MHZ(48);
+#endif
 }
 
 /*
