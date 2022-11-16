@@ -579,7 +579,7 @@ static const struct regulator_driver_api api = {
 		.ilim_reg = DT_PROP_OR(node_id, ilim_reg, 0),                  \
 		.ilim_mask = DT_PROP_OR(node_id, ilim_mask, 0),                \
 		.enable_inverted = DT_PROP(node_id, enable_inverted),          \
-		.boot_on = DT_PROP_OR(node_id, regulator_boot_on, false),      \
+		.boot_on = DT_PROP(node_id, regulator_boot_on),                \
 		.num_modes = ARRAY_SIZE(allowed_modes_##ord),                  \
 		.initial_mode = DT_PROP_OR(DT_PARENT(node_id),                 \
 					   regulator_initial_mode, 0),         \
