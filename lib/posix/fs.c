@@ -11,7 +11,7 @@
 #include <zephyr/posix/dirent.h>
 #include <string.h>
 #include <zephyr/sys/fdtable.h>
-#include <sys/stat.h>
+#include <zephyr/posix/sys/stat.h>
 #include <fcntl.h>
 #include <zephyr/fs/fs.h>
 
