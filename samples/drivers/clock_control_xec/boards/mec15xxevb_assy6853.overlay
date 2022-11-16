@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2022 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
+
+/ {
+};
+&pcr {
+	status = "okay";
+	pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_SIL_OSC>;
+	periph-32k-src = <MCHP_XEC_PERIPH_CLK32K_SRC_SO_SO>;
+	xtal-single-ended;
+	internal-osc-disable;
+
+	/* debug only, not using 32KHZ_IN pin */
+	pinctrl-0 = <&tst_clk_out_gpio060 &clk_32khz_out_gpio221>;
+
+	/* 32KHZ_IN is a clock source and no debug */
+	/* pinctrl-0 = <&clk_32khz_in_gpio165>; */
+
+	/* 32KHZ_IN is a clock source with debug */
+	/* pinctrl-0 = <&clk_32khz_in_gpio165
+			&tst_clk_out_gpio060
+			&clk_32khz_out_gpio221>;
+	*/
+	pinctrl-names = "default";
+};
