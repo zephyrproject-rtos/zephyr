@@ -1,0 +1,13 @@
+# Raspberry Pi Pico RTC Driver configuration options
+
+# Copyright (c) 2022 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_RPI_PICO
+	bool "Raspberry Pi Pico RTC Driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_RTC_ENABLED
+	select PICOSDK_USE_RTC
+	depends on RESET
+	help
+	  Enable support for Raspberry Pi Pico RTC driver
