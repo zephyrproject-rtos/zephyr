@@ -57,6 +57,7 @@
 #include "../common/atmel_sam0_dt.h"
 
 #define SOC_ATMEL_SAM0_OSC32K_FREQ_HZ 32768
+#define SOC_ATMEL_SAM0_OSC48M_FREQ_HZ 48000000
 
 /** Processor Clock (HCLK) Frequency */
 #define SOC_ATMEL_SAM0_HCLK_FREQ_HZ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
