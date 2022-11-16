@@ -14,6 +14,9 @@ LOG_MODULE_REGISTER(pcie_ecam, LOG_LEVEL_ERR);
 #ifdef CONFIG_GIC_V3_ITS
 #include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 #endif
+#ifdef CONFIG_IOMMU
+#include <zephyr/iommu/iommu.h>
+#endif
 
 #define DT_DRV_COMPAT pci_host_ecam_generic
 
@@ -388,7 +391,14 @@ static const struct pcie_ctrl_driver_api pcie_ecam_api = {
 #define DEVICE_DT_GET_MSI_PARENT(n)
 #endif
 
+#if CONFIG_IOMMU
+#define DEVICE_DT_GET_IOMMU_MAPS(n) IOMMU_MAPS_SPEC_ITERABLE_LIST_DT_INIT(n)
+#else
+#define DEVICE_DT_GET_IOMMU_MAPS(n)
+#endif
+
 #define PCIE_ECAM_INIT(n)							\
+	DEVICE_DT_GET_IOMMU_MAPS(n);						\
 	static struct pcie_ecam_data pcie_ecam_data##n;				\
 	static const struct pcie_ctrl_config pcie_ecam_config##n = {		\
 		DEVICE_DT_GET_MSI_PARENT(n)					\

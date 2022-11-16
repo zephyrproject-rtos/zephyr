@@ -122,6 +122,9 @@ endif()
 
 if(CONFIG_PCIE)
   zephyr_iterable_section(NAME pcie_dev GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  if(CONFIG_IOMMU)
+    zephyr_iterable_section(NAME iommu_maps_spec GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  endif()
 endif()
 
 if(CONFIG_USB_DEVICE_STACK OR CONFIG_USB_DEVICE_STACK_NEXT)

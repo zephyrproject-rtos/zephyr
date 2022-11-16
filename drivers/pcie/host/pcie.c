@@ -23,6 +23,10 @@ LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 #include <zephyr/drivers/pcie/msi.h>
 #endif
 
+#ifdef CONFIG_IOMMU
+#include <zephyr/iommu/iommu.h>
+#endif
+
 #ifdef CONFIG_PCIE_CONTROLLER
 #include <zephyr/drivers/pcie/controller.h>
 #endif
@@ -515,6 +519,10 @@ static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 			dev->bdf = bdf;
 			dev->class_rev = class_rev;
 			data->found++;
+
+#ifdef CONFIG_IOMMU
+			iommu_pci_instantiate_ctx(dev, false);
+#endif
 			break;
 		}
 	}

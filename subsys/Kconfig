@@ -46,5 +46,6 @@ source "subsys/usb/host/Kconfig"
 source "subsys/usb/usb_c/Kconfig"
 source "subsys/zbus/Kconfig"
 source "subsys/sip_svc/Kconfig"
+source "subsys/iommu/Kconfig"
 
 endmenu

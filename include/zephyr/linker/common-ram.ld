@@ -85,6 +85,10 @@
 
 #if defined(CONFIG_PCIE)
 	ITERABLE_SECTION_RAM(pcie_dev, 4)
+
+	#if defined(CONFIG_IOMMU)
+		ITERABLE_SECTION_RAM(iommu_maps_spec, 4)
+	#endif
 #endif /* PCIE */
 
 #if defined(CONFIG_UART_MUX)
