@@ -65,6 +65,12 @@
 			#clock-cells = <0>;
 		};
 
+		rtc_clk: rtc_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <46875>;
+			#clock-cells = <0>;
+		};
+
 		reset: reset-controller@4000c000 {
 			compatible = "raspberrypi,pico-reset";
 			reg = <0x4000c000 DT_SIZE_K(4)>;
@@ -221,6 +227,18 @@
 			reg = <0x50300000 DT_SIZE_K(4)>;
 			clocks = <&system_clk>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO1>;
+			status = "disabled";
+		};
+
+		rtc: rtc@4005c000 {
+			compatible = "raspberrypi,pico-rtc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4005c000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_RTC>;
+			clocks = <&rtc_clk>;
+			interrupts = <25 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "rtc";
 			status = "disabled";
 		};
 	};
