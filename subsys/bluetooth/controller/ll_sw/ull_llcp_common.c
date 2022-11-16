@@ -424,6 +424,23 @@ static void lp_comm_terminate_invalid_pdu(struct ll_conn *conn, struct proc_ctx 
 	ctx->state = LP_COMMON_STATE_IDLE;
 }
 
+static void lp_comm_ntf_complete_proxy(struct ll_conn *conn, struct proc_ctx *ctx,
+				       const bool valid_pdu)
+{
+	if (valid_pdu) {
+		if (!llcp_ntf_alloc_is_available()) {
+			ctx->state = LP_COMMON_STATE_WAIT_NTF;
+		} else {
+			lp_comm_ntf(conn, ctx);
+			llcp_lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+		}
+	} else {
+		/* Illegal response opcode */
+		lp_comm_terminate_invalid_pdu(conn, ctx);
+	}
+}
+
 static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
@@ -440,19 +457,9 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP ||
-		    ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_FEATURE_RSP) {
-			if (!llcp_ntf_alloc_is_available()) {
-				ctx->state = LP_COMMON_STATE_WAIT_NTF;
-			} else {
-				lp_comm_ntf(conn, ctx);
-				llcp_lr_complete(conn);
-				ctx->state = LP_COMMON_STATE_IDLE;
-			}
-		} else {
-			/* Illegal response opcode */
-			lp_comm_terminate_invalid_pdu(conn, ctx);
-		}
+		lp_comm_ntf_complete_proxy(conn, ctx,
+			(ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP ||
+			 ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_FEATURE_RSP));
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
@@ -461,18 +468,8 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
-		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_VERSION_IND) {
-			if (!llcp_ntf_alloc_is_available()) {
-				ctx->state = LP_COMMON_STATE_WAIT_NTF;
-			} else {
-				lp_comm_ntf(conn, ctx);
-				llcp_lr_complete(conn);
-				ctx->state = LP_COMMON_STATE_IDLE;
-			}
-		} else {
-			/* Illegal response opcode */
-			lp_comm_terminate_invalid_pdu(conn, ctx);
-		}
+		lp_comm_ntf_complete_proxy(conn, ctx,
+			(ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_VERSION_IND));
 		break;
 	case PROC_TERMINATE:
 		/* No notification */
@@ -577,36 +574,36 @@ static bool lp_cis_terminated(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
+static bool lp_comm_tx_proxy(struct ll_conn *conn, struct proc_ctx *ctx, const bool extra_cond)
+{
+	if (extra_cond || llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+		ctx->state = LP_COMMON_STATE_WAIT_TX;
+	} else {
+		lp_comm_tx(conn, ctx);
+
+		/* Select correct state, depending on TX ack handling 'request' */
+		ctx->state = ctx->tx_ack ? LP_COMMON_STATE_WAIT_TX_ACK : LP_COMMON_STATE_WAIT_RX;
+		return true;
+	}
+	return false;
+}
+
 static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
-		if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-			ctx->state = LP_COMMON_STATE_WAIT_TX;
-		} else {
-			lp_comm_tx(conn, ctx);
-			ctx->state = LP_COMMON_STATE_WAIT_RX;
-		}
+		lp_comm_tx_proxy(conn, ctx, false);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-			ctx->state = LP_COMMON_STATE_WAIT_TX;
-		} else {
-			lp_comm_tx(conn, ctx);
+		if (lp_comm_tx_proxy(conn, ctx, false)) {
 			conn->llcp.fex.sent = 1;
-			ctx->state = LP_COMMON_STATE_WAIT_RX;
 		}
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
-		if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-			ctx->state = LP_COMMON_STATE_WAIT_TX;
-		} else {
-			lp_comm_tx(conn, ctx);
-			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
-		}
+		lp_comm_tx_proxy(conn, ctx, false);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
@@ -614,12 +611,8 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		 * one LL_VERSION_IND PDU during a connection.
 		 */
 		if (!conn->llcp.vex.sent) {
-			if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-				ctx->state = LP_COMMON_STATE_WAIT_TX;
-			} else {
-				lp_comm_tx(conn, ctx);
+			if (lp_comm_tx_proxy(conn, ctx, false)) {
 				conn->llcp.vex.sent = 1;
-				ctx->state = LP_COMMON_STATE_WAIT_RX;
 			}
 		} else {
 			ctx->response_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
@@ -637,13 +630,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	case PROC_CIS_TERMINATE:
-		if (!lp_cis_terminated(conn) || llcp_lr_ispaused(conn) ||
-		    !llcp_tx_alloc_peek(conn, ctx)) {
-			ctx->state = LP_COMMON_STATE_WAIT_TX;
-		} else {
-			lp_comm_tx(conn, ctx);
-			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
-		}
+		lp_comm_tx_proxy(conn, ctx, !lp_cis_terminated(conn));
 		break;
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -678,13 +665,8 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #else
 		    1) {
 #endif /* CONFIG_BT_CTLR_PHY */
-			if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
-			    (llcp_rr_get_paused_cmd(conn) == PROC_CTE_REQ)) {
-				ctx->state = LP_COMMON_STATE_WAIT_TX;
-			} else {
-				lp_comm_tx(conn, ctx);
-				ctx->state = LP_COMMON_STATE_WAIT_RX;
-			}
+			lp_comm_tx_proxy(conn, ctx,
+					 (llcp_rr_get_paused_cmd(conn) == PROC_CTE_REQ));
 		} else {
 			/* The PHY was changed to CODED when the request was waiting in a local
 			 * request queue.
@@ -702,12 +684,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 	case PROC_SCA_UPDATE:
-		if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-			ctx->state = LP_COMMON_STATE_WAIT_TX;
-		} else {
-			lp_comm_tx(conn, ctx);
-			ctx->state = LP_COMMON_STATE_WAIT_RX;
-		}
+		lp_comm_tx_proxy(conn, ctx, false);
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
@@ -1181,30 +1158,36 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+static bool rp_comm_tx_proxy(struct ll_conn *conn, struct proc_ctx *ctx, const bool complete)
+{
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+		ctx->state = RP_COMMON_STATE_WAIT_TX;
+		return false;
+	}
+
+	rp_comm_tx(conn, ctx);
+	ctx->state = RP_COMMON_STATE_WAIT_TX_ACK;
+	if (complete) {
+		llcp_rr_complete(conn);
+		ctx->state = RP_COMMON_STATE_IDLE;
+	}
+
+	return true;
+}
+
 static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		/* Always respond on remote ping */
-		if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-			ctx->state = RP_COMMON_STATE_WAIT_TX;
-		} else {
-			rp_comm_tx(conn, ctx);
-			llcp_rr_complete(conn);
-			ctx->state = RP_COMMON_STATE_IDLE;
-		}
+		rp_comm_tx_proxy(conn, ctx, true);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		/* Always respond on remote feature exchange */
-		if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-			ctx->state = RP_COMMON_STATE_WAIT_TX;
-		} else {
-			rp_comm_tx(conn, ctx);
+		if (rp_comm_tx_proxy(conn, ctx, true)) {
 			conn->llcp.fex.sent = 1;
-			llcp_rr_complete(conn);
-			ctx->state = RP_COMMON_STATE_IDLE;
 		}
 		break;
 	case PROC_VERSION_EXCHANGE:
@@ -1215,13 +1198,8 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		 * LL_VERSION_IND PDU to the peer device.
 		 */
 		if (!conn->llcp.vex.sent) {
-			if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-				ctx->state = RP_COMMON_STATE_WAIT_TX;
-			} else {
-				rp_comm_tx(conn, ctx);
+			if (rp_comm_tx_proxy(conn, ctx, true)) {
 				conn->llcp.vex.sent = 1;
-				llcp_rr_complete(conn);
-				ctx->state = RP_COMMON_STATE_IDLE;
 			}
 		} else {
 			/* Invalid behaviour
@@ -1281,15 +1259,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-			ctx->state = RP_COMMON_STATE_WAIT_TX;
-		} else {
-			/* On RSP tx close the window for possible local req piggy-back */
-			rp_comm_tx(conn, ctx);
-
-			/* Wait for the peer to have ack'ed the RSP before updating DLE */
-			ctx->state = RP_COMMON_STATE_WAIT_TX_ACK;
-		}
+		rp_comm_tx_proxy(conn, ctx, false);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -1307,14 +1277,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 	case PROC_SCA_UPDATE:
 		/* Always respond to remote SCA */
-		if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-			ctx->state = RP_COMMON_STATE_WAIT_TX;
-		} else {
-			rp_comm_tx(conn, ctx);
-
-			/* Wait for the peer to have ack'ed the RSP before completing */
-			ctx->state = RP_COMMON_STATE_WAIT_TX_ACK;
-		}
+		rp_comm_tx_proxy(conn, ctx, false);
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
