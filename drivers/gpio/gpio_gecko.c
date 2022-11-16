@@ -11,6 +11,9 @@
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <em_gpio.h>
+#ifdef CONFIG_SOC_GECKO_DEV_INIT
+#include <em_cmu.h>
+#endif
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -371,6 +374,9 @@ DEVICE_DT_DEFINE(DT_INST(0, silabs_gecko_gpio),
 
 static int gpio_gecko_common_init(const struct device *dev)
 {
+#ifdef CONFIG_SOC_GECKO_DEV_INIT
+	CMU_ClockEnable(cmuClock_GPIO, true);
+#endif
 	gpio_gecko_common_data.count = 0;
 	IRQ_CONNECT(GPIO_EVEN_IRQn,
 		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_even, priority),
