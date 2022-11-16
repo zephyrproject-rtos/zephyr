@@ -84,10 +84,10 @@ typedef void zephyr_smp_transport_ud_free_fn(void *ud);
  * @brief Function for checking if queued data is still valid.
  *
  * This function is used to check if queued SMP data is still valid e.g. on a remote device
- * disconnecting, this is triggered when ``smp_rx_clear`` is called.
+ * disconnecting, this is triggered when smp_rx_remove_invalid() is called.
  *
  * @param nb			net buf containing queued request.
- * @param arg			Argument provided when calling smp_rx_clear() function.
+ * @param arg			Argument provided when calling smp_rx_remove_invalid() function.
  *
  * @return			false if data is no longer valid/should be freed, true otherwise.
  */
@@ -173,12 +173,12 @@ void zephyr_smp_transport_init(struct zephyr_smp_transport *smpt,
 
 /**
  * @brief	Used to remove queued requests for an SMP transport that are no longer valid. A
- *		``smp_transport_query_valid_check_fn`` function must be registered for this to
- *		function. If the ``smp_transport_query_valid_check_fn`` function returns false
+ *		smp_transport_query_valid_check_fn() function must be registered for this to
+ *		function. If the smp_transport_query_valid_check_fn() function returns false
  *		during a callback, the queried command will classed as invalid and dropped.
  *
  * @param zst	The transport to use.
- * @param arg	Argument provided to callback ``smp_transport_query_valid_check_fn`` function.
+ * @param arg	Argument provided to callback smp_transport_query_valid_check_fn() function.
  */
 void smp_rx_remove_invalid(struct smp_transport *zst, void *arg);
 

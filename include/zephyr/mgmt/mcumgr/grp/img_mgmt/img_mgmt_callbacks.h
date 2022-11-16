@@ -22,7 +22,7 @@ extern "C" {
  */
 
 /**
- * Structure provided in the MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK notification callback: This callback
+ * Structure provided in the #MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK notification callback: This callback
  * function is used to notify the application about a pending firmware upload packet from a client
  * and authorise or deny it. Upload will be allowed so long as all notification handlers return
  * MGMT_ERR_EOK, if one returns an error then the upload will be denied.
