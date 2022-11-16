@@ -6,6 +6,9 @@
 
 #include <mem.h>
 #include <st/l4/stm32l4.dtsi>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
+
+/delete-node/ &quadspi;
 
 / {
 	sram0: memory@20000000 {
@@ -309,6 +312,34 @@
 		adc1: adc@50040000 {
 			has-temp-channel;
 			has-vref-channel;
+		};
+
+		octospi1: octospi@a0001000 {
+			compatible = "st,stm32-ospi";
+			reg = <0xa0001000 0x400>;
+			interrupts = <71 0>;
+			clock-names = "ospix", "ospi-ker", "ospi-mgr";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000100>,
+				<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
+				<&rcc STM32_CLOCK_BUS_AHB2 0x00100000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		octospi2: octospi@a0001400 {
+			compatible = "st,stm32-ospi";
+			reg = <0xa0001400 0x400>;
+			interrupts = <76 0>;
+			clock-names = "ospix", "ospi-ker", "ospi-mgr";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000200>,
+				<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
+				<&rcc STM32_CLOCK_BUS_AHB2 0x00100000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 	};
 
