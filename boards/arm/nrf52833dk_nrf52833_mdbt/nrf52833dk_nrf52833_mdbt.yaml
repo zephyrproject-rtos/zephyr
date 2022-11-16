@@ -1,0 +1,25 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf52833dk_nrf52833_mdbt
+name: nRF52833-DK-NRF52833-MDBT
+type: mcu
+arch: arm
+ram: 128
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - usb_device
+  - ble
+  - gpio
+  - pwm
+  - watchdog
+  - counter
+  - netif:openthread
