@@ -11,7 +11,7 @@
 #include <zephyr/sys/fdtable.h>
 #include <sys/types.h>
 
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 
 #ifdef __cplusplus
 extern "C" {
