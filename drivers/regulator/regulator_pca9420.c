@@ -52,7 +52,6 @@ struct regulator_pca9420_config {
 	const uint32_t *voltage_array;
 	const uint32_t *current_array;
 	const uint16_t *allowed_modes;
-	uint8_t modesel_offset;
 	uint8_t modesel_reg;
 	uint8_t modesel_mask;
 };
@@ -588,8 +587,6 @@ static const struct regulator_driver_api api = {
 		.voltage_array = vol_range_##id,                               \
 		.current_array = curr_limits_##id,                             \
 		.allowed_modes = allowed_modes_##id,                           \
-		.modesel_offset =                                              \
-			DT_PROP_OR(DT_PARENT(node_id), modesel_offset, 0),     \
 		.modesel_reg = DT_PROP_OR(DT_PARENT(node_id), modesel_reg, 0), \
 		.modesel_mask =                                                \
 			DT_PROP_OR(DT_PARENT(node_id), modesel_mask, 0),       \
