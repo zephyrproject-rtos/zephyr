@@ -44,6 +44,7 @@ struct mcux_lpuart_config {
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
+	bool rs485_de_active_low;
 	bool loopback_en;
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	void (*irq_config_func)(const struct device *dev);
@@ -948,6 +949,7 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 	FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
+	case UART_CFG_FLOW_CTRL_RS485:
 		uart_config.enableTxCTS = false;
 		uart_config.enableRxRTS = false;
 		break;
@@ -961,8 +963,10 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 #endif
 
 	uart_config.baudRate_Bps = cfg->baudrate;
-	uart_config.enableTx = true;
 	uart_config.enableRx = true;
+	/* Tx will be enabled manually after set tx-rts */
+	uart_config.enableTx = false;
+
 
 #ifdef CONFIG_UART_ASYNC_API
 	uart_config.rxIdleType = kLPUART_IdleTypeStopBit;
@@ -983,6 +987,17 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 #endif /* CONFIG_UART_ASYNC_API */
 
 	LPUART_Init(config->base, &uart_config, clock_freq);
+
+	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {
+		/* Set the LPUART into RS485 mode (tx driver enable using RTS) */
+		config->base->MODIR |= LPUART_MODIR_TXRTSE(true);
+		if (!config->rs485_de_active_low) {
+			config->base->MODIR |= LPUART_MODIR_TXRTSPOL(1);
+		}
+	}
+	/* Now can enable tx */
+	config->base->CTRL |= LPUART_CTRL_TE(true);
+
 
 	if (config->loopback_en) {
 		/* Set the LPUART into loopback mode */
@@ -1179,19 +1194,26 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 #define PINCTRL_INIT(n)
 #endif /* CONFIG_PINCTRL */
 
-#define LPUART_MCUX_DECLARE_CFG(n)						\
-static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {		\
-	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),				\
-	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
+#define FLOW_CONTROL(n) \
+	DT_INST_PROP(n, hw_flow_control)   \
+		? UART_CFG_FLOW_CTRL_RTS_CTS     \
+		: DT_INST_PROP(n, nxp_rs485_mode)\
+				? UART_CFG_FLOW_CTRL_RS485   \
+				: UART_CFG_FLOW_CTRL_NONE
+
+#define LPUART_MCUX_DECLARE_CFG(n)                                      \
+static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
+	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),                          \
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
-	.baud_rate = DT_INST_PROP(n, current_speed),				\
-	.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?				\
-		UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,		\
-	.loopback_en = DT_INST_PROP(n, nxp_loopback),				\
-	PINCTRL_INIT(n)								\
-	MCUX_LPUART_IRQ_INIT(n)							\
-	RX_DMA_CONFIG(n)							\
-	TX_DMA_CONFIG(n)							\
+	.baud_rate = DT_INST_PROP(n, current_speed),                          \
+	.flow_ctrl = FLOW_CONTROL(n),                                         \
+	.rs485_de_active_low = DT_INST_PROP(n, nxp_rs485_de_active_low),      \
+	.loopback_en = DT_INST_PROP(n, nxp_loopback),                         \
+	PINCTRL_INIT(n)         \
+	MCUX_LPUART_IRQ_INIT(n) \
+	RX_DMA_CONFIG(n)        \
+	TX_DMA_CONFIG(n)        \
 };
 
 #define LPUART_MCUX_INIT(n)						\
