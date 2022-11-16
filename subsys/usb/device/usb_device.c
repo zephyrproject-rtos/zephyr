@@ -252,7 +252,7 @@ static void usb_data_to_host(void)
 		if (!usb_dev.data_buf_residue && chunk &&
 		    usb_dev.setup.wLength > usb_dev.data_buf_len) {
 			/* Send less data as requested during the Setup stage */
-			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {
+			if (!(usb_dev.data_buf_len % CONFIG_USB_EP0_MAX_PACKET_SIZE)) {
 				/* Transfers a zero-length packet */
 				LOG_DBG("ZLP, requested %u , length %u ",
 					usb_dev.setup.wLength,
@@ -1549,7 +1549,7 @@ int usb_enable(usb_dc_status_callback status_cb)
 	}
 
 	/* Configure control EP */
-	ep0_cfg.ep_mps = USB_MAX_CTRL_MPS;
+	ep0_cfg.ep_mps = CONFIG_USB_EP0_MAX_PACKET_SIZE;
 	ep0_cfg.ep_type = USB_DC_EP_CONTROL;
 
 	ep0_cfg.ep_addr = USB_CONTROL_EP_OUT;

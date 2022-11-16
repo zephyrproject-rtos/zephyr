@@ -72,6 +72,18 @@ config USB_DEVICE_BLUETOOTH_BIG_BUF
 	default y if BT_BUF_EVT_RX_SIZE > 125 # 2 byte header
 	default y if BT_BUF_CMD_TX_SIZE > 124 # 3 byte header
 
+config USB_EP0_MAX_PACKET_SIZE
+	int "Maximum size of endpoint 0 packet size"
+	default 64
+	help
+	  Maximum size of endpoint 0 packet size. This value goes to
+	  device descriptor and is used for EP0 configuration.
+	  It is bMaxPacketSize0 field (byte 7 of the device descriptor).
+	  Valid values for:
+	  - low speed devices: 8
+	  - full speed devices: 8, 16, 32, 64
+	  - high speed device: 64
+
 config USB_REQUEST_BUFFER_SIZE
 	int "Set buffer size for Standard, Class and Vendor request handlers"
 	range 64 512 if USB_DEVICE_NETWORK_RNDIS
