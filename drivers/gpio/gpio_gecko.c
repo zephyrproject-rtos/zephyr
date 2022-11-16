@@ -366,7 +366,7 @@ DEVICE_DT_DEFINE(DT_INST(0, silabs_gecko_gpio),
 		    gpio_gecko_common_init,
 		    NULL,
 		    &gpio_gecko_common_data, &gpio_gecko_common_config,
-		    POST_KERNEL, CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY,
+		    PRE_KERNEL_1, CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY,
 		    &gpio_gecko_common_driver_api);
 
 static int gpio_gecko_common_init(const struct device *dev)
