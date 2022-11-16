@@ -92,6 +92,9 @@ hardware features:
    * - UART (PIO)
      - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`raspberrypi,pico-uart-pio`
+   * - RTC
+     - :kconfig:option:`CONFIG_RTC`
+     - :dtcompatible:`raspberrypi,pico-rtc`
 
 Pin Mapping
 ===========
