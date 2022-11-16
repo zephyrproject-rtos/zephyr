@@ -459,9 +459,9 @@ ZTEST(posix_apis, test_posix_pthread_error_condition)
 		      "set scheduling policy error");
 	zassert_equal(pthread_attr_setschedpolicy(&attr, 2),
 		      EINVAL, "set scheduling policy error");
-	zassert_false(pthread_attr_setdetachstate(&attr, 1),
+	zassert_false(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE),
 		      "set detach state error");
-	zassert_false(pthread_attr_setdetachstate(&attr, 2),
+	zassert_false(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED),
 		      "set detach state error");
 	zassert_equal(pthread_attr_setdetachstate(&attr, 3),
 		      EINVAL, "set detach state error");
