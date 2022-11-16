@@ -17,4 +17,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SRAM_VECTOR_TABLE
 	default y
 
+config USB_EP0_MAX_PACKET_SIZE
+	default 8
+
 endif # SOC_SERIES_DA1469X
