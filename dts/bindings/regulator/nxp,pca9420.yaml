@@ -75,32 +75,6 @@ child-binding:
           type: int
           required: true
           description: number of voltages present in the voltage-range array.
-      vsel-reg:
-          type: int
-          required: true
-          description: I2C register to write voltage selection value to
-      vsel-mask:
-          type: int
-          required: true
-          description: |
-            Mask to apply to the voltage range value when written to vsel
-            register
-      enable-reg:
-          type: int
-          required: true
-          description: I2C register to write enable value to
-      enable-mask:
-          type: int
-          required: true
-          description: |
-            Mask to apply to the enable bit (either 1 for enabled,
-            or 0 for disabled) when writing it to the I2C enable register.
-      enable-val:
-          type: int
-          required: true
-          description: |
-            value to apply enable-mask to, and write to enable-reg in order
-            to enable the regulator output.
       enable-inverted:
           type: boolean
           description: |
@@ -119,13 +93,3 @@ child-binding:
           description: |
             Number of current limit levels this regulator supports. If left as
             default, regulator current support will be disabled.
-      ilim-reg:
-          type: int
-          description: |
-            Register to write the register value given in current-levels into
-            to set the current limit
-      ilim-mask:
-          type: int
-          description: |
-            Mask to apply to the current-levels value before writing it to the
-            ilim-reg value to set the current limit

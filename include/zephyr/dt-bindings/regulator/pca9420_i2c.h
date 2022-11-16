@@ -205,62 +205,19 @@
 #define PCA9420_MODECFG3_PIN \
 	(PMIC_MODE(0xC, PMIC_MODE_FLAG_MODESEL_MULTI_REG, 0x40))
 
-/** Register memory map. See datasheet for more details. */
-/** General purpose registers */
-/** @brief Top level system ctrl 0 */
-#define PCA9420_TOP_CNTL0     0x09U
 /** @brief Top level system ctrl 3 */
 #define PCA9420_TOP_CNTL3     0x0CU
 
-/** Regulator status indication registers */
 /** @brief Mode configuration for mode 0_0 */
 #define PCA9420_MODECFG_0_0          0x22U
-/** @brief Mode configuration for mode 0_1 */
-#define PCA9420_MODECFG_0_1          0x23U
-/** @brief Mode configuration for mode 0_2 */
-#define PCA9420_MODECFG_0_2          0x24U
-/** @brief Mode configuration for mode 0_3 */
-#define PCA9420_MODECFG_0_3          0x25U
-
-/** @brief VIN input current limit selection */
-#define PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK 0xE0U
-#define PCA9420_TOP_CNTL0_VIN_ILIM_SEL_SHIFT 0x05U
 
 /** @brief I2C Mode control mask */
 #define PCA9420_TOP_CNTL3_MODE_I2C_MASK 0x18U
-#define PCA9420_TOP_CNTL3_MODE_I2C_SHIFT 0x03U
+
 /*
  * @brief Mode control selection mask. When this bit is set, the external
  * PMIC pins MODESEL0 and MODESEL1 can be used to select the active mode
  */
 #define PCA9420_MODECFG_0_MODE_CTRL_SEL_MASK 0x40U
-/** @brief Mode output voltage mask */
-#define PCA9420_MODECFG_0_SW1_OUT_MASK       0x3FU
-/*
- * @brief Mode configuration upon falling edge applied to ON pin. If set,
- * the device will switch to mode 0 when a valid falling edge is applied.
- * to the ON pin
- */
-/** @brief SW2_OUT offset and voltage level mask */
-#define PCA9420_MODECFG_1_SW2_OUT_MASK       0x3FU
-/** @brief LDO1_OUT voltage level mask */
-#define PCA9420_MODECFG_2_LDO1_OUT_MASK      0xF0U
-#define PCA9420_MODECFG_2_LDO1_OUT_SHIFT     0x04U
-/** @brief SW1 Enable */
-#define PCA9420_MODECFG_2_SW1_EN_MASK	     0x08U
-#define PCA9420_MODECFG_2_SW1_EN_VAL	     0x08U
-/** @brief SW2 Enable */
-#define PCA9420_MODECFG_2_SW2_EN_MASK	     0x04U
-#define PCA9420_MODECFG_2_SW2_EN_VAL	     0x04U
-/** @brief LDO1 Enable */
-#define PCA9420_MODECFG_2_LDO1_EN_MASK	     0x02U
-#define PCA9420_MODECFG_2_LDO1_EN_VAL	     0x02U
-/** @brief LDO2 Enable */
-#define PCA9420_MODECFG_2_LDO2_EN_MASK	     0x01U
-#define PCA9420_MODECFG_2_LDO2_EN_VAL	     0x01U
-/** @brief LDO2_OUT offset and voltage level mask */
-#define PCA9420_MODECFG_3_LDO2_OUT_MASK      0x3FU
-
-
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_PCA9420_I2C_H_*/
