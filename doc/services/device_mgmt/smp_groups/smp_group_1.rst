@@ -36,24 +36,21 @@ is supposed to run from the "primary slot" and update is supposed to be
 uploaded to the "secondary slot";  the mcuboot is responsible in swapping
 slots on boot.
 This means that pair of slots is dedicated to single upgradable application.
-In case of Zephyr this gets a little bit confusing because DTS will use
-"slot0_partition" and "slot1_partition", as label of ``fixed-partition`` dedicated
-to single application, but will name them as "image-0" and "image-1" respectively.
 
 Currently Zephyr supports at most two images, in which case mapping is as follows:
 
 .. table::
     :align: center
 
-    +-------------+-------------------+---------------+
-    | Image       | Slot labels       | Slot  Names   |
-    +=============+===================+===============+
-    | 1           | "slot0_partition" |   "image-0"   |
-    |             | "slot1_partition" |   "image-1"   |
-    +-------------+-------------------+---------------+
-    | 2           | "slot2_partition" |   "image-2"   |
-    |             | "slot3_partition" |   "image-3"   |
-    +-------------+-------------------+---------------+
+    +-------------+-------------------+
+    | Image       | Slot labels       |
+    +=============+===================+
+    | 1           | "slot0_partition" |
+    |             | "slot1_partition" |
+    +-------------+-------------------+
+    | 2           | "slot2_partition" |
+    |             | "slot3_partition" |
+    +-------------+-------------------+
 
 State of images
 ***************
