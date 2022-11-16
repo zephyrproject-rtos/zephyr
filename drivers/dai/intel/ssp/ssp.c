@@ -1571,7 +1571,7 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 	LOG_INF("%s sscr2 = 0x%08x, sspsp2 = 0x%08x, sscr3 = 0x%08x", __func__,
 		blob->i2s_driver_config.i2s_config.ssc2, blob->i2s_driver_config.i2s_config.sspsp2,
 		blob->i2s_driver_config.i2s_config.ssc3);
-	LOG_ERR("%s ssioc = 0x%08x, ssrsa = 0x%08x, sstsa = 0x%08x", __func__,
+	LOG_INF("%s ssioc = 0x%08x, ssrsa = 0x%08x, sstsa = 0x%08x", __func__,
 		blob->i2s_driver_config.i2s_config.ssioc, ssrsa, sstsa);
 
 	ssp->params.sample_valid_bits = SSCR0_DSIZE_GET(ssc0);
