@@ -33,7 +33,7 @@ static bool stopping;
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
-#define BROADCAST_SOURCE_LIFETIME  30U /* seconds */
+#define BROADCAST_SOURCE_LIFETIME  120U /* seconds */
 
 static void stream_started_cb(struct bt_audio_stream *stream)
 {
