@@ -16,6 +16,56 @@
 
 LOG_MODULE_REGISTER(pca9420, CONFIG_REGULATOR_LOG_LEVEL);
 
+/** Register memory map. See datasheet for more details. */
+/** General purpose registers */
+/** @brief Top level system ctrl 0 */
+#define PCA9420_TOP_CNTL0     0x09U
+
+/** Regulator status indication registers */
+/** @brief Mode configuration for mode 0_0 */
+#define PCA9420_MODECFG_0_0          0x22U
+/** @brief Mode configuration for mode 0_1 */
+#define PCA9420_MODECFG_0_1          0x23U
+/** @brief Mode configuration for mode 0_2 */
+#define PCA9420_MODECFG_0_2          0x24U
+/** @brief Mode configuration for mode 0_3 */
+#define PCA9420_MODECFG_0_3          0x25U
+
+/** @brief VIN input current limit selection */
+#define PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK 0xE0U
+
+/*
+ * @brief Mode control selection mask. When this bit is set, the external
+ * PMIC pins MODESEL0 and MODESEL1 can be used to select the active mode
+ */
+#define PCA9420_MODECFG_0_MODE_CTRL_SEL_MASK 0x40U
+
+/*
+ * @brief Mode configuration upon falling edge applied to ON pin. If set,
+ * the device will switch to mode 0 when a valid falling edge is applied.
+ * to the ON pin
+ */
+/** @brief Mode output voltage mask */
+#define PCA9420_MODECFG_0_SW1_OUT_MASK       0x3FU
+/** @brief SW2_OUT offset and voltage level mask */
+#define PCA9420_MODECFG_1_SW2_OUT_MASK       0x3FU
+/** @brief LDO1_OUT voltage level mask */
+#define PCA9420_MODECFG_2_LDO1_OUT_MASK      0xF0U
+/** @brief SW1 Enable */
+#define PCA9420_MODECFG_2_SW1_EN_MASK	     0x08U
+#define PCA9420_MODECFG_2_SW1_EN_VAL	     0x08U
+/** @brief SW2 Enable */
+#define PCA9420_MODECFG_2_SW2_EN_MASK	     0x04U
+#define PCA9420_MODECFG_2_SW2_EN_VAL	     0x04U
+/** @brief LDO1 Enable */
+#define PCA9420_MODECFG_2_LDO1_EN_MASK	     0x02U
+#define PCA9420_MODECFG_2_LDO1_EN_VAL	     0x02U
+/** @brief LDO2 Enable */
+#define PCA9420_MODECFG_2_LDO2_EN_MASK	     0x01U
+#define PCA9420_MODECFG_2_LDO2_EN_VAL	     0x01U
+/** @brief LDO2_OUT offset and voltage level mask */
+#define PCA9420_MODECFG_3_LDO2_OUT_MASK      0x3FU
+
 struct voltage_range {
 	int32_t uV; /* Voltage in uV */
 	uint8_t reg_val; /* Register value for voltage */
@@ -24,6 +74,16 @@ struct voltage_range {
 struct current_range {
 	int32_t uA; /* Current limit in uA */
 	uint8_t reg_val; /* Register value for current limit */
+};
+
+struct regulator_pca9420_desc {
+	uint8_t enable_reg;
+	uint8_t enable_mask;
+	uint8_t enable_val;
+	uint8_t ilim_reg;
+	uint8_t ilim_mask;
+	uint8_t vsel_reg;
+	uint8_t vsel_mask;
 };
 
 struct regulator_pca9420_data {
@@ -36,17 +96,10 @@ struct regulator_pca9420_config {
 	int num_voltages;
 	int num_current_levels;
 	int num_modes;
-	uint8_t vsel_reg;
-	uint8_t vsel_mask;
 	int32_t max_uv;
 	int32_t min_uv;
-	uint8_t enable_reg;
-	uint8_t enable_mask;
-	uint8_t enable_val;
 	bool enable_inverted;
 	bool boot_on;
-	uint8_t ilim_reg;
-	uint8_t ilim_mask;
 	struct i2c_dt_spec i2c;
 	uint16_t initial_mode;
 	const uint32_t *voltage_array;
@@ -54,6 +107,47 @@ struct regulator_pca9420_config {
 	const uint16_t *allowed_modes;
 	uint8_t modesel_reg;
 	uint8_t modesel_mask;
+	const struct regulator_pca9420_desc *desc;
+};
+
+static const struct regulator_pca9420_desc buck1_desc = {
+	.enable_reg = PCA9420_MODECFG_0_2,
+	.enable_mask = PCA9420_MODECFG_2_SW1_EN_MASK,
+	.enable_val = PCA9420_MODECFG_2_SW1_EN_VAL,
+	.ilim_reg = PCA9420_TOP_CNTL0,
+	.ilim_mask = PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
+	.vsel_mask = PCA9420_MODECFG_0_SW1_OUT_MASK,
+	.vsel_reg = PCA9420_MODECFG_0_0,
+};
+
+static const struct regulator_pca9420_desc buck2_desc = {
+	.enable_reg = PCA9420_MODECFG_0_2,
+	.enable_mask = PCA9420_MODECFG_2_SW2_EN_MASK,
+	.enable_val = PCA9420_MODECFG_2_SW2_EN_VAL,
+	.vsel_mask = PCA9420_MODECFG_1_SW2_OUT_MASK,
+	.vsel_reg = PCA9420_MODECFG_0_1,
+	.ilim_reg = PCA9420_TOP_CNTL0,
+	.ilim_mask = PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
+};
+
+static const struct regulator_pca9420_desc ldo1_desc = {
+	.enable_reg = PCA9420_MODECFG_0_2,
+	.enable_mask = PCA9420_MODECFG_2_LDO1_EN_MASK,
+	.enable_val = PCA9420_MODECFG_2_LDO1_EN_VAL,
+	.vsel_mask = PCA9420_MODECFG_2_LDO1_OUT_MASK,
+	.vsel_reg = PCA9420_MODECFG_0_2,
+	.ilim_reg = PCA9420_TOP_CNTL0,
+	.ilim_mask = PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
+};
+
+static const struct regulator_pca9420_desc ldo2_desc = {
+	.enable_reg = PCA9420_MODECFG_0_2,
+	.enable_mask = PCA9420_MODECFG_2_LDO2_EN_MASK,
+	.enable_val = PCA9420_MODECFG_2_LDO2_EN_VAL,
+	.vsel_reg = PCA9420_MODECFG_0_3,
+	.vsel_mask = PCA9420_MODECFG_3_LDO2_OUT_MASK,
+	.ilim_reg = PCA9420_TOP_CNTL0,
+	.ilim_mask = PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
 };
 
 static int regulator_pca9420_is_supported_voltage(const struct device *dev,
@@ -112,12 +206,12 @@ static int32_t regulator_pca9420_get_voltage_offset(const struct device *dev,
 	int rc, i = 0;
 	uint8_t raw_reg;
 
-	rc = regulator_pca9420_read_register(dev, config->vsel_reg + off,
+	rc = regulator_pca9420_read_register(dev, config->desc->vsel_reg + off,
 					     &raw_reg);
 	if (rc) {
 		return rc;
 	}
-	raw_reg &= config->vsel_mask;
+	raw_reg &= config->desc->vsel_mask;
 	/* Locate the voltage value in the voltage table */
 	while (i < config->num_voltages &&
 		raw_reg != data->voltages[i].reg_val){
@@ -162,8 +256,9 @@ static int regulator_set_voltage_offset(const struct device *dev,
 	}
 	LOG_DBG("Setting regulator %s to %duV", dev->name,
 			data->voltages[i].uV);
-	return regulator_pca9420_modify_register(dev, config->vsel_reg + off,
-						 config->vsel_mask,
+	return regulator_pca9420_modify_register(dev,
+						 config->desc->vsel_reg + off,
+						 config->desc->vsel_mask,
 						 data->voltages[i].reg_val);
 }
 
@@ -265,7 +360,7 @@ static int regulator_pca9420_set_current_limit(const struct device *dev,
 	}
 	/* Set the current limit */
 	return regulator_pca9420_modify_register(
-		dev, config->ilim_reg, config->ilim_mask,
+		dev, config->desc->ilim_reg, config->desc->ilim_mask,
 		data->current_levels[i].reg_val);
 }
 
@@ -283,11 +378,12 @@ static int regulator_pca9420_get_current_limit(const struct device *dev)
 	if (config->num_current_levels == 0) {
 		return -ENOTSUP;
 	}
-	rc = regulator_pca9420_read_register(dev, config->ilim_reg, &raw_reg);
+	rc = regulator_pca9420_read_register(dev, config->desc->ilim_reg,
+					     &raw_reg);
 	if (rc) {
 		return rc;
 	}
-	raw_reg &= config->ilim_mask;
+	raw_reg &= config->desc->ilim_mask;
 	while (i < config->num_current_levels &&
 		data->current_levels[i].reg_val != raw_reg) {
 		i++;
@@ -356,10 +452,10 @@ static int regulator_pca9420_mode_disable(const struct device *dev,
 		return -EINVAL;
 	}
 	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
-	dis_val = config->enable_inverted ? config->enable_val : 0;
-	return regulator_pca9420_modify_register(dev,
-						 config->enable_reg + sel_off,
-						 config->enable_mask, dis_val);
+	dis_val = config->enable_inverted ? config->desc->enable_val : 0;
+	return regulator_pca9420_modify_register(
+		dev, config->desc->enable_reg + sel_off,
+		config->desc->enable_mask, dis_val);
 }
 
 /*
@@ -388,10 +484,10 @@ static int regulator_pca9420_mode_enable(const struct device *dev,
 		return -EINVAL;
 	}
 	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
-	en_val = config->enable_inverted ? 0 : config->enable_val;
-	return regulator_pca9420_modify_register(dev,
-						 config->enable_reg + sel_off,
-						 config->enable_mask, en_val);
+	en_val = config->enable_inverted ? 0 : config->desc->enable_val;
+	return regulator_pca9420_modify_register(
+		dev, config->desc->enable_reg + sel_off,
+		config->desc->enable_mask, en_val);
 }
 
 /*
@@ -480,9 +576,10 @@ static int regulator_pca9420_enable(const struct device *dev,
 		/* Request has already enabled PMIC */
 		return onoff_sync_finalize(&data->srv, key, cli, rc, true);
 	}
-	en_val = config->enable_inverted ? 0 : config->enable_val;
-	rc = regulator_pca9420_modify_register(dev, config->enable_reg,
-					       config->enable_mask, en_val);
+	en_val = config->enable_inverted ? 0 : config->desc->enable_val;
+	rc = regulator_pca9420_modify_register(dev, config->desc->enable_reg,
+					       config->desc->enable_mask,
+					       en_val);
 	if (rc != 0) {
 		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
 	}
@@ -504,10 +601,10 @@ static int regulator_pca9420_disable(const struct device *dev)
 		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
 	} else if (rc == 1) {
 		/* Disable regulator */
-		dis_val = config->enable_inverted ? config->enable_val : 0;
-		rc = regulator_pca9420_modify_register(dev, config->enable_reg,
-						       config->enable_mask,
-						       dis_val);
+		dis_val = config->enable_inverted ? config->desc->enable_val : 0;
+		rc = regulator_pca9420_modify_register(
+			dev, config->desc->enable_reg,
+			config->desc->enable_mask, dis_val);
 	}
 	return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
 }
@@ -556,7 +653,7 @@ static const struct regulator_driver_api api = {
 	.mode_enable = regulator_pca9420_mode_enable,
 };
 
-#define REGULATOR_PCA9420_DEFINE(node_id, id)                                  \
+#define REGULATOR_PCA9420_DEFINE(node_id, id, name)                            \
 	static const uint32_t curr_limits_##id[] =                             \
 		DT_PROP_OR(node_id, current_levels, {});                       \
 	static const uint32_t vol_range_##id[] =                               \
@@ -567,17 +664,10 @@ static const struct regulator_driver_api api = {
 	static struct regulator_pca9420_data data_##id;                        \
                                                                                \
 	static const struct regulator_pca9420_config config_##id = {           \
-		.vsel_mask = DT_PROP(node_id, vsel_mask),                      \
-		.vsel_reg = DT_PROP(node_id, vsel_reg),                        \
 		.num_voltages = DT_PROP(node_id, num_voltages),                \
 		.num_current_levels = DT_PROP(node_id, num_current_levels),    \
-		.enable_reg = DT_PROP(node_id, enable_reg),                    \
-		.enable_mask = DT_PROP(node_id, enable_mask),                  \
-		.enable_val = DT_PROP(node_id, enable_val),                    \
 		.min_uv = DT_PROP(node_id, regulator_min_microvolt),           \
 		.max_uv = DT_PROP(node_id, regulator_max_microvolt),           \
-		.ilim_reg = DT_PROP_OR(node_id, ilim_reg, 0),                  \
-		.ilim_mask = DT_PROP_OR(node_id, ilim_mask, 0),                \
 		.enable_inverted = DT_PROP(node_id, enable_inverted),          \
 		.boot_on = DT_PROP(node_id, regulator_boot_on),                \
 		.num_modes = ARRAY_SIZE(allowed_modes_##id),                   \
@@ -590,6 +680,7 @@ static const struct regulator_driver_api api = {
 		.modesel_reg = DT_PROP_OR(DT_PARENT(node_id), modesel_reg, 0), \
 		.modesel_mask =                                                \
 			DT_PROP_OR(DT_PARENT(node_id), modesel_mask, 0),       \
+		.desc = &name ## _desc,                                        \
 	};                                                                     \
                                                                                \
 	DEVICE_DT_DEFINE(node_id, regulator_pca9420_init, NULL, &data_##id,    \
@@ -599,7 +690,7 @@ static const struct regulator_driver_api api = {
 #define REGULATOR_PCA9420_DEFINE_COND(inst, child)                             \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                \
 		    (REGULATOR_PCA9420_DEFINE(DT_INST_CHILD(inst, child),      \
-					      child ## inst)), ())
+					      child ## inst, child)), ())
 
 #define REGULATOR_PCA9420_DEFINE_ALL(inst)                                     \
 	REGULATOR_PCA9420_DEFINE_COND(inst, buck1)                             \
