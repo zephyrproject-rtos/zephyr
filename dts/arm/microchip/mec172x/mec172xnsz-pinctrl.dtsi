@@ -709,6 +709,10 @@
 		pinmux = < MCHP_XEC_PINMUX(022, MCHP_AF4) >;
 	};
 
+	/omit-if-no-ref/ tst_clk_out_gpio060: tst_clk_out_gpio060 {
+		pinmux = < MCHP_XEC_PINMUX(060, MCHP_AF2) >;
+	};
+
 	/* PROCHOT */
 	/omit-if-no-ref/ prochot_in_n_alt_gpio222: prochot_in_n_alt_gpio222 {
 		pinmux = < MCHP_XEC_PINMUX(0222, MCHP_AF2) >;

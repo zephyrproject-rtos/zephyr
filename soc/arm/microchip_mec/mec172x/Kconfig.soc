@@ -24,8 +24,3 @@ config SOC_MEC172X_PROC_CLK_DIV
 	  and main 96 MHz clock (MCK):
 	  HCLK = MCK / PROC_CLK_DIV
 	  Allowed divider values: 1, 3, 4, 16, and 48.
-
-config SOC_MEC172X_TEST_CLK_OUT
-	bool "Test clock out pin"
-	help
-	  Enables a test clock out pin
