@@ -112,6 +112,13 @@ Stable API changes in this release
   Applications using the existing callback system will need to be upgraded to
   use the new API by following the :ref:`migration guide <mcumgr_cb_migration>`
 
+* :c:func:`net_pkt_get_frag`, :c:func:`net_pkt_get_reserve_tx_data` and
+  :c:func:`net_pkt_get_reserve_rx_data` functions are now requiring to specify
+  the minimum fragment length to allocate, so that they work correctly also in
+  case :kconfig:option:`CONFIG_NET_BUF_VARIABLE_DATA_SIZE` is enabled.
+  Applications using this APIs will need to be updated to provide the expected
+  fragment length.
+
 New APIs in this release
 ========================
 
