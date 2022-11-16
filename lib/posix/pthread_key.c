@@ -9,9 +9,7 @@
 
 #include "posix_internal.h"
 
-struct k_sem pthread_key_sem;
-
-K_SEM_DEFINE(pthread_key_sem, 1, 1);
+static struct k_spinlock pthread_key_lock;
 
 /**
  * @brief Create a key for thread-specific data
@@ -49,8 +47,9 @@ int pthread_key_delete(pthread_key_t key)
 	pthread_key_obj *key_obj = (pthread_key_obj *)key;
 	pthread_key_data *key_data;
 	sys_snode_t *node_l, *next_node_l;
+	k_spinlock_key_t key_key;
 
-	k_sem_take(&pthread_key_sem, K_FOREVER);
+	key_key = k_spin_lock(&pthread_key_lock);
 
 	/* Delete thread-specific elements associated with the key */
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&(key_obj->key_data_l),
@@ -66,7 +65,7 @@ int pthread_key_delete(pthread_key_t key)
 
 	k_free((void *)key_obj);
 
-	k_sem_give(&pthread_key_sem);
+	k_spin_unlock(&pthread_key_lock, key_key);
 
 	return 0;
 }
@@ -82,6 +81,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 	struct posix_thread *thread = to_posix_thread(pthread_self());
 	pthread_key_data *key_data;
 	pthread_thread_data *thread_spec_data;
+	k_spinlock_key_t key_key;
 	sys_snode_t *node_l;
 	int retval = 0;
 
@@ -89,7 +89,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 	 * If the key is already in the list, re-assign its value.
 	 * Else add the key to the thread's list.
 	 */
-	k_sem_take(&pthread_key_sem, K_FOREVER);
+	key_key = k_spin_lock(&pthread_key_lock);
 
 	SYS_SLIST_FOR_EACH_NODE(&(thread->key_list), node_l) {
 
@@ -128,7 +128,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 	}
 
 out:
-	k_sem_give(&pthread_key_sem);
+	k_spin_unlock(&pthread_key_lock, key_key);
 
 	return retval;
 }
@@ -145,8 +145,9 @@ void *pthread_getspecific(pthread_key_t key)
 	pthread_thread_data *thread_spec_data;
 	void *value = NULL;
 	sys_snode_t *node_l;
+	k_spinlock_key_t key_key;
 
-	k_sem_take(&pthread_key_sem, K_FOREVER);
+	key_key = k_spin_lock(&pthread_key_lock);
 
 	node_l = sys_slist_peek_head(&(thread->key_list));
 
@@ -161,7 +162,7 @@ void *pthread_getspecific(pthread_key_t key)
 		}
 	}
 
-	k_sem_give(&pthread_key_sem);
+	k_spin_unlock(&pthread_key_lock, key_key);
 
 	return value;
 }
