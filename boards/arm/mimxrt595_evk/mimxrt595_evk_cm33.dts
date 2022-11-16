@@ -181,7 +181,7 @@ arduino_serial: &flexcomm12 {
 		regulator-initial-mode = <PCA9420_MODECFG0_PIN>;
 		modesel-reg = <PCA9420_MODECFG_0_0>;
 		modesel-mask = <PCA9420_MODECFG_0_MODE_CTRL_SEL_MASK>;
-		pca9420_sw1: sw1_buck {
+		BUCK1 {
 			voltage-range = <PCA9420_SW1_VOLTAGE_RANGE>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
 			num-voltages = <42>;
@@ -198,7 +198,7 @@ arduino_serial: &flexcomm12 {
 			regulator-boot-on;
 		};
 
-		pca9420_sw2: sw2_buck {
+		BUCK2 {
 			voltage-range = <PCA9420_SW2_VOLTAGE_RANGE>;
 			num-voltages = <50>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
@@ -215,7 +215,7 @@ arduino_serial: &flexcomm12 {
 			regulator-boot-on;
 		};
 
-		pca9420_ldo1: ldo1_reg {
+		LDO1 {
 			voltage-range = <PCA9420_LDO1_VOLTAGE_RANGE>;
 			num-voltages = <9>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
@@ -232,7 +232,7 @@ arduino_serial: &flexcomm12 {
 			regulator-boot-on;
 		};
 
-		pca9420_ldo2: ldo2_reg {
+		LDO2 {
 			voltage-range = <PCA9420_LDO2_VOLTAGE_RANGE>;
 			num-voltages = <51>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
