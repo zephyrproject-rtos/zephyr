@@ -155,6 +155,7 @@ def dt_nodelabel_enabled(kconf, _, label):
     if doc_mode or edt is None:
         return "n"
 
+    label = label.strip()
     node = edt.label2node.get(label)
 
     return "y" if node and node.status == "okay" else "n"
@@ -423,6 +424,7 @@ def dt_nodelabel_bool_prop(kconf, _, label, prop):
     if doc_mode or edt is None:
         return "n"
 
+    label = label.strip()
     return _dt_node_bool_prop_generic(edt.label2node.get, label, prop)
 
 def _dt_node_has_prop_generic(node_search_function, search_arg, prop):
@@ -466,6 +468,7 @@ def dt_nodelabel_has_prop(kconf, _, label, prop):
     if doc_mode or edt is None:
         return "n"
 
+    label = label.strip()
     return _dt_node_has_prop_generic(edt.label2node.get, label, prop)
 
 def dt_node_int_prop(kconf, name, path, prop, unit=None):
@@ -601,6 +604,7 @@ def dt_nodelabel_has_compat(kconf, _, label, compat):
     if doc_mode or edt is None:
         return "n"
 
+    label = label.strip()
     node = edt.label2node.get(label)
 
     if node and compat in node.compats:
@@ -635,6 +639,7 @@ def dt_nodelabel_path(kconf, _, label):
     if doc_mode or edt is None:
         return ""
 
+    label = label.strip()
     node = edt.label2node.get(label)
 
     return node.path if node else ""
