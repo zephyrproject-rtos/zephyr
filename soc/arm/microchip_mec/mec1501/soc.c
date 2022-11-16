@@ -12,8 +12,6 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
-#define TEST_CLK_OUT_PIN_COUNT		1
-
 /*
  * Initialize MEC1501 EC Interrupt Aggregator (ECIA) and external NVIC
  * inputs.
@@ -76,9 +74,6 @@ static void configure_debug_interface(void)
 static int soc_init(const struct device *dev)
 {
 	uint32_t isave;
-#ifdef CONFIG_SOC_MEC1501_TEST_CLK_OUT
-	const pinctrl_soc_pin_t test_clk_out_pin = {MCHP_XEC_PINMUX(060, MCHP_AF2), 0};
-#endif
 
 	ARG_UNUSED(dev);
 
@@ -96,15 +91,6 @@ static int soc_init(const struct device *dev)
 #endif
 
 	configure_debug_interface();
-
-#ifdef CONFIG_SOC_MEC1501_TEST_CLK_OUT
-	/*
-	 * Deep sleep testing: Enable TEST_CLK_OUT on GPIO_060 function 2.
-	 * TEST_CLK_OUT is the PLL 48MHz conditioned output.
-	 */
-
-	pinctrl_configure_pins(&test_clk_out_pin, TEST_CLK_OUT_PIN_COUNT, 0);
-#endif
 
 	if (!isave) {
 		__enable_irq();
