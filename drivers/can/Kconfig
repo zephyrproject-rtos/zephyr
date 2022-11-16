@@ -86,6 +86,7 @@ config CAN_QEMU_IFACE_NAME
 	  configured before starting QEMU.
 
 source "drivers/can/Kconfig.sam"
+source "drivers/can/Kconfig.sam0"
 source "drivers/can/Kconfig.stm32"
 source "drivers/can/Kconfig.stm32fd"
 source "drivers/can/Kconfig.stm32h7"
