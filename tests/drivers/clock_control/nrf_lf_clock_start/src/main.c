@@ -89,15 +89,6 @@ ZTEST(nrf_lf_clock_start, test_wait_in_thread)
 
 void *test_init(void)
 {
-	/* Do clock state read as early as possible. When RC is already running
-	 * and XTAL has been started then LFSRCSTAT register content might be
-	 * not valid, in that case read system clock to check if it has
-	 * progressed.
-	 */
-	on = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &type);
-	k_busy_wait(100);
-	rtc_cnt = k_cycle_get_32();
-
 	 TC_PRINT("CLOCK_CONTROL_NRF_K32SRC=%s\n",
 		IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC) ? "RC"
 		: IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH) ? "SYNTH"
@@ -114,3 +105,26 @@ void *test_init(void)
 	return NULL;
 }
 ZTEST_SUITE(nrf_lf_clock_start, NULL, test_init, NULL, NULL, NULL);
+
+/* This test needs to read the LF clock state soon after the system clock is
+ * started (to check if the starting routine waits for the LF clock or not),
+ * so do it at the beginning of the POST_KERNEL stage (the system clock is
+ * started in PRE_KERNEL_2). Reading of the clock state in the ZTEST setup
+ * function turns out to be too late.
+ */
+static int get_lfclk_state(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* Do clock state read as early as possible. When RC is already running
+	 * and XTAL has been started then LFSRCSTAT register content might be
+	 * not valid, in that case read system clock to check if it has
+	 * progressed.
+	 */
+	on = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &type);
+	k_busy_wait(100);
+	rtc_cnt = k_cycle_get_32();
+
+	return 0;
+}
+SYS_INIT(get_lfclk_state, POST_KERNEL, 0);
