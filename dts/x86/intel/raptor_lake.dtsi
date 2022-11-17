@@ -41,11 +41,12 @@
 		compatible = "intel,pcie";
 		ranges;
 
-		smbus0: smbus@fc00 {
+		smbus0: smbus0 {
 			compatible = "intel,pch-smbus";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <PCIE_BDF(0,0x1f,4) PCIE_ID(0x8086,0x7a23)>;
+			vendor-id = <0x8086>;
+			device-id = <0x7a23>;
 			interrupts = <18 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 

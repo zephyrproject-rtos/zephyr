@@ -5,7 +5,7 @@ description: Intel Platform Controller Hub SMBus node
 
 compatible: "intel,pch-smbus"
 
-include: smbus-controller.yaml
+include: [smbus-controller.yaml, pcie-device.yaml]
 
 properties:
   interrupts:

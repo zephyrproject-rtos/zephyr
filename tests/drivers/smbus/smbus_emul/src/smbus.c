@@ -93,9 +93,13 @@ static void config_function(const struct device *dev)
 	TC_PRINT("Emulator device configuration\n");
 }
 static struct pch_data smbus_data;
+/* Zero initialized, dummy device does not care about pcie ids */
+static struct pcie_dev pcie_params;
 static struct pch_config pch_config_data = {
 	.config_func = config_function,
+	.pcie = &pcie_params,
 };
+
 DEVICE_DEFINE(dummy_driver, SMBUS_EMUL, &pch_smbus_init,
 	      NULL, &smbus_data, &pch_config_data, APPLICATION,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
