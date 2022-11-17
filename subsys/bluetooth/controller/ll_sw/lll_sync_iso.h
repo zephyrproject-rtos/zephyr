@@ -54,6 +54,8 @@ struct lll_sync_iso {
 
 	uint8_t stream_curr:5;
 
+	uint8_t next_chan_use;
+
 	uint8_t chm_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t chm_chan_count:6;
 
