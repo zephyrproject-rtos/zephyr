@@ -9,15 +9,6 @@
 
 #include "pmic_i2c.h"
 
-#define PCA9420_CURRENT_LIMIT_LEVELS \
-	85000 0x00		/* min: 74mA, typ: 85mA, max: 98mA */\
-	225000 0x20		/* min: 222mA, typ: 225mA, max: 293mA */\
-	425000 0x40		/* min: 370mA, typ: 425mA, max: 489mA */\
-	595000 0x60		/* min: 517mA, typ: 595mA, max: 684mA */\
-	765000 0x80		/* min: 665mA, typ: 765mA, max: 880mA */\
-	935000 0xA0		/* min: 813mA, typ: 935mA, max: 1075mA */\
-	1105000 0xC0		/* min: 961mA, typ: 1105mA, max: 1271mA */\
-
 #define PCA9420_MODECFG0 \
 	(PMIC_MODE(0x0, 0x0, 0x0)) /* ModeCfg 0, selected via I2C */
 #define PCA9420_MODECFG1 \
