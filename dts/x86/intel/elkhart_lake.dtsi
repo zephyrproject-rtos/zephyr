@@ -189,11 +189,12 @@
 			current-speed = <115200>;
 		};
 
-		smbus0: smbus@fc00 {
+		smbus0: smbus0 {
 			compatible = "intel,pch-smbus";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <PCIE_BDF(0,0x1f,4) PCIE_ID(0x8086,0x4b23)>;
+			vendor-id = <0x8086>;
+			device-id = <0x4b23>;
 			interrupts = <16 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
