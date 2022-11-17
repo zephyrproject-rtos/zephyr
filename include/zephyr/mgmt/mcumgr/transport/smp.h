@@ -14,6 +14,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief MCUmgr transport SMP API
+ * @defgroup mcumgr_transport_smp MCUmgr transport SMP API
+ * @ingroup mcumgr
+ * @{
+ */
+
 struct smp_transport;
 struct zephyr_smp_transport;
 struct net_buf;
@@ -25,7 +32,7 @@ struct net_buf;
  *
  * @param nb                    The net_buf to transmit.
  *
- * @return                      0 on success, MGMT_ERR_[...] code on failure.
+ * @return                      0 on success, #mcumgr_err_t code on failure.
  */
 typedef int (*smp_transport_out_fn)(struct net_buf *nb);
 /* use smp_transport_out_fn instead */
@@ -59,7 +66,7 @@ typedef uint16_t zephyr_smp_transport_get_mtu_fn(const struct net_buf *nb);
  * @param dst                   Source buffer user_data pointer.
  * @param src                   Destination buffer user_data pointer.
  *
- * @return                      0 on success, MGMT_ERR_[...] code on failure.
+ * @return                      0 on success, #mcumgr_err_t code on failure.
  */
 typedef int (*smp_transport_ud_copy_fn)(struct net_buf *dst,
 					const struct net_buf *src);
@@ -188,6 +195,10 @@ void smp_rx_remove_invalid(struct smp_transport *zst, void *arg);
  * @param zst	The transport to use.
  */
 void smp_rx_clear(struct smp_transport *zst);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
