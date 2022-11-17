@@ -7,6 +7,16 @@
 
 #include <nxp/nxp_rt1060.dtsi>
 
+&ccm {
+	arm-podf {
+		clock-div = <2>;
+	};
+
+	ipg-podf {
+		clock-div = <4>;
+	};
+};
+
 &flexspi2 {
 	status = "okay";
 	reg = <0x402a4000 0x4000>, <0x70000000 DT_SIZE_M(4)>;

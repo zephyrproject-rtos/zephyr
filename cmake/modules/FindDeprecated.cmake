@@ -68,9 +68,26 @@ if("CROSS_COMPILE" IN_LIST Deprecated_FIND_COMPONENTS)
   endif()
 endif()
 
+if("XTOOLS" IN_LIST Deprecated_FIND_COMPONENTS)
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS XTOOLS)
+  # This code was deprecated after Zephyr v3.3.0
+  # When removing support for `xtools`, remember to also remove:
+  # cmake/toolchain/xtools (folder with files)
+  # doc/develop/toolchains/crosstool_ng.rst and update the index.rst file.
+  message(DEPRECATION "XTOOLS toolchain variant is deprecated. "
+                      "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'zephyr'")
+endif()
+
 if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
   message(STATUS "The following deprecated component(s) could not be found: "
                  "${Deprecated_FIND_COMPONENTS}")
+endif()
+
+if("SOURCES" IN_LIST Deprecated_FIND_COMPONENTS)
+  message(DEPRECATION
+      "Setting SOURCES prior to calling find_package() for unit tests is deprecated."
+      "To add sources after find_package() use:\n"
+      "    target_sources(testbinary PRIVATE <source-file.c>)")
 endif()
 
 set(Deprecated_FOUND True)

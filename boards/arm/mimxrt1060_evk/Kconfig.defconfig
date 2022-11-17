@@ -14,9 +14,6 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
-config DISK_DRIVER_SDMMC
-	default y if DISK_DRIVERS
-
 if FLASH
 
 config FLASH_MCUX_FLEXSPI_NOR

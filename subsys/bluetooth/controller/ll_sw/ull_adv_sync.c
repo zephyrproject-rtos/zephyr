@@ -111,7 +111,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		lll_sync->adv = lll;
 
 		lll_adv_data_reset(&lll_sync->data);
-		err = lll_adv_data_init(&lll_sync->data);
+		err = lll_adv_sync_data_init(&lll_sync->data);
 		if (err) {
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
@@ -873,14 +873,18 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 *       when auxiliary and Periodic Advertising have
 			 *       similar event interval.
 			 */
-			ticks_anchor_sync = ticker_ticks_now_get();
+			ticks_anchor_sync =
+				ticker_ticks_now_get() +
+				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 		} else {
 			/* Auxiliary set will be started due to inclusion of
 			 * sync info field.
 			 */
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
-			ticks_anchor_aux = ticker_ticks_now_get();
+			ticks_anchor_aux =
+				ticker_ticks_now_get() +
+				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 			ticks_slot_overhead_aux =
 				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
 			ticks_anchor_sync = ticks_anchor_aux +

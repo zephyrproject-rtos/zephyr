@@ -7,8 +7,6 @@
 #include <zephyr/kernel.h>
 #include "host_mocks/assert.h"
 
-DEFINE_FFF_GLOBALS;
-
 DEFINE_FAKE_VALUE_FUNC(bool, mock_check_if_assert_expected);
 
 void assert_print(const char *fmt, ...)

@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
+# Copyright (c) 2022 T-Mobile USA, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -7,7 +8,7 @@ description: |
 
 compatible: "ti,tmp108"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     alert-gpios:

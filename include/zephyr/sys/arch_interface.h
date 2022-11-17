@@ -459,7 +459,18 @@ static inline uint32_t arch_proc_id(void);
  * This will invoke z_sched_ipi() on other CPUs in the system.
  */
 void arch_sched_ipi(void);
+
 #endif /* CONFIG_SMP */
+
+/**
+ * @brief Returns the number of CPUs
+ *
+ * For most systems this will be the same as CONFIG_MP_MAX_NUM_CPUS,
+ * however some systems may determine this at runtime instead.
+ *
+ * @return the number of CPUs
+ */
+static inline unsigned int arch_num_cpus(void);
 
 /** @} */
 

@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 
 #include <zephyr/drivers/entropy.h>
+#include <zephyr/irq.h>
 
 #include "hal/swi.h"
 #include "hal/ccm.h"
@@ -459,7 +460,7 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 	uint32_t diff;
 
 	ticks_now = ticker_ticks_now_get();
-	diff = ticks_now - ticks_at_event;
+	diff = ticker_ticks_diff_get(ticks_now, ticks_at_event);
 	if (diff & BIT(HAL_TICKER_CNTR_MSBIT)) {
 		return 0;
 	}
@@ -472,10 +473,13 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 		 *    duration.
 		 * 3. Increase the preempt to start ticks for future events.
 		 */
-		return 1;
+		LL_ASSERT_MSG(false, "%s: Actual EVENT_OVERHEAD_START_US = %u",
+			      __func__, HAL_TICKER_TICKS_TO_US(diff));
+
+		return 1U;
 	}
 
-	return 0;
+	return 0U;
 }
 
 void lll_chan_set(uint32_t chan)

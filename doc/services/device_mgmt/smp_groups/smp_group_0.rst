@@ -410,12 +410,12 @@ System reset
 
 Performs reset of system. The device should issue response before resetting so
 that the SMP client could receive information that the command has been
-accepted. By default, this command is accepted in all conditions, however if the
-:kconfig:option:`CONFIG_OS_MGMT_RESET_HOOK` is enabled and an application
-registers a callback, the callback will be called when this command is issued
-and can be used to perform any necessary tidy operations prior to the module
-rebooting, or to reject the reset request outright altogether with an error
-response.
+accepted. By default, this command is accepted in all conditions, however if
+the :kconfig:option:`CONFIG_MCUMGR_GRP_OS_OS_RESET_HOOK` is enabled and an
+application registers a callback, the callback will be called when this command
+is issued and can be used to perform any necessary tidy operations prior to the
+module rebooting, or to reject the reset request outright altogether with an
+error response. For details on this functionality, see `ref:`mcumgr_callbacks`.
 
 System reset request
 ====================

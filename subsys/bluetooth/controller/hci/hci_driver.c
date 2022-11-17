@@ -105,8 +105,9 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 }
 
 
-isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
-				 const struct isoal_sdu_produced *valid_sdu)
+isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
+				 const struct isoal_emitted_sdu_frag *sdu_frag,
+				 const struct isoal_emitted_sdu      *sdu)
 {
 	struct bt_hci_iso_ts_data_hdr *data_hdr;
 	uint16_t packet_status_flag;
@@ -114,16 +115,17 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 	uint16_t handle_packed;
 	uint16_t slen_packed;
 	struct net_buf *buf;
+	uint16_t total_len;
 	uint16_t handle;
 	uint8_t  ts, pb;
 	uint16_t len;
 
-	buf = (struct net_buf *) valid_sdu->contents.dbuf;
+	buf = (struct net_buf *) sdu_frag->sdu.contents.dbuf;
 
 
 	if (buf) {
 #if defined(CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA)
-		if (valid_sdu->status != ISOAL_SDU_STATUS_VALID) {
+		if (sdu_frag->sdu.status != ISOAL_SDU_STATUS_VALID) {
 			/* unref buffer if invalid fragment */
 			net_buf_unref(buf);
 
@@ -131,9 +133,10 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA */
 
-		pb  = sink_ctx->sdu_production.sdu_state;
-		len = sink_ctx->sdu_production.sdu_written;
-		packet_status_flag = valid_sdu->status;
+		pb  = sdu_frag->sdu_state;
+		len = sdu_frag->sdu_frag_size;
+		total_len = sdu->total_sdu_size;
+		packet_status_flag = sdu->collated_status;
 
 		/* BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
 		 * 5.4.5 HCI ISO Data packets
@@ -147,6 +150,7 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 				net_buf_pull_mem(buf, len);
 			}
 			len = 0;
+			total_len = 0;
 		}
 
 		/*
@@ -169,10 +173,10 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 
 		if (ts) {
 			data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
-			slen_packed = bt_iso_pkt_len_pack(len, packet_status_flag);
+			slen_packed = bt_iso_pkt_len_pack(total_len, packet_status_flag);
 
-			data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
-			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) valid_sdu->seqn);
+			data_hdr->ts = sys_cpu_to_le32((uint32_t) sdu_frag->sdu.timestamp);
+			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) sdu_frag->sdu.seqn);
 			data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
 
 			len += BT_HCI_ISO_TS_DATA_HDR_SIZE;

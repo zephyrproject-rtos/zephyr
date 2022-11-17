@@ -6,15 +6,12 @@
 #
 
 config BT_CAP
-	bool
-	help
-	  Hidden Kconfig to enable cross-role CAP capabilities.
+	def_bool BT_CAP_ACCEPTOR || BT_CAP_INITIATOR
 
 config BT_CAP_ACCEPTOR
 	bool "Common Audio Profile Acceptor Role Support [EXPERIMENTAL]"
-	depends on BT_AUDIO_UNICAST_SERVER || (BT_AUDIO_BROADCAST_SINK && BT_BASS)
+	depends on BT_AUDIO_UNICAST_SERVER || (BT_AUDIO_BROADCAST_SINK && BT_BAP_SCAN_DELEGATOR)
 	select EXPERIMENTAL
-	select BT_CAP
 	help
 	  Enabling this will enable the CAP Acceptor role. This instantiates the
 	  common audio service (CAS).
@@ -29,9 +26,23 @@ config BT_CAP_ACCEPTOR_SET_MEMBER
 	  Enabling will take one of the allocated CSIS instances
 	  (BT_CSIS_MAX_INSTANCE_COUNT).
 
-config BT_DEBUG_CAP
+config BT_DEBUG_CAP_ACCEPTOR
 	bool "Common Audio Profile debug"
-	depends on BT_CAP
+	depends on BT_CAP_ACCEPTOR
 	help
 	  Use this option to enable CAP debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_CAP_INITIATOR
+	bool "Common Audio Profile Initiator Role Support [EXPERIMENTAL]"
+	depends on (BT_AUDIO_UNICAST_CLIENT && BT_CSIS_CLIENT) || BT_AUDIO_BROADCAST_SOURCE
+	select EXPERIMENTAL
+	help
+	  Enabling this will enable the CAP Initiator role.
+
+config BT_DEBUG_CAP_INITIATOR
+	bool "Common Audio Profile Initiator debug"
+	depends on BT_CAP_INITIATOR
+	help
+	  Use this option to enable CAP Initiator debug logs for the
 	  Bluetooth Audio functionality.

@@ -94,6 +94,16 @@ struct log_msg {
 	uint8_t data[];
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+BUILD_ASSERT(sizeof(struct log_msg) % Z_LOG_MSG2_ALIGNMENT == 0,
+	     "Log msg size must aligned");
+/**
+ * @endcond
+ */
+
+
 struct log_msg_generic_hdr {
 	LOG_MSG2_GENERIC_HDR;
 };
@@ -139,7 +149,9 @@ enum z_log_msg_mode {
 }
 
 #define Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) \
-	(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt))
+	(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt) | \
+	(IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? \
+	 CBPRINTF_PACKAGE_ADD_STRING_IDXS : 0))
 
 #ifdef CONFIG_LOG_USE_VLA
 #define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \

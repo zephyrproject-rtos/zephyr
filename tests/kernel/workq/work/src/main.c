@@ -894,11 +894,14 @@ ZTEST(work_1cpu, test_1cpu_drain_wait)
 	 */
 	ctx->submit_rc = INT_MAX;
 	k_timer_init(&ctx->timer, test_drain_wait_cb, NULL);
-	k_timer_start(&ctx->timer, K_TICKS(1), K_NO_WAIT);
+	k_timer_start(&ctx->timer, K_MSEC(10), K_NO_WAIT);
 
 	/* Wait to drain */
 	rc = k_work_queue_drain(&coophi_queue, false);
 	zassert_equal(rc, 1);
+
+	/* Wait until timer expires. */
+	(void)k_timer_status_sync(&ctx->timer);
 
 	/* Verify completion */
 	rc = k_sem_take(&sync_sem, K_NO_WAIT);
@@ -1308,8 +1311,11 @@ static bool try_queue_no_yield(struct k_work_q *wq)
 /* Verify that no-yield policy works */
 ZTEST(work_1cpu, test_1cpu_queue_no_yield)
 {
+	/* This test needs two slots available in the sem! */
+	k_sem_init(&sync_sem, 0, 2);
 	zassert_equal(try_queue_no_yield(&coophi_queue), true);
 	zassert_equal(try_queue_no_yield(&cooplo_queue), false);
+	k_sem_init(&sync_sem, 0, 1);
 }
 
 /* Basic functionality with the system work queue. */

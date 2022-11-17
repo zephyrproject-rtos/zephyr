@@ -435,6 +435,92 @@ static void iface_teardown(void *dummy)
 	net_if_down(iface4);
 }
 
+static void test_iface_init(struct net_if *iface, bool carrier, bool dormant)
+{
+	net_if_down(iface);
+
+	if (carrier) {
+		net_if_carrier_on(iface);
+	} else {
+		net_if_carrier_off(iface);
+	}
+
+	if (dormant) {
+		net_if_dormant_on(iface);
+	} else {
+		net_if_dormant_off(iface);
+	}
+
+	net_if_up(iface);
+}
+
+ZTEST(net_iface, test_oper_state)
+{
+	/* Carrier OFF, Dormant OFF - interface should remain down */
+	test_iface_init(iface1, false, false);
+	zassert_false(net_if_is_up(iface1), "Interface should be down");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_DOWN,
+		      "Wrong operational state");
+
+	/* Carrier ON transition - interface should go up */
+	net_if_carrier_on(iface1);
+	zassert_true(net_if_is_up(iface1), "Interface should be up");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_UP,
+		      "Wrong operational state");
+
+	/* Carrier ON, Dormant ON - interface should remain down */
+	test_iface_init(iface1, true, true);
+	zassert_false(net_if_is_up(iface1), "Interface should be down");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_DORMANT,
+		      "Wrong operational state");
+
+	/* Dormant OFF transition - interface should go up */
+	net_if_dormant_off(iface1);
+	zassert_true(net_if_is_up(iface1), "Interface should be up");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_UP,
+		      "Wrong operational state");
+
+	/* Carrier ON, Dormant OFF - interface should go up right away */
+	test_iface_init(iface1, true, false);
+	zassert_true(net_if_is_up(iface1), "Interface should be up");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_UP,
+		      "Wrong operational state");
+
+	/* Carrier OFF transition - interface should go down */
+	net_if_carrier_off(iface1);
+	zassert_false(net_if_is_up(iface1), "Interface should be down");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_DOWN,
+		      "Wrong operational state");
+
+	/* Carrier ON, Dormant OFF - interface should go up right away */
+	test_iface_init(iface1, true, false);
+	zassert_true(net_if_is_up(iface1), "Interface should be up");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_UP,
+		      "Wrong operational state");
+
+	/* Dormant ON transition - interface should go down */
+	net_if_dormant_on(iface1);
+	zassert_false(net_if_is_up(iface1), "Interface should be down");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_DORMANT,
+		      "Wrong operational state");
+
+	/* Carrier ON, Dormant OFF - interface should go up right away */
+	test_iface_init(iface1, true, false);
+	zassert_true(net_if_is_up(iface1), "Interface should be up");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_UP,
+		      "Wrong operational state");
+
+	/* Admin down transition - interface should go down */
+	net_if_down(iface1);
+	zassert_false(net_if_is_up(iface1), "Interface should be down");
+	zassert_equal(net_if_oper_state(iface1), NET_IF_OPER_DOWN,
+		      "Wrong operational state");
+
+	/* Bring the interface back up */
+	net_if_up(iface1);
+	zassert_true(net_if_is_up(iface1), "Interface should be up");
+}
+
 static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 {
 	static uint8_t data[] = { 't', 'e', 's', 't', '\0' };

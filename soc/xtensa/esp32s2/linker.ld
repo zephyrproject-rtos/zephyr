@@ -131,7 +131,7 @@ SECTIONS
    */
   SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
   {
-    _rodata_start = ABSOLUTE(.);
+    __rodata_region_start = ABSOLUTE(.);
 
     . = ALIGN(4);
     #include <snippets-rodata.ld>
@@ -162,7 +162,7 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    _rodata_end = ABSOLUTE(.);
+    __rodata_region_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
@@ -352,7 +352,7 @@ SECTIONS
 
   .dram0.data :
   {
-    _data_start = ABSOLUTE(.);
+    __data_start = ABSOLUTE(.);
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -402,7 +402,7 @@ SECTIONS
     #include <snippets-rwdata.ld>
     . = ALIGN(4);
     _end = ABSOLUTE(.);
-    _data_end = ABSOLUTE(.);
+    __data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
   .iram0.text_end (NOLOAD) :

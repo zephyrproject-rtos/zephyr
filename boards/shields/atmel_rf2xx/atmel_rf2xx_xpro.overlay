@@ -6,14 +6,14 @@
 
 / {
 	chosen {
-		zephyr,ieee802154 = &ieee802154;
+		zephyr,ieee802154 = &ieee802154_atmel_rf2xx_xpro;
 	};
 };
 
 &ext1_spi {
 	status = "okay";
 
-	ieee802154: rf2xx@0 {
+	ieee802154_atmel_rf2xx_xpro: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
 		spi-max-frequency = <6000000>;

@@ -19,6 +19,7 @@
 #include "soc_power.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(uart_npcx, CONFIG_UART_LOG_LEVEL);
 
 /* Driver config */
@@ -59,7 +60,7 @@ struct uart_npcx_data {
 #endif
 };
 
-#if defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
+#ifdef CONFIG_PM
 static void uart_npcx_pm_policy_state_lock_get(struct uart_npcx_data *data,
 					       enum uart_pm_policy_state_flag flag)
 {
@@ -75,7 +76,7 @@ static void uart_npcx_pm_policy_state_lock_put(struct uart_npcx_data *data,
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	}
 }
-#endif /* defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN) */
+#endif
 
 /* UART local functions */
 static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate, int src_clk)

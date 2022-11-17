@@ -22,6 +22,7 @@
 #include "lll/lll_vendor.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
+#include "lll_clock.h"
 
 #include "isoal.h"
 #include "ull_iso_types.h"
@@ -122,7 +123,7 @@ uint8_t ll_cis_reject(uint16_t handle, uint8_t reason)
 	struct ll_conn *acl_conn = ll_cis_get_acl_awaiting_reply(handle, &status);
 
 	if (acl_conn) {
-		/* Accept request */
+		/* Reject request */
 		ull_cp_cc_reject(acl_conn, reason);
 	}
 #endif
@@ -140,12 +141,35 @@ int ull_peripheral_iso_reset(void)
 	return 0;
 }
 
+/* Use this function to release CIS/CIG resources on an aborted CIS setup
+ * ie if CIS setup is 'cancelled' after call to ull_peripheral_iso_acquire()
+ * because of a rejection of the CIS request
+ */
+void ull_peripheral_iso_release(uint16_t cis_handle)
+{
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn_iso_group *cig;
+
+	cis = ll_conn_iso_stream_get(cis_handle);
+	LL_ASSERT(cis);
+
+	cig = cis->group;
+
+	ll_conn_iso_stream_release(cis);
+	cig->lll.num_cis--;
+
+	if (!cig->lll.num_cis) {
+		ll_conn_iso_group_release(cig);
+	}
+}
+
 uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 				   struct pdu_data_llctrl_cis_req *req,
 				   uint16_t *cis_handle)
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
+	uint32_t iso_interval_us;
 	uint16_t handle;
 
 	/* Get CIG by id */
@@ -160,10 +184,25 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 
 		memset(&cig->lll, 0, sizeof(cig->lll));
 
+		cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
+		iso_interval_us = cig->iso_interval * CONN_INT_UNIT_US;
+
 		cig->cig_id = req->cig_id;
 		cig->lll.handle = LLL_HANDLE_INVALID;
 		cig->lll.role = acl->lll.role;
 		cig->lll.resume_cis = LLL_HANDLE_INVALID;
+
+		/* Calculate CIG default maximum window widening. NOTE: This calculation
+		 * does not take into account that leading CIS with NSE>=3 must reduce
+		 * the maximum window widening to one sub-interval. This must be applied
+		 * in LLL (BT Core 5.3, Vol 6, Part B, section 4.2.4).
+		 */
+		cig->lll.window_widening_max_us = (iso_interval_us >> 1) -
+						  EVENT_IFS_US;
+		cig->lll.window_widening_periodic_us_frac =
+			ceiling_fraction(((lll_clock_ppm_local_get() +
+					 lll_clock_ppm_get(acl->periph.sca)) *
+					 EVENT_US_TO_US_FRAC(iso_interval_us)), USEC_PER_SEC);
 
 		ull_hdr_init(&cig->ull);
 		lll_hdr_init(&cig->lll, cig);
@@ -185,11 +224,16 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	/* Acquire new CIS */
 	cis = ll_conn_iso_stream_acquire();
 	if (cis == NULL) {
+		if (!cig->lll.num_cis) {
+			/* No CIS's in CIG, so this was just allocated
+			 * so release as we can't use it
+			 */
+			ll_conn_iso_group_release(cig);
+		}
 		/* No space for new CIS */
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
-	cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
 	/* Read 20-bit SDU intervals (mask away RFU bits) */
 	cig->c_sdu_interval = sys_get_le24(req->c_sdu_interval) & 0x0FFFFF;
 	cig->p_sdu_interval = sys_get_le24(req->p_sdu_interval) & 0x0FFFFF;
@@ -270,6 +314,10 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	return 0;
 }
 
+static void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
+					     uint32_t ticks_at_expire,
+					     uint32_t iso_interval_us_frac);
+
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
@@ -313,6 +361,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 			leading_event_count = MAX(leading_event_count,
 						cis->lll.event_count);
+
+			ull_iso_lll_event_prepare(cis->lll.handle, cis->lll.event_count);
 		}
 
 		/* Latch datapath validity entering event */
@@ -341,6 +391,21 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.param = &cig->lll;
 	mfy.param = &p;
 
+	if (cig->sca_update) {
+		/* CIG/ACL affilaition established */
+		uint32_t iso_interval_us_frac =
+			EVENT_US_TO_US_FRAC(cig->iso_interval * CONN_INT_UNIT_US);
+
+		cig->lll.window_widening_periodic_us_frac =
+			ceiling_fraction(((lll_clock_ppm_local_get() +
+					   lll_clock_ppm_get(cig->sca_update - 1)) *
+					  iso_interval_us_frac),
+					 1000000U);
+		iso_interval_us_frac -= cig->lll.window_widening_periodic_us_frac;
+
+		ull_peripheral_iso_update_ticker(cig, ticks_at_expire, iso_interval_us_frac);
+		cig->sca_update = 0;
+	}
 	/* Kick LLL prepare */
 	err = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
 			     0, &mfy);
@@ -357,6 +422,35 @@ static void ticker_op_cb(uint32_t status, void *param)
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
+static void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
+					     uint32_t ticks_at_expire,
+					     uint32_t iso_interval_us_frac)
+{
+
+	/* stop/start with new updated timings */
+	uint8_t ticker_id_cig = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
+	uint32_t ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				    ticker_id_cig, ticker_op_cb, NULL);
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		  (ticker_status == TICKER_STATUS_BUSY));
+
+	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
+				     TICKER_USER_ID_ULL_HIGH,
+				     ticker_id_cig,
+				     ticks_at_expire,
+				     EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac),
+				     EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac),
+				     EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac),
+				     TICKER_NULL_LAZY,
+				     0,
+				     ticker_cb, cig,
+				     ticker_op_cb, NULL);
+
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		  (ticker_status == TICKER_STATUS_BUSY));
+
+}
+
 void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 			      uint16_t cis_handle)
 {
@@ -364,8 +458,8 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 	struct ll_conn_iso_stream *cis;
 	uint32_t acl_to_cig_ref_point;
 	uint32_t cis_offs_to_cig_ref;
+	uint32_t iso_interval_us_frac;
 	uint32_t ready_delay_us;
-	uint32_t ticks_interval;
 	uint32_t ticker_status;
 	int32_t cig_offset_us;
 	uint8_t ticker_id;
@@ -387,10 +481,14 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 		return;
 	}
 
-	ticker_id = TICKER_ID_CONN_ISO_BASE +
-		    ll_conn_iso_group_handle_get(cig);
-	ticks_interval = HAL_TICKER_US_TO_TICKS(cig->iso_interval *
-						CONN_INT_UNIT_US);
+	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
+
+	/* Calculate interval in fractional microseconds for highest precision when
+	 * accumulating the window widening window size. Ticker interval is set lopsided,
+	 * with natural drift towards earlier timeout.
+	 */
+	iso_interval_us_frac = EVENT_US_TO_US_FRAC(cig->iso_interval * CONN_INT_UNIT_US) -
+		cig->lll.window_widening_periodic_us_frac;
 
 	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
 	 * (cis->offset) by the difference between CIG- and CIS sync delays.
@@ -406,7 +504,6 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 	/* Calculate initial ticker offset - we're one ACL interval early */
 	cig_offset_us  = acl_to_cig_ref_point;
 	cig_offset_us += (acl->lll.interval * CONN_INT_UNIT_US);
-	cig_offset_us -= EVENT_OVERHEAD_START_US;
 	cig_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	cig_offset_us -= EVENT_JITTER_US;
 	cig_offset_us -= ready_delay_us;
@@ -430,8 +527,8 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 				     ticker_id,
 				     ticks_at_expire,
 				     HAL_TICKER_US_TO_TICKS(cig_offset_us),
-				     ticks_interval,
-				     HAL_TICKER_REMAINDER(ticks_interval),
+				     EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac),
+				     EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac),
 				     TICKER_NULL_LAZY,
 				     0,
 				     ticker_cb, cig,
@@ -441,4 +538,34 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
 		  (ticker_status == TICKER_STATUS_BUSY));
 
 	cig->started = 1;
+}
+
+void ull_peripheral_iso_update_peer_sca(struct ll_conn *acl)
+{
+	uint8_t cig_handle;
+
+	/* Find CIG associated with ACL conn */
+	for (cig_handle = 0; cig_handle < CONFIG_BT_CTLR_CONN_ISO_GROUPS; cig_handle++) {
+		/* Go through all ACL affiliated CIGs and update peer SCA */
+		struct ll_conn_iso_stream *cis;
+		struct ll_conn_iso_group *cig;
+
+		cig = ll_conn_iso_group_get(cig_handle);
+		if (!cig || !cig->lll.num_cis) {
+			continue;
+		}
+		cis = ll_conn_iso_stream_get_by_group(cig, NULL);
+		LL_ASSERT(cis);
+
+		uint16_t cis_handle = cis->lll.handle;
+
+		cis = ll_iso_stream_connected_get(cis_handle);
+		if (!cis) {
+			continue;
+		}
+
+		if (cis->lll.acl_handle == acl->lll.handle) {
+			cig->sca_update = acl->periph.sca + 1;
+		}
+	}
 }

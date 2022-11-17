@@ -1065,10 +1065,10 @@ static void carrier_on_off(struct k_work *work)
 
 	if (eth_carrier_up) {
 		ethernet_mgmt_raise_carrier_on_event(ctx->iface);
-		net_if_up(ctx->iface);
+		net_if_carrier_on(ctx->iface);
 	} else {
 		ethernet_mgmt_raise_carrier_off_event(ctx->iface);
-		net_if_carrier_down(ctx->iface);
+		net_if_carrier_off(ctx->iface);
 	}
 }
 

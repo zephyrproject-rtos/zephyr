@@ -112,7 +112,7 @@ resetwait:
 	/* Mask all exceptions */
 	msr	DAIFSet, #0xf
 
-#if CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 
 	ldr	x0, =arm64_cpu_boot_params
 	get_cpu_id x1

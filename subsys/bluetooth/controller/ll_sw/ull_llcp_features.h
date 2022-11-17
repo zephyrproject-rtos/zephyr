@@ -120,7 +120,16 @@ static inline bool feature_phy_coded(struct ll_conn *conn)
 static inline bool feature_cte_req(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_DF) && defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
-	return conn->llcp.fex.features_used & LL_FEAT_BIT_CONNECTION_CTE_REQ;
+	return (conn->llcp.fex.features_used & LL_FEAT_BIT_CONNECTION_CTE_REQ) != 0;
+#else
+	return 0;
+#endif
+}
+
+static inline bool feature_sca(struct ll_conn *conn)
+{
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	return (conn->llcp.fex.features_used & LL_FEAT_BIT_SCA_UPDATE) != 0;
 #else
 	return 0;
 #endif
@@ -162,7 +171,6 @@ static inline bool feature_peer_smi_tx(struct ll_conn *conn)
  * tone_ext
  * per_adv_sync_tx
  * per_adv_sync_rx
- * sleep_upd
  * rpk_valid
  * iso_central
  * iso_periph

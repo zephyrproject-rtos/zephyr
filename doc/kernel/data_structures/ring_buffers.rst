@@ -154,7 +154,7 @@ its contents are copied to the data buffer, along with its associated metadata
 values (which occupy one additional 32-bit word). If the ring buffer has
 insufficient space to hold the new data item the enqueue operation fails.
 
-A data items is **dequeued** (:c:func:`ring_buf_item_get`) from a ring
+A data item is **dequeued** (:c:func:`ring_buf_item_get`) from a ring
 buffer by removing the oldest enqueued item. The contents of the dequeued data
 item, as well as its two metadata values, are copied to areas supplied by the
 retriever. If the ring buffer is empty, or if the data array supplied by the
@@ -200,7 +200,7 @@ Defining a Ring Buffer
 
 A ring buffer is defined using a variable of type :c:type:`ring_buf`.
 It must then be initialized by calling :c:func:`ring_buf_init` or
-c:func:`ring_buf_item_init`.
+:c:func:`ring_buf_item_init`.
 
 The following code defines and initializes an empty **data item mode** ring
 buffer (which is part of a larger data structure). The ring buffer's data buffer

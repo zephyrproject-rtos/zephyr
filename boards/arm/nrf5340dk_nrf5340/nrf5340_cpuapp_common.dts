@@ -14,6 +14,8 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -259,6 +261,10 @@ arduino_spi: &spi4 {
 			reg = <0x000fa000 0x00006000>;
 		};
 	};
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {

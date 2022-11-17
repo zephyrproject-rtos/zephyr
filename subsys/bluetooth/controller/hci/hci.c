@@ -92,6 +92,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_hci
 #include "common/log.h"
+#include "common/bt_str.h"
 #include "hal/debug.h"
 
 #define STR_NULL_TERMINATOR 0x00
@@ -2417,6 +2418,20 @@ static void le_reject_cis(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+static void le_req_peer_sca(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_req_peer_sca *cmd = (void *)buf->data;
+	uint16_t handle;
+	uint8_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = ll_req_peer_sca(handle);
+
+	*evt = cmd_status(status);
+}
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 {
@@ -2466,7 +2481,7 @@ static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 
 	status = ll_conn_update(handle, 0, 0, conn_interval_min,
 				conn_interval_max, conn_latency,
-				supervision_timeout);
+				supervision_timeout, NULL);
 
 	*evt = cmd_status(status);
 }
@@ -2490,7 +2505,7 @@ static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
 	timeout = sys_le16_to_cpu(cmd->timeout);
 
 	status = ll_conn_update(handle, 2, 0, interval_min, interval_max,
-				latency, timeout);
+				latency, timeout, NULL);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
@@ -2506,7 +2521,7 @@ static void le_conn_param_req_neg_reply(struct net_buf *buf,
 	uint8_t status;
 
 	handle = sys_le16_to_cpu(cmd->handle);
-	status = ll_conn_update(handle, 2, cmd->reason, 0, 0, 0, 0);
+	status = ll_conn_update(handle, 2, cmd->reason, 0, 0, 0, 0, NULL);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
@@ -4096,14 +4111,6 @@ static void le_cis_request(struct pdu_data *pdu_data,
 	struct node_rx_conn_iso_req *req;
 	void *node;
 
-	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
-	    !(le_event_mask & BT_EVT_MASK_LE_CIS_REQ)) {
-		return;
-	}
-
-	sep = meta_evt(buf, BT_HCI_EVT_LE_CIS_REQ, sizeof(*sep));
-	sep->acl_handle = sys_cpu_to_le16(node_rx->hdr.handle);
-
 	/* Check for pdu field being aligned before accessing CIS established
 	 * event.
 	 */
@@ -4111,6 +4118,15 @@ static void le_cis_request(struct pdu_data *pdu_data,
 	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_conn_iso_estab));
 
 	req = node;
+	if (!(ll_feat_get() & BIT64(BT_LE_FEAT_BIT_ISO_CHANNELS)) ||
+	    !(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CIS_REQ)) {
+		ll_cis_reject(req->cis_handle, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE);
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CIS_REQ, sizeof(*sep));
+	sep->acl_handle = sys_cpu_to_le16(node_rx->hdr.handle);
 	sep->cis_handle = sys_cpu_to_le16(req->cis_handle);
 	sep->cig_id = req->cig_id;
 	sep->cis_id = req->cis_id;
@@ -4345,6 +4361,12 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case BT_OCF(BT_HCI_OP_LE_REQ_PEER_SC):
+		le_req_peer_sca(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 	case BT_OCF(BT_HCI_OP_LE_SETUP_ISO_PATH):
@@ -5676,7 +5698,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		sdu_frag_tx.target_event = cis->lll.event_count +
 			(cis->lll.tx.flush_timeout > 1 ? 0 : 1);
 
-		sdu_frag_tx.cig_ref_point = cig->cig_ref_point;
+		sdu_frag_tx.grp_ref_point = cig->cig_ref_point;
 
 		/* Get controller's input data path for CIS */
 		dp_in = hdr->datapath_in;
@@ -8012,6 +8034,31 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, uint16_t handle,
 	sep->rx_phy = find_lsb_set(pu->rx);
 }
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+static void le_req_peer_sca_complete(struct pdu_data *pdu, uint16_t handle,
+				struct net_buf *buf)
+{
+	struct bt_hci_evt_le_req_peer_sca_complete *sep;
+	struct node_rx_sca *scau;
+
+	scau = (void *)pdu;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_REQ_PEER_SCA_COMPLETE)) {
+		BT_WARN("handle: 0x%04x, status: %x, sca: %x.", handle,
+			scau->status,
+			scau->sca);
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_REQ_PEER_SCA_COMPLETE, sizeof(*sep));
+
+	sep->status = scau->status;
+	sep->handle = sys_cpu_to_le16(handle);
+	sep->sca = scau->sca;
+}
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -8178,6 +8225,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		le_cis_established(pdu_data, node_rx, buf);
 		return;
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE:
+		le_req_peer_sca_complete(pdu_data, handle, buf);
+		return;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
@@ -8348,7 +8401,7 @@ static void le_conn_param_req(struct pdu_data *pdu_data, uint16_t handle,
 	    !(le_event_mask & BT_EVT_MASK_LE_CONN_PARAM_REQ)) {
 		/* event masked, reject the conn param req */
 		ll_conn_update(handle, 2, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, 0,
-			       0, 0, 0);
+			       0, 0, 0, NULL);
 
 		return;
 	}
@@ -8634,6 +8687,10 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 		case NODE_RX_TYPE_CIS_REQUEST:
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+		case NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE:
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_CIS_ESTABLISHED:

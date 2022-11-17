@@ -7,7 +7,7 @@ config BOARD
 	default "acrn"
 	depends on BOARD_ACRN
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 2
 
 endif

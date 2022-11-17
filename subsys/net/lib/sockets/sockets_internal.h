@@ -8,6 +8,8 @@
 #define _SOCKETS_INTERNAL_H_
 
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/socket.h>
 
 #define SOCK_EOF 1
 #define SOCK_NONBLOCK 2

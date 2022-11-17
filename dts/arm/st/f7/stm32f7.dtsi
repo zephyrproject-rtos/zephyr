@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 #include <freq.h>
 
@@ -697,8 +698,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x1FF07A2C>;
-		ts-cal2-addr = <0x1FF07A2E>;
+		ts-cal1-addr = <0x1FF0F44C>;
+		ts-cal2-addr = <0x1FF0F44E>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3300>;

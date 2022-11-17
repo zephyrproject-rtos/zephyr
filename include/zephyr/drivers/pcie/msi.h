@@ -39,7 +39,7 @@ struct msix_vector {
 	uint32_t msg_up_addr;
 	uint32_t msg_data;
 	uint32_t vector_ctrl;
-};
+} __packed;
 
 struct msi_vector {
 	pcie_bdf_t bdf;

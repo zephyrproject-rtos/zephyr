@@ -250,7 +250,7 @@ SECTIONS {
 
   .rodata : ALIGN(4096)
   {
-    _rodata_start = .;
+    __rodata_region_start = .;
     *(.rodata)
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
@@ -285,7 +285,7 @@ SECTIONS {
     LONG(_bss_start)
     LONG(_bss_end)
     _bss_table_end = .;
-    _rodata_end = .;
+    __rodata_region_end = .;
   } >ram
 
   .module_init : {
@@ -309,7 +309,7 @@ SECTIONS {
   } >ucram
 
   .data SEGSTART_UNCACHED : {
-    _data_start = .;
+    __data_start = .;
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -326,7 +326,7 @@ SECTIONS {
     *(.trace_ctx)
     _trace_ctx_end = ABSOLUTE(.);
     *(.gna_model)
-    _data_end = .;
+    __data_end = .;
   } >ucram
 
   .lit4 SEGSTART_CACHED : {
@@ -452,6 +452,8 @@ SECTIONS {
   } >noload
 
 #include <zephyr/linker/debug-sections.ld>
+
+   /DISCARD/ : { *(.note.GNU-stack) }
 
   .xtensa.info 0 : { *(.xtensa.info) }
   .xt.insn 0 : {

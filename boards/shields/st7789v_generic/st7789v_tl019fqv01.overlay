@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,display = &st7789v;
+		zephyr,display = &st7789v_st7789v_tl019fqv01;
 	};
 };
 
@@ -14,7 +14,7 @@
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 
-	st7789v: st7789v@0 {
+	st7789v_st7789v_tl019fqv01: st7789v@0 {
 		compatible = "sitronix,st7789v";
 		spi-max-frequency = <20000000>;
 		reg = <0>;

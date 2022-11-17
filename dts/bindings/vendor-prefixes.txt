@@ -310,6 +310,7 @@ kobol	Kobol Innovations Pte. Ltd.
 koe	Kaohsiung Opto-Electronics Inc.
 kontron	Kontron S&T AG
 kosagi	Sutajio Ko-Usagi PTE Ltd.
+kvaser	Kvaser
 kvg	Kverneland Group
 kyo	Kyocera Corporation
 lacie	LaCie
@@ -565,6 +566,7 @@ solidrun	SolidRun
 solomon	Solomon Systech Limited
 sony	Sony Corporation
 spansion	Spansion Inc.
+sparkfun	SparkFun Electronics
 sprd	Spreadtrum Communications Inc.
 sst	Silicon Storage Technology, Inc.
 sstar	Xiamen Xingchen(SigmaStar) Technology Co., Ltd. (formerly part of MStar Semiconductor, Inc.)

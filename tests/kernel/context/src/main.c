@@ -850,17 +850,13 @@ static void busy_wait_thread(void *mseconds, void *arg2, void *arg3)
 
 	usecs = POINTER_TO_INT(mseconds) * 1000;
 
-	TC_PRINT("Thread busy waiting for %d usecs\n", usecs);
 	k_busy_wait(usecs);
-	TC_PRINT("Thread busy waiting completed\n");
 
 	/* FIXME: Broken on Nios II, see #22956 */
 #ifndef CONFIG_NIOS2
 	int key = arch_irq_lock();
 
-	TC_PRINT("Thread busy waiting for %d usecs (irqs locked)\n", usecs);
 	k_busy_wait(usecs);
-	TC_PRINT("Thread busy waiting completed (irqs locked)\n");
 	arch_irq_unlock(key);
 #endif
 
@@ -889,11 +885,9 @@ static void thread_sleep(void *delta, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 
-	TC_PRINT(" thread sleeping for %d milliseconds\n", timeout);
 	timestamp = k_uptime_get();
 	k_msleep(timeout);
 	timestamp = k_uptime_get() - timestamp;
-	TC_PRINT(" thread back from sleep\n");
 
 	int slop = MAX(k_ticks_to_ms_floor64(2), 1);
 

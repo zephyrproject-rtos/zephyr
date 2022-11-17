@@ -19,7 +19,7 @@
  * IN THE SOFTWARE.
  */
 
-#include <zephyr/net/http_parser.h>
+#include <zephyr/net/http/parser.h>
 #include <string.h>
 #include <errno.h>
 

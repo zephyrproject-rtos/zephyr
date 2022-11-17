@@ -8,7 +8,7 @@ set(ARMFVP_BIN_NAME FVP_BaseR_AEMv8R)
 set(ARMFVP_FLAGS
   -C cluster0.has_aarch64=0
   -C cluster0.VMSA_supported=0
-  -C cluster0.NUM_CORES=${CONFIG_MP_NUM_CPUS}
+  -C cluster0.NUM_CORES=${CONFIG_MP_MAX_NUM_CPUS}
   -C cluster0.gicv3.cpuintf-mmap-access-level=2
   -C cluster0.gicv3.SRE-enable-action-on-mmap=2
   -C cluster0.gicv3.SRE-EL2-enable-RAO=1

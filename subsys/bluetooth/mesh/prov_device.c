@@ -20,6 +20,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV_DEVICE)
 #define LOG_MODULE_NAME bt_mesh_prov_device
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "host/ecc.h"
 #include "host/testing.h"
@@ -159,10 +160,10 @@ static void prov_start(const uint8_t *data)
 	}
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, OOB_STATIC_KEY)) {
-		memcpy(bt_mesh_prov_link.auth + 16 - bt_mesh_prov->static_val_len,
-		       bt_mesh_prov->static_val, bt_mesh_prov->static_val_len);
-		(void)memset(bt_mesh_prov_link.auth, 0,
-			     sizeof(bt_mesh_prov_link.auth) - bt_mesh_prov->static_val_len);
+		memcpy(bt_mesh_prov_link.auth, bt_mesh_prov->static_val,
+				bt_mesh_prov->static_val_len);
+		memset(bt_mesh_prov_link.auth + bt_mesh_prov->static_val_len, 0,
+				sizeof(bt_mesh_prov_link.auth) - bt_mesh_prov->static_val_len);
 	}
 }
 
@@ -611,12 +612,12 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
 	    (bearers & BT_MESH_PROV_ADV)) {
-		pb_adv.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
+		bt_mesh_pb_adv.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
 	    (bearers & BT_MESH_PROV_GATT)) {
-		pb_gatt.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
+		bt_mesh_pb_gatt.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
 	}
 
 	bt_mesh_prov_link.role = &role_device;

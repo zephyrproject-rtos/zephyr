@@ -16,7 +16,6 @@
 #define _SOC__H_
 
 #ifndef _ASMLANGUAGE
-#include <zephyr/sys/util.h>
 #include <fsl_common.h>
 
 

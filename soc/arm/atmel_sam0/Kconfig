@@ -13,9 +13,11 @@ config SOC_FAMILY
 	string
 	default "atmel_sam0"
 
+source "soc/arm/atmel_sam0/common/Kconfig.samc2x"
 source "soc/arm/atmel_sam0/common/Kconfig.saml2x"
 source "soc/arm/atmel_sam0/common/Kconfig.samd2x"
 source "soc/arm/atmel_sam0/common/Kconfig.samd5x"
 source "soc/arm/atmel_sam0/*/Kconfig.soc"
+source "soc/arm/atmel_sam0/Kconfig.soc.revisions"
 
 endif

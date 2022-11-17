@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&twai {
+        status = "okay";
+};

@@ -17,6 +17,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
 #define LOG_MODULE_NAME bt_mesh_pb_gatt_srv
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "mesh.h"
 #include "adv.h"
@@ -98,8 +99,8 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 	struct bt_conn_info info;
 
 	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_PERIPHERAL ||
-	    !service_registered || bt_mesh_is_provisioned()) {
+	if (info.role != BT_CONN_ROLE_PERIPHERAL || !service_registered ||
+	    bt_mesh_is_provisioned() || info.id != BT_ID_DEFAULT) {
 		return;
 	}
 
@@ -113,8 +114,8 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	struct bt_conn_info info;
 
 	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_PERIPHERAL ||
-	    !service_registered) {
+	if (info.role != BT_CONN_ROLE_PERIPHERAL || !service_registered ||
+	    info.id != BT_ID_DEFAULT) {
 		return;
 	}
 
@@ -269,7 +270,8 @@ int bt_mesh_pb_gatt_srv_adv_start(void)
 {
 	BT_DBG("");
 
-	if (!service_registered || bt_mesh_is_provisioned()) {
+	if (!service_registered || bt_mesh_is_provisioned() ||
+	    bt_mesh_proxy_conn_count_get() == CONFIG_BT_MAX_CONN) {
 		return -ENOTSUP;
 	}
 

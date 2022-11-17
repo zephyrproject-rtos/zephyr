@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/fff.h>
-#include <bluetooth/addr.h>
+#include <zephyr/bluetooth/addr.h>
 #include <host/conn_internal.h>
 
 typedef void (*bt_conn_foreach_cb) (struct bt_conn *conn, void *data);

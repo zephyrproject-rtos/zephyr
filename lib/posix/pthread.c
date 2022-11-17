@@ -12,12 +12,14 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/slist.h>
 
+#include "posix_internal.h"
+
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)
 
 #define LOWEST_POSIX_THREAD_PRIORITY 1
 
-PTHREAD_MUTEX_DEFINE(pthread_key_lock);
+K_MUTEX_DEFINE(pthread_key_lock);
 
 static const pthread_attr_t init_pthread_attrs = {
 	.priority = LOWEST_POSIX_THREAD_PRIORITY,
@@ -35,7 +37,23 @@ static const pthread_attr_t init_pthread_attrs = {
 };
 
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
-PTHREAD_MUTEX_DEFINE(pthread_pool_lock);
+static struct k_spinlock pthread_pool_lock;
+
+pthread_t pthread_self(void)
+{
+	return (struct posix_thread *)
+		CONTAINER_OF(k_current_get(), struct posix_thread, thread)
+		- posix_thread_pool;
+}
+
+struct posix_thread *to_posix_thread(pthread_t pthread)
+{
+	if (pthread >= CONFIG_MAX_PTHREAD_COUNT) {
+		return NULL;
+	}
+
+	return &posix_thread_pool[pthread];
+}
 
 static bool is_posix_prio_valid(uint32_t priority, int policy)
 {
@@ -131,8 +149,11 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		   void *(*threadroutine)(void *), void *arg)
 {
+	int rv;
 	int32_t prio;
+	k_spinlock_key_t key;
 	uint32_t pthread_num;
+	k_spinlock_key_t cancel_key;
 	pthread_condattr_t cond_attr;
 	struct posix_thread *thread;
 
@@ -146,7 +167,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		return EINVAL;
 	}
 
-	pthread_mutex_lock(&pthread_pool_lock);
+	key = k_spin_lock(&pthread_pool_lock);
 	for (pthread_num = 0;
 	    pthread_num < CONFIG_MAX_PTHREAD_COUNT; pthread_num++) {
 		thread = &posix_thread_pool[pthread_num];
@@ -155,26 +176,26 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 			break;
 		}
 	}
-	pthread_mutex_unlock(&pthread_pool_lock);
+	k_spin_unlock(&pthread_pool_lock, key);
 
 	if (pthread_num >= CONFIG_MAX_PTHREAD_COUNT) {
 		return EAGAIN;
 	}
 
+	rv = pthread_mutex_init(&thread->state_lock, NULL);
+	if (rv != 0) {
+		key = k_spin_lock(&pthread_pool_lock);
+		thread->state = PTHREAD_EXITED;
+		k_spin_unlock(&pthread_pool_lock, key);
+		return rv;
+	}
+
 	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
 
-	thread = &posix_thread_pool[pthread_num];
-	/*
-	 * Ignore return value, as we know that Zephyr implementation
-	 * cannot fail.
-	 */
-	(void)pthread_mutex_init(&thread->state_lock, NULL);
-	(void)pthread_mutex_init(&thread->cancel_lock, NULL);
-
-	pthread_mutex_lock(&thread->cancel_lock);
+	cancel_key = k_spin_lock(&thread->cancel_lock);
 	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
 	thread->cancel_pending = 0;
-	pthread_mutex_unlock(&thread->cancel_lock);
+	k_spin_unlock(&thread->cancel_lock, cancel_key);
 
 	pthread_mutex_lock(&thread->state_lock);
 	thread->state = attr->detachstate;
@@ -183,14 +204,10 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	pthread_cond_init(&thread->state_cond, &cond_attr);
 	sys_slist_init(&thread->key_list);
 
-	*newthread = (pthread_t) k_thread_create(&thread->thread, attr->stack,
-						 attr->stacksize,
-						 (k_thread_entry_t)
-						 zephyr_thread_wrapper,
-						 (void *)arg, NULL,
-						 threadroutine, prio,
-						 (~K_ESSENTIAL & attr->flags),
-						 K_MSEC(attr->delayedstart));
+	*newthread = pthread_num;
+	k_thread_create(&thread->thread, attr->stack, attr->stacksize,
+			(k_thread_entry_t)zephyr_thread_wrapper, (void *)arg, NULL, threadroutine,
+			prio, (~K_ESSENTIAL & attr->flags), K_MSEC(attr->delayedstart));
 	return 0;
 }
 
@@ -202,20 +219,22 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
  */
 int pthread_setcancelstate(int state, int *oldstate)
 {
-	struct posix_thread *pthread = (struct posix_thread *) pthread_self();
+	bool cancel_pending;
+	k_spinlock_key_t cancel_key;
+	struct posix_thread *pthread = to_posix_thread(pthread_self());
 
 	if (state != PTHREAD_CANCEL_ENABLE &&
 	    state != PTHREAD_CANCEL_DISABLE) {
 		return EINVAL;
 	}
 
+	cancel_key = k_spin_lock(&pthread->cancel_lock);
 	*oldstate = pthread->cancel_state;
-
-	pthread_mutex_lock(&pthread->cancel_lock);
 	pthread->cancel_state = state;
-	pthread_mutex_unlock(&pthread->cancel_lock);
+	cancel_pending = pthread->cancel_pending;
+	k_spin_unlock(&pthread->cancel_lock, cancel_key);
 
-	if (state == PTHREAD_CANCEL_ENABLE && pthread->cancel_pending) {
+	if (state == PTHREAD_CANCEL_ENABLE && cancel_pending) {
 		pthread_exit((void *)PTHREAD_CANCELED);
 	}
 
@@ -229,17 +248,18 @@ int pthread_setcancelstate(int state, int *oldstate)
  */
 int pthread_cancel(pthread_t pthread)
 {
-	struct posix_thread *thread = (struct posix_thread *) pthread;
+	struct posix_thread *thread = to_posix_thread(pthread);
 	int cancel_state;
+	k_spinlock_key_t cancel_key;
 
 	if ((thread == NULL) || (thread->state == PTHREAD_TERMINATED)) {
 		return ESRCH;
 	}
 
-	pthread_mutex_lock(&thread->cancel_lock);
+	cancel_key = k_spin_lock(&thread->cancel_lock);
 	thread->cancel_pending = 1;
 	cancel_state = thread->cancel_state;
-	pthread_mutex_unlock(&thread->cancel_lock);
+	k_spin_unlock(&thread->cancel_lock, cancel_key);
 
 	if (cancel_state == PTHREAD_CANCEL_ENABLE) {
 		pthread_mutex_lock(&thread->state_lock);
@@ -252,7 +272,7 @@ int pthread_cancel(pthread_t pthread)
 		}
 		pthread_mutex_unlock(&thread->state_lock);
 
-		k_thread_abort((k_tid_t) thread);
+		k_thread_abort(&thread->thread);
 	}
 
 	return 0;
@@ -266,7 +286,7 @@ int pthread_cancel(pthread_t pthread)
 int pthread_setschedparam(pthread_t pthread, int policy,
 			  const struct sched_param *param)
 {
-	k_tid_t thread = (k_tid_t)pthread;
+	struct posix_thread *thread = to_posix_thread(pthread);
 	int new_prio;
 
 	if (thread == NULL) {
@@ -283,7 +303,7 @@ int pthread_setschedparam(pthread_t pthread, int policy,
 
 	new_prio = posix_to_zephyr_priority(param->sched_priority, policy);
 
-	k_thread_priority_set(thread, new_prio);
+	k_thread_priority_set(&thread->thread, new_prio);
 	return 0;
 }
 
@@ -312,14 +332,14 @@ int pthread_attr_init(pthread_attr_t *attr)
 int pthread_getschedparam(pthread_t pthread, int *policy,
 			  struct sched_param *param)
 {
-	struct posix_thread *thread = (struct posix_thread *) pthread;
+	struct posix_thread *thread = to_posix_thread(pthread);
 	uint32_t priority;
 
 	if ((thread == NULL) || (thread->state == PTHREAD_TERMINATED)) {
 		return ESRCH;
 	}
 
-	priority = k_thread_priority_get((k_tid_t) thread);
+	priority = k_thread_priority_get(&thread->thread);
 
 	param->sched_priority = zephyr_to_posix_priority(priority, policy);
 	return 0;
@@ -332,17 +352,14 @@ int pthread_getschedparam(pthread_t pthread, int *policy,
  */
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
-	pthread_mutex_lock(&pthread_key_lock);
+	k_mutex_lock(&pthread_key_lock, K_FOREVER);
 
-	if (*once != PTHREAD_ONCE_INIT) {
-		pthread_mutex_unlock(&pthread_key_lock);
-		return 0;
+	if (*once == PTHREAD_ONCE_INIT) {
+		init_func();
+		*once = 0;
 	}
 
-	init_func();
-	*once = 0;
-
-	pthread_mutex_unlock(&pthread_key_lock);
+	k_mutex_unlock(&pthread_key_lock);
 
 	return 0;
 }
@@ -354,22 +371,22 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
  */
 void pthread_exit(void *retval)
 {
-	struct posix_thread *self = (struct posix_thread *)pthread_self();
+	k_spinlock_key_t cancel_key;
+	struct posix_thread *self = to_posix_thread(pthread_self());
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
 	sys_snode_t *node_l;
 
 	/* Make a thread as cancelable before exiting */
-	pthread_mutex_lock(&self->cancel_lock);
+	cancel_key = k_spin_lock(&self->cancel_lock);
 	if (self->cancel_state == PTHREAD_CANCEL_DISABLE) {
 		self->cancel_state = PTHREAD_CANCEL_ENABLE;
 	}
 
-	pthread_mutex_unlock(&self->cancel_lock);
+	k_spin_unlock(&self->cancel_lock, cancel_key);
 
 	pthread_mutex_lock(&self->state_lock);
 	if (self->state == PTHREAD_JOINABLE) {
-		self->retval = retval;
 		self->state = PTHREAD_EXITED;
 		self->retval = retval;
 		pthread_cond_broadcast(&self->state_cond);
@@ -388,6 +405,8 @@ void pthread_exit(void *retval)
 	}
 
 	pthread_mutex_unlock(&self->state_lock);
+	pthread_mutex_destroy(&self->state_lock);
+
 	k_thread_abort((k_tid_t)self);
 }
 
@@ -398,15 +417,15 @@ void pthread_exit(void *retval)
  */
 int pthread_join(pthread_t thread, void **status)
 {
-	struct posix_thread *pthread = (struct posix_thread *) thread;
+	struct posix_thread *pthread = to_posix_thread(thread);
 	int ret = 0;
+
+	if (thread == pthread_self()) {
+		return EDEADLK;
+	}
 
 	if (pthread == NULL) {
 		return ESRCH;
-	}
-
-	if (pthread == pthread_self()) {
-		return EDEADLK;
 	}
 
 	pthread_mutex_lock(&pthread->state_lock);
@@ -426,6 +445,10 @@ int pthread_join(pthread_t thread, void **status)
 	}
 
 	pthread_mutex_unlock(&pthread->state_lock);
+	if (pthread->state == PTHREAD_EXITED) {
+		pthread_mutex_destroy(&pthread->state_lock);
+	}
+
 	return ret;
 }
 
@@ -436,7 +459,7 @@ int pthread_join(pthread_t thread, void **status)
  */
 int pthread_detach(pthread_t thread)
 {
-	struct posix_thread *pthread = (struct posix_thread *) thread;
+	struct posix_thread *pthread = to_posix_thread(thread);
 	int ret = 0;
 
 	if (pthread == NULL) {
@@ -622,11 +645,13 @@ int pthread_attr_destroy(pthread_attr_t *attr)
 int pthread_setname_np(pthread_t thread, const char *name)
 {
 #ifdef CONFIG_THREAD_NAME
-	k_tid_t kthread = (k_tid_t)thread;
+	k_tid_t kthread;
 
-	if (kthread == NULL) {
+	if (thread >= CONFIG_MAX_PTHREAD_COUNT) {
 		return ESRCH;
 	}
+
+	kthread = &posix_thread_pool[thread].thread;
 
 	if (name == NULL) {
 		return EINVAL;
@@ -643,9 +668,9 @@ int pthread_setname_np(pthread_t thread, const char *name)
 int pthread_getname_np(pthread_t thread, char *name, size_t len)
 {
 #ifdef CONFIG_THREAD_NAME
-	k_tid_t kthread = (k_tid_t)thread;
+	k_tid_t kthread;
 
-	if (kthread == NULL) {
+	if (thread >= CONFIG_MAX_PTHREAD_COUNT) {
 		return ESRCH;
 	}
 
@@ -654,6 +679,7 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 	}
 
 	memset(name, '\0', len);
+	kthread = &posix_thread_pool[thread].thread;
 	return k_thread_name_copy(kthread, name, len-1);
 #else
 	ARG_UNUSED(thread);

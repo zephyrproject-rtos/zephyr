@@ -28,6 +28,12 @@
 	reg = <0x20200000 DT_SIZE_K(128)>;
 };
 
+&ccm {
+	ipg-podf {
+		clock-div = <4>;
+	};
+};
+
 &flexspi {
 	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(4)>;

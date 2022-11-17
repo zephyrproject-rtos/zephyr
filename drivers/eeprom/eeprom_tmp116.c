@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/sensor/tmp116.h>

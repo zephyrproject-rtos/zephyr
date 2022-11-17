@@ -167,7 +167,8 @@ set_compiler_property(PROPERTY imacros -imacros)
 set_compiler_property(PROPERTY security_canaries -fstack-protector-all)
 
 #no support of _FORTIFY_SOURCE"
-set_compiler_property(PROPERTY security_fortify "")
+set_compiler_property(PROPERTY security_fortify_compile_time)
+set_compiler_property(PROPERTY security_fortify_run_time)
 
 # Required C++ flags when using mwdt
 set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" "-Hoff=Stackcheck_alloca")
@@ -175,11 +176,9 @@ set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" "-Hoff=Stackcheck_a
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe-statics")
 
-#Compiler flags for disabling position independent code / executable
-set_compiler_property(PROPERTY no_position_independent
-                      -fno-pic
-                      -fno-pie
-)
+# ARC MWDT does not support -fno-pic and -fno-pie flags,
+# but it has PIE disabled by default - so no extra flags are required here.
+set_compiler_property(PROPERTY no_position_independent "")
 
 #################################
 # This section covers asm flags #

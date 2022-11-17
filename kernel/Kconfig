@@ -331,6 +331,7 @@ config BOOT_BANNER
 
 config BOOT_DELAY
 	int "Boot delay in milliseconds"
+	depends on MULTITHREADING
 	default 0
 	help
 	  This option delays bootup for the specified amount of
@@ -873,10 +874,18 @@ config SMP_BOOT_DELAY
 
 config MP_NUM_CPUS
 	int "Number of CPUs/cores"
-	default 1
+	default MP_MAX_NUM_CPUS
 	range 1 4
 	help
 	  Number of multiprocessing-capable cores available to the
+	  multicpu API and SMP features.
+
+config MP_MAX_NUM_CPUS
+	int "Maximum number of CPUs/cores"
+	default 1
+	range 1 4
+	help
+	  Maximum number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
 
 config SCHED_IPI_SUPPORTED

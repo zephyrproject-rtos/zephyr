@@ -3,8 +3,8 @@
 
 config IPM_CAVS_IDC
 	bool "CAVS DSP Intra-DSP Communication (IDC) driver"
-	depends on IPM && CAVS_ICTL
 	default y if MP_NUM_CPUS > 1 && SMP
+	depends on CAVS_ICTL && DT_HAS_INTEL_ADSP_IDC_ENABLED
 	help
 	  Driver for the Intra-DSP Communication (IDC) channel for
 	  cross SoC communications.

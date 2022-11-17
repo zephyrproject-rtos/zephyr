@@ -84,7 +84,7 @@ static bool map_msix_table_entries(pcie_bdf_t bdf,
 {
 	uint32_t table_offset;
 	uint8_t table_bir;
-	struct pcie_mbar bar;
+	struct pcie_bar bar;
 	uintptr_t mapped_table;
 	int i;
 
@@ -207,10 +207,10 @@ static void enable_msix(pcie_bdf_t bdf,
 		uint32_t map = pcie_msi_map(irq, &vectors[i], 1);
 		uint32_t mdr = pcie_msi_mdr(irq, &vectors[i]);
 
-		vectors[i].msix_vector->msg_addr = map;
-		vectors[i].msix_vector->msg_up_addr = 0;
-		vectors[i].msix_vector->msg_data = mdr;
-		vectors[i].msix_vector->vector_ctrl = 0;
+		sys_write32(map, (mm_reg_t) &vectors[i].msix_vector->msg_addr);
+		sys_write32(0, (mm_reg_t) &vectors[i].msix_vector->msg_up_addr);
+		sys_write32(mdr, (mm_reg_t) &vectors[i].msix_vector->msg_data);
+		sys_write32(0, (mm_reg_t) &vectors[i].msix_vector->vector_ctrl);
 	}
 
 	mcr = pcie_conf_read(bdf, base + PCIE_MSIX_MCR);

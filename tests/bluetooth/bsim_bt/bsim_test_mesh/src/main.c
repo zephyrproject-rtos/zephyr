@@ -10,6 +10,11 @@
 #if defined(CONFIG_SETTINGS)
 extern struct bst_test_list *test_persistence_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_rpc_install(struct bst_test_list *tests);
+#elif defined(CONFIG_BT_MESH_GATT_PROXY)
+extern struct bst_test_list *test_adv_install(struct bst_test_list *test);
+#elif defined(CONFIG_BT_CTLR_LOW_LAT)
+extern struct bst_test_list *test_transport_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_friendship_install(struct bst_test_list *tests);
 #else
 extern struct bst_test_list *test_transport_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_friendship_install(struct bst_test_list *tests);
@@ -26,6 +31,11 @@ bst_test_install_t test_installers[] = {
 #if defined(CONFIG_SETTINGS)
 	test_persistence_install,
 	test_rpc_install,
+#elif defined(CONFIG_BT_MESH_GATT_PROXY)
+	test_adv_install,
+#elif defined(CONFIG_BT_CTLR_LOW_LAT)
+	test_transport_install,
+	test_friendship_install,
 #else
 	test_transport_install,
 	test_friendship_install,

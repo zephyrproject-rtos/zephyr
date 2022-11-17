@@ -115,6 +115,7 @@ enum {
 	RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY,
 	RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY_CONTINUE,
 	RP_CU_STATE_WAIT_TX_REJECT_EXT_IND,
+	RP_CU_STATE_WAIT_USER_REPLY,
 	RP_CU_STATE_WAIT_TX_CONN_PARAM_RSP,
 	RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND,
 	RP_CU_STATE_WAIT_RX_CONN_UPDATE_IND,
@@ -139,6 +140,9 @@ enum {
 
 	/* CONN_PARAM_REQ negative reply */
 	RP_CU_EVT_CONN_PARAM_REQ_NEG_REPLY,
+
+	/* CONN_PARAM_REQ Ancjor Point Move reply */
+	RP_CU_EVT_CONN_PARAM_REQ_USER_REPLY,
 };
 
 /*
@@ -197,6 +201,29 @@ static void cu_prepare_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 	ctx->data.cu.win_size = 1U;
 	ctx->data.cu.win_offset_us = 0U;
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	/* Handle preferred periodicity */
+	const uint8_t preferred_periodicity = ctx->data.cu.preferred_periodicity;
+
+	if (preferred_periodicity) {
+		const uint16_t interval_max = (ctx->data.cu.interval_max / preferred_periodicity) *
+			preferred_periodicity;
+		if (interval_max >= ctx->data.cu.interval_min) {
+			/* In case of there is no underflowing interval_min use 'preferred max' */
+			ctx->data.cu.interval_max = interval_max;
+		}
+	}
+
+#if !defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	/* Use valid offset0 in range [0..interval]. An offset of
+	 * 0xffff means not valid. Disregard other preferred offsets.
+	 */
+	/* Handle win_offset/'anchor point move' */
+	if (ctx->data.cu.offsets[0] <= ctx->data.cu.interval_max) {
+		ctx->data.cu.win_offset_us = ctx->data.cu.offsets[0] * CONN_INT_UNIT_US;
+	}
+#endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
 			       CONN_UPDATE_INSTANT_DELTA;
@@ -270,9 +297,16 @@ static void lp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	pdu = (struct node_rx_cu *)ntf->pdu;
 
 	pdu->status = ctx->data.cu.error;
-	pdu->interval = ctx->data.cu.interval_max;
-	pdu->latency = ctx->data.cu.latency;
-	pdu->timeout = ctx->data.cu.timeout;
+	if (!ctx->data.cu.error) {
+		pdu->interval = ctx->data.cu.interval_max;
+		pdu->latency = ctx->data.cu.latency;
+		pdu->timeout = ctx->data.cu.timeout;
+	} else {
+		pdu->interval = conn->lll.interval;
+		pdu->latency = conn->lll.latency;
+		pdu->timeout = conn->supervision_reload *
+			conn->lll.interval * 125U / 1000;
+	}
 
 	/* Enqueue notification towards LL */
 	ll_rx_put(ntf->hdr.link, ntf);
@@ -329,12 +363,6 @@ static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx
 
 		ctx->data.cu.reference_conn_event_count = event_counter;
 		ctx->data.cu.preferred_periodicity = 0U;
-		ctx->data.cu.offset0 = 0x0000U;
-		ctx->data.cu.offset1 = 0xffffU;
-		ctx->data.cu.offset2 = 0xffffU;
-		ctx->data.cu.offset3 = 0xffffU;
-		ctx->data.cu.offset4 = 0xffffU;
-		ctx->data.cu.offset5 = 0xffffU;
 
 		/* Mark CPR as active */
 		cpr_active_set(conn);
@@ -727,10 +755,16 @@ static void rp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	pdu = (struct node_rx_cu *)ntf->pdu;
 
 	pdu->status = ctx->data.cu.error;
-	pdu->interval = ctx->data.cu.interval_max;
-	pdu->latency = ctx->data.cu.latency;
-	pdu->timeout = ctx->data.cu.timeout;
-
+	if (!ctx->data.cu.error) {
+		pdu->interval = ctx->data.cu.interval_max;
+		pdu->latency = ctx->data.cu.latency;
+		pdu->timeout = ctx->data.cu.timeout;
+	} else {
+		pdu->interval = conn->lll.interval;
+		pdu->latency = conn->lll.latency;
+		pdu->timeout = conn->supervision_reload *
+			conn->lll.interval * 125U / 1000;
+	}
 	/* Enqueue notification towards LL */
 	ll_rx_put(ntf->hdr.link, ntf);
 	ll_rx_sched();
@@ -895,6 +929,16 @@ static void rp_cu_st_wait_conn_param_req_available(struct ll_conn *conn, struct 
 			if (params_changed) {
 				rp_cu_send_conn_param_req_ntf(conn, ctx, evt, param);
 			} else {
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+				/* Handle APM as a vendor specific user extension */
+				if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL &&
+				    DEFER_APM_CHECK(conn, ctx->data.cu.offsets,
+						    &ctx->data.cu.error)) {
+					/* Wait for user response */
+					ctx->state = RP_CU_STATE_WAIT_USER_REPLY;
+					break;
+				}
+#endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 				ctx->state = RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY_CONTINUE;
 			}
 		}
@@ -904,8 +948,8 @@ static void rp_cu_st_wait_conn_param_req_available(struct ll_conn *conn, struct 
 	}
 }
 
-static void rp_cu_st_wait_rx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-					    void *param)
+static void rp_cu_st_wait_rx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx,
+					    uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_CONN_PARAM_REQ:
@@ -968,7 +1012,13 @@ static void rp_cu_state_wait_conn_param_req_reply_continue(struct ll_conn *conn,
 		if (conn->lll.role == BT_HCI_ROLE_CENTRAL) {
 			rp_cu_send_conn_update_ind(conn, ctx, evt, param);
 		} else if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
-			rp_cu_send_conn_param_rsp(conn, ctx, evt, param);
+			if (!ctx->data.cu.error) {
+				rp_cu_send_conn_param_rsp(conn, ctx, evt, param);
+			} else {
+				ctx->data.cu.rejected_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+				rp_cu_send_reject_ext_ind(conn, ctx, evt, param);
+
+			}
 		} else {
 			/* Unknown role */
 			LL_ASSERT(0);
@@ -1005,6 +1055,22 @@ static void rp_cu_st_wait_tx_conn_param_rsp(struct ll_conn *conn, struct proc_ct
 		break;
 	}
 }
+
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+static void rp_cu_st_wait_user_response(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
+{
+	switch (evt) {
+	case RP_CU_EVT_CONN_PARAM_REQ_USER_REPLY:
+		/* Continue procedure in next prepare run */
+		ctx->state = RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY_CONTINUE;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+#endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
@@ -1138,6 +1204,11 @@ static void rp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	case RP_CU_STATE_WAIT_TX_CONN_PARAM_RSP:
 		rp_cu_st_wait_tx_conn_param_rsp(conn, ctx, evt, param);
 		break;
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+	case RP_CU_STATE_WAIT_USER_REPLY:
+		rp_cu_st_wait_user_response(conn, ctx, evt, param);
+		break;
+#endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	case RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND:
 		rp_cu_st_wait_tx_conn_update_ind(conn, ctx, evt, param);
@@ -1200,4 +1271,16 @@ void llcp_rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx
 {
 	rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_CONN_PARAM_REQ_NEG_REPLY, NULL);
 }
+
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+bool llcp_rp_conn_param_req_apm_awaiting_reply(struct proc_ctx *ctx)
+{
+	return (ctx->state == RP_CU_STATE_WAIT_USER_REPLY);
+}
+
+void llcp_rp_conn_param_req_apm_reply(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_CONN_PARAM_REQ_USER_REPLY, NULL);
+}
+#endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */

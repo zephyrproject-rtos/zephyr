@@ -85,6 +85,8 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
 				uint16_t interval, uint16_t latency,
 				uint16_t timeout, uint16_t instant);
 
+void ull_conn_update_peer_sca(struct ll_conn *conn);
+
 void ull_conn_default_tx_octets_set(uint16_t tx_octets);
 
 void ull_conn_default_tx_time_set(uint16_t tx_time);
@@ -97,6 +99,8 @@ void ull_dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 				    uint16_t *max_tx_time);
 
 uint8_t ull_dle_update_eff(struct ll_conn *conn);
+uint8_t ull_dle_update_eff_tx(struct ll_conn *conn);
+uint8_t ull_dle_update_eff_rx(struct ll_conn *conn);
 
 void ull_dle_local_tx_update(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time);
 

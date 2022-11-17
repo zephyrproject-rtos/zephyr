@@ -112,6 +112,17 @@ uint32_t log_src_cnt_get(uint32_t domain_id);
  */
 const char *log_source_name_get(uint32_t domain_id, uint32_t source_id);
 
+/** @brief Return number of domains present in the system.
+ *
+ * There will be at least one local domain.
+ *
+ * @return Number of domains.
+ */
+static inline uint8_t log_domains_count(void)
+{
+	return 1 + (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) ? z_log_ext_domain_count() : 0);
+}
+
 /** @brief Get name of the domain.
  *
  * @param domain_id Domain ID.

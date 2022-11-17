@@ -7,7 +7,7 @@ description: |
 
 compatible: "invensense,mpu9250"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     irq-gpios:

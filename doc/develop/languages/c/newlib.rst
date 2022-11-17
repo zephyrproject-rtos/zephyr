@@ -56,10 +56,6 @@ Note that the Newlib nano variant is not available for all architectures. The
 availability of the nano variant is specified by the
 :kconfig:option:`CONFIG_HAS_NEWLIB_LIBC_NANO`.
 
-When available (:kconfig:option:`CONFIG_HAS_NEWLIB_LIBC_NANO` is selected),
-the Newlib nano variant is enabled by default unless
-:kconfig:option:`CONFIG_NEWLIB_LIBC_NANO` is explicitly de-selected.
-
 .. _`Newlib`: https://sourceware.org/newlib/
 
 Formatted Output

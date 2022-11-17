@@ -457,7 +457,7 @@ ZTEST(net_content_raw_cbor_nomem, test_put_string_nomem)
 ZTEST(net_content_raw_cbor, test_put_time)
 {
 	int ret;
-	int64_t timestamp = 1;
+	time_t timestamp = 1;
 	struct test_payload_buffer expected_payload = {
 		.data = {
 			(0x06 << 5) | 0x00,
@@ -480,9 +480,11 @@ ZTEST(net_content_raw_cbor, test_put_time)
 
 ZTEST(net_content_raw_cbor_nomem, test_put_time_nomem)
 {
-	int ret;
+	int ret = 0;
+	time_t value = -1;
 
-	ret = cbor_writer.put_time(&test_out, &test_path, UINT64_MAX);
+	ret = cbor_writer.put_time(&test_out, &test_path, value);
+
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 

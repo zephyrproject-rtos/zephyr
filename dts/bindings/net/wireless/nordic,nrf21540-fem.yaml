@@ -135,3 +135,11 @@ properties:
             Default value is based on Table 6 of the nRF21540 Product
             Specification (v1.0), and can be overridden for tuned
             configurations.
+    supply-voltage-mv:
+        type: int
+        required: false
+        description: |
+            nRF21540 supply voltage in mV.
+
+            This is used if compensation for nRF21540 supply voltage is supported
+            by software.

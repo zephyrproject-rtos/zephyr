@@ -357,7 +357,7 @@ static const struct sensor_driver_api vcnl4040_driver_api = {
 												\
 	PM_DEVICE_DT_INST_DEFINE(inst, vcnl4040_pm_action);					\
 												\
-	DEVICE_DT_INST_DEFINE(inst, vcnl4040_init, PM_DEVICE_DT_INST_GET(inst),			\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vcnl4040_init, PM_DEVICE_DT_INST_GET(inst),		\
 			      &vcnl4040_data_##inst, &vcnl4040_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);		\
 

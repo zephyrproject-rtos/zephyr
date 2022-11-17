@@ -16,6 +16,7 @@
 
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
 
 struct video_mcux_csi_config {
 	CSI_Type *base;

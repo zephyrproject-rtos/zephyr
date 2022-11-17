@@ -62,8 +62,10 @@ static struct net_buf rf2xx_ack_frame = {
 };
 static struct net_pkt rf2xx_ack_pkt = {
 	.buffer = &rf2xx_ack_frame,
-	.ieee802154_lqi = 80,
-	.ieee802154_rssi = -40,
+	.cb = {
+		.lqi = 80,
+		.rssi = -40,
+	}
 };
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 
@@ -165,7 +167,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 
 	/*
 	 * The rf2xx frame buffer can have length > 128 bytes. The
-	 * net_pkt_alloc_with_buffer allocates max value of 128 bytes.
+	 * net_pkt_rx_alloc_with_buffer allocates max value of 128 bytes.
 	 *
 	 * This obligate the driver to have rx_buf statically allocated with
 	 * RX2XX_MAX_FRAME_SIZE.
@@ -204,8 +206,8 @@ static void rf2xx_trx_rx(const struct device *dev)
 		pkt_len -= RX2XX_FRAME_FCS_LENGTH;
 	}
 
-	pkt = net_pkt_alloc_with_buffer(ctx->iface, pkt_len,
-					AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len,
+					   AF_UNSPEC, 0, K_NO_WAIT);
 
 	if (!pkt) {
 		LOG_ERR("No buf available");

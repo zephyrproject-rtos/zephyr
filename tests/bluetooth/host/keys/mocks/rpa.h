@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/fff.h>
-#include <bluetooth/addr.h>
+#include <zephyr/bluetooth/addr.h>
 
 /* List of fakes used by this unit tester */
 #define RPA_FFF_FAKES_LIST(FAKE)       \

@@ -343,8 +343,7 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 			seg = seg->next;
 		}
 
-		BT_HEXDUMP_DBG(obj.content->data, obj.content->len,
-			       "Segments Object");
+		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len, "Segments Object");
 		BT_DBG("Segments object length: %d", obj.content->len);
 	} else {
 		BT_ERR("No seg!");
@@ -406,8 +405,7 @@ static uint32_t setup_parent_group_object(struct mpl_group *group)
 		if (next_size > obj.content->size) {
 			BT_WARN("Not room for full group in object");
 		}
-		BT_HEXDUMP_DBG(obj.content->data, obj.content->len,
-			       "Parent Group Object");
+		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len, "Parent Group Object");
 		BT_DBG("Group object length: %d", obj.content->len);
 	}
 	return obj.content->len;
@@ -439,8 +437,7 @@ static uint32_t setup_group_object(struct mpl_group *group)
 		if (next_size > obj.content->size) {
 			BT_WARN("Not room for full group in object");
 		}
-		BT_HEXDUMP_DBG(obj.content->data, obj.content->len,
-			       "Group Object");
+		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len, "Group Object");
 		BT_DBG("Group object length: %d", obj.content->len);
 	}
 	return obj.content->len;
@@ -474,12 +471,14 @@ static int add_icon_object(struct mpl_mediaplayer *pl)
 	add_param.type.uuid_16.val = BT_UUID_16(icon_type)->val;
 
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
-
-	if (ret) {
+	if (ret < 0) {
 		BT_WARN("Unable to add icon object, error %d", ret);
 		obj.busy = false;
+
+		return ret;
 	}
-	return ret;
+
+	return 0;
 }
 
 /* Add a track segments object to the OTS */
@@ -507,11 +506,14 @@ static int add_current_track_segments_object(struct mpl_mediaplayer *pl)
 	add_param.type.uuid_16.val = BT_UUID_16(segs_type)->val;
 
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
-	if (ret) {
+	if (ret < 0) {
 		BT_WARN("Unable to add track segments object: %d", ret);
 		obj.busy = false;
+
+		return ret;
 	}
-	return ret;
+
+	return 0;
 }
 
 /* Add a single track to the OTS */
@@ -546,13 +548,14 @@ static int add_track_object(struct mpl_track *track)
 	add_param.type.uuid_16.val = BT_UUID_16(track_type)->val;
 
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
-
-	if (ret) {
+	if (ret < 0) {
 		BT_WARN("Unable to add track object: %d", ret);
 		obj.busy = false;
+
+		return ret;
 	}
 
-	return ret;
+	return 0;
 }
 
 /* Add the parent group to the OTS */
@@ -580,11 +583,14 @@ static int add_parent_group_object(struct mpl_mediaplayer *pl)
 	add_param.type.uuid_16.val = BT_UUID_16(group_type)->val;
 
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
-	if (ret) {
+	if (ret < 0) {
 		BT_WARN("Unable to add parent group object");
 		obj.busy = false;
+
+		return ret;
 	}
-	return ret;
+
+	return 0;
 }
 
 /* Add a single group to the OTS */
@@ -620,13 +626,14 @@ static int add_group_object(struct mpl_group *group)
 	add_param.type.uuid_16.val = BT_UUID_16(group_type)->val;
 
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
-
-	if (ret) {
+	if (ret < 0) {
 		BT_WARN("Unable to add group object: %d", ret);
 		obj.busy = false;
+
+		return ret;
 	}
 
-	return ret;
+	return 0;
 }
 
 /* Add all tracks of a group to the OTS */
@@ -2641,7 +2648,7 @@ static void parse_search(const struct mpl_search *search)
 			index += sci.len - 1;
 
 			BT_DBG("SCI # %d: type: %d", sci_num, sci.type);
-			BT_HEXDUMP_DBG(sci.param, sci.len-1, "param:");
+			LOG_HEXDUMP_DBG(sci.param, sci.len - 1, "param:");
 			sci_num++;
 		}
 	}
@@ -2667,7 +2674,7 @@ void send_search(const struct mpl_search *search)
 		BT_WARN("Search too long: %d", search->len);
 	}
 
-	BT_HEXDUMP_DBG(search->search, search->len, "Search");
+	LOG_HEXDUMP_DBG(search->search, search->len, "Search");
 
 	parse_search(search);
 }
@@ -2771,6 +2778,7 @@ int media_proxy_pl_init(void)
 	pl.calls.get_playing_orders_supported = get_playing_orders_supported;
 	pl.calls.get_media_state              = get_media_state;
 	pl.calls.send_command                 = send_command;
+	pl.calls.get_commands_supported       = get_commands_supported;
 #ifdef CONFIG_BT_MPL_OBJECTS
 	pl.calls.send_search                  = send_search;
 	pl.calls.get_search_results_id        = get_search_results_id;

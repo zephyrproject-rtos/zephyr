@@ -522,6 +522,7 @@ static int cmd_write_without_rsp(const struct shell *sh,
 	}
 
 	repeat = 0U;
+	err = 0;
 
 	if (argc > 4) {
 		repeat = strtoul(argv[4], NULL, 16);

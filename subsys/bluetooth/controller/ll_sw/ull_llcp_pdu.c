@@ -23,6 +23,7 @@
 #include "ll_settings.h"
 
 #include "lll.h"
+#include "lll_clock.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
@@ -60,16 +61,14 @@
 void llcp_pdu_encode_ping_req(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, ping_req) +
-		   sizeof(struct pdu_data_llctrl_ping_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(ping_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_REQ;
 }
 
 void llcp_pdu_encode_ping_rsp(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, ping_rsp) +
-		   sizeof(struct pdu_data_llctrl_ping_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(ping_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
@@ -80,8 +79,7 @@ void llcp_pdu_encode_ping_rsp(struct pdu_data *pdu)
 void llcp_pdu_encode_unknown_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, unknown_rsp) +
-		   sizeof(struct pdu_data_llctrl_unknown_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(unknown_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP;
 
 	pdu->llctrl.unknown_rsp.type = ctx->unknown_response.type;
@@ -97,8 +95,7 @@ void llcp_ntf_encode_unknown_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_unknown_rsp *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, unknown_rsp) +
-		   sizeof(struct pdu_data_llctrl_unknown_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(unknown_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP;
 	p = &pdu->llctrl.unknown_rsp;
 	p->type = ctx->unknown_response.type;
@@ -129,8 +126,7 @@ void llcp_pdu_encode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 	struct pdu_data_llctrl_feature_req *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, feature_req) +
-		   sizeof(struct pdu_data_llctrl_feature_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(feature_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
 
 #if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_PERIPHERAL)
@@ -149,8 +145,7 @@ void llcp_pdu_encode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	uint64_t feature_rsp = LL_FEAT;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
-		   sizeof(struct pdu_data_llctrl_feature_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(feature_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 
 	p = &pdu->llctrl.feature_rsp;
@@ -169,8 +164,7 @@ void llcp_ntf_encode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	struct pdu_data_llctrl_feature_rsp *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
-		   sizeof(struct pdu_data_llctrl_feature_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(feature_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 	p = &pdu->llctrl.feature_rsp;
 
@@ -211,8 +205,7 @@ void llcp_pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *p
 	struct pdu_data_llctrl_min_used_chans_ind *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, min_used_chans_ind) +
-		   sizeof(struct pdu_data_llctrl_min_used_chans_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(min_used_chans_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND;
 	p = &pdu->llctrl.min_used_chans_ind;
 	p->phys = ctx->data.muc.phys;
@@ -237,8 +230,7 @@ void llcp_pdu_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_terminate_ind *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, terminate_ind) +
-		   sizeof(struct pdu_data_llctrl_terminate_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(terminate_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_TERMINATE_IND;
 	p = &pdu->llctrl.terminate_ind;
 	p->error_code = ctx->data.term.error_code;
@@ -249,8 +241,7 @@ void llcp_ntf_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_terminate_ind *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, terminate_ind) +
-		   sizeof(struct pdu_data_llctrl_terminate_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(terminate_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_TERMINATE_IND;
 	p = &pdu->llctrl.terminate_ind;
 	p->error_code = ctx->data.term.error_code;
@@ -271,8 +262,7 @@ void llcp_pdu_encode_version_ind(struct pdu_data *pdu)
 	struct pdu_data_llctrl_version_ind *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) +
-		   sizeof(struct pdu_data_llctrl_version_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(version_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 
 	p = &pdu->llctrl.version_ind;
@@ -288,8 +278,7 @@ void llcp_ntf_encode_version_ind(struct ll_conn *conn, struct pdu_data *pdu)
 	struct pdu_data_llctrl_version_ind *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) +
-		   sizeof(struct pdu_data_llctrl_version_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(version_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 
 	p = &pdu->llctrl.version_ind;
@@ -327,8 +316,7 @@ void llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_enc_req *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, enc_req) + sizeof(struct pdu_data_llctrl_enc_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(enc_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
 
 	p = &pdu->llctrl.enc_req;
@@ -350,8 +338,7 @@ void llcp_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_enc_req *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, enc_req) + sizeof(struct pdu_data_llctrl_enc_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(enc_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
 
 	p = &pdu->llctrl.enc_req;
@@ -365,8 +352,7 @@ void llcp_pdu_encode_enc_rsp(struct pdu_data *pdu)
 	struct pdu_data_llctrl_enc_rsp *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, enc_rsp) + sizeof(struct pdu_data_llctrl_enc_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(enc_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 
 	p = &pdu->llctrl.enc_rsp;
@@ -380,8 +366,7 @@ void llcp_pdu_encode_enc_rsp(struct pdu_data *pdu)
 void llcp_pdu_encode_start_enc_req(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_req) +
-		   sizeof(struct pdu_data_llctrl_start_enc_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(start_enc_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 }
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -389,8 +374,7 @@ void llcp_pdu_encode_start_enc_req(struct pdu_data *pdu)
 void llcp_pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_rsp) +
-		   sizeof(struct pdu_data_llctrl_start_enc_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(start_enc_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
 }
 
@@ -398,8 +382,7 @@ void llcp_pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 void llcp_pdu_encode_pause_enc_req(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, pause_enc_req) +
-		   sizeof(struct pdu_data_llctrl_pause_enc_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(pause_enc_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ;
 }
 #endif /* CONFIG_BT_CENTRAL */
@@ -407,8 +390,7 @@ void llcp_pdu_encode_pause_enc_req(struct pdu_data *pdu)
 void llcp_pdu_encode_pause_enc_rsp(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, pause_enc_rsp) +
-		   sizeof(struct pdu_data_llctrl_pause_enc_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(pause_enc_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -416,8 +398,7 @@ void llcp_pdu_encode_pause_enc_rsp(struct pdu_data *pdu)
 void llcp_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, reject_ind) +
-		   sizeof(struct pdu_data_llctrl_reject_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(reject_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
 	pdu->llctrl.reject_ind.error_code = error_code;
 }
@@ -425,8 +406,7 @@ void llcp_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code)
 void llcp_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, reject_ext_ind) +
-		   sizeof(struct pdu_data_llctrl_reject_ext_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(reject_ext_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
 	pdu->llctrl.reject_ext_ind.reject_opcode = reject_opcode;
 	pdu->llctrl.reject_ext_ind.error_code = error_code;
@@ -443,8 +423,7 @@ void llcp_ntf_encode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_reject_ext_ind *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, reject_ext_ind) +
-		   sizeof(struct pdu_data_llctrl_reject_ext_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(reject_ext_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
 
 	p = (void *)&pdu->llctrl.reject_ext_ind;
@@ -460,8 +439,7 @@ void llcp_ntf_encode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 void llcp_pdu_encode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(phy_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ;
 	pdu->llctrl.phy_req.rx_phys = ctx->data.pu.rx;
 	pdu->llctrl.phy_req.tx_phys = ctx->data.pu.tx;
@@ -477,8 +455,7 @@ void llcp_pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 void llcp_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(phy_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
 	pdu->llctrl.phy_rsp.rx_phys = conn->phy_pref_rx;
 	pdu->llctrl.phy_rsp.tx_phys = conn->phy_pref_tx;
@@ -495,8 +472,7 @@ void llcp_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 void llcp_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, phy_upd_ind) +
-		   sizeof(struct pdu_data_llctrl_phy_upd_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(phy_upd_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
 	pdu->llctrl.phy_upd_ind.instant = sys_cpu_to_le16(ctx->data.pu.instant);
 	pdu->llctrl.phy_upd_ind.c_to_p_phy = ctx->data.pu.c_to_p_phy;
@@ -519,8 +495,7 @@ void llcp_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_conn_param_req *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_req) +
-		   sizeof(struct pdu_data_llctrl_conn_param_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(conn_param_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
 
 	p = (void *)&pdu->llctrl.conn_param_req;
@@ -530,12 +505,12 @@ void llcp_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	p->timeout = sys_cpu_to_le16(ctx->data.cu.timeout);
 	p->preferred_periodicity = ctx->data.cu.preferred_periodicity;
 	p->reference_conn_event_count = sys_cpu_to_le16(ctx->data.cu.reference_conn_event_count);
-	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offset0);
-	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offset1);
-	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offset2);
-	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offset3);
-	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offset4);
-	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offset5);
+	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offsets[0]);
+	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offsets[1]);
+	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offsets[2]);
+	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offsets[3]);
+	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offsets[4]);
+	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offsets[5]);
 }
 
 void llcp_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -543,8 +518,7 @@ void llcp_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_conn_param_req *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_rsp) +
-		   sizeof(struct pdu_data_llctrl_conn_param_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(conn_param_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
 
 	p = (void *)&pdu->llctrl.conn_param_rsp;
@@ -554,12 +528,12 @@ void llcp_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	p->timeout = sys_cpu_to_le16(ctx->data.cu.timeout);
 	p->preferred_periodicity = ctx->data.cu.preferred_periodicity;
 	p->reference_conn_event_count = sys_cpu_to_le16(ctx->data.cu.reference_conn_event_count);
-	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offset0);
-	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offset1);
-	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offset2);
-	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offset3);
-	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offset4);
-	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offset5);
+	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offsets[0]);
+	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offsets[1]);
+	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offsets[2]);
+	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offsets[3]);
+	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offsets[4]);
+	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offsets[5]);
 }
 
 void llcp_pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -573,12 +547,12 @@ void llcp_pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cu.timeout = sys_le16_to_cpu(p->timeout);
 	ctx->data.cu.preferred_periodicity = p->preferred_periodicity;
 	ctx->data.cu.reference_conn_event_count = sys_le16_to_cpu(p->reference_conn_event_count);
-	ctx->data.cu.offset0 = sys_le16_to_cpu(p->offset0);
-	ctx->data.cu.offset1 = sys_le16_to_cpu(p->offset1);
-	ctx->data.cu.offset2 = sys_le16_to_cpu(p->offset2);
-	ctx->data.cu.offset3 = sys_le16_to_cpu(p->offset3);
-	ctx->data.cu.offset4 = sys_le16_to_cpu(p->offset4);
-	ctx->data.cu.offset5 = sys_le16_to_cpu(p->offset5);
+	ctx->data.cu.offsets[0] = sys_le16_to_cpu(p->offset0);
+	ctx->data.cu.offsets[1] = sys_le16_to_cpu(p->offset1);
+	ctx->data.cu.offsets[2] = sys_le16_to_cpu(p->offset2);
+	ctx->data.cu.offsets[3] = sys_le16_to_cpu(p->offset3);
+	ctx->data.cu.offsets[4] = sys_le16_to_cpu(p->offset4);
+	ctx->data.cu.offsets[5] = sys_le16_to_cpu(p->offset5);
 }
 
 void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -592,12 +566,12 @@ void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cu.timeout = sys_le16_to_cpu(p->timeout);
 	ctx->data.cu.preferred_periodicity = p->preferred_periodicity;
 	ctx->data.cu.reference_conn_event_count = sys_le16_to_cpu(p->reference_conn_event_count);
-	ctx->data.cu.offset0 = sys_le16_to_cpu(p->offset0);
-	ctx->data.cu.offset1 = sys_le16_to_cpu(p->offset1);
-	ctx->data.cu.offset2 = sys_le16_to_cpu(p->offset2);
-	ctx->data.cu.offset3 = sys_le16_to_cpu(p->offset3);
-	ctx->data.cu.offset4 = sys_le16_to_cpu(p->offset4);
-	ctx->data.cu.offset5 = sys_le16_to_cpu(p->offset5);
+	ctx->data.cu.offsets[0] = sys_le16_to_cpu(p->offset0);
+	ctx->data.cu.offsets[1] = sys_le16_to_cpu(p->offset1);
+	ctx->data.cu.offsets[2] = sys_le16_to_cpu(p->offset2);
+	ctx->data.cu.offsets[3] = sys_le16_to_cpu(p->offset3);
+	ctx->data.cu.offsets[4] = sys_le16_to_cpu(p->offset4);
+	ctx->data.cu.offsets[5] = sys_le16_to_cpu(p->offset5);
 }
 #endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
 
@@ -606,8 +580,7 @@ void llcp_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_conn_update_ind *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, conn_update_ind) +
-		   sizeof(struct pdu_data_llctrl_conn_update_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(conn_update_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
 
 	p = (void *)&pdu->llctrl.conn_update_ind;
@@ -640,8 +613,7 @@ void llcp_pdu_encode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *
 	struct pdu_data_llctrl_chan_map_ind *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, chan_map_ind) +
-		   sizeof(struct pdu_data_llctrl_chan_map_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(chan_map_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND;
 	p = &pdu->llctrl.chan_map_ind;
 	p->instant = sys_cpu_to_le16(ctx->data.chmu.instant);
@@ -663,8 +635,7 @@ void llcp_pdu_encode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
 	struct pdu_data_llctrl_length_req *p = &pdu->llctrl.length_req;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, length_req) +
-		   sizeof(struct pdu_data_llctrl_length_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(length_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_REQ;
 	p->max_rx_octets = sys_cpu_to_le16(conn->lll.dle.local.max_rx_octets);
 	p->max_tx_octets = sys_cpu_to_le16(conn->lll.dle.local.max_tx_octets);
@@ -677,8 +648,7 @@ void llcp_pdu_encode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	struct pdu_data_llctrl_length_rsp *p = &pdu->llctrl.length_rsp;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, length_rsp) +
-		   sizeof(struct pdu_data_llctrl_length_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(length_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 	p->max_rx_octets = sys_cpu_to_le16(conn->lll.dle.local.max_rx_octets);
 	p->max_tx_octets = sys_cpu_to_le16(conn->lll.dle.local.max_tx_octets);
@@ -691,8 +661,7 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn, struct pdu_data *pdu)
 	struct pdu_data_llctrl_length_rsp *p = &pdu->llctrl.length_rsp;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, length_rsp) +
-		   sizeof(struct pdu_data_llctrl_length_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(length_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 	p->max_rx_octets = sys_cpu_to_le16(conn->lll.dle.eff.max_rx_octets);
 	p->max_tx_octets = sys_cpu_to_le16(conn->lll.dle.eff.max_tx_octets);
@@ -781,8 +750,7 @@ void llcp_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_cte_req *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, cte_req) + sizeof(struct pdu_data_llctrl_cte_req);
+	pdu->len = PDU_DATA_LLCTRL_LEN(cte_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_REQ;
 
 	p = &pdu->llctrl.cte_req;
@@ -803,8 +771,7 @@ void llcp_pdu_decode_cte_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu)
 void llcp_ntf_encode_cte_req(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(cte_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
 
 	/* Received LL_CTE_RSP PDU didn't have CTE */
@@ -822,8 +789,7 @@ void llcp_pdu_decode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		 offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(cte_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
 
 	/* Set content of a PDU header first byte, that is not changed by LLL */
@@ -870,8 +836,7 @@ void llcp_pdu_encode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	struct pdu_data_llctrl_cis_rsp *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, cis_rsp) + sizeof(struct pdu_data_llctrl_cis_rsp);
+	pdu->len = PDU_DATA_LLCTRL_LEN(cis_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_RSP;
 
 	p = &pdu->llctrl.cis_rsp;
@@ -886,9 +851,7 @@ void llcp_pdu_encode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pd
 	struct pdu_data_llctrl_cis_terminate_ind *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, cis_terminate_ind) +
-		sizeof(struct pdu_data_llctrl_cis_terminate_ind);
+	pdu->len = PDU_DATA_LLCTRL_LEN(cis_terminate_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND;
 
 	p = &pdu->llctrl.cis_terminate_ind;
@@ -904,3 +867,44 @@ void llcp_pdu_decode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pd
 	ctx->data.cis_term.error_code = pdu->llctrl.cis_terminate_ind.error_code;
 }
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+/*
+ * SCA Update Procedure Helpers
+ */
+void llcp_pdu_encode_clock_accuracy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_clock_accuracy_req *p = &pdu->llctrl.clock_accuracy_req;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = PDU_DATA_LLCTRL_LEN(clock_accuracy_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ;
+	/* Currently we do not support variable SCA, so we always 'report' current SCA */
+	p->sca = lll_clock_sca_local_get();
+}
+
+void llcp_pdu_encode_clock_accuracy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_clock_accuracy_rsp *p = &pdu->llctrl.clock_accuracy_rsp;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = PDU_DATA_LLCTRL_LEN(clock_accuracy_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP;
+	/* Currently we do not support variable SCA, so we always 'report' current SCA */
+	p->sca = lll_clock_sca_local_get();
+}
+
+void llcp_pdu_decode_clock_accuracy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_clock_accuracy_req *p = &pdu->llctrl.clock_accuracy_req;
+
+	ctx->data.sca_update.sca = p->sca;
+}
+
+void llcp_pdu_decode_clock_accuracy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_clock_accuracy_rsp *p = &pdu->llctrl.clock_accuracy_rsp;
+
+	ctx->data.sca_update.sca = p->sca;
+}
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */

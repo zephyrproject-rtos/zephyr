@@ -8,7 +8,7 @@ description: Maxim MAX17262 Fuel Gauge
 
 compatible: "maxim,max17262"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     design-voltage:

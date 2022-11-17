@@ -24,6 +24,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_ATT)
 #define LOG_MODULE_NAME bt_att
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -3227,7 +3228,7 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 		}
 
 		if (quota == ATT_CHAN_MAX) {
-			BT_WARN("Maximum number of channels reached: %d", quota);
+			BT_DBG("Maximum number of channels reached: %d", quota);
 			return NULL;
 		}
 	}
@@ -3278,7 +3279,11 @@ static void att_enhanced_connection_work_handler(struct k_work *work)
 	const struct bt_att *att = CONTAINER_OF(dwork, struct bt_att, eatt.connection_work);
 	const int err = bt_eatt_connect(att->conn, att->eatt.chans_to_connect);
 
-	if (err < 0) {
+	if (err == -ENOMEM) {
+		BT_DBG("Failed to connect %d EATT channels, central has probably "
+		       "already established some.",
+		       att->eatt.chans_to_connect);
+	} else if (err < 0) {
 		BT_WARN("Failed to connect %d EATT channels (err: %d)",
 			att->eatt.chans_to_connect, err);
 	}
@@ -3512,7 +3517,7 @@ static void eatt_auto_connect(struct bt_conn *conn, bt_security_t level,
 	if (eatt_err < 0) {
 		BT_WARN("Automatic creation of EATT bearers failed on "
 			"connection %s with error %d",
-			bt_addr_le_str_real(bt_conn_get_dst(conn)), eatt_err);
+			bt_addr_le_str(bt_conn_get_dst(conn)), eatt_err);
 	}
 }
 
@@ -3622,12 +3627,17 @@ static void bt_eatt_init(void)
 		.sec_level = BT_SECURITY_L2,
 		.accept = bt_eatt_accept,
 	};
+	struct bt_l2cap_server *registered_server;
 
 	BT_DBG("");
 
-	err = bt_l2cap_server_register(&eatt_l2cap);
-	if (err < 0) {
-		BT_ERR("EATT Server registration failed %d", err);
+	/* Check if eatt_l2cap server has already been registered. */
+	registered_server = bt_l2cap_server_lookup_psm(eatt_l2cap.psm);
+	if (registered_server != &eatt_l2cap) {
+		err = bt_l2cap_server_register(&eatt_l2cap);
+		if (err < 0) {
+			BT_ERR("EATT Server registration failed %d", err);
+		}
 	}
 
 #if defined(CONFIG_BT_EATT)
@@ -3642,6 +3652,7 @@ static void bt_eatt_init(void)
 
 void bt_att_init(void)
 {
+	k_fifo_init(&free_att_tx_meta_data);
 	for (size_t i = 0; i < ARRAY_SIZE(tx_meta_data); i++) {
 		k_fifo_put(&free_att_tx_meta_data, &tx_meta_data[i]);
 	}

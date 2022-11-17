@@ -26,4 +26,12 @@ config XTENSA_UNCACHED_REGION
 
 endif # XTENSA_RPO_CACHE
 
+config CONSOLE
+	def_bool y
+
+if CONSOLE
+config WINSTREAM_CONSOLE
+	def_bool y
+endif
+
 endif # SOC_FAMILY_INTEL_ADSP

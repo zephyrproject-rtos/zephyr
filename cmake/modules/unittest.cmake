@@ -33,11 +33,12 @@ if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
 endif()
 
-if(NOT SOURCES)
+if(NOT SOURCES AND EXISTS main.c)
   set(SOURCES main.c)
 endif()
 
 add_executable(testbinary ${SOURCES})
+find_package(Deprecated COMPONENTS SOURCES)
 add_library(test_interface INTERFACE)
 target_link_libraries(testbinary PRIVATE test_interface)
 

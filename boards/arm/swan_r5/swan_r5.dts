@@ -36,15 +36,26 @@
 		};
 	};
 
+
 	zephyr,user {
-		pull-up-gpios = <&gpioe 4 GPIO_PULL_UP>;
-		no-pull-gpios = <&gpioe 6 GPIO_PUSH_PULL>;
+		dischrg-gpios = <&gpioe 6 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+
+	supply-3v3 {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		regulator-name = "supply-3v3";
+		enable-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
 	};
 
 	aliases {
 		led0 = &led0;
 		sw0 = &user_button;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -154,6 +165,8 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

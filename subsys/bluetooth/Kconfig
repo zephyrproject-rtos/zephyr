@@ -164,6 +164,21 @@ config BT_DATA_LEN_UPDATE
 	depends on !BT_CTLR || BT_CTLR_DATA_LEN_UPDATE_SUPPORT
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
+
+config BT_PER_ADV_SYNC_TRANSFER_RECEIVER
+	bool "Periodic Advertising Sync Transfer receiver"
+	depends on !BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+
+config BT_PER_ADV_SYNC_TRANSFER_SENDER
+	bool "Periodic Advertising Sync Transfer sender"
+	depends on !BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+
+config BT_SCA_UPDATE
+	bool "Sleep Clock Accuracy Update"
+	default y if BT_ISO_PERIPHERAL || BT_ISO_CENTRAL
+	depends on !BT_CTLR || BT_CTLR_SCA_UPDATE_SUPPORT
+	help
+	  Enable support for Bluetooth 5.1 Sleep Clock Accuracy Update Procedure
 endif # BT_CONN
 
 rsource "Kconfig.iso"
@@ -171,6 +186,7 @@ rsource "common/Kconfig"
 rsource "host/Kconfig"
 rsource "controller/Kconfig"
 rsource "shell/Kconfig"
+rsource "crypto/Kconfig"
 
 endif # BT_HCI
 

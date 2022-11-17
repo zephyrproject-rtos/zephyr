@@ -6,96 +6,67 @@
 
 #define DT_DRV_COMPAT ti_ina237
 
+#include "ina237.h"
+#include "ina23x_common.h"
+
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/dt-bindings/sensor/ina237.h>
 #include <zephyr/sys/byteorder.h>
-#include "ina237.h"
-#include "ina23x_common.h"
 
 LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
 
-/**
- * @brief Internal fixed value of INA237 that is used to ensure
- *	  scaling is properly maintained.
- *
- */
-#define INA237_INTERNAL_FIXED_SCALING_VALUE 8192
+/** @brief Calibration scaling value (scaled by 10^-5) */
+#define INA237_CAL_SCALING 8192U
 
-/**
- * @brief The LSB value for the bus voltage register.
- *
- */
-#define INA237_BUS_VOLTAGE_LSB 3125
+/** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
+#define INA237_BUS_VOLTAGE_UV_LSB 3125
 
-/**
- * @brief The LSB value for the power register.
- *
- */
-#define INA237_POWER_VALUE_LSB 2
+/** @brief Power scaling (scaled by 10) */
+#define INA237_POWER_SCALING 2
 
-/**
- * @brief sensor value get
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- */
 static int ina237_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ina237_data *data = dev->data;
 	const struct ina237_config *config = dev->config;
+	uint32_t bus_uv, current_ua, power_uw;
+	int32_t sign;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			uint32_t bus_mv = ((data->bus_voltage *
-					 INA237_BUS_VOLTAGE_LSB) / 1000);
+		bus_uv = data->bus_voltage * INA237_BUS_VOLTAGE_UV_LSB;
 
-			val->val1 = bus_mv / 1000U;
-			val->val2 = (bus_mv % 1000) * 1000;
-		} else {
-			val->val1 = data->bus_voltage;
-			val->val2 = 0;
-		}
+		val->val1 = bus_uv / 1000000U;
+		val->val2 = bus_uv % 1000000U;
 		break;
 
 	case SENSOR_CHAN_CURRENT:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			/**
-			 * If current is negative, convert it to a
-			 * magnitude and return the negative of that
-			 * magnitude.
-			 */
-			if (data->current & INA23X_CURRENT_SIGN_BIT) {
-				uint16_t current_mag = (~data->current + 1);
-
-				val->val1 = -(current_mag / 10000U);
-				val->val2 = -(current_mag % 10000) * 100;
-
-			} else {
-				val->val1 = data->current / 10000U;
-				val->val2 = (data->current % 10000) * 100;
-			}
+		if (data->current & INA23X_CURRENT_SIGN_BIT) {
+			current_ua = ~data->current + 1U;
+			sign = -1;
 		} else {
-			val->val1 = data->current;
-			val->val2 = 0;
+			current_ua = data->current;
+			sign = 1;
 		}
+
+		/* see datasheet "Current and Power calculations" section */
+		current_ua = current_ua * config->current_lsb;
+
+		/* convert to fractional amperes */
+		val->val1 = sign * (int32_t)(current_ua / 1000000U);
+		val->val2 = sign * (int32_t)(current_ua % 1000000U);
 		break;
 
 	case SENSOR_CHAN_POWER:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			uint32_t power_mw = ((data->power *
-					 config->current_lsb *
-					 INA237_POWER_VALUE_LSB) / 10);
+		/* see datasheet "Current and Power calculations" section */
+		power_uw = (data->power * INA237_POWER_SCALING *
+			    config->current_lsb) / 10000U;
 
-			val->val1 = power_mw / 10000U;
-			val->val2 = (power_mw % 10000) * 100;
-		} else {
-			val->val1 = data->power;
-			val->val2 = 0;
-		}
+		/* convert to fractional watts */
+		val->val1 = (int32_t)(power_uw / 1000000U);
+		val->val2 = (int32_t)(power_uw % 1000000U);
 		break;
 
 	default:
@@ -216,13 +187,6 @@ static int ina237_sample_fetch(const struct device *dev,
 	}
 }
 
-/**
- * @brief sensor attribute set
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- * @retval -EIO for i2c write failure
- */
 static int ina237_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
@@ -241,13 +205,6 @@ static int ina237_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-/**
- * @brief sensor attribute get
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- * @retval -EIO for i2c read failure
- */
 static int ina237_attr_get(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   struct sensor_value *val)
@@ -280,19 +237,15 @@ static int ina237_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-/**
- * @brief sensor calibrate
- *
- * @retval 0 for success
- * @retval -EIO for i2c write failure
- */
 static int ina237_calibrate(const struct device *dev)
 {
 	const struct ina237_config *config = dev->config;
 	uint16_t val;
 	int ret;
 
-	val = ((INA237_INTERNAL_FIXED_SCALING_VALUE * config->current_lsb * config->rshunt) / 100);
+	/* see datasheet "Current and Power calculations" section */
+	val = (INA237_CAL_SCALING * config->current_lsb * config->rshunt) /
+	       10000000U;
 
 	ret = ina23x_reg_write(&config->bus, INA237_REG_CALIB, val);
 	if (ret < 0) {
@@ -302,10 +255,6 @@ static int ina237_calibrate(const struct device *dev)
 	return 0;
 }
 
-/**
- * @brief sensor trigger work handler
- *
- */
 static void ina237_trigger_work_handler(struct k_work *work)
 {
 	struct ina23x_trigger *trigg = CONTAINER_OF(work, struct ina23x_trigger, conversion_work);
@@ -333,12 +282,6 @@ static void ina237_trigger_work_handler(struct k_work *work)
 	}
 }
 
-/**
- * @brief Initialize the INA237
- *
- * @retval 0 for success
- * @retval negative errno code on fail
- */
 static int ina237_init(const struct device *dev)
 {
 	struct ina237_data *data = dev->data;
@@ -390,7 +333,7 @@ static int ina237_init(const struct device *dev)
 
 		k_work_init(&data->trigger.conversion_work, ina237_trigger_work_handler);
 
-		ret = ina23x_trigger_mode_init(&data->trigger, &config->gpio_alert);
+		ret = ina23x_trigger_mode_init(&data->trigger, &config->alert_gpio);
 		if (ret < 0) {
 			LOG_ERR("Failed to init trigger mode");
 			return ret;
@@ -406,12 +349,6 @@ static int ina237_init(const struct device *dev)
 	return 0;
 }
 
-/**
- * @brief sensor trigger set
- *
- * @retval 0 for success
- * @retval negative errno code on fail
- */
 static int ina237_trigger_set(const struct device *dev,
 			      const struct sensor_trigger *trig,
 			      sensor_trigger_handler_t handler)
@@ -436,21 +373,18 @@ static const struct sensor_driver_api ina237_driver_api = {
 	.channel_get = ina237_channel_get,
 };
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
-	     "No compatible ina237 instances found");
-
 #define INA237_DRIVER_INIT(inst)						\
 	static struct ina237_data ina237_data_##inst;				\
 	static const struct ina237_config ina237_config_##inst = {		\
 		.bus = I2C_DT_SPEC_INST_GET(inst),				\
 		.config = DT_INST_PROP(inst, config),				\
 		.adc_config = DT_INST_PROP(inst, adc_config),			\
-		.current_lsb = DT_INST_PROP(inst, current_lsb),			\
-		.rshunt = DT_INST_PROP(inst, rshunt),				\
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),	\
+		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),			\
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),	\
-		.gpio_alert = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),	\
+		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),	\
 	};							    \
-	DEVICE_DT_INST_DEFINE(inst,				    \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,			    \
 			      &ina237_init,			    \
 			      NULL,				    \
 			      &ina237_data_##inst,		    \

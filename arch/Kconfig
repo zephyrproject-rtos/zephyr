@@ -124,6 +124,7 @@ config XTENSA
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	imply ATOMIC_OPERATIONS_ARCH
 	help
@@ -165,6 +166,14 @@ config BIG_ENDIAN
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
 	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
 	  and command line option for gen_isr_tables.py.
+
+config LITTLE_ENDIAN
+	# Hidden Kconfig option representing the default little-endian architecture
+	# This is just the opposite of BIG_ENDIAN and is used for non-negative
+	# conditional compilation
+	bool
+	depends on !BIG_ENDIAN
+	default y
 
 config 64BIT
 	bool

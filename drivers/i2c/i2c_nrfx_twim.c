@@ -15,6 +15,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_TRANSFER_TIMEOUT_MSEC		K_MSEC(500)

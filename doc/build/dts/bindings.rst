@@ -825,7 +825,17 @@ included into this binding.
 
 Included files are merged into bindings with a simple recursive dictionary
 merge. The build system will check that the resulting merged binding is
-well-formed.
+well-formed. It is allowed to include at any level, including ``child-binding``,
+like this:
+
+.. code-block:: YAML
+
+   # foo.yaml will be merged with content at this level
+   include: foo.yaml
+
+   child-binding:
+     # bar.yaml will be merged with content at this level
+     include: bar.yaml
 
 It is an error if a key appears with a different value in a binding and in a
 file it includes, with one exception: a binding can have ``required: true`` for

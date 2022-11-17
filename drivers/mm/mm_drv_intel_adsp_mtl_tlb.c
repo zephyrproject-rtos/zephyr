@@ -34,7 +34,6 @@
 
 #include <soc.h>
 #include <adsp_memory.h>
-#include <ace_v1x-regs.h>
 
 #include "mm_drv_common.h"
 
@@ -187,7 +186,7 @@ static uint16_t tlb_perms_to_flags(uint16_t perms)
 static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocking)
 {
 #if defined(CONFIG_SOC_SERIES_INTEL_ACE)
-	if (bank_idx > mtl_hpsram_get_bank_count()) {
+	if (bank_idx > ace_hpsram_get_bank_count()) {
 		return -1;
 	}
 
@@ -642,6 +641,15 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	int ret;
 
 	ARG_UNUSED(dev);
+
+	/*
+	 * Change size of avalible physical memory according to fw register information
+	 * in runtime.
+	 */
+
+	uint32_t avalible_memory_size = ace_hpsram_get_bank_count() * SRAM_BANK_SIZE;
+
+	L2_PHYS_SRAM_REGION.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
 
 	/*
 	 * Initialize memblocks that will store physical

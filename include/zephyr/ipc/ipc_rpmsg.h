@@ -113,6 +113,20 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 		   void *shb, size_t size,
 		   rpmsg_ns_bind_cb ns_bind_cb);
 
+
+/** @brief
+ *
+ * Deinit an RPMsg instance
+ *
+ * @param instance Pointer to the RPMsg instance struct.
+ * @param role Host / Remote role.
+ *
+ * @retval -EINVAL When some parameter is missing
+ * @retval 0 If successful
+ */
+int ipc_rpmsg_deinit(struct ipc_rpmsg_instance *instance,
+		   unsigned int role);
+
 /** @brief Register an endpoint.
  *
  *  Register an endpoint to a provided RPMsg instance.

@@ -213,7 +213,7 @@ static int hids_init(const struct device *dev)
  */
 
 #define HIDS_DEVICE_INIT(inst)                                                         \
-	DEVICE_DT_INST_DEFINE(inst,                                                    \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                             \
 			      hids_init,                                               \
 			      NULL,                                                    \
 			      &hids_data_##inst,                                       \

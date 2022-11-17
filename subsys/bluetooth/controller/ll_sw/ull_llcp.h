@@ -129,7 +129,7 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
  * @brief Initiate a Connection Parameter Request Procedure or Connection Update Procedure
  */
 uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max,
-			   uint16_t latency, uint16_t timeout);
+			   uint16_t latency, uint16_t timeout, uint16_t *offsets);
 
 /**
  * @brief Accept the remote device’s request to change connection parameters.
@@ -151,6 +151,24 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn);
  *        works.
  */
 uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn);
+
+/**
+ * @brief Check if a remote connection param reg is expecting an
+ *        anchor point move response.
+ */
+bool ull_cp_remote_cpr_apm_awaiting_reply(struct ll_conn *conn);
+
+/**
+ * @brief Repsond to anchor point move of remote connection
+ *        param reg.
+ */
+void ull_cp_remote_cpr_apm_reply(struct ll_conn *conn, uint16_t *offsets);
+
+/**
+ * @brief Reject anchor point move of remote connection param
+ *        reg.
+ */
+void ull_cp_remote_cpr_apm_neg_reply(struct ll_conn *conn, uint8_t error_code);
 
 /**
  * @brief Initiate a Termination Procedure.
@@ -216,3 +234,10 @@ void ull_cp_cte_req_set_disable(struct ll_conn *conn);
  */
 void ull_cp_cte_rsp_enable(struct ll_conn *conn, bool enable, uint8_t max_cte_len,
 			   uint8_t cte_types);
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+/**
+ * @brief Initiate a Sleep Clock Accuracy Update Procedure.
+ */
+uint8_t ull_cp_req_peer_sca(struct ll_conn *conn);
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */

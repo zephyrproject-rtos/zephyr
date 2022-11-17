@@ -6,7 +6,7 @@ description: |
 
 compatible: "st,iis2mdc"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
     drdy-gpios:

@@ -7,8 +7,14 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_
 #define ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_
 
-#include <zephyr/drivers/i2c.h>
 #include "ina23x_trigger.h"
+
+#include <stdint.h>
+
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
 
 #define INA237_REG_CONFIG     0x00
 #define INA237_REG_ADC_CONFIG 0x01
@@ -42,9 +48,9 @@ struct ina237_config {
 	struct i2c_dt_spec bus;
 	uint16_t config;
 	uint16_t adc_config;
-	uint16_t current_lsb;
+	uint32_t current_lsb;
 	uint16_t rshunt;
-	const struct gpio_dt_spec gpio_alert;
+	const struct gpio_dt_spec alert_gpio;
 	uint16_t alert_config;
 };
 

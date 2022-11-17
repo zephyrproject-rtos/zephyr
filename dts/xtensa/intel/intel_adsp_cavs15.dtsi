@@ -73,9 +73,37 @@
 			reg = <0x1500 0x40>;
 		};
 
-		win: win@1580 {
-			compatible = "intel,cavs-win";
-			reg = <0x1580 0x20>;
+		mem_window0: mem_window@1580 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x1580 0x8>;
+			offset = <0x4000>;
+			memory = <&sram0>;
+			initialize;
+			read-only;
+		};
+		mem_window1: mem_window@1588 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x1588 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window2: mem_window@1590 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x1590 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window3: mem_window@1598 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x1598 0x8>;
+			memory = <&sram0>;
+			offset = <0>;
+			read-only;
+		};
+
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&shim>;
 		};
 
 		core_intc: core_intc@0 {
@@ -286,5 +314,24 @@
 
 			status = "okay";
 		};
+
+		dmic0: dmic0@4000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x4000 0x8000>;
+			shim = <0x1000>;
+			fifo = <0x0008>;
+			interrupts = <0x08 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+		};
+
+		dmic1: dmic1@4000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x4000 0x8000>;
+			shim = <0x1000>;
+			fifo = <0x0108>;
+			interrupts = <0x09 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+		};
+
 	};
 };

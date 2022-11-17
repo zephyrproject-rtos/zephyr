@@ -6,6 +6,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 
 static const struct gpio_dt_spec ccs_gpio =
 	GPIO_DT_SPEC_GET(DT_NODELABEL(ccs_pwr), enable_gpios);

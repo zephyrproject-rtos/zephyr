@@ -29,6 +29,7 @@
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(usb_dc_stm32);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
@@ -343,6 +344,22 @@ static int usb_dc_stm32_clock_enable(void)
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
 #endif
+
+	return 0;
+}
+
+static int usb_dc_stm32_clock_disable(void)
+{
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	struct stm32_pclken pclken = {
+		.bus = USB_CLOCK_BUS,
+		.enr = USB_CLOCK_BITS,
+	};
+
+	if (clock_control_off(clk, (clock_control_subsys_t *)&pclken) != 0) {
+		LOG_ERR("Unable to disable USB clock");
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -993,7 +1010,8 @@ int usb_dc_ep_mps(const uint8_t ep)
 
 int usb_dc_detach(void)
 {
-	LOG_ERR("Not implemented");
+	HAL_StatusTypeDef status;
+	int ret;
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 	/* Specially for STM32WB, unlock the HSEM when USB is no more used. */
@@ -1006,6 +1024,22 @@ int usb_dc_detach(void)
 	 * https://github.com/zephyrproject-rtos/zephyr/pull/25850
 	 */
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
+
+	LOG_DBG("HAL_PCD_DeInit");
+	status = HAL_PCD_DeInit(&usb_dc_stm32_state.pcd);
+	if (status != HAL_OK) {
+		LOG_ERR("PCD_DeInit failed, %d", (int)status);
+		return -EIO;
+	}
+
+	ret = usb_dc_stm32_clock_disable();
+	if (ret) {
+		return ret;
+	}
+
+	if (irq_is_enabled(USB_IRQ)) {
+		irq_disable(USB_IRQ);
+	}
 
 	return 0;
 }

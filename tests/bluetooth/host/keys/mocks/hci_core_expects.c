@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <bluetooth/buf.h>
+#include <zephyr/bluetooth/buf.h>
 #include "mocks/hci_core.h"
 #include "mocks/hci_core_expects.h"
 

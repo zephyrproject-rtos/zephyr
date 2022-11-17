@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/has.h>
 #include <zephyr/sys/check.h>
 
@@ -1151,15 +1151,15 @@ static int has_init(const struct device *dev)
 			 * Front Left and the Front Right bits to a value of 0b1
 			 * in the Sink Audio Locations characteristic value.
 			 */
-			bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-							 (BT_AUDIO_LOCATION_FRONT_LEFT |
-								BT_AUDIO_LOCATION_FRONT_RIGHT));
+			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					     (BT_AUDIO_LOCATION_FRONT_LEFT |
+					      BT_AUDIO_LOCATION_FRONT_RIGHT));
 		} else if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_LEFT)) {
-			bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-							 BT_AUDIO_LOCATION_FRONT_LEFT);
+			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					     BT_AUDIO_LOCATION_FRONT_LEFT);
 		} else {
-			bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-							 BT_AUDIO_LOCATION_FRONT_RIGHT);
+			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					     BT_AUDIO_LOCATION_FRONT_RIGHT);
 		}
 	}
 

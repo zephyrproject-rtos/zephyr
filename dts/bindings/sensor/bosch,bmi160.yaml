@@ -3,6 +3,8 @@
 
 description: BMI160 inertial measurement unit
 
+include: sensor-device.yaml
+
 properties:
     int-gpios:
       type: phandle-array

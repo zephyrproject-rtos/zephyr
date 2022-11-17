@@ -8,7 +8,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
 #include "unicast_common.h"
 
@@ -22,6 +22,9 @@ static struct bt_codec lc3_codec =
 
 static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
+static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02,
+								   10, 40000, 40000, 40000, 40000);
+
 /* TODO: Expand with BAP data */
 static const struct bt_data unicast_server_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -31,37 +34,47 @@ static const struct bt_data unicast_server_ad[] = {
 CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_stream_configured);
 
-static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
-					struct bt_audio_ep *ep,
-					enum bt_audio_dir dir,
-					struct bt_audio_capability *cap,
-					struct bt_codec *codec)
+static struct bt_audio_stream *stream_alloc(void)
 {
-	printk("ASE Codec Config: conn %p ep %p dir %u, cap %p\n",
-	       conn, ep, dir, cap);
-
-	print_codec(codec);
-
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
 		struct bt_audio_stream *stream = &streams[i];
 
-		if (stream->conn == NULL) {
-			printk("ASE Codec Config stream %p\n", stream);
-			SET_FLAG(flag_stream_configured);
+		if (!stream->conn) {
 			return stream;
 		}
 	}
 
-	FAIL("No streams available\n");
-
 	return NULL;
 }
 
-static int lc3_reconfig(struct bt_audio_stream *stream,
-			struct bt_audio_capability *cap,
-			struct bt_codec *codec)
+static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum bt_audio_dir dir,
+		      const struct bt_codec *codec, struct bt_audio_stream **stream,
+		      struct bt_codec_qos_pref *const pref)
 {
-	printk("ASE Codec Reconfig: stream %p cap %p\n", stream, cap);
+	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
+
+	print_codec(codec);
+
+	*stream = stream_alloc();
+	if (*stream == NULL) {
+		printk("No streams available\n");
+
+		return -ENOMEM;
+	}
+
+	printk("ASE Codec Config stream %p\n", *stream);
+
+	SET_FLAG(flag_stream_configured);
+
+	*pref = qos_pref;
+
+	return 0;
+}
+
+static int lc3_reconfig(struct bt_audio_stream *stream, enum bt_audio_dir dir,
+			const struct bt_codec *codec, struct bt_codec_qos_pref *const pref)
+{
+	printk("ASE Codec Reconfig: stream %p\n", stream);
 
 	print_codec(codec);
 
@@ -69,7 +82,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 	return -ENOEXEC;
 }
 
-static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
+static int lc3_qos(struct bt_audio_stream *stream, const struct bt_codec_qos *qos)
 {
 	printk("QoS: stream %p qos %p\n", stream, qos);
 
@@ -78,8 +91,7 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 	return 0;
 }
 
-static int lc3_enable(struct bt_audio_stream *stream,
-		      struct bt_codec_data *meta,
+static int lc3_enable(struct bt_audio_stream *stream, const struct bt_codec_data *meta,
 		      size_t meta_count)
 {
 	printk("Enable: stream %p meta_count %zu\n", stream, meta_count);
@@ -137,8 +149,7 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 	}
 }
 
-static int lc3_metadata(struct bt_audio_stream *stream,
-			struct bt_codec_data *meta,
+static int lc3_metadata(struct bt_audio_stream *stream, const struct bt_codec_data *meta,
 			size_t meta_count)
 {
 	printk("Metadata: stream %p meta_count %zu\n", stream, meta_count);
@@ -176,7 +187,7 @@ static int lc3_release(struct bt_audio_stream *stream)
 	return 0;
 }
 
-static struct bt_audio_capability_ops lc3_ops = {
+static const struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
@@ -221,13 +232,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static void init(void)
 {
-	static struct bt_audio_capability caps = {
-		.dir = BT_AUDIO_DIR_SINK,
-		.pref = BT_AUDIO_CAPABILITY_PREF(
-				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
-				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000),
+	static struct bt_pacs_cap cap = {
 		.codec = &lc3_codec,
-		.ops = &lc3_ops,
 	};
 	int err;
 
@@ -239,7 +245,9 @@ static void init(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_audio_capability_register(&caps);
+	bt_audio_unicast_server_register_cb(&unicast_server_cb);
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err != 0) {
 		FAIL("Failed to register capabilities: %d", err);
 		return;
@@ -263,8 +271,8 @@ static void set_location(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-						       BT_AUDIO_LOCATION_FRONT_CENTER);
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					   BT_AUDIO_LOCATION_FRONT_CENTER);
 		if (err != 0) {
 			FAIL("Failed to set sink location (err %d)\n", err);
 			return;
@@ -272,9 +280,9 @@ static void set_location(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SOURCE,
-						       (BT_AUDIO_LOCATION_FRONT_LEFT |
-							BT_AUDIO_LOCATION_FRONT_RIGHT));
+		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+					   (BT_AUDIO_LOCATION_FRONT_LEFT |
+					    BT_AUDIO_LOCATION_FRONT_RIGHT));
 		if (err != 0) {
 			FAIL("Failed to set source location (err %d)\n", err);
 			return;
@@ -288,16 +296,16 @@ static void set_available_contexts(void)
 {
 	int err;
 
-	err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
-						BT_AUDIO_CONTEXT_TYPE_MEDIA |
-						BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
+	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
+					     BT_AUDIO_CONTEXT_TYPE_MEDIA |
+					     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
 		FAIL("Failed to set sink available contexts (err %d)\n", err);
 		return;
 	}
 
-	err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-						BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS);
+	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+					     BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS);
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC) && err != 0) {
 		FAIL("Failed to set source available contexts (err %d)\n", err);
 		return;

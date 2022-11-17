@@ -9,21 +9,30 @@
 #include <zephyr/wait_q.h>
 #include <zephyr/posix/pthread.h>
 
+#include "posix_internal.h"
+
 extern struct k_spinlock z_pthread_spinlock;
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
-static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut,
+static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mu,
 		     k_timeout_t timeout)
 {
-	__ASSERT(mut->lock_count == 1U, "");
-
 	int ret;
-	k_spinlock_key_t key = k_spin_lock(&z_pthread_spinlock);
+	k_spinlock_key_t key;
+	struct posix_mutex *m;
 
-	mut->lock_count = 0U;
-	mut->owner = NULL;
-	_ready_one_thread(&mut->wait_q);
+	key = k_spin_lock(&z_pthread_spinlock);
+	m = to_posix_mutex(mu);
+	if (m == NULL) {
+		k_spin_unlock(&z_pthread_spinlock, key);
+		return EINVAL;
+	}
+
+	__ASSERT_NO_MSG(m->lock_count == 1U);
+	m->lock_count = 0U;
+	m->owner = NULL;
+	_ready_one_thread(&m->wait_q);
 	ret = z_sched_wait(&z_pthread_spinlock, key, &cv->wait_q, timeout, NULL);
 
 	/* FIXME: this extra lock (and the potential context switch it
@@ -34,7 +43,7 @@ static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut,
 	 * But that requires putting scheduler intelligence into this
 	 * higher level abstraction and is probably not worth it.
 	 */
-	pthread_mutex_lock(mut);
+	pthread_mutex_lock(mu);
 
 	return ret == -EAGAIN ? ETIMEDOUT : ret;
 }

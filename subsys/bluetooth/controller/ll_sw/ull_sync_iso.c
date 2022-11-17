@@ -12,6 +12,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -25,6 +26,7 @@
 #include "lll/lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_scan.h"
+#include "lll/lll_df_types.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 

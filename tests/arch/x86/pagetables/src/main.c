@@ -54,6 +54,12 @@ extern char __gcov_bss_start[];
 extern char __gcov_bss_size[];
 #endif
 
+#include <zephyr/sys/libc-hooks.h>
+#ifdef Z_LIBC_PARTITION_EXISTS
+extern char z_data_smem_z_libc_partition_part_start[];
+extern char z_data_smem_z_libc_partition_part_size[];
+#endif
+
 static pentry_t get_entry(pentry_t *flags, void *addr)
 {
 	int level;
@@ -133,6 +139,10 @@ ZTEST(x86_pagetables, test_ram_perms)
 			expected = MMU_P | MMU_US;
 		} else if (IN_REGION(lnkr_pinned_rodata, pos)) {
 			expected = MMU_P | MMU_US | MMU_XD;
+#endif
+#ifdef Z_LIBC_PARTITION_EXISTS
+		} else if (IN_REGION(z_data_smem_z_libc_partition_part, pos)) {
+			expected = MMU_P | MMU_RW | MMU_XD;
 #endif
 		} else {
 			/* We forced CONFIG_HW_STACK_PROTECTION off otherwise

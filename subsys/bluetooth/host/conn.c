@@ -28,6 +28,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CONN)
 #define LOG_MODULE_NAME bt_conn
 #include "common/log.h"
+#include "common/assert.h"
 
 #include "hci_core.h"
 #include "id.h"
@@ -136,7 +137,7 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 	 * dedicated ISO buffers.
 	 */
 	if (conn->type == BT_CONN_TYPE_ISO) {
-		if (bt_dev.le.iso_mtu && bt_dev.le.iso_pkts.limit) {
+		if (bt_dev.le.iso_mtu && bt_dev.le.iso_limit != 0) {
 			return &bt_dev.le.iso_pkts;
 		}
 
@@ -698,6 +699,22 @@ static void conn_cleanup(struct bt_conn *conn)
 	k_work_reschedule(&conn->deferred_work, K_NO_WAIT);
 }
 
+static void conn_destroy(struct bt_conn *conn, void *data)
+{
+	k_work_cancel_delayable(&conn->deferred_work);
+
+	conn->pending_no_cb = 0;
+
+	conn_cleanup(conn);
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+}
+
+void bt_conn_cleanup_all(void)
+{
+	bt_conn_foreach(BT_CONN_TYPE_ALL, conn_destroy, NULL);
+}
+
 static int conn_prepare_events(struct bt_conn *conn,
 			       struct k_poll_event *events)
 {
@@ -914,6 +931,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 		    conn->role == BT_CONN_ROLE_PERIPHERAL) {
+
+#if defined(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)
+			conn->le.conn_param_retry_countdown =
+				CONFIG_BT_CONN_PARAM_RETRY_COUNT;
+#endif /* CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS */
+
 			k_work_schedule(&conn->deferred_work,
 					CONN_UPDATE_TIMEOUT);
 		}
@@ -992,6 +1015,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_conn_unref(conn);
 			break;
 		case BT_CONN_CONNECTED:
+			/* Can only happen if bt_conn_cleanup_all is called
+			 * whilst in a connection.
+			 */
+			break;
 		case BT_CONN_DISCONNECTING:
 		case BT_CONN_DISCONNECTED:
 			/* Cannot happen. */
@@ -1152,7 +1179,7 @@ void bt_conn_unref(struct bt_conn *conn)
 	__ASSERT(old > 0, "Conn reference counter is 0");
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->type == BT_CONN_TYPE_LE &&
-	    atomic_get(&conn->ref) == 0) {
+	    conn->role == BT_CONN_ROLE_PERIPHERAL && atomic_get(&conn->ref) == 0) {
 		bt_le_adv_resume();
 	}
 }
@@ -1642,19 +1669,38 @@ static void deferred_work(struct k_work *work)
 	/* if application set own params use those, otherwise use defaults. */
 	if (atomic_test_and_clear_bit(conn->flags,
 				      BT_CONN_PERIPHERAL_PARAM_SET)) {
+		int err;
+
 		param = BT_LE_CONN_PARAM(conn->le.interval_min,
 					 conn->le.interval_max,
 					 conn->le.pending_latency,
 					 conn->le.pending_timeout);
-		send_conn_le_param_update(conn, param);
+
+		err = send_conn_le_param_update(conn, param);
+		if (!err) {
+			atomic_clear_bit(conn->flags,
+					 BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
+		} else {
+			BT_WARN("Send LE param update failed (err %d)", err);
+		}
 	} else if (IS_ENABLED(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)) {
 #if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
+		int err;
+
 		param = BT_LE_CONN_PARAM(
 				CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
 				CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
 				CONFIG_BT_PERIPHERAL_PREF_LATENCY,
 				CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
-		send_conn_le_param_update(conn, param);
+
+		err = send_conn_le_param_update(conn, param);
+		if (!err) {
+			atomic_set_bit(conn->flags,
+				       BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
+		} else {
+			BT_WARN("Send auto LE param update failed (err %d)",
+				err);
+		}
 #endif
 	}
 
@@ -2180,16 +2226,16 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 	}
 
 	/* Check against conn dst address as it may be the identity address */
-	if (!bt_addr_le_cmp(peer, &conn->le.dst)) {
+	if (bt_addr_le_eq(peer, &conn->le.dst)) {
 		return true;
 	}
 
 	/* Check against initial connection address */
 	if (conn->role == BT_HCI_ROLE_CENTRAL) {
-		return bt_addr_le_cmp(peer, &conn->le.resp_addr) == 0;
+		return bt_addr_le_eq(peer, &conn->le.resp_addr);
 	}
 
-	return bt_addr_le_cmp(peer, &conn->le.init_addr) == 0;
+	return bt_addr_le_eq(peer, &conn->le.init_addr);
 }
 
 struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)
@@ -3001,6 +3047,7 @@ int bt_conn_init(void)
 {
 	int err, i;
 
+	k_fifo_init(&free_tx);
 	for (i = 0; i < ARRAY_SIZE(conn_tx); i++) {
 		k_fifo_put(&free_tx, &conn_tx[i]);
 	}

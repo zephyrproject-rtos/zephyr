@@ -28,7 +28,8 @@ Bluetooth APIs
    volume.rst
    uuid.rst
    shell/audio.rst
-   shell/bass.rst
+   shell/bap_broadcast_assistant.rst
+   shell/bap_scan_delegator.rst
    shell/ccp.rst
    shell/csip.rst
    shell/iso.rst

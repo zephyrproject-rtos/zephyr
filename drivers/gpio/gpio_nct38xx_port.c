@@ -9,7 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 
 #include "gpio_nct38xx.h"
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(gpio_ntc38xx, CONFIG_GPIO_LOG_LEVEL);

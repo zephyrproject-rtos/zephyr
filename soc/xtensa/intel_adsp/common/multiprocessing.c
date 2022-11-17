@@ -50,7 +50,7 @@ uint32_t _loader_storage_manifest_start;
  * to be absolutely sure we don't try to IPI a CPU that isn't ready to
  * start, or else we'll launch it into garbage and crash the DSP.
  */
-bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
+bool soc_cpus_active[CONFIG_MP_MAX_NUM_CPUS];
 
 #define NOP4 "nop; nop; nop; nop;"
 #define NOP32 NOP4 NOP4 NOP4 NOP4 NOP4 NOP4 NOP4 NOP4
@@ -63,7 +63,8 @@ bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
  * Note that alignment is absolutely required: the IDC protocol passes
  * only the upper 30 bits of the address to the second CPU.
  */
-__asm__(".align 4                   \n\t"
+__asm__(".section .text.z_soc_mp_asm_entry, \"x\" \n\t"
+	".align 4                   \n\t"
 	".global z_soc_mp_asm_entry \n\t"
 	"z_soc_mp_asm_entry:        \n\t"
 	"  movi  a0, 0x4002f        \n\t" /* WOE | UM | INTLEVEL(max) */

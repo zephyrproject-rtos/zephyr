@@ -391,6 +391,11 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cereg)
 			gsm.context.data_cellid);
 	}
 
+	if (argc >= 5) {
+		gsm.context.data_act = unquoted_atoi(argv[4], 10);
+		LOG_INF("act: %u", gsm.context.data_act);
+	}
+
 	return 0;
 }
 
@@ -1210,6 +1215,7 @@ void gsm_ppp_stop(const struct device *dev)
 		gsm->modem_off_cb(gsm->dev, gsm->user_data);
 	}
 
+	gsm->state = GSM_PPP_STOP;
 	gsm->net_state = GSM_NET_INIT;
 	gsm_ppp_unlock(gsm);
 }

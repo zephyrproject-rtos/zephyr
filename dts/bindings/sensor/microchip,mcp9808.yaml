@@ -7,7 +7,7 @@ description: |
 
 compatible: "microchip,mcp9808"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:

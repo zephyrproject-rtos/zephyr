@@ -21,40 +21,9 @@
 extern "C" {
 #endif
 
-enum pthread_state {
-	/* The thread structure is unallocated and available for reuse. */
-	PTHREAD_TERMINATED = 0,
-	/* The thread is running and joinable. */
-	PTHREAD_JOINABLE,
-	/* The thread is running and detached. */
-	PTHREAD_DETACHED,
-	/* A joinable thread exited and its return code is available. */
-	PTHREAD_EXITED
-};
-
-struct posix_thread {
-	struct k_thread thread;
-
-	/* List of keys that thread has called pthread_setspecific() on */
-	sys_slist_t key_list;
-
-	/* Exit status */
-	void *retval;
-
-	/* Pthread cancellation */
-	int cancel_state;
-	int cancel_pending;
-	pthread_mutex_t cancel_lock;
-
-	/* Pthread State */
-	enum pthread_state state;
-	pthread_mutex_t state_lock;
-	pthread_cond_t state_cond;
-};
-
 /* Pthread detach/joinable */
-#define PTHREAD_CREATE_JOINABLE     PTHREAD_JOINABLE
-#define PTHREAD_CREATE_DETACHED     PTHREAD_DETACHED
+#define PTHREAD_CREATE_JOINABLE     1
+#define PTHREAD_CREATE_DETACHED     2
 
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
@@ -161,6 +130,13 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
 }
 
 /**
+ * @brief Declare a mutex as initialized
+ *
+ * Initialize a mutex with the default mutex attributes.
+ */
+#define PTHREAD_MUTEX_INITIALIZER (-1)
+
+/**
  * @brief Declare a pthread mutex
  *
  * Declaration API for a pthread mutex.  This is not a POSIX API, it's
@@ -168,14 +144,9 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
  * kernel objects.
  *
  * @param name Symbol name of the mutex
+ * @deprecated Use @c PTHREAD_MUTEX_INITIALIZER instead.
  */
-#define PTHREAD_MUTEX_DEFINE(name) \
-	struct pthread_mutex name = \
-	{ \
-		.lock_count = 0, \
-		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),	\
-		.owner = NULL, \
-	}
+#define PTHREAD_MUTEX_DEFINE(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER
 
 /*
  *  Mutex attributes - type
@@ -447,11 +418,7 @@ int pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
  *
  * See IEEE 1003.1
  */
-static inline pthread_t pthread_self(void)
-{
-	return (pthread_t)k_current_get();
-}
-
+pthread_t pthread_self(void);
 
 /**
  * @brief Compare thread IDs.

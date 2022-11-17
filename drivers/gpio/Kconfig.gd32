@@ -5,5 +5,6 @@ config GPIO_GD32
 	bool "GD32 GPIO driver"
 	default y
 	depends on DT_HAS_GD_GD32_GPIO_ENABLED
+	select GD32_EXTI
 	help
 	  Enable the GD32 GPIO driver.

@@ -28,6 +28,7 @@
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
+#include "lll_sync_iso.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_df.h"
@@ -36,19 +37,19 @@
 #include "isoal.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
-#include "ull_sync_internal.h"
 #include "ull_adv_types.h"
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
-#include "ull_conn_internal.h"
 #include "ull_df_types.h"
-#include "ull_df_internal.h"
 #include "ull_llcp.h"
 
-#include "ull_adv_internal.h"
 #include "ull_internal.h"
+#include "ull_adv_internal.h"
+#include "ull_sync_internal.h"
+#include "ull_conn_internal.h"
+#include "ull_df_internal.h"
 
 #include "ll.h"
 
@@ -391,7 +392,7 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
  *
  * @param[in]handle                     Connection handle.
  * @param[in]sampling_enable            Enable or disable CTE RX
- * @param[in]slot_durations             Switching and samplig slot durations for
+ * @param[in]slot_durations             Switching and sampling slot durations for
  *                                      AoA mode.
  * @param[in]max_cte_count              Maximum number of sampled CTEs in single
  *                                      periodic advertising event.
@@ -401,8 +402,8 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
  * @return Status of command completion.
  *
  * @Note This function may put TX thread into wait state. This may lead to a
- *       situation that ll_sync_set instnace is relased (RX thread has higher
- *       priority than TX thread). l_sync_set instance may not be accessed after
+ *       situation that ll_sync_set instance is relased (RX thread has higher
+ *       priority than TX thread). ll_sync_set instance may not be accessed after
  *       call to ull_sync_slot_update.
  *       This is related with possible race condition with RX thread handling
  *       periodic sync lost event.
@@ -455,11 +456,28 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 #endif /* CONFIG_BT_CTLR_DF_DEBUG_ENABLE */
 
 		/* Enable of already enabled CTE updates AoA configuration */
-		if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
-		       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
-		      slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US)) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+
+		/* According to Core 5.3 Vol 4, Part E, section 7.8.82 slot_durations,
+		 * switch_pattern_len and ant_ids are used only for AoA and do not affect
+		 * reception of AoD CTE. If AoA is not supported relax command validation
+		 * to improve interoperability with different Host implementations.
+		 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)) {
+			if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
+			       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
+			      slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US)) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+
+			if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+			    switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+
+			(void)memcpy(cfg->ant_ids, ant_ids, switch_pattern_len);
 		}
+		cfg->slot_durations = slot_durations;
+		cfg->ant_sw_len = switch_pattern_len;
 
 		/* max_cte_count equal to 0x0 has special meaning - sample and
 		 * report continuously until there are CTEs received.
@@ -467,23 +485,13 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 		if (max_cte_count > CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
-
-		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
-		    switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN ||
-		    !ant_ids) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-
-		cfg->slot_durations = slot_durations;
 		cfg->max_cte_count = max_cte_count;
-		memcpy(cfg->ant_ids, ant_ids, switch_pattern_len);
-		cfg->ant_sw_len = switch_pattern_len;
 
 		cfg->is_enabled = 1U;
 
 		if (!cfg_prev->is_enabled) {
 			/* Extend sync event by maximum CTE duration.
-			 * CTE duration denepnds on transmitter configuration
+			 * CTE duration depends on transmitter configuration
 			 * so it is unknown for receiver upfront.
 			 */
 			slot_plus_us = BT_HCI_LE_CTE_LEN_MAX;
@@ -520,7 +528,7 @@ bool ull_df_sync_cfg_is_not_enabled(struct lll_df_sync *df_cfg)
 	struct lll_df_sync_cfg *cfg;
 
 	/* If new CTE sampling configuration was enqueued, get reference to
-	 * latest congiruation without swapping buffers. Buffer should be
+	 * latest configuration without swapping buffers. Buffer should be
 	 * swapped only at the beginning of the radio event.
 	 *
 	 * We may not get here if CTE sampling is not enabled in current
@@ -615,7 +623,7 @@ bool ull_df_conn_cfg_is_not_enabled(struct lll_df_conn_rx_cfg *rx_cfg)
 	struct lll_df_conn_rx_params *rx_params;
 
 	/* If new CTE sampling configuration was enqueued, get reference to
-	 * latest congiruation without swapping buffers. Buffer should be
+	 * latest configuration without swapping buffers. Buffer should be
 	 * swapped only at the beginning of the radio event.
 	 *
 	 * We may not get here if CTE sampling is not enabled in current
@@ -670,10 +678,10 @@ static struct lll_df_adv_cfg *df_adv_cfg_acquire(void)
  * @param pdu_prev       Pointer to a PDU that is already in use by LLL or was updated with new PDU
  *                       payload.
  * @param pdu            Pointer to a new head of periodic advertising chain. The pointer may have
- *                       the same value as @p pdu_prev, if payload of PDU pointerd by @p pdu_prev
+ *                       the same value as @p pdu_prev, if payload of PDU pointed by @p pdu_prev
  *                       was already updated.
  * @param cte_count      Number of CTEs that should be transmitted in periodic advertising chain.
- * @param cte_into       Pointer to instence of cte_info stuctuct that is added to PDUs extended
+ * @param cte_into       Pointer to instance of cte_info structure that is added to PDUs extended
  *                       advertising header.
  *
  * @return Zero in case of success, other value in case of failure.
@@ -989,7 +997,7 @@ static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
 	/* Go through existing chain and remove CTE info. */
 	while (pdu_chained) {
 		if (pdu_ext_adv_is_empty_without_cte(pdu_chained)) {
-			/* If there is an empty PDU then all remaining PDUs shoudl be released. */
+			/* If there is an empty PDU then all remaining PDUs should be released. */
 			if (!new_chain) {
 				lll_adv_pdu_linked_release_all(pdu_chained);
 
@@ -1008,7 +1016,7 @@ static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
 							 pdu_rem_field_flags, NULL);
 			if (err != BT_HCI_ERR_SUCCESS) {
 				/* TODO: return here leaves periodic advertising chain in
-				 * an inconsisten state. Add gracefull return or assert.
+				 * an inconsistent state. Add gracefull return or assert.
 				 */
 				return err;
 			}
@@ -1090,7 +1098,7 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 
 	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0, pdu_rem_field_flags, NULL);
 	if (err != BT_HCI_ERR_SUCCESS) {
-		/* TODO: return here leaves periodic advertising chain in an inconsisten state.
+		/* TODO: return here leaves periodic advertising chain in an inconsistent state.
 		 * Add gracefull return or assert.
 		 */
 		return err;
@@ -1170,13 +1178,13 @@ uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t
  * @note: The CTE may not be send/received with PHY CODED. The BT Core 5.3 specification does not
  *        mention special handling of CTE receive and sampling while the functionality is enabled
  *        for a connection that currently uses PHY CODED. Enable of CTE receive for a PHY CODED
- *        will introduce coplications for TISF maintenance by software switch. To avoid that
+ *        will introduce complications for TISF maintenance by software switch. To avoid that
  *        the lower link layer will enable the functionality when connection uses PHY UNCODED only.
  *
  * @param handle             Connection handle.
  * @param sampling_enable    Enable or disable CTE RX. When the parameter is set to false,
  *                           @p slot_durations, @p switch_pattern_len and @ant_ids are ignored.
- * @param slot_durations     Switching and samplig slot durations for AoA mode.
+ * @param slot_durations     Switching and sampling slot durations for AoA mode.
  * @param switch_pattern_len Number of antenna ids in switch pattern.
  * @param ant_ids            Array of antenna identifiers.
  *
@@ -1209,6 +1217,11 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 	if (!sampling_enable) {
 		params_rx->is_enabled = false;
 	} else {
+		/* According to Core 5.3 Vol 4, Part E, section 7.8.83 slot_durations,
+		 * switch_pattern_len and ant_ids are used only for AoA and do not affect
+		 * reception of AoD CTE. If AoA is not supported relax command validation
+		 * to improve interoperability with different Host implementations.
+		 */
 		if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)) {
 			if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
 			       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||

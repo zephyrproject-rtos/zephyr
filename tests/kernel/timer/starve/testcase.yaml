@@ -1,10 +1,5 @@
 tests:
   kernel.timer.starve:
-    build_only: true
+    slow: true
+    timeout: 3600
     tags: kernel timer
-  kernel.timer.starve.linker_generator:
-    platform_allow: qemu_cortex_m3
-    build_only: true
-    tags: kernel timer linker_generator
-    extra_configs:
-      - CONFIG_CMAKE_LINKER_GENERATOR=y

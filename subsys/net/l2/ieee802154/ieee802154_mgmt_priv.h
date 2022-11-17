@@ -27,7 +27,7 @@ static inline void ieee802154_mgmt_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
-	k_sem_init(&ctx->res_lock, 1, 1);
+	k_sem_init(&ctx->scan_ctx_lock, 1, 1);
 }
 
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,

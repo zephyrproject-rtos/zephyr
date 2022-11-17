@@ -30,6 +30,15 @@
 #endif
 #endif
 
+#ifdef __xtensa__
+#define Z_PKG_HDR_EXT_XTENSA_ALIGNMENT 8
+#ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+#define Z_PKG_DESC_XTENSA_PADDING 1
+#else
+#define Z_PKG_DESC_XTENSA_PADDING 0
+#endif
+#endif /* __xtensa__ */
+
 /**
  * @brief cbprintf package descriptor.
  */
@@ -50,6 +59,16 @@ struct cbprintf_package_desc {
 	/** Flags used to create the package */
 	uint32_t pkg_flags;
 #endif
+#ifdef __xtensa__
+	/*
+	 * On Xtensa, the first argument needs to be aligned to 8-byte.
+	 * With 32-bit pointers, we need another 4 bytes padding so
+	 * that whole struct cbprintf_package_hdr_ext is of multiple of
+	 * 8 bytes.
+	 */
+	uint32_t xtensa_padding[Z_PKG_DESC_XTENSA_PADDING];
+#endif
+
 } __packed;
 
 /** @brief cbprintf package header
@@ -66,19 +85,9 @@ union cbprintf_package_hdr {
 	void *raw2[2];
 #endif
 
-#ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
-#ifdef __xtensa__
-	/*
-	 * On Xtensa, the first argument needs to be aligned to 8-byte.
-	 * With 32-bit pointers, we need another 4 bytes padding so
-	 * that whole struct cbprintf_package_hdr_ext is of multiple of
-	 * 8 bytes.
-	 */
-	uint32_t xtensa_padding;
-#endif
-#endif
-
 } __packed;
+
+
 
 /** @brief cbprintf package header with format string pointer.
  *
@@ -96,6 +105,20 @@ struct cbprintf_package_hdr_ext {
 	 * to pointer size.
 	 */
 } __packed;
+
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * Assert that the package hdr does indeed align properly.
+ */
+#ifdef __xtensa__
+BUILD_ASSERT(sizeof(struct cbprintf_package_hdr_ext) % Z_PKG_HDR_EXT_XTENSA_ALIGNMENT == 0,
+	     "Package header size on Xtensa must be aligned");
+#endif
+/**
+ * @endcond
+ */
 
 /* Z_C_GENERIC is used there */
 #include <zephyr/sys/cbprintf_internal.h>
@@ -120,6 +143,7 @@ extern "C" {
 #endif
 
 BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
+
 
 /**@defgroup CBPRINTF_PACKAGE_FLAGS Package flags.
  * @{
@@ -792,9 +816,9 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 #ifdef CONFIG_PICOLIBC
 
 #define fprintfcb(stream, ...) fprintf(stream, __VA_ARGS__)
-#define vfprintfcb(stream, format, ap) (stream, format, ap)
+#define vfprintfcb(stream, format, ap) vfprintf(stream, format, ap)
 #define printfcb(format, ...) printf(format, __VA_ARGS__)
-#define vprintfcb(format, ap) vfprintf(format, ap)
+#define vprintfcb(format, ap) vprintf(format, ap)
 #define snprintfcb(str, size, ...) snprintf(str, size, __VA_ARGS__)
 #define vsnprintfcb(str, size, format, ap) vsnprintf(str, size, format, ap)
 

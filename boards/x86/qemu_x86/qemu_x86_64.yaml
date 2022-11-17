@@ -6,6 +6,8 @@ toolchain:
   - zephyr
   - xtools
 simulation: qemu
+supported:
+  - can
 testing:
   default: true
   ignore_tags:

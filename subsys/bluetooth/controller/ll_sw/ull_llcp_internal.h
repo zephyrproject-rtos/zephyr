@@ -28,6 +28,7 @@ enum llcp_proc {
 	PROC_CTE_REQ,
 	PROC_CIS_CREATE,
 	PROC_CIS_TERMINATE,
+	PROC_SCA_UPDATE,
 	/* A helper enum entry, to use in pause procedure context */
 	PROC_NONE = 0x0,
 };
@@ -197,6 +198,12 @@ struct proc_ctx {
 		} pu;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		struct {
+			uint8_t ntf_dle;
+		} dle;
+#endif
+
 		/* Connection Update & Connection Parameter Request */
 		struct {
 			uint8_t error;
@@ -212,12 +219,7 @@ struct proc_ctx {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint8_t  preferred_periodicity;
 			uint16_t reference_conn_event_count;
-			uint16_t offset0;
-			uint16_t offset1;
-			uint16_t offset2;
-			uint16_t offset3;
-			uint16_t offset4;
-			uint16_t offset5;
+			uint16_t offsets[6];
 #endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
 		} cu;
 
@@ -289,6 +291,12 @@ struct proc_ctx {
 			uint8_t  cis_id;
 			uint8_t error_code;
 		} cis_term;
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+		struct {
+			uint8_t sca;
+			uint8_t error_code;
+		} sca_update;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	} data;
 
 	struct {
@@ -485,6 +493,8 @@ void llcp_rp_cu_init_proc(struct proc_ctx *ctx);
 void llcp_rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 void llcp_rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
+bool llcp_rp_conn_param_req_apm_awaiting_reply(struct proc_ctx *ctx);
+void llcp_rp_conn_param_req_apm_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 
 /*
  * Terminate Helper
@@ -663,6 +673,17 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+/*
+ * Sleep Clock Accuracy Update Procedure Helper
+ */
+void llcp_pdu_encode_clock_accuracy_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_clock_accuracy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_clock_accuracy_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_clock_accuracy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /*

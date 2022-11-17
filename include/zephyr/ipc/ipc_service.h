@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,12 +21,22 @@ extern "C" {
  * @{
  * @}
  */
+
 /**
  * @brief IPC Service API
  * @defgroup ipc_service_api IPC service APIs
  * @ingroup ipc
  * @{
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
  *
+ * These are for internal use only, so skip these in
+ * public documentation.
+ */
+
+/**
  * Some terminology:
  *
  * - INSTANCE: an instance is the external representation of a physical
@@ -121,6 +132,10 @@ extern "C" {
  *
  */
 
+/**
+ * @endcond
+ */
+
 /** @brief Event callback structure.
  *
  *  It is registered during endpoint registration.
@@ -203,6 +218,24 @@ struct ipc_ept_cfg {
  */
 int ipc_service_open_instance(const struct device *instance);
 
+/** @brief Close an instance
+ *
+ *  Function to be used to close an instance. All endpoints must be
+ *  deregistered using ipc_service_deregister_endpoint before this
+ *  is called.
+ *
+ *  @param[in] instance Instance to close.
+ *
+ *  @retval -EINVAL when instance configuration is invalid.
+ *  @retval -EIO when no backend is registered.
+ *  @retval -EALREADY when the instance is not already opened.
+ *  @retval -EBUSY when an endpoint exists that hasn't been
+ *           deregistered
+ *
+ *  @retval 0 on success or when not implemented on the backend (not needed).
+ *  @retval other errno codes depending on the implementation of the backend.
+ */
+int ipc_service_close_instance(const struct device *instance);
 
 /** @brief Register IPC endpoint onto an instance.
  *

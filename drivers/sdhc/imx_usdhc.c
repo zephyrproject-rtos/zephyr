@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(usdhc, CONFIG_SDHC_LOG_LEVEL);
 
 #include <fsl_usdhc.h>
 #include <fsl_cache.h>
+#include <zephyr/irq.h>
 
 enum transfer_callback_status {
 	TRANSFER_CMD_COMPLETE = BIT(0),

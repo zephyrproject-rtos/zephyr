@@ -7,37 +7,27 @@ common:
     - native_posix
 tests:
   logging.log_api_deferred_overflow_rt_filter:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.log_api_deferred_overflow:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
 
   logging.log_api_deferred_no_overflow:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=n
 
   logging.log_api_deferred_static_filter:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log_api_deferred_printk:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
@@ -46,16 +36,12 @@ tests:
       - CONFIG_LOG_PROCESS_THREAD=y
 
   logging.log_api_deferred_func_prefix:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
       - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
 
   logging.log_api_deferred_64b_timestamp:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
@@ -78,57 +64,41 @@ tests:
       - CONFIG_LOG_OVERRIDE_LEVEL=4
 
   logging.log_api_immediate:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
 
   logging.log_api_immediate_printk:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_PRINTK=y
 
   logging.log_api_immediate_rt_filter:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.log_api_immediate_static_filter:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log_api_immediate_64b_timestamp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
 
   logging.log_api_frontend_dbg:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log_api_frontend:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_DEFERRED=y
 
   logging.log_api_frontend_immediate:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -152,15 +122,11 @@ tests:
       - CONFIG_LOG_OVERRIDE_LEVEL=4
 
   logging.log_api_frontend_only:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_ONLY=y
 
   logging.log_api_frontend_no_backends:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_ONLY=y
@@ -171,8 +137,6 @@ tests:
     extra_args: EXTRA_CPPFLAGS=-DNO_BACKENDS=1
 
   logging.log_api_deferred_overflow_rt_filter_cpp:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
@@ -180,32 +144,24 @@ tests:
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_deferred_overflow_cpp:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_deferred_no_overflow_cpp:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=n
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_deferred_static_filter_cpp:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_deferred_printk_cpp:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
@@ -215,8 +171,6 @@ tests:
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_deferred_func_prefix_cpp:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
@@ -224,55 +178,41 @@ tests:
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_deferred_64b_timestamp_cpp:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_immediate_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_immediate_printk_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_PRINTK=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_immediate_rt_filter_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_immediate_static_filter_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_immediate_64b_timestamp_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_frontend_dbg_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -280,32 +220,24 @@ tests:
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_frontend_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_frontend_immediate_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_frontend_only_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_ONLY=y
       - CONFIG_CPLUSPLUS=y
 
   logging.log_api_frontend_no_backends_cpp:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_ONLY=y
@@ -317,8 +249,6 @@ tests:
     extra_args: EXTRA_CPPFLAGS=-DNO_BACKENDS=1
 
   logging.log_api_deferred_overflow_rt_filter.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -327,8 +257,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_overflow.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -336,8 +264,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_no_overflow.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -345,8 +271,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_static_filter.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -354,8 +278,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_printk.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -366,8 +288,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_func_prefix.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -376,8 +296,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_64b_timestamp.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -387,7 +305,7 @@ tests:
   logging.log_api_deferred_override_level.tagged_args:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
-    platform_allow: qemu_cortex_m3 qemu_cortex_a9
+    platform_allow: qemu_cortex_m3 qemu_cortex_a9 native_posix
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -397,7 +315,7 @@ tests:
   logging.log_api_deferred_override_level_rt_filtering.tagged_args:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
-    platform_allow: qemu_cortex_m3 qemu_cortex_a9
+    platform_allow: qemu_cortex_m3 qemu_cortex_a9 native_posix
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -406,16 +324,12 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate_printk.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -423,8 +337,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate_rt_filter.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -432,8 +344,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate_static_filter.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -441,8 +351,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate_64b_timestamp.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -450,8 +358,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_overflow_rt_filter_cpp.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -461,8 +367,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_overflow_cpp.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -471,8 +375,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_no_overflow_cpp.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -481,8 +383,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_static_filter_cpp.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -491,8 +391,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_printk_cpp.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -504,8 +402,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_func_prefix_cpp.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -515,8 +411,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_deferred_64b_timestamp_cpp.tagged_args:
-    # FIXME:see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -525,8 +419,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate_cpp.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -534,8 +426,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate_printk_cpp.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -544,8 +434,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate_rt_filter_cpp.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -554,8 +442,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate_static_filter_cpp.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -564,8 +450,6 @@ tests:
       - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
 
   logging.log_api_immediate_64b_timestamp_cpp.tagged_args:
-    # FIXME: qemu_arc_hs6x excluded, see #38041
-    platform_exclude: qemu_arc_hs6x
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y

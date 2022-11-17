@@ -236,7 +236,6 @@ struct bt_mesh_net_rx {
 	       net_if:2,       /* Network interface */
 	       local_match:1,  /* Matched a local element */
 	       friend_match:1; /* Matched an LPN we're friends for */
-	uint16_t  msg_cache_idx;  /* Index of entry in message cache */
 };
 
 /* Encoding context for Network/Transport data */

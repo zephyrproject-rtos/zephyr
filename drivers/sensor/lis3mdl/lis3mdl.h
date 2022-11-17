@@ -12,6 +12,7 @@
 #include <zephyr/types.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 
 #define LIS3MDL_REG_WHO_AM_I            0x0F
 #define LIS3MDL_CHIP_ID                 0x3D

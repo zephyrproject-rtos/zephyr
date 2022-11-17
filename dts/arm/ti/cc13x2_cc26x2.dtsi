@@ -149,6 +149,14 @@
 				status = "disabled";
 			};
 		};
+
+		adc0: adc@400cb008 {
+			compatible = "ti,cc13xx-cc26xx-adc";
+			reg = <0x400cb008 0x1>;
+			interrupts = <32 0>;  /* interrupt #48 = 32 + 16 */
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
 	};
 };
 

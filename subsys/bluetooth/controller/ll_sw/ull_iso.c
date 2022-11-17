@@ -12,10 +12,11 @@
 #include "hal/ccm.h"
 
 #include "util/util.h"
-#include "util/memq.h"
 #include "util/mem.h"
+#include "util/memq.h"
 #include "util/mfifo.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 #include "hal/ticker.h"
@@ -25,6 +26,7 @@
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
 #include "lll_adv_iso.h"
+#include "lll/lll_df_types.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 #include "lll_conn.h"
@@ -154,12 +156,41 @@ __weak bool ll_data_path_configured(uint8_t data_path_dir,
 uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 			    uint32_t *timestamp, uint32_t *offset)
 {
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+
+	if (IS_CIS_HANDLE(handle)) {
+		struct ll_iso_datapath *dp = NULL;
+		struct ll_conn_iso_stream *cis;
+
+		cis = ll_conn_iso_stream_get(handle);
+
+		if (cis) {
+			dp = cis->hdr.datapath_in;
+		}
+
+		if (dp &&
+			isoal_tx_get_sync_info(dp->source_hdl, seq,
+					timestamp, offset) == ISOAL_STATUS_OK) {
+			return BT_HCI_ERR_SUCCESS;
+		}
+
+		return BT_HCI_ERR_CMD_DISALLOWED;
+
+	} else if (IS_ADV_ISO_HANDLE(handle)) {
+		/* FIXME: Do something similar to connected */
+
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
+#else
 	ARG_UNUSED(handle);
 	ARG_UNUSED(seq);
 	ARG_UNUSED(timestamp);
 	ARG_UNUSED(offset);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 }
 
 /* Must be implemented by vendor */
@@ -623,15 +654,16 @@ static isoal_status_t ll_iso_test_sdu_alloc(const struct isoal_sink *sink_ctx,
  * further in the data path. This injected implementation performs statistics on
  * the SDU and then discards it.
  */
-static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink *sink_ctx,
-					   const struct isoal_sdu_produced *valid_sdu)
+static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink             *sink_ctx,
+					   const struct isoal_emitted_sdu_frag *sdu_frag,
+					   const struct isoal_emitted_sdu      *sdu)
 {
 	isoal_status_t status;
 	struct net_buf *buf;
 	uint16_t handle;
 
 	handle = sink_ctx->session.handle;
-	buf = (struct net_buf *)valid_sdu->contents.dbuf;
+	buf = (struct net_buf *)sdu_frag->sdu.contents.dbuf;
 
 	if (IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_stream *cis;
@@ -656,7 +688,7 @@ static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink *sink_ctx,
 			sdu_counter = 0U;
 		}
 
-		switch (valid_sdu->status) {
+		switch (sdu_frag->sdu.status) {
 		case ISOAL_SDU_STATUS_VALID:
 			if (framed && cis->hdr.test_mode.rx_sdu_counter == 0U) {
 				/* BT 5.3, Vol 6, Part B, section 7.2:
@@ -886,7 +918,9 @@ static isoal_status_t ll_iso_test_pdu_release(struct node_tx_iso *node_tx,
 					      const isoal_status_t status)
 {
 	/* Release back to memory pool */
-	ll_iso_link_tx_release(node_tx->link);
+	if (node_tx->link) {
+		ll_iso_link_tx_release(node_tx->link);
+	}
 	ll_iso_tx_mem_release(node_tx);
 
 	return ISOAL_STATUS_OK;
@@ -951,9 +985,9 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 
 		/* Configure SDU similarly to one delivered via HCI */
 		sdu.dbuf = tx_buffer;
-		sdu.cig_ref_point = cig->cig_ref_point;
+		sdu.grp_ref_point = cig->cig_ref_point;
 		sdu.target_event = cis->lll.event_count +
-				   (cis->lll.tx.flush_timeout > 1U ? 0U : 1U);
+					(cis->lll.tx.flush_timeout > 1U ? 0U : 1U);
 		sdu.iso_sdu_length = remaining_tx;
 
 		/* Send all SDU fragments */
@@ -1262,6 +1296,30 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 		LL_ASSERT(0);
 	}
 }
+
+void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count)
+{
+	if (IS_CIS_HANDLE(handle)) {
+		struct ll_iso_datapath *dp = NULL;
+		struct ll_conn_iso_stream *cis;
+
+		cis = ll_iso_stream_connected_get(handle);
+
+		if (cis) {
+			dp  = cis->hdr.datapath_in;
+		}
+
+		if (dp) {
+			isoal_tx_event_prepare(dp->source_hdl, event_count);
+		}
+	} else if (IS_ADV_ISO_HANDLE(handle)) {
+		/* Send event deadline trigger to ISO-AL.
+		 * TODO: Can be unified with CIS implementation.
+		 */
+	} else {
+		LL_ASSERT(0);
+	}
+}
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
@@ -1512,6 +1570,8 @@ static isoal_status_t ll_iso_pdu_alloc(struct isoal_pdu_buffer *pdu_buffer)
 		return ISOAL_STATUS_ERR_PDU_ALLOC;
 	}
 
+	node_tx->link = NULL;
+
 	/* node_tx handle will be required to emit the PDU later */
 	pdu_buffer->handle = (void *)node_tx;
 	pdu_buffer->pdu    = (void *)node_tx->pdu;
@@ -1595,7 +1655,9 @@ static isoal_status_t ll_iso_pdu_release(struct node_tx_iso *node_tx,
 		ll_rx_sched();
 	} else {
 		/* Release back to memory pool */
-		ll_iso_link_tx_release(node_tx->link);
+		if (node_tx->link) {
+			ll_iso_link_tx_release(node_tx->link);
+		}
 		ll_iso_tx_mem_release(node_tx);
 	}
 

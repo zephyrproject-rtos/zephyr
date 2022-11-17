@@ -6,7 +6,7 @@ description: ICM-42605 motion tracking device
 # ICM-42605 is SPI.
 compatible: "invensense,icm42605"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
     int-gpios:

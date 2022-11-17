@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 #include <fsl_uart.h>
 #include <soc.h>
 #ifdef CONFIG_PINCTRL

@@ -213,14 +213,28 @@ static int cmd_fill(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+/* Device name autocompletion support */
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_lookup(idx, NULL);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(eeprom_cmds,
-	SHELL_CMD_ARG(read, NULL, "<device> <offset> <length>", cmd_read, 4, 0),
-	SHELL_CMD_ARG(write, NULL,
+	SHELL_CMD_ARG(read, &dsub_device_name,
+		      "<device> <offset> <length>", cmd_read, 4, 0),
+	SHELL_CMD_ARG(write, &dsub_device_name,
 		      "<device> <offset> [byte0] <byte1> .. <byteN>", cmd_write,
 		      4, CONFIG_EEPROM_SHELL_BUFFER_SIZE - 1),
-	SHELL_CMD_ARG(size, NULL, "<device>", cmd_size, 2, 0),
-	SHELL_CMD_ARG(fill, NULL, "<device> <offset> <length> <pattern>",
-		      cmd_fill, 5, 0),
+	SHELL_CMD_ARG(size, &dsub_device_name, "<device>", cmd_size, 2, 0),
+	SHELL_CMD_ARG(fill, &dsub_device_name,
+		      "<device> <offset> <length> <pattern>", cmd_fill, 5, 0),
 	SHELL_SUBCMD_SET_END
 );
 

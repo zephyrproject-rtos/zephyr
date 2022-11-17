@@ -24,3 +24,5 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # enable pin controller
 CONFIG_PINCTRL=y
+
+CONFIG_REGULATOR=y

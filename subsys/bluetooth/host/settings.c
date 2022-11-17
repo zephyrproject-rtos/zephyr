@@ -15,6 +15,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SETTINGS)
 #define LOG_MODULE_NAME bt_settings
 #include "common/log.h"
+#include "common/bt_str.h"
 
 #include "hci_core.h"
 #include "settings.h"
@@ -113,7 +114,7 @@ int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
+static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb,
 	       void *cb_arg)
 {
 	ssize_t len;
@@ -150,8 +151,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 				       " (err %zd)", len);
 			} else {
 				BT_ERR("Invalid length ID address in storage");
-				BT_HEXDUMP_DBG(&bt_dev.id_addr, len,
-					       "data read");
+				LOG_HEXDUMP_DBG(&bt_dev.id_addr, len, "data read");
 			}
 			(void)memset(bt_dev.id_addr, 0,
 				     sizeof(bt_dev.id_addr));
@@ -255,7 +255,7 @@ void bt_settings_save_id(void)
 	k_work_submit(&save_id_work);
 }
 
-static int commit(void)
+static int commit_settings(void)
 {
 	int err;
 
@@ -307,7 +307,7 @@ static int commit(void)
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt, "bt", NULL, set, commit, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt, "bt", NULL, set_setting, commit_settings, NULL);
 
 int bt_settings_init(void)
 {

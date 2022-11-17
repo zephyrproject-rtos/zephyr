@@ -31,12 +31,17 @@ set(TFM_CRYPTO_MODULES
 
 
 if (CONFIG_BUILD_WITH_TFM)
-  if (CONFIG_TFM_IPC)
+  if (CONFIG_TFM_LIBRARY)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=ON)
+  else()
     list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=OFF)
     # PSA API awareness for the Non-Secure application
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
-  else()
-    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=ON)
+    if (CONFIG_TFM_SFN)
+      list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
+    else() # CONFIG_TFM_IPC
+      list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="IPC")
+    endif()
   endif()
   if (CONFIG_TFM_REGRESSION_S)
     list(APPEND TFM_CMAKE_ARGS -DTEST_S=ON)
@@ -372,7 +377,7 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
 
   if(NOT CONFIG_TFM_BUILD_NS)
-    if(CONFIG_TFM_IPC)
+    if(CONFIG_TFM_IPC OR CONFIG_TFM_SFN)
       zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_ipc_api.c)
       zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_ipc_api.c)
       zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_ipc_api.c)

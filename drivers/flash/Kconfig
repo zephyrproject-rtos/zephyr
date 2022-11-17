@@ -88,6 +88,8 @@ source "drivers/flash/Kconfig.gecko"
 
 source "drivers/flash/Kconfig.nor"
 
+source "drivers/flash/Kconfig.rpi_pico"
+
 source "drivers/flash/Kconfig.stm32"
 
 source "drivers/flash/Kconfig.stm32_qspi"
@@ -109,5 +111,7 @@ source "drivers/flash/Kconfig.smartbond"
 source "drivers/flash/Kconfig.cadence_qspi_nor"
 
 source "drivers/flash/Kconfig.gd32"
+
+source "drivers/flash/Kconfig.xmc4xxx"
 
 endif # FLASH

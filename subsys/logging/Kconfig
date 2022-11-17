@@ -24,7 +24,7 @@ rsource "Kconfig.formatting"
 
 if !LOG_FRONTEND_ONLY
 
-rsource "Kconfig.backends"
+rsource "backends/Kconfig"
 
 endif # !LOG_FRONTEND_ONLY
 
@@ -35,6 +35,12 @@ if LOG_FRONTEND
 rsource "Kconfig.frontends"
 
 endif #LOG_FRONTEND
+
+if LOG_MULTIDOMAIN
+
+rsource "Kconfig.links"
+
+endif
 
 rsource "Kconfig.misc"
 

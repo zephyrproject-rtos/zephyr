@@ -26,9 +26,9 @@ struct eth_stm32_hal_dev_cfg {
 	struct stm32_pclken pclken;
 	struct stm32_pclken pclken_rx;
 	struct stm32_pclken pclken_tx;
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
 	struct stm32_pclken pclken_ptp;
-#endif /* !defined(CONFIG_SOC_SERIES_STM32H7X) */
+#endif
 	const struct pinctrl_dev_config *pcfg;
 };
 

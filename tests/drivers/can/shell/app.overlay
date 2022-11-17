@@ -6,7 +6,7 @@
 
 /{
 	fake_can: fake_can {
-		compatible = "test-fake-can";
+		compatible = "zephyr,fake-can";
 		status = "okay";
 		sjw = <1>;
 		sample-point = <875>;

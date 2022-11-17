@@ -130,7 +130,7 @@ static const struct sensor_driver_api qdec_sam_driver_api = {
 									\
 	static struct qdec_sam_dev_data qdec##n##_sam_data;		\
 									\
-	DEVICE_DT_INST_DEFINE(n, qdec_sam_initialize, NULL,		\
+	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_sam_initialize, NULL,	\
 			    &qdec##n##_sam_data, &qdec##n##_sam_config, \
 			    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
 			    &qdec_sam_driver_api);

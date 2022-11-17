@@ -14,7 +14,7 @@ inline const char *boolToString(bool cond)
 	return cond ? "SUCCESS" : "FAIL";
 }
 
-void main(void)
+int main(void)
 {
 	auto echo_app = chre::initializeStaticNanoappEchoApp();
 	auto& eventLoop = chre::EventLoopManagerSingleton::get()->getEventLoop();
@@ -22,7 +22,7 @@ void main(void)
 
 	if (chre::zephyr::init()) {
 		printk("Failed to initialize!\n");
-		return;
+		return -1;
 	}
 
 	printk("Hello CHRE!\n");
@@ -44,4 +44,5 @@ void main(void)
 	       boolToString(eventLoop.unloadNanoapp(instanceId, false)));
 	chre::zephyr::deinit();
 	printk("Goodbye!\n");
+	return 0;
 }

@@ -159,7 +159,9 @@
 #define LIS2DH_REG_INT2_THS		0x36
 #define LIS2DH_REG_INT2_DUR		0x37
 
-#define LIS2DH_AOI_CFG			BIT(7)
+#define LIS2DH_INT_CFG_MODE_SHIFT	6
+#define LIS2DH_INT_CFG_AOI_CFG		BIT(LIS2DH_INT_CFG_MODE_SHIFT + 1)
+#define LIS2DH_INT_CFG_6D_CFG		BIT(LIS2DH_INT_CFG_MODE_SHIFT)
 #define LIS2DH_INT_CFG_ZHIE_ZUPE	BIT(5)
 #define LIS2DH_INT_CFG_ZLIE_ZDOWNE	BIT(4)
 #define LIS2DH_INT_CFG_YHIE_YUPE	BIT(3)
@@ -208,6 +210,8 @@ struct lis2dh_config {
 		bool is_lsm303agr_dev : 1;
 		bool disc_pull_up : 1;
 		bool anym_on_int1 : 1;
+		bool anym_latch : 1;
+		uint8_t anym_mode : 2;
 	} hw;
 #ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
 	const struct temperature temperature;

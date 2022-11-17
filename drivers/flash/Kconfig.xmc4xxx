@@ -1,0 +1,11 @@
+# Copyright (c) 2022 Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_XMC4XXX
+	bool "XMC4XXX flash driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enables XMC4XXX flash driver.

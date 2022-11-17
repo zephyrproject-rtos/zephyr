@@ -68,25 +68,27 @@ static void load_callee_saved_regs(const _callee_saved_t *regs)
 	__asm__ volatile (
 		"mov r1, r7;\n\t"
 		"mov r0, %0;\n\t"
-		"ldmia r0!, {r4-r7};\n\t"
+		"add r0, #16;\n\t"
 		"ldmia r0!, {r4-r7};\n\t"
 		"mov r8, r4;\n\t"
 		"mov r9, r5;\n\t"
 		"mov r10, r6;\n\t"
 		"mov r11, r7;\n\t"
+		"sub r0, #32;\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
 		"mov r7, r1;\n\t"
-		:
+		: /* no output */
 		: "r" (regs)
-		: "memory"
+		: "memory", "r1", "r0"
 	);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
 		"mov r1, r7;\n\t"
 		"ldmia %0, {v1-v8};\n\t"
 		"mov r7, r1;\n\t"
-		:
+		: /* no output */
 		: "r" (regs)
-		: "memory"
+		: "memory", "r1"
 	);
 #endif
 	__DSB();
@@ -334,26 +336,44 @@ static void alt_thread_entry(void)
 	 */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	__asm__ volatile (
-		"push {r4,r5,r6,r7};\n\t"
-		"mov r4, r8;\n\t"
-		"mov r5, r9;\n\t"
-		"push {r4, r5};\n\t"
-		"mov r4, r10;\n\t"
-		"mov r5, r11;\n\t"
-		"push {r4, r5};\n\t"
-		"push {r0, r1};\n\t"
-		"mov r1, r7;\n\t"
+		/* Stash r4-r11 in stack, they will be restored much later in
+		 * another inline asm -- that should be reworked since stack
+		 * must be balanced when we leave any inline asm. We could
+		 * use simply an alternative stack for storing them instead
+		 * of the function's stack.
+		 */
+		"push {r4-r7};\n\t"
+		"mov r2, r8;\n\t"
+		"mov r3, r9;\n\t"
+		"push {r2, r3};\n\t"
+		"mov r2, r10;\n\t"
+		"mov r3, r11;\n\t"
+		"push {r2, r3};\n\t"
+
+		/* Save r0 and r7 since we want to preserve them but they
+		 * are used below: r0 is used as a copy of struct pointer
+		 * we don't want to mess and r7 is the frame pointer which
+		 * we must not clobber it.
+		 */
+		"push {r0, r7};\n\t"
+
+		/* Load struct into r4-r11 */
 		"mov r0, %0;\n\t"
-		"ldmia r0!, {r4-r7};\n\t"
+		"add r0, #16;\n\t"
 		"ldmia r0!, {r4-r7};\n\t"
 		"mov r8, r4;\n\t"
 		"mov r9, r5;\n\t"
 		"mov r10, r6;\n\t"
 		"mov r11, r7;\n\t"
-		"mov r7, r1;\n\t"
-		"pop {r0, r1};\n\t"
-		:	: "r" (&ztest_thread_callee_saved_regs_container)
-		: "memory"
+		"sub r0, #32;\n\t"
+		"ldmia r0!, {r4-r7};\n\t"
+
+		/* Restore r0 and r7 */
+		"pop {r0, r7};\n\t"
+
+		: /* no output */
+		: "r" (&ztest_thread_callee_saved_regs_container)
+		: "memory", "r0", "r2", "r3"
 	);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
@@ -363,8 +383,9 @@ static void alt_thread_entry(void)
 		"ldmia %0, {v1-v8};\n\t"
 		"mov r7, r0;\n\t"
 		"pop {r0, r1};\n\t"
-		: : "r" (&ztest_thread_callee_saved_regs_container)
-		: "memory"
+		: /* no output */
+		: "r" (&ztest_thread_callee_saved_regs_container)
+		: "memory", "r0"
 	);
 #endif
 

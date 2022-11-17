@@ -21,6 +21,9 @@
 
 #include <zephyr/net/buf.h>
 
+#if defined(CONFIG_IEEE802154)
+#include <zephyr/net/ieee802154_pkt.h>
+#endif
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_linkaddr.h>
 #include <zephyr/net/net_ip.h>
@@ -83,6 +86,10 @@ struct net_pkt {
 
 	/** @cond ignore */
 
+#if defined(CONFIG_NET_TCP)
+	/** Allow placing the packet into sys_slist_t */
+	sys_snode_t next;
+#endif
 #if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
@@ -126,76 +133,65 @@ struct net_pkt {
 	struct net_linkaddr lladdr_dst;
 	uint16_t ll_proto_type;
 
-#if defined(CONFIG_NET_TCP)
-	/** Allow placing the packet into sys_slist_t */
-	sys_snode_t next;
-#endif
-
 #if defined(CONFIG_NET_IP)
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 #endif
 
-	uint8_t overwrite  : 1;	/* Is packet content being overwritten? */
+	uint8_t overwrite : 1;	 /* Is packet content being overwritten? */
+	uint8_t sent_or_eof : 1; /* For outgoing packet: is this sent or not
+				  * For incoming packet of a socket: last
+				  * packet before EOF
+				  * Used only if defined(CONFIG_NET_TCP)
+				  */
+	uint8_t pkt_queued : 1;	 /* For outgoing packet: is this packet
+				  * queued to be sent but has not reached
+				  * the driver yet.
+				  * Used only if defined(CONFIG_NET_TCP)
+				  */
+	uint8_t ptp_pkt : 1;	 /* For outgoing packet: is this packet
+				  * a L2 PTP packet.
+				  * Used only if defined (CONFIG_NET_L2_PTP)
+				  */
+	uint8_t forwarding : 1;	 /* Are we forwarding this pkt
+				  * Used only if defined(CONFIG_NET_ROUTE)
+				  */
+	uint8_t family : 3;	 /* Address family, see net_ip.h */
 
-	uint8_t sent_or_eof: 1;	/* For outgoing packet: is this sent or not
-				 * For incoming packet of a socket: last
-				 * packet before EOF
-				 * Used only if defined(CONFIG_NET_TCP)
-				 */
-	union {
-		uint8_t pkt_queued: 1; /* For outgoing packet: is this packet
-				     * queued to be sent but has not reached
-				     * the driver yet.
-				     * Used only if defined(CONFIG_NET_TCP)
-				     */
-		uint8_t ptp_pkt: 1; /* For outgoing packet: is this packet
-				     * a L2 PTP packet.
-				     * Used only if defined (CONFIG_NET_L2_PTP)
-				     */
-	};
+	/* bitfield byte alignment boundary */
 
-	uint8_t forwarding : 1;	/* Are we forwarding this pkt
-				 * Used only if defined(CONFIG_NET_ROUTE)
-				 */
-	uint8_t family     : 3;	/* Address family, see net_ip.h */
-
-	union {
 #if defined(CONFIG_NET_IPV4_AUTO)
-		uint8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP
-					     * message.
-					     * Note: family needs to be
-					     * AF_INET.
-					     */
-#endif
-#if defined(CONFIG_NET_LLDP)
-		uint8_t lldp_pkt          : 1; /* Is this pkt an LLDP message.
-					     * Note: family needs to be
-					     * AF_UNSPEC.
-					     */
-#endif
-		uint8_t ppp_msg           : 1; /* This is a PPP message */
-	};
-
-#if defined(CONFIG_NET_TCP)
-	uint8_t tcp_first_msg     : 1; /* Is this the first time this pkt is
-					* sent, or is this a resend of a TCP
-					* segment.
+	uint8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP
+					* message.
+					* Note: family needs to be
+					* AF_INET.
 					*/
 #endif
-
-	uint8_t captured : 1; /* Set to 1 if this packet is already being
-			       * captured
+#if defined(CONFIG_NET_LLDP)
+	uint8_t lldp_pkt : 1; /* Is this pkt an LLDP message.
+			       * Note: family needs to be
+			       * AF_UNSPEC.
 			       */
-
-	uint8_t l2_bridged : 1; /* set to 1 if this packet comes from a bridge
-				 * and already contains its L2 header to be
-				 * preserved. Useful only if
-				 * defined(CONFIG_NET_ETHERNET_BRIDGE).
-				 */
-
+#endif
+	uint8_t ppp_msg : 1; /* This is a PPP message */
+#if defined(CONFIG_NET_TCP)
+	uint8_t tcp_first_msg : 1; /* Is this the first time this pkt is
+				    * sent, or is this a resend of a TCP
+				    * segment.
+				    */
+#endif
+	uint8_t captured : 1;	  /* Set to 1 if this packet is already being
+				   * captured
+				   */
+	uint8_t l2_bridged : 1;	  /* set to 1 if this packet comes from a bridge
+				   * and already contains its L2 header to be
+				   * preserved. Useful only if
+				   * defined(CONFIG_NET_ETHERNET_BRIDGE).
+				   */
 	uint8_t l2_processed : 1; /* Set to 1 if this packet has already been
 				   * processed by the L2
 				   */
+
+	/* bitfield byte alignment boundary */
 
 #if defined(CONFIG_NET_IP)
 	union {
@@ -212,18 +208,51 @@ struct net_pkt {
 
 	union {
 #if defined(CONFIG_NET_IPV4)
-		uint8_t ipv4_opts_len; /* Length if IPv4 Header Options */
+		uint8_t ipv4_opts_len; /* length of IPv4 header options */
 #endif
 #if defined(CONFIG_NET_IPV6)
 		uint16_t ipv6_ext_len; /* length of extension headers */
 #endif
 	};
-#endif /* CONFIG_NET_IP */
 
-	/** Network packet priority, can be left out in which case packet
-	 * is not prioritised.
+#if defined(CONFIG_NET_IPV4_FRAGMENT) || defined(CONFIG_NET_IPV6_FRAGMENT)
+	union {
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+		struct {
+			uint16_t flags;		/* Fragment offset and M (More Fragment) flag */
+			uint16_t id;		/* Fragment ID */
+		} ipv4_fragment;
+#endif /* CONFIG_NET_IPV4_FRAGMENT */
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+		struct {
+			uint16_t flags;		/* Fragment offset and M (More Fragment) flag */
+			uint32_t id;		/* Fragment id */
+			uint16_t hdr_start;	/* Where starts the fragment header */
+		} ipv6_fragment;
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+	};
+#endif /* CONFIG_NET_IPV4_FRAGMENT || CONFIG_NET_IPV6_FRAGMENT */
+
+#if defined(CONFIG_NET_IPV6)
+	/* Where is the start of the last header before payload data
+	 * in IPv6 packet. This is offset value from start of the IPv6
+	 * packet. Note that this value should be updated by who ever
+	 * adds IPv6 extension headers to the network packet.
 	 */
-	uint8_t priority;
+	uint16_t ipv6_prev_hdr_start;
+
+	uint8_t ipv6_ext_opt_len; /* IPv6 ND option length */
+	uint8_t ipv6_next_hdr;	/* What is the very first next header */
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IP_DSCP_ECN)
+	/** IPv4/IPv6 Differentiated Services Code Point value. */
+	uint8_t ip_dscp : 6;
+
+	/** IPv4/IPv6 Explicit Congestion Notification value. */
+	uint8_t ip_ecn : 2;
+#endif /* CONFIG_NET_IP_DSCP_ECN */
+#endif /* CONFIG_NET_IP */
 
 #if defined(CONFIG_NET_VLAN)
 	/* VLAN TCI (Tag Control Information). This contains the Priority
@@ -234,55 +263,24 @@ struct net_pkt {
 	uint16_t vlan_tci;
 #endif /* CONFIG_NET_VLAN */
 
-#if defined(CONFIG_NET_IPV6)
-	/* Where is the start of the last header before payload data
-	 * in IPv6 packet. This is offset value from start of the IPv6
-	 * packet. Note that this value should be updated by who ever
-	 * adds IPv6 extension headers to the network packet.
+#if defined(NET_PKT_HAS_CONTROL_BLOCK)
+	/* TODO: Evolve this into a union of orthogonal
+	 *       control block declarations if further L2
+	 *       stacks require L2-specific attributes.
 	 */
-	uint16_t ipv6_prev_hdr_start;
-
-#if defined(CONFIG_NET_IPV6_FRAGMENT)
-	uint16_t ipv6_fragment_flags;	/* Fragment offset and M (More Fragment) flag */
-	uint32_t ipv6_fragment_id;	/* Fragment id */
-	uint16_t ipv6_frag_hdr_start;	/* Where starts the fragment header */
-#endif /* CONFIG_NET_IPV6_FRAGMENT */
-
-	uint8_t ipv6_ext_opt_len; /* IPv6 ND option length */
-	uint8_t ipv6_next_hdr;	/* What is the very first next header */
-#endif /* CONFIG_NET_IPV6 */
-
 #if defined(CONFIG_IEEE802154)
-#if defined(CONFIG_IEEE802154_2015)
-	uint32_t ieee802154_ack_fc; /* Frame counter set in the ACK */
-	uint8_t ieee802154_ack_keyid; /* Key index set in the ACK */
-#endif
-	uint8_t ieee802154_lqi;  /* Link Quality Indicator */
-	union {
-		uint8_t ieee802154_rssi; /* Received Signal Strength Indication */
-#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-		int8_t ieee802154_txpwr; /* TX power in dBm. It should be clear from
-					  * the context which field of the union
-					  * is valid at the moment.
-					  */
-#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
-	};
-#if defined(CONFIG_IEEE802154_2015)
-	uint8_t ieee802154_fv2015 : 1; /* Frame version is IEEE 802.15.4-2015 */
-	uint8_t ieee802154_ack_seb : 1; /* Security Enabled Bit was set in the ACK */
-#endif
-	uint8_t ieee802154_arb : 1; /* ACK Request Bit is set in the frame */
-	uint8_t ieee802154_ack_fpb : 1; /* Frame Pending Bit was set in the ACK */
-	uint8_t ieee802154_frame_secured : 1; /* Frame is authenticated and
-					       * encrypted according to its
-					       * Auxiliary Security Header
-					       */
-	uint8_t ieee802154_mac_hdr_rdy : 1; /* Indicates if frame's MAC header
-					     * is ready to be transmitted or if
-					     * it requires further modifications,
-					     * e.g. Frame Counter injection.
-					     */
-#endif
+	/* The following structure requires a 4-byte alignment
+	 * boundary to avoid padding.
+	 */
+	struct net_pkt_cb_ieee802154 cb;
+#endif /* CONFIG_IEEE802154 */
+#endif /* NET_PKT_HAS_CONTROL_BLOCK */
+
+	/** Network packet priority, can be left out in which case packet
+	 * is not prioritised.
+	 */
+	uint8_t priority;
+
 	/* @endcond */
 };
 
@@ -407,6 +405,38 @@ static inline void net_pkt_set_ip_hdr_len(struct net_pkt *pkt, uint8_t len)
 {
 #if defined(CONFIG_NET_IP)
 	pkt->ip_hdr_len = len;
+#endif
+}
+
+static inline uint8_t net_pkt_ip_dscp(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_IP_DSCP_ECN)
+	return pkt->ip_dscp;
+#else
+	return 0;
+#endif
+}
+
+static inline void net_pkt_set_ip_dscp(struct net_pkt *pkt, uint8_t dscp)
+{
+#if defined(CONFIG_NET_IP_DSCP_ECN)
+	pkt->ip_dscp = dscp;
+#endif
+}
+
+static inline uint8_t net_pkt_ip_ecn(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_IP_DSCP_ECN)
+	return pkt->ip_ecn;
+#else
+	return 0;
+#endif
+}
+
+static inline void net_pkt_set_ip_ecn(struct net_pkt *pkt, uint8_t ecn)
+{
+#if defined(CONFIG_NET_IP_DSCP_ECN)
+	pkt->ip_ecn = ecn;
 #endif
 }
 
@@ -667,42 +697,102 @@ static inline uint16_t net_pkt_ip_opts_len(struct net_pkt *pkt)
 #endif
 }
 
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)
+{
+	return (pkt->ipv4_fragment.flags & NET_IPV4_FRAGH_OFFSET_MASK) * 8;
+}
+
+static inline bool net_pkt_ipv4_fragment_more(struct net_pkt *pkt)
+{
+	return (pkt->ipv4_fragment.flags & NET_IPV4_MORE_FRAG_MASK) != 0;
+}
+
+static inline void net_pkt_set_ipv4_fragment_flags(struct net_pkt *pkt, uint16_t flags)
+{
+	pkt->ipv4_fragment.flags = flags;
+}
+
+static inline uint32_t net_pkt_ipv4_fragment_id(struct net_pkt *pkt)
+{
+	return pkt->ipv4_fragment.id;
+}
+
+static inline void net_pkt_set_ipv4_fragment_id(struct net_pkt *pkt, uint32_t id)
+{
+	pkt->ipv4_fragment.id = id;
+}
+#else /* CONFIG_NET_IPV4_FRAGMENT */
+static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline bool net_pkt_ipv4_fragment_more(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv4_fragment_flags(struct net_pkt *pkt, uint16_t flags)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(flags);
+}
+
+static inline uint32_t net_pkt_ipv4_fragment_id(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv4_fragment_id(struct net_pkt *pkt, uint32_t id)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(id);
+}
+#endif /* CONFIG_NET_IPV4_FRAGMENT */
+
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 static inline uint16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
 {
-	return pkt->ipv6_frag_hdr_start;
+	return pkt->ipv6_fragment.hdr_start;
 }
 
 static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
 						   uint16_t start)
 {
-	pkt->ipv6_frag_hdr_start = start;
+	pkt->ipv6_fragment.hdr_start = start;
 }
 
 static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 {
-	return pkt->ipv6_fragment_flags & NET_IPV6_FRAGH_OFFSET_MASK;
+	return pkt->ipv6_fragment.flags & NET_IPV6_FRAGH_OFFSET_MASK;
 }
 static inline bool net_pkt_ipv6_fragment_more(struct net_pkt *pkt)
 {
-	return (pkt->ipv6_fragment_flags & 0x01) != 0;
+	return (pkt->ipv6_fragment.flags & 0x01) != 0;
 }
 
 static inline void net_pkt_set_ipv6_fragment_flags(struct net_pkt *pkt,
 						   uint16_t flags)
 {
-	pkt->ipv6_fragment_flags = flags;
+	pkt->ipv6_fragment.flags = flags;
 }
 
 static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
 {
-	return pkt->ipv6_fragment_id;
+	return pkt->ipv6_fragment.id;
 }
 
 static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 						uint32_t id)
 {
-	pkt->ipv6_fragment_id = id;
+	pkt->ipv6_fragment.id = id;
 }
 #else /* CONFIG_NET_IPV6_FRAGMENT */
 static inline uint16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
@@ -1044,130 +1134,6 @@ static inline void net_pkt_set_ll_proto_type(struct net_pkt *pkt, uint16_t type)
 	pkt->ll_proto_type = type;
 }
 
-#if defined(CONFIG_IEEE802154) || defined(CONFIG_IEEE802154_RAW_MODE)
-static inline uint8_t net_pkt_ieee802154_rssi(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_rssi;
-}
-
-static inline void net_pkt_set_ieee802154_rssi(struct net_pkt *pkt,
-					       uint8_t rssi)
-{
-	pkt->ieee802154_rssi = rssi;
-}
-
-static inline uint8_t net_pkt_ieee802154_lqi(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_lqi;
-}
-
-static inline void net_pkt_set_ieee802154_lqi(struct net_pkt *pkt,
-					      uint8_t lqi)
-{
-	pkt->ieee802154_lqi = lqi;
-}
-
-static inline bool net_pkt_ieee802154_arb(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_arb;
-}
-
-static inline void net_pkt_set_ieee802154_arb(struct net_pkt *pkt, bool arb)
-{
-	pkt->ieee802154_arb = arb;
-}
-
-static inline bool net_pkt_ieee802154_ack_fpb(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_ack_fpb;
-}
-
-static inline void net_pkt_set_ieee802154_ack_fpb(struct net_pkt *pkt,
-						  bool fpb)
-{
-	pkt->ieee802154_ack_fpb = fpb;
-}
-
-static inline bool net_pkt_ieee802154_frame_secured(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_frame_secured;
-}
-
-static inline void net_pkt_set_ieee802154_frame_secured(struct net_pkt *pkt,
-							bool secured)
-{
-	pkt->ieee802154_frame_secured = secured;
-}
-
-static inline bool net_pkt_ieee802154_mac_hdr_rdy(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_mac_hdr_rdy;
-}
-
-static inline void net_pkt_set_ieee802154_mac_hdr_rdy(struct net_pkt *pkt,
-						      bool rdy)
-{
-	pkt->ieee802154_mac_hdr_rdy = rdy;
-}
-
-#if defined(CONFIG_IEEE802154_2015)
-static inline bool net_pkt_ieee802154_fv2015(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_fv2015;
-}
-
-static inline void net_pkt_set_ieee802154_fv2015(struct net_pkt *pkt, bool fv2015)
-{
-	pkt->ieee802154_fv2015 = fv2015;
-}
-
-static inline bool net_pkt_ieee802154_ack_seb(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_ack_seb;
-}
-
-static inline void net_pkt_set_ieee802154_ack_seb(struct net_pkt *pkt, bool seb)
-{
-	pkt->ieee802154_ack_seb = seb;
-}
-
-static inline uint32_t net_pkt_ieee802154_ack_fc(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_ack_fc;
-}
-
-static inline void net_pkt_set_ieee802154_ack_fc(struct net_pkt *pkt,
-						 uint32_t fc)
-{
-	pkt->ieee802154_ack_fc = fc;
-}
-
-static inline uint8_t net_pkt_ieee802154_ack_keyid(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_ack_keyid;
-}
-
-static inline void net_pkt_set_ieee802154_ack_keyid(struct net_pkt *pkt,
-						    uint8_t keyid)
-{
-	pkt->ieee802154_ack_keyid = keyid;
-}
-#endif /* CONFIG_IEEE802154_2015 */
-
-#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-static inline int8_t net_pkt_ieee802154_txpwr(struct net_pkt *pkt)
-{
-	return pkt->ieee802154_txpwr;
-}
-
-static inline void net_pkt_set_ieee802154_txpwr(struct net_pkt *pkt,
-						int8_t txpwr)
-{
-	pkt->ieee802154_txpwr = txpwr;
-}
-#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
-#endif /* CONFIG_IEEE802154 || CONFIG_IEEE802154_RAW_MODE */
-
 #if defined(CONFIG_NET_IPV4_AUTO)
 static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
 {
@@ -1246,6 +1212,20 @@ static inline void net_pkt_set_ppp(struct net_pkt *pkt,
 	ARG_UNUSED(is_ppp_msg);
 }
 #endif /* CONFIG_NET_PPP */
+
+#if defined(NET_PKT_HAS_CONTROL_BLOCK)
+static inline void *net_pkt_cb(struct net_pkt *pkt)
+{
+	return &pkt->cb;
+}
+#else
+static inline void *net_pkt_cb(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return NULL;
+}
+#endif
 
 #define NET_IPV6_HDR(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))
 #define NET_IPV4_HDR(pkt) ((struct net_ipv4_hdr *)net_pkt_ip_data(pkt))

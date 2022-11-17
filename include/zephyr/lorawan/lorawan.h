@@ -62,6 +62,22 @@ enum lorawan_datarate {
 };
 
 /**
+ * @brief LoRaWAN region types.
+ */
+enum lorawan_region {
+	LORAWAN_REGION_AS923,
+	LORAWAN_REGION_AU915,
+	LORAWAN_REGION_CN470,
+	LORAWAN_REGION_CN779,
+	LORAWAN_REGION_EU433,
+	LORAWAN_REGION_EU868,
+	LORAWAN_REGION_KR920,
+	LORAWAN_REGION_IN865,
+	LORAWAN_REGION_US915,
+	LORAWAN_REGION_RU864,
+};
+
+/**
  * @brief LoRaWAN message types.
  */
 enum lorawan_message_type {
@@ -289,6 +305,18 @@ enum lorawan_datarate lorawan_get_min_datarate(void);
  */
 void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 			       uint8_t *max_payload_size);
+
+/**
+ * @brief Set the region and frequency to be used
+ *
+ * Control the LoRa region and frequency settings. This should be called before
+ * @a lorawan_start(). If you only have support for a single region selected via
+ * Kconfig, this function does not need to be called at all.
+ *
+ * @param region The region to be selected
+ * @return 0 if successful, negative errno otherwise
+ */
+int lorawan_set_region(enum lorawan_region region);
 
 #ifdef __cplusplus
 }

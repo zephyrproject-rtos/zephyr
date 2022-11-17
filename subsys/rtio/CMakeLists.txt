@@ -7,6 +7,11 @@ if(CONFIG_RTIO)
 	zephyr_include_directories(${ZEPHYR_BASE}/subsys/rtio)
 
 	zephyr_library_sources_ifdef(
+		CONFIG_USERSPACE
+		rtio_handlers.c
+	)
+
+	zephyr_library_sources_ifdef(
 		CONFIG_RTIO_EXECUTOR_SIMPLE
 		rtio_executor_simple.c
 	)

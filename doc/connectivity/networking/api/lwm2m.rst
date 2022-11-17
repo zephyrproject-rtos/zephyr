@@ -234,7 +234,7 @@ The Zephyr LwM2M library implements the following items:
 
 * engine to process networking events and core functions
 * RD client which performs BOOTSTRAP and REGISTRATION functions
-* TLV, JSON, and plain text formatting functions
+* SenML CBOR, SenML JSON, CBOR, TLV, JSON, and plain text formatting functions
 * LwM2M Technical Specification Enabler objects such as Security, Server,
   Device, Firmware Update, etc.
 * Extended IPSO objects such as Light Control, Temperature Sensor, and Timer
@@ -255,7 +255,7 @@ To use the LwM2M library, start by creating an LwM2M client context
 	/* LwM2M client context */
 	static struct lwm2m_ctx client;
 
-Create callback functions for LwM2M resource exuctions:
+Create callback functions for LwM2M resource executions:
 
 .. code-block:: c
 
@@ -302,8 +302,8 @@ events, setup a callback function:
 			LOG_DBG("Registration complete");
 			break;
 
-		case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE:
-			LOG_DBG("Registration update failure!");
+		case LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT:
+			LOG_DBG("Registration timeout!");
 			break;
 
 		case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE:
@@ -429,6 +429,65 @@ This is especially useful if the server is composite-observing the resources bei
 written to. Locking will then ensure that the client only updates and sends notifications
 to the server after all operations are done, resulting in fewer messages in general.
 
+Support for time series data
+****************************
+
+LwM2M version 1.1 adds support for SenML CBOR and SenML JSON data formats. These data formats add
+support for time series data. Time series formats can be used for READ, NOTIFY and SEND operations.
+When data cache is enabled for a resource, each write will create a timestamped entry in a cache,
+and its content is then returned as a content in in READ, NOTIFY or SEND operation for a given
+resource.
+
+Data cache is only supported for resources with a fixed data size.
+
+Supported resource types:
+
+* Signed and unsigned 8-64-bit integers
+* Float
+* Boolean
+
+Enabling and configuring
+========================
+
+Enable data cache by selecting :kconfig:option:`CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT`.
+Application needs to allocate an array of :c:struct:`lwm2m_time_series_elem` structures and then
+enable the cache by calling :c:func:`lwm2m_engine_enable_cache` for a given resource. Earch resource
+must be enabled separately and each resource needs their own storage.
+
+.. code-block:: c
+
+  /* Allocate data cache storage */
+  static struct lwm2m_time_series_elem temperature_cache[10];
+  /* Enable data cache */
+  lwm2m_engine_enable_cache(LWM2M_PATH(IPSO_OBJECT_TEMP_SENSOR_ID, 0, SENSOR_VALUE_RID),
+          temperature_cache, ARRAY_SIZE(temperature_cache));
+
+LwM2M engine have room for four resources that have cache enabled. Limit can be increased by
+changing :kconfig:option:`CONFIG_LWM2M_MAX_CACHED_RESOURCES`. This affects a static memory usage of
+engine.
+
+Data caches depends on one of the SenML data formats
+:kconfig:option:`CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT` or
+:kconfig:option:`CONFIG_LWM2M_RW_SENML_JSON_SUPPORT` and needs :kconfig:option:`CONFIG_POSIX_CLOCK`
+so it can request a timestamp from the system and :kconfig:option:`CONFIG_RING_BUFFER` for ring
+buffer.
+
+Read and Write operations
+=========================
+
+Full content of data cache is written into a payload when any READ, SEND or NOTIFY operation
+internally reads the content of a given resource. This has a side effect that any read callbacks
+registered for a that resource are ignored when cache is enabled.
+Data is written into a cache when any of the ``lwm2m_engine_set_*`` functions are called. To filter
+the data entering the cache, application may register a validation callback using
+:c:func:`lwm2m_engine_register_validate_callback`.
+
+Limitations
+===========
+
+Cache size should be manually set so small that the content can fit normal packets sizes.
+When cache is full, new values are dropped.
+
 LwM2M engine and application events
 ***********************************
 
@@ -472,7 +531,7 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
    * - 4
      - REGISTRATION_FAILURE
      - Registration to LwM2M server failed.
-       Occurs if there is a timeout or failure in the registration.
+       Occurs if there is a failure in the registration.
      - Retry registration
    * - 5
      - REGISTRATION_COMPLETE
@@ -481,10 +540,10 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        or when session resumption is used.
      - No actions needed
    * - 6
-     - REG_UPDATE_FAILURE
-     - Registration update failed.
-       Occurs if there is a timeout during registration update.
-       NOTE: If registration update fails without a timeout,
+     - REG_TIMEOUT
+     - Registration or registration update timeout.
+       Occurs if there is a timeout during registration.
+       NOTE: If registration fails without a timeout,
        a full registration is triggered automatically and
        no registration update failure event is generated.
      - No actions needed, client proceeds to re-registration automatically.
@@ -516,6 +575,57 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        If sending a message fails, it will be retried.
        If the retry counter reaches its limits, this event will be triggered.
      - No actions needed, client will do a re-registrate automatically.
+
+.. _lwm2m_shell:
+
+LwM2M shell
+***********
+For testing the client it is possible to enable Zephyr's shell and LwM2M specific commands which
+support changing the state of the client. Operations supported are read, write and execute
+resources. Client start, stop, pause and resume are also available. The feature is enabled by
+selecting :kconfig:option:`CONFIG_LWM2M_SHELL`. The shell is meant for testing so productions
+systems should not enable it.
+
+One imaginable scenario, where to use the shell, would be executing client side actions over UART
+when a server side tests would require those. It is assumed that not all tests are able to trigger
+required actions from the server side.
+
+.. code-block:: console
+
+   uart:~$ lwm2m
+   lwm2m - LwM2M commands
+   Subcommands:
+   exec    :Execute a resource
+            exec PATH
+
+   read    :Read value from LwM2M resource
+            read PATH [OPTIONS]
+            -s   Read value as string (default)
+            -b   Read value as bool (1/0)
+            -uX  Read value as uintX_t
+            -sX  Read value as intX_t
+            -f   Read value as float
+
+   write   :Write into LwM2M resource
+            write PATH [OPTIONS] VALUE
+            -s   Value as string (default)
+            -b   Value as bool
+            -uX  Value as uintX_t
+            -sX  Value as intX_t
+            -f   Value as float
+
+   start   :Start the LwM2M RD (Registration / Discovery) Client
+            start EP_NAME [BOOTSTRAP FLAG]
+            -b   Set the bootstrap flag (default 0)
+
+   stop    :Stop the LwM2M RD (De-register) Client
+            stop [OPTIONS]
+            -f   Force close the connection
+
+   update  :Trigger Registration Update of the LwM2M RD Client
+
+   pause   :LwM2M engine thread pause
+   resume  :LwM2M engine thread resume
 
 
 .. _lwm2m_api_reference:

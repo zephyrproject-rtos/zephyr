@@ -6,14 +6,20 @@
  */
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/ite-it8xxx2-gpio.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
+#include <zephyr/irq.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
+
+#include <chip_chipregs.h>
+#include <soc_common.h>
+
 LOG_MODULE_REGISTER(gpio_it8xxx2, LOG_LEVEL_ERR);
 
 #define DT_DRV_COMPAT ite_it8xxx2_gpio
@@ -476,9 +482,9 @@ static int gpio_ite_get_config(const struct device *dev,
 			gpio_1p8v[gpio_config->index][pin].offset);
 	mask_1p8v = gpio_1p8v[gpio_config->index][pin].mask_1p8v;
 	if (*reg_1p8v & mask_1p8v) {
-		flags |= GPIO_VOLTAGE_1P8;
+		flags |= IT8XXX2_GPIO_VOLTAGE_1P8;
 	} else {
-		flags |= GPIO_VOLTAGE_3P3;
+		flags |= IT8XXX2_GPIO_VOLTAGE_3P3;
 	}
 
 	/* set input or output. */
@@ -611,7 +617,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		printk("Level trigger mode not supported.\r\n");
+		LOG_ERR("Level trigger mode not supported");
 		return -ENOTSUP;
 	}
 

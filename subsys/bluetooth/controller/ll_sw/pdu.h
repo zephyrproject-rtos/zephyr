@@ -102,6 +102,76 @@
 #define PDU_DC_PAYLOAD_TIME_MAX       2120
 #endif /* !CONFIG_BT_CTLR_DF */
 
+/* Data channel control PDU maximum payload size */
+#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+/* Isochronous Central and Peripheral */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_req)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_req)
+#elif defined(CONFIG_BT_CENTRAL)
+/* Isochronous Central */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_req)
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_param_req)
+#elif defined(CONFIG_BT_CTLR_LE_ENC)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_rsp)
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_rsp)
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+#elif defined(CONFIG_BT_PERIPHERAL)
+/* Isochronous Peripheral */
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_param_req)
+#elif defined(CONFIG_BT_CTLR_LE_ENC)
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_rsp)
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_rsp)
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_req)
+#endif /* !CONFIG_BT_PERIPHERAL */
+
+#elif defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+/* Central and Peripheral with Connection Parameter Request */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_param_req)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_param_req)
+
+#elif defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+/* Central and Peripheral with encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_req)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_req)
+#elif defined(CONFIG_BT_CENTRAL)
+/* Central with encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_req)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_rsp)
+#elif defined(CONFIG_BT_PERIPHERAL)
+/* Peripheral with encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_rsp)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_req)
+#endif /* !CONFIG_BT_PERIPHERAL */
+
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+/* Central and Peripheral without encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_update_ind)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_update_ind)
+#elif defined(CONFIG_BT_CENTRAL)
+/* Central without encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_update_ind)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(feature_rsp)
+#elif defined(CONFIG_BT_PERIPHERAL)
+/* Peripheral without encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(feature_rsp)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_update_ind)
+#endif /* !CONFIG_BT_PERIPHERAL */
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+
+#else /* !CONFIG_BT_CONN */
+#define PDU_DC_CTRL_TX_SIZE_MAX       0U
+#define PDU_DC_CTRL_RX_SIZE_MAX       0U
+#endif /* !CONFIG_BT_CONN */
+
 /* Link Layer header size of Data PDU. Assumes pdu_data is packed */
 #define PDU_DC_LL_HEADER_SIZE  (offsetof(struct pdu_data, lldata))
 
@@ -297,21 +367,19 @@ struct pdu_adv_connect_ind {
 		uint16_t latency;
 		uint16_t timeout;
 		uint8_t  chan_map[PDU_CHANNEL_MAP_SIZE];
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 		uint8_t  hop:5;
 		uint8_t  sca:3;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-		uint8_t  sca:3;
-		uint8_t  hop:5;
 #else
-#error "Unsupported endianness"
-#endif
+		uint8_t  sca:3;
+		uint8_t  hop:5;
+#endif /* CONFIG_LITTLE_ENDIAN */
 
 	} __packed;
 } __packed;
 
 struct pdu_adv_ext_hdr {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t adv_addr:1;
 	uint8_t tgt_addr:1;
 	uint8_t cte_info:1;
@@ -320,31 +388,27 @@ struct pdu_adv_ext_hdr {
 	uint8_t sync_info:1;
 	uint8_t tx_pwr:1;
 	uint8_t rfu:1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rfu:1;
-	uint8_t tx_pwr:1;
-	uint8_t sync_info:1;
-	uint8_t aux_ptr:1;
-	uint8_t adi:1;
-	uint8_t cte_info:1;
-	uint8_t tgt_addr:1;
-	uint8_t adv_addr:1;
 #else
-#error "Unsupported endianness"
-#endif
+	uint8_t rfu:1;
+	uint8_t tx_pwr:1;
+	uint8_t sync_info:1;
+	uint8_t aux_ptr:1;
+	uint8_t adi:1;
+	uint8_t cte_info:1;
+	uint8_t tgt_addr:1;
+	uint8_t adv_addr:1;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t data[0];
 } __packed;
 
 struct pdu_adv_com_ext_adv {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t ext_hdr_len:6;
 	uint8_t adv_mode:2;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t adv_mode:2;
-	uint8_t ext_hdr_len:6;
 #else
-#error "Unsupported endianness"
-#endif
+	uint8_t adv_mode:2;
+	uint8_t ext_hdr_len:6;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	union {
 		struct pdu_adv_ext_hdr ext_hdr;
 		uint8_t ext_hdr_adv_data[0];
@@ -360,29 +424,25 @@ enum pdu_adv_mode {
 #define PDU_ADV_SID_COUNT 16
 
 struct pdu_adv_adi {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint16_t did:12;
 	uint16_t sid:4;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint16_t sid:4;
-	uint16_t did:12;
 #else
-#error "Unsupported endianness"
-#endif
+	uint16_t sid:4;
+	uint16_t did:12;
+#endif /* CONFIG_LITTLE_ENDIAN */
 } __packed;
 
 struct pdu_adv_aux_ptr {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t  chan_idx:6;
 	uint8_t  ca:1;
 	uint8_t  offs_units:1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t  offs_units:1;
-	uint8_t  ca:1;
-	uint8_t  chan_idx:6;
 #else
-#error "Unsupported endianness"
-#endif
+	uint8_t  offs_units:1;
+	uint8_t  ca:1;
+	uint8_t  chan_idx:6;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	/* offs:13
 	 * phy:3
 	 * NOTE: This layout as bitfields is not portable for BE using
@@ -408,33 +468,29 @@ enum pdu_adv_aux_phy {
 };
 
 struct pdu_cte_info {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t  time:5;
 	uint8_t  rfu:1;
 	uint8_t  type:2;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t  type:2;
-	uint8_t  rfu:1;
-	uint8_t  time:5;
 #else
-#error "Unsupported endianness"
-#endif
+	uint8_t  type:2;
+	uint8_t  rfu:1;
+	uint8_t  time:5;
+#endif /* CONFIG_LITTLE_ENDIAN */
 } __packed;
 
 struct pdu_adv_sync_info {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint16_t offs:13;
 	uint16_t offs_units:1;
 	uint16_t offs_adjust:1;
 	uint16_t rfu:1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint16_t rfu:1;
-	uint16_t offs_adjust:1;
-	uint16_t offs_units:1;
-	uint16_t offs:13;
 #else
-#error "Unsupported endianness"
-#endif
+	uint16_t rfu:1;
+	uint16_t offs_adjust:1;
+	uint16_t offs_units:1;
+	uint16_t offs:13;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint16_t interval;
 	uint8_t  sca_chm[PDU_CHANNEL_MAP_SIZE];
 	uint32_t aa;
@@ -472,21 +528,19 @@ enum pdu_adv_type {
 } __packed;
 
 struct pdu_adv {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t type:4;
 	uint8_t rfu:1;
 	uint8_t chan_sel:1;
 	uint8_t tx_addr:1;
 	uint8_t rx_addr:1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rx_addr:1;
-	uint8_t tx_addr:1;
-	uint8_t chan_sel:1;
-	uint8_t rfu:1;
-	uint8_t type:4;
 #else
-#error "Unsupported endianness"
-#endif
+	uint8_t rx_addr:1;
+	uint8_t tx_addr:1;
+	uint8_t chan_sel:1;
+	uint8_t rfu:1;
+	uint8_t type:4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 
 	uint8_t len;
 
@@ -540,6 +594,8 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND = 0x19,
 	PDU_DATA_LLCTRL_TYPE_CTE_REQ = 0x1A,
 	PDU_DATA_LLCTRL_TYPE_CTE_RSP = 0x1B,
+	PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ = 0x1D,
+	PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP = 0x1E,
 	PDU_DATA_LLCTRL_TYPE_CIS_REQ = 0x1F,
 	PDU_DATA_LLCTRL_TYPE_CIS_RSP = 0x20,
 	PDU_DATA_LLCTRL_TYPE_CIS_IND = 0x21,
@@ -698,21 +754,27 @@ struct pdu_data_llctrl_min_used_chans_ind {
 } __packed;
 
 struct pdu_data_llctrl_cte_req {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t min_cte_len_req : 5;
 	uint8_t rfu : 1;
 	uint8_t cte_type_req : 2;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t cte_type_req : 2;
-	uint8_t rfu : 1;
-	uint8_t min_cte_len_req : 5;
 #else
-#error "Unsupported endianness"
-#endif
+	uint8_t cte_type_req : 2;
+	uint8_t rfu : 1;
+	uint8_t min_cte_len_req : 5;
+#endif /* CONFIG_LITTLE_ENDIAN */
 } __packed;
 
 struct pdu_data_llctrl_cte_rsp {
 	/* no members */
+} __packed;
+
+struct pdu_data_llctrl_clock_accuracy_req {
+	uint8_t sca;
+} __packed;
+
+struct pdu_data_llctrl_clock_accuracy_rsp {
+	uint8_t sca;
 } __packed;
 
 struct pdu_data_llctrl_cis_req {
@@ -739,15 +801,13 @@ struct pdu_data_llctrl_cis_req {
 	uint16_t p_max_pdu;
 	uint8_t  nse;
 	uint8_t  sub_interval[3];
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t  c_bn:4;
 	uint8_t  p_bn:4;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t  p_bn:4;
-	uint8_t  c_bn:4;
 #else
-#error "Unsupported endianness"
-#endif
+	uint8_t  p_bn:4;
+	uint8_t  c_bn:4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t  c_ft;
 	uint8_t  p_ft;
 	uint16_t iso_interval;
@@ -807,6 +867,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
 		struct pdu_data_llctrl_cte_req cte_req;
 		struct pdu_data_llctrl_cte_rsp cte_rsp;
+		struct pdu_data_llctrl_clock_accuracy_req clock_accuracy_req;
+		struct pdu_data_llctrl_clock_accuracy_rsp clock_accuracy_rsp;
 		struct pdu_data_llctrl_cis_req cis_req;
 		struct pdu_data_llctrl_cis_rsp cis_rsp;
 		struct pdu_data_llctrl_cis_ind cis_ind;
@@ -833,7 +895,7 @@ struct profile {
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 struct pdu_data {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t ll_id:2;
 	uint8_t nesn:1;
 	uint8_t sn:1;
@@ -844,7 +906,7 @@ struct pdu_data {
 #else
 	uint8_t rfu:3;
 #endif
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	uint8_t rfu:2;
 	uint8_t cp:1;
@@ -855,9 +917,7 @@ struct pdu_data {
 	uint8_t sn:1;
 	uint8_t nesn:1;
 	uint8_t ll_id:2;
-#else
-#error "Unsupported endianness"
-#endif
+#endif /* CONFIG_LITTLE_ENDIAN */
 
 	uint8_t len;
 
@@ -888,15 +948,13 @@ struct pdu_data {
  * To be used when referring to component without knowing CIS or BIS type
  */
 struct pdu_iso {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t ll_id:2;
 	uint8_t hdr_other:6;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t hdr_other:6;
-	uint8_t ll_id:2;
 #else
-#error "Unsupported endianness"
-#endif /* __BYTE_ORDER__ */
+	uint8_t hdr_other:6;
+	uint8_t ll_id:2;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t length;
 	uint8_t payload[0];
 } __packed;
@@ -906,7 +964,7 @@ struct pdu_iso {
 #define PDU_ISO_SEG_TIMEOFFSET_SIZE 3
 
 struct pdu_iso_sdu_sh {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t sc:1;
 	uint8_t cmplt:1;
 	uint8_t rfu:6;
@@ -916,18 +974,16 @@ struct pdu_iso_sdu_sh {
 	uint32_t timeoffset:24;
 	uint32_t payload:8;
 
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rfu:6;
-	uint8_t cmplt:1;
-	uint8_t sc:1;
-
-	uint8_t length;
-	/* Note, timeoffset only available in first segment of sdu */
-	uint32_t payload:8;
-	uint32_t timeoffset:24;
 #else
-#error "Unsupported endianness"
-#endif /* __BYTE_ORDER__ */
+	uint8_t rfu:6;
+	uint8_t cmplt:1;
+	uint8_t sc:1;
+
+	uint8_t length;
+	/* Note, timeoffset only available in first segment of sdu */
+	uint32_t payload:8;
+	uint32_t timeoffset:24;
+#endif /* CONFIG_LITTLE_ENDIAN */
 } __packed;
 
 enum pdu_cis_llid {
@@ -940,7 +996,7 @@ enum pdu_cis_llid {
 };
 
 struct pdu_cis {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t ll_id:2;
 	uint8_t nesn:1;
 	uint8_t sn:1;
@@ -948,17 +1004,15 @@ struct pdu_cis {
 	uint8_t rfu0:1;
 	uint8_t npi:1;
 	uint8_t rfu1:1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rfu1:1;
-	uint8_t npi:1;
-	uint8_t rfu0:1;
-	uint8_t cie:1;
-	uint8_t sn:1;
-	uint8_t nesn:1;
-	uint8_t ll_id:2;
 #else
-#error "Unsupported endianness"
-#endif /* __BYTE_ORDER__ */
+	uint8_t rfu1:1;
+	uint8_t npi:1;
+	uint8_t rfu0:1;
+	uint8_t cie:1;
+	uint8_t sn:1;
+	uint8_t nesn:1;
+	uint8_t ll_id:2;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t length;
 	uint8_t payload[0];
 } __packed;
@@ -1000,19 +1054,17 @@ enum pdu_bis_llid {
 };
 
 struct pdu_bis {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t ll_id:2;
 	uint8_t cssn:3;
 	uint8_t cstf:1;
 	uint8_t rfu:2;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rfu:2;
-	uint8_t cstf:1;
-	uint8_t cssn:3;
-	uint8_t ll_id:2;
 #else
-#error "Unsupported endianness"
-#endif /* __BYTE_ORDER__ */
+	uint8_t rfu:2;
+	uint8_t cstf:1;
+	uint8_t cssn:3;
+	uint8_t ll_id:2;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t len;
 	union {
 		uint8_t payload[0];
@@ -1021,7 +1073,7 @@ struct pdu_bis {
 } __packed;
 
 struct pdu_big_info {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint32_t offs:14;
 	uint32_t offs_units:1;
 	uint32_t iso_interval:12;
@@ -1042,30 +1094,28 @@ struct pdu_big_info {
 
 	uint32_t sdu_interval:20;
 	uint32_t max_sdu:12;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint32_t num_bis:5;
-	uint32_t iso_interval:12;
-	uint32_t offs_units:1;
-	uint32_t offs:14;
-
-	uint32_t pto:4;
-	uint32_t sub_interval:20;
-	uint32_t bn:3;
-	uint32_t nse:5;
-
-	uint32_t max_pdu:8;
-	uint32_t irc:4;
-	uint32_t spacing:20;
-
-	uint8_t  rfu;
-
-	uint32_t seed_access_addr;
-
-	uint32_t max_sdu:12;
-	uint32_t sdu_interval:20;
 #else
-#error "Unsupported endianness"
-#endif /* __BYTE_ORDER__ */
+	uint32_t num_bis:5;
+	uint32_t iso_interval:12;
+	uint32_t offs_units:1;
+	uint32_t offs:14;
+
+	uint32_t pto:4;
+	uint32_t sub_interval:20;
+	uint32_t bn:3;
+	uint32_t nse:5;
+
+	uint32_t max_pdu:8;
+	uint32_t irc:4;
+	uint32_t spacing:20;
+
+	uint8_t  rfu;
+
+	uint32_t seed_access_addr;
+
+	uint32_t max_sdu:12;
+	uint32_t sdu_interval:20;
+#endif /* CONFIG_LITTLE_ENDIAN */
 
 	uint16_t base_crc_init;
 
@@ -1081,7 +1131,7 @@ struct pdu_big_info {
 #define PDU_BIG_PAYLOAD_COUNT_MAX   28
 
 struct pdu_dtm {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t type:4;
 	uint8_t rfu0:1;
 #if defined(CONFIG_BT_CTLR_DF_CTE_TX)
@@ -1090,7 +1140,7 @@ struct pdu_dtm {
 #else
 	uint8_t rfu1:3;
 #endif
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#else
 #if defined(CONFIG_BT_CTLR_DF_CTE_TX)
 	uint8_t rfu1:2;
 	uint8_t cp:1;
@@ -1099,9 +1149,7 @@ struct pdu_dtm {
 #endif
 	uint8_t rfu0:1;
 	uint8_t type:4;
-#else
-#error "Unsupported endianness"
-#endif
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t length;
 #if defined(CONFIG_BT_CTLR_DF_CTE_TX)
 	union {

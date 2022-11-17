@@ -51,8 +51,10 @@ class Filters:
     TESTSUITE = 'testsuite filter'
     # filters realted to platform definition
     PLATFORM = 'Platform related filter'
-    # in case a testcase was quarantined.
+    # in case a test suite was quarantined.
     QUARENTINE = 'Quarantine filter'
+    # in case a test suite is skipped intentionally .
+    SKIP = 'Skip filter'
 
 
 class TestPlan:
@@ -522,6 +524,7 @@ class TestPlan:
                 if status in ["error", "failed"]:
                     instance.status = None
                     instance.reason = None
+                    instance.retries += 1
                 # test marked as passed (built only) but can run when
                 # --test-only is used. Reset status to capture new results.
                 elif status == 'passed' and instance.run and self.options.test_only:
@@ -554,9 +557,7 @@ class TestPlan:
 
         toolchain = self.env.toolchain
         platform_filter = self.options.platform
-        # temporary workaround for exclusion of boards. setting twister in
-        # board yaml file to False does not really work. Need a better solution for the future.
-        exclude_platform = ['mec15xxevb_assy6853','mec1501modular_assy6885'] + self.options.exclude_platform
+        exclude_platform = self.options.exclude_platform
         testsuite_filter = self.run_individual_testsuite
         arch_filter = self.options.arch
         tag_filter = self.options.tag
@@ -665,7 +666,7 @@ class TestPlan:
                     instance.add_filter("Not part of integration platforms", Filters.TESTSUITE)
 
                 if ts.skip:
-                    instance.add_filter("Skip filter", Filters.TESTSUITE)
+                    instance.add_filter("Skip filter", Filters.SKIP)
 
                 if tag_filter and not ts.tags.intersection(tag_filter):
                     instance.add_filter("Command line testsuite tag filter", Filters.CMD_LINE)
@@ -786,7 +787,7 @@ class TestPlan:
                 and "Quarantine" not in filtered_instance.reason:
                 # Do not treat this as error if filter type is command line
                 filters = {t['type'] for t in filtered_instance.filters}
-                if Filters.CMD_LINE in filters:
+                if Filters.CMD_LINE in filters or Filters.SKIP in filters:
                     continue
                 filtered_instance.status = "error"
                 filtered_instance.reason += " but is one of the integration platforms"

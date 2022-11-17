@@ -1,0 +1,19 @@
+# NXP S32Z/E MCUs family
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_S32ZE_R52
+	bool "NXP S32Z/E series"
+	select ARM
+	select ARM_ARCH_TIMER
+	select CPU_CORTEX_R52
+	select CPU_HAS_DCLS
+	select CPU_HAS_ARM_MPU
+	select GIC_V3
+	select GIC_SINGLE_SECURITY_STATE
+	select VFP_DP_D16
+	select PLATFORM_SPECIFIC_INIT
+	select SOC_FAMILY_S32
+	help
+	  Enable support for NXP S32Z/E MCUs family on Cortex-R52 cores.

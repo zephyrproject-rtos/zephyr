@@ -69,7 +69,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define CLIENT_EP_LEN		CONFIG_LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
 
-#define CLIENT_BINDING_LEN sizeof("U")
+#define CLIENT_BINDING_LEN sizeof("UQ")
 #define CLIENT_QUEUE_LEN sizeof("Q")
 
 static void sm_handle_registration_update_failure(void);
@@ -137,13 +137,20 @@ static enum sm_engine_state suspended_client_state;
 static struct lwm2m_message *rd_get_message(void)
 {
 	if (client.rd_message.ctx) {
-		return NULL;
+		/* Free old message */
+		lwm2m_reset_message(&client.rd_message, true);
 	}
 
 	client.rd_message.ctx = client.ctx;
 	return &client.rd_message;
 
 }
+
+static void rd_client_message_free(void)
+{
+	lwm2m_reset_message(lwm2m_get_ongoing_rd_msg(), true);
+}
+
 
 struct lwm2m_message *lwm2m_get_ongoing_rd_msg(void)
 {
@@ -259,9 +266,9 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 #endif
 	{
 		if (client.engine_state == ENGINE_REGISTRATION_SENT) {
-			event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE;
+			event = LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT;
 		} else if (client.engine_state == ENGINE_UPDATE_SENT) {
-			event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE;
+			event = LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT;
 		} else if (client.engine_state == ENGINE_DEREGISTER_SENT) {
 			event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
 		} else {
@@ -404,18 +411,20 @@ int engine_trigger_bootstrap(void)
 {
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	k_mutex_lock(&client.mutex, K_FOREVER);
-	if (!sm_is_registered()) {
+
+	if (client.use_bootstrap) {
 		/* Bootstrap is not possible to trig */
-		LOG_WRN("Cannot trigger bootstrap from state %u", client.engine_state);
+		LOG_WRN("Bootstrap process ongoing");
 		k_mutex_unlock(&client.mutex);
 		return -EPERM;
 	}
-
 	LOG_INF("Server Initiated Bootstrap");
+	/* Free ongoing possible message */
+	rd_client_message_free();
 	client.use_bootstrap = true;
+	client.trigger_update = false;
 	client.engine_state = ENGINE_INIT;
 	k_mutex_unlock(&client.mutex);
-
 	return 0;
 #else
 	return -EPERM;
@@ -427,7 +436,7 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 {
 	struct coap_option options[2];
 	uint8_t code;
-	int ret;
+	int ret = -EINVAL;
 
 	code = coap_header_get_code(response);
 	LOG_DBG("Registration callback (code:%u.%u)",
@@ -439,8 +448,9 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 		ret = coap_find_options(response, COAP_OPTION_LOCATION_PATH,
 					options, 2);
 		if (ret < 2) {
-			LOG_ERR("Unexpected endpoint data returned.");
-			return -EINVAL;
+			LOG_ERR("Unexpected endpoint data returned. ret = %d", ret);
+			ret = -EINVAL;
+			goto fail;
 		}
 
 		/* option[0] should be "rd" */
@@ -450,7 +460,8 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 				    "%u (expected %zu)\n",
 				    options[1].len,
 				    sizeof(client.server_ep));
-			return -EINVAL;
+			ret = -EINVAL;
+			goto fail;
 		}
 
 		/* remember the last reg time */
@@ -469,10 +480,10 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 	LOG_ERR("Failed with code %u.%u (%s). Not Retrying.",
 		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
 		code2str(code));
-
+fail:
 	sm_handle_failure_state(ENGINE_IDLE);
 
-	return 0;
+	return ret;
 }
 
 static void do_registration_timeout_cb(struct lwm2m_message *msg)
@@ -1200,6 +1211,7 @@ static void lwm2m_rd_client_service(struct k_work *work)
 			if (client.ctx->sock_fd > -1) {
 				lwm2m_engine_stop(client.ctx);
 			}
+			rd_client_message_free();
 			break;
 
 		case ENGINE_INIT:
@@ -1332,6 +1344,7 @@ int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 	}
 
 	client.ctx->event_cb = event_cb;
+	rd_client_message_free();
 
 	if (sm_is_registered() && deregister) {
 		set_sm_state(ENGINE_DEREGISTER);
@@ -1341,11 +1354,12 @@ int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 
 	LOG_INF("Stop LWM2M Client: %s", client.ep_name);
 
+	k_mutex_unlock(&client.mutex);
 
 	while (get_sm_state() != ENGINE_IDLE) {
 		k_sleep(K_MSEC(STATE_MACHINE_UPDATE_INTERVAL_MS / 2));
 	}
-	k_mutex_unlock(&client.mutex);
+
 	return 0;
 }
 
@@ -1403,7 +1417,7 @@ int lwm2m_rd_client_resume(void)
 		suspended_client_state = ENGINE_REGISTRATION_DONE;
 	}
 	/* Clear Possible pending RD Client message */
-	lwm2m_reset_message(lwm2m_get_ongoing_rd_msg(), true);
+	rd_client_message_free();
 
 	client.engine_state = suspended_client_state;
 

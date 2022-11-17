@@ -273,15 +273,15 @@ static void log_demo_thread(void *p1, void *p2, void *p3)
 	/* Re-enabling filters before processing.
 	 * Note: Same filters are used to for gathering logs and processing.
 	 */
-	log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID,
+	log_filter_set(NULL, Z_LOG_LOCAL_DOMAIN_ID,
 		       log_source_id_get(sample_module_name_get()),
 		       CONFIG_LOG_DEFAULT_LEVEL);
 
-	log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID,
+	log_filter_set(NULL, Z_LOG_LOCAL_DOMAIN_ID,
 		       log_source_id_get(INST1_NAME),
 		       CONFIG_LOG_DEFAULT_LEVEL);
 
-	log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID,
+	log_filter_set(NULL, Z_LOG_LOCAL_DOMAIN_ID,
 		       log_source_id_get(INST2_NAME),
 		       CONFIG_LOG_DEFAULT_LEVEL);
 

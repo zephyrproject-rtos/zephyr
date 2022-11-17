@@ -222,7 +222,7 @@ int i3c_ccc_do_setmwl(const struct i3c_device_desc *target,
 
 	memset(&ccc_payload, 0, sizeof(ccc_payload));
 
-	ccc_tgt_payload.addr = target->static_addr;
+	ccc_tgt_payload.addr = target->dynamic_addr;
 	ccc_tgt_payload.rnw = 0;
 	ccc_tgt_payload.data = &data[0];
 	ccc_tgt_payload.data_len = sizeof(data);
@@ -309,7 +309,7 @@ int i3c_ccc_do_setmrl(const struct i3c_device_desc *target,
 
 	memset(&ccc_payload, 0, sizeof(ccc_payload));
 
-	ccc_tgt_payload.addr = target->static_addr;
+	ccc_tgt_payload.addr = target->dynamic_addr;
 	ccc_tgt_payload.rnw = 0;
 	ccc_tgt_payload.data = &data[0];
 

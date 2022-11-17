@@ -70,9 +70,11 @@
 #include <assert.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_npcx, LOG_LEVEL_ERR);
 
 /* I2C controller mode */
@@ -1009,7 +1011,7 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 		}
 	}
 
-	if (data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
+	if (data->oper_state == NPCX_I2C_ERROR_RECOVERY || ret == -ETIMEDOUT) {
 		int recovery_error = i2c_ctrl_recovery(i2c_dev);
 		/*
 		 * Recovery failed, return it immediately. Otherwise, the upper

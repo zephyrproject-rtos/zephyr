@@ -6,6 +6,7 @@
 #include <adsp_memory.h>
 #include <adsp_shim.h>
 #include <intel_adsp_ipc.h>
+#include <mem_window.h>
 
 /* Matches SOF_IPC_MSG_MAX_SIZE, though in practice nothing anywhere
  * near that big is ever sent.  Should maybe consider making this a
@@ -23,10 +24,11 @@
  * One side effect is that the word "before" MSG_INBUF is owned by our
  * code too, and can be used for a nice trick below.
  */
-#define BUFPTR(ptr, off) ((uint32_t *) \
-	arch_xtensa_uncached_ptr((void *)((uint32_t)ptr + off)))
-#define MSG_INBUF BUFPTR(L2_SRAM_BASE, CONFIG_IPM_CAVS_HOST_INBOX_OFFSET)
-#define MSG_OUTBUF BUFPTR(HP_SRAM_WIN0_BASE, CONFIG_IPM_CAVS_HOST_OUTBOX_OFFSET)
+
+/* host windows */
+#define DMWBA(win_base) (win_base + 0x0)
+#define DMWLO(win_base) (win_base + 0x4)
+
 
 struct ipm_cavs_host_data {
 	ipm_callback_t callback;
@@ -38,9 +40,18 @@ struct ipm_cavs_host_data {
  * whether this is required, and the SOF code that will be using this
  * is externally synchronized already.
  */
-static int send(const struct device *ipmdev, int wait, uint32_t id,
+static int send(const struct device *dev, int wait, uint32_t id,
 		const void *data, int size)
 {
+	const struct device *mw0 = DEVICE_DT_GET(DT_NODELABEL(mem_window0));
+
+	if (!device_is_ready(mw0)) {
+		return -ENODEV;
+	}
+	const struct mem_win_config *mw0_config = mw0->config;
+	uint32_t *buf = (uint32_t *)arch_xtensa_uncached_ptr((void *)((uint32_t)mw0_config->mem_base
+		+ CONFIG_IPM_CAVS_HOST_OUTBOX_OFFSET));
+
 	if (!intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV)) {
 		return -EBUSY;
 	}
@@ -65,7 +76,7 @@ static int send(const struct device *ipmdev, int wait, uint32_t id,
 		size -= 4;
 	}
 
-	memcpy(MSG_OUTBUF, data, size);
+	memcpy(buf, data, size);
 
 	bool ok = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, id, ext_data);
 
@@ -91,7 +102,13 @@ static bool ipc_handler(const struct device *dev, void *arg,
 	ARG_UNUSED(arg);
 	struct device *ipmdev = arg;
 	struct ipm_cavs_host_data *devdata = ipmdev->data;
-	uint32_t *msg = MSG_INBUF;
+	const struct device *mw1 = DEVICE_DT_GET(DT_NODELABEL(mem_window1));
+
+	if (!device_is_ready(mw1)) {
+		return -ENODEV;
+	}
+	const struct mem_win_config *mw1_config = mw1->config;
+	uint32_t *msg = arch_xtensa_uncached_ptr((void *)mw1_config->mem_base);
 
 	/* We play tricks to leave one word available before the
 	 * beginning of the SRAM window, this way the host can see the
@@ -158,12 +175,19 @@ static int init(const struct device *dev)
 {
 	struct ipm_cavs_host_data *data = dev->data;
 
+	const struct device *mw1 = DEVICE_DT_GET(DT_NODELABEL(mem_window1));
+
+	if (!device_is_ready(mw1)) {
+		return -ENODEV;
+	}
+	const struct mem_win_config *mw1_config = mw1->config;
 	/* Initialize hardware SRAM window.  SOF will give the host 8k
 	 * here, let's limit it to just the memory we're using for
 	 * futureproofing.
 	 */
-	CAVS_WIN[1].dmwlo = ROUND_UP(MAX_MSG, 8);
-	CAVS_WIN[1].dmwba = ((uint32_t) MSG_INBUF) | CAVS_DMWBA_ENABLE;
+
+	sys_write32(ROUND_UP(MAX_MSG, 8) | 0x7, DMWLO(mw1_config->base_addr));
+	sys_write32((mw1_config->mem_base | ADSP_DMWBA_ENABLE), DMWBA(mw1_config->base_addr));
 
 	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, ipc_handler, (void *)dev);
 

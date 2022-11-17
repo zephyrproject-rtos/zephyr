@@ -308,6 +308,7 @@ enum node_rx_type {
 	NODE_RX_TYPE_SCAN_INDICATION,
 	NODE_RX_TYPE_CIS_REQUEST,
 	NODE_RX_TYPE_CIS_ESTABLISHED,
+	NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE,
 	NODE_RX_TYPE_MESH_ADV_CPLT,
 	NODE_RX_TYPE_MESH_REPORT,
 	NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT,
@@ -586,6 +587,7 @@ void ull_iso_rx_put(memq_link_t *link, void *rx);
 void ull_iso_rx_sched(void);
 void *ull_iso_tx_ack_dequeue(void);
 void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *tx);
+void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count);
 struct event_done_extra *ull_event_done_extra_get(void);
 struct event_done_extra *ull_done_extra_type_set(uint8_t type);
 void *ull_event_done(void *param);
