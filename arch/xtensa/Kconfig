@@ -126,6 +126,13 @@ if XTENSA_MMU
 		help
 		  Each table can address up to 4MB memory address.
 
+	config XTENSA_MMU_DOUBLE_MAP
+		bool "Map memory in cached and uncached region"
+		default n
+		help
+			This option specifies that the memory is mapped in two
+			distinct region, cached and uncached.
+
 endif # XTENSA_MMU
 
 endif # CPU_HAS_MMU
