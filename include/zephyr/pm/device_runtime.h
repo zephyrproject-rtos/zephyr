@@ -143,12 +143,43 @@ int pm_device_runtime_put_async(const struct device *dev);
 bool pm_device_runtime_is_enabled(const struct device *dev);
 
 #else
-static inline int pm_device_runtime_enable(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_runtime_disable(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_runtime_get(const struct device *dev) { return 0; }
-static inline int pm_device_runtime_put(const struct device *dev) { return 0; }
-static inline int pm_device_runtime_put_async(const struct device *dev) { return 0; }
-static inline bool pm_device_runtime_is_enabled(const struct device *dev) { return false; }
+
+static inline int pm_device_runtime_enable(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return -ENOSYS;
+}
+
+static inline int pm_device_runtime_disable(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return -ENOSYS;
+}
+
+static inline int pm_device_runtime_get(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+static inline int pm_device_runtime_put(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+static inline int pm_device_runtime_put_async(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+static inline bool pm_device_runtime_is_enabled(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return false;
+}
+
 #endif
 
 /** @} */
