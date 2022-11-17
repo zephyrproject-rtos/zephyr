@@ -259,6 +259,14 @@ Drivers and Sensors
 
 * Pin control
 
+  * Common pin control properties are now defined at root level in a single
+    file: :zephyr_file:`dts/bindings/pinctrl/pincfg-node.yaml`. Pin control
+    bindings are expected to include it at the level they need. For example,
+    drivers using the grouping representation approach need to include it at
+    grandchild level, while drivers using the node approach need to include it
+    at the child level. This change will only impact out-of-tree pin control
+    drivers, sinc all in-tree drivers have been updated.
+
 * PWM
 
 * Power domain
