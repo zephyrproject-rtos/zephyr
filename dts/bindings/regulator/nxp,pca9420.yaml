@@ -55,6 +55,7 @@ child-binding:
         - regulator-boot-on
         - regulator-min-microvolt
         - regulator-max-microvolt
+        - regulator-max-microamp
 
   description: Voltage output of PMIC controller regulator
   properties:
@@ -62,6 +63,9 @@ child-binding:
         required: true
 
       regulator-max-microvolt:
+          required: true
+
+      regulator-max-microamp:
           required: true
 
       voltage-range:
