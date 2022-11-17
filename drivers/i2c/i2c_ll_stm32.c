@@ -8,6 +8,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
@@ -66,13 +67,23 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	data->dev_config = config;
 
 	k_sem_take(&data->bus_mutex, K_FOREVER);
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#else
 	pm_device_busy_set(dev);
+#endif
 
 	LL_I2C_Disable(i2c);
 	LL_I2C_SetMode(i2c, LL_I2C_MODE_I2C);
 	ret = stm32_i2c_configure_timing(dev, clock);
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_put(dev);
+#else
 	pm_device_busy_clear(dev);
+#endif
+
 	k_sem_give(&data->bus_mutex);
 
 	return ret;
@@ -181,11 +192,20 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 		return ret;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* Send out messages */
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 
 	/* Prevent driver from being suspended by PM until I2C transaction is complete */
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#else
 	pm_device_busy_set(dev);
+#endif
 
 	current = msg;
 
@@ -204,9 +224,14 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 		num_msgs--;
 	}
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_put(dev);
+#else
 	pm_device_busy_clear(dev);
+#endif
 
 	k_sem_give(&data->bus_mutex);
+
 	return ret;
 }
 
@@ -327,6 +352,12 @@ static int i2c_stm32_init(const struct device *dev)
 		LOG_ERR("i2c: failure initializing");
 		return ret;
 	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	i2c_stm32_suspend(dev);
+	pm_device_init_suspended(dev);
+	(void)pm_device_runtime_enable(dev);
+#endif
 
 	return 0;
 }
