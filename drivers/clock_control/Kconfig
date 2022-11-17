@@ -70,4 +70,6 @@ source "drivers/clock_control/Kconfig.gd32"
 
 source "drivers/clock_control/Kconfig.sam"
 
+source "drivers/clock_control/Kconfig.smartbond"
+
 endif # CLOCK_CONTROL
