@@ -319,6 +319,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			struct node_rx_hdr *node_rx,
 			uint8_t *acad, uint8_t acad_len)
 {
+	struct lll_sync_iso_stream *stream;
 	uint32_t ticks_slot_overhead;
 	uint32_t sync_iso_offset_us;
 	uint32_t ticks_slot_offset;
@@ -417,11 +418,17 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 
+	/* Calculate the BIG Offset in microseconds */
 	sync_iso_offset_us = ftr->radio_end_us;
 	sync_iso_offset_us += (uint32_t)sys_le16_to_cpu(bi->offs) *
 			      lll->window_size_event_us;
-	sync_iso_offset_us -= PDU_BIS_US(pdu->len, lll->enc, lll->phy,
-					 ftr->phy_flags);
+	/* Skip to first selected BIS subevent */
+	/* FIXME: add support for interleaved packing */
+	stream = ull_sync_iso_stream_get(lll->stream_handle[0]);
+	sync_iso_offset_us += (stream->bis_index - 1U) * lll->sub_interval *
+			      ((lll->irc * lll->bn) + lll->ptc);
+	sync_iso_offset_us -= PDU_AC_US(pdu->len, sync_iso->sync->lll.phy,
+					ftr->phy_flags);
 	sync_iso_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_iso_offset_us -= EVENT_JITTER_US;
 	sync_iso_offset_us -= ready_delay_us;
