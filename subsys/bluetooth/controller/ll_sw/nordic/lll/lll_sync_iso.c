@@ -239,7 +239,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	util_bis_aa_le32(lll->bis_curr, lll->seed_access_addr, access_addr);
 	data_chan_id = lll_chan_id(access_addr);
 
-	/* Calculate the radio channel to use for ISO event */
+	/* Calculate the radio channel to use for ISO event and hence store the
+	 * channel to be used for control subevent.
+	 */
 	data_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
 					   lll->data_chan_map,
 					   lll->data_chan_count,
@@ -263,7 +265,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 				 access_addr);
 		data_chan_id = lll_chan_id(access_addr);
 
-		/* Calculate the radio channel to use for ISO event */
+		/* Calculate the channel id for the next BIS subevent */
 		data_chan_use = lll_chan_iso_event(event_counter,
 					data_chan_id,
 					lll->data_chan_map,
@@ -555,6 +557,7 @@ static void isr_rx(void *param)
 		handle = lll->stream_handle[lll->stream_curr];
 		stream = ull_sync_iso_lll_stream_get(handle);
 
+		/* store the received PDU */
 		if ((lll->bis_curr == stream->bis_index) && pdu->len &&
 		    !lll->payload[bis_idx][payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
@@ -572,65 +575,94 @@ isr_rx_done:
 
 isr_rx_find_subevent:
 	/* FIXME: Sequential or Interleaved BIS subevents decision */
-	/* Sequential Rx complete flow pseudo code */
+	/* NOTE: below code is for Sequential Rx only */
+
+	/* Find the next (bn_curr)th subevent to receive PDU */
 	while (lll->bn_curr < lll->bn) {
 		lll->bn_curr++;
 
+		/* Find the index of the (bn_curr)th Rx PDU buffer */
 		payload_index = lll->payload_tail + (lll->bn_curr - 1U);
 		if (payload_index >= lll->payload_count_max) {
 			payload_index -= lll->payload_count_max;
 		}
 
+		/* Check if (bn_curr)th Rx PDU has been received */
 		if (!lll->payload[bis_idx][payload_index]) {
+			/* Receive the (bn_curr)th Rx PDU of bis_curr */
 			bis = lll->bis_curr;
 
-			/* Receive the (bn_curr)th Rx PDU of bis_curr */
 			goto isr_rx_next_subevent;
 		}
 
+		/* (bn_curr)th Rx PDU already received, skip subevent */
 		skipped++;
 	}
 
+	/* Find the next repetition (irc_curr)th subevent to receive PDU */
 	if (lll->irc_curr < lll->irc) {
 		if (!new_burst) {
 			lll->bn_curr = 1U;
 			lll->irc_curr++;
 
+			/* Find the index of the (irc_curr)th bn = 1 Rx PDU
+			 * buffer.
+			 */
 			payload_index = lll->payload_tail;
 
+			/* Check if (irc_curr)th bn = 1 Rx PDU has been
+			 * received.
+			 */
 			if (!lll->payload[bis_idx][payload_index]) {
+				/* Receive the (irc_curr)th bn = 1 Rx PDU of
+				 * bis_curr.
+				 */
 				bis = lll->bis_curr;
 
 				goto isr_rx_next_subevent;
 			} else {
+				/* bn = 1 Rx PDU already received, skip
+				 * subevent.
+				 */
 				skipped++;
+
+				/* flag to skip successive repetitions if all
+				 * bn PDUs have been received. i.e. the bn
+				 * loop above did not find a PDU to be received.
+				 */
 				new_burst = 1U;
 
-				/* Receive the missing (bn_curr)th Rx PDU of
+				/* Find the missing (bn_curr)th Rx PDU of
 				 * bis_curr
 				 */
 				goto isr_rx_find_subevent;
 			}
 		} else {
+			/* Skip all successive repetition reception as all
+			 * bn PDUs have been received.
+			 */
 			skipped += (lll->irc - lll->irc_curr) * lll->bn;
 			lll->irc_curr = lll->irc;
 		}
 	}
 
+	/* Next pre-transmission subevent */
 	if (lll->ptc_curr < lll->ptc) {
 		lll->ptc_curr++;
-		/* Receive the (ptc_curr)th Rx PDU */
 
+		/* Receive the (ptc_curr)th Rx PDU of bis_curr */
 		bis = lll->bis_curr;
 
 		goto isr_rx_next_subevent;
 	}
 
+	/* Next BIS */
 	if (lll->bis_curr < lll->num_bis) {
 		const uint8_t stream_curr = lll->stream_curr + 1U;
 		struct lll_sync_iso_stream *stream;
 		uint16_t handle;
 
+		/* Next selected stream */
 		if (stream_curr < lll->stream_count) {
 			lll->stream_curr = stream_curr;
 			handle = lll->stream_handle[lll->stream_curr];
@@ -688,6 +720,7 @@ isr_rx_find_subevent:
 		}
 	}
 
+	/* Control subevent */
 	if (!lll->ctrl && (lll->cssn_next != lll->cssn_curr)) {
 		/* Receive the control PDU and close the BIG event
 		 *  there after.
