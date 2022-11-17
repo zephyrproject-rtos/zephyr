@@ -31,7 +31,10 @@ extern "C" {
 #define PTHREAD_CANCEL_DISABLE	BIT(_PTHREAD_CANCEL_POS)
 
 /* Passed to pthread_once */
-#define PTHREAD_ONCE_INIT 1
+#define PTHREAD_ONCE_INIT                                                                          \
+	{                                                                                          \
+		1, 0                                                                               \
+	}
 
 /* The minimum allowable stack size */
 #define PTHREAD_STACK_MIN Z_KERNEL_STACK_SIZE_ADJUST(0)
