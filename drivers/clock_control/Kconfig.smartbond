@@ -1,0 +1,10 @@
+# Smartbond clock control driver config
+
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SMARTBOND
+	bool "Smartbond Clock Control"
+	depends on SOC_FAMILY_SMARTBOND
+	help
+	  Enable driver for Clock Control subsystem found in SmartBond
