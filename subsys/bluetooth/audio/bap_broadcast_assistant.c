@@ -285,9 +285,15 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 		} else {
 			if (broadcast_assistant_cbs != NULL &&
 			    broadcast_assistant_cbs->recv_state != NULL) {
-				broadcast_assistant_cbs->recv_state(conn,
-								    cb_err,
-								    &recv_state);
+				if (active_recv_state) {
+					broadcast_assistant_cbs->recv_state(conn,
+									    cb_err,
+									    &recv_state);
+				} else {
+					broadcast_assistant_cbs->recv_state(conn,
+									    cb_err,
+									    NULL);
+				}
 			}
 		}
 	} else {
