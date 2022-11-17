@@ -182,8 +182,6 @@ arduino_serial: &flexcomm12 {
 		modesel-reg = <PCA9420_MODECFG_0_0>;
 		modesel-mask = <PCA9420_MODECFG_0_MODE_CTRL_SEL_MASK>;
 		BUCK1 {
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			num-current-levels = <7>;
 			regulator-min-microvolt = <500000>;
 			regulator-max-microvolt = <1800000>;
 			regulator-max-microamp = <250000>;
@@ -191,8 +189,6 @@ arduino_serial: &flexcomm12 {
 		};
 
 		BUCK2 {
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			num-current-levels = <7>;
 			regulator-min-microvolt = <1500000>;
 			regulator-max-microvolt = <3300000>;
 			regulator-max-microamp = <500000>;
@@ -200,8 +196,6 @@ arduino_serial: &flexcomm12 {
 		};
 
 		LDO1 {
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			num-current-levels = <7>;
 			regulator-min-microvolt = <1700000>;
 			regulator-max-microvolt = <1900000>;
 			regulator-max-microamp = <1000>;
@@ -209,8 +203,6 @@ arduino_serial: &flexcomm12 {
 		};
 
 		LDO2 {
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			num-current-levels = <7>;
 			regulator-min-microvolt = <1500000>;
 			regulator-max-microvolt = <3300000>;
 			regulator-max-microamp = <250000>;
