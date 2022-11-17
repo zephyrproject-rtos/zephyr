@@ -12,9 +12,14 @@
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
-
 #include <zcbor_common.h>
 
+/**
+ * @brief MCUmgr img_mgmt API
+ * @defgroup mcumgr_img_mgmt MCUmgr img_mgmt API
+ * @ingroup mcumgr
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +29,7 @@ extern "C" {
 #define IMG_MGMT_HASH_LEN	32
 #define IMG_MGMT_DATA_SHA_LEN	32 /* SHA256 */
 
-/*
+/**
  * Image state flags
  */
 #define IMG_MGMT_STATE_F_PENDING	0x01
@@ -35,7 +40,7 @@ extern "C" {
 /* 255.255.65535.4294967295\0 */
 #define IMG_MGMT_VER_MAX_STR_LEN	(sizeof("255.255.65535.4294967295"))
 
-/*
+/**
  * Swap Types for image management state machine
  */
 #define IMG_MGMT_SWAP_TYPE_NONE		0
@@ -54,12 +59,14 @@ extern "C" {
 #define IMG_MGMT_ID_CORELOAD	4
 #define IMG_MGMT_ID_ERASE	5
 
-/*
+/**
  * IMG_MGMT_ID_UPLOAD statuses.
  */
-#define IMG_MGMT_ID_UPLOAD_STATUS_START		0
-#define IMG_MGMT_ID_UPLOAD_STATUS_ONGOING	1
-#define IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE	2
+enum img_mgmt_id_upload_t {
+	IMG_MGMT_ID_UPLOAD_STATUS_START		= 0,
+	IMG_MGMT_ID_UPLOAD_STATUS_ONGOING,
+	IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE,
+};
 
 extern int boot_current_slot;
 extern struct img_mgmt_state g_img_mgmt_state;
@@ -239,6 +246,10 @@ extern const char *img_mgmt_err_str_image_bad_flash_addr;
 #define IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, rsn)
 #define IMG_MGMT_UPLOAD_ACTION_RC_RSN(action) NULL
 #endif
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
