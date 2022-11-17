@@ -52,6 +52,8 @@ static void isr_tx_normal(void *param);
 static void isr_tx_common(void *param,
 			  radio_isr_cb_t isr_tx,
 			  radio_isr_cb_t isr_done);
+static void next_chan_calc(struct lll_adv_iso *lll, uint16_t event_counter,
+			   uint16_t data_chan_id);
 static void isr_done_create(void *param);
 static void isr_done_term(void *param);
 
@@ -400,6 +402,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		LL_ASSERT(!ret);
 	}
 
+	/* Calculate ahead the next subevent channel index */
+	next_chan_calc(lll, event_counter, data_chan_id);
+
 	return 0;
 }
 
@@ -619,25 +624,7 @@ static void isr_tx_common(void *param,
 		pdu->payload[3] = lll->bis_curr;
 #endif /* TEST_WITH_DUMMY_PDU */
 
-		if ((lll->bn_curr == 1U) && (lll->irc_curr == 1U)) {
-			const uint16_t event_counter =
-				(lll->payload_count / lll->bn) - 1U;
-
-			/* Calculate the radio channel to use for next BIS */
-			data_chan_use = lll_chan_iso_event(event_counter,
-						data_chan_id,
-						lll->data_chan_map,
-						lll->data_chan_count,
-						&lll->data_chan_prn_s,
-						&lll->data_chan_remap_idx);
-		} else {
-			/* Calculate the radio channel to use for subevent */
-			data_chan_use =	lll_chan_iso_subevent(data_chan_id,
-						lll->data_chan_map,
-						lll->data_chan_count,
-						&lll->data_chan_prn_s,
-						&lll->data_chan_remap_idx);
-		}
+		data_chan_use = lll->next_chan_use;
 	}
 	pdu->rfu = 0U;
 
@@ -667,6 +654,42 @@ static void isr_tx_common(void *param,
 
 	/* assert if radio packet ptr is not set and radio started rx */
 	LL_ASSERT(!radio_is_ready());
+
+	/* Calculate ahead the next subevent channel index */
+	const uint16_t event_counter = (lll->payload_count / lll->bn) - 1U;
+
+	next_chan_calc(lll, event_counter, data_chan_id);
+}
+
+static void next_chan_calc(struct lll_adv_iso *lll, uint16_t event_counter,
+			   uint16_t data_chan_id)
+{
+	/* Calculate ahead the next subevent channel index */
+	if ((lll->bn_curr < lll->bn) ||
+	    (lll->irc_curr < lll->irc) ||
+	    (lll->ptc_curr < lll->ptc)) {
+		/* Calculate the radio channel to use for next subevent */
+		lll->next_chan_use = lll_chan_iso_subevent(data_chan_id,
+						lll->data_chan_map,
+						lll->data_chan_count,
+						&lll->data_chan_prn_s,
+						&lll->data_chan_remap_idx);
+	} else if (lll->bis_curr < lll->num_bis) {
+		uint8_t access_addr[4];
+
+		/* Calculate the Access Address for the next BIS subevent */
+		util_bis_aa_le32((lll->bis_curr + 1U), lll->seed_access_addr,
+				 access_addr);
+		data_chan_id = lll_chan_id(access_addr);
+
+		/* Calculate the radio channel to use for next BIS */
+		lll->next_chan_use = lll_chan_iso_event(event_counter,
+						data_chan_id,
+						lll->data_chan_map,
+						lll->data_chan_count,
+						&lll->data_chan_prn_s,
+						&lll->data_chan_remap_idx);
+	}
 }
 
 static void isr_done_create(void *param)
