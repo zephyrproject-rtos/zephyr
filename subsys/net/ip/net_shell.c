@@ -3865,6 +3865,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 					      struct net_icmpv6_echo_req);
 	struct net_icmpv6_echo_req *icmp_echo;
 	uint32_t cycles;
+	char time_buf[16] = { 0 };
 
 	icmp_echo = (struct net_icmpv6_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
@@ -3873,21 +3874,30 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
-	if (net_pkt_read_be32(pkt, &cycles)) {
-		return -NET_DROP;
-	}
 
-	cycles = k_cycle_get_32() - cycles;
+	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
+		if (net_pkt_read_be32(pkt, &cycles)) {
+			return -NET_DROP;
+		}
+
+		cycles = k_cycle_get_32() - cycles;
+
+		snprintf(time_buf, sizeof(time_buf),
+#ifdef CONFIG_FPU
+			 "time=%.2f ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+#else
+			 "time=%d ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
+#endif
+			);
+	}
 
 	PR_SHELL(shell_for_ping, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
 #ifdef CONFIG_IEEE802154
 		 "rssi=%d "
 #endif
-#ifdef CONFIG_FPU
-		 "time=%.2f ms\n",
-#else
-		 "time=%d ms\n",
-#endif
+		 "%s\n",
 		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
 								NET_ICMPH_LEN,
 		 net_sprint_ipv6_addr(&ip_hdr->src),
@@ -3897,11 +3907,8 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 #ifdef CONFIG_IEEE802154
 		 net_pkt_ieee802154_rssi(pkt),
 #endif
-#ifdef CONFIG_FPU
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
-#else
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
-#endif
+		 time_buf);
+
 	k_sem_give(&ping_timeout);
 
 	net_pkt_unref(pkt);
@@ -4001,6 +4008,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 					      struct net_icmpv4_echo_req);
 	uint32_t cycles;
 	struct net_icmpv4_echo_req *icmp_echo;
+	char time_buf[16] = { 0 };
 
 	icmp_echo = (struct net_icmpv4_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
@@ -4009,29 +4017,35 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
-	if (net_pkt_read_be32(pkt, &cycles)) {
-		return -NET_DROP;
+
+	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
+		if (net_pkt_read_be32(pkt, &cycles)) {
+			return -NET_DROP;
+		}
+
+		cycles = k_cycle_get_32() - cycles;
+
+		snprintf(time_buf, sizeof(time_buf),
+#ifdef CONFIG_FPU
+			 "time=%.2f ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+#else
+			 "time=%d ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
+#endif
+			);
 	}
 
-	cycles = k_cycle_get_32() - cycles;
-
 	PR_SHELL(shell_for_ping, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
-#ifdef CONFIG_FPU
-		 "time=%.2f ms\n",
-#else
-		 "time=%d ms\n",
-#endif
+		 "%s\n",
 		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
 								NET_ICMPH_LEN,
 		 net_sprint_ipv4_addr(&ip_hdr->src),
 		 net_sprint_ipv4_addr(&ip_hdr->dst),
 		 ntohs(icmp_echo->sequence),
 		 ip_hdr->ttl,
-#ifdef CONFIG_FPU
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
-#else
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
-#endif
+		 time_buf);
+
 	k_sem_give(&ping_timeout);
 
 	net_pkt_unref(pkt);
