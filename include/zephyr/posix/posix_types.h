@@ -11,6 +11,10 @@
 #include <sys/types.h>
 #endif
 
+#ifdef CONFIG_NEWLIB_LIBC
+#include <sys/_pthreadtypes.h>
+#endif
+
 #include <zephyr/kernel.h>
 
 #ifdef __cplusplus
@@ -33,7 +37,7 @@ typedef unsigned long timer_t;
 
 #ifdef CONFIG_PTHREAD_IPC
 /* Thread attributes */
-typedef struct pthread_attr {
+struct pthread_attr {
 	int priority;
 	void *stack;
 	uint32_t stacksize;
@@ -42,7 +46,11 @@ typedef struct pthread_attr {
 	uint32_t schedpolicy;
 	int32_t detachstate;
 	uint32_t initialized;
-} pthread_attr_t;
+};
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC)
+typedef struct pthread_attr pthread_attr_t;
+#endif
+BUILD_ASSERT(sizeof(pthread_attr_t) >= sizeof(struct pthread_attr));
 
 typedef uint32_t pthread_t;
 
@@ -52,15 +60,24 @@ typedef struct k_sem sem_t;
 /* Mutex */
 typedef uint32_t pthread_mutex_t;
 
-typedef struct pthread_mutexattr {
+struct pthread_mutexattr {
 	int type;
-} pthread_mutexattr_t;
+};
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC)
+typedef struct pthread_mutexattr pthread_mutexattr_t;
+#endif
+BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr));
 
 /* Condition variables */
 typedef uint32_t pthread_cond_t;
 
-typedef struct pthread_condattr {
-} pthread_condattr_t;
+struct pthread_condattr {
+};
+
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC)
+typedef struct pthread_condattr pthread_condattr_t;
+#endif
+BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
 
 /* Barrier */
 typedef struct pthread_barrier {
