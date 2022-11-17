@@ -16,5 +16,69 @@
 		interrupt-parent = <&intc>;
 
 		status = "okay";
+
+		eeprom2: smbus_eeprom@50 {
+			compatible = "zephyr,smbus-eeprom";
+			reg = <0x50>;
+			size = <0x100>;
+
+			status = "okay";
+		};
+
+		eeprom3: smbus_eeprom@51 {
+			compatible = "zephyr,smbus-eeprom";
+			reg = <0x51>;
+			size = <0x100>;
+
+			status = "okay";
+		};
+
+		eeprom4: smbus_eeprom@52 {
+			compatible = "zephyr,smbus-eeprom";
+			reg = <0x52>;
+			size = <0x100>;
+
+			status = "okay";
+		};
+
+		eeprom5: smbus_eeprom@53 {
+			compatible = "zephyr,smbus-eeprom";
+			reg = <0x53>;
+			size = <0x100>;
+
+			status = "okay";
+		};
+
+		eeprom6: smbus_eeprom@54 {
+			compatible = "zephyr,smbus-eeprom";
+			reg = <0x54>;
+			size = <0x100>;
+
+			status = "okay";
+		};
+
+		eeprom7: smbus_eeprom@55 {
+			compatible = "zephyr,smbus-eeprom";
+			reg = <0x55>;
+			size = <0x100>;
+
+			status = "okay";
+		};
+
+		eeprom8: smbus_eeprom@56 {
+			compatible = "zephyr,smbus-eeprom";
+			reg = <0x56>;
+			size = <0x100>;
+
+			status = "okay";
+		};
+
+		eeprom9: smbus_eeprom@57 {
+			compatible = "zephyr,smbus-eeprom";
+			reg = <0x57>;
+			size = <0x100>;
+
+			status = "okay";
+		};
 	};
 };
