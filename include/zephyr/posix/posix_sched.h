@@ -11,14 +11,10 @@ extern "C" {
 #endif
 
 /* Cooperative scheduling policy */
-#ifndef SCHED_FIFO
-#define SCHED_FIFO 0
-#endif /* SCHED_FIFO */
+#define SCHED_FIFO 1
 
 /* Priority based preemptive scheduling policy */
-#ifndef SCHED_RR
-#define SCHED_RR 1
-#endif /* SCHED_RR */
+#define SCHED_RR 2
 
 struct sched_param {
 	int sched_priority;
