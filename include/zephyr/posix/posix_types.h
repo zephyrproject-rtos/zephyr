@@ -36,7 +36,7 @@ typedef unsigned long timer_t;
 typedef struct pthread_attr {
 	int priority;
 	void *stack;
-	size_t stacksize;
+	uint32_t stacksize;
 	uint32_t flags;
 	uint32_t delayedstart;
 	uint32_t schedpolicy;
