@@ -12,6 +12,7 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/dt-bindings/regulator/pmic_i2c.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(pca9420, CONFIG_REGULATOR_LOG_LEVEL);
@@ -47,10 +48,13 @@ LOG_MODULE_REGISTER(pca9420, CONFIG_REGULATOR_LOG_LEVEL);
  */
 /** @brief Mode output voltage mask */
 #define PCA9420_MODECFG_0_SW1_OUT_MASK       0x3FU
+#define PCA9420_MODECFG_0_SW1_OUT_POS        0U
 /** @brief SW2_OUT offset and voltage level mask */
 #define PCA9420_MODECFG_1_SW2_OUT_MASK       0x3FU
+#define PCA9420_MODECFG_1_SW2_OUT_POS        0U
 /** @brief LDO1_OUT voltage level mask */
 #define PCA9420_MODECFG_2_LDO1_OUT_MASK      0xF0U
+#define PCA9420_MODECFG_2_LDO1_OUT_POS       4U
 /** @brief SW1 Enable */
 #define PCA9420_MODECFG_2_SW1_EN_MASK	     0x08U
 #define PCA9420_MODECFG_2_SW1_EN_VAL	     0x08U
@@ -65,17 +69,12 @@ LOG_MODULE_REGISTER(pca9420, CONFIG_REGULATOR_LOG_LEVEL);
 #define PCA9420_MODECFG_2_LDO2_EN_VAL	     0x01U
 /** @brief LDO2_OUT offset and voltage level mask */
 #define PCA9420_MODECFG_3_LDO2_OUT_MASK      0x3FU
-
-struct voltage_range {
-	int32_t uV; /* Voltage in uV */
-	uint8_t reg_val; /* Register value for voltage */
-};
+#define PCA9420_MODECFG_3_LDO2_OUT_POS       0U
 
 struct current_range {
 	int32_t uA; /* Current limit in uA */
 	uint8_t reg_val; /* Register value for current limit */
 };
-
 struct regulator_pca9420_desc {
 	uint8_t enable_reg;
 	uint8_t enable_mask;
@@ -84,30 +83,53 @@ struct regulator_pca9420_desc {
 	uint8_t ilim_mask;
 	uint8_t vsel_reg;
 	uint8_t vsel_mask;
+	uint8_t vsel_pos;
+	uint8_t num_ranges;
+	const struct linear_range *ranges;
 };
 
 struct regulator_pca9420_data {
 	struct onoff_sync_service srv;
-	const struct voltage_range *voltages;
 	const struct current_range *current_levels;
 };
 
 struct regulator_pca9420_config {
-	int num_voltages;
 	int num_current_levels;
 	int num_modes;
-	int32_t max_uv;
-	int32_t min_uv;
 	bool enable_inverted;
 	bool boot_on;
 	struct i2c_dt_spec i2c;
 	uint16_t initial_mode;
-	const uint32_t *voltage_array;
 	const uint32_t *current_array;
 	const uint16_t *allowed_modes;
 	uint8_t modesel_reg;
 	uint8_t modesel_mask;
 	const struct regulator_pca9420_desc *desc;
+};
+
+static const struct linear_range buck1_ranges[] = {
+	LINEAR_RANGE_INIT(500000, 25000U, 0x0U, 0x28U),
+	LINEAR_RANGE_INIT(1500000, 0U, 0x29U, 0x3E),
+	LINEAR_RANGE_INIT(1800000, 0U, 0x3FU, 0x3FU),
+};
+
+static const struct linear_range buck2_ranges[] = {
+	LINEAR_RANGE_INIT(1500000, 25000U, 0x0U, 0x18U),
+	LINEAR_RANGE_INIT(2100000, 0U, 0x19U, 0x1F),
+	LINEAR_RANGE_INIT(2700000, 25000U, 0x20U, 0x38U),
+	LINEAR_RANGE_INIT(3300000, 0U, 0x39U, 0x3F),
+};
+
+static const struct linear_range ldo1_ranges[] = {
+	LINEAR_RANGE_INIT(1700000, 25000U, 0x0U, 0x9U),
+	LINEAR_RANGE_INIT(1900000, 0U, 0x9U, 0xFU),
+};
+
+static const struct linear_range ldo2_ranges[] = {
+	LINEAR_RANGE_INIT(1500000, 25000U, 0x0U, 0x18U),
+	LINEAR_RANGE_INIT(2100000, 0U, 0x19U, 0x1FU),
+	LINEAR_RANGE_INIT(2700000, 25000U, 0x20U, 0x38U),
+	LINEAR_RANGE_INIT(3300000, 0U, 0x39U, 0x3FU),
 };
 
 static const struct regulator_pca9420_desc buck1_desc = {
@@ -117,7 +139,10 @@ static const struct regulator_pca9420_desc buck1_desc = {
 	.ilim_reg = PCA9420_TOP_CNTL0,
 	.ilim_mask = PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
 	.vsel_mask = PCA9420_MODECFG_0_SW1_OUT_MASK,
+	.vsel_pos = PCA9420_MODECFG_0_SW1_OUT_POS,
 	.vsel_reg = PCA9420_MODECFG_0_0,
+	.ranges = buck1_ranges,
+	.num_ranges = ARRAY_SIZE(buck1_ranges),
 };
 
 static const struct regulator_pca9420_desc buck2_desc = {
@@ -125,9 +150,12 @@ static const struct regulator_pca9420_desc buck2_desc = {
 	.enable_mask = PCA9420_MODECFG_2_SW2_EN_MASK,
 	.enable_val = PCA9420_MODECFG_2_SW2_EN_VAL,
 	.vsel_mask = PCA9420_MODECFG_1_SW2_OUT_MASK,
+	.vsel_pos = PCA9420_MODECFG_1_SW2_OUT_POS,
 	.vsel_reg = PCA9420_MODECFG_0_1,
 	.ilim_reg = PCA9420_TOP_CNTL0,
 	.ilim_mask = PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
+	.ranges = buck2_ranges,
+	.num_ranges = ARRAY_SIZE(buck2_ranges),
 };
 
 static const struct regulator_pca9420_desc ldo1_desc = {
@@ -135,9 +163,12 @@ static const struct regulator_pca9420_desc ldo1_desc = {
 	.enable_mask = PCA9420_MODECFG_2_LDO1_EN_MASK,
 	.enable_val = PCA9420_MODECFG_2_LDO1_EN_VAL,
 	.vsel_mask = PCA9420_MODECFG_2_LDO1_OUT_MASK,
+	.vsel_pos = PCA9420_MODECFG_2_LDO1_OUT_POS,
 	.vsel_reg = PCA9420_MODECFG_0_2,
 	.ilim_reg = PCA9420_TOP_CNTL0,
 	.ilim_mask = PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
+	.ranges = ldo1_ranges,
+	.num_ranges = ARRAY_SIZE(ldo1_ranges),
 };
 
 static const struct regulator_pca9420_desc ldo2_desc = {
@@ -146,8 +177,11 @@ static const struct regulator_pca9420_desc ldo2_desc = {
 	.enable_val = PCA9420_MODECFG_2_LDO2_EN_VAL,
 	.vsel_reg = PCA9420_MODECFG_0_3,
 	.vsel_mask = PCA9420_MODECFG_3_LDO2_OUT_MASK,
+	.vsel_pos = PCA9420_MODECFG_3_LDO2_OUT_POS,
 	.ilim_reg = PCA9420_TOP_CNTL0,
 	.ilim_mask = PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
+	.ranges = ldo2_ranges,
+	.num_ranges = ARRAY_SIZE(ldo2_ranges),
 };
 
 static int regulator_pca9420_is_supported_voltage(const struct device *dev,
@@ -198,30 +232,24 @@ static int regulator_pca9420_modify_register(const struct device *dev,
  * offset applied to the vsel_reg. Useful to support reading voltages
  * in another target mode
  */
-static int32_t regulator_pca9420_get_voltage_offset(const struct device *dev,
-						    uint32_t off)
+static int regulator_pca9420_get_voltage_offset(const struct device *dev,
+						uint32_t off, int32_t *voltage)
 {
 	const struct regulator_pca9420_config *config = dev->config;
-	struct regulator_pca9420_data *data = dev->data;
-	int rc, i = 0;
+	int ret;
 	uint8_t raw_reg;
 
-	rc = regulator_pca9420_read_register(dev, config->desc->vsel_reg + off,
-					     &raw_reg);
-	if (rc) {
-		return rc;
+	ret = regulator_pca9420_read_register(dev, config->desc->vsel_reg + off,
+					      &raw_reg);
+	if (ret < 0) {
+		return ret;
 	}
-	raw_reg &= config->desc->vsel_mask;
-	/* Locate the voltage value in the voltage table */
-	while (i < config->num_voltages &&
-		raw_reg != data->voltages[i].reg_val){
-		i++;
-	}
-	if (i == config->num_voltages) {
-		LOG_WRN("Regulator vsel reg has unknown value");
-		return -EIO;
-	}
-	return data->voltages[i].uV;
+
+	raw_reg = (raw_reg & config->desc->vsel_mask) >> config->desc->vsel_pos;
+
+	return linear_range_group_get_value(config->desc->ranges,
+					    config->desc->num_ranges, raw_reg,
+					    voltage);
 }
 
 /**
@@ -234,32 +262,22 @@ static int regulator_set_voltage_offset(const struct device *dev,
 					uint32_t off)
 {
 	const struct regulator_pca9420_config *config = dev->config;
-	struct regulator_pca9420_data *data = dev->data;
-	int i = 0;
+	uint16_t idx;
+	int ret;
 
-	if (!regulator_pca9420_is_supported_voltage(dev, min_uv, max_uv) ||
-		min_uv > max_uv) {
-		return -EINVAL;
+	ret = linear_range_group_get_win_index(config->desc->ranges,
+					       config->desc->num_ranges, min_uv,
+					       max_uv, &idx);
+	if (ret < 0) {
+		return ret;
 	}
-	/* Find closest supported voltage */
-	while (i < config->num_voltages && min_uv > data->voltages[i].uV) {
-		i++;
-	}
-	if (data->voltages[i].uV > max_uv) {
-		LOG_DBG("Regulator could not satisfy voltage range, too narrow");
-		return -EINVAL;
-	}
-	if (i == config->num_voltages) {
-		LOG_WRN("Regulator could not locate supported voltage,"
-				"but voltage is in range.");
-		return -EINVAL;
-	}
-	LOG_DBG("Setting regulator %s to %duV", dev->name,
-			data->voltages[i].uV);
+
+	idx <<= config->desc->vsel_pos;
+
 	return regulator_pca9420_modify_register(dev,
 						 config->desc->vsel_reg + off,
 						 config->desc->vsel_mask,
-						 data->voltages[i].reg_val);
+						 (uint8_t)idx);
 }
 
 
@@ -271,7 +289,8 @@ static int regulator_pca9420_count_voltages(const struct device *dev)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 
-	return config->num_voltages;
+	return linear_range_group_values_count(config->desc->ranges,
+					       config->desc->num_ranges);
 }
 
 /**
@@ -293,12 +312,15 @@ static int32_t regulator_pca9420_list_voltages(const struct device *dev,
 					       unsigned int selector)
 {
 	const struct regulator_pca9420_config *config = dev->config;
-	struct regulator_pca9420_data *data = dev->data;
+	int32_t value;
 
-	if (config->num_voltages <= selector) {
-		return -ENODEV;
+	if (linear_range_group_get_value(config->desc->ranges,
+					 config->desc->num_ranges, selector,
+					 &value) < 0) {
+		return 0;
 	}
-	return data->voltages[selector].uV;
+
+	return value;
 }
 
 /**
@@ -310,8 +332,11 @@ static int regulator_pca9420_is_supported_voltage(const struct device *dev,
 						  int32_t max_uv)
 {
 	const struct regulator_pca9420_config *config = dev->config;
+	uint16_t idx;
 
-	return !((config->max_uv < min_uv) || (config->min_uv > max_uv));
+	return linear_range_group_get_win_index(config->desc->ranges,
+						config->desc->num_ranges,
+						min_uv, max_uv, &idx);
 }
 
 /**
@@ -331,7 +356,11 @@ static int regulator_pca9420_set_voltage(const struct device *dev,
  */
 static int32_t regulator_pca9420_get_voltage(const struct device *dev)
 {
-	return regulator_pca9420_get_voltage_offset(dev, 0);
+	int32_t voltage = 0;
+
+	(void)regulator_pca9420_get_voltage_offset(dev, 0, &voltage);
+
+	return voltage;
 }
 
 /**
@@ -501,6 +530,7 @@ static int32_t regulator_pca9420_get_mode_voltage(const struct device *dev,
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	uint8_t i, sel_off;
+	int32_t voltage;
 
 	if (config->num_modes == 0) {
 		return -ENOTSUP;
@@ -517,7 +547,10 @@ static int32_t regulator_pca9420_get_mode_voltage(const struct device *dev,
 		return -EINVAL;
 	}
 	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
-	return regulator_pca9420_get_voltage_offset(dev, sel_off);
+
+	(void)regulator_pca9420_get_voltage_offset(dev, sel_off, &voltage);
+
+	return voltage;
 }
 
 /*
@@ -615,10 +648,6 @@ static int regulator_pca9420_init(const struct device *dev)
 	struct regulator_pca9420_data *data = dev->data;
 	int rc  = 0;
 
-	/* Cast the voltage array set at compile time to the voltage range
-	 * struct
-	 */
-	data->voltages = (struct voltage_range *)config->voltage_array;
 	/* Do the same cast for current limit ranges */
 	data->current_levels = (struct current_range *)config->current_array;
 	/* Check to verify we have a valid I2C device */
@@ -656,25 +685,19 @@ static const struct regulator_driver_api api = {
 #define REGULATOR_PCA9420_DEFINE(node_id, id, name)                            \
 	static const uint32_t curr_limits_##id[] =                             \
 		DT_PROP_OR(node_id, current_levels, {});                       \
-	static const uint32_t vol_range_##id[] =                               \
-		DT_PROP(node_id, voltage_range);                               \
 	static const uint16_t allowed_modes_##id[] =                           \
 		DT_PROP_OR(DT_PARENT(node_id), regulator_allowed_modes, {});   \
                                                                                \
 	static struct regulator_pca9420_data data_##id;                        \
                                                                                \
 	static const struct regulator_pca9420_config config_##id = {           \
-		.num_voltages = DT_PROP(node_id, num_voltages),                \
 		.num_current_levels = DT_PROP(node_id, num_current_levels),    \
-		.min_uv = DT_PROP(node_id, regulator_min_microvolt),           \
-		.max_uv = DT_PROP(node_id, regulator_max_microvolt),           \
 		.enable_inverted = DT_PROP(node_id, enable_inverted),          \
 		.boot_on = DT_PROP(node_id, regulator_boot_on),                \
 		.num_modes = ARRAY_SIZE(allowed_modes_##id),                   \
 		.initial_mode = DT_PROP_OR(DT_PARENT(node_id),                 \
 					   regulator_initial_mode, 0),         \
 		.i2c = I2C_DT_SPEC_GET(DT_PARENT(node_id)),                    \
-		.voltage_array = vol_range_##id,                               \
 		.current_array = curr_limits_##id,                             \
 		.allowed_modes = allowed_modes_##id,                           \
 		.modesel_reg = DT_PROP_OR(DT_PARENT(node_id), modesel_reg, 0), \

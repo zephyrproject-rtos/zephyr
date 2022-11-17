@@ -68,17 +68,6 @@ child-binding:
       regulator-max-microamp:
           required: true
 
-      voltage-range:
-          type: array
-          required: true
-          description: |
-             array of voltage values in uV, followed by the register value that
-             must be written to enable the voltage. For example, [3300000, 0x3]
-             denotes a value of 0x3 must be written to the register to set 3.3V
-      num-voltages:
-          type: int
-          required: true
-          description: number of voltages present in the voltage-range array.
       enable-inverted:
           type: boolean
           description: |
