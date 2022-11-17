@@ -117,12 +117,13 @@ static inline uint32_t *alloc_l2_table(void)
 	return NULL;
 }
 
-static void map_memory_range(const struct xtensa_mmu_range *range)
+static void map_memory_range(const uint32_t start, const uint32_t end,
+			     const uint32_t attrs)
 {
 	uint32_t page, *table;
 
-	for (page = range->start; page < range->end; page += CONFIG_MMU_PAGE_SIZE) {
-		uint32_t pte = Z_XTENSA_PTE(page, MMU_KERNEL_RING, range->attrs);
+	for (page = start; page < end; page += CONFIG_MMU_PAGE_SIZE) {
+		uint32_t pte = Z_XTENSA_PTE(page, MMU_KERNEL_RING, attrs);
 		uint32_t l2_pos = Z_XTENSA_L2_POS(page);
 		uint32_t l1_pos = page >> 22;
 
@@ -142,6 +143,23 @@ static void map_memory_range(const struct xtensa_mmu_range *range)
 	}
 }
 
+static void map_memory(const uint32_t start, const uint32_t end,
+		       const uint32_t attrs)
+{
+	map_memory_range(start, end, attrs);
+
+#ifdef CONFIG_XTENSA_MMU_DOUBLE_MAP
+	if (arch_xtensa_is_ptr_uncached((void *)start)) {
+		map_memory_range(POINTER_TO_UINT(z_soc_cached_ptr((void *)start)),
+			POINTER_TO_UINT(z_soc_cached_ptr((void *)end)),
+			attrs | Z_XTENSA_MMU_CACHED_WB);
+	} else if (arch_xtensa_is_ptr_cached((void *)start)) {
+		map_memory_range(POINTER_TO_UINT(z_soc_uncached_ptr((void *)start)),
+			POINTER_TO_UINT(z_soc_uncached_ptr((void *)end)), attrs);
+	}
+#endif
+}
+
 static void xtensa_init_page_tables(void)
 {
 	volatile uint8_t entry;
@@ -152,7 +170,9 @@ static void xtensa_init_page_tables(void)
 	}
 
 	for (entry = 0; entry < ARRAY_SIZE(mmu_zephyr_ranges); entry++) {
-		map_memory_range(&mmu_zephyr_ranges[entry]);
+		const struct xtensa_mmu_range *range = &mmu_zephyr_ranges[entry];
+
+		map_memory(range->start, range->end, range->attrs);
 	}
 
 /**
@@ -169,7 +189,9 @@ static void xtensa_init_page_tables(void)
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
 	for (entry = 0; entry < xtensa_soc_mmu_ranges_num; entry++) {
-		map_memory_range(&xtensa_soc_mmu_ranges[entry]);
+		const struct xtensa_mmu_range *range = &xtensa_soc_mmu_ranges[entry];
+
+		map_memory(range->start, range->end, range->attrs);
 	}
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
