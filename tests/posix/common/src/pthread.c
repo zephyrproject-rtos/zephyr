@@ -453,12 +453,9 @@ ZTEST(posix_apis, test_posix_pthread_error_condition)
 	/* Initialise thread attribute to ensure won't be return with init error */
 	zassert_false(pthread_attr_init(&attr),
 		      "Unable to create pthread object attr");
-	zassert_false(pthread_attr_setschedpolicy(&attr, 0),
+	zassert_false(pthread_attr_setschedpolicy(&attr, SCHED_FIFO),
 		      "set scheduling policy error");
-	zassert_false(pthread_attr_setschedpolicy(&attr, 1),
-		      "set scheduling policy error");
-	zassert_equal(pthread_attr_setschedpolicy(&attr, 2),
-		      EINVAL, "set scheduling policy error");
+	zassert_false(pthread_attr_setschedpolicy(&attr, SCHED_RR), "set scheduling policy error");
 	zassert_false(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE),
 		      "set detach state error");
 	zassert_false(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED),
