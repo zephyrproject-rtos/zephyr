@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
 #include <stimer.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
