@@ -503,6 +503,7 @@ static void isr_tx_common(void *param,
 		/* control subevent to use bis = 0 and se_n = 1 */
 		bis = 0U;
 		data_chan_use = lll->ctrl_chan_use;
+
 	} else {
 		struct lll_adv_iso_stream *stream;
 		uint16_t stream_handle;
@@ -618,14 +619,25 @@ static void isr_tx_common(void *param,
 		pdu->payload[3] = lll->bis_curr;
 #endif /* TEST_WITH_DUMMY_PDU */
 
-		/* Calculate the radio channel to use for ISO event */
-		data_chan_use =
-			lll_chan_iso_subevent(data_chan_id,
-					      lll->data_chan_map,
-					      lll->data_chan_count,
-					      &lll->data_chan_prn_s,
-					      &lll->data_chan_remap_idx);
+		if ((lll->bn_curr == 1U) && (lll->irc_curr == 1U)) {
+			const uint16_t event_counter =
+				(lll->payload_count / lll->bn) - 1U;
 
+			/* Calculate the radio channel to use for next BIS */
+			data_chan_use = lll_chan_iso_event(event_counter,
+						data_chan_id,
+						lll->data_chan_map,
+						lll->data_chan_count,
+						&lll->data_chan_prn_s,
+						&lll->data_chan_remap_idx);
+		} else {
+			/* Calculate the radio channel to use for subevent */
+			data_chan_use =	lll_chan_iso_subevent(data_chan_id,
+						lll->data_chan_map,
+						lll->data_chan_count,
+						&lll->data_chan_prn_s,
+						&lll->data_chan_remap_idx);
+		}
 	}
 	pdu->rfu = 0U;
 
