@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/regulator.h>
-#include <zephyr/dt-bindings/regulator/pmic_i2c.h>
+#include <zephyr/dt-bindings/regulator/pca9420.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util.h>
@@ -407,7 +407,7 @@ static int regulator_pca9420_set_mode_voltage(const struct device *dev,
 		/* Mode was not found */
 		return -EINVAL;
 	}
-	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
+	sel_off = ((mode & PCA9420_MODE_OFFSET_MASK) >> PCA9420_MODE_OFFSET_SHIFT);
 	return regulator_set_voltage_offset(dev, min_uv, max_uv, sel_off);
 }
 
@@ -437,7 +437,7 @@ static int regulator_pca9420_mode_disable(const struct device *dev,
 		/* Mode was not found */
 		return -EINVAL;
 	}
-	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
+	sel_off = ((mode & PCA9420_MODE_OFFSET_MASK) >> PCA9420_MODE_OFFSET_SHIFT);
 	dis_val = config->enable_inverted ? config->desc->enable_val : 0;
 	return regulator_pca9420_modify_register(
 		&cconfig->i2c, config->desc->enable_reg + sel_off,
@@ -470,7 +470,7 @@ static int regulator_pca9420_mode_enable(const struct device *dev,
 		/* Mode was not found */
 		return -EINVAL;
 	}
-	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
+	sel_off = ((mode & PCA9420_MODE_OFFSET_MASK) >> PCA9420_MODE_OFFSET_SHIFT);
 	en_val = config->enable_inverted ? 0 : config->desc->enable_val;
 	return regulator_pca9420_modify_register(
 		&cconfig->i2c, config->desc->enable_reg + sel_off,
@@ -505,7 +505,8 @@ static int32_t regulator_pca9420_get_mode_voltage(const struct device *dev,
 		/* Mode was not found */
 		return -EINVAL;
 	}
-	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
+
+	sel_off = ((mode & PCA9420_MODE_OFFSET_MASK) >> PCA9420_MODE_OFFSET_SHIFT);
 
 	(void)regulator_pca9420_get_voltage_offset(dev, sel_off, &voltage);
 
@@ -538,20 +539,20 @@ static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
 		/* Mode was not found */
 		return -EINVAL;
 	}
-	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
+	sel_off = ((mode & PCA9420_MODE_OFFSET_MASK) >> PCA9420_MODE_OFFSET_SHIFT);
 	/* Configure mode */
-	if (mode & PMIC_MODE_FLAG_MODESEL_MULTI_REG) {
+	if (mode & PCA9420_MODE_FLAG_MODESEL_MULTI_REG) {
 		/* Select mode with offset calculation */
 		rc = regulator_pca9420_modify_register(
 			&cconfig->i2c,
 			cconfig->modesel_reg + sel_off,
-			mode & PMIC_MODE_SELECTOR_MASK,
+			mode & PCA9420_MODE_SELECTOR_MASK,
 			cconfig->modesel_mask);
 	} else {
 		/* Select mode without offset to modesel_reg */
 		rc = regulator_pca9420_modify_register(
 			&cconfig->i2c, cconfig->modesel_reg,
-			mode & PMIC_MODE_SELECTOR_MASK,
+			mode & PCA9420_MODE_SELECTOR_MASK,
 			cconfig->modesel_mask);
 	}
 	return rc;
