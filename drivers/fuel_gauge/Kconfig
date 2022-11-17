@@ -19,6 +19,8 @@ config FUEL_GAUGE_INIT_PRIORITY
 	help
 	  Battery fuel gauge initialization priority.
 
+source "drivers/fuel_gauge/max17048/Kconfig"
+
 source "drivers/fuel_gauge/sbs_gauge/Kconfig"
 
 endif # FUEL_GAUGE
