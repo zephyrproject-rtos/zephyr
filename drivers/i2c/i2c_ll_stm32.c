@@ -339,7 +339,7 @@ static int i2c_stm32_init(const struct device *dev)
 	 * So that they can enter master mode properly.
 	 * Issue described in ES096 2.14.7
 	 */
-	I2C_TypeDef * i2c = cfg->i2c;
+	I2C_TypeDef *i2c = cfg->i2c;
 
 	LL_I2C_EnableReset(i2c);
 	LL_I2C_DisableReset(i2c);
