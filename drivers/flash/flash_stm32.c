@@ -396,7 +396,7 @@ static int stm32_flash_init(const struct device *dev)
 	}
 #endif
 
-	return flash_stm32_write_protection(dev, false);
+	return 0;
 }
 
 DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL,
