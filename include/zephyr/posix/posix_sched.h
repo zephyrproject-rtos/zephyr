@@ -16,9 +16,11 @@ extern "C" {
 /* Priority based preemptive scheduling policy */
 #define SCHED_RR 2
 
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC)
 struct sched_param {
 	int sched_priority;
 };
+#endif
 
 /**
  * @brief Yield the processor
