@@ -45,7 +45,7 @@ static int vcnl4040_handle_proxy_int(const struct device *dev)
 		.chan = SENSOR_CHAN_PROX,
 	};
 
-	if (data->proxy_handler) {
+	if (data->proxy_handler != NULL) {
 		data->proxy_handler(dev, &proxy_trig);
 	}
 
@@ -60,7 +60,7 @@ static int vcnl4040_handle_als_int(const struct device *dev)
 		.chan = SENSOR_CHAN_LIGHT,
 	};
 
-	if (data->als_handler) {
+	if (data->als_handler != NULL) {
 		data->als_handler(dev, &als_trig);
 	}
 
@@ -190,7 +190,7 @@ int vcnl4040_trigger_set(const struct device *dev,
 	uint16_t conf;
 	int ret = 0;
 
-	if (!config->int_gpio.port) {
+	if (config->int_gpio.port == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -220,8 +220,8 @@ int vcnl4040_trigger_set(const struct device *dev,
 				goto exit;
 			}
 
-			/* Set interrupt enable bit 1 */
-			conf |= 1 << 1;
+			/* ALS interrupt enable */
+			conf |= VCNL4040_ALS_INT_EN_MASK;
 
 			if (vcnl4040_write(dev, VCNL4040_REG_ALS_CONF, conf)) {
 				ret = -EIO;
@@ -256,10 +256,8 @@ int vcnl4040_trigger_init(const struct device *dev)
 
 	data->dev = dev;
 
-	/* dts doesn't have GPIO int pin set, so we dont support
-	 * trigger mode for this instance
-	 */
-	if (!config->int_gpio.port) {
+	if (config->int_gpio.port == NULL) {
+		LOG_DBG("instance '%s' doesn't support trigger mode", dev->name);
 		return 0;
 	}
 
@@ -289,7 +287,7 @@ int vcnl4040_trigger_init(const struct device *dev)
 			   BIT(config->int_gpio.pin));
 
 	if (gpio_add_callback(config->int_gpio.port, &data->gpio_cb) < 0) {
-		LOG_DBG("Failed to set gpio callback!");
+		LOG_ERR("Failed to set gpio callback");
 		return -EIO;
 	}
 
