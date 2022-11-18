@@ -197,11 +197,13 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 }
 
 /* Must be implemented by vendor */
-__weak bool ll_data_path_sink_create(struct ll_iso_datapath *datapath,
+__weak bool ll_data_path_sink_create(uint16_t handle,
+				     struct ll_iso_datapath *datapath,
 				     isoal_sink_sdu_alloc_cb *sdu_alloc,
 				     isoal_sink_sdu_emit_cb *sdu_emit,
 				     isoal_sink_sdu_write_cb *sdu_write)
 {
+	ARG_UNUSED(handle);
 	ARG_UNUSED(datapath);
 
 	*sdu_alloc = NULL;
@@ -406,7 +408,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			isoal_sink_sdu_write_cb sdu_write;
 
 			/* Request vendor sink callbacks for path */
-			if (ll_data_path_sink_create(dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
+			if (ll_data_path_sink_create(handle, dp, &sdu_alloc, &sdu_emit,
+						     &sdu_write)) {
 				err = isoal_sink_create(handle, role, framed,
 							burst_number, flush_timeout,
 							sdu_interval, iso_interval,
@@ -506,7 +509,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		isoal_sink_sdu_write_cb sdu_write;
 
 		/* Request vendor sink callbacks for path */
-		if (ll_data_path_sink_create(dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
+		if (ll_data_path_sink_create(handle, dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
 			err = isoal_sink_create(handle, role, framed,
 						burst_number, flush_timeout,
 						sdu_interval, iso_interval,
@@ -1538,6 +1541,11 @@ void ll_iso_rx_mem_release(void **node_rx)
 	RXFIFO_ALLOC(iso_rx, UINT8_MAX);
 }
 #endif /* CONFIG_BT_CTLR_SYNC_ISO) || CONFIG_BT_CTLR_CONN_ISO */
+
+struct ll_iso_datapath *ull_iso_datapath_alloc(void)
+{
+	return mem_acquire(&datapath_free);
+}
 
 void ull_iso_datapath_release(struct ll_iso_datapath *dp)
 {

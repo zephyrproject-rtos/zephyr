@@ -129,11 +129,12 @@ static isoal_status_t test_sink_sdu_write(void *dbuf,
 }
 
 
-bool ll_data_path_sink_create(struct ll_iso_datapath *datapath,
+bool ll_data_path_sink_create(uint16_t handle, struct ll_iso_datapath *datapath,
 			      isoal_sink_sdu_alloc_cb *sdu_alloc,
 			      isoal_sink_sdu_emit_cb *sdu_emit,
 			      isoal_sink_sdu_write_cb *sdu_write)
 {
+	ARG_UNUSED(handle);
 	ARG_UNUSED(datapath);
 
 	*sdu_alloc = test_sink_sdu_alloc;
