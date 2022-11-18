@@ -1,0 +1,43 @@
+# Copyright (c) 2022 Rodrigo Peixoto <rodrigopex@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ZBUS
+	bool "Zbus support"
+	help
+	  Enables support for Zephyr message bus.
+
+if ZBUS
+
+config ZBUS_STRUCTS_ITERABLE_ACCESS
+	bool "Zbus iterable sections support."
+	depends on !XTENSA && !ARCH_POSIX
+	default y
+
+config ZBUS_CHANNEL_NAME
+	bool "Channel name field"
+
+config ZBUS_OBSERVER_NAME
+	bool "Observer name field"
+
+config ZBUS_RUNTIME_OBSERVERS_POOL_SIZE
+	int "The size of the runtime observers pool."
+	default 0
+	help
+	  When the size is bigger than zero this feature will be enabled. It applies the Object Pool Pattern,
+	  where the objects in the pool are pre-allocated and can be used and recycled after use. The
+	  technique avoids dynamic allocation and allows the code to increase the number of observers by
+	  only changing a configuration.
+
+config ZBUS_ASSERT_MOCK
+	bool "Zbus assert mock for test purposes."
+	help
+	  This configuration enables the developer to change the _ZBUS_ASSERT behavior. When this configuration is
+	  enabled, _ZBUS_ASSERT returns -EFAULT instead of assert. It makes it more straightforward to test invalid
+	  parameters.
+
+
+module = ZBUS
+module-str = zbus
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ZBUS

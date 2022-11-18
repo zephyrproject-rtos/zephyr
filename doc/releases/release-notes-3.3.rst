@@ -19,6 +19,7 @@ API Changes
 
 Changes in this release
 =======================
+
 * Bluetooth: :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER`
   and :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER` have been
   added to enable the PAST implementation rather than
@@ -33,7 +34,10 @@ Changes in this release
   :kconfig:option:`CONFIG_DISK_FLASH_SECTOR_SIZE` Kconfig options have been
   removed in favor of new :dtcompatible:`zephyr,flash-disk` devicetree binding.
 
-- Starting from this release ``zephyr-`` prefixed tags won't be created
+* Regulator APIs previously located in ``<zephyr/drivers/regulator/consumer.h>``
+  are now part of ``<zerphyr/drivers/regulator.h>``.
+
+* Starting from this release ``zephyr-`` prefixed tags won't be created
   anymore. The project will continue using ``v`` tags, for example ``v3.3.0``.
 
 Removed APIs in this release
@@ -215,6 +219,8 @@ Drivers and Sensors
 * Flash
 
   * NRF: Added CONFIG_SOC_FLASH_NRF_TIMEOUT_MULTIPLIER to allow tweaking the timeout of flash operations.
+
+  * spi_nor: Added property mxicy,mx25r-power-mode to jedec,spi-nor binding for controlling low power/high performance mode on Macronix MX25R* Ultra Low Power flash devices.
 
 * GPIO
 

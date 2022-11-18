@@ -460,7 +460,7 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 	uint32_t diff;
 
 	ticks_now = ticker_ticks_now_get();
-	diff = ticks_now - ticks_at_event;
+	diff = ticker_ticks_diff_get(ticks_now, ticks_at_event);
 	if (diff & BIT(HAL_TICKER_CNTR_MSBIT)) {
 		return 0;
 	}

@@ -1182,9 +1182,19 @@ void ll_rx_dequeue(void)
 				aux = HDR_LLL2ULL(lll->aux);
 				aux->is_started = 0U;
 			}
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+			/* If Extended Advertising Commands used, reset
+			 * is_enabled when advertising set terminated event is
+			 * dequeued. Otherwise, legacy advertising commands used
+			 * then reset is_enabled here.
+			 */
+			if (!lll->node_rx_adv_term) {
+				adv->is_enabled = 0U;
+			}
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 			adv->is_enabled = 0U;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 #else /* !CONFIG_BT_PERIPHERAL */
 			ARG_UNUSED(cc);
 #endif /* !CONFIG_BT_PERIPHERAL */

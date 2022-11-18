@@ -263,8 +263,11 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 		LOG_DBG("dest data size: lli_desc %p, ctrl_lo %x", lli_desc, lli_desc->ctrl_lo);
 
 		lli_desc->ctrl_lo |= DW_CTLL_SRC_MSIZE(msize) |
-			DW_CTLL_DST_MSIZE(msize) |
-			DW_CTLL_INT_EN; /* enable interrupt */
+			DW_CTLL_DST_MSIZE(msize);
+
+		if (cfg->dma_callback) {
+			lli_desc->ctrl_lo |= DW_CTLL_INT_EN; /* enable interrupt */
+		}
 
 		LOG_DBG("msize, int_en: lli_desc %p, ctrl_lo %x", lli_desc, lli_desc->ctrl_lo);
 

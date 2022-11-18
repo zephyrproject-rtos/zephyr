@@ -748,6 +748,22 @@ Release Notes:
   labels:
     - "area: Flash"
 
+"Drivers: FPGA":
+  status: maintained
+  maintainers:
+    - cfriedt
+  collaborators:
+    - tgorochowik
+    - fkokosinski
+    - msierszulski
+  files:
+    - drivers/fpga/
+    - dts/bindings/fpga/
+    - include/zephyr/drivers/fpga.h
+    - samples/drivers/fpga/
+  labels:
+    - "area: FPGA"
+
 "Drivers: GPIO":
   status: maintained
   maintainers:
@@ -1930,6 +1946,7 @@ STM32 Platforms:
   collaborators:
     - ABOSTM
     - FRASTM
+    - gautierg-st
     - GeorgeCGV
   files:
     - boards/arm/nucleo_*/
