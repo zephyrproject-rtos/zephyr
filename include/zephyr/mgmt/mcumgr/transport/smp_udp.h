@@ -17,18 +17,23 @@ extern "C" {
 #endif
 
 /**
- * @brief Opens a UDP socket for the SMP UDP service.
+ * @brief	Opens a UDP socket for the SMP UDP service.
  *
- * @return 0 on success; negative error code on failure.
+ * @return	0 on success; negative error code on failure.
  */
 int smp_udp_open(void);
 
 /**
- * @brief Closes the UDP socket for the SMP UDP service.
+ * @brief	Closes the UDP socket for the SMP UDP service.
  *
- * @return 0 on success; negative error code on failure.
+ * @return	0 on success; negative error code on failure.
  */
 int smp_udp_close(void);
+
+/**
+ * @brief       Starts UDP transport at start-up if ``CONFIG_MCUMGR_SMP_BOOT_SETUP`` is enabled.
+ */
+void smp_udp_start(void);
 
 #ifdef __cplusplus
 }

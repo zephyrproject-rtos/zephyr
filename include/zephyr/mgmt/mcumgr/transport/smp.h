@@ -189,6 +189,14 @@ void smp_rx_remove_invalid(struct smp_transport *zst, void *arg);
  */
 void smp_rx_clear(struct smp_transport *zst);
 
+/**
+ * @brief	Callback that runs at boot-up if ``CONFIG_MCUMGR_SMP_BOOT_SETUP`` is enabled, this
+ *		should be used by applications to initialise custom SMP transports (in-tree zephyr
+ *		MCUmgr transports do not need to be registered by applications as this is done
+ *		automatically).
+ */
+void mcumgr_smp_boot_transport_init(void);
+
 #ifdef __cplusplus
 }
 #endif

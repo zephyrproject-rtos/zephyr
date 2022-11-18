@@ -15,6 +15,11 @@ extern "C" {
  */
 #define ZEPHYR_MGMT_GRP_BASIC_CMD_ERASE_STORAGE	0	/* Command to erase storage partition */
 
+/**
+ * @brief Registers the zephyr basic command handler group.
+ */
+void zephyr_basic_mgmt_register_group(void);
+
 #ifdef __cplusplus
 }
 #endif

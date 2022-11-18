@@ -14,6 +14,15 @@
 
 #include <mgmt/mcumgr/transport/smp_reassembly.h>
 
+#ifdef CONFIG_MCUMGR_SMP_BOOT_SETUP_TRANSPORT
+#ifdef CONFIG_MCUMGR_SMP_BT
+#include <zephyr/mgmt/mcumgr/transport/smp_bt.h>
+#endif
+#ifdef CONFIG_MCUMGR_SMP_UDP
+#include <zephyr/mgmt/mcumgr/transport/smp_udp.h>
+#endif
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 
@@ -228,13 +237,34 @@ void smp_rx_clear(struct smp_transport *zst)
 	}
 }
 
+#ifdef CONFIG_MCUMGR_SMP_BOOT_SETUP_TRANSPORT
+__weak void mcumgr_smp_boot_transport_init(void)
+{
+}
+#endif
+
 static int smp_init(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	k_work_queue_init(&smp_work_queue);
 
 	k_work_queue_start(&smp_work_queue, smp_work_queue_stack,
 			   K_THREAD_STACK_SIZEOF(smp_work_queue_stack),
 			   CONFIG_MCUMGR_SMP_WORKQUEUE_THREAD_PRIO, &smp_work_queue_config);
+
+#if defined(CONFIG_MCUMGR_SMP_BOOT_SETUP_TRANSPORT)
+#ifdef CONFIG_MCUMGR_SMP_BT
+	smp_bt_start();
+#endif
+
+#ifdef CONFIG_MCUMGR_SMP_UDP
+	smp_udp_start();
+#endif
+
+	/* Run user transport registration function */
+	mcumgr_smp_boot_transport_init();
+#endif
 
 	return 0;
 }

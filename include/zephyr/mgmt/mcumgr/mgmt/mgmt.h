@@ -153,6 +153,14 @@ void mgmt_unregister_group(struct mgmt_group *group);
  */
 const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command_id);
 
+/**
+ * @brief	Callback that runs at boot-up if ``CONFIG_MCUMGR_SMP_BOOT_SETUP`` is enabled, this
+ *		should be used by applications to register custom MCUmgr commands (in-tree zephyr
+ *		MCUmgr command handlers do not need to be registered by applications as this is
+ *		done automatically).
+ */
+void mcumgr_smp_boot_command_init(void);
+
 #ifdef __cplusplus
 }
 #endif

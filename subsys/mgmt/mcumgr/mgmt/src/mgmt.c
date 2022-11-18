@@ -7,11 +7,33 @@
 
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/device.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <string.h>
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
+#endif
+
+#ifdef CONFIG_MCUMGR_SMP_BOOT_SETUP
+#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
+#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_CMD_OS_MGMT
+#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
+#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_CMD_STAT_MGMT
+#include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
+#include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_GRP_ZEPHYR_BASIC
+#include <zephyr/mgmt/mcumgr/grp/zephyr/zephyr_basic.h>
+#endif
 #endif
 
 static sys_slist_t mgmt_group_list =
@@ -122,4 +144,46 @@ int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
 
 	return return_rc;
 }
+#endif
+
+#ifdef CONFIG_MCUMGR_SMP_BOOT_SETUP
+__weak void mcumgr_smp_boot_command_init(void)
+{
+}
+
+static int mcumgr_mgmt_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
+	fs_mgmt_register_group();
+#endif
+
+#ifdef CONFIG_MCUMGR_CMD_OS_MGMT
+	os_mgmt_register_group();
+#endif
+
+#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
+	img_mgmt_register_group();
+#endif
+
+#ifdef CONFIG_MCUMGR_CMD_STAT_MGMT
+	stat_mgmt_register_group();
+#endif
+
+#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
+	shell_mgmt_register_group();
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_ZEPHYR_BASIC
+	zephyr_basic_mgmt_register_group();
+#endif
+
+	/* Run user command handler registration function */
+	mcumgr_smp_boot_command_init();
+
+	return 0;
+}
+
+SYS_INIT(mcumgr_mgmt_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 #endif

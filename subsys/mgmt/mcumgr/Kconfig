@@ -125,6 +125,28 @@ config MCUMGR_SMP_COMMAND_STATUS_HOOKS
 	  This will enable SMP command status notification hooks for when an SMP message is
 	  received or processed.
 
+config MCUMGR_SMP_BOOT_SETUP
+	bool "Configure MCUmgr commands at boot-up"
+	help
+	  This will register all enabled MCUmgr command handlers during boot-up of the
+	  application. User-defined commands can be registered in the callback function
+	  ``mcumgr_smp_boot_command_init()``.
+
+config MCUMGR_SMP_BOOT_SETUP_TRANSPORT
+	bool "Configure SMP transports at boot-up"
+	help
+	  This will enable SMP transports during boot-up of the application. User-defined
+	  transports can be initialized in the callback function
+	  ``mcumgr_smp_boot_transport_init()``.
+
+config MCUMGR_SMP_BOOT_SETUP_BT_WAIT
+	bool "Wait for Bluetooth stack to initialize"
+	depends on MCUMGR_SMP_BOOT_SETUP_TRANSPORT
+	depends on MCUMGR_SMP_BT
+	help
+	  This will wait for Bluetooth to initialize before returning from the boot-up MCUmgr
+	  initialization function, otherwise it will return without waiting.
+
 menu "Command Handlers"
 
 rsource "grp/Kconfig"

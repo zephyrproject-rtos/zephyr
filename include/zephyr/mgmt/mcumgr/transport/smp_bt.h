@@ -19,30 +19,36 @@ extern "C" {
 #endif
 
 /**
- * @brief Registers the SMP Bluetooth service.
+ * @brief	Registers the SMP Bluetooth service.
  *
- * @return 0 on success; negative error code on failure.
+ * @return	0 on success; negative error code on failure.
  */
 int smp_bt_register(void);
 
 /**
- * @brief Unregisters the SMP Bluetooth service.
+ * @brief	Unregisters the SMP Bluetooth service.
  *
- * @return 0 on success; negative error code on failure.
+ * @return	0 on success; negative error code on failure.
  */
 int smp_bt_unregister(void);
 
 /**
- * Transmits an SMP command/response over the specified Bluetooth connection
- * as a notification.
+ * @brief	Transmits an SMP command/response over the specified Bluetooth connection
+ *		as a notification.
  *
- * @param conn Connection object.
- * @param data Pointer to SMP message.
- * @param len data length.
+ * @param conn	Connection object.
+ * @param data	Pointer to SMP message.
+ * @param len	data length.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return	0 in case of success or negative value in case of error.
  */
 int smp_bt_notify(struct bt_conn *conn, const void *data, uint16_t len);
+
+/**
+ * @brief	Starts Bluetooth transport at start-up if ``CONFIG_MCUMGR_SMP_BOOT_SETUP`` is
+ *		enabled.
+ */
+void smp_bt_start(void);
 
 #ifdef __cplusplus
 }

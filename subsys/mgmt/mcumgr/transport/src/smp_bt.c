@@ -87,6 +87,10 @@ static uint8_t next_id;
 static struct smp_transport smp_bt_transport;
 static struct conn_param_data conn_data[CONFIG_BT_MAX_CONN];
 
+#ifdef CONFIG_MCUMGR_SMP_BOOT_SETUP_BT_WAIT
+static K_SEM_DEFINE(bt_ready_sem, 0, 1);
+#endif
+
 /* SMP service.
  * {8D53DC1D-1DB7-4CD3-868B-8A527460AA84}
  */
@@ -657,3 +661,40 @@ static int smp_bt_init(const struct device *dev)
 }
 
 SYS_INIT(smp_bt_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+
+#ifdef CONFIG_MCUMGR_SMP_BOOT_SETUP
+#ifdef CONFIG_MCUMGR_SMP_BOOT_SETUP_BT_WAIT
+static void bt_ready(int err)
+{
+	if (err) {
+		LOG_ERR("Bluetooth init failed (err %d)", err);
+		return;
+	}
+
+	LOG_INF("Bluetooth initialised");
+
+	k_sem_give(&bt_ready_sem);
+}
+#endif
+
+void smp_bt_start(void)
+{
+	/* Enable Bluetooth */
+#ifdef CONFIG_MCUMGR_SMP_BOOT_SETUP_BT_WAIT
+	int rc = bt_enable(bt_ready);
+#else
+	int rc = bt_enable(NULL);
+#endif
+
+	if (rc != 0) {
+		LOG_ERR("Bluetooth init failed (err %d)", rc);
+	} else {
+#ifdef CONFIG_MCUMGR_SMP_BOOT_SETUP_BT_WAIT
+		k_sem_take(&bt_ready_sem, K_FOREVER);
+#endif
+
+		/* Initialise the Bluetooth mcumgr transport */
+		smp_bt_register();
+	}
+}
+#endif
