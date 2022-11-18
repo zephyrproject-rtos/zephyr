@@ -13,8 +13,8 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include <zephyr/toolchain.h>
 
 #include <zephyr/net/socket.h>
+#include <zephyr/net/zperf.h>
 
-#include "zperf.h"
 #include "zperf_internal.h"
 #include "shell_utils.h"
 #include "zperf_session.h"
