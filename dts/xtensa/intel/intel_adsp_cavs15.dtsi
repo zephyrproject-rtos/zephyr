@@ -191,6 +191,8 @@
 			reg = <0x00002400 0x20>;
 			dma-channels = <2>;
 			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
 
 			status = "okay";
 		};
@@ -201,6 +203,8 @@
 			reg = <0x00002600 0x20>;
 			dma-channels = <2>;
 			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
 
 			status = "okay";
 		};
@@ -211,6 +215,8 @@
 			reg = <0x00002800 0x40>;
 			dma-channels = <6>;
 			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
 
 			status = "okay";
 		};
@@ -221,6 +227,8 @@
 			reg = <0x00002c00 0x40>;
 			dma-channels = <7>;
 			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
 
 			status = "okay";
 		};
