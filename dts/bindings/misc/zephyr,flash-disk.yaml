@@ -20,7 +20,7 @@ properties:
       description: |
         Disk name.
 
-    sector-size:
+    disk-sector-size:
       type: int
       required: false
       default: 512
