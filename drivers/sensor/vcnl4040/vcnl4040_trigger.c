@@ -73,14 +73,10 @@ static void vcnl4040_handle_int(const struct device *dev)
 	struct vcnl4040_data *data = dev->data;
 	uint16_t int_source;
 
-	k_sem_take(&data->sem, K_FOREVER);
-
 	if (vcnl4040_read(dev, VCNL4040_REG_INT_FLAG, &int_source)) {
 		LOG_ERR("Could not read interrupt source");
 		int_source = 0U;
 	}
-
-	k_sem_give(&data->sem);
 
 	data->int_type = int_source >> 8;
 
@@ -126,11 +122,11 @@ int vcnl4040_attr_set(const struct device *dev,
 	const struct vcnl4040_config *config = dev->config;
 	int ret = 0;
 
-	if (!config->int_gpio.port) {
+	if (config->int_gpio.port == NULL) {
 		return -ENOTSUP;
 	}
 
-	k_sem_take(&data->sem, K_FOREVER);
+	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	if (chan == SENSOR_CHAN_PROX) {
 		if (attr == SENSOR_ATTR_UPPER_THRESH) {
@@ -180,7 +176,7 @@ int vcnl4040_attr_set(const struct device *dev,
 #endif
 	ret = -ENOTSUP;
 exit:
-	k_sem_give(&data->sem);
+	k_mutex_unlock(&data->mutex);
 
 	return ret;
 }
@@ -198,7 +194,7 @@ int vcnl4040_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	k_sem_take(&data->sem, K_FOREVER);
+	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
@@ -248,7 +244,7 @@ int vcnl4040_trigger_set(const struct device *dev,
 		goto exit;
 	}
 exit:
-	k_sem_give(&data->sem);
+	k_mutex_unlock(&data->mutex);
 
 	return ret;
 }
