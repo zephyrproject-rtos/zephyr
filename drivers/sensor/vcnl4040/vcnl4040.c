@@ -35,22 +35,15 @@ int vcnl4040_read(const struct device *dev, uint8_t reg, uint16_t *out)
 int vcnl4040_write(const struct device *dev, uint8_t reg, uint16_t value)
 {
 	const struct vcnl4040_config *config = dev->config;
-	struct i2c_msg msg;
+	uint8_t buf[3];
 	int ret;
-	uint8_t buff[3];
 
-	sys_put_le16(value, &buff[1]);
+	buf[0] = reg;
+	sys_put_le16(value, &buf[1]);
 
-	buff[0] = reg;
-
-	msg.buf = buff;
-	msg.flags = 0;
-	msg.len = sizeof(buff);
-
-	ret = i2c_transfer_dt(&config->i2c, &msg, 1);
-
+	ret = i2c_write_dt(&config->i2c, buf, sizeof(buf));
 	if (ret < 0) {
-		LOG_ERR("write block failed");
+		LOG_ERR("write: %u", ret);
 		return ret;
 	}
 
