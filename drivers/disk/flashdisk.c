@@ -441,7 +441,7 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_CACHE)
 	.cache = flashdisk##n##_cache,						\
 	.cache_size = sizeof(flashdisk##n##_cache),				\
 	.size = DT_REG_SIZE(PARTITION_PHANDLE(n)),				\
-	.sector_size = DT_INST_PROP(n, sector_size),				\
+	.sector_size = DT_INST_PROP(n, disk_sector_size),				\
 },
 
 static struct flashdisk_data flash_disks[] = {
@@ -457,7 +457,7 @@ static struct flashdisk_data flash_disks[] = {
 DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY)
 
 #define VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE(n)					\
-	BUILD_ASSERT(DT_INST_PROP(n, cache_size) % DT_INST_PROP(n, sector_size) == 0,	\
+	BUILD_ASSERT(DT_INST_PROP(n, cache_size) % DT_INST_PROP(n, disk_sector_size) == 0,	\
 		"Devicetree node " DT_NODE_PATH(DT_DRV_INST(n))				\
 		" has cache size which is not a multiple of its sector size");
 DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE)
