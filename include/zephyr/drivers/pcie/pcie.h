@@ -37,6 +37,16 @@ typedef uint32_t pcie_bdf_t;
  */
 typedef uint32_t pcie_id_t;
 
+/* Helper macro to exclude invalid PCIe identifiers. We should really only
+ * need to look for PCIE_ID_NONE, but because of some broken PCI host controllers
+ * we have try cases where both VID & DID are zero or just one of them is
+ * zero (0x0000) and the other is all ones (0xFFFF).
+ */
+#define PCIE_ID_IS_VALID(id) ((id != PCIE_ID_NONE) && \
+			      (id != PCIE_ID(0x0000, 0x0000)) && \
+			      (id != PCIE_ID(0xFFFF, 0x0000)) && \
+			      (id != PCIE_ID(0x0000, 0xFFFF)))
+
 struct pcie_dev {
 	pcie_bdf_t bdf;
 	pcie_id_t  id;

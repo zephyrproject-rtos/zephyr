@@ -29,7 +29,7 @@ bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id)
 
 	data = pcie_conf_read(bdf, PCIE_CONF_ID);
 
-	if (data == PCIE_ID_NONE) {
+	if (!PCIE_ID_IS_VALID(data)) {
 		return false;
 	}
 
@@ -356,7 +356,7 @@ pcie_bdf_t pcie_bdf_lookup(pcie_id_t id)
 				uint32_t data;
 
 				data = pcie_conf_read(bdf, PCIE_CONF_ID);
-				if (data == PCIE_ID_NONE) {
+				if (!PCIE_ID_IS_VALID(data)) {
 					continue;
 				}
 
@@ -386,7 +386,7 @@ static int pcie_init(const struct device *dev)
 				uint32_t id;
 
 				id = pcie_conf_read(bdf, PCIE_CONF_ID);
-				if (id == PCIE_ID_NONE) {
+				if (!PCIE_ID_IS_VALID(id)) {
 					continue;
 				}
 
