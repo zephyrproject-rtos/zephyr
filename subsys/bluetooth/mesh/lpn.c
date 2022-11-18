@@ -68,8 +68,8 @@
 #define POLL_TO(to) { (uint8_t)((to) >> 16), (uint8_t)((to) >> 8), (uint8_t)(to) }
 #define LPN_POLL_TO POLL_TO(CONFIG_BT_MESH_LPN_POLL_TIMEOUT)
 
-/* 2 transmissions, 20ms interval */
-#define POLL_XMIT BT_MESH_TRANSMIT(1, 20)
+/* 1 transmission, 20ms interval */
+#define POLL_XMIT BT_MESH_TRANSMIT(0, 20)
 
 #if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 static const char *state2str(int state)
