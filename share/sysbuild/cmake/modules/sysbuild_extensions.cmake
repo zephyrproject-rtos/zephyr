@@ -105,25 +105,27 @@ endfunction()
 # Usage:
 #   ExternalZephyrProject_Add(APPLICATION <name>
 #                             SOURCE_DIR <dir>
-#                             [BOARD <board>]
+#                             [BOARD <board> [BOARD_REVISION <revision>]]
 #                             [MAIN_APP]
 #   )
 #
 # This function includes a Zephyr based build system into the multiimage
 # build system
 #
-# APPLICATION: <name>: Name of the application, name will also be used for build
-#                      folder of the application
-# SOURCE_DIR <dir>:    Source directory of the application
-# BOARD <board>:       Use <board> for application build instead user defined BOARD.
-# MAIN_APP:            Flag indicating this application is the main application
-#                      and where user defined settings should be passed on as-is
-#                      except for multi image build flags.
-#                      For example, -DCONF_FILES=<files> will be passed on to the
-#                      MAIN_APP unmodified.
+# APPLICATION: <name>:       Name of the application, name will also be used for build
+#                            folder of the application
+# SOURCE_DIR <dir>:          Source directory of the application
+# BOARD <board>:             Use <board> for application build instead user defined BOARD.
+# BOARD_REVISION <revision>: Use <revision> of <board> for application (only valid if
+#                            <board> is also supplied).
+# MAIN_APP:                  Flag indicating this application is the main application
+#                            and where user defined settings should be passed on as-is
+#                            except for multi image build flags.
+#                            For example, -DCONF_FILES=<files> will be passed on to the
+#                            MAIN_APP unmodified.
 #
 function(ExternalZephyrProject_Add)
-  cmake_parse_arguments(ZBUILD "MAIN_APP" "APPLICATION;BOARD;SOURCE_DIR" "" ${ARGN})
+  cmake_parse_arguments(ZBUILD "MAIN_APP" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -198,7 +200,17 @@ function(ExternalZephyrProject_Add)
     # Only set image specific board if provided.
     # The sysbuild BOARD is exported through sysbuild cache, and will be used
     # unless <image>_BOARD is defined.
-    list(APPEND sysbuild_cache_strings "${ZBUILD_APPLICATION}_BOARD:STRING=${ZBUILD_BOARD}\n")
+    if(DEFINED ZBUILD_BOARD_REVISION)
+      # Use provided board revision
+      list(APPEND sysbuild_cache_strings "${ZBUILD_APPLICATION}_BOARD:STRING=${ZBUILD_BOARD}@${ZBUILD_BOARD_REVISION}\n")
+    else()
+      list(APPEND sysbuild_cache_strings "${ZBUILD_APPLICATION}_BOARD:STRING=${ZBUILD_BOARD}\n")
+    endif()
+  elseif(DEFINED ZBUILD_BOARD_REVISION)
+    message(FATAL_ERROR
+      "ExternalZephyrProject_Add(... BOARD_REVISION ${ZBUILD_BOARD_REVISION})"
+      " requires BOARD."
+    )
   endif()
 
   file(WRITE ${sysbuild_cache_file}.tmp ${sysbuild_cache_strings})
