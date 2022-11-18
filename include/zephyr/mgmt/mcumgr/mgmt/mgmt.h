@@ -36,6 +36,13 @@ extern "C" {
 #define MGMT_GROUP_ID_RUN	7
 #define MGMT_GROUP_ID_FS	8
 #define MGMT_GROUP_ID_SHELL	9
+
+/** Zephyr-specific groups decrease from PERUSER to avoid collision with user defined groups. */
+#define ZEPHYR_MGMT_GRP_BASE	(MGMT_GROUP_ID_PERUSER - 1)
+
+/** Basic group */
+#define ZEPHYR_MGMT_GRP_BASIC	ZEPHYR_MGMT_GRP_BASE
+
 #define MGMT_GROUP_ID_PERUSER	64
 
 /**
