@@ -10,7 +10,7 @@
 #include <zephyr/storage/flash_map.h>
 
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/grp/zephyr/zephyr_groups.h>
+#include <zephyr/mgmt/mcumgr/grp/zephyr/zephyr_basic.h>
 
 LOG_MODULE_REGISTER(mcumgr_zephyr_grp);
 
