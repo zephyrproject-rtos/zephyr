@@ -1766,7 +1766,7 @@ static void dai_ssp_stop(struct dai_intel_ssp *dp, int direction)
 	    ssp->state[DAI_DIR_PLAYBACK] == DAI_STATE_PRE_RUNNING) {
 		bool clear_rse_bits = COND_CODE_1(CONFIG_INTEL_ADSP_CAVS,
 						 (!(ssp->clk_active & SSP_CLK_BCLK_ES_REQ)),
-						 (false));
+						 (true));
 		if (clear_rse_bits) {
 			/* clear TRSE/RSRE before SSE */
 			dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE | SSCR1_RSRE, 0);
