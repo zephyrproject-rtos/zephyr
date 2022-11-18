@@ -653,6 +653,25 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 #define DMA_BUF_ADDR_ALIGNMENT(node) DT_PROP(node, dma_buf_addr_alignment)
 
 /**
+ * Get the device tree property describing the buffer size alignment
+ *
+ * Useful when statically defining or allocating buffers for DMA usage where
+ * memory alignment often matters.
+ *
+ * @param node Node identifier, e.g. DT_NODELABEL(dma_0)
+ * @return alignment Memory byte alignment required for DMA buffers
+ */
+#define DMA_BUF_SIZE_ALIGNMENT(node) DT_PROP(node, dma_buf_size_alignment)
+
+/**
+ * Get the device tree property describing the minimal chunk of data possible to be copied
+ *
+ * @param node Node identifier, e.g. DT_NODELABEL(dma_0)
+ * @return minimal Minimal chunk of data possible to be copied
+ */
+#define DMA_COPY_ALIGNMENT(node) DT_PROP(node, dma_copy_alignment)
+
+/**
  * @}
  */
 

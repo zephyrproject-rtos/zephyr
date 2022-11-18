@@ -17,3 +17,9 @@ properties:
 
     "dma-buf-addr-alignment":
       required: true
+
+    "dma-buf-size-alignment":
+      required: true
+
+    "dma-copy-alignment":
+      required: true
