@@ -1,5 +1,5 @@
 common:
-  tags: base userspace
+  tags: base kernel userspace
   min_flash: 33
   timeout: 120
 tests:
