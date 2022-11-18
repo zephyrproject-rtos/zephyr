@@ -220,6 +220,50 @@ class CheckPatch(ComplianceTest):
                 self.failure(output)
 
 
+class DevicetreeBindingsCheck(ComplianceTest):
+    """
+    Checks if we are introducing any unwanted properties in Devicetree Bindings.
+    """
+    name = "Devicetree Bindings"
+    doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
+    path_hint = ZEPHYR_BASE
+
+    def run(self, full=True):
+        dts_yaml = self.parse_dts_yaml()
+
+        self.required_false_check(dts_yaml)
+
+    def parse_dt_bindings(self):
+        """
+        Returns a list of dts/bindings/**/*.yaml files
+        """
+        if not ZEPHYR_BASE:
+            self.skip("Not a Zephyr tree (ZEPHYR_BASE unset)")
+
+        dt_bindings = []
+        for file_name in git('diff', '--name-only', COMMIT_RANGE):
+            if file_name.startswith('dts/bindings/') and file_name.endswith('.yaml'):
+                dt_bindings.append(file_name)
+
+        return dt_bindings
+
+    def required_false_check(self, dt_bindings):
+        for file_name in dt_bindings:
+            try:
+                with open(file_name) as file:
+                    line_number = 0
+                    for line in file:
+                        line_number += 1
+                        if 'required: false' in line:
+                            self.fmtd_failure(
+                                'warning', 'Devicetree Bindings', file_name,
+                                line_number, col=None,
+                                desc="'required: false' is redundant, please remove")
+            except Exception:
+                # error opening file (it was likely deleted by the commit)
+                continue
+
+
 class KconfigCheck(ComplianceTest):
     """
     Checks is we are introducing any new warnings/errors with Kconfig,
