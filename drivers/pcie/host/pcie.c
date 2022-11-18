@@ -346,29 +346,38 @@ void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 	irq_enable(irq);
 }
 
-pcie_bdf_t pcie_bdf_lookup(pcie_id_t id)
+struct lookup_data {
+	pcie_bdf_t bdf;
+	pcie_id_t id;
+};
+
+static bool lookup_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 {
-	int bus, dev, func;
+	struct lookup_data *data = cb_data;
 
-	for (bus = 0; bus <= PCIE_MAX_BUS; bus++) {
-		for (dev = 0; dev <= PCIE_MAX_DEV; dev++) {
-			for (func = 0; func <= PCIE_MAX_FUNC; func++) {
-				pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
-				uint32_t data;
-
-				data = pcie_conf_read(bdf, PCIE_CONF_ID);
-				if (!PCIE_ID_IS_VALID(data)) {
-					continue;
-				}
-
-				if (data == id) {
-					return bdf;
-				}
-			}
-		}
+	if (id == data->id) {
+		data->bdf = bdf;
+		return false;
 	}
 
-	return PCIE_BDF_NONE;
+	return true;
+}
+
+pcie_bdf_t pcie_bdf_lookup(pcie_id_t id)
+{
+	struct lookup_data data = {
+		.bdf = PCIE_BDF_NONE,
+		.id = id,
+	};
+	struct pcie_scan_opt opt = {
+		.cb = lookup_cb,
+		.cb_data = &data,
+		.flags = (PCIE_SCAN_RECURSIVE | PCIE_SCAN_CB_ALL),
+	};
+
+	pcie_scan(&opt);
+
+	return data.bdf;
 }
 
 static bool scan_flag(const struct pcie_scan_opt *opt, uint32_t flag)
