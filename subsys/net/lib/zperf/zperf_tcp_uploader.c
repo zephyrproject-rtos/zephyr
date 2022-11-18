@@ -12,14 +12,13 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/net/socket.h>
+#include <zephyr/net/zperf.h>
 
-#include "zperf.h"
 #include "zperf_internal.h"
 
 static char sample_packet[PACKET_SIZE_MAX];
 
-void zperf_tcp_upload(const struct shell *sh,
-		      int sock,
+static int tcp_upload(int sock,
 		      unsigned int duration_in_ms,
 		      unsigned int packet_size,
 		      struct zperf_results *results)
@@ -28,20 +27,17 @@ void zperf_tcp_upload(const struct shell *sh,
 	int64_t start_time, last_print_time, end_time, remaining;
 	uint32_t nb_packets = 0U, nb_errors = 0U;
 	uint32_t alloc_errors = 0U;
+	int ret = 0;
 
 	if (packet_size > PACKET_SIZE_MAX) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "Packet size too large! max size: %u\n",
-			      PACKET_SIZE_MAX);
+		NET_WARN("Packet size too large! max size: %u\n",
+			PACKET_SIZE_MAX);
 		packet_size = PACKET_SIZE_MAX;
 	}
 
 	/* Start the loop */
 	start_time = k_uptime_ticks();
 	last_print_time = start_time;
-
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "New session started\n");
 
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
@@ -52,15 +48,11 @@ void zperf_tcp_upload(const struct shell *sh,
 	(void)memset(sample_packet, 0, sizeof(uint32_t));
 
 	do {
-		int ret = 0;
-
 		/* Send the packet */
 		ret = zsock_send(sock, sample_packet, packet_size, 0);
 		if (ret < 0) {
 			if (nb_errors == 0 && ret != -ENOMEM) {
-				shell_fprintf(sh, SHELL_WARNING,
-					      "Failed to send the packet (%d)\n",
-					      errno);
+				NET_ERR("Failed to send the packet (%d)", errno);
 			}
 
 			nb_errors++;
@@ -73,6 +65,7 @@ void zperf_tcp_upload(const struct shell *sh,
 				 */
 				alloc_errors++;
 			} else {
+				ret = -errno;
 				break;
 			}
 		} else {
@@ -98,12 +91,40 @@ void zperf_tcp_upload(const struct shell *sh,
 	results->nb_packets_errors = nb_errors;
 
 	if (alloc_errors > 0) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "There was %u network buffer allocation "
-			      "errors during send.\nConsider increasing the "
-			      "value of CONFIG_NET_BUF_TX_COUNT and\n"
-			      "optionally CONFIG_NET_PKT_TX_COUNT Kconfig "
-			      "options.\n",
-			      alloc_errors);
+		NET_WARN("There was %u network buffer allocation "
+			 "errors during send.\nConsider increasing the "
+			 "value of CONFIG_NET_BUF_TX_COUNT and\n"
+			 "optionally CONFIG_NET_PKT_TX_COUNT Kconfig "
+			 "options.",
+			 alloc_errors);
 	}
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+int zperf_tcp_upload(const struct zperf_upload_params *param,
+		     struct zperf_results *result)
+{
+	int sock;
+	int ret;
+
+	if (param == NULL || result == NULL) {
+		return -EINVAL;
+	}
+
+	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
+					 IPPROTO_TCP);
+	if (sock < 0) {
+		return sock;
+	}
+
+	ret = tcp_upload(sock, param->duration_ms, param->packet_size, result);
+
+	zsock_close(sock);
+
+	return ret;
 }
