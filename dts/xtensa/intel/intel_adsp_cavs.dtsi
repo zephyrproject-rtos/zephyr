@@ -35,7 +35,7 @@
 			#dma-cells = <1>;
 			reg = <0x00072400 0x20>;
 			dma-channels = <4>;
-			dma-buf-alignment = <128>;
+			dma-buf-addr-alignment = <128>;
 
 			status = "okay";
 		};
@@ -45,7 +45,7 @@
 			#dma-cells = <1>;
 			reg = <0x00072600 0x20>;
 			dma-channels = <4>;
-			dma-buf-alignment = <128>;
+			dma-buf-addr-alignment = <128>;
 
 			status = "okay";
 		};
@@ -55,7 +55,7 @@
 			#dma-cells = <1>;
 			reg = <0x00072800 0x40>;
 			dma-channels = <9>;
-			dma-buf-alignment = <128>;
+			dma-buf-addr-alignment = <128>;
 
 			status = "okay";
 		};
@@ -65,7 +65,7 @@
 			#dma-cells = <1>;
 			reg = <0x00072c00 0x40>;
 			dma-channels = <7>;
-			dma-buf-alignment = <128>;
+			dma-buf-addr-alignment = <128>;
 
 			status = "okay";
 		};

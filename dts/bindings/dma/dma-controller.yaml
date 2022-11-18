@@ -28,6 +28,6 @@ properties:
       type: int
       description: Number of DMA request signals supported by the controller.
 
-    dma-buf-alignment:
+    dma-buf-addr-alignment:
       type: int
-      description: Memory alignment requirement for DMA buffers used by the controller.
+      description: Memory address alignment requirement for DMA buffers used by the controller.
