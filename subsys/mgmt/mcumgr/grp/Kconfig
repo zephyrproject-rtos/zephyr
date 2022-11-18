@@ -13,3 +13,5 @@ rsource "shell_mgmt/Kconfig"
 rsource "stat_mgmt/Kconfig"
 
 rsource "zephyr_basic/Kconfig"
+
+rsource "nvs_mgmt/Kconfig"

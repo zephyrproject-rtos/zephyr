@@ -1,0 +1,12 @@
+# Copyright Nordic Semiconductor ASA 2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUMGR_CMD_NVS_MGMT
+	bool "MCUmgr handlers for non-volatile storage management"
+	depends on NVS
+	select MGMT_MIN_DECODING_LEVEL_2
+	help
+	  Enables MCUmgr handlers for non-volatile storage management, which
+	  allows for device configuration to be read and update. Note that
+	  there is no security implied with the usage of this feature, all
+	  NVS keys can be read or updated.

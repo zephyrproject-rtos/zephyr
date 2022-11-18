@@ -27,6 +27,9 @@
 #ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
 #include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
 #endif
+#ifdef CONFIG_MCUMGR_CMD_NVS_MGMT
+#include <zephyr/mgmt/mcumgr/grp/nvs_mgmt/nvs_mgmt.h>
+#endif
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <zephyr/logging/log.h>
@@ -89,6 +92,9 @@ void main(void)
 #endif
 #ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
 	shell_mgmt_register_group();
+#endif
+#ifdef CONFIG_MCUMGR_CMD_NVS_MGMT
+	nvs_mgmt_register_group();
 #endif
 #ifdef CONFIG_MCUMGR_SMP_BT
 	start_smp_bluetooth();

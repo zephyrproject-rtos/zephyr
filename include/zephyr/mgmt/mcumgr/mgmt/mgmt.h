@@ -29,7 +29,7 @@ extern "C" {
 #define MGMT_GROUP_ID_OS	0
 #define MGMT_GROUP_ID_IMAGE	1
 #define MGMT_GROUP_ID_STAT	2
-#define MGMT_GROUP_ID_CONFIG	3
+#define MGMT_GROUP_ID_NVS	3
 #define MGMT_GROUP_ID_LOG	4
 #define MGMT_GROUP_ID_CRASH	5
 #define MGMT_GROUP_ID_SPLIT	6
