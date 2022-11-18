@@ -567,23 +567,23 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
-	SHELL_CMD(cd, NULL, "Change working directory", cmd_cd),
-	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
-	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
+	SHELL_CMD_ARG(cd, NULL, "Change working directory\ncd <path>", cmd_cd, 2, 0),
+	SHELL_CMD_ARG(ls, NULL, "List files in current directory\nls [<path>]", cmd_ls, 1, 1),
+	SHELL_CMD_ARG(mkdir, NULL, "Create directory\nmkdir <directory>", cmd_mkdir, 2, 0),
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
 	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 	SHELL_CMD(mount, &sub_fs_mount,
 		  "<Mount fs, syntax:- fs mount <fs type> <mount-point>", NULL),
 #endif
 	SHELL_CMD(pwd, NULL, "Print current working directory", cmd_pwd),
-	SHELL_CMD_ARG(read, NULL, "Read from file", cmd_read, 2, 255),
+	SHELL_CMD_ARG(read, NULL, "Read from file\nread <path> [<length>] [<offset>]", cmd_read, 2, 2),
 	SHELL_CMD_ARG(cat, NULL,
-		"Concatenate files and print on the standard output",
-		cmd_cat, 2, 255),
-	SHELL_CMD_ARG(rm, NULL, "Remove file", cmd_rm, 2, 0),
-	SHELL_CMD_ARG(statvfs, NULL, "Show file system state", cmd_statvfs, 2, 0),
-	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
-	SHELL_CMD_ARG(write, NULL, "Write file", cmd_write, 3, 255),
+		"Concatenate files and print on the standard output\ncat <file> [<file>...]",
+		cmd_cat, 2, CONFIG_SHELL_ARGC_MAX - 2),
+	SHELL_CMD_ARG(rm, NULL, "Remove file\nrm <file>", cmd_rm, 2, 0),
+	SHELL_CMD_ARG(statvfs, NULL, "Show file system state\nstatvfs <mount-point>", cmd_statvfs, 2, 0),
+	SHELL_CMD_ARG(trunc, NULL, "Truncate file\ntrunc <file> [<length>]", cmd_trunc, 2, 1),
+	SHELL_CMD_ARG(write, NULL, "Write file with data in hex format\nWith no given offset it is appended to the file\nwrite <file> [-o <offset>] <data> [<data>...]", cmd_write, 3, CONFIG_SHELL_ARGC_MAX - 3),
 	SHELL_SUBCMD_SET_END
 );
 
