@@ -48,7 +48,7 @@ jobs:
     - name: install-pkgs
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build graphviz libclang1-9 libclang-cpp9
+        sudo apt-get install -y ninja-build graphviz
         wget --no-verbose https://downloads.sourceforge.net/project/doxygen/rel-${DOXYGEN_VERSION}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
