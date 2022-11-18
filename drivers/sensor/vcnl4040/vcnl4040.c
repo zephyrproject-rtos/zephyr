@@ -25,7 +25,7 @@ int vcnl4040_read(const struct device *dev, uint8_t reg, uint16_t *out)
 	ret = i2c_write_read_dt(&config->i2c,
 			     &reg, sizeof(reg), buff, sizeof(buff));
 
-	if (!ret) {
+	if (ret == 0) {
 		*out = sys_get_le16(buff);
 	}
 
@@ -274,11 +274,9 @@ static int vcnl4040_init(const struct device *dev)
 	k_mutex_init(&data->mutex);
 
 #if CONFIG_VCNL4040_TRIGGER
-	if (config->int_gpio.port) {
-		if (vcnl4040_trigger_init(dev)) {
-			LOG_ERR("Could not initialise interrupts");
-			return -EIO;
-		}
+	if (vcnl4040_trigger_init(dev)) {
+		LOG_ERR("Could not initialise interrupts");
+		return -EIO;
 	}
 #endif
 
