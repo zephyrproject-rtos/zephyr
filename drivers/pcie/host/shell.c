@@ -147,7 +147,7 @@ static void show(const struct shell *sh, pcie_bdf_t bdf, bool dump)
 
 	data = pcie_conf_read(bdf, PCIE_CONF_ID);
 
-	if (data == PCIE_ID_NONE) {
+	if (!PCIE_ID_IS_VALID(data)) {
 		return;
 	}
 
