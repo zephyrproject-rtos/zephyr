@@ -400,6 +400,19 @@ static uint16_t smp_bt_get_mtu(const struct net_buf *nb)
 	return mtu - 3;
 }
 
+static void smp_bt_get_details(const struct net_buf *nb, struct smp_transport_details_t *details)
+{
+	if (nb == NULL) {
+		details->mtu = 0;
+	} else {
+		details->mtu = smp_bt_get_mtu(nb);
+	}
+
+	details->ud_size = sizeof(struct smp_bt_user_data);
+	details->max_instances = CONFIG_BT_MAX_CONN;
+	details->async_supported = true;
+}
+
 static void smp_bt_ud_free(void *ud)
 {
 	struct smp_bt_user_data *user_data = ud;
@@ -651,7 +664,7 @@ static int smp_bt_init(const struct device *dev)
 	}
 
 	smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
-			   smp_bt_get_mtu, smp_bt_ud_copy,
+			   smp_bt_get_details, smp_bt_ud_copy,
 			   smp_bt_ud_free, smp_bt_query_valid_check);
 	return 0;
 }

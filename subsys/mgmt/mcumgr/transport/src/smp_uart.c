@@ -75,9 +75,13 @@ static void smp_uart_rx_frag(struct uart_mcumgr_rx_buf *rx_buf)
 	k_work_submit(&smp_uart_work);
 }
 
-static uint16_t smp_uart_get_mtu(const struct net_buf *nb)
+static void smp_uart_get_details(const struct net_buf *nb, struct smp_transport_details_t *details)
 {
-	return CONFIG_MCUMGR_SMP_UART_MTU;
+	ARG_UNUSED(nb);
+	details->mtu = CONFIG_MCUMGR_SMP_UART_MTU;
+	details->ud_size = 0;
+	details->max_instances = 1;
+	details->async_supported = true;
 }
 
 static int smp_uart_tx_pkt(struct net_buf *nb)
@@ -95,7 +99,7 @@ static int smp_uart_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	smp_transport_init(&smp_uart_transport, smp_uart_tx_pkt,
-			   smp_uart_get_mtu, NULL, NULL, NULL);
+			   smp_uart_get_details, NULL, NULL, NULL);
 	uart_mcumgr_register(smp_uart_rx_frag);
 
 	return 0;

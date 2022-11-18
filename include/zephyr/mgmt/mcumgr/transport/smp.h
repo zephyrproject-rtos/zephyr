@@ -18,6 +18,22 @@ struct smp_transport;
 struct zephyr_smp_transport;
 struct net_buf;
 
+
+/**
+ * @brief TODO
+ *
+ * @param mtu			
+ * @param ud_size		
+ * @param max_instances		
+ * @param async_supported	
+*/
+struct smp_transport_details_t {
+	uint32_t mtu;
+	uint8_t ud_size;
+	int16_t max_instances;
+	bool async_supported;
+};
+
 /** @typedef smp_transport_out_fn
  * @brief SMP transmit callback for transport
  *
@@ -31,8 +47,8 @@ typedef int (*smp_transport_out_fn)(struct net_buf *nb);
 /* use smp_transport_out_fn instead */
 typedef int zephyr_smp_transport_out_fn(struct net_buf *nb);
 
-/** @typedef smp_transport_get_mtu_fn
- * @brief SMP MTU query callback for transport
+/** @typedef smp_transport_get_details_fn
+ * @brief SMP details query callback for transport TODO
  *
  * The supplied net_buf should contain a request received from the peer whose
  * MTU is being queried.  This function takes a net_buf parameter because some
@@ -44,7 +60,8 @@ typedef int zephyr_smp_transport_out_fn(struct net_buf *nb);
  * @return                      The transport's MTU;
  *                              0 if transmission is currently not possible.
  */
-typedef uint16_t (*smp_transport_get_mtu_fn)(const struct net_buf *nb);
+typedef void (*smp_transport_get_details_fn)(const struct net_buf *nb,
+					     struct smp_transport_details_t *details);
 /* use smp_transport_get_mtu_fn instead */
 typedef uint16_t zephyr_smp_transport_get_mtu_fn(const struct net_buf *nb);
 
@@ -104,7 +121,7 @@ struct smp_transport {
 	struct k_fifo fifo;
 
 	smp_transport_out_fn output;
-	smp_transport_get_mtu_fn get_mtu;
+	smp_transport_get_details_fn get_details;
 	smp_transport_ud_copy_fn ud_copy;
 	smp_transport_ud_free_fn ud_free;
 	smp_transport_query_valid_check_fn query_valid_check;
@@ -118,6 +135,7 @@ struct smp_transport {
 #endif
 };
 
+#if 0
 /* Deprecated, use smp_transport instead */
 struct zephyr_smp_transport {
 	/* Must be the first member. */
@@ -139,6 +157,7 @@ struct zephyr_smp_transport {
 	} __reassembly;
 #endif
 };
+#endif
 
 /**
  * @brief Initializes a Zephyr SMP transport object.
@@ -152,11 +171,12 @@ struct zephyr_smp_transport {
  */
 void smp_transport_init(struct smp_transport *smpt,
 			smp_transport_out_fn output_func,
-			smp_transport_get_mtu_fn get_mtu_func,
+			smp_transport_get_details_fn get_details_func,
 			smp_transport_ud_copy_fn ud_copy_func,
 			smp_transport_ud_free_fn ud_free_func,
 			smp_transport_query_valid_check_fn query_valid_check_func);
 
+#if 0
 __deprecated static inline
 void zephyr_smp_transport_init(struct zephyr_smp_transport *smpt,
 			       zephyr_smp_transport_out_fn *output_func,
@@ -170,6 +190,7 @@ void zephyr_smp_transport_init(struct zephyr_smp_transport *smpt,
 			   (smp_transport_ud_copy_fn)ud_copy_func,
 			   (smp_transport_ud_free_fn)ud_free_func, NULL);
 }
+#endif
 
 /**
  * @brief	Used to remove queued requests for an SMP transport that are no longer valid. A

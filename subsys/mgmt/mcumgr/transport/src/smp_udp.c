@@ -104,11 +104,14 @@ static int smp_udp6_tx(struct net_buf *nb)
 }
 #endif
 
-static uint16_t smp_udp_get_mtu(const struct net_buf *nb)
+static void smp_udp_get_details(const struct net_buf *nb, struct smp_transport_details_t *details)
 {
 	ARG_UNUSED(nb);
 
-	return CONFIG_MCUMGR_SMP_UDP_MTU;
+	details->mtu = CONFIG_MCUMGR_SMP_UDP_MTU;
+	details->ud_size = sizeof(struct sockaddr);
+	details->max_instances = CONFIG_NET_MAX_CONN;
+	details->async_supported = true;
 }
 
 static int smp_udp_ud_copy(struct net_buf *dst, const struct net_buf *src)
@@ -166,13 +169,13 @@ static int smp_udp_init(const struct device *dev)
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 	smp_transport_init(&configs.ipv4.smp_transport,
-			   smp_udp4_tx, smp_udp_get_mtu,
+			   smp_udp4_tx, smp_udp_get_details,
 			   smp_udp_ud_copy, NULL, NULL);
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
 	smp_transport_init(&configs.ipv6.smp_transport,
-			   smp_udp6_tx, smp_udp_get_mtu,
+			   smp_udp6_tx, smp_udp_get_details,
 			   smp_udp_ud_copy, NULL, NULL);
 #endif
 

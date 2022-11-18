@@ -137,14 +137,14 @@ smp_handle_reqs(struct k_work *work)
 void
 smp_transport_init(struct smp_transport *smpt,
 		   smp_transport_out_fn output_func,
-		   smp_transport_get_mtu_fn get_mtu_func,
+		   smp_transport_get_details_fn get_details_func,
 		   smp_transport_ud_copy_fn ud_copy_func,
 		   smp_transport_ud_free_fn ud_free_func,
 		   smp_transport_query_valid_check_fn query_valid_check_func)
 {
 	*smpt = (struct smp_transport) {
 		.output = output_func,
-		.get_mtu = get_mtu_func,
+		.get_details = get_details_func,
 		.ud_copy = ud_copy_func,
 		.ud_free = ud_free_func,
 		.query_valid_check = query_valid_check_func,

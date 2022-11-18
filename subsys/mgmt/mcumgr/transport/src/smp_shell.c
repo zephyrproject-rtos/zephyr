@@ -158,9 +158,13 @@ void smp_shell_process(struct smp_shell_data *data)
 	}
 }
 
-static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
+static void smp_shell_get_details(const struct net_buf *nb, struct smp_transport_details_t *details)
 {
-	return CONFIG_MCUMGR_SMP_SHELL_MTU;
+	ARG_UNUSED(nb);
+	details->mtu = CONFIG_MCUMGR_SMP_SHELL_MTU;
+	details->ud_size = 0;
+	details->max_instances = 1;
+	details->async_supported = true;
 }
 
 static int smp_shell_tx_raw(const void *data, int len)
@@ -192,7 +196,7 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 int smp_shell_init(void)
 {
 	smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
-			   smp_shell_get_mtu, NULL, NULL, NULL);
+			   smp_shell_get_details, NULL, NULL, NULL);
 
 	return 0;
 }
