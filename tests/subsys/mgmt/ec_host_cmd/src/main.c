@@ -10,13 +10,10 @@
 
 /* Variables used to record what is "sent" to host for verification. */
 K_SEM_DEFINE(send_called, 0, 1);
-struct ec_host_cmd_tx_buf sent;
+struct ec_host_cmd_tx_buf *sent;
 
-static int host_send(const struct device *const dev,
-		     const struct ec_host_cmd_tx_buf *const buf)
+static int host_send(const struct ec_host_cmd_backend *backend)
 {
-	sent.len = buf->len;
-	sent.buf = buf->buf;
 	k_sem_give(&send_called);
 	return 0;
 }
@@ -124,8 +121,8 @@ static void verify_tx_data(void)
 {
 	update_dut_to_host_checksum();
 
-	zassert_equal(sent.len, expected_tx_size(), "Sent bytes did not match");
-	zassert_mem_equal(sent.buf, expected_dut_to_host, expected_tx_size(),
+	zassert_equal(sent->len, expected_tx_size(), "Sent bytes did not match");
+	zassert_mem_equal(sent->buf, expected_dut_to_host, expected_tx_size(),
 			  "Sent buffer did not match");
 }
 
@@ -137,8 +134,8 @@ static void verify_tx_error(enum ec_host_cmd_status error)
 	expected_dut_to_host->header.reserved = 0;
 	update_dut_to_host_checksum();
 
-	zassert_equal(sent.len, expected_tx_size(), "Sent bytes did not match");
-	zassert_mem_equal(sent.buf, expected_dut_to_host, expected_tx_size(),
+	zassert_equal(sent->len, expected_tx_size(), "Sent bytes did not match");
+	zassert_mem_equal(sent->buf, expected_dut_to_host, expected_tx_size(),
 			  "Sent buffer did not match");
 }
 
@@ -439,7 +436,7 @@ ZTEST(ec_host_cmd, test_response_always_too_big)
 
 static void *ec_host_cmd_tests_setup(void)
 {
-	ec_host_cmd_backend_sim_install_send_cb(host_send);
+	ec_host_cmd_backend_sim_install_send_cb(host_send, &sent);
 	return NULL;
 }
 
