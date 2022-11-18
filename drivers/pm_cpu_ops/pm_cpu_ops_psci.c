@@ -80,10 +80,30 @@ int pm_system_off(void)
 	return psci_to_dev_err(ret);
 }
 
+int pm_system_reset(unsigned char reset)
+{
+	int ret;
+
+	if (psci_data.conduit == SMCCC_CONDUIT_NONE) {
+		return -EINVAL;
+	}
+
+	if (reset == SYS_WARM_RESET) {
+		ret = psci_data.invoke_psci_fn(PSCI_0_2_FN64_SYSTEM_RESET2, 0, 0, 0);
+	} else if (reset == SYS_COLD_RESET) {
+		ret = psci_data.invoke_psci_fn(PSCI_0_2_FN_SYSTEM_RESET, 0, 0, 0);
+	} else {
+		return -EINVAL;
+	}
+
+	return psci_to_dev_err(ret);
+
+}
+
 static unsigned long __invoke_psci_fn_hvc(unsigned long function_id,
-					  unsigned long arg0,
-					  unsigned long arg1,
-					  unsigned long arg2)
+					unsigned long arg0,
+					unsigned long arg1,
+					unsigned long arg2)
 {
 	struct arm_smccc_res res;
 

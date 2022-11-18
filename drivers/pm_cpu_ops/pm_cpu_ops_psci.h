@@ -39,6 +39,7 @@
 #define PSCI_0_2_FN64_AFFINITY_INFO		PSCI_0_2_FN64(4)
 #define PSCI_0_2_FN64_MIGRATE			PSCI_0_2_FN64(5)
 #define PSCI_0_2_FN64_MIGRATE_INFO_UP_CPU	PSCI_0_2_FN64(7)
+#define PSCI_0_2_FN64_SYSTEM_RESET2		PSCI_0_2_FN64(18)
 
 /* PSCI return values (inclusive of all PSCI versions) */
 #define PSCI_RET_SUCCESS			0
