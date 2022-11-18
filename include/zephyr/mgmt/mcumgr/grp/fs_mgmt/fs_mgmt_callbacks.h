@@ -20,7 +20,7 @@ extern "C" {
  */
 
 /**
- * Structure provided in the MGMT_EVT_OP_FS_MGMT_FILE_ACCESS notification callback: This callback
+ * Structure provided in the #MGMT_EVT_OP_FS_MGMT_FILE_ACCESS notification callback: This callback
  * function is used to notify the application about a pending file read/write request and to
  * authorise or deny it. Access will be allowed so long as all notification handlers return
  * MGMT_ERR_EOK, if one returns an error then access will be denied.

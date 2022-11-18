@@ -9,7 +9,7 @@
 
 #include <inttypes.h>
 #include <zephyr/sys/slist.h>
-#include <mgmt/mgmt.h>
+#include <zephyr/mgmg/mcumgr/mgmt/mgmt.h>
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_callbacks.h>
@@ -93,13 +93,13 @@ enum smp_all_events {
  * MGMT event opcodes for base SMP command processing.
  */
 enum smp_group_events {
-	/** Callback when a command is received, data is mgmt_evt_op_cmd_arg. */
+	/** Callback when a command is received, data is mgmt_evt_op_cmd_arg(). */
 	MGMT_EVT_OP_CMD_RECV			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 0),
 
-	/** Callback when a a status is updated, data is mgmt_evt_op_cmd_arg. */
+	/** Callback when a a status is updated, data is mgmt_evt_op_cmd_arg(). */
 	MGMT_EVT_OP_CMD_STATUS			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 1),
 
-	/** Callback when a command has been processed, data is mgmt_evt_op_cmd_arg. */
+	/** Callback when a command has been processed, data is mgmt_evt_op_cmd_arg(). */
 	MGMT_EVT_OP_CMD_DONE			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 2),
 
 	/** Used to enable all smp_group events. */
@@ -110,7 +110,7 @@ enum smp_group_events {
  * MGMT event opcodes for filesystem management group.
  */
 enum fs_mgmt_group_events {
-	/** Callback when a file has been accessed, data is fs_mgmt_file_access. */
+	/** Callback when a file has been accessed, data is fs_mgmt_file_access(). */
 	MGMT_EVT_OP_FS_MGMT_FILE_ACCESS		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_FS, 0),
 
 	/** Used to enable all fs_mgmt_group events. */
@@ -121,7 +121,7 @@ enum fs_mgmt_group_events {
  * MGMT event opcodes for image management group.
  */
 enum img_mgmt_group_events {
-	/** Callback when a client sends a file upload chunk, data is img_mgmt_upload_check. */
+	/** Callback when a client sends a file upload chunk, data is img_mgmt_upload_check(). */
 	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 0),
 
 	/** Callback when a DFU operation is stopped. */
@@ -166,7 +166,7 @@ struct mgmt_callback {
 };
 
 /**
- * MGMT_EVT_OP_CMD_RECV, MGMT_EVT_OP_CMD_STATUS, MGMT_EVT_OP_CMD_DONE arguments
+ * Arguments for #MGMT_EVT_OP_CMD_RECV, #MGMT_EVT_OP_CMD_STATUS and #MGMT_EVT_OP_CMD_DONE
  */
 struct mgmt_evt_op_cmd_arg {
 	/** MGMT_GROUP_ID_[...] */
@@ -176,10 +176,10 @@ struct mgmt_evt_op_cmd_arg {
 	uint8_t id;
 
 	union {
-		/** MGMT_ERR_[...], used in MGMT_EVT_OP_CMD_DONE */
+		/** MGMT_ERR_[...], used in #MGMT_EVT_OP_CMD_DONE */
 		int err;
 
-		/** IMG_MGMT_ID_UPLOAD_STATUS_[...], used in MGMT_EVT_OP_CMD_STATUS */
+		/** IMG_MGMT_ID_UPLOAD_STATUS_[...], used in #MGMT_EVT_OP_CMD_STATUS */
 		int status;
 	};
 };

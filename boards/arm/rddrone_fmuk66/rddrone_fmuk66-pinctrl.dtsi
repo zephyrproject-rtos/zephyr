@@ -53,7 +53,7 @@
 	ftm0_default: ftm0_default {
 		group0 {
 			pinmux = <FTM0_CH0_PTC1>,
-				<FTM0_CH1_PTA4>,
+				<FTM0_CH3_PTA6>,
 				<FTM0_CH4_PTD4>,
 				<FTM0_CH5_PTD5>;
 			drive-strength = "low";
@@ -76,19 +76,29 @@
 
 	i2c0_default: i2c0_default {
 		group0 {
-			pinmux = <I2C0_SCL_PTE24>,
-				<I2C0_SDA_PTE25>;
+			pinmux = <I2C0_SCL_PTE24>;
 			drive-strength = "low";
 			slew-rate = "fast";
+		};
+		group1 {
+			pinmux = <I2C0_SDA_PTE25>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			drive-open-drain;
 		};
 	};
 
 	i2c1_default: i2c1_default {
 		group0 {
-			pinmux = <I2C1_SCL_PTC10>,
-				<I2C1_SDA_PTC11>;
+			pinmux = <I2C1_SCL_PTC10>;
 			drive-strength = "low";
 			slew-rate = "fast";
+		};
+		group1 {
+			pinmux = <I2C1_SDA_PTC11>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			drive-open-drain;
 		};
 	};
 

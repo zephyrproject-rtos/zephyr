@@ -83,7 +83,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 4ee20fd6ca25cd4bf78918f4fffee016a4ef47b9
+      revision: fe0be3c3546e136a67264084c0e3edfd7354645a
       path: modules/hal/nordic
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       revision: 8d53544871e1f300c478224faca6be8384ab0d04
       path: modules/lib/open-amp
     - name: openthread
-      revision: bacf8d625f50dd5c4b415caee754c934ba1a262c
+      revision: 3e138d3f5d549894b79cdc8567ed1f9215281344
       path: modules/lib/openthread
     - name: picolibc
       path: modules/lib/picolibc

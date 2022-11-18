@@ -7,19 +7,21 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 
-#include <assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
-#include <zephyr/kernel.h>
-#include <soc.h>
-#include <zephyr/init.h>
-#include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
-#include <mgmt/mgmt.h>
-#include <img_mgmt/img_mgmt.h>
-#include <img_mgmt/image.h>
-#include "img_mgmt_priv.h"
+#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
+#include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
+#include <assert.h>
+
+#include <bootutil/bootutil_public.h>
+
+#include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_impl.h>
+#include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
 
 #define SLOT0_PARTITION		slot0_partition
 #define SLOT1_PARTITION		slot1_partition

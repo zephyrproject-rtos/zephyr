@@ -8,12 +8,12 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/net/net_ip.h>
-#include <mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/smp_dummy.h>
-#include <fs_mgmt/fs_mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_dummy.h>
+#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
-#include <smp_internal.h>
+#include <mgmt/mcumgr/transport/smp_internal.h>
 
 #define SMP_RESPONSE_WAIT_TIME 3
 

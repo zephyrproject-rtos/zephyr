@@ -31,7 +31,7 @@ struct sbs_gauge_emul_cfg {
 	uint16_t addr;
 };
 
-static void reg_write(const struct emul *target, int reg, int val)
+static int emul_sbs_gauge_reg_write(const struct emul *target, int reg, int val)
 {
 	ARG_UNUSED(target);
 
@@ -39,13 +39,14 @@ static void reg_write(const struct emul *target, int reg, int val)
 	switch (reg) {
 	default:
 		LOG_INF("Unknown write %x", reg);
+		return -EIO;
 	}
+
+	return 0;
 }
 
-static int reg_read(const struct emul *target, int reg)
+static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 {
-	int val;
-
 	ARG_UNUSED(target);
 
 	switch (reg) {
@@ -61,15 +62,15 @@ static int reg_read(const struct emul *target, int reg)
 	case SBS_GAUGE_CMD_CYCLE_COUNT:
 	case SBS_GAUGE_CMD_DESIGN_VOLTAGE:
 		/* Arbitrary stub value. */
-		val = 1;
+		*val = 1;
 		break;
 	default:
 		LOG_ERR("Unknown register 0x%x read", reg);
 		return -EIO;
 	}
-	LOG_INF("read 0x%x = 0x%x", reg, val);
+	LOG_INF("read 0x%x = 0x%x", reg, *val);
 
-	return val;
+	return 0;
 }
 
 static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg *msgs,
@@ -79,6 +80,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 	struct sbs_gauge_emul_data *data;
 	unsigned int val;
 	int reg;
+	int rc;
 
 	data = target->data;
 
@@ -102,7 +104,11 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 		if (msgs->flags & I2C_MSG_READ) {
 			switch (msgs->len - 1) {
 			case 1:
-				val = reg_read(target, reg);
+				rc = emul_sbs_gauge_reg_read(target, reg, &val);
+				if (rc) {
+					/* Return before writing bad value to message buffer */
+					return rc;
+				}
 				msgs->buf[0] = val;
 				break;
 			default:
@@ -113,7 +119,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 			if (msgs->len != 1) {
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);
 			}
-			reg_write(target, reg, msgs->buf[0]);
+			rc = emul_sbs_gauge_reg_write(target, reg, msgs->buf[0]);
 		}
 		break;
 	default:
@@ -121,7 +127,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 		return -EIO;
 	}
 
-	return 0;
+	return rc;
 }
 
 static const struct i2c_emul_api sbs_gauge_emul_api_i2c = {

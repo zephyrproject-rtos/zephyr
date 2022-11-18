@@ -32,7 +32,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/printk.h>
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
-#include <zephyr/mgmt/mcumgr/serial.h>
+#include <zephyr/mgmt/mcumgr/transport/serial.h>
 #endif
 
 static const struct device *const uart_console_dev =

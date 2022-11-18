@@ -470,6 +470,13 @@
 	#size-cells = <0>;
 };
 
+&flexspi2 {
+	compatible = "nxp,imx-flexspi";
+	status = "disabled";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };

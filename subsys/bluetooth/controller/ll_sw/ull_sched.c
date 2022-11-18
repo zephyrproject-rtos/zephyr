@@ -876,7 +876,10 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
 		if (conn && !conn->lll.role) {
-			*ticks_slot = conn->ull.ticks_slot;
+			*ticks_slot =
+				MAX(conn->ull.ticks_slot,
+				    HAL_TICKER_US_TO_TICKS(
+					    CONFIG_BT_CTLR_CENTRAL_SPACING));
 
 			return &conn->ull;
 		}

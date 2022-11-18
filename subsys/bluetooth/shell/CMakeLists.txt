@@ -93,12 +93,12 @@ zephyr_library_sources_ifdef(
   )
 
 zephyr_library_sources_ifdef(
-  CONFIG_BT_BASS
-  bass.c
+  CONFIG_BT_BAP_SCAN_DELEGATOR
+  bap_scan_delegator.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_BASS_CLIENT
-  bass_client.c
+  CONFIG_BT_BAP_BROADCAST_ASSISTANT
+  bap_broadcast_assistant.c
   )
 
 zephyr_library_sources_ifdef(
