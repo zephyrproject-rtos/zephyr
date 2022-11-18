@@ -493,8 +493,16 @@ class TestPlan:
                 plat = quar_dict['platforms']
                 self.verify_platforms_existence(plat, "quarantine-list")
             comment = quar_dict.get('comment', "NA")
+            scenarios = []
+            for _, ts in self.testsuites.items():
+                scenarios.append(ts.id)
+            q_scenarios = []
+            for s in quar_dict['scenarios']:
+                r = re.compile(s)
+                q_scenarios.extend(list(filter(r.fullmatch, scenarios)))
+
             quarantine_list.append([{"/".join([p, s]): comment}
-                                   for p in plat for s in quar_dict['scenarios']])
+                                   for p in plat for s in q_scenarios])
 
         # Flatten the quarantine_list
         quarantine_list = [it for sublist in quarantine_list for it in sublist]

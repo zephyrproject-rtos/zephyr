@@ -886,6 +886,11 @@ to put under quarantine. In addition, an optional entry "comment" can be used, w
 some more details can be given (e.g. link to a reported issue). These comments will also
 be added to the output reports.
 
+When quarantining a class of tests or many scenarios in a single testsuite or
+when dealing with multiple issues within a subsystem, it is possible to use
+regular expressions and wildcards, for example, **kernel.*** would quarantine
+all kernel tests.
+
 An example of entries in a quarantine yaml::
 
     tests:
