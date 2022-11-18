@@ -24,10 +24,11 @@ string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 set(NOSTDINC "")
 
-list(APPEND NOSTDINC ${TOOLCHAIN_HOME}/arc/inc)
-
-if(CONFIG_ARCMWDT_LIBC AND CONFIG_LIB_CPLUSPLUS)
-  list(APPEND NOSTDINC ${TOOLCHAIN_HOME}/arc/lib/src/c++/inc)
+# In case of using minimal libc, add path to target-specific headers,
+# which are omitted in "lib/libc/minimal/include" path
+# (stddef.h and stdarg.h).
+if(NOT CONFIG_ARCMWDT_LIBC)
+ list(APPEND NOSTDINC ${TOOLCHAIN_HOME}/arc/inc)
 endif()
 
 # For CMake to be able to test if a compiler flag is supported by the

@@ -117,9 +117,8 @@ set_compiler_property(PROPERTY cstd -std=)
 
 if (NOT CONFIG_ARCMWDT_LIBC)
   set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib)
+  set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
-
-set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 
 # C++ std options
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp98 "-std=c++98")
@@ -187,3 +186,6 @@ set_compiler_property(PROPERTY no_position_independent
 
 # Required ASM flags when using mwdt
 set_property(TARGET asm PROPERTY required "-Hasmcpp")
+
+# Pass includes directly into assembly build
+set_property(TARGET asm PROPERTY required "-I${TOOLCHAIN_HOME}/arc/inc")
