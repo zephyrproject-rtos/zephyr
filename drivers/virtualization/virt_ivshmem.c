@@ -225,27 +225,13 @@ static const struct ivshmem_driver_api ivshmem_api = {
 static int ivshmem_init(const struct device *dev)
 {
 	struct ivshmem *data = dev->data;
-	static bool bdf_lookup_done;
 
-	if ((data->pcie->bdf == PCIE_BDF_NONE) && bdf_lookup_done) {
-		LOG_ERR("One instance of ivshmem with pcie_bdf_lookup() already initialized.\n"
-			"Using more than one with PCIE_BDF_NONE parameter might conflict\n"
-			"with already initialized instances.");
+	if (data->pcie->bdf == PCIE_BDF_NONE) {
+		LOG_WRN("ivshmem device not found");
 		return -ENOTSUP;
 	}
-	if ((data->pcie->bdf == PCIE_BDF_NONE) && !bdf_lookup_done) {
-		if (data->pcie->id == PCIE_ID_NONE) {
-			data->pcie->id = PCIE_ID(IVSHMEM_VENDOR_ID,
-						 IVSHMEM_DEVICE_ID);
-			data->pcie->bdf = pcie_bdf_lookup(data->pcie->id);
-		}
-		if (data->pcie->bdf == PCIE_BDF_NONE) {
-			LOG_WRN("ivshmem device not found");
-			return -ENOTSUP;
-		}
-	}
+
 	LOG_DBG("ivshmem found at bdf 0x%x", data->pcie->bdf);
-	bdf_lookup_done = true;
 
 	if (!ivshmem_configure(dev)) {
 		return -EIO;
