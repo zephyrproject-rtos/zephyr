@@ -92,6 +92,8 @@ struct sdhc_spi_data {
 	uint8_t scratch[MAX_CMD_READ];
 };
 
+static int sdhc_spi_get_host_props(const struct device *dev, struct sdhc_host_props *props);
+
 /* Receives a block of bytes */
 static int sdhc_spi_rx(const struct device *spi_dev, struct spi_config *spi_cfg,
 	uint8_t *buf, int len)
@@ -422,10 +424,12 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 {
 	const struct sdhc_spi_config *config = dev->config;
 	struct sdhc_spi_data *dev_data = dev->data;
+	struct sdhc_host_props props;
 	uint8_t *read_location = data->data;
 	uint32_t remaining = data->blocks;
 	int ret;
 	uint8_t crc[SD_SPI_CRC16_SIZE + 1];
+	uint32_t prev_freq = dev_data->spi_cfg->frequency;
 
 	/* The SPI API defaults to sending 0x00 when no TX buffer is
 	 * provided, so we are limited to 512 byte reads
@@ -472,12 +476,18 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 		return -EIO;
 	}
 
+	sdhc_spi_get_host_props(dev, &props);
+
+	/* Change to max frequency */
+	dev_data->spi_cfg->frequency = props.f_max;
+
 	/* Read blocks until we are out of data */
 	while (remaining--) {
 		ret = spi_transceive(config->spi_dev,
 			dev_data->spi_cfg, &tx, &rx);
 		if (ret) {
 			LOG_ERR("Data write failed");
+			dev_data->spi_cfg->frequency = prev_freq;
 			return ret;
 		}
 		/* Read CRC16 plus one end byte */
@@ -487,6 +497,7 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 			sys_get_be16(crc)) {
 			/* Bad CRC */
 			LOG_ERR("Bad data CRC");
+			dev_data->spi_cfg->frequency = prev_freq;
 			return -EILSEQ;
 		}
 		/* Advance read location */
@@ -497,10 +508,14 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 			ret = sdhc_skip(dev, 0xff);
 			if (ret != SD_SPI_TOKEN_SINGLE) {
 				LOG_ERR("Bad token");
+				dev_data->spi_cfg->frequency = prev_freq;
 				return -EIO;
 			}
 		}
 	}
+
+	/* Go back to min frequency */
+	dev_data->spi_cfg->frequency = prev_freq;
 	return ret;
 }
 
@@ -509,10 +524,12 @@ static int sdhc_spi_write_data(const struct device *dev, struct sdhc_data *data)
 {
 	const struct sdhc_spi_config *config = dev->config;
 	struct sdhc_spi_data *dev_data = dev->data;
+	struct sdhc_host_props props;
 	int ret;
 	uint8_t token, resp;
 	uint8_t *write_location = data->data, crc[SD_SPI_CRC16_SIZE];
 	uint32_t remaining = data->blocks;
+	uint32_t prev_freq = dev_data->spi_cfg->frequency;
 
 	struct spi_buf tx_bufs[] = {
 		{
@@ -543,18 +560,25 @@ static int sdhc_spi_write_data(const struct device *dev, struct sdhc_data *data)
 		token = SD_SPI_TOKEN_SINGLE;
 	}
 
+	sdhc_spi_get_host_props(dev, &props);
+
+	/* Change to max frequency */
+	dev_data->spi_cfg->frequency = props.f_max;
+
 	while (remaining--) {
 		/* Build the CRC for this data block */
 		sys_put_be16(crc16_itu_t(0, write_location, data->block_size),
 			crc);
 		ret = spi_write(config->spi_dev, dev_data->spi_cfg, &tx);
 		if (ret) {
+			dev_data->spi_cfg->frequency = prev_freq;
 			return ret;
 		}
 		/* Read back the data response token from the card */
 		ret = sdhc_spi_rx(config->spi_dev, dev_data->spi_cfg,
 			&resp, sizeof(resp));
 		if (ret) {
+			dev_data->spi_cfg->frequency = prev_freq;
 			return ret;
 		}
 		/* Check response token */
@@ -565,6 +589,7 @@ static int sdhc_spi_write_data(const struct device *dev, struct sdhc_data *data)
 				return -EIO;
 			}
 			LOG_DBG("Unknown write response token 0x%x", resp);
+			dev_data->spi_cfg->frequency = prev_freq;
 			return -EIO;
 		}
 		/* Advance write location */
@@ -573,6 +598,7 @@ static int sdhc_spi_write_data(const struct device *dev, struct sdhc_data *data)
 		/* Wait for card to stop being busy */
 		ret = sdhc_spi_wait_unbusy(dev, data->timeout_ms, 0);
 		if (ret) {
+			dev_data->spi_cfg->frequency = prev_freq;
 			return ret;
 		}
 	}
@@ -582,14 +608,18 @@ static int sdhc_spi_write_data(const struct device *dev, struct sdhc_data *data)
 		tx.count = 1;
 		ret = spi_write(config->spi_dev, dev_data->spi_cfg, &tx);
 		if (ret) {
+			dev_data->spi_cfg->frequency = prev_freq;
 			return ret;
 		}
 		/* Wait for card to stop being busy */
 		ret = sdhc_spi_wait_unbusy(dev, data->timeout_ms, 0);
 		if (ret) {
+			dev_data->spi_cfg->frequency = prev_freq;
 			return ret;
 		}
 	}
+
+	dev_data->spi_cfg->frequency = prev_freq;
 	return 0;
 }
 
