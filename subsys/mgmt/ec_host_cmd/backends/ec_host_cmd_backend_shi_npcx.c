@@ -109,9 +109,8 @@ struct shi_npcx_config {
 };
 
 struct shi_npcx_data {
-	/* Handler mutexes */
-	struct k_sem handler_owns;
-	struct k_sem dev_owns;
+	struct ec_host_cmd_rx_ctx *rx_ctx;
+	struct ec_host_cmd_tx_buf *tx;
 	/* Communication status */
 	enum shi_npcx_state state;
 	enum shi_npcx_state last_error_state;
@@ -119,7 +118,6 @@ struct shi_npcx_data {
 	uint8_t *tx_msg;	  /* Entry pointer of msg tx buffer   */
 	volatile uint8_t *rx_buf; /* Entry pointer of receive buffer  */
 	volatile uint8_t *tx_buf; /* Entry pointer of transmit buffer */
-	uint32_t sz_received;	  /* Size of received data in bytes   */
 	uint16_t sz_sending;	  /* Size of sending data in bytes    */
 	uint16_t sz_request;	  /* Request bytes need to receive    */
 	uint16_t sz_response;	  /* Response bytes need to receive   */
@@ -130,6 +128,18 @@ struct shi_npcx_data {
 	uint8_t *const out_msg;
 	uint8_t in_msg[CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST] __aligned(4);
 };
+
+struct ec_host_cmd_shi_npcx_ctx {
+	/* SHI device instance */
+	const struct device *dev;
+};
+
+#define EC_HOST_CMD_SHI_NPCX_DEFINE(_name)                                                         \
+	static struct ec_host_cmd_shi_npcx_ctx _name##_hc_shi_npcx;                                \
+	struct ec_host_cmd_backend _name = {                                                       \
+		.api = &ec_host_cmd_api,                                                           \
+		.ctx = (struct ec_host_cmd_shi_npcx_ctx *)&_name##_hc_shi_npcx,                    \
+	}
 
 /* Forward declaration */
 static void shi_npcx_reset_prepare(const struct device *dev);
@@ -188,7 +198,7 @@ static int shi_npcx_read_inbuf_wait(const struct device *dev, uint32_t szbytes)
 	struct shi_reg *const inst = HAL_INSTANCE(dev);
 
 	/* Copy data to msg buffer from input buffer */
-	for (uint32_t i = 0; i < szbytes; i++, data->sz_received++) {
+	for (uint32_t i = 0; i < szbytes; i++, data->rx_ctx->len++) {
 		/*
 		 * If input buffer pointer equals pointer which wants to read,
 		 * it means data is not ready.
@@ -255,7 +265,7 @@ static void shi_npcx_bad_received_data(const struct device *dev)
 
 	LOG_ERR("SHI bad data recv");
 	LOG_DBG("BAD-");
-	LOG_HEXDUMP_DBG(data->in_msg, data->sz_received, "in_msg=");
+	LOG_HEXDUMP_DBG(data->in_msg, data->rx_ctx->len, "in_msg=");
 
 	/* Reset shi's state machine for error recovery */
 	shi_npcx_reset_prepare(dev);
@@ -316,14 +326,14 @@ static void shi_npcx_handle_host_package(const struct device *dev)
 	struct shi_npcx_data *data = dev->data;
 	struct shi_reg *const inst = HAL_INSTANCE(dev);
 	uint32_t sz_inbuf_int = data->sz_request / SHI_IBUF_HALF_SIZE;
-	uint32_t cnt_inbuf_int = data->sz_received / SHI_IBUF_HALF_SIZE;
+	uint32_t cnt_inbuf_int = data->rx_ctx->len / SHI_IBUF_HALF_SIZE;
 
 	if (sz_inbuf_int - cnt_inbuf_int) {
 		/* Need to receive data from buffer */
 		return;
 	}
 
-	uint32_t remain_bytes = data->sz_request - data->sz_received;
+	uint32_t remain_bytes = data->sz_request - data->rx_ctx->len;
 
 	/* Read remaining bytes from input buffer */
 	if (!shi_npcx_read_inbuf_wait(dev, remain_bytes)) {
@@ -339,7 +349,7 @@ static void shi_npcx_handle_host_package(const struct device *dev)
 	data->out_msg[0] = EC_SHI_FRAME_START;
 
 	/* Wake-up the HC handler thread */
-	k_sem_give(&data->handler_owns);
+	k_sem_give(&data->rx_ctx->handler_owns);
 }
 
 static int shi_npcx_host_request_expected_size(const struct ec_host_cmd_request_header *r)
@@ -437,8 +447,8 @@ static void shi_npcx_read_half_inbuf(const struct device *dev)
 	do {
 		/* Restore data to msg buffer */
 		*data->rx_msg++ = *data->rx_buf++;
-		data->sz_received++;
-	} while (data->sz_received % SHI_IBUF_HALF_SIZE && data->sz_received != data->sz_request);
+		data->rx_ctx->len++;
+	} while (data->rx_ctx->len % SHI_IBUF_HALF_SIZE && data->rx_ctx->len != data->sz_request);
 }
 
 /*
@@ -677,7 +687,7 @@ static void shi_npcx_reset_prepare(const struct device *dev)
 	data->tx_msg = data->out_msg;
 	data->rx_buf = inst->IBUF;
 	data->tx_buf = inst->OBUF;
-	data->sz_received = 0;
+	data->rx_ctx->len = 0;
 	data->sz_sending = 0;
 	data->sz_request = 0;
 	data->sz_response = 0;
@@ -841,17 +851,6 @@ static int shi_npcx_init_registers(const struct device *dev)
 	return ret;
 }
 
-static int shi_npcx_init_backend(const struct device *dev)
-{
-	struct shi_npcx_data *data = dev->data;
-
-	/* Allow writing to rx buff at startup and block on reading. */
-	k_sem_init(&data->handler_owns, 0, 1);
-	k_sem_init(&data->dev_owns, 1, 1);
-
-	return 0;
-}
-
 static int shi_npcx_init(const struct device *dev)
 {
 	int ret;
@@ -860,33 +859,37 @@ static int shi_npcx_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
-
-	ret = shi_npcx_init_backend(dev);
-	if (ret) {
-		return ret;
-	}
-
 	pm_device_init_suspended(dev);
+
 	return pm_device_runtime_enable(dev);
 }
 
-static int shi_npcx_backend_init_context(const struct device *dev,
-					struct ec_host_cmd_rx_ctx *rx_ctx)
+static int shi_npcx_backend_init(const struct ec_host_cmd_backend *backend,
+				 struct ec_host_cmd_rx_ctx *rx_ctx, struct ec_host_cmd_tx_buf *tx)
 {
-	struct shi_npcx_data *data = dev->data;
+	struct ec_host_cmd_shi_npcx_ctx *hc_shi = (struct ec_host_cmd_shi_npcx_ctx *)backend->ctx;
+	struct shi_npcx_data *data;
 
-	rx_ctx->dev_owns = &data->dev_owns;
-	rx_ctx->handler_owns = &data->handler_owns;
+	hc_shi->dev = DEVICE_DT_INST_GET(0);
+	if (!device_is_ready(hc_shi->dev)) {
+		return -ENODEV;
+	}
+
+	data = hc_shi->dev->data;
+	data->rx_ctx = rx_ctx;
+	data->tx = tx;
+
 	rx_ctx->buf = data->in_msg;
-	rx_ctx->len = &data->sz_received;
+	tx->buf = data->out_msg_padded + SHI_OUT_START_PAD;
+	tx->len_max = CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE;
 
 	return 0;
 }
 
-static int shi_npcx_backend_send(const struct device *dev,
-				const struct ec_host_cmd_tx_buf *in_buf)
+static int shi_npcx_backend_send(const struct ec_host_cmd_backend *backend)
 {
-	struct shi_npcx_data *data = dev->data;
+	struct ec_host_cmd_shi_npcx_ctx *hc_shi = (struct ec_host_cmd_shi_npcx_ctx *)backend->ctx;
+	struct shi_npcx_data *data = hc_shi->dev->data;
 	uint8_t *out_buf = data->out_msg + EC_SHI_FRAME_START_LENGTH;
 
 	/*
@@ -897,17 +900,15 @@ static int shi_npcx_backend_send(const struct device *dev,
 	 */
 	__disable_irq();
 
-	memcpy(out_buf, in_buf->buf, in_buf->len);
-
 	if (data->state == SHI_STATE_PROCESSING) {
 		/* Append our past-end byte, which we reserved space for. */
-		((uint8_t *)out_buf)[in_buf->len] = EC_SHI_PAST_END;
+		((uint8_t *)out_buf)[data->tx->len] = EC_SHI_PAST_END;
 
 		/* Computing sending bytes of response */
-		data->sz_response = in_buf->len + EC_SHI_PROTO3_OVERHEAD;
+		data->sz_response = data->tx->len + EC_SHI_PROTO3_OVERHEAD;
 
 		/* Start to fill output buffer with msg buffer */
-		shi_npcx_write_first_pkg_outbuf(dev, data->sz_response);
+		shi_npcx_write_first_pkg_outbuf(hc_shi->dev, data->sz_response);
 
 		/* Transmit the reply */
 		data->state = SHI_STATE_SENDING;
@@ -918,7 +919,7 @@ static int shi_npcx_backend_send(const struct device *dev,
 		 * the transaction, and won't be listening for a response.
 		 * Reset state machine for next transaction.
 		 */
-		shi_npcx_reset_prepare(dev);
+		shi_npcx_reset_prepare(hc_shi->dev);
 		LOG_DBG("END\n");
 	} else {
 		LOG_ERR("Unexpected state %d in response handler", data->state);
@@ -929,7 +930,7 @@ static int shi_npcx_backend_send(const struct device *dev,
 }
 
 static const struct ec_host_cmd_backend_api ec_host_cmd_api = {
-	.init = shi_npcx_backend_init_context,
+	.init = shi_npcx_backend_init,
 	.send = shi_npcx_backend_send,
 };
 
@@ -974,3 +975,21 @@ static struct shi_npcx_data shi_data = {
 
 DEVICE_DT_INST_DEFINE(0, shi_npcx_init, PM_DEVICE_DT_INST_GET(0), &shi_data, &shi_cfg, POST_KERNEL,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ec_host_cmd_api);
+
+EC_HOST_CMD_SHI_NPCX_DEFINE(ec_host_cmd_shi_npcx);
+
+struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_npcx(void)
+{
+	return &ec_host_cmd_shi_npcx;
+}
+
+#if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_backend))
+static int host_cmd_init(const struct device *arg)
+{
+	ARG_UNUSED(arg);
+
+	ec_host_cmd_init(ec_host_cmd_backend_get_shi_npcx());
+	return 0;
+}
+SYS_INIT(host_cmd_init, POST_KERNEL, CONFIG_EC_HOST_CMD_INIT_PRIORITY);
+#endif
