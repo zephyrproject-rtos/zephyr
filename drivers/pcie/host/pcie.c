@@ -471,46 +471,52 @@ int pcie_scan(const struct pcie_scan_opt *opt)
 	return 0;
 }
 
-static int pcie_init(const struct device *dev)
+struct scan_data {
+	size_t found;
+	size_t max_dev;
+};
+
+static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 {
-	size_t dev_count, found;
+	struct scan_data *data = cb_data;
 
-	ARG_UNUSED(dev);
+	STRUCT_SECTION_FOREACH(pcie_dev, dev) {
+		if (dev->bdf != PCIE_BDF_NONE) {
+			continue;
+		}
 
-	STRUCT_SECTION_COUNT(pcie_dev, &dev_count);
-	found = 0;
-
-	for (int b = 0; b <= PCIE_MAX_BUS; b++) {
-		for (int d = 0; d <= PCIE_MAX_DEV; d++) {
-			for (int f = 0; f <= PCIE_MAX_FUNC; f++) {
-				pcie_bdf_t bdf = PCIE_BDF(b, d, f);
-				uint32_t id;
-
-				id = pcie_conf_read(bdf, PCIE_CONF_ID);
-				if (!PCIE_ID_IS_VALID(id)) {
-					continue;
-				}
-
-				STRUCT_SECTION_FOREACH(pcie_dev, dev) {
-					if (dev->bdf != PCIE_BDF_NONE) {
-						continue;
-					}
-
-					if (dev->id == id) {
-						dev->bdf = bdf;
-						found++;
-						break;
-					}
-				}
-
-				if (found == dev_count) {
-					goto done;
-				}
-			}
+		if (dev->id == id) {
+			dev->bdf = bdf;
+			data->found++;
+			break;
 		}
 	}
 
-done:
+	/* Continue if we've not yet found all devices */
+	return (data->found != data->max_dev);
+}
+
+static int pcie_init(const struct device *dev)
+{
+	struct scan_data data;
+	struct pcie_scan_opt opt = {
+		.cb = pcie_dev_cb,
+		.cb_data = &data,
+		.flags = PCIE_SCAN_RECURSIVE,
+	};
+
+	ARG_UNUSED(dev);
+
+	STRUCT_SECTION_COUNT(pcie_dev, &data.max_dev);
+	/* Don't bother calling pcie_scan() if there are no devices to look for */
+	if (data.max_dev == 0) {
+		return 0;
+	}
+
+	data.found = 0;
+
+	pcie_scan(&opt);
+
 	return 0;
 }
 
