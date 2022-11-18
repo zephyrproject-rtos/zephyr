@@ -7,6 +7,13 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_
 #define ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_
 
+/**
+ * @brief Fuel Gauge Interface
+ * @defgroup fuel_gauge_interface Fuel Gauge Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -127,6 +134,10 @@ typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
 __subsystem struct battery_driver_api {
 	fuel_gauge_get_property_t get_property;
 };
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
