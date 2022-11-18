@@ -15,6 +15,8 @@
 			shim = <0x00078400 0x100>;
 			interrupts = <0x10 0 0>;
 			interrupt-parent = <&cavs_intc3>;
+			dma-buf-size-alignment = <4>;
+			dma-copy-alignment = <4>;
 
 			status = "okay";
 		};
@@ -26,6 +28,8 @@
 			shim = <0x00078500 0x100>;
 			interrupts = <0x0F 0 0>;
 			interrupt-parent = <&cavs_intc3>;
+			dma-buf-size-alignment = <4>;
+			dma-copy-alignment = <4>;
 
 			status = "okay";
 		};
