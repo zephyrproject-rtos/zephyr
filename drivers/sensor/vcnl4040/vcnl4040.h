@@ -104,7 +104,7 @@ struct vcnl4040_config {
 };
 
 struct vcnl4040_data {
-	struct k_sem sem;
+	struct k_mutex mutex;
 #ifdef CONFIG_VCNL4040_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;

@@ -63,7 +63,7 @@ static int vcnl4040_sample_fetch(const struct device *dev,
 #else
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX);
 #endif
-	k_sem_take(&data->sem, K_FOREVER);
+	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX) {
 		ret = vcnl4040_read(dev, VCNL4040_REG_PS_DATA,
@@ -83,7 +83,7 @@ static int vcnl4040_sample_fetch(const struct device *dev,
 	}
 #endif
 exit:
-	k_sem_give(&data->sem);
+	k_mutex_unlock(&data->mutex);
 
 	return ret;
 }
@@ -95,7 +95,7 @@ static int vcnl4040_channel_get(const struct device *dev,
 	struct vcnl4040_data *data = dev->data;
 	int ret = 0;
 
-	k_sem_take(&data->sem, K_FOREVER);
+	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	switch (chan) {
 	case SENSOR_CHAN_PROX:
@@ -114,7 +114,7 @@ static int vcnl4040_channel_get(const struct device *dev,
 		ret = -ENOTSUP;
 	}
 
-	k_sem_give(&data->sem);
+	k_mutex_unlock(&data->mutex);
 
 	return ret;
 }
@@ -271,7 +271,7 @@ static int vcnl4040_init(const struct device *dev)
 		return -EIO;
 	}
 
-	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
+	k_mutex_init(&data->mutex);
 
 #if CONFIG_VCNL4040_TRIGGER
 	if (config->int_gpio.port) {
@@ -281,8 +281,6 @@ static int vcnl4040_init(const struct device *dev)
 		}
 	}
 #endif
-
-	k_sem_give(&data->sem);
 
 	LOG_DBG("Init complete");
 
