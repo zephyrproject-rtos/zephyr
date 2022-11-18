@@ -1,26 +1,11 @@
+# Host Command backend configs
+
 # Copyright (c) 2020 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig EC_HOST_CMD_BACKEND
-	bool "Embedded Controller Host Command backend support"
-	depends on EC_HOST_CMD
-	help
-	  Enable the embedded controller host command backend driver. This
-	  is needed by the EC host command framework to send and receive data
-	  on the appropriate EC host bus.
-
-if EC_HOST_CMD_BACKEND
-
-module = EC_HC
-module-str = ec-host-commands
-source "subsys/logging/Kconfig.template.log_config"
-
-choice EC_HOST_CMD_BACKEND_TYPE
-	prompt "Host commands backend"
-
 config EC_HOST_CMD_BACKEND_SIMULATOR
 	bool "Embedded Controller Host Command Backend Simulator"
-	depends on DT_HAS_ZEPHYR_SIM_EC_HOST_CMD_BACKEND_ENABLED
+	depends on SOC_POSIX
 	help
 	  Enable the EC host command simulator.
 
@@ -28,7 +13,6 @@ config EC_HOST_CMD_BACKEND_ESPI
 	bool "Host commands support using eSPI bus"
 	depends on ESPI_PERIPHERAL_EC_HOST_CMD
 	depends on ESPI_PERIPHERAL_CUSTOM_OPCODE
-	depends on DT_HAS_ZEPHYR_EC_HOST_CMD_BACKEND_ESPI_ENABLED
 	help
 	  Enable support for Embedded Controller host commands using
 	  the eSPI bus.
@@ -38,8 +22,6 @@ config EC_HOST_CMD_BACKEND_SHI
 	help
 	  Enable support for Embedded Controller host commands using
 	  the Serial Host Interface.
-
-endchoice
 
 if EC_HOST_CMD_BACKEND_SHI
 
@@ -83,5 +65,3 @@ config EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE
 	  command, flash read offset/size, and 512 bytes of flash data.
 
 endif # EC_HOST_CMD_BACKEND_SHI
-
-endif # EC_HOST_CMD_BACKEND

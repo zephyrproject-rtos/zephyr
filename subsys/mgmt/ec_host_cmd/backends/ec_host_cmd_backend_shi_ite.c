@@ -30,8 +30,6 @@ LOG_MODULE_REGISTER(host_cmd_shi_ite, CONFIG_EC_HC_LOG_LEVEL);
 #define SHI_MAX_RESPONSE_SIZE                                                                      \
 	(SPI_TX_MAX_FIFO_SIZE - EC_SHI_PREAMBLE_LENGTH - EC_SHI_PAST_END_LENGTH)
 
-BUILD_ASSERT(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER == SHI_MAX_RESPONSE_SIZE,
-	     "EC HC TX has different size than SHI TX response size");
 BUILD_ASSERT(CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST <= SPI_RX_MAX_FIFO_SIZE,
 	     "SHI max request size is too big");
 BUILD_ASSERT(CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE <= SHI_MAX_RESPONSE_SIZE,
@@ -65,16 +63,20 @@ struct shi_it8xxx2_cfg {
 };
 
 struct shi_it8xxx2_data {
-	/* Backend data */
-	struct k_sem handler_owns;
-	struct k_sem dev_owns;
+	/* Peripheral data */
+	struct ec_host_cmd_rx_ctx *rx_ctx;
+	struct ec_host_cmd_tx_buf *tx;
 	struct gpio_callback cs_cb;
 	/* Current state */
 	enum shi_state_machine shi_state;
 	/* Buffers */
-	uint32_t in_msg_size;
 	uint8_t in_msg[SPI_RX_MAX_FIFO_SIZE] __aligned(4);
 	uint8_t out_msg[SPI_TX_MAX_FIFO_SIZE] __aligned(4);
+};
+
+struct ec_host_cmd_shi_ite_ctx {
+	/* SHI device instance */
+	const struct device *dev;
 };
 
 static const uint8_t out_preamble[EC_SHI_PREAMBLE_LENGTH] = {
@@ -91,6 +93,13 @@ static const int shi_ite_response_state[] = {
 	[SHI_STATE_RX_BAD] = EC_SHI_RX_BAD_DATA,
 };
 BUILD_ASSERT(ARRAY_SIZE(shi_ite_response_state) == SHI_STATE_COUNT);
+
+#define EC_HOST_CMD_SHI_ITE_DEFINE(_name)                                                          \
+	static struct ec_host_cmd_shi_ite_ctx _name##_hc_shi_ite;                                  \
+	struct ec_host_cmd_backend _name = {                                                       \
+		.api = &ec_host_cmd_api,                                                           \
+		.ctx = (struct ec_host_cmd_shi_ite_ctx *)&_name##_hc_shi_ite,                      \
+	}
 
 static void shi_ite_set_state(struct shi_it8xxx2_data *data, int state)
 {
@@ -170,10 +179,10 @@ static void shi_ite_response_host_data(const struct device *dev, uint8_t *out_ms
  * Some commands can continue for a while. This function is called by
  * host_command when it completes.
  */
-static int shi_ite_backend_send(const struct device *dev,
-			       const struct ec_host_cmd_tx_buf *buf)
+static int shi_ite_backend_send(const struct ec_host_cmd_backend *backend)
 {
-	struct shi_it8xxx2_data *data = dev->data;
+	struct ec_host_cmd_shi_ite_ctx *hc_shi = (struct ec_host_cmd_shi_ite_ctx *)backend->ctx;
+	struct shi_it8xxx2_data *data = hc_shi->dev->data;
 	int tx_size;
 
 	if (data->shi_state != SHI_STATE_PROCESSING) {
@@ -184,18 +193,17 @@ static int shi_ite_backend_send(const struct device *dev,
 	/* Copy preamble */
 	memcpy(data->out_msg, out_preamble, sizeof(out_preamble));
 
-	/* Copy data */
-	memcpy(data->out_msg + sizeof(out_preamble), buf->buf, buf->len);
+	/* Data to sent are already at "out_msg + sizeof(out_preamble)" memory address(tx buf
+	 * assigned in the init function), prepared by the handler.
+	 * Append our past-end byte, which we reserved space for.
+	 */
+	memset(&data->out_msg[sizeof(out_preamble) + data->tx->len], EC_SHI_PAST_END,
+	       EC_SHI_PAST_END_LENGTH);
 
-	/* Append our past-end byte, which we reserved space for. */
-	for (int i = 0; i < EC_SHI_PAST_END_LENGTH; i++) {
-		data->out_msg[sizeof(out_preamble) + buf->len + i] = EC_SHI_PAST_END;
-	}
-
-	tx_size = buf->len + EC_SHI_PREAMBLE_LENGTH + EC_SHI_PAST_END_LENGTH;
+	tx_size = data->tx->len + EC_SHI_PREAMBLE_LENGTH + EC_SHI_PAST_END_LENGTH;
 
 	/* Transmit the reply */
-	shi_ite_response_host_data(dev, data->out_msg, tx_size);
+	shi_ite_response_host_data(hc_shi->dev, data->out_msg, tx_size);
 
 	return 0;
 }
@@ -238,24 +246,24 @@ static void shi_ite_parse_header(const struct device *dev)
 	struct shi_it8xxx2_data *data = dev->data;
 	struct ec_host_cmd_request_header *r = (struct ec_host_cmd_request_header *)data->in_msg;
 
-	/* Store request data from Rx FIFO to in_msg buffer */
+	/* Store request data from Rx FIFO to in_msg buffer (rx_ctx->buf) */
 	shi_ite_host_request_data(data->in_msg, sizeof(*r));
 
 	/* Protocol version 3 */
-	if (data->in_msg[0] == EC_HOST_REQUEST_VERSION) {
+	if (r->prtcl_ver == EC_HOST_REQUEST_VERSION) {
 		/* Check how big the packet should be */
-		data->in_msg_size = shi_ite_host_request_expected_size(r);
+		data->rx_ctx->len = shi_ite_host_request_expected_size(r);
 
-		if (data->in_msg_size == 0 || data->in_msg_size > sizeof(data->in_msg)) {
-			shi_ite_bad_received_data(dev, data->in_msg_size);
+		if (data->rx_ctx->len == 0 || data->rx_ctx->len > sizeof(data->in_msg)) {
+			shi_ite_bad_received_data(dev, data->rx_ctx->len);
 			return;
 		}
 
 		/* Store request data from Rx FIFO to in_msg buffer */
-		shi_ite_host_request_data(data->in_msg + sizeof(*r),
-					  data->in_msg_size - sizeof(*r));
+		shi_ite_host_request_data(data->rx_ctx->buf + sizeof(*r),
+					  data->rx_ctx->len - sizeof(*r));
 
-		k_sem_give(&data->handler_owns);
+		k_sem_give(&data->rx_ctx->handler_owns);
 	} else {
 		/* Invalid version number */
 		LOG_ERR("Invalid version number");
@@ -396,17 +404,6 @@ static int shi_ite_init_registers(const struct device *dev)
 	return 0;
 }
 
-static int shi_ite_init_backend(const struct device *dev)
-{
-	struct shi_it8xxx2_data *data = dev->data;
-
-	/* Allow writing to rx buff at startup and block on reading. */
-	k_sem_init(&data->handler_owns, 0, 1);
-	k_sem_init(&data->dev_owns, 1, 1);
-
-	return 0;
-}
-
 static int shi_ite_init(const struct device *dev)
 {
 	const struct shi_it8xxx2_cfg *cfg = dev->config;
@@ -414,11 +411,6 @@ static int shi_ite_init(const struct device *dev)
 	int ret;
 
 	ret = shi_ite_init_registers(dev);
-	if (ret) {
-		return ret;
-	}
-
-	ret = shi_ite_init_backend(dev);
 	if (ret) {
 		return ret;
 	}
@@ -447,15 +439,24 @@ static int shi_ite_init(const struct device *dev)
 	return pm_device_runtime_enable(dev);
 }
 
-static int shi_ite_backend_init_context(const struct device *dev,
-				       struct ec_host_cmd_rx_ctx *rx_ctx)
+static int shi_ite_backend_init(const struct ec_host_cmd_backend *backend,
+				struct ec_host_cmd_rx_ctx *rx_ctx, struct ec_host_cmd_tx_buf *tx)
 {
-	struct shi_it8xxx2_data *data = dev->data;
+	struct ec_host_cmd_shi_ite_ctx *hc_shi = (struct ec_host_cmd_shi_ite_ctx *)backend->ctx;
+	struct shi_it8xxx2_data *data;
 
-	rx_ctx->dev_owns = &data->dev_owns;
-	rx_ctx->handler_owns = &data->handler_owns;
+	hc_shi->dev = DEVICE_DT_INST_GET(0);
+	if (!device_is_ready(hc_shi->dev)) {
+		return -ENODEV;
+	}
+
+	data = hc_shi->dev->data;
+	data->rx_ctx = rx_ctx;
+	data->tx = tx;
+
 	rx_ctx->buf = data->in_msg;
-	rx_ctx->len = &data->in_msg_size;
+	tx->buf = data->out_msg + sizeof(out_preamble);
+	data->tx->len_max = sizeof(data->out_msg) - EC_SHI_PREAMBLE_LENGTH - EC_SHI_PAST_END_LENGTH;
 
 	return 0;
 }
@@ -488,7 +489,7 @@ static int shi_ite_pm_cb(const struct device *dev, enum pm_device_action action)
 PM_DEVICE_DT_INST_DEFINE(0, shi_ite_pm_cb);
 
 static const struct ec_host_cmd_backend_api ec_host_cmd_api = {
-	.init = shi_ite_backend_init_context,
+	.init = shi_ite_backend_init,
 	.send = shi_ite_backend_send,
 };
 
@@ -499,8 +500,25 @@ static const struct shi_it8xxx2_cfg shi_cfg = {
 
 static struct shi_it8xxx2_data shi_data = {
 	.shi_state = SHI_STATE_DISABLED,
-	.in_msg_size = 0,
 };
 
 DEVICE_DT_INST_DEFINE(0, shi_ite_init, PM_DEVICE_DT_INST_GET(0), &shi_data, &shi_cfg, POST_KERNEL,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ec_host_cmd_api);
+
+EC_HOST_CMD_SHI_ITE_DEFINE(ec_host_cmd_shi_ite);
+
+struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_ite(void)
+{
+	return &ec_host_cmd_shi_ite;
+}
+
+#if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_backend))
+static int host_cmd_init(const struct device *arg)
+{
+	ARG_UNUSED(arg);
+
+	ec_host_cmd_init(ec_host_cmd_backend_get_shi_ite());
+	return 0;
+}
+SYS_INIT(host_cmd_init, POST_KERNEL, CONFIG_EC_HOST_CMD_INIT_PRIORITY);
+#endif

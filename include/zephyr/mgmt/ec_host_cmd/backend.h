@@ -21,47 +21,88 @@
 extern "C" {
 #endif
 
+struct ec_host_cmd_backend {
+	/** API provided by the backed. */
+	const struct ec_host_cmd_backend_api *api;
+	/** Context for the backed. */
+	void *ctx;
+};
+
 /**
- * @brief Host Command Backend API
- * @defgroup ec_host_cmd_backend Host Command Backend API
+ * @brief EC Host Command Interface
+ * @defgroup ec_host_cmd_interface EC Host Command Interface
  * @ingroup io_interfaces
  * @{
  */
 
 /**
- * @brief Context for host command backend and framework to pass rx data
+ * @brief Context for host command backend and handler to pass rx data.
  */
 struct ec_host_cmd_rx_ctx {
-	/** Buffer written to by device (when dev_owns) and read from by
-	 *  command framework and handler (when handler_owns). Buffer is owned
-	 *  by devices and lives as long as device is valid. Device will never
-	 *  read from this buffer (for security reasons).
+	/**
+	 * Buffer to hold received data. The buffer is provided by the handler if
+	 * CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER > 0. Otherwise, the backend should provide
+	 * the buffer on its own and overwrites @a buf pointer in the init function.
 	 */
 	uint8_t *buf;
-	/** Number of bytes written to @a buf by device (when dev_owns). */
-	size_t *len;
-	/** Device will take when it needs to write to @a buf and @a size. */
-	struct k_sem *dev_owns;
-	/** Handler will take so it can read @a buf and @a size */
-	struct k_sem *handler_owns;
+	/** Number of bytes written to @a buf by backend. */
+	size_t len;
+	/**
+	 * The backend gives @a handler_owns, when data in @a buf are ready.
+	 * The handler takes @a handler_owns to read data in @a buf.
+	 */
+	struct k_sem handler_owns;
 };
 
 /**
- * @brief Context for host command backend and framework to pass tx data
+ * @brief Context for host command backend and handler to pass tx data
  */
 struct ec_host_cmd_tx_buf {
-	/** Data to write to the host */
+	/**
+	 * Data to write to the host The buffer is provided by the handler if
+	 * CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER > 0. Otherwise, the backend should provide
+	 * the buffer on its own and overwrites @a buf pointer and @a len_max
+	 * in the init function.
+	 */
 	void *buf;
-	/** Number of bytes to write from @a buf */
+	/** Number of bytes to write from @a buf. */
 	size_t len;
+	/** Size of @a buf. */
+	size_t len_max;
 };
 
-typedef int (*ec_host_cmd_backend_api_init)(
-	const struct device *dev, struct ec_host_cmd_rx_ctx *rx_ctx);
+/**
+ * @brief Initialize a host command backend
+ *
+ * This routine initializes a host command backend. It includes initialization
+ * a device used to communication and setting up buffers.
+ * This function is called by the ec_host_cmd_init function.
+ *
+ * @param[in]     backend Pointer to the backend structure for the driver instance.
+ * @param[in,out] rx_ctx  Pointer to the receive context object. These objects are used to receive
+ *                        data from the driver when the host sends data. The buf member can be
+ *                        assigned by the backend.
+ * @param[in,out] tx      Pointer to the transmit buffer object. The buf and len_max members can be
+ *                        assigned by the backend. These objects are used to send data by the
+ *                        backend with the ec_host_cmd_backend_api_send function.
+ *
+ * @retval 0 if successful
+ */
+typedef int (*ec_host_cmd_backend_api_init)(const struct ec_host_cmd_backend *backend,
+					    struct ec_host_cmd_rx_ctx *rx_ctx,
+					    struct ec_host_cmd_tx_buf *tx);
 
-typedef int (*ec_host_cmd_backend_api_send)(
-	const struct device *dev,
-	const struct ec_host_cmd_tx_buf *tx_buf);
+/**
+ * @brief Sends data to the host
+ *
+ * Sends data from tx buf that was passed via ec_host_cmd_backend_api_init
+ * function.
+ *
+ * @param backend Pointer to the backed to send data.
+ *
+ * @retval 0 if successful.
+ */
+typedef int (*ec_host_cmd_backend_api_send)(const struct ec_host_cmd_backend *backend);
 
 __subsystem struct ec_host_cmd_backend_api {
 	ec_host_cmd_backend_api_init init;
@@ -69,50 +110,30 @@ __subsystem struct ec_host_cmd_backend_api {
 };
 
 /**
- * @brief Initialize a host command device
+ * @brief Get the eSPI Host Command backend pointer
  *
- * This routine initializes a host command device, prior to its first use. The
- * receive context object are an output of this function and are valid
- * for the lifetime of this device. The RX context is used by the client to
- * receive data from the host.
+ * Get the eSPI pointer backend and pass a pointer to eSPI device instance that will be used for
+ * the Host Command communication.
  *
- * @param dev Pointer to the device structure for the driver instance.
- * @param rx_ctx [out] The receiving context object that are valid for the
- *               lifetime of the device. These objects are used to receive data
- *               from the driver when the host send data.
+ * @param dev Pointer to eSPI device instance.
  *
- * @retval 0 if successful
+ * @retval The eSPI backend pointer.
  */
-static inline int
-ec_host_cmd_backend_init(const struct device *dev,
-			       struct ec_host_cmd_rx_ctx *rx_ctx)
-{
-	const struct ec_host_cmd_backend_api *api =
-		(const struct ec_host_cmd_backend_api *)dev->api;
-
-	return api->init(dev, rx_ctx);
-}
+struct ec_host_cmd_backend *ec_host_cmd_backend_get_espi(const struct device *dev);
 
 /**
- * @brief Sends the specified data to the host
+ * @brief Get the SHI NPCX Host Command backend pointer
  *
- * Sends the data specified in @a tx_buf to the host over the host communication
- * bus.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param tx_buf The data to transmit to the host.
- *
- * @retval 0 if successful
+ * @retval the SHI NPCX backend pointer
  */
-static inline int ec_host_cmd_backend_send(
-	const struct device *dev,
-	const struct ec_host_cmd_tx_buf *tx_buf)
-{
-	const struct ec_host_cmd_backend_api *api =
-		(const struct ec_host_cmd_backend_api *)dev->api;
+struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_npcx(void);
 
-	return api->send(dev, tx_buf);
-}
+/**
+ * @brief Get the SHI ITE Host Command backend pointer
+ *
+ * @retval the SHI ITE backend pointer
+ */
+struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_ite(void);
 
 /**
  * @}
@@ -122,4 +143,4 @@ static inline int ec_host_cmd_backend_send(
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_BACKEND_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_BACKEND_H_ */

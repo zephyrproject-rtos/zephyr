@@ -25,8 +25,11 @@
  * will override the first callback installation.
  *
  * @param cb Callback that is called when device would send data to host.
+ * @param tx_buf Pointer of a pointer to the tx buf structure where data will
+ *               be sent.
  */
-void ec_host_cmd_backend_sim_install_send_cb(ec_host_cmd_backend_api_send cb);
+void ec_host_cmd_backend_sim_install_send_cb(ec_host_cmd_backend_api_send cb,
+					     struct ec_host_cmd_tx_buf **tx_buf);
 
 /**
  * @brief Simulate receiving data from host as passed in to this function

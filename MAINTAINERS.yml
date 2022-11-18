@@ -1314,6 +1314,17 @@ Release Notes:
   labels:
     - "area: Virtualization"
 
+EC Host Commands:
+  status: maintained
+  maintainers:
+    - semihalf-niedzwiecki-dawid
+  files:
+    - subsys/mgmt/ec_host_cmd/
+    - include/zephyr/mgmt/ec_host_cmd/
+    - tests/subsys/mgmt/ec_host_cmd/
+  labels:
+    - "area: ec_host_cmd"
+
 Xen Platform:
   status: maintained
   maintainers:
