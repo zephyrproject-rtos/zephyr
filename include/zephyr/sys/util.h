@@ -208,7 +208,7 @@ extern "C" {
  * @return a pointer to the structure that contains @p ptr
  */
 #define CONTAINER_OF(ptr, type, field) \
-	((type *)(((char *)(ptr)) - offsetof(type, field)))
+	((type *)(void*)(((char *)(ptr)) - offsetof(type, field)))
 
 /**
  * @brief Value of @p x rounded up to the next multiple of @p align,
