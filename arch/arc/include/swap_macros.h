@@ -543,16 +543,30 @@
 #endif
 .endm
 
+
+#define __arc_u9_max		(255)
+#define __arc_u9_min		(-256)
+#define __arc_ldst32_as_shift	2
+
 /*
  * When we accessing bloated struct member we can exceed u9 operand in store
  * instruction. So we can use _st32_huge_offset macro instead
  */
-.macro _st32_huge_offset, d, s, off, temp
-	.if MACRO_ARG(off) > 255 || MACRO_ARG(off) < -256
-		ADDR MACRO_ARG(temp), MACRO_ARG(s), MACRO_ARG(off)
-		st MACRO_ARG(d), [MACRO_ARG(temp)]
+.macro _st32_huge_offset, d, s, offset, temp
+	off = MACRO_ARG(offset)
+	u9_max_shifted = __arc_u9_max << __arc_ldst32_as_shift
+
+	.if off <= __arc_u9_max && off >= __arc_u9_min
+		st MACRO_ARG(d), [MACRO_ARG(s), off]
+	/* Technically we can optimize with .as both big positive and negative offsets here, but
+	 * as we use only positive offsets in hand-written assembly code we keep only
+	 * positive offset case here for simplicity.
+	 */
+	.elseif !(off % (1 << __arc_ldst32_as_shift)) && off <= u9_max_shifted && off >= 0
+		st.as MACRO_ARG(d), [MACRO_ARG(s), off >> __arc_ldst32_as_shift]
 	.else
-		st MACRO_ARG(d), [MACRO_ARG(s), MACRO_ARG(off)]
+		ADDR MACRO_ARG(temp), MACRO_ARG(s), off
+		st MACRO_ARG(d), [MACRO_ARG(temp)]
 	.endif
 .endm
 
