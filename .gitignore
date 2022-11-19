@@ -63,3 +63,13 @@ TAGS
 tags
 
 .idea
+
+# from check_compliance.py
+Gitlint.txt
+checkpatch.txt
+Kconfig.txt
+KconfigBasic.txt
+Codeowners.txt
+Nits.txt
+pylint.txt
+Identity.txt
