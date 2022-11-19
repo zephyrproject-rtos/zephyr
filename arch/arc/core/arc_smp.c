@@ -16,8 +16,6 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 
-#define MP_PRIMARY_CPU_ID 0
-
 volatile struct {
 	arch_cpustart_t fn;
 	void *arg;
@@ -70,7 +68,7 @@ static void arc_connect_debug_mask_update(int cpu_num)
 	 * MDB debugger may modify debug_select and debug_mask registers on start, so we can't
 	 * rely on debug_select reset value.
 	 */
-	if (cpu_num != MP_PRIMARY_CPU_ID) {
+	if (cpu_num != ARC_MP_PRIMARY_CPU_ID) {
 		core_mask |= z_arc_connect_debug_select_read();
 	}
 
@@ -152,7 +150,7 @@ static int arc_smp_init(const struct device *dev)
 
 	if (bcr.dbg) {
 		/* configure inter-core debug unit if available */
-		arc_connect_debug_mask_update(MP_PRIMARY_CPU_ID);
+		arc_connect_debug_mask_update(ARC_MP_PRIMARY_CPU_ID);
 	}
 
 	if (bcr.ipi) {
