@@ -25,19 +25,19 @@ Sample Output
 
 .. code-block:: console
 
-    uart:~$ flash page_count
+    uart:~$ flash_sample page_count
     Flash device contains 1024 pages.
-    uart:~$ flash page_erase 1023
+    uart:~$ flash_sample page_erase 1023
     Erasing page 1023 (start offset 0xffc00, size 0x400)
-    uart:~$ flash page_write 1023 8 17 19 28 39
+    uart:~$ flash_sample page_write 1023 8 17 19 28 39
     Reading back written bytes:
     11 13 1c 27
-    uart:~$ flash page_write 1023 4 77 9 1 2
+    uart:~$ flash_sample page_write 1023 4 77 9 1 2
     Reading back written bytes:
     4d 09 01 02
-    uart:~$ flash page_read 1023 4 12
+    uart:~$ flash_sample page_read 1023 4 12
     4d 09 01 02 | 11 13 1c 27
     ff ff ff ff
-    uart:~$ flash page_read 1023 0 16
+    uart:~$ flash_sample page_read 1023 0 16
     ff ff ff ff | 4d 09 01 02
     11 13 1c 27 | ff ff ff ff
