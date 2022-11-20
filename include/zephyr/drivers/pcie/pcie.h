@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,10 +152,13 @@ struct pcie_bar {
  * This function is used to look up the BDF for a device given its
  * vendor and device ID.
  *
+ * @deprecated
+ * @see DEVICE_PCIE_DECLARE
+ *
  * @param id PCI(e) vendor & device ID encoded using PCIE_ID()
  * @return The BDF for the device, or PCIE_BDF_NONE if it was not found
  */
-extern pcie_bdf_t pcie_bdf_lookup(pcie_id_t id);
+__deprecated extern pcie_bdf_t pcie_bdf_lookup(pcie_id_t id);
 
 /**
  * @brief Read a 32-bit word from an endpoint's configuration space.
@@ -222,11 +226,14 @@ int pcie_scan(const struct pcie_scan_opt *opt);
 /**
  * @brief Probe for the presence of a PCI(e) endpoint.
  *
+ * @deprecated
+ * @see DEVICE_PCIE_DECLARE
+ *
  * @param bdf the endpoint to probe
  * @param id the endpoint ID to expect, or PCIE_ID_NONE for "any device"
  * @return true if the device is present, false otherwise
  */
-extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
+__deprecated extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
 
 /**
  * @brief Get the MBAR at a specific BAR index

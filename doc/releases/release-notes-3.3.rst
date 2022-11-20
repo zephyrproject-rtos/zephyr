@@ -116,6 +116,9 @@ Deprecated in this release
 
   :kconfig:option:`CONFIG_SETTINGS_FS_MAX_LINES` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_MAX_LINES`
 
+* PCIe APIs :c:func:`pcie_probe` and :c:func:`pcie_bdf_lookup` have been
+  deprecated in favor of a centralized scan of available PCIe devices.
+
 Stable API changes in this release
 ==================================
 
