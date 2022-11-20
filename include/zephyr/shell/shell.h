@@ -1226,6 +1226,27 @@ int shell_obscure_set(const struct shell *shell, bool obscure);
 int shell_mode_delete_set(const struct shell *shell, bool val);
 
 /**
+ * @brief Read shell input data. Can only be called from shell command context!
+ *
+ * @param[in]  shell    Pointer to the shell instance to read data for.
+ * @param[in]  data     Pointer to the destination buffer.
+ * @param[in]  length   Destination buffer length.
+ * @param[in]  timeout  Amount of time to wait for the data, or one of the
+ *                      special values K_NO_WAIT and K_FOREVER.
+ * @param[out] cnt      Pointer to the received bytes counter.
+ *
+ * @retval -EACCES Shell input is bypassed.
+ * @retval -EBUSY Shell is not in command context.
+ * @retval -EAGAIN Waiting period timed out.
+ * @retval -EINTR Waiting has been interrupted.
+ * @retval -ENOMEM Thread resource pool insufficient memory (user mode only)
+ * @retval -EIO Reading the transport failed.
+ */
+int shell_read(const struct shell *shell,
+		void *data, size_t length,
+		k_timeout_t timeout,
+		size_t *cnt);
+/**
  * @}
  */
 

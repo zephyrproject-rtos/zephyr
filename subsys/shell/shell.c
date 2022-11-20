@@ -1477,6 +1477,63 @@ void shell_process(const struct shell *shell)
 	z_flag_processing_set(shell, false);
 }
 
+int shell_read(const struct shell *shell,
+		void *data, size_t length,
+		k_timeout_t timeout,
+		size_t *cnt)
+{
+	int err;
+	struct k_poll_signal *signal;
+	__ASSERT_NO_MSG(shell);
+	__ASSERT_NO_MSG(shell->ctx);
+	__ASSERT_NO_MSG(data || !length);
+	__ASSERT_NO_MSG(cnt);
+
+	/* Error out, if the shell is bypassed */
+	if (shell->ctx->bypass) {
+		return -EACCES;
+	}
+
+	/* Error out early, if the shell is not in command context */
+	if (!z_flag_cmd_ctx_get(shell)) {
+		return -EBUSY;
+	}
+
+	/* Wait for the RXRDY signal (only) */
+	err = k_poll(shell->ctx->events, SHELL_SIGNAL_RXRDY + 1, timeout);
+	if (err != 0) {
+		return err;
+	}
+
+	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
+	signal = &shell->ctx->signals[SHELL_SIGNAL_RXRDY];
+	/* If we are (still) in the command context */
+	if (z_flag_cmd_ctx_get(shell)) {
+		/* Read (and update) the transport */
+		err = shell->iface->api->read(shell->iface, data, length,
+						cnt);
+		if (shell->iface->api->update) {
+			shell->iface->api->update(shell->iface);
+		}
+		/* If we (may) have data remaining */
+		if (err != 0 || *cnt) {
+			/* Re-raise the signal to continue reading */
+			while (k_poll_signal_raise(signal, 0) == -EAGAIN);
+		}
+		/* Collapse transport errors to avoid clashes with ours */
+		if (err != 0) {
+			err = -EIO;
+		}
+	/* Else, we're out of the command context */
+	} else {
+		/* Re-raise the signal for the shell */
+		while (k_poll_signal_raise(signal, 0) == -EAGAIN);
+		err = -EBUSY;
+	}
+	k_mutex_unlock(&shell->ctx->wr_mtx);
+	return err;
+}
+
 /* This function mustn't be used from shell context to avoid deadlock.
  * However it can be used in shell command handlers.
  */
