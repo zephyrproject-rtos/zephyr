@@ -658,8 +658,8 @@ struct shell_transport_api {
 	/**
 	 * @brief Function for reading data from the transport interface.
 	 *
-	 * @param[in]  p_transport  Pointer to the transfer instance.
-	 * @param[in]  p_data       Pointer to the destination buffer.
+	 * @param[in]  transport    Pointer to the transfer instance.
+	 * @param[in]  data         Pointer to the destination buffer.
 	 * @param[in]  length       Destination buffer length.
 	 * @param[out] cnt          Pointer to the received bytes counter.
 	 *
