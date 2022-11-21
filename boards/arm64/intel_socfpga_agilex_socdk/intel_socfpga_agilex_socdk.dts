@@ -51,6 +51,11 @@
 
 &sdmmc {
 	status = "okay";
+	mmc {
+	/*SD Disk Access */
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };
 
 &timer0 {
