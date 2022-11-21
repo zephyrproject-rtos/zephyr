@@ -9,7 +9,7 @@
 
 #include <inttypes.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/mgmg/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_callbacks.h>
