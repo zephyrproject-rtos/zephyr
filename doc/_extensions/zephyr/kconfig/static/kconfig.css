@@ -5,14 +5,37 @@
 
 /* Kconfig search */
 
-#__kconfig-search input {
+#__kconfig-search .input-container {
     border-radius: 5px;
     border: 1px solid rgba(149, 157, 165, 0.2);
     box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px !important;
-    font-size: 18px;
     margin-bottom: 0.5rem;
-    padding: 0.75rem;
     width: 100%;
+    height: 60px;
+}
+
+#__kconfig-search .input-container input {
+    font-size: 18px;
+    width: 90%;
+    height: 100%;
+    padding: 0.75rem;
+    border: none;
+    box-shadow: none !important;
+    background-color: white;
+}
+
+#__kconfig-search .input-container input:focus,
+#__kconfig-search .input-container input:active {
+    outline: none;
+}
+
+#__kconfig-search .input-container button {
+    font-size: 22px;
+    float: right;
+    width: 10%;
+    height: 100%;
+    border: none;
+    background-color: white;
 }
 
 #__kconfig-search select {
