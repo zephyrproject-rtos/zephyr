@@ -1058,6 +1058,29 @@ class Identity(ComplianceTest):
                 self.failure(failure)
 
 
+class BinaryFiles(ComplianceTest):
+    """
+    Check that the diff contains no binary files.
+    """
+    name = "BinaryFiles"
+    doc = "No binary files allowed."
+    path_hint = "<git-top>"
+
+    def run(self):
+        BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/")
+        # svg files are always detected as binary, see .gitattributes
+        BINARY_ALLOW_EXT = (".jpg", ".jpeg", ".png", ".svg")
+
+        for stat in git("diff", "--numstat", "--diff-filter=A",
+                        COMMIT_RANGE).splitlines():
+            added, deleted, fname = stat.split("\t")
+            if added == "-" and deleted == "-":
+                if (fname.startswith(BINARY_ALLOW_PATHS) and
+                    fname.endswith(BINARY_ALLOW_EXT)):
+                    continue
+                self.failure(f"Binary file not allowed: {fname}")
+
+
 def init_logs(cli_arg):
     # Initializes logging
 
