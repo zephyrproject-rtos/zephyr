@@ -27,7 +27,7 @@ ZTEST(settings_config_fs, test_config_empty_file)
 	rc = settings_file_src(&cf_running);
 	zassert_true(rc == 0, "can't register FS as configuration source");
 
-	settings_mount_fs_backend(&cf_mfg);
+	settings_mount_file_backend(&cf_mfg);
 	/*
 	 * No files
 	 */
