@@ -203,7 +203,7 @@ static void esp_rx(struct esp_data *data)
 {
 	while (true) {
 		/* wait for incoming data */
-		k_sem_take(&data->iface_data.rx_sem, K_FOREVER);
+		modem_iface_uart_rx_wait(&data->mctx.iface, K_FOREVER);
 
 		data->mctx.cmd_handler.process(&data->mctx.cmd_handler,
 					       &data->mctx.iface);
@@ -1286,11 +1286,14 @@ static int esp_init(const struct device *dev)
 	}
 
 	/* modem interface */
-	data->iface_data.hw_flow_control = DT_PROP(ESP_BUS, hw_flow_control);
-	data->iface_data.rx_rb_buf = &data->iface_rb_buf[0];
-	data->iface_data.rx_rb_buf_len = sizeof(data->iface_rb_buf);
-	ret = modem_iface_uart_init(&data->mctx.iface, &data->iface_data,
-				    DEVICE_DT_GET(DT_INST_BUS(0)));
+	const struct modem_iface_uart_config uart_config = {
+		.rx_rb_buf = &data->iface_rb_buf[0],
+		.rx_rb_buf_len = sizeof(data->iface_rb_buf),
+		.dev = DEVICE_DT_GET(DT_INST_BUS(0)),
+		.hw_flow_control = DT_PROP(ESP_BUS, hw_flow_control),
+	};
+
+	ret = modem_iface_uart_init(&data->mctx.iface, &data->iface_data, &uart_config);
 	if (ret < 0) {
 		goto error;
 	}
