@@ -2,6 +2,7 @@ identifier: nrf52_bsim
 name: NRF52 BabbleSim board
 type: native
 arch: posix
+simulation: native
 env:
   - BSIM_OUT_PATH
 toolchain:
