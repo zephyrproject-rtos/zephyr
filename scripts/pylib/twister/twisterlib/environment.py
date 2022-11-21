@@ -268,6 +268,13 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                              "Default to html. "
                              "Valid options are html, xml, csv, txt, coveralls, sonarqube.")
 
+    parser.add_argument("--test-config", action="store", default=os.path.join(ZEPHYR_BASE, "tests", "test_config.yaml"),
+        help="Path to file with plans and test configurations.")
+
+    parser.add_argument("--level", action="store",
+        help="Test level to be used. By default, no levels are used for filtering"
+             "and do the selection based on existing filters.")
+
     parser.add_argument(
         "-D", "--all-deltas", action="store_true",
         help="Show all footprint deltas, positive or negative. Implies "
@@ -743,6 +750,8 @@ class TwisterEnv:
             self.outdir = None
 
         self.hwm = None
+
+        self.test_config = options.test_config
 
     def discover(self):
         self.check_zephyr_version()

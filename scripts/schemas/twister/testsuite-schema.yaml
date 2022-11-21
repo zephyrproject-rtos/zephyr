@@ -64,6 +64,12 @@ mapping:
       "ignore_qemu_crash":
         type: bool
         required: false
+      "levels":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+            enum: ["smoke", "unit", "integration", "acceptance", "system", "regression"]
       "testcases":
         type: seq
         required: false
@@ -237,6 +243,12 @@ mapping:
           "filter":
             type: str
             required: false
+          "levels":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+                enum: ["smoke", "unit", "integration", "acceptance", "system", "regression"]
           "integration_platforms":
             type: seq
             required: false
