@@ -712,6 +712,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/dts/                             @mbolivar-nordic @galak
 /scripts/release/                         @nashif
 /scripts/ci/                              @nashif
+/scripts/ci/check_compliance.py           @nashif @carlescufi
 /arch/x86/gen_gdt.py                      @dcpleung @nashif
 /arch/x86/gen_idt.py                      @dcpleung @nashif
 /scripts/build/gen_kobject_list.py        @dcpleung @nashif
