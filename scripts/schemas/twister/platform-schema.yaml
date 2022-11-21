@@ -25,6 +25,8 @@ mapping:
   "simulation":
     type: str
     enum: ["qemu", "simics", "xt-sim", "renode", "nsim", "mdb-nsim", "tsim", "armfvp"]
+  "simulation_exec":
+    type: str
   "arch":
     type: str
   "toolchain":
