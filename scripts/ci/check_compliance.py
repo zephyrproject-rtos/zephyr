@@ -229,7 +229,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
     path_hint = ZEPHYR_BASE
 
     def run(self, full=True):
-        dts_yaml = self.parse_dts_yaml()
+        dts_yaml = self.parse_dt_bindings()
 
         self.required_false_check(dts_yaml)
 
