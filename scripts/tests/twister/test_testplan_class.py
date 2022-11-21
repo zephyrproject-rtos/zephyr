@@ -54,6 +54,7 @@ def test_add_configurations(test_data, class_env, board_root_dir):
     """
     class_env.board_roots = [os.path.abspath(test_data + board_root_dir)]
     plan = TestPlan(class_env)
+    plan.parse_configuration(config_file=class_env.test_config)
     if board_root_dir == "board_config":
         plan.add_configurations()
         assert sorted(plan.default_platforms) == sorted(['demo_board_1', 'demo_board_3'])
@@ -62,9 +63,9 @@ def test_add_configurations(test_data, class_env, board_root_dir):
         assert sorted(plan.default_platforms) != sorted(['demo_board_1'])
 
 
-def test_get_all_testsuites(class_env, all_testsuites_dict):
+def test_get_all_testsuites(class_testplan, all_testsuites_dict):
     """ Testing get_all_testsuites function of TestPlan class in Twister """
-    plan = TestPlan(class_env)
+    plan = class_testplan
     plan.testsuites = all_testsuites_dict
     expected_tests = ['sample_test.app', 'test_a.check_1.1a',
                       'test_a.check_1.1c',
@@ -79,9 +80,9 @@ def test_get_all_testsuites(class_env, all_testsuites_dict):
                       'test_d.check_1.unit_1b', 'test_config.main']
     assert sorted(plan.get_all_tests()) == sorted(expected_tests)
 
-def test_get_platforms(class_env, platforms_list):
+def test_get_platforms(class_testplan, platforms_list):
     """ Testing get_platforms function of TestPlan class in Twister """
-    plan = TestPlan(class_env)
+    plan = class_testplan
     plan.platforms = platforms_list
     platform = plan.get_platform("demo_board_1")
     assert isinstance(platform, Platform)
@@ -106,13 +107,13 @@ TESTDATA_PART1 = [
 
 @pytest.mark.parametrize("tc_attribute, tc_value, plat_attribute, plat_value, expected_discards",
                          TESTDATA_PART1)
-def test_apply_filters_part1(class_env, all_testsuites_dict, platforms_list,
+def test_apply_filters_part1(class_testplan, all_testsuites_dict, platforms_list,
                              tc_attribute, tc_value, plat_attribute, plat_value, expected_discards):
     """ Testing apply_filters function of TestPlan class in Twister
     Part 1: Response of apply_filters function have
             appropriate values according to the filters
     """
-    plan = TestPlan(class_env)
+    plan = class_testplan
     if tc_attribute is None and plat_attribute is None:
         plan.apply_filters()
 

@@ -65,6 +65,7 @@ class TwisterConfigParser:
                        "toolchain_exclude": {"type": "set"},
                        "toolchain_allow": {"type": "set"},
                        "filter": {"type": "str"},
+                       "levels": {"type": "list", "default": []},
                        "harness": {"type": "str", "default": "test"},
                        "harness_config": {"type": "map", "default": {}},
                        "seed": {"type": "int", "default": 0},
