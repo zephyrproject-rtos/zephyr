@@ -154,7 +154,7 @@ int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int 
 	k_sem_take(&cfg->sem_lock, K_FOREVER);
 
 	for (i = 0; i < cfg->sockets_len; i++) {
-		if (cfg->sockets[i].id < cfg->base_socket_num) {
+		if (cfg->sockets[i].id < cfg->base_socket_id) {
 			break;
 		}
 	}
@@ -173,7 +173,8 @@ int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int 
 	cfg->sockets[i].family = family;
 	cfg->sockets[i].type = type;
 	cfg->sockets[i].ip_proto = proto;
-	cfg->sockets[i].id = i + cfg->base_socket_num;
+	cfg->sockets[i].id = (cfg->assign_id) ? (i + cfg->base_socket_id) :
+		(cfg->base_socket_id + cfg->sockets_len);
 	z_finalize_fd(cfg->sockets[i].sock_fd, &cfg->sockets[i],
 		      (const struct fd_op_vtable *)cfg->vtable);
 
@@ -203,7 +204,7 @@ struct modem_socket *modem_socket_from_id(struct modem_socket_config *cfg, int i
 {
 	int i;
 
-	if (id < cfg->base_socket_num) {
+	if (id < cfg->base_socket_id) {
 		return NULL;
 	}
 
@@ -223,7 +224,7 @@ struct modem_socket *modem_socket_from_id(struct modem_socket_config *cfg, int i
 
 struct modem_socket *modem_socket_from_newid(struct modem_socket_config *cfg)
 {
-	return modem_socket_from_id(cfg, cfg->sockets_len + 1);
+	return modem_socket_from_id(cfg, cfg->base_socket_id + cfg->sockets_len);
 }
 
 void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
@@ -236,7 +237,7 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 
 	k_sem_take(&cfg->sem_lock, K_FOREVER);
 
-	sock->id = cfg->base_socket_num - 1;
+	sock->id = cfg->base_socket_id - 1;
 	sock->sock_fd = -1;
 	sock->is_waiting = false;
 	sock->is_connected = false;
@@ -410,18 +411,78 @@ void modem_socket_data_ready(struct modem_socket_config *cfg, struct modem_socke
 	k_sem_give(&cfg->sem_lock);
 }
 
-int modem_socket_init(struct modem_socket_config *cfg, const struct socket_op_vtable *vtable)
+int modem_socket_init(struct modem_socket_config *cfg, struct modem_socket *sockets,
+		      size_t sockets_len, int base_socket_id, bool assign_id,
+		      const struct socket_op_vtable *vtable)
 {
-	int i;
-
-	k_sem_init(&cfg->sem_lock, 1, 1);
-	for (i = 0; i < cfg->sockets_len; i++) {
-		k_sem_init(&cfg->sockets[i].sem_data_ready, 0, 1);
-		k_poll_signal_init(&cfg->sockets[i].sig_data_ready);
-		cfg->sockets[i].id = cfg->base_socket_num - 1;
+	/* Verify arguments */
+	if (cfg == NULL || sockets == NULL || sockets_len < 1 || vtable == NULL) {
+		return -EINVAL;
 	}
 
+	/* Initialize config */
+	cfg->sockets = sockets;
+	cfg->sockets_len = sockets_len;
+	cfg->base_socket_id = base_socket_id;
+	cfg->assign_id = assign_id;
+	k_sem_init(&cfg->sem_lock, 1, 1);
 	cfg->vtable = vtable;
 
+	/* Initialize associated sockets */
+	for (int i = 0; i < cfg->sockets_len; i++) {
+		/* Clear entire socket structure */
+		memset(&cfg->sockets[i], 0, sizeof(cfg->sockets[i]));
+
+		/* Initialize socket members */
+		k_sem_init(&cfg->sockets[i].sem_data_ready, 0, 1);
+		k_poll_signal_init(&cfg->sockets[i].sig_data_ready);
+		cfg->sockets[i].id = -1;
+	}
+	return 0;
+}
+
+bool modem_socket_is_allocated(const struct modem_socket_config *cfg,
+			       const struct modem_socket *sock)
+{
+	/* Socket is allocated with a reserved id value if id is not dynamically assigned */
+	if (cfg->assign_id == false && sock->id == (cfg->base_socket_id + cfg->sockets_len)) {
+		return true;
+	}
+
+	/* Socket must have been allocated if id is assigned */
+	return modem_socket_id_is_assigned(cfg, sock);
+}
+
+bool modem_socket_id_is_assigned(const struct modem_socket_config *cfg,
+				 const struct modem_socket *sock)
+{
+	/* Verify socket is assigned to a valid value */
+	if ((cfg->base_socket_id <= sock->id) &&
+		(sock->id < (cfg->base_socket_id + cfg->sockets_len))) {
+		return true;
+	}
+	return false;
+}
+
+int modem_socket_id_assign(const struct modem_socket_config *cfg,
+			   struct modem_socket *sock, int id)
+{
+	/* Verify dynamically assigning id is disabled */
+	if (cfg->assign_id) {
+		return -EPERM;
+	}
+
+	/* Verify id is currently not assigned */
+	if (modem_socket_id_is_assigned(cfg, sock)) {
+		return -EPERM;
+	}
+
+	/* Verify id is valid */
+	if (id < cfg->base_socket_id || (cfg->base_socket_id + cfg->sockets_len) <= id) {
+		return -EINVAL;
+	}
+
+	/* Assign id */
+	sock->id = id;
 	return 0;
 }

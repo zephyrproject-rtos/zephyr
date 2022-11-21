@@ -738,15 +738,15 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
 MODEM_CMD_DEFINE(on_cmd_sockcreate)
 {
 	struct modem_socket *sock = NULL;
+	int id;
 
 	/* look up new socket by special id */
 	sock = modem_socket_from_newid(&mdata.socket_config);
 	if (sock) {
-		sock->id = ATOI(argv[0],
-				mdata.socket_config.base_socket_num - 1,
-				"socket_id");
+		id = ATOI(argv[0], -1, "socket_id");
+
 		/* on error give up modem socket */
-		if (sock->id == mdata.socket_config.base_socket_num - 1) {
+		if (modem_socket_id_assign(&mdata.socket_config, sock, id) < 0) {
 			modem_socket_put(&mdata.socket_config, sock->sock_fd);
 		}
 	}
@@ -1489,8 +1489,8 @@ static int offload_close(void *obj)
 	char buf[sizeof("AT+USOCL=#\r")];
 	int ret;
 
-	/* make sure we assigned an id */
-	if (sock->id < mdata.socket_config.base_socket_num) {
+	/* make sure socket is allocated and assigned an id */
+	if (modem_socket_id_is_assigned(&mdata.socket_config, sock) == false) {
 		return 0;
 	}
 
@@ -1518,7 +1518,7 @@ static int offload_bind(void *obj, const struct sockaddr *addr,
 	memcpy(&sock->src, addr, sizeof(*addr));
 
 	/* make sure we've created the socket */
-	if (sock->id == mdata.socket_config.sockets_len + 1) {
+	if (modem_socket_is_allocated(&mdata.socket_config, sock) == true) {
 		if (create_socket(sock, addr) < 0) {
 			return -1;
 		}
@@ -1541,7 +1541,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		return -1;
 	}
 
-	if (sock->id < mdata.socket_config.base_socket_num - 1) {
+	/* make sure socket has been allocated */
+	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d",
 			sock->id, sock->sock_fd);
 		errno = EINVAL;
@@ -1549,7 +1550,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	}
 
 	/* make sure we've created the socket */
-	if (sock->id == mdata.socket_config.sockets_len + 1) {
+	if (modem_socket_id_is_assigned(&mdata.socket_config, sock) == false) {
 		if (create_socket(sock, NULL) < 0) {
 			return -1;
 		}
@@ -2139,11 +2140,8 @@ static int modem_init(const struct device *dev)
 #endif
 
 	/* socket config */
-	mdata.socket_config.sockets = &mdata.sockets[0];
-	mdata.socket_config.sockets_len = ARRAY_SIZE(mdata.sockets);
-	mdata.socket_config.base_socket_num = MDM_BASE_SOCKET_NUM;
-	ret = modem_socket_init(&mdata.socket_config,
-				&offload_socket_fd_op_vtable);
+	ret = modem_socket_init(&mdata.socket_config, &mdata.sockets[0], ARRAY_SIZE(mdata.sockets),
+				MDM_BASE_SOCKET_NUM, false, &offload_socket_fd_op_vtable);
 	if (ret < 0) {
 		goto error;
 	}
