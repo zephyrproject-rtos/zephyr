@@ -45,7 +45,7 @@
 		zephyr,canbus = &can0;
 	};
 
-	pcie0 {
+	pcie0: pcie0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "intel,pcie";
