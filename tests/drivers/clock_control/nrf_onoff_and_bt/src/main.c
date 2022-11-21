@@ -103,6 +103,7 @@ ZTEST(nrf_onoff_and_bt, test_onoff_interrupted)
 	int backoff;
 
 	iteration = 0;
+	test_end = false;
 
 	k_timer_start(&timer1, K_MSEC(1), K_NO_WAIT);
 
@@ -190,6 +191,7 @@ ZTEST(nrf_onoff_and_bt, test_bt_interrupted)
 	int backoff;
 
 	iteration = 0;
+	test_end = false;
 
 	k_timer_start(&timer2, K_MSEC(1), K_NO_WAIT);
 
