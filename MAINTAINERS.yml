@@ -764,6 +764,19 @@ Release Notes:
   labels:
     - "area: FPGA"
 
+"Drivers: Fuel Gauge":
+  status: maintained
+  maintainers:
+    - aaronemassey
+    - teburd
+  files:
+    - drivers/fuel_gauge/
+    - dts/bindings/fuel-gauge/
+    - include/zephyr/drivers/fuel_gauge.h
+    - tests/drivers/fuel_gauge/
+  labels:
+    - "area: Fuel Gauge"
+
 "Drivers: GPIO":
   status: maintained
   maintainers:
