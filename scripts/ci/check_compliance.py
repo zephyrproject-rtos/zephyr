@@ -1117,9 +1117,11 @@ def parse_args():
                                                      'ERROR', 'CRITICAL'],
                         help="python logging level")
     parser.add_argument('-m', '--module', action="append", default=[],
-                        help="Checks to run. All checks by default.")
+                        help="Checks to run. All checks by default. (case " \
+                        "insensitive)")
     parser.add_argument('-e', '--exclude-module', action="append", default=[],
-                        help="Do not run the specified checks")
+                        help="Do not run the specified checks (case " \
+                        "insensitive)")
     parser.add_argument('-j', '--previous-run', default=None,
                         help='''Pre-load JUnit results in XML format
                         from a previous run and combine with new results.''')
@@ -1169,15 +1171,18 @@ def _main(args):
     else:
         suite = TestSuite("Compliance")
 
+    included = list(map(lambda x: x.lower(), args.module))
+    excluded = list(map(lambda x: x.lower(), args.exclude_module))
+
     for testcase in inheritors(ComplianceTest):
         # "Modules" and "testcases" are the same thing. Better flags would have
         # been --tests and --exclude-tests or the like, but it's awkward to
         # change now.
 
-        if args.module and testcase.name not in args.module:
+        if included and testcase.name.lower() not in included:
             continue
 
-        if testcase.name in args.exclude_module:
+        if testcase.name.lower() in excluded:
             print("Skipping " + testcase.name)
             continue
 
