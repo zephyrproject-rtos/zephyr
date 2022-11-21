@@ -29,5 +29,6 @@ comment "Reset Controller Drivers"
 
 rsource "Kconfig.rpi_pico"
 rsource "Kconfig.gd32"
+rsource "Kconfig.aspeed"
 
 endif # RESET
