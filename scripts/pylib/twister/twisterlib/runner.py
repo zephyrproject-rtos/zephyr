@@ -544,7 +544,7 @@ class ProjectBuilder(FilterBuilder):
 
         elif op == "gather_metrics":
             self.gather_metrics(self.instance)
-            if self.instance.run and self.instance.handler:
+            if self.instance.run and self.instance.handler.ready:
                 pipeline.put({"op": "run", "test": self.instance})
             else:
                 pipeline.put({"op": "report", "test": self.instance})
@@ -730,7 +730,7 @@ class ProjectBuilder(FilterBuilder):
             elif instance.status in ["skipped", "filtered"]:
                 more_info = instance.reason
             else:
-                if instance.handler and instance.run:
+                if instance.handler.ready and instance.run:
                     more_info = instance.handler.type_str
                     htime = instance.execution_time
                     if htime:
@@ -775,7 +775,7 @@ class ProjectBuilder(FilterBuilder):
         instance = self.instance
         args = self.testsuite.extra_args[:]
 
-        if instance.handler:
+        if instance.handler.ready:
             args += instance.handler.args
 
         # merge overlay files into one variable
@@ -817,7 +817,7 @@ class ProjectBuilder(FilterBuilder):
 
         instance = self.instance
 
-        if instance.handler:
+        if instance.handler.ready:
             if instance.handler.type_str == "device":
                 instance.handler.duts = self.duts
 

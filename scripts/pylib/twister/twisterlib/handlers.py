@@ -38,6 +38,7 @@ except ImportError as capture_error:
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
+SUPPORTED_SIMS = ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim", "native"]
 
 class HarnessImporter:
 
@@ -76,6 +77,7 @@ class Handler:
         self.generator = None
         self.generator_cmd = None
         self.suite_name_check = True
+        self.ready = False
 
         self.args = []
         self.terminated = False
@@ -310,6 +312,21 @@ class BinaryHandler(Handler):
 
         self._final_handle_actions(harness, handler_time)
 
+
+class SimulationHandler(BinaryHandler):
+    def __init__(self, instance, type_str):
+        """Constructor
+
+        @param instance Test Instance
+        """
+        super().__init__(instance, type_str)
+
+        if type_str == 'renode':
+            self.pid_fn = os.path.join(instance.build_dir, "renode.pid")
+        elif type_str == 'native':
+            self.call_make_run = False
+            self.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
+            self.ready = True
 
 class DeviceHandler(Handler):
 
