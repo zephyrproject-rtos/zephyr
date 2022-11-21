@@ -600,6 +600,26 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 	return true;
 }
 
+static int disable_endpoint(uint8_t ep_addr)
+{
+	uint32_t ep_bm;
+	int ret;
+
+	ret = usb_dc_ep_disable(ep_addr);
+	if (ret == -EALREADY) {
+		LOG_WRN("Endpoint 0x%02x already disabled", ep_addr);
+	} else if (ret) {
+		LOG_ERR("Failed to disable endpoint 0x%02x", ep_addr);
+		return ret;
+	}
+
+	/* clear endpoint mask */
+	ep_bm = get_ep_bm_from_addr(ep_addr);
+	usb_dev.ep_bm &= ~ep_bm;
+
+	return 0;
+}
+
 /*
  * @brief Disable endpoint for transferring data
  *
@@ -613,8 +633,6 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 static bool reset_endpoint(const struct usb_ep_descriptor *ep_desc)
 {
 	struct usb_dc_ep_cfg_data ep_cfg;
-	uint32_t ep_bm;
-	int ret;
 
 	ep_cfg.ep_addr = ep_desc->bEndpointAddress;
 	ep_cfg.ep_type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
@@ -624,21 +642,7 @@ static bool reset_endpoint(const struct usb_ep_descriptor *ep_desc)
 
 	usb_cancel_transfer(ep_cfg.ep_addr);
 
-	ret = usb_dc_ep_disable(ep_cfg.ep_addr);
-	if (ret == -EALREADY) {
-		LOG_WRN("Endpoint 0x%02x already disabled", ep_cfg.ep_addr);
-	} else if (ret) {
-		LOG_ERR("Failed to disable endpoint 0x%02x", ep_cfg.ep_addr);
-		return false;
-	} else {
-		;
-	}
-
-	/* clear endpoint mask */
-	ep_bm = get_ep_bm_from_addr(ep_desc->bEndpointAddress);
-	usb_dev.ep_bm &= ~ep_bm;
-
-	return true;
+	return disable_endpoint(ep_cfg.ep_addr) ? false : true;
 }
 
 static bool usb_eps_reconfigure(struct usb_ep_descriptor *ep_desc,
@@ -1354,6 +1358,22 @@ int usb_disable(void)
 		return ret;
 	}
 
+	usb_cancel_transfers();
+	for (uint8_t i = 0; i <= 15; i++) {
+		if (usb_dev.ep_bm & BIT(i)) {
+			ret = disable_endpoint(i);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+		if (usb_dev.ep_bm & BIT(i + 16)) {
+			ret = disable_endpoint(USB_EP_DIR_IN | i);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
 	/* Disable VBUS if needed */
 	usb_vbus_set(false);
 
@@ -1647,11 +1667,13 @@ int usb_enable(usb_dc_status_callback status_cb)
 	if (ret < 0) {
 		goto out;
 	}
+	usb_dev.ep_bm |= get_ep_bm_from_addr(USB_CONTROL_EP_OUT);
 
 	ret = usb_dc_ep_enable(USB_CONTROL_EP_IN);
 	if (ret < 0) {
 		goto out;
 	}
+	usb_dev.ep_bm |= get_ep_bm_from_addr(USB_CONTROL_EP_IN);
 
 	usb_dev.enabled = true;
 	ret = 0;
