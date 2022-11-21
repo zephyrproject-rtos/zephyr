@@ -951,7 +951,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 
 	if (handle == mcs_inst->player_name_handle) {
 		BT_DBG("Player Name notification");
-		mcc_read_player_name_cb(conn, 0, NULL, data, length);
+		mcc_read_player_name_cb(conn, 0, read_params, data, length);
 
 	} else if (handle == mcs_inst->track_changed_handle) {
 		/* The Track Changed characteristic can only be */
