@@ -249,6 +249,7 @@ Bluetooth Audio:
     - MariuszSkamra
     - rymanluk
     - sjanc
+    - szymon-czapracki
     - asbjornsabo
   files:
     - subsys/bluetooth/audio/
