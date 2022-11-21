@@ -17,5 +17,6 @@
 #define F_SETFL 4
 
 int open(const char *name, int flags, ...);
+int fcntl(int fildes, int cmd, ...);
 
 #endif /* ZEPHYR_POSIX_FCNTL_H_ */
