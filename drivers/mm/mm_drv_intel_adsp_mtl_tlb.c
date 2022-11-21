@@ -35,8 +35,8 @@
 #include <soc.h>
 #include <adsp_memory.h>
 
+#include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
 #include "mm_drv_common.h"
-#include <drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
 
 DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
 

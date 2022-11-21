@@ -13,7 +13,8 @@
 #include <adsp_power.h>
 #include <adsp_memory.h>
 #include <adsp_imr_layout.h>
-#include <drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
+#include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
+
 #define LPSRAM_MAGIC_VALUE      0x13579BDF
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
 #define SRAM_ALIAS_BASE         0xA0000000
