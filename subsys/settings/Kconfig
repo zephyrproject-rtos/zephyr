@@ -37,7 +37,7 @@ choice SETTINGS_BACKEND
 	prompt "Storage back-end"
 	default SETTINGS_NVS if NVS
 	default SETTINGS_FCB if FCB
-	default SETTINGS_FS if FILE_SYSTEM
+	default SETTINGS_FILE if FILE_SYSTEM
 	default SETTINGS_NONE
 	depends on SETTINGS
 	help
@@ -49,12 +49,20 @@ config SETTINGS_FCB
 	help
 	  Use FCB as a settings storage back-end.
 
-config SETTINGS_FS
-	bool "File System"
+config SETTINGS_FILE
+	bool "File"
 	depends on FILE_SYSTEM
 	select SETTINGS_ENCODE_LEN
 	help
-	  Use a file system as a settings storage back-end.
+	  Use a file (on mounted file system) as a settings storage back-end.
+
+config SETTINGS_FS
+	bool "FS (DEPRECATED)"
+	depends on FILE_SYSTEM
+	select SETTINGS_ENCODE_LEN
+	select DEPRECATED
+	help
+	  This is deprecated, please use SETTINGS_FILE instead.
 
 config SETTINGS_NVS
 	bool "NVS non-volatile storage support"
@@ -107,26 +115,47 @@ config SETTINGS_FCB_MAGIC
 	help
 	  Magic 32-bit word for to identify valid settings area
 
-config SETTINGS_FS_DIR
+config SETTINGS_FILE_DIR
 	string "Serialization directory"
 	default "/settings"
-	depends on SETTINGS && SETTINGS_FS
+	depends on SETTINGS && SETTINGS_FILE
 	help
 	  Directory where the settings data is stored
 
-config SETTINGS_FS_FILE
+config SETTINGS_FILE_PATH
 	string "Default settings file"
 	default "/settings/run"
-	depends on SETTINGS && SETTINGS_FS
+	depends on SETTINGS && SETTINGS_FILE
 	help
 	  Full path to the default settings file.
 
-config SETTINGS_FS_MAX_LINES
+config SETTINGS_FILE_MAX_LINES
 	int "Compression threshold"
+	default 32
+	depends on SETTINGS && SETTINGS_FILE
+	help
+	  Limit how many items stored in a file before compressing
+
+config SETTINGS_FS_DIR
+	string "Serialization directory (DEPRECATED)"
+	default "/settings"
+	depends on SETTINGS && SETTINGS_FS
+	help
+	  This is deprecated. Use SETTINGS_FILE_DIR instead.
+
+config SETTINGS_FS_FILE
+	string "Default settings file (DEPRECATED)"
+	default "/settings/run"
+	depends on SETTINGS && SETTINGS_FS
+	help
+	  This is deprecated. Use SETTINGS_FILE_PATH instead.
+
+config SETTINGS_FS_MAX_LINES
+	int "Compression threshold (DEPRECATED)"
 	default 32
 	depends on SETTINGS && SETTINGS_FS
 	help
-	  Limit how many items stored in a file before compressing
+	  This is deprecated. Use SETTINGS_FILE_MAX_LINES instead.
 
 config SETTINGS_NVS_SECTOR_SIZE_MULT
 	int "Sector size of the NVS settings area"

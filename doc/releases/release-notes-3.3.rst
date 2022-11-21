@@ -104,6 +104,18 @@ Deprecated in this release
   :kconfig:option:`CONFIG_COUNTER_RTC_STM32_CLOCK_LSE` options are now
   deprecated.
 
+* File backend for settings APIs and Kconfig options were deprecated:
+
+  :c:func:`settings_mount_fs_backend` in favor of :c:func:`settings_mount_file_backend`
+
+  :kconfig:option:`CONFIG_SETTINGS_FS` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE`
+
+  :kconfig:option:`CONFIG_SETTINGS_FS_DIR` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_DIR`
+
+  :kconfig:option:`CONFIG_SETTINGS_FS_FILE` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_PATH`
+
+  :kconfig:option:`CONFIG_SETTINGS_FS_MAX_LINES` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_MAX_LINES`
+
 Stable API changes in this release
 ==================================
 

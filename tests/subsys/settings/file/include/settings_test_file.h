@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SETTINGS_TEST_FS_H
-#define _SETTINGS_TEST_FS_H
+#ifndef _SETTINGS_TEST_FILE_H
+#define _SETTINGS_TEST_FILE_H
 
 #include <stdio.h>
 #include <string.h>
@@ -62,4 +62,4 @@ void test_config_compress_file(void);
 }
 #endif
 
-#endif /* _SETTINGS_TEST_FS_H */
+#endif /* _SETTINGS_TEST_FILE_H */
