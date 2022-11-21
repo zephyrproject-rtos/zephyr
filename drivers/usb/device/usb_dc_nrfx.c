@@ -1578,10 +1578,6 @@ int usb_dc_ep_disable(const uint8_t ep)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 
-	if (!dev_attached() || !dev_ready()) {
-		return -ENODEV;
-	}
-
 	ep_ctx = endpoint_ctx(ep);
 	if (!ep_ctx) {
 		return -EINVAL;
