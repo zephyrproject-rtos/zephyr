@@ -8,15 +8,15 @@
 #include <zephyr/sys/crc.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_chksum.h>
+#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum.h>
 #include <string.h>
 
 #include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_config.h>
-#include <mgmt/mcumgr/grp/fs_mgmt/hash_checksum_crc32.h>
+#include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum_crc32.h>
 
 #define CRC32_SIZE 4
 
-static int fs_hash_checksum_mgmt_crc32(struct fs_file_t *file, uint8_t *output,
+static int fs_mgmt_hash_checksum_crc32(struct fs_file_t *file, uint8_t *output,
 				       size_t *out_len, size_t len)
 {
 	/* Calculate IEEE CRC32 checksum of target file */
@@ -50,19 +50,19 @@ static int fs_hash_checksum_mgmt_crc32(struct fs_file_t *file, uint8_t *output,
 	return 0;
 }
 
-struct hash_checksum_mgmt_group crc32 = {
+static struct fs_mgmt_hash_checksum_group crc32 = {
 	.group_name = "crc32",
 	.byte_string = false,
 	.output_size = CRC32_SIZE,
-	.function = fs_hash_checksum_mgmt_crc32,
+	.function = fs_mgmt_hash_checksum_crc32,
 };
 
-void fs_hash_checksum_mgmt_register_crc32(void)
+void fs_mgmt_hash_checksum_register_crc32(void)
 {
-	hash_checksum_mgmt_register_group(&crc32);
+	fs_mgmt_hash_checksum_register_group(&crc32);
 }
 
-void fs_hash_checksum_mgmt_unregister_crc32(void)
+void fs_mgmt_hash_checksum_unregister_crc32(void)
 {
-	hash_checksum_mgmt_unregister_group(&crc32);
+	fs_mgmt_hash_checksum_unregister_group(&crc32);
 }

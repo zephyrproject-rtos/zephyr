@@ -7,11 +7,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_chksum.h>
+#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum.h>
 #include <string.h>
 
 #include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_config.h>
-#include <mgmt/mcumgr/grp/fs_mgmt/hash_checksum_sha256.h>
+#include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum_sha256.h>
 
 #if defined(CONFIG_TINYCRYPT_SHA256)
 #include <tinycrypt/constants.h>
@@ -25,7 +25,7 @@
 
 #if defined(CONFIG_TINYCRYPT_SHA256)
 /* Tinycrypt SHA256 implementation */
-static int fs_hash_checksum_mgmt_sha256(struct fs_file_t *file, uint8_t *output,
+static int fs_mgmt_hash_checksum_sha256(struct fs_file_t *file, uint8_t *output,
 					size_t *out_len, size_t len)
 {
 	int rc = 0;
@@ -72,7 +72,7 @@ static int fs_hash_checksum_mgmt_sha256(struct fs_file_t *file, uint8_t *output,
 }
 #else
 /* mbedtls SHA256 implementation */
-static int fs_hash_checksum_mgmt_sha256(struct fs_file_t *file, uint8_t *output,
+static int fs_mgmt_hash_checksum_sha256(struct fs_file_t *file, uint8_t *output,
 					size_t *out_len, size_t len)
 {
 	int rc = 0;
@@ -133,19 +133,19 @@ error:
 }
 #endif
 
-struct hash_checksum_mgmt_group sha256 = {
+static struct fs_mgmt_hash_checksum_group sha256 = {
 	.group_name = "sha256",
 	.byte_string = true,
 	.output_size = SHA256_DIGEST_SIZE,
-	.function = fs_hash_checksum_mgmt_sha256,
+	.function = fs_mgmt_hash_checksum_sha256,
 };
 
-void fs_hash_checksum_mgmt_register_sha256(void)
+void fs_mgmt_hash_checksum_register_sha256(void)
 {
-	hash_checksum_mgmt_register_group(&sha256);
+	fs_mgmt_hash_checksum_register_group(&sha256);
 }
 
-void fs_hash_checksum_mgmt_unregister_sha256(void)
+void fs_mgmt_hash_checksum_unregister_sha256(void)
 {
-	hash_checksum_mgmt_unregister_group(&sha256);
+	fs_mgmt_hash_checksum_unregister_group(&sha256);
 }
