@@ -27,6 +27,8 @@
 #define SHELL_HELP_STATISTICS		"Shell statistics."
 #define SHELL_HELP_STATISTICS_SHOW	\
 	"Get shell statistics for the Logger module."
+#define SHELL_HELP_STATISTICS_ARGLEN	\
+	"Return the maximum number of argumunts allowed in a command."
 #define SHELL_HELP_STATISTICS_RESET	\
 	"Reset shell statistics for the Logger module."
 #define SHELL_HELP_RESIZE						\
@@ -331,6 +333,17 @@ static int cmd_shell_stats_show(const struct shell *shell, size_t argc,
 	return 0;
 }
 
+static int cmd_arglen(const struct shell *shell, size_t argc,
+				char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(shell, "%d", CONFIG_SHELL_ARGC_MAX);
+
+	return 0;
+}
+
 static int cmd_shell_stats_reset(const struct shell *shell,
 				 size_t argc, char **argv)
 {
@@ -446,6 +459,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_shell,
 	SHELL_CMD_ARG(echo, &m_sub_echo, SHELL_HELP_ECHO, cmd_echo, 1, 1),
 	SHELL_COND_CMD(CONFIG_SHELL_STATS, stats, &m_sub_shell_stats,
 			SHELL_HELP_STATISTICS, NULL),
+	SHELL_CMD(arglen, NULL, SHELL_HELP_STATISTICS_ARGLEN,
+			cmd_arglen),
 	SHELL_SUBCMD_SET_END
 );
 
