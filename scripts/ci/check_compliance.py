@@ -30,8 +30,6 @@ if not ZEPHYR_BASE:
     # Propagate this decision to child processes.
     os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
 
-    print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
-
 
 def git(*args, cwd=None):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
