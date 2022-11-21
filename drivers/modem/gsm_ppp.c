@@ -174,7 +174,7 @@ static void gsm_rx(struct gsm_modem *gsm)
 	LOG_DBG("starting");
 
 	while (true) {
-		(void)k_sem_take(&gsm->gsm_data.rx_sem, K_FOREVER);
+		modem_iface_uart_rx_wait(&gsm->context.iface, K_FOREVER);
 
 		/* The handler will listen AT channel */
 		gsm->context.cmd_handler.process(&gsm->context.cmd_handler,
@@ -1305,13 +1305,15 @@ static int gsm_init(const struct device *dev)
 #endif	/* CONFIG_MODEM_SHELL */
 
 	gsm->context.is_automatic_oper = false;
-	gsm->gsm_data.rx_rb_buf = &gsm->gsm_rx_rb_buf[0];
-	gsm->gsm_data.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf);
-	gsm->gsm_data.hw_flow_control = DT_PROP(GSM_UART_NODE,
-						hw_flow_control);
 
-	ret = modem_iface_uart_init(&gsm->context.iface, &gsm->gsm_data,
-				DEVICE_DT_GET(GSM_UART_NODE));
+	const struct modem_iface_uart_config uart_config = {
+		.rx_rb_buf = &gsm->gsm_rx_rb_buf[0],
+		.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf),
+		.hw_flow_control = DT_PROP(GSM_UART_NODE, hw_flow_control),
+		.dev = DEVICE_DT_GET(GSM_UART_NODE),
+	};
+
+	ret = modem_iface_uart_init(&gsm->context.iface, &gsm->gsm_data, &uart_config);
 	if (ret < 0) {
 		LOG_DBG("iface uart error %d", ret);
 		return ret;
