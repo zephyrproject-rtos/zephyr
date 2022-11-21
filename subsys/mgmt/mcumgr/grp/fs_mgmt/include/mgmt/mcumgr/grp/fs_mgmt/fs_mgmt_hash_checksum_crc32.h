@@ -16,12 +16,12 @@ extern "C" {
 /**
  * @brief Registers the IEEE CRC32 checksum mcumgr handler.
  */
-void fs_hash_checksum_mgmt_register_crc32(void);
+void fs_mgmt_hash_checksum_register_crc32(void);
 
 /**
  * @brief Un-registers the IEEE CRC32 checksum mcumgr handler.
  */
-void fs_hash_checksum_mgmt_unregister_crc32(void);
+void fs_mgmt_hash_checksum_unregister_crc32(void);
 
 #ifdef __cplusplus
 }

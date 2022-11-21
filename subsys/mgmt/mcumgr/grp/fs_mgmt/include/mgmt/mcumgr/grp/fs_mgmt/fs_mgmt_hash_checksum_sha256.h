@@ -16,12 +16,12 @@ extern "C" {
 /**
  * @brief Registers the SHA256 hash mcumgr handler.
  */
-void fs_hash_checksum_mgmt_register_sha256(void);
+void fs_mgmt_hash_checksum_register_sha256(void);
 
 /**
  * @brief Un-registers the SHA256 hash mcumgr handler.
  */
-void fs_hash_checksum_mgmt_unregister_sha256(void);
+void fs_mgmt_hash_checksum_unregister_sha256(void);
 
 #ifdef __cplusplus
 }

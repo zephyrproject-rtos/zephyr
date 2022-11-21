@@ -12,7 +12,7 @@
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
-#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_chksum.h>
+#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum.h>
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
@@ -25,11 +25,11 @@
 #include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_config.h>
 
 #if defined(CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32)
-#include <mgmt/mcumgr/grp/fs_mgmt/hash_checksum_crc32.h>
+#include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum_crc32.h>
 #endif
 
 #if defined(CONFIG_FS_MGMT_HASH_SHA256)
-#include <mgmt/mcumgr/grp/fs_mgmt/hash_checksum_sha256.h>
+#include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum_sha256.h>
 #endif
 
 #if defined(CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS)
@@ -77,7 +77,7 @@ static const struct mgmt_handler fs_mgmt_handlers[];
 
 #if defined(CONFIG_FS_MGMT_CHECKSUM_HASH)
 /* Hash/checksum iterator information passing structure */
-struct hash_checksum_iterator_info {
+struct fs_mgmt_hash_checksum_iterator_info {
 	zcbor_state_t *zse;
 	bool ok;
 };
@@ -464,7 +464,7 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 	struct zcbor_string name = { 0 };
 	size_t decoded;
 	struct fs_file_t file;
-	const struct hash_checksum_mgmt_group *group = NULL;
+	const struct fs_mgmt_hash_checksum_group *group = NULL;
 
 	struct zcbor_map_decode_key_val fs_hash_checksum_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_VAL(type, zcbor_tstr_decode, &type),
@@ -491,7 +491,7 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 	}
 
 	/* Search for supported hash/checksum */
-	group = hash_checksum_mgmt_find_handler(type_arr);
+	group = fs_mgmt_hash_checksum_find_handler(type_arr);
 
 	if (group == NULL) {
 		return MGMT_ERR_EINVAL;
@@ -591,10 +591,12 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 
 #if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_CMD)
 /* Callback for supported hash/checksum types to encode details on one type into CBOR map */
-static void supported_hash_checksum_callback(const struct hash_checksum_mgmt_group *group,
-					     void *user_data)
+static void fs_mgmt_supported_hash_checksum_callback(
+					const struct fs_mgmt_hash_checksum_group *group,
+					void *user_data)
 {
-	struct hash_checksum_iterator_info *ctx = (struct hash_checksum_iterator_info *)user_data;
+	struct fs_mgmt_hash_checksum_iterator_info *ctx =
+			(struct fs_mgmt_hash_checksum_iterator_info *)user_data;
 
 	if (!ctx->ok) {
 		return;
@@ -616,7 +618,7 @@ static int
 fs_mgmt_supported_hash_checksum(struct smp_streamer *ctxt)
 {
 	zcbor_state_t *zse = ctxt->writer->zs;
-	struct hash_checksum_iterator_info itr_ctx = {
+	struct fs_mgmt_hash_checksum_iterator_info itr_ctx = {
 		.zse = zse,
 	};
 
@@ -624,7 +626,7 @@ fs_mgmt_supported_hash_checksum(struct smp_streamer *ctxt)
 
 	zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES);
 
-	hash_checksum_mgmt_find_handlers(supported_hash_checksum_callback, &itr_ctx);
+	fs_mgmt_hash_checksum_find_handlers(fs_mgmt_supported_hash_checksum_callback, &itr_ctx);
 
 	if (!itr_ctx.ok ||
 	    !zcbor_map_end_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES)) {
@@ -676,11 +678,11 @@ void fs_mgmt_register_group(void)
 #if defined(CONFIG_FS_MGMT_CHECKSUM_HASH)
 	/* Register any supported hash or checksum functions */
 #if defined(CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32)
-	fs_hash_checksum_mgmt_register_crc32();
+	fs_mgmt_hash_checksum_register_crc32();
 #endif
 
 #if defined(CONFIG_FS_MGMT_HASH_SHA256)
-	fs_hash_checksum_mgmt_register_sha256();
+	fs_mgmt_hash_checksum_register_sha256();
 #endif
 #endif
 }
