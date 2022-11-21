@@ -177,8 +177,7 @@ static void gsm_rx(struct gsm_modem *gsm)
 		modem_iface_uart_rx_wait(&gsm->context.iface, K_FOREVER);
 
 		/* The handler will listen AT channel */
-		gsm->context.cmd_handler.process(&gsm->context.cmd_handler,
-						 &gsm->context.iface);
+		modem_cmd_handler_process(&gsm->context.cmd_handler, &gsm->context.iface);
 	}
 }
 
@@ -1273,19 +1272,24 @@ static int gsm_init(const struct device *dev)
 	(void)k_mutex_init(&gsm->lock);
 	gsm->dev = dev;
 
-	gsm->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
-	gsm->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
-	gsm->cmd_handler_data.match_buf = &gsm->cmd_match_buf[0];
-	gsm->cmd_handler_data.match_buf_len = sizeof(gsm->cmd_match_buf);
-	gsm->cmd_handler_data.buf_pool = &gsm_recv_pool;
-	gsm->cmd_handler_data.alloc_timeout = K_NO_WAIT;
-	gsm->cmd_handler_data.eol = "\r";
+	const struct modem_cmd_handler_config cmd_handler_config = {
+		.match_buf = &gsm->cmd_match_buf[0],
+		.match_buf_len = sizeof(gsm->cmd_match_buf),
+		.buf_pool = &gsm_recv_pool,
+		.alloc_timeout = K_NO_WAIT,
+		.eol = "\r",
+		.user_data = NULL,
+		.response_cmds = response_cmds,
+		.response_cmds_len = ARRAY_SIZE(response_cmds),
+		.unsol_cmds = NULL,
+		.unsol_cmds_len = 0,
+	};
 
 	(void)k_sem_init(&gsm->sem_response, 0, 1);
 	(void)k_sem_init(&gsm->sem_if_down, 0, 1);
 
-	ret = modem_cmd_handler_init(&gsm->context.cmd_handler,
-				   &gsm->cmd_handler_data);
+	ret = modem_cmd_handler_init(&gsm->context.cmd_handler, &gsm->cmd_handler_data,
+				     &cmd_handler_config);
 	if (ret < 0) {
 		LOG_DBG("cmd handler error %d", ret);
 		return ret;
