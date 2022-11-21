@@ -36,7 +36,7 @@ static void(*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
 };
 
 /** Channel to compare get function mapping. */
-#if !defined(CONFIG_SOC_SERIES_STM32F4X)
+#if !defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32U5X)
 static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(const TIM_TypeDef *) = {
 	LL_TIM_OC_GetCompareCH1, LL_TIM_OC_GetCompareCH2,
 	LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4,
@@ -46,7 +46,7 @@ static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *) = {
 	LL_TIM_OC_GetCompareCH1, LL_TIM_OC_GetCompareCH2,
 	LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4,
 };
-#endif
+#endif /* ! STM32F4X && ! STM3U5X */
 /** Channel to interrupt enable function mapping. */
 static void(*const enable_it[TIMER_MAX_CH])(TIM_TypeDef *) = {
 	LL_TIM_EnableIT_CC1, LL_TIM_EnableIT_CC2,
@@ -61,7 +61,7 @@ static void(*const disable_it[TIMER_MAX_CH])(TIM_TypeDef *) = {
 
 #ifdef CONFIG_ASSERT
 /** Channel to interrupt enable check function mapping. */
-#if !defined(CONFIG_SOC_SERIES_STM32F4X)
+#if !defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32U5X)
 static uint32_t(*const check_it_enabled[TIMER_MAX_CH])(const TIM_TypeDef *) = {
 	LL_TIM_IsEnabledIT_CC1, LL_TIM_IsEnabledIT_CC2,
 	LL_TIM_IsEnabledIT_CC3, LL_TIM_IsEnabledIT_CC4,
@@ -71,8 +71,8 @@ static uint32_t(*const check_it_enabled[TIMER_MAX_CH])(TIM_TypeDef *) = {
 	LL_TIM_IsEnabledIT_CC1, LL_TIM_IsEnabledIT_CC2,
 	LL_TIM_IsEnabledIT_CC3, LL_TIM_IsEnabledIT_CC4,
 };
-#endif
-#endif
+#endif  /* ! STM32F4X && ! STM3U5X */
+#endif /* CONFIG_ASSERT */
 
 /** Channel to interrupt flag clear function mapping. */
 static void(*const clear_it_flag[TIMER_MAX_CH])(TIM_TypeDef *) = {
