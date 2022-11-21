@@ -185,7 +185,7 @@ class CheckPatch(ComplianceTest):
     Runs checkpatch and reports found issues
 
     """
-    name = "checkpatch"
+    name = "Checkpatch"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
     path_hint = "<git-top>"
 
@@ -938,7 +938,7 @@ class PyLint(ComplianceTest):
     Runs pylint on all .py files, with a limited set of checks enabled. The
     configuration is in the pylintrc file.
     """
-    name = "pylint"
+    name = "Pylint"
     doc = "See https://www.pylint.org/ for more details"
     path_hint = "<git-top>"
 
