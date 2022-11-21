@@ -203,21 +203,12 @@ class TestInstance:
                         self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim"] or \
                         filter == 'runnable')
 
-        if self.platform.simulation == "nsim":
-            if not shutil.which("nsimdrv"):
-                target_ready = False
+        for sim in ['nsim', 'mdb-nsim', 'renode', 'tsim']:
+            if self.platform.simulation == sim and self.platform.simulation_exec:
+                if not shutil.which(self.platform.simulation_exec):
+                    target_ready = False
+                break
 
-        if self.platform.simulation == "mdb-nsim":
-            if not shutil.which("mdb"):
-                target_ready = False
-
-        if self.platform.simulation == "renode":
-            if not shutil.which("renode"):
-                target_ready = False
-
-        if self.platform.simulation == "tsim":
-            if not shutil.which("tsim-leon3"):
-                target_ready = False
 
         testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)
 
