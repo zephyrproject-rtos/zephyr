@@ -224,7 +224,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
     """
     Checks if we are introducing any unwanted properties in Devicetree Bindings.
     """
-    name = "Devicetree Bindings"
+    name = "DevicetreeBindings"
     doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
     path_hint = ZEPHYR_BASE
 
