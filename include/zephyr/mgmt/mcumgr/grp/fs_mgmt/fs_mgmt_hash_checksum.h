@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-/** @typedef hash_checksum_mgmt_handler_fn
+/** @typedef fs_mgmt_hash_checksum_handler_fn
  * @brief Function that gets called to generate a hash or checksum.
  *
  * @param file		Opened file context
@@ -26,14 +26,13 @@ extern "C" {
  *
  * @return 0 on success, negative error code on failure.
  */
-typedef int (*hash_checksum_mgmt_handler_fn)(struct fs_file_t *file,
-					     uint8_t *output, size_t *out_len,
-					     size_t len);
+typedef int (*fs_mgmt_hash_checksum_handler_fn)(struct fs_file_t *file, uint8_t *output,
+						size_t *out_len, size_t len);
 
 /**
  * @brief A collection of handlers for an entire hash/checksum group.
  */
-struct hash_checksum_mgmt_group {
+struct fs_mgmt_hash_checksum_group {
 	/** Entry list node. */
 	sys_snode_t node;
 
@@ -47,31 +46,31 @@ struct hash_checksum_mgmt_group {
 	uint8_t output_size;
 
 	/** Hash/checksum function pointer. */
-	hash_checksum_mgmt_handler_fn function;
+	fs_mgmt_hash_checksum_handler_fn function;
 };
 
-/** @typedef hash_checksum_mgmt_list_cb
+/** @typedef fs_mgmt_hash_checksum_list_cb
  * @brief Function that gets called with hash/checksum details
  *
  * @param group         Details about a supported hash/checksum
  * @param user_data     User-supplied value to calling function
  */
-typedef void (*hash_checksum_mgmt_list_cb)(const struct hash_checksum_mgmt_group *group,
-					   void *user_data);
+typedef void (*fs_mgmt_hash_checksum_list_cb)(const struct fs_mgmt_hash_checksum_group *group,
+					      void *user_data);
 
 /**
  * @brief Registers a full hash/checksum group.
  *
  * @param group The group to register.
  */
-void hash_checksum_mgmt_register_group(struct hash_checksum_mgmt_group *group);
+void fs_mgmt_hash_checksum_register_group(struct fs_mgmt_hash_checksum_group *group);
 
 /**
  * @brief Unregisters a full hash/checksum group.
  *
  * @param group The group to register.
  */
-void hash_checksum_mgmt_unregister_group(struct hash_checksum_mgmt_group *group);
+void fs_mgmt_hash_checksum_unregister_group(struct fs_mgmt_hash_checksum_group *group);
 
 /**
  * @brief Finds a registered hash/checksum handler.
@@ -81,7 +80,7 @@ void hash_checksum_mgmt_unregister_group(struct hash_checksum_mgmt_group *group)
  * @return	The requested hash/checksum handler on success;
  *		NULL on failure.
  */
-const struct hash_checksum_mgmt_group *hash_checksum_mgmt_find_handler(const char *name);
+const struct fs_mgmt_hash_checksum_group *fs_mgmt_hash_checksum_find_handler(const char *name);
 
 /**
  * @brief Runs a callback with all supported hash/checksum types.
@@ -89,7 +88,7 @@ const struct hash_checksum_mgmt_group *hash_checksum_mgmt_find_handler(const cha
  * @param cb		The callback function to call with each hash/checksum type.
  * @param user_data	Data to pass back with the callback function.
  */
-void hash_checksum_mgmt_find_handlers(hash_checksum_mgmt_list_cb cb, void *user_data);
+void fs_mgmt_hash_checksum_find_handlers(fs_mgmt_hash_checksum_list_cb cb, void *user_data);
 
 #ifdef __cplusplus
 }
