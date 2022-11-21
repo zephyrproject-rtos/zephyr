@@ -69,8 +69,7 @@ jobs:
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
-        ./scripts/ci/check_compliance.py --annotate -m DevicetreeBindings
-        -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m Kconfig \
+        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic \
         -c origin/${BASE_REF}..
 
     - name: upload-results
@@ -86,13 +85,15 @@ jobs:
           exit 1;
         fi
 
-        for file in Nits.txt checkpatch.txt Identity.txt Gitlint.txt pylint.txt Devicetree.txt Kconfig.txt DevicetreeBindings.txt; do
-          if [[ -s $file ]]; then
-            errors=$(cat $file)
+        files=($(./scripts/ci/check_compliance.py -l))
+        for file in "${files[@]}"; do
+          f="${file}.txt"
+          if [[ -s $f ]]; then
+            errors=$(cat $f)
             errors="${errors//'%'/'%25'}"
             errors="${errors//$'\n'/'%0A'}"
             errors="${errors//$'\r'/'%0D'}"
-            echo "::error file=${file}::$errors"
+            echo "::error file=${f}::$errors"
             exit=1
           fi
         done
