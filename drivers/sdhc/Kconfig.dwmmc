@@ -1,0 +1,12 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_SNPS_DW_SDHC := snps,designware-sdmmc
+
+config DW_SDHC
+	bool "SNPS DW SDHC"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_SDMMC_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+		Enable Synopsys Designware SDMMC Host Controller.

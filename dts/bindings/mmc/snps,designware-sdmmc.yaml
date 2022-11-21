@@ -10,9 +10,12 @@ include: mmc.yaml
 properties:
   clock-frequency:
     type: int
-    required: true
+    required: false
     description: clock frequency information for DW SDMMC Controller
   label:
     required: false
   reg:
+    required: true
+
+  resets:
     required: true
