@@ -18,8 +18,6 @@ LOG_MODULE_REGISTER(test);
 
 static bool test_end;
 
-#include <hal/nrf_gpio.h>
-
 static const struct device *const entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 static struct onoff_manager *hf_mgr;
 static uint32_t iteration;
@@ -39,13 +37,10 @@ static void bt_timeout_handler(struct k_timer *timer)
 {
 	static bool on;
 
-	nrf_gpio_cfg_output(27);
 	if (on) {
 		on = false;
-		nrf_gpio_pin_clear(27);
 		z_nrf_clock_bt_ctlr_hf_release();
 	} else {
-		nrf_gpio_pin_set(27);
 		on = true;
 		z_nrf_clock_bt_ctlr_hf_request();
 	}
