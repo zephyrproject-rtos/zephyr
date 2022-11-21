@@ -12,11 +12,9 @@ properties:
       required: true
 
     "#address-cells":
-      required: false
       const: 1
 
     "#size-cells":
-      required: false
       const: 0
 
 child-binding:
@@ -105,7 +103,6 @@ child-binding:
 
       zephyr,vref-mv:
         type: int
-        required: false
         description: |
           This property can be used to specify the voltage (in millivolts)
           of the reference selected for this channel, so that applications
@@ -126,14 +123,12 @@ child-binding:
 
       zephyr,input-positive:
         type: int
-        required: false
         description: |
           Positive ADC input. Used only for drivers that select
           the ADC_CONFIGURABLE_INPUTS Kconfig option.
 
       zephyr,input-negative:
         type: int
-        required: false
         description: |
           Negative ADC input. Used only for drivers that select
           the ADC_CONFIGURABLE_INPUTS Kconfig option.
@@ -142,13 +137,11 @@ child-binding:
 
       zephyr,resolution:
         type: int
-        required: false
         description: |
           ADC resolution to be used for the channel.
 
       zephyr,oversampling:
         type: int
-        required: false
         description: |
           Oversampling setting to be used for the channel.
           When specified, each sample is averaged from 2^N conversion results

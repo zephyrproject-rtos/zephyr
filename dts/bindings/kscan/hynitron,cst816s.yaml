@@ -10,7 +10,6 @@ include: i2c-device.yaml
 properties:
     irq-gpios:
       type: phandle-array
-      required: false
       description: |
         The irq signal defaults to active low as produced by the
         sensor. The property value should ensure the flags properly
@@ -18,7 +17,6 @@ properties:
 
     rst-gpios:
       type: phandle-array
-      required: false
       description: |
         The reset signal defaults to active low to the
         sensor. The property value should ensure the flags properly

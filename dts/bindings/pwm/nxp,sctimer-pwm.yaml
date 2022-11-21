@@ -10,7 +10,6 @@ include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
 properties:
     prescaler:
       type: int
-      required: false
       default: 1
       description: prescaling factor from the SCT clock. Default to 1 which is the reset value
       enum:

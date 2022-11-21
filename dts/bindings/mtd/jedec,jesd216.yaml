@@ -20,17 +20,14 @@
 properties:
   jedec-id:
     type: uint8-array
-    required: false
     description: JEDEC ID as manufacturer ID, memory type, memory density
 
   size:
     type: int
-    required: false
     description: flash capacity in bits
 
   sfdp-bfp:
     type: uint8-array
-    required: false
     description: |
       Contains the 32-bit words in little-endian byte order from the
       JESD216 Serial Flash Discoverable Parameters Basic Flash
@@ -48,7 +45,6 @@ properties:
       - "S2B1v4"
       - "S2B1v5"
       - "S2B1v6"
-    required: false
     description: |
       Quad Enable Requirements value from JESD216 BFP DW15.
 
@@ -59,7 +55,6 @@ properties:
 
   enter-4byte-addr:
     type: int
-    required: false
     description: |
       Enter 4-Byte Addressing value from JESD216 BFP DW16
 

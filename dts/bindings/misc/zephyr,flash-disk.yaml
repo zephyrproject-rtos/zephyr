@@ -22,7 +22,6 @@ properties:
 
     sector-size:
       type: int
-      required: false
       default: 512
       description: |
         Emulated block device sector size in bytes.

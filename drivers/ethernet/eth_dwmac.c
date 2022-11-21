@@ -359,7 +359,7 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 
 		/* get a new fragment if the previous one was consumed */
 		if (!frag) {
-			frag = net_pkt_get_reserve_rx_data(K_FOREVER);
+			frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
 			if (!frag) {
 				LOG_ERR("net_pkt_get_reserve_rx_data() returned NULL");
 				k_sem_give(&p->free_rx_descs);

@@ -85,6 +85,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 /* Make sure that IP + TCP/UDP/ICMP headers fit into one fragment. This
  * makes possible to cast a fragment pointer to protocol header struct.
  */
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 #if CONFIG_NET_BUF_DATA_SIZE < (MAX_IP_PROTO_LEN + MAX_NEXT_PROTO_LEN)
 #if defined(STRING2)
 #undef STRING2
@@ -98,6 +99,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #pragma message "Minimum len " STRING(MAX_IP_PROTO_LEN + MAX_NEXT_PROTO_LEN)
 #error "Too small net_buf fragment size"
 #endif
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 #if CONFIG_NET_PKT_RX_COUNT <= 0
 #error "Minimum value for CONFIG_NET_PKT_RX_COUNT is 1"
@@ -366,26 +368,31 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
+					       size_t min_len,
 					       k_timeout_t timeout,
 					       const char *caller,
 					       int line)
 #else /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
-					 k_timeout_t timeout)
+					 size_t min_len, k_timeout_t timeout)
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 {
 	struct net_buf *frag;
 
-	/*
-	 * The reserve_head variable in the function will tell
-	 * the size of the link layer headers if there are any.
-	 */
-
 	if (k_is_in_isr()) {
-		frag = net_buf_alloc(pool, K_NO_WAIT);
-	} else {
-		frag = net_buf_alloc(pool, timeout);
+		timeout = K_NO_WAIT;
 	}
+
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+	if (min_len > CONFIG_NET_BUF_DATA_SIZE) {
+		NET_ERR("Requested too large fragment. Increase CONFIG_NET_BUF_DATA_SIZE.");
+		return NULL;
+	}
+
+	frag = net_buf_alloc(pool, timeout);
+#else
+	frag = net_buf_alloc_len(pool, min_len, timeout);
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 	if (!frag) {
 		return NULL;
@@ -410,11 +417,11 @@ struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
  * the data.
  */
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-struct net_buf *net_pkt_get_frag_debug(struct net_pkt *pkt,
+struct net_buf *net_pkt_get_frag_debug(struct net_pkt *pkt, size_t min_len,
 				       k_timeout_t timeout,
 				       const char *caller, int line)
 #else
-struct net_buf *net_pkt_get_frag(struct net_pkt *pkt,
+struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, size_t min_len,
 				 k_timeout_t timeout)
 #endif
 {
@@ -425,52 +432,54 @@ struct net_buf *net_pkt_get_frag(struct net_pkt *pkt,
 	if (context && context->data_pool) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 		return net_pkt_get_reserve_data_debug(context->data_pool(),
-						      timeout, caller, line);
+						      min_len, timeout,
+						      caller, line);
 #else
-		return net_pkt_get_reserve_data(context->data_pool(), timeout);
+		return net_pkt_get_reserve_data(context->data_pool(), min_len,
+						timeout);
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 	}
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 	if (pkt->slab == &rx_pkts) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		return net_pkt_get_reserve_rx_data_debug(timeout,
+		return net_pkt_get_reserve_rx_data_debug(min_len, timeout,
 							 caller, line);
 #else
-		return net_pkt_get_reserve_rx_data(timeout);
+		return net_pkt_get_reserve_rx_data(min_len, timeout);
 #endif
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	return net_pkt_get_reserve_tx_data_debug(timeout, caller, line);
+	return net_pkt_get_reserve_tx_data_debug(min_len, timeout, caller, line);
 #else
-	return net_pkt_get_reserve_tx_data(timeout);
+	return net_pkt_get_reserve_tx_data(min_len, timeout);
 #endif
 }
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-struct net_buf *net_pkt_get_reserve_rx_data_debug(k_timeout_t timeout,
+struct net_buf *net_pkt_get_reserve_rx_data_debug(size_t min_len, k_timeout_t timeout,
 						  const char *caller, int line)
 {
-	return net_pkt_get_reserve_data_debug(&rx_bufs, timeout, caller, line);
+	return net_pkt_get_reserve_data_debug(&rx_bufs, min_len, timeout, caller, line);
 }
 
-struct net_buf *net_pkt_get_reserve_tx_data_debug(k_timeout_t timeout,
+struct net_buf *net_pkt_get_reserve_tx_data_debug(size_t min_len, k_timeout_t timeout,
 						  const char *caller, int line)
 {
-	return net_pkt_get_reserve_data_debug(&tx_bufs, timeout, caller, line);
+	return net_pkt_get_reserve_data_debug(&tx_bufs, min_len, timeout, caller, line);
 }
 
 #else /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 
-struct net_buf *net_pkt_get_reserve_rx_data(k_timeout_t timeout)
+struct net_buf *net_pkt_get_reserve_rx_data(size_t min_len, k_timeout_t timeout)
 {
-	return net_pkt_get_reserve_data(&rx_bufs, timeout);
+	return net_pkt_get_reserve_data(&rx_bufs, min_len, timeout);
 }
 
-struct net_buf *net_pkt_get_reserve_tx_data(k_timeout_t timeout)
+struct net_buf *net_pkt_get_reserve_tx_data(size_t min_len, k_timeout_t timeout)
 {
-	return net_pkt_get_reserve_data(&tx_bufs, timeout);
+	return net_pkt_get_reserve_data(&tx_bufs, min_len, timeout);
 }
 
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */

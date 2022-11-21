@@ -83,7 +83,6 @@ child-binding:
               ITE IT8XXX2 pin's configuration (pinctrl node, pin and function).
 
         gpio-voltage:
-          required: false
           type: string
           description: |
               Pin input voltage selection 3.3V or 1.8V. All gpio pins support 3.3V.

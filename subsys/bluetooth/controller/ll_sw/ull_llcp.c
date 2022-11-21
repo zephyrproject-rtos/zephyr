@@ -35,6 +35,7 @@
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
 #include "ull_conn_iso_internal.h"
+#include "ull_central_iso_internal.h"
 
 #include "ull_internal.h"
 #include "ull_conn_types.h"
@@ -371,6 +372,11 @@ struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc)
 		llcp_lp_comm_init_proc(ctx);
 		break;
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case PROC_CIS_CREATE:
+		llcp_lp_comm_init_proc(ctx);
+		break;
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 	case PROC_SCA_UPDATE:
 		llcp_lp_comm_init_proc(ctx);
@@ -861,6 +867,54 @@ uint8_t ull_cp_cis_terminate(struct ll_conn *conn,
 }
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
+{
+	struct ll_conn_iso_group *cig;
+	struct proc_ctx *ctx;
+
+	if (conn->lll.handle != cis->lll.acl_handle) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_CIS_CREATE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	cig = cis->group;
+	ctx->data.cis_create.cis_handle = cis->lll.handle;
+
+	ctx->data.cis_create.cig_id = cis->group->cig_id;
+	ctx->data.cis_create.cis_id = cis->cis_id;
+	ctx->data.cis_create.c_phy = cis->lll.tx.phy;
+	ctx->data.cis_create.p_phy = cis->lll.rx.phy;
+	ctx->data.cis_create.c_sdu_interval = cig->c_sdu_interval;
+	ctx->data.cis_create.p_sdu_interval = cig->p_sdu_interval;
+	ctx->data.cis_create.c_max_pdu = cis->lll.tx.max_octets;
+	ctx->data.cis_create.p_max_pdu = cis->lll.rx.max_octets;
+	ctx->data.cis_create.c_max_sdu = cis->c_max_sdu;
+	ctx->data.cis_create.p_max_sdu = cis->p_max_sdu;
+	ctx->data.cis_create.iso_interval = cig->iso_interval;
+	ctx->data.cis_create.framed = cis->framed;
+	ctx->data.cis_create.nse = cis->lll.num_subevents;
+	ctx->data.cis_create.sub_interval = cis->lll.sub_interval;
+	ctx->data.cis_create.c_bn = cis->lll.tx.burst_number;
+	ctx->data.cis_create.p_bn = cis->lll.rx.burst_number;
+	ctx->data.cis_create.c_ft = cis->lll.tx.flush_timeout;
+	ctx->data.cis_create.p_ft = cis->lll.rx.flush_timeout;
+
+	ctx->data.cis_create.conn_event_count =
+		ull_central_iso_cis_offset_get(cis->lll.handle,
+					       &ctx->data.cis_create.cis_offset_min,
+					       &ctx->data.cis_create.cis_offset_max);
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
+
 #if defined(CONFIG_BT_CENTRAL)
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
 {
@@ -1225,6 +1279,19 @@ void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code)
 	}
 }
 #endif /* defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+bool ull_lp_cc_is_active(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_lp_cc_is_active(ctx);
+	}
+	return false;
+}
+#endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 
 static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
 {

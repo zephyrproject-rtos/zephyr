@@ -53,14 +53,12 @@ properties:
 
     div-p:
       type: int
-      required: false
       description: |
           PLLx DIVP division factor
           Valid range: 1 - 128
 
     div-q:
       type: int
-      required: false
       description: |
           PLLx DIVQ division factor
           Valid range: 1 - 128

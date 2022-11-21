@@ -10,7 +10,6 @@ include: [spi-device.yaml, display-controller.yaml]
 properties:
     extcomin-gpios:
       type: phandle-array
-      required: false
       description: EXTCOMIN pin
 
         The EXTCOMIN pin is where a square pulse for toggling VCOM will
@@ -18,7 +17,6 @@ properties:
 
     extcomin-frequency:
       type: int
-      required: false
       description: EXTCOMIN pin toggle frequency
 
         The frequency with which the EXTCOMIN pin should be toggled. See
@@ -27,7 +25,6 @@ properties:
 
     disp-en-gpios:
       type: phandle-array
-      required: false
       description: DISPLAY pin
 
         The DISPLAY pin controls if the LCD displays memory contents or

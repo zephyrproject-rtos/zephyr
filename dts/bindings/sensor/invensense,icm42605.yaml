@@ -19,7 +19,6 @@ properties:
 
     accel-hz:
       type: int
-      required: false
       default: 12
       description: |
         Default frequency of accelerometer. (Unit - Hz)
@@ -41,7 +40,6 @@ properties:
 
     gyro-hz:
       type: int
-      required: false
       default: 12
       description: |
         Default frequency of gyroscope. (Unit - Hz)
@@ -60,7 +58,6 @@ properties:
 
     accel-fs:
       type: int
-      required: false
       default: 16
       description: |
         Default full scale of accelerometer. (Unit - g)
@@ -73,7 +70,6 @@ properties:
 
     gyro-fs:
       type: int
-      required: false
       default: 2000
       description: |
         Default full scale of gyroscope. (Unit - DPS)

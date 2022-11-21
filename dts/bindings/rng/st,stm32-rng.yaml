@@ -16,7 +16,6 @@ properties:
 
     nist-config:
       type: int
-      required: false
       description: |
            This property is used to configure the RNG_CR for the NIST certification
            The validation conditions are following the refMan
@@ -30,14 +29,12 @@ properties:
 
     health-test-magic:
       type: int
-      required: false
       description: |
            Magic Number to be written to Health Test Configuration Register (HTCR)
            prior to real configuration, if any.
 
     health-test-config:
       type: int
-      required: false
       description: |
            Heath Test Configuration, necessary to have proper RNG behavior,
            when available.

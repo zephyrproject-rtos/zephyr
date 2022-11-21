@@ -69,8 +69,10 @@ int net_icmpv4_send_error(struct net_pkt *pkt, uint8_t type, uint8_t code);
  * @param tos IPv4 Type-of-service field value. Represents combined DSCP and ECN
  * values.
  * @param data Arbitrary payload data that will be included in the
- * Echo Reply verbatim. May be zero.
- * @param data_size Size of the Payload Data in bytes. May be zero.
+ * Echo Reply verbatim. May be NULL.
+ * @param data_size Size of the Payload Data in bytes. May be zero. In case data
+ * pointer is NULL, the function will generate the payload up to the requested
+ * size.
  *
  * @return Return 0 if the sending succeed, <0 otherwise.
  */

@@ -71,7 +71,6 @@ child-binding:
           Pin mux selections for this group. See the soc level iomuxc DTSI file
           for a defined list of these options.
       drive-strength:
-        required: false
         type: string
         enum:
           - "normal"
@@ -81,7 +80,6 @@ child-binding:
           0 (normal) - sets pin to normal drive strength
           1 (high) - sets pin to high drive strength
       slew-rate:
-        required: false
         type: string
         enum:
           - "fast"

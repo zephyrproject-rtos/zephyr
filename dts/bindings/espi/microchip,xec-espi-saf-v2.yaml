@@ -26,27 +26,22 @@ properties:
     poll-timeout:
       type: int
       description: poll flash busy timeout in 32KHz periods
-      required: false
 
     poll-interval:
       type: int
       description: interval between flash busy poll in 20 ns units
-      required: false
 
     consec-rd-timeout:
       type: int
       description: timeout after last read to resume supended operations in 20 ns units
-      required: false
 
     sus-chk-delay:
       type: int
       description: hold off poll after suspend in 20 ns units
-      required: false
 
     sus-rsm-interval:
       type: int
       description: force suspended erase or program to resume in 32KHz periods
-      required: false
 
     "#girq-cells":
       type: int

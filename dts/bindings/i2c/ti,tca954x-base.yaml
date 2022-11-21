@@ -49,7 +49,6 @@ include: [i2c-device.yaml]
 properties:
   reset-gpios:
     type: phandle-array
-    required: false
     description: |
       GPIO connected to the controller RESET pin. This pin is active-low.
 

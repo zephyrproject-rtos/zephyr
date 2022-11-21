@@ -19,17 +19,14 @@ properties:
 
     cd-gpios:
         type: phandle-array
-        required: false
         description: Card Detect pin
 
     pwr-gpios:
         type: phandle-array
-        required: false
         description: Power pin
 
     bus-width:
         type: int
-        required: false
         default: 1
         description: |
             bus width for SDMMC access, defaults to the minimum necessary

@@ -75,7 +75,6 @@ child-binding:
           Pin mux selection for this group. See the SOC level pinctrl header
           file in NXP's HAL for a defined list of these options.
       slew-rate:
-        required: false
         default: "standard"
         type: string
         enum:

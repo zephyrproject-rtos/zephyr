@@ -23,7 +23,6 @@ properties:
 
     xlnx,gen0-assert:
       type: int
-      required: false
       enum:
         - 0
         - 1
@@ -33,7 +32,6 @@ properties:
 
     xlnx,gen1-assert:
       type: int
-      required: false
       enum:
         - 0
         - 1
@@ -52,7 +50,6 @@ properties:
 
     xlnx,trig0-assert:
       type: int
-      required: false
       enum:
         - 0
         - 1
@@ -62,7 +59,6 @@ properties:
 
     xlnx,trig1-assert:
       type: int
-      required: false
       enum:
         - 0
         - 1

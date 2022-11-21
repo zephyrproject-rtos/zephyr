@@ -77,6 +77,30 @@ __asm__(".section .imr.z_boot_asm_entry, \"x\" \n\t"
 	"  call4 boot_core0   \n\t");
 
 
+#ifdef CONFIG_PM
+
+/* Entry point for restore from IMR flow */
+__asm__(".pushsection .boot_entry.text, \"ax\"\n\t"
+	".global rom_entry_d3_restore\n\t"
+	"rom_entry_d3_restore:\n\t"
+	"  j z_boot_entry_d3_restore\n\t"
+	".popsection\n\t");
+
+__asm__(".section .imr.z_boot_entry_d3_restore, \"x\"\n\t"
+	".align 4\n\t"
+	"z_boot_entry_d3_restore:\n\t"
+	"  movi  a0, 0x4002f\n\t"
+	"  wsr   a0, PS\n\t"
+	"  movi  a0, 0\n\t"
+	"  wsr   a0, WINDOWBASE\n\t"
+	"  movi  a0, 1\n\t"
+	"  wsr   a0, WINDOWSTART\n\t"
+	"  rsync\n\t"
+	"  movi  a1, " IMRSTACK"\n\t"
+	"  call4 boot_d3_restore\n\t");
+
+#endif /* CONFIG_PM */
+
 static __imr void parse_module(struct sof_man_fw_header *hdr,
 			       struct sof_man_module *mod)
 {
@@ -159,3 +183,25 @@ __imr void boot_core0(void)
 	extern FUNC_NORETURN void z_cstart(void);
 	z_cstart();
 }
+
+#ifdef CONFIG_PM
+__imr void boot_d3_restore(void)
+{
+
+	cpu_early_init();
+
+#ifdef CONFIG_ADSP_DISABLE_L2CACHE_AT_BOOT
+	ADSP_L2PCFG_REG = 0;
+#endif
+
+#ifdef RESET_MEMORY_HOLE
+	/* reset memory hole */
+	CAVS_SHIM.l2mecs = 0;
+#endif
+
+	lp_sram_init();
+
+	extern FUNC_NORETURN void pm_state_imr_restore(void);
+	pm_state_imr_restore();
+}
+#endif /* CONFIG_PM */

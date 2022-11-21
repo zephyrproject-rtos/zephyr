@@ -13,12 +13,6 @@ properties:
     reg:
       required: true
 
-    interrupts:
-      required: false
-
-    interrupt-names:
-      required: false
-
     ldn:
       type: int
       required: true
@@ -26,18 +20,15 @@ properties:
 
     girqs:
       type: array
-      required: false
       description: array of GIRQ and bit positions
 
     pcrs:
       type: array
-      required: false
       description: PCR sleep register index and bit position
 
 # optional properties application to different host facing devices
     host-io:
       type: int
-      required: false
       description: |
         Logical device Host I/O (x86) base. Refer to SoC documentation for the
         number of I/O decoders implemented by a device (1 or 2) and the fixed
@@ -45,7 +36,6 @@ properties:
 
     host-io-addr-mask:
       type: int
-      required: false
       description: |
         Host I/O address mask. This value is fixed for all HW and is only
         used by Port80 BIOS debug alias device to specify the byte lane the
@@ -53,7 +43,6 @@ properties:
 
     host-mem:
       type: int
-      required: false
       description: |
         Logical device Host memory (x86) base address. Refer to SoC
         documentation for which logical devices implement a memory decoder
@@ -61,7 +50,6 @@ properties:
 
     emi-mems:
       type: array
-      required: false
       description: |
         Each EMI host device supports Host access to two SoC data memory
         regions. Each region requires three configuration parameters:

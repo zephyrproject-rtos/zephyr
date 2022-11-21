@@ -335,6 +335,11 @@
 						((enc) ? (PDU_MIC_SIZE) : 0), \
 						(phy), (s8))
 
+#define PDU_CIS_MAX_US(octets, enc, phy) PDU_MAX_US((octets), \
+						    ((enc) ? \
+						     (PDU_MIC_SIZE) : 0), \
+						    (phy))
+
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
 	uint8_t data[PDU_AC_LEG_DATA_SIZE_MAX];

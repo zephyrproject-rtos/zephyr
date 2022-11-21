@@ -6,7 +6,6 @@ include: sensor-device.yaml
 properties:
     irq-gpios:
       type: phandle-array
-      required: false
       description: |
         DRDY pin
 
@@ -16,7 +15,6 @@ properties:
 
     range:
       type: int
-      required: false
       default: 2
       description: |
         Range in g. Default is power-up configuration.
@@ -29,7 +27,6 @@ properties:
 
     power-mode:
       type: int
-      required: false
       default: 0
       description: |
         Specify the sensor power mode. Default is power-down mode
@@ -42,7 +39,6 @@ properties:
 
     odr:
       type: int
-      required: false
       default: 0
       description: |
           Specify the default output data rate expressed in samples per second (Hz).
