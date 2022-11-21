@@ -850,7 +850,7 @@ static void modem_rx(void)
 		/* Wait for incoming data */
 		modem_iface_uart_rx_wait(&mctx.iface, K_FOREVER);
 
-		mctx.cmd_handler.process(&mctx.cmd_handler, &mctx.iface);
+		modem_cmd_handler_process(&mctx.cmd_handler, &mctx.iface);
 	}
 }
 
@@ -1153,17 +1153,22 @@ static int modem_init(const struct device *dev)
 		goto error;
 	}
 
-	/* cmd handler */
-	mdata.cmd_handler_data.cmds[CMD_RESP]	   = response_cmds;
-	mdata.cmd_handler_data.cmds_len[CMD_RESP]  = ARRAY_SIZE(response_cmds);
-	mdata.cmd_handler_data.cmds[CMD_UNSOL]	   = unsol_cmds;
-	mdata.cmd_handler_data.cmds_len[CMD_UNSOL] = ARRAY_SIZE(unsol_cmds);
-	mdata.cmd_handler_data.match_buf	   = &mdata.cmd_match_buf[0];
-	mdata.cmd_handler_data.match_buf_len	   = sizeof(mdata.cmd_match_buf);
-	mdata.cmd_handler_data.buf_pool		   = &mdm_recv_pool;
-	mdata.cmd_handler_data.alloc_timeout	   = BUF_ALLOC_TIMEOUT;
-	mdata.cmd_handler_data.eol		   = "\r\n";
-	ret = modem_cmd_handler_init(&mctx.cmd_handler, &mdata.cmd_handler_data);
+	/* cmd handler setup */
+	const struct modem_cmd_handler_config cmd_handler_config = {
+		.match_buf = &mdata.cmd_match_buf[0],
+		.match_buf_len = sizeof(mdata.cmd_match_buf),
+		.buf_pool = &mdm_recv_pool,
+		.alloc_timeout = BUF_ALLOC_TIMEOUT,
+		.eol = "\r\n",
+		.user_data = NULL,
+		.response_cmds = response_cmds,
+		.response_cmds_len = ARRAY_SIZE(response_cmds),
+		.unsol_cmds = unsol_cmds,
+		.unsol_cmds_len = ARRAY_SIZE(unsol_cmds),
+	};
+
+	ret = modem_cmd_handler_init(&mctx.cmd_handler, &mdata.cmd_handler_data,
+				     &cmd_handler_config);
 	if (ret < 0) {
 		goto error;
 	}
