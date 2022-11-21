@@ -337,6 +337,31 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_size(const struct shell *shell, size_t argc, char **argv)
+{
+	char path[MAX_PATH_LEN];
+	struct fs_dirent dirent;
+	int err;
+
+	create_abs_path(argv[1], path, sizeof(path));
+
+	err = fs_stat(path, &dirent);
+	if (err) {
+		shell_error(shell, "Failed to obtain file %s (err: %d)",
+			    path, err);
+		return -ENOEXEC;
+	}
+
+	if (dirent.type != FS_DIR_ENTRY_FILE) {
+		shell_error(shell, "Not a file %s", path);
+		return -ENOEXEC;
+	}
+
+	shell_print(shell, "%zd", dirent.size);
+
+	return 0;
+}
+
 static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
@@ -576,7 +601,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 		  "<Mount fs, syntax:- fs mount <fs type> <mount-point>", NULL),
 #endif
 	SHELL_CMD(pwd, NULL, "Print current working directory", cmd_pwd),
-	SHELL_CMD_ARG(read, NULL, "Read from file\nread <path> [<length>] [<offset>]", cmd_read, 2, 2),
+	SHELL_CMD_ARG(read, NULL, "Read from file\nread <file> [<length>] [<offset>]", cmd_read, 2, 2),
+	SHELL_CMD_ARG(size, NULL, "Get file size\nsize <file>", cmd_size, 2, 0),
 	SHELL_CMD_ARG(cat, NULL,
 		"Concatenate files and print on the standard output\ncat <file> [<file>...]",
 		cmd_cat, 2, CONFIG_SHELL_ARGC_MAX - 2),
