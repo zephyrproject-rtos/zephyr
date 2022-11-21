@@ -153,12 +153,10 @@ where:
     +-----------------------+---------------------------------------------------+
     | "hash"                | hash of an upload; this is used to identify       |
     |                       | an upload session, for example to allow mcumgr    |
-    |                       | library to continue broken session                |
-    |                       |                                                   |
-    |                       | .. note::                                         |
-    |                       |    By default mcumgr-cli uses here a few          |
-    |                       |    characters of sha256 of the first uploaded     |
-    |                       |    chunk.                                         |
+    |                       | library to continue broken session. This must be  |
+    |                       | a full sha256 of the whole image being uploaded,  |
+    |                       | and is optionally used for image verification     |
+    |                       | purposes.                                         |
     +-----------------------+---------------------------------------------------+
     | "bootable"            | true if image has bootable flag set;              |
     |                       | this field does not have to be present if false   |
