@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
+#include <zephyr/dt-bindings/reset/stm32u5_reset.h>
 #include <freq.h>
 
 / {
@@ -136,6 +137,11 @@
 			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x46020c00 0x400>;
+
+			rctl: reset-controller {
+				compatible = "st,stm32-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
 
 		exti: interrupt-controller@46022000 {
