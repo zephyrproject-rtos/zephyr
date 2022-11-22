@@ -52,7 +52,7 @@ __imr void boot_d3_restore(void)
 	extern void lp_sram_init(void);
 	lp_sram_init();
 
-	extern FUNC_NORETURN void pm_state_imr_restore(void);
+	extern void pm_state_imr_restore(void);
 	pm_state_imr_restore();
 }
 #endif /* CONFIG_PM */
