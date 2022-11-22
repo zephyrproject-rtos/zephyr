@@ -147,7 +147,7 @@ module = SHELL_BACKEND_RTT
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
@@ -243,7 +243,7 @@ module = SHELL_BACKEND_MQTT
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
@@ -339,7 +339,7 @@ module = SHELL_TELNET
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
