@@ -10,7 +10,7 @@
 #include <zephyr/init.h>
 
 SHELL_DUMMY_DEFINE(shell_transport_dummy);
-SHELL_DEFINE(shell_dummy, CONFIG_SHELL_PROMPT_DUMMY, &shell_transport_dummy, 1,
+SHELL_DEFINE(shell_dummy, CONFIG_SHELL_PROMPT_DUMMY, &shell_transport_dummy, 256,
 	     0, SHELL_FLAG_OLF_CRLF);
 
 static int init(const struct shell_transport *transport,
