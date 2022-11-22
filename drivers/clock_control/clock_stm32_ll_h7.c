@@ -340,6 +340,9 @@ static int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_PLL1_P) && IS_ENABLED(STM32_PLL_P_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL1_Q) && IS_ENABLED(STM32_PLL_Q_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL1_R) && IS_ENABLED(STM32_PLL_R_ENABLED)) ||
+	    ((src_clk == STM32_SRC_PLL2_P) && IS_ENABLED(STM32_PLL2_P_ENABLED)) ||
+	    ((src_clk == STM32_SRC_PLL2_Q) && IS_ENABLED(STM32_PLL2_Q_ENABLED)) ||
+	    ((src_clk == STM32_SRC_PLL2_R) && IS_ENABLED(STM32_PLL2_R_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_P) && IS_ENABLED(STM32_PLL3_P_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_Q) && IS_ENABLED(STM32_PLL3_Q_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_R) && IS_ENABLED(STM32_PLL3_R_ENABLED))) {
@@ -521,6 +524,26 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLL_R_DIVISOR);
 		break;
 #endif /* STM32_PLL_ENABLED */
+#if defined(STM32_PLL2_ENABLED)
+	case STM32_SRC_PLL2_P:
+		*rate = get_pllout_frequency(get_pllsrc_frequency(),
+					      STM32_PLL2_M_DIVISOR,
+					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_P_DIVISOR);
+		break;
+	case STM32_SRC_PLL2_Q:
+		*rate = get_pllout_frequency(get_pllsrc_frequency(),
+					      STM32_PLL2_M_DIVISOR,
+					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_Q_DIVISOR);
+		break;
+	case STM32_SRC_PLL2_R:
+		*rate = get_pllout_frequency(get_pllsrc_frequency(),
+					      STM32_PLL2_M_DIVISOR,
+					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_R_DIVISOR);
+		break;
+#endif /* STM32_PLL2_ENABLED */
 #if defined(STM32_PLL3_ENABLED)
 	case STM32_SRC_PLL3_P:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
@@ -617,7 +640,7 @@ static void set_up_fixed_clock_sources(void)
 __unused
 static int set_up_plls(void)
 {
-#if defined(STM32_PLL_ENABLED) || defined(STM32_PLL3_ENABLED)
+#if defined(STM32_PLL_ENABLED) || defined(STM32_PLL2_ENABLED) || defined(STM32_PLL3_ENABLED)
 	int r;
 	uint32_t vco_input_range;
 	uint32_t vco_output_range;
@@ -677,6 +700,44 @@ static int set_up_plls(void)
 
 #endif /* STM32_PLL_ENABLED */
 
+#if defined(STM32_PLL2_ENABLED)
+	r = get_vco_input_range(STM32_PLL2_M_DIVISOR, &vco_input_range);
+	if (r < 0) {
+		return r;
+	}
+
+	vco_output_range = get_vco_output_range(vco_input_range);
+
+	LL_RCC_PLL2_SetM(STM32_PLL2_M_DIVISOR);
+
+	LL_RCC_PLL2_SetVCOInputRange(vco_input_range);
+	LL_RCC_PLL2_SetVCOOutputRange(vco_output_range);
+
+	LL_RCC_PLL2_SetN(STM32_PLL2_N_MULTIPLIER);
+
+	LL_RCC_PLL2FRACN_Disable();
+
+	if (IS_ENABLED(STM32_PLL2_P_ENABLED)) {
+		LL_RCC_PLL2_SetP(STM32_PLL2_P_DIVISOR);
+		LL_RCC_PLL2P_Enable();
+	}
+
+	if (IS_ENABLED(STM32_PLL2_Q_ENABLED)) {
+		LL_RCC_PLL2_SetQ(STM32_PLL2_Q_DIVISOR);
+		LL_RCC_PLL2Q_Enable();
+	}
+
+	if (IS_ENABLED(STM32_PLL2_R_ENABLED)) {
+		LL_RCC_PLL2_SetR(STM32_PLL2_R_DIVISOR);
+		LL_RCC_PLL2R_Enable();
+	}
+
+	LL_RCC_PLL2_Enable();
+	while (LL_RCC_PLL2_IsReady() != 1U) {
+	}
+
+#endif /* STM32_PLL2_ENABLED */
+
 #if defined(STM32_PLL3_ENABLED)
 	r = get_vco_input_range(STM32_PLL3_M_DIVISOR, &vco_input_range);
 	if (r < 0) {
@@ -719,7 +780,7 @@ static int set_up_plls(void)
 	/* Init PLL source to None */
 	LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_NONE);
 
-#endif /* STM32_PLL_ENABLED || STM32_PLL3_ENABLED */
+#endif /* STM32_PLL_ENABLED || STM32_PLL2_ENABLED || STM32_PLL3_ENABLED */
 
 	return 0;
 }
