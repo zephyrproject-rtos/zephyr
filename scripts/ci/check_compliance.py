@@ -39,26 +39,19 @@ def git(*args, cwd=None):
 
     git_cmd = ("git",) + args
     try:
-        git_process = subprocess.Popen(
-            git_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+        cp = subprocess.run(git_cmd, capture_output=True, cwd=cwd)
     except OSError as e:
         err(f"failed to run '{cmd2str(git_cmd)}': {e}")
 
-    stdout, stderr = git_process.communicate()
-    stdout = stdout.decode("utf-8")
-    stderr = stderr.decode("utf-8")
-    if git_process.returncode or stderr:
-        err(f"""\
-'{cmd2str(git_cmd)}' exited with status {git_process.returncode} and/or wrote
-to stderr.
+    if cp.returncode or cp.stderr:
+        err(f"'{cmd2str(git_cmd)}' exited with status {cp.returncode} and/or "
+            f"wrote to stderr.\n"
+            f"==stdout==\n"
+            f"{cp.stdout.decode('utf-8')}\n"
+            f"==stderr==\n"
+            f"{cp.stderr.decode('utf-8')}\n")
 
-==stdout==
-{stdout}
-==stderr==
-{stderr}""")
-
-    return stdout.rstrip()
-
+    return cp.stdout.decode("utf-8").rstrip()
 
 def get_shas(refspec):
     """
@@ -194,14 +187,16 @@ class CheckPatch(ComplianceTest):
         if not os.path.exists(checkpatch):
             self.skip(checkpatch + " not found")
 
-        # git diff's output doesn't depend on the current (sub)directory
         diff = subprocess.Popen(('git', 'diff', COMMIT_RANGE),
-                                stdout=subprocess.PIPE)
+                                stdout=subprocess.PIPE,
+                                cwd=GIT_TOP)
         try:
-            subprocess.check_output((checkpatch, '--mailback', '--no-tree', '-'),
-                                    stdin=diff.stdout,
-                                    stderr=subprocess.STDOUT,
-                                    shell=True, cwd=GIT_TOP)
+            subprocess.run((checkpatch, '--mailback', '--no-tree', '-'),
+                           check=True,
+                           stdin=diff.stdout,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
+                           shell=True, cwd=GIT_TOP)
 
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
@@ -297,9 +292,10 @@ class KconfigCheck(ComplianceTest):
         cmd = [sys.executable, zephyr_module_path,
                '--kconfig-out', modules_file]
         try:
-            _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as ex:
-            self.error(ex.output)
+            self.error(ex.output.decode("utf-8"))
 
         modules_dir = ZEPHYR_BASE + '/modules'
         modules = [name for name in os.listdir(modules_dir) if
@@ -331,9 +327,10 @@ class KconfigCheck(ComplianceTest):
         cmd = [sys.executable, zephyr_drv_kconfig_path,
                '--kconfig-out', kconfig_dts_file, '--bindings', binding_path]
         try:
-            _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as ex:
-            self.error(ex.output)
+            self.error(ex.output.decode("utf-8"))
 
 
     def parse_kconfig(self):
@@ -919,16 +916,15 @@ class GitLint(ComplianceTest):
     def run(self):
         # By default gitlint looks for .gitlint configuration only in
         # the current directory
-        proc = subprocess.Popen('gitlint --commits ' + COMMIT_RANGE,
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                shell=True, cwd=GIT_TOP)
+        try:
+            subprocess.run('gitlint --commits ' + COMMIT_RANGE,
+                           check=True,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
+                           shell=True, cwd=GIT_TOP)
 
-        msg = ""
-        if proc.wait() != 0:
-            msg = proc.stdout.read()
-
-        if msg != "":
-            self.failure(msg.decode("utf-8"))
+        except subprocess.CalledProcessError as ex:
+            self.failure(ex.output.decode("utf-8"))
 
 
 class PyLint(ComplianceTest):
