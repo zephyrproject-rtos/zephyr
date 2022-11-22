@@ -10,4 +10,5 @@ zephyr_library_sources(
   irq.c
   power_down.S
   power.c
+  boot.c
   )

@@ -73,7 +73,7 @@ uint8_t *global_imr_ram_storage;
 /*8
  * @biref a d3 restore boot entry point
  */
-extern void rom_entry_d3_restore(void);
+extern void boot_entry_d3_restore(void);
 
 /* NOTE: This struct will grow with all values that have to be stored for
  * proper cpu restore after PG.
@@ -219,7 +219,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 			imr_layout->imr_state.header.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE;
 			imr_layout->imr_state.header.imr_restore_vector =
-					(void *)rom_entry_d3_restore;
+					(void *)boot_entry_d3_restore;
 			imr_layout->imr_state.header.imr_ram_storage = global_imr_ram_storage;
 			z_xtensa_cache_flush(imr_layout, sizeof(*imr_layout));
 
