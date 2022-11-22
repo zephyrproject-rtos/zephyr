@@ -396,6 +396,15 @@ void settings_mount_fcb_backend(struct settings_fcb *cf)
 	settings_line_io_init(read_handler, write_handler, get_len_cb, rbs);
 }
 
+static void *settings_fcb_storage_get(struct settings_store *cs)
+{
+	struct settings_fcb *cf = CONTAINER_OF(cs, struct settings_fcb, cf_store);
+
+	return &cf->cf_fcb;
+}
+
+#ifdef CONFIG_SETTINGS_FCB_INIT
+
 int settings_backend_init(void)
 {
 	static struct flash_sector
@@ -447,9 +456,4 @@ int settings_backend_init(void)
 	return rc;
 }
 
-static void *settings_fcb_storage_get(struct settings_store *cs)
-{
-	struct settings_fcb *cf = CONTAINER_OF(cs, struct settings_fcb, cf_store);
-
-	return &cf->cf_fcb;
-}
+#endif /* CONFIG_SETTINGS_FCB_INIT */

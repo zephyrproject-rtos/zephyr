@@ -516,6 +516,15 @@ void settings_mount_file_backend(struct settings_file *cf)
 	settings_line_io_init(read_handler, write_handler, get_len_cb, 1);
 }
 
+static void *settings_file_storage_get(struct settings_store *cs)
+{
+	struct settings_file *cf = CONTAINER_OF(cs, struct settings_file, cf_store);
+
+	return (void *)cf->cf_name;
+}
+
+#ifdef CONFIG_SETTINGS_FILE_INIT
+
 static int mkdir_if_not_exists(const char *path)
 {
 	struct fs_dirent entry;
@@ -582,9 +591,4 @@ int settings_backend_init(void)
 	return mkdir_for_file(config_init_settings_file.cf_name);
 }
 
-static void *settings_file_storage_get(struct settings_store *cs)
-{
-	struct settings_file *cf = CONTAINER_OF(cs, struct settings_file, cf_store);
-
-	return (void *)cf->cf_name;
-}
+#endif /* CONFIG_SETTINGS_FILE_INIT */

@@ -30,18 +30,53 @@ config SETTINGS_DYNAMIC_HANDLERS
 config SETTINGS_ENCODE_LEN
 	bool
 
-choice SETTINGS_BACKEND
-	prompt "Storage back-end"
-	default SETTINGS_NVS if NVS
-	default SETTINGS_FCB if FCB
-	default SETTINGS_FILE if FILE_SYSTEM
-	default SETTINGS_NONE
+choice SETTINGS_INIT_BACKEND
+	prompt "Storage back-end init"
+	# backward compatibility for deprecated options
+	default SETTINGS_CUSTOM_INIT if SETTINGS_CUSTOM
+	default SETTINGS_NONE_INIT if SETTINGS_NONE
+	# non-deprecated options
+	default SETTINGS_NVS_INIT if SETTINGS_NVS
+	default SETTINGS_FCB_INIT if SETTINGS_FCB
+	default SETTINGS_FILE_INIT if SETTINGS_FILE || SETTINGS_FS
+	default SETTINGS_NONE_INIT
 	help
 	  Storage back-end to be used by the settings subsystem.
+
+config SETTINGS_FCB_INIT
+	bool "FCB"
+	depends on SETTINGS_FCB
+	help
+	  Use FCB as a settings storage back-end.
+
+config SETTINGS_FILE_INIT
+	bool "File"
+	depends on SETTINGS_FILE
+	help
+	  Use a file system as a settings storage back-end.
+
+config SETTINGS_NVS_INIT
+	bool "NVS"
+	depends on SETTINGS_NVS
+	help
+	  Enables NVS storage support
+
+config SETTINGS_CUSTOM_INIT
+	bool "CUSTOM"
+	help
+	  Use a custom settings storage back-end.
+
+config SETTINGS_NONE_INIT
+	bool "NONE"
+	help
+	  No storage back-end.
+
+endchoice
 
 config SETTINGS_FCB
 	bool "FCB"
 	depends on FCB
+	depends on !SETTINGS_ENCODE_LEN
 	help
 	  Use FCB as a settings storage back-end.
 
@@ -85,21 +120,10 @@ config SETTINGS_NVS_NAME_CACHE_SIZE
 
 endif # SETTINGS_NVS
 
-config SETTINGS_CUSTOM
-	bool "CUSTOM"
-	help
-	  Use a custom settings storage back-end.
-
-config SETTINGS_NONE
-	bool "NONE"
-	help
-	  No storage back-end.
-endchoice
-
 config SETTINGS_FCB_NUM_AREAS
 	int "Number of flash areas used by the settings subsystem"
 	default 8
-	depends on SETTINGS_FCB
+	depends on SETTINGS_FCB_INIT
 	help
 	  Number of areas to allocate in the settings FCB. A smaller number is
 	  used if the flash hardware cannot support this value.
@@ -114,14 +138,14 @@ config SETTINGS_FCB_MAGIC
 config SETTINGS_FILE_PATH
 	string "Default settings file"
 	default "/settings/run"
-	depends on SETTINGS_FILE
+	depends on SETTINGS_FILE_INIT
 	help
 	  Full path to the default settings file.
 
 config SETTINGS_FILE_MAX_LINES
 	int "Compression threshold"
 	default 32
-	depends on SETTINGS_FILE
+	depends on SETTINGS_FILE_INIT
 	help
 	  Limit how many items stored in a file before compressing
 
@@ -149,7 +173,7 @@ config SETTINGS_FS_MAX_LINES
 config SETTINGS_NVS_SECTOR_SIZE_MULT
 	int "Sector size of the NVS settings area"
 	default 1
-	depends on SETTINGS_NVS
+	depends on SETTINGS_NVS_INIT
 	help
 	  The sector size to use for the NVS settings area as a multiple of
 	  FLASH_ERASE_BLOCK_SIZE.
@@ -157,9 +181,21 @@ config SETTINGS_NVS_SECTOR_SIZE_MULT
 config SETTINGS_NVS_SECTOR_COUNT
 	int "Sector count of the NVS settings area"
 	default 8
-	depends on SETTINGS_NVS
+	depends on SETTINGS_NVS_INIT
 	help
 	  Number of sectors used for the NVS settings area
+
+config SETTINGS_CUSTOM
+	bool "CUSTOM backend (DEPRECATED)"
+	select DEPRECATED
+	help
+	  This is deprecated. Use SETTINGS_CUSTOM_INIT instead.
+
+config SETTINGS_NONE
+	bool "NONE backend (DEPRECATED)"
+	select DEPRECATED
+	help
+	  This is deprecated. Use SETTINGS_NONE_INIT instead.
 
 config SETTINGS_SHELL
 	bool "Settings shell"

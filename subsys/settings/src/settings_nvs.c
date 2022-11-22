@@ -342,6 +342,15 @@ int settings_nvs_backend_init(struct settings_nvs *cf)
 	return 0;
 }
 
+static void *settings_nvs_storage_get(struct settings_store *cs)
+{
+	struct settings_nvs *cf = CONTAINER_OF(cs, struct settings_nvs, cf_store);
+
+	return &cf->cf_nvs;
+}
+
+#ifdef CONFIG_SETTINGS_NVS_INIT
+
 int settings_backend_init(void)
 {
 	static struct settings_nvs default_settings_nvs;
@@ -400,9 +409,4 @@ int settings_backend_init(void)
 	return rc;
 }
 
-static void *settings_nvs_storage_get(struct settings_store *cs)
-{
-	struct settings_nvs *cf = CONTAINER_OF(cs, struct settings_nvs, cf_store);
-
-	return &cf->cf_nvs;
-}
+#endif /* CONFIG_SETTINGS_NVS_INIT */
