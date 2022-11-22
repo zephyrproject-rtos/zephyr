@@ -29,6 +29,7 @@ from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.testinstance import TestInstance
+from twisterlib.quarantine import Quarantine
 
 
 from zephyr_module import parse_modules
@@ -79,7 +80,7 @@ class TestPlan:
 
         # Keep track of which test cases we've filtered out and why
         self.testsuites = {}
-        self.quarantine = {}
+        self.quarantine = None
         self.platforms = []
         self.platform_names = []
         self.selected_platforms = []
@@ -128,15 +129,12 @@ class TestPlan:
 
         # handle quarantine
         ql = self.options.quarantine_list
-        if ql:
-            self.load_quarantine(ql)
-
         qv = self.options.quarantine_verify
-        if qv:
-            if not ql:
-                logger.error("No quarantine list given to be verified")
-                raise TwisterRuntimeError("No quarantine list given to be verified")
-
+        if qv and not ql:
+            logger.error("No quarantine list given to be verified")
+            raise TwisterRuntimeError("No quarantine list given to be verified")
+        if ql:
+            self.quarantine = Quarantine(ql)
 
     def load(self):
 
@@ -463,35 +461,6 @@ class TestPlan:
                 break
         return selected_platform
 
-    def load_quarantine(self, file):
-        """
-        Loads quarantine list from the given yaml file. Creates a dictionary
-        of all tests configurations (platform + scenario: comment) that shall be
-        skipped due to quarantine
-        """
-
-        # Load yaml into quarantine_yaml
-        quarantine_yaml = scl.yaml_load_verify(file, self.quarantine_schema)
-
-        # Create quarantine_list with a product of the listed
-        # platforms and scenarios for each entry in quarantine yaml
-        quarantine_list = []
-        for quar_dict in quarantine_yaml:
-            if quar_dict['platforms'][0] == "all":
-                plat = self.platform_names
-            else:
-                plat = quar_dict['platforms']
-                self.verify_platforms_existence(plat, "quarantine-list")
-            comment = quar_dict.get('comment', "NA")
-            quarantine_list.append([{".".join([p, s]): comment}
-                                   for p in plat for s in quar_dict['scenarios']])
-
-        # Flatten the quarantine_list
-        quarantine_list = [it for sublist in quarantine_list for it in sublist]
-        # Change quarantine_list into a dictionary
-        for d in quarantine_list:
-            self.quarantine.update(d)
-
     def load_from_file(self, file, filter_platform=[]):
         with open(file, "r") as json_test_plan:
             jtp = json.load(json_test_plan)
@@ -775,14 +744,15 @@ class TestPlan:
                     else:
                         instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
 
-                test_configuration = ".".join([instance.platform.name,
-                                               instance.testsuite.id])
-                # skip quarantined tests
-                if test_configuration in self.quarantine and not self.options.quarantine_verify:
-                    instance.add_filter(f"Quarantine: {self.quarantine[test_configuration]}", Filters.QUARENTINE)
-                # run only quarantined test to verify their statuses (skip everything else)
-                if self.options.quarantine_verify and test_configuration not in self.quarantine:
-                    instance.add_filter("Not under quarantine", Filters.QUARENTINE)
+                # handle quarantined tests
+                if self.quarantine:
+                    matched_quarantine = self.quarantine.get_matched_quarantine(
+                        instance.testsuite.id, plat.name, plat.arch
+                    )
+                    if matched_quarantine and not self.options.quarantine_verify:
+                        instance.add_filter(matched_quarantine, Filters.QUARENTINE)
+                    if not matched_quarantine and self.options.quarantine_verify:
+                        instance.add_filter("Not under quarantine", Filters.QUARENTINE)
 
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.

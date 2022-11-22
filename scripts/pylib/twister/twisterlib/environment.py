@@ -475,6 +475,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument(
         "--quarantine-list",
+        action="append",
         metavar="FILENAME",
         help="Load list of test scenarios under quarantine. The entries in "
              "the file need to correspond to the test scenarios names as in "
