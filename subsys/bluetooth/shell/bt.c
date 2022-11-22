@@ -102,6 +102,22 @@ static const char *phy2str(uint8_t phy)
 }
 #endif
 
+#if defined(CONFIG_BT_CONN) || (defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_EXT_ADV))
+static void print_le_addr(const char *desc, const bt_addr_le_t *addr)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+
+	const char *addr_desc = bt_addr_le_is_identity(addr) ? "identity" :
+				bt_addr_le_is_rpa(addr) ? "resolvable" :
+				"non-resolvable";
+
+	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+
+	shell_print(ctx_shell, "%s address: %s (%s)", desc, addr_str,
+		    addr_desc);
+}
+#endif /* CONFIG_BT_CONN || (CONFIG_BT_BROADCASTER && CONFIG_BT_EXT_ADV) */
+
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_scan_off(const struct shell *sh);
 static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[]);
@@ -1795,6 +1811,7 @@ static int cmd_adv_info(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "Advertiser[%d] %p", selected_adv, adv);
 	shell_print(sh, "Id: %d, TX power: %d dBm", info.id, info.tx_power);
+	print_le_addr("Address", info.addr);
 
 	return 0;
 }
@@ -2423,20 +2440,6 @@ static const char *get_conn_role_str(uint8_t role)
 	case BT_CONN_ROLE_PERIPHERAL: return "peripheral";
 	default: return "Invalid";
 	}
-}
-
-static void print_le_addr(const char *desc, const bt_addr_le_t *addr)
-{
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	const char *addr_desc = bt_addr_le_is_identity(addr) ? "identity" :
-				bt_addr_le_is_rpa(addr) ? "resolvable" :
-				"non-resolvable";
-
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-
-	shell_print(ctx_shell, "%s address: %s (%s)", desc, addr_str,
-		    addr_desc);
 }
 
 static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
