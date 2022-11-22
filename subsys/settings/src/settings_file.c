@@ -122,7 +122,7 @@ static int read_entry_len(const struct line_entry_ctx *entry_ctx, off_t off)
 static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 				   void *cb_arg, bool filter_duplicates)
 {
-	struct settings_file *cf = (struct settings_file *)cs;
+	struct settings_file *cf = CONTAINER_OF(cs, struct settings_file, cf_store);
 	struct fs_file_t file;
 	int lines;
 	int rc;
@@ -375,7 +375,7 @@ end_rolback:
 static int settings_file_save_priv(struct settings_store *cs, const char *name,
 				   const char *value, size_t val_len)
 {
-	struct settings_file *cf = (struct settings_file *)cs;
+	struct settings_file *cf = CONTAINER_OF(cs, struct settings_file, cf_store);
 	struct line_entry_ctx entry_ctx;
 	struct fs_file_t file;
 	int rc2;
@@ -550,7 +550,7 @@ int settings_backend_init(void)
 
 static void *settings_file_storage_get(struct settings_store *cs)
 {
-	struct settings_file *cf = (struct settings_file *)cs;
+	struct settings_file *cf = CONTAINER_OF(cs, struct settings_file, cf_store);
 
 	return (void *)cf->cf_name;
 }
