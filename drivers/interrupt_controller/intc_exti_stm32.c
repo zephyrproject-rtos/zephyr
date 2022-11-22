@@ -113,7 +113,7 @@ void stm32_exti_enable(int line)
 {
 	int irqnum = 0;
 
-	if (line >= ARRAY_SIZE(exti_irq_table)) {
+	if (line >= (int)ARRAY_SIZE(exti_irq_table)) {
 		__ASSERT_NO_MSG(line);
 	}
 

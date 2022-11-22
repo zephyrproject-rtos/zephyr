@@ -1601,7 +1601,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 		}
 		case 'c':
 			bps = buf;
-			buf[0] = CHAR_IS_SIGNED ? value->sint : value->uint;
+			buf[0] = CHAR_IS_SIGNED ? (char)value->sint : (char)value->uint;
 			bpe = buf + 1;
 			break;
 		case 'd':

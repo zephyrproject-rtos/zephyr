@@ -900,7 +900,7 @@ static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_ret
 	*nested_exc = false;
 
 	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) !=
-			EXC_RETURN_INDICATOR_PREFIX) {
+			(uint32_t)EXC_RETURN_INDICATOR_PREFIX) {
 		/* Invalid EXC_RETURN value. This is a fatal error. */
 		return NULL;
 	}

@@ -285,7 +285,7 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 	}
 
 	wrote = ring_buf_put(dev_data->rx_ringbuf, dev_data->rx_buf, size);
-	if (wrote < size) {
+	if ((int)wrote >= 0 && (int)wrote < size) {
 		LOG_ERR("Ring buffer full, drop %zd bytes", size - wrote);
 	}
 
@@ -517,7 +517,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	dev_data->tx_ready = false;
 
 	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
-	if (wrote < len) {
+	if ((int)wrote >= 0 && (int)wrote < len) {
 		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
 

@@ -201,8 +201,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		delay =
 		 ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
 		delay -= unannounced;
-		delay = MAX(delay, MIN_DELAY);
-		if (delay > MAX_CYCLES) {
+		delay = MAX(delay, (uint32_t)MIN_DELAY);
+		if (delay > (uint32_t)MAX_CYCLES) {
 			last_load = MAX_CYCLES;
 		} else {
 			last_load = delay;
