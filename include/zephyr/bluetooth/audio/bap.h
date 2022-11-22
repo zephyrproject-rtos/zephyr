@@ -2030,8 +2030,8 @@ struct bt_bap_broadcast_assistant_add_src_param {
  *
  * @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
-				       struct bt_bap_broadcast_assistant_add_src_param *param);
+int bt_bap_broadcast_assistant_add_src(
+	struct bt_conn *conn, const struct bt_bap_broadcast_assistant_add_src_param *param);
 
 /** Parameters for modifying a source */
 struct bt_bap_broadcast_assistant_mod_src_param {
@@ -2062,8 +2062,8 @@ struct bt_bap_broadcast_assistant_mod_src_param {
  *
  *  @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
-				       struct bt_bap_broadcast_assistant_mod_src_param *param);
+int bt_bap_broadcast_assistant_mod_src(
+	struct bt_conn *conn, const struct bt_bap_broadcast_assistant_mod_src_param *param);
 
 /** @brief Set a broadcast code to the specified receive state.
  *
@@ -2074,7 +2074,8 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
  *  @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
 int bt_bap_broadcast_assistant_set_broadcast_code(
-	struct bt_conn *conn, uint8_t src_id, uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
+	struct bt_conn *conn, uint8_t src_id,
+	const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
 
 /** @brief Remove a source from the server.
  *
