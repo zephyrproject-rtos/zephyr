@@ -83,6 +83,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_NUMAKER    gpio_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_EFINIX_SAPPHIRE    gpio_efinix_sapphire.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_DAVINCI    gpio_davinci.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SEDI    gpio_sedi.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_ALTERA_PIO gpio_altera_pio.c)
 
 if (CONFIG_GPIO_EMUL_SDL)
   zephyr_library_sources(gpio_emul_sdl.c)
