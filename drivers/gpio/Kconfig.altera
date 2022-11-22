@@ -1,0 +1,14 @@
+config GPIO_ALTERA_PIO
+	bool "Altera PIO"
+	help
+		Enable driver for Altera PIO
+
+config GPIO_ALTERA_PIO_OUTSET
+	bool "Outset Register"
+	help
+		Enable outset register to specify which bit of the output port to set.
+
+config GPIO_ALTERA_PIO_OUTCLEAR
+	bool "Outclear Register"
+	help
+		Enable outclear register to specify which output bit to clear.

@@ -1,0 +1,37 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Altera PIO node
+
+compatible: "altr,pio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ngpios:
+    required: true
+    type: int
+    description: |
+        Width of the I/O ports.
+
+  direction:
+    required: false
+    type: string
+    description: |
+        Direction can be set to Bidir, Input, InOut or Output.
+    default: Output
+    enum:
+      - "Bidir"
+      - "Input"
+      - "InOut"
+      - "Output"
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
