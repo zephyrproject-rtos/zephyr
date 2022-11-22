@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/reset/stm32wb_l_reset.h>
 #include <freq.h>
 
 / {
@@ -103,6 +104,11 @@
 			compatible = "st,stm32wl-rcc";
 			#clock-cells = <2>;
 			reg = <0x58000000 0x400>;
+
+			rctl: reset-controller {
+				compatible = "st,stm32-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
 
 		exti: interrupt-controller@58000800 {
