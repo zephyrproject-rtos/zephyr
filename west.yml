@@ -29,7 +29,7 @@ manifest:
       revision: 53d3415c14d60f8f4bfca54bfbc5d5a667d7e724
       path: modules/lib/canopennode
     - name: chre
-      revision: ef76d3456db07e4959df555047d6962279528c8d
+      revision: fe0ab36e0fa7453a4c9b97bedac89709f45cf965
       path: modules/lib/chre
     - name: cmsis
       revision: 093de61c2a7d12dc9253daf8692f61f793a9254a
