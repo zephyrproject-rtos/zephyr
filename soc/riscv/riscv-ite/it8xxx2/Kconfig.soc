@@ -105,4 +105,12 @@ config SOC_IT8XXX2_EXCEPTIONS_IN_RAM
 	  Flash. This can significantly improve performance when under I-cache
 	  pressure.
 
+config SOC_IT8XXX2_SHA256_HW_ACCELERATE
+	bool "HW SHA256 calculation"
+	help
+	  IT8XXX2 HW support sha256 calculation, and its calculation is faster than FW.
+	  We place SHA256 message, hash and key data (total 512bytes) in RAM.
+	  If we enable this config, because HW limits, the sha256 data must place in
+	  first 4KB of RAM.
+
 endif # SOC_IT8XXX2
