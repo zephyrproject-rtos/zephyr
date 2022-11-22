@@ -16,12 +16,18 @@ sequence:
     mapping:
       "scenarios":
         type: seq
-        required: true
+        required: false
         sequence:
           - type: str
           - unique: true
       "platforms":
-        required: true
+        required: false
+        type: seq
+        sequence:
+          - type: str
+          - unique: True
+      "architectures":
+        required: false
         type: seq
         sequence:
           - type: str
