@@ -693,7 +693,7 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn)
 }
 
 int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
-				       struct bt_bap_broadcast_assistant_add_src_param *param)
+				       const struct bt_bap_broadcast_assistant_add_src_param *param)
 {
 	struct bt_bap_bass_cp_add_src *cp;
 
@@ -763,7 +763,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 }
 
 int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
-				       struct bt_bap_broadcast_assistant_mod_src_param *param)
+				       const struct bt_bap_broadcast_assistant_mod_src_param *param)
 {
 	struct bt_bap_bass_cp_mod_src *cp;
 	bool known_recv_state;
@@ -849,7 +849,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 
 int bt_bap_broadcast_assistant_set_broadcast_code(
 	struct bt_conn *conn, uint8_t src_id,
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+	const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
 {
 	struct bt_bap_bass_cp_broadcase_code *cp;
 
