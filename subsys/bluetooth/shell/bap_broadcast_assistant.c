@@ -305,6 +305,7 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 	int result;
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	unsigned long pa_sync;
 
 	result = bt_addr_le_from_str(argv[1], argv[2], &param.addr);
 	if (result) {
@@ -318,11 +319,18 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	param.pa_sync = strtol(argv[4], NULL, 0);
-	if (param.pa_sync < 0 || param.pa_sync > 1) {
-		shell_error(sh, "pa_sync shall be boolean");
+	pa_sync = shell_strtoul(argv[4], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "failed to parse pa_sync: %d", result);
+
+		return -ENOEXEC;
+	} else if (pa_sync != 0U || pa_sync != 1U) {
+		shell_error(sh, "pa_sync shall be boolean: %ul", pa_sync);
+
 		return -ENOEXEC;
 	}
+
+	param.pa_sync = (bool)pa_sync;
 
 	param.broadcast_id = strtol(argv[5], NULL, 0);
 	if (param.broadcast_id < 0 ||
@@ -376,6 +384,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 	int result;
 	struct bt_bap_broadcast_assistant_mod_src_param param = { 0 };
 	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	unsigned long pa_sync;
 
 	param.src_id = strtol(argv[1], NULL, 0);
 	if (param.src_id < 0 || param.src_id > UINT8_MAX) {
@@ -383,11 +392,19 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	param.pa_sync = strtol(argv[2], NULL, 0);
-	if (param.pa_sync < 0 || param.pa_sync > 1) {
-		shell_error(sh, "pa_sync shall be boolean");
+	result = 0;
+	pa_sync = shell_strtoul(argv[4], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "failed to parse pa_sync: %d", result);
+
+		return -ENOEXEC;
+	} else if (pa_sync != 0U || pa_sync != 1U) {
+		shell_error(sh, "pa_sync shall be boolean: %ul", pa_sync);
+
 		return -ENOEXEC;
 	}
+
+	param.pa_sync = (bool)pa_sync;
 
 	if (argc > 3) {
 		param.pa_interval = strtol(argv[3], NULL, 0);

@@ -695,7 +695,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 
 	sys_put_le24(param->broadcast_id, cp->broadcast_id);
 
-	if (param->pa_sync != 0) {
+	if (param->pa_sync) {
 		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
 		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
 			/* TODO: Validate that we are synced to the peer address
@@ -767,7 +767,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 	cp->opcode = BT_BAP_BASS_OP_MOD_SRC;
 	cp->src_id = param->src_id;
 
-	if (param->pa_sync != 0) {
+	if (param->pa_sync) {
 		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
 		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC_PAST;
