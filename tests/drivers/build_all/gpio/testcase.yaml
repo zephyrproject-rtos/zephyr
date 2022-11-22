@@ -6,3 +6,9 @@ tests:
     min_ram: 32
     platform_exclude: serpente
     depends_on: gpio spi i2c
+
+  drivers.gpio.build.altera_pio:
+    min_ram: 32
+    platform_allow: niosv_m
+    depends_on: gpio spi i2c
+    extra_args: DTC_OVERLAY_FILE="altera.overlay"
