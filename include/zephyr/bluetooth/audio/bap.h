@@ -1846,30 +1846,6 @@ const struct bt_bap_scan_delegator_recv_state *bt_bap_scan_delegator_find_state(
 /******************************** CLIENT API ********************************/
 
 /**
- * @brief Callback function for when a receive state is read or updated
- *
- * Called whenever a receive state is read or updated.
- *
- * @param conn     The connection to the Broadcast Audio Scan Service server.
- * @param err      Error value. 0 on success, GATT error on fail.
- * @param state    The receive state.
- */
-typedef void (*bt_bap_broadcast_assistant_recv_state_cb)(
-	struct bt_conn *conn, int err,
-	const struct bt_bap_scan_delegator_recv_state *state);
-
-/**
- * @brief Callback function for when a receive state is removed.
- *
- * @param conn     The connection to the Broadcast Audio Scan Service server.
- * @param err      Error value. 0 on success, GATT error on fail.
- * @param src_id   The receive state.
- */
-typedef void (*bt_bap_broadcast_assistant_recv_state_rem_cb)(struct bt_conn *conn,
-							     int err,
-							     uint8_t src_id);
-
-/**
  * @brief Callback function for writes.
  *
  * @param conn    The connection to the peer device.
