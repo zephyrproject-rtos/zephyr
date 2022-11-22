@@ -150,6 +150,8 @@ Bluetooth
   * Fixed missing calls to bt_le_per_adv_sync_cb.term when deleting a periodic
     advertising sync object.
 
+  * Added local advertising address to bt_le_ext_adv_info.
+
 * Mesh
 
   * Change default advertiser to be extended advertiser.

@@ -1499,6 +1499,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 {
 	info->id = adv->id;
 	info->tx_power = adv->tx_power;
+	info->addr = &adv->random_addr;
 
 	return 0;
 }
