@@ -41,6 +41,8 @@ struct bap_broadcast_assistant_instance {
 	 * which source ID was removed
 	 */
 	uint8_t src_ids[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
+	/** Cached PAST available */
+	bool past_avail[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 
 	uint16_t start_handle;
 	uint16_t end_handle;
@@ -75,6 +77,15 @@ static int16_t lookup_index_by_handle(uint16_t handle)
 	LOG_ERR("Unknown handle 0x%04x", handle);
 
 	return -1;
+}
+
+static bool past_available(const struct bt_conn *conn,
+			   const bt_addr_le_t *adv_addr,
+			   uint8_t sid)
+{
+	return BT_FEAT_LE_PAST_RECV(conn->le.features) &&
+	       BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
+	       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
 }
 
 static int parse_recv_state(const void *data, uint16_t length,
@@ -210,6 +221,9 @@ static uint8_t notify_handler(struct bt_conn *conn,
 		}
 
 		broadcast_assistant.src_ids[index] = recv_state.src_id;
+		broadcast_assistant.past_avail[index] = past_available(conn,
+								       &recv_state.addr,
+								       recv_state.adv_sid);
 
 		if (broadcast_assistant_cbs != NULL &&
 		    broadcast_assistant_cbs->recv_state != NULL) {
@@ -218,6 +232,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 		}
 	} else if (broadcast_assistant_cbs != NULL &&
 		   broadcast_assistant_cbs->recv_state_removed != NULL) {
+		broadcast_assistant.past_avail[index] = false;
 		broadcast_assistant_cbs->recv_state_removed(conn, 0,
 							    broadcast_assistant.src_ids[index]);
 	}
@@ -240,6 +255,8 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 	(void)memset(params, 0, sizeof(*params));
 
+	LOG_DBG("%s receive state", active_recv_state ? "Active " : "Inactive");
+
 	if (cb_err == 0 && active_recv_state) {
 		int16_t index;
 
@@ -253,6 +270,9 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 				LOG_DBG("Invalid receive state");
 			} else {
 				broadcast_assistant.src_ids[index] = recv_state.src_id;
+				broadcast_assistant.past_avail[index] =
+					past_available(conn, &recv_state.addr,
+						       recv_state.adv_sid);
 			}
 		}
 	}
@@ -696,11 +716,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	sys_put_le24(param->broadcast_id, cp->broadcast_id);
 
 	if (param->pa_sync) {
-		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
-			/* TODO: Validate that we are synced to the peer address
-			 * before saying to use PAST - Requires additional per_adv_sync API
-			 */
+		if (past_available(conn, &param->addr, param->adv_sid)) {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC_PAST;
 		} else {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC;
@@ -708,7 +724,6 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	} else {
 		cp->pa_sync = BT_BAP_BASS_PA_REQ_NO_SYNC;
 	}
-
 	cp->pa_interval = sys_cpu_to_le16(param->pa_interval);
 
 	cp->num_subgroups = param->num_subgroups;
@@ -751,6 +766,8 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 				       struct bt_bap_broadcast_assistant_mod_src_param *param)
 {
 	struct bt_bap_bass_cp_mod_src *cp;
+	bool known_recv_state;
+	bool past_avail;
 
 	if (conn == NULL) {
 		return 0;
@@ -767,9 +784,26 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 	cp->opcode = BT_BAP_BASS_OP_MOD_SRC;
 	cp->src_id = param->src_id;
 
+	/* Since we do not have the address and SID in this function, we
+	 * rely on cached PAST support information
+	 */
+	known_recv_state = false;
+	past_avail = false;
+	for (size_t i = 0; i < ARRAY_SIZE(broadcast_assistant.src_ids); i++) {
+		if (broadcast_assistant.src_ids[i] == param->src_id) {
+			known_recv_state = true;
+			past_avail = broadcast_assistant.past_avail[i];
+			break;
+		}
+	}
+
+	if (!known_recv_state) {
+		LOG_WRN("Attempting to modify unknown receive state: %u",
+			param->src_id);
+	}
+
 	if (param->pa_sync) {
-		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
+		if (known_recv_state && past_avail) {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC_PAST;
 		} else {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC;
@@ -777,6 +811,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 	} else {
 		cp->pa_sync = BT_BAP_BASS_PA_REQ_NO_SYNC;
 	}
+
 	cp->pa_interval = sys_cpu_to_le16(param->pa_interval);
 
 	cp->num_subgroups = param->num_subgroups;
