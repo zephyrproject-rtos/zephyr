@@ -2008,7 +2008,7 @@ struct bt_bap_broadcast_assistant_add_src_param {
 	uint8_t adv_sid;
 
 	/** Whether to sync to periodic advertisements. */
-	uint8_t pa_sync;
+	bool pa_sync;
 
 	/** 24-bit broadcast ID */
 	uint32_t broadcast_id;
@@ -2044,7 +2044,7 @@ struct bt_bap_broadcast_assistant_mod_src_param {
 	uint8_t src_id;
 
 	/** Whether to sync to periodic advertisements. */
-	uint8_t pa_sync;
+	bool pa_sync;
 
 	/**
 	 * @brief Periodic advertising interval.
