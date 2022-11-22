@@ -127,8 +127,12 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 
 	fs_file_t_init(&file);
 
-	rc = fs_open(&file, cf->cf_name, FS_O_CREATE | FS_O_RDWR);
+	rc = fs_open(&file, cf->cf_name, FS_O_READ);
 	if (rc != 0) {
+		if (rc == -ENOENT) {
+			return -ENOENT;
+		}
+
 		return -EINVAL;
 	}
 
