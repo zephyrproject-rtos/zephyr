@@ -81,17 +81,11 @@ static inline uint32_t time_delta(uint32_t ts, uint32_t t)
 	return (t >= ts) ? (t - ts) : (ULONG_MAX - ts + t);
 }
 
-int zperf_get_ipv6_addr(const struct shell *sh, char *host,
-			char *prefix_str, struct in6_addr *addr);
+int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr);
 struct sockaddr_in6 *zperf_get_sin6(void);
 
-int zperf_get_ipv4_addr(const struct shell *sh, char *host,
-			struct in_addr *addr);
+int zperf_get_ipv4_addr(char *host, struct in_addr *addr);
 struct sockaddr_in *zperf_get_sin(void);
-
-extern void zperf_udp_receiver_init(const struct shell *sh, int port);
-
-extern void zperf_tcp_receiver_init(const struct shell *sh, int port);
 
 extern void connect_ap(char *ssid);
 

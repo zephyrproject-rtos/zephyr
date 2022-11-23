@@ -39,6 +39,10 @@ struct zperf_upload_params {
 	} options;
 };
 
+struct zperf_download_params {
+	uint16_t port;
+};
+
 struct zperf_results {
 	uint32_t nb_packets_sent;
 	uint32_t nb_packets_rcvd;
@@ -116,6 +120,34 @@ int zperf_udp_upload_async(const struct zperf_upload_params *param,
  */
 int zperf_tcp_upload_async(const struct zperf_upload_params *param,
 			   zperf_callback callback, void *user_data);
+
+/**
+ * @brief Start UDP server.
+ *
+ * @note Only one UDP server instance can run at a time.
+ *
+ * @param param Download parameters.
+ * @param callback Session results callback.
+ * @param user_data A pointer to the user data to be provided with the callback.
+ *
+ * @return 0 if server was started, a negative error code otherwise.
+ */
+int zperf_udp_download(const struct zperf_download_params *param,
+		       zperf_callback callback, void *user_data);
+
+/**
+ * @brief Start TCP server.
+ *
+ * @note Only one TCP server instance can run at a time.
+ *
+ * @param param Download parameters.
+ * @param callback Session results callback.
+ * @param user_data A pointer to the user data to be provided with the callback.
+ *
+ * @return 0 if server was started, a negative error code otherwise.
+ */
+int zperf_tcp_download(const struct zperf_download_params *param,
+		       zperf_callback callback, void *user_data);
 
 #ifdef __cplusplus
 }
