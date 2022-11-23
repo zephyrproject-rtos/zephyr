@@ -451,6 +451,8 @@ SECTIONS {
     . = ALIGN(16);
   } >noload
 
+#include <snippets-sections.ld>
+
 #include <zephyr/linker/debug-sections.ld>
 
    /DISCARD/ : { *(.note.GNU-stack) }
