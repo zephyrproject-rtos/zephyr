@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2023 The Chromium OS Authors.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <dt-bindings/usb-c/pd.h>
+
+/ {
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_ctl: g0 {
+			pwms = <&pwm15 1 PWM_USEC(50) PWM_POLARITY_INVERTED>;
+			label = "PWM CTL";
+		};
+	};
+
+	pwrctrl {
+		compatible = "gpio-leds";
+
+		/* Pin D3 is used to enable VBUS Source */
+		source_en: g1 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+			label = "SOURCE_EN";
+		};
+
+		/* Pin A1 is used for DCDC_EN */
+		dcdc_en: g2 {
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+			label = "V_CTL2";
+		};
+
+		/* Pin D4 enables VCONN on CC1 */
+		vconn1_en: vconn1_en {
+			gpios = <&gpiod 4 GPIO_ACTIVE_LOW>;
+			label = "VCONN1_EN";
+		};
+
+		/* Pin B9 enables VCONN on CC2 */
+		vconn2_en: vconn2_en {
+			gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
+			label = "VCONN2_EN";
+		};
+	};
+
+	vbus1: vbus {
+		compatible = "zephyr,usb-c-vbus-adc";
+		io-channels = <&adc1 9>;
+		output-ohms = <49900>;
+		full-ohms = <(330000 + 49900)>;
+
+		/* Pin B13 is used to control VBUS Discharge for Port1 */
+		discharge-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port1: usbc-port@1 {
+			compatible = "usb-c-connector";
+			reg = <1>;
+			tcpc = <&ucpd1>;
+			vbus = <&vbus1>;
+			power-role = "source";
+			typec-power-opmode = "3.0A";
+			source-pdos = <PDO_FIXED(5000, 100, 0) PDO_FIXED(9000, 100, 0) PDO_FIXED(15000, 100, 0)>;
+		};
+	};
+};
