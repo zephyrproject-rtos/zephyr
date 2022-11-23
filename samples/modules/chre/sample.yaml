@@ -5,6 +5,7 @@ sample:
 tests:
   sample.modules.chre:
     tags: introduction
+    platform_exclude: qemu_leon3
     modules:
       - chre
     harness: console
