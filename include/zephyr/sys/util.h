@@ -245,10 +245,27 @@ extern "C" {
 #define WB_DN(x) ROUND_DOWN(x, sizeof(void *))
 
 /**
- * @brief Ceiling function applied to @p numerator / @p divider as a fraction.
+ * @brief Divide and round up.
+ *
+ * Example:
+ * @code{.c}
+ * DIV_ROUND_UP(1, 2); // 1
+ * DIV_ROUND_UP(3, 2); // 2
+ * @endcode
+ *
+ * @param n Numerator.
+ * @param d Denominator.
+ *
+ * @return The result of @p n / @p d, rounded up.
  */
-#define ceiling_fraction(numerator, divider) \
-	(((numerator) + ((divider) - 1)) / (divider))
+#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+
+/**
+ * @brief Ceiling function applied to @p numerator / @p divider as a fraction.
+ * @deprecated Use DIV_ROUND_UP() instead.
+ */
+#define ceiling_fraction(numerator, divider) __DEPRECATED_MACRO \
+	DIV_ROUND_UP(numerator, divider)
 
 #ifndef MAX
 /**
