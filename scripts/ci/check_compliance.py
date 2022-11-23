@@ -3,20 +3,21 @@
 # Copyright (c) 2018,2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import argparse
 import collections
-import sys
-import subprocess
-import re
-import os
 from email.utils import parseaddr
 import logging
-import argparse
-from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
 import tempfile
 import traceback
-import magic
 import shlex
-from pathlib import Path
+
+from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
+import magic
 
 logger = None
 
