@@ -251,7 +251,7 @@ int e1000_probe(const struct device *ddev)
 
 	/* Setup TX descriptor */
 
-	iow32(dev, TDBAL, (uint32_t) &dev->tx);
+	iow32(dev, TDBAL, (uint32_t)POINTER_TO_UINT(&dev->tx));
 	iow32(dev, TDBAH, 0);
 	iow32(dev, TDLEN, 1*16);
 
@@ -265,7 +265,7 @@ int e1000_probe(const struct device *ddev)
 	dev->rx.addr = POINTER_TO_INT(dev->rxb);
 	dev->rx.len = sizeof(dev->rxb);
 
-	iow32(dev, RDBAL, (uint32_t) &dev->rx);
+	iow32(dev, RDBAL, (uint32_t)POINTER_TO_UINT(&dev->rx));
 	iow32(dev, RDBAH, 0);
 	iow32(dev, RDLEN, 1*16);
 
