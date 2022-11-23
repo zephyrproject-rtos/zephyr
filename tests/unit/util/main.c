@@ -146,6 +146,11 @@ ZTEST(util_cxx, test_IS_SHIFTED_BIT_MASK)
 	run_IS_SHIFTED_BIT_MASK();
 }
 
+ZTEST(util_cxx, test_DIV_ROUND_UP)
+{
+	run_DIV_ROUND_UP();
+}
+
 ZTEST_SUITE(util_cxx, NULL, NULL, NULL, NULL, NULL);
 
 #if __cplusplus
@@ -284,5 +289,9 @@ ZTEST(util_cc, test_IS_SHIFTED_BIT_MASK)
 	run_IS_SHIFTED_BIT_MASK();
 }
 
+ZTEST(util_cc, test_DIV_ROUND_UP)
+{
+	run_DIV_ROUND_UP();
+}
 
 ZTEST_SUITE(util_cc, NULL, NULL, NULL, NULL, NULL);

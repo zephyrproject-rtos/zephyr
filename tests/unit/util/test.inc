@@ -608,3 +608,10 @@ void run_IS_SHIFTED_BIT_MASK(void)
 	zassert_true(IS_SHIFTED_BIT_MASK(0x80000000UL, 31));
 	zassert_true(IS_SHIFTED_BIT_MASK(0x8000000000000000ULL, 63));
 }
+
+void run_DIV_ROUND_UP(void)
+{
+	zassert_equal(DIV_ROUND_UP(0, 1), 0);
+	zassert_equal(DIV_ROUND_UP(1, 2), 1);
+	zassert_equal(DIV_ROUND_UP(3, 2), 2);
+}
