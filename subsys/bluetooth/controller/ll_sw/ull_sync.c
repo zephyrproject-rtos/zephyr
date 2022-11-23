@@ -719,6 +719,26 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U *
 						  USEC_PER_MSEC), interval_us);
 
+	/* Adjust Skip value so that there is minimum of 6 events that can be
+	 * listened to before Sync_Timeout occurs.
+	 * The adjustment of the skip value is controller implementation
+	 * specific and not specified by the Bluetooth Core Specification v5.3.
+	 * The Controller `may` use the Skip value, and the implementation here
+	 * covers a case where Skip value could lead to less events being
+	 * listened to until Sync_Timeout. Listening to more consecutive events
+	 * before Sync_Timeout increases probability of retaining the Periodic
+	 * Synchronization.
+	 */
+	if (sync->timeout_reload > CONN_ESTAB_COUNTDOWN) {
+		uint16_t skip_max = sync->timeout_reload - CONN_ESTAB_COUNTDOWN;
+
+		if (sync->skip > skip_max) {
+			sync->skip = skip_max;
+		}
+	} else {
+		sync->skip = 0U;
+	}
+
 	sync->sync_expire = CONN_ESTAB_COUNTDOWN;
 
 	/* Extract the SCA value from the sca_chm field of the sync_info
