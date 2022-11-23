@@ -556,7 +556,7 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 
 	BT_DBG("");
 
-	if (bt_mesh_proxy_conn_count_get() == CONFIG_BT_MAX_CONN) {
+	if (!bt_mesh_proxy_has_avail_conn()) {
 		BT_DBG("Connectable advertising deferred (max connections)");
 		return -ENOMEM;
 	}
@@ -847,7 +847,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 					       proxy_msg_recv);
 
 	/* Try to re-enable advertising in case it's possible */
-	if (bt_mesh_proxy_conn_count_get() < CONFIG_BT_MAX_CONN) {
+	if (bt_mesh_proxy_has_avail_conn()) {
 		bt_mesh_adv_gatt_update();
 	}
 }
