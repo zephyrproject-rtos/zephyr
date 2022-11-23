@@ -20,71 +20,16 @@
  * are untouched.
  */
 
-#define DT_DRV_COMPAT intel_adsp_mtl_tlb
-
-#include <zephyr/device.h>
-#include <zephyr/kernel.h>
-#include <zephyr/spinlock.h>
-#include <zephyr/sys/__assert.h>
-#include <zephyr/sys/check.h>
-#include <zephyr/sys/mem_manage.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/drivers/mm/system_mm.h>
-#include <zephyr/sys/mem_blocks.h>
-
-#include <soc.h>
-#include <adsp_memory.h>
+#include "mm_drv_intel_adsp.h"
 
 #include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
-#include "mm_drv_common.h"
-
-DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
-
-/* base address of TLB table */
-#define TLB_BASE \
-	((mm_reg_t)DEVICE_MMIO_TOPLEVEL_GET(tlb_regs))
-
-/* size of TLB table */
-#define TLB_SIZE DT_REG_SIZE_BY_IDX(DT_INST(0, intel_adsp_mtl_tlb), 0)
-
-/*
- * Number of significant bits in the page index (defines the size of
- * the table)
- */
-#define TLB_PADDR_SIZE DT_INST_PROP(0, paddr_size)
-#define TLB_EXEC_BIT   BIT(DT_INST_PROP(0, exec_bit_idx))
-#define TLB_WRITE_BIT  BIT(DT_INST_PROP(0, write_bit_idx))
-
-#define TLB_ENTRY_NUM (1 << TLB_PADDR_SIZE)
-#define TLB_PADDR_MASK ((1 << TLB_PADDR_SIZE) - 1)
-#define TLB_ENABLE_BIT BIT(TLB_PADDR_SIZE)
-
-/* This is used to translate from TLB entry back to physical address. */
-#define TLB_PHYS_BASE  \
-	(((L2_SRAM_BASE / CONFIG_MM_DRV_PAGE_SIZE) & ~TLB_PADDR_MASK) * CONFIG_MM_DRV_PAGE_SIZE)
-#define HPSRAM_SEGMENTS(hpsram_ebb_quantity) \
-	((ROUND_DOWN((hpsram_ebb_quantity) + 31u, 32u) / 32u) - 1u)
-
-#define L2_SRAM_PAGES_NUM			(L2_SRAM_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
-#define MAX_EBB_BANKS_IN_SEGMENT	32
-#define SRAM_BANK_SIZE				(128 * 1024)
-#define L2_SRAM_BANK_NUM			(L2_SRAM_SIZE / SRAM_BANK_SIZE)
-#define IS_BIT_SET(value, idx)		((value) & (1 << (idx)))
 
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
 
-/* references counter to physical pages */
 static int hpsram_ref[L2_SRAM_BANK_NUM];
 
-/* declare L2 physical memory block */
-SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(
-		L2_PHYS_SRAM_REGION,
-		CONFIG_MM_DRV_PAGE_SIZE,
-		L2_SRAM_PAGES_NUM,
-		(uint8_t *) L2_SRAM_BASE);
 
-#ifdef CONFIG_MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
 /* Define a marker which is placed by the linker script just after
  * last explicitly defined section. All .text, .data, .bss and .heap
  * sections should be placed before this marker in the memory.
@@ -95,37 +40,13 @@ __attribute__((__section__(".unused_ram_start_marker")))
 static int unused_l2_sram_start_marker = 0xba0babce;
 #define UNUSED_L2_START_ALIGNED ROUND_UP(POINTER_TO_UINT(&unused_l2_sram_start_marker), \
 					 CONFIG_MM_DRV_PAGE_SIZE)
-#else
-/* If memory is not going to be remaped (and thus powered off by)
- * the driver, just define the unused memory start as the end of
- * the memory.
- */
-#define UNUSED_L2_START_ALIGNED ROUND_UP((L2_SRAM_BASE + L2_SRAM_SIZE), \
-					 CONFIG_MM_DRV_PAGE_SIZE)
-#endif
 
-/**
- * Calculate TLB entry based on physical address.
- *
- * @param pa Page-aligned virutal address.
- * @return TLB entry value.
- */
-static inline uint16_t pa_to_tlb_entry(uintptr_t pa)
-{
-	return (((pa) / CONFIG_MM_DRV_PAGE_SIZE) & TLB_PADDR_MASK);
-}
-
-/**
- * Calculate physical address based on TLB entry.
- *
- * @param tlb_entry TLB entry value.
- * @return physcial address pointer.
- */
-static inline uintptr_t tlb_entry_to_pa(uint16_t tlb_entry)
-{
-	return ((((tlb_entry) & TLB_PADDR_MASK) *
-		CONFIG_MM_DRV_PAGE_SIZE) + TLB_PHYS_BASE);
-}
+/* declare L2 physical memory block */
+SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(
+		L2_PHYS_SRAM_REGION,
+		CONFIG_MM_DRV_PAGE_SIZE,
+		L2_SRAM_PAGES_NUM,
+		(uint8_t *) L2_SRAM_BASE);
 
 /**
  * Calculate the index to the TLB table.
