@@ -73,6 +73,11 @@
 		label = "clock";
 	};
 
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
 	/* This periph setting is for setting the MMU region
 	 * to cover the following register map due to
 	 * MMU requirement of 4K alignment
