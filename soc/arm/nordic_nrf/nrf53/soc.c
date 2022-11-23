@@ -126,7 +126,7 @@ static bool nrf53_anomaly_160_check(void)
 {
 	/* System clock cycles needed to cover 200 us window. */
 	const uint32_t window_cycles =
-		ceiling_fraction(200 * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+		DIV_ROUND_UP(200 * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 				 1000000);
 	static uint32_t timestamps[5];
 	static bool timestamps_filled;

@@ -814,7 +814,7 @@ static void dfu_cli_inputs_prepare(uint16_t group)
 		dfu_cli_xfer.targets[i].blob.addr = addr;
 		if (recover) {
 			memset(&dfu_cli_xfer.pull[i].missing, 1,
-			       ceiling_fraction(CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX, 8));
+			       DIV_ROUND_UP(CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX, 8));
 			dfu_cli_xfer.targets[i].blob.pull = &dfu_cli_xfer.pull[i];
 		}
 

@@ -826,7 +826,7 @@ static char *encode_uint(uint_value_type value,
 /* Number of hex "digits" in the fractional part of an IEEE 754-2008
  * double precision float.
  */
-#define FRACTION_HEX ceiling_fraction(FRACTION_BITS, 4)
+#define FRACTION_HEX DIV_ROUND_UP(FRACTION_BITS, 4)
 
 /* Number of bits in the exponent of an IEEE 754-2008 double precision
  * float.

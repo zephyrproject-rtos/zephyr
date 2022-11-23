@@ -182,7 +182,7 @@ struct can_frame {
 	/** The frame payload data. */
 	union {
 		uint8_t data[CAN_MAX_DLEN];
-		uint32_t data_32[ceiling_fraction(CAN_MAX_DLEN, sizeof(uint32_t))];
+		uint32_t data_32[DIV_ROUND_UP(CAN_MAX_DLEN, sizeof(uint32_t))];
 	};
 };
 

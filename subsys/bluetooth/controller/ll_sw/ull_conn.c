@@ -2159,7 +2159,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 			lll->periph.window_widening_periodic_us * instant_latency;
 
 		lll->periph.window_widening_periodic_us =
-			ceiling_fraction(((lll_clock_ppm_local_get() +
+			DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 					   lll_clock_ppm_get(conn->periph.sca)) *
 					  conn_interval_us), 1000000U);
 		lll->periph.window_widening_max_us = (conn_interval_us >> 1U) - EVENT_IFS_US;
@@ -2242,7 +2242,7 @@ void ull_conn_update_peer_sca(struct ll_conn *conn)
 	periodic_us = conn_interval_us;
 
 	lll->periph.window_widening_periodic_us =
-		ceiling_fraction(((lll_clock_ppm_local_get() +
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 				   lll_clock_ppm_get(conn->periph.sca)) *
 				  conn_interval_us), 1000000U);
 

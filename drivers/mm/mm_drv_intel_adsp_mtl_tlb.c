@@ -153,7 +153,7 @@ static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocki
 static void sys_mm_drv_report_page_usage(void)
 {
 	/* PMC uses 32 KB banks */
-	uint32_t pmc_banks = ceiling_fraction(used_pages, KB(32) / CONFIG_MM_DRV_PAGE_SIZE);
+	uint32_t pmc_banks = DIV_ROUND_UP(used_pages, KB(32) / CONFIG_MM_DRV_PAGE_SIZE);
 
 	if (used_pmc_banks_reported != pmc_banks) {
 		if (!adsp_comm_widget_pmc_send_ipc(pmc_banks)) {

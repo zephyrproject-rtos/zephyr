@@ -83,7 +83,7 @@ static int block_start(const struct bt_mesh_blob_io *io,
 		return err;
 	}
 
-	erase_size = page.size * ceiling_fraction(block->size, page.size);
+	erase_size = page.size * DIV_ROUND_UP(block->size, page.size);
 #else
 	erase_size = block->size;
 #endif

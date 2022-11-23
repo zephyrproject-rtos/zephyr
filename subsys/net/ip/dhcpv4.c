@@ -477,7 +477,7 @@ static uint32_t dhcpv4_get_timeleft(int64_t start, uint32_t time, int64_t now)
 	 * rounded-up whole seconds until the deadline.
 	 */
 	if (deadline > now) {
-		ret = (uint32_t)ceiling_fraction(deadline - now, MSEC_PER_SEC);
+		ret = (uint32_t)DIV_ROUND_UP(deadline - now, MSEC_PER_SEC);
 	}
 
 	return ret;

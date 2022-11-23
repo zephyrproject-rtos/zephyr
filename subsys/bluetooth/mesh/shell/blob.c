@@ -134,9 +134,9 @@ static uint8_t get_progress(const struct bt_mesh_blob_xfer_info *info)
 	uint8_t blocks_not_rxed_size;
 	int i;
 
-	total_blocks = ceiling_fraction(info->size, 1U << info->block_size_log);
+	total_blocks = DIV_ROUND_UP(info->size, 1U << info->block_size_log);
 
-	blocks_not_rxed_size = ceiling_fraction(total_blocks, 8);
+	blocks_not_rxed_size = DIV_ROUND_UP(total_blocks, 8);
 
 	for (i = 0; i < blocks_not_rxed_size; i++) {
 		blocks_not_rxed += info->missing_blocks[i % 8] & (1 << (i % 8));

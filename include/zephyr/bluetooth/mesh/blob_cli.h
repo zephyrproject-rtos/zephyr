@@ -43,7 +43,7 @@ struct bt_mesh_blob_target_pull {
 	int64_t block_report_timestamp;
 
 	/** Missing chunks reported by this Target node. */
-	uint8_t missing[ceiling_fraction(CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX, 8)];
+	uint8_t missing[DIV_ROUND_UP(CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX, 8)];
 };
 
 /** BLOB Transfer Client Target node. */
