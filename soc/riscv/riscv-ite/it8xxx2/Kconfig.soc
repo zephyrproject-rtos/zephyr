@@ -141,4 +141,12 @@ config SOC_IT8XXX2_SHA256_HW_ACCELERATE
 	  If we enable this config, because HW limits, the sha256 data must place in
 	  first 4KB of RAM.
 
+DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
+
+config SOC_IT8XXX2_FLASH_SIZE_BYTES
+	hex
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_ZEPHYR_FLASH))
+	help
+	  Total size of writable flash.
+
 endif # SOC_IT8XXX2
