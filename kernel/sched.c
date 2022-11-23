@@ -1419,12 +1419,7 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 
 	__ASSERT(!arch_is_in_isr(), "");
 
-#ifndef CONFIG_TIMEOUT_64BIT
-	/* LOG subsys does not handle 64-bit values
-	 * https://github.com/zephyrproject-rtos/zephyr/issues/26246
-	 */
-	LOG_DBG("thread %p for %u ticks", _current, ticks);
-#endif
+	LOG_DBG("thread %p for %lu ticks", _current, (unsigned long)ticks);
 
 	/* wait of 0 ms is treated as a 'yield' */
 	if (ticks == 0) {
