@@ -16,44 +16,116 @@
 extern "C" {
 #endif
 
+/**
+ * @brief MCUmgr mgmt API
+ * @defgroup mcumgr_mgmt_api MCUmgr mgmt API
+ * @ingroup mcumgr
+ * @{
+ */
+
 /** Opcodes; encoded in first byte of header. */
-#define MGMT_OP_READ		0
-#define MGMT_OP_READ_RSP	1
-#define MGMT_OP_WRITE		2
-#define MGMT_OP_WRITE_RSP	3
+enum mcumgr_op_t {
+	/** Read op-code */
+	MGMT_OP_READ		= 0,
+
+	/** Read response op-code */
+	MGMT_OP_READ_RSP,
+
+	/** Write op-code */
+	MGMT_OP_WRITE,
+
+	/** Write response op-code */
+	MGMT_OP_WRITE_RSP,
+};
 
 /**
- * The first 64 groups are reserved for system level mcumgr commands.
- * Per-user commands are then defined after group 64.
+ * MCUmgr groups. The first 64 groups are reserved for system level mcumgr
+ * commands. Per-user commands are then defined after group 64.
  */
-#define MGMT_GROUP_ID_OS	0
-#define MGMT_GROUP_ID_IMAGE	1
-#define MGMT_GROUP_ID_STAT	2
-#define MGMT_GROUP_ID_CONFIG	3
-#define MGMT_GROUP_ID_LOG	4
-#define MGMT_GROUP_ID_CRASH	5
-#define MGMT_GROUP_ID_SPLIT	6
-#define MGMT_GROUP_ID_RUN	7
-#define MGMT_GROUP_ID_FS	8
-#define MGMT_GROUP_ID_SHELL	9
-#define MGMT_GROUP_ID_PERUSER	64
+enum mcumgr_group_t {
+	/** OS (operating system) group */
+	MGMT_GROUP_ID_OS	= 0,
+
+	/** Image management group, used for uploading firmware images */
+	MGMT_GROUP_ID_IMAGE,
+
+	/** Statistic management group, used for retieving statistics */
+	MGMT_GROUP_ID_STAT,
+
+	/** System configuration group (unused) */
+	MGMT_GROUP_ID_CONFIG,
+
+	/** Log management group (unused) */
+	MGMT_GROUP_ID_LOG,
+
+	/** Crash group (unused) */
+	MGMT_GROUP_ID_CRASH,
+
+	/** Split image management group (unused) */
+	MGMT_GROUP_ID_SPLIT,
+
+	/** Run group (unused) */
+	MGMT_GROUP_ID_RUN,
+
+	/** FS (file system) group, used for performing file IO operations */
+	MGMT_GROUP_ID_FS,
+
+	/** Shell management group, used for executing shell commands */
+	MGMT_GROUP_ID_SHELL,
+
+	/** User groups defined from 64 onwards */
+	MGMT_GROUP_ID_PERUSER	= 64,
+
+	/** Zephyr-specific groups decrease from PERUSER to avoid collision with upstream and
+	 *  user-defined groups.
+	 *  Zephyr-specific: Basic group
+	 */
+	ZEPHYR_MGMT_GRP_BASIC	= (MGMT_GROUP_ID_PERUSER - 1),
+};
 
 /**
- * mcumgr error codes.
+ * MCUmgr error codes.
  */
-#define MGMT_ERR_EOK		0
-#define MGMT_ERR_EUNKNOWN	1
-#define MGMT_ERR_ENOMEM		2
-#define MGMT_ERR_EINVAL		3
-#define MGMT_ERR_ETIMEOUT	4
-#define MGMT_ERR_ENOENT		5
-#define MGMT_ERR_EBADSTATE	6	/* Current state disallows command. */
-#define MGMT_ERR_EMSGSIZE	7	/* Response too large. */
-#define MGMT_ERR_ENOTSUP	8	/* Command not supported. */
-#define MGMT_ERR_ECORRUPT	9	/* Corrupt */
-#define MGMT_ERR_EBUSY		10	/* Command blocked by processing of other command */
-#define MGMT_ERR_EACCESSDENIED	11	/* Access to specific function or resource denied */
-#define MGMT_ERR_EPERUSER	256
+enum mcumgr_err_t {
+	/** No error (success). */
+	MGMT_ERR_EOK		= 0,
+
+	/** Unknown error. */
+	MGMT_ERR_EUNKNOWN,
+
+	/** Insufficient memory (likely not enough space for CBOR object). */
+	MGMT_ERR_ENOMEM,
+
+	/** Error in input value. */
+	MGMT_ERR_EINVAL,
+
+	/** Operation timed out. */
+	MGMT_ERR_ETIMEOUT,
+
+	/** No such file/entry. */
+	MGMT_ERR_ENOENT,
+
+	/** Current state disallows command. */
+	MGMT_ERR_EBADSTATE,
+
+	/** Response too large. */
+	MGMT_ERR_EMSGSIZE,
+
+	/** Command not supported. */
+	MGMT_ERR_ENOTSUP,
+
+	/** Corrupt */
+	MGMT_ERR_ECORRUPT,
+
+	/** Command blocked by processing of other command */
+	MGMT_ERR_EBUSY,
+
+	/** Access to specific function, command or resource denied */
+	MGMT_ERR_EACCESSDENIED,
+
+	/** User errors defined from 256 onwards */
+	MGMT_ERR_EPERUSER	= 256
+};
 
 #define MGMT_HDR_SIZE		8
 
@@ -94,7 +166,7 @@ typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
  *
  * @param ctxt	The mcumgr context to use.
  *
- * @return 0 if a response was successfully encoded, MGMT_ERR_[...] code on failure.
+ * @return 0 if a response was successfully encoded, #mcumgr_err_t code on failure.
  */
 typedef int (*mgmt_handler_fn)(struct smp_streamer *ctxt);
 
@@ -145,6 +217,10 @@ void mgmt_unregister_group(struct mgmt_group *group);
  *		NULL on failure.
  */
 const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command_id);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

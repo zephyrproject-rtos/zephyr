@@ -6429,7 +6429,7 @@ void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
 	/* Start ISO peripheral one event before the requested instant */
 	if (event_counter == start_event_count) {
 		/* Start CIS peripheral */
-		ull_peripheral_iso_start(conn, ticks_at_expire, conn->llcp_cis.cis_handle);
+		ull_conn_iso_start(conn, ticks_at_expire, conn->llcp_cis.cis_handle);
 
 		conn->llcp_cis.state = LLCP_CIS_STATE_REQ;
 		conn->llcp_cis.ack = conn->llcp_cis.req;

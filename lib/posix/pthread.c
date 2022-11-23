@@ -407,6 +407,8 @@ void pthread_exit(void *retval)
 	pthread_mutex_unlock(&self->state_lock);
 	pthread_mutex_destroy(&self->state_lock);
 
+	pthread_cond_destroy(&self->state_cond);
+
 	k_thread_abort((k_tid_t)self);
 }
 

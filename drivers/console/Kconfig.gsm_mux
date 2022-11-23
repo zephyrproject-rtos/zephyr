@@ -3,6 +3,7 @@
 
 config GSM_MUX
 	bool "GSM 07.10 muxing protocol"
+	select CRC
 	help
 	  Enable GSM 07.10 muxing protocol defined in
 	  https://www.etsi.org/deliver/etsi_ts/101300_101399/101369/07.01.00_60/ts_101369v070100p.pdf

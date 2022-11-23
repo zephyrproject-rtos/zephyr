@@ -20,7 +20,6 @@ properties:
       required: true
 
     psc-ucpdclk:
-      required: false
       default: 2
       type: int
       enum:
@@ -39,7 +38,6 @@ properties:
         the range from 6 to 9 MHz.
 
     ifrgap:
-      required: false
       type: int
       default: 17
       description: |
@@ -50,7 +48,6 @@ properties:
         Valid range: 2 - 32
 
     transwin:
-      required: false
       type: int
       default: 8
       description: |
@@ -59,7 +56,6 @@ properties:
         Valid range: 2 - 32
 
     hbitclkdiv:
-      required: false
       type: int
       default: 14
       description: |

@@ -830,6 +830,9 @@ int npcx_host_periph_read_request(enum lpc_peripheral_opcode op,
 		case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY:
 			*data = (uint32_t)shm_host_cmd;
 			break;
+		case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY_SIZE:
+			*data = CONFIG_ESPI_NPCX_PERIPHERAL_HOST_CMD_PARAM_SIZE;
+			break;
 		default:
 			return -EINVAL;
 		}

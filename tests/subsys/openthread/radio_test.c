@@ -244,7 +244,7 @@ static void create_ack_frame(void)
 	const int8_t rssi = -80;
 
 	packet = net_pkt_alloc(K_NO_WAIT);
-	buf = net_pkt_get_reserve_tx_data(K_NO_WAIT);
+	buf = net_pkt_get_reserve_tx_data(ACK_PKT_LENGTH, K_NO_WAIT);
 	net_pkt_append_buffer(packet, buf);
 
 	buf->len = ACK_PKT_LENGTH;
@@ -724,7 +724,8 @@ uint8_t alloc_pkt(struct net_pkt **out_packet, uint8_t buf_ct, uint8_t offset)
 
 	packet = net_pkt_alloc(K_NO_WAIT);
 	for (buf_num = 0; buf_num < buf_ct; buf_num++) {
-		buf = net_pkt_get_reserve_tx_data(K_NO_WAIT);
+		buf = net_pkt_get_reserve_tx_data(IEEE802154_MAX_PHY_PACKET_SIZE,
+						  K_NO_WAIT);
 		net_pkt_append_buffer(packet, buf);
 
 		for (int i = 0; i < buf->size; i++) {

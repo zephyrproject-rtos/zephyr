@@ -1,0 +1,19 @@
+# TCA6424A configuration options
+
+# Copyright (c) 2022 Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_TCA6424A
+	bool "TCA6424A driver"
+	default y
+	depends on DT_HAS_TI_TCA6424A_ENABLED
+	depends on I2C
+	help
+	  Enable driver for TCA6424A IO expander chip.
+
+config GPIO_TCA6424A_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_TCA6424A
+	help
+	  Device driver initialization priority.

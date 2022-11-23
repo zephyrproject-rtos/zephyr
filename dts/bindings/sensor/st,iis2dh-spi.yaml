@@ -11,7 +11,6 @@ include: [sensor-device.yaml, spi-device.yaml]
 properties:
     drdy-gpios:
       type: phandle-array
-      required: false
       description: DRDY pin
 
         This pin defaults to active high when produced by the sensor.

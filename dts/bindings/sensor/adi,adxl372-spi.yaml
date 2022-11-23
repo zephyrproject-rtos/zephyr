@@ -11,7 +11,6 @@ include: ["spi-device.yaml", "adi,adxl372-common.yaml"]
 properties:
     int1-gpios:
       type: phandle-array
-      required: false
       description: |
         The INT1 signal defaults to active high as produced by the
         sensor.  The property value should ensure the flags properly

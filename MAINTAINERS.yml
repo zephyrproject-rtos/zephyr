@@ -249,7 +249,9 @@ Bluetooth Audio:
     - MariuszSkamra
     - rymanluk
     - sjanc
+    - szymon-czapracki
     - asbjornsabo
+    - fredrikdanebjer
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/

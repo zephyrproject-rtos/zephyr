@@ -249,15 +249,16 @@ class TestPlan:
         return 1
 
     def report_duplicates(self):
-        all_tests = self.get_all_tests()
-
-        dupes = [item for item, count in collections.Counter(all_tests).items() if count > 1]
+        all_identifiers = []
+        for _, ts in self.testsuites.items():
+            all_identifiers.append(ts.id)
+        dupes = [item for item, count in collections.Counter(all_identifiers).items() if count > 1]
         if dupes:
             print("Tests with duplicate identifiers:")
             for dupe in dupes:
                 print("- {}".format(dupe))
                 for dc in self.get_testsuite(dupe):
-                    print("  - {}".format(dc))
+                    print("  - {}".format(dc.name))
         else:
             print("No duplicates found.")
 

@@ -29,7 +29,6 @@ properties:
 
     vref-mv:
       type: int
-      required: false
       default: 3300
       description: Indicates the reference voltage of the ADC in mV (on the target board).
 

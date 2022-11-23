@@ -22,7 +22,6 @@ properties:
             A index to indicate PWM module that generates a single PWM signal.
             Please don't overwrite it in the board-level DT driver.
     clock-bus:
-        required: false
         type: string
         description: |
             Select a specific input clock source for the PWM module. If this

@@ -24,10 +24,8 @@ properties:
 
     input-pin:
       type: int
-      required: false
       description: Pulse counter input pin (0 to 3).
 
     active-low:
       type: boolean
-      required: false
       description: Pulse counter input pin is active-low

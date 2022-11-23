@@ -42,7 +42,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: a30531af3a95a9a3ea7d771ea8a578ebfed45514
+      revision: 38f303ad09fdd687ee066a938f65ad708dd5989d
       path: modules/fs/fatfs
       groups:
         - fs
@@ -93,7 +93,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 53b8bc406a40e2166679cf1a3381f9eb5de96082
+      revision: 138742f66576f2e2235a072425e71b8d1360c0d3
       path: modules/hal/nxp
       groups:
         - hal

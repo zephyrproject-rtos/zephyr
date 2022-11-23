@@ -8,5 +8,6 @@ config SHTCX
 	default y
 	depends on DT_HAS_SENSIRION_SHTCX_ENABLED
 	select I2C
+	select CRC
 	help
 	  Enable driver for SHTC1 and SHTC3 temperature and humidity sensors.

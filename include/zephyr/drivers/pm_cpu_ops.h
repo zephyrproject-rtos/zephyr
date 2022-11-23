@@ -51,6 +51,18 @@ int pm_cpu_off(void);
  */
 int pm_cpu_on(unsigned long cpuid, uintptr_t entry_point);
 
+/**
+ * @brief Power down the system
+ *
+ * This call is used to power down the whole system.
+ *
+ * A compliant PSCI implementation will never return, but some real-world
+ * implementations do return errors in some cases.
+ *
+ * @retval does not return on success, a negative errno otherwise
+ * @retval -ENOTSUP If the operation is not supported
+ */
+int pm_system_off(void);
 
 #ifdef __cplusplus
 }

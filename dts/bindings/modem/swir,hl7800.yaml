@@ -41,7 +41,6 @@ properties:
 
     mdm-gpio2-gpios:
         type: phandle-array
-        required: false
 
     mdm-gpio6-gpios:
         type: phandle-array

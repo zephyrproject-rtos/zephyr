@@ -291,6 +291,12 @@
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lsi), fixed_clock, okay)
 #define STM32_LSI_ENABLED	1
 #define STM32_LSI_FREQ		DT_PROP(DT_NODELABEL(clk_lsi), clock_frequency)
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lsi1), fixed_clock, okay)
+#define STM32_LSI_ENABLED	1
+#define STM32_LSI_FREQ		DT_PROP(DT_NODELABEL(clk_lsi1), clock_frequency)
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lsi2), fixed_clock, okay)
+#define STM32_LSI_ENABLED	1
+#define STM32_LSI_FREQ		DT_PROP(DT_NODELABEL(clk_lsi2), clock_frequency)
 #else
 #define STM32_LSI_FREQ		0
 #endif

@@ -136,7 +136,6 @@ properties:
 
     dfe-antenna-num:
       type: int
-      required: false
       description: |
         Number of available antennas for the Direction Finding Extension.
 
@@ -145,7 +144,6 @@ properties:
 
     dfe-pdu-antenna:
       type: int
-      required: false
       description: |
         Antenna switch pattern to be used for transmission of PDU before start
         of transmission of Constant Tone Extension.
@@ -158,7 +156,6 @@ properties:
 
     dfegpio0-gpios:
       type: phandle-array
-      required: false
       description: |
         Pin select for DFE pin 0. This should only be set if dfe-supported
         is true.
@@ -176,43 +173,36 @@ properties:
 
     dfegpio1-gpios:
       type: phandle-array
-      required: false
       description: |
         Pin select for DFE pin 1. See description for dfegpio0-gpios.
 
     dfegpio2-gpios:
       type: phandle-array
-      required: false
       description: |
         Pin select for DFE pin 2. See description for dfegpio0-gpios.
 
     dfegpio3-gpios:
       type: phandle-array
-      required: false
       description: |
         Pin select for DFE pin 3. See description for dfegpio0-gpios.
 
     dfegpio4-gpios:
       type: phandle-array
-      required: false
       description: |
         Pin select for DFE pin 4. See description for dfegpio0-gpios.
 
     dfegpio5-gpios:
       type: phandle-array
-      required: false
       description: |
         Pin select for DFE pin 5. See description for dfegpio0-gpios.
 
     dfegpio6-gpios:
       type: phandle-array
-      required: false
       description: |
         Pin select for DFE pin 6. See description for dfegpio0-gpios.
 
     dfegpio7-gpios:
       type: phandle-array
-      required: false
       description: |
         Pin select for DFE pin 7. See description for dfegpio0-gpios.
 

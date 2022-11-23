@@ -210,7 +210,7 @@ static int smp_handle_single_req(struct smp_streamer *streamer, const struct smp
 	/* Process the request and write the response payload. */
 	rc = smp_handle_single_payload(streamer, req_hdr, handler_found);
 	if (rc != 0) {
-		*rsn = MGMT_CTXT_RC_RSN(cbuf);
+		*rsn = MGMT_CTXT_RC_RSN(streamer);
 		return rc;
 	}
 

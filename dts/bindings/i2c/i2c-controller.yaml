@@ -16,5 +16,4 @@ properties:
       const: 0
     clock-frequency:
       type: int
-      required: false
       description: Initial clock frequency in Hz

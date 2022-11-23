@@ -12,7 +12,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
     int-gpios:
       type: phandle-array
-      required: false
       description: |
         The alert pin defaults to active low when produced by the
         sensor, and is open-drain.  A pull-up may be appropriate.  The
@@ -21,7 +20,6 @@ properties:
 
     resolution:
       type: int
-      required: false
       default: 3
       description: |
         Sensor resolution. Default is 0.0625C (0b11),

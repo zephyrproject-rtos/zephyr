@@ -89,7 +89,7 @@ struct smp_streamer {
  * @param streamer	The streamer providing the required SMP callbacks.
  * @param req		The request packet to process.
  *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
+ * @return 0 on success, #mcumgr_err_t code on failure.
  */
 int smp_process_request_packet(struct smp_streamer *streamer, void *req);
 

@@ -30,7 +30,6 @@ properties:
 
     lvol-maps:
         type: phandles
-        required: false
         description: |
             Mapping table between Low-Voltage controllers and 8 IOs belong to
             this device. Please notice not all IOs support Low-Voltage detection.

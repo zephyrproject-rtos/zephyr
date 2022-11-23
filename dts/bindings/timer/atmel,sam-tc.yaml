@@ -22,21 +22,18 @@ properties:
 
     channel:
       type: int
-      required: false
       description: |
         Timer / Counter channel to use, channel 0 is the default.
         Valid range: 0 - 2
 
     clk:
       type: int
-      required: false
       description: |
         Clock source selection as defined by TCCLKS bit-field of TC_CMR
         register. Consult the datasheet for the details.
 
     nodivclk:
       type: boolean
-      required: false
       description: |
         If set to true the `clk` property is ignored. Instead the TC module is
         driven directly via MCLK. Only supported on sam4e, same70, same70b,
@@ -44,7 +41,6 @@ properties:
 
     reg-cmr:
       type: int
-      required: false
       description: |
         Alternate value of the CMR (Channel Mode Register) register.
         If specified this value will be written to the register during driver
@@ -56,7 +52,6 @@ properties:
 
     reg-rc:
       type: int
-      required: false
       description: |
         Register C compare/match value. RC can be used as compare/match unit
         for an specific timer unit. Their use depends on how timer channel

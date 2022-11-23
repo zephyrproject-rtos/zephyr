@@ -41,5 +41,4 @@ properties:
 
     alert-gpios:
       type: phandle-array
-      required: false
       description: Alert pin

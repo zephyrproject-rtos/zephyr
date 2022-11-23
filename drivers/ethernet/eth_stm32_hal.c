@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/net/lldp.h>
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 #include <zephyr/drivers/ptp_clock.h>
@@ -959,6 +960,8 @@ static void eth_iface_init(struct net_if *iface)
 
 	net_if_carrier_off(iface);
 
+	net_lldp_set_lldpdu(iface);
+
 	if (is_first_init) {
 		const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 		/* Now that the iface is setup, we are safe to enable IRQs. */
@@ -980,6 +983,9 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #endif
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 		| ETHERNET_PTP
+#endif
+#if defined(CONFIG_NET_LLDP)
+		| ETHERNET_LLDP
 #endif
 		;
 }

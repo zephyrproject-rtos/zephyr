@@ -77,6 +77,7 @@ enum {
 	SHELL_ADV_OPT_DISCOVERABLE,
 	SHELL_ADV_OPT_EXT_ADV,
 	SHELL_ADV_OPT_APPEARANCE,
+	SHELL_ADV_OPT_KEEP_RPA,
 
 	SHELL_ADV_OPT_NUM,
 };
@@ -275,6 +276,22 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 		    bt_le_ext_adv_get_index(adv), adv, str);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_PRIVACY)
+static bool adv_rpa_expired(struct bt_le_ext_adv *adv)
+{
+	uint8_t adv_index = bt_le_ext_adv_get_index(adv);
+
+	bool keep_rpa = atomic_test_bit(adv_set_opt[adv_index],
+					  SHELL_ADV_OPT_KEEP_RPA);
+	shell_print(ctx_shell, "Advertiser[%d] %p RPA %s",
+		    adv_index, adv,
+		    keep_rpa ? "not expired" : "expired");
+
+	return keep_rpa;
+}
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
 #endif /* CONFIG_BT_EXT_ADV */
 
 #if !defined(CONFIG_BT_CONN)
@@ -564,6 +581,10 @@ static struct bt_le_ext_adv_cb adv_callbacks = {
 #if defined(CONFIG_BT_PERIPHERAL)
 	.connected = adv_connected,
 #endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_PRIVACY)
+	.rpa_expired = adv_rpa_expired,
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
 };
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_EXT_ADV */
@@ -1799,6 +1820,24 @@ static int cmd_adv_oob(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 #endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_PRIVACY)
+static int cmd_adv_rpa_expire(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (!strcmp(argv[1], "on")) {
+		atomic_clear_bit(adv_set_opt[selected_adv], SHELL_ADV_OPT_KEEP_RPA);
+		shell_print(sh, "RPA will expire on next timeout");
+	} else if (!strcmp(argv[1], "off")) {
+		atomic_set_bit(adv_set_opt[selected_adv], SHELL_ADV_OPT_KEEP_RPA);
+		shell_print(sh, "RPA will not expire on RPA timeout");
+	} else {
+		shell_error(sh, "Invalid argument: %s", argv[1]);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif
 
 #if defined(CONFIG_BT_PER_ADV)
 static int cmd_per_adv(const struct shell *sh, size_t argc, char *argv[])
@@ -3464,6 +3503,7 @@ static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 
 
 #define HELP_NONE "[none]"
+#define HELP_ONOFF "<on, off>"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 #if defined(CONFIG_BT_EXT_ADV)
@@ -3554,8 +3594,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(adv-oob, NULL, HELP_NONE, cmd_adv_oob, 1, 0),
 #endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_PRIVACY)
+	SHELL_CMD_ARG(adv-rpa-expire, NULL, HELP_ONOFF, cmd_adv_rpa_expire, 2, 0),
+#endif
 #if defined(CONFIG_BT_PER_ADV)
-	SHELL_CMD_ARG(per-adv, NULL, "<type: off, on>", cmd_per_adv, 2, 0),
+	SHELL_CMD_ARG(per-adv, NULL, HELP_ONOFF, cmd_per_adv, 2, 0),
 	SHELL_CMD_ARG(per-adv-param, NULL,
 		      "[<interval-min> [<interval-max> [tx_power]]]",
 		      cmd_per_adv_param, 1, 3),
@@ -3615,7 +3658,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
 				      "LE: 1 - 4> [force-pair]",
 		      cmd_security, 1, 2),
-	SHELL_CMD_ARG(bondable, NULL, "<bondable: on, off>", cmd_bondable,
+	SHELL_CMD_ARG(bondable, NULL, HELP_ONOFF, cmd_bondable,
 		      2, 0),
 	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
 	SHELL_CMD_ARG(connections, NULL, HELP_NONE, cmd_connections, 1, 0),
@@ -3642,7 +3685,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(fal-clear, NULL, HELP_NONE, cmd_fal_clear, 1, 0),
 
 #if defined(CONFIG_BT_CENTRAL)
-	SHELL_CMD_ARG(fal-connect, NULL, "<on, off>" EXT_ADV_SCAN_OPT,
+	SHELL_CMD_ARG(fal-connect, NULL, HELP_ONOFF EXT_ADV_SCAN_OPT,
 		      cmd_fal_connect, 2, 3),
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
@@ -3653,7 +3696,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-	SHELL_CMD(mesh_adv, NULL, "<on, off>", cmd_mesh_adv),
+	SHELL_CMD(mesh_adv, NULL, HELP_ONOFF, cmd_mesh_adv),
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)

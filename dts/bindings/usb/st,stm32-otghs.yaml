@@ -29,7 +29,6 @@ properties:
 
     phys:
       type: phandle
-      required: false
       description: PHY provider specifier
 
     clocks:

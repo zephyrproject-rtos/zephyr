@@ -10,5 +10,6 @@
 config FCB
 	bool "Flash Circular Buffer support"
 	depends on FLASH_MAP
+	select CRC
 	help
 	  Enable support of Flash Circular Buffer.

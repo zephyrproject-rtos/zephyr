@@ -11,4 +11,3 @@ properties:
     clock-source:
       type: int
       description: cpu clock source
-      required: false

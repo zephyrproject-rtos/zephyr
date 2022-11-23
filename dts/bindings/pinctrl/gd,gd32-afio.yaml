@@ -17,7 +17,6 @@ properties:
     required: true
 
   enable-cps:
-    required: false
     type: boolean
     description: |
       Enable the I/O compensation cell. This option should be enabled when the

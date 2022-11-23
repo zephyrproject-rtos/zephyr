@@ -94,7 +94,6 @@ child-binding:
           encode all the pin muxing information in a 32-bit value.
 
       slew-rate:
-        required: false
         enum: [0, 4, 5, 6, 7]
         default: 4
         description: |
