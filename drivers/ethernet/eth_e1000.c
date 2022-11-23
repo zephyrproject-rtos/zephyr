@@ -289,6 +289,7 @@ BUILD_ASSERT(DT_INST_IRQN(0) != PCIE_IRQ_DETECT,
 static void e1000_iface_init(struct net_if *iface)
 {
 	struct e1000_dev *dev = net_if_get_device(iface)->data;
+	const struct e1000_config *config = net_if_get_device(iface)->config;
 
 	/* For VLAN, this value is only used to get the correct L2 driver.
 	 * The iface pointer in device context should contain the main
@@ -298,14 +299,7 @@ static void e1000_iface_init(struct net_if *iface)
 		dev->iface = iface;
 
 		/* Do the phy link up only once */
-		IRQ_CONNECT(DT_INST_IRQN(0),
-			DT_INST_IRQ(0, priority),
-			e1000_isr, DEVICE_DT_INST_GET(0),
-			DT_INST_IRQ(0, sense));
-
-		irq_enable(DT_INST_IRQN(0));
-		iow32(dev, CTRL, CTRL_SLU); /* Set link up */
-		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);
+		config->config_func(dev);
 	}
 
 	ethernet_init(iface);
@@ -316,12 +310,6 @@ static void e1000_iface_init(struct net_if *iface)
 	LOG_DBG("done");
 }
 
-DEVICE_PCIE_INST_DECLARE(0);
-
-static struct e1000_dev e1000_dev = {
-	DEVICE_PCIE_INST_INIT(0, pcie),
-};
-
 static const struct ethernet_api e1000_api = {
 	.iface_api.init		= e1000_iface_init,
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
@@ -331,14 +319,39 @@ static const struct ethernet_api e1000_api = {
 	.send			= e1000_send,
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
-		    e1000_probe,
-		    NULL,
-		    &e1000_dev,
-		    NULL,
-		    CONFIG_ETH_INIT_PRIORITY,
-		    &e1000_api,
-		    NET_ETH_MTU);
+#define E1000_PCI_INIT(inst)						\
+	DEVICE_PCIE_INST_DECLARE(inst);					\
+									\
+	static struct e1000_dev dev_##inst = {				\
+		DEVICE_PCIE_INST_INIT(inst, pcie),			\
+	};								\
+									\
+	static void e1000_config_##inst(const struct e1000_dev *dev)	\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(inst),				\
+			    DT_INST_IRQ(inst, priority),		\
+			    e1000_isr, DEVICE_DT_INST_GET(inst),	\
+			    DT_INST_IRQ(inst, sense));			\
+									\
+		irq_enable(DT_INST_IRQN(0));				\
+		iow32(dev, CTRL, CTRL_SLU); /* Set link up */		\
+		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);			\
+	}								\
+									\
+	static const struct e1000_config config_##inst = {		\
+		.config_func = e1000_config_##inst,			\
+	};								\
+									\
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst,				\
+				      e1000_probe,			\
+				      NULL,				\
+				      &dev_##inst,			\
+				      &config_##inst,			\
+				      CONFIG_ETH_INIT_PRIORITY,		\
+				      &e1000_api,			\
+				      NET_ETH_MTU);
+
+DT_INST_FOREACH_STATUS_OKAY(E1000_PCI_INIT);
 
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 struct ptp_context {
@@ -349,8 +362,6 @@ struct ptp_context {
 	 */
 	uint64_t clock_time;
 };
-
-static struct ptp_context ptp_e1000_context;
 
 static int ptp_clock_e1000_set(const struct device *dev,
 			       struct net_ptp_time *tm)
@@ -444,20 +455,25 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_e1000_init(const struct device *port)
 {
-	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
-	struct e1000_dev *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
+	struct e1000_dev *context = ptp_context->eth_context;
 
 	context->ptp_clock = port;
-	ptp_context->eth_context = context;
-
 	ptp_context->clock_time = k_ticks_to_ns_floor64(k_uptime_ticks());
 
 	return 0;
 }
 
-DEVICE_DEFINE(e1000_ptp_clock, PTP_CLOCK_NAME, ptp_e1000_init,
-	      NULL, &ptp_e1000_context, NULL, POST_KERNEL,
-	      CONFIG_APPLICATION_INIT_PRIORITY, &api);
+#define E1000_PTP_INIT(inst)						\
+	static struct ptp_context ptp_e1000_context_##inst = {		\
+		.eth_context = DEVICE_DT_INST_GET(inst)->data,		\
+	};								\
+									\
+	DEVICE_DEFINE(e1000_ptp_clock, PTP_CLOCK_NAME,			\
+		      ptp_e1000_init, NULL,				\
+		      &ptp_e1000_context_##inst, NULL, POST_KERNEL,	\
+		      CONFIG_APPLICATION_INIT_PRIORITY, &api);
+
+DT_INST_FOREACH_STATUS_OKAY(E1000_PTP_INIT);
 
 #endif /* CONFIG_ETH_E1000_PTP_CLOCK */
