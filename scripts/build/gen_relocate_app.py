@@ -446,7 +446,7 @@ def get_obj_filename(searchpath, filename):
 def parse_input_string(line):
     line = line.replace('\\ :', ':')
 
-    flag_sep = ':NOCOPY' if ':NOCOPY' in line else ':COPY:'
+    flag_sep = ':NOCOPY:' if ':NOCOPY' in line else ':COPY:'
     mem_region_phdr, copy_flag, file_name = line.partition(flag_sep)
     copy_flag = copy_flag.replace(':', '')
 
