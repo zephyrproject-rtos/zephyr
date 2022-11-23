@@ -381,7 +381,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 	LOG_DBG("Send %u clocks", config->leading_clocks);
 	tx_buf.buf = clock_buf;
-	tx_buf.len = ceiling_fraction(config->leading_clocks, BITS_PER_BYTE);
+	tx_buf.len = DIV_ROUND_UP(config->leading_clocks, BITS_PER_BYTE);
 	ret = spi_write_dt(&config->bus, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("Failed to send leading %u clocks: %d", config->leading_clocks, ret);
@@ -413,7 +413,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 	LOG_DBG("Send %u clocks", config->trailing_clocks);
 	tx_buf.buf = clock_buf;
-	tx_buf.len = ceiling_fraction(config->trailing_clocks, BITS_PER_BYTE);
+	tx_buf.len = DIV_ROUND_UP(config->trailing_clocks, BITS_PER_BYTE);
 	ret = spi_write_dt(&config->bus, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("Failed to send trailing %u clocks: %d", config->trailing_clocks, ret);

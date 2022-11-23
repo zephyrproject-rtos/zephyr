@@ -114,8 +114,8 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #else
 /* For requested SCK < 32 MHz, use divider /2 for HFCLK192M. */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
-#define INST_0_SCK_CFG (ceiling_fraction(NRF_QSPI_BASE_CLOCK_FREQ / 2, \
-					 INST_0_SCK_FREQUENCY) - 1)
+#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ / 2, \
+				     INST_0_SCK_FREQUENCY) - 1)
 #endif
 
 #else
@@ -126,7 +126,7 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #if (INST_0_SCK_FREQUENCY >= NRF_QSPI_BASE_CLOCK_FREQ)
 #define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
 #else
-#define INST_0_SCK_CFG (ceiling_fraction(NRF_QSPI_BASE_CLOCK_FREQ, \
+#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, \
 					 INST_0_SCK_FREQUENCY) - 1)
 
 #endif
@@ -1295,7 +1295,7 @@ static int enter_dpd(const struct device *const dev)
 
 		if (t_enter_dpd) {
 			uint32_t t_enter_dpd_us =
-				ceiling_fraction(t_enter_dpd, NSEC_PER_USEC);
+				DIV_ROUND_UP(t_enter_dpd, NSEC_PER_USEC);
 
 			k_busy_wait(t_enter_dpd_us);
 		}
@@ -1321,7 +1321,7 @@ static int exit_dpd(const struct device *const dev)
 
 		if (t_exit_dpd) {
 			uint32_t t_exit_dpd_us =
-				ceiling_fraction(t_exit_dpd, NSEC_PER_USEC);
+				DIV_ROUND_UP(t_exit_dpd, NSEC_PER_USEC);
 
 			k_busy_wait(t_exit_dpd_us);
 		}

@@ -685,10 +685,10 @@ static const struct flash_driver_api spi_flash_at45_api = {
 		.sector_size = DT_INST_PROP(idx, sector_size),		     \
 		.block_size  = DT_INST_PROP(idx, block_size),		     \
 		.page_size   = DT_INST_PROP(idx, page_size),		     \
-		.t_enter_dpd = ceiling_fraction(			     \
+		.t_enter_dpd = DIV_ROUND_UP(			     \
 					DT_INST_PROP(idx, enter_dpd_delay),  \
 					NSEC_PER_USEC),			     \
-		.t_exit_dpd  = ceiling_fraction(			     \
+		.t_exit_dpd  = DIV_ROUND_UP(			     \
 					DT_INST_PROP(idx, exit_dpd_delay),   \
 					NSEC_PER_USEC),			     \
 		.use_udpd    = DT_INST_PROP(idx, use_udpd),		     \

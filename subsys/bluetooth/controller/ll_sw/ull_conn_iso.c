@@ -681,7 +681,7 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		uint32_t iso_interval_us_frac =
 			EVENT_US_TO_US_FRAC(cig->iso_interval * CONN_INT_UNIT_US);
 		cig->lll.window_widening_periodic_us_frac =
-			ceiling_fraction(((lll_clock_ppm_local_get() +
+			DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 					   lll_clock_ppm_get(cig->sca_update - 1)) *
 					  iso_interval_us_frac),
 					 1000000U);
@@ -1285,7 +1285,7 @@ void ull_conn_iso_transmit_test_cig_interval(uint16_t handle, uint32_t ticks_at_
 		 * on 64-bit sdu_counter:
 		 *   (39 bits x 22 bits (4x10^6 us) = 61 bits / 8 bits (255 us) = 53 bits)
 		 */
-		sdu_counter = ceiling_fraction((cis->lll.event_count + 1U) * iso_interval,
+		sdu_counter = DIV_ROUND_UP((cis->lll.event_count + 1U) * iso_interval,
 					       sdu_interval);
 
 		if (cis->hdr.test_mode.tx_sdu_counter == 0U) {

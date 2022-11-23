@@ -630,7 +630,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * the requested ticks have passed starting now.
 	 */
 	cyc += unannounced;
-	cyc = ceiling_fraction(cyc, CYC_PER_TICK) * CYC_PER_TICK;
+	cyc = DIV_ROUND_UP(cyc, CYC_PER_TICK) * CYC_PER_TICK;
 
 	/* Due to elapsed time the calculation above might produce a
 	 * duration that laps the counter.  Don't let it.

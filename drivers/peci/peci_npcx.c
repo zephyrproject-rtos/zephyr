@@ -80,7 +80,7 @@ static int peci_npcx_configure(const struct device *dev, uint32_t bitrate)
 	 * The unit of the bitrate is in Kbps, need to convert it to bps when
 	 * calculate the divider
 	 */
-	bit_rate_divider = ceiling_fraction(data->peci_src_clk_freq, bitrate * 1000 * 4) - 1;
+	bit_rate_divider = DIV_ROUND_UP(data->peci_src_clk_freq, bitrate * 1000 * 4) - 1;
 	/*
 	 * Make sure the divider doesn't exceed the max valid value and is not lower than the
 	 * minimal valid value.

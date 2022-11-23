@@ -799,7 +799,7 @@ static int adc_npcx_init(const struct device *dev)
 	}
 
 	/* Configure the ADC clock */
-	prescaler = ceiling_fraction(data->input_clk, NPCX_ADC_CLK);
+	prescaler = DIV_ROUND_UP(data->input_clk, NPCX_ADC_CLK);
 	if (prescaler > 0x40) {
 		prescaler = 0x40;
 	}

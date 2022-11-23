@@ -113,7 +113,7 @@ static int pwm_npcx_set_cycles(const struct device *dev, uint32_t channel,
 	 * maximum pwm period cycles and won't exceed it.
 	 * Then prescaler = ceil (period_cycles / pwm_max_period_cycles)
 	 */
-	prescaler = ceiling_fraction(period_cycles, NPCX_PWM_MAX_PERIOD_CYCLES);
+	prescaler = DIV_ROUND_UP(period_cycles, NPCX_PWM_MAX_PERIOD_CYCLES);
 	if (prescaler > NPCX_PWM_MAX_PRESCALER) {
 		return -EINVAL;
 	}

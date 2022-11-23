@@ -96,7 +96,7 @@ ZTEST(blob_io_flash, test_chunk_read)
 	/* Simulate reading whole partition divided into blocks and chunk of maximum sizes */
 	while (remaining > 0) {
 		block.chunk_count =
-			ceiling_fraction(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX,
+			DIV_ROUND_UP(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX,
 					 CHUNK_SIZE);
 		block.size = remaining > CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX
 				     ? CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX
@@ -193,7 +193,7 @@ ZTEST(blob_io_flash, test_chunk_write)
 	/* Simulate writing whole partition divided into blocks and chunk of maximum sizes */
 	while (remaining > 0) {
 		block.chunk_count =
-			ceiling_fraction(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX,
+			DIV_ROUND_UP(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX,
 					 CHUNK_SIZE);
 		block.size = remaining > CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX
 				     ? CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX

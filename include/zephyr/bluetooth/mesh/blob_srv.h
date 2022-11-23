@@ -29,7 +29,7 @@ struct bt_mesh_blob_srv;
  */
 #if defined(CONFIG_BT_MESH_BLOB_SRV)
 #define BT_MESH_BLOB_BLOCKS_MAX                                                \
-	(ceiling_fraction(CONFIG_BT_MESH_BLOB_SIZE_MAX,                        \
+	(DIV_ROUND_UP(CONFIG_BT_MESH_BLOB_SIZE_MAX,                        \
 			  CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN))
 #else
 #define BT_MESH_BLOB_BLOCKS_MAX 1

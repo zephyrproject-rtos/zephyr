@@ -236,11 +236,11 @@ static int wdt_npcx_setup(const struct device *dev, uint8_t options)
 	 * One clock period of T0 timer is 32/32.768 KHz = 0.976 ms.
 	 * Then the counter value is timeout/0.976 - 1.
 	 */
-	inst->TWDT0 = MAX(ceiling_fraction(data->timeout * NPCX_WDT_CLK,
+	inst->TWDT0 = MAX(DIV_ROUND_UP(data->timeout * NPCX_WDT_CLK,
 				32 * 1000) - 1, 1);
 
 	/* Configure 8-bit watchdog counter */
-	inst->WDCNT = MIN(ceiling_fraction(data->timeout, 32) +
+	inst->WDCNT = MIN(DIV_ROUND_UP(data->timeout, 32) +
 					CONFIG_WDT_NPCX_DELAY_CYCLES, 0xff);
 
 	LOG_DBG("WDT setup: TWDT0, WDCNT are %d, %d", inst->TWDT0, inst->WDCNT);

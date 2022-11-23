@@ -478,7 +478,7 @@ static uint32_t calculate_tifs(uint8_t len)
 	 * LE Test packet interval: I(L) = ceil((L + 249) / 625) * 625 us
 	 * where L is an LE Test packet length in microseconds unit.
 	 */
-	interval = ceiling_fraction((transmit_time + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
+	interval = DIV_ROUND_UP((transmit_time + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
 
 	return interval - transmit_time;
 }

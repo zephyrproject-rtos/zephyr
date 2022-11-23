@@ -191,7 +191,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		cig->lll.window_widening_max_us = (iso_interval_us >> 1) -
 						  EVENT_IFS_US;
 		cig->lll.window_widening_periodic_us_frac =
-			ceiling_fraction(((lll_clock_ppm_local_get() +
+			DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 					 lll_clock_ppm_get(acl->periph.sca)) *
 					 EVENT_US_TO_US_FRAC(iso_interval_us)), USEC_PER_SEC);
 

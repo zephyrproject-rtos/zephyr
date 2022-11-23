@@ -592,7 +592,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 * BIG radio events.
 			 */
 			aux->interval =
-				ceiling_fraction(((uint64_t)adv->interval *
+				DIV_ROUND_UP(((uint64_t)adv->interval *
 						  ADV_INT_UNIT_US) +
 						 HAL_TICKER_TICKS_TO_US(
 							ULL_ADV_RANDOM_DELAY),
