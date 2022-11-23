@@ -68,6 +68,7 @@ else()
  if(CONFIG_BT_MESH_V1d1)
   target_sources(app PRIVATE
    src/test_blob.c
+   src/test_sar.c
    src/test_lcd.c
   )
  endif()
