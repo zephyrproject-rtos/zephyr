@@ -66,6 +66,11 @@ static void process(const struct log_backend *const backend,
 	uint32_t flags;
 	struct backend_cb *cb = (struct backend_cb *)backend->cb->ctx;
 
+	/* If printk message skip it. */
+	if (log_msg_get_level(&(msg->log)) == LOG_LEVEL_INTERNAL_RAW_STRING) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		cb->sync++;
 	}
@@ -327,7 +332,9 @@ ZTEST(test_log_core_additional, test_log_timestamping)
 	log_init();
 	/* deactivate all other backend */
 	STRUCT_SECTION_FOREACH(log_backend, backend) {
-		log_backend_deactivate(backend);
+		if ((backend == &backend1) || (backend == &backend2)) {
+			log_backend_deactivate(backend);
+		}
 	}
 
 	TC_PRINT("Register timestamp function\n");
