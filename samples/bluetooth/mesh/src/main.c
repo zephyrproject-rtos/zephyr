@@ -94,7 +94,7 @@ static inline uint8_t model_time_encode(int32_t ms)
 			continue;
 		}
 
-		uint8_t steps = ceiling_fraction(ms, time_res[i]);
+		uint8_t steps = DIV_ROUND_UP(ms, time_res[i]);
 
 		return steps | (i << 6);
 	}

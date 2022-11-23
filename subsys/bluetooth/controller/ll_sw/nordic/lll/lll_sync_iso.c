@@ -1227,7 +1227,7 @@ static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
 	stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
 	iso_meta->timestamp = HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
 			      radio_tmr_aa_restore() +
-			      (ceiling_fraction(lll->ptc_curr, lll->bn) *
+			      (DIV_ROUND_UP(lll->ptc_curr, lll->bn) *
 			       lll->pto * lll->iso_interval *
 			       PERIODIC_INT_UNIT_US) -
 			      addr_us_get(lll->phy) -

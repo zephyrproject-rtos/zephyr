@@ -1221,7 +1221,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		interval_min_us = time_us +
 				  (scan_delay + scan_window) * USEC_PER_MSEC;
 		if ((interval * SCAN_INT_UNIT_US) < interval_min_us) {
-			interval = ceiling_fraction(interval_min_us,
+			interval = DIV_ROUND_UP(interval_min_us,
 						    SCAN_INT_UNIT_US);
 		}
 
@@ -1470,7 +1470,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 * BIG radio events.
 			 */
 			aux->interval =
-				ceiling_fraction(((uint64_t)adv->interval *
+				DIV_ROUND_UP(((uint64_t)adv->interval *
 						  ADV_INT_UNIT_US) +
 						 HAL_TICKER_TICKS_TO_US(
 							ULL_ADV_RANDOM_DELAY),

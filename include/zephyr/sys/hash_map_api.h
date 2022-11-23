@@ -215,7 +215,7 @@ struct sys_hashmap_config {
 #define SYS_HASHMAP_CONFIG(_max_size, _load_factor)                                                \
 	{                                                                                          \
 		.max_size = (size_t)_max_size, .load_factor = (uint8_t)_load_factor,               \
-		.initial_n_buckets = NHPOT(ceiling_fraction(100, _load_factor)),                   \
+		.initial_n_buckets = NHPOT(DIV_ROUND_UP(100, _load_factor)),                   \
 	}
 
 /**

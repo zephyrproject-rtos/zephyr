@@ -171,7 +171,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		 *  10 ms          12.5 ms        40        50         25%
 		 */
 		iso_interval_us = cig->c_sdu_interval;
-		cig->iso_interval = ceiling_fraction(iso_interval_us, ISO_INT_UNIT_US);
+		cig->iso_interval = DIV_ROUND_UP(iso_interval_us, ISO_INT_UNIT_US);
 	} else {
 		iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
 	}
@@ -324,7 +324,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		if (!cig->central.test) {
 #if defined(CONFIG_BT_CTLR_CONN_ISO_LOW_LATENCY_POLICY)
 			/* Use symmetric flush timeout */
-			cis->lll.tx.ft = ceiling_fraction(total_time, iso_interval_us);
+			cis->lll.tx.ft = DIV_ROUND_UP(total_time, iso_interval_us);
 			cis->lll.rx.ft = cis->lll.tx.ft;
 
 #elif defined(CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY)
@@ -334,26 +334,26 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 				 * SDU_Interval <= CIG_Sync_Delay
 				 */
 				cis->lll.tx.ft =
-					ceiling_fraction(cig->c_latency - cig->c_sdu_interval -
+					DIV_ROUND_UP(cig->c_latency - cig->c_sdu_interval -
 							iso_interval_us, iso_interval_us);
 				cis->lll.rx.ft =
-					ceiling_fraction(cig->p_latency - cig->p_sdu_interval -
+					DIV_ROUND_UP(cig->p_latency - cig->p_sdu_interval -
 							iso_interval_us, iso_interval_us);
 			} else {
 				/* TL = CIG_Sync_Delay + FT x ISO_Interval - SDU_Interval.
 				 * SDU_Interval <= CIG_Sync_Delay
 				 */
 				cis->lll.tx.ft =
-					ceiling_fraction(cig->c_latency + cig->c_sdu_interval -
+					DIV_ROUND_UP(cig->c_latency + cig->c_sdu_interval -
 							iso_interval_us, iso_interval_us);
 				cis->lll.rx.ft =
-					ceiling_fraction(cig->p_latency + cig->p_sdu_interval -
+					DIV_ROUND_UP(cig->p_latency + cig->p_sdu_interval -
 							iso_interval_us, iso_interval_us);
 			}
 #else
 			LL_ASSERT(0);
 #endif
-			cis->lll.nse = ceiling_fraction(se[i].total_count,
+			cis->lll.nse = DIV_ROUND_UP(se[i].total_count,
 								  cis->lll.tx.ft);
 		}
 
@@ -757,17 +757,17 @@ static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 		 *   Continuation header = 2 bytes
 		 *   MaxDrift (Max. allowed SDU delivery timing drift) = 100 ppm
 		 */
-		max_drift = ceiling_fraction(SDU_MAX_DRIFT_PPM * sdu_interval, 1000000U);
-		ceil_f = ceiling_fraction(iso_interval + max_drift, sdu_interval);
-		ceil_f_x_max_sdu = ceiling_fraction(max_sdu * (iso_interval + max_drift),
+		max_drift = DIV_ROUND_UP(SDU_MAX_DRIFT_PPM * sdu_interval, 1000000U);
+		ceil_f = DIV_ROUND_UP(iso_interval + max_drift, sdu_interval);
+		ceil_f_x_max_sdu = DIV_ROUND_UP(max_sdu * (iso_interval + max_drift),
 						    sdu_interval);
 
 		/* Strategy: Keep lowest possible BN.
 		 * TODO: Implement other strategies, possibly as policies.
 		 */
 		max_pdu_bn1 = ceil_f * 5 + ceil_f_x_max_sdu;
-		*bn = ceiling_fraction(max_pdu_bn1, LL_CIS_OCTETS_TX_MAX);
-		*max_pdu = ceiling_fraction(max_pdu_bn1, *bn) + 2;
+		*bn = DIV_ROUND_UP(max_pdu_bn1, LL_CIS_OCTETS_TX_MAX);
+		*max_pdu = DIV_ROUND_UP(max_pdu_bn1, *bn) + 2;
 	} else {
 		/* For unframed, ISO_Interval must be N x SDU_Interval */
 		LL_ASSERT(iso_interval % sdu_interval == 0);
@@ -775,6 +775,6 @@ static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 		/* Core 5.3 Vol 6, Part G section 2.1:
 		 * BN >= ceil(Max_SDU/Max_PDU * ISO_Interval/SDU_Interval)
 		 */
-		*bn = ceiling_fraction(max_sdu * iso_interval, (*max_pdu) * sdu_interval);
+		*bn = DIV_ROUND_UP(max_sdu * iso_interval, (*max_pdu) * sdu_interval);
 	}
 }

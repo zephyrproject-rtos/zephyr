@@ -866,7 +866,7 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 		if (chan->chan.ops->alloc_buf) {
 			/* Auto tune credits to receive a full packet */
 			chan->rx.init_credits =
-				ceiling_fraction(chan->rx.mtu,
+				DIV_ROUND_UP(chan->rx.mtu,
 						 BT_L2CAP_RX_MTU);
 		} else {
 			chan->rx.init_credits = L2CAP_LE_MAX_CREDITS;
