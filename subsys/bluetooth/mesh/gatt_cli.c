@@ -302,7 +302,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	if (bt_mesh_proxy_conn_count_get() == CONFIG_BT_MAX_CONN) {
+	if (!bt_mesh_proxy_has_avail_conn()) {
 		return;
 	}
 

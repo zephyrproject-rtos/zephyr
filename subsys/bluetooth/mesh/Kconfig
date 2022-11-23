@@ -212,6 +212,14 @@ config BT_MESH_PROXY_FILTER_SIZE
 	  enough so that proxy client can communicate with several devices through
 	  this proxy server node using the default accept list filter type.
 
+config BT_MESH_MAX_CONN
+	int "Maximum number of simultaneous connections used by the stack"
+	default BT_MAX_CONN
+	range 1 BT_MAX_CONN
+	help
+	  Maximum number of simultaneous Bluetooth connections that the Bluetooth
+	  mesh stack can use.
+
 endif # BT_CONN
 
 config BT_MESH_ACCESS_LAYER_MSG
