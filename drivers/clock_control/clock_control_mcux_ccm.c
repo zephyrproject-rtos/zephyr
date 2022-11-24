@@ -179,7 +179,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	} break;
 #endif
 
-#ifdef CONFIG_CAN_MCUX_FLEXCAN
+#if defined(CONFIG_CAN_MCUX_FLEXCAN) || defined(CONFIG_CAN_MCUX_FLEXCAN_FD)
 	case IMX_CCM_CAN_CLK:
 	{
 		uint32_t can_mux = CLOCK_GetMux(kCLOCK_CanMux);
