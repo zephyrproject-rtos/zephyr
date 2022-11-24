@@ -639,10 +639,8 @@ static void dai_dmic_stop(struct dai_intel_dmic *dmic, bool stop_is_pause)
 		/* Don't stop CIC yet if one FIFO remains active */
 		if (dai_dmic_global.active_fifos_mask == 0) {
 			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-					     CIC_CONTROL_SOFT_RESET_BIT |
-					     CIC_CONTROL_MIC_MUTE_BIT,
-					     CIC_CONTROL_SOFT_RESET_BIT |
-					     CIC_CONTROL_MIC_MUTE_BIT);
+					     CIC_CONTROL_SOFT_RESET_BIT,
+					     CIC_CONTROL_SOFT_RESET_BIT);
 		}
 		switch (dmic->dai_config_params.dai_index) {
 		case 0:
