@@ -15,6 +15,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/drivers/dai.h>
 #include <zephyr/irq.h>
@@ -792,7 +794,6 @@ out:
 	return ret;
 }
 
-
 static int dai_dmic_probe_wrapper(const struct device *dev)
 {
 	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *)dev->data;
@@ -831,9 +832,29 @@ static int dai_dmic_remove_wrapper(const struct device *dev)
 	return ret;
 }
 
+static int dmic_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		dai_dmic_remove_wrapper(dev);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		dai_dmic_probe_wrapper(dev);
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* All device pm is handled during resume and suspend */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 const struct dai_driver_api dai_dmic_ops = {
-	.probe			= dai_dmic_probe_wrapper,
-	.remove			= dai_dmic_remove_wrapper,
+	.probe			= pm_device_runtime_get,
+	.remove			= pm_device_runtime_put,
 	.config_set		= dai_dmic_set_config,
 	.config_get		= dai_dmic_get_config,
 	.get_properties		= dai_dmic_get_properties,
@@ -852,7 +873,9 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		dai_dmic_irq_handler,
 		DEVICE_DT_INST_GET(0),
 		0);
-	return 0;
+
+	pm_device_init_suspended(dev);
+	return pm_device_runtime_enable(dev);
 };
 
 
@@ -876,9 +899,11 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		},							\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(n, dmic_pm_action);			\
+									\
 	DEVICE_DT_INST_DEFINE(n,					\
 		dai_dmic_initialize_device,				\
-		NULL,							\
+		PM_DEVICE_DT_INST_GET(n),				\
 		&dai_intel_dmic_data_##n,				\
 		&dai_intel_dmic_properties_##n,				\
 		POST_KERNEL,						\
