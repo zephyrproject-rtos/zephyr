@@ -25,9 +25,9 @@ struct shell_uart_ctrl_blk {
 	void *context;
 	atomic_t tx_busy;
 	bool blocking_tx;
-#ifdef CONFIG_MCUMGR_SMP_SHELL
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 	struct smp_shell_data smp;
-#endif /* CONFIG_MCUMGR_SMP_SHELL */
+#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 };
 
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN

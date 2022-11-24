@@ -27,7 +27,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_shell);
 
-BUILD_ASSERT(CONFIG_MCUMGR_SMP_SHELL_MTU != 0, "CONFIG_MCUMGR_SMP_SHELL_MTU must be > 0");
+BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_SHELL_MTU != 0,
+	     "CONFIG_MCUMGR_TRANSPORT_SHELL_MTU must be > 0");
 
 static struct smp_transport smp_shell_transport;
 
@@ -160,7 +161,7 @@ void smp_shell_process(struct smp_shell_data *data)
 
 static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 {
-	return CONFIG_MCUMGR_SMP_SHELL_MTU;
+	return CONFIG_MCUMGR_TRANSPORT_SHELL_MTU;
 }
 
 static int smp_shell_tx_raw(const void *data, int len)

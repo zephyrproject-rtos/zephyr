@@ -35,11 +35,11 @@
 #endif
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
+LOG_MODULE_DECLARE(mcumgr_img_mgmt, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 struct img_mgmt_state g_img_mgmt_state;
 
-#ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
+#ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 const char *img_mgmt_err_str_app_reject = "app reject";
 const char *img_mgmt_err_str_hdr_malformed = "header malformed";
 const char *img_mgmt_err_str_magic_mismatch = "magic mismatch";
@@ -86,7 +86,7 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 				   uint32_t *flags)
 {
 
-#ifdef CONFIG_IMG_MGMT_DUMMY_HDR
+#ifdef CONFIG_MCUMGR_GRP_IMG_DUMMY_HDR
 	uint8_t dummy_hash[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x00, 0x11, 0x22,
 				0x33, 0x44, 0x55, 0x66, 0x77};
 
@@ -217,7 +217,7 @@ img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash)
 	int i;
 	struct image_version ver;
 
-	for (i = 0; i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; i < 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, &ver, hash, NULL) != 0) {
 			continue;
 		}
@@ -238,7 +238,7 @@ img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 	int i;
 	uint8_t hash[IMAGE_HASH_LEN];
 
-	for (i = 0; i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; i < 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, ver, hash, NULL) != 0) {
 			continue;
 		}

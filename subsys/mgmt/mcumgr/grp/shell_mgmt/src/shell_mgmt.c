@@ -111,7 +111,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 	/* Key="ret"; value=<status>, or rc if legacy option enabled */
 	ok = zcbor_tstr_put_lit(zse, "o")		&&
 	     zcbor_tstr_encode(zse, &cmd_out)		&&
-#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE
+#ifdef CONFIG_MCUMGR_GRP_SHELL_LEGACY_RC_RETURN_CODE
 	     zcbor_tstr_put_lit(zse, "rc")		&&
 #else
 	     zcbor_tstr_put_lit(zse, "ret")		&&

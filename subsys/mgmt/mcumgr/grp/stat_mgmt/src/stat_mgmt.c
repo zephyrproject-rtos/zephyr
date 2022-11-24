@@ -119,7 +119,7 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 	struct zcbor_string value = { 0 };
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
-	char stat_name[CONFIG_STAT_MGMT_MAX_NAME_LEN];
+	char stat_name[CONFIG_MCUMGR_GRP_STAT_MAX_NAME_LEN];
 	bool ok;
 	size_t counter = 0;
 
