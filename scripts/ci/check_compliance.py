@@ -937,12 +937,8 @@ class PyLint(ComplianceTest):
                                                 "pylintrc"))
 
         # List of files added/modified by the commit(s).
-        files = git(
-            "diff", "--name-only", "--diff-filter=d", COMMIT_RANGE, "--",
-            # Skip to work around crash in pylint 2.2.2:
-            # https://github.com/PyCQA/pylint/issues/2906
-            ":!boards/xtensa/intel_s1000_crb/support/create_board_img.py") \
-            .splitlines()
+        files = git("diff", "--name-only", "--diff-filter=d",
+                    COMMIT_RANGE).splitlines()
 
         # Filter out everything but Python files. Keep filenames
         # relative (to GIT_TOP) to stay farther from any command line
