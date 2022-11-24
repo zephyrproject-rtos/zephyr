@@ -46,6 +46,11 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		      const uint8_t dev_key[16])
 {
 	int err;
+
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_INIT)) {
+		return -ENODEV;
+	}
+
 	struct bt_mesh_cdb_subnet *subnet = NULL;
 
 	LOG_INF("Primary Element: 0x%04x", addr);
@@ -172,7 +177,8 @@ int bt_mesh_provision_gatt(const uint8_t uuid[16], uint16_t net_idx, uint16_t ad
 
 void bt_mesh_reset(void)
 {
-	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID) ||
+	    !atomic_test_bit(bt_mesh.flags, BT_MESH_INIT)) {
 		return;
 	}
 
@@ -181,6 +187,7 @@ void bt_mesh_reset(void)
 	bt_mesh.seq = 0U;
 
 	memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
+	atomic_set_bit(bt_mesh.flags, BT_MESH_INIT);
 
 	/* If this fails, the work handler will return early on the next
 	 * execution, as the device is not provisioned. If the device is
@@ -336,6 +343,10 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 		 const struct bt_mesh_comp *comp)
 {
 	int err;
+
+	if (atomic_test_and_set_bit(bt_mesh.flags, BT_MESH_INIT)) {
+		return -EALREADY;
+	}
 
 	err = bt_mesh_test();
 	if (err) {
