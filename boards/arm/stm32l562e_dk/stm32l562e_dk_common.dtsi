@@ -59,6 +59,10 @@
 	cpu-power-states = <&stop0 &stop1 &stop2>;
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_msi {
 	status = "okay";
 	msi-range = <6>;
