@@ -51,6 +51,11 @@
 #define	FF_MAX_LFN	CONFIG_FS_FATFS_MAX_LFN
 #endif /* defined(CONFIG_FS_FATFS_MAX_LFN) */
 
+#if defined(CONFIG_FS_FATFS_MIN_SS)
+#undef FF_MIN_SS
+#define FF_MIN_SS	CONFIG_FS_FATFS_MIN_SS
+#endif /* defined(CONFIG_FS_FATFS_MIN_SS) */
+
 #if defined(CONFIG_FS_FATFS_MAX_SS)
 #undef FF_MAX_SS
 #define FF_MAX_SS		CONFIG_FS_FATFS_MAX_SS

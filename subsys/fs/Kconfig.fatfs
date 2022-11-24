@@ -142,6 +142,20 @@ config FS_FATFS_MAX_SS
 	range 512 4096
 	default 512
 
+config FS_FATFS_MIN_SS
+	int "Minimum expected sector size"
+	range 512 FS_FATFS_MAX_SS
+	default 512
+	help
+	  Specifies minimum sector size the FAT FS driver is expected to
+	  support. Set this to FS_FATFS_MAX_FS when you have single
+	  device with FAT FS or all connected devices use the same
+	  sector size, to have slight reduction in code in FAT FS driver.
+	  The reduction comes from the fact that FAT FS does not have to
+	  query every connected device for sector size.
+	  This option affects FF_MAX_SS defined in ffconf.h, inside
+	  ELM FAT module
+
 config FS_FATFS_WINDOW_ALIGNMENT
 	int "Memory alignment for the member \"win\" in FATFS"
 	default 1
