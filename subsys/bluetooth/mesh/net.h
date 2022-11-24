@@ -167,6 +167,7 @@ struct bt_mesh_lpn {
 
 /* bt_mesh_net.flags */
 enum {
+	BT_MESH_INIT,            /* We have been initialized */
 	BT_MESH_VALID,           /* We have been provisioned */
 	BT_MESH_SUSPENDED,       /* Network is temporarily suspended */
 	BT_MESH_IVU_IN_PROGRESS, /* IV Update in Progress */

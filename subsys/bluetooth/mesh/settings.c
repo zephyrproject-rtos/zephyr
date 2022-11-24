@@ -65,6 +65,10 @@ int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 
 static int mesh_commit(void)
 {
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_INIT)) {
+		return 0;
+	}
+
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
 		/* The Bluetooth mesh settings loader calls bt_mesh_start() immediately
 		 * after loading the settings. This is not intended to work before
