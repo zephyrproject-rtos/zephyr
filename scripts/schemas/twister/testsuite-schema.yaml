@@ -43,6 +43,12 @@ mapping:
         required: false
         sequence:
           - type: str
+      "ignore_faults":
+        type: bool
+        required: false
+      "ignore_qemu_crash":
+        type: bool
+        required: false
       "testcases":
         type: seq
         required: false
@@ -199,6 +205,12 @@ mapping:
             required: false
             sequence:
               - type: str
+          "ignore_faults":
+            type: bool
+            required: false
+          "ignore_qemu_crash":
+            type: bool
+            required: false
           "harness":
             type: str
             required: false
