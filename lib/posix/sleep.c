@@ -14,8 +14,12 @@
  */
 unsigned sleep(unsigned int seconds)
 {
-	k_sleep(K_SECONDS(seconds));
-	return 0;
+	int rem;
+
+	rem = k_sleep(K_SECONDS(seconds));
+	__ASSERT_NO_MSG(rem >= 0);
+
+	return rem / MSEC_PER_SEC;
 }
 /**
  * @brief Suspend execution for microsecond intervals.
