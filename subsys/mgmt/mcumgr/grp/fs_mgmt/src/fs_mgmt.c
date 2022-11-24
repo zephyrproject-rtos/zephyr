@@ -25,11 +25,11 @@
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 #include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_config.h>
 
-#if defined(CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32)
+#if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32)
 #include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum_crc32.h>
 #endif
 
-#if defined(CONFIG_FS_MGMT_HASH_SHA256)
+#if defined(CONFIG_MCUMGR_GRP_FS_HASH_SHA256)
 #include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum_sha256.h>
 #endif
 
@@ -37,21 +37,21 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
-#ifdef CONFIG_FS_MGMT_CHECKSUM_HASH
+#ifdef CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH
 /* Define default hash/checksum */
-#if defined(CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32)
-#define FS_MGMT_CHECKSUM_HASH_DEFAULT "crc32"
-#elif defined(CONFIG_FS_MGMT_HASH_SHA256)
-#define FS_MGMT_CHECKSUM_HASH_DEFAULT "sha256"
+#if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32)
+#define MCUMGR_GRP_FS_CHECKSUM_HASH_DEFAULT "crc32"
+#elif defined(CONFIG_MCUMGR_GRP_FS_HASH_SHA256)
+#define MCUMGR_GRP_FS_CHECKSUM_HASH_DEFAULT "sha256"
 #else
 #error "Missing mcumgr fs checksum/hash algorithm selection?"
 #endif
 
 /* Define largest hach/checksum output size (bytes) */
-#if defined(CONFIG_FS_MGMT_HASH_SHA256)
-#define FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE 32
-#elif defined(CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32)
-#define FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE 4
+#if defined(CONFIG_MCUMGR_GRP_FS_HASH_SHA256)
+#define MCUMGR_GRP_FS_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE 32
+#elif defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32)
+#define MCUMGR_GRP_FS_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE 4
 #endif
 #endif
 
@@ -76,7 +76,7 @@ static struct {
 
 static const struct mgmt_handler fs_mgmt_handlers[];
 
-#if defined(CONFIG_FS_MGMT_CHECKSUM_HASH)
+#if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH)
 /* Hash/checksum iterator information passing structure */
 struct fs_mgmt_hash_checksum_iterator_info {
 	zcbor_state_t *zse;
@@ -164,8 +164,8 @@ done:
  */
 static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 {
-	uint8_t file_data[FS_MGMT_DL_CHUNK_SIZE];
-	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
+	uint8_t file_data[MCUMGR_GRP_FS_DL_CHUNK_SIZE];
+	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	uint64_t off = ULLONG_MAX;
 	size_t bytes_read = 0;
 	size_t file_len;
@@ -219,7 +219,7 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	}
 
 	/* Read the requested chunk from the file. */
-	rc = fs_mgmt_read(path, off, FS_MGMT_DL_CHUNK_SIZE, file_data, &bytes_read);
+	rc = fs_mgmt_read(path, off, MCUMGR_GRP_FS_DL_CHUNK_SIZE, file_data, &bytes_read);
 	if (rc != 0) {
 		return rc;
 	}
@@ -302,7 +302,7 @@ done:
  */
 static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 {
-	char file_name[CONFIG_FS_MGMT_PATH_SIZE + 1];
+	char file_name[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	unsigned long long len = ULLONG_MAX;
 	unsigned long long off = ULLONG_MAX;
 	size_t new_off;
@@ -394,13 +394,13 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 			MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
-#if defined(CONFIG_FS_MGMT_FILE_STATUS)
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_STATUS)
 /**
  * Command handler: fs stat (read)
  */
 static int fs_mgmt_file_status(struct smp_streamer *ctxt)
 {
-	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
+	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	size_t file_len;
 	int rc;
 	zcbor_state_t *zse = ctxt->writer->zs;
@@ -448,15 +448,15 @@ static int fs_mgmt_file_status(struct smp_streamer *ctxt)
 }
 #endif
 
-#if defined(CONFIG_FS_MGMT_CHECKSUM_HASH)
+#if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH)
 /**
  * Command handler: fs hash/checksum (read)
  */
 static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 {
-	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
-	char type_arr[HASH_CHECKSUM_TYPE_SIZE + 1] = FS_MGMT_CHECKSUM_HASH_DEFAULT;
-	char output[FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE];
+	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
+	char type_arr[HASH_CHECKSUM_TYPE_SIZE + 1] = MCUMGR_GRP_FS_CHECKSUM_HASH_DEFAULT;
+	char output[MCUMGR_GRP_FS_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE];
 	uint64_t len = ULLONG_MAX;
 	uint64_t off = 0;
 	size_t file_len;
@@ -563,13 +563,13 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 
 		if (group->output_size == sizeof(uint8_t)) {
 			tmp_val = (uint64_t)(*(uint8_t *)output);
-#if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 1
+#if MCUMGR_GRP_FS_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 1
 		} else if (group->output_size == sizeof(uint16_t)) {
 			tmp_val = (uint64_t)(*(uint16_t *)output);
-#if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 2
+#if MCUMGR_GRP_FS_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 2
 		} else if (group->output_size == sizeof(uint32_t)) {
 			tmp_val = (uint64_t)(*(uint32_t *)output);
-#if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 4
+#if MCUMGR_GRP_FS_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE > 4
 		} else if (group->output_size == sizeof(uint64_t)) {
 			tmp_val = (*(uint64_t *)output);
 #endif
@@ -646,13 +646,13 @@ static const struct mgmt_handler fs_mgmt_handlers[] = {
 		.mh_read = fs_mgmt_file_download,
 		.mh_write = fs_mgmt_file_upload,
 	},
-#if defined(CONFIG_FS_MGMT_FILE_STATUS)
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_STATUS)
 	[FS_MGMT_ID_STAT] = {
 		.mh_read = fs_mgmt_file_status,
 		.mh_write = NULL,
 	},
 #endif
-#if defined(CONFIG_FS_MGMT_CHECKSUM_HASH)
+#if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH)
 	[FS_MGMT_ID_HASH_CHECKSUM] = {
 		.mh_read = fs_mgmt_file_hash_checksum,
 		.mh_write = NULL,
@@ -678,13 +678,13 @@ static void fs_mgmt_register_group(void)
 {
 	mgmt_register_group(&fs_mgmt_group);
 
-#if defined(CONFIG_FS_MGMT_CHECKSUM_HASH)
+#if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH)
 	/* Register any supported hash or checksum functions */
-#if defined(CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32)
+#if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32)
 	fs_mgmt_hash_checksum_register_crc32();
 #endif
 
-#if defined(CONFIG_FS_MGMT_HASH_SHA256)
+#if defined(CONFIG_MCUMGR_GRP_FS_HASH_SHA256)
 	fs_mgmt_hash_checksum_register_sha256();
 #endif
 #endif

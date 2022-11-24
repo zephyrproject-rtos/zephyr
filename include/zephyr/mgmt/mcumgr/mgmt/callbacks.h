@@ -11,11 +11,11 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
+#ifdef CONFIG_MCUMGR_GRP_FS
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_callbacks.h>
 #endif
 
-#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
+#ifdef CONFIG_MCUMGR_GRP_IMG
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt_callbacks.h>
 #endif
 

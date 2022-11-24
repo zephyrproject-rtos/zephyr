@@ -99,7 +99,7 @@ static int smp_build_err_rsp(struct smp_streamer *streamer, const struct smp_hdr
 	     zcbor_tstr_put_lit(zsp, "rc")		&&
 	     zcbor_int32_put(zsp, status);
 
-#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+#ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
 	if (ok && rc_rsn != NULL) {
 		ok = zcbor_tstr_put_lit(zsp, "rsn")			&&
 		     zcbor_tstr_put_term(zsp, rc_rsn);
@@ -163,7 +163,8 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 
 	if (handler_fn) {
 		*handler_found = true;
-		zcbor_map_start_encode(cbuf->writer->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES);
+		zcbor_map_start_encode(cbuf->writer->zs,
+				       CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		cmd_recv.group = req_hdr->nh_group;
@@ -177,7 +178,8 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 		rc = handler_fn(cbuf);
 
 		/* End response payload. */
-		if (!zcbor_map_end_encode(cbuf->writer->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES) &&
+		if (!zcbor_map_end_encode(cbuf->writer->zs,
+					  CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES) &&
 		    rc == 0) {
 			rc = MGMT_ERR_EMSGSIZE;
 		}
