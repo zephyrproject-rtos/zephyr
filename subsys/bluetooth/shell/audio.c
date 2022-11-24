@@ -1887,10 +1887,21 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	err = bt_pacs_set_available_contexts(dir, ctx);
-	if (err) {
-		shell_error(ctx_shell, "Set available contexts err %d", err);
-		return err;
+	if (!strcmp(argv[3], "supported")) {
+		err = bt_pacs_set_supported_contexts(dir, ctx);
+		if (err) {
+			shell_error(ctx_shell, "Set supported contexts err %d", err);
+			return err;
+		}
+	} else if (!strcmp(argv[3], "available")) {
+		err = bt_pacs_set_available_contexts(dir, ctx);
+		if (err) {
+			shell_error(ctx_shell, "Set available contexts err %d", err);
+			return err;
+		}
+	} else {
+		shell_error(sh, "Unsupported context type: %s", argv[3]);
+		return -ENOEXEC;
 	}
 
 	return 0;
@@ -1924,6 +1935,10 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, LOCATION);
 		__ASSERT(err == 0, "Failed to set sink location");
 
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
+						     CONTEXT);
+		__ASSERT(err == 0, "Failed to set sink supported contexts");
+
 		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
 						     CONTEXT);
 		__ASSERT(err == 0, "Failed to set sink available contexts");
@@ -1932,6 +1947,10 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE, LOCATION);
 		__ASSERT(err == 0, "Failed to set source location");
+
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
+						     CONTEXT);
+		__ASSERT(err == 0, "Failed to set sink supported contexts");
 
 		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
 						     CONTEXT);
@@ -2084,9 +2103,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_location, NULL,
 			   "<direction: sink, source> <location bitmask>",
 			   cmd_set_loc, 3, 0),
-	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, add_context, NULL,
-			   "<direction: sink, source> <context bitmask>",
-			   cmd_context, 3, 0),
+	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_context, NULL,
+			   "<direction: sink, source>"
+			   "<context bitmask> <type: supported, available>",
+			   cmd_context, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 
