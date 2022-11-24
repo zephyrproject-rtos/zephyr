@@ -46,6 +46,13 @@ struct cbor_out_fmt_data {
 
 	/* Basetime for Cached data timestamp */
 	time_t basetime;
+
+	/* Storage for object links */
+	struct {
+		char objlnk[CONFIG_LWM2M_RW_SENML_CBOR_RECORDS][sizeof("65535:65535")];
+		size_t objlnk_sz; /* Object link buff size */
+		uint8_t objlnk_cnt;
+	};
 };
 
 struct cbor_in_fmt_data {
@@ -88,6 +95,7 @@ static void setup_out_fmt_data(struct lwm2m_message *msg)
 	engine_set_out_user_data(&msg->out, fd);
 	fd->name_sz = sizeof("/65535/999/");
 	fd->basetime = 0;
+	fd->objlnk_sz = sizeof("65535:65535");
 }
 
 static void clear_out_fmt_data(struct lwm2m_message *msg)
@@ -117,6 +125,7 @@ static void clear_in_fmt_data(struct lwm2m_message *msg)
 static int fmt_range_check(struct cbor_out_fmt_data *fd)
 {
 	if (fd->name_cnt >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS ||
+	    fd->objlnk_cnt >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS ||
 	    fd->input._lwm2m_senml__record_count >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS) {
 		LOG_ERR("CONFIG_LWM2M_RW_SENML_CBOR_RECORDS too small");
 		return -ENOMEM;
@@ -482,9 +491,40 @@ static int put_opaque(struct lwm2m_output_context *out, struct lwm2m_obj_path *p
 static int put_objlnk(struct lwm2m_output_context *out, struct lwm2m_obj_path *path,
 		      struct lwm2m_objlnk *value)
 {
-	int32_t value_s32 = (value->obj_id << 16) | value->obj_inst;
+	int ret = 0;
+	struct cbor_out_fmt_data *fd = LWM2M_OFD_CBOR(out);
 
-	return put_s32(out, path, value_s32);
+	ret = fmt_range_check(fd);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Format object link */
+	int objlnk_idx = fd->objlnk_cnt;
+	char *objlink_buf = fd->objlnk[objlnk_idx];
+	int objlnk_len =
+		snprintk(objlink_buf, fd->objlnk_sz, "%u:%u", value->obj_id, value->obj_inst);
+	if (objlnk_len < 0) {
+		return -EINVAL;
+	}
+
+	ret = put_name_nth_ri(out, path);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
+
+	/* Write the value */
+	record->_record_union._record_union_choice = _union_vlo;
+	record->_record_union._union_vlo.value = objlink_buf;
+	record->_record_union._union_vlo.len = objlnk_len;
+	record->_record_union_present = 1;
+
+	fd->objlnk_cnt++;
+
+	return 0;
 }
 
 static int get_opaque(struct lwm2m_input_context *in,
