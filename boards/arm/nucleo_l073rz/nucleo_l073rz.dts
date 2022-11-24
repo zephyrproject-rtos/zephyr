@@ -79,6 +79,10 @@
 	status = "okay";
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &pll {
 	div = <2>;
 	mul = <8>;
