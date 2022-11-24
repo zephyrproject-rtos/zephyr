@@ -69,6 +69,13 @@ struct zperf_server_hdr {
 	int32_t jitter2;
 };
 
+struct zperf_async_upload_context {
+	struct k_work work;
+	struct zperf_upload_params param;
+	zperf_callback callback;
+	void *user_data;
+};
+
 static inline uint32_t time_delta(uint32_t ts, uint32_t t)
 {
 	return (t >= ts) ? (t - ts) : (ULONG_MAX - ts + t);
@@ -98,5 +105,9 @@ int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
 			      int proto);
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
+
+void zperf_async_work_submit(struct k_work *work);
+void zperf_udp_uploader_init(void);
+void zperf_tcp_uploader_init(void);
 
 #endif /* __ZPERF_INTERNAL_H */

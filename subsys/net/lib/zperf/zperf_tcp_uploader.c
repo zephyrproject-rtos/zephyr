@@ -18,6 +18,8 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 static char sample_packet[PACKET_SIZE_MAX];
 
+static struct zperf_async_upload_context tcp_async_upload_ctx;
+
 static int tcp_upload(int sock,
 		      unsigned int duration_in_ms,
 		      unsigned int packet_size,
@@ -127,4 +129,49 @@ int zperf_tcp_upload(const struct zperf_upload_params *param,
 	zsock_close(sock);
 
 	return ret;
+}
+
+static void tcp_upload_async_work(struct k_work *work)
+{
+	struct zperf_async_upload_context *upload_ctx =
+		CONTAINER_OF(work, struct zperf_async_upload_context, work);
+	struct zperf_results result;
+	int ret;
+
+	upload_ctx->callback(ZPERF_SESSION_STARTED, NULL,
+			     upload_ctx->user_data);
+
+	ret = zperf_tcp_upload(&upload_ctx->param, &result);
+	if (ret < 0) {
+		upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
+				     upload_ctx->user_data);
+	} else {
+		upload_ctx->callback(ZPERF_SESSION_FINISHED, &result,
+				     upload_ctx->user_data);
+	}
+}
+
+int zperf_tcp_upload_async(const struct zperf_upload_params *param,
+			   zperf_callback callback, void *user_data)
+{
+	if (param == NULL || callback == NULL) {
+		return -EINVAL;
+	}
+
+	if (k_work_is_pending(&tcp_async_upload_ctx.work)) {
+		return -EBUSY;
+	}
+
+	memcpy(&tcp_async_upload_ctx.param, param, sizeof(*param));
+	tcp_async_upload_ctx.callback = callback;
+	tcp_async_upload_ctx.user_data = user_data;
+
+	zperf_async_work_submit(&tcp_async_upload_ctx.work);
+
+	return 0;
+}
+
+void zperf_tcp_uploader_init(void)
+{
+	k_work_init(&tcp_async_upload_ctx.work, tcp_upload_async_work);
 }

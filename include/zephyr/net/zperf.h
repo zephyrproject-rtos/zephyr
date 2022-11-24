@@ -23,6 +23,12 @@
 extern "C" {
 #endif
 
+enum zperf_status {
+	ZPERF_SESSION_STARTED,
+	ZPERF_SESSION_FINISHED,
+	ZPERF_SESSION_ERROR
+} __packed;
+
 struct zperf_upload_params {
 	struct sockaddr peer_addr;
 	uint32_t duration_ms;
@@ -47,6 +53,17 @@ struct zperf_results {
 };
 
 /**
+ * @brief Zperf callback function used for asynchronous operations.
+ *
+ * @param status Session status.
+ * @param result Session results. May be NULL for certain events.
+ * @param user_data A pointer to the user provided data.
+ */
+typedef void (*zperf_callback)(enum zperf_status status,
+			       struct zperf_results *result,
+			       void *user_data);
+
+/**
  * @brief Synchronous UDP upload operation. The function blocks until the upload
  *        is complete.
  *
@@ -69,6 +86,36 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
  */
 int zperf_tcp_upload(const struct zperf_upload_params *param,
 		     struct zperf_results *result);
+
+/**
+ * @brief Asynchronous UDP upload operation.
+ *
+ * @note Only one asynchronous upload can be performed at a time.
+ *
+ * @param param Upload parameters.
+ * @param callback Session results callback.
+ * @param user_data A pointer to the user data to be provided with the callback.
+ *
+ * @return 0 if session was scheduled successfully, a negative error code
+ *         otherwise.
+ */
+int zperf_udp_upload_async(const struct zperf_upload_params *param,
+			   zperf_callback callback, void *user_data);
+
+/**
+ * @brief Asynchronous TCP upload operation.
+ *
+ * @note Only one asynchronous upload can be performed at a time.
+ *
+ * @param param Upload parameters.
+ * @param callback Session results callback.
+ * @param user_data A pointer to the user data to be provided with the callback.
+ *
+ * @return 0 if session was scheduled successfully, a negative error code
+ *         otherwise.
+ */
+int zperf_tcp_upload_async(const struct zperf_upload_params *param,
+			   zperf_callback callback, void *user_data);
 
 #ifdef __cplusplus
 }
