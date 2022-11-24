@@ -23,9 +23,9 @@ void test_posix_clock(void)
 			NULL);
 	zassert_equal(errno, EINVAL, NULL);
 
-	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &ts));
-	zassert_ok(k_sleep(K_SECONDS(SLEEP_SECONDS)));
-	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &te));
+	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &ts), NULL);
+	zassert_ok(k_sleep(K_SECONDS(SLEEP_SECONDS)), NULL);
+	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &te), NULL);
 
 	if (te.tv_nsec >= ts.tv_nsec) {
 		secs_elapsed = te.tv_sec - ts.tv_sec;

@@ -37,6 +37,8 @@ extern void test_nanosleep_0_500000000(void);
 extern void test_nanosleep_1_0(void);
 extern void test_nanosleep_1_1(void);
 extern void test_nanosleep_1_1001(void);
+extern void test_sleep(void);
+extern void test_usleep(void);
 
 void test_main(void)
 {
@@ -69,7 +71,9 @@ void test_main(void)
 			ztest_unit_test(test_nanosleep_1_0),
 			ztest_unit_test(test_nanosleep_1_1),
 			ztest_unit_test(test_nanosleep_1_1001),
-			ztest_unit_test(test_posix_pthread_create_negative)
+			ztest_unit_test(test_posix_pthread_create_negative),
+			ztest_unit_test(test_sleep),
+			ztest_unit_test(test_usleep)
 			);
 	ztest_run_test_suite(posix_apis);
 }
