@@ -428,7 +428,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
 
-#ifdef CONFIG_CAN_MCUX_FLEXCAN
+#if defined(CONFIG_CAN_MCUX_FLEXCAN) || defined(CONFIG_CAN_MCUX_FLEXCAN_FD)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay)
 	/* Configure CAN1 using Osc48MDiv2 */
 	rootCfg.mux = kCLOCK_CAN1_ClockRoot_MuxOscRc48MDiv2;
