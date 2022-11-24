@@ -22,7 +22,7 @@
 
 /** Fixed clocks  */
 #define STM32_SRC_HSI		0x001
-/* #define STM32_SRC_HSI48	0x002 */
+#define STM32_SRC_HSI48		0x002
 #define STM32_SRC_HSE		0x003
 #define STM32_SRC_LSE		0x004
 #define STM32_SRC_LSI		0x005

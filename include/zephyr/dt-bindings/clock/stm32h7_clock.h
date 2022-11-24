@@ -25,8 +25,7 @@
 #define STM32_SRC_HSE		0x00A
 #define STM32_SRC_LSE		0x00B
 #define STM32_SRC_LSI		0x00C
-/** Oscillators not yet supported */
-/* #define STM32_SRC_HSI48	0x00D */
+#define STM32_SRC_HSI48		0x00D
 #define STM32_SRC_HSI_KER	0x00E /* HSI + HSIKERON */
 #define STM32_SRC_CSI_KER	0x00F /* CSI + CSIKERON */
 /** Core clock */
