@@ -19,10 +19,10 @@ LOG_MODULE_REGISTER(shell_uart);
 #define RX_POLL_PERIOD K_NO_WAIT
 #endif
 
-#ifdef CONFIG_MCUMGR_SMP_SHELL
-NET_BUF_POOL_DEFINE(smp_shell_rx_pool, CONFIG_MCUMGR_SMP_SHELL_RX_BUF_COUNT,
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
+NET_BUF_POOL_DEFINE(smp_shell_rx_pool, CONFIG_MCUMGR_TRANSPORT_SHELL_RX_BUF_COUNT,
 		    SMP_SHELL_RX_BUF_SIZE, 0, NULL);
-#endif /* CONFIG_MCUMGR_SMP_SHELL */
+#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 
 SHELL_UART_DEFINE(shell_transport_uart,
 		  CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE,
@@ -40,7 +40,7 @@ static void uart_rx_handle(const struct device *dev,
 	uint32_t len;
 	uint32_t rd_len;
 	bool new_data = false;
-#ifdef CONFIG_MCUMGR_SMP_SHELL
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 	struct smp_shell_data *const smp = &sh_uart->ctrl_blk->smp;
 #endif
 
@@ -58,7 +58,7 @@ static void uart_rx_handle(const struct device *dev,
 			if (rd_len > 0) {
 				new_data = true;
 			}
-#ifdef CONFIG_MCUMGR_SMP_SHELL
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 			/* Divert bytes from shell handling if it is
 			 * part of an mcumgr frame.
 			 */
@@ -71,7 +71,7 @@ static void uart_rx_handle(const struct device *dev,
 					data[j] = data[i + j];
 				}
 			}
-#endif /* CONFIG_MCUMGR_SMP_SHELL */
+#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 			int err = ring_buf_put_finish(sh_uart->rx_ringbuf,
 						      rd_len);
 			(void)err;
@@ -83,7 +83,7 @@ static void uart_rx_handle(const struct device *dev,
 			LOG_WRN("RX ring buffer full.");
 
 			rd_len = uart_fifo_read(dev, &dummy, 1);
-#ifdef CONFIG_MCUMGR_SMP_SHELL
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 			/* If successful in getting byte from the fifo, try
 			 * feeding it to SMP as a part of mcumgr frame.
 			 */
@@ -91,7 +91,7 @@ static void uart_rx_handle(const struct device *dev,
 			    (smp_shell_rx_bytes(smp, &dummy, 1) == 1)) {
 				new_data = true;
 			}
-#endif /* CONFIG_MCUMGR_SMP_SHELL */
+#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 		}
 	} while (rd_len && (rd_len == len));
 
@@ -201,7 +201,7 @@ static int init(const struct shell_transport *transport,
 	sh_uart->ctrl_blk->handler = evt_handler;
 	sh_uart->ctrl_blk->context = context;
 
-#ifdef CONFIG_MCUMGR_SMP_SHELL
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 	sh_uart->ctrl_blk->smp.buf_pool = &smp_shell_rx_pool;
 	k_fifo_init(&sh_uart->ctrl_blk->smp.buf_ready);
 #endif
@@ -293,14 +293,14 @@ static int read(const struct shell_transport *transport,
 	return 0;
 }
 
-#ifdef CONFIG_MCUMGR_SMP_SHELL
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 static void update(const struct shell_transport *transport)
 {
 	struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 
 	smp_shell_process(&sh_uart->ctrl_blk->smp);
 }
-#endif /* CONFIG_MCUMGR_SMP_SHELL */
+#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 
 const struct shell_transport_api shell_uart_transport_api = {
 	.init = init,
@@ -308,9 +308,9 @@ const struct shell_transport_api shell_uart_transport_api = {
 	.enable = enable,
 	.write = write,
 	.read = read,
-#ifdef CONFIG_MCUMGR_SMP_SHELL
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 	.update = update,
-#endif /* CONFIG_MCUMGR_SMP_SHELL */
+#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 };
 
 static int enable_shell_uart(const struct device *arg)
@@ -328,7 +328,7 @@ static int enable_shell_uart(const struct device *arg)
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_MCUMGR_SMP_SHELL)) {
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_SHELL)) {
 		smp_shell_init();
 	}
 

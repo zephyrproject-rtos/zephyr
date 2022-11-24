@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
+LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
@@ -28,8 +28,8 @@ LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 #define SLOT2_PARTITION		slot2_partition
 #define SLOT3_PARTITION		slot3_partition
 
-BUILD_ASSERT(CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1 ||
-	     (CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 &&
+BUILD_ASSERT(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1 ||
+	     (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2 &&
 	      FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
 	      FIXED_PARTITION_EXISTS(SLOT3_PARTITION)),
 	     "Missing partitions?");
@@ -161,12 +161,12 @@ img_mgmt_flash_area_id(int slot)
 	return fa_id;
 }
 
-#if CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1
 /**
  * In normal operation this function will select between first two slot
  * (in reality it just checks whether second slot can be used), ignoring the
  * slot parameter.
- * When CONFIG_IMG_MGMT_DIRECT_IMAGE_UPLOAD is defined it will check if given
+ * When CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD is defined it will check if given
  * slot is available, and allowed, for DFU; providing 0 as a parameter means
  * find any unused and non-active available (auto-select); any other positive
  * value is direct (slot + 1) to be used; if checks are positive, then area
@@ -176,7 +176,7 @@ img_mgmt_flash_area_id(int slot)
 static int
 img_mgmt_get_unused_slot_area_id(int slot)
 {
-#if defined(CONFIG_IMG_MGMT_DIRECT_IMAGE_UPLOAD)
+#if defined(CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD)
 	slot--;
 	if (slot < -1) {
 		return -1;
@@ -197,7 +197,7 @@ img_mgmt_get_unused_slot_area_id(int slot)
 			}
 		}
 		return -1;
-#if defined(CONFIG_IMG_MGMT_DIRECT_IMAGE_UPLOAD)
+#if defined(CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD)
 	}
 	/*
 	 * Direct selection; the first two slots are checked for being available
@@ -212,7 +212,7 @@ img_mgmt_get_unused_slot_area_id(int slot)
 #endif
 }
 
-#elif CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2
+#elif CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2
 static int
 img_mgmt_get_unused_slot_area_id(int image)
 {
@@ -291,7 +291,7 @@ img_mgmt_write_pending(int slot, bool permanent)
 {
 	int rc;
 
-	if (slot != 1 && !(CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 && slot == 3)) {
+	if (slot != 1 && !(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2 && slot == 3)) {
 		return MGMT_ERR_EINVAL;
 	}
 
@@ -342,7 +342,7 @@ img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_bytes)
 	return 0;
 }
 
-#if defined(CONFIG_IMG_MGMT_USE_HEAP_FOR_FLASH_IMG_CONTEXT)
+#if defined(CONFIG_MCUMGR_GRP_IMG_USE_HEAP_FOR_FLASH_IMG_CONTEXT)
 int
 img_mgmt_write_image_data(unsigned int offset, const void *data, unsigned int num_bytes, bool last)
 {
@@ -586,7 +586,7 @@ img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			return MGMT_ERR_ENOENT;
 		}
 
-#if defined(CONFIG_IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT)
+#if defined(CONFIG_MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT)
 		if (hdr->ih_flags & IMAGE_F_ROM_FIXED_ADDR) {
 			rc = flash_area_open(action->area_id, &fa);
 			if (rc) {

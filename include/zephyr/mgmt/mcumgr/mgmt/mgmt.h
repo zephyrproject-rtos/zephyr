@@ -151,7 +151,7 @@ typedef void *(*mgmt_alloc_rsp_fn)(const void *src_buf, void *arg);
  */
 typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
 
-#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+#ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
 #define MGMT_CTXT_SET_RC_RSN(mc, rsn) ((mc->rc_rsn) = (rsn))
 #define MGMT_CTXT_RC_RSN(mc) ((mc)->rc_rsn)
 #else
