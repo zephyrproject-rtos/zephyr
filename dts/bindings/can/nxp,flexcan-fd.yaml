@@ -1,0 +1,24 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2022 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP CAN FD FlexCAN controller
+
+compatible: "nxp,flexcan-fd"
+
+include: ["can-fd-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: CAN engine clock source
