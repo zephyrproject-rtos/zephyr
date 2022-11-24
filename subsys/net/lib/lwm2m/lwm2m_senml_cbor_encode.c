@@ -9,13 +9,14 @@
  * Generated with a --default-max-qty of 99
  */
 
+#include "lwm2m_senml_cbor_encode.h"
+#include "lwm2m_senml_cbor_types.h"
+#include "zcbor_encode.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "zcbor_encode.h"
-#include "lwm2m_senml_cbor_encode.h"
-#include "lwm2m_senml_cbor_types.h"
 
 static bool encode_repeated_record_bn(zcbor_state_t *state, const struct record_bn *input);
 static bool encode_repeated_record_bt(zcbor_state_t *state, const struct record_bt *input);
@@ -46,11 +47,11 @@ static bool encode_repeated_record_bt(zcbor_state_t *state, const struct record_
 {
 	zcbor_print("%s\r\n", __func__);
 
-	bool tmp_result = ((((zcbor_int32_put(state, (-3)))) &&
-			    ((((*input)._record_bt >= INT64_MIN) &&
-			      ((*input)._record_bt <= INT64_MAX)) ||
-			     (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)) &&
-			    (zcbor_int64_encode(state, (&(*input)._record_bt)))));
+	bool tmp_result =
+		((((zcbor_int32_put(state, (-3)))) &&
+		  ((((*input)._record_bt >= INT64_MIN) && ((*input)._record_bt <= INT64_MAX)) ||
+		   (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)) &&
+		  (zcbor_int64_encode(state, (&(*input)._record_bt)))));
 
 	if (!tmp_result)
 		zcbor_trace();
@@ -75,11 +76,11 @@ static bool encode_repeated_record_t(zcbor_state_t *state, const struct record_t
 {
 	zcbor_print("%s\r\n", __func__);
 
-	bool tmp_result = ((((zcbor_uint32_put(state, (6)))) &&
-			    ((((*input)._record_t >= INT64_MIN) &&
-			      ((*input)._record_t <= INT64_MAX)) ||
-			     (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)) &&
-			    (zcbor_int64_encode(state, (&(*input)._record_t)))));
+	bool tmp_result =
+		((((zcbor_uint32_put(state, (6)))) &&
+		  ((((*input)._record_t >= INT64_MIN) && ((*input)._record_t <= INT64_MAX)) ||
+		   (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)) &&
+		  (zcbor_int64_encode(state, (&(*input)._record_t)))));
 
 	if (!tmp_result)
 		zcbor_trace();
@@ -90,6 +91,7 @@ static bool encode_repeated_record_t(zcbor_state_t *state, const struct record_t
 static bool encode_repeated_record_union(zcbor_state_t *state, const struct record_union_ *input)
 {
 	zcbor_print("%s\r\n", __func__);
+	struct zcbor_string tmp_str;
 
 	bool tmp_result = (((
 		((*input)._record_union_choice == _union_vi)
@@ -113,9 +115,22 @@ static bool encode_repeated_record_union(zcbor_state_t *state, const struct reco
 								    ? (((zcbor_uint32_put(state,
 											  (8)))) &&
 								       (zcbor_bstr_encode(
-									state,
-									(&(*input)._union_vd))))
-								    : false)))))));
+									       state,
+									       (&(*input)._union_vd))))
+								    : (((*input)._record_union_choice ==
+									_union_vlo)
+									       ? (((zcbor_tstr_encode(
+											  state,
+											  ((tmp_str.value =
+												    (uint8_t *)"vlo",
+											    tmp_str.len =
+												    sizeof("vlo") -
+												    1,
+											    &tmp_str))))) &&
+										  (zcbor_tstr_encode(
+											  state,
+											  (&(*input)._union_vlo))))
+									       : false))))))));
 
 	if (!tmp_result)
 		zcbor_trace();
@@ -145,8 +160,8 @@ static bool encode_value(zcbor_state_t *state, const struct value_ *input)
 								   (&(*input)._value_float))))
 							 : (((*input)._value_choice == _value_bool)
 								    ? ((zcbor_bool_encode(
-									state,
-									(&(*input)._value_bool))))
+									      state,
+									      (&(*input)._value_bool))))
 								    : false)))))));
 
 	if (!tmp_result)
