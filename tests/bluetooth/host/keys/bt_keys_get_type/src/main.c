@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "host_mocks/print_utils.h"
+#include "common/bt_str.h"
+
 #include "mocks/keys_help_utils.h"
 #include "testing_common_defs.h"
 
