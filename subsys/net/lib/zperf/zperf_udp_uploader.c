@@ -18,6 +18,8 @@ static uint8_t sample_packet[sizeof(struct zperf_udp_datagram) +
 			     sizeof(struct zperf_client_hdr_v1) +
 			     PACKET_SIZE_MAX];
 
+static struct zperf_async_upload_context udp_async_upload_ctx;
+
 static inline void zperf_upload_decode_stat(const uint8_t *data,
 					    size_t datalen,
 					    struct zperf_results *results)
@@ -300,4 +302,49 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	zsock_close(sock);
 
 	return ret;
+}
+
+static void udp_upload_async_work(struct k_work *work)
+{
+	struct zperf_async_upload_context *upload_ctx =
+		&udp_async_upload_ctx;
+	struct zperf_results result;
+	int ret;
+
+	upload_ctx->callback(ZPERF_SESSION_STARTED, NULL,
+			     upload_ctx->user_data);
+
+	ret = zperf_udp_upload(&upload_ctx->param, &result);
+	if (ret < 0) {
+		upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
+				     upload_ctx->user_data);
+	} else {
+		upload_ctx->callback(ZPERF_SESSION_FINISHED, &result,
+				     upload_ctx->user_data);
+	}
+}
+
+int zperf_udp_upload_async(const struct zperf_upload_params *param,
+			   zperf_callback callback, void *user_data)
+{
+	if (param == NULL || callback == NULL) {
+		return -EINVAL;
+	}
+
+	if (k_work_is_pending(&udp_async_upload_ctx.work)) {
+		return -EBUSY;
+	}
+
+	memcpy(&udp_async_upload_ctx.param, param, sizeof(*param));
+	udp_async_upload_ctx.callback = callback;
+	udp_async_upload_ctx.user_data = user_data;
+
+	zperf_async_work_submit(&udp_async_upload_ctx.work);
+
+	return 0;
+}
+
+void zperf_udp_uploader_init(void)
+{
+	k_work_init(&udp_async_upload_ctx.work, udp_upload_async_work);
 }

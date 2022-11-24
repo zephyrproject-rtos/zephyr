@@ -7,7 +7,16 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
 
+#include "zperf_internal.h"
+
 LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
+
+#define ZPERF_WORK_Q_THREAD_PRIORITY K_LOWEST_APPLICATION_THREAD_PRIO
+#define ZPERF_WORK_Q_STACK_SIZE 2048
+
+K_THREAD_STACK_DEFINE(zperf_work_q_stack, ZPERF_WORK_Q_STACK_SIZE);
+
+static struct k_work_q zperf_work_q;
 
 int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
 			      int proto)
@@ -87,3 +96,26 @@ uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps)
 	return (uint32_t)(((uint64_t)packet_size * 8U * USEC_PER_SEC) /
 			  (rate_in_kbps * 1024U));
 }
+
+void zperf_async_work_submit(struct k_work *work)
+{
+	k_work_submit_to_queue(&zperf_work_q, work);
+}
+
+static int zperf_init(const struct device *unused)
+{
+	ARG_UNUSED(unused);
+
+	k_work_queue_init(&zperf_work_q);
+	k_work_queue_start(&zperf_work_q, zperf_work_q_stack,
+			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack),
+			   ZPERF_WORK_Q_THREAD_PRIORITY, NULL);
+	k_thread_name_set(&zperf_work_q.thread, "zperf_work_q");
+
+	zperf_udp_uploader_init();
+	zperf_tcp_uploader_init();
+
+	return 0;
+}
+
+SYS_INIT(zperf_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
