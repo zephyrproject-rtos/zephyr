@@ -727,6 +727,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/tracing/                         @nashif
 /scripts/pylib/twister/                   @nashif
 /scripts/twister                          @nashif
+/scripts/twister_reports_merge.py         @gopiotr
 /scripts/series-push-hook.sh              @erwango
 /scripts/utils/pinctrl_nrf_migrate.py     @gmarull
 /scripts/west_commands/                   @mbolivar-nordic
