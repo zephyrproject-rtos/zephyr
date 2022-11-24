@@ -72,7 +72,7 @@ def get_files(filter=None, paths=None):
 
 class FmtdFailure(Failure):
 
-    def __init__(self, severity, title, file, line, col=None, desc=""):
+    def __init__(self, severity, title, file, line=None, col=None, desc=""):
         self.severity = severity
         self.title = title
         self.file = file
@@ -82,9 +82,10 @@ class FmtdFailure(Failure):
         description = f':{desc}' if desc else ''
         msg_body = desc or title
 
-        txt = f'\n{title}{description}\nFile:{file}\nLine:{line}' + \
+        txt = f'\n{title}{description}\nFile:{file}' + \
+              (f'\nLine:{line}' if line else '') + \
               (f'\nColumn:{col}' if col else '')
-        msg = f'{file}:{line} {msg_body}'
+        msg = f'{file}' + (f':{line}' if line else '') + f' {msg_body}'
         typ = severity.lower()
 
         super().__init__(msg, typ)
@@ -156,7 +157,7 @@ class ComplianceTest:
         fail = Failure(msg or f'{type(self).name} issues', type_)
         self._result(fail, text)
 
-    def fmtd_failure(self, severity, title, file, line, col=None, desc=""):
+    def fmtd_failure(self, severity, title, file, line=None, col=None, desc=""):
         """
         Signals that the test failed, and store the information in a formatted
         standardized manner. Can be called many times within the same test to
@@ -1097,7 +1098,8 @@ def annotate(res):
     """
     https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#about-workflow-commands
     """
-    notice = f'::{res.severity} file={res.file},line={res.line}' + \
+    notice = f'::{res.severity} file={res.file}' + \
+             (f',line={res.line}' if res.line else '') + \
              (f',col={res.col}' if res.col else '') + \
              f',title={res.title}::{res.message}'
     print(notice)
