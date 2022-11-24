@@ -65,4 +65,4 @@ tests:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
   sample.net.sockets.echo_client.userspace:
     extra_args: CONFIG_USERSPACE=y OVERLAY_CONFIG="overlay-e1000.conf"
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86 qemu_x86_64
