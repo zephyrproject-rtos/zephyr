@@ -745,9 +745,6 @@ class Codeowners(ComplianceTest):
         return ret
 
     def run(self):
-        # TODO: testing an old self.commit range that doesn't end
-        # with HEAD is most likely a mistake. Should warn, see
-        # https://github.com/zephyrproject-rtos/ci-tools/pull/24
         codeowners = os.path.join(GIT_TOP, "CODEOWNERS")
         if not os.path.exists(codeowners):
             self.skip("CODEOWNERS not available in this repo")
