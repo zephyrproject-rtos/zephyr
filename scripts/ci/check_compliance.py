@@ -65,6 +65,10 @@ def get_shas(refspec):
     return git('rev-list',
                f'--max-count={-1 if "." in refspec else 1}', refspec).split()
 
+def get_files(filter=None, paths=None):
+    filter_arg = (f'--diff-filter={filter}',) if filter else ()
+    paths_arg = ('--', *paths) if paths else ()
+    return git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
 
 class FmtdFailure(Failure):
 
@@ -235,7 +239,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
             self.skip("Not a Zephyr tree (ZEPHYR_BASE unset)")
 
         dt_bindings = []
-        for file_name in git('diff', '--name-only', COMMIT_RANGE):
+        for file_name in get_files():
             if file_name.startswith('dts/bindings/') and file_name.endswith('.yaml'):
                 dt_bindings.append(file_name)
 
@@ -749,11 +753,8 @@ class Codeowners(ComplianceTest):
         if not os.path.exists(codeowners):
             self.skip("CODEOWNERS not available in this repo")
 
-        name_changes = git("diff", "--name-only", "--diff-filter=ARCD",
-                           COMMIT_RANGE)
-
-        owners_changes = git("diff", "--name-only", COMMIT_RANGE,
-                             "--", codeowners)
+        name_changes = get_files(filter="ARCD")
+        owners_changes = get_files(paths=(codeowners,))
 
         if not name_changes and not owners_changes:
             # TODO: 1. decouple basic and cheap CODEOWNERS syntax
@@ -767,8 +768,7 @@ class Codeowners(ComplianceTest):
         # The way git finds Renames and Copies is not "exact science",
         # however if one is missed then it will always be reported as an
         # Addition instead.
-        new_files = git("diff", "--name-only", "--diff-filter=ARC",
-                        COMMIT_RANGE).splitlines()
+        new_files = get_files(filter="ARC").splitlines()
         logger.debug(f"New files {new_files}")
 
         # Convert to pathlib.Path string representation (e.g.,
@@ -811,8 +811,7 @@ class Nits(ComplianceTest):
 
     def run(self):
         # Loop through added/modified files
-        for fname in git("diff", "--name-only", "--diff-filter=d",
-                         COMMIT_RANGE).splitlines():
+        for fname in get_files(filter="d").splitlines():
             if "Kconfig" in fname:
                 self.check_kconfig_header(fname)
                 self.check_redundant_zephyr_source(fname)
@@ -934,8 +933,7 @@ class PyLint(ComplianceTest):
                                                 "pylintrc"))
 
         # List of files added/modified by the commit(s).
-        files = git("diff", "--name-only", "--diff-filter=d",
-                    COMMIT_RANGE).splitlines()
+        files = get_files(filter="d").splitlines()
 
         # Filter out everything but Python files. Keep filenames
         # relative (to GIT_TOP) to stay farther from any command line
