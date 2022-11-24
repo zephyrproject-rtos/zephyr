@@ -59,72 +59,13 @@ static void uart_rpi_poll_out(const struct device *dev, unsigned char c)
 	uart_hw->dr = c;
 }
 
-static int uart_rpi_init(const struct device *dev)
+static int uart_rpi_set_format(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct uart_rpi_config *config = dev->config;
 	uart_inst_t * const uart_inst = config->uart_dev;
-	uart_hw_t * const uart_hw = config->uart_regs;
-	struct uart_rpi_data * const data = dev->data;
-	uint baudrate;
-	int ret;
-
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/*
-	 * uart_init() may be replaced by register based API once rpi-pico platform
-	 * has a clock controller driver
-	 */
-	baudrate = uart_init(uart_inst, data->uart_config.baudrate);
-	/* Check if baudrate adjustment returned by 'uart_init' function is a positive value */
-	if (baudrate == 0) {
-		return -EINVAL;
-	}
-	/*
-	 * initialize uart_config with hardware reset values
-	 * https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf#tab-registerlist_uart page:431
-	 * data bits set default to 8 instaed of hardware reset 5 to increase compatibility.
-	 */
-	data->uart_config = (struct uart_config){
-		.baudrate = baudrate,
-		.data_bits = UART_CFG_DATA_BITS_8,
-		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
-		.parity = UART_CFG_PARITY_NONE,
-		.stop_bits = UART_CFG_STOP_BITS_1
-	};
-	uart_set_format(uart_inst,
-			data->uart_config.data_bits,
-			data->uart_config.stop_bits,
-			data->uart_config.parity);
-	hw_clear_bits(&uart_hw->lcr_h, UART_UARTLCR_H_FEN_BITS);
-	uart_hw->dr = 0U;
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	config->irq_config_func(dev);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
-	return 0;
-}
-
-static int uart_rpi_config_get(const struct device *dev, struct uart_config *cfg)
-{
-	struct uart_rpi_data *data = dev->data;
-
-	memcpy(cfg, &data->uart_config, sizeof(struct uart_config));
-	return 0;
-}
-
-static int uart_rpi_configure(const struct device *dev, const struct uart_config *cfg)
-{
-	const struct uart_rpi_config *config = dev->config;
-	uart_inst_t * const uart_inst = config->uart_dev;
-	struct uart_rpi_data *data = dev->data;
 	uart_parity_t parity = 0;
 	uint data_bits = 0;
 	uint stop_bits = 0;
-	uint baudrate = 0;
 
 	switch (cfg->data_bits) {
 	case UART_CFG_DATA_BITS_5:
@@ -168,11 +109,80 @@ static int uart_rpi_configure(const struct device *dev, const struct uart_config
 		return -EINVAL;
 	}
 
+	uart_set_format(uart_inst, data_bits, stop_bits, parity);
+	return 0;
+}
+
+static int uart_rpi_init(const struct device *dev)
+{
+	const struct uart_rpi_config *config = dev->config;
+	uart_inst_t * const uart_inst = config->uart_dev;
+	uart_hw_t * const uart_hw = config->uart_regs;
+	struct uart_rpi_data * const data = dev->data;
+	uint baudrate;
+	int ret;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * uart_init() may be replaced by register based API once rpi-pico platform
+	 * has a clock controller driver
+	 */
+	baudrate = uart_init(uart_inst, data->uart_config.baudrate);
+	/* Check if baudrate adjustment returned by 'uart_init' function is a positive value */
+	if (baudrate == 0) {
+		return -EINVAL;
+	}
+	/*
+	 * initialize uart_config with hardware reset values
+	 * https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf#tab-registerlist_uart page:431
+	 * data bits set default to 8 instaed of hardware reset 5 to increase compatibility.
+	 */
+	data->uart_config = (struct uart_config){
+		.baudrate = baudrate,
+		.data_bits = UART_CFG_DATA_BITS_8,
+		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
+		.parity = UART_CFG_PARITY_NONE,
+		.stop_bits = UART_CFG_STOP_BITS_1
+	};
+	uart_rpi_set_format(dev, &data->uart_config);
+	hw_clear_bits(&uart_hw->lcr_h, UART_UARTLCR_H_FEN_BITS);
+	uart_hw->dr = 0U;
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	config->irq_config_func(dev);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	return 0;
+}
+
+static int uart_rpi_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	struct uart_rpi_data *data = dev->data;
+
+	memcpy(cfg, &data->uart_config, sizeof(struct uart_config));
+	return 0;
+}
+
+static int uart_rpi_configure(const struct device *dev, const struct uart_config *cfg)
+{
+	const struct uart_rpi_config *config = dev->config;
+	uart_inst_t * const uart_inst = config->uart_dev;
+	struct uart_rpi_data *data = dev->data;
+	uint baudrate = 0;
+
 	baudrate = uart_set_baudrate(uart_inst, cfg->baudrate);
 	if (baudrate == 0) {
 		return -EINVAL;
 	}
-	uart_set_format(uart_inst, data_bits, stop_bits, parity);
+
+	if (uart_rpi_set_format(dev, cfg) != 0) {
+		return -EINVAL;
+	}
+
 	data->uart_config = *cfg;
 	return 0;
 }

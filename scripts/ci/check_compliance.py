@@ -30,8 +30,6 @@ if not ZEPHYR_BASE:
     # Propagate this decision to child processes.
     os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
 
-    print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
-
 
 def git(*args, cwd=None):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
@@ -185,7 +183,7 @@ class CheckPatch(ComplianceTest):
     Runs checkpatch and reports found issues
 
     """
-    name = "checkpatch"
+    name = "Checkpatch"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
     path_hint = "<git-top>"
 
@@ -218,6 +216,50 @@ class CheckPatch(ComplianceTest):
             # If the regex has not matched add the whole output as a failure
             if len(matches) == 0:
                 self.failure(output)
+
+
+class DevicetreeBindingsCheck(ComplianceTest):
+    """
+    Checks if we are introducing any unwanted properties in Devicetree Bindings.
+    """
+    name = "DevicetreeBindings"
+    doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
+    path_hint = ZEPHYR_BASE
+
+    def run(self, full=True):
+        dts_yaml = self.parse_dt_bindings()
+
+        self.required_false_check(dts_yaml)
+
+    def parse_dt_bindings(self):
+        """
+        Returns a list of dts/bindings/**/*.yaml files
+        """
+        if not ZEPHYR_BASE:
+            self.skip("Not a Zephyr tree (ZEPHYR_BASE unset)")
+
+        dt_bindings = []
+        for file_name in git('diff', '--name-only', COMMIT_RANGE):
+            if file_name.startswith('dts/bindings/') and file_name.endswith('.yaml'):
+                dt_bindings.append(file_name)
+
+        return dt_bindings
+
+    def required_false_check(self, dt_bindings):
+        for file_name in dt_bindings:
+            try:
+                with open(file_name) as file:
+                    line_number = 0
+                    for line in file:
+                        line_number += 1
+                        if 'required: false' in line:
+                            self.fmtd_failure(
+                                'warning', 'Devicetree Bindings', file_name,
+                                line_number, col=None,
+                                desc="'required: false' is redundant, please remove")
+            except Exception:
+                # error opening file (it was likely deleted by the commit)
+                continue
 
 
 class KconfigCheck(ComplianceTest):
@@ -894,7 +936,7 @@ class PyLint(ComplianceTest):
     Runs pylint on all .py files, with a limited set of checks enabled. The
     configuration is in the pylintrc file.
     """
-    name = "pylint"
+    name = "Pylint"
     doc = "See https://www.pylint.org/ for more details"
     path_hint = "<git-top>"
 
@@ -1016,6 +1058,29 @@ class Identity(ComplianceTest):
                 self.failure(failure)
 
 
+class BinaryFiles(ComplianceTest):
+    """
+    Check that the diff contains no binary files.
+    """
+    name = "BinaryFiles"
+    doc = "No binary files allowed."
+    path_hint = "<git-top>"
+
+    def run(self):
+        BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/")
+        # svg files are always detected as binary, see .gitattributes
+        BINARY_ALLOW_EXT = (".jpg", ".jpeg", ".png", ".svg")
+
+        for stat in git("diff", "--numstat", "--diff-filter=A",
+                        COMMIT_RANGE).splitlines():
+            added, deleted, fname = stat.split("\t")
+            if added == "-" and deleted == "-":
+                if (fname.startswith(BINARY_ALLOW_PATHS) and
+                    fname.endswith(BINARY_ALLOW_EXT)):
+                    continue
+                self.failure(f"Binary file not allowed: {fname}")
+
+
 def init_logs(cli_arg):
     # Initializes logging
 
@@ -1073,9 +1138,11 @@ def parse_args():
                                                      'ERROR', 'CRITICAL'],
                         help="python logging level")
     parser.add_argument('-m', '--module', action="append", default=[],
-                        help="Checks to run. All checks by default.")
+                        help="Checks to run. All checks by default. (case " \
+                        "insensitive)")
     parser.add_argument('-e', '--exclude-module', action="append", default=[],
-                        help="Do not run the specified checks")
+                        help="Do not run the specified checks (case " \
+                        "insensitive)")
     parser.add_argument('-j', '--previous-run', default=None,
                         help='''Pre-load JUnit results in XML format
                         from a previous run and combine with new results.''')
@@ -1125,15 +1192,18 @@ def _main(args):
     else:
         suite = TestSuite("Compliance")
 
+    included = list(map(lambda x: x.lower(), args.module))
+    excluded = list(map(lambda x: x.lower(), args.exclude_module))
+
     for testcase in inheritors(ComplianceTest):
         # "Modules" and "testcases" are the same thing. Better flags would have
         # been --tests and --exclude-tests or the like, but it's awkward to
         # change now.
 
-        if args.module and testcase.name not in args.module:
+        if included and testcase.name.lower() not in included:
             continue
 
-        if testcase.name in args.exclude_module:
+        if testcase.name.lower() in excluded:
             print("Skipping " + testcase.name)
             continue
 

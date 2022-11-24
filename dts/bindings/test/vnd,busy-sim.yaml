@@ -15,6 +15,5 @@ properties:
 
     active-gpios:
       type: phandle-array
-      required: false
       description: |
         Debug pin is set to active state when cpu load is active.

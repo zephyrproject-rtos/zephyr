@@ -1,6 +1,7 @@
 # vim: set syntax=python ts=4 :
 #
 # Copyright (c) 20180-2022 Intel Corporation
+# Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -575,14 +576,19 @@ class ProjectBuilder(FilterBuilder):
                 done.put(self.instance)
                 self.report_out(results)
 
-            if self.options.runtime_artifact_cleanup and not self.options.coverage and self.instance.status == "passed":
-                pipeline.put({
-                    "op": "cleanup",
-                    "test": self.instance
-                })
+            if not self.options.coverage:
+                if self.options.runtime_artifact_cleanup == "pass" and self.instance.status == "passed":
+                    pipeline.put({"op": "cleanup_pass", "test": self.instance})
+                if self.options.runtime_artifact_cleanup == "all":
+                    pipeline.put({"op": "cleanup_all", "test": self.instance})
 
-        elif op == "cleanup":
+        elif op == "cleanup_pass":
             if self.options.device_testing or self.options.prep_artifacts_for_testing:
+                self.cleanup_device_testing_artifacts()
+            else:
+                self.cleanup_artifacts()
+        elif op == "cleanup_all":
+            if (self.options.device_testing or self.options.prep_artifacts_for_testing) and self.instance.reason != "Cmake build failure":
                 self.cleanup_device_testing_artifacts()
             else:
                 self.cleanup_artifacts()
@@ -627,7 +633,7 @@ class ProjectBuilder(FilterBuilder):
     def cleanup_artifacts(self, additional_keep=[]):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
         allow = [
-            'zephyr/.config',
+            os.path.join('zephyr', '.config'),
             'handler.log',
             'build.log',
             'device.log',
@@ -636,10 +642,13 @@ class ProjectBuilder(FilterBuilder):
             'Makefile',
             'CMakeCache.txt',
             'build.ninja',
-            'CMakeFiles/rules.ninja'
+            os.path.join('CMakeFiles', 'rules.ninja')
             ]
 
         allow += additional_keep
+
+        if self.options.runtime_artifact_cleanup == 'all':
+            allow += [os.path.join('twister', 'testsuite_extra.conf')]
 
         allow = [os.path.join(self.instance.build_dir, file) for file in allow]
 
@@ -661,12 +670,12 @@ class ProjectBuilder(FilterBuilder):
 
         sanitizelist = [
             'CMakeCache.txt',
-            'zephyr/runners.yaml',
+            os.path.join('zephyr', 'runners.yaml'),
         ]
         keep = [
-            'zephyr/zephyr.hex',
-            'zephyr/zephyr.bin',
-            'zephyr/zephyr.elf',
+            os.path.join('zephyr', 'zephyr.hex'),
+            os.path.join('zephyr', 'zephyr.bin'),
+            os.path.join('zephyr', 'zephyr.elf'),
             ]
 
         keep += sanitizelist

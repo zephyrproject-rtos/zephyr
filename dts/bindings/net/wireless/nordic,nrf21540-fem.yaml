@@ -69,32 +69,26 @@ include: base.yaml
 properties:
     tx-en-gpios:
         type: phandle-array
-        required: false
         description: |
             GPIO of the SOC controlling TX_EN pin of the nRF21540
     rx-en-gpios:
         type: phandle-array
-        required: false
         description: |
             GPIO of the SOC controlling RX_EN pin of the nRF21540
     pdn-gpios:
         type: phandle-array
-        required: false
         description: |
             GPIO of the SOC controlling PDN pin of the nRF21540
     ant-sel-gpios:
         type: phandle-array
-        required: false
         description: |
             GPIO of the SOC controlling ANT-SEL pin of the nRF21540
     mode-gpios:
         type: phandle-array
-        required: false
         description: |
             GPIO of the SOC controlling MODE pin of the nRF21540
     spi-if:
         type: phandle
-        required: false
         description: |
             Reference to the nordic,nrf21540-fem-spi SPI bus interface.
 
@@ -137,7 +131,6 @@ properties:
             configurations.
     supply-voltage-mv:
         type: int
-        required: false
         description: |
             nRF21540 supply voltage in mV.
 

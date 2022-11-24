@@ -9,7 +9,7 @@
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
-#include <zcbor_bulk/zcbor_bulk_priv.h>
+#include "mgmt/mcumgr/util/zcbor_bulk.h"
 
 #define zcbor_true_put(zse) zcbor_bool_put(zse, true)
 

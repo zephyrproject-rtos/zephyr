@@ -22,7 +22,6 @@ properties:
         Value of the shunt resistor in milliOhm
     brng:
       type: int
-      required: false
       default: 1
       description: |
         Bus Voltage Range
@@ -37,7 +36,6 @@ properties:
         - 1
     pg:
       type: int
-      required: false
       default: 3
       description: |
         Programmable Gain
@@ -57,7 +55,6 @@ properties:
         - 3
     badc:
       type: int
-      required: false
       default: 3
       description: |
         Bus ADC configuration
@@ -94,7 +91,6 @@ properties:
         - 15
     sadc:
       type: int
-      required: false
       default: 3
       description: |
         Shunt ADC configuration

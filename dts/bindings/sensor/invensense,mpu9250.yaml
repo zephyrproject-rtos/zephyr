@@ -12,7 +12,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
     irq-gpios:
       type: phandle-array
-      required: false
       description: |
         The INT signal default configuration is active-high.  The
         property value should ensure the flags properly describe the

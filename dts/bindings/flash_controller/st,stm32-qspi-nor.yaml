@@ -35,29 +35,23 @@ properties:
       description: Flash Memory size in bits
     reset-gpios:
       type: phandle-array
-      required: false
       description: RESETn pin
     reset-gpios-duration:
       type: int
-      required: false
       description: The duration (in ms) for the flash memory reset pulse
     reset-cmd:
       type: boolean
-      required: false
       description: Send reset command on initialization
     reset-cmd-wait:
       type: int
       default: 10
-      required: false
       description: The duration (in us) to wait after reset command
     spi-bus-width:
       type: int
-      required: false
       description: The width of (Q)SPI bus to which flash memory is connected.
                    Now only value of 4 (when using SIO[0123]) is supported.
     writeoc:
       type: string
-      required: false
       enum:
         - "PP_1_1_4"      # Quad data line SPI, PP 1-1-4 (0x32)
         - "PP_1_4_4"      # Quad data line SPI, PP 1-4-4 (0x38)

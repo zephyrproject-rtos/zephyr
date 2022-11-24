@@ -12,9 +12,6 @@ properties:
     reg:
       required: true
 
-    interrupts:
-      required: false
-
     pinctrl-0:
       required: true
 
@@ -23,7 +20,6 @@ properties:
 
     scl-gpios:
       type: phandle-array
-      required: false
       description: |
         GPIO to which the I2C SCL signal is routed. This is only required
         if the target SoC does not have support in hardware for clearing
@@ -31,7 +27,6 @@ properties:
 
     sda-gpios:
       type: phandle-array
-      required: false
       description: |
         GPIO to which the I2C SDA signal is routed. This is only required
         if the target SoC does not have support in hardware for clearing
@@ -39,17 +34,14 @@ properties:
 
     tx-lsb:
       type: boolean
-      required: false
       description: Set I2C TX data as LSB
 
     rx-lsb:
       type: boolean
-      required: false
       description: Set I2C RX data as LSB
 
     scl-timeout-us:
       type: int
-      required: false
       description: |
         Timeout for unchanged SCL during clock stretching of the I2C target in
         microseconds.

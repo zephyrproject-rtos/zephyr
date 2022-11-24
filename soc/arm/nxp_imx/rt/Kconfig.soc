@@ -609,6 +609,7 @@ config SOC_SERIES_IMX_RT10XX
 	bool "i.MX RT 10XX Series"
 	select CPU_CORTEX_M7
 	select CPU_CORTEX_M_HAS_DWT
+	select PLATFORM_SPECIFIC_INIT
 
 config SOC_SERIES_IMX_RT11XX
 	bool "i.MX RT 11XX Series"

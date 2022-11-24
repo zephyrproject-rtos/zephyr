@@ -65,11 +65,14 @@ static void send_pending_adv(struct k_work *work);
 static bool schedule_send(struct bt_mesh_ext_adv *adv);
 
 static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_main) = {
-	.tag = (BT_MESH_LOCAL_ADV |
+	.tag = (
 #if !defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
 		BT_MESH_PROXY_ADV |
 #endif /* !CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
-		BT_MESH_RELAY_ADV),
+#if defined(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)
+		BT_MESH_RELAY_ADV |
+#endif /* CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET */
+		BT_MESH_LOCAL_ADV),
 
 	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 };
@@ -324,7 +327,9 @@ void bt_mesh_adv_buf_relay_ready(void)
 	}
 
 	/* Attempt to use the main adv set for the sending of relay messages. */
-	(void)schedule_send(&adv_main);
+	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)) {
+		(void)schedule_send(&adv_main);
+	}
 }
 
 void bt_mesh_adv_init(void)

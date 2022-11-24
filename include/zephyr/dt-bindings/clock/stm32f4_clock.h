@@ -29,6 +29,8 @@
 /** Fixed clocks */
 #define STM32_SRC_LSE	0x004
 #define STM32_SRC_LSI	0x005
+/** System clock */
+#define STM32_SRC_SYSCLK 0x006
 
 /**
  * @brief STM32 clock configuration bit field.

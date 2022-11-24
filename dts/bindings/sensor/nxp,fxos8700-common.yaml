@@ -8,7 +8,6 @@ include: sensor-device.yaml
 properties:
     reset-gpios:
       type: phandle-array
-      required: false
       description: |
         RST pin
         This pin defaults to active high when consumed by the sensor.
@@ -17,7 +16,6 @@ properties:
 
     int1-gpios:
       type: phandle-array
-      required: false
       description: |
         INT1 pin
         This pin defaults to active low when produced by the sensor.
@@ -26,7 +24,6 @@ properties:
 
     int2-gpios:
       type: phandle-array
-      required: false
       description: |
         INT2 pin
         This pin defaults to active low when produced by the sensor.
@@ -35,7 +32,6 @@ properties:
 
     range:
       type: int
-      required: false
       default: 8
       description: Range in g
       enum:
@@ -45,7 +41,6 @@ properties:
 
     power-mode:
       type: int
-      required: false
       default: 0
       description: Power mode
       enum:
@@ -56,13 +51,11 @@ properties:
 
     pulse-cfg:
       type: int
-      required: false
       default: 0x3f
       description: Pulse configuration register
 
     pulse-thsx:
       type: int
-      required: false
       default: 0x20
       description: |
         Pulse X-axis threshold
@@ -73,7 +66,6 @@ properties:
 
     pulse-thsy:
       type: int
-      required: false
       default: 0x20
       description: |
         Pulse Y-axis threshold
@@ -84,7 +76,6 @@ properties:
 
     pulse-thsz:
       type: int
-      required: false
       default: 0x40
       description: |
         Pulse Z-axis threshold
@@ -95,7 +86,6 @@ properties:
 
     pulse-tmlt:
       type: int
-      required: false
       default: 0x18
       description: |
         Pulse time limit
@@ -108,7 +98,6 @@ properties:
 
     pulse-ltcy:
       type: int
-      required: false
       default: 0x28
       description: |
         Pulse latency
@@ -120,7 +109,6 @@ properties:
 
     pulse-wind:
       type: int
-      required: false
       default: 0x3c
       description: |
         Pulse window
@@ -136,13 +124,11 @@ properties:
 
     mag-vecm-cfg:
       type: int
-      required: false
       default: 0x4e
       description: Magnetic vector-magnitude configuration register
 
     mag-vecm-ths-msb:
       type: int
-      required: false
       default: 0x00
       description: |
         Magnetic vector-magnitude threshold most significant byte.
@@ -150,7 +136,6 @@ properties:
 
     mag-vecm-ths-lsb:
       type: int
-      required: false
       default: 0x5a
       description: |
         Magnetic vector-magnitude threshold least significant byte.

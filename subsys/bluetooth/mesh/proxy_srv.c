@@ -832,8 +832,8 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 	struct bt_conn_info info;
 
 	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_PERIPHERAL ||
-	    !service_registered) {
+	if (info.role != BT_CONN_ROLE_PERIPHERAL || !service_registered ||
+	    info.id != BT_ID_DEFAULT) {
 		return;
 	}
 
@@ -858,7 +858,7 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	struct bt_mesh_proxy_client *client;
 
 	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_PERIPHERAL) {
+	if (info.role != BT_CONN_ROLE_PERIPHERAL || info.id != BT_ID_DEFAULT) {
 		return;
 	}
 

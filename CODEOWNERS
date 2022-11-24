@@ -243,7 +243,6 @@
 /drivers/counter/counter_ll_stm32_timer.c @kentjhall
 /drivers/counter/*esp32*                  @glaubermaroto
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
-/drivers/display/display_framebuf.c       @dcpleung
 /drivers/display/*rm68200*                @mmahadevan108
 /drivers/dac/                             @martinjaeger
 /drivers/dai/                             @juimonen @marcinszkudlinski @abonislawski
@@ -364,7 +363,8 @@
 /drivers/pwm/*it8xxx2*                    @RuibinChang
 /drivers/pwm/*esp32*                      @LucasTambor
 /drivers/pwm/*rcar*                       @pmarzin
-/drivers/regulator/*pmic*                 @danieldegrasse
+/drivers/regulator/regulator_pca9420.c    @danieldegrasse
+/drivers/regulator/regulator_shell.c      @danieldegrasse
 /drivers/reset/                           @andrei-edward-popa
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
@@ -712,6 +712,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/dts/                             @mbolivar-nordic @galak
 /scripts/release/                         @nashif
 /scripts/ci/                              @nashif
+/scripts/ci/check_compliance.py           @nashif @carlescufi
 /arch/x86/gen_gdt.py                      @dcpleung @nashif
 /arch/x86/gen_idt.py                      @dcpleung @nashif
 /scripts/build/gen_kobject_list.py        @dcpleung @nashif
@@ -762,12 +763,12 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/fs/nvs/                           @Laczen
 /subsys/ipc/                              @carlocaione
 /subsys/logging/                          @nordic-krch
-/subsys/logging/log_backend_net.c         @nordic-krch @rlubos
+/subsys/logging/backends/log_backend_net.c @nordic-krch @rlubos
 /subsys/lorawan/                          @Mani-Sadhasivam
 /subsys/mgmt/ec_host_cmd/                 @jettr
 /subsys/mgmt/mcumgr/                      @carlescufi @de-nordic @nordicjm
 /subsys/mgmt/hawkbit/                     @Navin-Sankar
-/subsys/mgmt/mcumgr/smp_udp.c             @aunsbjerg
+/subsys/mgmt/mcumgr/transport/src/smp_udp.c @aunsbjerg
 /subsys/mgmt/updatehub/                   @nandojve @otavio
 /subsys/mgmt/osdp/                        @sidcha
 /subsys/modbus/                           @jfischer-no

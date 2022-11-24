@@ -16,4 +16,3 @@ include:
 properties:
     label:
         type: string
-        required: false

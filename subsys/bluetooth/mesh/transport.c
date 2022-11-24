@@ -753,9 +753,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, uint8_t hdr, uint8_t aszmic,
 
 	BT_DBG("AKF %u AID 0x%02x", !ctx.crypto.dev_key, AID(&hdr));
 
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND) && !rx->local_match) {
-		BT_DBG("Ignoring PDU for LPN 0x%04x of this Friend",
-		       rx->ctx.recv_dst);
+	if (!rx->local_match) {
 		return 0;
 	}
 

@@ -196,7 +196,7 @@ tests:
       - native_posix
     tags: cmsis_dsp
     min_flash: 1024
-    min_ram: 128
+    min_ram: 160
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF64=y
@@ -204,7 +204,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     tags: cmsis_dsp fpu
     min_flash: 1024
-    min_ram: 128
+    min_ram: 160
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF64=y

@@ -6,6 +6,7 @@ menuconfig MCUMGR
 	bool "mcumgr Support"
 	select NET_BUF
 	select ZCBOR
+	select CRC
 	help
 	  This option enables the mcumgr management library.
 
@@ -35,7 +36,7 @@ config APP_LINK_WITH_MCUMGR
 	  disabled if the include paths for MCUMGR are causing aliasing
 	  issues for 'app'.
 
-rsource "lib/mgmt/Kconfig"
+rsource "mgmt/Kconfig"
 
 config MGMT_MAX_MAIN_MAP_ENTRIES
 	int "Number of predicted maximum entries to main response map"
@@ -127,7 +128,7 @@ config MCUMGR_SMP_COMMAND_STATUS_HOOKS
 
 menu "Command Handlers"
 
-rsource "lib/cmd/Kconfig"
+rsource "grp/Kconfig"
 
 endmenu
 

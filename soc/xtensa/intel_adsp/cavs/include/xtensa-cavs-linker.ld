@@ -276,7 +276,7 @@ SECTIONS {
 
   .rodata : ALIGN(4096)
   {
-    _rodata_start = .;
+    __rodata_region_start = .;
     *(.rodata)
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
@@ -311,7 +311,7 @@ SECTIONS {
     LONG(_bss_start)
     LONG(_bss_end)
     _bss_table_end = .;
-    _rodata_end = .;
+    __rodata_region_end = .;
   } >RAM
 
   .module_init : {

@@ -8,7 +8,7 @@
 #ifndef H_MCUMGR_IMG_MGMT_CALLBACKS_
 #define H_MCUMGR_IMG_MGMT_CALLBACKS_
 
-#include <img_mgmt/img_mgmt.h>
+#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,10 +22,10 @@ extern "C" {
  */
 
 /**
- * Structure provided in the MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK notification callback: This callback
+ * Structure provided in the #MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK notification callback: This callback
  * function is used to notify the application about a pending firmware upload packet from a client
  * and authorise or deny it. Upload will be allowed so long as all notification handlers return
- * MGMT_ERR_EOK, if one returns an error then the upload will be denied.
+ * #MGMT_ERR_EOK, if one returns an error then the upload will be denied.
  */
 struct img_mgmt_upload_check {
 	/** Action to take */

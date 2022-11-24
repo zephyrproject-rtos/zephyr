@@ -10,7 +10,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
     drdy-gpios:
       type: phandle-array
-      required: false
       description: Data ready pin.
 
         The DRDYn pin of HDC sensor is open-drain, active low.

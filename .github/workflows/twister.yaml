@@ -51,7 +51,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
         continue-on-error: true
         run: |
-          git clone /github/cache/zephyrproject/zephyr .
+          git clone --shared /github/cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
@@ -146,7 +146,7 @@ jobs:
       - name: Clone cached Zephyr repository
         continue-on-error: true
         run: |
-          git clone /github/cache/zephyrproject/zephyr .
+          git clone --shared /github/cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
@@ -276,7 +276,7 @@ jobs:
 
     steps:
       # Needed for opensearch and upload script
-      - if: github.event_name == 'push'
+      - if: github.event_name == 'push' || github.event_name == 'schedule'
         name: Checkout
         uses: actions/checkout@v3
         with:

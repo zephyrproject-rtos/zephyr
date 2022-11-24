@@ -57,9 +57,7 @@ typedef struct pthread_mutexattr {
 } pthread_mutexattr_t;
 
 /* Condition variables */
-typedef struct pthread_cond {
-	_wait_q_t wait_q;
-} pthread_cond_t;
+typedef uint32_t pthread_cond_t;
 
 typedef struct pthread_condattr {
 } pthread_condattr_t;

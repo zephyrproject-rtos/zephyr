@@ -30,19 +30,16 @@ properties:
 
     remap-pa11:
       type: boolean
-      required: false
       description: Remaps the PA11 pin to operate as PA9 pin.
         Use of this property is restricted to STM32G0 SoCs.
 
     remap-pa12:
       type: boolean
-      required: false
       description: Remaps the PA12 pin to operate as PA10 pin.
         Use of this property is restricted to STM32G0 SoCs.
 
     remap-pa11-pa12:
       type: boolean
-      required: false
       description: Remaps the PA11/PA12 pin to operate as PA9/PA10 pin.
         Use of this property is restricted to STM32F070x SoCs.
 
@@ -93,7 +90,6 @@ child-binding:
             };
 
         slew-rate:
-          required: false
           type: string
           default: "low-speed"
           enum:

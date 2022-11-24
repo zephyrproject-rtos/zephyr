@@ -33,7 +33,6 @@ properties:
 
     int-gpios:
       type: phandle-array
-      required: false
       description: |
         The INT signal defaults to active low open drain, so requires a
         pull-up on the board. By default it acts as an output and signals

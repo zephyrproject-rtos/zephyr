@@ -92,9 +92,12 @@ static void *flash_driver_setup(void)
 	}
 
 	if (!is_buf_clear) {
-		/* erase page */
+		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
 		rc = flash_erase(flash_dev, page_info.start_offset,
-				 page_info.size);
+				(page_info.size *
+				((EXPECTED_SIZE + page_info.size - 1)
+				/ page_info.size)));
+
 		zassert_equal(rc, 0, "Flash memory not properly erased");
 	}
 

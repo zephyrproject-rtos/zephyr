@@ -17,7 +17,6 @@ properties:
     a-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -37,7 +36,6 @@ properties:
     b-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -48,7 +46,6 @@ properties:
     led-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -58,7 +55,6 @@ properties:
 
     enable-pin:
       type: int
-      required: false
       description: |
         The enable pin to use, to enable a connected QDEC device. The
         pin numbering scheme is the same as the a-pin property's.

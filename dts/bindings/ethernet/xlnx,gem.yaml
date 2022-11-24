@@ -41,7 +41,6 @@ properties:
 
     init-mdio-phy:
       type: boolean
-      required: false
       description: |
         Activates the management of a PHY associated with the controller in-
         stance. If this parameter is activated at the board level, the de-
@@ -83,7 +82,6 @@ properties:
 
     advertise-lower-link-speeds:
       type: boolean
-      required: false
       description: |
         Indicates to a driver instance which manages an associated PHY on
         the MDIO bus to include link speeds lower than the nominal value
@@ -92,7 +90,6 @@ properties:
 
     handle-rx-in-isr:
       type: boolean
-      required: false
       description: |
         Moves the handling of the frame received interrupt including the
         transfer of packet data from the DMA to network packet buffers and
@@ -104,7 +101,6 @@ properties:
 
     handle-tx-in-workq:
       type: boolean
-      required: false
       description: |
         Moves the handling of the frame transmission done interrupt into the
         context of the system work queue. By default, TX done handling is per-
@@ -153,7 +149,6 @@ properties:
 
     hw-tx-buffer-size-full:
       type: boolean
-      required: false
       description: |
         When set, the hardware TX data buffer will make use of the full 4 kB
         that are available. If unset, the hardware TX data buffer will be
@@ -189,7 +184,6 @@ properties:
 
     ignore-ipg-rxer:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Ignore IPG rx_er. When set, rx_er has no
         effect on the GEM's operation when rx_dv is low. Set this when using
@@ -197,14 +191,12 @@ properties:
 
     disable-reject-nsp:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Receive bad preamble. When set, frames with
         non-standard preamble will not be rejected.
 
     ipg-stretch:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable IPG stretch. When set, the transmit
         IPG can be increased above 96 bit times depending on the previous
@@ -212,7 +204,6 @@ properties:
 
     sgmii-mode:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable SGMII mode. Changes the behaviour of
         the auto-negotiation advertisement and link partner ability registers
@@ -221,7 +212,6 @@ properties:
 
     disable-reject-fcs-crc-errors:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Disable rejection of FCS/CRC errors.
         When set, frames with FCS/CRC errors will not be rejected. FCS error
@@ -231,14 +221,12 @@ properties:
 
     rx-halfdup-while-tx:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable frames to be received in half-duplex
         mode while transmitting.
 
     rx-checksum-offload:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable RX IP/TCP/UDP checksum offload to
         hardware. Frames with bad IP, TCP or UDP checksums will be discarded.
@@ -246,7 +234,6 @@ properties:
 
     tx-checksum-offload:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable TX IP/TCP/UDP checksum offload to
         hardware. This option is NOT supported by the QEMU implementation
@@ -254,7 +241,6 @@ properties:
 
     disable-pause-copy:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Do not copy received pause frames to memory.
         Set this option in order to prevent valid pause frames from being
@@ -267,7 +253,6 @@ properties:
 
     discard-rx-fcs:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Remove FCS of received frames.
         When set, received frames will be written to memory without their
@@ -276,7 +261,6 @@ properties:
 
     discard-rx-length-errors:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Discard frames with length field errors.
         When set, frames with a measured length shorter than the extracted
@@ -286,7 +270,6 @@ properties:
 
     pause-frame:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable pause. When set, transmission will
         pause if a non zero 802.3 classic pause frame is received and PFC
@@ -294,28 +277,24 @@ properties:
 
     tbi:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable TBI. When set, the TBI interface is en-
         bled instead of the GMII/MII interface.
 
     ext-address-match:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable external address match. When set, the
         external address match interface can be used to copy frames to memory.
 
     long-frame-rx-support:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable reception of 1536 byte frames.
         Normally, the GEM rejects any frame above 1518 bytes.
 
     unicast-hash:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable unicast hash. When set, unicast frames
         will be accepted when the 6 bit hash function of the destination
@@ -323,7 +302,6 @@ properties:
 
     multicast-hash:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable multicast hash. When set, mutlicast
         frames will be accepted when the 6 bit hash function of the desti-
@@ -331,47 +309,40 @@ properties:
 
     reject-broadcast:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Reject broadcast frames. When set, frames
         addressed to the all-ones broadcast address will be rejected.
 
     promiscuous-mode:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable promiscuous mode. When set, all valid
         frames will be accepted.
 
     discard-non-vlan:
       type: boolean
-      required: false
       description: Optional feature flag - Discard non-VLAN frames. When set,
         only VLAN tagged frames will be passed to the address matching logic.
 
     full-duplex:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enables full duplex reception and transmission.
 
     discard-rx-frame-ahb-unavail:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Discard received packets when no AHB resource
         is available.
 
     ahb-packet-endian-swap:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable AHB packet data endianness swap to big
         endian. If this flag is not set, data will be little endian.
 
     ahb-md-endian-swap:
       type: boolean
-      required: false
       description: |
         Optional feature flag - Enable AHB management descriptor data endian-
         ness swap to big endian. If this flag is not set, data will be little

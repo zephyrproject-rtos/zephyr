@@ -5,6 +5,8 @@
  */
 
 #include <zephyr/drivers/dma.h>
+#include <zephyr/cache.h>
+
 #define DT_DRV_COMPAT intel_adsp_gpdma
 
 #define GPDMA_CTL_OFFSET 0x0004
@@ -263,6 +265,40 @@ out:
 	return 0;
 }
 
+int intel_adsp_gpdma_get_status(const struct device *dev, uint32_t channel, struct dma_status *stat)
+{
+	uint32_t llp_l = 0;
+	uint32_t llp_u = 0;
+
+	if (channel >= DW_MAX_CHAN) {
+		return -EINVAL;
+	}
+
+	intel_adsp_gpdma_llp_read(dev, channel, &llp_l, &llp_u);
+	stat->total_copied = ((uint64_t)llp_u << 32) | llp_l;
+
+	return dw_dma_get_status(dev, channel, stat);
+}
+
+int intel_adsp_gpdma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
+{
+	switch (type) {
+	case DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT:
+		*value = sys_cache_data_line_size_get();
+		break;
+	case DMA_ATTR_BUFFER_SIZE_ALIGNMENT:
+		*value = DMA_BUF_SIZE_ALIGNMENT(DT_COMPAT_GET_ANY_STATUS_OKAY(intel_adsp_gpdma));
+		break;
+	case DMA_ATTR_COPY_ALIGNMENT:
+		*value = DMA_COPY_ALIGNMENT(DT_COMPAT_GET_ANY_STATUS_OKAY(intel_adsp_gpdma));
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
 	.config = intel_adsp_gpdma_config,
 	.reload = intel_adsp_gpdma_copy,
@@ -270,7 +306,8 @@ static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
 	.stop = intel_adsp_gpdma_stop,
 	.suspend = dw_dma_suspend,
 	.resume = dw_dma_resume,
-	.get_status = dw_dma_get_status,
+	.get_status = intel_adsp_gpdma_get_status,
+	.get_attribute = intel_adsp_gpdma_get_attribute,
 };
 
 #define INTEL_ADSP_GPDMA_CHAN_ARB_DATA(inst)				\

@@ -13,9 +13,10 @@
  * exceptions
  */
 
+#include <zephyr/drivers/pm_cpu_ops.h>
+#include <zephyr/exc_handle.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/exc_handle.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -276,5 +277,19 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 {
 	z_arm64_fatal_error(K_ERR_KERNEL_OOPS, ssf_ptr);
 	CODE_UNREACHABLE;
+}
+#endif
+
+#if defined(CONFIG_PM_CPU_OPS_PSCI)
+FUNC_NORETURN void arch_system_halt(unsigned int reason)
+{
+	ARG_UNUSED(reason);
+
+	(void)arch_irq_lock();
+	(void)pm_system_off();
+
+	for (;;) {
+		/* Spin endlessly as fallback */
+	}
 }
 #endif
