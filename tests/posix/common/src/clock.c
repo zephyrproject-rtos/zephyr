@@ -23,11 +23,9 @@ ZTEST(posix_apis, test_posix_clock)
 			NULL);
 	zassert_equal(errno, EINVAL);
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	/* 2 Sec Delay */
-	sleep(SLEEP_SECONDS);
-	usleep(SLEEP_SECONDS * USEC_PER_SEC);
-	clock_gettime(CLOCK_MONOTONIC, &te);
+	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &ts));
+	zassert_ok(k_sleep(K_SECONDS(SLEEP_SECONDS)));
+	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &te));
 
 	if (te.tv_nsec >= ts.tv_nsec) {
 		secs_elapsed = te.tv_sec - ts.tv_sec;
@@ -38,7 +36,7 @@ ZTEST(posix_apis, test_posix_clock)
 	}
 
 	/*TESTPOINT: Check if POSIX clock API test passes*/
-	zassert_equal(secs_elapsed, (2 * SLEEP_SECONDS),
+	zassert_equal(secs_elapsed, SLEEP_SECONDS,
 			"POSIX clock API test failed");
 
 	printk("POSIX clock APIs test done\n");
