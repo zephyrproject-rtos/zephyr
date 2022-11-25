@@ -69,7 +69,7 @@ ZTEST(smp_reassembly, test_first)
 	 */
 	ret = smp_reassembly_collect(&smpt, buff, frag_used);
 	zassert_equal(-ENOMEM, ret,
-		      "Expected is %d should be %d\n", ret, expected);
+		      "Expected -ENOMEM, got %d\n", ret);
 
 	/* This will normally be done by packet processing and should not be done by hand:
 	 * release the buffer to the pool
@@ -136,7 +136,7 @@ ZTEST(smp_reassembly, test_collection)
 	/* Last fragment */
 	ret = smp_reassembly_collect(&smpt, &buff[pkt_used], expected);
 	zassert_equal(0, ret,
-		      "Expected is %d should be %d\n", ret, 0);
+		      "Expected 0, got %d\n", ret);
 
 	/* And overflow */
 	ret = smp_reassembly_collect(&smpt, buff, 1);
