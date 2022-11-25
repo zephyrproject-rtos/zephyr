@@ -31,6 +31,8 @@
 # define LPGPDMA_CHOSEL_FLAG	  0xFF
 
 #include "dma_dw_common.h"
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -134,6 +136,11 @@ static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 	if (ret != 0) {
 		intel_adsp_gpdma_llp_disable(dev, channel);
 	}
+
+	if (ret == 0) {
+		ret = pm_device_runtime_get(dev);
+	}
+
 	return ret;
 }
 
@@ -144,7 +151,9 @@ static int intel_adsp_gpdma_stop(const struct device *dev, uint32_t channel)
 	ret = dw_dma_stop(dev, channel);
 	if (ret == 0) {
 		intel_adsp_gpdma_llp_disable(dev, channel);
+		ret = pm_device_runtime_put(dev);
 	}
+
 	return ret;
 }
 
@@ -234,6 +243,12 @@ int intel_adsp_gpdma_init(const struct device *dev)
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	/* Power up */
 	ret = intel_adsp_gpdma_enable(dev);
+
+	if (ret == 0) {
+		pm_device_init_suspended(dev);
+		ret = pm_device_runtime_enable(dev);
+	}
+
 	if (ret != 0) {
 		LOG_ERR("%s: dma %s failed to initialize", __func__,
 			dev->name);
@@ -302,6 +317,23 @@ int intel_adsp_gpdma_get_attribute(const struct device *dev, uint32_t type, uint
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int gpdma_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
 	.config = intel_adsp_gpdma_config,
 	.reload = intel_adsp_gpdma_copy,
@@ -367,10 +399,11 @@ static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
 		},							\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(inst, gpdma_pm_action);		\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			      &intel_adsp_gpdma_init,			\
-			      NULL,					\
+			      PM_DEVICE_DT_INST_GET(inst),		\
 			      &intel_adsp_gpdma##inst##_data,		\
 			      &intel_adsp_gpdma##inst##_config, POST_KERNEL,\
 			      CONFIG_DMA_INIT_PRIORITY,		\
