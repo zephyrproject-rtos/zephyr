@@ -111,4 +111,4 @@ where:
 .. note::
     In older versions of Zephyr, "rc" was used for both the mcumgr status code
     and shell command execution return code, this legacy behaviour can be
-    restored by enabling :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE`
+    restored by enabling :kconfig:option:`CONFIG_MCUMGR_GRP_SHELL_LEGACY_RC_RETURN_CODE`
