@@ -89,6 +89,12 @@ else()
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_INTERNAL_RADIO_IRQ_HANDLING=0)
 endif()
 
+if (CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CARRIER_FUNCTIONS_ENABLED=1)
+else()
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CARRIER_FUNCTIONS_ENABLED=0)
+endif()
+
 set(NRF52_SERIES  ${CONFIG_SOC_SERIES_NRF52X})
 set(NRF53_SERIES  ${CONFIG_SOC_SERIES_NRF53X})
 set(SER_HOST      ${CONFIG_NRF_802154_SER_HOST})
