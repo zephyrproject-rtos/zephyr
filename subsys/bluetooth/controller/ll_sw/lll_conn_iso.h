@@ -34,6 +34,7 @@ struct lll_conn_iso_stream {
 	uint8_t nesn:1;             /* Next expected sequence number */
 	uint8_t cie:1;              /* Close isochronous event */
 	uint8_t flushed:1;          /* 1 if CIS LLL has been flushed */
+	uint8_t active:1;           /* 1 if CIS LLL is active */
 	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
 
 	/* Resumption information */
@@ -55,10 +56,22 @@ struct lll_conn_iso_group {
 
 	/* Resumption information */
 	uint16_t resume_cis;    /* CIS handle to schedule at resume */
+
+	/* Window widening. Relies on vendor specific conversion macros, e.g.
+	 * EVENT_US_FRAC_TO_TICKS().
+	 */
+	uint32_t window_widening_periodic_us_frac; /* Widening in us fractions per
+						    * ISO interval.
+						    */
+	uint32_t window_widening_prepare_us_frac;  /* Widening in us fractions for
+						    * active prepare.
+						    */
+	uint32_t window_widening_event_us_frac;    /* Accumulated widening in us
+						    * fractions for active event.
+						    */
+	uint32_t window_widening_max_us;	   /* Maximum widening in us */
 };
 
 int lll_conn_iso_init(void);
 int lll_conn_iso_reset(void);
-void lll_conn_iso_done(struct lll_conn_iso_group *cig, uint8_t trx_cnt,
-		       uint16_t prog_to_anchor_us, uint8_t mic_state);
 void lll_conn_iso_flush(uint16_t handle, struct lll_conn_iso_stream *lll);

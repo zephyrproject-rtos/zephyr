@@ -3,7 +3,7 @@ sample:
   description: lz4 data compression library
 common:
   tags: compression lz4
-  min_ram: 40
+  min_ram: 64
   filter: TOOLCHAIN_HAS_NEWLIB == 1
   harness: console
   harness_config:

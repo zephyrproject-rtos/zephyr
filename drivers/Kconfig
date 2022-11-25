@@ -149,4 +149,6 @@ source "drivers/coredump/Kconfig"
 
 source "drivers/xen/Kconfig"
 
+source "drivers/fuel_gauge/Kconfig"
+
 endmenu

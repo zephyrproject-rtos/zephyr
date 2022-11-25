@@ -15,9 +15,6 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ADV)
-#define LOG_MODULE_NAME bt_mesh_adv
-#include "common/log.h"
 #include "common/bt_str.h"
 
 #include "adv.h"
@@ -28,6 +25,10 @@
 #include "prov.h"
 #include "proxy.h"
 #include "pb_gatt_srv.h"
+
+#define LOG_LEVEL CONFIG_BT_MESH_ADV_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_mesh_adv);
 
 /* Window and Interval are equal for continuous scanning */
 #define MESH_SCAN_INTERVAL    BT_MESH_ADV_SCAN_UNIT(BT_MESH_SCAN_INTERVAL_MS)
@@ -76,7 +77,7 @@ static struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *buf_poo
 	struct net_buf *buf;
 
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_SUSPENDED)) {
-		BT_WARN("Refusing to allocate buffer while suspended");
+		LOG_WRN("Refusing to allocate buffer while suspended");
 		return NULL;
 	}
 
@@ -117,7 +118,7 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 static struct net_buf *process_events(struct k_poll_event *ev, int count)
 {
 	for (; count; ev++, count--) {
-		BT_DBG("ev->state %u", ev->state);
+		LOG_DBG("ev->state %u", ev->state);
 
 		switch (ev->state) {
 		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
@@ -126,7 +127,7 @@ static struct net_buf *process_events(struct k_poll_event *ev, int count)
 		case K_POLL_STATE_CANCELLED:
 			break;
 		default:
-			BT_WARN("Unexpected k_poll event state %u", ev->state);
+			LOG_WRN("Unexpected k_poll event state %u", ev->state);
 			break;
 		}
 	}
@@ -142,11 +143,12 @@ struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
 						K_POLL_MODE_NOTIFY_ONLY,
 						&bt_mesh_adv_queue,
 						0),
+#if defined(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 						K_POLL_MODE_NOTIFY_ONLY,
 						&bt_mesh_relay_queue,
 						0),
-
+#endif /* CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET */
 	};
 
 	err = k_poll(events, ARRAY_SIZE(events), timeout);
@@ -188,7 +190,7 @@ struct net_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout)
 
 void bt_mesh_adv_buf_get_cancel(void)
 {
-	BT_DBG("");
+	LOG_DBG("");
 
 	k_fifo_cancel_wait(&bt_mesh_adv_queue);
 
@@ -201,8 +203,8 @@ void bt_mesh_adv_buf_get_cancel(void)
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 		      void *cb_data)
 {
-	BT_DBG("type 0x%02x len %u: %s", BT_MESH_ADV(buf)->type, buf->len,
-	       bt_hex(buf->data, buf->len));
+	LOG_DBG("type 0x%02x len %u: %s", BT_MESH_ADV(buf)->type, buf->len,
+		bt_hex(buf->data, buf->len));
 
 	BT_MESH_ADV(buf)->cb = cb;
 	BT_MESH_ADV(buf)->cb_data = cb_data;
@@ -226,11 +228,11 @@ int bt_mesh_adv_gatt_send(void)
 {
 	if (bt_mesh_is_provisioned()) {
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-			BT_DBG("Proxy Advertising");
+			LOG_DBG("Proxy Advertising");
 			return bt_mesh_proxy_adv_start();
 		}
 	} else if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		BT_DBG("PB-GATT Advertising");
+		LOG_DBG("PB-GATT Advertising");
 		return bt_mesh_pb_gatt_srv_adv_start();
 	}
 
@@ -244,7 +246,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
 		return;
 	}
 
-	BT_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	while (buf->len > 1) {
 		struct net_buf_simple_state state;
@@ -257,7 +259,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
 		}
 
 		if (len > buf->len) {
-			BT_WARN("AD malformed");
+			LOG_WRN("AD malformed");
 			return;
 		}
 
@@ -297,11 +299,11 @@ int bt_mesh_scan_enable(void)
 			.window     = MESH_SCAN_WINDOW };
 	int err;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	err = bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
 	if (err && err != -EALREADY) {
-		BT_ERR("starting scan failed (err %d)", err);
+		LOG_ERR("starting scan failed (err %d)", err);
 		return err;
 	}
 
@@ -312,11 +314,11 @@ int bt_mesh_scan_disable(void)
 {
 	int err;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	err = bt_le_scan_stop();
 	if (err && err != -EALREADY) {
-		BT_ERR("stopping scan failed (err %d)", err);
+		LOG_ERR("stopping scan failed (err %d)", err);
 		return err;
 	}
 

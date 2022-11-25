@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  tags: mgmt mcumgr fs_mgmt_hash_supported
+tests:
+  mgmt.mcumgr.fs.mgmt.hash.supported.crc32:
+    extra_args: >
+      OVERLAY_CONFIG="configuration/crc32.conf"
+  mgmt.mcumgr.fs.mgmt.hash.supported.sha256:
+    extra_args: >
+      OVERLAY_CONFIG="configuration/sha256.conf"
+  mgmt.mcumgr.fs.mgmt.hash.supported.all:
+    extra_args: >
+      OVERLAY_CONFIG="configuration/all.conf"

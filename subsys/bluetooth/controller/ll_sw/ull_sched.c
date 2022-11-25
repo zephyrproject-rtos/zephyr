@@ -44,9 +44,8 @@
 #include "ull_adv_internal.h"
 #include "ull_conn_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_sched
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
+
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -876,7 +875,10 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
 		if (conn && !conn->lll.role) {
-			*ticks_slot = conn->ull.ticks_slot;
+			*ticks_slot =
+				MAX(conn->ull.ticks_slot,
+				    HAL_TICKER_US_TO_TICKS(
+					    CONFIG_BT_CTLR_CENTRAL_SPACING));
 
 			return &conn->ull;
 		}

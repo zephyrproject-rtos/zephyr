@@ -10,4 +10,3 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
     xshut-gpios:
       type: phandle-array
-      required: false

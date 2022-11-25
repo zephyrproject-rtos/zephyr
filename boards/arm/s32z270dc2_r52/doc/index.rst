@@ -36,8 +36,12 @@ The boards support the following hardware features:
 | SIUL2     | on-chip    | pinctrl                             |
 |           |            |                                     |
 |           |            | gpio                                |
+|           |            |                                     |
+|           |            | external interrupt controller       |
 +-----------+------------+-------------------------------------+
 | LINFlexD  | on-chip    | serial                              |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.

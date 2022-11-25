@@ -19,9 +19,10 @@ concurrency:
 
 jobs:
   twister-build-prep:
+    if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.6
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -33,7 +34,7 @@ jobs:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 80
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
@@ -50,7 +51,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
         continue-on-error: true
         run: |
-          git clone /github/cache/zephyrproject/zephyr .
+          git clone --shared /github/cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
@@ -117,7 +118,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.6
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -126,11 +127,11 @@ jobs:
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
-      DAILY_OPTIONS: ' -M --build-only --all'
+      DAILY_OPTIONS: ' -M --build-only --all --show-footprint'
       PR_OPTIONS: ' --clobber-output --integration'
-      PUSH_OPTIONS: ' --clobber-output -M'
+      PUSH_OPTIONS: ' --clobber-output -M --show-footprint'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
@@ -145,7 +146,7 @@ jobs:
       - name: Clone cached Zephyr repository
         continue-on-error: true
         run: |
-          git clone /github/cache/zephyrproject/zephyr .
+          git clone --shared /github/cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
@@ -275,7 +276,7 @@ jobs:
 
     steps:
       # Needed for opensearch and upload script
-      - if: github.event_name == 'push'
+      - if: github.event_name == 'push' || github.event_name == 'schedule'
         name: Checkout
         uses: actions/checkout@v3
         with:
@@ -287,11 +288,15 @@ jobs:
         with:
           path: artifacts
 
-      - if: github.event_name == 'push'
+      - if: github.event_name == 'push' || github.event_name == 'schedule'
         name: Upload to opensearch
         run: |
           pip3 install opensearch-py
-          python3 ./scripts/ci/upload_test_results.py artifacts/*/*/twister.json
+          if [ "${{github.event_name}}" = "push" ]; then
+            python3 ./scripts/ci/upload_test_results.py --index zephyr-main-2 artifacts/*/*/twister.json
+          elif [ "${{github.event_name}}" = "schedule" ]; then
+            python3 ./scripts/ci/upload_test_results.py --index zephyr-weekly artifacts/*/*/twister.json
+          fi
 
       - name: Merge Test Results
         run: |

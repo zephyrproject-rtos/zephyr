@@ -1,47 +1,42 @@
 common:
   timeout: 180
   min_ram: 34
+  tags: kernel threads scheduler userspace
+  ignore_faults: true
 tests:
   kernel.scheduler:
     filter: not CONFIG_SCHED_MULTIQ
     extra_configs:
       - CONFIG_TIMESLICING=y
-    tags: kernel threads sched userspace ignore_faults
   kernel.scheduler.no_timeslicing:
     filter: not CONFIG_SCHED_MULTIQ
     extra_configs:
       - CONFIG_TIMESLICING=n
-    tags: kernel threads sched userspace ignore_faults
   kernel.scheduler.slice_perthread:
     filter: not CONFIG_SCHED_MULTIQ
     extra_configs:
       - CONFIG_TIMESLICING=y
       - CONFIG_TIMESLICE_PER_THREAD=y
-    tags: kernel threads sched userspace ignore_faults
   kernel.scheduler.multiq:
     extra_args: CONF_FILE=prj_multiq.conf
     extra_configs:
       - CONFIG_TIMESLICING=y
-    tags: kernel threads sched userspace ignore_faults
   kernel.scheduler.multiq_no_timeslicing:
     extra_args: CONF_FILE=prj_multiq.conf
     extra_configs:
       - CONFIG_TIMESLICING=n
-    tags: kernel threads sched userspacei ignore_faults
   kernel.scheduler.dumb_timeslicing:
     extra_args: CONF_FILE=prj_dumb.conf
     extra_configs:
       - CONFIG_TIMESLICING=y
-    tags: kernel threads sched userspace ignore_faults
   kernel.scheduler.dumb_no_timeslicing:
     extra_args: CONF_FILE=prj_dumb.conf
     extra_configs:
       - CONFIG_TIMESLICING=n
-    tags: kernel threads sched userspace ignore_faults
   kernel.scheduler.linker_generator:
-    platform_allow: qemu_cortex_m3
     filter: not CONFIG_SCHED_MULTIQ
+    platform_allow: qemu_cortex_m3
     extra_configs:
       - CONFIG_TIMESLICING=y
       - CONFIG_CMAKE_LINKER_GENERATOR=y
-    tags: kernel threads sched userspace ignore_faults linker_generator
+    tags: linker_generator

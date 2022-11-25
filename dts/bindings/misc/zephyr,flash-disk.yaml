@@ -22,7 +22,6 @@ properties:
 
     sector-size:
       type: int
-      required: false
       default: 512
       description: |
         Emulated block device sector size in bytes.
@@ -35,4 +34,5 @@ properties:
         adequately chosen. On storage backends with uniform erase-blocks it
         should be at least the erase-block-size, on storage backends with
         non-uniform erase-blocks it should be at least the largest
-        erase-block-size.
+        erase-block-size. The cache-size property is ignored if the partition
+        is read-only.

@@ -1354,11 +1354,12 @@ int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 
 	LOG_INF("Stop LWM2M Client: %s", client.ep_name);
 
+	k_mutex_unlock(&client.mutex);
 
 	while (get_sm_state() != ENGINE_IDLE) {
 		k_sleep(K_MSEC(STATE_MACHINE_UPDATE_INTERVAL_MS / 2));
 	}
-	k_mutex_unlock(&client.mutex);
+
 	return 0;
 }
 

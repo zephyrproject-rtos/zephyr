@@ -33,22 +33,22 @@ description: |
 
 compatible: "nxp,imx7d-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - input-schmitt-enable
-            - input-enable
-            - bias-pull-up
-            - bias-pull-down
+include: base.yaml
 
 child-binding:
   description: iMX pin controller pin group
   child-binding:
     description: |
       iMX pin controller pin configuration node.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-schmitt-enable
+          - input-enable
+          - bias-pull-up
+          - bias-pull-down
+
     properties:
       pinmux:
         required: true
@@ -77,7 +77,6 @@ child-binding:
           0 FAST — Fast Frequency Slew Rate
           1 SLOW — Slow Frequency Slew Rate
       bias-pull-up-value:
-        required: false
         type: string
         default: "100k"
         enum:

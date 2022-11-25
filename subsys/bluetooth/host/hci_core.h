@@ -87,6 +87,8 @@ enum {
 	 * of the RPA timeout.
 	 */
 	BT_ADV_RPA_VALID,
+	/* The private random address of the advertiser is being updated. */
+	BT_ADV_RPA_UPDATE,
 	/* The advertiser set is limited by a timeout, or number of advertising
 	 * events, or both.
 	 */
@@ -287,7 +289,7 @@ struct bt_dev {
 #else
 	/* Pointer to reserved advertising set */
 	struct bt_le_ext_adv    *adv;
-#if (CONFIG_BT_ID_MAX > 1) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
+#if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	/* When supporting multiple concurrent connectable advertising sets
 	 * with multiple identities, we need to know the identity of
 	 * the terminating advertising set to identify the connection object.

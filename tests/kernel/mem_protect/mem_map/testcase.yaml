@@ -1,22 +1,21 @@
+common:
+  ignore_faults: true
+  tags: kernel mmu
 tests:
   kernel.memory_protection.mem_map:
-    tags: kernel mmu ignore_faults
     filter: CONFIG_MMU and not CONFIG_X86_64
     extra_sections: _TRANSPLANTED_FUNC
+    extra_args: CONFIG_PICOLIBC_HEAP_SIZE=0
     platform_exclude: qemu_x86_64
   kernel.memory_protection.mem_map.x86_64:
-    tags: kernel mmu ignore_faults
     filter: CONFIG_MMU and CONFIG_X86_64 and not CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
-    platform_allow: qemu_x86_64
   kernel.memory_protection.mem_map.x86_64.coverage:
-    tags: kernel mmu ignore_faults
     filter: CONFIG_MMU and CONFIG_X86_64 and CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
     extra_args: EXTRA_CFLAGS=-DSKIP_EXECUTE_TESTS
     platform_allow: qemu_x86_64
   kernel.memory_protection.mem_map.x86_64.coverage.exec:
-    tags: kernel mmu ignore_faults
     filter: CONFIG_MMU and CONFIG_X86_64 and CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
     extra_args: CONF_FILE=prj_x86_64_coverage_exec.conf

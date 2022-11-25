@@ -9,6 +9,14 @@ config DISK_DRIVER_FLASH
 	  Flash device is used for the file system.
 
 if DISK_DRIVER_FLASH
+
+config FLASHDISK_VERIFY_PAGE_LAYOUT
+	bool "Verify flashdisk partition layout"
+	default y
+	help
+	  Enable runtime zephyr,flash-disk partition page layout constraints
+	  verification. Disable to reduce code size.
+
 module = FLASHDISK
 module-str = flashdisk
 source "subsys/logging/Kconfig.template.log_config"

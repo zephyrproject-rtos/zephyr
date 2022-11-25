@@ -609,6 +609,7 @@ config SOC_SERIES_IMX_RT10XX
 	bool "i.MX RT 10XX Series"
 	select CPU_CORTEX_M7
 	select CPU_CORTEX_M_HAS_DWT
+	select PLATFORM_SPECIFIC_INIT
 
 config SOC_SERIES_IMX_RT11XX
 	bool "i.MX RT 11XX Series"
@@ -625,25 +626,6 @@ config INIT_ENET_PLL
 	  If y, the Ethernet PLL is initialized. Always enabled on e.g.
 	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
 	  for MIMXRT1021").
-
-config HAS_ARM_DIV
-	bool "Has the divider for ARM"
-	default y
-
-config ARM_DIV
-	int "ARM clock divider"
-	range 0 7
-	default 0
-
-config AHB_DIV
-	int "AHB clock divider"
-	range 0 7
-	default 0
-
-config IPG_DIV
-	int "IPG clock divider"
-	range 0 3
-	default 0
 
 config DCDC_VALUE
 	hex "DCDC value for VDD_SOC"

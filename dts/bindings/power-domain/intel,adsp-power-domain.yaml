@@ -9,14 +9,6 @@ compatible: "intel,adsp-power-domain"
 include: power-domain.yaml
 
 properties:
-    lps:
-      type: phandle
-      required: true
-      description: |
-        A phandle to low power sequencer.
-        PWRCTL and PWRSTS registers used to write/read pwr gating
-        states are located there
-
     bit-position:
       type: int
       required: true

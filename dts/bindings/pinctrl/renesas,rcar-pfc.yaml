@@ -65,15 +65,7 @@ description: |
 
 compatible: "renesas,rcar-pfc"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-pull-down
-          - bias-pull-up
-          - drive-strength
+include: base.yaml
 
 properties:
     reg:
@@ -82,6 +74,15 @@ properties:
 child-binding:
   description: |
      This binding gives a base representation of the R-Car pins configuration.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-strength
+
   properties:
     pin:
       type: array

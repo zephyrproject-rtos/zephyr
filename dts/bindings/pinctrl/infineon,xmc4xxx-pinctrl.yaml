@@ -47,17 +47,7 @@ description: |
 
 compatible: "infineon,xmc4xxx-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
-        property-allowlist:
-          - bias-pull-down
-          - bias-pull-up
-          - drive-push-pull
-          - drive-open-drain
-          - output-high
-          - output-low
+include: base.yaml
 
 properties:
     "#address-cells":
@@ -69,6 +59,16 @@ properties:
 
 child-binding:
     description: Each child node defines the configuration for a particular state.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+          - drive-push-pull
+          - drive-open-drain
+          - output-high
+          - output-low
 
     properties:
         pinmux:
@@ -99,7 +99,6 @@ child-binding:
 
         invert-input:
           description: Inverts the input.
-          required: false
           type: boolean
 
         hwctrl:

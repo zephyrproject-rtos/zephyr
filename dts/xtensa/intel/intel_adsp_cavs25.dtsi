@@ -16,6 +16,8 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
 		};
 
 		cpu1: cpu@1 {
@@ -287,9 +289,16 @@
 		 *
 		 * https://github.com/zephyrproject-rtos/zephyr/pull/50287#discussion_r974591009
 		 */
-		alh0: alh1: alh@24400 {
+		alh0: alh0@71000 {
 			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
+			reg = <0x00071000 0x00071200>;
+
+			status = "okay";
+		};
+
+		alh1: alh1@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
 
 			status = "okay";
 		};

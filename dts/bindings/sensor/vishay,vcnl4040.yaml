@@ -12,7 +12,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
     int-gpios:
       type: phandle-array
-      required: false
       description: |
         The INT pin signals that a programmable interrupt function
         for ALS and PS with upper and lower thresholds has been
@@ -21,7 +20,6 @@ properties:
 
     led-current:
       type: int
-      required: false
       default: 50
       # default of 50 mA is POR (0b000) for PS_MS[LED_I] register
       description: LED current in mA
@@ -37,7 +35,6 @@ properties:
 
     led-duty-cycle:
       type: int
-      required: false
       default: 40
       # default of 40 Hz is POR (0b00) for PS_CONF1[PS_Duty] register
       description: LED duty cycle in Hz
@@ -49,7 +46,6 @@ properties:
 
     proximity-it:
       type: string
-      required: false
       default: "1"
       # default of 1 is POR (0b000) for PS_CONF2[PS_IT] register
       description: Proximity integration time in T
@@ -65,7 +61,6 @@ properties:
 
     proximity-trigger:
       type: string
-      required: false
       default: "disabled"
       # default of "disabled" is POR (0b00) for PS_CONF2[PS_INT] register
       description: Proximity trigger type
@@ -77,7 +72,6 @@ properties:
 
     als-it:
       type: int
-      required: false
       default: 80
       # default of 80 is POR (0b00) for ALS_CONF[ALS_IT] register
       description: ALS integration time in ms

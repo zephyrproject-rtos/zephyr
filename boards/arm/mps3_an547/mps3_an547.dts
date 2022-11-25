@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 Linaro Limited
+ * Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,6 +86,21 @@
 		};
 	};
 
+	ethosu {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupt-parent = <&nvic>;
+
+		ethosu0: ethosu@48102000 {
+			compatible = "arm,ethos-u";
+			reg = <0x48102000>;
+			interrupts = <56 3>;
+			secure-enable;
+			privilege-enable;
+			status = "okay";
+		};
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -132,6 +148,7 @@
 	/* DDR4 - 2G, alternates non-secure/secure every 256M */
 	ddr4: memory@60000000 {
 		device_type = "memory";
+		compatible = "zephyr,memory-region";
 		reg = <0x60000000 DT_SIZE_M(256)
 		       0x70000000 DT_SIZE_M(256)
 		       0x80000000 DT_SIZE_M(256)
@@ -140,6 +157,7 @@
 		       0xb0000000 DT_SIZE_M(256)
 		       0xc0000000 DT_SIZE_M(256)
 		       0xd0000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4";
 	};
 
 	soc {

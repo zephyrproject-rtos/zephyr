@@ -18,12 +18,10 @@ properties:
 
      st,input-polarity-inverted:
        type: boolean
-       required: false
        description: Encoder is triggered by a falling edge on the input pin
 
      st,input-filter-level:
        type: int
-       required: false
        description: |
          Intensity of the filter applied to the input signal. This is
          implemented by scaling the sampling frequency and adding a counter

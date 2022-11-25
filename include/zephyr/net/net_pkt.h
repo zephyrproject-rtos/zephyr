@@ -214,6 +214,25 @@ struct net_pkt {
 		uint16_t ipv6_ext_len; /* length of extension headers */
 #endif
 	};
+
+#if defined(CONFIG_NET_IPV4_FRAGMENT) || defined(CONFIG_NET_IPV6_FRAGMENT)
+	union {
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+		struct {
+			uint16_t flags;		/* Fragment offset and M (More Fragment) flag */
+			uint16_t id;		/* Fragment ID */
+		} ipv4_fragment;
+#endif /* CONFIG_NET_IPV4_FRAGMENT */
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+		struct {
+			uint16_t flags;		/* Fragment offset and M (More Fragment) flag */
+			uint32_t id;		/* Fragment id */
+			uint16_t hdr_start;	/* Where starts the fragment header */
+		} ipv6_fragment;
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+	};
+#endif /* CONFIG_NET_IPV4_FRAGMENT || CONFIG_NET_IPV6_FRAGMENT */
+
 #if defined(CONFIG_NET_IPV6)
 	/* Where is the start of the last header before payload data
 	 * in IPv6 packet. This is offset value from start of the IPv6
@@ -221,12 +240,6 @@ struct net_pkt {
 	 * adds IPv6 extension headers to the network packet.
 	 */
 	uint16_t ipv6_prev_hdr_start;
-
-#if defined(CONFIG_NET_IPV6_FRAGMENT)
-	uint16_t ipv6_fragment_flags;	/* Fragment offset and M (More Fragment) flag */
-	uint32_t ipv6_fragment_id;	/* Fragment id */
-	uint16_t ipv6_frag_hdr_start;	/* Where starts the fragment header */
-#endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 	uint8_t ipv6_ext_opt_len; /* IPv6 ND option length */
 	uint8_t ipv6_next_hdr;	/* What is the very first next header */
@@ -684,42 +697,102 @@ static inline uint16_t net_pkt_ip_opts_len(struct net_pkt *pkt)
 #endif
 }
 
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)
+{
+	return (pkt->ipv4_fragment.flags & NET_IPV4_FRAGH_OFFSET_MASK) * 8;
+}
+
+static inline bool net_pkt_ipv4_fragment_more(struct net_pkt *pkt)
+{
+	return (pkt->ipv4_fragment.flags & NET_IPV4_MORE_FRAG_MASK) != 0;
+}
+
+static inline void net_pkt_set_ipv4_fragment_flags(struct net_pkt *pkt, uint16_t flags)
+{
+	pkt->ipv4_fragment.flags = flags;
+}
+
+static inline uint32_t net_pkt_ipv4_fragment_id(struct net_pkt *pkt)
+{
+	return pkt->ipv4_fragment.id;
+}
+
+static inline void net_pkt_set_ipv4_fragment_id(struct net_pkt *pkt, uint32_t id)
+{
+	pkt->ipv4_fragment.id = id;
+}
+#else /* CONFIG_NET_IPV4_FRAGMENT */
+static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline bool net_pkt_ipv4_fragment_more(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv4_fragment_flags(struct net_pkt *pkt, uint16_t flags)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(flags);
+}
+
+static inline uint32_t net_pkt_ipv4_fragment_id(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv4_fragment_id(struct net_pkt *pkt, uint32_t id)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(id);
+}
+#endif /* CONFIG_NET_IPV4_FRAGMENT */
+
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 static inline uint16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
 {
-	return pkt->ipv6_frag_hdr_start;
+	return pkt->ipv6_fragment.hdr_start;
 }
 
 static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
 						   uint16_t start)
 {
-	pkt->ipv6_frag_hdr_start = start;
+	pkt->ipv6_fragment.hdr_start = start;
 }
 
 static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 {
-	return pkt->ipv6_fragment_flags & NET_IPV6_FRAGH_OFFSET_MASK;
+	return pkt->ipv6_fragment.flags & NET_IPV6_FRAGH_OFFSET_MASK;
 }
 static inline bool net_pkt_ipv6_fragment_more(struct net_pkt *pkt)
 {
-	return (pkt->ipv6_fragment_flags & 0x01) != 0;
+	return (pkt->ipv6_fragment.flags & 0x01) != 0;
 }
 
 static inline void net_pkt_set_ipv6_fragment_flags(struct net_pkt *pkt,
 						   uint16_t flags)
 {
-	pkt->ipv6_fragment_flags = flags;
+	pkt->ipv6_fragment.flags = flags;
 }
 
 static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
 {
-	return pkt->ipv6_fragment_id;
+	return pkt->ipv6_fragment.id;
 }
 
 static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 						uint32_t id)
 {
-	pkt->ipv6_fragment_id = id;
+	pkt->ipv6_fragment.id = id;
 }
 #else /* CONFIG_NET_IPV6_FRAGMENT */
 static inline uint16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
@@ -1249,30 +1322,33 @@ static inline bool net_pkt_filter_recv_ok(struct net_pkt *pkt)
  */
 
 struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
+					       size_t min_len,
 					       k_timeout_t timeout,
 					       const char *caller,
 					       int line);
 
-#define net_pkt_get_reserve_data(pool, timeout)				\
-	net_pkt_get_reserve_data_debug(pool, timeout, __func__, __LINE__)
+#define net_pkt_get_reserve_data(pool, min_len, timeout)				\
+	net_pkt_get_reserve_data_debug(pool, min_len, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_reserve_rx_data_debug(k_timeout_t timeout,
+struct net_buf *net_pkt_get_reserve_rx_data_debug(size_t min_len,
+						  k_timeout_t timeout,
 						  const char *caller,
 						  int line);
-#define net_pkt_get_reserve_rx_data(timeout)				\
-	net_pkt_get_reserve_rx_data_debug(timeout, __func__, __LINE__)
+#define net_pkt_get_reserve_rx_data(min_len, timeout)				\
+	net_pkt_get_reserve_rx_data_debug(min_len, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_reserve_tx_data_debug(k_timeout_t timeout,
+struct net_buf *net_pkt_get_reserve_tx_data_debug(size_t min_len,
+						  k_timeout_t timeout,
 						  const char *caller,
 						  int line);
-#define net_pkt_get_reserve_tx_data(timeout)				\
-	net_pkt_get_reserve_tx_data_debug(timeout, __func__, __LINE__)
+#define net_pkt_get_reserve_tx_data(min_len, timeout)				\
+	net_pkt_get_reserve_tx_data_debug(min_len, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_frag_debug(struct net_pkt *pkt,
+struct net_buf *net_pkt_get_frag_debug(struct net_pkt *pkt, size_t min_len,
 				       k_timeout_t timeout,
 				       const char *caller, int line);
-#define net_pkt_get_frag(pkt, timeout)					\
-	net_pkt_get_frag_debug(pkt, timeout, __func__, __LINE__)
+#define net_pkt_get_frag(pkt, min_len, timeout)					\
+	net_pkt_get_frag_debug(pkt, min_len, timeout, __func__, __LINE__)
 
 void net_pkt_unref_debug(struct net_pkt *pkt, const char *caller, int line);
 #define net_pkt_unref(pkt) net_pkt_unref_debug(pkt, __func__, __LINE__)
@@ -1331,6 +1407,7 @@ void net_pkt_print_frags(struct net_pkt *pkt);
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.
  *
+ * @param min_len Minimum length of the requested fragment.
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait up to the specified time.
@@ -1338,7 +1415,7 @@ void net_pkt_print_frags(struct net_pkt *pkt);
  * @return Network buffer if successful, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_reserve_rx_data(k_timeout_t timeout);
+struct net_buf *net_pkt_get_reserve_rx_data(size_t min_len, k_timeout_t timeout);
 #endif
 
 /**
@@ -1348,6 +1425,7 @@ struct net_buf *net_pkt_get_reserve_rx_data(k_timeout_t timeout);
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.
  *
+ * @param min_len Minimum length of the requested fragment.
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait up to the specified time.
@@ -1355,7 +1433,7 @@ struct net_buf *net_pkt_get_reserve_rx_data(k_timeout_t timeout);
  * @return Network buffer if successful, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_reserve_tx_data(k_timeout_t timeout);
+struct net_buf *net_pkt_get_reserve_tx_data(size_t min_len, k_timeout_t timeout);
 #endif
 
 /**
@@ -1363,6 +1441,7 @@ struct net_buf *net_pkt_get_reserve_tx_data(k_timeout_t timeout);
  * buffer pool or from global DATA pool.
  *
  * @param pkt Network packet.
+ * @param min_len Minimum length of the requested fragment.
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait up to the specified time.
@@ -1370,7 +1449,8 @@ struct net_buf *net_pkt_get_reserve_tx_data(k_timeout_t timeout);
  * @return Network buffer if successful, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, k_timeout_t timeout);
+struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, size_t min_len,
+				 k_timeout_t timeout);
 #endif
 
 /**

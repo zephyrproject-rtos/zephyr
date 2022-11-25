@@ -1,0 +1,3 @@
+sample:
+  description: Code relocation sample for Intel ADSP Cavs.
+  name: cavs_code_reloc

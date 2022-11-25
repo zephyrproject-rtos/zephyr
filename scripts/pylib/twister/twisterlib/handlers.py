@@ -38,6 +38,7 @@ except ImportError as capture_error:
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
+SUPPORTED_SIMS = ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim", "native"]
 
 class HarnessImporter:
 
@@ -76,6 +77,7 @@ class Handler:
         self.generator = None
         self.generator_cmd = None
         self.suite_name_check = True
+        self.ready = False
 
         self.args = []
         self.terminated = False
@@ -311,6 +313,21 @@ class BinaryHandler(Handler):
         self._final_handle_actions(harness, handler_time)
 
 
+class SimulationHandler(BinaryHandler):
+    def __init__(self, instance, type_str):
+        """Constructor
+
+        @param instance Test Instance
+        """
+        super().__init__(instance, type_str)
+
+        if type_str == 'renode':
+            self.pid_fn = os.path.join(instance.build_dir, "renode.pid")
+        elif type_str == 'native':
+            self.call_make_run = False
+            self.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
+            self.ready = True
+
 class DeviceHandler(Handler):
 
     def __init__(self, instance, type_str):
@@ -341,9 +358,16 @@ class DeviceHandler(Handler):
                 ser.close()
                 break
 
-            if not ser.in_waiting:
-                # no incoming bytes are waiting to be read from the serial
-                # input buffer, let other threads run
+            try:
+                if not ser.in_waiting:
+                    # no incoming bytes are waiting to be read from
+                    # the serial input buffer, let other threads run
+                    time.sleep(0.001)
+                    continue
+            # maybe the serial port is still in reset
+            # check status may cause error
+            # wait for more time
+            except OSError:
                 time.sleep(0.001)
                 continue
 
@@ -658,7 +682,7 @@ class QEMUHandler(Handler):
 
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
 
-        if "ignore_qemu_crash" in instance.testsuite.tags:
+        if instance.testsuite.ignore_qemu_crash:
             self.ignore_qemu_crash = True
             self.ignore_unexpected_eof = True
         else:

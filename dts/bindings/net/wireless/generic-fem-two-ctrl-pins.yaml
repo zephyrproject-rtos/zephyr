@@ -24,13 +24,11 @@ include: base.yaml
 properties:
     ctx-gpios:
         type: phandle-array
-        required: false
         description: |
             SoC GPIO connected to the CTX input pin on the FEM device.
 
     crx-gpios:
         type: phandle-array
-        required: false
         description: |
             SoC GPIO connected to the CRX input pin on the FEM device.
 

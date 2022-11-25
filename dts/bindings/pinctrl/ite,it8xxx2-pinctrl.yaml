@@ -61,10 +61,14 @@ description: |
 
 compatible: "ite,it8xxx2-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
+include: base.yaml
+
+child-binding:
+    description: |
+        This binding gives a base representation of the ITE IT8XXX2 pins configration.
+
+    include:
+      - name: pincfg-node.yaml
         property-allowlist:
           - bias-high-impedance
           - bias-pull-pin-default
@@ -72,9 +76,6 @@ include:
           - bias-pull-down
           - input-enable
 
-child-binding:
-    description: |
-        This binding gives a base representation of the ITE IT8XXX2 pins configration.
     properties:
         pinmuxs:
           required: true
@@ -83,7 +84,6 @@ child-binding:
               ITE IT8XXX2 pin's configuration (pinctrl node, pin and function).
 
         gpio-voltage:
-          required: false
           type: string
           description: |
               Pin input voltage selection 3.3V or 1.8V. All gpio pins support 3.3V.

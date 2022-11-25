@@ -12,3 +12,43 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&spi0 {
+	clock-frequency = <100000000>;
+};
+
+&spi1 {
+	clock-frequency = <100000000>;
+};
+
+&spi2 {
+	clock-frequency = <100000000>;
+};
+
+&spi3 {
+	clock-frequency = <120000000>;
+};
+
+&spi4 {
+	clock-frequency = <120000000>;
+};
+
+&spi5 {
+	clock-frequency = <120000000>;
+};
+
+&spi6 {
+	clock-frequency = <120000000>;
+};
+
+&spi7 {
+	clock-frequency = <100000000>;
+};
+
+&spi8 {
+	clock-frequency = <100000000>;
+};
+
+&spi9 {
+	clock-frequency = <100000000>;
+};

@@ -7,3 +7,4 @@ config CAN_SAM
 	default y
 	depends on DT_HAS_ATMEL_SAM_CAN_ENABLED
 	select CAN_MCAN
+	select CACHE_MANAGEMENT

@@ -237,14 +237,17 @@
 #define STM32_LSE_ENABLED	1
 #define STM32_LSE_FREQ		DT_PROP(DT_NODELABEL(clk_lse), clock_frequency)
 #define STM32_LSE_DRIVING	0
+#define STM32_LSE_BYPASS	DT_PROP(DT_NODELABEL(clk_lse), lse_bypass)
 #elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lse), st_stm32_lse_clock, okay)
 #define STM32_LSE_ENABLED	1
 #define STM32_LSE_FREQ		DT_PROP(DT_NODELABEL(clk_lse), clock_frequency)
 #define STM32_LSE_DRIVING	DT_PROP(DT_NODELABEL(clk_lse), driving_capability)
+#define STM32_LSE_BYPASS	DT_PROP(DT_NODELABEL(clk_lse), lse_bypass)
 #else
 #define STM32_LSE_ENABLED	0
 #define STM32_LSE_FREQ		0
 #define STM32_LSE_DRIVING	0
+#define STM32_LSE_BYPASS	0
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32_msi_clock, okay) || \
@@ -288,6 +291,12 @@
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lsi), fixed_clock, okay)
 #define STM32_LSI_ENABLED	1
 #define STM32_LSI_FREQ		DT_PROP(DT_NODELABEL(clk_lsi), clock_frequency)
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lsi1), fixed_clock, okay)
+#define STM32_LSI_ENABLED	1
+#define STM32_LSI_FREQ		DT_PROP(DT_NODELABEL(clk_lsi1), clock_frequency)
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lsi2), fixed_clock, okay)
+#define STM32_LSI_ENABLED	1
+#define STM32_LSI_FREQ		DT_PROP(DT_NODELABEL(clk_lsi2), clock_frequency)
 #else
 #define STM32_LSI_FREQ		0
 #endif

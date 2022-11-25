@@ -16,7 +16,6 @@ properties:
 
   int-gpios:
     type: phandle-array
-    required: false
     description: |
 
       Host input connected to the MCP7940N MFP open drain output pin

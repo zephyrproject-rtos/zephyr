@@ -8,11 +8,9 @@ include: sensor-device.yaml
 properties:
     int-gpios:
       type: phandle-array
-      required: false
 
     odr:
       type: string
-      required: false
       description: |
         Default output data rate in Hz. Only the following values are allowed:
           200   - 200     - 5ms  (default; chip reset value)
@@ -54,7 +52,6 @@ properties:
 
     osr-press:
       type: int
-      required: false
       description: |
         Default pressure oversampling rate. Only the following values are
         allowed:
@@ -75,7 +72,6 @@ properties:
 
     osr-temp:
       type: int
-      required: false
       description: |
         Default temperature oversampling rate. Only the following values are
         allowed:
@@ -96,7 +92,6 @@ properties:
 
     iir-filter:
       type: int
-      required: false
       description: |
         Default IIR filter coefficient. The default 0 is the chip reset value.
       default: 0

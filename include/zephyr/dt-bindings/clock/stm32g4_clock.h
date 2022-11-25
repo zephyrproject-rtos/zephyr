@@ -69,6 +69,9 @@
 #define CCIPR_REG		0x88
 #define CCIPR2_REG		0x9C
 
+/** @brief RCC_BDCR register offset */
+#define BDCR_REG		0x90
+
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR_REG)
@@ -90,5 +93,7 @@
 /** CCIPR2 devices */
 #define I2C4_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR2_REG)
 #define QSPI_SEL(val)		STM32_CLOCK(val, 3, 20, CCIPR2_REG)
+/** BDCR devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32G4_CLOCK_H_ */

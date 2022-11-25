@@ -52,6 +52,5 @@ properties:
         forced to 2.
       type: int
       default: 2
-      required: false
 
 compatible: "espressif,esp32-timer"

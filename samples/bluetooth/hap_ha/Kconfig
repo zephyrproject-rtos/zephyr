@@ -14,7 +14,7 @@ menu "Hearing Aid"
 
 config HAP_HA_SET_RANK
 	int "Device rank in set"
-	depends on BT_CSIS
+	depends on BT_CSIP_SET_MEMBER
 	range 1 2
 	help
 	  Rank of this device in set.

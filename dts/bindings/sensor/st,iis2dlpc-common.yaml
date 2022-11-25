@@ -6,7 +6,6 @@ include: sensor-device.yaml
 properties:
     drdy-gpios:
       type: phandle-array
-      required: false
       description: |
         DRDY pin
 
@@ -16,7 +15,6 @@ properties:
 
     drdy-int:
       type: int
-      required: false
       default: 1
       enum:
         - 1 # drdy is generated from INT1
@@ -30,7 +28,6 @@ properties:
 
     range:
       type: int
-      required: false
       default: 2
       description: Range in g. Default is power-up configuration.
       enum:
@@ -41,7 +38,6 @@ properties:
 
     power-mode:
       type: int
-      required: false
       default: 0
       description: Specify the sensor power mode. Default is power-up configuration.
       enum:
@@ -57,7 +53,6 @@ properties:
 
     tap-mode:
       type: int
-      required: false
       default: 0
       description: Tap mode. Default is power-up configuration.
       enum:
@@ -66,7 +61,6 @@ properties:
 
     tap-threshold:
       type: array
-      required: false
       default: [0, 0, 0]
       description: |
         Tap X/Y/Z axes threshold. Default is power-up configuration.
@@ -86,7 +80,6 @@ properties:
 
     tap-shock:
       type: int
-      required: false
       default: 0x0
       description: |
         Tap shock value. Default is power-up configuration.
@@ -97,7 +90,6 @@ properties:
 
     tap-latency:
       type: int
-      required: false
       default: 0x0
       description: |
         Tap latency. Default is power-up configuration.
@@ -108,7 +100,6 @@ properties:
 
     tap-quiet:
       type: int
-      required: false
       default: 0x0
       description: |
         Expected quiet time after a tap detection. Default is power-up configuration.

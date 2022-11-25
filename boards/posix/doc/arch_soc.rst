@@ -25,7 +25,7 @@ target hardware in the early phases of development.
 .. note::
 
    The POSIX architecture is not related and should not be confused with the
-   POSIX OS abstraction.
+   :ref:`POSIX OS abstraction<posix_support>`.
    The later provides an adapatation shim that enables running applications
    which require POSIX APIs on Zephyr.
 

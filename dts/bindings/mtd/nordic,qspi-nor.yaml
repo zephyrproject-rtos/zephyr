@@ -19,13 +19,11 @@ properties:
 
   size:
     type: int
-    required: false
     description: |
       The size in bits. Set this or size-in-bytes, but not both.
 
   size-in-bytes:
     type: int
-    required: false
     description: |
       The size in bytes. Set this or size, but not both.
 
@@ -35,7 +33,6 @@ properties:
 
   readoc:
     type: string
-    required: false
     enum:
       - "fastread"        # Single data line SPI, FAST_READ (0x0B)
       - "read2o"          # Dual data line SPI, READ2O (0x3B)
@@ -48,7 +45,6 @@ properties:
 
   writeoc:
     type: string
-    required: false
     enum:
       - "pp"            # Single data line SPI, PP (0x02)
       - "pp2o"          # Dual data line SPI, PP2O (0xA2)
@@ -60,21 +56,18 @@ properties:
 
   address-size-32:
     type: boolean
-    required: false
     description: |
       Set to indicate that 32-bit addressing is to be used.
       If not specified 24-bit addressing will be used.
 
   ppsize-512:
     type: boolean
-    required: false
     description: |
       Set to indicate that the write opcode operates on 512-byte pages.
       If not specified the write opcode operates on 256-byte pages.
 
   sck-delay:
     type: int
-    required: false
     default: 0
     description: |
       Number of clock cycles CSn must be asserted before it can go low
@@ -82,21 +75,18 @@ properties:
 
   rx-delay:
     type: int
-    required: false
     description: |
       Number of clock cycles from the rising edge of the SPI clock
       until the input serial data is sampled.
 
   cpha:
     type: boolean
-    required: false
     description: |
       Set to indicate phase starts with asserted half-phase (CPHA=1).
       For this driver using this property requires also using cpol.
 
   cpol:
     type: boolean
-    required: false
     description: |
       Set to indicate clock leading edge is falling (CPOL=1).
       For this driver using this property requires also using cpha.

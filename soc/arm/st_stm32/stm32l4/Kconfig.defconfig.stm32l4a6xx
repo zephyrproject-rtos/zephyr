@@ -1,0 +1,17 @@
+# ST Microelectronics STM32L4A6xx MCU
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) 2016 BayLibre, SAS
+# Copyright (c) 2019 Centaur Analytics, Inc
+# Copyright (c) 2022 Tomislav Milkovic
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L4A6XX
+
+config SOC
+	default "stm32l4a6xx"
+
+config NUM_IRQS
+	default 91
+
+endif # SOC_STM32L4A6XX

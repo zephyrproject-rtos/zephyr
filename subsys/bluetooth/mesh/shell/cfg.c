@@ -407,8 +407,8 @@ static int cmd_net_key_add(const struct shell *sh, size_t argc, char *argv[])
 	if (has_key_val) {
 		size_t len;
 
-		len = hex2bin(argv[3], strlen(argv[3]), key_val, sizeof(key_val));
-		(void)memset(key_val, 0, sizeof(key_val) - len);
+		len = hex2bin(argv[2], strlen(argv[2]), key_val, sizeof(key_val));
+		(void)memset(key_val + len, 0, sizeof(key_val) - len);
 	} else {
 		memcpy(key_val, bt_mesh_shell_default_key, sizeof(key_val));
 	}
@@ -470,7 +470,7 @@ static int cmd_net_key_update(const struct shell *sh, size_t argc, char *argv[])
 		size_t len;
 
 		len = hex2bin(argv[2], strlen(argv[2]), key_val, sizeof(key_val));
-		(void)memset(key_val, 0, sizeof(key_val) - len);
+		(void)memset(key_val + len, 0, sizeof(key_val) - len);
 	} else {
 		memcpy(key_val, bt_mesh_shell_default_key, sizeof(key_val));
 	}
@@ -627,7 +627,7 @@ static int cmd_app_key_upd(const struct shell *sh, size_t argc, char *argv[])
 		size_t len;
 
 		len = hex2bin(argv[3], strlen(argv[3]), key_val, sizeof(key_val));
-		(void)memset(key_val, 0, sizeof(key_val) - len);
+		(void)memset(key_val + len, 0, sizeof(key_val) - len);
 	} else {
 		memcpy(key_val, bt_mesh_shell_default_key, sizeof(key_val));
 	}

@@ -35,6 +35,27 @@ config MAX_PTHREAD_COUNT
 	help
 	  Maximum number of simultaneously active threads in a POSIX application.
 
+config MAX_PTHREAD_MUTEX_COUNT
+	int "Maximum simultaneously active mutex count in POSIX application"
+	default 5
+	range 0 255
+	help
+	  Maximum number of simultaneously active mutexes in a POSIX application.
+
+config MAX_PTHREAD_COND_COUNT
+	int "Maximum simultaneously active condition variables in a POSIX application"
+	default 5
+	range 0 255
+	help
+	  Maximum number of simultaneously active condition variables in a POSIX application.
+
+config MAX_PTHREAD_KEY_COUNT
+	int "Maximum simultaneously active keys in a POSIX application"
+	default 5
+	range 0 255
+	help
+	  Maximum number of simultaneously active keys in a POSIX application.
+
 config SEM_VALUE_MAX
 	int "Maximum semaphore limit"
 	default 32767

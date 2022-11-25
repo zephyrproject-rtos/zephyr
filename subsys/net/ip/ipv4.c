@@ -330,6 +330,14 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	net_pkt_set_family(pkt, PF_INET);
 
+	if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT)) {
+		/* Check if this is a fragmented packet, and if so, handle reassembly */
+		if ((ntohs(*((uint16_t *)&hdr->offset[0])) &
+		     (NET_IPV4_FRAGH_OFFSET_MASK | NET_IPV4_MORE_FRAG_MASK)) != 0) {
+			return net_ipv4_handle_fragment_hdr(pkt, hdr);
+		}
+	}
+
 	NET_DBG("IPv4 packet received from %s to %s",
 		net_sprint_ipv4_addr(&hdr->src),
 		net_sprint_ipv4_addr(&hdr->dst));
@@ -391,7 +399,15 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	if (verdict != NET_DROP) {
 		return verdict;
 	}
+
 drop:
 	net_stats_update_ipv4_drop(net_pkt_iface(pkt));
 	return NET_DROP;
+}
+
+void net_ipv4_init(void)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT)) {
+		net_ipv4_setup_fragment_buffers();
+	}
 }

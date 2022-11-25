@@ -246,6 +246,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	struct k_mem_block *block;
 	struct usb_ep_ctrl_data *eps = &dev_state.eps[ep_abs_idx];
 	usb_status_t status;
+	uint8_t ep;
 
 	ep_init.zlt = 0U;
 	ep_init.endpointAddress = cfg->ep_addr;
@@ -261,6 +262,14 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	if (dev_state.eps[ep_abs_idx].ep_enabled) {
 		LOG_WRN("Endpoint already configured");
 		return 0;
+	}
+
+	ep = cfg->ep_addr;
+	status = dev_state.dev_struct.controllerInterface->deviceControl(
+			dev_state.dev_struct.controllerHandle,
+			kUSB_DeviceControlEndpointDeinit, &ep);
+	if (kStatus_USB_Success != status) {
+		LOG_WRN("Failed to un-initialize endpoint (status=%d)", (int)status);
 	}
 
 	block = &(eps->block);
@@ -457,6 +466,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	}
 
 	dev_state.eps[ep_abs_idx].ep_enabled = false;
+	dev_state.eps[ep_abs_idx].ep_occupied = false;
 
 	return 0;
 }

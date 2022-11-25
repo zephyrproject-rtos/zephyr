@@ -39,9 +39,6 @@
 #include "ull_llcp_internal.h"
 #include "ull_conn_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_llcp_local
-#include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 
@@ -201,6 +198,16 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case PROC_CIS_CREATE:
+		llcp_lp_cc_rx(conn, ctx, rx);
+		break;
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case PROC_SCA_UPDATE:
+		llcp_lp_comm_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -316,11 +323,21 @@ static void lr_act_run(struct ll_conn *conn)
 		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case PROC_CIS_CREATE:
+		llcp_lp_cc_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	case PROC_CIS_TERMINATE:
 		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case PROC_SCA_UPDATE:
+		llcp_lp_comm_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);

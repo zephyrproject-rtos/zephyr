@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/arch/cpu.h>
 
 #include <soc.h>
 #include <adsp_boot.h>
@@ -39,6 +40,22 @@ static void ipc_isr(void *arg)
 	z_sched_ipi();
 #endif
 }
+
+#define DFIDCCP			0x2020
+#define CAP_INST_SHIFT		24
+#define CAP_INST_MASK		BIT_MASK(4)
+
+unsigned int soc_num_cpus;
+
+static __imr int soc_num_cpus_init(const struct device *dev)
+{
+	/* Need to set soc_num_cpus early to arch_num_cpus() works properly */
+	soc_num_cpus = ((sys_read32(DFIDCCP) >> CAP_INST_SHIFT) & CAP_INST_MASK) + 1;
+	soc_num_cpus = MIN(CONFIG_MP_MAX_NUM_CPUS, soc_num_cpus);
+
+	return 0;
+}
+SYS_INIT(soc_num_cpus_init, EARLY, 1);
 
 void soc_mp_init(void)
 {
@@ -122,6 +139,7 @@ void arch_sched_ipi(void)
 	}
 }
 
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 int soc_adsp_halt_cpu(int id)
 {
 	int retry = CORE_POWER_CHECK_NUM;
@@ -157,3 +175,4 @@ int soc_adsp_halt_cpu(int id)
 
 	return 0;
 }
+#endif

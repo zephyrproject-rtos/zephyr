@@ -10,9 +10,6 @@
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/msi.h>
 
-#define IVSHMEM_VENDOR_ID		0x1AF4
-#define IVSHMEM_DEVICE_ID		0x1110
-
 #define IVSHMEM_PCIE_REG_BAR_IDX	0
 #define IVSHMEM_PCIE_SHMEM_BAR_IDX	2
 
@@ -24,8 +21,7 @@ struct ivshmem_param {
 
 struct ivshmem {
 	DEVICE_MMIO_RAM;
-	pcie_bdf_t bdf;
-	uint32_t dev_ven_id;
+	struct pcie_dev *pcie;
 	uintptr_t shmem;
 	size_t size;
 #ifdef CONFIG_IVSHMEM_DOORBELL

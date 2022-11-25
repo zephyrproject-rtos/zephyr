@@ -4,13 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/regulator.h>
-#if CONFIG_REGULATOR_PMIC
-#include <zephyr/drivers/regulator/consumer.h>
-#endif
 
 LOG_MODULE_REGISTER(regulator_shell, CONFIG_REGULATOR_LOG_LEVEL);
 
@@ -56,9 +54,7 @@ static int cmd_reg_dis(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-
-#if CONFIG_REGULATOR_PMIC
-static int cmd_pmic_set_vol(const struct shell *sh, size_t argc, char **argv)
+static int cmd_set_vol(const struct shell *sh, size_t argc, char **argv)
 {
 	int lvol, uvol, ret;
 	const struct device *reg_dev;
@@ -86,7 +82,7 @@ static int cmd_pmic_set_vol(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_pmic_set_ilim(const struct shell *sh, size_t argc, char **argv)
+static int cmd_set_ilim(const struct shell *sh, size_t argc, char **argv)
 {
 	int lcur, ucur, ret;
 	const struct device *reg_dev;
@@ -114,18 +110,6 @@ static int cmd_pmic_set_ilim(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(pmic_set,
-	SHELL_CMD_ARG(set_vol, NULL, "Set voltage (in mV)\n"
-		"Usage: set_vol <device> <low limit (uV)> <high limit (uV)>",
-		cmd_pmic_set_vol, 4, 0),
-	SHELL_CMD_ARG(set_current, NULL, "Set current limit( in mA)\n"
-		"Usage: set_current <device> <low limit (uA)> <high limit (uA)>",
-		cmd_pmic_set_ilim, 4, 0),
-	SHELL_SUBCMD_SET_END
-);
-
-#endif /* CONFIG_REGULATOR_PMIC */
-
 SHELL_STATIC_SUBCMD_SET_CREATE(regulator_set,
 	SHELL_CMD_ARG(enable, NULL,
 		"Enable regulator\n"
@@ -133,9 +117,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(regulator_set,
 	SHELL_CMD_ARG(disable, NULL,
 		"Disable regulator\n"
 		"Usage: disable <device>", cmd_reg_dis, 2, 0),
-#if CONFIG_REGULATOR_PMIC
-	SHELL_CMD(pmic, &pmic_set, "PMIC management", NULL),
-#endif
+	SHELL_CMD_ARG(set_vol, NULL, "Set voltage (in mV)\n"
+		"Usage: set_vol <device> <low limit (uV)> <high limit (uV)>",
+		cmd_set_vol, 4, 0),
+	SHELL_CMD_ARG(set_current, NULL, "Set current limit( in mA)\n"
+		"Usage: set_current <device> <low limit (uA)> <high limit (uA)>",
+		cmd_set_ilim, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 

@@ -17,8 +17,6 @@
 #include "lll.h"
 #include "lll_conn_iso.h"
 
-#define LOG_MODULE_NAME bt_ctlr_lll_conn_iso
-#include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 

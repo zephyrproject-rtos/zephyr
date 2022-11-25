@@ -55,7 +55,8 @@ static int winstream_console_init(const struct device *d)
 		return -ENODEV;
 	}
 	const struct mem_win_config *config = dev->config;
-	void *buf = arch_xtensa_uncached_ptr((void *)config->mem_base);
+	void *buf =
+		arch_xtensa_uncached_ptr((__sparse_force void __sparse_cache *)config->mem_base);
 
 	winstream = sys_winstream_init(buf, config->size);
 

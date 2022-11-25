@@ -254,6 +254,24 @@
 			clocks = <&xtal>, <&rtc_xtal>;
 			clock-names = "xtal", "rtc-xtal";
 
+			arm-podf {
+				compatible = "fixed-factor-clock";
+				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
+			ahb-podf {
+				compatible = "fixed-factor-clock";
+				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
+			ipg-podf {
+				compatible = "fixed-factor-clock";
+				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
 			#clock-cells = <3>;
 		};
 

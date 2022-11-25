@@ -195,6 +195,8 @@ struct xmodem_packet {
 #define MDM_MTU 1500
 #define MDM_MAX_RESP_SIZE 128
 #define MDM_IP_INFO_RESP_SIZE 256
+#define MDM_EID_LENGTH	       33
+#define MDM_CCID_RESP_MAX_SIZE (MDM_HL7800_ICCID_MAX_SIZE + MDM_EID_LENGTH)
 
 #define MDM_HANDLER_MATCH_MAX_LEN 100
 
@@ -477,7 +479,7 @@ struct hl7800_iface_ctx {
 	char mdm_imei[MDM_HL7800_IMEI_SIZE];
 	char mdm_sn[MDM_HL7800_SERIAL_NUMBER_SIZE];
 	char mdm_network_status[MDM_NETWORK_STATUS_LENGTH];
-	char mdm_iccid[MDM_HL7800_ICCID_SIZE];
+	char mdm_iccid[MDM_HL7800_ICCID_MAX_SIZE];
 	enum mdm_hl7800_startup_state mdm_startup_state;
 	enum mdm_hl7800_radio_mode mdm_rat;
 	char mdm_active_bands_string[MDM_HL7800_LTE_BAND_STR_SIZE];
@@ -504,6 +506,8 @@ struct hl7800_iface_ctx {
 	enum mdm_hl7800_sleep sleep_state;
 	enum hl7800_lpm low_power_mode;
 	enum mdm_hl7800_network_state network_state;
+	bool network_dropped;
+	bool dns_ready;
 	enum net_operator_status operator_status;
 	struct tm local_time;
 	int32_t local_time_offset;
@@ -968,7 +972,7 @@ static int send_at_cmd(struct hl7800_socket *sock, const uint8_t *data,
 			ictx.search_no_id_resp = true;
 		}
 
-		LOG_DBG("OUT: [%s]", data);
+		LOG_DBG("OUT: [%s]", (char *)data);
 		mdm_receiver_send(&ictx.mdm_ctx, data, strlen(data));
 		mdm_receiver_send(&ictx.mdm_ctx, "\r", 1);
 
@@ -1752,35 +1756,39 @@ done:
 	return true;
 }
 
-/* Handler: +CCID: <ICCID> */
+/* Handler: +CCID: <ICCID>,<EID>
+ * NOTE: EID will only be present for eSIM
+ */
 static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 {
-	struct net_buf *frag = NULL;
+	int ret;
+	char value[MDM_CCID_RESP_MAX_SIZE];
+	char *delim;
 	size_t out_len;
 
-	/* make sure ICCID data is received
-	 *  waiting for: <ICCID>\r\n
-	 */
-	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf),
-					MDM_HL7800_ICCID_SIZE);
+	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	value[out_len] = 0;
 
-	frag = NULL;
-	len = net_buf_findcrlf(*buf, &frag);
-	if (!frag) {
-		LOG_ERR("Unable to find ICCID end");
-		goto done;
-	}
-	if (len > MDM_HL7800_ICCID_STRLEN) {
-		LOG_WRN("ICCID too long (len:%d)", len);
-		len = MDM_HL7800_ICCID_STRLEN;
+	LOG_DBG("+CCID: %s", value);
+
+	if (len > MDM_HL7800_ICCID_MAX_STRLEN) {
+		delim = strchr(value, ',');
+		if (!delim) {
+			LOG_ERR("Could not process +CCID");
+			return true;
+		}
+		/* Replace ',' with null so value contains two null terminated strings */
+		*delim = 0;
+		LOG_INF("EID: %s", delim + 1);
 	}
 
-	out_len = net_buf_linearize(ictx.mdm_iccid, MDM_HL7800_ICCID_STRLEN,
-				    *buf, 0, len);
-	ictx.mdm_iccid[out_len] = 0;
+	ret = snprintk(ictx.mdm_iccid, sizeof(ictx.mdm_iccid), "%s", value);
+	if (ret > MDM_HL7800_ICCID_MAX_STRLEN) {
+		LOG_WRN("ICCID too long: %d", ret);
+	}
 
 	LOG_INF("ICCID: %s", ictx.mdm_iccid);
-done:
+
 	return true;
 }
 
@@ -1831,7 +1839,7 @@ static void dns_work_cb(struct k_work *work)
 #endif
 						       NULL };
 
-	if (ictx.iface && net_if_is_up(ictx.iface)) {
+	if (ictx.iface && net_if_is_up(ictx.iface) && !ictx.dns_ready) {
 		/* set new DNS addr in DNS resolver */
 		LOG_DBG("Refresh DNS resolver");
 		dnsCtx = dns_resolve_get_default();
@@ -1841,6 +1849,7 @@ static void dns_work_cb(struct k_work *work)
 			LOG_ERR("dns_resolve_init fail (%d)", ret);
 			return;
 		}
+		ictx.dns_ready = true;
 	}
 #endif
 }
@@ -2021,7 +2030,13 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	/* store new dns */
 	addr_start = delims[4] + 1;
 	addr_len = delims[5] - addr_start;
+	strncpy(temp_addr_str, addr_start, addr_len);
+	temp_addr_str[addr_len] = 0;
 	if (is_ipv4) {
+		ret = strncmp(temp_addr_str, ictx.dns_v4_string, addr_len);
+		if (ret != 0) {
+			ictx.dns_ready = false;
+		}
 		strncpy(ictx.dns_v4_string, addr_start, addr_len);
 		ictx.dns_v4_string[addr_len] = 0;
 		ret = net_addr_pton(AF_INET, ictx.dns_v4_string, &ictx.dns_v4);
@@ -2029,6 +2044,10 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	}
 #ifdef CONFIG_NET_IPV6
 	else {
+		ret = strncmp(temp_addr_str, ictx.dns_v6_string, addr_len);
+		if (ret != 0) {
+			ictx.dns_ready = false;
+		}
 		/* store HL7800 formatted IPv6 DNS string temporarily */
 		strncpy(ictx.dns_v6_string, addr_start, addr_len);
 
@@ -3162,6 +3181,7 @@ static void iface_status_work_cb(struct k_work *work)
 {
 	int ret;
 	hl7800_lock();
+	enum mdm_hl7800_network_state state;
 
 	if (!ictx.initialized && ictx.restarting) {
 		LOG_DBG("Wait for driver init, process network state later");
@@ -3191,6 +3211,15 @@ static void iface_status_work_cb(struct k_work *work)
 
 	LOG_DBG("Updating network state...");
 
+	state = ictx.network_state;
+	/* Ensure we bring the network interface down and then re-check the current state */
+	if (ictx.network_dropped) {
+		ictx.network_dropped = false;
+		state = HL7800_OUT_OF_COVERAGE;
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.iface_status_work,
+					    IFACE_WORK_DELAY);
+	}
+
 	/* Query operator selection */
 	ret = send_at_cmd(NULL, "AT+COPS?", MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
@@ -3198,7 +3227,7 @@ static void iface_status_work_cb(struct k_work *work)
 	}
 
 	/* bring iface up/down */
-	switch (ictx.network_state) {
+	switch (state) {
 	case HL7800_HOME_NETWORK:
 	case HL7800_ROAMING:
 		if (ictx.iface) {
@@ -3210,14 +3239,14 @@ static void iface_status_work_cb(struct k_work *work)
 	default:
 		if (ictx.iface && (ictx.low_power_mode != HL7800_LPM_PSM)) {
 			LOG_DBG("HL7800 iface DOWN");
+			ictx.dns_ready = false;
 			net_if_carrier_off(ictx.iface);
 		}
 		break;
 	}
 
 	if ((ictx.iface && !net_if_is_up(ictx.iface)) ||
-	    (ictx.low_power_mode == HL7800_LPM_PSM &&
-	     ictx.network_state == HL7800_OUT_OF_COVERAGE)) {
+	    (ictx.low_power_mode == HL7800_LPM_PSM && state == HL7800_OUT_OF_COVERAGE)) {
 		hl7800_stop_rssi_work();
 		notify_all_tcp_sockets_closed();
 	} else if (ictx.iface && net_if_is_up(ictx.iface)) {
@@ -3755,7 +3784,11 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 
 	id = strtol(value, NULL, 10);
 	notif_val = strtol(delim + 1, NULL, 10);
-	LOG_DBG("+K**P_NOTIF: %d,%d", id, notif_val);
+	if (notif_val == HL7800_TCP_DISCON) {
+		LOG_DBG("+K**P_NOTIF: %d,%d", id, notif_val);
+	} else {
+		LOG_WRN("+K**P_NOTIF: %d,%d", id, notif_val);
+	}
 	sock = socket_from_id(id);
 	if (!sock) {
 		goto done;
@@ -3772,6 +3805,7 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 		sock->error = -ENOTCONN;
 		break;
 	default:
+		ictx.network_dropped = true;
 		err = true;
 		sock->error = -EIO;
 		break;
@@ -3787,6 +3821,11 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 		k_work_reschedule_for_queue(&hl7800_workq, &sock->notif_work, MDM_SOCK_NOTIF_DELAY);
 		if (trigger_sem) {
 			k_sem_give(&sock->sock_send_sem);
+		}
+
+		if (ictx.network_dropped) {
+			k_work_reschedule_for_queue(&hl7800_workq, &ictx.iface_status_work,
+						    IFACE_WORK_DELAY);
 		}
 	}
 done:
@@ -5060,6 +5099,7 @@ static int modem_reset_and_configure(void)
 #endif
 
 	ictx.restarting = true;
+	ictx.dns_ready = false;
 	if (ictx.iface) {
 		net_if_carrier_off(ictx.iface);
 	}
@@ -5436,6 +5476,7 @@ static int hl7800_power_off(void)
 	}
 	/* bring the iface down */
 	if (ictx.iface) {
+		ictx.dns_ready = false;
 		net_if_carrier_off(ictx.iface);
 	}
 	LOG_INF("Modem powered off");
@@ -5993,17 +6034,12 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 	struct fs_dirent file_info;
 	char cmd1[sizeof("AT+WDSD=24643584")];
 
-	/* HL7800 will stay locked for the duration of the FW update */
-	hl7800_lock();
-
 	/* get file info */
 	ret = fs_stat(file_path, &file_info);
 	if (ret >= 0) {
-		LOG_DBG("file '%s' size %zu", file_info.name,
-			file_info.size);
+		LOG_DBG("file '%s' size %zu", file_info.name, file_info.size);
 	} else {
-		LOG_ERR("Failed to get file [%s] info: %d",
-			file_path, ret);
+		LOG_ERR("Failed to get file [%s] info: %d", file_path, ret);
 		goto err;
 	}
 
@@ -6019,25 +6055,30 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 		goto err;
 	}
 
+	notify_all_tcp_sockets_closed();
+	hl7800_stop_rssi_work();
+	k_work_cancel_delayable(&ictx.iface_status_work);
+	k_work_cancel_delayable(&ictx.dns_work);
+	k_work_cancel_delayable(&ictx.mdm_reset_work);
+	k_work_cancel_delayable(&ictx.allow_sleep_work);
+	k_work_cancel_delayable(&ictx.delete_untracked_socket_work);
+	ictx.dns_ready = false;
 	if (ictx.iface) {
 		LOG_DBG("HL7800 iface DOWN");
-		hl7800_stop_rssi_work();
 		net_if_carrier_off(ictx.iface);
-		notify_all_tcp_sockets_closed();
 	}
+
+	/* HL7800 will stay locked for the duration of the FW update */
+	hl7800_lock();
 
 	/* start firmware update process */
 	LOG_INF("Initiate FW update, total packets: %zd",
 		((file_info.size / XMODEM_DATA_SIZE) + 1));
 	set_fota_state(HL7800_FOTA_START);
-	snprintk(cmd1, sizeof(cmd1), "AT+WDSD=%zd", file_info.size);
-	send_at_cmd(NULL, cmd1, K_NO_WAIT, 0, false);
-
-	goto done;
+	(void)snprintk(cmd1, sizeof(cmd1), "AT+WDSD=%zd", file_info.size);
+	(void)send_at_cmd(NULL, cmd1, K_NO_WAIT, 0, false);
 
 err:
-	hl7800_unlock();
-done:
 	return ret;
 }
 #endif

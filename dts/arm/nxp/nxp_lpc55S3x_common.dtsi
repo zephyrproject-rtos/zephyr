@@ -11,6 +11,10 @@
 #include <mem.h>
 
 / {
+	chosen {
+		zephyr,entropy = &css;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -225,6 +229,12 @@
 		#size-cells = <0>;
 	};
 
+	css: css@4003000 {
+		compatible = "nxp,css-v2";
+		reg = <0x4003000 0x200>;
+		status = "okay";
+	};
+
 	can0: can@4009d000 {
 		compatible = "nxp,lpc-mcan";
 		reg = <0x4009d000 0x1000>;
@@ -353,8 +363,14 @@
 		};
 	};
 
-
-
+	sc_timer: pwm@85000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x85000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+		prescaler = <2>;
+		#pwm-cells = <3>;
+	};
 };
 
 &nvic {

@@ -1,0 +1,23 @@
+identifier: nucleo_l4a6zg
+name: ST Nucleo L4A6ZG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 320
+flash: 1024
+supported:
+  - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
+  - gpio
+  - i2c
+  - spi
+  - pwm
+  - counter
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

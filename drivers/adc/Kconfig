@@ -68,6 +68,8 @@ source "drivers/adc/Kconfig.npcx"
 
 source "drivers/adc/Kconfig.cc32xx"
 
+source "drivers/adc/Kconfig.cc13xx_cc26xx"
+
 source "drivers/adc/Kconfig.adc_emul"
 
 source "drivers/adc/Kconfig.test"

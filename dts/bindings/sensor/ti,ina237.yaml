@@ -24,10 +24,4 @@ properties:
 
     alert-config:
       type: int
-      required: false
       description: Diag alert register, default matches the power-on reset value
-
-    irq-gpios:
-      type: phandle-array
-      required: false
-      description: IRQ Alert pin

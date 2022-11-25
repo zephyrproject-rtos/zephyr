@@ -48,24 +48,24 @@ description: |
 
 compatible: "nxp,mcux-rt-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - input-schmitt-enable
-            - drive-open-drain
-            - input-enable
-            - bias-disable
-            - bias-pull-down
-            - bias-pull-up
+include: base.yaml
 
 child-binding:
   description: MCUX RT pin controller pin group
   child-binding:
     description: |
       MCUX RT pin controller pin configuration node.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-schmitt-enable
+          - drive-open-drain
+          - input-enable
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+
     properties:
       pinmux:
         required: true
@@ -99,7 +99,6 @@ child-binding:
           110 DSE_6_R0_6 — 32 Ohm @3.3V, 43 Ohm @1.8V
           111 DSE_7_R0_7 — 26 Ohm @3.3V, 37 Ohm @1.8V
       bias-pull-up-value:
-        required: false
         type: string
         default: "47k"
         enum:
@@ -118,7 +117,6 @@ child-binding:
           11 PUS_2_22K_Ohm_Pull_Up — 22K Ohm Pull Up
 
       bias-pull-down-value:
-        required: false
         type: string
         default: "100k"
         enum:
@@ -139,7 +137,6 @@ child-binding:
           0 SRE_0_Slow_Slew_Rate — Slow Slew Rate
           1 SRE_1_Fast_Slew_Rate — Fast Slew Rate
       nxp,speed:
-        required: false
         type: string
         enum:
           - "50-mhz"

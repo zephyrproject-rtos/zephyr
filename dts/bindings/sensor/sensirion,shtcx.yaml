@@ -31,7 +31,6 @@ properties:
 
   clock-stretching:
     type: boolean
-    required: false
     description: |
       Specifies that the driver should clock stretching i2c communication to
       read the sensor values.

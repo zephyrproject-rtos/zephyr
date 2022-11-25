@@ -63,14 +63,7 @@ description: |
 
 compatible: "telink,b91-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-pull-down
-          - bias-pull-up
+include: base.yaml
 
 properties:
     reg:
@@ -91,6 +84,13 @@ properties:
 child-binding:
     description: |
         This binding gives a base representation of the Telink B91 pins configration.
+
+    include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
 
     properties:
         pinmux:

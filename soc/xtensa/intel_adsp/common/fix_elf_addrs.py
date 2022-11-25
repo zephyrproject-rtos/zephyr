@@ -36,7 +36,7 @@ with open(elffile, "rb") as fd:
     elf = ELFFile(fd)
     for s in elf.iter_sections():
         addr = s.header.sh_addr
-        if uc_min <= addr <= uc_max:
+        if uc_min <= addr <= uc_max and s.header.sh_size != 0:
             print(f"fix_elf_addrs.py: Moving section {s.name} to cached SRAM region")
             fixup.append(s.name)
 

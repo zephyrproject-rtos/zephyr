@@ -20,6 +20,7 @@ Peripherals
    eeprom.rst
    entropy.rst
    flash.rst
+   fuel_gauge.rst
    gna.rst
    gpio.rst
    hwinfo.rst

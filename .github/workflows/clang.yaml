@@ -8,9 +8,10 @@ concurrency:
 
 jobs:
   clang-build:
+    if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.6
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -19,7 +20,7 @@ jobs:
       matrix:
         platform: ["native_posix"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-15
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
@@ -37,7 +38,7 @@ jobs:
       - name: Clone cached Zephyr repository
         continue-on-error: true
         run: |
-          git clone /github/cache/zephyrproject/zephyr .
+          git clone --shared /github/cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout

@@ -8,9 +8,6 @@ properties:
     reg:
       required: true
 
-    interrupts:
-      required: false
-
     pinctrl-0:
       required: true
 
@@ -19,7 +16,6 @@ properties:
 
     half-duplex:
       type: boolean
-      required: false
       description: |
         Enable half-duplex communication mode.
 
@@ -27,12 +23,10 @@ properties:
 
     dummy-comp:
       type: boolean
-      required: false
       description: Enable dummy SPI compensation cycles
 
     sio:
       type: boolean
-      required: false
       description: |
         Enable 3-wire mode
 
@@ -40,22 +34,18 @@ properties:
 
     dma-enabled:
       type: boolean
-      required: false
       description: Enable SPI DMA support
 
     dma-clk:
       type: int
-      required: false
       description: DMA clock source
 
     dma-host:
       type: int
-      required: false
       description: DMA Host - 0 -> SPI2, 1 -> SPI3
 
     clk-as-cs:
       type: boolean
-      required: false
       description: |
         Support to toggle the CS while the clock toggles
 
@@ -63,12 +53,10 @@ properties:
 
     positive-cs:
       type: boolean
-      required: false
       description: Make CS positive during a transaction instead of negative
 
     use-iomux:
       type: boolean
-      required: false
       description: |
         Some pins are allowed to bypass the GPIO Matrix and use the IO_MUX
         routing mechanism instead, this avoids extra routing latency and makes

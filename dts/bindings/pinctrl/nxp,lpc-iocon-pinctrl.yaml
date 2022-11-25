@@ -50,11 +50,16 @@ description: |
 
 compatible: "nxp,lpc-iocon-pinctrl"
 
-include:
-  - name: base.yaml
-  - name: pincfg-node-group.yaml
-    child-binding:
-      child-binding:
+include: base.yaml
+
+child-binding:
+  description: LPC IOCON pin controller pin group
+  child-binding:
+    description: |
+      LPC IOCON pin controller pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
         property-allowlist:
           - drive-open-drain
           - bias-pull-up
@@ -62,11 +67,6 @@ include:
           - drive-push-pull
           - input-schmitt-enable
 
-child-binding:
-  description: LPC IOCON pin controller pin group
-  child-binding:
-    description: |
-      LPC IOCON pin controller pin configuration node
     properties:
       pinmux:
         required: true
@@ -75,7 +75,6 @@ child-binding:
           Pin mux selection for this group. See the SOC level pinctrl header
           file in NXP's HAL for a defined list of these options.
       slew-rate:
-        required: false
         default: "standard"
         type: string
         enum:

@@ -14,6 +14,7 @@ from collections import OrderedDict
 from itertools import islice
 import logging
 import copy
+import shutil
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -249,15 +250,16 @@ class TestPlan:
         return 1
 
     def report_duplicates(self):
-        all_tests = self.get_all_tests()
-
-        dupes = [item for item, count in collections.Counter(all_tests).items() if count > 1]
+        all_identifiers = []
+        for _, ts in self.testsuites.items():
+            all_identifiers.append(ts.id)
+        dupes = [item for item, count in collections.Counter(all_identifiers).items() if count > 1]
         if dupes:
             print("Tests with duplicate identifiers:")
             for dupe in dupes:
                 print("- {}".format(dupe))
                 for dc in self.get_testsuite(dupe):
-                    print("  - {}".format(dc))
+                    print("  - {}".format(dc.name))
         else:
             print("No duplicates found.")
 
@@ -596,7 +598,17 @@ class TestPlan:
         elif arch_filter:
             platforms = list(filter(lambda p: p.arch in arch_filter, self.platforms))
         elif default_platforms:
-            platforms = list(filter(lambda p: p.default, self.platforms))
+            _platforms = list(filter(lambda p: p.default, self.platforms))
+            platforms = []
+            # default platforms that can't be run are dropped from the list of
+            # the default platforms list. Default platforms should always be
+            # runnable.
+            for p in _platforms:
+                if p.simulation and p.simulation_exec:
+                    if shutil.which(p.simulation_exec):
+                        platforms.append(p)
+                else:
+                    platforms.append(p)
         else:
             platforms = self.platforms
 

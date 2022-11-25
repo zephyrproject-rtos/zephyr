@@ -59,6 +59,5 @@ properties:
 
     assigned-address:
       type: int
-      required: false
       description: |
         Dynamic address to be assigned to the device.

@@ -6,11 +6,9 @@
 
 properties:
     memory-regions:
-      required: false
       type: phandle-array
       description: List of memory region phandles
 
     memory-region-names:
-      required: false
       type: string-array
       description: A list of names, one for each corresponding phandle in memory-region

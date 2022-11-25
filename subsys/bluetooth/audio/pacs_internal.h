@@ -33,15 +33,8 @@ struct bt_pac_ltv_data {
 	struct bt_pac_ltv data[0];
 } __packed;
 
-struct bt_pac {
-	struct bt_pac_codec codec;	/* Codec ID */
-	struct bt_pac_ltv_data cc;	/* Codec Specific Capabilities */
-	struct bt_pac_ltv_data meta;	/* Metadata */
-} __packed;
-
 struct bt_pacs_read_rsp {
 	uint8_t  num_pac;		/* Number of PAC Records*/
-	struct bt_pac pac[0];
 } __packed;
 
 struct bt_pacs_context {

@@ -35,6 +35,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_CTEINLINE_SUPPORT if HAS_HW_NRF_RADIO_DFE
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
+	select BT_CTLR_SCA_UPDATE_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
 	select BT_CTLR_CONN_RSSI_SUPPORT
 
@@ -439,25 +440,24 @@ config BT_CTLR_SCHED_ADVANCED
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
 
-config BT_CTLR_SCHED_ADVANCED_CENTRAL_CONN_SPACING
-	int "Advanced scheduling central preferred connection spacing"
+config BT_CTLR_CENTRAL_SPACING
+	int "Central Connection Spacing"
 	depends on BT_CTLR_SCHED_ADVANCED
 	default 0
+	range 0 65535
 	help
-	  The central preferred connection spacing defines an additional spacing
-	  in microseconds, added to the fixed ~1250 us spacing obtained by enabling
-	  BT_CTLR_SCHED_ADVANCED. Specifying 0 (default) will obtain a spacing of
-	  ~1250 us, whereas specifying 1250 will yield a spacing of ~2500 us.
-	  The spacing is defined as the distance in time between the anchor points
-	  of the established central role connections.
-	  The precision is determined by the resolution of the platform dependent
-	  ticker clock.
-	  When specifying values above 6.25 ms, the spacing may be unobtainable if
-	  the connection interval becomes smaller than the total spacing. In that
-	  case, modulo is applied and a total spacing of 15 ms on a 10 ms connection
-	  interval yields 5 ms spacing.
-	  For multiple connections, it may become impossible to honor the preferred
-	  spacing, in which case overlapping will occur.
+	  The preferred connection spacing between multiple simultaneous central
+	  roles in microseconds. The Controller will calculate the required time
+	  reservation using the data length and PHY currently in use. The
+	  greater of the preferred spacing and the calculated time reservation
+	  will be used.
+	  The precision is determined by the resolution of the platform
+	  dependent ticker clock.
+	  The upper range is a ceil value permitting any tuning of Controller's
+	  radio handling overheads and to allow Coded PHY S8 coding scheme PDU
+	  time, i.e. radio event overheads + 17040 (PDU Tx) + 150 (tIFS) + 4
+	  (active clock jitter) + 17040 (PDU rx) = (radio event overheads +
+	  34234) microseconds.
 
 config BT_CTLR_LLL_PRIO
 	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
@@ -615,7 +615,7 @@ config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
 
 config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
 	int "Number of local control procedure contexts to be available across all connections"
-	default 4 if (BT_AUTO_PHY_UPDATE=y || BT_AUTO_DATA_LEN_UPDATE=y) && BT_CTLR_LLCP_CONN < 4
+	default 6 if (BT_AUTO_PHY_UPDATE=y || BT_AUTO_DATA_LEN_UPDATE=y) && BT_CTLR_LLCP_CONN < 4
 	default 2 if BT_CTLR_LLCP_CONN = 1
 	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
 	range 2 255
@@ -912,6 +912,14 @@ config BT_CTLR_USER_CPR_INTERVAL_MIN
 	help
 	  When enabled, controller will accept Connection Parameter Request
 	  intervals down to a proprietary minimum value.
+
+config BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE
+	bool "Proprietary handling of anchor point movement"
+	depends on BT_CTLR_USER_EXT && BT_CTLR_CONN_PARAM_REQ && BT_PERIPHERAL
+	help
+	  When enabled, defer accept/reject of Connection Parameter Request with only
+	  anchor point movement to proprietary logic.
+	  Only applicable for peripheral.
 
 endmenu
 

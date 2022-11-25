@@ -482,9 +482,9 @@ static int gpio_ite_get_config(const struct device *dev,
 			gpio_1p8v[gpio_config->index][pin].offset);
 	mask_1p8v = gpio_1p8v[gpio_config->index][pin].mask_1p8v;
 	if (*reg_1p8v & mask_1p8v) {
-		flags |= GPIO_VOLTAGE_1P8;
+		flags |= IT8XXX2_GPIO_VOLTAGE_1P8;
 	} else {
-		flags |= GPIO_VOLTAGE_3P3;
+		flags |= IT8XXX2_GPIO_VOLTAGE_3P3;
 	}
 
 	/* set input or output. */

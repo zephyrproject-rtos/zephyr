@@ -67,11 +67,15 @@ description: |
 
 compatible: "nxp,s32ze-pinctrl"
 
-include:
-  - name: base.yaml
-  - name: pincfg-node-group.yaml
-    child-binding:
-      child-binding:
+include: base.yaml
+
+child-binding:
+  description: NXP S32 pin controller pin group.
+  child-binding:
+    description: NXP S32 pin controller pin configuration node.
+
+    include:
+      - name: pincfg-node.yaml
         property-allowlist:
           - bias-pull-down
           - bias-pull-up
@@ -80,10 +84,6 @@ include:
           - input-enable
           - output-enable
 
-child-binding:
-  description: NXP S32 pin controller pin group.
-  child-binding:
-    description: NXP S32 pin controller pin configuration node.
     properties:
       pinmux:
         required: true
@@ -94,7 +94,6 @@ child-binding:
           encode all the pin muxing information in a 32-bit value.
 
       slew-rate:
-        required: false
         enum: [0, 4, 5, 6, 7]
         default: 4
         description: |

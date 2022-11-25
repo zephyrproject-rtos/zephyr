@@ -107,7 +107,7 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 	uint8_t *ref_count;
 
 	/* Reserve extra space for a ref-count (uint8_t) */
-	void *b = k_heap_alloc(pool, 1 + *size, timeout);
+	void *b = k_heap_alloc(pool, sizeof(void *) + *size, timeout);
 
 	if (b == NULL) {
 		return NULL;
@@ -117,7 +117,7 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 	*ref_count = 1U;
 
 	/* Return pointer to the byte following the ref count */
-	return ref_count + 1;
+	return ref_count + sizeof(void *);
 }
 
 static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
@@ -126,7 +126,7 @@ static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
 	struct k_heap *pool = buf_pool->alloc->alloc_data;
 	uint8_t *ref_count;
 
-	ref_count = data - 1;
+	ref_count = data - sizeof(void *);
 	if (--(*ref_count)) {
 		return;
 	}
@@ -169,21 +169,21 @@ static uint8_t *heap_data_alloc(struct net_buf *buf, size_t *size,
 {
 	uint8_t *ref_count;
 
-	ref_count = k_malloc(1 + *size);
+	ref_count = k_malloc(sizeof(void *) + *size);
 	if (!ref_count) {
 		return NULL;
 	}
 
 	*ref_count = 1U;
 
-	return ref_count + 1;
+	return ref_count + sizeof(void *);
 }
 
 static void heap_data_unref(struct net_buf *buf, uint8_t *data)
 {
 	uint8_t *ref_count;
 
-	ref_count = data - 1;
+	ref_count = data - sizeof(void *);
 	if (--(*ref_count)) {
 		return;
 	}

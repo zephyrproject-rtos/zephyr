@@ -147,8 +147,7 @@ uint8_t ll_cig_parameters_open(uint8_t cig_id,
 uint8_t ll_cis_parameters_set(uint8_t cis_id,
 			      uint16_t c_sdu, uint16_t p_sdu,
 			      uint8_t c_phy, uint8_t p_phy,
-			      uint8_t c_rtn, uint8_t p_rtn,
-			      uint16_t *handle);
+			      uint8_t c_rtn, uint8_t p_rtn);
 uint8_t ll_cig_parameters_commit(uint8_t cig_id);
 uint8_t ll_cig_parameters_test_open(uint8_t cig_id,
 				    uint32_t c_interval,
@@ -160,12 +159,11 @@ uint8_t ll_cig_parameters_test_open(uint8_t cig_id,
 				    uint8_t packing,
 				    uint8_t framing,
 				    uint8_t num_cis);
-uint8_t ll_cis_parameters_test_set(uint8_t cis_id,
+uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
 				   uint16_t c_sdu, uint16_t p_sdu,
 				   uint16_t c_pdu, uint16_t p_pdu,
 				   uint8_t c_phy, uint8_t p_phy,
-				   uint8_t c_bn, uint8_t p_bn,
-				   uint16_t *handle);
+				   uint8_t c_bn, uint8_t p_bn);
 uint8_t ll_configure_data_path(uint8_t data_path_dir,
 			       uint8_t data_path_id,
 			       uint8_t vs_config_len,
@@ -239,13 +237,14 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_connect_disable(void **rx);
 uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t interval_min,
-		    uint16_t interval_max, uint16_t latency, uint16_t timeout);
+		    uint16_t interval_max, uint16_t latency, uint16_t timeout, uint16_t *offset);
 uint8_t ll_chm_update(uint8_t const *const chm);
 uint8_t ll_chm_get(uint16_t handle, uint8_t *const chm);
 uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand_num, uint8_t const *const ediv,
 			uint8_t const *const ltk);
 uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t err_code,
 			   uint8_t const *const ltk);
+uint8_t ll_req_peer_sca(uint16_t handle);
 uint8_t ll_feature_req_send(uint16_t handle);
 uint8_t ll_version_ind_send(uint16_t handle);
 uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason);
@@ -324,6 +323,9 @@ void *ll_iso_tx_mem_acquire(void);
 void ll_iso_tx_mem_release(void *tx);
 int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx, void *link);
 void ll_iso_link_tx_release(void *link);
+
+uint8_t ll_conn_iso_accept_timeout_get(uint16_t *timeout);
+uint8_t ll_conn_iso_accept_timeout_set(uint16_t timeout);
 
 /* External co-operation */
 void ll_timeslice_ticker_id_get(uint8_t * const instance_index,

@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-zephyr_library_sources(audio.c)
+zephyr_library_sources(
+	audio.c
+	audio_iso.c
+)
 
 if (CONFIG_BT_VOCS OR CONFIG_BT_VOCS_CLIENT)
 	zephyr_library_sources(vocs.c)
@@ -27,10 +30,10 @@ zephyr_library_sources_ifdef(CONFIG_BT_CCID ccid.c)
 
 zephyr_library_link_libraries(subsys__bluetooth)
 
-zephyr_library_sources_ifdef(CONFIG_BT_CSIS csis.c)
-zephyr_library_sources_ifdef(CONFIG_BT_CSIS_CLIENT csis_client.c)
-if (CONFIG_BT_CSIS OR CONFIG_BT_CSIS_CLIENT)
-	zephyr_library_sources(csis_crypto.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CSIP_SET_MEMBER csip_set_member.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CSIP_SET_COORDINATOR csip_set_coordinator.c)
+if (CONFIG_BT_CSIP_SET_MEMBER OR CONFIG_BT_CSIP_SET_COORDINATOR)
+	zephyr_library_sources(csip_crypto.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_BT_TBS tbs.c)
@@ -52,8 +55,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_UNICAST_SERVER unicast_server.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_UNICAST_CLIENT unicast_client.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_BROADCAST_SOURCE broadcast_source.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_BROADCAST_SINK broadcast_sink.c)
-zephyr_library_sources_ifdef(CONFIG_BT_BASS bass.c)
-zephyr_library_sources_ifdef(CONFIG_BT_BASS_CLIENT bass_client.c)
+zephyr_library_sources_ifdef(CONFIG_BT_BAP_SCAN_DELEGATOR bap_scan_delegator.c)
+zephyr_library_sources_ifdef(CONFIG_BT_BAP_BROADCAST_ASSISTANT bap_broadcast_assistant.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HAS has.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HAS_CLIENT has_client.c)
 zephyr_library_sources_ifdef(CONFIG_BT_CAP cap_stream.c)

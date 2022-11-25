@@ -40,7 +40,11 @@ static int tcp_window =
 #if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
 #else
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	(CONFIG_NET_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
+#else
+	CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 #endif
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
 #define TCP_RTO_MS (conn->rto)
@@ -88,7 +92,7 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 		goto out;
 	}
 
-	buf = net_pkt_get_frag(pkt, TCP_PKT_ALLOC_TIMEOUT);
+	buf = net_pkt_get_frag(pkt, len, TCP_PKT_ALLOC_TIMEOUT);
 
 	if (!buf || buf->size < len) {
 		if (buf) {
@@ -2113,8 +2117,12 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			/* Adjust the window so that we do not run out of bufs
 			 * while waiting acks.
 			 */
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 			max_win = (CONFIG_NET_BUF_TX_COUNT *
 				   CONFIG_NET_BUF_DATA_SIZE) / 3;
+#else
+			max_win = CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 		}
 
 		if (sndbuf_opt > 0) {

@@ -68,3 +68,20 @@
  * cases.
  */
 #define EVENT_RX_TX_TURNAROUND(phy)   150
+
+/* Sub-microsecond conversion macros. With current timer resolution of ~30 us
+ * per tick, conversion factor is 1, and macros map 1:1 between us_frac and us.
+ * On sub-microsecond tick resolution architectures, a number of bits may be
+ * used to represent fractions of a microsecond, to allow higher precision in
+ * window widening.
+ */
+#define EVENT_US_TO_US_FRAC(us)             (us)
+#define EVENT_US_FRAC_TO_US(us_frac)        (us_frac)
+#define EVENT_TICKS_TO_US_FRAC(ticks)       HAL_TICKER_TICKS_TO_US(ticks)
+#define EVENT_US_FRAC_TO_TICKS(us_frac)     HAL_TICKER_US_TO_TICKS(us_frac)
+#define EVENT_US_FRAC_TO_REMAINDER(us_frac) HAL_TICKER_REMAINDER(us_frac)
+
+/* Time needed to set up a CIS from ACL instant to prepare (incl. radio). Used
+ * for CIS_Offset_Min.
+ */
+#define EVENT_OVERHEAD_CIS_SETUP_US         MAX(EVENT_OVERHEAD_START_US, 500U)

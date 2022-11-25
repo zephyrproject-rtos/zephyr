@@ -1,16 +1,15 @@
+common:
+  tags: kernel interrupt isr_table
 tests:
   arch.interrupt.gen_isr_table.arm_baseline:
     platform_allow: qemu_cortex_m3
-    platform_allow: bbc_microbit atsamr21_xpro nrf51dk_nrf51422 nucleo_g071rb qemu_cortex_m0
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
-    tags: kernel interrupt isr_table
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
   arch.interrupt.gen_isr_table.arm_baseline.linker_generator:
     platform_allow: qemu_cortex_m3
-    platform_allow: bbc_microbit atsamr21_xpro nrf51dk_nrf51422 nucleo_g071rb qemu_cortex_m0
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
-    tags: kernel interrupt isr_table linker_generator
+    tags: linker_generator
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
       - CONFIG_CMAKE_LINKER_GENERATOR=y
@@ -20,7 +19,6 @@ tests:
         stm32_min_dev_blue usb_kw24d512 v2m_beetle cc1352r1_launchxl
         cc26x2r1_launchxl olimex_stm32_h103 cc1352r_sensortag
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV7_M_ARMV8_M_MAINLINE
-    tags: kernel interrupt isr_table
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
   arch.interrupt.gen_isr_table.disabled:
@@ -28,7 +26,6 @@ tests:
     extra_configs:
       - CONFIG_GEN_ISR_TABLES=n
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
-    tags: kernel interrupt isr_table
     build_only: true
   arch.interrupt.gen_isr_table.arc:
     arch_allow: arc
@@ -36,16 +33,13 @@ tests:
     extra_configs:
       - CONFIG_ARC_FIRQ_STACK=y
       - CONFIG_TEST_HW_STACK_PROTECTION=n
-    tags: kernel interrupt isr_table
   arch.interrupt.gen_isr_table.riscv_direct:
     platform_exclude: m2gl025_miv
     filter: CONFIG_RISCV and CONFIG_SOC_FAMILY_RISCV_PRIVILEGE
-    tags: kernel interrupt isr_table
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=y
   arch.interrupt.gen_isr_table.riscv_no_direct:
     platform_exclude: m2gl025_miv
     filter: CONFIG_RISCV and CONFIG_SOC_FAMILY_RISCV_PRIVILEGE
-    tags: kernel interrupt isr_table
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=n

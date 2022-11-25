@@ -720,6 +720,9 @@ static int ecust_rd_req(const struct device *dev,
 	case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY:
 		*data = (uint32_t)ec_host_cmd_sram;
 		break;
+	case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY_SIZE:
+		*data = CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE;
+		break;
 #endif
 	default:
 		return -EINVAL;

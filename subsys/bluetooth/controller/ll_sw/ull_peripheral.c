@@ -60,9 +60,6 @@
 #include "ull_llcp.h"
 #endif
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_periph
-#include "common/log.h"
 #include "hal/debug.h"
 
 static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
@@ -219,9 +216,17 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	ull_cp_prt_reload_set(conn, conn_interval_us);
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	uint16_t conn_accept_timeout;
+
+	(void)ll_conn_iso_accept_timeout_get(&conn_accept_timeout);
+	conn->connect_accept_to = conn_accept_timeout * 625U;
+#else
 	conn->connect_accept_to = DEFAULT_CONNECTION_ACCEPT_TIMEOUT_US;
-#endif /* !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* APTO in no. of connection events */
 	conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),

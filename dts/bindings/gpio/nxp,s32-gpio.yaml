@@ -14,6 +14,12 @@ properties:
     reg-names:
       required: true
 
+    interrupts:
+      description: |
+        For GPIO ports that have pins can be used for processing
+        external interrupt signal, this is a list of GPIO pins and
+        respective external interrupt lines (<gpio-pin eirq-line>).
+
     "#gpio-cells":
       const: 2
 

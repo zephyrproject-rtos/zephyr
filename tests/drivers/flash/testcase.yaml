@@ -61,3 +61,11 @@ tests:
              dt_compat_enabled("st,stm32h7-flash-controller")) and
        dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     tags: drivers flash
+  drivers.flash.mx25r_high_perf:
+    platform_allow: nrf52840dk_nrf52840
+    tags: flash nrf52 mx25r_hp
+    extra_args:
+      OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
+      DTC_OVERLAY_FILE=boards/nrf52840dk_mx25r_high_perf.overlay
+    integration_platforms:
+      - nrf52840dk_nrf52840

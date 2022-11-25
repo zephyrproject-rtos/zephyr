@@ -133,6 +133,11 @@ enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
 #define net_gptp_recv(iface, pkt) NET_DROP
 #endif /* CONFIG_NET_GPTP */
 
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
+				 uint16_t pkt_len, uint16_t mtu);
+#endif
+
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 uint16_t pkt_len);

@@ -492,6 +492,9 @@ struct lwm2m_message {
 	/** Message transmission handling for TYPE_CON */
 	struct coap_pending *pending;
 	struct coap_reply *reply;
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	struct lwm2m_cache_read_info *cache_info;
+#endif
 
 	/** Message configuration */
 	uint8_t *token;

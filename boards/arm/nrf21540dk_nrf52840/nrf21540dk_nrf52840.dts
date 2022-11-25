@@ -120,6 +120,7 @@
 		ant-sel-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 		mode-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		spi-if = <&nrf_radio_fem_spi>;
+		supply-voltage-mv = <3000>;
 	};
 
 	/* These aliases are provided for compatibility with samples */

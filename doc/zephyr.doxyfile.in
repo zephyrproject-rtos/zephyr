@@ -2353,7 +2353,6 @@ PREDEFINED             = __DOXYGEN__ \
                          __attribute__(x)= \
                          __syscall= \
                          __must_check= \
-                         DT_DOXYGEN \
                          "ATOMIC_DEFINE(x, y)=atomic_t x[ATOMIC_BITMAP_SIZE(y)]"
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this

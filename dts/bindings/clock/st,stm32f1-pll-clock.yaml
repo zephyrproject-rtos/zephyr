@@ -36,12 +36,10 @@ properties:
 
     xtpre:
       type: boolean
-      required: false
       description: |
           Otpional HSE divider for PLL entry
 
     usbpre:
       type: int
-      required: false
       description: |
           Otpional HSE divider for PLL entry

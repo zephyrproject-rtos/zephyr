@@ -29,6 +29,11 @@ tests:
     extra_args: CONFIG_BT_PRIVACY=n
     platform_allow: native_posix
     tags: bluetooth
+  bluetooth.shell.log_defaults:
+    build_only: true
+    platform_allow: native_posix
+    extra_args: CONF_FILE="log.conf"
+    tags: bluetooth
 
 # Bluetooth Audio Compile validation tests
   bluetooth.shell.audio:
@@ -190,6 +195,18 @@ tests:
     extra_configs:
       - CONFIG_BT_AUDIO_UNICAST_SERVER=n
       - CONFIG_BT_HAS=n
+  bluetooth.audio_shell.no_ase_snk:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
+  bluetooth.audio_shell.no_ase_src:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
   bluetooth.audio_shell.no_broadcast_source:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -246,7 +263,6 @@ tests:
     build_only: true
     platform_allow: native_posix
     extra_configs:
-      - CONFIG_BT_CAP_ACCEPTOR=n
       - CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER=n
   bluetooth.audio_shell.no_cap_initiator:
     extra_args: CONF_FILE="audio.conf"

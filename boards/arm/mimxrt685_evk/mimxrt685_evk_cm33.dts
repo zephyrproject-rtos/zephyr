@@ -36,7 +36,7 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &flexspi;
+		zephyr,flash-controller = &mx25um51345g;
 		zephyr,flash = &mx25um51345g;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sram0;
@@ -230,7 +230,7 @@ i2s1: &flexcomm3 {
 
 	pca9420: pca9420@61 {
 		reg = <0x61>;
-		compatible = "regulator-pmic";
+		compatible = "nxp,pca9420";
 		/*
 		 * This mode-reg setting will permit mode control by
 		 * pins, a feature of the PCA9240. If mode control via

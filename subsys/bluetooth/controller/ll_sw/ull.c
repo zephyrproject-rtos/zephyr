@@ -81,9 +81,6 @@
 #include "ll_test.h"
 #include "ll_settings.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull
-#include "common/log.h"
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -209,9 +206,10 @@
  */
 #if defined(CONFIG_BT_MAX_CONN)
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
-#define BT_CTLR_MAX_CONNECTABLE 2
+#define BT_CTLR_MAX_CONNECTABLE (1U + MIN(((CONFIG_BT_MAX_CONN) - 1U), \
+					  (BT_CTLR_ADV_SET)))
 #else
-#define BT_CTLR_MAX_CONNECTABLE 1
+#define BT_CTLR_MAX_CONNECTABLE MAX(1U, (BT_CTLR_ADV_SET))
 #endif
 #define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
 #else
@@ -406,11 +404,14 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define PDU_DATA_SIZE MAX((PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX), \
 			  (PDU_BIS_LL_HEADER_SIZE + LL_BIS_OCTETS_RX_MAX))
 
+#define PDU_CTRL_SIZE (PDU_DC_LL_HEADER_SIZE + PDU_DC_CTRL_RX_SIZE_MAX)
+
 #define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
 
 #define PDU_RX_NODE_POOL_ELEMENT_SIZE MROUND(NODE_RX_HEADER_SIZE + \
 					     MAX(MAX(PDU_ADV_SIZE, \
-						     PDU_DATA_SIZE), \
+						     MAX(PDU_DATA_SIZE, \
+							 PDU_CTRL_SIZE)), \
 						 PDU_RX_USER_PDU_OCTETS_MAX))
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SET)
@@ -1179,9 +1180,19 @@ void ll_rx_dequeue(void)
 				aux = HDR_LLL2ULL(lll->aux);
 				aux->is_started = 0U;
 			}
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+			/* If Extended Advertising Commands used, reset
+			 * is_enabled when advertising set terminated event is
+			 * dequeued. Otherwise, legacy advertising commands used
+			 * then reset is_enabled here.
+			 */
+			if (!lll->node_rx_adv_term) {
+				adv->is_enabled = 0U;
+			}
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 			adv->is_enabled = 0U;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 #else /* !CONFIG_BT_PERIPHERAL */
 			ARG_UNUSED(cc);
 #endif /* !CONFIG_BT_PERIPHERAL */
@@ -1304,6 +1315,10 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	case NODE_RX_TYPE_CIS_REQUEST:
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE:
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	case NODE_RX_TYPE_CIS_ESTABLISHED:
@@ -1502,6 +1517,10 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_CIS_ESTABLISHED:
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+		case NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE:
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 		case NODE_RX_TYPE_ISO_PDU:
