@@ -452,9 +452,51 @@ static void shell_tcp_upload_print_stats(const struct shell *sh,
 	}
 }
 
+static void udp_upload_cb(enum zperf_status status,
+			  struct zperf_results *result,
+			  void *user_data)
+{
+	const struct shell *sh = user_data;
+
+	switch (status) {
+	case ZPERF_SESSION_STARTED:
+		break;
+
+	case ZPERF_SESSION_FINISHED: {
+		shell_udp_upload_print_stats(sh, result);
+		break;
+	}
+
+	case ZPERF_SESSION_ERROR:
+		shell_fprintf(sh, SHELL_ERROR, "UDP upload failed\n");
+		break;
+	}
+}
+
+static void tcp_upload_cb(enum zperf_status status,
+			  struct zperf_results *result,
+			  void *user_data)
+{
+	const struct shell *sh = user_data;
+
+	switch (status) {
+	case ZPERF_SESSION_STARTED:
+		break;
+
+	case ZPERF_SESSION_FINISHED: {
+		shell_tcp_upload_print_stats(sh, result);
+		break;
+	}
+
+	case ZPERF_SESSION_ERROR:
+		shell_fprintf(sh, SHELL_ERROR, "TCP upload failed\n");
+		break;
+	}
+}
+
 static int execute_upload(const struct shell *sh,
 			  const struct zperf_upload_params *param,
-			  bool is_udp)
+			  bool is_udp, bool async)
 {
 	struct zperf_results results = { 0 };
 	int ret;
@@ -498,14 +540,24 @@ static int execute_upload(const struct shell *sh,
 				      (unsigned int)packet_duration);
 		}
 
-		ret = zperf_udp_upload(param, &results);
-		if (ret < 0) {
-			shell_fprintf(sh, SHELL_ERROR,
-				      "UDP upload failed (%d)\n", ret);
-			return ret;
-		}
+		if (async) {
+			ret = zperf_udp_upload_async(param, udp_upload_cb,
+						     (void *)sh);
+			if (ret < 0) {
+				shell_fprintf(sh, SHELL_ERROR,
+					"Failed to start UDP async upload (%d)\n", ret);
+				return ret;
+			}
+		} else {
+			ret = zperf_udp_upload(param, &results);
+			if (ret < 0) {
+				shell_fprintf(sh, SHELL_ERROR,
+					"UDP upload failed (%d)\n", ret);
+				return ret;
+			}
 
-		shell_udp_upload_print_stats(sh, &results);
+			shell_udp_upload_print_stats(sh, &results);
+		}
 	} else {
 		if (!IS_ENABLED(CONFIG_NET_UDP)) {
 			shell_fprintf(sh, SHELL_INFO,
@@ -514,14 +566,24 @@ static int execute_upload(const struct shell *sh,
 	}
 
 	if (!is_udp && IS_ENABLED(CONFIG_NET_TCP)) {
-		ret = zperf_tcp_upload(param, &results);
-		if (ret < 0) {
-			shell_fprintf(sh, SHELL_ERROR,
-				      "TCP upload failed (%d)\n", ret);
-			return ret;
-		}
+		if (async) {
+			ret = zperf_tcp_upload_async(param, tcp_upload_cb,
+						     (void *)sh);
+			if (ret < 0) {
+				shell_fprintf(sh, SHELL_ERROR,
+					"Failed to start TCP async upload (%d)\n", ret);
+				return ret;
+			}
+		} else {
+			ret = zperf_tcp_upload(param, &results);
+			if (ret < 0) {
+				shell_fprintf(sh, SHELL_ERROR,
+					"TCP upload failed (%d)\n", ret);
+				return ret;
+			}
 
-		shell_tcp_upload_print_stats(sh, &results);
+			shell_tcp_upload_print_stats(sh, &results);
+		}
 	} else {
 		if (!IS_ENABLED(CONFIG_NET_TCP)) {
 			shell_fprintf(sh, SHELL_INFO,
@@ -568,6 +630,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	struct sockaddr_in6 ipv6 = { .sin6_family = AF_INET6 };
 	struct sockaddr_in ipv4 = { .sin_family = AF_INET };
 	char *port_str;
+	bool async = false;
 	bool is_udp;
 	int start = 0;
 	size_t opt_cnt = 0;
@@ -591,15 +654,19 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			}
 
 			param.options.tos = tos;
-
+			opt_cnt += 2;
 			break;
+
+		case 'a':
+			async = true;
+			opt_cnt += 1;
+			break;
+
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unrecognized argument: %s\n", argv[i]);
 			return -ENOEXEC;
 		}
-
-		opt_cnt += 2;
 	}
 
 	start += opt_cnt;
@@ -707,7 +774,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 		param.rate_kbps = 10U;
 	}
 
-	return execute_upload(sh, &param, is_udp);
+	return execute_upload(sh, &param, is_udp, async);
 }
 
 static int cmd_tcp_upload(const struct shell *sh, size_t argc, char *argv[])
@@ -730,6 +797,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 	struct zperf_upload_params param = { 0 };
 	sa_family_t family;
 	uint8_t is_udp;
+	bool async = false;
 	int start = 0;
 	size_t opt_cnt = 0;
 
@@ -752,15 +820,19 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			}
 
 			param.options.tos = tos;
-
+			opt_cnt += 2;
 			break;
+
+		case 'a':
+			async = true;
+			opt_cnt += 1;
+			break;
+
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unrecognized argument: %s\n", argv[i]);
 			return -ENOEXEC;
 		}
-
-		opt_cnt += 2;
 	}
 
 	start += opt_cnt;
@@ -833,7 +905,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 		param.rate_kbps = 10U;
 	}
 
-	return execute_upload(sh, &param, is_udp);
+	return execute_upload(sh, &param, is_udp, async);
 }
 
 static int cmd_tcp_upload2(const struct shell *sh, size_t argc,
@@ -1008,22 +1080,28 @@ static void zperf_init(const struct shell *sh)
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 	SHELL_CMD(upload, NULL,
 		  "[<options>] <dest ip> <dest port> <duration> <packet size>[K]\n"
-		  "<options>     command options (optional): [-S tos]\n"
+		  "<options>     command options (optional): [-S tos -a]\n"
 		  "<dest ip>     IP destination\n"
 		  "<dest port>   port destination\n"
 		  "<duration>    of the test in seconds\n"
 		  "<packet size> Size of the packet in byte or kilobyte "
 							"(with suffix K)\n"
+		  "Available options:\n"
+		  "-S tos: Specify IPv4/6 type of service\n"
+		  "-a: Asynchronous call (shell will not block for the upload)\n"
 		  "Example: tcp upload 192.0.2.2 1111 1 1K\n"
 		  "Example: tcp upload 2001:db8::2\n",
 		  cmd_tcp_upload),
 	SHELL_CMD(upload2, NULL,
 		  "[<options>] v6|v4 <duration> <packet size>[K] <baud rate>[K|M]\n"
-		  "<options>     command options (optional): [-S tos]\n"
+		  "<options>     command options (optional): [-S tos -a]\n"
 		  "<v6|v4>:      Use either IPv6 or IPv4\n"
 		  "<duration>    Duration of the test in seconds\n"
 		  "<packet size> Size of the packet in byte or kilobyte "
 							"(with suffix K)\n"
+		  "Available options:\n"
+		  "-S tos: Specify IPv4/6 type of service\n"
+		  "-a: Asynchronous call (shell will not block for the upload)\n"
 		  "Example: tcp upload2 v6 1 1K\n"
 		  "Example: tcp upload2 v4\n"
 #if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR_SET)
@@ -1047,24 +1125,30 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 	SHELL_CMD(upload, NULL,
 		  "[<options>] <dest ip> [<dest port> <duration> <packet size>[K] "
 							"<baud rate>[K|M]]\n"
-		  "<options>     command options (optional): [-S tos]\n"
+		  "<options>     command options (optional): [-S tos -a]\n"
 		  "<dest ip>     IP destination\n"
 		  "<dest port>   port destination\n"
 		  "<duration>    of the test in seconds\n"
 		  "<packet size> Size of the packet in byte or kilobyte "
 							"(with suffix K)\n"
 		  "<baud rate>   Baudrate in kilobyte or megabyte\n"
+		  "Available options:\n"
+		  "-S tos: Specify IPv4/6 type of service\n"
+		  "-a: Asynchronous call (shell will not block for the upload)\n"
 		  "Example: udp upload 192.0.2.2 1111 1 1K 1M\n"
 		  "Example: udp upload 2001:db8::2\n",
 		  cmd_udp_upload),
 	SHELL_CMD(upload2, NULL,
 		  "[<options>] v6|v4 [<duration> <packet size>[K] <baud rate>[K|M]]\n"
-		  "<options>     command options (optional): [-S tos]\n"
+		  "<options>     command options (optional): [-S tos -a]\n"
 		  "<v6|v4>:      Use either IPv6 or IPv4\n"
 		  "<duration>    Duration of the test in seconds\n"
 		  "<packet size> Size of the packet in byte or kilobyte "
 							"(with suffix K)\n"
 		  "<baud rate>   Baudrate in kilobyte or megabyte\n"
+		  "Available options:\n"
+		  "-S tos: Specify IPv4/6 type of service\n"
+		  "-a: Asynchronous call (shell will not block for the upload)\n"
 		  "Example: udp upload2 v4 1 1K 1M\n"
 		  "Example: udp upload2 v6\n"
 #if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR_SET)
