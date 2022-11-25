@@ -17,8 +17,6 @@
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 
-#include <mgmt/mcumgr/grp/stat_mgmt/stat_mgmt_config.h>
-
 static struct mgmt_handler stat_mgmt_handlers[];
 
 typedef int stat_mgmt_foreach_entry_fn(zcbor_state_t *zse, struct stat_mgmt_entry *entry);
@@ -120,7 +118,7 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 	struct zcbor_string value = { 0 };
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
-	char stat_name[STAT_MGMT_MAX_NAME_LEN];
+	char stat_name[CONFIG_STAT_MGMT_MAX_NAME_LEN];
 	bool ok;
 	size_t counter = 0;
 
