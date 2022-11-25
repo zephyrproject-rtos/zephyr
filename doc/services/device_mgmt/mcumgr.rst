@@ -118,7 +118,8 @@ transport expects a different set of key/value options:
          :widths: 10 60
 
          * - ``addr``
-           - can be a DNS name (if it can be resolved to the device IP), IPv4 addr (app must be built with :kconfig:option:`CONFIG_MCUMGR_SMP_UDP_IPV4`), or IPv6 addr (app must be built with :kconfig:option:`CONFIG_MCUMGR_SMP_UDP_IPV6`)
+           - can be a DNS name (if it can be resolved to the device IP), IPv4 addr (app must be
+             built with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_IPV4`), or IPv6 addr (app must be built with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_IPV6`)
          * - ``port``
            - any valid UDP port.
 
@@ -181,28 +182,28 @@ on Zephyr. The ones that are supported are described in the following table:
    * - ``echo``
      - Send data to a device and display the echoed back data. This command is
        part of the ``OS`` group, which must be enabled by setting
-       :kconfig:option:`CONFIG_MCUMGR_CMD_OS_MGMT`. The ``echo`` command itself can be
-       enabled by setting :kconfig:option:`CONFIG_OS_MGMT_ECHO`.
+       :kconfig:option:`CONFIG_MCUMGR_GRP_OS`. The ``echo`` command itself can be
+       enabled by setting :kconfig:option:`CONFIG_MCUMGR_GRP_OS_ECHO`.
    * - ``fs``
      - Access files on a device. More info in :ref:`fs_mgmt`.
    * - ``image``
      - Manage images on a device. More info in :ref:`image_mgmt`.
    * - ``reset``
      - Perform a soft reset of a device. This command is part of the ``OS``
-       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_CMD_OS_MGMT`.
+       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_GRP_OS`.
        The ``reset`` command itself is always enabled and the time taken for a
-       reset to happen can be set with :kconfig:option:`CONFIG_OS_MGMT_RESET_MS` (in ms).
+       reset to happen can be set with :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_MS` (in ms).
    * - ``shell``
      - Execute a command in the remote shell. This option is disabled by default
-       and can be enabled with :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT` = ``y``.
+       and can be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_SHELL` = ``y``.
        To know more about the shell in Zephyr check :ref:`shell_api`.
    * - ``stat``
      - Read statistics from a device. More info in :ref:`stats_mgmt`.
    * - ``taskstat``
      - Read task statistics from a device. This command is part of the ``OS``
-       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_CMD_OS_MGMT`.
+       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_GRP_OS`.
        The ``taskstat`` command itself can be enabled by setting
-       :kconfig:option:`CONFIG_OS_MGMT_TASKSTAT`. :kconfig:option:`CONFIG_THREAD_MONITOR` also
+       :kconfig:option:`CONFIG_MCUMGR_GRP_OS_TASKSTAT`. :kconfig:option:`CONFIG_THREAD_MONITOR` also
        needs to be enabled otherwise a ``-8`` (``MGMT_ERR_ENOTSUP``) will be
        returned.
 
@@ -211,7 +212,7 @@ on Zephyr. The ones that are supported are described in the following table:
     ``taskstat`` has a few options that might require tweaking. The
     :kconfig:option:`CONFIG_THREAD_NAME` must be set to display the task names, otherwise
     the priority is displayed. Since the ``taskstat`` packets are large, they
-    might need increasing the :kconfig:option:`CONFIG_MCUMGR_BUF_SIZE` option.
+    might need increasing the :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE` option.
 
 .. warning::
 
@@ -404,7 +405,7 @@ directly upgraded to.
 
 .. tip::
 
-    Building with :kconfig:option:`CONFIG_IMG_MGMT_VERBOSE_ERR` enables better error
+    Building with :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR` enables better error
     messages when failures happen (but increases the application size).
 
 .. _stats_mgmt:
@@ -457,7 +458,7 @@ declaration step::
 
 .. tip::
 
-   :kconfig:option:`CONFIG_STAT_MGMT_MAX_NAME_LEN` sets the maximum length of a section
+   :kconfig:option:`CONFIG_MCUMGR_GRP_STAT_MAX_NAME_LEN` sets the maximum length of a section
    name that can can be accepted as parameter for showing the section data, and
    might require tweaking for long section names.
 
@@ -505,7 +506,7 @@ Filesystem Management
 
 The filesystem module is disabled by default due to security concerns:
 because of a lack of access control every file in the FS will be accessible,
-including secrets, etc. To enable it :kconfig:option:`CONFIG_MCUMGR_CMD_FS_MGMT` must
+including secrets, etc. To enable it :kconfig:option:`CONFIG_MCUMGR_GRP_FS` must
 be set (``y``). Once enabled the following sub-commands can be used::
 
   mcumgr <connection-options> fs download <remote-file> <local-file>
@@ -552,12 +553,12 @@ Where ``0`` is the return code, and ``9`` is the size of the file.
    required for correct behavior.
 
 The size of the stack allocated buffer used to store the blocks, while transferring
-a file can be adjusted with :kconfig:option:`CONFIG_FS_MGMT_DL_CHUNK_SIZE`; this allows
+a file can be adjusted with :kconfig:option:`CONFIG_MCUMGR_GRP_FS_DL_CHUNK_SIZE`; this allows
 saving RAM resources.
 
 .. tip::
 
-   :kconfig:option:`CONFIG_FS_MGMT_PATH_SIZE` sets the maximum PATH accepted for a file
+   :kconfig:option:`CONFIG_MCUMGR_GRP_FS_PATH_LEN` sets the maximum PATH accepted for a file
    name. It might require tweaking for longer file names.
 
 Bootloader Integration

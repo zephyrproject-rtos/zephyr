@@ -97,7 +97,7 @@ Events can be selected by enabling their corresponding Kconfig option:
     :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_STARTED`,
     :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_PENDING`,
     :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED`)
- - :kconfig:option:`CONFIG_MCUMGR_GRP_OS_OS_RESET_HOOK`
+ - :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_HOOK`
     os_mgmt reset check (:c:enum:`MGMT_EVT_OP_OS_MGMT_RESET`)
 
 Actions
