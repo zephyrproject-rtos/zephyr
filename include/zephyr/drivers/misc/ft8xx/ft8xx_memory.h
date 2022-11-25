@@ -394,33 +394,33 @@ enum BT81x_register_address_t {
 
 struct ft8xx_memory_map_t
 {
-	uint32_t RAM_G,
-	uint32_t RAM_G_END,
-	uint32_t ROM_CHIPID,    
-	uint32_t ROM_FONT,      
-	uint32_t ROM_FONT_ADDR, 
-	uint32_t RAM_DL,        
-	uint32_t RAM_PAL,      // not present on ft81x 
-	uint32_t REG,           
-	uint32_t RAM_CMD,        
-	uint32_t RAM_ERR_REPORT,  // bt817/8 
-	uint32_t RAM_JTBOOT,	// bt817/8
-	uint32_t FLASH,       // bt81x external NOR Flash Ram
-	uint32_t FLASH_MAX,   // bt81x maximum external NOR Flash Ram
+	uint32_t RAM_G;
+	uint32_t RAM_G_END;
+	uint32_t ROM_CHIPID;    
+	uint32_t ROM_FONT;      
+	uint32_t ROM_FONT_ADDR; 
+	uint32_t RAM_DL;        
+	uint32_t RAM_PAL;      // not present on ft81x 
+	uint32_t REG;           
+	uint32_t RAM_CMD;        
+	uint32_t RAM_ERR_REPORT;  // bt817/8 
+	uint32_t RAM_JTBOOT;	// bt817/8
+	uint32_t FLASH;       // bt81x external NOR Flash Ram
+	uint32_t FLASH_MAX;   // bt81x maximum external NOR Flash Ram
 
-}
+};
 
 const static struct ft8xx_memory_map_t ft800_memory_map = 
 {
-	.RAM_G 				= FT800_RAM_G,
-	.RAM_G_END 			= FT800_RAM_G_END,
-	.ROM_CHIPID 		= FT800_ROM_CHIPID,    
-	.ROM_FONT			= FT800_ROM_FONT,      
-	.ROM_FONT_ADDR 		= FT800_ROM_FONT_ADDR, 
-	.RAM_DL 			= FT800_RAM_DL,        
-	.RAM_PAL 			= FT800_RAM_PAL, 
-	.REG 				= FT800_REG,           
-	.RAM_CMD 			= FT800_RAM_CMD, 
+	.RAM_G 				= FT800_RAM_G;
+	.RAM_G_END 			= FT800_RAM_G_END;
+	.ROM_CHIPID 		= FT800_ROM_CHIPID;    
+	.ROM_FONT			= FT800_ROM_FONT;      
+	.ROM_FONT_ADDR 		= FT800_ROM_FONT_ADDR; 
+	.RAM_DL 			= FT800_RAM_DL;        
+	.RAM_PAL 			= FT800_RAM_PAL; 
+	.REG 				= FT800_REG;           
+	.RAM_CMD 			= FT800_RAM_CMD; 
 	.RAM_ERR_REPORT		= 0, //not present on ft800
 	.RAM_JTBOOT			= 0, //not present on ft800
 	.FLASH				= 0, //not present on ft800 
@@ -563,6 +563,7 @@ struct ft8xx_register_address_map_t
 	uint32_t REG_TRACKER4,
 	uint32_t REG_MEDIAFIFO_READ,
 	uint32_t REG_MEDIAFIFO_WRITE,
+	uint32_t REG_FLASH_SIZE,
 	uint32_t REG_PLAY_CONTROL,
 	uint32_t REG_ANIM_ACTIVE,
 	uint32_t REG_COPRO_PATCH_PTR,	
@@ -670,6 +671,7 @@ const static struct ft8xx_register_address_map_t ft800_register_address_map
 	.REG_TRACKER4   			= 0, // not present on ft800
 	.REG_MEDIAFIFO_READ     	= 0, // not present on ft800
 	.REG_MEDIAFIFO_WRITE 		= 0, // not present on ft800
+	.REG_FLASH_SIZE 			= 0, // not present on ft800
 	.REG_PLAY_CONTROL 			= 0, // not present on ft800
 	.REG_ANIM_ACTIVE			= 0, // not present on ft800
 	.REG_COPRO_PATCH_PTR		= 0, // not present on ft800
@@ -778,10 +780,11 @@ const static struct ft8xx_register_address_map_t ft81X_register_address_map
 	.REG_TRACKER4   			= FT81x_REG_TRACKER4,
 	.REG_MEDIAFIFO_READ     	= FT81x_REG_MEDIAFIFO_READ,
 	.REG_MEDIAFIFO_WRITE 		= FT81x_REG_MEDIAFIFO_WRITE,
+	.REG_FLASH_SIZE 			= 0, // not present on ft81x
 	.REG_PLAY_CONTROL 			= 0, // not present on ft81x
 	.REG_ANIM_ACTIVE			= 0, // not present on ft81x
 	.REG_COPRO_PATCH_PTR		= 0, // not present on ft81x	
-}
+};
 
 const static struct ft8xx_register_address_map_t bt81X_register_address_map
 {  
@@ -885,10 +888,11 @@ const static struct ft8xx_register_address_map_t bt81X_register_address_map
 	.REG_TRACKER4   			= BT81X_REG_TRACKER4,
 	.REG_MEDIAFIFO_READ     	= BT81X_REG_MEDIAFIFO_READ,
 	.REG_MEDIAFIFO_WRITE 		= BT81X_REG_MEDIAFIFO_WRITE,
+	.REG_FLASH_SIZE 			= BT81x_REG_REG_FLASH_SIZE,
 	.REG_PLAY_CONTROL 			= BT81X_REG_PLAY_CONTROL,
 	.REG_ANIM_ACTIVE			= BT81X_REG_ANIM_ACTIVE,
 	.REG_COPRO_PATCH_PTR		= BT81X_REG_COPRO_PATCH_PTR,	
-}
+};
 
 
 

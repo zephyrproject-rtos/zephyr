@@ -33,122 +33,134 @@ LOG_MODULE_REGISTER(ft8xx, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define FT8XX_EXPECTED_ID 0x7C
 
+enum FT8XX_FLASH_STATUS
+{
+	FLASH_STATUS_INIT 		= 0x00, 
+	FLASH_STATUS_DETACHED	= 0x01,
+	FLASH_STATUS_BASIC		= 0x02,
+	FLASH_STATUS_FULL		= 0x03,
+}
 
+static const struct ft8xx_api api {
 
+    .ft8xx_calibrate 		= ft8xx_calibrate, 
+    .ft8xx_get_transform 	= ft8xx_touch_transform_get,
+    .ft8xx_set_transform 	= ft8xx_touch_transform_set,
+	.ft8xx_get_touch_tag	= ft8xx_get_touch_tag,
+	.ft8xx_register_int		= ft8xx_register_int,
+    .ft8xx_host_command		= ft8xx_host_command,
+    .ft8xx_command			= ft8xx_command,
 
-struct ft8xx_config {
-	uint16_t vsize;
-	uint16_t voffset;
-	uint16_t vcycle;
-	uint16_t vsync0;
-	uint16_t vsync1;
-	uint16_t hsize;
-	uint16_t hoffset;
-	uint16_t hcycle;
-	uint16_t hsync0;
-	uint16_t hsync1;
-	uint8_t pclk;
-	uint8_t pclk_pol :1;
-	uint8_t cspread  :1;
-	uint8_t swizzle  :4;
-	
-	uint32_t chip_id;
-	uint32_t chip_type;
+	.ft8xx_audio_load			= ,
+	.ft8xx_audio_play			= ,
+	.ft8xx_audio_get_status		= ,
+	.ft8xx_audio_stop			= ,
 
+	.ft8xx_audio_synth_start		= ,
+	.ft8xx_audio_synth_get_status	= ,
+	.ft8xx_audio_synth_stop 		= ,
 
-	union ft8xx_bus bus;
-	const struct ft8xx_bus_io *bus_io;
+	.ft8xx_copro_cmd_apilevel 		= ,
+	.ft8xx_copro_cmd_dlstart		= , 
+	.ft8xx_copro_cmd_interrupt 		= ,
+	.ft8xx_copro_cmd_coldstart		= ,
+	.ft8xx_copro_cmd_swap 			= ,
+	.ft8xx_copro_cmd_append			= ,
+	.ft8xx_copro_cmd_regread		= ,
+	.ft8xx_copro_cmd_memwrite		= ,
+	.ft8xx_copro_cmd_inflate		= ,
+	.ft8xx_copro_cmd_inflate2		= ,
+	.ft8xx_copro_cmd_loadimage		= ,
+	.ft8xx_copro_cmd_mediafifo		= ,
+	.ft8xx_copro_cmd_playvideo		= ,
+	.ft8xx_copro_cmd_videostart		= ,
+	.ft8xx_copro_cmd_videoframe		= ,
+	.ft8xx_copro_cmd_memcrc			= ,
+	.ft8xx_copro_cmd_memzero		= ,
+	.ft8xx_copro_cmd_memset			= ,
+	.ft8xx_copro_cmd_memcpy			= ,
+	.ft8xx_copro_cmd_button			= ,
+	.ft8xx_copro_cmd_clock			= ,
+	.ft8xx_copro_cmd_fgcolor		= ,
+	.ft8xx_copro_cmd_bgcolor		= ,
+	.ft8xx_copro_cmd_gradcolor		= ,
+	.ft8xx_copro_cmd_gauge			= ,
+	.ft8xx_copro_cmd_gradient		= ,
+	.ft8xx_copro_cmd_gradienta		= ,
+	.ft8xx_copro_cmd_keys			= ,
+	.ft8xx_copro_cmd_progress		= ,
+	.ft8xx_copro_cmd_scrollbar		= ,
+	.ft8xx_copro_cmd_slider			= ,
+	.ft8xx_copro_cmd_dial			= ,
+	.ft8xx_copro_cmd_toggle			= ,
+	.ft8xx_copro_cmd_fillwidth		= ,
+	.ft8xx_copro_cmd_text			= ,
+	.ft8xx_copro_cmd_setbase
+	.ft8xx_copro_cmd_number			= ,
+	.ft8xx_copro_cmd_loadidentity	= ,
+	.ft8xx_copro_cmd_setmatrix		= ,
+	.ft8xx_copro_cmd_getmatrix		= ,
+	.ft8xx_copro_cmd_getptr			= ,
+	.ft8xx_copro_cmd_getprops		= ,
+	.ft8xx_copro_cmd_scale			= ,
+	.ft8xx_copro_cmd_rotate			= ,
+	.ft8xx_copro_cmd_rotatearound	= ,
+	.ft8xx_copro_cmd_translate		= ,
+	.ft8xx_copro_cmd_calibrate		= ,
+	.ft8xx_copro_cmd_calibratesub	= ,
+	.ft8xx_copro_cmd_setrotate		= ,
+	.ft8xx_copro_cmd_spinner		= ,
+	.ft8xx_copro_cmd_screensaver	= ,
+	.ft8xx_copro_cmd_sketch			= ,
+	.ft8xx_copro_cmd_stop			= ,
+	.ft8xx_copro_cmd_setfont		= ,
+	.ft8xx_copro_cmd_setfont2		= ,
+	.ft8xx_copro_cmd_setscratch		= ,
+	.ft8xx_copro_cmd_romfont		= ,
+	.ft8xx_copro_cmd_resetfonts		= ,
+	.ft8xx_copro_cmd_track			= ,
+	.ft8xx_copro_cmd_snapshot		= ,
+	.ft8xx_copro_cmd_snapshot2		= ,
+	.ft8xx_copro_cmd_setbitmap		= ,
+	.ft8xx_copro_cmd_logo			= ,
 
-	struct gpio_dt_spec irq_gpio;
-};
+    .ft8xx_copro_cmd_flasherase		= ,
+    .ft8xx_copro_cmd_flashwrite		= ,
+    .ft8xx_copro_cmd_flashprogram	= ,
+    .ft8xx_copro_cmd_flashread		= ,
+    .ft8xx_copro_cmd_appendf		= ,
+    .ft8xx_copro_cmd_flashupdate	= ,
+    .ft8xx_copro_cmd_flashdetach	= ,
+    .ft8xx_copro_cmd_flashattach	= ,
+    .ft8xx_copro_cmd_flashfast		= ,
+    .ft8xx_copro_cmd_flashspidesel	= ,
+    .ft8xx_copro_cmd_flashtx		= ,
+    .ft8xx_copro_cmd_flashrx		= ,
+    .ft8xx_copro_cmd_clearcache		= ,
 
-struct ft8xx_data {
-//	const struct ft8xx_config *config;
-	ft8xx_int_callback irq_callback;
-	uint chip_id;
-	uint chip_type;
-	struct ft8xx_memory_map_t *memory_map;
-	struct ft8xx_register_address_map_t *register_map;
+	.ft8xx_copro_cmd_flashsource	= ,
+    .ft8xx_copro_cmd_videostartf	= ,
+    .ft8xx_copro_cmd_animstart		= ,
+    .ft8xx_copro_cmd_animstop		= ,
+    .ft8xx_copro_cmd_animxy			= ,
+    .ft8xx_copro_cmd_animdraw		= ,
+    .ft8xx_copro_cmd_animframe		= ,
+    .ft8xx_copro_cmd_animframeram	= ,
 
-	struct ft8xx_touch_transform *ctrform;
+    .ft8xx_copro_cmd_sync				= ,
+    .ft8xx_copro_cmd_bitmap_transform	= ,
+    .ft8xx_copro_cmd_testcard			= ,
+    .ft8xx_copro_cmd_wait				= ,
+    .ft8xx_copro_cmd_newlist			= ,
+    .ft8xx_copro_cmd_endlist			= ,
+    .ft8xx_copro_cmd_calllist			= ,
+    .ft8xx_copro_cmd_return				= ,
+    .ft8xx_copro_cmd_fontcache			= ,  
+    .ft8xx_copro_cmd_fontcachequery		= ,
+	.ft8xx_copro_cmd_getimage			= ,
+    .ft8xx_copro_cmd_hsf				= ,
+    .ft8xx_copro_cmd_pclkfreq			= ,
 
-	static uint16_t reg_cmd_read;
-	static uint16_t reg_cmd_write;
-};
-
-static struct ft8xx_data ft8xx_data = {
-//	.config = &ft8xx_config,
-	.irq_callback = NULL,
-	.chip_id = 0,
-	.chip_type = 0,
-	.memory_map = NULL,
-	.register_map = NULL,
-	.ctrform = NULL,
-};
-
-static struct ft8xx_api {
-   
-    ft8xx_calibrate 		= ft8xx_calibrate, 
-    ft8xx_get_transform 	= ft8xx_touch_transform_get,
-    ft8xx_set_transform 	= ft8xx_touch_transform_set,
-	ft8xx_get_touch_tag		= ft8xx_get_touch_tag,
-	ft8xx_register_int		= ft8xx_register_int,
-    ft8xx_host_command		= ft8xx_host_command,
-    ft8xx_command			= ft8xx_command,
-
-	ft8xx_audio_load			= ,
-	ft8xx_audio_play			= ,
-	ft8xx_audio_get_status		= ,
-	ft8xx_audio_stop			= ,
-
-	ft8xx_audio_synth_start			= ,
-	ft8xx_audio_synth_get_status	= ,
-	ft8xx_audio_synth_stop 			= ,
-
-	ft8xx_copro_cmd_dlstart			= , 
-	ft8xx_copro_cmd_swap 			= ,
-	ft8xx_copro_cmd_coldstart		= ,
-	ft8xx_copro_cmd_interrupt		= ,
-	ft8xx_copro_cmd_append			= ,
-	ft8xx_copro_cmd_regread			= ,
-	ft8xx_copro_cmd_memwrite		= ,
-	ft8xx_copro_cmd_inflate			= ,
-	ft8xx_copro_cmd_loadimage		= ,
-	ft8xx_copro_cmd_memcrc			= ,
-	ft8xx_copro_cmd_memzero			= ,
-	ft8xx_copro_cmd_memset			= ,
-	ft8xx_copro_cmd_memcpy			= ,
-	ft8xx_copro_cmd_button			= ,
-	ft8xx_copro_cmd_clock			= ,
-	ft8xx_copro_cmd_fgcolor			= ,
-	ft8xx_copro_cmd_bgcolor			= ,
-	ft8xx_copro_cmd_gradcolor		= ,
-	ft8xx_copro_cmd_gauge			= ,
-	ft8xx_copro_cmd_gradient		= ,
-	ft8xx_copro_cmd_keys			= ,
-	ft8xx_copro_cmd_progress		= ,
-	ft8xx_copro_cmd_scrollbar		= ,
-	ft8xx_copro_cmd_slider			= ,
-	ft8xx_copro_cmd_dial			= ,
-	ft8xx_copro_cmd_toggle			= ,
-	ft8xx_copro_cmd_text			= ,
-	ft8xx_copro_cmd_number			= ,
-	ft8xx_copro_cmd_setmatrix		= ,
-	ft8xx_copro_cmd_getmatrix		= ,
-	ft8xx_copro_cmd_getptr			= ,
-	ft8xx_copro_cmd_getprops		= ,
-	ft8xx_copro_cmd_scale			= ,
-	ft8xx_copro_cmd_rotate			= ,
-	ft8xx_copro_cmd_translate		= ,
-	ft8xx_copro_cmd_calibrate		= ,
-	ft8xx_copro_cmd_spinner			= ,
-	ft8xx_copro_cmd_screensaver		= ,
-	ft8xx_copro_cmd_sketch			= ,
-	ft8xx_copro_cmd_stop			= ,
-	ft8xx_copro_cmd_setfont			= ,
-	ft8xx_copro_cmd_track			= ,
-	ft8xx_copro_cmd_snapshot		= ,
-	ft8xx_copro_cmd_logo			= ,
 
 };
 
@@ -203,7 +215,7 @@ static bool verify_chip(const struct device *dev)
 	const struct ft8xx_data *data = dev->data;
 	union ft8xx_bus *bus = config->bus;
 	
-	if (config->chip_id <> 0)
+	if (config->chip_id != 0)
 	{
 		// check custom chipID matches that in device memory
 		if (chipid != data->chip_id) 
@@ -291,41 +303,188 @@ static void set_spi_mode(const struct device *dev)
 }
 #endif
 
+static void load_driver_blob(const struct device *dev)
+{
+	const struct ft8xx_config *config = dev->config;
+	const struct ft8xx_data *data = dev->data;
+	union ft8xx_bus *bus = config->bus;
+
+	int ram_offset = 0;
+	int blob_size = 4096;
+	uint8_t *blob;
+	uint32_t blob_crc;
+
+	LOG_INFO("Loading Flash Fullspeed Driver")
+
+	ft8xx_copro_cmd_flashattach(dev);
+
+	while (FLASH_STATUS_BASIC != ft8xx_rd8(data->register_map->REG_FLASH_STATUS))
+	{
+		// k_sleep(K_MSEC(1));
+	}
+	// read blob
+
+
+	// load blob to ram
+	ft8xx_copro_cmd_memwrite(data->memory_map->RAM_G+ram_offset,blob_size,blob);
+
+	// check blob correct 
+	uint32_t result_crc= 0;
+	ft8xx_copro_cmd_memwrite(data->memory_map->RAM_G+ram_offset,blob_size,&result_crc);
+	if (result_crc != blob_crc) 
+	{
+		LOG_ERR("Blob CRC Check failed");
+	}
+
+	// copy blob from ram to flash (allways first flash block)
+	ft8xx_copro_cmd_flashupdate(0, (data->memory_map->RAM_G+ram_offset, blob_size);
+
+
+	LOG_INFO("Loading Flash Fullspeed Driver Complete")	
+	return 0;
+}
+
+static int enable_flash_fastmode(const struct device *dev)
+{
+	/* Switch to fast mode*/
+	uint32_t result = 0xFFFFFFFF; 
+	ft8xx_copro_cmd_flashfast(dev, &result);
+
+	switch(result)
+	{
+		case 0xE001:
+		{
+			LOG_ERR("Flash is Not supported");
+			break;
+		}		
+		case 0xE002:
+		{
+			LOG_WARN("no header detected in sector 0 - flash blank?");
+			break;
+		}
+		case 0xE003:
+		{
+			LOG_WARN("sector 0 data failed integrity check");			
+			break;
+		}
+		case 0xE004:
+		{
+			LOG_WARN("device/blob mismatch - incorrect firmware?");							
+			break;
+		}
+		case 0xE005:
+		{
+			LOG_ERR("Flash full speed test failed, check connections");
+			break;
+		}							
+	}
+	return result
+}
+
+static void setup_flash(const struct device *dev)
+{
+	/* Attach to flash*/
+
+	ft8xx_copro_cmd_flashattach(dev);
+
+	/* Check Flash Status*/
+	while (ft8xx_rd8(bus, data->register_map->REG_FLASH_STATUS) == FLASH_STATUS_INIT)
+	{
+		
+	}
+
+	uint32_t fstatus = ft8xx_rd32(bus, data->register_map->REG_FLASH_STATUS)
+	data->flash_status = fstatus;
+
+	/* Detect Flash Size*/
+	uint32_t fsize = ft8xx_rd32(bus, data->register_map->REG_FLASH_SIZE);					
+	data->flash_size = fsize*1024*1024;
+
+	//enable fullspeed flash
+	LOG_INFO("trying to switch Flash to Fast Mode");
+	for (int i=1;i<=3;i++)
+	{
+		LOG_INFO("Attempt %d of 3");
+		int res = enable_flash_fastmode(dev); 
+		if (res != 0)
+		{
+			LOG_WARN("Unable to switch Flash to Fast Mode");
+
+			if ( 0xE002 <= res && res <= 0xE004) 
+			{
+				LOG_INFO("Loading Firmware Driver");
+				int load_res = load_driver_blob(dev);
+				if (load_res != 0)
+				{
+					LOG_WARN("Loading Firmware Driver Failed");
+				}
+			}
+			else
+			{
+				if (res == 0xE001 || res == 0xE005)
+				{
+					LOG_ERR("Permenent Error - giving up");
+				}
+				break;
+			}			
+		}
+		else
+		{
+			LOG_INFO("Successfully switched to Fast Mode");
+			break;
+		}
+		if (i == 3)
+		{
+		 	LOG_ERR("Failed to switch Flash to Fast Mode");
+		}
+	}
+
+}
 
 
 static void setup_chip(const struct device *dev)
 {
-  // assign register maps
-		switch(data->chip_type) {
-			case FT8xx_CHIP_ID_FT800:
-				{
-					data->memory_map = 	&ft800_memory_map;		
-					data->register_map = &ft800_register_address_map;					
-					break;
-				}
+	const struct ft8xx_config *config = dev->config;
+	const struct ft8xx_data *data = dev->data;
+	union ft8xx_bus *bus = config->bus;
 
-			case FT8xx_CHIP_ID_FT810:
-			case FT8xx_CHIP_ID_FT811:
-			case FT8xx_CHIP_ID_FT812:
-			case FT8xx_CHIP_ID_FT813:
-				{
-					data->memory_map = 	&ft81x_memory_map;		
-					data->register_map = &ft81x_register_address_map;		
-					break;			
-				}
+	// assign register maps
+	switch(data->chip_type) {
+		case FT8xx_CHIP_ID_FT800:
+			{
+				data->memory_map = 	&ft800_memory_map;		
+				data->register_map = &ft800_register_address_map;					
+				break;
+			}
+
+		case FT8xx_CHIP_ID_FT810:
+		case FT8xx_CHIP_ID_FT811:
+		case FT8xx_CHIP_ID_FT812:
+		case FT8xx_CHIP_ID_FT813:
+			{
+				data->memory_map = 	&ft81x_memory_map;		
+				data->register_map = &ft81x_register_address_map;		
+				break;			
+			}
 
 
-			case FT8xx_CHIP_ID_BT815:
-			case FT8xx_CHIP_ID_BT816:
-			case FT8xx_CHIP_ID_BT817:
-			case FT8xx_CHIP_ID_BT818:
-				{
-					data->memory_map = 	&bt81x_memory_map;		
-					data->register_map = &bt81x_register_address_map;					
-					break;
-				}
+		case FT8xx_CHIP_ID_BT815:
+		case FT8xx_CHIP_ID_BT816:
+		case FT8xx_CHIP_ID_BT817:
+		case FT8xx_CHIP_ID_BT818:
+			{
+				data->memory_map = 	&bt81x_memory_map;		
+				data->register_map = &bt81x_register_address_map;					
 
-		}
+				setup_flash(dev);
+
+				break;
+			}
+	}
+
+
+
+
 
 }
 
@@ -388,6 +547,11 @@ static int ft8xx_init(const struct device *dev)
 	ft8xx_wr8(bus, data->register_map->REG_SWIZZLE, config->swizzle);
 	ft8xx_wr8(bus, data->register_map->REG_PCLK_POL, config->pclk_pol);
 	ft8xx_wr8(bus, data->register_map->REG_CSPREAD, config->cspread);
+
+
+
+
+
 
 	/* Display initial screen */
 
@@ -497,6 +661,25 @@ void ft8xx_touch_transform_set(const struct device *dev, const struct ft8xx_touc
 	ft8xx_wr32(bus, data->register_map->REG_TOUCH_TRANSFORM_F, trform->f);
 }
 
+#define FT8XX_DATA(inst)
+{	
+//	.config = &ft8xx_config,
+	.irq_callback = NULL,
+	.chip_id = 0,
+	.chip_type = 0,
+	.memory_map = NULL,
+	.register_map = NULL,
+	.ctrform = NULL,
+
+	.reg_cmd_read = 0;
+	.reg_cmd_write = 0;
+
+	.flash_size = 0;
+	.flash_status = 0;
+
+};
+
+
 #define FT8XX_CONFIG(inst)				
 	{						
 		/* Initializes struct ft8xx_config for an instance on a SPI bus. */
@@ -529,9 +712,9 @@ void ft8xx_touch_transform_set(const struct device *dev, const struct ft8xx_touc
 	}
 
 #define FT8XX_DEFINE(inst)						
-	static struct ft8xx_data ft8xx_data_##inst;			
+	static struct ft8xx_data ft8xx_data_##inst = (FT8XX_DATA(inst));	
 	static const struct ft8xx_config ft8xx_config_##inst =	
-			    (FT8XX_CONFIG(inst))
+			    (FT8XX_CONFIG(inst));
 
 	DEVICE_DT_INST_DEFINE(inst, 
 					ft8xx_init,

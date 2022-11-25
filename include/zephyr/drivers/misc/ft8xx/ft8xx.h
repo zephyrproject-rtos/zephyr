@@ -32,6 +32,51 @@ enum ft8xx_chip_types {
 	FT8xx_CHIP_ID_BT818 = 0x08180100,
 }
 
+struct ft8xx_config {
+	uint16_t vsize;
+	uint16_t voffset;
+	uint16_t vcycle;
+	uint16_t vsync0;
+	uint16_t vsync1;
+	uint16_t hsize;
+	uint16_t hoffset;
+	uint16_t hcycle;
+	uint16_t hsync0;
+	uint16_t hsync1;
+	uint8_t pclk;
+	uint8_t pclk_pol :1;
+	uint8_t cspread  :1;
+	uint8_t swizzle  :4;
+	
+	uint32_t chip_id;
+	uint32_t chip_type;
+
+
+	union ft8xx_bus bus;
+	const struct ft8xx_bus_io *bus_io;
+
+	struct gpio_dt_spec irq_gpio;
+};
+
+struct ft8xx_data_t {
+//	const struct ft8xx_config *config;
+	ft8xx_int_callback irq_callback;
+	uint chip_id;
+	uint chip_type;
+	struct ft8xx_memory_map_t *memory_map;
+	struct ft8xx_register_address_map_t *register_map;
+
+	struct ft8xx_touch_transform *ctrform;
+
+	static uint16_t reg_cmd_read;
+	static uint16_t reg_cmd_write;
+
+	static uint32_t flash_size;
+	static uint16_t flash_status;
+
+};
+
+
 
 
 #define FT8XX_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)

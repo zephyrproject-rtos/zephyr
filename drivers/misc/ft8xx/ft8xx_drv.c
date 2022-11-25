@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
+#include <string.h>
 
 #define LOG_MODULE_NAME ft8xx_drv
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -124,6 +125,56 @@ int ft8xx_drv_write(const union ft8xx_bus *bus, uint32_t address, const uint8_t 
 		.buffers = tx,
 		.count = 2,
 	};
+
+	ret = spi_write_dt(bus->spi, &tx_bufs);
+	if (ret < 0) {
+		LOG_ERR("SPI write error: %d", ret);
+	}
+
+	return ret;
+}
+
+int ft8xx_drv_write_dual(const union ft8xx_bus *bus, uint32_t address, const uint8_t *data, unsigned int length,
+				const uint8_t *data2, 
+				unsigned int data2_length, 
+				uint8_t padsize)
+{
+	int ret;
+	uint8_t addr_buf[ADDR_SIZE];
+	uint8_t pad[padsize]; 
+
+	insert_addr(address, addr_buf);
+	addr_buf[0] |= WRITE_OP;
+
+	struct spi_buf tx[] = {
+		{
+			.buf = addr_buf,
+			.len = sizeof(addr_buf),
+		},
+		{
+			/* Discard const, it is implicit for TX buffer */
+			.buf = (uint8_t *)data,
+			.len = length,
+		},
+		{
+			/* Discard const, it is implicit for TX buffer */
+			.buf = (uint8_t *)data2,
+			.len = data2_length,
+		},
+		{
+			/* Discard const, it is implicit for TX buffer */
+			.buf = pad,
+			.len = padsize,
+		},
+
+	};
+
+	struct spi_buf_set tx_bufs = {
+		.buffers = tx,
+		.count = 4,
+	};
+
+
 
 	ret = spi_write_dt(bus->spi, &tx_bufs);
 	if (ret < 0) {
