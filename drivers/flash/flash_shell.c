@@ -119,24 +119,30 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	uint32_t w_addr;
 	int ret;
 	size_t op_size;
+	int verify = 0;
+	int argstart = 2;
 
 	ret = parse_helper(shell, &argc, &argv, &flash_dev, &w_addr);
 	if (ret) {
 		return ret;
 	}
 
-	if (argc <= 2) {
+	if (strcmp(argv[2], "-v") == 0) {
+		argstart++;
+		verify = 1;
+	}
+
+	if (argc <= argstart) {
 		shell_error(shell, "Missing data to be written.");
 		return -EINVAL;
 	}
 
 	op_size = 0;
 
-	for (int i = 2; i < argc; i++) {
-		int j = i - 2;
+	for (int i = argstart; i < argc; i++) {
+		int j = i - argstart;
 
 		buf_array[j] = strtoul(argv[i], NULL, 16);
-		check_array[j] = ~buf_array[j];
 
 		op_size += sizeof(buf_array[0]);
 	}
@@ -148,16 +154,21 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 
 	shell_print(shell, "Write OK.");
 
-	if (flash_read(flash_dev, w_addr, check_array, op_size) < 0) {
-		shell_print(shell, "Verification read ERROR!");
-		return -EIO;
-	}
+	if (verify == 1) {
+		for (int i = 0; i < argc - argstart; i++) {
+			check_array[i] = ~buf_array[i];
+		}
+		if (flash_read(flash_dev, w_addr, check_array, op_size) < 0) {
+			shell_print(shell, "Verification read ERROR!");
+			return -EIO;
+		}
 
-	if (memcmp(buf_array, check_array, op_size) == 0) {
-		shell_print(shell, "Verified.");
-	} else {
-		shell_error(shell, "Verification ERROR!");
-		return -EIO;
+		if (memcmp(buf_array, check_array, op_size) == 0) {
+			shell_print(shell, "Verified.");
+		} else {
+			shell_error(shell, "Verification ERROR!");
+			return -EIO;
+		}
 	}
 
 	return 0;
@@ -280,7 +291,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
 		"[<device>] <address> <size> <repeat count>",
 		cmd_test, 4, 1),
 	SHELL_CMD_ARG(write, &dsub_device_name,
-		"[<device>] <address> <dword> [<dword>...]",
+		"[<device>] <address> [-v] <dword> [<dword>...]",
 		cmd_write, 3, BUF_ARRAY_CNT),
 	SHELL_SUBCMD_SET_END
 );
