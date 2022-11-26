@@ -641,6 +641,10 @@ flagged.
         "STD_CPP",  # Referenced in CMake comment
         "TAGOIO_HTTP_POST_LOG_LEVEL",  # Used as in samples/net/cloud/tagoio
         "TEST1",
+        "TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE", # The symbol is defined in the toolchain
+                                                    # Kconfig which is sourced based on Zephyr
+                                                    # toolchain variant and therefore not visible
+                                                    # to compliance.
         "TYPE_BOOLEAN",
         "USB_CONSOLE",
         "USE_STDC_",
