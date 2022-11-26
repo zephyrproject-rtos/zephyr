@@ -126,9 +126,7 @@ static inline void arch_setup_callee_saved_regs(struct k_thread *thread,
 #if __ARC_TLS_REGNO__ <= 0
 #error Compiler not configured for thread local storage
 #endif
-#define _REGNO(n) r ## n
-#define REGNO(n) _REGNO(n)
-#define TLSREG REGNO(__ARC_TLS_REGNO__)
+#define TLSREG _CONCAT(r, __ARC_TLS_REGNO__)
 	/* __ARC_TLS_REGNO__ is used for thread pointer for ARCv2 */
 	regs->TLSREG = thread->tls;
 #else
