@@ -80,7 +80,7 @@ int net_icmpv6_finalize(struct net_pkt *pkt)
 	}
 
 	icmp_hdr->chksum = 0U;
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
 		icmp_hdr->chksum = net_calc_chksum_icmpv6(pkt);
 	}
 
