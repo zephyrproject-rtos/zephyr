@@ -150,7 +150,13 @@ set_property(TARGET compiler-cpp PROPERTY no_rtti "-fno-rtti")
 set_compiler_property(PROPERTY freestanding -Hnocrt)
 
 # Flag to enable debugging
-set_compiler_property(PROPERTY debug -g)
+if(CONFIG_THREAD_LOCAL_STORAGE)
+  # FIXME: Temporary workaround for ARC MWDT toolchain issue - LLDAC linker produce errors on
+  # debugging information (if -g option specified) of thread-local variables.
+  set_compiler_property(PROPERTY debug)
+else()
+  set_compiler_property(PROPERTY debug -g)
+endif()
 
 # compile common globals like normal definitions
 set_compiler_property(PROPERTY no_common -fno-common)

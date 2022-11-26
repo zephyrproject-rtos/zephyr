@@ -92,10 +92,24 @@ SECTIONS {
 	__rodata_region_start = .;
 
 #include <zephyr/linker/common-rom.ld>
-#include <zephyr/linker/thread-local-storage.ld>
 #ifdef __MWDT_LINKER_CMD__
+	SECTION_DATA_PROLOGUE(tdata,,)
+	{
+		*(.tls .tls.*);
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	#ifdef CONFIG_XIP
+		/* The "primary copy" of tls should be only in flash on XIP systems */
+		PROVIDE(_arcmwdt_tls_start = LOADADDR(tdata));
+	#else
+		PROVIDE(_arcmwdt_tls_start = ADDR(tdata));
+	#endif
+
+	PROVIDE(_arcmwdt_tls_size = SIZEOF(tdata));
+
 /* TODO: add mwdt specific ROM C++ sections */
 #else
+#include <zephyr/linker/thread-local-storage.ld>
 #include <zephyr/linker/cplusplus-rom.ld>
 #endif /* __MWDT_LINKER_CMD__ */
 
