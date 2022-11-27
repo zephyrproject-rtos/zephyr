@@ -11,12 +11,21 @@ config CAN_MCUX_FLEXCAN
 	help
 	  Enable support for mcux flexcan driver.
 
+config CAN_MCUX_FLEXCAN_FD
+	bool "MCUX FlexCAN FD driver"
+	default y
+	depends on DT_HAS_NXP_FLEXCAN_FD_ENABLED
+	depends on CLOCK_CONTROL
+	help
+	  Enable support for mcux flexcan CAN FD driver.
+
 config CAN_MAX_FILTER
 	int "Maximum number of concurrent active RX filters"
-	depends on CAN_MCUX_FLEXCAN
+	depends on CAN_MCUX_FLEXCAN || CAN_MCUX_FLEXCAN_FD
 	default 5
 	range 1 15 if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_KINETIS_K6X
 	range 1 63 if SOC_SERIES_IMX_RT
+	range 1 13 if SOC_SERIES_IMX_RT && CAN_MCUX_FLEXCAN_FD && CAN_FD_MODE
 	help
 	  Defines maximum number of concurrent active RX filters
 
