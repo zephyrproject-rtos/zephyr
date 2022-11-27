@@ -17,6 +17,7 @@ flash: 16384
 supported:
   - counter
   - can
+  - canfd
   - dma
   - gpio
   - hwinfo
