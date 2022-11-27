@@ -28,6 +28,13 @@
 	};
 };
 
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
