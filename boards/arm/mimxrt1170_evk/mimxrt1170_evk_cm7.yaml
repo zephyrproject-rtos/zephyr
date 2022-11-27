@@ -18,6 +18,7 @@ supported:
   - adc
   - counter
   - can
+  - canfd
   - dma
   - gpio
   - hwinfo
