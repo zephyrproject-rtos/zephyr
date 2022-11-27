@@ -298,6 +298,7 @@ jdi	Japan Display Inc.
 jedec	JEDEC Solid State Technology Association
 jesurun	Shenzhen Jesurun Electronics Business Dept.
 jianda	Jiandangjing Technology Co., Ltd.
+jhd	Shenzhen Jinghua Displays Electronics Co., Ltd.
 kam	Kamstrup A/S
 karo	Ka-Ro electronics GmbH
 keithkoep	Keith & Koep GmbH
