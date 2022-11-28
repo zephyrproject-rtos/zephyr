@@ -22,7 +22,6 @@ import magic
 
 logger = None
 
-# This ends up as None when we're not running in a Zephyr tree
 ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
 if not ZEPHYR_BASE:
     # Let the user run this script as ./scripts/ci/check_compliance.py without
@@ -187,9 +186,7 @@ class CheckPatch(ComplianceTest):
     path_hint = "<git-top>"
 
     def run(self):
-        # Default to Zephyr's checkpatch if ZEPHYR_BASE is set
-        checkpatch = os.path.join(ZEPHYR_BASE or GIT_TOP, 'scripts',
-                                  'checkpatch.pl')
+        checkpatch = os.path.join(ZEPHYR_BASE, 'scripts', 'checkpatch.pl')
         if not os.path.exists(checkpatch):
             self.skip(f'{checkpatch} not found')
 
@@ -236,8 +233,6 @@ class DevicetreeBindingsCheck(ComplianceTest):
         """
         Returns a list of dts/bindings/**/*.yaml files
         """
-        if not ZEPHYR_BASE:
-            self.skip("Not a Zephyr tree (ZEPHYR_BASE unset)")
 
         dt_bindings = []
         for file_name in get_files():
@@ -344,9 +339,6 @@ class KconfigCheck(ComplianceTest):
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
         this object for all tests to avoid having to reparse for each test.
         """
-        if not ZEPHYR_BASE:
-            self.skip("Not a Zephyr tree (ZEPHYR_BASE unset)")
-
         # Put the Kconfiglib path first to make sure no local Kconfiglib version is
         # used
         kconfig_path = os.path.join(ZEPHYR_BASE, "scripts", "kconfig")
