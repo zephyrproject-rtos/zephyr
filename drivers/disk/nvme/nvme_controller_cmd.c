@@ -3,12 +3,13 @@
  * Copyright (c) 2022 Intel Corp.
  */
 
-#define LOG_LEVEL CONFIG_NVME_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(nvme_ctrlr_cmd);
+LOG_MODULE_DECLARE(nvme, CONFIG_NVME_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+
+#include <string.h>
 
 #include "nvme.h"
 #include "nvme_helpers.h"
@@ -28,6 +29,28 @@ int nvme_ctrlr_cmd_identify_controller(struct nvme_controller *ctrlr,
 	memset(&request->cmd, 0, sizeof(request->cmd));
 	request->cmd.cdw0.opc = NVME_OPC_IDENTIFY;
 	request->cmd.cdw10 = sys_cpu_to_le32(1);
+
+	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
+}
+
+int nvme_ctrlr_cmd_identify_namespace(struct nvme_controller *ctrlr,
+				      uint32_t nsid, void *payload,
+				      nvme_cb_fn_t cb_fn, void *cb_arg)
+{
+	struct nvme_request *request;
+
+	request = nvme_allocate_request_vaddr(
+		payload, sizeof(struct nvme_namespace_data),
+		cb_fn, cb_arg);
+	if (!request) {
+		return -ENOMEM;
+	}
+
+	request->cmd.cdw0.opc = NVME_OPC_IDENTIFY;
+	/*
+	 * TODO: create an identify command data structure
+	 */
+	request->cmd.nsid = sys_cpu_to_le32(nsid);
 
 	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
 }

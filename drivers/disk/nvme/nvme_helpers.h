@@ -15,6 +15,12 @@
 #define NVME_MAJOR(r)			(((r) >> 16) & 0xffff)
 #define NVME_MINOR(r)			(((r) >> 8) & 0xff)
 
+/*
+ * Use to mark a command to apply to all namespaces, or to retrieve global
+ * log pages.
+ */
+#define NVME_GLOBAL_NAMESPACE_TAG	((uint32_t)0xFFFFFFFF)
+
 /* Many items are expressed in terms of power of two times MPS */
 #define NVME_MPS_SHIFT			12
 
@@ -341,6 +347,127 @@
 #define NVME_CTRLR_DATA_VWC_ALL_UNKNOWN			(0)
 #define NVME_CTRLR_DATA_VWC_ALL_NO			(2)
 #define NVME_CTRLR_DATA_VWC_ALL_YES			(3)
+
+/** namespace features */
+/* thin provisioning */
+#define NVME_NS_DATA_NSFEAT_THIN_PROV_SHIFT		(0)
+#define NVME_NS_DATA_NSFEAT_THIN_PROV_MASK		(0x1)
+/* NAWUN, NAWUPF, and NACWU fields are valid */
+#define NVME_NS_DATA_NSFEAT_NA_FIELDS_SHIFT		(1)
+#define NVME_NS_DATA_NSFEAT_NA_FIELDS_MASK		(0x1)
+/* Deallocated or Unwritten Logical Block errors supported */
+#define NVME_NS_DATA_NSFEAT_DEALLOC_SHIFT		(2)
+#define NVME_NS_DATA_NSFEAT_DEALLOC_MASK		(0x1)
+/* NGUID and EUI64 fields are not reusable */
+#define NVME_NS_DATA_NSFEAT_NO_ID_REUSE_SHIFT		(3)
+#define NVME_NS_DATA_NSFEAT_NO_ID_REUSE_MASK		(0x1)
+/* NPWG, NPWA, NPDG, NPDA, and NOWS are valid */
+#define NVME_NS_DATA_NSFEAT_NPVALID_SHIFT		(4)
+#define NVME_NS_DATA_NSFEAT_NPVALID_MASK		(0x1)
+
+/** formatted lba size */
+#define NVME_NS_DATA_FLBAS_FORMAT_SHIFT			(0)
+#define NVME_NS_DATA_FLBAS_FORMAT_MASK			(0xF)
+#define NVME_NS_DATA_FLBAS_EXTENDED_SHIFT		(4)
+#define NVME_NS_DATA_FLBAS_EXTENDED_MASK		(0x1)
+
+/** metadata capabilities */
+/* metadata can be transferred as part of data prp list */
+#define NVME_NS_DATA_MC_EXTENDED_SHIFT			(0)
+#define NVME_NS_DATA_MC_EXTENDED_MASK			(0x1)
+/* metadata can be transferred with separate metadata pointer */
+#define NVME_NS_DATA_MC_POINTER_SHIFT			(1)
+#define NVME_NS_DATA_MC_POINTER_MASK			(0x1)
+
+/** end-to-end data protection capabilities */
+/* protection information type 1 */
+#define NVME_NS_DATA_DPC_PIT1_SHIFT			(0)
+#define NVME_NS_DATA_DPC_PIT1_MASK			(0x1)
+/* protection information type 2 */
+#define NVME_NS_DATA_DPC_PIT2_SHIFT			(1)
+#define NVME_NS_DATA_DPC_PIT2_MASK			(0x1)
+/* protection information type 3 */
+#define NVME_NS_DATA_DPC_PIT3_SHIFT			(2)
+#define NVME_NS_DATA_DPC_PIT3_MASK			(0x1)
+/* first eight bytes of metadata */
+#define NVME_NS_DATA_DPC_MD_START_SHIFT			(3)
+#define NVME_NS_DATA_DPC_MD_START_MASK			(0x1)
+/* last eight bytes of metadata */
+#define NVME_NS_DATA_DPC_MD_END_SHIFT			(4)
+#define NVME_NS_DATA_DPC_MD_END_MASK			(0x1)
+
+/** end-to-end data protection type settings */
+/* protection information type */
+#define NVME_NS_DATA_DPS_PIT_SHIFT			(0)
+#define NVME_NS_DATA_DPS_PIT_MASK			(0x7)
+/* 1 == protection info transferred at start of metadata */
+/* 0 == protection info transferred at end of metadata */
+#define NVME_NS_DATA_DPS_MD_START_SHIFT			(3)
+#define NVME_NS_DATA_DPS_MD_START_MASK			(0x1)
+
+/** Namespace Multi-path I/O and Namespace Sharing Capabilities */
+/* the namespace may be attached to two or more controllers */
+#define NVME_NS_DATA_NMIC_MAY_BE_SHARED_SHIFT		(0)
+#define NVME_NS_DATA_NMIC_MAY_BE_SHARED_MASK		(0x1)
+
+/** Reservation Capabilities */
+/* Persist Through Power Loss */
+#define NVME_NS_DATA_RESCAP_PTPL_SHIFT		(0)
+#define NVME_NS_DATA_RESCAP_PTPL_MASK		(0x1)
+/* supports the Write Exclusive */
+#define NVME_NS_DATA_RESCAP_WR_EX_SHIFT		(1)
+#define NVME_NS_DATA_RESCAP_WR_EX_MASK		(0x1)
+/* supports the Exclusive Access */
+#define NVME_NS_DATA_RESCAP_EX_AC_SHIFT		(2)
+#define NVME_NS_DATA_RESCAP_EX_AC_MASK		(0x1)
+/* supports the Write Exclusive – Registrants Only */
+#define NVME_NS_DATA_RESCAP_WR_EX_RO_SHIFT	(3)
+#define NVME_NS_DATA_RESCAP_WR_EX_RO_MASK	(0x1)
+/* supports the Exclusive Access - Registrants Only */
+#define NVME_NS_DATA_RESCAP_EX_AC_RO_SHIFT	(4)
+#define NVME_NS_DATA_RESCAP_EX_AC_RO_MASK	(0x1)
+/* supports the Write Exclusive – All Registrants */
+#define NVME_NS_DATA_RESCAP_WR_EX_AR_SHIFT	(5)
+#define NVME_NS_DATA_RESCAP_WR_EX_AR_MASK	(0x1)
+/* supports the Exclusive Access - All Registrants */
+#define NVME_NS_DATA_RESCAP_EX_AC_AR_SHIFT	(6)
+#define NVME_NS_DATA_RESCAP_EX_AC_AR_MASK	(0x1)
+/* Ignore Existing Key is used as defined in revision 1.3 or later */
+#define NVME_NS_DATA_RESCAP_IEKEY13_SHIFT	(7)
+#define NVME_NS_DATA_RESCAP_IEKEY13_MASK	(0x1)
+
+/** Format Progress Indicator */
+/* percentage of the Format NVM command that remains to be completed */
+#define NVME_NS_DATA_FPI_PERC_SHIFT		(0)
+#define NVME_NS_DATA_FPI_PERC_MASK		(0x7f)
+/* namespace supports the Format Progress Indicator */
+#define NVME_NS_DATA_FPI_SUPP_SHIFT		(7)
+#define NVME_NS_DATA_FPI_SUPP_MASK		(0x1)
+
+/** Deallocate Logical Block Features */
+/* deallocated logical block read behavior */
+#define NVME_NS_DATA_DLFEAT_READ_SHIFT		(0)
+#define NVME_NS_DATA_DLFEAT_READ_MASK		(0x07)
+#define NVME_NS_DATA_DLFEAT_READ_NR		(0x00)
+#define NVME_NS_DATA_DLFEAT_READ_00		(0x01)
+#define NVME_NS_DATA_DLFEAT_READ_FF		(0x02)
+/* supports the Deallocate bit in the Write Zeroes */
+#define NVME_NS_DATA_DLFEAT_DWZ_SHIFT		(3)
+#define NVME_NS_DATA_DLFEAT_DWZ_MASK		(0x01)
+/* Guard field for deallocated logical blocks is set to the CRC  */
+#define NVME_NS_DATA_DLFEAT_GCRC_SHIFT		(4)
+#define NVME_NS_DATA_DLFEAT_GCRC_MASK		(0x01)
+
+/** lba format support */
+/* metadata size */
+#define NVME_NS_DATA_LBAF_MS_SHIFT		(0)
+#define NVME_NS_DATA_LBAF_MS_MASK		(0xFFFF)
+/* lba data size */
+#define NVME_NS_DATA_LBAF_LBADS_SHIFT		(16)
+#define NVME_NS_DATA_LBAF_LBADS_MASK		(0xFF)
+/* relative performance */
+#define NVME_NS_DATA_LBAF_RP_SHIFT		(24)
+#define NVME_NS_DATA_LBAF_RP_MASK		(0x3)
 
 enum nvme_critical_warning_state {
 	NVME_CRIT_WARN_ST_AVAILABLE_SPARE		= 0x1,
