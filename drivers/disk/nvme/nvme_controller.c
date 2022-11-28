@@ -394,6 +394,22 @@ static int nvme_controller_identify(struct nvme_controller *nvme_ctrlr)
 	return 0;
 }
 
+static void nvme_controller_setup_namespaces(struct nvme_controller *nvme_ctrlr)
+{
+	uint32_t i;
+
+	for (i = 0;
+	     i < MIN(nvme_ctrlr->cdata.nn, CONFIG_NVME_MAX_NAMESPACES); i++) {
+		struct nvme_namespace *ns = &nvme_ctrlr->ns[i];
+
+		if (nvme_namespace_construct(ns, i+1, nvme_ctrlr) != 0) {
+			break;
+		}
+
+		LOG_DBG("Namespace id %u setup and running", i);
+	}
+}
+
 static int nvme_controller_init(const struct device *dev)
 {
 	struct nvme_controller *nvme_ctrlr = dev->data;
@@ -436,6 +452,8 @@ static int nvme_controller_init(const struct device *dev)
 	if (ret != 0) {
 		return ret;
 	}
+
+	nvme_controller_setup_namespaces(nvme_ctrlr);
 
 	return 0;
 }
