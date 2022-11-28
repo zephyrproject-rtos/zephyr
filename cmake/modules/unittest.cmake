@@ -93,7 +93,7 @@ target_link_libraries(testbinary PRIVATE
   ${EXTRA_LDFLAGS_AS_LIST}
   )
 
-if(COVERAGE)
+if(CONFIG_COVERAGE)
   target_compile_options(test_interface INTERFACE $<TARGET_PROPERTY:compiler,coverage>)
 
   target_link_libraries(testbinary PRIVATE $<TARGET_PROPERTY:linker,coverage>)
