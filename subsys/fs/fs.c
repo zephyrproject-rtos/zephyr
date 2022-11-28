@@ -187,7 +187,6 @@ int fs_close(struct fs_file_t *zfp)
 	rc = zfp->mp->fs->close(zfp);
 	if (rc < 0) {
 		LOG_ERR("file close error (%d)", rc);
-		return rc;
 	}
 
 	zfp->mp = NULL;
