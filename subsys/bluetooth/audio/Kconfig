@@ -51,4 +51,8 @@ rsource "Kconfig.mpl"
 rsource "Kconfig.mctl"
 rsource "Kconfig.cap"
 
+module = BT_AUDIO
+module-str = "Bluetooth Audio"
+source "subsys/logging/Kconfig.template.log_config"
+
 endif # BT_AUDIO

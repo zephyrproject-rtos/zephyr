@@ -28,6 +28,22 @@
 #define BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS    0
 #endif
 
+/** The minimum size of a Broadcast Audio Source Endpoint (BASE)
+ * 2 octets UUID
+ * 3 octets presentation delay
+ * 1 octet number of subgroups (which is minimum 1)
+ * 1 octet number of BIS (which is minimum 1)
+ * 5 octets codec_id
+ * 1 octet codec configuration length (which may be 0)
+ * 1 octet metadata length (which may be 0)
+ * 1 octet BIS index
+ * 1 octet BIS specific codec configuration length (which may be 0)
+ */
+#define BT_BAP_BASE_MIN_SIZE 16
+
+/** The minimum size of a bt_bap_base_bis_data */
+#define BT_BAP_BASE_BIS_DATA_MIN_SIZE 2 /* index and length */
+
 /** Periodic advertising state reported by the Scan Delegator */
 enum bt_bap_pa_state {
 	/** The periodic advertising has not been synchronized */
@@ -1312,6 +1328,18 @@ struct bt_bap_base {
 	/* Array of subgroups in the BASE */
 	struct bt_bap_base_subgroup subgroups[BROADCAST_SNK_SUBGROUP_CNT];
 };
+
+/** @brief Decode a Broadcast Audio Source Endpoint (BASE) from advertising data
+ *
+ *  The BASE is sent via periodic advertising, and can be decoded into a
+ *  bt_bap_base using this function.
+ *
+ *  @param data The periodic advertising data
+ *  @param base The output struct to put the decode BASE in
+ *
+ *  @return 0 in case of success or negative errno value in case of error.
+ */
+int bt_bap_decode_base(struct bt_data *data, struct bt_bap_base *base);
 
 /** @} */ /* End of group bt_bap_broadcast */
 
