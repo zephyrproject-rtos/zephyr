@@ -52,6 +52,15 @@ config NVME_REQUEST_TIMEOUT
 	  This sets the waiting time for a request to succeed.
 	  Do not touch this unless you know what you are doing.
 
+config NVME_MAX_NAMESPACES
+	int "Maximum namespace to allocate"
+	range 1 16
+	default 1
+	help
+	  This sets the maximum namespace to allocate. Note that there may
+	  be much less to be actually instantiated at runtime.
+	  This option can be used to reduce the memory usage a bit then.
+
 config NVME_INT_PRIORITY
 	int "Interrupt priority"
 	default 2

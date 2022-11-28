@@ -7,7 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_DISK_NVME_NHME_H_
 #define ZEPHYR_DRIVERS_DISK_NVME_NVME_H_
 
+#include "nvme_helpers.h"
 #include "nvme_cmd.h"
+#include "nvme_namespace.h"
 
 struct nvme_registers {
 	uint32_t	cap_lo; /* controller capabilities */
@@ -444,6 +446,16 @@ struct nvme_controller {
 
 	/** maximum i/o size in bytes */
 	uint32_t max_xfer_size;
+
+	struct nvme_namespace ns[CONFIG_NVME_MAX_NAMESPACES];
 };
+
+static inline
+bool nvme_controller_has_dataset_mgmt(struct nvme_controller *ctrlr)
+{
+	/* Assumes cd was byte swapped by nvme_controller_data_swapbytes() */
+	return ((ctrlr->cdata.oncs >> NVME_CTRLR_DATA_ONCS_DSM_SHIFT) &
+		NVME_CTRLR_DATA_ONCS_DSM_MASK);
+}
 
 #endif /* ZEPHYR_DRIVERS_DISK_NVME_NHME_H_ */

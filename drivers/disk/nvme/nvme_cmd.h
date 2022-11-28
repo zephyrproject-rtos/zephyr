@@ -382,6 +382,10 @@ int nvme_cmd_identify_controller(struct nvme_controller *ctrlr,
 int nvme_ctrlr_cmd_identify_controller(struct nvme_controller *ctrlr,
 				       nvme_cb_fn_t cb_fn, void *cb_arg);
 
+int nvme_ctrlr_cmd_identify_namespace(struct nvme_controller *ctrlr,
+				      uint32_t nsid, void *payload,
+				      nvme_cb_fn_t cb_fn, void *cb_arg);
+
 int nvme_ctrlr_cmd_create_io_cq(struct nvme_controller *ctrlr,
 				struct nvme_cmd_qpair *io_queue,
 				nvme_cb_fn_t cb_fn, void *cb_arg);
