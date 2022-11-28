@@ -13,7 +13,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_cap_initiator, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
 
 static const struct bt_cap_initiator_cb *cap_cb;
 
