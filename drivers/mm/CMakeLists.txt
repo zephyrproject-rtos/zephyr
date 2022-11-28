@@ -12,5 +12,6 @@ zephyr_library_sources_ifdef(
 
 zephyr_sources_ifdef(
 	CONFIG_MM_DRV_INTEL_ADSP_MTL_TLB
+	mm_drv_intel_adsp_regions.c
 	mm_drv_intel_adsp_mtl_tlb.c
 	)
