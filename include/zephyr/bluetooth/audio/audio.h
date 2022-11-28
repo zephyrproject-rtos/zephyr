@@ -2276,6 +2276,17 @@ int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink);
 
 /** @} */ /* End of bt_audio_broadcast */
 
+/** @brief Decode a Broadcast Audio Source Endpoint (BASE) from advertising data
+ *
+ *  The BASE is sent via periodic advertising, and can be decoded into a
+ *  bt_audio_base using this function.
+ *
+ *  @param data The periodic advertising data
+ *  @param base The output struct to put the decode BASE in
+ *
+ *  @return 0 in case of success or negative errno value in case of error.
+ */
+int bt_audio_decode_base(struct bt_data *data, struct bt_audio_base *base);
 
 /**
  * @brief Audio codec Config APIs

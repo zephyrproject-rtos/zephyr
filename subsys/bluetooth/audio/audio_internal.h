@@ -9,6 +9,9 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
 
+#define BT_AUDIO_BASE_MIN_SIZE             17
+#define BT_AUDIO_BASE_BIS_DATA_MIN_SIZE    2 /* index and length */
+
 /** @brief LE Audio Attribute User Data. */
 struct bt_audio_attr_user_data {
 	/** Attribute read callback */
