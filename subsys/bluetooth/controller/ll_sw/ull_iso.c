@@ -110,10 +110,11 @@ static void *datapath_free;
  * - mem_iso_rx:      Backing data pool for PDU buffer elements
  * - mem_link_iso_rx: Pool of memq_link_t elements
  *
+ * One extra rx buffer is reserved for empty ISO PDU reception.
  * Two extra links are reserved for use by the ll_iso_rx and ull_iso_rx memq.
  */
-static RXFIFO_DEFINE(iso_rx, NODE_RX_HEADER_SIZE + ISO_RX_BUFFER_SIZE,
-			     CONFIG_BT_CTLR_ISO_RX_BUFFERS, 2);
+static RXFIFO_DEFINE(iso_rx, ((NODE_RX_HEADER_SIZE) + (ISO_RX_BUFFER_SIZE)),
+			     (CONFIG_BT_CTLR_ISO_RX_BUFFERS + 1U), 2U);
 
 static MEMQ_DECLARE(ll_iso_rx);
 #if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
