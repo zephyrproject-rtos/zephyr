@@ -273,6 +273,11 @@ legacy-debug-sym = BT_AUDIO_DEBUG_STREAM
 module-str = "Bluetooth Audio Stream"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
+parent-module = BT
+module = BT_AUDIO_CODEC
+module-str = "Bluetooth Audio Codec"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 config BT_AUDIO_DEBUG_STREAM_DATA
 	bool "Bluetooth Audio Stream data debug"
 	depends on BT_AUDIO_STREAM_LOG_LEVEL_DBG
