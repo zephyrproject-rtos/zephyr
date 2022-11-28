@@ -1,0 +1,12 @@
+sample:
+  name: Touch iqs5xx Sample.
+tests:
+  sample.touch.iqs5xx:
+    tags: iqs5xx
+    platform_allow: esp32
+    depends_on: i2c
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "IQS Driver Probed. Product Number: (.*)"

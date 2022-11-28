@@ -1,0 +1,16 @@
+# Copyright 2022 Interrupt Labs <info@interruptlabs.ca>
+# SPDX-License-Identifier: Apache-2.0
+menuconfig TOUCH
+	bool "Touch Drivers"
+	help
+	  Include touch drivers in system config
+
+if TOUCH
+config TOUCH_INIT_PRIORITY
+	int "Touch init priority"
+	default 90
+	help
+	  Touch initialization priority.
+
+source "drivers/touch/iqs5xx/Kconfig"
+endif # TOUCH

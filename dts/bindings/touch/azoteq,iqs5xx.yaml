@@ -1,0 +1,12 @@
+description: IQS5XX Trackpad controller
+
+compatible: "azoteq,iqs5xx"
+
+include: i2c-device.yaml
+
+properties:
+    rdy-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        The ready signal (RDY) from the IQSxxx.
