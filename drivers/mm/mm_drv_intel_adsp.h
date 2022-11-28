@@ -26,6 +26,7 @@
 
 #include <soc.h>
 #include <adsp_memory.h>
+#include <adsp_memory_regions.h>
 
 #include "mm_drv_common.h"
 
@@ -59,9 +60,6 @@ DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
 #define L2_SRAM_BANK_NUM			(L2_SRAM_SIZE / SRAM_BANK_SIZE)
 #define IS_BIT_SET(value, idx)		((value) & (1 << (idx)))
 
-/* size of TLB table */
-#define TLB_SIZE DT_REG_SIZE_BY_IDX(DT_INST(0, intel_adsp_mtl_tlb), 0)
-
 /**
  * Calculate TLB entry based on physical address.
  *
@@ -84,5 +82,14 @@ static inline uintptr_t tlb_entry_to_pa(uint16_t tlb_entry)
 	return ((((tlb_entry) & TLB_PADDR_MASK) *
 		CONFIG_MM_DRV_PAGE_SIZE) + TLB_PHYS_BASE);
 }
+
+/**
+ * Calculate virtual memory regions allocation based on
+ * info from linker script.
+ *
+ * @param End address of staticaly allocated memory.
+ * @return Error Code.
+ */
+int calculate_memory_regions(uintptr_t static_alloc_end_ptr);
 
 #endif /* ZEPHYR_DRIVERS_SYSTEM_MM_DRV_INTEL_MTL_ */
