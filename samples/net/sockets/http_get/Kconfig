@@ -1,0 +1,22 @@
+# Private config options for http_get sample
+
+# Copyright (c) 2022 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if WIFI
+
+config SAMPLE_HTTP_GET_WIFI_SSID
+	string "WIFI SSID - Network name"
+	default "SSID"
+
+config SAMPLE_HTTP_GET_WIFI_PSK
+	string "WIFI PSK - Network password key"
+	default "PASSWORD"
+
+config SAMPLE_HTTP_GET_WIFI_CONNECT_TIMEOUT_MS
+	int "WIFI connect timeout in milliseconds"
+	default 10000
+
+endif
+
+source "Kconfig.zephyr"

@@ -27,6 +27,10 @@
 
 #endif
 
+#if defined(CONFIG_WIFI)
+#include "wifi.h"
+#endif
+
 /* HTTP server to connect to */
 #define HTTP_HOST "google.com"
 /* Port to connect to, as string */
@@ -60,6 +64,12 @@ void main(void)
 	static struct addrinfo hints;
 	struct addrinfo *res;
 	int st, sock;
+
+#if defined(CONFIG_WIFI)
+	wifi_connect(CONFIG_SAMPLE_HTTP_GET_WIFI_SSID,
+				 CONFIG_SAMPLE_HTTP_GET_WIFI_PSK,
+				 CONFIG_SAMPLE_HTTP_GET_WIFI_CONNECT_TIMEOUT_MS);
+#endif
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
