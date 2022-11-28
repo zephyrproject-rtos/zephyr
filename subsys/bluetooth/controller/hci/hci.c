@@ -63,6 +63,7 @@
 #include "ll_sw/ull_conn_iso_types.h"
 #include "ll_sw/ull_conn_iso_internal.h"
 #include "ll_sw/ull_df_types.h"
+#include "ll_sw/ull_internal.h"
 
 #include "ll_sw/ull_adv_internal.h"
 #include "ll_sw/ull_sync_internal.h"
@@ -5677,7 +5678,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		/* Overwrite time stamp with HCI provided time stamp */
 		time_stamp = net_buf_pull_mem(buf, sizeof(*time_stamp));
 		len -= sizeof(*time_stamp);
-		sdu_frag_tx.time_stamp = *time_stamp;
+		sdu_frag_tx.time_stamp = sys_le32_to_cpu(*time_stamp);
 	} else {
 		sdu_frag_tx.time_stamp =
 			HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
@@ -5687,8 +5688,8 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	if ((pb_flag & 0x01) == 0) {
 		iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
 		len -= sizeof(*iso_data_hdr);
-		sdu_frag_tx.packet_sn = iso_data_hdr->sn;
-		sdu_frag_tx.iso_sdu_length = iso_data_hdr->slen;
+		sdu_frag_tx.packet_sn = sys_le16_to_cpu(iso_data_hdr->sn);
+		sdu_frag_tx.iso_sdu_length = sys_le16_to_cpu(iso_data_hdr->slen);
 	} else {
 		sdu_frag_tx.packet_sn = 0;
 		sdu_frag_tx.iso_sdu_length = 0;
@@ -5719,43 +5720,35 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		}
 
 		struct ll_conn_iso_group *cig = cis->group;
+		uint8_t event_offset;
 
 		hdr = &(cis->hdr);
 
-		/* Set target event as the current event. This might cause some
-		 * misalignment between SDU interval and ISO interval in the
-		 * case of a burst from the application or late release. However
-		 * according to the specifications:
-		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part B LL Spec:
-		 * 4.5.13.3 Connected Isochronous Data:
-		 * This burst is associated with the corresponding CIS event but
-		 * the payloads may be transmitted in later events as well.
-		 * If flush timeout is greater than one, use the current event,
-		 * otherwise postpone to the next.
+		/* We must ensure sufficient time for ISO-AL to fragment SDU and
+		 * deliver PDUs to the TX queue. By checking ull_ref_get, we
+		 * know if we are within the subevents of an ISO event. If so,
+		 * we can assume that we have enough time to deliver in the next
+		 * ISO event. If we're not active within the ISO event, we don't
+		 * know if there is enough time to deliver in the next event,
+		 * and for safety we set the target to current event + 2.
 		 *
-		 * TODO: Calculate the best possible target event based on CIS
-		 * reference, FT and event_count.
+		 * For FT > 1, we have the opportunity to retransmit in later
+		 * event(s), in which case we have the option to target an
+		 * earlier event (this or next) because being late does not
+		 * instantly flush the payload.
 		 */
-		sdu_frag_tx.target_event = cis->lll.event_count +
-					   ((cis->lll.tx.ft > 1U) ? 0U : 1U);
 
-		/* FIXME: Remove the below temporary hack to buffer up ISO data
-		 * if the SDU interval and ISO interval misalign.
-		 */
-		uint64_t pkt_seq_num = cis->lll.event_count + 1U;
+		event_offset = ull_ref_get(&cig->ull) ? 1 : 2;
 
-		if (((pkt_seq_num - cis->lll.tx.payload_count) &
-		     BIT64_MASK(39)) <= BIT64_MASK(38)) {
-			cis->lll.tx.payload_count = pkt_seq_num;
-		} else {
-			pkt_seq_num = cis->lll.tx.payload_count;
+		if (cis->lll.tx.ft > 1) {
+			/* FT > 1, target an earlier event */
+			event_offset -= 1;
 		}
 
-		sdu_frag_tx.target_event = pkt_seq_num;
-
-		cis->lll.tx.payload_count++;
-
-		sdu_frag_tx.grp_ref_point = cig->cig_ref_point;
+		sdu_frag_tx.target_event = cis->lll.event_count + event_offset;
+		sdu_frag_tx.grp_ref_point = isoal_get_wrapped_time_us(cig->cig_ref_point,
+						(event_offset * cig->iso_interval *
+							ISO_INT_UNIT_US));
 
 		/* Get controller's input data path for CIS */
 		dp_in = hdr->datapath_in;
