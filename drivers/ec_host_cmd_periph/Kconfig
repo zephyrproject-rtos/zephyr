@@ -13,6 +13,10 @@ menuconfig EC_HOST_CMD_PERIPH
 
 if EC_HOST_CMD_PERIPH
 
+module = EC_HC
+module-str = ec-host-commands
+source "subsys/logging/Kconfig.template.log_config"
+
 choice
 	prompt "Host commands peripheral"
 
