@@ -4,5 +4,7 @@
 
 config BOARD_UNIT_TESTING
 	bool "Unit testing board"
+	select HAS_COVERAGE_SUPPORT
+	select NATIVE_APPLICATION
 	help
 	  Board for unit testing
