@@ -271,6 +271,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
 
+	/* By design, there shall alway be one free node rx available for
+	 * setting up radio for new PDU reception.
+	 */
 	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 	LL_ASSERT(node_rx);
 	radio_pkt_rx_set(node_rx->pdu);
@@ -477,6 +480,12 @@ static void isr_rx(void *param)
 		    lll->ctrl) {
 			lll->cssn_curr = lll->cssn_next;
 
+			/* By design, there shall alway be one free node rx
+			 * available for setting up radio for new PDU reception.
+			 * Control procedure handling does not consume any
+			 * node rx, hence checking for one free node rx is
+			 * sufficient.
+			 */
 			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 			LL_ASSERT(node_rx);
 
@@ -487,7 +496,7 @@ static void isr_rx(void *param)
 
 			isr_rx_ctrl_recv(lll, pdu);
 		} else {
-			/* check if there are 2 free rx buffers, one will be
+			/* Check if there are 2 free rx buffers, one will be
 			 * consumed to receive the current PDU, and the other
 			 * is to ensure a PDU can be setup for the radio DMA to
 			 * receive in the next sub_interval/iso_interval.
@@ -673,7 +682,7 @@ isr_rx_find_subevent:
 
 				iso_rx_put(node_rx->hdr.link, node_rx);
 			} else {
-				/* check if there are 2 free rx buffers, one
+				/* Check if there are 2 free rx buffers, one
 				 * will be consumed to generate PDU with invalid
 				 * status, and the other is to ensure a PDU can
 				 * be setup for the radio DMA to receive in the
@@ -805,6 +814,9 @@ isr_rx_next_subevent:
 	}
 	lll_chan_set(data_chan_use);
 
+	/* By design, there shall alway be one free node rx available for
+	 * setting up radio for new PDU reception.
+	 */
 	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 	LL_ASSERT(node_rx);
 	radio_pkt_rx_set(node_rx->pdu);
