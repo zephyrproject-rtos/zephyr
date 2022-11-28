@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,16 @@ typedef uint32_t pcie_bdf_t;
  * look to PCIE_ID_* macros in include/dt-bindings/pcie/pcie.h for more.
  */
 typedef uint32_t pcie_id_t;
+
+/* Helper macro to exclude invalid PCIe identifiers. We should really only
+ * need to look for PCIE_ID_NONE, but because of some broken PCI host controllers
+ * we have try cases where both VID & DID are zero or just one of them is
+ * zero (0x0000) and the other is all ones (0xFFFF).
+ */
+#define PCIE_ID_IS_VALID(id) ((id != PCIE_ID_NONE) && \
+			      (id != PCIE_ID(0x0000, 0x0000)) && \
+			      (id != PCIE_ID(0xFFFF, 0x0000)) && \
+			      (id != PCIE_ID(0x0000, 0xFFFF)))
 
 struct pcie_dev {
 	pcie_bdf_t bdf;
@@ -141,10 +152,13 @@ struct pcie_bar {
  * This function is used to look up the BDF for a device given its
  * vendor and device ID.
  *
+ * @deprecated
+ * @see DEVICE_PCIE_DECLARE
+ *
  * @param id PCI(e) vendor & device ID encoded using PCIE_ID()
  * @return The BDF for the device, or PCIE_BDF_NONE if it was not found
  */
-extern pcie_bdf_t pcie_bdf_lookup(pcie_id_t id);
+__deprecated extern pcie_bdf_t pcie_bdf_lookup(pcie_id_t id);
 
 /**
  * @brief Read a 32-bit word from an endpoint's configuration space.
@@ -168,14 +182,58 @@ extern uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg);
  */
 extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
 
+/** Callback type used for scanning for PCI endpoints
+ *
+ * @param bdf      BDF value for a found endpoint.
+ * @param id       Vendor & Device ID for the found endpoint.
+ * @param cb_data  Custom, use case specific data.
+ *
+ * @return true to continue scanning, false to stop scanning.
+ */
+typedef bool (*pcie_scan_cb_t)(pcie_bdf_t bdf, pcie_id_t id, void *cb_data);
+
+enum {
+	/** Scan all available PCI host controllers and sub-busses */
+	PCIE_SCAN_RECURSIVE = BIT(0),
+	/** Do the callback for all endpoint types, including bridges */
+	PCIE_SCAN_CB_ALL = BIT(1),
+};
+
+/** Options for performing a scan for PCI devices */
+struct pcie_scan_opt {
+	/** Initial bus number to scan */
+	uint8_t bus;
+
+	/** Function to call for each found endpoint */
+	pcie_scan_cb_t cb;
+
+	/** Custom data to pass to the scan callback */
+	void *cb_data;
+
+	/** Scan flags */
+	uint32_t flags;
+};
+
+/** Scan for PCIe devices.
+ *
+ * Scan the PCI bus (or busses) for available endpoints.
+ *
+ * @param opt Options determining how to perform the scan.
+ * @return 0 on success, negative POSIX error number on failure.
+ */
+int pcie_scan(const struct pcie_scan_opt *opt);
+
 /**
  * @brief Probe for the presence of a PCI(e) endpoint.
+ *
+ * @deprecated
+ * @see DEVICE_PCIE_DECLARE
  *
  * @param bdf the endpoint to probe
  * @param id the endpoint ID to expect, or PCIE_ID_NONE for "any device"
  * @return true if the device is present, false otherwise
  */
-extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
+__deprecated extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
 
 /**
  * @brief Get the MBAR at a specific BAR index
@@ -317,6 +375,18 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 				     const void *parameter,
 				     uint32_t flags);
 
+/**
+ * @brief Get the BDF for a given PCI host controller
+ *
+ * This macro is useful when the PCI host controller behind PCIE_BDF(0, 0, 0)
+ * indicates a multifunction device. In such a case each function of this
+ * endpoint is a potential host controller itself.
+ *
+ * @param n Bus number
+ * @return BDF value of the given host controller
+ */
+#define PCIE_HOST_CONTROLLER(n) PCIE_BDF(0, 0, n)
+
 /*
  * Configuration word 13 contains the head of the capabilities list.
  */
@@ -387,6 +457,11 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 
 #define PCIE_CONF_MULTIFUNCTION(w)	(((w) & 0x00800000U) != 0U)
 #define PCIE_CONF_TYPE_BRIDGE(w)	(((w) & 0x007F0000U) != 0U)
+#define PCIE_CONF_TYPE_GET(w)		(((w) >> 16) & 0x7F)
+
+#define PCIE_CONF_TYPE_STANDARD         0x0U
+#define PCIE_CONF_TYPE_PCI_BRIDGE       0x1U
+#define PCIE_CONF_TYPE_CARDBUS_BRIDGE   0x2U
 
 /*
  * Words 4-9 are BARs are I/O or memory decoders. Memory decoders may

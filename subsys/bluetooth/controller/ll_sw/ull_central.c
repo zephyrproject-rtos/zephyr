@@ -65,9 +65,6 @@
 #include "ull_llcp.h"
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_central
-#include "common/log.h"
 #include "hal/debug.h"
 
 static void ticker_op_stop_scan_cb(uint32_t status, void *param);

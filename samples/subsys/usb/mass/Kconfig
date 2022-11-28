@@ -1,9 +1,6 @@
 # Copyright (c) 2019-2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config USB_DEVICE_PID
-	default USB_PID_MASS_SAMPLE
-
 config APP_WIPE_STORAGE
 	bool "Option to clear the flash area before mounting"
 	help

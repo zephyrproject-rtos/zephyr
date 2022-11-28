@@ -150,7 +150,7 @@ static int settings_fcb_load_priv(struct settings_store *cs,
 				  void *cb_arg,
 				  bool filter_duplicates)
 {
-	struct settings_fcb *cf = (struct settings_fcb *)cs;
+	struct settings_fcb *cf = CONTAINER_OF(cs, struct settings_fcb, cf_store);
 	struct fcb_entry_ctx entry_ctx = {
 		{.fe_sector = NULL, .fe_elem_off = 0},
 		.fap = cf->cf_fcb.fap
@@ -326,7 +326,7 @@ static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
 				  const char *value, size_t val_len)
 {
-	struct settings_fcb *cf = (struct settings_fcb *)cs;
+	struct settings_fcb *cf = CONTAINER_OF(cs, struct settings_fcb, cf_store);
 	struct fcb_entry_ctx loc;
 	int len;
 	int rc = -EINVAL;
@@ -457,7 +457,7 @@ int settings_backend_init(void)
 
 static void *settings_fcb_storage_get(struct settings_store *cs)
 {
-	struct settings_fcb *cf = (struct settings_fcb *)cs;
+	struct settings_fcb *cf = CONTAINER_OF(cs, struct settings_fcb, cf_store);
 
 	return &cf->cf_fcb;
 }

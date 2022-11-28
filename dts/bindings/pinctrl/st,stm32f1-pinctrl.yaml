@@ -11,18 +11,7 @@ description: |
 
 compatible: "st,stm32f1-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-pull-down
-          - bias-pull-up
-          - drive-push-pull
-          - drive-open-drain
-          - output-low
-          - output-high
+include: base.yaml
 
 properties:
     reg:
@@ -53,6 +42,17 @@ child-binding:
     description: |
         This binding gives a base representation of the STM32F1 pins
         configration
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - drive-push-pull
+          - drive-open-drain
+          - output-low
+          - output-high
 
     properties:
         pinmux:

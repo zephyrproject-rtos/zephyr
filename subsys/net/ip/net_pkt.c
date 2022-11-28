@@ -255,8 +255,7 @@ void net_pkt_allocs_foreach(net_pkt_allocs_cb_t cb, void *user_data)
 #define net_pkt_alloc_find(alloc_data, func_free, line_free) false
 #endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC */
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
-	CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(NET_PKT_DEBUG_ENABLED)
 
 #define NET_FRAG_CHECK_IF_NOT_IN_USE(frag, ref)				\
 	do {								\
@@ -287,10 +286,7 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool)
 
 	return "EDATA";
 }
-#endif
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
-	CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 static inline int16_t get_frees(struct net_buf_pool *pool)
 {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
@@ -298,36 +294,6 @@ static inline int16_t get_frees(struct net_buf_pool *pool)
 #else
 	return 0;
 #endif
-}
-#endif
-
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-static inline const char *get_name(struct net_buf_pool *pool)
-{
-#if defined(CONFIG_NET_BUF_POOL_USAGE)
-	return pool->name;
-#else
-	return "?";
-#endif
-}
-
-static inline int16_t get_size(struct net_buf_pool *pool)
-{
-#if defined(CONFIG_NET_BUF_POOL_USAGE)
-	return pool->pool_size;
-#else
-	return 0;
-#endif
-}
-
-static inline const char *slab2str(struct k_mem_slab *slab)
-{
-	return net_pkt_slab2str(slab);
-}
-
-static inline const char *pool2str(struct net_buf_pool *pool)
-{
-	return net_pkt_pool2str(pool);
 }
 
 void net_pkt_print_frags(struct net_pkt *pkt)
@@ -363,6 +329,36 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 	NET_INFO("Total data size %zu, occupied %d bytes, utilization %zu%%",
 		 total, count * frag_size,
 		 count ? (total * 100) / (count * frag_size) : 0);
+}
+#endif
+
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+static inline const char *get_name(struct net_buf_pool *pool)
+{
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	return pool->name;
+#else
+	return "?";
+#endif
+}
+
+static inline int16_t get_size(struct net_buf_pool *pool)
+{
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	return pool->pool_size;
+#else
+	return 0;
+#endif
+}
+
+static inline const char *slab2str(struct k_mem_slab *slab)
+{
+	return net_pkt_slab2str(slab);
+}
+
+static inline const char *pool2str(struct net_buf_pool *pool)
+{
+	return net_pkt_pool2str(pool);
 }
 #endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 

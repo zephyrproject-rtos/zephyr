@@ -126,13 +126,18 @@ config BT_AUDIO_BROADCAST_SOURCE
 if BT_AUDIO_BROADCAST_SOURCE
 
 config BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT
-	int # hidden: TODO: Update once the API supports it
+	int "Basic Audio Broadcast Source subgroup count"
 	default 1
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
+	help
+	  This option sets the maximum number of subgroups per broadcast source
+	  to support.
 
 config BT_AUDIO_BROADCAST_SRC_COUNT
 	int "Basic Audio Broadcaster source count"
 	default 1
-	range 0 BT_ISO_MAX_BIG
+	range 1 BT_ISO_MAX_BIG
 	help
 	  This option sets the number of broadcast sources to support.
 	  One broadcast source can send multiple streams
@@ -142,7 +147,8 @@ config BT_AUDIO_BROADCAST_SRC_COUNT
 config BT_AUDIO_BROADCAST_SRC_STREAM_COUNT
 	int "Basic Audio Broadcast Source Stream count"
 	default 1
-	range 0 BT_ISO_MAX_CHAN
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
 	help
 	  This option sets the maximum number of streams per broadcast source
 	  to support.
@@ -164,7 +170,8 @@ if BT_AUDIO_BROADCAST_SINK
 config BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
 	int "Basic Audio Profile Broadcast Sink subgroup count"
 	default 1
-	range 1 BT_ISO_MAX_CHAN
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
 	help
 	  This option sets the maximum number of subgroups per broadcast sink
 	  to support.
@@ -255,14 +262,20 @@ endif # BT_BAP_BROADCAST_ASSISTANT
 
 config BT_AUDIO_DEBUG_STREAM
 	bool "Bluetooth Audio Stream debug"
+	select DEPRECATED
 	depends on BT_AUDIO_STREAM
 	help
 	  Use this option to enable Bluetooth Audio Stream debug logs for the
 	  Bluetooth Audio functionality.
 
+module = BT_AUDIO_STREAM
+legacy-debug-sym = BT_AUDIO_DEBUG_STREAM
+module-str = "Bluetooth Audio Stream"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 config BT_AUDIO_DEBUG_STREAM_DATA
 	bool "Bluetooth Audio Stream data debug"
-	depends on BT_AUDIO_DEBUG_STREAM
+	depends on BT_AUDIO_STREAM_LOG_LEVEL_DBG
 	help
 	  Use this option to enable Bluetooth Audio Stream data debug logs for
 	  the Bluetooth Audio functionality. This will enable debug logs for all
@@ -270,52 +283,94 @@ config BT_AUDIO_DEBUG_STREAM_DATA
 
 config BT_DEBUG_ASCS
 	bool "Audio Stream Control Service debug"
+	select DEPRECATED
 	depends on BT_ASCS
 	help
 	  Use this option to enable Audio Stream Control Service debug logs for
 	  the Bluetooth Audio functionality.
 
+module = BT_ASCS
+legacy-debug-sym = BT_DEBUG_ASCS
+module-str = "Audio Stream Control Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 config BT_AUDIO_DEBUG_UNICAST_SERVER
 	bool "Bluetooth Audio Unicast Server debug"
+	select DEPRECATED
 	depends on BT_AUDIO_UNICAST_SERVER
 	help
 	  Use this option to enable Bluetooth Audio Unicast Server debug logs
 	  for the Bluetooth Audio functionality.
 
+module = BT_AUDIO_UNICAST_SERVER
+legacy-debug-sym = BT_AUDIO_DEBUG_UNICAST_SERVER
+module-str = "Bluetooth Audio Unicast Server"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 config BT_AUDIO_DEBUG_UNICAST_CLIENT
 	bool "Basic Audio Profile debug"
+	select DEPRECATED
 	depends on BT_AUDIO_UNICAST_CLIENT
 	help
 	  Use this option to enable Basic Audio Profile debug logs for the
 	  Bluetooth Audio functionality.
 
+module = BT_AUDIO_UNICAST_CLIENT
+legacy-debug-sym = BT_AUDIO_DEBUG_UNICAST_CLIENT
+module-str = "Basic Audio Profile"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 config BT_AUDIO_DEBUG_BROADCAST_SOURCE
 	bool "Bluetooth Audio Broadcast Source debug"
+	select DEPRECATED
 	depends on BT_AUDIO_BROADCAST_SOURCE
 	help
 	  Use this option to enable Bluetooth Audio Broadcast Source debug logs
 	  for the Bluetooth Audio functionality.
 
+module = BT_AUDIO_BROADCAST_SOURCE
+legacy-debug-sym = BT_AUDIO_DEBUG_BROADCAST_SOURCE
+module-str = "Bluetooth Audio Broadcast Source"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 config BT_AUDIO_DEBUG_BROADCAST_SINK
 	bool "Bluetooth Audio Broadcast Sink debug"
+	select DEPRECATED
 	depends on BT_AUDIO_BROADCAST_SINK
 	help
 	  Use this option to enable Bluetooth Audio Broadcast Sink debug logs
 	  for the Bluetooth Audio functionality.
 
+module = BT_AUDIO_BROADCAST_SINK
+legacy-debug-sym = BT_AUDIO_DEBUG_BROADCAST_SINK
+module-str = "Bluetooth Audio Broadcast Sink"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 config BT_DEBUG_BAP_SCAN_DELEGATOR
 	bool "Broadcast Audio Scan Service debug"
+	select DEPRECATED
 	depends on BT_BAP_SCAN_DELEGATOR
 	help
 	  Use this option to enable Broadcast Audio Scan Service debug logs for
 	  the Bluetooth Audio functionality.
 
+module = BT_BAP_SCAN_DELEGATOR
+legacy-debug-sym = BT_DEBUG_BAP_SCAN_DELEGATOR
+module-str = "Broadcast Audio Scan Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 config BT_DEBUG_BAP_BROADCAST_ASSISTANT
 	bool "Broadcast Audio Scan Service client debug"
+	select DEPRECATED
 	depends on BT_BAP_BROADCAST_ASSISTANT
 	help
 	  Use this option to enable Broadcast Audio Scan Service client
 	  debug logs for the Bluetooth Audio functionality.
+
+module = BT_BAP_BROADCAST_ASSISTANT
+legacy-debug-sym = BT_DEBUG_BAP_BROADCAST_ASSISTANT
+module-str = "Broadcast Audio Scan Service client debug"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 config BT_AUDIO_STREAM
 	# Virtual/hidden option

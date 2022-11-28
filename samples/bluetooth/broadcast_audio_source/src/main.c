@@ -33,7 +33,7 @@ static bool stopping;
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
-#define BROADCAST_SOURCE_LIFETIME  30U /* seconds */
+#define BROADCAST_SOURCE_LIFETIME  120U /* seconds */
 
 static void stream_started_cb(struct bt_audio_stream *stream)
 {
@@ -85,9 +85,50 @@ static struct bt_audio_stream_ops stream_ops = {
 	.sent = stream_sent_cb
 };
 
+static int setup_broadcast_source(struct bt_audio_broadcast_source **source)
+{
+	struct bt_audio_broadcast_source_stream_param
+		stream_params[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
+	struct bt_audio_broadcast_source_subgroup_param
+		subgroup_param[CONFIG_BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT];
+	struct bt_audio_broadcast_source_create_param create_param;
+	const size_t streams_per_subgroup = ARRAY_SIZE(stream_params) / ARRAY_SIZE(subgroup_param);
+	int err;
+
+	(void)memset(streams, 0, sizeof(streams));
+
+	for (size_t i = 0U; i < ARRAY_SIZE(subgroup_param); i++) {
+		subgroup_param[i].params_count = streams_per_subgroup;
+		subgroup_param[i].params = stream_params + i * streams_per_subgroup;
+		subgroup_param[i].codec = &preset_16_2_1.codec;
+	}
+
+	for (size_t j = 0U; j < ARRAY_SIZE(stream_params); j++) {
+		stream_params[j].stream = &streams[j];
+		stream_params[j].data = NULL;
+		stream_params[j].data_count = 0U;
+		bt_audio_stream_cb_register(stream_params[j].stream, &stream_ops);
+	}
+
+	create_param.params_count = ARRAY_SIZE(subgroup_param);
+	create_param.params = subgroup_param;
+	create_param.qos = &preset_16_2_1.qos;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       ARRAY_SIZE(subgroup_param),
+	       ARRAY_SIZE(subgroup_param) * streams_per_subgroup);
+
+	err = bt_audio_broadcast_source_create(&create_param, source);
+	if (err != 0) {
+		printk("Unable to create broadcast source: %d\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
 void main(void)
 {
-	struct bt_audio_stream *streams_p[ARRAY_SIZE(streams)];
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -98,11 +139,6 @@ void main(void)
 	}
 	printk("Bluetooth initialized\n");
 
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		streams[i].ops = &stream_ops;
-		streams_p[i] = &streams[i];
-	}
-
 	for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
 		/* Initialize mock data */
 		mock_data[i] = i;
@@ -112,7 +148,7 @@ void main(void)
 		/* Broadcast Audio Streaming Endpoint advertising data */
 		NET_BUF_SIMPLE_DEFINE(ad_buf,
 				      BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
-		NET_BUF_SIMPLE_DEFINE(base_buf, 64);
+		NET_BUF_SIMPLE_DEFINE(base_buf, 128);
 		struct bt_data ext_ad;
 		struct bt_data per_ad;
 		uint32_t broadcast_id;
@@ -134,13 +170,9 @@ void main(void)
 		}
 
 		printk("Creating broadcast source\n");
-		err = bt_audio_broadcast_source_create(streams_p,
-						       ARRAY_SIZE(streams_p),
-						       &preset_16_2_1.codec,
-						       &preset_16_2_1.qos,
-						       &broadcast_source);
+		err = setup_broadcast_source(&broadcast_source);
 		if (err != 0) {
-			printk("Unable to create broadcast source: %d\n", err);
+			printk("Unable to setup broadcast source: %d\n", err);
 			return;
 		}
 

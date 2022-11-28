@@ -189,7 +189,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 
 	shell_print(
 		(const struct shell *)user_data, "%p %-" STRINGIFY(THREAD_MAX_NAM_LEN) "s "
-		"(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%u %%)",
+		"(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%2u %%)",
 		thread, tname ? tname : "NA", size, unused, size - unused, size, pcnt);
 }
 
@@ -223,7 +223,7 @@ static int cmd_kernel_stacks(const struct shell *shell,
 		__ASSERT_NO_MSG(err == 0);
 
 		shell_print(shell,
-			    "%p IRQ %02d %s(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%zu %%)",
+			    "%p IRQ %02d %s(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%2zu %%)",
 			    &z_interrupt_stacks[i], i, pad, size, unused, size - unused, size,
 			    ((size - unused) * 100U) / size);
 	}

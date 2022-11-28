@@ -719,7 +719,7 @@ static int dw_dma_avail_data_size(uint32_t base,
 		if (delta) {
 			size = chan_data->ptr_data.buffer_bytes;
 		} else {
-			LOG_INF("%s size is 0!", __func__);
+			LOG_DBG("%s size is 0!", __func__);
 		}
 	}
 
@@ -751,7 +751,7 @@ static int dw_dma_free_data_size(uint32_t base,
 		if (delta) {
 			size = chan_data->ptr_data.buffer_bytes;
 		} else {
-			LOG_INF("%s size is 0!", __func__);
+			LOG_DBG("%s size is 0!", __func__);
 		}
 	}
 

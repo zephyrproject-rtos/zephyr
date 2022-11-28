@@ -79,18 +79,27 @@ struct bt_audio_unicast_group {
 	sys_slist_t streams;
 };
 
+struct bt_audio_broadcast_stream_data {
+#if defined(CONFIG_BT_CODEC_MAX_DATA_COUNT)
+	/** Codec Specific Data count */
+	size_t   data_count;
+	/** Codec Specific Data */
+	struct bt_codec_data data[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT */
+};
+
 struct bt_audio_broadcast_source {
 	uint8_t stream_count;
-	uint8_t subgroup_count;
-	uint32_t pd; /** QoS Presentation Delay */
 	uint32_t broadcast_id; /* 24 bit */
 
 	struct bt_iso_big *big;
-	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
 	struct bt_codec_qos *qos;
-	struct bt_codec *codec;
-	/* The streams used to create the broadcast source */
-	sys_slist_t streams;
+
+	/* The codec specific configured data for each stream in the subgroup */
+	struct bt_audio_broadcast_stream_data stream_data[BROADCAST_STREAM_CNT];
+
+	/* The subgroups containing the streams used to create the broadcast source */
+	sys_slist_t subgroups;
 };
 
 struct bt_audio_broadcast_sink {

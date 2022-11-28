@@ -63,19 +63,7 @@ description: |
 
 compatible: "microchip,xec-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-pull-down
-          - bias-pull-up
-          - drive-push-pull
-          - drive-open-drain
-          - low-power-enable
-          - output-high
-          - output-low
+include: base.yaml
 
 properties:
     reg:
@@ -85,6 +73,18 @@ child-binding:
     description: |
       This binding gives a base representation of the Microchip XEC pins
       configuration
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - drive-push-pull
+          - drive-open-drain
+          - low-power-enable
+          - output-high
+          - output-low
 
     properties:
         pinmux:

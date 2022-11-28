@@ -66,9 +66,6 @@
 #include "ull_llcp.h"
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_adv
-#include "common/log.h"
 #include "hal/debug.h"
 
 inline struct ll_adv_set *ull_adv_set_get(uint8_t handle);
@@ -1463,7 +1460,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 				ticks_anchor + ticks_slot +
 				HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
-					    EVENT_OVERHEAD_START_US) +
+					    EVENT_OVERHEAD_START_US) -
+					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 
 			ticks_slot_overhead_aux =
@@ -1503,7 +1501,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 					ticks_anchor_aux + ticks_slot_aux +
 					HAL_TICKER_US_TO_TICKS(
 						MAX(EVENT_MAFS_US,
-						    EVENT_OVERHEAD_START_US) +
+						    EVENT_OVERHEAD_START_US) -
+						EVENT_OVERHEAD_START_US +
 						(EVENT_TICKER_RES_MARGIN_US << 1));
 
 				ret = ull_adv_sync_start(adv, sync,

@@ -1,5 +1,6 @@
 tests:
   kernel.poll:
-    tags: kernel userspace ignore_faults
+    ignore_faults: true
+    tags: kernel userspace
     # FIXME: qemu_arc_hs6x is excluded due to a run-time failure, see #49492
     platform_exclude: nrf52dk_nrf52810 qemu_arc_hs6x

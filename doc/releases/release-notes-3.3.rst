@@ -40,6 +40,11 @@ Changes in this release
 * Starting from this release ``zephyr-`` prefixed tags won't be created
   anymore. The project will continue using ``v`` tags, for example ``v3.3.0``.
 
+* Bluetooth: Deprecate the Bluetooth logging subsystem in favor of the Zephyr
+  standard logging system. To enable debugging for a particular module in the
+  Bluetooth subsystem, enable `CONFIG_BT_(module name)_LOG_LEVEL_DBG` instead of
+  `CONFIG_BT_DEBUG_(module name)`.
+
 Removed APIs in this release
 ============================
 
@@ -104,6 +109,21 @@ Deprecated in this release
   :kconfig:option:`CONFIG_COUNTER_RTC_STM32_CLOCK_LSE` options are now
   deprecated.
 
+* File backend for settings APIs and Kconfig options were deprecated:
+
+  :c:func:`settings_mount_fs_backend` in favor of :c:func:`settings_mount_file_backend`
+
+  :kconfig:option:`CONFIG_SETTINGS_FS` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE`
+
+  :kconfig:option:`CONFIG_SETTINGS_FS_DIR` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_DIR`
+
+  :kconfig:option:`CONFIG_SETTINGS_FS_FILE` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_PATH`
+
+  :kconfig:option:`CONFIG_SETTINGS_FS_MAX_LINES` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_MAX_LINES`
+
+* PCIe APIs :c:func:`pcie_probe` and :c:func:`pcie_bdf_lookup` have been
+  deprecated in favor of a centralized scan of available PCIe devices.
+
 Stable API changes in this release
 ==================================
 
@@ -149,6 +169,8 @@ Bluetooth
 
   * Fixed missing calls to bt_le_per_adv_sync_cb.term when deleting a periodic
     advertising sync object.
+
+  * Added local advertising address to bt_le_ext_adv_info.
 
 * Mesh
 
@@ -256,6 +278,14 @@ Drivers and Sensors
 * PECI
 
 * Pin control
+
+  * Common pin control properties are now defined at root level in a single
+    file: :zephyr_file:`dts/bindings/pinctrl/pincfg-node.yaml`. Pin control
+    bindings are expected to include it at the level they need. For example,
+    drivers using the grouping representation approach need to include it at
+    grandchild level, while drivers using the node approach need to include it
+    at the child level. This change will only impact out-of-tree pin control
+    drivers, sinc all in-tree drivers have been updated.
 
 * PWM
 

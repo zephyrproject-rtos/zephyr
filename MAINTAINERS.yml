@@ -249,7 +249,9 @@ Bluetooth Audio:
     - MariuszSkamra
     - rymanluk
     - sjanc
+    - szymon-czapracki
     - asbjornsabo
+    - fredrikdanebjer
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -763,6 +765,19 @@ Release Notes:
     - samples/drivers/fpga/
   labels:
     - "area: FPGA"
+
+"Drivers: Fuel Gauge":
+  status: maintained
+  maintainers:
+    - aaronemassey
+    - teburd
+  files:
+    - drivers/fuel_gauge/
+    - dts/bindings/fuel-gauge/
+    - include/zephyr/drivers/fuel_gauge.h
+    - tests/drivers/fuel_gauge/
+  labels:
+    - "area: Fuel Gauge"
 
 "Drivers: GPIO":
   status: maintained

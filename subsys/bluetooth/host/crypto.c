@@ -22,12 +22,13 @@
 #include <tinycrypt/aes.h>
 #include <tinycrypt/utils.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
-#define LOG_MODULE_NAME bt_host_crypto
-#include "common/log.h"
 #include "common/bt_str.h"
 
 #include "hci_core.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_host_crypto);
 
 static struct tc_hmac_prng_struct prng;
 
@@ -47,7 +48,7 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 	ret = tc_hmac_prng_reseed(h, seed, sizeof(seed), (uint8_t *)&extra,
 				  sizeof(extra));
 	if (ret == TC_CRYPTO_FAIL) {
-		BT_ERR("Failed to re-seed PRNG");
+		LOG_ERR("Failed to re-seed PRNG");
 		return -EIO;
 	}
 
@@ -66,7 +67,7 @@ int prng_init(void)
 
 	ret = tc_hmac_prng_init(&prng, perso, sizeof(perso));
 	if (ret == TC_CRYPTO_FAIL) {
-		BT_ERR("Failed to initialize PRNG");
+		LOG_ERR("Failed to initialize PRNG");
 		return -EIO;
 	}
 
@@ -120,8 +121,8 @@ int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 		return -EINVAL;
 	}
 
-	BT_DBG("key %s", bt_hex(key, 16));
-	BT_DBG("plaintext %s", bt_hex(plaintext, 16));
+	LOG_DBG("key %s", bt_hex(key, 16));
+	LOG_DBG("plaintext %s", bt_hex(plaintext, 16));
 
 	sys_memcpy_swap(tmp, key, 16);
 
@@ -137,7 +138,7 @@ int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 
 	sys_mem_swap(enc_data, 16);
 
-	BT_DBG("enc_data %s", bt_hex(enc_data, 16));
+	LOG_DBG("enc_data %s", bt_hex(enc_data, 16));
 
 	return 0;
 }
@@ -151,8 +152,8 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 		return -EINVAL;
 	}
 
-	BT_DBG("key %s", bt_hex(key, 16));
-	BT_DBG("plaintext %s", bt_hex(plaintext, 16));
+	LOG_DBG("key %s", bt_hex(key, 16));
+	LOG_DBG("plaintext %s", bt_hex(plaintext, 16));
 
 	if (tc_aes128_set_encrypt_key(&s, key) == TC_CRYPTO_FAIL) {
 		return -EINVAL;
@@ -162,7 +163,14 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 		return -EINVAL;
 	}
 
-	BT_DBG("enc_data %s", bt_hex(enc_data, 16));
+	LOG_DBG("enc_data %s", bt_hex(enc_data, 16));
 
 	return 0;
 }
+
+#ifdef ZTEST_UNITTEST
+struct tc_hmac_prng_struct *bt_crypto_get_hmac_prng_instance(void)
+{
+	return &prng;
+}
+#endif /* ZTEST_UNITTEST */

@@ -17,13 +17,16 @@ concurrency:
 
 jobs:
   bluetooth-test:
-    runs-on: ubuntu-20.04
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.6
       options: '--entrypoint /bin/bash'
+      volumes:
+        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       EDTT_PATH: ../tools/edtt
@@ -37,26 +40,37 @@ jobs:
           #        GitHub comes up with a fundamental fix for this problem.
           git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
-      - name: Update PATH for west
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
         run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          git clone --shared /github/cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: west setup
+      - name: Environment Setup
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "Your Name"
-          git remote -v
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
+          git log  --pretty=oneline | head -n 10
           west init -l . || true
+          west config manifest.group-filter -- +ci
           west config --global update.narrow true
-          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
+          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
+          west forall -c 'git reset --hard HEAD'
+
+      - name: Install parallel
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y parallel
+          parallel --version
 
       - name: Run Bluetooth Tests with BSIM
         run: |

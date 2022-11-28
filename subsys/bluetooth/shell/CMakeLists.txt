@@ -42,12 +42,12 @@ zephyr_library_sources_ifdef(
   micp_mic_ctlr.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_CSIS
-  csis.c
+  CONFIG_BT_CSIP_SET_MEMBER
+  csip_set_member.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_CSIS_CLIENT
-  csis_client.c
+  CONFIG_BT_CSIP_SET_COORDINATOR
+  csip_set_coordinator.c
   )
 zephyr_library_sources_ifdef(
   CONFIG_BT_TBS
@@ -74,7 +74,7 @@ zephyr_library_sources_ifdef(
   has.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_CAP_ACCEPTOR
+  CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER
   cap_acceptor.c
   )
 zephyr_library_sources_ifdef(

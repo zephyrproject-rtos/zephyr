@@ -59,7 +59,7 @@ class Harness:
         config = instance.testsuite.harness_config
         self.id = instance.testsuite.id
         self.run_id = instance.run_id
-        if "ignore_faults" in instance.testsuite.tags:
+        if instance.testsuite.ignore_faults:
             self.fail_on_fault = False
 
         if config:

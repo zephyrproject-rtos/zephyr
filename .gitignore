@@ -66,10 +66,11 @@ tags
 
 # from check_compliance.py
 Gitlint.txt
-checkpatch.txt
+Checkpatch.txt
 Kconfig.txt
 KconfigBasic.txt
 Codeowners.txt
 Nits.txt
-pylint.txt
+Pylint.txt
 Identity.txt
+DevicetreeBindings.txt

@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
-#include <zephyr/bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/services/ias.h>
 
 #include "hap_ha.h"
@@ -38,15 +38,15 @@ static uint8_t unicast_server_addata[] = {
 	0x00, /* Metadata length */
 };
 
-static uint8_t csis_rsi_addata[BT_CSIS_RSI_SIZE];
+static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
 
 /* TODO: Expand with BAP data */
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
-#if defined(CONFIG_BT_CSIS)
+#if defined(CONFIG_BT_CSIP_SET_MEMBER)
 	BT_DATA(BT_DATA_CSIS_RSI, csis_rsi_addata, ARRAY_SIZE(csis_rsi_addata)),
-#endif /* CONFIG_BT_CSIS */
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
 	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
 
@@ -63,7 +63,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-#if defined(CONFIG_BT_PRIVACY) && defined(CONFIG_BT_CSIS)
+#if defined(CONFIG_BT_PRIVACY) && defined(CONFIG_BT_CSIP_SET_MEMBER)
 static bool adv_rpa_expired_cb(struct bt_le_ext_adv *adv)
 {
 	char rsi_str[13];
@@ -89,12 +89,12 @@ static bool adv_rpa_expired_cb(struct bt_le_ext_adv *adv)
 
 	return true;
 }
-#endif /* CONFIG_BT_PRIVACY && CONFIG_BT_CSIS */
+#endif /* CONFIG_BT_PRIVACY && CONFIG_BT_CSIP_SET_MEMBER */
 
 static const struct bt_le_ext_adv_cb adv_cb = {
-#if defined(CONFIG_BT_PRIVACY) && defined(CONFIG_BT_CSIS)
+#if defined(CONFIG_BT_PRIVACY) && defined(CONFIG_BT_CSIP_SET_MEMBER)
 	.rpa_expired = adv_rpa_expired_cb,
-#endif /* CONFIG_BT_PRIVACY && CONFIG_BT_CSIS */
+#endif /* CONFIG_BT_PRIVACY && CONFIG_BT_CSIP_SET_MEMBER */
 };
 
 static void adv_work_handler(struct k_work *work)

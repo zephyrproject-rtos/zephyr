@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
 
@@ -25,9 +26,9 @@
 #include "unicast_client_internal.h"
 #include "unicast_server.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM)
-#define LOG_MODULE_NAME bt_audio_stream
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_audio_stream, CONFIG_BT_AUDIO_STREAM_LOG_LEVEL);
 
 static uint8_t pack_bt_codec_cc(const struct bt_codec *codec, uint8_t cc[])
 {
@@ -74,7 +75,7 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 			    struct bt_audio_ep *ep,
 			    struct bt_codec *codec)
 {
-	BT_DBG("conn %p stream %p ep %p codec %p", conn, stream, ep, codec);
+	LOG_DBG("conn %p stream %p ep %p codec %p", conn, stream, ep, codec);
 
 	if (conn != NULL) {
 		__ASSERT(stream->conn == NULL || stream->conn == conn,
@@ -95,7 +96,48 @@ struct bt_iso_chan *bt_audio_stream_iso_chan_get(struct bt_audio_stream *stream)
 	return NULL;
 }
 
+void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
+				 struct bt_audio_stream_ops *ops)
+{
+	stream->ops = ops;
+}
+
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
+{
+	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
+	    qos->interval > BT_ISO_SDU_INTERVAL_MAX) {
+		LOG_DBG("Interval not within allowed range: %u (%u-%u)", qos->interval,
+			BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX);
+		return false;
+	}
+
+	if (qos->framing > BT_CODEC_QOS_FRAMED) {
+		LOG_DBG("Invalid Framing 0x%02x", qos->framing);
+		return false;
+	}
+
+	if (qos->phy != BT_CODEC_QOS_1M &&
+	    qos->phy != BT_CODEC_QOS_2M &&
+	    qos->phy != BT_CODEC_QOS_CODED) {
+		LOG_DBG("Invalid PHY 0x%02x", qos->phy);
+		return false;
+	}
+
+	if (qos->sdu > BT_ISO_MAX_SDU) {
+		LOG_DBG("Invalid SDU %u", qos->sdu);
+		return false;
+	}
+
+	if (qos->latency < BT_ISO_LATENCY_MIN ||
+	    qos->latency > BT_ISO_LATENCY_MAX) {
+		LOG_DBG("Invalid Latency %u", qos->latency);
+		return false;
+	}
+
+	return true;
+}
+
 int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
 			 uint16_t seq_num, uint32_t ts)
 {
@@ -108,8 +150,8 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
 	ep = stream->ep;
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
-		BT_DBG("Channel %p not ready for streaming (state: %s)",
-		       stream, bt_audio_ep_state_str(ep->status.state));
+		LOG_DBG("Channel %p not ready for streaming (state: %s)", stream,
+			bt_audio_ep_state_str(ep->status.state));
 		return -EBADMSG;
 	}
 
@@ -133,7 +175,7 @@ static int bt_audio_stream_iso_accept(const struct bt_iso_accept_info *info,
 {
 	int i;
 
-	BT_DBG("acl %p", info->acl);
+	LOG_DBG("acl %p", info->acl);
 
 	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
 		struct bt_audio_stream *c = enabling[i];
@@ -143,13 +185,13 @@ static int bt_audio_stream_iso_accept(const struct bt_iso_accept_info *info,
 			*iso_chan = &enabling[i]->ep->iso->chan;
 			enabling[i] = NULL;
 
-			BT_DBG("iso_chan %p", *iso_chan);
+			LOG_DBG("iso_chan %p", *iso_chan);
 
 			return 0;
 		}
 	}
 
-	BT_ERR("No channel listening");
+	LOG_ERR("No channel listening");
 
 	return -EPERM;
 }
@@ -165,7 +207,7 @@ int bt_audio_stream_iso_listen(struct bt_audio_stream *stream)
 	int err, i;
 	struct bt_audio_stream **free_stream = NULL;
 
-	BT_DBG("stream %p conn %p", stream, stream->conn);
+	LOG_DBG("stream %p conn %p", stream, stream->conn);
 
 	if (server) {
 		goto done;
@@ -173,7 +215,7 @@ int bt_audio_stream_iso_listen(struct bt_audio_stream *stream)
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
-		BT_ERR("bt_iso_server_register: %d", err);
+		LOG_ERR("bt_iso_server_register: %d", err);
 		return err;
 	}
 
@@ -195,46 +237,11 @@ done:
 		return 0;
 	}
 
-	BT_ERR("Unable to listen: no slot left");
+	LOG_ERR("Unable to listen: no slot left");
 
 	return -ENOSPC;
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
-
-bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
-{
-	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
-	    qos->interval > BT_ISO_SDU_INTERVAL_MAX) {
-		BT_DBG("Interval not within allowed range: %u (%u-%u)",
-		       qos->interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX);
-		return false;
-	}
-
-	if (qos->framing > BT_CODEC_QOS_FRAMED) {
-		BT_DBG("Invalid Framing 0x%02x", qos->framing);
-		return false;
-	}
-
-	if (qos->phy != BT_CODEC_QOS_1M &&
-	    qos->phy != BT_CODEC_QOS_2M &&
-	    qos->phy != BT_CODEC_QOS_CODED) {
-		BT_DBG("Invalid PHY 0x%02x", qos->phy);
-		return false;
-	}
-
-	if (qos->sdu > BT_ISO_MAX_SDU) {
-		BT_DBG("Invalid SDU %u", qos->sdu);
-		return false;
-	}
-
-	if (qos->latency < BT_ISO_LATENCY_MIN ||
-	    qos->latency > BT_ISO_LATENCY_MAX) {
-		BT_DBG("Invalid Latency %u", qos->latency);
-		return false;
-	}
-
-	return true;
-}
 
 static bool bt_audio_stream_is_broadcast(const struct bt_audio_stream *stream)
 {
@@ -251,12 +258,11 @@ bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
 
 	if (qos_pref->latency < qos->latency) {
 		/* Latency is a preferred value. Print debug info but do not fail. */
-		BT_DBG("Latency %u higher than preferred max %u",
-			qos->latency, qos_pref->latency);
+		LOG_DBG("Latency %u higher than preferred max %u", qos->latency, qos_pref->latency);
 	}
 
 	if (!IN_RANGE(qos->pd, qos_pref->pd_min, qos_pref->pd_max)) {
-		BT_DBG("Presentation Delay not within range: min %u max %u pd %u",
+		LOG_DBG("Presentation Delay not within range: min %u max %u pd %u",
 			qos_pref->pd_min, qos_pref->pd_max, qos->pd);
 		return false;
 	}
@@ -268,7 +274,7 @@ void bt_audio_stream_detach(struct bt_audio_stream *stream)
 {
 	const bool is_broadcast = bt_audio_stream_is_broadcast(stream);
 
-	BT_DBG("stream %p", stream);
+	LOG_DBG("stream %p", stream);
 
 	if (stream->conn != NULL) {
 		bt_conn_unref(stream->conn);
@@ -287,7 +293,7 @@ int bt_audio_stream_disconnect(struct bt_audio_stream *stream)
 {
 	struct bt_iso_chan *iso_chan = bt_audio_stream_iso_chan_get(stream);
 
-	BT_DBG("stream %p iso %p", stream, iso_chan);
+	LOG_DBG("stream %p iso %p", stream, iso_chan);
 
 	if (stream == NULL) {
 		return -EINVAL;
@@ -312,19 +318,13 @@ int bt_audio_stream_disconnect(struct bt_audio_stream *stream)
 
 void bt_audio_stream_reset(struct bt_audio_stream *stream)
 {
-	BT_DBG("stream %p", stream);
+	LOG_DBG("stream %p", stream);
 
 	if (stream == NULL) {
 		return;
 	}
 
 	bt_audio_stream_detach(stream);
-}
-
-void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
-				 struct bt_audio_stream_ops *ops)
-{
-	stream->ops = ops;
 }
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
@@ -337,24 +337,24 @@ int bt_audio_stream_config(struct bt_conn *conn,
 	uint8_t role;
 	int err;
 
-	BT_DBG("conn %p stream %p, ep %p codec %p codec id 0x%02x "
+	LOG_DBG("conn %p stream %p, ep %p codec %p codec id 0x%02x "
 	       "codec cid 0x%04x codec vid 0x%04x", conn, stream, ep,
 	       codec, codec ? codec->id : 0, codec ? codec->cid : 0,
 	       codec ? codec->vid : 0);
 
 	CHECKIF(conn == NULL || stream == NULL || codec == NULL) {
-		BT_DBG("NULL value(s) supplied)");
+		LOG_DBG("NULL value(s) supplied)");
 		return -EINVAL;
 	}
 
 	if (stream->conn != NULL) {
-		BT_DBG("Stream already configured for conn %p", stream->conn);
+		LOG_DBG("Stream already configured for conn %p", stream->conn);
 		return -EALREADY;
 	}
 
 	role = conn->role;
 	if (role != BT_HCI_ROLE_CENTRAL) {
-		BT_DBG("Invalid conn role: %u, shall be central", role);
+		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -367,8 +367,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
 	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		BT_ERR("Invalid state: %s",
-		       bt_audio_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(ep->status.state));
 		return -EBADMSG;
 	}
 
@@ -376,7 +375,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
 
 	err = bt_unicast_client_config(stream, codec);
 	if (err != 0) {
-		BT_DBG("Failed to configure stream: %d", err);
+		LOG_DBG("Failed to configure stream: %d", err);
 		return err;
 	}
 
@@ -400,7 +399,7 @@ static int bt_audio_cig_create(struct bt_audio_unicast_group *group,
 	uint8_t cis_count;
 	int err;
 
-	BT_DBG("group %p qos %p", group, qos);
+	LOG_DBG("group %p qos %p", group, qos);
 
 	cis_count = 0;
 	for (size_t i = 0; i < ARRAY_SIZE(group->cis); i++) {
@@ -415,7 +414,7 @@ static int bt_audio_cig_create(struct bt_audio_unicast_group *group,
 
 	err = bt_iso_cig_create(&param, &group->cig);
 	if (err != 0) {
-		BT_ERR("bt_iso_cig_create failed: %d", err);
+		LOG_ERR("bt_iso_cig_create failed: %d", err);
 		return err;
 	}
 
@@ -431,7 +430,7 @@ static int bt_audio_cig_reconfigure(struct bt_audio_unicast_group *group,
 	uint8_t cis_count;
 	int err;
 
-	BT_DBG("group %p qos %p", group, qos);
+	LOG_DBG("group %p qos %p", group, qos);
 
 	cis_count = 0U;
 	for (size_t i = 0; i < ARRAY_SIZE(group->cis); i++) {
@@ -446,7 +445,7 @@ static int bt_audio_cig_reconfigure(struct bt_audio_unicast_group *group,
 
 	err = bt_iso_cig_reconfigure(group->cig, &param);
 	if (err != 0) {
-		BT_ERR("bt_iso_cig_create failed: %d", err);
+		LOG_ERR("bt_iso_cig_create failed: %d", err);
 		return err;
 	}
 
@@ -482,26 +481,26 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 	uint8_t role;
 	int err;
 
-	BT_DBG("conn %p group %p", conn, group);
+	LOG_DBG("conn %p group %p", conn, group);
 
 	CHECKIF(conn == NULL) {
-		BT_DBG("conn is NULL");
+		LOG_DBG("conn is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(group == NULL) {
-		BT_DBG("group is NULL");
+		LOG_DBG("group is NULL");
 		return -EINVAL;
 	}
 
 	if (sys_slist_is_empty(&group->streams)) {
-		BT_DBG("group stream list is empty");
+		LOG_DBG("group stream list is empty");
 		return -ENOEXEC;
 	}
 
 	role = conn->role;
 	if (role != BT_HCI_ROLE_CENTRAL) {
-		BT_DBG("Invalid conn role: %u, shall be central", role);
+		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -525,7 +524,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 		ep = stream->ep;
 		if (ep == NULL) {
-			BT_DBG("stream->ep is NULL");
+			LOG_DBG("stream->ep is NULL");
 			return -EINVAL;
 		}
 
@@ -537,8 +536,8 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 		case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 			break;
 		default:
-			BT_DBG("Invalid state: %s",
-			       bt_audio_ep_state_str(stream->ep->status.state));
+			LOG_DBG("Invalid state: %s",
+				bt_audio_ep_state_str(stream->ep->status.state));
 			return -EINVAL;
 		}
 
@@ -560,13 +559,13 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 			/* This can only happen if the stream was somehow added
 			 * to a group without the audio_iso being bound to it
 			 */
-			BT_ERR("Could not find audio_iso for stream %p", stream);
+			LOG_ERR("Could not find audio_iso for stream %p", stream);
 			return -EINVAL;
 		}
 	}
 
 	if (!conn_stream_found) {
-		BT_DBG("No streams in the group %p for conn %p", group, conn);
+		LOG_DBG("No streams in the group %p for conn %p", group, conn);
 		return -EINVAL;
 	}
 
@@ -598,7 +597,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 	err = bt_unicast_client_ep_send(conn, ep, buf);
 	if (err != 0) {
-		BT_DBG("Could not send config QoS: %d", err);
+		LOG_DBG("Could not send config QoS: %d", err);
 		audio_stream_qos_cleanup(conn, group);
 		return err;
 	}
@@ -613,29 +612,28 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 	uint8_t role;
 	int err;
 
-	BT_DBG("stream %p", stream);
+	LOG_DBG("stream %p", stream);
 
 	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
+		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
 	role = stream->conn->role;
 	if (role != BT_HCI_ROLE_CENTRAL) {
-		BT_DBG("Invalid conn role: %u, shall be central", role);
+		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
 	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
 	if (stream->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-		BT_ERR("Invalid state: %s",
-		       bt_audio_ep_state_str(stream->ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(stream->ep->status.state));
 		return -EBADMSG;
 	}
 
 	err = bt_unicast_client_enable(stream, meta, meta_count);
 	if (err != 0) {
-		BT_DBG("Failed to enable stream: %d", err);
+		LOG_DBG("Failed to enable stream: %d", err);
 		return err;
 	}
 
@@ -649,13 +647,13 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 	int err;
 
 	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
+		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
 	role = stream->conn->role;
 	if (role != BT_HCI_ROLE_CENTRAL) {
-		BT_DBG("Invalid conn role: %u, shall be central", role);
+		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -666,14 +664,13 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 	case BT_AUDIO_EP_STATE_DISABLING:
 		break;
 	default:
-		BT_ERR("Invalid state: %s",
-		       bt_audio_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(ep->status.state));
 		return -EBADMSG;
 	}
 
 	err = bt_unicast_client_stop(stream);
 	if (err != 0) {
-		BT_DBG("Stopping stream failed: %d", err);
+		LOG_DBG("Stopping stream failed: %d", err);
 		return err;
 	}
 
@@ -682,7 +679,7 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 
 int bt_audio_cig_terminate(struct bt_audio_unicast_group *group)
 {
-	BT_DBG("group %p", group);
+	LOG_DBG("group %p", group);
 
 	return bt_iso_cig_terminate(group->cig);
 }
@@ -694,7 +691,7 @@ int bt_audio_stream_connect(struct bt_audio_stream *stream)
 
 	iso_chan = bt_audio_stream_iso_chan_get(stream);
 
-	BT_DBG("stream %p iso %p", stream, iso_chan);
+	LOG_DBG("stream %p iso %p", stream, iso_chan);
 
 	if (stream == NULL || iso_chan == NULL) {
 		return -EINVAL;
@@ -846,7 +843,7 @@ static int unicast_group_add_stream(struct bt_audio_unicast_group *group,
 	stream->unicast_group = group;
 	sys_slist_append(&group->streams, &stream->_node);
 
-	BT_DBG("Added stream %p to group %p", stream, group);
+	LOG_DBG("Added stream %p to group %p", stream, group);
 
 	return 0;
 }
@@ -909,20 +906,19 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
 	int err;
 
 	CHECKIF(out_unicast_group == NULL) {
-		BT_DBG("out_unicast_group is NULL");
+		LOG_DBG("out_unicast_group is NULL");
 		return -EINVAL;
 	}
 	/* Set out_unicast_group to NULL until the source has actually been created */
 	*out_unicast_group = NULL;
 
 	CHECKIF(params == NULL) {
-		BT_DBG("streams is NULL");
+		LOG_DBG("streams is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(num_param > UNICAST_GROUP_STREAM_CNT) {
-		BT_DBG("Too many streams provided: %u/%u",
-		       num_param, UNICAST_GROUP_STREAM_CNT);
+		LOG_DBG("Too many streams provided: %u/%u", num_param, UNICAST_GROUP_STREAM_CNT);
 		return -EINVAL;
 	}
 
@@ -931,32 +927,32 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
 			params[i].qos == NULL ||
 			(params[i].dir != BT_AUDIO_DIR_SINK &&
 			 params[i].dir != BT_AUDIO_DIR_SOURCE)) {
-			BT_DBG("Invalid params[%zu] values", i);
+			LOG_DBG("Invalid params[%zu] values", i);
 			return -EINVAL;
 		}
 
 		if (params[i].stream->group != NULL) {
-			BT_DBG("params[%zu] stream (%p) already part of group %p",
-			       i, params[i].stream, params[i].stream->group);
+			LOG_DBG("params[%zu] stream (%p) already part of group %p", i,
+				params[i].stream, params[i].stream->group);
 			return -EALREADY;
 		}
 
 		if (group_qos == NULL) {
 			group_qos = params[i].qos;
 		} else if (!unicast_group_valid_qos(group_qos, params[i].qos)) {
-			BT_DBG("Stream[%zu] QoS incompatible with group QoS", i);
+			LOG_DBG("Stream[%zu] QoS incompatible with group QoS", i);
 			return -EINVAL;
 		}
 
 		CHECKIF(!bt_audio_valid_qos(params[i].qos)) {
-			BT_DBG("Invalid QoS");
+			LOG_DBG("Invalid QoS");
 			return -EINVAL;
 		}
 	}
 
 	unicast_group = unicast_group_alloc();
 	if (unicast_group == NULL) {
-		BT_DBG("Could not allocate any more unicast groups");
+		LOG_DBG("Could not allocate any more unicast groups");
 		return -ENOMEM;
 	}
 
@@ -964,7 +960,7 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
 		err = unicast_group_add_stream(unicast_group, params[i].stream,
 					       params[i].qos, params[i].dir);
 		if (err < 0) {
-			BT_DBG("unicast_group_add_stream failed: %d", err);
+			LOG_DBG("unicast_group_add_stream failed: %d", err);
 			unicast_group_free(unicast_group);
 
 			return err;
@@ -973,7 +969,7 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
 
 	err = bt_audio_cig_create(unicast_group, group_qos);
 	if (err != 0) {
-		BT_DBG("bt_audio_cig_create failed: %d", err);
+		LOG_DBG("bt_audio_cig_create failed: %d", err);
 		unicast_group_free(unicast_group);
 
 		return err;
@@ -996,17 +992,17 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 	int err;
 
 	CHECKIF(unicast_group == NULL) {
-		BT_DBG("unicast_group is NULL");
+		LOG_DBG("unicast_group is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(params == NULL) {
-		BT_DBG("params is NULL");
+		LOG_DBG("params is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(num_param == 0) {
-		BT_DBG("num_param is 0");
+		LOG_DBG("num_param is 0");
 		return -EINVAL;
 	}
 
@@ -1015,20 +1011,20 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 			params[i].qos == NULL ||
 			(params[i].dir != BT_AUDIO_DIR_SINK &&
 			 params[i].dir != BT_AUDIO_DIR_SOURCE)) {
-			BT_DBG("Invalid params[%zu] values", i);
+			LOG_DBG("Invalid params[%zu] values", i);
 			return -EINVAL;
 		}
 
 		if (params[i].stream->group != NULL) {
-			BT_DBG("params[%zu] stream (%p) already part of group %p",
-			       i, params[i].stream, params[i].stream->group);
+			LOG_DBG("params[%zu] stream (%p) already part of group %p", i,
+				params[i].stream, params[i].stream->group);
 			return -EALREADY;
 		}
 
 		if (group_qos == NULL) {
 			group_qos = params[i].qos;
 		} else if (!unicast_group_valid_qos(group_qos, params[i].qos)) {
-			BT_DBG("Stream[%zu] QoS incompatible with group QoS", i);
+			LOG_DBG("Stream[%zu] QoS incompatible with group QoS", i);
 			return -EINVAL;
 		}
 	}
@@ -1039,8 +1035,8 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 	}
 
 	if (total_stream_cnt > UNICAST_GROUP_STREAM_CNT) {
-		BT_DBG("Too many streams provided: %u/%u",
-		       total_stream_cnt, UNICAST_GROUP_STREAM_CNT);
+		LOG_DBG("Too many streams provided: %u/%u", total_stream_cnt,
+			UNICAST_GROUP_STREAM_CNT);
 		return -EINVAL;
 
 	}
@@ -1050,7 +1046,7 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 	 */
 	cig = unicast_group->cig;
 	if (cig != NULL && cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
-		BT_DBG("At least one unicast group stream is started");
+		LOG_DBG("At least one unicast group stream is started");
 		return -EBADMSG;
 	}
 
@@ -1060,14 +1056,14 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 					       params[num_added].qos,
 					       params[num_added].dir);
 		if (err < 0) {
-			BT_DBG("unicast_group_add_stream failed: %d", err);
+			LOG_DBG("unicast_group_add_stream failed: %d", err);
 			goto fail;
 		}
 	}
 
 	err = bt_audio_cig_reconfigure(unicast_group, group_qos);
 	if (err != 0) {
-		BT_DBG("bt_audio_cig_reconfigure failed: %d", err);
+		LOG_DBG("bt_audio_cig_reconfigure failed: %d", err);
 		goto fail;
 	}
 
@@ -1085,7 +1081,7 @@ fail:
 int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 {
 	CHECKIF(unicast_group == NULL) {
-		BT_DBG("unicast_group is NULL");
+		LOG_DBG("unicast_group is NULL");
 		return -EINVAL;
 	}
 
@@ -1093,8 +1089,7 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 		const int err = bt_audio_cig_terminate(unicast_group);
 
 		if (err != 0) {
-			BT_DBG("bt_audio_cig_terminate failed with err %d",
-			       err);
+			LOG_DBG("bt_audio_cig_terminate failed with err %d", err);
 
 			return err;
 		}
@@ -1114,15 +1109,15 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 	uint8_t role;
 	int err;
 
-	BT_DBG("stream %p codec %p", stream, codec);
+	LOG_DBG("stream %p codec %p", stream, codec);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
+		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
 	CHECKIF(codec == NULL) {
-		BT_DBG("codec is NULL");
+		LOG_DBG("codec is NULL");
 		return -EINVAL;
 	}
 
@@ -1136,7 +1131,7 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		BT_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -1152,7 +1147,7 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 	}
 
 	if (err != 0) {
-		BT_DBG("reconfiguring stream failed: %d", err);
+		LOG_DBG("reconfiguring stream failed: %d", err);
 	} else {
 		stream->codec = codec;
 	}
@@ -1166,10 +1161,10 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 	uint8_t role;
 	int err;
 
-	BT_DBG("stream %p ep %p", stream, stream == NULL ? NULL : stream->ep);
+	LOG_DBG("stream %p ep %p", stream, stream == NULL ? NULL : stream->ep);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
+		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
@@ -1179,7 +1174,7 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 	case BT_AUDIO_EP_STATE_ENABLING:
 		break;
 	default:
-		BT_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -1195,7 +1190,7 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 	}
 
 	if (err != 0) {
-		BT_DBG("Starting stream failed: %d", err);
+		LOG_DBG("Starting stream failed: %d", err);
 		return err;
 	}
 
@@ -1210,16 +1205,16 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 	uint8_t role;
 	int err;
 
-	BT_DBG("stream %p metadata count %u", stream, meta_count);
+	LOG_DBG("stream %p metadata count %u", stream, meta_count);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
+		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
 	CHECKIF((meta == NULL && meta_count != 0U) ||
 		(meta != NULL && meta_count == 0U)) {
-		BT_DBG("Invalid meta (%p) or count (%zu)", meta, meta_count);
+		LOG_DBG("Invalid meta (%p) or count (%zu)", meta, meta_count);
 		return -EINVAL;
 	}
 
@@ -1231,7 +1226,7 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 	case BT_AUDIO_EP_STATE_STREAMING:
 		break;
 	default:
-		BT_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -1247,7 +1242,7 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 	}
 
 	if (err != 0) {
-		BT_DBG("Updating metadata failed: %d", err);
+		LOG_DBG("Updating metadata failed: %d", err);
 		return err;
 	}
 
@@ -1260,10 +1255,10 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 	uint8_t role;
 	int err;
 
-	BT_DBG("stream %p", stream);
+	LOG_DBG("stream %p", stream);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
+		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
@@ -1275,7 +1270,7 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 	case BT_AUDIO_EP_STATE_STREAMING:
 		break;
 	default:
-		BT_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -1291,7 +1286,7 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 	}
 
 	if (err != 0) {
-		BT_DBG("Disabling stream failed: %d", err);
+		LOG_DBG("Disabling stream failed: %d", err);
 		return err;
 	}
 
@@ -1304,10 +1299,10 @@ int bt_audio_stream_release(struct bt_audio_stream *stream)
 	uint8_t role;
 	int err;
 
-	BT_DBG("stream %p", stream);
+	LOG_DBG("stream %p", stream);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
+		LOG_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
@@ -1325,7 +1320,7 @@ int bt_audio_stream_release(struct bt_audio_stream *stream)
 	case BT_AUDIO_EP_STATE_DISABLING:
 		break;
 	default:
-		BT_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		LOG_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -1341,7 +1336,7 @@ int bt_audio_stream_release(struct bt_audio_stream *stream)
 	}
 
 	if (err != 0) {
-		BT_DBG("Releasing stream failed: %d", err);
+		LOG_DBG("Releasing stream failed: %d", err);
 		return err;
 	}
 
