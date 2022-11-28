@@ -22,16 +22,6 @@ import magic
 
 logger = None
 
-ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
-if not ZEPHYR_BASE:
-    # Let the user run this script as ./scripts/ci/check_compliance.py without
-    #  making them set ZEPHYR_BASE.
-    ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
-
-    # Propagate this decision to child processes.
-    os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
-
-
 def git(*args, cwd=None):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
     # Called like git("diff"). Exits with SystemError (raised by sys.exit()) on
@@ -107,11 +97,15 @@ class ComplianceTest:
       The path the test runs itself in. This is just informative and used in
       the message that gets printed when running the test.
 
-      The magic string "<git-top>" refers to the top-level repository
+      There are two magic strings that can be used instead of a path:
+      - The magic string "<zephyr-base>" can be used to refer to the
+      environment variable ZEPHYR_BASE or, when missing, the calculated base of
+      the zephyr tree
+      - The magic string "<git-top>" refers to the top-level repository
       directory. This avoids running 'git' to find the top-level directory
       before main() runs (class variable assignments run when the 'class ...'
       statement runs). That avoids swallowing errors, because main() reports
-      them to GitHub.
+      them to GitHub
     """
     def __init__(self):
         self.case = TestCase(type(self).name, "Guidelines")
@@ -222,7 +216,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
     """
     name = "DevicetreeBindings"
     doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
-    path_hint = ZEPHYR_BASE
+    path_hint = "<zephyr-base>"
 
     def run(self, full=True):
         dts_yaml = self.parse_dt_bindings()
@@ -265,7 +259,7 @@ class KconfigCheck(ComplianceTest):
     """
     name = "Kconfig"
     doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
-    path_hint = ZEPHYR_BASE
+    path_hint = "<zephyr-base>"
 
     def run(self, full=True):
         kconf = self.parse_kconfig()
@@ -665,7 +659,7 @@ class KconfigBasicCheck(KconfigCheck):
     """
     name = "KconfigBasic"
     doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
-    path_hint = ZEPHYR_BASE
+    path_hint = "<zephyr-base>"
 
     def run(self):
         super().run(full=False)
@@ -1097,6 +1091,15 @@ def annotate(res):
     print(notice)
 
 
+def resolve_path_hint(hint):
+    if hint == "<zephyr-base>":
+        return ZEPHYR_BASE
+    elif hint == "<git-top>":
+        return GIT_TOP
+    else:
+        return hint
+
+
 def parse_args():
 
     default_range = 'HEAD~1..HEAD'
@@ -1130,6 +1133,16 @@ def parse_args():
 def _main(args):
     # The "real" main(), which is wrapped to catch exceptions and report them
     # to GitHub. Returns the number of test failures.
+
+    global ZEPHYR_BASE
+    ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
+    if not ZEPHYR_BASE:
+        # Let the user run this script as ./scripts/ci/check_compliance.py without
+        #  making them set ZEPHYR_BASE.
+        ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
+
+        # Propagate this decision to child processes.
+        os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
 
     # The absolute path of the top-level git directory. Initialize it here so
     # that issues running Git can be reported to GitHub.
@@ -1186,7 +1199,7 @@ def _main(args):
         test = testcase()
         try:
             print(f"Running {test.name:16} tests in "
-                  f"{GIT_TOP if test.path_hint == '<git-top>' else test.path_hint} ...")
+                  f"{resolve_path_hint(test.path_hint)} ...")
             test.run()
         except EndTest:
             pass
