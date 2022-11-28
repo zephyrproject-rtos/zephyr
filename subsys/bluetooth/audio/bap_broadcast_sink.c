@@ -24,6 +24,7 @@
 
 #include "bap_iso.h"
 #include "bap_endpoint.h"
+#include "audio_internal.h"
 
 #include <zephyr/logging/log.h>
 
@@ -33,8 +34,6 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVE
 
 #define PA_SYNC_SKIP              5
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
-#define BASE_MIN_SIZE             17
-#define BASE_BIS_DATA_MIN_SIZE    2 /* index and length */
 #define BROADCAST_SYNC_MIN_INDEX  (BIT(1))
 
 /* any value above 0xFFFFFF is invalid, so we can just use 0xFFFFFFFF to denote
@@ -649,259 +648,22 @@ static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink)
 	}
 }
 
-static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
-				     struct bt_codec_data *codec_data)
-{
-	void *value;
-
-	if (buf->len < sizeof(codec_data->data.data_len)) {
-		LOG_DBG("Not enough data for LTV length field: %u", buf->len);
-		return false;
-	}
-	codec_data->data.data_len = net_buf_simple_pull_u8(buf);
-
-	if (buf->len < sizeof(codec_data->data.type)) {
-		LOG_DBG("Not enough data for LTV type field: %u", buf->len);
-		return false;
-	}
-
-	/* LTV structures include the data.type in the length field,
-	 * but we do not do that for the bt_data struct in Zephyr
-	 */
-	codec_data->data.data_len -= sizeof(codec_data->data.type);
-
-	codec_data->data.type = net_buf_simple_pull_u8(buf);
-	codec_data->data.data = codec_data->value;
-
-	if (buf->len < codec_data->data.data_len) {
-		LOG_DBG("Not enough data for LTV value field: %u/%zu", buf->len,
-			codec_data->data.data_len);
-		return false;
-	}
-	value = net_buf_simple_pull_mem(buf, codec_data->data.data_len);
-	(void)memcpy(codec_data->value, value, codec_data->data.data_len);
-
-	return true;
-}
-
-static bool net_buf_decode_bis_data(struct net_buf_simple *buf, struct bt_bap_base_bis_data *bis)
-{
-	uint8_t len;
-
-	if (buf->len < BASE_BIS_DATA_MIN_SIZE) {
-		LOG_DBG("Not enough bytes (%u) to decode BIS data", buf->len);
-		return false;
-	}
-
-	bis->index = net_buf_simple_pull_u8(buf);
-	if (!IN_RANGE(bis->index, BT_ISO_BIS_INDEX_MIN, BT_ISO_BIS_INDEX_MAX)) {
-		LOG_DBG("Invalid BIS index %u", bis->index);
-		return false;
-	}
-
-	/* codec config data length */
-	len = net_buf_simple_pull_u8(buf);
-	if (len > buf->len) {
-		LOG_DBG("Invalid BIS specific codec config data length: "
-		       "%u (buf is %u)", len, buf->len);
-		return false;
-	}
-
-	if (len > 0) {
-		struct net_buf_simple ltv_buf;
-		void *ltv_data;
-
-		/* Use an extra net_buf_simple to be able to decode until it
-		 * is empty (len = 0)
-		 */
-		ltv_data = net_buf_simple_pull_mem(buf, len);
-		net_buf_simple_init_with_data(&ltv_buf, ltv_data, len);
-
-		while (ltv_buf.len != 0) {
-			struct bt_codec_data *bis_codec_data;
-
-			if (bis->data_count >= ARRAY_SIZE(bis->data)) {
-				LOG_WRN("BIS data overflow; discarding");
-				break;
-			}
-
-			bis_codec_data = &bis->data[bis->data_count];
-
-			if (!net_buf_decode_codec_ltv(&ltv_buf,
-						      bis_codec_data)) {
-				LOG_DBG("Failed to decode BIS config data for entry %u",
-					bis->data_count);
-				return false;
-			}
-
-			bis->data_count++;
-		}
-	}
-
-	return true;
-}
-
-static bool net_buf_decode_subgroup(struct net_buf_simple *buf,
-				    struct bt_bap_base_subgroup *subgroup)
-{
-	struct net_buf_simple ltv_buf;
-	struct bt_codec	*codec;
-	void *ltv_data;
-	uint8_t len;
-
-	codec = &subgroup->codec;
-
-	subgroup->bis_count = net_buf_simple_pull_u8(buf);
-	if (subgroup->bis_count > ARRAY_SIZE(subgroup->bis_data)) {
-		LOG_DBG("BASE has more BIS %u than we support %u", subgroup->bis_count,
-			(uint8_t)ARRAY_SIZE(subgroup->bis_data));
-		return false;
-	}
-	codec->id = net_buf_simple_pull_u8(buf);
-	codec->cid = net_buf_simple_pull_le16(buf);
-	codec->vid = net_buf_simple_pull_le16(buf);
-
-	/* codec configuration data length */
-	len = net_buf_simple_pull_u8(buf);
-	if (len > buf->len) {
-		LOG_DBG("Invalid codec config data length: %u (buf is %u)", len, buf->len);
-		return false;
-	}
-
-	/* Use an extra net_buf_simple to be able to decode until it
-	 * is empty (len = 0)
-	 */
-	ltv_data = net_buf_simple_pull_mem(buf, len);
-	net_buf_simple_init_with_data(&ltv_buf, ltv_data, len);
-
-	/* The loop below is very similar to codec_config_store with notable
-	 * exceptions that it can do early termination, and also does not log
-	 * every LTV entry, which would simply be too much for handling
-	 * broadcasted BASEs
-	 */
-	while (ltv_buf.len != 0) {
-		struct bt_codec_data *codec_data;
-
-		if (codec->data_count >= ARRAY_SIZE(codec->data)) {
-			LOG_WRN("BIS codec data overflow; discarding");
-			break;
-		}
-
-		codec_data = &codec->data[codec->data_count];
-
-		if (!net_buf_decode_codec_ltv(&ltv_buf, codec_data)) {
-			LOG_DBG("Failed to decode codec config data for entry %u",
-				codec->data_count);
-			return false;
-		}
-
-		codec->data_count++;
-	}
-
-	if (buf->len < sizeof(len)) {
-		return false;
-	}
-
-	/* codec metadata length */
-	len = net_buf_simple_pull_u8(buf);
-	if (len > buf->len) {
-		LOG_DBG("Invalid codec config data length: %u (buf is %u)", len, buf->len);
-		return false;
-	}
-
-
-	/* Use an extra net_buf_simple to be able to decode until it
-	 * is empty (len = 0)
-	 */
-	ltv_data = net_buf_simple_pull_mem(buf, len);
-	net_buf_simple_init_with_data(&ltv_buf, ltv_data, len);
-
-	/* The loop below is very similar to codec_config_store with notable
-	 * exceptions that it can do early termination, and also does not log
-	 * every LTV entry, which would simply be too much for handling
-	 * broadcasted BASEs
-	 */
-	while (ltv_buf.len != 0) {
-		struct bt_codec_data *metadata;
-
-		if (codec->meta_count >= ARRAY_SIZE(codec->meta)) {
-			LOG_WRN("BIS codec metadata overflow; discarding");
-			break;
-		}
-
-		metadata = &codec->meta[codec->meta_count];
-
-		if (!net_buf_decode_codec_ltv(&ltv_buf, metadata)) {
-			LOG_DBG("Failed to decode codec metadata for entry %u",
-				codec->meta_count);
-			return false;
-		}
-
-		codec->meta_count++;
-	}
-
-	for (int i = 0; i < subgroup->bis_count; i++) {
-		if (!net_buf_decode_bis_data(buf, &subgroup->bis_data[i])) {
-			LOG_DBG("Failed to decode BIS data for bis %d", i);
-			return false;
-		}
-	}
-
-	return true;
-}
-
 static bool pa_decode_base(struct bt_data *data, void *user_data)
 {
 	struct bt_bap_broadcast_sink *sink = (struct bt_bap_broadcast_sink *)user_data;
 	struct bt_bap_broadcast_sink_cb *listener;
-	struct bt_bap_base base = {0};
-	struct bt_uuid_16 broadcast_uuid;
-	struct net_buf_simple net_buf;
-	void *uuid;
-
-	if (sys_slist_is_empty(&sink_cbs)) {
-		/* Terminate early if we do not have any broadcast sink listeners */
-		return false;
-	}
+	struct bt_bap_base base = { 0 };
 
 	if (data->type != BT_DATA_SVC_DATA16) {
 		return true;
 	}
 
-	if (data->data_len < BASE_MIN_SIZE) {
+	if (data->data_len < BT_BAP_BASE_MIN_SIZE) {
 		return true;
 	}
 
-	net_buf_simple_init_with_data(&net_buf, (void *)data->data,
-				      data->data_len);
-
-	uuid = net_buf_simple_pull_mem(&net_buf, BT_UUID_SIZE_16);
-
-	if (!bt_uuid_create(&broadcast_uuid.uuid, uuid, BT_UUID_SIZE_16)) {
-		LOG_ERR("bt_uuid_create failed");
+	if (bt_bap_decode_base(data, &base) != 0) {
 		return false;
-	}
-
-	if (bt_uuid_cmp(&broadcast_uuid.uuid, BT_UUID_BASIC_AUDIO) != 0) {
-		/* Continue parsing */
-		return true;
-	}
-
-	base.pd = net_buf_simple_pull_le24(&net_buf);
-	base.subgroup_count = net_buf_simple_pull_u8(&net_buf);
-
-	if (base.subgroup_count > ARRAY_SIZE(base.subgroups)) {
-		LOG_DBG("Cannot decode BASE with %u subgroups (max supported is %zu)",
-			base.subgroup_count, ARRAY_SIZE(base.subgroups));
-
-		return false;
-	}
-
-	for (int i = 0; i < base.subgroup_count; i++) {
-		if (!net_buf_decode_subgroup(&net_buf, &base.subgroups[i])) {
-			LOG_DBG("Failed to decode subgroup %d", i);
-			return false;
-		}
 	}
 
 	if (atomic_test_bit(sink->flags,
@@ -949,6 +711,11 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 
 	if (sink == NULL) {
 		/* Not a PA sync that we control */
+		return;
+	}
+
+	if (sys_slist_is_empty(&sink_cbs)) {
+		/* Terminate early if we do not have any broadcast sink listeners */
 		return;
 	}
 
