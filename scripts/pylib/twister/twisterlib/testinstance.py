@@ -140,7 +140,7 @@ class TestInstance:
 
         options = env.options
         handler = Handler(self, "")
-        if self.platform.simulation:
+        if self.platform.simulation != "na":
             if self.platform.simulation == "qemu":
                 handler = QEMUHandler(self, "qemu")
                 handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
