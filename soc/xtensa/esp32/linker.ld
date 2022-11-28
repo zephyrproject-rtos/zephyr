@@ -39,10 +39,12 @@
 #define IROM_SEG_ORG 0x400D0020
 #define IROM_SEG_LEN 0x330000-0x20
 #define IROM_SEG_ALIGN 0x4
+#define IRAM_SEG_LEN 0x20000
 #else
 #define IROM_SEG_ORG 0x400D0000
 #define IROM_SEG_LEN 0x330000
 #define IROM_SEG_ALIGN 0x10000
+#define IRAM_SEG_LEN 0x13000
 #endif
 
 MEMORY
@@ -54,7 +56,7 @@ MEMORY
   #ifdef CONFIG_ESP32_NETWORK_CORE
   iram0_0_seg(RX): org = 0x40080000, len = 0x08000
   #else
-  iram0_0_seg(RX): org = 0x40080000, len = 0x20000
+  iram0_0_seg(RX): org = 0x40080000, len = IRAM_SEG_LEN
   #endif
 
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
@@ -343,10 +345,6 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     *libesp32.a:panic.*(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__l2__ethernet.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__lib__config.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__ip.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net.a:(.literal .text .literal.* .text.*)
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
