@@ -13,6 +13,7 @@
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,ieee802154 = &ieee802154;
+		nordic,pm-ext-flash = &mx25r64;
 	};
 
 	buttons {

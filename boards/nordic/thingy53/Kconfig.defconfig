@@ -5,6 +5,12 @@
 
 if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
 
+config BOOTLOADER_MCUBOOT
+	default y if !MCUBOOT
+
+config BOARD_ENABLE_CPUNET
+	default y if !MCUBOOT
+
 # Code Partition:
 #
 # For the secure version of the board the firmware is linked at the beginning
