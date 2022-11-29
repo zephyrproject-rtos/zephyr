@@ -2487,6 +2487,12 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
+	if (buf->len > chan->rx.mps) {
+		LOG_WRN("PDU size > MPS (%u > %u)", buf->len, chan->rx.mps);
+		bt_l2cap_chan_disconnect(&chan->chan);
+		return;
+	}
+
 	/* Check if segments already exist */
 	if (chan->_sdu) {
 		l2cap_chan_le_recv_seg(chan, buf);
