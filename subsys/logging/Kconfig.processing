@@ -7,6 +7,7 @@ if !LOG_MODE_MINIMAL
 
 config LOG_PRINTK
 	bool "Process printk messages"
+	default y if PRINTK && (!ZTEST || ZTEST_NEW_API)
 	help
 	  LOG_PRINTK messages are formatted in place and logged unconditionally.
 

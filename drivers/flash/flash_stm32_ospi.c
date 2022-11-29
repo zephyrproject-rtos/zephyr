@@ -196,6 +196,8 @@ static int ospi_read_access(const struct device *dev, OSPI_RegularCmdTypeDef *cm
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 	HAL_StatusTypeDef hal_ret;
 
+	LOG_DBG("Instruction 0x%x", cmd->Instruction);
+
 	cmd->NbData = size;
 
 	dev_data->cmd_status = 0;
@@ -1937,7 +1939,9 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	dev_data->hospi.Init.ChipSelectHighTime = 2;
 	dev_data->hospi.Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
 	dev_data->hospi.Init.ClockMode = HAL_OSPI_CLOCK_MODE_0;
+#if defined(OCTOSPI_DCR2_WRAPSIZE)
 	dev_data->hospi.Init.WrapSize = HAL_OSPI_WRAP_NOT_SUPPORTED;
+#endif /* OCTOSPI_DCR2_WRAPSIZE */
 	dev_data->hospi.Init.SampleShifting = HAL_OSPI_SAMPLE_SHIFTING_NONE;
 	/* STR mode else Macronix for DTR mode */
 	if (dev_cfg->data_rate == OSPI_DTR_TRANSFER) {
@@ -1949,14 +1953,16 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	}
 	dev_data->hospi.Init.ChipSelectBoundary = 0;
 	dev_data->hospi.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_USED;
+#if defined(OCTOSPI_DCR4_REFRESH)
 	dev_data->hospi.Init.Refresh = 0;
+#endif /* OCTOSPI_DCR4_REFRESH */
 
 	if (HAL_OSPI_Init(&dev_data->hospi) != HAL_OK) {
 		LOG_ERR("OSPI Init failed");
 		return -EIO;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
+#if defined(OCTOSPIM)
 	/* OCTOSPI I/O manager init Function */
 	OSPIM_CfgTypeDef ospi_mgr_cfg = {0};
 
@@ -1973,15 +1979,15 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		ospi_mgr_cfg.IOLowPort = HAL_OSPIM_IOPORT_2_LOW;
 		ospi_mgr_cfg.IOHighPort = HAL_OSPIM_IOPORT_2_HIGH;
 	}
-
+#if defined(OCTOSPIM_CR_MUXEN)
 	ospi_mgr_cfg.Req2AckTime = 1;
-
+#endif /* OCTOSPIM_CR_MUXEN */
 	if (HAL_OSPIM_Config(&dev_data->hospi, &ospi_mgr_cfg,
 		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI M config failed");
 		return -EIO;
 	}
-
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* OCTOSPI2 delay block init Function */
 	HAL_OSPI_DLYB_CfgTypeDef ospi_delay_block_cfg = {0};
 
@@ -1992,6 +1998,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -EIO;
 	}
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
+#endif /* OCTOSPIM */
 
 	/* Reset NOR flash memory : still with the SPI/STR config for the NOR */
 	if (stm32_ospi_mem_reset(dev) != 0) {
