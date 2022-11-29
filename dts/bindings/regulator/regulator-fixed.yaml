@@ -3,7 +3,13 @@
 
 description: GPIO-controlled regulators
 
-include: regulator.yaml
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-boot-on
+      - regulator-always-on
 
 # NOTE: The driver supports "regulator-fixed-sync" as a specializing
 # variant when it's known that the GPIO state change operations are
@@ -19,9 +25,7 @@ compatible: "regulator-fixed"
 
 properties:
   regulator-name:
-    type: string
     required: true
-    description: Descriptive name for regulator outputs.
 
   enable-gpios:
     type: phandle-array

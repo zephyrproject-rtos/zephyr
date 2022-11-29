@@ -126,7 +126,8 @@
 #define STM32_PLL_R_DIVISOR	DT_PROP_OR(DT_NODELABEL(pll), div_r, 1)
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32u5_pll_clock, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32u5_pll_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32h7_pll_clock, okay)
 #define STM32_PLL2_ENABLED	1
 #define STM32_PLL2_M_DIVISOR	DT_PROP(DT_NODELABEL(pll2), div_m)
 #define STM32_PLL2_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pll2), mul_n)

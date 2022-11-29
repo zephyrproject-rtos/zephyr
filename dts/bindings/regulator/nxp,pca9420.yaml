@@ -1,26 +1,66 @@
 # Copyright (c), 2021 NXP
 # SPDX -License-Identifier: Apache-2.0
 
-description: NXP PCA9420 PMIC
+description: |
+  NXP PCA9420 PMIC
+
+  The PMIC has two buck converters and two LDOs. All need to be defined as
+  children nodes, strictly following the BUCK1, BUCK2, LDO1 and LDO2 node names.
+  For example:
+
+  pmic@61 {
+    reg = <0x61>;
+    ...
+    BUCK1 {
+      /* all properties for BUCK1 */
+    };
+    BUCK2 {
+      /* all properties for BUCK2 */
+    };
+    LDO1 {
+      /* all properties for LDO1 */
+    };
+    LDO2 {
+      /* all properties for LDO2 */
+    };
+  };
 
 
 compatible: "nxp,pca9420"
 
-include: base.yaml
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-allowed-modes
+      - regulator-initial-mode
 
 properties:
-  regulator-initial-mode:
-      type: int
-      description: |
-        Initial operating mode of the regulator. Regulators modes can be
-        used for better power saving, or different voltage configurations,
-        and are hardware specific.
-  regulator-allowed-modes:
-      type: array
-      description: |
-        Array of operating modes that software may configure for the
-        regulator at runtime. The set of possible operating modes depends on
-        what the hardware supports.
+  nxp,vin-ilim-microamp:
+    type: int
+    default: 425000
+    enum:
+      - 85000
+      - 255000
+      - 425000
+      - 595000
+      - 765000
+      - 935000
+      - 1105000
+    description: |
+      VIN input current limit, in microamperes. Value reflects typical value,
+      below you can find min/typical/max values:
+
+      - 74 mA/85 mA/98 mA
+      - 222 mA/255 mA/293 mA
+      - 370 mA/425 mA/489 mA
+      - 517 mA/595 mA/684 mA
+      - 665 mA/765 mA/880 mA
+      - 813 mA/935 mA/1075 mA
+      - 961 mA/1105 mA/1271 mA
+
+      To disable current limit, set property to zero. Defaults to 425mA, the IC
+      default value.
 
   modesel-reg:
     type: int
@@ -39,80 +79,23 @@ child-binding:
     - name: regulator.yaml
       property-allowlist:
         - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-max-microamp
+
   description: Voltage output of PMIC controller regulator
   properties:
-      voltage-range:
-          type: array
+      regulator-min-microvolt:
+        required: true
+
+      regulator-max-microvolt:
           required: true
-          description: |
-             array of voltage values in uV, followed by the register value that
-             must be written to enable the voltage. For example, [3300000, 0x3]
-             denotes a value of 0x3 must be written to the register to set 3.3V
-      num-voltages:
-          type: int
+
+      regulator-max-microamp:
           required: true
-          description: number of voltages present in the voltage-range array.
-      vsel-reg:
-          type: int
-          required: true
-          description: I2C register to write voltage selection value to
-      vsel-mask:
-          type: int
-          required: true
-          description: |
-            Mask to apply to the voltage range value when written to vsel
-            register
-      enable-reg:
-          type: int
-          required: true
-          description: I2C register to write enable value to
-      enable-mask:
-          type: int
-          required: true
-          description: |
-            Mask to apply to the enable bit (either 1 for enabled,
-            or 0 for disabled) when writing it to the I2C enable register.
-      enable-val:
-          type: int
-          required: true
-          description: |
-            value to apply enable-mask to, and write to enable-reg in order
-            to enable the regulator output.
-      min-uV:
-          type: int
-          required: true
-          description: |
-             Minimum voltage in microvolts that this regulator supports
-      max-uV:
-          type: int
-          required: true
-          description: |
-             Maximum voltage in microvolts that this regulator supports
+
       enable-inverted:
           type: boolean
           description: |
             If the enable bit should be zero to turn the regulator on, add this
             property.
-      current-levels:
-          type: array
-          description: |
-            Array of current limit values in uA, followed by the register value
-            that must be written to enable the current limit. For example,
-            [800000, 0x3] denotes a value of 0x3 must be written to the register
-            to set a current limit of 800mA
-      num-current-levels:
-          type: int
-          default: 0
-          description: |
-            Number of current limit levels this regulator supports. If left as
-            default, regulator current support will be disabled.
-      ilim-reg:
-          type: int
-          description: |
-            Register to write the register value given in current-levels into
-            to set the current limit
-      ilim-mask:
-          type: int
-          description: |
-            Mask to apply to the current-levels value before writing it to the
-            ilim-reg value to set the current limit
