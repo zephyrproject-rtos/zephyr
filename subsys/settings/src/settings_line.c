@@ -149,14 +149,8 @@ int settings_next_line_ctx(struct line_entry_ctx *entry_ctx)
 
 int settings_line_len_calc(const char *name, size_t val_len)
 {
-	int len;
-
-	/* <evalue> */
-	len = val_len;
-	/* <name>=<enc(value)> */
-	len += strlen(name) + 1;
-
-	return len;
+	/* <name>=<value> */
+	return strlen(name) + 1 + val_len;
 }
 
 
