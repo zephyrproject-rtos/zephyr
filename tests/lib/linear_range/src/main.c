@@ -301,6 +301,10 @@ ZTEST(linear_range, test_linear_range_get_win_index)
 	zassert_equal(ret, 0);
 	zassert_equal(idx, 5U);
 
+	ret = linear_range_group_get_win_index(r, r_cnt, 140, 400, &idx);
+	zassert_equal(ret, 0);
+	zassert_equal(idx, 6U);
+
 	ret = linear_range_group_get_win_index(r, r_cnt, 400, 400, &idx);
 	zassert_equal(ret, 0);
 	zassert_equal(idx, 12U);
