@@ -367,32 +367,6 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 static K_WORK_DELAYABLE_DEFINE(audio_send_work, lc3_audio_timer_timeout);
 #endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX */
 
-static void print_codec(const struct bt_codec *codec)
-{
-	int i;
-
-	shell_print(ctx_shell, "codec 0x%02x cid 0x%04x vid 0x%04x count %u",
-		    codec->id, codec->cid, codec->vid, codec->data_count);
-
-	for (i = 0; i < codec->data_count; i++) {
-		shell_print(ctx_shell, "data #%u: type 0x%02x len %u", i,
-			    codec->data[i].data.type,
-			    codec->data[i].data.data_len);
-		shell_hexdump(ctx_shell, codec->data[i].data.data,
-			      codec->data[i].data.data_len -
-				sizeof(codec->data[i].data.type));
-	}
-
-	for (i = 0; i < codec->meta_count; i++) {
-		shell_print(ctx_shell, "meta #%u: type 0x%02x len %u", i,
-			    codec->meta[i].data.type,
-			    codec->meta[i].data.data_len);
-		shell_hexdump(ctx_shell, codec->meta[i].data.data,
-			      codec->meta[i].data.data_len -
-				sizeof(codec->meta[i].data.type));
-	}
-}
-
 static const struct named_lc3_preset *get_named_preset(bool is_unicast, const char *preset_arg)
 {
 	if (is_unicast) {
@@ -421,14 +395,6 @@ static void set_unicast_stream(struct bt_bap_stream *stream)
 			shell_print(ctx_shell, "Default stream: %u", i + 1);
 		}
 	}
-}
-
-static void print_qos(const struct bt_codec_qos *qos)
-{
-	shell_print(ctx_shell, "QoS: interval %u framing 0x%02x "
-		    "phy 0x%02x sdu %u rtn %u latency %u pd %u",
-		    qos->interval, qos->framing, qos->phy, qos->sdu,
-		    qos->rtn, qos->latency, qos->pd);
 }
 
 static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
@@ -476,7 +442,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 {
 	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
 
-	print_codec(codec);
+	print_codec(ctx_shell, codec);
 
 	*stream = stream_alloc();
 	if (*stream == NULL) {
@@ -502,7 +468,7 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 {
 	shell_print(ctx_shell, "ASE Codec Reconfig: stream %p", stream);
 
-	print_codec(codec);
+	print_codec(ctx_shell, codec);
 
 	if (default_stream == NULL) {
 		set_unicast_stream(stream);
@@ -518,7 +484,7 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
 {
 	shell_print(ctx_shell, "QoS: stream %p %p", stream, qos);
 
-	print_qos(qos);
+	print_qos(ctx_shell, qos);
 
 	return 0;
 }
@@ -744,7 +710,7 @@ static void print_remote_codec(const struct bt_conn *conn, struct bt_codec *code
 	shell_print(ctx_shell, "conn %p: #%u: codec %p dir 0x%02x",
 		    conn, index, codec, dir);
 
-	print_codec(codec);
+	print_codec(ctx_shell, codec);
 }
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -1433,8 +1399,8 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "%s", named_preset->name);
 
-	print_codec(&named_preset->preset.codec);
-	print_qos(&named_preset->preset.qos);
+	print_codec(ctx_shell, &named_preset->preset.codec);
+	print_qos(ctx_shell, &named_preset->preset.qos);
 
 	return 0;
 }
@@ -1640,7 +1606,7 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 		subgroup = &base->subgroups[i];
 
 		shell_print(ctx_shell, "Subgroup[%d]:", i);
-		print_codec(&subgroup->codec);
+		print_codec(ctx_shell, &subgroup->codec);
 
 		for (int j = 0; j < subgroup->bis_count; j++) {
 			const struct bt_bap_base_bis_data *bis_data;

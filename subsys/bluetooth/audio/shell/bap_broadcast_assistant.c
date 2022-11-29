@@ -20,6 +20,48 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include "shell/bt.h"
 #include "../../host/hci_core.h"
+#include "audio.h"
+
+static struct bt_bap_base received_base;
+
+static bool pa_decode_base(struct bt_data *data, void *user_data)
+{
+	struct bt_bap_base base = { 0 };
+	int err;
+
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true;
+	}
+
+	if (data->data_len < BT_BAP_BASE_MIN_SIZE) {
+		return true;
+	}
+
+	err = bt_bap_decode_base(data, &base);
+	if (err != 0 && err != -ENOMSG) {
+		shell_error(ctx_shell, "Failed to decode BASE: %d", err);
+
+		return false;
+	}
+
+	/* Compare BASE and print if different */
+	if (memcmp(&base, &received_base, sizeof(base)) != 0) {
+		(void)memcpy(&received_base, &base, sizeof(base));
+
+#if BROADCAST_SNK_SUBGROUP_CNT > 0
+		print_base(ctx_shell, &received_base);
+#endif /* BROADCAST_SNK_SUBGROUP_CNT > 0 */
+	}
+
+	return false;
+}
+
+static void pa_recv(struct bt_le_per_adv_sync *sync,
+		    const struct bt_le_per_adv_sync_recv_info *info,
+		    struct net_buf_simple *buf)
+{
+	bt_data_parse(buf, pa_decode_base, NULL);
+}
 
 static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 						uint8_t recv_state_count)
@@ -251,9 +293,20 @@ static struct bt_bap_broadcast_assistant_cb cbs = {
 static int cmd_bap_broadcast_assistant_discover(const struct shell *sh,
 						size_t argc, char **argv)
 {
+	static bool registered;
 	int result;
 
-	bt_bap_broadcast_assistant_register_cb(&cbs);
+	if (!registered) {
+		static struct bt_le_per_adv_sync_cb cb = {
+			.recv = pa_recv,
+		};
+
+		bt_le_per_adv_sync_cb_register(&cb);
+
+		bt_bap_broadcast_assistant_register_cb(&cbs);
+
+		registered = true;
+	}
 
 	result = bt_bap_broadcast_assistant_discover(default_conn);
 	if (result) {
