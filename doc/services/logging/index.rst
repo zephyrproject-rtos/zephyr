@@ -343,6 +343,22 @@ When :c:func:`log_panic` is called, _panic_ notification is sent to all active
 backends. Once all backends are notified, all buffered messages are flushed. Since
 that moment all logs are processed in a blocking way.
 
+.. _logging_printk:
+
+Printk
+******
+
+Typically, logging and :c:func:`printk` is using the same output for which they
+compete. This can lead to issues if the output does not support preemption but
+also it may result in the corrupted output because logging data is interleaved
+with printk data. However, it is possible to redirect printk messages to the
+logging subsystem by enabling :kconfig:option:`CONFIG_LOG_PRINTK`. In that case,
+printk entries are treated as log messages with level 0 (they cannot be disabled).
+When enabled, logging manages the output so there is no interleaving. However,
+in the deferred mode it changes the behavior of the printk because output is delayed
+until logging thread processes the data. :kconfig:option:`CONFIG_LOG_PRINTK` is by
+default enabled.
+
 .. _log_architecture:
 
 Architecture
