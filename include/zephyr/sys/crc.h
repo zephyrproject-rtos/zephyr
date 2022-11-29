@@ -4,6 +4,7 @@
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2018 Google LLC.
+ * Copyright (c) 2022 Meta
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,8 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+#include <zephyr/sys/__assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +39,23 @@ extern "C" {
  * @ingroup checksum
  * @{
  */
+
+/**
+ * @brief CRC algorithm enumeration
+ *
+ * These values should be used with the @ref crc dispatch function.
+ */
+enum crc_type {
+	CRC7_BE,     /**< Use @ref crc7_be */
+	CRC8,	     /**< Use @ref crc8 */
+	CRC8_CCITT,  /**< Use @ref crc8_ccitt */
+	CRC16,	     /**< Use @ref crc16 */
+	CRC16_ANSI,  /**< Use @ref crc16_ansi */
+	CRC16_CCITT, /**< Use @ref crc16_ccitt */
+	CRC16_ITU_T, /**< Use @ref crc16_itu_t */
+	CRC32_C,     /**< Use @ref crc32_c */
+	CRC32_IEEE,  /**< Use @ref crc32_ieee */
+};
 
 /**
  * @brief Generic function for computing a CRC-16 without input or output
@@ -256,6 +276,63 @@ uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
  * @return The computed CRC7 value
  */
 uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len);
+
+/**
+ * @brief Compute a CRC checksum, in a generic way.
+ *
+ * This is a dispatch function that calls the individual CRC routine
+ * determined by @p type.
+ *
+ * For 7, 8, and 16-bit CRCs, the relevant @p seed and @p poly values should
+ * be passed in via the least-significant byte(s).
+ *
+ * Similarly, for 7, 8, and 16-bit CRCs, the relevant result is stored in the
+ * least-significant byte(s) of the returned value.
+ *
+ * @param type CRC algorithm to use.
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ * @param seed Value to seed the CRC with
+ * @param poly The polynomial to use omitting the leading coefficient
+ * @param reflect Should we use reflected/reversed values or not
+ * @param first Whether this is the first packet in the stream.
+ * @param last Whether this is the last packet in the stream.
+ * @return uint32_t the computed CRC value
+ */
+static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_t len,
+				   uint32_t seed, uint32_t poly, bool reflect, bool first,
+				   bool last)
+{
+	switch (type) {
+	case CRC7_BE:
+		return crc7_be(seed, src, len);
+	case CRC8:
+		return crc8(src, len, poly, seed, reflect);
+	case CRC8_CCITT:
+		return crc8_ccitt(seed, src, len);
+	case CRC16:
+		if (reflect) {
+			return crc16_reflect(poly, seed, src, len);
+		} else {
+			return crc16(poly, seed, src, len);
+		}
+	case CRC16_ANSI:
+		return crc16_ansi(src, len);
+	case CRC16_CCITT:
+		return crc16_ccitt(seed, src, len);
+	case CRC16_ITU_T:
+		return crc16_itu_t(seed, src, len);
+	case CRC32_C:
+		return crc32_c(seed, src, len, first, last);
+	case CRC32_IEEE:
+		return crc32_ieee_update(seed, src, len);
+	default:
+		break;
+	}
+
+	__ASSERT_NO_MSG(false);
+	return -1;
+}
 
 /**
  * @}
