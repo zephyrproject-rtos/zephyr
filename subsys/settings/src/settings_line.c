@@ -21,8 +21,6 @@ struct settings_io_cb_s {
 	uint8_t rwbs;
 } static settings_io_cb;
 
-#define MAX_ENC_BLOCK_SIZE 4
-
 int settings_line_write(const char *name, const char *value, size_t val_len,
 			off_t w_loc, void *cb_arg)
 {
