@@ -18,3 +18,13 @@
 		zephyr,shell-uart = &uart0;
 	};
 };
+
+&mru4 {
+	rx-channels = <1>;
+	status = "okay";
+};
+
+&enetc_psi0 {
+	mboxes = <&mru4 0>;
+	mbox-names = "rx";
+};
