@@ -1012,18 +1012,6 @@ static int cmd_connectap(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static bool tcp_running;
-
-void zperf_tcp_stopped(void)
-{
-	tcp_running = false;
-}
-
-void zperf_tcp_started(void)
-{
-	tcp_running = true;
-}
-
 static void tcp_session_cb(enum zperf_status status,
 			   struct zperf_results *result,
 			   void *user_data)

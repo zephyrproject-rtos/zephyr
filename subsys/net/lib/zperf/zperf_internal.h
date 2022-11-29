@@ -92,9 +92,6 @@ extern void connect_ap(char *ssid);
 const struct in_addr *zperf_get_default_if_in4_addr(void);
 const struct in6_addr *zperf_get_default_if_in6_addr(void);
 
-void zperf_tcp_stopped(void);
-void zperf_tcp_started(void);
-
 int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
 			      int proto);
 
@@ -103,5 +100,7 @@ uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
 void zperf_async_work_submit(struct k_work *work);
 void zperf_udp_uploader_init(void);
 void zperf_tcp_uploader_init(void);
+void zperf_udp_receiver_init(void);
+void zperf_tcp_receiver_init(void);
 
 #endif /* __ZPERF_INTERNAL_H */

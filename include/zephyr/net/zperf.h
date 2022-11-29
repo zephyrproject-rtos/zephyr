@@ -149,6 +149,20 @@ int zperf_udp_download(const struct zperf_download_params *param,
 int zperf_tcp_download(const struct zperf_download_params *param,
 		       zperf_callback callback, void *user_data);
 
+/**
+ * @brief Stop UDP server.
+ *
+ * @return 0 if server was stopped successfully, a negative error code otherwise.
+ */
+int zperf_udp_download_stop(void);
+
+/**
+ * @brief Stop TCP server.
+ *
+ * @return 0 if server was stopped successfully, a negative error code otherwise.
+ */
+int zperf_tcp_download_stop(void);
+
 #ifdef __cplusplus
 }
 #endif
