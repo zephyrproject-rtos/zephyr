@@ -1059,6 +1059,21 @@ class BinaryFiles(ComplianceTest):
                 self.failure(f"Binary file not allowed: {fname}")
 
 
+class MergeCommits(ComplianceTest):
+    """
+    Check that the range does not contain any merge commits.
+    """
+    name = "MergeCommits"
+    doc = "No merge commits allowed."
+    path_hint = "<git-top>"
+
+    def run(self):
+        for commits in git("log", "--format=%h %p", COMMIT_RANGE).splitlines():
+            commit, *parents = commits.split(" ")
+            if len(parents) > 1:
+                self.failure(f"Merge commits not allowed: {commit} <- {*parents,}")
+
+
 def init_logs(cli_arg):
     # Initializes logging
 
