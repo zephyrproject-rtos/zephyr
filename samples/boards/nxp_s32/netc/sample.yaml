@@ -1,0 +1,13 @@
+sample:
+  description: Sample for show-casing the different use-cases of NXP S32 NETC driver
+  name: NXP S32 NETC sample
+common:
+  platform_allow: s32z270dc2_rtu0_r52
+  depends_on: netif
+  tags: net
+tests:
+  sample.boards.nxp_s32.netc.psi:
+    harness: net
+  sample.boards.nxp_s32.netc.vsi_and_psi:
+    extra_args: DTC_OVERLAY_FILE="./vsi-and-psi.overlay"
+    harness: net
