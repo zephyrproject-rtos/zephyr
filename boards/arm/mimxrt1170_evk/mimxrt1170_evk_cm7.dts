@@ -39,7 +39,7 @@
 	};
 
 	en_mipi_display: enable-mipi-display {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "en_mipi_display";
 		enable-gpios = <&gpio11 16 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
