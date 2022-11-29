@@ -75,27 +75,6 @@ struct mcs_instance_t {
 #endif /* CONFIG_BT_MCC_OTS */
 	uint16_t content_control_id_handle;
 
-	struct bt_gatt_subscribe_params player_name_sub_params;
-	struct bt_gatt_subscribe_params track_changed_sub_params;
-	struct bt_gatt_subscribe_params track_title_sub_params;
-	struct bt_gatt_subscribe_params track_duration_sub_params;
-	struct bt_gatt_subscribe_params track_position_sub_params;
-	struct bt_gatt_subscribe_params playback_speed_sub_params;
-	struct bt_gatt_subscribe_params seeking_speed_sub_params;
-#ifdef CONFIG_BT_MCC_OTS
-	struct bt_gatt_subscribe_params current_track_obj_sub_params;
-	struct bt_gatt_subscribe_params next_track_obj_sub_params;
-	struct bt_gatt_subscribe_params parent_group_obj_sub_params;
-	struct bt_gatt_subscribe_params current_group_obj_sub_params;
-#endif /* CONFIG_BT_MCC_OTS */
-	struct bt_gatt_subscribe_params playing_order_sub_params;
-	struct bt_gatt_subscribe_params media_state_sub_params;
-	struct bt_gatt_subscribe_params cp_sub_params;
-	struct bt_gatt_subscribe_params opcodes_supported_sub_params;
-#ifdef CONFIG_BT_MCC_OTS
-	struct bt_gatt_subscribe_params scp_sub_params;
-	struct bt_gatt_subscribe_params search_results_obj_sub_params;
-#endif /* CONFIG_BT_MCC_OTS */
 
 	/* The write buffer is used for
 	 * - track position    (4 octets)
@@ -124,7 +103,31 @@ struct mcs_instance_t {
 	struct bt_gatt_discover_params  discover_params;
 	struct bt_gatt_read_params      read_params;
 	struct bt_gatt_write_params     write_params;
+
+/** Any fields below here cannot be memset as part of a reset */
 	bool busy;
+
+	struct bt_gatt_subscribe_params player_name_sub_params;
+	struct bt_gatt_subscribe_params track_changed_sub_params;
+	struct bt_gatt_subscribe_params track_title_sub_params;
+	struct bt_gatt_subscribe_params track_duration_sub_params;
+	struct bt_gatt_subscribe_params track_position_sub_params;
+	struct bt_gatt_subscribe_params playback_speed_sub_params;
+	struct bt_gatt_subscribe_params seeking_speed_sub_params;
+#ifdef CONFIG_BT_MCC_OTS
+	struct bt_gatt_subscribe_params current_track_obj_sub_params;
+	struct bt_gatt_subscribe_params next_track_obj_sub_params;
+	struct bt_gatt_subscribe_params parent_group_obj_sub_params;
+	struct bt_gatt_subscribe_params current_group_obj_sub_params;
+#endif /* CONFIG_BT_MCC_OTS */
+	struct bt_gatt_subscribe_params playing_order_sub_params;
+	struct bt_gatt_subscribe_params media_state_sub_params;
+	struct bt_gatt_subscribe_params cp_sub_params;
+	struct bt_gatt_subscribe_params opcodes_supported_sub_params;
+#ifdef CONFIG_BT_MCC_OTS
+	struct bt_gatt_subscribe_params scp_sub_params;
+	struct bt_gatt_subscribe_params search_results_obj_sub_params;
+#endif /* CONFIG_BT_MCC_OTS */
 
 #ifdef CONFIG_BT_MCC_OTS
 	struct bt_ots_client otc;
@@ -1080,6 +1083,47 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
+static void reset_mcs_inst(struct mcs_instance_t *mcs_inst, struct bt_conn *conn)
+{
+	(void)memset(mcs_inst, 0, offsetof(struct mcs_instance_t, busy));
+
+	/* It's okay if these fail. In case of disconnect, we can't
+	 * unsubscribe and they will just fail.
+	 * In case that we reset due to another call of the discover
+	 * function, we will unsubscribe (regardless of bonding state)
+	 * to accommodate the new discovery values.
+	 */
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->player_name_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->track_changed_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->track_title_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->track_duration_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->track_position_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->playback_speed_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->seeking_speed_sub_params);
+#ifdef CONFIG_BT_MCC_OTS
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->current_track_obj_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->next_track_obj_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->parent_group_obj_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->current_group_obj_sub_params);
+#endif /* CONFIG_BT_MCC_OTS */
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->playing_order_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->media_state_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->cp_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->opcodes_supported_sub_params);
+#ifdef CONFIG_BT_MCC_OTS
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->scp_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->search_results_obj_sub_params);
+#endif /* CONFIG_BT_MCC_OTS */
+
+	/* Reset OTC instance as well if supported */
+#ifdef CONFIG_BT_MCC_OTS
+	(void)memset(&mcs_inst->otc, 0,
+		     offsetof(struct bt_ots_client, oacp_sub_params));
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->otc.oacp_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &mcs_inst->otc.olcp_sub_params);
+#endif /* CONFIG_BT_MCC_OTS */
+}
+
 /* Called when discovery is completed - successfully or with error */
 static void discovery_complete(struct bt_conn *conn, int err)
 {
@@ -1093,7 +1137,7 @@ static void discovery_complete(struct bt_conn *conn, int err)
 
 		mcs_inst = lookup_inst_by_conn(conn);
 		if (mcs_inst != NULL) {
-			(void)memset(mcs_inst, 0, sizeof(*mcs_inst));
+			reset_mcs_inst(mcs_inst, conn);
 		}
 	}
 
@@ -1766,7 +1810,7 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 	}
 
 	subscribe_all = subscribe;
-	memset(mcs_inst, 0, sizeof(*mcs_inst));
+	reset_mcs_inst(mcs_inst, conn);
 	(void)memcpy(&uuid, BT_UUID_GMCS, sizeof(uuid));
 
 	mcs_inst->discover_params.func = discover_primary_func;
