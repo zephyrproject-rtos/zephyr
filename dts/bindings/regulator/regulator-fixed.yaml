@@ -11,16 +11,6 @@ include:
       - regulator-boot-on
       - regulator-always-on
 
-# NOTE: The driver supports "regulator-fixed-sync" as a specializing
-# variant when it's known that the GPIO state change operations are
-# isr-ok and not sleep, and both startup and off-on delays are zero.
-# This bypasses the asynchronous onoff manager which optimizes both time
-# and memory use.
-#
-# To enable this use both:
-#    compatible = "regulator-fixed-sync", "regulator-fixed";
-#
-
 compatible: "regulator-fixed"
 
 properties:

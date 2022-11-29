@@ -64,7 +64,7 @@
 	};
 
 	npm1100_force_pwm_mode: npm1100_force_pwm_mode {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "npm1100_force_pwm_mode";
 		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		status = "disabled";
@@ -80,14 +80,14 @@
 	};
 
 	regulator_3v3: regulator-3v3-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "ncp114";
 		enable-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
 
 	sensor_pwr_ctrl: sensor-pwr-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "tck106ag";
 		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;

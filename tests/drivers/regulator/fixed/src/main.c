@@ -14,7 +14,6 @@
 BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(REGULATOR_NODE, regulator_fixed, okay));
 BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(CHECK_NODE, test_regulator_fixed, okay));
 
-#define IS_REGULATOR_SYNC DT_NODE_HAS_COMPAT_STATUS(REGULATOR_NODE, regulator_fixed_sync, okay)
 #define BOOT_ON DT_PROP(REGULATOR_NODE, regulator_boot_on)
 #define ALWAYS_ON DT_PROP(REGULATOR_NODE, regulator_always_on)
 #define STARTUP_DELAY_US DT_PROP(REGULATOR_NODE, startup_delay_us)
