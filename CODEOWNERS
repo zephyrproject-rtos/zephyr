@@ -235,6 +235,7 @@
 /drivers/adc/adc_ads1x1x.c                @XenuIsWatching
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/audio/*nrfx*                     @anangl
+/drivers/auxdisplay/*                      @thedjnK
 /drivers/bbram/*                          @yperess @sjg20 @jackrosenthal
 /drivers/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
 /drivers/bluetooth/hci/hci_esp32.c        @sylvioalves
@@ -569,6 +570,7 @@
 /dts/bindings/i3c/                        @dcpleung
 /dts/bindings/pm_cpu_ops/*                @carlocaione
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
+/dts/bindings/auxdisplay/*                 @thedjnK
 /dts/posix/                               @aescolar @daor-oti
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/*ina23*              @bbilas
@@ -580,6 +582,7 @@
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/zephyr/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
 /include/zephyr/drivers/adc.h                    @anangl
+/include/zephyr/drivers/auxdisplay.h       @thedjnK
 /include/zephyr/drivers/can.h                    @alexanderwachter @henrikbrixandersen
 /include/zephyr/drivers/can/                     @alexanderwachter @henrikbrixandersen
 /include/zephyr/drivers/counter.h                @nordic-krch
