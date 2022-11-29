@@ -501,6 +501,7 @@ struct adc_sequence {
 	 * of this sequence.
 	 * All selected channels must be configured with adc_channel_setup()
 	 * before they are used in a sequence.
+	 * The least significant bit corresponds to channel 0.
 	 */
 	uint32_t channels;
 
@@ -509,6 +510,8 @@ struct adc_sequence {
 	 * from subsequent samplings are written sequentially in the buffer.
 	 * The number of samples written for each sampling is determined by
 	 * the number of channels selected in the "channels" field.
+	 * The values written to the buffer represent a sample from each
+	 * selected channel starting from the one with the lowest ID.
 	 * The buffer must be of an appropriate size, taking into account
 	 * the number of selected channels and the ADC resolution used,
 	 * as well as the number of samplings contained in the sequence.
