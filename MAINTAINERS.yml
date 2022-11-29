@@ -667,6 +667,17 @@ Release Notes:
   labels:
     - "area: Battery Backed RAM (bbram)"
 
+"Drivers: Aux display":
+  status: maintained
+  maintainers:
+    - thedjnK
+  files:
+    - include/zephyr/drivers/auxdisplay.h
+    - drivers/auxdisplay/*
+    - dts/bindings/auxdisplay/*
+  labels:
+    - "area: Aux display"
+
 "Drivers: CAN":
   status: maintained
   maintainers:
