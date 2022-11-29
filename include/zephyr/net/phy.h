@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2021 IP-Logix Inc.
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,9 +36,14 @@ enum phy_link_speed {
 	LINK_HALF_100BASE_T		= BIT(2),
 	/** 100Base-T Full-Duplex */
 	LINK_FULL_100BASE_T		= BIT(3),
+	/** 1000Base-T Half-Duplex */
+	LINK_HALF_1000BASE_T		= BIT(4),
+	/** 1000Base-T Full-Duplex */
+	LINK_FULL_1000BASE_T		= BIT(5),
 };
 
-#define PHY_LINK_IS_FULL_DUPLEX(x)	(x & (BIT(1) | BIT(3)))
+#define PHY_LINK_IS_FULL_DUPLEX(x)	(x & (BIT(1) | BIT(3) | BIT(5)))
+#define PHY_LINK_IS_SPEED_1000M(x)	(x & (BIT(4) | BIT(5)))
 #define PHY_LINK_IS_SPEED_100M(x)	(x & (BIT(2) | BIT(3)))
 
 /** @brief Link state */
