@@ -128,7 +128,7 @@ int settings_next_line_ctx(struct line_entry_ctx *entry_ctx)
 	uint16_t readout;
 	int rc;
 
-	entry_ctx->seek += entry_ctx->len; /* to begin of nex line */
+	entry_ctx->seek += entry_ctx->len; /* to begin of next line */
 
 	entry_ctx->len = 0; /* ask read handler to ignore len */
 
@@ -165,7 +165,7 @@ int settings_line_len_calc(const char *name, size_t val_len)
 /**
  * Read RAW settings line entry data until a char from the storage.
  *
- * @param seek offset form the line beginning.
+ * @param seek offset from the line beginning.
  * @param[out] out buffer for name
  * @param[in] len_req size of <p>out</p> buffer
  * @param[out] len_read length of read name
