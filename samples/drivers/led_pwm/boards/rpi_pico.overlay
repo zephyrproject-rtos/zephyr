@@ -1,5 +1,11 @@
-&pwm_led0 {
-	status = "okay";
+/ {
+	leds {
+		status = "disabled";
+	};
+
+	pwm_leds {
+		status = "okay";
+	};
 };
 
 &pwm {
