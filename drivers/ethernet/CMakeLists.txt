@@ -30,6 +30,12 @@ zephyr_library_sources_ifdef(CONFIG_ETH_W5500		eth_w5500.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_SAM_GMAC	eth_sam_gmac.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_CYCLONEV	eth_cyclonev.c)
 
+if(CONFIG_ETH_NXP_S32_NETC)
+  zephyr_library_sources(eth_nxp_s32_netc.c)
+  zephyr_library_sources_ifdef(CONFIG_DT_HAS_NXP_S32_NETC_PSI_ENABLED	eth_nxp_s32_netc_psi.c)
+  zephyr_library_sources_ifdef(CONFIG_DT_HAS_NXP_S32_NETC_VSI_ENABLED	eth_nxp_s32_netc_vsi.c)
+endif()
+
 if(CONFIG_ETH_NATIVE_POSIX)
   set(native_posix_source_files eth_native_posix.c eth_native_posix_adapt.c)
   set_source_files_properties(${native_posix_source_files}
