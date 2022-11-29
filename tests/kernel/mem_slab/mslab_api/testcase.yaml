@@ -5,6 +5,9 @@ tests:
     tags: kernel memory_slabs
     platform_allow: qemu_cortex_m3 qemu_cortex_m0 nsim_em nsim_em7d_v22 nsim_hs
       nsim_hs_mpuv6 nsim_hs5x nsim_hs6x qemu_arc_em qemu_arc_hs qemu_arc_hs6x
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_arc_hs
     extra_configs:
       - CONFIG_MULTITHREADING=n
   kernel.memory_slabs.api.linker_generator:
