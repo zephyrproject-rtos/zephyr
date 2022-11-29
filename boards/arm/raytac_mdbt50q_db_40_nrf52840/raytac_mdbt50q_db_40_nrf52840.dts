@@ -6,7 +6,7 @@
 #include "raytac_mdbt50q_db_40_nrf52840-pinctrl.dtsi"
 
 / {
-	model = "Raytac MDBT50Q_DB_40_nRF52840";
+	model = "Raytac MDBT50Q_DB_40_NRF52840";
 	compatible = "raytac,raytac-mdbt50q-db-40-nrf52840";
 
 	chosen {
