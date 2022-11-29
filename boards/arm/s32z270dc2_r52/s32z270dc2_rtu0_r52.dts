@@ -22,3 +22,13 @@
 		watchdog0 = &swt0;
 	};
 };
+
+&mru0 {
+	rx-channels = <1>;
+	status = "okay";
+};
+
+&enetc_psi0 {
+	mboxes = <&mru0 0>;
+	mbox-names = "rx";
+};

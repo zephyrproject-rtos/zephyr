@@ -597,5 +597,66 @@
 			#mbox-cells = <1>;
 			status = "disabled";
 		};
+
+		netc: ethernet@74000000 {
+			reg = <0x74000000 0x1000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			emdio: mdio@74b60000 {
+				compatible = "nxp,s32-netc-emdio";
+				reg = <0x74b60000 0x1c44>;
+				status = "disabled";
+			};
+
+			enetc_psi0: ethernet@74b00000 {
+				compatible = "nxp,s32-netc-psi";
+				reg = <0x74b00000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi1: ethernet@74bc0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74bc0000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi2: ethernet@74bd0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74bd0000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi3: ethernet@74be0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74be0000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi4: ethernet@74bf0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74bf0000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi5: ethernet@74c00000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74c00000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi6: ethernet@74c10000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74c10000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi7: ethernet@74c20000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74c20000 0x10000>;
+				status = "disabled";
+			};
+		};
 	};
 };
