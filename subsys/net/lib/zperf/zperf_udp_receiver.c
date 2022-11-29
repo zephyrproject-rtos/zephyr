@@ -38,6 +38,7 @@ static struct sockaddr_in *in4_addr_my;
 #define SOCK_ID_MAX 2
 
 #define UDP_RECEIVER_BUF_SIZE 1500
+#define POLL_TIMEOUT_MS 100
 
 static K_THREAD_STACK_DEFINE(udp_receiver_stack_area, UDP_RECEIVER_STACK_SIZE);
 static struct k_thread udp_receiver_thread_data;
@@ -45,6 +46,9 @@ static struct k_thread udp_receiver_thread_data;
 static zperf_callback udp_session_cb;
 static void *udp_user_data;
 static bool udp_server_running;
+static bool udp_server_stop;
+static uint16_t udp_server_port;
+static K_SEM_DEFINE(udp_server_run, 0, 1);
 
 static inline void build_reply(struct zperf_udp_datagram *hdr,
 			       struct zperf_server_hdr *stat,
@@ -225,13 +229,9 @@ static void udp_received(int sock, const struct sockaddr *addr, uint8_t *data,
 	}
 }
 
-void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
+static void udp_server_session(void)
 {
-	ARG_UNUSED(ptr1);
-	ARG_UNUSED(ptr3);
-
 	static uint8_t buf[UDP_RECEIVER_BUF_SIZE];
-	int port = POINTER_TO_INT(ptr2);
 	struct zsock_pollfd fds[SOCK_ID_MAX] = { 0 };
 	int ret;
 
@@ -248,7 +248,7 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 						    IPPROTO_UDP);
 		if (fds[SOCK_ID_IPV4].fd < 0) {
 			NET_ERR("Cannot create IPv4 network socket.");
-			goto cleanup;
+			goto error;
 		}
 
 		if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
@@ -265,7 +265,7 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			in4_addr = zperf_get_default_if_in4_addr();
 			if (!in4_addr) {
 				NET_ERR("Unable to get IPv4 by default");
-				goto cleanup;
+				goto error;
 			}
 			memcpy(&in4_addr_my->sin_addr, in4_addr,
 				sizeof(struct in_addr));
@@ -274,7 +274,7 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 		NET_INFO("Binding to %s",
 			 net_sprint_ipv4_addr(&in4_addr_my->sin_addr));
 
-		in4_addr_my->sin_port = htons(port);
+		in4_addr_my->sin_port = htons(udp_server_port);
 
 		ret = zsock_bind(fds[SOCK_ID_IPV4].fd,
 				 (struct sockaddr *)in4_addr_my,
@@ -283,7 +283,7 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			NET_ERR("Cannot bind IPv4 UDP port %d (%d)",
 				ntohs(in4_addr_my->sin_port),
 				errno);
-			goto cleanup;
+			goto error;
 		}
 
 		fds[SOCK_ID_IPV4].events = ZSOCK_POLLIN;
@@ -298,7 +298,7 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 						    IPPROTO_UDP);
 		if (fds[SOCK_ID_IPV6].fd < 0) {
 			NET_ERR("Cannot create IPv4 network socket.");
-			goto cleanup;
+			goto error;
 		}
 
 		if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
@@ -316,7 +316,7 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			in6_addr = zperf_get_default_if_in6_addr();
 			if (!in6_addr) {
 				NET_ERR("Unable to get IPv4 by default");
-				goto cleanup;
+				goto error;
 			}
 			memcpy(&in6_addr_my->sin6_addr, in6_addr,
 				sizeof(struct in6_addr));
@@ -325,7 +325,7 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 		NET_INFO("Binding to %s",
 			 net_sprint_ipv6_addr(&in6_addr_my->sin6_addr));
 
-		in6_addr_my->sin6_port = htons(port);
+		in6_addr_my->sin6_port = htons(udp_server_port);
 
 		ret = zsock_bind(fds[SOCK_ID_IPV6].fd,
 				 (struct sockaddr *)in6_addr_my,
@@ -334,19 +334,27 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			NET_ERR("Cannot bind IPv6 UDP port %d (%d)",
 				ntohs(in6_addr_my->sin6_port),
 				ret);
-			goto cleanup;
+			goto error;
 		}
 
 		fds[SOCK_ID_IPV6].events = ZSOCK_POLLIN;
 	}
 
-	NET_INFO("Listening on port %d", port);
+	NET_INFO("Listening on port %d", udp_server_port);
 
 	while (true) {
-		ret = zsock_poll(fds, ARRAY_SIZE(fds), -1);
+		ret = zsock_poll(fds, ARRAY_SIZE(fds), POLL_TIMEOUT_MS);
 		if (ret < 0) {
 			NET_ERR("UDP receiver poll error (%d)", errno);
+			goto error;
+		}
+
+		if (udp_server_stop) {
 			goto cleanup;
+		}
+
+		if (ret == 0) {
+			continue;
 		}
 
 		for (int i = 0; i < ARRAY_SIZE(fds); i++) {
@@ -357,7 +365,7 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			    (fds[i].revents & ZSOCK_POLLNVAL)) {
 				NET_ERR("UDP receiver IPv%d socket error",
 					(i == SOCK_ID_IPV4) ? 4 : 6);
-				goto cleanup;
+				goto error;
 			}
 
 			if (!(fds[i].revents & ZSOCK_POLLIN)) {
@@ -369,18 +377,19 @@ void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			if (ret < 0) {
 				NET_ERR("recv failed on IPv%d socket (%d)",
 					(i == SOCK_ID_IPV4) ? 4 : 6, errno);
-				goto cleanup;
+				goto error;
 			}
 
 			udp_received(fds[i].fd, &addr, buf, ret);
 		}
 	}
 
-cleanup:
+error:
 	if (udp_session_cb != NULL) {
 		udp_session_cb(ZPERF_SESSION_ERROR, NULL, udp_user_data);
 	}
 
+cleanup:
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
 		if (fds[i].fd >= 0) {
 			zsock_close(fds[i].fd);
@@ -388,13 +397,28 @@ cleanup:
 	}
 }
 
-static void zperf_udp_receiver_init(int port)
+static void udp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
+{
+	ARG_UNUSED(ptr1);
+	ARG_UNUSED(ptr2);
+	ARG_UNUSED(ptr3);
+
+	while (true) {
+		k_sem_take(&udp_server_run, K_FOREVER);
+
+		udp_server_session();
+
+		udp_server_running = false;
+	}
+}
+
+void zperf_udp_receiver_init(void)
 {
 	k_thread_create(&udp_receiver_thread_data,
 			udp_receiver_stack_area,
 			K_THREAD_STACK_SIZEOF(udp_receiver_stack_area),
 			udp_receiver_thread,
-			NULL, INT_TO_POINTER(port), NULL,
+			NULL, NULL, NULL,
 			UDP_RECEIVER_THREAD_PRIORITY,
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
 						       K_INHERIT_PERMS : 0,
@@ -414,9 +438,23 @@ int zperf_udp_download(const struct zperf_download_params *param,
 
 	udp_session_cb = callback;
 	udp_user_data  = user_data;
+	udp_server_port = param->port;
 	udp_server_running = true;
+	udp_server_stop = false;
 
-	zperf_udp_receiver_init(param->port);
+	k_sem_give(&udp_server_run);
+
+	return 0;
+}
+
+int zperf_udp_download_stop(void)
+{
+	if (!udp_server_running) {
+		return -EALREADY;
+	}
+
+	udp_server_stop = true;
+	udp_session_cb = NULL;
 
 	return 0;
 }
