@@ -43,6 +43,18 @@ jobs:
         west init -l . || true
         west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
+    - name: Run Compliance Tests (no rebase)
+      continue-on-error: true
+      id: compliance-norebase
+      env:
+        BASE_REF: ${{ github.base_ref }}
+        PR_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        export ZEPHYR_BASE=$PWD
+        git log --pretty=oneline origin/${BASE_REF}..${PR_SHA}
+        ./scripts/ci/check_compliance.py --annotate -m MergeCommits \
+        -c origin/${BASE_REF}..${PR_SHA}
+
     - name: Run Compliance Tests
       continue-on-error: true
       id: compliance
