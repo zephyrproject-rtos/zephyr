@@ -14,7 +14,6 @@ LOG_MODULE_REGISTER(regulator_shell, CONFIG_REGULATOR_LOG_LEVEL);
 
 static int cmd_reg_en(const struct shell *sh, size_t argc, char **argv)
 {
-	struct onoff_client cli;
 	const struct device *reg_dev;
 	int ret;
 
@@ -24,7 +23,7 @@ static int cmd_reg_en(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	ret = regulator_enable(reg_dev, &cli);
+	ret = regulator_enable(reg_dev);
 	if (ret < 0) {
 		shell_error(sh, "failed to enable regulator, error %d", ret);
 		return ret;

@@ -28,62 +28,39 @@ struct regulator_fixed_config {
 };
 
 struct regulator_fixed_data {
-	struct onoff_sync_service srv;
+	struct regulator_common_data common;
 };
 
-static int regulator_fixed_enable(const struct device *dev,
-				  struct onoff_client *cli)
+static int regulator_fixed_enable(const struct device *dev)
 {
 	const struct regulator_fixed_config *cfg = dev->config;
-	struct regulator_fixed_data *data = dev->data;
-	k_spinlock_key_t key;
 	int ret;
 
 	if ((cfg->options & OPTION_ALWAYS_ON) != 0) {
 		return 0;
 	}
 
-	ret = onoff_sync_lock(&data->srv, &key);
-	if (ret > 0) {
-		goto finalize;
-	}
-
 	ret = gpio_pin_set_dt(&cfg->enable, 1);
 	if (ret < 0) {
-		goto finalize;
+		return ret;
 	}
 
 	if (cfg->off_on_delay_us > 0U) {
 		k_sleep(K_USEC(cfg->off_on_delay_us));
 	}
 
-finalize:
-	return onoff_sync_finalize(&data->srv, key, cli, ret, true);
+	return 0;
 }
 
 static int regulator_fixed_disable(const struct device *dev)
 {
 	const struct regulator_fixed_config *cfg = dev->config;
-	struct regulator_fixed_data *data = dev->data;
-	k_spinlock_key_t key;
-	int ret;
 
 	if  ((cfg->options & OPTION_ALWAYS_ON) != 0) {
 		return 0;
 	}
 
-	ret = onoff_sync_lock(&data->srv, &key);
-	if (ret != 1) {
-		goto finalize;
-	}
-
-	ret = gpio_pin_set_dt(&cfg->enable, 0);
-	if (ret < 0) {
-		return ret;
-	}
-
-finalize:
-	return onoff_sync_finalize(&data->srv, key, NULL, ret, false);
+	return gpio_pin_set_dt(&cfg->enable, 0);
 }
 
 static const struct regulator_driver_api regulator_fixed_api = {
@@ -95,6 +72,8 @@ static int regulator_fixed_init(const struct device *dev)
 {
 	const struct regulator_fixed_config *cfg = dev->config;
 	int ret;
+
+	regulator_common_data_init(dev);
 
 	if (!device_is_ready(cfg->enable.port)) {
 		LOG_ERR("GPIO port: %s not ready", cfg->enable.port->name);
@@ -119,6 +98,8 @@ static int regulator_fixed_init(const struct device *dev)
 }
 
 #define REGULATOR_FIXED_DEFINE(inst)                                           \
+	static struct regulator_fixed_data data##inst;                         \
+                                                                               \
 	static const struct regulator_fixed_config config##inst = {            \
 		.startup_delay_us = DT_INST_PROP(inst, startup_delay_us),      \
 		.off_on_delay_us = DT_INST_PROP(inst, off_on_delay_us),        \
@@ -129,7 +110,7 @@ static int regulator_fixed_init(const struct device *dev)
 			    << OPTION_ALWAYS_ON_POS),                          \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, NULL,          \
+	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &data##inst,   \
 			      &config##inst, POST_KERNEL,                      \
 			      CONFIG_REGULATOR_FIXED_INIT_PRIORITY,            \
 			      &regulator_fixed_api);

@@ -47,47 +47,6 @@ static const char *const pc_errstr[] = {
 	[PC_OK] = "precheck OK",
 };
 
-static struct onoff_client cli;
-static struct onoff_manager *callback_srv;
-static struct onoff_client *callback_cli;
-static uint32_t callback_state;
-static int callback_res;
-static onoff_client_callback callback_fn;
-
-static void callback(struct onoff_manager *srv,
-		     struct onoff_client *cli,
-		     uint32_t state,
-		     int res)
-{
-	onoff_client_callback cb = callback_fn;
-
-	callback_srv = srv;
-	callback_cli = cli;
-	callback_state = state;
-	callback_res = res;
-	callback_fn = NULL;
-
-	if (cb != NULL) {
-		cb(srv, cli, state, res);
-	}
-}
-
-static void reset_callback(void)
-{
-	callback_srv = NULL;
-	callback_cli = NULL;
-	callback_state = INT_MIN;
-	callback_res = 0;
-	callback_fn = NULL;
-}
-
-static void reset_client(void)
-{
-	cli = (struct onoff_client){};
-	reset_callback();
-	sys_notify_init_callback(&cli.notify, callback);
-}
-
 static int reg_status(void)
 {
 	return gpio_pin_get_dt(&check_gpio);
@@ -197,30 +156,11 @@ ZTEST(regulator, test_basic)
 			      "not off at boot: %d", rs);
 	}
 
-	reset_client();
-
 	/* Turn it on */
-	int rc = regulator_enable(reg_dev, &cli);
-	zassert_true(rc >= 0,
-		     "first enable failed: %d", rc);
+	int rc = regulator_enable(reg_dev);
 
-	if (STARTUP_DELAY_US > 0) {
-		rc = sys_notify_fetch_result(&cli.notify, &rc);
-
-		zassert_equal(rc, -EAGAIN,
-			      "startup notify early: %d", rc);
-
-		while (sys_notify_fetch_result(&cli.notify, &rc) == -EAGAIN) {
-			k_yield();
-		}
-	}
-
-	zassert_equal(callback_cli, &cli,
-		      "callback not invoked");
-	zassert_equal(callback_res, 0,
-		      "callback res: %d", callback_res);
-	zassert_equal(callback_state, ONOFF_STATE_ON,
-		      "callback state: 0x%x", callback_res);
+	zassert_equal(rc, 0,
+		      "first enable failed: %d", rc);
 
 	/* Make sure it's on */
 
@@ -230,17 +170,9 @@ ZTEST(regulator, test_basic)
 
 	/* Turn it on again (another client) */
 
-	reset_client();
-	rc = regulator_enable(reg_dev, &cli);
-	zassert_true(rc >= 0,
+	rc = regulator_enable(reg_dev);
+	zassert_equal(rc, 0,
 		     "second enable failed: %d", rc);
-
-	zassert_equal(callback_cli, &cli,
-		      "callback not invoked");
-	zassert_true(callback_res >= 0,
-		      "callback res: %d", callback_res);
-	zassert_equal(callback_state, ONOFF_STATE_ON,
-		      "callback state: 0x%x", callback_res);
 
 	/* Make sure it's still on */
 
@@ -263,7 +195,7 @@ ZTEST(regulator, test_basic)
 	/* Turn it off again (no more clients) */
 
 	rc = regulator_disable(reg_dev);
-	zassert_true(rc >= 0,
+	zassert_equal(rc, 0,
 		     "first disable failed: %d", rc);
 
 	/* On if and only if it can't be turned off */
