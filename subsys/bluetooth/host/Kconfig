@@ -501,6 +501,17 @@ config BT_ID_UNPAIR_MATCHING_BONDS
 	  link-layer. The Host does not have control over this acknowledgment,
 	  and the order of distribution is fixed by the specification.
 
+config BT_ID_ALLOW_UNAUTH_OVERWRITE
+	bool "Allow unauthenticated pairing with same peer with other local identity"
+	depends on !BT_SMP_ALLOW_UNAUTH_OVERWRITE
+	help
+	  This option allows unauthenticated pairing attempts made by the
+	  peer where an unauthenticated bond already exists on other local
+	  identity. This configuration still blocks unauthenticated pairing
+	  attempts on the same local identity. To allow the pairing procedure
+	  unconditionally, please see the BT_SMP_ALLOW_UNAUTH_OVERWRITE
+	  configuration.
+
 config BT_SMP_USB_HCI_CTLR_WORKAROUND
 	bool "Workaround for USB HCI controller out-of-order events"
 	depends on BT_TESTING
