@@ -254,6 +254,8 @@ class TestInstance:
         fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
         fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
         fns = [x for x in fns if '_pre' not in x]
+        # EFI elf files
+        fns = [x for x in fns if 'zefi' not in x]
         if len(fns) != 1:
             raise BuildError("Missing/multiple output ELF binary")
         return fns[0]
