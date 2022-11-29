@@ -6,16 +6,14 @@
 /*
  * Generated using zcbor version 0.6.0
  * https://github.com/zephyrproject-rtos/zcbor
- * Generated with a --default-max-qty of 99
  */
 
-#include "lwm2m_senml_cbor_decode.h"
-#include "zcbor_decode.h"
-
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h>
+#include "zcbor_decode.h"
+#include "lwm2m_senml_cbor_decode.h"
 
 static bool decode_repeated_record_bn(zcbor_state_t *state, struct record_bn *result);
 static bool decode_repeated_record_bt(zcbor_state_t *state, struct record_bt *result);

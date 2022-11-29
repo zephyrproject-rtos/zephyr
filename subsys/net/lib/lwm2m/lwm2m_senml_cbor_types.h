@@ -4,33 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 /*
- *
  * Generated using zcbor version 0.6.0
  * https://github.com/zephyrproject-rtos/zcbor
- * Generated with a --default-max-qty of 99
  */
 
 #ifndef LWM2M_SENML_CBOR_TYPES_H__
 #define LWM2M_SENML_CBOR_TYPES_H__
-
 #include "zcbor_common.h"
-
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h>
-
-enum lwm2m_senml_cbor_key {
-	lwm2m_senml_cbor_key_bn = -2,
-	lwm2m_senml_cbor_key_bt = -3,
-	lwm2m_senml_cbor_key_n = 0,
-	lwm2m_senml_cbor_key_t = 6,
-	lwm2m_senml_cbor_key_vi = 2,
-	lwm2m_senml_cbor_key_vf = 2,
-	lwm2m_senml_cbor_key_vs = 3,
-	lwm2m_senml_cbor_key_vb = 4,
-	lwm2m_senml_cbor_key_vd = 8,
-};
+#include "zcbor_encode.h"
 
 /** Which value for --default-max-qty this file was created with.
  *
@@ -132,6 +117,18 @@ struct record {
 struct lwm2m_senml {
 	struct record _lwm2m_senml__record[DEFAULT_MAX_QTY];
 	uint_fast32_t _lwm2m_senml__record_count;
+};
+
+enum lwm2m_senml_cbor_key {
+	lwm2m_senml_cbor_key_bn = -2,
+	lwm2m_senml_cbor_key_bt = -3,
+	lwm2m_senml_cbor_key_n = 0,
+	lwm2m_senml_cbor_key_t = 6,
+	lwm2m_senml_cbor_key_vi = 2,
+	lwm2m_senml_cbor_key_vf = 2,
+	lwm2m_senml_cbor_key_vs = 3,
+	lwm2m_senml_cbor_key_vb = 4,
+	lwm2m_senml_cbor_key_vd = 8,
 };
 
 #endif /* LWM2M_SENML_CBOR_TYPES_H__ */

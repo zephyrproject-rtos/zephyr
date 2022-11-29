@@ -6,17 +6,15 @@
 /*
  * Generated using zcbor version 0.6.0
  * https://github.com/zephyrproject-rtos/zcbor
- * Generated with a --default-max-qty of 99
  */
 
-#include "lwm2m_senml_cbor_encode.h"
-#include "lwm2m_senml_cbor_types.h"
-#include "zcbor_encode.h"
-
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h>
+#include "zcbor_encode.h"
+#include "lwm2m_senml_cbor_encode.h"
+#include "lwm2m_senml_cbor_types.h"
 
 static bool encode_repeated_record_bn(zcbor_state_t *state, const struct record_bn *input);
 static bool encode_repeated_record_bt(zcbor_state_t *state, const struct record_bt *input);
@@ -200,31 +198,33 @@ static bool encode_record(zcbor_state_t *state, const struct record *input)
 {
 	zcbor_print("%s\r\n", __func__);
 
-	int max_keys = ZCBOR_ARRAY_SIZE(input->_record__key_value_pair);
-
-	bool tmp_result = (((zcbor_map_start_encode(state, max_keys + 5) &&
-			     ((zcbor_present_encode(&((*input)._record_bn_present),
-						    (zcbor_encoder_t *)encode_repeated_record_bn,
-						    state, (&(*input)._record_bn)) &&
-			       zcbor_present_encode(&((*input)._record_bt_present),
-						    (zcbor_encoder_t *)encode_repeated_record_bt,
-						    state, (&(*input)._record_bt)) &&
-			       zcbor_present_encode(&((*input)._record_n_present),
-						    (zcbor_encoder_t *)encode_repeated_record_n,
-						    state, (&(*input)._record_n)) &&
-			       zcbor_present_encode(&((*input)._record_t_present),
-						    (zcbor_encoder_t *)encode_repeated_record_t,
-						    state, (&(*input)._record_t)) &&
-			       zcbor_present_encode(&((*input)._record_union_present),
-						    (zcbor_encoder_t *)encode_repeated_record_union,
-						    state, (&(*input)._record_union)) &&
-			       zcbor_multi_encode_minmax(
-				       0, max_keys, &(*input)._record__key_value_pair_count,
-				       (zcbor_encoder_t *)encode_repeated_record__key_value_pair,
-				       state, (&(*input)._record__key_value_pair),
-				       sizeof(struct record__key_value_pair))) ||
-			      (zcbor_list_map_end_force_encode(state), false)) &&
-			     zcbor_map_end_encode(state, max_keys + 5))));
+	bool tmp_result =
+		(((zcbor_map_start_encode(state,
+					  ZCBOR_ARRAY_SIZE(input->_record__key_value_pair) + 5) &&
+		   ((zcbor_present_encode(&((*input)._record_bn_present),
+					  (zcbor_encoder_t *)encode_repeated_record_bn, state,
+					  (&(*input)._record_bn)) &&
+		     zcbor_present_encode(&((*input)._record_bt_present),
+					  (zcbor_encoder_t *)encode_repeated_record_bt, state,
+					  (&(*input)._record_bt)) &&
+		     zcbor_present_encode(&((*input)._record_n_present),
+					  (zcbor_encoder_t *)encode_repeated_record_n, state,
+					  (&(*input)._record_n)) &&
+		     zcbor_present_encode(&((*input)._record_t_present),
+					  (zcbor_encoder_t *)encode_repeated_record_t, state,
+					  (&(*input)._record_t)) &&
+		     zcbor_present_encode(&((*input)._record_union_present),
+					  (zcbor_encoder_t *)encode_repeated_record_union, state,
+					  (&(*input)._record_union)) &&
+		     zcbor_multi_encode_minmax(
+			     0, ZCBOR_ARRAY_SIZE(input->_record__key_value_pair),
+			     &(*input)._record__key_value_pair_count,
+			     (zcbor_encoder_t *)encode_repeated_record__key_value_pair, state,
+			     (&(*input)._record__key_value_pair),
+			     sizeof(struct record__key_value_pair))) ||
+		    (zcbor_list_map_end_force_encode(state), false)) &&
+		   zcbor_map_end_encode(state,
+					ZCBOR_ARRAY_SIZE(input->_record__key_value_pair) + 5))));
 
 	if (!tmp_result)
 		zcbor_trace();
@@ -235,15 +235,15 @@ static bool encode_record(zcbor_state_t *state, const struct record *input)
 static bool encode_lwm2m_senml(zcbor_state_t *state, const struct lwm2m_senml *input)
 {
 	zcbor_print("%s\r\n", __func__);
-	size_t max_records = ZCBOR_ARRAY_SIZE(input->_lwm2m_senml__record);
 
-	bool tmp_result = (((zcbor_list_start_encode(state, max_records) &&
-			     ((zcbor_multi_encode_minmax(
-				      1, max_records, &(*input)._lwm2m_senml__record_count,
-				      (zcbor_encoder_t *)encode_record, state,
-				      (&(*input)._lwm2m_senml__record), sizeof(struct record))) ||
-			      (zcbor_list_map_end_force_encode(state), false)) &&
-			     zcbor_list_end_encode(state, max_records))));
+	bool tmp_result =
+		(((zcbor_list_start_encode(state, ZCBOR_ARRAY_SIZE(input->_lwm2m_senml__record)) &&
+		   ((zcbor_multi_encode_minmax(
+			    1, ZCBOR_ARRAY_SIZE(input->_lwm2m_senml__record),
+			    &(*input)._lwm2m_senml__record_count, (zcbor_encoder_t *)encode_record,
+			    state, (&(*input)._lwm2m_senml__record), sizeof(struct record))) ||
+		    (zcbor_list_map_end_force_encode(state), false)) &&
+		   zcbor_list_end_encode(state, ZCBOR_ARRAY_SIZE(input->_lwm2m_senml__record)))));
 
 	if (!tmp_result)
 		zcbor_trace();
