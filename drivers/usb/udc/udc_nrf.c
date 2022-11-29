@@ -33,12 +33,15 @@ enum udc_nrf_event_type {
 	UDC_NRF_EVT_HAL,
 	/* Shim driver event to trigger next transfer */
 	UDC_NRF_EVT_XFER,
+	/* Let controller perform status stage */
+	UDC_NRF_EVT_STATUS_IN,
 };
 
 struct udc_nrf_evt {
 	enum udc_nrf_event_type type;
 	union {
 		nrfx_usbd_evt_t hal_evt;
+		uint8_t ep;
 	};
 };
 
@@ -81,9 +84,13 @@ static void udc_nrf_clear_control_out(const struct device *dev)
 	}
 }
 
-static void udc_event_xfer_in_next(const struct device *dev, uint8_t ep)
+static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 {
 	struct net_buf *buf;
+
+	if (nrfx_usbd_ep_is_busy(ep)) {
+		return;
+	}
 
 	buf = udc_buf_peek(dev, ep, false);
 	if (buf != NULL) {
@@ -98,7 +105,7 @@ static void udc_event_xfer_in_next(const struct device *dev, uint8_t ep)
 		err = nrfx_usbd_ep_transfer(ep, &xfer);
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
-			/* FIXME: remove from endpoint queue? */
+			/* REVISE: remove from endpoint queue? ASSERT? */
 			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
 					 -ECONNREFUSED, buf);
 		}
@@ -129,6 +136,20 @@ static void udc_event_xfer_ctrl_in(const struct device *dev,
 	nrfx_usbd_setup_clear();
 }
 
+static void udc_event_fake_status_in(const struct device *dev)
+{
+	struct net_buf *buf;
+
+	buf = udc_buf_get(dev, USB_CONTROL_EP_IN, true);
+	if (unlikely(buf == NULL)) {
+		LOG_DBG("ep 0x%02x queue is empty", USB_CONTROL_EP_IN);
+		return;
+	}
+
+	LOG_DBG("Fake status IN %p", buf);
+	udc_event_xfer_ctrl_in(dev, buf);
+}
+
 static void udc_event_xfer_in(const struct device *dev,
 			      nrfx_usbd_evt_t const *const event)
 {
@@ -140,6 +161,7 @@ static void udc_event_xfer_in(const struct device *dev,
 		buf = udc_buf_get(dev, ep, true);
 		if (buf == NULL) {
 			LOG_ERR("ep 0x%02x queue is empty", ep);
+			__ASSERT_NO_MSG(false);
 			return;
 		}
 
@@ -148,7 +170,6 @@ static void udc_event_xfer_in(const struct device *dev,
 		}
 
 		udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
-		udc_event_xfer_in_next(dev, ep);
 		break;
 
 	case NRFX_USBD_EP_ABORTED:
@@ -188,6 +209,31 @@ static void udc_event_xfer_ctrl_out(const struct device *dev,
 	}
 }
 
+static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
+{
+	struct net_buf *buf;
+
+	buf = udc_buf_peek(dev, ep, true);
+	if (buf != NULL) {
+		nrfx_usbd_transfer_t xfer = {
+			.p_data = {.rx = buf->data},
+			.size = buf->size,
+			.flags = 0,
+		};
+		nrfx_err_t err;
+
+		err = nrfx_usbd_ep_transfer(ep, &xfer);
+		if (err != NRFX_SUCCESS) {
+			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
+			/* REVISE: remove from endpoint queue? ASSERT? */
+			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
+					 -ECONNREFUSED, buf);
+		}
+	} else {
+		LOG_DBG("ep 0x%02x waiting, queue is empty", ep);
+	}
+}
+
 static void udc_event_xfer_out(const struct device *dev,
 			       nrfx_usbd_evt_t const *const event)
 {
@@ -198,19 +244,7 @@ static void udc_event_xfer_out(const struct device *dev,
 
 	switch (event->data.eptransfer.status) {
 	case NRFX_USBD_EP_WAITING:
-		buf = udc_buf_peek(dev, ep, true);
-		if (buf == NULL) {
-			LOG_ERR("ep 0x%02x waiting, queue is empty", ep);
-			return;
-		}
-
-		NRFX_USBD_TRANSFER_OUT(transfer, buf->data, buf->size);
-		nrfx_err_t err = nrfx_usbd_ep_transfer(ep, &transfer);
-
-		if (err != NRFX_SUCCESS) {
-			LOG_ERR("nRF USBD transfer error (OUT): 0x%02x", err);
-		}
-
+		udc_event_xfer_out_next(dev, ep);
 		break;
 
 	case NRFX_USBD_EP_OK:
@@ -232,17 +266,6 @@ static void udc_event_xfer_out(const struct device *dev,
 			udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
 		}
 
-		break;
-
-	case NRFX_USBD_EP_ABORTED:
-		buf = udc_buf_get_all(dev, ep);
-		if (buf == NULL) {
-			LOG_ERR("ep 0x%02x queue is empty", ep);
-			return;
-		}
-
-		udc_submit_event(dev, UDC_EVT_EP_REQUEST,
-					 -ECONNABORTED, buf);
 		break;
 
 	default:
@@ -309,26 +332,49 @@ static int udc_event_xfer_setup(const struct device *dev)
 
 static void udc_nrf_thread(const struct device *dev)
 {
-	struct udc_nrf_evt evt;
-	uint8_t ep;
-
 	while (true) {
-		k_msgq_get(&drv_msgq, &evt, K_FOREVER);
-		ep = evt.hal_evt.data.eptransfer.ep;
+		bool start_xfer = false;
+		struct udc_nrf_evt evt;
+		uint8_t ep;
 
-		switch (evt.hal_evt.type) {
-		case NRFX_USBD_EVT_EPTRANSFER:
-			if (USB_EP_DIR_IS_IN(ep)) {
-				udc_event_xfer_in(dev, &evt.hal_evt);
-			} else {
-				udc_event_xfer_out(dev, &evt.hal_evt);
+		k_msgq_get(&drv_msgq, &evt, K_FOREVER);
+
+		switch (evt.type) {
+		case UDC_NRF_EVT_HAL:
+			ep = evt.hal_evt.data.eptransfer.ep;
+			switch (evt.hal_evt.type) {
+			case NRFX_USBD_EVT_EPTRANSFER:
+				if (USB_EP_DIR_IS_IN(ep)) {
+					udc_event_xfer_in(dev, &evt.hal_evt);
+					start_xfer = true;
+				} else {
+					udc_event_xfer_out(dev, &evt.hal_evt);
+				}
+				break;
+			case NRFX_USBD_EVT_SETUP:
+				udc_event_xfer_setup(dev);
+				break;
+			default:
+				break;
 			}
 			break;
-		case NRFX_USBD_EVT_SETUP:
-			udc_event_xfer_setup(dev);
+		case UDC_NRF_EVT_XFER:
+			start_xfer = true;
+			ep = evt.ep;
 			break;
-		default:
+		case UDC_NRF_EVT_STATUS_IN:
+			udc_event_fake_status_in(dev);
 			break;
+		}
+
+		if (start_xfer) {
+			struct udc_ep_config *cfg = udc_get_ep_cfg(dev, ep);
+
+			if (USB_EP_DIR_IS_IN(ep)) {
+				udc_event_xfer_in_next(dev, ep);
+			} else if (cfg->stat.pending) {
+				udc_event_xfer_out_next(dev, ep);
+			}
 		}
 	}
 }
@@ -337,16 +383,8 @@ static void udc_sof_check_iso_out(const struct device *dev)
 {
 	const uint8_t iso_out_addr = 0x08;
 	struct udc_nrf_evt evt = {
-		.type = UDC_NRF_EVT_HAL,
-		.hal_evt = {
-			.type = NRFX_USBD_EVT_EPTRANSFER,
-			.data = {
-				.eptransfer = {
-					.ep = iso_out_addr,
-					.status = NRFX_USBD_EP_WAITING,
-				},
-			},
-		},
+		.type = UDC_NRF_EVT_XFER,
+		.ep = iso_out_addr,
 	};
 	struct udc_ep_config *ep_cfg;
 
@@ -422,44 +460,15 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 	}
 }
 
-static void udc_nrf_fake_in_ack(const struct device *dev)
+static void udc_nrf_fake_status_in(const struct device *dev)
 {
 	struct udc_nrf_evt evt = {
-		.type = UDC_NRF_EVT_HAL,
-		.hal_evt = {
-			.type = NRFX_USBD_EVT_EPTRANSFER,
-			.data = {
-				.eptransfer = {
-					.ep = USB_CONTROL_EP_IN,
-					.status = NRFX_USBD_EP_OK,
-				},
-			},
-		},
+		.type = UDC_NRF_EVT_STATUS_IN,
+		.ep = USB_CONTROL_EP_IN,
 	};
 
 	if (nrfx_usbd_last_setup_dir_get() == USB_CONTROL_EP_OUT) {
-		/* Host -> Device or no Data stage */
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
-	}
-}
-
-static void udc_nrf_check_pending(const struct device *dev,
-				   struct udc_ep_config *ep_cfg)
-{
-	struct udc_nrf_evt evt = {
-		.type = UDC_NRF_EVT_HAL,
-		.hal_evt = {
-			.type = NRFX_USBD_EVT_EPTRANSFER,
-			.data = {
-				.eptransfer = {
-					.ep = ep_cfg->addr,
-					.status = NRFX_USBD_EP_WAITING,
-				},
-			},
-		},
-	};
-
-	if (ep_cfg->stat.pending) {
+		/* Let controller perform status IN stage */
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 	}
 }
@@ -468,36 +477,19 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 			      struct udc_ep_config *cfg,
 			      struct net_buf *buf)
 {
-	net_buf_put(&cfg->fifo, buf);
+	struct udc_nrf_evt evt = {
+		.type = UDC_NRF_EVT_XFER,
+		.ep = cfg->addr,
+	};
+
+	udc_buf_put(cfg, buf);
 
 	if (cfg->addr == USB_CONTROL_EP_IN && buf->len == 0) {
-		udc_nrf_fake_in_ack(dev);
-		LOG_INF("Fake IN STATUS %p", buf);
+		udc_nrf_fake_status_in(dev);
 		return 0;
 	}
 
-	if (USB_EP_DIR_IS_IN(cfg->addr) && !nrfx_usbd_ep_is_busy(cfg->addr)) {
-		nrfx_usbd_transfer_t xfer = {
-			.p_data = {.tx = buf->data},
-			.size = buf->len,
-			.flags = udc_ep_buf_has_zlp(buf) ?
-				 NRFX_USBD_TRANSFER_ZLP_FLAG : 0,
-		};
-		nrfx_err_t err;
-
-		err = nrfx_usbd_ep_transfer(cfg->addr, &xfer);
-		if (err != NRFX_SUCCESS) {
-			LOG_ERR("ep 0x%02x nrfx error: %x", cfg->addr, err);
-			return -EIO;
-		}
-
-		return 0;
-	}
-
-
-	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
-		udc_nrf_check_pending(dev, cfg);
-	}
+	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 
 	return 0;
 }
@@ -505,27 +497,23 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 static int udc_nrf_ep_dequeue(const struct device *dev,
 			      struct udc_ep_config *cfg)
 {
-	struct udc_nrf_evt evt = {
-		.type = UDC_NRF_EVT_HAL,
-		.hal_evt = {
-			.type = NRFX_USBD_EVT_EPTRANSFER,
-			.data = {
-				.eptransfer = {
-					.ep = cfg->addr,
-					.status = NRFX_USBD_EP_ABORTED,
-				},
-			},
-		},
-	};
-	int ret = 0;
-
-	/* FIXME: check the queue state before */
 	nrfx_usbd_ep_abort(cfg->addr);
+
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
-		ret = k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		struct net_buf *buf;
+
+		/* HAL driver does not generate event for an OUT endpoint */
+		buf = udc_buf_get_all(dev, cfg->addr);
+		if (buf) {
+			udc_submit_event(dev, UDC_EVT_EP_REQUEST,
+					 -ECONNABORTED, buf);
+		} else {
+			LOG_INF("ep 0x%02x queue is empty", cfg->addr);
+		}
+
 	}
 
-	return ret;
+	return 0;
 }
 
 static int udc_nrf_ep_enable(const struct device *dev,
