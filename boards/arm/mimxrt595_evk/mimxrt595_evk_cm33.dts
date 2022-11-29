@@ -181,28 +181,28 @@ arduino_serial: &flexcomm12 {
 		regulator-initial-mode = <PCA9420_MODECFG0_PIN>;
 		modesel-reg = <PCA9420_MODECFG_0_0>;
 		modesel-mask = <PCA9420_MODECFG_0_MODE_CTRL_SEL_MASK>;
-		BUCK1 {
+		pca9420_sw1: BUCK1 {
 			regulator-min-microvolt = <500000>;
 			regulator-max-microvolt = <1800000>;
 			regulator-max-microamp = <250000>;
 			regulator-boot-on;
 		};
 
-		BUCK2 {
+		pca9420_sw2: BUCK2 {
 			regulator-min-microvolt = <1500000>;
 			regulator-max-microvolt = <3300000>;
 			regulator-max-microamp = <500000>;
 			regulator-boot-on;
 		};
 
-		LDO1 {
+		pca9420_ldo1: LDO1 {
 			regulator-min-microvolt = <1700000>;
 			regulator-max-microvolt = <1900000>;
 			regulator-max-microamp = <1000>;
 			regulator-boot-on;
 		};
 
-		LDO2 {
+		pca9420_ldo2: LDO2 {
 			regulator-min-microvolt = <1500000>;
 			regulator-max-microvolt = <3300000>;
 			regulator-max-microamp = <250000>;
