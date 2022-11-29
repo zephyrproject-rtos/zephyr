@@ -228,6 +228,7 @@ static int cmd_ieee802154_scan(const struct shell *shell,
 
 	net_mgmt_init_event_callback(&scan_cb, scan_result_cb,
 				     NET_EVENT_IEEE802154_SCAN_RESULT);
+	net_mgmt_add_event_callback(&scan_cb);
 
 	if (!strcmp(argv[1], "active")) {
 		scan_type = NET_REQUEST_IEEE802154_ACTIVE_SCAN;
