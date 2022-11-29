@@ -7,6 +7,8 @@ common:
   depends_on: netif
   build_only: true
   platform_allow: frdm_k64f
+  integration_platforms:
+    - frdm_k64f
 tests:
   sample.net.updatehub:
     extra_configs:

@@ -16,6 +16,8 @@ tests:
         nucleo_f429zi nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_l073rz
         nucleo_l152re nucleo_l4r5zi stm32l562e_dk nucleo_wb55rg nucleo_wl55jc
         b_u585i_iot02a nucleo_u575zi_q
+    integration_platforms:
+      - nucleo_f091rc
   drivers.watchdog.stm32wwdg_h7:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg_h7.overlay"
@@ -27,6 +29,8 @@ tests:
         nucleo_f429zi nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_l073rz
         nucleo_l152re nucleo_l4r5zi stm32l562e_dk nucleo_wb55rg nucleo_wl55jc
         b_u585i_iot02a nucleo_u575zi_q nucleo_h753zi nucleo_h743zi
+    integration_platforms:
+      - nucleo_f091rc
   drivers.watchdog.mec15xxevb_assy6853:
     build_only: true
     platform_allow: mec15xxevb_assy6853
@@ -40,9 +44,13 @@ tests:
     platform_allow: gd32e103v_eval gd32e507v_start gd32f350r_eval gd32f403z_eval
         gd32f450i_eval gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval
         longan_nano
+    integration_platforms:
+      - gd32e103v_eval
   drivers.watchdog.gd32wwdgt:
     filter: dt_compat_enabled("gd,gd32-wwdgt")
     extra_args: DTC_OVERLAY_FILE="boards/gd32_wwdgt.overlay"
     platform_allow: gd32e103v_eval gd32e507v_start gd32f350r_eval gd32f403z_eval
         gd32f450i_eval gd32f450z_eval gd32f470i_eval gd32vf103c_starter
         gd32vf103v_eval longan_nano
+    integration_platforms:
+      - gd32e103v_eval
