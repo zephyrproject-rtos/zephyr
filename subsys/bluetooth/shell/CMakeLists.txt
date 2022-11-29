@@ -26,12 +26,12 @@ zephyr_library_sources_ifdef(
   iso.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_VCS
-  vcs.c
+  CONFIG_BT_VCP_VOL_REND
+  vcp_vol_rend.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_VCS_CLIENT
-  vcs_client.c
+  CONFIG_BT_VCP_VOL_CTLR
+  vcp_vol_ctlr.c
   )
 zephyr_library_sources_ifdef(
   CONFIG_BT_MICP_MIC_DEV

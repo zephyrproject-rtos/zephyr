@@ -18,7 +18,3 @@ else()
 
   zephyr_ld_options(-Hlib=hs38_full)
 endif()
-
-zephyr_sources(
-  soc.c
-  )

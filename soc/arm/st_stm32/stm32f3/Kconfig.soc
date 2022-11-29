@@ -10,6 +10,10 @@ choice
 config SOC_STM32F302X8
 	bool "STM32F302X8"
 
+config SOC_STM32F302XC
+	bool "STM32F302XC"
+	select CPU_HAS_ARM_MPU
+
 config SOC_STM32F303X8
 	bool "STM32F303X8"
 
