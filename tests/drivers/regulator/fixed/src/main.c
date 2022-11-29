@@ -26,7 +26,6 @@ static const struct device *const reg_dev = DEVICE_DT_GET(REGULATOR_NODE);
 
 static enum {
 	PC_UNCHECKED,
-	PC_FAIL_REG_DEV_READY,
 	PC_FAIL_DEVICES_READY,
 	PC_FAIL_CFG_OUTPUT,
 	PC_FAIL_CFG_INPUT,
@@ -37,7 +36,6 @@ static enum {
 } precheck = PC_UNCHECKED;
 static const char *const pc_errstr[] = {
 	[PC_UNCHECKED] = "precheck not verified",
-	[PC_FAIL_REG_DEV_READY] = "regulator device not ready",
 	[PC_FAIL_DEVICES_READY] = "GPIO devices not ready",
 	[PC_FAIL_CFG_OUTPUT] = "failed to configure output",
 	[PC_FAIL_CFG_INPUT] = "failed to configure input",
@@ -54,11 +52,6 @@ static int reg_status(void)
 
 static int setup(const struct device *dev)
 {
-	if (!device_is_ready(reg_dev)) {
-		precheck = PC_FAIL_REG_DEV_READY;
-		return -ENODEV;
-	}
-
 	/* Configure the regulator GPIO as an output inactive, and the check
 	 * GPIO as an input, then start testing whether they track.
 	 */
@@ -129,15 +122,10 @@ static int setup(const struct device *dev)
 BUILD_ASSERT(CONFIG_REGULATOR_FIXED_INIT_PRIORITY > 74);
 SYS_INIT(setup, POST_KERNEL, 74);
 
-static void test_preconditions(void)
-{
-	zassert_equal(precheck, PC_OK,
-		      "precheck failed: %s",
-		      pc_errstr[precheck]);
-}
-
 ZTEST(regulator, test_basic)
 {
+	zassert_true(device_is_ready(reg_dev), "regulator device not ready");
+
 	zassert_equal(precheck, PC_OK,
 		      "precheck failed: %s",
 		      pc_errstr[precheck]);
@@ -216,7 +204,6 @@ void *regulator_setup(void)
 	TC_PRINT("startup-delay: %u us\n", STARTUP_DELAY_US);
 	TC_PRINT("off-on-delay: %u us\n", OFF_ON_DELAY_US);
 
-	test_preconditions();
 	return NULL;
 }
 
