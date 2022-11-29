@@ -2,12 +2,18 @@ tests:
   storage.flash_map:
     platform_allow: nrf51dk_nrf51422 qemu_x86 native_posix native_posix_64
     tags: flash_map
+    integration_platforms:
+      - native_posix
   storage.flash_map.mpu:
     extra_args: OVERLAY_CONFIG=overlay-mpu.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832 frdm_k64f hexiwear_k64
                         twr_ke18f
+    integration_platforms:
+      - nrf52840dk_nrf52840
     tags: flash_map
   storage.flash_map.mbedtls:
     extra_args: OVERLAY_CONFIG=overlay-mbedtls.conf
     platform_allow: nrf51dk_nrf51422 qemu_x86 native_posix native_posix_64
     tags: flash_map
+    integration_platforms:
+      - native_posix

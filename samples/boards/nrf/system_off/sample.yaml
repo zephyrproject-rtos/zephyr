@@ -2,6 +2,8 @@ sample:
   name: Low Power State Sample for nRF5x
 common:
   tags: power
+  integration_platforms:
+    - nrf52840dk_nrf52840
 tests:
   sample.boards.nrf.system_off:
     build_only: true

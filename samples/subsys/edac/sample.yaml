@@ -2,14 +2,16 @@ sample:
   description: EDAC shell sample application
   name: edac shell
 common:
-    tags: edac
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "EDAC shell application initialized"
+  tags: edac
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "EDAC shell application initialized"
 
 tests:
   sample.subsys.edac:
     platform_allow: ehl_crb
+    integration_platforms:
+      - ehl_crb
     tags: edac

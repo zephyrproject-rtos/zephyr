@@ -7,3 +7,5 @@ tests:
       mimxrt685_evk_cm33 mimxrt1060_evk mimxrt1064_evk qemu_x86 native_posix
       mimxrt1160_evk_cm7
     tags: filesystem
+    integration_platforms:
+      - nrf52840dk_nrf52840

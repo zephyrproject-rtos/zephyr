@@ -4,5 +4,7 @@ tests:
   sample.usb.hid-cdc:
     depends_on: usb_device
     platform_allow: nrf52840dk_nrf52840 nrf52840dongle_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
     harness: button
     tags: usb
