@@ -340,7 +340,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
 
-    parser.add_argument("--gcov-tool", default=None,
+    parser.add_argument("--gcov-tool", type=Path, default=None,
                         help="Path to the gcov tool to use for code coverage "
                              "reports")
 
