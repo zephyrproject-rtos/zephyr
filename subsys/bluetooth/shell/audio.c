@@ -24,6 +24,7 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 
 #include "bt.h"
+#include "audio_common.h"
 
 #define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
 #define CONTEXT BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA
@@ -355,32 +356,6 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 static K_WORK_DELAYABLE_DEFINE(audio_send_work, lc3_audio_timer_timeout);
 #endif /* CONFIG_LIBLC3 */
 
-static void print_codec(const struct bt_codec *codec)
-{
-	int i;
-
-	shell_print(ctx_shell, "codec 0x%02x cid 0x%04x vid 0x%04x count %u",
-		    codec->id, codec->cid, codec->vid, codec->data_count);
-
-	for (i = 0; i < codec->data_count; i++) {
-		shell_print(ctx_shell, "data #%u: type 0x%02x len %u", i,
-			    codec->data[i].data.type,
-			    codec->data[i].data.data_len);
-		shell_hexdump(ctx_shell, codec->data[i].data.data,
-			      codec->data[i].data.data_len -
-				sizeof(codec->data[i].data.type));
-	}
-
-	for (i = 0; i < codec->meta_count; i++) {
-		shell_print(ctx_shell, "meta #%u: type 0x%02x len %u", i,
-			    codec->meta[i].data.type,
-			    codec->meta[i].data.data_len);
-		shell_hexdump(ctx_shell, codec->meta[i].data.data,
-			      codec->data[i].data.data_len -
-				sizeof(codec->meta[i].data.type));
-	}
-}
-
 static struct named_lc3_preset *set_preset(bool is_unicast, size_t argc,
 					   char **argv)
 {
@@ -463,14 +438,6 @@ static void set_stream(struct bt_audio_stream *stream)
 	}
 }
 
-static void print_qos(const struct bt_codec_qos *qos)
-{
-	shell_print(ctx_shell, "QoS: interval %u framing 0x%02x "
-		    "phy 0x%02x sdu %u rtn %u latency %u pd %u",
-		    qos->interval, qos->framing, qos->phy, qos->sdu,
-		    qos->rtn, qos->latency, qos->pd);
-}
-
 static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_stream *stream;
@@ -512,7 +479,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum b
 {
 	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
 
-	print_codec(codec);
+	print_codec(ctx_shell, codec);
 
 	*stream = stream_alloc();
 	if (*stream == NULL) {
@@ -535,7 +502,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream, enum bt_audio_dir dir,
 {
 	shell_print(ctx_shell, "ASE Codec Reconfig: stream %p", stream);
 
-	print_codec(codec);
+	print_codec(ctx_shell, codec);
 
 	if (default_stream == NULL) {
 		set_stream(stream);
@@ -550,7 +517,7 @@ static int lc3_qos(struct bt_audio_stream *stream, const struct bt_codec_qos *qo
 {
 	shell_print(ctx_shell, "QoS: stream %p %p", stream, qos);
 
-	print_qos(qos);
+	print_qos(ctx_shell, qos);
 
 	return 0;
 }
@@ -779,7 +746,7 @@ static void add_codec(struct bt_codec *codec, uint8_t index, enum bt_audio_dir d
 {
 	shell_print(ctx_shell, "#%u: codec %p dir 0x%02x", index, codec, dir);
 
-	print_codec(codec);
+	print_codec(ctx_shell, codec);
 
 	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
 		return;
@@ -1123,8 +1090,8 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "%s", named_preset->name);
 
-	print_codec(&named_preset->preset.codec);
-	print_qos(&named_preset->preset.qos);
+	print_codec(ctx_shell, &named_preset->preset.codec);
+	print_qos(ctx_shell, &named_preset->preset.qos);
 
 	return 0;
 }
@@ -1322,7 +1289,7 @@ static void base_recv(struct bt_audio_broadcast_sink *sink,
 		subgroup = &base->subgroups[i];
 
 		shell_print(ctx_shell, "Subgroup[%d]:", i);
-		print_codec(&subgroup->codec);
+		print_codec(ctx_shell, &subgroup->codec);
 
 		for (int j = 0; j < subgroup->bis_count; j++) {
 			const struct bt_audio_base_bis_data *bis_data;
