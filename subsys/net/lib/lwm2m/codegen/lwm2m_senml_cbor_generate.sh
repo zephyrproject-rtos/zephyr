@@ -30,6 +30,6 @@ done
 
 comby -config ../lwm2m_senml_cbor_comby.conf -in-place
 clang-format -i $FILES
-cp $FILES ../../
+cp $FILES ../../generated
 
 echo "✅ Code has been generated - review changes & commit"

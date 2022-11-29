@@ -28,9 +28,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_object.h"
 #include "lwm2m_rw_senml_cbor.h"
-#include "lwm2m_senml_cbor_decode.h"
-#include "lwm2m_senml_cbor_encode.h"
-#include "lwm2m_senml_cbor_types.h"
+#include "generated/lwm2m_senml_cbor_decode.h"
+#include "generated/lwm2m_senml_cbor_encode.h"
+#include "generated/lwm2m_senml_cbor_types.h"
 #include "lwm2m_util.h"
 
 struct cbor_out_fmt_data {

@@ -71,8 +71,8 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_CBOR_SUPPORT
 # SENML CBOR support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT
     lwm2m_rw_senml_cbor.c
-    lwm2m_senml_cbor_decode.c
-    lwm2m_senml_cbor_encode.c
+    generated/lwm2m_senml_cbor_decode.c
+    generated/lwm2m_senml_cbor_encode.c
     )
 
 # IPSO Objects
