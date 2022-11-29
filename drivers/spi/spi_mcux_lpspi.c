@@ -175,6 +175,8 @@ static int spi_mcux_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	LPSPI_Enable(base, false);
+
 	LPSPI_MasterGetDefaultConfig(&master_config);
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
@@ -201,12 +203,6 @@ static int spi_mcux_configure(const struct device *dev,
 		? kLPSPI_LsbFirst
 		: kLPSPI_MsbFirst;
 
-	master_config.baudRate = spi_cfg->frequency;
-
-	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
-	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
-	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
-
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
@@ -216,6 +212,19 @@ static int spi_mcux_configure(const struct device *dev,
 				   &clock_freq)) {
 		return -EINVAL;
 	}
+
+	master_config.baudRate = spi_cfg->frequency;
+	LOG_DBG("Setting baud rate to %d", spi_cfg->frequency);
+
+	uint32_t idk = 0;
+	uint32_t real_baud = LPSPI_MasterSetBaudRate(base, spi_cfg->frequency, clock_freq, &idk);
+	LOG_DBG("Real baud rate: %zu", real_baud);
+
+	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
+	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
+	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
+
+	LOG_DBG("Src clock rate: %zu", clock_freq);
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
 

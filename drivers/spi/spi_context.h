@@ -311,7 +311,7 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 		" tx buf/len %p/%zu, rx buf/len %p/%zu",
 		ctx->current_tx, ctx->tx_count,
 		ctx->current_rx, ctx->rx_count,
-		ctx->tx_buf, ctx->tx_len, ctx->rx_buf, ctx->rx_len);
+		(void *) ctx->tx_buf, ctx->tx_len, (void *) ctx->rx_buf, ctx->rx_len);
 }
 
 static ALWAYS_INLINE
@@ -339,7 +339,7 @@ void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 		ctx->tx_buf += dfs * len;
 	}
 
-	LOG_DBG("tx buf/len %p/%zu", ctx->tx_buf, ctx->tx_len);
+	LOG_DBG("tx buf/len %p/%zu", (void *) ctx->tx_buf, ctx->tx_len);
 }
 
 static ALWAYS_INLINE
@@ -386,7 +386,7 @@ void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 		ctx->rx_buf += dfs * len;
 	}
 
-	LOG_DBG("rx buf/len %p/%zu", ctx->rx_buf, ctx->rx_len);
+	LOG_DBG("rx buf/len %p/%zu", (void *) ctx->rx_buf, ctx->rx_len);
 }
 
 static ALWAYS_INLINE
