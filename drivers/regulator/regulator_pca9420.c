@@ -89,10 +89,6 @@ struct regulator_pca9420_desc {
 	const struct linear_range *ranges;
 };
 
-struct regulator_pca9420_data {
-	struct onoff_sync_service srv;
-};
-
 struct regulator_pca9420_common_config {
 	struct i2c_dt_spec i2c;
 	int32_t vin_ilim_ua;
@@ -109,6 +105,10 @@ struct regulator_pca9420_config {
 	bool boot_on;
 	const struct regulator_pca9420_desc *desc;
 	const struct device *parent;
+};
+
+struct regulator_pca9420_data {
+	struct regulator_common_data data;
 };
 
 static const struct linear_range buck1_ranges[] = {
@@ -558,55 +558,30 @@ static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
 	return rc;
 }
 
-static int regulator_pca9420_enable(const struct device *dev,
-				    struct onoff_client *cli)
+static int regulator_pca9420_enable(const struct device *dev)
 {
-	k_spinlock_key_t key;
-	int rc;
-	uint8_t en_val;
-	struct regulator_pca9420_data *data = dev->data;
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
+	uint8_t en_val;
 
-	LOG_DBG("Enabling regulator");
-	rc = onoff_sync_lock(&data->srv, &key);
-	if (rc) {
-		/* Request has already enabled PMIC */
-		return onoff_sync_finalize(&data->srv, key, cli, rc, true);
-	}
 	en_val = config->enable_inverted ? 0 : config->desc->enable_val;
-	rc = regulator_pca9420_modify_register(&cconfig->i2c,
-					       config->desc->enable_reg,
-					       config->desc->enable_mask,
-					       en_val);
-	if (rc != 0) {
-		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
-	}
-	return onoff_sync_finalize(&data->srv, key, cli, rc, true);
+	return regulator_pca9420_modify_register(&cconfig->i2c,
+						 config->desc->enable_reg,
+						 config->desc->enable_mask,
+						 en_val);
 }
 
 static int regulator_pca9420_disable(const struct device *dev)
 {
-	struct regulator_pca9420_data *data = dev->data;
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
-	k_spinlock_key_t key;
 	uint8_t dis_val;
-	int rc;
 
-	LOG_DBG("Disabling regulator");
-	rc = onoff_sync_lock(&data->srv, &key);
-	if (rc == 0) {
-		rc = -EINVAL;
-		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
-	} else if (rc == 1) {
-		/* Disable regulator */
-		dis_val = config->enable_inverted ? config->desc->enable_val : 0;
-		rc = regulator_pca9420_modify_register(
-			&cconfig->i2c, config->desc->enable_reg,
-			config->desc->enable_mask, dis_val);
-	}
-	return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
+	dis_val = config->enable_inverted ? config->desc->enable_val : 0;
+	return regulator_pca9420_modify_register(&cconfig->i2c,
+						 config->desc->enable_reg,
+						 config->desc->enable_mask,
+						 dis_val);
 }
 
 static int regulator_pca9420_init(const struct device *dev)
@@ -615,12 +590,14 @@ static int regulator_pca9420_init(const struct device *dev)
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
 	int rc  = 0;
 
+	regulator_common_data_init(dev);
+
 	if (!device_is_ready(config->parent)) {
 		return -ENODEV;
 	}
 
 	if (config->boot_on) {
-		rc = regulator_pca9420_enable(dev, NULL);
+		rc = regulator_pca9420_enable(dev);
 	}
 	if (cconfig->initial_mode) {
 		rc = regulator_pca9420_set_mode(dev, cconfig->initial_mode);
