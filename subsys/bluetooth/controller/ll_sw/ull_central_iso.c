@@ -44,6 +44,8 @@
 
 #include "hal/debug.h"
 
+#define SDU_MAX_DRIFT_PPM 100
+
 /* Setup cache for CIG commit transaction */
 static struct {
 	struct ll_conn_iso_group group;
@@ -167,6 +169,44 @@ uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
 	return BT_HCI_ERR_SUCCESS;
 }
 
+static void set_bn_max_pdu(bool framed, uint32_t iso_interval, uint32_t sdu_interval,
+			   uint16_t max_sdu, uint8_t *bn, uint8_t *max_pdu)
+{
+	uint32_t ceil_f_x_max_sdu;
+	uint16_t max_pdu_bn1;
+	uint32_t max_drift;
+	uint32_t ceil_f;
+
+	if (framed) {
+		/* Framed (From ES-18002):
+		 *   Max_PDU >= ((ceil(F) x 5 + ceil(F x Max_SDU)) / BN) + 2
+		 *   F = (1 + MaxDrift) x ISO_Interval / SDU_Interval
+		 *   SegmentationHeader + TimeOffset = 5 bytes
+		 *   Continuation header = 2 bytes
+		 *   MaxDrift (Max. allowed SDU delivery timing drift) = 100 ppm
+		 */
+		max_drift = ceiling_fraction(SDU_MAX_DRIFT_PPM * sdu_interval, 1000000U);
+		ceil_f = ceiling_fraction(iso_interval + max_drift, sdu_interval);
+		ceil_f_x_max_sdu = ceiling_fraction(max_sdu * (iso_interval + max_drift),
+						    sdu_interval);
+
+		/* Strategy: Keep lowest possible BN.
+		 * TODO: Implement other strategies, possibly as policies.
+		 */
+		max_pdu_bn1 = ceil_f * 5 + ceil_f_x_max_sdu;
+		*bn = ceiling_fraction(max_pdu_bn1, CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE);
+		*max_pdu = ceiling_fraction(max_pdu_bn1, *bn) + 2;
+	} else {
+		/* For unframed, ISO_Interval must be N x SDU_Interval */
+		LL_ASSERT(iso_interval % sdu_interval == 0);
+
+		/* Core 5.3 Vol 6, Part G section 2.1:
+		 * BN >= ceil(Max_SDU/Max_PDU * ISO_Interval/SDU_Interval)
+		 */
+		*bn = ceiling_fraction(max_sdu * iso_interval, (*max_pdu) * sdu_interval);
+	}
+}
+
 
 /* TODO:
  * - Drop retransmissions to stay within Max_Transmission_Latency instead of asserting
@@ -278,30 +318,29 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 			tx = cig->c_sdu_interval && cis->c_max_sdu;
 			rx = cig->p_sdu_interval && cis->p_max_sdu;
 
-			if (cis->framed) {
-				cis->lll.tx.max_octets =
-					ceiling_fraction(cis->c_max_sdu * cig->c_sdu_interval,
-							 iso_interval_us);
-				cis->lll.rx.max_octets =
-					ceiling_fraction(cis->p_max_sdu * cig->c_sdu_interval,
-							 iso_interval_us);
-			} else {
-				/* For unframed, ISO_Interval must be N x SDU_Interval */
-				LL_ASSERT(iso_interval_us % cig->c_sdu_interval == 0);
+			/* Use Max_PDU = MIN(<buffer_size>, Max_SDU) as default. May be changed by
+			 * set_bn_max_pdu.
+			 */
+			cis->lll.tx.max_octets = MIN(CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,
+						     cis->c_max_sdu);
+			cis->lll.rx.max_octets = MIN(251, cis->p_max_sdu);
 
-				/* Use Max_PDU = MIN(<buffer_size>, Max_SDU) */
-				cis->lll.tx.max_octets = MIN(CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,
-							 cis->c_max_sdu);
-				cis->lll.rx.max_octets = MIN(251, cis->p_max_sdu);
+			/* Calculate BN and Max_PDU (framed) for both directions */
+			if (tx) {
+				set_bn_max_pdu(cis->framed, iso_interval_us, cig->c_sdu_interval,
+					       cis->c_max_sdu, &cis->lll.tx.burst_number,
+					       &cis->lll.tx.max_octets);
+			} else {
+				cis->lll.tx.burst_number = 0;
 			}
 
-			/* BN >= Max_SDU/Max_PDU * ISO_Interval/SDU_Interval */
-			cis->lll.tx.burst_number = tx ?
-				ceiling_fraction(cis->c_max_sdu * iso_interval_us,
-						 cis->lll.tx.max_octets * cig->c_sdu_interval) : 0;
-			cis->lll.rx.burst_number = rx ?
-				ceiling_fraction(cis->p_max_sdu * iso_interval_us,
-						 cis->lll.rx.max_octets * cig->p_sdu_interval) : 0;
+			if (rx) {
+				set_bn_max_pdu(cis->framed, iso_interval_us, cig->p_sdu_interval,
+					       cis->p_max_sdu, &cis->lll.rx.burst_number,
+					       &cis->lll.rx.max_octets);
+			} else {
+				cis->lll.rx.burst_number = 0;
+			}
 		}
 
 		/* Calculate SE_Length */
@@ -621,7 +660,6 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 		int16_t conn_events_since_ref;
 		uint32_t iso_interval_us;
 		uint32_t time_since_ref;
-		uint32_t acl_offset;
 
 		c = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		if (c->cis_id != cis->cis_id && c->lll.active) {
@@ -630,9 +668,8 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 
 			time_since_ref = c->offset + conn_events_since_ref * conn->lll.interval *
 					 CONN_INT_UNIT_US;
-			iso_interval_us = cig->iso_interval * CONN_INT_UNIT_US;
-			acl_offset = iso_interval_us - (time_since_ref % iso_interval_us);
-			cis_offset = acl_offset + (cig->sync_delay - cis->sync_delay);
+			iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+			cis_offset = time_since_ref % iso_interval_us;
 			break;
 		}
 	}
