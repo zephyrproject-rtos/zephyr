@@ -16,12 +16,16 @@ import os
 import pickle
 import sys
 import json
-from pathlib import PurePath
+from pathlib import PurePath, Path
 from concurrent.futures import ProcessPoolExecutor
 from collections import defaultdict
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'dts', 'python-devicetree',
                                 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'kconfig'))
+
+from kconfiglib import Kconfig, standard_kconfig, MenuNode, Symbol, Choice
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -88,6 +92,18 @@ def insert_compile_commands_data(cur, board_test_id, compile_commands):
     print(f"inserting {len(rows)} board test file rows for board {board_test_id}")
     cur.executemany("INSERT OR IGNORE INTO board_test_file VALUES(?, ?)", rows)
 
+def insert_kconfig(cur, kconfig):
+    cur.execute("INSERT OR IGNORE INTO kconfig(config) VALUES(?) RETURNING id;", (config))
+    row = cur.fetchone()
+    if row:
+        (config_id, ) = row
+        return config_id
+    else:
+        cur.execute("SELECT id FROM kconfig WHERE config = ?;", (config))
+        row = cur.fetchone()
+        (config_id, ) = row
+        return config_id
+
 def process(sqlite_db, path):
     conn = sqlite3.connect(sqlite_db)
     process_path(conn, path)
@@ -95,6 +111,7 @@ def process(sqlite_db, path):
 def process_path(conn, path):
     board_name = path_board_name(path)
     test_name = path_test_name(path)
+
     cur = conn.cursor()
     board_test_id = insert_board_test(cur, board_name, test_name)
     conn.commit()
@@ -116,6 +133,90 @@ def process_path(conn, path):
             insert_compile_commands_data(cur, board_test_id, compile_commands)
             conn.commit()
 
+def map_symbol_dep(dep):
+    if isinstance(dep, Symbol):
+        return dep.name
+    elif isinstance(dep, tuple):
+        sel = list(sel)
+        sel = list(map(map_symbol_dep, dep))
+        return sel
+    else:
+        print(f"got dep as unknown type {type(dep)}")
+        return ""
+
+def map_symbol_select(sel):
+    if isinstance(sel, Symbol):
+        return sel.name
+    elif isinstance(sel, tuple):
+        sel = list(sel)
+        sel = list(map(map_symbol_select, sel))
+        return sel
+    else:
+        print(f"got sel as unknown type {type(sel)}")
+        return ""
+
+def flatten(list_of_lists):
+    if len(list_of_lists) == 0:
+        return list_of_lists
+    if isinstance(list_of_lists[0], list):
+        return flatten(list_of_lists[0]) + flatten(list_of_lists[1:])
+    return list_of_lists[:1] + flatten(list_of_lists[1:])
+
+def insert_kconfig(conn):
+    ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
+    if not ZEPHYR_BASE:
+        ZEPHYR_BASE = str(Path(__file__).resolve().parents[1])
+        os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
+
+    os.environ['srctree'] = ZEPHYR_BASE
+    os.environ['SOC_DIR'] = 'soc/'
+    os.environ['ARCH_DIR'] = 'arch/'
+    os.environ['BOARD_DIR'] = os.path.join("boards", '*', '*')
+    os.environ['ARCH'] = '*'
+    os.environ['DEVICETREE_CONF'] = 'dummy'
+
+    # read in Kconfig
+    kconf = Kconfig()
+
+    cur = conn.cursor()
+
+    for node in kconf.node_iter():
+        item = node.item
+        if isinstance(node.item, Symbol):
+            symbol_name = item.name
+            symbol_deps = []
+            if type(item.direct_dep) is list:
+                symbol_deps = list(map(map_symbol_dep, item.direct_dep))
+                symbol_deps = flatten(symbol_deps)
+                symbol_deps = list(filter(lambda elem: elem != 'y' and elem != "",
+                                             symbol_deps))
+            elif type(item.direct_dep) is Symbol:
+                symbol_deps = [item.direct_dep.name]
+            else:
+                print(f"can't handle {type(item.direct_dep)}")
+
+            symbol_selects = []
+            if type(item.selects) is list:
+                symbol_selects = list(map(map_symbol_select, item.selects))
+                symbol_selects = flatten(symbol_selects)
+                symbol_selects = list(filter(lambda elem: elem != 'y' and elem != "",
+                                             symbol_selects))
+            elif type(item.selects) is tuple:
+                print(f"can't handle selects tuple {item.selects}")
+            else:
+                print(f"can't handle selects type {type(item.selects)}")
+
+            print(f'''symbol name: {symbol_name}, direct dep {symbol_deps}, selects {symbol_selects}''')
+        elif isinstance(node.item, Choice):
+            symbol_name = item.name
+            symbol_deps = []
+            symbol_selects = []
+        else:
+            print(f"unknown node item type {type(node.item)}")
+
+    return kconf
+
+
 def test_paths(twister_out):
     for (dirpath, dirnames, filenames) in os.walk(twister_out):
         if "CMakeCache.txt" in filenames:
@@ -127,11 +228,21 @@ def main():
     conn = sqlite3.connect(args.sqlite_db)
 
     cur = conn.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS board_test(id INTEGER PRIMARY KEY, board TEXT NOT NULL, test TEXT NOT NULL, UNIQUE (board, test))")
-    cur.execute("CREATE TABLE IF NOT EXISTS board_test_compatible(board_test_id integer, compatible text, UNIQUE (board_test_id, compatible))")
-    cur.execute("CREATE TABLE IF NOT EXISTS board_test_file(board_test_id integer, file text, UNIQUE(board_test_id, file))")
-    cur.execute("CREATE TABLE IF NOT EXISTS board_test_config(board_test_id integer, config text, UNIQUE(board_test_id, config))")
+    cur.execute('''CREATE TABLE IF NOT EXISTS symbol_depends_on(config TEXT NOT NULL, depends_on TEXT
+                NOT NULL, UNIQUE (config, depends_on))''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS symbol_selects(config TEXT NOT NULL, selects TEXT
+                NOT NULL, UNIQUE (config, selects))''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS board_test(id INTEGER PRIMARY KEY, board TEXT NOT
+                NULL, test TEXT NOT NULL, UNIQUE (board, test))''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS board_test_compatible(board_test_id integer,
+                compatible text, UNIQUE (board_test_id, compatible))''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS board_test_compatible_config(board_test_id integer,
+                compatible text, config text, UNIQUE (board_test_id, compatible, config))''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS board_test_file(board_test_id integer, file text,
+                UNIQUE(board_test_id, file))''')
     conn.commit()
+
+    insert_kconfig(conn)
 
     if args.no_concurrency:
         for path in test_paths(args.twister_out):
