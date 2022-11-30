@@ -14,6 +14,7 @@ add_library(mocks STATIC
             kernel.c
             kernel_expects.c
             keys.c
+            keys_expects.c
             net_buf.c
             net_buf_expects.c
             rpa.c
