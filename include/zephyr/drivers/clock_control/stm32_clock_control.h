@@ -38,6 +38,8 @@
 #include <zephyr/dt-bindings/clock/stm32wb_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WLX)
 #include <zephyr/dt-bindings/clock/stm32wl_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <zephyr/dt-bindings/clock/stm32h5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #include <zephyr/dt-bindings/clock/stm32h7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
