@@ -290,8 +290,17 @@ static int imxrt_init(const struct device *arg)
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
-	if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
-		SCB_EnableDCache();
+#ifndef CONFIG_IMXRT1XXX_CODE_CACHE
+	/* SystemInit enables code cache, disable it here */
+	SCB_DisableICache();
+#endif
+
+	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE)) {
+		if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
+			SCB_EnableDCache();
+		}
+	} else {
+		SCB_DisableDCache();
 	}
 
 	/* Initialize system clock */
