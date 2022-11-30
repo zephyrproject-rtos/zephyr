@@ -14,17 +14,9 @@
 #		the new kconfig is forced to max verbosity.
 #		Example: "BT_DEBUG_HCI_CORE"
 
-parent-module = BT
-
-choice "$(module)_LOG_LEVEL_CHOICE"
-	default $(module)_LOG_LEVEL_INHERIT if y
-
-config $(module)_LOG_LEVEL_INHERIT
-	bool "Inherit $(parent-module)_LOG_LEVEL"
-endchoice
-
 config $(module)_LOG_LEVEL
 	default 4 if $(legacy-debug-sym)
-	default $(parent-module)_LOG_LEVEL if $(module)_LOG_LEVEL_INHERIT
 
-source "subsys/logging/Kconfig.template.log_config"
+module := $(module)
+parent-module := BT
+source "subsys/logging/Kconfig.template.log_config_inherit"
