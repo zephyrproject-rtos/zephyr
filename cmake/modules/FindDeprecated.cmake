@@ -78,6 +78,18 @@ if("XTOOLS" IN_LIST Deprecated_FIND_COMPONENTS)
                       "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'zephyr'")
 endif()
 
+if("SPARSE" IN_LIST Deprecated_FIND_COMPONENTS)
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS SPARSE)
+  # This code was deprecated after Zephyr v3.2.0
+  if(SPARSE)
+    message(DEPRECATION
+        "Setting SPARSE=${SPARSE} is deprecated. "
+        "Please set ZEPHYR_SCA_VARIANT to 'sparse'"
+    )
+    set_ifndef(ZEPHYR_SCA_VARIANT sparse)
+  endif()
+endif()
+
 if("SOURCES" IN_LIST Deprecated_FIND_COMPONENTS)
   list(REMOVE_ITEM Deprecated_FIND_COMPONENTS SOURCES)
   if(SOURCES)
