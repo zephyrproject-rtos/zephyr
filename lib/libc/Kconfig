@@ -52,7 +52,7 @@ config NEWLIB_LIBC
 	depends on !NATIVE_APPLICATION
 	help
 	  Build with newlib library. The newlib library is expected to be
-	  part of the SDK in this case.
+	  part of the Zephyr SDK or provided with custom toolchain.
 
 config ARCMWDT_LIBC
 	bool "ARC MWDT C library"

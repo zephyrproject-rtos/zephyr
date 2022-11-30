@@ -5,6 +5,7 @@ arch: xtensa
 toolchain:
   - zephyr
   - xcc
+  - xcc-clang
 supported:
   - dma
 testing:

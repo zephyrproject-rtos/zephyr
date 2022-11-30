@@ -38,8 +38,10 @@
  * and therefore this header is not meant to exist in-tree
  */
 #include <toolchain/other.h>
-#elif defined(__XCC__)
+#elif defined(__XCC__) && !defined(__clang__)
 #include <zephyr/toolchain/xcc.h>
+#elif defined(__XCC__)
+#include <zephyr/toolchain/xcc-clang.h>
 #elif defined(__CCAC__)
 #include <zephyr/toolchain/mwdt.h>
 #elif defined(__ARMCOMPILER_VERSION)
