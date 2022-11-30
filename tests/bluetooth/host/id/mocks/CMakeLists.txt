@@ -18,6 +18,7 @@ add_library(mocks STATIC
             net_buf.c
             net_buf_expects.c
             rpa.c
+            rpa_expects.c
             scan.c
             settings.c
             settings_expects.c
