@@ -1,0 +1,13 @@
+common:
+  depends_on: fpga
+  tags: subsys fpga_manager
+tests:
+  subsys.fpga_manager.fpga_manager_intel:
+    harness: ztest
+    harness_config:
+      fixture: fixture_fpga_manager
+    filter: dt_alias_exists("fpga_config")
+    tags: fpga_manager
+    min_ram: 32
+    integration_platforms:
+      - mimxrt1064_evk
