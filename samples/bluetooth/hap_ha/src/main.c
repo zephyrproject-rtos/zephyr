@@ -171,7 +171,7 @@ void main(void)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BINAURAL)) {
+	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BINAURAL)) {
 		err = csip_set_member_init();
 		if (err != 0) {
 			printk("CSIP Set Member init failed (err %d)\n", err);
@@ -207,7 +207,7 @@ void main(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BANDED)) {
+	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BANDED)) {
 		/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
 		 * A Banded Hearing Aid in the HA role shall set the
 		 * Front Left and the Front Right bits to a value of 0b1
