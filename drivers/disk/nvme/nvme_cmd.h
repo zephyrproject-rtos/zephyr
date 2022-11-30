@@ -305,6 +305,19 @@ enum nvme_feature {
 #define CACHE_LINE_SIZE				CONFIG_DCACHE_LINE_SIZE
 #endif
 
+/* Assuming page size it always 4Kib
+ * ToDo: define it accorditng to CONFIG_MMU_PAGE_SIZE
+ */
+#define NVME_PBAO_MASK 0xFFF
+
+#define NVME_PRP_NEXT_PAGE(_addr) ((_addr & (~NVME_PBAO_MASK)) + 0x1000)
+
+struct nvme_prp_list {
+	uintptr_t prp[CONFIG_MMU_PAGE_SIZE / sizeof(uintptr_t)]
+						__aligned(0x1000);
+	sys_dnode_t node;
+};
+
 struct nvme_cmd_qpair {
 	struct nvme_controller	*ctrlr;
 	uint32_t		id;
@@ -353,6 +366,8 @@ struct nvme_request {
 	uint32_t			payload_size;
 	nvme_cb_fn_t			cb_fn;
 	void				*cb_arg;
+
+	struct nvme_prp_list		*prp_list;
 
 	sys_dnode_t			node;
 };
