@@ -24,6 +24,7 @@
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#include <fsl_cache.h>
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 #include "flash_clock_setup.h"
@@ -384,6 +385,10 @@ static int nxp_rt600_init(const struct device *arg)
 	 * the kernel, NOP otherwise
 	 */
 	NMI_INIT();
+
+#ifndef CONFIG_IMXRT6XX_ENABLE_CODE_CACHE
+	CACHE64_DisableCache(CACHE64);
+#endif
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
