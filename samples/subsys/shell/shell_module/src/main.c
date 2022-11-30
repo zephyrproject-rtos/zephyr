@@ -13,6 +13,12 @@
 #include <zephyr/usb/usb_device.h>
 #include <ctype.h>
 
+#ifdef CONFIG_ARCH_POSIX
+#include <unistd.h>
+#else
+#include <zephyr/posix/unistd.h>
+#endif
+
 LOG_MODULE_REGISTER(app);
 
 extern void foo(void);
