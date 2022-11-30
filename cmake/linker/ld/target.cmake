@@ -66,12 +66,6 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     zephyr_get_include_directories_for_lang(C current_includes)
     get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
-    if("${SPARSE}" STREQUAL "y")
-      set(ld_command ${SPARSE_REAL_COMPILER})
-    else()
-      set(ld_command ${CMAKE_C_COMPILER})
-    endif()
-
     add_custom_command(
       OUTPUT ${linker_script_gen}
       DEPENDS
@@ -80,7 +74,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       ${extra_dependencies}
       # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
       ${linker_script_dep}
-      COMMAND ${ld_command}
+      COMMAND ${CMAKE_C_COMPILER}
       -x assembler-with-cpp
       ${NOSYSDEF_CFLAG}
       -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
