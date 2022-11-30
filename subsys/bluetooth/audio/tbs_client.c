@@ -110,28 +110,6 @@ static bool free_call_spot(struct bt_tbs_instance *inst)
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_ORIGINATE_CALL) */
 
-static struct bt_tbs_instance *lookup_inst_by_handle(struct bt_conn *conn,
-							 uint16_t handle)
-{
-	uint8_t conn_index;
-	struct bt_tbs_server_inst *srv_inst;
-
-	__ASSERT(conn, "NULL conn");
-
-	conn_index = bt_conn_index(conn);
-	srv_inst = &srv_insts[conn_index];
-
-	for (size_t i = 0; i < ARRAY_SIZE(srv_inst->tbs_insts); i++) {
-		if (srv_inst->tbs_insts[i].start_handle <= handle &&
-		    srv_inst->tbs_insts[i].end_handle >= handle) {
-			return &srv_inst->tbs_insts[i];
-		}
-	}
-	LOG_DBG("Could not find instance with handle 0x%04x", handle);
-
-	return NULL;
-}
-
 static uint8_t net_buf_pull_call_state(struct net_buf_simple *buf,
 				       struct bt_tbs_client_call_state *call_state)
 {
@@ -296,125 +274,212 @@ const char *parse_string_value(const void *data, uint16_t length,
 	return string_val;
 }
 
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
-static void provider_name_notify_handler(struct bt_conn *conn,
-					 const struct bt_tbs_instance *tbs_inst,
-					 const void *data, uint16_t length)
+static void unsubscribed(struct bt_tbs_instance *tbs_inst,
+			 struct bt_gatt_subscribe_params *params)
 {
-	const char *name = parse_string_value(data, length,
-					      CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
+	LOG_DBG("%p", tbs_inst);
 
-	LOG_DBG("%s", name);
+	memset(params, 0, sizeof(*params));
+	tbs_inst->subscribe_cnt--;
+}
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+static uint8_t provider_name_notify_handler(struct bt_conn *conn,
+					    struct bt_gatt_subscribe_params *params,
+					    const void *data, uint16_t length)
+{
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							name_sub_params);
+	const char *name;
+
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
+
+	name = parse_string_value(data, length, CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
+
+	LOG_DBG("%p index %u %s", tbs_inst, tbs_index(conn, tbs_inst), name);
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->bearer_provider_name != NULL) {
 		tbs_client_cbs->bearer_provider_name(conn, 0, tbs_index(conn, tbs_inst), name);
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) */
 
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
-static void technology_notify_handler(struct bt_conn *conn,
-				      const struct bt_tbs_instance *tbs_inst,
-				      const void *data, uint16_t length)
+static uint8_t technology_notify_handler(struct bt_conn *conn,
+					 struct bt_gatt_subscribe_params *params,
+					 const void *data, uint16_t length)
 {
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							technology_sub_params);
 	uint8_t technology;
 
-	LOG_DBG("");
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
 
 	if (length == sizeof(technology)) {
 		(void)memcpy(&technology, data, length);
-		LOG_DBG("%s (0x%02x)", bt_tbs_technology_str(technology), technology);
+		LOG_DBG("%p index %u %s (0x%02x)", tbs_inst, tbs_index(conn, tbs_inst),
+			bt_tbs_technology_str(technology), technology);
 
 		if (tbs_client_cbs != NULL && tbs_client_cbs->technology != NULL) {
 			tbs_client_cbs->technology(conn, 0, tbs_index(conn, tbs_inst), technology);
 		}
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
 
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
-static void signal_strength_notify_handler(struct bt_conn *conn,
-					   const struct bt_tbs_instance *tbs_inst,
-					   const void *data, uint16_t length)
+static uint8_t signal_strength_notify_handler(struct bt_conn *conn,
+					      struct bt_gatt_subscribe_params *params,
+					      const void *data, uint16_t length)
 {
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							signal_strength_sub_params);
 	uint8_t signal_strength;
 
-	LOG_DBG("");
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
 
 	if (length == sizeof(signal_strength)) {
 		(void)memcpy(&signal_strength, data, length);
-		LOG_DBG("0x%02x", signal_strength);
+		LOG_DBG("%p index %u 0x%02x", tbs_inst, tbs_index(conn, tbs_inst),
+			signal_strength);
 
 		if (tbs_client_cbs != NULL && tbs_client_cbs->signal_strength != NULL) {
 			tbs_client_cbs->signal_strength(conn, 0, tbs_index(conn, tbs_inst),
 							signal_strength);
 		}
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH) */
 
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS)
-static void current_calls_notify_handler(struct bt_conn *conn,
-					 const struct bt_tbs_instance *tbs_inst,
-					 const void *data, uint16_t length)
+static uint8_t current_calls_notify_handler(struct bt_conn *conn,
+					    struct bt_gatt_subscribe_params *params,
+					    const void *data, uint16_t length)
 {
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							current_calls_sub_params);
 	struct net_buf_simple buf;
 
-	LOG_DBG("");
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
+	LOG_DBG("%p index %u", tbs_inst, tbs_index(conn, tbs_inst));
 
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 
 	/* TODO: If length == MTU, do long read for all calls */
 
 	bearer_list_current_calls(conn, tbs_inst, &buf);
+
+	return BT_GATT_ITER_CONTINUE;
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
 
 #if defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS)
-static void status_flags_notify_handler(struct bt_conn *conn,
-					const struct bt_tbs_instance *tbs_inst,
-					const void *data, uint16_t length)
+static uint8_t status_flags_notify_handler(struct bt_conn *conn,
+					   struct bt_gatt_subscribe_params *params,
+					   const void *data, uint16_t length)
 {
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							status_flags_sub_params);
 	uint16_t status_flags;
 
-	LOG_DBG("");
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
 
 	if (length == sizeof(status_flags)) {
 		(void)memcpy(&status_flags, data, length);
-		LOG_DBG("0x%04x", status_flags);
+		LOG_DBG("%p index %u 0x%04x", tbs_inst, tbs_index(conn, tbs_inst),
+			status_flags);
 		if (tbs_client_cbs != NULL && tbs_client_cbs->status_flags != NULL) {
 			tbs_client_cbs->status_flags(conn, 0, tbs_index(conn, tbs_inst),
 						     status_flags);
 		}
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS) */
 
 #if defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI)
-static void incoming_uri_notify_handler(struct bt_conn *conn,
-					const struct bt_tbs_instance *tbs_inst,
-					const void *data, uint16_t length)
+static uint8_t incoming_uri_notify_handler(struct bt_conn *conn,
+					   struct bt_gatt_subscribe_params *params,
+					   const void *data, uint16_t length)
 {
-	const char *uri = parse_string_value(data, length,
-					     CONFIG_BT_TBS_MAX_URI_LENGTH);
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							in_target_uri_sub_params);
+	const char *uri;
 
-	LOG_DBG("%s", uri);
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
+
+	uri = parse_string_value(data, length, CONFIG_BT_TBS_MAX_URI_LENGTH);
+
+	LOG_DBG("%p index %u %s", tbs_inst, tbs_index(conn, tbs_inst), uri);
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->call_uri != NULL) {
 		tbs_client_cbs->call_uri(conn, 0, tbs_index(conn, tbs_inst), uri);
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI) */
 
-static void call_state_notify_handler(struct bt_conn *conn,
-				      const struct bt_tbs_instance *tbs_inst,
-				      const void *data, uint16_t length)
+static uint8_t call_state_notify_handler(struct bt_conn *conn,
+					 struct bt_gatt_subscribe_params *params,
+					 const void *data, uint16_t length)
 {
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							call_state_sub_params);
 	struct bt_tbs_client_call_state call_states[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
 	uint8_t cnt = 0;
 	struct net_buf_simple buf;
 
-	LOG_DBG("");
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
 
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 
@@ -427,8 +492,12 @@ static void call_state_notify_handler(struct bt_conn *conn,
 		err = net_buf_pull_call_state(&buf, call_state);
 		if (err != 0) {
 			LOG_DBG("Invalid current call notification: %d", err);
-			return;
+			return BT_GATT_ITER_CONTINUE;
 		}
+
+		LOG_DBG("%p index %u call_index 0x%02x state 0x%02x flags 0x%02x ",
+			tbs_inst, tbs_index(conn, tbs_inst), call_state->index,
+			call_state->state, call_state->flags);
 
 		cnt++;
 		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
@@ -440,40 +509,61 @@ static void call_state_notify_handler(struct bt_conn *conn,
 	if (tbs_client_cbs != NULL && tbs_client_cbs->call_state != NULL) {
 		tbs_client_cbs->call_state(conn, 0, tbs_index(conn, tbs_inst), cnt, call_states);
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 
 #if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
-static void call_cp_notify_handler(struct bt_conn *conn,
-				  const struct bt_tbs_instance *tbs_inst,
-				  const void *data, uint16_t length)
+static uint8_t call_cp_notify_handler(struct bt_conn *conn,
+				      struct bt_gatt_subscribe_params *params,
+				      const void *data, uint16_t length)
 {
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							call_cp_sub_params);
 	struct bt_tbs_call_cp_notify *ind_val;
 
-	LOG_DBG("");
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
 
 	if (length == sizeof(*ind_val)) {
 		ind_val = (struct bt_tbs_call_cp_notify *)data;
-		LOG_DBG("Status: %s for the %s opcode for call 0x%02X",
-			bt_tbs_status_str(ind_val->status), bt_tbs_opcode_str(ind_val->opcode),
-			ind_val->call_index);
+		LOG_DBG("%p index %u status: %s for the %s opcode for call 0x%02X",
+			tbs_inst, tbs_index(conn, tbs_inst), bt_tbs_status_str(ind_val->status),
+			bt_tbs_opcode_str(ind_val->opcode), ind_val->call_index);
 
 		call_cp_callback_handler(conn, ind_val->status, tbs_index(conn, tbs_inst),
 					 ind_val->opcode, ind_val->call_index);
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES) */
 
-static void termination_reason_notify_handler(struct bt_conn *conn,
-					      const struct bt_tbs_instance *tbs_inst,
-					      const void *data, uint16_t length)
+static uint8_t termination_reason_notify_handler(struct bt_conn *conn,
+						 struct bt_gatt_subscribe_params *params,
+						 const void *data, uint16_t length)
 {
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							termination_sub_params);
 	struct bt_tbs_terminate_reason reason;
 
-	LOG_DBG("");
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
 
 	if (length == sizeof(reason)) {
 		(void)memcpy(&reason, data, length);
-		LOG_DBG("ID 0x%02X, reason %s", reason.call_index,
+		LOG_DBG("%p index %u ID 0x%02X, reason %s", tbs_inst,
+			tbs_index(conn, tbs_inst), reason.call_index,
 			bt_tbs_term_reason_str(reason.reason));
 
 		if (tbs_client_cbs != NULL && tbs_client_cbs->termination_reason != NULL) {
@@ -481,119 +571,67 @@ static void termination_reason_notify_handler(struct bt_conn *conn,
 							   reason.call_index, reason.reason);
 		}
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 
 #if defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL)
-static void in_call_notify_handler(struct bt_conn *conn,
-				   const struct bt_tbs_instance *tbs_inst,
-				   const void *data, uint16_t length)
+static uint8_t in_call_notify_handler(struct bt_conn *conn,
+				      struct bt_gatt_subscribe_params *params,
+				      const void *data, uint16_t length)
 {
-	const char *uri = parse_string_value(data, length,
-					     CONFIG_BT_TBS_MAX_URI_LENGTH);
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							incoming_call_sub_params);
+	const char *uri;
 
-	LOG_DBG("%s", uri);
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
+
+	uri = parse_string_value(data, length, CONFIG_BT_TBS_MAX_URI_LENGTH);
+
+	LOG_DBG("%p index %u %s", tbs_inst, tbs_index(conn, tbs_inst), uri);
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->remote_uri != NULL) {
 		tbs_client_cbs->remote_uri(conn, 0, tbs_index(conn, tbs_inst), uri);
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) */
 
 #if defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME)
-static void friendly_name_notify_handler(struct bt_conn *conn,
-					 const struct bt_tbs_instance *tbs_inst,
-					 const void *data, uint16_t length)
+static uint8_t friendly_name_notify_handler(struct bt_conn *conn,
+					    struct bt_gatt_subscribe_params *params,
+					    const void *data, uint16_t length)
 {
-	const char *name = parse_string_value(data, length,
-					      CONFIG_BT_TBS_MAX_URI_LENGTH);
+	struct bt_tbs_instance *tbs_inst = CONTAINER_OF(params,
+							struct bt_tbs_instance,
+							friendly_name_sub_params);
+	const char *name;
 
-	LOG_DBG("%s", name);
+	if (data == NULL) {
+		unsubscribed(tbs_inst, params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	LOG_HEXDUMP_DBG(data, length, "");
+
+	name = parse_string_value(data, length, CONFIG_BT_TBS_MAX_URI_LENGTH);
+
+	LOG_DBG("%p index %u %s", tbs_inst, tbs_index(conn, tbs_inst), name);
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->friendly_name != NULL) {
 		tbs_client_cbs->friendly_name(conn, 0, tbs_index(conn, tbs_inst), name);
 	}
-}
-#endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
-
-/** @brief Handles notifications and indications from the server */
-static uint8_t notify_handler(struct bt_conn *conn,
-			      struct bt_gatt_subscribe_params *params,
-			      const void *data, uint16_t length)
-{
-	uint16_t handle = params->value_handle;
-	struct bt_tbs_instance *tbs_inst = lookup_inst_by_handle(conn, handle);
-
-	if (data == NULL) {
-		LOG_DBG("[UNSUBSCRIBED] 0x%04X", params->value_handle);
-		params->value_handle = 0U;
-		if (tbs_inst != NULL) {
-			tbs_inst->subscribe_cnt--;
-		}
-
-		return BT_GATT_ITER_STOP;
-	}
-
-	if (tbs_inst != NULL) {
-		uint8_t inst_index = tbs_index(conn, tbs_inst);
-
-		LOG_DBG("Index %u", inst_index);
-
-		LOG_HEXDUMP_DBG(data, length, "notify handler value");
-
-		if (handle == tbs_inst->call_state_sub_params.value_handle) {
-			call_state_notify_handler(conn, tbs_inst, data, length);
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
-		} else if (handle == tbs_inst->name_sub_params.value_handle) {
-			provider_name_notify_handler(conn, tbs_inst, data,
-						     length);
-#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) */
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
-		} else if (handle == tbs_inst->technology_sub_params.value_handle) {
-			technology_notify_handler(conn, tbs_inst, data, length);
-#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
-		} else if (handle == tbs_inst->signal_strength_sub_params.value_handle) {
-			signal_strength_notify_handler(conn, tbs_inst, data,
-						       length);
-#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH) */
-#if defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS)
-		} else if (handle == tbs_inst->status_flags_sub_params.value_handle) {
-			status_flags_notify_handler(conn, tbs_inst, data,
-						    length);
-#endif /* defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS) */
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS)
-		} else if (handle == tbs_inst->current_calls_sub_params.value_handle) {
-			current_calls_notify_handler(conn, tbs_inst, data,
-						     length);
-#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
-#if defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI)
-		} else if (handle == tbs_inst->in_target_uri_sub_params.value_handle) {
-			incoming_uri_notify_handler(conn, tbs_inst, data,
-						    length);
-#endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI) */
-#if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
-		} else if (handle == tbs_inst->call_cp_sub_params.value_handle) {
-			call_cp_notify_handler(conn, tbs_inst, data, length);
-#endif /* defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES) */
-		} else if (handle == tbs_inst->termination_reason_handle) {
-			termination_reason_notify_handler(conn, tbs_inst, data,
-							  length);
-#if defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL)
-		} else if (handle == tbs_inst->incoming_call_sub_params.value_handle) {
-			in_call_notify_handler(conn, tbs_inst, data, length);
-#endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) */
-#if defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME)
-		} else if (handle == tbs_inst->friendly_name_sub_params.value_handle) {
-			friendly_name_notify_handler(conn, tbs_inst, data,
-						     length);
-#endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
-		}
-	} else {
-		LOG_DBG("Notification/Indication on unknown TBS inst");
-	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
+#endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
 
 #if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
 static int tbs_client_common_call_control(struct bt_conn *conn,
@@ -1293,12 +1331,14 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params = &current_inst->call_state_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->call_state_sub_disc_params;
+			sub_params->notify = call_state_notify_handler;
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_PROVIDER_NAME) == 0) {
 			LOG_DBG("Provider name");
 			sub_params = &current_inst->name_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->name_sub_disc_params;
+			sub_params->notify = provider_name_notify_handler;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_UCI) == 0) {
@@ -1311,6 +1351,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params = &current_inst->technology_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->technology_sub_disc_params;
+			sub_params->notify = technology_notify_handler;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_URI_LIST) == 0) {
@@ -1323,6 +1364,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params = &current_inst->signal_strength_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->signal_strength_sub_disc_params;
+			sub_params->notify = signal_strength_notify_handler;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH) */
 #if defined(CONFIG_BT_TBS_CLIENT_READ_BEARER_SIGNAL_INTERVAL) \
 || defined(CONFIG_BT_TBS_CLIENT_SET_BEARER_SIGNAL_INTERVAL)
@@ -1337,6 +1379,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params = &current_inst->current_calls_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->current_calls_sub_disc_params;
+			sub_params->notify = current_calls_notify_handler;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
 #if defined(CONFIG_BT_TBS_CLIENT_CCID)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CCID) == 0) {
@@ -1349,6 +1392,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params = &current_inst->in_target_uri_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->in_target_uri_sub_disc_params;
+			sub_params->notify = incoming_uri_notify_handler;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI) */
 #if defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_STATUS_FLAGS) == 0) {
@@ -1356,6 +1400,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params = &current_inst->status_flags_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->status_sub_disc_params;
+			sub_params->notify = status_flags_notify_handler;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS) */
 #if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_CALL_CONTROL_POINT) == 0) {
@@ -1363,6 +1408,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params = &current_inst->call_cp_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->call_cp_sub_disc_params;
+			sub_params->notify = call_cp_notify_handler;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES) */
 #if defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_OPTIONAL_OPCODES) == 0) {
@@ -1375,12 +1421,14 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params = &current_inst->termination_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->termination_sub_disc_params;
+			sub_params->notify = termination_reason_notify_handler;
 #if defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_FRIENDLY_NAME) == 0) {
 			LOG_DBG("Incoming friendly name");
 			sub_params = &current_inst->friendly_name_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->friendly_name_sub_disc_params;
+			sub_params->notify = friendly_name_notify_handler;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
 #if defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_INCOMING_CALL) == 0) {
@@ -1388,6 +1436,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params = &current_inst->incoming_call_sub_params;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->incoming_call_sub_disc_params;
+			sub_params->notify = in_call_notify_handler;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) */
 		}
 
@@ -1405,7 +1454,6 @@ static uint8_t discover_func(struct bt_conn *conn,
 				/* Setting ccc_handle = will use auto discovery feature */
 				sub_params->ccc_handle = 0;
 				sub_params->end_handle = current_inst->end_handle;
-				sub_params->notify = notify_handler;
 				err = bt_gatt_subscribe(conn, sub_params);
 				if (err != 0) {
 					LOG_DBG("Could not subscribe to "
