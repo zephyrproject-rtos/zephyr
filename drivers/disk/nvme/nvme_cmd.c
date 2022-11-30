@@ -15,6 +15,9 @@ LOG_MODULE_DECLARE(nvme, CONFIG_NVME_LOG_LEVEL);
 #include "nvme.h"
 #include "nvme_helpers.h"
 
+static struct nvme_prp_list prp_list_pool[CONFIG_NVME_PRP_LIST_AMOUNT];
+static sys_dlist_t free_prp_list;
+
 static struct nvme_request request_pool[NVME_REQUEST_AMOUNT];
 static sys_dlist_t free_request;
 static sys_dlist_t pending_request;
@@ -29,16 +32,46 @@ void nvme_cmd_init(void)
 
 	sys_dlist_init(&free_request);
 	sys_dlist_init(&pending_request);
+	sys_dlist_init(&free_prp_list);
 
 	for (idx = 0; idx < NVME_REQUEST_AMOUNT; idx++) {
 		sys_dlist_append(&free_request, &request_pool[idx].node);
 	}
+
+	for (idx = 0; idx < CONFIG_NVME_PRP_LIST_AMOUNT; idx++) {
+		sys_dlist_append(&free_prp_list, &prp_list_pool[idx].node);
+	}
+}
+
+static struct nvme_prp_list *nvme_prp_list_alloc(void)
+{
+	sys_dnode_t *node;
+
+	node = sys_dlist_peek_head(&free_prp_list);
+	if (!node) {
+		LOG_ERR("Could not allocate PRP list");
+		return NULL;
+	}
+
+	sys_dlist_remove(node);
+
+	return CONTAINER_OF(node, struct nvme_prp_list, node);
+}
+
+static void nvme_prp_list_free(struct nvme_prp_list *prp_list)
+{
+	memset(prp_list, 0, sizeof(struct nvme_prp_list));
+	sys_dlist_append(&free_prp_list, &prp_list->node);
 }
 
 void nvme_cmd_request_free(struct nvme_request *request)
 {
 	if (sys_dnode_is_linked(&request->node)) {
 		sys_dlist_remove(&request->node);
+	}
+
+	if (request->prp_list != NULL) {
+		nvme_prp_list_free(request->prp_list);
 	}
 
 	memset(request, 0, sizeof(struct nvme_request));
@@ -336,6 +369,36 @@ void nvme_cmd_qpair_reset(struct nvme_cmd_qpair *qpair)
 	       qpair->num_entries * sizeof(struct nvme_completion));
 }
 
+static int nvme_cmd_qpair_fill_prp_list(struct nvme_cmd_qpair *qpair,
+					struct nvme_request *request,
+					int n_prp)
+{
+	struct nvme_prp_list *prp_list;
+	uintptr_t p_addr;
+	int idx;
+
+	prp_list = nvme_prp_list_alloc();
+	if (prp_list == NULL) {
+		return -ENOMEM;
+	}
+
+	p_addr = (uintptr_t)request->payload;
+	request->cmd.dptr.prp1 =
+		(uint64_t)sys_cpu_to_le64(p_addr);
+	request->cmd.dptr.prp2 =
+		(uint64_t)sys_cpu_to_le64(&prp_list->prp);
+	p_addr = NVME_PRP_NEXT_PAGE(p_addr);
+
+	for (idx = 0; idx < n_prp; idx++) {
+		prp_list->prp[idx] = (uint64_t)sys_cpu_to_le64(p_addr);
+		p_addr = NVME_PRP_NEXT_PAGE(p_addr);
+	}
+
+	request->prp_list = prp_list;
+
+	return 0;
+}
+
 static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 				    struct nvme_request *request)
 {
@@ -343,16 +406,34 @@ static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 	case NVME_REQUEST_NULL:
 		break;
 	case NVME_REQUEST_VADDR:
+		int n_prp;
+
 		if (request->payload_size > qpair->ctrlr->max_xfer_size) {
 			LOG_ERR("VADDR request's payload too big");
 			return -EINVAL;
 		}
 
-		request->cmd.dptr.prp1 =
-			(uint64_t)sys_cpu_to_le64(request->payload);
-		request->cmd.dptr.prp2 = 0;
+		n_prp = request->payload_size / qpair->ctrlr->page_size;
+		if ((request->payload_size % qpair->ctrlr->page_size) ||
+		    ((uintptr_t)request->payload & NVME_PBAO_MASK)) {
+			n_prp++;
+		}
 
-		/* ToDo: handle > page_size payload through prp list */
+		if (n_prp <= 2) {
+			request->cmd.dptr.prp1 =
+				(uint64_t)sys_cpu_to_le64(request->payload);
+			if ((uintptr_t)request->payload & NVME_PBAO_MASK) {
+				request->cmd.dptr.prp2 =
+					NVME_PRP_NEXT_PAGE(
+						(uintptr_t)request->payload);
+			} else {
+				request->cmd.dptr.prp2 = 0;
+			}
+
+			break;
+		}
+
+		return nvme_cmd_qpair_fill_prp_list(qpair, request, n_prp);
 	default:
 		break;
 	}
