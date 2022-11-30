@@ -490,7 +490,7 @@ config BUILD_OUTPUT_HEX
 
 config BUILD_OUTPUT_BIN
 	bool "Build a binary in BIN format"
-	default y
+	default n
 	help
 	  Build a "raw" binary zephyr/zephyr.bin in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
