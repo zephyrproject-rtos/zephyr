@@ -889,7 +889,7 @@ static int ppp_driver_init(const struct device *dev)
 
 	k_work_queue_start(&ppp->cb_workq, ppp_workq,
 			   K_KERNEL_STACK_SIZEOF(ppp_workq),
-			   K_PRIO_COOP(PPP_WORKQ_PRIORITY), NULL);
+			   PPP_WORKQ_PRIORITY, NULL);
 	k_thread_name_set(&ppp->cb_workq.thread, "ppp_workq");
 #if defined(CONFIG_NET_PPP_ASYNC_UART)
 	k_work_init_delayable(&ppp->uart_recovery_work, uart_recovery);

@@ -1328,13 +1328,13 @@ static int gsm_init(const struct device *dev)
 	(void)k_thread_create(&gsm->rx_thread, gsm_rx_stack,
 			      K_KERNEL_STACK_SIZEOF(gsm_rx_stack),
 			      (k_thread_entry_t) gsm_rx,
-			      gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			gsm, NULL, NULL, CONFIG_GSM_PPP_RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 	(void)k_thread_name_set(&gsm->rx_thread, "gsm_rx");
 
 	/* initialize the work queue */
 	k_work_queue_init(&gsm->workq);
 	k_work_queue_start(&gsm->workq, gsm_workq_stack, K_KERNEL_STACK_SIZEOF(gsm_workq_stack),
-			   K_PRIO_COOP(7), NULL);
+			   CONFIG_GSM_PPP_WORKQ_PRIORITY, NULL);
 	(void)k_thread_name_set(&gsm->workq.thread, "gsm_workq");
 
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {

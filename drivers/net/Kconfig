@@ -57,7 +57,7 @@ config NET_PPP_RX_STACK_SIZE
 
 config NET_PPP_RX_PRIORITY
 	int "RX workqueue thread priority"
-	default 7
+	default -7
 	help
 	  Sets the priority of the RX workqueue thread.
 

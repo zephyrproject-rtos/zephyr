@@ -130,4 +130,16 @@ config MODEM_GSM_RETRY_DELAY
 	help
 	  Time to wait before retrying configuration.
 
+config GSM_PPP_RX_THREAD_PRIORITY
+	int "Priority of AT command receiver thread"
+	default -7
+	help
+	  Thread handling incomming bytes from AT endpoint.
+
+config GSM_PPP_WORKQ_PRIORITY
+	int "Priority of AT command scheduling"
+	default -7
+	help
+	  Workqueue scheduling commands configuring the modem.
+
 endif
