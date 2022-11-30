@@ -8,9 +8,11 @@ add_library(mocks STATIC
             conn.c
             crypto.c
             hci_core.c
+            hci_core_expects.c
             kernel.c
             keys.c
             net_buf.c
+            net_buf_expects.c
             rpa.c
             scan.c
             settings.c
