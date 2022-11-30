@@ -396,6 +396,20 @@ struct i2c_target_config {
 	const struct i2c_target_callbacks *callbacks;
 };
 
+/**
+ * @brief Validate that I2C bus is ready.
+ *
+ * @param spec I2C specification from devicetree
+ *
+ * @retval true if the I2C bus is ready for use.
+ * @retval false if the I2C bus is not ready for use.
+ */
+static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	return device_is_ready(spec->bus);
+}
+
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
 
 #include <zephyr/stats/stats.h>
