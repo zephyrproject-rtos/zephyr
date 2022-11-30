@@ -155,7 +155,7 @@ void nvme_namespace_data_swapbytes(struct nvme_namespace_data *s)
 
 struct nvme_namespace {
 	struct nvme_controller *ctrlr;
-	struct nvme_namespace_data data __aligned(0x1000);
+	struct nvme_namespace_data data;
 	uint32_t id;
 	uint32_t flags;
 	uint32_t boundary;

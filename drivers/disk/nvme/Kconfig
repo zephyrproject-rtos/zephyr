@@ -52,6 +52,15 @@ config NVME_REQUEST_TIMEOUT
 	  This sets the waiting time for a request to succeed.
 	  Do not touch this unless you know what you are doing.
 
+config NVME_PRP_LIST_AMOUNT
+	int "Number of allocated PRP list"
+	default 2
+	help
+	  This sets the amount of pre-allocated PRP list. Each list
+	  can be used in a NVMe command to address memory where to
+	  read or write data. Each PRP list is of page size be careful
+	  on this number as it may take a sensible amount of memory.
+
 config NVME_MAX_NAMESPACES
 	int "Maximum namespace to allocate"
 	range 1 16
