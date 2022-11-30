@@ -6,6 +6,7 @@ add_library(mocks STATIC
             addr.c
             addr_expects.c
             adv.c
+            adv_expects.c
             conn.c
             crypto.c
             crypto_expects.c
