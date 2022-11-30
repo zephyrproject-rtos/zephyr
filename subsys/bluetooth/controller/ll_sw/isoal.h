@@ -262,6 +262,7 @@ struct isoal_sink_session {
 	uint16_t                 handle;
 	uint8_t                  pdus_per_sdu;
 	uint8_t                  framed;
+	uint8_t                  burst_number;
 	uint32_t                 sdu_interval;
 	uint32_t                 latency_unframed;
 	uint32_t                 latency_framed;
