@@ -118,6 +118,25 @@ struct fuel_gauge_get_property {
 	} value;
 };
 
+struct fuel_gauge_set_property {
+	/** Battery fuel gauge property to set */
+	uint16_t property_type;
+
+	/** Negative error status set by callee e.g. -ENOTSUP for an unsupported property */
+	int status;
+
+	/** Property field for setting */
+	union {
+		/* Fields have the format: */
+		/* FUEL_GAUGE_PROPERTY_FIELD */
+		/* type property_field; */
+
+		/* Writable Dynamic Battery Info */
+		/** FUEL_GAUGE_SBS_MFR_ACCESS */
+		uint16_t sbs_mfr_access_word;
+	} value;
+};
+
 /**
  * @brief Fetch a battery fuel-gauge property
  *
@@ -133,10 +152,26 @@ struct fuel_gauge_get_property {
 typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
 					 struct fuel_gauge_get_property *props, size_t props_len);
 
+/**
+ * @brief Set a battery fuel-gauge property
+ *
+ * @param dev Pointer to the battery fuel-gauge device
+ * @param props pointer to array of fuel_gauge_set_property struct where the property struct
+ * field is set by the caller to determine what property is written to the fuel gauge device from
+ * the fuel_gauge_get_property struct's value field.
+ * @param props_len number of properties in props array
+ *
+ * @return return=0 if successful, return < 0 if setting all properties failed, return > 0 if some
+ * properties failed where return=number of failing properties.
+ */
+typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
+					 struct fuel_gauge_set_property *props, size_t props_len);
+
 /* Caching is entirely on the onus of the client */
 
 __subsystem struct battery_driver_api {
 	fuel_gauge_get_property_t get_property;
+	fuel_gauge_set_property_t set_property;
 };
 
 /**
