@@ -84,6 +84,20 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(144),
 	SMP_TIME(480)
 };
+#elif defined(CONFIG_SOC_SERIES_GD32L23X)
+#define SMP_TIME(x)	ADC_SAMPLETIME_##x##POINT5
+
+static const uint16_t acq_time_tbl[8] = {3, 8, 14, 29, 42, 56, 72, 240};
+static const uint32_t table_samp_time[] = {
+	SMP_TIME(2),
+	SMP_TIME(7),
+	SMP_TIME(13),
+	SMP_TIME(28),
+	SMP_TIME(41),
+	SMP_TIME(55),
+	SMP_TIME(71),
+	SMP_TIME(239),
+};
 #else
 #define SMP_TIME(x)	ADC_SAMPLETIME_##x##POINT5
 
@@ -271,7 +285,8 @@ static int adc_gd32_start_read(const struct device *dev,
 	}
 
 #if defined(CONFIG_SOC_SERIES_GD32F4XX) || \
-	defined(CONFIG_SOC_SERIES_GD32F3X0)
+	defined(CONFIG_SOC_SERIES_GD32F3X0) || \
+	defined(CONFIG_SOC_SERIES_GD32L23X)
 	ADC_CTL0(cfg->reg) &= ~ADC_CTL0_DRES;
 	ADC_CTL0(cfg->reg) |= CTL0_DRES(resolution_id);
 #elif defined(CONFIG_SOC_SERIES_GD32F403)
@@ -359,7 +374,8 @@ static int adc_gd32_init(const struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_GD32F403) || \
 	defined(CONFIG_SOC_SERIES_GD32VF103) || \
-	defined(CONFIG_SOC_SERIES_GD32F3X0)
+	defined(CONFIG_SOC_SERIES_GD32F3X0) || \
+	defined(CONFIG_SOC_SERIES_GD32L23X)
 	/* Set SWRCST as the regular channel external trigger. */
 	ADC_CTL1(cfg->reg) &= ~ADC_CTL1_ETSRC;
 	ADC_CTL1(cfg->reg) |= CTL1_ETSRC(7);
