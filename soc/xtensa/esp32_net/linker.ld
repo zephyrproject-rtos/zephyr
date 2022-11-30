@@ -145,7 +145,7 @@ SECTIONS
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
   _image_drom_start = LOADADDR(_RODATA_SECTION_NAME);
-  _image_drom_size = LOADADDR(_RODATA_SECTION_NAME) + SIZEOF(_RODATA_SECTION_NAME) - _image_drom_start;
+  _image_drom_size = LOADADDR(_RODATA_SECTION_END) + SIZEOF(_RODATA_SECTION_END)  - _image_drom_start;
   _image_drom_vaddr = ADDR(_RODATA_SECTION_NAME);
 
   SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -213,6 +213,14 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
   #pragma pop_macro("GROUP_ROM_LINK_IN")
+
+  /* Create an explicit section at the end of all the data that shall be mapped into drom.
+   * This is used to calculate the size of the _image_drom_size variable */
+  SECTION_PROLOGUE(_RODATA_SECTION_END,,)
+  {
+    . = ALIGN(4);
+    _image_rodata_end = ABSOLUTE(.);
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   _image_dram_start = LOADADDR(.dram0.data);
   _image_dram_size = LOADADDR(.dram0.end) + SIZEOF(.dram0.end) - _image_dram_start;
