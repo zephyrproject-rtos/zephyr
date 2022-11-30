@@ -36,10 +36,7 @@ void main(void)
 		const struct log_backend *backend = log_backend_net_get();
 
 		if (!log_backend_is_active(backend)) {
-			if (backend->api->init != NULL) {
-				backend->api->init(backend);
-			}
-
+			log_backend_init(backend);
 			log_backend_enable(backend, backend->cb->ctx, CONFIG_LOG_MAX_LEVEL);
 		}
 	}
