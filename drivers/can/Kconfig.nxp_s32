@@ -1,0 +1,27 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_NXP_S32_CANXL
+	bool "NXP S32 CANXL driver"
+	default y
+	depends on DT_HAS_NXP_S32_CANXL_ENABLED
+	help
+	  Enable support for NXP S32 CANXL driver.
+
+if CAN_NXP_S32_CANXL
+config CAN_NXP_S32_MAX_RX
+	int "Maximum number of RX descriptors"
+	depends on CAN_NXP_S32_CANXL
+	default 16
+	range 1 128
+	help
+	  Maximum number of RX descriptors.
+
+config CAN_NXP_S32_MAX_TX
+	int "Maximum number of TX descriptors"
+	depends on CAN_NXP_S32_CANXL
+	default 16
+	range 1 128
+	help
+	  Maximum number of TX descriptors.
+endif # CAN_NXP_S32_CANXL
