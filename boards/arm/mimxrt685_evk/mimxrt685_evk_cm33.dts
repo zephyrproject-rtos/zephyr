@@ -229,28 +229,10 @@ i2s1: &flexcomm3 {
 	pinctrl-names = "default";
 
 	pca9420: pca9420@61 {
-		reg = <0x61>;
 		compatible = "nxp,pca9420";
-		/*
-		 * This mode-reg setting will permit mode control by
-		 * pins, a feature of the PCA9240. If mode control via
-		 * I2C is desired, the following settings
-		 * should be used:
-		 * regulator-initial-mode = <PCA9420_MODECFG0_I2C>;
-		 * regulator-allowed-modes = <PCA9420_MODECFG0_I2C>,
-		 *			<PCA9420_MODECFG1_I2C>,
-		 *			<PCA9420_MODECFG2_I2C>,
-		 *			<PCA9420_MODECFG3_I2C>;
-		 * modesel-reg = <PCA9420_TOP_CNTL3>;
-		 * modesel-mask = <PCA9420_TOP_CNTL3_MODE_I2C_MASK>;
-		 */
-		regulator-allowed-modes = <PCA9420_MODECFG0_PIN>,
-					<PCA9420_MODECFG1_PIN>,
-					<PCA9420_MODECFG2_PIN>,
-					<PCA9420_MODECFG3_PIN>;
-		regulator-initial-mode = <PCA9420_MODECFG0_PIN>;
-		modesel-reg = <PCA9420_MODECFG_0_0>;
-		modesel-mask = <PCA9420_MODECFG_0_MODE_CTRL_SEL_MASK>;
+		reg = <0x61>;
+		nxp,enable-modesel-pins;
+
 		BUCK1 {
 			regulator-min-microvolt = <500000>;
 			regulator-max-microvolt = <1800000>;
