@@ -29,7 +29,9 @@ static const struct bt_has_preset_ops preset_ops = {
 
 static void test_main(void)
 {
-	struct bt_has_preset_register_param param;
+	struct bt_has_register_param has_param;
+	struct bt_has_preset_register_param preset_param;
+
 	int err;
 
 	err = bt_enable(NULL);
@@ -48,22 +50,30 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	param.index = test_preset_index_5;
-	param.properties = test_preset_properties;
-	param.name = test_preset_name_5;
-	param.ops = &preset_ops,
+	has_param.type = BT_HAS_HEARING_AID_TYPE_MONAURAL;
 
-	err = bt_has_preset_register(&param);
+	err = bt_has_register(&has_param);
+	if (err) {
+		FAIL("HAS register failed (err %d)\n", err);
+		return;
+	}
+
+	preset_param.index = test_preset_index_5;
+	preset_param.properties = test_preset_properties;
+	preset_param.name = test_preset_name_5;
+	preset_param.ops = &preset_ops,
+
+	err = bt_has_preset_register(&preset_param);
 	if (err) {
 		FAIL("Preset register failed (err %d)\n", err);
 		return;
 	}
 
-	param.index = test_preset_index_1;
-	param.properties = test_preset_properties;
-	param.name = test_preset_name_1;
+	preset_param.index = test_preset_index_1;
+	preset_param.properties = test_preset_properties;
+	preset_param.name = test_preset_name_1;
 
-	err = bt_has_preset_register(&param);
+	err = bt_has_preset_register(&preset_param);
 	if (err) {
 		FAIL("Preset register failed (err %d)\n", err);
 		return;

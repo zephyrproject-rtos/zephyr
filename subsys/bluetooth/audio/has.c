@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/device.h>
 
@@ -70,7 +71,7 @@ static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *at
 }
 
 /* Hearing Access Service GATT Attributes */
-BT_GATT_SERVICE_DEFINE(has_svc,
+static struct bt_gatt_attr has_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HAS),
 	BT_AUDIO_CHRC(BT_UUID_HAS_HEARING_AID_FEATURES,
 		      BT_GATT_CHRC_READ,
@@ -92,11 +93,13 @@ BT_GATT_SERVICE_DEFINE(has_svc,
 		      read_active_preset_index, NULL, NULL),
 	BT_AUDIO_CCC(ccc_cfg_changed),
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
-);
+};
+
+static struct bt_gatt_service has_svc;
 
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
-#define PRESET_CONTROL_POINT_ATTR &has_svc.attrs[4]
-#define ACTIVE_PRESET_INDEX_ATTR &has_svc.attrs[7]
+#define PRESET_CONTROL_POINT_ATTR &has_attrs[4]
+#define ACTIVE_PRESET_INDEX_ATTR &has_attrs[7]
 
 static struct has_client {
 	struct bt_conn *conn;
@@ -865,19 +868,19 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 	case BT_HAS_OP_SET_PREV_PRESET:
 		return handle_set_prev_preset(false);
 	case BT_HAS_OP_SET_ACTIVE_PRESET_SYNC:
-		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+		if ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0) {
 			return handle_set_active_preset(buf, true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
 		}
 	case BT_HAS_OP_SET_NEXT_PRESET_SYNC:
-		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+		if ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0) {
 			return handle_set_next_preset(true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
 		}
 	case BT_HAS_OP_SET_PREV_PRESET_SYNC:
-		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+		if ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0) {
 			return handle_set_prev_preset(true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
@@ -1123,48 +1126,51 @@ int bt_has_preset_name_change(uint8_t index, const char *name)
 }
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
-static int has_init(const struct device *dev)
+int bt_has_register(const struct bt_has_register_param *param)
 {
-	ARG_UNUSED(dev);
+	int err;
+
+	LOG_DBG("param %p", param);
+
+	CHECKIF(!param) {
+		LOG_DBG("NULL params pointer");
+		return -EINVAL;
+	}
 
 	/* Initialize the supported features characteristic value */
-	has.features = CONFIG_BT_HAS_HEARING_AID_TYPE & BT_HAS_FEAT_HEARING_AID_TYPE_MASK;
+	has.features = param->type;
 
 	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT)) {
 		has.features |= BT_HAS_FEAT_DYNAMIC_PRESETS;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BINAURAL)) {
-		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
-			has.features |= BT_HAS_FEAT_PRESET_SYNC_SUPP;
+	if (param->preset_sync_support) {
+		if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
+			LOG_DBG("Preset sync support only available for binaural hearing aid type");
+			return -EINVAL;
 		}
 
-		if (!IS_ENABLED(CONFIG_BT_HAS_IDENTICAL_PRESET_RECORDS)) {
-			has.features |= BT_HAS_FEAT_INDEPENDENT_PRESETS;
+		has.features |= BT_HAS_FEAT_PRESET_SYNC_SUPP;
+	}
+
+	if (param->independent_presets) {
+		if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
+			LOG_DBG("Independent presets only available for binaural hearing aid type");
+			return -EINVAL;
 		}
+
+		has.features |= BT_HAS_FEAT_INDEPENDENT_PRESETS;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC)) {
 		has.features |= BT_HAS_FEAT_WRITABLE_PRESETS_SUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BANDED)) {
-			/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
-			 * A Banded Hearing Aid in the HA role shall set the
-			 * Front Left and the Front Right bits to a value of 0b1
-			 * in the Sink Audio Locations characteristic value.
-			 */
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					     (BT_AUDIO_LOCATION_FRONT_LEFT |
-					      BT_AUDIO_LOCATION_FRONT_RIGHT));
-		} else if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_LEFT)) {
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					     BT_AUDIO_LOCATION_FRONT_LEFT);
-		} else {
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					     BT_AUDIO_LOCATION_FRONT_RIGHT);
-		}
+	has_svc = (struct bt_gatt_service)BT_GATT_SERVICE(has_attrs);
+	err = bt_gatt_service_register(&has_svc);
+	if (err != 0) {
+		LOG_DBG("HAS service register failed: %d", err);
+		return err;
 	}
 
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
@@ -1173,5 +1179,3 @@ static int has_init(const struct device *dev)
 
 	return 0;
 }
-
-SYS_INIT(has_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
