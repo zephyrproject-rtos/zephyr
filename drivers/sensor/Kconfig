@@ -263,4 +263,6 @@ source "drivers/sensor/ite_vcmp_it8xxx2/Kconfig"
 
 source "drivers/sensor/pcnt_esp32/Kconfig"
 
+source "drivers/sensor/esp32_temp/Kconfig"
+
 endif # SENSOR
