@@ -117,3 +117,10 @@ child-binding:
             is "1x" for most pins. PIO pins are 2, 4, 8, or 12 mA. PIO-24 pins
             are 4, 8, 16, or 24 mA. Please refer to the data sheet for each
             pin's PIO type and default drive strength.
+
+        microchip,output-func-invert:
+          required: false
+          type: boolean
+          description:
+            Invert polarity of an output alternate function. Input functions
+            are not affected.

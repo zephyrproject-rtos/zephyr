@@ -716,6 +716,7 @@ void llcp_rp_cc_reject(struct ll_conn *conn, struct proc_ctx *ctx);
 
 void llcp_pdu_decode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_cis_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu);
