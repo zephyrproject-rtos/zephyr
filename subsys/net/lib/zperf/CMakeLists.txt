@@ -3,7 +3,6 @@
 zephyr_library_named(zperf)
 
 zephyr_library_sources(
-  shell_utils.c
   zperf_common.c
   zperf_session.c
   zperf_shell.c
