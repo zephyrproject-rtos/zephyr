@@ -11,5 +11,6 @@ config SOC_SERIES_IMX_RT6XX
 	select SOC_FAMILY_IMX
 	select CLOCK_CONTROL
 	select CODE_DATA_RELOCATION_SRAM if FLASH_MCUX_FLEXSPI_XIP
+	select PLATFORM_SPECIFIC_INIT
 	help
 	  Enable support for i.MX RT6XX Series MCU series

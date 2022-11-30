@@ -77,11 +77,11 @@ const clock_audio_pll_config_t g_audioPllConfig = {
 
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
+/* Main stack pointer */
+extern char z_main_stack[];
 
 #ifdef CONFIG_NXP_IMX_RT6XX_BOOT_HEADER
-extern char z_main_stack[];
 extern char _flash_used[];
-
 extern void z_arm_reset(void);
 extern void z_arm_nmi(void);
 extern void z_arm_hard_fault(void);
@@ -352,31 +352,6 @@ static int nxp_rt600_init(const struct device *arg)
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
-	/* Enable cache to accelerate boot. */
-	if (SYSTEM_IS_XIP_FLEXSPI() && (CACHE64_POLSEL->POLSEL == 0)) {
-		/*
-		 * Set command to invalidate all ways and write GO bit
-		 * to initiate command
-		 */
-		CACHE64->CCR = (CACHE64_CTRL_CCR_INVW1_MASK |
-					CACHE64_CTRL_CCR_INVW0_MASK);
-		CACHE64->CCR |= CACHE64_CTRL_CCR_GO_MASK;
-		/* Wait until the command completes */
-		while (CACHE64->CCR & CACHE64_CTRL_CCR_GO_MASK) {
-		}
-		/* Enable cache, enable write buffer */
-		CACHE64->CCR = (CACHE64_CTRL_CCR_ENWRBUF_MASK |
-						CACHE64_CTRL_CCR_ENCACHE_MASK);
-
-		/* Set whole FlexSPI0 space to write through. */
-		CACHE64_POLSEL->REG0_TOP = 0x07FFFC00U;
-		CACHE64_POLSEL->REG1_TOP = 0x0U;
-		CACHE64_POLSEL->POLSEL = 0x1U;
-
-		__ISB();
-		__DSB();
-	}
-
 	/* Initialize clock */
 	clock_init();
 
@@ -386,7 +361,7 @@ static int nxp_rt600_init(const struct device *arg)
 	 */
 	NMI_INIT();
 
-#ifndef CONFIG_IMXRT6XX_ENABLE_CODE_CACHE
+#ifndef CONFIG_IMXRT6XX_CODE_CACHE
 	CACHE64_DisableCache(CACHE64);
 #endif
 
@@ -395,5 +370,30 @@ static int nxp_rt600_init(const struct device *arg)
 
 	return 0;
 }
+
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+#ifndef CONFIG_NXP_IMX_RT6XX_BOOT_HEADER
+	/*
+	 * If boot did not proceed using a boot header, we should not assume
+	 * the core is in reset state. Disable the MPU and correctly
+	 * set the stack pointer, since we are about to push to
+	 * the stack when we call SystemInit
+	 */
+	 /* Clear stack limit registers */
+	 __set_MSPLIM(0);
+	 __set_PSPLIM(0);
+	/* Disable MPU */
+	 MPU->CTRL &= ~MPU_CTRL_ENABLE_Msk;
+	 /* Set stack pointer */
+	 __set_MSP((uint32_t)(z_main_stack + CONFIG_MAIN_STACK_SIZE));
+#endif /* !CONFIG_NXP_IMX_RT5XX_BOOT_HEADER */
+	/* This is provided by the SDK */
+	SystemInit();
+}
+
+#endif
 
 SYS_INIT(nxp_rt600_init, PRE_KERNEL_1, 0);

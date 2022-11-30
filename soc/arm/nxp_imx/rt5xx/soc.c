@@ -375,7 +375,7 @@ static int nxp_rt500_init(const struct device *arg)
 	 */
 	NMI_INIT();
 
-#ifndef CONFIG_IMXRT5XX_ENABLE_CODE_CACHE
+#ifndef CONFIG_IMXRT5XX_CODE_CACHE
 	CACHE64_DisableCache(CACHE64_CTRL0);
 #endif
 

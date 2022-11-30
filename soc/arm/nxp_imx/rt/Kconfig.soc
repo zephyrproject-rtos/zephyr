@@ -614,6 +614,7 @@ config SOC_SERIES_IMX_RT10XX
 
 config SOC_SERIES_IMX_RT11XX
 	bool "i.MX RT 11XX Series"
+	select PLATFORM_SPECIFIC_INIT
 
 config INIT_ARM_PLL
 	bool "Initialize ARM PLL"
@@ -748,5 +749,17 @@ config SECOND_CORE_MCUX
 	  The M4 image will be loaded from flash into RAM based off a
 	  generated header specifying the VMA and LMA of each memory section
 	  to load
+
+config IMXRT1XXX_CODE_CACHE
+	bool "Code cache"
+	default y
+	help
+	  Enable Code cache at boot for IMXRT1xxx series
+
+config IMXRT1XXX_DATA_CACHE
+	bool "Data cache"
+	default y
+	help
+	  Enable Data cache at boot for IMXRT1xxx series
 
 endif # SOC_SERIES_IMX_RT
