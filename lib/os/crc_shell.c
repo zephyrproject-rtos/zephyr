@@ -5,10 +5,14 @@
  */
 
 #include <errno.h>
-#include <getopt.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#ifdef CONFIG_ARCH_POSIX
+#include <unistd.h>
+#else
+#include <zephyr/posix/unistd.h>
+#endif
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -71,7 +75,6 @@ static int cmd_crc(const struct shell *sh, size_t argc, char **argv)
 	enum crc_type type = CRC32_IEEE;
 
 	optind = 1;
-	optreset = 1;
 
 	while ((rv = getopt(argc, argv, "fhlp:rs:t:")) != -1) {
 		switch (rv) {
