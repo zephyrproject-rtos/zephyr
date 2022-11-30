@@ -36,6 +36,18 @@ include:
       - regulator-initial-mode
 
 properties:
+  regulator-allowed-modes:
+    default: [0, 1, 2, 3]
+
+  regulator-initial-mode:
+    default: 0
+
+  nxp,enable-modesel-pins:
+    type: boolean
+    description:
+      When enabled, the PMIC will be configured to allow mode selection using
+      the MODESEL0/1 inputs.
+
   nxp,vin-ilim-microamp:
     type: int
     default: 425000
@@ -61,18 +73,6 @@ properties:
 
       To disable current limit, set property to zero. Defaults to 425mA, the IC
       default value.
-
-  modesel-reg:
-    type: int
-    description: |
-      Mode selection register. This register is used by the regulator driver
-      to select the target mode of the regulator
-
-  modesel-mask:
-    type: int
-    description: |
-      Mode selection mask. Applied to a mode selection when it is written
-      to the modesel-reg.
 
 child-binding:
   include:
