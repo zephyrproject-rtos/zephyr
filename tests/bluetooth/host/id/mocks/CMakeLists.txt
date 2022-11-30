@@ -8,6 +8,7 @@ add_library(mocks STATIC
             adv.c
             adv_expects.c
             conn.c
+            conn_expects.c
             crypto.c
             crypto_expects.c
             hci_core.c
@@ -21,6 +22,7 @@ add_library(mocks STATIC
             rpa.c
             rpa_expects.c
             scan.c
+            scan_expects.c
             settings.c
             settings_expects.c
             smp.c
