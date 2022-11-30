@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/__assert.h>
 LOG_MODULE_REGISTER(log_uart);
 
@@ -161,4 +162,5 @@ const struct log_backend_api log_backend_uart_api = {
 	.format_set = format_set,
 };
 
-LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api, true);
+LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api,
+		IS_ENABLED(CONFIG_LOG_BACKEND_UART_AUTOSTART));
