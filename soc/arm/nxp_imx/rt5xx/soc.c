@@ -20,6 +20,7 @@
 #include <soc.h>
 #include "fsl_power.h"
 #include "fsl_clock.h"
+#include <fsl_cache.h>
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 #include "flash_clock_setup.h"
@@ -373,6 +374,10 @@ static int nxp_rt500_init(const struct device *arg)
 	 * the kernel, NOP otherwise
 	 */
 	NMI_INIT();
+
+#ifndef CONFIG_IMXRT5XX_ENABLE_CODE_CACHE
+	CACHE64_DisableCache(CACHE64_CTRL0);
+#endif
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);

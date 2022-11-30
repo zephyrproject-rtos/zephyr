@@ -264,6 +264,24 @@ static int nxp_lpc55xxx_init(const struct device *arg)
 	return 0;
 }
 
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+	SystemInit();
+
+
+#ifndef CONFIG_LOG_BACKEND_SWO
+	/*
+	 * SystemInit unconditionally enables the trace clock.
+	 * Disable the trace clock unless SWO is used
+	 */
+	 SYSCON->TRACECLKDIV = 0x4000000;
+#endif
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
+
 SYS_INIT(nxp_lpc55xxx_init, PRE_KERNEL_1, 0);
 
 #if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_LPC55S69_CPU0)

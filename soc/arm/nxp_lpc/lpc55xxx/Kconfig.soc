@@ -139,4 +139,12 @@ config BUILD_OUTPUT_ADJUST_LMA
 	depends on SECOND_CORE_MCUX && SOC_LPC55S69_CPU1
 	default "0x10000000"
 
+config LPC55XXX_SRAM_CLOCKS
+	bool "CLock LPC SRAM banks"
+	default y
+	help
+	  SRAM controllers 1,2,3, and 4 are disabled at reset.
+	  By default, CMSIS SystemInit will enable the clock to these RAM banks.
+	  Disable this Kconfig to leave the ram banks untouched out of reset.
+
 endif # SOC_SERIES_LPC55XXX
