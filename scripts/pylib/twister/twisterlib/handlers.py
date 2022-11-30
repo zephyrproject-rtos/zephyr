@@ -485,10 +485,7 @@ class DeviceHandler(Handler):
                 board_id = hardware.probe_id or hardware.id
                 product = hardware.product
                 if board_id is not None:
-                    if runner == "pyocd":
-                        command_extra_args.append("--board-id")
-                        command_extra_args.append(board_id)
-                    elif runner == "nrfjprog":
+                    if runner in ("pyocd", "nrfjprog"):
                         command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
                     elif runner == "openocd" and product == "STM32 STLink":
