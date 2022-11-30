@@ -310,54 +310,75 @@ struct bt_tbs_instance {
 #endif /* defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES) */
 	uint16_t termination_reason_handle;
 
-	bool busy;
 	uint8_t subscribe_cnt;
 #if defined(CONFIG_BT_TBS_CLIENT_CCID)
 	uint8_t ccid;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CCID) */
 
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
-	struct bt_gatt_subscribe_params name_sub_params;
 	struct bt_gatt_discover_params name_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
-	struct bt_gatt_subscribe_params technology_sub_params;
 	struct bt_gatt_discover_params technology_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
-	struct bt_gatt_subscribe_params signal_strength_sub_params;
 	struct bt_gatt_discover_params signal_strength_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH) */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS)
-	struct bt_gatt_subscribe_params current_calls_sub_params;
 	struct bt_gatt_discover_params current_calls_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
 #if defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS)
-	struct bt_gatt_subscribe_params status_flags_sub_params;
 	struct bt_gatt_discover_params status_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS) */
 #if defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI)
-	struct bt_gatt_subscribe_params in_target_uri_sub_params;
 	struct bt_gatt_discover_params in_target_uri_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI) */
 #if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
-	struct bt_gatt_subscribe_params call_cp_sub_params;
 	struct bt_gatt_discover_params call_cp_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES) */
 #if defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME)
-	struct bt_gatt_subscribe_params friendly_name_sub_params;
 	struct bt_gatt_discover_params friendly_name_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
 #if defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL)
-	struct bt_gatt_subscribe_params incoming_call_sub_params;
 	struct bt_gatt_discover_params incoming_call_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) */
-	struct bt_gatt_subscribe_params call_state_sub_params;
 	struct bt_gatt_discover_params call_state_sub_disc_params;
-	struct bt_gatt_subscribe_params termination_sub_params;
 	struct bt_gatt_discover_params termination_sub_disc_params;
 	struct bt_gatt_read_params read_params;
 	uint8_t read_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
 	struct net_buf_simple net_buf;
+
+	/** Any fields below here cannot be memset as part of a reset */
+	bool busy;
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+	struct bt_gatt_subscribe_params name_sub_params;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
+	struct bt_gatt_subscribe_params technology_sub_params;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
+	struct bt_gatt_subscribe_params signal_strength_sub_params;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH) */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS)
+	struct bt_gatt_subscribe_params current_calls_sub_params;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
+#if defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS)
+	struct bt_gatt_subscribe_params status_flags_sub_params;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS) */
+#if defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI)
+	struct bt_gatt_subscribe_params in_target_uri_sub_params;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI) */
+#if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
+	struct bt_gatt_subscribe_params call_cp_sub_params;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES) */
+#if defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME)
+	struct bt_gatt_subscribe_params friendly_name_sub_params;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
+#if defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL)
+	struct bt_gatt_subscribe_params incoming_call_sub_params;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) */
+	struct bt_gatt_subscribe_params call_state_sub_params;
+	struct bt_gatt_subscribe_params termination_sub_params;
 };
 #endif /* CONFIG_BT_TBS_CLIENT */

@@ -35,12 +35,14 @@ LOG_MODULE_REGISTER(bt_tbs_client, CONFIG_BT_TBS_CLIENT_LOG_LEVEL);
 #endif /* IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) */
 
 struct bt_tbs_server_inst {
-	struct bt_tbs_instance tbs_insts[BT_TBS_INSTANCE_MAX_CNT];
 	struct bt_gatt_discover_params discover_params;
 	struct bt_tbs_instance *current_inst;
 	struct bt_tbs_instance *gtbs;
 	uint8_t inst_cnt;
 	bool subscribe_all;
+
+	/** Any fields below here cannot be memset as part of a reset */
+	struct bt_tbs_instance tbs_insts[BT_TBS_INSTANCE_MAX_CNT];
 };
 
 static const struct bt_tbs_client_cb *tbs_client_cbs;
@@ -95,6 +97,69 @@ static uint8_t tbs_index(struct bt_conn *conn, const struct bt_tbs_instance *ins
 	__ASSERT_NO_MSG(index >= 0 && index < ARRAY_SIZE(server->tbs_insts));
 
 	return (uint8_t)index;
+}
+
+static void reset_tbs_inst(struct bt_tbs_instance *tbs_inst,
+			   struct bt_conn *conn)
+{
+	LOG_DBG("%p conn %p", tbs_inst, (void *)conn);
+
+	__ASSERT(!tbs_inst->busy, "TBS instance is busy");
+
+	(void)memset(tbs_inst, 0, offsetof(struct bt_tbs_instance, busy));
+
+	/* It's okay if these fail. In case of disconnect, we can't
+	 * unsubscribe and they will just fail.
+	 * In case that we reset due to another call of the discover
+	 * function, we will unsubscribe (regardless of bonding state)
+	 * to accommodate the new discovery values.
+	 */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->name_sub_params);
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->technology_sub_params);
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->signal_strength_sub_params);
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH) */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS)
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->current_calls_sub_params);
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
+#if defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS)
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->status_flags_sub_params);
+#endif /* defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS) */
+#if defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI)
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->in_target_uri_sub_params);
+#endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI) */
+#if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->call_cp_sub_params);
+#endif /* defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES) */
+#if defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME)
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->friendly_name_sub_params);
+#endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
+#if defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL)
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->incoming_call_sub_params);
+#endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) */
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->call_state_sub_params);
+	(void)bt_gatt_unsubscribe(conn, &tbs_inst->termination_sub_params);
+}
+
+static void reset_tbs_server_inst(struct bt_tbs_server_inst *srv_inst,
+				  struct bt_conn *conn)
+{
+	LOG_DBG("%p conn %p", srv_inst, (void *)conn);
+
+	if (srv_inst->gtbs) {
+		reset_tbs_inst(srv_inst->gtbs, conn);
+		srv_inst->gtbs = NULL;
+	}
+
+	while (srv_inst->inst_cnt > 0) {
+		reset_tbs_inst(&srv_inst->tbs_insts[--srv_inst->inst_cnt], conn);
+	}
+
+	(void)memset(srv_inst, 0, offsetof(struct bt_tbs_server_inst, tbs_insts));
 }
 
 #if defined(CONFIG_BT_TBS_CLIENT_ORIGINATE_CALL)
@@ -2246,12 +2311,10 @@ int bt_tbs_client_discover(struct bt_conn *conn, bool subscribe)
 		return -EBUSY;
 	}
 
-	(void)memset(srv_inst->tbs_insts, 0, sizeof(srv_inst->tbs_insts)); /* reset data */
-	srv_inst->inst_cnt = 0;
-	srv_inst->gtbs = NULL;
+	reset_tbs_server_inst(srv_inst, conn);
+
 	/* Discover TBS on peer, setup handles and notify/indicate */
 	srv_inst->subscribe_all = subscribe;
-	(void)memset(&srv_inst->discover_params, 0, sizeof(srv_inst->discover_params));
 	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS)) {
 		LOG_DBG("Discovering GTBS");
 		srv_inst->discover_params.uuid = gtbs_uuid;
@@ -2294,3 +2357,19 @@ struct bt_tbs_instance *bt_tbs_client_get_by_ccid(const struct bt_conn *conn,
 	return NULL;
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CCID) */
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_tbs_server_inst *srv_inst = &srv_insts[bt_conn_index(conn)];
+
+	/* FIXME: As we store the TBS information in bt_conn index-based array
+	 * we cannot relay on the values between connections as different
+	 * device can be allocated in the same place overriding the data.
+	 * Thus it's better to reset the instance state.
+	 */
+	reset_tbs_server_inst(srv_inst, conn);
+}
+
+BT_CONN_CB_DEFINE(conn_cb) = {
+	.disconnected = disconnected,
+};
