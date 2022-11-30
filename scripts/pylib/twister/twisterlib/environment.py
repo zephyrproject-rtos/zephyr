@@ -626,6 +626,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="Get information about memory footprint from generated build.log. "
              "Requires using --show-footprint option.")
 
+    parser.add_argument("extra_test_args", nargs=argparse.REMAINDER,
+        help="Additional args following a '--' are passed to the test binary")
+
     options = parser.parse_args(args)
 
     # Very early error handling
@@ -679,6 +682,29 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
             sc = SizeCalculator(fn, [])
             sc.size_report()
         sys.exit(1)
+
+    if len(options.extra_test_args) > 0:
+        # extra_test_args is a list of CLI args that Twister did not recognize
+        # and are intended to be passed through to the ztest executable. This
+        # list should begin with a "--". If not, there is some extra
+        # unrecognized arg(s) that shouldn't be there. Tell the user there is a
+        # syntax error.
+        if options.extra_test_args[0] != "--":
+            try:
+                double_dash = options.extra_test_args.index("--")
+            except ValueError:
+                double_dash = len(options.extra_test_args)
+            unrecognized = " ".join(options.extra_test_args[0:double_dash])
+
+            logger.error("Unrecognized arguments found: '%s'. Use -- to "
+                         "delineate extra arguments for test binary or pass "
+                         "-h for help.",
+                         unrecognized)
+
+            sys.exit(1)
+
+        # Strip off the initial "--" following validation.
+        options.extra_test_args = options.extra_test_args[1:]
 
     return options
 
