@@ -262,6 +262,12 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_PERIPH_SARADC_MODULE>;
 			#io-channel-cells = <1>;
+		};
+
+		coretemp: coretemp@3f408800 {
+			compatible = "espressif,esp32-temp";
+			friendly-name = "coretemp";
+			reg = <0x3f408800 0x4>;
 			status = "disabled";
 		};
 	};
