@@ -6,4 +6,4 @@ tests:
     integration_platforms:
       - native_posix
     platform_exclude: hsdk hsdk_2cores thingy52_nrf52832 bbc_microbit bbc_microbit_v2 bt610
-       bl5340_dvk_cpuapp bl5340_dvk_cpuapp_ns
+       bl5340_dvk_cpuapp bl5340_dvk_cpuapp_ns mimxrt595_evk_cm33
