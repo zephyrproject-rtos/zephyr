@@ -26,6 +26,7 @@ add_library(mocks STATIC
             settings.c
             settings_expects.c
             smp.c
+            smp_expects.c
 )
 
 target_include_directories(mocks PUBLIC
