@@ -135,4 +135,13 @@ static int k8x_init(const struct device *arg)
 	return 0;
 }
 
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+	SystemInit();
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
+
 SYS_INIT(k8x_init, PRE_KERNEL_1, 0);

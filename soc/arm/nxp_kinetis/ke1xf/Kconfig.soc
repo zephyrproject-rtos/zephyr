@@ -80,7 +80,6 @@ config SOC_PART_NUMBER_KINETIS_KE1XF
 
 config WDOG_ENABLE_AT_BOOT
 	bool "Keep watchdog timer enabled at boot"
-	depends on WDOG_INIT
 	help
 	  Keep the watchdog timer enabled at boot with the internal
 	  128kHz LPO clock (and a prescaler of 256) as clock
@@ -90,7 +89,7 @@ config WDOG_ENABLE_AT_BOOT
 
 config WDOG_INITIAL_TIMEOUT
 	int "Initial timeout for the watchdog timer in milliseconds"
-	depends on WDOG_ENABLE_AT_BOOT
+	depends on WDOG_ENABLE_AT_BOOT && WDOG_INIT
 	range 2 131070
 	default 2048
 	help
