@@ -12,6 +12,7 @@ add_library(mocks STATIC
             hci_core.c
             hci_core_expects.c
             kernel.c
+            kernel_expects.c
             keys.c
             net_buf.c
             net_buf_expects.c
