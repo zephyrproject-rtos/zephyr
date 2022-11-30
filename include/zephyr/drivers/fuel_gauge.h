@@ -55,8 +55,10 @@ extern "C" {
 #define FUEL_GAUGE_RUNTIME_TO_EMPTY	FUEL_GAUGE_REMAINING_CAPACITY + 1
 /** Remaining time in minutes until battery reaches full charge */
 #define FUEL_GAUGE_RUNTIME_TO_FULL	FUEL_GAUGE_RUNTIME_TO_EMPTY + 1
+/** Retrieve word from SBS1.1 ManufactuerAccess */
+#define FUEL_GAUGE_SBS_MFR_ACCESS	FUEL_GAUGE_RUNTIME_TO_FULL + 1
 /** Absolute state of charge (percent, 0-100) - expressed as % of design capacity */
-#define FUEL_GAUGE_STATE_OF_CHARGE	FUEL_GAUGE_RUNTIME_TO_FULL + 1
+#define FUEL_GAUGE_STATE_OF_CHARGE	FUEL_GAUGE_SBS_MFR_ACCESS + 1
 /** Temperature in 0.1 K */
 #define FUEL_GAUGE_TEMPERATURE		FUEL_GAUGE_STATE_OF_CHARGE + 1
 /** Battery voltage (uV) */
@@ -105,6 +107,8 @@ struct fuel_gauge_get_property {
 		uint32_t runtime_to_empty;
 		/** FUEL_GAUGE_RUNTIME_TO_FULL */
 		uint32_t runtime_to_full;
+		/** FUEL_GAUGE_SBS_MFR_ACCESS */
+		uint16_t sbs_mfr_access_word;
 		/** FUEL_GAUGE_STATE_OF_CHARGE */
 		uint8_t state_of_charge;
 		/** FUEL_GAUGE_TEMPERATURE */
