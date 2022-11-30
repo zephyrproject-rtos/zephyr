@@ -1,0 +1,14 @@
+# STMicroelectronics STM32H562XX MCU
+
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H562XX
+
+config SOC
+	default "stm32h562xx"
+
+config NUM_IRQS
+	default 131
+
+endif # SOC_STM32H562XX
