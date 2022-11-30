@@ -17,10 +17,18 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	/*
+	 * To use this sample:
+	 * - Connect VREFN_TARGET to GND, and VREFP_TARGET to 3v3
+	 *   (Resistors J8 and J9, should be populated by default)
+	 * - Connect LPADC0 CH0 signal to voltage between 0~3.3V (P19 pin 4)
+	 */
+
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <3300>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
