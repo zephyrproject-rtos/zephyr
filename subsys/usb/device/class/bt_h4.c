@@ -38,7 +38,11 @@ static struct k_thread tx_thread_data;
 
 /* HCI USB state flags */
 static bool configured;
-static bool suspended;
+/*
+ * Shared variable between bluetooth_status_cb() and hci_tx_thread(),
+ * where hci_tx_thread() has read-only access to it.
+ */
+static atomic_t  suspended;
 
 struct usb_bt_h4_config {
 	struct usb_if_descriptor if0;
@@ -92,25 +96,92 @@ static struct usb_ep_cfg_data bt_h4_ep_data[] = {
 	},
 };
 
-static void bt_h4_read(uint8_t ep, int size, void *priv)
+static uint16_t hci_pkt_get_len(struct net_buf *buf,
+				const uint8_t *data, size_t size)
 {
-	static uint8_t data[USB_MAX_FS_BULK_MPS];
+	uint16_t len = 0;
+	size_t hdr_len = 0;
 
-	if (size > 0) {
-		struct net_buf *buf;
+	switch (bt_buf_get_type(buf)) {
+	case BT_BUF_CMD: {
+		struct bt_hci_cmd_hdr *cmd_hdr;
 
-		buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, data, size);
-		if (!buf) {
-			LOG_ERR("Cannot get free TX buffer\n");
-			return;
-		}
+		hdr_len = sizeof(*cmd_hdr);
+		cmd_hdr = (struct bt_hci_cmd_hdr *)data;
+		len = cmd_hdr->param_len + hdr_len;
+		break;
+	}
+	case BT_BUF_ACL_OUT: {
+		struct bt_hci_acl_hdr *acl_hdr;
 
-		net_buf_put(&rx_queue, buf);
+		hdr_len = sizeof(*acl_hdr);
+		acl_hdr = (struct bt_hci_acl_hdr *)data;
+		len = sys_le16_to_cpu(acl_hdr->len) + hdr_len;
+		break;
+	}
+	case BT_BUF_ISO_OUT: {
+		struct bt_hci_iso_hdr *iso_hdr;
+
+		hdr_len = sizeof(*iso_hdr);
+		iso_hdr = (struct bt_hci_iso_hdr *)data;
+		len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len)) + hdr_len;
+		break;
+	}
+	default:
+		LOG_ERR("Unknown bt buffer type");
+		return 0;
 	}
 
+	return (size < hdr_len) ? 0 : len;
+}
+
+static void bt_h4_read(uint8_t ep, int size, void *priv)
+{
+	static struct net_buf *buf;
+	static uint8_t data[USB_MAX_FS_BULK_MPS];
+	static uint16_t pkt_len;
+
+	if (size == 0) {
+		goto restart_out_transfer;
+	}
+
+	if (buf == NULL) {
+		buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, data, size);
+		if (!buf) {
+			LOG_ERR("Failed to allocate buffer");
+			goto restart_out_transfer;
+		}
+
+		pkt_len = hci_pkt_get_len(buf, &data[1], size - 1);
+		LOG_DBG("pkt_len %u, chunk %u", pkt_len, size);
+	} else {
+		if (net_buf_tailroom(buf) < size) {
+			LOG_ERR("Buffer tailroom too small");
+			net_buf_unref(buf);
+			buf = NULL;
+			goto restart_out_transfer;
+		}
+
+		/*
+		 * Take over the next chunk if HCI packet is
+		 * larger than USB_MAX_FS_BULK_MPS.
+		 */
+		net_buf_add_mem(buf, data, size);
+		LOG_DBG("len %u, chunk %u", buf->len, size);
+	}
+
+	if (buf != NULL && pkt_len == buf->len) {
+		net_buf_put(&rx_queue, buf);
+		LOG_DBG("put");
+		buf = NULL;
+		pkt_len = 0;
+	}
+
+restart_out_transfer:
 	/* Start a new read transfer */
 	usb_transfer(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr, data,
-		     USB_MAX_FS_BULK_MPS, USB_TRANS_READ, bt_h4_read, NULL);
+		     USB_MAX_FS_BULK_MPS, USB_TRANS_READ | USB_TRANS_NO_ZLP,
+		      bt_h4_read, NULL);
 }
 
 static void hci_tx_thread(void)
@@ -121,6 +192,20 @@ static void hci_tx_thread(void)
 		struct net_buf *buf;
 
 		buf = net_buf_get(&tx_queue, K_FOREVER);
+		if (atomic_get(&suspended)) {
+			if (usb_wakeup_request()) {
+				LOG_DBG("Remote wakeup not enabled/supported");
+			}
+			/*
+			 * Let's wait until operation is resumed.
+			 * This is independent of usb_wakeup_request() result,
+			 * as long as device is suspended it should not start
+			 * any transfers.
+			 */
+			while (atomic_get(&suspended)) {
+				k_sleep(K_MSEC(1));
+			}
+		}
 
 		usb_transfer_sync(bt_h4_ep_data[BT_H4_IN_EP_IDX].ep_addr,
 				  buf->data, buf->len, USB_TRANS_WRITE);
@@ -146,12 +231,13 @@ static void bt_h4_status_cb(struct usb_cfg_data *cfg,
 			    enum usb_dc_status_code status, const uint8_t *param)
 {
 	ARG_UNUSED(cfg);
+	atomic_val_t tmp;
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_RESET:
 		LOG_DBG("Device reset detected");
-		suspended = false;
+		atomic_clear(&suspended);
 		configured = false;
 		break;
 	case USB_DC_CONFIGURED:
@@ -168,17 +254,17 @@ static void bt_h4_status_cb(struct usb_cfg_data *cfg,
 		/* Cancel any transfer */
 		usb_cancel_transfer(bt_h4_ep_data[BT_H4_IN_EP_IDX].ep_addr);
 		usb_cancel_transfer(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr);
-		suspended = false;
+		atomic_clear(&suspended);
 		configured = false;
 		break;
 	case USB_DC_SUSPEND:
-		suspended = true;
+		atomic_set(&suspended, 1);
 		break;
 	case USB_DC_RESUME:
 		LOG_DBG("Device resumed");
-		if (suspended) {
+		tmp = atomic_clear(&suspended);
+		if (tmp) {
 			LOG_DBG("from suspend");
-			suspended = false;
 			if (configured) {
 				/* Start reading */
 				bt_h4_read(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr,
