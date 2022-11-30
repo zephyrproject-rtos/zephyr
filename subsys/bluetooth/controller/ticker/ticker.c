@@ -1299,7 +1299,7 @@ void ticker_worker(void *param)
 				struct ticker_expire_info_internal *expire_info;
 				struct ticker_ext_context ext_context;
 				ticker_timeout_func timeout_func;
-				
+
 				timeout_func = ticker->ext_data->ext_timeout_func;
 				expire_info = ticker->ext_data->other_expire_info;
 
