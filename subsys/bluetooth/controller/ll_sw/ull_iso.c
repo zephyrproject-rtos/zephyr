@@ -909,16 +909,45 @@ uint8_t ll_read_iso_link_quality(uint16_t  handle,
 				 uint32_t *rx_unreceived_packets,
 				 uint32_t *duplicate_packets)
 {
-	ARG_UNUSED(handle);
-	ARG_UNUSED(tx_unacked_packets);
-	ARG_UNUSED(tx_flushed_packets);
-	ARG_UNUSED(tx_last_subevent_packets);
-	ARG_UNUSED(retransmitted_packets);
-	ARG_UNUSED(crc_error_packets);
-	ARG_UNUSED(rx_unreceived_packets);
-	ARG_UNUSED(duplicate_packets);
+	uint8_t status;
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	*tx_unacked_packets = 0;
+	*tx_flushed_packets = 0;
+	*tx_last_subevent_packets = 0;
+	*retransmitted_packets = 0;
+	*crc_error_packets = 0;
+	*rx_unreceived_packets = 0;
+	*duplicate_packets = 0;
+
+	status = BT_HCI_ERR_SUCCESS;
+
+	if (IS_CIS_HANDLE(handle)) {
+		struct ll_conn_iso_stream *cis;
+
+		cis = ll_iso_stream_connected_get(handle);
+
+		if (!cis) {
+			/* CIS is not connected */
+			return BT_HCI_ERR_UNKNOWN_CONN_ID;
+		}
+
+		*tx_unacked_packets       = cis->hdr.link_quality.tx_unacked_packets;
+		*tx_flushed_packets       = cis->hdr.link_quality.tx_flushed_packets;
+		*tx_last_subevent_packets = cis->hdr.link_quality.tx_last_subevent_packets;
+		*retransmitted_packets    = cis->hdr.link_quality.retransmitted_packets;
+		*crc_error_packets        = cis->hdr.link_quality.crc_error_packets;
+		*rx_unreceived_packets    = cis->hdr.link_quality.rx_unreceived_packets;
+		*duplicate_packets        = cis->hdr.link_quality.duplicate_packets;
+
+	} else if (IS_SYNC_ISO_HANDLE(handle)) {
+		/* FIXME: Implement for sync receiver */
+		status = BT_HCI_ERR_CMD_DISALLOWED;
+	} else {
+		/* Handle is out of range */
+		status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	return status;
 }
 #endif /* CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY */
 
