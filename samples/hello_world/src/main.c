@@ -8,5 +8,6 @@
 
 void main(void)
 {
+	// COMMENT 1
 	printk("Hello World! %s\n", CONFIG_BOARD);
 }
