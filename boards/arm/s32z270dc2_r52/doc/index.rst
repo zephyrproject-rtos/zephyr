@@ -51,6 +51,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | SWT       | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| CANEXCEL  | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -127,6 +129,16 @@ NETC driver supports to manage the Physical Station Interface (PSI0) and/or a
 single Virtual SI (VSI). The rest of the VSI's shall be assigned to different
 cores of the system. Refer to :ref:`nxp_s32_netc-samples` to learn how to
 configure the Ethernet network controller.
+
+Controller Area Network (CAN)
+=============================
+
+Currently, the CANXL transceiver is not populated in this board. So CAN transceiver
+connection is required for running external traffic. We can use any CAN transceiver,
+which supports CAN 2.0 and CAN FD protocol.
+
+CAN driver supports classic (CAN 2.0) and CAN FD mode. Remote transmission request is
+not supported as this feature is not available on NXP S32 CANXL HAL.
 
 Programming and Debugging
 *************************
