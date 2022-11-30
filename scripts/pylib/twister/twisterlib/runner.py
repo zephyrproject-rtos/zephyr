@@ -837,6 +837,9 @@ class ProjectBuilder(FilterBuilder):
                     self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
                     instance.handler.seed = self.options.seed
 
+            if self.options.extra_test_args and instance.platform.arch == "posix":
+                instance.handler.extra_test_args = self.options.extra_test_args
+
             instance.handler.handle()
 
         sys.stdout.flush()
