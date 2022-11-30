@@ -17,4 +17,20 @@ config SAMPLE_BIG_HTTP_DL_NUM_ITER
 	help
 	  Number of download iterations (0 - unlimited).
 
+if WIFI
+
+config SAMPLE_BIG_HTTP_DL_WIFI_SSID
+	string "WIFI SSID - Network name"
+	default "SSID"
+
+config SAMPLE_BIG_HTTP_DL_WIFI_PSK
+	string "WIFI PSK - Network password key"
+	default "PASSWORD"
+
+config SAMPLE_BIG_HTTP_DL_WIFI_CONNECT_TIMEOUT_MS
+	int "WIFI connect timeout in milliseconds"
+	default 10000
+    
+endif
+
 source "Kconfig.zephyr"

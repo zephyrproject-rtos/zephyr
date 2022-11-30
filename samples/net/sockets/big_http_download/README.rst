@@ -61,6 +61,25 @@ setup is needed).
    on the Internet.  Using files on archive.ubuntu.com is not recommended for
    large-scale testing.
 
+Building for WiFi
+=================
+
+For WiFi, you need a board with WiFi connectivity, for instance, through shield
+:ref:`module_esp_8266`. Additionally, you need to fill ``CONFIG_SAMPLE_BIG_HTTP_DL_WIFI_SSID``
+and ``CONFIG_SAMPLE_BIG_HTTP_DL_WIFI_PSK`` with your WiFi network SSID and password
+at ``overlay-wifi.conf``.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/big_http_download
+   :board: [ disco_l475_iot1 | frdm_k64f ]
+   :conf: "prj.conf overlay-wifi.conf"
+   :shield: [esp_8266 | esp_8266_arduino ]
+   :goals: build
+   :compact:
+
+An alternative way is to specify ``-DOVERLAY_CONFIG=overlay-wifi.conf`` when
+running ``west build`` or ``cmake``.
+
 Enabling TLS support
 =================================
 

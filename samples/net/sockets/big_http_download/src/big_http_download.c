@@ -29,6 +29,10 @@
 #include "ca_certificate.h"
 #endif
 
+#if defined(CONFIG_WIFI)
+#include "wifi.h"
+#endif
+
 #define sleep(x) k_sleep(K_MSEC((x) * MSEC_PER_SEC))
 
 #endif
@@ -245,6 +249,12 @@ void main(void)
 	int resolve_attempts = 10;
 	bool is_tls = false;
 	unsigned int num_iterations = CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER;
+
+#if defined(CONFIG_WIFI)
+	wifi_connect(CONFIG_SAMPLE_BIG_HTTP_DL_WIFI_SSID,
+				 CONFIG_SAMPLE_BIG_HTTP_DL_WIFI_PSK,
+				 CONFIG_SAMPLE_BIG_HTTP_DL_WIFI_CONNECT_TIMEOUT_MS);
+#endif
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
