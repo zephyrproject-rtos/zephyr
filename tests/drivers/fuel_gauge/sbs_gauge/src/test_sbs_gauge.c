@@ -123,6 +123,9 @@ ZTEST_F(sbs_gauge_new_api, test_get_props__returns_ok)
 		{
 			.property_type = FUEL_GAUGE_CYCLE_COUNT,
 		},
+		{
+			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
+		},
 	};
 
 	int ret = fixture->api->get_property(fixture->dev, props, ARRAY_SIZE(props));
