@@ -556,6 +556,20 @@ __subsystem struct gpio_driver_api {
  */
 
 /**
+ * @brief Validate that GPIO port is ready.
+ *
+ * @param spec GPIO specification from devicetree
+ *
+ * @retval true if the GPIO spec is ready for use.
+ * @retval false if the GPIO spec is not ready for use.
+ */
+static inline bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
+{
+	/* Validate port is ready */
+	return device_is_ready(spec->port);
+}
+
+/**
  * @brief Configure pin interrupt.
  *
  * @note This function can also be used to configure interrupts on pins
