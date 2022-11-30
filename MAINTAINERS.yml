@@ -1985,11 +1985,10 @@ Espressif Platforms:
   status: maintained
   maintainers:
     - sylvioalves
-    - glaubermaroto
-    - uLipe
   collaborators:
     - LucasTambor
     - marekmatej
+    - uLipe
   files:
     - drivers/*/*esp32*.c
     - boards/xtensa/esp32*/
