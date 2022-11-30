@@ -8,6 +8,7 @@
 #include <zephyr/net/socket.h>
 
 #include "zperf_internal.h"
+#include "zperf_session.h"
 
 LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
@@ -116,6 +117,9 @@ static int zperf_init(const struct device *unused)
 	zperf_tcp_uploader_init();
 	zperf_udp_receiver_init();
 	zperf_tcp_receiver_init();
+
+	zperf_session_init();
+	zperf_shell_init();
 
 	return 0;
 }
