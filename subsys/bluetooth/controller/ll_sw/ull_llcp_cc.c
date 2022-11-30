@@ -432,8 +432,19 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 				void *param)
 {
 	uint16_t start_event_count;
+	struct ll_conn_iso_group *cig;
 
+	cig = ll_conn_iso_group_get_by_id(ctx->data.cis_create.cig_id);
 	start_event_count = ctx->data.cis_create.conn_event_count;
+	LL_ASSERT(cig);
+
+	if (!cig->started) {
+		/* Start ISO peripheral one event before the requested instant
+		 * for first CIS. This is done to be able to accept small CIS
+		 * offsets.
+		 */
+		start_event_count--;
+	}
 
 	if (is_instant_reached_or_passed(start_event_count,
 					 cc_event_counter(conn))) {
