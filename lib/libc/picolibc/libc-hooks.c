@@ -324,7 +324,7 @@ out:
 }
 
 #ifdef CONFIG_MULTITHREADING
-#define _LOCK_T void *
+
 K_MUTEX_DEFINE(__lock___libc_recursive_mutex);
 
 #ifdef CONFIG_USERSPACE

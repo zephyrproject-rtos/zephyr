@@ -19,6 +19,8 @@
 
 #if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC) || defined(CONFIG_PICOLIBC)
 
+#define _LOCK_T void *
+
 /* syscall generation ignores preprocessor, ensure this is defined to ensure
  * we don't have compile errors
  */

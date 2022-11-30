@@ -284,7 +284,7 @@ static int intel_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 static int intel_sha_device_set_hash_type(const struct device *dev, struct hash_ctx *ctx,
 					  enum hash_algo algo)
 {
-	int ret;
+	int ret = 0;
 	int ctx_idx;
 	struct sha_container *self = (struct sha_container *const)(dev)->data;
 
