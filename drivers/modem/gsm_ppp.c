@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 
 #define GSM_UART_NODE                   DT_INST_BUS(0)
 #define GSM_CMD_READ_BUF                128
-#define GSM_CMD_AT_TIMEOUT              K_SECONDS(2)
+#define GSM_CMD_AT_TIMEOUT              K_MSEC(CONFIG_MODEM_GSM_CMD_AT_TIMEOUT)
 #define GSM_CMD_SETUP_TIMEOUT           K_SECONDS(6)
 /* GSM_CMD_LOCK_TIMEOUT should be longer than GSM_CMD_AT_TIMEOUT & GSM_CMD_SETUP_TIMEOUT,
  * otherwise the gsm_ppp_stop might fail to lock tx.
@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_RECV_BUF_SIZE               128
 #define GSM_ATTACH_RETRY_DELAY_MSEC     1000
 #define GSM_REGISTER_DELAY_MSEC         1000
-#define GSM_RETRY_DELAY                 K_SECONDS(1)
+#define GSM_RETRY_DELAY                 K_MSEC(CONFIG_MODEM_GSM_RETRY_DELAY)
 
 #define GSM_RSSI_RETRY_DELAY_MSEC       2000
 #define GSM_RSSI_RETRIES                10
@@ -929,7 +929,7 @@ static int mux_enable(struct gsm_modem *gsm)
 		/* Arbitrary delay for Quectel modems to initialize the CMUX,
 		 * without this the AT cmd will fail.
 		 */
-		(void)k_sleep(K_SECONDS(1));
+		(void)k_sleep(K_MSEC(50));
 	} else {
 		/* Generic GSM modem */
 		ret = modem_cmd_send_nolock(&gsm->context.iface,

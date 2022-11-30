@@ -118,4 +118,16 @@ config MODEM_GSM_FACTORY_RESET_AT_BOOT
 	  helpful if your modem has a tendency to get stuck due to cached
 	  state.
 
+config MODEM_GSM_CMD_AT_TIMEOUT
+	int "Timeout waiting for response to AT command (in miliseconds)"
+	default 2000
+	help
+	  Timeout to wait for resonse to AT command.
+
+config MODEM_GSM_RETRY_DELAY
+	int "Delay before retrying configuration if it fails (in miliseconds)"
+	default 1000
+	help
+	  Time to wait before retrying configuration.
+
 endif
