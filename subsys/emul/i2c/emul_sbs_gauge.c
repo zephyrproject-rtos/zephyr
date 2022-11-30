@@ -53,6 +53,7 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	ARG_UNUSED(target);
 
 	switch (reg) {
+	case SBS_GAUGE_CMD_MANUFACTURER_ACCESS:
 	case SBS_GAUGE_CMD_VOLTAGE:
 	case SBS_GAUGE_CMD_AVG_CURRENT:
 	case SBS_GAUGE_CMD_TEMP:
