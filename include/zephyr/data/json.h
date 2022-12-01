@@ -577,14 +577,14 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @param len Length of JSON-encoded value
  * @param descr Pointer to the descriptor array
  * @param descr_len Number of elements in the descriptor array. Must be less
- * than 31 due to implementation detail reasons (if more fields are
+ * than 63 due to implementation detail reasons (if more fields are
  * necessary, use two descriptors)
  * @param val Pointer to the struct to hold the decoded values
  *
  * @return < 0 if error, bitmap of decoded fields on success (bit 0
  * is set if first field in the descriptor has been properly decoded, etc).
  */
-int json_obj_parse(char *json, size_t len,
+int64_t json_obj_parse(char *json, size_t len,
 	const struct json_obj_descr *descr, size_t descr_len,
 	void *val);
 
