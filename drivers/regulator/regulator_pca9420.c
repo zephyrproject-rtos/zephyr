@@ -271,23 +271,14 @@ static unsigned int regulator_pca9420_count_voltages(const struct device *dev)
 					       config->desc->num_ranges);
 }
 
-/**
- * Part of the extended regulator consumer API
- * Returns the supported voltage in uV for a given selector value
- */
-static int32_t regulator_pca9420_list_voltages(const struct device *dev,
-					       unsigned int selector)
+static int regulator_pca9420_list_voltage(const struct device *dev,
+					  unsigned int idx, int32_t *volt_uv)
 {
 	const struct regulator_pca9420_config *config = dev->config;
-	int32_t value;
 
-	if (linear_range_group_get_value(config->desc->ranges,
-					 config->desc->num_ranges, selector,
-					 &value) < 0) {
-		return 0;
-	}
-
-	return value;
+	return linear_range_group_get_value(config->desc->ranges,
+					    config->desc->num_ranges, idx,
+					    volt_uv);
 }
 
 /**
@@ -536,7 +527,7 @@ static const struct regulator_driver_api api = {
 	.enable = regulator_pca9420_enable,
 	.disable = regulator_pca9420_disable,
 	.count_voltages = regulator_pca9420_count_voltages,
-	.list_voltages = regulator_pca9420_list_voltages,
+	.list_voltage = regulator_pca9420_list_voltage,
 	.is_supported_voltage = regulator_pca9420_is_supported_voltage,
 	.set_voltage = regulator_pca9420_set_voltage,
 	.get_voltage = regulator_pca9420_get_voltage,
