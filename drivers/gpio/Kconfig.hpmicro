@@ -1,0 +1,10 @@
+# Copyright (c) 2022 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_HPMICRO
+	bool "HPMicro GPIO driver"
+	default y
+	depends on DT_HAS_HPMICRO_HPM_GPIO_ENABLED
+	select USE_HPMSDK_GPIO
+	help
+	  Enable the hpmicro gpio driver.

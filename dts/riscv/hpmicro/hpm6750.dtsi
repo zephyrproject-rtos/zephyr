@@ -4,6 +4,7 @@
  */
 
 /dts-v1/;
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/hpmicro-clocks.h>
 #include <mem.h>
 
@@ -43,7 +44,13 @@
 			};
 		};
 
+		fgpio: peripheral@C0000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xC0000 0x2000>;
+		};
 	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -128,7 +135,19 @@
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
 			interrupts-extended = <&CPU0_intc 3 &CPU1_intc 3>;
-	};
+		};
+
+		gpio0: peripheral@f0000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xf0000000 0x4000>;
+		};
+
+		gpio1: peripheral@f0004000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xf0004000 0x4000>;
+		};
 
 		uart0: serial@f0040000 {
 			compatible = "hpmicro,hpm-uart";
