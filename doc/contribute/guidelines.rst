@@ -12,6 +12,8 @@ This document explains how to participate in project conversations, log bugs
 and enhancement requests, and submit patches to the project so your patch will
 be accepted quickly in the codebase.
 
+.. _licensing_requirements:
+
 Licensing
 *********
 
@@ -816,25 +818,8 @@ in the Git commit's ``Author:`` field.
 Other Commit Expectations
 =========================
 
-* Commits must build cleanly when applied on top of each other, thus avoiding
-  breaking bisectability.
-
-* Commits must pass all CI checks (see `Continuous Integration`_ for more
-  information)
-
-* Each commit must address a single identifiable issue and must be
-  logically self-contained. Unrelated changes should be submitted as
-  separate commits.
-
-* You may submit pull request RFCs (requests for comments) to send work
-  proposals, progress snapshots of your work, or to get early feedback on
-  features or changes that will affect multiple areas in the code base.
-
-* When major new functionality is added, tests for the new functionality MUST be
-  added to the automated test suite. All new APIs MUST be documented and tested
-  and tests MUST cover at least 80% of the added functionality using the code
-  coverage tool and reporting provided by the project.
-
+See the :ref:`contributor-expectations` for a more complete discussion of
+contributor and reviewer expectations.
 
 Submitting Proposals
 ====================

@@ -7,6 +7,7 @@ Contributing to Zephyr
    :maxdepth: 1
 
    guidelines.rst
+   contributor_expectations.rst
    coding_guidelines/index.rst
    documentation/index.rst
    external.rst
