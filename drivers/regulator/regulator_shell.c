@@ -85,6 +85,7 @@ static int cmd_set_vol(const struct shell *sh, size_t argc, char **argv)
 static int cmd_set_ilim(const struct shell *sh, size_t argc, char **argv)
 {
 	int lcur, ucur, ret;
+	int32_t curr_ua;
 	const struct device *reg_dev;
 
 	reg_dev = device_get_binding(argv[1]);
@@ -101,12 +102,12 @@ static int cmd_set_ilim(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "failed to set current, error %d", ret);
 		return ret;
 	}
-	ret = regulator_get_current_limit(reg_dev);
+	ret = regulator_get_current_limit(reg_dev, &curr_ua);
 	if (ret < 0) {
 		shell_error(sh, "failed to read current, error %d", ret);
 		return ret;
 	}
-	shell_print(sh, "set current limit to %d uA", ret);
+	shell_print(sh, "set current limit to %d uA", curr_ua);
 	return 0;
 }
 

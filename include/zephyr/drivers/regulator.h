@@ -39,7 +39,7 @@ __subsystem struct regulator_driver_api {
 	int (*get_voltage)(const struct device *dev, int32_t *volt_uv);
 	int (*set_current_limit)(const struct device *dev, int32_t min_ua,
 				 int32_t max_ua);
-	int (*get_current_limit)(const struct device *dev);
+	int (*get_current_limit)(const struct device *dev, int32_t *curr_ua);
 	int (*set_mode)(const struct device *dev, uint32_t mode);
 };
 
@@ -242,12 +242,14 @@ static inline int regulator_set_current_limit(const struct device *dev,
  * @brief Get output current limit.
  *
  * @param dev Regulator device instance.
+ * @param[out] curr_ua Where output current limit will be stored.
  *
- * @retval current Current limit in microamperes
+ * @retval 0 If successful.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
-static inline int32_t regulator_get_current_limit(const struct device *dev)
+static inline int regulator_get_current_limit(const struct device *dev,
+					      int32_t *curr_ua)
 {
 	const struct regulator_driver_api *api =
 		(const struct regulator_driver_api *)dev->api;
@@ -256,7 +258,7 @@ static inline int32_t regulator_get_current_limit(const struct device *dev)
 		return -ENOSYS;
 	}
 
-	return api->get_current_limit(dev);
+	return api->get_current_limit(dev, curr_ua);
 }
 
 /**
