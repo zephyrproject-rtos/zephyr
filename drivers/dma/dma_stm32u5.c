@@ -586,6 +586,24 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 	return 0;
 }
 
+static int dma_stm32_resume(const struct device *dev, uint32_t id)
+{
+	const struct dma_stm32_config *config = dev->config;
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+
+	/* Give channel from index 0 */
+	id = id - STM32_DMA_STREAM_OFFSET;
+
+	if (id >= config->max_streams) {
+		return -EINVAL;
+	}
+
+	/* Resume the channel : it's enough after suspend */
+	LL_DMA_ResumeChannel(dma, dma_stm32_id_to_stream(id));
+
+	return 0;
+}
+
 static int dma_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
@@ -662,6 +680,7 @@ static const struct dma_driver_api dma_funcs = {
 	.stop		 = dma_stm32_stop,
 	.get_status	 = dma_stm32_get_status,
 	.suspend	 = dma_stm32_suspend,
+	.resume		 = dma_stm32_resume,
 };
 
 #define DMA_STM32_OFFSET_INIT(index)
