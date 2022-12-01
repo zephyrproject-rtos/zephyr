@@ -130,6 +130,15 @@
 			interrupts-extended = <&CPU0_intc 3 &CPU1_intc 3>;
 	};
 
+		uart0: serial@f0040000 {
+			compatible = "hpmicro,hpm-uart";
+			reg = <0xf0040000 0x1000>;
+			interrupts = <31 1>;
+			interrupt-parent = <&plic0>;
+			clocks = <&clk HPM_CLOCK_UART0 HPM_CLK_SRC_OSC24M 1>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@f4040000 {
 			compatible = "hpmicro,hpm-pinctrl";
 			reg = <0xf4040000 0x40000>;

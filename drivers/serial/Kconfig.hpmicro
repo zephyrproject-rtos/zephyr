@@ -1,0 +1,12 @@
+# Copyright (c) 2022 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_HPM
+	bool "HPMICRO serial driver"
+	default y
+	depends on DT_HAS_HPMICRO_HPM_UART_ENABLED
+	select USE_HPMSDK_UART
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for HPM SoC family.
