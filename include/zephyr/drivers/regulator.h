@@ -168,17 +168,18 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 				    int32_t max_uv);
 
 /**
- * @brief Set output voltage.
+ * @brief Set the output voltage.
  *
- * @note The output voltage will be configured to the closest supported output
+ * The output voltage will be configured to the closest supported output
  * voltage. regulator_get_voltage() can be used to obtain the actual configured
- * voltage.
+ * voltage. The voltage will be applied to the active or selected mode.
  *
  * @param dev Regulator device instance.
  * @param min_uv Minimum acceptable voltage in microvolts.
  * @param max_uv Maximum acceptable voltage in microvolts.
  *
  * @retval 0 If successful.
+ * @retval -EINVAL If the given voltage window is not valid.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
