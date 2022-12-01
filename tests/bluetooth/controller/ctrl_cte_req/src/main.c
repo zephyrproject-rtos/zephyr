@@ -133,7 +133,7 @@ ZTEST(cte_req_after_fex, test_cte_req_central_local)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -208,7 +208,7 @@ ZTEST(cte_req_after_fex, test_cte_req_peripheral_local)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -427,7 +427,7 @@ ZTEST(cte_req_after_fex, test_cte_req_rejected_inv_ll_param_central_local)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -506,7 +506,7 @@ ZTEST(cte_req_after_fex, test_cte_req_rejected_inv_ll_param_peripheral_local)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -726,7 +726,7 @@ static void test_cte_req_ll_unknown_rsp_local(uint8_t role)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -861,7 +861,7 @@ static void run_local_cte_req(struct pdu_data_llctrl_cte_req *cte_req)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -918,7 +918,7 @@ static void check_phy_update(bool is_local, struct pdu_data_llctrl_phy_req *phy_
 	}
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
