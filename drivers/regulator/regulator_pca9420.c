@@ -273,18 +273,6 @@ static unsigned int regulator_pca9420_count_voltages(const struct device *dev)
 
 /**
  * Part of the extended regulator consumer API
- * Counts the number of modes supported by a regulator
- */
-static int regulator_pca9420_count_modes(const struct device *dev)
-{
-	const struct regulator_pca9420_config *config = dev->config;
-	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
-
-	return cconfig->allowed_modes_cnt;
-}
-
-/**
- * Part of the extended regulator consumer API
  * Returns the supported voltage in uV for a given selector value
  */
 static int32_t regulator_pca9420_list_voltages(const struct device *dev,
@@ -548,7 +536,6 @@ static const struct regulator_driver_api api = {
 	.enable = regulator_pca9420_enable,
 	.disable = regulator_pca9420_disable,
 	.count_voltages = regulator_pca9420_count_voltages,
-	.count_modes = regulator_pca9420_count_modes,
 	.list_voltages = regulator_pca9420_list_voltages,
 	.is_supported_voltage = regulator_pca9420_is_supported_voltage,
 	.set_voltage = regulator_pca9420_set_voltage,

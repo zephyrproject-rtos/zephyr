@@ -32,7 +32,6 @@ __subsystem struct regulator_driver_api {
 	int (*enable)(const struct device *dev);
 	int (*disable)(const struct device *dev);
 	unsigned int (*count_voltages)(const struct device *dev);
-	int (*count_modes)(const struct device *dev);
 	int32_t (*list_voltages)(const struct device *dev,
 				 unsigned int selector);
 	int (*is_supported_voltage)(const struct device *dev, int32_t min_uv,
@@ -127,27 +126,6 @@ static inline unsigned int regulator_count_voltages(const struct device *dev)
 	}
 
 	return api->count_voltages(dev);
-}
-
-/**
- * @brief Obtain the number of supported modes.
- *
- * @param dev Regulator device instance.
- *
- * @return Number of supported modes.
- *
- * @see regulator_set_mode()
- */
-static inline int regulator_count_modes(const struct device *dev)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	if (api->count_modes == NULL) {
-		return 0;
-	}
-
-	return api->count_modes(dev);
 }
 
 /**
