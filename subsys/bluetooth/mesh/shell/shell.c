@@ -387,6 +387,29 @@ static int cmd_proxy_disconnect(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
+static int cmd_proxy_solicit(const struct shell *sh, size_t argc,
+			     char *argv[])
+{
+	uint16_t net_idx;
+	int err = 0;
+
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
+
+	err = bt_mesh_proxy_solicit(net_idx);
+	if (err) {
+		shell_error(sh, "Failed to advertise solicitation PDU (err %d)",
+			    err);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_MESH_PROXY_SOLICITATION */
 #endif /* CONFIG_BT_MESH_PROXY_CLIENT */
 #endif /* CONFIG_BT_MESH_SHELL_GATT_PROXY */
 
@@ -1653,6 +1676,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(proxy_cmds,
 #if defined(CONFIG_BT_MESH_PROXY_CLIENT)
 	SHELL_CMD_ARG(connect, NULL, "<NetKeyIndex>", cmd_proxy_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, "<NetKeyIndex>", cmd_proxy_disconnect, 2, 0),
+
+#if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
+	SHELL_CMD_ARG(solicit, NULL, "<NetKeyIndex>",
+		      cmd_proxy_solicit, 2, 0),
+#endif
 #endif
 	SHELL_SUBCMD_SET_END);
 #endif /* CONFIG_BT_MESH_SHELL_GATT_PROXY */
