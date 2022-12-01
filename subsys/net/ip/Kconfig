@@ -743,7 +743,7 @@ config NET_PKT_BUF_DATA_SIZE
 	help
 	  This value tells what is the fixed size of each network buffer.
 
-config NET_BUF_DATA_POOL_SIZE
+config NET_PKT_BUF_DATA_POOL_SIZE
 	int "Size of the memory pool where buffers are allocated from"
 	default 4096 if NET_L2_ETHERNET
 	default 2048
