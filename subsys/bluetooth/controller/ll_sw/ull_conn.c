@@ -1144,6 +1144,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 #endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	/* Handle possibly pending NTF/complete */
 	ull_cp_tx_ntf(conn);
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
@@ -1158,13 +1159,13 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		nack = ctrl_rx(link, rx, pdu_rx, conn);
 		return nack;
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-		ARG_UNUSED(link);
 		ARG_UNUSED(pdu_rx);
-
-		ull_cp_rx(conn, *rx);
 
 		/* Mark buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
+
+		ull_cp_rx(conn, link, *rx);
+
 		return 0;
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	}
@@ -1555,6 +1556,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	/* Handle possibly pending NTF/complete */
 	ull_cp_tx_ntf(conn);
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 

@@ -153,7 +153,7 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Accept request */
 	ull_cp_cc_accept(&conn);
@@ -195,7 +195,15 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 		ut_rx_q_is_empty();
 	}
 
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
 	/* Emulate CIS becoming established */
+	ull_cp_cc_established(&conn, 0);
+
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -273,6 +281,9 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_reject)
 	ut_rx_node(NODE_CIS_REQUEST, &ntf, &cis_req);
 	ut_rx_q_is_empty();
 
+	/* Release Ntf */
+	release_ntf(ntf);
+
 	/* Decline request */
 	ull_cp_cc_reject(&conn, ERROR_CODE);
 
@@ -327,6 +338,10 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept_to)
 		.error_code = BT_HCI_ERR_CONN_ACCEPT_TIMEOUT,
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CIS_REQ
 	};
+	struct node_rx_conn_iso_estab cis_estab = {
+		.cis_handle = 0x00,
+		.status = BT_HCI_ERR_CONN_ACCEPT_TIMEOUT
+	};
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -347,6 +362,9 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept_to)
 	ut_rx_node(NODE_CIS_REQUEST, &ntf, &cis_req);
 	ut_rx_q_is_empty();
 
+	/* Release Ntf */
+	release_ntf(ntf);
+
 	/* Emulate that time passes real fast re. timeout */
 	conn.connect_accept_to = 0;
 
@@ -365,6 +383,13 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept_to)
 
 	/* Done */
 	event_done(&conn);
+
+	/* There should be excactly one host notification */
+	ut_rx_node(NODE_CIS_ESTABLISHED, &ntf, &cis_estab);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());

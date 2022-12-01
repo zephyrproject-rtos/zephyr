@@ -136,7 +136,7 @@ ZTEST(hci_fex, test_hci_feat_exchange_central_loc)
 			      "Wrong event count %d\n", conn_from_pool->lll.event_counter);
 
 		ull_cp_release_tx(conn_from_pool, tx);
-		ull_cp_release_ntf(ntf);
+		release_ntf(ntf);
 
 		ll_conn_release(conn_from_pool);
 	}
