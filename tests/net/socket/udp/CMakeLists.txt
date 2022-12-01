@@ -23,7 +23,7 @@ endfunction()
 
 math(EXPR
   ALL_TX_BUFS_SIZE
-  "${CONFIG_NET_BUF_TX_COUNT} * ${CONFIG_NET_BUF_DATA_SIZE}"
+  "${CONFIG_NET_PKT_BUF_TX_COUNT} * ${CONFIG_NET_BUF_DATA_SIZE}"
   OUTPUT_FORMAT DECIMAL)
 generate_c_string(string_all_tx_bufs.inc ${ALL_TX_BUFS_SIZE})
 

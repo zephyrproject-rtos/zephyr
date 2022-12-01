@@ -706,7 +706,7 @@ config NET_PKT_BUF_RX_COUNT
 	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data.
 
-config NET_BUF_TX_COUNT
+config NET_PKT_BUF_TX_COUNT
 	int "How many network buffers are allocated for sending data"
 	default 36 if NET_L2_ETHERNET
 	default 16

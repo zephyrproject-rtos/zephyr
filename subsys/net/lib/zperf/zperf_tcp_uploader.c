@@ -95,7 +95,7 @@ static int tcp_upload(int sock,
 	if (alloc_errors > 0) {
 		NET_WARN("There was %u network buffer allocation "
 			 "errors during send.\nConsider increasing the "
-			 "value of CONFIG_NET_BUF_TX_COUNT and\n"
+			 "value of CONFIG_NET_PKT_BUF_TX_COUNT and\n"
 			 "optionally CONFIG_NET_PKT_TX_COUNT Kconfig "
 			 "options.",
 			 alloc_errors);

@@ -44,7 +44,7 @@ BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
 /** RX descriptors count for main queue */
 #define MAIN_QUEUE_RX_DESC_COUNT        CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT
 /** TX descriptors count for main queue */
-#define MAIN_QUEUE_TX_DESC_COUNT        (CONFIG_NET_BUF_TX_COUNT + 1)
+#define MAIN_QUEUE_TX_DESC_COUNT        (CONFIG_NET_PKT_BUF_TX_COUNT + 1)
 
 /** RX/TX descriptors count for priority queues */
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
