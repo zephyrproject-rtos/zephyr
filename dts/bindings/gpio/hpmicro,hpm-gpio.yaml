@@ -1,0 +1,37 @@
+# Copyright (c) 2022 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+description: HPMicro GPIO node
+
+compatible: "hpmicro,hpm-gpio"
+
+include: [gpio-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  hpmicro-gpio-port:
+    type: int
+    description: |
+      GPIO Port Number
+      GPIOA (0UL)
+      GPIOB (1UL)
+      GPIOC (2UL)
+      GPIOD (3UL)
+      GPIOE (4UL)
+      GPIOF (5UL)
+      GPIOX (13UL)
+      GPIOY (14UL)
+      GPIOZ (15UL)
+    required: true
+
+  interrupts:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
