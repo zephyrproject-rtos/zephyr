@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(sbs_sbs_gauge);
 
 /** Run-time data used by the emulator */
 struct sbs_gauge_emul_data {
-	/* Stub */
+	uint16_t mfr_acc;
 };
 
 /** Static configuration for the emulator */
@@ -36,10 +36,13 @@ struct sbs_gauge_emul_cfg {
 
 static int emul_sbs_gauge_reg_write(const struct emul *target, int reg, int val)
 {
-	ARG_UNUSED(target);
+	struct sbs_gauge_emul_data *data = target->data;
 
 	LOG_INF("write %x = %x", reg, val);
 	switch (reg) {
+	case SBS_GAUGE_CMD_MANUFACTURER_ACCESS:
+		data->mfr_acc = val;
+		break;
 	default:
 		LOG_INF("Unknown write %x", reg);
 		return -EIO;
@@ -50,10 +53,12 @@ static int emul_sbs_gauge_reg_write(const struct emul *target, int reg, int val)
 
 static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 {
-	ARG_UNUSED(target);
+	struct sbs_gauge_emul_data *data = target->data;
 
 	switch (reg) {
 	case SBS_GAUGE_CMD_MANUFACTURER_ACCESS:
+		*val = data->mfr_acc;
+		break;
 	case SBS_GAUGE_CMD_VOLTAGE:
 	case SBS_GAUGE_CMD_AVG_CURRENT:
 	case SBS_GAUGE_CMD_TEMP:
