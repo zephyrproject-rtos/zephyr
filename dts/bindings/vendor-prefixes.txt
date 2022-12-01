@@ -263,6 +263,7 @@ honeywell	Honeywell
 hoperf	HOPERF Microelectronics Co. Ltd
 hoperun	Jiangsu HopeRun Software Co., Ltd.
 hp	Hewlett Packard
+hpmicro	HPMicro Semiconductor Co., Ltd.
 hsg	HannStar Display Co.
 holtek	Holtek Semiconductor, Inc.
 hugsun	Shenzhen Hugsun Technology Co. Ltd.
