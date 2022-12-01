@@ -1,0 +1,15 @@
+# Copyright (c) 2024 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_HPMICRO_D45
+	bool
+
+if SOC_FAMILY_HPMICRO_D45
+
+config SOC_FAMILY
+	string
+	default "hpmicro_d45"
+
+source "soc/riscv/hpmicro_d45/*/Kconfig.soc"
+
+endif # SOC_FAMILY_HPMICRO_D45

@@ -1,0 +1,42 @@
+# Copyright (c) 2022 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "HPMicro HPM6700_6400 SoC Selection"
+	depends on SOC_SERIES_HPM6750
+
+config SOC_HPM6750
+	bool "HPMicro HPM6750 SoC implementation"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select USE_HPMSDK_PDM
+	select USE_HPMSDK_PLLCTL
+	select USE_HPMSDK_PMP
+
+endchoice
+
+if SOC_SERIES_HPM6750
+
+choice
+prompt "FPU options"
+default SOC_HPMICRO_NO_FPU
+
+config SOC_HPMICRO_NO_FPU
+	bool "No FPU"
+
+config SOC_HPMICRO_SINGLE_PRECISION_FPU
+	bool "Single precision FPU"
+	select CPU_HAS_FPU
+
+config SOC_HPMICRO_DOUBLE_PRECISION_FPU
+	bool "Double precision FPU"
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+
+endchoice
+
+endif # SOC_SERIES_HPM6750

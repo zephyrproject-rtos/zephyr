@@ -1,0 +1,4 @@
+# Copyright (c) 2024 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/riscv/hpmicro_d45/*/Kconfig.defconfig.series"

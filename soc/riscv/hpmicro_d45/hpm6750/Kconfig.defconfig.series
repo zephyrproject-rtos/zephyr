@@ -1,0 +1,36 @@
+# Copyright (c) 2022 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_HPM6750
+
+source "soc/riscv/hpmicro_d45/hpm6750/Kconfig.defconfig.hpm6*"
+
+config SOC_SERIES
+	default "hpm6750"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 24000000
+
+config KERNEL_ENTRY
+	default "_start"
+
+config RISCV_GENERIC_TOOLCHAIN
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	default n
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config RISCV_HAS_PLIC
+	default y
+
+config RISCV_GP
+	default y
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 112
+
+config NUM_IRQS
+	default 128
+
+endif # SOC_SERIES_HPM6750
