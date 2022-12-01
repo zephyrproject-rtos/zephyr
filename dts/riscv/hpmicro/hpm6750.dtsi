@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2022 HPMicro
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: cpu@0 {
+			compatible = "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			status = "okay";
+			riscv,isa = "rv32imafdcxandes";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			CPU0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+			};
+		};
+		cpu1: cpu@1 {
+			compatible = "riscv";
+			device_type = "cpu";
+			reg = <1>;
+			status = "okay";
+			riscv,isa = "rv32imafdcxandes";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			CPU1_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+			};
+		};
+
+	};
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "hpmicro,hpm6750";
+		ranges;
+		mtimer: timer@e6000000 {
+			compatible = "andestech,machine-timer";
+			reg = <0xe6000000 0x10>;
+			interrupts-extended = <&CPU0_intc 7 &CPU1_intc 7>;
+		};
+
+		flash0: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 DT_SIZE_M(16)>;
+		};
+
+		ilm: memory@0 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0 DT_SIZE_K(256)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		dlm: memory@80000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x080000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		sram: memory@1080000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x01080000 DT_SIZE_K(1024)>;
+		};
+
+		core0_lm_slv: memory@1000000 {
+			device_type = "memory";
+			reg = <0x1000000 DT_SIZE_K(512)>;
+		};
+
+		core1_lm_slv: memory@1180000 {
+			device_type = "memory";
+			reg = <0x1180000 DT_SIZE_K(256)>;
+		};
+
+		noncache: memory@11c0000 {
+			device_type = "memory";
+			reg = <0x11c0000 DT_SIZE_K(256)>;
+		};
+
+		plic0: interrupt-controller@e4000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = <	0xe4000000 0x00001000
+				0xe4002000 0x00000800
+				0xe4200000 0x00010000 >;
+			reg-names = "prio", "irq_en", "reg";
+			riscv,max-priority = <255>;
+			riscv,ndev = <1023>;
+			interrupts-extended = <&CPU0_intc 0 &CPU1_intc 0>;
+		};
+
+		plic_sw0: interrupt-controller@e6400000 {
+			compatible = "andestech,plic_sw";
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = <0xe6400000 0x00400000>;
+			riscv,max-priority = <255>;
+			riscv,ndev = <1023>;
+			interrupts-extended = <&CPU0_intc 3 &CPU1_intc 3>;
+	};
+
+	};
+};
