@@ -171,27 +171,31 @@ static int cmd_vcp_vol_rend_init(const struct shell *sh, size_t argc,
 
 	memset(&vcp_register_param, 0, sizeof(vcp_register_param));
 
-	for (int i = 0; i < ARRAY_SIZE(vcp_register_param.vocs_param); i++) {
-		vcp_register_param.vocs_param[i].location_writable = true;
-		vcp_register_param.vocs_param[i].desc_writable = true;
-		snprintf(output_desc[i], sizeof(output_desc[i]),
-			 "Output %d", i + 1);
-		vcp_register_param.vocs_param[i].output_desc = output_desc[i];
-		vcp_register_param.vocs_param[i].cb = &vocs_cbs;
+	if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND_VOCS)) {
+		for (int i = 0; i < ARRAY_SIZE(vcp_register_param.vocs_param); i++) {
+			vcp_register_param.vocs_param[i].location_writable = true;
+			vcp_register_param.vocs_param[i].desc_writable = true;
+			snprintf(output_desc[i], sizeof(output_desc[i]),
+				"Output %d", i + 1);
+			vcp_register_param.vocs_param[i].output_desc = output_desc[i];
+			vcp_register_param.vocs_param[i].cb = &vocs_cbs;
+		}
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(vcp_register_param.aics_param); i++) {
-		vcp_register_param.aics_param[i].desc_writable = true;
-		snprintf(input_desc[i], sizeof(input_desc[i]),
-			 "Input %d", i + 1);
-		vcp_register_param.aics_param[i].description = input_desc[i];
-		vcp_register_param.aics_param[i].type = BT_AICS_INPUT_TYPE_UNSPECIFIED;
-		vcp_register_param.aics_param[i].status = true;
-		vcp_register_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
-		vcp_register_param.aics_param[i].units = 1;
-		vcp_register_param.aics_param[i].min_gain = -100;
-		vcp_register_param.aics_param[i].max_gain = 100;
-		vcp_register_param.aics_param[i].cb = &aics_cbs;
+	if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND_AICS)) {
+		for (int i = 0; i < ARRAY_SIZE(vcp_register_param.aics_param); i++) {
+			vcp_register_param.aics_param[i].desc_writable = true;
+			snprintf(input_desc[i], sizeof(input_desc[i]),
+				"Input %d", i + 1);
+			vcp_register_param.aics_param[i].description = input_desc[i];
+			vcp_register_param.aics_param[i].type = BT_AICS_INPUT_TYPE_UNSPECIFIED;
+			vcp_register_param.aics_param[i].status = true;
+			vcp_register_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
+			vcp_register_param.aics_param[i].units = 1;
+			vcp_register_param.aics_param[i].min_gain = -100;
+			vcp_register_param.aics_param[i].max_gain = 100;
+			vcp_register_param.aics_param[i].cb = &aics_cbs;
+		}
 	}
 
 	/* Default values */
@@ -379,6 +383,7 @@ static int cmd_vcp_vol_rend_mute(const struct shell *sh, size_t argc,
 	return result;
 }
 
+#if defined(CONFIG_BT_VCP_VOL_REND_VOCS)
 static int cmd_vcp_vol_rend_vocs_state_get(const struct shell *sh, size_t argc,
 					   char **argv)
 {
@@ -519,7 +524,9 @@ static int cmd_vcp_vol_rend_vocs_output_description_set(const struct shell *sh,
 
 	return result;
 }
+#endif /* CONFIG_BT_VCP_VOL_REND_VOCS */
 
+#if defined(CONFIG_BT_VCP_VOL_REND_AICS)
 static int cmd_vcp_vol_rend_aics_input_state_get(const struct shell *sh,
 						 size_t argc, char **argv)
 {
@@ -750,6 +757,7 @@ static int cmd_vcp_vol_rend_aics_input_description_set(const struct shell *sh,
 
 	return result;
 }
+#endif /* CONFIG_BT_VCP_VOL_REND_AICS */
 
 static int cmd_vcp_vol_rend(const struct shell *sh, size_t argc, char **argv)
 {
@@ -799,6 +807,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(vcp_vol_rend_cmds,
 	SHELL_CMD_ARG(step, NULL,
 		      "Set step size",
 		      cmd_vcp_vol_rend_volume_step, 2, 0),
+#if defined(CONFIG_BT_VCP_VOL_REND_VOCS)
 	SHELL_CMD_ARG(vocs_state_get, NULL,
 		      "Get the offset state of a VOCS instance <inst_index>",
 		      cmd_vcp_vol_rend_vocs_state_get, 2, 0),
@@ -821,6 +830,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(vcp_vol_rend_cmds,
 		      "Set the output description of a VOCS instance "
 		      "<inst_index> <description>",
 		      cmd_vcp_vol_rend_vocs_output_description_set, 3, 0),
+#endif /* CONFIG_BT_VCP_VOL_REND_VOCS */
+#if defined(CONFIG_BT_VCP_VOL_REND_AICS)
 	SHELL_CMD_ARG(aics_input_state_get, NULL,
 		      "Get the input state of a AICS instance <inst_index>",
 		      cmd_vcp_vol_rend_aics_input_state_get, 2, 0),
@@ -859,6 +870,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(vcp_vol_rend_cmds,
 		      "Set the input description of a AICS instance "
 		      "<inst_index> <description>",
 		      cmd_vcp_vol_rend_aics_input_description_set, 3, 0),
+#endif /* CONFIG_BT_VCP_VOL_REND_AICS */
 	SHELL_SUBCMD_SET_END
 );
 
