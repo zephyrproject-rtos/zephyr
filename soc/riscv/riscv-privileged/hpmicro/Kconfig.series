@@ -1,0 +1,10 @@
+# Copyright (c) 2022 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HPMICRO
+	bool "HPMicro HPM6700_6400 Series"
+	select RISCV
+	select SOC_FAMILY_RISCV_PRIVILEGED
+	select HAS_HPMICRO_HAL
+	help
+	  Enable support for HPMicro HPM6700_6400 series SoC
