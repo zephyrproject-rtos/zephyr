@@ -41,11 +41,6 @@ __subsystem struct regulator_driver_api {
 				 int32_t max_ua);
 	int (*get_current_limit)(const struct device *dev);
 	int (*set_mode)(const struct device *dev, uint32_t mode);
-	int (*set_mode_voltage)(const struct device *dev, uint32_t mode,
-				int32_t min_uv, int32_t max_uv);
-	int32_t (*get_mode_voltage)(const struct device *dev, uint32_t mode);
-	int (*mode_disable)(const struct device *dev, uint32_t mode);
-	int (*mode_enable)(const struct device *dev, uint32_t mode);
 };
 
 /**
@@ -285,105 +280,6 @@ static inline int regulator_set_mode(const struct device *dev, uint32_t mode)
 	}
 
 	return api->set_mode(dev, mode);
-}
-
-/**
- * @brief Set target voltage for a regulator mode.
- *
- * @note Mode does not need to be the active mode. The regulator can be switched
- * to that mode with regulator_set_mode().
- *
- * @param dev Regulator device instance.
- * @param mode Regulator mode.
- * @param min_uv Minimum acceptable voltage in microvolts.
- * @param max_uv Maximum acceptable voltage in microvolts.
- *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
- */
-static inline int regulator_set_mode_voltage(const struct device *dev,
-					     uint32_t mode, int32_t min_uv,
-					     int32_t max_uv)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	if (api->set_mode_voltage == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_mode_voltage(dev, mode, min_uv, max_uv);
-}
-
-/**
- * @brief Get target voltage for a regulator mode
- *
- * This API can be used to read voltages from a regulator mode other than the
- * default. The given mode does not need to be active.
- *
- * @param dev Regulator device instance.
- * @param mode Regulator mode.
- *
- * @return Voltage level in microvolts.
- */
-static inline int32_t regulator_get_mode_voltage(const struct device *dev,
-						 uint32_t mode)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	if (api->get_mode_voltage == NULL) {
-		return 0;
-	}
-
-	return api->get_mode_voltage(dev, mode);
-}
-
-/**
- * @brief Disable regulator for a given mode.
- *
- * @param dev Regulator device instance.
- * @param mode Regulator mode.
- *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
- */
-static inline int regulator_mode_disable(const struct device *dev,
-					 uint32_t mode)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	if (api->mode_disable == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->mode_disable(dev, mode);
-}
-
-/**
- * @brief Enable regulator for a given mode.
- *
- * @param dev Regulator device instance.
- * @param mode Regulator mode.
- *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
- */
-static inline int regulator_mode_enable(const struct device *dev,
-					uint32_t mode)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	if (api->mode_enable == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->mode_enable(dev, mode);
 }
 
 #ifdef __cplusplus
