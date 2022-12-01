@@ -824,13 +824,11 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	switch (pdu_rx->ll_id) {
 	case PDU_DATA_LLID_CTRL:
 	{
-		ARG_UNUSED(link);
-		ARG_UNUSED(pdu_rx);
-
-		ull_cp_rx(conn, *rx);
-
 		/* Mark buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
+
+		ull_cp_rx(conn, link, *rx);
+
 		return 0;
 	}
 

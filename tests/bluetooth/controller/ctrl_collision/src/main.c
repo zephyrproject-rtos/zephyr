@@ -309,7 +309,7 @@ ZTEST(collision, test_phy_update_central_loc_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
@@ -430,7 +430,7 @@ ZTEST(collision, test_phy_update_central_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -481,7 +481,7 @@ ZTEST(collision, test_phy_update_central_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
@@ -551,13 +551,19 @@ ZTEST(collision, test_phy_update_periph_loc_collision)
 	/* Done */
 	event_done(&conn);
 
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
 	/* There should be one host notification */
 	pu.status = BT_HCI_ERR_LL_PROC_COLLISION;
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -605,7 +611,7 @@ ZTEST(collision, test_phy_update_periph_loc_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
@@ -744,7 +750,7 @@ ZTEST(collision, test_phy_conn_update_central_loc_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }

@@ -42,4 +42,5 @@ void ut_rx_node_real(const char *file, uint32_t line, enum helper_node_opcode op
 		     struct node_rx_pdu **ntf_ref, void *param);
 void ut_rx_q_is_empty_real(const char *file, uint32_t line);
 
+void release_ntf(struct node_rx_pdu *ntf);
 void encode_pdu(enum helper_pdu_opcode opcode, struct pdu_data *pdu, void *param);

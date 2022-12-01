@@ -190,7 +190,7 @@ struct proc_ctx *llcp_rr_peek(struct ll_conn *conn)
 
 bool llcp_rr_ispaused(struct ll_conn *conn)
 {
-	return conn->llcp.remote.pause == 1U;
+	return (conn->llcp.remote.pause == 1U);
 }
 
 void llcp_rr_pause(struct ll_conn *conn)
@@ -213,8 +213,13 @@ void llcp_rr_prt_stop(struct ll_conn *conn)
 	conn->llcp.remote.prt_expire = 0U;
 }
 
-void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
+		struct node_rx_pdu *rx)
 {
+	/* Store RX node and link */
+	ctx->node_ref.rx = rx;
+	ctx->node_ref.link = link;
+
 	switch (ctx->proc) {
 	case PROC_UNKNOWN:
 		/* Do nothing */
@@ -319,17 +324,15 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		break;
 	}
 
+	/* Clear TX node reference */
+	ctx->node_ref.tx_ack = NULL;
+
 	llcp_rr_check_done(conn, ctx);
 }
 
 void llcp_rr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	switch (ctx->proc) {
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	case PROC_DATA_LENGTH_UPDATE:
-		/* llcp_rp_comm_tx_ntf(conn, ctx); */
-		break;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		llcp_rp_pu_tx_ntf(conn, ctx);
@@ -859,7 +862,7 @@ static const struct proc_role new_proc_lut[] = {
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 };
 
-void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu)
+void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx, bool valid_pdu)
 {
 	struct proc_ctx *ctx;
 	struct pdu_data *pdu;
@@ -898,7 +901,7 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu)
 	/* Handle PDU */
 	ctx = llcp_rr_peek(conn);
 	if (ctx) {
-		llcp_rr_rx(conn, ctx, rx);
+		llcp_rr_rx(conn, ctx, link, rx);
 	}
 }
 

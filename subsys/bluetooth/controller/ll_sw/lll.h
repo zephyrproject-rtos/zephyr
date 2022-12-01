@@ -316,6 +316,8 @@ enum node_rx_type {
 	NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT,
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_ULL_RELEASE,
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE,
+	/* Signals retention (ie non-release) of rx node */
+	NODE_RX_TYPE_RETAIN,
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	/* No entries shall be added after the NODE_RX_TYPE_USER_START/END */
