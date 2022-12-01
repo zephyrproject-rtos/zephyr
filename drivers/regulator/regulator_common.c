@@ -63,3 +63,21 @@ int regulator_disable(const struct device *dev)
 
 	return ret;
 }
+
+bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
+				    int32_t max_uv)
+{
+	unsigned int volt_cnt = regulator_count_voltages(dev);
+
+	for (unsigned int idx = 0U; idx < volt_cnt; idx++) {
+		int32_t volt_uv;
+
+		(void)regulator_list_voltage(dev, idx, &volt_uv);
+
+		if ((volt_uv > min_uv) && (volt_uv < max_uv)) {
+			return true;
+		}
+	}
+
+	return false;
+}
