@@ -662,4 +662,112 @@ ZTEST(lib_json_test, test_json_encode_bounds_check)
 	zassert_equal(ret, -ENOMEM, "Bounds check failed");
 }
 
+ZTEST(lib_json_test, test_large_descriptor)
+{
+	struct large_struct {
+		int int0;
+		int int1;
+		int int2;
+		int int3;
+		int int4;
+		int int5;
+		int int6;
+		int int7;
+		int int8;
+		int int9;
+		int int10;
+		int int11;
+		int int12;
+		int int13;
+		int int14;
+		int int15;
+		int int16;
+		int int17;
+		int int18;
+		int int19;
+		int int20;
+		int int21;
+		int int22;
+		int int23;
+		int int24;
+		int int25;
+		int int26;
+		int int27;
+		int int28;
+		int int29;
+		int int30;
+		int int31;
+		int int32;
+		int int33;
+		int int34;
+		int int35;
+		int int36;
+		int int37;
+		int int38;
+		int int39;
+	};
+
+	static const struct json_obj_descr large_descr[] = {
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int0, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int1, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int2, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int3, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int4, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int5, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int6, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int7, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int8, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int9, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int10, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int11, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int12, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int13, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int14, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int15, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int16, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int17, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int18, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int19, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int20, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int21, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int22, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int23, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int24, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int25, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int26, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int27, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int28, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int29, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int30, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int31, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int32, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int33, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int34, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int35, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int36, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int37, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int38, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM(struct large_struct, int39, JSON_TOK_NUMBER),
+	};
+	char encoded[] = "{"
+		"\"int1\": 1,"
+		"\"int21\": 21,"
+		"\"int31\": 31,"
+		"\"int39\": 39"
+		"}";
+
+	struct large_struct ls;
+
+	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, large_descr,
+				     ARRAY_SIZE(large_descr), &ls);
+
+	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret & ((int64_t)1 << 2), "Field int2 erroneously decoded");
+	zassert_false(ret & ((int64_t)1 << 35), "Field int35 erroneously decoded");
+	zassert_true(ret & ((int64_t)1 << 1), "Field int1 not decoded");
+	zassert_true(ret & ((int64_t)1 << 21), "Field int21 not decoded");
+	zassert_true(ret & ((int64_t)1 << 31), "Field int31 not decoded");
+	zassert_true(ret & ((int64_t)1 << 39), "Field int39 not decoded");
+}
+
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);
