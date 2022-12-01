@@ -391,13 +391,6 @@ void test_encryption_start_central_loc_limited_memory(void)
 	/* Dummy remove, as above loop might queue up ctx */
 	llcp_tx_alloc_unpeek(ctx);
 
-	/* Steal all ntf buffers */
-	while (ll_pdu_rx_alloc_peek(1)) {
-		ntf = ll_pdu_rx_alloc();
-		/* Make sure we use a correct type or the release won't work */
-		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
-	}
-
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
@@ -476,26 +469,6 @@ void test_encryption_start_central_loc_limited_memory(void)
 
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
-
-	/* Done */
-	event_done(&conn);
-
-	/* Check state */
-	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
-	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
-
-	/* There should be no host notifications */
-	ut_rx_q_is_empty();
-
-	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
-
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* Check state */
-	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
-	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
 
 	/* Done */
 	event_done(&conn);
@@ -1378,13 +1351,6 @@ void test_encryption_start_periph_rem_limited_memory(void)
 	/* Dummy remove, as above loop might queue up ctx */
 	llcp_tx_alloc_unpeek(ctx);
 
-	/* Steal all ntf buffers */
-	while (ll_pdu_rx_alloc_peek(1)) {
-		ntf = ll_pdu_rx_alloc();
-		/* Make sure we use a correct type or the release won't work */
-		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
-	}
-
 	/* Check state */
 	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
 	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
@@ -1423,29 +1389,12 @@ void test_encryption_start_periph_rem_limited_memory(void)
 	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
 	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
-	/* Done */
-	event_done(&conn);
-
-	/* Check state */
-	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
-	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
-
-	/* There should not be a host notification */
+	/* There should be one host notification */
+	ut_rx_pdu(LL_ENC_REQ, &ntf, &enc_req);
 	ut_rx_q_is_empty();
 
 	/* Release ntf */
 	ull_cp_release_ntf(ntf);
-
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* Check state */
-	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
-	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
-
-	/* There should be one host notification */
-	ut_rx_pdu(LL_ENC_REQ, &ntf, &enc_req);
-	ut_rx_q_is_empty();
 
 	/* Done */
 	event_done(&conn);
@@ -1522,18 +1471,12 @@ void test_encryption_start_periph_rem_limited_memory(void)
 	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
 	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
-	/* There should not be a host notification */
-	ut_rx_q_is_empty();
-
-	/* Release ntf */
-	ull_cp_release_ntf(ntf);
-
-	/* Prepare */
-	event_prepare(&conn);
-
 	/* There should be one host notification */
 	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
 	ut_rx_q_is_empty();
+
+	/* Prepare */
+	event_prepare(&conn);
 
 	/* Tx Queue should not have a LL Control PDU */
 	lt_rx_q_is_empty(&conn);

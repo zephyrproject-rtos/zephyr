@@ -293,7 +293,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 	ctx->collision = 0U;
 	ctx->done = 0U;
 	ctx->rx_greedy = 0U;
-	ctx->tx_ack = NULL;
+	ctx->node_ref.tx_ack = NULL;
 
 	/* Clear procedure data */
 	memset((void *)&ctx->data, 0, sizeof(ctx->data));
@@ -1613,13 +1613,13 @@ void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
-	if (ctx && ctx->tx_ack == tx) {
+	if (ctx && ctx->node_ref.tx_ack == tx) {
 		/* TX ack re. local request */
 		llcp_lr_tx_ack(conn, ctx, tx);
 	}
 
 	ctx = llcp_rr_peek(conn);
-	if (ctx && ctx->tx_ack == tx) {
+	if (ctx && ctx->node_ref.tx_ack == tx) {
 		/* TX ack re. remote response */
 		llcp_rr_tx_ack(conn, ctx, tx);
 	}

@@ -156,9 +156,12 @@ struct proc_ctx {
 	enum llcp_wait_reason wait_reason;
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-	/* TX node awaiting ack */
-	struct node_tx *tx_ack;
-
+	union {
+		/* TX node awaiting ack */
+		struct node_tx *tx_ack;
+		/* current RX node */
+		struct node_rx_pdu *rx;
+	} node_ref;
 	/*
 	 * This flag is set to 1 when we are finished with the control
 	 * procedure and it is safe to release the context ctx

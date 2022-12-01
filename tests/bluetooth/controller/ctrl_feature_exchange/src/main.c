@@ -426,13 +426,6 @@ void test_peripheral_feat_exchange_periph_loc(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Steal all ntf buffers, so as to check that the wait_ntf mechanism works */
-	while (ll_pdu_rx_alloc_peek(1)) {
-		ntf = ll_pdu_rx_alloc();
-		/* Make sure we use a correct type or the release won't work */
-		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
-	}
-
 	/* Initiate a Feature Exchange Procedure */
 	err = ull_cp_feature_exchange(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
@@ -447,19 +440,11 @@ void test_peripheral_feat_exchange_periph_loc(void)
 
 	event_done(&conn);
 
-	ut_rx_q_is_empty();
-
-	/* Release Ntf, so next cycle will generate NTF and complete procedure */
-	ull_cp_release_ntf(ntf);
-
-	event_prepare(&conn);
-	event_done(&conn);
-
 	/* There should be one host notification */
-
 	ut_rx_pdu(LL_FEATURE_RSP, &ntf, &remote_feature_rsp);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n",
+
+	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n",
 		      conn.lll.event_counter);
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
@@ -485,15 +470,7 @@ void test_feat_exchange_periph_loc_unknown_rsp(void)
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Steal all ntf buffers, so as to check that the wait_ntf mechanism works */
-	while (ll_pdu_rx_alloc_peek(1)) {
-		ntf = ll_pdu_rx_alloc();
-		/* Make sure we use a correct type or the release won't work */
-		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
-	}
-
 	/* Initiate a Feature Exchange Procedure */
-
 	event_prepare(&conn);
 	err = ull_cp_feature_exchange(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
@@ -511,17 +488,9 @@ void test_feat_exchange_periph_loc_unknown_rsp(void)
 
 	event_done(&conn);
 
-	ut_rx_q_is_empty();
-
-	/* Release Ntf, so next cycle will generate NTF and complete procedure */
-	ull_cp_release_ntf(ntf);
-
-	event_prepare(&conn);
-	event_done(&conn);
-
 	ut_rx_pdu(LL_UNKNOWN_RSP, &ntf, &unknown_rsp);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 3, "Wrong event-count %d\n",
+	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n",
 		      conn.lll.event_counter);
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());

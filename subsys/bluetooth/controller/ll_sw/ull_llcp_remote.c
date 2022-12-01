@@ -213,6 +213,9 @@ void llcp_rr_prt_stop(struct ll_conn *conn)
 
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
+	/* Store RX node */
+	ctx->node_ref.rx = rx;
+
 	switch (ctx->proc) {
 	case PROC_UNKNOWN:
 		/* Do nothing */

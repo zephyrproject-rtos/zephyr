@@ -1133,10 +1133,11 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		ARG_UNUSED(link);
 		ARG_UNUSED(pdu_rx);
 
-		ull_cp_rx(conn, *rx);
-
 		/* Mark buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
+
+		ull_cp_rx(conn, *rx);
+
 		return 0;
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	}

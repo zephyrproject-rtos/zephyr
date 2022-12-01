@@ -395,7 +395,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	}
 
 	/* Always 'request' the ACK signal */
-	ctx->tx_ack = tx;
+	ctx->node_ref.tx_ack = tx;
 	ctx->tx_opcode = pdu->llctrl.opcode;
 
 	/* Enqueue LL Control PDU towards LLL */
@@ -921,7 +921,7 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		LL_ASSERT(0);
 	}
 
-	ctx->tx_ack = tx;
+	ctx->node_ref.tx_ack = tx;
 	ctx->tx_opcode = pdu->llctrl.opcode;
 
 	/* Enqueue LL Control PDU towards LLL */

@@ -199,6 +199,9 @@ void llcp_lr_prt_stop(struct ll_conn *conn)
 
 void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
+	/* Store RX node */
+	ctx->node_ref.rx = rx;
+
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:

@@ -38,6 +38,7 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_conn_types.h"
 
+#include "ull_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_llcp_internal.h"
 #include "ull_llcp.h"
@@ -358,8 +359,20 @@ void event_done(struct ll_conn *conn)
 	ull_cp_tx_ntf(conn);
 
 	while ((rx = (struct node_rx_pdu *)sys_slist_get(&lt_tx_q))) {
+
+		/* Mark buffer for release */
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
+
 		ull_cp_rx(conn, rx);
-		free(rx);
+
+
+		if (rx->hdr.type == NODE_RX_TYPE_RELEASE) {
+			/* Only release if node was not hi-jacked by LLCP */
+			free(rx);
+		} else {
+			/* Otherwise put/sched to emulate ull_cp_rx return path */
+			ll_rx_put_sched(rx->hdr.link, rx);
+		}
 	}
 }
 
