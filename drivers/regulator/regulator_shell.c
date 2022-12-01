@@ -56,6 +56,7 @@ static int cmd_reg_dis(const struct shell *sh, size_t argc, char **argv)
 static int cmd_set_vol(const struct shell *sh, size_t argc, char **argv)
 {
 	int lvol, uvol, ret;
+	int32_t volt_uv;
 	const struct device *reg_dev;
 
 	reg_dev = device_get_binding(argv[1]);
@@ -72,12 +73,12 @@ static int cmd_set_vol(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "failed to set voltage, error %d", ret);
 		return ret;
 	}
-	ret = regulator_get_voltage(reg_dev);
+	ret = regulator_get_voltage(reg_dev, &volt_uv);
 	if (ret < 0) {
 		shell_error(sh, "failed to read voltage, error %d", ret);
 		return ret;
 	}
-	shell_print(sh, "set voltage to %d uV", ret);
+	shell_print(sh, "set voltage to %d uV", volt_uv);
 	return 0;
 }
 
