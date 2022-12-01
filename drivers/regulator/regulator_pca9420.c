@@ -327,9 +327,16 @@ static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
 	struct regulator_pca9420_common_data *cdata = config->parent->data;
 	int ret;
 
-	if (cconfig->enable_modesel_pins ||
-	    !regulator_pca9420_is_mode_allowed(dev, mode)) {
+	if (!regulator_pca9420_is_mode_allowed(dev, mode)) {
 		return -ENOTSUP;
+	}
+
+	/* change mode, to allow configuring voltage, but return -EPERM to
+	 * indicate we are not really changing mode, as it is managed externally
+	 */
+	if (cconfig->enable_modesel_pins) {
+		cdata->mode = mode;
+		return -EPERM;
 	}
 
 	ret = i2c_reg_update_byte_dt(&cconfig->i2c, PCA9420_TOP_CNTL3,
