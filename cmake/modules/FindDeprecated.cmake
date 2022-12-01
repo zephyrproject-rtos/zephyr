@@ -78,18 +78,19 @@ if("XTOOLS" IN_LIST Deprecated_FIND_COMPONENTS)
                       "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'zephyr'")
 endif()
 
-if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
-  message(STATUS "The following deprecated component(s) could not be found: "
-                 "${Deprecated_FIND_COMPONENTS}")
-endif()
-
 if("SOURCES" IN_LIST Deprecated_FIND_COMPONENTS)
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS SOURCES)
   if(SOURCES)
     message(DEPRECATION
         "Setting SOURCES prior to calling find_package() for unit tests is deprecated."
         " To add sources after find_package() use:\n"
         "    target_sources(testbinary PRIVATE <source-file.c>)")
   endif()
+endif()
+
+if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
+  message(STATUS "The following deprecated component(s) could not be found: "
+                 "${Deprecated_FIND_COMPONENTS}")
 endif()
 
 set(Deprecated_FOUND True)
