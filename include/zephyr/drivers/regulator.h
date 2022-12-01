@@ -34,8 +34,6 @@ __subsystem struct regulator_driver_api {
 	unsigned int (*count_voltages)(const struct device *dev);
 	int (*list_voltage)(const struct device *dev, unsigned int idx,
 			    int32_t *volt_uv);
-	int (*is_supported_voltage)(const struct device *dev, int32_t min_uv,
-				    int32_t max_uv);
 	int (*set_voltage)(const struct device *dev, int32_t min_uv,
 			   int32_t max_uv);
 	int32_t (*get_voltage)(const struct device *dev);
@@ -157,28 +155,17 @@ static inline int regulator_list_voltage(const struct device *dev,
 }
 
 /**
- * @brief Check if a voltage range is supported.
+ * @brief Check if a voltage within a window is supported.
  *
  * @param dev Regulator device instance.
  * @param min_uv Minimum voltage in microvolts.
  * @param max_uv maximum voltage in microvolts.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @retval true If voltage is supported.
+ * @retval false If voltage is not supported.
  */
-static inline int regulator_is_supported_voltage(const struct device *dev,
-						 int32_t min_uv, int32_t max_uv)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	if (api->is_supported_voltage == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->is_supported_voltage(dev, min_uv, max_uv);
-}
+bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
+				    int32_t max_uv);
 
 /**
  * @brief Set output voltage.

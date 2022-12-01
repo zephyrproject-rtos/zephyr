@@ -188,10 +188,6 @@ static const struct regulator_pca9420_desc ldo2_desc = {
 	.num_ranges = ARRAY_SIZE(ldo2_ranges),
 };
 
-static int regulator_pca9420_is_supported_voltage(const struct device *dev,
-						  int32_t min_uv,
-						  int32_t max_uv);
-
 static bool regulator_pca9420_is_mode_allowed(const struct device *dev,
 					      uint8_t mode)
 {
@@ -279,22 +275,6 @@ static int regulator_pca9420_list_voltage(const struct device *dev,
 	return linear_range_group_get_value(config->desc->ranges,
 					    config->desc->num_ranges, idx,
 					    volt_uv);
-}
-
-/**
- * Part of the extended regulator consumer API
- * Returns true if the regulator supports a voltage in the given range.
- */
-static int regulator_pca9420_is_supported_voltage(const struct device *dev,
-						  int32_t min_uv,
-						  int32_t max_uv)
-{
-	const struct regulator_pca9420_config *config = dev->config;
-	uint16_t idx;
-
-	return linear_range_group_get_win_index(config->desc->ranges,
-						config->desc->num_ranges,
-						min_uv, max_uv, &idx);
 }
 
 /**
@@ -528,7 +508,6 @@ static const struct regulator_driver_api api = {
 	.disable = regulator_pca9420_disable,
 	.count_voltages = regulator_pca9420_count_voltages,
 	.list_voltage = regulator_pca9420_list_voltage,
-	.is_supported_voltage = regulator_pca9420_is_supported_voltage,
 	.set_voltage = regulator_pca9420_set_voltage,
 	.get_voltage = regulator_pca9420_get_voltage,
 	.get_current_limit = regulator_pca9420_get_current_limit,
