@@ -92,6 +92,7 @@ def insert_compile_commands_data(cur, board_test_id, compile_commands):
     print(f"inserting {len(rows)} board test file rows for board {board_test_id}")
     cur.executemany("INSERT OR IGNORE INTO board_test_file VALUES(?, ?)", rows)
 
+
 def insert_kconfig(cur, kconfig):
     cur.execute("INSERT OR IGNORE INTO kconfig(config) VALUES(?) RETURNING id;", (config))
     row = cur.fetchone()
@@ -103,6 +104,18 @@ def insert_kconfig(cur, kconfig):
         row = cur.fetchone()
         (config_id, ) = row
         return config_id
+
+def insert_symbol(cur, symbol):
+    print(f"symbol {symbol}, type {type(symbol)}")
+    cur.execute("INSERT OR IGNORE INTO symbol(symbol) VALUES(?);", [(symbol)])
+
+def insert_symbol_selects(cur, symbol, sels):
+    rows = [(symbol, sel) for sel in sels]
+    cur.executemany("INSERT OR IGNORE INTO symbol_selects(symbol, selects) VALUES(?, ?);", rows)
+
+def insert_symbol_depends(cur, symbol, deps):
+    rows = [(symbol, dep) for dep in deps]
+    cur.executemany("INSERT OR IGNORE INTO symbol_depends_on(symbol, depends_on) VALUES(?, ?);", rows)
 
 def process(sqlite_db, path):
     conn = sqlite3.connect(sqlite_db)
@@ -162,7 +175,7 @@ def flatten(list_of_lists):
         return flatten(list_of_lists[0]) + flatten(list_of_lists[1:])
     return list_of_lists[:1] + flatten(list_of_lists[1:])
 
-def insert_kconfig(conn):
+def parse_kconfig(conn):
     ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
     if not ZEPHYR_BASE:
         ZEPHYR_BASE = str(Path(__file__).resolve().parents[1])
@@ -207,6 +220,9 @@ def insert_kconfig(conn):
                 print(f"can't handle selects type {type(item.selects)}")
 
             print(f'''symbol name: {symbol_name}, direct dep {symbol_deps}, selects {symbol_selects}''')
+            insert_symbol(cur, symbol_name)
+            insert_symbol_selects(cur, symbol_name, symbol_selects)
+            insert_symbol_depends(cur, symbol_name, symbol_deps)
         elif isinstance(node.item, Choice):
             symbol_name = item.name
             symbol_deps = []
@@ -214,6 +230,7 @@ def insert_kconfig(conn):
         else:
             print(f"unknown node item type {type(node.item)}")
 
+    conn.commit()
     return kconf
 
 
@@ -228,10 +245,11 @@ def main():
     conn = sqlite3.connect(args.sqlite_db)
 
     cur = conn.cursor()
-    cur.execute('''CREATE TABLE IF NOT EXISTS symbol_depends_on(config TEXT NOT NULL, depends_on TEXT
-                NOT NULL, UNIQUE (config, depends_on))''')
-    cur.execute('''CREATE TABLE IF NOT EXISTS symbol_selects(config TEXT NOT NULL, selects TEXT
-                NOT NULL, UNIQUE (config, selects))''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS symbol(symbol TEXT NOT NULL, UNIQUE (symbol))''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS symbol_depends_on(symbol TEXT NOT NULL, depends_on TEXT
+                NOT NULL, UNIQUE (symbol, depends_on))''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS symbol_selects(symbol TEXT NOT NULL, selects TEXT
+                NOT NULL, UNIQUE (symbol, selects))''')
     cur.execute('''CREATE TABLE IF NOT EXISTS board_test(id INTEGER PRIMARY KEY, board TEXT NOT
                 NULL, test TEXT NOT NULL, UNIQUE (board, test))''')
     cur.execute('''CREATE TABLE IF NOT EXISTS board_test_compatible(board_test_id integer,
@@ -242,7 +260,7 @@ def main():
                 UNIQUE(board_test_id, file))''')
     conn.commit()
 
-    insert_kconfig(conn)
+    parse_kconfig(conn)
 
     if args.no_concurrency:
         for path in test_paths(args.twister_out):
