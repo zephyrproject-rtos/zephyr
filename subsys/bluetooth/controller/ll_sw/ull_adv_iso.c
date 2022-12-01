@@ -465,15 +465,25 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	}
 
 	/* Based on packing requested, sequential or interleaved */
-	if (packing) {
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+	} else if (packing) {
 		/* Interleaved Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
 					    lll_adv_iso->num_bis;
-	} else {
+#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
+	} else if (true) {
 		/* Sequential Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
-					lll_adv_iso->nse;
+					   lll_adv_iso->nse;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
+
+	} else {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	/* TODO: Group count, GC = NSE / BN; PTO = GC - IRC;
@@ -1200,11 +1210,26 @@ static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max)
 	 */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO_RESERVE_MAX) || max) {
+		/* Maximum time reservation for both sequential and interleaved
+		 * packing.
+		 */
 		time_us = (pdu_spacing * lll_iso->nse * lll_iso->num_bis) +
 			  ctrl_spacing;
-	} else {
+
+	} else if (lll_iso->bis_spacing >=
+		   (lll_iso->sub_interval * lll_iso->nse)) {
+		/* Time reservation omitting PTC subevents in sequetial
+		 * packing.
+		 */
 		time_us = pdu_spacing * ((lll_iso->nse * lll_iso->num_bis) -
 					 lll_iso->ptc);
+
+	} else {
+		/* Time reservation omitting PTC subevents in interleaved
+		 * packing.
+		 */
+		time_us = pdu_spacing * ((lll_iso->nse - lll_iso->ptc) *
+					 lll_iso->num_bis);
 	}
 
 	/* Add implementation defined radio event overheads */
