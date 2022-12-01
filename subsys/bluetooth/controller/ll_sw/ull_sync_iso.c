@@ -147,7 +147,8 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	}
 
 	/* Check if free BISes available */
-	if (mem_free_count_get(stream_free) < num_bis) {
+	if ((num_bis > BT_CTLR_SYNC_ISO_STREAM_MAX) ||
+	    (mem_free_count_get(stream_free) < num_bis)) {
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
@@ -566,10 +567,15 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	sync_iso_offset_us += PDU_BIG_INFO_OFFS_GET(bi) *
 			      lll->window_size_event_us;
 	/* Skip to first selected BIS subevent */
-	/* FIXME: add support for interleaved packing */
 	stream = ull_sync_iso_stream_get(lll->stream_handle[0]);
-	sync_iso_offset_us += (stream->bis_index - 1U) * lll->sub_interval *
-			      ((lll->irc * lll->bn) + lll->ptc);
+	if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
+		sync_iso_offset_us += (stream->bis_index - 1U) *
+				      lll->sub_interval *
+				      ((lll->irc * lll->bn) + lll->ptc);
+	} else {
+		sync_iso_offset_us += (stream->bis_index - 1U) *
+				      lll->bis_spacing;
+	}
 	sync_iso_offset_us -= PDU_AC_US(pdu->len, sync_iso->sync->lll.phy,
 					ftr->phy_flags);
 	sync_iso_offset_us -= EVENT_TICKER_RES_MARGIN_US;
