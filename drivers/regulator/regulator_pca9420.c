@@ -308,16 +308,19 @@ static int regulator_pca9420_get_voltage(const struct device *dev,
  * Part of the extended regulator consumer API
  * Gets the set current limit for the regulator
  */
-static int regulator_pca9420_get_current_limit(const struct device *dev)
+static int regulator_pca9420_get_current_limit(const struct device *dev,
+					       int32_t *curr_ua)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
 
 	if (cconfig->vin_ilim_ua == 0U) {
-		return config->max_ua;
+		*curr_ua = config->max_ua;
+	} else {
+		*curr_ua = MIN(config->max_ua, cconfig->vin_ilim_ua);
 	}
 
-	return MIN(config->max_ua, cconfig->vin_ilim_ua);
+	return 0;
 }
 
 static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
