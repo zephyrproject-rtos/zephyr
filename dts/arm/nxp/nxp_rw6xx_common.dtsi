@@ -362,7 +362,6 @@
 		};
 	};
 
-
 	gau {
 		ranges = <>;
 		#address-cells = <1>;
@@ -391,6 +390,13 @@
 			status = "disabled";
 			#io-channel-cells = <0>;
 		};
+	};
+
+	os_timer: timers@13b000 {
+		compatible = "nxp,os-timer";
+		reg = <0x13b000 0x1000>;
+		interrupts = <41 0>;
+		status = "disabled";
 	};
 };
 
