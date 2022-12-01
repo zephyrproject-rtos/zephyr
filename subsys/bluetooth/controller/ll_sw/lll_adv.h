@@ -18,6 +18,17 @@ struct lll_adv_iso_stream {
 	uint16_t pkt_seq_num;
 };
 
+struct lll_adv_iso_data_chan {
+	uint16_t prn_s;
+	uint16_t remap_idx;
+};
+
+struct lll_adv_iso_data_chan_interleaved {
+	uint16_t prn_s;
+	uint16_t remap_idx;
+	uint16_t id;
+};
+
 struct lll_adv_iso {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
@@ -26,8 +37,14 @@ struct lll_adv_iso {
 	uint8_t base_crc_init[2];
 	uint16_t latency_prepare;
 	uint16_t latency_event;
-	uint16_t data_chan_prn_s;
-	uint16_t data_chan_remap_idx;
+	union {
+		struct lll_adv_iso_data_chan data_chan;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+		struct lll_adv_iso_data_chan_interleaved
+			interleaved_data_chan[BT_CTLR_ADV_ISO_STREAM_MAX];
+#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
+	};
 	uint8_t  next_chan_use;
 
 	uint64_t payload_count:39;
