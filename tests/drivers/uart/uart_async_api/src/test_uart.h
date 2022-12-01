@@ -83,6 +83,8 @@
 #elif defined(CONFIG_BOARD_MIMXRT1010_EVK) || \
 	defined(CONFIG_BOARD_MIMXRT1015_EVK)
 #define UART_DEVICE_DEV DT_NODELABEL(lpuart4)
+#elif defined(CONFIG_SOC_ESP32C3)
+	#define UART_DEVICE_DEV DT_NODELABEL(uart1)
 #else
 #define UART_DEVICE_DEV DT_CHOSEN(zephyr_console)
 #endif
