@@ -257,4 +257,6 @@ source "drivers/serial/Kconfig.ra"
 
 source "drivers/serial/Kconfig.rzt2m"
 
+source "drivers/serial/Kconfig.hpmicro"
+
 endif # SERIAL

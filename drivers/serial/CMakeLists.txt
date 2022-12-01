@@ -68,7 +68,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_BCM2711_MU uart_bcm2711.c)
 zephyr_library_sources_ifdef(CONFIG_UART_INTEL_LW uart_intel_lw.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RA uart_ra.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RZT2M uart_rzt2m.c)
-
+zephyr_library_sources_ifdef(CONFIG_UART_HPM uart_hpmicro.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 
 if(CONFIG_UART_NATIVE_POSIX)
