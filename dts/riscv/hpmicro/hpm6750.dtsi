@@ -130,5 +130,21 @@
 			interrupts-extended = <&CPU0_intc 3 &CPU1_intc 3>;
 	};
 
+		pinctrl: pin-controller@f4040000 {
+			compatible = "hpmicro,hpm-pinctrl";
+			reg = <0xf4040000 0x40000>;
+			status = "okay";
+		};
+		pinctrl_pioc: pin-controller@f40d8000 {
+			compatible = "hpmicro,hpm-pinctrl";
+			reg = <0xf40d8000 0x40000>;
+			status = "okay";
+		};
+
+		pinctrl_bioc: pin-controller@f5010000 {
+			compatible = "hpmicro,hpm-pinctrl";
+			reg = <0xf5010000 0x40000>;
+			status = "okay";
+		};
 	};
 };

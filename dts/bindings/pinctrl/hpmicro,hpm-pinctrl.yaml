@@ -1,0 +1,110 @@
+# Copyright (c) 2022 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The HPMicro pin controller is a singleton node responsible for
+  controlling pin function selection and pin properties. For example, you can
+  use this node to route UART0 RX to pin PA10 and enable the pull-up resistor
+  on the pin. Remapping is also supported.
+
+  The node has the 'pinctrl' node label set in your SoC's devicetree,
+  so you can modify it like this:
+
+    &pinctrl {
+            /* your modifications go here */
+    };
+
+  All device pin configurations should be placed in child nodes of the
+  'pinctrl' node, as shown in this example:
+
+  &pinctrl {
+    pinmux_uart0: pinmux_uart0 {
+      group0 {
+        pinmux = <HPMICRO_PINMUX(HPMICRO_PORTY, 7,IOC_TYPE_IOC, 0, 2)>,
+        <HPMICRO_PINMUX(HPMICRO_PORTY, 6,IOC_TYPE_IOC, 0, 2)>;
+      };
+    };
+    pinmux_gpiob: pinmux_gpiob {
+      group0 {
+        pinmux = <HPMICRO_PINMUX(HPMICRO_PORTB, 18,IOC_TYPE_IOC, 0, 0)>,
+            <HPMICRO_PINMUX(HPMICRO_PORTB, 19,IOC_TYPE_IOC, 0, 0)>,
+            <HPMICRO_PINMUX(HPMICRO_PORTB, 20,IOC_TYPE_IOC, 0, 0)>;
+            bias-pull-down;
+      };
+    };
+  };
+
+  A group can also specify shared pin properties common to all the specified
+  pins, such as the 'bias-pull-up' property in group 2. Here is a list of
+  supported standard pin properties:
+
+  - drive-open-drain: Open-drain drive mode.
+  - bias-disable: Disable pull-up/down (default, not required).
+  - bias-pull-up: Enable pull-up resistor.
+  - bias-pull-down: Enable pull-down resistor.
+  - input-enable: enable input.
+  - input-schmitt-enable: enable input schmitt circuit.
+
+compatible: "hpmicro,hpm-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: HPMicro pin controller pin group
+  child-binding:
+    description: |
+      HPMicro pin controller pin configuration node.
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-open-drain
+          - input-enable
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - input-schmitt-enable
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Represents pin mux settings. Use HPMICRO_PINMUX
+          With:
+          - pin: The gpio pin number (0, 1, ..., GPIO_NUM_MAX)
+          - analog: bool, select analog pin in pad
+          - alt_select: alt0-alt31
+          - ioc: IOC_TYPE_IOC IOC_TYPE_BIOC IOC_TYPE_PIOC
+      drive-strength:
+        description: |
+          Pin drive capability configuration
+          High speed pin 3.3v:
+          - r000 85.61 Ohm
+          - r001 61.2 Ohm
+          - r010 42.88 Ohm
+          - r011 35.76 Ohm
+          - r111 30.67 Ohm
+          High speed pin 1.8v:
+          - r000 84.07 Ohm
+          - r001 60.14 Ohm
+          - r010 42.15 Ohm
+          - r011 35.19 Ohm
+          - r111 30.2 Ohm
+          Normal pin:
+          - rx00 4 ma
+          - rx01 8 ma
+          - rx11 12 ma
+        type: string
+        enum:
+          - "r000"
+          - "r001"
+          - "r010"
+          - "r011"
+          - "r100"
+          - "r101"
+          - "r110"
+          - "r111"
+      power-source:
+        type: string
+        enum:
+          - "3v3"
+          - "1v8"
