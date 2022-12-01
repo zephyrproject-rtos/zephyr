@@ -735,6 +735,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/twister                          @nashif
 /scripts/series-push-hook.sh              @erwango
 /scripts/utils/pinctrl_nrf_migrate.py     @gmarull
+/scripts/utils/migrate_mcumgr_kconfigs.py @de-nordic
 /scripts/west_commands/                   @mbolivar-nordic
 /scripts/west_commands/blobs.py           @carlescufi
 /scripts/west_commands/fetchers/          @carlescufi
