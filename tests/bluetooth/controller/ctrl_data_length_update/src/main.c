@@ -97,13 +97,6 @@ ZTEST(dle_central, test_data_length_update_central_loc)
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
 
-	/* Steal all ntf buffers, so as to check that the wait_ntf mechanism works */
-	while (ll_pdu_rx_alloc_peek(1)) {
-		ntf = ll_pdu_rx_alloc();
-		/* Make sure we use a correct type or the release won't work */
-		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
-	}
-
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
@@ -121,19 +114,14 @@ ZTEST(dle_central, test_data_length_update_central_loc)
 
 	event_done(&conn);
 
-	ut_rx_q_is_empty();
-
-	/* Release Ntf, so next cycle will generate NTF and complete procedure */
-	ull_cp_release_ntf(ntf);
-
-	event_prepare(&conn);
-	event_done(&conn);
-
 	/* There should be one host notification */
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n",
+	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n",
 				  conn.lll.event_counter);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -613,13 +601,6 @@ ZTEST(dle_periph, test_data_length_update_periph_rem)
 	ull_conn_default_tx_time_set(1800);
 	ull_dle_init(&conn, PHY_1M);
 
-	/* Steal all ntf buffers, so as to check that the wait_ntf mechanism works */
-	while (ll_pdu_rx_alloc_peek(1)) {
-		ntf = ll_pdu_rx_alloc();
-		/* Make sure we use a correct type or the release won't work */
-		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
-	}
-
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
@@ -636,13 +617,6 @@ ZTEST(dle_periph, test_data_length_update_periph_rem)
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
 
-	event_done(&conn);
-	ut_rx_q_is_empty();
-
-	/* Release Ntf, so next cycle will generate NTF and complete procedure */
-	ull_cp_release_ntf(ntf);
-
-	event_prepare(&conn);
 	event_done(&conn);
 
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
