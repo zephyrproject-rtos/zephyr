@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(ivshmem);
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 
-#include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
