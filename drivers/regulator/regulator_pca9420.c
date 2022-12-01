@@ -203,63 +203,6 @@ static bool regulator_pca9420_is_mode_allowed(const struct device *dev,
 	return false;
 }
 
-static int regulator_pca9420_get_voltage_mode(const struct device *dev,
-					      regulator_mode_t mode,
-					      int32_t *voltage)
-{
-	const struct regulator_pca9420_config *config = dev->config;
-	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
-
-	int ret;
-	uint8_t raw_reg;
-
-	if (!regulator_pca9420_is_mode_allowed(dev, mode)) {
-		return -ENOTSUP;
-	}
-
-	ret = i2c_reg_read_byte_dt(
-		&cconfig->i2c,
-		config->desc->vsel_reg + PCA9420_MODECFG_OFFSET(mode),
-		&raw_reg);
-	if (ret < 0) {
-		return ret;
-	}
-
-	raw_reg = (raw_reg & config->desc->vsel_mask) >> config->desc->vsel_pos;
-
-	return linear_range_group_get_value(config->desc->ranges,
-					    config->desc->num_ranges, raw_reg,
-					    voltage);
-}
-
-static int regulator_set_voltage_mode(const struct device *dev,
-				      int32_t min_uv, int32_t max_uv,
-				      regulator_mode_t mode)
-{
-	const struct regulator_pca9420_config *config = dev->config;
-	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
-	uint16_t idx;
-	int ret;
-
-	if (!regulator_pca9420_is_mode_allowed(dev, mode)) {
-		return -ENOTSUP;
-	}
-
-	ret = linear_range_group_get_win_index(config->desc->ranges,
-					       config->desc->num_ranges, min_uv,
-					       max_uv, &idx);
-	if (ret < 0) {
-		return ret;
-	}
-
-	idx <<= config->desc->vsel_pos;
-
-	return i2c_reg_update_byte_dt(
-		&cconfig->i2c,
-		config->desc->vsel_reg + PCA9420_MODECFG_OFFSET(mode),
-		config->desc->vsel_mask, (uint8_t)idx);
-}
-
 static unsigned int regulator_pca9420_count_voltages(const struct device *dev)
 {
 	const struct regulator_pca9420_config *config = dev->config;
@@ -278,37 +221,54 @@ static int regulator_pca9420_list_voltage(const struct device *dev,
 					    volt_uv);
 }
 
-/**
- * Part of the extended regulator consumer API
- * Sets the output voltage to the closest supported voltage value
- */
 static int regulator_pca9420_set_voltage(const struct device *dev,
 					 int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	struct regulator_pca9420_common_data *cdata = config->parent->data;
+	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
+	uint16_t idx;
+	int ret;
 
-	return regulator_set_voltage_mode(dev, min_uv, max_uv, cdata->mode);
+	ret = linear_range_group_get_win_index(config->desc->ranges,
+					       config->desc->num_ranges, min_uv,
+					       max_uv, &idx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	idx <<= config->desc->vsel_pos;
+
+	return i2c_reg_update_byte_dt(
+		&cconfig->i2c,
+		config->desc->vsel_reg + PCA9420_MODECFG_OFFSET(cdata->mode),
+		config->desc->vsel_mask, (uint8_t)idx);
 }
 
-
-/**
- * Part of the extended regulator consumer API
- * Gets the current output voltage in uV
- */
 static int regulator_pca9420_get_voltage(const struct device *dev,
 					 int32_t *volt_uv)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	struct regulator_pca9420_common_data *cdata = config->parent->data;
+	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
+	int ret;
+	uint8_t raw_reg;
 
-	return regulator_pca9420_get_voltage_mode(dev, cdata->mode, volt_uv);
+	ret = i2c_reg_read_byte_dt(
+		&cconfig->i2c,
+		config->desc->vsel_reg + PCA9420_MODECFG_OFFSET(cdata->mode),
+		&raw_reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	raw_reg = (raw_reg & config->desc->vsel_mask) >> config->desc->vsel_pos;
+
+	return linear_range_group_get_value(config->desc->ranges,
+					    config->desc->num_ranges, raw_reg,
+					    volt_uv);
 }
 
-/**
- * Part of the extended regulator consumer API
- * Gets the set current limit for the regulator
- */
 static int regulator_pca9420_get_current_limit(const struct device *dev,
 					       int32_t *curr_ua)
 {
