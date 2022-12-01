@@ -395,6 +395,14 @@ The Proxy Client module is an optional mesh subsystem that can be enabled throug
 
 	* ``NetKeyIndex``: Index of the network key to disconnect.
 
+
+``mesh proxy solicit <NetKeyIndex>``
+------------------------------------
+
+	Begin Proxy Solicitation of a subnet. Support of this feature can be enabled through the :kconfig:option:`CONFIG_BT_MESH_PROXY_SOLICITATION` configuration option.
+
+	* ``NetKeyIndex``: Index of the network key to send Solicitation PDUs to.
+
 .. _bluetooth_mesh_shell_cfg_cli:
 
 Models
@@ -1545,3 +1553,31 @@ The Configuration database is an optional mesh subsystem that can be enabled thr
 	Delete an application key from the Configuration database.
 
 	* ``AppKeyIdx``: Key index of the application key to delete.
+
+
+On-Demand Private GATT Proxy Client
+-----------------------------------
+
+The On-Demand Private GATT Proxy Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_OD_PRIV_PROXY_CLI` configuration option.
+
+``mesh models od_priv_proxy od-priv-gatt-proxy [duration]``
+-----------------------------------------------------------
+
+	Set the On-Demand Private GATT Proxy state on active target, or fetch the value of this state from it. This feature can be enabled through the :kconfig:option:`CONFIG_BT_MESH_OD_PRIV_PROXY_CLI` configuration option.
+
+	* ``duration``: If given, set the state of On-Demand Private GATT Proxy to this value. Fetch this value otherwise.
+
+
+Solicitation PDU RPL Client
+---------------------------
+
+The Solicitation PDU RPL Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_SOL_PDU_RPL_CLI` configuration option.
+
+``mesh models sol_pdu_rpl sol-pdu-rpl-clear <range_start> <acked> [range_len]``
+-------------------------------------------------------------------------------
+
+	Clear active target's solicitation replay protection list (SRPL) in given range of solicitation source (SSRC) addresses. This feature can be enabled through the :kconfig:option:`CONFIG_BT_MESH_SOL_PDU_RPL_CLI` configuration option.
+
+	* ``range_start``: Start address of the SSRC range.
+	* ``acked``: This argument decides on whether an acknowledged or unacknowledged message will be sent.
+	* ``range_len``: Range length for the SSRC addresses to be cleared from the solicitiation RPL list. This parameter is optional; if absent, only a single SSRC address will be cleared.
