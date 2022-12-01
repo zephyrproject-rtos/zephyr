@@ -263,12 +263,7 @@ static int regulator_set_voltage_mode(const struct device *dev,
 		config->desc->vsel_mask, (uint8_t)idx);
 }
 
-
-/**
- * Part of the extended regulator consumer API
- * Returns the number of supported voltages
- */
-static int regulator_pca9420_count_voltages(const struct device *dev)
+static unsigned int regulator_pca9420_count_voltages(const struct device *dev)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 

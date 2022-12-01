@@ -31,7 +31,7 @@ extern "C" {
 __subsystem struct regulator_driver_api {
 	int (*enable)(const struct device *dev);
 	int (*disable)(const struct device *dev);
-	int (*count_voltages)(const struct device *dev);
+	unsigned int (*count_voltages)(const struct device *dev);
 	int (*count_modes)(const struct device *dev);
 	int32_t (*list_voltages)(const struct device *dev,
 				 unsigned int selector);
@@ -109,22 +109,21 @@ int regulator_disable(const struct device *dev);
 /**
  * @brief Obtain the number of supported voltage levels.
  *
- * Selectors are numbered starting at zero, and typically correspond to
- * bitfields in hardware registers.
+ * Each voltage level supported by a regulator gets an index, starting from
+ * zero. The total number of supported voltage levels can be used together with
+ * regulator_list_voltages() to list all supported voltage levels.
  *
  * @param dev Regulator device instance.
  *
- * @retval selectors Number of selectors, if successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return Number of supported voltages.
  */
-static inline int regulator_count_voltages(const struct device *dev)
+static inline unsigned int regulator_count_voltages(const struct device *dev)
 {
 	const struct regulator_driver_api *api =
 		(const struct regulator_driver_api *)dev->api;
 
 	if (api->count_voltages == NULL) {
-		return -ENOSYS;
+		return 0U;
 	}
 
 	return api->count_voltages(dev);
