@@ -30,6 +30,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RA                  clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AMBIQ               clock_control_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_PWM                 clock_control_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RPI_PICO            clock_control_rpi_pico.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_HPM                 clock_control_hpmicro.c)
 
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
