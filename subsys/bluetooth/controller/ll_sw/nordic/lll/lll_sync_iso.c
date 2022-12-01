@@ -44,9 +44,9 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
 static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
-				  uint8_t bis_idx, struct node_rx_pdu *node_rx);
+				  uint16_t handle, struct node_rx_pdu *node_rx);
 static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
-				    uint8_t bis_idx, uint8_t bn,
+				    uint8_t bn, uint16_t handle,
 				    struct node_rx_pdu *node_rx);
 static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu);
 
@@ -530,7 +530,7 @@ static void isr_rx(void *param)
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
 			ull_iso_pdu_rx_alloc();
-			isr_rx_iso_data_valid(lll, bis_idx, node_rx);
+			isr_rx_iso_data_valid(lll, handle, node_rx);
 
 			lll->payload[bis_idx][payload_index] = node_rx;
 		}
@@ -698,8 +698,8 @@ isr_rx_find_subevent:
 					pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
 					pdu->len = 0U;
 
-					isr_rx_iso_data_invalid(lll, bis_idx,
-								bn, node_rx);
+					isr_rx_iso_data_invalid(lll, bn, handle,
+								node_rx);
 
 					iso_rx_put(node_rx->hdr.link, node_rx);
 				}
@@ -898,12 +898,12 @@ isr_rx_next_subevent:
 }
 
 static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
-				  uint8_t bis_idx, struct node_rx_pdu *node_rx)
+				  uint16_t handle, struct node_rx_pdu *node_rx)
 {
 	struct node_rx_iso_meta *iso_meta;
 
 	node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
-	node_rx->hdr.handle = lll->stream_handle[bis_idx];
+	node_rx->hdr.handle = handle;
 
 	iso_meta = &node_rx->hdr.rx_iso_meta;
 	iso_meta->payload_number = lll->payload_count + (lll->bn_curr - 1U) +
@@ -916,13 +916,13 @@ static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
 }
 
 static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
-				    uint8_t bis_idx, uint8_t bn,
+				    uint8_t bn, uint16_t handle,
 				    struct node_rx_pdu *node_rx)
 {
 	struct node_rx_iso_meta *iso_meta;
 
 	node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
-	node_rx->hdr.handle = lll->stream_handle[bis_idx];
+	node_rx->hdr.handle = handle;
 
 	iso_meta = &node_rx->hdr.rx_iso_meta;
 	iso_meta->payload_number = lll->payload_count - bn - 1U;
