@@ -698,7 +698,7 @@ config NET_PKT_TX_COUNT
 	  Each TX buffer will occupy smallish amount of memory.
 	  See include/net/net_pkt.h and the sizeof(struct net_pkt)
 
-config NET_BUF_RX_COUNT
+config NET_PKT_BUF_RX_COUNT
 	int "How many network buffers are allocated for receiving data"
 	default 36 if NET_L2_ETHERNET
 	default 16

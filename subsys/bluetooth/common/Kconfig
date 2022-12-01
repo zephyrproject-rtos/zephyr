@@ -94,7 +94,7 @@ config BT_BUF_ACL_RX_SIZE
 
 config BT_BUF_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
-	default NET_BUF_RX_COUNT if NET_L2_BT
+	default NET_PKT_BUF_RX_COUNT if NET_L2_BT
 	default 3 if BT_RECV_BLOCKING
 	default 6
 	range 1 64

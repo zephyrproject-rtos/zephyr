@@ -113,9 +113,9 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 	not large enough to hold a full frame
 #endif
 
-#if CONFIG_NET_BUF_DATA_SIZE * (CONFIG_NET_BUF_RX_COUNT - \
+#if CONFIG_NET_BUF_DATA_SIZE * (CONFIG_NET_PKT_BUF_RX_COUNT - \
 	CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) < GMAC_FRAME_SIZE_MAX
-#error (CONFIG_NET_BUF_RX_COUNT - CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) * \
+#error (CONFIG_NET_PKT_BUF_RX_COUNT - CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) * \
 	CONFIG_NET_BUF_DATA_SIZE are not large enough to hold a full frame
 #endif
 
@@ -125,7 +125,7 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif
 
 #if (CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT + 1) * GMAC_ACTIVE_QUEUE_NUM \
-	> CONFIG_NET_BUF_RX_COUNT
+	> CONFIG_NET_PKT_BUF_RX_COUNT
 #error Not enough RX buffers to allocate descriptors for each HW queue
 #endif
 #endif /* !CONFIG_NET_TEST */
