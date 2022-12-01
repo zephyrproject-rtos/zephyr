@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2022 HPMicro
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <hpmicro/hpm6750.dtsi>
+#include "hpm6750evkmini-pinctrl.dtsi"
+
+/ {
+	model = "HPMicro HPM6750EVKMINI";
+	compatible = "HPMicro,hpm6750evkmini";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram;
+		zephyr,itcm = &ilm;
+		zephyr,dtcm = &dlm;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	dram: memory@40000000 {
+		device_type = "memory";
+		reg = <0x40000000 DT_SIZE_M(16)>;
+	};
+
+	aliases {
+		led0 = &led_r;
+		led1 = &led_g;
+		led2 = &led_b;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_r: led_r {
+			gpios = <&gpiob 19 GPIO_ACTIVE_LOW>;
+			label = "LEDR";
+		};
+		led_g: led_g {
+			gpios = <&gpiob 18 GPIO_ACTIVE_LOW>;
+			label = "LEDG";
+		};
+		led_b: led_b {
+			gpios = <&gpiob 20 GPIO_ACTIVE_LOW>;
+			label = "LEDB";
+		};
+	};
+};
+
+&gpio0 {
+
+	gpiob: gpio@1 {
+		compatible = "hpmicro,hpm-gpio";
+		reg = <0x0 0x4000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		hpmicro-gpio-port = <1>;
+		interrupts = <2 1>;
+		interrupt-parent = <&plic0>;
+	};
+
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_uart0>;
+	pinctrl-names = "default";
+};
+&gpiob {
+	pinctrl-0 = <&pinmux_gpiob>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x3000>;
+		};
+
+		slot0_partition: partition@3000 {
+			label = "image-0";
+			reg = <0x3000 DT_SIZE_M(4)>;
+		};
+	};
+};
