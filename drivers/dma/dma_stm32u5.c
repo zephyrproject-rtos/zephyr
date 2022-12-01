@@ -582,10 +582,7 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 		k_msleep(1); /* A delay is needed (1ms is valid) */
 	} while (LL_DMA_IsActiveFlag_SUSP(dma, dma_stm32_id_to_stream(id)) != 1);
 
-	/* Reset the FIFO register and internal state */
-	LL_DMA_ResetChannel(dma, dma_stm32_id_to_stream(id));
-	/* The Channel is disabled and its suspend Flag is also reset */
-
+	/* Do not Reset the channel to allow resuming later */
 	return 0;
 }
 
