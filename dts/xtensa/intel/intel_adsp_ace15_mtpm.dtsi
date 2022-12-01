@@ -118,6 +118,7 @@
 			fifo = <0x0008>;
 			interrupts = <0x08 0 0>;
 			interrupt-parent = <&ace_intc>;
+			power-domain = <&hub_ulp_domain>;
 		};
 
 		dmic1: dmic1@10000 {
@@ -127,6 +128,7 @@
 			fifo = <0x0108>;
 			interrupts = <0x09 0 0>;
 			interrupt-parent = <&ace_intc>;
+			power-domain = <&hub_ulp_domain>;
 		};
 
 		/*
@@ -291,7 +293,7 @@
 				compatible = "intel,adsp-power-domain";
 				bit-position = <15>;
 			};
-			hub_hp_domain: hub_hpp_domain {
+			hub_hp_domain: hub_hp_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <6>;
 			};

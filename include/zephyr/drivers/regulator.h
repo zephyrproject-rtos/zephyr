@@ -19,7 +19,7 @@
 #include <stdint.h>
 
 #include <zephyr/device.h>
-#include <zephyr/sys/onoff.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +29,7 @@ extern "C" {
 
 /** @brief Driver-specific API functions to support regulator control. */
 __subsystem struct regulator_driver_api {
-	int (*enable)(const struct device *dev, struct onoff_client *cli);
+	int (*enable)(const struct device *dev);
 	int (*disable)(const struct device *dev);
 	int (*count_voltages)(const struct device *dev);
 	int (*count_modes)(const struct device *dev);
@@ -51,35 +51,41 @@ __subsystem struct regulator_driver_api {
 	int (*mode_enable)(const struct device *dev, uint32_t mode);
 };
 
+/**
+ * @brief Common regulator data.
+ *
+ * This structure **must** be placed first in the driver's data structure.
+ */
+struct regulator_common_data {
+	/** Lock */
+	struct k_mutex lock;
+	/** Reference count */
+	int refcnt;
+};
+
+/**
+ * @brief Initialize common regulator data.
+ *
+ * This function **must** be called when driver is initialized.
+ *
+ * @param dev Regulator device instance.
+ */
+void regulator_common_data_init(const struct device *dev);
+
 /** @endcond */
 
 /**
  * @brief Enable a regulator.
  *
- * Reference-counted request that a regulator be turned on. This is an
- * asynchronous operation; if successfully initiated the result will be
- * communicated through the @p cli parameter.
- *
- * A regulator is considered "on" when it has reached a stable/usable state.
- *
- * @funcprops \isr_ok \pre_kernel_ok
+ * Reference-counted request that a regulator be turned on. A regulator is
+ * considered "on" when it has reached a stable/usable state.
  *
  * @param dev Regulator device instance
- * @param cli On-off client instance. This is used to notify the caller when the
- * attempt to turn on the regulator has completed (can be `NULL`).
  *
- * @retval 0 If enable request has been successfully initiated.
- * @retval -errno Negative errno in case of failure (can be from onoff_request()
- * or individual regulator drivers).
+ * @retval 0 If regulator has been successfully enabled.
+ * @retval -errno Negative errno in case of failure.
  */
-static inline int regulator_enable(const struct device *dev,
-				   struct onoff_client *cli)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	return api->enable(dev, cli);
-}
+int regulator_enable(const struct device *dev);
 
 /**
  * @brief Disable a regulator.
@@ -93,21 +99,12 @@ static inline int regulator_enable(const struct device *dev,
  *
  * This must be invoked at most once for each successful regulator_enable().
  *
- * @funcprops \isr_ok
- *
  * @param dev Regulator device instance.
  *
- * @retval 0 If enable request has been successfully initiated.
- * @retval -errno Negative errno in case of failure (can be from onoff_release()
- * or individual regulator drivers).
+ * @retval 0 If regulator has been successfully disabled.
+ * @retval -errno Negative errno in case of failure.
  */
-static inline int regulator_disable(const struct device *dev)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	return api->disable(dev);
-}
+int regulator_disable(const struct device *dev);
 
 /**
  * @brief Obtain the number of supported voltage levels.
