@@ -52,31 +52,18 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static bool cc_check_cis_established_or_timeout_lll(struct proc_ctx *ctx)
-{
-	const struct ll_conn_iso_stream *cis =
-		ll_conn_iso_stream_get(ctx->data.cis_create.cis_handle);
-
-	if (cis->established) {
-		return true;
-	}
-
-	if (!cis->event_expire) {
-		ctx->data.cis_create.error = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
-		return true;
-	}
-
-	return false;
-}
-
 static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
 {
-	struct node_rx_pdu *ntf;
 	struct node_rx_conn_iso_estab *pdu;
+	struct node_rx_pdu *ntf;
+	uint8_t piggy_back;
 
 	/* Allocate ntf node */
-	ntf = llcp_ntf_alloc();
+	ntf = ctx->node_ref.rx;
 	LL_ASSERT(ntf);
+	ctx->node_ref.rx = NULL;
+
+	piggy_back = (ntf->hdr.type != NODE_RX_TYPE_RETAIN);
 
 	ntf->hdr.type = NODE_RX_TYPE_CIS_ESTABLISHED;
 	ntf->hdr.handle = conn->lll.handle;
@@ -87,8 +74,10 @@ static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
 	pdu->cis_handle = ctx->data.cis_create.cis_handle;
 	pdu->status = ctx->data.cis_create.error;
 
-	/* Enqueue notification towards LL */
-	ll_rx_put_sched(ntf->hdr.link, ntf);
+	if (!piggy_back) {
+		/* Enqueue notification towards LL */
+		ll_rx_put_sched(ntf->hdr.link, ntf);
+	}
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -97,14 +86,13 @@ enum {
 	/* Establish Procedure */
 	RP_CC_STATE_IDLE,
 	RP_CC_STATE_WAIT_RX_CIS_REQ,
-	RP_CC_STATE_WAIT_NTF_CIS_CREATE,
 	RP_CC_STATE_WAIT_REPLY,
 	RP_CC_STATE_WAIT_TX_CIS_RSP,
 	RP_CC_STATE_WAIT_TX_REJECT_IND,
 	RP_CC_STATE_WAIT_RX_CIS_IND,
 	RP_CC_STATE_WAIT_INSTANT,
 	RP_CC_STATE_WAIT_CIS_ESTABLISHED,
-	RP_CC_STATE_WAIT_NTF,
+	RP_CC_STATE_WAIT_NTF_AVAIL,
 };
 
 /* LLCP Remote Procedure FSM events */
@@ -202,8 +190,9 @@ static void llcp_rp_cc_tx_reject(struct ll_conn *conn, struct proc_ctx *ctx, uin
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc(conn, ctx);
+	tx = ctx->node_ref.tx_ack;
 	LL_ASSERT(tx);
+	ctx->node_ref.tx_ack = NULL;
 
 	pdu = (struct pdu_data *)tx->pdu;
 
@@ -220,8 +209,8 @@ static void rp_cc_ntf_create(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct node_rx_pdu *ntf;
 	struct node_rx_conn_iso_req *pdu;
 
-	/* Allocate ntf node */
-	ntf = llcp_ntf_alloc();
+	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_CIS_REQUEST;
@@ -233,20 +222,13 @@ static void rp_cc_ntf_create(struct ll_conn *conn, struct proc_ctx *ctx)
 	pdu->cis_handle = ctx->data.cis_create.cis_handle;
 
 	ctx->data.cis_create.host_request_to = 0U;
-
-	/* Enqueue notification towards LL */
-	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 
 static void rp_cc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!llcp_ntf_alloc_is_available()) {
-		ctx->state = RP_CC_STATE_WAIT_NTF;
-	} else {
-		cc_ntf_established(conn, ctx);
-		llcp_rr_complete(conn);
-		ctx->state = RP_CC_STATE_IDLE;
-	}
+	cc_ntf_established(conn, ctx);
+	llcp_rr_complete(conn);
+	ctx->state = RP_CC_STATE_IDLE;
 }
 
 static void rp_cc_send_cis_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
@@ -263,23 +245,28 @@ static void rp_cc_send_cis_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	}
 }
 
-static void rp_cc_send_create_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				void *param)
-{
-	if (!llcp_ntf_alloc_is_available()) {
-		ctx->state = RP_CC_STATE_WAIT_NTF_CIS_CREATE;
-	} else {
-		rp_cc_ntf_create(conn, ctx);
-		ctx->state = RP_CC_STATE_WAIT_REPLY;
-	}
-}
-
 static void rp_cc_send_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_CC_STATE_WAIT_TX_REJECT_IND;
 	} else {
+		/* Allocate TX node to use, store in case we need to wait for NTF node */
+		ctx->node_ref.tx_ack = llcp_tx_alloc(conn, ctx);
+		if (ctx->data.cis_create.error == BT_HCI_ERR_CONN_ACCEPT_TIMEOUT) {
+			/* We complete with error, so we must generate NTF, thus we must make sure
+			 * we have a node to use for NTF before TX'ing
+			 */
+			if (!llcp_ntf_alloc_is_available()) {
+				ctx->state = RP_CC_STATE_WAIT_NTF_AVAIL;
+				return;
+			}
+			ctx->node_ref.rx = llcp_ntf_alloc();
+
+			/* Mark node as RETAIN to trigger put/sched */
+			ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+		}
+
 		llcp_rp_cc_tx_reject(conn, ctx, PDU_DATA_LLCTRL_TYPE_CIS_REQ);
 
 		if (ctx->data.cis_create.error == BT_HCI_ERR_CONN_ACCEPT_TIMEOUT) {
@@ -357,7 +344,8 @@ static void rp_cc_state_wait_rx_cis_req(struct ll_conn *conn, struct proc_ctx *c
 
 		if (ctx->data.cis_create.error == BT_HCI_ERR_SUCCESS) {
 			/* Now controller accepts, so go ask the host to accept or decline */
-			rp_cc_send_create_ntf(conn, ctx, evt, param);
+			rp_cc_ntf_create(conn, ctx);
+			ctx->state = RP_CC_STATE_WAIT_REPLY;
 		} else {
 			/* Now controller rejects, right out */
 			rp_cc_send_reject_ind(conn, ctx, evt, param);
@@ -410,6 +398,9 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 			/* CIS has been setup, go wait for 'instant' before starting */
 			ctx->state = RP_CC_STATE_WAIT_INSTANT;
 
+			/* Mark node as RETAIN to keep until we need for NTF */
+			llcp_rx_node_retain(ctx);
+
 			/* Check if this connection event is where we need to start the CIS */
 			rp_cc_check_instant(conn, ctx, evt, param);
 			break;
@@ -427,12 +418,20 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 	}
 }
 
-static void rp_cc_state_wait_ntf_cis_create(struct ll_conn *conn, struct proc_ctx *ctx,
-					    uint8_t evt, void *param)
+static void rp_cc_state_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				 void *param)
 {
 	switch (evt) {
 	case RP_CC_EVT_RUN:
-		rp_cc_send_create_ntf(conn, ctx, evt, param);
+		if (llcp_ntf_alloc_is_available()) {
+			ctx->node_ref.rx = llcp_ntf_alloc();
+			/* Mark node as RETAIN to trigger put/sched */
+			ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+
+			/* Now we're good to TX reject and complete procedure*/
+			llcp_rp_cc_tx_reject(conn, ctx, PDU_DATA_LLCTRL_TYPE_CIS_REQ);
+			rp_cc_complete(conn, ctx, evt, param);
+		}
 		break;
 	default:
 		/* Ignore other evts */
@@ -440,18 +439,6 @@ static void rp_cc_state_wait_ntf_cis_create(struct ll_conn *conn, struct proc_ct
 	}
 }
 
-static void rp_cc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				 void *param)
-{
-	switch (evt) {
-	case RP_CC_EVT_RUN:
-		rp_cc_complete(conn, ctx, evt, param);
-		break;
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
 
 static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
@@ -524,18 +511,7 @@ static void rp_cc_state_wait_cis_established(struct ll_conn *conn, struct proc_c
 					     uint8_t evt, void *param)
 {
 	switch (evt) {
-	case RP_CC_EVT_RUN:
-		/* Check for CIS state */
-		if (cc_check_cis_established_or_timeout_lll(ctx)) {
-			/* CIS was established or establishement timed out,
-			 * In either case complete procedure and generate
-			 * notification
-			 */
-			rp_cc_complete(conn, ctx, evt, param);
-		}
-		break;
 	case RP_CC_EVT_CIS_ESTABLISHED:
-		/* CIS was established, so let's go ahead and complete procedure */
 		rp_cc_complete(conn, ctx, evt, param);
 		break;
 	default:
@@ -555,9 +531,6 @@ static void rp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	case RP_CC_STATE_WAIT_RX_CIS_REQ:
 		rp_cc_state_wait_rx_cis_req(conn, ctx, evt, param);
 		break;
-	case RP_CC_STATE_WAIT_NTF_CIS_CREATE:
-		rp_cc_state_wait_ntf_cis_create(conn, ctx, evt, param);
-		break;
 	case RP_CC_STATE_WAIT_TX_REJECT_IND:
 		rp_cc_state_wait_tx_reject_ind(conn, ctx, evt, param);
 		break;
@@ -576,8 +549,8 @@ static void rp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	case RP_CC_STATE_WAIT_CIS_ESTABLISHED:
 		rp_cc_state_wait_cis_established(conn, ctx, evt, param);
 		break;
-	case RP_CC_STATE_WAIT_NTF:
-		rp_cc_state_wait_ntf(conn, ctx, evt, param);
+	case RP_CC_STATE_WAIT_NTF_AVAIL:
+		rp_cc_state_wait_ntf_avail(conn, ctx, evt, param);
 		break;
 	default:
 		/* Unknown state */
@@ -668,7 +641,6 @@ enum {
 	LP_CC_STATE_WAIT_TX_CIS_IND,
 	LP_CC_STATE_WAIT_INSTANT,
 	LP_CC_STATE_WAIT_ESTABLISHED,
-	LP_CC_STATE_WAIT_NTF,
 };
 
 /* LLCP Local Procedure CIS Creation FSM events */
@@ -823,13 +795,9 @@ static void lp_cc_send_cis_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 
 static void lp_cc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!llcp_ntf_alloc_is_available()) {
-		ctx->state = LP_CC_STATE_WAIT_NTF;
-	} else {
-		cc_ntf_established(conn, ctx);
-		llcp_lr_complete(conn);
-		ctx->state = LP_CC_STATE_IDLE;
-	}
+	cc_ntf_established(conn, ctx);
+	llcp_lr_complete(conn);
+	ctx->state = LP_CC_STATE_IDLE;
 }
 
 static void lp_cc_st_wait_rx_cis_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
@@ -841,6 +809,10 @@ static void lp_cc_st_wait_rx_cis_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 	case LP_CC_EVT_CIS_RSP:
 		/* TODO: Reject response if outside offset range? */
 		llcp_pdu_decode_cis_rsp(ctx, param);
+
+		/* Mark RX node to NOT release */
+		llcp_rx_node_retain(ctx);
+
 		lp_cc_send_cis_ind(conn, ctx, evt, param);
 		break;
 	case LP_CC_EVT_UNKNOWN:
@@ -915,26 +887,8 @@ static void lp_cc_st_wait_established(struct ll_conn *conn, struct proc_ctx *ctx
 				      void *param)
 {
 	switch (evt) {
-	case LP_CC_EVT_RUN:
-		if (cc_check_cis_established_or_timeout_lll(ctx)) {
-			/* CIS was established, so let's got ahead and complete procedure */
-			lp_cc_complete(conn, ctx, evt, param);
-		}
-		break;
 	case LP_CC_EVT_ESTABLISHED:
 		/* CIS was established, so let's go ahead and complete procedure */
-		lp_cc_complete(conn, ctx, evt, param);
-		break;
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
-
-static void lp_cc_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
-{
-	switch (evt) {
-	case LP_CC_EVT_RUN:
 		lp_cc_complete(conn, ctx, evt, param);
 		break;
 	default:
@@ -963,9 +917,6 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 		break;
 	case LP_CC_STATE_WAIT_ESTABLISHED:
 		lp_cc_st_wait_established(conn, ctx, evt, param);
-		break;
-	case LP_CC_STATE_WAIT_NTF:
-		lp_cc_st_wait_ntf(conn, ctx, evt, param);
 		break;
 	default:
 		/* Unknown state */
