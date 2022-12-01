@@ -6,4 +6,5 @@ zephyr_library_sources(
   nvme_cmd.c
   nvme_controller_cmd.c
   nvme_namespace.c
+  nvme_disk.c
 )
