@@ -9,6 +9,8 @@ LOG_MODULE_DECLARE(nvme, CONFIG_NVME_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 
+#include <stdio.h>
+
 #include "nvme.h"
 
 uint32_t nvme_namespace_get_sector_size(struct nvme_namespace *ns)
@@ -120,6 +122,13 @@ int nvme_namespace_construct(struct nvme_namespace *ns,
 		NVME_CTRLR_DATA_VWC_PRESENT_MASK;
 	if (vwc_present) {
 		ns->flags |= NVME_NS_FLUSH_SUPPORTED;
+	}
+
+	snprintf(ns->name, NVME_NAMESPACE_NAME_MAX_LENGTH, "nvme%dn%d",
+		 ctrlr->id, ns->id-1);
+
+	if (nvme_namespace_disk_setup(ns, &ns->disk) != 0) {
+		LOG_ERR("Could not register no disk subsystem");
 	}
 
 	return 0;

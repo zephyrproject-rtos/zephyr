@@ -7,6 +7,7 @@
 #define ZEPHYR_DRIVERS_DISK_NVME_NVME_COMMAND_H_
 
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/byteorder.h>
 
 struct nvme_command {
 	/* dword 0 */
@@ -478,6 +479,42 @@ struct nvme_request *nvme_allocate_request_null(nvme_cb_fn_t cb_fn,
 	}
 
 	return request;
+}
+
+/*
+ * Command building helper functions
+ * These functions assume allocator zeros out cmd structure
+ */
+static inline
+void nvme_namespace_flush_cmd(struct nvme_command *cmd, uint32_t nsid)
+{
+	cmd->cdw0.opc = NVME_OPC_FLUSH;
+	cmd->nsid = sys_cpu_to_le32(nsid);
+}
+
+static inline
+void nvme_namespace_rw_cmd(struct nvme_command *cmd, uint32_t rwcmd,
+			   uint32_t nsid, uint64_t lba, uint32_t count)
+{
+	cmd->cdw0.opc = rwcmd;
+	cmd->nsid = sys_cpu_to_le32(nsid);
+	cmd->cdw10 = sys_cpu_to_le32(lba & 0xffffffffu);
+	cmd->cdw11 = sys_cpu_to_le32(lba >> 32);
+	cmd->cdw12 = sys_cpu_to_le32(count-1);
+}
+
+static inline
+void nvme_namespace_write_cmd(struct nvme_command *cmd, uint32_t nsid,
+			      uint64_t lba, uint32_t count)
+{
+	nvme_namespace_rw_cmd(cmd, NVME_OPC_WRITE, nsid, lba, count);
+}
+
+static inline
+void nvme_namespace_read_cmd(struct nvme_command *cmd, uint32_t nsid,
+			     uint64_t lba, uint32_t count)
+{
+	nvme_namespace_rw_cmd(cmd, NVME_OPC_READ, nsid, lba, count);
 }
 
 static inline void nvme_completion_swapbytes(struct nvme_completion *cpl)

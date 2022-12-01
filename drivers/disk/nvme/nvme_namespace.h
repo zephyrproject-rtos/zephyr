@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_DISK_NVME_NVME_NAMESPACE_H_
 #define ZEPHYR_DRIVERS_DISK_NVME_NVME_NAMESPACE_H_
 
+#include <zephyr/drivers/disk.h>
+
 struct nvme_namespace_data {
 	/** namespace size */
 	uint64_t		nsze;
@@ -156,6 +158,7 @@ void nvme_namespace_data_swapbytes(struct nvme_namespace_data *s)
 struct nvme_namespace {
 	struct nvme_controller *ctrlr;
 	struct nvme_namespace_data data;
+	struct disk_info disk;
 	uint32_t id;
 	uint32_t flags;
 	uint32_t boundary;
@@ -187,5 +190,8 @@ uint32_t nvme_namespace_get_stripesize(struct nvme_namespace *ns);
 int nvme_namespace_construct(struct nvme_namespace *ns,
 			     uint32_t id,
 			     struct nvme_controller *ctrlr);
+
+int nvme_namespace_disk_setup(struct nvme_namespace *ns,
+			      struct disk_info *disk);
 
 #endif /* ZEPHYR_DRIVERS_DISK_NVME_NVME_NAMESPACE_H_ */
