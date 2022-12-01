@@ -266,11 +266,19 @@ static inline int32_t regulator_get_current_limit(const struct device *dev)
  * configuration or better power savings. This API will apply a mode for
  * the regulator.
  *
+ * Some regulators may only allow setting mode externally, but still allow
+ * configuring the parameters such as the output voltage. For such devices, this
+ * function will return -EPERM, indicating mode can't be changed. However, all
+ * future calls to e.g. regulator_set_voltage() will apply to the selected mode.
+ *
+ * Some regulators may apply a mode to all of its regulators simultaneously.
+ *
  * @param dev Regulator device instance.
  * @param mode Mode to select for this regulator. Only modes present in the
  * `regulator-allowed-modes` devicetree property are permitted.
  *
  * @retval 0 If successful.
+ * @retval -EPERM If mode can not be changed.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
