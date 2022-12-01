@@ -25,6 +25,9 @@
 extern "C" {
 #endif
 
+/** Opaque type to store regulator modes */
+typedef uint8_t regulator_mode_t;
+
 /** @cond INTERNAL_HIDDEN */
 
 /** @brief Driver-specific API functions to support regulator control. */
@@ -40,7 +43,7 @@ __subsystem struct regulator_driver_api {
 	int (*set_current_limit)(const struct device *dev, int32_t min_ua,
 				 int32_t max_ua);
 	int (*get_current_limit)(const struct device *dev, int32_t *curr_ua);
-	int (*set_mode)(const struct device *dev, uint32_t mode);
+	int (*set_mode)(const struct device *dev, regulator_mode_t mode);
 };
 
 /**
@@ -289,7 +292,8 @@ static inline int regulator_get_current_limit(const struct device *dev,
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
-static inline int regulator_set_mode(const struct device *dev, uint32_t mode)
+static inline int regulator_set_mode(const struct device *dev,
+				     regulator_mode_t mode)
 {
 	const struct regulator_driver_api *api =
 		(const struct regulator_driver_api *)dev->api;
