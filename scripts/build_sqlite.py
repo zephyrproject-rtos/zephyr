@@ -175,6 +175,42 @@ def flatten(list_of_lists):
         return flatten(list_of_lists[0]) + flatten(list_of_lists[1:])
     return list_of_lists[:1] + flatten(list_of_lists[1:])
 
+def visit_symbol(conn, symbol):
+    cur = conn.cursor()
+    symbol_name = symbol.name
+    symbol_deps = []
+    if isinstance(symbol.direct_dep, list):
+        symbol_deps = list(map(map_symbol_dep, symbol.direct_dep))
+        symbol_deps = flatten(symbol_deps)
+        symbol_deps = list(filter(lambda elem: elem != 'y' and elem != "",
+                                     symbol_deps))
+    elif isinstance(symbol.direct_dep, Symbol):
+        symbol_deps = [symbol.direct_dep.name]
+    else:
+        print(f"can't handle {type(symbol.direct_dep)}")
+
+    symbol_selects = []
+    if type(symbol.selects) is list:
+        symbol_selects = list(map(map_symbol_select, symbol.selects))
+        symbol_selects = flatten(symbol_selects)
+        symbol_selects = list(filter(lambda elem: elem != 'y' and elem != "",
+                                     symbol_selects))
+    elif type(symbol.selects) is tuple:
+        print(f"can't handle selects tuple {symbol.selects}")
+    else:
+        print(f"can't handle selects type {type(symbol.selects)}")
+
+    print(f'''symbol name: {symbol_name}, direct dep {symbol_deps}, selects {symbol_selects}''')
+    insert_symbol(cur, symbol_name)
+    insert_symbol_selects(cur, symbol_name, symbol_selects)
+    insert_symbol_depends(cur, symbol_name, symbol_deps)
+
+def visit_choice(conn, choice):
+    cur = conn.cursor()
+    insert_symbol(cur, choice.name)
+    for sym in choice.syms:
+        visit_symbol(conn, sym)
+
 def parse_kconfig(conn):
     ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
     if not ZEPHYR_BASE:
@@ -191,42 +227,12 @@ def parse_kconfig(conn):
     # read in Kconfig
     kconf = Kconfig()
 
-    cur = conn.cursor()
-
     for node in kconf.node_iter():
         item = node.item
-        if isinstance(node.item, Symbol):
-            symbol_name = item.name
-            symbol_deps = []
-            if type(item.direct_dep) is list:
-                symbol_deps = list(map(map_symbol_dep, item.direct_dep))
-                symbol_deps = flatten(symbol_deps)
-                symbol_deps = list(filter(lambda elem: elem != 'y' and elem != "",
-                                             symbol_deps))
-            elif type(item.direct_dep) is Symbol:
-                symbol_deps = [item.direct_dep.name]
-            else:
-                print(f"can't handle {type(item.direct_dep)}")
-
-            symbol_selects = []
-            if type(item.selects) is list:
-                symbol_selects = list(map(map_symbol_select, item.selects))
-                symbol_selects = flatten(symbol_selects)
-                symbol_selects = list(filter(lambda elem: elem != 'y' and elem != "",
-                                             symbol_selects))
-            elif type(item.selects) is tuple:
-                print(f"can't handle selects tuple {item.selects}")
-            else:
-                print(f"can't handle selects type {type(item.selects)}")
-
-            print(f'''symbol name: {symbol_name}, direct dep {symbol_deps}, selects {symbol_selects}''')
-            insert_symbol(cur, symbol_name)
-            insert_symbol_selects(cur, symbol_name, symbol_selects)
-            insert_symbol_depends(cur, symbol_name, symbol_deps)
-        elif isinstance(node.item, Choice):
-            symbol_name = item.name
-            symbol_deps = []
-            symbol_selects = []
+        if isinstance(item, Symbol):
+            visit_symbol(conn, item)
+        elif isinstance(item, Choice):
+            visit_choice(conn, item)
         else:
             print(f"unknown node item type {type(node.item)}")
 
