@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 /* size of pre-allocated packet fragments */
-#define RX_FRAG_SIZE CONFIG_NET_BUF_DATA_SIZE
+#define RX_FRAG_SIZE CONFIG_NET_PKT_BUF_DATA_SIZE
 
 /*
  * Grace period to wait for TX descriptor/fragment availability.

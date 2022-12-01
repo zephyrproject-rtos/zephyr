@@ -41,7 +41,7 @@ static int tcp_window =
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
 #else
 #if defined(CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE)
-	(CONFIG_NET_PKT_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
+	(CONFIG_NET_PKT_BUF_RX_COUNT * CONFIG_NET_PKT_BUF_DATA_SIZE) / 3;
 #else
 	CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
 #endif /* CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */
@@ -2111,7 +2111,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			 */
 #if defined(CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE)
 			max_win = (CONFIG_NET_PKT_BUF_TX_COUNT *
-				   CONFIG_NET_BUF_DATA_SIZE) / 3;
+				   CONFIG_NET_PKT_BUF_DATA_SIZE) / 3;
 #else
 			max_win = CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
 #endif /* CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */

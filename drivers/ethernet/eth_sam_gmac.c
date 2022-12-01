@@ -107,20 +107,20 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
  */
 /* No need to verify things for unit tests */
 #if !defined(CONFIG_NET_TEST)
-#if CONFIG_NET_BUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT \
+#if CONFIG_NET_PKT_BUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT \
 	< GMAC_FRAME_SIZE_MAX
-#error CONFIG_NET_BUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT is \
+#error CONFIG_NET_PKT_BUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT is \
 	not large enough to hold a full frame
 #endif
 
-#if CONFIG_NET_BUF_DATA_SIZE * (CONFIG_NET_PKT_BUF_RX_COUNT - \
+#if CONFIG_NET_PKT_BUF_DATA_SIZE * (CONFIG_NET_PKT_BUF_RX_COUNT - \
 	CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) < GMAC_FRAME_SIZE_MAX
 #error (CONFIG_NET_PKT_BUF_RX_COUNT - CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) * \
-	CONFIG_NET_BUF_DATA_SIZE are not large enough to hold a full frame
+	CONFIG_NET_PKT_BUF_DATA_SIZE are not large enough to hold a full frame
 #endif
 
-#if CONFIG_NET_BUF_DATA_SIZE & 0x3F
-#pragma message "CONFIG_NET_BUF_DATA_SIZE should be a multiple of 64 bytes " \
+#if CONFIG_NET_PKT_BUF_DATA_SIZE & 0x3F
+#pragma message "CONFIG_NET_PKT_BUF_DATA_SIZE should be a multiple of 64 bytes " \
 	"due to the granularity of RX DMA"
 #endif
 
@@ -297,7 +297,7 @@ static int priority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 
 	/* Setup RX buffer size for DMA */
 	gmac->GMAC_RBSRPQ[queue_index] =
-		GMAC_RBSRPQ_RBS(CONFIG_NET_BUF_DATA_SIZE >> 6);
+		GMAC_RBSRPQ_RBS(CONFIG_NET_PKT_BUF_DATA_SIZE >> 6);
 
 	/* Set Receive Buffer Queue Pointer Register */
 	gmac->GMAC_RBQBAPQ[queue_index] = (uint32_t)queue->rx_desc_list.buf;
@@ -477,7 +477,7 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	rx_desc_list->tail = 0U;
 
 	for (int i = 0; i < rx_desc_list->len; i++) {
-		rx_buf = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE,
+		rx_buf = net_pkt_get_reserve_rx_data(CONFIG_NET_PKT_BUF_DATA_SIZE,
 						     K_NO_WAIT);
 		if (rx_buf == NULL) {
 			free_rx_bufs(rx_frag_list, rx_desc_list->len);
@@ -490,7 +490,7 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 		rx_buf_addr = rx_buf->data;
 		__ASSERT(!((uint32_t)rx_buf_addr & ~GMAC_RXW0_ADDR),
 			 "Misaligned RX buffer address");
-		__ASSERT(rx_buf->size == CONFIG_NET_BUF_DATA_SIZE,
+		__ASSERT(rx_buf->size == CONFIG_NET_PKT_BUF_DATA_SIZE,
 			 "Incorrect length of RX data buffer");
 		/* Give ownership to GMAC and remove the wrap bit */
 		rx_desc_list->buf[i].w0 = (uint32_t)rx_buf_addr & GMAC_RXW0_ADDR;
@@ -1217,7 +1217,7 @@ static int nonpriority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 	/* Configure GMAC DMA transfer */
 	gmac->GMAC_DCFGR =
 		/* Receive Buffer Size (defined in multiples of 64 bytes) */
-		GMAC_DCFGR_DRBS(CONFIG_NET_BUF_DATA_SIZE >> 6) |
+		GMAC_DCFGR_DRBS(CONFIG_NET_PKT_BUF_DATA_SIZE >> 6) |
 		/* Attempt to use INCR4 AHB bursts (Default) */
 		GMAC_DCFGR_FBLDO_INCR4 |
 		/* DMA Queue Flags */
@@ -1298,7 +1298,7 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 		if (frame_is_complete) {
 			frag_len = (rx_desc->w1 & GMAC_RXW1_LEN) - frame_len;
 		} else {
-			frag_len = CONFIG_NET_BUF_DATA_SIZE;
+			frag_len = CONFIG_NET_PKT_BUF_DATA_SIZE;
 		}
 
 		frame_len += frag_len;
@@ -1309,7 +1309,8 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 			dcache_invalidate((uint32_t)frag_data, frag->size);
 
 			/* Get a new data net buffer from the buffer pool */
-			new_frag = net_pkt_get_frag(rx_frame, CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
+			new_frag = net_pkt_get_frag(rx_frame, CONFIG_NET_PKT_BUF_DATA_SIZE,
+						    K_NO_WAIT);
 			if (new_frag == NULL) {
 				queue->err_rx_frames_dropped++;
 				net_pkt_unref(rx_frame);

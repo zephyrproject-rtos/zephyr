@@ -51,7 +51,7 @@ extern int net_bt_shell_init(void);
 #endif
 
 #if defined(CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE)
-#define IPSP_FRAG_LEN CONFIG_NET_BUF_DATA_SIZE
+#define IPSP_FRAG_LEN CONFIG_NET_PKT_BUF_DATA_SIZE
 #else
 #define IPSP_FRAG_LEN L2CAP_IPSP_MTU
 #endif /* CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */

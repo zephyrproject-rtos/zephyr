@@ -41,7 +41,7 @@ const struct log_backend *log_backend_net_get(void);
 NET_PKT_SLAB_DEFINE(syslog_tx_pkts, CONFIG_LOG_BACKEND_NET_MAX_BUF);
 NET_PKT_DATA_POOL_DEFINE(syslog_tx_bufs,
 			 ROUND_UP(CONFIG_LOG_BACKEND_NET_MAX_BUF_SIZE /
-				  CONFIG_NET_BUF_DATA_SIZE, 1) *
+				  CONFIG_NET_PKT_BUF_DATA_SIZE, 1) *
 			 CONFIG_LOG_BACKEND_NET_MAX_BUF);
 
 static struct k_mem_slab *get_tx_slab(void)

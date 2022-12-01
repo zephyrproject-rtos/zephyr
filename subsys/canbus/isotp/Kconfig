@@ -101,7 +101,7 @@ config ISOTP_TX_BUF_COUNT
 	int "Number of data buffers for sending data"
 	default 4
 	help
-	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
+	  Each data buffer will occupy CONFIG_NET_PKT_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data. If context buffers
 	  are used, use the same size here.
 

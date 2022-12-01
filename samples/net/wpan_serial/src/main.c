@@ -52,7 +52,7 @@ static K_THREAD_STACK_DEFINE(tx_stack, 1024);
 static struct k_thread tx_thread_data;
 
 /* Buffer for SLIP encoded data for the worst case */
-static uint8_t slip_buf[1 + 2 * CONFIG_NET_BUF_DATA_SIZE];
+static uint8_t slip_buf[1 + 2 * CONFIG_NET_PKT_BUF_DATA_SIZE];
 
 /* ieee802.15.4 device */
 static struct ieee802154_radio_api *radio_api;

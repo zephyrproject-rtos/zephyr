@@ -285,7 +285,7 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 		net_pkt_frag_add(pkt, buf);
 
 		if (remaining > 0) {
-			buf = net_pkt_get_frag(pkt, CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
+			buf = net_pkt_get_frag(pkt, CONFIG_NET_PKT_BUF_DATA_SIZE, K_FOREVER);
 		}
 	}
 

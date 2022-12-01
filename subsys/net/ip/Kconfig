@@ -703,7 +703,7 @@ config NET_PKT_BUF_RX_COUNT
 	default 36 if NET_L2_ETHERNET
 	default 16
 	help
-	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
+	  Each data buffer will occupy CONFIG_NET_PKT_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data.
 
 config NET_PKT_BUF_TX_COUNT
@@ -711,7 +711,7 @@ config NET_PKT_BUF_TX_COUNT
 	default 36 if NET_L2_ETHERNET
 	default 16
 	help
-	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
+	  Each data buffer will occupy CONFIG_NET_PKT_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data.
 
 choice
@@ -736,7 +736,7 @@ config NET_PKT_BUF_VARIABLE_DATA_SIZE
 
 endchoice
 
-config NET_BUF_DATA_SIZE
+config NET_PKT_BUF_DATA_SIZE
 	int "Size of each network data fragment"
 	default 128
 	depends on NET_PKT_BUF_FIXED_DATA_SIZE
@@ -768,7 +768,7 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  If you are 100% sure the headers memory space is always in a
 	  contiguous space, this will save stack usage and ROM in net core.
 	  This is a possible case when using IPv4 only, with
-	  NET_PKT_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
+	  NET_PKT_BUF_FIXED_DATA_SIZE enabled and NET_PKT_BUF_DATA_SIZE of 128 for
 	  instance.
 
 choice

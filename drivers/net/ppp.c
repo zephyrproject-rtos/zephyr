@@ -260,7 +260,7 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 	if (!ppp->pkt) {
 		ppp->pkt = net_pkt_rx_alloc_with_buffer(
 			ppp->iface,
-			CONFIG_NET_BUF_DATA_SIZE,
+			CONFIG_NET_PKT_BUF_DATA_SIZE,
 			AF_UNSPEC, 0, K_NO_WAIT);
 		if (!ppp->pkt) {
 			LOG_ERR("[%p] cannot allocate pkt", ppp);
@@ -284,7 +284,7 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 	 */
 	if (ppp->available == 1) {
 		ret = net_pkt_alloc_buffer(ppp->pkt,
-					   CONFIG_NET_BUF_DATA_SIZE,
+					   CONFIG_NET_PKT_BUF_DATA_SIZE,
 					   AF_UNSPEC, K_NO_WAIT);
 		if (ret < 0) {
 			LOG_ERR("[%p] cannot allocate new data buffer", ppp);

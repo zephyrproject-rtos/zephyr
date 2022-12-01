@@ -21,7 +21,7 @@ config ETH_CVSX_NB_TX_DESCS
 	  of a full-size packet to be transmitted or the packet will be
 	  dropped.
 
-	  Fragment size is influenced by CONFIG_NET_BUF_DATA_SIZE.
+	  Fragment size is influenced by CONFIG_NET_PKT_BUF_DATA_SIZE.
 
 config ETH_CVSX_NB_RX_DESCS
 	int "Number of entries in the receive descriptor ring"
@@ -29,7 +29,7 @@ config ETH_CVSX_NB_RX_DESCS
 	range 4 128
 	help
 	  Received packets are spread across the required number of fragment
-	  buffers. Each RX fragment has a size of CONFIG_NET_BUF_DATA_SIZE.
+	  buffers. Each RX fragment has a size of CONFIG_NET_PKT_BUF_DATA_SIZE.
 	  There is one descriptor entry per fragment.
 
 endif # ETH_CYCLONEV
