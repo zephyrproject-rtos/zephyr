@@ -246,9 +246,9 @@ class TestInstance:
         elf_filepath = self.get_elf_file()
         buildlog_filepath = self.get_buildlog_file() if from_buildlog else ''
         return SizeCalculator(elf_filename=elf_filepath,
-        extra_sections=self.testsuite.extra_sections,
-        buildlog_filepath=buildlog_filepath,
-        generate_warning=generate_warning)
+                            extra_sections=self.testsuite.extra_sections,
+                            buildlog_filepath=buildlog_filepath,
+                            generate_warning=generate_warning)
 
     def get_elf_file(self) -> str:
         fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
