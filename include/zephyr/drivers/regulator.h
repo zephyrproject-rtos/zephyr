@@ -32,8 +32,8 @@ __subsystem struct regulator_driver_api {
 	int (*enable)(const struct device *dev);
 	int (*disable)(const struct device *dev);
 	unsigned int (*count_voltages)(const struct device *dev);
-	int32_t (*list_voltages)(const struct device *dev,
-				 unsigned int selector);
+	int (*list_voltage)(const struct device *dev, unsigned int idx,
+			    int32_t *volt_uv);
 	int (*is_supported_voltage)(const struct device *dev, int32_t min_uv,
 				    int32_t max_uv);
 	int (*set_voltage)(const struct device *dev, int32_t min_uv,
@@ -110,7 +110,7 @@ int regulator_disable(const struct device *dev);
  *
  * Each voltage level supported by a regulator gets an index, starting from
  * zero. The total number of supported voltage levels can be used together with
- * regulator_list_voltages() to list all supported voltage levels.
+ * regulator_list_voltage() to list all supported voltage levels.
  *
  * @param dev Regulator device instance.
  *
@@ -129,25 +129,31 @@ static inline unsigned int regulator_count_voltages(const struct device *dev)
 }
 
 /**
- * @brief Obtain supported voltages.
+ * @brief Obtain the value of a voltage given an index.
+ *
+ * Each voltage level supported by a regulator gets an index, starting from
+ * zero. Together with regulator_count_voltages(), this function can be used
+ * to iterate over all supported voltages.
  *
  * @param dev Regulator device instance.
- * @param selector Voltage selector.
+ * @param idx Voltage index.
+ * @param[out] volt_uv Where voltage for the given @p index will be stored, in
+ * microvolts.
  *
- * @return voltage Voltage level in microvolts.
- * @retval 0 If selector code can't be used.
+ * @retval 0 If @p index corresponds to a supported voltage.
+ * @retval -EINVAL If @p index does not correspond to a supported voltage.
  */
-static inline int32_t regulator_list_voltages(const struct device *dev,
-					      unsigned int selector)
+static inline int regulator_list_voltage(const struct device *dev,
+					 unsigned int idx, int32_t *volt_uv)
 {
 	const struct regulator_driver_api *api =
 		(const struct regulator_driver_api *)dev->api;
 
-	if (api->list_voltages == NULL) {
-		return 0;
+	if (api->list_voltage == NULL) {
+		return -EINVAL;
 	}
 
-	return api->list_voltages(dev, selector);
+	return api->list_voltage(dev, idx, volt_uv);
 }
 
 /**
