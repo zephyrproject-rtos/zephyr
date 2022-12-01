@@ -61,7 +61,7 @@ CRYPTO,n,experimental
 CRYPTO_MBEDTLS_SHIM,n,experimental
 CRYPTO_TINYCRYPT_SHIM,n,experimental
 MODEM_CONTEXT,n,experimental
-NET_BUF_VARIABLE_DATA_SIZE,n,experimental
+NET_PKT_BUF_VARIABLE_DATA_SIZE,n,experimental
 NET_CONNECTION_MANAGER,n,experimental
 NET_GPTP,n,experimental
 NET_IPV4_AUTO,n,experimental

@@ -728,7 +728,7 @@ config NET_PKT_BUF_FIXED_DATA_SIZE
 	  requested is bigger than that, it will allocate as many net_buf
 	  as necessary to reach that request.
 
-config NET_BUF_VARIABLE_DATA_SIZE
+config NET_PKT_BUF_VARIABLE_DATA_SIZE
 	bool "Variable data size buffer [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
@@ -747,7 +747,7 @@ config NET_BUF_DATA_POOL_SIZE
 	int "Size of the memory pool where buffers are allocated from"
 	default 4096 if NET_L2_ETHERNET
 	default 2048
-	depends on NET_BUF_VARIABLE_DATA_SIZE
+	depends on NET_PKT_BUF_VARIABLE_DATA_SIZE
 	help
 	  This value tell what is the size of the memory pool where each
 	  network buffer is allocated from.

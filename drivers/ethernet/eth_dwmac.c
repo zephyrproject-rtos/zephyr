@@ -27,11 +27,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  * Even though the hardware can store received packets with an arbitrary
  * offset in memory, the gap bytes in the first word will be overwritten,
  * and subsequent fragments have to be buswidth-aligned anyway.
- * This means CONFIG_NET_BUF_VARIABLE_DATA_SIZE requires special care due
+ * This means CONFIG_NET_PKT_BUF_VARIABLE_DATA_SIZE requires special care due
  * to its refcount byte placement, so we take the easy way out for now.
  */
-#ifdef CONFIG_NET_BUF_VARIABLE_DATA_SIZE
-#error "CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y is not supported"
+#ifdef CONFIG_NET_PKT_BUF_VARIABLE_DATA_SIZE
+#error "CONFIG_NET_PKT_BUF_VARIABLE_DATA_SIZE=y is not supported"
 #endif
 
 /* size of pre-allocated packet fragments */

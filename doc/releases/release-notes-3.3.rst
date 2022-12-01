@@ -226,7 +226,7 @@ Stable API changes in this release
 * :c:func:`net_pkt_get_frag`, :c:func:`net_pkt_get_reserve_tx_data` and
   :c:func:`net_pkt_get_reserve_rx_data` functions are now requiring to specify
   the minimum fragment length to allocate, so that they work correctly also in
-  case :kconfig:option:`CONFIG_NET_BUF_VARIABLE_DATA_SIZE` is enabled.
+  case :kconfig:option:`CONFIG_NET_PKT_BUF_VARIABLE_DATA_SIZE` is enabled.
   Applications using this APIs will need to be updated to provide the expected
   fragment length.
 
