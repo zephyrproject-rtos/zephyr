@@ -322,76 +322,6 @@ static int regulator_pca9420_get_current_limit(const struct device *dev)
 	return MIN(config->max_ua, cconfig->vin_ilim_ua);
 }
 
-/*
- * Part of the extended regulator consumer API.
- * sets the target voltage for a given regulator mode. This mode does
- * not need to be the active mode. This API can be used to configure
- * voltages for a mode, then the regulator can be switched to that mode
- * with the regulator_pca9420_set_mode api
- */
-static int regulator_pca9420_set_mode_voltage(const struct device *dev,
-					      uint32_t mode, int32_t min_uv,
-					      int32_t max_uv)
-{
-	return regulator_set_voltage_mode(dev, min_uv, max_uv, mode);
-}
-
-/*
- * Part of the extended regulator consumer API.
- * Disables the regulator in a given mode. Does not implement the
- * onoff service, as this is incompatible with multiple mode operation
- */
-static int regulator_pca9420_mode_disable(const struct device *dev,
-					  uint32_t mode)
-{
-	const struct regulator_pca9420_config *config = dev->config;
-	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
-	uint8_t dis_val;
-
-	dis_val = config->enable_inverted ? config->desc->enable_val : 0;
-	return i2c_reg_update_byte_dt(
-		&cconfig->i2c,
-		config->desc->enable_reg + PCA9420_MODECFG_OFFSET(mode),
-		config->desc->enable_mask, dis_val);
-}
-
-/*
- * Part of the extended regulator consumer API.
- * Enables the regulator in a given mode. Does not implement the
- * onoff service, as this is incompatible with multiple mode operation
- */
-static int regulator_pca9420_mode_enable(const struct device *dev,
-					 uint32_t mode)
-{
-	const struct regulator_pca9420_config *config = dev->config;
-	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
-	uint8_t en_val;
-
-	en_val = config->enable_inverted ? 0 : config->desc->enable_val;
-	return i2c_reg_update_byte_dt(
-		&cconfig->i2c,
-		config->desc->enable_reg + PCA9420_MODECFG_OFFSET(mode),
-		config->desc->enable_mask, en_val);
-}
-
-/*
- * Part of the extended regulator consumer API.
- * gets the target voltage for a given regulator mode. This mode does
- * not need to be the active mode. This API can be used to read voltages
- * from a regulator mode other than the default.
- */
-static int32_t regulator_pca9420_get_mode_voltage(const struct device *dev,
-						  uint32_t mode)
-{
-	int32_t voltage;
-
-	if (regulator_pca9420_get_voltage_mode(dev, mode, &voltage) < 0) {
-		return 0;
-	}
-
-	return voltage;
-}
-
 static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
 {
 	const struct regulator_pca9420_config *config = dev->config;
@@ -512,10 +442,6 @@ static const struct regulator_driver_api api = {
 	.get_voltage = regulator_pca9420_get_voltage,
 	.get_current_limit = regulator_pca9420_get_current_limit,
 	.set_mode = regulator_pca9420_set_mode,
-	.set_mode_voltage = regulator_pca9420_set_mode_voltage,
-	.get_mode_voltage = regulator_pca9420_get_mode_voltage,
-	.mode_disable = regulator_pca9420_mode_disable,
-	.mode_enable = regulator_pca9420_mode_enable,
 };
 
 #define REGULATOR_PCA9420_DEFINE(node_id, id, name, _parent)                   \
