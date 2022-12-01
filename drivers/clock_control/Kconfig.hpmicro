@@ -1,0 +1,9 @@
+# Copyright (c) 2022 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_HPM
+	bool "HPMICRO clock control"
+	default y
+	depends on DT_HAS_HPMICRO_HPM_CLOCK_ENABLED
+	help
+	  Enable driver for Hpmicro Clock Unit.
