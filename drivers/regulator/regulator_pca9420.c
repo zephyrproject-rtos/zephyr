@@ -11,11 +11,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/dt-bindings/regulator/pca9420.h>
-#include <zephyr/logging/log.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util.h>
-
-LOG_MODULE_REGISTER(pca9420, CONFIG_REGULATOR_LOG_LEVEL);
 
 /** Register memory map. See datasheet for more details. */
 /** General purpose registers */
@@ -184,43 +181,6 @@ static int regulator_pca9420_is_supported_voltage(const struct device *dev,
 						  int32_t min_uv,
 						  int32_t max_uv);
 
-/**
- * Reads a register from the PMIC
- * Returns 0 on success, or errno on error
- */
-static int regulator_pca9420_read_register(const struct i2c_dt_spec *i2c,
-					   uint8_t reg, uint8_t *out)
-{
-	int ret;
-
-	ret = i2c_reg_read_byte_dt(i2c, reg, out);
-	LOG_DBG("READ 0x%x: 0x%x", reg, *out);
-	return ret;
-}
-
-/**
- * Modifies a register within the PMIC
- * Returns 0 on success, or errno on error
- */
-static int regulator_pca9420_modify_register(const struct i2c_dt_spec *i2c,
-					     uint8_t reg, uint8_t reg_mask,
-					     uint8_t reg_val)
-{
-	uint8_t reg_current;
-	int rc;
-
-	rc = regulator_pca9420_read_register(i2c, reg, &reg_current);
-	if (rc) {
-		return rc;
-	}
-
-	reg_current &= ~reg_mask;
-	reg_current |= (reg_val & reg_mask);
-	LOG_DBG("WRITE 0x%02X to 0x%02X at I2C addr 0x%02X", reg_current,
-		reg, i2c->addr);
-	return i2c_reg_write_byte_dt(i2c, reg, reg_current);
-}
-
 /*
  * Internal helper function- gets the voltage from a regulator, with an
  * offset applied to the vsel_reg. Useful to support reading voltages
@@ -235,9 +195,8 @@ static int regulator_pca9420_get_voltage_offset(const struct device *dev,
 	int ret;
 	uint8_t raw_reg;
 
-	ret = regulator_pca9420_read_register(&cconfig->i2c,
-					      config->desc->vsel_reg + off,
-					      &raw_reg);
+	ret = i2c_reg_read_byte_dt(&cconfig->i2c, config->desc->vsel_reg + off,
+				   &raw_reg);
 	if (ret < 0) {
 		return ret;
 	}
@@ -272,10 +231,9 @@ static int regulator_set_voltage_offset(const struct device *dev,
 
 	idx <<= config->desc->vsel_pos;
 
-	return regulator_pca9420_modify_register(&cconfig->i2c,
-						 config->desc->vsel_reg + off,
-						 config->desc->vsel_mask,
-						 (uint8_t)idx);
+	return i2c_reg_update_byte_dt(&cconfig->i2c,
+				      config->desc->vsel_reg + off,
+				      config->desc->vsel_mask, (uint8_t)idx);
 }
 
 
@@ -439,9 +397,9 @@ static int regulator_pca9420_mode_disable(const struct device *dev,
 	}
 	sel_off = ((mode & PCA9420_MODE_OFFSET_MASK) >> PCA9420_MODE_OFFSET_SHIFT);
 	dis_val = config->enable_inverted ? config->desc->enable_val : 0;
-	return regulator_pca9420_modify_register(
-		&cconfig->i2c, config->desc->enable_reg + sel_off,
-		config->desc->enable_mask, dis_val);
+	return i2c_reg_update_byte_dt(&cconfig->i2c,
+				      config->desc->enable_reg + sel_off,
+				      config->desc->enable_mask, dis_val);
 }
 
 /*
@@ -472,9 +430,9 @@ static int regulator_pca9420_mode_enable(const struct device *dev,
 	}
 	sel_off = ((mode & PCA9420_MODE_OFFSET_MASK) >> PCA9420_MODE_OFFSET_SHIFT);
 	en_val = config->enable_inverted ? 0 : config->desc->enable_val;
-	return regulator_pca9420_modify_register(
-		&cconfig->i2c, config->desc->enable_reg + sel_off,
-		config->desc->enable_mask, en_val);
+	return i2c_reg_update_byte_dt(&cconfig->i2c,
+				      config->desc->enable_reg + sel_off,
+				      config->desc->enable_mask, en_val);
 }
 
 /*
@@ -543,17 +501,15 @@ static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
 	/* Configure mode */
 	if (mode & PCA9420_MODE_FLAG_MODESEL_MULTI_REG) {
 		/* Select mode with offset calculation */
-		rc = regulator_pca9420_modify_register(
-			&cconfig->i2c,
-			cconfig->modesel_reg + sel_off,
-			mode & PCA9420_MODE_SELECTOR_MASK,
-			cconfig->modesel_mask);
+		rc = i2c_reg_update_byte_dt(&cconfig->i2c,
+					    cconfig->modesel_reg + sel_off,
+					    mode & PCA9420_MODE_SELECTOR_MASK,
+					    cconfig->modesel_mask);
 	} else {
 		/* Select mode without offset to modesel_reg */
-		rc = regulator_pca9420_modify_register(
-			&cconfig->i2c, cconfig->modesel_reg,
-			mode & PCA9420_MODE_SELECTOR_MASK,
-			cconfig->modesel_mask);
+		rc = i2c_reg_update_byte_dt(&cconfig->i2c, cconfig->modesel_reg,
+					    mode & PCA9420_MODE_SELECTOR_MASK,
+					    cconfig->modesel_mask);
 	}
 	return rc;
 }
@@ -565,10 +521,8 @@ static int regulator_pca9420_enable(const struct device *dev)
 	uint8_t en_val;
 
 	en_val = config->enable_inverted ? 0 : config->desc->enable_val;
-	return regulator_pca9420_modify_register(&cconfig->i2c,
-						 config->desc->enable_reg,
-						 config->desc->enable_mask,
-						 en_val);
+	return i2c_reg_update_byte_dt(&cconfig->i2c, config->desc->enable_reg,
+				      config->desc->enable_mask, en_val);
 }
 
 static int regulator_pca9420_disable(const struct device *dev)
@@ -578,10 +532,8 @@ static int regulator_pca9420_disable(const struct device *dev)
 	uint8_t dis_val;
 
 	dis_val = config->enable_inverted ? config->desc->enable_val : 0;
-	return regulator_pca9420_modify_register(&cconfig->i2c,
-						 config->desc->enable_reg,
-						 config->desc->enable_mask,
-						 dis_val);
+	return i2c_reg_update_byte_dt(&cconfig->i2c, config->desc->enable_reg,
+				      config->desc->enable_mask, dis_val);
 }
 
 static int regulator_pca9420_init(const struct device *dev)
@@ -620,7 +572,7 @@ static int regulator_pca9420_common_init(const struct device *dev)
 			  PCA9420_VIN_ILIM_UA_LSB;
 	}
 
-	return regulator_pca9420_modify_register(
+	return i2c_reg_update_byte_dt(
 		&config->i2c, PCA9420_TOP_CNTL0,
 		PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
 		reg_val << PCA9420_TOP_CNTL0_VIN_ILIM_SEL_POS);
