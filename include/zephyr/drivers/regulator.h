@@ -217,11 +217,16 @@ static inline int regulator_get_voltage(const struct device *dev,
 /**
  * @brief Set output current limit.
  *
+ * The output current limit will be configured to the closest supported output
+ * current limit. regulator_get_current_limit() can be used to obtain the actual
+ * configured current limit.
+ *
  * @param dev Regulator device instance.
  * @param min_ua Minimum acceptable current limit in microamps.
  * @param max_ua Maximum acceptable current limit in microamps.
  *
  * @retval 0 If successful.
+ * @retval -EINVAL If the given current limit window is not valid.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
