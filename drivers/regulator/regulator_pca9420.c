@@ -99,12 +99,12 @@ struct regulator_pca9420_common_config {
 	struct i2c_dt_spec i2c;
 	int32_t vin_ilim_ua;
 	const uint8_t *allowed_modes;
-	uint8_t allowed_modes_cnt;
+	regulator_mode_t allowed_modes_cnt;
 	bool enable_modesel_pins;
 };
 
 struct regulator_pca9420_common_data {
-	uint8_t mode;
+	regulator_mode_t mode;
 };
 
 struct regulator_pca9420_config {
@@ -189,7 +189,7 @@ static const struct regulator_pca9420_desc ldo2_desc = {
 };
 
 static bool regulator_pca9420_is_mode_allowed(const struct device *dev,
-					      uint8_t mode)
+					      regulator_mode_t mode)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
@@ -204,7 +204,8 @@ static bool regulator_pca9420_is_mode_allowed(const struct device *dev,
 }
 
 static int regulator_pca9420_get_voltage_mode(const struct device *dev,
-					      uint8_t mode, int32_t *voltage)
+					      regulator_mode_t mode,
+					      int32_t *voltage)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
@@ -233,7 +234,7 @@ static int regulator_pca9420_get_voltage_mode(const struct device *dev,
 
 static int regulator_set_voltage_mode(const struct device *dev,
 				      int32_t min_uv, int32_t max_uv,
-				      uint8_t mode)
+				      regulator_mode_t mode)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
@@ -323,7 +324,8 @@ static int regulator_pca9420_get_current_limit(const struct device *dev,
 	return 0;
 }
 
-static int regulator_pca9420_set_mode(const struct device *dev, uint32_t mode)
+static int regulator_pca9420_set_mode(const struct device *dev,
+				      regulator_mode_t mode)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
