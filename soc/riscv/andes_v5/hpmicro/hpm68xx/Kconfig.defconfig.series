@@ -1,0 +1,9 @@
+# Copyright (c) 2024 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_HPM68XX
+
+config SOC
+	default "hpm6800"
+
+endif # SOC_SERIES_HPM68XX

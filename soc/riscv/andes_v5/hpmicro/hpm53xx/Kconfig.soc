@@ -1,0 +1,20 @@
+# Copyright (c) 2024 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "HPM53XX MCU Selection"
+	depends on SOC_SERIES_HPM53XX
+
+config SOC_HPM5301
+	bool "HPM5301"
+
+config SOC_HPM5321
+	bool "HPM5321"
+
+config SOC_HPM5331
+	bool "HPM5331"
+
+config SOC_HPM5361
+	bool "HPM5361"
+
+endchoice

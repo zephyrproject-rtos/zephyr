@@ -1,0 +1,20 @@
+# Copyright (c) 2024 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_HPM53XX
+
+if SOC_HPM5301 || SOC_HPM5321 || SOC_HPM5331
+
+config SOC
+	default "hpm5301"
+
+endif
+
+if SOC_HPM5361
+
+config SOC
+	default "hpm5361"
+
+endif
+
+endif # SOC_SERIES_HPM53XX

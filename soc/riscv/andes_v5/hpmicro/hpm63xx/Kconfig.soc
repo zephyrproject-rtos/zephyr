@@ -1,0 +1,23 @@
+# Copyright (c) 2024 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "HPM63XX MCU Selection"
+	depends on SOC_SERIES_HPM63XX
+
+config SOC_HPM636X
+	bool "HPM636X"
+
+config SOC_HPM6350
+	bool "HPM6350"
+
+config SOC_HPM6340
+	bool "HPM6340"
+
+config SOC_HPM6330
+	bool "HPM6330"
+
+config SOC_HPM6320
+	bool "HPM6320"
+
+endchoice

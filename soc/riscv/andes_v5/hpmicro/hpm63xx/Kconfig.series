@@ -1,0 +1,8 @@
+# Copyright (c) 2024 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HPM63XX
+	bool "HPM63XX Series MCU"
+	select RISCV
+	help
+	  Enable support for HPM63XX MCU series

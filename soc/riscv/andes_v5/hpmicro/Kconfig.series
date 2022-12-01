@@ -1,0 +1,27 @@
+# Copyright (c) 2024 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ANDES_HPMICRO
+	bool "Andes V5 HPMicro SoC Series Implementation"
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_PRIVILEGED
+	select SOC_FAMILY_ANDES_V5
+	select HAS_HPMICRO_HAL
+	select RISCV_HAS_PLIC
+	select CPU_HAS_FPU
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ATOMIC_OPERATIONS_C
+	select INCLUDE_RESET_VECTOR
+	help
+	  Enable support for Andes V5 HPMicro SoC Series
+
+if SOC_SERIES_ANDES_HPMICRO
+
+source "soc/riscv/andes_v5/hpmicro/*/Kconfig.series"
+
+endif # SOC_SERIES_ANDES_HPMICRO

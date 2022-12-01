@@ -1,0 +1,38 @@
+# Copyright (c) 2024 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ANDES_HPMICRO
+
+config SOC_SERIES
+	default "hpmicro"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 24000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config IDLE_STACK_SIZE
+	default 2048
+
+config TEST_EXTRA_STACK_SIZE
+	default 2048
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 0
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 0
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 112
+
+config NUM_IRQS
+	default 128
+
+source "soc/riscv/andes_v5/hpmicro/*/Kconfig.defconfig.series"
+
+endif # SOC_SERIES_ANDES_HPMICRO
