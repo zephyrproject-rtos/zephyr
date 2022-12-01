@@ -167,6 +167,11 @@ manifest:
       path: modules/hal/gigadevice
       groups:
         - hal
+    - name: hal_hpmicro
+      revision: pull/2/head
+      path: modules/hal/hpmicro
+      groups:
+        - hal
     - name: hal_infineon
       revision: 815e84a5150f95627201f192779a0180d5052de7
       path: modules/hal/infineon
