@@ -74,11 +74,11 @@ struct slip_context {
 #define _SLIP_MTU 576
 #endif /* CONFIG_SLIP_TAP */
 
-#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#if defined(CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE)
 #define SLIP_FRAG_LEN CONFIG_NET_BUF_DATA_SIZE
 #else
 #define SLIP_FRAG_LEN _SLIP_MTU
-#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+#endif /* CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */
 
 static inline void slip_writeb(unsigned char c)
 {

@@ -85,7 +85,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 /* Make sure that IP + TCP/UDP/ICMP headers fit into one fragment. This
  * makes possible to cast a fragment pointer to protocol header struct.
  */
-#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#if defined(CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE)
 #if CONFIG_NET_BUF_DATA_SIZE < (MAX_IP_PROTO_LEN + MAX_NEXT_PROTO_LEN)
 #if defined(STRING2)
 #undef STRING2
@@ -99,7 +99,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #pragma message "Minimum len " STRING(MAX_IP_PROTO_LEN + MAX_NEXT_PROTO_LEN)
 #error "Too small net_buf fragment size"
 #endif
-#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+#endif /* CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */
 
 #if CONFIG_NET_PKT_RX_COUNT <= 0
 #error "Minimum value for CONFIG_NET_PKT_RX_COUNT is 1"
@@ -120,21 +120,21 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 K_MEM_SLAB_DEFINE(rx_pkts, sizeof(struct net_pkt), CONFIG_NET_PKT_RX_COUNT, 4);
 K_MEM_SLAB_DEFINE(tx_pkts, sizeof(struct net_pkt), CONFIG_NET_PKT_TX_COUNT, 4);
 
-#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#if defined(CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE)
 
 NET_BUF_POOL_FIXED_DEFINE(rx_bufs, CONFIG_NET_PKT_BUF_RX_COUNT, CONFIG_NET_BUF_DATA_SIZE,
 			  CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
 NET_BUF_POOL_FIXED_DEFINE(tx_bufs, CONFIG_NET_PKT_BUF_TX_COUNT, CONFIG_NET_BUF_DATA_SIZE,
 			  CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
 
-#else /* !CONFIG_NET_BUF_FIXED_DATA_SIZE */
+#else /* !CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */
 
 NET_BUF_POOL_VAR_DEFINE(rx_bufs, CONFIG_NET_PKT_BUF_RX_COUNT, CONFIG_NET_BUF_DATA_POOL_SIZE,
 			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
 NET_BUF_POOL_VAR_DEFINE(tx_bufs, CONFIG_NET_PKT_BUF_TX_COUNT, CONFIG_NET_BUF_DATA_POOL_SIZE,
 			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
 
-#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+#endif /* CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */
 
 /* Allocation tracking is only available if separately enabled */
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
@@ -379,7 +379,7 @@ struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
 		timeout = K_NO_WAIT;
 	}
 
-#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#if defined(CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE)
 	if (min_len > CONFIG_NET_BUF_DATA_SIZE) {
 		NET_ERR("Requested too large fragment. Increase CONFIG_NET_BUF_DATA_SIZE.");
 		return NULL;
@@ -388,7 +388,7 @@ struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
 	frag = net_buf_alloc(pool, timeout);
 #else
 	frag = net_buf_alloc_len(pool, min_len, timeout);
-#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+#endif /* CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */
 
 	if (!frag) {
 		return NULL;
@@ -855,7 +855,7 @@ void net_pkt_print(void)
 
 /* New allocator and API starts here */
 
-#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#if defined(CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE)
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
@@ -922,7 +922,7 @@ error:
 	return NULL;
 }
 
-#else /* !CONFIG_NET_BUF_FIXED_DATA_SIZE */
+#else /* !CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
@@ -950,7 +950,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 	return buf;
 }
 
-#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+#endif /* CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE */
 
 static size_t pkt_buffer_length(struct net_pkt *pkt,
 				size_t size,

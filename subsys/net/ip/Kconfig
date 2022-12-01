@@ -716,12 +716,12 @@ config NET_PKT_BUF_TX_COUNT
 
 choice
 	prompt "Network packet data allocator type"
-	default NET_BUF_FIXED_DATA_SIZE
+	default NET_PKT_BUF_FIXED_DATA_SIZE
 	help
 	  Select the memory allocator for the network buffers that hold the
 	  packet data.
 
-config NET_BUF_FIXED_DATA_SIZE
+config NET_PKT_BUF_FIXED_DATA_SIZE
 	bool "Fixed data size buffer"
 	help
 	  Each buffer comes with a built time configured size. If runtime
@@ -739,7 +739,7 @@ endchoice
 config NET_BUF_DATA_SIZE
 	int "Size of each network data fragment"
 	default 128
-	depends on NET_BUF_FIXED_DATA_SIZE
+	depends on NET_PKT_BUF_FIXED_DATA_SIZE
 	help
 	  This value tells what is the fixed size of each network buffer.
 
@@ -768,7 +768,7 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  If you are 100% sure the headers memory space is always in a
 	  contiguous space, this will save stack usage and ROM in net core.
 	  This is a possible case when using IPv4 only, with
-	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
+	  NET_PKT_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
 	  instance.
 
 choice

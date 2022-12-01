@@ -4,7 +4,7 @@ common:
 tests:
   net.ipv6:
     extra_configs:
-      - CONFIG_NET_BUF_FIXED_DATA_SIZE=y
+      - CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE=y
   net.ipv6.variable_buf_size:
     extra_configs:
       - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y
