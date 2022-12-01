@@ -295,15 +295,13 @@ static int regulator_pca9420_set_voltage(const struct device *dev,
  * Part of the extended regulator consumer API
  * Gets the current output voltage in uV
  */
-static int32_t regulator_pca9420_get_voltage(const struct device *dev)
+static int regulator_pca9420_get_voltage(const struct device *dev,
+					 int32_t *volt_uv)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	struct regulator_pca9420_common_data *cdata = config->parent->data;
-	int32_t voltage = 0;
 
-	(void)regulator_pca9420_get_voltage_mode(dev, cdata->mode, &voltage);
-
-	return voltage;
+	return regulator_pca9420_get_voltage_mode(dev, cdata->mode, volt_uv);
 }
 
 /**
