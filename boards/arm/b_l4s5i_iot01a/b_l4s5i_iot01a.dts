@@ -248,7 +248,7 @@ zephyr_udc0: &usbotg_fs {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
 		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
-		size = <DT_SIZE_M(8)>; /* 64 Megabits = 8 Megabytes */
+		size = <DT_SIZE_M(64)>; /* 64 Megabits */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		writeoc="PP_1_4_4";
