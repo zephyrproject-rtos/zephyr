@@ -323,7 +323,7 @@ ZTEST(central_loc, test_conn_update_central_loc_accept)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -581,7 +581,7 @@ ZTEST(central_loc, test_conn_update_central_loc_accept_reject_2nd_cpr)
 	ull_cp_release_tx(&conn_3rd, tx);
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* One less CTXs as the conn_3rd CPR is still 'running' */
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
@@ -794,7 +794,7 @@ ZTEST(central_loc, test_conn_update_central_loc_reject)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -919,7 +919,7 @@ ZTEST(central_loc, test_conn_update_central_loc_remote_legacy)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -1044,7 +1044,7 @@ ZTEST(central_loc, test_conn_update_central_loc_unsupp_wo_feat_exch)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -1140,7 +1140,7 @@ ZTEST(central_loc, test_conn_update_central_loc_unsupp_w_feat_exch)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -1307,7 +1307,7 @@ ZTEST(central_loc, test_conn_update_central_loc_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -1372,7 +1372,7 @@ ZTEST(central_rem, test_conn_update_central_rem_accept)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -1427,7 +1427,7 @@ ZTEST(central_rem, test_conn_update_central_rem_accept)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -1544,7 +1544,7 @@ ZTEST(central_rem, test_conn_update_central_rem_reject)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -1683,7 +1683,7 @@ ZTEST(central_rem, test_conn_update_central_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -1744,7 +1744,7 @@ ZTEST(central_rem, test_conn_update_central_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1802,7 +1802,7 @@ ZTEST(central_rem, test_conn_update_central_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -1906,7 +1906,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_accept)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -1986,7 +1986,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_reject)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -2066,7 +2066,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_unsupp_feat_wo_feat_exch)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -2234,7 +2234,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -2262,7 +2262,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -2306,7 +2306,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -2376,7 +2376,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -2437,7 +2437,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -3213,7 +3213,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -3241,7 +3241,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	{
 		/* Initiate a parallel local Connection Parameter Request Procedure */
@@ -3326,7 +3326,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 	}
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* One less CTXs as the conn_2nd CPR is still 'running' */
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
@@ -3487,7 +3487,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -3587,7 +3587,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 	}
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* One less CTXs as the conn_2nd CPR is still 'running' */
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
@@ -3720,7 +3720,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -3781,7 +3781,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -3843,7 +3843,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -3942,7 +3942,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_reject)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -4081,7 +4081,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/*******************/
 
@@ -4146,7 +4146,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -4190,7 +4190,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_collision)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
@@ -4296,7 +4296,7 @@ ZTEST(central_loc_no_param_req, test_conn_update_central_loc_accept_no_param_req
 			ut_rx_q_is_empty();
 
 			/* Release Ntf */
-			ull_cp_release_ntf(ntf);
+			release_ntf(ntf);
 		}
 	} while (parameters_changed-- > 0U);
 
@@ -4539,7 +4539,7 @@ ZTEST(periph_rem_no_param_req, test_conn_update_periph_rem_accept_no_param_req)
 			ut_rx_q_is_empty();
 
 			/* Release Ntf */
-			ull_cp_release_ntf(ntf);
+			release_ntf(ntf);
 		}
 	} while (parameters_changed-- > 0U);
 
