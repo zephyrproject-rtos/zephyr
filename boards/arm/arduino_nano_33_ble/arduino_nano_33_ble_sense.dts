@@ -14,7 +14,7 @@
 	compatible = "arduino,arduino_nano_33_ble_sense";
 
 	mic_pwr: mic_pwr {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "mic_pwr";
 		enable-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;

@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32_SERIES_MAX_FLASH	2048
 #endif
 
+#define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
+
 #define BANK2_OFFSET	(KB(STM32_SERIES_MAX_FLASH) / 2)
 
 #define ICACHE_DISABLE_TIMEOUT_VALUE           1U   /* 1ms */
@@ -356,50 +358,52 @@ void flash_stm32_page_layout(const struct device *dev,
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	static struct flash_pages_layout stm32_flash_layout[3];
-#define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
+
+	*layout = stm32_flash_layout;
+	*layout_size = ARRAY_SIZE(stm32_flash_layout);
+
+	if (stm32_flash_layout[0].pages_count != 0) {
+		/* Short circuit calculation logic if already performed */
+		return;
+	}
 
 	if (((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) &&
 			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
 		/*
-		 * For stm32l552xx with 256 KB flash
-		 * or For stm32u57x with 1MB flash
+		 * For stm32l552xx with 256 kB flash or stm32u57x with 1MB flash
+		 * which have space between banks 1 and 2.
 		 */
-		if (stm32_flash_layout[0].pages_count == 0) {
-			/* Bank1 */
-			stm32_flash_layout[0].pages_count = PAGES_PER_BANK;
-			stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
-			/* Dummy page corresponding to discontinuity between
-			 * bank 1/2
-			 */
-			stm32_flash_layout[1].pages_count = 1;
-			stm32_flash_layout[1].pages_size = BANK2_OFFSET
-					- (PAGES_PER_BANK * FLASH_PAGE_SIZE);
-			/* Bank2 */
-			stm32_flash_layout[2].pages_count = PAGES_PER_BANK;
-			stm32_flash_layout[2].pages_size = FLASH_PAGE_SIZE;
-		}
+
+		/* Bank1 */
+		stm32_flash_layout[0].pages_count = PAGES_PER_BANK;
+		stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
+
+		/* Dummy page corresponding to space between banks 1 and 2 */
+		stm32_flash_layout[1].pages_count = 1;
+		stm32_flash_layout[1].pages_size = BANK2_OFFSET
+				- (PAGES_PER_BANK * FLASH_PAGE_SIZE);
+
+		/* Bank2 */
+		stm32_flash_layout[2].pages_count = PAGES_PER_BANK;
+		stm32_flash_layout[2].pages_size = FLASH_PAGE_SIZE;
 	} else {
 		/*
-		 * For stm32l562xx & stm32l552xx with 512 KB flash
-		 * or For stm32u58x with 2MB flash
+		 * For stm32l562xx & stm32l552xx with 512 flash or stm32u58x
+		 * with 2MB flash which has no space between banks 1 and 2.
 		 */
 
-		if (stm32_flash_layout[0].pages_count == 0) {
-			if ((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) {
-				/* flash with dualbank has 2k pages */
-				stm32_flash_layout[0].pages_count = FLASH_PAGE_NB;
-				stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
+		if ((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) {
+			/* L5 flash with dualbank has 2k pages */
+			/* U5 flash pages are always 8 kB in size */
+			stm32_flash_layout[0].pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
+			stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
 #if defined(CONFIG_SOC_SERIES_STM32L5X)
-			} else {
-				/* flash without dualbank has 4k pages */
-				stm32_flash_layout[0].pages_count = FLASH_PAGE_NB_128_BITS;
-				stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE_128_BITS;
-
+		} else {
+			/* L5 flash without dualbank has 4k pages */
+			stm32_flash_layout[0].pages_count = FLASH_PAGE_NB_128_BITS;
+			stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE_128_BITS;
 #endif /* CONFIG_SOC_SERIES_STM32L5X */
-			}
 		}
 	}
 
-	*layout = stm32_flash_layout;
-	*layout_size = ARRAY_SIZE(stm32_flash_layout);
 }

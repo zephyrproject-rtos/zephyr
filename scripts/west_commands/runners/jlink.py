@@ -5,7 +5,6 @@
 '''Runner for debugging with J-Link.'''
 
 import argparse
-from functools import partial
 import logging
 import os
 from pathlib import Path
@@ -14,7 +13,7 @@ import subprocess
 import sys
 import tempfile
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, depr_action
+from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 try:
     import pylink
@@ -93,10 +92,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # Optional:
         parser.add_argument('--loader', required=False, dest='loader',
                             help='specifies a loader type')
-        parser.add_argument('--id', required=False, dest='dev_id',
-                            action=partial(depr_action,
-                                           replacement='-i/--dev-id'),
-                            help='Deprecated: use -i/--dev-id instead')
         parser.add_argument('--iface', default='swd',
                             help='interface to use, default is swd')
         parser.add_argument('--speed', default='auto',

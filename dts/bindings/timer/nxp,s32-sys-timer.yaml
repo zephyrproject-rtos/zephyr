@@ -1,0 +1,31 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 System Timer Module (STM)
+
+compatible: "nxp,s32-sys-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Module clock frequency in Hz.
+
+  prescaler:
+    type: int
+    required: true
+    description: |
+      Selects the module clock divide value for the prescaler, between 1 and 256.
+      Timer frequency equals to clock-frequency divided by the prescaler value.
+
+  freeze:
+    type: boolean
+    description: Stops the timer when the chip enters Debug mode.

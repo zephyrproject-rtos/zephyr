@@ -363,6 +363,7 @@
 /drivers/pwm/*it8xxx2*                    @RuibinChang
 /drivers/pwm/*esp32*                      @LucasTambor
 /drivers/pwm/*rcar*                       @pmarzin
+/drivers/regulator/*                      @gmarull
 /drivers/regulator/regulator_pca9420.c    @danieldegrasse
 /drivers/regulator/regulator_shell.c      @danieldegrasse
 /drivers/reset/                           @andrei-edward-popa

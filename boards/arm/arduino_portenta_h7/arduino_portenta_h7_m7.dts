@@ -23,7 +23,7 @@
 	};
 
 	oscen: oscen {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "oscen";
 		enable-gpios = <&gpioh 1 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;

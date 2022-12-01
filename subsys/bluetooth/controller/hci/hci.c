@@ -954,6 +954,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Set PHY Command. */
 	rp->commands[35] |= BIT(6);
 #endif /* CONFIG_BT_CTLR_PHY */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	/* LE Request Peer SCA */
+	rp->commands[43] |= BIT(2);
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
