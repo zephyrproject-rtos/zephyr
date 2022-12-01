@@ -36,7 +36,7 @@ __subsystem struct regulator_driver_api {
 			    int32_t *volt_uv);
 	int (*set_voltage)(const struct device *dev, int32_t min_uv,
 			   int32_t max_uv);
-	int32_t (*get_voltage)(const struct device *dev);
+	int (*get_voltage)(const struct device *dev, int32_t *volt_uv);
 	int (*set_current_limit)(const struct device *dev, int32_t min_ua,
 				 int32_t max_ua);
 	int (*get_current_limit)(const struct device *dev);
@@ -195,19 +195,23 @@ static inline int regulator_set_voltage(const struct device *dev,
  * @brief Obtain output voltage.
  *
  * @param dev Regulator device instance.
+ * @param[out] volt_uv Where configured output voltage will be stored.
  *
- * @return Voltage level in microvolts.
+ * @retval 0 If successful
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
  */
-static inline int32_t regulator_get_voltage(const struct device *dev)
+static inline int regulator_get_voltage(const struct device *dev,
+					int32_t *volt_uv)
 {
 	const struct regulator_driver_api *api =
 		(const struct regulator_driver_api *)dev->api;
 
 	if (api->get_voltage == NULL) {
-		return 0;
+		return -ENOSYS;
 	}
 
-	return api->get_voltage(dev);
+	return api->get_voltage(dev, volt_uv);
 }
 
 /**
