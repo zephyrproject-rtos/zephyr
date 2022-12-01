@@ -529,4 +529,15 @@ static int pcie_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(pcie_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+/*
+ * If a pcie controller is employed, pcie_scan() depends on it for working.
+ * Thus, pcie must be bumped to the next level
+ */
+#ifdef CONFIG_PCIE_CONTROLLER
+#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_2
+#else
+#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_1
+#endif
+
+SYS_INIT(pcie_init, PCIE_SYS_INIT_LEVEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
