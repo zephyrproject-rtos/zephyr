@@ -27,7 +27,7 @@ config LOG_MODE_IMMEDIATE
 
 config LOG_MODE_MINIMAL
 	bool "Minimal-footprint"
-	imply PRINTK
+	select PRINTK
 	help
 	  Enable minimal logging implementation. This has very little footprint
 	  overhead on top of the printk() implementation for standard
