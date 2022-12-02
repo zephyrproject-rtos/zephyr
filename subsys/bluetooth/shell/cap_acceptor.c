@@ -63,11 +63,11 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 	int err;
 	struct bt_csip_set_member_register_param param = {
 		.set_size = 2,
-		.rank = 1,
+		.rank = 2,
 		.lockable = true,
 		/* Using the CSIS test sample SIRK */
 		.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-			      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+			      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x55 },
 		.cb = &csip_set_member_cbs
 	};
 

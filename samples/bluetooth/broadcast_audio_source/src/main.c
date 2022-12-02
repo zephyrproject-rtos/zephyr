@@ -33,7 +33,7 @@ static bool stopping;
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
-#define BROADCAST_SOURCE_LIFETIME  120U /* seconds */
+#define BROADCAST_SOURCE_LIFETIME  12000U /* seconds */
 
 static void stream_started_cb(struct bt_audio_stream *stream)
 {
@@ -113,6 +113,7 @@ static int setup_broadcast_source(struct bt_audio_broadcast_source **source)
 	create_param.params_count = ARRAY_SIZE(subgroup_param);
 	create_param.params = subgroup_param;
 	create_param.qos = &preset_16_2_1.qos;
+	create_param.encryption = false;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
 	       ARRAY_SIZE(subgroup_param),

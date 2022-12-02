@@ -504,6 +504,7 @@ static void handle_past_sync(struct bt_le_per_adv_sync *sync)
 static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	struct bt_audio_broadcast_sink_cb *listener;
 	struct bt_audio_broadcast_sink *sink;
 	int err;
@@ -528,7 +529,18 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 		LOG_WRN("Failed to stop sink scan: %d", err);
 	}
 
-	broadcast_sink_add_src(sink);
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_pa_sync_cb,
+						      (void *)sync);
+	if (recv_state == NULL) {
+		broadcast_sink_add_src(sink);
+	} else {
+		/* Set PA sync state */
+		err = bt_bap_scan_delegator_set_pa_state(recv_state->src_id,
+							 BT_BAP_PA_STATE_SYNCED);
+		if (err != 0) {
+			LOG_WRN("Failed to set PA state: %d", err);
+		}
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->pa_synced != NULL) {
@@ -915,7 +927,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 	 * If it was then that means that we found a broadcast source
 	 */
 	if (broadcast_id != INVALID_BROADCAST_ID) {
-		LOG_DBG("Found broadcast source with address %s and id 0x%6X",
+		LOG_DBG("Found broadcast source with address %s and id 0x%06X",
 			bt_addr_le_str(info->addr), broadcast_id);
 
 		if (broadcast_sink_get_by_broadcast_id(broadcast_id) != NULL) {

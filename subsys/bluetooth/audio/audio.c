@@ -359,6 +359,9 @@ int bt_audio_decode_base(struct bt_data *data, struct bt_audio_base *base)
 	}
 
 	if (data->data_len < BT_AUDIO_BASE_MIN_SIZE) {
+		LOG_DBG("Length %u not large enough for a BASE",
+			data->data_len);
+
 		return -EMSGSIZE;
 	}
 

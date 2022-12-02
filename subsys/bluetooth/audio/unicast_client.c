@@ -2289,7 +2289,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 
 	params = CONTAINER_OF(read, struct bt_audio_discover_params, read);
 
-	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
+	LOG_DBG("conn %p dir %u err 0x%02x len %u", conn, params->dir, err, length);
 
 	if (err || !data) {
 		params->err = err;
@@ -2457,13 +2457,13 @@ int bt_audio_discover(struct bt_conn *conn,
 	params->read.func = unicast_client_read_func;
 	params->read.handle_count = 0u;
 
-	if (!params->read.by_uuid.start_handle) {
+	// if (!params->read.by_uuid.start_handle) {
 		params->read.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	}
+	// }
 
-	if (!params->read.by_uuid.end_handle) {
+	// if (!params->read.by_uuid.end_handle) {
 		params->read.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-	}
+	// }
 
 	if (!conn_cb_registered) {
 		bt_conn_cb_register(&conn_cbs);

@@ -809,7 +809,7 @@ static int unicast_group_add_stream(struct bt_audio_unicast_group *group,
 	__ASSERT_NO_MSG(group != NULL);
 	__ASSERT_NO_MSG(stream != NULL);
 	__ASSERT_NO_MSG(stream->ep != NULL);
-	__ASSERT_NO_MSG(stream->ep->iso != NULL);
+	// __ASSERT_NO_MSG(stream->ep->iso != NULL);
 
 	iso = get_new_iso(group, stream->conn, dir);
 	if (iso == NULL) {

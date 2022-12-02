@@ -9,6 +9,8 @@
 #include "audio_iso.h"
 #include "endpoint.h"
 
+#include "../host/conn_internal.h"
+
 /* TODO: Optimize the ISO_POOL_SIZE */
 #define ISO_POOL_SIZE CONFIG_BT_ISO_MAX_CHAN
 
@@ -151,14 +153,29 @@ void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 
 	qos = iso->chan.qos;
 
-	if (ep->dir == BT_AUDIO_DIR_SINK) {
-		__ASSERT(iso->rx.ep == NULL,
-			 "iso %p bound with ep %p", iso, iso->rx.ep);
-		iso->rx.ep = ep;
+	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
+	    ep->stream->conn != NULL &&
+	    ep->stream->conn->role == BT_HCI_ROLE_CENTRAL) {
+		/* For the unicast client, the direction and tx/rx is reversed */
+		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+			__ASSERT(iso->rx.ep == NULL,
+				"iso %p bound with ep %p", iso, iso->rx.ep);
+			iso->rx.ep = ep;
+		} else {
+			__ASSERT(iso->tx.ep == NULL,
+				"iso %p bound with ep %p", iso, iso->tx.ep);
+			iso->tx.ep = ep;
+		}
 	} else {
-		__ASSERT(iso->tx.ep == NULL,
-			 "iso %p bound with ep %p", iso, iso->tx.ep);
-		iso->tx.ep = ep;
+		if (ep->dir == BT_AUDIO_DIR_SINK) {
+			__ASSERT(iso->rx.ep == NULL,
+				"iso %p bound with ep %p", iso, iso->rx.ep);
+			iso->rx.ep = ep;
+		} else {
+			__ASSERT(iso->tx.ep == NULL,
+				"iso %p bound with ep %p", iso, iso->tx.ep);
+			iso->tx.ep = ep;
+		}
 	}
 
 	ep->iso = bt_audio_iso_ref(iso);
@@ -176,14 +193,29 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 
 	qos = iso->chan.qos;
 
-	if (ep->dir == BT_AUDIO_DIR_SINK) {
-		__ASSERT(iso->rx.ep == ep,
-			 "iso %p not bound with ep %p", iso, ep);
-		iso->rx.ep = NULL;
-	} else  {
-		__ASSERT(iso->tx.ep == ep,
-			 "iso %p not bound with ep %p", iso, ep);
-		iso->tx.ep = NULL;
+	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
+	    ep->stream->conn != NULL &&
+	    ep->stream->conn->role == BT_HCI_ROLE_CENTRAL) {
+		/* For the unicast client, the direction and tx/rx is reversed */
+		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+			__ASSERT(iso->rx.ep == NULL,
+				 "iso %p not bound with ep %p", iso, iso->rx.ep);
+			iso->rx.ep = NULL;
+		} else {
+			__ASSERT(iso->tx.ep == NULL,
+				 "iso %p not bound with ep %p", iso, iso->tx.ep);
+			iso->tx.ep = NULL;
+		}
+	} else {
+		if (ep->dir == BT_AUDIO_DIR_SINK) {
+			__ASSERT(iso->rx.ep == ep,
+				 "iso %p not bound with ep %p", iso, ep);
+			iso->rx.ep = NULL;
+		} else  {
+			__ASSERT(iso->tx.ep == ep,
+				 "iso %p not bound with ep %p", iso, ep);
+			iso->tx.ep = NULL;
+		}
 	}
 
 	bt_audio_iso_unref(ep->iso);
@@ -196,6 +228,7 @@ struct bt_audio_ep *bt_audio_iso_get_ep(struct bt_audio_iso *iso,
 	__ASSERT(dir == BT_AUDIO_DIR_SINK || dir == BT_AUDIO_DIR_SOURCE,
 		 "invalid dir: %u", dir);
 
+	/* TODO FIX FOR CLIENT */
 	if (dir == BT_AUDIO_DIR_SINK) {
 		return iso->rx.ep;
 	} else {

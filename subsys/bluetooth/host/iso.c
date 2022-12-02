@@ -207,8 +207,8 @@ static int hci_le_setup_iso_data_path(const struct bt_conn *iso, uint8_t dir,
 		 dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST,
 		 "invalid ISO data path dir: %u", dir);
 
-	if ((path->cc == NULL && path->cc_len != 0) ||
-	    (path->cc != NULL && path->cc_len == 0)) {
+	if (path->cc == NULL && path->cc_len != 0) {
+	// || (path->cc != NULL && path->cc_len == 0)) {
 		LOG_DBG("Invalid ISO data path CC: %p %u", path->cc, path->cc_len);
 
 		return -EINVAL;
@@ -1433,7 +1433,7 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 			return NULL;
 		}
 
-		if (!qos->tx) {
+		if (!qos->tx || qos->tx->phy == 0U) {
 			/* Use RX PHY if TX is not set (disabled)
 			 * to avoid setting invalid values
 			 */
@@ -1444,7 +1444,7 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 			cis_param->c_rtn = qos->tx->rtn;
 		}
 
-		if (!qos->rx) {
+		if (!qos->rx || qos->rx->phy == 0U) {
 			/* Use TX PHY if RX is not set (disabled)
 			 * to avoid setting invalid values
 			 */

@@ -57,7 +57,7 @@ struct pacs {
 
 #if defined(CONFIG_BT_PAC_SNK)
 static uint16_t snk_available_contexts;
-static const uint16_t snk_supported_contexts = CONFIG_BT_PACS_SNK_CONTEXT;
+static const uint16_t snk_supported_contexts = CONFIG_BT_PACS_SNK_CONTEXT | BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 #else
 static const uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 static const uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
@@ -65,7 +65,7 @@ static const uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 
 #if defined(CONFIG_BT_PAC_SRC)
 static uint16_t src_available_contexts;
-static const uint16_t src_supported_contexts = CONFIG_BT_PACS_SRC_CONTEXT;
+static const uint16_t src_supported_contexts = CONFIG_BT_PACS_SRC_CONTEXT | BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 #else
 static const uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 static const uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
@@ -246,7 +246,7 @@ static int set_available_contexts(uint16_t contexts, uint16_t *available,
 		return 0;
 	}
 
-	*available = contexts;
+	*available = contexts | BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 
 	err = k_work_reschedule(&available_contexts_work, PAC_NOTIFY_TIMEOUT);
 	if (err < 0) {

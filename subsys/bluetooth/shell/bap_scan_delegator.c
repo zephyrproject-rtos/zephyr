@@ -242,8 +242,10 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 {
 	struct sync_state *state;
 
-	shell_info(ctx_shell, "PA Sync request: past_avail %u, pa_interval 0x%04x: %p",
-	       past_avail, pa_interval, recv_state);
+	shell_info(ctx_shell,
+		   "PA Sync request: past_avail %u, broadcast_id 0x%06X, pa_interval 0x%04x: %p",
+		   past_avail, recv_state->broadcast_id, pa_interval,
+		   recv_state);
 
 	state = sync_state_get_or_new(recv_state);
 	if (state == NULL) {

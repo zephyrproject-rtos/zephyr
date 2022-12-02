@@ -83,9 +83,9 @@ static bool past_available(const struct bt_conn *conn,
 			   const bt_addr_le_t *adv_addr,
 			   uint8_t sid)
 {
-	return BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-	       BT_FEAT_LE_PAST_RECV(bt_dev.le.features) &&
-	       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) == 0;
+	return BT_FEAT_LE_PAST_RECV(conn->le.features) &&
+	       BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
+	       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
 }
 
 static int parse_recv_state(const void *data, uint16_t length,
@@ -255,6 +255,8 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 	(void)memset(params, 0, sizeof(*params));
 
+	LOG_DBG("%s receive state", active_recv_state ? "Active " : "Inactive");
+
 	if (cb_err == 0 && active_recv_state) {
 		int16_t index;
 
@@ -388,9 +390,9 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 			sub_params->notify = notify_handler;
 			err = bt_gatt_subscribe(conn, sub_params);
 
-			if (err != 0) {
-				LOG_DBG("Could not subscribe to handle 0x%04x",
-					sub_params->value_handle);
+			if (err != 0 && err != -EALREADY) {
+				LOG_DBG("Could not subscribe to handle 0x%04x: %d",
+					sub_params->value_handle, err);
 
 				broadcast_assistant.discovering = false;
 				if (broadcast_assistant_cbs != NULL &&
@@ -512,6 +514,7 @@ static int bt_bap_broadcast_assistant_common_cp(struct bt_conn *conn,
 	int err;
 
 	if (conn == NULL) {
+		LOG_DBG("conn is NULL");
 		return -EINVAL;
 	} else if (broadcast_assistant.cp_handle == 0) {
 		LOG_DBG("Handle not set");
@@ -557,7 +560,8 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	LOG_DBG("Found BIS advertiser with address %s", bt_addr_le_str(info->addr));
+	LOG_DBG("Found BIS advertiser with address %s SID 0x%02X and broadcast_id 0x%06X",
+		bt_addr_le_str(info->addr), info->sid, broadcast_id);
 
 	if (broadcast_assistant_cbs != NULL &&
 	    broadcast_assistant_cbs->scan != NULL) {
@@ -623,10 +627,13 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 	int err;
 
 	if (conn == NULL) {
+		LOG_DBG("conn is NULL");
 		return -EINVAL;
 	} else if (broadcast_assistant.cp_handle == 0) {
+		LOG_DBG("cp_handle is 0");
 		return -EINVAL;
 	} else if (broadcast_assistant.busy) {
+		LOG_DBG("broadcast assistant busy");
 		return -EBUSY;
 	}
 
@@ -867,6 +874,8 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
 
 	(void)memcpy(cp->broadcast_code, broadcast_code,
 		     BT_BAP_BROADCAST_CODE_SIZE);
+
+	LOG_HEXDUMP_DBG(cp->broadcast_code, BT_BAP_BROADCAST_CODE_SIZE, "broadcast code:");
 
 	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
 }

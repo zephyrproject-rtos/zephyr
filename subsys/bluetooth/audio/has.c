@@ -200,7 +200,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 	LOG_DBG("conn %p level %d err %d", (void *)conn, level, err);
 
-	if (err != BT_SECURITY_ERR_SUCCESS) {
+	if (err != BT_SECURITY_ERR_SUCCESS ||
+	    !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		return;
 	}
 
@@ -347,7 +348,7 @@ static void control_point_ntf_complete(struct bt_conn *conn, void *user_data)
 {
 	struct has_client *client = client_get(conn);
 
-	LOG_DBG("conn %p\n", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	/* Resubmit if needed */
 	if (client != NULL &&
@@ -362,7 +363,7 @@ static void control_point_ind_complete(struct bt_conn *conn,
 {
 	if (err) {
 		/* TODO: Handle error somehow */
-		LOG_ERR("conn %p err 0x%02x\n", (void *)conn, err);
+		LOG_ERR("conn %p err 0x%02x", (void *)conn, err);
 	}
 
 	control_point_ntf_complete(conn, NULL);

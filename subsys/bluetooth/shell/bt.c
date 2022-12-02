@@ -139,6 +139,8 @@ static struct bt_scan_filter {
 	bool addr_set;
 	int8_t rssi;
 	bool rssi_set;
+	uint16_t pa_interval;
+	bool pa_interval_set;
 } scan_filter;
 
 
@@ -194,21 +196,26 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 
-	(void)memset(name, 0, sizeof(name));
-
-	bt_data_parse(buf, data_cb, name);
-
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
-	if (scan_filter.name_set && !is_substring(scan_filter.name, name)) {
-		return;
-	}
 
 	if (scan_filter.addr_set && !is_substring(scan_filter.addr, le_addr)) {
 		return;
 	}
 
 	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
+		return;
+	}
+
+	if (scan_filter.pa_interval_set &&
+	    (scan_filter.pa_interval > BT_CONN_INTERVAL_TO_MS(info->interval))) {
+		return;
+	}
+
+	(void)memset(name, 0, sizeof(name));
+
+	bt_data_parse(buf, data_cb, name);
+
+	if (scan_filter.name_set && !is_substring(scan_filter.name, name)) {
 		return;
 	}
 
@@ -432,8 +439,10 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 			     uint16_t latency, uint16_t timeout)
 {
-	shell_print(ctx_shell, "LE conn param updated: int 0x%04x lat %d "
-		     "to %d", interval, latency, timeout);
+	shell_print(ctx_shell,
+		    "LE conn param updated: int 0x%04x (%u ms) lat %d to %d",
+		    interval, BT_CONN_INTERVAL_TO_MS(interval), latency,
+		    timeout);
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -1200,6 +1209,39 @@ static int cmd_scan_filter_set_rssi(const struct shell *sh, size_t argc, char *a
 	return SHELL_CMD_HELP_PRINTED;
 }
 
+static int cmd_scan_filter_set_pa_interval(const struct shell *sh, size_t argc,
+					   char *argv[])
+{
+	unsigned long pa_interval;
+	int err = 0;
+
+	pa_interval = shell_strtoul(argv[1], 10, &err);
+
+	if (!err) {
+		if (IN_RANGE(pa_interval,
+			     BT_GAP_PER_ADV_MIN_INTERVAL,
+			     BT_GAP_PER_ADV_MAX_INTERVAL)) {
+			scan_filter.pa_interval = (uint16_t)pa_interval;
+			scan_filter.pa_interval_set = true;
+			shell_print(sh, "PA interval cutoff set at %u",
+				    scan_filter.pa_interval);
+
+			return 0;
+		}
+
+		shell_print(sh, "value out of bounds (%d to %d)",
+			    BT_GAP_PER_ADV_MIN_INTERVAL,
+			    BT_GAP_PER_ADV_MAX_INTERVAL);
+
+		err = -ERANGE;
+	}
+
+	shell_print(sh, "error %d", err);
+	shell_help(sh);
+
+	return SHELL_CMD_HELP_PRINTED;
+}
+
 static int cmd_scan_filter_clear_all(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
@@ -1233,6 +1275,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		       const atomic_t *adv_opt)
 {
 	const bool discoverable = atomic_test_bit(adv_opt, SHELL_ADV_OPT_DISCOVERABLE);
+	const bool connectable = atomic_test_bit(adv_opt, SHELL_ADV_OPT_CONNECTABLE);
 	const bool appearance = atomic_test_bit(adv_opt, SHELL_ADV_OPT_APPEARANCE);
 	const bool adv_ext = atomic_test_bit(adv_opt, SHELL_ADV_OPT_EXT_ADV);
 	static uint8_t ad_flags;
@@ -1274,7 +1317,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		ad_len++;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER)) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER) && connectable) {
 		ssize_t csis_ad_len;
 
 		csis_ad_len = csis_ad_data_add(&data_array[ad_len],
@@ -1288,7 +1331,6 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO) && IS_ENABLED(CONFIG_BT_EXT_ADV) && adv_ext) {
-		const bool connectable = atomic_test_bit(adv_opt, SHELL_ADV_OPT_CONNECTABLE);
 		size_t audio_ad_len;
 
 		audio_ad_len = audio_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
@@ -1937,12 +1979,33 @@ static int cmd_per_adv_param(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static ssize_t pa_ad_init(struct bt_data *data_array,
+			  const size_t data_array_size)
+{
+	size_t ad_len = 0;
+
+	if (IS_ENABLED(CONFIG_BT_AUDIO)) {
+		size_t audio_pa_ad_len;
+
+		audio_pa_ad_len = audio_pa_data_add(&data_array[ad_len],
+						    data_array_size - ad_len);
+		if (audio_pa_ad_len < 0) {
+			return audio_pa_ad_len;
+		}
+
+		ad_len += audio_pa_ad_len;
+	}
+
+	return ad_len;
+}
+
 static int cmd_per_adv_data(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
-	static struct bt_data ad;
+	static struct bt_data ad[2];
 	static uint8_t hex_data[256];
+	ssize_t stack_ad_len;
 	uint8_t ad_len = 0;
 	int err;
 
@@ -1951,19 +2014,34 @@ static int cmd_per_adv_data(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 
-	memset(hex_data, 0, sizeof(hex_data));
-	ad_len = hex2bin(argv[1], strlen(argv[1]), hex_data, sizeof(hex_data));
+	if (argc > 1) {
+		size_t hex_len = 0U;
 
-	if (!ad_len) {
-		shell_error(sh, "Could not parse adv data");
-		return -ENOEXEC;
+		(void)memset(hex_data, 0, sizeof(hex_data));
+		hex_len = hex2bin(argv[1U], strlen(argv[1U]), hex_data,
+				  sizeof(hex_data));
+
+		if (hex_len == 0U) {
+			shell_error(sh, "Could not parse adv data");
+
+			return -ENOEXEC;
+		}
+
+		ad[ad_len].data_len = hex_data[0U];
+		ad[ad_len].type = hex_data[1U];
+		ad[ad_len].data = &hex_data[2U];
+		ad_len++;
 	}
 
-	ad.data_len = hex_data[0];
-	ad.type = hex_data[1];
-	ad.data = &hex_data[2];
+	stack_ad_len = pa_ad_init(&ad[1U], ARRAY_SIZE(ad) - 1U);
+	if (stack_ad_len < 0) {
+		shell_error(sh, "Failed to get stack PA data");
 
-	err = bt_le_per_adv_set_data(adv, &ad, 1);
+		return -ENOEXEC;
+	}
+	ad_len += stack_ad_len;
+
+	err = bt_le_per_adv_set_data(adv, ad, ad_len);
 	if (err) {
 		shell_error(sh,
 			    "Failed to set periodic advertising data (%d)",
@@ -3527,6 +3605,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_scan_filter_set_cmds,
 	SHELL_CMD_ARG(name, NULL, "<name>", cmd_scan_filter_set_name, 2, 0),
 	SHELL_CMD_ARG(addr, NULL, "<addr>", cmd_scan_filter_set_addr, 2, 0),
 	SHELL_CMD_ARG(rssi, NULL, "<rssi>", cmd_scan_filter_set_rssi, 1, 1),
+	SHELL_CMD_ARG(pa_interval, NULL, "<pa_interval>",
+		      cmd_scan_filter_set_pa_interval, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
@@ -3607,7 +3687,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(per-adv-param, NULL,
 		      "[<interval-min> [<interval-max> [tx_power]]]",
 		      cmd_per_adv_param, 1, 3),
-	SHELL_CMD_ARG(per-adv-data, NULL, "<data>", cmd_per_adv_data, 2, 0),
+	SHELL_CMD_ARG(per-adv-data, NULL, "[data]", cmd_per_adv_data, 1, 1),
 #endif /* CONFIG_BT_PER_ADV */
 #endif /* CONFIG_BT_EXT_ADV */
 #endif /* CONFIG_BT_BROADCASTER */

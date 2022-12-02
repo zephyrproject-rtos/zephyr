@@ -4047,7 +4047,9 @@ void bt_data_parse(struct net_buf_simple *ad,
 		}
 
 		if (len > ad->len) {
-			LOG_WRN("malformed advertising data");
+			LOG_WRN("malformed advertising data %u / %u",
+				len, ad->len);
+
 			return;
 		}
 
