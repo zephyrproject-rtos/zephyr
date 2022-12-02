@@ -223,6 +223,9 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* SDU per max latency */
 	sdu_per_event = MAX((max_latency * USEC_PER_MSEC / sdu_interval), 1U);
 
+	/* Comment below code to have multiple SDUs per ISO_Interval */
+	/* sdu_per_event = 1U; */
+
 	/* BN (Burst Count), Mandatory BN = 1 */
 	bn = ceiling_fraction(max_sdu, lll_adv_iso->max_pdu) * sdu_per_event;
 	if (bn > PDU_BIG_BN_MAX) {
