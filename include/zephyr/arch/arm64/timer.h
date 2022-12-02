@@ -22,6 +22,13 @@ extern "C" {
 
 static ALWAYS_INLINE void arm_arch_timer_init(void)
 {
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	extern int z_clock_hw_cycles_per_sec;
+	uint64_t cntfrq_el0 = read_cntfrq_el0();
+
+	__ASSERT(cntfrq_el0 < INT_MAX, "cntfrq_el0 cannot fit in system 'int'");
+	z_clock_hw_cycles_per_sec = (int) cntfrq_el0;
+#endif
 }
 
 static ALWAYS_INLINE void arm_arch_timer_set_compare(uint64_t val)
