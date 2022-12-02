@@ -115,17 +115,22 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 					/* Return before writing bad value to message buffer */
 					return rc;
 				}
-				msgs->buf[0] = val;
+
+				/* SBS uses SMBus, which sends data in little-endian format. */
+				sys_put_le16(val, msgs->buf);
 				break;
 			default:
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);
 				return -EIO;
 			}
 		} else {
-			if (msgs->len != 1) {
+			/* We write a word (2 bytes by the SBS spec) */
+			if (msgs->len != 2) {
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);
 			}
-			rc = emul_sbs_gauge_reg_write(target, reg, msgs->buf[0]);
+			uint16_t *value = (uint16_t *)msgs->buf;
+
+			rc = emul_sbs_gauge_reg_write(target, reg, *value);
 		}
 		break;
 	default:
