@@ -256,7 +256,7 @@ class Filters:
             self.tag_options.extend(["-e", tag ])
 
         if exclude_tags:
-            logging.info(f'Potential tag based filters...')
+            logging.info(f'Potential tag based filters: {exclude_tags}')
 
     def find_excludes(self, skip=[]):
         with open("scripts/ci/twister_ignore.txt", "r") as twister_ignore:
