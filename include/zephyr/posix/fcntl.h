@@ -13,6 +13,12 @@
 #define O_CREAT 0x0200
 #endif
 
+#define O_ACCMODE (O_RDONLY | O_WRONLY | O_RDWR)
+
+#define O_RDONLY 00
+#define O_WRONLY 01
+#define O_RDWR	 02
+
 #define O_APPEND   0x0400
 #define O_EXCL	   0x0800
 #define O_NONBLOCK 0x4000
