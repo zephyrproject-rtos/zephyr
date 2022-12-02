@@ -55,6 +55,10 @@
 	status = "okay";
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &pll {
 	div-m = <5>;
 	mul-n = <110>;
@@ -148,5 +152,15 @@
 			       reg = <0x00000000 DT_SIZE_M(4)>;
 			   };
 		};
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
 	};
 };
