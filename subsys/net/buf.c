@@ -412,7 +412,7 @@ struct net_buf *net_buf_get_debug(struct k_fifo *fifo, k_timeout_t timeout,
 struct net_buf *net_buf_get(struct k_fifo *fifo, k_timeout_t timeout)
 #endif
 {
-	struct net_buf *buf, *frag;
+	struct net_buf *buf;
 
 	NET_BUF_DBG("%s():%d: fifo %p", func, line, fifo);
 
@@ -422,18 +422,6 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, k_timeout_t timeout)
 	}
 
 	NET_BUF_DBG("%s():%d: buf %p fifo %p", func, line, buf, fifo);
-
-	/* Get any fragments belonging to this buffer */
-	for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
-		frag->frags = k_fifo_get(fifo, K_NO_WAIT);
-		__ASSERT_NO_MSG(frag->frags);
-
-		/* The fragments flag is only for FIFO-internal usage */
-		frag->flags &= ~NET_BUF_FRAGS;
-	}
-
-	/* Mark the end of the fragment list */
-	frag->frags = NULL;
 
 	return buf;
 }
@@ -460,24 +448,19 @@ static struct k_spinlock net_buf_slist_lock;
 
 void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
 {
-	struct net_buf *tail;
 	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(list);
 	__ASSERT_NO_MSG(buf);
 
-	for (tail = buf; tail->frags; tail = tail->frags) {
-		tail->flags |= NET_BUF_FRAGS;
-	}
-
 	key = k_spin_lock(&net_buf_slist_lock);
-	sys_slist_append_list(list, &buf->node, &tail->node);
+	sys_slist_append(list, &buf->node);
 	k_spin_unlock(&net_buf_slist_lock, key);
 }
 
 struct net_buf *net_buf_slist_get(sys_slist_t *list)
 {
-	struct net_buf *buf, *frag;
+	struct net_buf *buf;
 	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(list);
@@ -486,20 +469,6 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 
 	buf = (void *)sys_slist_get(list);
 
-	if (buf) {
-		/* Get any fragments belonging to this buffer */
-		for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
-			frag->frags = (void *)sys_slist_get(list);
-			__ASSERT_NO_MSG(frag->frags);
-
-			/* The fragments flag is only for list-internal usage */
-			frag->flags &= ~NET_BUF_FRAGS;
-		}
-
-		/* Mark the end of the fragment list */
-		frag->frags = NULL;
-	}
-
 	k_spin_unlock(&net_buf_slist_lock, key);
 
 	return buf;
@@ -507,16 +476,10 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 
 void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
 {
-	struct net_buf *tail;
-
 	__ASSERT_NO_MSG(fifo);
 	__ASSERT_NO_MSG(buf);
 
-	for (tail = buf; tail->frags; tail = tail->frags) {
-		tail->flags |= NET_BUF_FRAGS;
-	}
-
-	k_fifo_put_list(fifo, buf, tail);
+	k_fifo_put(fifo, buf);
 }
 
 #if defined(CONFIG_NET_BUF_LOG)
