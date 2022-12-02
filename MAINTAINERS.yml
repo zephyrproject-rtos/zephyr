@@ -1828,9 +1828,9 @@ SiLabs Platforms:
 Intel Platforms (X86):
   status: maintained
   maintainers:
-    - enjiamai
-  collaborators:
     - jhedberg
+  collaborators:
+    - tbursztyka
     - aasthagr
     - laurenmurphyx64
     - MaureenHelm
@@ -2784,6 +2784,7 @@ x86 arch:
   maintainers:
     - jhedberg
   collaborators:
+    - tbursztyka
     - andyross
     - nashif
     - dcpleung
