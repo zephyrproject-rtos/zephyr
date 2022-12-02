@@ -388,7 +388,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 	if (cdca.is_dup == 1) {
 		return 0;
 	}
-	return settings_fcb_save_priv(cs, name, (char *)value, val_len);
+	return settings_fcb_save_priv(cs, name, value, val_len);
 }
 
 void settings_mount_fcb_backend(struct settings_fcb *cf)
