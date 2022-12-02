@@ -101,6 +101,27 @@ Changes in this release
   and an out-of-tree script used this by passing ``--reset`` then it will need
   to be updated to use the full argument name, ``--reset-type``.
 
+* Networking: Rename several Kconfig symbols from `NET_BUF_*` to `NET_PKT_BUF_*`:
+
+  :kconfig:option:`CONFIG_NET_BUF_RX_COUNT` to
+  :kconfig:option:`CONFIG_NET_PKT_BUF_RX_COUNT`
+
+  :kconfig:option:`CONFIG_NET_BUF_TX_COUNT` to
+  :kconfig:option:`CONFIG_NET_PKT_BUF_TX_COUNT`
+
+  :kconfig:option:`CONFIG_NET_BUF_FIXED_DATA_SIZE` to
+  :kconfig:option:`CONFIG_NET_PKT_BUF_FIXED_DATA_SIZE`
+
+  :kconfig:option:`CONFIG_NET_BUF_VARIABLE_DATA_SIZE` to
+  :kconfig:option:`CONFIG_NET_PKT_BUF_VARIABLE_DATA_SIZE`
+
+  :kconfig:option:`CONFIG_NET_BUF_DATA_SIZE` to
+  :kconfig:option:`CONFIG_NET_PKT_BUF_DATA_SIZE`
+
+  :kconfig:option:`CONFIG_NET_BUF_DATA_POOL_SIZE` to
+  :kconfig:option:`CONFIG_NET_PKT_BUF_DATA_POOL_SIZE`
+
+
 Removed APIs in this release
 ============================
 
