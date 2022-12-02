@@ -39,6 +39,55 @@ ZTEST_F(sbs_gauge_new_api, test_implemented_apis)
 	zassert_not_equal(NULL, fixture->api->get_property);
 }
 
+ZTEST_F(sbs_gauge_new_api, test_get_all_props_failed_returns_negative)
+{
+	struct fuel_gauge_get_property props[] = {
+		{
+			/* Invalid property */
+			.property_type = FUEL_GAUGE_PROP_MAX,
+		},
+	};
+
+	int ret = fixture->api->get_property(fixture->dev, props, ARRAY_SIZE(props));
+
+	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
+		      props[0].property_type);
+
+	zassert_true(ret < 0);
+}
+
+ZTEST_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_count)
+{
+	struct fuel_gauge_get_property props[] = {
+		{
+			/* First invalid property */
+			.property_type = FUEL_GAUGE_PROP_MAX,
+		},
+		{
+			/* Second invalid property */
+			.property_type = FUEL_GAUGE_PROP_MAX,
+		},
+		{
+			/* Valid property */
+			.property_type = FUEL_GAUGE_VOLTAGE,
+		},
+
+	};
+
+	int ret = fixture->api->get_property(fixture->dev, props, ARRAY_SIZE(props));
+
+	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
+		      props[0].property_type);
+
+	zassert_equal(props[1].status, -ENOTSUP, "Getting bad property %d has a good status.",
+		      props[1].property_type);
+
+	zassert_ok(props[2].status, "Property %d getting %d has a bad status.", 2,
+		   props[2].property_type);
+
+	zassert_equal(ret, 2);
+}
+
 ZTEST_F(sbs_gauge_new_api, test_get_props__returns_ok)
 {
 	/* Validate what props are supported by the driver */

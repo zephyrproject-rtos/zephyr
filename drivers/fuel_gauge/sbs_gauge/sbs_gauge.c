@@ -93,13 +93,17 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 static int sbs_gauge_get_props(const struct device *dev, struct fuel_gauge_get_property *props,
 			       size_t len)
 {
-	int ret = 0;
+	int err_count = 0;
 
 	for (int i = 0; i < len; i++) {
-		ret |= sbs_gauge_get_prop(dev, props + i);
+		int ret = sbs_gauge_get_prop(dev, props + i);
+
+		err_count += ret ? 1 : 0;
 	}
 
-	return ret;
+	err_count = (err_count == len) ? -1 : err_count;
+
+	return err_count;
 }
 
 /**
