@@ -26,6 +26,13 @@ if(LIBC_LIBRARY_DIR)
   set(LIBC_LIBRARY_DIR_FLAG -L${LIBC_LIBRARY_DIR})
 endif()
 
+# Define _ANSI_SOURCE in order to prevent Newlib from defining POSIX primitives
+# in its headers when GNU dialect is used (-std=gnu*). Newlib features.h
+# defines _DEFAULT_SOURCE when __STRICT_ANSI__ is not defined by GCC (i.e. when
+# -std=gnu*), which leads to various POSIX definitions being provided by the
+# Newlib headers and conflicts with the POSIX definitions provided by Zephyr.
+zephyr_compile_definitions(_ANSI_SOURCE)
+
 # define __LINUX_ERRNO_EXTENSIONS__ so we get errno defines like -ESHUTDOWN
 # used by the network stack
 zephyr_compile_definitions(__LINUX_ERRNO_EXTENSIONS__)
