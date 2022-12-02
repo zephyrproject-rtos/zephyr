@@ -191,11 +191,7 @@ const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
 
 int bt_mesh_health_attention_get(uint16_t addr, uint16_t app_idx, uint8_t *attention)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_attention_get(health_cli, &ctx, attention);
 }
@@ -203,33 +199,21 @@ int bt_mesh_health_attention_get(uint16_t addr, uint16_t app_idx, uint8_t *atten
 int bt_mesh_health_attention_set(uint16_t addr, uint16_t app_idx,
 				 uint8_t attention, uint8_t *updated_attention)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_attention_set(health_cli, &ctx, attention, updated_attention);
 }
 
 int bt_mesh_health_attention_set_unack(uint16_t addr, uint16_t app_idx, uint8_t attention)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_attention_set_unack(health_cli, &ctx, attention);
 }
 
 int bt_mesh_health_period_get(uint16_t addr, uint16_t app_idx, uint8_t *divisor)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_period_get(health_cli, &ctx, divisor);
 }
@@ -237,22 +221,14 @@ int bt_mesh_health_period_get(uint16_t addr, uint16_t app_idx, uint8_t *divisor)
 int bt_mesh_health_period_set(uint16_t addr, uint16_t app_idx, uint8_t divisor,
 			      uint8_t *updated_divisor)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_period_set(health_cli, &ctx, divisor, updated_divisor);
 }
 
 int bt_mesh_health_period_set_unack(uint16_t addr, uint16_t app_idx, uint8_t divisor)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_period_set_unack(health_cli, &ctx, divisor);
 }
@@ -260,22 +236,14 @@ int bt_mesh_health_period_set_unack(uint16_t addr, uint16_t app_idx, uint8_t div
 int bt_mesh_health_fault_test(uint16_t addr, uint16_t app_idx, uint16_t cid, uint8_t test_id,
 			      uint8_t *faults, size_t *fault_count)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_fault_test(health_cli, &ctx, cid, test_id, faults, fault_count);
 }
 
 int bt_mesh_health_fault_test_unack(uint16_t addr, uint16_t app_idx, uint16_t cid, uint8_t test_id)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_fault_test_unack(health_cli, &ctx, cid, test_id);
 }
@@ -284,11 +252,7 @@ int bt_mesh_health_fault_clear(uint16_t addr, uint16_t app_idx, uint16_t cid,
 				 uint8_t *test_id, uint8_t *faults,
 				 size_t *fault_count)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_fault_clear(health_cli, &ctx, cid, test_id, faults, fault_count);
 }
@@ -296,11 +260,7 @@ int bt_mesh_health_fault_clear(uint16_t addr, uint16_t app_idx, uint16_t cid,
 int bt_mesh_health_fault_clear_unack(uint16_t addr, uint16_t app_idx,
 				     uint16_t cid)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_fault_clear_unack(health_cli, &ctx, cid);
 }
@@ -309,11 +269,7 @@ int bt_mesh_health_fault_get(uint16_t addr, uint16_t app_idx, uint16_t cid,
 				 uint8_t *test_id, uint8_t *faults,
 				 size_t *fault_count)
 {
-	struct bt_mesh_msg_ctx ctx = {
-		.app_idx = app_idx,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, addr);
 
 	return bt_mesh_health_cli_fault_get(health_cli, &ctx, cid, test_id, faults, fault_count);
 }
