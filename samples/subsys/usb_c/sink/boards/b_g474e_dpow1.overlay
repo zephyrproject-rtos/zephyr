@@ -27,8 +27,28 @@
 			tcpc = <&ucpd1>;
 			vbus = <&vbus1>;
 			power-role = "sink";
+            		num-snk-pdos= <1>;
 			sink-pdos = <PDO_FIXED(5000, 100, 0)>;
+            		fr-swap-reqd-type-c-current-as-initial-source= <0>;
+			vconn-swap-to-off-supported;
+            		higher-capability-set;
 		};
 		/* usbc.rst usbc-port end */
 	};
+
+    vif {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        usbcvif1: usbcvif@1 {
+            compatible = "vif";
+            reg = <1>;
+            vendor-name = "Zephyr";
+            model-part-number = "b_g474e_dpow1";
+            product-revision= "1";
+            tid= "0";
+            vif-product-type= <0>;
+            certification-type= <0>;
+            component =<&port1>;
+        };
+    };
 };

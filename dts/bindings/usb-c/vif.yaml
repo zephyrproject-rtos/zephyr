@@ -1,0 +1,111 @@
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    A VIF node is a root element that describes the Qualifying Product in VIF
+    specification. It contains introductory material followed by an optional
+    product-level field element, zero or more Components, and zero or more
+    Optional Content elements.
+    This is based on VIF XML file schema in:
+      https://compliance.usb.org/cv/VendorInfoFile/Schemas/Current/VendorInfoFile.xsd
+
+compatible: "vif"
+
+include: base.yaml
+
+properties:
+
+    vendor-name:
+        type: string
+        required: false
+        description: |
+            To be provided by the Vendor. If the Qualifying Product has a Vendor Name
+            entry in USB4 DROM, then this field should be identical to that entry
+
+    model-part-number:
+        type: string
+        required: false
+        description: |
+            To be provided by the Vendor. This field should match what appears in the
+            USB-IF Product Registration form
+            If the Qualifying Product has a Model Name entry in USB4 DROM, then this
+            field should be identical to that entry
+            The USB-IF uses this field and /VIF/Product_Revision to generate the
+            product name in the USB Integrator’s List
+
+    product-revision:
+        type: string
+        required: false
+        description: |
+            To be provided by the Vendor. This field should match what appears in the
+            USB-IF Product Registration form
+            The USB-IF uses this field and /VIF/Model_Part_Number to generate the
+            product name in the USB Integrator’s List
+
+    tid:
+        type: string
+        required: false
+        description: |
+            Provided by the USB-IF
+
+    vif-product-type:
+        type: int
+        required: false
+        description: |
+            The highest-level category into which the Component being tested falls.
+            Valid options are:
+                0 - Port Product (contains one or more ports)
+                1 - Cable
+                2 - Repeater
+            This feild is required for defining any/all of the members below i.e,
+            /VIF/Certification_Type
+            /VIF/Product
+            /VIF/Component
+            /VIF/OptionalContent
+
+    certification-type:
+        type: int
+        required: false
+        description: |
+            What is the USB-IF certification category under which the Qualifying
+            Product is to be submitted? This field shall be set to the same value as
+            the one on the USB-IF Product Registration form.
+            If /VIF/VIF_Product_Type is set to 0 (Port Product), then valid options
+            are:
+                0 - End Product
+                1 - Reference Platform
+                2 - Silicon
+            If /VIF/VIF_Product_Type is set to 1 (Cable), then valid options are:
+                0 - End Product
+                2 - Silicon
+            If /VIF/VIF_Product_Type is set to 2 (Repeater), then this field shall be
+            set to 2 (Silicon).
+            If /VIF/VIF_Product_Type is not present, then this shall not be present
+
+    component:
+        type: phandles
+        required: false
+        description: |
+            0 or more components that fully describe a component of the Qualifying
+            Product. If vif-product-type is not present, then the number of
+            components shall be 0.
+
+    # EXAMPLE:
+    #
+    #
+    # vif {
+    #    address-cells = <1>;
+    #    size-cells = <0>;
+    #    usbcvif1: usbcvif@1 {
+    #       compatible = "vif";
+    #       reg = <1>;
+    #       vendor-name = "Zephyr";
+    #       model-part-number = "b_g474e_dpow1";
+    #       product-revision= "1";
+    #       tid= "0";
+    #       vif-product-type= <0>;
+    #       certification-type= <0>;
+    #       component =<&port1>;
+    #     };
+    # };
+    #

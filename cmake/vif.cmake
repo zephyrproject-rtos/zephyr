@@ -3,7 +3,7 @@
 
 # Generates USB-C VIF policies in XML format from device tree.
 set(gen_vif_script ${ZEPHYR_BASE}/scripts/generate_usb_vif/generate_vif.py)
-set(dts_compatible usb-c-connector)
+set(dts_compatible vif)
 set(vif_xml ${PROJECT_BINARY_DIR}/vif.xml)
 set(cmd_gen_vif ${PYTHON_EXECUTABLE} ${gen_vif_script}
         --edt-pickle ${EDT_PICKLE}

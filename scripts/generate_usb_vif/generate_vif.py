@@ -20,26 +20,8 @@ sys.path.insert(0, os.path.join(SCRIPTS_DIR, 'dts', 'python-devicetree', 'src'))
 from devicetree import edtlib
 
 
-def main():
-    args = parse_args()
-    try:
-        with open(args.edt_pickle, 'rb') as f:
-            edt = pickle.load(f)
-    except edtlib.EDTError as err:
-        sys.exit(f"devicetree error: {err}")
-    xml_root = get_root()
-    add_elements_to_xml(xml_root, constants.VIF_SPEC_ELEMENTS)
-    add_element_to_xml(xml_root, constants.MODEL_PART_NUMBER, args.board)
-    for node in edt.compat2nodes[args.compatible]:
-        xml_ele = add_element_to_xml(xml_root, constants.COMPONENT)
-        parse_and_add_node_to_xml(xml_ele, node)
-    tree = ET.ElementTree(xml_root)
-    tree.write(args.vif_out, xml_declaration=True,
-               encoding=constants.XML_ENCODING)
-
-
 def is_vif_element(name):
-    if name in constants.VIF_ELEMENTS:
+    if (name in constants.VIF_ELEMENTS) or (name in constants.DT_VIF_ELEMENTS):
         return True
     return False
 
@@ -75,9 +57,11 @@ def add_elements_to_xml(xml_ele, elements):
     for element_name in elements:
         text = elements[element_name].get(constants.TEXT, None)
         attributes = elements[element_name].get(constants.ATTRIBUTES, None)
-        new_xml_ele = add_element_to_xml(xml_ele, element_name, text, attributes)
+        new_xml_ele = add_element_to_xml(xml_ele, element_name, text,
+                                         attributes)
         if constants.CHILD in elements[element_name]:
-            add_elements_to_xml(new_xml_ele, elements[element_name][constants.CHILD])
+            add_elements_to_xml(new_xml_ele,
+                                elements[element_name][constants.CHILD])
 
 
 def is_simple_datatype(value):
@@ -96,30 +80,7 @@ def get_xml_bool_value(value):
     return constants.FALSE
 
 
-def parse_and_add_sink_pdos_to_xml(xml_ele, sink_pdos):
-    new_xml_ele = add_element_to_xml(xml_ele, constants.SINK_PDOS)
-    pdos_info = dict()
-    snk_max_power = 0
-    for pdo_value in sink_pdos:
-        power_mv = parse_and_add_sink_pdo_to_xml(new_xml_ele, pdo_value, pdos_info)
-        if power_mv > snk_max_power:
-            snk_max_power = power_mv
-    add_element_to_xml(xml_ele, constants.NUM_SINK_PDOS, None,
-                       {constants.VALUE: str(len(sink_pdos))})
-    add_element_to_xml(xml_ele, constants.EPR_SUPPORTED_AS_SINK,
-                       attributes={constants.VALUE: constants.FALSE})
-    add_element_to_xml(xml_ele, constants.NO_USB_SUSPEND_MAY_BE_SET,
-                       attributes={constants.VALUE: constants.TRUE})
-    add_element_to_xml(xml_ele, constants.HIGHER_CAPABILITY_SET, attributes={
-        constants.VALUE: get_xml_bool_value(pdos_info.get(constants.HIGHER_CAPABILITY_SET, 0))})
-    add_element_to_xml(xml_ele, constants.FR_SWAP_REQD_TYPE_C_CURRENT_AS_INITIAL_SOURCE,
-                       "FR_Swap not supported", attributes={constants.VALUE: str(
-            pdos_info.get(constants.FR_SWAP_REQD_TYPE_C_CURRENT_AS_INITIAL_SOURCE, 0))})
-    add_element_to_xml(xml_ele, constants.PD_POWER_AS_SINK, f'{snk_max_power} mW',
-                       {constants.VALUE: str(snk_max_power)})
-
-
-def parse_and_add_sink_pdo_to_xml(xml_ele, pdo_value, pdos_info):
+def parse_and_add_sink_pdo_to_xml(xml_ele, pdo_value):
     power_mw = 0
     xml_ele = add_element_to_xml(xml_ele, constants.SINK_PDO)
     pdo_type = get_pdo_type(pdo_value)
@@ -129,9 +90,8 @@ def parse_and_add_sink_pdo_to_xml(xml_ele, pdo_value, pdos_info):
         voltage = (pdo_value >> 10) & 0x3ff
         voltage_mv = voltage * 50
         power_mw = (current_ma * voltage_mv) // 1000
-        pdos_info[constants.HIGHER_CAPABILITY_SET] = pdo_value & (1 << 28)
-        pdos_info[constants.FR_SWAP_REQD_TYPE_C_CURRENT_AS_INITIAL_SOURCE] = pdo_value & (3 << 23)
-        add_element_to_xml(xml_ele, constants.SINK_PDO_VOLTAGE, f'{voltage_mv} mV',
+        add_element_to_xml(xml_ele, constants.SINK_PDO_VOLTAGE,
+                           f'{voltage_mv} mV',
                            {constants.VALUE: str(voltage)})
         add_element_to_xml(xml_ele, constants.SINK_PDO_OP_CURRENT,
                            f'{current_ma} mA',
@@ -149,7 +109,8 @@ def parse_and_add_sink_pdo_to_xml(xml_ele, pdo_value, pdos_info):
         add_element_to_xml(xml_ele, constants.SINK_PDO_MAX_VOLTAGE,
                            f'{max_voltage_mv} mV',
                            {constants.VALUE: str(max_voltage)})
-        add_element_to_xml(xml_ele, constants.SINK_PDO_OP_POWER, f'{power_mw} mW',
+        add_element_to_xml(xml_ele, constants.SINK_PDO_OP_POWER,
+                           f'{power_mw} mW',
                            {constants.VALUE: str(power)})
     elif pdo_type == constants.PDO_TYPE_VARIABLE:
         max_voltage = (pdo_value >> 20) & 0x3ff
@@ -191,60 +152,58 @@ def parse_and_add_sink_pdo_to_xml(xml_ele, pdo_value, pdos_info):
     else:
         raise ValueError(f'ERROR: Invalid PDO_TYPE {pdo_value}')
     add_element_to_xml(xml_ele, constants.SINK_PDO_SUPPLY_TYPE,
-                       constants.PDO_TYPES[pdo_type], {constants.VALUE: str(pdo_type)})
+                       constants.PDO_TYPES[pdo_type],
+                       {constants.VALUE: str(pdo_type)})
     return power_mw
 
 
-def parse_and_add_controller_and_data_to_xml(xml_ele, cad):
-    xml_ele = add_element_to_xml(xml_ele, cad.basename)
-    for name in cad.data:
-        add_element_to_xml(xml_ele, name, str(cad.data[name]))
-    parse_and_add_node_to_xml(xml_ele, cad.controller)
+def parse_and_add_sink_pdos_to_xml(xml_ele, sink_pdos):
+    new_xml_ele = add_element_to_xml(xml_ele, constants.SINK_PDOS)
+    snk_max_power = 0
+    for pdo_value in sink_pdos:
+        power_mv = parse_and_add_sink_pdo_to_xml(new_xml_ele, pdo_value)
+        if power_mv > snk_max_power:
+            snk_max_power = power_mv
+    add_element_to_xml(xml_ele, constants.PD_POWER_AS_SINK,
+                       f'{snk_max_power} mW',
+                       {constants.VALUE: str(snk_max_power)})
 
 
-def parse_and_add_array_to_xml(xml_ele, prop):
-    for member in prop.val:
-        if is_simple_datatype(member):
-            add_element_to_xml(xml_ele, prop.name, str(member))
-        elif isinstance(member, list):
-            new_xml_ele = add_element_to_xml(xml_ele, prop.name)
-            parse_and_add_array_to_xml(new_xml_ele, member)
-        elif isinstance(member, edtlib.Node):
-            new_xml_ele = add_element_to_xml(xml_ele, prop.name)
-            parse_and_add_node_to_xml(new_xml_ele, member)
-        elif isinstance(member, edtlib.ControllerAndData):
-            new_xml_ele = add_element_to_xml(xml_ele, prop.name)
-            parse_and_add_controller_and_data_to_xml(new_xml_ele, member)
+def parse_and_add_component_to_xml(xml_ele, component_node):
+    for name in component_node.props:
+        prop = component_node.props[name]
+        if name == constants.SINK_PDOS:
+            parse_and_add_sink_pdos_to_xml(xml_ele, prop.val)
+        elif name == constants.FR_SWAP_REQD_TYPE_C_CURRENT_AS_INITIAL_SOURCE:
+            add_element_to_xml(xml_ele, name,
+                               constants.FR_SWAP_REQD_TYPE_C_CURRENT_AS_INITIAL_SOURCE_DICT[
+                                   prop.val], {constants.VALUE: str(prop.val)})
         else:
-            ValueError(
-                f'Noticed undefined type : {str(type(member))}, with value {str(member)}')
+            add_element_to_xml(xml_ele, name, None,
+                               {constants.VALUE: str(prop.val).lower()})
 
 
-def parse_and_add_node_to_xml(xml_ele, node):
-    if not isinstance(node, edtlib.Node):
-        return
-    xml_ele = add_element_to_xml(xml_ele, node.name)
-    for prop in node.props:
-        if is_simple_datatype(node.props[prop].val):
-            add_element_to_xml(xml_ele, node.props[prop].name,
-                               str(node.props[prop].val))
-        elif node.props[prop].name == constants.SINK_PDOS:
-            parse_and_add_sink_pdos_to_xml(xml_ele, node.props[prop].val)
-        elif isinstance(node.props[prop].val, list):
-            parse_and_add_array_to_xml(xml_ele, node.props[prop])
-        elif isinstance(node.props[prop].val, edtlib.Node):
-            new_xml_ele = add_element_to_xml(xml_ele, node.props[prop].name)
-            parse_and_add_node_to_xml(new_xml_ele, node.props[prop].val)
-        elif isinstance(node.props[prop].val, edtlib.ControllerAndData):
-            new_xml_ele = add_element_to_xml(xml_ele, node.props[prop].name)
-            parse_and_add_controller_and_data_to_xml(new_xml_ele, node.props[prop].val)
-        else:
-            ValueError(
-                f'Noticed undefined type : {str(type(node.props[prop].val))}, '
-                f'with value {str(node.props[prop].val)}')
-    for child in node.children:
-        new_xml_ele = add_element_to_xml(xml_ele, child)
-        parse_and_add_node_to_xml(new_xml_ele, node.children[child])
+def parse_and_add_components_to_xml(xml_ele, component_nodes):
+    for component in component_nodes.val:
+        new_xml_ele = add_element_to_xml(xml_ele, component_nodes.name)
+        parse_and_add_component_to_xml(new_xml_ele, component)
+
+
+def parse_and_add_vif_to_xml(xml_ele, vif_node):
+    for name in vif_node.props:
+        prop = vif_node.props[name]
+        if name == constants.VIF_PRODUCT_TYPE:
+            add_element_to_xml(xml_ele, name,
+                               constants.VIF_PRODUCT_TYPE_DICT[prop.val],
+                               {constants.VALUE: str(prop.val)})
+        elif name == constants.CERTIFICATION_TYPE:
+            add_element_to_xml(xml_ele, name,
+                               constants.CERTIFICATION_TYPE_DICT[prop.val],
+                               {constants.VALUE: str(prop.val)})
+        elif is_simple_datatype(prop.val):
+            add_element_to_xml(xml_ele, name, prop.val)
+        elif name == constants.COMPONENT:
+            parse_and_add_components_to_xml(xml_ele, prop)
 
 
 def parse_args():
@@ -257,6 +216,24 @@ def parse_args():
                         help="path to write VIF policies to")
     parser.add_argument("--board", required=True, help="board name")
     return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    try:
+        with open(args.edt_pickle, 'rb') as f:
+            edt = pickle.load(f)
+    except edtlib.EDTError as err:
+        sys.exit(f"devicetree error: {err}")
+
+    # NOTE: Assuming there will be only one VIF node at max per project
+    for node in edt.compat2nodes[args.compatible]:
+        xml_root = get_root()
+        add_elements_to_xml(xml_root, constants.VIF_SPEC_ELEMENTS)
+        parse_and_add_vif_to_xml(xml_root, node)
+        tree = ET.ElementTree(xml_root)
+        tree.write(args.vif_out, xml_declaration=True,
+                   encoding=constants.XML_ENCODING)
 
 
 if __name__ == "__main__":
