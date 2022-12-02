@@ -2,6 +2,18 @@
 # Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+config MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE
+	int "MCUmgr transport workqueue stack size"
+	default 2048
+	help
+	  Stack size of the MCUmgr for transport subsystem work queue.
+
+config MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO
+	int "MCUmgr transport workqueue thread priority"
+	default 3
+	help
+	  Scheduling priority of the MCUmgr transport subsystem work queue.
+
 config MCUMGR_TRANSPORT_REASSEMBLY
 	bool
 	help
@@ -39,6 +51,10 @@ config MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE
 	  setting. A value of 4 is sufficient for UART and shell, a value of 8
 	  is sufficient for Bluetooth. For UDP, the userdata must be large
 	  enough to hold a IPv4/IPv6 address.
+
+module = MCUMGR_TRANSPORT
+module-str = mcumgr_transport
+source "subsys/logging/Kconfig.template.log_config"
 
 rsource "Kconfig.dummy"
 
