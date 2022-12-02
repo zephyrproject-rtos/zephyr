@@ -2,6 +2,13 @@
 # Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# The Kconfig is dedicated to mgmt subsystem of MCUmgr. Kconfig options defined
+# here affect behaviour of services provided by source code of mcumgr/mgmt/
+# directory, like management group registration or overall hooks support.
+#
+# All Kconfig options defined with this file should begin with prefix:
+#  MCUMGR_MGMT_
+
 config MCUMGR_MGMT_NOTIFICATION_HOOKS
 	bool "MCUmgr notification hook support"
 	help
