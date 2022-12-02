@@ -14,21 +14,44 @@
  * provide a random number generator.
  */
 
+#include <zephyr/init.h>
 #include <zephyr/random/rand32.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/atomic.h>
 #include <string.h>
+#include <zephyr/device.h>
 
 #if defined(__GNUC__)
 
-/*
- * Symbols used to ensure a rapid series of calls to random number generator
- * return different values.
- */
-static atomic_val_t _rand32_counter;
+/* seed the state with pseudo-random data */
+static uint32_t state[4] = {0, 0x9b64c2b0, 0x86d3d2d4, 0xa00ae278};
 
-#define _RAND32_INC 1000000003U
+static struct k_spinlock rand_state_lock;
+
+static inline uint32_t rotl(const uint32_t x, int k)
+{
+	return (x << k) | (x >> (32 - k));
+}
+
+static uint32_t xoshiro128_next(void)
+{
+	const uint32_t result = rotl(state[0] + state[3], 7) + state[0];
+	const uint32_t t = state[1] << 9;
+
+	k_spinlock_key_t lock_key = k_spin_lock(&rand_state_lock);
+
+	state[2] ^= state[0];
+	state[3] ^= state[1];
+	state[1] ^= state[2];
+	state[0] ^= state[3];
+
+	state[2] ^= t;
+	state[3] = rotl(state[3], 11);
+
+	k_spin_unlock(&rand_state_lock, lock_key);
+
+	return result;
+}
 
 /**
  * @brief Get a 32 bit random number
@@ -41,7 +64,7 @@ static atomic_val_t _rand32_counter;
  */
 uint32_t z_impl_sys_rand32_get(void)
 {
-	return k_cycle_get_32() + atomic_add(&_rand32_counter, _RAND32_INC);
+	return xoshiro128_next();
 }
 
 /**
@@ -68,4 +91,5 @@ void z_impl_sys_rand_get(void *dst, size_t outlen)
 		outlen -= blocksize;
 	}
 }
+
 #endif /* __GNUC__ */
