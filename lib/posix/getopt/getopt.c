@@ -30,11 +30,6 @@
  */
 
 #include <string.h>
-#ifdef CONFIG_ARCH_POSIX
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
 #include "getopt.h"
 #include "getopt_common.h"
 
