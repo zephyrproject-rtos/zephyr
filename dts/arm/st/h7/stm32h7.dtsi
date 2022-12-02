@@ -756,7 +756,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x01000000>;
 			interrupts = <127 0>;
 			status = "disabled";
-			vref-mv = <3300>;
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
