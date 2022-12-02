@@ -1057,9 +1057,12 @@ static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
 	stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
 	iso_meta->timestamp = HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
 			      radio_tmr_aa_restore() +
-			      (ceiling_fraction(lll->ptc_curr, lll->bn) *
-			       lll->pto * lll->iso_interval *
-			       PERIODIC_INT_UNIT_US) -
+			      (((lll->bn_curr * lll->iso_interval *
+				 PERIODIC_INT_UNIT_US / lll->sdu_interval /
+				 lll->bn) - 1U) * lll->sdu_interval) +
+			      ((lll->ptc_curr * lll->pto * lll->iso_interval *
+				PERIODIC_INT_UNIT_US / lll->sdu_interval /
+				lll->bn) * lll->sdu_interval) -
 			      addr_us_get(lll->phy) -
 			      ((stream->bis_index - 1U) *
 			       lll->sub_interval * ((lll->irc * lll->bn) +
@@ -1082,7 +1085,11 @@ static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
 
 	stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
 	iso_meta->timestamp = HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
-			      radio_tmr_aa_restore() - addr_us_get(lll->phy) -
+			      radio_tmr_aa_restore() +
+			      (((bn * lll->iso_interval * PERIODIC_INT_UNIT_US /
+				 lll->sdu_interval / lll->bn) - 1U) *
+			       lll->sdu_interval) -
+			      addr_us_get(lll->phy) -
 			      ((stream->bis_index - 1U) *
 			       lll->sub_interval * ((lll->irc * lll->bn) +
 						    lll->ptc));
