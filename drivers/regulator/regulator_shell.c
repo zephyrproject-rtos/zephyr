@@ -18,7 +18,7 @@ static int cmd_reg_en(const struct shell *sh, size_t argc, char **argv)
 	int ret;
 
 	reg_dev = device_get_binding(argv[1]);
-	if (!device_is_ready(reg_dev)) {
+	if (reg_dev == NULL) {
 		shell_error(sh, "regulator device %s not available", argv[1]);
 		return -ENODEV;
 	}
@@ -39,7 +39,7 @@ static int cmd_reg_dis(const struct shell *sh, size_t argc, char **argv)
 	int ret;
 
 	reg_dev = device_get_binding(argv[1]);
-	if (!device_is_ready(reg_dev)) {
+	if (reg_dev == NULL) {
 		shell_error(sh, "regulator device %s not available", argv[1]);
 		return -ENODEV;
 	}
@@ -59,13 +59,13 @@ static int cmd_set_vol(const struct shell *sh, size_t argc, char **argv)
 	const struct device *reg_dev;
 
 	reg_dev = device_get_binding(argv[1]);
-	if (!device_is_ready(reg_dev)) {
+	if (reg_dev == NULL) {
 		shell_error(sh, "regulator device %s not available", argv[1]);
 		return -ENODEV;
 	}
 
-	lvol = atoi(argv[2]) * 1000;
-	uvol = atoi(argv[3]) * 1000;
+	lvol = strtol(argv[2], NULL, 10) * 1000;
+	uvol = strtol(argv[3], NULL, 10) * 1000;
 	shell_print(sh, "Setting range to %d-%d uV", lvol, uvol);
 	ret = regulator_set_voltage(reg_dev, lvol, uvol);
 	if (ret < 0) {
@@ -87,13 +87,13 @@ static int cmd_set_ilim(const struct shell *sh, size_t argc, char **argv)
 	const struct device *reg_dev;
 
 	reg_dev = device_get_binding(argv[1]);
-	if (!device_is_ready(reg_dev)) {
+	if (reg_dev == NULL) {
 		shell_error(sh, "regulator device %s not available", argv[1]);
 		return -ENODEV;
 	}
 
-	lcur = atoi(argv[2]) * 1000;
-	ucur = atoi(argv[3]) * 1000;
+	lcur = strtol(argv[2], NULL, 10) * 1000;
+	ucur = strtol(argv[3], NULL, 10) * 1000;
 	shell_print(sh, "Setting range to %d-%d uA", lcur, ucur);
 	ret = regulator_set_current_limit(reg_dev, lcur, ucur);
 	if (ret < 0) {
