@@ -15,6 +15,8 @@
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 
+#include <SEGGER_RTT.h>
+
 /* Buffer is only needed for bytes that follow command and offset */
 #define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 2)
 #define TEST_ARR_SIZE 0x1000
@@ -174,6 +176,77 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_write_rtt(const struct shell *shell, size_t argc, char *argv[])
+{
+	uint32_t __aligned(4) read_array[BUF_ARRAY_CNT];
+	uint32_t __aligned(4) buf_array[BUF_ARRAY_CNT];
+	const struct device *flash_dev;
+	uint32_t w_addr;
+	int ret;
+	size_t op_size = 0;
+	int rtt_channel = 0;
+	size_t data_per_chunk = 0;
+	size_t data_to_read = 0;
+	size_t data_size = 0;
+	size_t data_received = 0;
+	int write_error = 0;
+
+	ret = parse_helper(shell, &argc, &argv, &flash_dev, &w_addr);
+	if (ret) {
+		return ret;
+	}
+
+	data_per_chunk = strtoul(argv[2], NULL, 16);
+	if (data_per_chunk >= sizeof(buf_array)) {
+		shell_error(shell, "ERROR: buffer size too big");
+		return -EDOM;
+	}
+
+	data_size = strtoul(argv[3], NULL, 16);
+
+	rtt_channel = SEGGER_RTT_AllocDownBuffer("Shell flash write", buf_array, sizeof(buf_array), 0);
+	if (rtt_channel < 0) {
+		shell_error(shell, "ERROR: could not create RTT channel");
+		return -1;
+	} else {
+		shell_print(shell, "RTT channel %d", rtt_channel);
+	}
+
+	data_to_read = data_per_chunk;
+	while (data_received < data_size) {
+		if (SEGGER_RTT_HasData(rtt_channel)) {
+			if (data_size - data_received < data_per_chunk) {
+				data_to_read = data_size - data_received;
+			}
+			op_size = 0;
+			do {
+				op_size = SEGGER_RTT_Read(rtt_channel, read_array + op_size, data_to_read - op_size);
+			} while(op_size != data_to_read);
+			if (flash_write(flash_dev, w_addr, read_array, op_size) != 0) {
+				shell_error(shell, "Write internal ERROR!");
+				write_error = 1;
+				break;
+			} else {
+				shell_print(shell, "Write OK.");
+			}
+			w_addr += op_size;
+			data_received += op_size;
+		}
+		k_msleep(5);
+	}
+
+	ret = SEGGER_RTT_ConfigDownBuffer(rtt_channel, "", NULL, 0, 0);
+	if (write_error) {
+		return -EIO;
+	}
+	if (ret < 0) {
+		shell_error(shell, "ERROR: could not destroy RTT channel");
+		return -1;
+	}
+
+	return 0;
+}
+
 static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 {
 	const struct device *flash_dev;
@@ -293,6 +366,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
 	SHELL_CMD_ARG(write, &dsub_device_name,
 		"[<device>] <address> [-v] <dword> [<dword>...]",
 		cmd_write, 3, BUF_ARRAY_CNT),
+	SHELL_CMD_ARG(write_rtt, &dsub_device_name,
+		"[<device>] <address> <buffer_size> <data_size>",
+		cmd_write_rtt, 5, 0),
 	SHELL_SUBCMD_SET_END
 );
 
