@@ -104,8 +104,13 @@ static int malloc_prepare(const struct device *unused)
 
 #ifdef USE_MALLOC_PREPARE
 #ifdef CONFIG_MMU
+	/* Need extra for the guard pages (before and after) which we
+	 * won't map.
+	 */
+	size_t max_alloc = k_mem_free_get() - CONFIG_MMU_PAGE_SIZE * 2;
+
 	max_heap_size = MIN(CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE,
-			    k_mem_free_get());
+			    max_alloc);
 
 	if (max_heap_size != 0) {
 		heap_base = k_mem_map(max_heap_size, K_MEM_PERM_RW);
