@@ -52,8 +52,8 @@ static int init_reset(void);
 static struct ll_adv_iso_set *adv_iso_get(uint8_t handle);
 static struct stream *adv_iso_stream_acquire(void);
 static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream);
-static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
-			uint32_t latency_packing, uint32_t ctrl_spacing);
+static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
+			uint32_t event_spacing_max);
 static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			      uint32_t iso_interval_us);
 static uint8_t adv_iso_chm_update(uint8_t big_handle);
@@ -94,14 +94,16 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct ll_adv_iso_set *adv_iso;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct pdu_big_info *big_info;
+	uint32_t event_spacing_max;
 	uint8_t pdu_big_info_size;
 	uint32_t iso_interval_us;
 	uint32_t latency_packing;
 	memq_link_t *link_cmplt;
 	memq_link_t *link_term;
 	struct ll_adv_set *adv;
+	uint32_t event_spacing;
 	uint16_t ctrl_spacing;
-	uint32_t latency_pdu;
+	uint8_t sdu_per_event;
 	uint8_t ter_idx;
 	uint8_t *acad;
 	uint32_t ret;
@@ -221,8 +223,12 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			adv_iso_stream_handle_get(stream);
 	}
 
+	/* FIXME: SDU per max latency */
+	sdu_per_event = MAX((max_latency * USEC_PER_MSEC / sdu_interval), 2U) -
+			1U;
+
 	/* BN (Burst Count), Mandatory BN = 1 */
-	bn = ceiling_fraction(max_sdu, lll_adv_iso->max_pdu);
+	bn = ceiling_fraction(max_sdu, lll_adv_iso->max_pdu) * sdu_per_event;
 	if (bn > PDU_BIG_BN_MAX) {
 		/* Restrict each BIG event to maximum burst per BIG event */
 		lll_adv_iso->bn = PDU_BIG_BN_MAX;
@@ -234,6 +240,13 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	} else {
 		lll_adv_iso->bn = bn;
 	}
+
+	/* Calculate ISO interval */
+	/* iso_interval shall be at least SDU interval,
+	 * or integer multiple of SDU interval for unframed PDUs
+	 */
+	iso_interval_us = ((sdu_interval * lll_adv_iso->bn * sdu_per_event) /
+			   (bn * PERIODIC_INT_UNIT_US)) * PERIODIC_INT_UNIT_US;
 
 	/* Immediate Repetition Count (IRC), Mandatory IRC = 1 */
 	lll_adv_iso->irc = rtn + 1U;
@@ -253,12 +266,15 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 				    EVENT_MSS_US;
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), encryption, phy,
 				  lll_adv_iso->phy_flags) + EVENT_IFS_US;
-
-	latency_pdu = max_latency * USEC_PER_MSEC * lll_adv_iso->bn / bn;
 	latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
 			  lll_adv_iso->num_bis;
-	if (latency_packing > sdu_interval) {
-		/* SDU interval too small to fit the calculated BIG event
+	event_spacing = latency_packing + ctrl_spacing +
+			EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	/* FIXME: calculate overheads due to extended and periodic advertising.
+	 */
+	event_spacing_max = iso_interval_us - 2000U;
+	if (event_spacing > event_spacing_max) {
+		/* ISO interval too small to fit the calculated BIG event
 		 * timing required for the supplied BIG create parameters.
 		 */
 
@@ -273,15 +289,15 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	if (packing) {
 		/* Interleaved Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
-		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, latency_pdu,
-					    latency_packing, ctrl_spacing);
+		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, event_spacing,
+					    event_spacing_max);
 		lll_adv_iso->nse += lll_adv_iso->ptc;
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
 					    lll_adv_iso->nse;
 	} else {
 		/* Sequential Packing */
-		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, latency_pdu,
-					    latency_packing, ctrl_spacing);
+		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, event_spacing,
+					    event_spacing_max);
 		lll_adv_iso->nse += lll_adv_iso->ptc;
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
 					   lll_adv_iso->nse;
@@ -318,13 +334,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	/* TODO: framing support */
 	lll_adv_iso->framing = framing;
-
-	/* Calculate ISO interval */
-	/* iso_interval shall be at least SDU interval,
-	 * or integer multiple of SDU interval for unframed PDUs
-	 */
-	iso_interval_us = ((sdu_interval * lll_adv_iso->bn) /
-			   (bn * PERIODIC_INT_UNIT_US)) * PERIODIC_INT_UNIT_US;
 
 	/* Allocate next PDU */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
@@ -827,23 +836,21 @@ static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream)
 	return mem_index_get(stream, stream_pool, sizeof(*stream));
 }
 
-static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
-			uint32_t latency_packing, uint32_t ctrl_spacing)
+static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
+			uint32_t event_spacing_max)
 {
-	uint32_t reserve;
-
-	reserve = latency_packing + ctrl_spacing +
-		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-	if (reserve < latency_pdu) {
+	if (event_spacing < event_spacing_max) {
 		uint8_t ptc;
 
 		/* Possible maximum Pre-transmission Subevents per BIS */
-		ptc = ((latency_pdu - reserve) / (lll->sub_interval * lll->bn *
-						  lll->num_bis)) *
+		ptc = ((event_spacing_max - event_spacing) /
+		       (lll->sub_interval * lll->bn * lll->num_bis)) *
 		      lll->bn;
 
-		/* Retrict to a maximum Pre-Transmission Subevents per BIS */
-		ptc = MIN(ptc, 1U);
+		/* FIXME: Here we retrict to a maximum of BN Pre-Transmission
+		 * subevents per BIS
+		 */
+		ptc = MIN(ptc, lll->bn);
 
 		return ptc;
 	}
