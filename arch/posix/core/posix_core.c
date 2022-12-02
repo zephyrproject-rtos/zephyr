@@ -479,8 +479,21 @@ void posix_abort_thread(int thread_idx)
 #if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 void z_impl_k_thread_abort(k_tid_t thread)
 {
+	extern struct k_thread z_main_thread;
 	unsigned int key;
 	int thread_idx;
+
+	/* The main thread runs in the entry process of the host Unix
+	 * process, not a pthread, so can't use the handling below as
+	 * it doesn't have a thread_idx.  And we for sure don't want
+	 * to kill it if it aborts itself!  Just suspend instead.
+	 */
+	if (_current == &z_main_thread) {
+		PC_DEBUG("posix cannot abort the main host process, "
+			 "suspending instead.");
+		k_thread_suspend(_current);
+		return; /* unreachable */
+	}
 
 	posix_thread_status_t *tstatus =
 					(posix_thread_status_t *)
