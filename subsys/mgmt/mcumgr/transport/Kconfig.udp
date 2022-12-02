@@ -2,6 +2,13 @@
 # Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# The Kconfig file is dedicated to UDP transport of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_UDP_
+
 menuconfig MCUMGR_TRANSPORT_UDP
 	bool "UDP mcumgr SMP transport"
 	select NETWORKING
