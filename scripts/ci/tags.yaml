@@ -59,7 +59,7 @@ kernel:
 
 posix:
     files:
-        - lib/posix
+        - lib/posix/
 
 # cbprintf:
 #    files:
