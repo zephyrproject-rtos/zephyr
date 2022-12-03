@@ -449,7 +449,7 @@ static int sx126x_lora_init(const struct device *dev)
 		return ret;
 	}
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
 	}

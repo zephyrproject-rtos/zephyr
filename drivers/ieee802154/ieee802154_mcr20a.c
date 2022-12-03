@@ -1381,7 +1381,7 @@ static int mcr20a_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("Configuring SPI failed");
 		return -EIO;
 	}
