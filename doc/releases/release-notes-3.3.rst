@@ -131,6 +131,8 @@ Deprecated in this release
 * PCIe APIs :c:func:`pcie_probe` and :c:func:`pcie_bdf_lookup` have been
   deprecated in favor of a centralized scan of available PCIe devices.
 
+* SPI DT :c:func:`spi_is_ready` function has been deprecated in favor of :c:func:`spi_is_ready_dt`.
+
 Stable API changes in this release
 ==================================
 

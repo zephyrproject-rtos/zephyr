@@ -392,6 +392,7 @@ struct spi_dt_spec {
  * Important: multiple fields are automatically constructed by this macro
  * which must be checked before use. @ref spi_is_ready performs the required
  * @ref device_is_ready checks.
+ * @deprecated Use @ref spi_is_ready_dt instead.
  *
  * This macro is not available in C++.
  *
@@ -508,6 +509,7 @@ __subsystem struct spi_driver_api {
  * @retval true if the SPI bus is ready for use.
  * @retval false if the SPI bus is not ready for use.
  */
+__deprecated
 static inline bool spi_is_ready(const struct spi_dt_spec *spec)
 {
 	/* Validate bus is ready */
