@@ -542,7 +542,7 @@ static int spi_flash_at45_init(const struct device *dev)
 	const struct spi_flash_at45_config *dev_config = dev->config;
 	int err;
 
-	if (!spi_is_ready(&dev_config->bus)) {
+	if (!spi_is_ready_dt(&dev_config->bus)) {
 		LOG_ERR("SPI bus %s not ready", dev_config->bus.bus->name);
 		return -ENODEV;
 	}

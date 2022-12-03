@@ -1139,7 +1139,7 @@ static int spi_nor_configure(const struct device *dev)
 	int rc;
 
 	/* Validate bus and CS is ready */
-	if (!spi_is_ready(&cfg->spi)) {
+	if (!spi_is_ready_dt(&cfg->spi)) {
 		return -ENODEV;
 	}
 

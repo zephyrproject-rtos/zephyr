@@ -60,7 +60,7 @@ bool bmi160_bus_ready_spi(const struct device *dev)
 {
 	const struct bmi160_cfg *cfg = dev->config;
 
-	return spi_is_ready(&cfg->bus.spi);
+	return spi_is_ready_dt(&cfg->bus.spi);
 }
 
 int bmi160_read_spi(const struct device *dev,

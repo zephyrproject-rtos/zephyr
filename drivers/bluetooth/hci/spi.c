@@ -521,7 +521,7 @@ static int bt_spi_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	if (!spi_is_ready(&bus)) {
+	if (!spi_is_ready_dt(&bus)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
 	}
