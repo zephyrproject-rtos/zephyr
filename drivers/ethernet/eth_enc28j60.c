@@ -782,7 +782,7 @@ static int eth_enc28j60_init(const struct device *dev)
 	struct eth_enc28j60_runtime *context = dev->data;
 
 	/* SPI config */
-	if (!spi_is_ready(&config->spi)) {
+	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}

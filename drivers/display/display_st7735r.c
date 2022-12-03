@@ -449,7 +449,7 @@ static int st7735r_init(const struct device *dev)
 	const struct st7735r_config *config = dev->config;
 	int ret;
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}

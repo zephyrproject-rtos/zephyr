@@ -16,7 +16,7 @@ LOG_MODULE_DECLARE(bmi270, CONFIG_SENSOR_LOG_LEVEL);
 
 static int bmi270_bus_check_spi(const union bmi270_bus *bus)
 {
-	return spi_is_ready(&bus->spi) ? 0 : -ENODEV;
+	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
 }
 
 static int bmi270_reg_read_spi(const union bmi270_bus *bus,

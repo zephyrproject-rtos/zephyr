@@ -129,7 +129,7 @@ static int lpd880x_strip_init(const struct device *dev)
 {
 	const struct lpd880x_config *config = dev->config;
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI device %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
