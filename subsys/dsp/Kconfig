@@ -1,6 +1,13 @@
 # Copyright (c) 2022 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 
+menuconfig DSP
+	bool "DSP"
+	help
+	  Enable the Digital Signal Processing subsystem
+
+if DSP
+
 config DSP_BACKEND_HAS_STATIC
 	bool
 
@@ -24,3 +31,5 @@ config DSP_BACKEND_CUSTOM
 	  added to the 'zdsp' build target by the application or one of its modules.
 
 endchoice
+
+endif # DSP
