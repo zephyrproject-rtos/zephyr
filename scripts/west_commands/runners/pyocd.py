@@ -22,6 +22,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
                  pyocd_config=None,
+                 pack='',
                  daparg=None, frequency=None, tool_opt=None):
         super().__init__(cfg)
 
@@ -32,7 +33,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             self.pyocd_config = None
 
 
-        self.target_args = ['-t', target]
+        self.target_args = ['-t', target, '--pack',
+                            pack] if len(pack)>0 else ['-t', target]
         self.pyocd = pyocd
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
         self.erase = erase
@@ -102,6 +104,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
                             help='pyocd gdb port, defaults to {}'.format(
                                 DEFAULT_PYOCD_GDB_PORT))
+        parser.add_argument('--pack', default="",
+                            help='specifying the path to the .pack file')
         parser.add_argument('--telnet-port', default=DEFAULT_PYOCD_TELNET_PORT,
                             help='pyocd telnet port, defaults to {}'.format(
                                 DEFAULT_PYOCD_TELNET_PORT))
@@ -125,6 +129,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
             dev_id=args.dev_id, daparg=args.daparg,
             frequency=args.frequency,
+            pack=args.pack,
             tool_opt=args.tool_opt)
 
         daparg = os.environ.get('PYOCD_DAPARG')
