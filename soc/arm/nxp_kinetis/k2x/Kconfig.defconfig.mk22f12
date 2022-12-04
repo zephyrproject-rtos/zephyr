@@ -11,4 +11,7 @@ config SOC
 config GPIO
 	default y
 
+config NUM_IRQS
+	default 74
+
 endif # SOC_MK22F12
