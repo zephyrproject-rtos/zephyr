@@ -1,4 +1,4 @@
 tests:
   virtualization.ivshmem:
-    arch_allow: x86
-    platform_allow: qemu_x86_64
+    arch_allow: x86 arm64
+    platform_allow: qemu_x86_64 qemu_cortex_a53
