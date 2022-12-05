@@ -429,6 +429,8 @@ SHELL_CMD_REGISTER(section_cmd, &sub_section_cmd,
 
 void main(void)
 {
+	volatile uint64_t	loop_count=0;
+
 	if (IS_ENABLED(CONFIG_SHELL_START_OBSCURED)) {
 		login_init();
 	}
@@ -447,4 +449,11 @@ void main(void)
 		k_sleep(K_MSEC(100));
 	}
 #endif
+
+	// prevent system from going into deep sleep by doing some dummy work
+	while(1)
+	{
+		loop_count++;
+		k_sleep(K_MSEC(1));
+	}
 }
