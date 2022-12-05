@@ -496,7 +496,7 @@ static int regulator_pca9420_init(const struct device *dev)
 	}
 
 	if (config->boot_on) {
-		rc = regulator_pca9420_enable(dev);
+		rc = regulator_enable(dev);
 	}
 
 	return rc;
