@@ -583,6 +583,118 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 	return result;
 }
 
+static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
+						   size_t argc, char **argv)
+{
+	struct bt_bap_scan_delegator_subgroup subgroup_params[BT_ISO_MAX_GROUP_ISO_COUNT] = { 0 };
+	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
+	/* TODO: Add support to select which PA sync to BIG sync to */
+	struct bt_le_per_adv_sync *pa_sync = per_adv_syncs[0];
+	struct bt_le_per_adv_sync_info pa_info;
+	unsigned long broadcast_id;
+	unsigned long pa_sync_req;
+	uint32_t bis_bitfield_req;
+	int err;
+
+	if (pa_sync == NULL) {
+		shell_error(sh, "PA not synced");
+
+		return -ENOEXEC;
+	}
+
+	err = bt_le_per_adv_sync_get_info(pa_sync, &pa_info);
+	if (err != 0) {
+		shell_error(sh, "Could not get PA sync info: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	bt_addr_le_copy(&param.addr, &pa_info.addr);
+	param.adv_sid = pa_info.sid;
+	param.pa_interval = pa_info.interval;
+
+	pa_sync_req = shell_strtoul(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "failed to parse pa_sync: %d", err);
+
+		return -ENOEXEC;
+	} else if (pa_sync_req != 0U || pa_sync_req != 1U) {
+		shell_error(sh, "pa_sync_req shall be boolean: %ul",
+			    pa_sync_req);
+
+		return -ENOEXEC;
+	}
+
+	param.pa_sync = (bool)pa_sync_req;
+
+	broadcast_id = shell_strtoul(argv[2], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "failed to parse broadcast_id: %d", err);
+
+		return -ENOEXEC;
+	} else if (broadcast_id > BT_AUDIO_BROADCAST_ID_MAX /* 24 bits */) {
+		shell_error(sh, "Invalid Broadcast ID: %x",
+			    param.broadcast_id);
+
+		return -ENOEXEC;
+	}
+
+	param.broadcast_id = broadcast_id;
+
+	bis_bitfield_req = 0U;
+	for (size_t i = 3U; i < argc; i++) {
+		const unsigned long index = shell_strtoul(argv[i], 16, &err);
+
+		if (err != 0) {
+			shell_error(sh, "failed to parse index: %d", err);
+
+			return -ENOEXEC;
+		}
+
+		if (index < BT_ISO_BIS_INDEX_MIN ||
+		    index > BT_ISO_BIS_INDEX_MAX) {
+			shell_error(sh, "Invalid index: %ld", index);
+		}
+
+		bis_bitfield_req |= BIT(index);
+	}
+
+	param.num_subgroups = received_base.subgroup_count;
+	param.subgroups = subgroup_params;
+	for (size_t i = 0; i < param.num_subgroups; i++) {
+		struct bt_bap_scan_delegator_subgroup *subgroup_param = &subgroup_params[i];
+		const struct bt_bap_base_subgroup *subgroup = &received_base.subgroups[i];
+		uint32_t subgroup_bis_indexes = 0U;
+		ssize_t metadata_len;
+
+		for (size_t j = 0U; j < subgroup->bis_count; j++) {
+			const struct bt_bap_base_bis_data *bis_data = &subgroup->bis_data[j];
+
+			subgroup_bis_indexes |= BIT(bis_data->index);
+		}
+
+		subgroup_param->bis_sync = subgroup_bis_indexes & bis_bitfield_req;
+
+		metadata_len = bt_audio_codec_data_to_buf(subgroup->codec.meta,
+							  subgroup->codec.meta_count,
+							  subgroup_param->metadata,
+							  sizeof(subgroup_param->metadata));
+		if (metadata_len < 0) {
+			return -ENOMEM;
+		}
+		subgroup_param->metadata_len = metadata_len;
+	}
+
+	err = bt_bap_broadcast_assistant_add_src(default_conn, &param);
+	if (err != 0) {
+		shell_print(sh, "Fail: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
 						      size_t argc, char **argv)
 {
@@ -707,6 +819,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_broadcast_assistant_cmds,
 		      "<broadcast_id> [<pa_interval>] [<sync_bis>] "
 		      "[<metadata>]",
 		      cmd_bap_broadcast_assistant_add_src, 6, 3),
+	SHELL_CMD_ARG(add_pa_sync, NULL,
+		      "Add a PA sync as a source <sync_pa> <broadcast_id> "
+		      "[bis_index [bis_index [bix_index [...]]]]>",
+		      cmd_bap_broadcast_assistant_add_pa_sync, 3,
+		      BT_ISO_MAX_GROUP_ISO_COUNT),
 	SHELL_CMD_ARG(mod_src, NULL,
 		      "Set sync <src_id> <sync_pa> [<pa_interval>] "
 		      "[<sync_bis>] [<metadata>]",

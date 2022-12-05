@@ -433,3 +433,31 @@ int bt_bap_decode_base(struct bt_data *data, struct bt_bap_base *base)
 	return 0;
 }
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR */
+
+ssize_t bt_audio_codec_data_to_buf(const struct bt_codec_data *codec_data, size_t count,
+				   uint8_t *buf, size_t buf_size)
+{
+	size_t total_len = 0;
+
+	for (size_t i = 0; i < count; i++) {
+		const struct bt_data *ltv = &codec_data[i].data;
+		const uint8_t length = ltv->data_len;
+		const uint8_t type = ltv->type;
+		const uint8_t *value = ltv->data;
+		const size_t ltv_len = sizeof(length) + sizeof(type) + length;
+
+		/* Verify that the buffer can hold the next LTV structure */
+		if (buf_size < total_len + ltv_len) {
+			return -ENOMEM;
+		}
+
+		/* Copy data */
+		buf[total_len++] = length + sizeof(type);
+		buf[total_len++] = type;
+		(void)memcpy(&buf[total_len], value, length);
+
+		total_len += length;
+	}
+
+	return total_len;
+}
