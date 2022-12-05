@@ -25,13 +25,35 @@
 		};
 	};
 
-	retram: memory0@0 {
+	vecttab: memory0@0 {
+		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x00000000 DT_SIZE_K(64)>;
+		reg = <0x00000000 0x300>;
 	};
-	mcusram: memory1@10000000 {
+	retram: memory1@300 {
+		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x10000000 DT_SIZE_K(320)>;
+		reg = <0x00000300 0xFD00>;
+	};
+	mcusramcode: memory2@10000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x10000000 0x30000>;
+	};
+	mcusramdata: memory3@10030000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x10030000 0x10000>;
+	};
+	mcusram3: memory4@10040000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x10040000 0x10000>;
+	};
+	mcusram4: memory5@10050000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x10050000 0x10000>;
 	};
 
 	soc {

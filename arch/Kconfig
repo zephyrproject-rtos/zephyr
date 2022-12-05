@@ -208,6 +208,25 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
+config VECT_BASE_ADDRESS
+	hex "physical memory address"
+	default 0
+	depends on VECT_REGION
+	help
+	  This option specifies address of the memory region to define for the
+	  vector table.
+	  If unsure, leave at the default value 0.
+
+config VECT_SIZE
+	hex "vector table size"
+	default 0
+	depends on VECT_REGION
+	help
+	  This option specifies the size of the  memory region to reseved for
+	  the vector table. This value suould be higher tthan the vector table
+	  size.
+	  If unsure, leave at the default value 0.
+
 endif # ARM || ARM64 || ARC || NIOS2 || X86
 
 if ARCH_HAS_TRUSTED_EXECUTION
