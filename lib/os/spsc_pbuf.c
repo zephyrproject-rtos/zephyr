@@ -346,7 +346,7 @@ void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len)
 
 	*rd_idx_loc = rd_idx;
 	__sync_synchronize();
-	cache_wb(&rd_idx_loc, sizeof(*rd_idx_loc), flags);
+	cache_wb(rd_idx_loc, sizeof(*rd_idx_loc), flags);
 }
 
 int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len)
