@@ -9,6 +9,8 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <limits.h>
+
 #include <zephyr/drivers/timer/arm_arch_timer.h>
 #include <zephyr/types.h>
 
