@@ -124,11 +124,20 @@ static void purge_buffers(sys_slist_t *list)
 
 		buf = (void *)sys_slist_get_not_empty(list);
 
-		buf->frags = NULL;
-		buf->flags &= ~NET_BUF_FRAGS;
-
 		net_buf_unref(buf);
 	}
+}
+
+static void purge_seg_buffers(struct net_buf *buf)
+{
+	/* Fragments head has always 2 references: one when allocated, one when becomes
+	 * fragments head.
+	 */
+	net_buf_unref(buf);
+
+	do {
+		buf = net_buf_frag_del(NULL, buf);
+	} while (buf != NULL);
 }
 
 /* Intentionally start a little bit late into the ReceiveWindow when
@@ -166,8 +175,10 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 	for (i = 0; i < ARRAY_SIZE(frnd->seg); i++) {
 		struct bt_mesh_friend_seg *seg = &frnd->seg[i];
 
-		purge_buffers(&seg->queue);
-		seg->seg_count = 0U;
+		if (seg->buf) {
+			purge_seg_buffers(seg->buf);
+			seg->seg_count = 0U;
+		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_mesh_friend_cb, cb) {
@@ -1053,7 +1064,7 @@ init_friend:
 
 static bool is_seg(struct bt_mesh_friend_seg *seg, uint16_t src, uint16_t seq_zero)
 {
-	struct net_buf *buf = (void *)sys_slist_peek_head(&seg->queue);
+	struct net_buf *buf = seg->buf;
 	struct net_buf_simple_state state;
 	uint16_t buf_seq_zero;
 	uint16_t buf_src;
@@ -1086,7 +1097,7 @@ static struct bt_mesh_friend_seg *get_seg(struct bt_mesh_friend *frnd,
 			return seg;
 		}
 
-		if (!unassigned && !sys_slist_peek_head(&seg->queue)) {
+		if (!unassigned && !seg->buf) {
 			unassigned = seg;
 		}
 	}
@@ -1121,16 +1132,13 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 		return;
 	}
 
-	net_buf_slist_put(&seg->queue, buf);
+	seg->buf = net_buf_frag_add(seg->buf, buf);
 
 	if (type == BT_MESH_FRIEND_PDU_COMPLETE) {
-		sys_slist_merge_slist(&frnd->queue, &seg->queue);
+		net_buf_slist_put(&frnd->queue, seg->buf);
 
 		frnd->queue_size += seg->seg_count;
 		seg->seg_count = 0U;
-	} else {
-		/* Mark the buffer as having more to come after it */
-		buf->flags |= NET_BUF_FRAGS;
 	}
 }
 
@@ -1244,6 +1252,15 @@ static void friend_timeout(struct k_work *work)
 		return;
 	}
 
+	/* Put next segment to the friend queue. */
+	if (frnd->last != net_buf_frag_last(frnd->last)) {
+		struct net_buf *next;
+
+		next = net_buf_frag_del(NULL, frnd->last);
+		net_buf_frag_add(NULL, next);
+		sys_slist_prepend(&frnd->queue, &next->node);
+	}
+
 	md = (uint8_t)(sys_slist_peek_head(&frnd->queue) != NULL);
 
 	update_overwrite(frnd->last, md);
@@ -1251,10 +1268,6 @@ static void friend_timeout(struct k_work *work)
 	if (encrypt_friend_pdu(frnd, frnd->last, false)) {
 		return;
 	}
-
-	/* Clear the flag we use for segment tracking */
-	frnd->last->flags &= ~NET_BUF_FRAGS;
-	frnd->last->frags = NULL;
 
 	BT_DBG("Sending buf %p from Friend Queue of LPN 0x%04x",
 	       frnd->last, frnd->lpn);
@@ -1330,16 +1343,11 @@ int bt_mesh_friend_init(void)
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
-		int j;
 
 		sys_slist_init(&frnd->queue);
 
 		k_work_init_delayable(&frnd->timer, friend_timeout);
 		k_work_init_delayable(&frnd->clear.timer, clear_timeout);
-
-		for (j = 0; j < ARRAY_SIZE(frnd->seg); j++) {
-			sys_slist_init(&frnd->seg[j].queue);
-		}
 	}
 
 	return 0;
@@ -1635,11 +1643,16 @@ static bool friend_queue_prepare_space(struct bt_mesh_friend *frnd, uint16_t add
 		frnd->queue_size--;
 		avail_space++;
 
-		pending_segments = (buf->flags & NET_BUF_FRAGS);
+		if (buf != net_buf_frag_last(buf)) {
+			struct net_buf *next;
 
-		/* Make sure old slist entry state doesn't remain */
-		buf->frags = NULL;
-		buf->flags &= ~NET_BUF_FRAGS;
+			next = net_buf_frag_del(NULL, buf);
+
+			net_buf_frag_add(NULL, next);
+			sys_slist_prepend(&frnd->queue, &next->node);
+
+			pending_segments = true;
+		}
 
 		net_buf_unref(buf);
 	}
@@ -1762,7 +1775,7 @@ void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, uint16_t src,
 
 			BT_WARN("Clearing incomplete segments for 0x%04x", src);
 
-			purge_buffers(&seg->queue);
+			purge_seg_buffers(seg->buf);
 			seg->seg_count = 0U;
 			break;
 		}
