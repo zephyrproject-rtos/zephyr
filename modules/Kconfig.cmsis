@@ -23,6 +23,7 @@ endif
 menuconfig CMSIS_DSP
 	bool "CMSIS-DSP Library Support"
 	depends on NEWLIB_LIBC || ARCH_POSIX
+	depends on DSP
 
 if CMSIS_DSP
 source "modules/Kconfig.cmsis_dsp"
