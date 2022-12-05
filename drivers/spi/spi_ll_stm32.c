@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <errno.h>
 #include <drivers/spi.h>
 #include <drivers/pinctrl.h>
+#include <stm32_ll_rcc.h>
 #include <toolchain.h>
 #ifdef CONFIG_SPI_STM32_DMA
 #include <drivers/dma/dma_stm32.h>
@@ -865,7 +866,10 @@ static int spi_stm32_init(const struct device *dev)
 		LOG_ERR("Could not enable SPI clock");
 		return -EIO;
 	}
-
+	
+	// @TODO Workaround for SPI2 clock issue
+	LL_RCC_SetSPIClockSource(LL_RCC_SPI23_CLKSOURCE_PER);
+	
 	if (!spi_stm32_is_subghzspi(dev)) {
 		/* Configure dt provided device signals when available */
 		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
