@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/reset.h>
 
+#define STM32_RESET_CLR_OFFSET(id) (((id) >> 17U) & 0xFFFU)
 #define STM32_RESET_SET_OFFSET(id) (((id) >> 5U) & 0xFFFU)
 #define STM32_RESET_REG_BIT(id)	   ((id)&0x1FU)
 
@@ -43,8 +44,13 @@ static int reset_stm32_line_deassert(const struct device *dev, uint32_t id)
 {
 	const struct reset_stm32_config *config = dev->config;
 
+#if DT_INST_PROP(0, set_bit_to_deassert)
+	sys_set_bit(config->base + STM32_RESET_CLR_OFFSET(id),
+		    STM32_RESET_REG_BIT(id));
+#else
 	sys_clear_bit(config->base + STM32_RESET_SET_OFFSET(id),
 		      STM32_RESET_REG_BIT(id));
+#endif
 
 	return 0;
 }
