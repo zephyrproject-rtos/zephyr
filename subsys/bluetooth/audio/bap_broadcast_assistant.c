@@ -906,8 +906,7 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
 	(void)memcpy(cp->broadcast_code, broadcast_code,
 		     BT_AUDIO_BROADCAST_CODE_SIZE);
 
-	LOG_HEXDUMP_DBG(cp->broadcast_code, BT_BAP_BROADCAST_CODE_SIZE,
-			"broadcast code:");
+	LOG_HEXDUMP_DBG(cp->broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE, "broadcast code:");
 
 	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
 }
