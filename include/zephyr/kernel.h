@@ -2005,6 +2005,22 @@ __syscall void *k_queue_peek_head(struct k_queue *queue);
 __syscall void *k_queue_peek_tail(struct k_queue *queue);
 
 /**
+ * @brief Provide the primitive to iterate on a queue
+ * Note: the loop is unsafe and thus curr should not be removed
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     K_QUEUE_FOR_EACH(l, n) {
+ *         <user code>
+ *     }
+ *
+ * @param queue Address of the queue.
+ * @param curr A node pointer to peek each node of the queue.
+ */
+#define K_QUEUE_FOR_EACH(queue, curr) \
+	SYS_SFLIST_FOR_EACH_NODE(&((queue)->data_q), curr)
+
+/**
  * @brief Statically define and initialize a queue.
  *
  * The queue can be accessed outside the module where it is defined using:
