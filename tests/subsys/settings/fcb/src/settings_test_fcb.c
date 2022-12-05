@@ -359,9 +359,6 @@ void *settings_config_fcb_setup(void)
 	return NULL;
 }
 
-void test_config_insert2(void);
-void test_config_insert3(void);
-
 ZTEST(settings_config_fcb, test_config_insert_handler2)
 {
 	test_config_insert2();
