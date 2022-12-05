@@ -339,10 +339,13 @@ static uint32_t counter_stm32_get_pending_int(const struct device *dev)
 	switch (counter_get_num_of_channels(dev)) {
 	case 4U:
 		pending |= LL_TIM_IsActiveFlag_CC4(cfg->timer);
+		__fallthrough;
 	case 3U:
 		pending |= LL_TIM_IsActiveFlag_CC3(cfg->timer);
+		__fallthrough;
 	case 2U:
 		pending |= LL_TIM_IsActiveFlag_CC2(cfg->timer);
+		__fallthrough;
 	case 1U:
 		pending |= LL_TIM_IsActiveFlag_CC1(cfg->timer);
 	}
@@ -585,10 +588,13 @@ void counter_stm32_irq_handler(const struct device *dev)
 	switch (counter_get_num_of_channels(dev)) {
 	case 4U:
 		TIM_IRQ_HANDLE_CC(timer, 4);
+		__fallthrough;
 	case 3U:
 		TIM_IRQ_HANDLE_CC(timer, 3);
+		__fallthrough;
 	case 2U:
 		TIM_IRQ_HANDLE_CC(timer, 2);
+		__fallthrough;
 	case 1U:
 		TIM_IRQ_HANDLE_CC(timer, 1);
 	}
