@@ -409,10 +409,23 @@ static int gpio_stm32_enable_int(int port, int pin)
 
 static int gpio_stm32_port_get_raw(const struct device *dev, uint32_t *value)
 {
+	int ret;
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
+	/* Enable device clock before read */
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	*value = LL_GPIO_ReadInputPort(gpio);
+
+	/* Release device clock after read */
+	ret = pm_device_runtime_put(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
