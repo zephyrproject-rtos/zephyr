@@ -11,9 +11,3 @@ zephyr_include_directories(
 	${ZEPHYR_BASE}/subsys/settings/include
 	${ZEPHYR_BASE}/subsys/settings/src
 	)
-
-if(TEST)
-	target_compile_definitions(app PRIVATE
-		-DTEST_${TEST}
-		)
-endif()
