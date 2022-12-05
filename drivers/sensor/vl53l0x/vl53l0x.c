@@ -13,6 +13,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/__assert.h>
@@ -241,23 +243,48 @@ static int vl53l0x_start(const struct device *dev)
 	return 0;
 }
 
+static int vl53l0x_stop(const struct device *dev)
+{
+	const struct vl53l0x_config *const config = dev->config;
+	int r;
+
+	LOG_DBG("[%s] Stopping", dev->name);
+
+	/* Pull XSHUT high to stop the sensor */
+	if (config->xshut.port) {
+		r = gpio_pin_set_dt(&config->xshut, 0);
+		if (r < 0) {
+			LOG_ERR("[%s] Unable to set XSHUT gpio (error %d)",
+				dev->name, r);
+			return -EIO;
+		}
+		k_sleep(K_MSEC(2));
+	}
+
+	LOG_DBG("[%s] Stopped", dev->name);
+	return 0;
+}
+
 static int vl53l0x_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	struct vl53l0x_data *drv_data = dev->data;
 	VL53L0X_Error ret;
-	int r;
 
 	__ASSERT_NO_MSG((chan == SENSOR_CHAN_ALL)
 			|| (chan == SENSOR_CHAN_DISTANCE)
 			|| (chan == SENSOR_CHAN_PROX));
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#else
 	if (!drv_data->started) {
-		r = vl53l0x_start(dev);
+		int r = vl53l0x_start(dev);
 		if (r < 0) {
 			return r;
 		}
 	}
+#endif
 
 	ret = VL53L0X_PerformSingleRangingMeasurement(&drv_data->vl53l0x,
 						      &drv_data->RangingMeasurementData);
@@ -266,6 +293,10 @@ static int vl53l0x_sample_fetch(const struct device *dev,
 			dev->name, ret);
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_put(dev);
+#endif
 
 	return 0;
 }
@@ -294,6 +325,27 @@ static int vl53l0x_channel_get(const struct device *dev,
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int vl53l0x_pm_action(const struct device *dev,
+			      enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		vl53l0x_start(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		vl53l0x_stop(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
 
 static const struct sensor_driver_api vl53l0x_api_funcs = {
 	.sample_fetch = vl53l0x_sample_fetch,
@@ -342,6 +394,11 @@ static int vl53l0x_init(const struct device *dev)
 		return -EIO;
 	}
 	LOG_DBG("[%s] Shutdown", dev->name);
+#endif
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_init_suspended(dev);
+	pm_device_runtime_enable(dev);
 #else
 	r = vl53l0x_start(dev);
 	if (r) {
@@ -361,7 +418,10 @@ static int vl53l0x_init(const struct device *dev)
 									 \
 	static struct vl53l0x_data vl53l0x_##inst##_driver;		 \
 									 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init, NULL,		 \
+	PM_DEVICE_DT_INST_DEFINE(inst, vl53l0x_pm_action);		 \
+									 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init,		 \
+			      PM_DEVICE_DT_INST_GET(inst),		 \
 			      &vl53l0x_##inst##_driver,			 \
 			      &vl53l0x_##inst##_config,			 \
 			      POST_KERNEL,				 \
