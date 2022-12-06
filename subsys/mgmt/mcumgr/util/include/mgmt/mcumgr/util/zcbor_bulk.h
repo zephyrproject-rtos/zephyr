@@ -21,7 +21,32 @@ struct zcbor_map_decode_key_val {
 	bool found;
 };
 
+/** @brief Define single key-decoder mapping
+ *
+ * The macro creates a single zcbor_map_decode_key_val type object.
+ *
+ * @param k	key is "" enclosed string representing key;
+ * @param dec	decoder function; this should be zcbor_decoder_t
+ *		type function from zcbor or a user provided implementation
+ *		compatible with the type.
+ * @param vp	non-NULL pointer for result of decoding; should correspond
+ *		to type served by decoder function for the mapping.
+ */
+#define ZCBOR_MAP_DECODE_KEY_DECODER(k, dec, vp)		\
+	{							\
+		{						\
+			.value = k,				\
+			.len = sizeof(k) - 1,			\
+		},						\
+		.decoder = (zcbor_decoder_t *)dec,		\
+		.value_ptr = vp,				\
+	}
+
 /** @brief Define single key-value decode mapping
+ *
+ * ZCBOR_MAP_DECODE_KEY_DECODER should be used instead of this macro as,
+ * this macro does not allow keys with whitespaces embeeded, which CBOR
+ * does allow.
  *
  * The macro creates a single zcbor_map_decode_key_val type object.
  *
@@ -34,28 +59,19 @@ struct zcbor_map_decode_key_val {
  *		to type served by decoder function for the mapping.
  */
 #define ZCBOR_MAP_DECODE_KEY_VAL(k, dec, vp)			\
-	{							\
-		{						\
-			.value = STRINGIFY(k),			\
-			.len = sizeof(STRINGIFY(k)) - 1,	\
-		},						\
-		.decoder = (zcbor_decoder_t *)dec,		\
-		.value_ptr = vp,				\
-	}
-
+	ZCBOR_MAP_DECODE_KEY_DECODER(STRINGIFY(k), dec, vp)
 
 /** @brief Decodes single level map according to a provided key-decode map.
  *
  * The function takes @p map of key to decoder array defined as:
  *
  *	struct zcbor_map_decode_key_val map[] = {
- *		ZCBOR_MAP_DECODE_KEY_VAL(key0, decode_fun0, val_ptr0),
- *		ZCBOR_MAP_DECODE_KEY_VAL(key1, decode_fun1, val_ptr1),
+ *		ZCBOR_MAP_DECODE_KEY_DECODER("key0", decode_fun0, val_ptr0),
+ *		ZCBOR_MAP_DECODE_KEY_DECODER("key1", decode_fun1, val_ptr1),
  *		...
  *	};
  *
- * where key? is string representing key without "", for example when key
- * is "abcd" , then the abcd should be provided; the decode_fun? is
+ * where "key?" is string representing key; the decode_fun? is
  * zcbor_decoder_t compatible function, either from zcbor or defined by
  * user; val_ptr? are pointers to variables where decoder function for
  * a given key will place a decoded value - they have to agree in type
