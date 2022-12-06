@@ -363,7 +363,7 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 	uint16_t valid_formats = 0;
 
 	struct zcbor_map_decode_key_val fs_info_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(format, zcbor_tstr_decode, &format),
+		ZCBOR_MAP_DECODE_KEY_DECODER("format", zcbor_tstr_decode, &format),
 	};
 
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS

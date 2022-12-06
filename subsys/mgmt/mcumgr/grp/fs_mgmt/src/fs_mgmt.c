@@ -175,8 +175,8 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	size_t decoded;
 
 	struct zcbor_map_decode_key_val fs_download_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(off, zcbor_uint64_decode, &off),
-		ZCBOR_MAP_DECODE_KEY_VAL(name, zcbor_tstr_decode, &name),
+		ZCBOR_MAP_DECODE_KEY_DECODER("off", zcbor_uint64_decode, &off),
+		ZCBOR_MAP_DECODE_KEY_DECODER("name", zcbor_tstr_decode, &name),
 	};
 
 #if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
@@ -313,10 +313,10 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 	size_t decoded = 0;
 
 	struct zcbor_map_decode_key_val fs_upload_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(off, zcbor_uint64_decode, &off),
-		ZCBOR_MAP_DECODE_KEY_VAL(name, zcbor_tstr_decode, &name),
-		ZCBOR_MAP_DECODE_KEY_VAL(data, zcbor_bstr_decode, &file_data),
-		ZCBOR_MAP_DECODE_KEY_VAL(len, zcbor_uint64_decode, &len),
+		ZCBOR_MAP_DECODE_KEY_DECODER("off", zcbor_uint64_decode, &off),
+		ZCBOR_MAP_DECODE_KEY_DECODER("name", zcbor_tstr_decode, &name),
+		ZCBOR_MAP_DECODE_KEY_DECODER("data", zcbor_bstr_decode, &file_data),
+		ZCBOR_MAP_DECODE_KEY_DECODER("len", zcbor_uint64_decode, &len),
 	};
 
 #if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
@@ -408,7 +408,7 @@ static int fs_mgmt_file_status(struct smp_streamer *ctxt)
 	size_t decoded;
 
 	struct zcbor_map_decode_key_val fs_status_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(name, zcbor_tstr_decode, &name),
+		ZCBOR_MAP_DECODE_KEY_DECODER("name", zcbor_tstr_decode, &name),
 	};
 
 	ok = zcbor_map_decode_bulk(zsd, fs_status_decode,
@@ -467,10 +467,10 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 	const struct fs_mgmt_hash_checksum_group *group = NULL;
 
 	struct zcbor_map_decode_key_val fs_hash_checksum_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(type, zcbor_tstr_decode, &type),
-		ZCBOR_MAP_DECODE_KEY_VAL(name, zcbor_tstr_decode, &name),
-		ZCBOR_MAP_DECODE_KEY_VAL(off, zcbor_uint64_decode, &off),
-		ZCBOR_MAP_DECODE_KEY_VAL(len, zcbor_uint64_decode, &len),
+		ZCBOR_MAP_DECODE_KEY_DECODER("type", zcbor_tstr_decode, &type),
+		ZCBOR_MAP_DECODE_KEY_DECODER("name", zcbor_tstr_decode, &name),
+		ZCBOR_MAP_DECODE_KEY_DECODER("off", zcbor_uint64_decode, &off),
+		ZCBOR_MAP_DECODE_KEY_DECODER("len", zcbor_uint64_decode, &len),
 	};
 
 	ok = zcbor_map_decode_bulk(zsd, fs_hash_checksum_decode,
