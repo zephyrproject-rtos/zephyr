@@ -19,6 +19,11 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 #define PM_DOMAIN(_pm) NULL
 #endif
 
+#define EVENT_STATE_ACTIVE	BIT(PM_DEVICE_STATE_ACTIVE)
+#define EVENT_STATE_SUSPENDED	BIT(PM_DEVICE_STATE_SUSPENDED)
+
+#define EVENT_MASK		(EVENT_STATE_ACTIVE | EVENT_STATE_SUSPENDED)
+
 /**
  * @brief Suspend a device
  *
@@ -100,7 +105,7 @@ static void runtime_suspend_work(struct k_work *work)
 	} else {
 		pm->state = PM_DEVICE_STATE_SUSPENDED;
 	}
-	k_condvar_broadcast(&pm->condvar);
+	k_event_set(&pm->event, BIT(pm->state));
 	k_mutex_unlock(&pm->lock);
 
 	/*
@@ -155,7 +160,11 @@ int pm_device_runtime_get(const struct device *dev)
 	if (!k_is_pre_kernel()) {
 		/* wait until possible async suspend is completed */
 		while (pm->state == PM_DEVICE_STATE_SUSPENDING) {
-			(void)k_condvar_wait(&pm->condvar, &pm->lock, K_FOREVER);
+			k_mutex_unlock(&pm->lock);
+
+			k_event_wait(&pm->event, EVENT_MASK, true, K_FOREVER);
+
+			(void)k_mutex_lock(&pm->lock, K_FOREVER);
 		}
 	}
 
@@ -292,8 +301,11 @@ int pm_device_runtime_disable(const struct device *dev)
 	/* wait until possible async suspend is completed */
 	if (!k_is_pre_kernel()) {
 		while (pm->state == PM_DEVICE_STATE_SUSPENDING) {
-			(void)k_condvar_wait(&pm->condvar, &pm->lock,
-					     K_FOREVER);
+			k_mutex_unlock(&pm->lock);
+
+			k_event_wait(&pm->event, EVENT_MASK, true, K_FOREVER);
+
+			(void)k_mutex_lock(&pm->lock, K_FOREVER);
 		}
 	}
 
