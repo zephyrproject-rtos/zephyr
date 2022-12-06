@@ -269,7 +269,7 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 	size_t decoded = 0;
 
 	struct zcbor_map_decode_key_val image_erase_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(slot, zcbor_uint32_decode, &slot),
+		ZCBOR_MAP_DECODE_KEY_DECODER("slot", zcbor_uint32_decode, &slot),
 	};
 
 	ok = zcbor_map_decode_bulk(zsd, image_erase_decode,
@@ -376,12 +376,12 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 	bool reset = false;
 
 	struct zcbor_map_decode_key_val image_upload_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(image, zcbor_uint32_decode, &req.image),
-		ZCBOR_MAP_DECODE_KEY_VAL(data, zcbor_bstr_decode, &req.img_data),
-		ZCBOR_MAP_DECODE_KEY_VAL(len, zcbor_size_decode, &req.size),
-		ZCBOR_MAP_DECODE_KEY_VAL(off, zcbor_size_decode, &req.off),
-		ZCBOR_MAP_DECODE_KEY_VAL(sha, zcbor_bstr_decode, &req.data_sha),
-		ZCBOR_MAP_DECODE_KEY_VAL(upgrade, zcbor_bool_decode, &req.upgrade)
+		ZCBOR_MAP_DECODE_KEY_DECODER("image", zcbor_uint32_decode, &req.image),
+		ZCBOR_MAP_DECODE_KEY_DECODER("data", zcbor_bstr_decode, &req.img_data),
+		ZCBOR_MAP_DECODE_KEY_DECODER("len", zcbor_size_decode, &req.size),
+		ZCBOR_MAP_DECODE_KEY_DECODER("off", zcbor_size_decode, &req.off),
+		ZCBOR_MAP_DECODE_KEY_DECODER("sha", zcbor_bstr_decode, &req.data_sha),
+		ZCBOR_MAP_DECODE_KEY_DECODER("upgrade", zcbor_bool_decode, &req.upgrade)
 	};
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
