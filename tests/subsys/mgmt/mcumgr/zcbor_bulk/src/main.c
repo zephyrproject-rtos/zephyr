@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/sys/byteorder.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
@@ -281,4 +280,160 @@ ZTEST(zcbor_bulk, test_duplicate)
 	zassert_false(bool_val, "Expected bool_val unmodified");
 }
 
+struct in_map_decoding {
+	size_t decoded;
+	int ret;
+	uint32_t number;
+	struct zcbor_string str;
+	uint32_t other_number;
+};
+
+static bool in_map_decoder(zcbor_state_t *zsd, struct in_map_decoding *imd)
+{
+	uint32_t dont_exist = 0x64;
+	struct zcbor_map_decode_key_val in_map[] = {
+		ZCBOR_MAP_DECODE_KEY_VAL(number, zcbor_uint32_decode, &imd->number),
+		ZCBOR_MAP_DECODE_KEY_VAL(str, zcbor_tstr_decode, &imd->str),
+		ZCBOR_MAP_DECODE_KEY_VAL(dont_exist, zcbor_uint32_decode, &dont_exist),
+	};
+
+	imd->ret = zcbor_map_decode_bulk(zsd, in_map, ARRAY_SIZE(in_map), &imd->decoded);
+
+	zassert_equal(dont_exist, 0x64, "dont_exist should not have get modified");
+
+	return (imd->ret == 0);
+}
+
+ZTEST(zcbor_bulk, test_map_in_map_correct)
+{
+	uint8_t buffer[512];
+	struct zcbor_string world;
+	uint32_t one = 0;
+	bool bool_val = false;
+	zcbor_state_t zsd[4] = { 0 };
+	size_t decoded = 0;
+	bool ok;
+	struct in_map_decoding imdd = { .ret = -1 };
+	struct zcbor_map_decode_key_val dm[] = {
+		ZCBOR_MAP_DECODE_KEY_VAL(hello, zcbor_tstr_decode, &world),
+		ZCBOR_MAP_DECODE_KEY_VAL(in_map_map, in_map_decoder, &imdd),
+		ZCBOR_MAP_DECODE_KEY_VAL(one, zcbor_uint32_decode, &one),
+		ZCBOR_MAP_DECODE_KEY_VAL(bool_val, zcbor_bool_decode, &bool_val)
+	};
+
+	zcbor_new_encode_state(zsd, 2, buffer, ARRAY_SIZE(buffer), 0);
+
+	/* { "hello":"world",
+	 *   "in_map" : {
+	 *	"number" : 30,
+	 *	"str" : "in_str"
+	 *	},
+	 *   "one":1,
+	 *   "bool_val":true }
+	 */
+	ok = zcbor_map_start_encode(zsd, 10)						&&
+	     zcbor_tstr_put_lit(zsd, "hello") && zcbor_tstr_put_lit(zsd, "world")	&&
+	     zcbor_tstr_put_lit(zsd, "in_map_map")					&&
+		zcbor_map_start_encode(zsd, 10)						&&
+		zcbor_tstr_put_lit(zsd, "number") && zcbor_uint32_put(zsd, 30)		&&
+		zcbor_tstr_put_lit(zsd, "str") && zcbor_tstr_put_lit(zsd, "in_str")	&&
+		zcbor_map_end_encode(zsd, 10)						&&
+	     zcbor_tstr_put_lit(zsd, "one") && zcbor_uint32_put(zsd, 1)			&&
+	     zcbor_tstr_put_lit(zsd, "bool_val") && zcbor_true_put(zsd)			&&
+	     zcbor_map_end_encode(zsd, 10);
+
+	zassert_true(ok, "Expected to be successful in encoding test pattern");
+
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
+
+	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
+
+	zassert_ok(rc, "Expected 0, got %d", rc);
+	zassert_equal(decoded, ARRAY_SIZE(dm), "Expected %d got %d",
+		ARRAY_SIZE(dm), decoded);
+	zassert_equal(one, 1, "Expected 1");
+	zassert_equal(sizeof("world") - 1, world.len, "Expected length %d",
+		sizeof("world") - 1);
+	zassert_equal(0, memcmp(world.value, "world", world.len),
+		"Expected \"world\", got %.*s", world.len, world.value);
+	zassert_true(bool_val, "Expected bool_val == true");
+
+	/* Map within map */
+	zassert_equal(imdd.ret, 0, "Expected successful decoding of inner map");
+	zassert_equal(imdd.decoded, 2, "Expected two items in inner map");
+	zassert_equal(imdd.number, 30);
+	zassert_equal(imdd.str.len, sizeof("in_str") - 1);
+	zassert_equal(memcmp("in_str", imdd.str.value, imdd.str.len), 0);
+}
+
+static bool in_map_decoder_bad(zcbor_state_t *zsd, struct in_map_decoding *imd)
+{
+	uint32_t dont_exist = 0x64;
+	uint32_t wrong_type = 0x34;
+	struct zcbor_map_decode_key_val in_map[] = {
+		ZCBOR_MAP_DECODE_KEY_VAL(number, zcbor_uint32_decode, &imd->number),
+		ZCBOR_MAP_DECODE_KEY_VAL(str, zcbor_uint32_decode, &wrong_type),
+		ZCBOR_MAP_DECODE_KEY_VAL(dont_exist, zcbor_uint32_decode, &dont_exist),
+	};
+
+	imd->ret = zcbor_map_decode_bulk(zsd, in_map, ARRAY_SIZE(in_map), &imd->decoded);
+
+	zassert_equal(dont_exist, 0x64, "dont_exist should not have get modified");
+
+	return (imd->ret == 0);
+}
+
+ZTEST(zcbor_bulk, test_map_in_map_bad)
+{
+	uint8_t buffer[512];
+	struct zcbor_string world;
+	uint32_t one = 0;
+	bool bool_val = false;
+	zcbor_state_t zsd[4] = { 0 };
+	size_t decoded = 0;
+	bool ok;
+	struct in_map_decoding imdd = { .ret = -1 };
+	struct zcbor_map_decode_key_val dm[] = {
+		ZCBOR_MAP_DECODE_KEY_VAL(hello, zcbor_tstr_decode, &world),
+		ZCBOR_MAP_DECODE_KEY_VAL(in_map_map, in_map_decoder_bad, &imdd),
+		ZCBOR_MAP_DECODE_KEY_VAL(one, zcbor_uint32_decode, &one),
+		ZCBOR_MAP_DECODE_KEY_VAL(bool_val, zcbor_bool_decode, &bool_val)
+	};
+
+	zcbor_new_encode_state(zsd, 2, buffer, ARRAY_SIZE(buffer), 0);
+
+	/* { "hello":"world",
+	 *   "in_map" : {
+	 *	"number" : 30,
+	 *	"str" : "in_str" # Decoding function will expect str to be int
+	 *	},
+	 *   "one":1,
+	 *   "bool_val":true }
+	 */
+	ok = zcbor_map_start_encode(zsd, 10)						&&
+	     zcbor_tstr_put_lit(zsd, "hello") && zcbor_tstr_put_lit(zsd, "world")	&&
+	     zcbor_tstr_put_lit(zsd, "in_map_map")					&&
+		zcbor_map_start_encode(zsd, 10)						&&
+		zcbor_tstr_put_lit(zsd, "number") && zcbor_uint32_put(zsd, 30)		&&
+		zcbor_tstr_put_lit(zsd, "str") && zcbor_tstr_put_lit(zsd, "in_str")	&&
+		zcbor_map_end_encode(zsd, 10)						&&
+	     zcbor_tstr_put_lit(zsd, "one") && zcbor_uint32_put(zsd, 1)			&&
+	     zcbor_tstr_put_lit(zsd, "bool_val") && zcbor_true_put(zsd)			&&
+	     zcbor_map_end_encode(zsd, 10);
+
+	zassert_true(ok, "Expected to be successful in encoding test pattern");
+
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
+
+	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
+
+	/* in_map_decoder_bad should fail */
+	zassert_equal(rc, -ENOMSG, "Expected ENOMSG(-42), got %d", rc);
+	zassert_equal(decoded, 1, "Expected 1 got %d", decoded);
+
+	/* Map within map */
+	zassert_equal(imdd.ret, -ENOMSG, "Expected failure in decoding of inner map");
+	zassert_equal(imdd.decoded, 1, "Expected 1 item before failure");
+	zassert_equal(imdd.number, 30);
+}
 ZTEST_SUITE(zcbor_bulk, NULL, NULL, NULL, NULL, NULL);
