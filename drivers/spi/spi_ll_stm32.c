@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <errno.h>
 #include <drivers/spi.h>
 #include <drivers/pinctrl.h>
+#include <stm32_ll_rcc.h>
 #include <toolchain.h>
 #ifdef CONFIG_SPI_STM32_DMA
 #include <drivers/dma/dma_stm32.h>
@@ -727,7 +728,7 @@ static int transceive_dma(const struct device *dev,
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP1X)
 	/* set request before enabling (else SPI CFG1 reg is write protected) */
 	LL_SPI_EnableDMAReq_RX(spi);
 	LL_SPI_EnableDMAReq_TX(spi);
@@ -758,7 +759,7 @@ static int transceive_dma(const struct device *dev,
 			break;
 		}
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32MP1X)
 		/* toggle the DMA request to restart the transfer */
 		LL_SPI_EnableDMAReq_RX(spi);
 		LL_SPI_EnableDMAReq_TX(spi);
@@ -778,7 +779,7 @@ static int transceive_dma(const struct device *dev,
 		while (ll_func_spi_dma_busy(spi) == 0) {
 		}
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32MP1X)
 		/* toggle the DMA transfer request */
 		LL_SPI_DisableDMAReq_TX(spi);
 		LL_SPI_DisableDMAReq_RX(spi);
@@ -865,7 +866,10 @@ static int spi_stm32_init(const struct device *dev)
 		LOG_ERR("Could not enable SPI clock");
 		return -EIO;
 	}
-
+	
+	// @TODO Workaround for SPI2 clock issue
+	LL_RCC_SetSPIClockSource(LL_RCC_SPI23_CLKSOURCE_PER);
+	
 	if (!spi_stm32_is_subghzspi(dev)) {
 		/* Configure dt provided device signals when available */
 		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);

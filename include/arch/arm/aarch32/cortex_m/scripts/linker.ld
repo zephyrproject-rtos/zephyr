@@ -21,11 +21,22 @@
 
 /* physical address of RAM */
 #ifdef CONFIG_XIP
+#ifdef CONFIG_VECT_REGION
+  #define VECT_REGION    VECT
+#endif
 #define ROMABLE_REGION FLASH
 #define RAMABLE_REGION SRAM
 #else
+#ifdef CONFIG_VECT_REGION
+  #define VECT_REGION    VECT
+#endif
 #define ROMABLE_REGION SRAM
 #define RAMABLE_REGION SRAM
+#endif
+
+#ifdef CONFIG_VECT_REGION
+  #define VECT_ADDR CONFIG_VECT_BASE_ADDRESS
+  #define VECT_SIZE CONFIG_VECT_SIZE
 #endif
 
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
@@ -79,6 +90,9 @@ _region_min_align = 4;
 
 MEMORY
     {
+#ifdef CONFIG_VECT_REGION
+    VECT      	  	  (rx) : ORIGIN = VECT_ADDR, LENGTH = VECT_SIZE
+#endif
     FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     SRAM  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* TI CCFG Registers */
@@ -121,11 +135,13 @@ SECTIONS
 	{
 	*(.iplt)
 	}
-
+#ifdef CONFIG_VECT_REGION
+    GROUP_START(VECT_REGION)
+#else
     GROUP_START(ROMABLE_REGION)
 
 	__rom_region_start = ROM_ADDR;
-
+#endif
     SECTION_PROLOGUE(rom_start,,)
 	{
 
@@ -135,7 +151,17 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
 
+#ifdef CONFIG_VECT_REGION
+	} GROUP_LINK_IN(VECT_REGION)
+
+GROUP_END(VECT_REGION)
+
+GROUP_START(ROMABLE_REGION)
+
+	__rom_region_start = ROM_ADDR;
+#else
 	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
 
