@@ -199,6 +199,7 @@ static const uint32_t table_samp_time[] = {
 };
 #elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 static const uint16_t acq_time_tbl[8] = {3, 7, 13, 25, 48, 93, 248, 641};
@@ -445,6 +446,7 @@ static void adc_stm32_start_conversion(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -469,6 +471,7 @@ static void adc_stm32_calib(const struct device *dev)
 #if defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
@@ -1106,6 +1109,7 @@ static int start_read(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -1389,10 +1393,11 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
-	 * L4, WB, G4, H7 and U5 series STM32 needs to be awaken from deep sleep
+	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be awaken from deep sleep
 	 * mode, and restore its calibration parameters if there are some
 	 * previously stored calibration parameters.
 	 */
@@ -1412,6 +1417,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -1431,6 +1437,9 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			      LL_ADC_CLOCK_SYNC_PCLK_DIV4);
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
+			      LL_ADC_CLOCK_ASYNC_DIV6);
 #elif defined(STM32F3X_ADC_V1_1)
 	/*
 	 * Set the synchronous clock mode to HCLK/1 (DIV1) or HCLK/2 (DIV2)
@@ -1467,6 +1476,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -1483,6 +1493,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
