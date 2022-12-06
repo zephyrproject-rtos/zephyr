@@ -357,6 +357,7 @@ Libraries / Subsystems
 
   * Added new API call `fs_mkfs`.
   * Added new sample `samples/subsys/fs/format`.
+  * FAT FS driver has been updated to version 0.15 w/patch1.
 
 * Management
 
