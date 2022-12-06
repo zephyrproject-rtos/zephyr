@@ -387,7 +387,7 @@ int can_mcan_init(const struct device *dev)
 
 #ifndef CONFIG_CAN_STM32FD
 	uint32_t mrba = 0;
-#ifdef CONFIG_CAN_STM32H7
+#if defined(CONFIG_CAN_STM32H7) || defined(CONFIG_CAN_NUMAKER)
 	mrba = (uint32_t)msg_ram;
 #endif
 #ifdef CONFIG_CAN_MCUX_MCAN

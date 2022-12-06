@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_CAN_STM32        can_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_STM32FD      can_stm32fd.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_STM32H7      can_stm32h7.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_RCAR         can_rcar.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_NUMAKER      can_numaker.c)
 
 if(CONFIG_CAN_NATIVE_POSIX_LINUX)
   if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)

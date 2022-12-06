@@ -43,4 +43,10 @@
                  <PA6MFP_EMAC0_RMII_RXERR 0x0000>,
                  <PB6MFP_EMAC0_PPS 0x0000>;
     };
+
+    /* CAN TX/RX --> PJ10/PJ11 */
+    canfd0_default: canfd0_default {
+        pinmux = <PJ10MFP_CAN0_TXD 0x0000>,
+                 <PJ11MFP_CAN0_RXD 0x0000>;
+    };
 };

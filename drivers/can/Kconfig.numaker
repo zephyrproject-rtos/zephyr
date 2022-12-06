@@ -1,0 +1,15 @@
+# NuMaker CAN(-FD) driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NUMAKER := nuvoton,numaker
+
+config CAN_NUMAKER
+	bool "Nuvoton NuMaker CAN-FD driver"
+	depends on SOC_FAMILY_NUMAKER
+	select HAS_NUMAKER_CANFD
+    select CAN_MCAN
+	default $(dt_compat_enabled,$(DT_COMPAT_NUMAKER))
+	help
+	  Enables Nuvoton NuMaker CAN-FD driver, using Bosch M_CAN as backend

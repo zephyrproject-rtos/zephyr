@@ -551,6 +551,82 @@
 			phy-addr = <1>;
 			clocks = <&pcc EMAC0_MODULE 0 0>;
 		};
+
+		can {
+			compatible = "bosch,m_can-base";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			std-filter-elements = <12>;
+			ext-filter-elements = <10>;
+			rx-fifo0-elements = <3>;
+			rx-fifo1-elements = <3>;
+			rx-buffer-elements = <3>;
+			tx-buffer-elements = <3>;
+
+        	canfd0: canfd@40020000 {
+				compatible = "nuvoton,numaker";
+				reg = <0x40020000 0x200>, <0x40020200 0x1800>;
+            	reg-names = "m_can", "message_ram";
+				interrupts = <112 0>, <113 0>;
+            	interrupt-names = "LINE_0", "LINE_1";
+				reset = <CANFD0_RST>;
+				clocks = <&pcc CANFD0_MODULE CLK_CLKSEL0_CANFD0SEL_HCLK CLK_CLKDIV5_CANFD0(1)>;
+				status = "disabled";
+				label = "CANFD_0";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+			};
+
+        	canfd1: canfd@40024000 {
+				compatible = "nuvoton,numaker";
+				reg = <0x40024000 0x200>, <0x40024200 0x1800>;
+            	reg-names = "m_can", "message_ram";
+				interrupts = <114 0>, <115 0>;
+            	interrupt-names = "LINE_0", "LINE_1";
+				reset = <CANFD1_RST>;
+				clocks = <&pcc CANFD1_MODULE CLK_CLKSEL0_CANFD1SEL_HCLK CLK_CLKDIV5_CANFD1(1)>;
+				status = "disabled";
+				label = "CANFD_1";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+			};
+
+        	canfd2: canfd@40028000 {
+				compatible = "nuvoton,numaker";
+				reg = <0x40028000 0x200>, <0x40028200 0x1800>;
+            	reg-names = "m_can", "message_ram";
+				interrupts = <120 0>, <121 0>;
+            	interrupt-names = "LINE_0", "LINE_1";
+				reset = <CANFD2_RST>;
+				clocks = <&pcc CANFD2_MODULE CLK_CLKSEL0_CANFD2SEL_HCLK CLK_CLKDIV5_CANFD2(1)>;
+				status = "disabled";
+				label = "CANFD_2";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+			};
+
+        	canfd3: canfd@4002c000 {
+				compatible = "nuvoton,numaker";
+				reg = <0x4002c000 0x200>, <0x4002c200 0x1800>;
+            	reg-names = "m_can", "message_ram";
+				interrupts = <122 0>, <123 0>;
+            	interrupt-names = "LINE_0", "LINE_1";
+				reset = <CANFD3_RST>;
+				clocks = <&pcc CANFD3_MODULE CLK_CLKSEL0_CANFD3SEL_HCLK CLK_CLKDIV5_CANFD3(1)>;
+				status = "disabled";
+				label = "CANFD_3";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+			};
+        };
 	};
 };
 

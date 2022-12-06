@@ -28,6 +28,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
    		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &canfd0;
 	};
 
 
@@ -126,4 +127,11 @@ zephyr_udc0: &usbd {
     pinctrl-names = "default";
     status = "okay";
  };
- 
+
+&canfd0 {
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	pinctrl-0 = <&canfd0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

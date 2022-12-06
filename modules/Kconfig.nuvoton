@@ -63,4 +63,8 @@ menu "Nuvoton NuMaker drivers"
         bool "NuMaker ETH"
         help
             Enable Nuvoton ETH EMAC HAL module driver
+    config HAS_NUMAKER_CANFD
+        bool "NuMaker CAN FD"
+        help
+            Enable Nuvoton CAN FD HAL module driver
 endmenu
