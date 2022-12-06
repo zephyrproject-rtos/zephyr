@@ -39,6 +39,15 @@
 #include <stm32_ll_exti.h>
 #endif /* CONFIG_PM */
 
+#define _UART_STM32_EACH_NODE_HAS_PROP_OR(id, prop) DT_INST_NODE_HAS_PROP(id, prop) &&
+#define UART_STM32_EACH_NODE_HAS_PROP(prop) \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(_UART_STM32_EACH_NODE_HAS_PROP_OR, prop) 1)
+
+#if !(defined(CONFIG_UART_USE_RUNTIME_CONFIGURE) || UART_STM32_EACH_NODE_HAS_PROP(current_speed))
+#	error "You need either enable CONFIG_UART_USE_RUNTIME_CONFIGURE" \
+	      "or define `current-speed` in each node"
+#endif
+
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
@@ -1656,7 +1665,9 @@ static int uart_stm32_init(const struct device *dev)
 	}
 
 	/* Set the default baudrate */
-	uart_stm32_set_baudrate(dev, data->baud_rate);
+	if (data->baud_rate) {
+		uart_stm32_set_baudrate(dev, data->baud_rate);
+	}
 
 	/* Enable the single wire / half-duplex mode */
 	if (config->single_wire) {
@@ -1895,7 +1906,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
-	.baud_rate = DT_INST_PROP(index, current_speed),		\
+	.baud_rate = DT_INST_PROP_OR(index, current_speed, 0),		\
 	UART_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)		\
 	UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
 };									\
