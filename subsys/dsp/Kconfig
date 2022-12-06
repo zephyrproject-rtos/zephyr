@@ -1,6 +1,15 @@
 # Copyright (c) 2022 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 
+menuconfig DSP
+	bool "DSP subsystem"
+	help
+	  Include the DSP (Digital Signal Processing) subsystem as a part of the
+	  Zephyr build. This enables applications to include and call into the
+	  <zephyr/dsp/dsp.h> header.
+
+if DSP
+
 config DSP_BACKEND_HAS_STATIC
 	bool
 
@@ -24,3 +33,5 @@ config DSP_BACKEND_CUSTOM
 	  added to the 'zdsp' build target by the application or one of its modules.
 
 endchoice
+
+endif # DSP
