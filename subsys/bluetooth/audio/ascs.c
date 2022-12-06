@@ -558,12 +558,14 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 		/* The ASE state machine goes into different states from this operation
 		 * based on whether it is a source or a sink ASE.
 		 */
-		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_DISABLING);
-		} else {
-			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+		if (ep->status.state == BT_AUDIO_EP_STATE_STREAMING ||
+		    ep->status.state == BT_AUDIO_EP_STATE_ENABLING) {
+			if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+				ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_DISABLING);
+			} else {
+				ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+			}
 		}
-
 		err = bt_audio_stream_iso_listen(stream);
 		if (err != 0) {
 			LOG_ERR("Could not make stream listen: %d", err);
