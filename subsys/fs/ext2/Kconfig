@@ -1,0 +1,55 @@
+# Copyright (c) 2022 Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+# Ext2 file system
+
+config FILE_SYSTEM_EXT2
+	bool "Ext2 file system support"
+	depends on FILE_SYSTEM
+	help
+	  Enable Ext2 file system support.
+
+module = EXT2
+module-str = Ext2
+source "subsys/logging/Kconfig.template.log_config"
+
+if FILE_SYSTEM_EXT2
+
+menu "Ext2 file system Settings"
+	visible if FILE_SYSTEM_EXT2
+
+config EXT2_HEAP_SIZE
+	int "Heap size"
+	default 10240
+	help
+	  Memory for allocation of internal structures (e.g. inodes).
+
+config MAX_INODES
+	int "Maximum number of opened inodes"
+	default 10
+
+config EXT2_SYNC_SECONDS
+	int "Seconds between automatic sync"
+	default 2
+
+
+config EXT2_MAX_BLOCKS
+	int "Number of blocks in blocks cache"
+	default 8
+	help
+	  Maximum number of blocks that could be created in the blocks cache.
+
+config EXT2_MAX_PAGES
+	int "Number of pages in blocks cache"
+	default 8
+	help
+	  Maximum number of pages that could be created in the blocks cache.
+
+config EXT2_PAGES_BUF_SIZE
+	int "Maximum size of pages buffer in blocks cache"
+	default 40960
+	help
+	  Maximum size of buffer that holds memory for cached pages.
+
+endmenu
+endif
