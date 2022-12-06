@@ -114,13 +114,14 @@ int pm_device_runtime_put(const struct device *dev);
  * this case, the function will be blocking (equivalent to
  * pm_device_runtime_put()).
  *
- * @funcprops \pre_kernel_ok, \async
+ * @funcprops \pre_kernel_ok, \async, \isr_ok
  *
  * @param dev Device instance.
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
  * @retval -ENOTSUP If the device does not support PM.
+ * @retval -EBUSY If the device is busy.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
  *
