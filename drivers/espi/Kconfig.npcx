@@ -48,6 +48,14 @@ config ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_MULTI_BYTE
 	  EC can accept 1/2/4 bytes of Port 80 data written from the Host in an
 	  eSPI transaction.
 
+config ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_RING_BUF_SIZE
+	int "Debug Port80 ring buffer size"
+	depends on ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_MULTI_BYTE
+	default 256
+	help
+	  The size of the ring buffer in byte used by the Port80 ISR to store
+	  Postcodes from Host.
+
 # The default value 'y' for the existing options if ESPI_NPCX is selected.
 if ESPI_NPCX
 
