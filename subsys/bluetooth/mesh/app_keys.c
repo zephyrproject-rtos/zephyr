@@ -10,12 +10,12 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/conn.h>
 #include "mesh.h"
+#include "adv.h"
 #include "net.h"
 #include "app_keys.h"
 #include "rpl.h"
 #include "settings.h"
 #include "crypto.h"
-#include "adv.h"
 #include "proxy.h"
 #include "friend.h"
 #include "foundation.h"

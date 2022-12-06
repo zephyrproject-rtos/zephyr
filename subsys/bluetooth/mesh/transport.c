@@ -144,7 +144,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 		      const struct bt_mesh_send_cb *cb, void *cb_data,
 		      const uint8_t *ctl_op)
 {
-	struct net_buf *buf;
+	struct bt_mesh_buf *buf;
 
 	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
 				 tx->xmit, BUF_TIMEOUT);
@@ -153,17 +153,17 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 		return -ENOBUFS;
 	}
 
-	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
+	net_buf_simple_reserve(&buf->b, BT_MESH_NET_HDR_LEN);
 
 	if (ctl_op) {
-		net_buf_add_u8(buf, TRANS_CTL_HDR(*ctl_op, 0));
+		net_buf_simple_add_u8(&buf->b, TRANS_CTL_HDR(*ctl_op, 0));
 	} else if (BT_MESH_IS_DEV_KEY(tx->ctx->app_idx)) {
-		net_buf_add_u8(buf, UNSEG_HDR(0, 0));
+		net_buf_simple_add_u8(&buf->b, UNSEG_HDR(0, 0));
 	} else {
-		net_buf_add_u8(buf, UNSEG_HDR(1, tx->aid));
+		net_buf_simple_add_u8(&buf->b, UNSEG_HDR(1, tx->aid));
 	}
 
-	net_buf_add_mem(buf, sdu->data, sdu->len);
+	net_buf_simple_add_mem(&buf->b, sdu->data, sdu->len);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 		if (!bt_mesh_friend_queue_has_space(tx->sub->net_idx,
@@ -171,7 +171,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 						    NULL, 1)) {
 			if (BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
 				LOG_ERR("Not enough space in Friend Queue");
-				net_buf_unref(buf);
+				bt_mesh_buf_unref(buf);
 				return -ENOBUFS;
 			} else {
 				LOG_WRN("No space in Friend Queue");
@@ -185,7 +185,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 			/* PDUs for a specific Friend should only go
 			 * out through the Friend Queue.
 			 */
-			net_buf_unref(buf);
+			bt_mesh_buf_unref(buf);
 			send_cb_finalize(cb, cb_data);
 			return 0;
 		}
@@ -407,7 +407,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 		tx->attempts);
 
 	while (tx->seg_o <= tx->seg_n) {
-		struct net_buf *seg;
+		struct bt_mesh_buf *seg;
 		int err;
 
 		if (!tx->seg[tx->seg_o]) {
@@ -423,7 +423,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 			goto end;
 		}
 
-		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
+		net_buf_simple_reserve(&seg->b, BT_MESH_NET_HDR_LEN);
 		seg_tx_buf_build(tx, tx->seg_o, &seg->b);
 
 		LOG_DBG("Sending %u/%u", tx->seg_o, tx->seg_n);

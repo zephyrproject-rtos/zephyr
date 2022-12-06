@@ -16,6 +16,7 @@
 
 #include "cdb.h"
 #include "mesh.h"
+#include "adv.h"
 #include "net.h"
 #include "rpl.h"
 #include "settings.h"

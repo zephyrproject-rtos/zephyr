@@ -8,6 +8,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 
 #include "mesh.h"
+#include "adv.h"
 #include "net.h"
 #include "rpl.h"
 #include "beacon.h"
@@ -15,7 +16,6 @@
 #include "heartbeat.h"
 #include "friend.h"
 #include "cfg.h"
-#include "adv.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_CFG_LOG_LEVEL
 #include <zephyr/logging/log.h>

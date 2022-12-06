@@ -7,9 +7,11 @@
 #include <zephyr/kernel.h>
 #include <stddef.h>
 
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/testing.h>
 
 #if defined(CONFIG_BT_MESH)
+#include "mesh/adv.h"
 #include "mesh/net.h"
 #include "mesh/lpn.h"
 #include "mesh/rpl.h"

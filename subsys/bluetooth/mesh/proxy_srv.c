@@ -800,12 +800,12 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 	return false;
 }
 
-bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
+bool bt_mesh_proxy_relay(struct bt_mesh_buf *buf, uint16_t dst)
 {
 	bool relayed = false;
 	int i;
 
-	LOG_DBG("%u bytes to dst 0x%04x", buf->len, dst);
+	LOG_DBG("%u bytes to dst 0x%04x", buf->b.len, dst);
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];

@@ -508,15 +508,15 @@ static int net_loopback(const struct bt_mesh_net_tx *tx, const uint8_t *data,
 	return 0;
 }
 
-int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
+int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct bt_mesh_buf *buf,
 		     const struct bt_mesh_send_cb *cb, void *cb_data)
 {
 	const struct bt_mesh_net_cred *cred;
 	int err;
 
 	LOG_DBG("src 0x%04x dst 0x%04x len %u headroom %zu tailroom %zu", tx->src, tx->ctx->addr,
-		buf->len, net_buf_headroom(buf), net_buf_tailroom(buf));
-	LOG_DBG("Payload len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+		buf->b.len, net_buf_simple_headroom(&buf->b), net_buf_simple_tailroom(&buf->b));
+	LOG_DBG("Payload len %u: %s", buf->b.len, bt_hex(buf->b.data, buf->b.len));
 	LOG_DBG("Seq 0x%06x", bt_mesh.seq);
 
 	cred = net_tx_cred_get(tx);
@@ -528,7 +528,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
 	    bt_mesh_has_addr(tx->ctx->addr)) {
-		err = net_loopback(tx, buf->data, buf->len);
+		err = net_loopback(tx, buf->b.data, buf->b.len);
 
 		/* Local unicast messages should not go out to network */
 		if (BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr) ||
@@ -556,8 +556,8 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		goto done;
 	}
 
-	BT_MESH_ADV(buf)->cb = cb;
-	BT_MESH_ADV(buf)->cb_data = cb_data;
+	buf->adv.cb = cb;
+	buf->adv.cb_data = cb_data;
 
 	/* Deliver to GATT Proxy Clients if necessary. */
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
@@ -576,7 +576,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	bt_mesh_adv_send(buf, cb, cb_data);
 
 done:
-	net_buf_unref(buf);
+	bt_mesh_buf_unref(buf);
 	return err;
 }
 
@@ -669,7 +669,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 			      struct bt_mesh_net_rx *rx)
 {
 	const struct bt_mesh_net_cred *cred;
-	struct net_buf *buf;
+	struct bt_mesh_buf *buf;
 	uint8_t transmit;
 
 	if (rx->ctx.recv_ttl <= 1U) {
@@ -706,16 +706,16 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	sbuf->data[1] &= 0x80;
 	sbuf->data[1] |= rx->ctx.recv_ttl - 1U;
 
-	net_buf_add_mem(buf, sbuf->data, sbuf->len);
+	net_buf_simple_add_mem(&buf->b, sbuf->data, sbuf->len);
 
 	cred = &rx->sub->keys[SUBNET_KEY_TX_IDX(rx->sub)].msg;
 
-	LOG_DBG("Relaying packet. TTL is now %u", TTL(buf->data));
+	LOG_DBG("Relaying packet. TTL is now %u", TTL(buf->b.data));
 
 	/* Update NID if RX or RX was with friend credentials */
 	if (rx->friend_cred) {
-		buf->data[0] &= 0x80; /* Clear everything except IVI */
-		buf->data[0] |= cred->nid;
+		buf->b.data[0] &= 0x80; /* Clear everything except IVI */
+		buf->b.data[0] |= cred->nid;
 	}
 
 	/* We re-encrypt and obfuscate using the received IVI rather than
@@ -742,7 +742,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	}
 
 done:
-	net_buf_unref(buf);
+	bt_mesh_buf_unref(buf);
 }
 
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,

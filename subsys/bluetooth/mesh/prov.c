@@ -22,6 +22,7 @@
 
 #include "crypto.h"
 #include "mesh.h"
+#include "adv.h"
 #include "net.h"
 #include "access.h"
 #include "foundation.h"

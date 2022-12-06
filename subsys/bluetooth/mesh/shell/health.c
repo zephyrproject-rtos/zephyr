@@ -6,8 +6,9 @@
 
 #include <stdlib.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
-
+#include "mesh/adv.h"
 #include "mesh/net.h"
 #include "mesh/access.h"
 #include "utils.h"

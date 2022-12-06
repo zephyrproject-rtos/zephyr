@@ -6,6 +6,7 @@
 #include "mesh_test.h"
 #include "settings_test_backend.h"
 #include "mesh/mesh.h"
+#include "mesh/adv.h"
 #include "mesh/net.h"
 #include "mesh/rpl.h"
 #include "mesh/transport.h"

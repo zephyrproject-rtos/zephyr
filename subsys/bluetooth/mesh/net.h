@@ -270,7 +270,7 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update);
 int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 		       bool proxy);
 
-int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
+int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct bt_mesh_buf *buf,
 		     const struct bt_mesh_send_cb *cb, void *cb_data);
 
 int bt_mesh_net_decode(struct net_buf_simple *in, enum bt_mesh_net_if net_if,

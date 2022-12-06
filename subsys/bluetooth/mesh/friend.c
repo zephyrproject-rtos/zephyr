@@ -1227,7 +1227,7 @@ static void friend_timeout(struct k_work *work)
 		.start = buf_send_start,
 		.end = buf_send_end,
 	};
-	struct net_buf *buf;
+	struct bt_mesh_buf *buf;
 	uint8_t md;
 
 	if (!friend_is_allocated(frnd)) {
@@ -1269,19 +1269,18 @@ static void friend_timeout(struct k_work *work)
 	frnd->queue_size--;
 
 send_last:
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_FRIEND_ADV,
-				 FRIEND_XMIT, K_NO_WAIT);
+	buf = bt_mesh_adv_frnd_create(FRIEND_XMIT, K_NO_WAIT);
 	if (!buf) {
 		LOG_ERR("Unable to allocate friend adv buffer");
 		return;
 	}
 
-	net_buf_add_mem(buf, frnd->last->data, frnd->last->len);
+	net_buf_simple_add_mem(&buf->b, frnd->last->data, frnd->last->len);
 
 	frnd->pending_req = 0U;
 	frnd->pending_buf = 1U;
 	bt_mesh_adv_send(buf, &buf_sent_cb, frnd);
-	net_buf_unref(buf);
+	bt_mesh_buf_unref(buf);
 }
 
 static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)

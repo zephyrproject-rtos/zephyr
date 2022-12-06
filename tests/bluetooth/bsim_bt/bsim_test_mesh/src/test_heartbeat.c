@@ -5,6 +5,7 @@
  */
 #include "mesh_test.h"
 #include "argparse.h"
+#include "mesh/adv.h"
 #include "mesh/net.h"
 #include "mesh/heartbeat.h"
 #include "mesh/lpn.h"

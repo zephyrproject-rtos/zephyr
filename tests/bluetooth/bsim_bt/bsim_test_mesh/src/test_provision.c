@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "mesh_test.h"
+#include "mesh/adv.h"
 #include "mesh/net.h"
 #include "argparse.h"
 #include <bs_pc_backchannel.h>

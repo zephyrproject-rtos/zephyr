@@ -8,6 +8,7 @@
 #include "settings_test_backend.h"
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/sys/reboot.h>
+#include "mesh/adv.h"
 #include "mesh/net.h"
 #include "mesh/app_keys.h"
 #include "mesh/crypto.h"

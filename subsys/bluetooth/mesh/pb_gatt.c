@@ -6,9 +6,9 @@
  */
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/conn.h>
+#include "adv.h"
 #include "net.h"
 #include "proxy.h"
-#include "adv.h"
 #include "host/ecc.h"
 #include "prov.h"
 #include "pb_gatt.h"

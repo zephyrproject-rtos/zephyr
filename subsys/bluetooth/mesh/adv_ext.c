@@ -57,7 +57,7 @@ struct bt_mesh_ext_adv {
 	uint8_t tag;
 	ATOMIC_DEFINE(flags, ADV_FLAGS_NUM);
 	struct bt_le_ext_adv *instance;
-	struct net_buf *buf;
+	struct bt_mesh_buf *buf;
 	uint64_t timestamp;
 	struct k_work_delayable work;
 	struct bt_le_adv_param adv_param;
@@ -182,29 +182,29 @@ static int adv_start(struct bt_mesh_ext_adv *adv,
 	return err;
 }
 
-static int buf_send(struct bt_mesh_ext_adv *adv, struct net_buf *buf)
+static int buf_send(struct bt_mesh_ext_adv *adv, struct bt_mesh_buf *buf)
 {
 	struct bt_le_ext_adv_start_param start = {
 		.num_events =
-			BT_MESH_TRANSMIT_COUNT(BT_MESH_ADV(buf)->xmit) + 1,
+			BT_MESH_TRANSMIT_COUNT(buf->adv.xmit) + 1,
 	};
 	uint16_t duration, adv_int;
 	struct bt_data ad;
 	int err;
 
 	adv_int = MAX(ADV_INT_FAST_MS,
-		      BT_MESH_TRANSMIT_INT(BT_MESH_ADV(buf)->xmit));
+		      BT_MESH_TRANSMIT_INT(buf->adv.xmit));
 	/* Upper boundary estimate: */
 	duration = start.num_events * (adv_int + 10);
 
-	LOG_DBG("type %u len %u: %s", BT_MESH_ADV(buf)->type, buf->len,
-		bt_hex(buf->data, buf->len));
+	LOG_DBG("type %u len %u: %s", buf->adv.type, buf->b.len,
+		bt_hex(buf->b.data, buf->b.len));
 	LOG_DBG("count %u interval %ums duration %ums",
-		BT_MESH_TRANSMIT_COUNT(BT_MESH_ADV(buf)->xmit) + 1, adv_int, duration);
+		BT_MESH_TRANSMIT_COUNT(buf->adv.xmit) + 1, adv_int, duration);
 
-	ad.type = bt_mesh_adv_type[BT_MESH_ADV(buf)->type];
-	ad.data_len = buf->len;
-	ad.data = buf->data;
+	ad.type = bt_mesh_adv_type[buf->adv.type];
+	ad.data_len = buf->b.len;
+	ad.data = buf->b.data;
 
 	/* Only update advertising parameters if they're different */
 	if (adv->adv_param.interval_min != BT_MESH_ADV_SCAN_UNIT(adv_int)) {
@@ -215,10 +215,10 @@ static int buf_send(struct bt_mesh_ext_adv *adv, struct net_buf *buf)
 
 	err = adv_start(adv, &adv->adv_param, &start, &ad, 1, NULL, 0);
 	if (!err) {
-		adv->buf = net_buf_ref(buf);
+		adv->buf = bt_mesh_buf_ref(buf);
 	}
 
-	bt_mesh_adv_send_start(duration, err, BT_MESH_ADV(buf));
+	bt_mesh_adv_send_start(duration, err, &buf->adv);
 
 	return err;
 }
@@ -241,7 +241,7 @@ static const char *adv_tag_to_str(enum bt_mesh_adv_tag tag)
 static void send_pending_adv(struct k_work *work)
 {
 	struct bt_mesh_ext_adv *adv;
-	struct net_buf *buf;
+	struct bt_mesh_buf *buf;
 	int err;
 
 	adv = CONTAINER_OF(work, struct bt_mesh_ext_adv, work.work);
@@ -260,7 +260,7 @@ static void send_pending_adv(struct k_work *work)
 		atomic_clear_bit(adv->flags, ADV_FLAG_PROXY);
 
 		if (adv->buf) {
-			net_buf_unref(adv->buf);
+			bt_mesh_buf_unref(adv->buf);
 			adv->buf = NULL;
 		}
 
@@ -273,15 +273,15 @@ static void send_pending_adv(struct k_work *work)
 
 	while ((buf = bt_mesh_adv_buf_get_by_tag(adv->tag, K_NO_WAIT))) {
 		/* busy == 0 means this was canceled */
-		if (!BT_MESH_ADV(buf)->busy) {
-			net_buf_unref(buf);
+		if (!buf->adv.busy) {
+			bt_mesh_buf_unref(buf);
 			continue;
 		}
 
-		BT_MESH_ADV(buf)->busy = 0U;
+		buf->adv.busy = 0U;
 		err = buf_send(adv, buf);
 
-		net_buf_unref(buf);
+		bt_mesh_buf_unref(buf);
 
 		if (!err) {
 			return; /* Wait for advertising to finish */

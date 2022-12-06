@@ -18,6 +18,7 @@
 
 #include "common/bt_str.h"
 
+#include "adv.h"
 #include "net.h"
 #include "foundation.h"
 #include "msg.h"

@@ -17,6 +17,7 @@
 #include "mesh.h"
 #include "subnet.h"
 #include "app_keys.h"
+#include "adv.h"
 #include "net.h"
 #include "cdb.h"
 #include "crypto.h"

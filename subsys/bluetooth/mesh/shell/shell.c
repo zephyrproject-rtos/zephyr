@@ -19,6 +19,7 @@
 
 /* Private includes for raw Network & Transport layer access */
 #include "mesh/mesh.h"
+#include "mesh/adv.h"
 #include "mesh/net.h"
 #include "mesh/rpl.h"
 #include "mesh/transport.h"

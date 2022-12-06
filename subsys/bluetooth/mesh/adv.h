@@ -7,11 +7,6 @@
 /* Maximum advertising data payload for a single data type */
 #define BT_MESH_ADV_DATA_SIZE 29
 
-/* The user data is a pointer (4 bytes) to struct bt_mesh_adv */
-#define BT_MESH_ADV_USER_DATA_SIZE 4
-
-#define BT_MESH_ADV(buf) (*(struct bt_mesh_adv **)net_buf_user_data(buf))
-
 #define BT_MESH_ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)
 #define BT_MESH_SCAN_INTERVAL_MS 30
 #define BT_MESH_SCAN_WINDOW_MS   30
@@ -44,20 +39,34 @@ struct bt_mesh_adv {
 	uint8_t      xmit;
 };
 
+struct bt_mesh_buf {
+	sys_snode_t node;
+
+	struct net_buf_simple b;
+	uint8_t _bufs[BT_MESH_ADV_DATA_SIZE];
+
+	uint8_t ref;
+
+	struct bt_mesh_adv adv;
+};
+
 /* Lookup table for Advertising data types for bt_mesh_adv_type: */
 extern const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES];
 
-/* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
-struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
-				   enum bt_mesh_adv_tag tag,
-				   uint8_t xmit, k_timeout_t timeout);
+struct bt_mesh_buf *bt_mesh_buf_ref(struct bt_mesh_buf *buf);
+void bt_mesh_buf_unref(struct bt_mesh_buf *buf);
 
-void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
+/* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
+struct bt_mesh_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
+				       enum bt_mesh_adv_tag tag,
+				       uint8_t xmit, k_timeout_t timeout);
+
+void bt_mesh_adv_send(struct bt_mesh_buf *buf, const struct bt_mesh_send_cb *cb,
 		      void *cb_data);
 
-struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout);
+struct bt_mesh_buf *bt_mesh_adv_buf_get(k_timeout_t timeout);
 
-struct net_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout);
+struct bt_mesh_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout);
 
 void bt_mesh_adv_gatt_update(void);
 

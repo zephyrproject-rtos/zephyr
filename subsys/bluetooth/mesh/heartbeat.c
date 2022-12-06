@@ -3,7 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
+
+#include "adv.h"
 #include "net.h"
 #include "rpl.h"
 #include "access.h"
