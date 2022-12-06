@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2022 Antmicro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ &flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		small_partition: partition@3e000 {
+			label = "small";
+			reg = <0x0003E000 0x42000>;
+		};
+	};
+};
