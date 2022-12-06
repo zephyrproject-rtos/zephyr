@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&adc1 {
+	/delete-property/ pinctrl-0;
+	pinctrl-0 = <&adc1_inp0_pa0>; /* Arduino A2 */
+};
