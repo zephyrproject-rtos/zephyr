@@ -152,6 +152,9 @@ struct bt_mesh_lpn {
 	/* Duration reported for last advertising packet */
 	uint16_t adv_duration;
 
+	/* Advertising start time. */
+	uint32_t adv_start_time;
+
 	/* Next LPN related action timer */
 	struct k_work_delayable timer;
 

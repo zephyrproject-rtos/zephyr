@@ -217,7 +217,7 @@ static int send_friend_clear(void)
 static void clear_friendship(bool force, bool disable)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
-	bool established = lpn->established;
+	bool was_established = lpn->established;
 	uint16_t frnd = lpn->frnd;
 	uint16_t net_idx = lpn->sub->net_idx;
 
@@ -280,7 +280,7 @@ static void clear_friendship(bool force, bool disable)
 		k_work_reschedule(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
 	}
 
-	if (established) {
+	if (was_established) {
 		STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
 			if (cb->terminated) {
 				cb->terminated(net_idx, frnd);
@@ -289,7 +289,7 @@ static void clear_friendship(bool force, bool disable)
 	}
 }
 
-static void friend_req_sent(uint16_t duration, int err, void *user_data)
+static void friend_req_send_end(int err, void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
@@ -302,20 +302,32 @@ static void friend_req_sent(uint16_t duration, int err, void *user_data)
 		return;
 	}
 
-	lpn->adv_duration = duration;
+	lpn->adv_duration = k_uptime_get_32() - lpn->adv_start_time;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
-		k_work_reschedule(&lpn->timer, K_MSEC(FRIEND_REQ_WAIT));
+		k_work_reschedule(&lpn->timer,
+				  K_MSEC(FRIEND_REQ_WAIT - (int32_t)lpn->adv_duration));
 		lpn_set_state(BT_MESH_LPN_REQ_WAIT);
 	} else {
-		k_work_reschedule(&lpn->timer,
-				  K_MSEC(duration + FRIEND_REQ_TIMEOUT));
+		k_work_reschedule(&lpn->timer, K_MSEC(FRIEND_REQ_TIMEOUT));
 		lpn_set_state(BT_MESH_LPN_WAIT_OFFER);
 	}
 }
 
-static const struct bt_mesh_send_cb friend_req_sent_cb = {
-	.start = friend_req_sent,
+static void friend_req_send_start(uint16_t duration, int err, void *user_data)
+{
+	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+	lpn->adv_start_time = k_uptime_get_32();
+
+	if (err) {
+		friend_req_send_end(err, user_data);
+	}
+}
+
+static const struct bt_mesh_send_cb friend_req_send_cb = {
+	.start = friend_req_send_start,
+	.end = friend_req_send_end,
 };
 
 static int send_friend_req(struct bt_mesh_lpn *lpn)
@@ -355,10 +367,10 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 	tx.sub = lpn->sub;
 
 	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_REQ, &req,
-				sizeof(req), &friend_req_sent_cb, NULL);
+				sizeof(req), &friend_req_send_cb, NULL);
 }
 
-static void req_sent(uint16_t duration, int err, void *user_data)
+static void req_send_end(int err, void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 	bool retry;
@@ -367,8 +379,10 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 		return;
 	}
 
+	lpn->adv_duration = k_uptime_get_32() - lpn->adv_start_time;
+
 #if defined(CONFIG_BT_MESH_LOW_POWER_LOG_LEVEL_DBG)
-	LOG_DBG("req 0x%02x duration %u err %d state %s", lpn->sent_req, duration, err,
+	LOG_DBG("req 0x%02x duration %u err %d state %s", lpn->sent_req, lpn->adv_duration, err,
 		state2str(lpn->state));
 #endif
 
@@ -382,7 +396,6 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 	retry = (lpn->req_attempts > 0);
 
 	lpn->req_attempts++;
-	lpn->adv_duration = duration;
 
 	if (lpn->established || IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 		lpn_set_state(BT_MESH_LPN_RECV_DELAY);
@@ -390,12 +403,11 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 		 * response data due to HCI and other latencies.
 		 */
 		k_work_reschedule(&lpn->timer,
-				  K_MSEC(LPN_RECV_DELAY - SCAN_LATENCY));
+				  K_MSEC(LPN_RECV_DELAY - SCAN_LATENCY -
+					 (int32_t)lpn->adv_duration));
 	} else {
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
-		k_work_reschedule(&lpn->timer,
-				  K_MSEC(LPN_RECV_DELAY + duration +
-					 lpn->recv_win));
+		k_work_reschedule(&lpn->timer, K_MSEC(LPN_RECV_DELAY + lpn->recv_win));
 	}
 
 	STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
@@ -405,8 +417,20 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 	}
 }
 
-static const struct bt_mesh_send_cb req_sent_cb = {
-	.start = req_sent,
+static void req_send_start(uint16_t duration, int err, void *user_data)
+{
+	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+	lpn->adv_start_time = k_uptime_get_32();
+
+	if (err) {
+		req_send_end(err, user_data);
+	}
+}
+
+static const struct bt_mesh_send_cb req_send_cb = {
+	.start = req_send_start,
+	.end = req_send_end,
 };
 
 static int send_friend_poll(void)
@@ -439,7 +463,7 @@ static int send_friend_poll(void)
 	}
 
 	err = bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_POLL, &fsn, 1,
-			       &req_sent_cb, NULL);
+			       &req_send_cb, NULL);
 	if (err == 0) {
 		lpn->pending_poll = 0U;
 		lpn->sent_req = TRANS_CTL_OP_FRIEND_POLL;
@@ -782,7 +806,7 @@ static bool sub_update(uint8_t op)
 	req.xact = lpn->xact_next++;
 
 	if (bt_mesh_ctl_send(&tx, op, &req, 1 + g * 2,
-			     &req_sent_cb, NULL) < 0) {
+			     &req_send_cb, NULL) < 0) {
 		group_zero(lpn->pending);
 		return false;
 	}
@@ -843,8 +867,7 @@ static void lpn_timeout(struct k_work *work)
 		break;
 	case BT_MESH_LPN_REQ_WAIT:
 		bt_mesh_scan_enable();
-		k_work_reschedule(&lpn->timer, K_MSEC(lpn->adv_duration +
-							  FRIEND_REQ_SCAN));
+		k_work_reschedule(&lpn->timer, K_MSEC(lpn->adv_duration + FRIEND_REQ_SCAN));
 		lpn_set_state(BT_MESH_LPN_WAIT_OFFER);
 		break;
 	case BT_MESH_LPN_WAIT_OFFER:
@@ -878,8 +901,7 @@ static void lpn_timeout(struct k_work *work)
 		break;
 	case BT_MESH_LPN_RECV_DELAY:
 		k_work_reschedule(&lpn->timer,
-				      K_MSEC(lpn->adv_duration + SCAN_LATENCY +
-					     lpn->recv_win));
+				  K_MSEC(lpn->adv_duration + SCAN_LATENCY + lpn->recv_win));
 		bt_mesh_scan_enable();
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
 		break;
@@ -1063,8 +1085,8 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 	if (established) {
 		STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
 			if (cb->established) {
-				cb->established(lpn->sub->net_idx, lpn->frnd,
-					lpn->queue_size, lpn->recv_win);
+				cb->established(lpn->sub->net_idx, lpn->frnd, lpn->queue_size,
+						lpn->recv_win);
 			}
 		}
 	}
