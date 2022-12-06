@@ -497,6 +497,7 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
+		return;
 	}
 
 	/*1.  Set divider to bigger value (slowest SCLK)
@@ -588,9 +589,9 @@ int cad_qspi_int_disable(struct cad_qspi_params *cad_params, uint32_t mask)
 
 void cad_qspi_set_chip_select(struct cad_qspi_params *cad_params, int cs)
 {
-
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
+		return;
 	}
 
 	cad_params->cad_qspi_cs = cs;
