@@ -4,7 +4,7 @@ sample:
   name: chre
 tests:
   sample.modules.chre:
-    tags: introduction
+    tags: introduction chre
     platform_exclude: qemu_leon3
     modules:
       - chre
