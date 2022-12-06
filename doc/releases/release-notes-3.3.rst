@@ -45,6 +45,13 @@ Changes in this release
   Bluetooth subsystem, enable `CONFIG_BT_(module name)_LOG_LEVEL_DBG` instead of
   `CONFIG_BT_DEBUG_(module name)`.
 
+* MCUmgr img_mgmt now requires that a full sha256 hash to be used when
+  uploading an image to keep track of the progress, where the sha256 hash
+  is of the whole file being uploaded (different to the hash used when getting
+  image states). Use of a truncated hash or non-sha256 hash will still work
+  but will cause issues and failures in client software with future updates
+  to Zephyr/MCUmgr such as image verification.
+
 Removed APIs in this release
 ============================
 
