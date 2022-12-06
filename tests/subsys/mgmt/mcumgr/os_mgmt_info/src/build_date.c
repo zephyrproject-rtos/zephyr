@@ -88,7 +88,7 @@ ZTEST(os_mgmt_info_build_date, test_info_build_date_1_build_date)
 	int32_t received_time_seconds;
 
 	struct zcbor_map_decode_key_val output_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(output, zcbor_tstr_decode, &output),
+		ZCBOR_MAP_DECODE_KEY_DECODER("output", zcbor_tstr_decode, &output),
 	};
 
 	memset(buffer, 0, sizeof(buffer));
@@ -164,7 +164,7 @@ ZTEST(os_mgmt_info_build_date, test_info_build_date_2_all)
 	int32_t received_time_seconds;
 
 	struct zcbor_map_decode_key_val output_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(output, zcbor_tstr_decode, &output),
+		ZCBOR_MAP_DECODE_KEY_DECODER("output", zcbor_tstr_decode, &output),
 	};
 
 	memset(buffer, 0, sizeof(buffer));
