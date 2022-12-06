@@ -162,4 +162,6 @@ source "drivers/gpio/Kconfig.rt1718s"
 
 source "drivers/gpio/Kconfig.numicro"
 
+source "drivers/gpio/Kconfig.zephyr"
+
 endif # GPIO
