@@ -570,6 +570,7 @@ class TestPlan:
         runnable = (self.options.device_testing or self.options.filter == 'runnable')
         force_toolchain = self.options.force_toolchain
         force_platform = self.options.force_platform
+        ignore_platform_hints = self.options.ignore_platform_hints
         emu_filter = self.options.emulation_only
 
         logger.debug("platform filter: " + str(platform_filter))
@@ -747,10 +748,18 @@ class TestPlan:
                 if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
 
-                # if --all or -K are not provided, only build/run on simulators superceding above
-                # logic
-                if ts.simulation_only and plat.simulation == 'na' and not force_platform and not all_filter:
-                    instance.add_filter("Excluded non-simulation platform (simulation_only)", Filters.PLATFORM)
+                # platform_hint is a hint given by a test to describe at which level of integration a test should
+                # be run (none, arch, soc, board) with board being the default and implying the test should run everywhere.
+                #
+                # unset implies no hints, and the test is scheduled to run on every given platform
+                # arch implies that running the test once on the architecture is enough, priority is given to simulators if in the set of platforms
+                # family implies that running the test once for a family of SoCs is enough
+                # soc implies that running the test once per SoC is enough
+                # board implies that the test should be run on every physical (non-simulation!) board.
+                if set(ts.platform_hint) and ts.platform_hint == "arch" and not ("arch" in plat.platform_levels) and not ignore_platform_hints:
+                    cur_arch_test = arch_tests[(plat.arch, ts.name)]
+
+                    instance.add_filter("Excluded non-simulation platform (platform_level = 'arch')", Filters.PLATFORM)
 
                 test_configuration = ".".join([instance.platform.name,
                                                instance.testsuite.id])

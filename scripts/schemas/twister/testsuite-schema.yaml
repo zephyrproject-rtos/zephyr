@@ -130,8 +130,8 @@ mapping:
       "type":
         type: str
         enum: ["unit"]
-      "simulation_only":
-        type: bool
+      "platform_hint":
+        type: ["arch", "soc_family", "soc", "board"]
         required: false
       "skip":
         type: bool
