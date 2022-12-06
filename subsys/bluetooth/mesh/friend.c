@@ -730,6 +730,23 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	friend_recv_delay(frnd);
 
+	if (msg->fsn == frnd->fsn && frnd->last) {
+		LOG_DBG("Re-sending last PDU");
+		frnd->send_last = 1U;
+	} else {
+		if (frnd->last) {
+			net_buf_unref(frnd->last);
+			frnd->last = NULL;
+		}
+
+		frnd->fsn = msg->fsn;
+
+		if (sys_slist_is_empty(&frnd->queue)) {
+			enqueue_update(frnd, 0);
+			LOG_DBG("Enqueued Friend Update to empty queue");
+		}
+	}
+
 	STRUCT_SECTION_FOREACH(bt_mesh_friend_cb, cb) {
 		if (cb->polled) {
 			cb->polled(frnd->subnet->net_idx, frnd->lpn);
@@ -745,23 +762,6 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 				cb->established(frnd->subnet->net_idx, frnd->lpn, frnd->recv_delay,
 						frnd->poll_to);
 			}
-		}
-	}
-
-	if (msg->fsn == frnd->fsn && frnd->last) {
-		LOG_DBG("Re-sending last PDU");
-		frnd->send_last = 1U;
-	} else {
-		if (frnd->last) {
-			net_buf_unref(frnd->last);
-			frnd->last = NULL;
-		}
-
-		frnd->fsn = msg->fsn;
-
-		if (sys_slist_is_empty(&frnd->queue)) {
-			enqueue_update(frnd, 0);
-			LOG_DBG("Enqueued Friend Update to empty queue");
 		}
 	}
 
