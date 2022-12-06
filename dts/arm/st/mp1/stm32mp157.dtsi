@@ -325,6 +325,45 @@
 			status = "disabled";
 			label = "MAILBOX_0";
 		};
+
+		dma1: dma@48000000 {
+			compatible = "st,stm32-dma-v1";
+			reg = <0x48000000 0x400>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>, <47 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000001>;
+			#dma-cells = <4>;
+			st,mem2mem;
+			dma-offset = <0>;
+			dma-requests = <8>;
+			status = "disabled";
+			label = "DMA_1";
+		};
+
+		dma2: dma@48001000 {
+			compatible = "st,stm32-dma-v1";
+			reg = <0x48001000 0x400>;
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <68 0>, <69 0>, <70 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000002>;
+			#dma-cells = <4>;
+			st,mem2mem;
+			dma-offset = <8>;
+			dma-requests = <8>;
+			status = "disabled";
+			label = "DMA_2";
+		};
+
+		dmamux: dma-router@48002000 {
+			compatible = "st,stm32-dmamux";
+			reg = <0x48002000 0x400>;
+			#dma-cells = <3>;
+			dma-requests = <108>;
+			interrupts = <102 0>;
+			dma-channels = <16>;
+			dma-generators = <8>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000004>;
+			status = "disabled";
+			label = "DMAMUX_1";
+		};
 	};
 };
 

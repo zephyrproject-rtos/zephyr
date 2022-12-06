@@ -59,7 +59,7 @@ struct spi_stm32_data {
 #ifdef CONFIG_SPI_STM32_DMA
 static inline uint32_t ll_func_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t location)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP1X)
 	if (location == SPI_STM32_DMA_TX) {
 		/* use direct register location until the LL_SPI_DMA_GetTxRegAddr exists */
 		return (uint32_t)&(spi->TXDR);
