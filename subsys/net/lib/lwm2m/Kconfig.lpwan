@@ -1,0 +1,81 @@
+# Copyright (c) 2022 FTP Technologies
+# SPDX-License-Identifier: Apache-2.0
+
+config LWM2M_LPWAN_OBJ_SUPPORT
+	bool "LPWAN object support"
+	help
+	  Include support for LWM2M Connectivity Monitoring Object (ID 4)
+
+config LWM2M_LPWAN_INSTANCE_COUNT
+	int "Maximum # of LPWAN instances"
+	depends on LWM2M_LPWAN_OBJ_SUPPORT
+	default 1
+	range 1 4
+	help
+	  This value sets the maximum allowable number of LPWAN instances.
+
+config LWM2M_LPWAN_IPV4_ADDRESS_MAX
+	int "Maximum # of IPv4 addresses"
+	depends on LWM2M_LPWAN_OBJ_SUPPORT
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of IPv4 address assigned to a
+	  device that can be stored in this object.
+
+config LWM2M_LPWAN_IPV6_ADDRESS_MAX
+	int "Maximum # of IPv6 addresses"
+	depends on LWM2M_LPWAN_OBJ_SUPPORT
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of IPv6 addresses assigned to a
+	  device that can be stored in this object.
+
+config LWM2M_LPWAN_NETWORK_ADDRESS_MAX
+	int "Maximum # of network addresses"
+	depends on LWM2M_LPWAN_OBJ_SUPPORT
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of LPWAN network addresses assigned
+	  to a device that can be stored in this object.
+
+config LWM2M_LPWAN_SECONDARY_NETWORK_ADDRESS_MAX
+	int "Maximum # of secondary network addresses"
+	depends on LWM2M_LPWAN_OBJ_SUPPORT
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of secondary addresses used to
+	  communicate with the device on the LPWAN network assigned that can be
+	  stored in this object.
+
+config LWM2M_LPWAN_PEER_ADDRESS_MAX
+	int "Maximum # of addresses of peer nodes"
+	depends on LWM2M_LPWAN_OBJ_SUPPORT
+	default 0
+	range 0 64
+	help
+	  This value sets the maximum number of LPWAN addresses of peer nodes
+	  that can be stored in this object.
+
+config LWM2M_LPWAN_MULTICAST_GRP_ADDRESS_MAX
+	int "Maximum # of multicast addresses"
+	depends on LWM2M_LPWAN_OBJ_SUPPORT
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of group addresses (from which the
+	  device should accept incoming messages and/or commands) that can be
+	  stored in this object.
+
+config LWM2M_LPWAN_MULTICAST_GRP_KEY_MAX
+	int "Maximum # of multicast group keys"
+	depends on LWM2M_LPWAN_OBJ_SUPPORT
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of security key (e.g. AES128) to
+	  be shared with other members to be part of a multicast group that can
+	  be stored in this object.
