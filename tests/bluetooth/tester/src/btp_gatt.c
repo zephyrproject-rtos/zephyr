@@ -56,6 +56,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define SERVER_MAX_SERVICES		10
 #define SERVER_MAX_ATTRIBUTES		50
 #define SERVER_BUF_SIZE			2048
+#define MAX_CCC_COUNT			2
 
 /* bt_gatt_attr_next cannot be used on non-registered services */
 #define NEXT_DB_ATTR(attr) (attr + 1)
@@ -72,6 +73,7 @@ NET_BUF_POOL_DEFINE(server_pool, 1, SERVER_BUF_SIZE, 0, NULL);
 static uint8_t attr_count;
 static uint8_t svc_attr_count;
 static uint8_t svc_count;
+static bool ccc_added;
 
 /*
  * gatt_buf - cache used by a gatt client (to cache data read/discovered)
@@ -87,6 +89,36 @@ struct get_attr_data {
 	struct net_buf_simple *buf;
 	struct bt_conn *conn;
 };
+
+struct ccc_value {
+	struct bt_gatt_attr *attr;
+	struct bt_gatt_attr *ccc;
+	uint8_t value;
+};
+
+static struct ccc_value ccc_values[MAX_CCC_COUNT];
+
+static int ccc_find_by_attr(uint16_t handle)
+{
+	for (int i = 0; i < MAX_CCC_COUNT; i++) {
+		if (handle == ccc_values[i].attr->handle) {
+			return i;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static int ccc_find_by_ccc(const struct bt_gatt_attr *attr)
+{
+	for (int i = 0; i < MAX_CCC_COUNT; i++) {
+		if (attr == ccc_values[i].ccc) {
+			return i;
+		}
+	}
+
+	return -ENOENT;
+}
 
 static void *gatt_buf_add(const void *data, size_t len)
 {
@@ -474,6 +506,9 @@ static void add_characteristic(uint8_t *data, uint16_t len)
 	}
 
 	rp.char_id = sys_cpu_to_le16(cmd_data.char_id);
+
+	ccc_added = false;
+
 	tester_send(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
 		    CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 	return;
@@ -483,26 +518,27 @@ fail:
 		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
-static bool ccc_added;
-
-static uint8_t ccc_value;
-
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	ccc_value = value;
+	int i = ccc_find_by_ccc(attr);
+
+	if (i >= 0) {
+		ccc_values[i].value = value;
+	}
 }
 
 static struct bt_gatt_attr ccc = BT_GATT_CCC(ccc_cfg_changed,
 					     BT_GATT_PERM_READ |
 					     BT_GATT_PERM_WRITE);
 
-static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr)
+static struct bt_gatt_attr *add_ccc(struct bt_gatt_attr *attr)
 {
 	struct bt_gatt_attr *attr_desc;
 	struct bt_gatt_chrc *chrc = attr->user_data;
 	struct gatt_value *value = NEXT_DB_ATTR(attr)->user_data;
+	int i;
 
-	/* Fail if another CCC already exist on server */
+	/* Fail if another CCC already exist for this characteristic */
 	if (ccc_added) {
 		return NULL;
 	}
@@ -517,6 +553,13 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr)
 	attr_desc = gatt_db_add(&ccc, 0);
 	if (!attr_desc) {
 		return NULL;
+	}
+
+	i = ccc_find_by_ccc(NULL);
+	if (i >= 0) {
+		ccc_values[i].attr = attr;
+		ccc_values[i].ccc = attr_desc;
+		ccc_values[i].value = 0;
 	}
 
 	tester_set_bit(value->flags, GATT_VALUE_CCC_FLAG);
@@ -548,7 +591,7 @@ struct add_descriptor {
 	const struct bt_uuid *uuid;
 };
 
-static int alloc_descriptor(const struct bt_gatt_attr *attr,
+static int alloc_descriptor(struct bt_gatt_attr *attr,
 			    struct add_descriptor *d)
 {
 	struct bt_gatt_attr *attr_desc;
@@ -762,6 +805,8 @@ static void indicate_cb(struct bt_conn *conn,
 static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 {
 	struct gatt_value *value;
+	uint8_t ccc_value;
+	int i;
 
 	/* Value has been already set while adding CCC to the gatt_db */
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC)) {
@@ -787,6 +832,15 @@ static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 	}
 
 	memcpy(value->data, data->value, value->len);
+
+	/** Handle of attribute is 1 less that handle to its value */
+	i = ccc_find_by_attr(attr->handle - 1);
+
+	if (i < 0) {
+		ccc_value = 0;
+	} else {
+		ccc_value = ccc_values[i].value;
+	}
 
 	if (tester_test_bit(value->flags, GATT_VALUE_CCC_FLAG) && ccc_value) {
 		if (ccc_value == BT_GATT_CCC_NOTIFY) {
