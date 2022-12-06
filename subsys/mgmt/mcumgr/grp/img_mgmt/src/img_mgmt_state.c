@@ -281,8 +281,8 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 	struct zcbor_string zhash = { 0 };
 
 	struct zcbor_map_decode_key_val image_list_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(hash, zcbor_bstr_decode, &zhash),
-		ZCBOR_MAP_DECODE_KEY_VAL(confirm, zcbor_bool_decode, &confirm)
+		ZCBOR_MAP_DECODE_KEY_DECODER("hash", zcbor_bstr_decode, &zhash),
+		ZCBOR_MAP_DECODE_KEY_DECODER("confirm", zcbor_bool_decode, &confirm)
 	};
 
 	zcbor_state_t *zsd = ctxt->reader->zs;
