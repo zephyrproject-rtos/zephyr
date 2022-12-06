@@ -196,14 +196,6 @@ config LINKER_SORT_BY_ALIGNMENT
 	  in decreasing size of symbols. This helps to minimize
 	  padding between symbols.
 
-config VECT_REGION
-	bool "vector table specific allocation"
-	default n
-	help
-	  used to specify a specific memory region for the vector table.
-	  this can be used to split the memories region for code and vector
-	  table.
-
 config SRAM_VECTOR_TABLE
 	bool "Place the vector table in SRAM instead of flash"
 	help
