@@ -127,6 +127,9 @@ enum {
 	/* Reject response received */
 	RP_CC_EVT_REJECT,
 
+	/* Established */
+	RP_CC_EVT_CIS_ESTABLISHED,
+
 	/* Unknown response received */
 	RP_CC_EVT_UNKNOWN,
 };
@@ -433,7 +436,6 @@ static void rp_cc_state_wait_ntf_cis_create(struct ll_conn *conn, struct proc_ct
 	}
 }
 
-
 static void rp_cc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				 void *param)
 {
@@ -535,6 +537,10 @@ static void rp_cc_state_wait_cis_established(struct ll_conn *conn, struct proc_c
 			rp_cc_complete(conn, ctx, evt, param);
 		}
 		break;
+	case RP_CC_EVT_CIS_ESTABLISHED:
+		/* CIS was established, so let's go ahead and complete procedure */
+		rp_cc_complete(conn, ctx, evt, param);
+		break;
 	default:
 		/* Ignore other evts */
 		break;
@@ -623,6 +629,11 @@ bool llcp_rp_cc_awaiting_reply(struct proc_ctx *ctx)
 	return (ctx->state == RP_CC_STATE_WAIT_REPLY);
 }
 
+bool llcp_rp_cc_awaiting_established(struct proc_ctx *ctx)
+{
+	return (ctx->state == RP_CC_STATE_WAIT_CIS_ESTABLISHED);
+}
+
 void llcp_rp_cc_accept(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	rp_cc_execute_fsm(conn, ctx, RP_CC_EVT_CIS_REQ_ACCEPT, NULL);
@@ -641,6 +652,11 @@ void llcp_rp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 bool llcp_rp_cc_awaiting_instant(struct proc_ctx *ctx)
 {
 	return (ctx->state == RP_CC_STATE_WAIT_INSTANT);
+}
+
+void llcp_rp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	rp_cc_execute_fsm(conn, ctx, RP_CC_EVT_CIS_ESTABLISHED, NULL);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -668,6 +684,9 @@ enum {
 
 	/* Reject response received */
 	LP_CC_EVT_REJECT,
+
+	/* CIS established */
+	LP_CC_EVT_ESTABLISHED,
 
 	/* Unknown response received */
 	LP_CC_EVT_UNKNOWN,
@@ -898,6 +917,10 @@ static void lp_cc_st_wait_established(struct ll_conn *conn, struct proc_ctx *ctx
 			lp_cc_complete(conn, ctx, evt, param);
 		}
 		break;
+	case LP_CC_EVT_ESTABLISHED:
+		/* CIS was established, so let's go ahead and complete procedure */
+		lp_cc_complete(conn, ctx, evt, param);
+		break;
 	default:
 		/* Ignore other evts */
 		break;
@@ -955,5 +978,15 @@ void llcp_lp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 bool llcp_lp_cc_is_active(struct proc_ctx *ctx)
 {
 	return ctx->state != LP_CC_STATE_IDLE;
+}
+
+bool llcp_lp_cc_awaiting_established(struct proc_ctx *ctx)
+{
+	return (ctx->state == LP_CC_STATE_WAIT_ESTABLISHED);
+}
+
+void llcp_lp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	lp_cc_execute_fsm(conn, ctx, LP_CC_EVT_ESTABLISHED, NULL);
 }
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */

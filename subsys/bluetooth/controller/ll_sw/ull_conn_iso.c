@@ -36,6 +36,7 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
 #include "ull_internal.h"
+#include "ull_llcp.h"
 #include "lll/lll_vendor.h"
 
 #include "ll.h"
@@ -258,8 +259,6 @@ uint8_t ll_conn_iso_accept_timeout_set(uint16_t timeout)
 
 void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
 {
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	struct node_rx_conn_iso_estab *est;
 	struct node_rx_pdu *node_rx;
 
 	node_rx = ull_pdu_rx_alloc();
@@ -268,14 +267,23 @@ void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
 		return;
 	}
 
-	/* TODO: Send CIS_ESTABLISHED with status != 0 in error scenarios */
 	node_rx->hdr.type = NODE_RX_TYPE_CIS_ESTABLISHED;
+
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	struct node_rx_conn_iso_estab *est;
+
+	/* TODO: Send CIS_ESTABLISHED with status != 0 in error scenarios */
 	node_rx->hdr.handle = 0xFFFF;
 	node_rx->hdr.rx_ftr.param = cis;
 
 	est = (void *)node_rx->pdu;
 	est->status = 0;
 	est->cis_handle = cis->lll.handle;
+
+	ll_rx_put_sched(node_rx->hdr.link, node_rx);
+#else
+	/* Send node to ULL RX demuxer for triggering LLCP state machine */
+	node_rx->hdr.handle = cis->lll.acl_handle;
 
 	ll_rx_put_sched(node_rx->hdr.link, node_rx);
 #endif /* defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
@@ -332,7 +340,11 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 				}
 
 				if (--cis->event_expire == 0) {
-					/* Stop CIS and defer cleanup to after teardown. */
+					/* Stop CIS and defer cleanup to after teardown. This will
+					 * only generate a terminate event to the host if CIS has
+					 * been established. If CIS was not established, the
+					 * teardown will send CIS_ESTABLISHED with failure.
+					 */
 					ull_conn_iso_cis_stop(cis, NULL,
 							      cis->established ?
 							      BT_HCI_ERR_CONN_TIMEOUT :
@@ -835,6 +847,7 @@ static void cis_disabled_cb(void *param)
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
 	uint32_t ticker_status;
+	struct ll_conn *conn;
 	uint16_t handle_iter;
 	uint8_t is_last_cis;
 	uint8_t cis_idx;
@@ -850,7 +863,6 @@ static void cis_disabled_cb(void *param)
 
 		if (cis->lll.flushed) {
 			ll_iso_stream_released_cb_t cis_released_cb;
-			struct ll_conn *conn;
 
 			conn = ll_conn_get(cis->lll.acl_handle);
 			cis_released_cb = cis->released_cb;
@@ -883,16 +895,25 @@ static void cis_disabled_cb(void *param)
 			struct node_rx_pdu *node_terminate;
 			uint32_t ret;
 
-			/* Create and enqueue termination node. This shall prevent
-			 * further enqueuing of TX nodes for terminating CIS.
-			 */
-			node_terminate = ull_pdu_rx_alloc();
-			LL_ASSERT(node_terminate);
-			node_terminate->hdr.handle = cis->lll.handle;
-			node_terminate->hdr.type = NODE_RX_TYPE_TERMINATE;
-			*((uint8_t *)node_terminate->pdu) = cis->terminate_reason;
+			if (cis->established) {
+				/* Create and enqueue termination node. This shall prevent
+				 * further enqueuing of TX nodes for terminating CIS.
+				 */
+				node_terminate = ull_pdu_rx_alloc();
+				LL_ASSERT(node_terminate);
+				node_terminate->hdr.handle = cis->lll.handle;
+				node_terminate->hdr.type = NODE_RX_TYPE_TERMINATE;
+				*((uint8_t *)node_terminate->pdu) = cis->terminate_reason;
 
-			ll_rx_put_sched(node_terminate->hdr.link, node_terminate);
+				ll_rx_put_sched(node_terminate->hdr.link, node_terminate);
+			} else {
+				conn = ll_conn_get(cis->lll.acl_handle);
+
+				/* CIS was not established - complete the procedure with error */
+				if (ull_cp_cc_awaiting_established(conn)) {
+					ull_cp_cc_established(conn, cis->terminate_reason);
+				}
+			}
 
 			if (cig->lll.resume_cis == cis->lll.handle) {
 				/* Resume pending for terminating CIS - stop ticker */

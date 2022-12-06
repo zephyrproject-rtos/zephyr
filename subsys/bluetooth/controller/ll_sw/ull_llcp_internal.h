@@ -711,14 +711,18 @@ void llcp_lp_cc_init_proc(struct proc_ctx *ctx);
 void llcp_lp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 bool llcp_lp_cc_is_active(struct proc_ctx *ctx);
+bool llcp_lp_cc_awaiting_established(struct proc_ctx *ctx);
+void llcp_lp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx);
 
 void llcp_rp_cc_init_proc(struct proc_ctx *ctx);
 void llcp_rp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_rp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 bool llcp_rp_cc_awaiting_reply(struct proc_ctx *ctx);
+bool llcp_rp_cc_awaiting_established(struct proc_ctx *ctx);
 void llcp_rp_cc_accept(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_rp_cc_reject(struct ll_conn *conn, struct proc_ctx *ctx);
 bool llcp_rp_cc_awaiting_instant(struct proc_ctx *ctx);
+void llcp_rp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx);
 
 void llcp_pdu_decode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
