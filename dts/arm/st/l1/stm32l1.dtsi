@@ -233,6 +233,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			resets = <&rctl STM32_RESET(APB1, 0U)>;
 			interrupts = <28 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -249,6 +250,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000002>;
+			resets = <&rctl STM32_RESET(APB1, 1U)>;
 			interrupts = <29 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -265,6 +267,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
+			resets = <&rctl STM32_RESET(APB1, 2U)>;
 			interrupts = <30 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -281,6 +284,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40010800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000004>;
+			resets = <&rctl STM32_RESET(APB2, 2U)>;
 			interrupts = <25 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -297,6 +301,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40010c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000008>;
+			resets = <&rctl STM32_RESET(APB2, 3U)>;
 			interrupts = <26 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -313,6 +318,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40011400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000010>;
+			resets = <&rctl STM32_RESET(APB2, 4U)>;
 			interrupts = <27 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;

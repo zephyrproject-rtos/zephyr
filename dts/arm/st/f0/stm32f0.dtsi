@@ -231,6 +231,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40012c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
+			resets = <&rctl STM32_RESET(APB2, 11U)>;
 			interrupts = <13 0>, <14 0>;
 			interrupt-names = "brk_up_trg_com", "cc";
 			st,prescaler = <0>;
@@ -247,6 +248,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000002>;
+			resets = <&rctl STM32_RESET(APB1, 1U)>;
 			interrupts = <16 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -263,6 +265,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			resets = <&rctl STM32_RESET(APB1, 4U)>;
 			interrupts = <17 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -273,6 +276,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40001400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			resets = <&rctl STM32_RESET(APB1, 5U)>;
 			interrupts = <18 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -283,6 +287,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40002000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000100>;
+			resets = <&rctl STM32_RESET(APB1, 8U)>;
 			interrupts = <19 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -299,6 +304,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40014000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00010000>;
+			resets = <&rctl STM32_RESET(APB2, 16U)>;
 			interrupts = <20 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -315,6 +321,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40014400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00020000>;
+			resets = <&rctl STM32_RESET(APB2, 17U)>;
 			interrupts = <21 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -331,6 +338,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40014800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00040000>;
+			resets = <&rctl STM32_RESET(APB2, 18U)>;
 			interrupts = <22 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;

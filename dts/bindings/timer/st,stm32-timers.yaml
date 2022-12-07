@@ -5,13 +5,16 @@ description: STM32 timers
 
 compatible: "st,stm32-timers"
 
-include: base.yaml
+include: [base.yaml, reset-device.yaml]
 
 properties:
     reg:
       required: true
 
     clocks:
+      required: true
+
+    resets:
       required: true
 
     st,prescaler:
