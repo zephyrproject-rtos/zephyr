@@ -354,6 +354,7 @@
 /drivers/ps2/*xec*                        @franciscomunoz @sjvasanth1
 /drivers/ps2/*npcx*                       @MulinChao @ChiHuaL
 /drivers/pwm/*b91*                        @andy-liu-telink
+/drivers/pwm/*pca9685*                    @nixward
 /drivers/pwm/*rpi_pico*                   @burumaj
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
 /drivers/pwm/*sam0*                       @nzmichaelh
