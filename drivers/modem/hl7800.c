@@ -1112,20 +1112,16 @@ int32_t mdm_hl7800_update_rat(enum mdm_hl7800_radio_mode value)
 	}
 
 error:
-	if (ret >= 0) {
-		/* Changing the RAT causes the modem to reset. */
-		ret = modem_boot_handler("RAT changed");
-	}
 
 	allow_sleep(true);
 	hl7800_unlock();
 
-	/* A reset and reconfigure ensures the modem configuration and
-	 * state are valid
+	/* Changing the RAT causes the modem to reset.
+	 * A reset and reconfigure ensures the modem configuration and
+	 * state are valid.
 	 */
 	if (ret >= 0) {
-		k_work_reschedule_for_queue(&hl7800_workq, &ictx.mdm_reset_work,
-					    K_NO_WAIT);
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.mdm_reset_work, K_NO_WAIT);
 	}
 
 	return ret;
