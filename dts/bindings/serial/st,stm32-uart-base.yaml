@@ -4,13 +4,16 @@
 # Common fields for STM32 UART peripherals.
 description: STM32 UART-BASE
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
     reg:
       required: true
 
     clocks:
+      required: true
+
+    resets:
       required: true
 
     interrupts:
