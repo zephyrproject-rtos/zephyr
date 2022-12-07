@@ -754,6 +754,50 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 	cis->lll.handle = cis_handle;
 	cis->lll.active = 1U;
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	if (conn->lll.enc_tx) {
+		/* copy the Session Key */
+		memcpy(cis->lll.tx.ccm.key, conn->lll.ccm_tx.key,
+		       sizeof(cis->lll.tx.ccm.key));
+
+		/* copy the MSbits of IV Base */
+		memcpy(&cis->lll.tx.ccm.iv[4], &conn->lll.ccm_tx.iv[4], 4);
+
+		/* XOR the CIS access address to get IV */
+		mem_xor_32(cis->lll.tx.ccm.iv, conn->lll.ccm_tx.iv,
+			   cis->lll.access_addr);
+
+		/* initialise counter */
+		cis->lll.tx.ccm.counter = 0U;
+
+		/* set direction: peripheral to central = 0,
+		 * central to peripheral = 1
+		 */
+		cis->lll.tx.ccm.direction = !conn->lll.role;
+	}
+
+	if (conn->lll.enc_rx) {
+		/* copy the Session Key */
+		memcpy(cis->lll.rx.ccm.key, conn->lll.ccm_rx.key,
+		       sizeof(cis->lll.rx.ccm.key));
+
+		/* copy the MSbits of IV Base */
+		memcpy(&cis->lll.rx.ccm.iv[4], &conn->lll.ccm_rx.iv[4], 4);
+
+		/* XOR the CIS access address to get IV */
+		mem_xor_32(cis->lll.rx.ccm.iv, conn->lll.ccm_rx.iv,
+			   cis->lll.access_addr);
+
+		/* initialise counter */
+		cis->lll.rx.ccm.counter = 0U;
+
+		/* set direction: peripheral to central = 0,
+		 * central to peripheral = 1
+		 */
+		cis->lll.rx.ccm.direction = conn->lll.role;
+	}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 	/* Connection establishment timeout */
 	cis->event_expire = CONN_ESTAB_COUNTDOWN;
 
