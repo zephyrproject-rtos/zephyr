@@ -673,11 +673,17 @@ class ProjectBuilder(FilterBuilder):
             'CMakeCache.txt',
             os.path.join('zephyr', 'runners.yaml'),
         ]
-        keep = [
-            os.path.join('zephyr', 'zephyr.hex'),
-            os.path.join('zephyr', 'zephyr.bin'),
-            os.path.join('zephyr', 'zephyr.elf'),
-            ]
+        platform = self.instance.platform
+        if platform.binaries:
+            keep = []
+            for binary in platform.binaries:
+                keep.append(os.path.join('zephyr', binary ))
+        else:
+            keep = [
+                os.path.join('zephyr', 'zephyr.hex'),
+                os.path.join('zephyr', 'zephyr.bin'),
+                os.path.join('zephyr', 'zephyr.elf'),
+                ]
 
         keep += sanitizelist
 
