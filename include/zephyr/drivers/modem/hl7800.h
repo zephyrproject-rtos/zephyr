@@ -354,15 +354,19 @@ bool mdm_hl7800_valid_rat(uint8_t value);
  * Multiple users registering for callbacks is supported.
  *
  * @param agent event callback agent
+ *
+ * @retval 0 on success, negative on failure
  */
-void mdm_hl7800_register_event_callback(struct mdm_hl7800_callback_agent *agent);
+int mdm_hl7800_register_event_callback(struct mdm_hl7800_callback_agent *agent);
 
 /**
  * @brief Unregister a callback event function
  *
  * @param agent event callback agent
+ *
+ * @retval 0 on success, negative on failure
  */
-void mdm_hl7800_unregister_event_callback(struct mdm_hl7800_callback_agent *agent);
+int mdm_hl7800_unregister_event_callback(struct mdm_hl7800_callback_agent *agent);
 
 /**
  * @brief Force modem module to generate status events.

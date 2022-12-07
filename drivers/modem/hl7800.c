@@ -353,7 +353,7 @@ static uint8_t mdm_recv_buf[MDM_MAX_DATA_LENGTH];
 
 static K_SEM_DEFINE(hl7800_RX_lock_sem, 1, 1);
 static K_SEM_DEFINE(hl7800_TX_lock_sem, 1, 1);
-static K_MUTEX_DEFINE(cb_lock);
+static K_SEM_DEFINE(cb_lock, 1, 1);
 
 /* RX thread structures */
 K_THREAD_STACK_DEFINE(hl7800_rx_stack, CONFIG_MODEM_HL7800_RX_STACK_SIZE);
@@ -924,14 +924,14 @@ static void event_handler(enum mdm_hl7800_event event, void *event_data)
 	sys_snode_t *node;
 	struct mdm_hl7800_callback_agent *agent;
 
-	k_mutex_lock(&cb_lock, K_FOREVER);
+	k_sem_take(&cb_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_NODE(&hl7800_event_callback_list, node) {
 		agent = CONTAINER_OF(node, struct mdm_hl7800_callback_agent, node);
 		if (agent->event_callback != NULL) {
 			agent->event_callback(event, event_data);
 		}
 	}
-	k_mutex_unlock(&cb_lock);
+	k_sem_give(&cb_lock);
 }
 
 void mdm_hl7800_get_signal_quality(int *rsrp, int *sinr)
@@ -5494,21 +5494,40 @@ int32_t mdm_hl7800_power_off(void)
 	return rc;
 }
 
-void mdm_hl7800_register_event_callback(struct mdm_hl7800_callback_agent *agent)
+int mdm_hl7800_register_event_callback(struct mdm_hl7800_callback_agent *agent)
 {
-	k_mutex_lock(&cb_lock, K_FOREVER);
+	int ret;
+
+	ret = k_sem_take(&cb_lock, K_NO_WAIT);
+	if (ret < 0) {
+		return ret;
+	}
 	if (!agent->event_callback) {
 		LOG_WRN("event_callback is NULL");
 	}
 	sys_slist_append(&hl7800_event_callback_list, &agent->node);
-	k_mutex_unlock(&cb_lock);
+	k_sem_give(&cb_lock);
+
+	return ret;
 }
 
-void mdm_hl7800_unregister_event_callback(struct mdm_hl7800_callback_agent *agent)
+int mdm_hl7800_unregister_event_callback(struct mdm_hl7800_callback_agent *agent)
 {
-	k_mutex_lock(&cb_lock, K_FOREVER);
-	(void)sys_slist_find_and_remove(&hl7800_event_callback_list, &agent->node);
-	k_mutex_unlock(&cb_lock);
+	int ret;
+
+	ret = k_sem_take(&cb_lock, K_NO_WAIT);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = (int)sys_slist_find_and_remove(&hl7800_event_callback_list, &agent->node);
+	if (ret) {
+		ret = 0;
+	} else {
+		ret = -ENOENT;
+	}
+	k_sem_give(&cb_lock);
+
+	return ret;
 }
 
 /*** OFFLOAD FUNCTIONS ***/
