@@ -1294,9 +1294,10 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 		nrf_timer_cc_set(EVENT_TIMER, 0, start_us + 1U);
 
 		/* Capture the current time */
-		nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
+		nrf_timer_task_trigger(EVENT_TIMER,
+				       HAL_EVENT_TIMER_SAMPLE_TASK);
 
-		now_us = EVENT_TIMER->CC[1];
+		now_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 	} while ((now_us > start_us) && (EVENT_TIMER->EVENTS_COMPARE[0] == 0U));
 
 	return start_us + 1U;
@@ -1309,8 +1310,8 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 	/* PPI/DPPI configuration will be done in radio_tmr_start_us() */
 
 	/* Capture the current time */
-	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
-	start_us = EVENT_TIMER->CC[1];
+	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
+	start_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 
 	/* Setup radio start at current time */
 	start_us = radio_tmr_start_us(trx, start_us);
