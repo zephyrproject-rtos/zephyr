@@ -610,38 +610,9 @@ bool lr_is_idle(struct ll_conn *conn)
 	return conn->llcp.local.state == LR_STATE_IDLE;
 }
 
-void test_int_local_pending_requests(void)
+struct proc_ctx *pub_lr_dequeue(struct ll_conn *conn)
 {
-	struct ll_conn conn;
-	struct proc_ctx *peek_ctx;
-	struct proc_ctx *dequeue_ctx;
-	struct proc_ctx ctx;
-
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_llcp_init(&conn);
-
-	peek_ctx = llcp_lr_peek(&conn);
-	zassert_is_null(peek_ctx, NULL);
-
-	dequeue_ctx = lr_dequeue(&conn);
-	zassert_is_null(dequeue_ctx, NULL);
-
-	llcp_lr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.local.pend_proc_list);
-	zassert_equal_ptr(peek_ctx, &ctx, NULL);
-
-	peek_ctx = llcp_lr_peek(&conn);
-	zassert_equal_ptr(peek_ctx, &ctx, NULL);
-
-	dequeue_ctx = lr_dequeue(&conn);
-	zassert_equal_ptr(dequeue_ctx, &ctx, NULL);
-
-	peek_ctx = llcp_lr_peek(&conn);
-	zassert_is_null(peek_ctx, NULL);
-
-	dequeue_ctx = lr_dequeue(&conn);
-	zassert_is_null(dequeue_ctx, NULL);
+	return lr_dequeue(conn);
 }
 
 #endif

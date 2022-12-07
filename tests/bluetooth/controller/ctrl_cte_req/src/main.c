@@ -6,7 +6,6 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -27,7 +26,7 @@
 
 #include "lll.h"
 #include "ll_feat.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -44,9 +43,9 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ll_conn conn;
+static struct ll_conn conn;
 
-static void setup(void *data)
+static void cte_req_setup(void *data)
 {
 	test_setup(&conn);
 
@@ -56,7 +55,7 @@ static void setup(void *data)
 
 static void fex_setup(void *data)
 {
-	setup(data);
+	cte_req_setup(data);
 
 	/* Emulate valid feature exchange and all features valid for local and peer devices */
 	memset(&conn.llcp.fex, 0, sizeof(conn.llcp.fex));
@@ -1475,5 +1474,5 @@ ZTEST(cte_req_after_fex, test_peripheral_cte_req_wait_for_remote_phy_update_comp
 	test_cte_req_wait_for_remote_phy_update_complete(BT_HCI_ROLE_PERIPHERAL);
 }
 
-ZTEST_SUITE(cte_req, NULL, NULL, setup, NULL, NULL);
+ZTEST_SUITE(cte_req, NULL, NULL, cte_req_setup, NULL, NULL);
 ZTEST_SUITE(cte_req_after_fex, NULL, NULL, fex_setup, NULL, NULL);

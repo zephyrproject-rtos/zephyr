@@ -7,6 +7,9 @@
 config SOC_COMPATIBLE_NRF
 	default y
 
+config BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	default y
+
 config BT_CTLR_PHY_UPDATE_SUPPORT
 	default y
 

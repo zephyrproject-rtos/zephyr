@@ -738,8 +738,17 @@ void llcp_pdu_decode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ll_conn *conn);
 bool lr_is_idle(struct ll_conn *conn);
+struct proc_ctx *pub_lr_dequeue(struct ll_conn *conn);
+
 bool rr_is_disconnected(struct ll_conn *conn);
 bool rr_is_idle(struct ll_conn *conn);
+struct proc_ctx *pub_rr_dequeue(struct ll_conn *conn);
+void pub_rr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx);
+
+uint16_t local_ctx_buffers_free(void);
+uint16_t remote_ctx_buffers_free(void);
 uint16_t ctx_buffers_free(void);
 uint8_t common_tx_buffer_alloc_count(void);
+struct proc_ctx *pub_proc_ctx_acquire(void);
+struct proc_ctx *pub_create_procedure(enum llcp_proc proc);
 #endif
