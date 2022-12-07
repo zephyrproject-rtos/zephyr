@@ -1,0 +1,8 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_CORTEX_A55
+	bool "QEMU virt platform (cortex-a55)"
+	select ARM64
+	select CPU_CORTEX_A55
+	select GIC_V3

@@ -1,0 +1,16 @@
+# Copyright 2022 NXP
+
+identifier: qemu_cortex_a55_smp
+name: QEMU Emulation for Cortex-A55 SMP
+type: qemu
+simulation: qemu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

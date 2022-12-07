@@ -1,0 +1,12 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_CORTEX_A55
+
+config BUILD_OUTPUT_BIN
+	default y
+
+config BOARD
+	default "qemu_cortex_a55"
+
+endif # BOARD_QEMU_CORTEX_A55

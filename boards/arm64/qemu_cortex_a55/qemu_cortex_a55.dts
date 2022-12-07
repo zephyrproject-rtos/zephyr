@@ -1,0 +1,48 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <arm64/qemu/qemu-virt-a55.dtsi>
+
+/ {
+	model = "QEMU Cortex-A55";
+	compatible = "qemu,arm-cortex-a55";
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+
+		cpu@1 {
+			status = "disabled";
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "hvc";
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+	};
+
+	soc {
+		sram0: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x40000000 0x0 DT_SIZE_M(128)>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};

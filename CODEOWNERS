@@ -62,6 +62,7 @@
 /soc/arm/renesas_rcar/                    @aaillet @pmarzin
 /soc/arm64/                               @carlocaione
 /soc/arm64/qemu_cortex_a53/               @carlocaione
+/soc/arm64/qemu_cortex_a55/		  @LaurentiuM1234
 /soc/arm64/bcm_vk/                        @abhishek-brcm
 /soc/arm64/nxp_layerscape/                @JiafeiPan
 /soc/arm64/xenvm/                         @lorc @firscity
@@ -184,6 +185,7 @@
 /boards/xtensa/nxp_adsp_imx8/             @iuliana-prodan @dbaluta
 /boards/sparc/                            @julius-barendt
 /boards/arm64/qemu_cortex_a53/            @carlocaione
+/boards/arm64/qemu_cortex_a55/		  @LaurentiuM1234
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
 /boards/arm64/mimx8mm_evk/                @MrVan @JiafeiPan
 /boards/arm64/mimx8mp_evk/                @MrVan @JiafeiPan
