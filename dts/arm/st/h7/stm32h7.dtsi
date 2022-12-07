@@ -258,6 +258,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000010>;
+			resets = <&rctl STM32_RESET(APB2, 4U)>;
 			interrupts = <37 0>;
 			status = "disabled";
 		};
@@ -265,6 +266,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			resets = <&rctl STM32_RESET(APB1L, 17U)>;
 			interrupts = <38 0>;
 			status = "disabled";
 		};
@@ -272,6 +274,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			resets = <&rctl STM32_RESET(APB1L, 18U)>;
 			interrupts = <39 0>;
 			status = "disabled";
 		};
@@ -279,6 +282,7 @@
 			compatible ="st,stm32-uart";
 			reg = <0x40004c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
+			resets = <&rctl STM32_RESET(APB1L, 19U)>;
 			interrupts = <52 0>;
 			status = "disabled";
 		};
@@ -286,6 +290,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			resets = <&rctl STM32_RESET(APB1L, 20U)>;
 			interrupts = <53 0>;
 			status = "disabled";
 		};
@@ -293,6 +298,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+			resets = <&rctl STM32_RESET(APB2, 5U)>;
 			interrupts = <71 0>;
 			status = "disabled";
 		};
@@ -300,6 +306,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40007800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x40000000>;
+			resets = <&rctl STM32_RESET(APB1L, 30U)>;
 			interrupts = <82 0>;
 			status = "disabled";
 		};
@@ -307,6 +314,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40007c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
+			resets = <&rctl STM32_RESET(APB1L, 31U)>;
 			interrupts = <83 0>;
 			status = "disabled";
 		};
@@ -315,6 +323,7 @@
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x58000c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000008>;
+			resets = <&rctl STM32_RESET(APB4, 3U)>;
 			interrupts = <142 0>;
 			status = "disabled";
 		};
