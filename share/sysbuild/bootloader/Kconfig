@@ -1,0 +1,67 @@
+# Copyright (c) 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SUPPORT_BOOTLOADER
+	bool
+	default y
+
+config SUPPORT_BOOTLOADER_MCUBOOT_ZEPHYR
+	bool
+	default y
+
+choice BOOTLOADER
+	prompt "Bootloader support"
+	default BOOTLOADER_NONE
+	depends on SUPPORT_BOOTLOADER
+
+config BOOTLOADER_NONE
+	bool "None"
+	help
+	  Do not Include a bootloader in the build
+
+config BOOTLOADER_MCUBOOT
+	bool "MCUboot"
+	depends on SUPPORT_BOOTLOADER_MCUBOOT_ZEPHYR
+	help
+	  Include MCUboot (Zephyr port) as the bootloader to use
+
+endchoice
+
+if BOOTLOADER_MCUBOOT
+
+config SIGNATURE_TYPE
+	string
+	default NONE if BOOT_SIGNATURE_TYPE_NONE
+	default RSA  if BOOT_SIGNATURE_TYPE_RSA
+	default ECDSA_P256 if BOOT_SIGNATURE_TYPE_ECDSA_P256
+	default ED25519 if BOOT_SIGNATURE_TYPE_ED25519
+
+choice
+	prompt "Signature type"
+	default BOOT_SIGNATURE_TYPE_RSA
+
+config BOOT_SIGNATURE_TYPE_NONE
+	bool "No signature; use only hash check"
+
+config BOOT_SIGNATURE_TYPE_RSA
+	bool "RSA signatures"
+
+config BOOT_SIGNATURE_TYPE_ECDSA_P256
+	bool "Elliptic curve digital signatures with curve P-256"
+
+config BOOT_SIGNATURE_TYPE_ED25519
+	bool "Edwards curve digital signatures using ed25519"
+
+endchoice
+
+config BOOT_SIGNATURE_KEY_FILE
+	string "PEM key file"
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ec-p256.pem" if BOOT_SIGNATURE_TYPE_ECDSA_P256
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ed25519.pem" if BOOT_SIGNATURE_TYPE_ED25519
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-rsa-2048.pem" if BOOT_SIGNATURE_TYPE_RSA
+	default ""
+	help
+	  Absolute path to key file to use with MCUBoot.
+
+endif

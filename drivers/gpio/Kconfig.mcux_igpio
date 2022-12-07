@@ -5,6 +5,8 @@
 
 config GPIO_MCUX_IGPIO
 	bool "MCUX IGPIO driver"
+	default y
 	depends on HAS_MCUX_IGPIO
+	depends on DT_HAS_NXP_IMX_GPIO_ENABLED
 	help
 	  Enable the MCUX IGPIO driver.

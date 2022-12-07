@@ -9,11 +9,20 @@
 #include <zephyr/drivers/mdio.h>
 #include <string.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/devicetree.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define MDIO_DEVICE "MDIO"
+#if DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_mdio)
+#define DT_DRV_COMPAT atmel_sam_mdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_mdio)
+#define DT_DRV_COMPAT espressif_esp32_mdio
+#else
+#error "No known devicetree compatible match for MDIO shell"
+#endif
+
+#define MDIO_NODE_ID DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT)
 
 /*
  * Scan the entire 5-bit address space of the MDIO bus
@@ -27,10 +36,9 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 	uint16_t data;
 	uint16_t dev_addr;
 
-	dev = device_get_binding(MDIO_DEVICE);
-	if (!dev) {
-		shell_error(sh, "MDIO: Device driver %s not found.",
-			    MDIO_DEVICE);
+	dev = DEVICE_DT_GET(MDIO_NODE_ID);
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
 
 		return -ENODEV;
 	}
@@ -59,7 +67,7 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 
 	mdio_bus_disable(dev);
 
-	shell_print(sh, "%u devices found on %s", cnt, MDIO_DEVICE);
+	shell_print(sh, "%u devices found on %s", cnt, dev->name);
 
 	return 0;
 }
@@ -72,10 +80,9 @@ static int cmd_mdio_write(const struct shell *sh, size_t argc, char **argv)
 	uint16_t dev_addr;
 	uint16_t port_addr;
 
-	dev = device_get_binding(MDIO_DEVICE);
-	if (!dev) {
-		shell_error(sh, "MDIO: Device driver %s not found.",
-			    MDIO_DEVICE);
+	dev = DEVICE_DT_GET(MDIO_NODE_ID);
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
 
 		return -ENODEV;
 	}
@@ -87,7 +94,7 @@ static int cmd_mdio_write(const struct shell *sh, size_t argc, char **argv)
 	mdio_bus_enable(dev);
 
 	if (mdio_write(dev, port_addr, dev_addr, data) < 0) {
-		shell_error(sh, "Failed to write to device: %s", MDIO_DEVICE);
+		shell_error(sh, "Failed to write to device: %s", dev->name);
 		mdio_bus_disable(dev);
 
 		return -EIO;
@@ -106,10 +113,9 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 	uint16_t dev_addr;
 	uint16_t port_addr;
 
-	dev = device_get_binding(MDIO_DEVICE);
-	if (!dev) {
-		shell_error(sh, "MDIO: Device driver %s not found.",
-			    MDIO_DEVICE);
+	dev = DEVICE_DT_GET(MDIO_NODE_ID);
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
 
 		return -ENODEV;
 	}
@@ -120,7 +126,7 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 	mdio_bus_enable(dev);
 
 	if (mdio_read(dev, port_addr, dev_addr, &data) < 0) {
-		shell_error(sh, "Failed to read from device: %s", MDIO_DEVICE);
+		shell_error(sh, "Failed to read from device: %s", dev->name);
 		mdio_bus_disable(dev);
 
 		return -EIO;

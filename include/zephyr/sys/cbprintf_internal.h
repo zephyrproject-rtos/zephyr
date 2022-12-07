@@ -14,6 +14,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/arch/cpu.h>
 
 /*
  * Special alignment cases
@@ -29,6 +30,8 @@
 #define VA_STACK_MIN_ALIGN	8
 #elif defined(__aarch64__)
 #define VA_STACK_MIN_ALIGN	8
+#elif defined(CONFIG_ARC)
+#define VA_STACK_MIN_ALIGN	ARCH_STACK_PTR_ALIGN
 #elif defined(__riscv)
 #ifdef CONFIG_RISCV_ISA_RV32E
 #define VA_STACK_ALIGN(type)	4
@@ -91,10 +94,17 @@ extern "C" {
 #else
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic((x) + 0, \
+		/* char * */ \
 		char * : 1, \
 		const char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile char * : 1, \
 		const volatile char * : 1, \
+		/* unsigned char * */ \
+		unsigned char * : 1, \
+		const unsigned char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
+		volatile unsigned char * : 1, \
+		const volatile unsigned char * : 1,\
+		/* wchar_t * */ \
 		wchar_t * : 1, \
 		const wchar_t * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile wchar_t * : 1, \
@@ -171,15 +181,15 @@ extern "C" {
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
-	__auto_type _v = (v) + 0; \
+	__auto_type __v = (v) + 0; \
 	/* Static code analysis may complain about unused variable. */ \
-	(void)_v; \
-	size_t _arg_size = _Generic((v), \
+	(void)__v; \
+	size_t __arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
-			sizeof((_v)) \
+			sizeof((__v)) \
 		); \
-	_arg_size; \
+	__arg_size; \
 })
 #endif
 
@@ -226,7 +236,7 @@ extern "C" {
 			default : \
 				(const void **)buf) = arg; \
 	} \
-} while (0)
+} while (false)
 #endif
 
 /** @brief Return alignment needed for given argument.
@@ -291,7 +301,7 @@ do { \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg)) { \
+	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
 		_idx += sizeof(int); \
 		_align_offset += sizeof(int); \
 	} \
@@ -305,6 +315,7 @@ do { \
 		if (_cros_en) { \
 			if (Z_CBPRINTF_IS_X_PCHAR(arg_idx, _arg, _flags)) { \
 				if (_rws_pos_en) { \
+					_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
 					_rws_buffer[_rws_pos_idx++] = _loc; \
 				} \
 			} else { \
@@ -313,6 +324,7 @@ do { \
 				} \
 			} \
 		} else if (_rws_pos_en) { \
+			_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
 			_rws_buffer[_rws_pos_idx++] = _idx / sizeof(int); \
 		} \
 	} \
@@ -321,7 +333,7 @@ do { \
 	} \
 	_idx += _arg_size; \
 	_align_offset += _arg_size; \
-} while (0)
+} while (false)
 
 /** @brief Package single argument.
  *
@@ -417,7 +429,7 @@ do { \
 	uint8_t *_ros_pos_buf; \
 	Z_CBPRINTF_ON_STACK_ALLOC(_ros_pos_buf, _ros_cnt); \
 	uint8_t *_rws_buffer; \
-	Z_CBPRINTF_ON_STACK_ALLOC(_rws_buffer, _rws_cnt); \
+	Z_CBPRINTF_ON_STACK_ALLOC(_rws_buffer, 2 * _rws_cnt); \
 	size_t _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
 	int _pkg_len = 0; \
 	int _total_len = 0; \
@@ -441,21 +453,21 @@ do { \
 	_total_len = _pkg_len; \
 	/* Append string indexes to the package. */ \
 	_total_len += _ros_cnt; \
-	_total_len += _rws_cnt; \
-	if (_pbuf) { \
+	_total_len += 2 * _rws_cnt; \
+	if (_pbuf != NULL) { \
 		/* Append string locations. */ \
 		uint8_t *_pbuf_loc = &_pbuf[_pkg_len]; \
 		for (size_t i = 0; i < _ros_cnt; i++) { \
 			*_pbuf_loc++ = _ros_pos_buf[i]; \
 		} \
-		for (size_t i = 0; i < _rws_cnt; i++) { \
+		for (size_t i = 0; i < (2 * _rws_cnt); i++) { \
 			*_pbuf_loc++ = _rws_buffer[i]; \
 		} \
 	} \
 	/* Store length */ \
 	_outlen = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
-	if (_pbuf) { \
+	if (_pbuf != NULL) { \
 		union cbprintf_package_hdr hdr = { \
 			.desc = { \
 				.len = (uint8_t)(_pkg_len / sizeof(int)), \
@@ -469,7 +481,7 @@ do { \
 		*_len_loc = hdr; \
 	} \
 	_Pragma("GCC diagnostic pop") \
-} while (0)
+} while (false)
 
 #if Z_C_GENERIC
 #define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
@@ -486,7 +498,7 @@ do { \
 	} else { \
 		outlen = cbprintf_package(NULL, align_offset, flags, __VA_ARGS__); \
 	} \
-} while (0)
+} while (false)
 #endif /* Z_C_GENERIC */
 
 #ifdef __cplusplus
@@ -503,6 +515,43 @@ do { \
 	z_cbprintf_cxx_remove_cv < \
 		z_cbprintf_cxx_remove_reference < decltype(arg) > ::type \
 	> ::type
+
+/*
+ * Get the type of elements in an array.
+ */
+#define Z_CBPRINTF_CXX_ARG_ARRAY_TYPE(arg) \
+	z_cbprintf_cxx_remove_cv < \
+		z_cbprintf_cxx_remove_extent < decltype(arg) > ::type \
+	> ::type
+
+/*
+ * Determine if incoming type is char.
+ */
+#define Z_CBPRINTF_CXX_ARG_IS_TYPE_CHAR(type) \
+	(z_cbprintf_cxx_is_same_type < type, \
+	 char > :: value ? \
+	 true : \
+	 (z_cbprintf_cxx_is_same_type < type, \
+	  const char > :: value ? \
+	  true : \
+	  (z_cbprintf_cxx_is_same_type < type, \
+	   volatile char > :: value ? \
+	   true : \
+	   (z_cbprintf_cxx_is_same_type < type, \
+	    const volatile char > :: value ? \
+	    true : \
+	    false))))
+
+/*
+ * Figure out if this is a char array since (char *) and (char[])
+ * are of different types in C++.
+ */
+#define Z_CBPRINTF_CXX_ARG_IS_CHAR_ARRAY(arg) \
+	(z_cbprintf_cxx_is_array < decltype(arg) > :: value ? \
+	 (Z_CBPRINTF_CXX_ARG_IS_TYPE_CHAR(Z_CBPRINTF_CXX_ARG_ARRAY_TYPE(arg)) ? \
+	  true : \
+	  false) : \
+	 false)
 
 /*
  * Note that qualifiers of char * must be explicitly matched
@@ -560,7 +609,9 @@ do { \
 			 (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
 			  const volatile char * > :: value ? \
 			  CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR : \
-			  CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID)))))))))))))))))
+			  (Z_CBPRINTF_CXX_ARG_IS_CHAR_ARRAY(arg) ? \
+			   CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR : \
+			   CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID))))))))))))))))))
 #else
 #define Z_CBPRINTF_ARG_TYPE(arg) \
 	_Generic(arg, \

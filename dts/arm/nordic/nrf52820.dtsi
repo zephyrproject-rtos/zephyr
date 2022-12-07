@@ -22,7 +22,14 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
-			swo-ref-frequency = <32000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv7m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <32000000>;
+			};
 		};
 	};
 
@@ -48,7 +55,6 @@
 			reg = <0x40000000 0x1000>;
 			interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
-			label = "CLOCK";
 		};
 
 		power: power@40000000 {
@@ -76,7 +82,6 @@
 			reg = <0x40002000 0x1000>;
 			interrupts = <2 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-			label = "UART_0";
 		};
 
 		i2c0: i2c@40003000 {
@@ -94,7 +99,6 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-			label = "I2C_0";
 		};
 
 		spi0: spi@40003000 {
@@ -110,8 +114,8 @@
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			max-frequency = <DT_FREQ_M(8)>;
 			status = "disabled";
-			label = "SPI_0";
 		};
 
 		i2c1: i2c@40004000 {
@@ -129,7 +133,6 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-			label = "I2C_1";
 		};
 
 		spi1: spi@40004000 {
@@ -145,8 +148,8 @@
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
+			max-frequency = <DT_FREQ_M(8)>;
 			status = "disabled";
-			label = "SPI_1";
 		};
 
 		gpiote: gpiote@40006000 {
@@ -154,7 +157,6 @@
 			reg = <0x40006000 0x1000>;
 			interrupts = <6 5>;
 			status = "disabled";
-			label = "GPIOTE_0";
 		};
 
 		timer0: timer@40008000 {
@@ -164,7 +166,6 @@
 			cc-num = <4>;
 			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
-			label = "TIMER_0";
 		};
 
 		timer1: timer@40009000 {
@@ -174,7 +175,6 @@
 			cc-num = <4>;
 			interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
-			label = "TIMER_1";
 		};
 
 		timer2: timer@4000a000 {
@@ -184,7 +184,6 @@
 			cc-num = <4>;
 			interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
-			label = "TIMER_2";
 		};
 
 		rtc0: rtc@4000b000 {
@@ -195,7 +194,6 @@
 			status = "okay";
 			clock-frequency = <32768>;
 			prescaler = <1>;
-			label = "RTC_0";
 		};
 
 		temp: temp@4000c000 {
@@ -203,7 +201,6 @@
 			reg = <0x4000c000 0x1000>;
 			interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
-			label = "TEMP_0";
 		};
 
 		rng: random@4000d000 {
@@ -211,7 +208,6 @@
 			reg = <0x4000d000 0x1000>;
 			interrupts = <13 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
-			label = "RNG";
 		};
 
 		ecb: ecb@4000e000 {
@@ -219,7 +215,6 @@
 			reg = <0x4000e000 0x1000>;
 			interrupts = <14 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
-			label = "ECB";
 		};
 
 		ccm: ccm@4000f000 {
@@ -235,7 +230,6 @@
 			reg = <0x40010000 0x1000>;
 			interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
-			label = "WDT";
 		};
 
 		rtc1: rtc@40011000 {
@@ -246,7 +240,6 @@
 			status = "okay";
 			clock-frequency = <32768>;
 			prescaler = <1>;
-			label = "RTC_1";
 		};
 
 		qdec: qdec0: qdec@40012000 {
@@ -254,7 +247,6 @@
 			reg = <0x40012000 0x1000>;
 			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-			label = "QDEC";
 		};
 
 		comp: comparator@40013000 {
@@ -314,7 +306,6 @@
 			cc-num = <6>;
 			interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
-			label = "TIMER_3";
 		};
 
 		acl: acl@4001e000 {
@@ -331,11 +322,9 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			label="NRF_FLASH_DRV_NAME";
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				label = "NRF_FLASH";
 				erase-block-size = <4096>;
 				write-block-size = <4>;
 			};
@@ -357,7 +346,6 @@
 			num-isoin-endpoints = <1>;
 			num-isoout-endpoints = <1>;
 			status = "disabled";
-			label = "USBD";
 		};
 
 		gpio0: gpio@50000000 {
@@ -366,7 +354,6 @@
 			reg = <0x50000000 0x200
 			       0x50000500 0x300>;
 			#gpio-cells = <2>;
-			label = "GPIO_0";
 			status = "disabled";
 			port = <0>;
 		};
@@ -375,7 +362,6 @@
 	sw_pwm: sw-pwm {
 		compatible = "nordic,nrf-sw-pwm";
 		status = "disabled";
-		label = "SW_PWM";
 		generator = <&timer2>;
 		clock-prescaler = <0>;
 		#pwm-cells = <3>;

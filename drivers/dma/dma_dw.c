@@ -18,6 +18,7 @@
 #include "dma_dw_common.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dma_dw, CONFIG_DMA_LOG_LEVEL);
 
 /* Device constant configuration parameters */

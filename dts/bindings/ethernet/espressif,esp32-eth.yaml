@@ -1,0 +1,21 @@
+# Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 Ethernet
+
+compatible: "espressif,esp32-eth"
+
+include:
+  - name: ethernet.yaml
+
+properties:
+  phy-connection-type:
+    type: string
+    enum:
+      - "rmii"
+      - "mii"
+    default: "rmii"
+    description: |
+      Phy connection type define the physical interface connection between
+      PHY and MAC.  The default value uses Reduced Media-Independent
+      Interface (RMII) mode.

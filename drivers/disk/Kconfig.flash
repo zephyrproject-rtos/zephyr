@@ -4,55 +4,18 @@
 config DISK_DRIVER_FLASH
 	bool "Flash"
 	select FLASH
+	select FLASH_MAP
 	help
 	  Flash device is used for the file system.
 
 if DISK_DRIVER_FLASH
 
-config DISK_FLASH_VOLUME_NAME
-	string "Flash mount point or drive name"
-	default "NAND"
+config FLASHDISK_VERIFY_PAGE_LAYOUT
+	bool "Verify flashdisk partition layout"
+	default y
 	help
-	  Disk name as per file system naming guidelines.
-
-config DISK_FLASH_DEV_NAME
-	string "Flash device name to be used as storage backend"
-
-config DISK_FLASH_START
-	hex "Flash device start address in hex"
-	help
-	  This is start address of the flash to be used as storage backend.
-
-config DISK_FLASH_MAX_RW_SIZE
-	int "Flash device max read-write size in decimal"
-	help
-	  This is the maximum number of bytes that the
-	  flash_write API can accept per invocation.
-	  API.
-
-config DISK_FLASH_ERASE_ALIGNMENT
-	hex "Flash device erase alignment in hex"
-	help
-	  This is the start address alignment required by
-	  the flash component.
-
-config DISK_ERASE_BLOCK_SIZE
-	hex "Flash device erasable block size in hex"
-	help
-	  This is typically the minimum block size that
-	  is erased at one time in flash storage.
-	  Typically it is equal to the flash memory page size.
-
-config DISK_FLASH_SECTOR_SIZE
-	int "Flash device sector size"
-	default 512
-	help
-	  This is the file system sector size in bytes.
-
-config DISK_VOLUME_SIZE
-	hex "Flash device volume size in hex"
-	help
-	  This is the file system volume size in bytes.
+	  Enable runtime zephyr,flash-disk partition page layout constraints
+	  verification. Disable to reduce code size.
 
 module = FLASHDISK
 module-str = flashdisk

@@ -11,8 +11,4 @@ config SOC
 config NUM_IRQS
 	default 82
 
-config CRYPTO_STM32
-	default y
-	depends on CRYPTO
-
 endif # SOC_STM32F415XX

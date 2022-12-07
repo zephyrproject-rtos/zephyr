@@ -5,8 +5,9 @@
 
 config ENTROPY_NEORV32_TRNG
 	bool "NEORV32 TRNG"
-	default $(dt_compat_enabled,neorv32-trng)
-	depends on SOC_SERIES_NEORV32 && SYSCON
+	default y
+	depends on DT_HAS_NEORV32_TRNG_ENABLED
+	depends on SYSCON
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the True Random Number Generator (TRNG) driver for

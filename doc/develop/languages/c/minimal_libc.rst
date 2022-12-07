@@ -15,6 +15,17 @@ with a number of different toolchains.
 The minimal libc implementation can be found in :file:`lib/libc/minimal` in the
 main Zephyr tree.
 
+Formatted Output
+****************
+
+The minimal libc does not implement its own formatted output processor;
+instead, it maps the C standard formatted output functions such as ``printf``
+and ``sprintf`` to the :c:func:`cbprintf` function, which is Zephyr's own
+C99-compatible formatted output implementation.
+
+For more details, refer to the :ref:`Formatted Output <formatted_output>` OS
+service documentation.
+
 Dynamic Memory Management
 *************************
 

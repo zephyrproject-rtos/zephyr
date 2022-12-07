@@ -49,7 +49,6 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 #ifdef CONFIG_USERSPACE
 		LOG_ERR("     sp: " PR_REG, esf->sp);
 #endif
-		LOG_ERR("     tp: " PR_REG, esf->tp);
 		LOG_ERR("     ra: " PR_REG, esf->ra);
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
@@ -60,7 +59,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 	CODE_UNREACHABLE;
 }
 
-static char *cause_str(ulong_t cause)
+static char *cause_str(unsigned long cause)
 {
 	switch (cause) {
 	case 0:
@@ -149,22 +148,22 @@ void _Fault(z_arch_esf_t *esf)
 	 * treated as recoverable.
 	 */
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
-		ulong_t start = (ulong_t)exceptions[i].start;
-		ulong_t end = (ulong_t)exceptions[i].end;
+		unsigned long start = (unsigned long)exceptions[i].start;
+		unsigned long end = (unsigned long)exceptions[i].end;
 
 		if (esf->mepc >= start && esf->mepc < end) {
-			esf->mepc = (ulong_t)exceptions[i].fixup;
+			esf->mepc = (unsigned long)exceptions[i].fixup;
 			return;
 		}
 	}
 #endif /* CONFIG_USERSPACE */
 
-	ulong_t mcause;
+	unsigned long mcause;
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 
 #ifndef CONFIG_SOC_OPENISA_RV32M1_RISCV32
-	ulong_t mtval;
+	unsigned long mtval;
 	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
 #endif
 

@@ -18,7 +18,6 @@
 	lora: lora@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
-		label = "sx1276";
 		/* SX1276 nRESET */
 		reset-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
 		dio-gpios =

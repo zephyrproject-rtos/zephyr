@@ -95,9 +95,7 @@ struct i2c_dw_rom_config {
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
-	bool		pcie;
-	pcie_bdf_t	pcie_bdf;
-	pcie_id_t	pcie_id;
+	struct pcie_dev *pcie;
 #endif /* I2C_DW_PCIE_ENABLED */
 };
 
@@ -105,7 +103,6 @@ struct i2c_dw_dev_config {
 	DEVICE_MMIO_RAM;
 	struct k_sem		device_sync_sem;
 	uint32_t app_config;
-
 
 	uint8_t			*xfr_buf;
 	uint32_t		xfr_len;
@@ -119,7 +116,7 @@ struct i2c_dw_dev_config {
 	uint8_t			xfr_flags;
 	bool			support_hs_mode;
 
-	struct i2c_slave_config *slave_cfg;
+	struct i2c_target_config *slave_cfg;
 };
 
 #define Z_REG_READ(__sz) sys_read##__sz

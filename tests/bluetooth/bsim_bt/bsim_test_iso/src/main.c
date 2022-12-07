@@ -58,6 +58,7 @@ static const struct bt_data per_ad_data2[] = {
 static uint8_t chan_map[] = { 0x1F, 0XF1, 0x1F, 0xF1, 0x1F };
 
 static bool volatile is_iso_connected;
+static bool volatile deleting_pa_sync;
 static void iso_connected(struct bt_iso_chan *chan);
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason);
 static void iso_recv(struct bt_iso_chan *chan,
@@ -86,7 +87,7 @@ static struct bt_iso_chan bis_iso_chan = {
 
 #define BIS_ISO_CHAN_COUNT 1
 static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
-static uint32_t seq_num;
+static uint16_t seq_num;
 
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
@@ -106,12 +107,13 @@ static isoal_status_t test_sink_sdu_alloc(const struct isoal_sink    *sink_ctx,
 }
 
 
-static isoal_status_t test_sink_sdu_emit(const struct isoal_sink         *sink_ctx,
-					 const struct isoal_sdu_produced *valid_sdu)
+static isoal_status_t test_sink_sdu_emit(const struct isoal_sink             *sink_ctx,
+					 const struct isoal_emitted_sdu_frag *sdu_frag,
+					 const struct isoal_emitted_sdu      *sdu)
 {
-	printk("Vendor sink SDU len %u, seq_num %u, ts %u\n",
-		sink_ctx->sdu_production.sdu_written, valid_sdu->seqn,
-		valid_sdu->timestamp);
+	printk("Vendor sink SDU fragment size %u / %u, seq_num %u, ts %u\n",
+		sdu_frag->sdu_frag_size, sdu->total_sdu_size, sdu_frag->sdu.seqn,
+		sdu_frag->sdu.timestamp);
 	is_iso_vs_emitted = true;
 
 	return ISOAL_STATUS_OK;
@@ -394,7 +396,11 @@ static void pa_terminated_cb(struct bt_le_per_adv_sync *sync,
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr);
 
-	FAIL("PA terminated unexpectedly\n");
+	if (!deleting_pa_sync) {
+		FAIL("PA terminated unexpectedly\n");
+	} else {
+		deleting_pa_sync = false;
+	}
 }
 
 static bool volatile is_sync_recv;
@@ -617,6 +623,7 @@ static void test_iso_recv_main(void)
 	k_sleep(K_MSEC(5000));
 
 	printk("Deleting Periodic Advertising Sync...");
+	deleting_pa_sync = true;
 	err = bt_le_per_adv_sync_delete(sync);
 	if (err) {
 		FAIL("Failed to delete periodic advertising sync (err %d)\n",
@@ -765,6 +772,7 @@ static void test_iso_recv_main(void)
 	printk("success.\n");
 
 	printk("Deleting Periodic Advertising Sync...");
+	deleting_pa_sync = true;
 	err = bt_le_per_adv_sync_delete(sync);
 	if (err) {
 		FAIL("Failed to delete periodic advertising sync (err %d)\n",
@@ -922,6 +930,7 @@ static void test_iso_recv_vs_dp_main(void)
 	printk("success.\n");
 
 	printk("Deleting Periodic Advertising Sync... ");
+	deleting_pa_sync = true;
 	err = bt_le_per_adv_sync_delete(sync);
 	if (err) {
 		FAIL("Failed to delete periodic advertising sync (err %d)\n",

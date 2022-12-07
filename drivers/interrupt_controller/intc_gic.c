@@ -10,18 +10,18 @@
  * NOTE: This driver implements the GICv1 and GICv2 interfaces.
  */
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 
-#define CPU_REG_ID(cpu_node_id) DT_REG_ADDR(cpu_node_id),
 static const uint64_t cpu_mpid_list[] = {
-	DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(cpus), CPU_REG_ID)
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
 };
 
-BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_NUM_CPUS,
-		"The count of CPU Cores nodes in dts is less than CONFIG_MP_NUM_CPUS\n");
+BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_MAX_NUM_CPUS,
+		"The count of CPU Cores nodes in dts is less than CONFIG_MP_MAX_NUM_CPUS\n");
 
 void arm_gic_irq_enable(unsigned int irq)
 {
@@ -138,9 +138,11 @@ static void gic_dist_init(void)
 
 	/*
 	 * Enable all global interrupts distributing to CPUs listed
-	 * in dts with the count of CONFIG_MP_NUM_CPUS.
+	 * in dts with the count of arch_num_cpus().
 	 */
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0; i < num_cpus; i++) {
 		cpu_mask |= BIT(cpu_mpid_list[i]);
 	}
 	reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16)

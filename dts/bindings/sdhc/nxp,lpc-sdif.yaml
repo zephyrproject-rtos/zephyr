@@ -1,0 +1,39 @@
+# Copyright 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC SDIF SD host controller
+
+compatible: "nxp,lpc-sdif"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  data-timeout:
+    type: int
+    default: 0xFFFFFF
+    description: |
+      Data timeout, as multiple of the SD clock. See DATA_TIMEOUT field of SDIF.
+      Default value is the reset value of SOC
+
+  response-timeout:
+    type: int
+    default: 0xFF
+    description: |
+      Response timeout, as multiple of the SD clock. See RESPONSE_TIMEOUT field
+      of SDIF. Default value is the maximum possible timeout
+
+  cd-debounce-clocks:
+    type: int
+    default: 0xFFFFFF
+    description: |
+      Number of SD host clocks to use as a chip detect debounce filter. See
+      DEBOUNCE_COUNT field of SDIF. Default value is the reset value of SOC.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

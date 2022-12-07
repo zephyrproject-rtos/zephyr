@@ -7,7 +7,9 @@
 
 #define DT_DRV_COMPAT zephyr_dummy_dc
 
+#include <errno.h>
 #include <string.h>
+
 #include <zephyr/drivers/display.h>
 #include <zephyr/device.h>
 

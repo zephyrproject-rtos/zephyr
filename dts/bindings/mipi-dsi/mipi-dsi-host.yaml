@@ -8,9 +8,6 @@ include: base.yaml
 bus: mipi-dsi
 
 properties:
-    label:
-      required: true
-
     "#address-cells":
       required: true
       const: 1

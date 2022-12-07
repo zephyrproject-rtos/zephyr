@@ -1,0 +1,7 @@
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config RELOCATE_TO_ITCM
+	bool "test with code relocate to itcm"
+
+source "Kconfig.zephyr"

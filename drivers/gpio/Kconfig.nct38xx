@@ -5,6 +5,8 @@
 
 config GPIO_NCT38XX
 	bool "NCT38XX I2C-based GPIO chip"
+	default y
+	depends on DT_HAS_NUVOTON_NCT38XX_GPIO_PORT_ENABLED
 	depends on I2C
 	help
 	  Enable driver for NCT38XX I2C-based GPIO chip.

@@ -62,7 +62,7 @@ static int i2c_npcx_port_configure(const struct device *dev,
 		return -EIO;
 	}
 
-	if (!(dev_config & I2C_MODE_MASTER)) {
+	if (!(dev_config & I2C_MODE_CONTROLLER)) {
 		return -ENOTSUP;
 	}
 
@@ -87,7 +87,7 @@ static int i2c_npcx_port_get_config(const struct device *dev, uint32_t *dev_conf
 
 	ret = npcx_i2c_ctrl_get_speed(config->i2c_ctrl, &speed);
 	if (!ret) {
-		*dev_config = (I2C_MODE_MASTER | speed);
+		*dev_config = (I2C_MODE_CONTROLLER | speed);
 	}
 
 	return ret;
@@ -122,6 +122,26 @@ static int i2c_npcx_port_transfer(const struct device *dev,
 
 	return ret;
 }
+static int i2c_npcx_port_recover_bus(const struct device *dev)
+{
+	const struct i2c_npcx_port_config *const config = dev->config;
+	int ret;
+
+	if (config->i2c_ctrl == NULL) {
+		LOG_ERR("Cannot find i2c controller on port%02x!", config->port);
+		return -EIO;
+	}
+
+	/* Lock mutex of i2c/smb controller */
+	npcx_i2c_ctrl_mutex_lock(config->i2c_ctrl);
+
+	ret = npcx_i2c_ctrl_recover_bus(config->i2c_ctrl);
+
+	/* Unlock mutex of i2c/smb controller */
+	npcx_i2c_ctrl_mutex_unlock(config->i2c_ctrl);
+
+	return ret;
+}
 
 /* I2C driver registration */
 static int i2c_npcx_port_init(const struct device *dev)
@@ -139,7 +159,7 @@ static int i2c_npcx_port_init(const struct device *dev)
 
 
 	/* Setup initial i2c configuration */
-	i2c_config = (I2C_MODE_MASTER | i2c_map_dt_bitrate(config->bitrate));
+	i2c_config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 	ret = i2c_npcx_port_configure(dev, i2c_config);
 	if (ret != 0) {
 		return ret;
@@ -152,6 +172,7 @@ static const struct i2c_driver_api i2c_port_npcx_driver_api = {
 	.configure = i2c_npcx_port_configure,
 	.get_config = i2c_npcx_port_get_config,
 	.transfer = i2c_npcx_port_transfer,
+	.recover_bus = i2c_npcx_port_recover_bus,
 };
 
 /* I2C port init macro functions */
@@ -165,7 +186,7 @@ static const struct i2c_driver_api i2c_port_npcx_driver_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 	};                                                                     \
 									       \
-	DEVICE_DT_INST_DEFINE(inst,                                            \
+	I2C_DEVICE_DT_INST_DEFINE(inst,                                        \
 			    i2c_npcx_port_init,                                \
 			    NULL, NULL,                                        \
 			    &i2c_npcx_port_cfg_##inst,                         \

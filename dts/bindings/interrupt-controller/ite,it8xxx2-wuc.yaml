@@ -10,9 +10,6 @@ properties:
   reg:
     required: true
 
-  label:
-    required: true
-
   "wakeup-controller":
     type: boolean
     required: true

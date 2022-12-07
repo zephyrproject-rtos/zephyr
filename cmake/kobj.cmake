@@ -17,14 +17,14 @@ function(gen_kobj gen_dir_out)
     OUTPUT ${KOBJ_TYPES} ${KOBJ_OTYPE} ${KOBJ_SIZE}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+    ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
     --kobj-types-output ${KOBJ_TYPES}
     --kobj-otype-output ${KOBJ_OTYPE}
     --kobj-size-output ${KOBJ_SIZE}
     ${gen_kobject_list_include_args}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
-    ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+    ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
     ${PARSE_SYSCALLS_TARGET}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )

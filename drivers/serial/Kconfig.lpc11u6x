@@ -5,8 +5,9 @@
 
 config UART_LPC11U6X
 	bool "LPC11U6X serial driver"
+	default y
+	depends on DT_HAS_NXP_LPC11U6X_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on SOC_SERIES_LPC11U6X
 	help
 	  Enable UART driver for LPC11U6X series

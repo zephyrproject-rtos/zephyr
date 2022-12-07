@@ -26,8 +26,14 @@
 #include "lll.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+#include "ull_conn_iso_internal.h"
 
 #include "ull_conn_types.h"
 #include "ull_conn_internal.h"
@@ -35,9 +41,6 @@
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_llcp_remote
-#include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 
@@ -86,6 +89,9 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	case PROC_TERMINATE:
 	case PROC_DATA_LENGTH_UPDATE:
 	case PROC_CTE_REQ:
+	case PROC_CIS_TERMINATE:
+	case PROC_CIS_CREATE:
+	case PROC_SCA_UPDATE:
 		return 0U;
 	case PROC_PHY_UPDATE:
 	case PROC_CONN_UPDATE:
@@ -260,6 +266,21 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case PROC_CIS_CREATE:
+		llcp_rp_cc_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case PROC_CIS_TERMINATE:
+		llcp_rp_comm_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case PROC_SCA_UPDATE:
+		llcp_rp_comm_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -286,8 +307,34 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		llcp_rp_comm_tx_ack(conn, ctx, tx);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case PROC_SCA_UPDATE:
+		llcp_rp_comm_tx_ack(conn, ctx, tx);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	default:
 		/* Ignore tx_ack */
+		break;
+	}
+
+	rr_check_done(conn, ctx);
+}
+
+void llcp_rr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	case PROC_DATA_LENGTH_UPDATE:
+		/* llcp_rp_comm_tx_ntf(conn, ctx); */
+		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#ifdef CONFIG_BT_CTLR_PHY
+	case PROC_PHY_UPDATE:
+		llcp_rp_pu_tx_ntf(conn, ctx);
+		break;
+#endif /* CONFIG_BT_CTLR_PHY */
+	default:
+		/* Ignore other procedures */
 		break;
 	}
 
@@ -350,6 +397,21 @@ static void rr_act_run(struct ll_conn *conn)
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case PROC_CIS_CREATE:
+		llcp_rp_cc_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case PROC_CIS_TERMINATE:
+		llcp_rp_comm_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case PROC_SCA_UPDATE:
+		llcp_rp_comm_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -776,6 +838,15 @@ static const struct proc_role new_proc_lut[] = {
 	[PDU_DATA_LLCTRL_TYPE_CTE_REQ] = { PROC_CTE_REQ, ACCEPT_ROLE_BOTH },
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	[PDU_DATA_LLCTRL_TYPE_CTE_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	[PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND] = { PROC_CIS_TERMINATE, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	[PDU_DATA_LLCTRL_TYPE_CIS_REQ] = { PROC_CIS_CREATE, ACCEPT_ROLE_PERIPHERAL },
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ] = { PROC_SCA_UPDATE, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 };
 
 void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu)
@@ -785,7 +856,6 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu)
 	uint8_t proc = PROC_UNKNOWN;
 
 	pdu = (struct pdu_data *)rx->pdu;
-
 
 	/* Is this a valid opcode */
 	if (valid_pdu && pdu->llctrl.opcode < ARRAY_SIZE(new_proc_lut)) {

@@ -4,7 +4,7 @@
 menuconfig I2C_SAM0
 	bool "SAM0 series I2C SERCOM driver"
 	default y
-	depends on SOC_FAMILY_SAM0
+	depends on DT_HAS_ATMEL_SAM0_I2C_ENABLED
 	help
 	  Enable the SAM0 series SERCOM I2C driver.
 

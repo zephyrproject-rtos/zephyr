@@ -2,8 +2,9 @@
 
 config UART_NATIVE_POSIX
 	bool "UART driver for native_posix"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_POSIX_UART_ENABLED
 	select SERIAL_HAS_DRIVER
-	depends on ARCH_POSIX
 	help
 	  This enables a UART driver for the POSIX ARCH with up to 2 UARTs.
 	  For the first UART port, the driver can be configured

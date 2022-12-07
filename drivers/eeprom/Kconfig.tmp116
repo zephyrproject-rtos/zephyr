@@ -3,8 +3,9 @@
 
 config EEPROM_TMP116
 	bool "TMP116 EEPROM driver"
-	depends on TMP116
 	default y
+	depends on DT_HAS_TI_TMP116_EEPROM_ENABLED
+	depends on TMP116
 	help
 	  Enable support for the on-chip EEPROM found on
 	  Texas instrument TMP116 temperature sensor

@@ -6,7 +6,7 @@
 #ifndef SRC_TEST_HELPERS_H__
 #define SRC_TEST_HELPERS_H__
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 __syscall void test_helpers_log_setup(void);
 __syscall int test_helpers_cycle_get(void);

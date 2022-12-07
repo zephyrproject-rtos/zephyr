@@ -7,7 +7,6 @@ tests:
     tags: cpp
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
-      - CONFIG_NEWLIB_LIBC_NANO=n
       - CONFIG_EXCEPTIONS=y
     integration_platforms:
       - mps2_an385

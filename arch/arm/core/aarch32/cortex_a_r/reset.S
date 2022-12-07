@@ -65,7 +65,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
     mrs r0, cpsr
     bic r0, #MODE_MASK
     orr r0, #MODE_SVC
-    msr spsr_hyp, r0
+    msr spsr_cxsf, r0
 
     ldr r0, =EL1_Reset_Handler
     msr elr_hyp, r0
@@ -76,7 +76,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
 EL1_Reset_Handler:
 
 #endif
-#if defined(CONFIG_CPU_HAS_DCLS)
+#if defined(CONFIG_DCLS)
     /*
      * Initialise CPU registers to a defined state if the processor is
      * configured as Dual-redundant Core Lock-step (DCLS). This is required
@@ -194,7 +194,7 @@ EL1_Reset_Handler:
     vmsr fpexc, r1
 #endif /* CONFIG_FPU && CONFIG_CPU_HAS_VFP */
 
-#endif /* CONFIG_CPU_HAS_DCLS */
+#endif /* CONFIG_DCLS */
 
     /*
      * Configure stack.

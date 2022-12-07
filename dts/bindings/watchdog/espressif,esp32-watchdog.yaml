@@ -12,9 +12,3 @@ include: base.yaml
 properties:
     reg:
       required: true
-
-    label:
-      required: true
-
-    interrupts:
-      required: false

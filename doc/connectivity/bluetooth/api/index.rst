@@ -6,6 +6,7 @@ Bluetooth APIs
 .. toctree::
    :maxdepth: 1
 
+   att.rst
    audio.rst
    connection_mgmt.rst
    controller.rst
@@ -27,3 +28,9 @@ Bluetooth APIs
    volume.rst
    uuid.rst
    shell/audio.rst
+   shell/bap_broadcast_assistant.rst
+   shell/bap_scan_delegator.rst
+   shell/ccp.rst
+   shell/csip.rst
+   shell/iso.rst
+   shell/mcp.rst

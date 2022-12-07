@@ -128,7 +128,7 @@ struct lpc11u6x_uart0_regs {
 
 struct lpc11u6x_uart0_config {
 	struct lpc11u6x_uart0_regs *uart0;
-	const char *clock_drv_name;
+	const struct device *clock_dev;
 	uint32_t baudrate;
 	uint32_t clkid;
 	const struct pinctrl_dev_config *pincfg;
@@ -167,7 +167,7 @@ struct lpc11u6x_uartx_regs {
 
 struct lpc11u6x_uartx_config {
 	struct lpc11u6x_uartx_regs *base;
-	const char *clock_drv_name;
+	const struct device *clock_dev;
 	uint32_t baudrate;
 	uint32_t clkid;
 	const struct pinctrl_dev_config *pincfg;

@@ -26,39 +26,33 @@
 		tcml_code: code@1ffe0000 {
 			compatible = "nxp,imx-itcm";
 			reg = <0x1ffe0000 DT_SIZE_K(128)>;
-			label = "TCML CODE";
 		};
 
 		tcmu_sys: memory@20000000 {
 			compatible = "nxp,imx-dtcm";
 			reg = <0x20000000 DT_SIZE_K(128)>;
-			label = "TCMU SYSTEM";
 		};
 
 		ocram_code: code@900000 {
 			compatible = "nxp,imx-code-bus";
 			reg = <0x00900000 DT_SIZE_K(256)>;
-			label = "OCRAM CODE";
 		};
 
 		ocram_sys: memory@20200000 {
 			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20200000 DT_SIZE_K(256)>;
-			label = "OCRAM SYSTEM";
 		};
 
 		ocram_s_code: code@180000 {
 			compatible = "nxp,imx-code-bus";
 			reg = <0x00180000 DT_SIZE_K(32)>;
-			label = "OCRAM_S CODE";
 		};
 
 		ocram_s_sys: memory@20180000 {
 			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20180000 DT_SIZE_K(32)>;
-			label = "OCRAM_S SYSTEM";
 		};
 
 		gpio1: gpio@30200000 {
@@ -69,7 +63,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -83,7 +76,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -97,7 +89,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -111,7 +102,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -125,7 +115,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_5";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -144,7 +133,6 @@
 		ccm: ccm@30380000 {
 			compatible = "nxp,imx-ccm";
 			reg = <0x30380000 DT_SIZE_K(64)>;
-			label = "CCM";
 			#clock-cells = <3>;
 		};
 
@@ -153,7 +141,6 @@
 			reg = <0x30860000 0x10000>;
 			interrupts = <26 3>;
 			clocks = <&ccm IMX_CCM_UART1_CLK 0x7c 24>;
-			label = "UART_1";
 			status = "disabled";
 		};
 
@@ -162,7 +149,6 @@
 			reg = <0x30890000 0x10000>;
 			interrupts = <27 3>;
 			clocks = <&ccm IMX_CCM_UART2_CLK 0x68 28>;
-			label = "UART_2";
 			status = "disabled";
 		};
 
@@ -171,7 +157,6 @@
 			reg = <0x30880000 0x10000>;
 			interrupts = <28 3>;
 			clocks = <&ccm IMX_CCM_UART3_CLK 0x68 12>;
-			label = "UART_3";
 			status = "disabled";
 		};
 
@@ -180,7 +165,6 @@
 			reg = <0x30a60000 0x10000>;
 			interrupts = <29 3>;
 			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
-			label = "UART_4";
 			status = "disabled";
 		};
 
@@ -188,7 +172,6 @@
 			compatible = "nxp,imx-mu";
 			reg = <0x30ab0000 DT_SIZE_K(64)>;
 			interrupts = <97 0>;
-			label = "MAILBOX_0";
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\

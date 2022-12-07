@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <zephyr/sys/mutex.h>
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 
 #include <fcntl.h>
 #include <zephyr/net/socket.h>
@@ -21,16 +21,20 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define DBG(fmt, ...)
 #endif
 
+#define IPV4_ADDR "127.0.0.1"
+
 static uint8_t lladdr1[] = { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
 static uint8_t lladdr2[] = { 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 };
 
 struct eth_fake_context {
 	struct net_if *iface;
 	uint8_t *mac_address;
+	char *ip_address;
 };
 
 static struct eth_fake_context eth_fake_data1 = {
-	.mac_address = lladdr1
+	.mac_address = lladdr1,
+	.ip_address = IPV4_ADDR,
 };
 static struct eth_fake_context eth_fake_data2 = {
 	.mac_address = lladdr2
@@ -74,6 +78,14 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ctx->iface = iface;
 
 	net_if_set_link_addr(iface, ctx->mac_address, 6, NET_LINK_ETHERNET);
+
+	if (ctx->ip_address != NULL) {
+		struct in_addr addr;
+
+		if (net_addr_pton(AF_INET, ctx->ip_address, &addr) == 0) {
+			net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
+		}
+	}
 
 	ethernet_init(iface);
 }
@@ -164,7 +176,7 @@ static void setblocking(int fd, bool val)
 	}
 
 	res = fcntl(fd, F_SETFL, fl);
-	zassert_not_equal(fl, -1, "Fail to set fcntl");
+	zassert_not_equal(res, -1, "Fail to set fcntl");
 }
 
 #define SRC_PORT 4240
@@ -178,8 +190,7 @@ static int prepare_udp_socket(struct sockaddr_in *sockaddr, uint16_t local_port)
 
 	sockaddr->sin_family = AF_INET;
 	sockaddr->sin_port = htons(local_port);
-	ret = inet_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR,
-			&sockaddr->sin_addr);
+	ret = inet_pton(AF_INET, IPV4_ADDR, &sockaddr->sin_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	/* Bind UDP socket to local port */
@@ -215,7 +226,7 @@ static void __test_packet_sockets(int *sock1, int *sock2)
 #define IP_HDR_SIZE 20
 #define UDP_HDR_SIZE 8
 #define HDR_SIZE (IP_HDR_SIZE + UDP_HDR_SIZE)
-static void test_raw_packet_sockets(void)
+ZTEST(socket_packet, test_raw_packet_sockets)
 {
 	uint8_t data_to_send[] = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 };
 	uint8_t data_to_receive[sizeof(data_to_send) + HDR_SIZE];
@@ -284,7 +295,7 @@ static void test_raw_packet_sockets(void)
 	close(sock4);
 }
 
-static void test_packet_sockets(void)
+ZTEST(socket_packet, test_packet_sockets)
 {
 	int sock1, sock2;
 
@@ -294,7 +305,7 @@ static void test_packet_sockets(void)
 	close(sock2);
 }
 
-static void test_packet_sockets_dgram(void)
+ZTEST(socket_packet, test_packet_sockets_dgram)
 {
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	uint8_t data_to_receive[32];
@@ -391,7 +402,7 @@ static void test_packet_sockets_dgram(void)
 	close(sock2);
 }
 
-static void test_raw_and_dgram_socket_exchange(void)
+ZTEST(socket_packet, test_raw_and_dgram_socket_exchange)
 {
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	uint8_t data_to_receive[32];
@@ -497,7 +508,7 @@ static void test_raw_and_dgram_socket_exchange(void)
 	close(sock2);
 }
 
-static void test_raw_and_dgram_socket_recv(void)
+ZTEST(socket_packet, test_raw_and_dgram_socket_recv)
 {
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	uint8_t data_to_receive[32];
@@ -592,13 +603,4 @@ static void test_raw_and_dgram_socket_recv(void)
 	close(sock3);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(socket_packet,
-			 ztest_unit_test(test_packet_sockets),
-			 ztest_unit_test(test_raw_packet_sockets),
-			 ztest_unit_test(test_packet_sockets_dgram),
-			 ztest_unit_test(test_raw_and_dgram_socket_exchange),
-			 ztest_unit_test(test_raw_and_dgram_socket_recv));
-	ztest_run_test_suite(socket_packet);
-}
+ZTEST_SUITE(socket_packet, NULL, NULL, NULL, NULL, NULL);

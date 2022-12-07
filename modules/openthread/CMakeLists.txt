@@ -1,3 +1,4 @@
+if(CONFIG_OPENTHREAD)
 if(CONFIG_OPENTHREAD_SOURCES)
 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
@@ -18,6 +19,14 @@ set(
     "Specify external mbedtls library"
     FORCE
 )
+
+if(CONFIG_OPENTHREAD_FTD)
+  set(OT_FTD ON CACHE BOOL "Enable FTD" FORCE)
+  set(OT_MTD OFF CACHE BOOL "Enable MTD" FORCE)
+elseif(CONFIG_OPENTHREAD_MTD)
+  set(OT_FTD OFF CACHE BOOL "Enable FTD" FORCE)
+  set(OT_MTD ON CACHE BOOL "Enable MTD" FORCE)
+endif()
 
 if(CONFIG_ASSERT)
   set(OT_ASSERT ON CACHE BOOL "Enable assert function OT_ASSERT()" FORCE)
@@ -432,9 +441,11 @@ target_compile_options(ot-config INTERFACE
 # errno_private.h is generated as part of ${SYSCALL_LIST_H_TARGET} target.
 add_dependencies(ot-config ${SYSCALL_LIST_H_TARGET})
 
-# Make sure C library is linked after OpenThread libraries (to prevent linker
-# errors)
-target_link_libraries(ot-config INTERFACE -lc)
+# Make sure C library, in case of newlib, is linked after OpenThread libraries
+# (to prevent linker errors)
+if(CONFIG_NEWLIB_LIBC)
+  target_link_libraries(ot-config INTERFACE -lc)
+endif()
 
 # Include OpenThread headers
 zephyr_system_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/include)
@@ -482,5 +493,9 @@ if(CONFIG_OPENTHREAD_SETTINGS_RAM)
 endif()
 
 zephyr_link_libraries(${ot_libs})
+
+endif()
+
+add_subdirectory(platform)
 
 endif()

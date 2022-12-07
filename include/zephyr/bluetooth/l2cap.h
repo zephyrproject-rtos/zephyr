@@ -69,7 +69,7 @@ extern "C" {
  */
 #define BT_L2CAP_SDU_RX_MTU (BT_L2CAP_RX_MTU - BT_L2CAP_SDU_HDR_SIZE)
 
-/** @def BT_L2CAP_SDU_BUF_SIZE
+/**
  *
  *  @brief Helper to calculate needed buffer size for L2CAP SDUs.
  *         Useful for creating buffer pools.
@@ -199,7 +199,7 @@ struct bt_l2cap_le_chan {
 #endif
 };
 
-/** @def BT_L2CAP_LE_CHAN(_ch)
+/**
  *  @brief Helper macro getting container object of type bt_l2cap_le_chan
  *  address having the same container chan member address as object in question.
  *
@@ -279,6 +279,19 @@ struct bt_l2cap_chan_ops {
 	 */
 	void (*encrypt_change)(struct bt_l2cap_chan *chan, uint8_t hci_status);
 
+	/** @brief Channel alloc_seg callback
+	 *
+	 *  If this callback is provided the channel will use it to allocate
+	 *  buffers to store segments. This avoids wasting big SDU buffers with
+	 *  potentially much smaller PDUs. If this callback is supplied, it must
+	 *  return a valid buffer.
+	 *
+	 *  @param chan The channel requesting a buffer.
+	 *
+	 *  @return Allocated buffer.
+	 */
+	struct net_buf *(*alloc_seg)(struct bt_l2cap_chan *chan);
+
 	/** @brief Channel alloc_buf callback
 	 *
 	 *  If this callback is provided the channel will use it to allocate
@@ -345,12 +358,12 @@ struct bt_l2cap_chan_ops {
 	void (*reconfigured)(struct bt_l2cap_chan *chan);
 };
 
-/** @def BT_L2CAP_CHAN_SEND_RESERVE
+/**
  *  @brief Headroom needed for outgoing L2CAP PDUs.
  */
 #define BT_L2CAP_CHAN_SEND_RESERVE (BT_L2CAP_BUF_SIZE(0))
 
-/** @def BT_L2CAP_SDU_CHAN_SEND_RESERVE
+/**
  * @brief Headroom needed for outgoing L2CAP SDUs.
  */
 #define BT_L2CAP_SDU_CHAN_SEND_RESERVE (BT_L2CAP_SDU_BUF_SIZE(0))

@@ -13,7 +13,7 @@ extern "C" {
 
 #include <sys/types.h>
 #include <string.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net/net_pkt.h>
 
 #define tp_dbg(fmt, args...) printk("%s: " fmt "\n", __func__, ## args)

@@ -21,6 +21,8 @@ zephyr_library_sources_ifdef(CONFIG_SW_VECTOR_RELAY irq_relay.S)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE ../common/tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 
+zephyr_library_sources_ifdef(CONFIG_ARCH_CACHE cache.c)
+
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M cortex_m)
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M_HAS_CMSE cortex_m/cmse)
 add_subdirectory_ifdef(CONFIG_ARM_SECURE_FIRMWARE cortex_m/tz)
@@ -33,3 +35,4 @@ add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_R cortex_a_r)
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_A cortex_a_r)
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)
+zephyr_linker_sources(ROM_START SORT_KEY 0x1vectors cortex_m/vector_table_pad.ld)

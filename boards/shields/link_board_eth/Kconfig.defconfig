@@ -5,13 +5,7 @@ if SHIELD_LINK_BOARD_ETH
 
 if NETWORKING
 
-config SPI
-	default y
-
 config NET_L2_ETHERNET
-	default y
-
-config ETH_ENC424J600
 	default y
 
 endif # NETWORKING

@@ -8,6 +8,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
 
 #define RESET_NODE DT_NODELABEL(nrf52840_reset)
 
@@ -21,7 +22,7 @@ int bt_hci_transport_setup(const struct device *h4)
 {
 	int err;
 	char c;
-	const struct device *port = DEVICE_DT_GET(RESET_GPIO_CTRL);
+	const struct device *const port = DEVICE_DT_GET(RESET_GPIO_CTRL);
 
 	if (!device_is_ready(port)) {
 		return -EIO;

@@ -26,7 +26,7 @@ on:
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
-  WEST_VERSION: 0.13.0a1
+  WEST_VERSION: 0.14.0
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
@@ -35,26 +35,26 @@ env:
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
     concurrency:
       group: doc-build-html-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
     - name: checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: install-pkgs
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build graphviz libclang1-9 libclang-cpp9
+        sudo apt-get install -y ninja-build graphviz
         wget --no-verbose https://downloads.sourceforge.net/project/doxygen/rel-${DOXYGEN_VERSION}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
     - name: cache-pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
@@ -91,7 +91,7 @@ jobs:
         tar cfJ html-output.tar.xz --directory=doc/_build html
 
     - name: upload-build
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v3
       with:
         name: html-output
         path: html-output.tar.xz
@@ -107,7 +107,7 @@ jobs:
         echo "Documentation will be available shortly at: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
 
     - name: upload-pr-number
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       if: github.event_name == 'pull_request'
       with:
         name: pr_num
@@ -115,16 +115,16 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container: texlive/texlive:latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     concurrency:
       group: doc-build-pdf-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
     - name: checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: install-pkgs
       run: |
@@ -132,7 +132,7 @@ jobs:
         apt-get install -y python3-pip ninja-build doxygen graphviz librsvg2-bin
 
     - name: cache-pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
@@ -159,7 +159,7 @@ jobs:
         DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -j auto" LATEXMKOPTS="-quiet -halt-on-error" make -C doc pdf
 
     - name: upload-build
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v3
       with:
         name: pdf-output
         path: doc/_build/latex/zephyr.pdf

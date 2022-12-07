@@ -11,8 +11,7 @@ radio boards delivered with `EFR32-SLWSTK6006A Website`_. It contains
 a Wireless System-On-Chip from the EFR32MG21 family built on an
 ARM Cortex®-M33F processor with excellent low power capabilities.
 
-.. figure:: ./efr32mg21-slwrb4180a.jpg
-   :height: 260px
+.. figure:: efr32mg21-slwrb4180a.jpg
    :align: center
    :alt: SLWRB4180A Mighty Gecko Radio Board
 

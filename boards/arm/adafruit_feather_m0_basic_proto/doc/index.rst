@@ -12,7 +12,6 @@ polymer batteries, charging status indicator and user LEDs, native USB
 connector, 20 I/O pins, and a small prototyping area.
 
 .. image:: img/adafruit_feather_m0_basic_proto.jpg
-     :width: 640px
      :align: center
      :alt: Adafruit Feather M0 Basic Proto
 
@@ -151,7 +150,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! adafruit_feather_m0_basic_proto" in your terminal.
 
 References
 **********

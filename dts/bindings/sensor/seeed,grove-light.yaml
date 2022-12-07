@@ -5,7 +5,7 @@ description: Grove Photo-Resistor Light Sensor
 
 compatible: "seeed,grove-light"
 
-include: base.yaml
+include: sensor-device.yaml
 
 properties:
   io-channels:

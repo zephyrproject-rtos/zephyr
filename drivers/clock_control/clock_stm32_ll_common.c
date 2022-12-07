@@ -19,6 +19,9 @@
 #include "stm32_hsem.h"
 
 /* Macros to fill up prescaler values */
+#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
+#define hsi_divider(v) z_hsi_divider(v)
+
 #define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
 #define ahb_prescaler(v) fn_ahb_prescaler(v)
 
@@ -46,6 +49,32 @@
 #define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK_FREQ
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHBPrescaler
 #endif
+
+#if defined(RCC_PLLCFGR_PLLPEN)
+#define RCC_PLLP_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLPEN)
+#else
+#define RCC_PLLP_ENABLE()
+#endif /* RCC_PLLCFGR_PLLPEN */
+#if defined(RCC_PLLCFGR_PLLQEN)
+#define RCC_PLLQ_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLQEN)
+#else
+#define RCC_PLLQ_ENABLE()
+#endif /* RCC_PLLCFGR_PLLQEN */
+
+/**
+ * @brief Return frequency for pll with 2 dividers and a multiplier
+ */
+__unused
+static uint32_t get_pll_div_frequency(uint32_t pllsrc_freq,
+				      int pllm_div,
+				      int plln_mul,
+				      int pllout_div)
+{
+	__ASSERT_NO_MSG(pllm_div && pllout_div);
+
+	return (pllsrc_freq * plln_mul) /
+		(pllm_div * pllout_div);
+}
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
@@ -123,6 +152,27 @@ static int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_PLLCLK */
+#if defined(STM32_SRC_PLL_P)
+	case STM32_SRC_PLL_P:
+		if (!IS_ENABLED(STM32_PLL_P_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLL_P */
+#if defined(STM32_SRC_PLL_Q)
+	case STM32_SRC_PLL_Q:
+		if (!IS_ENABLED(STM32_PLL_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLL_Q */
+#if defined(STM32_SRC_PLL_R)
+	case STM32_SRC_PLL_R:
+		if (!IS_ENABLED(STM32_PLL_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLL_R */
 	default:
 		return -ENOTSUP;
 	}
@@ -138,6 +188,11 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
+
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+		/* Attemp to change a wrong periph clock bit */
+		return -ENOTSUP;
+	}
 
 	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
 	reg_val = *reg;
@@ -173,7 +228,7 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 						clock_control_subsys_t sub_system,
 						void *data)
 {
-#if defined(STM32_SRC_CLOCK_MIN)
+#if defined(STM32_SRC_SYSCLK)
 	/* At least one alt src clock available */
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	volatile uint32_t *reg;
@@ -286,6 +341,33 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = get_pllout_frequency();
 		break;
 #endif
+#if defined(STM32_SRC_PLL_P) & STM32_PLL_P_ENABLED
+	case STM32_SRC_PLL_P:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_P_DIVISOR);
+		break;
+#endif
+#if defined(STM32_SRC_PLL_Q) & STM32_PLL_Q_ENABLED
+	case STM32_SRC_PLL_Q:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_Q_DIVISOR);
+		break;
+#endif
+#if defined(STM32_SRC_PLL_R) & STM32_PLL_R_ENABLED
+	case STM32_SRC_PLL_R:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_R_DIVISOR);
+		break;
+#endif
+/* PLLSAI1x not supported yet */
+/* PLLSAI2x not supported yet */
+/* PLLI2Sx not supported yet */
 #if defined(STM32_SRC_LSE)
 	case STM32_SRC_LSE:
 		*rate = STM32_LSE_FREQ;
@@ -348,8 +430,12 @@ static void stm32_clock_switch_to_hsi(void)
 static inline void stm32_clock_control_mco_init(void)
 {
 #ifndef CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	LL_RCC_ConfigMCO(MCO1_SOURCE);
+#else
 	LL_RCC_ConfigMCO(MCO1_SOURCE,
 			 mco1_prescaler(CONFIG_CLOCK_STM32_MCO1_DIV));
+#endif
 #endif /* CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK */
 
 #ifndef CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK
@@ -377,24 +463,34 @@ static void set_up_plls(void)
 	}
 	LL_RCC_PLL_Disable();
 
-#ifdef CONFIG_SOC_SERIES_STM32F7X
-	/* Assuming we stay on Power Scale default value: Power Scale 1 */
-	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
-		LL_PWR_EnableOverDriveMode();
-		while (LL_PWR_IsActiveFlag_OD() != 1) {
-		/* Wait for OverDrive mode ready */
-		}
-		LL_PWR_EnableOverDriveSwitching();
-		while (LL_PWR_IsActiveFlag_ODSW() != 1) {
-		/* Wait for OverDrive switch ready */
-		}
-	}
 #endif
 
-#if STM32_PLL_Q_DIVISOR
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
-		   STM32_PLL_Q_DIVISOR
-		   << RCC_PLLCFGR_PLLQ_Pos);
+#if defined(STM32_PLL2_ENABLED)
+	/*
+	 * Disable PLL2 after switching to HSI for SysClk
+	 * and disabling PLL, but before enabling PLL again,
+	 * since PLL source can be PLL2.
+	 */
+	LL_RCC_PLL2_Disable();
+
+	config_pll2();
+
+	/* Enable PLL2 */
+	LL_RCC_PLL2_Enable();
+	while (LL_RCC_PLL2_IsReady() != 1U) {
+	/* Wait for PLL2 ready */
+	}
+#endif /* STM32_PLL2_ENABLED */
+
+#if defined(STM32_PLL_ENABLED)
+
+#if defined(STM32_SRC_PLL_P) & STM32_PLL_P_ENABLED
+	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
+	RCC_PLLP_ENABLE();
+#endif
+#if defined(STM32_SRC_PLL_Q) & STM32_PLL_Q_ENABLED
+	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ, pllq(STM32_PLL_Q_DIVISOR));
+	RCC_PLLQ_ENABLE();
 #endif
 
 	config_pll_sysclock();
@@ -442,6 +538,9 @@ static void set_up_fixed_clock_sources(void)
 			/* Wait for HSI ready */
 			}
 		}
+#if STM32_HSI_DIV_ENABLED
+		LL_RCC_SetHSIDiv(hsi_divider(STM32_HSI_DIVISOR));
+#endif
 	}
 
 #if defined(STM32_MSI_ENABLED)
@@ -503,16 +602,46 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
 #endif
 
+		if (IS_ENABLED(STM32_LSE_BYPASS)) {
+			/* Configure LSE bypass */
+			LL_RCC_LSE_EnableBypass();
+		}
+
 		/* Enable LSE Oscillator (32.768 kHz) */
 		LL_RCC_LSE_Enable();
 		while (!LL_RCC_LSE_IsReady()) {
 			/* Wait for LSE ready */
 		}
 
+#ifdef RCC_BDCR_LSESYSEN
+		LL_RCC_LSE_EnablePropagation();
+		/* Wait till LSESYS is ready */
+		while (!LL_RCC_LSE_IsPropagationReady()) {
+		}
+#endif /* RCC_BDCR_LSESYSEN */
+
 		LL_PWR_DisableBkUpAccess();
 
 		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 	}
+
+#if defined(STM32_HSI48_ENABLED)
+	/* For all series with HSI 48 clock support */
+	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		/*
+		 * HSI48 requires VREFINT (see RM0376 section 7.2.4).
+		 * The SYSCFG is needed to control VREFINT, so clock it.
+		 */
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+		LL_SYSCFG_VREFINT_EnableHSI48();
+#endif /* CONFIG_SOC_SERIES_STM32L0X */
+
+		LL_RCC_HSI48_Enable();
+		while (LL_RCC_HSI48_IsReady() != 1) {
+		}
+	}
+#endif /* STM32_HSI48_ENABLED */
 }
 
 /**
@@ -533,6 +662,21 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
+
+#if defined(STM32_PLL_ENABLED) && defined(CONFIG_SOC_SERIES_STM32F7X)
+	/* Assuming we stay on Power Scale default value: Power Scale 1 */
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+		/* Set Overdrive if needed before configuring the Flash Latency */
+		LL_PWR_EnableOverDriveMode();
+		while (LL_PWR_IsActiveFlag_OD() != 1) {
+		/* Wait for OverDrive mode ready */
+		}
+		LL_PWR_EnableOverDriveSwitching();
+		while (LL_PWR_IsActiveFlag_ODSW() != 1) {
+		/* Wait for OverDrive switch ready */
+		}
+	}
+#endif /* STM32_PLL_ENABLED && CONFIG_SOC_SERIES_STM32F7X */
 
 #if defined(FLASH_ACR_LATENCY)
 	uint32_t old_flash_freq;

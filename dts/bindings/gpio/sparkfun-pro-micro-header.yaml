@@ -1,0 +1,35 @@
+# Copyright (C) 2021 Peter Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on Sparkfun Pro Micro (and compatible devices) headers.
+
+    The Sparkfun Pro Micro layout provides two headers, along opposite
+    edges of the board.
+
+    Proceeding counter-clockwise:
+    * A 12-pin Power and Digital Input header.  This has input signals
+      labeled from 0 at the top through 9 at the bottom.
+    * An 12-pin Power and Digital/Analog Input header.  This
+      has four power pins, followed by eight inputs, with a
+      non-monotonically decreasing numbering.
+
+    This binding provides a nexus mapping for 18 pins, as depicted below:
+
+        0 TX0                    RAW    -
+        1 RX1                    GND    -
+        - GND                    RST    -
+        - GND                    VCC    -
+        2 D2                     D21/A3 21
+        3 D3                     D20/A2 20
+        4 A4                     D19/A1 19
+        5 D5                     D18/A0 18
+        6 D6                     D15    15
+        7 D7                     D14    14
+        8 D8                     D16    16
+        9 D9                     D10    10
+
+
+compatible: "sparkfun,pro-micro-gpio"
+
+include: [gpio-nexus.yaml, base.yaml]

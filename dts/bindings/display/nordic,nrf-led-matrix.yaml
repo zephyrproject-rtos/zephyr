@@ -58,7 +58,6 @@ properties:
 
     pwm:
       type: phandle
-      required: false
       description: |
         Reference to a PWM instance for generating pulse signals on column
         GPIOs. If not provided, GPIOTE and PPI channels are allocated and

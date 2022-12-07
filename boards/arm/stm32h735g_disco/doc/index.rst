@@ -28,9 +28,7 @@ comes with the STM32CubeH7 MCU Package, which provides an STM32 comprehensive
 software HAL library as well as various software examples.
 
 .. image:: img/stm32h735g_disco.jpg
-     :width: 472px
      :align: center
-     :height: 352px
      :alt: STM32H735G-DISCO
 
 More information about the board can be found at the `STM32H735G-DISCO website`_.

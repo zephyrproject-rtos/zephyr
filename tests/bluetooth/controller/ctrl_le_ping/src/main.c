@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/types.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>
@@ -26,8 +26,13 @@
 #include "lll.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_conn_internal.h"
@@ -89,7 +94,7 @@ void test_ping_central_loc(void)
 
 	/* Initiate an LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -115,7 +120,7 @@ void test_ping_central_loc(void)
 
 	/* Initiate another LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -180,7 +185,7 @@ void test_ping_central_loc_invalid_rsp(void)
 
 	/* Initiate an LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -213,7 +218,7 @@ void test_ping_central_loc_invalid_rsp(void)
 
 	/* Initiate another LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -276,7 +281,7 @@ void test_ping_periph_loc(void)
 
 	/* Initiate an LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);

@@ -11,6 +11,7 @@
 #include <nrfx_pdm.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dmic_nrfx_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 
 struct dmic_nrfx_pdm_drv_data {

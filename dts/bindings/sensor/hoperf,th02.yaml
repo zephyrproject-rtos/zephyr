@@ -7,4 +7,4 @@ description: |
 
 compatible: "hoperf,th02"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

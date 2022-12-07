@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <cmsis_os.h>
 
 #define ONESHOT_TIME	1000
@@ -38,7 +38,7 @@ void Timer2_Callback(void const *arg)
 		 Tmr, num_periods_executed);
 }
 
-void test_timer(void)
+ZTEST(cmsis_timer, test_timer)
 {
 	osTimerId id1;
 	osTimerId id2;
@@ -96,3 +96,4 @@ void test_timer(void)
 	status = osTimerDelete(id2);
 	zassert_true(status == osOK, "error deleting periodic timer");
 }
+ZTEST_SUITE(cmsis_timer, NULL, NULL, NULL, NULL, NULL);

@@ -183,13 +183,24 @@ static struct modbus_iface_param server_param = {
 	},
 };
 
+/*
+ * This test performed on hardware requires two UART controllers
+ * on the board (with RX/TX lines connected crosswise).
+ * The exact mapping is not required, we assume that both controllers
+ * have similar capabilities and use the instance with index 1
+ * as interface for the server.
+ */
+#if DT_NODE_EXISTS(DT_INST(1, zephyr_modbus_serial))
+static const char rtu_iface_name[] = {DEVICE_DT_NAME(DT_INST(1, zephyr_modbus_serial))};
+#else
+static const char rtu_iface_name[] = "";
+#endif
+
 void test_server_setup_low_odd(void)
 {
 	int err;
-	const char iface_name[] = {DT_PROP_OR(DT_INST(1, zephyr_modbus_serial),
-					      label, "")};
 
-	server_iface = modbus_iface_get_by_name(iface_name);
+	server_iface = modbus_iface_get_by_name(rtu_iface_name);
 	server_param.mode = MODBUS_MODE_RTU;
 	server_param.serial.baud = MB_TEST_BAUDRATE_LOW;
 	server_param.serial.parity = UART_CFG_PARITY_ODD;
@@ -205,10 +216,8 @@ void test_server_setup_low_odd(void)
 void test_server_setup_low_none(void)
 {
 	int err;
-	const char iface_name[] = {DT_PROP_OR(DT_INST(1, zephyr_modbus_serial),
-					      label, "")};
 
-	server_iface = modbus_iface_get_by_name(iface_name);
+	server_iface = modbus_iface_get_by_name(rtu_iface_name);
 	server_param.mode = MODBUS_MODE_RTU;
 	server_param.serial.baud = MB_TEST_BAUDRATE_LOW;
 	server_param.serial.parity = UART_CFG_PARITY_NONE;
@@ -224,10 +233,8 @@ void test_server_setup_low_none(void)
 void test_server_setup_high_even(void)
 {
 	int err;
-	const char iface_name[] = {DT_PROP_OR(DT_INST(1, zephyr_modbus_serial),
-					      label, "")};
 
-	server_iface = modbus_iface_get_by_name(iface_name);
+	server_iface = modbus_iface_get_by_name(rtu_iface_name);
 	server_param.mode = MODBUS_MODE_RTU;
 	server_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
 	server_param.serial.parity = UART_CFG_PARITY_EVEN;
@@ -243,10 +250,8 @@ void test_server_setup_high_even(void)
 void test_server_setup_ascii(void)
 {
 	int err;
-	const char iface_name[] = {DT_PROP_OR(DT_INST(1, zephyr_modbus_serial),
-					      label, "")};
 
-	server_iface = modbus_iface_get_by_name(iface_name);
+	server_iface = modbus_iface_get_by_name(rtu_iface_name);
 	server_param.mode = MODBUS_MODE_ASCII;
 	server_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
 	server_param.serial.parity = UART_CFG_PARITY_EVEN;
@@ -266,7 +271,7 @@ void test_server_setup_raw(void)
 
 	server_iface = modbus_iface_get_by_name(iface_name);
 	server_param.mode = MODBUS_MODE_RAW;
-	server_param.raw_tx_cb = server_raw_cb;
+	server_param.rawcb.raw_tx_cb = server_raw_cb;
 
 	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		err = modbus_init_server(server_iface, server_param);

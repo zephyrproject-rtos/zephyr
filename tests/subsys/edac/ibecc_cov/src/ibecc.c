@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 
 #include <zephyr/drivers/pcie/pcie.h>
 #include <ibecc.h>
@@ -34,8 +34,8 @@ static uint64_t mock_sys_read64(uint64_t addr)
 {
 #if defined(IBECC_ENABLED)
 	if (addr == IBECC_ECC_ERROR_LOG) {
-		TC_PRINT("Simulate sys_read64(IBECC_ECC_ERROR_LOG)=>1\n");
-		return 1;
+		TC_PRINT("Simulate sys_read64(IBECC_ECC_ERROR_LOG)=>CERRSTS\n");
+		return ECC_ERROR_CERRSTS;
 	}
 
 	if (addr == IBECC_PARITY_ERROR_LOG) {
@@ -95,9 +95,9 @@ static uint32_t mock_conf_read(pcie_bdf_t bdf, unsigned int reg)
 /* Include source code to test some static functions */
 #include "edac_ibecc.c"
 
-static void test_static_functions(void)
+ZTEST(ibecc_cov, test_static_functions)
 {
-	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
+	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
 	struct ibecc_error error_data;
 	uint64_t log_data;
 	int ret;
@@ -134,7 +134,7 @@ static void test_static_functions(void)
 	ibecc_errcmd_setup(PCI_HOST_BRIDGE, false);
 }
 
-static void test_trigger_nmi_handler(void)
+ZTEST(ibecc_cov, test_trigger_nmi_handler)
 {
 	bool ret;
 
@@ -142,11 +142,4 @@ static void test_trigger_nmi_handler(void)
 	zassert_true(ret, "Test NMI handling");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(ibecc_cov,
-			 ztest_unit_test(test_static_functions),
-			 ztest_unit_test(test_trigger_nmi_handler)
-			);
-	ztest_run_test_suite(ibecc_cov);
-}
+ZTEST_SUITE(ibecc_cov, NULL, NULL, NULL, NULL, NULL);

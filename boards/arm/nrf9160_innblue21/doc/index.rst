@@ -9,8 +9,7 @@ Overview
 The nRF9160 innblue21 is a cellular IoT sensor development board, which
 is based on the nRF9160 SiP, and features NB-IoT and LTE-M connectivity.
 
-.. figure:: img/nrf9160_innblue21.png
-	 :width: 716px
+.. figure:: img/nrf9160_innblue21.jpg
 	 :align: center
 	 :alt: nRF9160 innblue21
 

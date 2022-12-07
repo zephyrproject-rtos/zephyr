@@ -14,9 +14,15 @@ include:
           - nxp,analog-mode
           - nxp,i2c-mode
           - nxp,i2c-filter
-  - name: pincfg-node-group.yaml
-    child-binding:
-      child-binding:
+
+child-binding:
+  description: LPC IOCON pin controller pin group
+  child-binding:
+    description: |
+      LPC IOCON pin controller pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
         property-allowlist:
           - drive-open-drain
           - bias-pull-up
@@ -24,11 +30,6 @@ include:
           - drive-push-pull
           - input-schmitt-enable
 
-child-binding:
-  description: LPC IOCON pin controller pin group
-  child-binding:
-    description: |
-      LPC IOCON pin controller pin configuration node
     properties:
       nxp,digital-filter:
         type: int

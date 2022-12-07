@@ -37,7 +37,7 @@ struct gpio_xlnx_ps_dev_cfg {
 	struct gpio_driver_config common;
 
 	uint32_t base_addr;
-	const struct device **bank_devices;
+	const struct device *const *bank_devices;
 	uint32_t num_banks;
 	gpio_xlnx_ps_config_irq_t config_func;
 };

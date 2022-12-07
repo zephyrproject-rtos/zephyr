@@ -274,7 +274,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
 
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state);
 
-#if defined(CONFIG_BT_DEBUG_L2CAP)
+#if defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
 void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 				   bt_l2cap_chan_state_t state,
 				   const char *func, int line);
@@ -283,7 +283,7 @@ void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 #else
 void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 			     bt_l2cap_chan_state_t state);
-#endif /* CONFIG_BT_DEBUG_L2CAP */
+#endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
 
 /*
  * Notify L2CAP channels of a change in encryption state passing additionally
@@ -378,3 +378,6 @@ struct bt_l2cap_ecred_cb {
 
 /* Register callbacks for Enhanced Credit based Flow Control */
 void bt_l2cap_register_ecred_cb(const struct bt_l2cap_ecred_cb *cb);
+
+/* Returns a server if it exists for given psm. */
+struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm);

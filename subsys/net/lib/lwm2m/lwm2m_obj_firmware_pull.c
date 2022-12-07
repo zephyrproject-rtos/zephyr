@@ -78,7 +78,5 @@ int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri)
 		return error_code;
 	}
 
-	lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
-
 	return 0;
 }

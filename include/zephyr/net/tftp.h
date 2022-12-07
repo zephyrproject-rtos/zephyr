@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_TFTP_H_
 #define ZEPHYR_INCLUDE_NET_TFTP_H_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 
 #ifdef __cplusplus

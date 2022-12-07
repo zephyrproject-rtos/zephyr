@@ -7,6 +7,15 @@
 #ifndef ZEPHYR_STM32_AFIO_H_
 #define ZEPHYR_STM32_AFIO_H_
 
+#define STM32_REMAP_REG_MASK    0x1U
+#define STM32_REMAP_REG_SHIFT   0U
+#define STM32_REMAP_SHIFT_MASK  0x1FU
+#define STM32_REMAP_SHIFT_SHIFT 1U
+#define STM32_REMAP_MASK_MASK   0x3U
+#define STM32_REMAP_MASK_SHIFT  6U
+#define STM32_REMAP_VAL_MASK    0x3U
+#define STM32_REMAP_VAL_SHIFT   8U
+
 /**
  * @brief STM32F1 Remap configuration bit field.
  *
@@ -20,16 +29,6 @@
  * @param mask Mask for the AFIO_MAPRx field.
  * @param val Remap value (0, 1, 2 or 3).
  */
-
-#define STM32_REMAP_REG_MASK    0x1U
-#define STM32_REMAP_REG_SHIFT   0U
-#define STM32_REMAP_SHIFT_MASK  0x1FU
-#define STM32_REMAP_SHIFT_SHIFT 1U
-#define STM32_REMAP_MASK_MASK   0x3U
-#define STM32_REMAP_MASK_SHIFT  6U
-#define STM32_REMAP_VAL_MASK    0x3U
-#define STM32_REMAP_VAL_SHIFT   8U
-
 #define STM32_REMAP(val, mask, shift, reg)				       \
 	((((reg) & STM32_REMAP_REG_MASK) << STM32_REMAP_REG_SHIFT) |	       \
 	 (((shift) & STM32_REMAP_SHIFT_MASK) << STM32_REMAP_SHIFT_SHIFT) |     \
@@ -150,14 +149,14 @@
 #define CAN1_REMAP2		CAN_REMAP2
 
 /** ETH (no remap) */
-#define ETH_REMAP0		STM32_REMAP(0U, 0x1U, 20U, STM32_AFIO_MAPR)
+#define ETH_REMAP0		STM32_REMAP(0U, 0x1U, 21U, STM32_AFIO_MAPR)
 /** ETH (remap) */
-#define ETH_REMAP1		STM32_REMAP(1U, 0x1U, 20U, STM32_AFIO_MAPR)
+#define ETH_REMAP1		STM32_REMAP(1U, 0x1U, 21U, STM32_AFIO_MAPR)
 
 /** CAN2 (no remap) */
-#define CAN2_REMAP0		STM32_REMAP(0U, 0x1U, 21U, STM32_AFIO_MAPR)
+#define CAN2_REMAP0		STM32_REMAP(0U, 0x1U, 22U, STM32_AFIO_MAPR)
 /** CAN2 (remap) */
-#define CAN2_REMAP1		STM32_REMAP(1U, 0x1U, 21U, STM32_AFIO_MAPR)
+#define CAN2_REMAP1		STM32_REMAP(1U, 0x1U, 22U, STM32_AFIO_MAPR)
 
 /** SPI3 (no remap) */
 #define SPI3_REMAP0		STM32_REMAP(0U, 0x1U, 28U, STM32_AFIO_MAPR)

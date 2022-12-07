@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/mem_manage.h>
 #include <zephyr/toolchain.h>
 #include <mmu.h>
@@ -18,9 +18,17 @@
 #define BASE_FLAGS	(K_MEM_CACHE_WB)
 volatile bool expect_fault;
 
+/* z_phys_map() doesn't have alignment requirements, any oddly-sized buffer
+ * can get mapped. BUF_SIZE has a odd size to make sure the mapped buffer
+ * spans multiple pages.
+ */
+#define BUF_SIZE	(CONFIG_MMU_PAGE_SIZE + 907)
+#define BUF_OFFSET	1238
+
+#define TEST_PAGE_SZ	ROUND_UP(BUF_OFFSET + BUF_SIZE, CONFIG_MMU_PAGE_SIZE)
+
 __pinned_noinit
-static uint8_t __aligned(CONFIG_MMU_PAGE_SIZE)
-			test_page[2 * CONFIG_MMU_PAGE_SIZE];
+static uint8_t __aligned(CONFIG_MMU_PAGE_SIZE) test_page[TEST_PAGE_SZ];
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
@@ -35,19 +43,12 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 	}
 }
 
-
-/* z_phys_map() doesn't have alignment requirements, any oddly-sized buffer
- * can get mapped. This will span two pages.
- */
-#define BUF_SIZE	5003
-#define BUF_OFFSET	1238
-
 /**
  * Show that mapping an irregular size buffer works and RW flag is respected
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_z_phys_map_rw(void)
+ZTEST(mem_map, test_z_phys_map_rw)
 {
 	uint8_t *mapped_rw, *mapped_ro;
 	uint8_t *buf = test_page + BUF_OFFSET;
@@ -58,19 +59,39 @@ void test_z_phys_map_rw(void)
 	z_phys_map(&mapped_rw, z_mem_phys_addr(buf),
 		   BUF_SIZE, BASE_FLAGS | K_MEM_PERM_RW);
 
-	/* Initialize buf with some bytes */
-	for (int i = 0; i < BUF_SIZE; i++) {
-		mapped_rw[i] = (uint8_t)(i % 256);
-	}
-
 	/* Map again this time only allowing reads */
 	z_phys_map(&mapped_ro, z_mem_phys_addr(buf),
 		   BUF_SIZE, BASE_FLAGS);
 
-	/* Check that the mapped area contains the expected data. */
+	/* Initialize read-write buf with some bytes */
 	for (int i = 0; i < BUF_SIZE; i++) {
+		mapped_rw[i] = (uint8_t)(i % 256);
+	}
+
+	/* Check that the backing buffer contains the expected data. */
+	for (int i = 0; i < BUF_SIZE; i++) {
+		uint8_t expected_val = (uint8_t)(i % 256);
+
+		zassert_equal(expected_val, buf[i],
+			      "unexpected byte at buffer index %d (%u != %u)",
+			      i, expected_val, buf[i]);
+
+		zassert_equal(buf[i], mapped_rw[i],
+			      "unequal byte at RW index %d (%u != %u)",
+			      i, buf[i], mapped_rw[i]);
+	}
+
+	/* Check that the read-only mapped area contains the expected data. */
+	for (int i = 0; i < BUF_SIZE; i++) {
+		uint8_t expected_val = (uint8_t)(i % 256);
+
+		zassert_equal(expected_val, mapped_ro[i],
+			      "unexpected byte at RO index %d (%u != %u)",
+			      i, expected_val, mapped_ro[i]);
+
 		zassert_equal(buf[i], mapped_ro[i],
-			      "unequal byte at index %d", i);
+			      "unequal byte at RO index %d (%u != %u)",
+			      i, buf[i], mapped_ro[i]);
 	}
 
 	/* This should explode since writes are forbidden */
@@ -90,14 +111,16 @@ static void transplanted_function(bool *executed)
 {
 	*executed = true;
 }
+#endif
 
 /**
  * Show that mapping with/without K_MEM_PERM_EXEC works as expected
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_z_phys_map_exec(void)
+ZTEST(mem_map, test_z_phys_map_exec)
 {
+#ifndef SKIP_EXECUTE_TESTS
 	uint8_t *mapped_exec, *mapped_ro;
 	bool executed = false;
 	void (*func)(bool *executed);
@@ -129,20 +152,17 @@ void test_z_phys_map_exec(void)
 
 	printk("shouldn't get here\n");
 	ztest_test_fail();
-}
 #else
-void test_z_phys_map_exec(void)
-{
 	ztest_test_skip();
-}
 #endif /* SKIP_EXECUTE_TESTS */
+}
 
 /**
  * Show that memory mapping doesn't have unintended side effects
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_z_phys_map_side_effect(void)
+ZTEST(mem_map, test_z_phys_map_side_effect)
 {
 	uint8_t *mapped;
 
@@ -171,7 +191,7 @@ void test_z_phys_map_side_effect(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_z_phys_unmap(void)
+ZTEST(mem_map, test_z_phys_unmap)
 {
 	uint8_t *mapped;
 
@@ -195,11 +215,51 @@ void test_z_phys_unmap(void)
 }
 
 /**
+ * Show that z_phys_unmap() can reclaim the virtual region correctly.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST(mem_map, test_z_phys_map_unmap_reclaim_addr)
+{
+	uint8_t *mapped, *mapped_old;
+	uint8_t *buf = test_page + BUF_OFFSET;
+
+	/* Map the buffer the first time. */
+	z_phys_map(&mapped, z_mem_phys_addr(buf),
+		   BUF_SIZE, BASE_FLAGS);
+
+	printk("Mapped (1st time): %p\n", mapped);
+
+	/* Store the pointer for later comparison. */
+	mapped_old = mapped;
+
+	/*
+	 * Unmap the buffer.
+	 * This should reclaim the bits in virtual region tracking,
+	 * so that the next time z_phys_map() is called with
+	 * the same arguments, it will return the same address.
+	 */
+	z_phys_unmap(mapped, BUF_SIZE);
+
+	/*
+	 * Map again the same buffer using same parameters.
+	 * It should give us back the same virtual address
+	 * as above when it is mapped the first time.
+	 */
+	z_phys_map(&mapped, z_mem_phys_addr(buf),
+		   BUF_SIZE, BASE_FLAGS);
+
+	printk("Mapped (2nd time): %p\n", mapped);
+
+	zassert_equal(mapped, mapped_old, "Virtual memory region not reclaimed!");
+}
+
+/**
  * Basic k_mem_map() and k_mem_unmap() functionality
  *
  * Does not exercise K_MEM_MAP_* control flags, just default behavior
  */
-void test_k_mem_map_unmap(void)
+ZTEST(mem_map_api, test_k_mem_map_unmap)
 {
 	size_t free_mem, free_mem_after_map, free_mem_after_unmap;
 	char *mapped, *last_mapped;
@@ -262,7 +322,7 @@ void test_k_mem_map_unmap(void)
 /**
  * Test that the "before" guard page is in place for k_mem_map().
  */
-void test_k_mem_map_guard_before(void)
+ZTEST(mem_map_api, test_k_mem_map_guard_before)
 {
 	uint8_t *mapped;
 
@@ -290,7 +350,7 @@ void test_k_mem_map_guard_before(void)
 /**
  * Test that the "after" guard page is in place for k_mem_map().
  */
-void test_k_mem_map_guard_after(void)
+ZTEST(mem_map_api, test_k_mem_map_guard_after)
 {
 	uint8_t *mapped;
 
@@ -315,7 +375,7 @@ void test_k_mem_map_guard_after(void)
 	ztest_test_fail();
 }
 
-void test_k_mem_map_exhaustion(void)
+ZTEST(mem_map_api, test_k_mem_map_exhaustion)
 {
 	/* With demand paging enabled, there is backing store
 	 * which extends available memory. However, we don't
@@ -427,7 +487,7 @@ static void user_function(void *p1, void *p2, void *p3)
  * Test that the allocated region will be only accessible to userspace when
  * K_MEM_PERM_USER is used.
  */
-void test_k_mem_map_user(void)
+ZTEST(mem_map_api, test_k_mem_map_user)
 {
 #ifdef CONFIG_USERSPACE
 	int ret;
@@ -485,7 +545,7 @@ void test_k_mem_map_user(void)
 }
 
 /* ztest main entry*/
-void test_main(void)
+void *mem_map_env_setup(void)
 {
 #ifdef CONFIG_DEMAND_PAGING
 	/* This test sets up multiple mappings of RAM pages, which is only
@@ -493,16 +553,8 @@ void test_main(void)
 	 */
 	k_mem_pin(test_page, sizeof(test_page));
 #endif
-	ztest_test_suite(test_mem_map,
-			ztest_unit_test(test_z_phys_map_rw),
-			ztest_unit_test(test_z_phys_map_exec),
-			ztest_unit_test(test_z_phys_map_side_effect),
-			ztest_unit_test(test_z_phys_unmap),
-			ztest_unit_test(test_k_mem_map_unmap),
-			ztest_unit_test(test_k_mem_map_guard_before),
-			ztest_unit_test(test_k_mem_map_guard_after),
-			ztest_unit_test(test_k_mem_map_exhaustion),
-			ztest_unit_test(test_k_mem_map_user)
-			);
-	ztest_run_test_suite(test_mem_map);
+	return NULL;
 }
+
+ZTEST_SUITE(mem_map, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(mem_map_api, NULL, mem_map_env_setup, NULL, NULL, NULL);

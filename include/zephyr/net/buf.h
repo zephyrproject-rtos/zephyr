@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,7 +30,6 @@ extern "C" {
 #define __net_buf_align __aligned(sizeof(void *))
 
 /**
- *  @def NET_BUF_SIMPLE_DEFINE
  *  @brief Define a net_buf_simple stack variable.
  *
  *  This is a helper macro which is used to define a net_buf_simple object
@@ -49,7 +48,7 @@ extern "C" {
 	}
 
 /**
- * @def NET_BUF_SIMPLE_DEFINE_STATIC
+ *
  * @brief Define a static net_buf_simple variable.
  *
  * This is a helper macro which is used to define a static net_buf_simple
@@ -101,7 +100,7 @@ struct net_buf_simple {
 };
 
 /**
- * @def NET_BUF_SIMPLE
+ *
  * @brief Define a net_buf_simple stack variable and get a pointer to it.
  *
  * This is a helper macro which is used to define a net_buf_simple object on
@@ -886,15 +885,6 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
 }
 
 /**
- * Flag indicating that the buffer has associated fragments. Only used
- * internally by the buffer handling code while the buffer is inside a
- * FIFO, meaning this never needs to be explicitly set or unset by the
- * net_buf API user. As long as the buffer is outside of a FIFO, i.e.
- * in practice always for the user for this API, the buf->frags pointer
- * should be used instead.
- */
-#define NET_BUF_FRAGS        BIT(0)
-/**
  * Flag indicating that the buffer's associated data pointer, points to
  * externally allocated memory. Therefore once ref goes down to zero, the
  * pointed data will not need to be deallocated. This never needs to be
@@ -903,7 +893,7 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
  * Reference count mechanism however will behave the same way, and ref
  * count going to 0 will free the net_buf but no the data pointer in it.
  */
-#define NET_BUF_EXTERNAL_DATA  BIT(1)
+#define NET_BUF_EXTERNAL_DATA  BIT(0)
 
 /**
  * @brief Network buffer representation.
@@ -913,13 +903,11 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
  * using the net_buf_alloc() API.
  */
 struct net_buf {
-	union {
-		/** Allow placing the buffer into sys_slist_t */
-		sys_snode_t node;
+	/** Allow placing the buffer into sys_slist_t */
+	sys_snode_t node;
 
-		/** Fragments associated with this buffer. */
-		struct net_buf *frags;
-	};
+	/** Fragments associated with this buffer. */
+	struct net_buf *frags;
 
 	/** Reference count. */
 	uint8_t ref;
@@ -1062,7 +1050,7 @@ extern const struct net_buf_data_alloc net_buf_heap_alloc;
 /** @endcond */
 
 /**
- * @def NET_BUF_POOL_HEAP_DEFINE
+ *
  * @brief Define a new pool for buffers using the heap for the data.
  *
  * Defines a net_buf_pool struct and the necessary memory storage (array of
@@ -1105,7 +1093,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
 /** @endcond */
 
 /**
- * @def NET_BUF_POOL_FIXED_DEFINE
+ *
  * @brief Define a new pool for buffers based on fixed-size data
  *
  * Defines a net_buf_pool struct and the necessary memory storage (array of
@@ -1134,7 +1122,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
  */
 #define NET_BUF_POOL_FIXED_DEFINE(_name, _count, _data_size, _ud_size, _destroy) \
 	_NET_BUF_ARRAY_DEFINE(_name, _count, _ud_size);                        \
-	static uint8_t __noinit net_buf_data_##_name[_count][_data_size];      \
+	static uint8_t __noinit net_buf_data_##_name[_count][_data_size] __net_buf_align; \
 	static const struct net_buf_pool_fixed net_buf_fixed_##_name = {       \
 		.data_size = _data_size,                                       \
 		.data_pool = (uint8_t *)net_buf_data_##_name,                  \
@@ -1153,7 +1141,7 @@ extern const struct net_buf_data_cb net_buf_var_cb;
 /** @endcond */
 
 /**
- * @def NET_BUF_POOL_VAR_DEFINE
+ *
  * @brief Define a new pool for buffers with variable size payloads
  *
  * Defines a net_buf_pool struct and the necessary memory storage (array of
@@ -1189,7 +1177,7 @@ extern const struct net_buf_data_cb net_buf_var_cb;
 					 _destroy)
 
 /**
- * @def NET_BUF_POOL_DEFINE
+ *
  * @brief Define a new pool for buffers
  *
  * Defines a net_buf_pool struct and the necessary memory storage (array of

@@ -7,7 +7,7 @@
 #ifndef SHELL_LOG_BACKEND_H__
 #define SHELL_LOG_BACKEND_H__
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/sys/mpsc_pbuf.h>
@@ -72,12 +72,13 @@ int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx);
 	LOG_OUTPUT_DEFINE(_name##_log_output, z_shell_log_backend_output_func,\
 			  _buf, _size); \
 	static struct shell_log_backend_control_block _name##_control_block; \
-	static uint32_t __aligned(Z_LOG_MSG2_ALIGNMENT) _name##_buf[128]; \
+	static uint32_t __aligned(Z_LOG_MSG2_ALIGNMENT) \
+			_name##_buf[_queue_size / sizeof(uint32_t)]; \
 	const struct mpsc_pbuf_buffer_config _name##_mpsc_buffer_config = { \
 		.buf = _name##_buf, \
 		.size = ARRAY_SIZE(_name##_buf), \
 		.notify_drop = NULL, \
-		.get_wlen = log_msg2_generic_get_wlen, \
+		.get_wlen = log_msg_generic_get_wlen, \
 		.flags = MPSC_PBUF_MODE_OVERWRITE, \
 	}; \
 	struct mpsc_pbuf_buffer _name##_mpsc_buffer; \

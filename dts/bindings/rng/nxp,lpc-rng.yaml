@@ -10,9 +10,3 @@ include: base.yaml
 properties:
     reg:
       required: true
-
-    interrupts:
-      required: false
-
-    label:
-      required: true

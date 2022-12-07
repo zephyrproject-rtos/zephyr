@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest.h>
+#include <zephyr/ztest_error_hook.h>
 
 /* Macro declarations */
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -75,7 +75,7 @@ static void thread_high_prio_sem_take(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sys_sem_tests
  */
-void test_multiple_thread_sem_usage(void)
+ZTEST_USER(kernel_sys_sem, test_multiple_thread_sem_usage)
 {
 	k_sem_init(&usage_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 	k_sem_init(&sync_sem, SEM_INIT_VAL, SEM_MAX_VAL);
@@ -133,10 +133,11 @@ static void multi_thread_sem_give(void *p1, void *p2, void *p3)
 	count = atomic_get(&atomic_count);
 	k_sem_give(&limit_sem);
 
-	if (count < TOTAL_MAX)
+	if (count < TOTAL_MAX) {
 		zassert_equal(k_sem_count_get(&limit_sem), count, "multi get sem error");
-	else
+	} else {
 		zassert_equal(k_sem_count_get(&limit_sem), SEM_MAX_VAL, "count > SEM_MAX_VAL");
+	}
 
 	k_sem_take(&sync_sem, K_FOREVER);
 }
@@ -149,10 +150,11 @@ static void multi_thread_sem_take(void *p1, void *p2, void *p3)
 	(void)atomic_dec(&atomic_count);
 	count = atomic_get(&atomic_count);
 
-	if (count >= 0)
+	if (count >= 0) {
 		zassert_equal(k_sem_count_get(&limit_sem), count, "multi take sem error");
-	else
+	} else {
 		zassert_equal(k_sem_count_get(&limit_sem), 0, "count < SEM_INIT_VAL");
+	}
 
 	k_sem_give(&sync_sem);
 }
@@ -168,7 +170,7 @@ static void multi_thread_sem_take(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sys_sem_tests
  */
-void test_multi_thread_sem_limit(void)
+ZTEST_USER(kernel_sys_sem, test_multi_thread_sem_limit)
 {
 	k_sem_init(&limit_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 	k_sem_init(&sync_sem, SEM_INIT_VAL, SEM_MAX_VAL);
@@ -188,9 +190,16 @@ void test_multi_thread_sem_limit(void)
 				multi_thread_sem_take, NULL, NULL, NULL,
 				PRIO, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
+
+	/* cleanup all threads for the following test cases */
+	k_sleep(K_MSEC(50));
+	for (int i = 1; i <= TOTAL_MAX; i++) {
+		k_thread_abort(&multi_tid_give[i]);
+		k_thread_abort(&multi_tid_take[i]);
+	}
 }
 
-void test_main(void)
+void *test_init(void)
 {
 	k_thread_access_grant(k_current_get(), &usage_sem, &sync_sem, &limit_sem,
 			      &multi_tid_give[0], &multi_tid_give[1],
@@ -204,9 +213,7 @@ void test_main(void)
 			      &multi_stack_take[2], &multi_stack_give[0],
 			      &multi_stack_give[1], &multi_stack_give[2],
 			      &multi_stack_give[3], &multi_stack_give[4]);
-
-	ztest_test_suite(test_kernel_sys_sem,
-			 ztest_1cpu_user_unit_test(test_multiple_thread_sem_usage),
-			 ztest_1cpu_user_unit_test(test_multi_thread_sem_limit));
-	ztest_run_test_suite(test_kernel_sys_sem);
+	return NULL;
 }
+ZTEST_SUITE(kernel_sys_sem, NULL, test_init,
+	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

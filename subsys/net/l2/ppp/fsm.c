@@ -382,7 +382,6 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	struct ppp_packet ppp;
 	struct net_pkt *pkt = NULL;
 	int ret;
-	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
 
 	if (!iface) {
 		if (!fsm) {
@@ -397,10 +396,13 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	}
 
 	switch (type) {
-	case PPP_CODE_REJ:
+	case PPP_CODE_REJ: {
+		struct ppp_context *ctx = ppp_fsm_ctx(fsm);
+
 		len = net_pkt_get_len(req_pkt);
 		len = MIN(len, ctx->lcp.my_options.mru);
 		break;
+	}
 
 	case PPP_CONFIGURE_ACK:
 	case PPP_CONFIGURE_NACK:
@@ -458,7 +460,8 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	} else {
 		struct net_buf *buf;
 
-		buf = net_pkt_get_reserve_tx_data(PPP_BUF_ALLOC_TIMEOUT);
+		buf = net_pkt_get_reserve_tx_data(sizeof(uint16_t) + len,
+						  PPP_BUF_ALLOC_TIMEOUT);
 		if (!buf) {
 			LOG_ERR("failed to allocate buffer");
 			goto out_of_mem;
@@ -860,7 +863,7 @@ static enum net_verdict fsm_recv_terminate_req(struct ppp_fsm *fsm, uint8_t id,
 
 			NET_DBG("[%s/%p] %s (%s)",
 				fsm->name, fsm, "Terminated by peer",
-				log_strdup(fsm->terminate_reason));
+				fsm->terminate_reason);
 		} else {
 			NET_DBG("[%s/%p] Terminated by peer",
 				fsm->name, fsm);

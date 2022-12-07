@@ -167,7 +167,7 @@ static void spi_sifive_xfer(const struct device *dev, const bool hw_cs_control)
 		sys_write32(SF_CSMODE_OFF, SPI_REG(dev, REG_CSMODE));
 	}
 
-	spi_context_complete(ctx, 0);
+	spi_context_complete(ctx, dev, 0);
 }
 
 /* API Functions */
@@ -207,7 +207,7 @@ static int spi_sifive_transceive(const struct device *dev,
 	bool hw_cs_control = false;
 
 	/* Lock the SPI Context */
-	spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, config);
+	spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, NULL, config);
 
 	/* Configure the SPI bus */
 	SPI_DATA(dev)->ctx.config = config;
@@ -296,24 +296,6 @@ static struct spi_driver_api spi_sifive_api = {
 			&spi_sifive_cfg_##n, \
 			POST_KERNEL, \
 			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_sifive_api)
+			&spi_sifive_api);
 
-#ifndef CONFIG_SIFIVE_SPI_0_ROM
-#if DT_INST_NODE_HAS_PROP(0, label)
-
-SPI_INIT(0);
-
-#endif /* DT_INST_NODE_HAS_PROP(0, label) */
-#endif /* !CONFIG_SIFIVE_SPI_0_ROM */
-
-#if DT_INST_NODE_HAS_PROP(1, label)
-
-SPI_INIT(1);
-
-#endif /* DT_INST_NODE_HAS_PROP(1, label) */
-
-#if DT_INST_NODE_HAS_PROP(2, label)
-
-SPI_INIT(2);
-
-#endif /* DT_INST_NODE_HAS_PROP(2, label) */
+DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

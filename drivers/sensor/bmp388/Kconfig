@@ -3,7 +3,10 @@
 
 menuconfig BMP388
 	bool "Bosch BMP388 pressure sensor"
-	depends on SPI || I2C
+	default y
+	depends on DT_HAS_BOSCH_BMP388_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP388),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP388),spi)
 	help
 	  Enable driver for the Bosch BMP388 pressure sensor
 

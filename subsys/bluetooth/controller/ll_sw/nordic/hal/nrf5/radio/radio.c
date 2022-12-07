@@ -206,15 +206,15 @@ void radio_reset(void)
 {
 	irq_disable(RADIO_IRQn);
 
-	nrf_radio_power_set(
-		NRF_RADIO,
-		(RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos) &
-			RADIO_POWER_POWER_Msk);
-	nrf_radio_power_set(
-		NRF_RADIO,
-		(RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos) &
-			RADIO_POWER_POWER_Msk);
+	/* nRF SoC generic radio reset/initializations
+	 * Note: Only registers whose bits are partially modified across
+	 *       functions are assigned back the power-on reset values.
+	 *       Ignore other registers for reset which will have all bits
+	 *       explicitly assigned by functions in this file.
+	 */
+	NRF_RADIO->PCNF1 = HAL_RADIO_RESET_VALUE_PCNF1;
 
+	/* nRF SoC specific reset/initializations, if any */
 	hal_radio_reset();
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
@@ -231,7 +231,50 @@ void radio_reset(void)
 
 void radio_stop(void)
 {
+	/* nRF SoC specific radio stop/cleanup, if any */
 	hal_radio_stop();
+
+	/* nRF SoC generic radio stop/cleanup
+	 * TODO: Initialize NRF_RADIO registers used by Controller to power-on
+	 *       reset values.
+	 *       This is required in case NRF_RADIO is share/used between
+	 *       Bluetooth radio events by application defined radio protocols.
+	 *       The application too shall restore the registers it uses to the
+	 *       power-on reset values once it has stopped using the radio.
+	 *
+	 *       Registers used for Bluetooth Low Energy Controller:
+	 *       - MODE
+	 *       - MODECNF0
+	 *       - TXPOWER
+	 *       - FREQUENCY
+	 *       - DATAWHITEIV
+	 *       - PCNF0
+	 *       - PCNF1
+	 *       - TXADDRESS
+	 *       - RXADDRESSES
+	 *       - PREFIX0
+	 *       - BASE0
+	 *       - PACKETPTR
+	 *       - CRCCNF
+	 *       - CRCPOLY
+	 *       - CRCINIT
+	 *       - DAB
+	 *       - DAP
+	 *       - DACNF
+	 *       - BCC
+	 *       - TIFS
+	 *       - SHORTS
+	 *
+	 *       Additional registers used for Direction Finding feature:
+	 *       - SWITCHPATTERN
+	 *       - DFEMODE
+	 *       - CTEINLINECONF
+	 *       - DFECTRL1
+	 *       - DEFCTRL2
+	 *       - CLEARPATTERN
+	 *       - PSEL.DFEGPIO[n]
+	 *       - DFEPACKET.PTR
+	 */
 }
 
 void radio_phy_set(uint8_t phy, uint8_t flags)
@@ -243,10 +286,19 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 	NRF_RADIO->MODE = (mode << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
 
 #if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
-	NRF_RADIO->MODECNF0 |= (RADIO_MODECNF0_RU_Fast <<
+	NRF_RADIO->MODECNF0 = ((RADIO_MODECNF0_DTX_Center <<
+				RADIO_MODECNF0_DTX_Pos) &
+			       RADIO_MODECNF0_DTX_Msk) |
+			      ((RADIO_MODECNF0_RU_Fast <<
 				RADIO_MODECNF0_RU_Pos) &
-			       RADIO_MODECNF0_RU_Msk;
-#endif /* CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
+			       RADIO_MODECNF0_RU_Msk);
+#else /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
+#if !defined(CONFIG_SOC_SERIES_NRF51X)
+	NRF_RADIO->MODECNF0 = (RADIO_MODECNF0_DTX_Center <<
+			       RADIO_MODECNF0_DTX_Pos) &
+			      RADIO_MODECNF0_DTX_Msk;
+#endif /* !CONFIG_SOC_SERIES_NRF51X */
+#endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 }
 
 void radio_tx_power_set(int8_t power)
@@ -992,7 +1044,7 @@ uint32_t radio_filter_match_get(void)
 
 void radio_bc_configure(uint32_t n)
 {
-	nrf_radio_bcc_set(NRF_RADIO, n);
+	NRF_RADIO->BCC = n;
 	NRF_RADIO->SHORTS |= RADIO_SHORTS_ADDRESS_BCSTART_Msk;
 }
 
@@ -1050,11 +1102,7 @@ void radio_tmr_tifs_set(uint32_t tifs)
 
 uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 {
-	if ((!(remainder / 1000000UL)) || (remainder & 0x80000000)) {
-		ticks_start--;
-		remainder += 30517578UL;
-	}
-	remainder /= 1000000UL;
+	hal_ticker_remove_jitter(&ticks_start, &remainder);
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	EVENT_TIMER->MODE = 0;
@@ -1145,10 +1193,8 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 	return remainder_us;
 }
 
-void radio_tmr_start_us(uint8_t trx, uint32_t us)
+uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 {
-	nrf_timer_cc_set(EVENT_TIMER, 0, us);
-
 	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
@@ -1170,11 +1216,31 @@ void radio_tmr_start_us(uint8_t trx, uint32_t us)
 	hal_sw_switch_timer_clear_ppi_config();
 #endif /* CONFIG_SOC_SERIES_NRF53X */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+	/* start_us could be the current count in the timer */
+	uint32_t now_us = start_us;
+
+	/* Setup PPI while determining the latency in doing so */
+	do {
+		/* Set start to be, now plus the determined latency */
+		start_us = (now_us << 1) - start_us;
+
+		/* Setup compare event with min. 1 us offset */
+		EVENT_TIMER->EVENTS_COMPARE[0] = 0U;
+		nrf_timer_cc_set(EVENT_TIMER, 0, start_us + 1U);
+
+		/* Capture the current time */
+		nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
+
+		now_us = EVENT_TIMER->CC[1];
+	} while ((now_us > start_us) && (EVENT_TIMER->EVENTS_COMPARE[0] == 0U));
+
+	return start_us + 1U;
 }
 
 uint32_t radio_tmr_start_now(uint8_t trx)
 {
-	uint32_t now, start;
+	uint32_t start_us;
 
 	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
 
@@ -1197,24 +1263,12 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 
 	/* Capture the current time */
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
-	now = EVENT_TIMER->CC[1];
-	start = now;
+	start_us = EVENT_TIMER->CC[1];
 
-	/* Setup PPI while determining the latency in doing so */
-	do {
-		/* Set start to be, now plus the determined latency */
-		start = (now << 1) - start;
+	/* Setup radio start at current time */
+	start_us = radio_tmr_start_us(trx, start_us);
 
-		/* Setup compare event with min. 1 us offset */
-		nrf_timer_cc_set(EVENT_TIMER, 0, start + 1);
-
-		/* Capture the current time */
-		nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
-
-		now = EVENT_TIMER->CC[1];
-	} while (now > start);
-
-	return start + 1;
+	return start_us;
 }
 
 uint32_t radio_tmr_start_get(void)
@@ -1720,8 +1774,10 @@ uint32_t radio_ar_has_match(void)
 	return 0U;
 }
 
-void radio_ar_resolve(const uint8_t *addr)
+uint8_t radio_ar_resolve(const uint8_t *addr)
 {
+	uint8_t retval;
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 
@@ -1747,8 +1803,13 @@ void radio_ar_resolve(const uint8_t *addr)
 
 	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
 
+	retval = (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) ?
+		 1U : 0U;
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
+
+	return retval;
 
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */

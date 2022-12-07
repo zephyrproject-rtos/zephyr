@@ -7,10 +7,8 @@
 #include <zephyr/device.h>
 #include <stdlib.h>
 #include <zephyr/drivers/kscan.h>
-#include <zephyr/zephyr.h>
-#include <ztest.h>
-
-#define KSCAN_DEV_NAME DT_LABEL(DT_ALIAS(kscan0))
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 
 static void kb_callback(const struct device *dev, uint32_t row, uint32_t col,
 			bool pressed)
@@ -23,10 +21,10 @@ static void kb_callback(const struct device *dev, uint32_t row, uint32_t col,
 
 static int test_kb_callback(void)
 {
-	const struct device *kscan_dev = device_get_binding(KSCAN_DEV_NAME);
+	const struct device *const kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
 
-	if (!kscan_dev) {
-		TC_PRINT("Cannot get KBSCAN device\n");
+	if (!device_is_ready(kscan_dev)) {
+		TC_PRINT("KBSCAN device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -40,10 +38,10 @@ static int test_kb_callback(void)
 
 static int test_null_callback(void)
 {
-	const struct device *kscan_dev = device_get_binding(KSCAN_DEV_NAME);
+	const struct device *const kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
 
-	if (!kscan_dev) {
-		TC_PRINT("Cannot get KBSCAN device\n");
+	if (!device_is_ready(kscan_dev)) {
+		TC_PRINT("KBSCAN device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -57,10 +55,10 @@ static int test_null_callback(void)
 
 static int test_disable_enable_callback(void)
 {
-	const struct device *kscan_dev = device_get_binding(KSCAN_DEV_NAME);
+	const struct device *const kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
 
-	if (!kscan_dev) {
-		TC_PRINT("Cannot get KBSCAN device\n");
+	if (!device_is_ready(kscan_dev)) {
+		TC_PRINT("KBSCAN device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -82,19 +80,19 @@ static int test_disable_enable_callback(void)
 	return TC_PASS;
 }
 
-void test_init_callback(void)
+ZTEST(kscan_basic, test_init_callback)
 {
 	/* Configure kscan matrix with an appropriate callback */
-	zassert_true(test_kb_callback() == TC_PASS, NULL);
+	zassert_true(test_kb_callback() == TC_PASS);
 	k_sleep(K_MSEC(1000));
 
 	/* Configure kscan with a null callback */
-	zassert_true(test_null_callback() == TC_PASS, NULL);
+	zassert_true(test_null_callback() == TC_PASS);
 }
 
-void test_control_callback(void)
+ZTEST(kscan_basic, test_control_callback)
 {
 	/* Disable/enable notifications to user */
-	zassert_true(test_disable_enable_callback() == TC_PASS, NULL);
+	zassert_true(test_disable_enable_callback() == TC_PASS);
 	k_sleep(K_MSEC(1000));
 }

@@ -15,4 +15,3 @@ properties:
 
     wakeup-gpios:
       type: phandle-array
-      required: false

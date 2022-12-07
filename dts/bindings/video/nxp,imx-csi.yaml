@@ -14,10 +14,7 @@ properties:
     interrupts:
       required: true
 
-    label:
+    sensor:
       required: true
-
-    sensor-label:
-      required: true
-      type: string
-      description: label of connected sensor device
+      type: phandle
+      description: phandle of connected sensor device

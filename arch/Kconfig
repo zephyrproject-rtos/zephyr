@@ -107,6 +107,7 @@ config RISCV
 	select ARCH_IS_SET
 	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
@@ -123,6 +124,7 @@ config XTENSA
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	imply ATOMIC_OPERATIONS_ARCH
 	help
@@ -149,14 +151,10 @@ config ARCH_IS_SET
 
 menu "General Architecture Options"
 
-source "$(ARCH_DIR)/common/Kconfig"
+source "arch/common/Kconfig"
 
 module = ARCH
 module-str = arch
-source "subsys/logging/Kconfig.template.log_config"
-
-module = MPU
-module-str = mpu
 source "subsys/logging/Kconfig.template.log_config"
 
 config BIG_ENDIAN
@@ -168,6 +166,14 @@ config BIG_ENDIAN
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
 	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
 	  and command line option for gen_isr_tables.py.
+
+config LITTLE_ENDIAN
+	# Hidden Kconfig option representing the default little-endian architecture
+	# This is just the opposite of BIG_ENDIAN and is used for non-negative
+	# conditional compilation
+	bool
+	depends on !BIG_ENDIAN
+	default y
 
 config 64BIT
 	bool
@@ -408,6 +414,35 @@ config GEN_IRQ_VECTOR_TABLE
 	  indexed by IRQ line. In the latter case, the vector table must be
 	  supplied by the application or architecture code.
 
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	int "Alignment size of the interrupt vector table"
+	default 4
+	depends on GEN_IRQ_VECTOR_TABLE
+	help
+	  This option controls alignment size of generated
+	  _irq_vector_table.  Some architecture needs an IRQ vector table
+	  to be aligned to architecture specific size.  The default
+	  size is 0 for no alignment.
+
+choice IRQ_VECTOR_TABLE_TYPE
+	prompt "IRQ vector table type"
+	depends on GEN_IRQ_VECTOR_TABLE
+	default IRQ_VECTOR_TABLE_JUMP_BY_CODE if (RISCV && !RISCV_HAS_CLIC)
+	default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+
+config IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+	bool "Jump by address"
+	help
+	  The IRQ vector table contains the address of the interrupt handler.
+
+config IRQ_VECTOR_TABLE_JUMP_BY_CODE
+	bool "Jump by code"
+	help
+	  The IRQ vector table contains the opcode of a jump instruction to the
+	  interrupt handler address.
+
+endchoice
+
 config GEN_SW_ISR_TABLE
 	bool "Generate a software ISR table"
 	default y
@@ -420,7 +455,7 @@ config GEN_SW_ISR_TABLE
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"
-	default 0
+	default 4
 	depends on GEN_SW_ISR_TABLE
 	help
 	  This option controls alignment size of generated
@@ -540,12 +575,23 @@ config ARCH_HAS_COHERENCE
 config ARCH_HAS_THREAD_LOCAL_STORAGE
 	bool
 
+config ARCH_HAS_SUSPEND_TO_RAM
+	bool
+	help
+	  When selected, the architecture supports suspend-to-RAM (S2RAM).
+
 #
 # Other architecture related options
 #
 
 config ARCH_HAS_THREAD_ABORT
 	bool
+
+config ARCH_HAS_CODE_DATA_RELOCATION
+	bool
+	help
+	  When selected, the architecture/SoC implements support for
+	  CODE_DATA_RELOCATION in its linker scripts.
 
 #
 # Hidden CPU family configs
@@ -561,7 +607,7 @@ config CPU_HAS_TEE
 config CPU_HAS_DCLS
 	bool
 	help
-	  This option is enabled when the processor hardware is configured in
+	  This option is enabled when the processor hardware has support for
 	  Dual-redundant Core Lock-step (DCLS) topology.
 
 config CPU_HAS_FPU
@@ -602,6 +648,16 @@ config ARCH_HAS_RESERVED_PAGE_FRAMES
 	  memory mappings. The architecture will need to implement
 	  arch_reserved_pages_update().
 
+config CPU_HAS_DCACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has a d-cache.
+
+config CPU_HAS_ICACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has an i-cache.
+
 config ARCH_MAPS_ALL_RAM
 	bool
 	help
@@ -622,6 +678,16 @@ config ARCH_MAPS_ALL_RAM
 	  this mapping at all; non-kernel pages will be considered free (unless marked
 	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
 
+config DCLS
+	bool "Processor is configured in DCLS mode"
+	depends on CPU_HAS_DCLS
+	default y
+	help
+	  This option is enabled when the processor hardware is configured in
+	  Dual-redundant Core Lock-step (DCLS) topology. For the processor that
+	  supports DCLS, but is configured in split-lock mode (by default or
+	  changed at flash time), this option should be disabled.
+
 menuconfig MPU
 	bool "MPU features"
 	depends on CPU_HAS_MPU
@@ -630,6 +696,10 @@ menuconfig MPU
 	  is enabled.
 
 if MPU
+module = MPU
+module-str = mpu
+source "subsys/logging/Kconfig.template.log_config"
+
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	help
@@ -701,6 +771,15 @@ config SRAM_REGION_PERMISSIONS
 	  paging, do not need memory protection, and would rather not use up
 	  RAM for the alignment between regions.
 
+config CODE_DATA_RELOCATION
+	bool "Support code/data section relocation"
+	depends on ARCH_HAS_CODE_DATA_RELOCATION
+	help
+	  Enable support for relocating .text, data and .bss sections from specified
+	  files and placing them in a chosen memory region. Files to relocate and
+	  the target regions should be specified in CMakeLists.txt using
+	  zephyr_code_relocate().
+
 menu "Floating Point Options"
 
 config FPU
@@ -745,20 +824,29 @@ endmenu
 menu "Cache Options"
 
 config DCACHE
-	bool "Data cache support"
+	bool "Data cache (d-cache) support"
+	depends on CPU_HAS_DCACHE
 	default y
 	help
-	  This option enables data cache (d-cache).
+	  This option enables the support for the data cache (d-cache).
+
+config ICACHE
+	bool "Instruction cache (i-cache) support"
+	depends on CPU_HAS_ICACHE
+	default y
+	help
+	  This option enables the support for the instruction cache (i-cache).
 
 config CACHE_MANAGEMENT
 	bool "Cache management features"
+	depends on DCACHE || ICACHE
 	help
-	  This links in the cache management functions (for d-cache and i-cache
-	  where possible).
+	  This option enables the cache management functions backed by arch or
+	  driver code.
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
-	depends on CACHE_MANAGEMENT
+	depends on CACHE_MANAGEMENT && DCACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -769,8 +857,8 @@ config DCACHE_LINE_SIZE_DETECT
 	  using the 'd-cache-line-size' property.
 
 config DCACHE_LINE_SIZE
-	int "d-cache line size" if !DCACHE_LINE_SIZE_DETECT
-	depends on CACHE_MANAGEMENT
+	int "d-cache line size"
+	depends on CACHE_MANAGEMENT && DCACHE && !DCACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
@@ -781,7 +869,7 @@ config DCACHE_LINE_SIZE
 
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
-	depends on CACHE_MANAGEMENT
+	depends on CACHE_MANAGEMENT && ICACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -792,8 +880,8 @@ config ICACHE_LINE_SIZE_DETECT
 	  using the 'i-cache-line-size' property.
 
 config ICACHE_LINE_SIZE
-	int "i-cache line size" if !ICACHE_LINE_SIZE_DETECT
-	depends on CACHE_MANAGEMENT
+	int "i-cache line size"
+	depends on CACHE_MANAGEMENT && ICACHE && !ICACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is
@@ -804,17 +892,17 @@ config ICACHE_LINE_SIZE
 choice CACHE_TYPE
 	prompt "Cache type"
 	depends on CACHE_MANAGEMENT
-	default HAS_ARCH_CACHE
+	default ARCH_CACHE
 
-config HAS_ARCH_CACHE
+config ARCH_CACHE
 	bool "Integrated cache controller"
 	help
-	  "Integrated on-core cache controller"
+	  Integrated on-core cache controller
 
-config HAS_EXTERNAL_CACHE
+config EXTERNAL_CACHE
 	bool "External cache controller"
 	help
-	  "External cache controller or cache management system"
+	  External cache controller
 
 endchoice
 

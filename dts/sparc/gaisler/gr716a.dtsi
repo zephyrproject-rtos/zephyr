@@ -52,7 +52,6 @@
 			compatible = "gaisler,apbuart";
 			interrupts = <24>;
 			reg = <0x80300000 0x100>;
-			label = "UART_0";
 			status = "disabled";
 		};
 
@@ -60,7 +59,6 @@
 			compatible = "gaisler,apbuart";
 			interrupts = <25>;
 			reg = <0x80301000 0x100>;
-			label = "UART_1";
 			status = "disabled";
 		};
 
@@ -68,7 +66,6 @@
 			compatible = "gaisler,apbuart";
 			interrupts = <3>;
 			reg = <0x80302000 0x100>;
-			label = "UART_2";
 			status = "disabled";
 		};
 
@@ -76,7 +73,6 @@
 			compatible = "gaisler,apbuart";
 			interrupts = <5>;
 			reg = <0x80303000 0x100>;
-			label = "UART_3";
 			status = "disabled";
 		};
 
@@ -84,7 +80,6 @@
 			compatible = "gaisler,apbuart";
 			interrupts = <6>;
 			reg = <0x80304000 0x100>;
-			label = "UART_4";
 			status = "disabled";
 		};
 
@@ -92,7 +87,6 @@
 			compatible = "gaisler,apbuart";
 			interrupts = <7>;
 			reg = <0x80305000 0x100>;
-			label = "UART_5";
 			status = "disabled";
 		};
 	};

@@ -31,7 +31,6 @@
 	ccs811: ccs811@5b {
 		compatible = "ams,ccs811";
 		reg = <0x5b>;
-		label = "CCS811";
 		irq-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 		wake-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;

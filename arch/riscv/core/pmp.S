@@ -18,8 +18,8 @@
  * void z_riscv_write_pmp_entries(unsigned int start,		// a0
  *                                unsigned int end,		// a1
  *                                bool clear_trailing_entries,	// a2
- *                                ulong_t *pmp_addr,		// a3
- *                                ulong_t *pmp_cfg)		// a4
+ *                                unsigned long *pmp_addr,		// a3
+ *                                unsigned long *pmp_cfg)		// a4
  *
  * Called from pmp.c to write a range of PMP entries.
  *

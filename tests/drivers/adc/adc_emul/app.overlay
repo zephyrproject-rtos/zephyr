@@ -11,7 +11,6 @@
 		ref-internal-mv = <3300>;
 		ref-external1-mv = <5000>;
 		#io-channel-cells = <1>;
-		label = "ADC_0";
 		status = "okay";
 	};
 };

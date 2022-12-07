@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include "tests_thread_apis.h"
 
@@ -31,11 +31,11 @@ static void threads_suspend_resume(int prio)
 	k_thread_suspend(tid);
 	k_msleep(100);
 	/* checkpoint: created thread shouldn't be executed after suspend */
-	zassert_false(last_prio == create_prio, NULL);
+	zassert_false(last_prio == create_prio);
 	k_thread_resume(tid);
 	k_msleep(100);
 	/* checkpoint: created thread should be executed after resume */
-	zassert_true(last_prio == create_prio, NULL);
+	zassert_true(last_prio == create_prio);
 }
 
 /*test cases*/
@@ -51,7 +51,7 @@ static void threads_suspend_resume(int prio)
  *
  * @see k_thread_suspend(), k_thread_resume()
  */
-void test_threads_suspend_resume_cooperative(void)
+ZTEST(threads_lifecycle_1cpu, test_threads_suspend_resume_cooperative)
 {
 	threads_suspend_resume(-2);
 }
@@ -67,7 +67,7 @@ void test_threads_suspend_resume_cooperative(void)
  *
  * @see k_thread_suspend(), k_thread_resume()
  */
-void test_threads_suspend_resume_preemptible(void)
+ZTEST_USER(threads_lifecycle, test_threads_suspend_resume_preemptible)
 {
 	threads_suspend_resume(1);
 }
@@ -89,7 +89,7 @@ void suspend_myself(void *arg0, void *arg1, void *arg2)
  * @brief Check that k_thread_suspend() is a schedule point when
  * called on the current thread.
  */
-void test_threads_suspend(void)
+ZTEST(threads_lifecycle, test_threads_suspend)
 {
 	after_suspend = false;
 
@@ -126,7 +126,7 @@ void sleep_suspended(void *arg0, void *arg1, void *arg2)
  * @details Suspended threads should not wake up unexpectedly if they
  * happened to have been sleeping when suspended.
  */
-void test_threads_suspend_timeout(void)
+ZTEST(threads_lifecycle, test_threads_suspend_timeout)
 {
 	after_suspend = false;
 
@@ -154,7 +154,7 @@ void test_threads_suspend_timeout(void)
  * @details Use k_thread_state_str() to get thread state.
  * Resume an unsuspend thread will not change the thread state.
  */
-void test_resume_unsuspend_thread(void)
+ZTEST(threads_lifecycle, test_resume_unsuspend_thread)
 {
 	char buffer[32];
 	const char *str;
@@ -165,19 +165,19 @@ void test_resume_unsuspend_thread(void)
 
 	/* Resume an unsuspend thread will not change the thread state. */
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "queued") == 0, NULL);
+	zassert_true(strcmp(str, "queued") == 0);
 	k_thread_resume(tid);
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "queued") == 0, NULL);
+	zassert_true(strcmp(str, "queued") == 0);
 
 	/* suspend created thread */
 	k_thread_suspend(tid);
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "suspended") == 0, NULL);
+	zassert_true(strcmp(str, "suspended") == 0);
 
 	/* Resume an suspend thread will make it to be next eligible.*/
 	k_thread_resume(tid);
 	str = k_thread_state_str(tid, buffer, sizeof(buffer));
-	zassert_true(strcmp(str, "queued") == 0, NULL);
+	zassert_true(strcmp(str, "queued") == 0);
 	k_thread_abort(tid);
 }

@@ -9,6 +9,6 @@ Nordic nRF52840 SoC and NXP A71CH Secure Element, and can
 connect some Seeed Grove sensors via GPIO, ADC, I2C,
 and UART.
 
-.. figure:: img/degu_evk.png
+.. figure:: img/degu_evk.jpg
 
 For more information, see the `Degu Project website <https://open-degu.com/en/>`__.

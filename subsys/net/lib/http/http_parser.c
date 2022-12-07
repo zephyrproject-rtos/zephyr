@@ -23,7 +23,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include <zephyr/net/http_parser.h>
+#include <zephyr/net/http/parser.h>
 #include <zephyr/sys/__assert.h>
 #include <stddef.h>
 #include <ctype.h>

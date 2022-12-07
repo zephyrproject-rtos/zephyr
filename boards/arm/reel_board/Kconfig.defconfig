@@ -16,15 +16,13 @@ config BT_CTLR
 	default y
 	depends on BT
 
-if DISPLAY
+if FXOS8700
 
-config SSD16XX
-	default y
+choice FXOS8700_MODE
+	default FXOS8700_MODE_ACCEL
+endchoice
 
-config SPI
-	default y
-
-endif # DISPLAY
+endif # FXOS8700
 
 if LVGL
 

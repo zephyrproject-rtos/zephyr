@@ -5,9 +5,6 @@ compatible: "quicklogic,eos-s3-gpio"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    label:
-      required: true
-
     interrupts:
       required: true
 

@@ -24,7 +24,6 @@
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "hvc";
-		label = "PSCI";
 	};
 
 	soc {

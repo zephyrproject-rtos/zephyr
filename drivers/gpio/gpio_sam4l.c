@@ -13,8 +13,9 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 typedef void (*config_func_t)(const struct device *dev);
 
@@ -243,7 +244,7 @@ int gpio_sam_init(const struct device *dev)
 			    gpio_sam_isr,				\
 			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));		\
-	} while (0)
+	} while (false)
 
 #define GPIO_SAM_INIT(n)						\
 	static void port_##n##_sam_config_func(const struct device *dev);\

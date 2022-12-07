@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
 #include "abstract_driver.h"
@@ -19,12 +19,6 @@
 
 #define MY_DRIVER_A     "my_driver_A"
 #define MY_DRIVER_B     "my_driver_B"
-
-extern void test_mmio_multiple(void);
-extern void test_mmio_toplevel(void);
-extern void test_mmio_single(void);
-extern void test_mmio_device_map(void);
-extern void test_mmio_multireg(void);
 
 /**
  * @brief Test cases to verify device objects
@@ -54,23 +48,23 @@ extern void test_mmio_multireg(void);
  *
  * @see device_get_binding(), DEVICE_DEFINE()
  */
-void test_dummy_device(void)
+ZTEST(device, test_dummy_device)
 {
 	const struct device *dev;
 
 	/* Validates device binding for a non-existing device object */
 	dev = device_get_binding(DUMMY_PORT_1);
-	zassert_equal(dev, NULL, NULL);
+	zassert_is_null(dev);
 
 	/* Validates device binding for an existing device object */
 	dev = device_get_binding(DUMMY_PORT_2);
-	zassert_false((dev == NULL), NULL);
+	zassert_not_null(dev);
 
 	/* device_get_binding() returns false for device object
 	 * with failed init.
 	 */
 	dev = device_get_binding(BAD_DRIVER);
-	zassert_true((dev == NULL), NULL);
+	zassert_is_null(dev);
 }
 
 /**
@@ -80,14 +74,14 @@ void test_dummy_device(void)
  *
  * @see device_get_binding(), DEVICE_DEFINE()
  */
-static void test_dynamic_name(void)
+ZTEST_USER(device, test_dynamic_name)
 {
 	const struct device *mux;
 	char name[sizeof(DUMMY_PORT_2)];
 
 	snprintk(name, sizeof(name), "%s", DUMMY_PORT_2);
 	mux = device_get_binding(name);
-	zassert_true(mux != NULL, NULL);
+	zassert_true(mux != NULL);
 }
 
 /**
@@ -98,14 +92,14 @@ static void test_dynamic_name(void)
  *
  * @see device_get_binding(), DEVICE_DEFINE()
  */
-static void test_bogus_dynamic_name(void)
+ZTEST_USER(device, test_bogus_dynamic_name)
 {
 	const struct device *mux;
 	char name[64];
 
 	snprintk(name, sizeof(name), "ANOTHER_BOGUS_NAME");
 	mux = device_get_binding(name);
-	zassert_true(mux == NULL, NULL);
+	zassert_true(mux == NULL);
 }
 
 /**
@@ -115,7 +109,7 @@ static void test_bogus_dynamic_name(void)
  *
  * @see device_get_binding(), DEVICE_DEFINE()
  */
-static void test_null_dynamic_name(void)
+ZTEST_USER(device, test_null_dynamic_name)
 {
 	/* Supplying a NULL dynamic name may trigger a SecureFault and
 	 * lead to system crash in TrustZone enabled Non-Secure builds.
@@ -125,7 +119,7 @@ static void test_null_dynamic_name(void)
 	char *drv_name = NULL;
 
 	mux = device_get_binding(drv_name);
-	zassert_equal(mux, 0,  NULL);
+	zassert_equal(mux, 0);
 #else
 	ztest_test_skip();
 #endif
@@ -196,7 +190,7 @@ SYS_INIT(null_driver_init, POST_KERNEL, 0);
  *
  * @see k_is_pre_kernel()
  */
-void test_pre_kernel_detection(void)
+ZTEST(device, test_pre_kernel_detection)
 {
 	struct init_record *rpe = rp;
 
@@ -234,12 +228,30 @@ void test_pre_kernel_detection(void)
  *
  * @see z_device_get_all_static()
  */
-static void test_device_list(void)
+ZTEST(device, test_device_list)
 {
 	struct device const *devices;
 	size_t devcount = z_device_get_all_static(&devices);
 
-	zassert_false((devcount == 0), NULL);
+	zassert_false((devcount == 0));
+}
+
+static int sys_init_counter;
+
+static int init_fn(const struct device *dev)
+{
+	sys_init_counter++;
+	return 0;
+}
+
+SYS_INIT(init_fn, APPLICATION, 0);
+SYS_INIT_NAMED(init1, init_fn, APPLICATION, 1);
+SYS_INIT_NAMED(init2, init_fn, APPLICATION, 2);
+SYS_INIT_NAMED(init3, init_fn, APPLICATION, 2);
+
+ZTEST(device, test_sys_init_multiple)
+{
+	zassert_equal(sys_init_counter, 4, "");
 }
 
 /* this is for storing sequence during initialization */
@@ -258,7 +270,7 @@ extern unsigned int seq_priority_cnt;
  *
  * @ingroup kernel_device_tests
  */
-void test_device_init_level(void)
+ZTEST(device, test_device_init_level)
 {
 	bool seq_correct = true;
 
@@ -266,8 +278,9 @@ void test_device_init_level(void)
 	 * correct, and it should be 1, 2, 3, 4
 	 */
 	for (int i = 0; i < 4; i++) {
-		if (init_level_sequence[i] != (i+1))
+		if (init_level_sequence[i] != (i + 1)) {
 			seq_correct = false;
+		}
 	}
 
 	zassert_true((seq_correct == true),
@@ -284,7 +297,7 @@ void test_device_init_level(void)
  *
  * @ingroup kernel_device_tests
  */
-void test_device_init_priority(void)
+ZTEST(device, test_device_init_priority)
 {
 	bool sequence_correct = true;
 
@@ -292,8 +305,9 @@ void test_device_init_priority(void)
 	 * and it should be 1, 2, 3, 4
 	 */
 	for (int i = 0; i < 4; i++) {
-		if (init_priority_sequence[i] != (i+1))
+		if (init_priority_sequence[i] != (i + 1)) {
 			sequence_correct = false;
+		}
 	}
 
 	zassert_true((sequence_correct == true),
@@ -316,7 +330,7 @@ void test_device_init_priority(void)
  *
  * @ingroup kernel_device_tests
  */
-void test_abstraction_driver_common(void)
+ZTEST(device, test_abstraction_driver_common)
 {
 	const struct device *dev;
 	int ret;
@@ -326,7 +340,7 @@ void test_abstraction_driver_common(void)
 
 	/* verify driver A API has called */
 	dev = device_get_binding(MY_DRIVER_A);
-	zassert_false((dev == NULL), NULL);
+	zassert_false((dev == NULL));
 
 	ret = subsystem_do_this(dev, foo, bar);
 	zassert_true(ret == (foo + bar), "common API do_this fail");
@@ -336,7 +350,7 @@ void test_abstraction_driver_common(void)
 
 	/* verify driver B API has called */
 	dev = device_get_binding(MY_DRIVER_B);
-	zassert_false((dev == NULL), NULL);
+	zassert_false((dev == NULL));
 
 	ret = subsystem_do_this(dev, foo, bar);
 	zassert_true(ret == (foo - bar), "common API do_this fail");
@@ -350,22 +364,4 @@ void test_abstraction_driver_common(void)
  * @}
  */
 
-void test_main(void)
-{
-	ztest_test_suite(device,
-			 ztest_unit_test(test_device_list),
-			 ztest_unit_test(test_dummy_device),
-			 ztest_unit_test(test_pre_kernel_detection),
-			 ztest_user_unit_test(test_bogus_dynamic_name),
-			 ztest_user_unit_test(test_null_dynamic_name),
-			 ztest_user_unit_test(test_dynamic_name),
-			 ztest_unit_test(test_device_init_level),
-			 ztest_unit_test(test_device_init_priority),
-			 ztest_unit_test(test_abstraction_driver_common),
-			 ztest_unit_test(test_mmio_single),
-			 ztest_unit_test(test_mmio_multiple),
-			 ztest_unit_test(test_mmio_toplevel),
-			 ztest_unit_test(test_mmio_device_map),
-			 ztest_unit_test(test_mmio_multireg));
-	ztest_run_test_suite(device);
-}
+ZTEST_SUITE(device, NULL, NULL, NULL, NULL, NULL);

@@ -414,7 +414,7 @@ bytes processed. This too should use a stack copy:
 
         Z_OOPS(z_user_from_copy(&size, size_ptr, sizeof(size));
         ret = z_impl_in_out_syscall(&size);
-        *size_ptr = size;
+        Z_OOPS(z_user_to_copy(size_ptr, &size, sizeof(size)));
         return ret;
     }
 

@@ -1,14 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20)
-
-if (NOT BOARD STREQUAL unit_testing)
-  message(FATAL_ERROR "This project can only be used with '-DBOARD=unit_testing'.")
-endif()
-
-FILE(GLOB SOURCES
-  src/*.c
-)
+cmake_minimum_required(VERSION 3.20.0)
 
 # Propagate NO_ENC to compile
 if(NO_ENC)
@@ -31,7 +23,7 @@ if(NO_PHY)
 endif()
 
 project(bluetooth_ull_llcp_unsupported)
-find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
 include(${ZEPHYR_BASE}/tests/bluetooth/controller/common/defaults_cmake.txt)
 
 # Remove ull_llcp_enc.c from compile
@@ -44,4 +36,10 @@ if(NO_PHY)
   list(REMOVE_ITEM ll_sw_sources ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_phy.c)
 endif()
 
-target_sources(testbinary PRIVATE ${ll_sw_sources} ${mock_sources} ${common_sources})
+target_sources(testbinary
+  PRIVATE
+    src/main.c
+    ${ll_sw_sources}
+    ${mock_sources}
+    ${common_sources}
+)

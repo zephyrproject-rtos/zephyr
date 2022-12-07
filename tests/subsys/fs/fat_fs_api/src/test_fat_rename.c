@@ -161,6 +161,6 @@ cleanup:
 
 void test_fat_rename(void)
 {
-	zassert_true(test_rename_file() == TC_PASS, NULL);
-	zassert_true(test_rename_dir() == TC_PASS, NULL);
+	zassert_true(test_rename_file() == TC_PASS);
+	zassert_true(test_rename_dir() == TC_PASS);
 }

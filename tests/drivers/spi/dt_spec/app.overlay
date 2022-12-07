@@ -16,7 +16,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO";
 			status = "okay";
 		};
 
@@ -25,7 +24,6 @@
 			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			label = "TEST_SPI_CTLR_CS";
 			status = "okay";
 			clock-frequency = <2000000>;
 
@@ -33,7 +31,6 @@
 
 			test_spi_dev_cs: test-spi-dev@0 {
 				compatible = "vnd,spi-device";
-				label = "TEST_SPI_DEV_0";
 				reg = <0>;
 				spi-max-frequency = <2000000>;
 			};
@@ -44,13 +41,11 @@
 			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x55556666 0x1000>;
-			label = "TEST_SPI_CTLR_NO_CS";
 			status = "okay";
 			clock-frequency = <2000000>;
 
 			test_spi_dev_no_cs: test-spi-dev@0 {
 				compatible = "vnd,spi-device";
-				label = "TEST_SPI_DEV_NO_CS";
 				reg = <0>;
 				spi-max-frequency = <2000000>;
 			};

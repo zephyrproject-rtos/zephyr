@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022, Intel Corporation
+
+config IPM_STM32_IPCC
+	bool "STM32 IPCC controller"
+	default y
+	depends on DT_HAS_ST_STM32_IPCC_MAILBOX_ENABLED
+	select USE_STM32_LL_IPCC
+	help
+	  Driver for stm32 IPCC mailboxes
+
+config IPM_STM32_IPCC_PROCID
+	int "STM32 IPCC Processor ID"
+	default 2
+	range 1 2
+	depends on IPM_STM32_IPCC
+	help
+	  use to define the Processor ID for IPCC access
+
+config IPM_STM32_HSEM
+	bool "STM32 HSEM controller"
+	default y
+	depends on DT_HAS_ST_STM32_HSEM_MAILBOX_ENABLED
+	help
+	  Driver for stm32 HSEM mailbox
+
+config IPM_STM32_HSEM_CPU
+	int "HSEM CPU ID"
+	default 1 if "$(dt_nodelabel_enabled,cpu0)"
+	default 2 if "$(dt_nodelabel_enabled,cpu1)"
+	range 1 2
+	depends on IPM_STM32_HSEM
+	help
+	  use to define the CPU ID used by HSEM

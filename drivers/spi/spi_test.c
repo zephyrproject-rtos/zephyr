@@ -9,7 +9,7 @@
  * devices for the "vnd,spi" devicetree compatible used in test code.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
 
 #define DT_DRV_COMPAT vnd_spi
@@ -27,7 +27,8 @@ static int vnd_spi_transceive_async(const struct device *dev,
 				    const struct spi_config *spi_cfg,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs,
-				    struct k_poll_signal *async)
+				    spi_callback_t cb,
+				    void *userdata)
 {
 	return -ENOTSUP;
 }

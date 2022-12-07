@@ -4,9 +4,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_XEC_QMSPI
-	bool "Microchip XEC QMSPI driver"
+	bool "Microchip MEC15xx XEC QMSPI driver"
 	default y
-	depends on SOC_SERIES_MEC1501X
+	depends on DT_HAS_MICROCHIP_XEC_QMSPI_ENABLED
 	select DMA if SPI_ASYNC
 	help
-	  Enable support for the Microchip XEC QMSPI driver.
+	  Enable support for Microchip MEC15xx XEC QMSPI driver.
+
+config SPI_XEC_QMSPI_LDMA
+	bool "Microchip XEC MEC17xx QMSPI LDMA driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_QMSPI_LDMA_ENABLED
+	help
+	  Enable support for Microchip MEC17xx QMSPI with local DMA driver.
+
+config SPI_XEC_QMSPI_FULL_DUPLEX
+	bool "Microchip XEC MEC17xx QMSPI Full Duplex driver"
+	depends on DT_HAS_MICROCHIP_XEC_QMSPI_FULL_DUPLEX_ENABLED
+	help
+	  Enable support for Microchip MEC17xx QMSPI full duplex driver
+	  to work with Zephyr NOR driver

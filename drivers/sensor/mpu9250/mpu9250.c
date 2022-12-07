@@ -210,9 +210,9 @@ static int mpu9250_sample_fetch(const struct device *dev,
 	drv_data->gyro_y = sys_be16_to_cpu(buf[5]);
 	drv_data->gyro_z = sys_be16_to_cpu(buf[6]);
 #ifdef CONFIG_MPU9250_MAGN_EN
-	drv_data->magn_x = sys_be16_to_cpu(buf[7]);
-	drv_data->magn_y = sys_be16_to_cpu(buf[8]);
-	drv_data->magn_z = sys_be16_to_cpu(buf[9]);
+	drv_data->magn_x = sys_le16_to_cpu(buf[7]);
+	drv_data->magn_y = sys_le16_to_cpu(buf[8]);
+	drv_data->magn_z = sys_le16_to_cpu(buf[9]);
 	drv_data->magn_st2 = ((uint8_t *)buf)[20];
 	LOG_DBG("magn_st2: %u", drv_data->magn_st2);
 #endif
@@ -309,7 +309,7 @@ static int mpu9250_init(const struct device *dev)
 	}
 
 	ret = i2c_reg_write_byte_dt(&cfg->i2c, MPU9250_REG_ACCEL_CFG2,
-				    cfg->gyro_dlpf);
+				    cfg->accel_dlpf);
 	if (ret < 0) {
 		LOG_ERR("Failed to write accel digital LPF settings.");
 		return ret;
@@ -358,7 +358,7 @@ static int mpu9250_init(const struct device *dev)
 		  (.int_pin = GPIO_DT_SPEC_INST_GET(inst, irq_gpios)))	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst, mpu9250_init, NULL,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mpu9250_init, NULL,		\
 			      &mpu9250_data_##inst, &mpu9250_cfg_##inst,\
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
 			      &mpu9250_driver_api);

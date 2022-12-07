@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+test_dma: &gpdma1 {
+	status = "okay";
+};

@@ -613,9 +613,9 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		ptr++;						\
 	}
 
-#define CHECK_INT(arg)							\
+#define CHECK_UINT(arg)							\
 	{								\
-		arg = strtol((const char *)ptr, (char **)&ptr, 16);	\
+		arg = strtoul((const char *)ptr, (char **)&ptr, 16);	\
 		CHECK_ERROR(ptr == NULL);				\
 	}
 
@@ -651,9 +651,9 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		 * Format: m addr,length
 		 */
 		case 'm':
-			CHECK_INT(addr);
+			CHECK_UINT(addr);
 			CHECK_SYMBOL(',');
-			CHECK_INT(data_len);
+			CHECK_UINT(data_len);
 
 			/* Read Memory */
 
@@ -678,9 +678,9 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		 * Format: M addr,length:val
 		 */
 		case 'M':
-			CHECK_INT(addr);
+			CHECK_UINT(addr);
 			CHECK_SYMBOL(',');
-			CHECK_INT(data_len);
+			CHECK_UINT(data_len);
 			CHECK_SYMBOL(':');
 
 			if (addr == 0L) {
@@ -737,7 +737,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		 * Format: p n
 		 */
 		case 'p':
-			CHECK_INT(addr);
+			CHECK_UINT(addr);
 
 			/* Read Register */
 			pkt_len = arch_gdb_reg_readone(ctx, buf, sizeof(buf), addr);
@@ -750,7 +750,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		 * Format: P register=value
 		 */
 		case 'P':
-			CHECK_INT(addr);
+			CHECK_UINT(addr);
 			CHECK_SYMBOL('=');
 
 			pkt_len = arch_gdb_reg_writeone(ctx, ptr, strlen(ptr), addr);
@@ -764,11 +764,11 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		case 'z':
 			__fallthrough;
 		case 'Z':
-			CHECK_INT(type);
+			CHECK_UINT(type);
 			CHECK_SYMBOL(',');
-			CHECK_INT(addr);
+			CHECK_UINT(addr);
 			CHECK_SYMBOL(',');
-			CHECK_INT(data_len);
+			CHECK_UINT(data_len);
 
 			if (buf[0] == 'Z') {
 				ret = arch_gdb_add_breakpoint(ctx, type,
@@ -815,7 +815,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 	}
 
 #undef CHECK_ERROR
-#undef CHECK_INT
+#undef CHECK_UINT
 #undef CHECK_SYMBOL
 
 	return 0;

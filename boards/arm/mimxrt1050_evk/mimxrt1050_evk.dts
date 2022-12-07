@@ -18,6 +18,9 @@
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {
@@ -30,6 +33,7 @@
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &lcdif;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram0: memory@80000000 {
@@ -120,7 +124,6 @@ arduino_serial: &lpuart3 {
 	s26ks512s0: s26ks512s@0 {
 		compatible = "nxp,imx-flexspi-hyperflash";
 		size = <DT_SIZE_M(64*8)>;
-		label = "S26KS512S";
 		reg = <0>;
 		spi-max-frequency = <166000000>;
 		word-addressable;
@@ -193,10 +196,9 @@ arduino_serial: &lpuart3 {
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 
-	fxos8700@1f {
+	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
 		reg = <0x1f>;
-		label = "FXOS8700";
 
 		/* Two zero ohm resistors (R263 and R264) isolate sensor
 		 * interrupt gpios from the soc and are unpopulated by default.
@@ -210,7 +212,6 @@ arduino_serial: &lpuart3 {
 	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "FT5336";
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -267,7 +268,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
-	mmc {
+	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
 	};

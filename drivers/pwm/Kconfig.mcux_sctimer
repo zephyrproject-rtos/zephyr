@@ -3,6 +3,7 @@
 
 config PWM_MCUX_SCTIMER
 	bool "MCUX SCTimer PWM driver"
-	depends on HAS_MCUX_SCTIMER
+	default y
+	depends on DT_HAS_NXP_SCTIMER_PWM_ENABLED
 	help
 	  Enable sctimer based pwm driver.

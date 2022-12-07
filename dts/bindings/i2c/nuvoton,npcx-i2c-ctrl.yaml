@@ -12,5 +12,3 @@ properties:
         required: true
     clocks:
         required: true
-    label:
-        required: true

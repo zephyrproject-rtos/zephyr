@@ -25,6 +25,8 @@
 		sw1 = &btn_usr;
 		sw2 = &btn_isp;
 		usart-0 = &flexcomm0;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 
 	leds {
@@ -130,10 +132,9 @@
 	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
 	pinctrl-names = "default";
 
-	fxos8700@1e {
+	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
-		label = "FXOS8700";
 		int1-gpios = <&gpio1 26 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 };
@@ -154,6 +155,27 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_hs_lspi>;
 	pinctrl-names = "default";
+};
+
+&flash0 {
+	/*
+	 * LPC flash controller requires minimum 512 byte
+	 * write to flash, so MCUBoot is not supported. Just
+	 * provide storage and code partition.
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(196)>;
+		};
+		storage_partition: partition@30000 {
+			label = "storage";
+			reg = <0x00030000 DT_SIZE_K(64)>;
+		};
+	};
 };
 
 arduino_i2c: &flexcomm4 {};

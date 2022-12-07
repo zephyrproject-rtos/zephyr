@@ -56,14 +56,20 @@ int net_ipv6_create(struct net_pkt *pkt,
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *ipv6_hdr;
+	uint8_t tc = 0;
 
 	ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!ipv6_hdr) {
 		return -ENOBUFS;
 	}
 
-	ipv6_hdr->vtc     = 0x60;
-	ipv6_hdr->tcflow  = 0U;
+	if (IS_ENABLED(CONFIG_NET_IP_DSCP_ECN)) {
+		net_ipv6_set_dscp(&tc, net_pkt_ip_dscp(pkt));
+		net_ipv6_set_ecn(&tc, net_pkt_ip_ecn(pkt));
+	}
+
+	ipv6_hdr->vtc     = 0x60 | ((tc >> 4) & 0x0F);
+	ipv6_hdr->tcflow  = (tc << 4) & 0xF0;
 	ipv6_hdr->flow    = 0U;
 	ipv6_hdr->len     = 0U;
 	ipv6_hdr->nexthdr = 0U;
@@ -267,7 +273,7 @@ static struct net_route_entry *add_route(struct net_if *iface,
 			      NET_ROUTE_PREFERENCE_LOW);
 
 	NET_DBG("%s route to %s/%d iface %p", route ? "Add" : "Cannot add",
-		log_strdup(net_sprint_ipv6_addr(addr)), prefix_len, iface);
+		net_sprint_ipv6_addr(addr), prefix_len, iface);
 
 	return route;
 }
@@ -278,8 +284,8 @@ static void ipv6_no_route_info(struct net_pkt *pkt,
 			       struct in6_addr *dst)
 {
 	NET_DBG("Will not route pkt %p ll src %s to dst %s between interfaces",
-		pkt, log_strdup(net_sprint_ipv6_addr(src)),
-		log_strdup(net_sprint_ipv6_addr(dst)));
+		pkt, net_sprint_ipv6_addr(src),
+		net_sprint_ipv6_addr(dst));
 }
 
 #if defined(CONFIG_NET_ROUTE)
@@ -339,7 +345,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 		if (ret < 0) {
 			NET_DBG("Cannot re-route pkt %p via %s "
 				"at iface %p (%d)",
-				pkt, log_strdup(net_sprint_ipv6_addr(nexthop)),
+				pkt, net_sprint_ipv6_addr(nexthop),
 				net_pkt_iface(pkt), ret);
 		} else {
 			return NET_OK;
@@ -360,7 +366,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 		}
 
 		NET_DBG("No route to %s pkt %p dropped",
-			log_strdup(net_sprint_ipv6_addr(&hdr->dst)), pkt);
+			net_sprint_ipv6_addr(&hdr->dst), pkt);
 	}
 
 drop:
@@ -466,8 +472,8 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	NET_DBG("IPv6 packet len %d received from %s to %s", pkt_len,
-		log_strdup(net_sprint_ipv6_addr(&hdr->src)),
-		log_strdup(net_sprint_ipv6_addr(&hdr->dst)));
+		net_sprint_ipv6_addr(&hdr->src),
+		net_sprint_ipv6_addr(&hdr->dst));
 
 	if (net_ipv6_is_addr_unspecified((struct in6_addr *)hdr->src)) {
 		NET_DBG("DROP: src addr is %s", "unspecified");
@@ -496,6 +502,15 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			NET_DBG("DROP: invalid scope multicast packet");
 			goto drop;
 		}
+	}
+
+	/* Reconstruct TC field. */
+
+	if (IS_ENABLED(CONFIG_NET_IP_DSCP_ECN)) {
+		uint8_t tc = ((hdr->vtc << 4) & 0xF0) | ((hdr->tcflow >> 4) & 0x0F);
+
+		net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(tc));
+		net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(tc));
 	}
 
 	/* Check extension headers */

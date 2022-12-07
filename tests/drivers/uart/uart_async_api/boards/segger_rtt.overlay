@@ -7,25 +7,21 @@
 
 	rtt0: rtt_chan0 {
 		compatible = "segger,rtt-uart";
-		label = "rtt_chan0";
 		status = "okay";
 	};
 
 	rtt1: rtt_chan1 {
 		compatible = "segger,rtt-uart";
-		label = "rtt_chan1";
 		status = "okay";
 	};
 
 	rtt2: rtt_chan2 {
 		compatible = "segger,rtt-uart";
-		label = "rtt_chan2";
 		status = "okay";
 	};
 
 	rtt3: rtt_chan3 {
 		compatible = "segger,rtt-uart";
-		label = "rtt_chan3";
 		status = "okay";
 	};
 };

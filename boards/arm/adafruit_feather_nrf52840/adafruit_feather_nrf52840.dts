@@ -22,6 +22,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -49,6 +50,8 @@
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &button0;
+		watchdog0 = &wdt0;
+		spi-flash0 = &gd25q16;
 	};
 };
 
@@ -104,7 +107,6 @@
 		writeoc = "pp4o";
 		readoc = "read4io";
 		sck-frequency = <16000000>;
-		label = "GD25Q16";
 		jedec-id = [c8 40 15];
 		size = <16777216>;
 		has-dpd;
@@ -112,6 +114,10 @@
 		t-exit-dpd = <20000>;
 		quad-enable-requirements = "S2B1v1";
 	};
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &flash0 {

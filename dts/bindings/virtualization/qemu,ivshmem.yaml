@@ -5,4 +5,4 @@ description: ivShMem device properties
 
 compatible: "qemu,ivshmem"
 
-include: base.yaml
+include: [base.yaml, pcie-device.yaml]

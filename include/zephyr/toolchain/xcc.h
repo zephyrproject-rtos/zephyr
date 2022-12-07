@@ -141,8 +141,7 @@
 
 #endif /* __GCC_LINKER_CMD__ */
 
-#define __builtin_unreachable() do { __ASSERT(false, "Unreachable code"); } \
-	while (true)
+#define __builtin_unreachable() __builtin_trap()
 
 /* Not a full barrier, just a SW barrier */
 #define __sync_synchronize() do { __asm__ __volatile__ ("" ::: "memory"); } \

@@ -9,6 +9,8 @@ source "subsys/net/lib/dns/Kconfig"
 
 source "subsys/net/lib/mqtt/Kconfig"
 
+source "subsys/net/lib/mqtt_sn/Kconfig"
+
 source "subsys/net/lib/tftp/Kconfig"
 
 source "subsys/net/lib/http/Kconfig"
@@ -38,5 +40,7 @@ menu "Network additional services"
 source "subsys/net/lib/conn_mgr/Kconfig"
 
 source "subsys/net/lib/capture/Kconfig"
+
+source "subsys/net/lib/zperf/Kconfig"
 
 endmenu

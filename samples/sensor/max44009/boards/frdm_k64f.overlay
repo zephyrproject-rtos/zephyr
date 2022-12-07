@@ -9,6 +9,5 @@
 		compatible = "maxim,max44009";
 		reg = <0x4a>;
 		int-gpios = <&gpioc 6 0>;
-		label = "MAX44009";
 	};
 };

@@ -15,7 +15,7 @@
 #include "board.h"
 
 static uint32_t oob_number;
-static const struct device *gpio;
+const struct gpio_dt_spec sw0_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 
 static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 			   uint32_t pins)
@@ -30,18 +30,18 @@ static void configure_button(void)
 {
 	static struct gpio_callback button_cb;
 
-	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
+	if (!device_is_ready(sw0_gpio.port)) {
+		printk("SW0 GPIO controller device is not ready\n");
+		return;
+	}
 
-	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
-			   DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios) | GPIO_INPUT);
+	gpio_pin_configure_dt(&sw0_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&button_cb, button_pressed,
-			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)));
+	gpio_init_callback(&button_cb, button_pressed, BIT(sw0_gpio.pin));
 
-	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&sw0_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
-	gpio_add_callback(gpio, &button_cb);
+	gpio_add_callback(sw0_gpio.port, &button_cb);
 }
 
 void board_output_number(bt_mesh_output_action_t action, uint32_t number)
@@ -55,8 +55,7 @@ void board_output_number(bt_mesh_output_action_t action, uint32_t number)
 
 	oob_number = number;
 
-	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&sw0_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, SYS_FOREVER_MS, &arrow,
 			 1);
@@ -72,8 +71,7 @@ void board_prov_complete(void)
 					 { 0, 1, 1, 1, 0 });
 
 
-	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&sw0_gpio, GPIO_INT_DISABLE);
 
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, 10 * MSEC_PER_SEC,
 			 &arrow, 1);

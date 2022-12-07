@@ -20,7 +20,7 @@ Building and Running
 ********************
 
 This sample can be built for a variety of boards, including ``nrf52840_blip``,
-``mimxrt1050_evk``, ``olimexino_stm32`` and ``esp_wrover_kit``.
+``mimxrt1050_evk``, ``olimexino_stm32``, ``esp_wrover_kit`` and ``arduino_mkrzero``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/fat_fs

@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/led_strip.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
@@ -33,7 +33,7 @@ static const struct led_rgb colors[] = {
 
 struct led_rgb pixels[STRIP_NUM_PIXELS];
 
-static const struct device *strip = DEVICE_DT_GET(STRIP_NODE);
+static const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
 
 void main(void)
 {

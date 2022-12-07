@@ -21,6 +21,7 @@
 		zephyr,sram           = &sram0;
 		zephyr,flash          = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154     = &ieee802154;
 	};
 
 	leds {
@@ -71,6 +72,8 @@
 		led2-red   = &led2_red;
 		led3-blue  = &led3_blue;
 		pwm-led0   = &pwm_led0_red;
+		watchdog0 = &wdt0;
+		accel0     = &lis2dh12;
 	};
 
 };
@@ -108,7 +111,6 @@
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12-ACCEL";
 	};
 };
 
@@ -129,13 +131,12 @@
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
-	dw1000@0 {
+	ieee802154: dw1000@0 {
 		compatible = "decawave,dw1000";
 		spi-max-frequency = <8000000>;
 		int-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;	/* P0.19 */
 		reset-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;	/* P0.24 */
 		status = "okay";
-		label = "DW1000";
 		reg = <0>;
 	};
 };

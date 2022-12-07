@@ -1,11 +1,11 @@
 common:
    tags: lora
+   depends_on: lora
 sample:
    description: Demonstration of LoRa Receive functionality
    name: LoRa Receive Sample
 tests:
    sample.driver.lora.receive:
-     platform_allow: 96b_wistrio rak4631_nrf52840 nucleo_wl55jc
      harness: console
      harness_config:
       type: one_line

@@ -6,7 +6,7 @@
 config NPCX_MIWU
 	bool "Nuvoton NPCX embedded controller (EC) miwu driver"
 	default y
-	depends on SOC_FAMILY_NPCX
+	depends on DT_HAS_NUVOTON_NPCX_MIWU_ENABLED
 	help
 	  This option enables the Multi-Input Wake-Up Unit (MIWU) driver
 	  for NPCX family of processors.

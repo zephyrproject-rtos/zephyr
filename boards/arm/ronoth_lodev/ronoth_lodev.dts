@@ -103,7 +103,12 @@
 		sw0 = &user_button;
 		eeprom-0 = &eeprom;
 		lora0 = &lora;
+		watchdog0 = &iwdg;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -162,6 +167,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

@@ -9,4 +9,3 @@ properties:
       required: true
 
     interrupts:
-      required: false

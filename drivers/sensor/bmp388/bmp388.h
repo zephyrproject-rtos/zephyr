@@ -13,6 +13,7 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/util.h>
 
 /* registers */
@@ -139,14 +140,13 @@ struct bmp388_io_ops {
 };
 
 struct bmp388_config {
-	const struct device *bus;
 	const struct bmp388_io_ops *ops;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		struct spi_dt_spec spi_bus;
+		struct spi_dt_spec spi;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		uint16_t bus_addr;
+		struct i2c_dt_spec i2c;
 #endif
 	};
 

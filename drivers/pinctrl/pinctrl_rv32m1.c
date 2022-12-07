@@ -8,7 +8,9 @@
 #define DT_DRV_COMPAT openisa_rv32m1_pinmux
 
 #include <zephyr/drivers/pinctrl.h>
+
 #include <fsl_clock.h>
+#include <soc.h>
 
 /* Port register addresses. */
 static PORT_Type *ports[] = {

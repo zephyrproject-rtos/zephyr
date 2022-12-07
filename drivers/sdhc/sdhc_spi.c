@@ -151,6 +151,27 @@ static int sdhc_spi_init_card(const struct device *dev)
 	return ret;
 }
 
+/* Checks if SPI SD card is sending busy signal */
+static int sdhc_spi_card_busy(const struct device *dev)
+{
+	const struct sdhc_spi_config *config = dev->config;
+	struct sdhc_spi_data *data = dev->data;
+	int ret;
+	uint8_t response;
+
+
+	ret = sdhc_spi_rx(config->spi_dev, data->spi_cfg, &response, 1);
+	if (ret) {
+		return -EIO;
+	}
+
+	if (response == 0xFF) {
+		return 0;
+	} else
+		return 1;
+
+}
+
 /* Waits for SPI SD card to stop sending busy signal */
 static int sdhc_spi_wait_unbusy(const struct device *dev,
 	int timeout_ms,
@@ -732,6 +753,7 @@ static struct sdhc_driver_api sdhc_spi_api = {
 	.get_host_props = sdhc_spi_get_host_props,
 	.get_card_present = sdhc_spi_get_card_present,
 	.reset = sdhc_spi_reset,
+	.card_busy = sdhc_spi_card_busy,
 };
 
 
@@ -742,21 +764,10 @@ static struct sdhc_driver_api sdhc_spi_api = {
 		.spi_max_freq = DT_INST_PROP(n, spi_max_frequency),		\
 	};									\
 										\
-	IF_ENABLED(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),				\
-		(struct spi_cs_control sdhc_spi_cs_##n = {			\
-			.gpio_dev = DEVICE_DT_GET(DT_INST_SPI_DEV_CS_GPIOS_CTLR(n)), \
-			.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(n),		\
-			.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(n),	\
-		};))								\
 	struct sdhc_spi_data sdhc_spi_data_##n = {				\
-		.cfg_a = {							\
-			.operation = (SPI_LOCK_ON |				\
-				SPI_HOLD_ON_CS |				\
-				SPI_WORD_SET(8)),				\
-			COND_CODE_1(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),		\
-			(.cs = &sdhc_spi_cs_##n),				\
-			(.cs = NULL))						\
-		},								\
+		.cfg_a = SPI_CONFIG_DT_INST(n,					\
+				(SPI_LOCK_ON | SPI_HOLD_ON_CS | SPI_WORD_SET(8)),\
+				0),						\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\

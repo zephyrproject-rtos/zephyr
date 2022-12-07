@@ -7,7 +7,7 @@
 #ifndef __DSA_SAMPLE__
 #define __DSA_SAMPLE__
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 
 #include <zephyr/net/net_core.h>

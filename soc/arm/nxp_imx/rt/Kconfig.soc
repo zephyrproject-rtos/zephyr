@@ -29,6 +29,7 @@ config SOC_MIMXRT1011
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1015
 	bool "SOC_MIMXRT1015"
@@ -53,6 +54,7 @@ config SOC_MIMXRT1015
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1021
 	bool "SOC_MIMXRT1021"
@@ -83,6 +85,7 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1024
 	bool "SOC_MIMXRT1024"
@@ -113,6 +116,7 @@ config SOC_MIMXRT1024
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
@@ -143,6 +147,7 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -165,7 +170,7 @@ config SOC_MIMXRT1052
 	select CPU_HAS_ARM_MPU
 	select INIT_ARM_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -177,6 +182,8 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_MCUX_SRC
+	select HAS_SWO
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -207,6 +214,7 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
@@ -232,7 +240,7 @@ config SOC_MIMXRT1062
 	select CPU_HAS_ARM_MPU
 	select INIT_ARM_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -245,6 +253,9 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
 	select HAS_MCUX_ADC_ETC
+	select HAS_MCUX_SRC
+	select HAS_SWO
+	select HAS_MCUX_XBARA
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
@@ -271,7 +282,7 @@ config SOC_MIMXRT1064
 	select CPU_HAS_ARM_MPU
 	select INIT_ARM_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -282,11 +293,11 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1176_CM7
 	bool "SOC_MIMXRT1176_CM7"
 	select CPU_CORTEX_M7
-	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_SERIES_IMX_RT11XX
 	select HAS_MCUX_CACHE
@@ -305,7 +316,7 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_FLEXCAN
 	select CPU_HAS_ARM_MPU
 	select INIT_ARM_PLL
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select INIT_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select CPU_HAS_FPU_DOUBLE_PRECISION
@@ -322,6 +333,7 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_ACMP
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1176_CM4
 	bool "SOC_MIMXRT1176_CM4"
@@ -339,7 +351,7 @@ config SOC_MIMXRT1176_CM4
 	select HAS_MCUX_GPT
 	select CPU_HAS_ARM_MPU
 	select INIT_ARM_PLL
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select INIT_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_PWM
@@ -351,11 +363,11 @@ config SOC_MIMXRT1176_CM4
 	select HAS_MCUX_ACMP
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1166_CM7
 	bool "SOC_MIMXRT1166_CM7"
 	select CPU_CORTEX_M7
-	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_SERIES_IMX_RT11XX
 	select HAS_MCUX_CACHE
@@ -372,7 +384,7 @@ config SOC_MIMXRT1166_CM7
 	select HAS_MCUX_FLEXCAN
 	select CPU_HAS_ARM_MPU
 	select INIT_ARM_PLL
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select INIT_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select CPU_HAS_FPU_DOUBLE_PRECISION
@@ -387,6 +399,7 @@ config SOC_MIMXRT1166_CM7
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 
 config SOC_MIMXRT1166_CM4
@@ -405,7 +418,7 @@ config SOC_MIMXRT1166_CM4
 	select HAS_MCUX_GPT
 	select CPU_HAS_ARM_MPU
 	select INIT_ARM_PLL
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select INIT_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_PWM
@@ -415,6 +428,7 @@ config SOC_MIMXRT1166_CM4
 	select HAS_MCUX_GPC
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
+	select HAS_SWO
 
 config SOC_MIMXRT1165_CM7
 	bool "SOC_MIMXRT1165_CM7"
@@ -543,6 +557,12 @@ config SOC_PART_NUMBER_MIMXRT1061CVL5A
 config SOC_PART_NUMBER_MIMXRT1061DVL6A
 	bool
 
+config SOC_PART_NUMBER_MIMXRT1062CVJ5A
+	bool
+
+config SOC_PART_NUMBER_MIMXRT1062CVJ5B
+	bool
+
 config SOC_PART_NUMBER_MIMXRT1062CVL5A
 	bool
 
@@ -625,6 +645,8 @@ config SOC_PART_NUMBER_IMX_RT
 	default "MIMXRT1052DVL6B" if SOC_PART_NUMBER_MIMXRT1052DVL6B
 	default "MIMXRT1061CVL5A" if SOC_PART_NUMBER_MIMXRT1061CVL5A
 	default "MIMXRT1061DVL6A" if SOC_PART_NUMBER_MIMXRT1061DVL6A
+	default "MIMXRT1062CVJ5A" if SOC_PART_NUMBER_MIMXRT1062CVJ5A
+	default "MIMXRT1062CVJ5B" if SOC_PART_NUMBER_MIMXRT1062CVJ5B
 	default "MIMXRT1062CVL5A" if SOC_PART_NUMBER_MIMXRT1062CVL5A
 	default "MIMXRT1062DVJ6A" if SOC_PART_NUMBER_MIMXRT1062DVJ6A
 	default "MIMXRT1062DVL6A" if SOC_PART_NUMBER_MIMXRT1062DVL6A
@@ -653,8 +675,8 @@ config SOC_PART_NUMBER_IMX_RT
 config SOC_SERIES_IMX_RT10XX
 	bool "i.MX RT 10XX Series"
 	select CPU_CORTEX_M7
-	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_CORTEX_M_HAS_DWT
+	select PLATFORM_SPECIFIC_INIT
 
 config SOC_SERIES_IMX_RT11XX
 	bool "i.MX RT 11XX Series"
@@ -671,25 +693,6 @@ config INIT_ENET_PLL
 	  If y, the Ethernet PLL is initialized. Always enabled on e.g.
 	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
 	  for MIMXRT1021").
-
-config HAS_ARM_DIV
-	bool "Has the divider for ARM"
-	default y
-
-config ARM_DIV
-	int "ARM clock divider"
-	range 0 7
-	default 0
-
-config AHB_DIV
-	int "AHB clock divider"
-	range 0 7
-	default 0
-
-config IPG_DIV
-	int "IPG clock divider"
-	range 0 3
-	default 0
 
 config DCDC_VALUE
 	hex "DCDC value for VDD_SOC"
@@ -715,7 +718,7 @@ config PM_MCUX_PMU
 
 menuconfig NXP_IMX_RT_BOOT_HEADER
 	bool "Boot header"
-	depends on !BOOTLOADER_MCUBOOT
+	depends on ((!BOOTLOADER_MCUBOOT) && (CODE_FLEXSPI || CODE_FLEXSPI2))
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.
@@ -787,6 +790,10 @@ config CODE_FLEXSPI2
 
 config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
+
+config CODE_OCRAM
+	bool "Link code into OCRAM memory (OCRAM-M4)"
+
 endchoice
 
 config OCRAM_NOCACHE
@@ -797,5 +804,15 @@ config OCRAM_NOCACHE
 	  Creates linker section and MPU region for OCRAM region with
 	  noncacheable attribute. OCRAM memory is useful for fast DMA transfers.
 
+config SECOND_CORE_MCUX
+	bool "Dual core operation on the RT11xx series"
+	depends on SOC_SERIES_IMX_RT11XX
+	help
+	  Indicates the second core will be enabled, and the part will run
+	  in dual core mode. Enables dual core operation on the RT11xx series,
+	  by booting an image targeting the Cortex-M4 from the Cortex-M7 CPU.
+	  The M4 image will be loaded from flash into RAM based off a
+	  generated header specifying the VMA and LMA of each memory section
+	  to load
 
 endif # SOC_SERIES_IMX_RT

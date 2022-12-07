@@ -46,5 +46,5 @@ below:
    :goals: flash
    :compact:
 
-.. _VM800C board: https://www.ftdichip.com/Products/Modules/VM800C.html
-.. _FT800 EVE: https://www.ftdichip.com/Products/ICs/FT800.html
+.. _VM800C board: https://www.ftdichip.com/old2020/Products/Modules/VM800C.html
+.. _FT800 EVE: https://www.ftdichip.com/old2020/Products/ICs/FT800.html

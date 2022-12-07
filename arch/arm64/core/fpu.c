@@ -96,7 +96,9 @@ static void flush_owned_fpu(struct k_thread *thread)
 	int i;
 
 	/* search all CPUs for the owner we want */
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0; i < num_cpus; i++) {
 		if (_kernel.cpus[i].arch.fpu_owner != thread) {
 			continue;
 		}
@@ -179,8 +181,9 @@ static bool simulate_str_q_insn(z_arch_esf_t *esf)
 		 *
 		 * where 0 <= <n> <= 7 and <pimm> is a 12-bits multiple of 16.
 		 */
-		if ((insn & 0xffc003f8) != 0x3d8003e0)
+		if ((insn & 0xffc003f8) != 0x3d8003e0) {
 			break;
+		}
 
 		uint32_t pimm = (insn >> 10) & 0xfff;
 

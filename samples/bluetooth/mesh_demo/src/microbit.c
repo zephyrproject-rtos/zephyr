@@ -32,9 +32,10 @@ static const struct gpio_dt_spec button_a =
 	GPIO_DT_SPEC_GET(DT_NODELABEL(buttona), gpios);
 static const struct gpio_dt_spec button_b =
 	GPIO_DT_SPEC_GET(DT_NODELABEL(buttonb), gpios);
-static const struct device *nvm =
+static const struct device *const nvm =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
-static const struct device *pwm = DEVICE_DT_GET_ANY(nordic_nrf_sw_pwm);
+static const struct device *const pwm =
+	DEVICE_DT_GET_ANY(nordic_nrf_sw_pwm);
 
 static struct k_work button_work;
 

@@ -1,21 +1,18 @@
 # Copyright (c) 2021 Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_GIGADEVICE_GD32_PINCTRL_AF := gd,gd32-pinctrl-af
-DT_COMPAT_GIGADEVICE_GD32_PINCTRL_AFIO := gd,gd32-pinctrl-afio
-
 config PINCTRL_GD32_AF
 	bool "GD32 AF pin controller driver"
-	depends on GD32_HAS_AF_PINMUX
-	default $(dt_compat_enabled,$(DT_COMPAT_GIGADEVICE_GD32_PINCTRL_AF))
+	default y
+	depends on DT_HAS_GD_GD32_PINCTRL_AF_ENABLED
 	help
 	  GD32 AF pin controller driver. This driver is used by series using the
 	  AF pin multiplexing model.
 
 config PINCTRL_GD32_AFIO
 	bool "GD32 AFIO pin controller driver"
-	depends on GD32_HAS_AFIO_PINMUX
-	default $(dt_compat_enabled,$(DT_COMPAT_GIGADEVICE_GD32_PINCTRL_AFIO))
+	default y
+	depends on DT_HAS_GD_GD32_PINCTRL_AFIO_ENABLED
 	help
 	  GD32 AFIO pin controller driver. This driver is used by series using the
 	  AFIO pin multiplexing model.

@@ -13,7 +13,6 @@ which provides a full debug interface without the need for additional
 hardware.
 
 .. image:: img/atsamd20_xpro.jpg
-     :width: 500px
      :align: center
      :alt: ATSAMD20-XPRO
 
@@ -126,7 +125,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! atsamd20_xpro" in your terminal.
 
 References
 **********

@@ -8,9 +8,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     clocks:
       required: true
 

@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
@@ -36,16 +36,9 @@ NET_DEVICE_OFFLOAD_INIT(net_offload, "net_offload",
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&offload_if_api, 0);
 
-static void test_ok(void)
+ZTEST(net_compile_all_test, test_ok)
 {
 	zassert_true(true, "This test should never fail");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(net_compile_all_test,
-			 ztest_unit_test(test_ok)
-			 );
-
-	ztest_run_test_suite(net_compile_all_test);
-}
+ZTEST_SUITE(net_compile_all_test, NULL, NULL, NULL, NULL, NULL);

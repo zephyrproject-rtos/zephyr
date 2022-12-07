@@ -7,7 +7,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
 
 static void start_scan(void);
@@ -23,7 +24,7 @@ static void start_scan(void);
 static struct bt_conn *default_conn;
 static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
-static uint32_t seq_num;
+static uint16_t seq_num;
 static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8,
 			  NULL);
@@ -230,10 +231,18 @@ void main(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
+
+
 	printk("Bluetooth initialized\n");
 
 	iso_chan.ops = &iso_ops;
 	iso_chan.qos = &iso_qos;
+#if defined(CONFIG_BT_SMP)
+	iso_chan.required_sec_level = BT_SECURITY_L2,
+#endif /* CONFIG_BT_SMP */
 
 	channels[0] = &iso_chan;
 	param.cis_channels = channels;

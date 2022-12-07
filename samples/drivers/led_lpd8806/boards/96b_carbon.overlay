@@ -10,6 +10,5 @@
 		compatible = "greeled,lpd8806";
 		reg = <0>;
 		spi-max-frequency = <2000000>;
-		label = "LPD8806";
 	};
 };

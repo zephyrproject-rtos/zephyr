@@ -78,9 +78,6 @@ compatible: "st,stm32-fmc-sdram"
 include: base.yaml
 
 properties:
-  label:
-    required: true
-
   "#address-cells":
     required: true
     const: 1

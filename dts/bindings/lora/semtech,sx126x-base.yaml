@@ -7,7 +7,6 @@ include: spi-device.yaml
 properties:
     reset-gpios:
       type: phandle-array
-      required: false
       description: |
         GPIO connected to the modem's NRESET signal.
 
@@ -16,40 +15,34 @@ properties:
 
     busy-gpios:
       type: phandle-array
-      required: false
       description: |
         GPIO connected to the modem's BUSY signal.
 
     antenna-enable-gpios:
       type: phandle-array
-      required: false
       description: |
         Antenna power enable pin.
 
     tx-enable-gpios:
       type: phandle-array
-      required: false
       description: |
         Antenna switch TX enable GPIO. If set, the driver tracks the
         state of the radio and controls the RF switch.
 
     rx-enable-gpios:
       type: phandle-array
-      required: false
       description: |
         Antenna switch RX enable GPIO. If set, the driver tracks the
         state of the radio and controls the RF switch.
 
     dio1-gpios:
       type: phandle-array
-      required: false
       description: |
         GPIO connected to DIO1. This GPIO will be used as a generic
         IRQ line from the chip.
 
     dio2-tx-enable:
       type: boolean
-      required: false
       description: |
         Use DIO2 to drive an RF switch selecting between the TX and RX
         paths. When enabled, DIO2 goes high when the chip is
@@ -57,7 +50,6 @@ properties:
 
     dio3-tcxo-voltage:
       type: int
-      required: false
       description: |
         TCXO supply voltage controlled by DIO3 if present.
 
@@ -65,6 +57,5 @@ properties:
 
     tcxo-power-startup-delay-ms:
       type: int
-      required: false
       description: |
         Startup delay to let the TCXO stabilize after TCXO power on.

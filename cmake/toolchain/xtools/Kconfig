@@ -1,0 +1,6 @@
+# Copyright © 2022 Keith Packard
+# SPDX-License-Identifier: Apache-2.0
+
+config TOOLCHAIN_XTOOLS_SUPPORTS_THREAD_LOCAL_STORAGE
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE

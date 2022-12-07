@@ -7,7 +7,7 @@
 #ifndef __UPDATEHUB_DEVICE_H__
 #define __UPDATEHUB_DEVICE_H__
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/hwinfo.h>
 
 #define DEVICE_ID_BIN_MAX_SIZE	64

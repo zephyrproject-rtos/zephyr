@@ -1,0 +1,64 @@
+# Copyright (c) 2022 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 DMA controller for the stm32U5 soc family
+
+  It is present on stm32U5 devices as a GP DMA
+  This controller includes several channels with different requests.
+  DMA clients connected to the STM32 DMA controller must use a three-cell
+  specifier for each channel.
+  For the client part, example for stm32u585 on GPDMA1 instance
+    Tx using channel 0 with request 7
+    Rx using channel 1 with request 6
+    spi1 {
+     dmas = <&gpdma1 0 7 0x10440>,
+            <&gpdma1 1 6 0x10480>;
+     dma-names = "tx", "rx";
+    };
+  It is a phandle to the DMA controller plus the following three integer cells
+    1. channel: the stream or channel from 0 to (<dma-channels> - 1).
+    2. slot: DMA periph request ID, which is written in the REQSEL bits of the CxTR2
+    the slot is a value between <0> .. (<dma-requests> - 1).
+    3. channel-config: A 32bit mask specifying the DMA channel configuration
+    which is device dependent:
+        -bit 6-7 : Direction  (see dma.h)
+               0x0: MEM to MEM
+               0x1: MEM to PERIPH
+               0x2: PERIPH to MEM
+               0x3: reserved for PERIPH to PERIPH
+        -bit 9 : Peripheral Increment Address
+               0x0: no address increment between transfers
+               0x1: increment address between transfers
+        -bit 10 : Memory Increment Address
+               0x0: no address increment between transfers
+               0x1: increment address between transfers
+        -bit 11-12 : Peripheral data size
+               0x0: Byte (8 bits)
+               0x1: Half-word (16 bits)
+               0x2: Word (32 bits)
+               0x3: reserved
+        -bit 13-14 : Memory data size
+               0x0: Byte (8 bits)
+               0x1: Half-word (16 bits)
+               0x2: Word (32 bits)
+               0x3: reserved
+        -bit 15: Reserved
+        -bit 16-17 : Priority level
+               0x0: low
+               0x1: medium
+               0x2: high
+               0x3: very high
+
+compatible: "st,stm32u5-dma"
+
+include: st,stm32-dma.yaml
+
+properties:
+    "#dma-cells":
+      const: 3
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config

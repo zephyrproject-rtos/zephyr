@@ -7,15 +7,20 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 
+
+#include <zephyr/crypto/crypto.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/ieee802154.h>
+#include <zephyr/net/ieee802154_mgmt.h>
 #include <zephyr/net/net_core.h>
-#include "net_private.h"
-
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/socket.h>
 
+#include "net_private.h"
 #include <ieee802154_frame.h>
 #include <ipv6.h>
 
@@ -139,6 +144,38 @@ static void ieee_addr_hexdump(uint8_t *addr, uint8_t length)
 	printk("%02x\n", *addr);
 }
 
+static int set_up_short_addr(struct net_if *iface, struct ieee802154_context *ctx)
+{
+	uint16_t short_addr = 0x5678;
+
+	int ret = net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface, &short_addr,
+			   sizeof(short_addr));
+	if (ret) {
+		NET_ERR("*** Failed to set short address\n");
+	}
+
+	return ret;
+}
+
+static int tear_down_short_addr(struct net_if *iface, struct ieee802154_context *ctx)
+{
+	uint16_t short_addr;
+
+	if (ctx->linkaddr.len != IEEE802154_SHORT_ADDR_LENGTH) {
+		/* nothing to do */
+		return 0;
+	}
+
+	short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
+	int ret = net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface, &short_addr,
+			   sizeof(short_addr));
+	if (ret) {
+		NET_ERR("*** Failed to unset short address\n");
+	}
+
+	return ret;
+}
+
 static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 {
 	struct ieee802154_mpdu mpdu;
@@ -165,16 +202,26 @@ static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 	return true;
 }
 
-static bool test_ns_sending(struct ieee802154_pkt_test *t)
+static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_mpdu mpdu;
 
 	NET_INFO("- Sending NS packet\n");
 
+	if (with_short_addr) {
+		if (set_up_short_addr(iface, ctx)) {
+			return false;
+		}
+	}
+
 	if (net_ipv6_send_ns(iface, NULL, &t->src, &t->dst, &t->dst, false)) {
 		NET_ERR("*** Could not create IPv6 NS packet\n");
+		tear_down_short_addr(iface, ctx);
 		return false;
 	}
+
+	tear_down_short_addr(iface, ctx);
 
 	k_yield();
 	k_sem_take(&driver_lock, K_SECONDS(1));
@@ -189,7 +236,7 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t)
 	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** Sent packet is not valid\n");
-		net_pkt_unref(current_pkt);
+		net_pkt_frag_unref(current_pkt->frags);
 
 		return false;
 	}
@@ -198,6 +245,203 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t)
 	current_pkt->frags = NULL;
 
 	return true;
+}
+
+static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t security_level)
+{
+	/* tests should be run sequentially, so no need for context locking */
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	int fd;
+	struct sockaddr_ll socket_sll = {0};
+	uint8_t payload[4] = {0x01, 0x02, 0x03, 0x04};
+	struct ieee802154_mpdu mpdu;
+	bool result = false;
+	struct ieee802154_security_params params = {
+		.key = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb,
+			0xcc, 0xcd, 0xce, 0xcf},
+		.key_len = 16U,
+		.key_mode = IEEE802154_KEY_ID_MODE_IMPLICIT,
+		.level = security_level,
+	};
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS, iface, &params,
+		     sizeof(struct ieee802154_security_params))) {
+		NET_ERR("*** Failed to set security settings\n");
+		goto out;
+	}
+
+	NET_INFO("- Sending DGRAM packet via AF_PACKET socket\n");
+	fd = socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
+	if (fd < 0) {
+		NET_ERR("*** Failed to create DGRAM socket : %d\n", errno);
+		goto release_sec_ctx;
+	}
+
+	/* In case we have a short destination address
+	 * we simulate an associated device.
+	 */
+	/* TODO: support short addresses with encryption (requires neighbour cache) */
+	bool bind_short_address = pkt_sll->sll_halen == IEEE802154_SHORT_ADDR_LENGTH &&
+				  security_level == IEEE802154_SECURITY_LEVEL_NONE;
+
+	if (bind_short_address) {
+		if (set_up_short_addr(iface, ctx)) {
+			goto release_fd;
+		}
+	}
+
+	socket_sll.sll_ifindex = net_if_get_by_iface(iface);
+	socket_sll.sll_family = AF_PACKET;
+	socket_sll.sll_protocol = ETH_P_IEEE802154;
+
+	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+		NET_ERR("*** Failed to bind packet socket : %d\n", errno);
+		goto release_fd;
+	}
+
+	if (sendto(fd, payload, sizeof(payload), 0, (const struct sockaddr *)pkt_sll,
+		   sizeof(struct sockaddr_ll)) != sizeof(payload)) {
+		NET_ERR("*** Failed to send, errno %d\n", errno);
+		goto release_fd;
+	}
+
+	k_yield();
+	k_sem_take(&driver_lock, K_SECONDS(1));
+
+	if (!current_pkt->frags) {
+		NET_ERR("*** Could not send DGRAM packet\n");
+		goto release_fd;
+	}
+
+	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
+
+	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
+				       net_pkt_get_len(current_pkt), &mpdu)) {
+		NET_ERR("*** Sent packet is not valid\n");
+		goto release_frag;
+	}
+
+	net_pkt_lladdr_src(current_pkt)->addr = net_if_get_link_addr(iface)->addr;
+	net_pkt_lladdr_src(current_pkt)->len = net_if_get_link_addr(iface)->len;
+
+	if (!ieee802154_decipher_data_frame(iface, current_pkt, &mpdu)) {
+		NET_ERR("*** Cannot decipher/authenticate packet\n");
+		goto release_frag;
+	}
+
+	if (memcmp(mpdu.payload, payload, sizeof(payload)) != 0) {
+		NET_ERR("*** Payload of sent packet is incorrect\n");
+		goto release_frag;
+	}
+
+	result = true;
+
+release_frag:
+	net_pkt_frag_unref(current_pkt->frags);
+	current_pkt->frags = NULL;
+release_fd:
+	tear_down_short_addr(iface, ctx);
+	close(fd);
+release_sec_ctx:
+	cipher_free_session(ctx->sec_ctx.enc.device, &ctx->sec_ctx.enc);
+	cipher_free_session(ctx->sec_ctx.dec.device, &ctx->sec_ctx.dec);
+out:
+	ctx->sec_ctx.level = IEEE802154_SECURITY_LEVEL_NONE;
+	return result;
+}
+
+static bool test_raw_packet_sending(void)
+{
+	/* tests should be run sequentially, so no need for context locking */
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	int fd;
+	struct sockaddr_ll socket_sll = {0};
+	struct msghdr msg = {0};
+	struct iovec io_vector;
+	uint8_t payload[20];
+	struct ieee802154_mpdu mpdu;
+	bool result = false;
+
+	NET_INFO("- Sending RAW packet via AF_PACKET socket\n");
+	fd = socket(AF_PACKET, SOCK_RAW, ETH_P_IEEE802154);
+	if (fd < 0) {
+		NET_ERR("*** Failed to create RAW socket : %d\n", errno);
+		goto out;
+	}
+
+	socket_sll.sll_ifindex = net_if_get_by_iface(iface);
+	socket_sll.sll_family = AF_PACKET;
+	socket_sll.sll_protocol = ETH_P_IEEE802154;
+
+	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+		NET_ERR("*** Failed to bind packet socket : %d\n", errno);
+		goto release_fd;
+	}
+
+	/* Construct raw packet payload, length and FCS gets added in the radio driver,
+	 * see https://github.com/linux-wpan/wpan-tools/blob/master/examples/af_packet_tx.c
+	 */
+	payload[0] = 0x01; /* Frame Control Field */
+	payload[1] = 0xc8; /* Frame Control Field */
+	payload[2] = 0x8b; /* Sequence number */
+	payload[3] = 0xff; /* Destination PAN ID 0xffff */
+	payload[4] = 0xff; /* Destination PAN ID */
+	payload[5] = 0x02; /* Destination short address 0x0002 */
+	payload[6] = 0x00; /* Destination short address */
+	payload[7] = 0x23; /* Source PAN ID 0x0023 */
+	payload[8] = 0x00; /* */
+	payload[9] = 0x60; /* Source extended address ae:c2:4a:1c:21:16:e2:60 */
+	payload[10] = 0xe2; /* */
+	payload[11] = 0x16; /* */
+	payload[12] = 0x21; /* */
+	payload[13] = 0x1c; /* */
+	payload[14] = 0x4a; /* */
+	payload[15] = 0xc2; /* */
+	payload[16] = 0xae; /* */
+	payload[17] = 0xAA; /* Payload */
+	payload[18] = 0xBB; /* */
+	payload[19] = 0xCC; /* */
+	io_vector.iov_base = payload;
+	io_vector.iov_len = sizeof(payload);
+	msg.msg_iov = &io_vector;
+	msg.msg_iovlen = 1;
+
+	if (sendmsg(fd, &msg, 0) != sizeof(payload)) {
+		NET_ERR("*** Failed to send, errno %d\n", errno);
+		goto release_fd;
+	}
+
+	k_yield();
+	k_sem_take(&driver_lock, K_SECONDS(1));
+
+	if (!current_pkt->frags) {
+		NET_ERR("*** Could not send RAW packet\n");
+		goto release_fd;
+	}
+
+	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
+
+	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
+				       net_pkt_get_len(current_pkt), &mpdu)) {
+		NET_ERR("*** Sent packet is not valid\n");
+		goto release_frag;
+	}
+
+	if (memcmp(mpdu.payload, &payload[17], 3) != 0) {
+		NET_ERR("*** Payload of sent packet is incorrect\n");
+		goto release_frag;
+	}
+
+	result = true;
+
+release_frag:
+	net_pkt_frag_unref(current_pkt->frags);
+	current_pkt->frags = NULL;
+release_fd:
+	close(fd);
+out:
+	ctx->sec_ctx.level = IEEE802154_SECURITY_LEVEL_NONE;
+	return result;
 }
 
 static bool test_ack_reply(struct ieee802154_pkt_test *t)
@@ -220,7 +464,7 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 	NET_INFO("- Sending ACK reply to a data packet\n");
 
 	pkt = net_pkt_rx_alloc(K_FOREVER);
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, sizeof(data_pkt), K_FOREVER);
 
 	memcpy(frag->data, data_pkt, sizeof(data_pkt));
 	frag->len = sizeof(data_pkt);
@@ -261,6 +505,31 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 	return true;
 }
 
+static bool test_packet_cloning_with_cb(void)
+{
+	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(iface, 64, AF_UNSPEC, 0, K_NO_WAIT);
+	struct net_pkt *cloned_pkt;
+
+	NET_INFO("- Cloning packet\n");
+
+	/* Set some arbitrary flags and data */
+	net_pkt_set_ieee802154_ack_fpb(pkt, true);
+	net_pkt_set_ieee802154_lqi(pkt, 50U);
+	net_pkt_set_ieee802154_frame_secured(pkt, true);
+
+	cloned_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+	zassert_not_equal(net_pkt_cb(cloned_pkt), net_pkt_cb(pkt));
+
+	zassert_true(net_pkt_ieee802154_ack_fpb(cloned_pkt));
+	zassert_true(net_pkt_ieee802154_frame_secured(cloned_pkt));
+	zassert_false(net_pkt_ieee802154_arb(cloned_pkt));
+	zassert_false(net_pkt_ieee802154_mac_hdr_rdy(cloned_pkt));
+	zassert_equal(net_pkt_ieee802154_lqi(cloned_pkt), 50U);
+	zassert_equal(net_pkt_ieee802154_rssi(cloned_pkt), 0U);
+
+	return true;
+}
+
 static bool initialize_test_environment(void)
 {
 	const struct device *dev;
@@ -292,17 +561,19 @@ static bool initialize_test_environment(void)
 	return true;
 }
 
-static void test_init(void)
+static void *test_init(void)
 {
 	bool ret;
 
 	ret = initialize_test_environment();
 
 	zassert_true(ret, "Test initialization");
+
+	return NULL;
 }
 
 
-static void test_parsing_ns_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_ns_pkt)
 {
 	bool ret;
 
@@ -311,16 +582,25 @@ static void test_parsing_ns_pkt(void)
 	zassert_true(ret, "NS parsed");
 }
 
-static void test_sending_ns_pkt(void)
+ZTEST(ieee802154_l2, test_sending_ns_pkt)
 {
 	bool ret;
 
-	ret = test_ns_sending(&test_ns_pkt);
+	ret = test_ns_sending(&test_ns_pkt, false);
 
 	zassert_true(ret, "NS sent");
 }
 
-static void test_parsing_ack_pkt(void)
+ZTEST(ieee802154_l2, test_sending_ns_pkt_with_short_addr)
+{
+	bool ret;
+
+	ret = test_ns_sending(&test_ns_pkt, true);
+
+	zassert_true(ret, "NS sent");
+}
+
+ZTEST(ieee802154_l2, test_parsing_ack_pkt)
 {
 	bool ret;
 
@@ -329,7 +609,7 @@ static void test_parsing_ack_pkt(void)
 	zassert_true(ret, "ACK parsed");
 }
 
-static void test_replying_ack_pkt(void)
+ZTEST(ieee802154_l2, test_replying_ack_pkt)
 {
 	bool ret;
 
@@ -338,7 +618,7 @@ static void test_replying_ack_pkt(void)
 	zassert_true(ret, "ACK replied");
 }
 
-static void test_parsing_beacon_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_beacon_pkt)
 {
 	bool ret;
 
@@ -347,7 +627,7 @@ static void test_parsing_beacon_pkt(void)
 	zassert_true(ret, "Beacon parsed");
 }
 
-static void test_parsing_sec_data_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_sec_data_pkt)
 {
 	bool ret;
 
@@ -356,17 +636,70 @@ static void test_parsing_sec_data_pkt(void)
 	zassert_true(ret, "Secured data frame parsed");
 }
 
-void test_main(void)
+ZTEST(ieee802154_l2, test_sending_broadcast_dgram_pkt)
 {
-	ztest_test_suite(ieee802154_l2,
-			 ztest_unit_test(test_init),
-			 ztest_unit_test(test_parsing_ns_pkt),
-			 ztest_unit_test(test_sending_ns_pkt),
-			 ztest_unit_test(test_parsing_ack_pkt),
-			 ztest_unit_test(test_replying_ack_pkt),
-			 ztest_unit_test(test_parsing_beacon_pkt),
-			 ztest_unit_test(test_parsing_sec_data_pkt)
-		);
+	bool ret;
+	uint16_t dst_short_addr = htons(IEEE802154_BROADCAST_ADDRESS);
+	struct sockaddr_ll pkt_sll = {
+		.sll_halen = sizeof(dst_short_addr),
+		.sll_protocol = htons(ETH_P_IEEE802154),
+	};
 
-	ztest_run_test_suite(ieee802154_l2);
+	memcpy(pkt_sll.sll_addr, &dst_short_addr, sizeof(dst_short_addr));
+
+	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_NONE);
+
+	zassert_true(ret, "Broadcast DGRAM packet sent");
 }
+
+ZTEST(ieee802154_l2, test_sending_authenticated_dgram_pkt)
+{
+	bool ret;
+	uint16_t dst_short_addr = htons(0x1234);
+	struct sockaddr_ll pkt_sll = {
+		.sll_halen = sizeof(dst_short_addr),
+		.sll_protocol = htons(ETH_P_IEEE802154),
+	};
+
+	memcpy(pkt_sll.sll_addr, &dst_short_addr, sizeof(dst_short_addr));
+
+	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_MIC_128);
+
+	zassert_true(ret, "Authenticated DGRAM packet sent");
+}
+
+ZTEST(ieee802154_l2, test_sending_encrypted_and_authenticated_dgram_pkt)
+{
+	bool ret;
+	uint8_t dst_ext_addr[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+	struct sockaddr_ll pkt_sll = {
+		.sll_halen = sizeof(dst_ext_addr),
+		.sll_protocol = htons(ETH_P_IEEE802154),
+	};
+
+	memcpy(pkt_sll.sll_addr, dst_ext_addr, sizeof(dst_ext_addr));
+
+	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_ENC_MIC_128);
+
+	zassert_true(ret, "Encrypted and authenticated DGRAM packet sent");
+}
+
+ZTEST(ieee802154_l2, test_sending_raw_pkt)
+{
+	bool ret;
+
+	ret = test_raw_packet_sending();
+
+	zassert_true(ret, "RAW packet sent");
+}
+
+ZTEST(ieee802154_l2, test_clone_cb)
+{
+	bool ret;
+
+	ret = test_packet_cloning_with_cb();
+
+	zassert_true(ret, "IEEE 802.15.4 net_pkt control block correctly cloned.");
+}
+
+ZTEST_SUITE(ieee802154_l2, NULL, test_init, NULL, NULL, NULL);

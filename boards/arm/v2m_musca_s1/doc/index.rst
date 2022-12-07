@@ -15,10 +15,8 @@ CPU and the following devices:
 - Cortex-M System Design Kit GPIO
 - Cortex-M System Design Kit UART
 
-.. image:: img/v2m_musca_s1.png
-     :width: 440px
+.. image:: img/v2m_musca_s1.jpg
      :align: center
-     :height: 386px
      :alt: ARM V2M Musca-S1
 
 More information about the board can be found at the `V2M Musca-S1 Website`_.
@@ -344,10 +342,8 @@ For more information refer to the `Srecord Manual`_.
    # For a 128K bootloader IMAGE_OFFSET = $FLASH_OFFSET + 0x20000
    srec_cat $BIN_BOOTLOADER -Binary -offset 0xA000000 $BIN_APP -Binary -offset 0xA020000 -o zephyr.hex -Intel
 
-.. image:: img/v2m_musca_s1_powered.png
-     :width: 600px
+.. image:: img/v2m_musca_s1_powered.jpg
      :align: center
-     :height: 404px
      :alt: The Musca-S1 with the USB connected and powered-on
 
 To upload the application, connect the V2M Musca-S1 to your host computer using
@@ -413,7 +409,7 @@ For alternative build options and more information, please read the
 corresponding TF-M integration example's README file.
 
 .. _V2M Musca-S1 Website:
-   https://developer.arm.com/tools-and-software/development-boards/iot-test-chips-and-boards/musca-s1-test-chip-board
+   https://developer.arm.com/Tools%20and%20Software/Musca-S1%20Test%20Chip%20Board
 
 .. _Musca-S1 Technical Reference Manual (TRM):
    https://developer.arm.com/documentation/101835/latest
@@ -422,19 +418,19 @@ corresponding TF-M integration example's README file.
    https://github.com/ARMmbed/DAPLink
 
 .. _Cortex-M33 Generic User Guide:
-   https://developer.arm.com/documentation/100235/0004/
+   https://developer.arm.com/documentation/100235/latest/
 
 .. _Trusted Firmware-M Guide:
-   https://ci.trustedfirmware.org/view/TF-M/job/tf-m-nightly/lastStableBuild/artifact/docs/trusted-firmware-m/build/install/doc/user_guide/html/docs/getting_started/tfm_build_instruction.html
+   https://tf-m-user-guide.trustedfirmware.org/building/tfm_build_instruction.html
 
 .. _Corelink SSE-200 Subsystem:
-   https://developer.arm.com/ip-products/subsystem/corelink-subsystem/corelink-sse-200-subsystem
+   https://developer.arm.com/documentation/dto0051/latest/subsystem-overview/about-the-sse-200
 
 .. _Srecord Manual:
    http://srecord.sourceforge.net/man/man1/srec_cat.html
 
 .. _IDAU:
-   https://developer.arm.com/documentation/100690/0201/Attribution-units--SAU-and-IDAU-
+   https://developer.arm.com/documentation/100690/latest/Attribution-units--SAU-and-IDAU-
 
 .. _AMBA®:
    https://developer.arm.com/architectures/system-architectures/amba

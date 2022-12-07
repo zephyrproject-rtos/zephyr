@@ -5,28 +5,16 @@
 
 menuconfig ADXL372
 	bool "ADXL372 Three Axis High-g I2C/SPI accelerometer"
-	depends on I2C || SPI
+	default y
+	depends on DT_HAS_ADI_ADXL372_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),spi)
 	help
 	  Enable driver for ADXL372 Three-Axis Digital Accelerometers.
 
 if ADXL372
 
-choice ADXL372_BUS_TYPE
-	prompt "Interface type"
-	help
-	  Select interface the digital interface type for the ADXL372
-
-config ADXL372_I2C
-	depends on I2C
-	bool "I2C Interface"
-
-config ADXL372_SPI
-	depends on SPI
-	bool "SPI Interface"
-
-endchoice
-
-choice
+choice ADXL372_OP_MODE
 	prompt "Operating mode"
 	default ADXL372_PEAK_DETECT_MODE
 
@@ -46,91 +34,6 @@ config ADXL372_MEASUREMENT_MODE
 	  output data rate (ODR).
 
 endchoice
-
-choice
-	prompt "Accelerometer sampling frequency (ODR)"
-	default ADXL372_ODR_6400HZ if ADXL372_PEAK_DETECT_MODE
-	default ADXL372_ODR_400HZ if ADXL372_MEASUREMENT_MODE
-
-config ADXL372_ODR_400HZ
-	bool "400 Hz"
-
-config ADXL372_ODR_800HZ
-	bool "800 Hz"
-
-config ADXL372_ODR_1600HZ
-	bool "1600 Hz"
-
-config ADXL372_ODR_3200HZ
-	bool "3200 Hz"
-
-config ADXL372_ODR_6400HZ
-	bool "6400 Hz"
-
-endchoice
-
-choice
-	prompt "Low-Pass (Antialiasing) Filter corner frequency"
-	default ADXL372_BW_200HZ if ADXL372_ODR_400HZ
-	default ADXL372_BW_400HZ if ADXL372_ODR_800HZ
-	default ADXL372_BW_800HZ if ADXL372_ODR_1600HZ
-	default ADXL372_BW_1600HZ if ADXL372_ODR_3200HZ
-	default ADXL372_BW_3200HZ if ADXL372_ODR_6400HZ
-	help
-	  High g events often include acceleration content over a wide range
-	  of frequencies. The ADC of the ADXL372 samples the input acceleration
-	  at the user selected ODR.
-	  In the absence of antialiasing filters, input signals whose frequency
-	  is more than half the ODR alias or fold into the measurement bandwidth
-	  can lead to inaccurate measurements.
-
-config ADXL372_LPF_DISABLE
-	bool "Disabled"
-
-config ADXL372_BW_200HZ
-	bool "200 Hz"
-
-config ADXL372_BW_400HZ
-	bool "400 Hz"
-
-config ADXL372_BW_800HZ
-	bool "800 Hz"
-
-config ADXL372_BW_1600HZ
-	bool "1600 Hz"
-
-config ADXL372_BW_3200HZ
-	bool "3200 Hz"
-
-endchoice
-
-choice
-	prompt "High-Pass Filter corner frequency"
-	default ADXL372_HPF_CORNER0
-	help
-	  The ADXL372 offers a one-pole, high-pass filter with a user
-	  selectable −3 dB frequency. Applications that do not require dc
-	  acceleration measurements can use the high-pass filter to minimize
-	  constant or slow varying offset errors including initial bias,
-	  bias drift due to temperature, and bias drift due to supply voltage
-
-config ADXL372_HPF_DISABLE
-	bool "Disabled"
-
-config ADXL372_HPF_CORNER0
-	bool "ODR/210"
-
-config ADXL372_HPF_CORNER1
-	bool "ODR/411"
-
-config ADXL372_HPF_CORNER2
-	bool "ODR/812"
-
-config ADXL372_HPF_CORNER3
-	bool "ODR/1616"
-
-endchoice
-
 
 config ADXL372_ACTIVITY_THRESHOLD
 	int "Activity threshold in mg"
@@ -180,7 +83,7 @@ config ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE
 	  activity detection to be based not on an absolute threshold,
 	  but on a deviation from a reference point or orientation.
 
-choice
+choice ADXL372_TRIGGER_MODE
 	prompt "Trigger mode"
 	default ADXL372_TRIGGER_NONE
 	help

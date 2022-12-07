@@ -39,9 +39,10 @@ properties:
 
     tx-pin:
       type: int
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The TX pin to use.
 
@@ -57,43 +58,48 @@ properties:
 
     rx-pin:
       type: int
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The RX pin to use. The pin numbering scheme is the same as the
         tx-pin property's.
 
     rts-pin:
       type: int
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The RTS pin to use. The pin numbering scheme is the same as the
         tx-pin property's.
 
     cts-pin:
       type: int
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The CTS pin to use. The pin numbering scheme is the same as the
         tx-pin property's.
 
     rx-pull-up:
       type: boolean
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         Enable pull-up resistor on the RX pin.
 
     cts-pull-up:
       type: boolean
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         Enable pull-up resistor on the CTS pin.

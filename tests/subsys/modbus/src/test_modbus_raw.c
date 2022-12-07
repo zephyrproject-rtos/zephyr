@@ -16,7 +16,8 @@ K_SEM_DEFINE(received, 0, 1);
  * Server wants to send the data back.
  * We just store them in between and pass them to the client.
  */
-int server_raw_cb(const int iface, const struct modbus_adu *adu)
+int server_raw_cb(const int iface, const struct modbus_adu *adu,
+		void *user_data)
 {
 	LOG_DBG("Server raw callback from interface %d", iface);
 
@@ -38,7 +39,8 @@ int server_raw_cb(const int iface, const struct modbus_adu *adu)
  * Client wants to send the data via whatever.
  * We just store it in between and submit to the server.
  */
-int client_raw_cb(const int iface, const struct modbus_adu *adu)
+int client_raw_cb(const int iface, const struct modbus_adu *adu,
+		void *user_data)
 {
 	uint8_t server_iface = test_get_server_iface();
 	uint8_t client_iface = test_get_client_iface();

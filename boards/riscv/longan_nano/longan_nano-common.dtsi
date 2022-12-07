@@ -10,6 +10,7 @@
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		sdhc0 = &sdhc0;
 	};
 
 	leds {
@@ -58,6 +59,7 @@
 		pwm-led0 = &pwm_led_green;
 		pwm-led1 = &pwm_led_blue;
 		sw0 = &button_boot0;
+		watchdog0 = &fwdgt;
 	};
 };
 
@@ -108,11 +110,14 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		status = "okay";
-		label = "SDHC_0";
 		spi-max-frequency = <24000000>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";
 		};
 	};
+};
+
+&fwdgt {
+	status = "okay";
 };

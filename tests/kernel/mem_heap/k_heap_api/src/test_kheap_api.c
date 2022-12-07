@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 #include "test_kheap.h"
 
@@ -76,7 +76,7 @@ volatile uint32_t heap_guard1;
  * works to allocate that byte at runtime and that it doesn't overflow
  * its memory bounds.
  */
-void test_k_heap_min_size(void)
+ZTEST(k_heap_api, test_k_heap_min_size)
 {
 	const uint32_t guard_bits = 0x5a5a5a5a;
 
@@ -110,7 +110,7 @@ void test_k_heap_min_size(void)
  *
  * @see k_heap_malloc(), k_heap_Free()
  */
-void test_k_heap_alloc(void)
+ZTEST(k_heap_api, test_k_heap_alloc)
 {
 	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
 	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
@@ -134,7 +134,7 @@ void test_k_heap_alloc(void)
  *
  * @see k_heap_malloc(), k_heap_Free()
  */
-void test_k_heap_alloc_fail(void)
+ZTEST(k_heap_api, test_k_heap_alloc_fail)
 {
 
 	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
@@ -161,7 +161,7 @@ void test_k_heap_alloc_fail(void)
  *
  * @see k_heap_alloc, k_heap_free()
  */
-void test_k_heap_free(void)
+ZTEST(k_heap_api, test_k_heap_free)
 {
 	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
 	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
@@ -184,7 +184,7 @@ void test_k_heap_free(void)
  *
  * @ingroup kernel_heap_tests
  */
-void test_kheap_alloc_in_isr_nowait(void)
+ZTEST(k_heap_api, test_kheap_alloc_in_isr_nowait)
 {
 	irq_offload((irq_offload_routine_t)tIsr_kheap_alloc_nowait, NULL);
 }
@@ -198,7 +198,7 @@ void test_kheap_alloc_in_isr_nowait(void)
  *
  * @ingroup kernel_heap_tests
  */
-void test_k_heap_alloc_pending(void)
+ZTEST(k_heap_api, test_k_heap_alloc_pending)
 {
 	/*
 	 * Allocate first to make sure subsequent allocations
@@ -235,7 +235,7 @@ void test_k_heap_alloc_pending(void)
  *
  * @ingroup kernel_heap_tests
  */
-void test_k_heap_alloc_pending_null(void)
+ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
 {
 	/*
 	 * Allocate first to make sure subsequent allocations

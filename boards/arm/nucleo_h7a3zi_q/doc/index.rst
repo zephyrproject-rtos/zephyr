@@ -43,9 +43,7 @@ Key Features
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
 
 .. image:: img/nucleo_h7a3zi_q.jpg
-   :width: 1000px
    :align: center
-   :height: 1498px
    :alt: Nucleo H7A3ZI-Q
 
 More information about the board can be found at the `Nucleo H7A3ZI-Q website`_.
@@ -71,7 +69,6 @@ Nucleo H7A3ZI-Q provides the following hardware components:
 - USART(5)
 - UART(5)
 - USB OTG Full Speed and High Speed(1)
-- USB OTG Full Speed(1)
 - CAN-FD(2)
 - SAI(2)
 - SPDIF_Rx(4)
@@ -107,6 +104,10 @@ features:
 | ADC         | on-chip    | adc                                |
 +-------------+------------+------------------------------------+
 | Backup SRAM | on-chip    | Backup SRAM                        |
++-------------+------------+------------------------------------+
+| USB OTG HS  | on-chip    | USB device                         |
++-------------+------------+------------------------------------+
+| RNG         | on-chip    | True Random number generator       |
 +-------------+------------+------------------------------------+
 
 

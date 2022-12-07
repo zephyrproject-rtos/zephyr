@@ -30,8 +30,11 @@
 			reg = <0x40009800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
-			label = "DAC_2";
 			#io-channel-cells = <1>;
 		};
 	};
 };
+
+/delete-node/ &spi2;
+
+/delete-node/ &spi3;

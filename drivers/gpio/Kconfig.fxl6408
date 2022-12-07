@@ -3,6 +3,8 @@
 
 menuconfig GPIO_FXL6408
 	bool "FXL6408 I2C-based GPIO chip"
+	default y
+	depends on DT_HAS_FCS_FXL6408_ENABLED
 	depends on I2C
 	help
 	  Enable driver for FXL6408 I2C-based GPIO chip.

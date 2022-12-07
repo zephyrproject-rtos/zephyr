@@ -368,7 +368,7 @@ static const struct sensor_driver_api vcmp_ite_it8xxx2_api = {
 		.adc_ch_cfg.channel_id = (uint8_t)DT_INST_IO_CHANNELS_INPUT(inst),	\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(inst,							\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,						\
 			      vcmp_it8xxx2_init,					\
 			      NULL,							\
 			      &vcmp_it8xxx2_data_##inst,				\

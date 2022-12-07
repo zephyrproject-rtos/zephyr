@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/display/cfb.h>
 #include <zephyr/sys/printk.h>
@@ -13,7 +13,7 @@
 
 void main(void)
 {
-	const struct device *display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+	const struct device *const display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	int err;
 
 	if (!device_is_ready(display)) {

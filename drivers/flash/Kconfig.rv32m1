@@ -3,7 +3,8 @@
 
 config SOC_FLASH_RV32M1
 	bool "RV32M1 flash shim driver"
-	depends on HAS_RV32M1_FTFX
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_FTFE_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help

@@ -40,9 +40,7 @@ Zephyr OS is ported to run on the Cortex®-M4 core.
     - MicroUSB for UART debug, two COM ports for A53 and M4
 
 .. image:: img/mimx8mm_evk.jpg
-   :width: 720px
    :align: center
-   :height: 405px
    :alt: MIMX8MM EVK
 
 More information about the board can be found at the

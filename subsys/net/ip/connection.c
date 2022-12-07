@@ -8,6 +8,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* TODO: Make core part of networking subsystem less dependent on
+ * UDP, TCP, IPv4 or IPv6. So that we can add new features with
+ * less cross-module changes.
+ */
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 
@@ -18,7 +23,7 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/udp.h>
 #include <zephyr/net/ethernet.h>
-#include <zephyr/net/socket_can.h>
+#include <zephyr/net/socketcan.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
@@ -71,13 +76,11 @@ void conn_register_debug(struct net_conn *conn,
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    conn->family == AF_INET6) {
 			snprintk(dst, sizeof(dst), "%s",
-				 log_strdup(net_sprint_ipv6_addr(
-				    &net_sin6(&conn->remote_addr)->sin6_addr)));
+				 net_sprint_ipv6_addr(&net_sin6(&conn->remote_addr)->sin6_addr));
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   conn->family == AF_INET) {
 			snprintk(dst, sizeof(dst), "%s",
-				 log_strdup(net_sprint_ipv4_addr(
-				    &net_sin(&conn->remote_addr)->sin_addr)));
+				 net_sprint_ipv4_addr(&net_sin(&conn->remote_addr)->sin_addr));
 		} else {
 			snprintk(dst, sizeof(dst), "%s", "?");
 		}
@@ -89,13 +92,11 @@ void conn_register_debug(struct net_conn *conn,
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    conn->family == AF_INET6) {
 			snprintk(src, sizeof(src), "%s",
-				 log_strdup(net_sprint_ipv6_addr(
-				    &net_sin6(&conn->local_addr)->sin6_addr)));
+				 net_sprint_ipv6_addr(&net_sin6(&conn->local_addr)->sin6_addr));
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   conn->family == AF_INET) {
 			snprintk(src, sizeof(src), "%s",
-				 log_strdup(net_sprint_ipv4_addr(
-				    &net_sin(&conn->local_addr)->sin_addr)));
+				 net_sprint_ipv4_addr(&net_sin(&conn->local_addr)->sin_addr));
 		} else {
 			snprintk(src, sizeof(src), "%s", "?");
 		}
@@ -105,24 +106,31 @@ void conn_register_debug(struct net_conn *conn,
 
 	NET_DBG("[%p/%d/%u/0x%02x] remote %s/%u ",
 		conn, conn->proto, conn->family, conn->flags,
-		log_strdup(dst), remote_port);
+		dst, remote_port);
 	NET_DBG("  local %s/%u cb %p ud %p",
-		log_strdup(src), local_port, conn->cb, conn->user_data);
+		src, local_port, conn->cb, conn->user_data);
 }
 #else
 #define conn_register_debug(...)
 #endif /* (CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG) */
 
+static K_MUTEX_DEFINE(conn_lock);
+
 static struct net_conn *conn_get_unused(void)
 {
 	sys_snode_t *node;
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
+
 	node = sys_slist_peek_head(&conn_unused);
 	if (!node) {
+		k_mutex_unlock(&conn_lock);
 		return NULL;
 	}
 
 	sys_slist_remove(&conn_unused, NULL, node);
+
+	k_mutex_unlock(&conn_lock);
 
 	return CONTAINER_OF(node, struct net_conn, node);
 }
@@ -131,14 +139,18 @@ static void conn_set_used(struct net_conn *conn)
 {
 	conn->flags |= NET_CONN_IN_USE;
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	sys_slist_prepend(&conn_used, &conn->node);
+	k_mutex_unlock(&conn_lock);
 }
 
 static void conn_set_unused(struct net_conn *conn)
 {
 	(void)memset(conn, 0, sizeof(*conn));
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	sys_slist_prepend(&conn_unused, &conn->node);
+	k_mutex_unlock(&conn_lock);
 }
 
 /* Check if we already have identical connection handler installed. */
@@ -150,6 +162,8 @@ static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 {
 	struct net_conn *conn;
 	struct net_conn *tmp;
+
+	k_mutex_lock(&conn_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn_used, conn, tmp, node) {
 		if (conn->proto != proto) {
@@ -234,9 +248,11 @@ static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 			continue;
 		}
 
+		k_mutex_unlock(&conn_lock);
 		return conn;
 	}
 
+	k_mutex_unlock(&conn_lock);
 	return NULL;
 }
 
@@ -379,7 +395,9 @@ int net_conn_unregister(struct net_conn_handle *handle)
 
 	NET_DBG("Connection handler %p removed", conn);
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	sys_slist_find_and_remove(&conn_used, &conn->node);
+	k_mutex_unlock(&conn_lock);
 
 	conn_set_unused(conn);
 
@@ -475,40 +493,32 @@ static inline void conn_send_icmp_error(struct net_pkt *pkt)
 	}
 }
 
-static bool conn_are_end_points_valid(struct net_pkt *pkt,
-				      union net_ip_header *ip_hdr,
-				      uint16_t src_port,
-				      uint16_t dst_port)
+static bool conn_are_endpoints_valid(struct net_pkt *pkt, uint8_t family,
+				     union net_ip_header *ip_hdr,
+				     uint16_t src_port, uint16_t dst_port)
 {
-	bool my_src_addr = false;
+	bool is_my_src_addr;
+	bool is_same_src_and_dst_addr;
 
-	/* For AF_PACKET family, we are not parsing headers. */
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-	    net_pkt_family(pkt) == AF_PACKET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+		is_my_src_addr = net_ipv4_is_my_addr(
+			(struct in_addr *)ip_hdr->ipv4->src);
+		is_same_src_and_dst_addr = net_ipv4_addr_cmp_raw(
+			ip_hdr->ipv4->src, ip_hdr->ipv4->dst);
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+		is_my_src_addr = net_ipv6_is_my_addr(
+			(struct in6_addr *)ip_hdr->ipv6->src);
+		is_same_src_and_dst_addr = net_ipv6_addr_cmp_raw(
+			ip_hdr->ipv6->src, ip_hdr->ipv6->dst);
+	} else {
 		return true;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-	    net_pkt_family(pkt) == AF_CAN) {
-		return true;
-	}
+	bool is_same_src_and_dst_port = src_port == dst_port;
+	bool are_invalid_endpoints =
+		(is_same_src_and_dst_addr || is_my_src_addr) && is_same_src_and_dst_port;
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_addr_cmp_raw(ip_hdr->ipv4->src,
-					  ip_hdr->ipv4->dst) ||
-		    net_ipv4_is_my_addr((struct in_addr *)ip_hdr->ipv4->src)) {
-			my_src_addr = true;
-		}
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_addr_cmp_raw(ip_hdr->ipv6->src,
-					  ip_hdr->ipv6->dst) ||
-		    net_ipv6_is_my_addr((struct in6_addr *)ip_hdr->ipv6->src)) {
-			my_src_addr = true;
-		}
-	}
-
-	return !(my_src_addr && (src_port == dst_port));
+	return !are_invalid_endpoints;
 }
 
 static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
@@ -519,45 +529,42 @@ static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 
 		if ((type == SOCK_DGRAM && !net_pkt_is_l2_processed(pkt)) ||
 		    (type == SOCK_RAW && net_pkt_is_l2_processed(pkt))) {
-			goto out;
-		}
-	}
-
-	if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
-		struct net_if *pkt_iface = net_pkt_iface(pkt);
-		struct sockaddr_ll *local;
-		struct net_pkt *raw_pkt;
-
-		local = (struct sockaddr_ll *)&conn->local_addr;
-
-		if (local->sll_ifindex !=
-		    net_if_get_by_iface(pkt_iface)) {
 			return NET_CONTINUE;
 		}
-
-		NET_DBG("[%p] raw match found cb %p ud %p", conn,
-			conn->cb, conn->user_data);
-
-		raw_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
-		if (!raw_pkt) {
-			net_stats_update_per_proto_drop(pkt_iface, proto);
-			NET_WARN("pkt cloning failed, pkt %p dropped", pkt);
-			return NET_DROP;
-		}
-
-		if (conn->cb(conn, raw_pkt, NULL, NULL, conn->user_data)
-		    == NET_DROP) {
-			net_stats_update_per_proto_drop(pkt_iface, proto);
-			net_pkt_unref(raw_pkt);
-		} else {
-			net_stats_update_per_proto_recv(pkt_iface, proto);
-		}
-
-		return NET_OK;
 	}
 
-out:
-	return NET_CONTINUE;
+	if (!(conn->flags & NET_CONN_LOCAL_ADDR_SET)) {
+		return NET_CONTINUE;
+	}
+
+	struct net_if *pkt_iface = net_pkt_iface(pkt);
+	struct sockaddr_ll *local;
+	struct net_pkt *raw_pkt;
+
+	local = (struct sockaddr_ll *)&conn->local_addr;
+
+	if (local->sll_ifindex != net_if_get_by_iface(pkt_iface)) {
+		return NET_CONTINUE;
+	}
+
+	NET_DBG("[%p] raw match found cb %p ud %p", conn, conn->cb,
+		conn->user_data);
+
+	raw_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
+	if (!raw_pkt) {
+		net_stats_update_per_proto_drop(pkt_iface, proto);
+		NET_WARN("pkt cloning failed, pkt %p dropped", pkt);
+		return NET_DROP;
+	}
+
+	if (conn->cb(conn, raw_pkt, NULL, NULL, conn->user_data) == NET_DROP) {
+		net_stats_update_per_proto_drop(pkt_iface, proto);
+		net_pkt_unref(raw_pkt);
+	} else {
+		net_stats_update_per_proto_recv(pkt_iface, proto);
+	}
+
+	return NET_OK;
 }
 
 enum net_verdict net_conn_input(struct net_pkt *pkt,
@@ -566,126 +573,120 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_proto_header *proto_hdr)
 {
 	struct net_if *pkt_iface = net_pkt_iface(pkt);
-	struct net_conn *best_match = NULL;
-	bool is_mcast_pkt = false, mcast_pkt_delivered = false;
-	bool is_bcast_pkt = false;
-	bool raw_pkt_delivered = false;
-	bool raw_pkt_continue = false;
-	int16_t best_rank = -1;
-	struct net_conn *conn;
-	enum net_verdict ret;
-	uint16_t src_port;
-	uint16_t dst_port;
+	uint8_t pkt_family = net_pkt_family(pkt);
+	uint16_t src_port = 0U, dst_port = 0U;
 
-	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
-		src_port = proto_hdr->udp->src_port;
-		dst_port = proto_hdr->udp->dst_port;
-	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
-		if (proto_hdr->tcp == NULL) {
+	if (IS_ENABLED(CONFIG_NET_IP) && (pkt_family == AF_INET || pkt_family == AF_INET6)) {
+		if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+			src_port = proto_hdr->udp->src_port;
+			dst_port = proto_hdr->udp->dst_port;
+		} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+			if (proto_hdr->tcp == NULL) {
+				return NET_DROP;
+			}
+			src_port = proto_hdr->tcp->src_port;
+			dst_port = proto_hdr->tcp->dst_port;
+		}
+		if (!conn_are_endpoints_valid(pkt, pkt_family, ip_hdr, src_port, dst_port)) {
+			NET_DBG("Dropping invalid src/dst end-points packet");
 			return NET_DROP;
 		}
-
-		src_port = proto_hdr->tcp->src_port;
-		dst_port = proto_hdr->tcp->dst_port;
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
-		if (net_pkt_family(pkt) != AF_PACKET ||
-		    (!IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
-		     proto != ETH_P_ALL && proto != IPPROTO_RAW)) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
+		if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
 			return NET_DROP;
 		}
-
-		src_port = dst_port = 0U;
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-		   net_pkt_family(pkt) == AF_CAN) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && pkt_family == AF_CAN) {
 		if (proto != CAN_RAW) {
 			return NET_DROP;
 		}
-
-		src_port = dst_port = 0U;
 	} else {
 		NET_DBG("No suitable protocol handler configured");
 		return NET_DROP;
 	}
 
-	if (!conn_are_end_points_valid(pkt, ip_hdr, src_port, dst_port)) {
-		NET_DBG("Dropping invalid src/dst end-points packet");
-		return NET_DROP;
-	}
-
-	/* TODO: Make core part of networking subsystem less dependent on
-	 * UDP, TCP, IPv4 or IPv6. So that we can add new features with
-	 * less cross-module changes.
-	 */
 	NET_DBG("Check %s listener for pkt %p src port %u dst port %u"
 		" family %d", net_proto2str(net_pkt_family(pkt), proto), pkt,
 		ntohs(src_port), ntohs(dst_port), net_pkt_family(pkt));
 
-	/* If we receive a packet with multicast destination address, we might
-	 * need to deliver the packet to multiple recipients.
-	 */
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_is_addr_mcast((struct in_addr *)ip_hdr->ipv4->dst)) {
-			is_mcast_pkt = true;
-		} else if (net_if_ipv4_is_addr_bcast(
-				pkt_iface, (struct in_addr *)ip_hdr->ipv4->dst)) {
-			is_bcast_pkt = true;
-		}
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-					   net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->ipv6->dst)) {
-			is_mcast_pkt = true;
+
+	struct net_conn *best_match = NULL;
+	int16_t best_rank = -1;
+	bool is_mcast_pkt = false;
+	bool mcast_pkt_delivered = false;
+	bool is_bcast_pkt = false;
+	bool raw_pkt_delivered = false;
+	bool raw_pkt_continue = false;
+	struct net_conn *conn;
+
+	if (IS_ENABLED(CONFIG_NET_IP)) {
+		/* If we receive a packet with multicast destination address, we might
+		 * need to deliver the packet to multiple recipients.
+		 */
+		if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == AF_INET) {
+			if (net_ipv4_is_addr_mcast((struct in_addr *)ip_hdr->ipv4->dst)) {
+				is_mcast_pkt = true;
+			} else if (net_if_ipv4_is_addr_bcast(pkt_iface,
+							     (struct in_addr *)ip_hdr->ipv4->dst)) {
+				is_bcast_pkt = true;
+			}
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) && pkt_family == AF_INET6) {
+			is_mcast_pkt = net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->ipv6->dst);
 		}
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+		/* Is the candidate connection matching the packet's interface? */
 		if (conn->context != NULL &&
 		    net_context_is_bound_to_iface(conn->context) &&
 		    net_pkt_iface(pkt) != net_context_get_iface(conn->context)) {
-			continue;
+			continue; /* wrong interface */
 		}
 
-		/* For packet socket data, the proto is set to ETH_P_ALL or IPPROTO_RAW
-		 * but the listener might have a specific protocol set. This is ok
-		 * and let the packet pass this check in this case.
-		 */
-		if ((IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) ||
-		     IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) &&
-		    net_pkt_family(pkt) == AF_PACKET) {
-			if ((conn->proto != proto) && (proto != ETH_P_ALL) &&
-				(proto != IPPROTO_RAW)) {
-				continue;
-			}
-		} else {
-			if ((conn->proto != proto)) {
-				continue;
-			}
-		}
-
+		/* Is the candidate connection matching the packet's protocol family? */
 		if (conn->family != AF_UNSPEC &&
-		    conn->family != net_pkt_family(pkt)) {
-			/* If there are other listening connections than
-			 * AF_PACKET, the packet shall be also passed back to
-			 * net_conn_input() in IPv4/6 processing in order to
-			 * re-check if there is any listening socket interested
-			 * in this packet.
-			 */
-			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-			    conn->family != AF_PACKET) {
-				raw_pkt_continue = true;
+		    conn->family != pkt_family) {
+			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
+				/* If there are other listening connections than
+				 * AF_PACKET, the packet shall be also passed back to
+				 * net_conn_input() in upper layer processing in order to
+				 * re-check if there is any listening socket interested
+				 * in this packet.
+				 */
+				if (conn->family != AF_PACKET) {
+					raw_pkt_continue = true;
+				}
 			}
-
-			continue;
+			continue; /* wrong protocol family */
 		}
 
-		/* The code below shall be only executed when one enters
-		 * the net_conn_input() from net_packet_socket() which
-		 * is executed for e.g. AF_PACKET && SOCK_RAW
-		 *
-		 * Here we do need to check if we have ANY connection which
-		 * was setup with AF_PACKET
-		 */
-		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-		    conn->family == AF_PACKET) {
+		/* Is the candidate connection matching the packet's protocol wihin the family? */
+		if (conn->proto != proto) {
+			/* For packet socket data, the proto is set to ETH_P_ALL
+			 * or IPPROTO_RAW but the listener might have a specific
+			 * protocol set. This is ok and let the packet pass this
+			 * check in this case.
+			 */
+			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
+				if (proto != ETH_P_ALL && proto != IPPROTO_RAW) {
+					continue; /* wrong protocol */
+				}
+			} else {
+				continue; /* wrong protocol */
+			}
+		}
+
+		/* Apply protocol-specific matching criteria... */
+		uint8_t conn_family = conn->family;
+
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && conn_family == AF_PACKET) {
+			/* This code shall be only executed when one enters
+			 * the net_conn_input() from net_packet_socket() which
+			 * targets AF_PACKET sockets.
+			 *
+			 * All AF_PACKET connections will receive the packet if
+			 * their socket type and - in case of IPPROTO - protocol
+			 * also matches.
+			 */
 			if (proto == ETH_P_ALL) {
 				/* We shall continue with ETH_P_ALL to IPPROTO_RAW: */
 				raw_pkt_continue = true;
@@ -694,56 +695,48 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			/* With IPPROTO_RAW deliver only if protocol match: */
 			if ((proto == ETH_P_ALL && conn->proto != IPPROTO_RAW) ||
 			    conn->proto == proto) {
-				ret = conn_raw_socket(pkt, conn, proto);
+				enum net_verdict ret = conn_raw_socket(pkt, conn, proto);
+
 				if (ret == NET_DROP) {
 					goto drop;
 				} else if (ret == NET_OK) {
 					raw_pkt_delivered = true;
 				}
 
-				continue;
+				continue; /* packet was consumed */
 			}
-		}
-
-		if (IS_ENABLED(CONFIG_NET_UDP) ||
-		    IS_ENABLED(CONFIG_NET_TCP)) {
-			if (net_sin(&conn->remote_addr)->sin_port) {
-				if (net_sin(&conn->remote_addr)->sin_port !=
-				    src_port) {
-					continue;
-				}
-			}
-
-			if (net_sin(&conn->local_addr)->sin_port) {
-				if (net_sin(&conn->local_addr)->sin_port !=
-				    dst_port) {
-					continue;
-				}
+		} else if ((IS_ENABLED(CONFIG_NET_UDP) || IS_ENABLED(CONFIG_NET_TCP)) &&
+			   (conn_family == AF_INET || conn_family == AF_INET6 ||
+			    conn_family == AF_UNSPEC)) {
+			/* Is the candidate connection matching the packet's TCP/UDP
+			 * address and port?
+			 */
+			if (net_sin(&conn->remote_addr)->sin_port &&
+			    net_sin(&conn->remote_addr)->sin_port != src_port) {
+				continue; /* wrong remote port */
 			}
 
-			if (conn->flags & NET_CONN_REMOTE_ADDR_SET) {
-				if (!conn_addr_cmp(pkt, ip_hdr,
-						   &conn->remote_addr,
-						   true)) {
-					continue;
-				}
+			if (net_sin(&conn->local_addr)->sin_port &&
+			    net_sin(&conn->local_addr)->sin_port != dst_port) {
+				continue; /* wrong local port */
 			}
 
-			if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
-				if (!conn_addr_cmp(pkt, ip_hdr,
-						   &conn->local_addr,
-						   false)) {
-					continue;
-				}
+			if ((conn->flags & NET_CONN_REMOTE_ADDR_SET) &&
+			    !conn_addr_cmp(pkt, ip_hdr, &conn->remote_addr, true)) {
+				continue; /* wrong remote address */
+			}
+
+			if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) &&
+			    !conn_addr_cmp(pkt, ip_hdr, &conn->local_addr, false)) {
+				continue; /* wrong local address */
 			}
 
 			/* If we have an existing best_match, and that one
 			 * specifies a remote port, then we've matched to a
-			 * LISTENING connection that should not override.
+			 * LISTENING connection that we should not override.
 			 */
-			if (best_match != NULL &&
-			    best_match->flags & NET_CONN_REMOTE_PORT_SPEC) {
-				continue;
+			if (best_match != NULL && best_match->flags & NET_CONN_REMOTE_PORT_SPEC) {
+				continue; /* do not override listening connection */
 			}
 
 			if (best_rank < NET_CONN_RANK(conn->flags)) {
@@ -753,7 +746,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 					best_rank = NET_CONN_RANK(conn->flags);
 					best_match = conn;
 
-					continue;
+					continue; /* found a match - but maybe not yet the best */
 				}
 
 				/* If we have a multicast packet, and we found
@@ -763,60 +756,62 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 				 * clone the received pkt.
 				 */
 
-				NET_DBG("[%p] mcast match found cb %p ud %p",
-					conn, conn->cb,	conn->user_data);
+				NET_DBG("[%p] mcast match found cb %p ud %p", conn, conn->cb,
+					conn->user_data);
 
 				mcast_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
 				if (!mcast_pkt) {
 					goto drop;
 				}
 
-				if (conn->cb(conn, mcast_pkt, ip_hdr,
-					     proto_hdr, conn->user_data) ==
-								NET_DROP) {
-					net_stats_update_per_proto_drop(
-							pkt_iface, proto);
+				if (conn->cb(conn, mcast_pkt, ip_hdr, proto_hdr, conn->user_data) ==
+				    NET_DROP) {
+					net_stats_update_per_proto_drop(pkt_iface, proto);
 					net_pkt_unref(mcast_pkt);
 				} else {
-					net_stats_update_per_proto_recv(
-						pkt_iface, proto);
+					net_stats_update_per_proto_recv(pkt_iface, proto);
 				}
 
 				mcast_pkt_delivered = true;
 			}
-		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
-			best_rank = 0;
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && conn_family == AF_CAN) {
 			best_match = conn;
 		}
-	}
+	} /* loop end */
 
-	if ((is_mcast_pkt && mcast_pkt_delivered) ||
-	    (net_pkt_family(pkt) == AF_PACKET && (raw_pkt_delivered ||
-						  raw_pkt_continue))) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
 		if (raw_pkt_continue) {
 			/* When there is open connection different than
 			 * AF_PACKET this packet shall be also handled in
 			 * the upper net stack layers.
 			 */
 			return NET_CONTINUE;
-		} else {
-			/* As one or more multicast or raw socket packets
+		}
+		if (raw_pkt_delivered) {
+			/* As one or more raw socket packets
 			 * have already been delivered in the loop above,
 			 * we shall not call the callback again here.
 			 */
 			net_pkt_unref(pkt);
-
 			return NET_OK;
 		}
 	}
 
-	conn = best_match;
-	if (conn) {
-		NET_DBG("[%p] match found cb %p ud %p rank 0x%02x",
-			conn, conn->cb, conn->user_data, conn->flags);
+	if (IS_ENABLED(CONFIG_NET_IP) && is_mcast_pkt && mcast_pkt_delivered) {
+		/* As one or more multicast packets
+		 * have already been delivered in the loop above,
+		 * we shall not call the callback again here.
+		 */
+		net_pkt_unref(pkt);
+		return NET_OK;
+	}
 
-		if (conn->cb(conn, pkt, ip_hdr, proto_hdr,
-			     conn->user_data) == NET_DROP) {
+	if (best_match) {
+		NET_DBG("[%p] match found cb %p ud %p rank 0x%02x", best_match, best_match->cb,
+			best_match->user_data, best_match->flags);
+
+		if (best_match->cb(best_match, pkt, ip_hdr, proto_hdr, best_match->user_data)
+				== NET_DROP) {
 			goto drop;
 		}
 
@@ -827,20 +822,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	NET_DBG("No match found.");
 
-	/* Do not send ICMP error for Packet socket as that makes no
-	 * sense here.
-	 */
-	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_pkt_family(pkt) == AF_INET6 && is_mcast_pkt) {
-		;
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_pkt_family(pkt) == AF_INET &&
-		   (is_mcast_pkt || is_bcast_pkt)) {
-		;
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-		    net_pkt_family(pkt) == AF_PACKET) {
-		;
-	} else {
+	if (IS_ENABLED(CONFIG_NET_IP) && (pkt_family == AF_INET || pkt_family == AF_INET6) &&
+	    !(is_mcast_pkt || is_bcast_pkt)) {
 		conn_send_icmp_error(pkt);
 
 		if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
@@ -858,9 +841,13 @@ void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data)
 {
 	struct net_conn *conn;
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
 		cb(conn, user_data);
 	}
+
+	k_mutex_unlock(&conn_lock);
 }
 
 void net_conn_init(void)

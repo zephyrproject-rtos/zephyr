@@ -1,0 +1,20 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32Z27-BGA594-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <PB10_LIN_0_TX>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PB11_LIN_0_RX>;
+			input-enable;
+		};
+	};
+};

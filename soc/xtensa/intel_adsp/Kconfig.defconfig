@@ -3,28 +3,35 @@
 # Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_FAMILY_INTEL_ADSP
 source "soc/xtensa/intel_adsp/*/Kconfig.defconfig.series"
 
-# Lower priority defaults come AFTER the series-specific ones set above
 
+config XTENSA_RPO_CACHE
+	def_bool y
+
+# console can't handle the amount of data coming from many tests, so introduce
+# a delay beween testcases.
+if ZTEST
+config ZTEST_TEST_DELAY_MS
+	default 100
+endif
+
+if XTENSA_RPO_CACHE
 config XTENSA_CACHED_REGION
 	default 5
 
 config XTENSA_UNCACHED_REGION
 	default 4
 
-if INTEL_ADSP_CAVS
+endif # XTENSA_RPO_CACHE
 
-config DMA_CAVS_GPDMA
-	default y
-	depends on DMA
+config CONSOLE
+	def_bool y
 
-config DMA_CAVS_HDA
-	default y
-	depends on DMA
+if CONSOLE
+config WINSTREAM_CONSOLE
+	def_bool y
+endif
 
-config XTENSA_CCOUNT_HZ
-	default 400000000 if SOC_SERIES_INTEL_CAVS_V25
-	default 200000000
-
-endif # INTEL_ADSP_CAVS
+endif # SOC_FAMILY_INTEL_ADSP

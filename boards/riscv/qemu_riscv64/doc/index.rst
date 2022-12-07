@@ -8,13 +8,6 @@ Overview
 
 The RISCV64 QEMU board configuration is used to emulate the RISCV64 architecture.
 
-.. figure:: qemu_riscv64.png
-   :width: 600px
-   :align: center
-   :alt: QEMU
-
-   QEMU (Credit: qemu.org)
-
 Get the Toolchain and QEMU
 **************************
 

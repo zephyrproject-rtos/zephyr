@@ -8,7 +8,8 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#include "gpio_utils.h"
+#include <zephyr/irq.h>
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 
 /* Driver dts compatibility: telink,b91_gpio */

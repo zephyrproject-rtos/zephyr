@@ -52,8 +52,10 @@ include(extensions)
 zephyr_check_cache(BOARD REQUIRED)
 
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
-# be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
-list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
+# be found. It always includes ${ZEPHYR_BASE} at the lowest priority (except for unittesting).
+if(NOT unittest IN_LIST Zephyr_FIND_COMPONENTS)
+  list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
+endif()
 
 string(FIND "${BOARD}" "@" REVISION_SEPARATOR_INDEX)
 if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
@@ -62,8 +64,9 @@ if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
   string(SUBSTRING ${BOARD} 0 ${REVISION_SEPARATOR_INDEX} BOARD)
 endif()
 
-if(DEFINED ENV{ZEPHYR_BOARD_ALIASES})
-  include($ENV{ZEPHYR_BOARD_ALIASES})
+zephyr_get(ZEPHYR_BOARD_ALIASES)
+if(DEFINED ZEPHYR_BOARD_ALIASES)
+  include(${ZEPHYR_BOARD_ALIASES})
   if(${BOARD}_BOARD_ALIAS)
     set(BOARD_ALIAS ${BOARD} CACHE STRING "Board alias, provided by user")
     set(BOARD ${${BOARD}_BOARD_ALIAS})
@@ -100,6 +103,12 @@ Hints:
     if(BOARD_HIDDEN_DIR)
       message("Board alias ${BOARD_ALIAS} is hiding the real board of same name")
     endif()
+  endif()
+  if(BOARD_DIR AND NOT EXISTS ${BOARD_DIR}/${BOARD}_defconfig)
+    message(WARNING "BOARD_DIR: ${BOARD_DIR} has been moved or deleted. "
+                    "Trying to find new location."
+    )
+    set(BOARD_DIR BOARD_DIR-NOTFOUND CACHE PATH "Path to a file." FORCE)
   endif()
   find_path(BOARD_DIR
     NAMES ${BOARD}_defconfig
@@ -142,7 +151,7 @@ list(TRANSFORM BOARD_ROOT PREPEND "--board-root=" OUTPUT_VARIABLE board_root_arg
 
 set(list_boards_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_boards.py
-            ${arch_root_args} ${board_root_args}
+            ${arch_root_args} ${board_root_args} --arch-root=${ZEPHYR_BASE}
 )
 
 if(NOT BOARD_DIR)

@@ -5,7 +5,8 @@
 
 config ADC_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) ADC driver"
-	depends on SOC_FAMILY_NPCX
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_ADC_ENABLED
 	help
 	  This option enables the ADC driver for NPCX family of
 	  processors.

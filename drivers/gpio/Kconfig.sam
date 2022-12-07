@@ -4,21 +4,16 @@
 # Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_ATMEL_SAM_GPIO := atmel,sam-gpio
-
 config GPIO_SAM
 	bool "Atmel SAM GPIO (PORT) driver"
-	default y if $(dt_compat_enabled,$(DT_COMPAT_ATMEL_SAM_GPIO))
-	depends on SOC_FAMILY_SAM && !SOC_SERIES_SAM4L
-	depends on GPIO
+	default y
+	depends on DT_HAS_ATMEL_SAM_GPIO_ENABLED
 	help
 	  Enable support for the Atmel SAM 'PORT' GPIO controllers.
 
 config GPIO_SAM4L
 	bool "Atmel SAM4L GPIO (PORT) driver"
-	default y if $(dt_compat_enabled,$(DT_COMPAT_ATMEL_SAM_GPIO))
-	depends on SOC_SERIES_SAM4L
-	depends on GPIO
+	default y
+	depends on DT_HAS_ATMEL_SAM4L_GPIO_ENABLED
 	help
 	  Enable support for the Atmel SAM4L 'PORT' GPIO controllers.

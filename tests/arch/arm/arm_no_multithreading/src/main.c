@@ -23,7 +23,7 @@
 #define FPSCR_MASK		(0xffffffffU)
 #endif
 
-extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 
 static volatile int test_flag;
 static unsigned int expected_reason;

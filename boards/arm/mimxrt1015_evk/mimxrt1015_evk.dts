@@ -82,7 +82,6 @@ arduino_serial: &lpuart4 {
 	at25sf128a: at25sf128a@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <134217728>;
-		label = "AT25SF128A";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";

@@ -86,9 +86,14 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		return rc;
 	}
 
-	/* Check if this double word is erased */
-	if (flash[0] != 0xFFFFFFFFUL ||
-	    flash[1] != 0xFFFFFFFFUL) {
+	/* Check if this double word is erased and value isn't 0.
+	 *
+	 * It is allowed to write only zeros over an already written dword
+	 * See 3.3.8 in reference manual.
+	 */
+	if ((flash[0] != 0xFFFFFFFFUL ||
+	     flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
+		LOG_ERR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
 
@@ -194,7 +199,8 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	int i, rc = 0;
 
 	for (i = 0; i < len; i += 8, offset += 8) {
-		rc = write_dword(dev, offset, ((const uint64_t *) data)[i>>3]);
+		rc = write_dword(dev, offset,
+				UNALIGNED_GET((const uint64_t *) data + (i >> 3)));
 		if (rc < 0) {
 			return rc;
 		}

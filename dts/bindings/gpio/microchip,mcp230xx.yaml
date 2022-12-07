@@ -12,9 +12,6 @@ compatible: "microchip,mcp230xx"
 include: [gpio-controller.yaml, i2c-device.yaml]
 
 properties:
-    label:
-      required: true
-
     ngpios:
       type: int
       enum:

@@ -8,10 +8,7 @@ include: base.yaml
 bus: mdio
 
 properties:
-    label:
-      required: true
     protocol:
-      required: false
       type: string
       description: |
         MDIO bus framing protocol to use for communication. Most devices

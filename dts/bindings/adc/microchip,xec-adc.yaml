@@ -5,7 +5,7 @@ description: Microchip XEC ADC
 
 compatible: "microchip,xec-adc"
 
-include: adc-controller.yaml
+include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -21,6 +21,12 @@ properties:
       type: int
       required: true
       description: ADC clock high & low time count value <1:255>
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
 
 io-channel-cells:
     - input

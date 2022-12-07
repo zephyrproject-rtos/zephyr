@@ -1,0 +1,22 @@
+# Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_TRUSTED_FIRMWARE_A_MODULE
+	bool
+
+menuconfig BUILD_WITH_TFA
+	bool "Build with TF-A as the Secure Execution Environment"
+	help
+	  When enabled, this option instructs the Zephyr build process to
+	  additionally generate a TF-A image for the Secure Execution
+	  environment, along with the Zephyr image. The Zephyr image
+	  itself is to be executed in the Non-Secure Processing Environment.
+
+if BUILD_WITH_TFA
+
+config TFA_MAKE_BUILD_TYPE_DEBUG
+	bool "Debug build"
+	help
+	  When enabled, the build type of TF-A would be debug.
+
+endif # BUILD_WITH_TFA

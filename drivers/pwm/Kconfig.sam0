@@ -5,6 +5,7 @@
 
 config PWM_SAM0_TCC
 	bool "Atmel SAM0 MCU Family TCC PWM Driver"
-	depends on SOC_FAMILY_SAM0
+	default y
+	depends on DT_HAS_ATMEL_SAM0_TCC_PWM_ENABLED
 	help
 	  Enable PWM driver for Atmel SAM0 MCUs using the TCC timer/counter.

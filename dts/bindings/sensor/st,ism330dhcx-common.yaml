@@ -1,10 +1,11 @@
 # Copyright (c) 2021 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+include: sensor-device.yaml
+
 properties:
     drdy-gpios:
       type: phandle-array
-      required: false
       description: |
         DRDY gpio pin
 
@@ -14,7 +15,6 @@ properties:
 
     int-pin:
       type: int
-      required: false
       default: 1
       description: |
         Select DRDY pin number (1 or 2).
@@ -33,7 +33,6 @@ properties:
 
     accel-odr:
       type: int
-      required: false
       default: 0
       description: |
         Specify the default accelerometer output data rate expressed in samples per second (Hz).
@@ -66,7 +65,6 @@ properties:
 
     accel-range:
       type: int
-      required: false
       default: 2
       description: |
         Range in g. Default is power-up configuration.
@@ -84,7 +82,6 @@ properties:
 
     gyro-odr:
       type: int
-      required: false
       default: 0
       description: |
         Specify the default gyro output data rate expressed in samples per second (Hz).
@@ -117,7 +114,6 @@ properties:
 
     gyro-range:
       type: int
-      required: false
       default: 125
       description: |
         Range in dps. Default is power-up configuration.

@@ -10,7 +10,6 @@ target_sources(app PRIVATE
   src/q31.c
   src/f32.c
   src/f64.c
-  src/main.c
   )
 
 target_sources_ifdef(CONFIG_CMSIS_DSP_FLOAT16 app PRIVATE src/f16.c)

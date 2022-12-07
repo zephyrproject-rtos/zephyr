@@ -1,11 +1,9 @@
 # Copyright (c) 2022 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_TELINK_B91_PINCTRL := telink,b91-pinctrl
-
 config PINCTRL_TELINK_B91
 	bool "Telink B91 pin controller driver"
-	depends on SOC_RISCV_TELINK_B91
-	default $(dt_compat_enabled,$(DT_COMPAT_TELINK_B91_PINCTRL))
+	default y
+	depends on DT_HAS_TELINK_B91_PINCTRL_ENABLED
 	help
 	  Enables Telink B91 pin controller driver

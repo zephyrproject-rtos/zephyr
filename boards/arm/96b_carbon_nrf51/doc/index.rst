@@ -83,7 +83,7 @@ debugger, via the debug header labeled "BLE" on the board's
 silkscreen. The header is not populated; 0.1" male header must be
 soldered on first.
 
-.. figure:: img/96b_carbon_nrf51.png
+.. figure:: img/96b_carbon_nrf51.jpg
      :align: center
      :alt: 96Boards Carbon nRF51 Debug
 

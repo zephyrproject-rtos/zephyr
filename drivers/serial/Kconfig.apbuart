@@ -3,7 +3,8 @@
 
 config UART_APBUART
 	bool "ABPUART serial driver"
-	depends on SOC_SPARC_LEON
+	default y
+	depends on DT_HAS_GAISLER_APBUART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

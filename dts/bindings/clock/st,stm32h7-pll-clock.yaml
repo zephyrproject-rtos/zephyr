@@ -39,7 +39,7 @@ properties:
       description: |
           Division factor for PLLx
           input clock
-          Valid range: 0 - 63
+          Valid range: 1 - 63
 
     mul-n:
       type: int
@@ -50,21 +50,18 @@ properties:
 
     div-p:
       type: int
-      required: false
       description: |
           PLL division factor for pllx_p_ck
           Valid range: 1 - 128
 
     div-q:
       type: int
-      required: false
       description: |
           PLL division factor for pllx_q_ck
           Valid range: 1 - 128
 
     div-r:
       type: int
-      required: false
       description: |
           PLL division factor for pllx_r_ck
           Valid range: 1 - 128

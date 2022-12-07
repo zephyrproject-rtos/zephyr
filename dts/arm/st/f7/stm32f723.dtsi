@@ -31,7 +31,6 @@
 			compatible = "st,stm32-usbphyc";
 			reg = <0x40017c00 0x400>;
 			#phy-cells = <0>;
-			label = "USBPHYC";
 		};
 
 		usbotg_hs: usb@40040000 {
@@ -45,10 +44,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
 			interrupts = <103 0>;
 			status = "disabled";
-			label = "SDMMC_2";
 		};
 	};
 
+	die_temp: dietemp {
+		ts-cal1-addr = <0x1FF07A2C>;
+		ts-cal2-addr = <0x1FF07A2E>;
+	};
 };
 
 /delete-node/ &otghs_fs_phy;

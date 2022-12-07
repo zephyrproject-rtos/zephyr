@@ -1,0 +1,13 @@
+;*******************************************************************************
+;   Copyright 2022 NXP                                                         *
+;   SPDX-License-Identifier: Apache-2.0                                        *
+;                                                                              *
+;   Lauterbach TRACE32 start-up script for flashing s32z270dc2_r52             *
+;                                                                              *
+;*******************************************************************************
+
+ENTRY %LINE &args
+
+DO ~~~~/startup.cmm command=flash &args
+
+ENDDO

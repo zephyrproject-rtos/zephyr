@@ -111,7 +111,7 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
  *
  * See IEEE 1003.1
  */
-int gettimeofday(struct timeval *tv, const void *tz)
+int gettimeofday(struct timeval *tv, void *tz)
 {
 	struct timespec ts;
 	int res;

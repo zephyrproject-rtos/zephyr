@@ -21,6 +21,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dac_sam, CONFIG_DAC_LOG_LEVEL);
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_SAME70) ||

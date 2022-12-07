@@ -17,6 +17,7 @@
 		zephyr,shell-uart = &sercom0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -126,7 +127,6 @@
 	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	label = "I2C_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -143,7 +143,6 @@
 	 */
 	dipo = <0>;
 	dopo = <1>;
-	label = "SPI_RF2XX";
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -152,16 +151,23 @@
 
 	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
 
-	rf2xx@0 {
+	ieee802154: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
-		label = "RF2XX_0";
 		spi-max-frequency = <6000000>;
 		irq-gpios = <&portb 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;
 		slptr-gpios = <&porta 20 GPIO_ACTIVE_HIGH>;
 		dig2-gpios = <&portb 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		status = "okay";
+		tx-pwr-min = [01 11];	/* -17.0 dBm */
+		tx-pwr-max = [00 04];	/*   4.0 dBm */
+		tx-pwr-table = [00 01 03 04 05 05 06 06
+				07 07 07 08 08 09 09 0a
+				0a 0a 0b 0b 0b 0b 0c 0c
+				0c 0c 0d 0d 0d 0d 0d 0d
+				0d 0d 0e 0e 0e 0e 0e 0e
+				0e 0e 0e 0e 0e 0e 0f 0f];
 	};
 };
 
@@ -170,7 +176,6 @@
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <2>;
-	label = "SPI_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -183,10 +188,6 @@ zephyr_udc0: &usb0 {
 
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
-};
-
-&rtc {
-	status = "okay";
 };
 
 ext1_spi: &sercom5 {

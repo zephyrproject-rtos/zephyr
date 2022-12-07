@@ -8,5 +8,4 @@ include: riscv,cpus.yaml
 properties:
     hardware-exec-breakpoint-count:
       type: int
-      required: false
       description: Number of hardware break points

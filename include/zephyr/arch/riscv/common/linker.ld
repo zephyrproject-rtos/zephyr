@@ -27,7 +27,6 @@
 #endif
 #define RAMABLE_REGION              RAM
 
-#define _VECTOR_SECTION_NAME        vector
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
@@ -40,7 +39,7 @@
 #define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 #endif /* CONFIG_FLASH_LOAD_OFFSET */
 #define ROM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
-#elif DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), jedec_spi_nor, okay)
+#elif DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash), jedec_spi_nor)
 /* For jedec,spi-nor we expect the spi controller to memory map the flash
  * and for that mapping to be the second register property of the spi
  * controller.
@@ -110,12 +109,6 @@ SECTIONS
     GROUP_START(ROMABLE_REGION)
     __rom_region_start = ROM_BASE;
 
-    SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
-    {
-		. = ALIGN(4);
-		KEEP(*(.vectors.*))
-    } GROUP_LINK_IN(ROMABLE_REGION)
-
     SECTION_PROLOGUE(rom_start,,)
     {
 		. = ALIGN(16);
@@ -124,6 +117,10 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
     } GROUP_LINK_IN(ROMABLE_REGION)
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_relocate.ld>
+#endif
 
     SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
     {
@@ -148,14 +145,6 @@ SECTIONS
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
 #include <zephyr/linker/kobject-text.ld>
-#ifdef CONFIG_SOC_FLASH_RAMCODE_SECTION
-		. = ALIGN(0x1000);
-		_ram_code_start = .;
-		KEEP(*(.__ram_code))
-		__ram_code_size = . - _ram_code_start;
-		ASSERT((__ram_code_size <= 0x1000),
-			"__ram_code_size <= 4k bytes");
-#endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
     __text_region_end = .;
@@ -246,6 +235,11 @@ SECTIONS
 		 *(.bss)
 		 *(".bss.*")
 		 COMMON_SYMBOLS
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
+
 		 /*
 		  * As memory is cleared in words only, it is simpler to ensure the BSS
 		  * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
@@ -287,6 +281,11 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rwdata.ld>
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_data_relocate.ld>
+#endif
+
 		 __data_end = .;
 
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -383,19 +382,27 @@ GROUP_END(DTCM)
 	KEEP(*(.gnu.attributes))
 	}
 
+    /* Sections generated from 'zephyr,memory-region' nodes */
+    LINKER_DT_SECTIONS()
+
 /* Because ROMABLE_REGION != RAMABLE_REGION in XIP-system, it is valid
  * to set __rom_region_end symbol at the end of linker script and
  * doesn't mistakenly contain the RAMABLE_REGION in it.
  */
 #ifdef CONFIG_XIP
 /* Must be last in romable region */
-SECTION_PROLOGUE(.last_section,(NOLOAD),)
+SECTION_PROLOGUE(.last_section,,)
 {
+#ifdef CONFIG_LINKER_LAST_SECTION_ID
+  /* Fill last section with a word to ensure location counter and actual rom
+   * region data usage match. */
+  LONG(CONFIG_LINKER_LAST_SECTION_ID_PATTERN)
+#endif
 } GROUP_LINK_IN(ROMABLE_REGION)
 
 /* To provide the image size as a const expression,
  * calculate this value here. */
-__rom_region_end = LOADADDR(.last_section);
+__rom_region_end = LOADADDR(.last_section) + SIZEOF(.last_section);
 __rom_region_size = __rom_region_end - __rom_region_start;
 #endif
 

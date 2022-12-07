@@ -319,6 +319,9 @@ __net_socket struct net_context {
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
 		uint16_t sndbuf;
 #endif
+#if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
+		uint8_t dscp_ecn;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -553,7 +556,7 @@ static inline void net_context_set_type(struct net_context *context,
  * @param filter_id CAN filter id
  */
 #if defined(CONFIG_NET_SOCKETS_CAN)
-static inline void net_context_set_filter_id(struct net_context *context,
+static inline void net_context_set_can_filter_id(struct net_context *context,
 					     int filter_id)
 {
 	NET_ASSERT(context);
@@ -561,7 +564,7 @@ static inline void net_context_set_filter_id(struct net_context *context,
 	context->can_filter_id = filter_id;
 }
 #else
-static inline void net_context_set_filter_id(struct net_context *context,
+static inline void net_context_set_can_filter_id(struct net_context *context,
 					     int filter_id)
 {
 	ARG_UNUSED(context);
@@ -579,14 +582,14 @@ static inline void net_context_set_filter_id(struct net_context *context,
  * @return Filter id of this network context
  */
 #if defined(CONFIG_NET_SOCKETS_CAN)
-static inline int net_context_get_filter_id(struct net_context *context)
+static inline int net_context_get_can_filter_id(struct net_context *context)
 {
 	NET_ASSERT(context);
 
 	return context->can_filter_id;
 }
 #else
-static inline int net_context_get_filter_id(struct net_context *context)
+static inline int net_context_get_can_filter_id(struct net_context *context)
 {
 	ARG_UNUSED(context);
 
@@ -604,7 +607,7 @@ static inline int net_context_get_filter_id(struct net_context *context)
  *
  * @return Network context IP protocol.
  */
-static inline uint16_t net_context_get_ip_proto(struct net_context *context)
+static inline uint16_t net_context_get_proto(struct net_context *context)
 {
 	return context->proto;
 }
@@ -619,8 +622,8 @@ static inline uint16_t net_context_get_ip_proto(struct net_context *context)
  * @param proto Context IP protocol (IPPROTO_UDP, IPPROTO_TCP or IEEE 802.3
  * protocol value)
  */
-static inline void net_context_set_ip_proto(struct net_context *context,
-					    uint16_t proto)
+static inline void net_context_set_proto(struct net_context *context,
+					 uint16_t proto)
 {
 	context->proto = proto;
 }
@@ -1068,6 +1071,7 @@ enum net_context_option {
 	NET_OPT_SNDTIMEO        = 5,
 	NET_OPT_RCVBUF		= 6,
 	NET_OPT_SNDBUF		= 7,
+	NET_OPT_DSCP_ECN	= 8,
 };
 
 /**

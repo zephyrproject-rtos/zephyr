@@ -41,11 +41,9 @@ static const char * const severity_lvls_sorted[] = {
  */
 static const struct log_backend *backend_find(char const *name)
 {
-	const struct log_backend *backend;
 	size_t slen = strlen(name);
 
-	for (int i = 0; i < log_backend_count_get(); i++) {
-		backend = log_backend_get(i);
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (strncmp(name, backend->name, slen) == 0) {
 			return backend;
 		}
@@ -93,7 +91,7 @@ static int log_status(const struct shell *shell,
 		      const struct log_backend *backend,
 		      size_t argc, char **argv)
 {
-	uint32_t modules_cnt = z_log_sources_count();
+	uint32_t modules_cnt = log_src_cnt_get(Z_LOG_LOCAL_DOMAIN_ID);
 	uint32_t dynamic_lvl;
 	uint32_t compiled_lvl;
 
@@ -107,13 +105,13 @@ static int log_status(const struct shell *shell,
 	      "----------------------------------------------------------\r\n");
 
 	for (int16_t i = 0U; i < modules_cnt; i++) {
-		dynamic_lvl = log_filter_get(backend, CONFIG_LOG_DOMAIN_ID,
+		dynamic_lvl = log_filter_get(backend, Z_LOG_LOCAL_DOMAIN_ID,
 					     i, true);
-		compiled_lvl = log_filter_get(backend, CONFIG_LOG_DOMAIN_ID,
+		compiled_lvl = log_filter_get(backend, Z_LOG_LOCAL_DOMAIN_ID,
 					      i, false);
 
 		shell_fprintf(shell, SHELL_NORMAL, "%-40s | %-7s | %s\r\n",
-			      log_source_name_get(CONFIG_LOG_DOMAIN_ID, i),
+			      log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, i),
 			      severity_lvls[dynamic_lvl],
 			      severity_lvls[compiled_lvl]);
 	}
@@ -141,12 +139,12 @@ static int cmd_log_backend_status(const struct shell *shell,
 
 static int module_id_get(const char *name)
 {
-	uint32_t modules_cnt = z_log_sources_count();
+	uint32_t modules_cnt = log_src_cnt_get(Z_LOG_LOCAL_DOMAIN_ID);
 	const char *tmp_name;
 	uint32_t i;
 
 	for (i = 0U; i < modules_cnt; i++) {
-		tmp_name = log_source_name_get(CONFIG_LOG_DOMAIN_ID, i);
+		tmp_name = log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, i);
 
 		if (strncmp(tmp_name, name, 64) == 0) {
 			return i;
@@ -162,7 +160,7 @@ static void filters_set(const struct shell *shell,
 	int i;
 	int id;
 	bool all = argc ? false : true;
-	int cnt = all ? z_log_sources_count() : argc;
+	int cnt = all ? log_src_cnt_get(Z_LOG_LOCAL_DOMAIN_ID) : argc;
 
 	if (!backend->cb->active) {
 		shell_warn(shell, "Backend not active.");
@@ -172,15 +170,14 @@ static void filters_set(const struct shell *shell,
 		id = all ? i : module_id_get(argv[i]);
 		if (id >= 0) {
 			uint32_t set_lvl = log_filter_set(backend,
-						       CONFIG_LOG_DOMAIN_ID,
+						       Z_LOG_LOCAL_DOMAIN_ID,
 						       id, level);
 
 			if (set_lvl != level) {
 				const char *name;
 
 				name = all ?
-					log_source_name_get(
-						CONFIG_LOG_DOMAIN_ID, i) :
+					log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, i) :
 					argv[i];
 				shell_warn(shell, "%s: level set to %s.",
 					   name, severity_lvls[set_lvl]);
@@ -272,7 +269,7 @@ static void module_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->handler = NULL;
 	entry->help  = NULL;
 	entry->subcmd = &dsub_module_name;
-	entry->syntax = log_source_name_get(CONFIG_LOG_DOMAIN_ID, idx);
+	entry->syntax = log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, idx);
 }
 
 
@@ -343,13 +340,7 @@ static int cmd_log_backend_go(const struct shell *shell,
 static int cmd_log_backends_list(const struct shell *shell,
 				 size_t argc, char **argv)
 {
-	int backend_count;
-
-	backend_count = log_backend_count_get();
-
-	for (int i = 0; i < backend_count; i++) {
-		const struct log_backend *backend = log_backend_get(i);
-
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "%s\r\n"
 			      "\t- Status: %s\r\n"
@@ -359,48 +350,6 @@ static int cmd_log_backends_list(const struct shell *shell,
 			      backend->cb->id);
 
 	}
-	return 0;
-}
-
-static int cmd_log_strdup_utilization(const struct shell *shell,
-				      size_t argc, char **argv)
-{
-
-	/* Defines needed when string duplication is disabled (LOG2 or immediate
-	 * mode). In that case, this function is not compiled in.
-	 */
-	#ifndef CONFIG_LOG_STRDUP_BUF_COUNT
-	#define CONFIG_LOG_STRDUP_BUF_COUNT 0
-	#endif
-
-	#ifndef CONFIG_LOG_STRDUP_MAX_STRING
-	#define CONFIG_LOG_STRDUP_MAX_STRING 0
-	#endif
-
-	uint32_t cur_cnt = log_get_strdup_pool_current_utilization();
-	uint32_t buf_cnt = log_get_strdup_pool_utilization();
-	uint32_t buf_size = log_get_strdup_longest_string();
-	uint32_t percent = CONFIG_LOG_STRDUP_BUF_COUNT ?
-			buf_cnt * 100U / CONFIG_LOG_STRDUP_BUF_COUNT : 0U;
-
-	shell_print(shell, "Current utilization of the buffer pool: %d.",
-		    cur_cnt);
-
-	shell_print(shell,
-		"Maximal utilization of the buffer pool: %d / %d (%d %%).",
-		buf_cnt, CONFIG_LOG_STRDUP_BUF_COUNT, percent);
-	if (buf_cnt == CONFIG_LOG_STRDUP_BUF_COUNT) {
-		shell_warn(shell, "Buffer count too small.");
-	}
-
-	shell_print(shell,
-		"Longest duplicated string: %d, buffer capacity: %d.",
-		buf_size, CONFIG_LOG_STRDUP_MAX_STRING);
-	if (buf_size > CONFIG_LOG_STRDUP_MAX_STRING) {
-		shell_warn(shell, "Buffer size too small.");
-
-	}
-
 	return 0;
 }
 
@@ -452,9 +401,7 @@ static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = &sub_log_backend;
 	entry->syntax  = NULL;
 
-	if (idx < log_backend_count_get()) {
-		const struct log_backend *backend = log_backend_get(idx);
-
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		entry->syntax = backend->name;
 	}
 }
@@ -477,9 +424,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(list_backends, NULL, "Lists logger backends.", cmd_log_backends_list, 1, 0),
 	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, status, NULL, "Logger status",
 		       cmd_log_self_status),
-	SHELL_COND_CMD_ARG(CONFIG_LOG_STRDUP_POOL_PROFILING, strdup_utilization, NULL,
-			   "Get utilization of string duplicates pool", cmd_log_strdup_utilization,
-			   1, 0),
 	SHELL_COND_CMD(CONFIG_LOG_MODE_DEFERRED, mem, NULL, "Logger memory usage",
 		       cmd_log_mem),
 	SHELL_SUBCMD_SET_END);

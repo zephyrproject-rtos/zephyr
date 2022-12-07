@@ -12,12 +12,9 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
-if FLASH
-
-config FLASH_MCUX_FLEXSPI_NOR
+config I2C_MCUX_LPI2C_BUS_RECOVERY
 	default y
-
-endif #FLASH
+	depends on I2C_MCUX_LPI2C && PINCTRL
 
 if NETWORKING
 

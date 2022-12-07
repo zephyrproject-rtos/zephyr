@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 #include "test_sched.h"
 
@@ -15,38 +15,38 @@ static struct k_sem end_sema;
 static void tIsr(const void *data)
 {
 	/** TESTPOINT: The code is running at ISR. */
-	zassert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread());
 }
 
 static void tpreempt_ctx(void *p1, void *p2, void *p3)
 {
 	/** TESTPOINT: The thread's priority is in the preemptible range. */
-	zassert_true(k_is_preempt_thread(), NULL);
+	zassert_true(k_is_preempt_thread());
 	k_sched_lock();
 	/** TESTPOINT: The thread has locked the scheduler. */
-	zassert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread());
 	k_sched_unlock();
 	/** TESTPOINT: The thread has not locked the scheduler. */
-	zassert_true(k_is_preempt_thread(), NULL);
+	zassert_true(k_is_preempt_thread());
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(1));
 	/** TESTPOINT: The thread's priority is in the cooperative range. */
-	zassert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread());
 	k_sem_give(&end_sema);
 }
 
 static void tcoop_ctx(void *p1, void *p2, void *p3)
 {
 	/** TESTPOINT: The thread's priority is in the cooperative range. */
-	zassert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread());
 	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(1));
 	/** TESTPOINT: The thread's priority is in the preemptible range. */
-	zassert_true(k_is_preempt_thread(), NULL);
+	zassert_true(k_is_preempt_thread());
 	k_sched_lock();
 	/** TESTPOINT: The thread has locked the scheduler. */
-	zassert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread());
 	k_sched_unlock();
 	/** TESTPOINT: The thread has not locked the scheduler. */
-	zassert_true(k_is_preempt_thread(), NULL);
+	zassert_true(k_is_preempt_thread());
 	k_sem_give(&end_sema);
 }
 
@@ -65,7 +65,7 @@ static void tcoop_ctx(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_sched_is_preempt_thread(void)
+ZTEST(threads_scheduling, test_sched_is_preempt_thread)
 {
 	k_sem_init(&end_sema, 0, 1);
 

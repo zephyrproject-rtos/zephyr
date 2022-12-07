@@ -8,3 +8,4 @@ zephyr_sources(
   )
 
 zephyr_sources_ifdef(CONFIG_PM power.c)
+zephyr_sources_ifdef(CONFIG_PM_POLICY_CUSTOM policy.c)

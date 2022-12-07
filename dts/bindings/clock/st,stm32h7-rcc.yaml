@@ -26,18 +26,7 @@ description: |
            d3ppre = <1>;
   }
 
-  Specifying a gated clock:
-
-  To specify a gated clock, a peripheral should define a "clocks" property encoded
-  in the following way:
-  ... {
-           ...
-           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
-           ...
-  }
-  After the phandle referring to rcc node, the first index specifies the registers of
-  the bus controlling the peripheral and the second index specifies the bit used to
-  control the peripheral clock in that bus register.
+  Confere st,stm32-rcc binding for information about domain clocks configuration.
 
 compatible: "st,stm32h7-rcc"
 

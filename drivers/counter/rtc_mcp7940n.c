@@ -43,9 +43,8 @@ LOG_MODULE_REGISTER(MCP7940N, CONFIG_COUNTER_LOG_LEVEL);
 
 struct mcp7940n_config {
 	struct counter_config_info generic;
-	const struct device *i2c_dev;
+	struct i2c_dt_spec i2c;
 	const struct gpio_dt_spec int_gpios;
-	uint8_t addr;
 };
 
 struct mcp7940n_data {
@@ -193,9 +192,7 @@ static int read_register(const struct device *dev, uint8_t addr, uint8_t *val)
 {
 	const struct mcp7940n_config *cfg = dev->config;
 
-	int rc = i2c_write_read(cfg->i2c_dev, cfg->addr,
-				&addr, sizeof(addr),
-				val, 1);
+	int rc = i2c_write_read_dt(&cfg->i2c, &addr, sizeof(addr), val, 1);
 
 	return rc;
 }
@@ -215,9 +212,8 @@ static int read_time(const struct device *dev, time_t *unix_time)
 	const struct mcp7940n_config *cfg = dev->config;
 	uint8_t addr = REG_RTC_SEC;
 
-	int rc = i2c_write_read(cfg->i2c_dev, cfg->addr,
-				&addr, sizeof(addr),
-				&data->registers, RTC_TIME_REGISTERS_SIZE);
+	int rc = i2c_write_read_dt(&cfg->i2c, &addr, sizeof(addr), &data->registers,
+				   RTC_TIME_REGISTERS_SIZE);
 
 	if (rc >= 0) {
 		*unix_time = decode_rtc(dev);
@@ -242,7 +238,7 @@ static int write_register(const struct device *dev, enum mcp7940n_register addr,
 
 	uint8_t time_data[2] = {addr, value};
 
-	rc = i2c_write(cfg->i2c_dev, time_data, sizeof(time_data), cfg->addr);
+	rc = i2c_write_dt(&cfg->i2c, time_data, sizeof(time_data));
 
 	return rc;
 }
@@ -287,7 +283,7 @@ static int write_data_block(const struct device *dev, enum mcp7940n_register add
 	time_data[0] = addr;
 	memcpy(&time_data[1], write_block_start, size);
 
-	rc = i2c_write(cfg->i2c_dev, time_data, size + 1, cfg->addr);
+	rc = i2c_write_dt(&cfg->i2c, time_data, size + 1);
 
 	return rc;
 }
@@ -668,8 +664,8 @@ static int mcp7940n_init(const struct device *dev)
 	/* Initialize and take the lock */
 	k_sem_init(&data->lock, 0, 1);
 
-	if (!device_is_ready(cfg->i2c_dev)) {
-		LOG_ERR("I2C device %s is not ready", cfg->i2c_dev->name);
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C device %s is not ready", cfg->i2c.bus->name);
 		rc = -ENODEV;
 		goto out;
 	}
@@ -756,8 +752,7 @@ static const struct counter_driver_api mcp7940n_api = {
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,				\
 			.channels = 2,							\
 		},									\
-		.i2c_dev = DEVICE_DT_GET(DT_INST_BUS(index)),				\
-		.addr = DT_INST_REG_ADDR(index),					\
+		.i2c = I2C_DT_SPEC_INST_GET(index),					\
 		.int_gpios = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {0}),		\
 	};										\
 											\

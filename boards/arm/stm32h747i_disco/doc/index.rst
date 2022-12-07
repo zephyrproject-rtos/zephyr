@@ -34,9 +34,7 @@ Additionally, the board features:
 - Arduino Uno V3 connectors
 
 .. image:: img/stm32h747i_disco.jpg
-     :width: 472px
      :align: center
-     :height: 352px
      :alt: STM32H747I-DISCO
 
 More information about the board can be found at the `STM32H747I-DISCO website`_.
@@ -147,15 +145,11 @@ To get Ethernet working following HW modifications are required:
 Following two images shows necessary changes on the board marked:
 
 .. image:: img/disco_h747i_ethernet_modification_1.jpg
-     :width: 271px
      :align: center
-     :height: 596px
      :alt: STM32H747I-DISCO - Ethernet modification 1 (**SB44**, **SB45**)
 
 .. image:: img/disco_h747i_ethernet_modification_2.jpg
-     :width: 344px
      :align: center
-     :height: 520px
      :alt: STM32H747I-DISCO - Ethernet modification 2 (**SB21**, **R87**, **SB22**, **SB17** and **SB8**)
 
 Resources sharing

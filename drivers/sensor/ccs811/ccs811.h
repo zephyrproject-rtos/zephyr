@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_CCS811_CCS811_H_
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/sensor/ccs811.h>
@@ -48,9 +49,6 @@
 #define CCS811_CO2_MAX_PPM              32767
 
 struct ccs811_data {
-	const struct device *i2c;
-#if DT_INST_NODE_HAS_PROP(0, irq_gpios)
-	const struct device *irq_gpio;
 #ifdef CONFIG_CCS811_TRIGGER
 	const struct device *dev;
 
@@ -71,16 +69,16 @@ struct ccs811_data {
 	uint16_t co2_l2m;
 	uint16_t co2_m2h;
 #endif /* CONFIG_CCS811_TRIGGER */
-#endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	const struct device *reset_gpio;
-#endif
-#if DT_INST_NODE_HAS_PROP(0, wake_gpios)
-	const struct device *wake_gpio;
-#endif
 	struct ccs811_result_type result;
 	uint8_t mode;
 	uint8_t app_fw_ver;
+};
+
+struct ccs811_config {
+	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec irq_gpio;
+	struct gpio_dt_spec reset_gpio;
+	struct gpio_dt_spec wake_gpio;
 };
 
 #ifdef CONFIG_CCS811_TRIGGER

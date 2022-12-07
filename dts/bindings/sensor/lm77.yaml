@@ -6,12 +6,11 @@ description: |
 
 compatible: "lm77"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:
       type: phandle-array
-      required: false
       description: |
         Identifies the INT signal, which is active-low open drain by default
         when produced by the sensor.

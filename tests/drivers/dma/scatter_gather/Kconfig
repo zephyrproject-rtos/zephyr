@@ -5,10 +5,6 @@ mainmenu "DMA Scatter Gather Test"
 
 source "Kconfig.zephyr"
 
-config DMA_SG_DRV_NAME
-	string "DMA device name to use for test"
-	default "DMA_0"
-
 config DMA_SG_CHANNEL_NR
 	int "DMA channel to use"
 	default 0

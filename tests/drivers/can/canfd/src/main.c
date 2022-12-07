@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /**
  * @addtogroup t_can_driver
@@ -14,6 +14,16 @@
  * @defgroup t_can_canfd test_can_canfd
  * @}
  */
+
+/**
+ * Test bitrates in bits/second.
+ */
+#define TEST_BITRATE 1000000
+
+/**
+ * Test sample points in per mille.
+ */
+#define TEST_SAMPLE_POINT 750
 
 
 /**
@@ -31,18 +41,17 @@
 /**
  * @brief Global variables.
  */
-const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
-struct k_sem rx_callback_sem;
-struct k_sem tx_callback_sem;
+static const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+static struct k_sem rx_callback_sem;
+static struct k_sem tx_callback_sem;
 
 CAN_MSGQ_DEFINE(can_msgq, 5);
 
 /**
  * @brief Standard (11-bit) CAN ID frame 1.
  */
-const struct zcan_frame test_std_frame_1 = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr     = CAN_DATAFRAME,
+const struct can_frame test_std_frame_1 = {
+	.flags   = 0,
 	.id      = TEST_CAN_STD_ID_1,
 	.dlc     = 8,
 	.data    = { 1, 2, 3, 4, 5, 6, 7, 8 }
@@ -51,9 +60,8 @@ const struct zcan_frame test_std_frame_1 = {
 /**
  * @brief Standard (11-bit) CAN ID frame 2.
  */
-const struct zcan_frame test_std_frame_2 = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr     = CAN_DATAFRAME,
+const struct can_frame test_std_frame_2 = {
+	.flags   = 0,
 	.id      = TEST_CAN_STD_ID_2,
 	.dlc     = 8,
 	.data    = { 1, 2, 3, 4, 5, 6, 7, 8 }
@@ -62,13 +70,10 @@ const struct zcan_frame test_std_frame_2 = {
 /**
  * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
  */
-const struct zcan_frame test_std_frame_fd_1 = {
-	.id  = TEST_CAN_STD_ID_1,
-	.fd      = 1,
-	.rtr     = CAN_DATAFRAME,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+const struct can_frame test_std_frame_fd_1 = {
+	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
+	.id      = TEST_CAN_STD_ID_1,
 	.dlc     = 0xf,
-	.brs     = 1,
 	.data    = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
 		    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
 		    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
@@ -79,13 +84,10 @@ const struct zcan_frame test_std_frame_fd_1 = {
 /**
  * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
  */
-const struct zcan_frame test_std_frame_fd_2 = {
-	.id  = TEST_CAN_STD_ID_2,
-	.fd      = 1,
-	.rtr     = CAN_DATAFRAME,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+const struct can_frame test_std_frame_fd_2 = {
+	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
+	.id      = TEST_CAN_STD_ID_2,
 	.dlc     = 0xf,
-	.brs     = 1,
 	.data    = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
 		    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
 		    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
@@ -96,23 +98,19 @@ const struct zcan_frame test_std_frame_fd_2 = {
 /**
  * @brief Standard (11-bit) CAN ID filter 1.
  */
-const struct zcan_filter test_std_filter_1 = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr = CAN_DATAFRAME,
+const struct can_filter test_std_filter_1 = {
+	.flags = CAN_FILTER_DATA,
 	.id = TEST_CAN_STD_ID_1,
-	.rtr_mask = 1,
-	.id_mask = CAN_STD_ID_MASK
+	.mask = CAN_STD_ID_MASK
 };
 
 /**
  * @brief Standard (11-bit) CAN ID filter 2.
  */
-const struct zcan_filter test_std_filter_2 = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr = CAN_DATAFRAME,
+const struct can_filter test_std_filter_2 = {
+	.flags = CAN_FILTER_DATA,
 	.id = TEST_CAN_STD_ID_2,
-	.rtr_mask = 1,
-	.id_mask = CAN_STD_ID_MASK
+	.mask = CAN_STD_ID_MASK
 };
 
 /**
@@ -121,12 +119,10 @@ const struct zcan_filter test_std_filter_2 = {
  * @param frame1  First CAN frame.
  * @param frame2  Second CAN frame.
  */
-static inline void assert_frame_equal(const struct zcan_frame *frame1,
-				      const struct zcan_frame *frame2)
+static inline void assert_frame_equal(const struct can_frame *frame1,
+				      const struct can_frame *frame2)
 {
-	zassert_equal(frame1->id_type, frame2->id_type, "ID type does not match");
-	zassert_equal(frame1->fd, frame2->fd, "FD bit does not match");
-	zassert_equal(frame1->rtr, frame2->rtr, "RTR bit does not match");
+	zassert_equal(frame1->flags, frame2->flags, "Flags do not match");
 	zassert_equal(frame1->id, frame2->id, "ID does not match");
 	zassert_equal(frame1->dlc, frame2->dlc, "DLC does not match");
 	zassert_mem_equal(frame1->data, frame2->data, frame1->dlc, "Received data differ");
@@ -134,7 +130,7 @@ static inline void assert_frame_equal(const struct zcan_frame *frame1,
 
 static void tx_std_callback_1(const struct device *dev, int error, void *user_data)
 {
-	const struct zcan_frame *frame = user_data;
+	const struct can_frame *frame = user_data;
 
 	k_sem_give(&tx_callback_sem);
 
@@ -144,7 +140,7 @@ static void tx_std_callback_1(const struct device *dev, int error, void *user_da
 
 static void tx_std_callback_2(const struct device *dev, int error, void *user_data)
 {
-	const struct zcan_frame *frame = user_data;
+	const struct can_frame *frame = user_data;
 
 	k_sem_give(&tx_callback_sem);
 
@@ -152,9 +148,9 @@ static void tx_std_callback_2(const struct device *dev, int error, void *user_da
 	zassert_equal(frame->id, TEST_CAN_STD_ID_2, "ID does not match");
 }
 
-static void rx_std_callback_1(const struct device *dev, struct zcan_frame *frame, void *user_data)
+static void rx_std_callback_1(const struct device *dev, struct can_frame *frame, void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_1);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -163,9 +159,9 @@ static void rx_std_callback_1(const struct device *dev, struct zcan_frame *frame
 	k_sem_give(&rx_callback_sem);
 }
 
-static void rx_std_callback_2(const struct device *dev, struct zcan_frame *frame, void *user_data)
+static void rx_std_callback_2(const struct device *dev, struct can_frame *frame, void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_2);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -174,10 +170,10 @@ static void rx_std_callback_2(const struct device *dev, struct zcan_frame *frame
 	k_sem_give(&rx_callback_sem);
 }
 
-static void rx_std_callback_fd_1(const struct device *dev, struct zcan_frame *frame,
+static void rx_std_callback_fd_1(const struct device *dev, struct can_frame *frame,
 				 void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_fd_1);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -186,10 +182,10 @@ static void rx_std_callback_fd_1(const struct device *dev, struct zcan_frame *fr
 	k_sem_give(&rx_callback_sem);
 }
 
-static void rx_std_callback_fd_2(const struct device *dev, struct zcan_frame *frame,
+static void rx_std_callback_fd_2(const struct device *dev, struct can_frame *frame,
 				 void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_fd_2);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -207,7 +203,7 @@ static void rx_std_callback_fd_2(const struct device *dev, struct zcan_frame *fr
  * @param dev   Pointer to the device structure for the driver instance.
  * @param frame Pointer to the CAN frame to send.
  */
-static void send_test_frame(const struct device *dev, const struct zcan_frame *frame)
+static void send_test_frame(const struct device *dev, const struct can_frame *frame)
 {
 	int err;
 
@@ -226,7 +222,7 @@ static void send_test_frame(const struct device *dev, const struct zcan_frame *f
  * @param frame    Pointer to the CAN frame to send.
  * @param callback Transmit callback function.
  */
-static void send_test_frame_nowait(const struct device *dev, const struct zcan_frame *frame,
+static void send_test_frame_nowait(const struct device *dev, const struct can_frame *frame,
 				   can_tx_callback_t callback)
 {
 	int err;
@@ -244,7 +240,7 @@ static void send_test_frame_nowait(const struct device *dev, const struct zcan_f
  *
  * @return CAN filter ID.
  */
-static inline int add_rx_msgq(const struct device *dev, const struct zcan_filter *filter)
+static inline int add_rx_msgq(const struct device *dev, const struct can_filter *filter)
 {
 	int filter_id;
 
@@ -265,7 +261,7 @@ static inline int add_rx_msgq(const struct device *dev, const struct zcan_filter
  * @return CAN filter ID.
  */
 static inline int add_rx_filter(const struct device *dev,
-				const struct zcan_filter *filter,
+				const struct can_filter *filter,
 				can_rx_callback_t callback)
 {
 	int filter_id;
@@ -287,12 +283,12 @@ static inline int add_rx_filter(const struct device *dev,
  * @param frame1  CAN frame 1
  * @param frame2  CAN frame 2
  */
-static void send_receive(const struct zcan_filter *filter1,
-			 const struct zcan_filter *filter2,
-			 const struct zcan_frame *frame1,
-			 const struct zcan_frame *frame2)
+static void send_receive(const struct can_filter *filter1,
+			 const struct can_filter *filter2,
+			 const struct can_frame *frame1,
+			 const struct can_frame *frame2)
 {
-	struct zcan_frame frame_buffer;
+	struct can_frame frame_buffer;
 	int filter_id_1;
 	int filter_id_2;
 	int err;
@@ -308,13 +304,13 @@ static void send_receive(const struct zcan_filter *filter1,
 
 	k_sem_reset(&tx_callback_sem);
 
-	if (frame1->fd) {
+	if ((frame1->flags & CAN_FRAME_FDF) != 0) {
 		filter_id_1 = add_rx_filter(can_dev, filter1, rx_std_callback_fd_1);
 	} else {
 		filter_id_1 = add_rx_filter(can_dev, filter1, rx_std_callback_1);
 	}
 
-	if (frame2->fd) {
+	if ((frame2->flags & CAN_FRAME_FDF) != 0) {
 		filter_id_2 = add_rx_filter(can_dev, filter2, rx_std_callback_fd_2);
 	} else {
 		filter_id_2 = add_rx_filter(can_dev, filter2, rx_std_callback_2);
@@ -340,23 +336,23 @@ static void send_receive(const struct zcan_filter *filter1,
 }
 
 /**
- * @brief Test configuring the CAN controller for loopback mode.
- *
- * This test case must be run before sending/receiving test cases as it allows
- * these test cases to send/receive their own frames.
+ * @brief Test getting the CAN controller capabilities.
  */
-static void test_set_loopback(void)
+ZTEST(canfd, test_get_capabilities)
 {
+	can_mode_t cap;
 	int err;
 
-	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
-	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
+	err = can_get_capabilities(can_dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);
+	zassert_not_equal(cap & (CAN_MODE_LOOPBACK | CAN_MODE_FD), 0,
+			  "CAN-FD loopback mode not supported");
 }
 
 /**
  * @brief Test send/receive with standard (11-bit) CAN IDs and classic CAN frames.
  */
-void test_send_receive_classic(void)
+ZTEST(canfd, test_send_receive_classic)
 {
 	send_receive(&test_std_filter_1, &test_std_filter_2,
 		     &test_std_frame_1, &test_std_frame_2);
@@ -365,7 +361,7 @@ void test_send_receive_classic(void)
 /**
  * @brief Test send/receive with standard (11-bit) CAN IDs and CAN-FD frames.
  */
-void test_send_receive_fd(void)
+ZTEST(canfd, test_send_receive_fd)
 {
 	send_receive(&test_std_filter_1, &test_std_filter_2,
 		     &test_std_frame_fd_1, &test_std_frame_fd_2);
@@ -374,23 +370,58 @@ void test_send_receive_fd(void)
 /**
  * @brief Test send/receive with (11-bit) CAN IDs, mixed classic and CAN-FD frames.
  */
-void test_send_receive_mixed(void)
+ZTEST(canfd, test_send_receive_mixed)
 {
 	send_receive(&test_std_filter_1, &test_std_filter_2,
 		     &test_std_frame_fd_1, &test_std_frame_2);
 }
 
-void test_main(void)
+/**
+ * @brief Test setting bitrate is not allowed while started.
+ */
+ZTEST_USER(canfd, test_set_bitrate_data_while_started)
 {
+	int err;
+
+	err = can_set_bitrate_data(can_dev, TEST_BITRATE);
+	zassert_not_equal(err, 0, "changed data bitrate while started");
+	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
+}
+
+/**
+ * @brief Test setting timing is not allowed while started.
+ */
+ZTEST_USER(canfd, test_set_timing_data_while_started)
+{
+	struct can_timing timing;
+	int err;
+
+	timing.sjw = CAN_SJW_NO_CHANGE;
+
+	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE, TEST_SAMPLE_POINT);
+	zassert_ok(err, "failed to calculate data timing (err %d)", err);
+
+	err = can_set_timing(can_dev, &timing);
+	zassert_not_equal(err, 0, "changed data timing while started");
+	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
+}
+
+void *canfd_setup(void)
+{
+	int err;
+
 	k_sem_init(&rx_callback_sem, 0, 2);
 	k_sem_init(&tx_callback_sem, 0, 2);
 
 	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
-	ztest_test_suite(canfd_driver,
-			 ztest_unit_test(test_set_loopback),
-			 ztest_unit_test(test_send_receive_classic),
-			 ztest_unit_test(test_send_receive_fd),
-			 ztest_unit_test(test_send_receive_mixed));
-	ztest_run_test_suite(canfd_driver);
+	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
+	zassert_equal(err, 0, "failed to set CAN-FD loopback mode (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+
+	return NULL;
 }
+
+ZTEST_SUITE(canfd, NULL, canfd_setup, NULL, NULL, NULL);

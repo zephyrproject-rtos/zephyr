@@ -3,10 +3,6 @@
 # Copyright (c) 2021 metraTec GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_MICROCHIP_MCP230xx := microchip,mcp230xx
-DT_COMPAT_MICROCHIP_MCP23Sxx := microchip,mcp23sxx
-
 config GPIO_MCP23XXX
 	bool
 	help
@@ -15,7 +11,8 @@ config GPIO_MCP23XXX
 
 menuconfig GPIO_MCP230XX
 	bool "MCP230XX I2C-based GPIO chip"
-	default $(dt_compat_enabled,$(DT_COMPAT_MICROCHIP_MCP230xx))
+	default y
+	depends on DT_HAS_MICROCHIP_MCP230XX_ENABLED
 	depends on I2C
 	select GPIO_MCP23XXX
 	help
@@ -33,7 +30,8 @@ endif #GPIO_MCP230XX
 
 menuconfig GPIO_MCP23SXX
 	bool "MCP23SXX SPI-based GPIO chip"
-	default $(dt_compat_enabled,$(DT_COMPAT_MICROCHIP_MCP23Sxx))
+	default y
+	depends on DT_HAS_MICROCHIP_MCP23SXX_ENABLED
 	depends on SPI
 	select GPIO_MCP23XXX
 	help

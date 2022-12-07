@@ -75,13 +75,19 @@ struct lll_df_adv_cfg {
  * To mitigate the limited accuracy and losing information about saturated IQ samples a 0x80 value
  * is selected to serve the purpose.
  */
-#define IQ_SAMPLE_STATURATED_16_BIT ((int16_t)0x8000)
-#define IQ_SAMPLE_STATURATED_8_BIT ((int8_t)0x80)
+#define IQ_SAMPLE_SATURATED_16_BIT ((int16_t)0x8000)
+#define IQ_SAMPLE_SATURATED_8_BIT ((int8_t)0x80)
 
-#define IQ_SHIFT_12_TO_8_BIT(x) ((int8_t)((x) >> 4))
-#define IQ_CONVERT_12_TO_8_BIT(x)                                                                  \
-	(((x) == IQ_SAMPLE_STATURATED_16_BIT) ? IQ_SAMPLE_STATURATED_8_BIT :                       \
-						      IQ_SHIFT_12_TO_8_BIT((x)))
+#if defined(CONFIG_BT_CTLR_DF_IQ_SAMPLES_CONVERT_4_BITS_SHIFT)
+#define IQ_SAMPLE_CONVERT_12_TO_8_BIT(x) ((int16_t)((x) >> 4))
+#elif defined(CONFIG_BT_CTLR_DF_IQ_SAMPLES_CONVERT_2_BITS_SHIFT)
+#define IQ_SAMPLE_CONVERT_12_TO_8_BIT(x) ((int16_t)((x) >> 2))
+#elif defined(CONFIG_BT_CTLR_DF_IQ_SAMPLES_CONVERT_USE_8_LSB)
+#define IQ_SAMPLE_CONVERT_12_TO_8_BIT(x) ((int8_t)(x))
+#elif defined(CODNFIG_BT_CTLR_DF)
+#error "Unsupported IQ samples conversion"
+#endif
+
 /* Structure to store an single IQ sample */
 struct iq_sample {
 	int16_t i;
@@ -90,6 +96,10 @@ struct iq_sample {
 
 /* Receive node aimed to report collected IQ samples during CTE receive */
 struct node_rx_iq_report {
+	/* hdr member must be a first member of the structure. It can't be moved because
+	 * it is expected to be in the beginning of a node memory for common handling of
+	 * all node_rx_xxx types.
+	 */
 	struct node_rx_hdr hdr;
 	uint8_t sample_count;
 	struct pdu_cte_info cte_info;

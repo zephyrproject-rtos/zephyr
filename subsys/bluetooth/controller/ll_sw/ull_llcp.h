@@ -25,6 +25,11 @@ void ull_llcp_init(struct ll_conn *conn);
  */
 void ull_cp_state_set(struct ll_conn *conn, uint8_t state);
 
+/*
+ * @brief Update 'global' tx buffer allowance
+ */
+void ull_cp_update_tx_buffer_queue(struct ll_conn *conn);
+
 /**
  *
  */
@@ -54,6 +59,11 @@ void ull_cp_run(struct ll_conn *conn);
  * @brief Handle TX ack PDU.
  */
 void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx);
+
+/**
+ * @brief Handle TX procedures notifications towards Host.
+ */
+void ull_cp_tx_ntf(struct ll_conn *conn);
 
 /**
  * @brief Handle received LL Control PDU.
@@ -119,7 +129,7 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
  * @brief Initiate a Connection Parameter Request Procedure or Connection Update Procedure
  */
 uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max,
-			   uint16_t latency, uint16_t timeout);
+			   uint16_t latency, uint16_t timeout, uint16_t *offsets);
 
 /**
  * @brief Accept the remote device’s request to change connection parameters.
@@ -143,9 +153,69 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn);
 uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn);
 
 /**
+ * @brief Check if a remote connection param reg is expecting an
+ *        anchor point move response.
+ */
+bool ull_cp_remote_cpr_apm_awaiting_reply(struct ll_conn *conn);
+
+/**
+ * @brief Repsond to anchor point move of remote connection
+ *        param reg.
+ */
+void ull_cp_remote_cpr_apm_reply(struct ll_conn *conn, uint16_t *offsets);
+
+/**
+ * @brief Reject anchor point move of remote connection param
+ *        reg.
+ */
+void ull_cp_remote_cpr_apm_neg_reply(struct ll_conn *conn, uint8_t error_code);
+
+/**
  * @brief Initiate a Termination Procedure.
  */
 uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code);
+
+/**
+ * @brief Initiate a CIS Termination Procedure.
+ */
+uint8_t ull_cp_cis_terminate(struct ll_conn *conn, struct ll_conn_iso_stream *cis,
+			     uint8_t error_code);
+
+/**
+ * @brief Initiate a CIS Create Procedure.
+ */
+uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis);
+
+/**
+ * @brief Is ongoing create cis procedure expecting a reply?
+ */
+bool ull_cp_cc_awaiting_reply(struct ll_conn *conn);
+
+/**
+ * @brief Get handle of ongoing create cis procedure.
+ * @return 0xFFFF if none
+ */
+uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn);
+
+/**
+ * @brief Accept the remote device’s request to create cis.
+ */
+void ull_cp_cc_accept(struct ll_conn *conn);
+
+/**
+ * @brief Rejset the remote device’s request to create cis.
+ */
+void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code);
+
+/**
+ * @brief CIS was established.
+ */
+void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code);
+
+/**
+ * @brief CIS creation ongoing.
+ */
+bool ull_lp_cc_is_active(struct ll_conn *conn);
 
 /**
  * @brief Initiate a Channel Map Update Procedure.
@@ -179,3 +249,10 @@ void ull_cp_cte_req_set_disable(struct ll_conn *conn);
  */
 void ull_cp_cte_rsp_enable(struct ll_conn *conn, bool enable, uint8_t max_cte_len,
 			   uint8_t cte_types);
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+/**
+ * @brief Initiate a Sleep Clock Accuracy Update Procedure.
+ */
+uint8_t ull_cp_req_peer_sca(struct ll_conn *conn);
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */

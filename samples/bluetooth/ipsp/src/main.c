@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(ipsp);
 /* Preventing log module registration in net_core.h */
 #define NET_LOG_ENABLED	0
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 #include <errno.h>
 #include <stdio.h>
@@ -138,7 +138,7 @@ static int build_reply(const char *name,
 	int reply_len = net_pkt_remaining_data(pkt);
 	int ret;
 
-	LOG_DBG("%s received %d bytes", log_strdup(name), reply_len);
+	LOG_DBG("%s received %d bytes", name, reply_len);
 
 	ret = net_pkt_read(pkt, buf, reply_len);
 	if (ret < 0) {

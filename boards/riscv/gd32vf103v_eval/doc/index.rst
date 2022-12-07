@@ -67,6 +67,9 @@ The board configuration supports the following hardware features:
    * - USART
      - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`gd,gd32-usart`
+   * - ADC
+     - :kconfig:option:`CONFIG_ADC`
+     - :dtcompatible:`gd,gd32-adc`
 
 Serial Port
 ===========
@@ -147,7 +150,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
    https://www.gigadevice.com/datasheet/gd32vf103xxxx-datasheet/
 
 .. _GD32VF103 User Manual:
-   https://gd32mcu.21ic.com/data/documents/shujushouce/GD32VF103_User_Manual_EN_V1.2.pdf
+   https://www.gd32mcu.com/data/documents/userManual/GD32VF103_User_Manual_Rev1.4.pdf
 
 .. _GD32VF103V-EVAL Documents:
    https://github.com/riscv-mcu/GD32VF103_Demo_Suites/tree/master/GD32VF103V_EVAL_Demo_Suites/Docs

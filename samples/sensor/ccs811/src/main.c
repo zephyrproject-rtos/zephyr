@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/printk.h>
@@ -113,12 +113,12 @@ static void do_main(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, ams_ccs811)));
+	const struct device *const dev = DEVICE_DT_GET_ONE(ams_ccs811);
 	struct ccs811_configver_type cfgver;
 	int rc;
 
-	if (!dev) {
-		printk("Failed to get device binding");
+	if (!device_is_ready(dev)) {
+		printk("Device %s is not ready\n", dev->name);
 		return;
 	}
 

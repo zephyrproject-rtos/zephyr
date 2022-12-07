@@ -44,9 +44,7 @@ the STM32L562E-DK Discovery board:
 - User and reset push-buttons
 
 .. image:: img/stm32l562e_dk.jpg
-   :width: 460px
    :align: center
-   :height: 474px
    :alt: STM32L562E-DK Discovery
 
 More information about the board can be found at the `STM32L562E-DK Discovery website`_.
@@ -175,6 +173,8 @@ hardware features:
 | PWM       | on-chip    | PWM                                 |
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| SDMMC     | on-chip    | sd/mmc                              |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+

@@ -31,7 +31,12 @@
 
 	aliases {
 		led0 = &led;
+		spi-flash0 = &gd25q16;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hse {
@@ -80,7 +85,6 @@
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 	gd25q16: gd25q16c@0 {
 		compatible = "jedec,spi-nor";
-		label = "GD25Q16C";
 		reg = <0>;
 		spi-max-frequency = <80000000>;
 		size = <0x200000>;
@@ -98,6 +102,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

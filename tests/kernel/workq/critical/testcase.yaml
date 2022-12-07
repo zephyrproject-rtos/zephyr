@@ -1,5 +1,5 @@
 common:
-  tags: kernel
+  tags: kernel workqueue
 
 tests:
   kernel.workqueue.critical:
@@ -15,7 +15,6 @@ tests:
       - CONFIG_TEST_HW_STACK_PROTECTION=n
   kernel.workqueue.critical.linker_generator:
     platform_allow: qemu_cortex_m3
-    filter: not CONFIG_WDT_SAM
-    tags:  linker_generator
+    tags: linker_generator
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y

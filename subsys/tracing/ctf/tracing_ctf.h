@@ -160,6 +160,21 @@ extern "C" {
 #define sys_port_trace_k_mutex_unlock_exit(mutex, ret)                         \
 	sys_trace_k_mutex_unlock_exit(mutex, ret)
 
+/* Timer */
+#define sys_port_trace_k_timer_init(timer)					\
+	sys_trace_k_timer_init(timer)
+#define sys_port_trace_k_timer_start(timer, duration, period)			\
+	sys_trace_k_timer_start(timer, duration, period)
+#define sys_port_trace_k_timer_stop(timer)					\
+	sys_trace_k_timer_stop(timer)
+#define sys_port_trace_k_timer_status_sync_enter(timer)				\
+	sys_trace_k_timer_status_sync_enter(timer)
+#define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)		\
+	sys_trace_k_timer_status_sync_blocking(timer, timeout)
+#define sys_port_trace_k_timer_status_sync_exit(timer, result)			\
+	sys_trace_k_timer_status_sync_exit(timer, result)
+
+
 #define sys_port_trace_k_condvar_init(condvar, ret)
 #define sys_port_trace_k_condvar_signal_enter(condvar)
 #define sys_port_trace_k_condvar_signal_blocking(condvar, timeout)
@@ -306,16 +321,9 @@ extern "C" {
 #define sys_port_trace_k_mem_slab_free_enter(slab)
 #define sys_port_trace_k_mem_slab_free_exit(slab)
 
-#define sys_port_trace_k_timer_init(timer)
-#define sys_port_trace_k_timer_start(timer)
-#define sys_port_trace_k_timer_stop(timer)
-#define sys_port_trace_k_timer_status_sync_enter(timer)
-#define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)
-#define sys_port_trace_k_timer_status_sync_exit(timer, result)
-
 #define sys_port_trace_k_event_init(event)
-#define sys_port_trace_k_event_post_enter(event, events, accumulate)
-#define sys_port_trace_k_event_post_exit(event, events, accumulate)
+#define sys_port_trace_k_event_post_enter(event, events, events_mask)
+#define sys_port_trace_k_event_post_exit(event, events, events_mask)
 #define sys_port_trace_k_event_wait_enter(event, events, options, timeout)
 #define sys_port_trace_k_event_wait_blocking(event, events, options, timeout)
 #define sys_port_trace_k_event_wait_exit(event, events, ret)
@@ -416,12 +424,14 @@ void sys_trace_k_mutex_lock_exit(struct k_mutex *mutex, k_timeout_t timeout,
 void sys_trace_k_mutex_unlock_enter(struct k_mutex *mutex);
 void sys_trace_k_mutex_unlock_exit(struct k_mutex *mutex, int ret);
 
-void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
-			    k_timer_expiry_t stop_fn);
+/* Timer */
+void sys_trace_k_timer_init(struct k_timer *timer);
+
 void sys_trace_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			     k_timeout_t period);
 void sys_trace_k_timer_stop(struct k_timer *timer);
-void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer);
+void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer, k_timeout_t timeout);
+void sys_trace_k_timer_status_sync_enter(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
 
 void sys_trace_k_event_init(struct k_event *event);

@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 #include <fcntl.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
@@ -15,6 +15,9 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "../../socket_helpers.h"
 
 #define TEST_STR_SMALL "test"
+
+#define MY_IPV4_ADDR "127.0.0.1"
+#define MY_IPV6_ADDR "::1"
 
 #define ANY_PORT 0
 #define SERVER_PORT 4242
@@ -148,7 +151,7 @@ static void spawn_client_connect_thread(int sock, struct sockaddr *addr)
 	k_thread_start(&client_connect_thread);
 }
 
-void test_so_type(void)
+ZTEST(net_socket_tls, test_so_type)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -156,10 +159,8 @@ void test_so_type(void)
 	int optval;
 	socklen_t optlen = sizeof(optval);
 
-	prepare_sock_tls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
-			    &sock1, &bind_addr4, IPPROTO_TLS_1_2);
-	prepare_sock_tls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			    &sock2, &bind_addr6, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6, IPPROTO_TLS_1_2);
 
 	rv = getsockopt(sock1, SOL_SOCKET, SO_TYPE, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
@@ -176,7 +177,7 @@ void test_so_type(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
-void test_so_protocol(void)
+ZTEST(net_socket_tls, test_so_protocol)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -184,10 +185,8 @@ void test_so_protocol(void)
 	int optval;
 	socklen_t optlen = sizeof(optval);
 
-	prepare_sock_tls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
-			    &sock1, &bind_addr4, IPPROTO_TLS_1_2);
-	prepare_sock_tls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			    &sock2, &bind_addr6, IPPROTO_TLS_1_1);
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6, IPPROTO_TLS_1_1);
 
 	rv = getsockopt(sock1, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
@@ -228,7 +227,7 @@ static void test_msg_waitall_tx_work_handler(struct k_work *work)
 	}
 }
 
-void test_v4_msg_waitall(void)
+ZTEST(net_socket_tls, test_v4_msg_waitall)
 {
 	struct test_msg_waitall_data test_data = {
 		.data = TEST_STR_SMALL,
@@ -247,10 +246,8 @@ void test_v4_msg_waitall(void)
 		.tv_usec = 500000,
 	};
 
-	prepare_sock_tls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
-			    &c_sock, &c_saddr, IPPROTO_TLS_1_2);
-	prepare_sock_tls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
-			    &s_sock, &s_saddr, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &s_sock, &s_saddr, IPPROTO_TLS_1_2);
 
 	test_config_psk(s_sock, c_sock);
 
@@ -306,7 +303,7 @@ void test_v4_msg_waitall(void)
 	test_close(c_sock);
 }
 
-void test_v6_msg_waitall(void)
+ZTEST(net_socket_tls, test_v6_msg_waitall)
 {
 	struct test_msg_waitall_data test_data = {
 		.data = TEST_STR_SMALL,
@@ -325,10 +322,8 @@ void test_v6_msg_waitall(void)
 		.tv_usec = 500000,
 	};
 
-	prepare_sock_tls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			    &c_sock, &c_saddr, IPPROTO_TLS_1_2);
-	prepare_sock_tls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			    &s_sock, &s_saddr, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock, &s_saddr, IPPROTO_TLS_1_2);
 
 	test_config_psk(s_sock, c_sock);
 
@@ -452,34 +447,30 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v4_msg_trunc(void)
+ZTEST(net_socket_tls, test_v4_msg_trunc)
 {
 	int client_sock;
 	int server_sock;
 	struct sockaddr_in client_addr;
 	struct sockaddr_in server_addr;
 
-	prepare_sock_dtls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
-			     &client_sock, &client_addr, IPPROTO_DTLS_1_2);
-	prepare_sock_dtls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
-			     &server_sock, &server_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &server_sock, &server_addr, IPPROTO_DTLS_1_2);
 
 	test_msg_trunc(client_sock, server_sock,
 		       (struct sockaddr *)&client_addr, sizeof(client_addr),
 		       (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-void test_v6_msg_trunc(void)
+ZTEST(net_socket_tls, test_v6_msg_trunc)
 {
 	int client_sock;
 	int server_sock;
 	struct sockaddr_in6 client_addr;
 	struct sockaddr_in6 server_addr;
 
-	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			     &client_sock, &client_addr, IPPROTO_DTLS_1_2);
-	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			     &server_sock, &server_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &server_sock, &server_addr, IPPROTO_DTLS_1_2);
 
 	test_msg_trunc(client_sock, server_sock,
 		       (struct sockaddr *)&client_addr, sizeof(client_addr),
@@ -577,60 +568,34 @@ static void test_dtls_sendmsg(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v4_dtls_sendmsg(void)
+ZTEST(net_socket_tls, test_v4_dtls_sendmsg)
 {
 	int client_sock;
 	int server_sock;
-	struct sockaddr_in6 client_addr;
-	struct sockaddr_in6 server_addr;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
 
-	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			     &client_sock, &client_addr, IPPROTO_DTLS_1_2);
-	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			     &server_sock, &server_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &server_sock, &server_addr, IPPROTO_DTLS_1_2);
 
 	test_dtls_sendmsg(client_sock, server_sock,
 			  (struct sockaddr *)&client_addr, sizeof(client_addr),
 			  (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-void test_v6_dtls_sendmsg(void)
+ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
 {
 	int client_sock;
 	int server_sock;
 	struct sockaddr_in6 client_addr;
 	struct sockaddr_in6 server_addr;
 
-	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			     &client_sock, &client_addr, IPPROTO_DTLS_1_2);
-	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
-			     &server_sock, &server_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &server_sock, &server_addr, IPPROTO_DTLS_1_2);
 
 	test_dtls_sendmsg(client_sock, server_sock,
 			  (struct sockaddr *)&client_addr, sizeof(client_addr),
 			  (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-void test_main(void)
-{
-	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
-		k_thread_priority_set(k_current_get(),
-				K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1));
-	} else {
-		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(8));
-	}
-
-	ztest_test_suite(
-		socket_tls,
-		ztest_unit_test(test_so_type),
-		ztest_unit_test(test_so_protocol),
-		ztest_unit_test(test_v4_msg_waitall),
-		ztest_unit_test(test_v6_msg_waitall),
-		ztest_unit_test(test_v4_msg_trunc),
-		ztest_unit_test(test_v6_msg_trunc),
-		ztest_unit_test(test_v4_dtls_sendmsg),
-		ztest_unit_test(test_v6_dtls_sendmsg)
-		);
-
-	ztest_run_test_suite(socket_tls);
-}
+ZTEST_SUITE(net_socket_tls, NULL, NULL, NULL, NULL, NULL);

@@ -32,7 +32,6 @@
 &ftfe {
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
-		label = "MCUX_FLASH";
 		reg = <0 DT_SIZE_K(256)>;
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <8>;

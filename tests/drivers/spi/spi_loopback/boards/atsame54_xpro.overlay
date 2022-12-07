@@ -8,4 +8,14 @@
 	/* Internally connect MOSI to MISO for loop-back operation */
 	dipo = <3>;
 	dopo = <2>;
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
 };

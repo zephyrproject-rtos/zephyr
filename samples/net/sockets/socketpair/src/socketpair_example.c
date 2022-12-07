@@ -3,9 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX_32BIT) \
-	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
-	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
+#if defined(__ZEPHYR__) && !defined(CONFIG_ARCH_POSIX)
 
 #include <zephyr/net/socket.h>
 #include <zephyr/posix/pthread.h>
@@ -44,11 +42,9 @@ static const char *const names[] = {
 	"Charlie",
 };
 
-#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX_32BIT) \
-	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
-	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
+#if defined(__ZEPHYR__) && !defined(CONFIG_ARCH_POSIX)
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define STACK_SIZE (1024)
 static pthread_attr_t attr[NUM_SOCKETPAIRS];
 K_THREAD_STACK_ARRAY_DEFINE(stack, NUM_SOCKETPAIRS, STACK_SIZE);
 
@@ -110,7 +106,6 @@ int main(int argc, char *argv[])
 	int r;
 	int fd;
 	int idx;
-	int poll_r;
 	size_t i;
 	size_t num_active;
 	char buf[32];
@@ -127,9 +122,7 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 
-#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX_32BIT) \
-	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
-	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
+#if defined(__ZEPHYR__) && !defined(CONFIG_ARCH_POSIX)
 		/* Zephyr requires a non-NULL attribute for pthread_create */
 		attrp = &attr[i];
 		r = pthread_attr_init(attrp);
@@ -174,7 +167,7 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		poll_r = poll(fds, num_active, -1);
+		(void)poll(fds, num_active, -1);
 
 		for (size_t i = 0; i < num_active; ++i) {
 

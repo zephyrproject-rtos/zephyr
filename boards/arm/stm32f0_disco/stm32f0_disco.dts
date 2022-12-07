@@ -44,6 +44,7 @@
 		led0 = &green_led_3;
 		led1 = &blue_led_4;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 

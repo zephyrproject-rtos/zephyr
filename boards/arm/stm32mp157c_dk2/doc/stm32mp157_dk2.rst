@@ -47,9 +47,7 @@ Zephyr OS is ported to run on the Cortex®-M4 core.
   - Bluetooth® Low Energy 4.1
 
 .. image:: img/en.stm32mp157c-dk2.jpg
-     :width: 600px
      :align: center
-     :height: 526px
      :alt: STM32MP157C-DK2 Discovery
 
 More information about the board can be found at the
@@ -248,30 +246,24 @@ Debugging
 =========
 
 You can debug an application using OpenOCD and GDB. The Solution proposed below
-is based on the Linux STM32MP1 SDK OpenOCD and is available only for a Linux
+is based on the attach to a preloaded firmware, available only for a Linux
 environment. The firmware must first be loaded by the Cortex®-A7. Developer
 then attaches the debugger to the running Zephyr using OpenOCD.
 
-Prerequisite
-------------
-install `stm32mp1 developer package`_.
+Principle is to attach to the firmware already loaded by the Linux.
 
-1) start OpenOCD in a dedicated terminal
+- Build the sample:
 
-   - Start up the  sdk environment::
+.. code-block:: console
 
-      source <SDK installation directory>/environment-setup-cortexa7hf-neon-vfpv4-openstlinux_weston-linux-gnueabi
+  west build -b stm32mp157c_dk2 samples/hello_world
 
-   - Start OpenOCD::
+- Copy the firmware on the target filesystem, load it and start it (`stm32mp157c boot Cortex-M4 firmware`_).
+- Attach to the target:
 
-      ${OECORE_NATIVE_SYSROOT}/usr/bin/openocd -s ${OECORE_NATIVE_SYSROOT}/usr/share/openocd/scripts -f board/stm32mp15x_dk2.cfg
+.. code-block:: console
 
-2) run gdb in Zephyr environment
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: stm32mp157c_dk2
-      :goals: debug
+  west attach
 
 .. _STM32P157C Discovery website:
    https://www.st.com/content/st_com/en/products/evaluation-tools/product-evaluation-tools/mcu-mpu-eval-tools/stm32-mcu-mpu-eval-tools/stm32-discovery-kits/stm32mp157c-dk2.html

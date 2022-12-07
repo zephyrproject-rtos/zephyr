@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max17262, CONFIG_SENSOR_LOG_LEVEL);
@@ -31,8 +32,7 @@ static int max17262_reg_read(const struct device *dev, uint8_t reg_addr,
 	uint8_t i2c_data[2];
 	int rc;
 
-	rc = i2c_burst_read(cfg->i2c, cfg->i2c_addr, reg_addr,
-			    i2c_data, 2);
+	rc = i2c_burst_read_dt(&cfg->i2c, reg_addr, i2c_data, 2);
 	if (rc < 0) {
 		LOG_ERR("Unable to read register");
 		return rc;
@@ -58,8 +58,7 @@ static int max17262_reg_write(const struct device *dev, uint8_t reg_addr,
 	const struct max17262_config *cfg = dev->config;
 	uint8_t i2c_data[3] = {reg_addr, val & 0xFF, (uint16_t)val >> 8};
 
-	return i2c_write(cfg->i2c, i2c_data, sizeof(i2c_data),
-		     cfg->i2c_addr);
+	return i2c_write_dt(&cfg->i2c, i2c_data, sizeof(i2c_data));
 }
 
 /**
@@ -227,9 +226,9 @@ static int max17262_gauge_init(const struct device *dev)
 	const struct max17262_config *const config = dev->config;
 	int16_t tmp, hibcfg;
 
-	if (!device_is_ready(config->i2c)) {
-		LOG_ERR("Could not get pointer to %s device", config->i2c->name);
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	/* Read Status register */
@@ -321,8 +320,7 @@ static const struct sensor_driver_api max17262_battery_driver_api = {
 	static struct max17262_data max17262_data_##n;			\
 									\
 	static const struct max17262_config max17262_config_##n = {	\
-		.i2c = DEVICE_DT_GET(DT_INST_BUS(n)),			\
-		.i2c_addr = DT_INST_REG_ADDR(n),			\
+		.i2c = I2C_DT_SPEC_INST_GET(n),				\
 		.design_voltage = DT_INST_PROP(n, design_voltage),	\
 		.desired_voltage = DT_INST_PROP(n, desired_voltage),	\
 		.desired_charging_current =				\
@@ -333,7 +331,7 @@ static const struct sensor_driver_api max17262_battery_driver_api = {
 		.charge_voltage = DT_INST_PROP(n, charge_voltage),	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init,		\
 			    NULL,					\
 			    &max17262_data_##n,				\
 			    &max17262_config_##n, POST_KERNEL,		\

@@ -45,9 +45,7 @@ Key Features
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
 
 .. image:: img/nucleo_h753zi.jpg
-   :width: 720px
    :align: center
-   :height: 533px
    :alt: Nucleo H753ZI
 
 More information about the board can be found at the `Nucleo H753ZI website`_.

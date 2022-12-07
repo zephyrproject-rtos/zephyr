@@ -189,8 +189,8 @@ static int modem_atoi(const char *s, const int err_value,
 
 	ret = (int)strtol(s, &endptr, 10);
 	if (!endptr || *endptr != '\0') {
-		LOG_ERR("bad %s '%s' in %s", log_strdup(s), log_strdup(desc),
-			log_strdup(func));
+		LOG_ERR("bad %s '%s' in %s", s, desc,
+			func);
 		return err_value;
 	}
 
@@ -274,7 +274,7 @@ int modem_detect_apn(const char *imsi)
 	}
 
 	if (rc == 0) {
-		LOG_INF("Assign APN: \"%s\"", log_strdup(mdata.mdm_apn));
+		LOG_INF("Assign APN: \"%s\"", mdata.mdm_apn);
 	}
 
 	return rc;
@@ -561,7 +561,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
 				    sizeof(mdata.mdm_manufacturer) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_manufacturer[out_len] = '\0';
-	LOG_INF("Manufacturer: %s", log_strdup(mdata.mdm_manufacturer));
+	LOG_INF("Manufacturer: %s", mdata.mdm_manufacturer);
 	return 0;
 }
 
@@ -574,7 +574,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 				    sizeof(mdata.mdm_model) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_model[out_len] = '\0';
-	LOG_INF("Model: %s", log_strdup(mdata.mdm_model));
+	LOG_INF("Model: %s", mdata.mdm_model);
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* Set modem type */
@@ -600,7 +600,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 				    sizeof(mdata.mdm_revision) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_revision[out_len] = '\0';
-	LOG_INF("Revision: %s", log_strdup(mdata.mdm_revision));
+	LOG_INF("Revision: %s", mdata.mdm_revision);
 	return 0;
 }
 
@@ -612,7 +612,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 	out_len = net_buf_linearize(mdata.mdm_imei, sizeof(mdata.mdm_imei) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_imei[out_len] = '\0';
-	LOG_INF("IMEI: %s", log_strdup(mdata.mdm_imei));
+	LOG_INF("IMEI: %s", mdata.mdm_imei);
 	return 0;
 }
 
@@ -624,7 +624,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
 	out_len = net_buf_linearize(mdata.mdm_imsi, sizeof(mdata.mdm_imsi) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_imsi[out_len] = '\0';
-	LOG_INF("IMSI: %s", log_strdup(mdata.mdm_imsi));
+	LOG_INF("IMSI: %s", mdata.mdm_imsi);
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 	/* set the APN automatically */
@@ -766,7 +766,7 @@ MODEM_CMD_DEFINE(on_cmd_sockwrite)
 /* Handler: +USECMNG: 0,<type>[0],<internal_name>[1],<md5_string>[2] */
 MODEM_CMD_DEFINE(on_cmd_cert_write)
 {
-	LOG_DBG("cert md5: %s", log_strdup(argv[2]));
+	LOG_DBG("cert md5: %s", argv[2]);
 	return 0;
 }
 #endif
@@ -1455,7 +1455,7 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	return 0;
 
 error:
-	LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+	LOG_ERR("%s ret:%d", buf, ret);
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
 	errno = -ret;
 	return -1;
@@ -1500,7 +1500,7 @@ static int offload_close(void *obj)
 				     NULL, 0U, buf,
 				     &mdata.sem_response, MDM_CMD_TIMEOUT);
 		if (ret < 0) {
-			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+			LOG_ERR("%s ret:%d", buf, ret);
 		}
 	}
 
@@ -1583,7 +1583,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 			     NULL, 0U, buf,
 			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+		LOG_ERR("%s ret:%d", buf, ret);
 		errno = -ret;
 		return -1;
 	}
@@ -2018,9 +2018,9 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	}
 
 	LOG_DBG("DNS RESULT: %s",
-		log_strdup(net_addr_ntop(result.ai_family,
+		net_addr_ntop(result.ai_family,
 					 &net_sin(&result_addr)->sin_addr,
-					 sendbuf, NET_IPV4_ADDR_LEN)));
+					 sendbuf, NET_IPV4_ADDR_LEN));
 
 	*res = (struct zsock_addrinfo *)&result;
 	return 0;

@@ -3,6 +3,7 @@
 
 config I2C_LPC11U6X
 	bool "LPC11U6X I2C driver"
-	depends on SOC_SERIES_LPC11U6X
+	default y
+	depends on DT_HAS_NXP_LPC11U6X_I2C_ENABLED
 	help
 	  Enable I2C support on the LPC11U6X SoCs

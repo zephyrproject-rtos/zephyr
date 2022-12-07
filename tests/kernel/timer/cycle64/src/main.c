@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 
 static void swap64(uint64_t *a, uint64_t *b)
 {
@@ -42,7 +42,7 @@ uint32_t timeout(uint64_t prev, uint64_t now)
 	return (uint32_t)next;
 }
 
-static void test_32bit_wrap_around(void)
+ZTEST(cycle64_tests, test_32bit_wrap_around)
 {
 	enum {
 		CURR,
@@ -75,10 +75,4 @@ static void test_32bit_wrap_around(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(cycle64_tests,
-			 ztest_unit_test(test_32bit_wrap_around));
-
-	ztest_run_test_suite(cycle64_tests);
-}
+ZTEST_SUITE(cycle64_tests, NULL, NULL, NULL, NULL, NULL);

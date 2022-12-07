@@ -11,7 +11,7 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include <limits.h>
 #include <fcntl.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 /* Define sockaddr, etc, before simplelink.h */
 #include <zephyr/net/socket_offload.h>
 

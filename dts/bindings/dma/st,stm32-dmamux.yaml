@@ -49,7 +49,6 @@ description: |
          dma-generators = <4>;
          dma-requests= <36>;
          status = "disabled";
-         label = "DMAMUX_1";
         };
     for client SPI of stm32wb55x
      spi1: spi@40013000 {

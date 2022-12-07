@@ -15,6 +15,9 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#define STORAGE_PARTITION	storage_partition
+#define STORAGE_PARTITION_ID	FIXED_PARTITION_ID(STORAGE_PARTITION)
+
 /* FAT */
 #ifdef CONFIG_FAT_FILESYSTEM_ELM
 #include <ff.h>
@@ -36,7 +39,7 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(lfs_data);
 static struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &lfs_data,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.storage_dev = (void *)STORAGE_PARTITION_ID,
 };
 #endif
 
@@ -274,7 +277,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (dirent.type != FS_DIR_ENTRY_FILE) {
-		shell_error(shell, "Note a file %s", path);
+		shell_error(shell, "Not a file %s", path);
 		return -ENOEXEC;
 	}
 
@@ -356,7 +359,7 @@ static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (dirent.type != FS_DIR_ENTRY_FILE) {
-			shell_error(shell, "Note a file %s", path);
+			shell_error(shell, "Not a file %s", path);
 			continue;
 		}
 
@@ -505,7 +508,7 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 	res = fs_mount(&fatfs_mnt);
 	if (res != 0) {
 		shell_error(shell,
-			"Error mounting fat fs.Error Code [%d]", res);
+			"Error mounting FAT fs. Error Code [%d]", res);
 		return -ENOEXEC;
 	}
 

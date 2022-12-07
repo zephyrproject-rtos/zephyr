@@ -2,7 +2,7 @@
 # Reason for that is because not a single command covers all use cases,
 # and it must therefore be possible to call individual commands, depending
 # on the arguments used.
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.20.0)
 
 # Handle stripping
 if (STRIP_DEBUG OR STRIP_ALL)

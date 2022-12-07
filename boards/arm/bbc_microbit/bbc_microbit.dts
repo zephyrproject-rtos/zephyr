@@ -16,6 +16,9 @@
 	aliases {
 		sw0 = &buttonA;
 		sw1 = &buttonB;
+		magn0 = &lsm303agr_magn;
+		accel0 = &mma8653fc;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -45,7 +48,6 @@
 	led_matrix: led_matrix {
 		compatible = "nordic,nrf-led-matrix";
 		status = "okay";
-		label = "LED_MATRIX";
 		width = <5>;
 		height = <5>;
 		pixel-mapping = [00 13 01 14 02
@@ -129,29 +131,26 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
-	mma8653fc@1d {
+	mma8653fc: mma8653fc@1d {
 		compatible = "nxp,fxos8700", "nxp,mma8653fc";
 		status = "okay";
 		reg = <0x1d>;
-		label = "MMA8653FC";
 		int1-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 	};
 
 	/* v1.5 variant 1 LSM303AGR */
-	lsm303agr-magn@1e {
+	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		status = "disabled";
 		reg = <0x1e>;
-		label = "LSM303AGR-MAGN";
 		irq-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;	/* A3 */
 	};
 
-	lsm303agr-accel@19 {
+	lsm303agr_accel: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		status = "disabled";
 		reg = <0x19>;
-		label = "LSM303AGR-ACCEL";
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
 	};
 };

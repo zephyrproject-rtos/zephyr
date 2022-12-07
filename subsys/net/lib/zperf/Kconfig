@@ -1,0 +1,25 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_ZPERF
+	bool "zperf shell utility"
+	depends on SHELL
+	help
+	  This option enables zperf shell utility, which allows to generate
+	  network traffic and evaluate network bandwidth.
+
+if NET_ZPERF
+
+module = NET_ZPERF
+module-dep = NET_LOG
+module-str = Log level for zperf
+module-help = Enable debug message of zperf libray.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_ZPERF_MAX_PACKET_SIZE
+	int "Maximum packet size"
+	default 1024
+	help
+	  Upper size limit for packets sent by zperf.
+
+endif

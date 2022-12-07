@@ -6,7 +6,7 @@
 
 /* Tests where time_t is a 32-bit value */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "timeutil_test.h"
 
 static const struct timeutil_test_data tests[] = {
@@ -238,7 +238,7 @@ static const struct timeutil_test_data tests[] = {
 	  } },
 };
 
-void test_s32(void)
+ZTEST(timeutil_api, test_s32)
 {
 	timeutil_check(tests, sizeof(tests) / sizeof(*tests));
 }

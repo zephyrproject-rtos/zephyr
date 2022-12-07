@@ -7,11 +7,9 @@
 &zephyr_udc0 {
 	cdc_acm_uart0 {
 		compatible = "zephyr,cdc-acm-uart";
-		label = "CDC_ACM_0";
 	};
 
 	cdc_acm_uart1 {
 		compatible = "zephyr,cdc-acm-uart";
-		label = "CDC_ACM_1";
 	};
 };

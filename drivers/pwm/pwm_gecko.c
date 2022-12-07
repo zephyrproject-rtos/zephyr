@@ -8,8 +8,8 @@
 
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include "em_cmu.h"
-#include "em_timer.h"
+#include <em_cmu.h>
+#include <em_timer.h>
 
 /** PWM configuration. */
 struct pwm_gecko_config {
@@ -74,7 +74,7 @@ static int pwm_gecko_get_cycles_per_sec(const struct device *dev,
 
 static const struct pwm_driver_api pwm_gecko_driver_api = {
 	.set_cycles = pwm_gecko_set_cycles,
-	.get_cycles_per_sec = pwm_gecko_get_cycles_per_sec
+	.get_cycles_per_sec = pwm_gecko_get_cycles_per_sec,
 };
 
 static int pwm_gecko_init(const struct device *dev)
@@ -112,7 +112,7 @@ static int pwm_gecko_init(const struct device *dev)
 										\
 	DEVICE_DT_INST_DEFINE(index, &pwm_gecko_init, NULL, NULL,		\
 				&pwm_gecko_config_##index, POST_KERNEL,		\
-				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+				CONFIG_PWM_INIT_PRIORITY,			\
 				&pwm_gecko_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_GECKO_INIT)

@@ -109,8 +109,7 @@ struct bt_mesh_hb_cb {
 	void (*pub_sent)(const struct bt_mesh_hb_pub *pub);
 };
 
-/** @def BT_MESH_HB_CB_DEFINE
- *
+/**
  *  @brief Register a callback structure for Heartbeat events.
  *
  *  Registers a callback structure that will be called whenever Heartbeat

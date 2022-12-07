@@ -92,6 +92,7 @@
 		sw2 = &joy_down;
 		sw3 = &joy_right;
 		sw4 = &joy_up;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -136,17 +137,14 @@
 	vbus_meas: ina230@40 {
 		status = "okay";
 		compatible = "ti,ina230";
-		label = "VBUS";
 		reg = <0x40>;
 		config = <INA230_CONFIG(
 			INA230_OPER_MODE_BUS_VOLTAGE_CONT,
 			INA230_CONV_TIME_1100,
 			INA230_CONV_TIME_1100,
 			INA230_AVG_MODE_1)>;
-		/* Set current LSB to 1mA */
-		current-lsb = <1>;
-		/* Set shunt resistor value to 15 milliohms */
-		rshunt = <15>;
+		current-lsb-microamps = <1000>;
+		rshunt-milliohms = <15>;
 	};
 };
 
@@ -177,6 +175,8 @@
 	 */
 	psc-ucpdclk = <1>;
 	hbitclkdiv = <27>;
+	pinctrl-0 = <&ucpd1_cc1_pa8 &ucpd1_cc2_pb15>;
+	pinctrl-names = "default";
 };
 
 &iwdg {

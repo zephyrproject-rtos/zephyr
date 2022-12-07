@@ -16,12 +16,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_22";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_22";
 				#pwm-cells = <3>;
 			};
 		};

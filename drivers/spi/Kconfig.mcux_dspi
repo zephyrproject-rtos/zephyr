@@ -6,7 +6,9 @@
 
 config SPI_MCUX_DSPI
 	bool "MCUX SPI driver"
-	depends on HAS_MCUX && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_NXP_KINETIS_DSPI_ENABLED
+	depends on CLOCK_CONTROL
 	select PINCTRL
 	help
 	  Enable support for mcux spi driver.

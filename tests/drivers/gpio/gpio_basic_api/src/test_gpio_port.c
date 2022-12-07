@@ -9,7 +9,7 @@
 
 #define ALL_BITS ((gpio_port_value_t)-1)
 
-static const struct device *dev;
+static const struct device *const dev = DEVICE_DT_GET(DEV);
 
 /* Short-hand for a checked read of PIN_IN raw state */
 static bool raw_in(void)
@@ -69,12 +69,10 @@ static int setup(void)
 	int rc;
 	gpio_port_value_t v1;
 
-	TC_PRINT("Validate device %s\n", DEV_NAME);
-	dev = device_get_binding(DEV_NAME);
-	zassert_not_equal(dev, NULL,
-			  "Device not found");
+	TC_PRINT("Validate device %s\n", dev->name);
+	zassert_true(device_is_ready(dev), "GPIO dev is not ready");
 
-	TC_PRINT("Check %s output %d connected to input %d\n", DEV_NAME,
+	TC_PRINT("Check %s output %d connected to input %d\n", dev->name,
 		 PIN_OUT, PIN_IN);
 
 	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT);
@@ -631,7 +629,30 @@ static int bits_logical(void)
 	return TC_PASS;
 }
 
-void test_gpio_port(void)
+/* gpio_pin_get_config()
+ */
+static int pin_get_config(void)
+{
+	gpio_flags_t flags_get = 0;
+	gpio_flags_t flags_set;
+	int rc;
+
+	flags_set = GPIO_OUTPUT_HIGH;
+	rc = gpio_pin_configure(dev, PIN_OUT, flags_set);
+	zassert_equal(rc, 0, "pin configure failed");
+
+	rc = gpio_pin_get_config(dev, PIN_OUT, &flags_get);
+	if (rc == -ENOSYS) {
+		return TC_PASS;
+	}
+
+	zassert_equal(rc, 0, "pin get config failed");
+	zassert_equal(flags_get, flags_set, "flags are different");
+
+	return TC_PASS;
+}
+
+ZTEST(gpio_port, test_gpio_port)
 {
 	zassert_equal(setup(), TC_PASS,
 		      "device setup failed");
@@ -649,4 +670,8 @@ void test_gpio_port(void)
 		      "bits_logical failed");
 	zassert_equal(check_pulls(), TC_PASS,
 		      "check_pulls failed");
+	if (IS_ENABLED(CONFIG_GPIO_GET_CONFIG)) {
+		zassert_equal(pin_get_config(), TC_PASS,
+			      "pin_get_config failed");
+	}
 }

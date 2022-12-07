@@ -30,7 +30,8 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                  config_dir,
                  default_key,
                  key,
-                 pty
+                 pty,
+                 tool_opt
                  ):
         super().__init__(cfg)
 
@@ -48,13 +49,15 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
         else:
             self.key = os.path.join(DEFAULT_KEY_DIR, default_key)
 
+        self.tool_opt_args = tool_opt
+
     @classmethod
     def name(cls):
         return 'intel_adsp'
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'})
+        return RunnerCaps(commands={'flash'}, tool_opt=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -68,9 +71,14 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                             help='the default basename of the key store in board.cmake')
         parser.add_argument('--key',
                             help='specify where the signing key is')
-        parser.add_argument('--pty', action="store_true",
-                            help='the log will not output immediately to STDOUT, you \
-                            can redirect it to a serial PTY')
+        parser.add_argument('--pty', nargs='?', const="remote-host", type=str,
+                            help=''''Capture the output of cavstool.py running on --remote-host \
+                            and stream it remotely to west's standard output.''')
+
+    @classmethod
+    def tool_opt_help(cls) -> str:
+        return """Additional options for run/request service tool,
+        e.g. '--lock' """
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -80,15 +88,22 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                                     config_dir=args.config_dir,
                                     default_key=args.default_key,
                                     key=args.key,
-                                    pty=args.pty
+                                    pty=args.pty,
+                                    tool_opt=args.tool_opt
                                     )
 
     def do_run(self, command, **kwargs):
         self.logger.info('Starting Intel ADSP runner')
 
-        # If the zephyr.ri is not existing, it will build and sign it.
-        if self.bin_fw is None or not os.path.isfile(self.bin_fw):
-            self.sign(**kwargs)
+        # Always re-sign because here we cannot know whether `west
+        # flash` was invoked with `--skip-rebuild` or not and we have no
+        # way to tell whether there was any code change either.
+        #
+        # Signing does not belong here; it should be invoked either from
+        # some CMakeLists.txt file or an optional hook in some generic
+        # `west flash` code but right now it's in neither so we have to
+        # do this.
+        self.sign(**kwargs)
 
         if re.search("intel_adsp_cavs", self.platform):
             self.require(self.cavstool)
@@ -98,9 +113,12 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
             sys.exit(1)
 
     def sign(self, **kwargs):
-        sign_cmd = ['west', 'sign', '-d', f'{self.cfg.build_dir}', '-t', 'rimage', '-p', f'{self.rimage_tool}',
-                '-D', f'{self.config_dir}', '--', '-k', f'{self.key}']
-
+        path_opt = ['-p', f'{self.rimage_tool}'] if self.rimage_tool else []
+        sign_cmd = (
+            ['west', 'sign', '-d', f'{self.cfg.build_dir}', '-t', 'rimage']
+            + path_opt + ['-D', f'{self.config_dir}', '--', '-k', f'{self.key}']
+        )
+        self.logger.info(" ".join(sign_cmd))
         self.check_call(sign_cmd)
 
     def flash(self, **kwargs):
@@ -109,19 +127,31 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
         random_str = f"{random.getrandbits(64)}".encode()
         hash_object.update(random_str)
         send_bin_fw = str(self.bin_fw + "." + hash_object.hexdigest())
-        os.rename(self.bin_fw, send_bin_fw)
+        shutil.copy(self.bin_fw, send_bin_fw)
 
         # Copy the zephyr to target remote ADSP host and run
         self.run_cmd = ([f'{self.cavstool}','-s', f'{self.remote_host}', f'{send_bin_fw}'])
-        self.log_cmd = ([f'{self.cavstool}','-s', f'{self.remote_host}', '-l'])
 
-        self.logger.debug(f"cavstool({self.cavstool}), fw('{send_bin_fw})")
+        # Add the extra tool options to run/request service tool
+        if self.tool_opt_args:
+            self.run_cmd = self.run_cmd + self.tool_opt_args
+
         self.logger.debug(f"rcmd: {self.run_cmd}")
 
         self.check_call(self.run_cmd)
 
-        # If the self.pty assigned, the output the log will
-        # not output to stdout directly. That means we can
-        # make the log output to the PTY.
-        if not self.pty:
+        # If the self.pty is assigned, the log will output to stdout
+        # directly. That means you don't have to execute the command:
+        #
+        #   cavstool_client.py -s {host}:{port} -l
+        #
+        # to get the result later separately.
+        if self.pty is not None:
+            if self.pty == 'remote-host':
+                self.log_cmd = ([f'{self.cavstool}','-s', f'{self.remote_host}', '-l'])
+            else:
+                self.log_cmd = ([f'{self.cavstool}','-s', f'{self.pty}', '-l'])
+
+            self.logger.debug(f"rcmd: {self.log_cmd}")
+
             self.check_call(self.log_cmd)

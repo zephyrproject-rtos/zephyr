@@ -32,6 +32,28 @@ static inline int z_cbprintf_cxx_is_pchar(const volatile char *, bool const_as_f
 	return 1;
 }
 
+static inline int z_cbprintf_cxx_is_pchar(unsigned char *, bool const_as_fixed)
+{
+	ARG_UNUSED(const_as_fixed);
+	return 1;
+}
+
+static inline int z_cbprintf_cxx_is_pchar(const unsigned char *, bool const_as_fixed)
+{
+	return const_as_fixed ? 0 : 1;
+}
+
+static inline int z_cbprintf_cxx_is_pchar(volatile unsigned char *, bool const_as_fixed)
+{
+	ARG_UNUSED(const_as_fixed);
+	return 1;
+}
+
+static inline int z_cbprintf_cxx_is_pchar(const volatile unsigned char *, bool const_as_fixed)
+{
+	ARG_UNUSED(const_as_fixed);
+	return 1;
+}
 static inline int z_cbprintf_cxx_is_pchar(wchar_t *, bool const_as_fixed)
 {
 	ARG_UNUSED(const_as_fixed);
@@ -249,6 +271,44 @@ struct z_cbprintf_cxx_remove_cv < volatile T > {
 
 template < typename T >
 struct z_cbprintf_cxx_remove_cv < const volatile T > {
+	typedef T type;
+};
+
+/* Determine if a type is an array */
+template < typename T >
+struct z_cbprintf_cxx_is_array {
+	enum {
+		value = false
+	};
+};
+
+template < typename T >
+struct z_cbprintf_cxx_is_array < T[] > {
+	enum {
+		value = true
+	};
+};
+
+template < typename T, size_t N >
+struct z_cbprintf_cxx_is_array < T[N] > {
+	enum {
+		value = true
+	};
+};
+
+/* Determine the type of elements in an array */
+template < typename T >
+struct z_cbprintf_cxx_remove_extent {
+	typedef T type;
+};
+
+template < typename T >
+struct z_cbprintf_cxx_remove_extent < T[] > {
+	typedef T type;
+};
+
+template < typename T, size_t N >
+struct z_cbprintf_cxx_remove_extent < T[N] > {
 	typedef T type;
 };
 

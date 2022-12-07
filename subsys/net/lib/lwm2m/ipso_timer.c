@@ -275,7 +275,7 @@ static int timer_trigger_cb(uint16_t obj_inst_id,
 	return start_timer(&timer_data[i]);
 }
 
-static struct lwm2m_engine_obj_inst *timer_create(uint16_t obj_inst_id)
+static struct lwm2m_engine_obj_inst *timer_inst_create(uint16_t obj_inst_id)
 {
 	int index, avail = -1, i = 0, j = 0;
 
@@ -362,7 +362,7 @@ static int ipso_timer_init(const struct device *dev)
 	timer.fields = fields;
 	timer.field_count = ARRAY_SIZE(fields);
 	timer.max_instance_count = MAX_INSTANCE_COUNT;
-	timer.create_cb = timer_create;
+	timer.create_cb = timer_inst_create;
 	lwm2m_register_obj(&timer);
 
 	return 0;

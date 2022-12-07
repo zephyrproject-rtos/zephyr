@@ -59,7 +59,7 @@
 
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/flash.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_emulator);
@@ -550,7 +550,7 @@ static int eeprom_emu_read(const struct device *dev, off_t address, void *data,
 	}
 
 	/* Handle normal case */
-	LOG_DBG("EEPROM read at [0x%tx] length[%d]", (ptrdiff_t)address, len);
+	LOG_DBG("EEPROM read at [0x%tx] length[%zu]", (ptrdiff_t)address, len);
 	k_mutex_lock(&dev_data->lock, K_FOREVER);
 
 	/* read from rambuffer if possible */
@@ -606,7 +606,7 @@ static int eeprom_emu_write(const struct device *dev, off_t address,
 	}
 
 	/* Handle normal case */
-	LOG_DBG("EEPROM write at [0x%tx] length[%d]", (ptrdiff_t)address, len);
+	LOG_DBG("EEPROM write at [0x%tx] length[%zu]", (ptrdiff_t)address, len);
 
 	k_mutex_lock(&dev_data->lock, K_FOREVER);
 
@@ -741,9 +741,6 @@ static const struct eeprom_driver_api eeprom_emu_api = {
 
 #define PART_DEV(part) \
 	DEVICE_DT_GET(PART_DEV_ID(part))
-
-#define PART_DEV_NAME(part) \
-	DT_PROP(PART_DEV_ID(part), label)
 
 #define RECALC_SIZE(size, cbs) \
 	(size % cbs) ? ((size + cbs - 1) & ~(cbs - 1)) : size

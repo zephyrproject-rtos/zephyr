@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2022 Richard Osterloh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f413.dtsi>
+
+/ {
+	soc {
+		aes: aes@50060000 {
+			compatible = "st,stm32-aes";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+	};
+};

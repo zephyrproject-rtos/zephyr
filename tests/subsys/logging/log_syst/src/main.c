@@ -9,7 +9,7 @@
  * @brief Test log message
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include "mock_backend.h"
 #include <zephyr/sys/printk.h>
@@ -17,9 +17,9 @@
 #include <zephyr/logging/log_backend_std.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_output.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <stdbool.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <stdlib.h>
 
 /** Hex string corresponding to "Debug message example, %d, %d, %d", 1, 2, 3.
@@ -29,7 +29,7 @@
 #define PAYLOAD_MULTIPLE_ARGS "4465627567206D657373616765206578616D706C652C2025642C2025642C20256"\
 	"400010000000200000003000000"
 
-MOCK_LOG_BACKEND_DEFINE(backend1, false);
+LOG_BACKEND_DEFINE(log_backend_mock, mock_log_backend_api, false);
 
 #define LOG_MODULE_NAME test
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
@@ -38,25 +38,24 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
  * @brief Testcase to validate that the mock backend would use the expected
  * processing function from the function pointer table format_table
  */
-void test_log_syst_format_table_selection(void)
+ZTEST(log_syst, test_log_syst_format_table_selection)
 {
-
 #ifdef CONFIG_LOG_MIPI_SYST_ENABLE
 	uint32_t test_log_type_syst = LOG_OUTPUT_SYST;
 
 	log_format_func_t test_log_output_func = log_format_func_t_get(test_log_type_syst);
 
-	zassert_equal_ptr(test_log_output_func, log_output_msg2_syst_process,
+	zassert_equal_ptr(test_log_output_func, log_output_msg_syst_process,
 					"Correct Function pointer for SYST log\n"
 					"format was not selected %p vs %p",
-					test_log_output_func, log_output_msg2_syst_process);
+					test_log_output_func, log_output_msg_syst_process);
 
 #elif CONFIG_LOG_BACKEND_MOCK_OUTPUT_DEFAULT == LOG_OUTPUT_TEXT
 
 	uint32_t test_log_type_text = LOG_OUTPUT_TEXT;
 	log_format_func_t test_log_output_func = log_format_func_t_get(test_log_type_text);
 
-	zassert_equal_ptr(test_log_output_func, log_output_msg2_process,
+	zassert_equal_ptr(test_log_output_func, log_output_msg_process,
 						"Function pointer for TEXT log format was not selected");
 
 #endif
@@ -76,7 +75,7 @@ const char *module_id = "00";
 #endif
 
 /* Testcase to validate the SYST output of log data */
-void test_log_syst_data(void)
+ZTEST(log_syst, test_log_syst_data)
 {
 	LOG_DBG("Debug message example, %d", 1);
 
@@ -88,7 +87,7 @@ void test_log_syst_data(void)
 }
 
 /* Testcase to validate the SYST output of data with multiple arguments */
-void test_log_syst_data_multiple_args(void)
+ZTEST(log_syst, test_log_syst_data_multiple_args)
 {
 	LOG_DBG("Debug message example, %d, %d, %d", 1, 2, 3);
 
@@ -99,7 +98,7 @@ void test_log_syst_data_multiple_args(void)
 }
 
 /* Testcase to validate the SYST output of float data */
-void test_log_syst_float_data(void)
+ZTEST(log_syst, test_log_syst_float_data)
 {
 	LOG_DBG("Debug message example, %f", 1.223);
 
@@ -112,30 +111,50 @@ void test_log_syst_float_data(void)
 
 #else
 
-void test_log_syst_data(void)
+ZTEST(log_syst, test_log_syst_data)
 {
 	ztest_test_skip();
 }
 
-void test_log_syst_data_multiple_args(void)
+ZTEST(log_syst, test_log_syst_data_multiple_args)
 {
 	ztest_test_skip();
 }
 
-void test_log_syst_float_data(void)
+ZTEST(log_syst, test_log_syst_float_data)
 {
 	ztest_test_skip();
 }
 
 #endif
 /* test case main entry */
-void test_main(void)
+
+static void before(void *unused)
 {
-	ztest_test_suite(test_log_syst,
-		ztest_unit_test(test_log_syst_format_table_selection),
-		ztest_unit_test(test_log_syst_data),
-		ztest_unit_test(test_log_syst_float_data),
-		ztest_unit_test(test_log_syst_data_multiple_args)
-		);
-	ztest_run_test_suite(test_log_syst);
+	const struct log_backend *backend;
+
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		backend = log_backend_get(i);
+		if (backend == &log_backend_mock) {
+			log_backend_enable(backend, NULL, 4);
+		} else {
+			log_backend_disable(backend);
+		}
+	}
 }
+
+static void after(void *unused)
+{
+	const struct log_backend *backend;
+
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		backend = log_backend_get(i);
+		if (backend == &log_backend_mock) {
+			log_backend_disable(backend);
+		} else {
+			log_backend_enable(backend, NULL, 4);
+		}
+	}
+}
+
+ZTEST_SUITE(log_syst, NULL, NULL, before, after, NULL);

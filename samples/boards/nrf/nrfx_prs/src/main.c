@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -12,6 +12,7 @@
 #include <nrfx_spim.h>
 #include <nrfx_uarte.h>
 #include <drivers/src/prs/nrfx_prs.h>
+#include <zephyr/irq.h>
 
 #define TRANSFER_LENGTH 10
 
@@ -288,9 +289,7 @@ static bool background_transfer(const struct device *spi_dev)
 	static const uint8_t tx_buffer[] = "Nordic Semiconductor";
 	static uint8_t rx_buffer[sizeof(tx_buffer)];
 	static const struct spi_cs_control spi_dev_cs_ctrl = {
-		.gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(SPI_DEV_NODE, cs_gpios)),
-		.gpio_pin = DT_GPIO_PIN(SPI_DEV_NODE, cs_gpios),
-		.gpio_dt_flags = DT_GPIO_FLAGS(SPI_DEV_NODE, cs_gpios)
+		.gpio = GPIO_DT_SPEC_GET(SPI_DEV_NODE, cs_gpios),
 	};
 	static const struct spi_config spi_dev_cfg = {
 		.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
@@ -338,7 +337,7 @@ void main(void)
 	static uint8_t tx_buffer[TRANSFER_LENGTH];
 	static uint8_t rx_buffer[sizeof(tx_buffer)];
 	uint8_t fill_value = 0;
-	const struct device *spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
+	const struct device *const spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
 
 	if (!device_is_ready(spi_dev)) {
 		printk("%s is not ready\n", spi_dev->name);
@@ -351,8 +350,7 @@ void main(void)
 	 */
 	BUILD_ASSERT(
 		DT_IRQ(SPIM_NODE, priority) == DT_IRQ(UARTE_NODE, priority),
-		"Interrupt priorities for " DT_LABEL(SPIM_NODE) " and "
-		DT_LABEL(UARTE_NODE) " need to be equal.");
+		"Interrupt priorities for SPIM_NODE and UARTE_NODE need to be equal.");
 	IRQ_CONNECT(DT_IRQN(SPIM_NODE), DT_IRQ(SPIM_NODE, priority),
 		    nrfx_isr, nrfx_prs_box_2_irq_handler, 0);
 

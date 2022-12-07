@@ -18,7 +18,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_scg);
 
-#define MCUX_SCG_CLOCK_NODE(name) DT_CHILD(DT_DRV_INST(0), name)
+#define MCUX_SCG_CLOCK_NODE(name) DT_INST_CHILD(0, name)
 
 static int mcux_scg_on(const struct device *dev,
 		       clock_control_subsys_t sub_system)

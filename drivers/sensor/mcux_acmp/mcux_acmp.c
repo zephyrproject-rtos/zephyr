@@ -11,8 +11,10 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/mcux_acmp.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 #include <fsl_acmp.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(mcux_acmp, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -522,7 +524,7 @@ static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 									\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init,		\
 			      NULL,					\
 			      &mcux_acmp_data_##n,			\
 			      &mcux_acmp_config_##n, POST_KERNEL,	\

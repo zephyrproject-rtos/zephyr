@@ -8,13 +8,6 @@ Overview
 
 The X86 QEMU board configuration is used to emulate the X86 architecture.
 
-.. figure:: qemu_x86.png
-   :width: 600px
-   :align: center
-   :alt: Qemu
-
-   Qemu (Credit: qemu.org)
-
 This board configuration provides support for an x86 Minute IA (Lakemont) CPU
 and the following devices:
 

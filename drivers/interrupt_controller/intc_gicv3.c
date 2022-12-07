@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
@@ -14,7 +15,7 @@
 #include <string.h>
 
 /* Redistributor base addresses for each core */
-mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
+mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 
 #if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 #define IGROUPR_VAL	0xFFFFFFFFU
@@ -60,8 +61,9 @@ static int gic_wait_rwp(uint32_t intid)
 		rwp_mask = BIT(GICD_CTLR_RWP);
 	}
 
-	while (sys_read32(base) & rwp_mask)
+	while (sys_read32(base) & rwp_mask) {
 		;
+	}
 
 	return 0;
 }
@@ -99,6 +101,20 @@ static bool arm_gic_lpi_is_enabled(unsigned int intid)
 	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
 
 	return (*cfg & BIT(0));
+}
+#endif
+
+#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
+static inline void arm_gic_write_irouter(uint64_t val, unsigned int intid)
+{
+	mem_addr_t addr = IROUTER(GET_DIST_BASE(intid), intid);
+
+#ifdef CONFIG_ARM
+	sys_write32((uint32_t)val, addr);
+	sys_write32((uint32_t)(val >> 32U), addr + 4);
+#else
+	sys_write64(val, addr);
+#endif
 }
 #endif
 
@@ -151,15 +167,15 @@ void arm_gic_irq_enable(unsigned int intid)
 
 	sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
 
-#ifdef CONFIG_ARMV8_A_NS
+#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 	/*
-	 * Affinity routing is enabled for Non-secure state (GICD_CTLR.ARE_NS
-	 * is set to '1' when GIC distributor is initialized) ,so need to set
-	 * SPI's affinity, now set it to be the PE on which it is enabled.
+	 * Affinity routing is enabled for Armv8-A Non-secure state (GICD_CTLR.ARE_NS
+	 * is set to '1') and for GIC single security state (GICD_CTRL.ARE is set to '1'),
+	 * so need to set SPI's affinity, now set it to be the PE on which it is enabled.
 	 */
-	if (GIC_IS_SPI(intid))
-		sys_write64(MPIDR_TO_CORE(GET_MPIDR()),
-				IROUTER(GET_DIST_BASE(intid), intid));
+	if (GIC_IS_SPI(intid)) {
+		arm_gic_write_irouter(MPIDR_TO_CORE(GET_MPIDR()), intid);
+	}
 #endif
 }
 
@@ -257,12 +273,14 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
  */
 static void gicv3_rdist_enable(mem_addr_t rdist)
 {
-	if (!(sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA)))
+	if (!(sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA))) {
 		return;
+	}
 
 	sys_clear_bit(rdist + GICR_WAKER, GICR_WAKER_PS);
-	while (sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA))
+	while (sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA)) {
 		;
+	}
 }
 
 #ifdef CONFIG_GIC_V3_ITS
@@ -460,12 +478,81 @@ static void gicv3_dist_init(void)
 #endif
 }
 
+static uint64_t arm_gic_mpidr_to_affinity(uint64_t mpidr)
+{
+	uint64_t aff3, aff2, aff1, aff0;
+
+#if defined(CONFIG_ARM)
+	/* There is no Aff3 in AArch32 MPIDR */
+	aff3 = 0;
+#else
+	aff3 = MPIDR_AFFLVL(mpidr, 3);
+#endif
+
+	aff2 = MPIDR_AFFLVL(mpidr, 2);
+	aff1 = MPIDR_AFFLVL(mpidr, 1);
+	aff0 = MPIDR_AFFLVL(mpidr, 0);
+
+	return (aff3 << 24 | aff2 << 16 | aff1 << 8 | aff0);
+}
+
+static bool arm_gic_aff_matching(uint64_t gicr_aff, uint64_t aff)
+{
+#if defined(CONFIG_GIC_V3_RDIST_MATCHING_AFF0_ONLY)
+	uint64_t mask = BIT64_MASK(8);
+
+	return (gicr_aff & mask) == (aff & mask);
+#else
+	return gicr_aff == aff;
+#endif
+}
+
+static inline uint64_t arm_gic_get_typer(mem_addr_t addr)
+{
+	uint64_t val;
+
+#if defined(CONFIG_ARM)
+	val = sys_read32(addr);
+	val |= (uint64_t)sys_read32(addr + 4) << 32;
+#else
+	val = sys_read64(addr);
+#endif
+
+	return val;
+}
+
+static mem_addr_t arm_gic_iterate_rdists(void)
+{
+	uint64_t aff = arm_gic_mpidr_to_affinity(GET_MPIDR());
+
+	for (mem_addr_t rdist_addr = GIC_RDIST_BASE;
+		rdist_addr < GIC_RDIST_BASE + GIC_RDIST_SIZE;
+		rdist_addr += 0x20000) {
+		uint64_t val = arm_gic_get_typer(rdist_addr + GICR_TYPER);
+		uint64_t gicr_aff = GICR_TYPER_AFFINITY_VALUE_GET(val);
+
+		if (arm_gic_aff_matching(gicr_aff, aff)) {
+			return rdist_addr;
+		}
+
+		if (GICR_TYPER_LAST_GET(val) == 1) {
+			return (mem_addr_t)NULL;
+		}
+	}
+
+	return (mem_addr_t)NULL;
+}
+
 static void __arm_gic_init(void)
 {
 	uint8_t cpu;
+	mem_addr_t gic_rd_base;
 
 	cpu = arch_curr_cpu()->id;
-	gic_rdists[cpu] = GIC_RDIST_BASE + MPIDR_TO_CORE(GET_MPIDR()) * 0x20000;
+	gic_rd_base = arm_gic_iterate_rdists();
+	__ASSERT(gic_rd_base != (mem_addr_t)NULL, "");
+
+	gic_rdists[cpu] = gic_rd_base;
 
 #ifdef CONFIG_GIC_V3_ITS
 	/* Enable LPIs in Redistributor */

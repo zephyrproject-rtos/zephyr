@@ -15,6 +15,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <string.h>
+#include <zephyr/irq.h>
 
 #ifndef SERCOM_USART_CTRLA_MODE_USART_INT_CLK
 #define SERCOM_USART_CTRLA_MODE_USART_INT_CLK SERCOM_USART_CTRLA_MODE(0x1)
@@ -145,7 +146,7 @@ static void uart_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
 static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data)
 {
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	size_t tx_active = dev_data->tx_len;
 	struct dma_status st;
 
@@ -227,7 +228,7 @@ static void uart_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 	const struct device *dev = dev_data->dev;
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 	SercomUsart * const regs = cfg->regs;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->rx_len == 0U) {
 		irq_unlock(key);
@@ -306,7 +307,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 	SercomUsart * const regs = cfg->regs;
 	struct dma_status st;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->rx_len == 0U) {
 		irq_unlock(key);
@@ -724,7 +725,7 @@ static void uart_sam0_isr(const struct device *dev)
 
 		k_work_cancel_delayable(&dev_data->tx_timeout_work);
 
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		struct uart_event evt = {
 			.type = UART_TX_DONE,
@@ -956,7 +957,7 @@ static int uart_sam0_tx(const struct device *dev, const uint8_t *buf,
 		return -EINVAL;
 	}
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->tx_len != 0U) {
 		retval = -EBUSY;
@@ -1016,7 +1017,7 @@ static int uart_sam0_rx_enable(const struct device *dev, uint8_t *buf,
 		return -EINVAL;
 	}
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->rx_len != 0U) {
 		retval = -EBUSY;
@@ -1063,7 +1064,7 @@ static int uart_sam0_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	}
 
 	struct uart_sam0_dev_data *const dev_data = dev->data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	int retval = 0;
 
 	if (dev_data->rx_len == 0U) {
@@ -1096,7 +1097,7 @@ static int uart_sam0_rx_disable(const struct device *dev)
 
 	k_work_cancel_delayable(&dev_data->rx_timeout_work);
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->rx_len == 0U) {
 		irq_unlock(key);
@@ -1201,7 +1202,7 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 			    uart_sam0_isr,				\
 			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));		\
-	} while (0)
+	} while (false)
 
 #define UART_SAM0_IRQ_HANDLER_DECL(n)					\
 	static void uart_sam0_irq_config_##n(const struct device *dev)
@@ -1246,7 +1247,7 @@ static void uart_sam0_irq_config_##n(const struct device *dev)		\
 	(DT_INST_PROP(n, txpo) << SERCOM_USART_CTRLA_TXPO_Pos)
 
 #define UART_SAM0_SERCOM_COLLISION_DETECT(n) \
-	(DT_INST_PROP(n, collision_detect))
+	(DT_INST_PROP_OR(n, collision_detection, false))
 
 #ifdef MCLK
 #define UART_SAM0_CONFIG_DEFN(n)					\
@@ -1257,7 +1258,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
-	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
+	.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
@@ -1270,7 +1271,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
-	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
+	.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\

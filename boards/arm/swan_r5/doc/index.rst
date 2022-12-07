@@ -54,9 +54,7 @@ some highlights of the board:
   - low-power RTC, and CRC calculation peripherals
 
 .. image:: img/swan.jpg
-     :width: 780px
      :align: center
-     :height: 600px
      :alt: Blues Wireless Swan
 
 More information about the board can be found at the `Swan Product Page`_.

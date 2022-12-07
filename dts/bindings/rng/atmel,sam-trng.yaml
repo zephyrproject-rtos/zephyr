@@ -18,6 +18,3 @@ properties:
       type: int
       description: peripheral ID
       required: true
-
-    label:
-      required: true

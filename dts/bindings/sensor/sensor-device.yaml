@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensor Device
+
+include: base.yaml
+
+properties:
+  friendly-name:
+    type: string
+    description: |
+      Human readable string describing the sensor. It can be used to
+      distinguish multiple instances of the same model (e.g., lid accelerometer
+      vs. base accelerometer in a laptop) to a host operating system.
+
+      This property is defined in the Generic Sensor Property Usages of the HID
+      Usage Tables specification
+      (https://usb.org/sites/default/files/hut1_3_0.pdf, section 22.5).

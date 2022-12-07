@@ -22,6 +22,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/irq.h>
 
 /* RTC registers. */
 #define RTC0 ((RtcMode0 *) DT_INST_REG_ADDR(0))
@@ -221,7 +222,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Avoid race condition between reading counter and ISR incrementing
 	 * it.
 	 */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	rtc_timeout = rtc_counter + ticks;
 	irq_unlock(key);

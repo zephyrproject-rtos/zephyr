@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 
 #ifdef CONFIG_SMP
 #error Cannot test MP API if SMP is using the CPUs
 #endif
 
-BUILD_ASSERT(CONFIG_MP_NUM_CPUS > 1);
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS > 1);
 
 #define CPU1_STACK_SIZE 1024
 
@@ -60,7 +60,7 @@ FUNC_NORETURN void cpu1_fn(void *arg)
  *   dynamic analysis and testing
  *
  * Prerequisite Conditions:
- * - CONFIG_MP_NUM_CPUS > 1
+ * - CONFIG_MP_MAX_NUM_CPUS > 1
  *
  * Input Specifications:
  * - CPU ID: the cpu want to start
@@ -91,7 +91,7 @@ FUNC_NORETURN void cpu1_fn(void *arg)
  *
  * @see arch_start_cpu()
  */
-void test_mp_start(void)
+ZTEST(multiprocessing, test_mp_start)
 {
 	cpu_arg = 12345;
 
@@ -103,9 +103,4 @@ void test_mp_start(void)
 	zassert_true(cpu_running, "cpu1 didn't start");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(multiprocessing,
-			 ztest_unit_test(test_mp_start));
-	ztest_run_test_suite(multiprocessing);
-}
+ZTEST_SUITE(multiprocessing, NULL, NULL, NULL, NULL, NULL);

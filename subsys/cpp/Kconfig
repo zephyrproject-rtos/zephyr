@@ -54,9 +54,20 @@ config STD_CPP2B
 
 endchoice
 
+config CPP_MAIN
+	bool "C++ main() function definition"
+	help
+	  This option instructs the Zephyr kernel to call the 'int main(void)'
+	  instead of the 'void main(void)', which is the default main() type
+	  for Zephyr.
+
+	  C++ does not allow the main() to be defined with 'void' return type,
+	  and any applications defining its main() in a C++ source file must
+	  enable this option.
+
 config LIB_CPLUSPLUS
 	bool "Link with STD C++ library"
-	depends on !MINIMAL_LIBC
+	select REQUIRES_FULL_LIBC
 	help
 	  Link with STD C++ Library.
 

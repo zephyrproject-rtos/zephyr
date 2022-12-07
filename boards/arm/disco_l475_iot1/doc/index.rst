@@ -37,9 +37,7 @@ This kit provides:
 
 
 .. image:: img/disco_l475_iot1.jpg
-     :width: 531px
      :align: center
-     :height: 354px
      :alt: Disco L475 IoT1
 
 More information about the board can be found at the `Disco L475 IoT1 website`_.
@@ -130,6 +128,8 @@ The Zephyr Disco L475 IoT board configuration supports the following hardware fe
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | QSPI NOR  | on-chip    | off-chip flash                      |
++-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.

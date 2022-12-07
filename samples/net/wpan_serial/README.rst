@@ -36,12 +36,6 @@ Building and Running
      This is the standard default config. This can be used by itself for
      hardware which has native 802.15.4 support.
 
-   - :file:`overlay-cc2520.conf`
-     This overlay enables support for CC2520 transceiver
-
-   - :file:`overlay-rf2xx.conf`
-     This overlay enables support for RF2XX transceiver
-
    To build the wpan_serial sample:
 
    .. zephyr-app-commands::
@@ -52,8 +46,7 @@ Building and Running
      :compact:
 
    Here's how to build and flash the sample for the Atmel SAM R21
-   Xplained Pro Development Kit. Note that for this SoC, you don't
-   need to include ``overlay-rf2xx.conf``.
+   Xplained Pro Development Kit.
 
    .. zephyr-app-commands::
      :zephyr-app: samples/net/wpan_serial

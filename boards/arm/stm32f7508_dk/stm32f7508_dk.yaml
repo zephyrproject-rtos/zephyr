@@ -1,0 +1,26 @@
+# Copyright (c) 2022, Rtone.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: stm32f7508_dk
+name: ST STM32F7508 DK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 320
+flash: 64
+supported:
+  - arduino_i2c
+  - netif:eth
+  - i2c
+  - spi
+  - gpio
+  - pwm
+  - counter
+  - sdhc
+  - usb_device
+  - kscan:touch
+  - display
+  - memc

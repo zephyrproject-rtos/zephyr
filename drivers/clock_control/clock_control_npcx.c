@@ -36,8 +36,9 @@ static inline int npcx_clock_control_on(const struct device *dev,
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
 	const uint32_t pmc_base = ((const struct npcx_pcc_config *)dev->config)->base_pmc;
 
-	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT)
+	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT) {
 		return -EINVAL;
+	}
 
 	/* Clear related PD (Power-Down) bit of module to turn on clock */
 	NPCX_PWDWN_CTL(pmc_base, clk_cfg->ctrl) &= ~(BIT(clk_cfg->bit));
@@ -51,8 +52,9 @@ static inline int npcx_clock_control_off(const struct device *dev,
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
 	const uint32_t pmc_base = ((const struct npcx_pcc_config *)dev->config)->base_pmc;
 
-	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT)
+	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT) {
 		return -EINVAL;
+	}
 
 	/* Set related PD (Power-Down) bit of module to turn off clock */
 	NPCX_PWDWN_CTL(pmc_base, clk_cfg->ctrl) |= BIT(clk_cfg->bit);
@@ -92,6 +94,9 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 		break;
 	case NPCX_CLOCK_BUS_LFCLK:
 		*rate = LFCLK;
+		break;
+	case NPCX_CLOCK_BUS_FMCLK:
+		*rate = FMCLK;
 		break;
 	default:
 		*rate = 0U;
@@ -220,7 +225,7 @@ static int npcx_clock_control_init(const struct device *dev)
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL5) = 0xFA;
 #if CONFIG_ESPI
 	/* Don't gate the clock of the eSPI module if eSPI interface is required */
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0xEF;
+	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0x7F;
 #else
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0xFF;
 #endif

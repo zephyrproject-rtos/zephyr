@@ -17,7 +17,6 @@ description: |
       led_controller: led_controller@0 {
         status = "okay";
         compatible = "ti,tlc59711", "ti,tlc5971";
-        label = "led controller";
         spi-max-frequency = <DT_FREQ_M(1)>;
         reg = <0x0>;
         chain-length = <24>;

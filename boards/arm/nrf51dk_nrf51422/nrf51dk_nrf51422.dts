@@ -84,12 +84,13 @@
 		bootloader-led0 = &led0;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
+		watchdog0 = &wdt0;
 	};
 };
 
 &sw_pwm {
 	status ="okay";
-	channel-gpios = <&gpio0 21 0>;
+	channel-gpios = <&gpio0 21 PWM_POLARITY_INVERTED>;
 	clock-prescaler = <8>;
 };
 

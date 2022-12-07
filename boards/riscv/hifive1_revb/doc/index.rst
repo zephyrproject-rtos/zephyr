@@ -10,7 +10,6 @@ The HiFive1 Rev B is an Arduino-compatible development board with
 a SiFive FE310-G002 RISC-V SoC.
 
 .. image:: img/hifive1_revb.jpg
-   :width: 650px
    :align: center
    :alt: SiFive HiFive1 Rev B board
 

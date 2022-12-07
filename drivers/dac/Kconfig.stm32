@@ -4,11 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_ST_STM32_DAC := st,stm32-dac
-
 config DAC_STM32
 	bool "STM32 DAC driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DAC))
+	default y
+	depends on DT_HAS_ST_STM32_DAC_ENABLED
 	help
 	  Enable the driver implementation for the stm32xx DAC

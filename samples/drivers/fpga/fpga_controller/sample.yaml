@@ -1,0 +1,13 @@
+sample:
+  name: FPGA Controller sample
+
+common:
+    tags: FPGA
+    build_only: true
+
+tests:
+  sample.drivers.fpga_controller:
+    platform_allow: quick_feather
+  sample.drivers.fpga_controller.shell:
+    platform_allow: quick_feather
+    extra_args: CONF_FILE="prj_shell.conf"

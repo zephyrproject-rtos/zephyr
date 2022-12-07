@@ -11,12 +11,11 @@
 #include <stdio.h>
 #include <pmp.h>
 
-#if defined(CONFIG_USERSPACE) && !defined(CONFIG_SMP)
+#ifdef CONFIG_USERSPACE
 /*
- * Glogal variable used to know the current mode running.
- * Is not boolean because it must match the PMP granularity of the arch.
+ * Per-thread (TLS) variable indicating whether execution is in user mode.
  */
-uint32_t is_user_mode;
+__thread uint8_t is_user_mode;
 #endif
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
@@ -36,14 +35,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 				);
 
 	/* Setup the initial stack frame */
-	stack_init->a0 = (ulong_t)entry;
-	stack_init->a1 = (ulong_t)p1;
-	stack_init->a2 = (ulong_t)p2;
-	stack_init->a3 = (ulong_t)p3;
-
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
-	thread->callee_saved.tp = (ulong_t)thread->tls;
-#endif
+	stack_init->a0 = (unsigned long)entry;
+	stack_init->a1 = (unsigned long)p1;
+	stack_init->a2 = (unsigned long)p2;
+	stack_init->a3 = (unsigned long)p3;
 
 	/*
 	 * Following the RISC-V architecture,
@@ -87,23 +82,18 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.priv_stack_start = 0;
 
 	/* the unwound stack pointer upon exiting exception */
-	stack_init->sp = (ulong_t)(stack_init + 1);
+	stack_init->sp = (unsigned long)(stack_init + 1);
 #endif /* CONFIG_USERSPACE */
-
-#if defined(CONFIG_THREAD_LOCAL_STORAGE)
-	stack_init->tp = thread->tls;
-	thread->callee_saved.tp = thread->tls;
-#endif
 
 	/* Assign thread entry point and mstatus.MPRV mode. */
 	if (IS_ENABLED(CONFIG_USERSPACE)
 	    && (thread->base.user_options & K_USER)) {
 		/* User thread */
-		stack_init->mepc = (ulong_t)k_thread_user_mode_enter;
+		stack_init->mepc = (unsigned long)k_thread_user_mode_enter;
 
 	} else {
 		/* Supervisor thread */
-		stack_init->mepc = (ulong_t)z_thread_entry;
+		stack_init->mepc = (unsigned long)z_thread_entry;
 
 #if defined(CONFIG_PMP_STACK_GUARD)
 		/* Enable PMP in mstatus.MPRV mode for RISC-V machine mode
@@ -122,10 +112,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->soc_context = soc_esf_init;
 #endif
 
-	thread->callee_saved.sp = (ulong_t)stack_init;
+	thread->callee_saved.sp = (unsigned long)stack_init;
 
 	/* where to go when returning from z_riscv_switch() */
-	thread->callee_saved.ra = (ulong_t)z_riscv_thread_start;
+	thread->callee_saved.ra = (unsigned long)z_riscv_thread_start;
 
 	/* our switch handle is the thread pointer itself */
 	thread->switch_handle = thread;
@@ -209,18 +199,18 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
 {
-	ulong_t top_of_user_stack, top_of_priv_stack;
-	ulong_t status;
+	unsigned long top_of_user_stack, top_of_priv_stack;
+	unsigned long status;
 
 	/* Set up privileged stack */
 #ifdef CONFIG_GEN_PRIV_STACKS
 	_current->arch.priv_stack_start =
-			(ulong_t)z_priv_stack_find(_current->stack_obj);
+			(unsigned long)z_priv_stack_find(_current->stack_obj);
 	/* remove the stack guard from the main stack */
 	_current->stack_info.start -= K_THREAD_STACK_RESERVED;
 	_current->stack_info.size += K_THREAD_STACK_RESERVED;
 #else
-	_current->arch.priv_stack_start = (ulong_t)_current->stack_obj;
+	_current->arch.priv_stack_start = (unsigned long)_current->stack_obj;
 #endif /* CONFIG_GEN_PRIV_STACKS */
 	top_of_priv_stack = Z_STACK_PTR_ALIGN(_current->arch.priv_stack_start +
 					      K_KERNEL_STACK_RESERVED +
@@ -255,9 +245,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* exception stack has to be in mscratch */
 	csr_write(mscratch, top_of_priv_stack);
 
-#if !defined(CONFIG_SMP)
 	is_user_mode = true;
-#endif
 
 	register void *a0 __asm__("a0") = user_entry;
 	register void *a1 __asm__("a1") = p1;

@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BATTERY_MAX17262_H_
 #define ZEPHYR_DRIVERS_SENSOR_BATTERY_MAX17262_H_
 
+#include <zephyr/drivers/i2c.h>
+
 #define VOLTAGE_MULTIPLIER_UV	1250 / 16
 #define CURRENT_MULTIPLIER_NA	156250
 #define TIME_MULTIPLIER_MS	5625
@@ -73,8 +75,7 @@ struct max17262_data {
 };
 
 struct max17262_config {
-	const struct device *i2c;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 	/* Value of Rsense resistor in milliohms (typically 5 or 10) */
 	uint16_t rsense_mohms;
 	/* Design voltage of cell in mV */

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY		       \
@@ -35,7 +35,7 @@ K_TIMER_DEFINE(ktimer, duration_expire, stop_expire);
 static ZTEST_BMEM struct timer_data tdata;
 
 #define DURATION 100
-#define LESS_DURATION 80
+#define LESS_DURATION 70
 
 /**
  * @addtogroup kernel_common_tests
@@ -47,7 +47,7 @@ static ZTEST_BMEM struct timer_data tdata;
  *
  * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta()
  */
-void test_clock_uptime(void)
+ZTEST_USER(clock, test_clock_uptime)
 {
 	uint64_t t64, t32;
 	int64_t d64 = 0;
@@ -71,7 +71,7 @@ void test_clock_uptime(void)
 	/**TESTPOINT: uptime straddled ms boundary*/
 	t32 = k_uptime_get_32();
 	ALIGN_MS_BOUNDARY;
-	zassert_true(k_uptime_get_32() > t32, NULL);
+	zassert_true(k_uptime_get_32() > t32);
 
 	/**TESTPOINT: uptime delta*/
 	d64 = k_uptime_delta(&d64);
@@ -122,7 +122,7 @@ void test_clock_uptime(void)
  * @see k_cycle_get_32(), k_uptime_get_32()
  */
 
-void test_clock_cycle_32(void)
+ZTEST(clock, test_clock_cycle_32)
 {
 	uint32_t c32, c0, c1, t32;
 
@@ -163,7 +163,7 @@ void test_clock_cycle_32(void)
 /**
  * @brief Test 64-bit clock cycle functionality
  */
-void test_clock_cycle_64(void)
+ZTEST(clock, test_clock_cycle_64)
 {
 	uint32_t d32;
 	uint64_t d64;
@@ -224,15 +224,15 @@ static void init_data_count(void)
  *
  */
 
-void test_ms_time_duration(void)
+ZTEST(clock, test_ms_time_duration)
 {
 	init_data_count();
 	k_timer_start(&ktimer, K_MSEC(DURATION), K_NO_WAIT);
 
 	/** TESTPOINT: waiting time less than duration and check the count*/
 	k_busy_wait(LESS_DURATION * 1000);
-	zassert_true(tdata.duration_count == 0, NULL);
-	zassert_true(tdata.stop_count == 0, NULL);
+	zassert_true(tdata.duration_count == 0);
+	zassert_true(tdata.stop_count == 0);
 
 	/** TESTPOINT: proving duration in millisecond */
 	init_data_count();

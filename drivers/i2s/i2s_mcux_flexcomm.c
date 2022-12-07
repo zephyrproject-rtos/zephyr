@@ -14,6 +14,7 @@
 #include <fsl_i2s.h>
 #include <fsl_dma.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 #ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
 #endif
@@ -219,6 +220,11 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 	 */
 	if (i2s_cfg->word_size <= 8) {
 		return -ENOTSUP;
+	}
+
+	if (!device_is_ready(cfg->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
 	}
 
 	/* Figure out function base clock */

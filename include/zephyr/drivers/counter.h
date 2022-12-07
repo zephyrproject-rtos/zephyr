@@ -20,9 +20,12 @@
  * @{
  */
 
+#include <errno.h>
+
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/device.h>
+#include <zephyr/sys_clock.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -174,6 +177,8 @@ typedef int (*counter_api_start)(const struct device *dev);
 typedef int (*counter_api_stop)(const struct device *dev);
 typedef int (*counter_api_get_value)(const struct device *dev,
 				     uint32_t *ticks);
+typedef int (*counter_api_get_value_64)(const struct device *dev,
+			uint64_t *ticks);
 typedef int (*counter_api_set_alarm)(const struct device *dev,
 				     uint8_t chan_id,
 				     const struct counter_alarm_cfg *alarm_cfg);
@@ -194,6 +199,7 @@ __subsystem struct counter_driver_api {
 	counter_api_start start;
 	counter_api_stop stop;
 	counter_api_get_value get_value;
+	counter_api_get_value_64 get_value_64;
 	counter_api_set_alarm set_alarm;
 	counter_api_cancel_alarm cancel_alarm;
 	counter_api_set_top_value set_top_value;
@@ -367,6 +373,29 @@ static inline int z_impl_counter_get_value(const struct device *dev,
 }
 
 /**
+ * @brief Get current counter 64-bit value.
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param ticks Pointer to where to store the current counter value
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure getting the counter value
+ */
+__syscall int counter_get_value_64(const struct device *dev, uint64_t *ticks);
+
+static inline int z_impl_counter_get_value_64(const struct device *dev,
+					   uint64_t *ticks)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (!api->get_value_64) {
+		return -ENOTSUP;
+	}
+
+	return api->get_value_64(dev, ticks);
+}
+
+/**
  * @brief Set a single shot alarm on a channel.
  *
  * After expiration alarm can be set again, disabling is not needed. When alarm
@@ -384,6 +413,7 @@ static inline int z_impl_counter_get_value(const struct device *dev,
  *		    interrupts or requested channel).
  * @retval -EINVAL if alarm settings are invalid.
  * @retval -ETIME  if absolute alarm was set too late.
+ * @retval -EBUSY  if alarm is already active.
  */
 __syscall int counter_set_channel_alarm(const struct device *dev,
 					uint8_t chan_id,

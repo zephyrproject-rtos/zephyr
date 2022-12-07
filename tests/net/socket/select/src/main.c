@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 
 #include <zephyr/net/socket.h>
 
@@ -19,16 +19,18 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define TEST_STR_SMALL "test"
 
+#define MY_IPV6_ADDR "::1"
+
 #define ANY_PORT 0
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
 
-/* On QEMU, poll() which waits takes +30ms from the requested time. */
-#define FUZZ 30
+/* Fudge factor added to expected timeouts, in milliseconds. */
+#define FUZZ 60
 
 #define TIMEOUT_MS 60
 
-void test_fd_set(void)
+ZTEST_USER(net_socket_select, test_fd_set)
 {
 	fd_set set;
 
@@ -63,7 +65,7 @@ void test_fd_set(void)
 	zassert_equal(set.bitset[1], 0, "");
 }
 
-void test_select(void)
+ZTEST_USER(net_socket_select, test_select)
 {
 	int res;
 	int c_sock;
@@ -76,10 +78,8 @@ void test_select(void)
 	char buf[10];
 	struct timeval tval;
 
-	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, CLIENT_PORT,
-			    &c_sock, &c_addr);
-	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
-			    &s_sock, &s_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &c_sock, &c_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_addr);
 
 	res = bind(s_sock, (struct sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(res, 0, "bind failed");
@@ -167,7 +167,7 @@ void test_select(void)
 	zassert_equal(res, 0, "close failed");
 }
 
-void test_main(void)
+static void *setup(void)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
 		k_thread_priority_set(k_current_get(),
@@ -177,10 +177,7 @@ void test_main(void)
 	}
 
 	k_thread_system_pool_assign(k_current_get());
-
-	ztest_test_suite(socket_select,
-			 ztest_user_unit_test(test_fd_set),
-			 ztest_user_unit_test(test_select));
-
-	ztest_run_test_suite(socket_select);
+	return NULL;
 }
+
+ZTEST_SUITE(net_socket_select, NULL, setup, NULL, NULL, NULL);

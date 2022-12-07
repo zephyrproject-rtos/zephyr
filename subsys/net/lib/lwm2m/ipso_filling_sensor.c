@@ -48,8 +48,8 @@ static bool container_full[MAX_INSTANCE_COUNT];
 static double low_threshold[MAX_INSTANCE_COUNT];
 static bool container_empty[MAX_INSTANCE_COUNT];
 static double average_fill_speed[MAX_INSTANCE_COUNT];
-static int64_t forecast_full_date[MAX_INSTANCE_COUNT];
-static int64_t forecast_empty_date[MAX_INSTANCE_COUNT];
+static time_t forecast_full_date[MAX_INSTANCE_COUNT];
+static time_t forecast_empty_date[MAX_INSTANCE_COUNT];
 static bool container_out_of_location[MAX_INSTANCE_COUNT];
 static bool container_out_of_position[MAX_INSTANCE_COUNT];
 
@@ -107,14 +107,14 @@ static void update(uint16_t obj_inst_id, uint16_t res_id, int index)
 	full = actual_fill_percentage[index] > high_threshold[index];
 	if (container_full[index] != full) {
 		container_full[index] = full;
-		NOTIFY_OBSERVER(IPSO_OBJECT_ID, obj_inst_id,
+		lwm2m_notify_observer(IPSO_OBJECT_ID, obj_inst_id,
 				CONTAINER_FULL_FILLING_SENSOR_RID);
 	}
 
 	empty = actual_fill_percentage[index] < low_threshold[index];
 	if (container_empty[index] != empty) {
 		container_empty[index] = empty;
-		NOTIFY_OBSERVER(IPSO_OBJECT_ID, obj_inst_id,
+		lwm2m_notify_observer(IPSO_OBJECT_ID, obj_inst_id,
 				CONTAINER_EMPTY_FILLING_SENSOR_RID);
 	}
 }

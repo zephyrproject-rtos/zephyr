@@ -39,8 +39,9 @@
 			status = "okay";
 
 			hlic: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -71,12 +72,9 @@
 		};
 
 		clint: clint@2000000 {
-			#interrupt-cells = <1>;
-			compatible = "riscv,clint0";
-			interrupt-controller;
+			compatible = "sifive,clint0";
 			interrupts-extended = <&hlic 3 &hlic 7>;
 			reg = <0x2000000 0x10000>;
-			reg-names = "control";
 		};
 
 		l2lim: l2lim@8000000 {
@@ -87,8 +85,9 @@
 
 
 		plic: interrupt-controller@c000000 {
-			#interrupt-cells = <2>;
 			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
 			reg = <0x0c000000 0x00002000
@@ -105,7 +104,6 @@
 			interrupts = <39 1>;
 			reg = <0x10010000 0x1000>;
 			reg-names = "control";
-			label = "uart_0";
 			status = "disabled";
 		};
 
@@ -115,7 +113,6 @@
 			interrupts = <40 1>;
 			reg = <0x10011000 0x1000>;
 			reg-names = "control";
-			label = "uart_1";
 			status = "disabled";
 		};
 
@@ -125,7 +122,6 @@
 			interrupts = <41 1>;
 			reg = <0x10040000 0x1000 0x20000000 0x10000000>;
 			reg-names = "control", "mem";
-			label = "spi_0";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -137,7 +133,6 @@
 			interrupts = <42 1>;
 			reg = <0x10041000 0x1000>;
 			reg-names = "control";
-			label = "spi_1";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -149,7 +144,6 @@
 			interrupts = <43 1>;
 			reg = <0x10050000 0x1000>;
 			reg-names = "control";
-			label = "spi_2";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

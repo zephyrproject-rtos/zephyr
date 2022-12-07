@@ -9,6 +9,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
@@ -191,7 +192,7 @@ static int counter_sam0_tc32_set_alarm(const struct device *dev,
 		return -EINVAL;
 	}
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (data->ch.callback) {
 		irq_unlock(key);
@@ -222,7 +223,7 @@ static int counter_sam0_tc32_cancel_alarm(const struct device *dev,
 	const struct counter_sam0_tc32_config *const cfg = dev->config;
 	TcCount32 *tc = cfg->regs;
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	ARG_UNUSED(chan_id);
 
@@ -241,7 +242,7 @@ static int counter_sam0_tc32_set_top_value(const struct device *dev,
 	const struct counter_sam0_tc32_config *const cfg = dev->config;
 	TcCount32 *tc = cfg->regs;
 	int err = 0;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (data->ch.callback) {
 		irq_unlock(key);

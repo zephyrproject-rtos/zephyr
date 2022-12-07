@@ -3,13 +3,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
 #include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include "soc.h"
+
+/* System Level Configuration Registers */
+#define SLCR_UNLOCK     0x0008
+#define SLCR_UNLOCK_KEY 0xdf0d
+#define AXI_GPIO_MMU_ENTRY(id)\
+	MMU_REGION_FLAT_ENTRY("axigpio",\
+			      DT_REG_ADDR(id),\
+			      DT_REG_SIZE(id),\
+			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
 
 static const struct arm_mmu_region mmu_regions[] = {
 
@@ -17,10 +30,6 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      0x00000000,
 			      0x1000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
-	MMU_REGION_FLAT_ENTRY("slcr",
-			      0xF8000000,
-			      0x1000,
-			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 	MMU_REGION_FLAT_ENTRY("mpcore",
 			      0xF8F00000,
 			      0x2000,
@@ -30,20 +39,6 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE(DT_CHOSEN(zephyr_ocm)),
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 	/* ARM Arch timer, GIC are covered by the MPCore mapping */
-
-/* UARTs */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
-	MMU_REGION_FLAT_ENTRY("uart0",
-			      DT_REG_ADDR(DT_NODELABEL(uart0)),
-			      DT_REG_SIZE(DT_NODELABEL(uart0)),
-			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
-	MMU_REGION_FLAT_ENTRY("uart1",
-			      DT_REG_ADDR(DT_NODELABEL(uart1)),
-			      DT_REG_SIZE(DT_NODELABEL(uart1)),
-			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
-#endif
 
 /* GEMs */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gem0), okay)
@@ -66,6 +61,8 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE(DT_NODELABEL(psgpio)),
 			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
 #endif
+
+DT_FOREACH_STATUS_OKAY(xlnx_xps_gpio_1_00_a, AXI_GPIO_MMU_ENTRY)
 
 };
 
@@ -128,4 +125,11 @@ void z_arm_platform_init(void)
 	sctlr &= ~SCTLR_C_Msk;
 	sctlr &= ~SCTLR_A_Msk;
 	__set_SCTLR(sctlr);
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(slcr), okay)
+	mm_reg_t addr = DT_REG_ADDR(DT_NODELABEL(slcr));
+
+	/* Unlock System Level Control Registers (SLCR) */
+	sys_write32(SLCR_UNLOCK_KEY, addr + SLCR_UNLOCK);
+#endif
 }

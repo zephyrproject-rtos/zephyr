@@ -39,7 +39,7 @@ static void eos_s3_cru_init(void)
 	/* Set desired frequency */
 	AIP->OSC_CTRL_0 |= AIP_OSC_CTRL_EN;
 	AIP->OSC_CTRL_0 &= ~AIP_OSC_CTRL_FRE_SEL;
-	OSC_SET_FREQ_INC(HSOSC_60MHZ);
+	OSC_SET_FREQ_INC(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	while (!OSC_CLK_LOCKED()) {
 		;

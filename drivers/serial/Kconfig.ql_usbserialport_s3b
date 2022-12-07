@@ -1,0 +1,12 @@
+# QuickLogic USBserialport_S3B configuration option
+
+# Copyright (c) 2022 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_QUICKLOGIC_USBSERIALPORT_S3B
+	bool "QuickLogic USBserialport_S3B serial driver"
+	default y
+	depends on DT_HAS_QUICKLOGIC_USBSERIALPORT_S3B_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the QuickLogic USBserialport_S3B serial driver.

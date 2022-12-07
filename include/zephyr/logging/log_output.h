@@ -22,6 +22,10 @@ extern "C" {
  * @{
  */
 
+/**@defgroup LOG_OUTPUT_FLAGS Log output formatting flags.
+ * @{
+ */
+
 /** @brief Flag forcing ANSI escape code colors, red (errors), yellow
  *         (warnings).
  */
@@ -46,10 +50,7 @@ extern "C" {
  */
 #define LOG_OUTPUT_FLAG_FORMAT_SYSLOG		BIT(6)
 
-/** @brief Flag forcing syslog format specified in mipi sys-t.
- * This flag is deprecated and can only be used when CONFIG_LOG1 is enabled.
- */
-#define LOG_OUTPUT_FLAG_FORMAT_SYST		BIT(7)
+/**@} */
 
 /** @brief Supported backend logging format types for use
  * with log_format_set() API to switch log format at runtime.
@@ -59,6 +60,8 @@ extern "C" {
 #define LOG_OUTPUT_SYST 1
 
 #define LOG_OUTPUT_DICT 2
+
+#define LOG_OUTPUT_CUSTOM 3
 
 /**
  * @brief Prototype of the function processing output data.
@@ -94,13 +97,13 @@ struct log_output {
  * @brief Typedef of the function pointer table "format_table".
  *
  * @param output Pointer to log_output struct.
- * @param msg2 Pointer to log_msg2 struct.
+ * @param msg Pointer to log_msg struct.
  * @param flags Flags used for text formatting options.
  *
  * @return Function pointer based on Kconfigs defined for backends.
  */
 typedef void (*log_format_func_t)(const struct log_output *output,
-					struct log_msg2 *msg2, uint32_t flags);
+					struct log_msg *msg, uint32_t flags);
 
 /**
  * @brief Declaration of the get routine for function pointer table format_table.
@@ -123,19 +126,6 @@ log_format_func_t log_format_func_t_get(uint32_t log_type);
 		.size = _size,						\
 	}
 
-/** @brief Process log messages to readable strings.
- *
- * Function is using provided context with the buffer and output function to
- * process formatted string and output the data.
- *
- * @param output Pointer to the log output instance.
- * @param msg Log message.
- * @param flags Optional flags.
- */
-void log_output_msg_process(const struct log_output *output,
-			    struct log_msg *msg,
-			    uint32_t flags);
-
 /** @brief Process log messages v2 to readable strings.
  *
  * Function is using provided context with the buffer and output function to
@@ -143,10 +133,32 @@ void log_output_msg_process(const struct log_output *output,
  *
  * @param log_output Pointer to the log output instance.
  * @param msg Log message.
- * @param flags Optional flags.
+ * @param flags Optional flags. See @ref LOG_OUTPUT_FLAGS.
  */
-void log_output_msg2_process(const struct log_output *log_output,
-			     struct log_msg2 *msg, uint32_t flags);
+void log_output_msg_process(const struct log_output *log_output,
+			    struct log_msg *msg, uint32_t flags);
+
+/** @brief Process input data to a readable string.
+ *
+ * @param log_output	Pointer to the log output instance.
+ * @param timestamp	Timestamp.
+ * @param domain	Domain name string. Can be NULL.
+ * @param source	Source name string. Can be NULL.
+ * @param level		Criticality level.
+ * @param package	Cbprintf package with a logging message string.
+ * @param data		Data passed to hexdump API. Can bu NULL.
+ * @param data_len	Data length.
+ * @param flags		Formatting flags. See @ref LOG_OUTPUT_FLAGS.
+ */
+void log_output_process(const struct log_output *log_output,
+			log_timestamp_t timestamp,
+			const char *domain,
+			const char *source,
+			uint8_t level,
+			const uint8_t *package,
+			const uint8_t *data,
+			size_t data_len,
+			uint32_t flags);
 
 /** @brief Process log messages v2 to SYS-T format.
  *
@@ -155,46 +167,10 @@ void log_output_msg2_process(const struct log_output *log_output,
  *
  * @param log_output Pointer to the log output instance.
  * @param msg Log message.
- * @param flag Optional flags.
+ * @param flags Optional flags. See @ref LOG_OUTPUT_FLAGS.
  */
-void log_output_msg2_syst_process(const struct log_output *log_output,
-			     struct log_msg2 *msg, uint32_t flag);
-
-/** @brief Process log string
- *
- * Function is formatting provided string adding optional prefixes and
- * postfixes.
- *
- * @param output Pointer to log_output instance.
- * @param src_level  Log source and level structure.
- * @param timestamp  Timestamp.
- * @param fmt        String.
- * @param ap         String arguments.
- * @param flags      Optional flags.
- *
- */
-void log_output_string(const struct log_output *output,
-		       struct log_msg_ids src_level, uint32_t timestamp,
-		       const char *fmt, va_list ap, uint32_t flags);
-
-/** @brief Process log hexdump
- *
- * Function is formatting provided hexdump adding optional prefixes and
- * postfixes.
- *
- * @param output Pointer to log_output instance.
- * @param src_level  Log source and level structure.
- * @param timestamp  Timestamp.
- * @param metadata   String.
- * @param data       Data.
- * @param length     Data length.
- * @param flags      Optional flags.
- *
- */
-void log_output_hexdump(const struct log_output *output,
-			     struct log_msg_ids src_level, uint32_t timestamp,
-			     const char *metadata, const uint8_t *data,
-			     uint32_t length, uint32_t flags);
+void log_output_msg_syst_process(const struct log_output *log_output,
+				  struct log_msg *msg, uint32_t flags);
 
 /** @brief Process dropped messages indication.
  *

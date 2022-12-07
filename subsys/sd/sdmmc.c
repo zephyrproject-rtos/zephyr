@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/sd/sd.h>
 #include <zephyr/sd/sdmmc.h>
@@ -19,9 +19,9 @@ LOG_MODULE_DECLARE(sd, CONFIG_SD_LOG_LEVEL);
 
 
 static inline void sdmmc_decode_csd(struct sd_csd *csd,
-	uint32_t *raw_csd, uint32_t *blk_cout, uint32_t *blk_size)
+	uint32_t *raw_csd, uint32_t *blk_count, uint32_t *blk_size)
 {
-	uint32_t tmp_blk_cout, tmp_blk_size;
+	uint32_t tmp_blk_count, tmp_blk_size;
 
 	csd->csd_structure = (uint8_t)((raw_csd[3U] &
 		0xC0000000U) >> 30U);
@@ -66,16 +66,16 @@ static inline void sdmmc_decode_csd(struct sd_csd *csd,
 			0x38000U) >> 15U);
 
 		/* Get card total block count and block size. */
-		tmp_blk_cout = ((csd->device_size + 1U) <<
+		tmp_blk_count = ((csd->device_size + 1U) <<
 			(csd->dev_size_mul + 2U));
 		tmp_blk_size = (1U << (csd->read_blk_len));
 		if (tmp_blk_size != SDMMC_DEFAULT_BLOCK_SIZE) {
-			tmp_blk_cout = (tmp_blk_cout * tmp_blk_size);
+			tmp_blk_count = (tmp_blk_count * tmp_blk_size);
 			tmp_blk_size = SDMMC_DEFAULT_BLOCK_SIZE;
-			tmp_blk_cout = (tmp_blk_cout / tmp_blk_size);
+			tmp_blk_count = (tmp_blk_count / tmp_blk_size);
 		}
-		if (blk_cout) {
-			*blk_cout = tmp_blk_cout;
+		if (blk_count) {
+			*blk_count = tmp_blk_count;
 		}
 		if (blk_size) {
 			*blk_size = tmp_blk_size;
@@ -89,9 +89,9 @@ static inline void sdmmc_decode_csd(struct sd_csd *csd,
 		csd->device_size |= (uint32_t)((raw_csd[1U] &
 			0xFFFF0000U) >> 16U);
 
-		tmp_blk_cout = ((csd->device_size + 1U) * 1024U);
-		if (blk_cout) {
-			*blk_cout = tmp_blk_cout;
+		tmp_blk_count = ((csd->device_size + 1U) * 1024U);
+		if (blk_count) {
+			*blk_count = tmp_blk_count;
 		}
 		if (blk_size) {
 			*blk_size = tmp_blk_size;
@@ -950,6 +950,14 @@ static int sdmmc_init_hs(struct sd_card *card)
 		LOG_ERR("Failed to switch card to HS mode");
 		return ret;
 	}
+	if (card->flags & SD_4BITS_WIDTH) {
+		/* Raise bus width to 4 bits */
+		ret = sdmmc_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
+		if (ret) {
+			LOG_ERR("Failed to change card bus width to 4 bits");
+			return ret;
+		}
+	}
 	return 0;
 }
 
@@ -998,6 +1006,11 @@ int sdmmc_card_init(struct sd_card *card)
 			ocr_arg |= SD_OCR_VDD29_30FLAG;
 		}
 		ocr_arg |= (SD_OCR_VDD32_33FLAG | SD_OCR_VDD33_34FLAG);
+		/* Momentary delay before initialization OCR. Some cards will
+		 * never leave busy state if init OCR is sent too soon after
+		 * probing OCR
+		 */
+		k_busy_wait(100);
 		/* Send SD OCR to card to initialize it */
 		ret = sdmmc_send_ocr(card, ocr_arg);
 	} else {
@@ -1501,6 +1514,12 @@ int sdmmc_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
 		(*(uint32_t *)buf) = card->block_size;
 		break;
+	case DISK_IOCTL_CTRL_SYNC:
+		/* Ensure card is not busy with data write.
+		 * Note that SD stack does not support enabling caching, so
+		 * cache flush is not required here
+		 */
+		return sdmmc_wait_ready(card);
 	default:
 		return -ENOTSUP;
 	}

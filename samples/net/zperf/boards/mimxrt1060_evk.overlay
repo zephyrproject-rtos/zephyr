@@ -1,0 +1,14 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use cortex systick as hardware timer */
+&systick {
+	status = "okay";
+};
+
+&gpt_hw_timer {
+	status = "disabled";
+};

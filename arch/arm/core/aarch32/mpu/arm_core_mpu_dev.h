@@ -118,8 +118,8 @@ struct k_thread;
  *
  * The function shall be invoked once, upon system initialization.
  *
- * @param static_regions[] an array of pointers to memory partitions
- *                         to be programmed
+ * @param static_regions an array of pointers to memory partitions
+ *                       to be programmed
  * @param regions_num the number of regions to be programmed
  * @param background_area_start the start address of the background memory area
  * @param background_area_end the end address of the background memory area
@@ -132,7 +132,7 @@ struct k_thread;
  *   requirements of the MPU hardware.
  */
 void arm_core_mpu_configure_static_mpu_regions(
-	const struct z_arm_mpu_partition static_regions[],
+	const struct z_arm_mpu_partition *static_regions,
 	const uint8_t regions_num, const uint32_t background_area_start,
 	const uint32_t background_area_end);
 
@@ -164,7 +164,7 @@ void arm_core_mpu_configure_static_mpu_regions(
  * arm_core_mpu_configure_static_mpu_regions().
  */
 void arm_core_mpu_mark_areas_for_dynamic_regions(
-	const struct z_arm_mpu_partition dyn_region_areas[],
+	const struct z_arm_mpu_partition *dyn_region_areas,
 	const uint8_t dyn_region_areas_num);
 
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
@@ -176,8 +176,8 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
  * within a (background) memory area. The total number of HW MPU regions
  * to be programmed depends on the MPU architecture.
  *
- * @param dynamic_regions[] an array of pointers to memory partitions
- *                          to be programmed
+ * @param dynamic_regions an array of pointers to memory partitions
+ *                        to be programmed
  * @param regions_num the number of regions to be programmed
  *
  * The function shall assert if the operation cannot be not performed
@@ -185,7 +185,7 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
  * not exceed the number of (currently) available MPU indices.
  */
 void arm_core_mpu_configure_dynamic_mpu_regions(
-	const struct z_arm_mpu_partition dynamic_regions[],
+	const struct z_arm_mpu_partition *dynamic_regions,
 	uint8_t regions_num);
 
 #if defined(CONFIG_USERSPACE)

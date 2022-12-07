@@ -5,8 +5,9 @@
 
 config UART_NEORV32
 	bool "NEORV32 UART"
-	default $(dt_compat_enabled,neorv32-uart)
-	depends on SOC_SERIES_NEORV32 && SYSCON
+	default y
+	depends on DT_HAS_NEORV32_UART_ENABLED
+	depends on SYSCON
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

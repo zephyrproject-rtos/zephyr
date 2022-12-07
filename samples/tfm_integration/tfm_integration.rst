@@ -52,4 +52,4 @@ convenience sake at
 For further information consult the official `TF-M documentation`_
 
 .. _TF-M documentation:
-   https://ci.trustedfirmware.org/job/tf-m-build-test-nightly/lastSuccessfulBuild/artifact/build-docs/tf-m_documents/install/doc/user_guide/html/index.html
+   https://tf-m-user-guide.trustedfirmware.org/

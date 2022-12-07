@@ -9,13 +9,6 @@ Overview
 This board configuration will use QEMU to emulate a generic Cortex-A53 hardware
 platform.
 
-.. figure:: qemu_cortex_a53.png
-   :width: 600px
-   :align: center
-   :alt: Qemu
-
-   Qemu (Credit: qemu.org)
-
 This configuration provides support for an ARM Cortex-A53 CPU and these
 devices:
 

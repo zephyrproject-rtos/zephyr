@@ -4,9 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/storage/flash_map.h>
+#include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
+
+#define SLOT0_PARTITION		slot0_partition
+#define SLOT1_PARTITION		slot1_partition
+
+#define SLOT0_PARTITION_ID	FIXED_PARTITION_ID(SLOT0_PARTITION)
+#define SLOT1_PARTITION_ID	FIXED_PARTITION_ID(SLOT1_PARTITION)
 
 #define BOOT_MAGIC_VAL_W0 0xf395c277
 #define BOOT_MAGIC_VAL_W1 0x7fefd260
@@ -15,7 +22,7 @@
 #define BOOT_MAGIC_VALUES {BOOT_MAGIC_VAL_W0, BOOT_MAGIC_VAL_W1,\
 			   BOOT_MAGIC_VAL_W2, BOOT_MAGIC_VAL_W3 }
 
-void test_bank_erase(void)
+ZTEST(mcuboot_interface, test_bank_erase)
 {
 	const struct flash_area *fa;
 	uint32_t temp;
@@ -23,7 +30,7 @@ void test_bank_erase(void)
 	off_t offs;
 	int ret;
 
-	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
+	ret = flash_area_open(SLOT1_PARTITION_ID, &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
@@ -38,7 +45,7 @@ void test_bank_erase(void)
 		}
 	}
 
-	zassert(boot_erase_img_bank(FLASH_AREA_ID(image_1)) == 0,
+	zassert(boot_erase_img_bank(SLOT1_PARTITION_ID) == 0,
 		"pass", "fail");
 
 	for (offs = 0; offs < fa->fa_size; offs += sizeof(temp)) {
@@ -48,7 +55,7 @@ void test_bank_erase(void)
 	}
 }
 
-void test_request_upgrade(void)
+ZTEST(mcuboot_interface, test_request_upgrade)
 {
 	const struct flash_area *fa;
 	const uint32_t expectation[6] = {
@@ -62,7 +69,7 @@ void test_request_upgrade(void)
 	uint32_t readout[ARRAY_SIZE(expectation)];
 	int ret;
 
-	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
+	ret = flash_area_open(SLOT1_PARTITION_ID, &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
@@ -77,7 +84,8 @@ void test_request_upgrade(void)
 	zassert(memcmp(expectation, readout, sizeof(expectation)) == 0,
 		"pass", "fail");
 
-	zassert(boot_erase_img_bank(FLASH_AREA_ID(image_1)) == 0, "pass", "fail");
+	zassert(boot_erase_img_bank(SLOT1_PARTITION_ID) == 0,
+				    "pass", "fail");
 
 	zassert(boot_request_upgrade(true) == 0, "pass", "fail");
 
@@ -91,7 +99,7 @@ void test_request_upgrade(void)
 	zassert_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
-void test_write_confirm(void)
+ZTEST(mcuboot_interface, test_write_confirm)
 {
 	const uint32_t img_magic[4] = BOOT_MAGIC_VALUES;
 	uint32_t readout[ARRAY_SIZE(img_magic)];
@@ -102,13 +110,13 @@ void test_write_confirm(void)
 	flag[0] = 0x01;
 	memset(&flag[1], 0xff, sizeof(flag) - 1);
 
-	ret = flash_area_open(FLASH_AREA_ID(image_0), &fa);
+	ret = flash_area_open(SLOT0_PARTITION_ID, &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
 	}
 
-	zassert(boot_erase_img_bank(FLASH_AREA_ID(image_0)) == 0,
+	zassert(boot_erase_img_bank(SLOT0_PARTITION_ID) == 0,
 		"pass", "fail");
 
 	ret = flash_area_read(fa, fa->fa_size - sizeof(img_magic),
@@ -135,11 +143,4 @@ void test_write_confirm(void)
 	zassert_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_mcuboot_interface,
-			 ztest_unit_test(test_bank_erase),
-			 ztest_unit_test(test_request_upgrade),
-			 ztest_unit_test(test_write_confirm));
-	ztest_run_test_suite(test_mcuboot_interface);
-}
+ZTEST_SUITE(mcuboot_interface, NULL, NULL, NULL, NULL, NULL);

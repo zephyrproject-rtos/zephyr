@@ -17,7 +17,6 @@ CONFIG_RTT_CONSOLE=y
 
 # no serial port
 CONFIG_SERIAL=n
-CONFIG_UART_STM32=n
 
 # enable GPIO
 CONFIG_GPIO=y

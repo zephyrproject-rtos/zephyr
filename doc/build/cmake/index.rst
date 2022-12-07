@@ -88,12 +88,12 @@ Devicetree
 
    The preprocessed devicetree sources are parsed by
    :zephyr_file:`gen_defines.py <scripts/dts/gen_defines.py>` to generate a
-   :file:`build/zephyr/include/generated/devicetree_unfixed.h` header with
+   :file:`build/zephyr/include/generated/devicetree_generated.h` header with
    preprocessor macros.
 
    Source code should access preprocessor macros generated from devicetree by
    including the :zephyr_file:`devicetree.h <include/zephyr/devicetree.h>` header,
-   which includes :file:`devicetree_unfixed.h`.
+   which includes :file:`devicetree_generated.h`.
 
    :file:`gen_defines.py` also writes the final devicetree to
    :file:`build/zephyr/zephyr.dts` in the build directory. This file's contents
@@ -106,12 +106,6 @@ Devicetree
 
    The above is just a brief overview. For more information on devicetree, see
    :ref:`dt-guide`.
-
-Devicetree fixups
-   Files named :file:`dts_fixup.h` from the target’s architecture, SoC, board,
-   and application directories are concatenated into a single
-   :file:`devicetree_fixups.h` file. :file:`dts_fixup.h` files are a legacy
-   feature which should not be used in new code.
 
 Kconfig
    :file:`Kconfig` files define available configuration options for for the
@@ -329,47 +323,47 @@ The following is a detailed description of the scripts used during the build pro
 
 .. _gen_syscalls.py:
 
-:zephyr_file:`scripts/gen_syscalls.py`
---------------------------------------
+:zephyr_file:`scripts/build/gen_syscalls.py`
+--------------------------------------------
 
-.. include:: ../../../scripts/gen_syscalls.py
+.. include:: ../../../scripts/build/gen_syscalls.py
    :start-after: """
    :end-before: """
 
 .. _gen_handles.py:
 
-:zephyr_file:`scripts/gen_handles.py`
---------------------------------------
+:zephyr_file:`scripts/build/gen_handles.py`
+-------------------------------------------
 
-.. include:: ../../../scripts/gen_handles.py
+.. include:: ../../../scripts/build/gen_handles.py
    :start-after: """
    :end-before: """
 
 .. _gen_kobject_list.py:
 
-:zephyr_file:`scripts/gen_kobject_list.py`
-------------------------------------------
+:zephyr_file:`scripts/build/gen_kobject_list.py`
+------------------------------------------------
 
-.. include:: ../../../scripts/gen_kobject_list.py
+.. include:: ../../../scripts/build/gen_kobject_list.py
    :start-after: """
    :end-before: """
 
 .. _gen_offset_header.py:
 
-:zephyr_file:`scripts/gen_offset_header.py`
--------------------------------------------
+:zephyr_file:`scripts/build/gen_offset_header.py`
+-------------------------------------------------
 
-.. include:: ../../../scripts/gen_offset_header.py
+.. include:: ../../../scripts/build/gen_offset_header.py
    :start-after: """
    :end-before: """
 
 .. _parse_syscalls.py:
 
-:zephyr_file:`scripts/parse_syscalls.py`
-----------------------------------------
+:zephyr_file:`scripts/build/parse_syscalls.py`
+----------------------------------------------
 
 
-.. include:: ../../../scripts/parse_syscalls.py
+.. include:: ../../../scripts/build/parse_syscalls.py
    :start-after: """
    :end-before: """
 
@@ -393,25 +387,25 @@ The following is a detailed description of the scripts used during the build pro
 
 .. _gen_relocate_app.py:
 
-:zephyr_file:`scripts/gen_relocate_app.py`
--------------------------------------------
+:zephyr_file:`scripts/build/gen_relocate_app.py`
+------------------------------------------------
 
-.. include:: ../../../scripts/gen_relocate_app.py
+.. include:: ../../../scripts/build/gen_relocate_app.py
    :start-after: """
    :end-before: """
 
 .. _process_gperf.py:
 
-:zephyr_file:`scripts/process_gperf.py`
----------------------------------------
+:zephyr_file:`scripts/build/process_gperf.py`
+---------------------------------------------
 
-.. include:: ../../../scripts/process_gperf.py
+.. include:: ../../../scripts/build/process_gperf.py
    :start-after: """
    :end-before: """
 
-:zephyr_file:`scripts/gen_app_partitions.py`
---------------------------------------------
+:zephyr_file:`scripts/build/gen_app_partitions.py`
+--------------------------------------------------
 
-.. include:: ../../../scripts/gen_app_partitions.py
+.. include:: ../../../scripts/build/gen_app_partitions.py
    :start-after: """
    :end-before: """

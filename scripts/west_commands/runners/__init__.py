@@ -31,6 +31,7 @@ _names = [
     'dediprog',
     'dfu',
     'esp32',
+    'ezflashcli',
     'gd32isp',
     'hifive1',
     'intel_adsp',
@@ -47,6 +48,7 @@ _names = [
     'spi_burn',
     'stm32cubeprogrammer',
     'stm32flash',
+    'trace32',
     'xtensa',
     # Keep this list sorted by runner name; don't add to the end.
 ]

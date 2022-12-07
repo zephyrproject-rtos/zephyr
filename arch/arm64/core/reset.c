@@ -136,6 +136,12 @@ void z_arm64_el2_init(void)
 #else
 	zero_cnthp_ctl_el2();
 #endif
+
+#ifdef CONFIG_ARM64_SET_VMPIDR_EL2
+	reg = read_mpidr_el1();
+	write_vmpidr_el2(reg);
+#endif
+
 	/*
 	 * Enable this if/when we use the hypervisor timer.
 	 * write_cnthp_cval_el2(~(uint64_t)0);

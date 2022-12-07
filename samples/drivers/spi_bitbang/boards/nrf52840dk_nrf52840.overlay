@@ -6,7 +6,6 @@
 
 / {
 	spibb0: spibb0 {
-		label = "SPIBB";
 		compatible = "zephyr,spi-bitbang";
 		status="okay";
 		#address-cells = <1>;

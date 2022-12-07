@@ -10,12 +10,9 @@ if(NOT (CONFIG_SOC_NSIM_HS_SMP OR CONFIG_SOC_NSIM_HS6X_SMP OR CONFIG_SOC_NSIM_HS
 endif()
 
 string(REPLACE "nsim" "mdb" MDB_ARGS "${BOARD}.args")
-if((CONFIG_SOC_NSIM_HS_SMP OR CONFIG_SOC_NSIM_HS6X_SMP))
-  board_runner_args(mdb-nsim "--cores=${CONFIG_MP_NUM_CPUS}" "--nsim_args=${MDB_ARGS}")
-  board_runner_args(mdb-hw "--cores=${CONFIG_MP_NUM_CPUS}")
-else()
-  board_runner_args(mdb-nsim "--nsim_args=${MDB_ARGS}")
-endif()
+
+board_runner_args(mdb-nsim "--cores=${CONFIG_MP_MAX_NUM_CPUS}" "--nsim_args=${MDB_ARGS}")
+board_runner_args(mdb-hw "--cores=${CONFIG_MP_MAX_NUM_CPUS}")
 
 board_finalize_runner_args(arc-nsim)
 include(${ZEPHYR_BASE}/boards/common/mdb-nsim.board.cmake)

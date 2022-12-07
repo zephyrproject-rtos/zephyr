@@ -6,8 +6,7 @@ Actinius Icarus SoM
 Overview
 ********
 
-.. figure:: img/icarus-som.png
-     :width: 450px
+.. figure:: img/icarus-som.jpg
      :align: center
      :alt: Icarus SoM
 
@@ -37,15 +36,13 @@ following devices (provided directly by Nordic):
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
-.. figure:: img/icarus-som-external-pins.png
-     :width: 450px
+.. figure:: img/icarus-som-external-pins.jpg
      :align: center
      :alt: Icarus SoM Pins
 
      Icarus SoM Pins
 
-.. figure:: img/icarus-som-peripherals-pins.png
-     :width: 200px
+.. figure:: img/icarus-som-peripherals-pins.jpg
      :align: center
      :alt: Icarus SoM
 

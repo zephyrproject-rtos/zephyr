@@ -30,6 +30,8 @@ struct device;
 enum pm_device_flag {
 	/** Indicate if the device is busy or not. */
 	PM_DEVICE_FLAG_BUSY,
+	/** Indicate if the device failed to power up. */
+	PM_DEVICE_FLAG_TURN_ON_FAILED,
 	/**
 	 * Indicates whether or not the device is capable of waking the system
 	 * up.
@@ -87,11 +89,7 @@ enum pm_device_action {
 	 *     Action triggered only by a power domain.
 	 */
 	PM_DEVICE_ACTION_TURN_ON,
-	/** Force suspend. */
-	PM_DEVICE_ACTION_FORCE_SUSPEND,
 };
-
-/** @cond INTERNAL_HIDDEN */
 
 /**
  * @brief Device PM action callback.
@@ -145,6 +143,8 @@ struct pm_device {
 	pm_device_action_cb_t action_cb;
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)			\
 	.lock = Z_MUTEX_INITIALIZER(obj.lock),		\
@@ -188,9 +188,9 @@ struct pm_device {
 /**
  * Get the name of device PM resources.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  */
-#define Z_PM_DEVICE_NAME(dev_name) _CONCAT(__pm_device__, dev_name)
+#define Z_PM_DEVICE_NAME(dev_id) _CONCAT(__pm_device_, dev_id)
 
 /**
  * @brief Define device PM slot.
@@ -201,11 +201,11 @@ struct pm_device {
  * is used internally by the PM subsystem to keep track of suspended devices
  * during system power transitions.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  */
-#define Z_PM_DEVICE_DEFINE_SLOT(dev_name)				\
+#define Z_PM_DEVICE_DEFINE_SLOT(dev_id)					\
 	static const Z_DECL_ALIGN(struct device *)			\
-	_CONCAT(Z_PM_DEVICE_NAME(dev_name), _slot) __used		\
+	_CONCAT(__pm_slot_, dev_id) __used				\
 	__attribute__((__section__(".z_pm_device_slots")))
 
 #ifdef CONFIG_PM_DEVICE
@@ -213,25 +213,25 @@ struct pm_device {
  * Define device PM resources for the given node identifier.
  *
  * @param node_id Node identifier (DT_INVALID_NODE if not a DT device).
- * @param dev_name Device name.
+ * @param dev_id Device id.
  * @param pm_action_cb PM control callback.
  */
-#define Z_PM_DEVICE_DEFINE(node_id, dev_name, pm_action_cb)		\
-	Z_PM_DEVICE_DEFINE_SLOT(dev_name);				\
-	static struct pm_device Z_PM_DEVICE_NAME(dev_name) =		\
-	Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_name), node_id,		\
+#define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb)		\
+	Z_PM_DEVICE_DEFINE_SLOT(dev_id);				\
+	static struct pm_device Z_PM_DEVICE_NAME(dev_id) =		\
+	Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_id), node_id,		\
 			 pm_action_cb)
 
 /**
  * Get a reference to the device PM resources.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  */
-#define Z_PM_DEVICE_GET(dev_name) (&Z_PM_DEVICE_NAME(dev_name))
+#define Z_PM_DEVICE_GET(dev_id) (&Z_PM_DEVICE_NAME(dev_id))
 
 #else
-#define Z_PM_DEVICE_DEFINE(node_id, dev_name, pm_action_cb)
-#define Z_PM_DEVICE_GET(dev_name) NULL
+#define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb)
+#define Z_PM_DEVICE_GET(dev_id) NULL
 #endif /* CONFIG_PM_DEVICE */
 
 /** @endcond */
@@ -241,13 +241,13 @@ struct pm_device {
  *
  * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  * @param pm_action_cb PM control callback.
  *
  * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DT_INST_DEFINE
  */
-#define PM_DEVICE_DEFINE(dev_name, pm_action_cb) \
-	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, pm_action_cb)
+#define PM_DEVICE_DEFINE(dev_id, pm_action_cb) \
+	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, pm_action_cb)
 
 /**
  * Define device PM resources for the given node identifier.
@@ -260,7 +260,7 @@ struct pm_device {
  * @see #PM_DEVICE_DT_INST_DEFINE, #PM_DEVICE_DEFINE
  */
 #define PM_DEVICE_DT_DEFINE(node_id, pm_action_cb)			\
-	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
+	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),	\
 			   pm_action_cb)
 
 /**
@@ -275,19 +275,19 @@ struct pm_device {
  */
 #define PM_DEVICE_DT_INST_DEFINE(idx, pm_action_cb)			\
 	Z_PM_DEVICE_DEFINE(DT_DRV_INST(idx),				\
-			   Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(idx)),	\
+			   Z_DEVICE_DT_DEV_ID(DT_DRV_INST(idx)),	\
 			   pm_action_cb)
 
 /**
  * @brief Obtain a reference to the device PM resources for the given device.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  *
  * @return Reference to the device PM resources (NULL if device
  * @kconfig{CONFIG_PM_DEVICE} is disabled).
  */
-#define PM_DEVICE_GET(dev_name) \
-	Z_PM_DEVICE_GET(dev_name)
+#define PM_DEVICE_GET(dev_id) \
+	Z_PM_DEVICE_GET(dev_id)
 
 /**
  * @brief Obtain a reference to the device PM resources for the given node.
@@ -298,7 +298,7 @@ struct pm_device {
  * @kconfig{CONFIG_PM_DEVICE} is disabled).
  */
 #define PM_DEVICE_DT_GET(node_id) \
-	PM_DEVICE_GET(Z_DEVICE_DT_DEV_NAME(node_id))
+	PM_DEVICE_GET(Z_DEVICE_DT_DEV_ID(node_id))
 
 /**
  * @brief Obtain a reference to the device PM resources for the given instance.
@@ -317,18 +317,6 @@ struct pm_device {
  * @param state State id which name should be returned
  */
 const char *pm_device_state_str(enum pm_device_state state);
-
-/**
- * @brief Obtain the power state of a device.
- *
- * @param dev Device instance.
- * @param state Pointer where device power state will be stored.
- *
- * @retval 0 If successful.
- * @retval -ENOSYS If device does not implement power management.
- */
-int pm_device_state_get(const struct device *dev,
-			enum pm_device_state *state);
 
 /**
  * @brief Run a pm action on a device.
@@ -365,6 +353,18 @@ void pm_device_children_action_run(const struct device *dev,
 		pm_device_action_failed_cb_t failure_cb);
 
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
+/**
+ * @brief Obtain the power state of a device.
+ *
+ * @param dev Device instance.
+ * @param state Pointer where device power state will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If device does not implement power management.
+ */
+int pm_device_state_get(const struct device *dev,
+			enum pm_device_state *state);
+
 /**
  * @brief Initialize a device state to #PM_DEVICE_STATE_SUSPENDED.
  *
@@ -566,6 +566,16 @@ int pm_device_power_domain_remove(const struct device *dev,
  */
 bool pm_device_is_powered(const struct device *dev);
 #else
+static inline int pm_device_state_get(const struct device *dev,
+				      enum pm_device_state *state)
+{
+	ARG_UNUSED(dev);
+
+	*state = PM_DEVICE_STATE_ACTIVE;
+
+	return 0;
+}
+
 static inline void pm_device_init_suspended(const struct device *dev)
 {
 	ARG_UNUSED(dev);

@@ -11,10 +11,33 @@ description: |
 
 compatible: "st,stm32-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    remap-pa11:
+      type: boolean
+      description: Remaps the PA11 pin to operate as PA9 pin.
+        Use of this property is restricted to STM32G0 SoCs.
+
+    remap-pa12:
+      type: boolean
+      description: Remaps the PA12 pin to operate as PA10 pin.
+        Use of this property is restricted to STM32G0 SoCs.
+
+    remap-pa11-pa12:
+      type: boolean
+      description: Remaps the PA11/PA12 pin to operate as PA9/PA10 pin.
+        Use of this property is restricted to STM32F070x SoCs.
+
+child-binding:
+    description: |
+        This binding gives a base representation of the STM32 pins configration
+
+    include:
+      - name: pincfg-node.yaml
         property-allowlist:
           - bias-disable
           - bias-pull-down
@@ -23,32 +46,6 @@ include:
           - drive-open-drain
           - output-low
           - output-high
-
-properties:
-    reg:
-      required: true
-
-    remap-pa11:
-      type: boolean
-      required: false
-      description: Remaps the PA11 pin to operate as PA9 pin.
-        Use of this property is restricted to STM32G0 SoCs.
-
-    remap-pa12:
-      type: boolean
-      required: false
-      description: Remaps the PA12 pin to operate as PA10 pin.
-        Use of this property is restricted to STM32G0 SoCs.
-
-    remap-pa11-pa12:
-      type: boolean
-      required: false
-      description: Remaps the PA11/PA12 pin to operate as PA9/PA10 pin.
-        Use of this property is restricted to STM32F070x SoCs.
-
-child-binding:
-    description: |
-        This binding gives a base representation of the STM32 pins configration
 
     properties:
         pinmux:
@@ -93,7 +90,6 @@ child-binding:
             };
 
         slew-rate:
-          required: false
           type: string
           default: "low-speed"
           enum:

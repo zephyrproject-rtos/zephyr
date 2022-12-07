@@ -57,6 +57,11 @@ This usually involves the following steps:
 
 4. Start the debugger corresponding to the target architecture.
 
+.. note::
+   Developers for Intel ADSP CAVS 15-25 platforms using
+   ``ZEPHYR_TOOLCHAIN_VARIANT=zephyr`` should use the debugger in the
+   ``xtensa-intel_apl_adsp`` toolchain of the SDK.
+
 Example
 -------
 

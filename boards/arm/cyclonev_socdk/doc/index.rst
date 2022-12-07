@@ -11,7 +11,6 @@ The Zephyr kernel is supported on the Intel® Cyclone® V SoC Development Kit,
 using its Hard Processor System (HPS) CPU.
 
 .. figure:: img/cv_soc_board.jpg
-   :width: 800px
    :align: center
    :alt: Intel's Cyclone® V SoC FPGA DevKit
 
@@ -199,7 +198,6 @@ The following image shows the expected output (UART) after executing "west flash
 the "hello world" sample design:
 
 .. figure:: img/cyclonev_westflash.jpg
-   :width: 700px
    :align: center
    :alt: UART output after "west flash" example
 
@@ -337,7 +335,6 @@ Development Kit Board. Try to ``blink`` an LED from the HPS side of the chip:
    :goals: flash
 
 .. figure:: img/cyclonev_blinky.jpg
-   :width: 600px
    :align: center
    :alt: HPS LED0 blinking example
 

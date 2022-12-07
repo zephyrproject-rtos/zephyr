@@ -67,7 +67,7 @@
 	pwm2_0_default: pwm2_0_default {
 		pinmux = <10 SIFIVE_PINMUX_IOF1>;
 	};
-	pwm2_1_default: pwm1_1_default {
+	pwm2_1_default: pwm2_1_default {
 		pinmux = <11 SIFIVE_PINMUX_IOF1>;
 	};
 	pwm2_2_default: pwm2_2_default {

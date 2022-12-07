@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -36,6 +36,7 @@
 #include "lll_conn.h"
 #include "lll_central.h"
 #include "lll_filter.h"
+#include "lll_conn_iso.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ull_tx_queue.h"
@@ -57,12 +58,13 @@
 #include "ll_settings.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ll_sw/ull_llcp.h"
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+
+#include "ull_llcp.h"
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_central
-#include "common/log.h"
 #include "hal/debug.h"
 
 static void ticker_op_stop_scan_cb(uint32_t status, void *param);
@@ -211,6 +213,16 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->nesn = 0;
 	conn_lll->empty = 0;
 
+#if defined(CONFIG_BT_CTLR_PHY)
+	/* Use the default 1M PHY, extended connection initiation in LLL will
+	 * update this with the correct PHY.
+	 */
+	conn_lll->phy_tx = PHY_1M;
+	conn_lll->phy_flags = 0;
+	conn_lll->phy_tx_time = PHY_1M;
+	conn_lll->phy_rx = PHY_1M;
+#endif /* CONFIG_BT_CTLR_PHY */
+
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	conn_lll->max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
@@ -229,16 +241,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	ull_dle_init(conn, PHY_1M);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-
-#if defined(CONFIG_BT_CTLR_PHY)
-	/* Use the default 1M PHY, extended connection initiation in LLL will
-	 * update this with the correct PHY.
-	 */
-	conn_lll->phy_tx = PHY_1M;
-	conn_lll->phy_flags = 0;
-	conn_lll->phy_tx_time = PHY_1M;
-	conn_lll->phy_rx = PHY_1M;
-#endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	conn_lll->rssi_latest = BT_HCI_LE_RSSI_NOT_AVAILABLE;
@@ -282,8 +284,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->connect_expire = CONN_ESTAB_COUNTDOWN;
 	conn->supervision_expire = 0U;
 	conn_interval_us = (uint32_t)interval * CONN_INT_UNIT_US;
-	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U,
-							 conn_interval_us);
+	conn->supervision_timeout = timeout;
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	conn->procedure_expire = 0U;
@@ -449,13 +450,19 @@ conn_is_valid:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-	/* TODO(thoh-ot): Not entirely sure this is correct */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	ull_dle_max_time_get(conn, &max_rx_time, &max_tx_time);
-#else /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	conn->lll.dle.eff.max_tx_time = MAX(conn->lll.dle.eff.max_tx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+	conn->lll.dle.eff.max_rx_time = MAX(conn->lll.dle.eff.max_rx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	max_tx_time = conn_lll->dle.eff.max_tx_time;
+	max_rx_time = conn_lll->dle.eff.max_rx_time;
+#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	conn->ull.ticks_slot =
@@ -830,6 +837,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	struct pdu_adv *pdu_tx;
 	uint8_t peer_addr_type;
 	uint32_t ticker_status;
+	uint32_t ticks_at_stop;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
 	memq_link_t *link;
@@ -977,10 +985,13 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	/* Stop Scanner */
 	ticker_id_scan = TICKER_ID_SCAN_BASE + ull_scan_handle_get(scan);
-	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
-				    TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_scan, ticker_op_stop_scan_cb,
-				    scan);
+	ticks_at_stop = ftr->ticks_anchor +
+			HAL_TICKER_US_TO_TICKS(conn_offset_us) -
+			ticks_slot_offset;
+	ticker_status = ticker_stop_abs(TICKER_INSTANCE_ID_CTLR,
+					TICKER_USER_ID_ULL_HIGH,
+					ticker_id_scan, ticks_at_stop,
+					ticker_op_stop_scan_cb, scan);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 

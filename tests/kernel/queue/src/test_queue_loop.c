@@ -44,14 +44,14 @@ static void tqueue_get(struct k_queue *pqueue)
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_p[i], NULL);
+		zassert_equal(rx_data, (void *)&data_p[i]);
 	}
 
 	/*get queue data from "queue_append"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data[i], NULL);
+		zassert_equal(rx_data, (void *)&data[i]);
 	}
 }
 
@@ -60,7 +60,7 @@ static void tqueue_find_and_remove(struct k_queue *pqueue)
 	/*remove queue data from "queue_find_and_remove"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue find and remove*/
-		zassert_true(k_queue_remove(pqueue, &data_r[i]), NULL);
+		zassert_true(k_queue_remove(pqueue, &data_r[i]));
 	}
 }
 
@@ -107,7 +107,7 @@ static void tqueue_read_write(struct k_queue *pqueue)
  * @see k_queue_append(), k_queue_get(),
  * k_queue_init(), k_queue_remove()
  */
-void test_queue_loop(void)
+ZTEST(queue_api_1cpu, test_queue_loop)
 {
 	k_queue_init(&queue);
 	for (int i = 0; i < LOOPS; i++) {

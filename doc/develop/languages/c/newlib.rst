@@ -43,8 +43,9 @@ Nano Newlib
 
 The Newlib nano variant (:file:`libc_nano.a` and :file:`libm_nano.a`) is the
 size-optimized version of the Newlib, and supports all features that the full
-variant supports except the ``long long`` and ``double`` type format
-specifiers.
+variant supports except the new format specifiers introduced in C99, such as
+the ``char``, ``long long`` type format specifiers (i.e. ``%hhX`` and
+``%llX``).
 
 This variant can be enabled by selecting the
 :kconfig:option:`CONFIG_NEWLIB_LIBC` and
@@ -55,11 +56,23 @@ Note that the Newlib nano variant is not available for all architectures. The
 availability of the nano variant is specified by the
 :kconfig:option:`CONFIG_HAS_NEWLIB_LIBC_NANO`.
 
-When available (:kconfig:option:`CONFIG_HAS_NEWLIB_LIBC_NANO` is selected),
-the Newlib nano variant is enabled by default unless
-:kconfig:option:`CONFIG_NEWLIB_LIBC_NANO` is explicitly de-selected.
-
 .. _`Newlib`: https://sourceware.org/newlib/
+
+Formatted Output
+****************
+
+Newlib supports all standard C formatted input and output functions, including
+``printf``, ``fprintf``, ``sprintf`` and ``sscanf``.
+
+The Newlib formatted input and output function implementation supports all
+format specifiers defined by the C standard with the following exceptions:
+
+* Floating point format specifiers (e.g. ``%f``) require
+  :kconfig:option:`CONFIG_NEWLIB_LIBC_FLOAT_PRINTF` and
+  :kconfig:option:`CONFIG_NEWLIB_LIBC_FLOAT_SCANF` to be enabled.
+* C99 format specifiers are not supported in the Newlib nano variant (i.e.
+  ``%hhX`` for ``char``, ``%llX`` for ``long long``, ``%jX`` for ``intmax_t``,
+  ``%zX`` for ``size_t``, ``%tX`` for ``ptrdiff_t``).
 
 Dynamic Memory Management
 *************************

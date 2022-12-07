@@ -11,12 +11,13 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_common.h>
 #include <fsl_port.h>
 #include <zephyr/drivers/clock_control.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 struct gpio_rv32m1_config {
 	/* gpio_driver_config needs to be first */
@@ -270,8 +271,11 @@ static int gpio_rv32m1_init(const struct device *dev)
 	int ret;
 
 	if (config->clock_dev) {
-		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
 
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
 		if (ret < 0) {
 			return ret;
 		}

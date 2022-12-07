@@ -1,0 +1,34 @@
+sample:
+  name: 1-Wire scanner sample
+
+common:
+    harness: console
+
+tests:
+  sample.drivers.w1.scanner.ds2484:
+    depends_on: arduino_i2c
+    extra_args: DTC_OVERLAY_FILE=ds2484.overlay
+    platform_allow: nrf52840dk_nrf52840 nucleo_g0b1re
+    harness_config:
+      type: one_line
+      regex:
+        - "Number of devices found on bus: .*"
+      fixture: w1_scanner_ds2484
+  samples.drivers.w1.scanner.ds2485:
+    depends_on: arduino_i2c
+    extra_args: DTC_OVERLAY_FILE=ds2485.overlay
+    platform_allow: nrf52840dk_nrf52840 nucleo_g0b1re
+    harness_config:
+      type: one_line
+      regex:
+        - "Number of devices found on bus: .*"
+      fixture: w1_scanner_ds2485
+  samples.drivers.w1.scanner.w1_serial:
+    depends_on: arduino_serial
+    extra_args: DTC_OVERLAY_FILE=w1_serial.overlay
+    platform_allow: nrf52840dk_nrf52840 nucleo_g0b1re
+    harness_config:
+      type: one_line
+      regex:
+        - "Number of devices found on bus: .*"
+      fixture: w1_scanner_w1_serial

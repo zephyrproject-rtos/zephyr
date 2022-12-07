@@ -53,7 +53,12 @@
 		led0 = &green_led_1;
 		led1 = &green_led_2;
 		sw0 = &user_button_UP;
+		spi-flash0 = &w25q16cv;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hse {
@@ -103,6 +108,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 
@@ -133,7 +140,6 @@ zephyr_udc0: &usbotg_fs {
 	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
 	w25q16cv: w25q16cv@0 {
 		compatible = "jedec,spi-nor";
-		label = "W25Q16CV";
 		reg = <0>;
 		spi-max-frequency = <40000000>;
 		size = <0x1000000>;

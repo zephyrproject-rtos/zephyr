@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -17,33 +17,34 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/vocs.h>
 
+#include "audio_internal.h"
 #include "vocs_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_VOCS)
-#define LOG_MODULE_NAME bt_vocs
-#include "common/log.h"
+#define LOG_LEVEL CONFIG_BT_VOCS_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_vocs);
 
 #define VALID_VOCS_OPCODE(opcode)	((opcode) == BT_VOCS_OPCODE_SET_OFFSET)
 
 #if defined(CONFIG_BT_VOCS)
 static void offset_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 
 static ssize_t read_offset_state(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_vocs *inst = attr->user_data;
+	struct bt_vocs *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
-	BT_DBG("offset %d, counter %u", inst->srv.state.offset, inst->srv.state.change_counter);
+	LOG_DBG("offset %d, counter %u", inst->srv.state.offset, inst->srv.state.change_counter);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.state,
 				 sizeof(inst->srv.state));
 }
 
 static void location_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 
 #endif /* CONFIG_BT_VOCS */
@@ -51,7 +52,7 @@ static void location_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value
 static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			      const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
-	struct bt_vocs *inst = attr->user_data;
+	struct bt_vocs *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 	uint32_t old_location = inst->srv.location;
 
 	if (offset) {
@@ -63,7 +64,7 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 	}
 
 	memcpy(&inst->srv.location, buf, len);
-	BT_DBG("%02x", inst->srv.location);
+	LOG_DBG("%02x", inst->srv.location);
 
 	if (old_location != inst->srv.location) {
 		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_LOCATION,
@@ -83,9 +84,9 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 static ssize_t read_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_vocs *inst = attr->user_data;
+	struct bt_vocs *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
-	BT_DBG("0x%08x", inst->srv.location);
+	LOG_DBG("0x%08x", inst->srv.location);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.location,
 				 sizeof(inst->srv.location));
 }
@@ -94,7 +95,7 @@ static ssize_t read_location(struct bt_conn *conn, const struct bt_gatt_attr *at
 static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				  const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
-	struct bt_vocs *inst = attr->user_data;
+	struct bt_vocs *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 	const struct bt_vocs_control *cp = buf;
 	bool notify = false;
 
@@ -108,7 +109,7 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 
 	/* Check opcode before length */
 	if (!VALID_VOCS_OPCODE(cp->opcode)) {
-		BT_DBG("Invalid opcode %u", cp->opcode);
+		LOG_DBG("Invalid opcode %u", cp->opcode);
 		return BT_GATT_ERR(BT_VOCS_ERR_OP_NOT_SUPPORTED);
 	}
 
@@ -116,7 +117,7 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	BT_DBG("Opcode %u, counter %u", cp->opcode, cp->counter);
+	LOG_DBG("Opcode %u, counter %u", cp->opcode, cp->counter);
 
 
 	if (cp->counter != inst->srv.state.change_counter) {
@@ -125,7 +126,7 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 
 	switch (cp->opcode) {
 	case BT_VOCS_OPCODE_SET_OFFSET:
-		BT_DBG("Set offset %d", cp->offset);
+		LOG_DBG("Set offset %d", cp->offset);
 		if (cp->offset > BT_VOCS_MAX_OFFSET || cp->offset < BT_VOCS_MIN_OFFSET) {
 			return BT_GATT_ERR(BT_VOCS_ERR_OUT_OF_RANGE);
 		}
@@ -141,8 +142,8 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 
 	if (notify) {
 		inst->srv.state.change_counter++;
-		BT_DBG("New state: offset %d, counter %u",
-		       inst->srv.state.offset, inst->srv.state.change_counter);
+		LOG_DBG("New state: offset %d, counter %u", inst->srv.state.offset,
+			inst->srv.state.change_counter);
 		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_STATE,
 					  inst->srv.service_p->attrs,
 					  &inst->srv.state, sizeof(inst->srv.state));
@@ -159,22 +160,22 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 #if defined(CONFIG_BT_VOCS)
 static void output_desc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	BT_DBG("value 0x%04x", value);
+	LOG_DBG("value 0x%04x", value);
 }
 #endif /* CONFIG_BT_VOCS */
 
 static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
-	struct bt_vocs *inst = attr->user_data;
+	struct bt_vocs *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	if (len >= sizeof(inst->srv.output_desc)) {
-		BT_DBG("Output desc was clipped from length %u to %zu",
-		       len, sizeof(inst->srv.output_desc) - 1);
+		LOG_DBG("Output desc was clipped from length %u to %zu", len,
+			sizeof(inst->srv.output_desc) - 1);
 		/* We just clip the string value if it's too long */
 		len = (uint16_t)sizeof(inst->srv.output_desc) - 1;
 	}
@@ -193,46 +194,66 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 		}
 	}
 
-	BT_DBG("%s", log_strdup(inst->srv.output_desc));
+	LOG_DBG("%s", inst->srv.output_desc);
 
 	return len;
+}
+
+static int vocs_write(struct bt_vocs *inst,
+		      ssize_t (*write)(struct bt_conn *conn,
+				       const struct bt_gatt_attr *attr,
+				       const void *buf, uint16_t len,
+				       uint16_t offset, uint8_t flags),
+		      const void *buf, uint16_t len)
+{
+	struct bt_audio_attr_user_data user_data = {
+		.user_data = inst,
+	};
+	struct bt_gatt_attr attr = {
+		.user_data = &user_data,
+	};
+	int err;
+
+	err = write(NULL, &attr, buf, len, 0, 0);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_BT_VOCS)
 static ssize_t read_output_desc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_vocs *inst = attr->user_data;
+	struct bt_vocs *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
-	BT_DBG("%s", log_strdup(inst->srv.output_desc));
+	LOG_DBG("%s", inst->srv.output_desc);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.output_desc,
 				 strlen(inst->srv.output_desc));
 }
 
 #define BT_VOCS_SERVICE_DEFINITION(_vocs) { \
 	BT_GATT_SECONDARY_SERVICE(BT_UUID_VOCS), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VOCS_STATE, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_offset_state, NULL, &_vocs), \
-	BT_GATT_CCC(offset_state_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VOCS_LOCATION, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_location, NULL, &_vocs), \
-	BT_GATT_CCC(location_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VOCS_CONTROL, \
-			       BT_GATT_CHRC_WRITE, \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       NULL, write_vocs_control, &_vocs), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VOCS_DESCRIPTION, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_output_desc, NULL, &_vocs), \
-	BT_GATT_CCC(output_desc_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT) \
+	BT_AUDIO_CHRC(BT_UUID_VOCS_STATE, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_offset_state, NULL, &_vocs), \
+	BT_AUDIO_CCC(offset_state_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_VOCS_LOCATION, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_location, write_location, &_vocs), \
+	BT_AUDIO_CCC(location_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_VOCS_CONTROL, \
+		      BT_GATT_CHRC_WRITE, \
+		      BT_GATT_PERM_WRITE_ENCRYPT, \
+		      NULL, write_vocs_control, &_vocs), \
+	BT_AUDIO_CHRC(BT_UUID_VOCS_DESCRIPTION, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_output_desc, write_output_desc, &_vocs), \
+	BT_AUDIO_CCC(output_desc_cfg_changed) \
 	}
 
 static struct bt_vocs vocs_insts[CONFIG_BT_VOCS_MAX_INSTANCE_COUNT];
@@ -253,7 +274,7 @@ struct bt_vocs *bt_vocs_free_instance_get(void)
 void *bt_vocs_svc_decl_get(struct bt_vocs *vocs)
 {
 	CHECKIF(!vocs) {
-		BT_DBG("Null VOCS pointer");
+		LOG_DBG("Null VOCS pointer");
 		return NULL;
 	}
 
@@ -276,12 +297,12 @@ int bt_vocs_register(struct bt_vocs *vocs,
 	static bool instances_prepared;
 
 	CHECKIF(!vocs) {
-		BT_DBG("Null VOCS pointer");
+		LOG_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
 	CHECKIF(!param) {
-		BT_DBG("NULL params pointer");
+		LOG_DBG("NULL params pointer");
 		return -EINVAL;
 	}
 
@@ -291,12 +312,12 @@ int bt_vocs_register(struct bt_vocs *vocs,
 	}
 
 	CHECKIF(vocs->srv.initialized) {
-		BT_DBG("Already initialized VOCS instance");
+		LOG_DBG("Already initialized VOCS instance");
 		return -EALREADY;
 	}
 
 	CHECKIF(param->offset > BT_VOCS_MAX_OFFSET || param->offset < BT_VOCS_MIN_OFFSET) {
-		BT_DBG("Invalid offset %d", param->offset);
+		LOG_DBG("Invalid offset %d", param->offset);
 		return -EINVAL;
 	}
 
@@ -309,9 +330,9 @@ int bt_vocs_register(struct bt_vocs *vocs,
 			sizeof(vocs->srv.output_desc) - 1);
 		/* strncpy may not always null-terminate */
 		vocs->srv.output_desc[sizeof(vocs->srv.output_desc) - 1] = '\0';
-		if (IS_ENABLED(CONFIG_BT_DEBUG_VOCS) &&
+		if (IS_ENABLED(CONFIG_BT_VOCS_LOG_LEVEL_DBG) &&
 		    strcmp(vocs->srv.output_desc, param->output_desc)) {
-			BT_DBG("Output desc clipped to %s", log_strdup(vocs->srv.output_desc));
+			LOG_DBG("Output desc clipped to %s", vocs->srv.output_desc);
 		}
 	}
 
@@ -327,14 +348,12 @@ int bt_vocs_register(struct bt_vocs *vocs,
 		if (param->location_writable && !bt_uuid_cmp(attr->uuid, BT_UUID_VOCS_LOCATION)) {
 			/* Update attr and chrc to be writable */
 			chrc = vocs->srv.service_p->attrs[i - 1].user_data;
-			attr->write = write_location;
 			attr->perm |= BT_GATT_PERM_WRITE_ENCRYPT;
 			chrc->properties |= BT_GATT_CHRC_WRITE_WITHOUT_RESP;
 		} else if (param->desc_writable &&
 			   !bt_uuid_cmp(attr->uuid, BT_UUID_VOCS_DESCRIPTION)) {
 			/* Update attr and chrc to be writable */
 			chrc = vocs->srv.service_p->attrs[i - 1].user_data;
-			attr->write = write_output_desc;
 			attr->perm |= BT_GATT_PERM_WRITE_ENCRYPT;
 			chrc->properties |= BT_GATT_CHRC_WRITE_WITHOUT_RESP;
 		}
@@ -342,7 +361,7 @@ int bt_vocs_register(struct bt_vocs *vocs,
 
 	err = bt_gatt_service_register(vocs->srv.service_p);
 	if (err) {
-		BT_DBG("Could not register VOCS service");
+		LOG_DBG("Could not register VOCS service");
 		return err;
 	}
 
@@ -354,7 +373,7 @@ int bt_vocs_register(struct bt_vocs *vocs,
 int bt_vocs_state_get(struct bt_vocs *inst)
 {
 	CHECKIF(!inst) {
-		BT_DBG("Null VOCS pointer");
+		LOG_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
@@ -373,7 +392,7 @@ int bt_vocs_state_get(struct bt_vocs *inst)
 int bt_vocs_location_get(struct bt_vocs *inst)
 {
 	CHECKIF(!inst) {
-		BT_DBG("Null VOCS pointer");
+		LOG_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
@@ -392,21 +411,14 @@ int bt_vocs_location_get(struct bt_vocs *inst)
 int bt_vocs_location_set(struct bt_vocs *inst, uint32_t location)
 {
 	CHECKIF(!inst) {
-		BT_DBG("Null VOCS pointer");
+		LOG_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
 		return bt_vocs_client_location_set(inst, location);
 	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
-		struct bt_gatt_attr attr;
-		int err;
-
-		attr.user_data = inst;
-
-		err = write_location(NULL, &attr, &location, sizeof(location), 0, 0);
-
-		return err > 0 ? 0 : err;
+		return vocs_write(inst, write_location, &location, sizeof(location));
 	}
 
 	return -ENOTSUP;
@@ -415,26 +427,20 @@ int bt_vocs_location_set(struct bt_vocs *inst, uint32_t location)
 int bt_vocs_state_set(struct bt_vocs *inst, int16_t offset)
 {
 	CHECKIF(!inst) {
-		BT_DBG("Null VOCS pointer");
+		LOG_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
 		return bt_vocs_client_state_set(inst, offset);
 	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
-		struct bt_gatt_attr attr;
 		struct bt_vocs_control cp;
-		int err;
 
 		cp.opcode = BT_VOCS_OPCODE_SET_OFFSET;
 		cp.counter = inst->srv.state.change_counter;
 		cp.offset = sys_cpu_to_le16(offset);
 
-		attr.user_data = inst;
-
-		err = write_vocs_control(NULL, &attr, &cp, sizeof(cp), 0, 0);
-
-		return err > 0 ? 0 : err;
+		return vocs_write(inst, write_vocs_control, &cp, sizeof(cp));
 	}
 
 	return -ENOTSUP;
@@ -443,7 +449,7 @@ int bt_vocs_state_set(struct bt_vocs *inst, int16_t offset)
 int bt_vocs_description_get(struct bt_vocs *inst)
 {
 	CHECKIF(!inst) {
-		BT_DBG("Null VOCS pointer");
+		LOG_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
@@ -462,25 +468,19 @@ int bt_vocs_description_get(struct bt_vocs *inst)
 int bt_vocs_description_set(struct bt_vocs *inst, const char *description)
 {
 	CHECKIF(!inst) {
-		BT_DBG("Null VOCS pointer");
+		LOG_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
 	CHECKIF(!description) {
-		BT_DBG("Null description pointer");
+		LOG_DBG("Null description pointer");
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
 		return bt_vocs_client_description_set(inst, description);
 	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
-		struct bt_gatt_attr attr;
-		int err;
-
-		attr.user_data = inst;
-
-		err = write_output_desc(NULL, &attr, description, strlen(description), 0, 0);
-		return err > 0 ? 0 : err;
+		return vocs_write(inst, write_output_desc, description, strlen(description));
 	}
 
 	return -ENOTSUP;

@@ -46,7 +46,6 @@
 			compatible = "xlnx,xps-uartlite-1.00.a";
 			interrupts = <0 0>;
 			reg = <0x50010000 0x10000>;
-			label = "UART_0";
 		};
 	};
 };

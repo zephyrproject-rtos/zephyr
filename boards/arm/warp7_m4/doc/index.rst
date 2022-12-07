@@ -12,8 +12,7 @@ Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
 
 
-.. image:: ./warp7_m4.png
-   :width: 470px
+.. image:: warp7_m4.jpg
    :align: center
    :alt: WaRP7-iMX7S
 
@@ -310,7 +309,7 @@ References
 - `J-Link iMX7D Instructions`_
 
 .. _WaRP7 Site:
-   https://www.nxp.com/support/developer-resources/nxp-designs/warp7-next-generation-iot-and-wearable-development-platform:WARP7
+   https://www.element14.com/warp7
 
 .. _WaRP7 User Guide:
    https://github.com/WaRP7/WaRP7-User-Guide/releases/download/v1.3/User_Guide_Manual_v1-3.pdf

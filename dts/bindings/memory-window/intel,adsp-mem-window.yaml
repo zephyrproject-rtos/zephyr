@@ -1,0 +1,25 @@
+description: ADSP Memory Window
+
+compatible: "intel,adsp-mem-window"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  initialize:
+    type: boolean
+    description: Initialize memory region and flush cache.
+
+  memory:
+    required: true
+    type: phandle
+    description: memory region the windows are exposed through.
+
+  offset:
+    type: int
+    description: offset from memory base.
+
+  read-only:
+    type: boolean

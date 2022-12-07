@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell_mqtt.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
@@ -70,7 +70,7 @@ static void sh_mqtt_rx_rb_flush(void)
 	uint8_t c;
 	uint32_t size = ring_buf_size_get(&sh_mqtt->rx_rb);
 
-	while (size) {
+	while (size > 0) {
 		size = ring_buf_get(&sh_mqtt->rx_rb, &c, 1U);
 	}
 }
@@ -86,7 +86,7 @@ bool __weak shell_mqtt_get_devid(char *id, int id_max_len)
 	}
 
 	(void)memset(id, 0, id_max_len);
-	length = bin2hex(hwinfo_id, (size_t)length, id, id_max_len - 1);
+	length = bin2hex(hwinfo_id, (size_t)length, id, id_max_len);
 
 	return length > 0;
 }
@@ -106,6 +106,13 @@ static void clear_fds(void)
 	sh_mqtt->nfds = 0;
 }
 
+/*
+ * Upon successful completion, poll() shall return a non-negative value. A positive value indicates
+ * the total number of pollfd structures that have selected events (that is, those for which the
+ * revents member is non-zero). A value of 0 indicates that the call timed out and no file
+ * descriptors have been selected. Upon failure, poll() shall return -1 and set errno to indicate
+ * the error.
+ */
 static int wait(int timeout)
 {
 	int rc = 0;
@@ -163,7 +170,7 @@ static void sh_mqtt_close_and_cleanup(void)
 	}
 
 	/* If network/mqtt disconnected, or mqtt_disconnect failed, do mqtt_abort */
-	if (rc) {
+	if (rc < 0) {
 		/* mqtt_abort doesn't send disconnection packet to the broker, but it
 		 * makes sure that the MQTT connection is aborted locally and will
 		 * always invoke mqtt_evt_handler:MQTT_EVT_DISCONNECT
@@ -230,7 +237,7 @@ static void sh_mqtt_process_handler(struct k_work *work)
 	}
 
 	/* If context can't be locked, that means net conn cb locked it */
-	if (sh_mqtt_context_lock(K_NO_WAIT)) {
+	if (sh_mqtt_context_lock(K_NO_WAIT) != 0) {
 		/* In that case we should simply return */
 		LOG_DBG("%s_work unable to lock context", "process");
 		return;
@@ -252,18 +259,21 @@ static void sh_mqtt_process_handler(struct k_work *work)
 	       (sh_mqtt->transport_state == SHELL_MQTT_TRANSPORT_CONNECTED) &&
 	       (sh_mqtt->subscribe_state == SHELL_MQTT_SUBSCRIBED)) {
 		LOG_DBG("Listening to socket");
-		if (wait(remaining)) {
+		rc = wait(remaining);
+		if (rc > 0) {
 			LOG_DBG("Process socket for MQTT packet");
 			rc = mqtt_input(&sh_mqtt->mqtt_cli);
 			if (rc != 0) {
 				LOG_ERR("%s error: %d", "processed: mqtt_input", rc);
 				goto process_error;
 			}
+		} else if (rc < 0) {
+			goto process_error;
 		}
 
 		LOG_DBG("MQTT %s", "Keepalive");
 		rc = mqtt_live(&sh_mqtt->mqtt_cli);
-		if (rc != 0 && rc != -EAGAIN) {
+		if ((rc != 0) && (rc != -EAGAIN)) {
 			LOG_ERR("%s error: %d", "mqtt_live", rc);
 			goto process_error;
 		}
@@ -302,7 +312,7 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 	}
 
 	/* If context can't be locked, that means net conn cb locked it */
-	if (sh_mqtt_context_lock(K_NO_WAIT)) {
+	if (sh_mqtt_context_lock(K_NO_WAIT) != 0) {
 		/* In that case we should simply return */
 		LOG_DBG("%s_work unable to lock context", "subscribe");
 		return;
@@ -317,13 +327,16 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 	if (rc == 0) {
 		/* Wait for mqtt's connack */
 		LOG_DBG("Listening to socket");
-		if (wait(CONNECT_TIMEOUT_MS)) {
+		rc = wait(CONNECT_TIMEOUT_MS);
+		if (rc > 0) {
 			LOG_DBG("Process socket for MQTT packet");
 			rc = mqtt_input(&sh_mqtt->mqtt_cli);
 			if (rc != 0) {
 				LOG_ERR("%s error: %d", "subscribe: mqtt_input", rc);
 				goto subscribe_error;
 			}
+		} else if (rc < 0) {
+			goto subscribe_error;
 		}
 
 		/* No suback, fail */
@@ -335,8 +348,8 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 		(void)sh_mqtt_work_reschedule(&sh_mqtt->process_dwork, PROCESS_INTERVAL);
 		sh_mqtt_context_unlock();
 
-		LOG_INF("Logs will be published to: %s", log_strdup(sh_mqtt->pub_topic));
-		LOG_INF("Subscribing shell cmds from: %s", log_strdup(sh_mqtt->sub_topic));
+		LOG_INF("Logs will be published to: %s", sh_mqtt->pub_topic);
+		LOG_INF("Subscribing shell cmds from: %s", sh_mqtt->sub_topic);
 
 		return;
 	}
@@ -360,7 +373,7 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 	}
 
 	/* If context can't be locked, that means net conn cb locked it */
-	if (sh_mqtt_context_lock(K_NO_WAIT)) {
+	if (sh_mqtt_context_lock(K_NO_WAIT) != 0) {
 		/* In that case we should simply return */
 		LOG_DBG("%s_work unable to lock context", "connect");
 		return;
@@ -375,7 +388,7 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 	/* Resolve the broker URL */
 	LOG_DBG("Resolving DNS");
 	rc = get_mqtt_broker_addrinfo();
-	if (rc) {
+	if (rc != 0) {
 		(void)sh_mqtt_work_reschedule(&sh_mqtt->connect_dwork, K_SECONDS(1));
 		sh_mqtt_context_unlock();
 		return;
@@ -399,13 +412,16 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 
 	/* Wait for mqtt's connack */
 	LOG_DBG("Listening to socket");
-	if (wait(CONNECT_TIMEOUT_MS)) {
+	rc = wait(CONNECT_TIMEOUT_MS);
+	if (rc > 0) {
 		LOG_DBG("Process socket for MQTT packet");
 		rc = mqtt_input(&sh_mqtt->mqtt_cli);
 		if (rc != 0) {
 			LOG_ERR("%s error: %d", "connect: mqtt_input", rc);
 			goto connect_error;
 		}
+	} else if (rc < 0) {
+		goto connect_error;
 	}
 
 	/* No connack, fail */
@@ -499,13 +515,13 @@ static void net_disconnect_handler(struct k_work *work)
 static void network_evt_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
 				struct net_if *iface)
 {
-	if (mgmt_event == NET_EVENT_L4_CONNECTED &&
-	    sh_mqtt->network_state == SHELL_MQTT_NETWORK_DISCONNECTED) {
+	if ((mgmt_event == NET_EVENT_L4_CONNECTED) &&
+	    (sh_mqtt->network_state == SHELL_MQTT_NETWORK_DISCONNECTED)) {
 		LOG_WRN("Network %s", "connected");
 		sh_mqtt->network_state = SHELL_MQTT_NETWORK_CONNECTED;
 		(void)sh_mqtt_work_reschedule(&sh_mqtt->connect_dwork, K_SECONDS(1));
-	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED &&
-		   sh_mqtt->network_state == SHELL_MQTT_NETWORK_CONNECTED) {
+	} else if ((mgmt_event == NET_EVENT_L4_DISCONNECTED) &&
+		   (sh_mqtt->network_state == SHELL_MQTT_NETWORK_CONNECTED)) {
 		(void)sh_mqtt_work_submit(&sh_mqtt->net_disconnected_work);
 	}
 }
@@ -548,14 +564,13 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 	case MQTT_EVT_PUBLISH: {
 		const struct mqtt_publish_param *pub = &evt->param.publish;
-		uint32_t size, payload_left, rb_free_space;
+		uint32_t size, payload_left;
 
 		payload_left = pub->message.payload.len;
-		rb_free_space = ring_buf_space_get(&sh_mqtt->rx_rb);
 
 		LOG_DBG("MQTT publish received %d, %d bytes", evt->result, payload_left);
 		LOG_DBG("   id: %d, qos: %d", pub->message_id, pub->message.topic.qos);
-		LOG_DBG("   item: %s", log_strdup(pub->message.topic.topic.utf8));
+		LOG_DBG("   item: %s", pub->message.topic.topic.utf8);
 
 		/* For MQTT_QOS_0_AT_MOST_ONCE no acknowledgment needed */
 		if (pub->message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
@@ -637,7 +652,7 @@ static int init(const struct shell_transport *transport, const void *config,
 		(void)snprintf(sh_mqtt->device_id, sizeof("dummy"), "dummy");
 	}
 
-	LOG_DBG("Client ID is %s", log_strdup(sh_mqtt->device_id));
+	LOG_DBG("Client ID is %s", sh_mqtt->device_id);
 
 	(void)snprintf(sh_mqtt->pub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_tx", sh_mqtt->device_id);
 	(void)snprintf(sh_mqtt->sub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_rx", sh_mqtt->device_id);
@@ -729,7 +744,7 @@ static int write(const struct shell_transport *transport, const void *data, size
 	(void)k_work_cancel_delayable_sync(&sh_mqtt->publish_dwork, &ws);
 
 	do {
-		if (sh_mqtt->tx_buf.len + length - *cnt > TX_BUF_SIZE) {
+		if ((sh_mqtt->tx_buf.len + length - *cnt) > TX_BUF_SIZE) {
 			copy_len = TX_BUF_SIZE - sh_mqtt->tx_buf.len;
 		} else {
 			copy_len = length - *cnt;
@@ -753,7 +768,7 @@ static int write(const struct shell_transport *transport, const void *data, size
 		*cnt += copy_len;
 	} while (*cnt < length);
 
-	if (sh_mqtt->tx_buf.len) {
+	if (sh_mqtt->tx_buf.len > 0) {
 		(void)sh_mqtt_work_reschedule(&sh_mqtt->publish_dwork, MQTT_SEND_DELAY_MS);
 	}
 

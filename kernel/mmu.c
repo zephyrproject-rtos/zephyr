@@ -58,18 +58,18 @@ static bool page_frames_initialized;
 #define COLOR_PAGE_FRAMES	1
 
 #if COLOR_PAGE_FRAMES
-#define ANSI_DEFAULT "\x1B[0m"
-#define ANSI_RED     "\x1B[1;31m"
-#define ANSI_GREEN   "\x1B[1;32m"
-#define ANSI_YELLOW  "\x1B[1;33m"
-#define ANSI_BLUE    "\x1B[1;34m"
-#define ANSI_MAGENTA "\x1B[1;35m"
-#define ANSI_CYAN    "\x1B[1;36m"
-#define ANSI_GREY    "\x1B[1;90m"
+#define ANSI_DEFAULT "\x1B" "[0m"
+#define ANSI_RED     "\x1B" "[1;31m"
+#define ANSI_GREEN   "\x1B" "[1;32m"
+#define ANSI_YELLOW  "\x1B" "[1;33m"
+#define ANSI_BLUE    "\x1B" "[1;34m"
+#define ANSI_MAGENTA "\x1B" "[1;35m"
+#define ANSI_CYAN    "\x1B" "[1;36m"
+#define ANSI_GREY    "\x1B" "[1;90m"
 
 #define COLOR(x)	printk(_CONCAT(ANSI_, x))
 #else
-#define COLOR(x)	do { } while (0)
+#define COLOR(x)	do { } while (false)
 #endif
 
 /* LCOV_EXCL_START */
@@ -238,10 +238,10 @@ static void virt_region_free(void *vaddr, size_t size)
 	}
 
 	__ASSERT((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
-		 && ((vaddr_u8 + size) < Z_VIRT_REGION_END_ADDR),
+		 && ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR),
 		 "invalid virtual address region %p (%zu)", vaddr_u8, size);
 	if (!((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
-	      && ((vaddr_u8 + size) < Z_VIRT_REGION_END_ADDR))) {
+	      && ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR))) {
 		return;
 	}
 
@@ -786,7 +786,7 @@ void z_phys_unmap(uint8_t *virt, size_t size)
 		aligned_virt, aligned_size, addr_offset);
 
 	arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
-	virt_region_free(virt, size);
+	virt_region_free(UINT_TO_POINTER(aligned_virt), aligned_size);
 	k_spin_unlock(&z_mm_lock, key);
 }
 
@@ -1482,7 +1482,7 @@ bool z_page_fault(void *addr)
 static void do_mem_unpin(void *addr)
 {
 	struct z_page_frame *pf;
-	int key;
+	unsigned int key;
 	uintptr_t flags, phys;
 
 	key = irq_lock();

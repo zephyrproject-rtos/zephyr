@@ -19,9 +19,9 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_rv32m1_tpm);
+
+LOG_MODULE_REGISTER(pwm_rv32m1_tpm, CONFIG_PWM_LOG_LEVEL);
 
 #define MAX_CHANNELS ARRAY_SIZE(TPM0->CONTROLS)
 
@@ -147,6 +147,11 @@ static int rv32m1_tpm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	if (clock_control_on(config->clock_dev, config->clock_subsys)) {
 		LOG_ERR("Could not turn on clock");
 		return -EINVAL;
@@ -213,7 +218,7 @@ static const struct pwm_driver_api rv32m1_tpm_driver_api = {
 	DEVICE_DT_INST_DEFINE(n, &rv32m1_tpm_init, NULL, \
 			    &rv32m1_tpm_data_##n, \
 			    &rv32m1_tpm_config_##n, \
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
 			    &rv32m1_tpm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TPM_DEVICE)

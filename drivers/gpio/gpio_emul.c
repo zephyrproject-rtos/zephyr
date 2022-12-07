@@ -10,10 +10,10 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_emul.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -446,6 +446,32 @@ static int gpio_emul_pin_configure(const struct device *port, gpio_pin_t pin,
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_emul_pin_get_config(const struct device *port, gpio_pin_t pin,
+				    gpio_flags_t *out_flags)
+{
+	struct gpio_emul_data *drv_data =
+		(struct gpio_emul_data *)port->data;
+
+	k_mutex_lock(&drv_data->mu, K_FOREVER);
+
+	*out_flags = drv_data->flags[pin] &
+			~(GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH
+				| GPIO_OUTPUT_INIT_LOGICAL);
+	if (drv_data->flags[pin] & GPIO_OUTPUT) {
+		if (drv_data->output_vals & BIT(pin)) {
+			*out_flags |= GPIO_OUTPUT_HIGH;
+		} else {
+			*out_flags |= GPIO_OUTPUT_LOW;
+		}
+	}
+
+	k_mutex_unlock(&drv_data->mu);
+
+	return 0;
+}
+#endif
+
 static int gpio_emul_port_get_raw(const struct device *port, gpio_port_value_t *values)
 {
 	struct gpio_emul_data *drv_data =
@@ -666,8 +692,45 @@ static gpio_port_pins_t gpio_emul_get_pending_int(const struct device *dev)
 	return drv_data->interrupts;
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_emul_port_get_direction(const struct device *port, gpio_port_pins_t map,
+					gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	int i;
+	gpio_port_pins_t ip = 0;
+	gpio_port_pins_t op = 0;
+	struct gpio_emul_data *const drv_data = (struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config = (const struct gpio_emul_config *)port->config;
+
+	map &= config->common.port_pin_mask;
+
+	if (inputs != NULL) {
+		for (i = find_lsb_set(map) - 1; map;
+		     map &= ~BIT(i), i = find_lsb_set(map) - 1) {
+			ip |= !!(drv_data->flags[i] & GPIO_INPUT) * BIT(i);
+		}
+
+		*inputs = ip;
+	}
+
+	if (outputs != NULL) {
+		for (i = find_lsb_set(map) - 1; map;
+		     map &= ~BIT(i), i = find_lsb_set(map) - 1) {
+			op |= !!(drv_data->flags[i] & GPIO_OUTPUT) * BIT(i);
+		}
+
+		*outputs = op;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 static const struct gpio_driver_api gpio_emul_driver = {
 	.pin_configure = gpio_emul_pin_configure,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_emul_pin_get_config,
+#endif
 	.port_get_raw = gpio_emul_port_get_raw,
 	.port_set_masked_raw = gpio_emul_port_set_masked_raw,
 	.port_set_bits_raw = gpio_emul_port_set_bits_raw,
@@ -676,6 +739,9 @@ static const struct gpio_driver_api gpio_emul_driver = {
 	.pin_interrupt_configure = gpio_emul_pin_interrupt_configure,
 	.manage_callback = gpio_emul_manage_callback,
 	.get_pending_int = gpio_emul_get_pending_int,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_emul_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 static int gpio_emul_init(const struct device *dev)
@@ -726,6 +792,9 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 		.num_pins = DT_INST_PROP(_num, ngpios),			\
 		.interrupt_caps = GPIO_EMUL_INT_CAPS(_num)		\
 	};								\
+	BUILD_ASSERT(							\
+		DT_INST_PROP(_num, ngpios) <= GPIO_MAX_PINS_PER_PORT,	\
+		"Too many ngpios");					\
 									\
 	static struct gpio_emul_data gpio_emul_data_##_num = {		\
 		.flags = gpio_emul_flags_##_num,			\

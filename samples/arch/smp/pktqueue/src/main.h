@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/random/rand32.h>
@@ -14,7 +14,7 @@
 #define QUEUE_NUM 2
 
 /* Amount of execution threads per pair of queues*/
-#define THREADS_NUM (CONFIG_MP_NUM_CPUS+1)
+#define THREADS_NUM (CONFIG_MP_MAX_NUM_CPUS+1)
 
 /* Amount of packet headers in a queue */
 #define SIZE_OF_QUEUE 5000

@@ -17,7 +17,6 @@ supported:
   - counter
   - gpio
   - i2c
-  - ieee802154
   - pwm
   - spi
   - qspi

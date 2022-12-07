@@ -16,6 +16,8 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+extern char xtensa_arch_except_epc[];
+
 void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 			void (*entry)(void *, void *, void *),
 			void *arg1, void *arg2, void *arg3)
@@ -217,11 +219,8 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 
 	if (cause == EXCCAUSE_LEVEL1_INTERRUPT) {
-
 		return xtensa_int1_c(interrupted_stack);
-
 	} else if (cause == EXCCAUSE_SYSCALL) {
-
 		/* Just report it to the console for now */
 		LOG_ERR(" ** SYSCALL PS %p PC %p",
 			(void *)bsa[BSA_PS_OFF/4], (void *)bsa[BSA_PC_OFF/4]);
@@ -232,18 +231,39 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * else it will just loop forever
 		 */
 		bsa[BSA_PC_OFF/4] += 3;
-
 	} else {
 		uint32_t ps = bsa[BSA_PS_OFF/4];
+		void *pc = (void *)bsa[BSA_PC_OFF/4];
 
 		__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
+
+		/* Default for exception */
+		int reason = K_ERR_CPU_EXCEPTION;
+
+		/* We need to distinguish between an ill in xtensa_arch_except,
+		 * e.g for k_panic, and any other ill. For exceptions caused by
+		 * xtensa_arch_except calls, we also need to pass the reason_p
+		 * to z_xtensa_fatal_error. Since the ARCH_EXCEPT frame is in the
+		 * BSA, the first arg reason_p is stored at the A2 offset.
+		 * We assign EXCCAUSE the unused, reserved code 63; this may be
+		 * problematic if the app or new boards also decide to repurpose
+		 * this code.
+		 */
+		if ((pc ==  (void *) &xtensa_arch_except_epc) && (cause == 0)) {
+			cause = 63;
+			__asm__ volatile("wsr.exccause %0" : : "r"(cause));
+			reason = bsa[BSA_A2_OFF/4];
+			/* Skip ILL to RETW */
+			bsa[BSA_PC_OFF/4] += 3;
+			pc = (void *)bsa[BSA_PC_OFF/4];
+		}
 
 		LOG_ERR(" ** FATAL EXCEPTION");
 		LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
 			arch_curr_cpu()->id, cause,
 			z_xtensa_exccause(cause));
 		LOG_ERR(" **  PC %p VADDR %p",
-			(void *)bsa[BSA_PC_OFF/4], (void *)vaddr);
+			pc, (void *)vaddr);
 		LOG_ERR(" **  PS %p", (void *)bsa[BSA_PS_OFF/4]);
 		LOG_ERR(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
 			get_bits(0, 4, ps), get_bits(4, 1, ps),
@@ -256,7 +276,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * as these are software errors.  Should clean this
 		 * up.
 		 */
-		z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION,
+		z_xtensa_fatal_error(reason,
 				     (void *)interrupted_stack);
 	}
 

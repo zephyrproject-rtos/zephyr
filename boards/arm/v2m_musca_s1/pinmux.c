@@ -7,7 +7,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/pinmux.h>
 #include <soc.h>
 #include <zephyr/sys/sys_io.h>
 
@@ -41,7 +40,7 @@ static void arm_musca_s1_pinmux_defaults(void)
 	scc[IOMUX_ALTF1_OUTSEL] = 0xffff;
 	scc[IOMUX_ALTF1_OENSEL] = 0xffff;
 
-#if defined(CONFIG_UART_PL011_PORT0)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 	/* clear bit 0/1 for GPIO0/1 to steer from ALTF1 */
 	scc[IOMUX_MAIN_INSEL]  &= ~(BIT(0) | BIT(1));
 	scc[IOMUX_MAIN_OUTSEL] &= ~(BIT(0) | BIT(1));

@@ -59,7 +59,13 @@ config MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
 
 config MCTL_DEBUG
 	bool "Media control debug"
+	select DEPRECATED
 	help
 	  Use this option to enable Media control debug logs
+
+module = MCTL
+legacy-debug-sym = MCTL_DEBUG
+module-str = "Media control"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # MCTL

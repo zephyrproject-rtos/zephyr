@@ -23,3 +23,12 @@ zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };
+
+&qspi {
+	status = "disabled";
+
+	/* Drop the flash and partitions to avoid the config being used for DFU
+	 * samples.
+	 */
+	/delete-node/ mx25r6435f@0;
+};

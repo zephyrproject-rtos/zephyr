@@ -14,8 +14,6 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 
-#define LOG_MODULE_NAME bt_ctlr_rv32m1_mayfly
-#include "common/log.h"
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)
@@ -31,12 +29,26 @@ void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 {
 	(void)caller_id;
 
-	LL_ASSERT(callee_id == MAYFLY_CALL_ID_JOB);
+	switch (callee_id) {
+	case MAYFLY_CALL_ID_WORKER:
+		if (enable) {
+			irq_enable(HAL_SWI_WORKER_IRQ);
+		} else {
+			irq_disable(HAL_SWI_WORKER_IRQ);
+		}
+		break;
 
-	if (enable) {
-		irq_enable(HAL_SWI_JOB_IRQ);
-	} else {
-		irq_disable(HAL_SWI_JOB_IRQ);
+	case MAYFLY_CALL_ID_JOB:
+		if (enable) {
+			irq_enable(HAL_SWI_JOB_IRQ);
+		} else {
+			irq_disable(HAL_SWI_JOB_IRQ);
+		}
+		break;
+
+	default:
+		LL_ASSERT(0);
+		break;
 	}
 }
 
@@ -113,4 +125,9 @@ void mayfly_pend(uint8_t caller_id, uint8_t callee_id)
 		LL_ASSERT(0);
 		break;
 	}
+}
+
+uint32_t mayfly_is_running(void)
+{
+	return k_is_in_isr();
 }

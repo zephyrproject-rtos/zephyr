@@ -50,11 +50,16 @@ description: |
 
 compatible: "nxp,lpc-iocon-pinctrl"
 
-include:
-  - name: base.yaml
-  - name: pincfg-node-group.yaml
-    child-binding:
-      child-binding:
+include: base.yaml
+
+child-binding:
+  description: LPC IOCON pin controller pin group
+  child-binding:
+    description: |
+      LPC IOCON pin controller pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
         property-allowlist:
           - drive-open-drain
           - bias-pull-up
@@ -62,11 +67,6 @@ include:
           - drive-push-pull
           - input-schmitt-enable
 
-child-binding:
-  description: LPC IOCON pin controller pin group
-  child-binding:
-    description: |
-      LPC IOCON pin controller pin configuration node
     properties:
       pinmux:
         required: true
@@ -75,7 +75,6 @@ child-binding:
           Pin mux selection for this group. See the SOC level pinctrl header
           file in NXP's HAL for a defined list of these options.
       slew-rate:
-        required: false
         default: "standard"
         type: string
         enum:
@@ -95,7 +94,12 @@ child-binding:
         type: boolean
         description: |
           Set the pin to analog mode. Sets DIGIMODE=0, and ASW=1. Only valid for
-          analog type pins.
+          analog type pins. Selects ASW0 on LPC55s3x family
+      nxp,analog-alt-mode:
+        type: boolean
+        description: |
+          Select the pin's alternate analog mode. Valid on LPC55s3x family SOCs
+          when DIGIMODE=0. Only valid for analog type pins. Sets ASW1.
       power-source:
         type: string
         enum:

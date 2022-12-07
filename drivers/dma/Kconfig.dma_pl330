@@ -4,5 +4,7 @@
 config DMA_PL330
 	bool
 	prompt "PL330 DMA driver"
+	default y
+	depends on DT_HAS_ARM_DMA_PL330_ENABLED
 	help
 	  This option enables support of pl330 DMA Controller.

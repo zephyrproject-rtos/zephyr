@@ -7,7 +7,7 @@
 #include <string.h>
 #include <errno.h>
 #include <zephyr/sys/__assert.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "testfs_util.h"
 
 static const char *path_vextend(struct testfs_path *pp,

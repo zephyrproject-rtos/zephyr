@@ -43,8 +43,7 @@ This development kit has the following features:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/bl5340_dvk_top.png
-     :width: 340px
+.. figure:: img/bl5340_dvk_top.jpg
      :align: center
      :alt: BL5340 DVK
 
@@ -424,7 +423,7 @@ References
 .. _BL5340 homepage: https://www.lairdconnect.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl5340-series-multi-core-bluetooth-52-802154-nfc-modules
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _TI TCA9538 datasheet: https://www.ti.com/lit/gpn/TCA9538
-.. _Macronix MX25R6435FZNIL0 datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7913/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.5.pdf
+.. _Macronix MX25R6435FZNIL0 datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf
 .. _Giantec GT24C256C-2GLI-TR datasheet: http://www.giantec-semi.com/Upload/datasheet/CU/GT24C256C_DS_Cu.pdf
 .. _Bosch BME680 datasheet: https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme680-ds001.pdf
 .. _ST Microelectronics LIS3DH datasheet: https://www.st.com/resource/en/datasheet/lis3dh.pdf

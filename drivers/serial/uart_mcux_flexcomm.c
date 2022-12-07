@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 #include <fsl_usart.h>
 #include <soc.h>
 #include <fsl_device_registers.h>
@@ -264,6 +265,10 @@ static int mcux_flexcomm_init(const struct device *dev)
 		return err;
 	}
 #endif /* CONFIG_PINCTRL */
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
 
 	/* Get the clock frequency */
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,

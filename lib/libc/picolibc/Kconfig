@@ -1,0 +1,164 @@
+# Copyright © 2021 Amazon.com, Inc. or its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+config PICOLIBC_USE_MODULE
+	bool "Use picolibc module"
+	default y
+	select PICOLIBC_MODULE
+	help
+	  Use picolibc module instead of picolibc included with toolchain
+
+config PICOLIBC_HEAP_SIZE
+	int "Picolibc heap size (bytes)"
+	default 16384 if MMU
+	default 1024 if USERSPACE && MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	default -1
+	help
+	  Indicates the amount of memory which will be used by the picolibc
+	  malloc() heap.
+
+	  If user mode is enabled, and MPU hardware has requirements that
+	  regions be sized to a power of two and aligned to their size,
+	  then this must be defined as a power of two or a compile error
+	  will result.
+
+	  If set to zero, then no malloc() heap will be available.
+
+	  If set to -1, then all remaining system RAM will be used for this
+	  area.
+
+config PICOLIBC_IO_LONG_LONG
+	bool "support for long long in integer-only printf/scanf"
+	default n
+	help
+	  Includes support for long long in integer-only printf/scanf. long long
+	  types are always supported in the floating-point versions.
+
+config PICOLIBC_IO_FLOAT
+	bool "support for floating point values in printf/scanf"
+	default n
+	help
+	  Include floating point support in printf/scanf functions.
+
+if PICOLIBC_USE_MODULE
+
+if PICOLIBC
+choice PICOLIBC_OPTIMIZATIONS
+	prompt "Optimization level"
+	default PICOLIBC_SIZE_OPTIMIZATIONS if SIZE_OPTIMIZATIONS
+	default PICOLIBC_SPEED_OPTIMIZATIONS if SPEED_OPTIMIZATIONS
+	default PICOLIBC_DEBUG_OPTIMIZATIONS if DEBUG_OPTIMIZATIONS
+	default PICOLIBC_NO_OPTIMIZATIONS if NO_OPTIMIZATIONS
+	help
+	  Note that these flags shall only control the compiler
+	  optimization level for picolibc, not the level for the
+	  rest of Zephyr
+
+config PICOLIBC_SIZE_OPTIMIZATIONS
+	bool "Optimize for size"
+	help
+	  Compiler optimizations will be set to -Os independently of other
+	  options.
+
+config PICOLIBC_SPEED_OPTIMIZATIONS
+	bool "Optimize for speed"
+	help
+	  Compiler optimizations will be set to -O2 independently of other
+	  options.
+
+config PICOLIBC_DEBUG_OPTIMIZATIONS
+	bool "Optimize debugging experience"
+	help
+	  Compiler optimizations will be set to -Og independently of other
+	  options.
+
+config PICOLIBC_NO_OPTIMIZATIONS
+	bool "Optimize nothing"
+	help
+	  Compiler optimizations will be set to -O0 independently of other
+	  options.
+
+endchoice
+
+config PICOLIBC_FAST_STRCMP
+	bool "always use fast strcmp paths"
+	default y
+	help
+	  This provides a faster strcmp version even when libc is
+	  built in space-optimized mode
+
+config PICOLIBC_IO_C99_FORMATS
+	bool "support C99 format additions in printf/scanf"
+	default y
+	help
+	  Includes support for hex floats (in floating-point version) and j, z,
+	  t size modifiers.
+
+config PICOLIBC_IO_POS_ARGS
+	bool "Support POSIX positional args (e.g. %$1d) in printf/scanf"
+	default y
+	depends on !PICOLIBC_IO_FLOAT
+	help
+	  Includes support for positional args (e.g. $1) in integer-only printf
+	  and scanf. Positional args are always supported in the floating-point
+	  versions.
+
+config PICOLIBC_IO_FLOAT_EXACT
+	bool "support for exact float/string conversion"
+	default y
+	depends on PICOLIBC_USE_MODULE
+	help
+	  Uses Ryu algorithm for exact binary/decimal float conversions.
+	  This ensures that printf values with enough digits can be
+	  fed to scanf and generate exactly the same binary value.
+
+config PICOLIBC_LOCALE_INFO
+	bool "support locales in libc functions"
+	default n
+	depends on PICOLIBC_USE_MODULE
+	help
+	  Includes code for basic locale support
+
+config PICOLIBC_LOCALE_EXTENDED_INFO
+	bool "support extended locales in libc functions"
+	default n
+	depends on PICOLIBC_USE_MODULE
+	help
+	  Includes code for extended locale support
+
+config PICOLIBC_MULTIBYTE
+	bool "support multibyte functions in libc"
+	default n
+	depends on PICOLIBC_USE_MODULE
+	help
+	  Includes code for multi-byte characters
+
+config PICOLIBC_PICOEXIT
+	bool "use smaller atexit/onexit implementation"
+	default y
+	depends on PICOLIBC_USE_MODULE
+	help
+	  Provides a simpler atexit/onexit implementation that doesn't use
+	  malloc, but only supports a small number (32) of exit handlers.
+
+config PICOLIBC_MULTITHREAD
+	bool "support multiple threads using retargetable locking API"
+	default y
+	depends on PICOLIBC_USE_MODULE
+	help
+	  Protects shared data structures in libc with mutexes that use
+	  an API which can be retargeted to OS provided routines.
+
+config PICOLIBC_GLOBAL_ERRNO
+	bool "use a single global variable for errno"
+	depends on PICOLIBC_USE_MODULE
+	help
+	  Picolibc usually uses a TLS variable for errno, ensuring that
+	  multiple threads have a reliable mechanism for detecting libc
+	  exceptions. This option switches to a single global errno variable,
+	  which can be used to avoid TLS variable usage by the library if
+	  necessary.
+
+endif
+
+endif

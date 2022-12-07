@@ -25,9 +25,6 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y
 
-config ETH_MCUX
-	default y if NET_L2_ETHERNET
-
 config ETH_MCUX_RMII_EXT_CLK
 	default y if ETH_MCUX
 
@@ -35,12 +32,5 @@ config ETH_MCUX_NO_PHY_SMI
 	default y if ETH_MCUX
 
 endif # NETWORKING
-
-if NET_DSA
-
-config DSA_KSZ8794
-	default y if SPI
-
-endif # NET_DSA
 
 endif # BOARD_IP_K66F

@@ -12,6 +12,9 @@ before they can be used; these are discussed individually below. These macros
 are generally meant for use within :ref:`device drivers <device_model_api>`,
 though they can be used outside of drivers with appropriate care.
 
+.. contents:: Contents
+   :local:
+
 .. _devicetree-generic-apis:
 
 Generic APIs
@@ -185,8 +188,8 @@ implements support for. Here is an example devicetree fragment:
            current-speed = <115200>;
    };
 
-Example usage, assuming serial@40001000 is the only enabled node
-with compatible "vnd,serial":
+Example usage, assuming ``serial@40001000`` is the only enabled node
+with compatible ``vnd,serial``:
 
 .. code-block:: c
 
@@ -356,11 +359,8 @@ identifier for a chosen node.
 .. doxygengroup:: devicetree-generic-chosen
    :project: Zephyr
 
-There are also conveniences for commonly used zephyr-specific properties of the
-``/chosen`` node.
-
-.. doxygengroup:: devicetree-zephyr
-   :project: Zephyr
+Zephyr-specific chosen nodes
+****************************
 
 The following table documents some commonly used Zephyr-specific chosen nodes.
 
@@ -397,6 +397,8 @@ device.
      - Sets UART device used by console driver
    * - zephyr,display
      - Sets the default display controller
+   * - zephyr,keyboard-scan
+     - Sets the default keyboard scan controller
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy
@@ -407,6 +409,10 @@ device.
    * - zephyr,flash-controller
      - The node corresponding to the flash controller device for
        the ``zephyr,flash`` node
+   * - zephyr,gdbstub-uart
+     - Sets UART device used by the :ref:`gdbstub` subsystem
+   * - zephyr,ieee802154
+     - Used by the networking subsystem to set the IEEE 802.15.4 device
    * - zephyr,ipc
      - Used by the OpenAMP subsystem to specify the inter-process communication
        (IPC) device
@@ -418,10 +424,14 @@ device.
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
+   * - zephyr,osdp-uart
+     - Sets UART device used by OSDP subsystem
    * - zephyr,ot-uart
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller
      - The node corresponding to the PCIe Controller
+   * - zephyr,ppp-uart
+     - Sets UART device used by PPP
    * - zephyr,settings-partition
      - Fixed partition node. If defined this selects the partition used
        by the NVS and FCB settings backends.
@@ -430,10 +440,12 @@ device.
    * - zephyr,sram
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking
+   * - zephyr,tracing-uart
+     - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr
      - UART used for :ref:`device_mgmt`
    * - zephyr,uart-pipe
-     - Sets default :kconfig:option:`CONFIG_UART_PIPE_ON_DEV_NAME`
+     - Sets UART device used by serial pipe driver
    * - zephyr,usb-device
      - USB device node. If defined and has a ``vbus-gpios`` property, these
        will be used by the USB subsystem to enable/disable VBUS

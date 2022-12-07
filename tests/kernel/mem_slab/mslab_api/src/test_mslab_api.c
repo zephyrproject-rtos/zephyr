@@ -4,13 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "test_mslab.h"
 
 /* TESTPOINT: Statically define and initialize a memory slab*/
 K_MEM_SLAB_DEFINE(kmslab, BLK_SIZE, BLK_NUM, BLK_ALIGN);
 static char __aligned(BLK_ALIGN) tslab[BLK_SIZE * BLK_NUM];
 static struct k_mem_slab mslab;
+K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
+K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
+static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
+static struct k_thread HELPER;
+
+void *mslab_setup(void)
+{
+	k_mem_slab_init(&mslab, tslab, BLK_SIZE, BLK_NUM);
+
+	return NULL;
+}
 
 void tmslab_alloc_free(void *data)
 {
@@ -51,7 +62,7 @@ static void tmslab_alloc_align(void *data)
 		 * TESTPOINT: To ensure that each memory block is similarly
 		 * aligned to this boundary
 		 */
-		zassert_true((uintptr_t)block[i] % BLK_ALIGN == 0U, NULL);
+		zassert_true((uintptr_t)block[i] % BLK_ALIGN == 0U);
 	}
 	for (int i = 0; i < BLK_NUM; i++) {
 		k_mem_slab_free(pslab, &block[i]);
@@ -78,16 +89,16 @@ static void tmslab_alloc_timeout(void *data)
 	err = k_mem_slab_alloc(pslab, &block_fail, K_MSEC(TIMEOUT));
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		/* TESTPOINT: -EAGAIN Waiting period timed out*/
-		zassert_equal(err, -EAGAIN, NULL);
+		zassert_equal(err, -EAGAIN);
 		/*
 		 * TESTPOINT: timeout Maximum time to wait for operation to
 		 * complete (in milliseconds)
 		 */
-		zassert_true(k_uptime_delta(&tms) >= TIMEOUT, NULL);
+		zassert_true(k_uptime_delta(&tms) >= TIMEOUT);
 	} else {
 		/* If no multithreading any timeout is treated as K_NO_WAIT */
-		zassert_equal(err, -ENOMEM, NULL);
-		zassert_true(k_uptime_delta(&tms) < TIMEOUT, NULL);
+		zassert_equal(err, -ENOMEM);
+		zassert_true(k_uptime_delta(&tms) < TIMEOUT);
 	}
 
 	for (int i = 0; i < BLK_NUM; i++) {
@@ -104,37 +115,32 @@ static void tmslab_used_get(void *data)
 		zassert_true(k_mem_slab_alloc(pslab, &block[i], K_NO_WAIT) == 0,
 			     NULL);
 		/* TESTPOINT: Get the number of used blocks in a memory slab.*/
-		zassert_equal(k_mem_slab_num_used_get(pslab), i + 1, NULL);
+		zassert_equal(k_mem_slab_num_used_get(pslab), i + 1);
 		/*
 		 * TESTPOINT: Get the number of unused blocks in a memory slab.
 		 */
-		zassert_equal(k_mem_slab_num_free_get(pslab), BLK_NUM - 1 - i, NULL);
+		zassert_equal(k_mem_slab_num_free_get(pslab), BLK_NUM - 1 - i);
 	}
 
 	zassert_equal(k_mem_slab_alloc(pslab, &block_fail, K_NO_WAIT), -ENOMEM,
 		      NULL);
 	/* free get on allocation failure*/
-	zassert_equal(k_mem_slab_num_free_get(pslab), 0, NULL);
+	zassert_equal(k_mem_slab_num_free_get(pslab), 0);
 	/* used get on allocation failure*/
-	zassert_equal(k_mem_slab_num_used_get(pslab), BLK_NUM, NULL);
+	zassert_equal(k_mem_slab_num_used_get(pslab), BLK_NUM);
 
 	zassert_equal(k_mem_slab_alloc(pslab, &block_fail, K_MSEC(TIMEOUT)),
 		      IS_ENABLED(CONFIG_MULTITHREADING) ? -EAGAIN : -ENOMEM,
 		      NULL);
-	zassert_equal(k_mem_slab_num_free_get(pslab), 0, NULL);
-	zassert_equal(k_mem_slab_num_used_get(pslab), BLK_NUM, NULL);
+	zassert_equal(k_mem_slab_num_free_get(pslab), 0);
+	zassert_equal(k_mem_slab_num_used_get(pslab), BLK_NUM);
 
 	for (int i = 0; i < BLK_NUM; i++) {
 		k_mem_slab_free(pslab, &block[i]);
-		zassert_equal(k_mem_slab_num_free_get(pslab), i + 1, NULL);
-		zassert_equal(k_mem_slab_num_used_get(pslab), BLK_NUM - 1 - i, NULL);
+		zassert_equal(k_mem_slab_num_free_get(pslab), i + 1);
+		zassert_equal(k_mem_slab_num_used_get(pslab), BLK_NUM - 1 - i);
 	}
 }
-
-K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
-K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
-static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
-static struct k_thread HELPER;
 
 static void helper_thread(void *p0, void *p1, void *p2)
 {
@@ -187,14 +193,14 @@ static void helper_thread(void *p0, void *p1, void *p2)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_kinit(void)
+ZTEST(mslab_api, test_mslab_kinit)
 {
 	/* if a block_size is not word aligned, slab init return error */
 	zassert_equal(k_mem_slab_init(&mslab, tslab, BLK_SIZE + 1, BLK_NUM),
 				-EINVAL, NULL);
 	k_mem_slab_init(&mslab, tslab, BLK_SIZE, BLK_NUM);
-	zassert_equal(k_mem_slab_num_used_get(&mslab), 0, NULL);
-	zassert_equal(k_mem_slab_num_free_get(&mslab), BLK_NUM, NULL);
+	zassert_equal(k_mem_slab_num_used_get(&mslab), 0);
+	zassert_equal(k_mem_slab_num_free_get(&mslab), BLK_NUM);
 }
 
 /**
@@ -206,10 +212,10 @@ void test_mslab_kinit(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_kdefine(void)
+ZTEST(mslab_api, test_mslab_kdefine)
 {
-	zassert_equal(k_mem_slab_num_used_get(&kmslab), 0, NULL);
-	zassert_equal(k_mem_slab_num_free_get(&kmslab), BLK_NUM, NULL);
+	zassert_equal(k_mem_slab_num_used_get(&kmslab), 0);
+	zassert_equal(k_mem_slab_num_free_get(&kmslab), BLK_NUM);
 }
 
 /**
@@ -217,7 +223,7 @@ void test_mslab_kdefine(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_alloc_free_thread(void)
+ZTEST(mslab_api, test_mslab_alloc_free_thread)
 {
 
 	tmslab_alloc_free(&mslab);
@@ -232,7 +238,7 @@ void test_mslab_alloc_free_thread(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_alloc_align(void)
+ZTEST(mslab_api, test_mslab_alloc_align)
 {
 	tmslab_alloc_align(&mslab);
 	tmslab_alloc_align(&kmslab);
@@ -254,8 +260,12 @@ void test_mslab_alloc_align(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_alloc_timeout(void)
+ZTEST(mslab_api, test_mslab_alloc_timeout)
 {
+	if (arch_num_cpus() != 1) {
+		ztest_test_skip();
+	}
+
 	tmslab_alloc_timeout(&mslab);
 }
 
@@ -273,7 +283,7 @@ void test_mslab_alloc_timeout(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_used_get(void)
+ZTEST(mslab_api, test_mslab_used_get)
 {
 	tmslab_used_get(&mslab);
 	tmslab_used_get(&kmslab);
@@ -290,7 +300,7 @@ void test_mslab_used_get(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_pending(void)
+ZTEST(mslab_api, test_mslab_pending)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		ztest_test_skip();

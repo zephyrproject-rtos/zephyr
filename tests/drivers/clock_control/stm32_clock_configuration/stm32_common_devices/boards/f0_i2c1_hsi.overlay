@@ -68,3 +68,8 @@
 			<&rcc STM32_SRC_HSI I2C1_SEL(2)>;
 	status = "okay";
 };
+
+&adc1 {
+	/* Basic test only. Don't configure domain clock. */
+	status = "okay";
+};

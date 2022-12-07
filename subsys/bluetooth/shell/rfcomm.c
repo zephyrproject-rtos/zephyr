@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/settings/settings.h>
 

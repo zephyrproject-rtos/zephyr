@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2022 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+
+#include "mec172xnsz.dtsi"
+#include "mec172x/mec172x-vw-routing.dtsi"
+#include "mec172x/mec172xnsz-pinctrl.dtsi"
+
+/ {
+	flash1: flash@60000000 {
+		reg = <0x60000000 0x80000>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+	clock-frequency = <12000000>;
+	lines = <2>;
+	port-sel = <2>;
+	chip-select = <0>;
+	pinctrl-0 = < &gpspi_cs_n_gpio116
+		      &gpspi_clk_gpio117
+		      &gpspi_io0_gpio074
+		      &gpspi_io1_gpio075
+		      &gpspi_wp_n_gpio076 >;
+	pinctrl-names = "default";
+
+	int_flash: sst25pf040@0 {
+		compatible ="jedec,spi-nor";
+		/* 4 Mbit Flash */
+		size = <DT_SIZE_M(4)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(40)>;
+		status = "okay";
+		jedec-id = [62 06 13];
+	};
+};
+
+&gpspi_wp_n_gpio076 {
+	output-high;
+};

@@ -1,6 +1,7 @@
 common:
   depends_on: netif
   min_ram: 32
+  min_flash: 260
   tags: net socket tls
   filter: TOOLCHAIN_HAS_NEWLIB == 1
   integration_platforms:

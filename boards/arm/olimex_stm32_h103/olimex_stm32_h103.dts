@@ -37,6 +37,7 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -129,7 +130,7 @@
 	status = "okay";
 };
 
-&usb {
+zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
 	disconnect-gpios = <&gpioc 11 GPIO_ACTIVE_LOW>;

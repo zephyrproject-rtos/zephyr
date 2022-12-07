@@ -16,6 +16,7 @@
 	chosen {
 		zephyr,sram = &sram2;
 		zephyr,flash = &sram1;
+		zephyr,code-cpu1-partition = &slot1_partition;
 		/*zephyr,console = &flexcomm0; uncomment to use console on M0  */
 		/*zephyr,shell-uart = &flexcomm0; uncomment to use shell on M0 */
 	};

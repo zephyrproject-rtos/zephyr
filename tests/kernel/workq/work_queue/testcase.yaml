@@ -4,7 +4,6 @@ tests:
     tags: kernel
   kernel.workqueue.linker_generator:
     platform_allow: qemu_cortex_m3
-    min_flash: 34
-    tags: kernel linker_generator
+    tags: linker_generator
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y

@@ -334,7 +334,7 @@ static int spi_flash_at45_write(const struct device *dev, off_t offset,
 
 #if ANY_INST_HAS_WP_GPIOS
 	if (cfg->wp) {
-		gpio_pin_set(cfg->wp->port, cfg->wp->pin, 0);
+		gpio_pin_set_dt(cfg->wp, 0);
 	}
 #endif
 
@@ -360,7 +360,7 @@ static int spi_flash_at45_write(const struct device *dev, off_t offset,
 
 #if ANY_INST_HAS_WP_GPIOS
 	if (cfg->wp) {
-		gpio_pin_set(cfg->wp->port, cfg->wp->pin, 1);
+		gpio_pin_set_dt(cfg->wp, 1);
 	}
 #endif
 
@@ -450,7 +450,7 @@ static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 
 #if ANY_INST_HAS_WP_GPIOS
 	if (cfg->wp) {
-		gpio_pin_set(cfg->wp->port, cfg->wp->pin, 0);
+		gpio_pin_set_dt(cfg->wp, 0);
 	}
 #endif
 
@@ -491,7 +491,7 @@ static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 
 #if ANY_INST_HAS_WP_GPIOS
 	if (cfg->wp) {
-		gpio_pin_set(cfg->wp->port, cfg->wp->pin, 1);
+		gpio_pin_set_dt(cfg->wp, 1);
 	}
 #endif
 
@@ -549,23 +549,28 @@ static int spi_flash_at45_init(const struct device *dev)
 
 #if ANY_INST_HAS_RESET_GPIOS
 	if (dev_config->reset) {
-		if (gpio_pin_configure_dt(dev_config->reset,
-					GPIO_OUTPUT_ACTIVE)) {
+		if (!device_is_ready(dev_config->reset->port)) {
+			LOG_ERR("Reset pin not ready");
+			return -ENODEV;
+		}
+		if (gpio_pin_configure_dt(dev_config->reset, GPIO_OUTPUT_ACTIVE)) {
 			LOG_ERR("Couldn't configure reset pin");
 			return -ENODEV;
 		}
-		gpio_pin_set(dev_config->reset->port, dev_config->reset->pin, 0);
+		gpio_pin_set_dt(dev_config->reset, 0);
 	}
 #endif
 
 #if ANY_INST_HAS_WP_GPIOS
 	if (dev_config->wp) {
-		if (gpio_pin_configure_dt(dev_config->wp,
-					GPIO_OUTPUT_ACTIVE)) {
+		if (!device_is_ready(dev_config->wp->port)) {
+			LOG_ERR("Write protect pin not ready");
+			return -ENODEV;
+		}
+		if (gpio_pin_configure_dt(dev_config->wp, GPIO_OUTPUT_ACTIVE)) {
 			LOG_ERR("Couldn't configure write protect pin");
 			return -ENODEV;
 		}
-		gpio_pin_set(dev_config->wp->port, dev_config->wp->pin, 1);
 	}
 #endif
 

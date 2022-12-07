@@ -120,23 +120,22 @@ static void configure(void)
 	printk("Configuring...\n");
 
 	/* Add Application Key */
-	bt_mesh_cfg_app_key_add(net_idx, addr, net_idx, app_idx, app_key, NULL);
+	bt_mesh_cfg_cli_app_key_add(net_idx, addr, net_idx, app_idx, app_key, NULL);
 
 	/* Bind to vendor model */
-	bt_mesh_cfg_mod_app_bind_vnd(net_idx, addr, addr, app_idx,
-				     MOD_LF, BT_COMP_ID_LF, NULL);
+	bt_mesh_cfg_cli_mod_app_bind_vnd(net_idx, addr, addr, app_idx, MOD_LF, BT_COMP_ID_LF, NULL);
 
 	/* Bind to Health model */
-	bt_mesh_cfg_mod_app_bind(net_idx, addr, addr, app_idx,
-				 BT_MESH_MODEL_ID_HEALTH_SRV, NULL);
+	bt_mesh_cfg_cli_mod_app_bind(net_idx, addr, addr, app_idx, BT_MESH_MODEL_ID_HEALTH_SRV,
+				     NULL);
 
 	/* Add model subscription */
-	bt_mesh_cfg_mod_sub_add_vnd(net_idx, addr, addr, GROUP_ADDR,
-				    MOD_LF, BT_COMP_ID_LF, NULL);
+	bt_mesh_cfg_cli_mod_sub_add_vnd(net_idx, addr, addr, GROUP_ADDR, MOD_LF, BT_COMP_ID_LF,
+					NULL);
 
 #if NODE_ADDR == PUBLISHER_ADDR
 	{
-		struct bt_mesh_cfg_hb_pub pub = {
+		struct bt_mesh_cfg_cli_hb_pub pub = {
 			.dst = GROUP_ADDR,
 			.count = 0xff,
 			.period = 0x05,
@@ -145,7 +144,7 @@ static void configure(void)
 			.net_idx = net_idx,
 		};
 
-		bt_mesh_cfg_hb_pub_set(net_idx, addr, &pub, NULL);
+		bt_mesh_cfg_cli_hb_pub_set(net_idx, addr, &pub, NULL);
 		printk("Publishing heartbeat messages\n");
 	}
 #endif
@@ -205,13 +204,13 @@ static void bt_ready(int err)
 	 * it explicitly.
 	 */
 	{
-		struct bt_mesh_cfg_hb_sub sub = {
+		struct bt_mesh_cfg_cli_hb_sub sub = {
 			.src = PUBLISHER_ADDR,
 			.dst = GROUP_ADDR,
 			.period = 0x10,
 		};
 
-		bt_mesh_cfg_hb_sub_set(net_idx, addr, &sub, NULL);
+		bt_mesh_cfg_cli_hb_sub_set(net_idx, addr, &sub, NULL);
 		printk("Subscribing to heartbeat messages\n");
 	}
 #endif

@@ -6,7 +6,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define ULL_LLCP_UNITTEST
 
@@ -29,8 +29,13 @@
 #include "lll.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 #include "ull_internal.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
@@ -99,7 +104,7 @@ void test_data_length_update_central_loc(void)
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -172,7 +177,7 @@ void test_data_length_update_central_loc_unknown_rsp(void)
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -245,7 +250,7 @@ void test_data_length_update_central_loc_invalid_rsp(void)
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -283,7 +288,7 @@ void test_data_length_update_central_loc_invalid_rsp(void)
 
 	/* Initiate another Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -348,7 +353,7 @@ void test_data_length_update_central_loc_no_eff_change(void)
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -424,7 +429,7 @@ void test_data_length_update_central_loc_no_eff_change2(void)
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -449,7 +454,7 @@ void test_data_length_update_central_loc_no_eff_change2(void)
 	 * change to effective numbers, thus not generate NTF
 	 */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -490,7 +495,7 @@ void test_data_length_update_periph_loc(void)
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
@@ -709,7 +714,7 @@ void test_data_length_update_periph_rem_and_loc(void)
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	event_done(&conn);
 

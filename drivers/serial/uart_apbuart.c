@@ -7,6 +7,8 @@
 #define DT_DRV_COMPAT gaisler_apbuart
 
 #include <zephyr/drivers/uart.h>
+#include <zephyr/irq.h>
+#include <zephyr/sys/time_units.h>
 #include <errno.h>
 
 /* APBUART registers
@@ -542,7 +544,8 @@ static const struct uart_driver_api apbuart_driver_api = {
 	static const struct apbuart_dev_cfg apbuart##index##_config = {	\
 		.regs           = (struct apbuart_regs *)		\
 				  DT_INST_REG_ADDR(index),		\
-		.interrupt      = DT_INST_IRQN(index),			\
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,		\
+			(.interrupt      = DT_INST_IRQN(index),))	\
 	};								\
 									\
 	static struct apbuart_dev_data apbuart##index##_data = {	\

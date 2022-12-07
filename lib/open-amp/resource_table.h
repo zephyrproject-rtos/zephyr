@@ -10,6 +10,10 @@
 #include <openamp/remoteproc.h>
 #include <openamp/virtio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
 
 #define VDEV_ID                 0xFF
@@ -73,6 +77,10 @@ inline struct fw_rsc_vdev_vring *rsc_table_get_vring1(void *rsc_table)
 	return &((struct fw_resource_table *)rsc_table)->vring1;
 }
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

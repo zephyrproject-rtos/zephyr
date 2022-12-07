@@ -12,8 +12,7 @@ bundled with Atmel's AT86RF233, a 2.4GHz IEEE802.15.4 compatible radio.
 The kit includes Atmel’s Embedded Debugger (EDBG), which provides a full
 debug interface without the need for additional hardware.
 
-.. image:: img/atsamr21_xpro.png
-     :width: 500px
+.. image:: img/atsamr21_xpro.jpg
      :align: center
      :alt: ATSAMR21-XPRO
 
@@ -68,8 +67,7 @@ controllers are responsible for pin muxing, input/output, pull-up, etc.
 For mode details please refer to `SAM R21 Family Datasheet`_ and the `SAM R21
 Xplained Pro Schematic`_.
 
-.. image:: img/ATSAMR21-XPRO-pinout.png
-     :width: 500px
+.. image:: img/ATSAMR21-XPRO-pinout.jpg
      :align: center
      :alt: ATSAMR21-XPRO-pinout
 
@@ -210,7 +208,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! atsamr21_xpro" in your terminal.
 
 References
 **********

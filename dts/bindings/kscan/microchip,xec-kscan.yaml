@@ -18,12 +18,6 @@ properties:
     reg:
       required: true
 
-    pinctrl-0:
-      required: false
-
-    pinctrl-names:
-      required: false
-
     interrupts:
       required: true
 
@@ -36,11 +30,3 @@ properties:
       type: array
       required: true
       description: ADC PCR register index and bit position
-
-girq-cells:
-    - girqnum
-    - bitpos
-
-pcr-cells:
-    - regidx
-    - bitpos

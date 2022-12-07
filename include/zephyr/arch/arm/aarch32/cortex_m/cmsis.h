@@ -14,34 +14,13 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CMSIS_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CMSIS_H_
 
-#include <soc.h>
-
 #include <zephyr/arch/arm/aarch32/cortex_m/nvic.h>
+
+#include <soc.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-/* CP10 Access Bits */
-#define CPACR_CP10_Pos          20U
-#define CPACR_CP10_Msk          (3UL << CPACR_CP10_Pos)
-#define CPACR_CP10_NO_ACCESS    (0UL << CPACR_CP10_Pos)
-#define CPACR_CP10_PRIV_ACCESS  (1UL << CPACR_CP10_Pos)
-#define CPACR_CP10_RESERVED     (2UL << CPACR_CP10_Pos)
-#define CPACR_CP10_FULL_ACCESS  (3UL << CPACR_CP10_Pos)
-
-/* CP11 Access Bits */
-#define CPACR_CP11_Pos          22U
-#define CPACR_CP11_Msk          (3UL << CPACR_CP11_Pos)
-#define CPACR_CP11_NO_ACCESS    (0UL << CPACR_CP11_Pos)
-#define CPACR_CP11_PRIV_ACCESS  (1UL << CPACR_CP11_Pos)
-#define CPACR_CP11_RESERVED     (2UL << CPACR_CP11_Pos)
-#define CPACR_CP11_FULL_ACCESS  (3UL << CPACR_CP11_Pos)
-
-#define SCB_UFSR  (*((__IOM uint16_t *) &SCB->CFSR + 1))
-#define SCB_BFSR  (*((__IOM uint8_t *) &SCB->CFSR + 1))
-#define SCB_MMFSR (*((__IOM uint8_t *) &SCB->CFSR))
 
 /* Fill in CMSIS required values for non-CMSIS compliant SoCs.
  * Use __NVIC_PRIO_BITS as it is required and simple to check, but

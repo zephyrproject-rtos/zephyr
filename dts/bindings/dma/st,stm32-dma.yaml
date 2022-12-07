@@ -24,12 +24,10 @@ properties:
 
     st,mem2mem:
       type: boolean
-      required: false
       description: If the DMA controller V1 supports memory to memory transfer
 
     dma-offset:
       type: int
-      required: false
       description: |
         offset in the table of channels when mapping to a DMAMUX
         for 1st dma instance, offset is 0,

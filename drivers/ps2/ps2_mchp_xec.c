@@ -10,6 +10,7 @@
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #ifdef CONFIG_SOC_SERIES_MEC172X
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
@@ -20,6 +21,7 @@
 #include <zephyr/drivers/ps2.h>
 #include <soc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #define LOG_LEVEL CONFIG_PS2_LOG_LEVEL
 LOG_MODULE_REGISTER(ps2_mchp_xec);

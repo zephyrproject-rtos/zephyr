@@ -7,12 +7,9 @@ description: |
 
 compatible: "st,stm32-ucpd"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-    label:
-      required: true
-
     reg:
       required: true
 
@@ -23,7 +20,6 @@ properties:
       required: true
 
     psc-ucpdclk:
-      required: false
       default: 2
       type: int
       enum:
@@ -42,7 +38,6 @@ properties:
         the range from 6 to 9 MHz.
 
     ifrgap:
-      required: false
       type: int
       default: 17
       description: |
@@ -53,7 +48,6 @@ properties:
         Valid range: 2 - 32
 
     transwin:
-      required: false
       type: int
       default: 8
       description: |
@@ -62,10 +56,15 @@ properties:
         Valid range: 2 - 32
 
     hbitclkdiv:
-      required: false
       type: int
       default: 14
       description: |
         Determines the division ratio of a ucpd_clk divider producing
         half-bit clock (hbit_clk)
         Valid range: 1 - 64
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true

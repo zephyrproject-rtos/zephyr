@@ -124,8 +124,7 @@ static int vexriscv_litex_irq_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	__asm__ volatile ("csrrs x0, mie, %0"
-			:: "r"((1 << RISCV_MACHINE_TIMER_IRQ)
-				| (1 << RISCV_MACHINE_EXT_IRQ)));
+			:: "r"(1 << RISCV_MACHINE_EXT_IRQ));
 	vexriscv_litex_irq_setie(1);
 	IRQ_CONNECT(RISCV_MACHINE_EXT_IRQ, 0, vexriscv_litex_irq_handler,
 			NULL, 0);

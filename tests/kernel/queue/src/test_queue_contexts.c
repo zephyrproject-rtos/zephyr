@@ -70,23 +70,23 @@ static void tqueue_get(struct k_queue *pqueue)
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_p[i], NULL);
+		zassert_equal(rx_data, (void *)&data_p[i]);
 	}
 	/*get queue data from "queue_append"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data[i], NULL);
+		zassert_equal(rx_data, (void *)&data[i]);
 	}
 	/*get queue data from "queue_append_list"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_l[i], NULL);
+		zassert_equal(rx_data, (void *)&data_l[i]);
 	}
 	/*get queue data from "queue_merge_slist"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_sl[i], NULL);
+		zassert_equal(rx_data, (void *)&data_sl[i]);
 	}
 }
 
@@ -151,7 +151,7 @@ static void tqueue_isr_thread(struct k_queue *pqueue)
  * @see k_queue_init(), k_queue_insert(), k_queue_append()
  * K_THREAD_STACK_DEFINE()
  */
-void test_queue_thread2thread(void)
+ZTEST(queue_api_1cpu, test_queue_thread2thread)
 {
 	/**TESTPOINT: init via k_queue_init*/
 	k_queue_init(&queue);
@@ -175,7 +175,7 @@ void test_queue_thread2thread(void)
  *
  * @see k_queue_init(), k_queue_insert(), k_queue_append()
  */
-void test_queue_thread2isr(void)
+ZTEST(queue_api, test_queue_thread2isr)
 {
 	/**TESTPOINT: init via k_queue_init*/
 	k_queue_init(&queue);
@@ -197,7 +197,7 @@ void test_queue_thread2isr(void)
  * @see k_queue_init(), k_queue_insert(), k_queue_get(),
  * k_queue_append(), k_queue_remove()
  */
-void test_queue_isr2thread(void)
+ZTEST(queue_api, test_queue_isr2thread)
 {
 	/**TESTPOINT: test k_queue_init queue*/
 	k_queue_init(&queue);
@@ -244,7 +244,7 @@ static void tqueue_get_2threads(struct k_queue *pqueue)
  * @see k_queue_init(), k_queue_get(),
  * k_queue_append(), k_queue_alloc_prepend()
  */
-void test_queue_get_2threads(void)
+ZTEST(queue_api_1cpu, test_queue_get_2threads)
 {
 	/**TESTPOINT: test k_queue_init queue*/
 	k_queue_init(&queue);
@@ -260,7 +260,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	k_queue_alloc_append(pqueue, (void *)&data_append);
 
 	/* Insertion fails and alloc returns NOMEM */
-	zassert_false(k_queue_remove(pqueue, &data_append), NULL);
+	zassert_false(k_queue_remove(pqueue, &data_append));
 
 	/* Assign resource pool of lower size */
 	k_thread_heap_assign(k_current_get(), &mem_pool_fail);
@@ -270,12 +270,12 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	 */
 	k_queue_alloc_prepend(pqueue, (void *)&data_prepend);
 
-	zassert_false(k_queue_remove(pqueue, &data_prepend), NULL);
+	zassert_false(k_queue_remove(pqueue, &data_prepend));
 
 	/* No element must be present in the queue, as all
 	 * operations failed
 	 */
-	zassert_true(k_queue_is_empty(pqueue), NULL);
+	zassert_true(k_queue_is_empty(pqueue));
 
 	/* Assign resource pool of sufficient size */
 	k_thread_heap_assign(k_current_get(), &mem_pool_pass);
@@ -284,7 +284,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 		      NULL);
 
 	/* Now queue shouldn't be empty */
-	zassert_false(k_queue_is_empty(pqueue), NULL);
+	zassert_false(k_queue_is_empty(pqueue));
 
 	zassert_true(k_queue_get(pqueue, K_FOREVER) != NULL,
 		     NULL);
@@ -297,7 +297,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
  * z_thread_heap_assign(), k_queue_is_empty(),
  * k_queue_get(), k_queue_remove()
  */
-void test_queue_alloc(void)
+ZTEST(queue_api, test_queue_alloc)
 {
 	/* The mem_pool_fail pool is supposed to be too small to
 	 * succeed any allocations, but in fact with the heap backend
@@ -322,7 +322,7 @@ static void queue_poll_race_consume(void *p1, void *p2, void *p3)
 	int *count = p2;
 
 	while (true) {
-		zassert_true(k_queue_get(q, K_FOREVER) != NULL, NULL);
+		zassert_true(k_queue_get(q, K_FOREVER) != NULL);
 		*count += 1;
 	}
 }
@@ -333,7 +333,7 @@ static void queue_poll_race_consume(void *p1, void *p2, void *p3)
  * before it got a chance to run, and the lower priority thread would
  * then return NULL before its timeout expired.
  */
-void test_queue_poll_race(void)
+ZTEST(queue_api_1cpu, test_queue_poll_race)
 {
 	int prio = k_thread_priority_get(k_current_get());
 	static volatile int mid_count, low_count;
@@ -361,12 +361,12 @@ void test_queue_poll_race(void)
 	k_queue_append(&queue, &data[0]);
 	k_queue_append(&queue, &data[1]);
 
-	zassert_true(low_count == 0, NULL);
-	zassert_true(mid_count == 0, NULL);
+	zassert_true(low_count == 0);
+	zassert_true(mid_count == 0);
 
 	k_sleep(K_MSEC(10));
 
-	zassert_true(low_count + mid_count == 2, NULL);
+	zassert_true(low_count + mid_count == 2);
 
 	k_thread_abort(&tdata);
 	k_thread_abort(&tdata1);
@@ -384,7 +384,7 @@ void test_queue_poll_race(void)
  * @see k_queue_init()
  */
 #define QUEUE_NUM 10
-void test_multiple_queues(void)
+ZTEST(queue_api, test_multiple_queues)
 {
 	/*define multiple queues*/
 	static struct k_queue queues[QUEUE_NUM];
@@ -424,7 +424,7 @@ void user_access_queue_private_data(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_access_kernel_obj_with_priv_data(void)
+ZTEST(queue_api, test_access_kernel_obj_with_priv_data)
 {
 	k_queue_init(&queue);
 	k_queue_insert(&queue, k_queue_peek_tail(&queue), (void *)&data[0]);
@@ -476,7 +476,7 @@ static void high_prio_t2_wait_for_queue(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_queue_tests
  */
-void test_queue_multithread_competition(void)
+ZTEST(queue_api_1cpu, test_queue_multithread_competition)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 	int prio = 10;
@@ -539,7 +539,7 @@ void test_queue_multithread_competition(void)
  *
  * @see k_queue_unique_append()
  */
-void test_queue_unique_append(void)
+ZTEST(queue_api, test_queue_unique_append)
 {
 	bool ret;
 

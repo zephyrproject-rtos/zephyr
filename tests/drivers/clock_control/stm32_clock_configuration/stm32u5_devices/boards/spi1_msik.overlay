@@ -11,6 +11,7 @@
 
 &clk_msik {
 	msi-range = <4>;
+	msi-pll-mode;
 	status = "okay";
 };
 

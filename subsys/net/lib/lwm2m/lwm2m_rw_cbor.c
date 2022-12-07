@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define ICTX_CBOR_R_SZ(pos, ictx) ((size_t)pos - (size_t)(ictx)->in_cpkt->data - (ictx)->offset)
 
-static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, int64_t value)
+static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, time_t value)
 {
 	/* CBOR time output format is unspecified but SenML CBOR uses string format.
 	 * Let's stick into the same format with plain CBOR
@@ -43,7 +43,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 	int tag_sz;
 	bool ret;
 
-	if (gmtime_r((time_t *)&value, &dt) != &dt) {
+	if (gmtime_r(&value, &dt) != &dt) {
 		LOG_ERR("unable to convert from secs since Epoch to a date/time construct");
 		return -EINVAL;
 	}
@@ -341,13 +341,14 @@ static int get_time_numerical(struct lwm2m_input_context *in, int64_t *value)
 	return 0;
 }
 
-static int get_time(struct lwm2m_input_context *in, int64_t *value)
+static int get_time(struct lwm2m_input_context *in, time_t *value)
 {
 	uint32_t tag;
 	int tag_sz = 0;
 	int data_len;
 	int ret;
 	bool success;
+	int64_t temp64;
 
 	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
 
@@ -359,13 +360,13 @@ static int get_time(struct lwm2m_input_context *in, int64_t *value)
 
 		switch (tag) {
 		case ZCBOR_TAG_TIME_NUM:
-			ret = get_time_numerical(in, value);
+			ret = get_time_numerical(in, &temp64);
 			if (ret < 0) {
 				goto error;
 			}
 			break;
 		case ZCBOR_TAG_TIME_TSTR:
-			ret = get_time_string(in, value);
+			ret = get_time_string(in, &temp64);
 			if (ret < 0) {
 				goto error;
 			}
@@ -377,9 +378,9 @@ static int get_time(struct lwm2m_input_context *in, int64_t *value)
 	} else { /* Assumption is that tags are optional */
 
 		/* Let's assume numeric string but in case that fails falls go back to numerical */
-		ret = get_time_string(in, value);
+		ret = get_time_string(in, &temp64);
 		if (ret == -EBADMSG) {
-			ret = get_time_numerical(in, value);
+			ret = get_time_numerical(in, &temp64);
 		}
 
 		if (ret < 0) {
@@ -389,6 +390,7 @@ static int get_time(struct lwm2m_input_context *in, int64_t *value)
 
 	data_len = ICTX_CBOR_R_SZ(states[0].payload, in);
 	in->offset += data_len;
+	*value = (time_t)temp64;
 
 	return tag_sz + data_len;
 

@@ -16,7 +16,7 @@ supported:
   - spi
   - i2c
   - gpio
-  - pinmux
   - counter
   - eeprom
   - nvs
+  - lora

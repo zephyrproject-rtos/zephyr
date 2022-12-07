@@ -6,10 +6,83 @@
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/pthread_key.h>
+#include <zephyr/sys/bitarray.h>
 
-struct k_sem pthread_key_sem;
+#include "posix_internal.h"
 
-K_SEM_DEFINE(pthread_key_sem, 1, 1);
+static struct k_spinlock pthread_key_lock;
+
+/* This is non-standard (i.e. an implementation detail) */
+#define PTHREAD_KEY_INITIALIZER (-1)
+
+/*
+ * We reserve the MSB to mark a pthread_key_t as initialized (from the
+ * perspective of the application). With a linear space, this means that
+ * the theoretical pthread_key_t range is [0,2147483647].
+ */
+BUILD_ASSERT(CONFIG_MAX_PTHREAD_KEY_COUNT < PTHREAD_OBJ_MASK_INIT,
+	     "CONFIG_MAX_PTHREAD_KEY_COUNT is too high");
+
+static pthread_key_obj posix_key_pool[CONFIG_MAX_PTHREAD_KEY_COUNT];
+SYS_BITARRAY_DEFINE_STATIC(posix_key_bitarray, CONFIG_MAX_PTHREAD_KEY_COUNT);
+
+static inline size_t posix_key_to_offset(pthread_key_obj *k)
+{
+	return k - posix_key_pool;
+}
+
+static inline size_t to_posix_key_idx(pthread_key_t key)
+{
+	return mark_pthread_obj_uninitialized(key);
+}
+
+pthread_key_obj *get_posix_key(pthread_key_t key)
+{
+	int actually_initialized;
+	size_t bit = to_posix_key_idx(key);
+
+	/* if the provided cond does not claim to be initialized, its invalid */
+	if (!is_pthread_obj_initialized(key)) {
+		return NULL;
+	}
+
+	/* Mask off the MSB to get the actual bit index */
+	if (sys_bitarray_test_bit(&posix_key_bitarray, bit, &actually_initialized) < 0) {
+		return NULL;
+	}
+
+	if (actually_initialized == 0) {
+		/* The cond claims to be initialized but is actually not */
+		return NULL;
+	}
+
+	return &posix_key_pool[bit];
+}
+
+pthread_key_obj *to_posix_key(pthread_key_t *key)
+{
+	size_t bit;
+	pthread_key_obj *k;
+
+	if (*key != PTHREAD_KEY_INITIALIZER) {
+		return get_posix_key(*key);
+	}
+
+	/* Try and automatically associate a pthread_key_obj */
+	if (sys_bitarray_alloc(&posix_key_bitarray, 1, &bit) < 0) {
+		/* No keys left to allocate */
+		return NULL;
+	}
+
+	/* Record the associated posix_cond in mu and mark as initialized */
+	*key = mark_pthread_obj_initialized(bit);
+	k = &posix_key_pool[bit];
+
+	/* Initialize the condition variable here */
+	memset(k, 0, sizeof(*k));
+
+	return k;
+}
 
 /**
  * @brief Create a key for thread-specific data
@@ -21,10 +94,8 @@ int pthread_key_create(pthread_key_t *key,
 {
 	pthread_key_obj *new_key;
 
-	*key = NULL;
-
-	new_key = k_malloc(sizeof(pthread_key_obj));
-
+	*key = PTHREAD_KEY_INITIALIZER;
+	new_key = to_posix_key(key);
 	if (new_key == NULL) {
 		return ENOMEM;
 	}
@@ -32,7 +103,6 @@ int pthread_key_create(pthread_key_t *key,
 	sys_slist_init(&(new_key->key_data_l));
 
 	new_key->destructor = destructor;
-	*key = (void *)new_key;
 
 	return 0;
 }
@@ -44,11 +114,18 @@ int pthread_key_create(pthread_key_t *key,
  */
 int pthread_key_delete(pthread_key_t key)
 {
-	pthread_key_obj *key_obj = (pthread_key_obj *)key;
+	pthread_key_obj *key_obj;
 	pthread_key_data *key_data;
 	sys_snode_t *node_l, *next_node_l;
+	k_spinlock_key_t key_key;
 
-	k_sem_take(&pthread_key_sem, K_FOREVER);
+	key_key = k_spin_lock(&pthread_key_lock);
+
+	key_obj = get_posix_key(key);
+	if (key_obj == NULL) {
+		k_spin_unlock(&pthread_key_lock, key_key);
+		return EINVAL;
+	}
 
 	/* Delete thread-specific elements associated with the key */
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&(key_obj->key_data_l),
@@ -62,9 +139,9 @@ int pthread_key_delete(pthread_key_t key)
 		k_free((void *)key_data);
 	}
 
-	k_free((void *)key_obj);
+	(void)sys_bitarray_free(&posix_key_bitarray, 1, 0);
 
-	k_sem_give(&pthread_key_sem);
+	k_spin_unlock(&pthread_key_lock, key_key);
 
 	return 0;
 }
@@ -76,10 +153,11 @@ int pthread_key_delete(pthread_key_t key)
  */
 int pthread_setspecific(pthread_key_t key, const void *value)
 {
-	pthread_key_obj *key_obj = (pthread_key_obj *)key;
-	struct posix_thread *thread = (struct posix_thread *)pthread_self();
+	pthread_key_obj *key_obj;
+	struct posix_thread *thread = to_posix_thread(pthread_self());
 	pthread_key_data *key_data;
 	pthread_thread_data *thread_spec_data;
+	k_spinlock_key_t key_key;
 	sys_snode_t *node_l;
 	int retval = 0;
 
@@ -87,7 +165,13 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 	 * If the key is already in the list, re-assign its value.
 	 * Else add the key to the thread's list.
 	 */
-	k_sem_take(&pthread_key_sem, K_FOREVER);
+	key_key = k_spin_lock(&pthread_key_lock);
+
+	key_obj = get_posix_key(key);
+	if (key_obj == NULL) {
+		k_spin_unlock(&pthread_key_lock, key_key);
+		return EINVAL;
+	}
 
 	SYS_SLIST_FOR_EACH_NODE(&(thread->key_list), node_l) {
 
@@ -112,7 +196,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 
 		} else {
 			/* Associate thread specific data, initialize new key */
-			key_data->thread_data.key = key;
+			key_data->thread_data.key = key_obj;
 			key_data->thread_data.spec_data = (void *)value;
 
 			/* Append new thread key data to thread's key list */
@@ -126,7 +210,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 	}
 
 out:
-	k_sem_give(&pthread_key_sem);
+	k_spin_unlock(&pthread_key_lock, key_key);
 
 	return retval;
 }
@@ -138,13 +222,20 @@ out:
  */
 void *pthread_getspecific(pthread_key_t key)
 {
-	pthread_key_obj *key_obj = (pthread_key_obj *)key;
-	struct posix_thread *thread = (struct posix_thread *)pthread_self();
+	pthread_key_obj *key_obj;
+	struct posix_thread *thread = to_posix_thread(pthread_self());
 	pthread_thread_data *thread_spec_data;
 	void *value = NULL;
 	sys_snode_t *node_l;
+	k_spinlock_key_t key_key;
 
-	k_sem_take(&pthread_key_sem, K_FOREVER);
+	key_key = k_spin_lock(&pthread_key_lock);
+
+	key_obj = get_posix_key(key);
+	if (key_obj == NULL) {
+		k_spin_unlock(&pthread_key_lock, key_key);
+		return NULL;
+	}
 
 	node_l = sys_slist_peek_head(&(thread->key_list));
 
@@ -159,7 +250,7 @@ void *pthread_getspecific(pthread_key_t key)
 		}
 	}
 
-	k_sem_give(&pthread_key_sem);
+	k_spin_unlock(&pthread_key_lock, key_key);
 
 	return value;
 }

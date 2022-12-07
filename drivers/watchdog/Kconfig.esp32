@@ -3,11 +3,9 @@
 # Copyright (C) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ESP32_WDT := espressif,esp32-watchdog
-
 config WDT_ESP32
 	bool "ESP32 Watchdog (WDT) Driver"
-	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
-	default $(dt_compat_enabled,$(DT_COMPAT_ESP32_WDT))
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_WATCHDOG_ENABLED
 	help
 	  Enable WDT driver for ESP32.

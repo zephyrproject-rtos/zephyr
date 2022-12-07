@@ -18,6 +18,8 @@
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 
 	chosen {
@@ -60,24 +62,21 @@
 	};
 
 	en_bat_sens: enable-battery-sense {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "en_bat_sens";
+		compatible = "regulator-fixed";
 		regulator-name = "en_bat_sens";
 		enable-gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
 
 	en_ldo: enable-ldo {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "en_ldo";
+		compatible = "regulator-fixed";
 		regulator-name = "en_ldo";
 		enable-gpios = <&gpioa 29 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
 
 	en_3v3b: enable-3v3b {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "en_3v3b";
+		compatible = "regulator-fixed";
 		regulator-name = "en_3v3b";
 		enable-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
@@ -118,7 +117,6 @@
 		status = "disabled";
 		compatible = "maxim,max30101";
 		reg = <0x57>;
-		label = "MAX30101";
 	};
 };
 
@@ -127,10 +125,9 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 
-	fxos8700@1e {
+	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
-		label = "FXOS8700";
 		int1-gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
 	};
@@ -138,7 +135,6 @@
 	fxas21002@20 {
 		compatible = "nxp,fxas21002";
 		reg = <0x20>;
-		label = "FXAS21002";
 		int1-gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpioc 18 GPIO_ACTIVE_LOW>;
 	};

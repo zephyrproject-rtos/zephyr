@@ -26,6 +26,9 @@ extern "C" {
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	__asm__ volatile ("li tp, 0");
+#endif
 #ifdef CONFIG_USERSPACE
 	csr_write(mscratch, 0);
 #endif
@@ -41,8 +44,11 @@ arch_switch(void *switch_to, void **switched_from)
 	struct k_thread *new = switch_to;
 	struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
 					    switch_handle);
-
+#ifdef CONFIG_RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	arch_syscall_invoke2((uintptr_t)new, (uintptr_t)old, RV_ECALL_SCHEDULE);
+#else
 	z_riscv_switch(new, old);
+#endif
 }
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,

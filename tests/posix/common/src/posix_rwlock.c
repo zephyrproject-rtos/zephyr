@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <pthread.h>
 #include <zephyr/sys/util.h>
 
@@ -53,7 +53,7 @@ static void *thread_top(void *p1)
 	return NULL;
 }
 
-void test_posix_rw_lock(void)
+ZTEST(posix_apis, test_posix_rw_lock)
 {
 	int32_t i, ret;
 	pthread_attr_t attr[N_THR];
@@ -65,14 +65,14 @@ void test_posix_rw_lock(void)
 	time.tv_sec = 1;
 	time.tv_nsec = 0;
 
-	zassert_equal(pthread_rwlock_destroy(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_rdlock(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_wrlock(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_trywrlock(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_tryrdlock(&rwlock), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_timedwrlock(&rwlock, &time), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_timedrdlock(&rwlock, &time), EINVAL, NULL);
-	zassert_equal(pthread_rwlock_unlock(&rwlock), EINVAL, NULL);
+	zassert_equal(pthread_rwlock_destroy(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_rdlock(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_wrlock(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_trywrlock(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_tryrdlock(&rwlock), EINVAL);
+	zassert_equal(pthread_rwlock_timedwrlock(&rwlock, &time), EINVAL);
+	zassert_equal(pthread_rwlock_timedrdlock(&rwlock, &time), EINVAL);
+	zassert_equal(pthread_rwlock_unlock(&rwlock), EINVAL);
 
 	zassert_false(pthread_rwlock_init(&rwlock, NULL),
 		      "Failed to create rwlock");

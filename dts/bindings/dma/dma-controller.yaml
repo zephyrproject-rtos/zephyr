@@ -8,9 +8,6 @@ include: base.yaml
 bus: dma
 
 properties:
-    label:
-      required: true
-
     "#dma-cells":
       type: int
       required: true
@@ -18,7 +15,6 @@ properties:
 
     dma-channel-mask:
       type: int
-      required: false
       description: |
         Bitmask of available DMA channels in ascending order that are
         not reserved by firmware and are available to the
@@ -26,10 +22,22 @@ properties:
 
     dma-channels:
       type: int
-      required: false
       description: Number of DMA channels supported by the controller
 
     dma-requests:
       type: int
-      required: false
       description: Number of DMA request signals supported by the controller.
+
+    dma-buf-addr-alignment:
+      type: int
+      description: Memory address alignment requirement for DMA buffers used by the controller.
+
+    dma-buf-size-alignment:
+      type: int
+      required: false
+      description: Memory size alignment requirement for DMA buffers used by the controller.
+
+    dma-copy-alignment:
+      type: int
+      required: false
+      description: Minimal chunk of data possible to be copied by the controller.

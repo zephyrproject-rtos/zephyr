@@ -22,6 +22,8 @@
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
+
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
 
 /* L0 series MCUs only have 16-bit timers and don't have below macro defined */
@@ -635,6 +637,11 @@ static int pwm_stm32_init(const struct device *dev)
 	/* enable clock and store its speed */
 	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	r = clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken);
 	if (r < 0) {
 		LOG_ERR("Could not initialize clock (%d)", r);
@@ -705,13 +712,6 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)        \
 		.enr = DT_CLOCKS_CELL(DT_INST_PARENT(index), bits)             \
 	}
 
-/* Print warning if any pwm node has 'st,prescaler' property */
-#define PRESCALER_PWM(index) DT_INST_NODE_HAS_PROP(index, st_prescaler) ||
-#if (DT_INST_FOREACH_STATUS_OKAY(PRESCALER_PWM) 0)
-#warning "DT property 'st,prescaler' in pwm node is deprecated and should be \
-replaced by 'st,prescaler' property in parent node, aka timers"
-#endif
-
 #define PWM_DEVICE_INIT(index)                                                 \
 	static struct pwm_stm32_data pwm_stm32_data_##index;                   \
 	IRQ_CONFIG_FUNC(index)						       \
@@ -720,10 +720,7 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),    \
-		/* For compatibility reason, use pwm st_prescaler property  */ \
-		/* if exist, otherwise use parent (timers) property         */ \
-		.prescaler = DT_INST_PROP_OR(index, st_prescaler,              \
-			(DT_PROP(DT_INST_PARENT(index), st_prescaler))),       \
+		.prescaler = DT_PROP(DT_INST_PARENT(index), st_prescaler),     \
 		.countermode = DT_PROP(DT_INST_PARENT(index), st_countermode), \
 		.pclken = DT_INST_CLK(index, timer),                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
@@ -733,7 +730,7 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL,                    \
 			    &pwm_stm32_data_##index,                           \
 			    &pwm_stm32_config_##index, POST_KERNEL,            \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                \
+			    CONFIG_PWM_INIT_PRIORITY,                          \
 			    &pwm_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT)

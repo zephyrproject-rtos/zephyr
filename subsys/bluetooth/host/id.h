@@ -5,8 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define RPA_TIMEOUT_MS       (CONFIG_BT_RPA_TIMEOUT * MSEC_PER_SEC)
-#define RPA_TIMEOUT          K_MSEC(RPA_TIMEOUT_MS)
+#define RPA_TIMEOUT_MS(_rpa_timeout) (_rpa_timeout * MSEC_PER_SEC)
 
 static inline bool bt_id_rpa_is_new(void)
 {
@@ -16,7 +15,7 @@ static inline bool bt_id_rpa_is_new(void)
 	/* RPA is considered new if there is less than half a second since the
 	 * timeout was started.
 	 */
-	return remaining_ms > (RPA_TIMEOUT_MS - 500);
+	return remaining_ms > (RPA_TIMEOUT_MS(bt_dev.rpa_timeout) - 500);
 #else
 	return false;
 #endif
@@ -44,3 +43,5 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv);
 int bt_id_set_private_addr(uint8_t id);
 
 void bt_id_pending_keys_update(void);
+
+void bt_id_adv_limited_stopped(struct bt_le_ext_adv *adv);

@@ -1,0 +1,6 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GD32F450V_START
+	bool "GigaDevice GD32F450V-START"
+	depends on SOC_GD32F450

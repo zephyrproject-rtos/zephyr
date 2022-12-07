@@ -23,10 +23,9 @@
  */
 
 #include <string.h>
-#include <zephyr/types.h>
 #include <stdbool.h>
-#include <ztest.h>
 #include <zephyr/sys/base64.h>
+#include <zephyr/ztest.h>
 
 #include "../../../lib/os/base64.c"
 
@@ -61,7 +60,7 @@ static const unsigned char base64_test_enc5[] =
 	"JEhuVodiWr2/F9mixBcaAZTtjx4Rs9cJDLbpEG8i\n\r\ni"
 	"swcFdsn6MWwINP+Nwmw4AEPpVJevUEvRQbqVMVoLlw= ";
 
-static void test_base64_codec(void)
+ZTEST(lib_base64, test_base64_codec)
 {
 	size_t len;
 	int rc;
@@ -130,10 +129,4 @@ static void test_base64_codec(void)
 	zassert_equal(rc, -ENOMEM, "Error: dst NULL: decode test return value");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(lib_base64_test,
-			 ztest_unit_test(test_base64_codec));
-
-	ztest_run_test_suite(lib_base64_test);
-}
+ZTEST_SUITE(lib_base64, NULL, NULL, NULL, NULL, NULL);

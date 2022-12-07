@@ -7,9 +7,6 @@ config BOARD
 	default "esp_wrover_kit"
 	depends on BOARD_ESP_WROVER_KIT
 
-config ENTROPY_ESP32_RNG
-	default y if ENTROPY_GENERATOR
-
 if BT
 
 config HEAP_MEM_POOL_SIZE

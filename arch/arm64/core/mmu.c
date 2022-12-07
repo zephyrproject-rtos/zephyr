@@ -416,6 +416,16 @@ static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
 	return ret;
 }
 
+/*
+ * GCC 12 and above may report a warning about the potential infinite recursion
+ * in the `discard_table` function.
+ */
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Winfinite-recursion"
+#endif
+
 static void discard_table(uint64_t *table, unsigned int level)
 {
 	unsigned int i;
@@ -432,6 +442,10 @@ static void discard_table(uint64_t *table, unsigned int level)
 	}
 	free_table(table);
 }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 			   uintptr_t virt, size_t size, unsigned int level)
@@ -759,15 +773,19 @@ static uint64_t get_tcr(int el)
 		 * that are translated using TTBR1_EL1.
 		 */
 		tcr |= TCR_EPD1_DISABLE;
-	} else
+	} else {
 		tcr = (tcr_ps_bits << TCR_EL3_PS_SHIFT);
+	}
 
 	tcr |= TCR_T0SZ(va_bits);
+
 	/*
 	 * Translation table walk is cacheable, inner/outer WBWA and
-	 * inner shareable
+	 * inner shareable.  Due to Cortex-A57 erratum #822227 we must
+	 * set TG1[1] = 4KB.
 	 */
-	tcr |= TCR_TG0_4K | TCR_SHARED_INNER | TCR_ORGN_WBWA | TCR_IRGN_WBWA;
+	tcr |= TCR_TG1_4K | TCR_TG0_4K | TCR_SHARED_INNER |
+	       TCR_ORGN_WBWA | TCR_IRGN_WBWA;
 
 	return tcr;
 }
@@ -786,7 +804,7 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 	isb();
 
 	/* Invalidate all data caches before enable them */
-	sys_cache_data_all(K_CACHE_INVD);
+	sys_cache_data_invd_all();
 
 	/* Enable the MMU and data cache */
 	val = read_sctlr_el1();

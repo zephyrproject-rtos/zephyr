@@ -199,9 +199,9 @@ static int osdp_init(const struct device *arg)
 	ring_buf_init(&p->tx_buf, sizeof(p->tx_fbuf), p->tx_fbuf);
 
 	/* init OSDP uart device */
-	p->dev = device_get_binding(CONFIG_OSDP_UART_DEV_NAME);
-	if (p->dev == NULL) {
-		LOG_ERR("Failed to get UART dev binding");
+	p->dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_osdp_uart));
+	if (!device_is_ready(p->dev)) {
+		LOG_ERR("UART dev is not ready");
 		k_panic();
 	}
 

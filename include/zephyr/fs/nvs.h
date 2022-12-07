@@ -169,28 +169,6 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len, ui
 ssize_t nvs_calc_free_space(struct nvs_fs *fs);
 
 /**
- * @brief nvs_init
- *
- * Initializes a NVS file system in flash.
- *
- * @deprecated Use nvs_mount() instead.
- *
- * @param fs Pointer to file system
- * @param dev_name Pointer to flash device name
- * @retval 0 Success
- * @retval -ERRNO errno code if error
- */
-__deprecated static inline int nvs_init(struct nvs_fs *fs, const char *dev_name)
-{
-	fs->flash_device = device_get_binding(dev_name);
-	if (fs->flash_device == NULL) {
-		return -ENODEV;
-	}
-
-	return nvs_mount(fs);
-}
-
-/**
  * @}
  */
 

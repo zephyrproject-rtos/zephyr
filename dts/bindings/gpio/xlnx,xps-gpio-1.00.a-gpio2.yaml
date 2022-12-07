@@ -7,9 +7,6 @@ include: [gpio-controller.yaml, base.yaml]
 on-bus: xlnx,xps-gpio-1.00.a
 
 properties:
-    label:
-      required: true
-
     "#gpio-cells":
       const: 2
 

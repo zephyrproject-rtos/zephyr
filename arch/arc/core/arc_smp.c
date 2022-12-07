@@ -13,22 +13,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
-#include <soc.h>
 #include <zephyr/init.h>
-
-
-#ifndef IRQ_ICI
-#define IRQ_ICI 19
-#endif
-
-#define ARCV2_ICI_IRQ_PRIORITY 1
-
-#define MP_PRIMARY_CPU_ID 0
+#include <zephyr/irq.h>
 
 volatile struct {
 	arch_cpustart_t fn;
 	void *arg;
-} arc_cpu_init[CONFIG_MP_NUM_CPUS];
+} arc_cpu_init[CONFIG_MP_MAX_NUM_CPUS];
 
 /*
  * arc_cpu_wake_flag is used to sync up master core and slave cores
@@ -44,7 +35,7 @@ volatile char *arc_cpu_sp;
  * _curr_cpu is used to record the struct of _cpu_t of each cpu.
  * for efficient usage in assembly
  */
-volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
+volatile _cpu_t *_curr_cpu[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Called from Zephyr initialization */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
@@ -58,7 +49,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	 * arc_cpu_wake_flag will protect arc_cpu_sp that
 	 * only one slave cpu can read it per time
 	 */
-	arc_cpu_sp = Z_THREAD_STACK_BUFFER(stack) + sz;
+	arc_cpu_sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 
 	arc_cpu_wake_flag = cpu_num;
 
@@ -77,7 +68,7 @@ static void arc_connect_debug_mask_update(int cpu_num)
 	 * MDB debugger may modify debug_select and debug_mask registers on start, so we can't
 	 * rely on debug_select reset value.
 	 */
-	if (cpu_num != MP_PRIMARY_CPU_ID) {
+	if (cpu_num != ARC_MP_PRIMARY_CPU_ID) {
 		core_mask |= z_arc_connect_debug_select_read();
 	}
 
@@ -93,6 +84,8 @@ static void arc_connect_debug_mask_update(int cpu_num)
 		| ARC_CONNECT_CMD_DEBUG_MASK_H));
 }
 #endif
+
+void arc_core_private_intc_init(void);
 
 /* the C entry of slave cores */
 void z_arc_slave_start(int cpu_num)
@@ -111,9 +104,12 @@ void z_arc_slave_start(int cpu_num)
 
 	z_irq_setup();
 
+	arc_core_private_intc_init();
+
 	z_arc_connect_ici_clear();
-	z_irq_priority_set(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY, 0);
-	irq_enable(IRQ_ICI);
+	z_irq_priority_set(DT_IRQN(DT_NODELABEL(ici)),
+			   DT_IRQ(DT_NODELABEL(ici), priority), 0);
+	irq_enable(DT_IRQN(DT_NODELABEL(ici)));
 #endif
 	/* call the function set by arch_start_cpu */
 	fn = arc_cpu_init[cpu_num].fn;
@@ -139,7 +135,9 @@ void arch_sched_ipi(void)
 	/* broadcast sched_ipi request to other cores
 	 * if the target is current core, hardware will ignore it
 	 */
-	for (i = 0U; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (i = 0U; i < num_cpus; i++) {
 		z_arc_connect_ici_generate(i);
 	}
 }
@@ -156,16 +154,17 @@ static int arc_smp_init(const struct device *dev)
 
 	if (bcr.dbg) {
 		/* configure inter-core debug unit if available */
-		arc_connect_debug_mask_update(MP_PRIMARY_CPU_ID);
+		arc_connect_debug_mask_update(ARC_MP_PRIMARY_CPU_ID);
 	}
 
 	if (bcr.ipi) {
 	/* register ici interrupt, just need master core to register once */
 		z_arc_connect_ici_clear();
-		IRQ_CONNECT(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY,
-		    sched_ipi_handler, NULL, 0);
+		IRQ_CONNECT(DT_IRQN(DT_NODELABEL(ici)),
+			    DT_IRQ(DT_NODELABEL(ici), priority),
+			    sched_ipi_handler, NULL, 0);
 
-		irq_enable(IRQ_ICI);
+		irq_enable(DT_IRQN(DT_NODELABEL(ici)));
 	} else {
 		__ASSERT(0,
 			"ARC connect has no inter-core interrupt\n");
@@ -177,7 +176,7 @@ static int arc_smp_init(const struct device *dev)
 		z_arc_connect_gfrc_enable();
 
 		/* when all cores halt, gfrc halt */
-		z_arc_connect_gfrc_core_set((1 << CONFIG_MP_NUM_CPUS) - 1);
+		z_arc_connect_gfrc_core_set((1 << arch_num_cpus()) - 1);
 		z_arc_connect_gfrc_clear();
 	} else {
 		__ASSERT(0,

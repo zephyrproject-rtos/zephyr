@@ -40,16 +40,14 @@ struct net_ptp_time {
 	/** Seconds encoded on 48 bits. */
 	union {
 		struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 			uint32_t low;
 			uint16_t high;
 			uint16_t unused;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-			uint16_t unused;
-			uint16_t high;
-			uint32_t low;
 #else
-#error "Unknown byte order"
+			uint16_t unused;
+			uint16_t high;
+			uint32_t low;
 #endif
 		} _sec;
 		uint64_t second;
@@ -77,16 +75,14 @@ struct net_ptp_extended_time {
 	/** Seconds encoded on 48 bits. */
 	union {
 		struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 			uint32_t low;
 			uint16_t high;
 			uint16_t unused;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-			uint16_t unused;
-			uint16_t high;
-			uint32_t low;
 #else
-#error "Unknown byte order"
+			uint16_t unused;
+			uint16_t high;
+			uint32_t low;
 #endif
 		} _sec;
 		uint64_t second;
@@ -95,16 +91,14 @@ struct net_ptp_extended_time {
 	/** Fractional nanoseconds on 48 bits. */
 	union {
 		struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 			uint32_t low;
 			uint16_t high;
 			uint16_t unused;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-			uint16_t unused;
-			uint16_t high;
-			uint32_t low;
 #else
-#error "Unknown byte order"
+			uint16_t unused;
+			uint16_t high;
+			uint32_t low;
 #endif
 		} _fns;
 		uint64_t fract_nsecond;

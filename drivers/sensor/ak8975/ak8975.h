@@ -23,25 +23,7 @@
 #define AK8975_MEASURE_TIME_US		9000
 #define AK8975_MICRO_GAUSS_PER_BIT	3000
 
-#if DT_NODE_HAS_PROP(DT_INST(0, invensense_mpu9150), reg)
-#if DT_REG_ADDR(DT_INST(0, asahi_kasei_ak8975)) != 0x0C
-#error "I2C address must be 0x0C when AK8975 is part of a MPU9150 chip"
-#endif
-
-#define MPU9150_I2C_ADDR		DT_REG_ADDR(DT_INST(0, invensense_mpu9150))
-
-#define MPU9150_REG_BYPASS_CFG		0x37
-#define MPU9150_I2C_BYPASS_EN		BIT(1)
-
-#define MPU9150_REG_PWR_MGMT1		0x6B
-#define MPU9150_SLEEP_EN		BIT(6)
-
-#endif /* DT_NODE_HAS_PROP(DT_INST(0, invensense_mpu9150), reg) */
-
-
 struct ak8975_data {
-	const struct device *i2c;
-
 	int16_t x_sample;
 	int16_t y_sample;
 	int16_t z_sample;
@@ -49,6 +31,10 @@ struct ak8975_data {
 	uint8_t x_adj;
 	uint8_t y_adj;
 	uint8_t z_adj;
+};
+
+struct ak8975_config {
+	struct i2c_dt_spec i2c;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_AK8975_AK8975_H_ */

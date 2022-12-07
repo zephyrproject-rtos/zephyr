@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2020 Linumiz
+ * Author: Parthiban Nallathambi <parthiban@linumiz.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <infineon/xmc4xxx.dtsi>
+
+&psram1 {
+	reg = <0x10000000 DT_SIZE_K(64)>;
+};
+
+&dsram1 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
+&dsram2 {
+	reg = <0x30000000 DT_SIZE_K(32)>;
+};
+
+&flash0 {
+	reg = <0xc000000 DT_SIZE_M(1)>;
+	pages_layout: pages_layout {
+		pages_layout_16k: pages_layout_16k {
+			pages-count = <8>;
+			pages-size = <DT_SIZE_K(16)>;
+		};
+		pages_layout_128k: pages_layout_128k {
+			pages-count = <1>;
+			pages-size = <DT_SIZE_K(128)>;
+		};
+		pages_layout_256k: pages_layout_256k {
+			pages-count = <3>;
+			pages-size = <DT_SIZE_K(256)>;
+		};
+	};
+};
+
+&gpio0 {
+	ngpios = <13>;
+};
+
+&gpio1 {
+	ngpios = <16>;
+};
+
+&gpio2 {
+	ngpios = <13>;
+};
+
+&pinctrl {
+	reg = <0x48028000 0x600>;
+
+	gpio3: gpio@48028300 {
+		compatible = "infineon,xmc4xxx-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		reg = <0x48028300 0x100>;
+		ngpios = <7>;
+		status = "disabled";
+	};
+
+	gpio4: gpio@48028400 {
+		compatible = "infineon,xmc4xxx-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		reg = <0x48028400 0x100>;
+		ngpios = <2>;
+		status = "disabled";
+	};
+
+	gpio5: gpio@48028500 {
+		compatible = "infineon,xmc4xxx-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		reg = <0x48028500 0x100>;
+		ngpios = <4>;
+		status = "disabled";
+	};
+};

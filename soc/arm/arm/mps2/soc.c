@@ -37,7 +37,7 @@ FPGAIO_INIT(2);
 /* The base address that the application image will start at on the secondary
  * (non-TrustZone) Cortex-M33 mcu.
  */
-#define CPU1_FLASH_ADDRESS      (0x100000)
+#define CPU1_FLASH_ADDRESS      (0x38B000)
 
 /* The memory map offset for the application image, which is used
  * to determine the location of the reset vector at startup.

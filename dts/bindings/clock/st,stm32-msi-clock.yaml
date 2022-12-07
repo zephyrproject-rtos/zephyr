@@ -30,7 +30,6 @@ properties:
 
     msi-pll-mode:
       type: boolean
-      required: false
       description: |
         MSI clock PLL enable
         Enables the PLL part of the MSI clock source.

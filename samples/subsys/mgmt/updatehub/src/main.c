@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <updatehub.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
@@ -15,6 +15,11 @@
 #if defined(CONFIG_UPDATEHUB_DTLS)
 #include <zephyr/net/tls_credentials.h>
 #include "c_certificates.h"
+#endif
+
+#if defined(CONFIG_MODEM_GSM_PPP)
+#define GSM_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_gsm_ppp)
+#define UART_NODE DT_BUS(GSM_NODE)
 #endif
 
 #include <zephyr/logging/log.h>
@@ -138,11 +143,10 @@ void main(void)
 	}
 
 #elif defined(CONFIG_MODEM_GSM_PPP)
-	const struct device *uart_dev =
-		DEVICE_DT_GET(DT_BUS(DT_INST(0, zephyr_gsm_ppp)));
+	const struct device *const uart_dev = DEVICE_DT_GET(UART_NODE);
 
 	LOG_INF("APN '%s' UART '%s' device %p", CONFIG_MODEM_GSM_APN,
-		DT_BUS_LABEL(DT_INST(0, zephyr_gsm_ppp)), uart_dev);
+		uart_dev->name, uart_dev);
 #endif
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler, EVENT_MASK);

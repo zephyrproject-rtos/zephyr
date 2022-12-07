@@ -4,14 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	chosen {
+		zephyr,ieee802154 = &ieee802154_atmel_rf2xx_xpro;
+	};
+};
+
 &ext1_spi {
 	status = "okay";
-	label = "SPI_RF2XX";
 
-	rf2xx@0 {
+	ieee802154_atmel_rf2xx_xpro: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
-		label = "RF2XX_0";
 		spi-max-frequency = <6000000>;
 		irq-gpios = <&ext1_header 6
 			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;

@@ -24,7 +24,7 @@ jobs:
         pip3 install -U PyGithub>=1.55
 
     - name: Check out source code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Run assignment script
       env:

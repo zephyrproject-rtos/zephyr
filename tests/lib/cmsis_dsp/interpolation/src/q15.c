@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -16,7 +16,7 @@
 #define SNR_ERROR_THRESH	((float32_t)70)
 #define ABS_ERROR_THRESH	((q15_t)2)
 
-void test_arm_linear_interp_q15(void)
+ZTEST(interpolation_q15, test_arm_linear_interp_q15)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(ref_linear);
@@ -52,7 +52,7 @@ void test_arm_linear_interp_q15(void)
 	free(output);
 }
 
-void test_arm_bilinear_interp_q15(void)
+ZTEST(interpolation_q15, test_arm_bilinear_interp_q15)
 {
 	arm_bilinear_interp_instance_q15 inst;
 	size_t index;
@@ -92,12 +92,4 @@ void test_arm_bilinear_interp_q15(void)
 	free(output);
 }
 
-void test_interpolation_q15(void)
-{
-	ztest_test_suite(interpolation_q15,
-		ztest_unit_test(test_arm_linear_interp_q15),
-		ztest_unit_test(test_arm_bilinear_interp_q15)
-		);
-
-	ztest_run_test_suite(interpolation_q15);
-}
+ZTEST_SUITE(interpolation_q15, NULL, NULL, NULL, NULL, NULL);

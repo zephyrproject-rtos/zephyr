@@ -18,6 +18,7 @@
 #include <zephyr/sys_clock.h>
 #include <soc.h>
 #include <zephyr/device.h>
+#include <zephyr/spinlock.h>
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
@@ -25,30 +26,39 @@
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_NODELABEL(systimer0));
+#endif
+
 #define TICKLESS IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 
 static struct k_spinlock lock;
 static uint64_t last_count;
 
+/* Systimer HAL layer object */
+static systimer_hal_context_t systimer_hal;
+
 static void set_systimer_alarm(uint64_t time)
 {
-	systimer_hal_select_alarm_mode(SYSTIMER_ALARM_0, SYSTIMER_ALARM_MODE_ONESHOT);
-	systimer_hal_set_alarm_target(SYSTIMER_ALARM_0, time);
-	systimer_hal_enable_alarm_int(SYSTIMER_ALARM_0);
+	systimer_hal_select_alarm_mode(&systimer_hal,
+		SYSTIMER_LL_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_ONESHOT);
+
+	systimer_hal_set_alarm_target(&systimer_hal, SYSTIMER_LL_ALARM_OS_TICK_CORE0, time);
+	systimer_hal_enable_alarm_int(&systimer_hal, SYSTIMER_LL_ALARM_OS_TICK_CORE0);
 }
 
-static uint64_t systimer_alarm(void)
+static uint64_t get_systimer_alarm(void)
 {
-	return systimer_hal_get_time(SYSTIMER_COUNTER_1);
+	return systimer_hal_get_time(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
 }
 
 static void sys_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-	systimer_ll_clear_alarm_int(SYSTIMER_ALARM_0);
+	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t now = systimer_alarm();
+	uint64_t now = get_systimer_alarm();
 
 	uint32_t dticks = (uint32_t)((now - last_count) / CYC_PER_TICK);
 
@@ -76,7 +86,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t now = systimer_alarm();
+	uint64_t now = get_systimer_alarm();
 	uint32_t adj, cyc = ticks * CYC_PER_TICK;
 
 	/* Round up to next tick boundary. */
@@ -104,7 +114,7 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = ((uint32_t)systimer_alarm() - (uint32_t)last_count) / CYC_PER_TICK;
+	uint32_t ret = ((uint32_t)get_systimer_alarm() - (uint32_t)last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 	return ret;
@@ -112,12 +122,12 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return (uint32_t)systimer_alarm();
+	return (uint32_t)get_systimer_alarm();
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
-	return systimer_alarm();
+	return get_systimer_alarm();
 }
 
 static int sys_clock_driver_init(const struct device *dev)
@@ -130,13 +140,14 @@ static int sys_clock_driver_init(const struct device *dev)
 		NULL,
 		NULL);
 
-	systimer_hal_init();
-	systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_0, SYSTIMER_COUNTER_1);
-	systimer_hal_enable_counter(SYSTIMER_COUNTER_1);
-	systimer_hal_counter_can_stall_by_cpu(SYSTIMER_COUNTER_1, 0, true);
-	last_count = systimer_alarm();
-	set_systimer_alarm(last_count + CYC_PER_TICK);
+	systimer_hal_init(&systimer_hal);
+	systimer_hal_connect_alarm_counter(&systimer_hal,
+		SYSTIMER_LL_ALARM_OS_TICK_CORE0, SYSTIMER_LL_COUNTER_OS_TICK);
 
+	systimer_hal_enable_counter(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
+	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, 0, true);
+	last_count = get_systimer_alarm();
+	set_systimer_alarm(last_count + CYC_PER_TICK);
 	return 0;
 }
 

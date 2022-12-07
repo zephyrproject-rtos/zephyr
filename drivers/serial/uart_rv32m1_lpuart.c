@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 #include <fsl_lpuart.h>
 #include <soc.h>
 #ifdef CONFIG_PINCTRL
@@ -253,6 +254,10 @@ static int rv32m1_lpuart_init(const struct device *dev)
 	/* set clock source */
 	/* TODO: Don't change if another core has configured */
 	CLOCK_SetIpSrc(config->clock_ip_name, config->clock_ip_src);
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {

@@ -5,7 +5,9 @@
 
 config ADC_MCP320X
 	bool "MCP3204/MCP3208 driver"
-	depends on SPI
+	default y
+	depends on DT_HAS_MICROCHIP_MCP3204_ENABLED || DT_HAS_MICROCHIP_MCP3208_ENABLED
+	select SPI
 	help
 	  Enable MCP3204/MCP3208 ADC driver.
 

@@ -9,12 +9,19 @@
  *
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <string.h>
+#ifdef CONFIG_ARCH_POSIX
+#include <unistd.h>
+#else
+#include <zephyr/posix/unistd.h>
+#endif
 #include <getopt.h>
 
-static void test_getopt_basic(void)
+ZTEST_SUITE(getopt_test_suite, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(getopt_test_suite, test_getopt_basic)
 {
 	static const char *const nargv[] = {
 		"cmd_name",
@@ -60,7 +67,7 @@ enum getopt_idx {
 	GETOPT_IDX_OPTARG
 };
 
-static void test_getopt(void)
+ZTEST(getopt_test_suite, test_getopt)
 {
 	struct getopt_state *state;
 	static const char *test_opts = "ac:";
@@ -104,7 +111,7 @@ enum getopt_long_idx {
 	GETOPT_LONG_IDX_OPTARG
 };
 
-static void test_getopt_long(void)
+ZTEST(getopt_test_suite, test_getopt_long)
 {
 	/* Below test is based on example
 	 * https://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html
@@ -224,7 +231,7 @@ static void test_getopt_long(void)
 			long_options, &option_index);
 }
 
-static void test_getopt_long_only(void)
+ZTEST(getopt_test_suite, test_getopt_long_only)
 {
 	/* Below test is based on example
 	 * https://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html
@@ -344,16 +351,4 @@ static void test_getopt_long_only(void)
 	zassert_equal('e', c, "unexpected option");
 	c = getopt_long_only(argc4, argv, accepted_opt,
 			     long_options, &option_index);
-}
-
-void test_main(void)
-{
-	ztest_test_suite(getopt_test_suite,
-			ztest_unit_test(test_getopt_basic),
-			ztest_unit_test(test_getopt),
-			ztest_unit_test(test_getopt_long),
-			ztest_unit_test(test_getopt_long_only)
-			);
-
-	ztest_run_test_suite(getopt_test_suite);
 }

@@ -8,7 +8,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/adc_cmp_npcx.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <stdio.h>
 
@@ -99,7 +99,7 @@ void threshold_trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *adc_cmp = DEVICE_DT_GET(ADC_CMP_NODE);
+	const struct device *const adc_cmp = DEVICE_DT_GET(ADC_CMP_NODE);
 	int err;
 
 	if (!device_is_ready(adc_cmp)) {

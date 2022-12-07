@@ -86,6 +86,10 @@ DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 #define TIMER0_COMPARATOR_LOW_REG	HPET_REG_ADDR(0x108)
 #define TIMER0_COMPARATOR_HIGH_REG	HPET_REG_ADDR(0x10c)
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, intel_hpet));
+#endif
+
 /**
  * @brief Return the value of the main counter.
  *
@@ -93,6 +97,11 @@ DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
  */
 static inline uint64_t hpet_counter_get(void)
 {
+#ifdef CONFIG_64BIT
+	uint64_t val = sys_read64(MAIN_COUNTER_LOW_REG);
+
+	return val;
+#else
 	uint32_t high;
 	uint32_t low;
 
@@ -102,6 +111,7 @@ static inline uint64_t hpet_counter_get(void)
 	} while (high != sys_read32(MAIN_COUNTER_HIGH_REG));
 
 	return ((uint64_t)high << 32) | low;
+#endif
 }
 
 /**

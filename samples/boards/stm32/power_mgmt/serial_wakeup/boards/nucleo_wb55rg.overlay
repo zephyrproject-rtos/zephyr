@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2022 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_hsi {
+	status = "okay";
+};
+
+&usart1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
+		 <&rcc STM32_SRC_HSI USART1_SEL(2)>;
+
+	wakeup-source;
+
+	pinctrl-1 = <&analog_pb6 &analog_pb7>;
+	pinctrl-names = "default", "sleep";
+};

@@ -11,12 +11,6 @@ properties:
     reg:
       required: true
 
-    interrupts:
-      required: false
-
-    label:
-      required: true
-
     port-id:
       type: int
       required: true

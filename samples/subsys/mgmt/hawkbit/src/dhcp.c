@@ -6,7 +6,7 @@
 
 #include <zephyr/logging/log.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>

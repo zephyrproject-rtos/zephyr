@@ -10,7 +10,7 @@
  * devices for the "vnd,pwm" devicetree compatible used in test code.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/pwm.h>
 
 #define DT_DRV_COMPAT vnd_pwm
@@ -66,7 +66,7 @@ static int vnd_pwm_init(const struct device *dev)
 #define VND_PWM_INIT(n)						  \
 	DEVICE_DT_INST_DEFINE(n, &vnd_pwm_init, NULL,		  \
 			      NULL, NULL, POST_KERNEL,		  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      CONFIG_PWM_INIT_PRIORITY,		  \
 			      &vnd_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_PWM_INIT)

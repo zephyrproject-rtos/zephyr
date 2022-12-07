@@ -3,18 +3,6 @@
 
 source "soc/arm/nxp_lpc/*/Kconfig.defconfig.series"
 
-config I2C_MCUX_FLEXCOMM
-	default y if HAS_MCUX_FLEXCOMM
-	depends on I2C
-
-config SPI_MCUX_FLEXCOMM
-	default y if HAS_MCUX_FLEXCOMM
-	depends on SPI
-
-config CLOCK_CONTROL_MCUX_SYSCON
-	default y if HAS_MCUX_SYSCON
-	depends on CLOCK_CONTROL
-
 config SERIAL_INIT_PRIORITY
 	default 55
 	depends on SERIAL

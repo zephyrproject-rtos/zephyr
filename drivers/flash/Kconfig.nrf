@@ -9,13 +9,16 @@ config FLASH_NRF_FORCE_ALT
 
 menuconfig SOC_FLASH_NRF
 	bool "Nordic Semiconductor nRF flash driver"
-	depends on SOC_FAMILY_NRF
+	default y
+	depends on DT_HAS_NORDIC_NRF51_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_NORDIC_NRF52_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_NORDIC_NRF53_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_NORDIC_NRF91_FLASH_CONTROLLER_ENABLED
 	depends on !FLASH_NRF_FORCE_ALT
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select NRFX_NVMC
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
-	default y
 	help
 	  Enables Nordic Semiconductor nRF flash driver.
 
@@ -63,6 +66,17 @@ config SOC_FLASH_NRF_PARTIAL_ERASE_MS
 	  of Flash, before stopping to let CPU resume operation.
 	  Minimal timeout is 2ms maximum should not exceed half of
 	  FLASH_PAGE_ERASE_MAX_TIME_US im ms.
+
+config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
+	int "Multiplier for flash operation timeouts [x0.1]"
+	depends on !SOC_FLASH_NRF_RADIO_SYNC_NONE
+	default 15 if SOC_FLASH_NRF_PARTIAL_ERASE && SOC_FLASH_NRF_RADIO_SYNC_TICKER
+	default 10
+	help
+	  This is a multiplier that will be divided by 10 that is applied
+	  to the flash erase and write operations timeout. The base for
+	  the multiplication would allow erasing all nRF flash pages in
+	  blocking mode.
 
 config SOC_FLASH_NRF_UICR
 	bool "Access to UICR"

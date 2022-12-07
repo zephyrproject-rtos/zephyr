@@ -1,10 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
-separate_arguments(EXTRA_CPPFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CPPFLAGS})
-separate_arguments(EXTRA_LDFLAGS_AS_LIST UNIX_COMMAND  ${EXTRA_LDFLAGS})
-separate_arguments(EXTRA_CFLAGS_AS_LIST   UNIX_COMMAND ${EXTRA_CFLAGS})
-separate_arguments(EXTRA_CXXFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CXXFLAGS})
-separate_arguments(EXTRA_AFLAGS_AS_LIST   UNIX_COMMAND ${EXTRA_AFLAGS})
+foreach(extra_flags EXTRA_CPPFLAGS EXTRA_LDFLAGS EXTRA_CFLAGS EXTRA_CXXFLAGS EXTRA_AFLAGS)
+  list(LENGTH ${extra_flags} flags_length)
+  if(flags_length LESS_EQUAL 1)
+    # A length of zero means no argument.
+    # A length of one means a single argument or a space separated list was provided.
+    # In both cases, it is safe to do a separate_arguments on the argument.
+    separate_arguments(${extra_flags}_AS_LIST UNIX_COMMAND ${${extra_flags}})
+  else()
+    # Already a proper list, no conversion needed.
+    set(${extra_flags}_AS_LIST "${${extra_flags}}")
+  endif()
+endforeach()
 
 if(EXTRA_CPPFLAGS)
   zephyr_compile_options(${EXTRA_CPPFLAGS_AS_LIST})

@@ -37,7 +37,6 @@
 				     <GIC_PPI 10 IRQ_TYPE_EDGE
 					IRQ_DEFAULT_PRIORITY>;
 			reg = <0xf8f00200 0x1C>;
-			label = "arch_timer";
 		};
 
 		gic: interrupt-controller@f8f01000 {
@@ -47,7 +46,6 @@
 				<0xf8f00100 0x100>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
-			label = "gic";
 		};
 
 		gem0: ethernet@e000b000 {
@@ -60,7 +58,6 @@
 				     <GIC_SPI 23 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			label = "gem0";
 			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
 			phy-poll-interval = <1000>;
 			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
@@ -88,7 +85,6 @@
 				     <GIC_SPI 46 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			label = "gem1";
 			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
 			phy-poll-interval = <1000>;
 			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
@@ -113,7 +109,6 @@
 			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
-			label = "uart0";
 		};
 
 		uart1: uart@e0001000 {
@@ -123,7 +118,6 @@
 			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
-			label = "uart1";
 		};
 
 		psgpio: gpio@e000a000 {
@@ -133,16 +127,13 @@
 			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
-			label = "psgpio";
 
-			ranges;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
 			psgpio_bank0: psgpio_bank@0 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x0>;
-				label = "psgpio_bank0_mio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <32>;
@@ -152,7 +143,6 @@
 			psgpio_bank1: psgpio_bank@1 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x1>;
-				label = "psgpio_bank1_mio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <22>;
@@ -162,7 +152,6 @@
 			psgpio_bank2: psgpio_bank@2 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x2>;
-				label = "psgpio_bank2_emio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <32>;
@@ -172,12 +161,25 @@
 			psgpio_bank3: psgpio_bank@3 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x3>;
-				label = "psgpio_bank3_emio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <32>;
 				status = "okay";
 			};
+		};
+	};
+
+	slcr: slcr@f8000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "xlnx,zynq-slcr", "syscon";
+		reg = <0xf8000000 0x1000>;
+		ranges;
+
+		pinctrl0: pinctrl@700 {
+			compatible = "xlnx,pinctrl-zynq";
+			reg = <0x700 0x200>;
+			syscon = <&slcr>;
 		};
 	};
 };

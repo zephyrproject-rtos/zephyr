@@ -31,12 +31,17 @@ set(TFM_CRYPTO_MODULES
 
 
 if (CONFIG_BUILD_WITH_TFM)
-  if (CONFIG_TFM_IPC)
+  if (CONFIG_TFM_LIBRARY)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=ON)
+  else()
     list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=OFF)
     # PSA API awareness for the Non-Secure application
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
-  else()
-    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=ON)
+    if (CONFIG_TFM_SFN)
+      list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
+    else() # CONFIG_TFM_IPC
+      list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="IPC")
+    endif()
   endif()
   if (CONFIG_TFM_REGRESSION_S)
     list(APPEND TFM_CMAKE_ARGS -DTEST_S=ON)
@@ -48,6 +53,11 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DBL2=TRUE)
   else()
     list(APPEND TFM_CMAKE_ARGS -DBL2=FALSE)
+  endif()
+  if (CONFIG_TFM_BUILD_NS)
+    list(APPEND TFM_CMAKE_ARGS -DNS=TRUE)
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DNS=FALSE)
   endif()
   if (CONFIG_TFM_ISOLATION_LEVEL)
     list(APPEND TFM_CMAKE_ARGS -DTFM_ISOLATION_LEVEL=${CONFIG_TFM_ISOLATION_LEVEL})
@@ -148,8 +158,9 @@ if (CONFIG_BUILD_WITH_TFM)
 
   set(VENEERS_FILE ${TFM_BINARY_DIR}/secure_fw/s_veneers.o)
   set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/tf-m-tests/app/libtfm_api_ns.a)
-  set(TFM_GENERATED_INCLUDES ${TFM_BINARY_DIR}/generated/interface/include)
   set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/libplatform_ns.a)
+  set(TFM_GENERATED_INCLUDES ${TFM_BINARY_DIR}/generated/interface/include)
+  set(TFM_INTERFACE_SOURCE_DIR ${TFM_BINARY_DIR}/install/interface/src)
 
   if (TFM_PSA_TEST_SUITE)
     set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/val/val_nspe.a)
@@ -195,6 +206,25 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_S_SIGNED_BIN_FILE}
     ${TFM_NS_SIGNED_BIN_FILE}
     ${TFM_S_NS_SIGNED_BIN_FILE}
+
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_ipc_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_ipc_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_ipc_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_ipc_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_ipc_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_ipc_api.c
+
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c
+
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_func_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_func_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_func_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_func_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_func_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_func_api.c
+
+    # Specific to nordic_nrf platform
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c
     )
 
   # Get the toolchain variant
@@ -236,6 +266,13 @@ if (CONFIG_BUILD_WITH_TFM)
       -DPSA_TOOLCHAIN_FILE=${CMAKE_CURRENT_LIST_DIR}/psa/GNUARM.cmake
       -DTOOLCHAIN=INHERIT
       )
+  endif()
+
+  if(CONFIG_FPU AND CONFIG_FP_HARDABI)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=hard)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP_ARCH=${FPU_FOR_${GCC_M_CPU}})
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=soft)
   endif()
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
@@ -324,9 +361,50 @@ if (CONFIG_BUILD_WITH_TFM)
     src/zephyr_tfm_log.c
     interface/interface.c
     )
+
   # Non-Secure interface to request system reboot
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM src/reboot.c)
+  if (CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
+    zephyr_library_sources(src/reboot.c)
+  endif()
   zephyr_library_sources_ifndef(CONFIG_TFM_PSA_TEST_NONE src/zephyr_tfm_psa_test.c)
+
+  if (TFM_PSA_TEST_SUITE)
+    zephyr_library_link_libraries(
+      ${PSA_TEST_VAL_FILE}
+      ${PSA_TEST_PAL_FILE}
+      ${PSA_TEST_COMBINE_FILE}
+      )
+  endif()
+
+  if(NOT CONFIG_TFM_BUILD_NS)
+    if(CONFIG_TFM_IPC OR CONFIG_TFM_SFN)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_ipc_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_ipc_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_ipc_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_ipc_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_ipc_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_ipc_api.c)
+
+      zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c)
+    else()
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_func_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_func_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_func_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_func_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_func_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_func_api.c)
+    endif()
+
+    if(CONFIG_SOC_FAMILY_NRF)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
+    endif()
+
+  else()
+    zephyr_library_link_libraries(
+      ${TFM_API_NS_PATH}
+      ${PLATFORM_NS_FILE}
+      )
+  endif()
 
   zephyr_include_directories(
     ${TFM_GENERATED_INCLUDES}
@@ -337,11 +415,6 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   zephyr_library_link_libraries(
-    ${PSA_TEST_VAL_FILE}
-    ${PSA_TEST_PAL_FILE}
-    ${PSA_TEST_COMBINE_FILE}
-    ${PLATFORM_NS_FILE}
-    ${TFM_API_NS_PATH}
     ${VENEERS_FILE}
     )
 
@@ -399,7 +472,7 @@ if (CONFIG_BUILD_WITH_TFM)
   set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr_ns_signed.hex)
   set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_signed.hex)
 
-  if (CONFIG_TFM_REGRESSION_NS)
+  if (CONFIG_TFM_USE_NS_APP)
     # Use the TF-M NS binary as the Non-Secure application firmware image
     set(NS_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
   else()
@@ -410,7 +483,7 @@ if (CONFIG_BUILD_WITH_TFM)
   if (NOT CONFIG_TFM_BL2)
     # Merge tfm_s and zephyr (NS) image to a single binary.
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
         ${NS_APP_FILE}
@@ -424,14 +497,14 @@ if (CONFIG_BUILD_WITH_TFM)
     tfm_sign(sign_cmd NS TRUE ${S_NS_FILE} ${S_NS_SIGNED_FILE})
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${S_NS_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
         ${NS_APP_FILE}
 
       COMMAND ${sign_cmd}
 
-      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_FILE}
         $<TARGET_PROPERTY:tfm,BL2_HEX_FILE>
         ${S_NS_SIGNED_FILE}
@@ -444,7 +517,7 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   else()
-    if (CONFIG_TFM_REGRESSION_NS)
+    if (CONFIG_TFM_USE_NS_APP)
       tfm_sign(sign_cmd_ns NS TRUE ${NS_APP_FILE} ${NS_SIGNED_FILE})
     else()
       tfm_sign(sign_cmd_ns NS FALSE ${NS_APP_FILE} ${NS_SIGNED_FILE})
@@ -457,7 +530,7 @@ if (CONFIG_BUILD_WITH_TFM)
       COMMAND ${sign_cmd_ns}
       COMMAND ${sign_cmd_s}
 
-      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_FILE}
         $<TARGET_PROPERTY:tfm,BL2_HEX_FILE>
         ${S_SIGNED_FILE}

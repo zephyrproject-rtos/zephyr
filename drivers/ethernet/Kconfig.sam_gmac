@@ -5,7 +5,10 @@
 
 menuconfig ETH_SAM_GMAC
 	bool "Atmel SAM Ethernet driver"
-	depends on SOC_FAMILY_SAM0 || SOC_FAMILY_SAM
+	default y
+	depends on NET_BUF_FIXED_DATA_SIZE
+	depends on DT_HAS_ATMEL_SAM_GMAC_ENABLED || \
+		   DT_HAS_ATMEL_SAM0_GMAC_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select MDIO
 	help
@@ -76,12 +79,6 @@ config ETH_SAM_GMAC_MAC_I2C_EEPROM
 
 if ETH_SAM_GMAC_MAC_I2C_EEPROM
 
-config ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS
-	hex "I2C 7-bit EEPROM chip address"
-	range 0 0xff
-	help
-	  I2C 7-bit address of the EEPROM chip.
-
 config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS
 	hex "I2C EEPROM internal address"
 	range 0 0xffffffff
@@ -96,12 +93,6 @@ config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
 	range 1 4
 	help
 	  Size (in bytes) of the internal EEPROM address.
-
-config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
-	string "I2C bus driver device name"
-	help
-	  Device name, e.g. I2C_0, of an I2C bus driver device. It is required to
-	  obtain handle to the I2C device object.
 
 endif # ETH_SAM_GMAC_MAC_I2C_EEPROM
 

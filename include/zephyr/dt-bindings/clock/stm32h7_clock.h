@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_
 
-/** Peripheral clock sources */
+/** Domain clocks */
 
 /* RM0468, Table 56 Kernel clock dictribution summary */
 
@@ -14,10 +14,9 @@
 #define STM32_SRC_PLL1_P	0x001
 #define STM32_SRC_PLL1_Q	0x002
 #define STM32_SRC_PLL1_R	0x003
-/** PLL2 not yet supported */
-/* #define STM32_SRC_PLL2_P	0x004 */
-/* #define STM32_SRC_PLL2_Q	0x005 */
-/* #define STM32_SRC_PLL2_R	0x006 */
+#define STM32_SRC_PLL2_P	0x004
+#define STM32_SRC_PLL2_Q	0x005
+#define STM32_SRC_PLL2_R	0x006
 #define STM32_SRC_PLL3_P	0x007
 #define STM32_SRC_PLL3_Q	0x008
 #define STM32_SRC_PLL3_R	0x009
@@ -25,8 +24,7 @@
 #define STM32_SRC_HSE		0x00A
 #define STM32_SRC_LSE		0x00B
 #define STM32_SRC_LSI		0x00C
-/** Oscillators not yet supported */
-/* #define STM32_SRC_HSI48	0x00D */
+#define STM32_SRC_HSI48		0x00D
 #define STM32_SRC_HSI_KER	0x00E /* HSI + HSIKERON */
 #define STM32_SRC_CSI_KER	0x00F /* CSI + CSIKERON */
 /** Core clock */
@@ -36,9 +34,6 @@
 /* #define STM32_SRC_SPDIFRX	0x012 */
 /** Clock muxes */
 #define STM32_SRC_CKPER		0x013
-
-#define STM32_SRC_CLOCK_MIN	STM32_SRC_PLL1_P
-#define STM32_SRC_CLOCK_MAX	STM32_SRC_CKPER
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB3    0x0D4
@@ -60,6 +55,15 @@
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB3
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB4
 
+#define STM32_CLOCK_REG_MASK    0xFFU
+#define STM32_CLOCK_REG_SHIFT   0U
+#define STM32_CLOCK_SHIFT_MASK  0x1FU
+#define STM32_CLOCK_SHIFT_SHIFT 8U
+#define STM32_CLOCK_MASK_MASK   0x7U
+#define STM32_CLOCK_MASK_SHIFT  13U
+#define STM32_CLOCK_VAL_MASK    0x7U
+#define STM32_CLOCK_VAL_SHIFT   16U
+
 /**
  * @brief STM32H7 clock configuration bit field.
  *
@@ -73,16 +77,6 @@
  * @param mask Mask for the RCC_DxCCIP field.
  * @param val Clock value (0, 1, 2 or 3).
  */
-
-#define STM32_CLOCK_REG_MASK    0xFFU
-#define STM32_CLOCK_REG_SHIFT   0U
-#define STM32_CLOCK_SHIFT_MASK  0x1FU
-#define STM32_CLOCK_SHIFT_SHIFT 8U
-#define STM32_CLOCK_MASK_MASK   0x7U
-#define STM32_CLOCK_MASK_SHIFT  13U
-#define STM32_CLOCK_VAL_MASK    0x7U
-#define STM32_CLOCK_VAL_SHIFT   16U
-
 #define STM32_CLOCK(val, mask, shift, reg)					\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |	\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
@@ -95,13 +89,18 @@
 #define D2CCIP2R_REG		0x54
 #define D3CCIPR_REG		0x58
 
-/** @brief Device clk sources selection helpers (RM0399.pdf) */
+/** @brief RCC_BDCR register offset */
+#define BDCR_REG		0x70
+
+/** @brief Device domain clocks selection helpers (RM0399.pdf) */
 /** D1CCIPR devices */
 #define FMC_SEL(val)		STM32_CLOCK(val, 3, 0, D1CCIPR_REG)
 #define QSPI_SEL(val)		STM32_CLOCK(val, 3, 4, D1CCIPR_REG)
 #define DSI_SEL(val)		STM32_CLOCK(val, 1, 8, D1CCIPR_REG)
 #define SDMMC_SEL(val)		STM32_CLOCK(val, 1, 16, D1CCIPR_REG)
 #define CKPER_SEL(val)		STM32_CLOCK(val, 3, 28, D1CCIPR_REG)
+/* Device domain clocks selection helpers (RM0468.pdf) */
+#define OSPI_SEL(val)		STM32_CLOCK(val, 3, 4, D1CCIPR_REG)
 /** D2CCIP1R devices */
 #define SAI1_SEL(val)		STM32_CLOCK(val, 7, 0, D2CCIP1R_REG)
 #define SAI23_SEL(val)		STM32_CLOCK(val, 7, 6, D2CCIP1R_REG)
@@ -128,5 +127,7 @@
 #define SAI4A_SEL(val)		STM32_CLOCK(val, 7, 21, D3CCIPR_REG)
 #define SAI4B_SEL(val)		STM32_CLOCK(val, 7, 24, D3CCIPR_REG)
 #define SPI6_SEL(val)		STM32_CLOCK(val, 7, 28, D3CCIPR_REG)
+/** BDCR devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_ */

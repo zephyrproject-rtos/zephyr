@@ -280,6 +280,12 @@ struct glue_reg {
 	volatile uint8_t PSL_CTS;
 };
 
+/* GLUE register fields */
+/* PSL input detection mode is configured by bits 7:4 of PSL_CTS */
+#define NPCX_PSL_CTS_MODE_BIT(bit) BIT(bit + 4)
+/* PSL input assertion events are reported by bits 3:0 of PSL_CTS */
+#define NPCX_PSL_CTS_EVENT_BIT(bit) BIT(bit)
+
 /*
  * Universal Asynchronous Receiver-Transmitter (UART) device registers
  */
@@ -663,23 +669,26 @@ struct espi_reg {
 	volatile uint32_t reserved4[6];
 	/* 0x140 - 16F: Virtual Wire Event Master-to-Slave 0 - 11 */
 	volatile uint32_t VWEVMS[12];
-	volatile uint32_t reserved5[99];
+	volatile uint32_t reserved5[4];
+	/* 0x180 - 1BF: Virtual Wire GPIO Event Master-to-Slave 0 - 15 */
+	volatile uint32_t VWGPSM[16];
+	volatile uint32_t reserved6[79];
 	/* 0x2FC: Virtual Wire Channel Control */
 	volatile uint32_t VWCTL;
 	/* 0x300 - 34F: OOB Receive Buffer 0 - 19 */
 	volatile uint32_t OOBRXBUF[20];
-	volatile uint32_t reserved6[12];
+	volatile uint32_t reserved7[12];
 	/* 0x380 - 3CF: OOB Transmit Buffer 0-19 */
 	volatile uint32_t OOBTXBUF[20];
-	volatile uint32_t reserved7[11];
+	volatile uint32_t reserved8[11];
 	/* 0x3FC: OOB Channel Control used in 'direct' mode */
 	volatile uint32_t OOBCTL_DIRECT;
 	/* 0x400 - 443: Flash Receive Buffer 0-16 */
 	volatile uint32_t FLASHRXBUF[17];
-	volatile uint32_t reserved8[15];
+	volatile uint32_t reserved9[15];
 	/* 0x480 - 497: Flash Transmit Buffer 0-5 */
 	volatile uint32_t FLASHTXBUF[6];
-	volatile uint32_t reserved9[25];
+	volatile uint32_t reserved10[25];
 	/* 0x4FC: Flash Channel Control used in 'direct' mode */
 	volatile uint32_t FLASHCTL_DIRECT;
 };
@@ -757,6 +766,7 @@ struct espi_reg {
 #define NPCX_VWEVSM_VALID                FIELD(4, 4)
 #define NPCX_VWEVSM_BIT_VALID(n)         (4+n)
 #define NPCX_VWEVSM_HW_WIRE              FIELD(24, 4)
+#define NPCX_VWGPSM_INDEX_EN             15
 #define NPCX_OOBCTL_OOB_FREE             0
 #define NPCX_OOBCTL_OOB_AVAIL            1
 #define NPCX_OOBCTL_RSTBUFHEADS          2
@@ -945,6 +955,7 @@ struct shm_reg {
 #define NPCX_DP80CTL_RFIFO               4
 #define NPCX_DP80CTL_CIEN                5
 #define NPCX_DP80CTL_DP80_HF_CFG         7
+#define NPCX_DP80BUF_OFFS_FIELD          FIELD(8, 3)
 
 /*
  * Keyboard and Mouse Controller (KBC) device registers
@@ -1530,4 +1541,96 @@ struct fiu_reg {
 #define UMA_CODE_CMD_ADR_WR_BYTE(n) (UMA_FLD_EXEC | UMA_FLD_WRITE | \
 					UMA_FLD_ADDR | UMA_FIELD_DATA_##n | \
 					UMA_FLD_SHD_SL)
+
+/* Platform Environment Control Interface (PECI) device registers */
+struct peci_reg {
+	/* 0x000: PECI Control Status */
+	volatile uint8_t PECI_CTL_STS;
+	/* 0x001: PECI Read Length */
+	volatile uint8_t PECI_RD_LENGTH;
+	/* 0x002: PECI Address */
+	volatile uint8_t PECI_ADDR;
+	/* 0x003: PECI Command */
+	volatile uint8_t PECI_CMD;
+	/* 0x004: PECI Control 2 */
+	volatile uint8_t PECI_CTL2;
+	/* 0x005: PECI Index */
+	volatile uint8_t PECI_INDEX;
+	/* 0x006: PECI Index Data */
+	volatile uint8_t PECI_IDATA;
+	/* 0x007: PECI Write Length */
+	volatile uint8_t PECI_WR_LENGTH;
+	volatile uint8_t reserved1[3];
+	/* 0x00B: PECI Write FCS */
+	volatile uint8_t PECI_WR_FCS;
+	/* 0x00C: PECI Read FCS */
+	volatile uint8_t PECI_RD_FCS;
+	/* 0x00D: PECI Assured Write FCS */
+	volatile uint8_t PECI_AW_FCS;
+	volatile uint8_t reserved2;
+	/* 0x00F: PECI Transfer Rate */
+	volatile uint8_t PECI_RATE;
+	/* 0x010 - 0x04F: PECI Data In/Out */
+	union {
+		volatile uint8_t PECI_DATA_IN[64];
+		volatile uint8_t PECI_DATA_OUT[64];
+	};
+};
+
+/* PECI register fields */
+#define NPCX_PECI_CTL_STS_START_BUSY     0
+#define NPCX_PECI_CTL_STS_DONE           1
+#define NPCX_PECI_CTL_STS_CRC_ERR        3
+#define NPCX_PECI_CTL_STS_ABRT_ERR       4
+#define NPCX_PECI_CTL_STS_AWFCS_EB       5
+#define NPCX_PECI_CTL_STS_DONE_EN        6
+#define NPCX_PECI_RATE_MAX_BIT_RATE      FIELD(0, 5)
+#define NPCX_PECI_RATE_MAX_BIT_RATE_MASK 0x1F
+/* The minimal valid value of NPCX_PECI_RATE_MAX_BIT_RATE field */
+#define PECI_MAX_BIT_RATE_VALID_MIN      0x05
+#define PECI_HIGH_SPEED_MIN_VAL          0x07
+
+#define NPCX_PECI_RATE_EHSP              6
+
+/* KBS (Keyboard Scan) device registers */
+struct kbs_reg {
+	volatile uint8_t reserved1[4];
+	/* 0x004: Keyboard Scan In */
+	volatile uint8_t KBSIN;
+	/* 0x005: Keyboard Scan In Pull-Up Enable */
+	volatile uint8_t KBSINPU;
+	/* 0x006: Keyboard Scan Out 0 */
+	volatile uint16_t KBSOUT0;
+	/* 0x008: Keyboard Scan Out 1 */
+	volatile uint16_t KBSOUT1;
+	/* 0x00A: Keyboard Scan Buffer Index */
+	volatile uint8_t KBS_BUF_INDX;
+	/* 0x00B: Keyboard Scan Buffer Data */
+	volatile uint8_t KBS_BUF_DATA;
+	/* 0x00C: Keyboard Scan Event */
+	volatile uint8_t KBSEVT;
+	/* 0x00D: Keyboard Scan Control */
+	volatile uint8_t KBSCTL;
+	/* 0x00E: Keyboard Scan Configuration Index */
+	volatile uint8_t KBS_CFG_INDX;
+	/* 0x00F: Keyboard Scan Configuration Data */
+	volatile uint8_t KBS_CFG_DATA;
+};
+
+/* KBS register fields */
+#define NPCX_KBSBUFINDX                  0
+#define NPCX_KBSEVT_KBSDONE              0
+#define NPCX_KBSEVT_KBSERR               1
+#define NPCX_KBSCTL_START                0
+#define NPCX_KBSCTL_KBSMODE              1
+#define NPCX_KBSCTL_KBSIEN               2
+#define NPCX_KBSCTL_KBSINC               3
+#define NPCX_KBSCTL_KBHDRV_FIELD         FIELD(6, 2)
+#define NPCX_KBSCFGINDX                  0
+/* Index of 'Automatic Scan' configuration register */
+#define KBS_CFG_INDX_DLY1                0 /* Keyboard Scan Delay T1 Byte */
+#define KBS_CFG_INDX_DLY2                1 /* Keyboard Scan Delay T2 Byte */
+#define KBS_CFG_INDX_RTYTO               2 /* Keyboard Scan Retry Timeout */
+#define KBS_CFG_INDX_CNUM                3 /* Keyboard Scan Columns Number */
+#define KBS_CFG_INDX_CDIV                4 /* Keyboard Scan Clock Divisor */
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

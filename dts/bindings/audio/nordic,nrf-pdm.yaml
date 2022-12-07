@@ -16,10 +16,10 @@ properties:
 
     clk-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The CLK pin to use.
 
@@ -35,17 +35,16 @@ properties:
 
     din-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The DIN pin to use. The pin numbering scheme is the same as
         the clk-pin property's.
 
     clock-source:
       type: string
-      required: false
       default: "PCLK32M_HFXO"
       description: |
         Clock source to be used by the PDM peripheral. The following options
@@ -64,7 +63,6 @@ properties:
 
     queue-size:
       type: int
-      required: false
       default: 4
       description: |
         Size of the queue of received audio data blocks to be used

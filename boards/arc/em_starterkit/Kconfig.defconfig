@@ -10,31 +10,7 @@ if GPIO
 config GPIO_INIT_PRIORITY
 	default 70
 
-config GPIO_DW
-	default y
-
-if GPIO_DW
-
-config GPIO_DW_0
-	default y
-
-config GPIO_DW_1
-	default y
-
-config GPIO_DW_2
-	default y
-
-config GPIO_DW_3
-	default y
-
-endif # GPIO_DW
-
 endif # GPIO
-
-if I2C
-
-config I2C_DW
-	default y
 
 if I2C_DW
 
@@ -42,17 +18,6 @@ config I2C_DW_CLOCK_SPEED
 	default 100
 
 endif # I2C_DW
-
-endif # I2C
-
-config UART_NS16550
-	default y
-	depends on SERIAL
-
-if SPI
-
-config SPI_DW
-	default y
 
 if SPI_DW
 
@@ -62,15 +27,6 @@ config SPI_DW_FIFO_DEPTH
 config SPI_DW_ARC_AUX_REGS
 	default n
 
-if BOARD_EM_STARTERKIT_R23
-
-config GPIO_SNPS_CREG
-	default y
-
-endif # BOARD_EM_STARTERKIT_R23
-
 endif # SPI_DW
-
-endif # SPI
 
 endif # BOARD_EM_STARTERKIT

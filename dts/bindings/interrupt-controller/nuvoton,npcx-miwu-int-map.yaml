@@ -28,5 +28,4 @@ child-binding:
           description: group bit-mask for miwu interrupts
        groups:
           type: array
-          required: false
           description: groups shared the same interrupt

@@ -1,16 +1,14 @@
 name: Manifest
 on:
   pull_request_target:
-    paths:
-      - 'west.yml'
 
 jobs:
   contribs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Manifest
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: zephyrproject/zephyr
           ref: ${{ github.event.pull_request.head.sha }}
@@ -18,12 +16,12 @@ jobs:
           persist-credentials: false
 
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@2f1ad2908599d4fe747f886f9d733dd7eebae4ef
+        uses: zephyrproject-rtos/action-manifest@f54422ea250adb7cc1b9f62bfe125978bb2c58ee
         with:
           github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
           manifest-path: 'west.yml'
           checkout-path: 'zephyrproject/zephyr'
           label-prefix: 'manifest-'
           verbosity-level: '1'
-          labels: 'manifest, west'
+          labels: 'manifest'
           dnm-labels: 'DNM'

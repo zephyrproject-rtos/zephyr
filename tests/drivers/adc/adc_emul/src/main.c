@@ -6,10 +6,10 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/adc/adc_emul.h>
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, zephyr_adc_emul))
+#define ADC_DEVICE_NODE		DT_INST(0, zephyr_adc_emul)
 #define ADC_REF_INTERNAL_MV	DT_PROP(DT_INST(0, zephyr_adc_emul), ref_internal_mv)
 #define ADC_REF_EXTERNAL1_MV	DT_PROP(DT_INST(0, zephyr_adc_emul), ref_external1_mv)
 #define ADC_RESOLUTION		14
@@ -32,9 +32,9 @@ static ZTEST_BMEM int16_t m_sample_buffer[BUFFER_SIZE];
  */
 const struct device *get_adc_device(void)
 {
-	const struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
+	const struct device *const adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
-	zassert_not_null(adc_dev, "Cannot get ADC device");
+	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
 	return adc_dev;
 }
@@ -113,9 +113,10 @@ static void check_empty_samples(int expected_count)
 {
 	int i;
 
-	for (i = expected_count; i < BUFFER_SIZE; i++)
+	for (i = expected_count; i < BUFFER_SIZE; i++) {
 		zassert_equal(INVALID_ADC_VALUE, m_sample_buffer[i],
 			      "[%u] should be empty", i);
+	}
 }
 
 /**
@@ -192,7 +193,7 @@ static int handle_seq(const struct device *dev, unsigned int channel,
 }
 
 /** @brief Test setting one channel with constant output. */
-static void test_adc_emul_single_value(void)
+ZTEST_USER(adc_emul, test_adc_emul_single_value)
 {
 	const uint16_t input_mv = 1500;
 	const int samples = 4;
@@ -224,7 +225,7 @@ static void test_adc_emul_single_value(void)
 }
 
 /** @brief Test setting two channels with different constant output */
-static void test_adc_emul_single_value_2ch(void)
+ZTEST_USER(adc_emul, test_adc_emul_single_value_2ch)
 {
 	const uint16_t input1_mv = 3000;
 	const uint16_t input2_mv = 2000;
@@ -266,7 +267,7 @@ static void test_adc_emul_single_value_2ch(void)
 }
 
 /** @brief Test setting one channel with custom function. */
-static void test_adc_emul_custom_function(void)
+ZTEST_USER(adc_emul, test_adc_emul_custom_function)
 {
 	struct handle_seq_params channel1_param;
 	const uint16_t input_mv = 1500;
@@ -305,7 +306,7 @@ static void test_adc_emul_custom_function(void)
  * @brief Test setting two channels with custom function and different
  *        params.
  */
-static void test_adc_emul_custom_function_2ch(void)
+ZTEST_USER(adc_emul, test_adc_emul_custom_function_2ch)
 {
 	struct handle_seq_params channel1_param;
 	struct handle_seq_params channel2_param;
@@ -357,7 +358,7 @@ static void test_adc_emul_custom_function_2ch(void)
  * @brief Test setting two channels, one with custom function and
  *        one with constant value.
  */
-static void test_adc_emul_custom_function_and_value(void)
+ZTEST_USER(adc_emul, test_adc_emul_custom_function_and_value)
 {
 	struct handle_seq_params channel1_param;
 	const uint16_t input1_mv = 1500;
@@ -403,7 +404,7 @@ static void test_adc_emul_custom_function_and_value(void)
 }
 
 /** @brief Test few different settings of gain argument. */
-static void test_adc_emul_gain(void)
+ZTEST_USER(adc_emul, test_adc_emul_gain)
 {
 	const uint16_t input_mv = 1000;
 	uint32_t channel_mask;
@@ -469,7 +470,7 @@ static void test_adc_emul_gain(void)
  *        cropped to reference value and cannot exceed resolution requested in
  *        adc_read().
  */
-static void test_adc_emul_input_higher_than_ref(void)
+ZTEST_USER(adc_emul, test_adc_emul_input_higher_than_ref)
 {
 	const uint16_t input_mv = ADC_REF_INTERNAL_MV + 100;
 	const int samples = 4;
@@ -502,16 +503,17 @@ static void test_adc_emul_input_higher_than_ref(void)
 
 	check_empty_samples(samples);
 
-	for (i = 0; i < samples; i++)
+	for (i = 0; i < samples; i++) {
 		zassert_equal(BIT_MASK(ADC_RESOLUTION), m_sample_buffer[i],
 			      "[%u] raw value isn't max value", i);
+	}
 }
 
 /**
  * @brief Test different reference sources and if error is reported when
  *        unconfigured reference source is requested.
  */
-static void test_adc_emul_reference(void)
+ZTEST_USER(adc_emul, test_adc_emul_reference)
 {
 	const uint16_t input1_mv = 4000;
 	const uint16_t input2_mv = 2000;
@@ -567,7 +569,7 @@ static void test_adc_emul_reference(void)
 }
 
 /** @brief Test setting reference value. */
-static void test_adc_emul_ref_voltage_set(void)
+ZTEST_USER(adc_emul, test_adc_emul_ref_voltage_set)
 {
 	const uint16_t input1_mv = 4000;
 	const uint16_t input2_mv = 2000;
@@ -638,19 +640,11 @@ static void test_adc_emul_ref_voltage_set(void)
 	check_empty_samples(samples * 2);
 }
 
-void test_main(void)
+void *adc_emul_setup(void)
 {
 	k_object_access_grant(get_adc_device(), k_current_get());
 
-	ztest_test_suite(adc_basic_test,
-			 ztest_user_unit_test(test_adc_emul_single_value),
-			 ztest_user_unit_test(test_adc_emul_single_value_2ch),
-			 ztest_user_unit_test(test_adc_emul_custom_function),
-			 ztest_user_unit_test(test_adc_emul_custom_function_2ch),
-			 ztest_user_unit_test(test_adc_emul_custom_function_and_value),
-			 ztest_user_unit_test(test_adc_emul_gain),
-			 ztest_user_unit_test(test_adc_emul_input_higher_than_ref),
-			 ztest_user_unit_test(test_adc_emul_reference),
-			 ztest_user_unit_test(test_adc_emul_ref_voltage_set));
-	ztest_run_test_suite(adc_basic_test);
+	return NULL;
 }
+
+ZTEST_SUITE(adc_emul, NULL, adc_emul_setup, NULL, NULL, NULL);

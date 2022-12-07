@@ -14,8 +14,7 @@
 	compatible = "arduino,arduino_nano_33_ble_sense";
 
 	mic_pwr: mic_pwr {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "mic_pwr";
+		compatible = "regulator-fixed";
 		regulator-name = "mic_pwr";
 		enable-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -27,21 +26,18 @@
 		compatible = "st,hts221";
 		status = "okay";
 		reg = <0x5f>;
-		label = "HTS221";
 	};
 
 	lps22hb: lps22hb-press@5c {
 		compatible = "st,lps22hb-press";
 		status = "okay";
 		reg = <0x5c>;
-		label = "LPS22HB";
 	};
 
 	apds9960: apds9960@39 {
 		compatible = "avago,apds9960";
 		status = "okay";
 		reg = <0x39>;
-		label = "APDS9960";
 		int-gpios = <&gpio0 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 };

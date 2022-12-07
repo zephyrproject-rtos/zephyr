@@ -21,6 +21,9 @@ static volatile bool read_complete;
 static volatile bool call_placed;
 static volatile uint8_t call_state;
 static volatile uint8_t call_index;
+static volatile uint8_t tbs_count;
+
+CREATE_FLAG(ccid_read_flag);
 
 static void tbs_client_call_states_cb(struct bt_conn *conn, int err,
 				      uint8_t index, uint8_t call_count,
@@ -58,7 +61,7 @@ static void tbs_client_read_bearer_provider_name(struct bt_conn *conn, int err,
 }
 
 static void tbs_client_discover_cb(struct bt_conn *conn, int err,
-				   uint8_t tbs_count, bool gtbs_found)
+				   uint8_t count, bool gtbs_found)
 {
 	printk("%s\n", __func__);
 	if (err != 0) {
@@ -66,8 +69,30 @@ static void tbs_client_discover_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
+	tbs_count = count;
 	is_gtbs_found = true;
 	discovery_complete = true;
+}
+
+static void tbs_client_read_ccid_cb(struct bt_conn *conn, int err,
+				    uint8_t inst_index, uint32_t value)
+{
+	struct bt_tbs_instance *inst;
+
+	if (value > UINT8_MAX) {
+		FAIL("Invalid CCID: %u", value);
+		return;
+	}
+
+	printk("Read CCID %u on index %u\n", value, inst_index);
+
+	inst = bt_tbs_client_get_by_ccid(conn, (uint8_t)value);
+	if (inst == NULL) {
+		FAIL("Could not get instance by CCID: %u", value);
+		return;
+	}
+
+	SET_FLAG(ccid_read_flag);
 }
 
 static const struct bt_tbs_client_cb tbs_client_cbs = {
@@ -77,7 +102,6 @@ static const struct bt_tbs_client_cb tbs_client_cbs = {
 	.hold_call = NULL,
 	.accept_call = NULL,
 	.retrieve_call = NULL,
-	.join_calls = NULL,
 	.bearer_provider_name = tbs_client_read_bearer_provider_name,
 	.bearer_uci = NULL,
 	.technology = NULL,
@@ -85,7 +109,7 @@ static const struct bt_tbs_client_cb tbs_client_cbs = {
 	.signal_strength = NULL,
 	.signal_interval = NULL,
 	.current_calls = NULL,
-	.ccid = NULL,
+	.ccid = tbs_client_read_ccid_cb,
 	.status_flags = NULL,
 	.call_uri = NULL,
 	.call_state = tbs_client_call_states_cb,
@@ -122,6 +146,39 @@ static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
+
+static void test_ccid(void)
+{
+	if (is_gtbs_found) {
+		int err;
+
+		UNSET_FLAG(ccid_read_flag);
+		printk("Reading GTBS CCID\n");
+
+		err = bt_tbs_client_read_ccid(default_conn, BT_TBS_GTBS_INDEX);
+		if (err != 0) {
+			FAIL("Read GTBS CCID failed (%d)\n", err);
+			return;
+		}
+
+		WAIT_FOR_FLAG(ccid_read_flag);
+	}
+
+	for (uint8_t i = 0; i < tbs_count; i++) {
+		int err;
+
+		UNSET_FLAG(ccid_read_flag);
+		printk("Reading bearer CCID on index %u\n", i);
+
+		err = bt_tbs_client_read_ccid(default_conn, i);
+		if (err != 0) {
+			FAIL("Read bearer CCID failed (%d)\n", err);
+			return;
+		}
+
+		WAIT_FOR_FLAG(ccid_read_flag);
+	}
+}
 
 static void test_main(void)
 {
@@ -202,6 +259,8 @@ static void test_main(void)
 	if (err != 0) {
 		FAIL("Read bearer provider name failed (%d)\n", err);
 	}
+
+	test_ccid();
 
 	WAIT_FOR_COND(read_complete);
 	PASS("TBS_CLIENT Passed\n");

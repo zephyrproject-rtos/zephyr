@@ -1,0 +1,66 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Immediate mode cannot be used with network backend as it would cause the sent
+# rsyslog message to be malformed.
+config LOG_BACKEND_NET
+	bool "Networking backend"
+	depends on NETWORKING && NET_UDP && !LOG_MODE_IMMEDIATE
+	select NET_CONTEXT_NET_PKT_POOL
+	select LOG_OUTPUT
+	help
+	  Send syslog messages to network server.
+	  See RFC 5424 (syslog protocol) and RFC 5426 (syslog over UDP)
+	  specifications for details.
+
+if LOG_BACKEND_NET
+
+config LOG_BACKEND_NET_SERVER
+	string "Syslog server IP address"
+	help
+	  This can be either IPv4 or IPv6 address.
+	  Server listen UDP port number can be configured here too.
+	  Following syntax is supported:
+	  192.0.2.1:514
+	  192.0.2.42
+	  [2001:db8::1]:514
+	  [2001:db8::2]
+	  2001:db::42
+
+config LOG_BACKEND_NET_MAX_BUF
+	int "How many network buffers to allocate for sending messages"
+	range 3 256
+	default 3
+	help
+	  Each syslog message should fit into a network packet that will be
+	  sent to server. This number tells how many syslog messages can be
+	  in transit to the server.
+
+config LOG_BACKEND_NET_MAX_BUF_SIZE
+	int "Max syslog message size"
+	range 64 1180
+	default 1180 if NET_IPV6
+	default 480 if NET_IPV4
+	default 256
+	help
+	  As each syslog message needs to fit to UDP packet, set this value
+	  so that messages are not truncated.
+	  The RFC 5426 recommends that for IPv4 the size is 480 octets and for
+	  IPv6 the size is 1180 octets. As each buffer will use RAM, the value
+	  should be selected so that typical messages will fit the buffer.
+
+config LOG_BACKEND_NET_AUTOSTART
+	bool "Automatically start networking backend"
+	default y if NET_CONFIG_NEED_IPV4 || NET_CONFIG_NEED_IPV6
+	help
+	  When enabled automatically start the networking backend on
+	  application start. If no routes to the logging server are available
+	  on application startup, this must be set to n and the backend must be
+	  started by the application later on. Otherwise the logging
+	  thread might block.
+
+backend = NET
+backend-str = net
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_NET

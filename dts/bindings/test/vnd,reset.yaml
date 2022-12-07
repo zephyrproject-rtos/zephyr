@@ -10,7 +10,6 @@ include: [base.yaml, reset-controller.yaml]
 properties:
     reg-width:
       type: int
-      required: false
       description: Register width
     "#reset-cells":
       const: 1

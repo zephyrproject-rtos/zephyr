@@ -3,7 +3,9 @@
 
 config AUDIO_MPXXDTYY
 	bool "ST Digital PDM microphone attached to I2S support"
-	depends on I2S
+	default y
+	depends on DT_HAS_ST_MPXXDTYY_ENABLED
+	select I2S
 	select HAS_STLIB
 	help
 	  Enable MPXXDTYY microphone support on the selected board

@@ -6,11 +6,12 @@
 
 #define DT_DRV_COMPAT microchip_mpfs_qspi
 
-#include <device.h>
-#include <drivers/spi.h>
-#include <sys/sys_io.h>
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(mss_qspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
@@ -145,9 +146,9 @@ static inline void mss_qspi_transmit_x8(const struct device *dev, uint32_t len)
 	skips &= ~MSS_QSPI_CONTROL_FLAGSX4;
 	mss_qspi_write(s, skips, MSS_QSPI_REG_CONTROL);
 	for (count = 0; count < len; ++count) {
-		while (mss_qspi_read(s, MSS_QSPI_REG_STATUS)
-				& MSS_QSPI_STATUS_TXFIFOFULL)
+		while (mss_qspi_read(s, MSS_QSPI_REG_STATUS) & MSS_QSPI_STATUS_TXFIFOFULL) {
 			;
+		}
 		if (spi_context_tx_buf_on(ctx)) {
 			mss_qspi_write(s, ctx->tx_buf[0], MSS_QSPI_REG_TX_DATA);
 			spi_context_update_tx(ctx, 1, 1);
@@ -166,9 +167,9 @@ static inline void mss_qspi_transmit_x32(const struct device *dev, uint32_t len)
 	ctrl |= MSS_QSPI_CONTROL_FLAGSX4;
 	mss_qspi_write(s, ctrl, MSS_QSPI_REG_CONTROL);
 	for (count = 0; count < len / 4; ++count) {
-		while (mss_qspi_read(s, MSS_QSPI_REG_STATUS)
-				& MSS_QSPI_STATUS_TXFIFOFULL)
+		while (mss_qspi_read(s, MSS_QSPI_REG_STATUS) & MSS_QSPI_STATUS_TXFIFOFULL) {
 			;
+		}
 		if (spi_context_tx_buf_on(ctx)) {
 			wdata = UNALIGNED_GET((uint32_t *)(ctx->tx_buf));
 			mss_qspi_write(s, wdata, MSS_QSPI_REG_X4_TX_DATA);
@@ -188,9 +189,9 @@ static inline void mss_qspi_receive_x32(const struct device *dev, uint32_t len)
 	ctrl |= MSS_QSPI_CONTROL_FLAGSX4;
 	mss_qspi_write(s, ctrl, MSS_QSPI_REG_CONTROL);
 	for (count = 0; count < len / 4; ++count) {
-		while ((mss_qspi_read(s, MSS_QSPI_REG_STATUS)
-					& MSS_QSPI_STATUS_RXFIFOEMPTY))
+		while ((mss_qspi_read(s, MSS_QSPI_REG_STATUS) & MSS_QSPI_STATUS_RXFIFOEMPTY)) {
 			;
+		}
 		if (spi_context_rx_buf_on(ctx)) {
 			temp = mss_qspi_read(s, MSS_QSPI_REG_X4_RX_DATA);
 			UNALIGNED_PUT(temp, (uint32_t *)ctx->rx_buf);
@@ -210,9 +211,9 @@ static inline void mss_qspi_receive_x8(const struct device *dev, uint32_t len)
 	rdata &= ~MSS_QSPI_CONTROL_FLAGSX4;
 	mss_qspi_write(s, rdata, MSS_QSPI_REG_CONTROL);
 	for (count = 0; count < len; ++count) {
-		while (mss_qspi_read(s, MSS_QSPI_REG_STATUS)
-				& MSS_QSPI_STATUS_RXFIFOEMPTY)
+		while (mss_qspi_read(s, MSS_QSPI_REG_STATUS) & MSS_QSPI_STATUS_RXFIFOEMPTY) {
 			;
+		}
 		if (spi_context_rx_buf_on(ctx)) {
 			rdata =  mss_qspi_read(s, MSS_QSPI_REG_RX_DATA);
 			UNALIGNED_PUT(rdata, (uint8_t *)ctx->rx_buf);
@@ -236,14 +237,16 @@ static inline void mss_qspi_config_frames(const struct device *dev,
 	} else {
 		skips |= ((total_bytes << MSS_QSPI_FRAMES_CMDBYTES) & MSS_QSPI_FRAMES_CMDBYTES_MSK);
 	}
-	if (mss_qspi_read(s, MSS_QSPI_REG_CONTROL) & MSS_QSPI_CONTROL_MODE0)
+	if (mss_qspi_read(s, MSS_QSPI_REG_CONTROL) & MSS_QSPI_CONTROL_MODE0) {
 		skips |= MSS_QSPI_FRAMES_QSPI;
+	}
 
 	skips &= ~MSS_QSPI_FRAMES_IDLE_MSK;
-	if (x8)
+	if (x8) {
 		skips |= MSS_QSPI_FRAMES_FLAGBYTE;
-	else
+	} else {
 		skips |= MSS_QSPI_FRAMES_FLAGWORD;
+	}
 
 	mss_qspi_write(s, skips, MSS_QSPI_REG_FRAMES);
 }
@@ -317,16 +320,19 @@ static inline void mss_qspi_receive(const struct device *dev)
 
 	rd_bytes = spi_context_longest_current_buf(ctx);
 	if (rd_bytes) {
-		if (rd_bytes >= 4)
+		if (rd_bytes >= 4) {
 			mss_qspi_receive_x32(dev, rd_bytes);
+		}
 
 		skips = mss_qspi_read(s, MSS_QSPI_REG_CONTROL);
 		skips &= ~MSS_QSPI_CONTROL_FLAGSX4;
 		mss_qspi_write(s, skips, MSS_QSPI_REG_CONTROL);
 		idx = (rd_bytes - (rd_bytes % 4u));
 		for (; idx < rd_bytes; ++idx) {
-			while (mss_qspi_read(s, MSS_QSPI_REG_STATUS) & MSS_QSPI_STATUS_RXFIFOEMPTY)
+			while (mss_qspi_read(s, MSS_QSPI_REG_STATUS) &
+			       MSS_QSPI_STATUS_RXFIFOEMPTY) {
 				;
+			}
 			if (spi_context_rx_buf_on(ctx)) {
 				rdata =  mss_qspi_read(s, MSS_QSPI_REG_RX_DATA);
 				UNALIGNED_PUT(rdata, (uint8_t *)ctx->rx_buf);
@@ -342,8 +348,9 @@ static inline int mss_qspi_clk_gen_set(const struct mss_qspi_config *s,
 	uint32_t control = mss_qspi_read(s, MSS_QSPI_REG_CONTROL);
 	uint32_t idx, clkrate, val = 0, speed;
 
-	if (spi_cfg->frequency > s->clock_freq)
+	if (spi_cfg->frequency > s->clock_freq) {
 		speed = s->clock_freq / 2;
+	}
 
 	for (idx = 1; idx < 16; idx++) {
 		clkrate = s->clock_freq / (2 * idx);
@@ -424,8 +431,9 @@ static void mss_qspi_interrupt(const struct device *dev)
 	int intfield = mss_qspi_read(cfg, MSS_QSPI_REG_STATUS);
 	int ienfield = mss_qspi_read(cfg, MSS_QSPI_REG_IEN);
 
-	if ((intfield & ienfield) == 0)
+	if ((intfield & ienfield) == 0) {
 		return;
+	}
 
 	if (intfield & MSS_QSPI_IEN_TXDONE) {
 		mss_qspi_write(cfg, MSS_QSPI_IEN_TXDONE, MSS_QSPI_REG_STATUS);
@@ -438,7 +446,7 @@ static void mss_qspi_interrupt(const struct device *dev)
 
 	if ((intfield & MSS_QSPI_IEN_RXDONE))  {
 		mss_qspi_write(cfg, MSS_QSPI_IEN_RXDONE, MSS_QSPI_REG_STATUS);
-		spi_context_complete(ctx, 0);
+		spi_context_complete(ctx, dev, 0);
 	}
 
 	if (intfield & MSS_QSPI_IEN_TXAVAILABLE) {
@@ -490,14 +498,16 @@ static int mss_qspi_transceive(const struct device *dev,
 			       const struct spi_config *spi_cfg,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs,
-			       bool async, struct k_poll_signal *sig)
+			       bool async,
+			       spi_callback_t cb,
+			       void *userdata)
 {
 	const struct mss_qspi_config *config = dev->config;
 	struct mss_qspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret = 0;
 
-	spi_context_lock(ctx, async, sig, spi_cfg);
+	spi_context_lock(ctx, async, cb, userdata, spi_cfg);
 	ret = mss_qspi_configure(dev, spi_cfg);
 	if (ret) {
 		goto out;
@@ -521,7 +531,7 @@ static int mss_qspi_transceive_blocking(const struct device *dev,
 					const struct spi_buf_set *rx_bufs)
 {
 	return mss_qspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, false,
-				       NULL);
+				   NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -529,10 +539,11 @@ static int mss_qspi_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     spi_callback_t cb,
+				     void *userdata)
 {
 	return mss_qspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true,
-				       async);
+				   cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 

@@ -72,7 +72,7 @@ What the build system does with bindings
 ========================================
 
 The build system uses bindings both to validate devicetree nodes and to convert
-the devicetree's contents into the generated :ref:`devicetree_unfixed.h
+the devicetree's contents into the generated :ref:`devicetree_generated.h
 <dt-outputs>` header file.
 
 For example, the build system would use the above binding to check that the
@@ -298,10 +298,6 @@ For example, a binding for a UART peripheral might look something like this:
        type: int
        description: current baud rate
        required: true
-     label:
-       type: string
-       description: human-readable name
-       required: false
 
 The properties in the following node would be validated by the above binding:
 
@@ -311,7 +307,6 @@ The properties in the following node would be validated by the above binding:
    	compatible = "manufacturer,serial";
    	reg = <0xdeadbeef 0x1000>;
    	current-speed = <115200>;
-        label = "UART_0";
    };
 
 This is used to check that required properties appear, and to control the
@@ -341,14 +336,12 @@ Here are some more examples.
        # Describes an optional property like 'keys = "foo", "bar";'
        keys:
            type: string-array
-           required: false
            description: Keys for bar-device
 
        # Describes an optional property like 'maximum-speed = "full-speed";'
        # the enum specifies known values that the string property may take
        maximum-speed:
            type: string
-           required: false
            description: Configures USB controllers to work up to a specific speed.
            enum:
               - "low-speed"
@@ -360,7 +353,6 @@ Here are some more examples.
        # the enum specifies known values that the int property may take
        resolution:
          type: int
-         required: false
          enum:
           - 8
           - 16
@@ -376,28 +368,23 @@ Here are some more examples.
 
        int-with-default:
            type: int
-           required: false
            default: 123
            description: Value for int register, default is power-up configuration.
 
        array-with-default:
            type: array
-           required: false
            default: [1, 2, 3] # Same as 'array-with-default = <1 2 3>'
 
        string-with-default:
            type: string
-           required: false
            default: "foo"
 
        string-array-with-default:
            type: string-array
-           required: false
            default: ["foo", "bar"] # Same as 'string-array-with-default = "foo", "bar"'
 
        uint8-array-with-default:
            type: uint8-array
-           required: false
            default: [0x12, 0x34] # Same as 'uint8-array-with-default = [12 34]'
 
 Property entry syntax
@@ -420,13 +407,17 @@ this:
        - <item2>
        ...
        - <itemN>
-     const: <string | int>
+     const: <string | int | array | uint8-array | string-array>
 
 Required properties
 +++++++++++++++++++
 
 If a node matches a binding but is missing any property which the binding
 defines with ``required: true``, the build fails.
+
+Note: A property is implicitly optional unless ``required: true`` is
+specified. Using ``required: false`` is therefore redundant and strongly
+discouraged.
 
 Property types
 ++++++++++++++
@@ -445,7 +436,7 @@ for more details about writing values of each type in a DTS file.
 
    * - ``string``
      - exactly one string
-     - ``label = "UART_0";``
+     - ``status = "disabled";``
 
    * - ``int``
      - exactly one 32-bit value (cell)
@@ -519,34 +510,10 @@ If property ``foo`` is missing in a matching node, then the output will be as
 if ``foo = <3>;`` had appeared in the DTS (except YAML data types are used for
 the default value).
 
-Note that it only makes sense to combine ``default:`` with ``required: false``.
-Combining it with ``required: true`` will raise an error.
+Note that combining ``default:`` with ``required: true`` will raise an error.
 
-There is a risk in using ``default:`` when the value in the binding may be
-incorrect for a particular board or hardware configuration.  For example,
-defaulting the capacity of the connected power cell in a charging IC binding
-is likely to be incorrect.  For such properties it's better to make the
-property ``required: true``, forcing the devicetree maintainer into an explicit
-and witting choice.
-
-Driver developers should use their best judgment as to whether a value can be
-safely defaulted. Candidates for default values include:
-
-- delays that would be different only under unusual conditions
-  (such as intervening hardware)
-- configuration for devices that have a standard initial configuration (such as
-  a USB audio headset)
-- defaults which match the vendor-specified power-on reset value
-  (as long as they are independent from other properties)
-
-Power-on reset values may be used for defaults as long as they're independent.
-If changing one property would require changing another to create a consistent
-configuration, then those properties should be made required.
-
-In any case where ``default:`` is used, the property documentation should
-explain why the value was selected and any conditions that would make it
-necessary to provide a different value. (This is mandatory for built-in
-bindings.)
+For rules related to ``default`` in upstream Zephyr bindings, see
+:ref:`dt-bindings-default-rules`.
 
 See :ref:`dt-bindings-example-properties` for examples. Putting ``default:`` on
 any property type besides those used in the examples will raise an error.
@@ -653,6 +620,15 @@ children of any node matching this binding appear on this type of bus.
 This in turn influences the way ``on-bus:`` is used to match bindings for the
 child nodes.
 
+For a single bus supporting multiple protocols, e.g. I3C and I2C, the ``bus:``
+in the binding can have a list as value:
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,i3c-controller"
+   bus: [i3c, i2c]
+   # ...
+
 .. _dt-bindings-on-bus:
 
 On-bus
@@ -724,7 +700,6 @@ nodes, even though they have the same compatible:
    properties:
      uses-clock-stretching:
        type: boolean
-       required: false
    on-bus: i2c
 
 Only ``sensor@79`` can have a ``use-clock-stretching`` property. The
@@ -844,7 +819,17 @@ included into this binding.
 
 Included files are merged into bindings with a simple recursive dictionary
 merge. The build system will check that the resulting merged binding is
-well-formed.
+well-formed. It is allowed to include at any level, including ``child-binding``,
+like this:
+
+.. code-block:: YAML
+
+   # foo.yaml will be merged with content at this level
+   include: foo.yaml
+
+   child-binding:
+     # bar.yaml will be merged with content at this level
+     include: bar.yaml
 
 It is an error if a key appears with a different value in a binding and in a
 file it includes, with one exception: a binding can have ``required: true`` for
@@ -947,8 +932,8 @@ Decisions made by the Zephyr devicetree maintainer override the contents of
 this section. If that happens, though, please let them know so they can update
 this page, or you can send a patch yourself.
 
-Check for existing bindings
-===========================
+Always check for existing bindings
+==================================
 
 Zephyr aims for devicetree :ref:`dt-source-compatibility`. Therefore, if there
 is an existing binding for your device in an authoritative location, you should
@@ -1017,8 +1002,8 @@ General rules
   this rule is if you are replicating a well-established binding from somewhere
   like Linux.)
 
-Vendor prefixes
-===============
+Rules for vendor prefixes
+=========================
 
 The following general rules apply to vendor prefixes in :ref:`compatible
 <dt-important-props>` properties.
@@ -1053,6 +1038,83 @@ The following general rules apply to vendor prefixes in :ref:`compatible
 - If your binding is describing an abstract class of hardware with Zephyr
   specific drivers handling the nodes, it's usually best to use ``zephyr`` as
   the vendor prefix. See :ref:`dt_vendor_zephyr` for examples.
+
+.. _dt-bindings-default-rules:
+
+Rules for default values
+========================
+
+In any case where ``default:`` is used in a devicetree binding, the
+``description:`` for that property **must** explain *why* the value was
+selected and any conditions that would make it necessary to provide a different
+value. Additionally, if changing one property would require changing another to
+create a consistent configuration, then those properties should be made
+required.
+
+There is no need to document the default value itself; this is already present
+in the :ref:`devicetree_binding_index` output.
+
+There is a risk in using ``default:`` when the value in the binding may be
+incorrect for a particular board or hardware configuration.  For example,
+defaulting the capacity of the connected power cell in a charging IC binding
+is likely to be incorrect.  For such properties it's better to make the
+property ``required: true``, forcing the user to make an explicit choice.
+
+Driver developers should use their best judgment as to whether a value can be
+safely defaulted. Candidates for default values include:
+
+- delays that would be different only under unusual conditions
+  (such as intervening hardware)
+- configuration for devices that have a standard initial configuration (such as
+  a USB audio headset)
+- defaults which match the vendor-specified power-on reset value
+  (as long as they are independent from other properties)
+
+Examples of how to write descriptions according to these rules:
+
+.. code-block:: yaml
+
+   properties:
+     cs-interval:
+       type: int
+       default: 0
+       description: |
+         Minimum interval between chip select deassertion and assertion.
+         The default corresponds to the reset value of the register field.
+     hold-time-ms:
+       type: int
+       default: 20
+       description: |
+         Amount of time to hold the power enable GPIO asserted before
+         initiating communication. The default was recommended in the
+         manufacturer datasheet, and would only change under very
+         cold temperatures.
+
+Some examples of what **not** to do, and why:
+
+.. code-block:: yaml
+
+   properties:
+     # Description doesn't mention anything about the default
+     foo:
+       type: int
+       default: 1
+       description: number of foos
+
+     # Description mentions the default value instead of why it
+     # was chosen
+     bar:
+       type: int
+       default: 2
+       description: bar size; default is 2
+
+     # Explanation of the default value is in a comment instead
+     # of the description. This won't be shown in the bindings index.
+     baz:
+       type: int
+       # This is the recommended value chosen by the manufacturer.
+       default: 2
+       description: baz time in milliseconds
 
 .. _dt-inferred-bindings:
 .. _dt-zephyr-user:

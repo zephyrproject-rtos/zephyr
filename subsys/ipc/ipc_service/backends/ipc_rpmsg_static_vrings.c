@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/atomic.h>
@@ -86,6 +86,21 @@ static struct ipc_rpmsg_ept *get_ept_slot_with_name(struct ipc_rpmsg_instance *r
 static struct ipc_rpmsg_ept *get_available_ept_slot(struct ipc_rpmsg_instance *rpmsg_inst)
 {
 	return get_ept_slot_with_name(rpmsg_inst, "");
+}
+
+static bool check_endpoints_freed(struct ipc_rpmsg_instance *rpmsg_inst)
+{
+	struct ipc_rpmsg_ept *rpmsg_ept;
+
+	for (size_t i = 0; i < NUM_ENDPOINTS; i++) {
+		rpmsg_ept = &rpmsg_inst->endpoint[i];
+
+		if (strcmp("", rpmsg_ept->name) != 0) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /*
@@ -239,7 +254,8 @@ static int vr_shm_configure(struct ipc_static_vrings *vr, const struct backend_c
 	vr->shm_size = shm_size(num_desc, conf->buffer_size) - VDEV_STATUS_SIZE;
 
 	vr->rx_addr = vr->shm_addr + VRING_COUNT * vq_ring_size(num_desc, conf->buffer_size);
-	vr->tx_addr = vr->rx_addr + vring_size(num_desc, VRING_ALIGNMENT);
+	vr->tx_addr = ROUND_UP(vr->rx_addr + vring_size(num_desc, VRING_ALIGNMENT),
+			       VRING_ALIGNMENT);
 
 	vr->status_reg_addr = conf->shm_addr;
 
@@ -296,6 +312,26 @@ static int mbox_init(const struct device *instance)
 	}
 
 	return mbox_set_enabled(&conf->mbox_rx, 1);
+}
+
+static int mbox_deinit(const struct device *instance)
+{
+	const struct backend_config_t *conf = instance->config;
+	struct backend_data_t *data = instance->data;
+	k_tid_t wq_thread;
+	int err;
+
+	err = mbox_set_enabled(&conf->mbox_rx, 0);
+	if (err != 0) {
+		return err;
+	}
+
+	k_work_queue_drain(&data->mbox_wq, 1);
+
+	wq_thread = k_work_queue_thread_get(&data->mbox_wq);
+	k_thread_abort(wq_thread);
+
+	return 0;
 }
 
 static struct ipc_rpmsg_ept *register_ept_on_host(struct ipc_rpmsg_instance *rpmsg_inst,
@@ -393,6 +429,30 @@ static int register_ept(const struct device *instance, void **token,
 	return 0;
 }
 
+static int deregister_ept(const struct device *instance, void *token)
+{
+	struct backend_data_t *data = instance->data;
+	struct ipc_rpmsg_ept *rpmsg_ept;
+
+	/* Instance is not ready */
+	if (atomic_get(&data->state) != STATE_INITED) {
+		return -EBUSY;
+	}
+
+	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	/* Endpoint is not registered with instance */
+	if (!rpmsg_ept) {
+		return -ENOENT;
+	}
+
+	rpmsg_destroy_ept(&rpmsg_ept->ep);
+
+	memset(rpmsg_ept, 0, sizeof(struct ipc_rpmsg_ept));
+
+	return 0;
+}
+
 static int send(const struct device *instance, void *token,
 		const void *msg, size_t len)
 {
@@ -411,6 +471,11 @@ static int send(const struct device *instance, void *token,
 	}
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	/* Endpoint is not registered with instance */
+	if (!rpmsg_ept) {
+		return -ENOENT;
+	}
 
 	ret = rpmsg_send(&rpmsg_ept->ep, msg, len);
 
@@ -439,6 +504,11 @@ static int send_nocopy(const struct device *instance, void *token,
 	}
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	/* Endpoint is not registered with instance */
+	if (!rpmsg_ept) {
+		return -ENOENT;
+	}
 
 	return rpmsg_send_nocopy(&rpmsg_ept->ep, msg, len);
 }
@@ -504,6 +574,50 @@ error:
 
 }
 
+static int close(const struct device *instance)
+{
+	const struct backend_config_t *conf = instance->config;
+	struct backend_data_t *data = instance->data;
+	struct ipc_rpmsg_instance *rpmsg_inst;
+	int err;
+
+	if (!atomic_cas(&data->state, STATE_INITED, STATE_BUSY)) {
+		return -EALREADY;
+	}
+
+	rpmsg_inst = &data->rpmsg_inst;
+
+	if (!check_endpoints_freed(rpmsg_inst)) {
+		return -EBUSY;
+	}
+
+	err = ipc_rpmsg_deinit(rpmsg_inst, data->role);
+	if (err != 0) {
+		goto error;
+	}
+
+	err = mbox_deinit(instance);
+	if (err != 0) {
+		goto error;
+	}
+
+	err = ipc_static_vrings_deinit(&data->vr, conf->role);
+	if (err != 0) {
+		goto error;
+	}
+
+	memset(&data->vr, 0, sizeof(struct ipc_static_vrings));
+	memset(rpmsg_inst, 0, sizeof(struct ipc_rpmsg_instance));
+
+	atomic_set(&data->state, STATE_READY);
+	return 0;
+
+error:
+	/* Back to the inited state */
+	atomic_set(&data->state, STATE_INITED);
+	return err;
+}
+
 static int get_tx_buffer_size(const struct device *instance, void *token)
 {
 	struct backend_data_t *data = instance->data;
@@ -519,6 +633,11 @@ static int get_tx_buffer(const struct device *instance, void *token,
 	void *payload;
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	/* Endpoint is not registered with instance */
+	if (!rpmsg_ept) {
+		return -ENOENT;
+	}
 
 	if (!r_data || !size) {
 		return -EINVAL;
@@ -562,6 +681,11 @@ static int hold_rx_buffer(const struct device *instance, void *token,
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
 
+	/* Endpoint is not registered with instance */
+	if (!rpmsg_ept) {
+		return -ENOENT;
+	}
+
 	rpmsg_hold_rx_buffer(&rpmsg_ept->ep, data);
 
 	return 0;
@@ -573,6 +697,11 @@ static int release_rx_buffer(const struct device *instance, void *token,
 	struct ipc_rpmsg_ept *rpmsg_ept;
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	/* Endpoint is not registered with instance */
+	if (!rpmsg_ept) {
+		return -ENOENT;
+	}
 
 	rpmsg_release_rx_buffer(&rpmsg_ept->ep, data);
 
@@ -588,7 +717,9 @@ static int drop_tx_buffer(const struct device *instance, void *token,
 
 const static struct ipc_service_backend backend_ops = {
 	.open_instance = open,
+	.close_instance = close,
 	.register_endpoint = register_ept,
+	.deregister_endpoint = deregister_ept,
 	.send = send,
 	.send_nocopy = send_nocopy,
 	.drop_tx_buffer = drop_tx_buffer,

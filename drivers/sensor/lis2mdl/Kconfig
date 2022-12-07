@@ -3,7 +3,10 @@
 
 menuconfig LIS2MDL
 	bool "LIS2MDL Magnetometer"
-	depends on I2C || SPI
+	default y
+	depends on DT_HAS_ST_LIS2MDL_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2MDL),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2MDL),spi)
 	select HAS_STMEMSC
 	select USE_STDC_LIS2MDL
 	help

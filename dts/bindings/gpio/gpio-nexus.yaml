@@ -10,11 +10,9 @@ properties:
 
     gpio-map-mask:
       type: compound
-      required: false
 
     gpio-map-pass-thru:
       type: compound
-      required: false
 
     "#gpio-cells":
       type: int

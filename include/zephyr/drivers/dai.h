@@ -24,6 +24,8 @@
  * @{
  */
 
+#include <errno.h>
+
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 
@@ -160,6 +162,11 @@ enum dai_trigger_cmd {
 	 * state.
 	 */
 	DAI_TRIGGER_RESET,
+	/** @brief Copy
+	 *
+	 * This trigger prepares for data copying.
+	 */
+	DAI_TRIGGER_COPY,
 };
 
 /** @brief Properties of DAI

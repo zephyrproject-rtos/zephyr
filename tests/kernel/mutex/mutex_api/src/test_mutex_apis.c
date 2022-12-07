@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define TIMEOUT 500
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -35,7 +35,7 @@ static void tThread_entry_lock_forever(void *p1, void *p2, void *p3)
 
 static void tThread_entry_lock_no_wait(void *p1, void *p2, void *p3)
 {
-	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_NO_WAIT) != 0, NULL);
+	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_NO_WAIT) != 0);
 	TC_PRINT("bypass locked resource from spawn thread\n");
 }
 
@@ -62,7 +62,7 @@ static void tmutex_test_lock(struct k_mutex *pmutex,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0, NULL);
+	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0);
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
@@ -78,7 +78,7 @@ static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0, NULL);
+	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0);
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
@@ -188,7 +188,7 @@ static void tThread_waiter(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
-void test_mutex_reent_lock_forever(void)
+ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	k_mutex_init(&mutex);
@@ -200,7 +200,7 @@ void test_mutex_reent_lock_forever(void)
 	k_thread_abort(&tdata);
 }
 
-void test_mutex_reent_lock_no_wait(void)
+ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	tmutex_test_lock(&mutex, tThread_entry_lock_no_wait);
@@ -209,7 +209,7 @@ void test_mutex_reent_lock_no_wait(void)
 	tmutex_test_lock(&kmutex, tThread_entry_lock_no_wait);
 }
 
-void test_mutex_reent_lock_timeout_fail(void)
+ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	tmutex_test_lock_timeout(&mutex, tThread_entry_lock_timeout_fail);
@@ -218,7 +218,7 @@ void test_mutex_reent_lock_timeout_fail(void)
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
 }
 
-void test_mutex_reent_lock_timeout_pass(void)
+ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	tmutex_test_lock_timeout(&mutex, tThread_entry_lock_timeout_pass);
@@ -227,7 +227,7 @@ void test_mutex_reent_lock_timeout_pass(void)
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
 }
 
-void test_mutex_lock_unlock(void)
+ZTEST_USER(mutex_api_1cpu, test_mutex_lock_unlock)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	tmutex_test_lock_unlock(&mutex);
@@ -243,7 +243,7 @@ void test_mutex_lock_unlock(void)
  * reaches zero.
  * @ingroup kernel_mutex_tests
  */
-void test_mutex_recursive(void)
+ZTEST_USER(mutex_api, test_mutex_recursive)
 {
 	k_mutex_init(&mutex);
 
@@ -258,6 +258,7 @@ void test_mutex_recursive(void)
 	zassert_true(k_mutex_lock(&mutex, K_NO_WAIT) == 0,
 		"Failed to recursively lock mutex");
 
+	thread_ret = TC_FAIL;
 	/* Spawn a waiter thread */
 	k_thread_create(&tdata3, tstack3, STACK_SIZE,
 			(k_thread_entry_t)tThread_waiter, &mutex, NULL, NULL,
@@ -294,7 +295,7 @@ void test_mutex_recursive(void)
  *   wait for timeout and T3 got the mutex.
  * @ingroup kernel_mutex_tests
  */
-void test_mutex_priority_inheritance(void)
+ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 {
 	/**TESTPOINT: run test case 1, given priority T1 < T2 */
 	k_mutex_init(&mutex);
@@ -386,21 +387,78 @@ void test_mutex_priority_inheritance(void)
 	k_msleep(TIMEOUT+1000);
 }
 
-/*test case main entry*/
-void test_main(void)
+static void tThread_mutex_lock_should_fail(void *p1, void *p2, void *p3)
 {
+	k_timeout_t timeout;
+	struct k_mutex *mutex = (struct k_mutex *)p1;
+
+	timeout.ticks = 0;
+	timeout.ticks |= (uint64_t)(uintptr_t)p2 << 32;
+	timeout.ticks |= (uint64_t)(uintptr_t)p3 << 0;
+
+	zassert_equal(-EAGAIN, k_mutex_lock(mutex, timeout), NULL);
+}
+
+/**
+ * @brief Test fix for subtle race during priority inversion
+ *
+ * - A low priority thread (Tlow) locks mutex A.
+ * - A high priority thread (Thigh) blocks on mutex A, boosting the priority
+ *   of Tlow.
+ * - Thigh times out waiting for mutex A.
+ * - Before Thigh has a chance to execute, Tlow unlocks mutex A (which now
+ *   has no owner) and drops its own priority.
+ * - Thigh now gets a chance to execute and finds that it timed out, and
+ *   then enters the block of code to lower the priority of the thread that
+ *   owns mutex A (now nobody).
+ * - Thigh tries to the dereference the owner of mutex A (which is nobody,
+ *   and thus it is NULL). This leads to an exception.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_lock()
+ */
+ZTEST(mutex_api_1cpu, test_mutex_timeout_race_during_priority_inversion)
+{
+	k_timeout_t timeout;
+	uintptr_t timeout_upper;
+	uintptr_t timeout_lower;
+	int helper_prio = k_thread_priority_get(k_current_get()) + 1;
+
+	k_mutex_init(&mutex);
+
+	/* align to tick boundary */
+	k_sleep(K_TICKS(1));
+
+	/* allow non-kobject data to be shared (via registers) */
+	timeout = K_TIMEOUT_ABS_TICKS(k_uptime_ticks()
+		+ CONFIG_TEST_MUTEX_API_THREAD_CREATE_TICKS);
+	timeout_upper = timeout.ticks >> 32;
+	timeout_lower = timeout.ticks & BIT64_MASK(32);
+
+	k_mutex_lock(&mutex, K_FOREVER);
+	k_thread_create(&tdata, tstack, K_THREAD_STACK_SIZEOF(tstack),
+			tThread_mutex_lock_should_fail, &mutex, (void *)timeout_upper,
+			(void *)timeout_lower, helper_prio,
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_priority_set(k_current_get(), K_HIGHEST_THREAD_PRIO);
+
+	k_sleep(timeout);
+
+	k_mutex_unlock(&mutex);
+}
+
+static void *mutex_api_tests_setup(void)
+{
+#ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(), &tdata, &tstack, &tdata2,
 				&tstack2, &tdata3, &tstack3, &kmutex,
 				&mutex);
-
-	ztest_test_suite(mutex_api,
-		 ztest_1cpu_user_unit_test(test_mutex_lock_unlock),
-		 ztest_1cpu_user_unit_test(test_mutex_reent_lock_forever),
-		 ztest_user_unit_test(test_mutex_reent_lock_no_wait),
-		 ztest_user_unit_test(test_mutex_reent_lock_timeout_fail),
-		 ztest_1cpu_user_unit_test(test_mutex_reent_lock_timeout_pass),
-		 ztest_user_unit_test(test_mutex_recursive),
-		 ztest_user_unit_test(test_mutex_priority_inheritance)
-		 );
-	ztest_run_test_suite(mutex_api);
+#endif
+	return NULL;
 }
+
+ZTEST_SUITE(mutex_api, NULL, mutex_api_tests_setup, NULL, NULL, NULL);
+ZTEST_SUITE(mutex_api_1cpu, NULL, mutex_api_tests_setup,
+			ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

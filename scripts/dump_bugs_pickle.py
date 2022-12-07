@@ -43,7 +43,8 @@ def main() -> None:
     args = parse_args()
     bugs = get_bugs(args)
     for bug in sorted(bugs, key=lambda bug: bug.number):
-        print(f'- :github:`{bug.number}` - {bug.title}')
+        title = bug.title.strip()
+        print(f'- :github:`{bug.number}` - {title}')
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2022 Liam Clark
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l4/stm32l4.dtsi>
+
+/ {
+	soc {
+
+		pinctrl: pin-controller@48000000 {
+
+			gpiod: gpio@48000c00 {
+				compatible = "st,stm32-gpio";
+				reg = <0x48000c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000008>;
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpioe: gpio@48001000 {
+				compatible = "st,stm32-gpio";
+				reg = <0x48001000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <36 5>;
+			status = "disabled";
+		};
+
+		spi3: spi@40003c00 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
+			interrupts = <51 5>;
+			status = "disabled";
+		};
+
+		usart3: serial@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			interrupts = <39 0>;
+			status = "disabled";
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			interrupts = <55 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		lptim2: timers@40009400 {
+			compatible = "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
+			interrupts = <66 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
+		can1: can@40006400 {
+			compatible = "st,stm32-can";
+			reg = <0x40006400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			sjw = <1>;
+			sample-point = <875>;
+			status = "disabled";
+		};
+
+		sdmmc1: sdmmc@40012800 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x40012800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			interrupts = <49 0>;
+			status = "disabled";
+		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@50040000 {
+			has-temp-channel;
+			has-vref-channel;
+		};
+
+	};
+};

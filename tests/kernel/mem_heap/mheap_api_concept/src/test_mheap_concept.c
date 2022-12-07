@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "test_mheap.h"
 
 #define THREAD_NUM 3
@@ -31,7 +31,7 @@ static void *block[BLK_NUM_MAX];
  *
  * @see k_malloc(), k_free()
  */
-void test_mheap_malloc_align4(void)
+ZTEST(mheap_api, test_mheap_malloc_align4)
 {
 	void *block[BLK_NUM_MAX];
 
@@ -42,7 +42,7 @@ void test_mheap_malloc_align4(void)
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		block[i] = k_malloc(i);
 		zassert_not_null(block[i], NULL);
-		zassert_false((uintptr_t)block[i] % sizeof(void *), NULL);
+		zassert_false((uintptr_t)block[i] % sizeof(void *));
 	}
 
 	/* test case tear down*/
@@ -72,7 +72,7 @@ static void tmheap_handler(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mheap_threadsafe(void)
+ZTEST(mheap_api, test_mheap_threadsafe)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		return;

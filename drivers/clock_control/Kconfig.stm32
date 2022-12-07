@@ -17,7 +17,6 @@ if CLOCK_CONTROL_STM32_CUBE
 
 DT_STM32_HSE_CLOCK := $(dt_nodelabel_path,clk_hse)
 DT_STM32_HSE_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_HSE_CLOCK),clock-frequency)
-DT_COMPAT_ST_MUX_CLOCK := st,stm32-clock-mux
 
 config CLOCK_STM32_HSE_CLOCK
 	int "HSE clock value"
@@ -36,7 +35,8 @@ config CLOCK_STM32_HSE_CLOCK
 
 config CLOCK_STM32_MUX
 	bool "STM32 clock mux driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_MUX_CLOCK))
+	default y
+	depends on DT_HAS_ST_STM32_CLOCK_MUX_ENABLED
 	help
 	  Enable driver for STM32 clock mux which don't match an
 	  existing clock hardware block but allows to select a clock
@@ -54,6 +54,12 @@ config CLOCK_STM32_MCO1_SRC_NOCLOCK
 	help
 	  MCO1 output disabled, no clock on MCO1
 
+config CLOCK_STM32_MCO1_SRC_EXT_HSE
+	bool "EXT_HSE"
+	depends on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+	help
+	  Use EXT_HSE as source of MCO1
+
 config CLOCK_STM32_MCO1_SRC_LSE
 	bool "LSE"
 	depends on SOC_SERIES_STM32F4X
@@ -62,13 +68,13 @@ config CLOCK_STM32_MCO1_SRC_LSE
 
 config CLOCK_STM32_MCO1_SRC_HSE
 	bool "HSE"
-	depends on SOC_SERIES_STM32F4X
+	depends on SOC_SERIES_STM32F1X || SOC_SERIES_STM32F4X
 	help
 	  Use HSE as source of MCO1
 
 config CLOCK_STM32_MCO1_SRC_HSI
 	bool "HSI"
-	depends on SOC_SERIES_STM32F4X
+	depends on SOC_SERIES_STM32F1X || SOC_SERIES_STM32F4X
 	help
 	  Use HSI as source of MCO1
 
@@ -78,11 +84,40 @@ config CLOCK_STM32_MCO1_SRC_PLLCLK
 	help
 	  Use PLLCLK as source of MCO1
 
+config CLOCK_STM32_MCO1_SRC_PLLCLK_DIV2
+	bool "PLLCLK_DIV2"
+	depends on SOC_SERIES_STM32F1X
+	help
+	  Use PLLCLK/2 as source of MCO1
+
+config CLOCK_STM32_MCO1_SRC_PLL2CLK
+	bool "PLL2CLK"
+	depends on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+	help
+	  Use PLL2CLK as source of MCO1
+
+config CLOCK_STM32_MCO1_SRC_PLLI2SCLK
+	bool "PLLI2SCLK"
+	depends on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+	help
+	  Use PLLI2SCLK as source of MCO1
+
+config CLOCK_STM32_MCO1_SRC_PLLI2SCLK_DIV2
+	bool "PLLI2SCLK_DIV2"
+	depends on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+	help
+	  Use PLLI2SCLK/2 as source of MCO1
+
+config CLOCK_STM32_MCO1_SRC_SYSCLK
+	bool "SYSCLK"
+	depends on SOC_SERIES_STM32F1X
+	help
+	  Use SYSCLK as source of MCO1
 endchoice
 
 config CLOCK_STM32_MCO1_DIV
 	int "MCO1 prescaler"
-	depends on !CLOCK_STM32_MCO1_SRC_NOCLOCK
+	depends on SOC_SERIES_STM32F4X && !CLOCK_STM32_MCO1_SRC_NOCLOCK
 	default 1
 	range 1   5
 	help

@@ -69,7 +69,6 @@ Here is an example DTS file:
            a-node {
                    subnode_nodelabel: a-sub-node {
                            foo = <3>;
-                           label = "SUBNODE";
                    };
            };
    };
@@ -87,8 +86,9 @@ The tree has three *nodes*:
 
 Nodes can be assigned *node labels*, which are unique shorthands that can be
 used to refer to the labeled node elsewhere in the devicetree. Above,
-``a-sub-node`` has the *node label* ``subnode_nodelabel``. A node can have zero,
-one, or multiple *node labels*.
+``a-sub-node`` has the *node label* ``subnode_nodelabel``, which can be
+accessed via ``DT_NODELABEL(subnode_nodelabel)``. A node can have zero, one, or
+multiple *node labels*.
 
 Devicetree nodes have *paths* identifying their locations in the tree. Like
 Unix file system paths, devicetree paths are strings separated by slashes
@@ -104,10 +104,6 @@ array of what are called *cells*. A cell is just a 32-bit unsigned integer.
 Node ``a-sub-node`` has a property named ``foo``, whose value is a cell with
 value 3. The size and type of ``foo``\ 's value are implied by the enclosing
 angle brackets (``<`` and ``>``) in the DTS.
-
-Node ``a-sub-node`` has an additional property named ``label``, whose value is a
-string containing the value "SUBNODE". Note that the ``label`` property is
-distinct from the *node label*.
 
 See :ref:`dt-writing-property-values` below for more example property values.
 
@@ -168,22 +164,18 @@ This is the corresponding DTS:
            soc {
                    i2c@40003000 {
                            compatible = "nordic,nrf-twim";
-                           label = "I2C_0";
                            reg = <0x40003000 0x1000>;
 
                            apds9960@39 {
                                    compatible = "avago,apds9960";
-                                   label = "APDS9960";
                                    reg = <0x39>;
                            };
                            ti_hdc@43 {
                                    compatible = "ti,hdc", "ti,hdc1010";
-                                   label = "HDC1010";
                                    reg = <0x43>;
                            };
                            mma8652fc@1d {
                                    compatible = "nxp,fxos8700", "nxp,mma8652fc";
-                                   label = "MMA8652FC";
                                    reg = <0x1d>;
                            };
                    };
@@ -285,20 +277,6 @@ compatible
 
     Within Zephyr's bindings syntax, this property has type ``string-array``.
 
-label
-    The device's name according to Zephyr's :ref:`device_model_api`. The value
-    can be passed to :c:func:`device_get_binding()` to retrieve the
-    corresponding driver-level :ref:`struct device* <device_struct>`. This
-    pointer can then be passed to the correct driver API by application code to
-    interact with the device. For example, calling
-    ``device_get_binding("I2C_0")`` would return a pointer to a device
-    structure which could be passed to :ref:`I2C API <i2c_api>` functions like
-    :c:func:`i2c_transfer()`. The generated C header will also contain a macro
-    which expands to this string.
-
-    Note that the ``label`` property is distinct from the :ref:`node
-    label <dt-node-labels>`.
-
 reg
     Information used to address the device. The value is specific to the device
     (i.e. is different depending on the compatible property).
@@ -349,6 +327,16 @@ interrupts
    https://www.devicetree.org/specifications/
 
 .. highlight:: none
+
+.. note::
+
+   Earlier versions of Zephyr made frequent use of the ``label`` property,
+   which is distinct from the standard :ref:`node label <dt-node-labels>`.
+   Use of the label *property* in new devicetree bindings, as well as use of
+   the :c:macro:`DT_LABEL` macro in new code, are actively discouraged. Label
+   properties continue to persist for historical reasons in some existing
+   bindings and overlays, but should not be used in new bindings or device
+   implementations.
 
 .. _dt-writing-property-values:
 
@@ -589,12 +577,6 @@ the contents of devicetree sources, includes, and overlays in a way that allows
 the build system to generate C macros usable by device drivers and
 applications. The :file:`dts/bindings` directory contains bindings.
 
-Zephyr currently uses :file:`dts_fixup.h` files to rename macros in
-:file:`devicetree_unfixed.h` to names that are currently in use by C code. The
-build system looks for fixup files in the :file:`zephyr/boards/` and
-:file:`zephyr/soc/` directories by default. Fixup files exist for historical
-reasons. New code should generally avoid them.
-
 .. _dt-scripts:
 
 Scripts and tools
@@ -642,14 +624,10 @@ These are created in your application's build directory.
 :file:`<build>/zephyr/zephyr.dts.pre`
    The preprocessed DTS source. This is an intermediate output file, which is
    input to :file:`gen_defines.py` and used to create :file:`zephyr.dts` and
-   :file:`devicetree_unfixed.h`.
+   :file:`devicetree_generated.h`.
 
-:file:`<build>/zephyr/include/generated/devicetree_unfixed.h`
+:file:`<build>/zephyr/include/generated/devicetree_generated.h`
    The generated macros and additional comments describing the devicetree.
-   Included by ``devicetree.h``.
-
-:file:`<build>/zephyr/include/generated/devicetree_fixups.h`
-   The concatenated contents of any :file:`dts_fixup.h` files.
    Included by ``devicetree.h``.
 
 :file:`<build>/zephyr/zephyr.dts`

@@ -5,16 +5,7 @@ if SHIELD_BUYDISPLAY_3_5_TFT_TOUCH_ARDUINO
 
 if DISPLAY
 
-config SPI
-	default y
-
 if KSCAN
-
-config I2C
-	default y
-
-config KSCAN_FT5336
-	default y
 
 # NOTE: Enable if IRQ line is available (requires to solder jumper)
 config KSCAN_FT5336_INTERRUPT
@@ -39,9 +30,6 @@ config KSCAN
 
 config LV_Z_POINTER_KSCAN
 	default y
-
-config LV_Z_POINTER_KSCAN_DEV_NAME
-	default "TOUCH"
 
 config LV_Z_POINTER_KSCAN_SWAP_XY
 	default y

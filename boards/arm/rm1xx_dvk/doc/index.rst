@@ -28,15 +28,13 @@ This development kit has the following features:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/RM186-DVK.png
-     :width: 500px
+.. figure:: img/RM186-DVK.jpg
      :align: center
      :alt: RM1xx development kit (DVK)
 
      RM1xx development kit (DVK) (Credit: Laird Connectivity)
 
 .. figure:: img/RM186-SM.jpg
-     :width: 185px
      :align: center
      :alt: RM1xx module
 
@@ -178,4 +176,4 @@ References
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _Adesto AT25DF041B datasheet: https://www.dialog-semiconductor.com/sites/default/files/ds-at25df041b_040.pdf
 .. _Semtech SX1272 datasheet: https://semtech.my.salesforce.com/sfc/p/#E0000000JelG/a/440000001NCE/v_VBhk1IolDgxwwnOpcS_vTFxPfSEPQbuneK3mWsXlU
-.. _Microchip MCP23S08 datasheet: https://www.microchip.com/content/dam/mchp/documents/OTH/ProductDocuments/DataSheets/MCP23008-MCP23S08-Data-Sheet-20001919F.pdf
+.. _Microchip MCP23S08 datasheet: https://ww1.microchip.com/downloads/en/DeviceDoc/MCP23008-MCP23S08-Data-Sheet-20001919F.pdf

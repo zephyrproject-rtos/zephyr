@@ -13,8 +13,8 @@ supported:
   - usb_device
   - usb_cdc
   - ble
-  - ieee802154
   - pwm
   - spi
   - watchdog
   - counter
+  - netif:openthread

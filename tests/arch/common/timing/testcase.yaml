@@ -1,0 +1,8 @@
+common:
+  filter: CONFIG_ARCH_HAS_TIMING_FUNCTIONS
+  platform_type:
+    - mcu
+    - native
+tests:
+  arch.common.timing:
+    tags: timing arch

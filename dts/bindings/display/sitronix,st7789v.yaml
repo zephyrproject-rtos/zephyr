@@ -11,7 +11,6 @@ include: [spi-device.yaml, display-controller.yaml]
 properties:
     reset-gpios:
       type: phandle-array
-      required: false
       description: |
         RESET pin.
 
@@ -21,9 +20,10 @@ properties:
 
     cmd-data-gpios:
       type: phandle-array
-      required: true
       description: |
-        D/CX pin.
+        D/CX pin. If configured, 4-lines serial interface is used, otherwise
+        3-lines serial interface is used and a D/CX bit (9-bit) is added to
+        the protocol.
 
         The D/CX pin of ST7789V is active low (transmission command byte).
         If connected directly the MCU pin should be configured
@@ -51,12 +51,10 @@ properties:
 
     vrhs:
       type: int
-      required: false
       description: VRH Setting
 
     vdvs:
       type: int
-      required: false
       description: VDV Setting
 
     mdac:

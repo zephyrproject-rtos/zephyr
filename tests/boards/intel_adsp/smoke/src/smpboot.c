@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include "tests.h"
 
 /* Experimentally 10ms is enough time to get the second CPU to run on
@@ -12,7 +12,7 @@
 #define CPU_START_DELAY 10000
 
 /* IPIs happen  much faster than CPU startup */
-#define CPU_IPI_DELAY 100
+#define CPU_IPI_DELAY 250
 
 BUILD_ASSERT(CONFIG_SMP);
 BUILD_ASSERT(CONFIG_SMP_BOOT_DELAY);
@@ -39,13 +39,15 @@ static void thread_fn(void *a, void *b, void *c)
 /* Needless to say: since this is starting the SMP CPUs, it needs to
  * be the first test run!
  */
-void test_smp_boot_delay(void)
+ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
 {
-	if (CONFIG_MP_NUM_CPUS < 2) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	if (arch_num_cpus() < 2) {
 		ztest_test_skip();
 	}
 
-	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
+	for (int i = 1; i < num_cpus; i++) {
 		printk("Launch cpu%d\n", i);
 		mp_flag = false;
 		k_thread_create(&cpu_thr, thr_stack, K_THREAD_STACK_SIZEOF(thr_stack),
@@ -70,9 +72,9 @@ void test_smp_boot_delay(void)
 	}
 }
 
-void test_post_boot_ipi(void)
+ZTEST(intel_adsp_boot, test_3rd_post_boot_ipi)
 {
-	if (CONFIG_MP_NUM_CPUS < 2) {
+	if (arch_num_cpus() < 2) {
 		ztest_test_skip();
 	}
 

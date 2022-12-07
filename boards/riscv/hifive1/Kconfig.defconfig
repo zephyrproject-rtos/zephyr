@@ -8,8 +8,4 @@ config BOARD
 config SYS_CLOCK_TICKS_PER_SEC
 	default 128
 
-config PWM_SIFIVE
-	default y
-	depends on PWM
-
 endif

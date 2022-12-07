@@ -1,0 +1,9 @@
+description: ACE wallclock RTC counter controller
+
+compatible: "intel,ace-rtc-counter"
+
+include: base.yaml
+
+properties:
+  reg:
+      required: true

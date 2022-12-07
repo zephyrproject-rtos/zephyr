@@ -13,8 +13,7 @@ Ethernet switch with Gigabit RGMII/MII/RMII interface.
 - KSZ8794CNX enables evaluation for switch functions
 - On-board debug probe J-Link-OB for programming
 
-.. image:: ./ip_k66f.png
-   :width: 720px
+.. image:: ip_k66f.jpg
    :align: center
    :alt: IP-K66F
 
@@ -156,7 +155,7 @@ Step through the application in your debugger.
    https://www.nxp.com/docs/en/data-sheet/K66P144M180SF5V2.pdf
 
 .. _K66F Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/K66P144M180SF5RMV2.pdf
+   https://www.nxp.com/webapp/Download?colCode=K66P144M180SF5RMV2
 
 .. _OpenSDA J-Link Generic Firmware for V3.2 Bootloader:
    https://www.segger.com/downloads/jlink/OpenSDA_V3_2

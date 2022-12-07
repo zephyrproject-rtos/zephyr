@@ -3,16 +3,16 @@
 if(NOT CONFIG_LOG_MODE_MINIMAL)
   zephyr_sources_ifdef(
     CONFIG_LOG
-    log_list.c
     log_core.c
     log_mgmt.c
+    log_cache.c
     log_msg.c
-    log_output.c
+    log_cache.c
   )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG2
-    log_msg2.c
+    CONFIG_LOG_OUTPUT
+    log_output.c
   )
 
   # Determine if __auto_type is supported. If not then runtime approach must always
@@ -21,28 +21,18 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   # - C++ (auto)
   # - GCC 4.9.0 https://gcc.gnu.org/gcc-4.9/changes.html
   # - Clang 3.8
-  if (NOT CONFIG_LOG2_ALWAYS_RUNTIME)
+  if (NOT CONFIG_LOG_ALWAYS_RUNTIME)
     if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
       if(CMAKE_C_COMPILER_VERSION VERSION_LESS "3.8.0")
-        message(WARNING "Compiler version requires CONFIG_LOG2_ALWAYS_RUNTIME to be set")
+        message(WARNING "Compiler version requires CONFIG_LOG_ALWAYS_RUNTIME to be set")
       endif()
     endif()
     if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
       if(CMAKE_C_COMPILER_VERSION VERSION_LESS "4.9.0")
-        message(WARNING "Compiler version requires CONFIG_LOG2_ALWAYS_RUNTIME to be set")
+        message(WARNING "Compiler version requires CONFIG_LOG_ALWAYS_RUNTIME to be set")
       endif()
     endif()
   endif()
-
-  zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_UART
-    log_backend_uart.c
-  )
-
-  zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_FS
-    log_backend_fs.c
-  )
 
   zephyr_sources_ifdef(
     CONFIG_LOG_CMDS
@@ -50,77 +40,42 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_NATIVE_POSIX
-    log_backend_native_posix.c
+    CONFIG_LOG_FRONTEND_DICT_UART
+    log_frontend_dict_uart.c
   )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_XTENSA_SIM
-    log_backend_xtensa_sim.c
+    CONFIG_LOG_DICTIONARY_SUPPORT
+    log_output_dict.c
   )
 
-  zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_NET
-    log_backend_net.c
-  )
+  add_subdirectory(backends)
 
-  zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_RTT
-    log_backend_rtt.c
-  )
-
-  zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_SWO
-    log_backend_swo.c
-  )
-
+  # For some reason, running sys-t with catalog message on
+  # Cortex-M0 would result in hard fault in mipi_catalog_formatter()
+  # if this is complied before the backends (only with SIZE
+  # optimization). Workaround the issue by placing it here instead
+  # as this is causing CI failures. Actual root-cause is TBD.
   zephyr_sources_ifdef(
     CONFIG_LOG_MIPI_SYST_ENABLE
     log_output_syst.c
   )
 
-  zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_ADSP
-    log_backend_adsp.c
-    )
-
-  zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_CAVS_HDA
-    log_backend_cavs_hda.c
-  )
-
-  if(CONFIG_LOG_BACKEND_SPINEL)
-    zephyr_library_include_directories(
-	    ${ZEPHYR_BASE}/subsys/net/lib/openthread/platform/
-    )
+  if(CONFIG_LOG_CUSTOM_FORMAT_SUPPORT)
+    zephyr_sources(log_output_custom.c)
   endif()
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_SPINEL
-    log_backend_spinel.c
+    CONFIG_LOG_MULTIDOMAIN_LINK
+    log_multidomain_link.c
   )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_FRONTEND_DICT_UART
-    log_frontend_dict_uart.c
+    CONFIG_LOG_LINK_IPC_SERVICE
+    log_link_ipc_service.c
   )
 
-  if(CONFIG_LOG_DICTIONARY_SUPPORT)
-    zephyr_sources(log_output_dict.c)
-  endif()
 
 else()
   zephyr_sources(log_minimal.c)
-endif()
-
-if(CONFIG_LOG2_MODE_IMMEDIATE OR CONFIG_LOG2_MODE_DEFERRED)
-  message(WARNING "CONFIG_LOG2_MODE_{IMMEDIATE,DEFERRED} is deprecated. Please \
-                   use CONFIG_LOG_MODE_{IMMEDIATE,DEFERRED} which defaults to v2"
-          )
-endif()
-
-if(CONFIG_LOG1)
-  message(WARNING "Logging v1 has been deprecated. Use v2 instead and adapt \
-                   custom backend to the new backend API"
-          )
 endif()

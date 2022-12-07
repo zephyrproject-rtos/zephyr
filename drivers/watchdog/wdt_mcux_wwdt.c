@@ -11,6 +11,8 @@
 #define DT_DRV_COMPAT nxp_lpc_wwdt
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/irq.h>
+#include <zephyr/sys_clock.h>
 #include <fsl_wwdt.h>
 #include <fsl_clock.h>
 

@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(mcux_snvs, CONFIG_COUNTER_LOG_LEVEL);
 #endif
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/irq.h>
 #include <fsl_snvs_hp.h>
 
 #ifdef MCUX_SNVS_SRTC

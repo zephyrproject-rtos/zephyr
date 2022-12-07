@@ -8,4 +8,4 @@ description: |
 
 compatible: "hoperf,hp206c"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

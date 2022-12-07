@@ -17,9 +17,10 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_common.h>
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include <fsl_gpio.h>
 #include <fsl_pint.h>
 #include <fsl_inputmux.h>
@@ -61,7 +62,7 @@ struct gpio_mcux_lpc_data {
 	/* pin association with PINT id */
 	pint_pin_int_t pint_id[32];
 	/* ISR allocated in device tree to this port */
-	uint32_t isr_list[8];
+	uint32_t isr_list[INPUTMUX_PINTSEL_COUNT];
 	/* index to to table above */
 	uint32_t isr_list_idx;
 };
@@ -224,8 +225,10 @@ static void gpio_mcux_lpc_port_isr(const struct device *dev)
 				config->pint_base, data->pint_id[pin]);
 			enabled_int = int_flags << pin;
 
-			PINT_PinInterruptClrStatus(config->pint_base,
-						   data->pint_id[pin]);
+			if (int_flags) {
+				PINT_PinInterruptClrStatus(config->pint_base,
+							   data->pint_id[pin]);
+			}
 
 			gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
 		}
@@ -406,10 +409,11 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 			    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(n), 0);		\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));				\
 		data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(n, m, irq);	\
-	} while (0)
+	} while (false)
 
-#define GPIO_MCUX_LPC_IRQ(n, m)								\
-	COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, m), (GPIO_MCUX_LPC_IRQ_CONNECT(n, m)), ())
+#define GPIO_MCUX_LPC_IRQ(idx, inst)							\
+	COND_CODE_1(DT_INST_IRQ_HAS_IDX(inst, idx),					\
+		(GPIO_MCUX_LPC_IRQ_CONNECT(inst, idx)), ())
 
 
 #define GPIO_MCUX_LPC(n)								\
@@ -438,10 +442,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 	{										\
 		gpio_mcux_lpc_init(dev);						\
 											\
-		GPIO_MCUX_LPC_IRQ(n, 0);						\
-		GPIO_MCUX_LPC_IRQ(n, 1);						\
-		GPIO_MCUX_LPC_IRQ(n, 2);						\
-		GPIO_MCUX_LPC_IRQ(n, 3);						\
+		LISTIFY(8, GPIO_MCUX_LPC_IRQ, (;), n)					\
 											\
 		return 0;								\
 	}

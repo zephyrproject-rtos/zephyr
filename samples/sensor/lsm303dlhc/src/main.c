@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
@@ -38,20 +38,16 @@ end:
 
 void main(void)
 {
-	const struct device *accelerometer = device_get_binding(
-						DT_LABEL(DT_INST(0, st_lis2dh)));
-	const struct device *magnetometer = device_get_binding(
-						DT_LABEL(DT_INST(0, st_lsm303dlhc_magn)));
+	const struct device *const accelerometer = DEVICE_DT_GET_ONE(st_lis2dh);
+	const struct device *const magnetometer = DEVICE_DT_GET_ONE(st_lsm303dlhc_magn);
 
-	if (accelerometer == NULL) {
-		printf("Could not get %s device\n",
-				DT_LABEL(DT_INST(0, st_lis2dh)));
+	if (!device_is_ready(accelerometer)) {
+		printf("Device %s is not ready\n", accelerometer->name);
 		return;
 	}
 
-	if (magnetometer == NULL) {
-		printf("Could not get %s device\n",
-				DT_LABEL(DT_INST(0, st_lsm303dlhc_magn)));
+	if (!device_is_ready(magnetometer)) {
+		printf("Device %s is not ready\n", magnetometer->name);
 		return;
 	}
 

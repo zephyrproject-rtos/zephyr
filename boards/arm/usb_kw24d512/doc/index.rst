@@ -62,6 +62,11 @@ The USB-KW24D512 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| RNGA      | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
+| FTFL      | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -211,7 +216,7 @@ you should see the following message in the terminal:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/ieee-802.15.4-packet-sniffer-usb-dongle-form-factor:USB-KW24D512
 
 .. _USB-KW24D512 Hardware Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/USB-KW2XHWRM.pdf
+   https://www.nxp.com/webapp/Download?colCode=USB-KW2XHWRM
 
 .. _KW2xD Website:
    https://www.nxp.com/products/wireless/thread/kinetis-kw2xd-2.4-ghz-802.15.4-wireless-radio-microcontroller-mcu-based-on-arm-cortex-m4-core:KW2xD
@@ -220,7 +225,7 @@ you should see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/MKW2xDxxx.pdf
 
 .. _KW2xD Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/MKW2xDxxxRM.pdf
+   https://www.nxp.com/webapp/Download?colCode=MKW2XDXXXRM
 
 .. _Segger RTT:
    https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/

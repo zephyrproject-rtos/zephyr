@@ -8,6 +8,7 @@
 #include <zephyr/init.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/irq.h>
 
 #include "cy_syslib.h"
 #include "cy_gpio.h"

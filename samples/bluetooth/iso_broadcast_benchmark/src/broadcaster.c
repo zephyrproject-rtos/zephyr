@@ -36,7 +36,7 @@ static uint8_t connected_bis;
 static struct bt_iso_chan bis_iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_iso_chan *bis[CONFIG_BT_ISO_MAX_CHAN];
 /* We use a single seq_num for all the BIS as they share the same SDU interval */
-static uint32_t seq_num;
+static uint16_t seq_num;
 static struct bt_iso_big_create_param big_create_param = {
 	.num_bis = DEFAULT_BIS_COUNT,
 	.bis_channels = bis,

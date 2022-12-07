@@ -5,13 +5,14 @@
  */
 
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
-#include <ztest.h>
-#include <logging/log_backend.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/ztest.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_MODULE_NAME test
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -35,13 +36,13 @@ static int cbprintf_callback(int c, void *ctx)
 }
 
 static void backend_process(const struct log_backend *const backend,
-			    union log_msg2_generic *msg)
+			    union log_msg_generic *msg)
 {
 	char str[100];
 	char *pstr = str;
 	struct backend_context *context = (struct backend_context *)backend->cb->ctx;
 	size_t len;
-	uint8_t *p = log_msg2_get_package(&msg->log, &len);
+	uint8_t *p = log_msg_get_package(&msg->log, &len);
 
 	(void)len;
 	int slen = cbpprintf(cbprintf_callback, &pstr, p);
@@ -52,6 +53,11 @@ static void backend_process(const struct log_backend *const backend,
 			"Unexpected string %s (exp:%s)", str, context->exp_str[context->cnt]);
 
 	context->cnt++;
+}
+
+static void panic(const struct log_backend *const backend)
+{
+	ARG_UNUSED(backend);
 }
 
 static void expire_cb(struct k_timer *timer)
@@ -81,7 +87,8 @@ static int backend_is_ready(const struct log_backend *const backend)
 static const struct log_backend_api backend_api = {
 	.process = backend_process,
 	.init = backend_init,
-	.is_ready = backend_is_ready
+	.is_ready = backend_is_ready,
+	.panic = panic
 };
 
 static struct backend_context context1 = {
@@ -103,9 +110,12 @@ LOG_BACKEND_DEFINE(backend2, backend_api, true, &context2);
  * ready it will not receive this message. Second message is created when
  * both backends are initialized so both receives the message.
  */
-void test_log_backends_initialization(void)
+ZTEST(log_backend_init, test_log_backends_initialization)
 {
-	if (log_backend_count_get() != 2) {
+	int cnt;
+
+	STRUCT_SECTION_COUNT(log_backend, &cnt);
+	if (cnt != 2) {
 		/* Other backends should not be enabled. */
 		ztest_test_skip();
 	}
@@ -121,13 +131,13 @@ void test_log_backends_initialization(void)
 	LOG_INF("test1");
 
 	/* Backends are not yet active. */
-	zassert_false(context1.active, NULL);
-	zassert_false(context2.active, NULL);
+	zassert_false(context1.active);
+	zassert_false(context2.active);
 
 	k_msleep(context2.delay + 100);
 
-	zassert_true(context1.active, NULL);
-	zassert_true(context2.active, NULL);
+	zassert_true(context1.active);
+	zassert_true(context2.active);
 
 	LOG_INF("test2");
 
@@ -137,13 +147,7 @@ void test_log_backends_initialization(void)
 	 * because when first was processed it was not yet active.
 	 */
 	zassert_equal(context1.cnt, 2, "Unexpected value:%d (exp: %d)", context1.cnt, 2);
-	zassert_equal(context2.cnt, 1, NULL);
+	zassert_equal(context2.cnt, 1);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_log_backend_init,
-			 ztest_unit_test(test_log_backends_initialization)
-			 );
-	ztest_run_test_suite(test_log_backend_init);
-}
+ZTEST_SUITE(log_backend_init, NULL, NULL, NULL, NULL, NULL);

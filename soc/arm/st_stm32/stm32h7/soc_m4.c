@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_cortex.h>
@@ -20,6 +21,7 @@
 #include <stm32_ll_system.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include "stm32_hsem.h"
 
 /**

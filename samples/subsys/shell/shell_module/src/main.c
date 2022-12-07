@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <version.h>
 #include <zephyr/logging/log.h>
@@ -12,6 +12,12 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/usb/usb_device.h>
 #include <ctype.h>
+
+#ifdef CONFIG_ARCH_POSIX
+#include <unistd.h>
+#else
+#include <zephyr/posix/unistd.h>
+#endif
 
 LOG_MODULE_REGISTER(app);
 
@@ -363,7 +369,8 @@ static int cmd_dict(const struct shell *shell, size_t argc, char **argv,
 }
 
 SHELL_SUBCMD_DICT_SET_CREATE(sub_dict_cmds, cmd_dict,
-	(value_0, 0), (value_1, 1), (value_2, 2), (value_3, 3)
+	(value_0, 0, "value 0"), (value_1, 1, "value 1"),
+	(value_2, 2, "value 2"), (value_3, 3, "value 3")
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,

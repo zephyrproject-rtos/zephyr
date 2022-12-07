@@ -29,42 +29,34 @@ properties:
 
     nxp,tx-sync-mode:
       type: boolean
-      required: false
       description: tx sync mode
 
     nxp,rx-sync-mode:
       type: boolean
-      required: false
       description: rx sync mode
 
     pre-div:
       type: int
-      required: false
       description: pre divider
 
     podf:
       type: int
-      required: false
       description: post-divider fraction
 
     pll-clocks:
       type: phandle-array
-      required: false
       description: pll settings
       specifier-space: pll-clock
 
     pll-clock-names:
-      required: false
       type: string-array
       description: Provided names of pll-clock specifiers
 
     pinmuxes:
       type: phandle-array
-      required: false
       specifier-space: pinmux
       description: iomux settings
 
     nxp,tx-channel:
       type: int
-      required: false
       description: tx channel the maximum number is SOC dependent

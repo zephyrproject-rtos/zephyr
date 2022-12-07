@@ -90,24 +90,27 @@ static int pcie_ecam_init(const struct device *dev)
 			data->regions[PCIE_REGION_IO].phys_start = cfg->ranges[i].host_map_addr;
 			data->regions[PCIE_REGION_IO].size = cfg->ranges[i].map_length;
 			/* Linux & U-Boot avoids allocating PCI resources from address 0 */
-			if (data->regions[PCIE_REGION_IO].bus_start < 0x1000)
+			if (data->regions[PCIE_REGION_IO].bus_start < 0x1000) {
 				data->regions[PCIE_REGION_IO].allocation_offset = 0x1000;
+			}
 			break;
 		case 0x02:
 			data->regions[PCIE_REGION_MEM].bus_start = cfg->ranges[i].pcie_bus_addr;
 			data->regions[PCIE_REGION_MEM].phys_start = cfg->ranges[i].host_map_addr;
 			data->regions[PCIE_REGION_MEM].size = cfg->ranges[i].map_length;
 			/* Linux & U-Boot avoids allocating PCI resources from address 0 */
-			if (data->regions[PCIE_REGION_MEM].bus_start < 0x1000)
+			if (data->regions[PCIE_REGION_MEM].bus_start < 0x1000) {
 				data->regions[PCIE_REGION_MEM].allocation_offset = 0x1000;
+			}
 			break;
 		case 0x03:
 			data->regions[PCIE_REGION_MEM64].bus_start = cfg->ranges[i].pcie_bus_addr;
 			data->regions[PCIE_REGION_MEM64].phys_start = cfg->ranges[i].host_map_addr;
 			data->regions[PCIE_REGION_MEM64].size = cfg->ranges[i].map_length;
 			/* Linux & U-Boot avoids allocating PCI resources from address 0 */
-			if (data->regions[PCIE_REGION_MEM64].bus_start < 0x1000)
+			if (data->regions[PCIE_REGION_MEM64].bus_start < 0x1000) {
 				data->regions[PCIE_REGION_MEM64].allocation_offset = 0x1000;
+			}
 			break;
 		}
 	}
@@ -197,8 +200,9 @@ static bool pcie_ecam_region_allocate_type(struct pcie_ecam_data *data, pcie_bdf
 	addr = (((data->regions[type].bus_start + data->regions[type].allocation_offset) - 1) |
 		((bar_size) - 1)) + 1;
 
-	if (addr - data->regions[type].bus_start + bar_size > data->regions[type].size)
+	if (addr - data->regions[type].bus_start + bar_size > data->regions[type].size) {
 		return false;
+	}
 
 	*bar_bus_addr = addr;
 	data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size;
@@ -291,8 +295,9 @@ static bool pcie_ecam_region_translate(const struct device *dev, pcie_bdf_t bdf,
 	enum pcie_region_type type;
 
 	/* Means it hasn't been allocated */
-	if (!bar_bus_addr)
+	if (!bar_bus_addr) {
 		return false;
+	}
 
 	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
 		    (data->regions[PCIE_REGION_MEM64].size &&

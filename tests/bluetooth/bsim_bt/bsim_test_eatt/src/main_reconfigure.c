@@ -10,12 +10,16 @@
 
 #include <zephyr/bluetooth/gatt.h>
 
+#define NEW_MTU 100
+
 CREATE_FLAG(flag_reconfigured);
 
 void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	printk("MTU Updated: tx %d, rx %d\n", tx, rx);
-	SET_FLAG(flag_reconfigured);
+	if (rx == NEW_MTU || tx == NEW_MTU) {
+		SET_FLAG(flag_reconfigured);
+	}
 }
 
 static struct bt_gatt_cb cb = {
@@ -38,8 +42,6 @@ static void test_peripheral_main(void)
 
 	PASS("EATT Peripheral tests Passed\n");
 }
-
-#define NEW_MTU 100
 
 static void test_central_main(void)
 {

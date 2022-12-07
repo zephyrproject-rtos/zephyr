@@ -10,10 +10,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam0);
 
+#include <zephyr/kernel.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <string.h>
+#include <zephyr/irq.h>
 
 #define NVM_USB_PAD_TRANSN_POS 45
 #define NVM_USB_PAD_TRANSN_SIZE 5
@@ -210,7 +212,7 @@ static void usb_sam0_load_padcal(void)
 		    DT_INST_IRQ_BY_IDX(0, n, priority),		\
 		    usb_sam0_isr, 0, 0);			\
 	irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		\
-	} while (0)
+	} while (false)
 
 /* Attach by initializing the device */
 int usb_dc_attach(void)
@@ -288,6 +290,31 @@ int usb_dc_attach(void)
 	return 0;
 }
 
+static void usb_dc_release_buffers(void)
+{
+	struct usb_sam0_data *data = usb_sam0_get_data();
+	UsbDeviceDescBank *bank;
+	void *buf;
+
+	/* release the buffers */
+	for (int i = 0; i < ARRAY_SIZE(data->descriptors); i++) {
+		for (int j = 0; j < ARRAY_SIZE(data->descriptors[0].DeviceDescBank); j++) {
+			bank = &data->descriptors[i].DeviceDescBank[j];
+			buf = (void *)bank->ADDR.reg;
+			/*
+			 * We free the ep descriptor memory that was
+			 * allocated in usb_dc_ep_configure().
+			 * Therefore a disabled ep must be reconfigured
+			 * before it can be enabled again.
+			 */
+			if (buf != NULL) {
+				k_free(buf);
+				bank->ADDR.reg = (uintptr_t) NULL;
+			}
+		}
+	}
+}
+
 /* Detach from the bus */
 int usb_dc_detach(void)
 {
@@ -295,6 +322,8 @@ int usb_dc_detach(void)
 
 	regs->CTRLB.bit.DETACH = 1;
 	usb_sam0_wait_syncbusy();
+
+	usb_dc_release_buffers();
 
 	return 0;
 }

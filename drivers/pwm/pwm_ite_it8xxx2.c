@@ -17,6 +17,7 @@
 #include <stdlib.h>
 
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(pwm_ite_it8xxx2, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_CTRX_MIN	100
@@ -98,9 +99,6 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 	uint32_t actual_freq = 0xffffffff, target_freq, deviation, cxcprs, ctr;
 	uint64_t pwm_clk_src;
 
-	/* PWM channel clock source gating before configuring */
-	pwm_enable(dev, 0);
-
 	/* Select PWM inverted polarity (ex. active-low pulse) */
 	if (flags & PWM_POLARITY_INVERTED) {
 		*reg_pwmpol |= BIT(ch);
@@ -141,8 +139,11 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 	 * <=324Hz in board dts. Now change prescaler clock source from 8MHz to
 	 * 32.768KHz to support pwm output in mode.
 	 */
-	if ((target_freq <= 324) && (inst->PCFSR & BIT(prs_sel))) {
-		inst->PCFSR &= ~BIT(prs_sel);
+	if (target_freq <= 324) {
+		if (inst->PCFSR & BIT(prs_sel)) {
+			inst->PCFSR &= ~BIT(prs_sel);
+		}
+
 		pwm_clk_src = (uint64_t) 32768;
 	}
 
@@ -277,7 +278,7 @@ static const struct pwm_driver_api pwm_it8xxx2_api = {
 			      NULL,							\
 			      &pwm_it8xxx2_cfg_##inst,					\
 			      PRE_KERNEL_1,						\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+			      CONFIG_PWM_INIT_PRIORITY,					\
 			      &pwm_it8xxx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_IT8XXX2_INIT)

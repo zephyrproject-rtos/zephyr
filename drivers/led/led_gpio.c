@@ -14,7 +14,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_gpio, CONFIG_LED_LOG_LEVEL);
@@ -83,13 +83,10 @@ static const struct led_driver_api led_gpio_api = {
 	.set_brightness	= led_gpio_set_brightness,
 };
 
-#define LED_GPIO_DT_SPEC(led_node_id)				\
-	GPIO_DT_SPEC_GET(led_node_id, gpios),			\
-
 #define LED_GPIO_DEVICE(i)					\
 								\
-static const struct gpio_dt_spec gpio_dt_spec_##i[] = {	\
-	DT_INST_FOREACH_CHILD(i, LED_GPIO_DT_SPEC)		\
+static const struct gpio_dt_spec gpio_dt_spec_##i[] = {		\
+	DT_INST_FOREACH_CHILD_SEP_VARGS(i, GPIO_DT_SPEC_GET, (,), gpios) \
 };								\
 								\
 static const struct led_gpio_config led_gpio_config_##i = {	\

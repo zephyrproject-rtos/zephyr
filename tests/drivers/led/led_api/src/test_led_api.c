@@ -4,20 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <zephyr/drivers/led.h>
 
 #define BRIGHTNESS_MAX	100
 #define TEST_MAX_COLORS	8
 #define COLOR_FULL	0xff
-
-#if DT_NODE_HAS_STATUS(DT_ALIAS(led_controller_0), okay)
-#define LED_CTRL_NODE_ID	DT_ALIAS(led_controller_0)
-#define LED_CTRL_DEV_NAME	DT_LABEL(LED_CTRL_NODE_ID)
-#else
-#error "LED controller device not found"
-#endif
 
 #define _COLOR_MAPPING(led_node_id)				\
 const uint8_t test_color_mapping_##led_node_id[] =		\
@@ -29,7 +22,7 @@ const uint8_t test_color_mapping_##led_node_id[] =		\
 
 #define LED_INFO_COLOR(led_node_id)				\
 {								\
-	.label		= DT_LABEL(led_node_id),		\
+	.label		= DT_PROP(led_node_id, label),		\
 	.index		= DT_PROP_OR(led_node_id, index, 0),	\
 	.num_colors	=					\
 		DT_PROP_LEN(led_node_id, color_mapping),	\
@@ -38,7 +31,7 @@ const uint8_t test_color_mapping_##led_node_id[] =		\
 
 #define LED_INFO_NO_COLOR(led_node_id)				\
 {								\
-	.label		= DT_LABEL(led_node_id),		\
+	.label		= DT_PROP(led_node_id, label),		\
 	.index		= DT_PROP_OR(led_node_id, index, 0),	\
 	.num_colors	= 0,					\
 	.color_mapping	= NULL,					\
@@ -59,33 +52,27 @@ const struct led_info test_led_info[] = {			\
 								\
 static ZTEST_DMEM int num_leds = ARRAY_SIZE(test_led_info)
 
-LED_CONTROLLER_INFO(LED_CTRL_NODE_ID);
+LED_CONTROLLER_INFO(DT_ALIAS(led_controller_0));
 
-static ZTEST_BMEM const struct device *led_ctrl;
+static ZTEST_BMEM const struct device *const led_ctrl = DEVICE_DT_GET(DT_ALIAS(led_controller_0));
 
-const struct device *get_led_controller(void)
+static void test_led_setup(void)
 {
-	return device_get_binding(LED_CTRL_DEV_NAME);
+	zassert_true(device_is_ready(led_ctrl), "LED controller is not ready");
+
+	zassert_not_equal(num_leds, 0, "No LEDs subnodes found in DT for controller");
+
+	k_object_access_grant(led_ctrl, k_current_get());
 }
 
-void test_led_setup(void)
-{
-	led_ctrl = get_led_controller();
-	zassert_not_null(led_ctrl,
-			 "LED controller " LED_CTRL_DEV_NAME " not found");
-
-	zassert_not_equal(num_leds, 0,
-			  "No LEDs subnodes found in DT for controller "
-			  LED_CTRL_DEV_NAME);
-}
-
-void test_led_get_info(void)
+ZTEST_USER(led_user, test_led_get_info)
 {
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		const struct led_info *info;
@@ -116,8 +103,9 @@ void test_led_get_info(void)
 		TC_PRINT("LED %d - label: %s, index: %d, num_colors: %d",
 			 led, info->label, info->index, info->num_colors);
 
-		if (!info->num_colors)
+		if (!info->num_colors) {
 			continue;
+		}
 
 		TC_PRINT(" color_mapping: ");
 
@@ -133,13 +121,14 @@ void test_led_get_info(void)
 	}
 }
 
-void test_led_on(void)
+ZTEST_USER(led_user, test_led_on)
 {
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		ret = led_on(led_ctrl, led);
@@ -147,13 +136,14 @@ void test_led_on(void)
 	}
 }
 
-void test_led_off(void)
+ZTEST_USER(led_user, test_led_off)
 {
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		ret = led_off(led_ctrl, led);
@@ -161,14 +151,15 @@ void test_led_off(void)
 	}
 }
 
-void test_led_set_color(void)
+ZTEST_USER(led_user, test_led_set_color)
 {
 	uint8_t led;
 	uint8_t colors[TEST_MAX_COLORS + 1];
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		uint8_t num_colors = test_led_info[led].num_colors;
@@ -221,13 +212,14 @@ void test_led_set_color(void)
 	}
 }
 
-void test_led_set_brightness(void)
+ZTEST_USER(led_user, test_led_set_brightness)
 {
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		uint16_t level;
@@ -247,3 +239,12 @@ void test_led_set_brightness(void)
 		}
 	}
 }
+
+void *led_setup(void)
+{
+	test_led_setup();
+
+	return NULL;
+}
+
+ZTEST_SUITE(led_user, NULL, led_setup, NULL, NULL, NULL);

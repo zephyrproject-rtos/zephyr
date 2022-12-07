@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2010, 2012-2015 Wind River Systems, Inc.
- * Copyright (c) 2020 Intel Corp.
+ * Copyright (c) 2020-2022 Intel Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,11 +28,13 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/irq.h>
 
-#include "uart_ns16550.h"
+#include <zephyr/drivers/serial/uart_ns16550.h>
 
 #define INST_HAS_PCP_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, pcp) ||
 #define INST_HAS_DLF_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, dlf) ||
@@ -225,6 +227,8 @@ struct uart_ns16550_device_config {
 	uint32_t port;
 #endif
 	uint32_t sys_clk_freq;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	uart_irq_config_func_t	irq_config_func;
 #endif
@@ -233,9 +237,7 @@ struct uart_ns16550_device_config {
 #endif
 	uint8_t reg_interval;
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
-	bool pcie;
-	pcie_bdf_t pcie_bdf;
-	pcie_id_t pcie_id;
+	struct pcie_dev *pcie;
 #endif
 };
 
@@ -283,19 +285,18 @@ static inline uintptr_t get_port(const struct device *dev)
 #endif
 }
 
-static void set_baud_rate(const struct device *dev, uint32_t baud_rate)
+static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t pclk)
 {
-	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
 	uint32_t divisor; /* baud rate divisor */
 	uint8_t lcr_cache;
 
-	if ((baud_rate != 0U) && (dev_cfg->sys_clk_freq != 0U)) {
+	if ((baud_rate != 0U) && (pclk != 0U)) {
 		/*
 		 * calculate baud rate divisor. a variant of
-		 * (uint32_t)(dev_cfg->sys_clk_freq / (16.0 * baud_rate) + 0.5)
+		 * (uint32_t)(pclk / (16.0 * baud_rate) + 0.5)
 		 */
-		divisor = ((dev_cfg->sys_clk_freq + (baud_rate << 3))
+		divisor = ((pclk + (baud_rate << 3))
 					/ baud_rate) >> 4;
 
 		/* set the DLAB to access the baud rate divisor registers */
@@ -317,6 +318,7 @@ static int uart_ns16550_configure(const struct device *dev,
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
 	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	uint8_t mdc = 0U;
+	uint32_t pclk = 0U;
 
 	/* temp for return value if error occurs in this locked region */
 	int ret = 0;
@@ -329,15 +331,15 @@ static int uart_ns16550_configure(const struct device *dev,
 #ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (dev_cfg->pcie) {
-		struct pcie_mbar mbar;
+		struct pcie_bar mbar;
 
-		if (!pcie_probe(dev_cfg->pcie_bdf, dev_cfg->pcie_id)) {
+		if (dev_cfg->pcie->bdf == PCIE_BDF_NONE) {
 			ret = -EINVAL;
 			goto out;
 		}
 
-		pcie_probe_mbar(dev_cfg->pcie_bdf, 0, &mbar);
-		pcie_set_cmd(dev_cfg->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
+		pcie_probe_mbar(dev_cfg->pcie->bdf, 0, &mbar);
+		pcie_set_cmd(dev_cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
 			   K_MEM_CACHE_NONE);
@@ -367,7 +369,23 @@ static int uart_ns16550_configure(const struct device *dev,
 	}
 #endif
 
-	set_baud_rate(dev, cfg->baudrate);
+	/*
+	 * set clock frequency from clock_frequency property if valid,
+	 * otherwise, get clock frequency from clock manager
+	 */
+	if (dev_cfg->sys_clk_freq != 0U) {
+		pclk = dev_cfg->sys_clk_freq;
+	} else {
+		if (!device_is_ready(dev_cfg->clock_dev)) {
+			ret = -EINVAL;
+			goto out;
+		}
+
+		clock_control_get_rate(dev_cfg->clock_dev, dev_cfg->clock_subsys,
+			   &pclk);
+	}
+
+	set_baud_rate(dev, cfg->baudrate, pclk);
 
 	/* Local structure to hold temporary values to pass to OUTBYTE() */
 	struct uart_config uart_cfg;
@@ -1041,21 +1059,21 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define UART_NS16550_IRQ_CONFIG_PCIE1(n)                                      \
 	static void irq_config_func##n(const struct device *dev)              \
 	{                                                                     \
-		ARG_UNUSED(dev);                                              \
 		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,              \
 			     "Only runtime IRQ configuration is supported");  \
 		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),           \
 			     "NS16550 PCIe requires dynamic interrupts");     \
-		unsigned int irq = pcie_alloc_irq(DT_INST_REG_ADDR(n));       \
+		const struct uart_ns16550_device_config *dev_cfg = dev->config;\
+		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);        \
 		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                         \
 			return;                                               \
 		}                                                             \
-		pcie_connect_dynamic_irq(DT_INST_REG_ADDR(n), irq,	      \
+		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq,	      \
 				     DT_INST_IRQ(n, priority),		      \
 				    (void (*)(const void *))uart_ns16550_isr, \
 				    DEVICE_DT_INST_GET(n),                    \
 				    UART_NS16550_IRQ_FLAGS(n));               \
-		pcie_irq_enable(DT_INST_REG_ADDR(n), irq);                    \
+		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                    \
 	}
 
 #ifdef CONFIG_UART_NS16550_ACCESS_IOPORT
@@ -1089,12 +1107,14 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #endif
 
 #define DEV_CONFIG_PCIE0(n)
-#define DEV_CONFIG_PCIE1(n)              \
-	.pcie = true,                    \
-	.pcie_bdf = DT_INST_REG_ADDR(n), \
-	.pcie_id = DT_INST_REG_SIZE(n),
+#define DEV_CONFIG_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie)
 #define DEV_CONFIG_PCIE_INIT(n) \
 	_CONCAT(DEV_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+
+#define DEV_DECLARE_PCIE0(n)
+#define DEV_DECLARE_PCIE1(n) DEVICE_PCIE_INST_DECLARE(n)
+#define DEV_PCIE_DECLARE(n) \
+	_CONCAT(DEV_DECLARE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #define DEV_DATA_FLOW_CTRL0 UART_CFG_FLOW_CTRL_NONE
 #define DEV_DATA_FLOW_CTRL1 UART_CFG_FLOW_CTRL_RTS_CTS
@@ -1109,9 +1129,20 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 
 #define UART_NS16550_DEVICE_INIT(n)                                                  \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
+	DEV_PCIE_DECLARE(n);                                                         \
 	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {  \
 		DEV_CONFIG_REG_INIT(n)                                               \
-		.sys_clk_freq = DT_INST_PROP(n, clock_frequency),                    \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_frequency), (             \
+				.sys_clk_freq = DT_INST_PROP(n, clock_frequency),    \
+				.clock_dev = NULL,                                   \
+				.clock_subsys = NULL,                                \
+			), (                                                         \
+				.sys_clk_freq = 0,                                   \
+				.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),  \
+				.clock_subsys = (clock_control_subsys_t) DT_INST_PHA(\
+								0, clocks, clkid),   \
+			)                                                            \
+		)                                                                    \
 		DEV_CONFIG_IRQ_FUNC_INIT(n)                                          \
 		DEV_CONFIG_PCP_INIT(n)                                               \
 		.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),                   \

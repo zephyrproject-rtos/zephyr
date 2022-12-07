@@ -39,7 +39,6 @@
 	wm8731: wm8731@1a {
 		compatible = "wolfson,wm8731";
 		reg = <0x1a>;
-		label = "WM8731";
 	};
 };
 

@@ -16,6 +16,7 @@
 #include <driverlib/rom_map.h>
 #include <driverlib/prcm.h>
 #include <driverlib/uart.h>
+#include <zephyr/irq.h>
 
 struct uart_cc32xx_dev_config {
 	unsigned long base;

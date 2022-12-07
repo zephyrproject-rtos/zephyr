@@ -105,6 +105,26 @@ todo_include_todos = False
 
 numfig = True
 
+nitpick_ignore = [
+    # ignore C standard identifiers (they are not defined in Zephyr docs)
+    ("c:identifier", "FILE"),
+    ("c:identifier", "int8_t"),
+    ("c:identifier", "int16_t"),
+    ("c:identifier", "int32_t"),
+    ("c:identifier", "int64_t"),
+    ("c:identifier", "intptr_t"),
+    ("c:identifier", "off_t"),
+    ("c:identifier", "size_t"),
+    ("c:identifier", "ssize_t"),
+    ("c:identifier", "time_t"),
+    ("c:identifier", "uint8_t"),
+    ("c:identifier", "uint16_t"),
+    ("c:identifier", "uint32_t"),
+    ("c:identifier", "uint64_t"),
+    ("c:identifier", "uintptr_t"),
+    ("c:identifier", "va_list"),
+]
+
 rst_epilog = """
 .. include:: /substitutions.txt
 """
@@ -140,6 +160,7 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("3.2.0", "/3.2.0/"),
         ("3.1.0", "/3.1.0/"),
         ("3.0.0", "/3.0.0/"),
         ("2.7.0", "/2.7.0/"),
@@ -179,6 +200,12 @@ latex_elements = {
 latex_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo-latex.pdf")
 latex_documents = [
     ("index-tex", "zephyr.tex", "Zephyr Project Documentation", author, "manual"),
+]
+
+# -- Options for linkcheck ------------------------------------------------
+
+linkcheck_ignore = [
+    r"https://github.com/zephyrproject-rtos/zephyr/issues/.*"
 ]
 
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
@@ -223,6 +250,11 @@ html_redirect_pages = redirects.REDIRECTS
 # -- Options for zephyr.warnings_filter -----------------------------------
 
 warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
+
+# -- Options for zephyr.link-roles ----------------------------------------
+
+link_roles_manifest_project = "zephyr"
+link_roles_manifest_baseurl = "https://github.com/zephyrproject-rtos/zephyr"
 
 # -- Options for notfound.extension ---------------------------------------
 
@@ -280,8 +312,7 @@ graphviz_dot_args = [
 # -- Linkcheck options ----------------------------------------------------
 
 extlinks = {
-    "jira": ("https://jira.zephyrproject.org/browse/%s", ""),
-    "github": ("https://github.com/zephyrproject-rtos/zephyr/issues/%s", ""),
+    "github": ("https://github.com/zephyrproject-rtos/zephyr/issues/%s", "GitHub #%s"),
 }
 
 linkcheck_timeout = 30

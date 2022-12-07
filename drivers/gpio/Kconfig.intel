@@ -5,6 +5,8 @@
 
 config GPIO_INTEL
 	bool "Intel Soc GPIO"
+	default y
+	depends on DT_HAS_INTEL_GPIO_ENABLED
 	help
 	  Enable driver for Intel SoC GPIO
 

@@ -9,6 +9,5 @@
 		compatible = "maxim,max6675";
 		reg = <0>;
 		spi-max-frequency = <4300000>;
-		label = "MAX6675";
 	};
 };

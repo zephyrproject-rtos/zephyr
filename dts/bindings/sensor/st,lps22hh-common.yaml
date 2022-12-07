@@ -1,10 +1,11 @@
 # Copyright (c) 2021 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+include: sensor-device.yaml
+
 properties:
     drdy-gpios:
       type: phandle-array
-      required: false
       description: |
         DRDY pin
 
@@ -14,7 +15,6 @@ properties:
 
     odr:
       type: int
-      required: false
       default: 0
       description: |
           Specify the default output data rate expressed in samples per second (Hz).

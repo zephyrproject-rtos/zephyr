@@ -1,9 +1,11 @@
 identifier: nsim_hs5x
 name: HS5x nSIM simulator
-type: mcu
+type: sim
 simulation: nsim
+simulation_exec: nsimdrv
 arch: arc
 toolchain:
+  - zephyr
   - arcmwdt
   - cross-compile
 testing:

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt10xx.dtsi>
 
 /* i.MX rt1060 has two continuous on-chip RAM, one is part of the
  * FlexRAM mapped at 0x20280000 (vs 0x20280000 on rt1050) and is
@@ -13,8 +13,17 @@
  * region, we describe them in one 768Kb unique node.
  */
 &ocram {
-	compatible = "mmio-sram";
 	reg = <0x20200000 DT_SIZE_K(768)>;
+};
+
+&ccm {
+	arm-podf {
+		clock-div = <2>;
+	};
+
+	ipg-podf {
+		clock-div = <4>;
+	};
 };
 
 /* i.MX rt1060 has a second Ethernet controller. */
@@ -26,7 +35,6 @@
 			interrupts = <152 0>;
 			interrupt-names = "COMMON";
 			status = "disabled";
-			label = "ETH_1";
 			ptp {
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";

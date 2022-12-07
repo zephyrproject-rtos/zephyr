@@ -29,6 +29,12 @@ config WIFI_OFFLOAD
 	help
 	  Enable support for Full-MAC Wi-Fi devices.
 
+config WIFI_USE_NATIVE_NETWORKING
+	bool
+	help
+	  When selected, this hidden configuration enables Wi-Fi driver
+	  to use native ethernet stack interface.
+
 source "drivers/wifi/winc1500/Kconfig.winc1500"
 source "drivers/wifi/simplelink/Kconfig.simplelink"
 source "drivers/wifi/eswifi/Kconfig.eswifi"

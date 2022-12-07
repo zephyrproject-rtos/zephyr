@@ -10,7 +10,7 @@
 
 LOG_MODULE_DECLARE(net_google_iot_mqtt, LOG_LEVEL_DBG);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>

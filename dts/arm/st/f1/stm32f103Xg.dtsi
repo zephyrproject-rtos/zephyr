@@ -37,12 +37,10 @@
 			interrupts = <24 0>;
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_9";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_9";
 				#pwm-cells = <3>;
 			};
 		};
@@ -55,12 +53,10 @@
 			interrupts = <25 0>;
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_10";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_10";
 				#pwm-cells = <3>;
 			};
 		};
@@ -73,12 +69,10 @@
 			interrupts = <26 0>;
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_11";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_11";
 				#pwm-cells = <3>;
 			};
 		};
@@ -91,12 +85,10 @@
 			interrupts = <43 0>;
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_12";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_12";
 				#pwm-cells = <3>;
 			};
 		};
@@ -109,12 +101,10 @@
 			interrupts = <44 0>;
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_13";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_13";
 				#pwm-cells = <3>;
 			};
 		};
@@ -127,12 +117,10 @@
 			interrupts = <45 0>;
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_14";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_14";
 				#pwm-cells = <3>;
 			};
 		};

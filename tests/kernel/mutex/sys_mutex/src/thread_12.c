@@ -15,8 +15,8 @@
  * the one it was defined in.
  */
 
-#include <tc_util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/mutex.h>
 
 static int tc_rc = TC_PASS;         /* test case return code */

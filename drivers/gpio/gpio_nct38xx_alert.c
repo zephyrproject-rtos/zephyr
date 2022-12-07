@@ -78,8 +78,9 @@ static void nct38xx_alert_worker(struct k_work *work)
 				}
 			}
 
-			if (alert & BIT(NCT38XX_REG_ALERT_VENDOR_DEFINDED_ALERT))
+			if (alert & BIT(NCT38XX_REG_ALERT_VENDOR_DEFINDED_ALERT)) {
 				nct38xx_gpio_alert_handler(config->nct38xx_dev[i]);
+			}
 		}
 		/* While the interrupt signal is still active; we have more work to do. */
 	} while (gpio_pin_get_dt(&config->irq_gpio));

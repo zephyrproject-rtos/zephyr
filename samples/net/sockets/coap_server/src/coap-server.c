@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_mgmt.h>
@@ -101,7 +101,7 @@ static bool join_coap_multicast_group(void)
 	ret = net_ipv6_mld_join(iface, &mcast_addr.sin6_addr);
 	if (ret < 0) {
 		LOG_ERR("Cannot join %s IPv6 multicast group (%d)",
-			log_strdup(net_sprint_ipv6_addr(&mcast_addr.sin6_addr)), ret);
+			net_sprint_ipv6_addr(&mcast_addr.sin6_addr), ret);
 		return false;
 	}
 

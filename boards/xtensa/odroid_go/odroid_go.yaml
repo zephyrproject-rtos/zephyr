@@ -7,9 +7,9 @@ toolchain:
 supported:
   - gpio
   - i2c
+  - spi
   - watchdog
   - uart
-  - pinmux
   - nvs
 testing:
   ignore_tags:

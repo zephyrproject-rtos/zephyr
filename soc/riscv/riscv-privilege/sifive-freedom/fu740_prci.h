@@ -7,6 +7,8 @@
 #ifndef _SIFIVE_FU740_PRCI_H
 #define _SIFIVE_FU740_PRCI_H
 
+#include <soc.h>
+
 #define Z_REG32(p, i) (*(volatile uint32_t *) ((p) + (i)))
 #define PRCI_REG(offset) Z_REG32(PRCI_BASE_ADDR, offset)
 

@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include "lw_priv.h"
 

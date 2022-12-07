@@ -10,8 +10,7 @@ The Adafruit ItsyBitsy M4 express is a small (36 mm x 18 mm) ARM development
 board with an onboard RGB LED, USB port, 2 MiB of SPI flash, and range of I/O
 broken out onto 23 GPIO pins.
 
-.. image:: img/adafruit_itsybitsy_m4_express.png
-     :width: 500px
+.. image:: img/adafruit_itsybitsy_m4_express.jpg
      :align: center
      :alt: Adafruit ItsyBitsy M4 Express
 
@@ -162,7 +161,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! adafruit_itsybitsy_m4_express" in your terminal.
 
 Debugging
 =========

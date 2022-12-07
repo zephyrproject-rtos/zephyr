@@ -6,4 +6,4 @@ description: |
 
 compatible: "honeywell,mpr"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

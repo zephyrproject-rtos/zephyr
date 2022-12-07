@@ -4,6 +4,8 @@ tests:
   sample.modbus.tcp_server:
     build_only: true
     platform_allow: frdm_k64f
+    integration_platforms:
+      - frdm_k64f
     tags: modbus
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
             dt_enabled_alias_with_parent_compat("led1", "gpio-leds") and

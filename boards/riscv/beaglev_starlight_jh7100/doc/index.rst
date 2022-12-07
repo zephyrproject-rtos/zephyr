@@ -41,7 +41,7 @@ Flashing
    any other serial terminal that supports xmodem based file transfers.
 
 #. BeagleV Starlight uses uart for flashing. Refer to `BeagleV Getting Started
-   <https://wiki.seeedstudio.com/BeagleV-Getting-Started/>`_
+   <https://web.archive.org/web/20210625011721/https://wiki.seeedstudio.com/BeagleV-Getting-Started/>`_
    to connect your serial-to-usb converter. Now power on the board and using
    minicom access board's serial.
 
@@ -68,8 +68,3 @@ Flashing
 #. Enter the directory path and press Enter
 #. Select zephyr.bin.out by navigating using arrow keys, press Space and press Enter
 #. Once uploaded hit any key to continue and reset the board to boot the zephyr binary
-
-References
-==========
-
-`Update bootloader, ddr init boot, u-boot and Recover bootloader <https://wiki.seeedstudio.com/BeagleV-Update-bootloader-ddr-init-boot-uboot-Recover-bootloader/>`_

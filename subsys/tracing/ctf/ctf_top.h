@@ -97,6 +97,13 @@ typedef enum {
 	CTF_EVENT_MUTEX_LOCK_EXIT = 0x2B,
 	CTF_EVENT_MUTEX_UNLOCK_ENTER = 0x2C,
 	CTF_EVENT_MUTEX_UNLOCK_EXIT = 0x2D,
+	CTF_EVENT_TIMER_INIT = 0x2E,
+	CTF_EVENT_TIMER_START = 0x2F,
+	CTF_EVENT_TIMER_STOP = 0x30,
+	CTF_EVENT_TIMER_STATUS_SYNC_ENTER = 0x31,
+	CTF_EVENT_TIMER_STATUS_SYNC_BLOCKING = 0x32,
+	CTF_EVENT_TIMER_STATUS_SYNC_EXIT = 0x33
+
 } ctf_event_t;
 
 typedef struct {
@@ -289,5 +296,37 @@ static inline void ctf_top_mutex_unlock_exit(uint32_t mutex_id, int32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_UNLOCK_EXIT), mutex_id);
 }
+
+/* Timer */
+static inline void ctf_top_timer_init(uint32_t timer)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_INIT), timer);
+}
+
+static inline void ctf_top_timer_start(uint32_t timer, uint32_t duration, uint32_t period)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_START), timer, duration, period);
+}
+
+static inline void ctf_top_timer_stop(uint32_t timer)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_STOP), timer);
+}
+
+static inline void ctf_top_timer_status_sync_enter(uint32_t timer)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_STATUS_SYNC_ENTER), timer);
+}
+
+static inline void ctf_top_timer_status_sync_blocking(uint32_t timer, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_STATUS_SYNC_BLOCKING), timer, timeout);
+}
+
+static inline void ctf_top_timer_status_sync_exit(uint32_t timer, uint32_t result)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_TIMER_STATUS_SYNC_EXIT), timer, result);
+}
+
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */

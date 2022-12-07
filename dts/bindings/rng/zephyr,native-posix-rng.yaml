@@ -6,7 +6,3 @@ description: Native POSIX RNG/Entropy
 compatible: "zephyr,native-posix-rng"
 
 include: base.yaml
-
-properties:
-    label:
-      required: true

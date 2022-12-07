@@ -1,43 +1,42 @@
 /*
- * Copyright (c) 2021, Piotr Mienkowski
+ * Copyright (c) 2022 Valerio Setti <valerio.setti@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
-#include <stdio.h>
+#include <zephyr/sys/printk.h>
 
 void main(void)
 {
-	const struct device *dev;
-	int ret;
+	struct sensor_value val;
+	int rc;
+	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(qdec0));
 
-	printf("Quadrature Decoder sample application\n\n");
-
-	dev = device_get_binding("QDEC_0");
-	if (!dev) {
-		printf("error: no QDEC_0 device\n");
+	if (!device_is_ready(dev)) {
+		printk("Qdec device is not ready\n");
 		return;
 	}
 
-	while (1) {
-		struct sensor_value value;
+	printk("Quadrature decoder sensor test\n");
 
-		ret = sensor_sample_fetch(dev);
-		if (ret) {
-			printf("sensor_sample_fetch failed returns: %d\n", ret);
-			break;
+	while (true) {
+		rc = sensor_sample_fetch(dev);
+		if (rc != 0) {
+			printk("Failed to fetch sample (%d)\n", rc);
+			return;
 		}
 
-		ret = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &value);
-		if (ret) {
-			printf("sensor_channel_get failed returns: %d\n", ret);
-			break;
+		rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
+		if (rc != 0) {
+			printk("Failed to get data (%d)\n", rc);
+			return;
 		}
 
-		printf("Position is %d\n", value.val1);
+		printk("Position = %d degrees", val.val1);
 
-		k_sleep(K_MSEC(2000));
+		k_msleep(1000);
 	}
 }

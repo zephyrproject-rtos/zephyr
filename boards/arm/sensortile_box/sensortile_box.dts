@@ -44,7 +44,19 @@
 		led0 = &blue_led;
 		led1 = &green_led;
 		sw0 = &user_button;
+		magn0 = &lis2mdl;
+		accel0 = &lis2dw12;
+		accel1 = &lsm6dso;
+		accel2 = &iis3dhhc;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
 };
 
 &clk_hse {
@@ -93,14 +105,12 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		label = "HTS221";
 		drdy-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 	};
 
 	lps22hh@5d {
 		compatible = "st,lps22hh";
 		reg = <0x5d>;
-		label = "LPS22HH";
 		drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 	};
 };
@@ -115,7 +125,6 @@
 		compatible = "st,stts751";
 		reg = <0x38>;
 		drdy-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
-		label = "STTS751";
 	};
 };
 
@@ -127,29 +136,26 @@
 
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>, <&gpioe 10 GPIO_ACTIVE_LOW>;
 
-	lis2dw12@0 {
+	lis2dw12: lis2dw12@0 {
 		compatible = "st,lis2dw12";
 		spi-max-frequency = <1000000>;
 		reg = <0>;
 		irq-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DW12";
 	};
 
-	lsm6dso@1 {
+	lsm6dso: lsm6dso@1 {
 		compatible = "st,lsm6dso";
 		spi-max-frequency = <1000000>;
 		reg = <1>;
 		irq-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
-		label = "LSM6DSO";
 		int-pin = <1>;
 	};
 
-	iis3dhhc@2 {
+	iis3dhhc: iis3dhhc@2 {
 		compatible = "st,iis3dhhc";
 		spi-max-frequency = <1000000>;
 		reg = <2>;
 		irq-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>, <&gpioe 6 GPIO_ACTIVE_HIGH>;
-		label = "IIS3DHHC";
 	};
 };
 
@@ -161,12 +167,11 @@
 
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 
-	lis2mdl@0 {
+	lis2mdl: lis2mdl@0 {
 		compatible = "st,lis2mdl";
 		spi-max-frequency = <1000000>;
 		spi-full-duplex;
 		reg = <0>;
-		label = "LIS2MDL";
 	};
 };
 
@@ -177,6 +182,8 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

@@ -4,16 +4,11 @@
 
 menuconfig IEEE802154_CC1200
 	bool "TI CC1200 Driver support"
-	depends on NETWORKING
+	default y
+	depends on DT_HAS_TI_CC1200_ENABLED
 	select NET_L2_IEEE802154_SUB_GHZ
 
 if IEEE802154_CC1200
-
-config IEEE802154_CC1200_DRV_NAME
-	string "TI CC1200 Driver's name"
-	default "cc1200"
-	help
-	  This option sets the driver name
 
 config IEEE802154_CC1200_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"

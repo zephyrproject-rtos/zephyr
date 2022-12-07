@@ -1,14 +1,12 @@
 # Copyright (c) 2021, Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_NRF_LED_MATRIX := nordic,nrf-led-matrix
-
 config DISPLAY_NRF_LED_MATRIX
 	bool "LED matrix driven by GPIOs"
-	depends on SOC_FAMILY_NRF
+	default y
+	depends on DT_HAS_NORDIC_NRF_LED_MATRIX_ENABLED
 	select NRFX_GPIOTE
 	select NRFX_PPI if HAS_HW_NRF_PPI
-	default $(dt_compat_enabled,$(DT_COMPAT_NRF_LED_MATRIX))
 	help
 	  Enable driver for a LED matrix with rows and columns driven by
 	  GPIOs. The driver allows setting one of 256 levels of brightness

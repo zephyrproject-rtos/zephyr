@@ -16,7 +16,6 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
 
-#include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
 
@@ -177,6 +176,8 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 
 #define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wattributes\"") \
 	__attribute__ ((interrupt ("IRQ"))) void name(void) \
 	{ \
 		int check_reschedule; \
@@ -184,6 +185,7 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 		check_reschedule = name##_body(); \
 		ISR_DIRECT_FOOTER(check_reschedule); \
 	} \
+	_Pragma("GCC diagnostic pop") \
 	static inline int name##_body(void)
 
 #if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
@@ -242,17 +244,6 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
 		CONCAT(z_arm_irq_direct_dynamic_dispatch_, resch), flags_p)
 
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
-
-/* Spurious interrupt handler. Throws an error if called */
-extern void z_irq_spurious(const void *unused);
-
-#ifdef CONFIG_GEN_SW_ISR_TABLE
-/* Architecture-specific common entry point for interrupts from the vector
- * table. Most likely implemented in assembly. Looks up the correct handler
- * and parameter from the _sw_isr_table and executes it.
- */
-extern void _isr_wrapper(void);
-#endif
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 /* Architecture-specific definition for the target security

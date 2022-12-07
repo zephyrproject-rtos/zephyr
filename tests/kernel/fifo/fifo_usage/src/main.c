@@ -32,7 +32,7 @@
  * All the Push and Pop operations happen in ISR Context.
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 
 #define STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -64,7 +64,7 @@ static void tIsr_entry_put(const void *p)
 	for (i = 0U; i < LIST_LEN; i++) {
 		k_fifo_put((struct k_fifo *)p, (void *)&data_isr[i]);
 	}
-	zassert_false(k_fifo_is_empty((struct k_fifo *)p), NULL);
+	zassert_false(k_fifo_is_empty((struct k_fifo *)p));
 }
 
 static void tIsr_entry_get(const void *p)
@@ -75,9 +75,9 @@ static void tIsr_entry_get(const void *p)
 	/* Get items from fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get((struct k_fifo *)p, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_isr[i], NULL);
+		zassert_equal(rx_data, (void *)&data_isr[i]);
 	}
-	zassert_true(k_fifo_is_empty((struct k_fifo *)p), NULL);
+	zassert_true(k_fifo_is_empty((struct k_fifo *)p));
 }
 
 static void thread_entry_fn_single(void *p1, void *p2, void *p3)
@@ -88,7 +88,7 @@ static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 	/* Get items from fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get((struct k_fifo *)p1, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data1[i], NULL);
+		zassert_equal(rx_data, (void *)&data1[i]);
 	}
 
 	/* Put items into fifo */
@@ -108,7 +108,7 @@ static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 	for (i = 0U; i < LIST_LEN; i++) {
 		/* Get items from fifo2 */
 		rx_data = k_fifo_get((struct k_fifo *)p2, K_FOREVER);
-		zassert_equal(rx_data, (void *)&data2[i], NULL);
+		zassert_equal(rx_data, (void *)&data2[i]);
 
 		/* Put items into fifo1 */
 		k_fifo_put((struct k_fifo *)p1, (void *)&data1[i]);
@@ -141,7 +141,7 @@ static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
  * is returned back to Test Thread, it extracts all items from the fifo.
  * @see k_fifo_get(), k_fifo_is_empty(), k_fifo_put(), #K_FIFO_DEFINE(x)
  */
-static void test_single_fifo_play(void)
+ZTEST(fifo_usage, test_single_fifo_play)
 {
 	void *rx_data;
 	uint32_t i;
@@ -164,7 +164,7 @@ static void test_single_fifo_play(void)
 	/* Get items from fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get(&fifo1, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data2[i], NULL);
+		zassert_equal(rx_data, (void *)&data2[i]);
 	}
 
 	/* Clear the spawn thread to avoid side effect */
@@ -180,7 +180,7 @@ static void test_single_fifo_play(void)
  * Child Thread and so forth.
  * @see k_fifo_get(), k_fifo_is_empty(), k_fifo_put(), #K_FIFO_DEFINE(x)
  */
-static void test_dual_fifo_play(void)
+ZTEST(fifo_usage, test_dual_fifo_play)
 {
 	void *rx_data;
 	uint32_t i;
@@ -195,7 +195,7 @@ static void test_dual_fifo_play(void)
 
 		/* Get item from fifo */
 		rx_data = k_fifo_get(&fifo1, K_FOREVER);
-		zassert_equal(rx_data, (void *)&data1[i], NULL);
+		zassert_equal(rx_data, (void *)&data1[i]);
 	}
 
 	/* Clear the spawn thread to avoid side effect */
@@ -212,7 +212,7 @@ static void test_dual_fifo_play(void)
  * All the Push and Pop operations happen in ISR Context.
  * @see k_fifo_get(), k_fifo_is_empty(), k_fifo_put(), #K_FIFO_DEFINE(x)
  */
-static void test_isr_fifo_play(void)
+ZTEST(fifo_usage, test_isr_fifo_play)
 {
 	/* Init kernel objects */
 	k_sem_init(&end_sema, 0, 1);
@@ -239,12 +239,5 @@ static void test_isr_fifo_play(void)
  * @}
  */
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_fifo_usage,
-			 ztest_1cpu_unit_test(test_single_fifo_play),
-			 ztest_1cpu_unit_test(test_dual_fifo_play),
-			 ztest_1cpu_unit_test(test_isr_fifo_play));
-	ztest_run_test_suite(test_fifo_usage);
-}
+ZTEST_SUITE(fifo_usage, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

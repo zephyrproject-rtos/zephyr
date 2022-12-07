@@ -181,7 +181,7 @@ static void spi_gecko_xfer(const struct device *dev,
 	} while (!ret && spi_gecko_transfer_ongoing(data));
 
 	spi_context_cs_control(ctx, false);
-	spi_context_complete(ctx, 0);
+	spi_context_complete(ctx, dev, 0);
 }
 
 static void spi_gecko_init_pins(const struct device *dev)

@@ -9,8 +9,8 @@
 
 / {
 	aliases {
-		eeprom-0 = &eeprom0;
-		eeprom-1 = &eeprom4;
+		eeprom-0 = &eeprom0_x_nucleo_eeprma2;
+		eeprom-1 = &eeprom4_x_nucleo_eeprma2;
 	};
 };
 
@@ -18,11 +18,10 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	eeprom0: eeprom@54 {
+	eeprom0_x_nucleo_eeprma2: eeprom@54 {
 		/* M24C02-FMC6TG aka U1 (2 kbit eeprom in DFN8 package) */
 		compatible = "st,m24xxx", "atmel,at24";
 		reg = <0x54>;
-		label = "EEPROM_M24C02";
 		size = <256>;
 		pagesize = <16>;
 		address-width = <8>;
@@ -32,11 +31,10 @@
 		/* wp-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>; */
 	};
 
-	eeprom1: eeprom@55 {
+	eeprom1_x_nucleo_eeprma2: eeprom@55 {
 		/* M24256-DFDW6TP aka U2 (256 kbit eeprom in TSSOP package) */
 		compatible = "st,m24xxx", "atmel,at24";
 		reg = <0x55>;
-		label = "EEPROM_M24256";
 		size = <DT_SIZE_K(32)>;
 		pagesize = <64>;
 		address-width = <16>;
@@ -46,11 +44,10 @@
 		/* wp-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>; */
 	};
 
-	eeprom2: eeprom@56 {
+	eeprom2_x_nucleo_eeprma2: eeprom@56 {
 		/* M24M01-DFMN6TP aka U3 (1 Mbit eeprom in SO8N package) */
 		compatible = "st,m24xxx", "atmel,at24";
 		reg = <0x56>;
-		label = "EEPROM_M24M01";
 		size = <DT_SIZE_K(128)>;
 		pagesize = <256>;
 		address-width = <16>;
@@ -64,6 +61,7 @@
 };
 
 &arduino_spi {
+	status = "okay";
 	cs-gpios = <&arduino_header  8 GPIO_ACTIVE_LOW>, /* U5: eeprom4 */
 		   <&arduino_header 15 GPIO_ACTIVE_LOW>, /* U6: eeprom5 */
 		   <&arduino_header 16 GPIO_ACTIVE_LOW>; /* U7: eeprom6 */
@@ -82,11 +80,10 @@
 	 * via an open solder bridge.
 	 */
 
-	eeprom4: eeprom_m95040@0 {
+	eeprom4_x_nucleo_eeprma2: eeprom_m95040@0 {
 		/* M95040-RMC6TG aka U5 (4 kbit eeprom in DFN8 package) */
 		compatible = "st,m95xxx", "atmel,at25";
 		reg = <0x00>;
-		label = "EEPROM_M95040";
 		size = <512>;
 		pagesize = <16>;
 		address-width = <8>;
@@ -97,11 +94,10 @@
 		/* wp-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>; */
 	};
 
-	eeprom5: eeprom_m95256@1 {
+	eeprom5_x_nucleo_eeprma2: eeprom_m95256@1 {
 		/* M95256-DFDW6TP aka U6 (256 kbit eeprom in TSSOP package) */
 		compatible = "st,m95xxx", "atmel,at25";
 		reg = <0x01>;
-		label = "EEPROM_M95256";
 		size = <DT_SIZE_K(32)>;
 		pagesize = <64>;
 		address-width = <16>;
@@ -112,11 +108,10 @@
 		/* wp-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>; */
 	};
 
-	eeprom6: eeprom_m95m04@2 {
+	eeprom6_x_nucleo_eeprma2: eeprom_m95m04@2 {
 		/* M95M04-DRMN6TP aka U7 (4 Mbit eeprom in SON8 package) */
 		compatible = "st,m95xxx", "atmel,at25";
 		reg = <0x02>;
-		label = "EEPROM_M95M04";
 		size = <DT_SIZE_K(512)>;
 		pagesize = <512>;
 		address-width = <24>;

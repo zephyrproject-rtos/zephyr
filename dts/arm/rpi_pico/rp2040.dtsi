@@ -33,11 +33,19 @@
 			reg = <0x20000000 DT_SIZE_K(264)>;
 		};
 
-		flash0: flash@10000000 {
-			compatible = "soc-nv-flash";
-			label = "FLASH_RP2";
+		flash_controller: flash-controller@10000000 {
+			compatible = "raspberrypi,pico-flash-controller";
+			reg = <0x10000000 DT_SIZE_K(4)>;
+			interrupts = <15 0>;
 
-			write-block-size = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				write-block-size = <1>;
+				erase-block-size = <DT_SIZE_K(4)>;
+			};
 		};
 
 		peripheral_clk: peripheral-clk {
@@ -58,14 +66,12 @@
 			reg-width = <4>;
 			active-low = <0>;
 			#reset-cells = <1>;
-			label = "RESET";
 		};
 
 		pinctrl: pin-controller@40014000 {
 			compatible = "raspberrypi,pico-pinctrl";
 			reg = <0x40014000 DT_SIZE_K(4)>;
 			status = "okay";
-			label = "PINCTRL";
 		};
 
 		gpio0: gpio@40014000 {
@@ -74,7 +80,6 @@
 			interrupts = <13 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			label = "GPIO_0";
 			status = "disabled";
 			ngpios = <30>;
 		};
@@ -86,7 +91,6 @@
 			resets = <&reset RPI_PICO_RESETS_RESET_UART0>;
 			interrupts = <20 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "uart0";
-			label = "UART_0";
 			status = "disabled";
 		};
 
@@ -97,8 +101,41 @@
 			resets = <&reset RPI_PICO_RESETS_RESET_UART1>;
 			interrupts = <21 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "uart1";
-			label = "UART_1";
 			status = "disabled";
+		};
+
+		spi0: spi@4003c000 {
+			compatible = "raspberrypi,pico-spi", "arm,pl022";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4003c000 DT_SIZE_K(4)>;
+			clocks = <&peripheral_clk>;
+			resets = <&reset RPI_PICO_RESETS_RESET_SPI0>;
+			interrupts = <18 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "spi0";
+			status = "disabled";
+		};
+
+		spi1: spi@40040000 {
+			compatible = "raspberrypi,pico-spi", "arm,pl022";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40040000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_SPI1>;
+			clocks = <&peripheral_clk>;
+			interrupts = <19 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "spi1";
+			status = "disabled";
+		};
+
+		adc: adc@4004c000 {
+			compatible = "raspberrypi,pico-adc";
+			reg = <0x4004c000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_ADC>;
+			interrupts = <22 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "adc0";
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		i2c0: i2c@40044000 {
@@ -109,7 +146,6 @@
 			clocks = <&system_clk>;
 			interrupts = <23 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "i2c0";
-			label = "I2C_0";
 			status = "disabled";
 		};
 
@@ -121,7 +157,13 @@
 			clocks = <&system_clk>;
 			interrupts = <24 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "i2c1";
-			label = "I2C_1";
+			status = "disabled";
+		};
+
+		wdt0: watchdog@40058000 {
+			compatible = "raspberrypi,pico-watchdog";
+			reg = <0x40058000 DT_SIZE_K(4)>;
+			clocks = <&xtal_clk>;
 			status = "disabled";
 		};
 
@@ -132,8 +174,18 @@
 			interrupts = <5 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "usbctrl";
 			num-bidir-endpoints = <16>;
-			label = "USBD";
 			status = "disabled";
+		};
+
+		pwm: pwm@40050000 {
+			compatible = "raspberrypi,pico-pwm";
+			reg = <0x40050000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_PWM>;
+			clocks = <&system_clk>;
+			interrupts = <4 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "PWM_IRQ_WRAP";
+			status = "disabled";
+			#pwm-cells = <3>;
 		};
 	};
 };

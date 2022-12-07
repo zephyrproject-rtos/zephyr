@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/syscall_handler.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <kernel_internal.h>
 
 #define SEM_ARRAY_SIZE	16
@@ -81,14 +81,14 @@ void object_permission_checks(struct k_sem *sem, bool skip_init)
  *
  * @see k_object_alloc(), k_object_access_grant()
  */
-void test_generic_object(void)
+ZTEST(object_validation, test_generic_object)
 {
 	struct k_sem stack_sem;
 
 	/* None of these should be even in the table */
-	zassert_false(test_object(&stack_sem, -EBADF), NULL);
-	zassert_false(test_object((struct k_sem *)&bad_sem, -EBADF), NULL);
-	zassert_false(test_object((struct k_sem *)0xFFFFFFFF, -EBADF), NULL);
+	zassert_false(test_object(&stack_sem, -EBADF));
+	zassert_false(test_object((struct k_sem *)&bad_sem, -EBADF));
+	zassert_false(test_object((struct k_sem *)0xFFFFFFFF, -EBADF));
 	object_permission_checks(&sem3, false);
 	object_permission_checks(&sem1, true);
 	object_permission_checks(&sem2, false);
@@ -106,11 +106,11 @@ void test_generic_object(void)
 	/* dynamic object table well-populated with semaphores at this point */
 	for (int i = 0; i < SEM_ARRAY_SIZE; i++) {
 		/* Should have permission granted but be uninitialized */
-		zassert_false(test_object(dyn_sem[i], -EINVAL), NULL);
+		zassert_false(test_object(dyn_sem[i], -EINVAL));
 		k_object_access_revoke(dyn_sem[i], k_current_get());
 		object_permission_checks(dyn_sem[i], false);
 		k_object_free(dyn_sem[i]);
-		zassert_false(test_object(dyn_sem[i], -EBADF), NULL);
+		zassert_false(test_object(dyn_sem[i], -EBADF));
 	}
 }
 
@@ -129,7 +129,7 @@ void test_generic_object(void)
  *
  * @see k_object_alloc()
  */
-void test_kobj_assign_perms_on_alloc_obj(void)
+ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
 {
 	static struct k_sem *test_dyn_sem;
 	struct k_thread *thread = _current;
@@ -164,7 +164,7 @@ void test_kobj_assign_perms_on_alloc_obj(void)
  *
  * @see k_object_alloc()
  */
-void test_no_ref_dyn_kobj_release_mem(void)
+ZTEST(object_validation, test_no_ref_dyn_kobj_release_mem)
 {
 	int ret;
 
@@ -183,14 +183,11 @@ void test_no_ref_dyn_kobj_release_mem(void)
 	zassert_true(ret == -EBADF, "Dynamic kernel object not released");
 }
 
-void test_main(void)
+void *object_validation_setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
 
-	ztest_test_suite(object_validation,
-			 ztest_unit_test(test_generic_object),
-			 ztest_unit_test(test_kobj_assign_perms_on_alloc_obj),
-			 ztest_unit_test(test_no_ref_dyn_kobj_release_mem)
-			 );
-	ztest_run_test_suite(object_validation);
+	return NULL;
 }
+
+ZTEST_SUITE(object_validation, NULL, NULL, NULL, NULL, NULL);

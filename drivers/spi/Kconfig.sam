@@ -4,14 +4,19 @@
 # Copyright (c) 2018 qianfan Zhao
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_ATMEL_SAM_SPI := atmel,sam-spi
-
 config SPI_SAM
 	bool "Atmel SAM series SPI driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ATMEL_SAM_SPI))
-	depends on SOC_FAMILY_SAM
-	depends on SPI
+	default y
+	depends on DT_HAS_ATMEL_SAM_SPI_ENABLED
 	select GPIO
 	help
 	  Enable support for the SAM SPI driver.
+
+if SPI_SAM
+config SPI_SAM_DMA
+	bool "SPI SAM DMA Support"
+	select DMA
+	help
+	  Enable using DMA with SPI for SPI instances that enable dma channels in
+	  their device tree node.
+endif # SPI_SAM

@@ -42,9 +42,9 @@ int gpio_mmio32_init(const struct device *dev);
  *
  */
 #define GPIO_MMIO32_INIT(node_id, _address, _mask)					\
-static struct gpio_mmio32_context _CONCAT(Z_DEVICE_DT_DEV_NAME(node_id), _ctx);		\
+static struct gpio_mmio32_context _CONCAT(Z_DEVICE_DT_DEV_ID(node_id), _ctx);		\
 											\
-static const struct gpio_mmio32_config _CONCAT(Z_DEVICE_DT_DEV_NAME(node_id), _cfg) = {	\
+static const struct gpio_mmio32_config _CONCAT(Z_DEVICE_DT_DEV_ID(node_id), _cfg) = {	\
 	.common = {									\
 		 .port_pin_mask = _mask,						\
 	},										\
@@ -55,8 +55,8 @@ static const struct gpio_mmio32_config _CONCAT(Z_DEVICE_DT_DEV_NAME(node_id), _c
 DEVICE_DT_DEFINE(node_id,								\
 		    &gpio_mmio32_init,							\
 		    NULL,								\
-		    &_CONCAT(Z_DEVICE_DT_DEV_NAME(node_id), _ctx),			\
-		    &_CONCAT(Z_DEVICE_DT_DEV_NAME(node_id), _cfg),			\
+		    &_CONCAT(Z_DEVICE_DT_DEV_ID(node_id), _ctx),			\
+		    &_CONCAT(Z_DEVICE_DT_DEV_ID(node_id), _cfg),			\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
 		    &gpio_mmio32_api)
 

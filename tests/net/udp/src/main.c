@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 
 #include <zephyr/types.h>
@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include "ipv4.h"
 #include "ipv6.h"
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -419,7 +419,7 @@ static void set_port(sa_family_t family, struct sockaddr *raddr,
 	}
 }
 
-void test_udp(void)
+ZTEST(udp_fn_tests, test_udp)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
 		k_thread_priority_set(k_current_get(),
@@ -671,9 +671,4 @@ void test_udp(void)
 	zassert_false(test_failed, "udp tests failed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_udp_fn,
-		ztest_unit_test(test_udp));
-	ztest_run_test_suite(test_udp_fn);
-}
+ZTEST_SUITE(udp_fn_tests, NULL, NULL, NULL, NULL, NULL);

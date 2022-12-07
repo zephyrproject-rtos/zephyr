@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(esp32_intc, CONFIG_LOG_DEFAULT_LEVEL);
 #ifdef CONFIG_INTC_ESP32_DECISIONS_LOG
 # define INTC_LOG(...) LOG_INF(__VA_ARGS__)
 #else
-# define INTC_LOG(...) do {} while (0)
+# define INTC_LOG(...) do {} while (false)
 #endif
 
 /* Typedef for C-callable interrupt handler function */
@@ -75,15 +75,15 @@ struct intr_alloc_table_entry {
 /* Default handler for unhandled interrupts. */
 void default_intr_handler(void *arg)
 {
-	printk("Unhandled interrupt %d on cpu %d!\n", (int)arg, arch_curr_cpu()->id);
+	printk("Unhandled interrupt %d on cpu %d!\n", (int)arg, esp_core_id());
 }
 
-static struct intr_alloc_table_entry intr_alloc_table[ESP_INTC_INTS_NUM * CONFIG_MP_NUM_CPUS];
+static struct intr_alloc_table_entry intr_alloc_table[ESP_INTC_INTS_NUM * CONFIG_MP_MAX_NUM_CPUS];
 
 static void set_interrupt_handler(int n, intc_handler_t f, void *arg)
 {
 	irq_disable(n);
-	intr_alloc_table[n * CONFIG_MP_NUM_CPUS].handler = f;
+	intr_alloc_table[n * CONFIG_MP_MAX_NUM_CPUS].handler = f;
 	irq_connect_dynamic(n, n, (intc_dyn_handler_t)f, arg, 0);
 	irq_enable(n);
 }
@@ -92,10 +92,10 @@ static void set_interrupt_handler(int n, intc_handler_t f, void *arg)
 static struct vector_desc_t *vector_desc_head; /* implicitly initialized to NULL */
 
 /* This bitmask has an 1 if the int should be disabled when the flash is disabled. */
-static uint32_t non_iram_int_mask[CONFIG_MP_NUM_CPUS];
+static uint32_t non_iram_int_mask[CONFIG_MP_MAX_NUM_CPUS];
 /* This bitmask has 1 in it if the int was disabled using esp_intr_noniram_disable. */
-static uint32_t non_iram_int_disabled[CONFIG_MP_NUM_CPUS];
-static bool non_iram_int_disabled_flag[CONFIG_MP_NUM_CPUS];
+static uint32_t non_iram_int_disabled[CONFIG_MP_MAX_NUM_CPUS];
+static bool non_iram_int_disabled_flag[CONFIG_MP_MAX_NUM_CPUS];
 
 /*
  * Inserts an item into vector_desc list so that the list is sorted
@@ -202,7 +202,9 @@ static struct vector_desc_t *find_desc_for_source(int source, int cpu)
 
 void esp_intr_initialize(void)
 {
-	for (size_t i = 0; i < (ESP_INTC_INTS_NUM * CONFIG_MP_NUM_CPUS); ++i) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (size_t i = 0; i < (ESP_INTC_INTS_NUM * num_cpus); ++i) {
 		intr_alloc_table[i].handler = default_intr_handler;
 		intr_alloc_table[i].arg = (void *)i;
 	}
@@ -213,7 +215,7 @@ int esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 	if (intno >= ESP_INTC_INTS_NUM) {
 		return -EINVAL;
 	}
-	if (cpu >= CONFIG_MP_NUM_CPUS) {
+	if (cpu >= arch_num_cpus()) {
 		return -EINVAL;
 	}
 
@@ -238,7 +240,7 @@ int esp_intr_reserve(int intno, int cpu)
 	if (intno >= ESP_INTC_INTS_NUM) {
 		return -EINVAL;
 	}
-	if (cpu >= CONFIG_MP_NUM_CPUS) {
+	if (cpu >= arch_num_cpus()) {
 		return -EINVAL;
 	}
 
@@ -258,7 +260,11 @@ int esp_intr_reserve(int intno, int cpu)
 /* Returns true if handler for interrupt is not the default unhandled interrupt handler */
 static bool intr_has_handler(int intr, int cpu)
 {
-	return (intr_alloc_table[intr * CONFIG_MP_NUM_CPUS + cpu].handler != default_intr_handler);
+	bool r;
+
+	r = intr_alloc_table[intr * CONFIG_MP_MAX_NUM_CPUS + cpu].handler != default_intr_handler;
+
+	return r;
 }
 
 static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)
@@ -507,7 +513,7 @@ int esp_intr_alloc_intrstatus(int source,
 	struct intr_handle_data_t *ret = NULL;
 	int force = -1;
 
-	INTC_LOG("%s (cpu %d): checking args", __func__, arch_curr_cpu()->id);
+	INTC_LOG("%s (cpu %d): checking args", __func__, esp_core_id());
 	/* Shared interrupts should be level-triggered. */
 	if ((flags & ESP_INTR_FLAG_SHARED) && (flags & ESP_INTR_FLAG_EDGE)) {
 		return -EINVAL;
@@ -548,7 +554,7 @@ int esp_intr_alloc_intrstatus(int source,
 		}
 	}
 	INTC_LOG("%s (cpu %d): Args okay."
-		"Resulting flags 0x%X", __func__, arch_curr_cpu()->id, flags);
+		"Resulting flags 0x%X", __func__, esp_core_id(), flags);
 
 	/*
 	 * Check 'special' interrupt sources. These are tied to one specific
@@ -584,7 +590,7 @@ int esp_intr_alloc_intrstatus(int source,
 	}
 
 	esp_intr_lock();
-	int cpu = arch_curr_cpu()->id;
+	int cpu = esp_core_id();
 	/* See if we can find an interrupt that matches the flags. */
 	int intr = get_available_int(flags, cpu, force, source);
 
@@ -815,7 +821,7 @@ int IRAM_ATTR esp_intr_enable(struct intr_handle_data_t *handle)
 		intr_matrix_set(handle->vector_desc->cpu, source, handle->vector_desc->intno);
 	} else {
 		/* Re-enable using cpu int ena reg */
-		if (handle->vector_desc->cpu != arch_curr_cpu()->id) {
+		if (handle->vector_desc->cpu != esp_core_id()) {
 			return -EINVAL; /* Can only enable these ints on this cpu */
 		}
 		irq_enable(handle->vector_desc->intno);
@@ -858,7 +864,7 @@ int IRAM_ATTR esp_intr_disable(struct intr_handle_data_t *handle)
 		}
 	} else {
 		/* Disable using per-cpu regs */
-		if (handle->vector_desc->cpu != arch_curr_cpu()->id) {
+		if (handle->vector_desc->cpu != esp_core_id()) {
 			esp_intr_unlock();
 			return -EINVAL; /* Can only enable these ints on this cpu */
 		}
@@ -872,26 +878,27 @@ int IRAM_ATTR esp_intr_disable(struct intr_handle_data_t *handle)
 void IRAM_ATTR esp_intr_noniram_disable(void)
 {
 	int oldint;
-	int cpu = arch_curr_cpu()->id;
-	int intmask = ~non_iram_int_mask[cpu];
+	int cpu = esp_core_id();
+	int non_iram_ints = ~non_iram_int_mask[cpu];
 
 	if (non_iram_int_disabled_flag[cpu]) {
 		abort();
 	}
 	non_iram_int_disabled_flag[cpu] = true;
-	oldint = interrupt_controller_hal_disable_int_mask(intmask);
+	oldint = interrupt_controller_hal_read_interrupt_mask();
+	interrupt_controller_hal_disable_interrupts(non_iram_ints);
 	/* Save which ints we did disable */
-	non_iram_int_disabled[cpu] = oldint & non_iram_int_mask[cpu];
+	non_iram_int_disabled[cpu] = oldint & non_iram_ints;
 }
 
 void IRAM_ATTR esp_intr_noniram_enable(void)
 {
-	int cpu = arch_curr_cpu()->id;
-	int intmask = non_iram_int_disabled[cpu];
+	int cpu = esp_core_id();
+	int non_iram_ints = non_iram_int_disabled[cpu];
 
 	if (!non_iram_int_disabled_flag[cpu]) {
 		abort();
 	}
 	non_iram_int_disabled_flag[cpu] = false;
-	interrupt_controller_hal_enable_int_mask(intmask);
+	interrupt_controller_hal_enable_interrupts(non_iram_ints);
 }

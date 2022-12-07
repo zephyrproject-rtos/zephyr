@@ -11,26 +11,11 @@ import subprocess
 import ctypes
 import mmap
 import argparse
-import socketserver
-import threading
-import netifaces
 
-# Global variable use to sync between log and request services.
-# When it is true, the adsp is able to start running.
-start_output = False
-lock = threading.Lock()
+start_output = True
 
-HOST = None
-PORT_LOG = 9999
-PORT_REQ = PORT_LOG + 1
-BUF_SIZE = 4096
-CMD_LOG_START = "start_log"
-CMD_LOG_STOP = "stop_log"
-CMD_DOWNLOAD = "download"
-
-logging.basicConfig()
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("cavs-fw")
-log.setLevel(logging.INFO)
 
 PAGESZ = 4096
 HUGEPAGESZ = 2 * 1024 * 1024
@@ -108,6 +93,7 @@ class HDAStream:
         self.regs.BDPL = self.buf_list_addr & 0xffffffff
         self.regs.CBL = buf_len
         self.regs.LVI = self.n_bufs - 1
+        self.mem.seek(0)
         self.debug()
         log.info(f"Configured stream {self.stream_id}")
 
@@ -159,12 +145,12 @@ class HDAStream:
         return (mem, hugef, phys_addr + bdl_off, phys_addr+dpib_off, 2)
 
     def debug(self):
-        log.info("HDA %d: PPROC %d, CTL 0x%x, LPIB 0x%x, BDPU 0x%x, BDPL 0x%x, CBL 0x%x, LVI 0x%x",
+        log.debug("HDA %d: PPROC %d, CTL 0x%x, LPIB 0x%x, BDPU 0x%x, BDPL 0x%x, CBL 0x%x, LVI 0x%x",
                  self.stream_id, (hda.PPCTL >> self.stream_id) & 1, self.regs.CTL, self.regs.LPIB, self.regs.BDPU,
                  self.regs.BDPL, self.regs.CBL, self.regs.LVI)
-        log.info("    FIFOW %d, FIFOS %d, FMT %x, FIFOL %d, DPIB %d, EFIFOS %d",
+        log.debug("    FIFOW %d, FIFOS %d, FMT %x, FIFOL %d, DPIB %d, EFIFOS %d",
                  self.regs.FIFOW & 0x7, self.regs.FIFOS, self.regs.FMT, self.regs.FIFOL, self.dbg0.DPIB, self.dbg0.EFIFOS)
-        log.info("    status: FIFORDY %d, DESE %d, FIFOE %d, BCIS %d",
+        log.debug("    status: FIFORDY %d, DESE %d, FIFOE %d, BCIS %d",
                  (self.regs.STS >> 5) & 1, (self.regs.STS >> 4) & 1, (self.regs.STS >> 3) & 1, (self.regs.STS >> 2) & 1)
 
     def reset(self):
@@ -202,7 +188,7 @@ class HDAStream:
 
 
 def map_regs():
-    p = runx(f"grep -iPl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
+    p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
@@ -221,10 +207,10 @@ def map_regs():
         else:
             log.warning(found_msg + ", unloading module")
             runx(f"rmmod -f {mod}")
-
-    # Disengage runtime power management so the kernel doesn't put it to sleep
-    with open(f"{pcidir}/power/control", "w") as ctrl:
-        ctrl.write("on")
+            # Disengage runtime power management so the kernel doesn't put it to sleep
+            log.info(f"Forcing {pcidir}/power/control to always 'on'")
+            with open(f"{pcidir}/power/control", "w") as ctrl:
+                ctrl.write("on")
 
     # Make sure PCI memory space access and busmastering are enabled.
     # Also disable interrupts so as not to confuse the kernel.
@@ -469,20 +455,33 @@ def load_firmware(fw_file):
     # chromebook) putting the two writes next each other also hangs
     # the DSP!
     sd.CTL &= ~2 # clear START
-    time.sleep(1)
+    time.sleep(0.1)
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
 
+def fw_is_alive():
+    return dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
 
-def wait_fw_entered():
-    log.info("Waiting for firmware handoff, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
-    for _ in range(200):
-        alive = dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
+def wait_fw_entered(timeout_s=2):
+    log.info("Waiting %s for firmware handoff, FW_STATUS = 0x%x",
+             "forever" if timeout_s is None else f"{timeout_s} seconds",
+             dsp.SRAM_FW_STATUS)
+    hertz = 100
+    attempts = None if timeout_s is None else timeout_s * hertz
+    while True:
+        alive = fw_is_alive()
         if alive:
             break
-        time.sleep(0.01)
+        if attempts is not None:
+            attempts -= 1
+            if attempts < 0:
+                break
+        time.sleep(1 / hertz)
+
     if not alive:
         log.warning("Load failed?  FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+    else:
+        log.info("FW alive, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
 
 
 # This SHOULD be just "mem[start:start+length]", but slicing an mmap
@@ -598,19 +597,40 @@ def ipc_command(data, ext_data):
             buf[i] = i
         hda_streams[stream_id].write(buf)
     elif data == 12: # HDA PRINT
-        log.info("Doing HDA Print")
         stream_id = ext_data & 0xFF
         buf_len = ext_data >> 8 & 0xFFFF
         hda_str = hda_streams[stream_id]
+        # check for wrap here
         pos = hda_str.mem.tell()
-        buf_data = hda_str.mem.read(buf_len).decode("utf-8", "replace")
-        log.info(f"DSP LOG MSG (idx: {pos}, len: {buf_len}): {buf_data}")
-        pos = hda_str.mem.tell()
-        if pos >= hda_str.buf_len*2:
-            log.info(f"Wrapping log reader, pos {pos} len {hda_str.buf_len}")
+        read_lens = [buf_len, 0]
+        if pos + buf_len >= hda_str.buf_len*2:
+            read_lens[0] = hda_str.buf_len*2 - pos
+            read_lens[1] = buf_len - read_lens[0]
+        # validate the read lens
+        assert (read_lens[0] + pos) <= (hda_str.buf_len*2)
+        assert read_lens[0] % 128 == 0
+        assert read_lens[1] % 128 == 0
+        buf_data0 = hda_str.mem.read(read_lens[0])
+        hda_msg0 = buf_data0.decode("utf-8", "replace")
+        sys.stdout.write(hda_msg0)
+        if read_lens[1] != 0:
             hda_str.mem.seek(0)
+            buf_data1 = hda_str.mem.read(read_lens[1])
+            hda_msg1 = buf_data1.decode("utf-8", "replace")
+            sys.stdout.write(hda_msg1)
+        pos = hda_str.mem.tell()
+        sys.stdout.flush()
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
+        if not fw_is_alive():
+            if args.log_only:
+                log.info("DSP power seems off")
+                wait_fw_entered(timeout_s=None)
+            else:
+                log.warning("DSP power seems off?!")
+                time.sleep(2) # potential spam reduction
+
+            return
 
     dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
     if cavs18:
@@ -622,9 +642,10 @@ def ipc_command(data, ext_data):
         dsp.HIPCIDD = ext_data
         dsp.HIPCIDR = (1<<31) | ext_data
 
-async def _main(server):
+async def main():
     #TODO this bit me, remove the globals, write a little FirmwareLoader class or something to contain.
     global hda, sd, dsp, hda_ostream_id, hda_streams
+
     try:
         (hda, sd, dsp, hda_ostream_id) = map_regs()
     except Exception as e:
@@ -635,16 +656,16 @@ async def _main(server):
     log.info(f"Detected cAVS {'1.5' if cavs15 else '1.8+'} hardware")
 
     if args.log_only:
-        wait_fw_entered()
+        wait_fw_entered(timeout_s=None)
     else:
-        if not fw_file:
+        if not args.fw_file:
             log.error("Firmware file argument missing")
             sys.exit(1)
 
-        load_firmware(fw_file)
+        load_firmware(args.fw_file)
         time.sleep(0.1)
         if not args.quiet:
-            adsp_log("--\n", server)
+            sys.stdout.write("--\n")
 
     hda_streams = dict()
 
@@ -653,147 +674,23 @@ async def _main(server):
         await asyncio.sleep(0.03)
         (last_seq, output) = winstream_read(last_seq)
         if output:
-            adsp_log(output, server)
-        if dsp.HIPCTDR & 0x80000000:
-            ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
-        if dsp.HIPCIDA & 0x80000000:
-            dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
-
-class adsp_request_handler(socketserver.BaseRequestHandler):
-    """
-    The request handler class for control the actions of server.
-    """
-
-    def receive_fw(self, filename):
-        try:
-            with open(fw_file,'wb') as f:
-                cnt = 0
-                log.info("Receiving...")
-
-                while True:
-                    l = self.request.recv(BUF_SIZE)
-                    ll = len(l)
-                    cnt = cnt + ll
-                    if not l:
-                        break
-                    else:
-                        f.write(l)
-        except Exception as e:
-            log.error(f"Get exception {e} during FW transfer.")
-            return 1
-
-        log.info(f"Done Receiving {cnt}.")
-
-    def handle(self):
-        global start_output, fw_file
-
-        cmd = self.request.recv(BUF_SIZE)
-        log.info(f"{self.client_address[0]} wrote: {cmd}")
-        action = cmd.decode("utf-8")
-        log.debug(f'load {action}')
-
-        if action == CMD_DOWNLOAD:
-            self.request.sendall(cmd)
-            recv_fn = self.request.recv(BUF_SIZE)
-            log.info(f"{self.client_address[0]} wrote: {recv_fn}")
-
-            try:
-                tmp_file = recv_fn.decode("utf-8")
-            except UnicodeDecodeError:
-                tmp_file = "zephyr.ri.decode_error"
-                log.info(f'did not receive a correct filename')
-
-            lock.acquire()
-            fw_file = tmp_file
-            ret = self.receive_fw(fw_file)
-            if not ret:
-                start_output = True
-            lock.release()
-
-            log.debug(f'{recv_fn}, {fw_file}, {start_output}')
-
-        elif action == CMD_LOG_STOP:
-            self.request.sendall(cmd)
-            lock.acquire()
-            start_output = False
-            if fw_file:
-                os.remove(fw_file)
-                fw_file = None
-            lock.release()
-        else:
-            log.error("incorrect load communitcation!")
-
-class adsp_log_handler(socketserver.BaseRequestHandler):
-    """
-    The log handler class for grabbing output messages of server.
-    """
-    def run_adsp(self):
-        self.loop = asyncio.get_event_loop()
-        self.loop.run_until_complete(_main(self))
-
-    def handle(self):
-        global start_output, fw_file
-
-        cmd = self.request.recv(BUF_SIZE)
-        log.info(f"{self.client_address[0]} wrote: {cmd}")
-        action = cmd.decode("utf-8")
-        log.debug(f'monitor {action}')
-
-        if action == CMD_LOG_START:
-            self.request.sendall(cmd)
-            log.info(f"Waiting for instruction...")
-            while start_output is False:
-                time.sleep(1)
-
-            log.info(f"Loaded FW {fw_file} and running...")
-            if os.path.exists(fw_file):
-                self.run_adsp()
-                self.request.sendall("service complete.".encode())
-                log.info("service complete.")
-            else:
-                log.error("cannot find the FW file")
-
-            lock.acquire()
-            fw_file = None
-            start_output = False
-            lock.release()
-
-        else:
-            log.error("incorrect monitor communitcation!")
-
-
-def adsp_log(output, server):
-    if server:
-        server.request.sendall(output.encode("utf-8"))
-    else:
-        sys.stdout.write(output)
-        sys.stdout.flush()
-
-def get_host_ip():
-    """
-    Helper tool use to detect host's serving ip address.
-    """
-    interfaces = netifaces.interfaces()
-
-    for i in interfaces:
-        if i != "lo":
-            try:
-                netifaces.ifaddresses(i)
-                ip = netifaces.ifaddresses(i)[netifaces.AF_INET][0]['addr']
-                log.info (f"Use interface {i}, IP address: {ip}")
-            except Exception:
-                log.info(f"Ignore the interface {i} which is not activated.")
-    return ip
+            sys.stdout.write(output)
+            sys.stdout.flush()
+        if not args.log_only:
+            if dsp.HIPCIDA & 0x80000000:
+                dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
+            if dsp.HIPCTDR & 0x80000000:
+                ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
 
 
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
 ap.add_argument("-q", "--quiet", action="store_true",
                 help="No loader output, just DSP logging")
+ap.add_argument("-v", "--verbose", action="store_true",
+                help="More loader output, DEBUG logging level")
 ap.add_argument("-l", "--log-only", action="store_true",
                 help="Don't load firmware, just show log output")
 ap.add_argument("-n", "--no-history", action="store_true",
-                help="No current log buffer at start, just new output")
-ap.add_argument("-s", "--server-addr",
                 help="No current log buffer at start, just new output")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
 
@@ -801,46 +698,11 @@ args = ap.parse_args()
 
 if args.quiet:
     log.setLevel(logging.WARN)
-
-if args.fw_file:
-    fw_file = args.fw_file
-else:
-    fw_file = None
-
-if args.server_addr:
-    HOST = args.server_addr
-else:
-    HOST = get_host_ip()
+elif args.verbose:
+    log.setLevel(logging.DEBUG)
 
 if __name__ == "__main__":
-
-    # When fw_file is assigned or in log_only mode, it will
-    # not serve as a daemon. That mean it just run load
-    # firmware or read the log directly.
-    if args.fw_file or args.log_only:
-        start_output = True
-        try:
-            asyncio.get_event_loop().run_until_complete(_main(None))
-        except KeyboardInterrupt:
-            start_output = False
-        finally:
-            sys.exit(0)
-
-    # Launch the command request service
-    socketserver.TCPServer.allow_reuse_address = True
-    req_server = socketserver.TCPServer((HOST, PORT_REQ), adsp_request_handler)
-    req_t = threading.Thread(target=req_server.serve_forever, daemon=True)
-
-    # Activate the log service which output adsp execution
-    with socketserver.TCPServer((HOST, PORT_LOG), adsp_log_handler) as log_server:
-        try:
-            log.info("Req server start...")
-            req_t.start()
-            log.info("Log server start...")
-            log_server.serve_forever()
-        except KeyboardInterrupt:
-            lock.acquire()
-            start_output = False
-            lock.release()
-            log_server.shutdown()
-            req_server.shutdown()
+    try:
+        asyncio.get_event_loop().run_until_complete(main())
+    except KeyboardInterrupt:
+        start_output = False

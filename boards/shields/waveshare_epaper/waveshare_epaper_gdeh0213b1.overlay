@@ -8,14 +8,13 @@
 
 / {
 	chosen {
-		zephyr,display = &ssd16xx;
+		zephyr,display = &ssd16xx_waveshare_epaper_gdeh0213b1;
 	};
 };
 
 &arduino_spi {
-	ssd16xx: ssd16xxfb@0 {
-		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b1";
-		label = "SSD16XX";
+	ssd16xx_waveshare_epaper_gdeh0213b1: ssd16xxfb@0 {
+		compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673", "solomon,ssd16xxfb";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <250>;
@@ -29,6 +28,8 @@
 		sdv = [19];
 		vcom = <0xa8>;
 		border-waveform = <0x71>;
+		dummy-line = <0x1a>;
+		gate-line-width = <0x08>;
 		lut-initial = [
 			22 55 AA 55 AA 55 AA 11
 			00 00 00 00 00 00 00 00

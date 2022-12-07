@@ -19,6 +19,7 @@
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32);
 
 #include "i2c-priv.h"
@@ -177,8 +178,9 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			next_msg_flags = &(next->flags);
 		}
 		ret = i2c_stm32_transaction(dev, *current, next_msg_flags, slave);
-		if (ret < 0)
+		if (ret < 0) {
 			break;
+		}
 		current++;
 		num_msgs--;
 	}
@@ -190,15 +192,15 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
-#if defined(CONFIG_I2C_SLAVE)
-	.slave_register = i2c_stm32_slave_register,
-	.slave_unregister = i2c_stm32_slave_unregister,
+#if defined(CONFIG_I2C_TARGET)
+	.target_register = i2c_stm32_target_register,
+	.target_unregister = i2c_stm32_target_unregister,
 #endif
 };
 
 static int i2c_stm32_init(const struct device *dev)
 {
-	const struct device *clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct i2c_stm32_config *cfg = dev->config;
 	uint32_t bitrate_cfg;
 	int ret;
@@ -222,7 +224,12 @@ static int i2c_stm32_init(const struct device *dev)
 	 */
 	k_sem_init(&data->bus_mutex, 1, 1);
 
-	if (clock_control_on(clock,
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	if (clock_control_on(clk,
 		(clock_control_subsys_t *) &cfg->pclken) != 0) {
 		LOG_ERR("i2c: failure enabling clock");
 		return -EIO;
@@ -271,7 +278,7 @@ static int i2c_stm32_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
-	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
 		LOG_ERR("i2c: failure initializing");
 		return ret;
@@ -292,7 +299,7 @@ static int i2c_stm32_init(const struct device *dev)
 			    stm32_i2c_combined_isr,			\
 			    DEVICE_DT_GET(DT_NODELABEL(name)), 0);	\
 		irq_enable(DT_IRQN(DT_NODELABEL(name)));		\
-	} while (0)
+	} while (false)
 #else
 #define STM32_I2C_IRQ_CONNECT_AND_ENABLE(name)				\
 	do {								\
@@ -309,7 +316,7 @@ static int i2c_stm32_init(const struct device *dev)
 			    stm32_i2c_error_isr,			\
 			    DEVICE_DT_GET(DT_NODELABEL(name)), 0);	\
 		irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(name), error, irq));\
-	} while (0)
+	} while (false)
 #endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
 
 #define STM32_I2C_IRQ_HANDLER_DECL(name)				\

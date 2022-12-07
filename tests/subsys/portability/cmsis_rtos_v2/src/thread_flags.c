@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 
@@ -86,7 +86,7 @@ static osThreadAttr_t thread2_attr = {
 	.priority = osPriorityHigh,
 };
 
-void test_thread_flags_no_wait_timeout(void)
+ZTEST(cmsis_thread_flags, test_thread_flags_no_wait_timeout)
 {
 	osThreadId_t id1;
 	uint32_t flags;
@@ -101,7 +101,7 @@ void test_thread_flags_no_wait_timeout(void)
 	osDelay(TIMEOUT_TICKS);
 }
 
-void test_thread_flags_signalled(void)
+ZTEST(cmsis_thread_flags, test_thread_flags_signalled)
 {
 	osThreadId_t id;
 	uint32_t flags;
@@ -158,7 +158,7 @@ static osThreadAttr_t thread3_attr = {
 	.priority = osPriorityHigh,
 };
 
-void test_thread_flags_isr(void)
+ZTEST(cmsis_thread_flags, test_thread_flags_isr)
 {
 	osThreadId_t id;
 
@@ -168,3 +168,4 @@ void test_thread_flags_isr(void)
 
 	osDelay(TIMEOUT_TICKS);
 }
+ZTEST_SUITE(cmsis_thread_flags, NULL, NULL, NULL, NULL, NULL);

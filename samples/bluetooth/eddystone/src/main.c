@@ -13,7 +13,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -490,7 +490,7 @@ static ssize_t write_adv_data(struct bt_conn *conn,
 		 */
 		slot->ad[2].data_len = MIN(slot->ad[2].data_len,
 					   len + EDS_URL_WRITE_OFFSET);
-		memcpy(&slot->ad[2].data + EDS_URL_WRITE_OFFSET, buf,
+		memcpy((uint8_t *) slot->ad[2].data + EDS_URL_WRITE_OFFSET, buf,
 		       slot->ad[2].data_len - EDS_URL_WRITE_OFFSET);
 
 		/* Restart slot */

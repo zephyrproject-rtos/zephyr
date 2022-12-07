@@ -8,12 +8,11 @@ description: |
 
         mx25lm51245: ospi-nor-flash@0 {
                 compatible = "st,stm32-ospi-nor";
-                label = "MX25LM512";
                 reg = <0>;
                 data-mode = <OSPI_OPI_MODE>; /* access on 8 data lines */
                 data-rate = <OSPI_DTR_TRANSFER>; /* access in DTR */
                 ospi-max-frequency = <DT_FREQ_M(50)>;
-                size = <DT_SIZE_M(4)>;
+                size = <DT_SIZE_M(64*8)>; /* 512 Mbit */
                 status = "okay";
         };
 
@@ -30,14 +29,11 @@ properties:
       type: int
       required: true
       description: Maximum clock frequency of device's OSPI interface in Hz
-    label:
-      required: true
     size:
       required: true
       description: Flash Memory size in bits
     reset-gpios:
       type: phandle-array
-      required: false
       description: RESETn pin
     spi-bus-width:
       type: int
@@ -69,7 +65,6 @@ properties:
         - 2
     writeoc:
       type: string
-      required: false
       enum:
         - "PP"            # Page program, PP (0x02) up to 256 bytes
         - "PP_1_1_2"      # Dual page program, PP 1-1-2 (0xA2)
@@ -93,7 +88,6 @@ properties:
         * OSPI_QUAD_MODE -> PP 1-4-4 (0x38)
     four-byte-opcodes:
       type: boolean
-      required: false
       description: |
         Some NOR-Flash ICs use different opcodes when operating in
         4 byte addressing mode.

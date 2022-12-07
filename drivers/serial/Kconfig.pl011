@@ -3,22 +3,14 @@
 
 menuconfig UART_PL011
 	bool "ARM PL011 UART Driver"
+	default y
+	depends on DT_HAS_ARM_PL011_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the UART driver for the PL011
 
 if UART_PL011
-
-config UART_PL011_PORT0
-	bool "Driver for UART 0"
-	help
-	  Build the driver to utilize UART controller Port 0.
-
-config UART_PL011_PORT1
-	bool "Driver for UART 1"
-	help
-	  Build the driver to utilize UART controller Port 1.
 
 config UART_PL011_SBSA
 	bool "SBSA UART"

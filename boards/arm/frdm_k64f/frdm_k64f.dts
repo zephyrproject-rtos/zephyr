@@ -15,6 +15,8 @@
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 
 	chosen {
@@ -130,10 +132,9 @@ arduino_i2c: &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 
-	fxos8700@1d {
+	fxos8700: fxos8700@1d {
 		compatible = "nxp,fxos8700";
 		reg = <0x1d>;
-		label = "FXOS8700";
 		int1-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 	};
@@ -143,6 +144,24 @@ arduino_spi: &spi0 {
 	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+		spi-max-frequency = <24000000>;
+	};
 };
 
 &ftm0 {

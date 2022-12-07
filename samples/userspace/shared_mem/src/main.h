@@ -7,7 +7,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/kernel_structs.h>
 #include <string.h>

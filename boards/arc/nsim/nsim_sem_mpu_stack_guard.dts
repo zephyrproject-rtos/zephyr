@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "nsim_em.dtsi"
+#include "nsim_em-sec.dtsi"
 
 / {
 	model = "snps,nsim_sem_mpu_stack_guard";

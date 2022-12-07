@@ -14,7 +14,7 @@
 #include <soc.h>
 #include <zephyr/drivers/gpio.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include "cy_gpio.h"
 #include "cy_sysint.h"
 

@@ -91,6 +91,7 @@ int sem_post(sem_t *semaphore)
 int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
 {
 	int32_t timeout;
+	struct timespec current;
 	int64_t current_ms, abstime_ms;
 
 	__ASSERT(abstime, "abstime pointer NULL");
@@ -100,8 +101,12 @@ int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
 		return -1;
 	}
 
-	current_ms = (int64_t)k_uptime_get();
+	if (clock_gettime(CLOCK_REALTIME, &current) < 0) {
+		return -1;
+	}
+
 	abstime_ms = (int64_t)_ts_to_ms(abstime);
+	current_ms = (int64_t)_ts_to_ms(&current);
 
 	if (abstime_ms <= current_ms) {
 		timeout = 0;

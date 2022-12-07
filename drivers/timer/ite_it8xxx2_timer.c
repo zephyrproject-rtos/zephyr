@@ -13,6 +13,7 @@
 #include <zephyr/sys_clock.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 
 BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
@@ -36,6 +37,10 @@ BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 #define BUSY_WAIT_H_TIMER_FLAG	DT_INST_IRQ_BY_IDX(0, 3, flags)
 /* Busy wait high timer max count is 71.58min (base on clock source 1MHz) */
 #define BUSY_WAIT_TIMER_H_MAX_CNT 0xFFFFFFFFUL
+
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 5, irq);
+#endif
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
 /*
@@ -367,10 +372,11 @@ static int timer_init(enum ext_timer_idx ext_timer,
 		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN |
 						 IT8XXX2_EXT_ETXRST);
 
-	if (with_int == EXT_WITH_TIMER_INT)
+	if (with_int == EXT_WITH_TIMER_INT) {
 		irq_enable(irq_num);
-	else
+	} else {
 		irq_disable(irq_num);
+	}
 
 	return 0;
 }

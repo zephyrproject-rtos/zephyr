@@ -74,6 +74,12 @@ enum rf2xx_trx_model_t {
 	RF2XX_TRX_MODEL_233     = 0x0B,
 };
 
+enum rf2xx_trx_channel_page_t {
+	RF2XX_TRX_CC_PAGE_0     = 0x00,
+	RF2XX_TRX_CC_PAGE_2     = 0x02,
+	RF2XX_TRX_CC_PAGE_5     = 0x05,
+};
+
 struct rf2xx_config {
 	struct gpio_dt_spec irq_gpio;
 	struct gpio_dt_spec reset_gpio;
@@ -85,6 +91,11 @@ struct rf2xx_config {
 
 	uint8_t inst;
 	uint8_t has_mac;
+
+	uint8_t const *tx_pwr_table;
+	uint8_t tx_pwr_table_size;
+	int8_t tx_pwr_min[2];
+	int8_t tx_pwr_max[2];
 };
 
 struct rf2xx_context {
@@ -101,6 +112,7 @@ struct rf2xx_context {
 	struct k_sem trx_tx_sync;
 
 	enum rf2xx_trx_model_t trx_model;
+	enum rf2xx_trx_channel_page_t cc_page;
 	enum rf2xx_trx_state_trac_t trx_trac;
 
 	enum ieee802154_tx_mode tx_mode;

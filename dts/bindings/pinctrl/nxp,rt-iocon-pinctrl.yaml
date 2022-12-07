@@ -39,22 +39,22 @@ description: |
 
 compatible: "nxp,rt-iocon-pinctrl"
 
-include:
-  - name: base.yaml
-  - name: pincfg-node-group.yaml
-    child-binding:
-      child-binding:
-        property-allowlist:
-          - drive-open-drain
-          - bias-pull-up
-          - bias-pull-down
-          - input-enable
+include: base.yaml
 
 child-binding:
   description: iMX RT IOCON pin controller pin group
   child-binding:
     description: |
       iMX RT IOCON pin controller pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-open-drain
+          - bias-pull-up
+          - bias-pull-down
+          - input-enable
+
     properties:
       pinmux:
         required: true
@@ -81,8 +81,9 @@ child-binding:
         description: |
           Pin output drive strength. Sets the FULLDRIVE field in the
           IOCON register.
-          0 FULLDRIVE_0- normal mode, output slew rate is standard
-          1 FULLDRIVE_1- slow mode, output slew rate is slower
+          0 FULLDRIVE_0- Normal output drive mode
+          1 FULLDRIVE_1- Full output drive mode, output strength is twice
+          the drive strength of normal drive mode.
       nxp,invert:
         type: boolean
         description: |

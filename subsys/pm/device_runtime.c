@@ -47,7 +47,7 @@ static int runtime_suspend(const struct device *dev, bool async)
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
 
-	if ((pm->flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED)) == 0U) {
+	if (!atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
 		goto unlock;
 	}
 
@@ -129,7 +129,7 @@ int pm_device_runtime_get(const struct device *dev)
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
 
-	if ((pm->flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED)) == 0U) {
+	if (!atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
 		goto unlock;
 	}
 
@@ -140,6 +140,12 @@ int pm_device_runtime_get(const struct device *dev)
 	if (PM_DOMAIN(pm) != NULL) {
 		ret = pm_device_runtime_get(PM_DOMAIN(pm));
 		if (ret != 0) {
+			goto unlock;
+		}
+		/* Check if powering up this device failed */
+		if (atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_TURN_ON_FAILED)) {
+			(void)pm_device_runtime_put(PM_DOMAIN(pm));
+			ret = -EAGAIN;
 			goto unlock;
 		}
 	}
@@ -232,7 +238,7 @@ int pm_device_runtime_enable(const struct device *dev)
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
 
-	if ((pm->flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED)) != 0U) {
+	if (atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
 		goto unlock;
 	}
 
@@ -279,7 +285,7 @@ int pm_device_runtime_disable(const struct device *dev)
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
 
-	if ((pm->flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED)) == 0U) {
+	if (!atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
 		goto unlock;
 	}
 

@@ -48,7 +48,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(shell, "Reading %d bytes from EEPROM, offset %d...", len,
+	shell_print(shell, "Reading %zu bytes from EEPROM, offset %zu...", len,
 		    addr);
 
 	for (upto = 0; upto < len; upto += pending) {
@@ -84,7 +84,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 	len = argc - args_indx.data;
 
 	if (len > sizeof(wr_buf)) {
-		shell_error(shell, "Write buffer size (%d bytes) exceeded",
+		shell_error(shell, "Write buffer size (%zu bytes) exceeded",
 			    sizeof(wr_buf));
 		return -EINVAL;
 	}
@@ -104,7 +104,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(shell, "Writing %d bytes to EEPROM...", len);
+	shell_print(shell, "Writing %zu bytes to EEPROM...", len);
 
 	err = eeprom_write(eeprom, offset, wr_buf, len);
 	if (err) {
@@ -140,7 +140,7 @@ static int cmd_size(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(shell, "%d bytes", eeprom_get_size(eeprom));
+	shell_print(shell, "%zu bytes", eeprom_get_size(eeprom));
 	return 0;
 }
 
@@ -173,7 +173,7 @@ static int cmd_fill(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(shell, "Writing %d bytes of 0x%02lx to EEPROM...", len,
+	shell_print(shell, "Writing %zu bytes of 0x%02lx to EEPROM...", len,
 		    pattern);
 
 	addr = initial_offset;
@@ -213,14 +213,28 @@ static int cmd_fill(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+/* Device name autocompletion support */
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_lookup(idx, NULL);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(eeprom_cmds,
-	SHELL_CMD_ARG(read, NULL, "<device> <offset> <length>", cmd_read, 4, 0),
-	SHELL_CMD_ARG(write, NULL,
+	SHELL_CMD_ARG(read, &dsub_device_name,
+		      "<device> <offset> <length>", cmd_read, 4, 0),
+	SHELL_CMD_ARG(write, &dsub_device_name,
 		      "<device> <offset> [byte0] <byte1> .. <byteN>", cmd_write,
 		      4, CONFIG_EEPROM_SHELL_BUFFER_SIZE - 1),
-	SHELL_CMD_ARG(size, NULL, "<device>", cmd_size, 2, 0),
-	SHELL_CMD_ARG(fill, NULL, "<device> <offset> <length> <pattern>",
-		      cmd_fill, 5, 0),
+	SHELL_CMD_ARG(size, &dsub_device_name, "<device>", cmd_size, 2, 0),
+	SHELL_CMD_ARG(fill, &dsub_device_name,
+		      "<device> <offset> <length> <pattern>", cmd_fill, 5, 0),
 	SHELL_SUBCMD_SET_END
 );
 

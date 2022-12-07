@@ -9,7 +9,6 @@
 	fdc2x1x@2A {
 		compatible = "ti,fdc2x1x";
 		reg = <0x2A>;
-		label = "FDC2X1X";
 		sd-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 		intb-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 

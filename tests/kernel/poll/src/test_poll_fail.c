@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest_error_hook.h>
 
 static struct k_poll_signal signal_err;
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -22,10 +22,11 @@ static struct k_poll_signal signal_err;
  *
  * @ingroup kernel_poll_tests
  */
-void test_k_poll_user_num_err(void)
+ZTEST_USER(poll_api, test_k_poll_user_num_err)
 {
 	struct k_poll_event events;
 
+	ztest_set_fault_valid(true);
 	k_poll(&events, -1, K_NO_WAIT);
 }
 
@@ -39,7 +40,7 @@ void test_k_poll_user_num_err(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_k_poll_user_mem_err(void)
+ZTEST_USER(poll_api, test_k_poll_user_mem_err)
 {
 	ztest_set_fault_valid(true);
 	k_poll(NULL, 3, K_NO_WAIT);
@@ -55,7 +56,7 @@ void test_k_poll_user_mem_err(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_k_poll_user_type_sem_err(void)
+ZTEST_USER(poll_api, test_k_poll_user_type_sem_err)
 {
 	struct k_poll_event event[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
@@ -77,7 +78,7 @@ void test_k_poll_user_type_sem_err(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_k_poll_user_type_signal_err(void)
+ZTEST_USER(poll_api, test_k_poll_user_type_signal_err)
 {
 	struct k_poll_event event[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
@@ -99,7 +100,7 @@ void test_k_poll_user_type_signal_err(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_k_poll_user_type_fifo_err(void)
+ZTEST_USER(poll_api, test_k_poll_user_type_fifo_err)
 {
 	struct k_poll_event event[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -121,7 +122,7 @@ void test_k_poll_user_type_fifo_err(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_k_poll_user_type_msgq_err(void)
+ZTEST_USER(poll_api, test_k_poll_user_type_msgq_err)
 {
 	struct k_poll_event event[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
@@ -144,7 +145,7 @@ void test_k_poll_user_type_msgq_err(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_poll_signal_init_null(void)
+ZTEST_USER(poll_api, test_poll_signal_init_null)
 {
 	ztest_set_fault_valid(true);
 	k_poll_signal_init(NULL);
@@ -160,7 +161,7 @@ void test_poll_signal_init_null(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_poll_signal_check_obj(void)
+ZTEST_USER(poll_api, test_poll_signal_check_obj)
 {
 	unsigned int signaled;
 	int result;
@@ -181,7 +182,7 @@ void test_poll_signal_check_obj(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_poll_signal_check_signal(void)
+ZTEST_USER(poll_api, test_poll_signal_check_signal)
 {
 	unsigned int result;
 
@@ -205,7 +206,7 @@ void test_poll_signal_check_signal(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_poll_signal_check_result(void)
+ZTEST_USER(poll_api, test_poll_signal_check_result)
 {
 	int signaled;
 
@@ -227,7 +228,7 @@ void test_poll_signal_check_result(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_poll_signal_raise_null(void)
+ZTEST_USER(poll_api, test_poll_signal_raise_null)
 {
 	int result = 0;
 
@@ -247,14 +248,14 @@ void test_poll_signal_raise_null(void)
  *
  * @ingroup kernel_poll_tests
  */
-void test_poll_signal_reset_null(void)
+ZTEST_USER(poll_api, test_poll_signal_reset_null)
 {
 	ztest_set_fault_valid(true);
 	k_poll_signal_reset(NULL);
 }
 #endif /* CONFIG_USERSPACE */
 
-void test_poll_fail_grant_access(void)
+void poll_fail_grant_access(void)
 {
 	k_thread_access_grant(k_current_get(), &signal_err);
 }

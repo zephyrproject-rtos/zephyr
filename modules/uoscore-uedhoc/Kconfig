@@ -1,0 +1,32 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UOSCORE
+	bool "UOSCORE library"
+	depends on ZCBOR
+	depends on ZCBOR_CANONICAL
+	depends on MBEDTLS
+	help
+	  This option enables the UOSCORE library.
+
+if UOSCORE
+
+config UOSCORE_DEBUG
+	bool "Debug logs in the uoscore library"
+
+endif # UOSCORE
+
+menuconfig UEDHOC
+	bool "UEDHOC library"
+	depends on ZCBOR
+	depends on ZCBOR_CANONICAL
+	depends on MBEDTLS
+	help
+	  This option enables the UEDHOC library.
+
+if UEDHOC
+
+config UEDHOC_DEBUG
+	bool "Debug logs in the uedhoc library"
+
+endif # UEDHOC

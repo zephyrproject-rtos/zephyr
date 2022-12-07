@@ -17,6 +17,7 @@
 #include <soc.h>
 #include <helpers/nrfx_gppi.h>
 #include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/irq.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
@@ -249,7 +250,7 @@ static void endtx_isr(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
@@ -283,7 +284,7 @@ static void uarte_nrfx_isr_int(void *arg)
 	}
 
 	if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
 			nrf_uarte_disable(uarte);
@@ -527,7 +528,7 @@ static bool is_tx_ready(const struct device *dev)
  */
 static int wait_tx_ready(const struct device *dev)
 {
-	int key;
+	unsigned int key;
 
 	do {
 		/* wait arbitrary time before back off. */
@@ -661,9 +662,7 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 			nrfx_timer_enable(&cfg->timer);
 			nrfx_timer_clear(&cfg->timer);
 		}
-	}
 
-	if (HW_RX_COUNTING_ENABLED(data)) {
 		ret = gppi_channel_alloc(&data->async->rx_cnt.ppi);
 		if (ret != NRFX_SUCCESS) {
 			LOG_ERR("Failed to allocate PPI Channel, "
@@ -671,9 +670,7 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 			data->async->hw_rx_counting = false;
 			nrfx_timer_uninit(&cfg->timer);
 		}
-	}
 
-	if (HW_RX_COUNTING_ENABLED(data)) {
 #if CONFIG_HAS_HW_NRF_PPI
 		ret = nrfx_ppi_channel_assign(
 			data->async->rx_cnt.ppi,
@@ -793,7 +790,7 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 	struct uarte_nrfx_data *data = dev->data;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (data->async->tx_size) {
 		irq_unlock(key);
@@ -946,7 +943,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 
 	data->async->rx_enabled = true;
 	if (cfg->flags & UARTE_CFG_FLAG_LOW_POWER) {
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		uarte_enable(dev, UARTE_LOW_POWER_RX);
 		irq_unlock(key);
@@ -963,7 +960,7 @@ static int uarte_nrfx_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	struct uarte_nrfx_data *data = dev->data;
 	int err;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (data->async->rx_buf == NULL) {
 		err = -EACCES;
@@ -1205,7 +1202,7 @@ static void endrx_isr(const struct device *dev)
 	 * and here we just do the swap of which buffer the driver is following,
 	 * the next rx_timeout() will update the rx_offset.
 	 */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (data->async->rx_next_buf) {
 		data->async->rx_buf = data->async->rx_next_buf;
@@ -1307,7 +1304,7 @@ static uint8_t rx_flush(const struct device *dev, uint8_t *buf, uint32_t len)
 static void async_uart_release(const struct device *dev, uint32_t dir_mask)
 {
 	struct uarte_nrfx_data *data = dev->data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	data->async->low_power_mask &= ~dir_mask;
 	if (!data->async->low_power_mask) {
@@ -1359,7 +1356,7 @@ static void txstopped_isr(const struct device *dev)
 	const struct uarte_nrfx_config *config = dev->config;
 	struct uarte_nrfx_data *data = dev->data;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	int key;
+	unsigned int key;
 
 	if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
 		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
@@ -1537,7 +1534,33 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 {
 	struct uarte_nrfx_data *data = dev->data;
 	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
-	int key;
+	unsigned int key;
+
+#if CONFIG_UART_NRF_DK_SERIAL_WORKAROUND
+	/* On some boards (usually those which have multiple virtual coms) it can
+	 * be seen that bytes are dropped on the console serial (serial that goes
+	 * through Segger interface chip) when working in virtual environment.
+	 * It's the Segger chip that drops those bytes. A workaround is to enforce
+	 * periodic gaps which allows to handle the traffic correctly.
+	 */
+	if (dev == DEVICE_DT_GET(DT_CHOSEN(zephyr_console))) {
+		static int cnt;
+		static uint32_t t;
+		uint32_t now = k_uptime_get_32();
+
+		if ((now - t) >= CONFIG_UART_NRF_DK_SERIAL_WORKAROUND_WAIT_MS) {
+			cnt = 0;
+		} else {
+			cnt++;
+			if (cnt >= CONFIG_UART_NRF_DK_SERIAL_WORKAROUND_COUNT) {
+				k_busy_wait(1000 * CONFIG_UART_NRF_DK_SERIAL_WORKAROUND_WAIT_MS);
+				cnt = 0;
+			}
+		}
+
+		t = now;
+	}
+#endif
 
 	if (isr_mode) {
 		while (1) {
@@ -1583,7 +1606,7 @@ static int uarte_nrfx_fifo_fill(const struct device *dev,
 	/* Copy data to RAM buffer for EasyDMA transfer */
 	memcpy(data->int_driven->tx_buffer, tx_data, len);
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (!is_tx_ready(dev)) {
 		data->int_driven->fifo_fill_lock = 0;
@@ -1624,7 +1647,7 @@ static void uarte_nrfx_irq_tx_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = dev->data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	data->int_driven->disable_tx_irq = false;
 	nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
@@ -1929,10 +1952,11 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		nrf_uarte_enable(uarte);
 
 #ifdef UARTE_ANY_ASYNC
-		if (HW_RX_COUNTING_ENABLED(data)) {
-			nrfx_timer_enable(&cfg->timer);
-		}
 		if (data->async) {
+			if (HW_RX_COUNTING_ENABLED(data)) {
+				nrfx_timer_enable(&cfg->timer);
+			}
+
 			return 0;
 		}
 #endif
@@ -2020,7 +2044,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), \
 			    isr_handler, DEVICE_DT_GET(UARTE(idx)), 0);	       \
 		irq_enable(DT_IRQN(UARTE(idx)));			       \
-	} while (0)
+	} while (false)
 
 #ifdef CONFIG_PINCTRL
 /* Low power mode is used when disable_rx is not defined or in async mode if

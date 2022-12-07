@@ -10,8 +10,7 @@ The Arduino Zero is a maker-friendly development board with
 Atmel’s Embedded Debugger (EDBG), which provides a full
 debug interface without the need for additional hardware.
 
-.. image:: img/arduino_zero.png
-     :width: 500px
+.. image:: img/arduino_zero.jpg
      :align: center
      :alt: Arduino Zero
 
@@ -153,7 +152,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! arduino_zero" in your terminal.
 
 References
 **********

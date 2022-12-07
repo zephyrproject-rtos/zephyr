@@ -7,19 +7,17 @@ description: |
 
 compatible: "bosch,bma280"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
   int1-gpios:
     type: phandle-array
-    required: false
     description: |
       Identifies pin for the INT1 signal on the sensor.  The sensor
       INT2 signal is not supported by the driver.
 
   is-bmc150:
     type: boolean
-    required: false
     description: |
       Specifies that the driver should adapt to the accelerometer
       capability provided by the BMC150 6-axis eCompass.  This affects

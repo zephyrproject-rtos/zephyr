@@ -4,14 +4,10 @@
 # Copyright (c) 2017 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_FLASH_CONTROLLER := st,stm32-flash-controller
-DT_COMPAT_ST_STM32H7_FLASH_CONTROLLER := st,stm32h7-flash-controller
-
 config SOC_FLASH_STM32
 	bool "STM32 flash driver"
-	depends on SOC_FAMILY_STM32
-	depends on $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_FLASH_CONTROLLER)) || \
-		$(dt_compat_enabled,$(DT_COMPAT_ST_STM32H7_FLASH_CONTROLLER))
+	depends on DT_HAS_ST_STM32_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	default y
 	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32F0X

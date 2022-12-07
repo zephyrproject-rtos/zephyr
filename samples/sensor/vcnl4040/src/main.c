@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys_clock.h>
@@ -130,12 +130,10 @@ static void test_trigger_mode(const struct device *dev)
 
 void main(void)
 {
-	const struct device *vcnl;
+	const struct device *const vcnl = DEVICE_DT_GET_ONE(vishay_vcnl4040);
 
-	printf("get device vcnl4040\n");
-	vcnl = device_get_binding(DT_LABEL(DT_INST(0, vishay_vcnl4040)));
-	if (!vcnl) {
-		printf("Device not found.\n");
+	if (!device_is_ready(vcnl)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
 

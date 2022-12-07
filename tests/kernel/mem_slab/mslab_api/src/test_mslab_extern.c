@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "test_mslab.h"
 
 extern struct k_mem_slab kmslab;
@@ -19,7 +19,7 @@ extern struct k_mem_slab kmslab;
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_kdefine_extern(void)
+ZTEST(mslab_api, test_mslab_kdefine_extern)
 {
 	tmslab_alloc_free(&kmslab);
 }

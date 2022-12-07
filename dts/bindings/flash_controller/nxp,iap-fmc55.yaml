@@ -1,0 +1,10 @@
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP (In-Application Programming) flash memory controller for
+  the lpc55xxx family, except lpc553x
+
+compatible: "nxp,iap-fmc55"
+
+include: flash-controller.yaml

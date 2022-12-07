@@ -11,13 +11,26 @@ config BOARD
 
 choice CODE_LOCATION
 	default CODE_FLEXSPI if BOARD_MIMXRT1170_EVK_CM7
+	default CODE_OCRAM if BOARD_MIMXRT1170_EVK_CM4 && SECOND_CORE_MCUX
 	default CODE_SRAM0 if BOARD_MIMXRT1170_EVK_CM4
 endchoice
 
-if DISK_DRIVERS
+if SECOND_CORE_MCUX && BOARD_MIMXRT1170_EVK_CM4
 
-config DISK_DRIVER_SDMMC
+config BUILD_OUTPUT_INFO_HEADER
 	default y
+
+DT_CHOSEN_IMAGE_M4 = nxp,m4-partition
+
+# Adjust the offset of the output image if building for RT11xx SOC
+config BUILD_OUTPUT_ADJUST_LMA
+	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4)) + \
+	$(dt_node_reg_addr_hex,/soc/spi@400cc000,1)) - \
+	$(dt_node_reg_addr_hex,/soc/ocram@20200000)"
+
+endif
+
+if DISK_DRIVERS
 
 config IMX_USDHC_DAT3_PWR_TOGGLE
 	default y
@@ -26,15 +39,19 @@ endif # DISK_DRIVERS
 
 if FLASH
 
-config FLASH_MCUX_FLEXSPI_NOR
-	default y
-
 choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
 	default FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM if CPU_CORTEX_M7
 	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM if CPU_CORTEX_M4
 endchoice
 
 endif #FLASH
+
+if KSCAN
+
+config KSCAN_GT911_INTERRUPT
+	default y
+
+endif # KSCAN
 
 if NETWORKING
 
@@ -50,15 +67,6 @@ if DISPLAY
 
 config MIPI_DSI
 	default y
-
-# Adjust the memory pool block size for a 720x1280 display
-config MCUX_ELCDIF_POOL_BLOCK_MAX
-	default 0x1C3000
-
-# Memory from the heap pool is used to allocate display buffers.
-# Adjust HEAP_MEM_POOL_SIZE.
-config HEAP_MEM_POOL_SIZE
-	default 4194304
 
 config REGULATOR
 	default y

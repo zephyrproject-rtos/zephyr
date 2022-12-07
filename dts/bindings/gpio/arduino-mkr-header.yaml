@@ -1,0 +1,39 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposing on Arduino MKR headers.
+
+    The Arduino MKR layout provides two headers on both edges of the board.
+
+    * One side of the 14-pin header is analog inputs and digital signals.
+      A1 to A6 is Analog input. The outside pin is AREF.
+      A0 that is next to AREF used as a DAC output pin too.
+      D0-D5 is a digital output.
+    * The other side 14-pin header is power supplies and peripheral interface.
+      There are 5V and VCC power supply, GND, and RESET pin. UART, I2C,
+      and SPI peripheral pins are also there. The end 2 pins are simple GPIO pins.
+
+    This binding provides a nexus mapping for 22 pins where parent pins 0
+    through 14 correspond to D0 through D21, and parent pins 15 through 21
+    correspond to A0 through A6, as depicted below.
+
+        -  AREF                 5V       -
+        15 A0/D15/DAC0          VIN      -
+        16 A1/D16               VCC      -
+        17 A2/D17               GND      -
+        18 A3/D18               RESET    -
+        19 A4/D19               D14/TX   14
+        20 A5/D20               D13/RX   13
+        21 A6/D21               D12/SCL  12
+        0  D0                   D11/SDA  11
+        1  D1                   D10/CPIO 10
+        2  D2                   D9/SCK   0
+        3  D3                   D8/COPI  8
+        4  D4                   D7       7
+        5  D5                   D6       6
+
+
+compatible: "arduino-mkr-header"
+
+include: [gpio-nexus.yaml, base.yaml]

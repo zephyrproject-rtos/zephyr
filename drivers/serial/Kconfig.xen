@@ -6,11 +6,11 @@
 
 config UART_XEN_HVC
 	bool "Xen hypervisor DomU console UART driver"
+	default y
+	depends on DT_HAS_XEN_HVC_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on BOARD_XENVM
 	depends on !XEN_INITIAL_DOMAIN
-	default y
 	help
 	  Enable Xen ring buffer based hypervisor console driver. Used
 	  for Zephyr as unprivileged domain.

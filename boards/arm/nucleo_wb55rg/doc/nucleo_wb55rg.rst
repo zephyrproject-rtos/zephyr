@@ -30,9 +30,7 @@ Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
   mass storage, virtual COM port and debug port
 
 .. image:: img/nucleowb55rg.jpg
-   :width: 670px
    :align: center
-   :height: 339px
    :alt: Nucleo WB55RG
 
 More information about the board can be found at the `Nucleo WB55RG website`_.
@@ -173,6 +171,8 @@ The Zephyr nucleo_wb55rg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RADIO     | on-chip    | Bluetooth Low Energy                |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -186,8 +186,12 @@ To operate bluetooth on Nucleo WB55RG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
 Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
-To date, interoperability and backward compatibility has been tested and is
-guaranteed up to version 1.5 of STM32Cube package releases.
+For compatibility information with the various versions of these binaries,
+please check `modules/hal/stm32/lib/stm32wb/hci/README <https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README>`__
+in the hal_stm32 repo.
+Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not compatible
+anymore for a use in Zephyr and only "HCI Only" versions should be used on the M0
+side.
 
 Connections and IOs
 ===================

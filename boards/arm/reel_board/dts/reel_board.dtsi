@@ -7,6 +7,10 @@
 #include "reel_board-pinctrl.dtsi"
 
 / {
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
@@ -84,6 +88,7 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &user_button;
+		accel0 = &mma8642fc;
 	};
 };
 
@@ -124,10 +129,9 @@ arduino_i2c: &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
-	mma8652fc@1d {
+	mma8642fc: mma8652fc@1d {
 		compatible = "nxp,fxos8700","nxp,mma8652fc";
 		reg = <0x1d>;
-		label = "MMA8652FC";
 		int1-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
 	};
@@ -135,14 +139,12 @@ arduino_i2c: &i2c0 {
 	ti_hdc@43 {
 		compatible = "ti,hdc","ti,hdc1010";
 		reg = <0x43>;
-		label = "HDC1010";
 		drdy-gpios = <&gpio0 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 
 	apds9960@39 {
 		compatible = "avago,apds9960";
 		reg = <0x39>;
-		label = "APDS9960";
 		int-gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 };
@@ -152,6 +154,10 @@ arduino_i2c: &i2c0 {
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 arduino_spi: &spi3 {

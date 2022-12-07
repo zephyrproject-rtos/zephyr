@@ -19,6 +19,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/irq.h>
 
 /* UART registers struct */
 struct uart_cmsdk_apb {
@@ -126,10 +127,12 @@ static int uart_cmsdk_apb_init(const struct device *dev)
 
 #ifdef CONFIG_CLOCK_CONTROL
 	/* Enable clock for subsystem */
-	const struct device *clk =
-		device_get_binding(CONFIG_ARM_CLOCK_CONTROL_DEV_NAME);
-
+	const struct device *const clk = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(0, 1));
 	struct uart_cmsdk_apb_dev_data * const data = dev->data;
+
+	if (!device_is_ready(clk)) {
+		return -ENODEV;
+	}
 
 #ifdef CONFIG_SOC_SERIES_BEETLE
 	clock_control_on(clk, (clock_control_subsys_t *) &data->uart_cc_as);

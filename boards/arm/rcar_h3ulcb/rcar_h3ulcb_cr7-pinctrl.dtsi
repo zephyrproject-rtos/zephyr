@@ -30,4 +30,8 @@
 	scif2_data_a_rx_default: scif2_data_a_rx_default {
 		pin = <PIN_RX2_A FUNC_RX2_A>;
 	};
+
+	pwm0_default: pwm0_default {
+		pin = <PIN_PWM0 FUNC_PWM0>;
+	};
 };

@@ -15,4 +15,14 @@
 	/delete-property/ clocks;
 	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
 		 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
 };

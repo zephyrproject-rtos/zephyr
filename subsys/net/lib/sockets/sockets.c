@@ -41,8 +41,13 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 		int ret;				     \
 							     \
 		obj = get_sock_vtable(sock, &vtable, &lock); \
-		if (obj == NULL || vtable->fn == NULL) {     \
+		if (obj == NULL) {			     \
 			errno = EBADF;			     \
+			return -1;			     \
+		}					     \
+							     \
+		if (vtable->fn == NULL) {		     \
+			errno = EOPNOTSUPP;		     \
 			return -1;			     \
 		}					     \
 							     \
@@ -639,9 +644,10 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 
 	Z_OOPS(addrlen && z_user_from_copy(&addrlen_copy, addrlen,
 					   sizeof(socklen_t)));
-	Z_OOPS(addr && Z_SYSCALL_MEMORY_WRITE(addr, addrlen_copy));
+	Z_OOPS(addr && Z_SYSCALL_MEMORY_WRITE(addr, addrlen ? addrlen_copy : 0));
 
-	ret = z_impl_zsock_accept(sock, (struct sockaddr *)addr, &addrlen_copy);
+	ret = z_impl_zsock_accept(sock, (struct sockaddr *)addr,
+				  addrlen ? &addrlen_copy : NULL);
 
 	Z_OOPS(ret >= 0 && addrlen && z_user_to_copy(addrlen, &addrlen_copy,
 						     sizeof(socklen_t)));
@@ -651,11 +657,13 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 #include <syscalls/zsock_accept_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-#define WAIT_BUFS K_MSEC(100)
+#define WAIT_BUFS_INITIAL_MS 10
+#define WAIT_BUFS_MAX_MS 100
 #define MAX_WAIT_BUFS K_SECONDS(10)
 
 static int send_check_and_wait(struct net_context *ctx, int status,
-			       uint64_t buf_timeout, k_timeout_t timeout)
+			       uint64_t buf_timeout, k_timeout_t timeout,
+			       uint32_t *retry_timeout)
 {
 	int64_t remaining;
 
@@ -685,9 +693,13 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 		goto out;
 	}
 
+	if (ctx->cond.lock) {
+		(void)k_mutex_unlock(ctx->cond.lock);
+	}
+
 	if (status == -ENOBUFS) {
 		/* We can monitor net_pkt/net_buf avaialbility, so just wait. */
-		k_sleep(WAIT_BUFS);
+		k_sleep(K_MSEC(*retry_timeout));
 	}
 
 	if (status == -EAGAIN) {
@@ -700,10 +712,18 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 					  K_POLL_MODE_NOTIFY_ONLY,
 					  net_tcp_tx_sem_get(ctx));
 
-			k_poll(&event, 1, WAIT_BUFS);
+			k_poll(&event, 1, K_MSEC(*retry_timeout));
 		} else {
-			k_sleep(WAIT_BUFS);
+			k_sleep(K_MSEC(*retry_timeout));
 		}
+	}
+	/* Exponentially increase the retry timeout
+	 * Cap the value to WAIT_BUFS_MAX_MS
+	 */
+	*retry_timeout = MIN(WAIT_BUFS_MAX_MS, *retry_timeout << 1);
+
+	if (ctx->cond.lock) {
+		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
 	}
 
 	return 0;
@@ -718,6 +738,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
+	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
 	uint64_t buf_timeout = 0;
 	int status;
 
@@ -750,7 +771,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 
 		if (status < 0) {
 			status = send_check_and_wait(ctx, status, buf_timeout,
-						     timeout);
+						     timeout, &retry_timeout);
 			if (status < 0) {
 				return status;
 			}
@@ -807,6 +828,7 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 			  int flags)
 {
 	k_timeout_t timeout = K_FOREVER;
+	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
 	uint64_t buf_timeout = 0;
 	int status;
 
@@ -823,7 +845,7 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 			if (status < 0) {
 				status = send_check_and_wait(ctx, status,
 							     buf_timeout,
-							     timeout);
+							     timeout, &retry_timeout);
 				if (status < 0) {
 					return status;
 				}
@@ -1154,7 +1176,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		} else {
 			int rv;
 
-			rv = sock_get_pkt_src_addr(pkt, net_context_get_ip_proto(ctx),
+			rv = sock_get_pkt_src_addr(pkt, net_context_get_proto(ctx),
 						   src_addr, *addrlen);
 			if (rv < 0) {
 				errno = -rv;
@@ -1811,7 +1833,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			break;
 
 		case SO_PROTOCOL: {
-			int proto = (int)net_context_get_ip_proto(ctx);
+			int proto = (int)net_context_get_proto(ctx);
 
 			if (*optlen != sizeof(proto)) {
 				errno = EINVAL;
@@ -1852,12 +1874,59 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 		}
+
+		break;
+
 	case IPPROTO_TCP:
 		switch (optname) {
 		case TCP_NODELAY:
 			ret = net_tcp_get_option(ctx, TCP_OPT_NODELAY, optval, optlen);
 			return ret;
 		}
+
+		break;
+
+	case IPPROTO_IP:
+		switch (optname) {
+		case IP_TOS:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_DSCP_ECN,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+		}
+
+		break;
+
+	case IPPROTO_IPV6:
+		switch (optname) {
+		case IPV6_TCLASS:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_DSCP_ECN,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+		}
+
+		break;
 	}
 
 	errno = ENOPROTOOPT;
@@ -2111,6 +2180,27 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		}
 		break;
 
+	case IPPROTO_IP:
+		switch (optname) {
+		case IP_TOS:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_DSCP_ECN,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+		}
+
+		break;
+
 	case IPPROTO_IPV6:
 		switch (optname) {
 		case IPV6_V6ONLY:
@@ -2118,7 +2208,24 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 * existing apps.
 			 */
 			return 0;
+
+		case IPV6_TCLASS:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_DSCP_ECN,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 		}
+
 		break;
 	}
 

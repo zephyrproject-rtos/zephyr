@@ -10,15 +10,15 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
- 		partition@0 {
+		small_partition: partition@0 {
 			label = "small";
 			reg = <0x00000000 0x00010000>;
 		};
-		partition@10000 {
+		medium_partition: partition@10000 {
 			label = "medium";
 			reg = <0x00010000 0x000F0000>;
 		};
-		partition@100000 {
+		large_partition: partition@100000 {
 			label = "large";
 			reg = <0x00100000 0x00300000>;
 		};

@@ -10,8 +10,7 @@ The EFM32 Happy Gecko Starter Kit EFM32HG-SLSTK3400A contains a MCU from the
 EFM32HG family built on ARM® Cortex®-M0+ processor with excellent low
 power capabilities.
 
-.. figure:: ./efm32hg_slstk3400a.jpg
-   :width: 375px
+.. figure:: efm32hg_slstk3400a.jpg
    :align: center
    :alt: EFM32HG-SLSTK3400A
 
@@ -159,7 +158,7 @@ Reset the board and you will see this message written to the serial port:
    https://www.silabs.com/documents/public/user-guides/ug255-stk3400-user-guide.pdf
 
 .. _EFM32HG-SLSTK3400A Schematics:
-   https://www.silabs.com/documents/public/schematic-files/EFM32HG_BRD2012A_B01_schematic.PDF
+   https://www.silabs.com/documents/public/schematic-files/BRD2012A-B01-schematic.pdf
 
 .. _EFM32HG Website:
    https://www.silabs.com/products/mcu/32-bit/efm32-happy-gecko

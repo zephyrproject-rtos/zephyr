@@ -8,9 +8,6 @@ compatible: "vnd,adc-temp-sensor"
 include: [base.yaml, reset-device.yaml]
 
 properties:
-    label:
-      required: true
-
     io-channels:
       required: true
       description: ADC conversion channels

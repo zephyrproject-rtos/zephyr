@@ -82,7 +82,7 @@ module = SHELL_BACKEND_SERIAL
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
@@ -147,7 +147,7 @@ module = SHELL_BACKEND_RTT
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
@@ -243,7 +243,7 @@ module = SHELL_BACKEND_MQTT
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
@@ -339,7 +339,7 @@ module = SHELL_TELNET
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
@@ -398,6 +398,7 @@ config SHELL_PROMPT_DUMMY
 
 config SHELL_BACKEND_DUMMY_BUF_SIZE
 	int "Size of dummy buffer size"
+	default 400 if LOG_PRINTK
 	default 300
 	help
 	  This is size of output buffer that will be used by dummy backend, this limits number of

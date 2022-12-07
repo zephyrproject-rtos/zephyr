@@ -7,6 +7,8 @@
 #ifndef __SENSOR_LSM303DLHC_MAGN_
 #define __SENSOR_LSM303DLHC_MAGN_
 
+#include <zephyr/drivers/i2c.h>
+
 #define LSM303_DLHC_MAGN_X_EN_BIT	BIT(0)
 #define LSM303DLHC_MAGN_Y_EN_BIT	BIT(1)
 #define LSM303DLHC_MAGN_Z_EN_BIT	BIT(2)
@@ -72,15 +74,12 @@
 #define LSM303DLHC_SR_REG_M		0x09
 
 struct lsm303dlhc_magn_data {
-	const struct device *i2c;
-
 	int16_t magn_x;
 	int16_t magn_y;
 	int16_t magn_z;
 };
 
 struct lsm303dlhc_magn_config {
-	char *i2c_name;
-	uint8_t i2c_address;
+	struct i2c_dt_spec i2c;
 };
 #endif /* _SENSOR_LSM303DLHC_MAGN_ */

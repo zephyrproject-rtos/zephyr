@@ -17,6 +17,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &usart0;
 		zephyr,shell-uart = &usart0;
+		zephyr,flash-controller = &fmc;
 	};
 
 	leds {
@@ -73,6 +74,7 @@
 		led1 = &led3;
 		sw0 = &user_key1;
 		pwm-led0 = &pwm_led;
+		watchdog0 = &fwdgt;
 	};
 };
 
@@ -86,6 +88,12 @@
 
 &gpiof {
 	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 };
 
 &usart0 {
@@ -104,4 +112,8 @@
 		pinctrl-0 = <&pwm0_default>;
 		pinctrl-names = "default";
 	};
+};
+
+&fwdgt {
+	status = "okay";
 };

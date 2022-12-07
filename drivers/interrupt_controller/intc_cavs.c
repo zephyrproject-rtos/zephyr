@@ -6,18 +6,21 @@
 
 #define DT_DRV_COMPAT intel_cavs_intc
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <zephyr/irq_nextlevel.h>
+#include <zephyr/sys/arch_interface.h>
 #include "intc_cavs.h"
 
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
-#if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+#if defined(CONFIG_SOC_INTEL_CAVS_V15)
 #define PER_CPU_OFFSET(x)	(0x40 * x)
-#elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V18)
+#elif defined(CONFIG_SOC_INTEL_CAVS_V18)
 #define PER_CPU_OFFSET(x)	(0x40 * x)
-#elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V20)
+#elif defined(CONFIG_SOC_INTEL_CAVS_V20)
 #define PER_CPU_OFFSET(x)	(0x40 * x)
-#elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V25)
+#elif defined(CONFIG_SOC_INTEL_CAVS_V25)
 #define PER_CPU_OFFSET(x)	(0x40 * x)
 #else
 #error "Must define PER_CPU_OFFSET(x) for SoC"
@@ -29,7 +32,7 @@
 static ALWAYS_INLINE
 struct cavs_registers *get_base_address(struct cavs_ictl_runtime *context)
 {
-#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 	return UINT_TO_POINTER(context->base_addr +
 			       PER_CPU_OFFSET(arch_curr_cpu()->id));
 #else

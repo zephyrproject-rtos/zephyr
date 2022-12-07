@@ -8,8 +8,5 @@ compatible: "silabs,gecko-timer"
 include: base.yaml
 
 properties:
-    label:
-      required: true
-
     reg:
       required: true

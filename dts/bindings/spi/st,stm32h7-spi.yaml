@@ -1,0 +1,14 @@
+# Copyright (c) 2022, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        STM32H7 SPI controller
+        This compatible stands for all SPI hardware blocks matching the
+        version available in STM32H7 SoCs.
+        This version of STM32 SPI hardware block could be identified by the
+        presence of a dedicated interrupt enable register (IER).
+        For instance, but not limited  to: STM32MP1, STM32U5
+
+compatible: "st,stm32h7-spi"
+
+include: st,stm32-spi-common.yaml

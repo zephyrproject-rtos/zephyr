@@ -33,7 +33,7 @@ typedef unsigned long timer_t;
 
 #ifdef CONFIG_PTHREAD_IPC
 /* Thread attributes */
-typedef struct pthread_attr_t {
+typedef struct pthread_attr {
 	int priority;
 	void *stack;
 	size_t stacksize;
@@ -44,27 +44,20 @@ typedef struct pthread_attr_t {
 	uint32_t initialized;
 } pthread_attr_t;
 
-typedef void *pthread_t;
+typedef uint32_t pthread_t;
 
 /* Semaphore */
 typedef struct k_sem sem_t;
 
 /* Mutex */
-typedef struct pthread_mutex {
-	pthread_t owner;
-	uint16_t lock_count;
-	int type;
-	_wait_q_t wait_q;
-} pthread_mutex_t;
+typedef uint32_t pthread_mutex_t;
 
 typedef struct pthread_mutexattr {
 	int type;
 } pthread_mutexattr_t;
 
 /* Condition variables */
-typedef struct pthread_cond {
-	_wait_q_t wait_q;
-} pthread_cond_t;
+typedef uint32_t pthread_cond_t;
 
 typedef struct pthread_condattr {
 } pthread_condattr_t;

@@ -14,11 +14,6 @@
 #include "flash_priv.h"
 
 #include "fsl_common.h"
-#ifdef CONFIG_HAS_MCUX_IAP
-#include "fsl_iap.h"
-#else
-#include "fsl_flash.h"
-#endif
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -31,15 +26,26 @@ LOG_MODULE_REGISTER(flash_mcux);
 #define DT_DRV_COMPAT nxp_kinetis_ftfe
 #elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfl), okay)
 #define DT_DRV_COMPAT nxp_kinetis_ftfl
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_lpc_iap), okay)
-#define DT_DRV_COMPAT nxp_lpc_iap
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc55), okay)
+#define DT_DRV_COMPAT nxp_iap_fmc55
+#define SOC_HAS_IAP 1
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc553), okay)
+#define DT_DRV_COMPAT nxp_iap_fmc553
+#define SOC_HAS_IAP 1
 #else
 #error No matching compatible for soc_flash_mcux.c
 #endif
 
+#if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
+#include "fsl_iap.h"
+#else
+#include "fsl_flash.h"
+#endif /* SOC_HAS_IAP && !CONFIG_SOC_LPC55S36*/
+
+
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
-#ifdef CONFIG_CHECK_BEFORE_READING
+#if defined(CONFIG_CHECK_BEFORE_READING)  && !defined(CONFIG_SOC_LPC55S36)
 #define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
 #define FMC_STATUS_ERR	FLASH_INT_CLR_ENABLE_ERR_MASK
 #define FMC_STATUS_DONE	FLASH_INT_CLR_ENABLE_DONE_MASK
@@ -107,7 +113,7 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 
 	return 0;
 }
-#endif /* CONFIG_CHECK_BEFORE_READING */
+#endif /* CONFIG_CHECK_BEFORE_READING && ! CONFIG_SOC_LPC55S36 */
 
 struct flash_priv {
 	flash_config_t config;
@@ -185,19 +191,26 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 #ifdef CONFIG_CHECK_BEFORE_READING
+  #ifdef CONFIG_SOC_LPC55S36
+	rc = FLASH_IsFlashAreaReadable(&priv->config, addr, len);
+	if (rc != kStatus_FLASH_Success) {
+		rc = -EIO;
+	}
+  #else
 	rc = is_area_readable(addr, len);
-#endif
+  #endif /* CONFIG_SOC_LPC55S36 */
+#endif /* CONFIG_CHECK_BEFORE_READING */
 
 	if (!rc) {
 		memcpy(data, (void *) addr, len);
+	}
 #ifdef CONFIG_CHECK_BEFORE_READING
-	} else if (rc == -ENODATA) {
+	else if (rc == -ENODATA) {
 		/* Erased area, return dummy data as an erased page. */
 		memset(data, 0xFF, len);
 		rc = 0;
-#endif
 	}
-
+#endif
 	return rc;
 }
 
@@ -270,7 +283,7 @@ static int flash_mcux_init(const struct device *dev)
 
 	rc = FLASH_Init(&priv->config);
 
-#ifdef CONFIG_HAS_MCUX_IAP
+#ifdef SOC_HAS_IAP
 	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflashBlockBaseAddr,
 			  &pflash_block_base);
 #else

@@ -164,7 +164,7 @@ void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 #include <zephyr/drivers/interrupt_controller/intel_vtd.h>
 #include <zephyr/arch/x86/acpi.h>
 
-static const struct device *vtd = DEVICE_DT_GET_ONE(intel_vt_d);
+static const struct device *const vtd = DEVICE_DT_GET_ONE(intel_vt_d);
 
 #endif /* CONFIG_INTEL_VTD_ICTL */
 

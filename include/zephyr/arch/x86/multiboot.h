@@ -9,6 +9,8 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <stdint.h>
+
 /*
  * Multiboot (version 1) boot information structure.
  *
@@ -94,7 +96,7 @@ struct multiboot_mmap {
 #define MULTIBOOT_HEADER_FLAG_MEM	BIT(1)	/* want mem_/mmap_* info */
 #define MULTIBOOT_HEADER_FLAG_FB	BIT(2)	/* want fb_* info */
 
-#ifdef CONFIG_MULTIBOOT_FRAMEBUF
+#ifdef CONFIG_INTEL_MULTIBOOTFB_DISPLAY
 #define MULTIBOOT_HEADER_FLAGS \
 	(MULTIBOOT_HEADER_FLAG_FB | MULTIBOOT_HEADER_FLAG_MEM)
 #else

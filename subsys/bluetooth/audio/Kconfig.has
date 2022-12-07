@@ -8,8 +8,7 @@ menuconfig BT_HAS
 	bool "Hearing Access Service support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select UTF8
-	depends on BT_SMP_SC_PAIR_ONLY
-	depends on BT_SMP_MIN_ENC_KEY_SIZE = 16
+	depends on BT_AUDIO_UNICAST_SERVER
 	help
 	  This option enables support for Hearing Access Service.
 
@@ -24,7 +23,7 @@ config BT_HAS_HEARING_AID_MONAURAL
 	bool "Monaural Hearing Aid"
 
 config BT_HAS_HEARING_AID_BINAURAL
-	depends on BT_CSIS
+	depends on BT_CSIP_SET_MEMBER
 	bool "Binaural Hearing Aid"
 
 config BT_HAS_HEARING_AID_BANDED
@@ -98,8 +97,14 @@ endif # BT_HAS_PRESET_SUPPORT
 
 config BT_DEBUG_HAS
 	bool "Hearing Access Service debug"
+	select DEPRECATED
 	help
 	  This option enables enables Hearing Access Service debug logs.
+
+module = BT_HAS
+legacy-debug-sym = BT_DEBUG_HAS
+module-str = "Hearing Access Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_HAS
 
@@ -115,6 +120,12 @@ config BT_HAS_CLIENT
 
 config BT_DEBUG_HAS_CLIENT
 	bool "Hearing Access Service Client debug"
+	select DEPRECATED
 	depends on BT_HAS_CLIENT
 	help
 	  This option enables enables Hearing Access Service Client debug logs.
+
+module = BT_HAS_CLIENT
+legacy-debug-sym = BT_DEBUG_HAS_CLIENT
+module-str = "Hearing Access Service Client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"

@@ -39,23 +39,21 @@ BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
 /* Check that all power states are consistent */
 DT_FOREACH_CHILD(DT_PATH(cpus), CHECK_POWER_STATES_CONSISTENCY)
 
-#define NUM_CPU_STATES(n) DT_NUM_CPU_POWER_STATES(n),
-
 #define DEFINE_CPU_STATES(n) \
 	static const struct pm_state_info pmstates_##n[] \
 		= PM_STATE_INFO_LIST_FROM_DT_CPU(n);
-#define CPU_STATE_REF(n) pmstates_##n,
+#define CPU_STATE_REF(n) pmstates_##n
 
 DT_FOREACH_CHILD(DT_PATH(cpus), DEFINE_CPU_STATES);
 
 /** CPU power states information for each CPU */
 static const struct pm_state_info *cpus_states[] = {
-	DT_FOREACH_CHILD(DT_PATH(cpus), CPU_STATE_REF)
+	DT_FOREACH_CHILD_SEP(DT_PATH(cpus), CPU_STATE_REF, (,))
 };
 
 /** Number of states for each CPU */
 static const uint8_t states_per_cpu[] = {
-	DT_FOREACH_CHILD(DT_PATH(cpus), NUM_CPU_STATES)
+	DT_FOREACH_CHILD_SEP(DT_PATH(cpus), DT_NUM_CPU_POWER_STATES, (,))
 };
 
 uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states)

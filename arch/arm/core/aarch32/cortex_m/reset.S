@@ -19,7 +19,7 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_reset)
-GTEXT(memset)
+GTEXT(z_early_memset)
 GDATA(z_interrupt_stacks)
 #if defined(CONFIG_DEBUG_THREAD_INFO)
 GDATA(z_sys_post_kernel)
@@ -31,7 +31,9 @@ GTEXT(z_arm_platform_init)
 GTEXT(z_arm_init_arch_hw_at_boot)
 GDATA(z_main_stack)
 #endif
-
+#if defined(CONFIG_PM_S2RAM)
+GTEXT(arch_pm_s2ram_resume)
+#endif
 
 /**
  *
@@ -87,6 +89,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
+#if defined(CONFIG_PM_S2RAM)
+    bl arch_pm_s2ram_resume
+#endif /* CONFIG_PM_S2RAM */
+
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
     bl z_arm_platform_init
 #endif
@@ -133,7 +139,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     ldr r0, =z_interrupt_stacks
     ldr r1, =0xaa
     ldr r2, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
-    bl memset
+    bl z_early_memset
 #endif
 
     /*

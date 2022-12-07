@@ -72,6 +72,18 @@ struct adc_context {
 #define ADC_CONTEXT_INIT_SYNC(_data, _ctx_name) \
 	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
+#ifdef ADC_CONTEXT_USES_KERNEL_TIMER
+static void adc_context_on_timer_expired(struct k_timer *timer_id);
+#endif
+
+static inline void adc_context_init(struct adc_context *ctx)
+{
+#ifdef ADC_CONTEXT_USES_KERNEL_TIMER
+	k_timer_init(&ctx->timer, adc_context_on_timer_expired, NULL);
+#endif
+	k_sem_init(&ctx->lock, 0, 1);
+	k_sem_init(&ctx->sync, 0, 1);
+}
 
 static inline void adc_context_request_next_sampling(struct adc_context *ctx)
 {
@@ -108,7 +120,6 @@ static void adc_context_on_timer_expired(struct k_timer *timer_id)
 	adc_context_request_next_sampling(ctx);
 }
 #endif /* ADC_CONTEXT_USES_KERNEL_TIMER */
-
 
 static inline void adc_context_lock(struct adc_context *ctx,
 				    bool asynchronous,

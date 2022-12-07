@@ -40,8 +40,7 @@ struct bt_mesh_proxy_cb {
 	void (*identity_disabled)(uint16_t net_idx);
 };
 
-/** @def BT_MESH_PROXY_CB_DEFINE
- *
+/**
  *  @brief Register a callback structure for Proxy events.
  *
  *  Registers a structure with callback functions that gets called on various

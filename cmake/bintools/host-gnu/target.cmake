@@ -7,6 +7,8 @@ find_program(CMAKE_OBJDUMP objdump)
 find_program(CMAKE_AR      ar     )
 find_program(CMAKE_RANLIB  ranlib )
 find_program(CMAKE_READELF readelf)
+find_program(CMAKE_NM      nm)
+find_program(CMAKE_STRIP   strip)
 
 find_program(CMAKE_GDB     gdb    )
 

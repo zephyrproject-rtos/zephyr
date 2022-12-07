@@ -9,4 +9,7 @@ if BOARD_CC1352R_SENSORTAG
 config BOARD
 	default "cc1352r_sensortag"
 
+config SPI
+	default SENSOR
+
 endif # BOARD_CC1352R_SENSORTAG

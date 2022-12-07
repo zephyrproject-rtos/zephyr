@@ -30,9 +30,7 @@ started quickly. Here are some highlights of the STM32F072B-DISCO board:
 - RF EEprom daughter board connector
 
 .. image:: img/stm32f072b_disco.jpg
-     :width: 272px
      :align: center
-     :height: 551px
      :alt: STM32F072B-DISCO
 
 More information about the board can be found at the
@@ -218,4 +216,4 @@ References
    http://www.st.com/resource/en/reference_manual/dm00031936.pdf
 
 .. _SK Pang CAN breakout board:
-   http://skpang.co.uk/catalog/canbus-can-fd-breakout-board-5v-p-242.html
+   https://www.skpang.co.uk/products/can-bus-can-fd-breakout-board-5v-supply-and-5v-logic

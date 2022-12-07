@@ -16,6 +16,7 @@
  */
 enum npcx_pinctrl_type {
 	NPCX_PINCTRL_TYPE_PERIPH,
+	NPCX_PINCTRL_TYPE_PSL_IN,
 	NPCX_PINCTRL_TYPE_RESERVED,
 };
 
@@ -46,6 +47,22 @@ enum npcx_io_drive_type {
 };
 
 /**
+ * @brief Suppoerted PSL input detection mode in NPCX series
+ */
+enum npcx_psl_in_mode {
+	NPCX_PSL_IN_MODE_LEVEL,
+	NPCX_PSL_IN_MODE_EDGE,
+};
+
+/**
+ * @brief Suppoerted PSL input detection polarity in NPCX series
+ */
+enum npcx_psl_in_pol {
+	NPCX_PSL_IN_POL_LOW,
+	NPCX_PSL_IN_POL_HIGH,
+};
+
+/**
  * @brief NPCX peripheral device configuration structure
  *
  * Used to indicate the peripheral device's corresponding register/bit for
@@ -65,12 +82,28 @@ struct npcx_periph {
 } __packed;
 
 /**
+ * @brief NPCX Power Switch Logic (PSL) input pad configuration structure
+ *
+ * Used to indicate a Power Switch Logic (PSL) input detection configuration
+ * such as detection polarity, port number, and so on.
+ */
+struct npcx_psl_input {
+	/** Indicate a PSL input port number. */
+	uint16_t port: 5;
+	/** Related register group for detection polarity of PSL input. */
+	uint16_t pol_group: 8;
+	/** Related register bit for detection polarity of PSL input. */
+	uint16_t pol_bit: 3;
+} __packed;
+
+/**
  * @brief Type for NPCX pin configuration. Please make sure the size of this
  *        structure is 4 bytes in case the impact of ROM usage.
  */
 struct npcx_pinctrl {
 	union {
 		struct npcx_periph periph;
+		struct npcx_psl_input psl_in;
 		uint16_t cfg_word;
 	} cfg;
 	struct {
@@ -82,7 +115,10 @@ struct npcx_pinctrl {
 		/** Properties used for io-pad. */
 		enum npcx_io_bias_type io_bias_type :2;
 		enum npcx_io_drive_type io_drive_type :1;
-		uint16_t reserved :1;
+		/** Properties used for PSL input. */
+		enum npcx_psl_in_mode psl_in_mode :1;
+		enum npcx_psl_in_pol psl_in_polarity :1;
+		uint16_t reserved :7;
 	} flags;
 } __packed;
 
@@ -105,6 +141,10 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
 #define Z_PINCTRL_NPCX_HAS_DRIVE_PROP(node_id, node_periph)	\
 	UTIL_AND(DT_PROP(node_id, drive_open_drain),		\
 		DT_NODE_HAS_PROP(node_periph, pwm_channel))
+
+#define Z_PINCTRL_NPCX_HAS_PSL_IN_PROP(node_id)			\
+	UTIL_AND(DT_NODE_HAS_PROP(node_id, psl_in_pol),		\
+		DT_NODE_HAS_PROP(node_id, psl_in_mode))
 
 /**
  * @brief Utility macro to initialize a periphral pinmux configuration.
@@ -152,6 +192,23 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
 		.cfg.periph.group = DT_PROP(node_periph, pwm_channel),		\
 	},
 
+/*
+ * @brief Utility macro to initialize a Power Switch Logic (PSL) input detection
+ *        configurations.
+ *
+ * @param node_id Node identifier.
+ * @param prop Property name for pull-up/down configuration. (i.e. 'polarity')
+ */
+#define Z_PINCTRL_NPCX_PSL_IN_DETECT_CONF_INIT(node_id, prop)				\
+	{										\
+		.flags.type = NPCX_PINCTRL_TYPE_PSL_IN,					\
+		.flags.psl_in_mode = DT_ENUM_IDX(node_id, psl_in_mode),			\
+		.flags.psl_in_polarity = DT_ENUM_IDX(node_id, psl_in_pol),		\
+		.cfg.psl_in.port = DT_PROP(node_id, psl_offset),			\
+		.cfg.psl_in.pol_group = DT_PHA(DT_PROP(node_id, prop), alts, group),	\
+		.cfg.psl_in.pol_bit = DT_PHA(DT_PROP(node_id, prop), alts, bit),	\
+	},
+
 /**
  * @brief Utility macro to initialize all peripheral confiurations for each pin.
  *
@@ -167,6 +224,9 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
 	COND_CODE_1(Z_PINCTRL_NPCX_HAS_PUPD_PROP(DT_PROP_BY_IDX(node_id, prop, idx)),	\
 		(Z_PINCTRL_NPCX_PERIPH_PUPD_INIT(					\
 			DT_PROP_BY_IDX(node_id, prop, idx), periph_pupd)), ())		\
+	COND_CODE_1(Z_PINCTRL_NPCX_HAS_PSL_IN_PROP(DT_PROP_BY_IDX(node_id, prop, idx)),	\
+		(Z_PINCTRL_NPCX_PSL_IN_DETECT_CONF_INIT(				\
+			DT_PROP_BY_IDX(node_id, prop, idx), psl_polarity)), ())		\
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_PROP_BY_IDX(node_id, prop, idx), pinmux),	\
 		(Z_PINCTRL_NPCX_PERIPH_PINMUX_INIT(					\
 			DT_PROP_BY_IDX(node_id, prop, idx), pinmux)), ())

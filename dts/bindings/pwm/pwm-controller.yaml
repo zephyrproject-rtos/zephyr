@@ -4,9 +4,6 @@
 # Common fields for PWM controllers
 
 properties:
-    label:
-      required: true
-
     "#pwm-cells":
       type: int
       required: true

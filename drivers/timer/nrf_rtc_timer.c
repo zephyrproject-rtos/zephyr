@@ -13,6 +13,7 @@
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
 #include <zephyr/sys_clock.h>
 #include <hal/nrf_rtc.h>
+#include <zephyr/irq.h>
 
 #define EXT_CHAN_COUNT CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT
 #define CHAN_COUNT (EXT_CHAN_COUNT + 1)
@@ -41,6 +42,7 @@ BUILD_ASSERT(CHAN_COUNT <= RTC_CH_COUNT, "Not enough compare channels");
 static volatile uint32_t overflow_cnt;
 static volatile uint64_t anchor;
 static uint64_t last_count;
+static bool sys_busy;
 
 struct z_nrf_rtc_timer_chan_data {
 	z_nrf_rtc_timer_compare_handler_t callback;
@@ -119,14 +121,14 @@ static void full_int_unlock(uint32_t mcu_critical_state)
 
 uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan >= 0 && chan < CHAN_COUNT);
 	return nrf_rtc_event_address_get(RTC, nrf_rtc_compare_event_get(chan));
 }
 
 uint32_t z_nrf_rtc_timer_capture_task_address_get(int32_t chan)
 {
 #if defined(RTC_TASKS_CAPTURE_TASKS_CAPTURE_Msk)
-	__ASSERT_NO_MSG(chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan >= 0 && chan < CHAN_COUNT);
 	if (chan == 0) {
 		return 0;
 	}
@@ -155,7 +157,7 @@ static bool compare_int_lock(int32_t chan)
 
 bool z_nrf_rtc_timer_compare_int_lock(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	return compare_int_lock(chan);
 }
@@ -173,14 +175,14 @@ static void compare_int_unlock(int32_t chan, bool key)
 
 void z_nrf_rtc_timer_compare_int_unlock(int32_t chan, bool key)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	compare_int_unlock(chan, key);
 }
 
 uint32_t z_nrf_rtc_timer_compare_read(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan >= 0 && chan < CHAN_COUNT);
 
 	return nrf_rtc_cc_get(RTC, chan);
 }
@@ -232,6 +234,7 @@ static uint32_t set_absolute_alarm(int32_t chan, uint32_t abs_val)
 	uint32_t now2;
 	uint32_t cc_val = abs_val & COUNTER_MAX;
 	uint32_t prev_cc = get_comparator(chan);
+	uint32_t tick_inc = 2;
 
 	do {
 		now = counter();
@@ -250,12 +253,16 @@ static uint32_t set_absolute_alarm(int32_t chan, uint32_t abs_val)
 			k_busy_wait(19);
 		}
 
-		/* If requested cc_val is in the past or next tick, set to 2
-		 * ticks from now. RTC may not generate event if CC is set for
-		 * 1 tick from now.
+		/* RTC may not generate event if CC is set for 1 tick from now.
+		 * Because of that if requested cc_val is in the past or next tick,
+		 * set CC to further in future. Start with 2 ticks from now but
+		 * if that fails go even futher. It may fail if operation got
+		 * interrupted and RTC counter progressed or if optimization is
+		 * turned off.
 		 */
 		if (counter_sub(cc_val, now + 2) > COUNTER_HALF_SPAN) {
-			cc_val = now + 2;
+			cc_val = now + tick_inc;
+			tick_inc++;
 		}
 
 		event_clear(chan);
@@ -329,14 +336,14 @@ int z_nrf_rtc_timer_set(int32_t chan, uint64_t target_time,
 			 z_nrf_rtc_timer_compare_handler_t handler,
 			 void *user_data)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	return compare_set(chan, target_time, handler, user_data);
 }
 
 void z_nrf_rtc_timer_abort(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	bool key = compare_int_lock(chan);
 
@@ -535,11 +542,46 @@ int32_t z_nrf_rtc_timer_chan_alloc(void)
 
 void z_nrf_rtc_timer_chan_free(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	atomic_or(&alloc_mask, BIT(chan));
 }
 
+
+int z_nrf_rtc_timer_trigger_overflow(void)
+{
+	uint32_t mcu_critical_state;
+	int err = 0;
+
+	if (!IS_ENABLED(CONFIG_NRF_RTC_TIMER_TRIGGER_OVERFLOW) ||
+	    (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT > 0)) {
+		return -ENOTSUP;
+	}
+
+	mcu_critical_state = full_int_lock();
+	if (sys_busy) {
+		err = -EBUSY;
+		goto bail;
+	}
+
+	if (counter() >= (COUNTER_SPAN - 100)) {
+		err = -EAGAIN;
+		goto bail;
+	}
+
+	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_TRIGGER_OVERFLOW);
+	k_busy_wait(80);
+
+	uint64_t now = z_nrf_rtc_timer_read();
+
+	if (err == 0) {
+		sys_clock_timeout_handler(0, now, NULL);
+	}
+bail:
+	full_int_unlock(mcu_critical_state);
+
+	return err;
+}
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
@@ -552,6 +594,10 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	/* If timeout is set to max we assume that system is idle and timeout
+	 * is set to forever.
+	 */
+	sys_busy = (ticks < (MAX_TICKS - 1));
 
 	uint32_t unannounced = z_nrf_rtc_timer_read() - last_count;
 
@@ -631,8 +677,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	}
 
 	uint32_t initial_timeout = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
-		(COUNTER_HALF_SPAN - 1) :
-		(counter() + CYC_PER_TICK);
+		MAX_TICKS : (counter() + CYC_PER_TICK);
 
 	compare_set(0, initial_timeout, sys_clock_timeout_handler, NULL);
 

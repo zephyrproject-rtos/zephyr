@@ -26,15 +26,15 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/speculation.h>
+#include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 
 #define REG_MISCCFG			0x0010
 #define MISCCFG_IRQ_ROUTE_POS		3
 
-#define REG_PAD_OWNER_BASE		0x0020
 #define PAD_OWN_MASK			0x03
 #define PAD_OWN_HOST			0
 #define PAD_OWN_CSME			1
@@ -44,12 +44,10 @@ BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 #define PAD_HOST_SW_OWN_GPIO		1
 #define PAD_HOST_SW_OWN_ACPI		0
 
-#define REG_GPI_INT_STS_BASE		0x0100
 
 #define PAD_CFG0_RXPADSTSEL		BIT(29)
 #define PAD_CFG0_RXRAW1			BIT(28)
 
-#define PAD_CFG0_PMODE_MASK		(0x0F << 10)
 
 #define PAD_CFG0_RXEVCFG_POS		25
 #define PAD_CFG0_RXEVCFG_MASK		(0x03 << PAD_CFG0_RXEVCFG_POS)
@@ -569,11 +567,11 @@ int gpio_intel_init(const struct device *dev)
 
 	isr_devs[nr_isr_devs++] = dev;
 
-	/* route to IRQ 14 */
-
-	sys_bitfield_clear_bit(regs(dev) + REG_MISCCFG,
-			       MISCCFG_IRQ_ROUTE_POS);
-
+	if (IS_ENABLED(CONFIG_SOC_APOLLO_LAKE)) {
+		/* route to IRQ 14 */
+		sys_bitfield_clear_bit(regs(dev) + REG_MISCCFG,
+				       MISCCFG_IRQ_ROUTE_POS);
+	}
 	return 0;
 }
 

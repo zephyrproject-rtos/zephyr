@@ -8,12 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/lorawan/lorawan.h>
-#include <zephyr/zephyr.h>
-
-#define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
-BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
-	     "No default LoRa radio specified in DT");
-#define DEFAULT_RADIO DT_LABEL(DEFAULT_RADIO_NODE)
+#include <zephyr/kernel.h>
 
 /* Customize based on network configuration */
 #define LORAWAN_DEV_EUI			{ 0xDD, 0xEE, 0xAA, 0xDD, 0xBB, 0xEE,\
@@ -64,11 +59,22 @@ void main(void)
 		.cb = dl_callback
 	};
 
-	lora_dev = device_get_binding(DEFAULT_RADIO);
-	if (!lora_dev) {
-		LOG_ERR("%s Device not found", DEFAULT_RADIO);
+	lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
+	if (!device_is_ready(lora_dev)) {
+		LOG_ERR("%s: device not ready.", lora_dev->name);
 		return;
 	}
+
+#if defined(CONFIG_LORAMAC_REGION_EU868)
+	/* If more than one region Kconfig is selected, app should set region
+	 * before calling lorawan_start()
+	 */
+	ret = lorawan_set_region(LORAWAN_REGION_EU868);
+	if (ret < 0) {
+		LOG_ERR("lorawan_set_region failed: %d", ret);
+		return;
+	}
+#endif
 
 	ret = lorawan_start();
 	if (ret < 0) {

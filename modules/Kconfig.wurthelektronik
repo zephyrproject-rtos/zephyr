@@ -1,0 +1,6 @@
+# Würth Elektronik HAL config
+# Copyright (c) 2022 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_WESENSORS
+	bool

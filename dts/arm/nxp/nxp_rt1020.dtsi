@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt10xx.dtsi>
 
 &sysclk {
 	clock-frequency = <500000000>;
@@ -23,6 +23,12 @@
 	reg = <0x20200000 DT_SIZE_K(128)>;
 };
 
+&ccm {
+	ipg-podf {
+		clock-div = <4>;
+	};
+};
+
 &gpt2 {
 	gptfreq = <12500000>;
 };
@@ -35,6 +41,8 @@
 		/delete-node/ gpio@42004000;
 		/delete-node/ gpio@42008000;
 		/delete-node/ gpio@4200c000;
+		/* RT1020 has only one flexSPI controller */
+		/delete-node/ spi@402a4000;
 	};
 };
 
@@ -144,6 +152,7 @@
 		<&iomuxc_gpio_sd_b1_09_gpio3_io29>,
 		<&iomuxc_gpio_sd_b1_10_gpio3_io30>,
 		<&iomuxc_gpio_sd_b1_11_gpio3_io31>;
+	gpio-reserved-ranges = <10 3>;
 };
 
 &gpio5{

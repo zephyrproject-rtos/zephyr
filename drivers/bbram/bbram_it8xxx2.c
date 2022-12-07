@@ -6,11 +6,14 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_bbram
 
-#include <zephyr/drivers/bbram.h>
 #include <errno.h>
+
+#include <zephyr/drivers/bbram.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
-#include <zephyr/logging/log.h>
+#include <chip_chipregs.h>
+
 LOG_MODULE_REGISTER(bbram, CONFIG_BBRAM_LOG_LEVEL);
 
 #define BRAM_VALID_MAGIC        0x4252414D  /* "BRAM" */

@@ -197,7 +197,7 @@
  */
 
 /**
- * @brief Defines a new iterable section.
+ * @brief Defines a new element for an iterable section.
  *
  * @details
  * Convenience helper combining __in_section() and Z_DECL_ALIGN().
@@ -206,13 +206,16 @@
  *
  * In the linker script, create output sections for these using
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM().
+ *
+ * @note In order to store the element in ROM, a const specifier has to
+ * be added to the declaration: const STRUCT_SECTION_ITERABLE(...);
  */
 #define STRUCT_SECTION_ITERABLE(struct_type, name) \
 	Z_DECL_ALIGN(struct struct_type) name \
-	__in_section(_##struct_type, static, name) __used
+	__in_section(_##struct_type, static, name) __used __noasan
 
 /**
- * @brief Defines an alternate data type iterable section.
+ * @brief Defines a new element of alternate data type for an iterable section.
  *
  * @details
  * Special variant of STRUCT_SECTION_ITERABLE(), for placing alternate
@@ -221,7 +224,7 @@
  */
 #define STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name) \
 	Z_DECL_ALIGN(struct struct_type) name \
-	__in_section(_##out_type, static, name) __used
+	__in_section(_##out_type, static, name) __used __noasan
 
 /**
  * @brief Iterate over a specified iterable section.
@@ -273,6 +276,17 @@
 /**
  * @}
  */ /* end of struct_section_apis */
+
+/** @brief Tag a symbol (e.g. function) to be kept in the binary even though it is not used.
+ *
+ * It prevents symbol from being removed by the linker garbage collector. It
+ * is achieved by adding a pointer to that symbol to the kept memory section.
+ *
+ * @param symbol Symbol to keep.
+ */
+#define LINKER_KEEP(symbol) \
+	static const void * const symbol##_ptr  __used \
+	__attribute__((__section__(".symbol_to_keep"))) = (void *)&symbol
 
 #define LOG2CEIL(x) \
 	((((x) <= 4) ? 2 : (((x) <= 8) ? 3 : (((x) <= 16) ? \

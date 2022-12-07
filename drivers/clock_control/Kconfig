@@ -60,4 +60,10 @@ source "drivers/clock_control/Kconfig.rcar"
 
 source "drivers/clock_control/Kconfig.xec"
 
+source "drivers/clock_control/Kconfig.cavs"
+
+source "drivers/clock_control/Kconfig.aspeed"
+
+source "drivers/clock_control/Kconfig.gd32"
+
 endif # CLOCK_CONTROL

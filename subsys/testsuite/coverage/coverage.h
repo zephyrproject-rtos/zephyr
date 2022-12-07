@@ -38,9 +38,26 @@
 #define GCOV_COUNTERS 10U
 #endif
 
+/* The GCOV 12 gcno/gcda format has slight change,
+ * Please refer to gcov-io.h in the GCC 12 for
+ * more details.
+ *
+ * Following GCC commits introduced these changes:
+ * gcc-mirror/gcc@23eb66d
+ * gcc-mirror/gcc@72e0c74
+ */
+#if (__GNUC__ >= 12)
+#define GCOV_12_FORMAT
+#endif
+
 typedef uint64_t gcov_type;
 
+#ifdef GCOV_12_FORMAT
+#define GCOV_TAG_FUNCTION_LENGTH  12
+#else
 #define GCOV_TAG_FUNCTION_LENGTH  3
+#endif
+
 #define GCOV_DATA_MAGIC   (0x67636461)
 #define GCOV_TAG_FUNCTION (0x01000000)
 #define GCOV_TAG_COUNTER_BASE (0x01a10000)
@@ -77,7 +94,7 @@ struct gcov_fn_info {
 	unsigned int ident;              /* unique ident of function */
 	unsigned int lineno_checksum;    /* function lineno_checksum */
 	unsigned int cfg_checksum;       /* function cfg checksum */
-	struct gcov_ctr_info ctrs[0];    /* instrumented counters */
+	struct gcov_ctr_info ctrs[1];    /* instrumented counters */
 };
 
 /** Profiling data per object file
@@ -89,6 +106,9 @@ struct gcov_info {
 	unsigned int version;        /* Gcov version (same as GCC version) */
 	struct gcov_info *next;      /* List head for a singly-linked list */
 	unsigned int stamp;          /* Uniquifying time stamp */
+#ifdef GCOV_12_FORMAT
+	unsigned int checksum;		/* unique object checksum */
+#endif
 	const char *filename;        /* Name of the associated gcda data file */
 	/* merge functions, null for unused*/
 	void (*merge[GCOV_COUNTERS])(gcov_type *, unsigned int);

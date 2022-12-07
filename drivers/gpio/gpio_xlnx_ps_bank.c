@@ -6,11 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 
 #include <zephyr/drivers/gpio.h>
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include "gpio_xlnx_ps_bank.h"
 
 #define LOG_MODULE_NAME gpio_xlnx_ps_bank

@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/benchmark_common.h"
@@ -147,7 +147,7 @@ static const uint32_t input2[256] = {
 	0xbf6a57bf, 0xbe9b9d13, 0x3ddf83ce, 0xbec67d55
 	};
 
-void test_benchmark_vec_add_f32(void)
+ZTEST(basicmath_f32_benchmark, test_benchmark_vec_add_f32)
 {
 	uint32_t irq_key, timestamp, timespan;
 	float32_t *output;
@@ -174,7 +174,7 @@ void test_benchmark_vec_add_f32(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_sub_f32(void)
+ZTEST(basicmath_f32_benchmark, test_benchmark_vec_sub_f32)
 {
 	uint32_t irq_key, timestamp, timespan;
 	float32_t *output;
@@ -201,7 +201,7 @@ void test_benchmark_vec_sub_f32(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_mult_f32(void)
+ZTEST(basicmath_f32_benchmark, test_benchmark_vec_mult_f32)
 {
 	uint32_t irq_key, timestamp, timespan;
 	float32_t *output;
@@ -228,7 +228,7 @@ void test_benchmark_vec_mult_f32(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_abs_f32(void)
+ZTEST(basicmath_f32_benchmark, test_benchmark_vec_abs_f32)
 {
 	uint32_t irq_key, timestamp, timespan;
 	float32_t *output;
@@ -253,7 +253,7 @@ void test_benchmark_vec_abs_f32(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_negate_f32(void)
+ZTEST(basicmath_f32_benchmark, test_benchmark_vec_negate_f32)
 {
 	uint32_t irq_key, timestamp, timespan;
 	float32_t *output;
@@ -278,7 +278,7 @@ void test_benchmark_vec_negate_f32(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_offset_f32(void)
+ZTEST(basicmath_f32_benchmark, test_benchmark_vec_offset_f32)
 {
 	uint32_t irq_key, timestamp, timespan;
 	float32_t *output;
@@ -303,7 +303,7 @@ void test_benchmark_vec_offset_f32(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_scale_f32(void)
+ZTEST(basicmath_f32_benchmark, test_benchmark_vec_scale_f32)
 {
 	uint32_t irq_key, timestamp, timespan;
 	float32_t *output;
@@ -328,7 +328,7 @@ void test_benchmark_vec_scale_f32(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_dot_prod_f32(void)
+ZTEST(basicmath_f32_benchmark, test_benchmark_vec_dot_prod_f32)
 {
 	uint32_t irq_key, timestamp, timespan;
 	float32_t output;
@@ -348,12 +348,4 @@ void test_benchmark_vec_dot_prod_f32(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-ztest_register_test_suite(basicmath_f32_benchmark, NULL,
-			  ztest_unit_test(test_benchmark_vec_add_f32),
-			  ztest_unit_test(test_benchmark_vec_sub_f32),
-			  ztest_unit_test(test_benchmark_vec_mult_f32),
-			  ztest_unit_test(test_benchmark_vec_abs_f32),
-			  ztest_unit_test(test_benchmark_vec_negate_f32),
-			  ztest_unit_test(test_benchmark_vec_offset_f32),
-			  ztest_unit_test(test_benchmark_vec_scale_f32),
-			  ztest_unit_test(test_benchmark_vec_dot_prod_f32));
+ZTEST_SUITE(basicmath_f32_benchmark, NULL, NULL, NULL, NULL, NULL);

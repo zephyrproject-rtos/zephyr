@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <string.h>
 #include <errno.h>
@@ -347,12 +347,13 @@ static int w5500_set_config(const struct device *dev,
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
 	    type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
 		if (config->promisc_mode) {
-			if (!(mode & BIT(mr)))
+			if (!(mode & BIT(mr))) {
 				return -EALREADY;
 			}
+		}
 
-			/* clear */
-			WRITE_BIT(mode, mr, 0);
+		/* clear */
+		WRITE_BIT(mode, mr, 0);
 	} else {
 		if (mode & BIT(mr)) {
 			return -EALREADY;
@@ -508,7 +509,6 @@ static int w5500_init(const struct device *dev)
 		}
 		gpio_pin_set_dt(&config->reset, 0);
 		k_usleep(500);
-		gpio_pin_set_dt(&config->reset, 1);
 	}
 
 	err = w5500_hw_reset(dev);

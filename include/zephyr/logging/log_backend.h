@@ -7,7 +7,6 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 
 #include <zephyr/logging/log_msg.h>
-#include <zephyr/logging/log_msg2.h>
 #include <stdarg.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
@@ -27,31 +26,53 @@ extern "C" {
 /* Forward declaration of the log_backend type. */
 struct log_backend;
 
+
+/**
+ * @brief Backend events
+ */
+enum log_backend_evt {
+	/**
+	 * @brief Event when process thread finishes processing.
+	 *
+	 * This event is emitted when the process thread finishes
+	 * processing pending log messages.
+	 *
+	 * @note This is not emitted when there are no pending
+	 *       log messages being processed.
+	 *
+	 * @note Deferred mode only.
+	 */
+	LOG_BACKEND_EVT_PROCESS_THREAD_DONE,
+
+	/** @brief Maximum number of backend events */
+	LOG_BACKEND_EVT_MAX,
+};
+
+/**
+ * @brief Argument(s) for backend events.
+ */
+union log_backend_evt_arg {
+	/** @brief Unspecified argument(s). */
+	void *raw;
+};
+
 /**
  * @brief Logger backend API.
  */
 struct log_backend_api {
-	/* Logging v2 function. */
 	void (*process)(const struct log_backend *const backend,
-			union log_msg2_generic *msg);
+			union log_msg_generic *msg);
 
-	/* DEPRECATED! Functions used for logging v1. */
-	void (*put)(const struct log_backend *const backend,
-		    struct log_msg *msg);
-	void (*put_sync_string)(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, uint32_t timestamp,
-			 const char *fmt, va_list ap);
-	void (*put_sync_hexdump)(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, uint32_t timestamp,
-			 const char *metadata, const uint8_t *data, uint32_t len);
-
-	/* Functions used by v1 and v2 */
 	void (*dropped)(const struct log_backend *const backend, uint32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
 	void (*init)(const struct log_backend *const backend);
 	int (*is_ready)(const struct log_backend *const backend);
 	int (*format_set)(const struct log_backend *const backend,
 				uint32_t log_type);
+
+	void (*notify)(const struct log_backend *const backend,
+		       enum log_backend_evt event,
+		       union log_backend_evt_arg *arg);
 };
 
 /**
@@ -61,6 +82,9 @@ struct log_backend_control_block {
 	void *ctx;
 	uint8_t id;
 	bool active;
+
+	/* Initialization level. */
+	uint8_t level;
 };
 
 /**
@@ -72,9 +96,6 @@ struct log_backend {
 	const char *name;
 	bool autostart;
 };
-
-extern const struct log_backend __log_backends_start[];
-extern const struct log_backend __log_backends_end[];
 
 /**
  * @brief Macro for creating a logger backend instance.
@@ -134,27 +155,11 @@ static inline void log_backend_init(const struct log_backend *const backend)
 static inline int log_backend_is_ready(const struct log_backend *const backend)
 {
 	__ASSERT_NO_MSG(backend != NULL);
-	if (backend->api->is_ready) {
+	if (backend->api->is_ready != NULL) {
 		return backend->api->is_ready(backend);
 	}
 
 	return 0;
-}
-
-/**
- * @brief Put message with log entry to the backend.
- *
- * @warning DEPRECATED. Use logging v2.
- *
- * @param[in] backend  Pointer to the backend instance.
- * @param[in] msg      Pointer to message with log entry.
- */
-static inline void log_backend_put(const struct log_backend *const backend,
-				   struct log_msg *msg)
-{
-	__ASSERT_NO_MSG(backend != NULL);
-	__ASSERT_NO_MSG(msg != NULL);
-	backend->api->put(backend, msg);
 }
 
 /**
@@ -166,65 +171,12 @@ static inline void log_backend_put(const struct log_backend *const backend,
  * @param[in] backend  Pointer to the backend instance.
  * @param[in] msg      Pointer to message with log entry.
  */
-static inline void log_backend_msg2_process(
-					const struct log_backend *const backend,
-					union log_msg2_generic *msg)
+static inline void log_backend_msg_process(const struct log_backend *const backend,
+					   union log_msg_generic *msg)
 {
 	__ASSERT_NO_MSG(backend != NULL);
 	__ASSERT_NO_MSG(msg != NULL);
 	backend->api->process(backend, msg);
-}
-
-
-/**
- * @brief Synchronously process log message.
- *
- * @warning DEPRECATED. Use logging v2.
- *
- * @param[in] backend   Pointer to the backend instance.
- * @param[in] src_level Message details.
- * @param[in] timestamp Timestamp.
- * @param[in] fmt       Log string.
- * @param[in] ap        Log string arguments.
- */
-static inline void log_backend_put_sync_string(
-					const struct log_backend *const backend,
-					struct log_msg_ids src_level,
-					uint32_t timestamp, const char *fmt,
-					va_list ap)
-{
-	__ASSERT_NO_MSG(backend != NULL);
-
-	if (backend->api->put_sync_string) {
-		backend->api->put_sync_string(backend, src_level,
-					      timestamp, fmt, ap);
-	}
-}
-
-/**
- * @brief Synchronously process log hexdump_message.
- *
- * @warning DEPRECATED. Use logging v2.
- *
- * @param[in] backend   Pointer to the backend instance.
- * @param[in] src_level Message details.
- * @param[in] timestamp Timestamp.
- * @param[in] metadata  Raw string associated with the data.
- * @param[in] data      Data.
- * @param[in] len       Data length.
- */
-static inline void log_backend_put_sync_hexdump(
-					const struct log_backend *const backend,
-					struct log_msg_ids src_level,
-					uint32_t timestamp, const char *metadata,
-					const uint8_t *data, uint32_t len)
-{
-	__ASSERT_NO_MSG(backend != NULL);
-
-	if (backend->api->put_sync_hexdump) {
-		backend->api->put_sync_hexdump(backend, src_level, timestamp,
-					       metadata, data, len);
-	}
 }
 
 /**
@@ -294,7 +246,11 @@ static inline uint8_t log_backend_id_get(const struct log_backend *const backend
  */
 static inline const struct log_backend *log_backend_get(uint32_t idx)
 {
-	return &__log_backends_start[idx];
+	const struct log_backend *backend;
+
+	STRUCT_SECTION_GET(log_backend, idx, &backend);
+
+	return backend;
 }
 
 /**
@@ -304,7 +260,11 @@ static inline const struct log_backend *log_backend_get(uint32_t idx)
  */
 static inline int log_backend_count_get(void)
 {
-	return __log_backends_end - __log_backends_start;
+	int cnt;
+
+	STRUCT_SECTION_COUNT(log_backend, &cnt);
+
+	return cnt;
 }
 
 /**
@@ -347,7 +307,6 @@ static inline bool log_backend_is_active(
 	return backend->cb->active;
 }
 
-#ifndef CONFIG_LOG1
 /** @brief Set logging format.
  *
  * @param backend Pointer to the backend instance.
@@ -379,7 +338,24 @@ static inline int log_backend_format_set(const struct log_backend *backend, uint
 
 	return backend->api->format_set(backend, log_type);
 }
-#endif
+
+/**
+ * @brief Notify a backend of an event.
+ *
+ * @param backend Pointer to the backend instance.
+ * @param event Event to be notified.
+ * @param arg Pointer to the argument(s).
+ */
+static inline void log_backend_notify(const struct log_backend *const backend,
+				      enum log_backend_evt event,
+				      union log_backend_evt_arg *arg)
+{
+	__ASSERT_NO_MSG(backend != NULL);
+
+	if (backend->api->notify) {
+		backend->api->notify(backend, event, arg);
+	}
+}
 
 /**
  * @}

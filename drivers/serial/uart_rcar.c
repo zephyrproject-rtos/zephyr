@@ -11,8 +11,9 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
 
 struct uart_rcar_cfg {
@@ -271,6 +272,10 @@ static int uart_rcar_init(const struct device *dev)
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
 	}
 
 	ret = clock_control_on(config->clock_dev,

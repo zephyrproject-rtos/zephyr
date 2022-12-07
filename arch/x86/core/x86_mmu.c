@@ -520,18 +520,18 @@ static inline bool is_region_page_aligned(void *addr, size_t size)
 #define COLOR_PAGE_TABLES	1
 
 #if COLOR_PAGE_TABLES
-#define ANSI_DEFAULT "\x1B[0m"
-#define ANSI_RED     "\x1B[1;31m"
-#define ANSI_GREEN   "\x1B[1;32m"
-#define ANSI_YELLOW  "\x1B[1;33m"
-#define ANSI_BLUE    "\x1B[1;34m"
-#define ANSI_MAGENTA "\x1B[1;35m"
-#define ANSI_CYAN    "\x1B[1;36m"
-#define ANSI_GREY    "\x1B[1;90m"
+#define ANSI_DEFAULT "\x1B" "[0m"
+#define ANSI_RED     "\x1B" "[1;31m"
+#define ANSI_GREEN   "\x1B" "[1;32m"
+#define ANSI_YELLOW  "\x1B" "[1;33m"
+#define ANSI_BLUE    "\x1B" "[1;34m"
+#define ANSI_MAGENTA "\x1B" "[1;35m"
+#define ANSI_CYAN    "\x1B" "[1;36m"
+#define ANSI_GREY    "\x1B" "[1;90m"
 
 #define COLOR(x)	printk(_CONCAT(ANSI_, x))
 #else
-#define COLOR(x)	do { } while (0)
+#define COLOR(x)	do { } while (false)
 #endif
 
 __pinned_func
@@ -564,7 +564,7 @@ static char get_entry_code(pentry_t value)
 
 		if ((value & MMU_US) != 0U) {
 			/* Uppercase indicates user mode access */
-			ret = toupper(ret);
+			ret = toupper((unsigned char)ret);
 		}
 	}
 
@@ -740,7 +740,7 @@ static void dump_entry(int level, void *virt, pentry_t entry)
 			if ((entry & MMU_##bit) != 0U) { \
 				str_append(&pos, &sz, #bit " "); \
 			} \
-		} while (0)
+		} while (false)
 
 	DUMP_BIT(RW);
 	DUMP_BIT(US);
@@ -752,7 +752,7 @@ static void dump_entry(int level, void *virt, pentry_t entry)
 	DUMP_BIT(XD);
 
 	LOG_ERR("%sE: %p -> " PRI_ENTRY ": %s", info->name,
-		virtmap, entry & info->mask, log_strdup(buf));
+		virtmap, entry & info->mask, buf);
 
 	#undef DUMP_BIT
 }

@@ -90,8 +90,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* resource state variables */
 static uint8_t  error_code_list[DEVICE_ERROR_CODE_MAX];
-static int32_t time_temp;
-static uint32_t time_offset;
+static time_t time_temp;
+static time_t time_offset;
 static uint8_t  binding_mode[DEVICE_STRING_SHORT];
 
 /* only 1 instance of device object exists */
@@ -170,7 +170,10 @@ static int current_time_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 				      bool last_block, size_t total_size)
 {
 	if (data_len == 4U) {
-		time_offset = *(int32_t *)data - (int32_t)(k_uptime_get() / 1000);
+		time_offset = *(uint32_t *)data - (uint32_t)(k_uptime_get() / 1000);
+		return 0;
+	} else if (data_len == 8U) {
+		time_offset = *(time_t *)data - (time_t)(k_uptime_get() / 1000);
 		return 0;
 	}
 
@@ -201,14 +204,14 @@ int lwm2m_device_add_err(uint8_t error_code)
 
 	error_code_list[i] = error_code;
 	error_code_ri[i].res_inst_id = i;
-	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_ERROR_CODE_ID);
+	lwm2m_notify_observer(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_ERROR_CODE_ID);
 
 	return 0;
 }
 
 static void device_periodic_service(struct k_work *work)
 {
-	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
+	lwm2m_notify_observer(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
 }
 
 int lwm2m_update_device_service_period(uint32_t period_ms)

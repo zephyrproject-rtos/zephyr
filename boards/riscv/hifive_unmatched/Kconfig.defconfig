@@ -12,12 +12,4 @@ config SYS_CLOCK_TICKS_PER_SEC
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000
 
-config SPI_SIFIVE
-	default y
-	depends on SPI
-
-config UART_SIFIVE
-	default y
-	depends on SERIAL
-
 endif

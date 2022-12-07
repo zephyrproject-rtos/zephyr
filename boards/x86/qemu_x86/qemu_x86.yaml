@@ -11,7 +11,7 @@ supported:
   - pci
   - nvs
   - netif:serial-net
-  - ieee802154
   - eeprom
+  - can
 testing:
   default: true

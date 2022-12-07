@@ -6,7 +6,7 @@
 
 #include "test_msgq.h"
 
-K_THREAD_STACK_EXTERN(tstack);
+K_THREAD_STACK_DECLARE(tstack, STACK_SIZE);
 extern struct k_thread tdata;
 extern struct k_msgq msgq;
 static ZTEST_BMEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
@@ -16,7 +16,7 @@ static void tThread_entry(void *p1, void *p2, void *p3)
 {
 	int ret = k_msgq_put((struct k_msgq *)p1, (void *)&data[0], TIMEOUT);
 
-	zassert_equal(ret, -ENOMSG, NULL);
+	zassert_equal(ret, -ENOMSG);
 }
 
 static void purge_when_put(struct k_msgq *q)
@@ -26,7 +26,7 @@ static void purge_when_put(struct k_msgq *q)
 	/*fill the queue to full*/
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_put(q, (void *)&data[i], K_NO_WAIT);
-		zassert_equal(ret, 0, NULL);
+		zassert_equal(ret, 0);
 	}
 	/*create another thread waiting to put msg*/
 	k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -40,7 +40,7 @@ static void purge_when_put(struct k_msgq *q)
 	/*verify msg put after purge*/
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_put(q, (void *)&data[i], K_NO_WAIT);
-		zassert_equal(ret, 0, NULL);
+		zassert_equal(ret, 0);
 	}
 
 	k_thread_abort(&tdata);
@@ -55,7 +55,7 @@ static void purge_when_put(struct k_msgq *q)
  * @brief Test purge a message queue
  * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
  */
-void test_msgq_purge_when_put(void)
+ZTEST(msgq_api_1cpu, test_msgq_purge_when_put)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
 
@@ -67,13 +67,13 @@ void test_msgq_purge_when_put(void)
  * @brief Test purge a message queue
  * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
  */
-void test_msgq_user_purge_when_put(void)
+ZTEST_USER(msgq_api, test_msgq_user_purge_when_put)
 {
 	struct k_msgq *q;
 
 	q = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(q, "couldn't alloc message queue");
-	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN));
 
 	purge_when_put(q);
 }

@@ -33,18 +33,18 @@ enum winc1500_gpio_index {
 	WINC1500_GPIO_IDX_MAX
 };
 
-struct winc1500_gpio_configuration {
-	const struct device *dev;
-	uint32_t pin;
+struct winc1500_cfg {
+	struct spi_dt_spec spi;
+	struct gpio_dt_spec chip_en_gpio;
+	struct gpio_dt_spec irq_gpio;
+	struct gpio_dt_spec reset_gpio;
 };
 
 struct winc1500_device {
-	struct winc1500_gpio_configuration	*gpios;
 	struct gpio_callback			gpio_cb;
-	const struct device *spi;
-	struct spi_config			spi_cfg;
 };
 
 extern struct winc1500_device winc1500;
+extern const struct winc1500_cfg winc1500_config;
 
 #endif /* ZEPHYR_DRIVERS_WIFI_WINC1500_WIFI_WINC1500_NM_BSP_INTERNAL_H_ */

@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PLIC
+	bool "Platform Level Interrupt Controller (PLIC)"
+	default y
+	depends on DT_HAS_SIFIVE_PLIC_1_0_0_ENABLED
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Platform Level Interrupt Controller provides support
+	  for external interrupt lines defined by the RISC-V SoC.

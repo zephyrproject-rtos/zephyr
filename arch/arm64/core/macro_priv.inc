@@ -7,7 +7,7 @@
 #ifndef _MACRO_PRIV_INC_
 #define _MACRO_PRIV_INC_
 
-#include <arch/arm64/tpidrro_el0.h>
+#include <zephyr/arch/arm64/tpidrro_el0.h>
 
 #ifdef _ASMLANGUAGE
 
@@ -23,6 +23,7 @@
 
 /*
  * Get CPU pointer
+ * Note: keep in sync with `arch_curr_cpu` in include/zephyr/arch/arm64/arch_inlines.h
  */
 
 .macro get_cpu xreg0

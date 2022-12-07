@@ -28,14 +28,15 @@ config BT_CCID
 rsource "Kconfig.baps"
 rsource "Kconfig.vocs"
 rsource "Kconfig.aics"
-rsource "Kconfig.vcs"
-rsource "Kconfig.mics"
-rsource "Kconfig.csis"
+rsource "Kconfig.vcp"
+rsource "Kconfig.micp"
+rsource "Kconfig.csip"
 rsource "Kconfig.tbs"
 rsource "Kconfig.mcs"
 rsource "Kconfig.bass"
 rsource "Kconfig.has"
 rsource "Kconfig.mpl"
 rsource "Kconfig.mctl"
+rsource "Kconfig.cap"
 
 endif # BT_AUDIO

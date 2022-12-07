@@ -8,17 +8,11 @@ compatible: "st,stm32-timers"
 include: base.yaml
 
 properties:
-    label:
-      required: true
-
     reg:
       required: true
 
     clocks:
       required: true
-
-    interrupts:
-      required: false
 
     st,prescaler:
       type: int
@@ -29,7 +23,6 @@ properties:
 
     st,countermode:
         type: int
-        required: false
         default: 0 # STM32_TIM_COUNTERMODE_UP - reset state
         description: |
           Sets timer counter mode.

@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/random/rand32.h>
 #include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/irq.h>
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <zephyr/net/openthread.h>
 #endif
@@ -205,8 +206,8 @@ static void b91_handle_ack(void)
 	struct net_pkt *ack_pkt;
 
 	/* allocate ack packet */
-	ack_pkt = net_pkt_alloc_with_buffer(data.iface, B91_ACK_FRAME_LEN,
-					    AF_UNSPEC, 0, K_NO_WAIT);
+	ack_pkt = net_pkt_rx_alloc_with_buffer(data.iface, B91_ACK_FRAME_LEN,
+					       AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		return;
@@ -300,7 +301,7 @@ static void b91_rf_rx_isr(void)
 		}
 
 		/* get packet pointer from NET stack */
-		pkt = net_pkt_alloc_with_buffer(data.iface, length, AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length, AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No pkt available");
 			goto exit;
@@ -613,14 +614,11 @@ static struct ieee802154_radio_api b91_radio_api = {
 
 /* IEEE802154 driver registration */
 #if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
-NET_DEVICE_INIT(b91_154_radio, CONFIG_IEEE802154_B91_DRV_NAME,
-		b91_init, NULL, &data, NULL,
-		CONFIG_IEEE802154_B91_INIT_PRIO,
-		&b91_radio_api, L2,
-		L2_CTX_TYPE, MTU);
+NET_DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL,
+			  CONFIG_IEEE802154_B91_INIT_PRIO,
+			  &b91_radio_api, L2, L2_CTX_TYPE, MTU);
 #else
-DEVICE_DEFINE(b91_154_radio, CONFIG_IEEE802154_B91_DRV_NAME,
-	      b91_init, NULL, &data, NULL,
-	      POST_KERNEL, CONFIG_IEEE802154_B91_INIT_PRIO,
-	      &b91_radio_api);
+DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL,
+		      POST_KERNEL, CONFIG_IEEE802154_B91_INIT_PRIO,
+		      &b91_radio_api);
 #endif

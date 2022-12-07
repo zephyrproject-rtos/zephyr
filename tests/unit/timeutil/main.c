@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "timeutil_test.h"
 #include "../../../lib/os/timeutil.c"
 
@@ -52,14 +52,4 @@ void timeutil_check(const struct timeutil_test_data *tp,
 	}
 }
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_timeutil_api,
-			 ztest_unit_test(test_gmtime),
-			 ztest_unit_test(test_s32),
-			 ztest_unit_test(test_s64),
-			 ztest_unit_test(test_sync)
-			 );
-	ztest_run_test_suite(test_timeutil_api);
-}
+ZTEST_SUITE(timeutil_api, NULL, NULL, NULL, NULL, NULL);

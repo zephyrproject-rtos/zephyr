@@ -26,7 +26,7 @@ static void nru_periodic_update(struct k_timer *timer)
 {
 	uintptr_t phys;
 	struct z_page_frame *pf;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	Z_PAGE_FRAME_FOREACH(phys, pf) {
 		if (!z_page_frame_is_evictable(pf)) {

@@ -12,8 +12,8 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
@@ -31,7 +31,7 @@ static const char *log_prefix = CONFIG_LOG_BACKEND_FS_FILE_PREFIX;
 int write_log_to_file(uint8_t *data, size_t length, void *ctx);
 
 
-static void test_fs_nonexist(void)
+ZTEST(test_log_backend_fs, test_fs_nonexist)
 {
 	#if TEST_AUTOMOUNT
 	ztest_test_skip();
@@ -48,7 +48,7 @@ static void test_fs_nonexist(void)
 	#endif
 }
 
-static void test_wipe_fs_logs(void)
+ZTEST(test_log_backend_fs, test_wipe_fs_logs)
 {
 	int rc;
 	struct fs_dir_t dir;
@@ -86,7 +86,7 @@ static void test_wipe_fs_logs(void)
 	(void)fs_closedir(&dir);
 }
 
-static void test_log_fs_file_content(void)
+ZTEST(test_log_backend_fs, test_log_fs_file_content)
 {
 	int rc;
 	struct fs_file_t file;
@@ -129,7 +129,7 @@ static void test_log_fs_file_content(void)
 	zassert_equal(fs_close(&file), 0, "Can not close log file.");
 }
 
-static void test_log_fs_file_size(void)
+ZTEST(test_log_backend_fs, test_log_fs_file_size)
 {
 	int rc;
 	int i;
@@ -186,7 +186,7 @@ static void test_log_fs_file_size(void)
 	zassert_equal(file_ctr, 2, "File changing failed");
 }
 
-static void test_log_fs_files_max(void)
+ZTEST(test_log_backend_fs, test_log_fs_files_max)
 {
 	int rc;
 	int i;
@@ -230,14 +230,4 @@ static void test_log_fs_files_max(void)
 	zassert_equal(test_mask, 0b11110, "Unexpected file numeration");
 }
 
-/* Test case main entry. */
-void test_main(void)
-{
-	ztest_test_suite(test_log_backend_fs,
-			 ztest_unit_test(test_fs_nonexist),
-			 ztest_unit_test(test_wipe_fs_logs),
-			 ztest_unit_test(test_log_fs_file_content),
-			 ztest_unit_test(test_log_fs_file_size),
-			 ztest_unit_test(test_log_fs_files_max));
-	ztest_run_test_suite(test_log_backend_fs);
-}
+ZTEST_SUITE(test_log_backend_fs, NULL, NULL, NULL, NULL, NULL);

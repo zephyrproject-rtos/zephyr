@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/sys/__assert.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <nrf_802154_serialization_error.h>
 

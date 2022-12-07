@@ -30,11 +30,14 @@ enum sensor_attribute_tmp_108 {
 	SENSOR_ATTR_TMP108_ALERT_POLARITY
 };
 
-/** a mask for the over temp alert bit in the status word*/
-#define OVER_TEMP_MASK 0x1000U
+/** a tmp108 mask for the over temp alert bit in the status word*/
+#define TMP108_OVER_TEMP_MASK 0x1000U
 
-/** a mask for the under temp alert bit in the status word*/
-#define UNDER_TEMP_MASK	0x0800U
+/** a tmp108 mask for the under temp alert bit in the status word*/
+#define TMP108_UNDER_TEMP_MASK	0x0800U
+
+/** a as6212 mask for the over temp alert bit in the status word*/
+#define A6212_ALERT_TEMP_MASK	0x0020U
 
 #ifdef __cplusplus
 }

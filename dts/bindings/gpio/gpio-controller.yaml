@@ -14,7 +14,6 @@ properties:
       description: Number of items to expect in a GPIO specifier
     ngpios:
       type: int
-      required: false
       default: 32
       description: |
           This property indicates the number of in-use slots of available slots
@@ -28,7 +27,6 @@ properties:
           holes in the slot range, this value should be the max slot number-1.
     gpio-reserved-ranges:
       type: array
-      required: false
       description: |
           If not all the GPIOs at offsets 0...N-1 are usable for ngpios = <N>, then
           this property contains an additional set of tuples which specify which GPIOs
@@ -39,7 +37,6 @@ properties:
           GPIO offsets 3, 4, and 10 are not usable, even if ngpios = <18>.
     gpio-line-names:
       type: string-array
-      required: false
       description: |
           This is an array of strings defining the names of the GPIO lines
           going out of the GPIO controller

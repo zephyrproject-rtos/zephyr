@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-mainmenu "Logger sample application"
+mainmenu "Shell module sample application"
 
 menu "Application configuration"
 

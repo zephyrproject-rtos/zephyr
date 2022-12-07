@@ -28,7 +28,6 @@ include: nordic,nrf-twi-common.yaml
 properties:
     zephyr,concat-buf-size:
         type: int
-        required: false
         default: 16
         description: |
             Size of a concatenation buffer that the driver is to use for merging
@@ -43,7 +42,6 @@ properties:
 
     zephyr,flash-buf-max-size:
         type: int
-        required: false
         default: 16
         description: |
             TWIM peripherals cannot perform write transactions from buffers

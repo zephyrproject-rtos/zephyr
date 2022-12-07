@@ -143,6 +143,10 @@ data_ready:
  * Socket Support Functions
  */
 
+/*
+ * This function reserves a file descriptor from the fdtable, make sure to update the
+ * POSIX_FDS_MAX Kconfig option to support at minimum the required amount of sockets
+ */
 int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int proto)
 {
 	int i;
@@ -160,7 +164,6 @@ int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int 
 		return -ENOMEM;
 	}
 
-	/* FIXME: 4 fds max now due to POSIX_OS conflict */
 	cfg->sockets[i].sock_fd = z_reserve_fd();
 	if (cfg->sockets[i].sock_fd < 0) {
 		k_sem_give(&cfg->sem_lock);
@@ -170,8 +173,7 @@ int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int 
 	cfg->sockets[i].family = family;
 	cfg->sockets[i].type = type;
 	cfg->sockets[i].ip_proto = proto;
-	/* socket # needs assigning */
-	cfg->sockets[i].id = cfg->sockets_len + 1;
+	cfg->sockets[i].id = i + cfg->base_socket_num;
 	z_finalize_fd(cfg->sockets[i].sock_fd, &cfg->sockets[i],
 		      (const struct fd_op_vtable *)cfg->vtable);
 

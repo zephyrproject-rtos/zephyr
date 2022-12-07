@@ -10,7 +10,6 @@ include: uart-device.yaml
 properties:
     de-gpios:
       type: phandle-array
-      required: false
       description: Driver enable pin.
 
         Driver enable pin (DE) of the RS-485 transceiver.
@@ -19,7 +18,6 @@ properties:
 
     re-gpios:
       type: phandle-array
-      required: false
       description: Receiver enable pin.
 
         Receiver enable pin (nRE) of the RS-485 transceiver.

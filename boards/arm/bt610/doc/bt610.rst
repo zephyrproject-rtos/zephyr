@@ -29,14 +29,12 @@ The sensor has the following features:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/bt610_front.jpg
-     :width: 500px
      :align: center
      :alt: Sentrius BT610 Sensor, front view
 
      Sentrius BT610 Sensor, front view
 
 .. figure:: img/bt610_back.jpg
-     :width: 500px
      :align: center
      :alt: Sentrius BT610 Sensor, rear view
 
@@ -90,7 +88,6 @@ hardware features:
 +-----------+------------+----------------------+
 
 .. figure:: img/bt610_board.jpg
-     :width: 500px
      :align: center
      :alt: Sentrius BT610 Sensor, board layout
 

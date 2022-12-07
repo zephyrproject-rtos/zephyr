@@ -21,8 +21,6 @@ The STM32 Nucleo board comes with the STM32 comprehensive software HAL library t
 with various packaged software examples.
 
 .. image:: img/nucleo_l031k6.jpg
-   :width: 426px
-   :height: 319px
    :align: center
    :alt: Nucleo L031K6
 

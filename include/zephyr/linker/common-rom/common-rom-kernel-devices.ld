@@ -9,6 +9,7 @@
 		 * by level, sorted by priority within a level)
 		 */
 		__init_start = .;
+		CREATE_OBJ_LEVEL(init, EARLY)
 		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)
 		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)
 		CREATE_OBJ_LEVEL(init, POST_KERNEL)
@@ -24,6 +25,7 @@
 		 * object parent. See above and include/device.h.
 		 */
 		__device_start = .;
+		CREATE_OBJ_LEVEL(device, EARLY)
 		CREATE_OBJ_LEVEL(device, PRE_KERNEL_1)
 		CREATE_OBJ_LEVEL(device, PRE_KERNEL_2)
 		CREATE_OBJ_LEVEL(device, POST_KERNEL)
@@ -67,6 +69,8 @@
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	ITERABLE_SECTION_ROM(k_p4wq_initparam, 4)
+
+	ITERABLE_SECTION_ROM(_static_thread_data, 4)
 
 #if defined(CONFIG_PCIE)
 	SECTION_DATA_PROLOGUE(irq_alloc,,)

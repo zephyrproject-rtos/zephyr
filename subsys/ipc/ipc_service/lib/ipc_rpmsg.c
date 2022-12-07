@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ipc/ipc_rpmsg.h>
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ep)
@@ -101,4 +101,20 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 	} else {
 		return rpmsg_init_vdev(&instance->rvdev, vdev, bind_cb, shm_io, NULL);
 	}
+}
+
+int ipc_rpmsg_deinit(struct ipc_rpmsg_instance *instance,
+		   unsigned int role)
+{
+	if (!instance) {
+		return -EINVAL;
+	}
+
+	rpmsg_deinit_vdev(&instance->rvdev);
+
+	if (role == RPMSG_HOST) {
+		memset(&instance->shm_pool, 0, sizeof(struct rpmsg_virtio_shm_pool));
+	}
+
+	return 0;
 }

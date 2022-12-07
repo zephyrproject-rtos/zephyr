@@ -21,7 +21,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 
-static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_NUM_CPUS);
+#define CURRENT_CPU \
+	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
+
+static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_MAX_NUM_CPUS);
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 
 /*
@@ -31,17 +34,17 @@ static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 #define CPU_PM_STATE_INIT(_, __)		\
 	{ .state = PM_STATE_ACTIVE }
 static struct pm_state_info z_cpus_pm_state[] = {
-	LISTIFY(CONFIG_MP_NUM_CPUS, CPU_PM_STATE_INIT, (,))
+	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, CPU_PM_STATE_INIT, (,))
 };
 
 static struct pm_state_info z_cpus_pm_forced_state[] = {
-	LISTIFY(CONFIG_MP_NUM_CPUS, CPU_PM_STATE_INIT, (,))
+	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, CPU_PM_STATE_INIT, (,))
 };
 
 static struct k_spinlock pm_forced_state_lock;
 
-#ifdef CONFIG_PM_DEVICE
-static atomic_t z_cpus_active = ATOMIC_INIT(CONFIG_MP_NUM_CPUS);
+#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
+static atomic_t z_cpus_active = ATOMIC_INIT(CONFIG_MP_MAX_NUM_CPUS);
 #endif
 static struct k_spinlock pm_notifier_lock;
 
@@ -49,6 +52,7 @@ static struct k_spinlock pm_notifier_lock;
 #ifdef CONFIG_PM_DEVICE
 extern const struct device *__pm_device_slots_start[];
 
+#if !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
@@ -102,6 +106,7 @@ static void pm_resume_devices(void)
 
 	num_susp = 0;
 }
+#endif  /* !CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE */
 #endif	/* CONFIG_PM_DEVICE */
 
 static inline void pm_exit_pos_ops(struct pm_state_info *info)
@@ -160,7 +165,7 @@ static inline void pm_state_notify(bool entering_state)
 
 void pm_system_resume(void)
 {
-	uint8_t id = _current_cpu->id;
+	uint8_t id = CURRENT_CPU;
 
 	/*
 	 * This notification is called from the ISR of the event
@@ -198,7 +203,7 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 
 bool pm_system_suspend(int32_t ticks)
 {
-	uint8_t id = _current_cpu->id;
+	uint8_t id = CURRENT_CPU;
 	k_spinlock_key_t key;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
@@ -235,7 +240,7 @@ bool pm_system_suspend(int32_t ticks)
 				     true);
 	}
 
-#if CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
 	if ((z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) &&
 			(atomic_sub(&z_cpus_active, 1) == 1)) {
 		if (pm_suspend_devices()) {
@@ -266,7 +271,7 @@ bool pm_system_suspend(int32_t ticks)
 	pm_stats_stop();
 
 	/* Wake up sequence starts here */
-#if CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
 	if (atomic_add(&z_cpus_active, 1) == 0) {
 		pm_resume_devices();
 	}

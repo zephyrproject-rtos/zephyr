@@ -5,7 +5,7 @@ description: Winsen MHZ-19B CO2 Sensor
 
 compatible: "winsen,mhz19b"
 
-include: uart-device.yaml
+include: [sensor-device.yaml, uart-device.yaml]
 
 properties:
   maximum-range:
@@ -19,6 +19,5 @@ properties:
 
   abc-on:
     type: boolean
-    required: false
     description: |
       Enable ABC self-calibration function

@@ -56,8 +56,6 @@ Related configuration options can be found under
 
 * :kconfig:option:`CONFIG_LORAWAN_SYSTEM_MAX_RX_ERROR`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_UNKNOWN`
-
 * :kconfig:option:`CONFIG_LORAMAC_REGION_AS923`
 
 * :kconfig:option:`CONFIG_LORAMAC_REGION_AU915`

@@ -7,11 +7,10 @@
 &arduino_spi {
 	status = "okay";
 
-	lmp90100: lmp90100@0 {
+	lmp90100_lmp90100_evb: lmp90100@0 {
 		compatible = "ti,lmp90100";
 		reg = <0x0>;
 		spi-max-frequency = <1000000>;
-		label = "LMP90100";
 		/* Uncomment to use IRQ instead of polling: */
 		/* drdyb-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; */
 		#io-channel-cells = <2>;
@@ -19,7 +18,6 @@
 		lmp90100_gpio: gpio {
 			compatible = "ti,lmp90xxx-gpio";
 			gpio-controller;
-			label = "LMP90100_GPIO";
 			/* Reduce to 6 if drdyb is used */
 			ngpios = <7>;
 			#gpio-cells = <2>;
@@ -30,10 +28,9 @@
 &arduino_i2c {
 	status = "okay";
 
-	eeprom0: eeprom@57 {
+	eeprom0_lmp90100_evb: eeprom@57 {
 		compatible = "atmel,at24";
 		reg = <0x57>;
-		label = "EEPROM_LMP90100_EVB";
 		size = <256>;
 		pagesize = <8>;
 		address-width = <8>;

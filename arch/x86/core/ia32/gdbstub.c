@@ -175,7 +175,7 @@ size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
 		 * "info registers all".
 		 */
 		if (buflen >= 2) {
-			strncpy(buf, "xx", 2);
+			memcpy(buf, "xx", 2);
 			ret = 2;
 		} else {
 			ret = 0;

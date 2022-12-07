@@ -69,6 +69,19 @@ config COAP_RANDOMIZE_ACK_TIMEOUT
 	  COAP_INIT_ACK_TIMEOUT_MS option). Otherwise, the initial ACK timeout
 	  will be fixed to the value of COAP_INIT_ACK_TIMEOUT_MS option.
 
+config COAP_ACK_RANDOM_PERCENT
+	int "Random factor for ACK timeout described as percentage"
+	default 150
+	depends on COAP_RANDOMIZE_ACK_TIMEOUT
+	help
+	  Factor described as percentage to extend CoAP ACK timeout. A value
+	  of 150 means a factor of 1.50.
+
+config COAP_MAX_RETRANSMIT
+	int "Max retransmission of a CoAP packet"
+	default 4
+	range 1 10
+
 config COAP_URI_WILDCARD
 	bool "Wildcards in CoAP resource path"
 	default y

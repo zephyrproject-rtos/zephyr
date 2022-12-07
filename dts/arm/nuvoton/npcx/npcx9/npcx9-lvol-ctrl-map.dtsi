@@ -14,7 +14,7 @@
 
 		/* Low-Voltage IO Control 1 */
 		lvol_io66: lvol17 {
-			lvols = <&scfg 0x06 6 1 7>;
+			lvols = <&scfg 1 7>;
 		};
 	};
 };

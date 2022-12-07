@@ -21,8 +21,8 @@
  *       test_arm_rifft_q15_step_4096
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include <arm_const_structs.h>
@@ -65,52 +65,68 @@ static void test_arm_rfft_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, noisy_32,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, noisy_32,
 	in_rfft_noisy_32, ref_rfft_noisy_32, 32);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, noisy_64,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, noisy_64,
 	in_rfft_noisy_64, ref_rfft_noisy_64, 64);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, noisy_128,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, noisy_128,
 	in_rfft_noisy_128, ref_rfft_noisy_128, 128);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, noisy_256,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, noisy_256,
 	in_rfft_noisy_256, ref_rfft_noisy_256, 256);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, noisy_512,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, noisy_512,
 	in_rfft_noisy_512, ref_rfft_noisy_512, 512);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, noisy_1024,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, noisy_1024,
 	in_rfft_noisy_1024, ref_rfft_noisy_1024, 1024);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, noisy_2048,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, noisy_2048,
 	in_rfft_noisy_2048, ref_rfft_noisy_2048, 2048);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, noisy_4096,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, noisy_4096,
 	in_rfft_noisy_4096, ref_rfft_noisy_4096, 4096);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, step_32,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, step_32,
 	in_rfft_step_32, ref_rfft_step_32, 32);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, step_64,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, step_64,
 	in_rfft_step_64, ref_rfft_step_64, 64);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, step_128,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, step_128,
 	in_rfft_step_128, ref_rfft_step_128, 128);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, step_256,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, step_256,
 	in_rfft_step_256, ref_rfft_step_256, 256);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, step_512,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, step_512,
 	in_rfft_step_512, ref_rfft_step_512, 512);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, step_1024,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, step_1024,
 	in_rfft_step_1024, ref_rfft_step_1024, 1024);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, step_2048,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, step_2048,
 	in_rfft_step_2048, ref_rfft_step_2048, 2048);
 
-DEFINE_TEST_VARIANT3(arm_rfft_q15, step_4096,
+DEFINE_TEST_VARIANT3(transform_rq15,
+	arm_rfft_q15, step_4096,
 	in_rfft_step_4096, ref_rfft_step_4096, 4096);
 
 static void test_arm_rifft_q15(
@@ -151,94 +167,72 @@ static void test_arm_rifft_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, noisy_32, 5,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, noisy_32, 5,
 	in_rifft_noisy_32, in_rfft_noisy_32, 32);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, noisy_64, 6,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, noisy_64, 6,
 	in_rifft_noisy_64, in_rfft_noisy_64, 64);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, noisy_128, 7,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, noisy_128, 7,
 	in_rifft_noisy_128, in_rfft_noisy_128, 128);
 
 #if 0
-DEFINE_TEST_VARIANT4(arm_rifft_q15, noisy_256, 8,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, noisy_256, 8,
 	in_rifft_noisy_256, in_rfft_noisy_256, 256);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, noisy_512, 9,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, noisy_512, 9,
 	in_rifft_noisy_512, in_rfft_noisy_512, 512);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, noisy_1024, 10,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, noisy_1024, 10,
 	in_rifft_noisy_1024, in_rfft_noisy_1024, 1024);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, noisy_2048, 11,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, noisy_2048, 11,
 	in_rifft_noisy_2048, in_rfft_noisy_2048, 2048);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, noisy_4096, 12,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, noisy_4096, 12,
 	in_rifft_noisy_4096, in_rfft_noisy_4096, 4096);
 #endif
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, step_32, 5,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, step_32, 5,
 	in_rifft_step_32, in_rfft_step_32, 32);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, step_64, 6,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, step_64, 6,
 	in_rifft_step_64, in_rfft_step_64, 64);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, step_128, 7,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, step_128, 7,
 	in_rifft_step_128, in_rfft_step_128, 128);
 
 #if 0
-DEFINE_TEST_VARIANT4(arm_rifft_q15, step_256, 8,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, step_256, 8,
 	in_rifft_step_256, in_rfft_step_256, 256);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, step_512, 9,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, step_512, 9,
 	in_rifft_step_512, in_rfft_step_512, 512);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, step_1024, 10,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, step_1024, 10,
 	in_rifft_step_1024, in_rfft_step_1024, 1024);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, step_2048, 11,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, step_2048, 11,
 	in_rifft_step_2048, in_rfft_step_2048, 2048);
 
-DEFINE_TEST_VARIANT4(arm_rifft_q15, step_4096, 12,
+DEFINE_TEST_VARIANT4(transform_rq15,
+	arm_rifft_q15, step_4096, 12,
 	in_rifft_step_4096, in_rfft_step_4096, 4096);
 #endif
 
-void test_transform_rq15(void)
-{
-	ztest_test_suite(transform_rq15,
-		ztest_unit_test(test_arm_rfft_q15_noisy_32),
-		ztest_unit_test(test_arm_rifft_q15_noisy_32),
-		ztest_unit_test(test_arm_rfft_q15_noisy_64),
-		ztest_unit_test(test_arm_rifft_q15_noisy_64),
-		ztest_unit_test(test_arm_rfft_q15_noisy_128),
-		ztest_unit_test(test_arm_rifft_q15_noisy_128),
-		ztest_unit_test(test_arm_rfft_q15_noisy_256),
-		/* ztest_unit_test(test_arm_rifft_q15_noisy_256), */
-		ztest_unit_test(test_arm_rfft_q15_noisy_512),
-		/* ztest_unit_test(test_arm_rifft_q15_noisy_512), */
-		ztest_unit_test(test_arm_rfft_q15_noisy_1024),
-		/* ztest_unit_test(test_arm_rifft_q15_noisy_1024), */
-		ztest_unit_test(test_arm_rfft_q15_noisy_2048),
-		/* ztest_unit_test(test_arm_rifft_q15_noisy_2048), */
-		ztest_unit_test(test_arm_rfft_q15_noisy_4096),
-		/* ztest_unit_test(test_arm_rifft_q15_noisy_4096), */
-		ztest_unit_test(test_arm_rfft_q15_step_32),
-		ztest_unit_test(test_arm_rifft_q15_step_32),
-		ztest_unit_test(test_arm_rfft_q15_step_64),
-		ztest_unit_test(test_arm_rifft_q15_step_64),
-		ztest_unit_test(test_arm_rfft_q15_step_128),
-		ztest_unit_test(test_arm_rifft_q15_step_128),
-		ztest_unit_test(test_arm_rfft_q15_step_256),
-		/* ztest_unit_test(test_arm_rifft_q15_step_256), */
-		ztest_unit_test(test_arm_rfft_q15_step_512),
-		/* ztest_unit_test(test_arm_rifft_q15_step_512), */
-		ztest_unit_test(test_arm_rfft_q15_step_1024),
-		/* ztest_unit_test(test_arm_rifft_q15_step_1024), */
-		ztest_unit_test(test_arm_rfft_q15_step_2048),
-		/* ztest_unit_test(test_arm_rifft_q15_step_2048), */
-		ztest_unit_test(test_arm_rfft_q15_step_4096)
-		/* ztest_unit_test(test_arm_rifft_q15_step_4096) */
-		);
-
-	ztest_run_test_suite(transform_rq15);
-}
+ZTEST_SUITE(transform_rq15, NULL, NULL, NULL, NULL, NULL);

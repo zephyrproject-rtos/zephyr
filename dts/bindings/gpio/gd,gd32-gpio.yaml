@@ -5,18 +5,16 @@ description: GD32 GPIO node
 
 compatible: "gd,gd32-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, reset-device.yaml, base.yaml]
 
 properties:
     reg:
       required: true
 
-    label:
+    clocks:
       required: true
 
-    rcu-periph-clock:
-      type: int
-      description: Reset Control Unit Peripheral Clock ID
+    resets:
       required: true
 
     "#gpio-cells":

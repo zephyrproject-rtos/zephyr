@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 Intel Corporation
  * Copyright (c) 2021 Antmicro <www.antmicro.com>
+ * Copyright (c) 2022 Meta
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,11 @@
 #include <zephyr/device.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
+#ifdef CONFIG_ARCH_POSIX
+#include <unistd.h>
+#else
+#include <zephyr/posix/unistd.h>
+#endif
 
 static inline bool is_ascii(uint8_t data)
 {
@@ -25,6 +31,122 @@ static bool littleendian;
 
 #define CHAR_CAN 0x18
 #define CHAR_DC1 0x11
+
+#ifndef BITS_PER_BYTE
+#define BITS_PER_BYTE 8
+#endif
+
+static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size, uint8_t width)
+{
+	uint32_t value;
+	size_t data_offset;
+	mm_reg_t addr;
+	const size_t vsize = width / BITS_PER_BYTE;
+	uint8_t data[SHELL_HEXDUMP_BYTES_IN_LINE];
+
+#if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
+	device_map((mm_reg_t *)&addr, phys_addr, size, K_MEM_CACHE_NONE);
+
+	shell_print(sh, "Mapped 0x%lx to 0x%lx\n", phys_addr, addr);
+#else
+	addr = phys_addr;
+#endif /* defined(CONFIG_MMU) || defined(CONFIG_PCIE) */
+
+	for (; size > 0;
+	     addr += SHELL_HEXDUMP_BYTES_IN_LINE, size -= MIN(size, SHELL_HEXDUMP_BYTES_IN_LINE)) {
+		for (data_offset = 0;
+		     size >= vsize && data_offset + vsize <= SHELL_HEXDUMP_BYTES_IN_LINE;
+		     data_offset += vsize) {
+			switch (width) {
+			case 8:
+				value = sys_read8(addr + data_offset);
+				data[data_offset] = value;
+				break;
+			case 16:
+				value = sys_read16(addr + data_offset);
+				if (IS_ENABLED(CONFIG_BIG_ENDIAN)) {
+					value = __bswap_16(value);
+				}
+
+				data[data_offset] = (uint8_t)value;
+				value >>= 8;
+				data[data_offset + 1] = (uint8_t)value;
+				break;
+			case 32:
+				value = sys_read32(addr + data_offset);
+				if (IS_ENABLED(CONFIG_BIG_ENDIAN)) {
+					value = __bswap_32(value);
+				}
+
+				data[data_offset] = (uint8_t)value;
+				value >>= 8;
+				data[data_offset + 1] = (uint8_t)value;
+				value >>= 8;
+				data[data_offset + 2] = (uint8_t)value;
+				value >>= 8;
+				data[data_offset + 3] = (uint8_t)value;
+				break;
+			default:
+				shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+				return -EINVAL;
+			}
+		}
+
+		shell_hexdump_line(sh, addr, data, MIN(size, SHELL_HEXDUMP_BYTES_IN_LINE));
+	}
+
+	return 0;
+}
+
+static int cmd_dump(const struct shell *sh, size_t argc, char **argv)
+{
+	int rv;
+	size_t size = -1;
+	size_t width = 32;
+	mem_addr_t addr = -1;
+
+	optind = 1;
+	while ((rv = getopt(argc, argv, "a:s:w:")) != -1) {
+		switch (rv) {
+		case 'a':
+			addr = (mem_addr_t)strtoul(optarg, NULL, 16);
+			if (addr == 0 && errno == EINVAL) {
+				shell_error(sh, "invalid addr '%s'", optarg);
+				return -EINVAL;
+			}
+			break;
+		case 's':
+			size = (size_t)strtoul(optarg, NULL, 0);
+			if (size == 0 && errno == EINVAL) {
+				shell_error(sh, "invalid size '%s'", optarg);
+				return -EINVAL;
+			}
+			break;
+		case 'w':
+			width = (size_t)strtoul(optarg, NULL, 0);
+			if (width == 0 && errno == EINVAL) {
+				shell_error(sh, "invalid width '%s'", optarg);
+				return -EINVAL;
+			}
+			break;
+		case '?':
+		default:
+			return -EINVAL;
+		}
+	}
+
+	if (addr == -1) {
+		shell_error(sh, "'-a <address>' is mandatory");
+		return -EINVAL;
+	}
+
+	if (size == -1) {
+		shell_error(sh, "'-s <size>' is mandatory");
+		return -EINVAL;
+	}
+
+	return memory_dump(sh, addr, size, width);
+}
 
 static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 {
@@ -229,6 +351,10 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_devmem,
+			       SHELL_CMD_ARG(dump, NULL,
+					     "Usage:\n"
+					     "devmem dump -a <address> -s <size> [-w <width>]\n",
+					     cmd_dump, 4, 6),
 			       SHELL_CMD_ARG(load, NULL,
 					     "Usage:\n"
 					     "devmem load [options] [address]\n"
@@ -238,6 +364,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_devmem,
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(devmem, &sub_devmem,
-		   "Read/write physical memory\""
-		   "devmem address [width [value]]",
+		   "Read/write physical memory\n"
+		   "Usage:\n"
+		   "Read memory at address with optional width:\n"
+		   "devmem address [width]\n"
+		   "Write memory at address with mandatory width and value:\n"
+		   "devmem address <width> <value>",
 		   cmd_devmem);

@@ -19,9 +19,6 @@ properties:
     interrupts:
       required: true
 
-    label:
-      required: true
-
     prescaler:
       type: int
       required: true

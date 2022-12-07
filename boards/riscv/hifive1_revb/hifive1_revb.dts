@@ -92,14 +92,13 @@
 	current-speed = <115200>;
 };
 
+/* disabled (used by Flash ROM by default) */
 &spi0 {
-	status = "okay";
-
 	reg = <0x10014000 0x1000 0x20010000 0x3c0900>;
 	flash0: flash@0 {
 		compatible = "issi,is25lp128", "jedec,spi-nor";
+		status = "disabled";
 		size = <134217728>;
-		label = "FLASH0";
 		jedec-id = [96 60 18];
 		reg = <0>;
 		spi-max-frequency = <133000000>;
@@ -138,7 +137,6 @@
 
 arduino_i2c: &i2c0 {
 	status = "okay";
-	label = "I2C_0";
 	clock-frequency = <100000>;
 	pinctrl-0 = <&i2c0_0_default &i2c0_1_default>;
 	pinctrl-names = "default";

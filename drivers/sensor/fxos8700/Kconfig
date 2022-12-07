@@ -5,7 +5,10 @@
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
-	depends on I2C
+	default y
+	depends on DT_HAS_NXP_FXOS8700_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXOS8700),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXOS8700),spi)
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer.
 	  The driver also supports MMA8451Q, MMA8652FC and MMA8653FC
@@ -14,9 +17,9 @@ menuconfig FXOS8700
 
 if FXOS8700
 
-choice
+choice FXOS8700_MODE
 	prompt "Mode"
-	default FXOS8700_MODE_ACCEL
+	default FXOS8700_MODE_HYBRID
 
 config FXOS8700_MODE_ACCEL
 	bool "Accelerometer-only mode"

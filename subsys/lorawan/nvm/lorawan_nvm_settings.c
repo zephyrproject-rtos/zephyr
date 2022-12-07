@@ -94,19 +94,19 @@ static int load_setting(void *tgt, size_t tgt_size,
 {
 	if (len != tgt_size) {
 		LOG_ERR("Can't load '%s' state, size mismatch.",
-			log_strdup(key));
+			key);
 		return -EINVAL;
 	}
 
 	if (!tgt) {
 		LOG_ERR("Can't load '%s' state, no target.",
-			log_strdup(key));
+			key);
 		return -EINVAL;
 	}
 
 	if (read_cb(cb_arg, tgt, len) != len) {
 		LOG_ERR("Can't load '%s' state, short read.",
-			log_strdup(key));
+			key);
 		return -EINVAL;
 	}
 
@@ -120,7 +120,7 @@ static int on_setting_loaded(const char *key, size_t len,
 	int err;
 	LoRaMacNvmData_t *nvm = param;
 
-	LOG_DBG("Key: %s", log_strdup(key));
+	LOG_DBG("Key: %s", key);
 
 	for (uint32_t i = 0; i < ARRAY_SIZE(nvm_setting_descriptors); i++) {
 		const struct lorawan_nvm_setting_descr *descr =
@@ -136,7 +136,7 @@ static int on_setting_loaded(const char *key, size_t len,
 		}
 	}
 
-	LOG_WRN("Unknown LoRaWAN setting: %s", log_strdup(key));
+	LOG_WRN("Unknown LoRaWAN setting: %s", key);
 	return 0;
 }
 

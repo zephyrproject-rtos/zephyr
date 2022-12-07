@@ -21,6 +21,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -88,4 +89,24 @@ zephyr_udc0: &usbd {
 
 &gpioe {
 	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 0x00070000>;
+		};
+		storage_partition: partition@700000 {
+			label = "storage";
+			reg = <0x00070000 0x00010000>;
+		};
+	};
 };

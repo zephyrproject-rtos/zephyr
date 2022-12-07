@@ -12,6 +12,15 @@
 	model = "Arduino Nicla Sense ME";
 	compatible = "arduino,arduino_nicla_sense_me";
 
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "user button";
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+	};
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -21,6 +30,12 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		sw0 = &user_button;
+		watchdog0 = &wdt0;
+		spi-flash0 = &mx25r1635f;
 	};
 };
 
@@ -83,11 +98,10 @@
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
 
-	mx25r1635f@0 {
+	mx25r1635f: mx25r1635f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <80000000>;
-		label = "MX25R16";
 		jedec-id = [c2 28 15];
 		size = <DT_SIZE_M(16)>;
 		has-dpd;

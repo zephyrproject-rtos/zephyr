@@ -55,7 +55,12 @@
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -94,6 +99,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 
@@ -143,12 +150,17 @@
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
 	status = "okay";
+	vref-mv = <3300>;
 };
 
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+};
+
+&die_temp {
+	status = "okay";
 };
 
 &flash0 {
@@ -170,5 +182,7 @@
 };
 
 &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };

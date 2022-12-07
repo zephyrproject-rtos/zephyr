@@ -1,0 +1,14 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence Quad-SPI NOR flash controller
+
+compatible: "cdns,qspi-nor"
+
+include: flash-controller.yaml
+
+properties:
+    clock-frequency:
+      type: int
+      required: true
+      description: clock frequency information for Cadence QSPI NOR Flash

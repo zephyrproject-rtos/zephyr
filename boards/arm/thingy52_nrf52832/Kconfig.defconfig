@@ -8,12 +8,6 @@ if BOARD_THINGY52_NRF52832
 config BOARD
 	default "thingy52_nrf52832"
 
-config I2C
-	default y
-
-config GPIO
-	default y
-
 config BT_CTLR
 	default BT
 

@@ -4,28 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-
-extern void test_mslab_kinit(void);
-extern void test_mslab_kdefine(void);
-extern void test_mslab_kdefine_extern(void);
-extern void test_mslab_alloc_free_thread(void);
-extern void test_mslab_alloc_align(void);
-extern void test_mslab_alloc_timeout(void);
-extern void test_mslab_used_get(void);
-extern void test_mslab_pending(void);
+#include <zephyr/ztest.h>
+#include "test_mslab.h"
 
 /*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(mslab_api,
-			 ztest_unit_test(test_mslab_kinit),
-			 ztest_unit_test(test_mslab_kdefine),
-			 ztest_unit_test(test_mslab_kdefine_extern),
-			 ztest_unit_test(test_mslab_alloc_free_thread),
-			 ztest_unit_test(test_mslab_alloc_align),
-			 ztest_1cpu_unit_test(test_mslab_alloc_timeout),
-			 ztest_unit_test(test_mslab_used_get),
-			 ztest_unit_test(test_mslab_pending));
-	ztest_run_test_suite(mslab_api);
-}
+ZTEST_SUITE(mslab_api, NULL, mslab_setup, NULL, NULL, NULL);

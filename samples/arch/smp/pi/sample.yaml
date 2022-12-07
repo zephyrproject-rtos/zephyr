@@ -17,4 +17,4 @@ common:
 tests:
   sample.smp.pi:
     tags: introduction
-    filter: (CONFIG_MP_NUM_CPUS > 1)
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)

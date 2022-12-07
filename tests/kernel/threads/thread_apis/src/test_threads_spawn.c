@@ -5,7 +5,7 @@
  */
 
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include "tests_thread_apis.h"
 
@@ -17,15 +17,15 @@ static ZTEST_BMEM int spawn_prio;
 static void thread_entry_params(void *p1, void *p2, void *p3)
 {
 	/* checkpoint: check parameter 1, 2, 3 */
-	zassert_equal(p1, tp1, NULL);
-	zassert_equal(POINTER_TO_INT(p2), tp2, NULL);
-	zassert_equal(p3, tp3, NULL);
+	zassert_equal(p1, tp1);
+	zassert_equal(POINTER_TO_INT(p2), tp2);
+	zassert_equal(p3, tp3);
 }
 
 static void thread_entry_priority(void *p1, void *p2, void *p3)
 {
 	/* checkpoint: check priority */
-	zassert_equal(k_thread_priority_get(k_current_get()), spawn_prio, NULL);
+	zassert_equal(k_thread_priority_get(k_current_get()), spawn_prio);
 }
 
 static void thread_entry_delay(void *p1, void *p2, void *p3)
@@ -45,7 +45,7 @@ static void thread_entry_delay(void *p1, void *p2, void *p3)
  *
  * @see k_thread_create()
  */
-void test_threads_spawn_params(void)
+ZTEST_USER(threads_lifecycle, test_threads_spawn_params)
 {
 	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_params,
 			tp1, INT_TO_POINTER(tp2), tp3, 0,
@@ -62,7 +62,7 @@ void test_threads_spawn_params(void)
  *
  * @see k_thread_create()
  */
-void test_threads_spawn_priority(void)
+ZTEST(threads_lifecycle, test_threads_spawn_priority)
 {
 	/* spawn thread with higher priority */
 	spawn_prio = k_thread_priority_get(k_current_get()) - 1;
@@ -80,7 +80,7 @@ void test_threads_spawn_priority(void)
  *
  * @see k_thread_create()
  */
-void test_threads_spawn_delay(void)
+ZTEST_USER(threads_lifecycle, test_threads_spawn_delay)
 {
 	/* spawn thread with higher priority */
 	tp2 = 10;
@@ -89,10 +89,10 @@ void test_threads_spawn_delay(void)
 	/* 100 < 120 ensure spawn thread not start */
 	k_msleep(100);
 	/* checkpoint: check spawn thread not execute */
-	zassert_true(tp2 == 10, NULL);
+	zassert_true(tp2 == 10);
 	/* checkpoint: check spawn thread executed */
 	k_msleep(100);
-	zassert_true(tp2 == 100, NULL);
+	zassert_true(tp2 == 100);
 }
 
 /**
@@ -107,7 +107,7 @@ void test_threads_spawn_delay(void)
  *
  * @see k_thread_create()
  */
-void test_threads_spawn_forever(void)
+ZTEST(threads_lifecycle, test_threads_spawn_forever)
 {
 	/* spawn thread with highest priority. It will run immediately once
 	 * started.
@@ -119,11 +119,11 @@ void test_threads_spawn_forever(void)
 				      K_USER, K_FOREVER);
 	k_yield();
 	/* checkpoint: check spawn thread not execute */
-	zassert_true(tp2 == 10, NULL);
+	zassert_true(tp2 == 10);
 	/* checkpoint: check spawn thread executed */
 	k_thread_start(tid);
 	k_yield();
-	zassert_true(tp2 == 100, NULL);
+	zassert_true(tp2 == 100);
 	k_thread_abort(tid);
 }
 
@@ -135,7 +135,7 @@ void test_threads_spawn_forever(void)
  *
  * @see k_thread_start()
  */
-void test_thread_start(void)
+ZTEST(threads_lifecycle, test_thread_start)
 {
 	tp2 = 5;
 
@@ -146,7 +146,7 @@ void test_thread_start(void)
 
 	k_thread_start(tid);
 	k_yield();
-	zassert_true(tp2 == 100, NULL);
+	zassert_true(tp2 == 100);
 
 	/* checkpoint: k_thread_start() should not start the
 	 * terminated thread
@@ -155,14 +155,14 @@ void test_thread_start(void)
 	tp2 = 50;
 	k_thread_start(tid);
 	k_yield();
-	zassert_false(tp2 == 100, NULL);
+	zassert_false(tp2 == 100);
 }
 
 static void user_start_thread(void *p1, void *p2, void *p3)
 {
 	*(int *)p1 = 100;
 }
-void test_thread_start_user(void)
+ZTEST_USER(threads_lifecycle, test_thread_start_user)
 {
 	tp2 = 5;
 
@@ -173,6 +173,6 @@ void test_thread_start_user(void)
 
 	k_thread_start(tid);
 	k_msleep(100);
-	zassert_true(tp2 == 100, NULL);
+	zassert_true(tp2 == 100);
 	k_thread_abort(tid);
 }

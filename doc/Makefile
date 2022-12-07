@@ -16,7 +16,7 @@ DT_TURBO_MODE ?= 0
 html-fast:
 	${MAKE} html DT_TURBO_MODE=1
 
-html latex pdf doxygen: configure
+html latex pdf linkcheck doxygen: configure
 	cmake --build ${BUILDDIR} --target $@
 
 configure:

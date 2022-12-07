@@ -4,13 +4,12 @@
 # Copyright (c) 2020 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_QSPI_NOR := st,stm32-qspi-nor
 DT_STM32_QUADSPI_HAS_DMA := $(dt_nodelabel_has_prop,quadspi,dmas)
 
 config FLASH_STM32_QSPI
 	bool "STM32 Quad SPI Flash driver"
-	depends on SOC_FAMILY_STM32
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_QSPI_NOR))
+	default y
+	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED
 	select USE_STM32_HAL_QSPI
 	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
 	select FLASH_HAS_DRIVER_ENABLED

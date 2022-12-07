@@ -4,7 +4,7 @@ sample:
 tests:
   sample.display.shield.adafruit_2_8_tft_touch_v2:
     depends_on: arduino_gpio arduino_i2c arduino_spi
-    platform_exclude: reel_board reel_board_v2 ubx_evkannab1_nrf52832 stm32f769i_disco
+    platform_exclude: reel_board reel_board_v2 ubx_evkannab1_nrf52832 stm32f769i_disco pan1781_evb pan1782_evb
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: display shield
     harness: console
@@ -82,3 +82,10 @@ tests:
         - CONFIG_SDL_DISPLAY=n
         - CONFIG_TEST=y
     tags: display
+  sample.display.max7219:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=max7219_8x8
+    tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display

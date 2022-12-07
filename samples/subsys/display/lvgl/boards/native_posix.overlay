@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2022, Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/ {
+	aliases {
+		sw0 = &button0;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		button0: button0 {
+			/* gpio0 pin 0 is already aliased to led0 */
+			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpio0 {
+	ngpios = <2>;
+
+	sdl_gpio {
+		status = "okay";
+		compatible = "zephyr,gpio-emul-sdl";
+		/* Skip pin 0 with the unknown code 0 */
+		scancodes = <0 21>;
+	};
+};

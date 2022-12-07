@@ -27,13 +27,12 @@ extern "C" {
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 
-/** @def BT_ISO_CHAN_SEND_RESERVE
+/**
  *  @brief Headroom needed for outgoing ISO SDUs
  */
 #define BT_ISO_CHAN_SEND_RESERVE BT_BUF_ISO_SIZE(0)
 
-/** @def BT_ISO_SDU_BUF_SIZE
- *
+/**
  *  @brief Helper to calculate needed buffer size for ISO SDUs.
  *         Useful for creating buffer pools.
  *
@@ -193,8 +192,8 @@ struct bt_iso_chan_path {
 	uint32_t			delay;
 	/** Codec Configuration length*/
 	uint8_t				cc_len;
-	/** Codec Configuration */
-	uint8_t				cc[0];
+	/** Pointer to an array containing the Codec Configuration */
+	uint8_t				*cc;
 };
 
 /** ISO packet status flag bits */
@@ -232,6 +231,18 @@ struct bt_iso_recv_info {
 
 	/** ISO packet flags bitfield (BT_ISO_FLAGS_*) */
 	uint8_t flags;
+};
+
+/** @brief ISO Meta Data structure for transmitted ISO packets. */
+struct bt_iso_tx_info {
+	/** CIG reference point or BIG anchor point of a transmitted SDU, in microseconds. */
+	uint32_t ts;
+
+	/** Time offset, in microseconds */
+	uint32_t offset;
+
+	/** Packet sequence number */
+	uint16_t seq_num;
 };
 
 
@@ -606,7 +617,26 @@ int bt_iso_cig_terminate(struct bt_iso_cig *cig);
  *  @param param Pointer to a connect parameter array with the ISO and ACL pointers.
  *  @param count Number of connect parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 Successfully started the connecting procedure.
+ *
+ *  @retval -EINVAL Invalid parameters were supplied.
+ *
+ *  @retval -EBUSY Some ISO channels are already being connected.
+ *          It is not possible to have multiple outstanding connection requests.
+ *          May also be returned if @kconfig{CONFIG_BT_SMP} is enabled and a
+ *          pairing procedure is already in progress.
+ *
+ *  @retval -ENOBUFS Not buffers available to send request to controller or if
+ *          @kconfig{CONFIG_BT_SMP} is enabled and no more keys could be stored.
+ *
+ *  @retval -ENOMEM If @kconfig{CONFIG_BT_SMP} is enabled and no more keys
+ *          could be stored.
+ *
+ *  @retval -EIO Controller rejected the request or if @kconfig{CONFIG_BT_SMP}
+ *          is enabled and pairing has timed out.
+ *
+ *  @retval -ENOTCONN If @kconfig{CONFIG_BT_SMP} is enabled the ACL is not
+ *          connected.
  */
 int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count);
 
@@ -647,7 +677,7 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
-		     uint32_t seq_num, uint32_t ts);
+		     uint16_t seq_num, uint32_t ts);
 
 struct bt_iso_unicast_tx_info {
 	/** The transport latency in us */
@@ -782,6 +812,22 @@ int bt_iso_chan_get_info(const struct bt_iso_chan *chan,
  *                               will be BT_ISO_CHAN_TYPE_NONE.
  */
 enum bt_iso_chan_type bt_iso_chan_get_type(const struct bt_iso_chan *chan);
+
+/** @brief Get ISO transmission timing info
+ *
+ *  @details Reads timing information for transmitted ISO packet on an ISO channel.
+ *           The HCI_LE_Read_ISO_TX_Sync HCI command is used to retrieve this information
+ *           from the controller.
+ *
+ *  @note An SDU must have already been successfully transmitted on the ISO channel
+ *        for this function to return successfully.
+ *
+ *  @param[in]  chan Channel object.
+ *  @param[out] info Transmit info object.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_info *info);
 
 /** @brief Creates a BIG as a broadcaster
  *

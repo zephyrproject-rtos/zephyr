@@ -1,0 +1,26 @@
+# Copyright (c) 2022 Actinius B.V.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Icarus IoT Board v2 provides the user with an option to disable the
+  charger or to leave it on auto. The option can be changed by changing
+  the `charger` property in the associated dt node to `auto`
+  or `disabled`.
+
+compatible: "actinius-charger-enable"
+
+include: base.yaml
+
+properties:
+    gpios:
+      type: phandle-array
+      required: true
+      description: Pin used to enable/disable the charger
+
+    charger:
+      type: string
+      required: true
+      enum:
+        - "auto"
+        - "disabled"
+      description: Charger enable choice (auto or disabled)

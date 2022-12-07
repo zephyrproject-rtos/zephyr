@@ -5,6 +5,8 @@
 
 config PMS7003
 	bool "PMS7003 particulate matter sensor"
+	default y
+	depends on DT_HAS_PLANTOWER_PMS7003_ENABLED
 	depends on SERIAL
 	help
 	  Enable driver for pms7003 particulate matter sensor.

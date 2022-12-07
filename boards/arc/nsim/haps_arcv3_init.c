@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <soc.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 
 #define ARC_CLN_MST_NOC_0_0_ADDR	292

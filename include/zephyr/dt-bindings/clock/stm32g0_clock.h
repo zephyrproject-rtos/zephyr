@@ -13,25 +13,35 @@
 #define STM32_CLOCK_BUS_APB2    0x040
 
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_IOP
-#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB1
+#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB2
 
-/** Peripheral clock sources */
+/** Domain clocks */
 /* RM0444, §5.4.21/22 Clock configuration register (RCC_CCIPRx) */
 
 /** Fixed clocks  */
 #define STM32_SRC_HSI		0x001
-#define STM32_SRC_MSI		0x002
-#define STM32_SRC_LSE		0x003
-#define STM32_SRC_LSI		0x004
+#define STM32_SRC_HSI48		0x002
+#define STM32_SRC_MSI		0x003
+#define STM32_SRC_HSE		0x004
+#define STM32_SRC_LSE		0x005
+#define STM32_SRC_LSI		0x006
 /** System clock */
-#define STM32_SRC_SYSCLK	0x005
+#define STM32_SRC_SYSCLK	0x007
 /** Peripheral bus clock */
-#define STM32_SRC_PCLK		0x006
-/** PLL clock */
-#define STM32_SRC_PLLCLK	0x007
+#define STM32_SRC_PCLK		0x008
+/** PLL clock outputs */
+#define STM32_SRC_PLL_P		0x009
+#define STM32_SRC_PLL_Q		0x00a
+#define STM32_SRC_PLL_R		0x00b
 
-#define STM32_SRC_CLOCK_MIN	STM32_SRC_HSI
-#define STM32_SRC_CLOCK_MAX	STM32_SRC_PLLCLK
+#define STM32_CLOCK_REG_MASK    0xFFU
+#define STM32_CLOCK_REG_SHIFT   0U
+#define STM32_CLOCK_SHIFT_MASK  0x1FU
+#define STM32_CLOCK_SHIFT_SHIFT 8U
+#define STM32_CLOCK_MASK_MASK   0x7U
+#define STM32_CLOCK_MASK_SHIFT  13U
+#define STM32_CLOCK_VAL_MASK    0x7U
+#define STM32_CLOCK_VAL_SHIFT   16U
 
 /**
  * @brief STM32 clock configuration bit field.
@@ -46,16 +56,6 @@
  * @param mask Mask for the RCC_CCIPRx field.
  * @param val Clock value (0, 1, ... 7).
  */
-
-#define STM32_CLOCK_REG_MASK    0xFFU
-#define STM32_CLOCK_REG_SHIFT   0U
-#define STM32_CLOCK_SHIFT_MASK  0x1FU
-#define STM32_CLOCK_SHIFT_SHIFT 8U
-#define STM32_CLOCK_MASK_MASK   0x7U
-#define STM32_CLOCK_MASK_SHIFT  13U
-#define STM32_CLOCK_VAL_MASK    0x7U
-#define STM32_CLOCK_VAL_SHIFT   16U
-
 #define STM32_CLOCK(val, mask, shift, reg)					\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
@@ -66,7 +66,10 @@
 #define CCIPR_REG		0x54
 #define CCIPR2_REG		0x58
 
-/** @brief Device clk sources selection helpers */
+/** @brief RCC_BDCR register offset */
+#define BDCR_REG		0x5C
+
+/** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR_REG)
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR_REG)
@@ -87,7 +90,8 @@
 #define I2S2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR2_REG)
 #define FDCAN_SEL(val)		STM32_CLOCK(val, 3, 8, CCIPR2_REG)
 #define USB_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR2_REG)
-
+/** BDCR devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 
 
 

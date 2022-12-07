@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2022, Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description:
+    This is a representation of AndesTech atciic100 I2C node
+
+compatible: "andestech,atciic100"
+
+include: i2c-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

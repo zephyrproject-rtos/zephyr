@@ -6,7 +6,8 @@
 
 config UART_PSOC6
 	bool "PSoC-6 MCU SCB serial driver"
-	depends on SOC_FAMILY_PSOC6
+	default y
+	depends on DT_HAS_CYPRESS_PSOC6_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select USE_INFINEON_UART

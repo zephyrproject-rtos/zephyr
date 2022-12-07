@@ -5,7 +5,8 @@
 
 config ADC_ITE_IT8XXX2
 	bool "ITE IT8XXX2 ADC driver"
-	depends on SOC_FAMILY_RISCV_ITE
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_ADC_ENABLED
 	help
 	  This option enables the ADC driver for IT8XXX2
 	  family of processors.

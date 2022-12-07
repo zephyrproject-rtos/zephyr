@@ -5,4 +5,4 @@ description: Texas Instruments OPT3001 ambient light sensor
 
 compatible: "ti,opt3001"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

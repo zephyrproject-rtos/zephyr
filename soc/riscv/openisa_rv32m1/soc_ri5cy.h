@@ -54,13 +54,7 @@
  * what the standard allocates (which is XLEN-1 bits).
  */
 #define SOC_MCAUSE_EXP_MASK 0x1F
-/*
- * Assembler instruction to exit from interrupt in machine mode.
- * The name "ERET" is a leftover from pre-v1.10 privileged ISA specs.
- * The "mret" mnemonic works properly with the Pulpino toolchain;
- * YMMV if using a generic toolchain.
- */
-#define SOC_ERET mret
+
 /* The ecall exception number. This is a standard value. */
 #define SOC_MCAUSE_ECALL_EXP 11
 #endif /* SOC_RISCV32_OPENISA_RV32M1_SOC_RI5CY_H_ */

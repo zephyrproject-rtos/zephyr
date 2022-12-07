@@ -7,14 +7,13 @@
 
 / {
 	chosen {
-		zephyr,display = &gd7965;
+		zephyr,display = &uc8176_waveshare_epaper_gdew042t2;
 	};
 };
 
 &arduino_spi {
-	gd7965: gd7965@0 {
-		compatible = "gooddisplay,gd7965","gooddisplay,gdew042t2";
-    		label = "GD7965";
+	uc8176_waveshare_epaper_gdew042t2: uc8176@0 {
+		compatible = "gooddisplay,gdew042t2", "ultrachip,uc8176";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <400>;
@@ -22,9 +21,13 @@
 		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
 		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;	/* D7 */
-		pwr = [03 00 26 26 09];
+
 		softstart = [17 17 17];
-		cdi = <0xd7>;
-		tcon = <0x22>;
+
+		full {
+			pwr = [03 00 26 26 09];
+			cdi = <0xd7>;
+			tcon = <0x22>;
+		};
 	};
 };

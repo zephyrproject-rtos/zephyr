@@ -18,12 +18,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DT_DRV_COMPAT st_stm32_ethernet
 
 #include <sys/types.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
 
 #include "eth_dwmac_priv.h"
 
@@ -50,6 +51,12 @@ int dwmac_bus_init(struct dwmac_priv *p)
 	int ret;
 
 	p->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	if (!device_is_ready(p->clock)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	ret  = clock_control_on(p->clock, (clock_control_subsys_t *)&pclken);
 	ret |= clock_control_on(p->clock, (clock_control_subsys_t *)&pclken_tx);
 	ret |= clock_control_on(p->clock, (clock_control_subsys_t *)&pclken_rx);

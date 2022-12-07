@@ -14,7 +14,7 @@
 #define I2C_INST DT_NODELABEL(i2c0)
 #define LCD_ADDRESS 0x28
 
-const struct device *i2c = DEVICE_DT_GET(I2C_INST);
+const struct device *const i2c = DEVICE_DT_GET(I2C_INST);
 
 void send_ascii(char c)
 {

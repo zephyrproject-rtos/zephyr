@@ -73,8 +73,6 @@ extern "C" {
 #define CLOCK_MONOTONIC 4
 #endif
 
-#define NSEC_PER_MSEC (NSEC_PER_USEC * USEC_PER_MSEC)
-
 #ifndef TIMER_ABSTIME
 #define TIMER_ABSTIME 4
 #endif

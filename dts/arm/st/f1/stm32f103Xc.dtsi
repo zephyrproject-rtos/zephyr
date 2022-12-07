@@ -29,7 +29,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <52 0>;
 			status = "disabled";
-			label = "UART_4";
 		};
 
 		uart5: serial@40005000 {
@@ -38,7 +37,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
 			interrupts = <53 0>;
 			status = "disabled";
-			label = "UART_5";
 		};
 
 		timers5: timers@40000c00 {
@@ -49,12 +47,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_5";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_5";
 				#pwm-cells = <3>;
 			};
 		};
@@ -67,7 +63,6 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_6";
 		};
 
 		timers7: timers@40001400 {
@@ -78,7 +73,6 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_7";
 		};
 
 		spi3: spi@40003c00 {
@@ -88,7 +82,6 @@
 			reg = <0X40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <51 5>;
-			label = "SPI_3";
 			status = "disabled";
 		};
 
@@ -97,7 +90,6 @@
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
 			status = "disabled";
-			label = "DAC_1";
 			#io-channel-cells = <1>;
 		};
 
@@ -110,7 +102,6 @@
 				#gpio-cells = <2>;
 				reg = <0x40011c00 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
-				label = "GPIOF";
 			};
 
 			gpiog: gpio@40012000 {
@@ -119,7 +110,6 @@
 				#gpio-cells = <2>;
 				reg = <0x40012000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000100>;
-				label = "GPIOG";
 			};
 		};
 
@@ -130,7 +120,6 @@
 			/* Shares vector with ADC1 */
 			interrupts = <18 0>;
 			status = "disabled";
-			label = "ADC_2";
 			#io-channel-cells = <1>;
 		};
 
@@ -140,7 +129,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00008000>;
 			interrupts = <47 0>;
 			status = "disabled";
-			label = "ADC_3";
 			#io-channel-cells = <1>;
 		};
 
@@ -152,12 +140,10 @@
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_8";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_8";
 				#pwm-cells = <3>;
 			};
 		};
@@ -169,7 +155,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
 			interrupts = < 56 0 57 0 58 0 59 0 60 0>;
 			status = "disabled";
-			label = "DMA_2";
 		};
 	};
 };

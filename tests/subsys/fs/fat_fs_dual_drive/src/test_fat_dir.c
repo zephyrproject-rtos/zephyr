@@ -160,19 +160,19 @@ static int test_rmdir(const char *dir)
 	return res;
 }
 
-void test_fat_dir(void)
+ZTEST(fat_fs_dual_drive, test_fat_dir)
 {
 	TC_PRINT("\nTesting directory operations on %s\n", FATFS_MNTP);
-	zassert_true(test_mkdir(TEST_DIR, TEST_DIR_FILE) == TC_PASS, NULL);
-	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS, NULL);
-	zassert_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
-	zassert_true(test_rmdir(TEST_DIR) == TC_PASS, NULL);
-	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS, NULL);
+	zassert_true(test_mkdir(TEST_DIR, TEST_DIR_FILE) == TC_PASS);
+	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS);
+	zassert_true(test_lsdir(TEST_DIR) == TC_PASS);
+	zassert_true(test_rmdir(TEST_DIR) == TC_PASS);
+	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS);
 
 	TC_PRINT("\nTesting directory operations on %s\n", FATFS_MNTP1);
-	zassert_true(test_mkdir(TEST_DIR1, TEST_DIR_FILE1) == TC_PASS, NULL);
-	zassert_true(test_lsdir(FATFS_MNTP1) == TC_PASS, NULL);
-	zassert_true(test_lsdir(TEST_DIR1) == TC_PASS, NULL);
-	zassert_true(test_rmdir(TEST_DIR1) == TC_PASS, NULL);
-	zassert_true(test_lsdir(FATFS_MNTP1) == TC_PASS, NULL);
+	zassert_true(test_mkdir(TEST_DIR1, TEST_DIR_FILE1) == TC_PASS);
+	zassert_true(test_lsdir(FATFS_MNTP1) == TC_PASS);
+	zassert_true(test_lsdir(TEST_DIR1) == TC_PASS);
+	zassert_true(test_rmdir(TEST_DIR1) == TC_PASS);
+	zassert_true(test_lsdir(FATFS_MNTP1) == TC_PASS);
 }

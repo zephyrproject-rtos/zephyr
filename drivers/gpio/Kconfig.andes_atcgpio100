@@ -7,7 +7,8 @@
 
 config GPIO_ANDES_ATCGPIO100
 	bool "Andes ATCGPIO100 GPIO driver"
-	depends on SOC_SERIES_RISCV_ANDES_V5
+	default y
+	depends on DT_HAS_ANDESTECH_ATCGPIO100_ENABLED
 	help
 	  Enable driver for the Andes ATCGPIO100 GPIO controller.
 

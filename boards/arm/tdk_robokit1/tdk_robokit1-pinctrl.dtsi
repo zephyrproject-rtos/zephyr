@@ -1,0 +1,206 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/same70q-pinctrl.h>
+
+&pinctrl {
+	afec0_default: afec0_default {	/* ADCL - J502 */
+		group1 {
+			pinmux = <PD30X_AFE0_AD0>,
+				 <PA19X_AFE0_AD8>,
+				 <PA17X_AFE0_AD6>;
+		};
+	};
+
+	afec1_default: afec1_default {	/* ADCH - J504 */
+		group1 {
+			pinmux = <PC31X_AFE1_AD6>;
+		};
+	};
+
+	can0_default: can0_default {
+		group1 {
+			pinmux = <PB3A_CAN0_RX>,
+				 <PB2A_CAN0_TX>;
+		};
+	};
+
+	gmac_rmii: gmac_rmii {
+		group1 {
+			pinmux = <PD0A_GMAC_GTXCK>,
+				 <PD1A_GMAC_GTXEN>,
+				 <PD2A_GMAC_GTX0>,
+				 <PD3A_GMAC_GTX1>,
+				 <PD4A_GMAC_GRXDV>,
+				 <PD5A_GMAC_GRX0>,
+				 <PD6A_GMAC_GRX1>,
+				 <PD7A_GMAC_GRXER>;
+		};
+	};
+
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <PD8A_GMAC_GMDC>,
+				 <PD9A_GMAC_GMDIO>;
+		};
+	};
+
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PA0A_PWMC0_PWMH0>,
+				 <PC19B_PWMC0_PWMH2>,
+				 <PD26A_PWMC0_PWML2>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PD20B_SPI0_MISO>,
+				 <PD21B_SPI0_MOSI>,
+				 <PD22B_SPI0_SPCK>;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <PC26C_SPI1_MISO>,
+				 <PC27C_SPI1_MOSI>,
+				 <PC24C_SPI1_SPCK>,
+				 <PC25C_SPI1_NPCS0>;
+		};
+	};
+
+	ssc_default: ssc_default {
+		group1 {
+			pinmux = <PD24B_SSC_RF>,
+				 <PA22A_SSC_RK>,
+				 <PA10C_SSC_RD>,
+				 <PB0D_SSC_TF>,
+				 <PB1D_SSC_TK>,
+				 <PB5D_SSC_TD>;
+		};
+	};
+
+	tc0_qdec_default: tc0_qdec_default {
+		group1 {
+			pinmux = <PA0B_TC0_TIOA0>,
+				 <PA1B_TC0_TIOB0>;
+		};
+	};
+
+	twihs0_default: twihs0_default {
+		group1 {
+			pinmux = <PA4A_TWI0_TWCK>,
+				 <PA3A_TWI0_TWD>;
+		};
+	};
+
+	twihs1_default: twihs1_default {
+		group1 {
+			pinmux = <PB5A_TWI1_TWCK>,
+				 <PB4A_TWI1_TWD>;
+		};
+	};
+
+	twihs2_default: twihs2_default {
+		group1 {
+			pinmux = <PD28C_TWI2_TWCK>,
+				 <PD27C_TWI2_TWD>;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <PA9A_UART0_RXD>,
+				<PA10A_UART0_TXD>;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <PA5C_UART1_RXD>,
+				<PA6C_UART1_TXD>;
+		};
+	};
+
+	uart2_default: uart2_default {
+		group1 {
+			pinmux = <PD25C_UART2_RXD>,
+				<PD26C_UART2_TXD>;
+		};
+	};
+
+	uart3_default: uart3_default {
+		group1 {
+			pinmux = <PD28A_UART3_RXD>,
+				 <PD30A_UART3_TXD>;
+		};
+	};
+	uart4_default: uart4_default {
+		group1 {
+			pinmux = <PD19C_UART4_TXD>,
+				 <PD18C_UART4_RXD>;
+		};
+	};
+
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <PB0C_USART0_RXD>,
+				 <PB1C_USART0_TXD>;
+		};
+	};
+
+	usart0_hw_ctrl_flow_clk: usart0_hw_ctrl_flow_clk {
+		group1 {
+			pinmux = <PB0C_USART0_RXD>,
+				 <PB3C_USART0_RTS>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <PB1C_USART0_TXD>,
+				 <PB2C_USART0_CTS>,
+				 <PB13C_USART0_SCK>;
+		};
+	};
+
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <PA21A_USART1_RXD>,
+				 <PB4D_USART1_TXD>;
+		};
+	};
+
+	usart1_hw_ctrl_flow: usart1_hw_ctrl_flow {
+		group1 {
+			pinmux = <PA21A_USART1_RXD>,
+				 <PA24A_USART1_RTS>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <PB4D_USART1_TXD>,
+				 <PA25A_USART1_CTS>;
+		};
+	};
+
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <PD15B_USART2_RXD>,
+				 <PD16B_USART2_TXD>;
+		};
+	};
+
+	usart2_hw_ctrl_flow_clk: usart2_hw_ctrl_flow_clk {
+		group1 {
+			pinmux = <PD15B_USART2_RXD>,
+				 <PD18B_USART2_RTS>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <PD16B_USART2_TXD>,
+				 <PD19B_USART2_CTS>,
+				 <PD17B_USART2_SCK>;
+		};
+	};
+};

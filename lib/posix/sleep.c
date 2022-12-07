@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/posix/unistd.h>
 
@@ -14,8 +16,12 @@
  */
 unsigned sleep(unsigned int seconds)
 {
-	k_sleep(K_SECONDS(seconds));
-	return 0;
+	int rem;
+
+	rem = k_sleep(K_SECONDS(seconds));
+	__ASSERT_NO_MSG(rem >= 0);
+
+	return rem / MSEC_PER_SEC;
 }
 /**
  * @brief Suspend execution for microsecond intervals.
@@ -24,10 +30,19 @@ unsigned sleep(unsigned int seconds)
  */
 int usleep(useconds_t useconds)
 {
-	if (useconds < USEC_PER_MSEC) {
-		k_busy_wait(useconds);
-	} else {
-		k_msleep(useconds / USEC_PER_MSEC);
+	int32_t rem;
+
+	if (useconds >= USEC_PER_SEC) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	rem = k_usleep(useconds);
+	__ASSERT_NO_MSG(rem >= 0);
+	if (rem > 0) {
+		/* sleep was interrupted by a call to k_wakeup() */
+		errno = EINTR;
+		return -1;
 	}
 
 	return 0;

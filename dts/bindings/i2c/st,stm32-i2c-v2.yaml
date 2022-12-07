@@ -22,7 +22,6 @@ properties:
 
     timings:
         type: array
-        required: false
         description: |
             An optional table of pre-computed i2c timing values with the
             matching clock configuration.

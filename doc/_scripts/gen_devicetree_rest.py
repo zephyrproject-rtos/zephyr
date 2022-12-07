@@ -204,6 +204,8 @@ def load_bindings(dts_roots):
 
     binding_files = []
     for dts_root in dts_roots:
+        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yml',
+                                       recursive=True))
         binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yaml',
                                        recursive=True))
 
@@ -794,9 +796,9 @@ def binding_filename(binding):
     if idx == -1:
         raise ValueError(f'binding path has no {dts_bindings}: {binding.path}')
 
-    # Cut past dts/bindings, strip off the .yaml, and replace with
-    # .rst.
-    return as_posix[idx + len(dts_bindings):-4] + 'rst'
+    # Cut past dts/bindings, strip off the extension (.yaml or .yml), and
+    # replace with .rst.
+    return os.path.splitext(as_posix[idx + len(dts_bindings):])[0] + '.rst'
 
 def binding_ref_target(binding):
     # Return the sphinx ':ref:' target name for a binding.

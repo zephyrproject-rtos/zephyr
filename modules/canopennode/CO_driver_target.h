@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/toolchain.h>
@@ -39,12 +39,10 @@ extern "C" {
 #define CO_USE_LEDS 1
 #endif
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifdef CONFIG_LITTLE_ENDIAN
 #define CO_LITTLE_ENDIAN
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define CO_BIG_ENDIAN
 #else
-#error "Unsupported endianness"
+#define CO_BIG_ENDIAN
 #endif
 
 typedef bool          bool_t;

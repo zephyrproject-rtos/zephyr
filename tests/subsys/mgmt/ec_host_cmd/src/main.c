@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_simulator.h>
 #include <zephyr/mgmt/ec_host_cmd.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* Variables used to record what is "sent" to host for verification. */
 K_SEM_DEFINE(send_called, 0, 1);
@@ -62,7 +62,6 @@ struct tx_structure {
 	struct ec_host_cmd_response_header header;
 	union {
 		struct ec_response_add add;
-		struct ec_response_too_big too_big;
 		uint8_t raw[0];
 	};
 } __packed * const expected_dut_to_host = (void *)&expected_dut_to_host_buffer;
@@ -163,10 +162,10 @@ ec_host_cmd_add(struct ec_host_cmd_handler_args *args)
 	args->output_buf_size = sizeof(*response);
 	return EC_HOST_CMD_SUCCESS;
 }
-EC_HOST_CMD_HANDLER(ec_host_cmd_add, EC_CMD_HELLO, BIT(0) | BIT(1) | BIT(2),
+EC_HOST_CMD_HANDLER(EC_CMD_HELLO, ec_host_cmd_add, BIT(0) | BIT(1) | BIT(2),
 		    struct ec_params_add, struct ec_response_add);
 
-static void test_add(void)
+ZTEST(ec_host_cmd, test_add)
 {
 	host_to_dut->header.prtcl_ver = 3;
 	host_to_dut->header.cmd_id = EC_CMD_HELLO;
@@ -187,7 +186,7 @@ static void test_add(void)
 	verify_tx_data();
 }
 
-static void test_add_version_2(void)
+ZTEST(ec_host_cmd, test_add_version_2)
 {
 	host_to_dut->header.prtcl_ver = 3;
 	host_to_dut->header.cmd_id = EC_CMD_HELLO;
@@ -208,7 +207,7 @@ static void test_add_version_2(void)
 	verify_tx_data();
 }
 
-static void test_add_invalid_version(void)
+ZTEST(ec_host_cmd, test_add_invalid_version)
 {
 	host_to_dut->header.prtcl_ver = 3;
 	host_to_dut->header.cmd_id = EC_CMD_HELLO;
@@ -222,7 +221,7 @@ static void test_add_invalid_version(void)
 	verify_tx_error(EC_HOST_CMD_INVALID_VERSION);
 }
 
-static void test_add_invalid_version_big(void)
+ZTEST(ec_host_cmd, test_add_invalid_version_big)
 {
 	host_to_dut->header.prtcl_ver = 3;
 	host_to_dut->header.cmd_id = EC_CMD_HELLO;
@@ -236,7 +235,7 @@ static void test_add_invalid_version_big(void)
 	verify_tx_error(EC_HOST_CMD_INVALID_VERSION);
 }
 
-static void test_add_invalid_prtcl_ver_2(void)
+ZTEST(ec_host_cmd, test_add_invalid_prtcl_ver_2)
 {
 	host_to_dut->header.prtcl_ver = 2;
 	host_to_dut->header.cmd_id = EC_CMD_HELLO;
@@ -250,7 +249,7 @@ static void test_add_invalid_prtcl_ver_2(void)
 	verify_tx_error(EC_HOST_CMD_INVALID_HEADER);
 }
 
-static void test_add_invalid_prtcl_ver_4(void)
+ZTEST(ec_host_cmd, test_add_invalid_prtcl_ver_4)
 {
 	host_to_dut->header.prtcl_ver = 4;
 	host_to_dut->header.cmd_id = EC_CMD_HELLO;
@@ -264,7 +263,7 @@ static void test_add_invalid_prtcl_ver_4(void)
 	verify_tx_error(EC_HOST_CMD_INVALID_HEADER);
 }
 
-static void test_add_invalid_rx_checksum(void)
+ZTEST(ec_host_cmd, test_add_invalid_rx_checksum)
 {
 	int rv;
 
@@ -292,7 +291,7 @@ static void test_add_invalid_rx_checksum(void)
 	verify_tx_error(EC_HOST_CMD_INVALID_CHECKSUM);
 }
 
-static void test_add_rx_size_too_small_for_header(void)
+ZTEST(ec_host_cmd, test_add_rx_size_too_small_for_header)
 {
 	int rv;
 
@@ -313,7 +312,7 @@ static void test_add_rx_size_too_small_for_header(void)
 	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
 }
 
-static void test_add_rx_size_too_small(void)
+ZTEST(ec_host_cmd, test_add_rx_size_too_small)
 {
 	int rv;
 
@@ -336,7 +335,7 @@ static void test_add_rx_size_too_small(void)
 	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
 }
 
-static void test_unknown_command(void)
+ZTEST(ec_host_cmd, test_unknown_command)
 {
 	host_to_dut->header.prtcl_ver = 3;
 	host_to_dut->header.cmd_id = 1234;
@@ -373,7 +372,7 @@ ec_host_cmd_unbounded(struct ec_host_cmd_handler_args *args)
 	}
 
 	/* Version 0 (and 2) write request bytes if it can fit */
-	if (request->bytes_to_write > args->output_buf_size) {
+	if (request->bytes_to_write > args->output_buf_max) {
 		return EC_HOST_CMD_OVERFLOW;
 	}
 
@@ -385,10 +384,10 @@ ec_host_cmd_unbounded(struct ec_host_cmd_handler_args *args)
 	args->output_buf_size = request->bytes_to_write;
 	return EC_HOST_CMD_SUCCESS;
 }
-EC_HOST_CMD_HANDLER_UNBOUND(ec_host_cmd_unbounded, EC_CMD_UNBOUNDED,
+EC_HOST_CMD_HANDLER_UNBOUND(EC_CMD_UNBOUNDED, ec_host_cmd_unbounded,
 			    BIT(0) | BIT(1) | BIT(2));
 
-static void test_unbounded_handler_error_return(void)
+ZTEST(ec_host_cmd, test_unbounded_handler_error_return)
 {
 	host_to_dut->header.prtcl_ver = 3;
 	host_to_dut->header.cmd_id = EC_CMD_UNBOUNDED;
@@ -402,7 +401,7 @@ static void test_unbounded_handler_error_return(void)
 	verify_tx_error(EC_HOST_CMD_OVERFLOW);
 }
 
-static void test_unbounded_handler_response_too_big(void)
+ZTEST(ec_host_cmd, test_unbounded_handler_response_too_big)
 {
 	host_to_dut->header.prtcl_ver = 3;
 	host_to_dut->header.cmd_id = EC_CMD_UNBOUNDED;
@@ -416,79 +415,16 @@ static void test_unbounded_handler_response_too_big(void)
 	verify_tx_error(EC_HOST_CMD_INVALID_RESPONSE);
 }
 
-static void test_rx_buffer_cleared_foreach_hostcommand(void)
-{
-	host_to_dut->header.prtcl_ver = 3;
-	host_to_dut->header.cmd_id = EC_CMD_UNBOUNDED;
-	host_to_dut->header.cmd_ver = 2;
-	host_to_dut->header.reserved = 0;
-	host_to_dut->header.data_len = sizeof(host_to_dut->unbounded);
-	host_to_dut->unbounded.bytes_to_write = 5;
-
-	/* Write data after the entire request message. The host command handler
-	 * always assert that this data is cleared upon receipt.
-	 */
-	host_to_dut->raw[4] = 42;
-
-	simulate_rx_data();
-
-	expected_dut_to_host->header.prtcl_ver = 3;
-	expected_dut_to_host->header.result = 0;
-	expected_dut_to_host->header.reserved = 0;
-	expected_dut_to_host->header.data_len = 5;
-	expected_dut_to_host->raw[0] = 0;
-	expected_dut_to_host->raw[1] = 1;
-	expected_dut_to_host->raw[2] = 2;
-	expected_dut_to_host->raw[3] = 3;
-	expected_dut_to_host->raw[4] = 4;
-
-	verify_tx_data();
-}
-
-static void test_tx_buffer_cleared_foreach_hostcommand(void)
-{
-	host_to_dut->header.prtcl_ver = 3;
-	host_to_dut->header.cmd_id = EC_CMD_UNBOUNDED;
-	host_to_dut->header.cmd_ver = 2;
-	host_to_dut->header.reserved = 0;
-	host_to_dut->header.data_len = sizeof(host_to_dut->unbounded);
-	host_to_dut->unbounded.bytes_to_write = 5;
-
-	simulate_rx_data();
-
-	expected_dut_to_host->header.prtcl_ver = 3;
-	expected_dut_to_host->header.result = 0;
-	expected_dut_to_host->header.reserved = 0;
-	expected_dut_to_host->header.data_len = 5;
-	expected_dut_to_host->raw[0] = 0;
-	expected_dut_to_host->raw[1] = 1;
-	expected_dut_to_host->raw[2] = 2;
-	expected_dut_to_host->raw[3] = 3;
-	expected_dut_to_host->raw[4] = 4;
-
-	verify_tx_data();
-
-	/* Send second command with less bytes to write. Host command handler
-	 * asserts that the previous output data is zero.
-	 */
-
-	host_to_dut->unbounded.bytes_to_write = 2;
-	simulate_rx_data();
-
-	expected_dut_to_host->header.data_len = 2;
-	verify_tx_data();
-}
-
 #define EC_CMD_TOO_BIG 0x0003
 static enum ec_host_cmd_status
 ec_host_cmd_too_big(struct ec_host_cmd_handler_args *args)
 {
 	return EC_HOST_CMD_SUCCESS;
 }
-EC_HOST_CMD_HANDLER(ec_host_cmd_too_big, EC_CMD_TOO_BIG, BIT(0), uint32_t,
+EC_HOST_CMD_HANDLER(EC_CMD_TOO_BIG, ec_host_cmd_too_big, BIT(0), uint32_t,
 		    struct ec_response_too_big);
 
-static void test_response_always_too_big(void)
+ZTEST(ec_host_cmd, test_response_always_too_big)
 {
 	host_to_dut->header.prtcl_ver = 3;
 	host_to_dut->header.cmd_id = EC_CMD_TOO_BIG;
@@ -501,26 +437,10 @@ static void test_response_always_too_big(void)
 	verify_tx_error(EC_HOST_CMD_INVALID_RESPONSE);
 }
 
-void test_main(void)
+static void *ec_host_cmd_tests_setup(void)
 {
 	ec_host_cmd_periph_sim_install_send_cb(host_send);
-
-	ztest_test_suite(
-		ec_host_cmd_tests, ztest_unit_test(test_add),
-		ztest_unit_test(test_add_version_2),
-		ztest_unit_test(test_add_invalid_prtcl_ver_2),
-		ztest_unit_test(test_add_invalid_prtcl_ver_4),
-		ztest_unit_test(test_add_invalid_version),
-		ztest_unit_test(test_add_invalid_version_big),
-		ztest_unit_test(test_add_invalid_rx_checksum),
-		ztest_unit_test(test_add_rx_size_too_small_for_header),
-		ztest_unit_test(test_add_rx_size_too_small),
-		ztest_unit_test(test_unknown_command),
-		ztest_unit_test(test_unbounded_handler_error_return),
-		ztest_unit_test(test_unbounded_handler_response_too_big),
-		ztest_unit_test(test_rx_buffer_cleared_foreach_hostcommand),
-		ztest_unit_test(test_tx_buffer_cleared_foreach_hostcommand),
-		ztest_unit_test(test_response_always_too_big));
-
-	ztest_run_test_suite(ec_host_cmd_tests);
+	return NULL;
 }
+
+ZTEST_SUITE(ec_host_cmd, NULL, ec_host_cmd_tests_setup, NULL, NULL, NULL);

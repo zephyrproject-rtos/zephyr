@@ -8,13 +8,11 @@
 	status = "okay";
 	compatible = "st,stm32-i2c-v1";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	label = "I2C_0";
 
 	ina219@40 {
 		status = "okay";
 		compatible = "ti,ina219";
 		reg = <0x40>;
-		label = "INA219";
 		brng = <0>;
 		pg = <0>;
 		sadc = <13>;

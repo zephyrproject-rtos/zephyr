@@ -1173,14 +1173,72 @@ This has been fixed in main for v3.0.0
 CVE-2022-1041
 --------------
 
-Under embargo until 2022/06/19
+Out-of-bound write vulnerability in the Bluetooth mesh core stack can be triggered during provisioning
+
+This has been fixed in main for v3.1.0
+
+- `Zephyr project bug tracker GHSA-p449-9hv9-pj38
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p449-9hv9-pj38>`_
+
+- `PR 45136 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45136>`_
+
+- `PR 45188 fix for v3.0.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45188>`_
+
+- `PR 45187 fix for v2.7.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45187>`_
 
 CVE-2022-1042
 --------------
 
-Under embargo until 2022/06/19
+Out-of-bound write vulnerability in the Bluetooth mesh core stack can be triggered during provisioning
+
+This has been fixed in main for v3.1.0
+
+- `Zephyr project bug tracker GHSA-j7v7-w73r-mm5x
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-j7v7-w73r-mm5x>`_
+
+- `PR 45066 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45066>`_
+
+- `PR 45135 fix for v3.0.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45135>`_
+
+- `PR 45134 fix for v2.7.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45134>`_
 
 CVE-2022-1841
 --------------
 
-Under embargo until 2022/08/18
+Out-of-Bound Write in tcp_flags
+
+This has been fixed in main for v3.1.0
+
+- `Zephyr project bug tracker GHSA-5c3j-p8cr-2pgh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-5c3j-p8cr-2pgh>`_
+
+- `PR 45796 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/45796>`_
+
+CVE-2022-2741
+--------------
+
+can: denial-of-service can be triggered by a crafted CAN frame
+
+This has been fixed in main for v3.2.0
+
+- `Zephyr project bug tracker GHSA-hx5v-j59q-c3j8
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hx5v-j59q-c3j8>`_
+
+- `PR 47903 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/47903>`_
+
+- `PR 47957 fix for v3.1.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/47957>`_
+
+- `PR 47958 fix for v3.0.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/47958>`_
+
+- `PR 47959 fix for v2.7.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/47959>`_

@@ -26,7 +26,6 @@ properties:
     ppi-wrap:
       type: boolean
       description: Enable wrapping with PPI
-      required: false
 
    # If enabled then counter based on nRF RTC peripheral supports only maximal
    # top value. That results in code optimizations and availability of one more
@@ -34,4 +33,3 @@ properties:
     fixed-top:
       type: boolean
       description: Enable fixed top value
-      required: false

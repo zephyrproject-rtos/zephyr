@@ -11,7 +11,7 @@ K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 K_THREAD_STACK_ARRAY_DEFINE(tstacks, MAX_NUM_THREAD, STACK_SIZE);
 
 /* Not in header file intentionally, see #16760 */
-K_THREAD_STACK_EXTERN(ustack);
+K_THREAD_STACK_DECLARE(ustack, STACK_SIZE);
 
 void spin_for_ms(int ms)
 {
@@ -27,6 +27,16 @@ void spin_for_ms(int ms)
 	}
 }
 
+static void *threads_scheduling_tests_setup(void)
+{
+#ifdef CONFIG_USERSPACE
+	k_thread_access_grant(k_current_get(), &user_thread, &user_sem,
+			      &ustack);
+#endif /* CONFIG_USERSPACE */
+
+	return NULL;
+}
+
 /**
  * @brief Test scheduling
  *
@@ -37,44 +47,6 @@ void spin_for_ms(int ms)
  * @{
  * @}
  */
-/* test case main entry */
-void test_main(void)
-{
-#ifdef CONFIG_USERSPACE
-	k_thread_access_grant(k_current_get(), &user_thread, &user_sem,
-			      &ustack);
-#endif /* CONFIG_USERSPACE */
-
-	ztest_test_suite(threads_scheduling,
-			 ztest_unit_test(test_bad_priorities),
-			 ztest_unit_test(test_priority_cooperative),
-			 ztest_unit_test(test_priority_preemptible),
-			 ztest_1cpu_unit_test(test_priority_preemptible_wait_prio),
-			 ztest_unit_test(test_yield_cooperative),
-			 ztest_unit_test(test_sleep_cooperative),
-			 ztest_unit_test(test_busy_wait_cooperative),
-			 ztest_unit_test(test_sleep_wakeup_preemptible),
-			 ztest_unit_test(test_pending_thread_wakeup),
-			 ztest_unit_test(test_time_slicing_preemptible),
-			 ztest_unit_test(test_time_slicing_disable_preemptible),
-			 ztest_unit_test(test_lock_preemptible),
-			 ztest_unit_test(test_unlock_preemptible),
-			 ztest_unit_test(test_unlock_nested_sched_lock),
-			 ztest_unit_test(test_sched_is_preempt_thread),
-			 ztest_unit_test(test_slice_reset),
-			 ztest_unit_test(test_slice_scheduling),
-			 ztest_unit_test(test_priority_scheduling),
-			 ztest_unit_test(test_wakeup_expired_timer_thread),
-			 ztest_user_unit_test(test_user_k_wakeup),
-			 ztest_user_unit_test(test_user_k_is_preempt),
-			 ztest_user_unit_test(test_k_thread_suspend_init_null),
-			 ztest_user_unit_test(test_k_thread_resume_init_null),
-			 ztest_user_unit_test(test_k_thread_priority_get_init_null),
-			 ztest_user_unit_test(test_k_thread_priority_set_init_null),
-			 ztest_user_unit_test(test_k_thread_priority_set_overmax),
-			 ztest_user_unit_test(test_k_thread_priority_set_upgrade),
-			 ztest_user_unit_test(test_k_wakeup_init_null),
-			 ztest_unit_test(test_slice_perthread)
-			 );
-	ztest_run_test_suite(threads_scheduling);
-}
+ZTEST_SUITE(threads_scheduling, NULL, threads_scheduling_tests_setup, NULL, NULL, NULL);
+ZTEST_SUITE(threads_scheduling_1cpu, NULL, threads_scheduling_tests_setup,
+			ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_hostname, CONFIG_NET_HOSTNAME_LOG_LEVEL);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/net/hostname.h>
 #include <zephyr/net/net_core.h>
@@ -52,7 +52,7 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 			 2 + 1, "%02x", hostname_postfix[i]);
 	}
 
-	NET_DBG("New hostname %s", log_strdup(hostname));
+	NET_DBG("New hostname %s", hostname);
 
 #if !defined(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)
 	postfix_set = true;

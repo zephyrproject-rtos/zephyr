@@ -19,7 +19,7 @@ description: |
 
 compatible: "cypress,psoc6-pinctrl"
 
-include: [base.yaml, pincfg-node.yaml]
+include: base.yaml
 
 properties:
     "#address-cells":
@@ -31,6 +31,9 @@ properties:
 
 child-binding:
     description: cypress pins
+
+    include: pincfg-node.yaml
+
     properties:
       "cypress,pins":
         type: phandle-array

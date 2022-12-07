@@ -110,7 +110,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 * sys_heap_runtime_stats_get function.
 	 */
 	size_t allocated_bytes, free_bytes;
-	struct sys_heap_runtime_stats stat;
+	struct sys_memory_stats stat;
 
 	get_alloc_info(h, &allocated_bytes, &free_bytes);
 	sys_heap_runtime_stats_get(heap, &stat);
@@ -414,7 +414,7 @@ void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks)
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 
 int sys_heap_runtime_stats_get(struct sys_heap *heap,
-		struct sys_heap_runtime_stats *stats)
+		struct sys_memory_stats *stats)
 {
 	if ((heap == NULL) || (stats == NULL)) {
 		return -EINVAL;

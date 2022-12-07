@@ -23,6 +23,7 @@
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -55,6 +56,7 @@
 		led1 = &led1;
 		led2 = &led2;
 		sw0 = &button0;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -130,6 +132,10 @@
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &flash0 {

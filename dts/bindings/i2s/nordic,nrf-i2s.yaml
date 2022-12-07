@@ -16,10 +16,10 @@ properties:
 
     sck-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The SCK pin to use.
 
@@ -35,47 +35,46 @@ properties:
 
     lrck-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The LRCK pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     sdout-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The SDOUT pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     sdin-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The SDIN pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     mck-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The MCK pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     clock-source:
       type: string
-      required: false
       default: "PCLK32M_HFXO"
       description: |
         Clock source to be used by the I2S peripheral for the master clock

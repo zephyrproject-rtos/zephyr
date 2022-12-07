@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT zephyr_ieee802154_uart_pipe
+
 #define LOG_MODULE_NAME ieee802154_uart_pipe
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
@@ -21,7 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/random/rand32.h>
 
-#include <zephyr/drivers/console/uart_pipe.h>
+#include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/net/ieee802154_radio.h>
 
 #include "ieee802154_uart_pipe.h"
@@ -134,7 +136,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 			goto flush;
 		}
 
-		frag = net_pkt_get_frag(pkt, K_NO_WAIT);
+		frag = net_pkt_get_frag(pkt, upipe->rx_len, K_NO_WAIT);
 		if (!frag) {
 			LOG_DBG("No fragment available");
 			goto out;
@@ -391,9 +393,7 @@ static struct ieee802154_radio_api upipe_radio_api = {
 	.stop			= upipe_stop,
 };
 
-NET_DEVICE_INIT(upipe_15_4, CONFIG_IEEE802154_UPIPE_DRV_NAME,
-		upipe_init, NULL,
-		&upipe_context_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&upipe_radio_api, IEEE802154_L2,
-		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);
+NET_DEVICE_DT_INST_DEFINE(0, upipe_init, NULL, &upipe_context_data, NULL,
+			  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &upipe_radio_api,
+			  IEEE802154_L2, NET_L2_GET_CTX_TYPE(IEEE802154_L2),
+			  125);

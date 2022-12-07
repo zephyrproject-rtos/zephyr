@@ -143,10 +143,9 @@ static const struct bt_mesh_model_op gen_onoff_cli_op[] = {
 };
 
 struct onoff_state {
+	const struct gpio_dt_spec led_device;
 	uint8_t current;
 	uint8_t previous;
-	uint8_t led_gpio_pin;
-	const struct device *led_device;
 };
 
 /*
@@ -155,10 +154,10 @@ struct onoff_state {
  */
 
 static struct onoff_state onoff_state[] = {
-	{ .led_gpio_pin = DT_GPIO_PIN(DT_ALIAS(led0), gpios) },
-	{ .led_gpio_pin = DT_GPIO_PIN(DT_ALIAS(led1), gpios) },
-	{ .led_gpio_pin = DT_GPIO_PIN(DT_ALIAS(led2), gpios) },
-	{ .led_gpio_pin = DT_GPIO_PIN(DT_ALIAS(led3), gpios) },
+	{ .led_device = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios), },
+	{ .led_device = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios), },
+	{ .led_device = GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios), },
+	{ .led_device = GPIO_DT_SPEC_GET(DT_ALIAS(led3), gpios), },
 };
 
 /*
@@ -250,7 +249,12 @@ static const struct bt_mesh_comp comp = {
 	.elem_count = ARRAY_SIZE(elements),
 };
 
-const struct device *sw_device;
+static const struct gpio_dt_spec sw_device[4] = {
+	GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios),
+	GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios),
+	GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios),
+	GPIO_DT_SPEC_GET(DT_ALIAS(sw3), gpios),
+};
 
 struct sw {
 	uint8_t sw_num;
@@ -308,8 +312,7 @@ static int gen_onoff_set_unack(struct bt_mesh_model *model,
 	printk("addr 0x%02x state 0x%02x\n",
 	       bt_mesh_model_elem(model)->addr, onoff_state->current);
 
-	gpio_pin_set(onoff_state->led_device, onoff_state->led_gpio_pin,
-		     onoff_state->current);
+	gpio_pin_set_dt(&onoff_state->led_device, onoff_state->current);
 
 	/*
 	 * If a server has a publish address, it is required to
@@ -570,16 +573,9 @@ static void bt_ready(int err)
 	printk("Mesh initialized\n");
 }
 
-void init_led(uint8_t dev, const char *port, uint32_t pin_num, gpio_flags_t flags)
-{
-	onoff_state[dev].led_device = device_get_binding(port);
-	gpio_pin_configure(onoff_state[dev].led_device, pin_num,
-			   flags | GPIO_OUTPUT_INACTIVE);
-}
-
 void main(void)
 {
-	int err;
+	int err, i;
 
 	printk("Initializing...\n");
 
@@ -592,51 +588,29 @@ void main(void)
 	/* Initialize button count timer */
 	k_timer_init(&sw.button_timer, button_cnt_timer, NULL);
 
-	sw_device = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
-	gpio_pin_configure(sw_device, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
-			   GPIO_INPUT |
-			   DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios));
-	gpio_pin_configure(sw_device, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
-			   GPIO_INPUT |
-			   DT_GPIO_FLAGS(DT_ALIAS(sw1), gpios));
-	gpio_pin_configure(sw_device, DT_GPIO_PIN(DT_ALIAS(sw2), gpios),
-			   GPIO_INPUT |
-			   DT_GPIO_FLAGS(DT_ALIAS(sw2), gpios));
-	gpio_pin_configure(sw_device, DT_GPIO_PIN(DT_ALIAS(sw3), gpios),
-			   GPIO_INPUT |
-			   DT_GPIO_FLAGS(DT_ALIAS(sw3), gpios));
-	gpio_pin_interrupt_configure(sw_device,
-				     DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
-				     GPIO_INT_EDGE_TO_ACTIVE);
-	gpio_pin_interrupt_configure(sw_device,
-				     DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
-				     GPIO_INT_EDGE_TO_ACTIVE);
-	gpio_pin_interrupt_configure(sw_device,
-				     DT_GPIO_PIN(DT_ALIAS(sw2), gpios),
-				     GPIO_INT_EDGE_TO_ACTIVE);
-	gpio_pin_interrupt_configure(sw_device,
-				     DT_GPIO_PIN(DT_ALIAS(sw3), gpios),
-				     GPIO_INT_EDGE_TO_ACTIVE);
 	gpio_init_callback(&button_cb, button_pressed,
-			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)) |
-			   BIT(DT_GPIO_PIN(DT_ALIAS(sw1), gpios)) |
-			   BIT(DT_GPIO_PIN(DT_ALIAS(sw2), gpios)) |
-			   BIT(DT_GPIO_PIN(DT_ALIAS(sw3), gpios)));
-	gpio_add_callback(sw_device, &button_cb);
+			   BIT(sw_device[0].pin) | BIT(sw_device[1].pin) |
+			   BIT(sw_device[2].pin) | BIT(sw_device[3].pin));
+
+	for (i = 0; i < ARRAY_SIZE(sw_device); i++) {
+		if (!device_is_ready(sw_device[i].port)) {
+			printk("SW%d GPIO controller device is not ready\n", i);
+			return;
+		}
+		gpio_pin_configure_dt(&sw_device[i], GPIO_INPUT);
+		gpio_pin_interrupt_configure_dt(&sw_device[i], GPIO_INT_EDGE_TO_ACTIVE);
+		gpio_add_callback(sw_device[i].port, &button_cb);
+	}
+
 
 	/* Initialize LED's */
-	init_led(0, DT_GPIO_LABEL(DT_ALIAS(led0), gpios),
-		 DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-		 DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
-	init_led(1, DT_GPIO_LABEL(DT_ALIAS(led1), gpios),
-		 DT_GPIO_PIN(DT_ALIAS(led1), gpios),
-		 DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
-	init_led(2, DT_GPIO_LABEL(DT_ALIAS(led2), gpios),
-		 DT_GPIO_PIN(DT_ALIAS(led2), gpios),
-		 DT_GPIO_FLAGS(DT_ALIAS(led2), gpios));
-	init_led(3, DT_GPIO_LABEL(DT_ALIAS(led3), gpios),
-		 DT_GPIO_PIN(DT_ALIAS(led3), gpios),
-		 DT_GPIO_FLAGS(DT_ALIAS(led3), gpios));
+	for (i = 0; i < ARRAY_SIZE(onoff_state); i++) {
+		if (!device_is_ready(onoff_state[i].led_device.port)) {
+			printk("LED%d GPIO controller device is not ready\n", i);
+			return;
+		}
+		gpio_pin_configure_dt(&onoff_state[i].led_device, GPIO_OUTPUT_INACTIVE);
+	}
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);

@@ -1,7 +1,7 @@
 common:
   arch_exclude: nios2 posix
-  min_ram: 128
   tags: posix filesystem
+  min_ram: 128
   modules:
     - fatfs
 tests:
@@ -22,3 +22,13 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y
+  portability.posix.fs.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  portability.posix.fs.tls.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y

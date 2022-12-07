@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
@@ -117,6 +118,9 @@ static bool i2c_sam0_terminate_on_error(const struct device *dev)
 	wait_synchronization(i2c);
 
 	i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
+	if (i2c->INTFLAG.reg & (SERCOM_I2CM_INTFLAG_MB | SERCOM_I2CM_INTFLAG_SB)) {
+		i2c->CTRLB.bit.CMD = 3;
+	}
 	k_sem_give(&data->sem);
 	return true;
 }
@@ -151,6 +155,7 @@ static void i2c_sam0_isr(const struct device *dev)
 	if (status & SERCOM_I2CM_INTFLAG_MB) {
 		if (!data->msg.size) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
+			i2c->CTRLB.bit.CMD = 3;
 			k_sem_give(&data->sem);
 			return;
 		}
@@ -166,6 +171,7 @@ static void i2c_sam0_isr(const struct device *dev)
 			 * require write synchronization.
 			 */
 			i2c->CTRLB.bit.ACKACT = 1;
+			i2c->CTRLB.bit.CMD = 3;
 		}
 
 		*data->msg.buffer = i2c->DATA.reg;
@@ -202,7 +208,7 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (i2c_sam0_terminate_on_error(dev)) {
 		irq_unlock(key);
@@ -293,7 +299,7 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (i2c_sam0_terminate_on_error(dev)) {
 		irq_unlock(key);
@@ -389,10 +395,11 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (!num_msgs) {
 		return 0;
 	}
-	data->num_msgs = num_msgs;
-	data->msgs = msgs;
 
 	k_sem_take(&data->lock, K_FOREVER);
+
+	data->num_msgs = num_msgs;
+	data->msgs = msgs;
 
 	for (; data->num_msgs > 0;) {
 		if (!data->msgs->len) {
@@ -435,7 +442,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 #endif
 		}
 
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		/*
 		 * Writing the address starts the transaction, issuing
@@ -483,9 +490,6 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->msg.status) {
-			/* return the bus to idle */
-			i2c->CTRLB.bit.CMD = 3;
-
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					dev->name);
@@ -497,23 +501,6 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 				dev->name, data->msg.status);
 			ret = -EIO;
 			goto unlock;
-		}
-
-		/*
-		 * Only send a stop if after this message:
-		 *   - it is explicitly requested that we send a stop, or
-		 *   - we are not conducting a restart, with more messages to follow
-		 *
-		 * Note: nothing validates the flags, so default to a stop if a stop is
-		 * requested... do not let a restart request override it
-		 */
-		bool send_stop = (data->msgs->flags & I2C_MSG_STOP)
-			|| !((data->msgs->flags & I2C_MSG_RESTART) && (data->num_msgs > 1));
-
-		if (send_stop) {
-			while (!i2c->STATUS.bit.CLKHOLD) {
-			}
-			i2c->CTRLB.bit.CMD = 3;
 		}
 
 		data->num_msgs--;
@@ -668,7 +655,7 @@ static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
-	if (!(config & I2C_MODE_MASTER)) {
+	if (!(config & I2C_MODE_CONTROLLER)) {
 		return -EINVAL;
 	}
 
@@ -780,7 +767,7 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 			    i2c_sam0_isr,				\
 			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));		\
-	} while (0)
+	} while (false)
 
 #if DT_INST_IRQ_HAS_IDX(0, 3)
 #define I2C_SAM0_IRQ_HANDLER(n)						\

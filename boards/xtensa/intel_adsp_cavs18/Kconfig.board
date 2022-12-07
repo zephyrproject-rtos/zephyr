@@ -5,4 +5,4 @@
 
 config  BOARD_INTEL_ADSP_CAVS18
 	bool "Intel ADSP CAVS 1.8"
-	depends on SOC_SERIES_INTEL_CAVS_V18
+	depends on SOC_SERIES_INTEL_ADSP_CAVS

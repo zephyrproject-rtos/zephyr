@@ -21,8 +21,6 @@ but CS and SCK signals are not the standard Arduino SPI_CS and SPI_SCK signals.
 Please refer to "Hardware configuration" section.
 
 .. image:: img/x-nucleo-idb05a1.jpg
-     :width: 400px
-     :height: 350px
      :align: center
      :alt: X-NUCLEO-IDB05A1
 

@@ -13,13 +13,22 @@
 #include <fsl_clock.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
+#endif
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <fsl_iomuxc.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
-#include "usb_dc_mcux.h"
+#include "usb.h"
 #endif
+
+#define CCM_NODE	DT_INST(0, nxp_imx_ccm)
+
+#define BUILD_ASSERT_PODF_IN_RANGE(podf, a, b)				\
+	BUILD_ASSERT(DT_PROP(DT_CHILD(CCM_NODE, podf), clock_div) >= (a) && \
+		     DT_PROP(DT_CHILD(CCM_NODE, podf), clock_div) <= (b), \
+		     #podf " is out of supported range (" #a ", " #b ")")
 
 #ifdef CONFIG_INIT_ARM_PLL
 /* ARM PLL configuration for RUN mode */
@@ -103,8 +112,10 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Boot ROM did initialize the XTAL, here we only sets external XTAL
 	 * OSC freq
 	 */
-	CLOCK_SetXtalFreq(24000000U);
-	CLOCK_SetRtcXtalFreq(32768U);
+	CLOCK_SetXtalFreq(DT_PROP(DT_CLOCKS_CTLR_BY_NAME(CCM_NODE, xtal),
+				  clock_frequency));
+	CLOCK_SetRtcXtalFreq(DT_PROP(DT_CLOCKS_CTLR_BY_NAME(CCM_NODE, rtc_xtal),
+				     clock_frequency));
 
 	/* Set PERIPH_CLK2 MUX to OSC */
 	CLOCK_SetMux(kCLOCK_PeriphClk2Mux, 0x1);
@@ -131,11 +142,17 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_InitVideoPll(&videoPllConfig);
 #endif
 
-#ifdef CONFIG_HAS_ARM_DIV
-	CLOCK_SetDiv(kCLOCK_ArmDiv, CONFIG_ARM_DIV); /* Set ARM PODF */
+#if DT_NODE_EXISTS(DT_CHILD(CCM_NODE, arm_podf))
+	/* Set ARM PODF */
+	BUILD_ASSERT_PODF_IN_RANGE(arm_podf, 1, 8);
+	CLOCK_SetDiv(kCLOCK_ArmDiv, DT_PROP(DT_CHILD(CCM_NODE, arm_podf), clock_div) - 1);
 #endif
-	CLOCK_SetDiv(kCLOCK_AhbDiv, CONFIG_AHB_DIV); /* Set AHB PODF */
-	CLOCK_SetDiv(kCLOCK_IpgDiv, CONFIG_IPG_DIV); /* Set IPG PODF */
+	/* Set AHB PODF */
+	BUILD_ASSERT_PODF_IN_RANGE(ahb_podf, 1, 8);
+	CLOCK_SetDiv(kCLOCK_AhbDiv, DT_PROP(DT_CHILD(CCM_NODE, ahb_podf), clock_div) - 1);
+	/* Set IPG PODF */
+	BUILD_ASSERT_PODF_IN_RANGE(ipg_podf, 1, 4);
+	CLOCK_SetDiv(kCLOCK_IpgDiv, DT_PROP(DT_CHILD(CCM_NODE, ipg_podf), clock_div) - 1);
 
 	/* Set PRE_PERIPH_CLK to PLL1, 1200M */
 	CLOCK_SetMux(kCLOCK_PrePeriphMux, 0x3);
@@ -212,6 +229,15 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetMux(kCLOCK_CanMux, 2); /* Set Can clock source. */
 #endif
 
+#ifdef CONFIG_LOG_BACKEND_SWO
+	/* Enable ARM trace clock to enable SWO output */
+	CLOCK_EnableClock(kCLOCK_Trace);
+	/* Divide root clock output by 3 */
+	CLOCK_SetDiv(kCLOCK_TraceDiv, 3);
+	/* Source clock from 528MHz system PLL */
+	CLOCK_SetMux(kCLOCK_TraceMux, 0);
+#endif
+
 	/* Keep the system clock running so SYSTICK can wake up the system from
 	 * wfi.
 	 */
@@ -264,26 +290,6 @@ static int imxrt_init(const struct device *arg)
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
-	/* Watchdog disable */
-	if ((WDOG1->WCR & WDOG_WCR_WDE_MASK) != 0) {
-		WDOG1->WCR &= ~WDOG_WCR_WDE_MASK;
-	}
-
-	if ((WDOG2->WCR & WDOG_WCR_WDE_MASK) != 0) {
-		WDOG2->WCR &= ~WDOG_WCR_WDE_MASK;
-	}
-
-	RTWDOG->CNT = 0xD928C520U; /* 0xD928C520U is the update key */
-	RTWDOG->TOVAL = 0xFFFF;
-	RTWDOG->CS = (uint32_t) ((RTWDOG->CS) & ~RTWDOG_CS_EN_MASK)
-		| RTWDOG_CS_UPDATE_MASK;
-
-	/* Disable Systick which might be enabled by bootrom */
-	if ((SysTick->CTRL & SysTick_CTRL_ENABLE_Msk) != 0) {
-		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
-	}
-
-	SCB_EnableICache();
 	if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
 		SCB_EnableDCache();
 	}
@@ -313,6 +319,8 @@ void z_arm_platform_init(void)
 	/* Zero BSS region */
 	memset(&__ocram_bss_start, 0, (&__ocram_bss_end - &__ocram_bss_start));
 #endif
+	/* Call CMSIS SystemInit */
+	SystemInit();
 }
 #endif
 

@@ -43,6 +43,14 @@ config GIC_SINGLE_SECURITY_STATE
 	  Some ARM Cortex-family processors only supports single security
 	  state.
 
+config GIC_V3_RDIST_MATCHING_AFF0_ONLY
+	bool
+	depends on GIC_V3
+	default y if CPU_CORTEX_R52
+	help
+	  Some platforms only use aff0 to match mpdir and GICR.aff. With this
+	  enabled, we find the target redistributor by comparing the aff0 only.
+
 config GIC_V3_ITS
 	bool "GIC v3 Interrupt Translation Service"
 	depends on GIC_V3

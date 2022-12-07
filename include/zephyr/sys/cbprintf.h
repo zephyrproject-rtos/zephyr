@@ -30,6 +30,15 @@
 #endif
 #endif
 
+#ifdef __xtensa__
+#define Z_PKG_HDR_EXT_XTENSA_ALIGNMENT 8
+#ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+#define Z_PKG_DESC_XTENSA_PADDING 1
+#else
+#define Z_PKG_DESC_XTENSA_PADDING 0
+#endif
+#endif /* __xtensa__ */
+
 /**
  * @brief cbprintf package descriptor.
  */
@@ -50,6 +59,16 @@ struct cbprintf_package_desc {
 	/** Flags used to create the package */
 	uint32_t pkg_flags;
 #endif
+#ifdef __xtensa__
+	/*
+	 * On Xtensa, the first argument needs to be aligned to 8-byte.
+	 * With 32-bit pointers, we need another 4 bytes padding so
+	 * that whole struct cbprintf_package_hdr_ext is of multiple of
+	 * 8 bytes.
+	 */
+	uint32_t xtensa_padding[Z_PKG_DESC_XTENSA_PADDING];
+#endif
+
 } __packed;
 
 /** @brief cbprintf package header
@@ -65,7 +84,10 @@ union cbprintf_package_hdr {
 #if defined(CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS) && !defined(CONFIG_64BIT)
 	void *raw2[2];
 #endif
+
 } __packed;
+
+
 
 /** @brief cbprintf package header with format string pointer.
  *
@@ -75,18 +97,6 @@ struct cbprintf_package_hdr_ext {
 	/** Header of package */
 	union cbprintf_package_hdr hdr;
 
-#ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
-#ifdef __xtensa__
-	/*
-	 * On Xtensa, the first argument needs to be aligned to 8-byte.
-	 * With 32-bit pointers, we need another 4 bytes padding so
-	 * that whole struct cbprintf_package_hdr_ext is of multiple of
-	 * 8 bytes.
-	 */
-	uint32_t xtensa_padding;
-#endif
-#endif
-
 	/** Pointer to format string */
 	char *fmt;
 
@@ -95,6 +105,20 @@ struct cbprintf_package_hdr_ext {
 	 * to pointer size.
 	 */
 } __packed;
+
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * Assert that the package hdr does indeed align properly.
+ */
+#ifdef __xtensa__
+BUILD_ASSERT(sizeof(struct cbprintf_package_hdr_ext) % Z_PKG_HDR_EXT_XTENSA_ALIGNMENT == 0,
+	     "Package header size on Xtensa must be aligned");
+#endif
+/**
+ * @endcond
+ */
 
 /* Z_C_GENERIC is used there */
 #include <zephyr/sys/cbprintf_internal.h>
@@ -119,6 +143,7 @@ extern "C" {
 #endif
 
 BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
+
 
 /**@defgroup CBPRINTF_PACKAGE_FLAGS Package flags.
  * @{
@@ -177,7 +202,7 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
 
 /**@} */
 
-/**@defgroup CBPRINTF_PACKAGE_COPY_FLAGS Package flags.
+/**@defgroup CBPRINTF_PACKAGE_CONVERT_FLAGS Package flags.
  * @{
  */
 
@@ -189,7 +214,8 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
  * are copied into destination package. Address of strings indicated as read-write
  * are also checked and if determined to be read-only they are also copied.
  */
-#define CBPRINTF_PACKAGE_COPY_RO_STR BIT(0)
+#define CBPRINTF_PACKAGE_CONVERT_RO_STR BIT(0)
+#define CBPRINTF_PACKAGE_COPY_RO_STR CBPRINTF_PACKAGE_CONVERT_RO_STR __DEPRECATED_MACRO
 
 /** @brief Append read-write strings from source package to destination package.
  *
@@ -197,18 +223,39 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
  * arrays of indexes where string address can be found in the package. When flag
  * is set, list of read-write strings is examined and if they are not determined
  * to be read-only, they are copied into the destination package.
- * If @ref CBPRINTF_PACKAGE_COPY_RO_STR is not set, remaining string locations
+ * If @ref CBPRINTF_PACKAGE_CONVERT_RO_STR is not set, remaining string locations
  * are considered as pointing to read-only location and they are copy to the
- * package if @ref CBPRINTF_PACKAGE_COPY_KEEP_RO_STR is set.
+ * package if @ref CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR is set.
  */
-#define CBPRINTF_PACKAGE_COPY_RW_STR BIT(1)
+#define CBPRINTF_PACKAGE_CONVERT_RW_STR BIT(1)
+#define CBPRINTF_PACKAGE_COPY_RW_STR CBPRINTF_PACKAGE_CONVERT_RW_STR __DEPRECATED_MACRO
 
 /** @brief Keep read-only location indexes in the package.
  *
  * If it is set read-only string pointers are kept in the package after copy. If
  * not set they are discarded.
  */
-#define CBPRINTF_PACKAGE_COPY_KEEP_RO_STR BIT(2)
+#define CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR BIT(2)
+#define CBPRINTF_PACKAGE_COPY_KEEP_RO_STR CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR __DEPRECATED_MACRO
+
+/** @brief Check format string if %p argument was treated as %s in the package.
+ *
+ * Static packaging is done based only on types of arguments used for a format
+ * string. Without looking into format specifiers present in the string. Because
+ * of that if (unsigned) char pointer is used for %p it will be considered as
+ * a string location and during conversion an attempt to append a string to a
+ * package may be performed. This can lead to misbehavior, in the best case
+ * package will be bigger and in the worst case memory fault or security violation
+ * may occur.
+ *
+ * When this flag is set, format string will be checked to detect cases when
+ * string candidate is a pointer used for %p and string appending from unexpected
+ * location is avoided. Additionally, an log warning is generated to encourage
+ * user to cast such argument to void *. It is recommended because there are
+ * configurations where string is not accessible and inspection cannot be done.
+ * In those cases there are no means to detect such cases.
+ */
+#define CBPRINTF_PACKAGE_CONVERT_PTR_CHECK BIT(3)
 
 /**@} */
 
@@ -278,8 +325,8 @@ typedef int (*cbprintf_convert_cb)(const void *buf, size_t len, void *ctx);
  * @return vprintf like return values: the number of characters printed,
  * or a negative error value returned from external formatter.
  */
-typedef int (*cbvprintf_exteral_formatter_func)(cbprintf_cb out, void *ctx,
-						const char *fmt, va_list ap);
+typedef int (*cbvprintf_external_formatter_func)(cbprintf_cb out, void *ctx,
+						 const char *fmt, va_list ap);
 
 /** @brief Determine if string must be packaged in run time.
  *
@@ -443,7 +490,7 @@ int cbvprintf_package(void *packaged,
  *
  * @param ctx Context provided to the @p cb.
  *
- * @param flags Flags. See @ref CBPRINTF_PACKAGE_COPY_FLAGS.
+ * @param flags Flags. See @ref CBPRINTF_PACKAGE_CONVERT_FLAGS.
  *
  * @param[in, out] strl if @p packaged is null, it is a pointer to the array where
  * @p strl_len first string lengths will is stored. If @p packaged is not null,
@@ -481,7 +528,7 @@ static inline int z_cbprintf_cpy(const void *buf, size_t len, void *ctx)
 		return -ENOSPC;
 	}
 
-	memcpy(&((uint8_t *)desc->buf)[desc->off], (void *)buf, len);
+	memcpy(&((uint8_t *)desc->buf)[desc->off], buf, len);
 	desc->off += len;
 
 	return len;
@@ -503,7 +550,7 @@ static inline int z_cbprintf_cpy(const void *buf, size_t len, void *ctx)
  * @param len Available space in the location pointed by @p packaged. Not used when
  * @p packaged is null.
  *
- * @param flags Flags. See @ref CBPRINTF_PACKAGE_COPY_FLAGS.
+ * @param flags Flags. See @ref CBPRINTF_PACKAGE_CONVERT_FLAGS.
  *
  * @param[in, out] strl if @p packaged is null, it is a pointer to the array where
  * @p strl_len first string lengths will is stored. If @p packaged is not null,
@@ -527,7 +574,8 @@ static inline int cbprintf_package_copy(void *in_packaged,
 {
 	struct z_cbprintf_buf_desc buf_desc = {
 		.buf = packaged,
-		.size = len
+		.size = len,
+		.off = 0,
 	};
 
 	return cbprintf_package_convert(in_packaged, in_len,
@@ -570,8 +618,8 @@ static inline int cbprintf_fsc_package(void *in_packaged,
 				       size_t len)
 {
 	return cbprintf_package_copy(in_packaged, in_len, packaged, len,
-				     CBPRINTF_PACKAGE_COPY_RO_STR |
-				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR |
+				     CBPRINTF_PACKAGE_CONVERT_RW_STR, NULL, 0);
 }
 
 /** @brief Generate the output for a previously captured format
@@ -595,7 +643,7 @@ static inline int cbprintf_fsc_package(void *in_packaged,
  * or a negative error value returned from external formatter.
  */
 int cbpprintf_external(cbprintf_cb out,
-		       cbvprintf_exteral_formatter_func formatter,
+		       cbvprintf_external_formatter_func formatter,
 		       void *ctx,
 		       void *packaged);
 
@@ -684,11 +732,15 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *format,
  * @return the number of characters generated, or a negative error value
  * returned from invoking @p out.
  */
+#ifdef CONFIG_PICOLIBC
+int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
+#else
 static inline
 int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 {
 	return z_cbvprintf_impl(out, ctx, format, ap, 0);
 }
+#endif
 
 /** @brief varargs-aware *printf-like output through a callback with tagged arguments.
  *
@@ -760,6 +812,17 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 }
 
 #ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
+
+#ifdef CONFIG_PICOLIBC
+
+#define fprintfcb(stream, ...) fprintf(stream, __VA_ARGS__)
+#define vfprintfcb(stream, format, ap) vfprintf(stream, format, ap)
+#define printfcb(format, ...) printf(format, __VA_ARGS__)
+#define vprintfcb(format, ap) vprintf(format, ap)
+#define snprintfcb(str, size, ...) snprintf(str, size, __VA_ARGS__)
+#define vsnprintfcb(str, size, format, ap) vsnprintf(str, size, format, ap)
+
+#else
 
 /** @brief fprintf using Zephyrs cbprintf infrastructure.
  *
@@ -887,6 +950,7 @@ int snprintfcb(char *str, size_t size, const char *format, ...);
  */
 int vsnprintfcb(char *str, size_t size, const char *format, va_list ap);
 
+#endif /* CONFIG_PICOLIBC */
 #endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
 
 /**

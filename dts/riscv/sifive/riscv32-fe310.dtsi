@@ -33,8 +33,9 @@
 			riscv,isa = "rv32imac";
 			status = "okay";
 			hlic: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -51,7 +52,6 @@
 			interrupts = <1 1>;
 			reg = <0x10000000 0x40>;
 			reg-names = "control";
-			label = "WDOG0";
 		};
 		aon: aon@10000040 {
 			compatible = "sifive,aon0";
@@ -61,12 +61,9 @@
 			reg-names = "control";
 		};
 		clint: clint@2000000 {
-			#interrupt-cells = <1>;
-			compatible = "riscv,clint0";
-			interrupt-controller;
+			compatible = "sifive,clint0";
 			interrupts-extended = <&hlic 3 &hlic 7>;
 			reg = <0x2000000 0x10000>;
-			reg-names = "control";
 		};
 		debug: debug-controller@0 {
 			compatible = "sifive,debug-013", "riscv,debug-013";
@@ -98,7 +95,6 @@
 				<36 1>, <37 1>, <38 1>, <39 1>;
 			reg = <0x10012000 0x1000>;
 			reg-names = "control";
-			label = "gpio_0";
 			status = "disabled";
 			#gpio-cells = <2>;
 
@@ -117,14 +113,14 @@
 			interrupts = <52 1>;
 			reg = <0x10016000 0x1000>;
 			reg-names = "control";
-			label = "i2c_0";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 		plic: interrupt-controller@c000000 {
-			#interrupt-cells = <2>;
 			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
 			reg = <0x0c000000 0x00002000
@@ -155,7 +151,6 @@
 			interrupts = <40 1>, <41 1>, <42 1>, <43 1>;
 			reg = <0x10015000 0x1000>;
 			reg-names = "control";
-			label = "pwm_0";
 			status = "disabled";
 			sifive,compare-width = <8>;
 			#pwm-cells = <2>;
@@ -166,7 +161,6 @@
 			interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
 			reg = <0x10025000 0x1000>;
 			reg-names = "control";
-			label = "pwm_1";
 			status = "disabled";
 			sifive,compare-width = <16>;
 			#pwm-cells = <2>;
@@ -177,7 +171,6 @@
 			interrupts = <48 1>, <49 1>, <50 1>, <51 1>;
 			reg = <0x10035000 0x1000>;
 			reg-names = "control";
-			label = "pwm_2";
 			status = "disabled";
 			sifive,compare-width = <16>;
 			#pwm-cells = <2>;
@@ -198,7 +191,6 @@
 			interrupts = <3 1>;
 			reg = <0x10013000 0x1000>;
 			reg-names = "control";
-			label = "uart_0";
 			status = "disabled";
 		};
 		uart1: serial@10023000 {
@@ -207,7 +199,6 @@
 			interrupts = <4 1>;
 			reg = <0x10023000 0x1000>;
 			reg-names = "control";
-			label = "uart_1";
 			status = "disabled";
 		};
 		spi0: spi@10014000 {
@@ -216,7 +207,6 @@
 			interrupts = <5 1>;
 			reg = <0x10014000 0x1000 0x20000000 0x20000000>;
 			reg-names = "control", "mem";
-			label = "spi_0";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -227,7 +217,6 @@
 			interrupts = <6 1>;
 			reg = <0x10024000 0x1000>;
 			reg-names = "control";
-			label = "spi_1";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -238,7 +227,6 @@
 			interrupts = <7 1>;
 			reg = <0x10034000 0x1000>;
 			reg-names = "control";
-			label = "spi_2";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

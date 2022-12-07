@@ -7,4 +7,4 @@ compatible: "ti,tmp116"
 
 bus: tmp116
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

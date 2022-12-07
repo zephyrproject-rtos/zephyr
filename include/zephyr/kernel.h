@@ -20,10 +20,19 @@
 #include <stdbool.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/tracing/tracing_macros.h>
+#include <zephyr/sys/mem_stats.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * Zephyr currently assumes the size of a couple standard types to simplify
+ * print string formats. Let's make sure this doesn't change without notice.
+ */
+BUILD_ASSERT(sizeof(int32_t) == sizeof(int));
+BUILD_ASSERT(sizeof(int64_t) == sizeof(long long));
+BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
 
 /**
  * @brief Kernel APIs
@@ -68,7 +77,6 @@ struct k_fifo;
 struct k_lifo;
 struct k_stack;
 struct k_mem_slab;
-struct k_mem_pool;
 struct k_timer;
 struct k_poll_event;
 struct k_poll_signal;
@@ -626,7 +634,7 @@ struct _static_thread_data {
 
 #define Z_THREAD_INITIALIZER(thread, stack, stack_size,           \
 			    entry, p1, p2, p3,                   \
-			    prio, options, delay, abort, tname)  \
+			    prio, options, delay, tname)         \
 	{                                                        \
 	.init_thread = (thread),				 \
 	.init_stack = (stack),					 \
@@ -638,7 +646,6 @@ struct _static_thread_data {
 	.init_prio = (prio),                                     \
 	.init_options = (options),                               \
 	.init_delay = (delay),                                   \
-	.init_abort = (abort),                                   \
 	.init_name = STRINGIFY(tname),                           \
 	}
 
@@ -684,7 +691,7 @@ struct _static_thread_data {
 		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
 				    _k_thread_stack_##name, stack_size,  \
 				entry, p1, p2, p3, prio, options, delay, \
-				NULL, name);				 	 \
+				name);					 \
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
@@ -2116,9 +2123,34 @@ __syscall void k_event_post(struct k_event *event, uint32_t events);
  * events tracked by the event object.
  *
  * @param event Address of the event object
- * @param events Set of events to post to @a event
+ * @param events Set of events to set in @a event
  */
 __syscall void k_event_set(struct k_event *event, uint32_t events);
+
+/**
+ * @brief Set or clear the events in an event object
+ *
+ * This routine sets the events stored in event object to the specified value.
+ * All tasks waiting on the event object @a event whose waiting conditions
+ * become met by this immediately unpend. Unlike @ref k_event_set, this routine
+ * allows specific event bits to be set and cleared as determined by the mask.
+ *
+ * @param event Address of the event object
+ * @param events Set of events to set/clear in @a event
+ * @param events_mask Mask to be applied to @a events
+ */
+__syscall void k_event_set_masked(struct k_event *event, uint32_t events,
+				  uint32_t events_mask);
+
+/**
+ * @brief Clear the events in an event object
+ *
+ * This routine clears (resets) the specified events stored in an event object.
+ *
+ * @param event Address of the event object
+ * @param events Set of events to clear in @a event
+ */
+__syscall void k_event_clear(struct k_event *event, uint32_t events);
 
 /**
  * @brief Wait for any of the specified events
@@ -2145,7 +2177,7 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
 				bool reset, k_timeout_t timeout);
 
 /**
- * @brief Wait for any of the specified events
+ * @brief Wait for all of the specified events
  *
  * This routine waits on event object @a event until all of the specified
  * events have been delivered to the event object, or the maximum wait time
@@ -2679,7 +2711,6 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 struct k_work;
 struct k_work_q;
 struct k_work_queue_config;
-struct k_delayed_work;
 extern struct k_work_q k_sys_work_q;
 
 /**
@@ -3843,129 +3874,6 @@ static inline k_tid_t k_work_queue_thread_get(struct k_work_q *queue)
 	return &queue->thread;
 }
 
-/* Legacy wrappers */
-
-__deprecated
-static inline bool k_work_pending(const struct k_work *work)
-{
-	return k_work_is_pending(work);
-}
-
-__deprecated
-static inline void k_work_q_start(struct k_work_q *work_q,
-				  k_thread_stack_t *stack,
-				  size_t stack_size, int prio)
-{
-	k_work_queue_start(work_q, stack, stack_size, prio, NULL);
-}
-
-/* deprecated, remove when corresponding deprecated API is removed. */
-struct k_delayed_work {
-	struct k_work_delayable work;
-};
-
-#define Z_DELAYED_WORK_INITIALIZER(work_handler) __DEPRECATED_MACRO { \
-	.work = Z_WORK_DELAYABLE_INITIALIZER(work_handler), \
-}
-
-__deprecated
-static inline void k_delayed_work_init(struct k_delayed_work *work,
-				       k_work_handler_t handler)
-{
-	k_work_init_delayable(&work->work, handler);
-}
-
-__deprecated
-static inline int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
-						 struct k_delayed_work *work,
-						 k_timeout_t delay)
-{
-	int rc = k_work_reschedule_for_queue(work_q, &work->work, delay);
-
-	/* Legacy API doesn't distinguish success cases. */
-	return (rc >= 0) ? 0 : rc;
-}
-
-__deprecated
-static inline int k_delayed_work_submit(struct k_delayed_work *work,
-					k_timeout_t delay)
-{
-	int rc = k_work_reschedule(&work->work, delay);
-
-	/* Legacy API doesn't distinguish success cases. */
-	return (rc >= 0) ? 0 : rc;
-}
-
-__deprecated
-static inline int k_delayed_work_cancel(struct k_delayed_work *work)
-{
-	bool pending = k_work_delayable_is_pending(&work->work);
-	int rc = k_work_cancel_delayable(&work->work);
-
-	/* Old return value rules:
-	 *
-	 * 0 if:
-	 * * Work item countdown cancelled before the item was submitted to
-	 *   its queue; or
-	 * * Work item was removed from its queue before it was processed.
-	 *
-	 * -EINVAL if:
-	 * * Work item has never been submitted; or
-	 * * Work item has been successfully cancelled; or
-	 * * Timeout handler is in the process of submitting the work item to
-	 *   its queue; or
-	 * * Work queue thread has removed the work item from the queue but
-	 *   has not called its handler.
-	 *
-	 * -EALREADY if:
-	 * * Work queue thread has removed the work item from the queue and
-	 *   cleared its pending flag; or
-	 * * Work queue thread is invoking the item handler; or
-	 * * Work item handler has completed.
-	 *
-
-	 * We can't reconstruct those states, so call it successful only when
-	 * a pending item is no longer pending, -EINVAL if it was pending and
-	 * still is, and cancel, and -EALREADY if it wasn't pending (so
-	 * presumably cancellation should have had no effect, assuming we
-	 * didn't hit a race condition).
-	 */
-	if (pending) {
-		return (rc == 0) ? 0 : -EINVAL;
-	}
-
-	return -EALREADY;
-}
-
-__deprecated
-static inline bool k_delayed_work_pending(struct k_delayed_work *work)
-{
-	return k_work_delayable_is_pending(&work->work);
-}
-
-__deprecated
-static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
-{
-	k_ticks_t rem = k_work_delayable_remaining_get(&work->work);
-
-	/* Probably should be ceil32, but was floor32 */
-	return k_ticks_to_ms_floor32(rem);
-}
-
-__deprecated
-static inline k_ticks_t k_delayed_work_expires_ticks(
-	struct k_delayed_work *work)
-{
-	return k_work_delayable_expires_get(&work->work);
-}
-
-__deprecated
-static inline k_ticks_t k_delayed_work_remaining_ticks(
-	struct k_delayed_work *work)
-{
-	return k_work_delayable_remaining_get(&work->work);
-}
-
 /** @} */
 
 struct k_work_user;
@@ -4187,20 +4095,6 @@ struct k_work_poll {
  */
 #define K_WORK_DEFINE(work, work_handler) \
 	struct k_work work = Z_WORK_INITIALIZER(work_handler)
-
-/**
- * @brief Initialize a statically-defined delayed work item.
- *
- * This macro can be used to initialize a statically-defined workqueue
- * delayed work item, prior to its first use. For example,
- *
- * @code static K_DELAYED_WORK_DEFINE(<work>, <work_handler>); @endcode
- *
- * @param work Symbol name for delayed work item object
- * @param work_handler Function to invoke each time work item is processed.
- */
-#define K_DELAYED_WORK_DEFINE(work, work_handler) __DEPRECATED_MACRO \
-	struct k_delayed_work work = Z_DELAYED_WORK_INITIALIZER(work_handler)
 
 /**
  * @brief Initialize a triggered work item.
@@ -4759,6 +4653,8 @@ struct k_pipe {
 		_wait_q_t      writers; /**< Writer wait queue */
 	} wait_q;			/** Wait queue */
 
+	_POLL_EVENT;
+
 	uint8_t	       flags;		/**< Flags */
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
@@ -4781,7 +4677,8 @@ struct k_pipe {
 		.readers = Z_WAIT_Q_INIT(&obj.wait_q.readers),       \
 		.writers = Z_WAIT_Q_INIT(&obj.wait_q.writers)        \
 	},                                                          \
-	.flags = 0                                                  \
+	_POLL_EVENT_OBJ_INIT(obj)                                   \
+	.flags = 0,                                                 \
 	}
 
 /**
@@ -5147,6 +5044,33 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 	return slab->num_blocks - slab->num_used;
 }
 
+/**
+ * @brief Get the memory stats for a memory slab
+ *
+ * This routine gets the runtime memory usage stats for the slab @a slab.
+ *
+ * @param slab Address of the memory slab
+ * @param stats Pointer to memory into which to copy memory usage statistics
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Any parameter points to NULL
+ */
+
+int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stats *stats);
+
+/**
+ * @brief Reset the maximum memory usage for a slab
+ *
+ * This routine resets the maximum memory usage for the slab @a slab to its
+ * current usage.
+ *
+ * @param slab Address of the memory slab
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Memory slab is NULL
+ */
+int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab);
+
 /** @} */
 
 /**
@@ -5208,6 +5132,7 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  * timeout API, or K_NO_WAIT or K_FOREVER) waiting for memory to be
  * freed.  If the allocation cannot be performed by the expiration of
  * the timeout, NULL will be returned.
+ * Allocated memory is aligned on a multiple of pointer sizes.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
@@ -5336,6 +5261,7 @@ extern void *k_aligned_alloc(size_t align, size_t size);
  *
  * This routine provides traditional malloc() semantics. Memory is
  * allocated from the heap memory pool.
+ * Allocated memory is aligned on a multiple of pointer sizes.
  *
  * @param size Amount of memory requested (in bytes).
  *
@@ -5347,8 +5273,7 @@ extern void *k_malloc(size_t size);
  * @brief Free memory allocated from heap.
  *
  * This routine provides traditional free() semantics. The memory being
- * returned must have been allocated from the heap memory pool or
- * k_mem_pool_malloc().
+ * returned must have been allocated from the heap memory pool.
  *
  * If @a ptr is NULL, no operation is performed.
  *
@@ -5396,6 +5321,9 @@ enum _poll_types_bits {
 	/* msgq data availability */
 	_POLL_TYPE_MSGQ_DATA_AVAILABLE,
 
+	/* pipe data availability */
+	_POLL_TYPE_PIPE_DATA_AVAILABLE,
+
 	_POLL_NUM_TYPES
 };
 
@@ -5420,6 +5348,9 @@ enum _poll_states_bits {
 
 	/* data is available to read on a message queue */
 	_POLL_STATE_MSGQ_DATA_AVAILABLE,
+
+	/* data is available to read from a pipe */
+	_POLL_STATE_PIPE_DATA_AVAILABLE,
 
 	_POLL_NUM_STATES
 };
@@ -5452,6 +5383,7 @@ enum _poll_states_bits {
 #define K_POLL_TYPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
 #define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
 #define K_POLL_TYPE_MSGQ_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_MSGQ_DATA_AVAILABLE)
+#define K_POLL_TYPE_PIPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_PIPE_DATA_AVAILABLE)
 
 /* public - polling modes */
 enum k_poll_modes {
@@ -5468,6 +5400,7 @@ enum k_poll_modes {
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
 #define K_POLL_STATE_MSGQ_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_MSGQ_DATA_AVAILABLE)
+#define K_POLL_STATE_PIPE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_PIPE_DATA_AVAILABLE)
 #define K_POLL_STATE_CANCELLED Z_POLL_STATE_BIT(_POLL_STATE_CANCELLED)
 
 /* public - poll signal object */
@@ -5525,6 +5458,9 @@ struct k_poll_event {
 		struct k_fifo *fifo;
 		struct k_queue *queue;
 		struct k_msgq *msgq;
+#ifdef CONFIG_PIPES
+		struct k_pipe *pipe;
+#endif
 	};
 };
 

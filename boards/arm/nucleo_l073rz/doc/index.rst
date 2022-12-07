@@ -21,8 +21,6 @@ The STM32 Nucleo board comes with the STM32 comprehensive software HAL library t
 with various packaged software examples.
 
 .. image:: img/nucleo_l073rz.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo L073RZ
 
@@ -102,6 +100,10 @@ The Zephyr nucleo_l073rz board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | Random Number Generator             |
 +-----------+------------+-------------------------------------+
+| EEPROM    | on-chip    | eeprom                              |
++-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -118,10 +120,8 @@ capable except for analog inputs.
 
 Board connectors:
 -----------------
-.. image:: img/nucleo_l073rz_connectors.png
-   :width: 800px
+.. image:: img/nucleo_l073rz_connectors.jpg
    :align: center
-   :height: 619px
    :alt: Nucleo L073RZ connectors
 
 Default Zephyr Peripheral Mapping:

@@ -7,9 +7,9 @@
 #ifndef __TEST_PWM_LOOPBACK_H__
 #define __TEST_PWM_LOOPBACK_H__
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/pwm.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define PWM_LOOPBACK_OUT_IDX 0
 #define PWM_LOOPBACK_IN_IDX  1
@@ -46,21 +46,5 @@ struct test_pwm_callback_data {
 };
 
 void get_test_pwms(struct test_pwm *out, struct test_pwm *in);
-
-void test_pulse_capture(void);
-
-void test_pulse_capture_inverted(void);
-
-void test_period_capture(void);
-
-void test_period_capture_inverted(void);
-
-void test_pulse_and_period_capture(void);
-
-void test_capture_timeout(void);
-
-void test_continuous_capture(void);
-
-void test_capture_busy(void);
 
 #endif /* __TEST_PWM_LOOPBACK_H__ */

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
@@ -35,7 +35,7 @@ void thread_sema(void const *arg)
 	 * and release it.
 	 */
 	tokens_available = osSemaphoreWait((osSemaphoreId)arg, 0);
-	zassert_true(tokens_available > 0, NULL);
+	zassert_true(tokens_available > 0);
 
 	zassert_true(osSemaphoreRelease((osSemaphoreId)arg) == osOK,
 			"Semaphore release failure");
@@ -47,7 +47,7 @@ void thread_sema(void const *arg)
 
 osThreadDef(thread_sema, osPriorityNormal, 1, 0);
 
-void test_semaphore(void)
+ZTEST(cmsis_semaphore, test_semaphore)
 {
 	osThreadId id;
 	osStatus status;
@@ -74,3 +74,4 @@ void test_semaphore(void)
 	status = osSemaphoreDelete(semaphore_id);
 	zassert_true(status == osOK, "semaphore delete failure");
 }
+ZTEST_SUITE(cmsis_semaphore, NULL, NULL, NULL, NULL, NULL);

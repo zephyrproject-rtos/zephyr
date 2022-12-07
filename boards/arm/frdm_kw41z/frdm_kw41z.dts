@@ -21,6 +21,8 @@
 		blue-pwm-led = &blue_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 
 	chosen {
@@ -28,6 +30,8 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -119,10 +123,9 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 
-	fxos8700@1f {
+	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
 		reg = <0x1f>;
-		label = "FXOS8700";
 		int1-gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -162,4 +165,24 @@
 	status = "okay";
 	pinctrl-0 = <&tmp2_default>;
 	pinctrl-names = "default";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 0x00070000>;
+		};
+		storage_partition: partition@700000 {
+			label = "storage";
+			reg = <0x00070000 0x00010000>;
+		};
+	};
 };

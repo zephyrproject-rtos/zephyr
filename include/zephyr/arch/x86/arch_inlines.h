@@ -26,7 +26,21 @@ static inline struct _cpu *arch_curr_cpu(void)
 	return cpu;
 }
 
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+	/*
+	 * Placeholder implementation to be replaced with an architecture
+	 * specific call to get processor ID
+	 */
+	return arch_curr_cpu()->id;
+}
+
 #endif /* CONFIG_X86_64 */
+
+static ALWAYS_INLINE unsigned int arch_num_cpus(void)
+{
+	return CONFIG_MP_MAX_NUM_CPUS;
+}
 
 #endif /* !_ASMLANGUAGE */
 

@@ -20,3 +20,5 @@ supported:
   - pwm
   - dma
   - watchdog
+  - nvs
+  - lora

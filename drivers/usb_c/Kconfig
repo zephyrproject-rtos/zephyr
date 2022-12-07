@@ -1,0 +1,7 @@
+# USB-C configuration options
+
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+source "drivers/usb_c/tcpc/Kconfig"
+source "drivers/usb_c/vbus/Kconfig"

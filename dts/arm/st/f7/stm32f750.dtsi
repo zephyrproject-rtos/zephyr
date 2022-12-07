@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2022, Rtone.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f7/stm32f746.dtsi>

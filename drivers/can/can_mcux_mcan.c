@@ -7,7 +7,11 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/clock_control.h>
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #include "can_mcan.h"
 
@@ -19,6 +23,9 @@ struct mcux_mcan_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 struct mcux_mcan_data {
@@ -40,6 +47,18 @@ static int mcux_mcan_init(const struct device *dev)
 	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
 	int err;
 
+	if (!device_is_ready(mcux_config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(mcux_config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
+
 	err = clock_control_on(mcux_config->clock_dev, mcux_config->clock_subsys);
 	if (err) {
 		LOG_ERR("failed to enable clock (err %d)", err);
@@ -58,6 +77,9 @@ static int mcux_mcan_init(const struct device *dev)
 }
 
 static const struct can_driver_api mcux_mcan_driver_api = {
+	.get_capabilities = can_mcan_get_capabilities,
+	.start = can_mcan_start,
+	.stop = can_mcan_stop,
 	.set_mode = can_mcan_set_mode,
 	.set_timing = can_mcan_set_timing,
 	.send = can_mcan_send,
@@ -120,7 +142,17 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
+#ifdef CONFIG_PINCTRL
+#define MCUX_MCAN_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n)
+#define MCUX_MCAN_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define MCUX_MCAN_PINCTRL_DEFINE(n)
+#define MCUX_MCAN_PINCTRL_INIT(n)
+#endif
+
 #define MCUX_MCAN_INIT(n)						\
+	MCUX_MCAN_PINCTRL_DEFINE(n);					\
+									\
 	static void mcux_mcan_irq_config_##n(const struct device *dev); \
 									\
 	static const struct mcux_mcan_config mcux_mcan_config_##n = {	\
@@ -128,6 +160,7 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 		.clock_subsys = (clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL(n, name),			\
 		.irq_config_func = mcux_mcan_irq_config_##n,		\
+		MCUX_MCAN_PINCTRL_INIT(n)				\
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_config_##n =	\

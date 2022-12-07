@@ -369,28 +369,6 @@ steps:
             $ git tag -s -m "Zephyr 1.11.0-rc1" v1.11.0-rc1
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0-rc1
 
-        #. Once the tag is pushed, a github action will create a draft release
-           in Github with a shortlog since the last tag. The action will also
-           create a SPDX manifest of the Zephyr tree and will add the file as an
-           asset in the release.
-
-           Go to the draft release that was created and edit as needed. If this
-           step fails for a reason, it can be done manually following the steps
-           below:
-
-                #. Create a shortlog of changes between the previous release (use
-                   rc1..rc2 between release candidates)::
-
-                    $ git shortlog v1.10.0..v1.11.0-rc1
-
-                #. Find the new tag at the top of the releases page and edit the release
-                   with the ``Edit tag`` button with the following:
-
-                    * Name it ``Zephyr 1.11.0-rc1``
-                    * Copy the shortlog into the release notes textbox (*don't forget
-                      to quote it properly so it shows as unformatted text in Markdown*)
-                    * Check the "This is a pre-release" checkbox
-
         #. Send an email to the mailing lists (``announce`` and ``devel``)
            with a link to the release
 
@@ -420,18 +398,12 @@ steps:
             $ git tag -s -m "Zephyr 1.11.0" v1.11.0
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0
 
-            # This is the tag that will represent the release on GitHub, so that
-            # the file you can download is named ``zephyr-v1.11.0.zip`` and not
-            # just ``v1.11.0.zip``
-            $ git tag -s -m "Zephyr 1.11.0" zephyr-v1.11.0
-            $ git push git@github.com:zephyrproject-rtos/zephyr.git zephyr-v1.11.0
+        #. Find the new ``v1.11.0`` tag at the top of the releases page and
+           edit the release with the ``Edit tag`` button with the following:
 
-        #. Find the new ``zephyr-v1.11.0`` tag at the top of the releases page
-           and edit the release with the ``Edit tag`` button with the following:
-
-            * Name it ``Zephyr 1.11.0``
-            * Copy the full content of ``docs/releases/release-notes-1.11.rst``
-              into the release notes textbox
+            * Copy the overview of ``docs/releases/release-notes-1.11.rst``
+              into the release notes textbox and link to the full release notes
+              file on docs.zephyrproject.org.
 
         #. Send an email to the mailing lists (``announce`` and ``devel``) with a link
            to the release
@@ -448,8 +420,8 @@ cycle you can do the following:
 #. Look for the last release before the current one and find the day it was
    tagged::
 
-    $ git show -s --format=%ci zephyr-v1.10.0
-    tag zephyr-v1.10.0
+    $ git show -s --format=%ci v1.10.0
+    tag v1.10.0
     Tagger: Kumar Gala <kumar.gala@linaro.org>
 
     Zephyr 1.10.0

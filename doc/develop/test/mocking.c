@@ -1,4 +1,4 @@
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static void expect_two_parameters(int a, int b)
 {

@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_PRIV_H_
 #define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_PRIV_H_
 
+#include <errno.h>
 #include <zephyr/types.h>
 #include <soc.h>
 

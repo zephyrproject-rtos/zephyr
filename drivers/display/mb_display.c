@@ -10,7 +10,7 @@
  * a suitable LED matrix controller driver.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <string.h>
 #include <zephyr/sys/printk.h>

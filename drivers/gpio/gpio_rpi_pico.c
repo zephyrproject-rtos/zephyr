@@ -6,13 +6,14 @@
 
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 
 /* pico-sdk includes */
 #include <hardware/gpio.h>
 #include <hardware/regs/intctrl.h>
 #include <hardware/structs/iobank0.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #define DT_DRV_COMPAT raspberrypi_pico_gpio
 

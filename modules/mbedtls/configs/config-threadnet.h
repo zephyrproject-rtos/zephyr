@@ -95,7 +95,6 @@
 #define MBEDTLS_AES_ROM_TABLES
 
 /* Save RAM by adjusting to our exact needs */
-#define MBEDTLS_ECP_MAX_BITS             256
 #define MBEDTLS_MPI_MAX_SIZE              32 // 256 bits is 32 bytes
 
 #define MBEDTLS_SSL_MAX_CONTENT_LEN 1024

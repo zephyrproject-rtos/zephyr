@@ -26,6 +26,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/irq.h>
 #include "stm32_hsem.h"
 
 #define IRQN		DT_INST_IRQN(0)
@@ -103,16 +104,49 @@ static void configure_rng(void)
 {
 	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
 
+#ifdef STM32_CONDRST_SUPPORT
+	uint32_t desired_nist_cfg = DT_INST_PROP_OR(0, nist_config, 0U);
+	uint32_t desired_htcr = DT_INST_PROP_OR(0, health_test_config, 0U);
+	uint32_t cur_nist_cfg = 0U;
+	uint32_t cur_htcr = 0U;
+
+#if DT_INST_NODE_HAS_PROP(0, nist_config)
+	/*
+	 * Configure the RNG_CR in compliance with the NIST SP800.
+	 * The nist-config is direclty copied from the DTS.
+	 * The RNG clock must be 48MHz else the clock DIV is not adpated.
+	 * The RNG_CR_CONDRST is set to 1 at the same time the RNG_CR is written
+	 */
+	cur_nist_cfg = READ_BIT(rng->CR,
+				(RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
+				RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
+#if defined(RNG_CR_ARDIS)
+				| RNG_CR_ARDIS
+	/* For STM32U5 series, the ARDIS bit7 is considered in the nist-config */
+#endif /* RNG_CR_ARDIS */
+			));
+#endif /* nist_config */
+
+#if DT_INST_NODE_HAS_PROP(0, health_test_config)
+	cur_htcr = LL_RNG_GetHealthConfig(rng);
+#endif /* health_test_config */
+
+	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr) {
+		MODIFY_REG(rng->CR, cur_nist_cfg, (desired_nist_cfg | RNG_CR_CONDRST));
+
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)
-	/* Write Magic number before writing configuration
-	 * Not all stm32 series have a Magic number
-	 */
-	LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
-#endif
-	/* Write RNG HTCR configuration */
-	LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_config));
-#endif
+		LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
+#endif /* health_test_magic */
+		LL_RNG_SetHealthConfig(rng, desired_htcr);
+#endif /* health_test_config */
+
+		LL_RNG_DisableCondReset(rng);
+		/* Wait for conditioning reset process to be completed */
+		while (LL_RNG_IsEnabledCondReset(rng) == 1) {
+		}
+	}
+#endif /* STM32_CONDRST_SUPPORT */
 
 	LL_RNG_Enable(rng);
 	LL_RNG_EnableIT(rng);
@@ -569,7 +603,11 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLL);
 #elif defined(RCC_CR2_HSI48ON) || defined(RCC_CR_HSI48ON) \
 	|| defined(RCC_CRRCR_HSI48ON)
+#if !STM32_HSI48_ENABLED
+	/* Deprecated: enable HSI48 using device tree */
+#warning RNG requires HSI48 clock to be enabled using device tree
 
+	/* Keeping this sequence for legacy: */
 #if CONFIG_SOC_SERIES_STM32L0X
 	/* We need SYSCFG to control VREFINT, so make sure it is clocked */
 	if (!LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
@@ -585,7 +623,12 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	while (!LL_RCC_HSI48_IsReady()) {
 		/* Wait for HSI48 to become ready */
 	}
+#else /* !STM32_HSI48_ENABLED */
+	/* HSI48 is enabled by the DTS : lock the HSI48 clock for RNG use */
+	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+#endif /* !STM32_HSI48_ENABLED */
 
+	/* HSI48 Clock is enabled through the DTS: set as RNG clock source */
 #if defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_CLK48);
 	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
@@ -603,6 +646,10 @@ static int entropy_stm32_rng_init(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32L4X */
 
 	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	if (!device_is_ready(dev_data->clock)) {
+		return -ENODEV;
+	}
 
 	res = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&dev_cfg->pclken);

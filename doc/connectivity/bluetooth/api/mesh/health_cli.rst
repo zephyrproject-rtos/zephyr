@@ -6,9 +6,11 @@ Health Client
 The Health Client model interacts with a Health Server model to read out
 diagnostics and control the node's attention state.
 
-All message passing functions in the Health Client API have ``net_idx`` and
-``addr`` as their first parameters. These should be set to the network index
-and primary unicast address that the target node was provisioned with.
+All message passing functions in the Health Client API have ``cli`` as
+their first parameter. This is a pointer to the client model instance to be
+used in this function call. The second parameter is the ``ctx`` or message
+context. Message context contains netkey index, appkey index and unicast
+address that the target node uses.
 
 The Health Client model is optional, and may be instantiated in any element.
 However, if a Health Client model is instantiated in an element other than the

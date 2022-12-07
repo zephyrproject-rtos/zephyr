@@ -11,4 +11,3 @@ supported:
   - i2c
   - usb_device
   - ble
-  - ieee802154

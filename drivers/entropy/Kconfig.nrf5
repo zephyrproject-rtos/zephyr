@@ -13,10 +13,10 @@ config ENTROPY_NRF_FORCE_ALT
 
 menuconfig ENTROPY_NRF5_RNG
 	bool "nRF5 RNG driver"
-	depends on !ENTROPY_NRF_FORCE_ALT
-	depends on HAS_HW_NRF_RNG
-	select ENTROPY_HAS_DRIVER
 	default y
+	depends on !ENTROPY_NRF_FORCE_ALT
+	depends on DT_HAS_NORDIC_NRF_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the RNG peripheral, which is a random number
 	  generator, based on internal thermal noise, that provides a

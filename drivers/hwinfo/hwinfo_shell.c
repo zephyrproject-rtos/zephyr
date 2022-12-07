@@ -77,6 +77,15 @@ static inline const char *cause_to_string(uint32_t cause)
 	case RESET_CLOCK:
 		return "clock";
 
+	case RESET_HARDWARE:
+		return "hardware";
+
+	case RESET_USER:
+		return "user";
+
+	case RESET_TEMPERATURE:
+		return "temperature";
+
 	default:
 		return "unknown";
 	}

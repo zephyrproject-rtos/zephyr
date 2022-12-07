@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(usb_dc_sam_usbc, CONFIG_USB_DRIVER_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
 
 #define EP_UDINT_MASK           0x000FF000
 

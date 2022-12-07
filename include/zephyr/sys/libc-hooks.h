@@ -17,7 +17,7 @@
  * that need to call into the kernel as system calls
  */
 
-#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC) || defined(CONFIG_PICOLIBC)
 
 /* syscall generation ignores preprocessor, ensure this is defined to ensure
  * we don't have compile errors
@@ -57,7 +57,18 @@ extern struct k_mem_partition z_malloc_partition;
  */
 #define Z_MALLOC_PARTITION_EXISTS 1
 #endif /* CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0 */
-#endif /* CONFIG_MINIMAL_LIBC */
+
+#elif defined(CONFIG_PICOLIBC)
+/*
+ * When using picolibc, we need z_malloc_partition whenever
+ * the heap size is not zero and there is an mpu or an mmu
+ */
+#if CONFIG_PICOLIBC_HEAP_SIZE != 0 && \
+(defined(CONFIG_MPU) || defined(CONFIG_MMU))
+#define Z_MALLOC_PARTITION_EXISTS 1
+#endif
+
+#endif /* CONFIG_PICOLIBC */
 
 #ifdef Z_MALLOC_PARTITION_EXISTS
 /* Memory partition containing the libc malloc arena. Configuration controls
@@ -67,7 +78,7 @@ extern struct k_mem_partition z_malloc_partition;
 #endif
 
 #if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_STACK_CANARIES) || \
-    defined(CONFIG_NEED_LIBC_MEM_PARTITION)
+defined(CONFIG_PICOLIBC) || defined(CONFIG_NEED_LIBC_MEM_PARTITION)
 /* - All newlib globals will be placed into z_libc_partition.
  * - Minimal C library globals, if any, will be placed into
  *   z_libc_partition.

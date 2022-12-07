@@ -8,7 +8,7 @@
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(net_dumb_http_srv_mt_sample);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
@@ -205,7 +205,6 @@ static void client_conn_handler(void *ptr1, void *ptr2, void *ptr3)
 		if (received == 0) {
 			/* Connection closed */
 			LOG_DBG("[%d] Connection closed by peer", client);
-			ret = 0;
 			break;
 		} else if (received < 0) {
 			/* Socket error */
@@ -321,7 +320,7 @@ static int process_tcp(int *sock, int *accepted)
 
 		LOG_DBG("[%d] Connection #%d from %s",
 			client, ++counter,
-			log_strdup(addr_str));
+			addr_str);
 	}
 
 	return 0;

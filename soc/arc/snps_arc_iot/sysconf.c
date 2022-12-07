@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc.h"
+#include <zephyr/devicetree.h>
 #include "sysconf.h"
 
+/* default system clock */
+#define SYSCLK_DEFAULT_IOSC_HZ			MHZ(16)
 
 #define PLL_CLK_IN	(SYSCLK_DEFAULT_IOSC_HZ / 1000000)  /* PLL clock in */
 
 
-#define sysconf_reg_ptr ((sysconf_reg_t *)(BASE_ADDR_SYSCONFIG))
+#define sysconf_reg_ptr ((sysconf_reg_t *)(DT_REG_ADDR(DT_NODELABEL(sysconf))))
 
 
 typedef struct pll_conf {
@@ -60,8 +62,9 @@ void arc_iot_pll_conf_reg(uint32_t val)
 	sysconf_reg_ptr->PLLCON = val | (1 << PLLCON_BIT_OFFSET_PLLRST);
 	sysconf_reg_ptr->PLLCON = val & (~(1 << PLLCON_BIT_OFFSET_PLLRST));
 
-	while (!(sysconf_reg_ptr->PLLSTAT & (1 << PLLSTAT_BIT_OFFSET_PLLSTB)))
+	while (!(sysconf_reg_ptr->PLLSTAT & (1 << PLLSTAT_BIT_OFFSET_PLLSTB))) {
 		;
+	}
 
 	sysconf_reg_ptr->CLKSEL = CLKSEL_PLL;
 	/* from AHB_CLK_DIVIDER, not from DVFSS&PMC */

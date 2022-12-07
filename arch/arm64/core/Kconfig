@@ -9,6 +9,9 @@ config CPU_CORTEX_A
 	select HAS_FLASH_LOAD_OFFSET
 	select SCHED_IPI_SUPPORTED if SMP
 	select CPU_HAS_FPU
+	select ARCH_HAS_SINGLE_THREAD_SUPPORT
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	imply FPU
 	imply FPU_SHARING
 	help
@@ -18,6 +21,8 @@ config CPU_AARCH64_CORTEX_R
 	bool
 	select CPU_CORTEX
 	select HAS_FLASH_LOAD_OFFSET
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	help
 	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
 
@@ -27,6 +32,13 @@ config CPU_CORTEX_A53
 	select ARMV8_A
 	help
 	  This option signifies the use of a Cortex-A53 CPU
+
+config CPU_CORTEX_A55
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A55 CPU
 
 config CPU_CORTEX_A72
 	bool
@@ -90,6 +102,13 @@ config PRIVILEGED_STACK_SIZE
 
 config KOBJECT_TEXT_AREA
 	default 512 if TEST
+
+config WAIT_AT_RESET_VECTOR
+	bool "Wait at reset vector"
+	default n
+	help
+	  Spin at reset vector waiting for debugger to attach and resume
+	  execution
 
 if CPU_CORTEX_A
 
@@ -173,6 +192,14 @@ config EXCEPTION_DEBUG
 
 config XIP
 	select AARCH64_IMAGE_HEADER
+
+config ARM64_SET_VMPIDR_EL2
+	bool "Set VMPIDR_EL2 at EL2 stage"
+	help
+	  VMPIDR_EL2 holds the value of the Virtualization Multiprocessor ID.
+	  This is the value returned by EL1 reads of MPIDR_EL1.
+	  This register may already be set by bootloader at the EL2 stage, if
+	  not, Zephyr should set it.
 
 if ARM_MMU
 

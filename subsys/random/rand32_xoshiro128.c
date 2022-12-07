@@ -32,7 +32,8 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 
-static const struct device *entropy_driver;
+static const struct device *const entropy_driver =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 static uint32_t state[4];
 static bool initialized;
 
@@ -43,7 +44,6 @@ static inline uint32_t rotl(const uint32_t x, int k)
 
 static int xoshiro128_initialize(const struct device *dev)
 {
-	entropy_driver = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 	if (!device_is_ready(entropy_driver)) {
 		return -ENODEV;
 	}

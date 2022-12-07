@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/pwm.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include "test_pwm_loopback.h"
 
@@ -35,7 +35,7 @@ void get_test_pwms(struct test_pwm *out, struct test_pwm *in)
 	zassert_true(device_is_ready(in->dev), "pwm loopback input device is not ready");
 }
 
-void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
+static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
 		  pwm_flags_t flags)
 {
 	struct test_pwm in;
@@ -103,7 +103,7 @@ void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
 	}
 }
 
-void test_pulse_capture(void)
+ZTEST_USER(pwm_loopback, test_pulse_capture)
 {
 	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
@@ -113,7 +113,7 @@ void test_pulse_capture(void)
 		     PWM_CAPTURE_TYPE_PULSE | PWM_POLARITY_NORMAL);
 }
 
-void test_pulse_capture_inverted(void)
+ZTEST_USER(pwm_loopback, test_pulse_capture_inverted)
 {
 	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
@@ -123,7 +123,7 @@ void test_pulse_capture_inverted(void)
 		     PWM_CAPTURE_TYPE_PULSE | PWM_POLARITY_INVERTED);
 }
 
-void test_period_capture(void)
+ZTEST_USER(pwm_loopback, test_period_capture)
 {
 	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
@@ -133,7 +133,7 @@ void test_period_capture(void)
 		     PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_NORMAL);
 }
 
-void test_period_capture_inverted(void)
+ZTEST_USER(pwm_loopback, test_period_capture_inverted)
 {
 	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
@@ -143,7 +143,7 @@ void test_period_capture_inverted(void)
 		     PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_INVERTED);
 }
 
-void test_pulse_and_period_capture(void)
+ZTEST_USER(pwm_loopback, test_pulse_and_period_capture)
 {
 	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
@@ -153,7 +153,7 @@ void test_pulse_and_period_capture(void)
 		     PWM_CAPTURE_TYPE_BOTH | PWM_POLARITY_NORMAL);
 }
 
-void test_capture_timeout(void)
+ZTEST_USER(pwm_loopback, test_capture_timeout)
 {
 	struct test_pwm in;
 	struct test_pwm out;
@@ -212,10 +212,8 @@ static void continuous_capture_callback(const struct device *dev,
 	}
 }
 
-void test_continuous_capture(void)
+ZTEST(pwm_loopback, test_continuous_capture)
 {
-	static const uint32_t period_usec = 10000;
-	static const uint32_t pulse_usec = 7500;
 	struct test_pwm in;
 	struct test_pwm out;
 	uint32_t buffer[10];
@@ -234,8 +232,8 @@ void test_continuous_capture(void)
 	memset(buffer, 0, sizeof(buffer));
 	k_sem_init(&data.sem, 0, 1);
 
-	err = pwm_set(out.dev, out.pwm, PWM_USEC(period_usec),
-		      PWM_USEC(pulse_usec), out.flags);
+	err = pwm_set(out.dev, out.pwm, PWM_USEC(TEST_PWM_PERIOD_USEC),
+		      PWM_USEC(TEST_PWM_PULSE_USEC), out.flags);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
 	err = pwm_configure_capture(in.dev, in.pwm,
@@ -259,7 +257,7 @@ void test_continuous_capture(void)
 	err = pwm_enable_capture(in.dev, in.pwm);
 	zassert_equal(err, 0, "failed to enable pwm capture (err %d)", err);
 
-	err = k_sem_take(&data.sem, K_USEC(period_usec * data.buffer_len * 10));
+	err = k_sem_take(&data.sem, K_USEC(TEST_PWM_PERIOD_USEC * data.buffer_len * 10));
 	zassert_equal(err, 0, "pwm capture timed out (err %d)", err);
 	zassert_equal(data.status, 0, "pwm capture failed (err %d)", err);
 
@@ -271,16 +269,16 @@ void test_continuous_capture(void)
 		zassert_equal(err, 0, "failed to calculate usec (err %d)", err);
 
 		if (data.pulse_capture) {
-			zassert_within(usec, pulse_usec, pulse_usec / 100,
+			zassert_within(usec, TEST_PWM_PULSE_USEC, TEST_PWM_PULSE_USEC / 100,
 				       "pulse capture off by more than 1%");
 		} else {
-			zassert_within(usec, period_usec, period_usec / 100,
+			zassert_within(usec, TEST_PWM_PERIOD_USEC, TEST_PWM_PERIOD_USEC / 100,
 				       "period capture off by more than 1%");
 		}
 	}
 }
 
-void test_capture_busy(void)
+ZTEST(pwm_loopback, test_capture_busy)
 {
 	struct test_pwm in;
 	struct test_pwm out;

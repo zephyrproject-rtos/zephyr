@@ -19,7 +19,8 @@
 #define HELP_INIT "call \"cfb init\" first"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
 
-static const struct device *dev;
+static const struct device *const dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 static const char * const param_name[] = {
 	"height", "width", "ppt", "rows", "cols"};
 
@@ -410,7 +411,6 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(dev)) {
 		shell_error(shell, "Display device not ready");
 		return -ENODEV;

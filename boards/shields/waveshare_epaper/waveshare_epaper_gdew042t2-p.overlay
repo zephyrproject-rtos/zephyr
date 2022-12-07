@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2022 Andreas Sandberg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "waveshare_epaper_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,display = &uc8176_waveshare_epaper_gdew042t2-p;
+	};
+};
+
+&arduino_spi {
+	/*
+	 * GoodDisplay GDEW042T2 with fast partial refresh. Based on
+	 * configuration from GoodDisplay's Arduino example.
+	 */
+	uc8176_waveshare_epaper_gdew042t2-p: uc8176@0 {
+		compatible = "gooddisplay,gdew042t2", "ultrachip,uc8176";
+		spi-max-frequency = <4000000>;
+		reg = <0>;
+		width = <400>;
+		height = <300>;
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;	/* D7 */
+
+		softstart = [ 17 17 17 ];
+
+		full {
+			cdi = <0x07>;
+		};
+
+		partial {
+			pwr = [ 03 02 2b 2b ];
+			cdi = <0x07>;
+			pll = <0x3c>;
+			vdcs = <0x08>;
+
+			lutc = [
+				00 01 0E 00 00 01
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00
+			];
+
+			lutww = [
+				00 01 0E 00 00 01
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+			];
+
+			lutkw = [
+				20 01 0E 00 00 01
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+			];
+
+			lutwk = [
+				10 01 0E 00 00 01
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+			];
+
+			lutkk = [
+				00 01 0E 00 00 01
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+				00 00 00 00 00 00
+			];
+		};
+	};
+};

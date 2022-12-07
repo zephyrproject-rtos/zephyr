@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/eeprom.h>
 #include <soc.h>
+#include <zephyr/kernel.h>
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
 #include <zephyr/logging/log.h>

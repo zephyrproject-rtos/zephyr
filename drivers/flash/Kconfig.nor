@@ -3,6 +3,8 @@
 
 menuconfig SPI_NOR
 	bool "SPI NOR Flash"
+	default y
+	depends on DT_HAS_JEDEC_SPI_NOR_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_JESD216

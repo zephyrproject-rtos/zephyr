@@ -3,13 +3,10 @@
 # Copyright (c) 2020 Markus Fuchs <markus.fuchs@de.sauter-bc.com>
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_AES := st,stm32-aes
-DT_COMPAT_ST_STM32_CRYP := st,stm32-cryp
-
 menuconfig CRYPTO_STM32
 	bool "STM32 Cryptographic Accelerator driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_AES)) || $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_CRYP))
-	depends on SOC_FAMILY_STM32
+	default y
+	depends on DT_HAS_ST_STM32_AES_ENABLED || DT_HAS_ST_STM32_CRYP_ENABLED
 	select USE_STM32_HAL_CRYP
 	select USE_STM32_HAL_CRYP_EX
 	help

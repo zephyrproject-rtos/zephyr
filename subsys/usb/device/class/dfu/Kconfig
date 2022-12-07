@@ -18,13 +18,23 @@ config USB_DEVICE_DFU_PID
 	help
 	  USB device product ID in DFU mode. MUST be configured by vendor.
 
+config USB_DFU_WILL_DETACH
+	bool "Generate detach-attach sequence on DFU detach"
+	default y
+	help
+	  Enabling this option makes the device responsible for detaching
+	  itself from the bus after the DFU_DETACH request. Select this
+	  for compatibility with host drivers that cannot issue USB reset.
+	  DFU fails on Windows with WinUSB driver if this is not enabled.
+
 config USB_DFU_DETACH_TIMEOUT
 	int
+	default 100 if USB_DFU_WILL_DETACH
 	default 1000
 
 config USB_DFU_DEFAULT_POLLTIMEOUT
 	int "Default value for bwPollTimeout"
-	default 256
+	default 8
 	range 0 1000
 	help
 	  Default value for bwPollTimeout (in ms)

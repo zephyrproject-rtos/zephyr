@@ -5,7 +5,8 @@
 
 config UART_MIV
 	bool "Mi-V serial driver"
-	depends on SOC_RISCV32_MIV
+	default y
+	depends on DT_HAS_MICROSEMI_COREUART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

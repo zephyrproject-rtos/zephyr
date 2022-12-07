@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <errno.h>
 #include <zephyr/lorawan/lorawan.h>
@@ -14,29 +15,26 @@
 #include <Region.h>
 #include "nvm/lorawan_nvm.h"
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_LORAMAC_REGION_UNKNOWN),
-	     "Unknown region specified for LoRaWAN in Kconfig");
-
 #ifdef CONFIG_LORAMAC_REGION_AS923
-#define LORAWAN_REGION LORAMAC_REGION_AS923
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_AS923
 #elif CONFIG_LORAMAC_REGION_AU915
-#define LORAWAN_REGION LORAMAC_REGION_AU915
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_AU915
 #elif CONFIG_LORAMAC_REGION_CN470
-#define LORAWAN_REGION LORAMAC_REGION_CN470
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_CN470
 #elif CONFIG_LORAMAC_REGION_CN779
-#define LORAWAN_REGION LORAMAC_REGION_CN779
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_CN779
 #elif CONFIG_LORAMAC_REGION_EU433
-#define LORAWAN_REGION LORAMAC_REGION_EU433
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_EU433
 #elif CONFIG_LORAMAC_REGION_EU868
-#define LORAWAN_REGION LORAMAC_REGION_EU868
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_EU868
 #elif CONFIG_LORAMAC_REGION_KR920
-#define LORAWAN_REGION LORAMAC_REGION_KR920
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_KR920
 #elif CONFIG_LORAMAC_REGION_IN865
-#define LORAWAN_REGION LORAMAC_REGION_IN865
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_IN865
 #elif CONFIG_LORAMAC_REGION_US915
-#define LORAWAN_REGION LORAMAC_REGION_US915
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_US915
 #elif CONFIG_LORAMAC_REGION_RU864
-#define LORAWAN_REGION LORAMAC_REGION_RU864
+#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_RU864
 #else
 #error "At least one LoRaWAN region should be selected"
 #endif
@@ -71,6 +69,8 @@ static LoRaMacEventInfoStatus_t last_mcps_confirm_status;
 static LoRaMacEventInfoStatus_t last_mlme_confirm_status;
 static LoRaMacEventInfoStatus_t last_mcps_indication_status;
 static LoRaMacEventInfoStatus_t last_mlme_indication_status;
+
+static LoRaMacRegion_t selected_region = DEFAULT_LORAWAN_REGION;
 
 static uint8_t (*get_battery_level_user)(void);
 static void (*dr_change_cb)(enum lorawan_datarate dr);
@@ -155,7 +155,8 @@ static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 		if ((cb->port == LW_RECV_PORT_ANY) ||
 		    (cb->port == mcps_indication->Port)) {
 			cb->cb(mcps_indication->Port,
-			       !!mcps_indication->FramePending,
+			       /* IsUplinkTxPending also indicates pending downlinks */
+			       mcps_indication->IsUplinkTxPending == 1,
 			       mcps_indication->Rssi, mcps_indication->Snr,
 			       mcps_indication->BufferSize,
 			       mcps_indication->Buffer);
@@ -284,6 +285,80 @@ static LoRaMacStatus_t lorawan_join_abp(
 	return LORAMAC_STATUS_OK;
 }
 
+int lorawan_set_region(enum lorawan_region region)
+{
+	switch (region) {
+
+#if defined(CONFIG_LORAMAC_REGION_AS923)
+	case LORAWAN_REGION_AS923:
+		selected_region = LORAMAC_REGION_AS923;
+		break;
+#endif
+
+#if defined(CONFIG_LORAMAC_REGION_AU915)
+	case LORAWAN_REGION_AU915:
+		selected_region = LORAMAC_REGION_AU915;
+		break;
+#endif
+
+#if defined(CONFIG_LORAMAC_REGION_CN470)
+	case LORAWAN_REGION_CN470:
+		selected_region = LORAMAC_REGION_CN470;
+		break;
+#endif
+
+#if defined(CONFIG_LORAMAC_REGION_CN779)
+	case LORAWAN_REGION_CN779:
+		selected_region = LORAMAC_REGION_CN779;
+		break;
+#endif
+
+#if defined(CONFIG_LORAMAC_REGION_EU433)
+	case LORAWAN_REGION_EU433:
+		selected_region = LORAMAC_REGION_EU433;
+		break;
+#endif
+
+#if defined(CONFIG_LORAMAC_REGION_EU868)
+	case LORAWAN_REGION_EU868:
+		selected_region = LORAMAC_REGION_EU868;
+		break;
+#endif
+
+#if defined(CONFIG_LORAMAC_REGION_KR920)
+	case LORAWAN_REGION_KR920:
+		selected_region = LORAMAC_REGION_KR920;
+		break;
+#endif
+
+#if defined(CONFIG_LORAMAC_REGION_IN865)
+	case LORAWAN_REGION_IN865:
+		selected_region = LORAMAC_REGION_IN865;
+		break;
+#endif
+
+#if defined(CONFIG_LORAMAC_REGION_US915)
+	case LORAWAN_REGION_US915:
+		selected_region = LORAMAC_REGION_US915;
+		break;
+#endif
+
+#if defined(CONFIG_LORAMAC_REGION_RU864)
+	case LORAWAN_REGION_RU864:
+		selected_region = LORAMAC_REGION_RU864;
+		break;
+#endif
+
+	default:
+		LOG_ERR("No support for region %d!", region);
+		return -ENOTSUP;
+	}
+
+	LOG_DBG("Selected region %d", region);
+
+	return 0;
+}
+
 int lorawan_join(const struct lorawan_join_config *join_cfg)
 {
 	MibRequestConfirm_t mib_req;
@@ -363,28 +438,35 @@ out:
 
 int lorawan_set_class(enum lorawan_class dev_class)
 {
-	LoRaMacStatus_t status;
 	MibRequestConfirm_t mib_req;
+	DeviceClass_t current_class;
+	LoRaMacStatus_t status;
 
 	mib_req.Type = MIB_DEVICE_CLASS;
+	LoRaMacMibGetRequestConfirm(&mib_req);
+	current_class = mib_req.Param.Class;
 
 	switch (dev_class) {
 	case LORAWAN_CLASS_A:
 		mib_req.Param.Class = CLASS_A;
 		break;
 	case LORAWAN_CLASS_B:
-	case LORAWAN_CLASS_C:
-		LOG_ERR("Device class not supported yet!");
+		LOG_ERR("Class B not supported yet!");
 		return -ENOTSUP;
+	case LORAWAN_CLASS_C:
+		mib_req.Param.Class = CLASS_C;
+		break;
 	default:
 		return -EINVAL;
 	}
 
-	status = LoRaMacMibSetRequestConfirm(&mib_req);
-	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("Failed to set device class: %s",
-			lorawan_status2str(status));
-		return lorawan_status2errno(status);
+	if (mib_req.Param.Class != current_class) {
+		status = LoRaMacMibSetRequestConfirm(&mib_req);
+		if (status != LORAMAC_STATUS_OK) {
+			LOG_ERR("Failed to set device class: %s",
+				lorawan_status2str(status));
+			return lorawan_status2errno(status);
+		}
 	}
 
 	return 0;
@@ -567,6 +649,21 @@ int lorawan_start(void)
 	GetPhyParams_t phy_params;
 	PhyParam_t phy_param;
 
+	status = LoRaMacInitialization(&mac_primitives, &mac_callbacks,
+				       selected_region);
+	if (status != LORAMAC_STATUS_OK) {
+		LOG_ERR("LoRaMacInitialization failed: %s",
+			lorawan_status2str(status));
+		return -EINVAL;
+	}
+
+	LOG_DBG("LoRaMAC Initialized");
+
+	if (!IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)) {
+		lorawan_nvm_init();
+		lorawan_nvm_data_restore();
+	}
+
 	status = LoRaMacStart();
 	if (status != LORAMAC_STATUS_OK) {
 		LOG_ERR("Failed to start the LoRaMAC stack: %s",
@@ -576,7 +673,7 @@ int lorawan_start(void)
 
 	/* Retrieve the default TX datarate for selected region */
 	phy_params.Attribute = PHY_DEF_TX_DR;
-	phy_param = RegionGetPhyParam(LORAWAN_REGION, &phy_params);
+	phy_param = RegionGetPhyParam(selected_region, &phy_params);
 	default_datarate = phy_param.Value;
 	current_datarate = default_datarate;
 
@@ -591,8 +688,6 @@ int lorawan_start(void)
 static int lorawan_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-
-	LoRaMacStatus_t status;
 
 	sys_slist_init(&dl_callbacks);
 
@@ -611,21 +706,7 @@ static int lorawan_init(const struct device *dev)
 
 	mac_callbacks.MacProcessNotify = mac_process_notify;
 
-	status = LoRaMacInitialization(&mac_primitives, &mac_callbacks,
-				       LORAWAN_REGION);
-	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("LoRaMacInitialization failed: %s",
-			lorawan_status2str(status));
-		return -EINVAL;
-	}
-
-	if (!IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)) {
-		lorawan_nvm_init();
-		lorawan_nvm_data_restore();
-	}
-
-	LOG_DBG("LoRaMAC Initialized");
-
 	return 0;
 }
+
 SYS_INIT(lorawan_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

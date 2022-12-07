@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "emsk.dtsi"
+
+/ {
+	sectimer0: sectimer0 {
+		compatible = "snps,arc-timer";
+		interrupts = <20 1>;
+		interrupt-parent = <&intc>;
+	};
+};

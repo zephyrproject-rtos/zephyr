@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/dac.h>
 #include <zephyr/logging/log.h>
@@ -385,7 +385,7 @@ static const struct dac_driver_api dacx0508_driver_api = {
 			    &dacx0508_init, NULL, \
 			    &dac##t##_data_##n, \
 			    &dac##t##_config_##n, POST_KERNEL, \
-			    CONFIG_DAC_INIT_PRIORITY, \
+			    CONFIG_DAC_DACX0508_INIT_PRIORITY, \
 			    &dacx0508_driver_api)
 
 /*

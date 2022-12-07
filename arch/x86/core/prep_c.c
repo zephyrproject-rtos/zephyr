@@ -40,15 +40,15 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 	x86_64_irq_init();
 #endif
 
-if (IS_ENABLED(CONFIG_MULTIBOOT_INFO) &&
-    cpu_arg->boot_type == MULTIBOOT_BOOT_TYPE) {
-	z_multiboot_init((struct multiboot_info *)cpu_arg->arg);
-} else if (IS_ENABLED(CONFIG_X86_EFI) &&
-	   cpu_arg->boot_type == EFI_BOOT_TYPE) {
+	if (IS_ENABLED(CONFIG_MULTIBOOT_INFO) &&
+		cpu_arg->boot_type == MULTIBOOT_BOOT_TYPE) {
+		z_multiboot_init((struct multiboot_info *)cpu_arg->arg);
+	} else if (IS_ENABLED(CONFIG_X86_EFI) &&
+		cpu_arg->boot_type == EFI_BOOT_TYPE) {
 		efi_init((struct efi_boot_arg *)cpu_arg->arg);
-} else {
-	ARG_UNUSED(cpu_arg);
-}
+	} else {
+		ARG_UNUSED(cpu_arg);
+	}
 
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 	z_x86_early_serial_init();
@@ -67,7 +67,9 @@ if (IS_ENABLED(CONFIG_MULTIBOOT_INFO) &&
 #endif
 
 #if CONFIG_X86_STACK_PROTECTION
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		z_x86_set_stack_guard(z_interrupt_stacks[i]);
 	}
 #endif

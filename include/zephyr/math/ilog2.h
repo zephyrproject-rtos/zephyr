@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_MATH_ILOG2_H_
+#define ZEPHYR_INCLUDE_MATH_ILOG2_H_
+
 #include <stdint.h>
 
 #include <zephyr/toolchain.h>
@@ -16,7 +19,7 @@
  */
 
 /**
- * @def ilog2_compile_time_const_u32(n)
+ *
  * @brief Calculate the floor of log2 for compile time constant
  *
  * This calculates the floor of log2 (integer log2) for 32-bit
@@ -70,7 +73,7 @@
 	)
 
 /**
- * @def ilog2(n)
+ *
  * @brief Calculate integer log2
  *
  * This calculates the floor of log2 (integer of log2).
@@ -93,3 +96,5 @@
 		ilog2_compile_time_const_u32(n) :	\
 		find_msb_set(n) - 1			\
 	)
+
+#endif /* ZEPHYR_INCLUDE_MATH_ILOG2_H_ */

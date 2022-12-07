@@ -32,7 +32,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <36 5>;
 			status = "disabled";
-			label = "SPI_2";
 		};
 
 		usb: usb@40005c00 {
@@ -45,7 +44,6 @@
 			status = "disabled";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
 			phys = <&usb_fs_phy>;
-			label= "USB";
 		};
 
 		can1: can@40006400 {
@@ -55,7 +53,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			label = "CAN_1";
 			sjw = <1>;
 			sample-point = <875>;
 		};
@@ -64,6 +61,5 @@
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
-		label = "USB_FS_PHY";
 	};
 };

@@ -42,8 +42,9 @@ int pm_cpu_off(void)
 {
 	int ret;
 
-	if (psci_data.conduit == SMCCC_CONDUIT_NONE)
+	if (psci_data.conduit == SMCCC_CONDUIT_NONE) {
 		return -EINVAL;
+	}
 
 	ret = psci_data.invoke_psci_fn(PSCI_0_2_FN_CPU_OFF, 0, 0, 0);
 
@@ -55,11 +56,26 @@ int pm_cpu_on(unsigned long cpuid,
 {
 	int ret;
 
-	if (psci_data.conduit == SMCCC_CONDUIT_NONE)
+	if (psci_data.conduit == SMCCC_CONDUIT_NONE) {
 		return -EINVAL;
+	}
 
 	ret = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(0_2, CPU_ON), cpuid,
 				       (unsigned long) entry_point, 0);
+
+	return psci_to_dev_err(ret);
+}
+
+int pm_system_off(void)
+{
+	int ret;
+
+	if (psci_data.conduit == SMCCC_CONDUIT_NONE) {
+		return -EINVAL;
+	}
+
+	/* A compliant PSCI implementation will never return from this call */
+	ret = psci_data.invoke_psci_fn(PSCI_0_2_FN_SYSTEM_OFF, 0, 0, 0);
 
 	return psci_to_dev_err(ret);
 }

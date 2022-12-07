@@ -10,8 +10,8 @@
  * Tests the fs_open flags
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 #include <string.h>
 

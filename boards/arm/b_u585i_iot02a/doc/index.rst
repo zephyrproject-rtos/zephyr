@@ -36,9 +36,7 @@ some highlights of the B_U585I_IOT02A Discovery kit:
 
 
 .. image:: img/b-u585i-iot02a.jpg
-     :width: 426px
      :align: center
-     :height: 33px
      :alt: B_U585I_IOT02A Discovery kit
 
 More information about the board can be found at the `B U585I IOT02A Discovery kit website`_.
@@ -177,7 +175,7 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
-+-------------+------------+-----------------------------------+
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
@@ -189,6 +187,9 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | usb_device                          |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
+| die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -255,6 +256,8 @@ Default Zephyr Peripheral Mapping:
 - DAC1 CH1 : PA4 (STMOD+1)
 - ADC1_IN15 : PB0
 - USB OTG : PA11/PA12
+- PWM4 : CN14 PB6
+- PWM3 : CN4 PE4
 
 System Clock
 ------------
@@ -273,14 +276,18 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+B_U585I_IOT02A Discovery kit includes an ST-LINK/V3 embedded debug tool interface.
+This probe allows to flash the board using various tools.
+
 Flashing
 ========
 
-B_U585I_IOT02A Discovery kit includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+Board is configured to be flashed using west STM32CubeProgrammer runner.
+Installation of `STM32CubeProgrammer`_ is then required to flash the board.
 
-Flashing an application to B_U585I_IOT02A Discovery kit
--------------------------------------------------------
+Alternatively, openocd (provided in Zephyr SDK), JLink and pyocd can also be
+used to flash and debug the board if west is told to use it as runner,
+using ``-r openocd``.
 
 Connect the B_U585I_IOT02A Discovery kit to your host computer using the USB
 port, then run a serial host program to connect with your Discovery
@@ -307,31 +314,93 @@ You should see the following message on the console:
 Debugging
 =========
 
-Debugging
-=========
-
-STM32U5 support is not currently supported in openocd. As a temporary workaround,
-user can use `STMicroelectronics customized version of OpenOCD`_ to debug the
-the B_U585I_IOT02A Discovery kit.
-For this you need to fetch this repo, checkout branch "openocd-cubeide-r3" and
-build openocd following the instructions provided in the README of the project.
-Then, build zephyr project indicating the openocd location in west build command.
-
+Default flasher for this board is openocd. It could be used in the usual way.
 Here is an example for the :ref:`blinky-sample` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: b_u585i_iot02a
-   :gen-args: -DOPENOCD="<path_to_openocd>/openocd/src/openocd" -DOPENOCD_DEFAULT_PATH="<path_to_openocd>/openocd/tcl/"
-   :goals: build
+   :goals: debug
 
-Then, indicate openocd as the chosen runner in flash and debug commands:
+Building a secure/non-secure with Arm |reg| TrustZone |reg|
+===========================================================
+
+The TF-M applications can be run on this board, thanks to its Arm |reg| TrustZone |reg|
+support.
+In TF-M configuration, Zephyr is run on the non-secure domain. A non-secure image
+can be generated using ``b_u585i_iot02a_ns`` as build target.
+
+.. code-block:: bash
+
+   $ west build -b b_u585i_iot02a_ns path/to/source/directory
+
+Note: When building the ``*_ns`` image with TF-M, ``build/tfm/postbuild.sh`` bash script
+is run automatically in a post-build step to make some required flash layout changes.
+
+Once the build is completed, run the following script to initialize the option bytes.
+
+.. code-block:: bash
+
+   $ build/tfm/regression.sh
+
+Finally, to flash the board, run:
+
+.. code-block:: bash
+
+   $ west flash
 
 
-   .. code-block:: console
+Disabling TrustZone |reg| on the board
+======================================
 
-      $ west flash -r openocd
-      $ west debug -r openocd
+If you have flashed a sample to the board that enables TrustZone, you will need
+to disable it before you can flash and run a new non-TrustZone sample on the
+board.
+
+To disable TrustZone, it's necessary to change AT THE SAME TIME the ``TZEN``
+and ``RDP`` bits. ``TZEN`` needs to get set from 1 to 0 and ``RDP``,
+needs to be set from ``DC`` to ``AA`` (step 3 below).
+
+This is docummented in the `AN5347, in section 9`_, "TrustZone deactivation".
+
+However, it's possible that the ``RDP`` bit is not yet set to ``DC``, so you
+first need to set it to ``DC`` (step 2).
+
+Finally you need to set the "Write Protection 1 & 2" bytes properly, otherwise
+some memory regions won't be erasable and mass erase will fail (step 4).
+
+The following command sequence will fully deactivate TZ:
+
+Step 1:
+
+Ensure U23 BOOT0 switch is set to 1 (switch is on the left, assuming you read
+"BOOT0" silkscreen label from left to right). You need to press "Reset" (B2 RST
+switch) after changing the switch to make the change effective.
+
+Step 2:
+
+.. code-block:: console
+
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -ob rdp=0xDC
+
+Step 3:
+
+.. code-block:: console
+
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -tzenreg
+
+Step 4:
+
+.. code-block:: console
+
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -ob wrp1a_pstrt=0x7f
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -ob wrp1a_pend=0x0
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -ob wrp1b_pstrt=0x7f
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -ob wrp1b_pend=0x0
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -ob wrp2a_pstrt=0x7f
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -ob wrp2a_pend=0x0
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -ob wrp2b_pstrt=0x7f
+   $ STM32_Programmer_CLI -c port=/dev/ttyACM0 -ob wrp2b_pend=0x0
 
 
 .. _B U585I IOT02A Discovery kit website:
@@ -351,3 +420,6 @@ Then, indicate openocd as the chosen runner in flash and debug commands:
 
 .. _STMicroelectronics customized version of OpenOCD:
    https://github.com/STMicroelectronics/OpenOCD
+
+.. _AN5347, in section 9:
+   https://www.st.com/resource/en/application_note/dm00625692-stm32l5-series-trustzone-features-stmicroelectronics.pdf

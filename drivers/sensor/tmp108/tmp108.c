@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
+ * Copyright (c) 2022 T-Mobile USA, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,17 +18,6 @@
 #include "tmp108.h"
 
 LOG_MODULE_REGISTER(TMP108, CONFIG_SENSOR_LOG_LEVEL);
-
-/** TI conversion scale from 16 bit int temp value to float */
-#define TMP108_TEMP_MULTIPLIER    62500
-
-/** TMP typical conversion time of 27 ms after waking from sleep */
-#define TMP108_WAKEUP_TIME_IN_MS 30
-
-struct tmp108_config {
-	const struct i2c_dt_spec i2c_spec;
-	const struct gpio_dt_spec alert_gpio;
-};
 
 int tmp108_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 {
@@ -122,8 +112,8 @@ static int tmp108_sample_fetch(const struct device *dev,
 	if (drv_data->one_shot_mode == true) {
 
 		result = tmp108_write_config(dev,
-					     TI_TMP108_MODE_MASK,
-					     TI_TMP108_MODE_ONE_SHOT);
+					     TI_TMP108_MODE_MASK(dev),
+					     TI_TMP108_MODE_ONE_SHOT(dev));
 
 		if (result < 0) {
 			return result;
@@ -133,7 +123,7 @@ static int tmp108_sample_fetch(const struct device *dev,
 		 * the typical wakeup time given in the data sheet is 27
 		 */
 		result = k_work_schedule(&drv_data->scheduled_work,
-					 K_MSEC(TMP108_WAKEUP_TIME_IN_MS));
+					 K_MSEC(TMP108_WAKEUP_TIME_IN_MS(dev)));
 
 		if (result < 0) {
 			return result;
@@ -162,7 +152,7 @@ static int tmp108_channel_get(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	uval = (int32_t)(drv_data->sample  >> 4U) * TMP108_TEMP_MULTIPLIER;
+	uval = ((int32_t)(drv_data->sample) * TMP108_TEMP_MULTIPLIER(dev)) >> 4U;
 	val->val1 = uval / 1000000U;
 	val->val2 = uval % 1000000U;
 
@@ -202,6 +192,7 @@ static int tmp108_attr_set(const struct device *dev,
 	uint16_t mode = 0;
 	uint16_t reg_value = 0;
 	int result = 0;
+	int32_t uval;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP && chan != SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
@@ -209,43 +200,49 @@ static int tmp108_attr_set(const struct device *dev,
 
 	switch ((int) attr) {
 	case SENSOR_ATTR_HYSTERESIS:
+		if (TI_TMP108_HYSTER_0_C(dev) == TI_TMP108_CONF_NA) {
+			LOG_WRN("AS621x Series lacks Hysterisis setttings");
+			return -ENOTSUP;
+		}
 		if (val->val1 < 1) {
-			mode = TI_TMP108_HYSTER_0_C;
+			mode = TI_TMP108_HYSTER_0_C(dev);
 		} else if (val->val1 < 2) {
-			mode = TI_TMP108_HYSTER_1_C;
+			mode = TI_TMP108_HYSTER_1_C(dev);
 		} else if (val->val1 < 4) {
-			mode = TI_TMP108_HYSTER_2_C;
+			mode = TI_TMP108_HYSTER_2_C(dev);
 		} else {
-			mode = TI_TMP108_HYSTER_4_C;
+			mode = TI_TMP108_HYSTER_4_C(dev);
 		}
 
 		result = tmp108_write_config(dev,
-					     TI_TMP108_HYSTER_MASK,
+					     TI_TMP108_HYSTER_MASK(dev),
 					     mode);
 		break;
 
 	case SENSOR_ATTR_ALERT:
 		/* Spec Sheet Errata: TM is set on reset not cleared */
 		if (val->val1 == 1) {
-			mode = TI_TMP108_CONF_TM_INT;
+			mode = TI_TMP108_CONF_TM_INT(dev);
 		} else {
-			mode = TI_TMP108_CONF_TM_CMP;
+			mode = TI_TMP108_CONF_TM_CMP(dev);
 		}
 
 		result = tmp108_write_config(dev,
-					     TI_TMP108_CONF_TM_MASK,
+					     TI_TMP108_CONF_TM_MASK(dev),
 					     mode);
 		break;
 
 	case SENSOR_ATTR_LOWER_THRESH:
-		reg_value = (val->val1 << 8) | (0x00FF & val->val2);
+		uval = val->val1 * 1000000 + val->val2;
+		reg_value = (uval << 4U) / TMP108_TEMP_MULTIPLIER(dev);
 		result = tmp108_reg_write(dev,
 					  TI_TMP108_REG_LOW_LIMIT,
 					  reg_value);
 		break;
 
 	case SENSOR_ATTR_UPPER_THRESH:
-		reg_value = (val->val1 << 8) | (0x00FF & val->val2);
+		uval = val->val1 * 1000000 + val->val2;
+		reg_value = (uval << 4U) / TMP108_TEMP_MULTIPLIER(dev);
 		result = tmp108_reg_write(dev,
 					  TI_TMP108_REG_HIGH_LIMIT,
 					  reg_value);
@@ -253,48 +250,48 @@ static int tmp108_attr_set(const struct device *dev,
 
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		if (val->val1 < 1) {
-			mode = TI_TMP108_FREQ_4_SECS;
+			mode = TI_TMP108_FREQ_4_SECS(dev);
 		} else if (val->val1 < 4) {
-			mode = TI_TMP108_FREQ_1_HZ;
+			mode = TI_TMP108_FREQ_1_HZ(dev);
 		} else if (val->val1 < 16) {
-			mode = TI_TMP108_FREQ_4_HZ;
+			mode = TI_TMP108_FREQ_4_HZ(dev);
 		} else {
-			mode = TI_TMP108_FREQ_16_HZ;
+			mode = TI_TMP108_FREQ_16_HZ(dev);
 		}
 		result = tmp108_write_config(dev,
-					     TI_TMP108_FREQ_MASK,
+					     TI_TMP108_FREQ_MASK(dev),
 					     mode);
 		break;
 
 	case SENSOR_ATTR_TMP108_SHUTDOWN_MODE:
 		result = tmp108_write_config(dev,
-					     TI_TMP108_MODE_MASK,
-					     TI_TMP108_MODE_SHUTDOWN);
+					     TI_TMP108_MODE_MASK(dev),
+					     TI_TMP108_MODE_SHUTDOWN(dev));
 		drv_data->one_shot_mode = false;
 		break;
 
 	case SENSOR_ATTR_TMP108_CONTINUOUS_CONVERSION_MODE:
 		result = tmp108_write_config(dev,
-					     TI_TMP108_MODE_MASK,
-					     TI_TMP108_MODE_CONTINUOUS);
+					     TI_TMP108_MODE_MASK(dev),
+					     TI_TMP108_MODE_CONTINUOUS(dev));
 		drv_data->one_shot_mode = false;
 		break;
 
 	case SENSOR_ATTR_TMP108_ONE_SHOT_MODE:
 		result = tmp108_write_config(dev,
-					     TI_TMP108_MODE_MASK,
-					     TI_TMP108_MODE_ONE_SHOT);
+					     TI_TMP108_MODE_MASK(dev),
+					     TI_TMP108_MODE_ONE_SHOT(dev));
 		drv_data->one_shot_mode = true;
 		break;
 
 	case SENSOR_ATTR_TMP108_ALERT_POLARITY:
 		if (val->val1 == 1) {
-			mode = TI_TMP108_CONF_POL_HIGH;
+			mode = TI_TMP108_CONF_POL_HIGH(dev);
 		} else {
-			mode = TI_TMP108_CONF_POL_LOW;
+			mode = TI_TMP108_CONF_POL_LOW(dev);
 		}
 		result = tmp108_write_config(dev,
-					     TI_TMP108_CONF_POL_MASK,
+					     TI_TMP108_CONF_POL_MASK(dev),
 					     mode);
 		break;
 
@@ -377,25 +374,41 @@ static int tmp108_init(const struct device *dev)
 
 #ifdef CONFIG_TMP108_ALERT_INTERRUPTS
 	result = setup_interrupts(dev);
-#endif
 
+	if (result < 0) {
+		return result;
+	}
+#endif
+	/* clear and set configuration registers back to default values */
+	result = tmp108_write_config(dev,
+				     0x0000,
+				     TMP108_CONF_RST(dev));
 	return result;
 }
 
-#define TMP108_DEFINE(inst)						   \
-	static struct tmp108_data tmp108_prv_data_##inst;		   \
-	static const struct tmp108_config tmp108_config_##inst = {	   \
+#define TMP108_DEFINE(inst, t)						   \
+	static struct tmp108_data tmp108_prv_data_##inst##t;		   \
+	static const struct tmp108_config tmp108_config_##inst##t = {	   \
 		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),			   \
 		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst,		   \
-						       alert_gpios, { 0 }) \
+						       alert_gpios, { 0 }),\
+		.reg_def = t##_CONF					   \
 	};								   \
-	DEVICE_DT_INST_DEFINE(inst,					   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				   \
 			      &tmp108_init,				   \
 			      NULL,					   \
-			      &tmp108_prv_data_##inst,			   \
-			      &tmp108_config_##inst,			   \
+			      &tmp108_prv_data_##inst##t,		   \
+			      &tmp108_config_##inst##t,			   \
 			      POST_KERNEL,				   \
 			      CONFIG_SENSOR_INIT_PRIORITY,		   \
 			      &tmp108_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(TMP108_DEFINE)
+#define TMP108_INIT(n) TMP108_DEFINE(n, TI_TMP108)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_tmp108
+DT_INST_FOREACH_STATUS_OKAY(TMP108_INIT)
+
+#define AS6212_INIT(n) TMP108_DEFINE(n, AMS_AS6212)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ams_as6212
+DT_INST_FOREACH_STATUS_OKAY(AS6212_INIT)

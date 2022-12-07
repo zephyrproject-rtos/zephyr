@@ -23,13 +23,6 @@ config ROM_START_OFFSET
 config BOOTLOADER_SRAM_SIZE
 	default 0 if !XIP
 
-if GPIO
-
-config GPIO_CC32XX
-	default y
-
-endif # GPIO
-
 if !XIP
 config FLASH_SIZE
 	default 0

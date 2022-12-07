@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <altera_common.h>
+#include <zephyr/irq.h>
 
 #include "altera_avalon_timer_regs.h"
 #include "altera_avalon_timer.h"
@@ -23,6 +24,10 @@ static uint32_t driver_uptime;
 static uint32_t accumulated_cycle_count;
 
 static int32_t _sys_idle_elapsed_ticks = 1;
+
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = TIMER_0_IRQ;
+#endif
 
 static void wrapped_announce(int32_t ticks)
 {

@@ -62,7 +62,9 @@
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	STR r58, sp, ___callee_saved_stack_t_r58_OFFSET
+#ifndef CONFIG_64BIT
 	STR r59, sp, ___callee_saved_stack_t_r59_OFFSET
+#endif /* !CONFIG_64BIT */
 #endif
 
 #ifdef CONFIG_FPU_SHARING
@@ -98,7 +100,9 @@
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	LDR r58, sp, ___callee_saved_stack_t_r58_OFFSET
+#ifndef CONFIG_64BIT
 	LDR r59, sp, ___callee_saved_stack_t_r59_OFFSET
+#endif /* !CONFIG_64BIT */
 #endif
 
 #ifdef CONFIG_FPU_SHARING
@@ -412,12 +416,15 @@
 .macro _store_old_thread_callee_regs
 
 	_save_callee_saved_regs
-#ifdef CONFIG_SMP
-	/* save old thread into switch handle which is required by
-	 * wait_for_switch
+	/* Save old thread into switch handle which is required by wait_for_switch.
+	 * NOTE: we shouldn't save anything related to old thread context after this point!
+	 * TODO: we should add SMP write-after-write data memory barrier here, as we want all
+	 * previous writes completed before setting switch_handle which is polled by other cores
+	 * in wait_for_switch in case of SMP. Though it's not likely that this issue
+	 * will reproduce in real world as there is some gap before reading switch_handle and
+	 * reading rest of the data we've stored before.
 	 */
 	STR r2, r2, ___thread_t_switch_handle_OFFSET
-#endif
 .endm
 
 /* macro to store old thread call regs  in interrupt*/
@@ -536,16 +543,30 @@
 #endif
 .endm
 
+
+#define __arc_u9_max		(255)
+#define __arc_u9_min		(-256)
+#define __arc_ldst32_as_shift	2
+
 /*
  * When we accessing bloated struct member we can exceed u9 operand in store
  * instruction. So we can use _st32_huge_offset macro instead
  */
-.macro _st32_huge_offset, d, s, off, temp
-	.if MACRO_ARG(off) > 255 || MACRO_ARG(off) < -256
-		ADDR MACRO_ARG(temp), MACRO_ARG(s), MACRO_ARG(off)
-		st MACRO_ARG(d), [MACRO_ARG(temp)]
+.macro _st32_huge_offset, d, s, offset, temp
+	off = MACRO_ARG(offset)
+	u9_max_shifted = __arc_u9_max << __arc_ldst32_as_shift
+
+	.if off <= __arc_u9_max && off >= __arc_u9_min
+		st MACRO_ARG(d), [MACRO_ARG(s), off]
+	/* Technically we can optimize with .as both big positive and negative offsets here, but
+	 * as we use only positive offsets in hand-written assembly code we keep only
+	 * positive offset case here for simplicity.
+	 */
+	.elseif !(off % (1 << __arc_ldst32_as_shift)) && off <= u9_max_shifted && off >= 0
+		st.as MACRO_ARG(d), [MACRO_ARG(s), off >> __arc_ldst32_as_shift]
 	.else
-		st MACRO_ARG(d), [MACRO_ARG(s), MACRO_ARG(off)]
+		ADDR MACRO_ARG(temp), MACRO_ARG(s), off
+		st MACRO_ARG(d), [MACRO_ARG(temp)]
 	.endif
 .endm
 

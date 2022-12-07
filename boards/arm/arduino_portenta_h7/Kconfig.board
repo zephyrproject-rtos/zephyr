@@ -1,0 +1,14 @@
+# Arduino Portenta H7 board configuration
+
+# Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_PORTENTA_H7_M7
+	bool "Arduino Portenta H7 Board"
+	depends on SOC_STM32H747XX
+	select CPU_CORTEX_M7
+
+config BOARD_ARDUINO_PORTENTA_H7_M4
+	bool "Arduino Portenta H7 Board"
+	depends on SOC_STM32H747XX
+	select CPU_CORTEX_M4

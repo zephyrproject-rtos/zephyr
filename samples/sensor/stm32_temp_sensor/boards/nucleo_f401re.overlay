@@ -8,7 +8,6 @@
 
 / {
 	stm-temp {
-		label = "DIE_TEMP";
 		compatible = "st,stm32-temp";
 		io-channels = <&adc1 16>;
 		status = "okay";

@@ -8,7 +8,7 @@
 execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/user_wordsize.py
+  ${ZEPHYR_BASE}/scripts/build/user_wordsize.py
   OUTPUT_VARIABLE
   WORDSIZE
   OUTPUT_STRIP_TRAILING_WHITESPACE

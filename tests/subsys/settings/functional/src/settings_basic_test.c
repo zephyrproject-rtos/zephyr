@@ -9,8 +9,8 @@
  *
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <errno.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/logging/log.h>
@@ -18,50 +18,54 @@ LOG_MODULE_REGISTER(settings_basic_test);
 
 #if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS)
 #include <zephyr/storage/flash_map.h>
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+#define TEST_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
 #endif
-#if IS_ENABLED(CONFIG_SETTINGS_FS)
+#elif IS_ENABLED(CONFIG_SETTINGS_FILE)
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
+#else
+#error "Settings backend not selected"
+#endif
+
+#ifndef TEST_FLASH_AREA_ID
+#define TEST_FLASH_AREA		storage_partition
+#define TEST_FLASH_AREA_ID	FIXED_PARTITION_ID(TEST_FLASH_AREA)
 #endif
 
 /* The standard test expects a cleared flash area.  Make sure it has
  * one.
  */
-static void test_clear_settings(void)
+ZTEST(settings_functional, test_clear_settings)
 {
-#if IS_ENABLED(CONFIG_SETTINGS_FCB) || IS_ENABLED(CONFIG_SETTINGS_NVS)
+#if !IS_ENABLED(CONFIG_SETTINGS_FILE)
 	const struct flash_area *fap;
 	int rc;
 
-#if DT_HAS_CHOSEN(zephyr_settings_partition)
-	rc = flash_area_open(FLASH_AREA_ID(chosen_partition), &fap);
-#else
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
-#endif
+	rc = flash_area_open(TEST_FLASH_AREA_ID, &fap);
 
 	if (rc == 0) {
 		rc = flash_area_erase(fap, 0, fap->fa_size);
 		flash_area_close(fap);
 	}
 	zassert_true(rc == 0, "clear settings failed");
-#endif
-#if IS_ENABLED(CONFIG_SETTINGS_FS)
+#else
 	FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
 
 	/* mounting info */
 	static struct fs_mount_t littlefs_mnt = {
-	.type = FS_LITTLEFS,
-	.fs_data = &cstorage,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
-	.mnt_point = "/ff"
-};
+		.type = FS_LITTLEFS,
+		.fs_data = &cstorage,
+		.storage_dev = (void *)TEST_FLASH_AREA_ID,
+		.mnt_point = "/ff"
+	};
 
 	int rc;
 
 	rc = fs_mount(&littlefs_mnt);
 	zassert_true(rc == 0, "mounting littlefs [%d]\n", rc);
 
-	rc = fs_unlink(CONFIG_SETTINGS_FS_FILE);
+	rc = fs_unlink(CONFIG_SETTINGS_FILE_PATH);
 	zassert_true(rc == 0 || rc == -ENOENT,
 		     "can't delete config file%d\n", rc);
 #endif
@@ -75,7 +79,7 @@ static void test_clear_settings(void)
  *                                   separator
  */
 
-static void test_support_rtn(void)
+ZTEST(settings_functional, test_support_rtn)
 {
 	const char test1[] = "bt/a/b/c/d";
 	const char test2[] = "bt/a/b/c/d=";
@@ -232,7 +236,7 @@ int settings_deregister(struct settings_handler *handler)
 	return sys_slist_find_and_remove(&settings_handlers, &handler->node);
 }
 
-static void test_register_and_loading(void)
+ZTEST(settings_functional, test_register_and_loading)
 {
 	int rc, err;
 	uint8_t val = 0;
@@ -346,10 +350,10 @@ static void test_register_and_loading(void)
 	zassert_true(rc, "deregistering val1_settings failed");
 
 	rc = settings_deregister(&val2_settings);
-	zassert_true(rc, "deregistering val1_settings failed");
+	zassert_true(rc, "deregistering val2_settings failed");
 
 	rc = settings_deregister(&val3_settings);
-	zassert_true(rc, "deregistering val1_settings failed");
+	zassert_true(rc, "deregistering val3_settings failed");
 }
 
 int val123_set(const char *key, size_t len,
@@ -402,15 +406,15 @@ int direct_loader(
 	int rc;
 	uint8_t val;
 
-	zassert_equal(0x1234, (size_t)param, NULL);
+	zassert_equal(0x1234, (size_t)param);
 
-	zassert_equal(1, len, NULL);
+	zassert_equal(1, len);
 	zassert_is_null(key, "Unexpected key: %s", key);
 
 
 	zassert_not_null(cb_arg, NULL);
 	rc = read_cb(cb_arg, &val, sizeof(val));
-	zassert_equal(sizeof(val), rc, NULL);
+	zassert_equal(sizeof(val), rc);
 
 	val_directly_loaded = val;
 	direct_load_cnt += 1;
@@ -418,11 +422,12 @@ int direct_loader(
 }
 
 
-static void test_direct_loading(void)
+ZTEST(settings_functional, test_direct_loading)
 {
 	int rc;
 	uint8_t val;
 
+	settings_subsys_init();
 	val = 11;
 	settings_save_one("val/1", &val, sizeof(uint8_t));
 	val = 23;
@@ -431,25 +436,25 @@ static void test_direct_loading(void)
 	settings_save_one("val/3", &val, sizeof(uint8_t));
 
 	rc = settings_register(&val123_settings);
-	zassert_true(rc == 0, NULL);
+	zassert_true(rc == 0);
 	memset(&data, 0, sizeof(data));
 
 	rc = settings_load();
-	zassert_true(rc == 0, NULL);
+	zassert_true(rc == 0);
 
-	zassert_equal(11, data.val1, NULL);
-	zassert_equal(23, data.val2, NULL);
-	zassert_equal(35, data.val3, NULL);
+	zassert_equal(11, data.val1);
+	zassert_equal(23, data.val2);
+	zassert_equal(35, data.val3);
 
 	/* Load subtree */
 	memset(&data, 0, sizeof(data));
 
 	rc = settings_load_subtree("val/2");
-	zassert_true(rc == 0, NULL);
+	zassert_true(rc == 0);
 
-	zassert_equal(0,  data.val1, NULL);
-	zassert_equal(23, data.val2, NULL);
-	zassert_equal(0,  data.val3, NULL);
+	zassert_equal(0,  data.val1);
+	zassert_equal(23, data.val2);
+	zassert_equal(0,  data.val3);
 
 	/* Direct loading now */
 	memset(&data, 0, sizeof(data));
@@ -459,13 +464,14 @@ static void test_direct_loading(void)
 		"val/2",
 		direct_loader,
 		(void *)0x1234);
-	zassert_true(rc == 0, NULL);
-	zassert_equal(0, data.val1, NULL);
-	zassert_equal(0, data.val2, NULL);
-	zassert_equal(0, data.val3, NULL);
+	zassert_true(rc == 0);
+	zassert_equal(0, data.val1);
+	zassert_equal(0, data.val2);
+	zassert_equal(0, data.val3);
 
-	zassert_equal(1, direct_load_cnt, NULL);
-	zassert_equal(23, val_directly_loaded, NULL);
+	zassert_equal(1, direct_load_cnt);
+	zassert_equal(23, val_directly_loaded);
+	settings_deregister(&val123_settings);
 }
 
 struct test_loading_data {
@@ -508,10 +514,10 @@ static int filtered_loader(
 	zassert_not_null(ldata->n, "Unexpected data name: %s", key);
 	zassert_is_null(next, NULL);
 	zassert_equal(strlen(ldata->v) + 1, len, "e: \"%s\", a:\"%s\"", ldata->v, buf);
-	zassert_true(len <= sizeof(buf), NULL);
+	zassert_true(len <= sizeof(buf));
 
 	rc = read_cb(cb_arg, buf, len);
-	zassert_equal(len, rc, NULL);
+	zassert_equal(len, rc);
 
 	zassert_false(strcmp(ldata->v, buf), "e: \"%s\", a:\"%s\"", ldata->v, buf);
 
@@ -534,12 +540,12 @@ static int direct_filtered_loader(
 	void *cb_arg,
 	void *param)
 {
-	zassert_equal(0x3456, (size_t)param, NULL);
+	zassert_equal(0x3456, (size_t)param);
 	return filtered_loader(key, len, read_cb, cb_arg);
 }
 
 
-static void test_direct_loading_filter(void)
+ZTEST(settings_functional, test_direct_loading_filter)
 {
 	int rc;
 	const struct test_loading_data *ldata;
@@ -562,6 +568,7 @@ static void test_direct_loading_filter(void)
 		{ .n = NULL }
 	};
 
+	settings_subsys_init();
 	/* Data that is going to be deleted */
 	strcpy(buffer, prefix);
 	strcat(buffer, "/to_delete");
@@ -589,7 +596,7 @@ static void test_direct_loading_filter(void)
 		prefix,
 		direct_filtered_loader,
 		(void *)0x3456);
-	zassert_equal(0, rc, NULL);
+	zassert_equal(0, rc);
 
 	/* Check if all the data was called */
 	for (n = 0; data_final[n].n; ++n) {
@@ -599,10 +606,10 @@ static void test_direct_loading_filter(void)
 	}
 
 	rc = settings_register(&filtered_loader_settings);
-	zassert_true(rc == 0, NULL);
+	zassert_true(rc == 0);
 
 	rc = settings_load_subtree(prefix);
-	zassert_equal(0, rc, NULL);
+	zassert_equal(0, rc);
 
 	/* Check if all the data was called */
 	for (n = 0; data_final[n].n; ++n) {
@@ -610,18 +617,5 @@ static void test_direct_loading_filter(void)
 			"Unexpected number of calls (%u) of (%s) element",
 			n, data_final[n].n);
 	}
-}
-
-
-void test_main(void)
-{
-	ztest_test_suite(settings_test_suite,
-			 ztest_unit_test(test_clear_settings),
-			 ztest_unit_test(test_support_rtn),
-			 ztest_unit_test(test_register_and_loading),
-			 ztest_unit_test(test_direct_loading),
-			 ztest_unit_test(test_direct_loading_filter)
-			);
-
-	ztest_run_test_suite(settings_test_suite);
+	settings_deregister(&filtered_loader_settings);
 }

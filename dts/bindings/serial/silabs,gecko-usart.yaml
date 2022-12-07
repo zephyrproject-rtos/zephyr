@@ -31,10 +31,8 @@ properties:
 
     location-rts:
       type: array
-      required: false
       description: RTS pin configuration defined as <location port pin>
 
     location-cts:
       type: array
-      required: false
       description: CTS pin configuration defined as <location port pin>

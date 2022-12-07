@@ -41,6 +41,27 @@
 
 #define LWM2M_PATH_MACRO(_1, _2, _3, _4, NAME, ...) NAME
 
-
+/**
+ * @brief Initialize LwM2M object structure
+ *
+ * Accepts at least one and up to four arguments. Fill up @ref lwm2m_obj_path structure
+ * and sets the level. For example:
+ *
+ *   struct lwm2m_obj_path p = LWM2M_OBJ(MY_OBJ, 0, RESOURCE);
+ *
+ * Can also be used in place of function argument to return the structure allocated from stack
+ *
+ *   lwm2m_notify_observer_path(&LWM2M_OBJ(MY_OBJ, inst_id, RESOURCE));
+ *
+ */
+#define LWM2M_OBJ(...) \
+	GET_OBJ_MACRO(__VA_ARGS__, LWM2M_OBJ4, LWM2M_OBJ3, LWM2M_OBJ2, LWM2M_OBJ1)(__VA_ARGS__)
+#define GET_OBJ_MACRO(_1, _2, _3, _4, NAME, ...) NAME
+#define LWM2M_OBJ1(oi) (struct lwm2m_obj_path) {.obj_id = oi, .level = 1}
+#define LWM2M_OBJ2(oi, oii) (struct lwm2m_obj_path) {.obj_id = oi, .obj_inst_id = oii, .level = 2}
+#define LWM2M_OBJ3(oi, oii, ri) (struct lwm2m_obj_path) \
+	{.obj_id = oi, .obj_inst_id = oii, .res_id = ri, .level = 3}
+#define LWM2M_OBJ4(oi, oii, ri, rii) (struct lwm2m_obj_path) \
+	{.obj_id = oi, .obj_inst_id = oii, .res_id = ri, .res_inst_id = rii, .level = 4}
 
 #endif /* ZEPHYR_INCLUDE_NET_LWM2M_PATH_H_ */

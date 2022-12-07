@@ -12,7 +12,7 @@ function(generate_cfb_font
     OUTPUT ${output_file}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_cfb_font_header.py
+    ${ZEPHYR_BASE}/scripts/build/gen_cfb_font_header.py
     --zephyr-base ${ZEPHYR_BASE}
     --input ${input_file}
     --output ${output_file}

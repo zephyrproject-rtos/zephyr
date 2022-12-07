@@ -33,8 +33,6 @@ struct sys_bitarray {
 typedef struct sys_bitarray sys_bitarray_t;
 
 /**
- * @def _SYS_BITARRAY_DEFINE
- *
  * @brief Create a bitarray object.
  *
  * @param name Name of the bitarray object.
@@ -44,7 +42,7 @@ typedef struct sys_bitarray sys_bitarray_t;
 #define _SYS_BITARRAY_DEFINE(name, total_bits, sba_mod)			\
 	sba_mod uint32_t _sys_bitarray_bundles_##name			\
 		[(((total_bits + 8 - 1) / 8) + sizeof(uint32_t) - 1)	\
-		 / sizeof(uint32_t)] = {0U};				\
+		 / sizeof(uint32_t)] = {0};				\
 	sba_mod sys_bitarray_t name = {					\
 		.num_bits = total_bits,					\
 		.num_bundles = (((total_bits + 8 - 1) / 8)		\
@@ -54,8 +52,6 @@ typedef struct sys_bitarray sys_bitarray_t;
 	}
 
 /**
- * @def SYS_BITARRAY_DEFINE
- *
  * @brief Create a bitarray object.
  *
  * @param name Name of the bitarray object.
@@ -65,8 +61,6 @@ typedef struct sys_bitarray sys_bitarray_t;
 	_SYS_BITARRAY_DEFINE(name, total_bits,)
 
 /**
- * @def SYS_BITARRAY_DEFINE_STATIC
- *
  * @brief Create a static bitarray object.
  *
  * @param name Name of the bitarray object.

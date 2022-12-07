@@ -5,6 +5,7 @@
 
 config NVS
 	bool "Non-volatile Storage"
+	select CRC
 	help
 	  Enable support of Non-volatile Storage.
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <fcntl.h>
 #include <zephyr/sys/util.h>
@@ -60,7 +60,7 @@ void *receiver_thread(void *p1)
 	return NULL;
 }
 
-void test_posix_mqueue(void)
+ZTEST(posix_apis, test_posix_mqueue)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;
@@ -77,7 +77,7 @@ void test_posix_mqueue(void)
 	for (i = 0; i < N_THR; i++) {
 		/* Creating threads */
 		if (pthread_attr_init(&attr[i]) != 0) {
-			zassert_equal(pthread_attr_destroy(&attr[i]), 0, NULL);
+			zassert_equal(pthread_attr_destroy(&attr[i]), 0);
 			zassert_false(pthread_attr_init(&attr[i]),
 				      "pthread attr init failed");
 		}
@@ -94,7 +94,7 @@ void test_posix_mqueue(void)
 		}
 
 		zassert_false(ret, "Not enough space to create new thread");
-		zassert_equal(pthread_attr_destroy(&attr[i]), 0, NULL);
+		zassert_equal(pthread_attr_destroy(&attr[i]), 0);
 	}
 
 	usleep(USEC_PER_MSEC * 10U);

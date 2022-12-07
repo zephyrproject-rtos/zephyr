@@ -29,6 +29,7 @@
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(usb_dc_stm32);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
@@ -188,7 +189,7 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 
 static int usb_dc_stm32_clock_enable(void)
 {
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct stm32_pclken pclken = {
 		.bus = USB_CLOCK_BUS,
 		.enr = USB_CLOCK_BITS,
@@ -206,7 +207,10 @@ static int usb_dc_stm32_clock_enable(void)
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
-
+#if !STM32_HSI48_ENABLED
+	/* Deprecated: enable HSI48 using device tree */
+#warning USB device requires HSI48 clock to be enabled using device tree
+#endif /* ! STM32_HSI48_ENABLED*/
 	/*
 	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
 	 * with 48 MHz RC to be enabled.
@@ -225,6 +229,7 @@ static int usb_dc_stm32_clock_enable(void)
 
 	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
+	/* Keeping this sequence for legacy: */
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
 		/* Wait for HSI48 to become ready */
@@ -279,10 +284,10 @@ static int usb_dc_stm32_clock_enable(void)
 	 */
 	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
 		switch (sys_clock_hw_cycles_per_sec()) {
-		case 48000000U:
+		case MHZ(48):
 			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_2);
 			break;
-		case 72000000U:
+		case MHZ(72):
 			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_3);
 			break;
 		default:
@@ -293,8 +298,33 @@ static int usb_dc_stm32_clock_enable(void)
 		LOG_ERR("Unable to set USB clock source (not using PLL1)");
 		return -EIO;
 	}
+#elif defined(RCC_CFGR_USBPRE)
+	/* on other STM32F1 family SOCs, we have a simple /1 or /1.5 divider on
+	 * the back of the RCC.  Similar strategy to the above, but we use the
+	 * correct flags
+	 */
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
+		switch (sys_clock_hw_cycles_per_sec()) {
+		case MHZ(48):
+			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
+			break;
+		case MHZ(72):
+			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_1_5);
+			break;
+		default:
+			LOG_ERR("Unable to set USB clock source (incompatible PLLCLK rate)");
+			return -EIO;
+		}
+	} else {
+		LOG_ERR("Unable to set USB clock source (not using PLL1)");
+		return -EIO;
+	}
+#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
-#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE */
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
 		LOG_ERR("Unable to enable USB clock");
@@ -305,12 +335,35 @@ static int usb_dc_stm32_clock_enable(void)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Disable ULPI interface (for external high-speed PHY) clock in sleep
+	 * mode.
+	 */
+	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #else
-	/* Disable ULPI interface (for external high-speed PHY) clock */
-	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	/* Disable ULPI interface (for external high-speed PHY) clock in low
+	 * power mode. It is disabled by default in run power mode, no need to
+	 * disable it.
+	 */
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
 #endif
+
+	return 0;
+}
+
+static int usb_dc_stm32_clock_disable(void)
+{
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	struct stm32_pclken pclken = {
+		.bus = USB_CLOCK_BUS,
+		.enr = USB_CLOCK_BITS,
+	};
+
+	if (clock_control_off(clk, (clock_control_subsys_t *)&pclken) != 0) {
+		LOG_ERR("Unable to disable USB clock");
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -392,15 +445,15 @@ static int usb_dc_stm32_init(void)
 #endif /* CONFIG_USB_DEVICE_SOF */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/* Currently assuming FS mode. Need to disable the ULPI clock on USB2 and
-	 * enable the FS clock. Need to make this dependent on HS or FS config.
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
+	/* The USB2 controller only works in FS mode, but the ULPI clock needs
+	 * to be disabled in sleep mode for it to work. For the USB1
+	 * controller, as it is an HS one, the clock is disabled in the common
+	 * path.
 	 */
 
-	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
-
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
-	LL_AHB1_GRP1_EnableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
+#endif
 
 	LL_PWR_EnableUSBVoltageDetector();
 
@@ -423,6 +476,16 @@ static int usb_dc_stm32_init(void)
 	status = HAL_PCD_Init(&usb_dc_stm32_state.pcd);
 	if (status != HAL_OK) {
 		LOG_ERR("PCD_Init failed, %d", (int)status);
+		return -EIO;
+	}
+
+	/* On a soft reset force USB to reset first and switch it off
+	 * so the USB connection can get re-initialized
+	 */
+	LOG_DBG("HAL_PCD_Stop");
+	status = HAL_PCD_Stop(&usb_dc_stm32_state.pcd);
+	if (status != HAL_OK) {
+		LOG_ERR("PCD_Stop failed, %d", (int)status);
 		return -EIO;
 	}
 
@@ -951,7 +1014,8 @@ int usb_dc_ep_mps(const uint8_t ep)
 
 int usb_dc_detach(void)
 {
-	LOG_ERR("Not implemented");
+	HAL_StatusTypeDef status;
+	int ret;
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 	/* Specially for STM32WB, unlock the HSEM when USB is no more used. */
@@ -964,6 +1028,22 @@ int usb_dc_detach(void)
 	 * https://github.com/zephyrproject-rtos/zephyr/pull/25850
 	 */
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
+
+	LOG_DBG("HAL_PCD_DeInit");
+	status = HAL_PCD_DeInit(&usb_dc_stm32_state.pcd);
+	if (status != HAL_OK) {
+		LOG_ERR("PCD_DeInit failed, %d", (int)status);
+		return -EIO;
+	}
+
+	ret = usb_dc_stm32_clock_disable();
+	if (ret) {
+		return ret;
+	}
+
+	if (irq_is_enabled(USB_IRQ)) {
+		irq_disable(USB_IRQ);
+	}
 
 	return 0;
 }
@@ -1102,14 +1182,9 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 #if (defined(USB) || defined(USB_DRD_FS)) && DT_INST_NODE_HAS_PROP(0, disconnect_gpios)
 void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
-	const struct device *usb_disconnect;
+	struct gpio_dt_spec usb_disconnect = GPIO_DT_SPEC_INST_GET(0, disconnect_gpios);
 
-	usb_disconnect = device_get_binding(
-				DT_GPIO_LABEL(DT_INST(0, st_stm32_usb), disconnect_gpios));
-
-	gpio_pin_configure(usb_disconnect,
-			   DT_GPIO_PIN(DT_INST(0, st_stm32_usb), disconnect_gpios),
-			   DT_GPIO_FLAGS(DT_INST(0, st_stm32_usb), disconnect_gpios) |
+	gpio_pin_configure_dt(&usb_disconnect,
 			   (state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
 #endif /* USB && DT_INST_NODE_HAS_PROP(0, disconnect_gpios) */

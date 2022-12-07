@@ -27,6 +27,12 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
 osource "soc/$(ARCH)/*/Kconfig.defconfig"
 # This loads the toolchain defconfigs
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
+# This loads the testsuite defconfig
+source "subsys/testsuite/Kconfig.defconfig"
+
+# This should be early since the autogen Kconfig.dts symbols may get
+# used by modules
+source "dts/Kconfig"
 
 menu "Modules"
 
@@ -38,7 +44,6 @@ source "boards/Kconfig"
 source "soc/Kconfig"
 source "arch/Kconfig"
 source "kernel/Kconfig"
-source "dts/Kconfig"
 source "drivers/Kconfig"
 source "lib/Kconfig"
 source "subsys/Kconfig"
@@ -261,6 +266,32 @@ config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 
 	  If unsure, say Y.
 
+config LINKER_LAST_SECTION_ID
+	bool "Last section identifier"
+	default y
+	depends on ARM || ARM64 || RISCV
+	help
+	  If enabled, the last section will contain an identifier.
+	  This ensures that the '_flash_used' linker symbol will always be
+	  correctly calculated, even in cases where the location counter may
+	  have been incremented for alignment purposes but no data is placed
+	  after alignment.
+
+	  Note: in cases where the flash is fully used, for example application
+	  specific data is written at the end of the flash area, then writing a
+	  last section identifier may cause rom region overflow.
+	  In such cases this setting should be disabled.
+
+config LINKER_LAST_SECTION_ID_PATTERN
+	hex "Last section identifier pattern"
+	default "0xE015E015"
+	depends on LINKER_LAST_SECTION_ID
+	help
+	  Pattern to fill into last section as identifier.
+	  Default pattern is 0xE015 (end of last section), but any pattern can
+	  be used.
+	  The size of the pattern must not exceed 4 bytes.
+
 endmenu # "Linker Sections"
 
 endmenu
@@ -321,6 +352,38 @@ config COMPILER_COLOR_DIAGNOSTICS
 	help
 	  Compiler diagnostic messages are colorized.
 
+choice COMPILER_SECURITY_FORTIFY
+	prompt "Detect buffer overflows in libc calls"
+	default FORTIFY_SOURCE_NONE if NO_OPTIMIZATIONS || MINIMAL_LIBC || NATIVE_APPLICATION
+	default FORTIFY_SOURCE_COMPILE_TIME
+	help
+	  Buffer overflow checking in libc calls. Supported by Clang and
+	  GCC when using Picolibc or Newlib. Requires compiler optimization
+	  to be enabled.
+
+config FORTIFY_SOURCE_NONE
+	bool "No detection"
+	help
+	  Disables both compile-time and run-time checking.
+
+config FORTIFY_SOURCE_COMPILE_TIME
+	bool "Compile-time detection"
+	help
+	  Enables only compile-time checking. Compile-time checking
+	  doesn't increase executable size or reduce performance, it
+	  limits checking to what can be done with information available
+	  at compile time.
+
+config FORTIFY_SOURCE_RUN_TIME
+	bool "Compile-time and run-time detection"
+	help
+	  Enables both compile-time and run-time checking. Run-time
+	  checking increases coverage at the expense of additional code,
+	  and means that applications will raise a runtime exception
+	  when buffer overflow is detected.
+
+endchoice
+
 config COMPILER_OPT
 	string "Custom compiler options"
 	help
@@ -376,6 +439,11 @@ config OUTPUT_STAT
 	default y
 	help
 	  Create a stat file using readelf -e <elf>
+
+config OUTPUT_SYMBOLS
+	bool "Create a symbol file"
+	help
+	  Create a symbol file using nm <elf>
 
 config OUTPUT_DISASSEMBLY
 	bool "Create a disassembly file"
@@ -595,6 +663,20 @@ config BUILD_OUTPUT_META_STATE_PROPAGATE
 
 endmenu
 
+config DEPRECATED
+	bool
+	help
+	  Symbol that must be selected by a feature or module if it is
+	  considered to be deprecated.
+
+config WARN_DEPRECATED
+	bool
+	default y
+	prompt "Warn on deprecated usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any deprecated
+	  features are enabled.
+
 config EXPERIMENTAL
 	bool
 	help
@@ -607,6 +689,28 @@ config WARN_EXPERIMENTAL
 	help
 	  Print a warning when the Kconfig tree is parsed if any experimental
 	  features are enabled.
+
+config TAINT
+	bool
+	help
+	  Symbol that must be selected by a feature or module if the Zephyr
+	  build is considered tainted.
+
+config ENFORCE_ZEPHYR_STDINT
+	bool
+	prompt "Enforce Zephyr convention for stdint"
+	depends on !ARCH_POSIX
+	default y
+	help
+	  This enforces the Zephyr stdint convention where int32_t = int,
+	  int64_t = long long, and intptr_t = long so that short string
+	  format length modifiers can be used universally across ILP32
+	  and LP64 architectures. Sometimes this is not possible e.g. when
+	  linking against a binary-only C++ library whose type mangling
+	  is incompatible with the Zephyr convention, or if the build
+	  environment doesn't allow such enforcement, in which case this
+	  should be turned off with the caveat that argument type validation
+	  on Zephyr code will be skipped.
 
 endmenu
 
@@ -809,13 +913,12 @@ config COMPAT_INCLUDES
 endmenu
 
 config LEGACY_INCLUDE_PATH
-	bool "Allow for the legacy include paths (without the zephyr/ prefix)"
-	default y
+	bool "Allow for the legacy include paths (without the zephyr/ prefix) (DEPRECATED)"
+	select DEPRECATED
 	help
-	  Allow applications and libraries to use the Zephyr legacy include
-	  path which does not use the zephyr/ prefix. For example, the
+	  DEPRECATED: Allow applications and libraries to use the Zephyr legacy
+	  include path which does not use the zephyr/ prefix. For example, the
 	  preferred way to include a Zephyr header is to use <zephyr/kernel.h>,
-	  but enabling CONFIG_LEGACY_INCLUDE_PATH will allow developers to
-	  use <kernel.h> instead. This (without the zephyr/ prefix) is
-	  deprecated and should be avoided. Eventually, it will not be
-	  supported.
+	  but enabling CONFIG_LEGACY_INCLUDE_PATH will allow developers to use
+	  <kernel.h> instead. This (without the zephyr/ prefix) is deprecated
+	  and should be avoided. Eventually, it will not be supported.

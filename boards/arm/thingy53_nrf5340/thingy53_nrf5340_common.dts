@@ -13,6 +13,8 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	buttons {
@@ -62,8 +64,7 @@
 	};
 
 	npm1100_force_pwm_mode: npm1100_force_pwm_mode {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "npm1100_force_pwm_mode";
+		compatible = "regulator-fixed";
 		regulator-name = "npm1100_force_pwm_mode";
 		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		status = "disabled";
@@ -79,16 +80,14 @@
 	};
 
 	regulator_3v3: regulator-3v3-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "vsys-3v3-ctrl";
+		compatible = "regulator-fixed";
 		regulator-name = "ncp114";
 		enable-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
 
 	sensor_pwr_ctrl: sensor-pwr-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "sens-pwr-ctrl";
+		compatible = "regulator-fixed";
 		regulator-name = "tck106ag";
 		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -114,6 +113,11 @@
 		pwm-led0 = &red_led_pwm;
 		pwm-led1 = &green_led_pwm;
 		pwm-led2 = &blue_led_pwm;
+		magn0 = &bmm150;
+		watchdog0 = &wdt0;
+		accel0 = &adxl362;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &blue_led;
 	};
 };
 
@@ -157,17 +161,20 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
-	bmm150@10 {
+	bmm150: bmm150@10 {
 		compatible = "bosch,bmm150";
-		label = "BMM150";
 		reg = <0x10>;
 	};
 
 	bh1749@38 {
 		compatible = "rohm,bh1749";
-		label = "BH1749";
 		reg = <0x38>;
 		int-gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+
+	bme688@76 {
+		compatible = "bosch,bme680";
+		reg = <0x76>;
 	};
 };
 
@@ -183,7 +190,6 @@
 	pinctrl-names = "default", "sleep";
 	adxl362: spi-dev-adxl362@0 {
 		compatible = "adi,adxl362";
-		label = "ADXL362";
 		spi-max-frequency = <8000000>;
 		reg = <0>;
 		int1-gpios = <&gpio0 19 0>;
@@ -191,17 +197,15 @@
 
 	bmi270: spi-dev-bmi270@1 {
 		compatible = "bosch,bmi270";
-		label = "BMI270";
+		status = "disabled";
 		spi-max-frequency = <8000000>;
 		reg = <1>;
-		int1-gpios = <&gpio0 23 0>;
 	};
 
 	nrf_radio_fem_spi: fem_spi@2 {
 		compatible = "nordic,nrf21540-fem-spi";
 		status = "disabled";
 		reg = <2>;
-		label = "FEM_SPI_IF";
 		spi-max-frequency = <8000000>;
 	};
 };
@@ -230,7 +234,6 @@
 		/* Thingy:53 supports only fastread and read2io options */
 		readoc = "read2io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
@@ -288,6 +291,15 @@
 			reg = <0x000fa000 0x00006000>;
 		};
 	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
 };
 
 / {

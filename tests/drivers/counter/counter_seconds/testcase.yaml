@@ -1,11 +1,11 @@
 tests:
   drivers.counter.cmos:
-    tags: drivers
+    tags: drivers counter
     arch_allow: x86
     extra_configs:
       - CONFIG_COUNTER_CMOS=y
     filter: CONFIG_X86_PC_COMPATIBLE
 
   drivers.counter.mcux.snvs.rtc:
-    tags: drivers
+    tags: drivers counter
     platform_allow: mimxrt1064_evk

@@ -15,10 +15,8 @@ CPU and the following devices:
 - Cortex-M System Design Kit GPIO
 - Cortex-M System Design Kit UART
 
-.. image:: img/mps2_an521.png
-     :width: 666px
+.. image:: img/mps2_an521.jpg
      :align: center
-     :height: 546px
      :alt: ARM MPS2+ AN521
 
 In addition to enabling actual hardware usage, this board configuration can
@@ -44,7 +42,7 @@ both Secure and Non-Secure firmware images may be built.
 The BOARD options are summarized below:
 
 +----------------------+-------------------------------------------------------+
-|   BOARD              | Description                                           |
+| BOARD                | Description                                           |
 +======================+=======================================================+
 | mps2_an521           | For building Secure (or Secure-only) firmware on CPU0 |
 +----------------------+-------------------------------------------------------+
@@ -53,21 +51,65 @@ The BOARD options are summarized below:
 | mps2_an521_remote    | For building firmware on CPU1                         |
 +----------------------+-------------------------------------------------------+
 
+Memory Partitioning
+===================
+
+The AN521 has 4MB allocated for code space, and 4MB for SRAM. These memory
+regions are shared across both cores, and are aliased in both secure and
+non-secure regions, where the secure memory alias has an offset of
+0x10000000 relative to non-secure.
+
+The following memory map and partitioning schemes are used by default, where
+the offset value is the offset from the base of the 4MB code or SRAM block,
+ignoring the S/NS alias difference.
+
++-------------------+-----+----------------+----------------+------------+
+| Board             | CPU | Code (Offset)  | SRAM (Offset)  | S/NS Alias |
++===================+=====+================+================+============+
+| mps2_an521        | 0   | 4MB (0)        | 4MB (0)        | S          |
++-------------------+-----+----------------+----------------+------------+
+| mps2_an521_ns     | 0   | 512KB (1MB)    | 512KB (1MB)    | NS         |
++-------------------+-----+----------------+----------------+------------+
+| mps2_an521_remote | 1   | 468KB (3628KB) | 512KB (1.5MB)  | NS         |
++-------------------+-----+----------------+----------------+------------+
+
+The ``mps2_an521_ns`` board target is intended to be used with TF-M, with the
+Zephyr memory map matching the AN521 memory map defined upstream in TF-M. TF-M
+boots the secure processing environment before initialising Zephyr in the
+non-secure processing environment. The non-secure Zephyr image is offset to
+make room for the secure bootloader, and the secure firmware (TF-M), resulting
+in a starting address of 0x00100000. SRAM begins with a 1MB offset at
+0x28100000.
+
+The ``mps2_an521_remote`` board target is setup for the second core on the
+AN521, using the final 468KB code memory in the 4MB code block. This value
+is chosen to maintain compatibility with TF-M, which marks that final 468KB
+code region as ``Unused``. Code memory thus starts with an offset of
+3628KB (address 0x0038B000), and sram starts with an offset of 1.5MB
+(address 0x28180000).
+
+This memory map enables the two alternative board targets to be used together
+if required, at the cost of reducing the amount of code memory available on
+the second core to the worst-case scenario from TF-M.
+
+When using one of the alternative board targets (``mps2_an521_ns`` or
+``mps2_an521_remote``), care needs to be taken with the amount of code or
+SRAM memory used on the primary board target (``mps2_an521``) since there is
+some overlap in the memory maps.
 
 Hardware
 ********
 
 ARM MPS2+ AN521 provides the following hardware components:
 
-
-
 - Dual core ARM Cortex-M33
 - Soft Macro Model (SMM) implementation of SSE-200 subsystem
 - Memory
 
-  - 16MB internal memory SRAM
+  - 4MB of code memory (SSRAM1)
+  - 4MB of SRAM (SSRAM2 and SSRAM3)
+  - 16MB of parallel SRAM (PSRAM, non-secure only)
   - 8KB of NVM code
-  - 224MB code memory
 
 - Debug
 
@@ -514,19 +556,19 @@ serial port:
    https://developer.arm.com/tools-and-software/development-boards/fpga-prototyping-boards/mps2
 
 .. _MPS2+ AN521 Technical Reference Manual (TRM):
-   http://infocenter.arm.com/help/topic/com.arm.doc.dai0521c/DAI0521C_Example_SSE200_Subsystem_for_MPS2plus.pdf
+   https://developer.arm.com/documentation/dai0521/latest/
 
 .. _Cortex M33 Generic User Guide:
-   http://infocenter.arm.com/help/topic/com.arm.doc.100235_0004_00_en/arm_cortex_m33_dgug_100235_0004_00_en.pdf
+   https://developer.arm.com/documentation/100235/latest/
 
 .. _Trusted Firmware M:
-   https://git.trustedfirmware.org/trusted-firmware-m.git/tree/docs/user_guides/tfm_build_instruction.rst
+   https://tf-m-user-guide.trustedfirmware.org/building/tfm_build_instruction.html
 
 .. _Corelink SSE-200 Subsystem:
-   https://developer.arm.com/products/system-design/subsystems/corelink-sse-200-subsystem
+   https://developer.arm.com/documentation/dto0051/latest/subsystem-overview/about-the-sse-200
 
 .. _IDAU:
-   https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
+   https://developer.arm.com/documentation/100690/latest/Attribution-units--SAU-and-IDAU-
 
 .. _AMBA®:
    https://developer.arm.com/products/architecture/system-architectures/amba

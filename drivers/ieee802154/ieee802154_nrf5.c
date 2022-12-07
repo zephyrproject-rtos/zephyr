@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_nrf_ieee802154
+
 #define LOG_MODULE_NAME ieee802154_nrf5
 #if defined(CONFIG_IEEE802154_DRIVER_LOG_LEVEL)
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
@@ -39,6 +41,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/random/rand32.h>
 
 #include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/irq.h>
 
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
@@ -59,9 +62,7 @@ static struct nrf5_802154_data nrf5_data;
 #define FRAME_PENDING_BYTE 1
 #define FRAME_PENDING_BIT (1 << 4)
 
-#define DRX_SLOT_PH 0 /* Placeholder delayed reception window ID */
-#define DRX_SLOT_RX 1 /* Actual delayed reception window ID */
-#define PH_DURATION 10 /* Duration of the placeholder window, in microseconds */
+#define DRX_SLOT_RX 0 /* Delayed reception window ID */
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
@@ -127,6 +128,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 	struct net_pkt *pkt;
 	struct nrf5_802154_rx_frame *rx_frame;
 	uint8_t pkt_len;
+	uint8_t *psdu;
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -190,8 +192,9 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			goto drop;
 		}
 
-		nrf_802154_buffer_free_raw(rx_frame->psdu);
+		psdu = rx_frame->psdu;
 		rx_frame->psdu = NULL;
+		nrf_802154_buffer_free_raw(psdu);
 
 		if (LOG_LEVEL >= LOG_LEVEL_DBG) {
 			log_stack_usage(&nrf5_radio->rx_thread);
@@ -200,8 +203,9 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		continue;
 
 drop:
-		nrf_802154_buffer_free_raw(rx_frame->psdu);
+		psdu = rx_frame->psdu;
 		rx_frame->psdu = NULL;
+		nrf_802154_buffer_free_raw(psdu);
 
 		net_pkt_unref(pkt);
 	}
@@ -374,8 +378,8 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 		ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
 	}
 
-	ack_pkt = net_pkt_alloc_with_buffer(nrf5_radio->iface, ack_len,
-					    AF_UNSPEC, 0, K_NO_WAIT);
+	ack_pkt = net_pkt_rx_alloc_with_buffer(nrf5_radio->iface, ack_len,
+					       AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
@@ -436,14 +440,14 @@ static bool nrf5_tx_immediate(struct net_pkt *pkt, uint8_t *payload, bool cca)
 {
 	nrf_802154_transmit_metadata_t metadata = {
 		.frame_props = {
-			.is_secured = pkt->ieee802154_frame_secured,
-			.dynamic_data_is_set = pkt->ieee802154_mac_hdr_rdy,
+			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
+			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = pkt->ieee802154_txpwr,
+			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
 	};
@@ -456,13 +460,13 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 {
 	nrf_802154_transmit_csma_ca_metadata_t metadata = {
 		.frame_props = {
-			.is_secured = pkt->ieee802154_frame_secured,
-			.dynamic_data_is_set = pkt->ieee802154_mac_hdr_rdy,
+			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
+			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = pkt->ieee802154_txpwr,
+			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
 	};
@@ -543,15 +547,15 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 {
 	nrf_802154_transmit_at_metadata_t metadata = {
 		.frame_props = {
-			.is_secured = pkt->ieee802154_frame_secured,
-			.dynamic_data_is_set = pkt->ieee802154_mac_hdr_rdy,
+			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
+			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
 		.channel = nrf_802154_channel_get(),
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = pkt->ieee802154_txpwr,
+			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
 	};
@@ -830,17 +834,13 @@ static void nrf5_receive_at(uint32_t start, uint32_t duration, uint8_t channel, 
 
 static void nrf5_config_csl_period(uint16_t period)
 {
-	nrf_802154_receive_at_cancel(DRX_SLOT_PH);
-	nrf_802154_receive_at_cancel(DRX_SLOT_RX);
-
 	nrf_802154_csl_writer_period_set(period);
 
-	/* A placeholder reception window is scheduled so that the radio driver is able to inject
-	 * the proper CSL Phase in the transmitted CSL Information Elements.
+	/* Update the CSL anchor time to match the nearest requested CSL window, so that
+	 * the proper CSL Phase in the transmitted CSL Information Elements can be injected.
 	 */
 	if (period > 0) {
-		nrf5_receive_at(nrf5_data.csl_rx_time, PH_DURATION, nrf_802154_channel_get(),
-				DRX_SLOT_PH);
+		nrf_802154_csl_writer_anchor_time_set(nrf5_data.csl_rx_time);
 	}
 }
 
@@ -848,9 +848,16 @@ static void nrf5_schedule_rx(uint8_t channel, uint32_t start, uint32_t duration)
 {
 	nrf5_receive_at(start, duration, channel, DRX_SLOT_RX);
 
-	/* The placeholder reception window is rescheduled for the next period */
-	nrf_802154_receive_at_cancel(DRX_SLOT_PH);
-	nrf5_receive_at(nrf5_data.csl_rx_time, PH_DURATION, channel, DRX_SLOT_PH);
+	/* Update the CSL anchor time to match the nearest requested CSL window, so that
+	 * the proper CSL Phase in the transmitted CSL Information Elements can be injected.
+	 *
+	 * Note that even if the nrf5_schedule_rx function is not called in time (for example
+	 * due to the call being blocked by higher priority threads) and the delayed reception
+	 * window is not scheduled, the CSL phase will still be calculated as if the following
+	 * reception windows were at times anchor_time + n * csl_period. The previously set
+	 * anchor_time will be used for calculations.
+	 */
+	nrf_802154_csl_writer_anchor_time_set(nrf5_data.csl_rx_time);
 }
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
@@ -935,9 +942,10 @@ static int nrf5_configure(const struct device *dev,
 		sys_put_le16(config->ack_ie.short_addr, short_addr_le);
 		/**
 		 * The extended address field passed to this function starts
-		 * with the leftmost octet and ends with the rightmost octet.
+		 * with the most significant octet and ends with the least
+		 * significant octet (i.e. big endian byte order).
 		 * The IEEE 802.15.4 transmission order mandates this order to be
-		 * reversed in a transmitted frame.
+		 * reversed (i.e. little endian byte order) in a transmitted frame.
 		 *
 		 * The nrf_802154_ack_data_set expects extended address in transmission
 		 * order.
@@ -1015,7 +1023,7 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 	const struct device *dev = net_if_get_device(nrf5_data.iface);
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-	if ((id == DRX_SLOT_PH) || (id == DRX_SLOT_RX)) {
+	if (id == DRX_SLOT_RX) {
 		__ASSERT_NO_MSG(nrf5_data.event_handler);
 		nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
 		if (error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
@@ -1139,9 +1147,9 @@ void nrf_802154_energy_detection_failed(nrf_802154_ed_error_t error)
 }
 
 #if defined(CONFIG_NRF_802154_SER_HOST)
-void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *p_err)
+void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *err)
 {
-	__ASSERT(false, "802.15.4 serialization error");
+	__ASSERT(false, "802.15.4 serialization error: %d", err->reason);
 }
 #endif
 
@@ -1169,7 +1177,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 #if defined(CONFIG_NET_L2_IEEE802154)
 #define L2 IEEE802154_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
-#define MTU 125
+#define MTU IEEE802154_MTU
 #elif defined(CONFIG_NET_L2_OPENTHREAD)
 #define L2 OPENTHREAD_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
@@ -1181,14 +1189,11 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 #endif
 
 #if defined(CONFIG_NET_L2_PHY_IEEE802154)
-NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
-		CONFIG_IEEE802154_NRF5_INIT_PRIO,
-		&nrf5_radio_api, L2,
-		L2_CTX_TYPE, MTU);
+NET_DEVICE_DT_INST_DEFINE(0, nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
+			  CONFIG_IEEE802154_NRF5_INIT_PRIO, &nrf5_radio_api, L2,
+			  L2_CTX_TYPE, MTU);
 #else
-DEVICE_DEFINE(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
-		POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
-		&nrf5_radio_api);
+DEVICE_DT_INST_DEFINE(0, nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
+		      POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
+		      &nrf5_radio_api);
 #endif

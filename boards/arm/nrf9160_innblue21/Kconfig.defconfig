@@ -42,4 +42,7 @@ endif # BOARD_NRF9160_INNBLUE21_NS
 config BT_HCI_VS
 	default y if BT
 
+config REGULATOR
+	default y if SENSOR
+
 endif # BOARD_NRF9160_INNBLUE21 || BOARD_NRF9160_INNBLUE21_NS

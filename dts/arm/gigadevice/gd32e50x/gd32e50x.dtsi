@@ -1,0 +1,433 @@
+/*
+ * Copyright (c) 2022, Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/clock/gd32e50x-clocks.h>
+#include <zephyr/dt-bindings/reset/gd32e50x.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clock-frequency = <DT_FREQ_M(180)>;
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		rcu: reset-clock-controller@40021000 {
+			compatible = "gd,gd32-rcu";
+			reg = <0x40021000 0x400>;
+			status = "okay";
+
+			cctl: clock-controller {
+				compatible = "gd,gd32-cctl";
+				#clock-cells = <1>;
+				status = "okay";
+			};
+
+			rctl: reset-controller {
+				compatible = "gd,gd32-rctl";
+				#reset-cells = <1>;
+				status = "okay";
+			};
+		};
+
+		fmc: flash-controller@40022000 {
+			compatible = "gd,gd32-flash-controller";
+			reg = <0x40022000 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "gd,gd32-nv-flash-v1", "soc-nv-flash";
+				write-block-size = <2>;
+				/* GD32E50x DataSheet not defined the maximum page erase time
+				 * for flash memory.
+				 * From other GD32 DataSheets, we can find 1KB page normally have a
+				 * 300ms max time.
+				 * Assume GD32E50x use the worst implementation, set the max erase
+				 * time to 8 times of 1KB page.
+				 */
+				max-erase-time-ms = <2400>;
+				page-size = <DT_SIZE_K(8)>;
+			};
+		};
+
+		mpu: mpu@e000ed90 {
+			compatible = "arm,armv8m-mpu";
+			reg = <0xe000ed90 0x40>;
+			arm,num-mpu-regions = <8>;
+		};
+
+		usart0: usart@40013800 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40013800 0x400>;
+			interrupts = <37 0>;
+			clocks = <&cctl GD32_CLOCK_USART0>;
+			resets = <&rctl GD32_RESET_USART0>;
+			status = "disabled";
+		};
+
+		usart1: usart@40004400 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004400 0x400>;
+			interrupts = <38 0>;
+			clocks = <&cctl GD32_CLOCK_USART1>;
+			resets = <&rctl GD32_RESET_USART1>;
+			status = "disabled";
+		};
+
+		usart2: usart@40004800 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004800 0x400>;
+			interrupts = <39 0>;
+			clocks = <&cctl GD32_CLOCK_USART2>;
+			resets = <&rctl GD32_RESET_USART2>;
+			status = "disabled";
+		};
+
+		uart3: usart@40004c00 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004c00 0x400>;
+			interrupts = <52 0>;
+			clocks = <&cctl GD32_CLOCK_UART3>;
+			resets = <&rctl GD32_RESET_UART3>;
+			status = "disabled";
+		};
+
+		uart4: usart@40005000 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40005000 0x400>;
+			interrupts = <53 0>;
+			clocks = <&cctl GD32_CLOCK_UART4>;
+			resets = <&rctl GD32_RESET_UART4>;
+			status = "disabled";
+		};
+
+		usart5: usart@40017000 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40017000 0x400>;
+			interrupts = <84 0>, <86 0>;
+			interrupt-names = "global", "wkup";
+			clocks = <&cctl GD32_CLOCK_USART5>;
+			resets = <&rctl GD32_RESET_USART5>;
+			status = "disabled";
+		};
+
+		dac: dac@40007400 {
+			compatible = "gd,gd32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&cctl GD32_CLOCK_DAC>;
+			resets = <&rctl GD32_RESET_DAC>;
+			num-channels = <2>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		i2c0: i2c@40005400 {
+			compatible = "gd,gd32-i2c";
+			reg = <0x40005400 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <31 0>, <32 0>;
+			interrupt-names = "event", "error";
+			clocks = <&cctl GD32_CLOCK_I2C0>;
+			resets = <&rctl GD32_RESET_I2C0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40005800 {
+			compatible = "gd,gd32-i2c";
+			reg = <0x40005800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			clocks = <&cctl GD32_CLOCK_I2C1>;
+			resets = <&rctl GD32_RESET_I2C1>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@4000c000 {
+			compatible = "gd,gd32-i2c";
+			reg = <0x4000c000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <82 0>, <83 0>;
+			interrupt-names = "event", "error";
+			clocks = <&cctl GD32_CLOCK_I2C2>;
+			resets = <&rctl GD32_RESET_I2C2>;
+			status = "disabled";
+		};
+
+		exti: interrupt-controller@40010400 {
+			compatible = "gd,gd32-exti";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			reg = <0x40010400 0x400>;
+			num-lines = <22>;
+			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
+				     <10 0>, <23 0>, <40 0>;
+			interrupt-names = "line0", "line1", "line2", "line3",
+					  "line4", "line5-9", "line10-15";
+			status = "okay";
+		};
+
+		afio: afio@40010000 {
+			compatible = "gd,gd32-afio";
+			reg = <0x40010000 0x400>;
+			clocks = <&cctl GD32_CLOCK_AFIO>;
+			status = "okay";
+		};
+
+		fwdgt: watchdog@40003000 {
+			compatible = "gd,gd32-fwdgt";
+			reg = <0x40003000 0x400>;
+			status = "disabled";
+		};
+
+		wwdgt: watchdog@40002c00 {
+			compatible = "gd,gd32-wwdgt";
+			reg = <0x40002C00 0x400>;
+			clocks = <&cctl GD32_CLOCK_WWDGT>;
+			resets = <&rctl GD32_RESET_WWDGT>;
+			interrupts = <0 0>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@40010800 {
+			compatible = "gd,gd32-pinctrl-afio";
+			reg = <0x40010800 0x2400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpioa: gpio@40010800 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40010800 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOA>;
+				resets = <&rctl GD32_RESET_GPIOA>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@40010c00 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40010c00 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOB>;
+				resets = <&rctl GD32_RESET_GPIOB>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@40011000 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40011000 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOC>;
+				resets = <&rctl GD32_RESET_GPIOC>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@40011400 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40011400 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOD>;
+				resets = <&rctl GD32_RESET_GPIOD>;
+				status = "disabled";
+			};
+
+			gpioe: gpio@40011800 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40011800 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOE>;
+				resets = <&rctl GD32_RESET_GPIOE>;
+				status = "disabled";
+			};
+
+			gpiof: gpio@40011c00 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40011c00 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOF>;
+				resets = <&rctl GD32_RESET_GPIOF>;
+				status = "disabled";
+			};
+
+			gpiog: gpio@40012000 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40012000 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOG>;
+				resets = <&rctl GD32_RESET_GPIOG>;
+				status = "disabled";
+			};
+		};
+
+		timer0: timer@40012c00 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40012c00 0x400>;
+			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
+			clocks = <&cctl GD32_CLOCK_TIMER0>;
+			resets = <&rctl GD32_RESET_TIMER0>;
+			is-advanced;
+			channels = <4>;
+			status = "disabled";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer1: timer@40000000 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40000000 0x400>;
+			interrupts = <28 0>;
+			interrupt-names = "global";
+			clocks = <&cctl GD32_CLOCK_TIMER1>;
+			resets = <&rctl GD32_RESET_TIMER1>;
+			is-32bit;
+			channels = <4>;
+			status = "disabled";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer2: timer@40000400 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40000400 0x400>;
+			interrupts = <29 0>;
+			interrupt-names = "global";
+			clocks = <&cctl GD32_CLOCK_TIMER2>;
+			resets = <&rctl GD32_RESET_TIMER2>;
+			channels = <4>;
+			status = "disabled";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer3: timer@40000800 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40000800 0x400>;
+			interrupts = <30 0>;
+			interrupt-names = "global";
+			clocks = <&cctl GD32_CLOCK_TIMER3>;
+			resets = <&rctl GD32_RESET_TIMER3>;
+			channels = <4>;
+			status = "disabled";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer4: timer@40000c00 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40000c00 0x400>;
+			interrupts = <50 0>;
+			interrupt-names = "global";
+			clocks = <&cctl GD32_CLOCK_TIMER4>;
+			resets = <&rctl GD32_RESET_TIMER4>;
+			is-32bit;
+			channels = <4>;
+			status = "disabled";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer5: timer@40001000 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40001000 0x400>;
+			interrupts = <54 0>;
+			interrupt-names = "global";
+			clocks = <&cctl GD32_CLOCK_TIMER5>;
+			resets = <&rctl GD32_RESET_TIMER5>;
+			channels = <0>;
+			status = "disabled";
+		};
+
+		timer6: timer@40001400 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40001400 0x400>;
+			interrupts = <55 0>;
+			interrupt-names = "global";
+			clocks = <&cctl GD32_CLOCK_TIMER6>;
+			resets = <&rctl GD32_RESET_TIMER6>;
+			channels = <0>;
+			status = "disabled";
+		};
+
+		dma0: dma@40020000 {
+			compatible = "gd,gd32-dma";
+			reg = <0x40020000 0x400>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>,
+				     <15 0>, <16 0>, <17 0>;
+			clocks = <&cctl GD32_CLOCK_DMA0>;
+			dma-channels = <7>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
+		dma1: dma@40020400 {
+			compatible = "gd,gd32-dma";
+			reg = <0x40020400 0x400>;
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>,
+				     <60 0>;
+			clocks = <&cctl GD32_CLOCK_DMA1>;
+			dma-channels = <5>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

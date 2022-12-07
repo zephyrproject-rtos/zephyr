@@ -3,6 +3,9 @@
 
 config AUDIO_TLV320DAC
 	bool "TLV320DAC310x DAC support"
-	depends on I2C && GPIO
+	default y
+	depends on DT_HAS_TI_TLV320DAC_ENABLED
+	select I2C
+	depends on GPIO
 	help
 	  Enable TLV320DAC support on the selected board

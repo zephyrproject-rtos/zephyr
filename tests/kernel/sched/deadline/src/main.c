@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <zephyr/random/rand32.h>
 
 #define NUM_THREADS 8
@@ -48,9 +48,11 @@ void worker(void *p1, void *p2, void *p3)
 	}
 }
 
-void test_deadline(void)
+ZTEST(suite_deadline, test_deadline)
 {
 	int i;
+
+	n_exec = 0;
 
 	/* Create a bunch of threads at a single lower priority.  Give
 	 * them each a random deadline.  Sleep, and check that they
@@ -125,7 +127,7 @@ void yield_worker(void *p1, void *p2, void *p3)
 	k_thread_abort(k_current_get());
 }
 
-void test_yield(void)
+ZTEST(suite_deadline, test_yield)
 {
 	/* Test that yield works across threads with the
 	 * same deadline and priority. This currently works by
@@ -177,7 +179,7 @@ void unqueue_worker(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_unqueued(void)
+ZTEST(suite_deadline, test_unqueued)
 {
 	int i;
 
@@ -211,11 +213,4 @@ void test_unqueued(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(suite_deadline,
-			 ztest_unit_test(test_deadline),
-			 ztest_unit_test(test_yield),
-			 ztest_unit_test(test_unqueued));
-	ztest_run_test_suite(suite_deadline);
-}
+ZTEST_SUITE(suite_deadline, NULL, NULL, NULL, NULL, NULL);

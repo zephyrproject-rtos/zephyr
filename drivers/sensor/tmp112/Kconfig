@@ -5,7 +5,9 @@
 
 config TMP112
 	bool "TMP112 Temperature Sensor"
-	depends on I2C
+	default y
+	depends on DT_HAS_TI_TMP112_ENABLED
+	select I2C
 	help
 	  Enable the driver for Texas Instruments TMP112 High-Accuracy Digital
 	  Temperature Sensors.

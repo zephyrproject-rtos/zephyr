@@ -6,7 +6,8 @@
 config PWM_NRF5_SW
 	bool "Nordic Semiconductor nRF5x series S/W PWM"
 	default y if !PWM_NRFX
-	depends on HAS_HW_NRF_PPI
+	depends on DT_HAS_NORDIC_NRF_SW_PWM_ENABLED
+	depends on DT_HAS_NORDIC_NRF_PPI_ENABLED
 	select NRFX_GPIOTE
 	select NRFX_PPI
 	help

@@ -58,3 +58,19 @@ arduino_spi: &flexcomm5 {
 	pinctrl-0 = <&pinmux_flexcomm5_spi>;
 	pinctrl-names = "default";
 };
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 0x00010000>;
+		};
+		slot1_partition: partition@10000 {
+			label = "image-1";
+			reg = <0x00010000 0x00010000>;
+		};
+	};
+};

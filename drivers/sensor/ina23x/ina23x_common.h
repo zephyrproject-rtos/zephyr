@@ -7,7 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_INA23X_COMMON_H_
 #define ZEPHYR_DRIVERS_SENSOR_INA23X_COMMON_H_
 
+#include <stdint.h>
+
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util_macro.h>
 
 /**
  * @brief Macro used to test if the current's sign bit is set

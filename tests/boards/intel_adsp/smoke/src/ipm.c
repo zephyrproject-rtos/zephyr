@@ -1,7 +1,7 @@
 /* Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/drivers/ipm.h>
 #include "tests.h"
 
@@ -50,17 +50,17 @@ static void msg_transact(bool do_wait)
 	received_id = ID_INVALID;
 
 	/* Now whitebox the message protocol: copy the message buffer
-	 * (on the host side!) from the outbox to the inbox.  That
+	 * (on the host side!) from the outbox to the inbox. That
 	 * will write into our "already received" inbox buffer memory.
-	 * We do this using the underlying cavs_ipc API, which works
-	 * only because we know it works.  Note that on cAVS 1.8+, the
+	 * We do this using the underlying intel_adsp_ipc API, which works
+	 * only because we know it works. Note that on cAVS 1.8+, the
 	 * actual in-use amount of the message will be one word
 	 * shorter (because the first word is sent as IPC ext_data),
 	 * but it won't be inspected below.
 	 */
 	for (int i = 0; i < ARRAY_SIZE(msg); i++) {
-		cavs_ipc_send_message_sync(CAVS_HOST_DEV, IPCCMD_WINCOPY,
-					   (i << 16) | i, K_FOREVER);
+		intel_adsp_ipc_send_message_sync(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_WINCOPY,
+			(i << 16) | i, K_FOREVER);
 	}
 
 	/* Validate data */
@@ -69,16 +69,16 @@ static void msg_transact(bool do_wait)
 	}
 }
 
-/* This is a little whiteboxey.  It relies on the knowledge that an
+/* This is a little whiteboxey. It relies on the knowledge that an
  * IPM message is nothing but a IPC message with the "id" parameter
  * passed as data (and, on cAVS 1.8+ only, the first word of the
  * message buffer passed as ext_data).
  */
-void test_ipm_cavs_host(void)
+ZTEST(intel_adsp, test_ipm_cavs_host)
 {
-	/* Restore IPM driver state (we've been mucking with cavs_ipc tests) */
-	cavs_ipc_set_message_handler(CAVS_HOST_DEV, ipm_handler, (void *)IPM_DEV);
-	cavs_ipc_set_done_handler(CAVS_HOST_DEV, NULL, NULL);
+	/* Restore IPM driver state (we've been mucking with intel_adsp_ipc tests) */
+	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, ipm_handler, (void *)IPM_DEV);
+	intel_adsp_ipc_set_done_handler(INTEL_ADSP_IPC_HOST_DEV, NULL, NULL);
 
 	ipm_register_callback(IPM_DEV, ipm_msg, NULL);
 

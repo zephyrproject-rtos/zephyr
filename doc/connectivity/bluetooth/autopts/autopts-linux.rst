@@ -20,8 +20,7 @@ Supported methods to test zephyr bluetooth host:
 
 - Testing Zephyr combined (controller + host) build on Real hardware (such as nRF52)
 
-For running with QEMU or native posix, please visit:
-   https://docs.zephyrproject.org/latest/guides/bluetooth/bluetooth-tools.html?highlight=hci_uart#running-on-qemu-and-native-posix
+For running with QEMU or native posix, see :ref:`bluetooth_qemu_posix`.
 
 Setup Linux
 ===========================

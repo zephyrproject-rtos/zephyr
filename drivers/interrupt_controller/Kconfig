@@ -16,31 +16,24 @@ config ARCV2_INTERRUPT_UNIT
 	  building a processor, you can configure the processor to include an
 	  interrupt unit. The ARCv2 interrupt unit is highly programmable.
 
-config PLIC
-	bool "Platform Level Interrupt Controller (PLIC)"
-	default y
-	depends on RISCV_HAS_PLIC
-	select MULTI_LEVEL_INTERRUPTS
-	select 2ND_LEVEL_INTERRUPTS
-	help
-	  Platform Level Interrupt Controller provides support
-	  for external interrupt lines defined by the RISC-V SoC;
-
 config SWERV_PIC
 	bool "SweRV EH1 Programmable Interrupt Controller (PIC)"
+	default y
+	depends on DT_HAS_SWERV_PIC_ENABLED
 	help
-	  Programmable Interrupt Controller for the SweRV EH1 RISC-V CPU;
+	  Programmable Interrupt Controller for the SweRV EH1 RISC-V CPU.
 
 config VEXRISCV_LITEX_IRQ
 	bool "VexRiscv LiteX Interrupt controller"
-	depends on SOC_RISCV32_LITEX_VEXRISCV
+	default y
+	depends on DT_HAS_VEXRISCV_INTC0_ENABLED
 	help
 	  IRQ implementation for LiteX VexRiscv
 
 config LEON_IRQMP
 	bool "GRLIB IRQMP interrupt controller"
 	default y
-	depends on SOC_SPARC_LEON
+	depends on DT_HAS_GAISLER_IRQMP_ENABLED
 	help
 	  GRLIB IRQMP and IRQAMP
 
@@ -82,8 +75,12 @@ source "drivers/interrupt_controller/Kconfig.esp32c3"
 
 source "drivers/interrupt_controller/Kconfig.xec"
 
-source "drivers/interrupt_controller/Kconfig.eclic"
+source "drivers/interrupt_controller/Kconfig.clic"
 
 source "drivers/interrupt_controller/Kconfig.gd32_exti"
+
+source "drivers/interrupt_controller/Kconfig.plic"
+
+source "drivers/interrupt_controller/Kconfig.nxp_s32"
 
 endmenu

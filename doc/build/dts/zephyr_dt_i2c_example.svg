@@ -231,41 +231,8 @@
     </switch>
   </g>
   <g
-     id="g54"
-     transform="translate(272.68201,266.75)">
-    <switch
-       id="switch52">
-      <foreignObject
-         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
-         height="12"
-         width="80"
-         pointer-events="all"
-         style="overflow:visible;">
-        <xhtml:div
-           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 350px; width: 81px; white-space: normal; overflow-wrap: normal; text-align: left;">
-          <xhtml:div
-             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
-            <xhtml:div>label = &quot;I2C_0&quot;</xhtml:div>
-          </xhtml:div>
-        </xhtml:div>
-      </foreignObject>
-      <text
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Helvetica;-inkscape-font-specification:'Helvetica, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000"
-         id="text50"
-         font-size="12px"
-         y="12"
-         x="40">
-        <tspan
-           y="12"
-           x="40"
-           sodipodi:role="line"
-           id="tspan289">label = &quot;I2C_0&quot;</tspan>
-      </text>
-    </switch>
-  </g>
-  <g
      id="g60"
-     transform="translate(277.75,292.75)">
+     transform="translate(272,267)">
     <switch
        id="switch58">
       <foreignObject
@@ -275,7 +242,7 @@
          pointer-events="all"
          style="overflow:visible;">
         <xhtml:div
-           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 350px; width: 145px; white-space: normal; overflow-wrap: normal; text-align: left;">
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 350px; width: 190px; white-space: normal; overflow-wrap: normal; text-align: left;">
           <xhtml:div
              style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">reg = &lt;0x4003000 0x1000&gt;</xhtml:div>
         </xhtml:div>
@@ -420,7 +387,7 @@
              pointer-events="all"
              style="overflow:visible;">
             <xhtml:div
-               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 251px; white-space: normal; overflow-wrap: normal; text-align: left;">
+               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 340px; white-space: normal; overflow-wrap: normal; text-align: left;">
               <xhtml:div
                  style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">compatible = &quot;nxp,fxos8700&quot;, &quot;nxp,mma8652fc&quot;</xhtml:div>
             </xhtml:div>
@@ -434,33 +401,8 @@
         </switch>
       </g>
       <g
-         id="g118"
-         transform="translate(524.25,440.5)">
-        <switch
-           id="switch116">
-          <foreignObject
-             requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
-             height="12"
-             width="118"
-             pointer-events="all"
-             style="overflow:visible;">
-            <xhtml:div
-               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 119px; white-space: normal; overflow-wrap: normal; text-align: left;">
-              <xhtml:div
-                 style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">label = &quot;MMA8652FC&quot;</xhtml:div>
-            </xhtml:div>
-          </foreignObject>
-          <text
-             style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
-             id="text114"
-             font-size="12px"
-             y="12"
-             x="59">label = &quot;MMA8652FC&quot;</text>
-        </switch>
-      </g>
-      <g
          id="g124"
-         transform="translate(524.25,466.5)">
+         transform="translate(524,440)">
         <switch
            id="switch122">
           <foreignObject
@@ -470,7 +412,7 @@
              pointer-events="all"
              style="overflow:visible;">
             <xhtml:div
-               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 71px; white-space: normal; overflow-wrap: normal; text-align: left;">
+               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 150px; white-space: normal; overflow-wrap: normal; text-align: left;">
               <xhtml:div
                  style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">reg = &lt;0x1d&gt;</xhtml:div>
             </xhtml:div>
@@ -559,33 +501,8 @@
         </switch>
       </g>
       <g
-         id="g148"
-         transform="translate(299,658.5)">
-        <switch
-           id="switch146">
-          <foreignObject
-             requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
-             height="12"
-             width="100"
-             pointer-events="all"
-             style="overflow:visible;">
-            <xhtml:div
-               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 101px; white-space: normal; overflow-wrap: normal; text-align: left;">
-              <xhtml:div
-                 style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">label = &quot;HDC1010&quot;</xhtml:div>
-            </xhtml:div>
-          </foreignObject>
-          <text
-             style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
-             id="text144"
-             font-size="12px"
-             y="12"
-             x="50">label = &quot;HDC1010&quot;</text>
-        </switch>
-      </g>
-      <g
          id="g154"
-         transform="translate(299,684.5)">
+         transform="translate(299,658)">
         <switch
            id="switch152">
           <foreignObject
@@ -595,7 +512,7 @@
              pointer-events="all"
              style="overflow:visible;">
             <xhtml:div
-               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 71px; white-space: normal; overflow-wrap: normal; text-align: left;">
+               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 150px; white-space: normal; overflow-wrap: normal; text-align: left;">
               <xhtml:div
                  style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">reg = &lt;0x43&gt;</xhtml:div>
             </xhtml:div>
@@ -673,7 +590,7 @@
              pointer-events="all"
              style="overflow:visible;">
             <xhtml:div
-               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 168px; white-space: normal; overflow-wrap: normal; text-align: left;">
+               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 250px; white-space: normal; overflow-wrap: normal; text-align: left;">
               <xhtml:div
                  style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">compatible = &quot;avago,apds9960&quot;</xhtml:div>
             </xhtml:div>
@@ -687,33 +604,8 @@
         </switch>
       </g>
       <g
-         id="g178"
-         transform="translate(5.5,521.5)">
-        <switch
-           id="switch176">
-          <foreignObject
-             requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
-             height="12"
-             width="106"
-             pointer-events="all"
-             style="overflow:visible;">
-            <xhtml:div
-               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 107px; white-space: normal; overflow-wrap: normal; text-align: left;">
-              <xhtml:div
-                 style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">label = &quot;APDS9960&quot;</xhtml:div>
-            </xhtml:div>
-          </foreignObject>
-          <text
-             style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
-             id="text174"
-             font-size="12px"
-             y="12"
-             x="53">label = &quot;APDS9960&quot;</text>
-        </switch>
-      </g>
-      <g
          id="g184"
-         transform="translate(5.5,547.5)">
+         transform="translate(5.5,522)">
         <switch
            id="switch182">
           <foreignObject
@@ -723,7 +615,7 @@
              pointer-events="all"
              style="overflow:visible;">
             <xhtml:div
-               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 71px; white-space: normal; overflow-wrap: normal; text-align: left;">
+               style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; overflow: hidden; max-height: 22px; max-width: 342px; width: 150px; white-space: normal; overflow-wrap: normal; text-align: left;">
               <xhtml:div
                  style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">reg = &lt;0x39&gt;</xhtml:div>
             </xhtml:div>

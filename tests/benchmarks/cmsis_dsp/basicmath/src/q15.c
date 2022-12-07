@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/benchmark_common.h"
@@ -83,7 +83,7 @@ static const q15_t input2[256] = {
 	0xEA8B, 0x0959, 0x2D02, 0xD265, 0x3343, 0x0521, 0x4A77, 0xE225
 	};
 
-void test_benchmark_vec_add_q15(void)
+ZTEST(basicmath_q15_benchmark, test_benchmark_vec_add_q15)
 {
 	uint32_t irq_key, timestamp, timespan;
 	q15_t *output;
@@ -108,7 +108,7 @@ void test_benchmark_vec_add_q15(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_sub_q15(void)
+ZTEST(basicmath_q15_benchmark, test_benchmark_vec_sub_q15)
 {
 	uint32_t irq_key, timestamp, timespan;
 	q15_t *output;
@@ -133,7 +133,7 @@ void test_benchmark_vec_sub_q15(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_mult_q15(void)
+ZTEST(basicmath_q15_benchmark, test_benchmark_vec_mult_q15)
 {
 	uint32_t irq_key, timestamp, timespan;
 	q15_t *output;
@@ -158,7 +158,7 @@ void test_benchmark_vec_mult_q15(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_abs_q15(void)
+ZTEST(basicmath_q15_benchmark, test_benchmark_vec_abs_q15)
 {
 	uint32_t irq_key, timestamp, timespan;
 	q15_t *output;
@@ -183,7 +183,7 @@ void test_benchmark_vec_abs_q15(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_negate_q15(void)
+ZTEST(basicmath_q15_benchmark, test_benchmark_vec_negate_q15)
 {
 	uint32_t irq_key, timestamp, timespan;
 	q15_t *output;
@@ -208,7 +208,7 @@ void test_benchmark_vec_negate_q15(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_offset_q15(void)
+ZTEST(basicmath_q15_benchmark, test_benchmark_vec_offset_q15)
 {
 	uint32_t irq_key, timestamp, timespan;
 	q15_t *output;
@@ -233,7 +233,7 @@ void test_benchmark_vec_offset_q15(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_scale_q15(void)
+ZTEST(basicmath_q15_benchmark, test_benchmark_vec_scale_q15)
 {
 	uint32_t irq_key, timestamp, timespan;
 	q15_t *output;
@@ -258,7 +258,7 @@ void test_benchmark_vec_scale_q15(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void test_benchmark_vec_dot_prod_q15(void)
+ZTEST(basicmath_q15_benchmark, test_benchmark_vec_dot_prod_q15)
 {
 	uint32_t irq_key, timestamp, timespan;
 	q63_t output;
@@ -276,12 +276,4 @@ void test_benchmark_vec_dot_prod_q15(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-ztest_register_test_suite(basicmath_q15_benchmark, NULL,
-			  ztest_unit_test(test_benchmark_vec_add_q15),
-			  ztest_unit_test(test_benchmark_vec_sub_q15),
-			  ztest_unit_test(test_benchmark_vec_mult_q15),
-			  ztest_unit_test(test_benchmark_vec_abs_q15),
-			  ztest_unit_test(test_benchmark_vec_negate_q15),
-			  ztest_unit_test(test_benchmark_vec_offset_q15),
-			  ztest_unit_test(test_benchmark_vec_scale_q15),
-			  ztest_unit_test(test_benchmark_vec_dot_prod_q15));
+ZTEST_SUITE(basicmath_q15_benchmark, NULL, NULL, NULL, NULL, NULL);

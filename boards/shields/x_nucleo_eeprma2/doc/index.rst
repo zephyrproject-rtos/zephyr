@@ -15,8 +15,7 @@ and ST morpho connectors can be mounted if required.
 The I2C EEPROMs are compatible with the ``atmel,at24`` driver and
 the SPI EEPROMs are compatible with the ``atmel,at25`` driver.
 
-.. figure:: ./x_nucleo_eeprma2.jpg
-   :width: 371px
+.. figure:: x_nucleo_eeprma2.jpg
    :align: center
    :alt: X-NUCLEO-EEPRMA2
 

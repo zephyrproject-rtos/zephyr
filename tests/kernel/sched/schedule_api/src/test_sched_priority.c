@@ -44,7 +44,7 @@ static void thread_entry_prio(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_priority_cooperative(void)
+ZTEST(threads_scheduling, test_priority_cooperative)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 
@@ -59,10 +59,10 @@ void test_priority_cooperative(void)
 				      thread_entry, NULL, NULL, NULL,
 				      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: current thread shouldn't preempted by higher thread */
-	zassert_true(last_prio == k_thread_priority_get(k_current_get()), NULL);
+	zassert_true(last_prio == k_thread_priority_get(k_current_get()));
 	k_sleep(K_MSEC(100));
 	/* checkpoint: spawned thread get executed */
-	zassert_true(last_prio == spawn_prio, NULL);
+	zassert_true(last_prio == spawn_prio);
 	k_thread_abort(tid);
 
 	/* restore environment */
@@ -80,7 +80,7 @@ void test_priority_cooperative(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_priority_preemptible(void)
+ZTEST(threads_scheduling, test_priority_preemptible)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 
@@ -94,7 +94,7 @@ void test_priority_preemptible(void)
 				      thread_entry, NULL, NULL, NULL,
 				      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: thread is preempted by higher thread */
-	zassert_true(last_prio == spawn_prio, NULL);
+	zassert_true(last_prio == spawn_prio);
 
 	k_sleep(K_MSEC(100));
 	k_thread_abort(tid);
@@ -104,7 +104,7 @@ void test_priority_preemptible(void)
 			      thread_entry, NULL, NULL, NULL,
 			      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: thread is not preempted by lower thread */
-	zassert_false(last_prio == spawn_prio, NULL);
+	zassert_false(last_prio == spawn_prio);
 	k_thread_abort(tid);
 
 	/* restore environment */
@@ -120,7 +120,7 @@ void test_priority_preemptible(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_priority_preemptible_wait_prio(void)
+ZTEST(threads_scheduling_1cpu, test_priority_preemptible_wait_prio)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 	k_tid_t tid[THREAD_NUM];
@@ -181,7 +181,7 @@ extern void idle(void *p1, void *p2, void *p3);
  *
  * @ingroup kernel_sched_tests
  */
-void test_bad_priorities(void)
+ZTEST(threads_scheduling, test_bad_priorities)
 {
 	struct prio_test {
 		int prio;

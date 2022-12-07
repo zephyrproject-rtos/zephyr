@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/posix/time.h>
 #include <zephyr/posix/sys/time.h>
 #include <zephyr/posix/unistd.h>
@@ -11,7 +11,7 @@
 #define SLEEP_SECONDS 1
 #define CLOCK_INVALID -1
 
-void test_posix_clock(void)
+ZTEST(posix_apis, test_posix_clock)
 {
 	int64_t nsecs_elapsed, secs_elapsed;
 	struct timespec ts, te;
@@ -21,13 +21,11 @@ void test_posix_clock(void)
 	/* TESTPOINT: Pass invalid clock type */
 	zassert_equal(clock_gettime(CLOCK_INVALID, &ts), -1,
 			NULL);
-	zassert_equal(errno, EINVAL, NULL);
+	zassert_equal(errno, EINVAL);
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	/* 2 Sec Delay */
-	sleep(SLEEP_SECONDS);
-	usleep(SLEEP_SECONDS * USEC_PER_SEC);
-	clock_gettime(CLOCK_MONOTONIC, &te);
+	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &ts));
+	zassert_ok(k_sleep(K_SECONDS(SLEEP_SECONDS)));
+	zassert_ok(clock_gettime(CLOCK_MONOTONIC, &te));
 
 	if (te.tv_nsec >= ts.tv_nsec) {
 		secs_elapsed = te.tv_sec - ts.tv_sec;
@@ -38,13 +36,13 @@ void test_posix_clock(void)
 	}
 
 	/*TESTPOINT: Check if POSIX clock API test passes*/
-	zassert_equal(secs_elapsed, (2 * SLEEP_SECONDS),
+	zassert_equal(secs_elapsed, SLEEP_SECONDS,
 			"POSIX clock API test failed");
 
 	printk("POSIX clock APIs test done\n");
 }
 
-void test_posix_realtime(void)
+ZTEST(posix_apis, test_posix_realtime)
 {
 	int ret;
 	struct timespec rts, mts;
@@ -66,7 +64,7 @@ void test_posix_realtime(void)
 	/* TESTPOINT: Pass invalid clock type */
 	zassert_equal(clock_settime(CLOCK_INVALID, &nts), -1,
 			NULL);
-	zassert_equal(errno, EINVAL, NULL);
+	zassert_equal(errno, EINVAL);
 
 	ret = clock_settime(CLOCK_MONOTONIC, &nts);
 	zassert_not_equal(ret, 0, "Should not be able to set monotonic time");
@@ -110,10 +108,10 @@ void test_posix_realtime(void)
 
 	/* Validate gettimeofday API */
 	ret = gettimeofday(&tv, NULL);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	ret = clock_gettime(CLOCK_REALTIME, &rts);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	/* TESTPOINT: Check if time obtained from
 	 * gettimeofday is same or more than obtained

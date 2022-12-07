@@ -10,6 +10,5 @@
 		compatible = "apa,apa102";
 		reg = <0>;
 		spi-max-frequency = <5250000>;
-		label = "APA102";
 	};
 };

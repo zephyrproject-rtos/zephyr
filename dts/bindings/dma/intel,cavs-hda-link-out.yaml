@@ -1,8 +1,0 @@
-# Copyright (c) 2022 Intel Corporation. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-description: Intel cAVS HDA Link Out controller
-
-compatible: "intel,cavs-hda-link-out"
-
-include: intel,cavs-hda.yaml

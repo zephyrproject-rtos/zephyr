@@ -38,7 +38,7 @@
 #endif
 
 #if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_CPU_CORTEX_M)
-extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 #endif
 
 /* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
@@ -620,7 +620,7 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
 	__set_PSPLIM(0);
 #endif
 
-	/* Store all required input in registers, to be accesible
+	/* Store all required input in registers, to be accessible
 	 * after stack pointer change. The function is not going
 	 * to return, so callee-saved registers do not need to be
 	 * stacked.

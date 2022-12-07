@@ -6,7 +6,7 @@
 #ifndef SHELL_UTILS_H__
 #define SHELL_UTILS_H__
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 
 #ifdef __cplusplus

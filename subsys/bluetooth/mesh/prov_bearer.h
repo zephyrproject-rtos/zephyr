@@ -104,11 +104,11 @@ struct prov_bearer {
 	void (*link_close)(enum prov_bearer_link_status status);
 };
 
-extern const struct prov_bearer pb_adv;
-extern const struct prov_bearer pb_gatt;
+extern const struct prov_bearer bt_mesh_pb_adv;
+extern const struct prov_bearer bt_mesh_pb_gatt;
 
-void pb_adv_init(void);
-void pb_gatt_init(void);
+void bt_mesh_pb_adv_init(void);
+void bt_mesh_pb_gatt_init(void);
 
-void pb_adv_reset(void);
-void pb_gatt_reset(void);
+void bt_mesh_pb_adv_reset(void);
+void bt_mesh_pb_gatt_reset(void);

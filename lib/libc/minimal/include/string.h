@@ -17,6 +17,8 @@ extern "C" {
 #endif
 
 extern char  *strcpy(char *ZRESTRICT d, const char *ZRESTRICT s);
+extern char  *strerror(int errnum);
+extern int   strerror_r(int errnum, char *strerrbuf, size_t buflen);
 extern char  *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s,
 		      size_t n);
 extern char  *strchr(const char *s, int c);

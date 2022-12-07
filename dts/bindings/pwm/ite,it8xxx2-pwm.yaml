@@ -11,12 +11,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
-    interrupts:
-      required: false
-
     channel:
       type: int
       required: true
@@ -50,7 +44,6 @@ properties:
 
     pwm-output-frequency:
       type: int
-      required: false
       description: PWM output frequency for operation
 
     pinctrl-0:

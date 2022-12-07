@@ -29,8 +29,6 @@ some highlights of the Nucleo G0B1RE board:
 - 32.768 kHz crystal oscillator
 
 .. image:: img/nucleo_g0b1re.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo G0B1RE
 
@@ -107,6 +105,8 @@ The Zephyr nucleo_g0b1re board configuration supports the following hardware fea
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.

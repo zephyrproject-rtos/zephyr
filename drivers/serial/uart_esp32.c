@@ -21,7 +21,6 @@
 #include <esp32c3/rom/gpio.h>
 #endif
 #include <soc/uart_struct.h>
-#include "stubs.h"
 #include <hal/uart_ll.h>
 #include <hal/uart_hal.h>
 #include <hal/uart_types.h>
@@ -200,6 +199,10 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
 	}
 
 	clock_control_on(config->clock_dev, config->clock_subsys);

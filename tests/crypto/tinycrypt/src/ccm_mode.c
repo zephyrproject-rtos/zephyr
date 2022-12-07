@@ -47,8 +47,8 @@
 
 #include <tinycrypt/ccm_mode.h>
 #include <tinycrypt/constants.h>
-#include <test_utils.h>
-#include <ztest.h>
+#include <zephyr/test_utils.h>
+#include <zephyr/ztest.h>
 
 #include <string.h>
 
@@ -120,7 +120,7 @@ uint32_t do_test(const uint8_t *key,
 	return result;
 }
 
-void test_ccm_vector_1(void)
+ZTEST(tinycrypt, test_ccm_vector_1)
 {
 	uint32_t result = TC_PASS;
 	/* RFC 3610 test vector #1 */
@@ -158,7 +158,7 @@ void test_ccm_vector_1(void)
 	zassert_false(result, "CCM test #1 (RFC 3610 test vector #1) failed.");
 }
 
-void test_ccm_vector_2(void)
+ZTEST(tinycrypt, test_ccm_vector_2)
 {
 	uint32_t result = TC_PASS;
 	/* RFC 3610 test vector #2 */
@@ -196,7 +196,7 @@ void test_ccm_vector_2(void)
 	zassert_false(result, "CCM test #2 failed.");
 }
 
-void test_ccm_vector_3(void)
+ZTEST(tinycrypt, test_ccm_vector_3)
 {
 	uint32_t result = TC_PASS;
 	/* RFC 3610 test vector #3  */
@@ -236,7 +236,7 @@ void test_ccm_vector_3(void)
 	zassert_false(result, "CCM test #3 failed.");
 }
 
-void test_ccm_vector_4(void)
+ZTEST(tinycrypt,  test_ccm_vector_4)
 {
 	uint32_t result = TC_PASS;
 	/* RFC 3610 test vector #7  */
@@ -275,7 +275,7 @@ void test_ccm_vector_4(void)
 	zassert_false(result, "CCM test #4 failed.");
 }
 
-void test_ccm_vector_5(void)
+ZTEST(tinycrypt, test_ccm_vector_5)
 {
 	uint32_t result = TC_PASS;
 	/* RFC 3610 test vector #8  */
@@ -314,7 +314,7 @@ void test_ccm_vector_5(void)
 	zassert_false(result, "CCM test #5 failed.");
 }
 
-void test_ccm_vector_6(void)
+ZTEST(tinycrypt, test_ccm_vector_6)
 {
 	uint32_t result = TC_PASS;
 	/* RFC 3610 test vector #9  */
@@ -354,7 +354,7 @@ void test_ccm_vector_6(void)
 	zassert_false(result, "CCM test #6 failed.");
 }
 
-void test_ccm_vector_7(void)
+ZTEST(tinycrypt, test_ccm_vector_7)
 {
 	uint32_t result = TC_PASS;
 	/* Test based on RFC 3610 test vector #9 but with no associated data */
@@ -415,7 +415,7 @@ void test_ccm_vector_7(void)
 
 }
 
-void test_ccm_vector_8(void)
+ZTEST(tinycrypt, test_ccm_vector_8)
 {
 	uint32_t result = TC_PASS;
 	/* Test based on RFC 3610 test vector #9 but with no payload data */

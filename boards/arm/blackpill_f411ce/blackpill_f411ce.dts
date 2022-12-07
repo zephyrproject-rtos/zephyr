@@ -108,6 +108,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 
@@ -120,6 +122,10 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa1>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&clk_lsi {
 	status = "okay";
 };
 

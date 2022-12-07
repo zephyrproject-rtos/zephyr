@@ -24,6 +24,11 @@ target_sources(app PRIVATE
 	src/multilib.c
 	src/errno.c
 	src/boot_delay.c
-	src/irq_offload.c
 	src/pow2.c
   )
+
+target_sources_ifdef(
+	CONFIG_IRQ_OFFLOAD
+	app PRIVATE
+	src/irq_offload.c
+)

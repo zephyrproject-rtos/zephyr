@@ -1,18 +1,21 @@
 .. _qemu_arc:
 
-ARC EM & HS Emulation (QEMU)
+ARCv2 & ARCv3 Emulation (QEMU)
 ###############################
 
 Overview
 ********
 
-This board configuration will use QEMU to emulate a generic ARC EM &
-ARC HS hardware platform.
+This board configuration will use QEMU to emulate set of generic
+ARCv2 and ARCv3 hardware platforms.
 
-The following features of ARCv2 ISA cores are currently supported:
+The following features of ARC ISA cores are currently supported:
 
-* ARC EM or ARC HS core (both belong to ARCv2 ISA family still
-  they are binary incompatible)
+* CPU:
+  * ARCv2 EM
+  * ARCv2 HS3x
+  * ARCv3 HS5x
+  * ARCv3 HS6x
 * Only little-endian configurations
 * Full 32 register set
 * ARC core free-running timers/counters Timer0 & Timer1
@@ -65,7 +68,8 @@ Programming and Debugging
 
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
 emulated environment, for example, with the :ref:`synchronization_sample`
-(note you may use ``qemu_arc_em`` or ``qemu_arc_hs`` depending on target CPU):
+(note you may use ``qemu_arc_em``, ``qemu_arc_hs``,  ``qemu_arc_hs5x`` or
+``qemu_arc_hs6x`` depending on target CPU):
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
@@ -95,4 +99,4 @@ References
 **********
 
 1.`Programmer’s Reference Manual for ARC HS
-   <https://www.synopsys.com/dw/doc.php/ds/cc/programmers-reference-manual-ARC-HS.pdf>`_
+   <https://www.synopsys.com/dw/doc.php/iip/dwc_arc_hs4xd/latest/doc/ARC_V2_PublicProgrammers_Reference.pdf>`_

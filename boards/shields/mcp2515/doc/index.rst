@@ -16,8 +16,7 @@ The DFRobot CAN BUS shield supports the Microchip MCP2515 stand-alone CAN
 controller and JTA1050 high speed CAN transceiver. The shield has an Arduino
 Uno R3 compatible hardware interface.
 
-.. figure:: ./dfrobot_can_bus_v2_0.jpg
-   :width: 720px
+.. figure:: dfrobot_can_bus_v2_0.jpg
    :align: center
    :alt: DFRobot_CAN_BUS_V2_0_SHIELD
 
@@ -126,8 +125,7 @@ The Keyestudio CAN BUS shield supports the Microchip MCP2515 stand-alone CAN
 controller and MCP2551 high speed CAN transceiver. The shield has an Arduino
 Uno R3 compatible hardware interface.
 
-.. figure:: ./keyestudio_can_bus_ks0411.png
-   :width: 559px
+.. figure:: keyestudio_can_bus_ks0411.jpg
    :align: center
    :alt: Keyestudio CAN-BUS Shield (KS0411)
 
@@ -229,14 +227,14 @@ when you invoke ``west build`` or ``cmake`` in your Zephyr application. For
 example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/can
+   :zephyr-app: samples/drivers/can/counter
    :tool: all
    :board: nrf52dk_nrf52832
    :shield: dfrobot_can_bus_v2_0
    :goals: build flash
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/can
+   :zephyr-app: samples/drivers/can/counter
    :tool: all
    :board: nrf52840dk_nrf52840
    :shield: keyestudio_can_bus_ks0411
@@ -246,7 +244,7 @@ example:
    https://www.dfrobot.com/product-1444.html
 
 .. _DFRobot CAN BUS Shield V2.0 schematic:
-   https://github.com/DFRobot/CAN_BUS/blob/master/DFR0370%20CAN%20BUS%20sheild(V2.0).pdf
+   https://github.com/DFRobot/DFRobot_MCP2515/blob/master/resources/doc/DFR0370%20CAN%20BUS%20sheild(V2.0).pdf
 
 .. _MCP2515:
    https://www.microchip.com/en-us/product/MCP2515

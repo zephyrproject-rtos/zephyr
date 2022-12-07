@@ -84,16 +84,16 @@ static int test_unmount(void)
 
 void test_fat_unmount(void)
 {
-	zassert_true(test_unmount() == TC_PASS, NULL);
+	zassert_true(test_unmount() == TC_PASS);
 }
 
 void test_fat_mount(void)
 {
-	zassert_false(test_unmount() == TC_PASS, NULL);
-	zassert_true(test_mount_no_format() == TC_PASS, NULL);
-	zassert_true(test_mount_rd_only_no_sys() == TC_PASS, NULL);
-	zassert_true(test_mount_use_disk_access() == TC_PASS, NULL);
-	zassert_true(test_unmount() == TC_PASS, NULL);
-	zassert_true(test_mount() == TC_PASS, NULL);
-	zassert_false(test_mount() == TC_PASS, NULL);
+	zassert_false(test_unmount() == TC_PASS);
+	zassert_true(test_mount_no_format() == TC_PASS);
+	zassert_true(test_mount_rd_only_no_sys() == TC_PASS);
+	zassert_true(test_mount_use_disk_access() == TC_PASS);
+	zassert_true(test_unmount() == TC_PASS);
+	zassert_true(test_mount() == TC_PASS);
+	zassert_false(test_mount() == TC_PASS);
 }

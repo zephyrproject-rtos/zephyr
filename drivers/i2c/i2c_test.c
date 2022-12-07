@@ -9,7 +9,7 @@
  * devices for the "vnd,i2c" devicetree compatible used in test code.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 
 #define DT_DRV_COMPAT vnd_i2c

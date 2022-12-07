@@ -18,8 +18,9 @@
 			reg = <0>;
 			riscv,isa = "rv32imac";
 			hlic: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -41,9 +42,16 @@
 			reg = <0x80040000 0x40000>;
 		};
 
+		clint: clint@44000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic 3>, <&hlic 7>;
+			reg = <0x44000000 0x10000>;
+		};
+
 		plic: interrupt-controller@40000000 {
-			#interrupt-cells = <2>;
 			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
 			reg = <0x40000000 0x2000
@@ -57,7 +65,6 @@
 		uart0: uart@70001000 {
 			compatible = "microsemi,coreuart";
 			reg = <0x70001000 0x1000>;
-			label = "uart_0";
 			status = "disabled";
 			current-speed = <0>;
 			clock-frequency = <0>;

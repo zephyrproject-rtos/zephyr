@@ -10,7 +10,6 @@ include: [fixed-clock.yaml]
 properties:
     hse-bypass:
       type: boolean
-      required: false
       description: |
         HSE crystal oscillator bypass
         Set to the property to by-pass the oscillator with an external clock.

@@ -81,3 +81,8 @@
 			<&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
+
+&adc1 {
+	/* Basic test only. Don't configure domain clock. */
+	status = "okay";
+};

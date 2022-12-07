@@ -19,6 +19,7 @@
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {
@@ -32,6 +33,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan2;
 		zephyr,display = &lcdif;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram0: memory@80000000 {
@@ -153,10 +155,9 @@ arduino_i2c: &lpi2c1 {};
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 
-	mt9m114@48 {
+	mt9m114: mt9m114@48 {
 		compatible = "aptina,mt9m114";
 		reg = <0x48>;
-		label = "MT9M114";
 		status = "okay";
 
 		port {
@@ -169,7 +170,6 @@ arduino_i2c: &lpi2c1 {};
 	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "FT5336";
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -185,7 +185,6 @@ arduino_i2c: &lpi2c1 {};
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
-		label = "IS25WP064";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
@@ -202,10 +201,6 @@ arduino_i2c: &lpi2c1 {};
 			};
 		};
 	};
-};
-
-&flexspi2 {
-	status = "okay";
 };
 
 &w25q32jvwj0 {
@@ -267,7 +262,7 @@ zephyr_udc0: &usb1 {
 
 &csi {
 	status = "okay";
-	sensor-label = "MT9M114";
+	sensor = <&mt9m114>;
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
 
@@ -293,7 +288,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
-	mmc {
+	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
 	};
@@ -347,4 +342,9 @@ zephyr_udc0: &usb1 {
  */
 &gpt_hw_timer {
 	status = "okay";
+};
+
+&itm {
+	pinctrl-0 = <&pinmux_swo>;
+	pinctrl-names = "default";
 };

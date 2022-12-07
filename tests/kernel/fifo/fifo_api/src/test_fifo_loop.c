@@ -32,7 +32,7 @@ static void tfifo_get(struct k_fifo *pfifo)
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: fifo get*/
 		rx_data = k_fifo_get(pfifo, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data[i], NULL);
+		zassert_equal(rx_data, (void *)&data[i]);
 	}
 }
 
@@ -96,7 +96,7 @@ static void tfifo_read_write(struct k_fifo *pfifo)
  *
  * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
  */
-void test_fifo_loop(void)
+ZTEST(fifo_api_1cpu, test_fifo_loop)
 {
 	k_fifo_init(&fifo);
 	for (int i = 0; i < LOOPS; i++) {

@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include "dhcp.h"
 #include "protocol.h"
@@ -44,7 +44,7 @@ int do_sntp(void)
 
 		gmtime_r(&now, &now_tm);
 		strftime(time_str, sizeof(time_str), "%FT%T", &now_tm);
-		LOG_INF("  Acquired time: %s", log_strdup(time_str));
+		LOG_INF("  Acquired time: %s", time_str);
 
 	} else {
 		LOG_ERR("  Failed to acquire SNTP, code %d\n", rc);

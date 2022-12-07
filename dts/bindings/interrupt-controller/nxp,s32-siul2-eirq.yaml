@@ -1,0 +1,61 @@
+# Copyright 2022 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 SIUL2 External Interrupts Request controller
+
+compatible: "nxp,s32-siul2-eirq"
+
+include: [interrupt-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  filter-prescaler:
+    type: int
+    description: |
+      Setting the prescaler which selects the clock for all digital filters.
+      Valid range: 0 - 15.
+
+child-binding:
+  description: |
+    NXP S32 SIUL2 External Interrupt line configuration. For each
+    interrupt line that has specific requirements about digital
+    glitch filter, a node using this binding must be added, the
+    name must be "line_<line_number>". For example:
+
+      line_0: line_0 {
+          filter-enable;
+          filter-counter = <5>;
+      };
+
+    If the controller has no child node, the digital filter will be
+    disabled for all external interrupt lines.
+
+  properties:
+    filter-enable:
+      type: boolean
+      required: true
+      description: |
+        Enable digital glitch filter to filter out glitches on the input pad.
+
+    filter-counter:
+      type: int
+      required: true
+      description: |
+        Configuring the filter counter associated with digital glitch filter.
+        Valid range: 0 - 15.
+
+interrupt-cells:
+  - gpio-pin
+  - eirq-line

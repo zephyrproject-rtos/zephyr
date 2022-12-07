@@ -1,0 +1,9 @@
+description: ACE wallclock ART counter controller
+
+compatible: "intel,ace-art-counter"
+
+include: base.yaml
+
+properties:
+  reg:
+      required: true

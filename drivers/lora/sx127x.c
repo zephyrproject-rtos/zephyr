@@ -8,7 +8,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/lora.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include "sx12xx_common.h"
 

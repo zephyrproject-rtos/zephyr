@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2022 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			clock-frequency = <32000000>;
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		qspif: memory@16000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x16000000 DT_SIZE_K(32768)>;
+			zephyr,memory-region = "QSPIF";
+		};
+
+		flash_controller: flash-controller@38000000 {
+			compatible = "renesas,smartbond-flash-controller";
+			reg = <0x38000000 0xb0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <1>;
+			};
+		};
+
+		pinctrl: pin-controller@50020a00 {
+			compatible = "renesas,smartbond-pinctrl";
+			reg = <0x50020a00 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpio0: gpio@50020a00 {
+				compatible = "renesas,smartbond-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				reg = <0x50020a00 20
+					   0x50020a18 128
+					   0x50000070 12
+					   0x50000114 36>;
+				reg-names = "data", "mode", "latch", "wkup";
+				interrupts = <38 0>;
+			};
+
+			gpio1: gpio@50020a04 {
+				compatible = "renesas,smartbond-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <23>;
+				reg = <0x50020a04 20
+					   0x50020a98 92
+					   0x5000007c 12
+					   0x50000118 36>;
+				reg-names = "data", "mode", "latch", "wkup";
+				interrupts = <39 0>;
+			};
+		};
+
+		uart: uart@50020000 {
+			compatible = "renesas,smartbond-uart";
+			reg = <0x50020000 0x100>;
+			periph-clock-config = <0x01>;
+			interrupts = <5 0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

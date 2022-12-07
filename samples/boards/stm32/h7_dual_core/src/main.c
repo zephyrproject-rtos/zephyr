@@ -4,15 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
 
 #define SLEEP_TIME_MS   1000
-
-#define IPM  DT_LABEL(DT_NODELABEL(mailbox))
 
 struct ipm_data {
 	const struct gpio_dt_spec *led;
@@ -36,11 +34,10 @@ void new_message_callback(const struct device *dev, void *user_data,
 
 void main(void)
 {
-	const struct device *ipm;
+	const struct device *const ipm = DEVICE_DT_GET(DT_NODELABEL(mailbox));
 
 	printk("STM32 h7_dual_core application\n");
 
-	ipm = device_get_binding(IPM);
 	if (!device_is_ready(ipm)) {
 		printk("ipm device not ready\n");
 		return;

@@ -5,7 +5,7 @@
  */
 
 /* Generic header files required by the TFTPC Module. */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/net/socket.h>
 

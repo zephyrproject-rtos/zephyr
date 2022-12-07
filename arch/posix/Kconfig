@@ -11,7 +11,9 @@ config ARCH
 
 config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	int
+	default 44 if 64BIT && STACK_SENTINEL
 	default 40 if 64BIT
+	default 28 if STACK_SENTINEL
 	default 24
 	help
 	  In bytes, stack size for Zephyr threads meant only for the POSIX
@@ -19,5 +21,36 @@ config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	  (In this architecture only part of the thread status is kept in the Zephyr
 	  thread stack, the real stack is the native underlying pthread stack.
 	  Therefore the allocated stack can be limited to this size)
+
+config ARCH_POSIX_LIBFUZZER
+	bool "Build fuzz test target"
+	help
+	  Build the posix app as a LLVM libfuzzer target.  Requires
+	  support from the toolchain (currently only clang works, and
+	  only on native_posix_64), and should normally be used in
+	  concert with some of CONFIG_ASAN/UBSAN/MSAN for validation.
+	  The application needs to implement the
+	  LLVMFuzzerTestOneInput() entry point, which runs in the host
+	  environment "outside" the OS.  See Zephyr documentation and
+	  sample and https://llvm.org/docs/LibFuzzer.html for more
+	  information.
+
+config ARCH_POSIX_FUZZ_IRQ
+	int "OS interrupt via which to deliver fuzz cases"
+	default 3
+	help
+	  When using libfuzzer, new fuzz cases are delivered to Zephyr
+	  via interrupts.  The IRQ should be otherwise unused, but can
+	  be any value desired by the app.
+
+config ARCH_POSIX_FUZZ_TICKS
+	int "Ticks to allow for fuzz case processing"
+	default 2
+	help
+	  Fuzz interrupts are delivered, from the perspective of the
+	  OS, at a steady cadence in simulated time.  In general most
+	  apps won't require much time to reach an idle state
+	  following a unit-test style case, so the default is short to
+	  prevent interaction with regular timer workloads.
 
 endmenu

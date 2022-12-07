@@ -8,10 +8,9 @@ if BOARD_DISCO_L475_IOT1
 config BOARD
 	default "disco_l475_iot1"
 
-choice STM32_LPTIM_CLOCK
-	default STM32_LPTIM_CLOCK_LSE
-	depends on STM32_LPTIM_TIMER
-endchoice
+# LPTIM clocked by LSE, force tick freq to 4096 for tick accuracy
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if STM32_LPTIM_TIMER
 
 config SPI_STM32_INTERRUPT
 	default y
@@ -51,15 +50,5 @@ config BT_HCI_VS_EXT
 	default n
 
 endif # BT
-
-if WIFI
-
-config SPI
-	default y
-
-config WIFI_ESWIFI
-	default y
-
-endif # WIFI
 
 endif # BOARD_DISCO_L475_IOT1

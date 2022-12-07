@@ -5,7 +5,7 @@ description: GigiDevice GD32 I2C
 
 compatible: "gd,gd32-i2c"
 
-include: [i2c-controller.yaml, pinctrl-device.yaml]
+include: [i2c-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -14,9 +14,10 @@ properties:
   interrupts:
     required: true
 
-  rcu-periph-clock:
-    type: int
-    description: Reset Control Unit Peripheral Clock ID
+  resets:
+    required: true
+
+  clocks:
     required: true
 
   pinctrl-0:

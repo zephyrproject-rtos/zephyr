@@ -37,9 +37,8 @@
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_lll_conn
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
+
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -149,6 +148,7 @@ void lll_conn_prepare_reset(void)
 
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+	struct event_done_extra *e;
 	struct lll_conn *lll;
 	int err;
 
@@ -172,6 +172,17 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
 	lll->latency_prepare += (prepare_param->lazy + 1);
+
+	/* Extra done event, to check supervision timeout */
+	e = ull_event_done_extra_get();
+	LL_ASSERT(e);
+
+	e->type = EVENT_DONE_EXTRA_TYPE_CONN;
+	e->trx_cnt = 0U;
+	e->crc_valid = 0U;
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	e->mic_state = LLL_CONN_MIC_NONE;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	lll_done(param);
 }
@@ -517,7 +528,7 @@ void lll_conn_isr_tx(void *param)
 		df_rx_params = dbuf_curr_get(&df_rx_cfg->hdr);
 
 		if (df_rx_params->is_enabled) {
-			lll_df_conf_cte_rx_enable(df_rx_params->slot_durations,
+			(void)lll_df_conf_cte_rx_enable(df_rx_params->slot_durations,
 						  df_rx_params->ant_sw_len, df_rx_params->ant_ids,
 						  df_rx_cfg->chan, CTE_INFO_IN_S1_BYTE,
 						  lll->phy_rx);
@@ -645,6 +656,11 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 
+	if ((PDU_DC_CTRL_RX_SIZE_MAX > PDU_DC_PAYLOAD_SIZE_MIN) &&
+	    (max_rx_octets < PDU_DC_CTRL_RX_SIZE_MAX)) {
+		max_rx_octets = PDU_DC_CTRL_RX_SIZE_MAX;
+	}
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	phy = lll->phy_rx;
 #else /* !CONFIG_BT_CTLR_PHY */
@@ -696,6 +712,11 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+
+	if ((PDU_DC_CTRL_TX_SIZE_MAX > PDU_DC_PAYLOAD_SIZE_MIN) &&
+	    (max_tx_octets < PDU_DC_CTRL_TX_SIZE_MAX)) {
+		max_tx_octets = PDU_DC_CTRL_TX_SIZE_MAX;
+	}
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	phy = lll->phy_tx;
@@ -776,7 +797,9 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 
 		max_tx_octets = ull_conn_lll_max_tx_octets_get(lll);
 
-		if (p->len > max_tx_octets) {
+		if (((PDU_DC_CTRL_TX_SIZE_MAX <= PDU_DC_PAYLOAD_SIZE_MIN) ||
+		     (p->ll_id != PDU_DATA_LLID_CTRL)) &&
+		    (p->len > max_tx_octets)) {
 			p->len = max_tx_octets;
 			p->md = 1U;
 		} else if ((link->next != lll->memq_tx.tail) ||

@@ -5,7 +5,3 @@ description: Simulated Host Command Peripheral
 compatible: "zephyr,sim-ec-host-cmd-periph"
 
 include: base.yaml
-
-properties:
-    label:
-      required: true

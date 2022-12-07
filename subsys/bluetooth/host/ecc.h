@@ -59,6 +59,12 @@ bool bt_pub_key_is_debug(uint8_t *pub_key);
  */
 int bt_pub_key_gen(struct bt_pub_key_cb *cb);
 
+/*  @brief Cleanup public key callbacks when HCI is disrupted.
+ *
+ *  Clear the pub_key_cb_slist and clear the BT_DEV_PUB_KEY_BUSY flag.
+ */
+void bt_pub_key_hci_disrupted(void);
+
 /*  @brief Get the current Public Key.
  *
  *  Get the current ECC Public Key.

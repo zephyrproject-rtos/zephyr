@@ -189,10 +189,6 @@
 		pinmux = < MCHP_XEC_PINMUX(025, MCHP_AF1) >;
 	};
 
-	/omit-if-no-ref/ nsmi_gpio107: nsmi_gpio107 {
-		pinmux = < MCHP_XEC_PINMUX(0107, MCHP_AF1) >;
-	};
-
 	/* I2C ports */
 	/omit-if-no-ref/ i2c00_scl_gpio004: i2c00_scl_gpio004 {
 		pinmux = < MCHP_XEC_PINMUX(04, MCHP_AF1) >;
@@ -640,6 +636,24 @@
 	/omit-if-no-ref/ gpspi_wp_n_gpio076: gpspi_wp_n_gpio076 {
 		pinmux = < MCHP_XEC_PINMUX(076, MCHP_GPIO) >;
 	};
+
+	/* EEPROM */
+	/omit-if-no-ref/ eeprom_cs_gpio116: eeprom_cs_gpio116 {
+		pinmux = < MCHP_XEC_PINMUX(0116, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ eeprom_clk_gpio117: eeprom_clk_gpio117 {
+		pinmux = < MCHP_XEC_PINMUX(0117, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ eeprom_mosi_gpio074: eeprom_mosi_gpio074 {
+		pinmux = < MCHP_XEC_PINMUX(074, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ eeprom_miso_gpio075: eeprom_miso_gpio075 {
+		pinmux = < MCHP_XEC_PINMUX(075, MCHP_AF2) >;
+	};
+
 
 	/* PECI */
 	/omit-if-no-ref/ peci_dat_gpio042: peci_dat_gpio042 {

@@ -18,8 +18,6 @@
 extern "C" {
 #endif
 
-#define SIZE32_OF(x) (sizeof((x))/sizeof(uint32_t))
-
 /* The limit is used by algorithm for distinguishing between empty and full
  * state.
  */
@@ -53,6 +51,10 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 	buf->get_head = buf->get_tail = buf->get_base = value;
 }
 
+/**
+ * @brief Data Structure APIs
+ * @defgroup datastructure_apis Data Structure APIs
+ */
 /**
  * @defgroup ring_buffer_apis Ring Buffer APIs
  * @ingroup datastructure_apis
@@ -130,6 +132,17 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
  */
 #define RING_BUF_ITEM_DECLARE_POW2(name, pow) \
 	RING_BUF_ITEM_DECLARE(name, BIT(pow))
+
+/**
+ * @brief Compute the ring buffer size in 32-bit needed to store an element
+ *
+ * The argument can be a type or an expression.
+ * Note: rounds up if the size is not a multiple of 32 bits.
+ *
+ * @param expr Expression or type to compute the size of
+ */
+#define RING_BUF_ITEM_SIZEOF(expr) \
+	((sizeof(expr) + sizeof(uint32_t) - 1) / sizeof(uint32_t))
 
 /**
  * @brief Initialize a ring buffer for byte data.

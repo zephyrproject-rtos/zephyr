@@ -31,7 +31,6 @@ properties:
 
     gain:
       type: array
-      required: false
       default: [0, 0, 0, 0]
       description: |
         Gain selection bit.

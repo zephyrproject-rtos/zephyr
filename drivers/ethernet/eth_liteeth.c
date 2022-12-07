@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_pkt.h>
 
 #include <zephyr/sys/printk.h>
+#include <zephyr/irq.h>
 
 #include "eth.h"
 
@@ -80,7 +81,7 @@ static int eth_initialize(const struct device *dev)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	int key;
+	unsigned int key;
 	uint16_t len;
 	struct eth_liteeth_dev_data *context = dev->data;
 

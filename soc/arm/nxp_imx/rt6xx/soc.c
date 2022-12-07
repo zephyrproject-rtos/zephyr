@@ -25,11 +25,17 @@
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
-#include "usb_phy.h"
-#include "usb_dc_mcux.h"
+#ifdef CONFIG_CODE_FLEXSPI
+#include "flash_clock_setup.h"
 #endif
 
+#if CONFIG_USB_DC_NXP_LPCIP3511
+#include "usb_phy.h"
+#include "usb.h"
+#endif
+
+/* Core clock frequency: 250105263Hz */
+#define CLOCK_INIT_CORE_CLOCK                     250105263U
 
 #define SYSTEM_IS_XIP_FLEXSPI() \
 	((((uint32_t)nxp_rt600_init >= 0x08000000U) &&		\
@@ -67,6 +73,9 @@ const clock_audio_pll_config_t g_audioPllConfig = {
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
+
+/* System clock frequency. */
+extern uint32_t SystemCoreClock;
 
 #ifdef CONFIG_NXP_IMX_RT6XX_BOOT_HEADER
 extern char z_main_stack[];
@@ -135,7 +144,7 @@ static void usb_device_clock_init(void)
 	RESET_PeripheralReset(kUSBHS_DEVICE_RST_SHIFT_RSTn);
 	RESET_PeripheralReset(kUSBHS_HOST_RST_SHIFT_RSTn);
 	RESET_PeripheralReset(kUSBHS_SRAM_RST_SHIFT_RSTn);
-	/*Make sure USDHC ram buffer has power up*/
+	/*Make sure USBHS ram buffer has power up*/
 	POWER_DisablePD(kPDRUNCFG_APD_USBHS_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USBHS_SRAM);
 	POWER_ApplyPD();
@@ -185,6 +194,15 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Configure SFRO clock */
 	POWER_DisablePD(kPDRUNCFG_PD_SFRO);
 	CLOCK_EnableSfroClk();
+
+#ifdef CONFIG_CODE_FLEXSPI
+	/*
+	 * Call function flexspi_clock_safe_config() to move FlexSPI clock to a stable
+	 * clock source to avoid instruction/data fetch issue when updating PLL and Main
+	 * clock if XIP(execute code on FLEXSPI memory).
+	 */
+	flexspi_clock_safe_config();
+#endif
 
 	/* Let CPU run on FFRO for safe switching. */
 	CLOCK_AttachClk(kFFRO_to_MAIN_CLK);
@@ -263,7 +281,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC
 	/* Make sure USDHC ram buffer has been power up*/
 	POWER_DisablePD(kPDRUNCFG_APD_USDHC0_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USDHC0_SRAM);
@@ -280,10 +298,26 @@ static ALWAYS_INLINE void clock_init(void)
 
 	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(i3c0), nxp_mcux_i3c, okay))
+	CLOCK_AttachClk(kFFRO_to_I3C_CLK);
+	CLOCK_AttachClk(kLPOSC_to_I3C_TC_CLK);
+#endif
+
+#ifdef CONFIG_CODE_FLEXSPI
+	/*
+	 * Call function flexspi_setup_clock() to set user configured clock source/divider
+	 * for FlexSPI.
+	 */
+	flexspi_setup_clock(FLEXSPI, 1U, 9U);
+#endif
+
+	/* Set SystemCoreClock variable. */
+	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
+
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC)
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC)
 
 void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
 	uint32_t speed, uint32_t strength)

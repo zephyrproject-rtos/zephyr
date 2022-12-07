@@ -1,3 +1,5 @@
+.. _posix_support:
+
 POSIX Support
 #############
 
@@ -290,8 +292,8 @@ This is implemented as part of the minimal C library available in Zephyr.
     strcoll(),
     strcpy(),yes
     strcspn(),
-    strerror(),
-    strerror_r(),
+    strerror(),yes
+    strerror_r(),yes
     strftime(),
     strlen(),yes
     strncat(),yes
@@ -412,7 +414,7 @@ POSIX_DEVICE_IO
     getchar(),
     gets(),
     open(),yes
-    perror(),
+    perror(),yes
     printf(),yes
     putc(),yes
     putchar(),

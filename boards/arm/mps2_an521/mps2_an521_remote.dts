@@ -101,12 +101,18 @@
 		#size-cells = <1>;
 		ranges;
 
-		code: memory@100000 {
-			reg = <0x00100000 DT_SIZE_K(512)>;
+		/* The memory regions defined below are selected to remain
+		 * compatible with what TF-M has defined for a single boot image,
+		 * where 468 KB memory at the bottom of the 4 MB code region is
+		 * marked as 'Unused'.
+		 */
+
+		code: memory@38B000 {
+			reg = <0x0038B000 DT_SIZE_K(468)>;
 		};
 
-		ram: memory@28100000 {
-			reg = <0x28100000 DT_SIZE_M(1)>;
+		ram: memory@28180000 {
+			reg = <0x28180000 DT_SIZE_K(512)>;
 		};
 	};
 

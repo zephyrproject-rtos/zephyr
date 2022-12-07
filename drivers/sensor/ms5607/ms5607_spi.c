@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include "ms5607.h"
 
@@ -29,7 +30,7 @@ static int ms5607_spi_raw_cmd(const struct ms5607_config *config, uint8_t cmd)
 		.count = 1,
 	};
 
-	return spi_write_dt(&config->bus_cfg.spi_bus, &buf_set);
+	return spi_write_dt(&config->bus_cfg.spi, &buf_set);
 }
 
 static int ms5607_spi_reset(const struct ms5607_config *config)
@@ -79,9 +80,7 @@ static int ms5607_spi_read_prom(const struct ms5607_config *config, uint8_t cmd,
 		.count = 1,
 	};
 
-	err = spi_transceive_dt(&config->bus_cfg.spi_bus,
-			     &tx_buf_set,
-			     &rx_buf_set);
+	err = spi_transceive_dt(&config->bus_cfg.spi, &tx_buf_set, &rx_buf_set);
 	if (err < 0) {
 		return err;
 	}
@@ -129,9 +128,7 @@ static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val
 		.count = 1,
 	};
 
-	err = spi_transceive_dt(&config->bus_cfg.spi_bus,
-			     &tx_buf_set,
-			     &rx_buf_set);
+	err = spi_transceive_dt(&config->bus_cfg.spi, &tx_buf_set, &rx_buf_set);
 	if (err < 0) {
 		return err;
 	}
@@ -143,8 +140,8 @@ static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val
 
 static int ms5607_spi_check(const struct ms5607_config *config)
 {
-	if (!spi_is_ready(&config->bus_cfg.spi_bus)) {
-		LOG_DBG("SPI bus %s not ready", config->bus->name);
+	if (!spi_is_ready(&config->bus_cfg.spi)) {
+		LOG_DBG("SPI bus not ready");
 		return -ENODEV;
 	}
 

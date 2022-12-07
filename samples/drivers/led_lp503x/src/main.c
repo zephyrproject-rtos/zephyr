@@ -9,7 +9,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/led/lp503x.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
@@ -211,7 +211,7 @@ static int run_channel_test(const struct device *lp503x_dev)
 
 void main(void)
 {
-	const struct device *lp503x_dev = DEVICE_DT_GET_ANY(ti_lp503x);
+	const struct device *const lp503x_dev = DEVICE_DT_GET_ANY(ti_lp503x);
 
 	int err;
 	uint8_t led;
@@ -239,16 +239,18 @@ void main(void)
 
 		/* Display LED information. */
 		printk("Found LED %d", led);
-		if (info->label)
+		if (info->label) {
 			printk(" - %s", info->label);
+		}
 		printk(" - index:%d", info->index);
 		printk(" - %d colors", info->num_colors);
 		if (!info->color_mapping) {
 			continue;
 		}
 		printk(" - %d", info->color_mapping[0]);
-		for (col = 1; col < info->num_colors; col++)
+		for (col = 1; col < info->num_colors; col++) {
 			printk(":%d", info->color_mapping[col]);
+		}
 		printk("\n");
 	}
 	num_leds = led;

@@ -15,6 +15,7 @@
 		i2c-1 = &twihs2;
 		led0 = &green_led;
 		sw0 = &sw0_user_button;
+		watchdog0 = &wdt;
 	};
 
 	chosen {
@@ -74,6 +75,11 @@
 
 	pinctrl-0 = <&twihs0_default>;
 	pinctrl-names = "default";
+
+	eeprom: eeprom@5f {
+		compatible = "atmel,24mac402";
+		reg = <0x5f>;
+	};
 };
 
 &twihs2 {
@@ -91,6 +97,9 @@
 
 	cs-gpios = <&piod 25 GPIO_ACTIVE_LOW>,
 		   <&piod 27 GPIO_ACTIVE_LOW>;
+
+	dmas = <&xdmac 1 DMA_PERID_SPI0_TX>, <&xdmac 2 DMA_PERID_SPI0_RX>;
+	dma-names = "tx", "rx";
 };
 
 &usart1 {
@@ -114,6 +123,8 @@ zephyr_udc0: &usbhs {
 
 	pinctrl-0 = <&gmac_rmii>;
 	pinctrl-names = "default";
+
+	mac-eeprom = <&eeprom>;
 
 	phy: phy {
 		compatible = "ethernet-phy";
@@ -175,13 +186,16 @@ zephyr_udc0: &usbhs {
 
 &ssc {
 	status = "okay";
-	label = "I2S_0";
 
 	pinctrl-0 = <&ssc_default>;
 	pinctrl-names = "default";
 
 	dma-names = "rx", "tx";
 	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
+};
+
+&xdmac {
+	status = "okay";
 };
 
 &can0 {

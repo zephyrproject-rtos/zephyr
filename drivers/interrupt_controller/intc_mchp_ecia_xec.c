@@ -20,6 +20,7 @@
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/irq.h>
 
 /* defined at the SoC layer */
 #define MCHP_FIRST_GIRQ			MCHP_FIRST_GIRQ_NOS
@@ -514,6 +515,10 @@ static int xec_ecia_init(const struct device *dev)
 	struct ecia_regs *const ecia = (struct ecia_regs *)cfg->ecia_base;
 	uint32_t n = 0, nr = 0;
 	int ret;
+
+	if (!device_is_ready(clk_dev)) {
+		return -ENODEV;
+	}
 
 	ret = clock_control_on(clk_dev,
 			       (clock_control_subsys_t *)&cfg->clk_ctrl);

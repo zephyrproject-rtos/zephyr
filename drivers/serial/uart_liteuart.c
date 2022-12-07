@@ -267,7 +267,7 @@ static void uart_liteuart_irq_callback_set(const struct device *dev,
 static void liteuart_uart_irq_handler(const struct device *dev)
 {
 	struct uart_liteuart_data *data = dev->data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);

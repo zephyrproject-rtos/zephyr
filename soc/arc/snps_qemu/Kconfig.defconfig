@@ -32,6 +32,7 @@ config ARC_MPU_VER
 
 source "soc/arc/snps_qemu/Kconfig.defconfig.em"
 source "soc/arc/snps_qemu/Kconfig.defconfig.hs"
+source "soc/arc/snps_qemu/Kconfig.defconfig.hs5x"
 source "soc/arc/snps_qemu/Kconfig.defconfig.hs6x"
 
 endif

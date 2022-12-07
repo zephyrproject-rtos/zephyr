@@ -9,7 +9,7 @@
 #include <zephyr/ipc/ipc_service_backend.h>
 
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 LOG_MODULE_REGISTER(ipc_service, CONFIG_IPC_SERVICE_LOG_LEVEL);
@@ -38,6 +38,30 @@ int ipc_service_open_instance(const struct device *instance)
 	return backend->open_instance(instance);
 }
 
+int ipc_service_close_instance(const struct device *instance)
+{
+	const struct ipc_service_backend *backend;
+
+	if (!instance) {
+		LOG_ERR("Invalid instance");
+		return -EINVAL;
+	}
+
+	backend = (const struct ipc_service_backend *) instance->api;
+
+	if (!backend) {
+		LOG_ERR("Invalid backend configuration");
+		return -EIO;
+	}
+
+	if (!backend->close_instance) {
+		/* maybe not needed on backend */
+		return 0;
+	}
+
+	return backend->close_instance(instance);
+}
+
 int ipc_service_register_endpoint(const struct device *instance,
 				  struct ipc_ept *ept,
 				  const struct ipc_ept_cfg *cfg)
@@ -63,6 +87,39 @@ int ipc_service_register_endpoint(const struct device *instance,
 	return backend->register_endpoint(instance, &ept->token, cfg);
 }
 
+int ipc_service_deregister_endpoint(struct ipc_ept *ept)
+{
+	const struct ipc_service_backend *backend;
+	int err;
+
+	if (!ept) {
+		LOG_ERR("Invalid endpoint");
+		return -EINVAL;
+	}
+
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
+	}
+
+	backend = ept->instance->api;
+
+	if (!backend || !backend->deregister_endpoint) {
+		LOG_ERR("Invalid backend configuration");
+		return -EIO;
+	}
+
+	err = backend->deregister_endpoint(ept->instance, ept->token);
+	if (err != 0) {
+		return err;
+	}
+
+	ept->instance = 0;
+
+	return 0;
+}
+
+
 int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len)
 {
 	const struct ipc_service_backend *backend;
@@ -70,6 +127,11 @@ int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len)
 	if (!ept) {
 		LOG_ERR("Invalid endpoint");
 		return -EINVAL;
+	}
+
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
@@ -89,6 +151,11 @@ int ipc_service_get_tx_buffer_size(struct ipc_ept *ept)
 	if (!ept) {
 		LOG_ERR("Invalid endpoint");
 		return -EINVAL;
+	}
+
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
@@ -115,6 +182,11 @@ int ipc_service_get_tx_buffer(struct ipc_ept *ept, void **data, uint32_t *len, k
 		return -EINVAL;
 	}
 
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
+	}
+
 	backend = ept->instance->api;
 
 	if (!backend) {
@@ -137,6 +209,11 @@ int ipc_service_drop_tx_buffer(struct ipc_ept *ept, const void *data)
 	if (!ept || !data) {
 		LOG_ERR("Invalid endpoint or data pointer");
 		return -EINVAL;
+	}
+
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
@@ -163,6 +240,11 @@ int ipc_service_send_nocopy(struct ipc_ept *ept, const void *data, size_t len)
 		return -EINVAL;
 	}
 
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
+	}
+
 	backend = ept->instance->api;
 
 	if (!backend) {
@@ -187,6 +269,11 @@ int ipc_service_hold_rx_buffer(struct ipc_ept *ept, void *data)
 		return -EINVAL;
 	}
 
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
+	}
+
 	backend = ept->instance->api;
 
 	if (!backend) {
@@ -209,6 +296,11 @@ int ipc_service_release_rx_buffer(struct ipc_ept *ept, void *data)
 	if (!ept) {
 		LOG_ERR("Invalid endpoint");
 		return -EINVAL;
+	}
+
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
 	}
 
 	backend = ept->instance->api;

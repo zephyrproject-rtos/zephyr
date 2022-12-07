@@ -12,8 +12,6 @@ The full range of hardware features on the board can help the user evaluate all 
 Extension headers make it possible to easily connect a daughter board or wrapping board for a specific application.
 
 .. image:: img/stm32373c_eval.jpg
-     :width: 350px
-     :height: 489px
      :align: center
      :alt: STM32373C-EVAL
 
@@ -99,9 +97,7 @@ capable except for analog inputs.
 
 Board connectors:
 -----------------
-.. image:: img/stm32373c_eval_connectors.png
-     :width: 664px
-     :height: 820px
+.. image:: img/stm32373c_eval_connectors.jpg
      :align: center
      :alt: STM32373C_EVAL connectors
 

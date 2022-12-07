@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RPL_CRB
+	bool "Raptor Lake CRB"
+	depends on SOC_RAPTOR_LAKE
+	select X86_64
+	select HAS_COVERAGE_SUPPORT

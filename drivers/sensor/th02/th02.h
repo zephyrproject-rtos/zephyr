@@ -10,7 +10,6 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 
-#define TH02_I2C_DEV_ID         0x40
 #define TH02_REG_STATUS         0x00
 #define TH02_REG_DATA_H         0x01
 #define TH02_REG_DATA_L         0x02
@@ -25,8 +24,11 @@
 #define TH02_WR_REG_MODE        0xC0
 #define TH02_RD_REG_MODE        0x80
 
+struct th02_config {
+	struct i2c_dt_spec i2c;
+};
+
 struct th02_data {
-	const struct device *i2c;
 	uint16_t t_sample;
 	uint16_t rh_sample;
 };

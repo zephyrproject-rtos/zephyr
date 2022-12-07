@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 
 /* Experimentally 10ms is enough time to get the second CPU to run on
  * all known platforms.
@@ -16,7 +16,7 @@
 BUILD_ASSERT(CONFIG_SMP);
 BUILD_ASSERT(CONFIG_SMP_BOOT_DELAY);
 BUILD_ASSERT(CONFIG_KERNEL_COHERENCE);
-BUILD_ASSERT(CONFIG_MP_NUM_CPUS > 1);
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS > 1);
 
 #define STACKSZ 2048
 char stack[STACKSZ];
@@ -33,7 +33,7 @@ static void thread_fn(void *a, void *b, void *c)
 	mp_flag = true;
 }
 
-void test_smp_boot_delay(void)
+ZTEST(smp_boot_delay, test_smp_boot_delay)
 {
 	/* Create a thread of lower priority.  This could run on
 	 * another CPU if it was available, but will not preempt us
@@ -55,10 +55,7 @@ void test_smp_boot_delay(void)
 	zassert_true(mp_flag, "CPU1 did not start");
 
 	k_thread_abort(&cpu1_thr);
-}
 
-void test_post_boot_ipi(void)
-{
 	/* Spawn the same thread to do the same thing, but this time
 	 * expect that the thread is going to run synchronously on the
 	 * other CPU as soon as its created.  Intended to test whether
@@ -73,12 +70,4 @@ void test_post_boot_ipi(void)
 	zassert_true(mp_flag, "CPU1 did not start thread via IPI");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(smp_boot_delay,
-			 ztest_unit_test(test_smp_boot_delay),
-			 ztest_unit_test(test_post_boot_ipi)
-			 );
-
-	ztest_run_test_suite(smp_boot_delay);
-}
+ZTEST_SUITE(smp_boot_delay, NULL, NULL, NULL, NULL, NULL);

@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2022 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/smartbond-pinctrl.h>
+
+&pinctrl {
+	uart_default: uart_default {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(UART_TX, 0, 9)>;
+		};
+		group2 {
+			pinmux = <SMARTBOND_PINMUX(UART_RX, 0, 8)>;
+			bias-pull-up;
+		};
+	};
+};

@@ -12,13 +12,15 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
-#define LOG_MODULE_NAME bt_br
-#include "common/log.h"
+#include "common/bt_str.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "keys.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_br);
 
 static bt_br_discovery_cb_t *discovery_cb;
 struct bt_br_discovery_result *discovery_results;
@@ -110,8 +112,7 @@ static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 	}
 
 	if (accept_sco_conn(&evt->bdaddr, sco_conn)) {
-		BT_ERR("Error accepting connection from %s",
-		       bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Error accepting connection from %s", bt_addr_str(&evt->bdaddr));
 		reject_conn(&evt->bdaddr, BT_HCI_ERR_UNSPECIFIED);
 		bt_sco_cleanup(sco_conn);
 		return;
@@ -127,8 +128,7 @@ void bt_hci_conn_req(struct net_buf *buf)
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
 	struct bt_conn *conn;
 
-	BT_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr),
-	       evt->link_type);
+	LOG_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr), evt->link_type);
 
 	if (evt->link_type != BT_HCI_ACL) {
 		bt_esco_conn_req(evt);
@@ -158,7 +158,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
 				sizeof(*cp));
 	if (!buf) {
-		BT_ERR("Failed to allocate command buffer");
+		LOG_ERR("Failed to allocate command buffer");
 		return false;
 	}
 
@@ -168,12 +168,12 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
 				   buf, &rsp);
 	if (err) {
-		BT_ERR("Failed to read encryption key size (err %d)", err);
+		LOG_ERR("Failed to read encryption key size (err %d)", err);
 		return false;
 	}
 
 	if (rsp->len < sizeof(*rp)) {
-		BT_ERR("Too small command complete for encryption key size");
+		LOG_ERR("Too small command complete for encryption key size");
 		net_buf_unref(rsp);
 		return false;
 	}
@@ -182,7 +182,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	key_size = rp->key_size;
 	net_buf_unref(rsp);
 
-	BT_DBG("Encryption key size is %u", key_size);
+	LOG_DBG("Encryption key size is %u", key_size);
 
 	if (conn->sec_level == BT_SECURITY_L4) {
 		return key_size == BT_HCI_ENCRYPTION_KEY_SIZE_MAX;
@@ -209,18 +209,18 @@ bool bt_br_update_sec_level(struct bt_conn *conn)
 			conn->sec_level = BT_SECURITY_L2;
 		}
 	} else {
-		BT_WARN("No BR/EDR link key found");
+		LOG_WRN("No BR/EDR link key found");
 		conn->sec_level = BT_SECURITY_L2;
 	}
 
 	if (!br_sufficient_key_size(conn)) {
-		BT_ERR("Encryption key size is not sufficient");
+		LOG_ERR("Encryption key size is not sufficient");
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 		return false;
 	}
 
 	if (conn->required_sec_level > conn->sec_level) {
-		BT_ERR("Failed to set required security level");
+		LOG_ERR("Failed to set required security level");
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 		return false;
 	}
@@ -234,12 +234,11 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 	struct bt_conn *sco_conn;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 
-	BT_DBG("status 0x%02x, handle %u, type 0x%02x", evt->status, handle,
-	       evt->link_type);
+	LOG_DBG("status 0x%02x, handle %u, type 0x%02x", evt->status, handle, evt->link_type);
 
 	sco_conn = bt_conn_lookup_addr_sco(&evt->bdaddr);
 	if (!sco_conn) {
-		BT_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -262,12 +261,11 @@ void bt_hci_conn_complete(struct net_buf *buf)
 	struct bt_hci_cp_read_remote_features *cp;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 
-	BT_DBG("status 0x%02x, handle %u, type 0x%02x", evt->status, handle,
-	       evt->link_type);
+	LOG_DBG("status 0x%02x, handle %u, type 0x%02x", evt->status, handle, evt->link_type);
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		BT_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -414,7 +412,7 @@ void bt_hci_inquiry_complete(struct net_buf *buf)
 	struct bt_hci_evt_inquiry_complete *evt = (void *)buf->data;
 
 	if (evt->status) {
-		BT_ERR("Failed to complete inquiry");
+		LOG_ERR("Failed to complete inquiry");
 	}
 
 	report_discovery_results();
@@ -460,8 +458,8 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr,
 	}
 
 	if (result) {
-		BT_DBG("Reusing slot (old %s rssi %d dBm)",
-		       bt_addr_str(&result->addr), result->rssi);
+		LOG_DBG("Reusing slot (old %s rssi %d dBm)", bt_addr_str(&result->addr),
+			result->rssi);
 
 		bt_addr_copy(&result->addr, addr);
 	}
@@ -477,7 +475,7 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 		return;
 	}
 
-	BT_DBG("number of results: %u", num_reports);
+	LOG_DBG("number of results: %u", num_reports);
 
 	while (num_reports--) {
 		struct bt_hci_evt_inquiry_result_with_rssi *evt;
@@ -485,12 +483,12 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 		struct discovery_priv *priv;
 
 		if (buf->len < sizeof(*evt)) {
-			BT_ERR("Unexpected end to buffer");
+			LOG_ERR("Unexpected end to buffer");
 			return;
 		}
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
-		BT_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
+		LOG_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
 
 		result = get_result_slot(&evt->addr, evt->rssi);
 		if (!result) {
@@ -519,7 +517,7 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 		return;
 	}
 
-	BT_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
+	LOG_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
 
 	result = get_result_slot(&evt->addr, evt->rssi);
 	if (!result) {
@@ -621,11 +619,11 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf)
 	struct bt_hci_cp_read_remote_ext_features *cp;
 	struct bt_conn *conn;
 
-	BT_DBG("status 0x%02x handle %u", evt->status, handle);
+	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
 
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
-		BT_ERR("Can't find conn for handle %u", handle);
+		LOG_ERR("Can't find conn for handle %u", handle);
 		return;
 	}
 
@@ -662,11 +660,11 @@ void bt_hci_read_remote_ext_features_complete(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	BT_DBG("status 0x%02x handle %u", evt->status, handle);
+	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
 
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
-		BT_ERR("Can't find conn for handle %u", handle);
+		LOG_ERR("Can't find conn for handle %u", handle);
 		return;
 	}
 
@@ -683,8 +681,7 @@ void bt_hci_role_change(struct net_buf *buf)
 	struct bt_hci_evt_role_change *evt = (void *)buf->data;
 	struct bt_conn *conn;
 
-	BT_DBG("status 0x%02x role %u addr %s", evt->status, evt->role,
-	       bt_addr_str(&evt->bdaddr));
+	LOG_DBG("status 0x%02x role %u addr %s", evt->status, evt->role, bt_addr_str(&evt->bdaddr));
 
 	if (evt->status) {
 		return;
@@ -692,7 +689,7 @@ void bt_hci_role_change(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -789,12 +786,12 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
 	uint16_t pkts;
 
-	BT_DBG("status 0x%02x", rp->status);
+	LOG_DBG("status 0x%02x", rp->status);
 
 	bt_dev.br.mtu = sys_le16_to_cpu(rp->acl_max_len);
 	pkts = sys_le16_to_cpu(rp->acl_max_num);
 
-	BT_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.br.mtu);
+	LOG_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.br.mtu);
 
 	k_sem_init(&bt_dev.br.pkts, pkts, pkts);
 }
@@ -948,7 +945,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 {
 	int err;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	if (!valid_br_discov_param(param, cnt)) {
 		return -EINVAL;
@@ -980,7 +977,7 @@ int bt_br_discovery_stop(void)
 	int err;
 	int i;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return -EALREADY;
@@ -1029,7 +1026,7 @@ static int write_scan_enable(uint8_t scan)
 	struct net_buf *buf;
 	int err;
 
-	BT_DBG("type %u", scan);
+	LOG_DBG("type %u", scan);
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SCAN_ENABLE, 1);
 	if (!buf) {

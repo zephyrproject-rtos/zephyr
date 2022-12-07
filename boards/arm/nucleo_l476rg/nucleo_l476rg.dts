@@ -63,6 +63,14 @@
 	};
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
 &clk_hsi {
 	status = "okay";
 };
@@ -85,6 +93,12 @@
 
 &cpu0 {
 	cpu-power-states = <&stop0 &stop1 &stop2>;
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
 };
 
 &usart1 {
@@ -165,6 +179,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

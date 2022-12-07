@@ -7,18 +7,13 @@ if SOC_FAMILY_ARM
 
 menuconfig CLOCK_CONTROL_BEETLE
 	bool "BEETLE Clock Control"
-	depends on SOC_SERIES_BEETLE
-	default y if SOC_SERIES_BEETLE
+	default y
+	depends on DT_HAS_ARM_BEETLE_SYSCON_ENABLED
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32F4 family of MCUs
 
-config ARM_CLOCK_CONTROL_DEV_NAME
-	string "Clock Config Device name"
-	default "CLOCK_CONTROL_0"
-	depends on CLOCK_CONTROL_BEETLE
-	help
-	  Configure Clock Config Device name
+if CLOCK_CONTROL_BEETLE
 
 config CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	bool "PLL on Beetle"
@@ -27,5 +22,7 @@ config CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	  Enable PLL on Beetle.
 
 	  Select n if not sure.
+
+endif # CLOCK_CONTROL_BEETLE
 
 endif # SOC_FAMILY_ARM

@@ -41,8 +41,6 @@
 #include "lll_adv_internal.h"
 #include "lll_prof_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_openisa_lll_adv
-#include "common/log.h"
 #include "hal/debug.h"
 
 static int init_reset(void);

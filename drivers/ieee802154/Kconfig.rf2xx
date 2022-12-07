@@ -5,18 +5,13 @@
 
 menuconfig IEEE802154_RF2XX
 	bool "ATMEL RF2XX Driver support"
-	depends on NETWORKING
+	default y
+	depends on DT_HAS_ATMEL_RF2XX_ENABLED
 	select SPI
 	select GPIO
 	select NET_L2_IEEE802154_SUB_GHZ if NET_L2_IEEE802154
 
 if IEEE802154_RF2XX
-
-config IEEE802154_RF2XX_DRV_NAME
-	string "ATMEL RF2XX Driver's name"
-	default "IEEE802154_rf2xx"
-	help
-	  This option sets the driver name
 
 config IEEE802154_RF2XX_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"

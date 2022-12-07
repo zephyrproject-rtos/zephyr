@@ -4,11 +4,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-void test_k_busy_wait(void)
+ZTEST(no_multithreading, test_k_busy_wait)
 {
 	int64_t now = k_uptime_get();
 	uint32_t watchdog = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
@@ -27,7 +27,7 @@ void test_k_busy_wait(void)
 
 	int64_t diff = k_uptime_get() - now;
 
-	zassert_within(diff, 10, 2, NULL);
+	zassert_within(diff, 10, 2);
 }
 
 static void timeout_handler(struct k_timer *timer)
@@ -39,7 +39,7 @@ static void timeout_handler(struct k_timer *timer)
 
 K_TIMER_DEFINE(timer, timeout_handler, NULL);
 
-void test_irq_locking(void)
+ZTEST(no_multithreading, test_irq_locking)
 {
 	volatile bool timeout_run = false;
 
@@ -56,7 +56,7 @@ void test_irq_locking(void)
 	zassert_true(timeout_run, "Timeout should expire because irq got unlocked");
 }
 
-void test_cpu_idle(void)
+ZTEST(no_multithreading, test_cpu_idle)
 {
 	volatile bool timeout_run = false;
 	int64_t now, diff;
@@ -75,11 +75,15 @@ void test_cpu_idle(void)
 	zassert_within(diff, 10, 2, "Unexpected time passed: %d ms", (int)diff);
 }
 
+#define IDX_PRE_KERNEL_1 0
+#define IDX_PRE_KERNEL_2 1
+#define IDX_POST_KERNEL 2
+
 #define SYS_INIT_CREATE(level) \
 	static int pre_kernel_##level##_init_func(const struct device *dev) \
 	{ \
 		ARG_UNUSED(dev); \
-		if (init_order != _SYS_INIT_LEVEL_##level && sys_init_result == 0) { \
+		if (init_order != IDX_##level && sys_init_result == 0) { \
 			sys_init_result = -1; \
 			return -EIO; \
 		} \
@@ -93,19 +97,9 @@ static int sys_init_result;
 
 FOR_EACH(SYS_INIT_CREATE, (;), PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL);
 
-void test_sys_init(void)
+ZTEST(no_multithreading, test_sys_init)
 {
-	zassert_equal(init_order, 3, "SYS_INIT failed");
+	zassert_equal(init_order, 3, "SYS_INIT failed: %d", init_order);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(no_multithreading,
-			 ztest_unit_test(test_k_busy_wait),
-			 ztest_unit_test(test_irq_locking),
-			 ztest_unit_test(test_cpu_idle),
-			 ztest_unit_test(test_sys_init)
-			 );
-
-	ztest_run_test_suite(no_multithreading);
-}
+ZTEST_SUITE(no_multithreading, NULL, NULL, NULL, NULL, NULL);

@@ -4,3 +4,5 @@ tests:
   drivers.adc-dma:
     depends_on: adc dma
     platform_allow: frdm_k82f frdm_k64f
+    integration_platforms:
+      - frdm_k82f

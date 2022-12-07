@@ -3,7 +3,10 @@
 
 menuconfig HTS221
 	bool "HTS221 temperature and humidity sensor"
-	depends on I2C || SPI
+	default y
+	depends on DT_HAS_ST_HTS221_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_HTS221),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_HTS221),spi)
 	select HAS_STMEMSC
 	select USE_STDC_HTS221
 	help

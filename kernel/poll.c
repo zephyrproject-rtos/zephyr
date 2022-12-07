@@ -86,6 +86,13 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 			return true;
 		}
 		break;
+#ifdef CONFIG_PIPES
+	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
+		if (k_pipe_read_avail(event->pipe)) {
+			*state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
+			return true;
+		}
+#endif
 	case K_POLL_TYPE_IGNORE:
 		break;
 	default:
@@ -146,6 +153,12 @@ static inline void register_event(struct k_poll_event *event,
 		__ASSERT(event->msgq != NULL, "invalid message queue\n");
 		add_event(&event->msgq->poll_events, event, poller);
 		break;
+#ifdef CONFIG_PIPES
+	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
+		__ASSERT(event->pipe != NULL, "invalid pipe\n");
+		add_event(&event->pipe->poll_events, event, poller);
+		break;
+#endif
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
@@ -181,6 +194,12 @@ static inline void clear_event_registration(struct k_poll_event *event)
 		__ASSERT(event->msgq != NULL, "invalid message queue\n");
 		remove_event = true;
 		break;
+#ifdef CONFIG_PIPES
+	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
+		__ASSERT(event->pipe != NULL, "invalid pipe\n");
+		remove_event = true;
+		break;
+#endif
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
@@ -397,6 +416,11 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
 			Z_OOPS(Z_SYSCALL_OBJ(e->msgq, K_OBJ_MSGQ));
 			break;
+#ifdef CONFIG_PIPES
+		case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
+			Z_OOPS(Z_SYSCALL_OBJ(e->pipe, K_OBJ_PIPE));
+			break;
+#endif
 		default:
 			ret = -EINVAL;
 			goto out_free;

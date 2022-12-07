@@ -18,7 +18,6 @@ properties:
         as active low.
     reset-gpios:
       type: phandle-array
-      required: false
       description: Reset pin.
 
         The reset pin of W5500 is active low.

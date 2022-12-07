@@ -11,8 +11,7 @@ development kit for the SimpleLink |trade| multi-Standard CC1352R wireless MCU.
 
 See the `TI CC1352R LaunchPad Product Page`_ for details.
 
-.. figure:: img/cc1352r1_launchxl.png
-   :width: 400px
+.. figure:: img/cc1352r1_launchxl.jpg
    :align: center
    :alt: TI CC1352R LaunchPad
 
@@ -53,6 +52,8 @@ features:
 | I2C       | on-chip    | i2c                  |
 +-----------+------------+----------------------+
 | SPI       | on-chip    | spi                  |
++-----------+------------+----------------------+
+| AUX_ADC   | on-chip    | adc                  |
 +-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.

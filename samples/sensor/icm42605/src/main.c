@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
@@ -98,11 +98,10 @@ static void handle_icm42605_double_tap(const struct device *dev,
 
 void main(void)
 {
-	const char *const label = DT_LABEL(DT_INST(0, invensense_icm42605));
-	const struct device *icm42605 = device_get_binding(label);
+	const struct device *const icm42605 = DEVICE_DT_GET_ONE(invensense_icm42605);
 
-	if (!icm42605) {
-		printf("Failed to find sensor %s\n", label);
+	if (!device_is_ready(icm42605)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
 

@@ -16,7 +16,6 @@ gpio0: gpio@1100000 {
 	interrupts = <69 3>;
 	gpio-controller;
 	#gpio-cells = <2>;
-	label = "GPIO_0";
 };
 
 gpio1: gpio@1101000 {
@@ -25,7 +24,6 @@ gpio1: gpio@1101000 {
 	interrupts = <70 3>;
 	gpio-controller;
 	#gpio-cells = <2>;
-	label = "GPIO_1";
 };
 
 gpio2: gpio@1102000 {
@@ -34,7 +32,6 @@ gpio2: gpio@1102000 {
 	interrupts = <71 3>;
 	gpio-controller;
 	#gpio-cells = <2>;
-	label = "GPIO_2";
 };
 
 gpio3: gpio@1103000 {
@@ -43,7 +40,6 @@ gpio3: gpio@1103000 {
 	interrupts = <72 3>;
 	gpio-controller;
 	#gpio-cells = <2>;
-	label = "GPIO_3";
 };
 
 eth0: eth@1400000 {
@@ -51,7 +47,6 @@ eth0: eth@1400000 {
 	compatible = "smsc,lan9220";
 	/* Actual reg range is ~0x200 */
 	reg = <0x1400000 0x100000>;
-	label = "eth0";
 	interrupts = <49 3>;
 };
 
@@ -61,7 +56,6 @@ i2c_touch: i2c@9200000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9200000 0x1000>;
-	label = "I2C_TOUCH";
 };
 
 i2c_audio_conf: i2c@9201000 {
@@ -70,7 +64,6 @@ i2c_audio_conf: i2c@9201000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9201000 0x1000>;
-	label = "I2C_AUDIO_CONF";
 };
 
 i2c_shield0: i2c@9203000 {
@@ -79,7 +72,6 @@ i2c_shield0: i2c@9203000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9203000 0x1000>;
-	label = "I2C_SHIELD0";
 };
 
 i2c_shield1: i2c@9204000 {
@@ -88,7 +80,6 @@ i2c_shield1: i2c@9204000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9204000 0x1000>;
-	label = "I2C_SHIELD1";
 };
 
 i2c_ddr4_eeprom: i2c@9208000 {
@@ -97,7 +88,6 @@ i2c_ddr4_eeprom: i2c@9208000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9208000 0x1000>;
-	label = "DDR4_EEPROM";
 };
 
 gpio_led0: mps3_fpgaio@9302000 {
@@ -107,7 +97,6 @@ gpio_led0: mps3_fpgaio@9302000 {
 	gpio-controller;
 	#gpio-cells = <1>;
 	ngpios = <8>;
-	label = "FPGA_LED0";
 };
 
 gpio_button: mps3_fpgaio@9302008 {
@@ -117,7 +106,6 @@ gpio_button: mps3_fpgaio@9302008 {
 	gpio-controller;
 	#gpio-cells = <1>;
 	ngpios = <2>;
-	label = "FPGA_BUTTON";
 };
 
 gpio_misc: mps3_fpgaio@930204c {
@@ -127,7 +115,6 @@ gpio_misc: mps3_fpgaio@930204c {
 	gpio-controller;
 	#gpio-cells = <1>;
 	ngpios = <3>;
-	label = "FPGA_MISC";
 };
 
 uart0: uart@9303000 {
@@ -137,7 +124,6 @@ uart0: uart@9303000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
-	label = "UART_0";
 };
 
 uart1: uart@9304000 {
@@ -147,7 +133,6 @@ uart1: uart@9304000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
-	label = "UART_1";
 };
 
 uart2: uart@9305000 {
@@ -157,7 +142,6 @@ uart2: uart@9305000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
-	label = "UART_2";
 };
 
 uart3: uart@9306000 {
@@ -167,7 +151,6 @@ uart3: uart@9306000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
-	label = "UART_3";
 };
 
 uart4: uart@9307000 {
@@ -177,7 +160,6 @@ uart4: uart@9307000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
-	label = "UART_4";
 };
 
 uart5: uart@9308000 {
@@ -188,5 +170,4 @@ uart5: uart@9308000 {
 	interrupts = <126 3 125 3>;
 	clocks = <&sysclk>;
 	current-speed = <115200>;
-	label = "UART_5";
 };

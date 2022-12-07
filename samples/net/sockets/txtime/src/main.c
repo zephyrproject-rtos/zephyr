@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <stdio.h>
 #include <inttypes.h>
@@ -314,7 +314,7 @@ static int create_socket(struct net_if *iface, struct sockaddr *peer)
 			return -EINVAL;
 		}
 
-		LOG_DBG("Binding to %s", log_strdup(addr_str));
+		LOG_DBG("Binding to %s", addr_str);
 	}
 
 	ret = bind(sock, &local, addrlen);
@@ -602,7 +602,7 @@ void main(void)
 	if (IS_ENABLED(CONFIG_NET_SAMPLE_UDP_SOCKET)) {
 		LOG_INF("Socket SO_TXTIME sample to %s port %d using "
 			"interface %d (%p) and PTP clock %p",
-			log_strdup(addr_str),
+			addr_str,
 			ntohs(net_sin(&data.peer)->sin_port),
 			if_index, iface, data.clk);
 	}

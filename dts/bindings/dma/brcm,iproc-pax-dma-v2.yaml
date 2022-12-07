@@ -14,8 +14,6 @@ properties:
         It includes data mover engine(dme), ring manager, ring manager common
         registers.
       required: true
-    label:
-      required: true
     bd-memory:
       type: array
       description: Uncached memory address to populate dma buffer descriptors
@@ -31,7 +29,6 @@ properties:
     interrupts:
       type: array
       description: Ring manager line interrupt number
-      required: false
     pcie-ep:
       type: phandle
       description: Pcie endpoint handle

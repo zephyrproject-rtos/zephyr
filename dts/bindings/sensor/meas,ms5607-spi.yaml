@@ -7,4 +7,4 @@ description: |
 
 compatible: "meas,ms5607"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]

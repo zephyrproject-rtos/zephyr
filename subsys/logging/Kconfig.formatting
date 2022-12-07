@@ -24,6 +24,7 @@ endmenu
 menuconfig LOG_MIPI_SYST_ENABLE
 	bool "MIPI SyS-T format output"
 	select MIPI_SYST_LIB
+	select LOG_OUTPUT
 	help
 	  Enable MIPI SyS-T format output for the logger system.
 
@@ -31,9 +32,9 @@ if LOG_MIPI_SYST_ENABLE
 
 config LOG_MIPI_SYST_USE_CATALOG
 	bool "Use MIPI Sys-T Catalog for logging"
-	depends on LOG2
-	select LOG2_FMT_SECTION
-	select LOG2_USE_TAGGED_ARGUMENTS
+	depends on !PICOLIBC
+	select LOG_FMT_SECTION
+	select LOG_USE_TAGGED_ARGUMENTS
 	help
 	  Use MIPI Sys-T Catalog for logging instead of plain text.
 
@@ -45,6 +46,16 @@ config LOG_MIPI_SYST_CATALOG_ARGS_BUFFER_SIZE
 	  The size (in bytes) of the temporary buffer to store the expanded
 	  argument list needed for the MIPI Sys-T library for processing
 	  catalog messages.
+
+config LOG_MIPI_SYST_ARGS_BUFFER_SIZE
+	int "Buffer size in bytes"
+	default 1024
+	help
+	  This user-configurable option specifies the maximum size (in bytes) to reserve in
+	  the call stack for processing the logging format strings MIPI Sys-T library.
+	  Increasing it will allow for longer strings to be logged at the expense of used
+	  stack space. Conversely decreasing it will lessen the stack burden at the expense
+	  of shorter maximum log strings.
 
 config LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
 	bool "Output Log Message Source ID as Module ID"
@@ -82,7 +93,6 @@ endif # LOG_MIPI_SYST_ENABLE
 
 config LOG_DICTIONARY_SUPPORT
 	bool
-	depends on LOG2
 	select LOG_DICTIONARY_DB
 	help
 	  Enable support for dictionary based logging.
@@ -93,6 +103,13 @@ config LOG_DICTIONARY_SUPPORT
 	  the log output when there are long format strings to be logged.
 
 	  This should be selected by the backend automatically.
+
+config LOG_CUSTOM_FORMAT_SUPPORT
+	bool "Custom format support"
+	default n
+	help
+	  Enable support for custom formatter.
+	  Allows custom format callbacks registering for logging backend.
 
 config LOG_IMMEDIATE_CLEAN_OUTPUT
 	bool "Clean log output"
@@ -137,7 +154,8 @@ config LOG_TAG_DEFAULT
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Timestamp formatting in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
-	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || LOG_BACKEND_FS
+	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || LOG_BACKEND_FS \
+	           || LOG_BACKEND_ADSP || LOG_BACKEND_ADSP_HDA || LOG_BACKEND_ADSP_MTRACE
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.

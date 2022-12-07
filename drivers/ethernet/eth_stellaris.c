@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/device.h>
 #include <soc.h>
 #include <ethernet/eth_stats.h>
+#include <zephyr/irq.h>
 #include "eth_stellaris_priv.h"
 
 static void eth_stellaris_assign_mac(const struct device *dev)

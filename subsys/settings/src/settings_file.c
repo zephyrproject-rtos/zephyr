@@ -7,7 +7,7 @@
 
 #include <string.h>
 #include <stdbool.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/fs/fs.h>
 
@@ -19,17 +19,29 @@
 
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
+#ifdef CONFIG_SETTINGS_FS
+#define SETTINGS_FILE_MAX_LINES		CONFIG_SETTINGS_FS_MAX_LINES
+#define SETTINGS_FILE_DIR		CONFIG_SETTINGS_FS_DIR
+#define SETTINGS_FILE_PATH		CONFIG_SETTINGS_FS_FILE
+#else
+#define SETTINGS_FILE_MAX_LINES		CONFIG_SETTINGS_FILE_MAX_LINES
+#define SETTINGS_FILE_DIR		CONFIG_SETTINGS_FILE_DIR
+#define SETTINGS_FILE_PATH		CONFIG_SETTINGS_FILE_PATH
+#endif
+
 int settings_backend_init(void);
-void settings_mount_fs_backend(struct settings_file *cf);
+void settings_mount_file_backend(struct settings_file *cf);
 
 static int settings_file_load(struct settings_store *cs,
 			      const struct settings_load_arg *arg);
 static int settings_file_save(struct settings_store *cs, const char *name,
 			      const char *value, size_t val_len);
+static void *settings_file_storage_get(struct settings_store *cs);
 
 static const struct settings_store_itf settings_file_itf = {
 	.csi_load = settings_file_load,
 	.csi_save = settings_file_save,
+	.csi_storage_get = settings_file_storage_get
 };
 
 /*
@@ -110,7 +122,7 @@ static int read_entry_len(const struct line_entry_ctx *entry_ctx, off_t off)
 static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 				   void *cb_arg, bool filter_duplicates)
 {
-	struct settings_file *cf = (struct settings_file *)cs;
+	struct settings_file *cf = CONTAINER_OF(cs, struct settings_file, cf_store);
 	struct fs_file_t file;
 	int lines;
 	int rc;
@@ -125,8 +137,12 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 
 	fs_file_t_init(&file);
 
-	rc = fs_open(&file, cf->cf_name, FS_O_CREATE | FS_O_RDWR);
+	rc = fs_open(&file, cf->cf_name, FS_O_READ);
 	if (rc != 0) {
+		if (rc == -ENOENT) {
+			return -ENOENT;
+		}
+
 		return -EINVAL;
 	}
 
@@ -363,7 +379,7 @@ end_rolback:
 static int settings_file_save_priv(struct settings_store *cs, const char *name,
 				   const char *value, size_t val_len)
 {
-	struct settings_file *cf = (struct settings_file *)cs;
+	struct settings_file *cf = CONTAINER_OF(cs, struct settings_file, cf_store);
 	struct line_entry_ctx entry_ctx;
 	struct fs_file_t file;
 	int rc2;
@@ -432,7 +448,7 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 	if (cdca.is_dup == 1) {
 		return 0;
 	}
-	return settings_file_save_priv(cs, name, (char *)value, val_len);
+	return settings_file_save_priv(cs, name, value, val_len);
 }
 
 static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
@@ -498,7 +514,7 @@ static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 	return rc;
 }
 
-void settings_mount_fs_backend(struct settings_file *cf)
+void settings_mount_file_backend(struct settings_file *cf)
 {
 	settings_line_io_init(read_handler, write_handler, get_len_cb, 1);
 }
@@ -506,8 +522,8 @@ void settings_mount_fs_backend(struct settings_file *cf)
 int settings_backend_init(void)
 {
 	static struct settings_file config_init_settings_file = {
-		.cf_name = CONFIG_SETTINGS_FS_FILE,
-		.cf_maxlines = CONFIG_SETTINGS_FS_MAX_LINES
+		.cf_name = SETTINGS_FILE_PATH,
+		.cf_maxlines = SETTINGS_FILE_MAX_LINES
 	};
 	struct fs_dirent entry;
 	int rc;
@@ -523,15 +539,22 @@ int settings_backend_init(void)
 		k_panic();
 	}
 
-	settings_mount_fs_backend(&config_init_settings_file);
+	settings_mount_file_backend(&config_init_settings_file);
 
 	/*
 	 * Must be called after root FS has been initialized.
 	 */
-	rc = fs_stat(CONFIG_SETTINGS_FS_DIR, &entry);
+	rc = fs_stat(SETTINGS_FILE_DIR, &entry);
 	/* If directory doesn't exist, create it */
 	if (rc == -ENOENT) {
-		rc = fs_mkdir(CONFIG_SETTINGS_FS_DIR);
+		rc = fs_mkdir(SETTINGS_FILE_DIR);
 	}
 	return rc;
+}
+
+static void *settings_file_storage_get(struct settings_store *cs)
+{
+	struct settings_file *cf = CONTAINER_OF(cs, struct settings_file, cf_store);
+
+	return (void *)cf->cf_name;
 }

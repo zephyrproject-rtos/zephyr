@@ -25,7 +25,6 @@
 
 	mx25l25645g: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		label = "MX25L25645G";
 		reg = <0>;
 		qspi-max-frequency = <50000000>;
 		size = <DT_SIZE_M(32*8)>;
@@ -39,9 +38,9 @@
 			   #address-cells = <1>;
 			   #size-cells = <1>;
 
-			   partition@0 {
+			   storage_partition: partition@0 {
 			       label = "storage";
-			       reg = <0x01000000 DT_SIZE_M(8)>;
+			       reg = <0 DT_SIZE_M(8)>;
 			   };
 		};
 	};

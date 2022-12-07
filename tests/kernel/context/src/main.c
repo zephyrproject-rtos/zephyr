@@ -20,13 +20,14 @@
  * @}
  */
 
-#include <ztest.h>
+#include <stdlib.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/sys_clock.h>
 
-#if defined(CONFIG_SOC_POSIX) || defined(CONFIG_ARC)
+#if defined(CONFIG_SOC_POSIX)
 /* TIMER_TICK_IRQ <soc.h> header for certain platforms */
 #include <soc.h>
 #endif
@@ -45,38 +46,9 @@
  * Get the timer type dependent IRQ number. If timer type
  * is not defined in platform, generate an error
  */
-#if defined(CONFIG_HPET_TIMER)
-#define TICK_IRQ DT_IRQN(DT_INST(0, intel_hpet))
-#elif defined(CONFIG_ARM_ARCH_TIMER)
-#define TICK_IRQ ARM_ARCH_TIMER_IRQ
-#elif defined(CONFIG_APIC_TIMER)
-#define TICK_IRQ CONFIG_APIC_TIMER_IRQ
-#elif defined(CONFIG_APIC_TSC_DEADLINE_TIMER)
-#define TICK_IRQ z_loapic_irq_base() /* first LVT interrupt */
-#elif defined(CONFIG_XTENSA_TIMER)
-#define TICK_IRQ UTIL_CAT(XCHAL_TIMER,		\
-			  UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
 
-#elif defined(CONFIG_CAVS_TIMER)
-#define TICK_IRQ DSP_WCT_IRQ(0)
-#elif defined(CONFIG_ALTERA_AVALON_TIMER)
-#define TICK_IRQ TIMER_0_IRQ
-#elif defined(CONFIG_ARCV2_TIMER)
-#define TICK_IRQ IRQ_TIMER0
-#elif defined(CONFIG_RISCV_MACHINE_TIMER)
-#define TICK_IRQ RISCV_MACHINE_TIMER_IRQ
-#elif defined(CONFIG_ITE_IT8XXX2_TIMER)
-#define TICK_IRQ DT_IRQ_BY_IDX(DT_NODELABEL(timer), 5, irq)
-#elif defined(CONFIG_LITEX_TIMER)
-#define TICK_IRQ DT_IRQN(DT_NODELABEL(timer0))
-#elif defined(CONFIG_RV32M1_LPTMR_TIMER)
-#define TICK_IRQ DT_IRQN(DT_ALIAS(system_lptmr))
-#elif defined(CONFIG_XLNX_PSTTC_TIMER)
-#define TICK_IRQ DT_IRQN(DT_INST(0, xlnx_ttcps))
-#elif defined(CONFIG_RCAR_CMT_TIMER)
-#define TICK_IRQ DT_IRQN(DT_INST(0, renesas_rcar_cmt))
-#elif defined(CONFIG_ESP32C3_SYS_TIMER)
-#define TICK_IRQ DT_IRQN(DT_NODELABEL(systimer0))
+#if defined(CONFIG_APIC_TSC_DEADLINE_TIMER)
+#define TICK_IRQ z_loapic_irq_base() /* first LVT interrupt */
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
  * The Cortex-M use the SYSTICK exception for the system timer, which is
@@ -94,8 +66,10 @@
  */
 #endif /* defined(CONFIG_ARCH_POSIX) */
 #else
-/* generate an error */
-#error Timer type is not defined for this platform
+
+extern const int32_t z_sys_timer_irq_for_test;
+#define TICK_IRQ (z_sys_timer_irq_for_test)
+
 #endif
 
 /* Cortex-M1, Nios II, and RISCV without CONFIG_RISCV_HAS_CPU_IDLE
@@ -136,84 +110,6 @@ static struct k_thread thread_data2;
 static struct k_thread thread_data3;
 
 static ISR_INFO isr_info;
-
-/**
- * @brief Test cpu idle function
- *
- * @details
- * Test Objective:
- * - The kernel architecture provide an idle function to be run when the system
- *   has no work for the current CPU
- * - This routine tests the k_cpu_idle() routine
- *
- * Testing techniques
- * - Functional and black box testing
- * - Interface testing
- *
- * Prerequisite Condition:
- * - HAS_POWERSAVE_INSTRUCTION is set
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Record system time before cpu enters idle state
- * -# Enter cpu idle state by k_cpu_idle()
- * -# Record system time after cpu idle state is interrupted
- * -# Compare the two system time values.
- *
- * Expected Test Result:
- * - cpu enters idle state for a given time
- *
- * Pass/Fail criteria:
- * - Success if the cpu enters idle state, failure otherwise.
- *
- * Assumptions and Constraints
- * - N/A
- *
- * @see k_cpu_idle()
- * @ingroup kernel_context_tests
- */
-static void test_kernel_cpu_idle(void);
-
-/**
- * @brief Test cpu idle function
- *
- * @details
- * Test Objective:
- * - The kernel architecture provide an idle function to be run when the system
- *   has no work for the current CPU
- * - This routine tests the k_cpu_atomic_idle() routine
- *
- * Testing techniques
- * - Functional and black box testing
- * - Interface testing
- *
- * Prerequisite Condition:
- * - HAS_POWERSAVE_INSTRUCTION is set
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Record system time before cpu enters idle state
- * -# Enter cpu idle state by k_cpu_atomic_idle()
- * -# Record system time after cpu idle state is interrupted
- * -# Compare the two system time values.
- *
- * Expected Test Result:
- * - cpu enters idle state for a given time
- *
- * Pass/Fail criteria:
- * - Success if the cpu enters idle state, failure otherwise.
- *
- * Assumptions and Constraints
- * - N/A
- *
- * @see k_cpu_atomic_idle()
- * @ingroup kernel_context_tests
- */
-static void test_kernel_cpu_idle_atomic(void);
 
 /**
  * @brief Handler to perform various actions from within an ISR context
@@ -324,36 +220,28 @@ static void idle_timer_expiry_function(struct k_timer *timer_id)
 
 static void _test_kernel_cpu_idle(int atomic)
 {
-	int tms, tms2;
-	int i;
+	uint64_t t0, dt;
+	unsigned int i, key;
+	uint32_t dur = k_ms_to_ticks_ceil32(10);
+	uint32_t slop = 1 + k_ms_to_ticks_ceil32(1);
 
 	/* Set up a time to trigger events to exit idle mode */
 	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);
 
-	for (i = 0; i < 5; i++) { /* Repeat the test five times */
-		/* Align to ticks before starting the timer.
-		 * (k_timer_start() rounds its duration argument down, not up,
-		 * to a tick boundary)
-		 * This timer operates under the assumption that the interrupt set
-		 * to wake the cpu from idle will be no sooner than 1 millsecond in
-		 * the future. Ensure we are a tick boundary each time, so that the
-		 * system timer does not choose to fire an interrupt sooner.
-		 */
+	for (i = 0; i < 5; i++) {
 		k_usleep(1);
-		k_timer_start(&idle_timer, K_MSEC(1), K_NO_WAIT);
-		tms = k_uptime_get_32();
+		t0 = k_uptime_ticks();
+		k_timer_start(&idle_timer, K_TICKS(dur), K_NO_WAIT);
+		key = irq_lock();
 		if (atomic) {
-			unsigned int key = irq_lock();
-
 			k_cpu_atomic_idle(key);
 		} else {
 			k_cpu_idle();
 		}
-		tms += 1;
-		tms2 = k_uptime_get_32();
-		zassert_false(tms2 < tms, "Bad ms value computed,"
-	      "got %d which is less than %d\n",
-	      tms2, tms);
+		dt = k_uptime_ticks() - t0;
+		zassert_true(abs(dt - dur) <= slop,
+			     "Inaccurate wakeup, idled for %d ticks, expected %d",
+			     dt, dur);
 	}
 }
 
@@ -391,31 +279,89 @@ static void _test_kernel_cpu_idle(int atomic)
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 /**
+ * @brief Test cpu idle function
  *
- * @brief Test the k_cpu_idle() routine
+ * @details
+ * Test Objective:
+ * - The kernel architecture provide an idle function to be run when the system
+ *   has no work for the current CPU
+ * - This routine tests the k_cpu_atomic_idle() routine
  *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - HAS_POWERSAVE_INSTRUCTION is set
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Record system time before cpu enters idle state
+ * -# Enter cpu idle state by k_cpu_atomic_idle()
+ * -# Record system time after cpu idle state is interrupted
+ * -# Compare the two system time values.
+ *
+ * Expected Test Result:
+ * - cpu enters idle state for a given time
+ *
+ * Pass/Fail criteria:
+ * - Success if the cpu enters idle state, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
+ *
+ * @see k_cpu_atomic_idle()
  * @ingroup kernel_context_tests
+ */
+ZTEST(context_cpu_idle, test_cpu_idle_atomic)
+{
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+	ztest_test_skip();
+#else
+	_test_kernel_cpu_idle(1);
+#endif
+}
+
+/**
+ * @brief Test cpu idle function
  *
- * This tests the k_cpu_idle() routine. The first thing it does is align to
- * a tick boundary. The only source of interrupts while the test is running is
- * expected to be the tick clock timer which should wake the CPU. Thus after
- * each call to k_cpu_idle(), the tick count should be one higher.
+ * @details
+ * Test Objective:
+ * - The kernel architecture provide an idle function to be run when the system
+ *   has no work for the current CPU
+ * - This routine tests the k_cpu_idle() routine
+ *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - HAS_POWERSAVE_INSTRUCTION is set
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Record system time before cpu enters idle state
+ * -# Enter cpu idle state by k_cpu_idle()
+ * -# Record system time after cpu idle state is interrupted
+ * -# Compare the two system time values.
+ *
+ * Expected Test Result:
+ * - cpu enters idle state for a given time
+ *
+ * Pass/Fail criteria:
+ * - Success if the cpu enters idle state, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
  *
  * @see k_cpu_idle()
+ * @ingroup kernel_context_tests
  */
-#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
-static void test_kernel_cpu_idle_atomic(void)
-{
-	ztest_test_skip();
-}
-#else
-static void test_kernel_cpu_idle_atomic(void)
-{
-	_test_kernel_cpu_idle(1);
-}
-#endif
-
-static void test_kernel_cpu_idle(void)
+ZTEST(context_cpu_idle, test_cpu_idle)
 {
 /*
  * Fixme: remove the skip code when sleep instruction in
@@ -428,11 +374,11 @@ static void test_kernel_cpu_idle(void)
 }
 
 #else /* HAS_POWERSAVE_INSTRUCTION */
-static void test_kernel_cpu_idle(void)
+ZTEST(context_cpu_idle, test_cpu_idle)
 {
 	ztest_test_skip();
 }
-static void test_kernel_cpu_idle_atomic(void)
+ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 {
 	ztest_test_skip();
 }
@@ -557,7 +503,7 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
  *
  * @see irq_lock(), irq_unlock()
  */
-static void test_kernel_interrupts(void)
+ZTEST(context, test_interrupts)
 {
 	/* IRQ locks don't prevent ticks from advancing in tickless mode */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -622,7 +568,7 @@ static void test_kernel_interrupts(void)
  *
  * @see irq_disable(), irq_enable()
  */
-static void test_kernel_timer_interrupts(void)
+ZTEST(context_one_cpu, test_timer_interrupts)
 {
 #if (defined(TICK_IRQ) && defined(CONFIG_TICKLESS_KERNEL))
 	/* Disable interrupts coming from the timer. */
@@ -672,7 +618,7 @@ static void test_kernel_timer_interrupts(void)
  * @ingroup kernel_context_tests
  * @see k_current_get(), k_is_in_isr()
  */
-static void test_kernel_ctx_thread(void)
+ZTEST(context, test_ctx_thread)
 {
 	k_tid_t self_thread_id;
 
@@ -904,17 +850,13 @@ static void busy_wait_thread(void *mseconds, void *arg2, void *arg3)
 
 	usecs = POINTER_TO_INT(mseconds) * 1000;
 
-	TC_PRINT("Thread busy waiting for %d usecs\n", usecs);
 	k_busy_wait(usecs);
-	TC_PRINT("Thread busy waiting completed\n");
 
 	/* FIXME: Broken on Nios II, see #22956 */
 #ifndef CONFIG_NIOS2
 	int key = arch_irq_lock();
 
-	TC_PRINT("Thread busy waiting for %d usecs (irqs locked)\n", usecs);
 	k_busy_wait(usecs);
-	TC_PRINT("Thread busy waiting completed (irqs locked)\n");
 	arch_irq_unlock(key);
 #endif
 
@@ -943,11 +885,9 @@ static void thread_sleep(void *delta, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 
-	TC_PRINT(" thread sleeping for %d milliseconds\n", timeout);
 	timestamp = k_uptime_get();
 	k_msleep(timeout);
 	timestamp = k_uptime_get() - timestamp;
-	TC_PRINT(" thread back from sleep\n");
 
 	int slop = MAX(k_ticks_to_ms_floor64(2), 1);
 
@@ -980,7 +920,7 @@ static void delayed_thread(void *num, void *arg2, void *arg3)
  *
  * @see k_busy_wait(), k_sleep()
  */
-static void test_busy_wait(void)
+ZTEST(context_one_cpu, test_busy_wait)
 {
 	int32_t timeout;
 	int rv;
@@ -1004,7 +944,7 @@ static void test_busy_wait(void)
  *
  * @see k_sleep()
  */
-static void test_k_sleep(void)
+ZTEST(context_one_cpu, test_k_sleep)
 {
 	struct timeout_order *data;
 	int32_t timeout;
@@ -1131,7 +1071,7 @@ static void test_k_sleep(void)
  *
  * @see k_yield()
  */
-void test_k_yield(void)
+ZTEST(context_one_cpu, test_k_yield)
 {
 	thread_evidence = 0;
 	k_thread_priority_set(k_current_get(), 0);
@@ -1158,7 +1098,7 @@ void test_k_yield(void)
  * @see k_thread_create
  */
 
-void test_kernel_thread(void)
+ZTEST(context_one_cpu, test_thread)
 {
 
 	k_thread_create(&thread_data3, thread_stack3, THREAD_STACKSIZE,
@@ -1167,24 +1107,16 @@ void test_kernel_thread(void)
 
 }
 
-/*test case main entry*/
-void test_main(void)
+static void *context_setup(void)
 {
-	(void)test_k_sleep;
-
 	kernel_init_objects();
 
-	/* The timer_interrupts test MUST BE LAST, see note above */
-	ztest_test_suite(context,
-			 ztest_unit_test(test_kernel_interrupts),
-			 ztest_unit_test(test_kernel_ctx_thread),
-			 ztest_1cpu_unit_test(test_busy_wait),
-			 ztest_1cpu_unit_test(test_k_sleep),
-			 ztest_unit_test(test_kernel_cpu_idle_atomic),
-			 ztest_unit_test(test_kernel_cpu_idle),
-			 ztest_1cpu_unit_test(test_k_yield),
-			 ztest_1cpu_unit_test(test_kernel_thread),
-			 ztest_1cpu_unit_test(test_kernel_timer_interrupts)
-			 );
-	ztest_run_test_suite(context);
+	return NULL;
 }
+
+ZTEST_SUITE(context_cpu_idle, NULL, context_setup, NULL, NULL, NULL);
+
+ZTEST_SUITE(context, NULL, context_setup, NULL, NULL, NULL);
+
+ZTEST_SUITE(context_one_cpu, NULL, context_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

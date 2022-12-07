@@ -2,6 +2,7 @@ identifier: generic_leon3
 name: Generic LEON3 system
 type: mcu
 simulation: tsim
+simulation_exec: tsim
 arch: sparc
 ram: 4096
 flash: 2048

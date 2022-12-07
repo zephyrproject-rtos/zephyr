@@ -18,6 +18,8 @@
  * @{
  */
 
+#include <errno.h>
+
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/devicetree/pinctrl.h>

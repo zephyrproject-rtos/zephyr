@@ -30,7 +30,6 @@
 				#gpio-cells = <2>;
 				reg = <0x40022400 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000200>;
-				label = "GPIOJ";
 			};
 
 			gpiok: gpio@40022800 {
@@ -39,7 +38,6 @@
 				#gpio-cells = <2>;
 				reg = <0x40022800 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000400>;
-				label = "GPIOK";
 			};
 		};
 
@@ -53,7 +51,6 @@
 			interrupts = <95 0>, <96 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
-			label = "I2C_4";
 		};
 
 		spi6: spi@40015400 {
@@ -64,7 +61,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00200000>;
 			interrupts = <86 5>;
 			status = "disabled";
-			label = "SPI_6";
 		};
 
 		can2: can@40006800 {
@@ -74,7 +70,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
-			label = "CAN_2";
 			sjw = <1>;
 			sample-point = <875>;
 		};
@@ -82,7 +77,6 @@
 		mac: ethernet@40028000 {
 			compatible = "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
-			label = "ETH_0";
 			interrupts = <61 0>;
 			clock-names = "stmmaceth", "mac-clk-tx",
 				      "mac-clk-rx", "mac-clk-ptp";

@@ -31,9 +31,7 @@ some highlights of the Nucleo F446ZE board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_f446ze.jpg
-   :width: 720px
    :align: center
-   :height: 720px
    :alt: Nucleo F446ZE
 
 More information about the board can be found at the `Nucleo F446ZE website`_.
@@ -118,25 +116,17 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_f446ze_zio_left_2019_8_29.png
-   :width: 720px
+.. image:: img/nucleo_f446ze_zio_left_2019_8_29.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F446ZE Zio/Arduino connectors (left)
-.. image:: img/nucleo_f446ze_zio_right_2019_8_29.png
-   :width: 720px
+.. image:: img/nucleo_f446ze_zio_right_2019_8_29.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F446ZE Zio/Arduino connectors (right)
-.. image:: img/nucleo_f446ze_morpho_left_2019_8_29.png
-   :width: 720px
+.. image:: img/nucleo_f446ze_morpho_left_2019_8_29.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F446ZE Morpho connectors (left)
-.. image:: img/nucleo_f446ze_morpho_right_2019_8_29.png
-   :width: 720px
+.. image:: img/nucleo_f446ze_morpho_right_2019_8_29.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F446ZE Morpho connectors (right)
 
 For mode details please refer to `STM32 Nucleo-144 board User Manual`_.

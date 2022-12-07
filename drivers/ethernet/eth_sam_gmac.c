@@ -54,6 +54,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/net/gptp.h>
+#include <zephyr/irq.h>
 
 #ifdef __DCACHE_PRESENT
 static bool dcache_enabled;
@@ -476,7 +477,8 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	rx_desc_list->tail = 0U;
 
 	for (int i = 0; i < rx_desc_list->len; i++) {
-		rx_buf = net_pkt_get_reserve_rx_data(K_NO_WAIT);
+		rx_buf = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE,
+						     K_NO_WAIT);
 		if (rx_buf == NULL) {
 			free_rx_bufs(rx_frag_list, rx_desc_list->len);
 			LOG_ERR("Failed to reserve data net buffers");
@@ -1307,7 +1309,7 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 			dcache_invalidate((uint32_t)frag_data, frag->size);
 
 			/* Get a new data net buffer from the buffer pool */
-			new_frag = net_pkt_get_frag(rx_frame, K_NO_WAIT);
+			new_frag = net_pkt_get_frag(rx_frame, CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
 			if (new_frag == NULL) {
 				queue->err_rx_frames_dropped++;
 				net_pkt_unref(rx_frame);
@@ -1787,20 +1789,19 @@ static int eth_initialize(const struct device *dev)
 	return retval;
 }
 
-#ifdef CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM
+#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
 static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 {
-	const struct device *dev;
 	uint32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
 	int ret;
+	const struct i2c_dt_spec i2c = I2C_DT_SPEC_GET(DT_INST_PHANDLE(0, mac_eeprom));
 
-	dev = device_get_binding(CONFIG_ETH_SAM_GMAC_MAC_I2C_DEV_NAME);
-	if (!dev) {
-		LOG_ERR("I2C: Device not found");
+	if (!device_is_ready(i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
 		return;
 	}
 
-	ret = i2c_write_read(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
+	ret = i2c_write_read_dt(&i2c,
 			   &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
 			   mac_addr, 6);
 
@@ -1813,7 +1814,7 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 
 static void generate_mac(uint8_t mac_addr[6])
 {
-#if defined(CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM)
+#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
 	get_mac_addr_from_i2c_eeprom(mac_addr);
 #elif DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
@@ -1965,7 +1966,7 @@ static void eth0_iface_init(struct net_if *iface)
 	}
 
 	/* Do not start the interface until PHY link is up */
-	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	net_if_carrier_off(iface);
 
 	init_done = true;
 }
@@ -2214,8 +2215,8 @@ static const struct eth_sam_dev_cfg eth0_config = {
 	.periph_id = DT_INST_PROP_OR(0, peripheral_id, 0),
 #endif
 	.config_func = eth0_irq_config,
-#if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), phy))
-	.phy_dev = DEVICE_DT_GET(DT_CHILD(DT_DRV_INST(0), phy))
+#if DT_NODE_EXISTS(DT_INST_CHILD(0, phy))
+	.phy_dev = DEVICE_DT_GET(DT_INST_CHILD(0, phy))
 #else
 #error "No PHY driver specified"
 #endif
@@ -2461,7 +2462,7 @@ static const struct ptp_clock_driver_api ptp_api = {
 
 static int ptp_gmac_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_DT_INST_GET(0);
+	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
 	struct eth_sam_dev_data *dev_data = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 

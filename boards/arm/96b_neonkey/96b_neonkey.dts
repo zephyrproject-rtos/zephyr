@@ -56,6 +56,10 @@
 	};
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_hsi {
 	status = "okay";
 };
@@ -106,7 +110,6 @@
 	lp3943@60 {
 		compatible = "ti,lp3943";
 		reg = <0x60>;
-		label = "LP3943";
 	};
 };
 
@@ -118,5 +121,7 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

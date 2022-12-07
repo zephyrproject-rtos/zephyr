@@ -16,6 +16,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {
@@ -93,7 +94,6 @@ arduino_serial: &lpuart2 {
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
-		label = "IS25WP064";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
@@ -186,7 +186,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-names = "default", "slow", "med", "fast";
 	cd-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
 	pwr-gpios = <&gpio3 24 GPIO_ACTIVE_HIGH>;
-	mmc {
+	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
 	};

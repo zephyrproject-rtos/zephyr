@@ -460,9 +460,9 @@ class RimageSigner(Signer):
             no_manifest = False
 
         if no_manifest:
-            extra_ri_args = ['-i', '3']
+            extra_ri_args = [ ]
         else:
-            extra_ri_args = ['-i', '3', '-e']
+            extra_ri_args = ['-e']
 
         sign_base = [tool_path]
 

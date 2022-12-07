@@ -1,0 +1,32 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Gigadevice Reset and Clock Unit (RCU) if a multi-function peripheral in
+  charge of reset control (RCTL) and clock control (CCTL) for all SoC
+  peripherals. This binding represents the reset controller (RCTL).
+
+  To specify the reset line in a peripheral, the standard resets property needs
+  to be used, e.g.:
+
+    gpioa: gpio@xxx {
+        ...
+        /* cell encodes RCU register offset and control bit position */
+        resets = <&rctl GD32_RESET_GPIOA>;
+        ...
+    }
+
+  Predefined RCU reset cells are available in
+  include/zephyr/dts-bindings/reset/gd32{xxx}.h header files, where {xxx}
+  corresponds to the SoC series, e.g. f4xx.
+
+compatible: "gd,gd32-rctl"
+
+include: [reset-controller.yaml, base.yaml]
+
+properties:
+    "#reset-cells":
+      const: 1
+
+reset-cells:
+  - id

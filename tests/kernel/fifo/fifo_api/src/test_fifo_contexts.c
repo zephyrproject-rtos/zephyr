@@ -51,17 +51,17 @@ static void tfifo_get(struct k_fifo *pfifo)
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: fifo get*/
 		rx_data = k_fifo_get(pfifo, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data[i], NULL);
+		zassert_equal(rx_data, (void *)&data[i]);
 	}
 	/*get fifo data from "fifo_put_list"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get(pfifo, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_l[i], NULL);
+		zassert_equal(rx_data, (void *)&data_l[i]);
 	}
 	/*get fifo data from "fifo_put_slist"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get(pfifo, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_sl[i], NULL);
+		zassert_equal(rx_data, (void *)&data_sl[i]);
 	}
 }
 
@@ -69,13 +69,13 @@ static void tfifo_get(struct k_fifo *pfifo)
 static void tIsr_entry_put(const void *p)
 {
 	tfifo_put((struct k_fifo *)p);
-	zassert_false(k_fifo_is_empty((struct k_fifo *)p), NULL);
+	zassert_false(k_fifo_is_empty((struct k_fifo *)p));
 }
 
 static void tIsr_entry_get(const void *p)
 {
 	tfifo_get((struct k_fifo *)p);
-	zassert_true(k_fifo_is_empty((struct k_fifo *)p), NULL);
+	zassert_true(k_fifo_is_empty((struct k_fifo *)p));
 }
 
 static void tThread_entry(void *p1, void *p2, void *p3)
@@ -118,11 +118,11 @@ static void tfifo_is_empty(void *p)
 
 	tfifo_put(&fifo);
 	/**TESTPOINT: return false when data available*/
-	zassert_false(k_fifo_is_empty(pfifo), NULL);
+	zassert_false(k_fifo_is_empty(pfifo));
 
 	tfifo_get(&fifo);
 	/**TESTPOINT: return true with data unavailable*/
-	zassert_true(k_fifo_is_empty(pfifo), NULL);
+	zassert_true(k_fifo_is_empty(pfifo));
 }
 
 /**
@@ -134,7 +134,7 @@ static void tfifo_is_empty(void *p)
  * @brief Test thread to thread data passing via fifo
  * @see k_fifo_init(), k_fifo_put(), k_fifo_get(), k_fifo_put_list()
  */
-void test_fifo_thread2thread(void)
+ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
 {
 	/**TESTPOINT: init via k_fifo_init*/
 	k_fifo_init(&fifo);
@@ -148,7 +148,7 @@ void test_fifo_thread2thread(void)
  * @brief Test isr to thread data passing via fifo
  * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
  */
-void test_fifo_thread2isr(void)
+ZTEST(fifo_api, test_fifo_thread2isr)
 {
 	/**TESTPOINT: init via k_fifo_init*/
 	k_fifo_init(&fifo);
@@ -162,7 +162,7 @@ void test_fifo_thread2isr(void)
  * @brief Test thread to isr data passing via fifo
  * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
  */
-void test_fifo_isr2thread(void)
+ZTEST(fifo_api, test_fifo_isr2thread)
 {
 	/**TESTPOINT: test k_fifo_init fifo*/
 	k_fifo_init(&fifo);
@@ -176,11 +176,11 @@ void test_fifo_isr2thread(void)
  * @brief Test empty fifo
  * @see k_fifo_init(), k_fifo_is_empty(), k_fifo_put(), k_fifo_get()
  */
-void test_fifo_is_empty_thread(void)
+ZTEST(fifo_api, test_fifo_is_empty_thread)
 {
 	k_fifo_init(&fifo);
 	/**TESTPOINT: k_fifo_is_empty after init*/
-	zassert_true(k_fifo_is_empty(&fifo), NULL);
+	zassert_true(k_fifo_is_empty(&fifo));
 
 	/**TESTPONT: check fifo is empty from thread*/
 	tfifo_is_empty(&fifo);
@@ -190,7 +190,7 @@ void test_fifo_is_empty_thread(void)
  * @brief Test empty fifo in interrupt context
  * @see k_fifo_init(), fifo_is_empty(), k_fifo_put(), k_fifo_get()
  */
-void test_fifo_is_empty_isr(void)
+ZTEST(fifo_api, test_fifo_is_empty_isr)
 {
 	k_fifo_init(&fifo);
 	/**TESTPOINT: check fifo is empty from isr*/

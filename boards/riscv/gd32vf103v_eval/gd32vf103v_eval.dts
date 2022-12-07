@@ -17,6 +17,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &usart0;
 		zephyr,shell-uart = &usart0;
+		zephyr,flash-controller = &fmc;
 	};
 
 	leds {
@@ -77,6 +78,8 @@
 		led1 = &led2;
 		sw0 = &key_cet;
 		pwm-led0 = &pwm_led;
+		spi-flash0 = &nor_flash;
+		watchdog0 = &fwdgt;
 	};
 };
 
@@ -130,10 +133,19 @@
 	nor_flash: gd25q16@0 {
 		compatible ="jedec,spi-nor";
 		size = <0x1000000>;
-		label = "GD25Q16";
 		reg = <0>;
 		spi-max-frequency = <4000000>;
 		status = "okay";
 		jedec-id = [c8 40 15];
 	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&fwdgt {
+	status = "okay";
 };

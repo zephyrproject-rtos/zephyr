@@ -12,8 +12,7 @@ cost-effective reference design for the MCR20A transceiver in a shield form
 factor, compatible with existing Freedom development platforms, such as
 :ref:`frdm_k64f`.
 
-.. image:: ./frdm_cr20a.jpg
-   :width: 720px
+.. image:: frdm_cr20a.jpg
    :align: center
    :alt: FRDM-CR20A
 

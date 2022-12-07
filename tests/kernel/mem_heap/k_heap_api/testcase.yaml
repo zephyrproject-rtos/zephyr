@@ -3,6 +3,6 @@ tests:
     tags: k_heap_api kernel
   kernel.k_heap_api.linker_generator:
     platform_allow: qemu_cortex_m3
-    tags: k_heap_api kernel linker_generator
+    tags: kernel linker_generator
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y

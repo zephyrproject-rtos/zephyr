@@ -14,6 +14,8 @@ Please also mention any information which could help others to understand
 the problem you're facing:
  - What target platform are you using?
  - What have you tried to diagnose or workaround this issue?
+ - Is this a regression? If yes, have you been able to "git bisect" it to a
+   specific commit?
  - ...
 
 **To Reproduce**

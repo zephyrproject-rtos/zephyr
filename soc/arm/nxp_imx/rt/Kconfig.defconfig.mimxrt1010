@@ -9,20 +9,8 @@ config SOC
 	string
 	default "mimxrt1011"
 
-config HAS_ARM_DIV
-	default n
-
 config NUM_IRQS
 	default 80
-
-config ARM_DIV
-	default 0
-
-config AHB_DIV
-	default 0
-
-config IPG_DIV
-	default 3
 
 config DCDC_VALUE
 	default 0x12
@@ -32,8 +20,5 @@ config GPIO
 
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	default 0x400
-
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 500000000 if CORTEX_M_SYSTICK
 
 endif # SOC_MIMXRT1010

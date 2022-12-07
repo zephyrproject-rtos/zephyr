@@ -46,6 +46,8 @@ description: |
     As shown, pin configurations are organized in groups within each child node.
     Each group can specify a list of pin function selections in the 'psels'
     property. The NRF_PSEL macro is used to specify a pin function selection.
+    If a pin needs to be explicitly disconnected, there is also the
+    NRF_PSEL_DISCONNECTED macro.
     Available pin functions can be found in the
     include/zephyr/dt-bindings/pinctrl/nrf-pinctrl.h header file.
 
@@ -74,16 +76,7 @@ description: |
 
 compatible: "nordic,nrf-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - bias-disable
-            - bias-pull-down
-            - bias-pull-up
-            - low-power-enable
+include: base.yaml
 
 child-binding:
   description: |
@@ -91,6 +84,15 @@ child-binding:
   child-binding:
     description: |
       nRF pin controller pin configuration group.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - low-power-enable
+
     properties:
       psels:
         required: true
@@ -98,7 +100,8 @@ child-binding:
         description: |
           An array of pins sharing the same group properties. The pins should
           be defined using the NRF_PSEL utility macro that encodes the port,
-          pin and function.
+          pin and function. NRF_PSEL_DISCONNECTED is also available to explicitly
+          disconnect a pin.
 
       nordic,drive-mode:
         type: int
@@ -107,7 +110,9 @@ child-binding:
           Pin output drive mode. Available drive modes are pre-defined in
           nrf-pinctrl.h. Note that extra modes may not be available on certain
           devices. Defaults to standard mode for 0 and 1 (NRF_DRIVE_S0S1), the
-          SoC default.
+          SoC default, except for the "nordic,nrf-twi" and "nordic,nrf-twim"
+          nodes where NRF_DRIVE_S0S1 is always overridden with NRF_DRIVE_S0D1
+          (standard '0', disconnect '1').
 
       nordic,invert:
         type: boolean

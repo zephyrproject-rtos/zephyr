@@ -323,7 +323,7 @@ int z_irq_controller_isr_vector_get(void)
 	 */
 	for (block = 7; likely(block > 0); block--) {
 		pReg = x86_read_loapic(LOAPIC_ISR + (block * 0x10));
-		if (pReg) {
+		if (pReg != 0) {
 			return (block * 32) + (find_msb_set(pReg) - 1);
 		}
 

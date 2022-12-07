@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 ZTEST_SUITE(framework_tests, NULL, NULL, NULL, NULL, NULL);
 
@@ -14,11 +14,11 @@ ZTEST(framework_tests, test_empty_test)
 
 ZTEST(framework_tests, test_assert_tests)
 {
-	zassert_true(1, NULL);
-	zassert_false(0, NULL);
+	zassert_true(1);
+	zassert_false(0);
 	zassert_is_null(NULL, NULL);
 	zassert_not_null("foo", NULL);
-	zassert_equal(1, 1, NULL);
+	zassert_equal(1, 1);
 	zassert_equal_ptr(NULL, NULL, NULL);
 }
 
@@ -35,10 +35,18 @@ ZTEST(framework_tests, test_assert_mem_equal)
 	zassert_mem_equal(actual, expected, sizeof(expected), NULL);
 }
 
+ZTEST_EXPECT_SKIP(framework_tests, test_skip_config);
 ZTEST(framework_tests, test_skip_config)
 {
 	Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
-	zassert_true(false, NULL);
+	ztest_test_fail();
+}
+
+ZTEST_EXPECT_SKIP(framework_tests, test_skip_no_config);
+ZTEST(framework_tests, test_skip_no_config)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_BUGyyyyy);
+	ztest_test_fail();
 }
 
 /***************************************************************************************************
@@ -59,8 +67,8 @@ ZTEST_SUITE(fixture_tests, NULL, fixture_tests_setup, NULL, NULL, NULL);
 
 ZTEST_F(fixture_tests, test_fixture_pointer)
 {
-	zassert_equal_ptr(&test_fixture, this, "Test fixture should be at 0x%x but was at 0x%x",
-			  &test_fixture, this);
+	zassert_equal_ptr(&test_fixture, fixture, "Test fixture should be at 0x%x but was at 0x%x",
+			  &test_fixture, fixture);
 }
 
 /***************************************************************************************************
@@ -128,7 +136,7 @@ static void rule_test_teardown(void *data)
 	 */
 	zassert_equal(fixture->state, RULE_STATE_AFTER_EACH, "Unexpected state");
 #ifdef CONFIG_ZTEST_SHUFFLE
-	zassert_equal(fixture->run_count, CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT, NULL);
+	zassert_equal(fixture->run_count, CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT);
 #endif
 }
 
@@ -138,7 +146,23 @@ ZTEST_SUITE(rules_tests, NULL, rule_test_setup, NULL, NULL, rule_test_teardown);
 
 ZTEST_F(rules_tests, test_rules_before_after)
 {
-	zassert_equal(this->state, RULE_STATE_BEFORE_EACH, "Unexpected state");
-	this->state = RULE_STATE_TEST;
-	this->run_count++;
+	zassert_equal(fixture->state, RULE_STATE_BEFORE_EACH,
+		      "Unexpected state");
+	fixture->state = RULE_STATE_TEST;
+	fixture->run_count++;
 }
+
+static void *fail_in_setup_setup(void)
+{
+	zassert_true(false);
+	return NULL;
+}
+
+ZTEST_EXPECT_FAIL(fail_in_setup, test_should_never_run);
+ZTEST(fail_in_setup, test_should_never_run)
+{
+	/* The following should pass, but the setup function will cause it to fail */
+	zassert_true(true);
+}
+
+ZTEST_SUITE(fail_in_setup, NULL, fail_in_setup_setup, NULL, NULL, NULL);

@@ -170,16 +170,6 @@ config RAM_TRACING_BUFFER_SIZE
 	  Size of the RAM trace buffer. Trace will be discarded if the
 	  length is exceeded.
 
-
-config TRACING_BACKEND_UART_NAME
-	string "Device Name of UART Device for UART backend"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_CONSOLE))" if HAS_DTS
-	default "UART_0"
-	depends on TRACING_BACKEND_UART
-	help
-	  This option specifies the name of UART device to be used for
-	  tracing backend.
-
 config TRACING_USB_MPS
 	int "USB backend max packet size"
 	default 64

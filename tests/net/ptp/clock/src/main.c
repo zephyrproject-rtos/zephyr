@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/net/ptp_time.h>
@@ -235,7 +235,7 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_test_1_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_GET(eth3_test);
+	const struct device *const eth_dev = DEVICE_GET(eth3_test);
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 
@@ -251,7 +251,7 @@ DEVICE_DEFINE(ptp_clock_1, PTP_VIRT_CLOCK_NAME, ptp_test_1_init,
 
 static int ptp_test_2_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_GET(eth2_test);
+	const struct device *const eth_dev = DEVICE_GET(eth2_test);
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 
@@ -296,8 +296,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	 */
 	if ((iface != net_if_lookup_by_dev(DEVICE_GET(eth3_test))) &&
 	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth2_test))) &&
-	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth1_test))))
+	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth1_test)))) {
 		return;
+	}
 
 	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
 	    net_if_get_by_iface(iface));
@@ -562,7 +563,7 @@ static void test_ptp_clock_get_user(void)
 	test_ptp_clock_get_by_xxx("user");
 }
 
-void test_main(void)
+void *setup(void)
 {
 	const struct device *clk;
 
@@ -570,18 +571,20 @@ void test_main(void)
 	if (clk != NULL) {
 		k_object_access_grant(clk, k_current_get());
 	}
-
-	ztest_test_suite(ptp_clock_test,
-			 ztest_unit_test(test_check_interfaces),
-			 ztest_unit_test(test_address_setup),
-			 ztest_unit_test(test_ptp_clock_interfaces),
-			 ztest_unit_test(test_ptp_clock_iface_1),
-			 ztest_unit_test(test_ptp_clock_iface_2),
-			 ztest_unit_test(test_ptp_clock_get_by_index),
-			 ztest_user_unit_test(test_ptp_clock_get_by_index_user),
-			 ztest_unit_test(test_ptp_clock_get_kernel),
-			 ztest_user_unit_test(test_ptp_clock_get_user)
-			 );
-
-	ztest_run_test_suite(ptp_clock_test);
+	return NULL;
 }
+
+ZTEST(ptp_clock_test_suite, test_ptp_clock)
+{
+	test_check_interfaces();
+	test_address_setup();
+	test_ptp_clock_interfaces();
+	test_ptp_clock_iface_1();
+	test_ptp_clock_iface_2();
+	test_ptp_clock_get_by_index();
+	test_ptp_clock_get_by_index_user();
+	test_ptp_clock_get_kernel();
+	test_ptp_clock_get_user();
+}
+
+ZTEST_SUITE(ptp_clock_test_suite, NULL, setup, NULL, NULL, NULL);

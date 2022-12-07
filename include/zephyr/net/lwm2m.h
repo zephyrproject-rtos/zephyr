@@ -17,22 +17,22 @@
  *
  * @note The implementation assumes UDP module is enabled.
  *
- * @note LwM2M 1.0.x is currently the only supported version.
+ * @note For more information refer to Technical Specification
+ * OMA-TS-LightweightM2M_Core-V1_1_1-20190617-A
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
 #define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
+#include <time.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mutex.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/lwm2m_path.h>
 
 /**
- * @brief LwM2M Objects managed by OMA for LwM2M tech specification.  Objects
- * in this range have IDs from 0 to 1023.
- * For more information refer to Technical Specification
- * OMA-TS-LightweightM2M-V1_0_2-20180209-A
+ * @brief LwM2M Objects managed by OMA for LwM2M tech specification. Objects in this range have IDs
+ * from 0 to 1023.
  */
 
 /* clang-format off */
@@ -46,6 +46,7 @@
 #define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID 7
 #define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID     9
 #define LWM2M_OBJECT_PORTFOLIO_ID               16
+#define LWM2M_OBJECT_EVENT_LOG_ID               20
 #define LWM2M_OBJECT_GATEWAY_ID                 25
 /* clang-format on */
 
@@ -105,6 +106,19 @@ enum lwm2m_observe_event {
 typedef void (*lwm2m_observe_cb_t)(enum lwm2m_observe_event event, struct lwm2m_obj_path *path,
 				   void *user_data);
 
+
+struct lwm2m_ctx;
+enum lwm2m_rd_client_event;
+/**
+ * @brief Asynchronous RD client event callback
+ *
+ * @param[in] ctx LwM2M context generating the event
+ * @param[in] event LwM2M RD client event code
+ */
+typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
+				     enum lwm2m_rd_client_event event);
+
+
 /**
  * @brief LwM2M context structure to maintain information for a single
  * LwM2M connection.
@@ -113,9 +127,9 @@ struct lwm2m_ctx {
 	/** Destination address storage */
 	struct sockaddr remote_addr;
 
-	/** Private CoAP and networking structures */
-	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
-	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
+	/** Private CoAP and networking structures + 1 is for RD Client own message */
+	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING + 1];
+	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES + 1];
 	sys_slist_t pending_sends;
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	sys_slist_t queued_messages;
@@ -154,13 +168,13 @@ struct lwm2m_ctx {
 	 */
 	bool use_dtls;
 
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	/**
 	 * Flag to indicate that the socket connection is suspended.
 	 * With queue mode, this will tell if there is a need to reconnect.
 	 */
 	bool connection_suspended;
 
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	/**
 	 * Flag to indicate that the client is buffering Notifications and Send messages.
 	 * True value buffer Notifications and Send messages.
@@ -173,9 +187,8 @@ struct lwm2m_ctx {
 	/** Current index of Server Object used in this context. */
 	int srv_obj_inst;
 
-	/** Flag to enable BOOTSTRAP interface.  See Section 5.2
-	 *  "Bootstrap Interface" of LwM2M Technical Specification 1.0.2
-	 *  for more information.
+	/** Flag to enable BOOTSTRAP interface. See Section "Bootstrap Interface"
+	 *  of LwM2M Technical Specification for more information.
 	 */
 	bool bootstrap_mode;
 
@@ -192,6 +205,8 @@ struct lwm2m_ctx {
 	 */
 	lwm2m_observe_cb_t observe_cb;
 
+	lwm2m_ctx_event_cb_t event_cb;
+
 	/** Validation buffer. Used as a temporary buffer to decode the resource
 	 *  value before validation. On successful validation, its content is
 	 *  copied into the actual resource buffer.
@@ -199,6 +214,26 @@ struct lwm2m_ctx {
 	uint8_t validate_buf[CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE];
 };
 
+/**
+ * LwM2M Time series data structure
+ */
+struct lwm2m_time_series_elem {
+	/* Cached data Unix timestamp */
+	time_t t;
+	union {
+		uint8_t u8;
+		uint16_t u16;
+		uint32_t u32;
+		uint64_t u64;
+		int8_t i8;
+		int16_t i16;
+		int32_t i32;
+		int64_t i64;
+		time_t time;
+		double f;
+		bool b;
+	};
+};
 
 /**
  * @brief Asynchronous callback to get a resource buffer and length.
@@ -544,6 +579,20 @@ int lwm2m_swmgmt_install_completed(uint16_t obj_inst_id, int error_code);
 
 #endif
 
+#if defined(CONFIG_LWM2M_EVENT_LOG_OBJ_SUPPORT)
+
+/**
+ * @brief Set callback to read log data
+ *
+ * The callback will be executed when the LWM2M read operation gets called
+ * on the corresponding object.
+ *
+ * @param[in] cb A callback function for handling the read event.
+ */
+void lwm2m_event_log_set_read_log_data_cb(lwm2m_engine_get_data_cb_t cb);
+
+#endif
+
 /**
  * @brief Maximum value for ObjLnk resource fields
  */
@@ -616,6 +665,21 @@ int lwm2m_engine_create_obj_inst(const char *pathstr);
 int lwm2m_engine_delete_obj_inst(const char *pathstr);
 
 /**
+ * @brief Locks the registry for this thread.
+ *
+ * Use this function before writing to multiple resources. This halts the
+ * lwm2m main thread until all the write-operations are finished.
+ *
+ */
+void lwm2m_registry_lock(void);
+
+/**
+ * @brief Unlocks the registry previously locked by lwm2m_registry_lock().
+ *
+ */
+void lwm2m_registry_unlock(void);
+
+/**
  * @brief Set resource (instance) value (opaque buffer)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
@@ -624,7 +688,7 @@ int lwm2m_engine_delete_obj_inst(const char *pathstr);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_opaque(const char *pathstr, char *data_ptr, uint16_t data_len);
+int lwm2m_engine_set_opaque(const char *pathstr, const char *data_ptr, uint16_t data_len);
 
 /**
  * @brief Set resource (instance) value (string)
@@ -634,7 +698,7 @@ int lwm2m_engine_set_opaque(const char *pathstr, char *data_ptr, uint16_t data_l
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_string(const char *pathstr, char *data_ptr);
+int lwm2m_engine_set_string(const char *pathstr, const char *data_ptr);
 
 /**
  * @brief Set resource (instance) value (u8)
@@ -734,7 +798,7 @@ int lwm2m_engine_set_bool(const char *pathstr, bool value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_float(const char *pathstr, double *value);
+int lwm2m_engine_set_float(const char *pathstr, const double *value);
 
 /**
  * @brief Set resource (instance) value (ObjLnk)
@@ -744,7 +808,17 @@ int lwm2m_engine_set_float(const char *pathstr, double *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_objlnk(const char *pathstr, struct lwm2m_objlnk *value);
+int lwm2m_engine_set_objlnk(const char *pathstr, const struct lwm2m_objlnk *value);
+
+/**
+ * @brief Set resource (instance) value (Time)
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[in] value Epoch timestamp
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_set_time(const char *pathstr, time_t value);
 
 /**
  * @brief Get resource (instance) value (opaque buffer)
@@ -878,11 +952,29 @@ int lwm2m_engine_get_float(const char *pathstr, double *buf);
  */
 int lwm2m_engine_get_objlnk(const char *pathstr, struct lwm2m_objlnk *buf);
 
+/**
+ * @brief Get resource (instance) value (Time)
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[out] buf time_t pointer to copy data
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_get_time(const char *pathstr, time_t *buf);
+
 
 /**
  * @brief Set resource (instance) read callback
  *
- * LwM2M clients can use this to set the callback function for resource reads.
+ * LwM2M clients can use this to set the callback function for resource reads when data
+ * handling in the LwM2M engine needs to be bypassed.
+ * For example reading back opaque binary data from external storage.
+ *
+ * This callback should not generally be used for any data that might be observed as
+ * engine does not have any knowledge of data changes.
+ *
+ * When separate buffer for data should be used, use lwm2m_engine_set_res_buf() instead
+ * to set the storage.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] cb Read resource callback
@@ -1156,6 +1248,19 @@ int lwm2m_update_device_service_period(uint32_t period_ms);
 bool lwm2m_engine_path_is_observed(const char *pathstr);
 
 /**
+ * @brief Stop the LwM2M engine
+ *
+ * LwM2M clients normally do not need to call this function as it is called
+ * within lwm2m_rd_client. However, if the client does not use the RD
+ * client implementation, it will need to be called manually.
+ *
+ * @param[in] client_ctx LwM2M context
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_stop(struct lwm2m_ctx *client_ctx);
+
+/**
  * @brief Start the LwM2M engine
  *
  * LwM2M clients normally do not need to call this function as it is called
@@ -1194,13 +1299,20 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE,
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE,
-	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT,
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE,
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_DISCONNECT,
 	LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF,
+	LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED,
 	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
 };
+
+/**
+ *	Define for old event name keeping backward compatibility.
+ */
+#define LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE                                                   \
+	LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT __DEPRECATED_MACRO
 
 /*
  * LwM2M RD client flags, used to configure LwM2M session.
@@ -1212,20 +1324,11 @@ enum lwm2m_rd_client_event {
 #define LWM2M_RD_CLIENT_FLAG_BOOTSTRAP BIT(0)
 
 /**
- * @brief Asynchronous RD client event callback
- *
- * @param[in] ctx LwM2M context generating the event
- * @param[in] event LwM2M RD client event code
- */
-typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
-				     enum lwm2m_rd_client_event event);
-
-/**
  * @brief Start the LwM2M RD (Registration / Discovery) Client
  *
  * The RD client sits just above the LwM2M engine and performs the necessary
  * actions to implement the "Registration interface".
- * For more information see Section 5.3 "Client Registration Interface" of the
+ * For more information see Section "Client Registration Interface" of
  * LwM2M Technical Specification.
  *
  * NOTE: lwm2m_engine_start() is called automatically by this function.
@@ -1250,7 +1353,7 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  *
  * The RD client sits just above the LwM2M engine and performs the necessary
  * actions to implement the "Registration interface".
- * For more information see Section 5.3 "Client Registration Interface" of the
+ * For more information see Section "Client Registration Interface" of the
  * LwM2M Technical Specification.
  *
  * @param[in] client_ctx LwM2M context
@@ -1262,6 +1365,29 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  */
 int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 			  lwm2m_ctx_event_cb_t event_cb, bool deregister);
+
+/**
+ * @brief Suspend the LwM2M engine Thread
+ *
+ * Suspend LwM2M engine. Use case could be when network connection is down.
+ * LwM2M Engine indicate before it suspend by
+ * LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED event.
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_pause(void);
+
+/**
+ * @brief Resume the LwM2M engine thread
+ *
+ * Resume suspended LwM2M engine. After successful resume call engine will do
+ * full registration or registration update based on suspended time.
+ * Event's LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE or WM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE
+ * indicate that client is connected to server.
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_resume(void);
 
 /**
  * @brief Trigger a Registration Update of the LwM2M RD Client
@@ -1281,7 +1407,7 @@ void lwm2m_rd_client_update(void);
  *
  * @return Resulting formatted path string
  */
-char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path);
+char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path);
 
 /** 
  * @brief LwM2M SEND operation to given path list
@@ -1304,6 +1430,22 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
  *
  */
 struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
+
+/** 
+ * @brief Enable data cache for a resource.
+ *
+ * Application may enable caching of resource data by allocating buffer for LwM2M engine to use.
+ * Buffer must be size of struct @ref lwm2m_time_series_elem times cache_len
+ *
+ * @param resource_path LwM2M resourcepath string "obj/obj-inst/res(/res-inst)"
+ * @param data_cache Pointer to Data cache array
+ * @param cache_len number of cached entries
+ * 
+ * @return 0 for success or negative in case of error.
+ *
+ */
+int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
+			      size_t cache_len);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

@@ -50,20 +50,17 @@ allowing both threads to know what has occurred.
 
 A mailbox message contains zero or more bytes of **message data**.
 The size and format of the message data is application-defined, and can vary
-from one message to the next. There are two forms of message data:
+from one message to the next.
 
-* A **message buffer** is an area of memory provided by the thread
-  that sends or receives the message. An array or structure variable
-  can often be used for this purpose.
+A **message buffer** is an area of memory provided by the thread that sends or
+receives the message data. An array or structure variable can often be used for
+this purpose.
 
-* A **message block** is an area of memory allocated from a memory pool.
-
-A message may *not* have both a message buffer and a message block.
 A message that has neither form of message data is called an **empty message**.
 
 .. note::
-    A message whose message buffer or memory block exists, but contains
-    zero bytes of actual data, is *not* an empty message.
+    A message whose message buffer exists, but contains zero bytes of actual
+    data, is *not* an empty message.
 
 Message Lifecycle
 =================
@@ -154,21 +151,15 @@ internal mailbox use only.
 
 *size*
     The message data size, in bytes. Set it to zero when sending an empty
-    message, or when sending a message buffer or message block with no
-    actual data. When receiving a message, set it to the maximum amount
-    of data desired, or to zero if the message data is not wanted.
-    The mailbox updates this field with the actual number of data bytes
-    exchanged once the message is received.
+    message, or when sending a message buffer with no actual data. When
+    receiving a message, set it to the maximum amount of data desired, or to
+    zero if the message data is not wanted. The mailbox updates this field with
+    the actual number of data bytes exchanged once the message is received.
 
 *tx_data*
     A pointer to the sending thread's message buffer. Set it to ``NULL``
-    when sending a memory block, or when sending an empty message.
-    Leave this field uninitialized when receiving a message.
-
-*tx_block*
-    The descriptor for the sending thread's memory block. Set tx_block.data
-    to ``NULL`` when sending an empty message. Leave this field
-    uninitialized when sending a message buffer, or when receiving a message.
+    when sending an empty message. Leave this field uninitialized when
+    receiving a message.
 
 *tx_target_thread*
     The address of the desired receiving thread. Set it to :c:macro:`K_ANY`
@@ -187,9 +178,6 @@ Sending a Message
 =================
 
 A thread sends a message by first creating its message data, if any.
-A message buffer is typically used when the data volume is small,
-and the cost of copying the data is less than the cost of allocating
-and freeing a message block.
 
 Next, the sending thread creates a message descriptor that characterizes
 the message to be sent, as described in the previous section.
@@ -312,52 +300,6 @@ the maximum size message buffer that each thread can handle.
         }
     }
 
-Sending Data Using a Message Block
-----------------------------------
-
-This code uses a mailbox to send asynchronous messages. A semaphore is used
-to hold off the sending of a new message until the previous message
-has been consumed, so that a backlog of messages doesn't build up
-when the consuming thread is unable to keep up.
-
-The message data is stored in a memory block obtained from a memory pool,
-thereby eliminating unneeded data copying when exchanging large messages.
-The memory pool contains only two blocks: one block gets filled with
-data while the previously sent block is being processed
-
-.. code-block:: c
-
-    /* define a semaphore, indicating that no message has been sent */
-    K_SEM_DEFINE(my_sem, 1, 1);
-
-    /* define a memory pool containing 2 blocks of 4096 bytes */
-    K_MEM_POOL_DEFINE(my_pool, 4096, 4096, 2, 4);
-
-    void producer_thread(void)
-    {
-        struct k_mbox_msg send_msg;
-
-        volatile char *hw_buffer;
-
-        while (1) {
-            /* allocate a memory block to hold the message data */
-            k_mem_pool_alloc(&my_pool, &send_msg.tx_block, 4096, K_FOREVER);
-
-            /* keep overwriting the hardware-generated data in the block    */
-            /* until the previous message has been received by the consumer */
-            do {
-                memcpy(send_msg.tx_block.data, hw_buffer, 4096);
-            } while (k_sem_take(&my_sem, K_NO_WAIT) != 0);
-
-            /* finish preparing to send message */
-            send_msg.size = 4096;
-            send_msg.tx_target_thread = K_ANY;
-
-            /* send message containing most current data and loop around */
-            k_mbox_async_put(&my_mailbox, &send_msg, &my_sem);
-        }
-    }
-
 Receiving a Message
 ===================
 
@@ -390,10 +332,7 @@ The receiving thread controls both the quantity of data it retrieves from an
 incoming message and where the data ends up. The thread may choose to take
 all of the data in the message, to take only the initial part of the data,
 or to take no data at all. Similarly, the thread may choose to have the data
-copied into a message buffer of its choice or to have it placed in a message
-block. A message buffer is typically used when the volume of data
-involved is small, and the cost of copying the data is less than the cost
-of allocating and freeing a memory pool block.
+copied into a message buffer of its choice.
 
 The following sections outline various approaches a receiving thread may use
 when retrieving message data.
@@ -415,14 +354,6 @@ message descriptor to indicate how many data bytes were copied (if any).
 
 The immediate data retrieval technique is best suited for small messages
 where the maximum size of a message is known in advance.
-
-.. note::
-   This technique can be used when the message data is actually located
-   in a memory block supplied by the sending thread. The mailbox copies
-   the data into the message buffer specified by the receiving thread, then
-   frees the message block back to its memory pool. This allows
-   a receiving thread to retrieve message data without having to know
-   whether the data was sent using a message buffer or a message block.
 
 The following code uses a mailbox to process variable-sized requests from any
 producing thread, using the immediate data retrieval technique. The message
@@ -501,14 +432,6 @@ used when memory limitations make it impractical for the receiving thread to
 always supply a message buffer capable of holding the largest possible
 incoming message.
 
-.. note::
-   This technique can be used when the message data is actually located
-   in a memory block supplied by the sending thread. The mailbox copies
-   the data into the message buffer specified by the receiving thread, then
-   frees the message block back to its memory pool. This allows
-   a receiving thread to retrieve message data without having to know
-   whether the data was sent using a message buffer or a message block.
-
 The following code uses a mailbox's deferred data retrieval mechanism
 to get message data from a producing thread only if the message meets
 certain criteria, thereby eliminating unneeded data copying. The message
@@ -542,81 +465,6 @@ certain criteria, thereby eliminating unneeded data copying. The message
             }
         }
     }
-
-Retrieving Data Later Using a Message Block
--------------------------------------------
-
-A receiving thread may choose to retrieve message data into a memory block,
-rather than a message buffer. This is done in much the same way as retrieving
-data subsequently into a message buffer --- the receiving thread first
-receives the message without its data, then retrieves the data by calling
-:c:func:`k_mbox_data_block_get`. The mailbox fills in the block descriptor
-supplied by the receiving thread, allowing the thread to access the data.
-The mailbox also deletes the received message, since data retrieval
-has been completed. The receiving thread is then responsible for freeing
-the message block back to the memory pool when the data is no longer needed.
-
-This technique is best suited for applications where the message data has
-been sent using a memory block.
-
-.. note::
-   This technique can be used when the message data is located in a message
-   buffer supplied by the sending thread. The mailbox automatically allocates
-   a memory block and copies the message data into it. However, this is much
-   less efficient than simply retrieving the data into a message buffer
-   supplied by the receiving thread. In addition, the receiving thread
-   must be designed to handle cases where the data retrieval operation fails
-   because the mailbox cannot allocate a suitable message block from the memory
-   pool. If such cases are possible, the receiving thread must either try
-   retrieving the data at a later time or instruct the mailbox to delete
-   the message without retrieving the data.
-
-The following code uses a mailbox to receive messages sent using a memory block,
-thereby eliminating unneeded data copying when processing a large message.
-(The messages may be sent synchronously or asynchronously.)
-
-.. code-block:: c
-
-    /* define a memory pool containing 1 block of 10000 bytes */
-    K_MEM_POOL_DEFINE(my_pool, 10000, 10000, 1, 4);
-
-    void consumer_thread(void)
-    {
-        struct k_mbox_msg recv_msg;
-        struct k_mem_block recv_block;
-
-        int total;
-        char *data_ptr;
-        int i;
-
-        while (1) {
-            /* prepare to receive message */
-            recv_msg.size = 10000;
-            recv_msg.rx_source_thread = K_ANY;
-
-            /* get message, but not its data */
-            k_mbox_get(&my_mailbox, &recv_msg, NULL, K_FOREVER);
-
-            /* get message data as a memory block and discard message */
-            k_mbox_data_block_get(&recv_msg, &my_pool, &recv_block, K_FOREVER);
-
-            /* compute sum of all message bytes in memory block */
-            total = 0;
-            data_ptr = (char *)(recv_block.data);
-            for (i = 0; i < recv_msg.size; i++) {
-                total += data_ptr++;
-            }
-
-            /* release memory block containing data */
-            k_mem_pool_free(&recv_block);
-        }
-    }
-
-.. note::
-    An incoming message that was sent using a message buffer is also processed
-    correctly by this algorithm, since the mailbox automatically allocates
-    a memory block from the memory pool and fills it with the message data.
-    However, the performance benefit of using the memory block approach is lost.
 
 Suggested Uses
 **************

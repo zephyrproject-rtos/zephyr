@@ -291,6 +291,7 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 
 static void esp_dns_work(struct k_work *work)
 {
+#if defined(ESP_MAX_DNS)
 	struct esp_data *data = CONTAINER_OF(work, struct esp_data, dns_work);
 	struct dns_resolve_context *dnsctx;
 	struct sockaddr_in *addrs = data->dns_addresses;
@@ -312,11 +313,13 @@ static void esp_dns_work(struct k_work *work)
 	}
 
 	LOG_DBG("DNS resolver reconfigured");
+#endif
 }
 
 /* +CIPDNS:enable[,"DNS IP1"[,"DNS IP2"[,"DNS IP3"]]] */
 MODEM_CMD_DEFINE(on_cmd_cipdns)
 {
+#if defined(ESP_MAX_DNS)
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 	struct sockaddr_in *addrs = dev->dns_addresses;
@@ -333,12 +336,12 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 		}
 
 		servers[i] = str_unquote(servers[i]);
-		LOG_DBG("DNS[%zu]: %s", i, log_strdup(servers[i]));
+		LOG_DBG("DNS[%zu]: %s", i, servers[i]);
 
 		err = net_addr_pton(AF_INET, servers[i], &addrs[i].sin_addr);
 		if (err) {
 			LOG_ERR("Invalid DNS address: %s",
-				log_strdup(servers[i]));
+				servers[i]);
 			addrs[i].sin_addr.s_addr = 0;
 			break;
 		}
@@ -352,6 +355,7 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 	if (valid_servers) {
 		k_work_submit(&dev->dns_work);
 	}
+#endif
 
 	return 0;
 }
@@ -431,7 +435,7 @@ MODEM_CMD_DEFINE(on_cmd_cipsta)
 	} else if (!strcmp(argv[0], "netmask")) {
 		net_addr_pton(AF_INET, ip, &dev->nm);
 	} else {
-		LOG_WRN("Unknown IP type %s", log_strdup(argv[0]));
+		LOG_WRN("Unknown IP type %s", argv[0]);
 	}
 
 	return 0;
@@ -573,7 +577,7 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 
 	ipd_buf[match_len] = 0;
 	if (ipd_buf[len] != ',' || ipd_buf[len + 2] != ',') {
-		LOG_ERR("Invalid IPD: %s", log_strdup(ipd_buf));
+		LOG_ERR("Invalid IPD: %s", ipd_buf);
 		return -EBADMSG;
 	}
 
@@ -583,7 +587,7 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 
 	if (endptr == &ipd_buf[len + 3] ||
 	    (*endptr == 0 && match_len >= MAX_IPD_LEN)) {
-		LOG_ERR("Invalid IPD len: %s", log_strdup(ipd_buf));
+		LOG_ERR("Invalid IPD len: %s", ipd_buf);
 		return -EBADMSG;
 	} else if (*endptr == 0) {
 		return -EAGAIN;
@@ -696,8 +700,9 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 					    cmd_handler_data);
 	k_sem_give(&dev->sem_if_ready);
 
-	if (net_if_is_up(dev->net_iface)) {
-		net_if_down(dev->net_iface);
+
+	if (net_if_is_carrier_ok(dev->net_iface)) {
+		net_if_carrier_off(dev->net_iface);
 		LOG_ERR("Unexpected reset");
 	}
 
@@ -1033,15 +1038,15 @@ static void esp_init_work(struct k_work *work)
 
 	LOG_INF("ESP Wi-Fi ready");
 
-	net_if_up(dev->net_iface);
+	net_if_carrier_on(dev->net_iface);
 }
 
 static int esp_reset(const struct device *dev)
 {
 	struct esp_data *data = dev->data;
 
-	if (net_if_is_up(data->net_iface)) {
-		net_if_down(data->net_iface);
+	if (net_if_is_carrier_ok(data->net_iface)) {
+		net_if_carrier_off(data->net_iface);
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, power_gpios)
@@ -1079,12 +1084,12 @@ static int esp_reset(const struct device *dev)
 
 static void esp_iface_init(struct net_if *iface)
 {
-	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	net_if_carrier_off(iface);
 	esp_offload_init(iface);
 }
 
 static const struct net_wifi_mgmt_offload esp_api = {
-	.iface_api.init = esp_iface_init,
+	.wifi_iface.init = esp_iface_init,
 	.scan		= esp_mgmt_scan,
 	.connect	= esp_mgmt_connect,
 	.disconnect	= esp_mgmt_disconnect,
@@ -1194,7 +1199,7 @@ static int esp_init(const struct device *dev)
 	k_thread_name_set(&esp_rx_thread, "esp_rx");
 
 	/* Retrieve associated network interface so asynchronous messages can be processed early */
-	data->net_iface = NET_IF_GET(Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(0)), 0);
+	data->net_iface = NET_IF_GET(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)), 0);
 
 	/* Reset the modem */
 	ret = esp_reset(dev);

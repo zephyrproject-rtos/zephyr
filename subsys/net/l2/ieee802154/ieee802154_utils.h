@@ -102,8 +102,13 @@ static inline int ieee802154_stop(struct net_if *iface)
 	return radio->stop(net_if_get_device(iface));
 }
 
-static inline void ieee802154_filter_ieee_addr(struct net_if *iface,
-					       uint8_t *ieee_addr)
+/**
+ * Sets the radio drivers extended address filter.
+ *
+ * @param iface Pointer to the IEEE 802.15.4 interface
+ * @param ieee_addr Pointer to an extended address in little endian byte order
+ */
+static inline void ieee802154_filter_ieee_addr(struct net_if *iface, uint8_t *ieee_addr)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -234,7 +239,7 @@ static inline void ieee802154_remove_src_short_addr(struct net_if *iface,
 
 		filter.short_addr = short_addr;
 
-		if (radio->filter(net_if_get_device(iface), true,
+		if (radio->filter(net_if_get_device(iface), false,
 				  IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR,
 				  &filter) != 0) {
 			NET_WARN("Could not remove SRC short address filter");

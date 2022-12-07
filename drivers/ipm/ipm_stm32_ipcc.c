@@ -16,6 +16,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);
 
 #define MBX_STRUCT(dev)					\
@@ -135,7 +136,7 @@ static void stm32_ipcc_mailbox_tx_isr(const struct device *dev)
 	mask = (~IPCC_ReadReg(cfg->ipcc, MR)) & IPCC_ALL_MR_TXF_CH_MASK;
 	mask = mask >> IPCC_C1MR_CH1FM_Pos;
 
-	mask &= IPCC_ReadReg_SR(cfg->ipcc) & IPCC_ALL_SR_CH_MASK;
+	mask &= ~IPCC_ReadReg_SR(cfg->ipcc) & IPCC_ALL_SR_CH_MASK;
 
 	for (i = 0; i <  data->num_ch; i++) {
 		if (!((1 << i) & mask)) {
@@ -244,6 +245,11 @@ static int stm32_ipcc_mailbox_init(const struct device *dev)
 	uint32_t i;
 
 	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	/* enable clock */
 	if (clock_control_on(clk,

@@ -166,6 +166,22 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t);
  * @retval -EBUSY if synchronization is not yet completed.
  */
 int z_nrf_rtc_timer_nrf53net_offset_get(void);
+
+/** @brief Move RTC counter forward using TRIGOVRFLW hardware feature.
+ *
+ * RTC has a hardware feature which can force counter to jump to 0xFFFFF0 value
+ * which is close to overflow. Function is using this feature and updates
+ * driver internal to perform time shift to the future. Operation can only be
+ * performed when there are no active alarms set. It should be used for testing
+ * only.
+ *
+ * @retval 0 on successful shift.
+ * @retval -EBUSY if there are active alarms.
+ * @retval -EAGAIN if current counter value is too close to overflow.
+ * @retval -ENOTSUP if option is disabled in Kconfig or additional channels are enabled.
+ */
+int z_nrf_rtc_timer_trigger_overflow(void);
+
 #ifdef __cplusplus
 }
 #endif

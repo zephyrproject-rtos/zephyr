@@ -57,20 +57,6 @@ struct YMD_date {
 	uint32_t day;
 };
 
-extern void log_output_msg_syst_process(const struct log_output *output,
-				struct log_msg *msg, uint32_t flag);
-extern void log_output_msg2_syst_process(const struct log_output *output,
-				struct log_msg2 *msg, uint32_t flag);
-extern void log_output_string_syst_process(const struct log_output *output,
-				struct log_msg_ids src_level,
-				const char *fmt, va_list ap, uint32_t flag,
-				int16_t source_id);
-extern void log_output_hexdump_syst_process(const struct log_output *output,
-				struct log_msg_ids src_level,
-				const char *metadata,
-				const uint8_t *data, uint32_t length,
-				uint32_t flag, int16_t source_id);
-
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
  * highest severity and 7 to be the lowest (debugging level) severity.
  *
@@ -139,10 +125,10 @@ static int out_func(int c, void *ctx)
 
 static int cr_out_func(int c, void *ctx)
 {
-	out_func(c, ctx);
 	if (c == '\n') {
 		out_func((int)'\r', ctx);
 	}
+	out_func(c, ctx);
 
 	return 0;
 }
@@ -328,8 +314,11 @@ static void color_postfix(const struct log_output *output,
 }
 
 
-static int ids_print(const struct log_output *output, bool level_on,
-		     bool func_on, uint32_t domain_id, int16_t source_id,
+static int ids_print(const struct log_output *output,
+		     bool level_on,
+		     bool func_on,
+		     const char *domain,
+		     const char *source,
 		     uint32_t level)
 {
 	int total = 0;
@@ -338,12 +327,16 @@ static int ids_print(const struct log_output *output, bool level_on,
 		total += print_formatted(output, "<%s> ", severity[level]);
 	}
 
-	if (source_id >= 0) {
+	if (domain) {
+		total += print_formatted(output, "%s/", domain);
+	}
+
+	if (source) {
 		total += print_formatted(output,
 				(func_on &&
 				((1 << level) & LOG_FUNCTION_PREFIX_MASK)) ?
 				"%s." : "%s: ",
-				log_source_name_get(domain_id, source_id));
+				source);
 	}
 
 	return total;
@@ -364,95 +357,6 @@ static void newline_print(const struct log_output *ctx, uint32_t flags)
 		print_formatted(ctx, "\n");
 	} else {
 		print_formatted(ctx, "\r\n");
-	}
-}
-
-static void std_print(struct log_msg *msg,
-		      const struct log_output *output)
-{
-	const char *str = log_msg_str_get(msg);
-	uint32_t nargs = log_msg_nargs_get(msg);
-	log_arg_t *args = alloca(sizeof(log_arg_t)*nargs);
-	int i;
-
-	for (i = 0; i < nargs; i++) {
-		args[i] = log_msg_arg_get(msg, i);
-	}
-
-	switch (log_msg_nargs_get(msg)) {
-	case 0:
-		print_formatted(output, str);
-		break;
-	case 1:
-		print_formatted(output, str, args[0]);
-		break;
-	case 2:
-		print_formatted(output, str, args[0], args[1]);
-		break;
-	case 3:
-		print_formatted(output, str, args[0], args[1], args[2]);
-		break;
-	case 4:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3]);
-		break;
-	case 5:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4]);
-		break;
-	case 6:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5]);
-		break;
-	case 7:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6]);
-		break;
-	case 8:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6], args[7]);
-		break;
-	case 9:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8]);
-		break;
-	case 10:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9]);
-		break;
-	case 11:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10]);
-		break;
-	case 12:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10], args[11]);
-		break;
-	case 13:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10], args[11], args[12]);
-		break;
-	case 14:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10], args[11], args[12],
-				args[13]);
-		break;
-	case 15:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10], args[11], args[12],
-				args[13], args[14]);
-		break;
-	default:
-		/* Unsupported number of arguments. */
-		__ASSERT_NO_MSG(true);
-		break;
 	}
 }
 
@@ -486,7 +390,7 @@ static void hexdump_line_print(const struct log_output *output,
 		}
 
 		if (i < length) {
-			char c = (char)data[i];
+			unsigned char c = (unsigned char)data[i];
 
 			print_formatted(output, "%c",
 			      isprint((int)c) ? c : '.');
@@ -496,33 +400,9 @@ static void hexdump_line_print(const struct log_output *output,
 	}
 }
 
-static void hexdump_print(struct log_msg *msg,
-			  const struct log_output *output,
-			  int prefix_offset, uint32_t flags)
-{
-	uint32_t offset = 0U;
-	uint8_t buf[HEXDUMP_BYTES_IN_LINE];
-	size_t length;
-
-	print_formatted(output, "%s", log_msg_str_get(msg));
-
-	do {
-		length = sizeof(buf);
-		log_msg_hexdump_data_get(msg, buf, &length, offset);
-
-		if (length) {
-			hexdump_line_print(output, buf, length,
-					   prefix_offset, flags);
-			offset += length;
-		} else {
-			break;
-		}
-	} while (true);
-}
-
-static void log_msg2_hexdump(const struct log_output *output,
-			     uint8_t *data, uint32_t len,
-			     int prefix_offset, uint32_t flags)
+static void log_msg_hexdump(const struct log_output *output,
+			    uint8_t *data, uint32_t len,
+			    int prefix_offset, uint32_t flags)
 {
 	size_t length;
 
@@ -536,45 +416,20 @@ static void log_msg2_hexdump(const struct log_output *output,
 	} while (len);
 }
 
-
-static void raw_string_print(struct log_msg *msg,
-			     const struct log_output *output)
-{
-	__ASSERT_NO_MSG(output->size);
-
-	size_t offset = 0;
-	size_t length;
-	bool eol = false;
-
-	do {
-		length = output->size;
-		/* Sting is stored in a hexdump message. */
-		log_msg_hexdump_data_get(msg, output->buf, &length, offset);
-		output->control_block->offset = length;
-
-		if (length != 0) {
-			eol = (output->buf[length - 1] == '\n');
-		}
-
-		log_output_flush(output);
-		offset += length;
-	} while (length > 0);
-
-	if (eol) {
-		print_formatted(output, "\r");
-	}
-}
-
 static uint32_t prefix_print(const struct log_output *output,
-			 uint32_t flags, bool func_on, log_timestamp_t timestamp, uint8_t level,
-			 uint8_t domain_id, int16_t source_id)
+			     uint32_t flags,
+			     bool func_on,
+			     log_timestamp_t timestamp,
+			     const char *domain,
+			     const char *source,
+			     uint8_t level)
 {
 	uint32_t length = 0U;
 
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
 	bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
-	const char *tag = z_log_get_tag();
+	const char *tag = IS_ENABLED(CONFIG_LOG) ? z_log_get_tag() : NULL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
@@ -611,9 +466,7 @@ static uint32_t prefix_print(const struct log_output *output,
 		color_prefix(output, colors_on, level);
 	}
 
-	length += ids_print(output, level_on, func_on,
-			domain_id, source_id, level);
-
+	length += ids_print(output, level_on, func_on, domain, source, level);
 
 	return length;
 }
@@ -626,80 +479,41 @@ static void postfix_print(const struct log_output *output,
 	newline_print(output, flags);
 }
 
-void log_output_msg_process(const struct log_output *output,
-			    struct log_msg *msg,
-			    uint32_t flags)
+void log_output_process(const struct log_output *output,
+			log_timestamp_t timestamp,
+			const char *domain,
+			const char *source,
+			uint8_t level,
+			const uint8_t *package,
+			const uint8_t *data,
+			size_t data_len,
+			uint32_t flags)
 {
-	bool std_msg = log_msg_is_std(msg);
-	uint32_t timestamp = log_msg_timestamp_get(msg);
-	uint8_t level = (uint8_t)log_msg_level_get(msg);
-	uint8_t domain_id = (uint8_t)log_msg_domain_id_get(msg);
-	int16_t source_id = (int16_t)log_msg_source_id_get(msg);
-	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
-	int prefix_offset;
-
-	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		log_output_msg_syst_process(output, msg, flags);
-		return;
-	}
-
-	prefix_offset = raw_string ?
-			0 : prefix_print(output, flags, std_msg, timestamp,
-					 level, domain_id, source_id);
-
-	if (log_msg_is_std(msg)) {
-		std_print(msg, output);
-	} else if (raw_string) {
-		raw_string_print(msg, output);
-	} else {
-		hexdump_print(msg, output, prefix_offset, flags);
-	}
-
-	if (!raw_string) {
-		postfix_print(output, flags, level);
-	}
-
-	log_output_flush(output);
-}
-
-void log_output_msg2_process(const struct log_output *output,
-			     struct log_msg2 *msg, uint32_t flags)
-{
-	log_timestamp_t timestamp = log_msg2_get_timestamp(msg);
-	uint8_t level = log_msg2_get_level(msg);
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 	uint32_t prefix_offset;
+	cbprintf_cb cb;
 
 	if (!raw_string) {
-		void *source = (void *)log_msg2_get_source(msg);
-		uint8_t domain_id = log_msg2_get_domain(msg);
-		int16_t source_id = source ?
-			(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-				log_dynamic_source_id(source) :
-				log_const_source_id(source)) :
-			-1;
-
-		prefix_offset = prefix_print(output, flags, 0, timestamp,
-					 level, domain_id, source_id);
+		prefix_offset = prefix_print(output, flags, 0, timestamp, domain, source, level);
+		cb = out_func;
 	} else {
 		prefix_offset = 0;
+		/* source set to 1 indicates raw string and contrary to printk
+		 * case it should not append anything to the output (printk is
+		 * appending <CR> to the new line character).
+		 */
+		cb = ((uintptr_t)source == 1) ? out_func : cr_out_func;
 	}
 
-	size_t len;
-	uint8_t *data = log_msg2_get_package(msg, &len);
-
-	if (len) {
-		int err = cbpprintf(raw_string ? cr_out_func :  out_func,
-				    (void *)output, data);
+	if (package) {
+		int err = cbpprintf(cb, (void *)output, (void *)package);
 
 		(void)err;
 		__ASSERT_NO_MSG(err >= 0);
 	}
 
-	data = log_msg2_get_data(msg, &len);
-	if (len) {
-		log_msg2_hexdump(output, data, len, prefix_offset, flags);
+	if (data_len) {
+		log_msg_hexdump(output, (uint8_t *)data, data_len, prefix_offset, flags);
 	}
 
 	if (!raw_string) {
@@ -709,93 +523,36 @@ void log_output_msg2_process(const struct log_output *output,
 	log_output_flush(output);
 }
 
-static bool ends_with_newline(const char *fmt)
+void log_output_msg_process(const struct log_output *output,
+			    struct log_msg *msg, uint32_t flags)
 {
-	char c = '\0';
+	log_timestamp_t timestamp = log_msg_get_timestamp(msg);
+	uint8_t level = log_msg_get_level(msg);
+	uint8_t domain_id = log_msg_get_domain(msg);
+	int16_t source_id;
 
-	while (*fmt != '\0') {
-		c = *fmt;
-		fmt++;
-	}
-
-	return (c == '\n');
-}
-
-void log_output_string(const struct log_output *output,
-		       struct log_msg_ids src_level, uint32_t timestamp,
-		       const char *fmt, va_list ap, uint32_t flags)
-{
-	int length;
-	uint8_t level = (uint8_t)src_level.level;
-	uint8_t domain_id = (uint8_t)src_level.domain_id;
-	int16_t source_id = (int16_t)src_level.source_id;
-	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
-
-	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		log_output_string_syst_process(output, src_level, fmt, ap,
-					       flags, source_id);
-		return;
-	}
-
-	if (!raw_string) {
-		prefix_print(output, flags, true, timestamp,
-				level, domain_id, source_id);
-	}
-
-	length = cbvprintf(out_func, (void *)output, fmt, ap);
-
-	(void)length;
-
-	if (raw_string) {
-		/* add \r if string ends with newline. */
-		if (ends_with_newline(fmt)) {
-			print_formatted(output, "\r");
-		}
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && domain_id != Z_LOG_LOCAL_DOMAIN_ID) {
+		/* Remote domain is converting source pointer to ID */
+		source_id = (int16_t)(uintptr_t)log_msg_get_source(msg);
 	} else {
-		postfix_print(output, flags, level);
+		void *source = (void *)log_msg_get_source(msg);
+
+		if (source != NULL) {
+			source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+					log_dynamic_source_id(source) :
+					log_const_source_id(source);
+		} else {
+			source_id = -1;
+		}
 	}
 
-	log_output_flush(output);
-}
+	const char *sname = source_id >= 0 ? log_source_name_get(domain_id, source_id) : NULL;
+	size_t plen, dlen;
+	uint8_t *package = log_msg_get_package(msg, &plen);
+	uint8_t *data = log_msg_get_data(msg, &dlen);
 
-void log_output_hexdump(const struct log_output *output,
-			     struct log_msg_ids src_level, uint32_t timestamp,
-			     const char *metadata, const uint8_t *data,
-			     uint32_t length, uint32_t flags)
-{
-	uint32_t prefix_offset;
-	uint8_t level = (uint8_t)src_level.level;
-	uint8_t domain_id = (uint8_t)src_level.domain_id;
-	int16_t source_id = (int16_t)src_level.source_id;
-
-	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		log_output_hexdump_syst_process(output, src_level, metadata,
-						data, length, flags,
-						source_id);
-		return;
-	}
-
-	prefix_offset = prefix_print(output, flags, true, timestamp,
-				     level, domain_id, source_id);
-
-	/* Print metadata */
-	print_formatted(output, "%s", metadata);
-
-	while (length != 0U) {
-		uint32_t part_len = length > HEXDUMP_BYTES_IN_LINE ?
-				HEXDUMP_BYTES_IN_LINE : length;
-
-		hexdump_line_print(output, data, part_len,
-				   prefix_offset, flags);
-
-		data += part_len;
-		length -= part_len;
-	}
-
-	postfix_print(output, flags, level);
-	log_output_flush(output);
+	log_output_process(output, timestamp, NULL, sname, level,
+			   plen > 0 ? package : NULL, data, dlen, flags);
 }
 
 void log_output_dropped_process(const struct log_output *output, uint32_t cnt)

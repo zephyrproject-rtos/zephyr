@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #include <soc_dt.h>
 #include <errno.h>
 #include <assert.h>
+#include <zephyr/irq.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -176,7 +177,7 @@ static void adc_it8xxx2_get_sample(const struct device *dev)
 
 static void adc_poll_valid_data(void)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	int valid = 0;
 
 	/*
@@ -205,7 +206,7 @@ static void adc_poll_valid_data(void)
 static void adc_enable_measurement(uint32_t ch)
 {
 	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct adc_it8xxx2_data *data = dev->data;
 
 	if (ch <= CHIP_ADC_CH7) {

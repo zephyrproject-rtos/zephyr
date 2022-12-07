@@ -5,7 +5,9 @@
 
 menuconfig ISL29035
 	bool "ISL29035 light sensor"
-	depends on I2C
+	default y
+	depends on DT_HAS_ISIL_ISL29035_ENABLED
+	select I2C
 	help
 	  Enable driver for the ISL29035 light sensor.
 

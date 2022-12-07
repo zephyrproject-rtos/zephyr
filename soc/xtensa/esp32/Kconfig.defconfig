@@ -17,6 +17,9 @@ if BOOTLOADER_MCUBOOT
 
 	config ROM_START_OFFSET
 		default 0x20
+
+	config HAS_DYNAMIC_DEVICE_HANDLES
+		default y
 endif
 
 config SOC
@@ -34,15 +37,12 @@ config SCHED_IPI_SUPPORTED
 config SCHED_CPU_MASK
 	default y
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 2
 
 endif
 
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
-	default n
-
-config LOG_DETECT_MISSED_STRDUP
 	default n
 
 if GDBSTUB

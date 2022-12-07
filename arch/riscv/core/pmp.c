@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(mpu);
 # define PR_ADDR "0x%08lx"
 #endif
 
-#define PMPCFG_STRIDE sizeof(ulong_t)
+#define PMPCFG_STRIDE sizeof(unsigned long)
 
 #define PMP_ADDR(addr)			((addr) >> 2)
 #define NAPOT_RANGE(size)		(((size) - 1) >> 1)
@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(mpu);
 #define PMP_NONE 0
 
 static void print_pmp_entries(unsigned int start, unsigned int end,
-			      ulong_t *pmp_addr, ulong_t *pmp_cfg,
+			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			      const char *banner)
 {
 	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
@@ -61,7 +61,7 @@ static void print_pmp_entries(unsigned int start, unsigned int end,
 
 	LOG_DBG("PMP %s:", banner);
 	for (index = start; index < end; index++) {
-		ulong_t start, end, tmp;
+		unsigned long start, end, tmp;
 
 		switch (pmp_n_cfg[index] & PMP_A) {
 		case PMP_TOR:
@@ -102,8 +102,8 @@ static void print_pmp_entries(unsigned int start, unsigned int end,
 
 static void dump_pmp_regs(const char *banner)
 {
-	ulong_t pmp_addr[CONFIG_PMP_SLOTS];
-	ulong_t pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
+	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
+	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 
 #define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
 
@@ -150,7 +150,7 @@ static void dump_pmp_regs(const char *banner)
  */
 static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 			  uintptr_t start, size_t size,
-			  ulong_t *pmp_addr, ulong_t *pmp_cfg,
+			  unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			  unsigned int index_limit)
 {
 	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
@@ -207,7 +207,8 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
  */
 extern void z_riscv_write_pmp_entries(unsigned int start, unsigned int end,
 				      bool clear_trailing_entries,
-				      ulong_t *pmp_addr, ulong_t *pmp_cfg);
+				      const unsigned long *pmp_addr,
+				      const unsigned long *pmp_cfg);
 
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
@@ -223,7 +224,7 @@ extern void z_riscv_write_pmp_entries(unsigned int start, unsigned int end,
  */
 static void write_pmp_entries(unsigned int start, unsigned int end,
 			      bool clear_trailing_entries,
-			      ulong_t *pmp_addr, ulong_t *pmp_cfg,
+			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			      unsigned int index_limit)
 {
 	__ASSERT(start < end && end <= index_limit &&
@@ -252,6 +253,21 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 
 	print_pmp_entries(start, end, pmp_addr, pmp_cfg, "register write");
 
+#ifdef CONFIG_QEMU_TARGET
+	/*
+	 * A QEMU bug may create bad transient PMP representations causing
+	 * false access faults to be reported. Work around it by setting
+	 * pmp registers to zero from the update start point to the end
+	 * before updating them with new values.
+	 * The QEMU fix is here with more details about this bug:
+	 * https://lists.gnu.org/archive/html/qemu-devel/2022-06/msg02800.html
+	 */
+	static const unsigned long pmp_zero[CONFIG_PMP_SLOTS] = { 0, };
+
+	z_riscv_write_pmp_entries(start, CONFIG_PMP_SLOTS, false,
+				  pmp_zero, pmp_zero);
+#endif
+
 	z_riscv_write_pmp_entries(start, end, clear_trailing_entries,
 				  pmp_addr, pmp_cfg);
 }
@@ -279,7 +295,8 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
  * sharing the same cfg register. Locked entries aren't modifiable but
  * we could have non-locked entries here too.
  */
-static ulong_t global_pmp_cfg[1];
+static unsigned long global_pmp_cfg[1];
+static unsigned long global_pmp_last_addr;
 
 /* End of global PMP entry range */
 static unsigned int global_pmp_end_index;
@@ -289,8 +306,8 @@ static unsigned int global_pmp_end_index;
  */
 void z_riscv_pmp_init(void)
 {
-	ulong_t pmp_addr[4];
-	ulong_t pmp_cfg[1];
+	unsigned long pmp_addr[4];
+	unsigned long pmp_cfg[1];
 	unsigned int index = 0;
 
 	/* The read-only area is always there for every mode */
@@ -302,9 +319,10 @@ void z_riscv_pmp_init(void)
 #ifdef CONFIG_PMP_STACK_GUARD
 	/*
 	 * Set the stack guard for this CPU's IRQ stack by making the bottom
-	 * addresses inaccessible. This will never change so we do it here.
+	 * addresses inaccessible. This will never change so we do it here
+	 * and lock it too.
 	 */
-	set_pmp_entry(&index, PMP_NONE,
+	set_pmp_entry(&index, PMP_NONE | PMP_L,
 		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
@@ -313,19 +331,53 @@ void z_riscv_pmp_init(void)
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 #ifdef CONFIG_SMP
+#ifdef CONFIG_PMP_STACK_GUARD
+	/*
+	 * The IRQ stack guard area is different for each CPU.
+	 * Make sure TOR entry sharing won't be attempted with it by
+	 * remembering a bogus address for those entries.
+	 */
+	pmp_addr[index - 1] = -1L;
+#endif
+
 	/* Make sure secondary CPUs produced the same values */
 	if (global_pmp_end_index != 0) {
 		__ASSERT(global_pmp_end_index == index, "");
 		__ASSERT(global_pmp_cfg[0] == pmp_cfg[0], "");
+		__ASSERT(global_pmp_last_addr == pmp_addr[index - 1], "");
 	}
 #endif
 
 	global_pmp_cfg[0] = pmp_cfg[0];
+	global_pmp_last_addr = pmp_addr[index - 1];
 	global_pmp_end_index = index;
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("initial register dump");
 	}
+}
+
+/**
+ * @Brief Initialize the per-thread PMP register copy with global values.
+ */
+static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
+						   unsigned long *pmp_cfg,
+						   unsigned int index_limit)
+{
+	ARG_UNUSED(index_limit);
+
+	/*
+	 * Retrieve pmpcfg0 partial content from global entries.
+	 */
+	pmp_cfg[0] = global_pmp_cfg[0];
+
+	/*
+	 * Retrieve the pmpaddr value matching the last global PMP slot.
+	 * This is so that set_pmp_entry() can safely attempt TOR with it.
+	 */
+	pmp_addr[global_pmp_end_index - 1] = global_pmp_last_addr;
+
+	return global_pmp_end_index;
 }
 
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -337,11 +389,8 @@ void z_riscv_pmp_init(void)
  */
 void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 {
-	unsigned int index = global_pmp_end_index;
+	unsigned int index = z_riscv_pmp_thread_init(PMP_M_MODE(thread));
 	uintptr_t stack_bottom;
-
-	/* Retrieve pmpcfg0 partial content from global entries */
-	thread->arch.m_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
 
 	/* make the bottom addresses of our stack inaccessible */
 	stack_bottom = thread->stack_info.start - K_KERNEL_STACK_RESERVED;
@@ -429,19 +478,7 @@ void z_riscv_pmp_usermode_init(struct k_thread *thread)
  */
 void z_riscv_pmp_usermode_prepare(struct k_thread *thread)
 {
-	unsigned int index = global_pmp_end_index;
-
-	/* Retrieve pmpcfg0 partial content from global entries */
-	thread->arch.u_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
-
-#if !defined(CONFIG_SMP)
-	/* Map the is_user_mode variable */
-	extern uint32_t is_user_mode;
-
-	set_pmp_entry(&index, PMP_R,
-		      (uintptr_t) &is_user_mode, sizeof(is_user_mode),
-		      PMP_U_MODE(thread));
-#endif
+	unsigned int index = z_riscv_pmp_thread_init(PMP_U_MODE(thread));
 
 	/* Map the usermode stack */
 	set_pmp_entry(&index, PMP_R | PMP_W,
@@ -541,11 +578,6 @@ int arch_mem_domain_max_partitions_get(void)
 
 	/* remove those slots dedicated to global entries */
 	available_pmp_slots -= global_pmp_end_index;
-
-#if !defined(CONFIG_SMP)
-	/* One slot needed to map the is_user_mode variable */
-	available_pmp_slots -= 1;
-#endif
 
 	/* At least one slot to map the user thread's stack */
 	available_pmp_slots -= 1;

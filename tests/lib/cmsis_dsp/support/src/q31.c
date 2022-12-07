@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -38,9 +38,9 @@ static void test_arm_copy_q31(const q31_t *input1, size_t length)
 	free(output);
 }
 
-DEFINE_TEST_VARIANT2(arm_copy_q31, 3, in_q31, 3);
-DEFINE_TEST_VARIANT2(arm_copy_q31, 8, in_q31, 8);
-DEFINE_TEST_VARIANT2(arm_copy_q31, 11, in_q31, 11);
+DEFINE_TEST_VARIANT2(support_q31, arm_copy_q31, 3, in_q31, 3);
+DEFINE_TEST_VARIANT2(support_q31, arm_copy_q31, 8, in_q31, 8);
+DEFINE_TEST_VARIANT2(support_q31, arm_copy_q31, 11, in_q31, 11);
 
 static void test_arm_fill_q31(size_t length)
 {
@@ -65,9 +65,9 @@ static void test_arm_fill_q31(size_t length)
 	free(output);
 }
 
-DEFINE_TEST_VARIANT1(arm_fill_q31, 3, 3);
-DEFINE_TEST_VARIANT1(arm_fill_q31, 8, 8);
-DEFINE_TEST_VARIANT1(arm_fill_q31, 11, 11);
+DEFINE_TEST_VARIANT1(support_q31, arm_fill_q31, 3, 3);
+DEFINE_TEST_VARIANT1(support_q31, arm_fill_q31, 8, 8);
+DEFINE_TEST_VARIANT1(support_q31, arm_fill_q31, 11, 11);
 
 static void test_arm_q31_to_float(
 	const q31_t *input1, const uint32_t *ref, size_t length)
@@ -91,9 +91,9 @@ static void test_arm_q31_to_float(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_q31_to_float, 7, in_q31, ref_f32, 7);
-DEFINE_TEST_VARIANT3(arm_q31_to_float, 16, in_q31, ref_f32, 16);
-DEFINE_TEST_VARIANT3(arm_q31_to_float, 17, in_q31, ref_f32, 17);
+DEFINE_TEST_VARIANT3(support_q31, arm_q31_to_float, 7, in_q31, ref_f32, 7);
+DEFINE_TEST_VARIANT3(support_q31, arm_q31_to_float, 16, in_q31, ref_f32, 16);
+DEFINE_TEST_VARIANT3(support_q31, arm_q31_to_float, 17, in_q31, ref_f32, 17);
 
 static void test_arm_q31_to_q15(
 	const q31_t *input1, const q15_t *ref, size_t length)
@@ -116,9 +116,9 @@ static void test_arm_q31_to_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_q31_to_q15, 3, in_q31, ref_q15, 3);
-DEFINE_TEST_VARIANT3(arm_q31_to_q15, 8, in_q31, ref_q15, 8);
-DEFINE_TEST_VARIANT3(arm_q31_to_q15, 11, in_q31, ref_q15, 11);
+DEFINE_TEST_VARIANT3(support_q31, arm_q31_to_q15, 3, in_q31, ref_q15, 3);
+DEFINE_TEST_VARIANT3(support_q31, arm_q31_to_q15, 8, in_q31, ref_q15, 8);
+DEFINE_TEST_VARIANT3(support_q31, arm_q31_to_q15, 11, in_q31, ref_q15, 11);
 
 static void test_arm_q31_to_q7(
 	const q31_t *input1, const q7_t *ref, size_t length)
@@ -141,29 +141,8 @@ static void test_arm_q31_to_q7(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_q31_to_q7, 15, in_q31, ref_q7, 15);
-DEFINE_TEST_VARIANT3(arm_q31_to_q7, 32, in_q31, ref_q7, 32);
-DEFINE_TEST_VARIANT3(arm_q31_to_q7, 33, in_q31, ref_q7, 33);
+DEFINE_TEST_VARIANT3(support_q31, arm_q31_to_q7, 15, in_q31, ref_q7, 15);
+DEFINE_TEST_VARIANT3(support_q31, arm_q31_to_q7, 32, in_q31, ref_q7, 32);
+DEFINE_TEST_VARIANT3(support_q31, arm_q31_to_q7, 33, in_q31, ref_q7, 33);
 
-void test_support_q31(void)
-{
-	ztest_test_suite(support_q31,
-		ztest_unit_test(test_arm_copy_q31_3),
-		ztest_unit_test(test_arm_copy_q31_8),
-		ztest_unit_test(test_arm_copy_q31_11),
-		ztest_unit_test(test_arm_fill_q31_3),
-		ztest_unit_test(test_arm_fill_q31_8),
-		ztest_unit_test(test_arm_fill_q31_11),
-		ztest_unit_test(test_arm_q31_to_float_7),
-		ztest_unit_test(test_arm_q31_to_float_16),
-		ztest_unit_test(test_arm_q31_to_float_17),
-		ztest_unit_test(test_arm_q31_to_q15_3),
-		ztest_unit_test(test_arm_q31_to_q15_8),
-		ztest_unit_test(test_arm_q31_to_q15_11),
-		ztest_unit_test(test_arm_q31_to_q7_15),
-		ztest_unit_test(test_arm_q31_to_q7_32),
-		ztest_unit_test(test_arm_q31_to_q7_33)
-		);
-
-	ztest_run_test_suite(support_q31);
-}
+ZTEST_SUITE(support_q31, NULL, NULL, NULL, NULL, NULL);

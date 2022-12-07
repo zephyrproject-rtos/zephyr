@@ -27,9 +27,7 @@ board comes with the STM32CubeH7 MCU Package, which provides an STM32 comprehens
 software HAL library as well as various software examples.
 
 .. image:: img/stm32h7b3i_dk.jpg
-     :width: 484px
      :align: center
-     :height: 439px
      :alt: STM32H7B3I-DK
 
 More information about the board can be found at the `STM32H7B3I-DK website`_.

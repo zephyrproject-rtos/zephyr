@@ -10,7 +10,6 @@ include: [microchip_dsa.yaml]
 properties:
     workaround:
         type: int
-        required: false
         description: |
           Define the applied workaround for the switch used for
           short connections. Use bitmask to select the workaround or more
@@ -19,7 +18,6 @@ properties:
           0x04: 2) CAT-5E/6 Short Cable with a Link Issue for the KSZ8795 Family
     mii-lowspeed-drivestrength:
         type: int
-        required: false
         description: |
           Define the Low-Speed Interface Drive Strength for MII and RMMI
           Supported values 2,4,8,12,16,20,24,28mA

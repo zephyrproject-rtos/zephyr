@@ -12,7 +12,6 @@
 	bme280@0 {
 		compatible = "bosch,bme280";
 		reg = <0>;
-		label = "BME280_SPI";
 		spi-max-frequency = <1000000>; /* conservatively set to 1MHz */
 	};
 };

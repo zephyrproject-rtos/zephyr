@@ -11,6 +11,7 @@
 
 #define SHELL_MSG_CMD_NOT_SUPPORTED	"Command not supported.\n"
 #define SHELL_HELP_CLEAR		"Clear screen."
+#define SHELL_HELP_BACKENDS		"List active shell backends.\n"
 #define SHELL_HELP_BACKSPACE_MODE	"Toggle backspace key mode.\n"	      \
 	"Some terminals are not sending separate escape code for "	      \
 	"backspace and delete button. This command forces shell to interpret" \
@@ -198,6 +199,21 @@ static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 
 	Z_SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
 	Z_SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
+
+	return 0;
+}
+
+static int cmd_backends(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	uint16_t cnt = 0;
+
+	shell_print(sh, "Active shell backends:");
+	STRUCT_SECTION_FOREACH(shell, obj) {
+		shell_print(sh, "  %2d. :%s", cnt++, obj->ctx->prompt);
+	}
 
 	return 0;
 }
@@ -422,6 +438,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_backspace_mode,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_shell,
+	SHELL_CMD_ARG(backends, NULL, SHELL_HELP_BACKENDS, cmd_backends, 1, 0),
 	SHELL_CMD(backspace_mode, &m_sub_backspace_mode,
 			SHELL_HELP_BACKSPACE_MODE, NULL),
 	SHELL_COND_CMD(CONFIG_SHELL_VT100_COMMANDS, colors, &m_sub_colors,

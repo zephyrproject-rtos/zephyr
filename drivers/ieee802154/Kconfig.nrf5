@@ -5,17 +5,12 @@
 
 menuconfig IEEE802154_NRF5
 	bool "nRF52 series IEEE 802.15.4 Driver"
-	depends on NETWORKING
+	default y
+	depends on DT_HAS_NORDIC_NRF_IEEE802154_ENABLED
 	select NRF_802154_RADIO_DRIVER if HAS_HW_NRF_RADIO_IEEE802154
 	select NRF_802154_SER_HOST if !HAS_HW_NRF_RADIO_IEEE802154
 
 if IEEE802154_NRF5
-
-config IEEE802154_NRF5_DRV_NAME
-	string "nRF52 IEEE 802.15.4 Driver's name"
-	default "IEEE802154_nrf5"
-	help
-	  This option sets the driver name
 
 config IEEE802154_NRF5_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"

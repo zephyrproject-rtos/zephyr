@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
 #include <zephyr/types.h>
+#include <zephyr/ztest.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -56,6 +56,19 @@ void vprintk(const char *fmt, va_list ap)
 {
 	vprintf(fmt, ap);
 }
+
+int snprintk(char *str, size_t size, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = snprintf(str, size, fmt, ap);
+	va_end(ap);
+
+	return ret;
+}
+
 #else
 
 /*
@@ -106,8 +119,9 @@ static void free_parameter(struct parameter *param)
 {
 	unsigned int allocation_index = param - params;
 
-	if (param == NULL)
+	if (param == NULL) {
 		return;
+	}
 	__ASSERT(allocation_index < CONFIG_ZTEST_PARAMETER_COUNT,
 		 "param %p given to free is not in the static buffer %p:%u",
 		 param, params, CONFIG_ZTEST_PARAMETER_COUNT);

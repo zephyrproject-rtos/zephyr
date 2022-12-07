@@ -13,10 +13,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 159
 
-config GPIO_MCUX_IGPIO
-	default y if HAS_MCUX_IGPIO
-	depends on GPIO
-
 config PINCTRL_IMX
 	default y if HAS_MCUX_IOMUXC
 	depends on PINCTRL

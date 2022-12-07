@@ -377,10 +377,12 @@ int modbus_iface_get_by_name(const char *iface_name);
  *
  * @param iface      Modbus RTU interface index
  * @param adu        Pointer to the RAW ADU struct to send
+ * @param user_data  Pointer to the user data
  *
  * @retval           0 If transfer was successful
  */
-typedef int (*modbus_raw_cb_t)(const int iface, const struct modbus_adu *adu);
+typedef int (*modbus_raw_cb_t)(const int iface, const struct modbus_adu *adu,
+				void *user_data);
 
 /**
  * @brief Modbus interface mode
@@ -425,6 +427,11 @@ struct modbus_server_param {
 	uint8_t unit_id;
 };
 
+struct modbus_raw_cb {
+	modbus_raw_cb_t raw_tx_cb;
+	void *user_data;
+};
+
 /**
  * @brief User parameter structure to configure Modbus interface
  *        as client or server.
@@ -443,7 +450,7 @@ struct modbus_iface_param {
 		/** Serial support parameter of the interface */
 		struct modbus_serial_param serial;
 		/** Pointer to raw ADU callback function */
-		modbus_raw_cb_t raw_tx_cb;
+		struct modbus_raw_cb rawcb;
 	};
 };
 

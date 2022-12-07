@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 
@@ -111,7 +111,7 @@ void message_recv(void)
 	status = osMessageQueueGet(message_id, (void *)&recv_data,
 				   NULL, osWaitForever);
 	zassert_true(status == osOK, "osMessageQueueGet failure");
-	zassert_equal(recv_data.data1, MESSAGE1, NULL);
+	zassert_equal(recv_data.data1, MESSAGE1);
 
 	/* Wait for queue to get filled */
 	osDelay(TIMEOUT_TICKS);
@@ -122,16 +122,16 @@ void message_recv(void)
 					   osWaitForever);
 		zassert_true(status == osOK, "osMessageQueueGet failure");
 
-		zassert_equal(recv_data.data1, i * 3, NULL);
-		zassert_equal(recv_data.data2, i * 3 + 1, NULL);
-		zassert_equal(recv_data.data3, i * 3 + 2, NULL);
+		zassert_equal(recv_data.data1, i * 3);
+		zassert_equal(recv_data.data2, i * 3 + 1);
+		zassert_equal(recv_data.data3, i * 3 + 2);
 	}
 
 	/* Receive the next message */
 	status = osMessageQueueGet(message_id, (void *)&recv_data,
 				   NULL, osWaitForever);
 	zassert_true(status == osOK, "osMessageQueueGet failure");
-	zassert_equal(recv_data.data1, MESSAGE2, NULL);
+	zassert_equal(recv_data.data1, MESSAGE2);
 }
 
 static K_THREAD_STACK_DEFINE(test_stack, STACKSZ);
@@ -152,7 +152,7 @@ static const osMessageQueueAttr_t init_mem_attrs = {
 	.mq_size = sizeof(struct sample_data) * Q_LEN,
 };
 
-void test_messageq(void)
+ZTEST(cmsis_msgq, test_messageq)
 {
 	osStatus_t status;
 	struct sample_data sample;
@@ -193,3 +193,4 @@ void test_messageq(void)
 	status = osMessageQueueDelete(message_id);
 	zassert_true(status == osOK, "osMessageQueueDelete failure");
 }
+ZTEST_SUITE(cmsis_msgq, NULL, NULL, NULL, NULL, NULL);

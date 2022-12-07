@@ -153,12 +153,10 @@ where:
     +-----------------------+---------------------------------------------------+
     | "hash"                | hash of an upload; this is used to identify       |
     |                       | an upload session, for example to allow mcumgr    |
-    |                       | library to continue broken session                |
-    |                       |                                                   |
-    |                       | .. note::                                         |
-    |                       |    By default mcumgr-cli uses here a few          |
-    |                       |    characters of sha256 of the first uploaded     |
-    |                       |    chunk.                                         |
+    |                       | library to continue broken session. This must be  |
+    |                       | a full sha256 of the whole image being uploaded,  |
+    |                       | and is optionally used for image verification     |
+    |                       | purposes.                                         |
     +-----------------------+---------------------------------------------------+
     | "bootable"            | true if image has bootable flag set;              |
     |                       | this field does not have to be present if false   |
@@ -354,10 +352,6 @@ Image erase
 The command is used for erasing image slot on a target device.
 
 .. note::
-    Currently Zephyr version of mcumgr is hardcoded to always erase secondary slot
-    of the first image.
-
-.. note::
     This is synchronous command which means that a sender of request will not
     receive response until the command completes.
 
@@ -375,7 +369,25 @@ Image erase request header fields:
     | ``2``  | ``1``        |  ``5``         |
     +--------+--------------+----------------+
 
-The command sends sends empty CBOR map as data.
+CBOR data of request:
+
+.. code-block:: none
+
+    {
+        {
+            (str,opt)"slot"     : (uint)
+        }
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +---------+-----------------------------------------------------------------+
+    | "slot"  | optional slot number, it does not have to appear in the request |
+    |         | at all, in which case it is assumed to be 1.                    |
+    +---------+-----------------------------------------------------------------+
 
 Image erase response
 ====================

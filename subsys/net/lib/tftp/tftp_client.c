@@ -103,7 +103,7 @@ static int tftp_send_request(int sock, struct sockaddr *server_addr,
 		tx_count++;
 
 		LOG_DBG("Sending TFTP request %d file %s", request,
-			log_strdup(remote_file));
+			remote_file);
 
 		/* Send the request to the server */
 		ret = sendto(sock, tftpc_buffer, req_size, 0, server_addr,

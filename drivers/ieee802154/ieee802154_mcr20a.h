@@ -29,9 +29,6 @@ struct mcr20a_context {
 	struct gpio_callback irqb_cb;
 	const struct device *spi;
 	struct spi_config spi_cfg;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctrl;
-#endif
 	uint8_t mac_addr[8];
 	struct k_mutex phy_mutex;
 	struct k_sem isr_sem;

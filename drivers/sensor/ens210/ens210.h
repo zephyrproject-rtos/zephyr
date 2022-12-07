@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_ENS210_ENS210_H_
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 
@@ -101,9 +102,12 @@ struct ens210_sens_stat {
 } __packed;
 
 struct ens210_data {
-	const struct device *i2c;
 	struct ens210_value_data temp;
 	struct ens210_value_data humidity;
+};
+
+struct ens210_config {
+	struct i2c_dt_spec i2c;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ENS210_ENS210_H_ */

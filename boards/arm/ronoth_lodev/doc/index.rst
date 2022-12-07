@@ -11,15 +11,13 @@ The Ronoth_ LoDev_ is a small open source board containing a `AcSIP S76S`_  SiP 
 The `full LoDev design details`_ are available on on GitHub.  The LoDev_ board can be purchased
 from Ronoth_ or from CrowdSupply_.
 
-The S76S contains an `STMicro STM32L073RZ`_ MCU, a `Semtech SX1276`_ LoRaWAN transceiver,
+The S76S contains an STMicro STM32L073RZ MCU, a `Semtech SX1276`_ LoRaWAN transceiver,
 and a +20 dBm power amplifier.  Refer to `AcSIP S76S Product Information Brief`_ for details.
 
 Zephyr applications may use the **ronoth_lodev** configuration to run on this board.
 
-.. figure:: img/lodev.png
-     :width: 291px
+.. figure:: img/lodev.jpg
      :align: center
-     :height: 217px
      :alt: Image of Ronoth LoDev open source development board containing S76S system on a chip
 
      Ronoth LoDev
@@ -30,7 +28,7 @@ Zephyr applications may use the **ronoth_lodev** configuration to run on this bo
 Device Resources
 ================
 
-The embedded `STMicro STM32L073RZ`_ has some GPIOs and SPI2 internally committed to the LoRaWAN
+The embedded STMicro STM32L073RZ has some GPIOs and SPI2 internally committed to the LoRaWAN
 transceiver operation.  See `internally dedicated ports`_ for a list of resources committed to this function.
 
 =========
@@ -55,8 +53,7 @@ PA9 and PA10 are unavailable for I/Os.
 
 A helpful silkscreen legend is provided on the board.
 
-.. figure:: img/pinout.png
-     :width: 600px
+.. figure:: img/pinout.jpg
      :align: center
      :alt: Ronoth LoDev sketch with pinout
 
@@ -158,7 +155,7 @@ References
 
 .. _AcSIP S76S: http://www.acsip.com.tw/index.php?action=products-detail&fid1=11&fid2=29&fid3=27&id=79&lang=3
 
-.. _AcSIP S76S Product Information Brief: http://www.acsip.com.tw/upload/product_attach/S76S_Brief_ver02.pdf
+.. _AcSIP S76S Product Information Brief: https://www.acsip.com.tw/index.php?action=download_pro&perm=d&id=365
 
 .. _CrowdSupply: https://www.crowdsupply.com/ronoth/lodev
 
@@ -167,8 +164,6 @@ References
 .. _Board design files: https://github.com/ronoth/LoDev
 
 .. _posted on MBed by Steve Osborn: https://os.mbed.com/users/steve918/
-
-.. _STMicro STM32L073RZ: STMicro STM32L073RZ
 
 .. _Semtech SX1276: https://www.semtech.com/products/wireless-rf/lora-transceivers/sx1276
 

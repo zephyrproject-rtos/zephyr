@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -44,7 +44,7 @@ static void test_arm_correlate_q15(
 }
 
 #define DEFINE_CORRELATE_TEST(a, b) \
-	DEFINE_TEST_VARIANT4( \
+	DEFINE_TEST_VARIANT4(filtering_misc_q15, \
 		arm_correlate_q15, a##_##b, a, b, \
 		ref_correlate_##a##_##b, ARRAY_SIZE(ref_correlate_##a##_##b))
 
@@ -101,7 +101,7 @@ static void test_arm_conv_q15(
 }
 
 #define DEFINE_CONV_TEST(a, b) \
-	DEFINE_TEST_VARIANT4( \
+	DEFINE_TEST_VARIANT4(filtering_misc_q15, \
 		arm_conv_q15, a##_##b, a, b, \
 		ref_conv_##a##_##b, ARRAY_SIZE(ref_conv_##a##_##b))
 
@@ -322,19 +322,19 @@ static void test_arm_conv_partial_fast_opt_q15(
 #endif /* CONFIG_CMSIS_DSP_TEST_FILTERING_MISC_CONV_PARTIAL */
 
 #define DEFINE_CONV_PARTIAL_TEST(a, b, c) \
-	DEFINE_TEST_VARIANT5( \
+	DEFINE_TEST_VARIANT5(filtering_misc_q15, \
 		arm_conv_partial_q15, a##_##b##_##c, a, b, c, \
 		ref_conv_partial_##a##_##b##_##c, \
 		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c)) \
-	DEFINE_TEST_VARIANT5( \
+	DEFINE_TEST_VARIANT5(filtering_misc_q15, \
 		arm_conv_partial_fast_q15, a##_##b##_##c, a, b, c, \
 		ref_conv_partial_##a##_##b##_##c, \
 		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c)) \
-	DEFINE_TEST_VARIANT5( \
+	DEFINE_TEST_VARIANT5(filtering_misc_q15, \
 		arm_conv_partial_opt_q15, a##_##b##_##c, a, b, c, \
 		ref_conv_partial_##a##_##b##_##c, \
 		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c)) \
-	DEFINE_TEST_VARIANT5( \
+	DEFINE_TEST_VARIANT5(filtering_misc_q15, \
 		arm_conv_partial_fast_opt_q15, a##_##b##_##c, a, b, c, \
 		ref_conv_partial_##a##_##b##_##c, \
 		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c))
@@ -343,72 +343,4 @@ DEFINE_CONV_PARTIAL_TEST(3, 6, 8);
 DEFINE_CONV_PARTIAL_TEST(9, 6, 8);
 DEFINE_CONV_PARTIAL_TEST(7, 6, 8);
 
-void test_filtering_misc_q15(void)
-{
-	ztest_test_suite(filtering_misc_q15,
-		ztest_unit_test(test_arm_correlate_q15_14_15),
-		ztest_unit_test(test_arm_correlate_q15_14_16),
-		ztest_unit_test(test_arm_correlate_q15_14_17),
-		ztest_unit_test(test_arm_correlate_q15_14_18),
-		ztest_unit_test(test_arm_correlate_q15_14_33),
-		ztest_unit_test(test_arm_correlate_q15_15_15),
-		ztest_unit_test(test_arm_correlate_q15_15_16),
-		ztest_unit_test(test_arm_correlate_q15_15_17),
-		ztest_unit_test(test_arm_correlate_q15_15_18),
-		ztest_unit_test(test_arm_correlate_q15_15_33),
-		ztest_unit_test(test_arm_correlate_q15_16_15),
-		ztest_unit_test(test_arm_correlate_q15_16_16),
-		ztest_unit_test(test_arm_correlate_q15_16_17),
-		ztest_unit_test(test_arm_correlate_q15_16_18),
-		ztest_unit_test(test_arm_correlate_q15_16_33),
-		ztest_unit_test(test_arm_correlate_q15_17_15),
-		ztest_unit_test(test_arm_correlate_q15_17_16),
-		ztest_unit_test(test_arm_correlate_q15_17_17),
-		ztest_unit_test(test_arm_correlate_q15_17_18),
-		ztest_unit_test(test_arm_correlate_q15_17_33),
-		ztest_unit_test(test_arm_correlate_q15_32_15),
-		ztest_unit_test(test_arm_correlate_q15_32_16),
-		ztest_unit_test(test_arm_correlate_q15_32_17),
-		ztest_unit_test(test_arm_correlate_q15_32_18),
-		ztest_unit_test(test_arm_correlate_q15_32_33),
-		ztest_unit_test(test_arm_conv_q15_14_15),
-		ztest_unit_test(test_arm_conv_q15_14_16),
-		ztest_unit_test(test_arm_conv_q15_14_17),
-		ztest_unit_test(test_arm_conv_q15_14_18),
-		ztest_unit_test(test_arm_conv_q15_14_33),
-		ztest_unit_test(test_arm_conv_q15_15_15),
-		ztest_unit_test(test_arm_conv_q15_15_16),
-		ztest_unit_test(test_arm_conv_q15_15_17),
-		ztest_unit_test(test_arm_conv_q15_15_18),
-		ztest_unit_test(test_arm_conv_q15_15_33),
-		ztest_unit_test(test_arm_conv_q15_16_15),
-		ztest_unit_test(test_arm_conv_q15_16_16),
-		ztest_unit_test(test_arm_conv_q15_16_17),
-		ztest_unit_test(test_arm_conv_q15_16_18),
-		ztest_unit_test(test_arm_conv_q15_16_33),
-		ztest_unit_test(test_arm_conv_q15_17_15),
-		ztest_unit_test(test_arm_conv_q15_17_16),
-		ztest_unit_test(test_arm_conv_q15_17_17),
-		ztest_unit_test(test_arm_conv_q15_17_18),
-		ztest_unit_test(test_arm_conv_q15_17_33),
-		ztest_unit_test(test_arm_conv_q15_32_15),
-		ztest_unit_test(test_arm_conv_q15_32_16),
-		ztest_unit_test(test_arm_conv_q15_32_17),
-		ztest_unit_test(test_arm_conv_q15_32_18),
-		ztest_unit_test(test_arm_conv_q15_32_33),
-		ztest_unit_test(test_arm_conv_partial_q15_3_6_8),
-		ztest_unit_test(test_arm_conv_partial_q15_9_6_8),
-		ztest_unit_test(test_arm_conv_partial_q15_7_6_8),
-		ztest_unit_test(test_arm_conv_partial_fast_q15_3_6_8),
-		ztest_unit_test(test_arm_conv_partial_fast_q15_9_6_8),
-		ztest_unit_test(test_arm_conv_partial_fast_q15_7_6_8),
-		ztest_unit_test(test_arm_conv_partial_opt_q15_3_6_8),
-		ztest_unit_test(test_arm_conv_partial_opt_q15_9_6_8),
-		ztest_unit_test(test_arm_conv_partial_opt_q15_7_6_8),
-		ztest_unit_test(test_arm_conv_partial_fast_opt_q15_3_6_8),
-		ztest_unit_test(test_arm_conv_partial_fast_opt_q15_9_6_8),
-		ztest_unit_test(test_arm_conv_partial_fast_opt_q15_7_6_8)
-		);
-
-	ztest_run_test_suite(filtering_misc_q15);
-}
+ZTEST_SUITE(filtering_misc_q15, NULL, NULL, NULL, NULL, NULL);

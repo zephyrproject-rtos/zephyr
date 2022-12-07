@@ -9,16 +9,34 @@
 
 #include <stdio.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
+ * @brief IPC
+ * @defgroup ipc IPC
+ * @{
+ * @}
+ */
+
+/**
  * @brief IPC Service API
  * @defgroup ipc_service_api IPC service APIs
+ * @ingroup ipc
  * @{
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
  *
+ * These are for internal use only, so skip these in
+ * public documentation.
+ */
+
+/**
  * Some terminology:
  *
  * - INSTANCE: an instance is the external representation of a physical
@@ -114,6 +132,10 @@ extern "C" {
  *
  */
 
+/**
+ * @endcond
+ */
+
 /** @brief Event callback structure.
  *
  *  It is registered during endpoint registration.
@@ -196,6 +218,24 @@ struct ipc_ept_cfg {
  */
 int ipc_service_open_instance(const struct device *instance);
 
+/** @brief Close an instance
+ *
+ *  Function to be used to close an instance. All endpoints must be
+ *  deregistered using ipc_service_deregister_endpoint before this
+ *  is called.
+ *
+ *  @param[in] instance Instance to close.
+ *
+ *  @retval -EINVAL when instance configuration is invalid.
+ *  @retval -EIO when no backend is registered.
+ *  @retval -EALREADY when the instance is not already opened.
+ *  @retval -EBUSY when an endpoint exists that hasn't been
+ *           deregistered
+ *
+ *  @retval 0 on success or when not implemented on the backend (not needed).
+ *  @retval other errno codes depending on the implementation of the backend.
+ */
+int ipc_service_close_instance(const struct device *instance);
 
 /** @brief Register IPC endpoint onto an instance.
  *
@@ -221,6 +261,24 @@ int ipc_service_register_endpoint(const struct device *instance,
 				  struct ipc_ept *ept,
 				  const struct ipc_ept_cfg *cfg);
 
+/** @brief Deregister an IPC endpoint from its instance.
+ *
+ *  Deregisters an IPC endpoint from its instance.
+ *
+ *  The same function deregisters endpoints for both host and remote devices.
+ *
+ *  @param[in] ept Endpoint object.
+ *
+ *  @retval -EIO when no backend is registered.
+ *  @retval -EINVAL when instance, endpoint or configuration is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
+ *  @retval -EBUSY when the instance is busy.
+ *
+ *  @retval 0 on success.
+ *  @retval other errno codes depending on the implementation of the backend.
+ */
+int ipc_service_deregister_endpoint(struct ipc_ept *ept);
+
 /** @brief Send data using given IPC endpoint.
  *
  *  @param[in] ept Registered endpoint by @ref ipc_service_register_endpoint.
@@ -230,6 +288,7 @@ int ipc_service_register_endpoint(const struct device *instance,
  *  @retval -EIO when no backend is registered or send hook is missing from
  *               backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -EBADMSG when the data is invalid (i.e. invalid data format,
  *		     invalid length, ...)
  *  @retval -EBUSY when the instance is busy.
@@ -250,6 +309,7 @@ int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len);
  *  @retval -EIO when no backend is registered or send hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -ENOTSUP when the operation is not supported by backend.
  *
  *  @retval size TX buffer size on success.
@@ -294,6 +354,7 @@ int ipc_service_get_tx_buffer_size(struct ipc_ept *ept);
  *  @retval -EIO when no backend is registered or send hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -ENOTSUP when the operation or the timeout is not supported by backend.
  *  @retval -ENOBUFS when there are no TX buffers available.
  *  @retval -EALREADY when a buffer was already claimed and not yet released.
@@ -316,6 +377,7 @@ int ipc_service_get_tx_buffer(struct ipc_ept *ept, void **data, uint32_t *size, 
  *  @retval -EIO when no backend is registered or send hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -ENOTSUP when this is not supported by backend.
  *  @retval -EALREADY when the buffer was already dropped.
  *  @retval -ENXIO when the buffer was not obtained using @ref
@@ -350,6 +412,7 @@ int ipc_service_drop_tx_buffer(struct ipc_ept *ept, const void *data);
  *  @retval -EIO when no backend is registered or send hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -EBADMSG when the data is invalid (i.e. invalid data format,
  *		     invalid length, ...)
  *  @retval -EBUSY when the instance is busy.
@@ -375,6 +438,7 @@ int ipc_service_send_nocopy(struct ipc_ept *ept, const void *data, size_t len);
  *  @retval -EIO when no backend is registered or release hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -EALREADY when the buffer data has been hold already.
  *  @retval -ENOTSUP when this is not supported by backend.
  *
@@ -398,6 +462,7 @@ int ipc_service_hold_rx_buffer(struct ipc_ept *ept, void *data);
  *  @retval -EIO when no backend is registered or release hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -EALREADY when the buffer data has been already released.
  *  @retval -ENOTSUP when this is not supported by backend.
  *  @retval -ENXIO when the buffer was not hold before using @ref

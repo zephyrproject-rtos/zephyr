@@ -4,16 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_imx_mu
 
 #include <errno.h>
 #include <string.h>
 #include <zephyr/device.h>
 #include <soc.h>
 #include <zephyr/drivers/ipm.h>
+#include <zephyr/irq.h>
 #if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+#define DT_DRV_COMPAT nxp_imx_mu_rev2
 #include "fsl_mu.h"
 #else
+#define DT_DRV_COMPAT nxp_imx_mu
 #include <mu_imx.h>
 #endif
 

@@ -10,7 +10,7 @@ demonstrates the benefit of multiple execution units (CPU cores)
 when compute-intensive tasks can be run in parallel, with
 no cross-dependencies or shared resources.
 
-By changing the value of CONFIG_MP_NUM_CPUS on SMP systems, you
+By changing the value of CONFIG_MP_MAX_NUM_CPUS on SMP systems, you
 can see that using more cores takes almost linearly less time
 to complete the computational task.
 

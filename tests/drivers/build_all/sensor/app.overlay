@@ -20,7 +20,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO_1";
 			status = "okay";
 
 			#include "gpio.dtsi"
@@ -31,7 +30,6 @@
 			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			label = "TEST_I2C_CTLR";
 			status = "okay";
 			clock-frequency = <100000>;
 
@@ -43,7 +41,6 @@
 			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			label = "TEST_SPI_CTLR";
 			status = "okay";
 			clock-frequency = <2000000>;
 
@@ -120,16 +117,24 @@
 		test_uart: uart@55556666 {
 			compatible = "vnd,serial";
 			reg = <0x55556666 0x1000>;
-			label = "TEST_UART_CTLR";
 			status = "okay";
 
 			#include "uart.dtsi"
 		};
 
+		test_w1: w1@66660000 {
+			compatible = "vnd,w1";
+			reg = <0x66660000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			#include "w1.dtsi"
+		};
+
 		dht22 {
 			compatible = "aosong,dht";
 			status = "okay";
-			label = "DHT22";
 			dio-gpios = <&test_gpio 0 0>;
 			/* dht22; */
 		};

@@ -5,7 +5,8 @@
 
 menuconfig ETH_MCUX
 	bool "MCUX Ethernet driver"
-	depends on HAS_MCUX_ENET
+	default y
+	depends on DT_HAS_NXP_KINETIS_ETHERNET_ENABLED
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
 	select ARM_MPU if CPU_CORTEX_M7
 	select NET_POWER_MANAGEMENT if PM_DEVICE
@@ -15,6 +16,13 @@ menuconfig ETH_MCUX
 	  configuration change.
 
 if ETH_MCUX
+
+config ETH_MCUX_USE_DTCM_FOR_DMA_BUFFER
+	bool "Use DTCM for hardware DMA buffers"
+	default y
+	help
+	  Place the hardware DMA buffers into DTCM for better networking
+	  performance
 
 config ETH_MCUX_PROMISCUOUS_MODE
 	bool "Promiscuous mode"
@@ -50,8 +58,8 @@ config ETH_MCUX_PHY_EXTRA_DEBUG
 
 config ETH_MCUX_RX_BUFFERS
 	int "Number of MCUX RX buffers"
-	default 1
-	range 1 16
+	default 6
+	range 6 16
 	help
 	  Set the number of RX buffers provided to the MCUX driver.
 

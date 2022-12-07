@@ -12,39 +12,39 @@ properties:
     reg:
       required: true
 
-    interrupts:
-      required: false
-
     pinctrl-0:
       required: true
 
     pinctrl-names:
       required: true
 
-    sda-pin:
-      type: int
-      required: false
+    scl-gpios:
+      type: phandle-array
       description: |
-        SDA pin information is only required if
-        the target SoC does not have support in
-        hardware for clearing the I2C bus in case
-        of communication failure
+        GPIO to which the I2C SCL signal is routed. This is only required
+        if the target SoC does not have support in hardware for clearing
+        the I2C bus in case of a communication failure
 
-    scl-pin:
-      type: int
-      required: false
+    sda-gpios:
+      type: phandle-array
       description: |
-        SCL pin information is only required if
-        the target SoC does not have support in
-        hardware for clearing the I2C bus in case
-        of communication failure
+        GPIO to which the I2C SDA signal is routed. This is only required
+        if the target SoC does not have support in hardware for clearing
+        the I2C bus in case of a communication failure
 
     tx-lsb:
       type: boolean
-      required: false
       description: Set I2C TX data as LSB
 
     rx-lsb:
       type: boolean
-      required: false
       description: Set I2C RX data as LSB
+
+    scl-timeout-us:
+      type: int
+      description: |
+        Timeout for unchanged SCL during clock stretching of the I2C target in
+        microseconds.
+
+        If not set or 0, the timeout is disabled or set to the maximum possible
+        value if the MCU does not support disabling the timeout.

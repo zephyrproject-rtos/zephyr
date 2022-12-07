@@ -8,15 +8,17 @@
 #include <mem.h>
 #include <st/h7/stm32h7.dtsi>
 #include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 / {
 	soc {
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				write-block-size = <32>;
 				erase-block-size = <DT_SIZE_K(128)>;
-				label = "FLASH_STM32";
+				/* maximum erase time for a 128K sector */
+				max-erase-time = <4000>;
 			};
 		};
 
@@ -26,7 +28,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000040>;
 			interrupts = <155 0>;
 			status = "disabled";
-			label = "UART_9";
 		};
 
 		usart10: serial@40011c00 {
@@ -35,7 +36,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
 			interrupts = <156 0>;
 			status = "disabled";
-			label = "UART_10";
 		};
 
 		dmamux1: dmamux@40020800 {
@@ -53,8 +53,65 @@
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
-			label = "LTDC";
 			status = "disabled";
+		};
+
+		octospi1: octospi@52005000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x52005000 0x1000>;
+			interrupts = <92 0>;
+			clock-names = "ospix", "ospi-ker";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>,
+				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		octospi2: octospi@5200a000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x5200a000 0x1000>;
+			interrupts = <150 0>;
+			clock-names = "ospix", "ospi-ker";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x000080000>,
+				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		can {
+			can2: can@4000A400 {
+				compatible = "st,stm32h7-fdcan";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				reg = <0x4000A400 0x400>, <0x4000ac00 0x350>;
+				reg-names = "m_can", "message_ram";
+				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+				interrupts = <20 0>, <22 0>, <63 0>;
+				interrupt-names = "LINE_0", "LINE_1", "CALIB";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+				status = "disabled";
+			};
+
+			can3: can@4000D400 {
+				compatible = "st,stm32h7-fdcan";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				reg = <0x4000D400 0x400>, <0x4000ac00 0x350>;
+				reg-names = "m_can", "message_ram";
+				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+				interrupts = <159 0>, <160 0>, <63 0>;
+				interrupt-names = "LINE_0", "LINE_1", "CALIB";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+				status = "disabled";
+			};
 		};
 	};
 
@@ -97,5 +154,10 @@
 		compatible = "zephyr,memory-region", "arm,itcm";
 		reg = <0x00000000 DT_SIZE_K(64)>;
 		zephyr,memory-region = "ITCM";
+	};
+
+	die_temp: dietemp {
+		io-channels = <&adc3 17>;
+		ts-cal2-temp = <130>;
 	};
 };

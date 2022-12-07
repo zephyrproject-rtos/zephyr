@@ -10,7 +10,7 @@ config BOARD
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 2
 
 if BOARD_EHL_CRB_SBL
@@ -18,9 +18,6 @@ config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	depends on SHELL_BACKEND_SERIAL
 	default n
 endif
-
-config HPET_TIMER
-	default y
 
 # TSC on this board is 1.9 GHz, HPET and APIC are 19.2 MHz
 config SYS_CLOCK_HW_CYCLES_PER_SEC

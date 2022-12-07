@@ -12,9 +12,10 @@
 #include <soc.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_rcar);
 
 #include "i2c-priv.h"
@@ -270,7 +271,7 @@ static int i2c_rcar_configure(const struct device *dev, uint32_t dev_config)
 	uint8_t cdf, scgd;
 
 	/* We only support Master mode */
-	if ((dev_config & I2C_MODE_MASTER) != I2C_MODE_MASTER) {
+	if ((dev_config & I2C_MODE_CONTROLLER) != I2C_MODE_CONTROLLER) {
 		return -ENOTSUP;
 	}
 
@@ -321,6 +322,10 @@ static int i2c_rcar_init(const struct device *dev)
 
 	k_sem_init(&data->int_sem, 0, 1);
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
 	ret = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t *)&config->mod_clk);
 
@@ -330,7 +335,7 @@ static int i2c_rcar_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
-	ret = i2c_rcar_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	ret = i2c_rcar_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret != 0) {
 		return ret;
 	}

@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: |
+  Includes can be added at any level, so can property-allowlist and
+  property-blocklist.
+
+compatible: allow-and-blocklist-multilevel
+
+include:
+  - name: include.yaml
+    property-allowlist: [x]
+
+child-binding:
+  include:
+    - name: include.yaml
+      property-blocklist: [y]

@@ -17,6 +17,5 @@
 		xlnx,one-timer-only = <0x0>;
 		xlnx,trig0-assert = <0x1>;
 		xlnx,trig1-assert = <0x1>;
-		label = "COUNTER_0";
 	};
 };

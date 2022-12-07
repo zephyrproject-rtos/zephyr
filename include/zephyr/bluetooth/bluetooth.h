@@ -37,8 +37,6 @@ extern "C" {
  */
 
 /**
- * @def BT_ID_DEFAULT
- *
  * Convenience macro for specifying the default identity. This helps
  * make the code more readable, especially when only one identity is
  * supported.
@@ -114,6 +112,22 @@ struct bt_le_ext_adv_cb {
 	 */
 	void (*scanned)(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_scanned_info *info);
+
+#if defined(CONFIG_BT_PRIVACY)
+	/**
+	 * @brief The RPA validity of the advertising set has expired.
+	 *
+	 * This callback notifies the application that the RPA validity of
+	 * the advertising set has expired. The user can use this callback
+	 * to synchronize the advertising payload update with the RPA rotation.
+	 *
+	 * @param adv  The advertising set object.
+	 *
+	 * @return true to rotate the current RPA, or false to use it for the
+	 *         next rotation period.
+	 */
+	bool (*rpa_expired)(struct bt_le_ext_adv *adv);
+#endif /* defined(CONFIG_BT_PRIVACY) */
 };
 
 /**
@@ -228,7 +242,7 @@ int bt_set_appearance(uint16_t new_appearance);
  * count of all available identities that can be retrieved with a
  * subsequent call to this function with non-NULL @a addrs parameter.
  *
- * @note Deleted identities may show up as BT_LE_ADDR_ANY in the returned
+ * @note Deleted identities may show up as @ref BT_ADDR_LE_ANY in the returned
  * array.
  *
  * @param addrs Array where to store the configured identities.
@@ -648,6 +662,13 @@ enum {
 	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 */
 	BT_LE_PER_ADV_OPT_USE_TX_POWER = BIT(1),
+
+	/**
+	 * @brief Advertise with included AdvDataInfo (ADI).
+	 *
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
+	 */
+	BT_LE_PER_ADV_OPT_INCLUDE_ADI = BIT(2),
 };
 
 struct bt_le_per_adv_param {
@@ -1073,6 +1094,9 @@ struct bt_le_ext_adv_info {
 
 	/** Currently selected Transmit Power (dBM). */
 	int8_t                     tx_power;
+
+	/** Current local advertising address used. */
+	const bt_addr_le_t         *addr;
 };
 
 /**
@@ -1096,6 +1120,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
  * @param addr Advertiser LE address and type.
  * @param rssi Strength of advertiser signal.
  * @param adv_type Type of advertising response from advertiser.
+ *                 Uses the BT_GAP_ADV_TYPE_* values.
  * @param buf Buffer containing advertiser data.
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
@@ -1395,6 +1420,20 @@ struct bt_le_per_adv_sync_param {
  */
 uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync);
 
+/**
+ * @brief Get a periodic advertising sync object from the array index.
+ *
+ * This function is to get the periodic advertising sync object from
+ * the array index.
+ * The array has CONFIG_BT_PER_ADV_SYNC_MAX elements.
+ *
+ * @param index The index of the periodic advertising sync object.
+ *              The range of the index value is 0..CONFIG_BT_PER_ADV_SYNC_MAX-1
+ *
+ * @return The periodic advertising sync object of the array index or NULL if invalid index.
+ */
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_index(uint8_t index);
+
 /** @brief Advertising set info structure. */
 struct bt_le_per_adv_sync_info {
 	/** Periodic Advertiser Address */
@@ -1683,7 +1722,13 @@ enum {
 	/** Scan without requesting additional information from advertisers. */
 	BT_LE_SCAN_TYPE_PASSIVE = 0x00,
 
-	/** Scan and request additional information from advertisers. */
+	/**
+	 * @brief Scan and request additional information from advertisers.
+	 *
+	 * Using this scan type will automatically send scan requests to all
+	 * devices. Scan responses are received in the same manner and using the
+	 * same callbacks as advertising reports.
+	 */
 	BT_LE_SCAN_TYPE_ACTIVE = 0x01,
 };
 
@@ -1724,7 +1769,7 @@ struct bt_le_scan_param {
 	uint16_t window_coded;
 };
 
-/** LE advertisement packet information */
+/** LE advertisement and scan response packet information */
 struct bt_le_scan_recv_info {
 	/**
 	 * @brief Advertiser LE address and type.
@@ -1743,10 +1788,24 @@ struct bt_le_scan_recv_info {
 	/** Transmit power of the advertiser. */
 	int8_t tx_power;
 
-	/** Advertising packet type. */
+	/**
+	 * @brief Advertising packet type.
+	 *
+	 * Uses the BT_GAP_ADV_TYPE_* value.
+	 *
+	 * May indicate that this is a scan response if the type is
+	 * @ref BT_GAP_ADV_TYPE_SCAN_RSP.
+	 */
 	uint8_t adv_type;
 
-	/** Advertising packet properties. */
+	/**
+	 * @brief Advertising packet properties bitfield.
+	 *
+	 * Uses the BT_GAP_ADV_PROP_* values.
+	 * May indicate that this is a scan response if the value contains the
+	 * @ref BT_GAP_ADV_PROP_SCAN_RESPONSE bit.
+	 *
+	 */
 	uint16_t adv_props;
 
 	/**
@@ -1767,9 +1826,9 @@ struct bt_le_scan_recv_info {
 struct bt_le_scan_cb {
 
 	/**
-	 * @brief Advertisement packet received callback.
+	 * @brief Advertisement packet and scan response received callback.
 	 *
-	 * @param info Advertiser packet information.
+	 * @param info Advertiser packet and scan response information.
 	 * @param buf  Buffer containing advertiser data.
 	 */
 	void (*recv)(const struct bt_le_scan_recv_info *info,
@@ -1985,12 +2044,35 @@ static inline int bt_le_whitelist_clear(void)
 int bt_le_set_chan_map(uint8_t chan_map[5]);
 
 /**
+ * @brief Set the Resolvable Private Address timeout in runtime
+ *
+ * The new RPA timeout value will be used for the next RPA rotation
+ * and all subsequent rotations until another override is scheduled
+ * with this API.
+ *
+ * Initially, the if @kconfig{CONFIG_BT_RPA_TIMEOUT} is used as the
+ * RPA timeout.
+ *
+ * This symbol is linkable if @kconfig{CONFIG_BT_RPA_TIMEOUT_DYNAMIC}
+ * is enabled.
+ *
+ * @param new_rpa_timeout Resolvable Private Address timeout in seconds
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL RPA timeout value is invalid. Valid range is 1s - 3600s.
+ */
+int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout);
+
+/**
  * @brief Helper for parsing advertising (or EIR or OOB) data.
  *
  * A helper for parsing the basic data types used for Extended Inquiry
  * Response (EIR), Advertising Data (AD), and OOB data blocks. The most
  * common scenario is to call this helper on the advertising data
  * received in the callback that was given to bt_le_scan_start().
+ *
+ * @warning This helper function will consume `ad` when parsing. The user should
+ *          make a copy if the original data is to be used afterwards
  *
  * @param ad        Advertising data as given to the bt_le_scan_cb_t callback.
  * @param func      Callback function which will be called for each element

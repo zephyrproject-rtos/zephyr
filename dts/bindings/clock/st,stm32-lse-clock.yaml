@@ -20,3 +20,9 @@ properties:
         - 1
         - 2
         - 3
+
+    lse-bypass:
+      type: boolean
+      description: |
+        LSE crystal oscillator bypass
+        Set the property to by-pass the oscillator with an external clock.

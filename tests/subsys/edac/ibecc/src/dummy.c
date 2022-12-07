@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/drivers/edac.h>
 
@@ -26,7 +26,7 @@ DEVICE_DEFINE(dummy_edac, "dummy_edac", edac_dummy_init, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 	      &edac_dummy_api);
 
-void test_edac_dummy_api(void)
+ZTEST(ibecc, test_edac_dummy_api)
 {
 	const struct device *dev = device_get_binding("dummy_edac");
 	uint64_t value;

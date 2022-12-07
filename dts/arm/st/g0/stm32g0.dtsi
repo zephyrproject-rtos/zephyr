@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <freq.h>
 
@@ -45,7 +46,8 @@
 
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
+			compatible = "st,stm32g0-hsi-clock";
+			hsi-div = <1>;
 			clock-frequency = <DT_FREQ_M(16)>;
 			status = "disabled";
 		};
@@ -75,7 +77,6 @@
 	soc {
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32g0-flash-controller";
-			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;
 			interrupts = <3 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000100>;
@@ -85,7 +86,6 @@
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-				label = "FLASH_STM32";
 
 				write-block-size = <8>;
 				erase-block-size = <2048>;
@@ -119,7 +119,6 @@
 				#gpio-cells = <2>;
 				reg = <0x50000000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000001>;
-				label = "GPIOA";
 			};
 
 			gpiob: gpio@50000400 {
@@ -128,7 +127,6 @@
 				#gpio-cells = <2>;
 				reg = <0x50000400 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000002>;
-				label = "GPIOB";
 			};
 
 			gpioc: gpio@50000800 {
@@ -137,7 +135,6 @@
 				#gpio-cells = <2>;
 				reg = <0x50000800 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000004>;
-				label = "GPIOC";
 			};
 
 			gpiod: gpio@50000c00 {
@@ -146,7 +143,6 @@
 				#gpio-cells = <2>;
 				reg = <0x50000c00 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000008>;
-				label = "GPIOD";
 			};
 
 			gpiof: gpio@50001400 {
@@ -155,7 +151,6 @@
 				#gpio-cells = <2>;
 				reg = <0x50001400 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000020>;
-				label = "GPIOF";
 			};
 		};
 
@@ -166,13 +161,11 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
 			status = "disabled";
-			label = "RTC_0";
 		};
 
 		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
-			label = "IWDG";
 			status = "disabled";
 		};
 
@@ -180,7 +173,6 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002C00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
-			label = "WWDG";
 			interrupts = <0 2>;
 			status = "disabled";
 		};
@@ -191,7 +183,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
 			interrupts = <27 0>;
 			status = "disabled";
-			label = "UART_1";
 		};
 
 		usart2: serial@40004400 {
@@ -200,7 +191,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
 			interrupts = <28 0>;
 			status = "disabled";
-			label = "UART_2";
 		};
 
 		lptim1: timers@40007c00 {
@@ -212,7 +202,6 @@
 			interrupts = <17 1>;
 			interrupt-names = "wakeup";
 			status = "disabled";
-			label = "LPTIM_1";
 		};
 
 		timers1: timers@40012c00 {
@@ -223,12 +212,10 @@
 			interrupt-names = "brk_up_trg_com", "cc";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_1";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_1";
 				#pwm-cells = <3>;
 			};
 		};
@@ -241,12 +228,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_3";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_3";
 				#pwm-cells = <3>;
 			};
 		};
@@ -259,12 +244,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_14";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_14";
 				#pwm-cells = <3>;
 			};
 		};
@@ -277,12 +260,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_16";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_16";
 				#pwm-cells = <3>;
 			};
 		};
@@ -295,12 +276,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_17";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_17";
 				#pwm-cells = <3>;
 			};
 		};
@@ -315,7 +294,6 @@
 			interrupts = <23 0>;
 			interrupt-names = "combined";
 			status = "disabled";
-			label = "I2C_1";
 		};
 
 		i2c2: i2c@40005800 {
@@ -328,7 +306,6 @@
 			interrupts = <24 0>;
 			interrupt-names = "combined";
 			status = "disabled";
-			label = "I2C_2";
 		};
 
 		spi1: spi@40013000 {
@@ -339,7 +316,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
 			interrupts = <25 0>;
 			status = "disabled";
-			label = "SPI_1";
 		};
 
 		spi2: spi@40003800 {
@@ -350,7 +326,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <26 0>;
 			status = "disabled";
-			label = "SPI_2";
 		};
 
 		adc1: adc@40012400 {
@@ -359,10 +334,11 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
 			interrupts = <12 0>;
 			status = "disabled";
-			label = "ADC_1";
+			vref-mv = <3300>;
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
+			has-vbat-channel;
 		};
 
 		dma1: dma@40020000 {
@@ -374,7 +350,6 @@
 			dma-requests = <5>;
 			dma-offset = <0>;
 			status = "disabled";
-			label = "DMA_1";
 		};
 
 		/* DMAMUX clock is enabled as long as DMA1 or DMA2 is enabled */
@@ -387,8 +362,18 @@
 			dma-generators = <4>;
 			dma-requests= <49>;
 			status = "disabled";
-			label = "DMAMUX_1";
 		};
+	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp-cal";
+		ts-cal1-addr = <0x1FFF75A8>;
+		ts-cal2-addr = <0x1FFF75CA>;
+		ts-cal1-temp = <30>;
+		ts-cal2-temp = <130>;
+		ts-cal-vrefanalog = <3000>;
+		io-channels = <&adc1 12>;
+		status = "disabled";
 	};
 };
 

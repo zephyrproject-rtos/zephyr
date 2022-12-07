@@ -1,10 +1,9 @@
 # Copyright (c) 2020 PHYTEC Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_MODBUS_RTU := zephyr,modbus-serial
-
 menuconfig MODBUS
 	bool "Modbus support"
+	select CRC
 
 if MODBUS
 
@@ -42,8 +41,9 @@ config MODBUS_CLIENT
 
 config MODBUS_SERIAL
 	bool "Modbus over serial line support"
+	default y
 	depends on SERIAL && SERIAL_HAS_DRIVER
-	default $(dt_compat_enabled,$(DT_COMPAT_MODBUS_RTU))
+	depends on DT_HAS_ZEPHYR_MODBUS_SERIAL_ENABLED
 	help
 	  Enable Modbus over serial line support.
 

@@ -50,7 +50,6 @@ at 24 MHz once the SD card has been initialized:
 		    compatible = "zephyr,sdhc-spi-slot";
                     reg = <0>;
                     status = "okay";
-                    label = "SDHC_0";
 		    mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";
@@ -65,6 +64,26 @@ filesystem driver when the board boots.
 To read and write files and directories, see the :ref:`file_system_api` in
 :zephyr_file:`include/zephyr/fs/fs.h` such as :c:func:`fs_open()`,
 :c:func:`fs_read()`, and :c:func:`fs_write()`.
+
+Emulated block device on flash partition support
+************************************************
+
+Zephyr flashdisk driver makes it possible to use flash memory partition as
+a block device. The flashdisk instances are defined in devicetree:
+
+.. code-block:: devicetree
+
+    / {
+        msc_disk0 {
+            compatible = "zephyr,flash-disk";
+            partition = <&storage_partition>;
+            disk-name = "NAND";
+            cache-size = <4096>;
+        };
+    };
+
+The cache size specified in :dtcompatible:`zephyr,flash-disk` node should be
+equal to backing partition minimum erasable block size.
 
 Disk Access API Configuration Options
 *************************************

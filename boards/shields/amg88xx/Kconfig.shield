@@ -1,0 +1,6 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_AMG88XX_EVAL_KIT
+	def_bool $(shields_list_contains,amg88xx_eval_kit)

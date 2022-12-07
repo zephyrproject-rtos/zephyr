@@ -9,6 +9,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 
 #define SX9500_REG_IRQ_SRC		0x00
 #define SX9500_REG_STAT			0x01
@@ -24,9 +25,14 @@
 #define SX9500_CONV_DONE_IRQ		(1 << 3)
 #define SX9500_NEAR_FAR_IRQ		((1 << 5) | (1 << 6))
 
+struct sx9500_config {
+	struct i2c_dt_spec i2c;
+#ifdef CONFIG_SX9500_TRIGGER
+	struct gpio_dt_spec int_gpio;
+#endif
+};
+
 struct sx9500_data {
-	const struct device *i2c_master;
-	uint16_t i2c_slave_addr;
 	uint8_t prox_stat;
 
 	struct gpio_callback gpio_cb;

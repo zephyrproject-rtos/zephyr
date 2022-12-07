@@ -15,7 +15,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/gpio.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include "gpio_mcp23xxx.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL

@@ -8,7 +8,7 @@
 #define _SFORMAT_H_
 
 #include <stdint.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

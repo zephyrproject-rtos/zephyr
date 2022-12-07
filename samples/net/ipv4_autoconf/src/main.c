@@ -10,7 +10,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ipv4_autoconf_sample, LOG_LEVEL_DBG);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 #include <errno.h>
 #include <stdio.h>
@@ -46,9 +46,9 @@ static void handler(struct net_mgmt_event_callback *cb,
 		}
 
 		LOG_INF("Your address: %s",
-			log_strdup(net_addr_ntop(AF_INET,
+			net_addr_ntop(AF_INET,
 				    &cfg->ip.ipv4->unicast[i].address.in_addr,
-				    buf, sizeof(buf))));
+				    buf, sizeof(buf)));
 	}
 }
 

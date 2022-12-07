@@ -9,12 +9,14 @@
 
 /* Driver config */
 struct npcx_pinctrl_config {
-	/* scfg device base address */
+	/* Device base address used for pinctrl driver */
 	uintptr_t base_scfg;
+	uintptr_t base_glue;
 };
 
 static const struct npcx_pinctrl_config npcx_pinctrl_cfg = {
-	.base_scfg = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg),
+	.base_scfg = NPCX_SCFG_REG_ADDR,
+	.base_glue = NPCX_GLUE_REG_ADDR,
 };
 
 /* PWM pinctrl config */
@@ -130,6 +132,27 @@ static void npcx_periph_configure(const pinctrl_soc_pin_t *pin, uintptr_t reg)
 	}
 }
 
+static void npcx_psl_input_detection_configure(const pinctrl_soc_pin_t *pin)
+{
+	struct glue_reg *inst_glue = (struct glue_reg *)(npcx_pinctrl_cfg.base_glue);
+	const uintptr_t scfg_base = npcx_pinctrl_cfg.base_scfg;
+	const struct npcx_psl_input *psl_in = (const struct npcx_psl_input *)&pin->cfg.psl_in;
+
+	/* Configure detection polarity of PSL input pads */
+	if (pin->flags.psl_in_polarity == NPCX_PSL_IN_POL_HIGH) {
+		NPCX_DEVALT(scfg_base, psl_in->pol_group) |=  BIT(psl_in->pol_bit);
+	} else {
+		NPCX_DEVALT(scfg_base, psl_in->pol_group) &= ~BIT(psl_in->pol_bit);
+	}
+
+	/* Configure detection mode of PSL input pads */
+	if (pin->flags.psl_in_mode == NPCX_PSL_IN_MODE_EDGE) {
+		inst_glue->PSL_CTS |= NPCX_PSL_CTS_MODE_BIT(psl_in->port);
+	} else {
+		inst_glue->PSL_CTS &= ~NPCX_PSL_CTS_MODE_BIT(psl_in->port);
+	}
+}
+
 /* Pinctrl API implementation */
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
@@ -138,7 +161,15 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 	/* Configure all peripheral devices' properties here. */
 	for (uint8_t i = 0; i < pin_cnt; i++) {
-		npcx_periph_configure(&pins[i], reg);
+		if (pins[i].flags.type == NPCX_PINCTRL_TYPE_PERIPH) {
+			/* Configure peripheral device's pinmux functionality */
+			npcx_periph_configure(&pins[i], reg);
+		} else if (pins[i].flags.type == NPCX_PINCTRL_TYPE_PSL_IN) {
+			/* Configure SPL input's detection mode */
+			npcx_psl_input_detection_configure(&pins[i]);
+		} else {
+			return -ENOTSUP;
+		}
 	}
 
 	return 0;

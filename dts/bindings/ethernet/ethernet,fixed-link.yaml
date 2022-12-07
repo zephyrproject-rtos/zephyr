@@ -14,5 +14,4 @@ child-binding:
             - 10
        full-duplex:
           type: boolean
-          required: false
           description: The fixed link operates in full duplex mode

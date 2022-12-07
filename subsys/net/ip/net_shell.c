@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/random/rand32.h>
@@ -347,7 +347,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_VLAN)
 	struct ethernet_context *eth_ctx;
 #endif
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IP)
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
 #endif
@@ -356,7 +356,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	int ret;
 #endif
 	const char *extra;
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IP)
 	int i, count;
 #endif
 
@@ -1388,8 +1388,8 @@ static void context_cb(struct net_context *context, void *user_data)
 	   net_context_get_type(context) == SOCK_DGRAM ? 'D' :
 	   (net_context_get_type(context) == SOCK_STREAM ? 'S' :
 	    (net_context_get_type(context) == SOCK_RAW ? 'R' : ' ')),
-	   net_context_get_ip_proto(context) == IPPROTO_UDP ? 'U' :
-	   (net_context_get_ip_proto(context) == IPPROTO_TCP ? 'T' : ' '),
+	   net_context_get_proto(context) == IPPROTO_UDP ? 'U' :
+	   (net_context_get_proto(context) == IPPROTO_TCP ? 'T' : ' '),
 	   addr_local, addr_remote);
 
 	(*count)++;
@@ -3657,7 +3657,11 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 
 	net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
 
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	PR("Fragment length %d bytes\n", CONFIG_NET_BUF_DATA_SIZE);
+#else
+	PR("Fragment data pool size %d bytes\n", CONFIG_NET_BUF_DATA_POOL_SIZE);
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 	PR("Network buffer pools:\n");
 
@@ -3670,7 +3674,7 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 	PR("%p\t%d\t%u\tTX\n",
 	       tx, tx->num_blocks, k_mem_slab_num_free_get(tx));
 
-	PR("%p\t%d\t%ld\tRX DATA (%s)\n	", rx_data, rx_data->buf_count,
+	PR("%p\t%d\t%ld\tRX DATA (%s)\n", rx_data, rx_data->buf_count,
 	   atomic_get(&rx_data->avail_count), rx_data->name);
 
 	PR("%p\t%d\t%ld\tTX DATA (%s)\n", tx_data, tx_data->buf_count,
@@ -3835,7 +3839,7 @@ static int cmd_net_nbr(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_IP)
 
 K_SEM_DEFINE(ping_timeout, 0, 1);
 static const struct shell *shell_for_ping;
@@ -3865,6 +3869,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 					      struct net_icmpv6_echo_req);
 	struct net_icmpv6_echo_req *icmp_echo;
 	uint32_t cycles;
+	char time_buf[16] = { 0 };
 
 	icmp_echo = (struct net_icmpv6_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
@@ -3873,21 +3878,30 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
-	if (net_pkt_read_be32(pkt, &cycles)) {
-		return -NET_DROP;
-	}
 
-	cycles = k_cycle_get_32() - cycles;
+	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
+		if (net_pkt_read_be32(pkt, &cycles)) {
+			return -NET_DROP;
+		}
+
+		cycles = k_cycle_get_32() - cycles;
+
+		snprintf(time_buf, sizeof(time_buf),
+#ifdef CONFIG_FPU
+			 "time=%.2f ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+#else
+			 "time=%d ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
+#endif
+			);
+	}
 
 	PR_SHELL(shell_for_ping, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
 #ifdef CONFIG_IEEE802154
 		 "rssi=%d "
 #endif
-#ifdef CONFIG_FPU
-		 "time=%.2f ms\n",
-#else
-		 "time=%d ms\n",
-#endif
+		 "%s\n",
 		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
 								NET_ICMPH_LEN,
 		 net_sprint_ipv6_addr(&ip_hdr->src),
@@ -3897,11 +3911,8 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 #ifdef CONFIG_IEEE802154
 		 net_pkt_ieee802154_rssi(pkt),
 #endif
-#ifdef CONFIG_FPU
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
-#else
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
-#endif
+		 time_buf);
+
 	k_sem_give(&ping_timeout);
 
 	net_pkt_unref(pkt);
@@ -3912,6 +3923,8 @@ static int ping_ipv6(const struct shell *shell,
 		     char *host,
 		     unsigned int count,
 		     unsigned int interval,
+		     uint8_t tos,
+		     int payload_size,
 		     int iface_idx)
 {
 	struct net_if *iface = net_if_get_by_index(iface_idx);
@@ -3951,14 +3964,13 @@ static int ping_ipv6(const struct shell *shell,
 	PR("PING %s\n", host);
 
 	for (int i = 0; i < count; ++i) {
-		uint32_t time_stamp = htonl(k_cycle_get_32());
-
 		ret = net_icmpv6_send_echo_request(iface,
 						   &ipv6_target,
 						   sys_rand32_get(),
 						   i,
-						   &time_stamp,
-						   sizeof(time_stamp));
+						   tos,
+						   NULL,
+						   payload_size);
 		if (ret) {
 			break;
 		}
@@ -4000,6 +4012,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 					      struct net_icmpv4_echo_req);
 	uint32_t cycles;
 	struct net_icmpv4_echo_req *icmp_echo;
+	char time_buf[16] = { 0 };
 
 	icmp_echo = (struct net_icmpv4_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
@@ -4008,29 +4021,35 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
-	if (net_pkt_read_be32(pkt, &cycles)) {
-		return -NET_DROP;
+
+	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
+		if (net_pkt_read_be32(pkt, &cycles)) {
+			return -NET_DROP;
+		}
+
+		cycles = k_cycle_get_32() - cycles;
+
+		snprintf(time_buf, sizeof(time_buf),
+#ifdef CONFIG_FPU
+			 "time=%.2f ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+#else
+			 "time=%d ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
+#endif
+			);
 	}
 
-	cycles = k_cycle_get_32() - cycles;
-
 	PR_SHELL(shell_for_ping, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
-#ifdef CONFIG_FPU
-		 "time=%.2f ms\n",
-#else
-		 "time=%d ms\n",
-#endif
+		 "%s\n",
 		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
 								NET_ICMPH_LEN,
 		 net_sprint_ipv4_addr(&ip_hdr->src),
 		 net_sprint_ipv4_addr(&ip_hdr->dst),
 		 ntohs(icmp_echo->sequence),
 		 ip_hdr->ttl,
-#ifdef CONFIG_FPU
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
-#else
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
-#endif
+		 time_buf);
+
 	k_sem_give(&ping_timeout);
 
 	net_pkt_unref(pkt);
@@ -4041,6 +4060,8 @@ static int ping_ipv4(const struct shell *shell,
 		     char *host,
 		     unsigned int count,
 		     unsigned int interval,
+		     uint8_t tos,
+		     int payload_size,
 		     int iface_idx)
 {
 	struct in_addr ipv4_target;
@@ -4060,14 +4081,13 @@ static int ping_ipv4(const struct shell *shell,
 	PR("PING %s\n", host);
 
 	for (int i = 0; i < count; ++i) {
-		uint32_t time_stamp = htonl(k_cycle_get_32());
-
 		ret = net_icmpv4_send_echo_request(iface,
 						   &ipv4_target,
 						   sys_rand32_get(),
 						   i,
-						   &time_stamp,
-						   sizeof(time_stamp));
+						   tos,
+						   NULL,
+						   payload_size);
 		if (ret) {
 			break;
 		}
@@ -4100,7 +4120,11 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 	}
 
 	errno = 0;
-	res = strtol(str, &endptr, 10);
+	if (strncmp(str, "0x", 2) == 0) {
+		res = strtol(str, &endptr, 16);
+	} else {
+		res = strtol(str, &endptr, 10);
+	}
 
 	if (errno || (endptr == str)) {
 		return -1;
@@ -4108,7 +4132,7 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 
 	return res;
 }
-#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_IP */
 
 static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -4125,6 +4149,8 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	int count = 3;
 	int interval = 1000;
 	int iface_idx = -1;
+	int tos = 0;
+	int payload_size = 4;
 
 	for (size_t i = 1; i < argc; ++i) {
 
@@ -4159,6 +4185,25 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 				return -ENOEXEC;
 			}
 			break;
+
+		case 'Q':
+			tos = parse_arg(&i, argc, argv);
+			if (tos < 0 || tos > UINT8_MAX) {
+				PR_WARNING("Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			break;
+
+		case 's':
+			payload_size = parse_arg(&i, argc, argv);
+			if (payload_size < 0 || payload_size > UINT16_MAX) {
+				PR_WARNING("Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			break;
+
 		default:
 			PR_WARNING("Unrecognized argument: %s\n", argv[i]);
 			return -ENOEXEC;
@@ -4173,7 +4218,8 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	shell_for_ping = shell;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		ret = ping_ipv6(shell, host, count, interval, iface_idx);
+		ret = ping_ipv6(shell, host, count, interval, tos, payload_size,
+				iface_idx);
 		if (!ret) {
 			goto wait_reply;
 		} else if (ret == -EIO) {
@@ -4183,7 +4229,8 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = ping_ipv4(shell, host, count, interval, iface_idx);
+		ret = ping_ipv4(shell, host, count, interval, tos, payload_size,
+				iface_idx);
 		if (ret) {
 			if (ret == -EIO || ret == -ENETUNREACH) {
 				PR_WARNING("Cannot send IPv4 ping\n");
@@ -4959,6 +5006,8 @@ static void udp_rcvd(struct net_context *context, struct net_pkt *pkt,
 			PR_SHELL(udp_shell, "%02x ", byte);
 		}
 		PR_SHELL(udp_shell, "\n");
+
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -5971,7 +6020,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_vlan,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
 	SHELL_CMD(--help, NULL,
-		  "'net ping [-c count] [-i interval ms] [-I <iface index>] <host>' "
+		  "'net ping [-c count] [-i interval ms] [-I <iface index>] "
+		  "[-Q tos] [-s payload size] <host>' "
 		  "Send ICMPv4 or ICMPv6 Echo-Request to a network host.",
 		  cmd_net_ping),
 	SHELL_SUBCMD_SET_END

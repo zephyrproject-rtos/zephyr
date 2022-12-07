@@ -48,7 +48,6 @@ endif()
 
 zephyr_iterable_section(NAME k_timer GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME k_mem_slab GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
-zephyr_iterable_section(NAME k_mem_pool GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME k_heap GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME k_mutex GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME k_stack GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
@@ -98,6 +97,11 @@ if(CONFIG_USB_DEVICE_BOS)
   )
 endif()
 
+if(CONFIG_RTIO)
+  zephyr_iterable_section(NAME rtio GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME rtio_iodev GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+endif()
+
 #if(CONFIG_USERSPACE)
 #	_static_kernel_objects_end = .;
 #endif()
@@ -105,4 +109,11 @@ endif()
 
 if(CONFIG_ZTEST)
   zephyr_iterable_section(NAME ztest_suite_node GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME ztest_suite_stats GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+endif()
+
+if(CONFIG_ZTEST_NEW_API)
+  zephyr_iterable_section(NAME ztest_unit_test GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME ztest_test_rule GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME ztest_expected_result_entry GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 endif()

@@ -69,7 +69,7 @@ Arm FVP emulated environment, for example, with the :ref:`synchronization_sample
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: fvp_baser_aemv8r
+   :board: fvp_baser_aemv8r_aarch32
    :goals: build
 
 This will build an image with the synchronization sample app. To run with FVP,

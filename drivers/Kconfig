@@ -43,6 +43,8 @@ source "drivers/sdhc/Kconfig"
 
 source "drivers/i2c/Kconfig"
 
+source "drivers/i3c/Kconfig"
+
 source "drivers/i2s/Kconfig"
 
 source "drivers/dai/Kconfig"
@@ -56,6 +58,8 @@ source "drivers/adc/Kconfig"
 source "drivers/dac/Kconfig"
 
 source "drivers/watchdog/Kconfig"
+
+source "drivers/w1/Kconfig"
 
 source "drivers/clock_control/Kconfig"
 
@@ -135,12 +139,16 @@ source "drivers/mm/Kconfig"
 
 source "drivers/power_domain/Kconfig"
 
-source "drivers/usbc/Kconfig"
+source "drivers/usb_c/Kconfig"
 
 source "drivers/reset/Kconfig"
 
 source "drivers/mipi_dsi/Kconfig"
 
 source "drivers/coredump/Kconfig"
+
+source "drivers/xen/Kconfig"
+
+source "drivers/fuel_gauge/Kconfig"
 
 endmenu

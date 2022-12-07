@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2022 Nordic Semiconductor ASA
  * Copyright (c) 2018 Ioannis Glaropoulos
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -82,4 +82,13 @@
 #else
 #error "PPI or DPPI abstractions missing."
 #endif
+
 #include "radio_nrf5_txp.h"
+
+/* Common NRF_RADIO power-on reset value. Refer to Product Specification,
+ * RADIO Registers section for the documented reset values.
+ *
+ * NOTE: Only implementation used values defined here.
+ *       In the future if MDK or nRFx header include these, use them instead.
+ */
+#define HAL_RADIO_RESET_VALUE_PCNF1 0x00000000UL

@@ -53,10 +53,8 @@ This kit provides:
         - 2 push-buttons (user and reset)
 - Arduino* Uno V3 connectors
 
-.. image:: img/b_l072z_lrwan1.png
-     :width: 500px
+.. image:: img/b_l072z_lrwan1.jpg
      :align: center
-     :height: 325px
      :alt: B-L072Z-LRWAN1
 
 More information about the board can be found at the `B-L072Z-LRWAN1 website`_.

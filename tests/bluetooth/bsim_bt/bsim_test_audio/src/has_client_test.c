@@ -25,6 +25,7 @@ CREATE_FLAG(g_preset_5_found);
 
 static struct bt_conn *g_conn;
 static struct bt_has *g_has;
+static uint8_t g_active_index;
 
 static void discover_cb(struct bt_conn *conn, int err, struct bt_has *has,
 			enum bt_has_hearing_aid_type type, enum bt_has_capabilities caps)
@@ -40,11 +41,16 @@ static void discover_cb(struct bt_conn *conn, int err, struct bt_has *has,
 	SET_FLAG(g_service_discovered);
 }
 
-static void preset_switch_cb(struct bt_has *has, uint8_t index)
+static void preset_switch_cb(struct bt_has *has, int err, uint8_t index)
 {
+	if (err != 0) {
+		return;
+	}
+
 	printk("Active preset index %d\n", index);
 
 	SET_FLAG(g_preset_switched);
+	g_active_index = index;
 }
 
 static void check_preset_record(const struct bt_has_preset_record *record,
@@ -104,6 +110,57 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
+static bool test_preset_switch(uint8_t index)
+{
+	int err;
+
+	UNSET_FLAG(g_preset_switched);
+
+	err = bt_has_client_preset_set(g_has, index, false);
+	if (err < 0) {
+		printk("%s (err %d)\n", __func__, err);
+		return false;
+	}
+
+	WAIT_FOR_COND(g_preset_switched);
+
+	return g_active_index == index;
+}
+
+static bool test_preset_next(uint8_t active_index_expected)
+{
+	int err;
+
+	UNSET_FLAG(g_preset_switched);
+
+	err = bt_has_client_preset_next(g_has, false);
+	if (err < 0) {
+		printk("%s (err %d)\n", __func__, err);
+		return false;
+	}
+
+	WAIT_FOR_COND(g_preset_switched);
+
+	return g_active_index == active_index_expected;
+}
+
+static bool test_preset_prev(uint8_t active_index_expected)
+{
+	int err;
+
+	UNSET_FLAG(g_preset_switched);
+
+	err = bt_has_client_preset_prev(g_has, false);
+	if (err < 0) {
+		printk("%s (err %d)\n", __func__, err);
+		return false;
+	}
+
+	WAIT_FOR_COND(g_preset_switched);
+
+	return g_active_index == active_index_expected;
+}
+
 static void test_main(void)
 {
 	int err;
@@ -149,6 +206,46 @@ static void test_main(void)
 
 	WAIT_FOR_COND(g_preset_1_found);
 	WAIT_FOR_COND(g_preset_5_found);
+
+	if (!test_preset_switch(test_preset_index_1)) {
+		FAIL("Failed to switch preset %d\n", test_preset_index_1);
+		return;
+	}
+
+	if (!test_preset_switch(test_preset_index_5)) {
+		FAIL("Failed to switch preset %d\n", test_preset_index_5);
+		return;
+	}
+
+	if (!test_preset_next(test_preset_index_1)) {
+		FAIL("Failed to set next preset %d\n", test_preset_index_1);
+		return;
+	}
+
+	if (!test_preset_next(test_preset_index_5)) {
+		FAIL("Failed to set next preset %d\n", test_preset_index_5);
+		return;
+	}
+
+	if (!test_preset_next(test_preset_index_1)) {
+		FAIL("Failed to set next preset %d\n", test_preset_index_1);
+		return;
+	}
+
+	if (!test_preset_prev(test_preset_index_5)) {
+		FAIL("Failed to set previous preset %d\n", test_preset_index_5);
+		return;
+	}
+
+	if (!test_preset_prev(test_preset_index_1)) {
+		FAIL("Failed to set previous preset %d\n", test_preset_index_1);
+		return;
+	}
+
+	if (!test_preset_prev(test_preset_index_5)) {
+		FAIL("Failed to set previous preset %d\n", test_preset_index_5);
+		return;
+	}
 
 	PASS("HAS main PASS\n");
 }

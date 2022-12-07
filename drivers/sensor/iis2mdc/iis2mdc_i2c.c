@@ -24,8 +24,7 @@ static int iis2mdc_i2c_read(const struct device *dev, uint8_t reg_addr,
 {
 	const struct iis2mdc_dev_config *cfg = dev->config;
 
-	return i2c_burst_read(cfg->bus, cfg->bus_cfg.i2c_slv_addr,
-			      reg_addr, value, len);
+	return i2c_burst_read_dt(&cfg->i2c, reg_addr, value, len);
 }
 
 static int iis2mdc_i2c_write(const struct device *dev, uint8_t reg_addr,
@@ -33,13 +32,18 @@ static int iis2mdc_i2c_write(const struct device *dev, uint8_t reg_addr,
 {
 	const struct iis2mdc_dev_config *cfg = dev->config;
 
-	return i2c_burst_write(cfg->bus, cfg->bus_cfg.i2c_slv_addr,
-			       reg_addr, value, len);
+	return i2c_burst_write_dt(&cfg->i2c, reg_addr, value, len);
 }
 
 int iis2mdc_i2c_init(const struct device *dev)
 {
 	struct iis2mdc_data *data = dev->data;
+	const struct iis2mdc_dev_config *cfg = dev->config;
+
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus is not ready");
+		return -ENODEV;
+	}
 
 	data->ctx_i2c.read_reg = (stmdev_read_ptr) iis2mdc_i2c_read;
 	data->ctx_i2c.write_reg = (stmdev_write_ptr) iis2mdc_i2c_write;

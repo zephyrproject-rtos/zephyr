@@ -5,7 +5,9 @@
 
 config CAN_MCUX_FLEXCAN
 	bool "MCUX FlexCAN driver"
-	depends on HAS_MCUX_FLEXCAN && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_NXP_KINETIS_FLEXCAN_ENABLED
+	depends on CLOCK_CONTROL
 	select CAN_HAS_RX_TIMESTAMP
 	help
 	  Enable support for mcux flexcan driver.
@@ -21,7 +23,9 @@ config CAN_MAX_FILTER
 
 config CAN_MCUX_MCAN
 	bool "MCUX MCAN driver"
-	depends on HAS_MCUX_MCAN && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_NXP_LPC_MCAN_ENABLED
+	depends on CLOCK_CONTROL
 	select CAN_MCAN
 	help
 	  Enable support for mcux mcan driver.

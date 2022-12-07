@@ -111,7 +111,7 @@ void k_timer_init(struct k_timer *timer,
 void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			  k_timeout_t period)
 {
-	SYS_PORT_TRACING_OBJ_FUNC(k_timer, start, timer);
+	SYS_PORT_TRACING_OBJ_FUNC(k_timer, start, timer, duration, period);
 
 	if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
 		return;
@@ -161,7 +161,7 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
-	int inactive = z_abort_timeout(&timer->timeout) != 0;
+	bool inactive = (z_abort_timeout(&timer->timeout) != 0);
 
 	if (inactive) {
 		return;

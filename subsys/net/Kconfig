@@ -13,12 +13,6 @@ config NET_BUF
 
 if NET_BUF
 
-config NET_BUF_USER_DATA_SIZE
-	int "Size of user_data available in every network buffer (DEPRECATED)"
-	default 0
-	help
-	  User data size is now set on a per-pool basis at declaration point
-
 config NET_BUF_LOG
 	bool "Network buffer logging"
 	select LOG
@@ -60,12 +54,13 @@ config NET_BUF_POOL_USAGE
 endif # NET_BUF
 
 config NETWORKING
-	bool "Link layer and IP networking support"
+	bool "Link layer and networking (including IP)"
 	select NET_BUF
 	select POLL
 	select ENTROPY_GENERATOR
 	help
-	  This option enabled generic link layer and IP networking support.
+	  This option enables generic link layer and networking support
+	  and is the basis for higher level protocols (e.g. IP protocols).
 
 if NETWORKING
 

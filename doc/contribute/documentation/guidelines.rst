@@ -262,12 +262,12 @@ markup (double backticks) to indicate a ``filename``.
 For references to files that are in the Zephyr GitHub tree, a special
 role can be used that creates a hyperlink to that file.  For example a
 reference to the reST file used to create this document can be generated
-using ``:zephyr_file:\`doc/guides/documentation/index.rst\```  that will
-show up as :zephyr_file:`doc/guides/documentation/index.rst`, a link to
+using ``:zephyr_file:`doc/contribute/documentation/index.rst```  that will
+show up as :zephyr_file:`doc/contribute/documentation/index.rst`, a link to
 the "blob" file in the github repo.  There's also a
-``:zephyr_raw:\`doc/guides/documentation/index.rst\``` role that will
+``:zephyr_raw:`doc/guides/documentation/index.rst``` role that will
 link to the "raw" content,
-:zephyr_file:`doc/guides/documentation/index.rst`. (You can click on
+:zephyr_raw:`doc/contribute/documentation/index.rst`. (You can click on
 these links to see the difference.)
 
 .. _internal-linking:
@@ -290,11 +290,11 @@ added immediately before a heading, so the text that's displayed is the
 heading text itself. You can change the text that's displayed as the
 link writing this as::
 
-   Refer to the `show this text instead <internal-linking>`_ page
+   Refer to the `show this text instead <internal-linking_>`_ page
 
 which renders as,
 
-   Refer to the `show this text instead <internal-linking>`_ page
+   Refer to the `show this text instead <internal-linking_>`_ page
 
 
 External Cross-Reference Linking
@@ -603,8 +603,8 @@ sequentially numbered within the document.  For example::
 Put your right hand in
 **********************
 
-See the :zephyr_raw:`doc/getting_started/index.rst` source file and compare
-with the :ref:`getting_started` to see a full example.  As implemented,
+See the :zephyr_raw:`doc/develop/getting_started/index.rst` source file and
+compare with the :ref:`getting_started` to see a full example.  As implemented,
 only one set of numbered steps is intended per document.
 
 For instructions on building the documentation, see :ref:`zephyr_doc`.

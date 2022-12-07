@@ -12,7 +12,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		partition@0 {
+		littlefs_dev: partition@0 {
 			label = "storage";
 			reg = <0x00000000 0x00010000>;
 		};

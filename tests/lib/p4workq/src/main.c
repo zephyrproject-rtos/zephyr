@@ -3,16 +3,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/random/rand32.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/p4wq.h>
 
-#define NUM_THREADS (CONFIG_MP_NUM_CPUS * 2)
-#define MAX_ITEMS (NUM_THREADS * 8)
+#define MAX_NUM_THREADS (CONFIG_MP_MAX_NUM_CPUS * 2)
+#define NUM_THREADS (arch_num_cpus() * 2)
+#define MAX_ITEMS (MAX_NUM_THREADS * 8)
 #define MAX_EVENTS 1024
 
-K_P4WQ_DEFINE(wq, NUM_THREADS, 2048);
+K_P4WQ_DEFINE(wq, MAX_NUM_THREADS, 2048);
 
 static struct k_p4wq_work simple_item;
 static volatile int has_run;
@@ -97,7 +98,7 @@ static void stress_handler(struct k_p4wq_work *item)
  * schedulable (i.e. high priority) items than there are threads to
  * run them.
  */
-static void test_stress(void)
+ZTEST(lib_p4wq, test_stress)
 {
 	k_thread_priority_set(k_current_get(), -1);
 	memset(items, 0, sizeof(items));
@@ -129,7 +130,7 @@ static int active_count(void)
 		count++;
 	}
 
-	count = NUM_THREADS - count;
+	count = MAX_NUM_THREADS - count;
 	return count;
 }
 
@@ -166,7 +167,7 @@ static bool add_new_item(int pri)
  * priorities and verify that they get scheduled too (to allow
  * preemption), up to the maximum number of threads that we created.
  */
-static void test_fill_queue(void)
+ZTEST(lib_p4wq, test_fill_queue)
 {
 	int p0 = 4;
 
@@ -180,7 +181,10 @@ static void test_fill_queue(void)
 	 * we can be sure to run).  They should all be made active
 	 * when added.
 	 */
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+	unsigned int num_threads = NUM_THREADS;
+
+	for (int i = 0; i < num_cpus; i++) {
 		zassert_true(add_new_item(p0), "thread should be active");
 	}
 
@@ -192,11 +196,11 @@ static void test_fill_queue(void)
 	 * we run out of threads.
 	 */
 	for (int pri = p0 - 1; pri >= p0 - 4; pri++) {
-		for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		for (int i = 0; i < num_cpus; i++) {
 			bool active = add_new_item(pri);
 
 			if (!active) {
-				zassert_equal(active_count(), NUM_THREADS,
+				zassert_equal(active_count(), num_threads,
 					      "thread max not reached");
 				goto done;
 			}
@@ -226,7 +230,7 @@ static void resubmit_handler(struct k_p4wq_work *item)
 }
 
 /* Validate item can be resubmitted from its own handler */
-static void test_resubmit(void)
+ZTEST(lib_p4wq, test_resubmit)
 {
 	run_count = 0;
 	simple_item = (struct k_p4wq_work){};
@@ -245,7 +249,7 @@ void simple_handler(struct k_p4wq_work *work)
 }
 
 /* Simple test that submitted items run, and at the correct priority */
-static void test_p4wq_simple(void)
+ZTEST(lib_p4wq_1cpu, test_p4wq_simple)
 {
 	int prio = 2;
 
@@ -270,13 +274,5 @@ static void test_p4wq_simple(void)
 	zassert_true(has_run, "high-priority item didn't run");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(lib_p4wq_test,
-			 ztest_1cpu_unit_test(test_p4wq_simple),
-			 ztest_unit_test(test_resubmit),
-			 ztest_unit_test(test_fill_queue),
-			 ztest_unit_test(test_stress));
-
-	ztest_run_test_suite(lib_p4wq_test);
-}
+ZTEST_SUITE(lib_p4wq, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(lib_p4wq_1cpu, NULL, NULL, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

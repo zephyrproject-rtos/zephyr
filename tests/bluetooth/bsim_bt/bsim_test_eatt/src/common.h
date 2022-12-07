@@ -20,6 +20,7 @@
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "bstests.h"
+#include "bs_pc_backchannel.h"
 
 extern enum bst_result_t bst_result;
 
@@ -51,3 +52,6 @@ void wait_for_disconnect(void);
 void disconnect(void);
 void test_init(void);
 void test_tick(bs_time_t HW_device_time);
+void backchannel_init(void);
+void backchannel_sync_send(void);
+void backchannel_sync_wait(void);

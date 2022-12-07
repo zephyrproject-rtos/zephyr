@@ -22,7 +22,6 @@ properties:
       description: EEPROM write cycle timeout in milliseconds
     wp-gpios:
       type: phandle-array
-      required: false
       description: |
         GPIO to which the write-protect pin of the chip is connected.
 

@@ -6,15 +6,6 @@ typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
 typealias integer { size = 32; align = 8; signed = true; } := int32_t;
 typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
 typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := ctf_bounded_string_t;
-typealias enum : uint32_t {
-	MUTEX_INIT = 33,
-	MUTEX_UNLOCK = 34,
-	MUTEX_LOCK = 35,
-	SEMA_INIT = 36,
-	SEMA_GIVE = 37,
-	SEMA_TAKE = 38,
-	SLEEP = 39
-} := call_id;
 
 struct event_header {
 	uint32_t timestamp;
@@ -154,22 +145,6 @@ event {
 };
 
 event {
-	name = start_call;
-	id = 0x1F;
-	fields := struct {
-		call_id id;
-	};
-};
-
-event {
-	name = end_call;
-	id = 0x20;
-	fields := struct {
-		call_id id;
-	};
-};
-
-event {
 	name = semaphore_init;
 	id = 0x21;
 	fields := struct {
@@ -285,3 +260,53 @@ event {
 	};
 };
 
+event {
+	name = timer_init;
+	id = 0x2E;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_start;
+	id = 0x2F;
+	fields := struct {
+		uint32_t id;
+		uint32_t duration;
+		uint32_t period;
+	};
+};
+
+event {
+	name = timer_stop;
+	id = 0x30;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_enter;
+	id = 0x31;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_blocking;
+	id = 0x32;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_exit;
+	id = 0x33;
+	fields := struct {
+		uint32_t id;
+		uint32_t result;
+	};
+};

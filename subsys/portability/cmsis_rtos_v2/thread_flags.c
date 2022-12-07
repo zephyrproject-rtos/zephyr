@@ -8,14 +8,13 @@
 #include "wrapper.h"
 
 #define DONT_CARE               (0)
-#define NSEC_PER_MSEC           (NSEC_PER_USEC * USEC_PER_MSEC)
 
 /**
  * @brief Set the specified Thread Flags of a thread.
  */
 uint32_t osThreadFlagsSet(osThreadId_t thread_id, uint32_t flags)
 {
-	int key;
+	unsigned int key;
 	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
 
 	if ((thread_id == NULL) || (is_cmsis_rtos_v2_thread(thread_id) == NULL)

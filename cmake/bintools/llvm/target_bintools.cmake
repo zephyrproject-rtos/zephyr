@@ -71,6 +71,18 @@ set_property(TARGET bintools PROPERTY disassembly_flag_infile "")
 set_property(TARGET bintools PROPERTY disassembly_flag_outfile ">;" )
 
 #
+# - symbols : Name of command for printing out symbols
+#   symbols_command         : empty
+#   symbols_final   : empty
+#   symbols_infile  : ELF file name
+#   symbols_outfile : output file
+set_property(TARGET bintools PROPERTY symbols_command ${CMAKE_NM})
+set_property(TARGET bintools PROPERTY symbols_flag "")
+set_property(TARGET bintools PROPERTY symbols_final "")
+set_property(TARGET bintools PROPERTY symbols_infile "")
+set_property(TARGET bintools PROPERTY symbols_outfile ">;" )
+
+#
 # - strip: Name of command for stripping symbols
 #          In this implementation `strip` is used
 #   strip_flag         : empty

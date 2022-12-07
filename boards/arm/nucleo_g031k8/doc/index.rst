@@ -22,8 +22,6 @@ libraries and examples available with the STM32Cube MCU Package.
 
 
 .. image:: img/nucleo_g031k8.jpg
-   :width: 426px
-   :height: 653px
    :align: center
    :alt: Nucleo G031K8
 

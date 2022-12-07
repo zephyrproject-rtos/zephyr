@@ -8,9 +8,6 @@ compatible: "arm,psci-0.2"
 include: base.yaml
 
 properties:
-  label:
-    required: true
-
   method:
     type: string
     required: true

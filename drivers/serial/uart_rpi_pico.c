@@ -8,6 +8,8 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
+#include <string.h>
 
 /* pico-sdk includes */
 #include <hardware/uart.h>
@@ -25,7 +27,7 @@ struct uart_rpi_config {
 };
 
 struct uart_rpi_data {
-	uint32_t baudrate;
+	struct uart_config uart_config;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
@@ -57,13 +59,68 @@ static void uart_rpi_poll_out(const struct device *dev, unsigned char c)
 	uart_hw->dr = c;
 }
 
+static int uart_rpi_set_format(const struct device *dev, const struct uart_config *cfg)
+{
+	const struct uart_rpi_config *config = dev->config;
+	uart_inst_t * const uart_inst = config->uart_dev;
+	uart_parity_t parity = 0;
+	uint data_bits = 0;
+	uint stop_bits = 0;
+
+	switch (cfg->data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		data_bits = 5;
+		break;
+	case UART_CFG_DATA_BITS_6:
+		data_bits = 6;
+		break;
+	case UART_CFG_DATA_BITS_7:
+		data_bits = 7;
+		break;
+	case UART_CFG_DATA_BITS_8:
+		data_bits = 8;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		stop_bits = 1;
+		break;
+	case UART_CFG_STOP_BITS_2:
+		stop_bits = 2;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		parity = UART_PARITY_NONE;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		parity = UART_PARITY_EVEN;
+		break;
+	case UART_CFG_PARITY_ODD:
+		parity = UART_PARITY_ODD;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	uart_set_format(uart_inst, data_bits, stop_bits, parity);
+	return 0;
+}
+
 static int uart_rpi_init(const struct device *dev)
 {
 	const struct uart_rpi_config *config = dev->config;
 	uart_inst_t * const uart_inst = config->uart_dev;
 	uart_hw_t * const uart_hw = config->uart_regs;
 	struct uart_rpi_data * const data = dev->data;
-	int ret, baudrate;
+	uint baudrate;
+	int ret;
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -74,12 +131,24 @@ static int uart_rpi_init(const struct device *dev)
 	 * uart_init() may be replaced by register based API once rpi-pico platform
 	 * has a clock controller driver
 	 */
-	baudrate = uart_init(uart_inst, data->baudrate);
+	baudrate = uart_init(uart_inst, data->uart_config.baudrate);
 	/* Check if baudrate adjustment returned by 'uart_init' function is a positive value */
-	if (baudrate <= 0) {
+	if (baudrate == 0) {
 		return -EINVAL;
 	}
-
+	/*
+	 * initialize uart_config with hardware reset values
+	 * https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf#tab-registerlist_uart page:431
+	 * data bits set default to 8 instaed of hardware reset 5 to increase compatibility.
+	 */
+	data->uart_config = (struct uart_config){
+		.baudrate = baudrate,
+		.data_bits = UART_CFG_DATA_BITS_8,
+		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
+		.parity = UART_CFG_PARITY_NONE,
+		.stop_bits = UART_CFG_STOP_BITS_1
+	};
+	uart_rpi_set_format(dev, &data->uart_config);
 	hw_clear_bits(&uart_hw->lcr_h, UART_UARTLCR_H_FEN_BITS);
 	uart_hw->dr = 0U;
 
@@ -87,6 +156,34 @@ static int uart_rpi_init(const struct device *dev)
 	config->irq_config_func(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+	return 0;
+}
+
+static int uart_rpi_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	struct uart_rpi_data *data = dev->data;
+
+	memcpy(cfg, &data->uart_config, sizeof(struct uart_config));
+	return 0;
+}
+
+static int uart_rpi_configure(const struct device *dev, const struct uart_config *cfg)
+{
+	const struct uart_rpi_config *config = dev->config;
+	uart_inst_t * const uart_inst = config->uart_dev;
+	struct uart_rpi_data *data = dev->data;
+	uint baudrate = 0;
+
+	baudrate = uart_set_baudrate(uart_inst, cfg->baudrate);
+	if (baudrate == 0) {
+		return -EINVAL;
+	}
+
+	if (uart_rpi_set_format(dev, cfg) != 0) {
+		return -EINVAL;
+	}
+
+	data->uart_config = *cfg;
 	return 0;
 }
 
@@ -263,6 +360,10 @@ static const struct uart_driver_api uart_rpi_driver_api = {
 	.poll_in = uart_rpi_poll_in,
 	.poll_out = uart_rpi_poll_out,
 	.err_check = uart_rpi_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_rpi_configure,
+	.config_get = uart_rpi_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_rpi_fifo_fill,
 	.fifo_read = uart_rpi_fifo_read,
@@ -309,7 +410,7 @@ static const struct uart_driver_api uart_rpi_driver_api = {
 	};									\
 										\
 	static struct uart_rpi_data uart##idx##_rpi_data = {			\
-		.baudrate = DT_INST_PROP(idx, current_speed),			\
+		.uart_config.baudrate = DT_INST_PROP(idx, current_speed),	\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(idx, &uart_rpi_init,				\

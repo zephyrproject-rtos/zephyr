@@ -21,7 +21,7 @@
 
 #include <zephyr/device.h>
 #include <stddef.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/types.h>
 

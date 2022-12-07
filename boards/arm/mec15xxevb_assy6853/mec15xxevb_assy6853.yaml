@@ -19,9 +19,6 @@ supported:
   - espi
   - gpio
   - i2c
-  - pinmux
   - pwm
   - watchdog
-  - ps2
-  - peci
   - kscan

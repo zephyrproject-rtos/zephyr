@@ -30,18 +30,6 @@
 			interrupts = <22 1>;
 		};
 
-		gpio@f000200c {
-			interrupts = <0 1>;
-		};
-
-		gpio@f0002018 {
-			interrupts = <0 1>;
-		};
-
-		gpio@f0002024 {
-			interrupts = <0 1>;
-		};
-
 		spi@f0006000 {
 			interrupts = <25 1>;
 		};

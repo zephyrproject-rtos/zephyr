@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <ctf_top.h>
@@ -27,7 +27,7 @@ void sys_trace_k_thread_switched_out(void)
 	ctf_bounded_string_t name = { "unknown" };
 	struct k_thread *thread;
 
-	thread = k_current_get();
+	thread = z_current_get();
 	_get_thread_name(thread, &name);
 
 	ctf_top_thread_switched_out((uint32_t)(uintptr_t)thread, name);
@@ -38,7 +38,7 @@ void sys_trace_k_thread_switched_in(void)
 	struct k_thread *thread;
 	ctf_bounded_string_t name = { "unknown" };
 
-	thread = k_current_get();
+	thread = z_current_get();
 	_get_thread_name(thread, &name);
 
 	ctf_top_thread_switched_in((uint32_t)(uintptr_t)thread, name);
@@ -181,7 +181,7 @@ void sys_trace_k_sem_take_enter(struct k_sem *sem, k_timeout_t timeout)
 {
 	ctf_top_semaphore_take_enter(
 		(uint32_t)(uintptr_t)sem,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks)
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
 		);
 }
 
@@ -190,7 +190,7 @@ void sys_trace_k_sem_take_blocking(struct k_sem *sem, k_timeout_t timeout)
 {
 	ctf_top_semaphore_take_blocking(
 		(uint32_t)(uintptr_t)sem,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks)
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
 		);
 }
 
@@ -198,7 +198,7 @@ void sys_trace_k_sem_take_exit(struct k_sem *sem, k_timeout_t timeout, int ret)
 {
 	ctf_top_semaphore_take_exit(
 		(uint32_t)(uintptr_t)sem,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks),
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
 		(uint32_t)ret
 		);
 }
@@ -237,7 +237,7 @@ void sys_trace_k_mutex_lock_enter(struct k_mutex *mutex, k_timeout_t timeout)
 {
 	ctf_top_mutex_lock_enter(
 		(uint32_t)(uintptr_t)mutex,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks)
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
 		);
 }
 
@@ -245,7 +245,7 @@ void sys_trace_k_mutex_lock_blocking(struct k_mutex *mutex, k_timeout_t timeout)
 {
 	ctf_top_mutex_lock_blocking(
 		(uint32_t)(uintptr_t)mutex,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks)
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
 		);
 }
 
@@ -253,7 +253,7 @@ void sys_trace_k_mutex_lock_exit(struct k_mutex *mutex, k_timeout_t timeout, int
 {
 	ctf_top_mutex_lock_exit(
 		(uint32_t)(uintptr_t)mutex,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks),
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
 		(int32_t)ret
 		);
 }
@@ -274,24 +274,48 @@ void sys_trace_k_mutex_unlock_exit(struct k_mutex *mutex, int ret)
 }
 
 /* Timer */
-void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
-			    k_timer_expiry_t stop_fn)
+void sys_trace_k_timer_init(struct k_timer *timer)
 {
+	ctf_top_timer_init(
+		(uint32_t)(uintptr_t)timer);
 }
 
 void sys_trace_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			     k_timeout_t period)
 {
+	ctf_top_timer_start(
+		(uint32_t)(uintptr_t)timer,
+		k_ticks_to_us_floor32((uint32_t)duration.ticks),
+		k_ticks_to_us_floor32((uint32_t)period.ticks)
+		);
 }
 
 void sys_trace_k_timer_stop(struct k_timer *timer)
 {
+	ctf_top_timer_stop(
+		(uint32_t)(uintptr_t)timer
+		);
 }
 
-void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer)
+void sys_trace_k_timer_status_sync_enter(struct k_timer *timer)
 {
+	ctf_top_timer_status_sync_enter(
+		(uint32_t)(uintptr_t)timer
+		);
+}
+
+void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer, k_timeout_t timeout)
+{
+	ctf_top_timer_status_sync_blocking(
+		(uint32_t)(uintptr_t)timer,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
 }
 
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result)
 {
+	ctf_top_timer_status_sync_exit(
+		(uint32_t)(uintptr_t)timer,
+		result
+		);
 }

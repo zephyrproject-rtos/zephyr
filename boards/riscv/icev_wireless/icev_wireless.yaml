@@ -1,0 +1,10 @@
+identifier: icev_wireless
+name: ICE-V Wireless
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

@@ -149,7 +149,7 @@ void *z_acpi_find_table(uint32_t signature)
 		return NULL;
 	}
 
-	if (rsdp->rsdt_ptr) {
+	if (rsdp->rsdt_ptr != 0U) {
 		z_phys_map((uint8_t **)&rsdt, rsdp->rsdt_ptr, sizeof(*rsdt), 0);
 		tbl_found = false;
 
@@ -191,7 +191,7 @@ void *z_acpi_find_table(uint32_t signature)
 		return NULL;
 	}
 
-	if (rsdp->xsdt_ptr) {
+	if (rsdp->xsdt_ptr != 0ULL) {
 		z_phys_map((uint8_t **)&xsdt, rsdp->xsdt_ptr, sizeof(*xsdt), 0);
 
 		tbl_found = false;

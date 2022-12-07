@@ -12,6 +12,8 @@
 #include <zephyr/sys/util.h>
 #include <mmu.h>
 #include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
+#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include "soc.h"
 
 void arch_reserved_pages_update(void)

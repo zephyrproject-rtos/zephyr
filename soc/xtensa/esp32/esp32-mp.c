@@ -11,8 +11,9 @@
 
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <soc.h>
+#include <ksched.h>
 #include <zephyr/device.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel_structs.h>
 
@@ -27,6 +28,7 @@
 #define DPORT_APPCPU_CTRL_B    Z_REG(DPORT_BASE, 0x030)
 #define DPORT_APPCPU_CTRL_C    Z_REG(DPORT_BASE, 0x034)
 
+#ifdef CONFIG_SMP
 struct cpustart_rec {
 	int cpu;
 	arch_cpustart_t fn;
@@ -38,10 +40,10 @@ struct cpustart_rec {
 
 volatile struct cpustart_rec *start_rec;
 static void *appcpu_top;
-static bool cpus_active[CONFIG_MP_NUM_CPUS];
+static bool cpus_active[CONFIG_MP_MAX_NUM_CPUS];
+#endif
 static struct k_spinlock loglock;
 
-extern void z_sched_ipi(void);
 
 /* Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
  * OPERATION!  At least one particular board will experience spurious
@@ -60,6 +62,7 @@ extern void z_sched_ipi(void);
  */
 void smp_log(const char *msg)
 {
+#ifndef CONFIG_ESP32_NETWORK_CORE
 	k_spinlock_key_t key = k_spin_lock(&loglock);
 
 	while (*msg) {
@@ -69,8 +72,10 @@ void smp_log(const char *msg)
 	esp_rom_uart_tx_one_char('\n');
 
 	k_spin_unlock(&loglock, key);
+#endif
 }
 
+#ifdef CONFIG_SMP
 static void appcpu_entry2(void)
 {
 	volatile int ps, ie;
@@ -163,13 +168,14 @@ static void appcpu_entry1(void)
 {
 	z_appcpu_stack_switch(appcpu_top, appcpu_entry2);
 }
+#endif
 
 /* The calls and sequencing here were extracted from the ESP-32
  * FreeRTOS integration with just a tiny bit of cleanup.  None of the
  * calls or registers shown are documented, so treat this code with
  * extreme caution.
  */
-static void appcpu_start(void)
+void esp_appcpu_start(void *entry_point)
 {
 	smp_log("ESP32: starting APPCPU");
 
@@ -181,6 +187,8 @@ static void appcpu_start(void)
 	esp_rom_Cache_Flush(1);
 	esp_rom_Cache_Read_Enable(1);
 
+	esp_rom_ets_set_appcpu_boot_addr((void *)0);
+
 	RTC_CNTL_SW_CPU_STALL &= ~RTC_CNTL_SW_STALL_APPCPU_C1;
 	RTC_CNTL_OPTIONS0     &= ~RTC_CNTL_SW_STALL_APPCPU_C0;
 	DPORT_APPCPU_CTRL_B   |= DPORT_APPCPU_CLKGATE_EN;
@@ -190,34 +198,43 @@ static void appcpu_start(void)
 	DPORT_APPCPU_CTRL_A |= DPORT_APPCPU_RESETTING;
 	DPORT_APPCPU_CTRL_A &= ~DPORT_APPCPU_RESETTING;
 
+
+	/* extracted from SMP LOG above, THIS IS REQUIRED FOR AMP RELIABLE
+	 * OPERATION AS WELL, PLEASE DON'T touch on the dummy write below!
+	 *
+	 * Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
+	 * OPERATION!  At least one particular board will experience spurious
+	 * hangs during initialization (usually the APPCPU fails to start at
+	 * all) without these calls present.  It's not just time -- careful
+	 * use of k_busy_wait() (and even hand-crafted timer loops using the
+	 * Xtensa timer SRs directly) that duplicates the timing exactly still
+	 * sees hangs.  Something is happening inside the ROM UART code that
+	 * magically makes the startup sequence reliable.
+	 *
+	 * Leave this in place until the sequence is understood better.
+	 *
+	 */
+	esp_rom_uart_tx_one_char('\r');
+	esp_rom_uart_tx_one_char('\r');
+	esp_rom_uart_tx_one_char('\n');
+
 	/* Seems weird that you set the boot address AFTER starting
 	 * the CPU, but this is how they do it...
 	 */
-	esp_rom_ets_set_appcpu_boot_addr((void *)appcpu_entry1);
+	esp_rom_ets_set_appcpu_boot_addr((void *)entry_point);
 
 	smp_log("ESP32: APPCPU start sequence complete");
 }
 
-IRAM_ATTR static inline uint32_t prid(void)
-{
-	uint32_t id;
-
-	__asm__ volatile (
-		"rsr.prid %0\n"
-		"extui %0,%0,13,1" : "=r" (id));
-	return id;
-}
-
+#ifdef CONFIG_SMP
 IRAM_ATTR static void esp_crosscore_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
-#ifdef CONFIG_SMP
 	/* Right now this interrupt is only used for IPIs */
 	z_sched_ipi();
-#endif
 
-	const int core_id = prid();
+	const int core_id = esp_core_id();
 
 	if (core_id == 0) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
@@ -241,22 +258,22 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	sr.cpu = cpu_num;
 	sr.fn = fn;
-	sr.stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
+	sr.stack_top = Z_KERNEL_STACK_BUFFER(stack) + sz;
 	sr.arg = arg;
 	sr.vecbase = vb;
 	sr.alive = &alive_flag;
 
-	appcpu_top = Z_THREAD_STACK_BUFFER(stack) + sz;
+	appcpu_top = Z_KERNEL_STACK_BUFFER(stack) + sz;
 
 	start_rec = &sr;
 
-	appcpu_start();
+	esp_appcpu_start(appcpu_entry1);
 
 	while (!alive_flag) {
 	}
 
 	cpus_active[0] = true;
-	cpus_active[CONFIG_MP_NUM_CPUS - 1] = true;
+	cpus_active[cpu_num] = true;
 
 	esp_intr_alloc(DT_IRQN(DT_NODELABEL(ipi0)),
 		ESP_INTR_FLAG_IRAM,
@@ -275,7 +292,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 void arch_sched_ipi(void)
 {
-	const int core_id = prid();
+	const int core_id = esp_core_id();
 
 	if (core_id == 0) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
@@ -288,3 +305,4 @@ IRAM_ATTR bool arch_cpu_active(int cpu_num)
 {
 	return cpus_active[cpu_num];
 }
+#endif /* CONFIG_SMP */

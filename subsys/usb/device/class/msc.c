@@ -772,6 +772,11 @@ static void thread_memory_write_done(void)
 	length -= size;
 	csw.DataResidue -= size;
 
+	if (!length) {
+		if (disk_access_ioctl(disk_pdrv, DISK_IOCTL_CTRL_SYNC, NULL)) {
+			LOG_ERR("!! Disk cache sync error !!");
+		}
+	}
 
 	if ((!length) || (stage != MSC_PROCESS_CBW)) {
 		csw.Status = (stage == MSC_ERROR) ? CSW_FAILED : CSW_PASSED;

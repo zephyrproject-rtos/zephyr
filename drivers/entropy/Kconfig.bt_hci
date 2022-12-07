@@ -4,6 +4,8 @@
 
 config ENTROPY_BT_HCI
 	bool "Bluetooth HCI RNG driver"
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_ENTROPY_ENABLED
 	depends on BT_HCI_HOST
 	select ENTROPY_HAS_DRIVER
 	help

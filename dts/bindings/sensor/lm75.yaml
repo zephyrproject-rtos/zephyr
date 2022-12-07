@@ -5,4 +5,4 @@ description: LM75 Digital Temperature Sensor with 2-Wire Interface.
 
 compatible: "lm75"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

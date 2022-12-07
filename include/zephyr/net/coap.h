@@ -264,9 +264,6 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
 			    struct coap_reply *reply,
 			    const struct sockaddr *from);
 
-#define COAP_DEFAULT_MAX_RETRANSMIT 4
-#define COAP_DEFAULT_ACK_RANDOM_FACTOR 1.5
-
 /**
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
@@ -363,7 +360,10 @@ const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt,
  * @param options Parse options and cache its details.
  * @param opt_num Number of options
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success.
+ * @retval -EINVAL in case of invalid input args.
+ * @retval -EBADMSG in case of malformed coap packet header.
+ * @retval -EILSEQ in case of malformed coap options.
  */
 int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		      struct coap_option *options, uint8_t opt_num);
@@ -514,7 +514,10 @@ int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success.
+ * @retval -ENOTSUP in case of invalid request code.
+ * @retval -EPERM in case resource handler is not implemented.
+ * @retval -ENOENT in case the resource is not found.
  */
 int coap_handle_request(struct coap_packet *cpkt,
 			struct coap_resource *resources,

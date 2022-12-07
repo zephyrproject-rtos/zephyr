@@ -9,13 +9,6 @@ Overview
 This board configuration will use QEMU to emulate the
 BBC Microbit (Nordic nRF51822) platform.
 
-.. figure:: qemu_cortex_m0.png
-   :width: 600px
-   :align: center
-   :alt: Qemu
-
-   Qemu (Credit: qemu.org)
-
 This configuration provides support for an ARM Cortex-M0 CPU and these devices:
 
 * Nested Vectored Interrupt Controller

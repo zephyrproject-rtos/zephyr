@@ -3,7 +3,7 @@
  * Copyright (c) 2019 Intel Corp.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/arch/x86/multiboot.h>
 
 void multiboot(void)

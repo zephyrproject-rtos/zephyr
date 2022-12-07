@@ -22,6 +22,8 @@
 
 #define PA_RETRY_COUNT 6
 
+#define BIS_ISO_CHAN_COUNT 2
+
 static bool         per_adv_found;
 static bool         per_adv_lost;
 static bt_addr_le_t per_addr;
@@ -32,20 +34,17 @@ static K_SEM_DEFINE(sem_per_adv, 0, 1);
 static K_SEM_DEFINE(sem_per_sync, 0, 1);
 static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
 static K_SEM_DEFINE(sem_per_big_info, 0, 1);
-static K_SEM_DEFINE(sem_big_sync, 0, 1);
-static K_SEM_DEFINE(sem_big_sync_lost, 0, 1);
+static K_SEM_DEFINE(sem_big_sync, 0, BIS_ISO_CHAN_COUNT);
+static K_SEM_DEFINE(sem_big_sync_lost, 0, BIS_ISO_CHAN_COUNT);
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
 #if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 #define HAS_LED     1
-#define LED0        DT_GPIO_LABEL(LED0_NODE, gpios)
-#define PIN         DT_GPIO_PIN(LED0_NODE, gpios)
-#define FLAGS       DT_GPIO_FLAGS(LED0_NODE, gpios)
 #define BLINK_ONOFF K_MSEC(500)
 
-static struct device const     *dev;
 static struct k_work_delayable blink_work;
 static bool                    led_is_on;
 static bool                    blink;
@@ -57,7 +56,7 @@ static void blink_timeout(struct k_work *work)
 	}
 
 	led_is_on = !led_is_on;
-	gpio_pin_set(dev, PIN, (int)led_is_on);
+	gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 
 	k_work_schedule(&blink_work, BLINK_ONOFF);
 }
@@ -207,8 +206,6 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 	.biginfo = biginfo_cb,
 };
 
-#define BIS_ISO_CHAN_COUNT 1
-
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
@@ -248,18 +245,24 @@ static struct bt_iso_chan_ops iso_ops = {
 	.disconnected	= iso_disconnected,
 };
 
-static struct bt_iso_chan_io_qos iso_rx_qos;
+static struct bt_iso_chan_io_qos iso_rx_qos[BIS_ISO_CHAN_COUNT];
 
-static struct bt_iso_chan_qos bis_iso_qos = {
-	.rx = &iso_rx_qos,
+static struct bt_iso_chan_qos bis_iso_qos[] = {
+	{ .rx = &iso_rx_qos[0], },
+	{ .rx = &iso_rx_qos[1], },
 };
 
-static struct bt_iso_chan bis_iso_chan = {
-	.ops = &iso_ops,
-	.qos = &bis_iso_qos,
+static struct bt_iso_chan bis_iso_chan[] = {
+	{ .ops = &iso_ops,
+	  .qos = &bis_iso_qos[0], },
+	{ .ops = &iso_ops,
+	  .qos = &bis_iso_qos[1], },
 };
 
-static struct bt_iso_chan *bis[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
+static struct bt_iso_chan *bis[] = {
+	&bis_iso_chan[0],
+	&bis_iso_chan[1],
+};
 
 static struct bt_iso_big_sync_param big_sync_param = {
 	.bis_channels = bis,
@@ -281,15 +284,15 @@ void main(void)
 
 #if defined(HAS_LED)
 	printk("Get reference to LED device...");
-	dev = device_get_binding(LED0);
-	if (!dev) {
-		printk("Failed.\n");
+
+	if (!device_is_ready(led_gpio.port)) {
+		printk("LED gpio device not ready.\n");
 		return;
 	}
 	printk("done.\n");
 
 	printk("Configure GPIO pin...");
-	err = gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
+	err = gpio_pin_configure_dt(&led_gpio, GPIO_OUTPUT_ACTIVE);
 	if (err) {
 		return;
 	}
@@ -328,7 +331,7 @@ void main(void)
 		printk("Start blinking LED...\n");
 		led_is_on = false;
 		blink = true;
-		gpio_pin_set(dev, PIN, (int)led_is_on);
+		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 		k_work_reschedule(&blink_work, BLINK_ONOFF);
 #endif /* HAS_LED */
 
@@ -406,8 +409,14 @@ big_sync_create:
 		}
 		printk("success.\n");
 
-		printk("Waiting for BIG sync...\n");
-		err = k_sem_take(&sem_big_sync, TIMEOUT_SYNC_CREATE);
+		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
+			printk("Waiting for BIG sync chan %u...\n", chan);
+			err = k_sem_take(&sem_big_sync, TIMEOUT_SYNC_CREATE);
+			if (err) {
+				break;
+			}
+			printk("BIG sync chan %u successful.\n", chan);
+		}
 		if (err) {
 			printk("failed (err %d)\n", err);
 
@@ -433,14 +442,17 @@ big_sync_create:
 
 		/* Keep LED on */
 		led_is_on = true;
-		gpio_pin_set(dev, PIN, (int)led_is_on);
+		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 #endif /* HAS_LED */
 
-		printk("Waiting for BIG sync lost...\n");
-		err = k_sem_take(&sem_big_sync_lost, K_FOREVER);
-		if (err) {
-			printk("failed (err %d)\n", err);
-			return;
+		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
+			printk("Waiting for BIG sync lost chan %u...\n", chan);
+			err = k_sem_take(&sem_big_sync_lost, K_FOREVER);
+			if (err) {
+				printk("failed (err %d)\n", err);
+				return;
+			}
+			printk("BIG sync lost chan %u.\n", chan);
 		}
 		printk("BIG sync lost.\n");
 

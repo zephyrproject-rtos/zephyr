@@ -5,7 +5,7 @@ description: GigaDevice GD32 SPI
 
 compatible: "gd,gd32-spi"
 
-include: [spi-controller.yaml, pinctrl-device.yaml]
+include: [spi-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -14,9 +14,10 @@ properties:
   interrupts:
     required: true
 
-  rcu-periph-clock:
-    type: int
-    description: Peripheral RCU(Reset Clock Unit) Clock ID
+  resets:
+    required: true
+
+  clocks:
     required: true
 
   pinctrl-0:

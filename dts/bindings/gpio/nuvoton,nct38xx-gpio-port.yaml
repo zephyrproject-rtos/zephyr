@@ -8,9 +8,6 @@ compatible: "nuvoton,nct38xx-gpio-port"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    label:
-      required: true
-
     reg:
       required: true
 
@@ -26,7 +23,6 @@ properties:
 
     pinmux_mask:
       type: int
-      required: false
       description: |
         NCT38XX series port 0 has Pin Multiplexing functionality. However, not
         every GPIOs have pinmux controller functionality. This property

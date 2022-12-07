@@ -6,12 +6,11 @@ description: |
 
 compatible: "st,stts751"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     drdy-gpios:
       type: phandle-array
-      required: false
       description: DRDY pin
 
         This pin defaults to active high when produced by the sensor.

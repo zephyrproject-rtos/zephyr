@@ -7,10 +7,9 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/pinmux.h>
 #include <soc.h>
 #include <zephyr/sys/sys_io.h>
-#include <gpio/gpio_cmsdk_ahb.h>
+#include <zephyr/drivers/gpio/gpio_cmsdk_ahb.h>
 
 /**
  * @brief Pinmux driver for ARM V2M Beetle Board

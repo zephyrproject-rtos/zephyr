@@ -14,19 +14,19 @@
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
 
-#define GCC_VERSION \
+#define TOOLCHAIN_GCC_VERSION \
 	((__GNUC__ * 10000) + (__GNUC_MINOR__ * 100) + __GNUC_PATCHLEVEL__)
 
 /* GCC supports #pragma diagnostics since 4.6.0 */
-#if !defined(TOOLCHAIN_HAS_PRAGMA_DIAG) && (GCC_VERSION >= 40600)
+#if !defined(TOOLCHAIN_HAS_PRAGMA_DIAG) && (TOOLCHAIN_GCC_VERSION >= 40600)
 #define TOOLCHAIN_HAS_PRAGMA_DIAG 1
 #endif
 
-#if !defined(TOOLCHAIN_HAS_C_GENERIC) && (GCC_VERSION >= 40900)
+#if !defined(TOOLCHAIN_HAS_C_GENERIC) && (TOOLCHAIN_GCC_VERSION >= 40900)
 #define TOOLCHAIN_HAS_C_GENERIC 1
 #endif
 
-#if !defined(TOOLCHAIN_HAS_C_AUTO_TYPE) && (GCC_VERSION >= 40900)
+#if !defined(TOOLCHAIN_HAS_C_AUTO_TYPE) && (TOOLCHAIN_GCC_VERSION >= 40900)
 #define TOOLCHAIN_HAS_C_AUTO_TYPE 1
 #endif
 
@@ -64,6 +64,7 @@
 #endif
 
 
+#undef BUILD_ASSERT /* clear out common version */
 /* C++11 has static_assert built in */
 #if defined(__cplusplus) && (__cplusplus >= 201103L)
 #define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
@@ -213,7 +214,20 @@ do {                                                                    \
 #define __may_alias     __attribute__((__may_alias__))
 
 #ifndef __printf_like
+#ifdef CONFIG_ENFORCE_ZEPHYR_STDINT
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
+#else
+/*
+ * The Zephyr stdint convention enforces int32_t = int, int64_t = long long,
+ * and intptr_t = long so that short string format length modifiers can be
+ * used universally across ILP32 and LP64 architectures. Without that it
+ * is possible for ILP32 toolchains to have int32_t = long and intptr_t = int
+ * clashing with the Zephyr convention and generating pointless warnings
+ * as they're still the same size. Inhibit the format argument type
+ * validation in that case and let the other configs do it.
+ */
+#define __printf_like(f, a)
+#endif
 #endif
 
 #define __used		__attribute__((__used__))
@@ -234,9 +248,8 @@ do {                                                                    \
 
 #define ARG_UNUSED(x) (void)(x)
 
-#define likely(x)   __builtin_expect((bool)!!(x), true)
-#define unlikely(x) __builtin_expect((bool)!!(x), false)
-
+#define likely(x)   (__builtin_expect((bool)!!(x), true) != 0L)
+#define unlikely(x) (__builtin_expect((bool)!!(x), false) != 0L)
 #define popcount(x) __builtin_popcount(x)
 
 #ifndef __no_optimization
@@ -605,6 +618,12 @@ do {                                                                    \
  * @return true if x is a power of 2, false otherwise
  */
 #define Z_IS_POW2(x) (((x) != 0) && (((x) & ((x)-1)) == 0))
+
+#if defined(CONFIG_ASAN) && defined(__clang__)
+#define __noasan __attribute__((no_sanitize("address")))
+#else
+#define __noasan /**/
+#endif
 
 #endif /* !_LINKER */
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

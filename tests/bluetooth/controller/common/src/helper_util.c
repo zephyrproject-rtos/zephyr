@@ -28,7 +28,14 @@
 #include "lll.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
+
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+#include "ull_conn_iso_internal.h"
 #include "ull_conn_types.h"
 
 #include "ull_conn_internal.h"
@@ -80,6 +87,12 @@ helper_pdu_encode_func_t *const helper_pdu_encode[] = {
 	[LL_LENGTH_RSP] = helper_pdu_encode_length_rsp,
 	[LL_CTE_REQ] = helper_pdu_encode_cte_req,
 	[LL_CTE_RSP] = helper_pdu_encode_cte_rsp,
+	[LL_CLOCK_ACCURACY_REQ] = helper_pdu_encode_sca_req,
+	[LL_CLOCK_ACCURACY_RSP] = helper_pdu_encode_sca_rsp,
+	[LL_CIS_REQ] = helper_pdu_encode_cis_req,
+	[LL_CIS_RSP] = helper_pdu_encode_cis_rsp,
+	[LL_CIS_IND] = helper_pdu_encode_cis_ind,
+	[LL_CIS_TERMINATE_IND] = helper_pdu_encode_cis_terminate_ind,
 	[LL_ZERO] = helper_pdu_encode_zero,
 };
 
@@ -112,6 +125,12 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	[LL_LENGTH_RSP] = helper_pdu_verify_length_rsp,
 	[LL_CTE_REQ] = helper_pdu_verify_cte_req,
 	[LL_CTE_RSP] = helper_pdu_verify_cte_rsp,
+	[LL_CLOCK_ACCURACY_REQ] = helper_pdu_verify_sca_req,
+	[LL_CLOCK_ACCURACY_RSP] = helper_pdu_verify_sca_rsp,
+	[LL_CIS_REQ] = helper_pdu_verify_cis_req,
+	[LL_CIS_RSP] = helper_pdu_verify_cis_rsp,
+	[LL_CIS_IND] = helper_pdu_verify_cis_ind,
+	[LL_CIS_TERMINATE_IND] = helper_pdu_verify_cis_terminate_ind,
 };
 
 helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
@@ -141,6 +160,13 @@ helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
 	[LL_LENGTH_RSP] = NULL,
 	[LL_CTE_REQ] = NULL,
 	[LL_CTE_RSP] = helper_pdu_ntf_verify_cte_rsp,
+	[LL_CTE_RSP] = NULL,
+	[LL_CLOCK_ACCURACY_REQ] = NULL,
+	[LL_CLOCK_ACCURACY_RSP] = NULL,
+	[LL_CIS_REQ] = NULL,
+	[LL_CIS_RSP] = NULL,
+	[LL_CIS_IND] = NULL,
+	[LL_CIS_TERMINATE_IND] = NULL,
 };
 
 helper_node_encode_func_t *const helper_node_encode[] = {
@@ -168,6 +194,12 @@ helper_node_encode_func_t *const helper_node_encode[] = {
 	[LL_CHAN_MAP_UPDATE_IND] = NULL,
 	[LL_CTE_REQ] = NULL,
 	[LL_CTE_RSP] = helper_node_encode_cte_rsp,
+	[LL_CLOCK_ACCURACY_REQ] = NULL,
+	[LL_CLOCK_ACCURACY_RSP] = NULL,
+	[LL_CIS_REQ] = NULL,
+	[LL_CIS_RSP] = NULL,
+	[LL_CIS_IND] = NULL,
+	[LL_CIS_TERMINATE_IND] = NULL,
 };
 
 helper_node_verify_func_t *const helper_node_verify[] = {
@@ -175,6 +207,9 @@ helper_node_verify_func_t *const helper_node_verify[] = {
 	[NODE_CONN_UPDATE] = helper_node_verify_conn_update,
 	[NODE_ENC_REFRESH] = helper_node_verify_enc_refresh,
 	[NODE_CTE_RSP] = helper_node_verify_cte_rsp,
+	[NODE_CIS_REQUEST] = helper_node_verify_cis_request,
+	[NODE_CIS_ESTABLISHED] = helper_node_verify_cis_established,
+	[NODE_PEER_SCA_UPDATE] = helper_node_verify_peer_sca_update,
 };
 
 /*
@@ -234,6 +269,8 @@ void test_setup(struct ll_conn *conn)
 
 	ll_reset();
 	conn->lll.event_counter = 0;
+	conn->lll.interval = 6;
+	conn->supervision_timeout = 600;
 	event_active[0] = 0;
 
 	memset(emul_conn_pool, 0x00, sizeof(emul_conn_pool));
@@ -315,6 +352,10 @@ void event_done(struct ll_conn *conn)
 	zassert_equal(*evt_active, 1, "Called outside an active event");
 	*evt_active = 0;
 
+	/* Notify all conotrol procedures that wait with Host notifications for instant to be on
+	 * air. This is done here because UT does not maintain actual connection events.
+	 */
+	ull_cp_tx_ntf(conn);
 
 	while ((rx = (struct node_rx_pdu *)sys_slist_get(&lt_tx_q))) {
 		ull_cp_rx(conn, rx);

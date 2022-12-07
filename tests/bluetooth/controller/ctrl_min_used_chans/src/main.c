@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/types.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>
@@ -26,8 +26,13 @@
 #include "lll.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_conn_internal.h"
@@ -76,7 +81,7 @@ void test_min_used_chans_periph_loc(void)
 
 	/* Initiate a Min number of Used Channels Procedure */
 	err = ull_cp_min_used_chans(&conn, 1, 2);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -116,7 +121,7 @@ void test_min_used_chans_central_loc(void)
 
 	/* Initiate a Min number of Used Channels Procedure */
 	err = ull_cp_min_used_chans(&conn, 1, 2);
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED);
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());

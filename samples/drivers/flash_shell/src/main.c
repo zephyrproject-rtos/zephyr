@@ -6,15 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/device.h>
-#include <soc.h>
-#include <stdlib.h>
 
 LOG_MODULE_REGISTER(app);
 
@@ -105,7 +103,7 @@ static void dump_buffer(const struct shell *shell, uint8_t *buf, size_t size)
 	uint8_t *p = buf;
 
 	while (size >= 16) {
-		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x |" \
+		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x | "
 		       "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
 		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
 			   p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
@@ -113,13 +111,13 @@ static void dump_buffer(const struct shell *shell, uint8_t *buf, size_t size)
 		size -= 16;
 	}
 	if (size >= 8) {
-		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
+		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x | ",
 		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
 		p += 8;
 		size -= 8;
 		newline = true;
 	}
-	if (size > 4) {
+	if (size >= 4) {
 		PR_SHELL(shell, "%02x %02x %02x %02x | ",
 		       p[0], p[1], p[2], p[3]);
 		p += 4;
@@ -765,4 +763,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_flash,
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
-SHELL_CMD_REGISTER(flash, &sub_flash, "Flash related commands.", NULL);
+SHELL_CMD_REGISTER(flash_sample, &sub_flash, "Flash related commands.", NULL);

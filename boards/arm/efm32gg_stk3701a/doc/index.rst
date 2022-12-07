@@ -10,8 +10,7 @@ The EFM32 Giant Gecko Starter Kit EFM32GG-STK3701A contains an MCU from the
 EFM32GG Series 1 family built on an ARM® Cortex®-M4F processor with excellent
 low power capabilities.
 
-.. figure:: ./efm32gg_stk3701a.jpg
-   :width: 375px
+.. figure:: efm32gg_stk3701a.jpg
    :align: center
    :alt: EFM32GG-SLSTK3701A
 

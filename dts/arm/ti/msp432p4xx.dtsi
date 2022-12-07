@@ -34,7 +34,6 @@
 			interrupts = <32 0>;
 			clocks = <&sysclk>;
 			status = "disabled";
-			label = "UART_0";
 		};
 	};
 };

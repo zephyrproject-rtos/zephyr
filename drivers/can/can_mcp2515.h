@@ -17,7 +17,6 @@
 #define MCP2515_FRAME_LEN               13
 
 struct mcp2515_tx_cb {
-	struct k_sem sem;
 	can_tx_callback_t cb;
 	void *cb_arg;
 };
@@ -38,13 +37,15 @@ struct mcp2515_data {
 	uint32_t filter_usage;
 	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MAX_FILTER];
-	struct zcan_filter filter[CONFIG_CAN_MAX_FILTER];
+	struct can_filter filter[CONFIG_CAN_MAX_FILTER];
 	can_state_change_callback_t state_change_cb;
 	void *state_change_cb_data;
 
 	/* general data */
 	struct k_mutex mutex;
 	enum can_state old_state;
+	uint8_t mcp2515_mode;
+	bool started;
 	uint8_t sjw;
 };
 
@@ -155,5 +156,7 @@ struct mcp2515_config {
 #define MCP2515_CANSTAT_MODE_MASK		(0x07 << MCP2515_CANSTAT_MODE_POS)
 #define MCP2515_CANCTRL_MODE_POS		5
 #define MCP2515_CANCTRL_MODE_MASK		(0x07 << MCP2515_CANCTRL_MODE_POS)
+#define MCP2515_TXBNCTRL_TXREQ_POS		3
+#define MCP2515_TXBNCTRL_TXREQ_MASK		(0x01 << MCP2515_TXBNCTRL_TXREQ_POS)
 
 #endif /*_MCP2515_H_*/

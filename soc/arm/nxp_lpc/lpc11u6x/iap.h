@@ -53,7 +53,7 @@
  */
 static inline int iap_cmd(unsigned int cmd[5])
 {
-	int key;
+	unsigned int key;
 	int status[5];
 
 	/*

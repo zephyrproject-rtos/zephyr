@@ -5,6 +5,7 @@
  */
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 /* Tiny, but not-as-primitive-as-it-looks implementation of something
  * like s/n/printf().  Handles %d, %x, %p, %c and %s only, allows a
@@ -24,7 +25,7 @@ static void (*z_putchar)(int c);
 
 static void pc(struct _pfr *r, int c)
 {
-	if (r->buf) {
+	if (r->buf != NULL) {
 		if (r->idx <= r->len) {
 			r->buf[r->idx] = c;
 		}
@@ -50,7 +51,7 @@ static void prdec(struct _pfr *r, long v)
 		v /= 10;
 	}
 
-	while (digs[++i]) {
+	while (digs[++i] != '\0') {
 		pc(r, digs[i]);
 	}
 }
@@ -64,7 +65,7 @@ static void endrec(struct _pfr *r)
 
 static int vpf(struct _pfr *r, const char *f, va_list ap)
 {
-	for (/**/; *f; f++) {
+	for (/**/; *f != '\0'; f++) {
 		bool islong = false;
 
 		if (*f != '%') {
@@ -100,7 +101,7 @@ static int vpf(struct _pfr *r, const char *f, va_list ap)
 		case 's': {
 			char *s = va_arg(ap, char *);
 
-			while (*s)
+			while (*s != '\0')
 				pc(r, *s++);
 			break;
 		}

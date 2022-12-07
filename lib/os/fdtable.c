@@ -52,6 +52,10 @@ static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
 		.vtable = &stdinout_fd_op_vtable,
 		.refcount = ATOMIC_INIT(1)
 	},
+#else
+	{
+	0
+	},
 #endif
 };
 

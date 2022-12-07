@@ -122,7 +122,8 @@ static void IoApicRedUpdateLo(unsigned int irq, uint32_t value,
 #include <zephyr/drivers/interrupt_controller/intel_vtd.h>
 #include <zephyr/arch/x86/acpi.h>
 
-static const struct device *vtd;
+static const struct device *const vtd =
+	DEVICE_DT_GET_OR_NULL(DT_INST(0, intel_vt_d));
 static uint16_t ioapic_id;
 
 
@@ -131,14 +132,6 @@ static bool get_vtd(void)
 	if (vtd != NULL) {
 		return true;
 	}
-
-#define DRV_COMPAT_BAK DT_DRV_COMPAT
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT intel_vt_d
-	vtd = DEVICE_DT_GET_OR_NULL(DT_DRV_INST(0));
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT DRV_COMPAT_BAK
-#undef DRV_COMPAT_BAK
 
 	ioapic_id = z_acpi_get_dev_id_from_dmar(ACPI_DRHD_DEV_SCOPE_IOAPIC);
 
@@ -445,7 +438,7 @@ static uint32_t __IoApicGet(int32_t offset)
 
 	key = irq_lock();
 
-	*((volatile uint32_t *) (IOAPIC_REG + IOAPIC_IND)) = (char)offset;
+	*((volatile uint32_t *) (IOAPIC_REG + IOAPIC_IND)) = (unsigned char)offset;
 	value = *((volatile uint32_t *)(IOAPIC_REG + IOAPIC_DATA));
 
 	irq_unlock(key);
@@ -470,7 +463,7 @@ static void __IoApicSet(int32_t offset, uint32_t value)
 
 	key = irq_lock();
 
-	*(volatile uint32_t *)(IOAPIC_REG + IOAPIC_IND) = (char)offset;
+	*(volatile uint32_t *)(IOAPIC_REG + IOAPIC_IND) = (unsigned char)offset;
 	*((volatile uint32_t *)(IOAPIC_REG + IOAPIC_DATA)) = value;
 
 	irq_unlock(key);

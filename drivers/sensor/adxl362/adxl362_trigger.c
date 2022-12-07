@@ -29,10 +29,15 @@ static void adxl362_thread_cb(const struct device *dev)
 	}
 
 	k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
-	if (drv_data->th_handler != NULL) {
-		if (ADXL362_STATUS_CHECK_INACT(status_buf) ||
-		    ADXL362_STATUS_CHECK_ACTIVITY(status_buf)) {
-			drv_data->th_handler(dev, &drv_data->th_trigger);
+	if (drv_data->inact_handler != NULL) {
+		if (ADXL362_STATUS_CHECK_INACT(status_buf)) {
+			drv_data->inact_handler(dev, &drv_data->inact_trigger);
+		}
+	}
+
+	if (drv_data->act_handler != NULL) {
+		if (ADXL362_STATUS_CHECK_ACTIVITY(status_buf)) {
+			drv_data->act_handler(dev, &drv_data->act_trigger);
 		}
 	}
 
@@ -79,16 +84,29 @@ int adxl362_trigger_set(const struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct adxl362_data *drv_data = dev->data;
+	const struct adxl362_config *config = dev->config;
 	uint8_t int_mask, int_en, status_buf;
 
+	if (!config->interrupt.port) {
+		return -ENOTSUP;
+	}
+
 	switch (trig->type) {
-	case SENSOR_TRIG_THRESHOLD:
+	case SENSOR_TRIG_MOTION:
 		k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
-		drv_data->th_handler = handler;
-		drv_data->th_trigger = *trig;
+		drv_data->act_handler = handler;
+		drv_data->act_trigger = *trig;
 		k_mutex_unlock(&drv_data->trigger_mutex);
-		int_mask = ADXL362_INTMAP1_ACT |
-			   ADXL362_INTMAP1_INACT;
+		int_mask = ADXL362_INTMAP1_ACT;
+		/* Clear activity and inactivity interrupts */
+		adxl362_get_status(dev, &status_buf);
+		break;
+	case SENSOR_TRIG_STATIONARY:
+		k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
+		drv_data->inact_handler = handler;
+		drv_data->inact_trigger = *trig;
+		k_mutex_unlock(&drv_data->trigger_mutex);
+		int_mask = ADXL362_INTMAP1_INACT;
 		/* Clear activity and inactivity interrupts */
 		adxl362_get_status(dev, &status_buf);
 		break;

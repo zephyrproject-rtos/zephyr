@@ -14,8 +14,4 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
-config COUNTER_GECKO_RTCC
-	default y
-	depends on COUNTER
-
 endif # BOARD_EFM32PG_STK3401A

@@ -18,36 +18,36 @@ extern "C" {
 #endif
 
 struct __esf {
-	ulong_t ra;		/* return address */
-	ulong_t gp;		/* global pointer */
+	unsigned long ra;		/* return address */
+	unsigned long gp;		/* global pointer */
 
-	ulong_t t0;		/* Caller-saved temporary register */
-	ulong_t t1;		/* Caller-saved temporary register */
-	ulong_t t2;		/* Caller-saved temporary register */
-	ulong_t t3;		/* Caller-saved temporary register */
-	ulong_t t4;		/* Caller-saved temporary register */
-	ulong_t t5;		/* Caller-saved temporary register */
-	ulong_t t6;		/* Caller-saved temporary register */
-	ulong_t t7;		/* Caller-saved temporary register */
-	ulong_t t8;		/* Caller-saved temporary register */
-	ulong_t t9;		/* Caller-saved temporary register */
+	unsigned long t0;		/* Caller-saved temporary register */
+	unsigned long t1;		/* Caller-saved temporary register */
+	unsigned long t2;		/* Caller-saved temporary register */
+	unsigned long t3;		/* Caller-saved temporary register */
+	unsigned long t4;		/* Caller-saved temporary register */
+	unsigned long t5;		/* Caller-saved temporary register */
+	unsigned long t6;		/* Caller-saved temporary register */
+	unsigned long t7;		/* Caller-saved temporary register */
+	unsigned long t8;		/* Caller-saved temporary register */
+	unsigned long t9;		/* Caller-saved temporary register */
 
-	ulong_t a0;		/* function argument */
-	ulong_t a1;		/* function argument */
-	ulong_t a2;		/* function argument */
-	ulong_t a3;		/* function argument */
+	unsigned long a0;		/* function argument */
+	unsigned long a1;		/* function argument */
+	unsigned long a2;		/* function argument */
+	unsigned long a3;		/* function argument */
 
-	ulong_t v0;		/* return value */
-	ulong_t v1;		/* return value */
+	unsigned long v0;		/* return value */
+	unsigned long v1;		/* return value */
 
-	ulong_t at;		/* assembly temporary */
+	unsigned long at;		/* assembly temporary */
 
-	ulong_t epc;
-	ulong_t badvaddr;
-	ulong_t hi;
-	ulong_t lo;
-	ulong_t status;
-	ulong_t cause;
+	unsigned long epc;
+	unsigned long badvaddr;
+	unsigned long hi;
+	unsigned long lo;
+	unsigned long status;
+	unsigned long cause;
 };
 
 typedef struct __esf z_arch_esf_t;

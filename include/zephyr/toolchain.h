@@ -53,19 +53,34 @@
 #endif
 
 /**
- * @def GCC_VERSION
- * @brief GCC version in xxyyzz for xx.yy.zz. Zero if not GCC compatible.
+ * @def __noasan
+ * @brief Disable address sanitizer
+ *
+ * When used in the definiton of a symbol, prevents that symbol (be it
+ * a function or data) from being instrumented by the address
+ * sanitizer feature of the compiler.  Most commonly, this is used to
+ * prevent padding around data that will be treated specially by the
+ * Zephyr link (c.f. SYS_INIT records, STRUCT_SECTION_ITERABLE
+ * definitions) in ways that don't understand the guard padding.
  */
-#ifndef GCC_VERSION
-#define GCC_VERSION 0
+#ifndef __noasan
+#define __noasan /**/
 #endif
 
 /**
- * @def CLANG_VERSION
+ * @def TOOLCHAIN_GCC_VERSION
+ * @brief GCC version in xxyyzz for xx.yy.zz. Zero if not GCC compatible.
+ */
+#ifndef TOOLCHAIN_GCC_VERSION
+#define TOOLCHAIN_GCC_VERSION 0
+#endif
+
+/**
+ * @def TOOLCHAIN_CLANG_VERSION
  * @brief Clang version in xxyyzz for xx.yy.zz. Zero if not Clang compatible.
  */
-#ifndef CLANG_VERSION
-#define CLANG_VERSION 0
+#ifndef TOOLCHAIN_CLANG_VERSION
+#define TOOLCHAIN_CLANG_VERSION 0
 #endif
 
 /**
@@ -80,7 +95,7 @@
  * @def TOOLCHAIN_HAS_C_GENERIC
  * @brief Indicate if toolchain supports C Generic.
  */
-#if __STDC_VERSION__ >= 201112L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 /* _Generic is introduced in C11, so it is supported. */
 # ifdef TOOLCHAIN_HAS_C_GENERIC
 #  undef TOOLCHAIN_HAS_C_GENERIC
@@ -102,16 +117,42 @@
 
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
- * as these are often used without checking for definition and doing so can
- * cause unexpected behaviours.
+ * and that they match the Kconfig option that is used in the code itself to
+ * check for endianness.
  */
 #ifndef _LINKER
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_BIG_ENDIAN__) || \
     !defined(__ORDER_LITTLE_ENDIAN__)
 
-#error "__BYTE_ORDER__ is not defined"
+/*
+ * Displaying values unfortunately requires #pragma message which can't
+ * be taken for granted + STRINGIFY() which is not available in this .h
+ * file.
+ */
+#error "At least one byte _ORDER_ macro is not defined"
 
-#endif
+#else
+
+#if (defined(CONFIG_BIG_ENDIAN) && (__BYTE_ORDER__ != __ORDER_BIG_ENDIAN__)) || \
+    (defined(CONFIG_LITTLE_ENDIAN) && (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__))
+
+#  error "Kconfig/toolchain endianness mismatch:"
+
+#  if (__BYTE_ORDER__ != __ORDER_BIG_ENDIAN__) && (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__)
+#    error "Unknown __BYTE_ORDER__ value"
+#  else
+#    ifdef CONFIG_BIG_ENDIAN
+#      error "CONFIG_BIG_ENDIAN but __ORDER_LITTLE_ENDIAN__"
+#    endif
+#    ifdef CONFIG_LITTLE_ENDIAN
+#      error "CONFIG_LITTLE_ENDIAN but __ORDER_BIG_ENDIAN__"
+#   endif
+# endif
+
+#endif  /* Endianness mismatch */
+
+#endif /* all _ORDER_ macros defined */
+
 #endif /* !_LINKER */
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_H_ */

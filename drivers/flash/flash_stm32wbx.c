@@ -84,9 +84,14 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		return -EIO;
 	}
 
-	/* Check if this double word is erased */
-	if (flash[0] != 0xFFFFFFFFUL ||
-	    flash[1] != 0xFFFFFFFFUL) {
+	/* Check if this double word is erased and value isn't 0.
+	 *
+	 * It is allowed to write only zeros over an already written dword
+	 * See 3.3.8 in reference manual.
+	 */
+	if ((flash[0] != 0xFFFFFFFFUL ||
+	     flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
+		LOG_ERR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
 
@@ -114,8 +119,9 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		 * However, keeping that code make it compatible with both
 		 * mechanisms.
 		 */
-		while (LL_FLASH_IsActiveFlag_OperationSuspended())
+		while (LL_FLASH_IsActiveFlag_OperationSuspended()) {
 			;
+		}
 
 		/* Enter critical section */
 		key = irq_lock();
@@ -250,8 +256,9 @@ static int erase_page(const struct device *dev, uint32_t page)
 		 * However, keeping that code make it compatible with both
 		 * mechanisms.
 		 */
-		while (LL_FLASH_IsActiveFlag_OperationSuspended())
+		while (LL_FLASH_IsActiveFlag_OperationSuspended()) {
 			;
+		}
 
 		/* Enter critical section */
 		key = irq_lock();

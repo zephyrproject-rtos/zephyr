@@ -26,6 +26,24 @@ config GPIO_INIT_PRIORITY
 	help
 	  GPIO driver device initialization priority.
 
+config GPIO_GET_DIRECTION
+	bool "Support for querying GPIO direction [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable this option if the application does not maintain its own GPIO
+	  direction state.
+
+	  With this option enabled, the application may query GPIO direction
+	  via gpio_port_get_direction(), gpio_pin_is_input(), and
+	  gpio_pin_is_output().
+
+config GPIO_GET_CONFIG
+	bool "Support for get configuration function [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the support for getting the current configurations
+	  of GPIOs. The driver must implement it to work.
+
 source "drivers/gpio/Kconfig.b91"
 
 source "drivers/gpio/Kconfig.dw"
@@ -92,6 +110,8 @@ source "drivers/gpio/Kconfig.npcx"
 
 source "drivers/gpio/Kconfig.emul"
 
+source "drivers/gpio/Kconfig.emul_sdl"
+
 source "drivers/gpio/Kconfig.psoc6"
 
 source "drivers/gpio/Kconfig.pcal6408a"
@@ -108,6 +128,8 @@ source "drivers/gpio/Kconfig.stmpe1600"
 
 source "drivers/gpio/Kconfig.pca953x"
 
+source "drivers/gpio/Kconfig.pcf8574"
+
 source "drivers/gpio/Kconfig.fxl6408"
 
 source "drivers/gpio/Kconfig.andes_atcgpio100"
@@ -121,5 +143,21 @@ source "drivers/gpio/Kconfig.test"
 source "drivers/gpio/Kconfig.gd32"
 
 source "drivers/gpio/Kconfig.xlnx_ps"
+
+source "drivers/gpio/Kconfig.sn74hc595"
+
+source "drivers/gpio/Kconfig.mchp_mss"
+
+source "drivers/gpio/Kconfig.xmc4xxx"
+
+source "drivers/gpio/Kconfig.smartbond"
+
+source "drivers/gpio/Kconfig.s32"
+
+source "drivers/gpio/Kconfig.tca6424a"
+
+source "drivers/gpio/Kconfig.npm6001"
+
+source "drivers/gpio/Kconfig.rt1718s"
 
 endif # GPIO

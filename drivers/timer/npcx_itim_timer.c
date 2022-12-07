@@ -37,11 +37,13 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(itim, LOG_LEVEL_ERR);
 
 #define NPCX_ITIM32_MAX_CNT 0xffffffff
@@ -307,6 +309,11 @@ static int sys_clock_driver_init(const struct device *dev)
 	int ret;
 	uint32_t sys_tmr_rate;
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
+
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	/* Turn on all itim module clocks used for counting */
 	for (int i = 0; i < ARRAY_SIZE(itim_clk_cfg); i++) {

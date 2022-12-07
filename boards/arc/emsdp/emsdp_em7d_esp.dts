@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <synopsys/emsdp.dtsi>
+#include <synopsys/emsdp-sec.dtsi>
 #include "board.dtsi"
 
 / {

@@ -38,6 +38,11 @@ int stts751_trigger_set(const struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct stts751_data *stts751 = dev->data;
+	const struct stts751_config *config = dev->config;
+
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	if (trig->chan == SENSOR_CHAN_ALL) {
 		stts751->thsld_handler = handler;
@@ -71,8 +76,7 @@ static void stts751_handle_interrupt(const struct device *dev)
 		stts751->thsld_handler(dev, &thsld_trigger);
 	}
 
-	gpio_pin_interrupt_configure(stts751->gpio, cfg->event_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void stts751_gpio_callback(const struct device *dev,
@@ -84,7 +88,7 @@ static void stts751_gpio_callback(const struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_interrupt_configure(dev, cfg->event_pin, GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_STTS751_TRIGGER_OWN_THREAD)
 	k_sem_give(&stts751->gpio_sem);
@@ -119,11 +123,9 @@ int stts751_init_interrupt(const struct device *dev)
 	const struct stts751_config *cfg = dev->config;
 	int ret;
 
-	/* setup data ready gpio interrupt */
-	stts751->gpio = device_get_binding(cfg->event_port);
-	if (stts751->gpio == NULL) {
-		LOG_DBG("Cannot get pointer to %s device", cfg->event_port);
-		return -EINVAL;
+	if (!device_is_ready(cfg->int_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
 #if defined(CONFIG_STTS751_TRIGGER_OWN_THREAD)
@@ -138,17 +140,15 @@ int stts751_init_interrupt(const struct device *dev)
 	stts751->work.handler = stts751_work_cb;
 #endif /* CONFIG_STTS751_TRIGGER_OWN_THREAD */
 
-	ret = gpio_pin_configure(stts751->gpio, cfg->event_pin,
-				 GPIO_INPUT | cfg->int_flags);
+	ret = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
 	}
 
-	gpio_init_callback(&stts751->gpio_cb, stts751_gpio_callback,
-			   BIT(cfg->event_pin));
+	gpio_init_callback(&stts751->gpio_cb, stts751_gpio_callback, BIT(cfg->int_gpio.pin));
 
-	if (gpio_add_callback(stts751->gpio, &stts751->gpio_cb) < 0) {
+	if (gpio_add_callback(cfg->int_gpio.port, &stts751->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
@@ -163,6 +163,5 @@ int stts751_init_interrupt(const struct device *dev)
 	stts751_low_temperature_threshold_set(stts751->ctx,
 					stts751_from_celsius_to_lsb(temp_lo));
 
-	return gpio_pin_interrupt_configure(stts751->gpio, cfg->event_pin,
-					    GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }

@@ -19,12 +19,8 @@ properties:
     clock-names:
       required: true
 
-    label:
-      required: true
-
     reference:
       type: string
-      required: false
       description: Reference voltage source
       enum:
         - "intref"

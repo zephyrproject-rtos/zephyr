@@ -20,13 +20,10 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config CACHE_MANAGEMENT
 	default y
 
-config ARC_HAS_ACCL_REGS
-	default y
-
 config ARC_CONNECT
 	default y
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 2
 
 endif # SOC_NSIM_HS5X_SMP

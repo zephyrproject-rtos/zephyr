@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
 
+#include <stdint.h>
+
 #include <zephyr/toolchain.h>
 #include <xtensa/config/core-isa.h>
 
@@ -67,10 +69,15 @@ static inline void z_xt_set_intset(unsigned int arg)
 #define CONFIG_NUM_IRQS (XCHAL_NUM_INTERRUPTS +\
 			CONFIG_NUM_2ND_LEVEL_AGGREGATORS *\
 			CONFIG_MAX_IRQ_PER_AGGREGATOR)
-#endif
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 #else
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
-#endif
+#endif /* CONFIG_2ND_LEVEL_INTERRUPTS */
+
+void z_soc_irq_init(void);
+void z_soc_irq_enable(unsigned int irq);
+void z_soc_irq_disable(unsigned int irq);
+int z_soc_irq_is_enabled(unsigned int irq);
 
 #define arch_irq_enable(irq)	z_soc_irq_enable(irq)
 #define arch_irq_disable(irq)	z_soc_irq_disable(irq)

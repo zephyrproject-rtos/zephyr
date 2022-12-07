@@ -10,11 +10,11 @@
  */
 
 &arduino_i2c {
-	lsm303agr-magn@1e {
+	lsm303agr-magn_x_nucleo_iks01a2: lsm303agr-magn@1e {
 		/delete-property/ irq-gpios;	/* A3 */
 	};
 
-	lsm303agr-accel@19 {
+	lsm303agr-accel_x_nucleo_iks01a2: lsm303agr-accel@19 {
 		/delete-property/ irq-gpios;	/* A3 */
 	};
 };

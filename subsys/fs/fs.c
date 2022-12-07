@@ -11,6 +11,7 @@
 #include <zephyr/types.h>
 #include <errno.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/check.h>
@@ -121,8 +122,9 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 	}
 
 	*mnt_pntp = mnt_p;
-	if (match_len)
+	if (match_len) {
 		*match_len = mnt_p->mountp_len;
+	}
 
 	return 0;
 }
@@ -653,6 +655,11 @@ int fs_mount(struct fs_mount_t *mp)
 		return -EINVAL;
 	}
 
+	if (sys_dnode_is_linked(&mp->node)) {
+		LOG_ERR("file system already mounted!!");
+		return -EBUSY;
+	}
+
 	len = strlen(mp->mnt_point);
 
 	if ((len <= 1) || (mp->mnt_point[0] != '/')) {
@@ -693,7 +700,7 @@ int fs_mount(struct fs_mount_t *mp)
 
 	if (fs->unmount == NULL) {
 		LOG_WRN("mount path %s is not unmountable",
-			log_strdup(mp->mnt_point));
+			mp->mnt_point);
 	}
 
 	rc = fs->mount(mp);
@@ -707,13 +714,49 @@ int fs_mount(struct fs_mount_t *mp)
 	mp->fs = fs;
 
 	sys_dlist_append(&fs_mnt_list, &mp->node);
-	LOG_DBG("fs mounted at %s", log_strdup(mp->mnt_point));
+	LOG_DBG("fs mounted at %s", mp->mnt_point);
 
 mount_err:
 	k_mutex_unlock(&mutex);
 	return rc;
 }
 
+#if defined(CONFIG_FILE_SYSTEM_MKFS)
+
+int fs_mkfs(int fs_type, uintptr_t dev_id, void *cfg, int flags)
+{
+	int rc = -EINVAL;
+	const struct fs_file_system_t *fs;
+
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	/* Get file system information */
+	fs = fs_type_get(fs_type);
+	if (fs == NULL) {
+		LOG_ERR("fs type %d not registered!!",
+				fs_type);
+		rc = -ENOENT;
+		goto mount_err;
+	}
+
+	CHECKIF(fs->mkfs == NULL) {
+		LOG_ERR("fs type %d does not support mkfs", fs_type);
+		rc = -ENOTSUP;
+		goto mount_err;
+	}
+
+	rc = fs->mkfs(dev_id, cfg, flags);
+	if (rc < 0) {
+		LOG_ERR("mkfs error (%d)", rc);
+		goto mount_err;
+	}
+
+mount_err:
+	k_mutex_unlock(&mutex);
+	return rc;
+}
+
+#endif /* CONFIG_FILE_SYSTEM_MKFS */
 
 int fs_unmount(struct fs_mount_t *mp)
 {
@@ -725,7 +768,7 @@ int fs_unmount(struct fs_mount_t *mp)
 
 	k_mutex_lock(&mutex, K_FOREVER);
 
-	if (mp->fs == NULL) {
+	if (!sys_dnode_is_linked(&mp->node)) {
 		LOG_ERR("fs not mounted (mp == %p)", mp);
 		goto unmount_err;
 	}
@@ -747,7 +790,7 @@ int fs_unmount(struct fs_mount_t *mp)
 
 	/* remove mount node from the list */
 	sys_dlist_remove(&mp->node);
-	LOG_DBG("fs unmounted from %s", log_strdup(mp->mnt_point));
+	LOG_DBG("fs unmounted from %s", mp->mnt_point);
 
 unmount_err:
 	k_mutex_unlock(&mutex);

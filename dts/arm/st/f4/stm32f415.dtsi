@@ -14,7 +14,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
 			interrupts = <79 0>;
 			status = "disabled";
-			label = "CRYP";
 		};
 	};
 };

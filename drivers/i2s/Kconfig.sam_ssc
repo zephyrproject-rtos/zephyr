@@ -5,7 +5,8 @@
 
 menuconfig I2S_SAM_SSC
 	bool "Atmel SAM MCU family I2S (SSC) Bus Driver"
-	depends on SOC_FAMILY_SAM
+	default y
+	depends on DT_HAS_ATMEL_SAM_SSC_ENABLED
 	select DMA
 	help
 	  Enable Inter Sound (I2S) bus driver for Atmel SAM MCU family based on

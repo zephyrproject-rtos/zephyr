@@ -23,11 +23,13 @@ extern "C" {
 #include <zephyr/kernel.h>
 #include <zephyr/math/ilog2.h>
 #include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/mem_stats.h>
 
 #define MAX_MULTI_ALLOCATORS 8
 
 /**
  * @defgroup mem_blocks_apis Memory Blocks APIs
+ * @ingroup memory_management
  * @{
  */
 
@@ -93,6 +95,14 @@ struct sys_mem_blocks {
 	/* Bitmap of allocated blocks */
 	sys_bitarray_t *bitmap;
 
+#ifdef CONFIG_SYS_MEM_BLOCKS_RUNTIME_STATS
+	/* Spinlock guarding access to memory block internals */
+	struct k_spinlock  lock;
+
+	uint32_t used_blocks;
+	uint32_t max_used_blocks;
+#endif
+
 };
 
 struct sys_multi_mem_blocks {
@@ -103,8 +113,6 @@ struct sys_multi_mem_blocks {
 };
 
 /**
- * @def _SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF
- *
  * @brief Create a memory block object with a providing backing buffer.
  *
  * @param name     Name of the memory block object.
@@ -124,8 +132,6 @@ struct sys_multi_mem_blocks {
 	}
 
 /**
- * @def _SYS_MEM_BLOCKS_DEFINE
- *
  * @brief Create a memory block object with a new backing buffer.
  *
  * @param name     Name of the memory block object.
@@ -147,8 +153,6 @@ struct sys_multi_mem_blocks {
  */
 
 /**
- * @def SYS_MEM_BLOCKS_DEFINE
- *
  * @brief Create a memory block object with a new backing buffer.
  *
  * @param name      Name of the memory block object.
@@ -160,8 +164,6 @@ struct sys_multi_mem_blocks {
 	_SYS_MEM_BLOCKS_DEFINE(name, blk_sz, num_blks, buf_align,)
 
 /**
- * @def SYS_MEM_BLOCKS_DEFINE_STATIC
- *
  * @brief Create a static memory block object with a new backing buffer.
  *
  * @param name      Name of the memory block object.
@@ -174,8 +176,6 @@ struct sys_multi_mem_blocks {
 
 
 /**
- * @def SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF
- *
  * @brief Create a memory block object with a providing backing buffer.
  *
  * @param name     Name of the memory block object.
@@ -187,8 +187,6 @@ struct sys_multi_mem_blocks {
 	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, blk_sz, num_blks, buf,)
 
 /**
- * @def SYS_MEM_BLOCKS_DEFINE_STATIC_WITH_EXT_BUF
- *
  * @brief Create a static memory block object with a providing backing buffer.
  *
  * @param name     Name of the memory block object.
@@ -254,6 +252,18 @@ int sys_mem_blocks_alloc_contiguous(sys_mem_blocks_t *mem_block, size_t count,
 int sys_mem_blocks_get(sys_mem_blocks_t *mem_block, void *in_block, size_t count);
 
 /**
+ * @brief check if the region is free
+ *
+ * @param[in]  mem_block  Pointer to memory block object.
+ * @param[in]  in_block   Address of the first block to check
+ * @param[in]  count      Number of blocks to check.
+ *
+ * @retval 1 All memory blocks are free
+ * @retval 0 At least one of the memory blocks is taken
+ */
+int sys_mem_blocks_is_region_free(sys_mem_blocks_t *mem_block, void *in_block, size_t count);
+
+/**
  * @brief Free multiple memory blocks
  *
  * Free multiple memory blocks according to the array of memory
@@ -284,6 +294,34 @@ int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
  * @retval -EFAULT Invalid pointer supplied.
  */
 int sys_mem_blocks_free_contiguous(sys_mem_blocks_t *mem_block, void *block, size_t count);
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_RUNTIME_STATS
+/**
+ * @brief Get the runtime statistics of a memory block
+ *
+ * This function retrieves the runtime stats for the specified memory block
+ * @a mem_block and copies it into the memory pointed to by @a stats.
+ *
+ * @param mem_block Pointer to system memory block
+ * @param stats Pointer to struct to copy statistics into
+ *
+ * @return -EINVAL if NULL pointer was passed, otherwise 0
+ */
+int sys_mem_blocks_runtime_stats_get(sys_mem_blocks_t *mem_block,
+				     struct sys_memory_stats *stats);
+
+/**
+ * @brief Reset the maximum memory block usage
+ *
+ * This routine resets the maximum memory usage in the specified memory
+ * block @a mem_block to match that block's current memory usage.
+ *
+ * @param mem_block Pointer to system memory block
+ *
+ * @return -EINVAL if NULL pointer was passed, otherwise 0
+ */
+int sys_mem_blocks_runtime_stats_reset_max(sys_mem_blocks_t *mem_block);
+#endif
 
 /**
  * @brief Initialize multi memory blocks allocator group

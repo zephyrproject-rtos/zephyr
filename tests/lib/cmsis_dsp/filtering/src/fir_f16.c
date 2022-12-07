@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math_f16.h>
 #include "../../common/test_common.h"
@@ -18,7 +18,7 @@
 
 #define COEFF_PADDING		(4)
 
-static void test_arm_fir_f16(void)
+ZTEST(filtering_fir_f16, test_arm_fir_f16)
 {
 	size_t sample_index, block_index;
 	size_t block_size, tap_count;
@@ -101,11 +101,4 @@ static void test_arm_fir_f16(void)
 	free(output_buf);
 }
 
-void test_filtering_fir_f16(void)
-{
-	ztest_test_suite(filtering_fir_f16,
-		ztest_unit_test(test_arm_fir_f16)
-		);
-
-	ztest_run_test_suite(filtering_fir_f16);
-}
+ZTEST_SUITE(filtering_fir_f16, NULL, NULL, NULL, NULL, NULL);

@@ -79,7 +79,7 @@ k_mem_paging_backing_store_histogram_bounds[
 unsigned long z_num_pagefaults_get(void)
 {
 	unsigned long ret;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	ret = paging_stats.pagefaults.cnt;

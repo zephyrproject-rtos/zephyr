@@ -9,6 +9,7 @@ import os
 import time
 import datetime
 from github import Github, GithubException
+from github.GithubException import UnknownObjectException
 from collections import defaultdict
 
 TOP_DIR = os.path.join(os.path.dirname(__file__))
@@ -54,7 +55,6 @@ def process_pr(gh, maintainer_file, number):
     log(f"working on https://github.com/{args.org}/{args.repo}/pull/{pr.number} : {pr.title}")
 
     labels = set()
-    collab = set()
     area_counter = defaultdict(int)
     maint = defaultdict(int)
 
@@ -74,37 +74,47 @@ def process_pr(gh, maintainer_file, number):
             for a in areas:
                 area_counter[a.name] += 1
                 labels.update(a.labels)
-                collab.update(a.collaborators)
-                collab.update(a.maintainers)
                 for p in a.maintainers:
                     maint[p] += 1
 
     ac = dict(sorted(area_counter.items(), key=lambda item: item[1], reverse=True))
     log(f"Area matches: {ac}")
     log(f"labels: {labels}")
-    log(f"collab: {collab}")
     if len(labels) > 10:
         log(f"Too many labels to be applied")
         return
+
+    # Create a list of collaborators ordered by the area match
+    collab = list()
+    for a in ac:
+        collab += maintainer_file.areas[a].maintainers
+        collab += maintainer_file.areas[a].collaborators
+    collab = list(dict.fromkeys(collab))
+    log(f"collab: {collab}")
 
     sm = dict(sorted(maint.items(), key=lambda item: item[1], reverse=True))
 
     log(f"Submitted by: {pr.user.login}")
     log(f"candidate maintainers: {sm}")
 
+    maintainer = "None"
+    maintainers = list(sm.keys())
+
     prop = 0
-    if sm:
-        maintainer = list(sm.keys())[0]
+    if maintainers:
+        maintainer = maintainers[0]
 
         if len(ac) > 1 and list(ac.values())[0] == list(ac.values())[1]:
-            log("++ Platform/Drivers takes precedence over subsystem...")
             for aa in ac:
                 if 'Documentation' in aa:
                     log("++ With multiple areas of same weight including docs, take something else other than Documentation as the maintainer")
                     for a in all_areas:
-                        if a.name == aa and a.maintainers[0] == maintainer:
-                            maintainer = list(sm.keys())[1]
+                        if (a.name == aa and
+                            a.maintainers and a.maintainers[0] == maintainer and
+                            len(maintainers) > 1):
+                            maintainer = maintainers[1]
                 elif 'Platform' in aa:
+                    log("++ Platform takes precedence over subsystem...")
                     log(f"Set maintainer of area {aa}")
                     for a in all_areas:
                         if a.name == aa:
@@ -128,8 +138,7 @@ def process_pr(gh, maintainer_file, number):
         prop = (maint[maintainer] / num_files) * 100
         if prop < 20:
             maintainer = "None"
-    else:
-        maintainer = "None"
+
     log(f"Picked maintainer: {maintainer} ({prop:.2f}% ownership)")
     log("+++++++++++++++++++++++++")
 
@@ -155,22 +164,32 @@ def process_pr(gh, maintainer_file, number):
             page += 1
 
         for c in collab:
-            u = gh.get_user(c)
-            if pr.user != u and gh_repo.has_in_collaborators(u):
-                if u not in existing_reviewers:
-                    reviewers.append(c)
-
-        if reviewers:
             try:
-                log(f"adding reviewers {reviewers}...")
-                if not args.dry_run:
-                    pr.create_review_request(reviewers=reviewers)
-            except GithubException:
-                log("cant add reviewer")
+                u = gh.get_user(c)
+                if pr.user != u and gh_repo.has_in_collaborators(u):
+                    if u not in existing_reviewers:
+                        reviewers.append(c)
+            except UnknownObjectException as e:
+                log(f"Can't get user '{c}', account does not exist anymore? ({e})")
+
+        if len(existing_reviewers) < 15:
+            reviewer_vacancy = 15 - len(existing_reviewers)
+            reviewers = reviewers[:reviewer_vacancy]
+
+            if reviewers:
+                try:
+                    log(f"adding reviewers {reviewers}...")
+                    if not args.dry_run:
+                        pr.create_review_request(reviewers=reviewers)
+                except GithubException:
+                    log("cant add reviewer")
+        else:
+            log("not adding reviewers because the existing reviewer count is greater than or "
+                "equal to 15")
 
     ms = []
     # assignees
-    if maintainer != 'None':
+    if maintainer != 'None' and not pr.assignee:
         try:
             u = gh.get_user(maintainer)
             ms.append(u)
@@ -181,6 +200,8 @@ def process_pr(gh, maintainer_file, number):
             log(f"Adding assignee {mm}...")
             if not args.dry_run:
                 pr.add_to_assignees(mm)
+    else:
+        log("not setting assignee")
 
     time.sleep(1)
 

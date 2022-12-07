@@ -65,12 +65,17 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b)
 
+# Flag for disabling strict aliasing rule in C and C++
+set_compiler_property(PROPERTY no_strict_aliasing)
+
 # Flag for disabling exceptions in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions)
 
 # Flag for disabling rtti in C++
 set_property(TARGET compiler-cpp PROPERTY no_rtti)
 
+# Flag for disabling optimizations around printf return value
+set_compiler_property(PROPERTY no_printf_return_value)
 
 ###################################################
 # This section covers all remaining C / C++ flags #
@@ -82,7 +87,8 @@ set_compiler_property(PROPERTY coverage)
 # Security canaries flags.
 set_compiler_property(PROPERTY security_canaries)
 
-set_compiler_property(PROPERTY security_fortify)
+set_compiler_property(PROPERTY security_fortify_compile_time)
+set_compiler_property(PROPERTY security_fortify_run_time)
 
 # Flag for a hosted (no-freestanding) application
 set_compiler_property(PROPERTY hosted)
@@ -98,11 +104,6 @@ set_compiler_property(PROPERTY no_common)
 # Flags for imacros. The specific header must be appended by user.
 set_compiler_property(PROPERTY imacros)
 
-# Compiler flags for sanitizing.
-set_compiler_property(PROPERTY sanitize_address)
-
-set_compiler_property(PROPERTY sanitize_undefined)
-
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
 
@@ -111,3 +112,6 @@ set_property(TARGET asm PROPERTY required)
 
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic)
+
+# Compiler flags for disabling position independent code / executable
+set_compiler_property(PROPERTY no_position_independent)

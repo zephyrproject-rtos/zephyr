@@ -15,7 +15,8 @@
  * @{
  */
 
-#include <zephyr/types.h>
+#include <stdint.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #ifdef __cplusplus
@@ -46,13 +47,46 @@ enum lora_coding_rate {
 };
 
 struct lora_modem_config {
+	/* Frequency in Hz to use for transceiving */
 	uint32_t frequency;
+
+	/* The bandwidth to use for transceiving */
 	enum lora_signal_bandwidth bandwidth;
+
+	/* The data-rate to use for transceiving */
 	enum lora_datarate datarate;
+
+	/* The coding rate to use for transceiving */
 	enum lora_coding_rate coding_rate;
+
+	/* Length of the preamble */
 	uint16_t preamble_len;
+
+	/* TX-power in dBm to use for transmission */
 	int8_t tx_power;
+
+	/* Set to true for transmission, false for receiving */
 	bool tx;
+
+	/**
+	 * Invert the In-Phase and Quadrature (IQ) signals. Normally this
+	 * should be set to false. In advanced use-cases where a
+	 * differentation is needed between "uplink" and "downlink" traffic,
+	 * the IQ can be inverted to create two different channels on the
+	 * same frequency
+	 */
+	bool iq_inverted;
+
+	/**
+	 * Sets the sync-byte to use:
+	 *  - false: for using the private network sync-byte
+	 *  - true:  for using the public network sync-byte
+	 * The public network sync-byte is only intended for advanced usage.
+	 * Normally the private network sync-byte should be used for peer
+	 * to peer communications and the LoRaWAN APIs should be used for
+	 * interacting with a public network.
+	 */
+	bool public_network;
 };
 
 /**

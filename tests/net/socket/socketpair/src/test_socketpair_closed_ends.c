@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/sys/util.h>
 #include <zephyr/posix/unistd.h>
 
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 
 #undef read
 #define read(fd, buf, len) zsock_recv(fd, buf, len, 0)
@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #undef write
 #define write(fd, buf, len) zsock_send(fd, buf, len, 0)
 
-void test_socketpair_close_one_end_and_write_to_the_other(void)
+ZTEST_USER(net_socketpair, test_socketpair_close_one_end_and_write_to_the_other)
 {
 	int res;
 	int sv[2] = {-1, -1};
@@ -43,7 +43,7 @@ void test_socketpair_close_one_end_and_write_to_the_other(void)
 	}
 }
 
-void test_socketpair_close_one_end_and_read_from_the_other(void)
+ZTEST_USER(net_socketpair, test_socketpair_close_one_end_and_read_from_the_other)
 {
 	int res;
 	int sv[2] = {-1, -1};

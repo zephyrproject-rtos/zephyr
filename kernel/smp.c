@@ -28,7 +28,7 @@ unsigned int z_smp_global_lock(void)
 
 void z_smp_global_unlock(unsigned int key)
 {
-	if (_current->base.global_lock_count) {
+	if (_current->base.global_lock_count != 0U) {
 		_current->base.global_lock_count--;
 
 		if (!_current->base.global_lock_count) {
@@ -112,7 +112,10 @@ void z_smp_start_cpu(int id)
 void z_smp_init(void)
 {
 	(void)atomic_clear(&start_flag);
-	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
+
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 1; i < num_cpus; i++) {
 		start_cpu(i, &start_flag);
 	}
 	(void)atomic_set(&start_flag, 1);

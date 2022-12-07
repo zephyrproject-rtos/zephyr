@@ -36,6 +36,9 @@ config SENSOR_SHELL_BATTERY
 	  in a convenient format. It makes use of a fuel gauge to read its
 	  information.
 
+config SENSOR_INFO
+	bool "Sensor Info iterable section"
+
 comment "Device Drivers"
 
 source "drivers/sensor/adt7420/Kconfig"
@@ -79,6 +82,8 @@ source "drivers/sensor/ccs811/Kconfig"
 source "drivers/sensor/dht/Kconfig"
 
 source "drivers/sensor/dps310/Kconfig"
+
+source "drivers/sensor/ds18b20/Kconfig"
 
 source "drivers/sensor/ens210/Kconfig"
 
@@ -194,6 +199,8 @@ source "drivers/sensor/qdec_nrfx/Kconfig"
 
 source "drivers/sensor/qdec_sam/Kconfig"
 
+source "drivers/sensor/qdec_stm32/Kconfig"
+
 source "drivers/sensor/sbs_gauge/Kconfig"
 
 source "drivers/sensor/sgp40/Kconfig"
@@ -216,6 +223,8 @@ source "drivers/sensor/sm351lt/Kconfig"
 
 source "drivers/sensor/stm32_temp/Kconfig"
 
+source "drivers/sensor/stm32_vbat/Kconfig"
+
 source "drivers/sensor/stts751/Kconfig"
 
 source "drivers/sensor/sx9500/Kconfig"
@@ -236,6 +245,8 @@ source "drivers/sensor/vl53l0x/Kconfig"
 
 source "drivers/sensor/nxp_kinetis_temp/Kconfig"
 
+source "drivers/sensor/wsen_hids/Kconfig"
+
 source "drivers/sensor/wsen_itds/Kconfig"
 
 source "drivers/sensor/mcux_acmp/Kconfig"
@@ -247,5 +258,7 @@ source "drivers/sensor/nuvoton_adc_cmp_npcx/Kconfig"
 source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
 
 source "drivers/sensor/ite_vcmp_it8xxx2/Kconfig"
+
+source "drivers/sensor/pcnt_esp32/Kconfig"
 
 endif # SENSOR

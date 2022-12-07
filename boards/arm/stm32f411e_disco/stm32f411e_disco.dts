@@ -73,7 +73,13 @@
 		pwm-led1 = &orange_pwm_led;
 		pwm-led2 = &red_pwm_led;
 		pwm-led3 = &blue_pwm_led;
+		magn0 = &lsm303agr_magn;
+		accel0 = &lsm303agr_accel;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hse {
@@ -118,21 +124,19 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	lsm303agr-magn@1e {
+	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		status = "okay";
 		reg = <0x1e>;
 		irq-gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
-		label = "LSM303AGR-MAGN";
 	};
 
-	lsm303agr-accel@19 {
+	lsm303agr_accel: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		status = "okay";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
 			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
-		label = "LSM303AGR-ACCEL";
 	};
 };
 
@@ -144,6 +148,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

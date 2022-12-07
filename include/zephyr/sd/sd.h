@@ -14,6 +14,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/sdhc.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

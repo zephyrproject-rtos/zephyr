@@ -1,0 +1,29 @@
+# Copyright (c) 2020 NXP
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig KSCAN_GT911
+	bool "GT9xx / GT9xxx capacitive touch panel driver"
+	default y
+	depends on DT_HAS_GOODIX_GT911_ENABLED
+	select I2C
+	help
+	  Enable driver for multiple Goodix capacitive touch panel
+	  controllers. This driver should support gt9110, gt912,
+	  gt927, gt9271, gt928, gt967
+
+if KSCAN_GT911
+
+config KSCAN_GT911_PERIOD
+	int "Sample period"
+	depends on !KSCAN_GT911_INTERRUPT
+	default 10
+	help
+	  Sample period in milliseconds when in polling mode.
+
+config KSCAN_GT911_INTERRUPT
+	bool "Interrupt"
+	help
+	  Enable interrupt support (requires GPIO).
+
+endif # KSCAN_GT911

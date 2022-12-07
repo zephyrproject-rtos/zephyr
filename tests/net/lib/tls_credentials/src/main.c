@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include "tls_internal.h"
 
@@ -124,15 +124,17 @@ static void test_credential_internal_iterate(void)
 	zassert_equal(cert->type, TLS_CREDENTIAL_SERVER_CERTIFICATE,
 		      "Invalid type for cert");
 	zassert_equal(cert->tag, common_tag, "Invalid tag for cert");
-	zassert_equal_ptr(cert->buf, test_server_cert, "Invalid cert content");
 	zassert_equal(cert->len, sizeof(test_server_cert),
 		      "Invalid cert length");
+	zassert_mem_equal(cert->buf, test_server_cert, sizeof(test_server_key),
+			  "Invalid cert content");
 
 	zassert_equal(key->type, TLS_CREDENTIAL_PRIVATE_KEY,
 		      "Invalid type for key");
 	zassert_equal(key->tag, common_tag, "Invalid tag for key");
-	zassert_equal_ptr(key->buf, test_server_key, "Invalid key content");
 	zassert_equal(key->len, sizeof(test_server_key), "Invalid key length");
+	zassert_mem_equal(key->buf, test_server_key, sizeof(test_server_key),
+			  "Invalid key content");
 
 	/* Iteration after getting last credential should return NULL */
 	key = credential_next_get(common_tag, key);
@@ -164,14 +166,12 @@ static void test_credential_delete(void)
 	zassert_equal(ret, -ENOENT, "Should have failed with ENOENT");
 }
 
-void test_main(void)
+ZTEST(tls_crecentials, test_tls_crecentials)
 {
-	ztest_test_suite(tls_crecentials_tests,
-		ztest_unit_test(test_credential_add),
-		ztest_unit_test(test_credential_get),
-		ztest_unit_test(test_credential_internal_iterate),
-		ztest_unit_test(test_credential_delete)
-	);
-
-	ztest_run_test_suite(tls_crecentials_tests);
+	test_credential_add();
+	test_credential_get();
+	test_credential_internal_iterate();
+	test_credential_delete();
 }
+
+ZTEST_SUITE(tls_crecentials, NULL, NULL, NULL, NULL, NULL);

@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/types.h>
@@ -38,7 +40,6 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 	mbedtls_md_context_t mbed_hash_ctx;
 	const mbedtls_md_info_t *mbed_hash_info;
 #endif
-	const struct device *dev;
 	int to_read;
 	int pos;
 	int rc;
@@ -71,7 +72,6 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 	}
 #endif
 
-	dev = device_get_binding(fa->fa_dev_name);
 	to_read = fac->rblen;
 
 	for (pos = 0; pos < fac->clen; pos += to_read) {
@@ -79,7 +79,7 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 			to_read = fac->clen - pos;
 		}
 
-		rc = flash_read(dev, (fa->fa_off + fac->off + pos),
+		rc = flash_read(fa->fa_dev, (fa->fa_off + fac->off + pos),
 				fac->rbuf, to_read);
 		if (rc != 0) {
 #if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY_TC)

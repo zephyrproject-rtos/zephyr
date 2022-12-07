@@ -12,10 +12,13 @@
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 
-#if IS_ENABLED(CONFIG_SETTINGS_FS)
+#if IS_ENABLED(CONFIG_SETTINGS_FILE)
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
 #endif
+
+#define STORAGE_PARTITION	storage_partition
+#define STORAGE_PARTITION_ID	FIXED_PARTITION_ID(STORAGE_PARTITION)
 
 #define GAMMA_DEFAULT_VAl 0
 #define FAIL_MSG "fail (err %d)\n"
@@ -419,14 +422,14 @@ static void example_initialization(void)
 {
 	int rc;
 
-#if IS_ENABLED(CONFIG_SETTINGS_FS)
+#if IS_ENABLED(CONFIG_SETTINGS_FILE)
 	FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
 
 	/* mounting info */
 	static struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &cstorage,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.storage_dev = (void *)STORAGE_PARTITION_ID,
 	.mnt_point = "/ff"
 	};
 
@@ -435,7 +438,7 @@ static void example_initialization(void)
 		printk("mounting littlefs error: [%d]\n", rc);
 	} else {
 
-		rc = fs_unlink(CONFIG_SETTINGS_FS_FILE);
+		rc = fs_unlink(CONFIG_SETTINGS_FILE_PATH);
 		if ((rc != 0) && (rc != -ENOENT)) {
 			printk("can't delete config file%d\n", rc);
 		} else {

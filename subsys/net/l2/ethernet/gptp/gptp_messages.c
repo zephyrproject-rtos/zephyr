@@ -46,7 +46,7 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 				ann->root_system_id.clk_quality.clock_class, \
 				ann->root_system_id.clk_quality.clock_accuracy,\
 				ann->root_system_id.grand_master_prio2,	\
-				log_strdup(output));			\
+				output);			\
 		} else {						\
 			NET_DBG("Sending %s seq %d pkt %p",		\
 				msg,					\
@@ -238,7 +238,6 @@ struct net_pkt *gptp_prepare_sync(int port)
 struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 {
 	struct gptp_hdr *hdr, *sync_hdr;
-	struct gptp_port_ds *port_ds;
 	struct net_if *iface;
 	struct net_pkt *pkt;
 
@@ -255,7 +254,6 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
 
-	port_ds = GPTP_PORT_DS(port);
 	hdr = GPTP_HDR(pkt);
 	sync_hdr = GPTP_HDR(sync);
 
@@ -350,7 +348,6 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 {
 	struct net_if *iface = net_pkt_iface(req);
 	struct gptp_pdelay_resp *pdelay_resp;
-	struct gptp_pdelay_req *pdelay_req;
 	struct gptp_hdr *hdr, *query;
 	struct gptp_port_ds *port_ds;
 	struct net_pkt *pkt;
@@ -368,7 +365,6 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	pdelay_resp = GPTP_PDELAY_RESP(pkt);
 	hdr = GPTP_HDR(pkt);
 
-	pdelay_req = GPTP_PDELAY_REQ(req);
 	query = GPTP_HDR(req);
 
 	/* Header configuration. */
@@ -593,13 +589,11 @@ fail:
 void gptp_handle_sync(int port, struct net_pkt *pkt)
 {
 	struct gptp_sync_rcv_state *state;
-	struct gptp_port_ds *port_ds;
 	struct gptp_hdr *hdr;
 	uint64_t upstream_sync_itv;
 	k_timeout_t duration;
 
 	state = &GPTP_PORT_STATE(port)->sync_rcv;
-	port_ds = GPTP_PORT_DS(port);
 	hdr = GPTP_HDR(state->rcvd_sync_ptr);
 
 	upstream_sync_itv = NSEC_PER_SEC * GPTP_POW2(hdr->log_msg_interval);
@@ -615,10 +609,8 @@ int gptp_handle_follow_up(int port, struct net_pkt *pkt)
 {
 	struct gptp_sync_rcv_state *state;
 	struct gptp_hdr *sync_hdr, *hdr;
-	struct gptp_port_ds *port_ds;
 
 	state = &GPTP_PORT_STATE(port)->sync_rcv;
-	port_ds = GPTP_PORT_DS(port);
 
 	sync_hdr = GPTP_HDR(state->rcvd_sync_ptr);
 	hdr = GPTP_HDR(pkt);
@@ -678,15 +670,11 @@ int gptp_handle_pdelay_resp(int port, struct net_pkt *pkt)
 	struct gptp_pdelay_req_state *state;
 	struct gptp_default_ds *default_ds;
 	struct gptp_pdelay_resp *resp;
-	struct gptp_port_ds *port_ds;
-	struct net_eth_hdr *eth;
 	struct gptp_hdr *hdr, *req_hdr;
 
-	eth = NET_ETH_HDR(pkt);
 	hdr = GPTP_HDR(pkt);
 	resp = GPTP_PDELAY_RESP(pkt);
 	state = &GPTP_PORT_STATE(port)->pdelay_req;
-	port_ds = GPTP_PORT_DS(port);
 	default_ds = GPTP_DEFAULT_DS();
 
 	if (!state->tx_pdelay_req_ptr) {
@@ -736,14 +724,10 @@ int gptp_handle_pdelay_follow_up(int port, struct net_pkt *pkt)
 	struct gptp_hdr *hdr, *req_hdr, *resp_hdr;
 	struct gptp_pdelay_req_state *state;
 	struct gptp_default_ds *default_ds;
-	struct gptp_port_ds *port_ds;
-	struct net_eth_hdr *eth;
 
-	eth = NET_ETH_HDR(pkt);
 	hdr = GPTP_HDR(pkt);
 	follow_up = GPTP_PDELAY_RESP_FOLLOWUP(pkt);
 	state = &GPTP_PORT_STATE(port)->pdelay_req;
-	port_ds = GPTP_PORT_DS(port);
 	default_ds = GPTP_DEFAULT_DS();
 
 	if (!state->tx_pdelay_req_ptr) {
@@ -875,12 +859,10 @@ void gptp_send_announce(int port, struct net_pkt *pkt)
 void gptp_send_pdelay_req(int port)
 {
 	struct gptp_pdelay_req_state *state;
-	struct gptp_port_ds *port_ds;
 	struct net_pkt *pkt;
 
 	NET_ASSERT((port >= GPTP_PORT_START) && (port <= GPTP_PORT_END));
 	state = &GPTP_PORT_STATE(port)->pdelay_req;
-	port_ds = GPTP_PORT_DS(port);
 
 	pkt = gptp_prepare_pdelay_req(port);
 	if (pkt) {

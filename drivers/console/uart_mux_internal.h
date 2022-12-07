@@ -18,7 +18,7 @@ extern "C" {
  * @param buf Data to send
  * @param size Data length
  *
- * @return 0 if data was sent, <0 if error
+ * @return >=0 if data was sent (and number of bytes sent), <0 if error
  */
 int uart_mux_send(const struct device *uart, const uint8_t *buf, size_t size);
 

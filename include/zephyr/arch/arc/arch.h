@@ -77,6 +77,15 @@
 #error "Unsupported configuration: ARC_FIRQ_STACK and (RGF_NUM_BANKS < 2)"
 #endif
 
+/* In case of ARC 2+2 secure mode enabled the firq are not supported by HW */
+#if defined(CONFIG_ARC_FIRQ) && defined(CONFIG_ARC_HAS_SECURE)
+#error "Unsupported configuration: ARC_FIRQ and ARC_HAS_SECURE"
+#endif
+
+#if defined(CONFIG_SMP) && !defined(CONFIG_MULTITHREADING)
+#error "Non-multithreading mode isn't supported on SMP targets"
+#endif
+
 #ifndef _ASMLANGUAGE
 
 #ifdef __cplusplus
@@ -88,6 +97,12 @@ extern "C" {
 #else
 #define ARCH_STACK_PTR_ALIGN	4
 #endif /* CONFIG_64BIT */
+
+BUILD_ASSERT(CONFIG_ISR_STACK_SIZE % ARCH_STACK_PTR_ALIGN == 0,
+	"CONFIG_ISR_STACK_SIZE must be a multiple of ARCH_STACK_PTR_ALIGN");
+
+BUILD_ASSERT(CONFIG_ARC_EXCEPTION_STACK_SIZE % ARCH_STACK_PTR_ALIGN == 0,
+	"CONFIG_ARC_EXCEPTION_STACK_SIZE must be a multiple of ARCH_STACK_PTR_ALIGN");
 
 /* Indicate, for a minimally sized MPU region, how large it must be and what
  * its base address must be aligned to.
@@ -333,6 +348,10 @@ static ALWAYS_INLINE void arch_nop(void)
 {
 	__builtin_arc_nop();
 }
+
+#ifndef CONFIG_XIP
+extern char __arc_rw_sram_size[];
+#endif /* CONFIG_XIP */
 
 #endif /* _ASMLANGUAGE */
 

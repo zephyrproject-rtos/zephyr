@@ -22,7 +22,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-#include <soc.h>
 #include <errno.h>
 #include <zephyr/sys/sys_io.h>
 
@@ -36,6 +35,7 @@
 #include "i2c_dw_registers.h"
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"
@@ -191,7 +191,7 @@ static inline void i2c_dw_transfer_complete(const struct device *dev)
 	k_sem_give(&dw->device_sync_sem);
 }
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 static inline uint8_t i2c_dw_read_byte_non_blocking(const struct device *dev);
 static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint8_t data);
 static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev);
@@ -275,8 +275,8 @@ static void i2c_dw_isr(const struct device *port)
 		}
 
 	} else {
-#ifdef CONFIG_I2C_SLAVE
-		const struct i2c_slave_callbacks *slave_cb = dw->slave_cfg->callbacks;
+#ifdef CONFIG_I2C_TARGET
+		const struct i2c_target_callbacks *slave_cb = dw->slave_cfg->callbacks;
 		uint32_t slave_activity = test_bit_status_activity(reg_base);
 		uint8_t data;
 
@@ -338,7 +338,7 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 	value = read_clr_intr(reg_base);
 
 	/* Set master or slave mode - (initialization = slave) */
-	if (I2C_MODE_MASTER & dw->app_config) {
+	if (I2C_MODE_CONTROLLER & dw->app_config) {
 		/*
 		 * Make sure to set both the master_mode and slave_disable_bit
 		 * to both 0 or both 1
@@ -432,7 +432,7 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 	 * bit in ic_tar register would control whether the DW_apb_i2c starts
 	 * its transfers in 7-bit or 10-bit addressing mode.
 	 */
-	if (I2C_MODE_MASTER & dw->app_config) {
+	if (I2C_MODE_CONTROLLER & dw->app_config) {
 		if (I2C_ADDR_10_BITS & dw->app_config) {
 			ic_tar.bits.ic_10bitaddr_master = 1U;
 		} else {
@@ -654,12 +654,12 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 	 * currently.  This "hack" forces us to always be configured for master
 	 * mode, until we can verify that Slave mode works correctly.
 	 */
-	dw->app_config |= I2C_MODE_MASTER;
+	dw->app_config |= I2C_MODE_CONTROLLER;
 
 	return rc;
 }
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 static inline uint8_t i2c_dw_read_byte_non_blocking(const struct device *dev)
 {
 	uint32_t reg_base = get_regs(dev);
@@ -735,7 +735,7 @@ static int i2c_dw_set_slave_mode(const struct device *dev, uint8_t addr)
 }
 
 static int i2c_dw_slave_register(const struct device *dev,
-				 struct i2c_slave_config *cfg)
+				 struct i2c_target_config *cfg)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t reg_base = get_regs(dev);
@@ -753,7 +753,7 @@ static int i2c_dw_slave_register(const struct device *dev,
 }
 
 static int i2c_dw_slave_unregister(const struct device *dev,
-				   struct i2c_slave_config *cfg)
+				   struct i2c_target_config *cfg)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	int ret;
@@ -770,7 +770,7 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev)
 	union ic_interrupt_register intr_stat;
 	uint32_t reg_base = get_regs(dev);
 
-	const struct i2c_slave_callbacks *slave_cb = dw->slave_cfg->callbacks;
+	const struct i2c_target_callbacks *slave_cb = dw->slave_cfg->callbacks;
 
 	intr_stat.raw = read_intr_stat(reg_base);
 
@@ -822,15 +822,15 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev)
 		dw->state = I2C_DW_STATE_READY;
 	}
 }
-#endif /* CONFIG_I2C_SLAVE */
+#endif /* CONFIG_I2C_TARGET */
 
 static const struct i2c_driver_api funcs = {
 	.configure = i2c_dw_runtime_configure,
 	.transfer = i2c_dw_transfer,
-#ifdef CONFIG_I2C_SLAVE
-	.slave_register = i2c_dw_slave_register,
-	.slave_unregister = i2c_dw_slave_unregister,
-#endif /* CONFIG_I2C_SLAVE */
+#ifdef CONFIG_I2C_TARGET
+	.target_register = i2c_dw_slave_register,
+	.target_unregister = i2c_dw_slave_unregister,
+#endif /* CONFIG_I2C_TARGET */
 };
 
 static int i2c_dw_initialize(const struct device *dev)
@@ -849,14 +849,14 @@ static int i2c_dw_initialize(const struct device *dev)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (rom->pcie) {
-		struct pcie_mbar mbar;
+		struct pcie_bar mbar;
 
-		if (!pcie_probe(rom->pcie_bdf, rom->pcie_id)) {
+		if (rom->pcie->bdf == PCIE_BDF_NONE) {
 			return -EINVAL;
 		}
 
-		pcie_probe_mbar(rom->pcie_bdf, 0, &mbar);
-		pcie_set_cmd(rom->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
+		pcie_probe_mbar(rom->pcie->bdf, 0, &mbar);
+		pcie_set_cmd(rom->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr,
 			   mbar.size, K_MEM_CACHE_NONE);
@@ -892,7 +892,7 @@ static int i2c_dw_initialize(const struct device *dev)
 
 	rom->config_func(dev);
 
-	dw->app_config = I2C_MODE_MASTER | i2c_map_dt_bitrate(rom->bitrate);
+	dw->app_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(rom->bitrate);
 
 	if (i2c_dw_runtime_configure(dev, dw->app_config) != 0) {
 		LOG_DBG("I2C: Cannot set default configuration");
@@ -913,12 +913,14 @@ static int i2c_dw_initialize(const struct device *dev)
 #endif
 
 #define I2C_DW_INIT_PCIE0(n)
-#define I2C_DW_INIT_PCIE1(n)                                                  \
-		.pcie = true,                                                 \
-		.pcie_bdf = DT_INST_REG_ADDR(n),                              \
-		.pcie_id = DT_INST_REG_SIZE(n),
+#define I2C_DW_INIT_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie),
 #define I2C_DW_INIT_PCIE(n) \
 	_CONCAT(I2C_DW_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+
+#define I2C_DEFINE_PCIE0(n)
+#define I2C_DEFINE_PCIE1(n) DEVICE_PCIE_INST_DECLARE(n)
+#define I2C_PCIE_DEFINE(n) \
+	_CONCAT(I2C_DEFINE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #define I2C_DW_IRQ_FLAGS_SENSE0(n) 0
 #define I2C_DW_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
@@ -940,31 +942,37 @@ static int i2c_dw_initialize(const struct device *dev)
 #define I2C_DW_IRQ_CONFIG_PCIE1(n)                                            \
 	static void i2c_config_##n(const struct device *port)                 \
 	{                                                                     \
-		ARG_UNUSED(port);                                             \
 		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,              \
 			     "Only runtime IRQ configuration is supported");  \
 		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),           \
 			     "DW I2C PCI needs CONFIG_DYNAMIC_INTERRUPTS");   \
-		unsigned int irq = pcie_alloc_irq(DT_INST_REG_ADDR(n));       \
+		const struct i2c_dw_rom_config * const dev_cfg = port->config;\
+		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);        \
 		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                         \
 			return;                                               \
 		}                                                             \
-		pcie_connect_dynamic_irq(DT_INST_REG_ADDR(n), irq,	      \
+		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq,	      \
 				     DT_INST_IRQ(n, priority),		      \
 				    (void (*)(const void *))i2c_dw_isr,       \
 				    DEVICE_DT_INST_GET(n),                    \
 				    I2C_DW_IRQ_FLAGS(n));                     \
-		pcie_irq_enable(DT_INST_REG_ADDR(n), irq);                    \
+		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                     \
 	}
 
 #define I2C_DW_IRQ_CONFIG(n) \
 	_CONCAT(I2C_DW_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
+#define I2C_CONFIG_REG_INIT_PCIE0(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
+#define I2C_CONFIG_REG_INIT_PCIE1(n)
+#define I2C_CONFIG_REG_INIT(n) \
+	_CONCAT(I2C_CONFIG_REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+
 #define I2C_DEVICE_INIT_DW(n)                                                 \
 	PINCTRL_DW_DEFINE(n);                                                 \
+	I2C_PCIE_DEFINE(n);                                                   \
 	static void i2c_config_##n(const struct device *port);                \
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {           \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                         \
+		I2C_CONFIG_REG_INIT(n)                                        \
 		.config_func = i2c_config_##n,                                \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                  \
 		PINCTRL_DW_CONFIG(n)                                          \

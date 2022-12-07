@@ -9,7 +9,6 @@ include: [spi-device.yaml, display-controller.yaml]
 properties:
     reset-gpios:
       type: phandle-array
-      required: false
       description: RESET pin.
 
         The RESET pin of ILI9340 is active low.

@@ -101,10 +101,19 @@ struct bt_df_per_adv_sync_cte_rx_param {
 	const uint8_t *ant_ids;
 };
 
+enum bt_df_iq_sample {
+	/** Reported IQ samples have 8 bits signed integer format. Size defined in BT Core 5.3
+	 * Vol 4, Part E sections 7.7.65.21 and 7.7.65.22.
+	 */
+	BT_DF_IQ_SAMPLE_8_BITS_INT,
+	/** Reported IQ samples have 16 bits signed integer format. Vendor specific extension. */
+	BT_DF_IQ_SAMPLE_16_BITS_INT,
+};
+
 struct bt_df_per_adv_sync_iq_samples_report {
 	/** Channel index used to receive PDU with CTE that was sampled. */
 	uint8_t chan_idx;
-	/** The RSSI of the PDU with CTE (excluding CTE). */
+	/** The RSSI of the PDU with CTE (excluding CTE). Range: -1270 to +200. Units: 0.1 dBm. */
 	int16_t rssi;
 	/** Id of antenna used to measure the RSSI. */
 	uint8_t rssi_ant_id;
@@ -118,8 +127,13 @@ struct bt_df_per_adv_sync_iq_samples_report {
 	uint16_t per_evt_counter;
 	/** Number of IQ samples in report. */
 	uint8_t sample_count;
-	/** Pinter to IQ samples data. */
-	struct bt_hci_le_iq_sample const *sample;
+	/** Type of IQ samples provided in a report. */
+	enum bt_df_iq_sample sample_type;
+	/** Pointer to IQ samples data. */
+	union {
+		struct bt_hci_le_iq_sample const *sample;
+		struct bt_hci_le_iq_sample16 const *sample16;
+	};
 };
 
 struct bt_df_conn_cte_rx_param {
@@ -153,7 +167,7 @@ struct bt_df_conn_iq_samples_report {
 	uint8_t rx_phy;
 	/** Channel index used to receive PDU with CTE that was sampled. */
 	uint8_t chan_idx;
-	/** The RSSI of the PDU with CTE (excluding CTE). */
+	/** The RSSI of the PDU with CTE (excluding CTE). Range: -1270 to +200. Units: 0.1 dBm. */
 	int16_t rssi;
 	/** Id of antenna used to measure the RSSI. */
 	uint8_t rssi_ant_id;
@@ -165,10 +179,15 @@ struct bt_df_conn_iq_samples_report {
 	uint8_t packet_status;
 	/** Value of connection event counter when the CTE was received and sampled. */
 	uint16_t conn_evt_counter;
+	/** Type of IQ samples provided in a report. */
+	enum bt_df_iq_sample sample_type;
 	/** Number of IQ samples in report. */
 	uint8_t sample_count;
-	/** Pinter to IQ samples data. */
-	struct bt_hci_le_iq_sample const *sample;
+	/** Pointer to IQ samples data. */
+	union {
+		struct bt_hci_le_iq_sample const *sample;
+		struct bt_hci_le_iq_sample16 const *sample16;
+	};
 };
 /** Constant Tone Extension parameters for CTE transmission in connected mode. */
 struct bt_df_conn_cte_tx_param {

@@ -16,6 +16,7 @@
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(adc_mcux_12b1msps_sar);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER

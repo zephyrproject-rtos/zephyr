@@ -6,6 +6,7 @@
 menuconfig INTEL_VTD_ICTL
 	bool "Intel VT-D interrupt remapping controller"
 	default y
+	depends on DT_HAS_INTEL_VT_D_ENABLED
 	depends on !BOARD_QEMU_X86_64 && ACPI && X86 && 64BIT && PCIE_MSI_MULTI_VECTOR
 	select CACHE_MANAGEMENT
 	help

@@ -1,0 +1,138 @@
+; Copyright 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+; SPDX-License-Identifier: Apache-2.0
+
+GLOBAL &GDBPORT
+GLOBAL &TERMPORT
+
+;
+; parse arguments
+;
+ENTRY %LINE &args
+&command=STRing.SCANAndExtract("&args","command=","debug")
+&elfFile=STRing.SCANAndExtract("&args","elfFile=","")
+&gdbRemote=STRing.SCANAndExtract("&args","gdbRemote=","")
+&termComPort=STRing.SCANAndExtract("&args","terminal=","")
+&userScript=STRing.SCANAndExtract("&args","userScript=","")
+
+IF "&command"=="flash"
+(
+  ; Execute the application and quit
+  QUIT -1
+)
+
+IF "&elfFile"==""
+(
+  PRINT %ERROR "Missing ELF file path"
+  PLIST
+  STOP
+  ENDDO
+)
+
+;
+; process system-wide settings
+;
+IF OS.FILE("~~/system-settings.cmm")
+  DO "~~/system-settings.cmm"
+
+;
+; CPU setup
+;
+SYStem.Down
+IF PRACTICE.CoMmanD.AVAILable(SYStem.CPU.NANO33BLE)
+  SYStem.CPU NANO33BLE
+ELSE
+  SYStem.CPU NRF52840QI
+
+;
+; RTOS setup
+;
+IF OS.FILE("~~/demo/arm/kernel/zephyr/v2-x/zephyr.t32")&&OS.FILE("~~/demo/arm/kernel/zephyr/v2-x/zephyr.men")
+(
+  TASK.CONFIG ~~/demo/arm/kernel/zephyr/v2-x/zephyr.t32
+  MENU.ReProgram ~~/demo/arm/kernel/zephyr/v2-x/zephyr.men
+)
+
+;
+; connect to the target
+;
+IF INTERFACE.GDB()
+(
+  IF ("&gdbRemote"=="")&&("&GDBPORT"!="")
+    &gdbRemote="&GDBPORT"
+
+  IF "&gdbRemote"!=""
+  (
+    PRINT "Use gdb remote: &gdbRemote"
+  )
+  ELSE
+  (
+    PRINT %ERROR "GDB Port not defined."
+    PLIST
+    STOP
+    ENDDO
+  )
+
+  TITLE "TRACE32 PowerView front-end debugger for Nano 33 BLE (remote=&gdbRemote)"
+
+  IF !SYStem.Up()
+  (
+    SYStem.PORT &gdbRemote
+    Break.CONFIG.METHOD.Program Onchip
+    SYStem.Option MMUSPACES ON
+
+    ON ERROR CONTinue
+    ERROR.RESet
+    SYStem.Mode Attach
+    ON ERROR nothing
+    IF ERROR.OCCURRED()
+    (
+      PRINT %ERROR  "Error while connecting to the target."
+      PLIST
+      STOP
+      ENDDO
+    )
+  )
+)
+ELSE
+(
+  SYStem.CONFIG.DEBUGPORTTYPE SWD
+  SYStem.UP
+)
+
+;
+; load ELF
+;
+Data.LOAD.Elf "&elfFile"
+
+;
+; Window initialization
+;
+IF ("&userScript"!="")&&FILE.EXIST("&userScript")
+(
+  DO "&userScript"
+)
+ELSE
+(
+  ; Setup minimal debug environment
+  WinCLEAR
+  SETUP.Var.%SpotLight
+  WinPOS 0. 0. 120. 30.
+  List.auto
+  WinPOS 125. 0. 80. 10.
+  Frame.view
+  WinPOS 125. 18.
+  Register.view /SpotLight
+
+  IF "&termComPort"!=""
+  (
+    SUBTITLE " &termComPort"
+    TERM.RESet
+    TERM.METHOD COM &termComPort 115200 8 NONE 1STOP NONE
+    TERM.Mode VT100
+    WinPOS 104.88 35.286 91. 24. 0. 0. W001
+    TERM.view
+    SUBTITLE ""
+  )
+)
+
+ENDDO

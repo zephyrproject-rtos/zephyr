@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/arch/x86/multiboot.h>
+#include <zephyr/devicetree.h>
 
 /*
  * This is included by ia32/crt0.S and intel64/locore.S
@@ -45,12 +46,12 @@
 	.long MULTIBOOT_HEADER_MAGIC
 	.long MULTIBOOT_HEADER_FLAGS
 	.long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
-#ifdef CONFIG_MULTIBOOT_FRAMEBUF
-	.fill 5,4,0				/* (unused exec layout) */
-	.long 0					/* linear graphics mode */
-	.long CONFIG_MULTIBOOT_FRAMEBUF_X	/* width */
-	.long CONFIG_MULTIBOOT_FRAMEBUF_Y	/* height */
-	.long 32				/* depth */
-#endif /* CONFIG_MULTIBOOT_FRAMEBUF */
+#if DT_HAS_COMPAT_STATUS_OKAY(intel_multiboot_framebuffer)
+	.fill 5,4,0							/* (unused exec layout) */
+	.long 0								/* linear graphics mode */
+	.long DT_PROP(DT_INST(0, intel_multiboot_framebuffer), width)	/* width */
+	.long DT_PROP(DT_INST(0, intel_multiboot_framebuffer), height)	/* height */
+	.long 32							/* depth */
+#endif
 1:
 #endif

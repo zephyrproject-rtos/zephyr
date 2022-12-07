@@ -71,8 +71,31 @@ recommended by the SoC vendor or a specific board (check your specific
 
 You can configure the Zephyr build system to use a specific toolchain by
 setting :ref:`environment variables <env_vars>` such as
-:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to a supported value, along with
-additional variable(s) specific to the toolchain variant.
+:envvar:`ZEPHYR_TOOLCHAIN_VARIANT <{TOOLCHAIN}_TOOLCHAIN_PATH>` to a supported
+value, along with additional variable(s) specific to the toolchain variant.
+
+.. _gs_toolchain_update:
+
+Updating the Zephyr SDK toolchain
+*********************************
+
+When updating Zephyr SDK, check whether the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`
+or :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variables are already set.
+
+* If the variables are not set, the latest compatible version of Zephyr SDK will be selected
+  by default. Proceed to next step without making any changes.
+
+* If :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` is set, the corresponding toolchain will be selected
+  at build time. Zephyr SDK is identified by the value ``zephyr``.
+  If the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` environment variable is not ``zephyr``, then either
+  unset it or change its value to ``zephyr`` to make sure Zephyr SDK is selected.
+
+* If the :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable is set, it will override
+  the default lookup location for Zephyr SDK. If you install Zephyr SDK to one
+  of the :ref:`recommended locations <toolchain_zephyr_sdk_bundle_variables>`,
+  you can unset this variable. Otherwise, set it to your chosen install location.
+
+For more information about these environment variables in Zephyr, see :ref:`env_vars_important`.
 
 Cloning the Zephyr Repositories
 *******************************
@@ -126,6 +149,8 @@ Export Zephyr CMake package
 
 The :ref:`cmake_pkg` can be exported to CMake's user package registry if it has
 not already been done as part of :ref:`getting_started`.
+
+.. _gs-board-aliases:
 
 Board Aliases
 *************

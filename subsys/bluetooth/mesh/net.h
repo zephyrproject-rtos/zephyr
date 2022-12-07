@@ -67,7 +67,10 @@ struct bt_mesh_friend {
 	struct k_work_delayable timer;
 
 	struct bt_mesh_friend_seg {
-		sys_slist_t queue;
+		/* First received segment of a segmented message. Rest
+		 * segments are added as net_buf fragments.
+		 */
+		struct net_buf *buf;
 
 		/* The target number of segments, i.e. not necessarily
 		 * the current number of segments, in the queue. This is
@@ -167,6 +170,7 @@ struct bt_mesh_lpn {
 
 /* bt_mesh_net.flags */
 enum {
+	BT_MESH_INIT,            /* We have been initialized */
 	BT_MESH_VALID,           /* We have been provisioned */
 	BT_MESH_SUSPENDED,       /* Network is temporarily suspended */
 	BT_MESH_IVU_IN_PROGRESS, /* IV Update in Progress */
@@ -236,7 +240,6 @@ struct bt_mesh_net_rx {
 	       net_if:2,       /* Network interface */
 	       local_match:1,  /* Matched a local element */
 	       friend_match:1; /* Matched an LPN we're friends for */
-	uint16_t  msg_cache_idx;  /* Index of entry in message cache */
 };
 
 /* Encoding context for Network/Transport data */

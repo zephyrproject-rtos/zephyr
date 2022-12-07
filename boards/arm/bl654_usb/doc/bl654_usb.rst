@@ -24,14 +24,12 @@ This USB adapter has the following features:
 * :abbr:`RTC (nRF RTC System Clock)`
 
 .. figure:: img/bl654_usb.jpg
-     :width: 500px
      :align: center
      :alt: BL654 USB adapter
 
      BL654 USB Adapter
 
 .. figure:: img/bl654_usb_pcb.jpg
-     :width: 500px
      :align: center
      :alt: 451-00004 Box Contents
 
@@ -126,7 +124,6 @@ before proceeding. These instructions were tested with version 6.1.0.
    The push button is in a pin-hole on the logo side of the USB adapter.
 
    .. image:: img/bl654_usb_reset.jpg
-      :width: 500px
       :align: center
       :alt: Location of RESET button
 

@@ -8,13 +8,6 @@ Overview
 
 This board configuration will use QEMU to emulate the TI LM3S6965 platform.
 
-.. figure:: qemu_cortex_m3.png
-   :width: 600px
-   :align: center
-   :alt: Qemu
-
-   Qemu (Credit: qemu.org)
-
 This configuration provides support for an ARM Cortex-M3 CPU and these devices:
 
 * Nested Vectored Interrupt Controller

@@ -40,6 +40,7 @@
 	aliases {
 		led0 = &blue_led;
 		lora0 = &lora;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -105,12 +106,11 @@
 	lora: lora@0 {
 		compatible = "semtech,sx1262";
 		reg = <0>;
-		label = "sx1262";
 		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 		busy-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		tx-enable-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 		rx-enable-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
-		dio1-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+		dio1-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 		dio2-tx-enable;
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
 		tcxo-power-startup-delay-ms = <5>;

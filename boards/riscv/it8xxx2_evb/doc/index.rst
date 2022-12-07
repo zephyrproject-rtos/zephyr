@@ -8,11 +8,10 @@ Overview
 
 The IT8XXX2 is a 32-bit RISC-V Micro-controller.
 And a highly integrated embedded controller with system functions.
-It is suitable for mobile system applications.
+It is suitable for mobile system applications. The picture below is
+the IT81302 MECC board (also known as it8xxx2_evb) and its debug card.
 
-.. figure:: it81302_board.jpg
-     :width: 550px
-     :height: 452px
+.. figure:: it8xxx2_evb_and_debug_card.jpg
      :align: center
      :alt: IT81302 EVB
 
@@ -75,6 +74,13 @@ Other hardware features are not currently supported by Zephyr.
 The default configuration can be found in the
 :zephyr_file:`boards/riscv/it8xxx2_evb/it8xxx2_evb_defconfig` Kconfig file.
 
+Hardware reworks
+****************
+
+Before using the it8xxx2_evb, some hardware rework is needed. The HW rework
+guide can be found in ITE's website.
+https://www.ite.com.tw/uploads/product_download/IT81302_MECC_Rework_Guide_0927.pdf
+
 Programming and debugging on it83202
 ************************************
 
@@ -84,19 +90,17 @@ You can get them at: `ITE's website`_.
 
 Wiring
 =======
-#. Connect your Download Board to your host computer using the USB cable.
+#. Connect the Download Board to your host computer using the USB cable.
 
-   .. image:: ite_Downloadboard_setup.jpg
-        :width: 600px
+#. Connect the it8xxx2_evb to your host computer or a 5V1A USB power supply.
+
+#. Connect the Download Board J5 to J8 on the it8xxx2_evb board.
+
+#. Connect the USB to UART wire to it8xxx2_evb.
+
+   .. image:: it8xxx2_evb_wiring.jpg
         :align: center
-        :alt: ITE Download Board Connected
-
-#. Connect your Download Board to J145 on the it8xxx2_evb board.
-
-   .. image:: it8xxx2_evb_setup.jpg
-        :width: 600px
-        :align: center
-        :alt: ITE Download Board Connected
+        :alt: it8xxx2_evb wiring
 
    .. note:: Be careful during connection!
     Use separate wires to connect I2C pins with pins on the it8xxx2_evb board.
@@ -104,34 +108,27 @@ Wiring
 
     +-------------+---------------+
     |   J5        | it8xxx2_evb   |
-    |   Connector | J145 Connector|
+    |   Connector | J8 Connector  |
     +=============+===============+
-    |      2      |       7       |
+    |      2      |       1       |
     +-------------+---------------+
-    |      3      |       9       |
+    |      3      |       3       |
     +-------------+---------------+
-    |      4      |       10      |
+    |      4      |       5       |
     +-------------+---------------+
 
-#. Connect UART0 port of the it8xxx2_evb board
-   to your host computer using the usb cable.
-
-   .. note:: Be careful during connection!
-    Use separate wires to connect USB serial with pins on the it8xxx2_evb board.
-    Wiring connection is described in the table below.
+    For USB to UART cable, connect the it8xxx2_evb as below:
 
     +-------------+---------------+
-    |   USB       |  it8xxx2_evb  |
-    |   Connector |  Connector    |
+    | USB to UART | it8xxx2_evb   |
+    | cable       | J5 Connector  |
     +=============+===============+
-    |      TX     |   UART0 5     |
+    |     RX      |     J5.3      |
     +-------------+---------------+
-    |      RX     |   UART0 7     |
+    |     TX      |     J5.4      |
     +-------------+---------------+
-    |      GND    |      J15      |
+    |     GND     | eSPI Debug.10 |
     +-------------+---------------+
-
-#. Apply power to the board via a USB cable.
 
 Building
 ========
@@ -160,20 +157,16 @@ to the it8xxx2 board flash.
    Second, turn on the it8xxx2_evb board switch.
    Then, configure your winflash tool like below.
 
-    .. figure:: WinFlashTool_P2.png
-          :width: 600px
+    .. figure:: WinFlashTool_P2.jpg
           :align: center
 
-    .. figure:: WinFlashTool_P4.png
-          :width: 600px
-          :align: center
+    .. figure:: WinFlashTool_P4.jpg
 
 #. Using winflash tool flash zephyr.bin into your ITE board.
    First, click ``Load`` button and select your zephyr.bin file.
    Second, click ``run`` to flash the iamge into board.
 
-    .. figure:: WinFlashTool_P3.png
-          :width: 600px
+    .. figure:: WinFlashTool_P3.jpg
           :align: center
 
 #. At this point, you have flashed your image into ITE board and
@@ -183,8 +176,7 @@ to the it8xxx2 board flash.
    For example, open device manager to find the USB Serial Port(COM4) and use your
    terminal program to connect it(Speed: 115200).
 
-    .. figure:: WinFlashTool_P1.png
-          :width: 600px
+    .. figure:: WinFlashTool_P1.jpg
           :align: center
 
 #. Turn on the it8xxx2_evb board switch, you should see ``"Hello World! it8xxx2_evb"``
@@ -204,7 +196,13 @@ Ubuntu
       $ minicom -D /dev/ttyUSB0 -b 115200
 
 #. Open a second terminal window and use linux flash tool to flash your board.
-   You can find more details about tool usage from its document.
+
+   .. code-block:: console
+
+      $ sudo ~/itetool/ite -f build/zephyr/zephyr.bin
+
+   .. note:: The source code of ITE tool can be downloaded here:
+    https://www.ite.com.tw/uploads/product_download/itedlb4-linux-v106.tar.bz2
 
 #. Split first and second terminal windows to view both of them.
    You should see ``"Hello World! it8xxx2_evb"`` in the first terminal window.

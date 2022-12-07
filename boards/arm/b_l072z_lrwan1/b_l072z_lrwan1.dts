@@ -71,7 +71,11 @@
 	cpu-power-states = <&stop>;
 };
 
-&lptim1 {
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
 	status = "okay";
 };
 
@@ -122,7 +126,6 @@ arduino_i2c: &i2c1 {};
 	lora: lora@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
-		label = "sx1276";
 		reset-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
 		dio-gpios = <&gpiob 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
 			<&gpiob 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
@@ -154,6 +157,8 @@ arduino_i2c: &i2c1 {};
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 
@@ -165,7 +170,7 @@ arduino_i2c: &i2c1 {};
 	status = "okay";
 };
 
-&usb {
+zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";

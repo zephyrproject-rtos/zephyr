@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <string.h>
 #include <inttypes.h>
 #include <zephyr/net/net_timeout.h>
@@ -31,7 +31,7 @@ static void dump_nto(const struct net_timeout *nto)
 }
 #endif
 
-static void test_basics(void)
+ZTEST(net_timeout, test_basics)
 {
 	zassert_equal(NET_TIMEOUT_MAX_VALUE, INT32_MAX,
 		      "Max value not as expected");
@@ -43,7 +43,7 @@ static void test_basics(void)
 		      "Full-max constant is wrong");
 }
 
-static void test_set(void)
+ZTEST(net_timeout, test_set)
 {
 	struct net_timeout nto;
 	uint32_t now = 4;
@@ -52,17 +52,17 @@ static void test_set(void)
 	/* Zero is a special case. */
 	memset(&nto, 0xa5, sizeof(nto));
 	net_timeout_set(&nto, 0, now);
-	zassert_equal(nto.timer_start, now, NULL);
-	zassert_equal(nto.wrap_counter, 0, NULL);
-	zassert_equal(nto.timer_timeout, 0, NULL);
+	zassert_equal(nto.timer_start, now);
+	zassert_equal(nto.wrap_counter, 0);
+	zassert_equal(nto.timer_timeout, 0);
 
 	/* Less than the max is straightforward. */
 	lifetime = NTO_MAX_S / 2;
 	++now;
 	memset(&nto, 0xa5, sizeof(nto));
 	net_timeout_set(&nto, lifetime, now);
-	zassert_equal(nto.timer_start, now, NULL);
-	zassert_equal(nto.wrap_counter, 0, NULL);
+	zassert_equal(nto.timer_start, now);
+	zassert_equal(nto.wrap_counter, 0);
 	zassert_equal(nto.timer_timeout, lifetime * MSEC_PER_SEC,
 		      NULL);
 
@@ -71,8 +71,8 @@ static void test_set(void)
 	++now;
 	memset(&nto, 0xa5, sizeof(nto));
 	net_timeout_set(&nto, lifetime, now);
-	zassert_equal(nto.timer_start, now, NULL);
-	zassert_equal(nto.wrap_counter, 0, NULL);
+	zassert_equal(nto.timer_start, now);
+	zassert_equal(nto.wrap_counter, 0);
 	zassert_equal(nto.timer_timeout, lifetime * MSEC_PER_SEC,
 		      NULL);
 
@@ -81,8 +81,8 @@ static void test_set(void)
 	++now;
 	memset(&nto, 0xa5, sizeof(nto));
 	net_timeout_set(&nto, lifetime, now);
-	zassert_equal(nto.timer_start, now, NULL);
-	zassert_equal(nto.wrap_counter, 1U, NULL);
+	zassert_equal(nto.timer_start, now);
+	zassert_equal(nto.wrap_counter, 1U);
 	zassert_equal(nto.timer_timeout,
 		      (lifetime * MSEC_PER_SEC) % NET_TIMEOUT_MAX_VALUE,
 		      NULL);
@@ -92,8 +92,8 @@ static void test_set(void)
 	++now;
 	memset(&nto, 0xa5, sizeof(nto));
 	net_timeout_set(&nto, lifetime, now);
-	zassert_equal(nto.timer_start, now, NULL);
-	zassert_equal(nto.wrap_counter, 1U, NULL);
+	zassert_equal(nto.timer_start, now);
+	zassert_equal(nto.wrap_counter, 1U);
 	zassert_equal(nto.timer_timeout,
 		      (lifetime * (uint64_t)MSEC_PER_SEC) % NET_TIMEOUT_MAX_VALUE,
 		      NULL);
@@ -103,12 +103,12 @@ static void test_set(void)
 	++now;
 	memset(&nto, 0xa5, sizeof(nto));
 	net_timeout_set(&nto, lifetime, now);
-	zassert_equal(nto.timer_start, now, NULL);
-	zassert_equal(nto.wrap_counter, MSEC_PER_SEC - 1, NULL);
-	zassert_equal(nto.timer_timeout, NET_TIMEOUT_MAX_VALUE, NULL);
+	zassert_equal(nto.timer_start, now);
+	zassert_equal(nto.wrap_counter, MSEC_PER_SEC - 1);
+	zassert_equal(nto.timer_timeout, NET_TIMEOUT_MAX_VALUE);
 }
 
-static void test_deadline(void)
+ZTEST(net_timeout, test_deadline)
 {
 	struct net_timeout nto;
 	uint64_t now = 1234;
@@ -147,7 +147,7 @@ static void test_deadline(void)
 		      NULL);
 }
 
-static void test_remaining(void)
+ZTEST(net_timeout, test_remaining)
 {
 	struct net_timeout nto;
 	uint32_t now = 4;
@@ -163,7 +163,7 @@ static void test_remaining(void)
 	lifetime = NTO_MAX_S / 2;
 	memset(&nto, 0xa5, sizeof(nto));
 	net_timeout_set(&nto, lifetime, now);
-	zassert_equal(nto.wrap_counter, 0, NULL);
+	zassert_equal(nto.wrap_counter, 0);
 	zassert_equal(net_timeout_remaining(&nto, now), lifetime,
 		      NULL);
 
@@ -184,12 +184,12 @@ static void test_remaining(void)
 	/* Works when wrap is involved */
 	lifetime = 4 * FULLMAX_S;
 	net_timeout_set(&nto, lifetime, now);
-	zassert_equal(nto.wrap_counter, 7, NULL);
+	zassert_equal(nto.wrap_counter, 7);
 	zassert_equal(net_timeout_remaining(&nto, now), lifetime,
 		      NULL);
 }
 
-static void test_evaluate_basic(void)
+ZTEST(net_timeout, test_evaluate_basic)
 {
 	struct net_timeout nto;
 	uint64_t now = 0;
@@ -296,7 +296,7 @@ static void test_evaluate_basic(void)
 		     NULL);
 }
 
-static void test_evaluate_whitebox(void)
+ZTEST(net_timeout, test_evaluate_whitebox)
 {
 	/* This explicitly tests the path where subtracting the excess elapsed
 	 * from the fractional timeout requires reducing the wrap count a
@@ -307,15 +307,15 @@ static void test_evaluate_whitebox(void)
 	uint32_t lifetime = 3 * HALFMAX_S + 2;
 
 	net_timeout_set(&nto, lifetime, now);
-	zassert_equal(nto.timer_start, now, NULL);
-	zassert_equal(nto.wrap_counter, 3, NULL);
-	zassert_equal(nto.timer_timeout, 59, NULL);
+	zassert_equal(nto.timer_start, now);
+	zassert_equal(nto.wrap_counter, 3);
+	zassert_equal(nto.timer_timeout, 59);
 
 	/* Preserve the deadline for validation */
 	uint64_t deadline = net_timeout_deadline(&nto, now);
 
 	uint32_t delay = net_timeout_evaluate(&nto, now);
-	zassert_equal(delay, NET_TIMEOUT_MAX_VALUE, NULL);
+	zassert_equal(delay, NET_TIMEOUT_MAX_VALUE);
 	zassert_equal(net_timeout_deadline(&nto, now),
 		      deadline, NULL);
 
@@ -324,50 +324,36 @@ static void test_evaluate_whitebox(void)
 	 */
 	now += delay + 100U;
 	delay = net_timeout_evaluate(&nto, now);
-	zassert_equal(nto.timer_start, now, NULL);
-	zassert_equal(nto.wrap_counter, 1, NULL);
-	zassert_equal(nto.timer_timeout, 2147483606, NULL);
+	zassert_equal(nto.timer_start, now);
+	zassert_equal(nto.wrap_counter, 1);
+	zassert_equal(nto.timer_timeout, 2147483606);
 	zassert_equal(net_timeout_deadline(&nto, now),
 		      deadline, NULL);
-	zassert_equal(delay, NET_TIMEOUT_MAX_VALUE, NULL);
+	zassert_equal(delay, NET_TIMEOUT_MAX_VALUE);
 
 	/* Another late evaluation finishes the wrap leaving some extra.
 	 */
 	now += delay + 123U;
 	delay = net_timeout_evaluate(&nto, now);
-	zassert_equal(nto.timer_start, (uint32_t)now, NULL);
-	zassert_equal(nto.wrap_counter, 0, NULL);
-	zassert_equal(nto.timer_timeout, 2147483483, NULL);
+	zassert_equal(nto.timer_start, (uint32_t)now);
+	zassert_equal(nto.wrap_counter, 0);
+	zassert_equal(nto.timer_timeout, 2147483483);
 	zassert_equal(net_timeout_deadline(&nto, now),
 		      deadline, NULL);
-	zassert_equal(delay, nto.timer_timeout, NULL);
+	zassert_equal(delay, nto.timer_timeout);
 
 	/* Complete the timeout.  This does *not* adjust the internal
 	 * state.
 	 */
 	now += delay + 234U;
 	delay = net_timeout_evaluate(&nto, now);
-	zassert_equal(delay, 0, NULL);
+	zassert_equal(delay, 0);
 	zassert_equal(net_timeout_deadline(&nto, now),
 		      deadline, NULL);
 }
 
-static void test_nop(void)
+ZTEST(net_timeout, test_nop)
 {
 }
 
-/*test case main entry*/
-void test_main(void)
-{
-
-	ztest_test_suite(test_net_timeout,
-			 ztest_unit_test(test_basics),
-			 ztest_unit_test(test_set),
-			 ztest_unit_test(test_deadline),
-			 ztest_unit_test(test_remaining),
-			 ztest_unit_test(test_evaluate_basic),
-			 ztest_unit_test(test_evaluate_whitebox),
-			 ztest_unit_test(test_nop)
-			 );
-	ztest_run_test_suite(test_net_timeout);
-}
+ZTEST_SUITE(net_timeout, NULL, NULL, NULL, NULL, NULL);

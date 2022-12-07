@@ -593,6 +593,30 @@ invisible:
    [*] All my children are invisible  ----
 
 
+Commas in macro arguments
+*************************
+
+Kconfig uses commas to separate macro arguments.
+This means a construct like this will fail:
+
+.. code-block:: none
+
+    config FOO
+        bool
+        default y if $(dt_chosen_enabled,"zephyr,bar")
+
+To solve this problem, create a variable with the text and use this variable as
+argument, as follows:
+
+.. code-block:: none
+
+    DT_CHOSEN_ZEPHYR_BAR := zephyr,bar
+
+    config FOO
+        bool
+        default y if $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_BAR))
+
+
 Checking changes in menuconfig/guiconfig
 ****************************************
 
@@ -745,17 +769,40 @@ The recommended style in Zephyr is to skip redundant defaults for ``bool`` and
 ``string`` symbols. That also generates clearer documentation: (*Implicitly
 defaults to n* instead of *n if <dependencies, possibly inherited>*).
 
-.. note::
-
-   The one case where ``default n``/``default ""`` is not redundant is when
-   defining a symbol in multiple locations and wanting to override e.g. a
-   ``default y`` on a later definition.
-
 Defaults *should* always be given for ``int`` and ``hex`` symbols, however, as
 they implicitly default to the empty string. This is partly for compatibility
 with the C Kconfig tools, though an implicit 0 default might be less likely to
 be what was intended compared to other symbol types as well.
 
+The one case where ``default n``/``default ""`` is not redundant is when
+defining a symbol in multiple locations and wanting to override e.g. a
+``default y`` on a later definition. Note that a ``default n`` does not override
+a previously defined ``default y``.
+
+That is, FOO will be set to ``n`` in the example below. If the ``default n`` was
+omitted in the first definition, FOO would have been set to ``y``.
+
+  .. code-block:: none
+
+     config FOO
+     	bool "foo"
+     	default n
+
+     config FOO
+     	bool "foo"
+     	default y
+
+In the following example FOO will get the value ``y``.
+
+  .. code-block:: none
+
+     config FOO
+     	bool "foo"
+     	default y
+
+     config FOO
+     	bool "foo"
+     	default n
 
 .. _kconfig_shorthands:
 

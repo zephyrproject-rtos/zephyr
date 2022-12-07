@@ -7,6 +7,7 @@
 
 #define DT_DRV_COMPAT renesas_rcar_pfc
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>

@@ -13,10 +13,16 @@ config SOC_FAMILY
 	depends on SOC_FAMILY_RISCV_PRIVILEGE
 
 config RISCV_HAS_PLIC
-	bool "Does the SOC provide support for a Platform Level Interrupt Controller"
+	bool "Does the SOC provide support for a Platform Level Interrupt Controller (PLIC)"
 	depends on SOC_FAMILY_RISCV_PRIVILEGE
 	help
-	  Does the SOC provide support for a Platform Level Interrupt Controller
+	  Does the SOC provide support for a Platform Level Interrupt Controller (PLIC).
+
+config RISCV_HAS_CLIC
+	bool "Does the SOC provide support for a Core-Local Interrupt Controller (CLIC)"
+	depends on SOC_FAMILY_RISCV_PRIVILEGE
+	help
+	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
 config RISCV_MTVEC_VECTORED_MODE
 	bool "Should the SOC use mtvec in vectored mode"

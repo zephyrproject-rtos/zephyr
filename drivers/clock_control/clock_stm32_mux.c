@@ -25,8 +25,8 @@ static int stm32_clk_mux_init(const struct device *dev)
 {
 	const struct stm32_clk_mux_config *cfg = dev->config;
 
-	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &cfg->pclken) != 0) {
+	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			     (clock_control_subsys_t) &cfg->pclken, NULL) != 0) {
 		LOG_ERR("Could not enable clock mux");
 		return -EIO;
 	}
@@ -37,7 +37,7 @@ static int stm32_clk_mux_init(const struct device *dev)
 #define STM32_MUX_CLK_INIT(id)						\
 									\
 static const struct stm32_clk_mux_config stm32_clk_mux_cfg_##id = {	\
-	.pclken = STM32_INST_CLOCK_INFO(id, 0)				\
+	.pclken = STM32_CLOCK_INFO(0, DT_DRV_INST(id))			\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(id, &stm32_clk_mux_init, NULL,			\

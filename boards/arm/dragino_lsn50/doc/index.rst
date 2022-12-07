@@ -23,10 +23,8 @@ This kit provides:
 - GPIOs exposed via screw terminals on the carrier board
 - Housing
 
-.. image:: img/dragino_lsn50.png
-     :width: 531px
+.. image:: img/dragino_lsn50.jpg
      :align: center
-     :height: 354px
      :alt: Dragino LSN50
 
 More information about the board can be found at the `Dragino LSN50 website`_.
@@ -187,7 +185,7 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _Dragino LSN50 website:
-   http://wiki.dragino.com/index.php?title=Lora_Sensor_Node-LSN50#Resource
+   https://www.dragino.com/products/lora-lorawan-end-node/item/128-lsn50.html
 
 .. _STM32L072CZ on www.st.com:
    http://www.st.com/en/microcontrollers/stm32l072cz.html

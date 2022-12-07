@@ -18,4 +18,7 @@ config IEEE802154_NRF5
 config HEAP_MEM_POOL_SIZE
 	default 4096 if NRF_802154_SER_RADIO
 
+config LOG_DOMAIN_NAME
+	default "net"
+
 endif # SOC_NRF5340_CPUNET_QKAA

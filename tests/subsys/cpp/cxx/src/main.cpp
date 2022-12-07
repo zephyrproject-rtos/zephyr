@@ -27,12 +27,14 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/coredump.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/dac.h>
+#include <zephyr/drivers/dai.h>
 #include <zephyr/drivers/disk.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/ec_host_cmd_periph.h>
+#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_periph.h>
 #include <zephyr/drivers/edac.h>
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/emul.h>
@@ -48,6 +50,7 @@
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/kscan.h>
 #include <zephyr/drivers/led.h>
@@ -55,19 +58,21 @@
 #include <zephyr/drivers/lora.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/drivers/mdio.h>
+#include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/peci.h>
 /* drivers/pinctrl.h requires SoC specific header */
-#include <zephyr/drivers/pinmux.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/drivers/ps2.h>
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/regulator.h>
 /* drivers/reset.h conflicts with assert() for certain platforms */
+#include <zephyr/drivers/sdhc.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi_emul.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_hid.h>
@@ -75,7 +80,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/watchdog.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 class foo_class {
 public:
@@ -103,19 +108,29 @@ static int test_init(const struct device *dev)
 
 SYS_INIT(test_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
+/* Check that global static object constructors are called. */
+foo_class static_foo(12345678);
 
-static void test_new_delete(void)
+ZTEST(cxx_tests, test_global_static_ctor)
+{
+	zassert_equal(static_foo.get_foo(), 12345678);
+}
+
+/*
+ * Check that dynamic memory allocation (usually, the C library heap) is
+ * functional when the global static object constructors are called.
+ */
+foo_class *static_init_dynamic_foo = new foo_class(87654321);
+
+ZTEST(cxx_tests, test_global_static_ctor_dynmem)
+{
+	zassert_equal(static_init_dynamic_foo->get_foo(), 87654321);
+}
+
+ZTEST(cxx_tests, test_new_delete)
 {
 	foo_class *test_foo = new foo_class(10);
-	zassert_equal(test_foo->get_foo(), 10, NULL);
+	zassert_equal(test_foo->get_foo(), 10);
 	delete test_foo;
 }
-
-void test_main(void)
-{
-	ztest_test_suite(cpp_tests,
-			 ztest_unit_test(test_new_delete)
-		);
-
-	ztest_run_test_suite(cpp_tests);
-}
+ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);

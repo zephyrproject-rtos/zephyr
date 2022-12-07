@@ -15,8 +15,7 @@ low-power operation, a standard-based form factor with expansion board
 options and a built-in debug interface for flash programming and run-control.
 
 
-.. image:: ./frdm_kl25z.jpg
-   :width: 272px
+.. image:: frdm_kl25z.jpg
    :align: center
    :alt: FRDM-KL25Z
 
@@ -215,7 +214,7 @@ should see the following message in the terminal:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/l-seriesultra-low-powerm0-plus/freedom-development-platform-for-kinetis-kl14-kl15-kl24-kl25-mcus:FRDM-KL25Z
 
 .. _FRDM-KL25Z User Guide:
-   https://www.nxp.com/docs/en/user-guide/FRDMKL25ZUM.zip
+   https://www.nxp.com/webapp/Download?colCode=FRDMKL25ZUM
 
 .. _FRDM-KL25Z Schematics:
    https://www.nxp.com/downloads/en/schematics/FRDM-KL25Z_SCH_REV_E.pdf
@@ -227,13 +226,13 @@ should see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/KL25P80M48SF0.pdf
 
 .. _KL25Z Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/KL25P80M48SF0RM.pdf
+   https://www.nxp.com/webapp/Download?colCode=KL25P80M48SF0RM
 
 .. _DAPLink Bootloader Update:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/
 
 .. _OpenSDA DAPLink FRDM-KL25Z Firmware:
-   https://www.nxp.com/assets/downloads/data/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmkl25z_rev0242.zip
+   https://www.nxp.com/downloads/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmkl25z_rev0242.zip
 
 .. _OpenSDA J-Link FRDM-KL25Z Firmware:
    https://www.segger.com/downloads/jlink/OpenSDA_FRDM-KL25Z

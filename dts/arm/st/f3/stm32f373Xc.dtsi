@@ -25,7 +25,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
 			interrupts = <56 0 57 0 58 0 59 0 60 0>;
 			status = "disabled";
-			label = "DMA_2";
 		};
 
 		dac2: dac@40009800 {
@@ -33,7 +32,6 @@
 			reg = <0x40009800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
-			label = "DAC_2";
 			#io-channel-cells = <1>;
 		};
 	};

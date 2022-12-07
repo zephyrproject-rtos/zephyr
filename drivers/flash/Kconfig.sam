@@ -6,10 +6,9 @@
 config SOC_FLASH_SAM
 	bool "Atmel SAM flash driver"
 	default y
+	depends on DT_HAS_ATMEL_SAM_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
 	help
 	  Enable the Atmel SAM series internal flash driver.

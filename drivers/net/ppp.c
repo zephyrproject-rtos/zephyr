@@ -1018,8 +1018,6 @@ static int ppp_start(const struct device *dev)
 	 */
 #if !defined(CONFIG_NET_TEST)
 	if (atomic_cas(&context->modem_init_done, false, true)) {
-		const char *dev_name = NULL;
-
 		/* Now try to figure out what device to open. If GSM muxing
 		 * is enabled, then use it. If not, then check if modem
 		 * configuration is enabled, and use that. If none are enabled,
@@ -1035,22 +1033,17 @@ static int ppp_start(const struct device *dev)
 			return -ENOENT;
 		}
 
-		dev_name = mux->name;
+		context->dev = mux;
 #elif IS_ENABLED(CONFIG_MODEM_GSM_PPP)
-		dev_name = DT_BUS_LABEL(DT_INST(0, zephyr_gsm_ppp));
+		context->dev = DEVICE_DT_GET(DT_BUS(DT_INST(0, zephyr_gsm_ppp)));
 #else
-		dev_name = CONFIG_NET_PPP_UART_NAME;
+		/* dts chosen zephyr,ppp-uart case */
+		context->dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ppp_uart));
 #endif
-		if (dev_name == NULL || dev_name[0] == '\0') {
-			LOG_ERR("UART configuration is wrong!");
-			return -EINVAL;
-		}
+		LOG_INF("Initializing PPP to use %s", context->dev->name);
 
-		LOG_INF("Initializing PPP to use %s", dev_name);
-
-		context->dev = device_get_binding(dev_name);
-		if (!context->dev) {
-			LOG_ERR("Cannot find dev %s", dev_name);
+		if (!device_is_ready(context->dev)) {
+			LOG_ERR("Device %s is not ready", context->dev->name);
 			return -ENODEV;
 		}
 #if defined(CONFIG_NET_PPP_ASYNC_UART)

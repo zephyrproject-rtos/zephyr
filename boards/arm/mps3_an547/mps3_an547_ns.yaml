@@ -8,6 +8,8 @@ identifier: mps3_an547_ns
 name: Arm MPS3-AN547_ns
 type: mcu
 arch: arm
+ram: 2048
+flash: 384
 simulation: qemu
 toolchain:
   - gnuarmemb

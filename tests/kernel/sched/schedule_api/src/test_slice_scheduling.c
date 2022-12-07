@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "test_sched.h"
 
 #ifdef CONFIG_TIMESLICING
@@ -87,11 +87,13 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_slice_scheduling(void)
+ZTEST(threads_scheduling, test_slice_scheduling)
 {
 	k_tid_t tid[NUM_THREAD];
 	int old_prio = k_thread_priority_get(k_current_get());
 	int count = 0;
+
+	thread_idx = 0;
 
 	/* disable timeslice */
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
@@ -179,7 +181,7 @@ static void slice_perthread_fn(void *a, void *b, void *c)
 	}
 }
 
-void test_slice_perthread(void)
+ZTEST(threads_scheduling, test_slice_perthread)
 {
 	if (!IS_ENABLED(CONFIG_TIMESLICE_PER_THREAD)) {
 		ztest_test_skip();
@@ -202,11 +204,11 @@ void test_slice_perthread(void)
 }
 
 #else /* CONFIG_TIMESLICING */
-void test_slice_scheduling(void)
+ZTEST(threads_scheduling, test_slice_scheduling)
 {
 	ztest_test_skip();
 }
-void test_slice_perthread(void)
+ZTEST(threads_scheduling, test_slice_perthread)
 {
 	ztest_test_skip();
 }

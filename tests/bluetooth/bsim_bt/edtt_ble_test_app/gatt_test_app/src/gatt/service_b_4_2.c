@@ -16,12 +16,12 @@
 
 #include "gatt_macs.h"
 
-/** @def BT_UUID_SERVICE_B_4
+/**
  *  @brief UUID for the Service B.4
  */
 #define BT_UUID_SERVICE_B_4             BT_UUID_DECLARE_16(0xa00b)
 
-/** @def BT_UUID_VALUE_V7
+/**
  *  @brief UUID for the Value V7 Characteristic
  */
 #define BT_UUID_VALUE_V7                BT_UUID_DECLARE_16(0xb007)

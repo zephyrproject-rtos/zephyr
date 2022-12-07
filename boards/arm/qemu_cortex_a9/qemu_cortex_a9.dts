@@ -39,6 +39,7 @@
 		zephyr,console    = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,ocm        = &ocm_low;
+		zephyr,uart-pipe  = &uart1;
 	};
 };
 

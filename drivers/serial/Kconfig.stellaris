@@ -2,7 +2,8 @@
 
 menuconfig UART_STELLARIS
 	bool "Stellaris serial driver"
-	depends on SOC_TI_LM3S6965
+	default y
+	depends on DT_HAS_TI_STELLARIS_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

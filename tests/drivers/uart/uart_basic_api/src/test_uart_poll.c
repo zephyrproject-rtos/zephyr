@@ -11,7 +11,7 @@ static const char *poll_data = "This is a POLL test.\r\n";
 static int test_poll_in(void)
 {
 	unsigned char recv_char;
-	const struct device *uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(uart_dev)) {
 		TC_PRINT("UART device not ready\n");
@@ -40,7 +40,7 @@ static int test_poll_in(void)
 static int test_poll_out(void)
 {
 	int i;
-	const struct device *uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(uart_dev)) {
 		TC_PRINT("UART device not ready\n");
@@ -55,12 +55,20 @@ static int test_poll_out(void)
 	return TC_PASS;
 }
 
+#if CONFIG_SHELL
 void test_uart_poll_out(void)
+#else
+ZTEST(uart_basic_api, test_uart_poll_out)
+#endif
 {
-	zassert_true(test_poll_out() == TC_PASS, NULL);
+	zassert_true(test_poll_out() == TC_PASS);
 }
 
+#if CONFIG_SHELL
 void test_uart_poll_in(void)
+#else
+ZTEST(uart_basic_api, test_uart_poll_in)
+#endif
 {
-	zassert_true(test_poll_in() == TC_PASS, NULL);
+	zassert_true(test_poll_in() == TC_PASS);
 }

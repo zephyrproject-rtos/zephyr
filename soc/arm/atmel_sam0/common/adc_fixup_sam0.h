@@ -104,6 +104,19 @@
 #else
 #  define ADC_SAM0_BIASREFBUF(n) 0
 #endif
+
+/*
+ * The following MCLK clock configuration fix-up symbols map to the applicable
+ * APB-specific symbols, in order to accommodate different SoC series with the
+ * ADC core connected to different APBs.
+ */
+#if defined(MCLK_APBDMASK_ADC) || defined(MCLK_APBDMASK_ADC0)
+#  define MCLK_ADC (MCLK->APBDMASK.reg)
+#elif defined(MCLK_APBCMASK_ADC0)
+#  define MCLK_ADC (MCLK->APBCMASK.reg)
+#else
+#  error ADC not supported...
+#endif
 #endif /* MCLK */
 
 /*

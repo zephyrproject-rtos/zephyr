@@ -127,7 +127,7 @@ void radio_tmr_status_reset(void);
 void radio_tmr_tifs_set(uint32_t tifs);
 uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder);
 uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick);
-void radio_tmr_start_us(uint8_t trx, uint32_t us);
+uint32_t radio_tmr_start_us(uint8_t trx, uint32_t us);
 uint32_t radio_tmr_start_now(uint8_t trx);
 uint32_t radio_tmr_start_get(void);
 void radio_tmr_stop(void);
@@ -163,7 +163,7 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags);
 uint32_t radio_ar_match_get(void);
 void radio_ar_status_reset(void);
 uint32_t radio_ar_has_match(void);
-void radio_ar_resolve(const uint8_t *addr);
+uint8_t radio_ar_resolve(const uint8_t *addr);
 
 /* Enables CTE inline configuration to automatically setup sampling and
  * switching according to CTEInfo in received PDU.

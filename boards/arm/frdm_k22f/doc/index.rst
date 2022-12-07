@@ -19,8 +19,7 @@ MCUs.
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
 
-.. image:: ./frdm_k22f.jpg
-   :width: 720px
+.. image:: frdm_k22f.jpg
    :align: center
    :alt: FRDM-K22F
 
@@ -58,7 +57,12 @@ For more information about the K22F SoC and FRDM-K22F board:
 Supported Features
 ==================
 
-The frdm_k22f board configuration supports the following hardware features:
+The frdm_k22f board configuration supports the hardware features listed
+below.  For additional features not yet supported, please also refer to the
+:ref:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
+NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+Zephyr.  Therefore, the frdm_k64f board may have additional features
+already supported, which can also be re-used on this frdm_k22f board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -90,6 +94,11 @@ The frdm_k22f board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | SENSOR    | off-chip   | fxos8700 polling;                   |
 |           |            | fxos8700 trigger                    |
++-----------+------------+-------------------------------------+
+| RNGA      | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
+| FTFE      | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -280,7 +289,7 @@ should see the following message in the terminal:
    https://www.nxp.com/docs/en/reference-manual/K22P121M120SF7RM.pdf
 
 .. _OpenSDA DAPLink FRDM-K22F Firmware:
-   http://www.nxp.com/assets/downloads/data/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmk22f_rev0242.zip
+   https://www.nxp.com/downloads/en/snippets-boot-code-headers-monitors/k20dx_frdmk22f_if_crc_legacy_0x8000.bin
 
 .. _DAPLink Bootloader Update:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <pthread.h>
 #include <zephyr/sys/util.h>
@@ -122,7 +122,7 @@ static void make_keys(void)
  * multiple keys.
  */
 
-void test_posix_multiple_threads_single_key(void)
+ZTEST(posix_apis, test_posix_multiple_threads_single_key)
 {
 	int i, ret = -1;
 
@@ -171,7 +171,7 @@ void test_posix_multiple_threads_single_key(void)
 	printk("\n");
 }
 
-void test_posix_single_thread_multiple_keys(void)
+ZTEST(posix_apis, test_posix_single_thread_multiple_keys)
 {
 	int i, ret = -1;
 

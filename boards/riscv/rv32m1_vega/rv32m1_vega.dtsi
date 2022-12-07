@@ -21,6 +21,8 @@
 		sw1 = &user_button_3;
 		sw2 = &user_button_4;
 		sw3 = &user_button_5;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 
 	leds {
@@ -132,10 +134,9 @@ arduino_i2c: &lpi2c0 {
 	pinctrl-0 = <&lpi2c3_default>;
 	pinctrl-names = "default";
 
-	fxos8700@1e {
+	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
-		label = "FXOS8700";
 		reset-gpios = <&gpioe 27 GPIO_ACTIVE_HIGH>;
 		int1-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpioe 22 GPIO_ACTIVE_LOW>;
@@ -158,7 +159,6 @@ arduino_spi: &lpspi0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <80000000>;
-		label = "MX25R32";
 		jedec-id = [c2 28 16];
 		size = <33554432>;
 	};

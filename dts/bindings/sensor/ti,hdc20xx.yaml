@@ -5,12 +5,11 @@ description: Texas Instruments HDC20XX Temperature and Humidity Sensor
 
 compatible: "ti,hdc20xx"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:
       type: phandle-array
-      required: false
       description: DRDY/INT pin.
 
         The DRDY/INT pin of HDC20xx sensor is open-drain, active low. If

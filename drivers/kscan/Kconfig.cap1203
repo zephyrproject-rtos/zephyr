@@ -1,12 +1,11 @@
 # Copyright (c) 2022 Keiya Nobuta
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_MICROCHIP_CAP1203 := microchip,cap1203
-
 menuconfig KSCAN_CAP1203
 	bool "CAP1203 3-cannel capacitive touch sensor driver"
-	depends on I2C
-	default $(dt_compat_enabled,$(DT_COMPAT_MICROCHIP_CAP1203))
+	default y
+	depends on DT_HAS_MICROCHIP_CAP1203_ENABLED
+	select I2C
 	help
 	  Enable driver for microchip CAP1203 3-cannel capacitive
 	  touch sensor.

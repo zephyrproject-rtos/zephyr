@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/types.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>
@@ -27,7 +27,13 @@
 #include "lll.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
+
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
@@ -88,7 +94,7 @@ void test_version_exchange_central_loc(void)
 
 	/* Initiate a Version Exchange Procedure */
 	err = ull_cp_version_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -160,7 +166,7 @@ void test_version_exchange_central_loc_invalid_rsp(void)
 
 	/* Initiate a Version Exchange Procedure */
 	err = ull_cp_version_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -196,7 +202,7 @@ void test_version_exchange_central_loc_invalid_rsp(void)
 
 	/* Initiate another Version Exchange Procedure */
 	err = ull_cp_version_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -232,7 +238,7 @@ void test_version_exchange_central_loc_invalid_rsp(void)
 
 	/* Initiate yet another Version Exchange Procedure */
 	err = ull_cp_version_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -272,7 +278,7 @@ void test_version_exchange_central_loc_2(void)
 	err = ull_cp_version_exchange(&conn);
 
 	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
-		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS);
 		err = ull_cp_version_exchange(&conn);
 	}
 
@@ -390,7 +396,7 @@ void test_version_exchange_central_rem_2(void)
 
 	/* Initiate a Version Exchange Procedure */
 	err = ull_cp_version_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -462,11 +468,11 @@ void test_version_exchange_central_loc_twice(void)
 
 	/* Initiate a Version Exchange Procedure */
 	err = ull_cp_version_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Initiate a Version Exchange Procedure */
 	err = ull_cp_version_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);

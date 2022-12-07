@@ -35,8 +35,6 @@ the STLINK-V3E debugger and programmer.
   Virtual COM port, and debug port
 
 .. image:: img/b_g474e_dpow1.jpg
-   :width: 426px
-   :height: 638px
    :align: center
    :alt: B-G474E-DPOW1
 

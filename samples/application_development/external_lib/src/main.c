@@ -7,7 +7,7 @@
 /* hello world example: calling functions from a static library */
 
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 
 #include <mylib.h>
