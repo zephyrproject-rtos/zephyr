@@ -8,3 +8,10 @@ tests:
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
+  sample.bluetooth.peripheral_iso.bt_ll_sw_split:
+    harness: bluetooth
+    tags: bluetooth
+    extra_args: CONF_FILE="prj-bt_ll_sw_split.conf"
+    platform_allow: nrf52dk_nrf52832
+    integration_platforms:
+      - nrf52dk_nrf52832
