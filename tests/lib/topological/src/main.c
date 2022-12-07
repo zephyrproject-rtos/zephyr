@@ -152,3 +152,47 @@ ZTEST(topological_tests, test_7points_7edges_DAG)
 
 	free(edges_vertex);
 }
+
+/**
+ * @brief Test the following 6 points/6 edges Directed cyclic Graph
+ *         A ------> B ------> C
+ *         |                   |
+ *         V                   V
+ *         F ------> E <------ D
+ */
+ZTEST(topological_tests, test_6points_6edges_DCG)
+{
+	/* points: A, B, C, D, E, F */
+	int point_num = 6;
+	/* edges: A->B, B->C, C->D, D->E, E->F, F->A */
+	int edge_num = 6;
+	uint16_t (*edges_vertex)[2];
+	uint16_t points[6] = {'A', 'B', 'C', 'D', 'E', 'F'};
+	uint16_t order[6];
+	int ret;
+
+	edges_vertex = (uint16_t(*)[2])malloc(sizeof(uint16_t) * edge_num * 2);
+	zassert_not_null(edges_vertex, "edges_vertex is null");
+	edges_vertex[0][0] = 'A';
+	edges_vertex[0][1] = 'B';
+
+	edges_vertex[1][0] = 'B';
+	edges_vertex[1][1] = 'C';
+
+	edges_vertex[2][0] = 'C';
+	edges_vertex[2][1] = 'D';
+
+	edges_vertex[3][0] = 'D';
+	edges_vertex[3][1] = 'E';
+
+	edges_vertex[4][0] = 'E';
+	edges_vertex[4][1] = 'F';
+
+	edges_vertex[5][0] = 'F';
+	edges_vertex[5][1] = 'A';
+
+	ret = topological_sort(point_num, points, edge_num, edges_vertex, order);
+	zassert_true(ret == -EINVAL, "input graph is Directed Cyclic Graph");
+
+	free(edges_vertex);
+}
