@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/types.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/bluetooth/hci.h>
 
@@ -22,7 +23,7 @@
 #include "ll_feat.h"
 #include "ll_settings.h"
 #include "lll.h"
-#include "lll_vendor.h"
+#include "lll/lll_vendor.h"
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
