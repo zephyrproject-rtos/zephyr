@@ -9,9 +9,10 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/iso.h>
 
+#include "util/util.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
-#include "util/util.h"
+#include "util/dbuf.h"
 
 #include "hal/ccm.h"
 #include "hal/ticker.h"
@@ -24,23 +25,28 @@
 
 #include "lll.h"
 #include "lll/lll_vendor.h"
+#include "lll_clock.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
-#include "lll_clock.h"
-
-#include "isoal.h"
-#include "ull_iso_types.h"
-#include "ull_tx_queue.h"
-#include "ull_internal.h"
-
-#include "ull_conn_types.h"
-#include "ull_conn_internal.h"
-#include "ull_conn_iso_types.h"
-#include "ull_conn_iso_internal.h"
-#include "ull_llcp.h"
 #include "lll_central_iso.h"
 
+#include "isoal.h"
+
+#include "ull_tx_queue.h"
+
+#include "ull_conn_types.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+
+#include "ull_llcp.h"
+
+#include "ull_internal.h"
+#include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
+
 #include "ll.h"
+#include "ll_feat.h"
 
 #include <zephyr/bluetooth/hci.h>
 
@@ -196,7 +202,7 @@ static void set_bn_max_pdu(bool framed, uint32_t iso_interval, uint32_t sdu_inte
 		 * TODO: Implement other strategies, possibly as policies.
 		 */
 		max_pdu_bn1 = ceil_f * 5 + ceil_f_x_max_sdu;
-		*bn = ceiling_fraction(max_pdu_bn1, CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE);
+		*bn = ceiling_fraction(max_pdu_bn1, LL_CIS_OCTETS_TX_MAX);
 		*max_pdu = ceiling_fraction(max_pdu_bn1, *bn) + 2;
 	} else {
 		/* For unframed, ISO_Interval must be N x SDU_Interval */
@@ -323,10 +329,10 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 			/* Use Max_PDU = MIN(<buffer_size>, Max_SDU) as default.
 			 * May be changed by set_bn_max_pdu.
 			 */
-			cis->lll.tx.max_pdu =
-					MIN(CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,
-					    cis->c_max_sdu);
-			cis->lll.rx.max_pdu = MIN(251, cis->p_max_sdu);
+			cis->lll.tx.max_pdu = MIN(LL_CIS_OCTETS_TX_MAX,
+						  cis->c_max_sdu);
+			cis->lll.rx.max_pdu = MIN(LL_CIS_OCTETS_RX_MAX,
+						  cis->p_max_sdu);
 
 			/* Calculate BN and Max_PDU (framed) for both
 			 * directions
