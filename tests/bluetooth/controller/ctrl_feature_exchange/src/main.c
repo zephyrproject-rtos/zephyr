@@ -7,7 +7,6 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #define ULL_LLCP_UNITTEST
 
@@ -27,7 +26,7 @@
 #include "ll_settings.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -49,9 +48,9 @@
 #include "helper_util.h"
 #include "helper_features.h"
 
-struct ll_conn conn;
+static struct ll_conn conn;
 
-static void setup(void)
+static void fex_setup(void *data)
 {
 	test_setup(&conn);
 }
@@ -76,7 +75,7 @@ static void setup(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_feat_exchange_central_loc(void)
+ZTEST(fex_central, test_feat_exchange_central_loc)
 {
 	uint64_t err;
 	uint64_t set_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE };
@@ -187,7 +186,7 @@ void test_feat_exchange_central_loc(void)
  *  ~~~~~~~~~~~~~~~~  TERMINATE CONNECTION ~~~~~~~~~~~~~~
  *    |                            |                   |
  */
-void test_feat_exchange_central_loc_invalid_rsp(void)
+ZTEST(fex_central, test_feat_exchange_central_loc_invalid_rsp)
 {
 	uint64_t err;
 	struct pdu_data_llctrl_feature_req local_feature_req;
@@ -269,7 +268,7 @@ void test_feat_exchange_central_loc_invalid_rsp(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_feat_exchange_central_loc_2(void)
+ZTEST(fex_central, test_feat_exchange_central_loc_2)
 {
 	uint8_t err;
 
@@ -301,7 +300,7 @@ void test_feat_exchange_central_loc_2(void)
  *   |        |                         |
  */
 #define CENTRAL_NR_OF_EVENTS 2
-void test_feat_exchange_central_rem(void)
+ZTEST(fex_central, test_feat_exchange_central_rem)
 {
 	uint64_t set_featureset[] = {
 		DEFAULT_FEATURE,
@@ -354,7 +353,7 @@ void test_feat_exchange_central_rem(void)
 
 #undef CENTRAL_NR_OF_EVENTS
 #define CENTRAL_NR_OF_EVENTS 3
-void test_feat_exchange_central_rem_2(void)
+ZTEST(fex_central, test_feat_exchange_central_rem_2)
 {
 	/*
 	 * we could combine some of the following,
@@ -440,7 +439,7 @@ void test_feat_exchange_central_rem_2(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_peripheral_feat_exchange_periph_loc(void)
+ZTEST(fex_periph, test_peripheral_feat_exchange_periph_loc)
 {
 	uint64_t err;
 	uint64_t featureset;
@@ -498,7 +497,7 @@ void test_peripheral_feat_exchange_periph_loc(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_feat_exchange_periph_loc_unknown_rsp(void)
+ZTEST(fex_periph, test_feat_exchange_periph_loc_unknown_rsp)
 {
 	uint64_t err;
 	uint64_t featureset;
@@ -560,33 +559,5 @@ void test_feat_exchange_periph_loc_unknown_rsp(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_hci_main(void);
-
-void test_main(void)
-{
-	ztest_test_suite(feat_exchange_central,
-			 ztest_unit_test_setup_teardown(test_feat_exchange_central_loc, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feat_exchange_central_loc_invalid_rsp,
-							setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feat_exchange_central_loc_2, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feat_exchange_central_rem, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feat_exchange_central_rem_2, setup,
-							unit_test_noop));
-
-	ztest_test_suite(feat_exchange_peripheral,
-			 ztest_unit_test_setup_teardown(test_peripheral_feat_exchange_periph_loc,
-							setup, unit_test_noop));
-
-	ztest_test_suite(feat_exchange_unknown,
-			 ztest_unit_test_setup_teardown(test_feat_exchange_periph_loc_unknown_rsp,
-							setup, unit_test_noop));
-
-	ztest_run_test_suite(feat_exchange_central);
-	ztest_run_test_suite(feat_exchange_peripheral);
-	ztest_run_test_suite(feat_exchange_unknown);
-
-	test_hci_main();
-}
+ZTEST_SUITE(fex_central, NULL, NULL, fex_setup, NULL, NULL);
+ZTEST_SUITE(fex_periph, NULL, NULL, fex_setup, NULL, NULL);

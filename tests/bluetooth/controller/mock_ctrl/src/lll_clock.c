@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/types.h>
+#include <zephyr/ztest.h>
 #include <soc.h>
 
 #include "hal/debug.h"

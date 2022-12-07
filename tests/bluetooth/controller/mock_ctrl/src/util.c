@@ -7,6 +7,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/ztest.h>
 #include "util.h"
 #include "pdu.h"
 

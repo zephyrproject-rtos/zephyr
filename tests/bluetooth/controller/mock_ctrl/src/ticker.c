@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/types.h>
+#include <zephyr/ztest.h>
 
 #include "ticker/ticker.h"
 
