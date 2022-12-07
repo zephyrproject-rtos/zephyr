@@ -26,6 +26,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_friend);
 
+/**
+ * Log modes other than the deferred may cause unintended delays during processing of log messages.
+ * This in turns will affect scheduling of the receive delay and receive window.
+ */
+#if !defined(CONFIG_TEST) && !defined(CONFIG_ARCH_POSIX) && \
+	defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_DEFERRED) && \
+	(LOG_LEVEL >= LOG_LEVEL_INF)
+#warning Frienship feature may work unstable when non-deferred log mode is selected. Use the \
+	 CONFIG_LOG_MODE_DEFERRED Kconfig option when Friend feature is enabled.
+#endif
+
 /* We reserve one extra buffer for each friendship, since we need to be able
  * to resend the last sent PDU, which sits separately outside of the queue.
  */

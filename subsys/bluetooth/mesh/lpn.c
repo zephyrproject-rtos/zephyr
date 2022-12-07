@@ -27,6 +27,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_lpn);
 
+/**
+ * Log modes other than the deferred may cause unintended delays during processing of log messages.
+ * This in turns will affect scheduling of the receive delay and receive window.
+ */
+#if !defined(CONFIG_TEST) && !defined(CONFIG_ARCH_POSIX) && \
+	defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_DEFERRED) && \
+	(LOG_LEVEL >= LOG_LEVEL_INF)
+#warning Frienship feature may work unstable when non-deferred log mode is selected. Use the \
+	 CONFIG_LOG_MODE_DEFERRED Kconfig option when Low Power node feature is enabled.
+#endif
+
 #if defined(CONFIG_BT_MESH_LPN_AUTO)
 #define LPN_AUTO_TIMEOUT (CONFIG_BT_MESH_LPN_AUTO_TIMEOUT * MSEC_PER_SEC)
 #else
