@@ -518,7 +518,8 @@ void mdm_hl7800_register_gpio6_callback(void (*func)(int state));
 void mdm_hl7800_register_cts_callback(void (*func)(int state));
 
 /**
- * @brief Set the bands available for the LTE connection
+ * @brief Set the bands available for the LTE connection.
+ * NOTE: This will cause the modem to reboot. This call returns before the reboot.
  *
  * @param bands Band bitmap in hexadecimal format without the 0x prefix.
  * Leading 0's for the value can be ommited.

@@ -5033,7 +5033,7 @@ static int set_bands(const char *bands, bool full_reboot)
 
 		ret = modem_boot_handler("LTE bands were just set");
 	} else {
-		ret = modem_reset_and_configure();
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.mdm_reset_work, K_NO_WAIT);
 	}
 	return ret;
 }
