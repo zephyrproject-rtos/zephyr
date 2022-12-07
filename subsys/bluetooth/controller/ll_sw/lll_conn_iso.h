@@ -82,3 +82,13 @@ int lll_conn_iso_reset(void);
 void lll_conn_iso_done(struct lll_conn_iso_group *cig, uint32_t trx_performed,
 		       uint16_t prog_to_anchor_us, uint8_t mic_state);
 void lll_conn_iso_flush(uint16_t handle, struct lll_conn_iso_stream *lll);
+
+extern struct lll_conn_iso_stream *
+ull_conn_iso_lll_stream_get_by_group(struct lll_conn_iso_group *cig_lll,
+				     uint16_t *handle_iter);
+extern struct lll_conn_iso_group *
+ull_conn_iso_lll_group_get_by_stream(struct lll_conn_iso_stream *cis_lll);
+extern void
+ull_conn_iso_lll_cis_established(struct lll_conn_iso_stream *cis_lll);
+extern void ll_iso_rx_put(memq_link_t *link, void *rx);
+extern void ll_rx_sched(void);
