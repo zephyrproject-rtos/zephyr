@@ -1829,12 +1829,12 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 #ifdef ZTEST_UNITTEST
 
-static uint16_t local_ctx_buffers_free(void)
+uint16_t local_ctx_buffers_free(void)
 {
 	return mem_free_count_get(mem_local_ctx.free);
 }
 
-static uint16_t remote_ctx_buffers_free(void)
+uint16_t remote_ctx_buffers_free(void)
 {
 	return mem_free_count_get(mem_remote_ctx.free);
 }
@@ -1851,142 +1851,13 @@ uint8_t common_tx_buffer_alloc_count(void)
 }
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-void test_int_mem_proc_ctx(void)
+struct proc_ctx *pub_proc_ctx_acquire(void)
 {
-	struct proc_ctx *ctx1;
-	struct proc_ctx *ctx2;
-	int nr_of_free_ctx;
-
-	ull_cp_init();
-
-	nr_of_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM +
-		      CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM, NULL);
-
-	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
-		ctx1 = proc_ctx_acquire(&mem_local_ctx);
-
-		/* The previous acquire should be valid */
-		zassert_not_null(ctx1, NULL);
-	}
-
-	nr_of_free_ctx = local_ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, 0);
-
-	ctx2 = proc_ctx_acquire(&mem_local_ctx);
-
-	/* The last acquire should fail */
-	zassert_is_null(ctx2, NULL);
-
-	llcp_proc_ctx_release(ctx1);
-	nr_of_free_ctx = local_ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, 1);
-
-	ctx1 = proc_ctx_acquire(&mem_local_ctx);
-
-	/* Releasing returns the context to the avilable pool */
-	zassert_not_null(ctx1, NULL);
+	return proc_ctx_acquire(&mem_local_ctx);
 }
 
-void test_int_mem_tx(void)
+struct proc_ctx *pub_create_procedure(enum llcp_proc proc)
 {
-	bool peek;
-#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-	#define TX_BUFFER_POOL_SIZE (CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM  + \
-					CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)
-#else /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
-	#define TX_BUFFER_POOL_SIZE (CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM  + \
-					CONFIG_BT_CTLR_LLCP_CONN * \
-					CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)
-#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
-	struct ll_conn conn;
-	struct node_tx *txl[TX_BUFFER_POOL_SIZE];
-	struct proc_ctx *ctx;
-
-	ull_cp_init();
-	ull_llcp_init(&conn);
-
-	ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
-
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		peek = llcp_tx_alloc_peek(&conn, ctx);
-
-		/* The previous tx alloc peek should be valid */
-		zassert_true(peek, NULL);
-
-		txl[i] = llcp_tx_alloc(&conn, ctx);
-
-		/* The previous alloc should be valid */
-		zassert_not_null(txl[i], NULL);
-	}
-
-	peek = llcp_tx_alloc_peek(&conn, ctx);
-
-	/* The last tx alloc peek should fail */
-	zassert_false(peek, NULL);
-
-	/* Release all */
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		ull_cp_release_tx(&conn, txl[i]);
-	}
-
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		peek = llcp_tx_alloc_peek(&conn, ctx);
-
-		/* The previous tx alloc peek should be valid */
-		zassert_true(peek, NULL);
-
-		txl[i] = llcp_tx_alloc(&conn, ctx);
-
-		/* The previous alloc should be valid */
-		zassert_not_null(txl[i], NULL);
-	}
-
-	peek = llcp_tx_alloc_peek(&conn, ctx);
-
-	/* The last tx alloc peek should fail */
-	zassert_false(peek, NULL);
-
-	/* Release all */
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		ull_cp_release_tx(&conn, txl[i]);
-	}
+	return create_procedure(proc, &mem_local_ctx);
 }
-
-void test_int_create_proc(void)
-{
-	struct proc_ctx *ctx;
-
-	ull_cp_init();
-
-	ctx = create_procedure(PROC_VERSION_EXCHANGE, &mem_local_ctx);
-	zassert_not_null(ctx, NULL);
-
-	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE);
-	zassert_equal(ctx->collision, 0);
-
-	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
-		zassert_not_null(ctx, NULL);
-		ctx = create_procedure(PROC_VERSION_EXCHANGE, &mem_local_ctx);
-	}
-
-	zassert_is_null(ctx, NULL);
-}
-
-void test_int_llcp_init(void)
-{
-	struct ll_conn conn;
-
-	ull_cp_init();
-
-	ull_llcp_init(&conn);
-
-	memset(&conn.llcp, 0xAA, sizeof(conn.llcp));
-
-	ull_llcp_init(&conn);
-
-	zassert_equal(conn.llcp.local.pause, 0);
-	zassert_equal(conn.llcp.remote.pause, 0);
-}
-
 #endif

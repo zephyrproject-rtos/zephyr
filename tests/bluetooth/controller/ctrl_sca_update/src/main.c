@@ -6,7 +6,6 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -27,7 +26,7 @@
 #include "ll_settings.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -45,9 +44,9 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ll_conn conn;
+static struct ll_conn conn;
 
-static void setup(void)
+static void sca_setup(void *data)
 {
 	test_setup(&conn);
 }
@@ -77,7 +76,7 @@ static void setup(void)
  *    |                            |<-------------------------------|
  *    |                            |                                |
  */
-void test_sca_central_loc(void)
+ZTEST(sca_central, test_sca_central_loc)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -185,7 +184,7 @@ void test_sca_central_loc(void)
  *       ~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~
  *    |                            |                          |
  */
-void test_sca_central_loc_invalid_rsp(void)
+ZTEST(sca_central, test_sca_central_loc_invalid_rsp)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -287,7 +286,7 @@ void test_sca_central_loc_invalid_rsp(void)
  *       ~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~
  *    |                            |                          |
  */
-void test_sca_peripheral_loc_invalid_rsp(void)
+ZTEST(sca_periph, test_sca_peripheral_loc_invalid_rsp)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -388,7 +387,7 @@ void test_sca_peripheral_loc_invalid_rsp(void)
  *    |                            |                          |
  *    |                            |                          |
  */
-void test_ping_periph_loc(void)
+ZTEST(sca_periph, test_ping_periph_loc)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -447,7 +446,7 @@ void test_ping_periph_loc(void)
  *    |                            |                          |
  *    |                            |                          |
  */
-void test_ping_central_rem(void)
+ZTEST(sca_central, test_ping_central_rem)
 {
 	struct node_tx *tx;
 
@@ -504,7 +503,7 @@ void test_ping_central_rem(void)
  *    |                            |                          |
  *    |                            |                          |
  */
-void test_ping_periph_rem(void)
+ZTEST(sca_periph, test_ping_periph_rem)
 {
 	struct node_tx *tx;
 
@@ -549,22 +548,5 @@ void test_ping_periph_rem(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_main(void)
-{
-	ztest_test_suite(sca,
-			 ztest_unit_test_setup_teardown(test_sca_central_loc, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_sca_central_loc_invalid_rsp, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_ping_periph_loc, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_sca_peripheral_loc_invalid_rsp, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_ping_central_rem, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_ping_periph_rem, setup,
-							unit_test_noop)
-		);
-
-	ztest_run_test_suite(sca);
-}
+ZTEST_SUITE(sca_central, NULL, NULL, sca_setup, NULL, NULL);
+ZTEST_SUITE(sca_periph, NULL, NULL, sca_setup, NULL, NULL);
