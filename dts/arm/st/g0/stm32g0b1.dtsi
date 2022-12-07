@@ -32,6 +32,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40005000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000100>;
+			resets = <&rctl STM32_RESET(APB1L, 8U)>;
 			interrupts = <29 0>;
 			status = "disabled";
 		};
@@ -40,6 +41,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000200>;
+			resets = <&rctl STM32_RESET(APB1L, 9U)>;
 			interrupts = <29 0>;
 			status = "disabled";
 		};
@@ -48,6 +50,7 @@
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x40008400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000080>;
+			resets = <&rctl STM32_RESET(APB1L, 7U)>;
 			interrupts = <28 0>;
 			status = "disabled";
 		};

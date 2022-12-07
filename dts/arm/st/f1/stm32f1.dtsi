@@ -159,6 +159,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
+			resets = <&rctl STM32_RESET(APB2, 14U)>;
 			interrupts = <37 0>;
 			status = "disabled";
 		};
@@ -167,6 +168,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			resets = <&rctl STM32_RESET(APB1, 17U)>;
 			interrupts = <38 0>;
 			status = "disabled";
 		};
@@ -175,6 +177,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			resets = <&rctl STM32_RESET(APB1, 18U)>;
 			interrupts = <39 0>;
 			status = "disabled";
 		};
