@@ -28,20 +28,9 @@ description: |
 
 compatible: "nxp,pca9420"
 
-include:
-  - name: base.yaml
-  - name: regulator.yaml
-    property-allowlist:
-      - regulator-allowed-modes
-      - regulator-initial-mode
+include: base.yaml
 
 properties:
-  regulator-allowed-modes:
-    default: [0, 1, 2, 3]
-
-  regulator-initial-mode:
-    default: 0
-
   nxp,enable-modesel-pins:
     type: boolean
     description:
@@ -78,22 +67,13 @@ child-binding:
   include:
     - name: regulator.yaml
       property-allowlist:
+        - regulator-always-on
         - regulator-boot-on
         - regulator-min-microvolt
         - regulator-max-microvolt
-        - regulator-max-microamp
 
   description: Voltage output of PMIC controller regulator
   properties:
-      regulator-min-microvolt:
-        required: true
-
-      regulator-max-microvolt:
-          required: true
-
-      regulator-max-microamp:
-          required: true
-
       enable-inverted:
           type: boolean
           description: |

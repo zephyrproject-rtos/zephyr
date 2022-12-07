@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 
 #ifdef __cplusplus
@@ -47,6 +48,82 @@ __subsystem struct regulator_driver_api {
 };
 
 /**
+ * @name Regulator flags
+ * @anchor REGULATOR_FLAGS
+ * @{
+ */
+/** Indicates regulator must stay always ON */
+#define REGULATOR_ALWAYS_ON	BIT(0)
+/** Indicates regulator must be initialized ON */
+#define REGULATOR_BOOT_ON	BIT(1)
+/** Indicates if regulator must be enabled when initialized */
+#define REGULATOR_INIT_ENABLED  (REGULATOR_ALWAYS_ON | REGULATOR_BOOT_ON)
+
+/** @} */
+
+/** Indicates initial mode is unknown/not specified */
+#define REGULATOR_INITIAL_MODE_UNKNOWN UINT8_MAX
+
+/**
+ * @brief Common regulator config.
+ *
+ * This structure **must** be placed first in the driver's config structure.
+ */
+struct regulator_common_config {
+	/** Minimum allowed voltage, in microvolts. */
+	int32_t min_uv;
+	/** Maximum allowed voltage, in microvolts. */
+	int32_t max_uv;
+	/** Minimum allowed current, in microamps. */
+	int32_t min_ua;
+	/** Maximum allowed current, in microamps. */
+	int32_t max_ua;
+	/** Allowed modes */
+	const regulator_mode_t *allowed_modes;
+	/** Number of allowed modes */
+	uint8_t allowed_modes_cnt;
+	/** Regulator initial mode */
+	regulator_mode_t initial_mode;
+	/** Flags (@reg REGULATOR_FLAGS). */
+	uint8_t flags;
+};
+
+/**
+ * @brief Initialize common driver config from devicetree.
+ *
+ * @param node_id Node identifier.
+ */
+#define REGULATOR_DT_COMMON_CONFIG_INIT(node_id)                               \
+	{                                                                      \
+		.min_uv = DT_PROP_OR(node_id, regulator_min_microvolts,        \
+				     INT32_MIN),                               \
+		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolts,        \
+				     INT32_MAX),                               \
+		.min_ua = DT_PROP_OR(node_id, regulator_min_microamps,         \
+				     INT32_MIN),                               \
+		.max_ua = DT_PROP_OR(node_id, regulator_max_microamps,         \
+				     INT32_MAX),                               \
+		.allowed_modes = (const regulator_mode_t [])                   \
+			DT_PROP_OR(node_id, regulator_allowed_modes, {}),      \
+		.allowed_modes_cnt =                                           \
+			DT_PROP_LEN_OR(node_id, regulator_allowed_modes, 0),   \
+		.initial_mode = DT_PROP_OR(node_id, regulator_initial_mode,    \
+					   REGULATOR_INITIAL_MODE_UNKNOWN),    \
+		.flags = ((DT_PROP_OR(node_id, regulator_always_on, 0U) *      \
+			   REGULATOR_ALWAYS_ON) |                              \
+			  (DT_PROP_OR(node_id, regulator_boot_on, 0U) *        \
+			   REGULATOR_BOOT_ON)),                                \
+	}
+
+/**
+ * @brief Initialize common driver config from devicetree instance.
+ *
+ * @param inst Instance.
+ */
+#define REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst)                             \
+	REGULATOR_DT_COMMON_CONFIG_INIT(DT_DRV_INST(inst))
+
+/**
  * @brief Common regulator data.
  *
  * This structure **must** be placed first in the driver's data structure.
@@ -73,7 +150,9 @@ void regulator_common_data_init(const struct device *dev);
  * @brief Enable a regulator.
  *
  * Reference-counted request that a regulator be turned on. A regulator is
- * considered "on" when it has reached a stable/usable state.
+ * considered "on" when it has reached a stable/usable state. Regulators that
+ * are always on, or configured in devicetree with `regulator-always-on` will
+ * always stay enabled, and so this function will always succeed.
  *
  * @param dev Regulator device instance
  *
@@ -86,11 +165,9 @@ int regulator_enable(const struct device *dev);
  * @brief Disable a regulator.
  *
  * Release a regulator after a previous regulator_enable() completed
- * successfully.
- *
- * If the release removes the last dependency on the regulator it will begin a
- * transition to its "off" state. There is currently no mechanism to notify when
- * the regulator has completely turned off.
+ * successfully. Regulators that are always on, or configured in devicetree with
+ * `regulator-always-on` will always stay enabled, and so this function will
+ * always succeed.
  *
  * This must be invoked at most once for each successful regulator_enable().
  *
@@ -170,7 +247,9 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
  *
  * The output voltage will be configured to the closest supported output
  * voltage. regulator_get_voltage() can be used to obtain the actual configured
- * voltage. The voltage will be applied to the active or selected mode.
+ * voltage. The voltage will be applied to the active or selected mode. Output
+ * voltage may be limited using `regulator-min-microvolt` and/or
+ * `regulator-max-microvolt` in devicetree.
  *
  * @param dev Regulator device instance.
  * @param min_uv Minimum acceptable voltage in microvolts.
@@ -181,18 +260,8 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
-static inline int regulator_set_voltage(const struct device *dev,
-					int32_t min_uv, int32_t max_uv)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	if (api->set_voltage == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_voltage(dev, min_uv, max_uv);
-}
+int regulator_set_voltage(const struct device *dev, int32_t min_uv,
+			  int32_t max_uv);
 
 /**
  * @brief Obtain output voltage.
@@ -222,7 +291,8 @@ static inline int regulator_get_voltage(const struct device *dev,
  *
  * The output current limit will be configured to the closest supported output
  * current limit. regulator_get_current_limit() can be used to obtain the actual
- * configured current limit.
+ * configured current limit. Current may be limited using `current-min-microamp`
+ * and/or `current-max-microamp` in Devicetree.
  *
  * @param dev Regulator device instance.
  * @param min_ua Minimum acceptable current limit in microamps.
@@ -233,18 +303,8 @@ static inline int regulator_get_voltage(const struct device *dev,
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
-static inline int regulator_set_current_limit(const struct device *dev,
-					      int32_t min_ua, int32_t max_ua)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	if (api->set_current_limit == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_current_limit(dev, min_ua, max_ua);
-}
+int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
+				int32_t max_ua);
 
 /**
  * @brief Get output current limit.
@@ -274,7 +334,8 @@ static inline int regulator_get_current_limit(const struct device *dev,
  *
  * Regulators can support multiple modes in order to permit different voltage
  * configuration or better power savings. This API will apply a mode for
- * the regulator.
+ * the regulator. Allowed modes may be limited using `regulator-allowed-modes`
+ * devicetree property.
  *
  * Some regulators may only allow setting mode externally, but still allow
  * configuring the parameters such as the output voltage. For such devices, this
@@ -284,26 +345,15 @@ static inline int regulator_get_current_limit(const struct device *dev,
  * Some regulators may apply a mode to all of its regulators simultaneously.
  *
  * @param dev Regulator device instance.
- * @param mode Mode to select for this regulator. Only modes present in the
- * `regulator-allowed-modes` devicetree property are permitted.
+ * @param mode Mode to select for this regulator.
  *
  * @retval 0 If successful.
  * @retval -EPERM If mode can not be changed.
+ * @retval -ENOTSUP If mode is not supported.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
  */
-static inline int regulator_set_mode(const struct device *dev,
-				     regulator_mode_t mode)
-{
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-
-	if (api->set_mode == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_mode(dev, mode);
-}
+int regulator_set_mode(const struct device *dev, regulator_mode_t mode);
 
 #ifdef __cplusplus
 }
