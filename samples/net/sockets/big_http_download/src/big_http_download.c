@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "mbedtls/md.h"
 
@@ -41,6 +42,12 @@
 #define MAX_URL_LENGTH CONFIG_SAMPLE_BIG_HTTP_DL_MAX_URL_LENGTH
 #else
 #define MAX_URL_LENGTH 256
+#endif
+
+#if defined(CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER)
+#define NUM_ITER CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER
+#else
+#define NUM_ITER 0
 #endif
 
 /* This URL is parsed in-place, so buffer must be non-const. */
@@ -358,7 +365,7 @@ void main(void)
 	unsigned int total_bytes = 0U;
 	int resolve_attempts = 10;
 	bool is_tls = false;
-	unsigned int num_iterations = CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER;
+	unsigned int num_iterations = NUM_ITER;
 	bool redirect = false;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
