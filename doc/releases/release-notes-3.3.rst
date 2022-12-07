@@ -122,7 +122,8 @@ Deprecated in this release
 
   :kconfig:option:`CONFIG_SETTINGS_FS` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE`
 
-  :kconfig:option:`CONFIG_SETTINGS_FS_DIR` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_DIR`
+  :kconfig:option:`CONFIG_SETTINGS_FS_DIR` in favor of creating all parent
+  directories from :kconfig:option:`CONFIG_SETTINGS_FILE_PATH`
 
   :kconfig:option:`CONFIG_SETTINGS_FS_FILE` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_PATH`
 

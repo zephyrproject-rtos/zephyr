@@ -10,7 +10,7 @@
 #include "settings_test_file.h"
 
 #define TEST_FS_MPTR "/fs"
-#define TEST_CONFIG_DIR TEST_FS_MPTR""CONFIG_SETTINGS_FILE_DIR
+#define TEST_CONFIG_DIR TEST_FS_MPTR"/settings"
 
 void *config_setup_fs(void);
 
