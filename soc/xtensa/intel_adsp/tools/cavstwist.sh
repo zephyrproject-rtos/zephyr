@@ -104,10 +104,10 @@ if [ "$DO_SIGN" = "1" ]; then
 	sleep 0.1
     done
 
-    ELF=$BLDDIR/zephyr/zephyr.elf.mod
-    BOOT=$BLDDIR/zephyr/bootloader.elf.mod
-    (cd $BLDDIR;
-     west sign --tool-data=$CAVS_RIMAGE/config -t rimage -- -k $CAVS_KEY)
+    if [ ! -f "$BLDDIR/zephyr/zephyr.ri" ]; then
+        (cd $BLDDIR; west sign --tool-data=$CAVS_RIMAGE/config -t rimage -- -k $CAVS_KEY)
+    fi
+
     cp $BLDDIR/zephyr/zephyr.ri $IMAGE
 fi
 

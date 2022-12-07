@@ -98,6 +98,8 @@ add_custom_target(
       --set-section-flags .fw_metadata=noload,readonly
       ${CMAKE_BINARY_DIR}/zephyr/main.mod
       ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>${NULL_FILE}
+
+	BYPRODUCTS ${CMAKE_BINARY_DIR}/zephyr/boot.mod ${CMAKE_BINARY_DIR}/zephyr/main.mod
 )
 
 if(CONFIG_BUILD_OUTPUT_STRIPPED)

@@ -95,31 +95,12 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
         self.logger.info('Starting Intel ADSP runner')
 
-        # Always re-sign because here we cannot know whether `west
-        # flash` was invoked with `--skip-rebuild` or not and we have no
-        # way to tell whether there was any code change either.
-        #
-        # Signing does not belong here; it should be invoked either from
-        # some CMakeLists.txt file or an optional hook in some generic
-        # `west flash` code but right now it's in neither so we have to
-        # do this.
-        self.sign(**kwargs)
-
         if re.search("intel_adsp_cavs", self.platform):
             self.require(self.cavstool)
             self.flash(**kwargs)
         else:
             self.logger.error("No suitable platform for running")
             sys.exit(1)
-
-    def sign(self, **kwargs):
-        path_opt = ['-p', f'{self.rimage_tool}'] if self.rimage_tool else []
-        sign_cmd = (
-            ['west', 'sign', '-d', f'{self.cfg.build_dir}', '-t', 'rimage']
-            + path_opt + ['-D', f'{self.config_dir}', '--', '-k', f'{self.key}']
-        )
-        self.logger.info(" ".join(sign_cmd))
-        self.check_call(sign_cmd)
 
     def flash(self, **kwargs):
         # Generate a hash string for appending to the sending ri file
