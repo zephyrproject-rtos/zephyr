@@ -6,7 +6,7 @@
  */
 
 #include "zephyr/types.h"
-#include "ztest.h"
+#include "zephyr/ztest.h"
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -26,7 +26,7 @@
 #include "ll_feat.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn_iso.h"
 
 #include "lll_conn.h"
