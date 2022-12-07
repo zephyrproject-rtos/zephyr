@@ -1034,6 +1034,15 @@ int ull_conn_reset(void)
 	return 0;
 }
 
+struct lll_conn *ull_conn_lll_get(uint16_t handle)
+{
+	struct ll_conn *conn;
+
+	conn = ll_conn_get(handle);
+
+	return &conn->lll;
+}
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 uint16_t ull_conn_default_tx_octets_get(void)
 {

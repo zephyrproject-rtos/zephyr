@@ -7,43 +7,51 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
+#include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
+
 #include "ticker/ticker.h"
+
 #include "hal/ccm.h"
 #include "hal/ticker.h"
 
 #include "pdu_df.h"
 #include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "lll.h"
-#include "lll_conn.h"
+#include "lll/lll_vendor.h"
 #include "lll_clock.h"
-#include "lll_peripheral_iso.h"
+#include "lll/lll_df_types.h"
+#include "lll_conn.h"
+#include "lll_conn_iso.h"
 #include "lll_central_iso.h"
+#include "lll_peripheral_iso.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ull_tx_queue.h"
 #endif
 
 #include "isoal.h"
+
 #include "ull_iso_types.h"
-#include "ull_iso_internal.h"
 #include "ull_conn_types.h"
-#include "lll_conn_iso.h"
 #include "ull_conn_iso_types.h"
+
+#include "ull_llcp.h"
+
+#include "ull_internal.h"
 #include "ull_conn_internal.h"
+#include "ull_iso_internal.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
-#include "ull_internal.h"
-#include "ull_llcp.h"
-#include "lll/lll_vendor.h"
 
 #include "ll.h"
-
-#include <zephyr/bluetooth/hci.h>
 
 #include "hal/debug.h"
 
@@ -240,6 +248,31 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_gr
 	return NULL;
 }
 
+struct lll_conn_iso_stream *
+ull_conn_iso_lll_stream_get_by_group(struct lll_conn_iso_group *cig_lll,
+				     uint16_t *handle_iter)
+{
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn_iso_group *cig;
+
+	cig = HDR_LLL2ULL(cig_lll);
+	cis = ll_conn_iso_stream_get_by_group(cig, handle_iter);
+
+	return &cis->lll;
+}
+
+struct lll_conn_iso_group *
+ull_conn_iso_lll_group_get_by_stream(struct lll_conn_iso_stream *cis_lll)
+{
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn_iso_group *cig;
+
+	cis = ll_conn_iso_stream_get(cis_lll->handle);
+	cig = cis->group;
+
+	return &cig->lll;
+}
+
 uint8_t ll_conn_iso_accept_timeout_get(uint16_t *timeout)
 {
 	*timeout = conn_accept_timeout;
@@ -259,8 +292,17 @@ uint8_t ll_conn_iso_accept_timeout_set(uint16_t timeout)
 	return 0;
 }
 
-void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
+void ull_conn_iso_lll_cis_established(struct lll_conn_iso_stream *cis_lll)
 {
+	struct ll_conn_iso_stream *cis =
+		ll_conn_iso_stream_get(cis_lll->handle);
+
+	if (cis->established) {
+		return;
+	}
+
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	struct node_rx_conn_iso_estab *est;
 	struct node_rx_pdu *node_rx;
 
 	node_rx = ull_pdu_rx_alloc();
@@ -271,24 +313,16 @@ void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
 
 	node_rx->hdr.type = NODE_RX_TYPE_CIS_ESTABLISHED;
 
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	struct node_rx_conn_iso_estab *est;
-
 	/* TODO: Send CIS_ESTABLISHED with status != 0 in error scenarios */
 	node_rx->hdr.handle = 0xFFFF;
 	node_rx->hdr.rx_ftr.param = cis;
 
 	est = (void *)node_rx->pdu;
 	est->status = 0;
-	est->cis_handle = cis->lll.handle;
+	est->cis_handle = cis_lll->handle;
 
 	ll_rx_put_sched(node_rx->hdr.link, node_rx);
-#else
-	/* Send node to ULL RX demuxer for triggering LLCP state machine */
-	node_rx->hdr.handle = cis->lll.acl_handle;
-
-	ll_rx_put_sched(node_rx->hdr.link, node_rx);
-#endif /* defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	cis->established = 1;
 }
