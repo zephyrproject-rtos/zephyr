@@ -230,7 +230,7 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	int "Isochronous Tx buffer size"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 1 4095
-	default 27
+	default 1
 	help
 	  Size of the Isochronous Tx buffers and the value returned in HCI LE
 	  Read Buffer Size V2 command response.
@@ -749,7 +749,7 @@ config BT_CTLR_ADV_ISO_STREAM_COUNT
 config BT_CTLR_ADV_ISO_PDU_LEN_MAX
 	int "Maximum Broadcast Isochronous Channel PDU Length"
 	depends on BT_CTLR_ADV_ISO
-	range 27 251
+	range 1 251
 	default 251
 	help
 	  Maximum Broadcast Isochronous Channel PDU Length.
@@ -774,7 +774,7 @@ config BT_CTLR_SYNC_ISO_PDU_LEN_MAX
 	int "Maximum Synchronized Isochronous Channel PDU Length"
 	depends on BT_CTLR_SYNC_ISO
 	range 251 251 if BT_HCI_RAW
-	range 27 251
+	range 1 251
 	default 251
 	help
 	  Maximum Synchronized Receiver Isochronous Channel PDU Length.
@@ -845,6 +845,23 @@ config BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA
 	help
 	  This allows for applications to decide whether to
 	  forward invalid SDUs through HCI upwards.
+
+config BT_CTLR_CONN_ISO_PDU_LEN_MAX
+	int "Maximum Connected Isochronous Channel PDU Length"
+	depends on BT_CTLR_CONN_ISO
+	range 251 251 if BT_HCI_RAW
+	range 1 251
+	default 251
+	help
+	  Maximum Connected Isochronous Channel PDU Length.
+
+config BT_CTLR_CONN_ISO_SDU_LEN_MAX
+	int "Maximum Connected Isochronous Channel SDU Length"
+	depends on BT_CTLR_CONN_ISO
+	range BT_CTLR_CONN_ISO_PDU_LEN_MAX 4095
+	default 251
+	help
+	  Maximum Connected Isochronous Channel SDU Length.
 
 config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 	int "LE Connected Isochronous Streams max number of subevents"

@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -43,19 +44,19 @@
 
 #include "ull_adv_types.h"
 #include "ull_sync_types.h"
+#include "ull_conn_types.h"
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
-#include "ull_internal.h"
-#include "ull_iso_internal.h"
-
-#include "ull_adv_internal.h"
-#include "ull_conn_internal.h"
-#include "ull_sync_iso_internal.h"
-#include "ull_conn_iso_internal.h"
-#include "ull_conn_types.h"
 #include "ull_llcp.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include "ull_internal.h"
+#include "ull_adv_internal.h"
+#include "ull_conn_internal.h"
+#include "ull_iso_internal.h"
+#include "ull_sync_iso_internal.h"
+#include "ull_conn_iso_internal.h"
+
+#include "ll_feat.h"
 
 #include "hal/debug.h"
 
@@ -133,18 +134,32 @@ void ll_iso_tx_mem_release(void *node_tx);
 
 #define NODE_TX_BUFFER_SIZE MROUND(offsetof(struct node_tx_iso, pdu) + \
 				   offsetof(struct pdu_iso, payload) + \
-				   CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE)
+				   MAX(LL_BIS_OCTETS_TX_MAX, \
+				       LL_CIS_OCTETS_TX_MAX))
 
 #define ISO_TEST_TX_BUFFER_SIZE 32U
 
+/* Calculate ISO PDU buffers required considering SDU fragmentation */
+/* FIXME: Calculation considering both Connected and Broadcast ISO PDU
+ *        fragmentation.
+ */
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#define ISO_TX_BUFFERS (((CONFIG_BT_CTLR_CONN_ISO_SDU_LEN_MAX + \
+			  CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX - 1U) / \
+			 CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX) * \
+			CONFIG_BT_CTLR_ISO_TX_BUFFERS)
+#else /* !CONFIG_BT_CTLR_CONN_ISO */
+#define ISO_TX_BUFFERS CONFIG_BT_CTLR_ISO_TX_BUFFERS
+#endif /* !CONFIG_BT_CTLR_CONN_ISO */
+
 static struct {
 	void *free;
-	uint8_t pool[NODE_TX_BUFFER_SIZE * CONFIG_BT_CTLR_ISO_TX_BUFFERS];
+	uint8_t pool[NODE_TX_BUFFER_SIZE * ISO_TX_BUFFERS];
 } mem_iso_tx;
 
 static struct {
 	void *free;
-	uint8_t pool[sizeof(memq_link_t) * CONFIG_BT_CTLR_ISO_TX_BUFFERS];
+	uint8_t pool[sizeof(memq_link_t) * ISO_TX_BUFFERS];
 } mem_link_iso_tx;
 
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
@@ -1610,7 +1625,7 @@ static isoal_status_t ll_iso_pdu_alloc(struct isoal_pdu_buffer *pdu_buffer)
 	 * the ISOAL based on the minimum of the buffer size and the respective
 	 * Max_PDU_C_To_P or Max_PDU_P_To_C.
 	 */
-	pdu_buffer->size = CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE;
+	pdu_buffer->size = MAX(LL_BIS_OCTETS_TX_MAX, LL_CIS_OCTETS_TX_MAX);
 
 	return ISOAL_STATUS_OK;
 }
@@ -1724,12 +1739,11 @@ static int init_reset(void)
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* Initialize tx pool. */
-	mem_init(mem_iso_tx.pool, NODE_TX_BUFFER_SIZE,
-		 CONFIG_BT_CTLR_ISO_TX_BUFFERS, &mem_iso_tx.free);
+	mem_init(mem_iso_tx.pool, NODE_TX_BUFFER_SIZE, ISO_TX_BUFFERS,
+		 &mem_iso_tx.free);
 
 	/* Initialize tx link pool. */
-	mem_init(mem_link_iso_tx.pool, sizeof(memq_link_t),
-		 CONFIG_BT_CTLR_ISO_TX_BUFFERS,
+	mem_init(mem_link_iso_tx.pool, sizeof(memq_link_t), ISO_TX_BUFFERS,
 		 &mem_link_iso_tx.free);
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
