@@ -18,6 +18,7 @@
 
 #include "util/memq.h"
 
+#include "hal/ccm.h"
 #include "hal/ticker.h"
 
 #include "pdu_df.h"
