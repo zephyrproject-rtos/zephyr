@@ -26,10 +26,19 @@
 extern "C" {
 #endif
 
+/** Opaque type to store regulator DVS states */
+typedef uint8_t regulator_dvs_state_t;
+
 /** Opaque type to store regulator modes */
 typedef uint8_t regulator_mode_t;
 
 /** @cond INTERNAL_HIDDEN */
+
+/** @brief Driver-specific API functions to support parent regulator control. */
+__subsystem struct regulator_parent_driver_api {
+	int (*dvs_state_set)(const struct device *dev,
+			     regulator_dvs_state_t state);
+};
 
 /** @brief Driver-specific API functions to support regulator control. */
 __subsystem struct regulator_driver_api {
@@ -145,6 +154,46 @@ struct regulator_common_data {
 void regulator_common_data_init(const struct device *dev);
 
 /** @endcond */
+
+/**
+ * @brief Regulator Parent Interface
+ * @defgroup regulator_parent_interface Regulator Parent Interface
+ * @{
+ */
+
+/**
+ * @brief Set a DVS state.
+ *
+ * Some PMICs feature DVS (Dynamic Voltage Scaling) by allowing to program the
+ * voltage level for multiple states. Such states may be automatically changed
+ * by hardware using GPIO pins. Certain MCUs even allow to automatically
+ * configure specific output pins when entering low-power modes so that PMIC
+ * state is changed without software intervention. This API can be used when
+ * state needs to be changed by software.
+ *
+ * @param dev Parent regulator device instance.
+ * @param state DVS state (vendor specific identifier).
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If given state is not supported.
+ * @retval -EPERM If state can't be changed by software.
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
+ */
+static inline int regulator_parent_dvs_state_set(const struct device *dev,
+						 regulator_dvs_state_t state)
+{
+	const struct regulator_parent_driver_api *api =
+		(const struct regulator_parent_driver_api *)dev->api;
+
+	if (api->dvs_state_set == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->dvs_state_set(dev, state);
+}
+
+/** @} */
 
 /**
  * @brief Enable a regulator.
@@ -337,18 +386,10 @@ static inline int regulator_get_current_limit(const struct device *dev,
  * the regulator. Allowed modes may be limited using `regulator-allowed-modes`
  * devicetree property.
  *
- * Some regulators may only allow setting mode externally, but still allow
- * configuring the parameters such as the output voltage. For such devices, this
- * function will return -EPERM, indicating mode can't be changed. However, all
- * future calls to e.g. regulator_set_voltage() will apply to the selected mode.
- *
- * Some regulators may apply a mode to all of its regulators simultaneously.
- *
  * @param dev Regulator device instance.
  * @param mode Mode to select for this regulator.
  *
  * @retval 0 If successful.
- * @retval -EPERM If mode can not be changed.
  * @retval -ENOTSUP If mode is not supported.
  * @retval -ENOSYS If function is not implemented.
  * @retval -errno In case of any other error.
