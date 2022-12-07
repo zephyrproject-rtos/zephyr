@@ -81,6 +81,8 @@
 /** VIN ILIM minimum value, uA */
 #define PCA9420_VIN_ILIM_MIN_UA 85000
 
+/** Number of modes */
+#define PCA9420_NUM_MODES 4U
 /** Offset applied to MODECFG* registers for a given mode */
 #define PCA9420_MODECFG_OFFSET(mode) ((mode) * 4U)
 
@@ -91,6 +93,7 @@ struct regulator_pca9420_desc {
 	uint8_t vsel_reg;
 	uint8_t vsel_mask;
 	uint8_t vsel_pos;
+	int32_t max_ua;
 	uint8_t num_ranges;
 	const struct linear_range *ranges;
 };
@@ -98,8 +101,6 @@ struct regulator_pca9420_desc {
 struct regulator_pca9420_common_config {
 	struct i2c_dt_spec i2c;
 	int32_t vin_ilim_ua;
-	const uint8_t *allowed_modes;
-	regulator_mode_t allowed_modes_cnt;
 	bool enable_modesel_pins;
 };
 
@@ -108,9 +109,8 @@ struct regulator_pca9420_common_data {
 };
 
 struct regulator_pca9420_config {
-	int32_t max_ua;
+	struct regulator_common_config common;
 	bool enable_inverted;
-	bool boot_on;
 	const struct regulator_pca9420_desc *desc;
 	const struct device *parent;
 };
@@ -151,6 +151,7 @@ static const struct regulator_pca9420_desc buck1_desc = {
 	.vsel_mask = PCA9420_MODECFG_0_SW1_OUT_MASK,
 	.vsel_pos = PCA9420_MODECFG_0_SW1_OUT_POS,
 	.vsel_reg = PCA9420_MODECFG_0_0,
+	.max_ua = 250000,
 	.ranges = buck1_ranges,
 	.num_ranges = ARRAY_SIZE(buck1_ranges),
 };
@@ -162,6 +163,7 @@ static const struct regulator_pca9420_desc buck2_desc = {
 	.vsel_mask = PCA9420_MODECFG_1_SW2_OUT_MASK,
 	.vsel_pos = PCA9420_MODECFG_1_SW2_OUT_POS,
 	.vsel_reg = PCA9420_MODECFG_0_1,
+	.max_ua = 500000,
 	.ranges = buck2_ranges,
 	.num_ranges = ARRAY_SIZE(buck2_ranges),
 };
@@ -173,6 +175,7 @@ static const struct regulator_pca9420_desc ldo1_desc = {
 	.vsel_mask = PCA9420_MODECFG_2_LDO1_OUT_MASK,
 	.vsel_pos = PCA9420_MODECFG_2_LDO1_OUT_POS,
 	.vsel_reg = PCA9420_MODECFG_0_2,
+	.max_ua = 1000,
 	.ranges = ldo1_ranges,
 	.num_ranges = ARRAY_SIZE(ldo1_ranges),
 };
@@ -184,24 +187,10 @@ static const struct regulator_pca9420_desc ldo2_desc = {
 	.vsel_reg = PCA9420_MODECFG_0_3,
 	.vsel_mask = PCA9420_MODECFG_3_LDO2_OUT_MASK,
 	.vsel_pos = PCA9420_MODECFG_3_LDO2_OUT_POS,
+	.max_ua = 250000,
 	.ranges = ldo2_ranges,
 	.num_ranges = ARRAY_SIZE(ldo2_ranges),
 };
-
-static bool regulator_pca9420_is_mode_allowed(const struct device *dev,
-					      regulator_mode_t mode)
-{
-	const struct regulator_pca9420_config *config = dev->config;
-	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
-
-	for (uint8_t i = 0U; i < cconfig->allowed_modes_cnt; i++) {
-		if (mode == cconfig->allowed_modes[i]) {
-			return true;
-		}
-	}
-
-	return false;
-}
 
 static unsigned int regulator_pca9420_count_voltages(const struct device *dev)
 {
@@ -276,9 +265,9 @@ static int regulator_pca9420_get_current_limit(const struct device *dev,
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
 
 	if (cconfig->vin_ilim_ua == 0U) {
-		*curr_ua = config->max_ua;
+		*curr_ua = config->desc->max_ua;
 	} else {
-		*curr_ua = MIN(config->max_ua, cconfig->vin_ilim_ua);
+		*curr_ua = MIN(config->desc->max_ua, cconfig->vin_ilim_ua);
 	}
 
 	return 0;
@@ -291,10 +280,6 @@ static int regulator_pca9420_set_mode(const struct device *dev,
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
 	struct regulator_pca9420_common_data *cdata = config->parent->data;
 	int ret;
-
-	if (!regulator_pca9420_is_mode_allowed(dev, mode)) {
-		return -ENOTSUP;
-	}
 
 	/* change mode, to allow configuring voltage, but return -EPERM to
 	 * indicate we are not really changing mode, as it is managed externally
@@ -349,7 +334,7 @@ static int regulator_pca9420_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (config->boot_on) {
+	if ((config->common.flags & REGULATOR_INIT_ENABLED) != 0U) {
 		rc = regulator_pca9420_enable(dev);
 	}
 
@@ -368,12 +353,12 @@ static int regulator_pca9420_common_init(const struct device *dev)
 	}
 
 	if (config->enable_modesel_pins) {
-		/* enable MODESEL0/1 pins for each allowed mode */
-		for (uint8_t i = 0U; i < config->allowed_modes_cnt; i++) {
+		/* enable MODESEL0/1 pins for each mode */
+		for (uint8_t i = 0U; i < PCA9420_NUM_MODES; i++) {
 			ret = i2c_reg_update_byte_dt(
 				&config->i2c,
 				PCA9420_MODECFG_0_0 +
-				PCA9420_MODECFG_OFFSET(config->allowed_modes[i]),
+				PCA9420_MODECFG_OFFSET(i),
 				PCA9420_MODECFG_0_X_EN_MODE_SEL_BY_PIN,
 				PCA9420_MODECFG_0_X_EN_MODE_SEL_BY_PIN);
 			if (ret < 0) {
@@ -418,9 +403,8 @@ static const struct regulator_driver_api api = {
 	static struct regulator_pca9420_data data_##id;                        \
                                                                                \
 	static const struct regulator_pca9420_config config_##id = {           \
-		.max_ua = DT_PROP(node_id, regulator_max_microamp),            \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),            \
 		.enable_inverted = DT_PROP(node_id, enable_inverted),          \
-		.boot_on = DT_PROP(node_id, regulator_boot_on),                \
 		.desc = &name ## _desc,                                        \
 		.parent = _parent,                                             \
 	};                                                                     \
@@ -436,18 +420,13 @@ static const struct regulator_driver_api api = {
 		    ())
 
 #define REGULATOR_PCA9420_DEFINE_ALL(inst)                                     \
-	static const uint8_t allowed_modes_##inst[] =                          \
-		DT_INST_PROP(inst, regulator_allowed_modes);                   \
-                                                                               \
 	static struct regulator_pca9420_common_data data_##inst = {            \
-		.mode = DT_INST_PROP(inst, regulator_initial_mode)             \
+		.mode = 0U                                                     \
 	};                                                                     \
                                                                                \
 	static const struct regulator_pca9420_common_config config_##inst = {  \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                             \
 		.vin_ilim_ua = DT_INST_PROP(inst, nxp_vin_ilim_microamp),      \
-		.allowed_modes = allowed_modes_##inst,                         \
-		.allowed_modes_cnt = ARRAY_SIZE(allowed_modes_##inst),         \
 		.enable_modesel_pins =                                         \
 			DT_INST_PROP(inst, nxp_enable_modesel_pins),           \
 	};                                                                     \

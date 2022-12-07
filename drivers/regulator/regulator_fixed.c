@@ -15,16 +15,11 @@
 
 LOG_MODULE_REGISTER(regulator_fixed, CONFIG_REGULATOR_LOG_LEVEL);
 
-#define OPTION_ALWAYS_ON_POS 0
-#define OPTION_ALWAYS_ON BIT(OPTION_ALWAYS_ON_POS)
-#define OPTION_BOOT_ON_POS 1
-#define OPTION_BOOT_ON BIT(OPTION_BOOT_ON_POS)
-
 struct regulator_fixed_config {
+	struct regulator_common_config common;
 	uint32_t startup_delay_us;
 	uint32_t off_on_delay_us;
 	struct gpio_dt_spec enable;
-	uint8_t options;
 };
 
 struct regulator_fixed_data {
@@ -35,10 +30,6 @@ static int regulator_fixed_enable(const struct device *dev)
 {
 	const struct regulator_fixed_config *cfg = dev->config;
 	int ret;
-
-	if ((cfg->options & OPTION_ALWAYS_ON) != 0) {
-		return 0;
-	}
 
 	ret = gpio_pin_set_dt(&cfg->enable, 1);
 	if (ret < 0) {
@@ -55,10 +46,6 @@ static int regulator_fixed_enable(const struct device *dev)
 static int regulator_fixed_disable(const struct device *dev)
 {
 	const struct regulator_fixed_config *cfg = dev->config;
-
-	if  ((cfg->options & OPTION_ALWAYS_ON) != 0) {
-		return 0;
-	}
 
 	return gpio_pin_set_dt(&cfg->enable, 0);
 }
@@ -80,7 +67,7 @@ static int regulator_fixed_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if ((cfg->options & (OPTION_ALWAYS_ON | OPTION_BOOT_ON)) != 0U) {
+	if ((cfg->common.flags & REGULATOR_INIT_ENABLED) != 0U) {
 		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
 			return ret;
@@ -101,13 +88,10 @@ static int regulator_fixed_init(const struct device *dev)
 	static struct regulator_fixed_data data##inst;                         \
                                                                                \
 	static const struct regulator_fixed_config config##inst = {            \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),          \
 		.startup_delay_us = DT_INST_PROP(inst, startup_delay_us),      \
 		.off_on_delay_us = DT_INST_PROP(inst, off_on_delay_us),        \
 		.enable = GPIO_DT_SPEC_INST_GET(inst, enable_gpios),           \
-		.options = (DT_INST_PROP(inst, regulator_boot_on)              \
-			    << OPTION_BOOT_ON_POS) |                           \
-			   (DT_INST_PROP(inst, regulator_always_on)            \
-			    << OPTION_ALWAYS_ON_POS),                          \
 	};                                                                     \
                                                                                \
 	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &data##inst,   \
