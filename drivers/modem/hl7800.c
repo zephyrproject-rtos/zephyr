@@ -2259,6 +2259,8 @@ static bool on_cmd_radio_band_configuration(struct net_buf **buf, uint16_t len)
 		ictx.mdm_bands_top, ictx.mdm_bands_middle,
 		ictx.mdm_bands_bottom);
 
+	event_handler(HL7800_EVENT_BANDS, ictx.mdm_bands_string);
+
 	return true;
 }
 
