@@ -230,10 +230,11 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	int "Isochronous Tx buffer size"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 1 4095
-	default 27
+	default 35
 	help
-	  Size of the Isochronous Tx buffers and the value returned in HCI LE
-	  Read Buffer Size V2 command response.
+	  Size of the Isochronous Tx buffers, 8 bytes added to accommodate
+	  the sequence number and the optional timestamp fields, is returned in
+	  HCI LE Read Buffer Size v2 command response.
 
 config BT_CTLR_ISOAL_SOURCES
 	int "Number of Isochronous Adaptation Layer sources"
@@ -845,6 +846,22 @@ config BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA
 	help
 	  This allows for applications to decide whether to
 	  forward invalid SDUs through HCI upwards.
+
+config BT_CTLR_CONN_ISO_SDU_LEN_MAX
+	int "Maximum Connected Isochronous Channel SDU Length"
+	depends on BT_CTLR_CONN_ISO
+	range 0 4095
+	default 27
+	help
+	  Maximum Connected Isochronous Channel SDU Length.
+
+config BT_CTLR_CONN_ISO_PDU_LEN_MAX
+	int "Maximum Connected Isochronous Channel PDU Length"
+	depends on BT_CTLR_CONN_ISO
+	range 27 251
+	default 27
+	help
+	  Maximum Connected Isochronous Channel PDU Length.
 
 config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 	int "LE Connected Isochronous Streams max number of subevents"
