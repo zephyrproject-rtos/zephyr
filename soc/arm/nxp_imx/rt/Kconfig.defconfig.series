@@ -134,11 +134,11 @@ endif # CODE_FLEXSPI
 if CODE_FLEXSPI2
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@4000d000,1,K) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_size_int,/soc/spi@400d0000,1,K) if SOC_SERIES_IMX_RT11XX
 	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K) if SOC_SERIES_IMX_RT10XX
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@4000d000,1) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_addr_hex,/soc/spi@400d0000,1) if SOC_SERIES_IMX_RT11XX
 	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1) if SOC_SERIES_IMX_RT10XX
 
 endif # CODE_FLEXSPI2
