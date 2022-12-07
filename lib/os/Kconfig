@@ -172,6 +172,21 @@ config UTF8
 	  Enable the utf8 API. The API implements functions to specifically
 	  handle UTF-8 encoded strings.
 
+config TOPO_LOGICAL
+	bool "Topo logical"
+	help
+	  Topological sorting for Directed Acyclic Graph (DAG) is a graph traversal
+	  in which each point is only visited after all of its dependencies have
+	  been visited.
+
+if TOPO_LOGICAL
+config MAX_POINT_NUM
+	int "maximum topo points number"
+	default 128
+	help
+	  maximum points number to be topological sorted.
+endif
+
 rsource "Kconfig.cbprintf"
 
 rsource "Kconfig.heap"

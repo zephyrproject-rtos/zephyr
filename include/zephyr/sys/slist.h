@@ -416,6 +416,7 @@ static inline bool sys_slist_find_and_remove(sys_slist_t *list,
 /** @} */
 Z_GENLIST_FIND_AND_REMOVE(slist, snode)
 
+
 #ifdef __cplusplus
 }
 #endif
