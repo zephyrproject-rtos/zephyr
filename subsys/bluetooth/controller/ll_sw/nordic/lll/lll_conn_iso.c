@@ -10,6 +10,8 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 
+#include "hal/ccm.h"
+
 #include "util/memq.h"
 #include "util/mem.h"
 

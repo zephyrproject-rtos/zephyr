@@ -12,6 +12,10 @@ struct lll_conn_iso_stream_rxtx {
 	uint64_t bn:4;             /* Burst number (BN) */
 	uint64_t phy:3;            /* PHY */
 	uint64_t rfu:1;
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	struct ccm ccm;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 };
 
 struct lll_conn_iso_stream {
@@ -35,6 +39,7 @@ struct lll_conn_iso_stream {
 	uint8_t sn:1;               /* Sequence number */
 	uint8_t nesn:1;             /* Next expected sequence number */
 	uint8_t cie:1;              /* Close isochronous event */
+	uint8_t empty:1;            /* 1 if CIS LLL has Tx-ed empty PDU */
 	uint8_t flushed:1;          /* 1 if CIS LLL has been flushed */
 	uint8_t active:1;           /* 1 if CIS LLL is active */
 	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */

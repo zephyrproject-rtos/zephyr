@@ -1097,7 +1097,12 @@ void radio_tmr_tx_status_reset(void)
 	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
 
 	hal_radio_nrf_ppi_channels_disable(
+#if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI != HAL_RADIO_ENABLE_RX_ON_TICK_PPI) && \
+	!defined(DPPI_PRESENT)
 			BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI) |
+#endif /* (HAL_RADIO_ENABLE_TX_ON_TICK_PPI !=
+	*  HAL_RADIO_ENABLE_RX_ON_TICK_PPI) && !DPPI_PRESENT
+	*/
 			BIT(HAL_EVENT_TIMER_START_PPI) |
 			BIT(HAL_RADIO_READY_TIME_CAPTURE_PPI) |
 			BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) |
@@ -1128,7 +1133,12 @@ void radio_tmr_rx_status_reset(void)
 	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
 
 	hal_radio_nrf_ppi_channels_disable(
+#if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI != HAL_RADIO_ENABLE_RX_ON_TICK_PPI) && \
+	!defined(DPPI_PRESENT)
 			BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI) |
+#endif /* (HAL_RADIO_ENABLE_TX_ON_TICK_PPI !=
+	*  HAL_RADIO_ENABLE_RX_ON_TICK_PPI) && !DPPI_PRESENT
+	*/
 			BIT(HAL_EVENT_TIMER_START_PPI) |
 			BIT(HAL_RADIO_READY_TIME_CAPTURE_PPI) |
 			BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) |
@@ -1152,6 +1162,42 @@ void radio_tmr_rx_status_reset(void)
 			BIT(HAL_TRIGGER_CRYPT_DELAY_PPI) |
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 			BIT(HAL_TRIGGER_CRYPT_PPI));
+}
+
+void radio_tmr_tx_enable(void)
+{
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+#else /* !CONFIG_SOC_SERIES_NRF53X */
+#if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
+	hal_radio_enable_on_tick_ppi_config_and_enable(1U);
+#endif /* HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI */
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
+}
+
+void radio_tmr_rx_enable(void)
+{
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+#else /* !CONFIG_SOC_SERIES_NRF53X */
+#if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
+	hal_radio_enable_on_tick_ppi_config_and_enable(0U);
+#endif /* HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI */
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
+}
+
+void radio_tmr_tx_disable(void)
+{
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_TXEN);
+#else /* !CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
+}
+
+void radio_tmr_rx_disable(void)
+{
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_RXEN);
+#else /* !CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
 }
 
 void radio_tmr_tifs_set(uint32_t tifs)
