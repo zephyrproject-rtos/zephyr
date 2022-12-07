@@ -60,9 +60,9 @@ struct ll_iso_test_mode_data {
 
 /* Common members for ll_conn_iso_stream and ll_broadcast_iso_stream */
 struct ll_iso_stream_hdr {
+	struct ll_iso_test_mode_data test_mode;
 	struct ll_iso_datapath *datapath_in;
 	struct ll_iso_datapath *datapath_out;
-	struct ll_iso_test_mode_data test_mode;
 };
 
 struct ll_iso_datapath {
