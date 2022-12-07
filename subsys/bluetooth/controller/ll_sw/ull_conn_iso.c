@@ -361,8 +361,8 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 			if (done->extra.mic_state == LLL_CONN_MIC_FAIL) {
 				/* MIC failure - stop CIS and defer cleanup to after teardown. */
 				ull_conn_iso_cis_stop(cis, NULL, BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL);
-			} else if (!(done->extra.trx_performed_mask &
-			      (1U << LL_CIS_IDX_FROM_HANDLE(cis->lll.handle)))) {
+			} else if (!(done->extra.trx_performed_bitmask &
+				     (1U << LL_CIS_IDX_FROM_HANDLE(cis->lll.handle)))) {
 				/* We did NOT have successful transaction on established CIS,
 				 * or CIS was not yet established, so handle timeout
 				 */
@@ -393,7 +393,7 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 		}
 	}
 
-	if (IS_PERIPHERAL(cig) && done->extra.trx_performed_mask) {
+	if (IS_PERIPHERAL(cig) && done->extra.trx_performed_bitmask) {
 		ull_drift_ticks_get(done, &ticks_drift_plus,
 				    &ticks_drift_minus);
 	}
