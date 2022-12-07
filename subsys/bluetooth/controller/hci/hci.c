@@ -5749,7 +5749,15 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		isoal_source_handle_t source = dp_in->source_hdl;
 
 		/* Start Fragmentation */
-		if (isoal_tx_sdu_fragment(source, &sdu_frag_tx)) {
+		isoal_status_t isoal_status =
+			isoal_tx_sdu_fragment(source, &sdu_frag_tx);
+
+		if (isoal_status) {
+			if (isoal_status & ISOAL_STATUS_ERR_PDU_ALLOC) {
+				data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
+				return -ENOBUFS;
+			}
+
 			return -EINVAL;
 		}
 
