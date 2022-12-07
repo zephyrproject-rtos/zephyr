@@ -17,12 +17,12 @@ static uint8_t chan_sel_remap(uint8_t *chan_map, uint8_t chan_index);
 static uint16_t chan_prn_s(uint16_t counter, uint16_t chan_id);
 static uint16_t chan_prn_e(uint16_t counter, uint16_t chan_id);
 
-#if defined(CONFIG_BT_CTLR_BROADCAST_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 static uint8_t chan_sel_remap_index(uint8_t *chan_map, uint8_t chan_index);
 static uint16_t chan_prn_subevent_se(uint16_t chan_id,
 				     uint16_t *prn_subevent_lu);
 static uint8_t chan_d(uint8_t n);
-#endif /* CONFIG_BT_CTLR_BROADCAST_ISO */
+#endif /* CONFIG_BT_CTLR_ISO */
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 
 #if defined(CONFIG_BT_CONN)
@@ -89,7 +89,7 @@ uint8_t lll_chan_sel_2(uint16_t counter, uint16_t chan_id, uint8_t *chan_map,
 	return chan_next;
 }
 
-#if defined(CONFIG_BT_CTLR_BROADCAST_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 /* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
  * Channel Selection algorithm #2, and Section 4.5.8.3.1 Overview
  *
@@ -156,7 +156,7 @@ uint8_t lll_chan_iso_subevent(uint16_t chan_id, uint8_t *chan_map,
 
 	return chan_idx;
 }
-#endif /* CONFIG_BT_CTLR_BROADCAST_ISO */
+#endif /* CONFIG_BT_CTLR_ISO */
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 
 /* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
@@ -247,7 +247,7 @@ static uint16_t chan_prn_e(uint16_t counter, uint16_t chan_id)
 	return prn_e;
 }
 
-#if defined(CONFIG_BT_CTLR_BROADCAST_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 /* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
  * Channel Selection algorithm #2, and Section 4.5.8.3.4 Event mapping to used
  * channel index
@@ -336,7 +336,7 @@ static uint8_t chan_d(uint8_t n)
 	/* Calculate d using the above sub expressions */
 	return MAX(1, MAX(MIN(3, x), MIN(11, y)));
 }
-#endif /* CONFIG_BT_CTLR_BROADCAST_ISO */
+#endif /* CONFIG_BT_CTLR_ISO */
 
 #if defined(CONFIG_BT_CTLR_TEST)
 /* Refer to Bluetooth Specification v5.2 Vol 6, Part C, Section 3 LE Channel
@@ -376,7 +376,7 @@ void lll_chan_sel_2_ut(void)
 	LL_ASSERT(m == 34U);
 
 
-#if defined(CONFIG_BT_CTLR_BROADCAST_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 	uint16_t prn_subevent_lu;
 	uint16_t prn_subevent_se;
 	uint16_t remap_idx;
@@ -544,7 +544,7 @@ void lll_chan_sel_2_ut(void)
 	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 1U);
 	LL_ASSERT(m == 10U);
-#endif /* CONFIG_BT_CTLR_BROADCAST_ISO */
+#endif /* CONFIG_BT_CTLR_ISO */
 }
 #endif /* CONFIG_BT_CTLR_TEST */
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
