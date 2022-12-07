@@ -7,7 +7,6 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt5xx.dtsi>
-#include <zephyr/dt-bindings/regulator/pca9420.h>
 
 #include "mimxrt595_evk_cm33-pinctrl.dtsi"
 

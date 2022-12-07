@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/regulator.h>
-#include <zephyr/dt-bindings/regulator/pca9420.h>
+#include <zephyr/drivers/regulator/pca9420.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util.h>
 
@@ -104,13 +104,10 @@ struct regulator_pca9420_common_config {
 	bool enable_modesel_pins;
 };
 
-struct regulator_pca9420_common_data {
-	regulator_mode_t mode;
-};
-
 struct regulator_pca9420_config {
 	struct regulator_common_config common;
 	bool enable_inverted;
+	int32_t modes_uv[4];
 	const struct regulator_pca9420_desc *desc;
 	const struct device *parent;
 };
@@ -214,7 +211,6 @@ static int regulator_pca9420_set_voltage(const struct device *dev,
 					 int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_pca9420_config *config = dev->config;
-	struct regulator_pca9420_common_data *cdata = config->parent->data;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
 	uint16_t idx;
 	int ret;
@@ -228,25 +224,20 @@ static int regulator_pca9420_set_voltage(const struct device *dev,
 
 	idx <<= config->desc->vsel_pos;
 
-	return i2c_reg_update_byte_dt(
-		&cconfig->i2c,
-		config->desc->vsel_reg + PCA9420_MODECFG_OFFSET(cdata->mode),
-		config->desc->vsel_mask, (uint8_t)idx);
+	return i2c_reg_update_byte_dt(&cconfig->i2c, config->desc->vsel_reg,
+				      config->desc->vsel_mask, (uint8_t)idx);
 }
 
 static int regulator_pca9420_get_voltage(const struct device *dev,
 					 int32_t *volt_uv)
 {
 	const struct regulator_pca9420_config *config = dev->config;
-	struct regulator_pca9420_common_data *cdata = config->parent->data;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
 	int ret;
 	uint8_t raw_reg;
 
-	ret = i2c_reg_read_byte_dt(
-		&cconfig->i2c,
-		config->desc->vsel_reg + PCA9420_MODECFG_OFFSET(cdata->mode),
-		&raw_reg);
+	ret = i2c_reg_read_byte_dt(&cconfig->i2c, config->desc->vsel_reg,
+				   &raw_reg);
 	if (ret < 0) {
 		return ret;
 	}
@@ -273,34 +264,6 @@ static int regulator_pca9420_get_current_limit(const struct device *dev,
 	return 0;
 }
 
-static int regulator_pca9420_set_mode(const struct device *dev,
-				      regulator_mode_t mode)
-{
-	const struct regulator_pca9420_config *config = dev->config;
-	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
-	struct regulator_pca9420_common_data *cdata = config->parent->data;
-	int ret;
-
-	/* change mode, to allow configuring voltage, but return -EPERM to
-	 * indicate we are not really changing mode, as it is managed externally
-	 */
-	if (cconfig->enable_modesel_pins) {
-		cdata->mode = mode;
-		return -EPERM;
-	}
-
-	ret = i2c_reg_update_byte_dt(&cconfig->i2c, PCA9420_TOP_CNTL3,
-				     mode << PCA9420_TOP_CNTL3_MODE_I2C_POS,
-				     PCA9420_TOP_CNTL3_MODE_I2C_MASK);
-	if (ret < 0) {
-		return ret;
-	}
-
-	cdata->mode = mode;
-
-	return 0;
-}
-
 static int regulator_pca9420_enable(const struct device *dev)
 {
 	const struct regulator_pca9420_config *config = dev->config;
@@ -323,15 +286,62 @@ static int regulator_pca9420_disable(const struct device *dev)
 				      config->desc->enable_mask, dis_val);
 }
 
+static const struct regulator_driver_api api = {
+	.enable = regulator_pca9420_enable,
+	.disable = regulator_pca9420_disable,
+	.count_voltages = regulator_pca9420_count_voltages,
+	.list_voltage = regulator_pca9420_list_voltage,
+	.set_voltage = regulator_pca9420_set_voltage,
+	.get_voltage = regulator_pca9420_get_voltage,
+	.get_current_limit = regulator_pca9420_get_current_limit,
+};
+
 static int regulator_pca9420_init(const struct device *dev)
 {
 	const struct regulator_pca9420_config *config = dev->config;
+	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
 	int rc  = 0;
 
 	regulator_common_data_init(dev);
 
 	if (!device_is_ready(config->parent)) {
 		return -ENODEV;
+	}
+
+	/* configure mode voltages */
+	for (uint8_t i = 0U; i < ARRAY_SIZE(config->modes_uv); i++) {
+		int ret;
+
+		if (config->modes_uv[i] == 0) {
+			/* disable mode if voltage is 0 */
+			ret = i2c_reg_update_byte_dt(
+				&cconfig->i2c,
+				config->desc->enable_reg + PCA9420_MODECFG_OFFSET(i),
+				config->desc->enable_mask, 0U);
+			if (ret < 0) {
+				return ret;
+			}
+		} else if (config->modes_uv[i] > 0) {
+			uint16_t idx;
+
+			/* program mode voltage */
+			ret = linear_range_group_get_win_index(
+				config->desc->ranges, config->desc->num_ranges,
+				config->modes_uv[i], config->modes_uv[i], &idx);
+			if (ret < 0) {
+				return ret;
+			}
+
+			idx <<= config->desc->vsel_pos;
+
+			ret = i2c_reg_update_byte_dt(
+				&cconfig->i2c,
+				config->desc->vsel_reg + PCA9420_MODECFG_OFFSET(i),
+				config->desc->vsel_mask, (uint8_t)idx);
+			if (ret < 0) {
+				return ret;
+			}
+		}
 	}
 
 	if ((config->common.flags & REGULATOR_INIT_ENABLED) != 0U) {
@@ -341,10 +351,31 @@ static int regulator_pca9420_init(const struct device *dev)
 	return rc;
 }
 
+int regulator_pca9420_dvs_state_set(const struct device *dev,
+				    regulator_dvs_state_t state)
+{
+	const struct regulator_pca9420_common_config *config = dev->config;
+
+	if (state >= PCA9420_NUM_MODES) {
+		return -ENOTSUP;
+	}
+
+	if (config->enable_modesel_pins) {
+		return -EPERM;
+	}
+
+	return i2c_reg_update_byte_dt(&config->i2c, PCA9420_TOP_CNTL3,
+				      state << PCA9420_TOP_CNTL3_MODE_I2C_POS,
+				      PCA9420_TOP_CNTL3_MODE_I2C_MASK);
+}
+
+static const struct regulator_parent_driver_api parent_api = {
+	.dvs_state_set = regulator_pca9420_dvs_state_set,
+};
+
 static int regulator_pca9420_common_init(const struct device *dev)
 {
 	const struct regulator_pca9420_common_config *config = dev->config;
-	const struct regulator_pca9420_common_data *data = dev->data;
 	uint8_t reg_val = PCA9420_TOP_CNTL0_VIN_ILIM_SEL_DISABLED;
 	int ret;
 
@@ -365,14 +396,6 @@ static int regulator_pca9420_common_init(const struct device *dev)
 				return ret;
 			}
 		}
-	} else {
-		ret = i2c_reg_update_byte_dt(
-			&config->i2c, PCA9420_TOP_CNTL3,
-			data->mode << PCA9420_TOP_CNTL3_MODE_I2C_POS,
-			PCA9420_TOP_CNTL3_MODE_I2C_MASK);
-		if (ret < 0) {
-			return ret;
-		}
 	}
 
 	/* configure VIN current limit */
@@ -387,24 +410,18 @@ static int regulator_pca9420_common_init(const struct device *dev)
 		reg_val << PCA9420_TOP_CNTL0_VIN_ILIM_SEL_POS);
 }
 
-
-static const struct regulator_driver_api api = {
-	.enable = regulator_pca9420_enable,
-	.disable = regulator_pca9420_disable,
-	.count_voltages = regulator_pca9420_count_voltages,
-	.list_voltage = regulator_pca9420_list_voltage,
-	.set_voltage = regulator_pca9420_set_voltage,
-	.get_voltage = regulator_pca9420_get_voltage,
-	.get_current_limit = regulator_pca9420_get_current_limit,
-	.set_mode = regulator_pca9420_set_mode,
-};
-
 #define REGULATOR_PCA9420_DEFINE(node_id, id, name, _parent)                   \
 	static struct regulator_pca9420_data data_##id;                        \
                                                                                \
 	static const struct regulator_pca9420_config config_##id = {           \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),            \
 		.enable_inverted = DT_PROP(node_id, enable_inverted),          \
+		.modes_uv = {                                                  \
+			DT_PROP_OR(node_id, nxp_mode0_microvolt, -1),          \
+			DT_PROP_OR(node_id, nxp_mode1_microvolt, -1),          \
+			DT_PROP_OR(node_id, nxp_mode2_microvolt, -1),          \
+			DT_PROP_OR(node_id, nxp_mode3_microvolt, -1),          \
+		},                                                             \
 		.desc = &name ## _desc,                                        \
 		.parent = _parent,                                             \
 	};                                                                     \
@@ -420,10 +437,6 @@ static const struct regulator_driver_api api = {
 		    ())
 
 #define REGULATOR_PCA9420_DEFINE_ALL(inst)                                     \
-	static struct regulator_pca9420_common_data data_##inst = {            \
-		.mode = 0U                                                     \
-	};                                                                     \
-                                                                               \
 	static const struct regulator_pca9420_common_config config_##inst = {  \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                             \
 		.vin_ilim_ua = DT_INST_PROP(inst, nxp_vin_ilim_microamp),      \
@@ -431,10 +444,10 @@ static const struct regulator_driver_api api = {
 			DT_INST_PROP(inst, nxp_enable_modesel_pins),           \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_INST_DEFINE(inst, regulator_pca9420_common_init, NULL,       \
-			      &data_##inst, &config_##inst, POST_KERNEL,       \
+	DEVICE_DT_INST_DEFINE(inst, regulator_pca9420_common_init, NULL, NULL, \
+			      &config_##inst, POST_KERNEL,                     \
 			      CONFIG_REGULATOR_PCA9420_COMMON_INIT_PRIORITY,   \
-			      NULL);                                           \
+			      &parent_api);                                    \
                                                                                \
 	REGULATOR_PCA9420_DEFINE_COND(inst, buck1, DEVICE_DT_INST_GET(inst))   \
 	REGULATOR_PCA9420_DEFINE_COND(inst, buck2, DEVICE_DT_INST_GET(inst))   \
