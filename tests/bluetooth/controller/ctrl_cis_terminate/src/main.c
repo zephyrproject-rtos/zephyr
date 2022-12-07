@@ -6,7 +6,6 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -26,7 +25,7 @@
 #include "ll_settings.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -43,9 +42,9 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ll_conn conn;
+static struct ll_conn conn;
 
-static void setup(void)
+static void cis_terminate_setup(void *data)
 {
 	test_setup(&conn);
 }
@@ -76,12 +75,12 @@ static void test_cis_terminate_rem(uint8_t role)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_cis_terminate_cen_rem(void)
+ZTEST(cis_terminate, test_cis_terminate_cen_rem)
 {
 	test_cis_terminate_rem(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_cis_terminate_per_rem(void)
+ZTEST(cis_terminate, test_cis_terminate_per_rem)
 {
 	test_cis_terminate_rem(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -149,24 +148,14 @@ void test_cis_terminate_loc(uint8_t role)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_cis_terminate_cen_loc(void)
+ZTEST(cis_terminate, test_cis_terminate_cen_loc)
 {
 	test_cis_terminate_loc(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_cis_terminate_per_loc(void)
+ZTEST(cis_terminate, test_cis_terminate_per_loc)
 {
 	test_cis_terminate_loc(BT_HCI_ROLE_PERIPHERAL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		cis_term,
-		ztest_unit_test_setup_teardown(test_cis_terminate_cen_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cis_terminate_per_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cis_terminate_cen_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cis_terminate_per_loc, setup, unit_test_noop));
-
-	ztest_run_test_suite(cis_term);
-}
+ZTEST_SUITE(cis_terminate, NULL, NULL, cis_terminate_setup, NULL, NULL);

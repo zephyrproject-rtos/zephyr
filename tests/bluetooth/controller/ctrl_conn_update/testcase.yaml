@@ -6,8 +6,8 @@ tests:
 
   bluetooth.controller.ctrl_conn_update.apm_test:
     type: unit
-    extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override_apm.h"
+    extra_args: CONF_FILE=prj_apm.conf
 
   bluetooth.controller.ctrl_conn_update.no_param_req_test:
     type: unit
-    extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override.h"
+    extra_args: CONF_FILE=prj_no_param_req.conf
