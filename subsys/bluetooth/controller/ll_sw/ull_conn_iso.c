@@ -736,9 +736,9 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 	uint32_t cis_offs_to_cig_ref;
 	uint32_t ticks_remainder;
 	uint32_t ticks_periodic;
-	uint32_t ready_delay_us;
 	uint32_t ticker_status;
 	int32_t cig_offset_us;
+	uint32_t ticks_slot;
 	uint8_t ticker_id;
 
 	cis = ll_conn_iso_stream_get(cis_handle);
@@ -769,12 +769,6 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 	 */
 	acl_to_cig_ref_point = cis->offset - cis_offs_to_cig_ref;
 
-#if defined(CONFIG_BT_CTLR_PHY)
-	ready_delay_us = lll_radio_rx_ready_delay_get(acl->lll.phy_rx, 1);
-#else
-	ready_delay_us = lll_radio_rx_ready_delay_get(0, 0);
-#endif
-
 	/* Calculate initial ticker offset */
 	cig_offset_us  = acl_to_cig_ref_point;
 
@@ -801,13 +795,13 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 		ticks_periodic  = EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac);
 		ticks_remainder = EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac);
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
 		/* Adjust CIG offset and reference point ahead one interval */
-		cig_offset_us -= EVENT_TICKER_RES_MARGIN_US;
-		cig_offset_us -= EVENT_JITTER_US;
-		cig_offset_us -= ready_delay_us;
 		cig_offset_us += (acl->lll.interval * CONN_INT_UNIT_US);
 
 		cig->cig_ref_point += (acl->lll.interval * CONN_INT_UNIT_US);
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
+
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 	} else if (IS_CENTRAL(cig)) {
@@ -816,6 +810,12 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 		iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
 		ticks_periodic  = HAL_TICKER_US_TO_TICKS(iso_interval_us);
 		ticks_remainder = HAL_TICKER_REMAINDER(iso_interval_us);
+
+		/* Compensate for unused ticker remainder value starting CIG */
+		cig_offset_us += EVENT_TICKER_RES_MARGIN_US;
+
+		/* Compensate for missing remainder scheduling first expire */
+		cig_offset_us += EVENT_TICKER_RES_MARGIN_US;
 
 	} else {
 		LL_ASSERT(0);
@@ -828,6 +828,37 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 	 */
 	LL_ASSERT(cig_offset_us > 0);
 
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	ticks_slot = 0U;
+
+#else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+	uint32_t ticks_slot_overhead;
+	uint32_t ticks_slot_offset;
+	uint32_t slot_us;
+
+	/* FIXME: time reservations */
+	slot_us = cis->lll.sub_interval;
+
+	/* Populate the ULL hdr with event timings overheads */
+	cig->ull.ticks_active_to_start = 0U;
+	cig->ull.ticks_prepare_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	cig->ull.ticks_preempt_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+
+	ticks_slot_offset = MAX(cig->ull.ticks_active_to_start,
+				cig->ull.ticks_prepare_to_start);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = ticks_slot_offset;
+	} else {
+		ticks_slot_overhead = 0U;
+	}
+
+	ticks_slot = cig->ull.ticks_slot + ticks_slot_overhead;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 	/* Start CIS peripheral CIG ticker */
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
@@ -837,7 +868,7 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 				     ticks_periodic,
 				     ticks_remainder,
 				     TICKER_NULL_LAZY,
-				     0,
+				     ticks_slot,
 				     ull_conn_iso_ticker_cb, cig,
 				     ticker_op_cb, NULL);
 
