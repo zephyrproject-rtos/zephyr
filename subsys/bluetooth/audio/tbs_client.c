@@ -200,8 +200,14 @@ static void bearer_list_current_calls(struct bt_conn *conn, const struct bt_tbs_
 	int err;
 
 	while (buf->len) {
-		struct bt_tbs_client_call *call = &calls[cnt];
+		struct bt_tbs_client_call *call;
 
+		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
+			LOG_WRN("Could not parse all calls due to memory restrictions");
+			break;
+		}
+
+		call = &calls[cnt];
 		call->remote_uri = remote_uris[cnt];
 
 		err = net_buf_pull_call(buf, call);
@@ -214,10 +220,6 @@ static void bearer_list_current_calls(struct bt_conn *conn, const struct bt_tbs_
 		}
 
 		cnt++;
-		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
-			LOG_WRN("Could not parse all calls due to memory restrictions");
-			break;
-		}
 	}
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->current_calls != NULL) {
@@ -421,8 +423,15 @@ static void call_state_notify_handler(struct bt_conn *conn,
 	/* TODO: If length == MTU, do long read for all call states */
 
 	while (buf.len) {
-		struct bt_tbs_client_call_state *call_state = &call_states[cnt];
+		struct bt_tbs_client_call_state *call_state;
 		int err;
+
+		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
+			LOG_WRN("Could not parse all calls due to memory restrictions");
+			break;
+		}
+
+		call_state = &call_states[cnt];
 
 		err = net_buf_pull_call_state(&buf, call_state);
 		if (err != 0) {
@@ -431,10 +440,6 @@ static void call_state_notify_handler(struct bt_conn *conn,
 		}
 
 		cnt++;
-		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
-			LOG_WRN("Could not parse all calls due to memory restrictions");
-			break;
-		}
 	}
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->call_state != NULL) {
@@ -1051,7 +1056,14 @@ static uint8_t read_call_state_cb(struct bt_conn *conn, uint8_t err,
 
 	/* Finished reading, start parsing */
 	while (inst->net_buf.len != 0) {
-		struct bt_tbs_client_call_state *call_state = &call_states[cnt];
+		struct bt_tbs_client_call_state *call_state;
+
+		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
+			LOG_WRN("Could not parse all calls due to memory restrictions");
+			break;
+		}
+
+		call_state = &call_states[cnt];
 
 		tbs_err = net_buf_pull_call_state(&inst->net_buf, call_state);
 		if (tbs_err != 0) {
@@ -1060,10 +1072,6 @@ static uint8_t read_call_state_cb(struct bt_conn *conn, uint8_t err,
 		}
 
 		cnt++;
-		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
-			LOG_WRN("Could not parse all calls due to memory restrictions");
-			break;
-		}
 	}
 
 	(void)memset(params, 0, sizeof(*params));
