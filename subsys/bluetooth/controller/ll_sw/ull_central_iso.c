@@ -673,7 +673,14 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	instant = MAX(*conn_event_count, ull_conn_event_counter(conn) + 1);
 
 	handle_iter = UINT16_MAX;
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	cis_offset = *cis_offset_min;
+
+#else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+	cis_offset = MAX((HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
+			 (EVENT_TICKER_RES_MARGIN_US << 1U)), *cis_offset_min);
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Calculate offset for CIS */
 	for (uint8_t i = 0; i < cig->cis_count; i++) {

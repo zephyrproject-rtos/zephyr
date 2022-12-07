@@ -456,10 +456,13 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 				void *param)
 {
 	uint16_t start_event_count;
+
+	start_event_count = ctx->data.cis_create.conn_event_count;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
 	struct ll_conn_iso_group *cig;
 
 	cig = ll_conn_iso_group_get_by_id(ctx->data.cis_create.cig_id);
-	start_event_count = ctx->data.cis_create.conn_event_count;
 	LL_ASSERT(cig);
 
 	if (!cig->started) {
@@ -469,6 +472,7 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		 */
 		start_event_count--;
 	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
 	if (is_instant_reached_or_passed(start_event_count,
 					 ull_conn_event_counter(conn))) {
