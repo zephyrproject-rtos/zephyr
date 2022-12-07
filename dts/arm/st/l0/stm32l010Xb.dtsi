@@ -23,6 +23,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40011400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+			resets = <&rctl STM32_RESET(APB2, 5U)>;
 			interrupts = <22 0>;
 			interrupt-names = "global";
 			status = "disabled";
