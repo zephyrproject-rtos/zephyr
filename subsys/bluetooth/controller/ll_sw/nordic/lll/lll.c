@@ -562,6 +562,28 @@ void lll_isr_rx_status_reset(void)
 	}
 }
 
+void lll_isr_tx_sub_status_reset(void)
+{
+	radio_status_reset();
+	radio_tmr_tx_status_reset();
+
+	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+}
+
+void lll_isr_rx_sub_status_reset(void)
+{
+	radio_status_reset();
+	radio_tmr_rx_status_reset();
+
+	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+}
+
 void lll_isr_status_reset(void)
 {
 	radio_status_reset();
