@@ -896,6 +896,13 @@ config BT_CTLR_JIT_SCHEDULING
 	  ticker, and instead relies on just-in-time ("lazy") resolution in
 	  the link layer.
 
+config BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START
+	bool "Early start of peripheral CIG event"
+	depends on BT_CTLR_PERIPHERAL_ISO
+	help
+	  Start scheduling the Peripheral ISO CIG events one event in advance
+	  and hence adjust CIG offset and reference point ahead one interval.
+
 config BT_CTLR_USER_EXT
 	prompt "Proprietary extensions in Controller"
 	bool

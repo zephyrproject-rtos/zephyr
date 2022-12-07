@@ -6557,6 +6557,7 @@ void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
 	cig = ll_conn_iso_group_get_by_id(conn->llcp_cis.cig_id);
 	LL_ASSERT(cig);
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
 	if (!cig->started) {
 		/* Start ISO peripheral one event before the requested instant
 		 * for first CIS. This is done to be able to accept small CIS
@@ -6564,6 +6565,7 @@ void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
 		 */
 		start_event_count--;
 	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
 	/* Start ISO peripheral one event before the requested instant */
 	if (event_counter == start_event_count) {
