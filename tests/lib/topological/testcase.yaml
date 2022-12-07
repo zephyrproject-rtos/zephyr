@@ -1,0 +1,4 @@
+tests:
+  libraries.topological:
+    platform_allow: native_posix
+    tags: topological
