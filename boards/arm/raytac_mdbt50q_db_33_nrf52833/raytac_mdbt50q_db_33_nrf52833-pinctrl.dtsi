@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2022 Raytac Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 6)>,
+				<NRF_PSEL(UART_RTS, 0, 5)>;
+		};
+		group2 {
+			psels = <NRF_PSEL(UART_RX, 0, 8)>,
+				<NRF_PSEL(UART_CTS, 0, 7)>;
+			bias-pull-up;
+		};
+	};
+
+	uart0_sleep: uart0_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 6)>,
+				<NRF_PSEL(UART_RX, 0, 8)>,
+				<NRF_PSEL(UART_RTS, 0, 5)>,
+				<NRF_PSEL(UART_CTS, 0, 7)>;
+			low-power-enable;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			psels = <NRF_PSEL(UART_RX, 1, 1)>;
+			bias-pull-up;
+		};
+		group2 {
+			psels = <NRF_PSEL(UART_TX, 1, 2)>;
+		};
+	};
+
+	uart1_sleep: uart1_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_RX, 1, 1)>,
+				<NRF_PSEL(UART_TX, 1, 2)>;
+			low-power-enable;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 26)>,
+				<NRF_PSEL(TWIM_SCL, 0, 27)>;
+		};
+	};
+
+	i2c0_sleep: i2c0_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 26)>,
+				<NRF_PSEL(TWIM_SCL, 0, 27)>;
+			low-power-enable;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;
+		};
+	};
+
+	i2c1_sleep: i2c1_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;
+			low-power-enable;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 13)>;
+			nordic,invert;
+		};
+	};
+
+	pwm0_sleep: pwm0_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 13)>;
+			low-power-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 27)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 26)>,
+				<NRF_PSEL(SPIM_MISO, 0, 29)>;
+		};
+	};
+
+	spi0_sleep: spi0_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 27)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 26)>,
+				<NRF_PSEL(SPIM_MISO, 0, 29)>;
+			low-power-enable;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 31)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 30)>,
+				<NRF_PSEL(SPIM_MISO, 1, 8)>;
+		};
+	};
+
+	spi1_sleep: spi1_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 31)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 30)>,
+				<NRF_PSEL(SPIM_MISO, 1, 8)>;
+			low-power-enable;
+		};
+	};
+
+};
