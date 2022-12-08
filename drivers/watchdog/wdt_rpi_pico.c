@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(wdt_rpi_pico, CONFIG_WDT_LOG_LEVEL);
 #define RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR 2
 
 /* Watchdog requires a 1MHz clock source, divided from the crystal oscillator */
-#define RPI_PICO_XTAL_FREQ_WDT_TICK_DIVISOR 1000000
+#define RPI_PICO_CLK_REF_FREQ_WDT_TICK_DIVISOR 1000000
 
 struct wdt_rpi_pico_data {
 	uint8_t reset_type;
@@ -28,7 +28,7 @@ struct wdt_rpi_pico_data {
 };
 
 struct wdt_rpi_pico_config {
-	uint32_t xtal_frequency;
+	uint32_t clk_ref_frequency;
 };
 
 static int wdt_rpi_pico_setup(const struct device *dev, uint8_t options)
@@ -75,7 +75,7 @@ static int wdt_rpi_pico_setup(const struct device *dev, uint8_t options)
 
 	data->enabled = true;
 
-	watchdog_hw->tick = (config->xtal_frequency / RPI_PICO_XTAL_FREQ_WDT_TICK_DIVISOR) |
+	watchdog_hw->tick = (config->clk_ref_frequency / RPI_PICO_CLK_REF_FREQ_WDT_TICK_DIVISOR) |
 			    WATCHDOG_TICK_ENABLE_BITS;
 
 	return 0;
@@ -155,18 +155,19 @@ static const struct wdt_driver_api wdt_rpi_pico_driver_api = {
 	.feed = wdt_rpi_pico_feed,
 };
 
-#define WDT_RPI_PICO_WDT_DEVICE(idx)                                                               \
-	static const struct wdt_rpi_pico_config wdt_##idx##_config = {                             \
-		.xtal_frequency = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency)            \
-	};                                                                                         \
-	static struct wdt_rpi_pico_data wdt_##idx##_data = {                                       \
-		.reset_type = WDT_FLAG_RESET_SOC,                                                  \
-		.load = (CONFIG_WDT_RPI_PICO_INITIAL_TIMEOUT *                                     \
-			 RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR),                                 \
-		.enabled = false                                                                   \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(DT_NODELABEL(wdt##idx), wdt_rpi_pico_init, NULL, &wdt_##idx##_data,       \
-			 &wdt_##idx##_config, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,    \
+#define WDT_RPI_PICO_WDT_DEVICE(idx)                                                             \
+	static const struct wdt_rpi_pico_config wdt_##idx##_config = {                           \
+		.clk_ref_frequency =                                                             \
+			DT_PROP(DT_NODELABEL(clocks), ref_frequency)                             \
+	};                                                                                       \
+	static struct wdt_rpi_pico_data wdt_##idx##_data = {                                     \
+		.reset_type = WDT_FLAG_RESET_SOC,                                                \
+		.load = (CONFIG_WDT_RPI_PICO_INITIAL_TIMEOUT *                                   \
+			 RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR),                               \
+		.enabled = false                                                                 \
+	};                                                                                       \
+	DEVICE_DT_DEFINE(DT_NODELABEL(wdt##idx), wdt_rpi_pico_init, NULL, &wdt_##idx##_data,     \
+			 &wdt_##idx##_config, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
 			 &wdt_rpi_pico_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_RPI_PICO_WDT_DEVICE);
