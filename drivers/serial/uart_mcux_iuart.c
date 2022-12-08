@@ -241,10 +241,12 @@ static int mcux_iuart_init(const struct device *dev)
 	uart_config.enableRx = true;
 	uart_config.baudRate_Bps = config->baud_rate;
 
+	clock_control_on(config->clock_dev, config->clock_subsys);
 	UART_Init(config->base, &uart_config, clock_freq);
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
+		clock_control_off(config->clock_dev, config->clock_subsys);
 		return err;
 	}
 
