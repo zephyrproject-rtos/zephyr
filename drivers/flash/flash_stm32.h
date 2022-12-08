@@ -226,8 +226,13 @@ struct flash_stm32_priv {
 				FLASH_STM32_SR_PGPERR)
 
 #define FLASH_STM32_RDP0 0xAA
-#define FLASH_STM32_RDP1 0x55
 #define FLASH_STM32_RDP2 0xCC
+#define FLASH_STM32_RDP1                                                       \
+	DT_PROP(DT_INST(0, st_stm32_flash_controller), st_rdp1_enable_byte)
+
+#if FLASH_STM32_RDP1 == FLASH_STM32_RDP0 || FLASH_STM32_RDP1 == FLASH_STM32_RDP2
+#error RDP1 byte has to be different than RDP0 and RDP2 byte
+#endif
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline bool flash_stm32_range_exists(const struct device *dev,
