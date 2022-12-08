@@ -8,6 +8,7 @@
 
 #include <hardware/watchdog.h>
 #include <hardware/structs/psm.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/sys_clock.h>
 
@@ -19,7 +20,7 @@ LOG_MODULE_REGISTER(wdt_rpi_pico, CONFIG_WDT_LOG_LEVEL);
 #define RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR 2
 
 /* Watchdog requires a 1MHz clock source, divided from the crystal oscillator */
-#define RPI_PICO_XTAL_FREQ_WDT_TICK_DIVISOR 1000000
+#define RPI_PICO_CLK_REF_FREQ_WDT_TICK_DIVISOR 1000000
 
 struct wdt_rpi_pico_data {
 	uint8_t reset_type;
@@ -28,13 +29,16 @@ struct wdt_rpi_pico_data {
 };
 
 struct wdt_rpi_pico_config {
-	uint32_t xtal_frequency;
+	const struct device *clk_dev;
+	clock_control_subsys_t clk_id;
 };
 
 static int wdt_rpi_pico_setup(const struct device *dev, uint8_t options)
 {
 	const struct wdt_rpi_pico_config *config = dev->config;
 	struct wdt_rpi_pico_data *data = dev->data;
+	uint32_t ref_clk;
+	int err;
 
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) == 1) {
 		return -ENOTSUP;
@@ -75,7 +79,17 @@ static int wdt_rpi_pico_setup(const struct device *dev, uint8_t options)
 
 	data->enabled = true;
 
-	watchdog_hw->tick = (config->xtal_frequency / RPI_PICO_XTAL_FREQ_WDT_TICK_DIVISOR) |
+	err = clock_control_on(config->clk_dev, config->clk_id);
+	if (err < 0) {
+		return err;
+	}
+
+	err = clock_control_get_rate(config->clk_dev, config->clk_id, &ref_clk);
+	if (err < 0) {
+		return err;
+	}
+
+	watchdog_hw->tick = (ref_clk / RPI_PICO_CLK_REF_FREQ_WDT_TICK_DIVISOR) |
 			    WATCHDOG_TICK_ENABLE_BITS;
 
 	return 0;
@@ -157,7 +171,8 @@ static const struct wdt_driver_api wdt_rpi_pico_driver_api = {
 
 #define WDT_RPI_PICO_WDT_DEVICE(idx)                                                               \
 	static const struct wdt_rpi_pico_config wdt_##idx##_config = {                             \
-		.xtal_frequency = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency)            \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),				   \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id),	   \
 	};                                                                                         \
 	static struct wdt_rpi_pico_data wdt_##idx##_data = {                                       \
 		.reset_type = WDT_FLAG_RESET_SOC,                                                  \
