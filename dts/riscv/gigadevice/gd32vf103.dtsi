@@ -401,7 +401,7 @@
 			reg = <0x40020400 0x400>;
 			interrupts = <75 0>, <76 0>, <77 0>, <78 0>,
 				     <79 0>;
-			clocks = <&cctl GD32_CLOCK_DMA0>;
+			clocks = <&cctl GD32_CLOCK_DMA1>;
 			dma-channels = <5>;
 			#dma-cells = <1>;
 			status = "disabled";
