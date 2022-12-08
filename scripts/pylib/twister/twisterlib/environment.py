@@ -184,6 +184,11 @@ Artificially long but functional example:
         help="Generate artifacts for testing, do not attempt to run the"
               "code on targets.")
 
+    parser.add_argument(
+        "--package-artifacts",
+        help="Package artifacts needed for flashing in a file to be used with --test-only"
+        )
+
     test_or_build.add_argument(
         "--test-only", action="store_true",
         help="""Only run device tests with current artifacts, do not build
