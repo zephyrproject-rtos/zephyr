@@ -246,7 +246,7 @@ typedef uint8_t gpio_pin_t;
  * The lower 8 bits are used for standard flags. The upper 8 bits are reserved
  * for SoC specific flags.
  */
-typedef uint16_t gpio_dt_flags_t;
+typedef uint32_t gpio_dt_flags_t;
 
 /**
  * @brief Provides a type to hold GPIO configuration flags.
