@@ -163,7 +163,6 @@ void ull_peripheral_iso_release(uint16_t cis_handle)
 	cig = cis->group;
 
 	ll_conn_iso_stream_release(cis);
-	cig->lll.num_cis--;
 
 	if (!cig->lll.num_cis) {
 		ll_conn_iso_group_release(cig);
@@ -290,7 +289,6 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.link_tx_free = NULL;
 
 	*cis_handle = ll_conn_iso_stream_handle_get(cis);
-	cig->lll.num_cis++;
 
 	return 0;
 }
