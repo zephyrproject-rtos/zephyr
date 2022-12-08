@@ -821,7 +821,7 @@ static uint8_t parse_composite_read_paths(struct lwm2m_message *msg,
 	struct lwm2m_obj_path path;
 	struct cbor_in_fmt_data *fd;
 	uint8_t paths = 0;
-	uint32_t isize;
+	size_t isize;
 	uint_fast8_t dret;
 	int len;
 	int ret;
@@ -934,7 +934,7 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 {
 	uint_fast8_t dret;
 	int ret = 0;
-	uint32_t decoded_sz;
+	size_t decoded_sz;
 	struct cbor_in_fmt_data *fd;
 
 	/* With block-wise transfer consecutive blocks will not carry the content header -
