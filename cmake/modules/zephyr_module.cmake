@@ -29,6 +29,7 @@ include(python)
 # files into the build system.
 
 # Settings used by Zephyr module but where systems may define an alternative value.
+zephyr_get(KCONFIG_BINARY_DIR SYSBUILD LOCAL)
 set_ifndef(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
 
 zephyr_get(ZEPHYR_MODULES)
