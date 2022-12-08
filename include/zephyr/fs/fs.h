@@ -452,8 +452,9 @@ int fs_sync(struct fs_file_t *zfp);
  * @param path Path to the directory to create
  *
  * @retval 0 on success;
- * @retval -EROFS if file is read-only, or when file system has been mounted
- *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
+ * @retval -EEXIST if entry of given name exists;
+ * @retval -EROFS if @p path is within read-only directory, or when
+ *         file system has been mounted with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error
  */
