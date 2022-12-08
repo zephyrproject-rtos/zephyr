@@ -3,12 +3,14 @@
 # Copyright (c) 2018 B. Leforestier
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig CPLUSPLUS
+menu "C++ Language Support"
+
+config CPP
 	bool "C++ support for the application"
 	help
 	  This option enables the use of applications built with C++.
 
-if CPLUSPLUS
+if CPP
 
 choice
 	prompt "C++ Standard"
@@ -94,4 +96,8 @@ config CPP_STATIC_INIT_GNU
 	help
 	  GNU-compatible initialization of CPP static objects
 
-endif # CPLUSPLUS
+endif # CPP
+
+rsource "Kconfig.deprecated"
+
+endmenu
