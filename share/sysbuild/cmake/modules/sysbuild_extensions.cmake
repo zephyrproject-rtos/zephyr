@@ -183,7 +183,7 @@ function(ExternalZephyrProject_Add)
       # Required CMake variable to be passed, like CMAKE_BUILD_TYPE must be
       # passed using `-D` on command invocation.
       get_property(var_type CACHE ${var_name} PROPERTY TYPE)
-      set(cache_entry "${var_name}:${var_type}=${${var_name}}")
+      set(cache_entry "${var_name}:${var_type}=$CACHE{${var_name}}")
       string(REPLACE ";" "\;" cache_entry "${cache_entry}")
       list(APPEND sysbuild_cache_strings "${cache_entry}\n")
     endif()
