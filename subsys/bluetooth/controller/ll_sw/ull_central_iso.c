@@ -276,12 +276,6 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		/* Total number of subevents needed */
 		se[i].total_count = MAX((cis->central.c_rtn + 1) * cis->lll.tx.bn,
 					(cis->central.p_rtn + 1) * cis->lll.rx.bn);
-
-		/* Initialize TX link */
-		cis->lll.link_tx_free = &cis->lll.link_tx;
-
-		memq_init(cis->lll.link_tx_free, &cis->lll.memq_tx.head, &cis->lll.memq_tx.tail);
-		cis->lll.link_tx_free = NULL;
 	}
 
 	handle_iter = UINT16_MAX;
@@ -521,10 +515,22 @@ uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
 
 void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 {
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn *conn;
+
 	/* Handles have been verified prior to calling this function */
-	(void)ull_cp_cis_create(
-		ll_connected_get(acl_handle),
-		ll_conn_iso_stream_get(cis_handle));
+	conn = ll_connected_get(acl_handle);
+	cis = ll_conn_iso_stream_get(cis_handle);
+
+	/* Initialize TX link */
+	if (!cis->lll.link_tx_free) {
+		cis->lll.link_tx_free = &cis->lll.link_tx;
+	}
+	memq_init(cis->lll.link_tx_free, &cis->lll.memq_tx.head, &cis->lll.memq_tx.tail);
+	cis->lll.link_tx_free = NULL;
+
+	/* Initiate CIS Request Control Procedure */
+	(void)ull_cp_cis_create(conn, cis);
 }
 
 /* Core 5.3 Vol 6, Part B section 7.8.100:
