@@ -1086,10 +1086,13 @@ static void cis_tx_lll_flush(void *param)
 
 	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head, (void **)&tx);
 	while (link) {
-		/* Create instant NACK */
-		ll_tx_ack_put(lll->handle, tx);
+		/* Create instant NACK, we are in LLL execution context here */
+		/* FIXME: ll_tx_ack_put is not LLL callable as it is used by
+		 * ACL connections in ULL context to dispatch ack.
+		 */
 		link->next = tx->next;
 		tx->next = link;
+		ll_tx_ack_put(lll->handle, tx);
 
 		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
 				    (void **)&tx);
