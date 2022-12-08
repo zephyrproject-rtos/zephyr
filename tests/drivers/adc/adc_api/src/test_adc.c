@@ -72,7 +72,8 @@
 	defined(CONFIG_BOARD_PAN1781_EVB) || \
 	defined(CONFIG_BOARD_PAN1782_EVB) || \
 	defined(CONFIG_BOARD_PAN1770_EVB) || \
-	defined(CONFIG_BOARD_XIAO_BLE)
+	defined(CONFIG_BOARD_XIAO_BLE)	|| \
+	defined(CONFIG_BOARD_RAYTAC_MDBT50Q_DB_33_NRF52833)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NODE		DT_INST(0, nordic_nrf_saadc)
