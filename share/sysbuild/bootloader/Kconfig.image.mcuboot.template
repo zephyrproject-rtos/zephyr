@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+choice BOOT_SIGNATURE_TYPE
+	default BOOT_SIGNATURE_TYPE_@SB_CONFIG_SIGNATURE_TYPE@
+endchoice

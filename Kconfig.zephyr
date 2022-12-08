@@ -4,6 +4,10 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+# Ensure that any setting defined by sysbuild takes precedence.
+# For eample if sysbuild defines that MCUboot is enabled, then it's enabled
+# and user should not be able to change this locally.
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.sysbuild.image"
 
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
@@ -49,6 +53,18 @@ source "lib/Kconfig"
 source "subsys/Kconfig"
 
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig"
+
+config SYSBUILD_CONTROLLED
+	bool
+	help
+	  This setting is set by sysbuild whenever sysbuild is used.
+	  It must never be selected by anything else than sysbuild but
+	  settings can rely on this to prevent users from configuring settings
+	  which are controlled by sysbuild, for example like:
+	  `bool "Foo" if !SYSBUILD_CONTROLLED`
+	  this line ensures that Foo can only be controlled through sysbuild
+	  when sysbuild is in use. When sysbuild is not in use, then users can
+	  control the setting.
 
 menu "Build and Link Features"
 
@@ -764,7 +780,7 @@ config MCUBOOT
 	  Hidden option used to indicate that the current image is MCUBoot
 
 config BOOTLOADER_MCUBOOT
-	bool "MCUboot bootloader support"
+	bool "MCUboot bootloader support" if !SYSBUILD_CONTROLLED
 	select USE_DT_CODE_PARTITION
 	imply INIT_ARCH_HW_AT_BOOT if ARCH_SUPPORTS_ARCH_HW_INIT
 	depends on !MCUBOOT
@@ -851,7 +867,7 @@ config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	  imgtool.  For example, you could set this to "--version 1.2".
 
 config MCUBOOT_GENERATE_UNSIGNED_IMAGE
-	bool "Generate unsigned binary image bootable with MCUboot"
+	bool "Generate unsigned binary image bootable with MCUboot" if !SYSBUILD_CONTROLLED
 	help
 	  Enabling this configuration allows automatic unsigned binary image
 	  generation when MCUboot signing key is not provided,

@@ -211,10 +211,11 @@ function(ExternalZephyrProject_Add)
       )
   endforeach()
   include(ExternalProject)
+  set(application_binary_dir ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
   ExternalProject_Add(
     ${ZBUILD_APPLICATION}
     SOURCE_DIR ${ZBUILD_SOURCE_DIR}
-    BINARY_DIR ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}
+    BINARY_DIR ${application_binary_dir}
     CONFIGURE_COMMAND ""
     CMAKE_ARGS -DSYSBUILD:BOOL=True
                -DSYSBUILD_CACHE:FILEPATH=${sysbuild_cache_file}
@@ -225,6 +226,9 @@ function(ExternalZephyrProject_Add)
     USES_TERMINAL_BUILD True
   )
   set_target_properties(${ZBUILD_APPLICATION} PROPERTIES CACHE_FILE ${sysbuild_cache_file})
+  set_target_properties(${ZBUILD_APPLICATION} PROPERTIES KCONFIG_BINARY_DIR
+                        ${application_binary_dir}/Kconfig
+  )
   if(ZBUILD_MAIN_APP)
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES MAIN_APP True)
   endif()
@@ -294,6 +298,9 @@ function(ExternalZephyrProject_Cmake)
   get_target_property(${ZCMAKE_APPLICATION}_CACHE_FILE ${ZCMAKE_APPLICATION} CACHE_FILE)
   get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
   get_target_property(${ZCMAKE_APPLICATION}_MAIN_APP   ${ZCMAKE_APPLICATION} MAIN_APP)
+  get_target_property(${ZCMAKE_APPLICATION}_KCONFIG_BINARY_DIR
+                      ${ZCMAKE_APPLICATION} KCONFIG_BINARY_DIR
+  )
 
   get_cmake_property(sysbuild_cache CACHE_VARIABLES)
   foreach(var_name ${sysbuild_cache})
@@ -321,6 +328,9 @@ function(ExternalZephyrProject_Cmake)
          "${ZCMAKE_APPLICATION}_BOARD:STRING=${${ZCMAKE_APPLICATION}_BOARD}\n"
     )
   endif()
+  list(APPEND sysbuild_cache_strings
+       "${ZCMAKE_APPLICATION}_KCONFIG_BINARY_DIR:PATH=${${ZCMAKE_APPLICATION}_KCONFIG_BINARY_DIR}\n"
+  )
 
   file(WRITE ${${ZCMAKE_APPLICATION}_CACHE_FILE}.tmp ${sysbuild_cache_strings})
   zephyr_file_copy(${${ZCMAKE_APPLICATION}_CACHE_FILE}.tmp
