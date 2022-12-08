@@ -466,7 +466,7 @@ img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 	 */
 
 	/* erase the image trailer area if it was not erased */
-	off = BOOT_TRAILER_IMG_STATUS_OFFS(fa);
+	off = boot_get_trailer_status_offset(fa->fa_size);
 	if (off >= erase_size) {
 		rc = flash_get_page_info_by_offs(dev, fa->fa_off + off, &page);
 
