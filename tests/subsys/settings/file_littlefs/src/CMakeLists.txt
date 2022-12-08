@@ -11,6 +11,5 @@ zephyr_include_directories(
 	${ZEPHYR_BASE}/tests/subsys/settings/file_littlefs/src
 	)
 
-
-FILE(GLOB mysources *.c)
-target_sources(app PRIVATE ${mysources})
+target_sources(app PRIVATE settings_test_fs.c)
+target_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS app PRIVATE settings_setup_littlefs.c)

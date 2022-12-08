@@ -13,8 +13,8 @@
 	partitions {
 		compatible = "fixed-partitions";
 
-		littlefs_dev: partition@0 {
-			label = "littlefs_dev";
+		settings_file_partition: partition@0 {
+			label = "settings_file_partition";
 			reg = <0x00000000 0x00010000>;
 		};
 	};

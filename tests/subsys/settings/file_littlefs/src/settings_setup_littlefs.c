@@ -9,7 +9,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
 
-#define LITTLEFS_PARTITION	littlefs_dev
+#define LITTLEFS_PARTITION	settings_file_partition
 #define LITTLEFS_PARTITION_ID	FIXED_PARTITION_ID(LITTLEFS_PARTITION)
 
 /* LittleFS work area struct */
@@ -21,7 +21,7 @@ static struct fs_mount_t littlefs_mnt = {
 	.mnt_point = TEST_FS_MPTR,
 };
 
-void *config_setup_littlefs(void)
+void *config_setup_fs(void)
 {
 	int rc;
 	const struct flash_area *fap;
