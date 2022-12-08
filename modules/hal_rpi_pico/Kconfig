@@ -28,3 +28,12 @@ config PICOSDK_USE_ADC
 	bool
 	help
 	  Use the ADC driver from pico-sdk
+
+config PICOSDK_USE_ROM_MATH
+	bool "Use ROM math"
+	default y
+	help
+	  Use math ABI functions from ROM. The Pico comes with ABI functions
+	  (e.g. __aeabi_fadd) pre-programmed to the ROM. These implementations
+	  can be used instead of the default software implementations.
+	  Enabling this is beneficial for binary size and performance.

@@ -2,6 +2,10 @@
 
 include(ExternalProject)
 
+function(pico_wrap_function FUNCNAME)
+  target_link_options(app INTERFACE "LINKER:--wrap=${FUNCNAME}")
+endfunction()
+
 if(CONFIG_HAS_RPI_PICO)
   zephyr_library()
 
@@ -113,4 +117,87 @@ if(CONFIG_HAS_RPI_PICO)
     COMPILE_FLAGS $<TARGET_PROPERTY:compiler,warning_no_pointer_arithmetic>
   )
 
+  if(CONFIG_PICOSDK_USE_ROM_MATH)
+    zephyr_library_sources(
+      # Hardware divider for improved performance
+      ${rp2_common_dir}/hardware_divider/divider.S
+
+      # Float ABI
+      ${rp2_common_dir}/pico_float/float_init_rom.c
+      ${rp2_common_dir}/pico_float/float_aeabi.S
+      ${rp2_common_dir}/pico_float/float_v1_rom_shim.S
+
+      # Double ABI
+      ${rp2_common_dir}/pico_double/double_init_rom.c
+      ${rp2_common_dir}/pico_double/double_aeabi.S
+      ${rp2_common_dir}/pico_double/double_v1_rom_shim.S
+
+      # Int64 ABI
+      ${rp2_common_dir}/pico_int64_ops/pico_int64_ops_aeabi.S
+    )
+
+    zephyr_include_directories(
+      ${rp2_common_dir}/pico_float/include
+      ${rp2_common_dir}/pico_double/include
+      ${rp2_common_dir}/pico_int64_ops/include
+      ${rp2_common_dir}/hardware_divider/include
+    )
+
+    # The Pico implementations for the ABI functions have a
+    # __wrap_ prefix. To make the compiler call these functions,
+    # we need to tell the linker that they are wrapped. For example,
+    # calling the linker with "--wrap=__aeabi_fadd" will replace all
+    # calls to __aeabi_fadd with calls to __wrap___aeabi_fadd. This
+    # will call a wrapper that finds the implementation in ROM, and
+    # call it.
+    pico_wrap_function(__aeabi_fadd)
+    pico_wrap_function(__aeabi_fdiv)
+    pico_wrap_function(__aeabi_fmul)
+    pico_wrap_function(__aeabi_frsub)
+    pico_wrap_function(__aeabi_fsub)
+    pico_wrap_function(__aeabi_cfcmpeq)
+    pico_wrap_function(__aeabi_cfrcmple)
+    pico_wrap_function(__aeabi_cfcmple)
+    pico_wrap_function(__aeabi_fcmpeq)
+    pico_wrap_function(__aeabi_fcmplt)
+    pico_wrap_function(__aeabi_fcmple)
+    pico_wrap_function(__aeabi_fcmpge)
+    pico_wrap_function(__aeabi_fcmpgt)
+    pico_wrap_function(__aeabi_fcmpun)
+    pico_wrap_function(__aeabi_i2f)
+    pico_wrap_function(__aeabi_l2f)
+    pico_wrap_function(__aeabi_ui2f)
+    pico_wrap_function(__aeabi_ul2f)
+    pico_wrap_function(__aeabi_f2iz)
+    pico_wrap_function(__aeabi_f2lz)
+    pico_wrap_function(__aeabi_f2uiz)
+    pico_wrap_function(__aeabi_f2ulz)
+    pico_wrap_function(__aeabi_f2d)
+
+    pico_wrap_function(__aeabi_dadd)
+    pico_wrap_function(__aeabi_ddiv)
+    pico_wrap_function(__aeabi_dmul)
+    pico_wrap_function(__aeabi_drsub)
+    pico_wrap_function(__aeabi_dsub)
+    pico_wrap_function(__aeabi_cdcmpeq)
+    pico_wrap_function(__aeabi_cdrcmple)
+    pico_wrap_function(__aeabi_cdcmple)
+    pico_wrap_function(__aeabi_dcmpeq)
+    pico_wrap_function(__aeabi_dcmplt)
+    pico_wrap_function(__aeabi_dcmple)
+    pico_wrap_function(__aeabi_dcmpge)
+    pico_wrap_function(__aeabi_dcmpgt)
+    pico_wrap_function(__aeabi_dcmpun)
+    pico_wrap_function(__aeabi_i2d)
+    pico_wrap_function(__aeabi_l2d)
+    pico_wrap_function(__aeabi_ui2d)
+    pico_wrap_function(__aeabi_ul2d)
+    pico_wrap_function(__aeabi_d2iz)
+    pico_wrap_function(__aeabi_d2lz)
+    pico_wrap_function(__aeabi_d2uiz)
+    pico_wrap_function(__aeabi_d2ulz)
+    pico_wrap_function(__aeabi_d2f)
+
+    pico_wrap_function(__aeabi_lmul)
+  endif()
 endif()

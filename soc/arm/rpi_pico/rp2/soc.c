@@ -33,6 +33,21 @@ extern void z_arm_nmi_init(void);
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
+#ifdef CONFIG_PICOSDK_USE_ROM_MATH
+void __aeabi_float_init(void);
+void __aeabi_double_init(void);
+
+static int rp2040_rom_math_init(const struct device *arg)
+{
+	ARG_UNUSED(arg);
+
+	__aeabi_float_init();
+	__aeabi_double_init();
+
+	return 0;
+}
+#endif /* CONFIG_PICOSDK_USE_ROM_MATH */
+
 static int rp2040_init(const struct device *arg)
 {
 	uint32_t key;
@@ -79,3 +94,7 @@ void __attribute__((noreturn)) panic(const char *fmt, ...)
 }
 
 SYS_INIT(rp2040_init, PRE_KERNEL_1, 0);
+
+#ifdef CONFIG_PICOSDK_USE_ROM_MATH
+SYS_INIT(rp2040_rom_math_init, PRE_KERNEL_1, 1);
+#endif /* CONFIG_PICOSDK_USE_ROM_MATH */
