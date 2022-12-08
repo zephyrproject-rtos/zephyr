@@ -81,6 +81,9 @@ hardware features:
    * - Flash
      - :kconfig:option:`CONFIG_FLASH`
      - :dtcompatible:`raspberrypi,pico-flash`
+   * - Clock control
+     - :kconfig:option:`CONFIG_CLOCK_CONTROL`
+     - :dtcompatible:`raspberrypi,pico-clocks`
 
 Pin Mapping
 ===========
