@@ -1159,7 +1159,7 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
 	K_MSGQ_DEFINE(name, sizeof(struct can_frame), max_frames, 4)
 
 /**
- * @brief Wrapper function for adding a message queue for a given filter
+ * @brief Simple wrapper function for adding a message queue for a given filter
  *
  * Wrapper function for @a can_add_rx_filter() which puts received CAN frames
  * matching the filter in a message queue instead of calling a callback.
@@ -1171,6 +1171,10 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
  *
  * @note The message queue must be initialized before calling this function and
  * the caller must have appropriate permissions on it.
+ *
+ * @warning Message queue overruns are silently ignored and overrun frames
+ * discarded. Custom error handling can be implemented by using
+ * @a can_add_rx_filter() and @a k_msgq_put() directly.
  *
  * @param dev    Pointer to the device structure for the driver instance.
  * @param msgq   Pointer to the already initialized @a k_msgq struct.
