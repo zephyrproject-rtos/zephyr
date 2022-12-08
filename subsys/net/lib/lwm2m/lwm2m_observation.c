@@ -1499,7 +1499,9 @@ int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm
 	new_entry->path = *path;
 	if (!sys_slist_is_empty(lwm2m_path_list)) {
 
-		/* Keep list Ordered by Object ID/ Object instance/ resource ID */
+		/* Keep list Ordered by Object ID / Object instance / resource ID /
+		 * Resource Instance ID
+		 */
 		SYS_SLIST_FOR_EACH_CONTAINER(lwm2m_path_list, entry, node) {
 			if (entry->path.level == LWM2M_PATH_LEVEL_NONE ||
 			    lwm2m_obj_path_equal(&entry->path, &new_entry->path)) {
@@ -1508,39 +1510,63 @@ int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm
 				return 0;
 			}
 
-			if (entry->path.obj_id > path->obj_id) {
-				/* New entry have smaller Object ID */
-				add_before_current = true;
-			} else if (entry->path.obj_id == path->obj_id &&
-				   entry->path.level > path->level) {
-				add_before_current = true;
-			} else if (entry->path.obj_id == path->obj_id &&
-				   entry->path.level == path->level) {
-				if (path->level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
-				    entry->path.obj_inst_id > path->obj_inst_id) {
-					/*
-					 * New have same Object ID
-					 * but smaller Object Instance ID
-					 */
-					add_before_current = true;
-				} else if (path->level >= LWM2M_PATH_LEVEL_RESOURCE &&
-					   entry->path.obj_inst_id == path->obj_inst_id &&
-					   entry->path.res_id > path->res_id) {
-					/*
-					 * Object ID and Object Instance id same
-					 * but Resource ID is smaller
-					 */
-					add_before_current = true;
-				} else if (path->level >= LWM2M_PATH_LEVEL_RESOURCE_INST &&
-					   entry->path.obj_inst_id == path->obj_inst_id &&
-					   entry->path.res_id == path->res_id &&
-					   entry->path.res_inst_id > path->res_inst_id) {
-					/*
-					 * Object ID, Object Instance id & Resource ID same
-					 * but Resource instance ID is smaller
-					 */
-					add_before_current = true;
-				}
+			/*
+			 * algorithm assumes that list is already properly sorted and that
+			 * there are no duplicates. general idea:
+			 * - if at any level up to new entry's path level, IDs below the level
+			 *   match and the ID of the new entry at that level is smaller,
+			 *   insert before.
+			 * - if all IDs of the new entry match the existing entry, insert before.
+			 *   Because of sorting and no duplicates, the existing entry must have
+			 *   higher path level and come after the new entry.
+			 */
+			switch (new_entry->path.level) {
+			case LWM2M_PATH_LEVEL_OBJECT:
+				add_before_current = new_entry->path.obj_id <= entry->path.obj_id;
+				break;
+
+			case LWM2M_PATH_LEVEL_OBJECT_INST:
+				add_before_current =
+					(new_entry->path.obj_id < entry->path.obj_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 new_entry->path.obj_inst_id <= entry->path.obj_inst_id);
+				break;
+
+			case LWM2M_PATH_LEVEL_RESOURCE:
+				add_before_current =
+					(new_entry->path.obj_id < entry->path.obj_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 new_entry->path.obj_inst_id < entry->path.obj_inst_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_RESOURCE &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 entry->path.obj_inst_id == new_entry->path.obj_inst_id &&
+					 new_entry->path.res_id <= entry->path.res_id);
+				break;
+
+			case LWM2M_PATH_LEVEL_RESOURCE_INST:
+				add_before_current =
+					(new_entry->path.obj_id < entry->path.obj_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 new_entry->path.obj_inst_id < entry->path.obj_inst_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_RESOURCE &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 entry->path.obj_inst_id == new_entry->path.obj_inst_id &&
+					 new_entry->path.res_id < entry->path.res_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_RESOURCE_INST &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 entry->path.obj_inst_id == new_entry->path.obj_inst_id &&
+					 entry->path.res_id == new_entry->path.res_id &&
+					 new_entry->path.res_inst_id <= entry->path.res_inst_id);
+				break;
 			}
 
 			if (add_before_current) {

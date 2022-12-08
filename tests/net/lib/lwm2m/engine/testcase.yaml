@@ -1,0 +1,6 @@
+common:
+  depends_on: netif
+tests:
+  net.lwm2m.engine:
+    platform_allow: native_posix
+    tags: lwm2m net
