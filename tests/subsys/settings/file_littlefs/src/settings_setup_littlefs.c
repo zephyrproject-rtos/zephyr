@@ -12,7 +12,7 @@
 #define LITTLEFS_PARTITION	littlefs_dev
 #define LITTLEFS_PARTITION_ID	FIXED_PARTITION_ID(LITTLEFS_PARTITION)
 
-/* NFFS work area strcut */
+/* LittleFS work area struct */
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
 static struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
