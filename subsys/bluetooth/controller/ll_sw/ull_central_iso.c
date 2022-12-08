@@ -54,6 +54,10 @@
 
 #define SDU_MAX_DRIFT_PPM 100
 
+static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
+			   uint32_t sdu_interval, uint16_t max_sdu, uint8_t *bn,
+			   uint8_t *max_pdu);
+
 /* Setup cache for CIG commit transaction */
 static struct {
 	struct ll_conn_iso_group group;
@@ -107,112 +111,6 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
 	ll_iso_setup.cis_idx++;
 
 	return BT_HCI_ERR_SUCCESS;
-}
-
-
-void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
-{
-	/* Handles have been verified prior to calling this function */
-	(void)ull_cp_cis_create(
-		ll_connected_get(acl_handle),
-		ll_conn_iso_stream_get(cis_handle));
-}
-
-uint8_t ll_cig_parameters_test_open(uint8_t cig_id,
-				    uint32_t c_interval,
-				    uint32_t p_interval,
-				    uint8_t  c_ft,
-				    uint8_t  p_ft,
-				    uint16_t iso_interval,
-				    uint8_t  sca,
-				    uint8_t  packing,
-				    uint8_t  framing,
-				    uint8_t  num_cis)
-{
-	memset(&ll_iso_setup, 0, sizeof(ll_iso_setup));
-
-	ll_iso_setup.group.cig_id = cig_id;
-	ll_iso_setup.group.c_sdu_interval = c_interval;
-	ll_iso_setup.group.p_sdu_interval = p_interval;
-	ll_iso_setup.group.iso_interval = iso_interval;
-	ll_iso_setup.group.cis_count = num_cis;
-	ll_iso_setup.group.central.sca = sca;
-	ll_iso_setup.group.central.packing = packing;
-	ll_iso_setup.group.central.framing = framing;
-	ll_iso_setup.group.central.test = 1U;
-
-	/* TODO: Perhaps move FT to LLL CIG */
-	ll_iso_setup.c_ft = c_ft;
-	ll_iso_setup.p_ft = p_ft;
-
-	return BT_HCI_ERR_SUCCESS;
-}
-
-uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
-				   uint16_t c_sdu, uint16_t p_sdu,
-				   uint16_t c_pdu, uint16_t p_pdu,
-				   uint8_t c_phy, uint8_t p_phy,
-				   uint8_t c_bn, uint8_t p_bn)
-{
-	uint8_t cis_idx = ll_iso_setup.cis_idx;
-
-	if (cis_idx >= CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP) {
-		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
-	}
-
-	memset(&ll_iso_setup.stream[cis_idx], 0, sizeof(struct ll_conn_iso_stream));
-
-	ll_iso_setup.stream[cis_idx].cis_id = cis_id;
-	ll_iso_setup.stream[cis_idx].c_max_sdu = c_sdu;
-	ll_iso_setup.stream[cis_idx].p_max_sdu = p_sdu;
-	ll_iso_setup.stream[cis_idx].lll.nse = nse;
-	ll_iso_setup.stream[cis_idx].lll.tx.max_pdu = c_bn ? c_pdu : 0;
-	ll_iso_setup.stream[cis_idx].lll.rx.max_pdu = p_bn ? p_pdu : 0;
-	ll_iso_setup.stream[cis_idx].lll.tx.phy = c_phy;
-	ll_iso_setup.stream[cis_idx].lll.rx.phy = p_phy;
-	ll_iso_setup.stream[cis_idx].lll.tx.bn = c_bn;
-	ll_iso_setup.stream[cis_idx].lll.rx.bn = p_bn;
-	ll_iso_setup.cis_idx++;
-
-	return BT_HCI_ERR_SUCCESS;
-}
-
-static void set_bn_max_pdu(bool framed, uint32_t iso_interval, uint32_t sdu_interval,
-			   uint16_t max_sdu, uint8_t *bn, uint8_t *max_pdu)
-{
-	uint32_t ceil_f_x_max_sdu;
-	uint16_t max_pdu_bn1;
-	uint32_t max_drift;
-	uint32_t ceil_f;
-
-	if (framed) {
-		/* Framed (From ES-18002):
-		 *   Max_PDU >= ((ceil(F) x 5 + ceil(F x Max_SDU)) / BN) + 2
-		 *   F = (1 + MaxDrift) x ISO_Interval / SDU_Interval
-		 *   SegmentationHeader + TimeOffset = 5 bytes
-		 *   Continuation header = 2 bytes
-		 *   MaxDrift (Max. allowed SDU delivery timing drift) = 100 ppm
-		 */
-		max_drift = ceiling_fraction(SDU_MAX_DRIFT_PPM * sdu_interval, 1000000U);
-		ceil_f = ceiling_fraction(iso_interval + max_drift, sdu_interval);
-		ceil_f_x_max_sdu = ceiling_fraction(max_sdu * (iso_interval + max_drift),
-						    sdu_interval);
-
-		/* Strategy: Keep lowest possible BN.
-		 * TODO: Implement other strategies, possibly as policies.
-		 */
-		max_pdu_bn1 = ceil_f * 5 + ceil_f_x_max_sdu;
-		*bn = ceiling_fraction(max_pdu_bn1, LL_CIS_OCTETS_TX_MAX);
-		*max_pdu = ceiling_fraction(max_pdu_bn1, *bn) + 2;
-	} else {
-		/* For unframed, ISO_Interval must be N x SDU_Interval */
-		LL_ASSERT(iso_interval % sdu_interval == 0);
-
-		/* Core 5.3 Vol 6, Part G section 2.1:
-		 * BN >= ceil(Max_SDU/Max_PDU * ISO_Interval/SDU_Interval)
-		 */
-		*bn = ceiling_fraction(max_sdu * iso_interval, (*max_pdu) * sdu_interval);
-	}
 }
 
 
@@ -544,6 +442,91 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	return BT_HCI_ERR_SUCCESS;
 }
 
+uint8_t ll_cig_parameters_test_open(uint8_t cig_id,
+				    uint32_t c_interval,
+				    uint32_t p_interval,
+				    uint8_t  c_ft,
+				    uint8_t  p_ft,
+				    uint16_t iso_interval,
+				    uint8_t  sca,
+				    uint8_t  packing,
+				    uint8_t  framing,
+				    uint8_t  num_cis)
+{
+	memset(&ll_iso_setup, 0, sizeof(ll_iso_setup));
+
+	ll_iso_setup.group.cig_id = cig_id;
+	ll_iso_setup.group.c_sdu_interval = c_interval;
+	ll_iso_setup.group.p_sdu_interval = p_interval;
+	ll_iso_setup.group.iso_interval = iso_interval;
+	ll_iso_setup.group.cis_count = num_cis;
+	ll_iso_setup.group.central.sca = sca;
+	ll_iso_setup.group.central.packing = packing;
+	ll_iso_setup.group.central.framing = framing;
+	ll_iso_setup.group.central.test = 1U;
+
+	/* TODO: Perhaps move FT to LLL CIG */
+	ll_iso_setup.c_ft = c_ft;
+	ll_iso_setup.p_ft = p_ft;
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
+				   uint16_t c_sdu, uint16_t p_sdu,
+				   uint16_t c_pdu, uint16_t p_pdu,
+				   uint8_t c_phy, uint8_t p_phy,
+				   uint8_t c_bn, uint8_t p_bn)
+{
+	uint8_t cis_idx = ll_iso_setup.cis_idx;
+
+	if (cis_idx >= CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP) {
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+	}
+
+	memset(&ll_iso_setup.stream[cis_idx], 0, sizeof(struct ll_conn_iso_stream));
+
+	ll_iso_setup.stream[cis_idx].cis_id = cis_id;
+	ll_iso_setup.stream[cis_idx].c_max_sdu = c_sdu;
+	ll_iso_setup.stream[cis_idx].p_max_sdu = p_sdu;
+	ll_iso_setup.stream[cis_idx].lll.nse = nse;
+	ll_iso_setup.stream[cis_idx].lll.tx.max_pdu = c_bn ? c_pdu : 0;
+	ll_iso_setup.stream[cis_idx].lll.rx.max_pdu = p_bn ? p_pdu : 0;
+	ll_iso_setup.stream[cis_idx].lll.tx.phy = c_phy;
+	ll_iso_setup.stream[cis_idx].lll.rx.phy = p_phy;
+	ll_iso_setup.stream[cis_idx].lll.tx.bn = c_bn;
+	ll_iso_setup.stream[cis_idx].lll.rx.bn = p_bn;
+	ll_iso_setup.cis_idx++;
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(acl_handle);
+	if (conn) {
+		struct ll_conn_iso_stream *cis;
+
+		/* Verify handle validity and association */
+		cis = ll_conn_iso_stream_get(cis_handle);
+		if (cis->lll.handle == cis_handle && cis->lll.acl_handle == acl_handle) {
+			return BT_HCI_ERR_SUCCESS;
+		}
+	}
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
+{
+	/* Handles have been verified prior to calling this function */
+	(void)ull_cp_cis_create(
+		ll_connected_get(acl_handle),
+		ll_conn_iso_stream_get(cis_handle));
+}
+
 /* Core 5.3 Vol 6, Part B section 7.8.100:
  * The HCI_LE_Remove_CIG command is used by the Central’s Host to remove the CIG
  * identified by CIG_ID.
@@ -613,24 +596,6 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 	ll_conn_iso_group_release(cig);
 
 	return BT_HCI_ERR_SUCCESS;
-}
-
-uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
-{
-	struct ll_conn *conn;
-
-	conn = ll_connected_get(acl_handle);
-	if (conn) {
-		struct ll_conn_iso_stream *cis;
-
-		/* Verify handle validity and association */
-		cis = ll_conn_iso_stream_get(cis_handle);
-		if (cis->lll.handle == cis_handle && cis->lll.acl_handle == acl_handle) {
-			return BT_HCI_ERR_SUCCESS;
-		}
-	}
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
 int ull_central_iso_init(void)
@@ -748,4 +713,43 @@ uint16_t ull_central_iso_cis_offset_get(uint16_t cis_handle, uint32_t *cis_offse
 
 	cis->central.instant = ull_conn_event_counter(conn) + 3;
 	return cis->central.instant;
+}
+
+static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
+			   uint32_t sdu_interval, uint16_t max_sdu, uint8_t *bn,
+			   uint8_t *max_pdu)
+{
+	uint32_t ceil_f_x_max_sdu;
+	uint16_t max_pdu_bn1;
+	uint32_t max_drift;
+	uint32_t ceil_f;
+
+	if (framed) {
+		/* Framed (From ES-18002):
+		 *   Max_PDU >= ((ceil(F) x 5 + ceil(F x Max_SDU)) / BN) + 2
+		 *   F = (1 + MaxDrift) x ISO_Interval / SDU_Interval
+		 *   SegmentationHeader + TimeOffset = 5 bytes
+		 *   Continuation header = 2 bytes
+		 *   MaxDrift (Max. allowed SDU delivery timing drift) = 100 ppm
+		 */
+		max_drift = ceiling_fraction(SDU_MAX_DRIFT_PPM * sdu_interval, 1000000U);
+		ceil_f = ceiling_fraction(iso_interval + max_drift, sdu_interval);
+		ceil_f_x_max_sdu = ceiling_fraction(max_sdu * (iso_interval + max_drift),
+						    sdu_interval);
+
+		/* Strategy: Keep lowest possible BN.
+		 * TODO: Implement other strategies, possibly as policies.
+		 */
+		max_pdu_bn1 = ceil_f * 5 + ceil_f_x_max_sdu;
+		*bn = ceiling_fraction(max_pdu_bn1, LL_CIS_OCTETS_TX_MAX);
+		*max_pdu = ceiling_fraction(max_pdu_bn1, *bn) + 2;
+	} else {
+		/* For unframed, ISO_Interval must be N x SDU_Interval */
+		LL_ASSERT(iso_interval % sdu_interval == 0);
+
+		/* Core 5.3 Vol 6, Part G section 2.1:
+		 * BN >= ceil(Max_SDU/Max_PDU * ISO_Interval/SDU_Interval)
+		 */
+		*bn = ceiling_fraction(max_sdu * iso_interval, (*max_pdu) * sdu_interval);
+	}
 }
