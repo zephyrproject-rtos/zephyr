@@ -1315,26 +1315,12 @@ int ull_iso_reset(void)
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 {
-	struct ll_iso_datapath *dp = NULL;
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) && IS_CIS_HANDLE(handle)) {
-		struct ll_conn_iso_stream *cis;
-
-		cis = ll_conn_iso_stream_get(handle);
-		dp  = cis->hdr.datapath_in;
-
-		if (dp) {
-			isoal_tx_pdu_release(dp->source_hdl, node_tx);
-		}
-	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) && IS_ADV_ISO_HANDLE(handle)) {
-		/* Process as TX ack. TODO: Can be unified with CIS and use
-		 * ISOAL.
-		 */
-		ll_tx_ack_put(handle, (void *)node_tx);
-		ll_rx_sched();
-	} else {
-		LL_ASSERT(0);
-	}
+	/* ISO Tx ack, we are in LLL context */
+	/* FIXME: add new interface to pass through ULL context as
+	 * ll_tx_ack_put shall only be ULL callable.
+	 */
+	ll_tx_ack_put(handle, (void *)node_tx);
+	ll_rx_sched();
 }
 
 void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count)
@@ -1695,11 +1681,14 @@ static isoal_status_t ll_iso_pdu_release(struct node_tx_iso *node_tx,
 					 const isoal_status_t status)
 {
 	if (status == ISOAL_STATUS_OK) {
+		/* FIXME: ll_tx_ack_put shall be ULL callable only,
+		 *        is it being called from Thread context here?
+		 */
 		/* Process as TX ack */
 		ll_tx_ack_put(handle, (void *)node_tx);
 		ll_rx_sched();
 	} else {
-		/* Release back to memory pool */
+		/* Release back to memory pool, we are in Thread context */
 		if (node_tx->link) {
 			ll_iso_link_tx_release(node_tx->link);
 		}

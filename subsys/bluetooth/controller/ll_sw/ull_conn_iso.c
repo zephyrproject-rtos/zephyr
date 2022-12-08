@@ -32,6 +32,7 @@
 #include "lll_conn_iso.h"
 #include "lll_central_iso.h"
 #include "lll_peripheral_iso.h"
+#include "lll_iso_tx.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ull_tx_queue.h"
@@ -1070,7 +1071,7 @@ static void cis_tx_lll_flush(void *param)
 	struct lll_conn_iso_stream *lll;
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
-	struct node_tx *tx;
+	struct node_tx_iso *tx;
 	memq_link_t *link;
 	uint32_t ret;
 
@@ -1086,10 +1087,8 @@ static void cis_tx_lll_flush(void *param)
 
 	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head, (void **)&tx);
 	while (link) {
-		/* Create instant NACK */
-		ll_tx_ack_put(lll->handle, tx);
-		link->next = tx->next;
 		tx->next = link;
+		ull_iso_lll_ack_enqueue(lll->handle, tx);
 
 		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
 				    (void **)&tx);
