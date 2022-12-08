@@ -31,7 +31,7 @@ zephyr_linker_section_configure(SECTION initlevel_error INPUT ".z_init_[_A-Z0-9]
 # ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
 
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   zephyr_linker_section(NAME ctors KVMA RAM_REGION GROUP RODATA_REGION NOINPUT)
   #
   # The compiler fills the constructor pointers table below,

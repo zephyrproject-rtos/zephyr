@@ -1859,7 +1859,7 @@ endfunction()
 # Support an optional second option for when the first option is not
 # supported.
 function(target_cc_option_fallback target scope option1 option2)
-  if(CONFIG_CPLUSPLUS)
+  if(CONFIG_CPP)
     foreach(lang C CXX)
       # For now, we assume that all flags that apply to C/CXX also
       # apply to ASM.
@@ -2051,7 +2051,7 @@ function(check_set_compiler_property)
       separate_arguments(option UNIX_COMMAND ${option})
     endif()
 
-    if(CONFIG_CPLUSPLUS)
+    if(CONFIG_CPP)
       zephyr_check_compiler_flag(CXX "${option}" check)
 
       if(${check})

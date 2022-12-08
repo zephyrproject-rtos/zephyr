@@ -11,7 +11,7 @@ Enabling C++ Support
 
 Zephyr supports applications written in both C and C++. However, to use C++ in
 an application you must configure Zephyr to include C++ support by selecting
-the :kconfig:option:`CONFIG_CPLUSPLUS` in the application configuration file.
+the :kconfig:option:`CONFIG_CPP` in the application configuration file.
 
 To enable C++ support, the compiler toolchain must also include a C++ compiler
 and the included compiler must be supported by the Zephyr build system. The

@@ -43,7 +43,7 @@ if(${CMAKE_C_COMPILER} STREQUAL CMAKE_C_COMPILER-NOTFOUND)
   message(FATAL_ERROR "C compiler ${CROSS_COMPILE}${CC} not found - Please check your toolchain installation")
 endif()
 
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   set(cplusplus_compiler ${CROSS_COMPILE}${C++})
 else()
   if(EXISTS ${CROSS_COMPILE}${C++})

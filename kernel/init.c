@@ -296,7 +296,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 	boot_banner();
 
-#if defined(CONFIG_CPLUSPLUS)
+#if defined(CONFIG_CPP)
 	void z_cpp_init_static(void);
 	z_cpp_init_static();
 #endif

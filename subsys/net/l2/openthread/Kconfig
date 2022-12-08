@@ -23,7 +23,7 @@ menuconfig NET_L2_OPENTHREAD
 
 	select SETTINGS if FLASH
 	select OPENTHREAD_SETTINGS_RAM if !FLASH
-	select CPLUSPLUS
+	select CPP
 	select REBOOT
 	select ENTROPY_GENERATOR
 
