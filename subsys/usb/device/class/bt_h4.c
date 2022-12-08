@@ -18,9 +18,8 @@
 #include <zephyr/bluetooth/hci_raw.h>
 #include <zephyr/bluetooth/l2cap.h>
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_bt_h4);
+LOG_MODULE_REGISTER(usb_bt_h4, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 static K_FIFO_DEFINE(rx_queue);
 static K_FIFO_DEFINE(tx_queue);
