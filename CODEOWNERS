@@ -187,6 +187,7 @@
 /boards/arm64/mimx8mm_evk/                @MrVan @JiafeiPan
 /boards/arm64/mimx8mp_evk/                @MrVan @JiafeiPan
 /boards/arm64/mimx8mn_evk/                @JiafeiPan
+/boards/arm64/mimx93_evk/                 @JiafeiPan
 /boards/arm64/nxp_ls1046ardb/             @JiafeiPan
 /boards/arm64/xenvm/                      @lorc @firscity
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
