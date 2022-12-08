@@ -291,6 +291,9 @@ Drivers and Sensors
 
 * DFU
 
+  * Remove :c:macro:`BOOT_TRAILER_IMG_STATUS_OFFS` in favor a two new functions;
+    :c:func:`boot_get_area_trailer_status_offset` and :c:func:`boot_get_trailer_status_offset`
+
 * Disk
 
 * Display
