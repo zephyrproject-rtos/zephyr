@@ -1,0 +1,48 @@
+# Copyright (c) 2022 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico clock controller node
+
+compatible: "raspberrypi,pico-clocks"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ref-frequency:
+    type: int
+    description: Frequency for clk-ref
+    required: true
+
+  sys-frequency:
+    type: int
+    description: Frequency for clk-sys
+    required: true
+
+  peri-frequency:
+    type: int
+    description: Frequency for clk-peri
+    required: true
+
+  usb-frequency:
+    type: int
+    description: Frequency for clk-usb
+    required: true
+
+  adc-frequency:
+    type: int
+    description: Frequency for clk-adc
+    required: true
+
+  rtc-frequency:
+    type: int
+    description: Frequency for clk-rtc
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clk-id
