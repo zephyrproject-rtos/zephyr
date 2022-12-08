@@ -55,9 +55,8 @@
 
 /* definitions */
 
-#define LOG_LEVEL CONFIG_USB_CDC_ACM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_cdc_acm);
+LOG_MODULE_REGISTER(usb_cdc_acm, CONFIG_USB_CDC_ACM_LOG_LEVEL);
 
 /* 115200bps, no parity, 1 stop bit, 8bit char */
 #define CDC_ACM_DEFAULT_BAUDRATE {sys_cpu_to_le32(115200), 0, 0, 8}

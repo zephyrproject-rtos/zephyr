@@ -53,9 +53,8 @@
 #include <usb_descriptor.h>
 #include <usb_work_q.h>
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_dfu);
+LOG_MODULE_REGISTER(usb_dfu, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #define SLOT0_PARTITION			slot0_partition
 #define SLOT1_PARTITION			slot1_partition
