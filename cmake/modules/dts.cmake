@@ -68,6 +68,7 @@ set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
 # This generates DT information needed by the Kconfig APIs.
 set(GEN_DRIVER_KCONFIG_SCRIPT   ${DT_SCRIPTS}/gen_driver_kconfig_dts.py)
 # Generated Kconfig symbols go here.
+set_ifndef(KCONFIG_BINARY_DIR   ${CMAKE_BINARY_DIR}/Kconfig)
 set(DTS_KCONFIG                 ${KCONFIG_BINARY_DIR}/Kconfig.dts)
 
 # This generates DT information needed by the CMake APIs.
