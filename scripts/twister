@@ -201,6 +201,7 @@ from twisterlib.reports import Reporting
 from twisterlib.hardwaremap import HardwareMap
 from twisterlib.coverage import run_coverage
 from twisterlib.runner import TwisterRunner
+from twisterlib.package import Artifacts
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -397,6 +398,10 @@ def main():
                        options.no_update,
                        options.platform_reports
                        )
+
+    if options.package_artifacts:
+        artifacts = Artifacts(env)
+        artifacts.package()
 
     logger.info("Run completed")
     if runner.results.failed or runner.results.error or (tplan.warnings and options.warnings_as_errors):
