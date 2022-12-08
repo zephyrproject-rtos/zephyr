@@ -12,6 +12,8 @@
 #define TEST_FS_MPTR "/littlefs"
 #define TEST_CONFIG_DIR TEST_FS_MPTR""CONFIG_SETTINGS_FILE_DIR
 
+void *config_setup_littlefs(void);
+
 void *settings_config_setup(void);
 void settings_config_teardown(void *fixture);
 
