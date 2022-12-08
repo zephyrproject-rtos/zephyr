@@ -19,6 +19,8 @@
 
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
+#define DT_DRV_COMPAT		zephyr_settings_file
+
 #ifdef CONFIG_SETTINGS_FS
 #define SETTINGS_FILE_MAX_LINES		CONFIG_SETTINGS_FS_MAX_LINES
 #define SETTINGS_FILE_PATH		CONFIG_SETTINGS_FS_FILE
@@ -521,8 +523,6 @@ static void *settings_file_storage_get(struct settings_store *cs)
 	return (void *)cf->cf_name;
 }
 
-#ifdef CONFIG_SETTINGS_FILE_INIT
-
 static int mkdir_if_not_exists(const char *path)
 {
 	struct fs_dirent entry;
@@ -563,8 +563,8 @@ static int mkdir_for_file(const char *file_path)
 	return 0;
 }
 
-static int settings_file_store_init(struct settings_store *store,
-				    const void *config)
+__unused static int settings_file_store_init(struct settings_store *store,
+					     const void *config)
 {
 	struct settings_file *settings =
 		CONTAINER_OF(store, struct settings_file, cf_store);
@@ -587,6 +587,19 @@ static int settings_file_store_init(struct settings_store *store,
 	 */
 	return mkdir_for_file(settings->cf_name);
 }
+
+#define SETTINGS_FILE_DEFINE(inst)					\
+static struct settings_file settings_file_##inst = {			\
+	.cf_name = DT_INST_PROP(inst, path),				\
+	.cf_maxlines = DT_INST_PROP_OR(inst, max_entries, 0),		\
+};									\
+									\
+SETTINGS_DT_INST_STORE_STATIC_DEFINE(inst, settings_file_store_init,	\
+				     &settings_file_##inst.cf_store, NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(SETTINGS_FILE_DEFINE)
+
+#ifdef CONFIG_SETTINGS_FILE_INIT
 
 static struct settings_file settings_file_default = {
 	.cf_name = SETTINGS_FILE_PATH,

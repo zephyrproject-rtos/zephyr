@@ -1,0 +1,23 @@
+# Copyright (C) 2022 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Settings using File backend.
+
+compatible: "zephyr,settings,file"
+
+include: "zephyr,settings-common.yaml"
+
+properties:
+  path:
+    type: string
+    required: true
+    description: |
+      Path to file storing settings, e.g. "/settings/run".
+
+  max-entries:
+    type: int
+    description: |
+      Maximum number of entries before attempting compression.
+
+      Compression is disabled if not defined, or set to <0>.
