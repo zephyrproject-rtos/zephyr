@@ -4,7 +4,7 @@
 config DMA_GD32
 	bool "Gigadevice GD32 DMA driver"
 	default y
-	depends on DT_HAS_GD_GD32_DMA_ENABLED
+	depends on DT_HAS_GD_GD32_DMA_ENABLED || DT_HAS_GD_GD32_DMA_V1_ENABLED
 	select USE_GD32_DMA
 	help
 	  DMA driver for GigaDevice GD32 series MCUs.

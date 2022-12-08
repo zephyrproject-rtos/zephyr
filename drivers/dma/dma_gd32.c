@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT gd_gd32_dma
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/gd32.h>
@@ -16,7 +14,13 @@
 #include <gd32_dma.h>
 #include <zephyr/irq.h>
 
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
+#define DT_DRV_COMPAT gd_gd32_dma_v1
+#elif DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma)
+#define DT_DRV_COMPAT gd_gd32_dma
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 #define CHXCTL_PERIEN_OFFSET	  ((uint32_t)25U)
 #define GD32_DMA_CHXCTL_DIR	  BIT(6)
 #define GD32_DMA_CHXCTL_M2M	  BIT(7)
@@ -59,7 +63,7 @@ struct dma_gd32_config {
 	uint32_t channels;
 	uint16_t clkid;
 	bool mem2mem;
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	struct reset_dt_spec reset;
 #endif
 	void (*irq_configure)(void);
@@ -190,7 +194,7 @@ gd32_dma_periph_width_config(uint32_t reg, dma_channel_enum ch, uint32_t pwidth)
 	GD32_DMA_CHCTL(reg, ch) = (ctl & (~DMA_CHXCTL_PWIDTH)) | pwidth;
 }
 
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 static inline void
 gd32_dma_channel_subperipheral_select(uint32_t reg, dma_channel_enum ch,
 				      dma_subperipheral_enum sub_periph)
@@ -212,7 +216,7 @@ gd32_dma_periph_address_config(uint32_t reg, dma_channel_enum ch, uint32_t addr)
 static inline void
 gd32_dma_memory_address_config(uint32_t reg, dma_channel_enum ch, uint32_t addr)
 {
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	DMA_CHM0ADDR(reg, ch) = addr;
 #else
 	GD32_DMA_CHMADDR(reg, ch) = addr;
@@ -234,7 +238,7 @@ gd32_dma_transfer_number_get(uint32_t reg, dma_channel_enum ch)
 static inline void
 gd32_dma_interrupt_flag_clear(uint32_t reg, dma_channel_enum ch, uint32_t flag)
 {
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	if (ch < DMA_CH4) {
 		DMA_INTC0(reg) |= DMA_FLAG_ADD(flag, ch);
 	} else {
@@ -248,7 +252,7 @@ gd32_dma_interrupt_flag_clear(uint32_t reg, dma_channel_enum ch, uint32_t flag)
 static inline void
 gd32_dma_flag_clear(uint32_t reg, dma_channel_enum ch, uint32_t flag)
 {
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	if (ch < DMA_CH4) {
 		DMA_INTC0(reg) |= DMA_FLAG_ADD(flag, ch);
 	} else {
@@ -262,7 +266,7 @@ gd32_dma_flag_clear(uint32_t reg, dma_channel_enum ch, uint32_t flag)
 static inline uint32_t
 gd32_dma_interrupt_flag_get(uint32_t reg, dma_channel_enum ch, uint32_t flag)
 {
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	if (ch < DMA_CH4) {
 		return (DMA_INTF0(reg) & DMA_FLAG_ADD(flag, ch));
 	} else {
@@ -280,7 +284,7 @@ static inline void gd32_dma_deinit(uint32_t reg, dma_channel_enum ch)
 	GD32_DMA_CHCTL(reg, ch) = DMA_CHCTL_RESET_VALUE;
 	GD32_DMA_CHCNT(reg, ch) = DMA_CHCNT_RESET_VALUE;
 	GD32_DMA_CHPADDR(reg, ch) = DMA_CHPADDR_RESET_VALUE;
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	DMA_CHM0ADDR(reg, ch) = DMA_CHMADDR_RESET_VALUE;
 	DMA_CHFCTL(reg, ch) = DMA_CHFCTL_RESET_VALUE;
 	if (ch < DMA_CH4) {
@@ -409,7 +413,7 @@ static int dma_gd32_config(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	if (dma_cfg->dma_slot > 0xF) {
 		LOG_ERR("dma_slot must be <7 (%" PRIu32 ")",
 			dma_cfg->dma_slot);
@@ -468,7 +472,7 @@ static int dma_gd32_config(const struct device *dev, uint32_t channel,
 	gd32_dma_periph_width_config(cfg->reg, channel,
 				     dma_gd32_periph_width(periph_cfg->width));
 	gd32_dma_circulation_disable(cfg->reg, channel);
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	if (dma_cfg->channel_direction != MEMORY_TO_MEMORY) {
 		gd32_dma_channel_subperipheral_select(cfg->reg, channel,
 						      dma_cfg->dma_slot);
@@ -600,7 +604,7 @@ static int dma_gd32_init(const struct device *dev)
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
 			       (clock_control_subsys_t *)&cfg->clkid);
 
-#ifdef CONFIG_SOC_SERIES_GD32F4XX
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	(void)reset_line_toggle_dt(&cfg->reset);
 #endif
 
@@ -674,7 +678,7 @@ static const struct dma_driver_api dma_gd32_driver_api = {
 		.channels = DT_INST_PROP(inst, dma_channels),                  \
 		.clkid = DT_INST_CLOCKS_CELL(inst, id),                        \
 		.mem2mem = DT_INST_PROP(inst, gd_mem2mem),                     \
-		IF_ENABLED(CONFIG_SOC_SERIES_GD32F4XX,                         \
+		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1),          \
 			   (.reset = RESET_DT_SPEC_INST_GET(inst),))           \
 		.irq_configure = dma_gd32##inst##_irq_configure,               \
 	};                                                                     \
