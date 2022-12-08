@@ -530,6 +530,7 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 {
 	const struct bt_audio_stream_ops *ops;
 	struct bt_audio_stream *stream;
+	int err;
 
 	stream = ep->stream;
 	if (stream == NULL) {
@@ -540,6 +541,18 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 	ops = stream->ops;
 
 	LOG_DBG("stream %p ep %p reason 0x%02x", stream, stream->ep, reason);
+
+	if (ep->status.state == BT_AUDIO_EP_STATE_ENABLING &&
+	    reason == BT_HCI_ERR_CONN_FAIL_TO_ESTAB) {
+		LOG_DBG("Waiting for retry");
+
+		err = bt_audio_stream_iso_listen(stream);
+		if (err != 0) {
+			LOG_ERR("Could not make stream listen: %d", err);
+		}
+
+		return;
+	}
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream);
@@ -553,8 +566,6 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 		/* Trigger a call to ase_process to handle the cleanup */
 		k_work_submit(&ep->work);
 	} else {
-		int err;
-
 		/* The ASE state machine goes into different states from this operation
 		 * based on whether it is a source or a sink ASE.
 		 */
