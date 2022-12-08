@@ -63,19 +63,19 @@ In order to make use of the C++ exceptions, the
 :kconfig:option:`CONFIG_EXCEPTIONS` must be selected in the application
 configuration file.
 
-Zephyr C++ Subsystem
-********************
+Zephyr Minimal C++ Library
+**************************
 
-Zephyr C++ subsystem (:file:`subsys/cpp`) provides a minimal subset of the C++
-standard library and application binary interface (ABI) functions to enable
-basic C++ language support. This includes:
+Zephyr minimal C++ library (:file:`lib/cpp/minimal`) provides a minimal subset
+of the C++ standard library and application binary interface (ABI) functions to
+enable basic C++ language support. This includes:
 
 * ``new`` and ``delete`` operators
 * virtual function stub and vtables
 * static global initializers for global constructors
 
-The scope of the C++ subsystem is strictly limited to providing the basic C++
-language support, and it does not implement any `Standard Template Library
+The scope of the minimal C++ library is strictly limited to providing the basic
+C++ language support, and it does not implement any `Standard Template Library
 (STL)`_ classes and functions. For this reason, it is only suitable for use in
 the applications that implement their own (non-standard) class library and do
 rely on the Standard Template Library (STL) components.
