@@ -28,3 +28,8 @@ config PICOSDK_USE_ADC
 	bool
 	help
 	  Use the ADC driver from pico-sdk
+
+config PICOSDK_USE_CLOCKS
+	bool
+	help
+	  Use the clock driver from pico-sdk
