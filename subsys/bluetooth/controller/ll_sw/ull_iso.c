@@ -1325,10 +1325,22 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 
 		if (dp) {
 			isoal_tx_pdu_release(dp->source_hdl, node_tx);
+		} else {
+			/* Race with Data Path remove */
+			/* FIXME: ll_tx_ack_put is not LLL callable as it is
+			 * used by ACL connections in ULL context to dispatch
+			 * ack.
+			 */
+			ll_tx_ack_put(handle, (void *)node_tx);
+			ll_rx_sched();
 		}
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) && IS_ADV_ISO_HANDLE(handle)) {
 		/* Process as TX ack. TODO: Can be unified with CIS and use
 		 * ISOAL.
+		 */
+		/* FIXME: ll_tx_ack_put is not LLL callable as it is
+		 * used by ACL connections in ULL context to dispatch
+		 * ack.
 		 */
 		ll_tx_ack_put(handle, (void *)node_tx);
 		ll_rx_sched();
@@ -1695,11 +1707,24 @@ static isoal_status_t ll_iso_pdu_release(struct node_tx_iso *node_tx,
 					 const isoal_status_t status)
 {
 	if (status == ISOAL_STATUS_OK) {
-		/* Process as TX ack */
+		/* Process as TX ack, we are in LLL execution context here.
+		 * status == ISOAL_STATUS_OK when an ISO PDU has been acked.
+		 *
+		 * Call Path:
+		 *   ull_iso_lll_ack_enqueue() --> isoal_tx_pdu_release() -->
+		 *   pdu_release() == ll_iso_pdu_release() (this function).
+		 */
+		/* FIXME: ll_tx_ack_put is not LLL callable as it is used by
+		 * ACL connections in ULL context to dispatch ack.
+		 */
 		ll_tx_ack_put(handle, (void *)node_tx);
 		ll_rx_sched();
 	} else {
-		/* Release back to memory pool */
+		/* Release back to memory pool, we are in Thread context
+		 * Callers:
+		 *   isoal_source_deallocate() with ISOAL_STATUS_ERR_PDU_EMIT
+		 *   isoal_tx_pdu_emit with status != ISOAL_STATUS_OK
+		 */
 		if (node_tx->link) {
 			ll_iso_link_tx_release(node_tx->link);
 		}
