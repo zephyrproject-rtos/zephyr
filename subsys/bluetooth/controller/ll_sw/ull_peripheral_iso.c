@@ -210,7 +210,6 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 					 lll_clock_ppm_get(acl->periph.sca)) *
 					 EVENT_US_TO_US_FRAC(iso_interval_us)), USEC_PER_SEC);
 
-		ull_hdr_init(&cig->ull);
 		lll_hdr_init(&cig->lll, cig);
 	}
 
