@@ -746,6 +746,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
 
 	cis = ll_conn_iso_stream_get(cis_handle);
 	cig = cis->group;
+	cig->lll.num_cis++;
 
 	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
 
@@ -959,7 +960,7 @@ static void cis_disabled_cb(void *param)
 	uint8_t cis_idx;
 
 	cig = HDR_LLL2ULL(param);
-	is_last_cis = cig->lll.num_cis == 1;
+	is_last_cis = (cig->lll.num_cis == 1U);
 	handle_iter = UINT16_MAX;
 
 	/* Remove all CISes marked for teardown */
@@ -979,7 +980,18 @@ static void cis_disabled_cb(void *param)
 			ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
 			ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 
-			ll_conn_iso_stream_release(cis);
+			if (IS_PERIPHERAL(cig) || (cig->cis_count == 0U)) {
+				ll_conn_iso_stream_release(cis);
+
+			} else if (IS_CENTRAL(cig)) {
+				cis->established = 0U;
+				cis->teardown = 0U;
+				cis->lll.flushed = 0U;
+
+			} else {
+				LL_ASSERT(0);
+			}
+
 			cig->lll.num_cis--;
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
@@ -1047,7 +1059,7 @@ static void cis_disabled_cb(void *param)
 		}
 	}
 
-	if (is_last_cis && cig->lll.num_cis == 0) {
+	if (is_last_cis && (cig->lll.num_cis == 0U)) {
 		/* This was the last CIS of the CIG. Initiate CIG teardown by
 		 * stopping ticker.
 		 */
