@@ -339,7 +339,7 @@ if(NOT CONFIG_NATIVE_APPLICATION)
   toolchain_ld_baremetal()
 endif()
 
-if(CONFIG_LIB_CPLUSPLUS)
+if(NOT CONFIG_MINIMAL_LIBCPP)
   # @Intent: Set linker specific flags for C++
   toolchain_ld_cpp()
 endif()
@@ -1881,7 +1881,7 @@ endif()
 zephyr_compile_options($<TARGET_PROPERTY:compiler,nostdinc>)
 target_include_directories(zephyr_interface SYSTEM INTERFACE $<TARGET_PROPERTY:compiler,nostdinc_include>)
 
-if(NOT CONFIG_LIB_CPLUSPLUS)
+if(CONFIG_MINIMAL_LIBCPP)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,nostdincxx>>)
 endif()
 
