@@ -52,6 +52,12 @@ Changes in this release
   but will cause issues and failures in client software with future updates
   to Zephyr/MCUmgr such as image verification.
 
+* MCUmgr handlers no longer need to be registered by the application code,
+  handlers just need to use a define which will then call the supplied
+  registration function at boot-up. If applications register this then
+  those registrations should be removed to prevent registering the same
+  handler multiple times.
+
 Removed APIs in this release
 ============================
 
