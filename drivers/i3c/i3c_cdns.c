@@ -816,9 +816,7 @@ static void cdns_i3c_program_retaining_regs(const struct device *dev)
 		 * it will be given the exact DA programmed in it's RR if the PID matches and marked
 		 * as active duing ENTDAA, otherwise they get set as active here
 		 */
-		if (!((i3c_device->static_addr == 0) ||
-		      ((i3c_device->init_dynamic_addr != 0) &&
-		       (i3c_device->static_addr != i3c_device->init_dynamic_addr)))) {
+		if (i3c_device->static_addr != 0) {
 			sys_write32(sys_read32(config->base + DEVS_CTRL) |
 					    DEVS_CTRL_DEV_ACTIVE(cdns_i3c_device_data->id),
 				    config->base + DEVS_CTRL);
@@ -1576,6 +1574,40 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 	data->cdns_i3c_i2c_priv_data[slot].id = slot;
 	desc->controller_priv = &(data->cdns_i3c_i2c_priv_data[slot]);
 	data->free_rr_slots &= ~BIT(slot);
+
+	k_mutex_unlock(&data->bus_lock);
+
+	return 0;
+}
+
+static int cdns_i3c_reattach_device(const struct device *dev, struct i3c_device_desc *desc,
+				    uint8_t old_dyn_addr)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+	struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = desc->controller_priv;
+
+	if (cdns_i3c_device_data == NULL) {
+		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		return -EINVAL;
+	}
+
+	if (!i3c_addr_slots_is_free(&data->addr_slots, desc->dynamic_addr)) {
+		LOG_ERR("%s: %s: dynamic address 0x%02x is not free", dev->name, desc->dev->name,
+			desc->dynamic_addr);
+		return -EADDRNOTAVAIL;
+	}
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+
+	uint32_t rr0 = DEV_ID_RR0_IS_I3C | prepare_rr0_dev_address(desc->dynamic_addr);
+
+	if (old_dyn_addr) {
+		/* mark the old address as free */
+		i3c_addr_slots_mark_free(&data->addr_slots, old_dyn_addr);
+	}
+	sys_write32(rr0, config->base + DEV_ID_RR0(cdns_i3c_device_data->id));
+	i3c_addr_slots_mark_i3c(&data->addr_slots, desc->dynamic_addr);
 
 	k_mutex_unlock(&data->bus_lock);
 
@@ -2415,6 +2447,8 @@ static struct i3c_driver_api api = {
 
 	.configure = cdns_i3c_configure,
 	.config_get = cdns_i3c_config_get,
+
+	.reattach_i3c_device = cdns_i3c_reattach_device,
 
 	.do_daa = cdns_i3c_do_daa,
 	.do_ccc = cdns_i3c_do_ccc,
