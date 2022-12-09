@@ -857,7 +857,7 @@ static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
 						uint8_t *addr, uint8_t len,
 						enum net_link_type type)
 {
-	if (net_if_flag_is_set(iface, NET_IF_UP)) {
+	if (net_if_flag_is_set(iface, NET_IF_RUNNING)) {
 		return -EPERM;
 	}
 
