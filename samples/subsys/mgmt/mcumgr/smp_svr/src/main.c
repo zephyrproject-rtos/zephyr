@@ -67,10 +67,7 @@ void main(void)
 	}
 #endif
 #ifdef CONFIG_MCUMGR_SMP_BT
-	start_smp_bluetooth();
-#endif
-#ifdef CONFIG_MCUMGR_SMP_UDP
-	start_smp_udp();
+	start_smp_bluetooth_adverts();
 #endif
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_STACK)) {
