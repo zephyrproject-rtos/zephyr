@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2019, Prevas A/S
+ * Copyright (c) 2019-2020, Prevas A/S
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +25,13 @@
 #include <errno.h>
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_conn_mgr.h>
+#endif
 
 #define LOG_LEVEL CONFIG_MCUMGR_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -63,6 +71,10 @@ static struct configs configs = {
 	},
 #endif
 };
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
+static struct net_mgmt_event_callback smp_udp_mgmt_cb;
+#endif
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 static int smp_udp4_tx(struct net_buf *nb)
@@ -280,3 +292,33 @@ int smp_udp_close(void)
 
 	return MGMT_ERR_EOK;
 }
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
+static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+				      struct net_if *iface)
+{
+	ARG_UNUSED(cb);
+	ARG_UNUSED(iface);
+
+	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+		LOG_INF("Network connected");
+
+		if (smp_udp_open() < 0) {
+			LOG_ERR("Could not open SMP UDP");
+		}
+	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+		LOG_INF("Network disconnected");
+		smp_udp_close();
+	}
+}
+
+static void smp_udp_start(void)
+{
+	net_mgmt_init_event_callback(&smp_udp_mgmt_cb, smp_udp_net_event_handler,
+				     (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED));
+	net_mgmt_add_event_callback(&smp_udp_mgmt_cb);
+	net_conn_mgr_resend_status();
+}
+
+MCUMGR_HANDLER_DEFINE(smp_udp, smp_udp_start);
+#endif
