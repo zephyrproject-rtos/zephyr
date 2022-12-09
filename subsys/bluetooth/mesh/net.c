@@ -648,31 +648,149 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 				   proxy) == 0;
 }
 
-/* Relaying from advertising to the advertising bearer should only happen
- * if the Relay state is set to enabled. Locally originated packets always
- * get sent to the advertising bearer. If the packet came in through GATT,
- * then we should only relay it if the GATT Proxy state is enabled.
- */
-static bool relay_to_adv(enum bt_mesh_net_if net_if)
+#if defined(CONFIG_BT_MESH_FRIEND) || \
+	defined(CONFIG_BT_MESH_PROXY)
+static void outbound_bearer_all(struct net_buf_simple *sbuf,
+				struct bt_mesh_net_rx *rx)
 {
-	switch (net_if) {
-	case BT_MESH_NET_IF_ADV:
-		return (bt_mesh_relay_get() == BT_MESH_RELAY_ENABLED);
-	case BT_MESH_NET_IF_PROXY:
-		return (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
-	default:
-		return false;
+	const struct bt_mesh_net_cred *cred;
+	struct bt_mesh_buf *buf;
+
+	if ((!rx->friend_cred &&
+	     bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_ENABLED)) {
+		return;
 	}
+
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+				 bt_mesh_net_transmit_get(), K_NO_WAIT);
+	if (!buf) {
+		LOG_DBG("Out of relay buffers");
+		return;
+	}
+
+	(void)net_buf_simple_add_mem(&buf->b, sbuf->data, sbuf->len);
+
+	cred = &rx->sub->keys[SUBNET_KEY_TX_IDX(rx->sub)].msg;
+
+	/* Update NID if RX or RX was with friend credentials */
+	if (rx->friend_cred) {
+		buf->b.data[0] &= 0x80; /* Clear everything except IVI */
+		buf->b.data[0] |= cred->nid;
+	}
+
+	/* When the Friend node relays message for lpn, the message will be
+	 * retransmitted using the managed flooding security credentials and
+	 * the Network PDU shall be retransmitted to all network interfaces.
+	 *
+	 * If the Proxy feature is supported and enabled, the Network PDU shall
+	 * be retransmitted to all network interfaces.
+	 */
+	bt_mesh_adv_send(buf, NULL, NULL);
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		bt_mesh_proxy_relay(buf, rx->ctx.recv_dst);
+	}
+
+	bt_mesh_buf_unref(buf);
 }
+#endif /* CONFIG_BT_MESH_FRIEND || CONFIG_BT_MESH_PROXY */
+
+#if defined(CONFIG_BT_MESH_RELAY)
+static void outbound_bearer_adv(struct net_buf_simple *sbuf,
+				struct bt_mesh_net_rx *rx)
+{
+	struct bt_mesh_buf *buf;
+
+	/* If the Relay feature is supported and enabled, the Network PDU shall be tagged
+	 * as relay, and the Network PDU shall be retransmitted to all network interfaces
+	 * connected to the advertising bearer.
+	 */
+	if (bt_mesh_relay_get() != BT_MESH_RELAY_ENABLED) {
+		return;
+	}
+
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_RELAY_ADV,
+				 bt_mesh_relay_retransmit_get(), K_NO_WAIT);
+	if (!buf) {
+		LOG_DBG("Out of relay buffers");
+		return;
+	}
+
+	(void)net_buf_simple_add_mem(&buf->b, sbuf->data, sbuf->len);
+
+	bt_mesh_adv_send(buf, NULL, NULL);
+
+	bt_mesh_buf_unref(buf);
+}
+#endif /* CONFIG_BT_MESH_RELAY */
+
+#if defined(CONFIG_BT_MESH_PROXY)
+static void outbound_bearer_proxy(struct net_buf_simple *sbuf,
+				  struct bt_mesh_net_rx *rx)
+{
+	struct bt_mesh_buf *buf;
+
+	if (bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_ENABLED) {
+		return;
+	}
+
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+				 bt_mesh_net_transmit_get(), K_NO_WAIT);
+	if (!buf) {
+		LOG_DBG("Out of relay buffers");
+		return;
+	}
+
+	(void)net_buf_simple_add_mem(&buf->b, sbuf->data, sbuf->len);
+
+	/* If Proxy feature is supported and enabled, the Network PDU shall be
+	 * retransmitted to all network interfaces connected to the GATT bearer.
+	 */
+	bt_mesh_proxy_relay(buf, rx->ctx.recv_dst);
+
+	bt_mesh_buf_unref(buf);
+}
+#endif /* CONFIG_BT_MESH_PROXY */
+
+static const struct {
+	bool friend_cred;
+	enum bt_mesh_net_if inbound_bearer;
+	void (*outbound_bearer_handler)(struct net_buf_simple *sbuf,
+					struct bt_mesh_net_rx *rx);
+} relay_table[] = {
+#if defined(CONFIG_BT_MESH_RELAY)
+	{
+		.inbound_bearer = BT_MESH_NET_IF_ADV,
+		.outbound_bearer_handler = outbound_bearer_adv,
+	},
+#endif /* CONFIG_BT_MESH_RELAY */
+#if defined(CONFIG_BT_MESH_PROXY)
+	{
+		.inbound_bearer = BT_MESH_NET_IF_PROXY,
+		.outbound_bearer_handler = outbound_bearer_all,
+	},
+	{
+		.inbound_bearer = BT_MESH_NET_IF_ADV,
+		.outbound_bearer_handler = outbound_bearer_proxy,
+	},
+#endif /* CONFIG_BT_MESH_PROXY */
+#if defined(CONFIG_BT_MESH_FRIEND)
+	{
+		.friend_cred = true,
+		.inbound_bearer = BT_MESH_NET_IF_ADV,
+		.outbound_bearer_handler = outbound_bearer_all,
+	},
+#endif /* CONFIG_BT_MESH_FRIEND */
+};
 
 static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 			      struct bt_mesh_net_rx *rx)
 {
+	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_NET_MAX_PDU_LEN);
 	const struct bt_mesh_net_cred *cred;
-	struct bt_mesh_buf *buf;
-	uint8_t transmit;
 
-	if (rx->ctx.recv_ttl <= 1U) {
+	if (rx->ctx.recv_ttl <= 1U ||
+	    ARRAY_SIZE(relay_table) == 0) {
 		return;
 	}
 
@@ -685,64 +803,33 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
 	LOG_DBG("TTL %u CTL %u dst 0x%04x", rx->ctx.recv_ttl, rx->ctl, rx->ctx.recv_dst);
 
-	/* The Relay Retransmit state is only applied to adv-adv relaying.
-	 * Anything else (like GATT to adv, or locally originated packets)
-	 * use the Network Transmit state.
-	 */
-	if (rx->net_if == BT_MESH_NET_IF_ADV && !rx->friend_cred) {
-		transmit = bt_mesh_relay_retransmit_get();
-	} else {
-		transmit = bt_mesh_net_transmit_get();
-	}
-
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_RELAY_ADV,
-				 transmit, K_NO_WAIT);
-	if (!buf) {
-		LOG_DBG("Out of relay buffers");
-		return;
-	}
-
 	/* Leave CTL bit intact */
 	sbuf->data[1] &= 0x80;
 	sbuf->data[1] |= rx->ctx.recv_ttl - 1U;
 
-	net_buf_simple_add_mem(&buf->b, sbuf->data, sbuf->len);
+	net_buf_simple_add_mem(&buf, sbuf->data, sbuf->len);
 
 	cred = &rx->sub->keys[SUBNET_KEY_TX_IDX(rx->sub)].msg;
 
-	LOG_DBG("Relaying packet. TTL is now %u", TTL(buf->b.data));
-
-	/* Update NID if RX or RX was with friend credentials */
-	if (rx->friend_cred) {
-		buf->b.data[0] &= 0x80; /* Clear everything except IVI */
-		buf->b.data[0] |= cred->nid;
-	}
+	LOG_DBG("Relaying packet. TTL is now %u", TTL(buf.data));
 
 	/* We re-encrypt and obfuscate using the received IVI rather than
 	 * the normal TX IVI (which may be different) since the transport
 	 * layer nonce includes the IVI.
 	 */
-	if (net_encrypt(&buf->b, cred, BT_MESH_NET_IVI_RX(rx), false)) {
+	if (net_encrypt(&buf, cred, BT_MESH_NET_IVI_RX(rx), false)) {
 		LOG_ERR("Re-encrypting failed");
-		goto done;
+		return;
 	}
 
-	/* When the Friend node relays message for lpn, the message will be
-	 * retransmitted using the managed flooding security credentials and
-	 * the Network PDU shall be retransmitted to all network interfaces.
-	 */
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    (rx->friend_cred ||
-	     bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED)) {
-		bt_mesh_proxy_relay(buf, rx->ctx.recv_dst);
-	}
+	for (int i = 0; i < ARRAY_SIZE(relay_table); i++) {
+		if (relay_table[i].inbound_bearer != rx->net_if ||
+		    relay_table[i].friend_cred != rx->friend_cred) {
+			continue;
+		}
 
-	if (relay_to_adv(rx->net_if) || rx->friend_cred) {
-		bt_mesh_adv_send(buf, NULL, NULL);
+		relay_table[i].outbound_bearer_handler(&buf, rx);
 	}
-
-done:
-	bt_mesh_buf_unref(buf);
 }
 
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
