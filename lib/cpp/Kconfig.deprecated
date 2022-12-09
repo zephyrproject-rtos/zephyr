@@ -12,6 +12,18 @@ config CPLUSPLUS
 
 	  [DEPRECATED] Select CPP instead.
 
+config LIB_CPLUSPLUS
+	bool "[DEPRECATED] Link with STD C++ library"
+	select REQUIRES_FULL_LIBC
+	select REQUIRES_FULL_LIBCPP
+	select DEPRECATED
+	help
+	  Link with STD C++ Library.
+
+	  [DEPRECATED]
+	  Select REQUIRES_FULL_LIBCPP or specify the C++ standard library
+	  implementation to use from LIBCPP_IMPLEMENTATION.
+
 if LIB_CPLUSPLUS
 
 config EXCEPTIONS

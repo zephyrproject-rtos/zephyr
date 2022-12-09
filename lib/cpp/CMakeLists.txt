@@ -2,4 +2,4 @@
 
 add_subdirectory(abi)
 
-add_subdirectory_ifndef(CONFIG_LIB_CPLUSPLUS minimal)
+add_subdirectory_ifdef(CONFIG_MINIMAL_LIBCPP minimal)
