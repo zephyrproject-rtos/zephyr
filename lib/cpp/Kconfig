@@ -81,7 +81,7 @@ config CPP_EXCEPTIONS
 	help
 	  This option enables support of C++ exceptions.
 
-config RTTI
+config CPP_RTTI
 	bool "C++ RTTI support"
 	help
 	  This option enables support of C++ RTTI.

@@ -24,6 +24,15 @@ config EXCEPTIONS
 
 	  [DEPRECATED] Select CPP_EXCEPTIONS instead.
 
+config RTTI
+	bool "[DEPRECATED] C++ RTTI support"
+	select CPP_RTTI
+	select DEPRECATED
+	help
+	  This option enables support of C++ RTTI.
+
+	  [DEPRECATED] Select CPP_RTTI instead.
+
 endif # LIB_CPLUSPLUS
 
 endmenu
