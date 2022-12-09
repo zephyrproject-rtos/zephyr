@@ -676,7 +676,7 @@ static struct mgmt_group os_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_OS,
 };
 
-void os_mgmt_register_group(void)
+static void os_mgmt_register_group(void)
 {
 	mgmt_register_group(&os_mgmt_group);
 }
