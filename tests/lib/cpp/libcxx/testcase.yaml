@@ -7,7 +7,7 @@ tests:
     tags: cpp
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
-      - CONFIG_EXCEPTIONS=y
+      - CONFIG_CPP_EXCEPTIONS=y
     integration_platforms:
       - mps2_an385
   cpp.libcxx.newlib_nano:
