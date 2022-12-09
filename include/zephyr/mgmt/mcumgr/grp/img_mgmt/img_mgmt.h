@@ -112,16 +112,6 @@ struct img_mgmt_upload_action {
 #endif
 };
 
-/**
- * @brief Register the image management command handler group.
- */
-void img_mgmt_register_group(void);
-
-/**
- * @brief Unregister the image management command handler group.
- */
-void img_mgmt_unregister_group(void);
-
 /*
  * @brief Read info of an image at the specified slot number
  *

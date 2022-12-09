@@ -60,7 +60,7 @@ static struct mgmt_group zephyr_basic_mgmt_group = {
 	.mg_group_id = (ZEPHYR_MGMT_GRP_BASIC),
 };
 
-void zephyr_basic_mgmt_init(void)
+static void zephyr_basic_mgmt_init(void)
 {
 	mgmt_register_group(&zephyr_basic_mgmt_group);
 }
