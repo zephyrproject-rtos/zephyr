@@ -7,6 +7,7 @@ config ZEPHYR_TFLITE-MICRO_MODULE
 
 config TENSORFLOW_LITE_MICRO
 	bool "TensorFlow Lite Micro Support"
+	select REQUIRES_FULL_LIBCPP
 	help
 	  This option enables the TensorFlow Lite Micro library.
 
