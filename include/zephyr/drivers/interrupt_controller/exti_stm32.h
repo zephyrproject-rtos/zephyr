@@ -28,14 +28,14 @@
  *
  * @param line EXTI# line
  */
-void stm32_exti_enable(int line);
+void stm32_exti_enable(unsigned int line);
 
 /**
  * @brief disable EXTI interrupt for specific line
  *
  * @param line EXTI# line
  */
-void stm32_exti_disable(int line);
+void stm32_exti_disable(unsigned int line);
 
 /**
  * @brief EXTI trigger flags

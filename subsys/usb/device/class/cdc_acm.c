@@ -37,6 +37,7 @@
  * Driver for USB CDC ACM device class driver
  */
 
+#include <limits.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart/cdc_acm.h>
@@ -275,7 +276,7 @@ static void tx_work_handler(struct k_work *work)
 static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 {
 	struct cdc_acm_dev_data_t *dev_data = priv;
-	size_t wrote;
+	uint32_t wrote;
 
 	LOG_DBG("ep %x size %d dev_data %p rx_ringbuf space %u",
 		ep, size, dev_data, ring_buf_space_get(dev_data->rx_ringbuf));
@@ -285,7 +286,10 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 	}
 
 	wrote = ring_buf_put(dev_data->rx_ringbuf, dev_data->rx_buf, size);
-	if ((int)wrote >= 0 && (int)wrote < size) {
+	if (wrote > LONG_MAX) {
+		// Unexpected: `wrote` cannot be expressed as a signed integer value.
+		//         OK: `ring_buf_put()` result is greater than `size`.
+	} else if ((int)wrote < size) {
 		LOG_ERR("Ring buffer full, drop %zd bytes", size - wrote);
 	}
 
@@ -503,7 +507,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 			     const uint8_t *tx_data, int len)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
-	size_t wrote;
+	uint32_t wrote;
 
 	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
 		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
@@ -517,7 +521,10 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	dev_data->tx_ready = false;
 
 	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
-	if ((int)wrote >= 0 && (int)wrote < len) {
+	if (wrote > LONG_MAX) {
+		// Unexpected: `wrote` cannot be expressed as a signed integer value.
+		//         OK: `ring_buf_put()` result is greater than `size`.
+	} else if ((int)wrote < len) {
 		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
 

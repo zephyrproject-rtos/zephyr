@@ -109,11 +109,11 @@ struct stm32_exti_data {
 	struct __exti_cb cb[ARRAY_SIZE(exti_irq_table)];
 };
 
-void stm32_exti_enable(int line)
+void stm32_exti_enable(unsigned int line)
 {
 	int irqnum = 0;
 
-	if (line >= (int)ARRAY_SIZE(exti_irq_table)) {
+	if (line >= ARRAY_SIZE(exti_irq_table)) {
 		__ASSERT_NO_MSG(line);
 	}
 
@@ -134,7 +134,7 @@ void stm32_exti_enable(int line)
 	irq_enable(irqnum);
 }
 
-void stm32_exti_disable(int line)
+void stm32_exti_disable(unsigned int line)
 {
 	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 

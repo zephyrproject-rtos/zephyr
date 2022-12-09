@@ -46,7 +46,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 /* Prefix. Indicates that this is an EXC_RETURN value.
  * This field reads as 0b11111111.
  */
-#define EXC_RETURN_INDICATOR_PREFIX     (0xFF << 24)
+#define EXC_RETURN_INDICATOR_PREFIX     (0xFFLU << 24)
 /* bit[0]: Exception Secure. The security domain the exception was taken to. */
 #define EXC_RETURN_EXCEPTION_SECURE_Pos 0
 #define EXC_RETURN_EXCEPTION_SECURE_Msk \
@@ -900,7 +900,7 @@ static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_ret
 	*nested_exc = false;
 
 	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) !=
-			(uint32_t)EXC_RETURN_INDICATOR_PREFIX) {
+			EXC_RETURN_INDICATOR_PREFIX) {
 		/* Invalid EXC_RETURN value. This is a fatal error. */
 		return NULL;
 	}
