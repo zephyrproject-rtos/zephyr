@@ -9,6 +9,5 @@ Storage
    nvs/nvs.rst
    disk/access.rst
    flash_map/flash_map.rst
-   flash_img/flash_img.rst
    fcb/fcb.rst
    stream/stream_flash.rst
