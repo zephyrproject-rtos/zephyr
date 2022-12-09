@@ -11,15 +11,6 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
-#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_CMD_OS_MGMT
-#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
-#endif
 #ifdef CONFIG_MCUMGR_CMD_STAT_MGMT
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 #endif
@@ -43,20 +34,6 @@ void smp_svr_init(void)
 
 	rc = STATS_INIT_AND_REG(smp_svr_stats, STATS_SIZE_32, "smp_svr_stats");
 	__ASSERT_NO_MSG(rc == 0);
-
-	/* Register the built-in mcumgr command handlers. */
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-	fs_mgmt_register_group();
-#endif
-#ifdef CONFIG_MCUMGR_CMD_OS_MGMT
-	os_mgmt_register_group();
-#endif
-#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
-	img_mgmt_register_group();
-#endif
-#ifdef CONFIG_MCUMGR_CMD_STAT_MGMT
-	stat_mgmt_register_group();
-#endif
 }
 
 static void smp_svr_timer_handler(struct k_timer *dummy)

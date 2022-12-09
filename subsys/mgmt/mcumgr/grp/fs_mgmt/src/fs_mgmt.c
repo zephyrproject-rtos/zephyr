@@ -11,6 +11,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum.h>
 #include <assert.h>
@@ -688,3 +689,5 @@ void fs_mgmt_register_group(void)
 #endif
 #endif
 }
+
+MCUMGR_HANDLER_DEFINE(fs_mgmt, fs_mgmt_register_group);
