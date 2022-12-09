@@ -258,7 +258,7 @@ if(NOT CONFIG_CPP_EXCEPTIONS)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_exceptions>>)
 endif()
 
-if(NOT CONFIG_RTTI)
+if(NOT CONFIG_CPP_RTTI)
   # @Intent: Obtain compiler specific flags related to C++ Run Time Type Information
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_rtti>>)
 endif()
