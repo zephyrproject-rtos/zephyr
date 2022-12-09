@@ -101,7 +101,10 @@ standard library that provides all features required by the ISO C++ standard
 including the Standard Template Library (STL).
 
 To enable C++ standard library, select the
-:kconfig:option:`CONFIG_LIB_CPLUSPLUS` in the application configuration file.
+:kconfig:option:`CONFIG_GLIBCXX_LIBCPP` (for Zephyr SDK and other GCC-based
+toolchains) or an applicable toolchain-specific C++ standard library type from
+the :kconfig:option:`CONFIG_LIBCPP_IMPLEMENTATION` in the application
+configuration file.
 
 .. _`C++ Standard Library`: https://en.wikipedia.org/wiki/C%2B%2B_Standard_Library
 .. _`Standard Template Library (STL)`: https://en.wikipedia.org/wiki/Standard_Template_Library
