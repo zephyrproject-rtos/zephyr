@@ -49,14 +49,12 @@ struct i3c_addr_slots {
  * This clears out the assigned address bits, and set the reserved
  * address bits according to the I3C specification.
  *
- * @param slots Pointer to address slots struct.
- * @param dev_list Pointer to device list struct.
+ * @param dev Pointer to controller device driver instance.
  *
  * @retval 0 if successful.
  * @retval -EINVAL if duplicate addresses.
  */
-int i3c_addr_slots_init(struct i3c_addr_slots *slots,
-			const struct i3c_dev_list *dev_list);
+int i3c_addr_slots_init(const struct device *dev);
 
 /**
  * @brief Set the address status of a device.
