@@ -1445,6 +1445,25 @@ int bt_le_adv_stop(void)
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
+static uint32_t adv_get_options(const struct bt_le_ext_adv *adv)
+{
+	uint32_t options = 0;
+
+	if (!atomic_test_bit(adv->flags, BT_ADV_PERSIST)) {
+		options |= BT_LE_ADV_OPT_ONE_TIME;
+	}
+
+	if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
+		options |= BT_LE_ADV_OPT_CONNECTABLE;
+	}
+
+	if (atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+		options |= BT_LE_ADV_OPT_USE_IDENTITY;
+	}
+
+	return options;
+}
+
 void bt_le_adv_resume(void)
 {
 	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
@@ -1477,6 +1496,17 @@ void bt_le_adv_resume(void)
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 		bt_id_set_adv_private_addr(adv);
+	} else {
+		uint8_t own_addr_type;
+		bool dir_adv = adv_is_directed(adv);
+		uint32_t options = adv_get_options(adv);
+
+		/* Always set the address. Don't assume it has not changed. */
+		err = bt_id_set_adv_own_addr(adv, options, dir_adv, &own_addr_type);
+		if (err) {
+			LOG_ERR("Controller cannot resume connectable advertising (%d)", err);
+			return;
+		}
 	}
 
 	err = bt_le_adv_set_enable(adv, true);
