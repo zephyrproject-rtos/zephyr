@@ -56,4 +56,13 @@ config MCUMGR_SMP_UDP_MTU
 	  MCUMGR_SMP_UDP_MTU <= MCUMGR_BUF_SIZE + SMP msg overhead - address size
 	  where address size is determined by IPv4/IPv6 selection.
 
+config MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
+	bool "UDP SMP autostart/setup"
+	default y
+	help
+	  Enable setting up the UDP SMP transport at boot time without needing
+	  any code in the application to do this. Will automatically start the
+	  UDP SMP service when the network interface is up and disable it when
+	  it goes down (at layer 4).
+
 endif # MCUMGR_SMP_UDP
