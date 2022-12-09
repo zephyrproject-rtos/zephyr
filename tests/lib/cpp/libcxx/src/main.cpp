@@ -67,7 +67,7 @@ ZTEST(libcxx_tests, test_make_unique)
 	zassert_equal(make_unique_data::dtors, 1, "dtor count not incremented");
 }
 
-#if defined(CONFIG_EXCEPTIONS) && !defined(CONFIG_BOARD_M2GL025_MIV)
+#if defined(CONFIG_CPP_EXCEPTIONS) && !defined(CONFIG_BOARD_M2GL025_MIV)
 static void throw_exception(void)
 {
 	throw 42;
