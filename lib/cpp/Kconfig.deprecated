@@ -12,4 +12,18 @@ config CPLUSPLUS
 
 	  [DEPRECATED] Select CPP instead.
 
+if LIB_CPLUSPLUS
+
+config EXCEPTIONS
+	bool "[DEPRECATED] C++ exceptions support"
+	depends on !NEWLIB_LIBC_NANO
+	select CPP_EXCEPTIONS
+	select DEPRECATED
+	help
+	  This option enables support of C++ exceptions.
+
+	  [DEPRECATED] Select CPP_EXCEPTIONS instead.
+
+endif # LIB_CPLUSPLUS
+
 endmenu

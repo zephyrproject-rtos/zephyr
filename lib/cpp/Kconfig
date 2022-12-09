@@ -75,7 +75,7 @@ config LIB_CPLUSPLUS
 
 if LIB_CPLUSPLUS
 
-config EXCEPTIONS
+config CPP_EXCEPTIONS
 	bool "C++ exceptions support"
 	depends on !NEWLIB_LIBC_NANO
 	help
