@@ -115,7 +115,7 @@ if(NOT IS_INCLUDED)
     # Project is a Zephyr workspace app.
     # This means this Zephyr is likely the correct one, but there could be an alternative installed along-side
     # Thus, check if there is an even better candidate.
-    check_zephyr_package(CURRENT_WORKSPACE_DIR ${CURRENT_WORKSPACE_DIR} VERSION_CHECK)
+    check_zephyr_package(WORKSPACE_DIR ${CURRENT_WORKSPACE_DIR} VERSION_CHECK)
 
     # We are the best candidate, so let's check our own version.
     check_zephyr_version()
