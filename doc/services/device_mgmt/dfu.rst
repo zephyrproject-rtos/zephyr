@@ -32,6 +32,20 @@ API Reference
 
 .. doxygengroup:: flash_img_api
 
+.. _mcuboot_api:
+
+MCUBoot API
+===========
+
+The MCUboot API is provided to get version information and boot status of
+application images. It allows to select application image and boot type
+for the next boot.
+
+API Reference
+-------------
+
+.. doxygengroup:: mcuboot_api
+
 Bootloaders
 ***********
 
