@@ -12,6 +12,14 @@ menuconfig I2C_NRFX
 
 if I2C_NRFX
 
+config I2C_NRFX_TRANSFER_TIMEOUT
+	int "Transfer timeout [ms]"
+	default 500
+	help
+	  Timeout in milliseconds used for each I2C transfer.
+	  0 means that the driver should use the K_FOREVER value,
+	  i.e. it should wait as long as necessary.
+
 config I2C_0_NRF_TWI
 	def_bool HAS_HW_NRF_TWI0
 	select NRFX_TWI0
