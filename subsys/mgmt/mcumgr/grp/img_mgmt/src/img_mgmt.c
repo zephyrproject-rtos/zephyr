@@ -17,6 +17,7 @@
 
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
 
@@ -611,14 +612,14 @@ static struct mgmt_group img_mgmt_group = {
 };
 
 
-void
-img_mgmt_register_group(void)
+void img_mgmt_register_group(void)
 {
 	mgmt_register_group(&img_mgmt_group);
 }
 
-void
-img_mgmt_unregister_group(void)
+void img_mgmt_unregister_group(void)
 {
 	mgmt_unregister_group(&img_mgmt_group);
 }
+
+MCUMGR_HANDLER_DEFINE(img_mgmt, img_mgmt_register_group);

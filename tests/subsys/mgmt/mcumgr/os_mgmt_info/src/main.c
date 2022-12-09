@@ -1497,9 +1497,6 @@ static void cleanup_test(void *p)
 
 void test_main(void)
 {
-	/* Register os_mgmt mcumgr group */
-	os_mgmt_register_group();
-
 	while (test_state.test_set < OS_MGMT_TEST_SET_COUNT) {
 		ztest_run_all(&test_state);
 		++test_state.test_set;

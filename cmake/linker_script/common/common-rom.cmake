@@ -146,6 +146,10 @@ if(CONFIG_SENSOR_INFO)
   zephyr_iterable_section(NAME sensor_info KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
 
+if(CONFIG_MCUMGR)
+  zephyr_iterable_section(NAME mcumgr_handler KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
+
 zephyr_iterable_section(NAME k_p4wq_initparam KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
 if(CONFIG_EMUL)

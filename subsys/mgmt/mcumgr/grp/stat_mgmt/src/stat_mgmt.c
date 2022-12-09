@@ -14,6 +14,7 @@
 #include <zcbor_encode.h>
 
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 
@@ -237,8 +238,9 @@ static struct mgmt_group stat_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_STAT,
 };
 
-void
-stat_mgmt_register_group(void)
+void stat_mgmt_register_group(void)
 {
 	mgmt_register_group(&stat_mgmt_group);
 }
+
+MCUMGR_HANDLER_DEFINE(stat_mgmt, stat_mgmt_register_group);

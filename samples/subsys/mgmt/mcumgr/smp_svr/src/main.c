@@ -13,19 +13,9 @@
 #include <zephyr/device.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
-#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_CMD_OS_MGMT
-#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
-#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #endif
 #ifdef CONFIG_MCUMGR_CMD_STAT_MGMT
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
-#include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
 #endif
 
 #define LOG_LEVEL LOG_LEVEL_DBG
@@ -75,20 +65,6 @@ void main(void)
 	if (rc < 0) {
 		LOG_ERR("Error mounting littlefs [%d]", rc);
 	}
-
-	fs_mgmt_register_group();
-#endif
-#ifdef CONFIG_MCUMGR_CMD_OS_MGMT
-	os_mgmt_register_group();
-#endif
-#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
-	img_mgmt_register_group();
-#endif
-#ifdef CONFIG_MCUMGR_CMD_STAT_MGMT
-	stat_mgmt_register_group();
-#endif
-#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
-	shell_mgmt_register_group();
 #endif
 #ifdef CONFIG_MCUMGR_SMP_BT
 	start_smp_bluetooth();

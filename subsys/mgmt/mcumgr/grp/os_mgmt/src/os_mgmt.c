@@ -12,6 +12,7 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
 #include <assert.h>
 #include <string.h>
@@ -680,7 +681,4 @@ void os_mgmt_register_group(void)
 	mgmt_register_group(&os_mgmt_group);
 }
 
-void os_mgmt_module_init(void)
-{
-	os_mgmt_register_group();
-}
+MCUMGR_HANDLER_DEFINE(os_mgmt, os_mgmt_register_group);
