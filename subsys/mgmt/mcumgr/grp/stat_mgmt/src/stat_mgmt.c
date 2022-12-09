@@ -238,7 +238,7 @@ static struct mgmt_group stat_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_STAT,
 };
 
-void stat_mgmt_register_group(void)
+static void stat_mgmt_register_group(void)
 {
 	mgmt_register_group(&stat_mgmt_group);
 }

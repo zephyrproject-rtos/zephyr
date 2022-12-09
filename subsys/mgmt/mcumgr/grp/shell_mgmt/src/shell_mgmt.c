@@ -135,8 +135,7 @@ static struct mgmt_group shell_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_SHELL,
 };
 
-
-void shell_mgmt_register_group(void)
+static void shell_mgmt_register_group(void)
 {
 	mgmt_register_group(&shell_mgmt_group);
 }
