@@ -152,7 +152,7 @@ void main(void)
 		printk("<LINE: %d> Cannot execute the shell command. error code is: %d\r\n",__LINE__ , err);
 	}
 
-	printk("<LINE: %d> BLE INITED \r\n");
+	printk("<LINE: %d> BLE INITED \r\n",__LINE__);
 	k_msleep(1000);
 
 	err = shell_execute_cmd(sh, "bt advertise on");
@@ -161,7 +161,7 @@ void main(void)
 		printk("<LINE: %d> Cannot execute the shell command. error code is: %d\r\n",__LINE__ , err);
 	}
 
-	printk("<LINE: %d> ADVERTISE ON \r\n");
+	printk("<LINE: %d> ADVERTISE ON \r\n", __LINE__);
 	k_msleep(1000);
 
 	err = shell_execute_cmd(sh, "bt oob");
@@ -170,7 +170,7 @@ void main(void)
 		printk("<LINE: %d> Cannot execute the shell command. error code is: %d\r\n",__LINE__ , err);
 	}
 	
-	printk("<LINE: %d> AGET OOB ADDRESS \r\n");
+	printk("<LINE: %d> AGET OOB ADDRESS \r\n", __LINE__);
 	
 	while (1) {
 		k_sleep(K_SECONDS(1));
