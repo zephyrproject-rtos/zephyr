@@ -60,7 +60,7 @@ initialized but before the application :c:func:`main()` function. Therefore,
 use of C++ is restricted to application code.
 
 In order to make use of the C++ exceptions, the
-:kconfig:option:`CONFIG_EXCEPTIONS` must be selected in the application
+:kconfig:option:`CONFIG_CPP_EXCEPTIONS` must be selected in the application
 configuration file.
 
 Zephyr Minimal C++ Library
