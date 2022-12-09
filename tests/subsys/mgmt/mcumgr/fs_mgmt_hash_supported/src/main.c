@@ -56,9 +56,6 @@ ZTEST(fs_mgmt_hash_supported, test_supported)
 #endif
 	};
 
-	/* Register os_mgmt mcumgr group */
-	fs_mgmt_register_group();
-
 	/* Enable dummy SMP backend and ready for usage */
 	smp_dummy_enable();
 	smp_dummy_clear_state();

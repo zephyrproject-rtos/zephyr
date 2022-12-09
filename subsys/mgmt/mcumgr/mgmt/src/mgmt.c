@@ -7,7 +7,9 @@
 
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/device.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <string.h>
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
@@ -123,3 +125,19 @@ int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
 	return return_rc;
 }
 #endif
+
+/* Processes all registered MCUmgr handlers at start up and registers them */
+static int mcumgr_handlers_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	STRUCT_SECTION_FOREACH(mcumgr_handler, handler) {
+		if (handler->init) {
+			handler->init();
+		}
+	}
+
+	return 0;
+}
+
+SYS_INIT(mcumgr_handlers_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

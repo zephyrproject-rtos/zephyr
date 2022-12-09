@@ -7,6 +7,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/shell/shell_dummy.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
 #include <string.h>
@@ -135,8 +136,9 @@ static struct mgmt_group shell_mgmt_group = {
 };
 
 
-void
-shell_mgmt_register_group(void)
+void shell_mgmt_register_group(void)
 {
 	mgmt_register_group(&shell_mgmt_group);
 }
+
+MCUMGR_HANDLER_DEFINE(shell_mgmt, shell_mgmt_register_group);
