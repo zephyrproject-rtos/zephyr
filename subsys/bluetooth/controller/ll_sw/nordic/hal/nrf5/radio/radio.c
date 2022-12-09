@@ -1584,16 +1584,18 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
+#endif /* !CONFIG_SOC_SERIES_NRF51X */
 
-#if !defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+#if !defined(CONFIG_SOC_SERIES_NRF51X) && \
+	!defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
-	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4)))
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
 	uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
 			RADIO_PCNF1_MAXLEN_Pos;
 
-	NRF_CCM->MAXPACKETSIZE = max_len;
+	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
+	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
 #endif
-#endif /* !CONFIG_SOC_SERIES_NRF51X */
 
 	NRF_CCM->MODE = mode;
 	NRF_CCM->CNFPTR = (uint32_t)ccm;
@@ -1629,6 +1631,18 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	mode |= (CCM_MODE_DATARATE_2Mbit << CCM_MODE_DATARATE_Pos) &
 		CCM_MODE_DATARATE_Msk;
 #endif
+
+#if !defined(CONFIG_SOC_SERIES_NRF51X) && \
+	!defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4)))
+	uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
+			RADIO_PCNF1_MAXLEN_Pos;
+
+	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
+	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
+#endif
+
 	NRF_CCM->MODE = mode;
 	NRF_CCM->CNFPTR = (uint32_t)ccm;
 	NRF_CCM->INPTR = (uint32_t)pkt;
