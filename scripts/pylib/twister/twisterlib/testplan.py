@@ -747,7 +747,7 @@ class TestPlan:
                 # handle quarantined tests
                 if self.quarantine:
                     matched_quarantine = self.quarantine.get_matched_quarantine(
-                        instance.testsuite.id, plat.name, plat.arch
+                        instance.testsuite.id, plat.name, plat.arch, plat.simulation
                     )
                     if matched_quarantine and not self.options.quarantine_verify:
                         instance.add_filter(matched_quarantine, Filters.QUARENTINE)

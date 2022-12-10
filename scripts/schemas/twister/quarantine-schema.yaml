@@ -31,7 +31,13 @@ sequence:
         type: seq
         sequence:
           - type: str
-          - unique: true
+          - unique: True
+      "simulations":
+        required: false
+        type: seq
+        sequence:
+          - type: str
+          - unique: True
       "comment":
         type: str
         required: false
