@@ -15,3 +15,7 @@ properties:
 
   clocks:
     required: true
+
+  gd,mem2mem:
+    type: boolean
+    description: The DMA controller supporting memory to memory transfer

@@ -625,6 +625,7 @@
 			clocks = <&cctl GD32_CLOCK_DMA0>;
 			resets = <&rctl GD32_RESET_DMA0>;
 			dma-channels = <8>;
+			gd,mem2mem;
 			#dma-cells = <2>;
 			status = "disabled";
 		};
@@ -637,6 +638,7 @@
 			clocks = <&cctl GD32_CLOCK_DMA1>;
 			resets = <&rctl GD32_RESET_DMA1>;
 			dma-channels = <8>;
+			gd,mem2mem;
 			#dma-cells = <2>;
 			status = "disabled";
 		};
