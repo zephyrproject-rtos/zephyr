@@ -58,6 +58,7 @@ struct dma_gd32_config {
 	uint32_t reg;
 	uint32_t channels;
 	uint16_t clkid;
+	bool mem2mem;
 #ifdef CONFIG_SOC_SERIES_GD32F4XX
 	struct reset_dt_spec reset;
 #endif
@@ -403,6 +404,11 @@ static int dma_gd32_config(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
+	if (dma_cfg->channel_direction == MEMORY_TO_MEMORY && !cfg->mem2mem) {
+		LOG_ERR("not supporting MEMORY_TO_MEMORY");
+		return -ENOTSUP;
+	}
+
 #ifdef CONFIG_SOC_SERIES_GD32F4XX
 	if (dma_cfg->dma_slot > 0xF) {
 		LOG_ERR("dma_slot must be <7 (%" PRIu32 ")",
@@ -665,10 +671,11 @@ static const struct dma_driver_api dma_gd32_driver_api = {
 	}                                                                      \
 	static const struct dma_gd32_config dma_gd32##inst##_config = {        \
 		.reg = DT_INST_REG_ADDR(inst),                                 \
+		.channels = DT_INST_PROP(inst, dma_channels),                  \
 		.clkid = DT_INST_CLOCKS_CELL(inst, id),                        \
+		.mem2mem = DT_INST_PROP(inst, gd_mem2mem),                     \
 		IF_ENABLED(CONFIG_SOC_SERIES_GD32F4XX,                         \
 			   (.reset = RESET_DT_SPEC_INST_GET(inst),))           \
-		.channels = DT_INST_PROP(inst, dma_channels),                  \
 		.irq_configure = dma_gd32##inst##_irq_configure,               \
 	};                                                                     \
                                                                                \
