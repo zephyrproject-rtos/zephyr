@@ -518,12 +518,14 @@ void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
 #if defined(CONFIG_BT_CTLR_PHY)
 		} else {
 			struct ll_conn_iso_stream *cis;
-			struct ll_conn *acl;
+			struct ll_conn *conn;
 
 			cis = ll_conn_iso_stream_get(cis_handle);
-			acl = ll_conn_get(cis->lll.acl_handle);
+			conn = ll_conn_get(cis->lll.acl_handle);
 
-			resume_delay_us += lll_radio_rx_ready_delay_get(acl->lll.phy_rx, 1);
+			resume_delay_us +=
+				lll_radio_rx_ready_delay_get(conn->lll.phy_rx,
+							     PHY_FLAGS_S8);
 #else
 		} else {
 			resume_delay_us += lll_radio_rx_ready_delay_get(0, 0);
@@ -646,7 +648,7 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		 * has been reached, and offset calculated.
 		 */
 		if (cis->lll.handle != 0xFFFF && cis->lll.active) {
-			cis->lll.event_count++;
+			cis->lll.event_count += (lazy + 1U);
 
 			leading_event_count = MAX(leading_event_count,
 						cis->lll.event_count);
@@ -728,7 +730,8 @@ static void ticker_op_cb(uint32_t status, void *param)
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
-void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t cis_handle)
+void ull_conn_iso_start(struct ll_conn *conn, uint32_t ticks_at_expire,
+			uint16_t cis_handle, uint16_t instant_latency)
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
@@ -796,10 +799,22 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 		ticks_remainder = EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac);
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
-		/* Adjust CIG offset and reference point ahead one interval */
-		cig_offset_us += (acl->lll.interval * CONN_INT_UNIT_US);
+		if (instant_latency == 0U) {
+			/* Adjust CIG offset and reference point ahead one
+			 * interval
+			 */
+			cig_offset_us += conn->lll.interval * CONN_INT_UNIT_US;
+			cig->cig_ref_point += conn->lll.interval *
+					      CONN_INT_UNIT_US;
+		} else {
+			LL_ASSERT(instant_latency == 1U);
+		}
 
-		cig->cig_ref_point += (acl->lll.interval * CONN_INT_UNIT_US);
+#else /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
+		/* FIXME: Handle latency due to skipped ACL events around the
+		 * instant to start CIG
+		 */
+		LL_ASSERT(instant_latency == 0U);
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
@@ -817,6 +832,10 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 		/* Compensate for missing remainder scheduling first expire */
 		cig_offset_us += EVENT_TICKER_RES_MARGIN_US;
 
+		/* FIXME: Handle latency due to skipped ACL events around the
+		 * instant to start CIG
+		 */
+		LL_ASSERT(instant_latency == 0U);
 	} else {
 		LL_ASSERT(0);
 

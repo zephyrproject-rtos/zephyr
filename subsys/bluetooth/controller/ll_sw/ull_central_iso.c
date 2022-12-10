@@ -705,6 +705,8 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->offset = cis_offset;
 	cis->central.instant = instant;
 	cis->lll.event_count = -1;
+	cis->lll.tx.payload_count = 0U;
+	cis->lll.rx.payload_count = 0U;
 
 	/* Create access address */
 	err = util_aa_le32(cis->lll.access_addr);
