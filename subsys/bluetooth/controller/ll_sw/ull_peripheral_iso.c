@@ -317,8 +317,10 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
 	cis->offset = sys_get_le24(ind->cis_offset);
-	cis->lll.event_count = -1;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
+	cis->lll.event_count = -1;
+	cis->lll.tx.payload_count = 0U;
+	cis->lll.rx.payload_count = 0U;
 
 	return 0;
 }
