@@ -164,7 +164,7 @@ static void llcp_rp_cc_tx_rsp(struct ll_conn *conn, struct proc_ctx *ctx)
 	 * the second for setting up the CIS.
 	 */
 	ctx->data.cis_create.conn_event_count = MAX(ctx->data.cis_create.conn_event_count,
-						    ull_conn_event_counter(conn) + 2);
+						    ull_conn_event_counter(conn) + 2U);
 
 	delay_conn_events = ctx->data.cis_create.conn_event_count - conn_event_count;
 
@@ -455,6 +455,7 @@ static void rp_cc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uin
 static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
+	uint16_t event_counter = ull_conn_event_counter(conn);
 	uint16_t start_event_count;
 
 	start_event_count = ctx->data.cis_create.conn_event_count;
@@ -474,8 +475,7 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
-	if (is_instant_reached_or_passed(start_event_count,
-					 ull_conn_event_counter(conn))) {
+	if (is_instant_reached_or_passed(start_event_count, event_counter)) {
 		/* Start CIS */
 		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
 				   ctx->data.cis_create.cis_handle);
