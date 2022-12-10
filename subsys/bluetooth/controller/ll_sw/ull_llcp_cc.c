@@ -455,9 +455,11 @@ static void rp_cc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uin
 static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter(conn);
 	uint16_t start_event_count;
+	uint16_t instant_latency;
+	uint16_t event_counter;
 
+	event_counter = ull_conn_event_counter(conn);
 	start_event_count = ctx->data.cis_create.conn_event_count;
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
@@ -475,10 +477,12 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
-	if (is_instant_reached_or_passed(start_event_count, event_counter)) {
+	instant_latency = (event_counter - start_event_count) & 0xffff;
+	if (instant_latency <= 0x7fff) {
 		/* Start CIS */
 		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-				   ctx->data.cis_create.cis_handle);
+				   ctx->data.cis_create.cis_handle,
+				   instant_latency);
 
 		/* Now we can wait for CIS to become established */
 		ctx->state = RP_CC_STATE_WAIT_CIS_ESTABLISHED;
@@ -889,12 +893,19 @@ static void lp_cc_st_wait_tx_cis_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 static void lp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter(conn);
+	uint16_t start_event_count;
+	uint16_t instant_latency;
+	uint16_t event_counter;
 
-	if (is_instant_reached_or_passed(ctx->data.cis_create.conn_event_count, event_counter)) {
+	event_counter = ull_conn_event_counter(conn);
+	start_event_count = ctx->data.cis_create.conn_event_count;
+
+	instant_latency = (event_counter - start_event_count) & 0xffff;
+	if (instant_latency <= 0x7fff) {
 		/* Start CIS */
 		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-				   ctx->data.cis_create.cis_handle);
+				   ctx->data.cis_create.cis_handle,
+				   instant_latency);
 
 		/* Now we can wait for CIS to become established */
 		ctx->state = LP_CC_STATE_WAIT_ESTABLISHED;

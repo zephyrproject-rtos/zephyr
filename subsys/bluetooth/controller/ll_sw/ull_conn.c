@@ -6551,6 +6551,7 @@ void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
 {
 	struct ll_conn_iso_group *cig;
 	uint16_t start_event_count;
+	uint16_t instant_latency;
 
 	start_event_count = conn->llcp_cis.conn_event_count;
 
@@ -6568,9 +6569,12 @@ void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
 	/* Start ISO peripheral one event before the requested instant */
-	if (event_counter == start_event_count) {
+	instant_latency = (event_counter - start_event_count) & 0xffff;
+	if (instant_latency <= 0x7fff) {
 		/* Start CIS peripheral */
-		ull_conn_iso_start(conn, ticks_at_expire, conn->llcp_cis.cis_handle);
+		ull_conn_iso_start(conn, ticks_at_expire,
+				   conn->llcp_cis.cis_handle,
+				   instant_latency);
 
 		conn->llcp_cis.state = LLCP_CIS_STATE_REQ;
 		conn->llcp_cis.ack = conn->llcp_cis.req;
