@@ -15,3 +15,4 @@ supported:
   - counter
   - pwm
   - watchdog
+  - dma
