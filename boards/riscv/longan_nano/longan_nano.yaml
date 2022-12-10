@@ -9,3 +9,4 @@ flash: 128
 ram: 32
 supported:
   - watchdog
+  - dma
