@@ -15,3 +15,5 @@ supported:
   - spi
   - netif:eth
   - memc
+  - usb_cdc
+  - usb_device
