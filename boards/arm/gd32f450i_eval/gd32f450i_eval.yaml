@@ -16,3 +16,4 @@ supported:
   - watchdog
   - counter
   - dma
+  - spi

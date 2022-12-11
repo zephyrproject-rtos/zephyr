@@ -16,3 +16,4 @@ supported:
   - pwm
   - watchdog
   - dma
+  - spi
