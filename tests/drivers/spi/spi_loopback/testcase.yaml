@@ -27,3 +27,11 @@ tests:
         nucleo_l152re nucleo_wl55jc nucleo_h743zi
     integration_platforms:
       - nucleo_g474re
+  drivers.gd32_spi_interrupt.loopback:
+    extra_args: OVERLAY_CONFIG="overlay-gd32-spi-interrupt.conf"
+    platform_allow: gd32f403z_eval gd32f407v_start gd32f450i_eval gd32f450v_start
+      gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval longan_nano longan_nano_lite
+  drivers.gd32_spi_dma.loopback:
+    extra_args: OVERLAY_CONFIG="overlay-gd32-spi-dma.conf"
+    platform_allow: gd32f403z_eval gd32f407v_start gd32f450i_eval gd32f450v_start
+      gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval longan_nano longan_nano_lite
