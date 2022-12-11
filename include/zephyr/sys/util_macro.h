@@ -74,6 +74,23 @@ extern "C" {
 #define BIT64_MASK(n) (BIT64(n) - 1ULL)
 
 /**
+ * @brief Check if bits are set continuously from the specified bit
+ *
+ * The macro is not dependent on the bit-width.
+ *
+ * @param m Check whether the bits are set continuously or not.
+ * @param s Specify the lowest bit for that is continuously set bits.
+ */
+#define IS_SHIFTED_BIT_MASK(m, s) (!(((m) >> (s)) & (((m) >> (s)) + 1U)))
+
+/**
+ * @brief Check if bits are set continuously from the LSB.
+ *
+ * @param m Check whether the bits are set continuously from LSB.
+ */
+#define IS_BIT_MASK(m) IS_SHIFTED_BIT_MASK(m, 0)
+
+/**
  * @brief Check for macro definition in compiler-visible expressions
  *
  * This trick was pioneered in Linux as the config_enabled() macro. It
