@@ -211,6 +211,16 @@ static inline int regulator_parent_dvs_state_set(const struct device *dev,
 int regulator_enable(const struct device *dev);
 
 /**
+ * @brief Check if a regulator is enabled.
+ *
+ * @param dev Regulator device instance.
+ *
+ * @retval true If regulator is enabled.
+ * @retval false If regulator is disabled.
+ */
+bool regulator_is_enabled(const struct device *dev);
+
+/**
  * @brief Disable a regulator.
  *
  * Release a regulator after a previous regulator_enable() completed
