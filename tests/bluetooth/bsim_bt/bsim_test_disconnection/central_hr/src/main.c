@@ -37,7 +37,7 @@ static uint8_t notify_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	bt_conn_disconnect(default_conn, 0x01);
+	bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	
 	printk("[NOTIFICATION] data %p length %u\n", data, length);
 
