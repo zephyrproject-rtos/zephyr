@@ -44,7 +44,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	clock = rcc_clocks.SYSCLK_Frequency;
 #else
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			(clock_control_subsys_t *) &cfg->pclken, &clock) < 0) {
+			(clock_control_subsys_t *) &cfg->pclken[0], &clock) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate");
 		return -EIO;
 	}
@@ -230,39 +230,20 @@ static int i2c_stm32_init(const struct device *dev)
 	}
 
 	if (clock_control_on(clk,
-		(clock_control_subsys_t *) &cfg->pclken) != 0) {
+		(clock_control_subsys_t *) &cfg->pclken[0]) != 0) {
 		LOG_ERR("i2c: failure enabling clock");
 		return -EIO;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
-	/*
-	 * STM32F0/3 I2C's independent clock source supports only
-	 * HSI and SYSCLK, not APB1. We force I2C clock source to SYSCLK.
-	 * I2C2 on STM32F0 uses APB1 clock as I2C clock source
-	 */
-
-	switch ((uint32_t)cfg->i2c) {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
-	case DT_REG_ADDR(DT_NODELABEL(i2c1)):
-		LL_RCC_SetI2CClockSource(LL_RCC_I2C1_CLKSOURCE_SYSCLK);
-		break;
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32F3X) &&	\
-	DT_NODE_HAS_STATUS(DT_NODELABEL(i2c2), okay)
-	case DT_REG_ADDR(DT_NODELABEL(i2c2)):
-		LL_RCC_SetI2CClockSource(LL_RCC_I2C2_CLKSOURCE_SYSCLK);
-		break;
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c3), okay)
-	case DT_REG_ADDR(DT_NODELABEL(i2c3)):
-		LL_RCC_SetI2CClockSource(LL_RCC_I2C3_CLKSOURCE_SYSCLK);
-		break;
-#endif
+	if (cfg->pclk_len > 1) {
+		/* Enable I2C clock source */
+		ret = clock_control_configure(clk,
+					(clock_control_subsys_t *) &cfg->pclken[1],
+					NULL);
+		if (ret < 0) {
+			return -EIO;
+		}
 	}
-#endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	/*
@@ -355,12 +336,13 @@ DEFINE_TIMINGS(name)							\
 									\
 PINCTRL_DT_DEFINE(DT_NODELABEL(name));					\
 									\
+static const struct stm32_pclken clk_##name[] =				\
+				 STM32_DT_CLOCKS(DT_NODELABEL(name));	\
+									\
 static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 	.i2c = (I2C_TypeDef *)DT_REG_ADDR(DT_NODELABEL(name)),		\
-	.pclken = {							\
-		.enr = DT_CLOCKS_CELL(DT_NODELABEL(name), bits),	\
-		.bus = DT_CLOCKS_CELL(DT_NODELABEL(name), bus),		\
-	},								\
+	.pclken = clk_##name,						\
+	.pclk_len = DT_NUM_CLOCKS(DT_NODELABEL(name)),			\
 	STM32_I2C_IRQ_HANDLER_FUNCTION(name)				\
 	.bitrate = DT_PROP(DT_NODELABEL(name), clock_frequency),	\
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(name)),		\
