@@ -1802,7 +1802,6 @@ Nuvoton NPCX Platforms:
     - keith-zephyr
     - jackrosenthal
     - fabiobaltieri
-    - yperess
   files:
     - soc/arm/nuvoton_npcx/
     - boards/arm/npcx*/
@@ -2027,7 +2026,6 @@ ITE Platforms:
     - jackrosenthal
     - keith-zephyr
     - brockus-zephyr
-    - yperess
     - sjg20
   files:
     - boards/riscv/it8xxx2_evb/
