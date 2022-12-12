@@ -9,11 +9,11 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/i2s.h>
 
-#define I2S_DEV_NAME_RX "I2S_0"
+#define I2S_DEV_NODE_RX DT_ALIAS(i2s_node0)
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
-#define I2S_DEV_NAME_TX "I2S_1"
+#define I2S_DEV_NODE_TX DT_ALIAS(i2s_node1)
 #else
-#define I2S_DEV_NAME_TX "I2S_0"
+#define I2S_DEV_NODE_TX DT_ALIAS(i2s_node0)
 #endif
 
 #define NUM_BLOCKS 20
@@ -183,8 +183,9 @@ ZTEST(drivers_i2s_speed, test_i2s_tx_transfer_configure)
 {
 	int ret;
 
-	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
-	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
+	dev_i2s_tx = DEVICE_DT_GET_OR_NULL(I2S_DEV_NODE_TX);
+	zassert_not_null(dev_i2s_tx, "transfer device not found");
+	zassert(device_is_ready(dev_i2s_tx), "transfer device not ready");
 
 	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX);
 	zassert_equal(ret, TC_PASS);
@@ -195,8 +196,9 @@ ZTEST(drivers_i2s_speed, test_i2s_rx_transfer_configure)
 {
 	int ret;
 
-	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
+	dev_i2s_rx = DEVICE_DT_GET_OR_NULL(I2S_DEV_NODE_RX);
+	zassert_not_null(dev_i2s_rx, "receive device not found");
+	zassert(device_is_ready(dev_i2s_rx), "receive device not ready");
 
 	ret = configure_stream(dev_i2s_rx, I2S_DIR_RX);
 	zassert_equal(ret, TC_PASS);
@@ -375,8 +377,9 @@ ZTEST(drivers_i2s_speed, test_i2s_dir_both_transfer_configure)
 {
 	int ret;
 
-	dev_i2s_rxtx = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s_rxtx, "device " I2S_DEV_NAME_RX " not found");
+	dev_i2s_rxtx = DEVICE_DT_GET_OR_NULL(I2S_DEV_NODE_RX);
+	zassert_not_null(dev_i2s_rxtx, "receive device not found");
+	zassert(device_is_ready(dev_i2s_rxtx), "receive device not ready");
 
 	ret = configure_stream(dev_i2s_rxtx, I2S_DIR_BOTH);
 	zassert_equal(ret, TC_PASS);
