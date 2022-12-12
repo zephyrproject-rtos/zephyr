@@ -6,6 +6,9 @@ if SHIELD_NPM6001_EK
 config GPIO
 	default y
 
+config REGULATOR
+	default y
+
 config WATCHDOG
 	default y
 
