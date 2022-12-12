@@ -203,11 +203,11 @@ static inline void update_net_if_link_addr(struct net_if *iface, struct ieee8021
 {
 	bool was_if_up;
 
-	was_if_up = net_if_flag_test_and_clear(iface, NET_IF_UP);
+	was_if_up = net_if_flag_test_and_clear(iface, NET_IF_RUNNING);
 	net_if_set_link_addr(iface, ctx->linkaddr.addr, ctx->linkaddr.len, ctx->linkaddr.type);
 
 	if (was_if_up) {
-		net_if_flag_set(iface, NET_IF_UP);
+		net_if_flag_set(iface, NET_IF_RUNNING);
 	}
 }
 
