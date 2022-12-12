@@ -650,6 +650,7 @@
 /include/zephyr/toolchain/                       @dcpleung @nashif @andyross
 /include/zephyr/zephyr.h                         @dcpleung @nashif @andyross
 /kernel/                                  @dcpleung @nashif @andyross
+/lib/cpp/                                 @stephanosio
 /lib/smf/                                 @sambhurst
 /lib/util/                                @carlescufi @jakub-uC
 /lib/util/fnmatch/                        @carlescufi @jakub-uC
