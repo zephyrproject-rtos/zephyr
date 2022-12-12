@@ -2911,6 +2911,16 @@ static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			PDU_AC_US(pdu_scan->len, lll->phy_s, lll->phy_flags);
 
 		time_us += EVENT_IFS_MAX_US * 2 + scan_req_us + scan_rsp_us;
+
+		/* FIXME: Calculate additional time reservations for scan
+		 *        response chain PDUs, if any.
+		 */
+	} else {
+		/* Non-connectable Non-Scannable */
+
+		/* FIXME: Calculate additional time reservations for chain PDUs,
+		 *        if any.
+		 */
 	}
 
 	return time_us;
