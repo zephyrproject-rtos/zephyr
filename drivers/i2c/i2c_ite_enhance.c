@@ -72,6 +72,7 @@ struct i2c_enhance_config {
 	uint8_t prescale_scl_low;
 	uint32_t clock_gate_offset;
 	bool target_enable;
+	bool target_pio_mode;
 };
 
 enum i2c_pin_fun {
@@ -137,6 +138,7 @@ struct i2c_enhance_data {
 #ifdef CONFIG_I2C_TARGET
 	struct i2c_target_config *target_cfg;
 	uint32_t buffer_size;
+	int target_nack;
 	bool target_attached;
 #endif
 	union {
@@ -209,6 +211,7 @@ enum i2c_reset_cause {
 	I2C_RC_TIMEOUT,
 };
 
+#ifdef CONFIG_I2C_TARGET
 enum enhanced_i2c_target_status {
 	/* Time out error */
 	E_TARGET_TMOE = 0x08,
@@ -217,6 +220,7 @@ enum enhanced_i2c_target_status {
 	/* Time out or lost arbitration */
 	E_TARGET_ANY_ERROR = (E_TARGET_TMOE | E_TARGET_ARB),
 };
+#endif
 
 static int i2c_parsing_return_value(const struct device *dev)
 {
@@ -381,6 +385,8 @@ static int enhanced_i2c_error(const struct device *dev)
 	} else if ((i2c_str & E_HOSTA_BDS_AND_ACK) == E_HOSTA_BDS) {
 		if (IT8XXX2_I2C_CTR(base) & E_ACK) {
 			data->err = E_HOSTA_ACK;
+			/* STOP */
+			IT8XXX2_I2C_CTR(base) = E_FINISH;
 		}
 	}
 
@@ -955,10 +961,104 @@ static int i2c_enhance_transfer(const struct device *dev,
 }
 
 #ifdef CONFIG_I2C_TARGET
+static void target_i2c_isr_dma(const struct device *dev,
+			       uint8_t interrupt_status)
+{
+	struct i2c_enhance_data *data = dev->data;
+	const struct i2c_enhance_config *config = dev->config;
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	struct i2c_target_dma_buffer *target_buffer = &data->target_buffer;
+	uint8_t *base = config->base;
+
+	/* Byte counter enable */
+	if (interrupt_status & IT8XXX2_I2C_IDW_CLR) {
+		IT8XXX2_I2C_BYTE_CNT_L(base) |=
+			(IT8XXX2_I2C_DMA_ADDR_RELOAD |
+			 IT8XXX2_I2C_BYTE_CNT_ENABLE);
+	}
+	/* The number of received data exceeds the byte counter setting */
+	if (interrupt_status & IT8XXX2_I2C_CNT_HOLD) {
+		LOG_ERR("The excess data written starts "
+			"from the memory address:%p",
+			target_buffer->in_buffer +
+			CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE);
+	}
+	/* Controller to write data */
+	if (interrupt_status & IT8XXX2_I2C_SLVDATAFLG) {
+		/* Number of receive data in target mode */
+		data->buffer_size =
+			((IT8XXX2_I2C_SLV_NUM_H(base) << 8) |
+			 IT8XXX2_I2C_SLV_NUM_L(base)) + 1;
+
+		/* Write data done callback function */
+		target_cb->buf_write_received(data->target_cfg,
+			target_buffer->in_buffer, data->buffer_size);
+	}
+	/* Controller to read data */
+	if (interrupt_status & IT8XXX2_I2C_IDR_CLR) {
+		uint32_t len;
+		uint8_t *rdata = NULL;
+
+		/* Clear byte counter setting */
+		IT8XXX2_I2C_BYTE_CNT_L(base) &=
+			~(IT8XXX2_I2C_DMA_ADDR_RELOAD |
+			  IT8XXX2_I2C_BYTE_CNT_ENABLE);
+		/* Read data callback function */
+		target_cb->buf_read_requested(data->target_cfg,
+			&rdata, &len);
+
+		if (len > CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE) {
+			LOG_ERR("The bufffer size exceeds "
+				"I2C_TARGET_IT8XXX2_MAX_BUF_SIZE: len=%d",
+				len);
+		} else {
+			memcpy(target_buffer->out_buffer, rdata, len);
+		}
+	}
+}
+
+static int target_i2c_isr_pio(const struct device *dev,
+			      uint8_t interrupt_status,
+			      uint8_t target_status)
+{
+	struct i2c_enhance_data *data = dev->data;
+	const struct i2c_enhance_config *config = dev->config;
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret = 0;
+	uint8_t *base = config->base;
+	uint8_t val;
+
+	/* Target ID write flag */
+	if (interrupt_status & IT8XXX2_I2C_IDW_CLR) {
+		ret = target_cb->write_requested(data->target_cfg);
+	}
+	/* Target ID read flag */
+	else if (interrupt_status & IT8XXX2_I2C_IDR_CLR) {
+		if (!target_cb->read_requested(data->target_cfg, &val)) {
+			IT8XXX2_I2C_DTR(base) = val;
+		}
+	}
+	/* Byte transfer done */
+	else if (target_status & IT8XXX2_I2C_BYTE_DONE) {
+		/* Read of write */
+		if (target_status & IT8XXX2_I2C_RW) {
+			/* Host receiving, target transmitting */
+			if (!target_cb->read_processed(data->target_cfg, &val)) {
+				IT8XXX2_I2C_DTR(base) = val;
+			}
+		} else {
+			/* Host transmitting, target receiving */
+			val = IT8XXX2_I2C_DRR(base);
+			ret = target_cb->write_received(data->target_cfg, val);
+		}
+	}
+
+	return ret;
+}
+
 static void target_i2c_isr(const struct device *dev)
 {
 	struct i2c_enhance_data *data = dev->data;
-	struct i2c_target_dma_buffer *target_buffer = &data->target_buffer;
 	const struct i2c_enhance_config *config = dev->config;
 	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
 	uint8_t *base = config->base;
@@ -973,55 +1073,27 @@ static void target_i2c_isr(const struct device *dev)
 	if (target_status & IT8XXX2_I2C_INT_PEND) {
 		uint8_t interrupt_status = IT8XXX2_I2C_IRQ_ST(base);
 
-		/* Byte counter enable */
-		if (interrupt_status & IT8XXX2_I2C_IDW_CLR) {
-			IT8XXX2_I2C_BYTE_CNT_L(base) |=
-				(IT8XXX2_I2C_DMA_ADDR_RELOAD |
-				 IT8XXX2_I2C_BYTE_CNT_ENABLE);
-		}
-		/* The number of received data exceeds the byte counter setting */
-		if (interrupt_status & IT8XXX2_I2C_CNT_HOLD) {
-			LOG_ERR("The excess data written starts "
-				"from the memory address:%p",
-				target_buffer->in_buffer +
-				CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE);
-		}
-		/* Controller to write data */
-		if (interrupt_status & IT8XXX2_I2C_SLVDATAFLG) {
-			/* Number of receive data in target mode */
-			data->buffer_size =
-				((IT8XXX2_I2C_SLV_NUM_H(base) << 8) |
-				 IT8XXX2_I2C_SLV_NUM_L(base)) + 1;
-
-			/* Write data done callback function */
-			target_cb->buf_write_received(data->target_cfg,
-				target_buffer->in_buffer, data->buffer_size);
-		}
-		/* Controller to read data */
-		if (interrupt_status & IT8XXX2_I2C_IDR_CLR) {
-			uint32_t len;
-			uint8_t *rdata = NULL;
-
-			/* Clear byte counter setting */
-			IT8XXX2_I2C_BYTE_CNT_L(base) &=
-				~(IT8XXX2_I2C_DMA_ADDR_RELOAD |
-				  IT8XXX2_I2C_BYTE_CNT_ENABLE);
-			/* Read data callback function */
-			target_cb->buf_read_requested(data->target_cfg,
-				&rdata, &len);
-
-			if (len > CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE) {
-				LOG_ERR("The bufffer size exceeds "
-					"I2C_TARGET_IT8XXX2_MAX_BUF_SIZE: len=%d",
-					len);
-			} else {
-				memcpy(target_buffer->out_buffer, rdata, len);
+		/* Determine whether the transaction uses PIO or DMA mode */
+		if (config->target_pio_mode) {
+			if (target_i2c_isr_pio(dev, interrupt_status, target_status) < 0) {
+				/* NACK */
+				IT8XXX2_I2C_CTR(base) &= ~IT8XXX2_I2C_ACK;
+				IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
+				data->target_nack = 1;
 			}
+		} else {
+			target_i2c_isr_dma(dev, interrupt_status);
 		}
 		/* Peripheral finish */
 		if (interrupt_status & IT8XXX2_I2C_P_CLR) {
 			/* Transfer done callback function */
 			target_cb->stop(data->target_cfg);
+
+			if (data->target_nack) {
+				/* Set acknowledge */
+				IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_ACK;
+				data->target_nack = 0;
+			}
 		}
 		/* Write clear the peripheral status */
 		IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
@@ -1200,8 +1272,6 @@ static int i2c_enhance_target_register(const struct device *dev,
 {
 	const struct i2c_enhance_config *config = dev->config;
 	struct i2c_enhance_data *data = dev->data;
-	struct i2c_target_dma_buffer *target_buffer = &data->target_buffer;
-	uint32_t in_data_addr, out_data_addr;
 	uint8_t *base = config->base;
 
 	if (!target_cfg) {
@@ -1235,44 +1305,59 @@ static int i2c_enhance_target_register(const struct device *dev,
 	/* Interrupt status write clear */
 	IT8XXX2_I2C_IRQ_ST(base) = 0xff;
 
-	/* Clear read and write data buffer of DMA */
-	memset(target_buffer->in_buffer, 0, CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE);
-	memset(target_buffer->out_buffer, 0, CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE);
+	/* I2C target initial configuration of PIO mode */
+	if (config->target_pio_mode) {
+		/* Block to enter power policy. */
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
-	in_data_addr = (uint32_t)target_buffer->in_buffer & 0xffffff;
-	out_data_addr = (uint32_t)target_buffer->out_buffer & 0xffffff;
-	/*
-	 * DMA write target address register
-	 * for high order byte
-	 */
-	IT8XXX2_I2C_RAMH2A(base) = in_data_addr >> 16;
-	IT8XXX2_I2C_RAMHA(base) = in_data_addr >> 8;
-	IT8XXX2_I2C_RAMLA(base) = in_data_addr;
-	/*
-	 * DMA read target address register
-	 * for high order byte
-	 */
-	IT8XXX2_I2C_CMD_ADDH2(base) = out_data_addr >> 16;
-	IT8XXX2_I2C_RAMHA2(base) = out_data_addr >> 8;
-	IT8XXX2_I2C_RAMLA2(base) = out_data_addr;
+		/* I2C module enable */
+		IT8XXX2_I2C_CTR1(base) = IT8XXX2_I2C_MDL_EN;
+	/* I2C target initial configuration of DMA mode */
+	} else {
+		struct i2c_target_dma_buffer *target_buffer = &data->target_buffer;
+		uint32_t in_data_addr, out_data_addr;
+		int buf_size = CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE;
 
-	/* Byte counter setting */
-	/* This register indicates byte count[10:3]. */
-	IT8XXX2_I2C_BYTE_CNT_H(base) = CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE >> 3;
-	/* This register indicates byte count[2:0]. */
-	IT8XXX2_I2C_BYTE_CNT_L(base) = CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE &
-				       GENMASK(2, 0);
+		/* Clear read and write data buffer of DMA */
+		memset(target_buffer->in_buffer, 0, buf_size);
+		memset(target_buffer->out_buffer, 0, buf_size);
 
-	/*
-	 * The EC processor(CPU) cannot be in the k_cpu_idle() and power
-	 * policy during the transactions with the CQ mode(DMA mode).
-	 * Otherwise, the EC processor would be clock gated.
-	 */
-	chip_block_idle();
-	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+		in_data_addr = (uint32_t)target_buffer->in_buffer & 0xffffff;
+		out_data_addr = (uint32_t)target_buffer->out_buffer & 0xffffff;
+		/*
+		 * DMA write target address register
+		 * for high order byte
+		 */
+		IT8XXX2_I2C_RAMH2A(base) = in_data_addr >> 16;
+		IT8XXX2_I2C_RAMHA(base) = in_data_addr >> 8;
+		IT8XXX2_I2C_RAMLA(base) = in_data_addr;
+		/*
+		 * DMA read target address register
+		 * for high order byte
+		 */
+		IT8XXX2_I2C_CMD_ADDH2(base) = out_data_addr >> 16;
+		IT8XXX2_I2C_RAMHA2(base) = out_data_addr >> 8;
+		IT8XXX2_I2C_RAMLA2(base) = out_data_addr;
 
-	/* I2C module enable and command queue mode */
-	IT8XXX2_I2C_CTR1(base) = IT8XXX2_I2C_COMQ_EN | IT8XXX2_I2C_MDL_EN;
+		/* Byte counter setting */
+		/* This register indicates byte count[10:3]. */
+		IT8XXX2_I2C_BYTE_CNT_H(base) =
+			CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE >> 3;
+		/* This register indicates byte count[2:0]. */
+		IT8XXX2_I2C_BYTE_CNT_L(base) =
+			CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE & GENMASK(2, 0);
+
+		/*
+		 * The EC processor(CPU) cannot be in the k_cpu_idle() and power
+		 * policy during the transactions with the CQ mode(DMA mode).
+		 * Otherwise, the EC processor would be clock gated.
+		 */
+		chip_block_idle();
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+
+		/* I2C module enable and command queue mode */
+		IT8XXX2_I2C_CTR1(base) = IT8XXX2_I2C_COMQ_EN | IT8XXX2_I2C_MDL_EN;
+	}
 
 	ite_intc_isr_clear(config->i2c_irq_base);
 	irq_enable(config->i2c_irq_base);
@@ -1294,10 +1379,13 @@ static int i2c_enhance_target_unregister(const struct device *dev,
 
 	/* Permit to enter power policy and idle mode. */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	chip_permit_idle();
+	if (!config->target_pio_mode) {
+		chip_permit_idle();
+	}
 
 	data->target_cfg = NULL;
 	data->target_attached = false;
+	data->target_nack = 0;
 
 	return 0;
 }
@@ -1343,6 +1431,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.target_enable = DT_INST_PROP(inst, target_enable),             \
+		.target_pio_mode = DT_INST_PROP(inst, target_pio_mode),         \
 	};                                                                      \
 										\
 	static struct i2c_enhance_data i2c_enhance_data_##inst;                 \
