@@ -50,6 +50,25 @@ int regulator_enable(const struct device *dev)
 	return ret;
 }
 
+bool regulator_is_enabled(const struct device *dev)
+{
+	const struct regulator_common_config *config =
+		(struct regulator_common_config *)dev->config;
+	struct regulator_common_data *data =
+		(struct regulator_common_data *)dev->data;
+	bool enabled;
+
+	if ((config->flags & REGULATOR_ALWAYS_ON) != 0U) {
+		enabled = true;
+	} else {
+		(void)k_mutex_lock(&data->lock, K_FOREVER);
+		enabled = data->refcnt != 0;
+		k_mutex_unlock(&data->lock);
+	}
+
+	return enabled;
+}
+
 int regulator_disable(const struct device *dev)
 {
 	const struct regulator_driver_api *api =
