@@ -158,11 +158,14 @@ K_FIFO_DEFINE(free_att_tx_meta_data);
 
 static struct bt_att_tx_meta_data *tx_meta_data_alloc(k_timeout_t timeout)
 {
+	LOG_DBG("BUFFER IS ALLOCATED\r\n");
 	return k_fifo_get(&free_att_tx_meta_data, timeout);
 }
 
 static inline void tx_meta_data_free(struct bt_att_tx_meta_data *data)
 {
+
+	LOG_DBG("BUFFER IS FREED\r\n");
 	__ASSERT_NO_MSG(data);
 
 	(void)memset(data, 0, sizeof(*data));
