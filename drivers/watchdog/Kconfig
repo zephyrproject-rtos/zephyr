@@ -96,4 +96,6 @@ source "drivers/watchdog/Kconfig.nxp_s32"
 
 source "drivers/watchdog/Kconfig.dw"
 
+source "drivers/watchdog/Kconfig.smartbond"
+
 endif # WATCHDOG
