@@ -59,6 +59,7 @@
 
 	aliases {
 		led0 = &red_led;
+		watchdog0 = &wdog;
 	};
 
 	sysclk: system-clock {
