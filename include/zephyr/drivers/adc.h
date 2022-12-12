@@ -217,11 +217,9 @@ struct adc_channel_cfg {
 	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
 	.channel_id       = DT_REG_ADDR(node_id), \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
-	(COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
-		(.differential   = true, \
-		 .input_positive = DT_PROP(node_id, zephyr_input_positive), \
-		 .input_negative = DT_PROP(node_id, zephyr_input_negative),), \
-		(.input_positive = DT_PROP(node_id, zephyr_input_positive),)))) \
+	(.differential    = DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
+	 .input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
+	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
 }
 
 /**
