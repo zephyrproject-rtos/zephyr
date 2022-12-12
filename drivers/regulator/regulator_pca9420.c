@@ -300,7 +300,6 @@ static int regulator_pca9420_init(const struct device *dev)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
-	int rc  = 0;
 
 	regulator_common_data_init(dev);
 
@@ -344,11 +343,7 @@ static int regulator_pca9420_init(const struct device *dev)
 		}
 	}
 
-	if ((config->common.flags & REGULATOR_INIT_ENABLED) != 0U) {
-		rc = regulator_pca9420_enable(dev);
-	}
-
-	return rc;
+	return regulator_common_init_enable(dev);
 }
 
 int regulator_pca9420_dvs_state_set(const struct device *dev,

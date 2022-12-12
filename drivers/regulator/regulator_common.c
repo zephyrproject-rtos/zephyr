@@ -14,6 +14,30 @@ void regulator_common_data_init(const struct device *dev)
 	data->refcnt = 0;
 }
 
+int regulator_common_init_enable(const struct device *dev)
+{
+	const struct regulator_common_config *config =
+		(struct regulator_common_config *)dev->config;
+	struct regulator_common_data *data =
+		(struct regulator_common_data *)dev->data;
+
+	if ((config->flags & REGULATOR_INIT_ENABLED) != 0U) {
+		const struct regulator_driver_api *api =
+			(const struct regulator_driver_api *)dev->api;
+
+		int ret;
+
+		ret = api->enable(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		data->refcnt++;
+	}
+
+	return 0;
+}
+
 int regulator_enable(const struct device *dev)
 {
 	const struct regulator_driver_api *api =
