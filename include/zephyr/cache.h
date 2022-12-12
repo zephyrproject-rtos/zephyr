@@ -113,6 +113,21 @@ extern size_t cache_instr_line_size_get(void);
 #endif /* CONFIG_ICACHE */
 #endif /* CONFIG_EXTERNAL_CACHE */
 
+
+/**
+ * @defgroup cache_interface Cache Interface
+ * @{
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ */
+
+#define _CPU DT_PATH(cpus, cpu_0)
+
+/** @endcond */
+
 /**
  * @brief Enable the d-cache
  *
@@ -408,8 +423,6 @@ static inline int sys_cache_instr_flush_and_invd_range(void *addr, size_t size)
 	return -ENOTSUP;
 }
 
-#define CPU DT_PATH(cpus, cpu_0)
-
 /**
  *
  * @brief Get the the d-cache line size.
@@ -418,8 +431,8 @@ static inline int sys_cache_instr_flush_and_invd_range(void *addr, size_t size)
  *
  * The cache line size is calculated (in order of priority):
  *
- * - At run-time when CONFIG_DCACHE_LINE_SIZE_DETECT is set.
- * - At compile time using the value set in CONFIG_DCACHE_LINE_SIZE.
+ * - At run-time when @kconfig{CONFIG_DCACHE_LINE_SIZE_DETECT} is set.
+ * - At compile time using the value set in @kconfig{CONFIG_DCACHE_LINE_SIZE}.
  * - At compile time using the `d-cache-line-size` CPU0 property of the DT.
  * - 0 otherwise
  *
@@ -433,7 +446,7 @@ static inline size_t sys_cache_data_line_size_get(void)
 #elif (CONFIG_DCACHE_LINE_SIZE != 0)
 	return CONFIG_DCACHE_LINE_SIZE;
 #else
-	return DT_PROP_OR(CPU, d_cache_line_size, 0);
+	return DT_PROP_OR(_CPU, d_cache_line_size, 0);
 #endif
 }
 
@@ -445,8 +458,8 @@ static inline size_t sys_cache_data_line_size_get(void)
  *
  * The cache line size is calculated (in order of priority):
  *
- * - At run-time when CONFIG_ICACHE_LINE_SIZE_DETECT is set.
- * - At compile time using the value set in CONFIG_ICACHE_LINE_SIZE.
+ * - At run-time when @kconfig{CONFIG_ICACHE_LINE_SIZE_DETECT} is set.
+ * - At compile time using the value set in @kconfig{CONFIG_ICACHE_LINE_SIZE}.
  * - At compile time using the `i-cache-line-size` CPU0 property of the DT.
  * - 0 otherwise
  *
@@ -460,7 +473,7 @@ static inline size_t sys_cache_instr_line_size_get(void)
 #elif (CONFIG_ICACHE_LINE_SIZE != 0)
 	return CONFIG_ICACHE_LINE_SIZE;
 #else
-	return DT_PROP_OR(CPU, i_cache_line_size, 0);
+	return DT_PROP_OR(_CPU, i_cache_line_size, 0);
 #endif
 }
 
@@ -475,5 +488,9 @@ static inline void sys_cache_flush(void *addr, size_t size)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_CACHE_H_ */
