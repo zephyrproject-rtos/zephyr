@@ -14,7 +14,7 @@
 
 /**
  * @brief External Cache Controller Interface
- * @defgroup cache_interface External Cache Controller Interface
+ * @defgroup cache_external_interface External Cache Controller Interface
  * @ingroup io_interfaces
  * @{
  */
