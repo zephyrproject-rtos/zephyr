@@ -61,3 +61,19 @@ properties:
         supporting 1-4-4 mode also would support fast page programming.
 
         If absent, then 1-4-4 program page is used in quad mode.
+    readoc:
+      type: string
+      required: false
+      enum:
+        - "MODE_114"      # Quad data line SPI, Mode 1-1-4
+        - "MODE_144"      # Quad data line SPI, Mode 1-4-4
+      description: |
+        The value encodes number of I/O lines used for the opcode,
+        address, and data.
+
+        Information about quad page program opcodes is present in the
+        SFDP tables, nevertheless with this option the values can be
+        overwritten if desired.
+
+        If absent, the fastest reading method listed in the SFDP tables
+        will be chosen.
