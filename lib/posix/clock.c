@@ -48,8 +48,8 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 	}
 
 	uint64_t ticks = k_uptime_ticks();
-	uint64_t elapsed_secs = k_ticks_to_ms_floor64(ticks) / MSEC_PER_SEC;
-	uint64_t nremainder = ticks - k_ms_to_ticks_floor64(MSEC_PER_SEC * elapsed_secs);
+	uint64_t elapsed_secs = ticks / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	uint64_t nremainder = ticks - elapsed_secs * CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	ts->tv_sec = (time_t) elapsed_secs;
 	/* For ns 32 bit conversion can be used since its smaller than 1sec. */
