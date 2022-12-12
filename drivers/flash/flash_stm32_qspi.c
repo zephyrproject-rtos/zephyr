@@ -986,7 +986,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	 */
 	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO)) {
 		enum jesd216_mode_type supported_modes[] = { JESD216_MODE_114,
-								   JESD216_MODE_144 };
+							 JESD216_MODE_144 };
 		int nr_of_modes = ARRAY_SIZE(supported_modes);
 		if (data->desired_mode != STM32_QSPI_UNKNOWN_MODE) {
 			supported_modes[0] = data->desired_mode;
