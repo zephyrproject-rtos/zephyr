@@ -15,7 +15,9 @@
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 
+#if IS_ENABLED(CONFIG_SHELL_BACKEND_RTT)
 #include <SEGGER_RTT.h>
+#endif
 
 /* Buffer is only needed for bytes that follow command and offset */
 #define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 2)
@@ -176,6 +178,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+#if IS_ENABLED(CONFIG_SHELL_BACKEND_RTT)
 static int cmd_write_rtt(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint32_t __aligned(4) read_array[BUF_ARRAY_CNT];
@@ -246,6 +249,7 @@ static int cmd_write_rtt(const struct shell *shell, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif
 
 static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -366,9 +370,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
 	SHELL_CMD_ARG(write, &dsub_device_name,
 		"[<device>] <address> [-v] <dword> [<dword>...]",
 		cmd_write, 3, BUF_ARRAY_CNT),
+#if IS_ENABLED(CONFIG_SHELL_BACKEND_RTT)
 	SHELL_CMD_ARG(write_rtt, &dsub_device_name,
 		"[<device>] <address> <buffer_size> <data_size>",
 		cmd_write_rtt, 5, 0),
+#endif
 	SHELL_SUBCMD_SET_END
 );
 
