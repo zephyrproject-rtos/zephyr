@@ -70,6 +70,19 @@ UART0.
 Programming and Debugging
 *************************
 
+Environment
+===========
+
+First, set the ``ARMFVP_BIN_PATH`` environment variable before building.
+Optionally, set ``ARMFVP_EXTRA_FLAGS`` to pass additional arguments to the FVP.
+
+.. code-block:: bash
+
+   export ARMFVP_BIN_PATH=/path/to/fvp/directory
+
+Programming
+===========
+
 Use this configuration to build basic Zephyr applications and kernel tests in the
 Arm FVP emulated environment, for example, with the :ref:`synchronization_sample`:
 
@@ -79,14 +92,8 @@ Arm FVP emulated environment, for example, with the :ref:`synchronization_sample
    :board: fvp_baser_aemv8r
    :goals: build
 
-This will build an image with the synchronization sample app. To run with FVP,
-first set environment variable ``ARMFVP_BIN_PATH`` before using it. Then you
-can run it with ``west build -t run``.
-
-.. code-block:: bash
-
-   export ARMFVP_BIN_PATH=/path/to/fvp/directory
-   west build -t run
+This will build an image with the synchronization sample app.
+Then you can run it with ``west build -t run``.
 
 Debugging
 =========
