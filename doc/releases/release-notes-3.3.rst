@@ -89,6 +89,24 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* C++ library Kconfig options have been renamed to improve consistency. See
+  below for the list of deprecated Kconfig options and their replacements:
+
+  .. table::
+     :align: center
+
+     +----------------------------------------+------------------------------------------------+
+     | Deprecated                             | Replacement                                    |
+     +========================================+================================================+
+     | :kconfig:option:`CONFIG_CPLUSPLUS`     | :kconfig:option:`CONFIG_CPP`                   |
+     +----------------------------------------+------------------------------------------------+
+     | :kconfig:option:`CONFIG_EXCEPTIONS`    | :kconfig:option:`CONFIG_CPP_EXCEPTIONS`        |
+     +----------------------------------------+------------------------------------------------+
+     | :kconfig:option:`CONFIG_RTTI`          | :kconfig:option:`CONFIG_CPP_RTTI`              |
+     +----------------------------------------+------------------------------------------------+
+     | :kconfig:option:`CONFIG_LIB_CPLUSPLUS` | :kconfig:option:`CONFIG_LIBCPP_IMPLEMENTATION` |
+     +----------------------------------------+------------------------------------------------+
+
 * MCUmgr subsystem, specifically the SMP transport API, is dropping `zephyr_`
   prefix, deprecating prefixed functions and callback type definitions with the
   prefix and replacing them with with prefix-less variants.
@@ -413,6 +431,35 @@ Devicetree
 
 Libraries / Subsystems
 **********************
+
+* C++ Library
+
+  * C++ support in Zephyr is no longer considered a "subsystem" because it
+    mainly consists of the C++ ABI runtime library and the C++ standard
+    library, which are "libraries" that are dissimilar to the existing Zephyr
+    subsystems. C++ support components are now located in ``lib/cpp`` as
+    "C++ library."
+  * C++ ABI runtime library components such as global constructor/destructor
+    and initialiser handlers, that were previously located under
+    ``subsys/cpp``, have been moved to ``lib/cpp/abi`` in order to provide a
+    clear separation between the C++ ABI runtime library and the C++ standard
+    library.
+  * C++ minimal library components have been moved to ``lib/cpp/minimal``.
+  * C++ tests have been moved to ``tests/lib/cpp``.
+  * C++ samples have been moved to ``samples/cpp``.
+  * :kconfig:option:`CONFIG_CPLUSPLUS` has been renamed to
+    :kconfig:option:`CONFIG_CPP`.
+  * :kconfig:option:`CONFIG_EXCEPTIONS` has been renamed to
+    :kconfig:option:`CONFIG_CPP_EXCEPTIONS`.
+  * :kconfig:option:`CONFIG_RTTI` has been renamed to
+    :kconfig:option:`CONFIG_CPP_RTTI`.
+  * :kconfig:option:`CONFIG_LIB_CPLUSPLUS` is deprecated. A toolchain-specific
+    C++ standard library Kconfig option from
+    :kconfig:option:`CONFIG_LIBCPP_IMPLEMENTATION` should be selected instead.
+  * Zephyr subsystems and modules that require the features from the full C++
+    standard library (e.g. Standard Template Library) can now select
+    :kconfig:option:`CONFIG_REQUIRES_FULL_LIBC`, which automatically selects
+    a compatible C++ standard library.
 
 * File systems
 
