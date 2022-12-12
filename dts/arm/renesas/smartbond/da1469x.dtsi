@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Renesas Electronics Corporation
+ * Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -22,6 +22,7 @@
 			clock-frequency = <32000000>;
 		};
 	};
+
 
 	soc {
 		sram0: memory@20000000 {
@@ -79,6 +80,12 @@
 				reg-names = "data", "mode", "latch", "wkup";
 				interrupts = <39 0>;
 			};
+		};
+
+		wdog: watchdog@50000700 {
+			compatible = "renesas,smartbond-watchdog";
+			reg = <0x50000700 0x8>;
+			status = "okay";
 		};
 
 		uart: uart@50020000 {
