@@ -12,7 +12,7 @@
 #include <zephyr/drivers/espi.h>
 #include <zephyr/drivers/pinctrl.h>
 
-#define ESPI_XEC_V2_DEBUG	1
+/* #define ESPI_XEC_V2_DEBUG	1 */
 
 struct espi_isr {
 	uint8_t girq_id;
@@ -61,10 +61,14 @@ struct espi_xec_data {
 #define ESPI_XEC_DATA(dev)						\
 	((struct espi_xec_data * const)(dev)->data)
 
+#define ESPI_XEC_SIGNAL_FLAG_EN_POS	0
+#define ESPI_XEC_SIGNAL_FLAG_DIR_POS	4
+
 struct xec_signal {
-	uint8_t xec_reg_idx;
+	uint8_t host_idx;
 	uint8_t bit;
-	uint8_t dir;
+	uint8_t xec_reg_idx;
+	uint8_t flags;
 };
 
 enum mchp_msvw_regs {
@@ -103,7 +107,6 @@ enum xec_espi_girq_idx {
 	vw_ch_en_girq_idx,
 	max_girq_idx,
 };
-
 
 int xec_host_dev_init(const struct device *dev);
 int xec_host_dev_connect_irqs(const struct device *dev);
