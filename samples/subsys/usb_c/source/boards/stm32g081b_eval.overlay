@@ -45,6 +45,7 @@
 		};
 	};
 
+	/* usbc.rst vbus-voltage-divider-adc start */
 	vbus1: vbus {
 		compatible = "zephyr,usb-c-vbus-adc";
 		io-channels = <&adc1 9>;
@@ -54,11 +55,13 @@
 		/* Pin B13 is used to control VBUS Discharge for Port1 */
 		discharge-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 	};
+	/* usbc.rst vbus-voltage-divider-adc end */
 
 	ports {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		/* usbc.rst usbc-port start */
 		port1: usbc-port@1 {
 			compatible = "usb-c-connector";
 			reg = <1>;
@@ -68,5 +71,6 @@
 			typec-power-opmode = "3.0A";
 			source-pdos = <PDO_FIXED(5000, 100, 0) PDO_FIXED(9000, 100, 0) PDO_FIXED(15000, 100, 0)>;
 		};
+		/* usbc.rst usbc-port end */
 	};
 };
