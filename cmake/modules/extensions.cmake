@@ -4120,7 +4120,7 @@ endfunction()
 # BAZ: <undefined>
 # QUX: option set
 #
-# will create a list as: "FOO;bar;QUX:TRUE" which can then be parsed as argument
+# will create a list as: "FOO;bar;QUX;TRUE" which can then be parsed as argument
 # list later.
 macro(zephyr_linker_arg_val_list list arguments)
   foreach(arg ${arguments})
