@@ -397,9 +397,12 @@ class KconfigCheck(ComplianceTest):
         grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
                           ":samples", ":tests", cwd=ZEPHYR_BASE)
 
+        # Generate combined list of configs and choices from the main Kconfig tree.
+        kconf_syms = kconf.unique_defined_syms + kconf.unique_choices
+
         # Symbols from the main Kconfig tree + grepped definitions from samples
         # and tests
-        return set([sym.name for sym in kconf.unique_defined_syms]
+        return set([sym.name for sym in kconf_syms]
                    + re.findall(regex, grep_stdout, re.MULTILINE))
 
 
