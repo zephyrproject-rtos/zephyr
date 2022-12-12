@@ -124,13 +124,94 @@ static int icm42688_sample_fetch(const struct device *dev, enum sensor_channel c
 static int icm42688_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
-	return -ENOTSUP;
+	const struct icm42688_sensor_data *data = dev->data;
+	struct icm42688_cfg new_config = data->dev_data.cfg;
+	int res = 0;
+
+	__ASSERT_NO_MSG(val != NULL);
+
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+			new_config.accel_odr = icm42688_accel_hz_to_reg(val->val1);
+		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
+			new_config.accel_fs = icm42688_accel_fs_to_reg(sensor_ms2_to_g(val));
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -ENOTSUP;
+		}
+		break;
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
+		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+			new_config.gyro_odr = icm42688_gyro_odr_to_reg(val->val1);
+		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
+			new_config.gyro_fs = icm42688_gyro_fs_to_reg(sensor_rad_to_degrees(val));
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -EINVAL;
+		}
+		break;
+	default:
+		LOG_ERR("Unsupported channel");
+		res = -EINVAL;
+		break;
+	}
+
+	if (res) {
+		return res;
+	}
+	return icm42688_configure(dev, &new_config);
 }
 
 static int icm42688_attr_get(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, struct sensor_value *val)
 {
-	return -ENOTSUP;
+	const struct icm42688_sensor_data *data = dev->data;
+	const struct icm42688_cfg *cfg = &data->dev_data.cfg;
+	int res = 0;
+
+	__ASSERT_NO_MSG(val != NULL);
+
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+			icm42688_accel_reg_to_hz(cfg->accel_odr, val);
+		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
+			icm42688_accel_reg_to_fs(cfg->accel_fs, val);
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -EINVAL;
+		}
+		break;
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
+		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+			icm42688_gyro_reg_to_odr(cfg->gyro_odr, val);
+		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
+			icm42688_gyro_reg_to_fs(cfg->gyro_fs, val);
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -EINVAL;
+		}
+		break;
+	default:
+		LOG_ERR("Unsupported channel");
+		res = -EINVAL;
+		break;
+	}
+
+	return res;
 }
 
 static const struct sensor_driver_api icm42688_driver_api = {

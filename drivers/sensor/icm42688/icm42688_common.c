@@ -103,6 +103,9 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		LOG_ERR("Error writing PWR_MGMT0");
 		return -EINVAL;
 	}
+	dev_data->cfg.gyro_mode = cfg->gyro_mode;
+	dev_data->cfg.accel_mode = cfg->accel_mode;
+	dev_data->cfg.temp_dis = cfg->temp_dis;
 
 	/* Need to wait at least 200us before updating more registers
 	 * see datasheet 14.36
@@ -117,6 +120,8 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		LOG_ERR("Error writing ACCEL_CONFIG0");
 		return -EINVAL;
 	}
+	dev_data->cfg.accel_odr = cfg->accel_odr;
+	dev_data->cfg.accel_fs = cfg->accel_fs;
 
 	res = icm42688_spi_single_write(&dev_cfg->spi, REG_GYRO_CONFIG0,
 					FIELD_PREP(MASK_GYRO_ODR, cfg->gyro_odr) |
@@ -126,6 +131,8 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		LOG_ERR("Error writing GYRO_CONFIG0");
 		return -EINVAL;
 	}
+	dev_data->cfg.gyro_odr = cfg->gyro_odr;
+	dev_data->cfg.gyro_fs = cfg->gyro_fs;
 
 	/*
 	 * Accelerometer sensor need at least 10ms startup time
@@ -151,6 +158,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 			LOG_ERR("Error writing FIFO_CONFIG3");
 			return -EINVAL;
 		}
+		dev_data->cfg.fifo_wm = cfg->fifo_wm;
 
 		/* TODO we have two interrupt lines, either can be used for watermark, choose 1 for
 		 *   now...
@@ -176,10 +184,12 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 			LOG_ERR("Error writing FIFO_CONFIG1");
 			return -EINVAL;
 		}
+		dev_data->cfg.fifo_hires = cfg->fifo_hires;
 
 		/* Begin streaming */
 		res = icm42688_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG,
 						FIELD_PREP(MASK_FIFO_MODE, BIT_FIFO_MODE_STREAM));
+		dev_data->cfg.fifo_en = true;
 	}
 
 	return res;
