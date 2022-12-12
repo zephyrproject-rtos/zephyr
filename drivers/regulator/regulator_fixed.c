@@ -67,18 +67,18 @@ static int regulator_fixed_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if ((cfg->common.flags & REGULATOR_INIT_ENABLED) != 0U) {
-		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_ACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
+	ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
+	ret = regulator_common_init_enable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (regulator_is_enabled(dev)) {
 		k_busy_wait(cfg->startup_delay_us);
-	} else {
-		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
 	}
 
 	return 0;
