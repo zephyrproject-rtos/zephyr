@@ -94,17 +94,27 @@ Zephyr does not include any C++ standard library implementation in source code
 form. Instead, it allows configuring the build system to link against the
 pre-built C++ standard library included in the C++ compiler toolchain.
 
-For instance, when building with the :ref:`toolchain_zephyr_sdk`, the build
-system can be configured to link against the GNU C++ Standard Library
-(``libstdc++.a``) included in the Zephyr SDK, which is a fully featured C++
-standard library that provides all features required by the ISO C++ standard
-including the Standard Template Library (STL).
+To enable C++ standard library, select an applicable toolchain-specific C++
+standard library type from the :kconfig:option:`CONFIG_LIBCPP_IMPLEMENTATION`
+in the application configuration file.
 
-To enable C++ standard library, select the
-:kconfig:option:`CONFIG_GLIBCXX_LIBCPP` (for Zephyr SDK and other GCC-based
-toolchains) or an applicable toolchain-specific C++ standard library type from
-the :kconfig:option:`CONFIG_LIBCPP_IMPLEMENTATION` in the application
+For instance, when building with the :ref:`toolchain_zephyr_sdk`, the build
+system can be configured to link against the GNU C++ Library (``libstdc++.a``),
+which is a fully featured C++ standard library that provides all features
+required by the ISO C++ standard including the Standard Template Library (STL),
+by selecting :kconfig:option:`CONFIG_GLIBCXX_LIBCPP` in the application
 configuration file.
+
+The following C++ standard libraries are supported by Zephyr:
+
+* GNU C++ Library (:kconfig:option:`CONFIG_GLIBCXX_LIBCPP`)
+* ARC MetaWare C++ Library (:kconfig:option:`CONFIG_ARCMWDT_LIBCPP`)
+
+A Zephyr subsystem that requires the features from the full C++ standard
+library can select, from its config,
+:kconfig:option:`CONFIG_REQUIRES_FULL_LIBCPP`, which automatically selects a
+compatible C++ standard library unless the Kconfig symbol for a specific C++
+standard library is selected.
 
 .. _`C++ Standard Library`: https://en.wikipedia.org/wiki/C%2B%2B_Standard_Library
 .. _`Standard Template Library (STL)`: https://en.wikipedia.org/wiki/Standard_Template_Library
