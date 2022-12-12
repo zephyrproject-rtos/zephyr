@@ -1321,6 +1321,8 @@ enum chip_pll_mode {
 /* 0x55: Slave A FIFO Control */
 #define IT8XXX2_SMB_HSAPE             BIT(1)
 /* 0x03: Status Register */
+#define IT8XXX2_I2C_BYTE_DONE         BIT(7)
+#define IT8XXX2_I2C_RW                BIT(2)
 #define IT8XXX2_I2C_INT_PEND          BIT(1)
 /* 0x04: Data Hold Time */
 #define IT8XXX2_I2C_SOFT_RST          BIT(7)
