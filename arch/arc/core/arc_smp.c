@@ -15,6 +15,7 @@
 #include <ksched.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <arc_irq_offload.h>
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -105,6 +106,8 @@ void z_arc_slave_start(int cpu_num)
 	z_irq_setup();
 
 	arc_core_private_intc_init();
+
+	arc_irq_offload_init_smp();
 
 	z_arc_connect_ici_clear();
 	z_irq_priority_set(DT_IRQN(DT_NODELABEL(ici)),
