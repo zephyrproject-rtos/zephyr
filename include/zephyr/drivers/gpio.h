@@ -696,9 +696,8 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 		 (GPIO_PULL_UP | GPIO_PULL_DOWN),
 		 "Pull Up and Pull Down should not be enabled simultaneously");
 
-	__ASSERT((flags & GPIO_OUTPUT) != 0 || (flags & GPIO_SINGLE_ENDED) == 0,
-		 "Output needs to be enabled for 'Open Drain', 'Open Source' "
-		 "mode to be supported");
+	__ASSERT(!((flags & GPIO_INPUT) && !(flags && GPIO_OUTPUT) && (flags & GPIO_SINGLE_ENDED)),
+		 "Input cannot be enabled for 'Open Drain', 'Open Source' modes without Output");
 
 	__ASSERT_NO_MSG((flags & GPIO_SINGLE_ENDED) != 0 ||
 			(flags & GPIO_LINE_OPEN_DRAIN) == 0);
