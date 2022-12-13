@@ -1248,13 +1248,11 @@ static int sdmmc_read(struct sd_card *card, uint8_t *rbuf,
 	}
 
 	/* Verify card is back in transfer state after read */
-	if (!card->host_props.is_spi) {
-		ret = sdmmc_wait_ready(card);
-		if (ret) {
-			LOG_ERR("Card did not return to ready state");
-			k_mutex_unlock(&card->lock);
-			return -ETIMEDOUT;
-		}
+	ret = sdmmc_wait_ready(card);
+	if (ret) {
+		LOG_ERR("Card did not return to ready state");
+		k_mutex_unlock(&card->lock);
+		return -ETIMEDOUT;
 	}
 	return 0;
 }
@@ -1403,13 +1401,7 @@ static int sdmmc_write(struct sd_card *card, const uint8_t *wbuf,
 	ret = sdhc_request(card->sdhc, &cmd, &data);
 	if (ret) {
 		LOG_DBG("Write failed: %d", ret);
-		if (card->host_props.is_spi) {
-			/* Just check card status */
-			ret = sdmmc_read_status(card);
-		} else {
-			/* Wait for card to be idle */
-			ret = sdmmc_wait_ready(card);
-		}
+		ret = sdmmc_wait_ready(card);
 		if (ret) {
 			return ret;
 		}
@@ -1422,13 +1414,7 @@ static int sdmmc_write(struct sd_card *card, const uint8_t *wbuf,
 		return -EIO;
 	}
 	/* Verify card is back in transfer state after write */
-	if (card->host_props.is_spi) {
-		/* Just check card status */
-		ret = sdmmc_read_status(card);
-	} else {
-		/* Wait for card to be idle */
-		ret = sdmmc_wait_ready(card);
-	}
+	ret = sdmmc_wait_ready(card);
 	if (ret) {
 		LOG_ERR("Card did not return to ready state");
 		return -ETIMEDOUT;
