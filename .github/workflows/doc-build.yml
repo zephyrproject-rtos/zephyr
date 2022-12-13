@@ -117,7 +117,7 @@ jobs:
     name: "Documentation Build (PDF)"
     runs-on: ubuntu-20.04
     container: texlive/texlive:latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     concurrency:
       group: doc-build-pdf-${{ github.ref }}
       cancel-in-progress: true
