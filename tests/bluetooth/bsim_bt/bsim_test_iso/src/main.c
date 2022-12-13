@@ -817,6 +817,15 @@ static void test_iso_recv_vs_dp_main(void)
 	bt_le_per_adv_sync_cb_register(&sync_cb);
 	printk("success.\n");
 
+	printk("Configure vendor data path... ");
+	err = bt_configure_data_path(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST,
+				     BT_HCI_DATAPATH_ID_VS, 0U, NULL);
+	if (err) {
+		FAIL("Failed (err %d)\n", err);
+		return;
+	}
+
+	printk("success.\n");
 	printk("Start scanning... ");
 	is_periodic = false;
 	err = bt_le_scan_start(&scan_param, NULL);
