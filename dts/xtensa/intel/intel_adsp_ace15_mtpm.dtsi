@@ -471,6 +471,19 @@
 			power-domain = <&io0_domain>;
 		};
 
+		lpgpdma2: dma@7e000 {
+			compatible = "intel,adsp-gpdma";
+			#dma-cells = <1>;
+			reg = <0x0007e000 0x1000>;
+			shim = <0x0007e800 0x1000>;
+			interrupts = <0x25 0 0>;
+			interrupt-parent = <&core_intc>;
+			dma-buf-size-alignment = <4>;
+			dma-copy-alignment = <4>;
+			power-domain = <&io0_domain>;
+			status = "okay";
+		};
+
 		sha: adsp-sha@17df00 {
 			compatible = "intel,adsp-sha";
 			reg = <0x17df00 0xd0>;
