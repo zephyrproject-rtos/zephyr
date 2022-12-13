@@ -405,7 +405,6 @@ static void start_ble_rf(void)
 
 	/* Select wakeup source of BLE RF */
 	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSE);
-	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
 
 	/* Switch OFF LSI */
 	LL_RCC_LSI2_Disable();
