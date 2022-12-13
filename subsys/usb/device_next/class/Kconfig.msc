@@ -1,0 +1,39 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_MSC_CLASS
+	bool "USB Mass Storage Device class support [EXPERIMENTAL]"
+	select DISK_ACCESS
+	help
+	  USB Mass Storage device class support.
+
+if USBD_MSC_CLASS
+
+config USBD_MSC_STACK_SIZE
+	int "USB MSC thread stack size"
+	default 1024
+	help
+	  USB MSC thread stack size.
+
+config USBD_MSC_LUNS_PER_INSTANCE
+	int "Number of LUNs"
+	default 1
+	range 1 16
+	help
+	  Maximum number of Logical Units that can be registered per instance.
+
+config USBD_MSC_SCSI_BUFFER_SIZE
+	int "SCSI Buffer size"
+	default 512
+	help
+	  Buffer size must be able to hold at least one sector. All LUNs within
+	  single instance share the SCSI buffer.
+
+module = USBD_MSC
+module-str = usbd msc
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.template.instances_count"
+endif
