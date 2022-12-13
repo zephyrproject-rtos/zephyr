@@ -606,8 +606,6 @@ int fs_stat(const char *path, struct fs_dirent *entry);
  */
 int fs_statvfs(const char *path, struct fs_statvfs *stat);
 
-#if defined(CONFIG_FILE_SYSTEM_MKFS)
-
 /**
  * @brief Create fresh file system
  *
@@ -620,8 +618,6 @@ int fs_statvfs(const char *path, struct fs_statvfs *stat);
  * @retval <0 negative errno code on error.
  */
 int fs_mkfs(int fs_type, uintptr_t dev_id, void *cfg, int flags);
-
-#endif /* CONFIG_FILE_SYSTEM_MKFS */
 
 /**
  * @brief Register a file system
