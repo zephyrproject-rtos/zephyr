@@ -458,6 +458,30 @@ Example output for a failed macro from
 
 .. doxygengroup:: ztest_assert
 
+
+Expectations
+============
+
+These macros will continue test execution if the related expectation fails and subsequently fail the
+test at the end of its execution.  When an expectation fails, it will print the current file, line,
+and function, alongside a reason for the failure and an optional message but continue executing the
+test. If the config option:`CONFIG_ZTEST_ASSERT_VERBOSE` is 0, the expectations will only print the
+file and line numbers, reducing the binary size of the test.
+
+Example output for a failed macro from::
+
+  zexpect_equal(buf->ref, 2, "Invalid refcount");
+  zexpect_equal(buf->ref, 1337, "Invalid refcount");
+
+.. code-block::none
+
+    START - test_get_single_buffer
+        Expectation failed at main.c:62: test_get_single_buffer: Invalid refcount (buf->ref not equal to 2)
+        Expectation failed at main.c:63: test_get_single_buffer: Invalid refcount (buf->ref not equal to 1337)
+     FAIL - test_get_single_buffer in 0.0 seconds
+
+.. doxygengroup:: ztest_expect
+
 Assumptions
 ===========
 
