@@ -23,7 +23,6 @@ tests:
       - mps2_an385
   cpp.libcxx.arcmwdtlib:
     toolchain_allow: arcmwdt
-    platform_allow: nsim_hs nsim_em
     min_flash: 54
     tags: cpp
     extra_configs:
