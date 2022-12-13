@@ -22,5 +22,6 @@ config MIPI_DSI_INIT_PRIORITY
 	  MIPI-DSI Host Controllers initialization priority.
 
 source "drivers/mipi_dsi/Kconfig.mcux"
+source "drivers/mipi_dsi/Kconfig.stm32"
 
 endif
