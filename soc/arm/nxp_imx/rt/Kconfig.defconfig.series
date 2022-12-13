@@ -47,6 +47,10 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if SOC_SERIES_IMX_RT10XX && CORTEX_M_SYSTICK
 	default 32768 if MCUX_GPT_TIMER
 
+# Disable systick if using MCUX_GPT_TIMER, as they will conflict
+config CORTEX_M_SYSTICK
+	default n if MCUX_GPT_TIMER
+
 config PM_MCUX_GPC
 	default y if HAS_MCUX_GPC
 	depends on SOC_SERIES_IMX_RT11XX && PM
