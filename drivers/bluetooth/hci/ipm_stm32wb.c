@@ -387,25 +387,8 @@ static int bt_ipm_send(struct net_buf *buf)
 
 static void start_ble_rf(void)
 {
-	if ((LL_RCC_IsActiveFlag_PINRST()) && (!LL_RCC_IsActiveFlag_SFTRST())) {
-		/* Simulate power off reset */
-		LL_PWR_EnableBkUpAccess();
-		LL_PWR_EnableBkUpAccess();
-		LL_RCC_ForceBackupDomainReset();
-		LL_RCC_ReleaseBackupDomainReset();
-	}
-
-#if STM32_LSE_ENABLED
-	/* Configure driving capability */
-	LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
-	/* Select LSE clock */
-	LL_RCC_LSE_Enable();
-	while (!LL_RCC_LSE_IsReady()) {
-	}
-
 	/* Select wakeup source of BLE RF */
 	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSE);
-#endif
 
 	/* HSI48 clock and CLK48 clock source are enabled using the device tree */
 #if !STM32_HSI48_ENABLED
