@@ -265,7 +265,7 @@ CBOR data of request:
             (str,opt)"image"    : (uint)
             (str,opt)"len"      : (uint)
             (str)"off"          : (uint)
-            (str,opt)"sha"      : (str)
+            (str,opt)"sha"      : (byte str)
             (str,opt)"data"     : (byte str)
             (str,opt)"upgrade"  : (bool)
         }
