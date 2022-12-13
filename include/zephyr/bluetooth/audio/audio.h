@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 
 /**
@@ -2085,6 +2086,12 @@ struct bt_audio_broadcast_source_create_param {
 	 *  controller may ignore.
 	 */
 	uint8_t packing;
+
+	/** Whether or not to encrypt the streams. */
+	bool encryption;
+
+	/** @brief Broadcast code */
+	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
 };
 
 /** @brief Create audio broadcast source.

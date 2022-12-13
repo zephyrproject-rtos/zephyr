@@ -735,6 +735,12 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 	source->qos = qos;
 	source->packing = param->packing;
 
+	source->encryption = param->encryption;
+	if (source->encryption) {
+		(void)memcpy(source->broadcast_code, param->broadcast_code,
+			     sizeof(source->broadcast_code));
+	}
+
 	LOG_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
 
 	*out_source = source;
@@ -883,6 +889,11 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source,
 	param.packing = source->packing;
 	param.interval = source->qos->interval;
 	param.latency = source->qos->latency;
+	param.encryption = source->encryption;
+	if (param.encryption) {
+		(void)memcpy(param.bcode, source->broadcast_code,
+			     sizeof(param.bcode));
+	}
 
 	err = bt_iso_big_create(adv, &param, &source->big);
 	if (err != 0) {
