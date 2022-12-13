@@ -327,3 +327,13 @@ test_spi_bme680: bme680@27 {
 	reg = <0x27>;
 	spi-max-frequency = <0>;
 };
+
+test_spi_icm426888: icm42688@28 {
+	compatible = "invensense,icm42688";
+	reg = <0x28>;
+	spi-max-frequency = <24000000>;
+	accel-hz = <32000>;
+	accel-fs = <16>;
+	gyro-hz = <32000>;
+	gyro-fs = <2000>;
+};
