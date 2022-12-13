@@ -204,8 +204,14 @@ used as shared memory
 System Clock
 ============
 
-The MIMXRT1160 SoC is configured to use the 32 KHz low frequency oscillator on
-the board as a source for the GPT timer to generate a system clock.
+The MIMXRT1160 SoC is configured to use SysTick as the system clock source,
+running at 600MHz. When targeting the M4 core, SysTick will also be used,
+running at 240MHz
+
+When power management is enabled, the 32 KHz low frequency
+oscillator on the board will be used as a source for the GPT timer to
+generate a system clock. This clock enables lower power states, at the
+cost of reduced resolution
 
 Serial Port
 ===========
