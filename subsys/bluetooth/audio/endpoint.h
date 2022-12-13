@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
@@ -75,6 +76,7 @@ struct bt_audio_broadcast_stream_data {
 struct bt_audio_broadcast_source {
 	uint8_t stream_count;
 	uint8_t packing;
+	bool encryption;
 	uint32_t broadcast_id; /* 24 bit */
 
 	struct bt_iso_big *big;
@@ -82,6 +84,8 @@ struct bt_audio_broadcast_source {
 
 	/* The codec specific configured data for each stream in the subgroup */
 	struct bt_audio_broadcast_stream_data stream_data[BROADCAST_STREAM_CNT];
+
+	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
 
 	/* The subgroups containing the streams used to create the broadcast source */
 	sys_slist_t subgroups;
