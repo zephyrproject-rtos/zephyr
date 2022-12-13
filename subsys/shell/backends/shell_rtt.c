@@ -9,9 +9,10 @@
 #include <SEGGER_RTT.h>
 #include <zephyr/logging/log.h>
 
-BUILD_ASSERT(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
-	       CONFIG_SHELL_RTT_BUFFER == CONFIG_LOG_BACKEND_RTT_BUFFER),
+#if IS_ENABLED(CONFIG_LOG_BACKEND_RTT)
+BUILD_ASSERT(!(CONFIG_SHELL_RTT_BUFFER == CONFIG_LOG_BACKEND_RTT_BUFFER),
 	     "Conflicting log RTT backend enabled on the same channel");
+#endif
 
 static uint8_t shell_rtt_up_buf[CONFIG_SEGGER_RTT_BUFFER_SIZE_UP];
 static uint8_t shell_rtt_down_buf[CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN];
