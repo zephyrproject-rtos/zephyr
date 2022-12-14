@@ -4,46 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SUBSYS_USBC_H_
-#define ZEPHYR_SUBSYS_USBC_H_
+#ifndef ZEPHYR_SUBSYS_USBC_TC_H_
+#define ZEPHYR_SUBSYS_USBC_TC_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/usb_c/usbc.h>
 #include <zephyr/smf.h>
-#include "usbc_timer.h"
 
-/**
- * @brief TC Layer State Machine Object
- */
-struct tc_sm_t {
-	/** TC layer state machine context */
-	struct smf_ctx ctx;
-	/** Port device */
-	const struct device *dev;
-	/** TC layer flags */
-	atomic_t flags;
-	/** VBUS measurement device */
-	const struct device *vbus_dev;
-	/** Port polarity */
-	enum tc_cc_polarity cc_polarity;
-	/** The cc state */
-	enum tc_cc_states cc_state;
-	/** Voltage on CC pin */
-	enum tc_cc_voltage_state cc_voltage;
-	/** Current CC1 value */
-	enum tc_cc_voltage_state cc1;
-	/** Current CC2 value */
-	enum tc_cc_voltage_state cc2;
-
-	/* Timers */
-
-	/** tCCDebounce timer */
-	struct usbc_timer_t tc_t_cc_debounce;
-	/** tRpValueChange timer */
-	struct usbc_timer_t tc_t_rp_value_change;
-	/** tErrorRecovery timer */
-	struct usbc_timer_t tc_t_error_recovery;
-};
+#include "usbc_stack.h"
 
 /**
  * @brief This function must only be called in the subsystem init function.
