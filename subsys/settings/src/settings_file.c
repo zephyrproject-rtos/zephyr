@@ -531,12 +531,12 @@ int settings_backend_init(void)
 
 	rc = settings_file_src(&config_init_settings_file);
 	if (rc) {
-		k_panic();
+		return rc;
 	}
 
 	rc = settings_file_dst(&config_init_settings_file);
 	if (rc) {
-		k_panic();
+		return rc;
 	}
 
 	settings_mount_file_backend(&config_init_settings_file);
