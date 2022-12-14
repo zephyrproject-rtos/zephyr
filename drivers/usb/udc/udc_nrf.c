@@ -497,12 +497,16 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 static int udc_nrf_ep_dequeue(const struct device *dev,
 			      struct udc_ep_config *cfg)
 {
-	nrfx_usbd_ep_abort(cfg->addr);
+	bool busy = nrfx_usbd_ep_is_busy(cfg->addr);
 
-	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+	nrfx_usbd_ep_abort(cfg->addr);
+	if (USB_EP_DIR_IS_OUT(cfg->addr) || !busy) {
 		struct net_buf *buf;
 
-		/* HAL driver does not generate event for an OUT endpoint */
+		/*
+		 * HAL driver does not generate event for an OUT endpoint
+		 * or when IN endpoint is not busy.
+		 */
 		buf = udc_buf_get_all(dev, cfg->addr);
 		if (buf) {
 			udc_submit_event(dev, UDC_EVT_EP_REQUEST,

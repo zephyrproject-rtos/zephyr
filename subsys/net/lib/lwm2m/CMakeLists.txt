@@ -51,6 +51,9 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_EVENT_LOG_OBJ_SUPPORT
 zephyr_library_sources_ifdef(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE
     lwm2m_obj_access_control.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_UCIFI_LPWAN
+    ucifi_lpwan.c
+    )
 
 # TLV Support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT

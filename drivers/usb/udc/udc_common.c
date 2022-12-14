@@ -614,7 +614,11 @@ int udc_ep_dequeue(const struct device *dev, const uint8_t ep)
 		udc_debug_ep_enqueue(dev, cfg);
 	}
 
-	ret = api->ep_dequeue(dev, cfg);
+	if (k_fifo_is_empty(&cfg->fifo)) {
+		ret = 0;
+	} else  {
+		ret = api->ep_dequeue(dev, cfg);
+	}
 
 ep_dequeue_error:
 	api->unlock(dev);
