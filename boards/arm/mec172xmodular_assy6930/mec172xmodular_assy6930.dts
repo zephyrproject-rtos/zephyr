@@ -34,13 +34,13 @@
 			/* GPIO157/LED1 on schematic,
 			 * LED3 on silkscreen.
 			 */
-			gpios = <&gpio_140_176 15 GPIO_ACTIVE_HIGH>;
+			gpios = <MCHP_GPIO_DECODE_157 GPIO_ACTIVE_HIGH>;
 		};
 		led2: led_2{
 			/* GPIO153/LED2 on schematic,
 			 * LED2 on silkscreen.
 			 */
-			gpios = <&gpio_140_176 11 GPIO_ACTIVE_HIGH>;
+			gpios = <MCHP_GPIO_DECODE_153 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
