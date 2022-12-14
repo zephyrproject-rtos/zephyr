@@ -94,6 +94,11 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
+	if (info->interval == 0U) {
+		/* Not broadcast periodic advertising - Ignore */
+		return;
+	}
+
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	LOG_INF("Found broadcaster with address %s (RSSI %i)",
