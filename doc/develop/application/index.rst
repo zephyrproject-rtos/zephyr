@@ -517,7 +517,7 @@ worth going through, especially if you planning to add new configuration
 options.
 
 Experimental features
-*********************
+~~~~~~~~~~~~~~~~~~~~~
 
 Zephyr is a project under constant development and thus there are features that
 are still in early stages of their development cycle. Such features will be
