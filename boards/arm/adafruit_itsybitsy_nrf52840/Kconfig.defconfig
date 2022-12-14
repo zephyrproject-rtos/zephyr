@@ -33,10 +33,11 @@ config USB_DEVICE_REMOTE_WAKEUP
 
 if LOG
 
-# Set USB and CDC log level to error only
+# Logger cannot use itself to log
 config USB_CDC_ACM_LOG_LEVEL
-	default 1
+	default 0
 
+# Set USB log level to error only
 config USB_DEVICE_LOG_LEVEL
 	default 1
 
