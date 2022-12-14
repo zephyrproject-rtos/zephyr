@@ -186,6 +186,8 @@ static int frame_duration_us;
 static int frame_duration_100us;
 static int frames_per_sdu;
 static int octets_per_frame;
+static int64_t lc3_start_time;
+static int32_t lc3_sdu_cnt;
 
 /**
  * Use the math lib to generate a sine-wave using 16 bit samples into a buffer.
@@ -260,8 +262,6 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 	 */
 	const uint8_t prime_count = 2;
 	static bool lc3_initialized;
-	static int64_t start_time;
-	static int32_t sdu_cnt;
 	int64_t run_time_100us;
 	int32_t sdu_goal_cnt;
 	int64_t run_time_ms;
@@ -280,16 +280,16 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 	k_work_schedule(k_work_delayable_from_work(work),
 			K_USEC(default_preset->preset.qos.interval));
 
-	if (start_time == 0) {
+	if (lc3_start_time == 0) {
 		/* Read start time and produce the number of frames needed to catch up with any
 		 * inaccuracies in the timer. by calculating the number of frames we should
 		 * have sent and compare to how many were actually sent.
 		 */
-		start_time = k_uptime_get();
+		lc3_start_time = k_uptime_get();
 	}
 
 	uptime = k_uptime_get();
-	run_time_ms = uptime - start_time;
+	run_time_ms = uptime - lc3_start_time;
 
 	/* PDU count calculations done in 100us units to allow 7.5ms framelength in fixed-point */
 	run_time_100us = run_time_ms * 10;
@@ -298,15 +298,15 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 	/* Add primer value to ensure the controller do not run low on data due to jitter */
 	sdu_goal_cnt += prime_count;
 
-	if ((sdu_cnt % 100) == 0) {
+	if ((lc3_sdu_cnt % 100) == 0) {
 		printk("LC3 encode %d frames in %d SDUs\n",
-		       (sdu_goal_cnt - sdu_cnt) * frames_per_sdu,
-		       (sdu_goal_cnt - sdu_cnt));
+		       (sdu_goal_cnt - lc3_sdu_cnt) * frames_per_sdu,
+		       (sdu_goal_cnt - lc3_sdu_cnt));
 	}
 
 	seq_num = get_next_seq_num(default_preset->preset.qos.interval);
 
-	while (sdu_cnt < sdu_goal_cnt) {
+	while (lc3_sdu_cnt < sdu_goal_cnt) {
 		const uint16_t tx_sdu_len = frames_per_sdu * octets_per_frame;
 		struct net_buf *buf;
 		uint8_t *net_buffer;
@@ -344,10 +344,10 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 			return;
 		}
 
-		if ((sdu_cnt % 100) == 0) {
+		if ((lc3_sdu_cnt % 100) == 0) {
 			printk("TX LC3: %zu\n", tx_sdu_len);
 		}
-		sdu_cnt++;
+		lc3_sdu_cnt++;
 		seq_num++;
 	}
 }
@@ -1426,6 +1426,9 @@ static void stream_stopped_cb(struct bt_audio_stream *stream)
 
 #if defined(CONFIG_LIBLC3)
 	if (stream == default_stream) {
+		lc3_start_time = 0;
+		lc3_sdu_cnt = 0;
+
 		k_work_cancel_delayable(&audio_send_work);
 	}
 #endif /* CONFIG_LIBLC3 */
@@ -1453,6 +1456,16 @@ static void stream_released_cb(struct bt_audio_stream *stream)
 		}
 	}
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+
+#if defined(CONFIG_LIBLC3)
+	/* stop sending */
+	if (stream == default_stream) {
+		lc3_start_time = 0;
+		lc3_sdu_cnt = 0;
+
+		k_work_cancel_delayable(&audio_send_work);
+	}
+#endif /* CONFIG_LIBLC3 */
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
@@ -1900,6 +1913,9 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 {
+	lc3_start_time = 0;
+	lc3_sdu_cnt = 0;
+
 	k_work_cancel_delayable(&audio_send_work);
 
 	return 0;
