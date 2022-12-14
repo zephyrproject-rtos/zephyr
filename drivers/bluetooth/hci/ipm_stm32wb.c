@@ -272,9 +272,6 @@ void shci_cmd_resp_wait(uint32_t timeout)
 
 void ipcc_reset(void)
 {
-	/* Reset IPCC */
-	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_IPCC);
-
 	LL_C1_IPCC_ClearFlag_CHx(
 		IPCC,
 		LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
@@ -385,23 +382,6 @@ static int bt_ipm_send(struct net_buf *buf)
 	return 0;
 }
 
-static void start_ble_rf(void)
-{
-	/* Select wakeup source of BLE RF */
-	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSE);
-
-	/* HSI48 clock and CLK48 clock source are enabled using the device tree */
-#if !STM32_HSI48_ENABLED
-	/* Deprecated: enable HSI48 using device tree */
-#warning Bluetooth IPM requires HSI48 clock to be enabled using device tree
-	/* Keeping this sequence for legacy: */
-	LL_RCC_HSI48_Enable();
-	while (!LL_RCC_HSI48_IsReady()) {
-	}
-
-#endif /* !STM32_HSI48_ENABLED */
-}
-
 #ifdef CONFIG_BT_HCI_HOST
 bt_addr_t *bt_get_ble_addr(void)
 {
@@ -502,7 +482,22 @@ static int bt_ipm_ble_init(void)
 
 static int c2_reset(void)
 {
-	start_ble_rf();
+	/* Select wakeup source of BLE RF */
+	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSE);
+
+	/* HSI48 clock and CLK48 clock source are enabled using the device tree */
+#if !STM32_HSI48_ENABLED
+	/* Deprecated: enable HSI48 using device tree */
+#warning Bluetooth IPM requires HSI48 clock to be enabled using device tree
+	/* Keeping this sequence for legacy: */
+	LL_RCC_HSI48_Enable();
+	while (!LL_RCC_HSI48_IsReady()) {
+	}
+
+#endif /* !STM32_HSI48_ENABLED */
+
+	/* Reset IPCC */
+	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_IPCC);
 
 	/* Take BLE out of reset */
 	ipcc_reset();
