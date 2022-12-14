@@ -347,7 +347,7 @@ static void control_point_ntf_complete(struct bt_conn *conn, void *user_data)
 {
 	struct has_client *client = client_get(conn);
 
-	LOG_DBG("conn %p\n", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	/* Resubmit if needed */
 	if (client != NULL &&
@@ -362,7 +362,7 @@ static void control_point_ind_complete(struct bt_conn *conn,
 {
 	if (err) {
 		/* TODO: Handle error somehow */
-		LOG_ERR("conn %p err 0x%02x\n", (void *)conn, err);
+		LOG_ERR("conn %p err 0x%02x", (void *)conn, err);
 	}
 
 	control_point_ntf_complete(conn, NULL);
