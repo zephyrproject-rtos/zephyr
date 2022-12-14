@@ -1977,12 +1977,33 @@ static int cmd_per_adv_param(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static ssize_t pa_ad_init(struct bt_data *data_array,
+			  const size_t data_array_size)
+{
+	size_t ad_len = 0;
+
+	if (IS_ENABLED(CONFIG_BT_AUDIO)) {
+		ssize_t audio_pa_ad_len;
+
+		audio_pa_ad_len = audio_pa_data_add(&data_array[ad_len],
+						    data_array_size - ad_len);
+		if (audio_pa_ad_len < 0U) {
+			return audio_pa_ad_len;
+		}
+
+		ad_len += audio_pa_ad_len;
+	}
+
+	return ad_len;
+}
+
 static int cmd_per_adv_data(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
-	static struct bt_data ad;
 	static uint8_t hex_data[256];
+	static struct bt_data ad[2U];
+	ssize_t stack_ad_len;
 	uint8_t ad_len = 0;
 	int err;
 
@@ -1991,19 +2012,34 @@ static int cmd_per_adv_data(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 
-	memset(hex_data, 0, sizeof(hex_data));
-	ad_len = hex2bin(argv[1], strlen(argv[1]), hex_data, sizeof(hex_data));
+	if (argc > 1) {
+		size_t hex_len = 0U;
 
-	if (!ad_len) {
-		shell_error(sh, "Could not parse adv data");
-		return -ENOEXEC;
+		(void)memset(hex_data, 0, sizeof(hex_data));
+		hex_len = hex2bin(argv[1U], strlen(argv[1U]), hex_data,
+				  sizeof(hex_data));
+
+		if (hex_len == 0U) {
+			shell_error(sh, "Could not parse adv data");
+
+			return -ENOEXEC;
+		}
+
+		ad[ad_len].data_len = hex_data[0U];
+		ad[ad_len].type = hex_data[1U];
+		ad[ad_len].data = &hex_data[2U];
+		ad_len++;
 	}
 
-	ad.data_len = hex_data[0];
-	ad.type = hex_data[1];
-	ad.data = &hex_data[2];
+	stack_ad_len = pa_ad_init(&ad[ad_len], ARRAY_SIZE(ad) - ad_len);
+	if (stack_ad_len < 0) {
+		shell_error(sh, "Failed to get stack PA data");
 
-	err = bt_le_per_adv_set_data(adv, &ad, 1);
+		return -ENOEXEC;
+	}
+	ad_len += stack_ad_len;
+
+	err = bt_le_per_adv_set_data(adv, ad, ad_len);
 	if (err) {
 		shell_error(sh,
 			    "Failed to set periodic advertising data (%d)",
@@ -3670,7 +3706,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(per-adv-param, NULL,
 		      "[<interval-min> [<interval-max> [tx_power]]]",
 		      cmd_per_adv_param, 1, 3),
-	SHELL_CMD_ARG(per-adv-data, NULL, "<data>", cmd_per_adv_data, 2, 0),
+	SHELL_CMD_ARG(per-adv-data, NULL, "[data]", cmd_per_adv_data, 1, 1),
 #endif /* CONFIG_BT_PER_ADV */
 #endif /* CONFIG_BT_EXT_ADV */
 #endif /* CONFIG_BT_BROADCASTER */
