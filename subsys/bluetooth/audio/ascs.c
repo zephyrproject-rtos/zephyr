@@ -1514,7 +1514,7 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 			return -ENOMEM;
 		}
 
-		if (bt_audio_iso_get_ep(iso, ep->dir) != NULL) {
+		if (bt_audio_iso_get_ep(false, iso, ep->dir) != NULL) {
 			LOG_ERR("iso %p already in use in dir %u",
 			       &iso->chan, ep->dir);
 			bt_audio_iso_unref(iso);
