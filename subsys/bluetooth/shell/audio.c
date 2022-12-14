@@ -2286,3 +2286,34 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 		return nonconnectable_ad_data_add(data_array, data_array_size);
 	}
 }
+
+ssize_t audio_pa_data_add(struct bt_data *data_array,
+			  const size_t data_array_size)
+{
+	size_t ad_len = 0;
+
+#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+	if (default_source) {
+		/* Required size of the buffer depends on what has been
+		 * configured. We just use the maximum size possible.
+		 */
+		NET_BUF_SIMPLE_DEFINE_STATIC(base_buf, UINT8_MAX);
+		int err;
+
+		err = bt_audio_broadcast_source_get_base(default_source,
+							 &base_buf);
+		if (err != 0) {
+			printk("Unable to get BASE: %d\n", err);
+
+			return -1;
+		}
+
+		data_array[ad_len].type = BT_DATA_SVC_DATA16;
+		data_array[ad_len].data_len = base_buf.len;
+		data_array[ad_len].data = base_buf.data;
+		ad_len++;
+	}
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+
+	return ad_len;
+}
