@@ -26,6 +26,13 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 {
 	void *ret;
 	_xtensa_irq_stack_frame_a11_t *frame;
+#ifdef CONFIG_USERSPACE
+	struct z_xtensa_thread_stack_header *header =
+		(struct z_xtensa_thread_stack_header *)thread->stack_obj;
+
+	thread->arch.psp = header->privilege_stack +
+		sizeof(header->privilege_stack);
+#endif
 
 	/* Not-a-cpu ID Ensures that the first time this is run, the
 	 * stack will be invalidated.  That covers the edge case of
@@ -48,11 +55,23 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 
 	(void)memset(frame, 0, bsasz);
 
-	frame->bsa.pc = (uintptr_t)z_thread_entry;
 	frame->bsa.ps = PS_WOE | PS_UM | PS_CALLINC(1);
+#ifdef CONFIG_USERSPACE
+	if ((thread->base.user_options & K_USER) == K_USER) {
+		frame->bsa.pc = (uintptr_t)arch_user_mode_enter;
+	} else {
+		frame->bsa.pc = (uintptr_t)z_thread_entry;
+	}
+#else
+	frame->bsa.pc = (uintptr_t)z_thread_entry;
+#endif
 
-#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
+#if XCHAL_HAVE_THREADPTR
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
 	frame->bsa.threadptr = thread->tls;
+#elif CONFIG_USERSPACE
+	frame->bsa.threadptr = (uintptr_t)((thread->base.user_options & K_USER) ? thread : NULL);
+#endif
 #endif
 
 	/* Arguments to z_thread_entry().  Remember these start at A6,
@@ -471,3 +490,24 @@ void arch_spin_relax(void)
 #undef NOP1
 }
 #endif /* CONFIG_XTENSA_MORE_SPIN_RELAX_NOPS */
+
+#ifdef CONFIG_USERSPACE
+FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
+					void *p1, void *p2, void *p3)
+{
+	struct k_thread *current = _current;
+	size_t stack_end;
+
+	/* Transition will reset stack pointer to initial, discarding
+	 * any old context since this is a one-way operation
+	 */
+	stack_end = Z_STACK_PTR_ALIGN(current->stack_info.start +
+				      current->stack_info.size -
+				      current->stack_info.delta);
+
+	z_xtensa_userspace_enter(user_entry, p1, p2, p3,
+				 stack_end, current->stack_info.start);
+
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_USERSPACE */

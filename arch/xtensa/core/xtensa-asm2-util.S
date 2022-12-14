@@ -174,7 +174,8 @@ _restore_context:
 	l32i a0, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
 	wsr a0, SCOMPARE1
 #endif
-#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
+#if XCHAL_HAVE_THREADPTR && \
+	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
 	l32i a0, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
 	wur a0, THREADPTR
 #endif
@@ -257,6 +258,16 @@ noflush:
 	l32i a2, a1, 0
 	l32i a3, a2, ___xtensa_irq_bsa_t_a3_OFFSET
 	s32i a1, a3, 0
+
+#ifdef CONFIG_USERSPACE
+	/* Switch page tables */
+	rsr a6, ZSR_CPU
+	l32i a6, a6, ___cpu_t_current_OFFSET
+	call4 z_xtensa_swap_update_page_tables
+
+	l32i a2, a3, 0
+	l32i a2, a2, 0
+#endif
 
 	/* Switch stack pointer and restore.  The jump to
 	 * _restore_context does not return as such, but we arrange
@@ -347,6 +358,9 @@ _Level1RealVector:
 	rsr.exccause a0
 #ifdef CONFIG_XTENSA_MMU
 	beqi a0, EXCCAUSE_ITLB_MISS, _handle_tlb_miss_user
+#ifdef CONFIG_USERSPACE
+	beqi a0, EXCCAUSE_SYSCALL, _syscall
+#endif /* CONFIG_USERSPACE */
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_user
 	rsr.exccause a0
@@ -376,6 +390,11 @@ _handle_tlb_miss_user:
 	l32i a0, a0, 0
 	rsr a0, ZSR_A0SAVE
 	rfe
+#ifdef CONFIG_USERSPACE
+_syscall:
+	rsr a0, ZSR_A0SAVE
+	j z_xtensa_do_syscall
+#endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_XTENSA_MMU */
 .popsection
 

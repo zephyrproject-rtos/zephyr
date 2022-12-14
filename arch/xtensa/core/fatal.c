@@ -15,6 +15,7 @@
 #endif
 #endif
 #include <zephyr/debug/coredump.h>
+#include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -119,6 +120,14 @@ void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 
 	z_fatal_error(reason, esf);
 }
+
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_xtensa_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_xtensa_user_string_nlen)
+};
+#endif /* CONFIG_USERSPACE */
 
 #ifdef XT_SIMULATOR
 void exit(int return_code)
