@@ -415,39 +415,35 @@ int settings_backend_init(void)
 
 	rc = flash_area_get_sectors(settings_fcb_get_flash_area(), &cnt,
 				    settings_fcb_area);
-	if (rc == -ENODEV) {
+	if (rc != 0 && rc != -ENOMEM) {
 		return rc;
-	} else if (rc != 0 && rc != -ENOMEM) {
-		k_panic();
 	}
 
 	config_init_settings_fcb.cf_fcb.f_sector_cnt = cnt;
 
 	rc = settings_fcb_src(&config_init_settings_fcb);
-
 	if (rc != 0) {
 		rc = flash_area_open(settings_fcb_get_flash_area(), &fap);
-
-		if (rc == 0) {
-			rc = flash_area_erase(fap, 0, fap->fa_size);
-			flash_area_close(fap);
+		if (rc != 0) {
+			return rc;
 		}
+
+		rc = flash_area_erase(fap, 0, fap->fa_size);
+		flash_area_close(fap);
 
 		if (rc != 0) {
-			k_panic();
-		} else {
-			rc = settings_fcb_src(&config_init_settings_fcb);
+			return rc;
 		}
-	}
 
-	if (rc != 0) {
-		k_panic();
+		rc = settings_fcb_src(&config_init_settings_fcb);
+		if (rc != 0) {
+			return rc;
+		}
 	}
 
 	rc = settings_fcb_dst(&config_init_settings_fcb);
-
 	if (rc != 0) {
-		k_panic();
+		return rc;
 	}
 
 	settings_mount_fcb_backend(&config_init_settings_fcb);
