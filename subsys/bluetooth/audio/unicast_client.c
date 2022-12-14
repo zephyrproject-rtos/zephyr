@@ -57,8 +57,11 @@ static const struct bt_uuid *ase_snk_uuid = BT_UUID_ASCS_ASE_SNK;
 static const struct bt_uuid *ase_src_uuid = BT_UUID_ASCS_ASE_SRC;
 static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
-static struct bt_unicast_client_ep snks[CONFIG_BT_MAX_CONN][CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_unicast_client_ep srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
+
+static struct bt_unicast_client_ep snks[CONFIG_BT_MAX_CONN]
+				       [CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_unicast_client_ep srcs[CONFIG_BT_MAX_CONN]
+				       [CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_subscribe_params snk_loc_subscribe[CONFIG_BT_MAX_CONN];
@@ -235,14 +238,14 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 static void unicast_client_ep_init(struct bt_audio_ep *ep, uint16_t handle,
 				   uint8_t dir)
 {
-    struct bt_unicast_client_ep *client;
+	struct bt_unicast_client_ep *client_ep;
 
 	LOG_DBG("ep %p dir 0x%02x handle 0x%04x", ep, dir, handle);
 
-	client = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
+	client_ep = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
 
 	(void)memset(ep, 0, sizeof(*ep));
-	client->handle = handle;
+	client_ep->handle = handle;
 	ep->status.id = 0U;
 	ep->dir = dir;
 }
@@ -256,20 +259,20 @@ static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
 	index = bt_conn_index(conn);
 
 	for (i = 0; i < ARRAY_SIZE(snks[index]); i++) {
-		struct bt_unicast_client_ep *client = &snks[index][i];
+		struct bt_unicast_client_ep *client_ep = &snks[index][i];
 
-		if ((handle && client->handle == handle) ||
-		    (!handle && client->handle)) {
-			return &client->ep;
+		if ((handle && client_ep->handle == handle) ||
+		    (!handle && client_ep->handle)) {
+			return &client_ep->ep;
 		}
 	}
 
 	for (i = 0; i < ARRAY_SIZE(srcs[index]); i++) {
-		struct bt_unicast_client_ep *client = &srcs[index][i];
+		struct bt_unicast_client_ep *client_ep = &srcs[index][i];
 
-		if ((handle && client->handle == handle) ||
-		    (!handle && client->handle)) {
-			return &client->ep;
+		if ((handle && client_ep->handle == handle) ||
+		    (!handle && client_ep->handle)) {
+			return &client_ep->ep;
 		}
 	}
 
@@ -316,11 +319,11 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 	}
 
 	for (i = 0; i < size; i++) {
-		struct bt_unicast_client_ep *client = &cache[i];
+		struct bt_unicast_client_ep *client_ep = &cache[i];
 
-		if (!client->handle) {
-			unicast_client_ep_init(&client->ep, handle, dir);
-			return &client->ep;
+		if (!client_ep->handle) {
+			unicast_client_ep_init(&client_ep->ep, handle, dir);
+			return &client_ep->ep;
 		}
 	}
 
@@ -678,7 +681,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 					 struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status *status;
-	struct bt_unicast_client_ep *client;
+	struct bt_unicast_client_ep *client_ep;
 	bool state_changed;
 	uint8_t old_state;
 
@@ -686,7 +689,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 		return;
 	}
 
-	client = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
+	client_ep = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
 
 	status = net_buf_simple_pull_mem(buf, sizeof(*status));
 
@@ -694,7 +697,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 	ep->status = *status;
 	state_changed = old_state != ep->status.state;
 
-	LOG_DBG("ep %p handle 0x%04x id 0x%02x dir %u state %s -> %s", ep, client->handle,
+	LOG_DBG("ep %p handle 0x%04x id 0x%02x dir %u state %s -> %s", ep, client_ep->handle,
 		status->id, ep->dir, bt_audio_ep_state_str(old_state),
 		bt_audio_ep_state_str(status->state));
 
@@ -1083,11 +1086,11 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 					const void *data, uint16_t length)
 {
 	struct net_buf_simple buf;
-	struct bt_unicast_client_ep *client;
+	struct bt_unicast_client_ep *client_ep;
 
-	client = CONTAINER_OF(params, struct bt_unicast_client_ep, subscribe);
+	client_ep = CONTAINER_OF(params, struct bt_unicast_client_ep, subscribe);
 
-	LOG_DBG("conn %p ep %p len %u", conn, &client->ep, length);
+	LOG_DBG("conn %p ep %p len %u", conn, &client_ep->ep, length);
 
 	if (!data) {
 		LOG_DBG("Unsubscribed");
@@ -1102,7 +1105,7 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	unicast_client_ep_set_status(&client->ep, &buf);
+	unicast_client_ep_set_status(&client_ep->ep, &buf);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -1110,25 +1113,25 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 static int unicast_client_ep_subscribe(struct bt_conn *conn,
 				       struct bt_audio_ep *ep)
 {
-	struct bt_unicast_client_ep *client;
+	struct bt_unicast_client_ep *client_ep;
 
-	client = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
+	client_ep = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
 
-	LOG_DBG("ep %p handle 0x%02x", ep, client->handle);
+	LOG_DBG("ep %p handle 0x%02x", ep, client_ep->handle);
 
-	if (client->subscribe.value_handle) {
+	if (client_ep->subscribe.value_handle) {
 		return 0;
 	}
 
-	client->subscribe.value_handle = client->handle;
-	client->subscribe.ccc_handle = 0x0000;
-	client->subscribe.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-	client->subscribe.disc_params = &client->discover;
-	client->subscribe.notify = unicast_client_ep_notify;
-	client->subscribe.value = BT_GATT_CCC_NOTIFY;
-	atomic_set_bit(client->subscribe.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+	client_ep->subscribe.value_handle = client_ep->handle;
+	client_ep->subscribe.ccc_handle = 0x0000;
+	client_ep->subscribe.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	client_ep->subscribe.disc_params = &client_ep->discover;
+	client_ep->subscribe.notify = unicast_client_ep_notify;
+	client_ep->subscribe.value = BT_GATT_CCC_NOTIFY;
+	atomic_set_bit(client_ep->subscribe.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
-	return bt_gatt_subscribe(conn, &client->subscribe);
+	return bt_gatt_subscribe(conn, &client_ep->subscribe);
 }
 
 static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
@@ -1154,18 +1157,18 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(snks[index]); i++) {
-		struct bt_unicast_client_ep *client = &snks[index][i];
+		struct bt_unicast_client_ep *client_ep = &snks[index][i];
 
-		if (client->handle) {
-			client->cp_handle = handle;
+		if (client_ep->handle) {
+			client_ep->cp_handle = handle;
 		}
 	}
 
 	for (i = 0; i < ARRAY_SIZE(srcs[index]); i++) {
-		struct bt_unicast_client_ep *client = &srcs[index][i];
+		struct bt_unicast_client_ep *client_ep = &srcs[index][i];
 
-		if (client->handle) {
-			client->cp_handle = handle;
+		if (client_ep->handle) {
+			client_ep->cp_handle = handle;
 		}
 	}
 }
@@ -1449,11 +1452,11 @@ static int unicast_client_ep_release(struct bt_audio_ep *ep,
 int bt_unicast_client_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 			      struct net_buf_simple *buf)
 {
-	struct bt_unicast_client_ep *client = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
+	struct bt_unicast_client_ep *client_ep = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
 
 	LOG_DBG("conn %p ep %p buf %p len %u", conn, ep, buf, buf->len);
 
-	return bt_gatt_write_without_response(conn, client->cp_handle,
+	return bt_gatt_write_without_response(conn, client_ep->cp_handle,
 					      buf->data, buf->len, false);
 }
 
