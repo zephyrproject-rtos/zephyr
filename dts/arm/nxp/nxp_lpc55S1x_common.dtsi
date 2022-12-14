@@ -28,6 +28,11 @@
 			};
 		};
 	};
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <150000000>;
+		#clock-cells = <0>;
+	};
 };
 
 &sram {
@@ -71,6 +76,8 @@
 	syscon: syscon@0 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x4000>;
+		clocks = <&sysclk>;
+		clock-names = "sysclk";
 		#clock-cells = <1>;
 	};
 

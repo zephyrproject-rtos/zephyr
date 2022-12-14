@@ -40,6 +40,11 @@
 			reg = <1>;
 		};
 	};
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <150000000>;
+		#clock-cells = <0>;
+	};
 };
 
 &sram {
@@ -98,7 +103,29 @@
 	syscon: syscon@0 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x1000>;
+		clocks = <&sysclk>;
+		clock-names = "sysclk";
 		#clock-cells = <1>;
+
+		pll0 {
+			compatible = "pll-config";
+			pll-ctrl-seli = <2>;
+			pll-ctrl-selp = <31>;
+			pll-ndec-ndiv = <125>;
+			pll-pdec-pdiv = <8>;
+			pll-sscg1-mdiv = <3072>;
+			pll-rate = <24576000>;
+		};
+
+		pll1 {
+			compatible = "pll-config";
+			pll-ctrl-seli = <53>;
+			pll-ctrl-selp = <31>;
+			pll-ndec-ndiv = <8>;
+			pll-pdec-pdiv = <1>;
+			pll-mdec-mdiv = <150>;
+			pll-rate = <150000000>;
+		};
 	};
 
 	iap: flash-controller@34000 {
