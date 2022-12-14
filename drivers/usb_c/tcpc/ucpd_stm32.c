@@ -156,10 +156,15 @@ static uint32_t ucpd_get_cc_enable_mask(const struct device *dev)
 	const struct tcpc_config *const config = dev->config;
 	uint32_t mask = UCPD_CR_CCENABLE_Msk;
 
+	/*
+	 * When VCONN is enabled, it is supplied on the CC line that's
+	 * not being used for Power Delivery messages.
+	 */
 	if (data->ucpd_vconn_enable) {
 		uint32_t cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
 		int pol = (cr & UCPD_CR_PHYCCSEL);
 
+		/* Dissable CC line that's used for VCONN */
 		mask &= ~BIT(UCPD_CR_CCENABLE_Pos + !pol);
 	}
 
@@ -281,10 +286,50 @@ static int ucpd_set_vconn(const struct device *dev, bool enable)
 	update_stm32g0x_cc_line(config->ucpd_port);
 #endif
 
+	/* Get CC line that VCONN is active on */
+	data->ucpd_vconn_cc = (cr & UCPD_CR_CCENABLE_0) ?
+				TC_POLARITY_CC2 : TC_POLARITY_CC1;
+
 	/* Call user supplied callback to set vconn */
-	ret = data->vconn_cb(dev, enable);
+	ret = data->vconn_cb(dev, data->ucpd_vconn_cc, enable);
 
 	return ret;
+}
+
+/**
+ * @brief Discharge VCONN
+ *
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOTSUP if not supported
+ */
+static int ucpd_vconn_discharge(const struct device *dev, bool enable)
+{
+	struct tcpc_data *data = dev->data;
+	const struct tcpc_config *const config = dev->config;
+
+	/* VCONN should not be discharged while it's enabled */
+	if (data->ucpd_vconn_enable) {
+		return -EIO;
+	}
+
+	if (data->vconn_discharge_cb) {
+		/* Use DPM supplied VCONN Discharge */
+		return data->vconn_discharge_cb(dev, data->ucpd_vconn_cc, enable);
+	}
+
+	/* Use TCPC VCONN Discharge */
+	if (enable) {
+		LL_UCPD_VconnDischargeEnable(config->ucpd_port);
+	} else {
+		LL_UCPD_VconnDischargeDisable(config->ucpd_port);
+	}
+
+#ifdef CONFIG_SOC_SERIES_STM32G0X
+	update_stm32g0x_cc_line(config->ucpd_port);
+#endif
+
+	return 0;
 }
 
 /**
@@ -1237,6 +1282,20 @@ static void ucpd_set_vconn_cb(const struct device *dev,
 }
 
 /**
+ * @brief Sets a callback that can discharge VCONN if the TCPC is
+ *        unable to or the system is configured in a way that does not use
+ *        the VCONN discharge capabilities of the TCPC
+ *
+ */
+static void ucpd_set_vconn_discharge_cb(const struct device *dev,
+					tcpc_vconn_discharge_cb_t cb)
+{
+	struct tcpc_data *data = dev->data;
+
+	data->vconn_discharge_cb = cb;
+}
+
+/**
  * @brief UCPD interrupt init
  */
 static void ucpd_isr_init(const struct device *dev)
@@ -1344,7 +1403,9 @@ static const struct tcpc_driver_api driver_api = {
 	.set_cc = ucpd_set_cc,
 	.set_roles = ucpd_set_roles,
 	.set_vconn_cb = ucpd_set_vconn_cb,
+	.set_vconn_discharge_cb = ucpd_set_vconn_discharge_cb,
 	.set_vconn = ucpd_set_vconn,
+	.vconn_discharge = ucpd_vconn_discharge,
 	.set_cc_polarity = ucpd_cc_set_polarity,
 	.dump_std_reg = ucpd_dump_std_reg,
 	.set_bist_test_mode = ucpd_set_bist_test_mode,
