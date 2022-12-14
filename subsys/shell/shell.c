@@ -1690,6 +1690,10 @@ void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 	__ASSERT_NO_MSG(sh);
 
 	sh->ctx->bypass = bypass;
+
+	if (bypass == NULL) {
+		cmd_buffer_clear(sh);
+	}
 }
 
 bool shell_ready(const struct shell *sh)
