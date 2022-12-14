@@ -42,22 +42,9 @@ struct bt_audio_ep {
 	struct bt_codec_qos qos;
 	struct bt_codec_qos_pref qos_pref;
 	struct bt_audio_iso *iso;
-	struct bt_gatt_subscribe_params subscribe;
-	struct bt_gatt_discover_params discover;
 
 	/* FIXME: Replace with metastate */
 	bool receiver_ready;
-
-	/* TODO: Consider client/server container split */
-	union {
-		struct {
-			uint16_t handle;
-			uint16_t cp_handle;
-		} client;
-		struct {
-			const struct bt_gatt_attr *attr;
-		} server;
-	};
 
 	/* TODO: Create a union to reduce memory usage */
 	struct bt_audio_unicast_group *unicast_group;
