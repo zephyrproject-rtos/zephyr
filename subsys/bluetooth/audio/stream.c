@@ -403,9 +403,12 @@ static int bt_audio_cig_create(struct bt_audio_unicast_group *group,
 
 	cis_count = 0;
 	for (size_t i = 0; i < ARRAY_SIZE(group->cis); i++) {
-		if (group->cis[i] != NULL) {
-			cis_count++;
+		if (group->cis[i] == NULL) {
+			/* A NULL CIS acts as a NULL terminater */
+			break;
 		}
+
+		cis_count++;
 	}
 
 	param.num_cis = cis_count;
@@ -434,9 +437,12 @@ static int bt_audio_cig_reconfigure(struct bt_audio_unicast_group *group,
 
 	cis_count = 0U;
 	for (size_t i = 0; i < ARRAY_SIZE(group->cis); i++) {
-		if (group->cis[i] != NULL) {
-			cis_count++;
+		if (group->cis[i] == NULL) {
+			/* A NULL CIS acts as a NULL terminater */
+			break;
 		}
+
+		cis_count++;
 	}
 
 	param.num_cis = cis_count;
@@ -798,6 +804,49 @@ static void unicast_group_del_iso(struct bt_audio_unicast_group *group,
 	}
 }
 
+static void unicast_client_codec_qos_to_iso_qos(struct bt_audio_iso *iso,
+						const struct bt_codec_qos *qos,
+						enum bt_audio_dir dir)
+{
+	struct bt_iso_chan_io_qos *io_qos;
+	struct bt_iso_chan_io_qos *other_io_qos;
+
+	if (dir == BT_AUDIO_DIR_SINK) {
+		/* If the endpoint is a sink, then we need to
+		 * configure our TX parameters
+		 */
+		io_qos = iso->chan.qos->tx;
+		if (bt_audio_iso_get_ep(true, iso, BT_AUDIO_DIR_SOURCE) == NULL) {
+			other_io_qos = iso->chan.qos->rx;
+		} else {
+			other_io_qos = NULL;
+		}
+	} else {
+		/* If the endpoint is a source, then we need to
+		 * configure our RX parameters
+		 */
+		io_qos = iso->chan.qos->rx;
+		if (bt_audio_iso_get_ep(true, iso, BT_AUDIO_DIR_SINK) == NULL) {
+			other_io_qos = iso->chan.qos->tx;
+		} else {
+			other_io_qos = NULL;
+		}
+	}
+
+	bt_audio_codec_qos_to_iso_qos(io_qos, qos);
+
+	/* If the opposing ASE of the CIS is not yet configured, we
+	 * assume that it will use the same QoS value.
+	 *
+	 * This allows us to actually create the CIG and only start the
+	 * CIS in one direction, and then later connect the CIS (assuming that
+	 * the QoS values are equal)
+	 */
+	if (other_io_qos != NULL) {
+		bt_audio_codec_qos_to_iso_qos(other_io_qos, qos);
+	}
+}
+
 static int unicast_group_add_stream(struct bt_audio_unicast_group *group,
 				    struct bt_audio_stream *stream,
 				    struct bt_codec_qos *qos,
@@ -809,7 +858,7 @@ static int unicast_group_add_stream(struct bt_audio_unicast_group *group,
 	__ASSERT_NO_MSG(group != NULL);
 	__ASSERT_NO_MSG(stream != NULL);
 	__ASSERT_NO_MSG(stream->ep != NULL);
-	__ASSERT_NO_MSG(stream->ep->iso != NULL);
+	__ASSERT_NO_MSG(stream->ep->iso == NULL);
 
 	iso = get_new_iso(group, stream->conn, dir);
 	if (iso == NULL) {
@@ -825,17 +874,8 @@ static int unicast_group_add_stream(struct bt_audio_unicast_group *group,
 	/* iso initialized already */
 	bt_audio_iso_bind_ep(iso, stream->ep);
 
-	if (dir == BT_AUDIO_DIR_SINK) {
-		/* If the endpoint is a sink, then we need to
-		 * configure our TX parameters
-		 */
-		bt_audio_codec_qos_to_iso_qos(iso->chan.qos->tx, qos);
-	} else {
-		/* If the endpoint is a source, then we need to
-		 * configure our RX parameters
-		 */
-		bt_audio_codec_qos_to_iso_qos(iso->chan.qos->rx, qos);
-	}
+	/* Store the Codec QoS in the audio_iso */
+	unicast_client_codec_qos_to_iso_qos(iso, qos, dir);
 
 	bt_audio_iso_unref(iso);
 
