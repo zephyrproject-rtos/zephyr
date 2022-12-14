@@ -359,10 +359,8 @@ int settings_backend_init(void)
 
 	rc = flash_area_get_sectors(SETTINGS_PARTITION, &sector_cnt,
 				    &hw_flash_sector);
-	if (rc == -ENODEV) {
+	if (rc != 0 && rc != -ENOMEM) {
 		return rc;
-	} else if (rc != 0 && rc != -ENOMEM) {
-		k_panic();
 	}
 
 	nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT *
