@@ -145,6 +145,28 @@ static void stm32_ucpd_state_init(const struct device *dev)
 }
 
 /**
+ * @brief Get the CC enable mask. The mask indicates which CC line
+ *        is enabled.
+ *
+ * @retval CC Enable mask (bit 0: CC1, bit 1: CC2)
+ */
+static uint32_t ucpd_get_cc_enable_mask(const struct device *dev)
+{
+	struct tcpc_data *data = dev->data;
+	const struct tcpc_config *const config = dev->config;
+	uint32_t mask = UCPD_CR_CCENABLE_Msk;
+
+	if (data->ucpd_vconn_enable) {
+		uint32_t cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+		int pol = (cr & UCPD_CR_PHYCCSEL);
+
+		mask &= ~BIT(UCPD_CR_CCENABLE_Pos + !pol);
+	}
+
+	return mask;
+}
+
+/**
  * @brief Get the state of the CC1 and CC2 lines
  *
  * @retval 0 on success
@@ -159,6 +181,7 @@ static int ucpd_get_cc(const struct device *dev,
 	int vstate_cc2;
 	int anamode;
 	uint32_t sr;
+	uint32_t cc_msk;
 
 	/*
 	 * cc_voltage_state is determined from vstate_cc bit field in the
@@ -206,32 +229,24 @@ static int ucpd_get_cc(const struct device *dev,
 		}
 	}
 
-	*cc1 = vstate_cc1;
-	*cc2 = vstate_cc2;
+	/* CC connection detection */
+	cc_msk = ucpd_get_cc_enable_mask(dev);
 
-	return 0;
-}
-
-/**
- * @brief Get the CC enable mask. The mask indicates which CC line
- *        is enabled.
- *
- * @retval CC Enable mask (bit 0: CC1, bit 1: CC2)
- */
-static uint32_t ucpd_get_cc_enable_mask(const struct device *dev)
-{
-	struct tcpc_data *data = dev->data;
-	const struct tcpc_config *const config = dev->config;
-	uint32_t mask = UCPD_CR_CCENABLE_Msk;
-
-	if (data->ucpd_vconn_enable) {
-		uint32_t cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
-		int pol = (cr & UCPD_CR_PHYCCSEL);
-
-		mask &= ~BIT(UCPD_CR_CCENABLE_Pos + !pol);
+	/* CC1 connection detection */
+	if (cc_msk & UCPD_CR_CCENABLE_0) {
+		*cc1 = vstate_cc1;
+	} else {
+		*cc1 = TC_CC_VOLT_OPEN;
 	}
 
-	return mask;
+	/* CC2 connection detection */
+	if (cc_msk & UCPD_CR_CCENABLE_1) {
+		*cc2 = vstate_cc2;
+	} else {
+		*cc2 = TC_CC_VOLT_OPEN;
+	}
+
+	return 0;
 }
 
 /**
