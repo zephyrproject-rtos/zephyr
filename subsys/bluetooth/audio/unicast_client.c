@@ -2456,14 +2456,8 @@ int bt_audio_discover(struct bt_conn *conn,
 
 	params->read.func = unicast_client_read_func;
 	params->read.handle_count = 0u;
-
-	if (!params->read.by_uuid.start_handle) {
-		params->read.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	}
-
-	if (!params->read.by_uuid.end_handle) {
-		params->read.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-	}
+	params->read.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	params->read.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	if (!conn_cb_registered) {
 		bt_conn_cb_register(&conn_cbs);
