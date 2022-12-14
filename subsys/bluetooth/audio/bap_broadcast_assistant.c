@@ -390,9 +390,9 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 			sub_params->notify = notify_handler;
 			err = bt_gatt_subscribe(conn, sub_params);
 
-			if (err != 0) {
-				LOG_DBG("Could not subscribe to handle 0x%04x",
-					sub_params->value_handle);
+			if (err != 0 && err != -EALREADY) {
+				LOG_DBG("Could not subscribe to handle 0x%04x: %d",
+					sub_params->value_handle, err);
 
 				broadcast_assistant.discovering = false;
 				if (broadcast_assistant_cbs != NULL &&
