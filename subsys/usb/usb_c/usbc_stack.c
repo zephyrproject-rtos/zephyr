@@ -15,7 +15,8 @@
 LOG_MODULE_REGISTER(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 
 #include "usbc_stack.h"
-
+#include "usbc_pe_common_internal.h"
+#include "usbc_tc_common_internal.h"
 
 static int usbc_subsys_init(const struct device *dev);
 
