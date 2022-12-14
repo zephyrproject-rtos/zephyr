@@ -105,6 +105,21 @@
 	status = "okay";
 };
 
+&tim15_ch1_pc1 {
+	slew-rate = "very-high-speed";
+	bias-pull-up;
+	drive-open-drain;
+};
+
+&timers15 {
+	status = "okay";
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pc1>;
+		pinctrl-names = "default";
+	};
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in3_pa3 &adc1_in9_pb1>;
 	pinctrl-names = "default";
