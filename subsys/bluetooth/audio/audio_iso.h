@@ -40,5 +40,6 @@ struct bt_audio_iso *bt_audio_iso_find(bt_audio_iso_func_t func,
 void bt_audio_iso_init(struct bt_audio_iso *iso, struct bt_iso_chan_ops *ops);
 void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep);
 void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep);
-struct bt_audio_ep *bt_audio_iso_get_ep(struct bt_audio_iso *iso,
+struct bt_audio_ep *bt_audio_iso_get_ep(bool unicast_client,
+					struct bt_audio_iso *iso,
 					enum bt_audio_dir dir);

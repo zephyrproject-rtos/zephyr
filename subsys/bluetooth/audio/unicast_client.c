@@ -235,6 +235,23 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 	.disconnected	= unicast_client_iso_disconnected,
 };
 
+bool bt_audio_ep_is_unicast_client(const struct bt_audio_ep *ep)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(snks); i++) {
+		if (PART_OF_ARRAY(snks[i], ep)) {
+			return true;
+		}
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(srcs); i++) {
+		if (PART_OF_ARRAY(srcs[i], ep)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void unicast_client_ep_init(struct bt_audio_ep *ep, uint16_t handle,
 				   uint8_t dir)
 {

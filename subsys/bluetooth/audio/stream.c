@@ -738,7 +738,7 @@ static struct bt_audio_iso *get_new_iso(struct bt_audio_unicast_group *group,
 			continue;
 		}
 
-		if (bt_audio_iso_get_ep(stream->ep->iso, dir) == NULL) {
+		if (bt_audio_iso_get_ep(true, stream->ep->iso, dir) == NULL) {
 			return bt_audio_iso_ref(stream->ep->iso);
 		}
 	}
