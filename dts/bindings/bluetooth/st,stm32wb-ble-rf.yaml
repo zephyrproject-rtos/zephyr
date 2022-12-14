@@ -1,0 +1,13 @@
+# Copyright (c) 2022, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32WB Radio device
+
+compatible: "st,stm32wb-rf"
+
+include: base.yaml
+
+properties:
+    clocks:
+      required: true
