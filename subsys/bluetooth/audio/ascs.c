@@ -39,6 +39,14 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 #include "pacs_internal.h"
 #include "cap_internal.h"
 
+#define MAX_ASES_SESSIONS CONFIG_BT_MAX_CONN * \
+				(CONFIG_BT_ASCS_ASE_SNK_COUNT + \
+				 CONFIG_BT_ASCS_ASE_SRC_COUNT)
+
+BUILD_ASSERT(CONFIG_BT_ASCS_MAX_ACTIVE_ASES <= MAX(MAX_ASES_SESSIONS,
+						   CONFIG_BT_ISO_MAX_CHAN),
+	     "Max active ASEs are set to more than actual number of ASEs or ISOs");
+
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 
 #define ASE_ID(_ase) ase->ep.status.id
@@ -52,16 +60,42 @@ struct bt_ascs_ase {
 	struct bt_ascs *ascs;
 	struct bt_audio_ep ep;
 	const struct bt_gatt_attr *attr;
+	sys_snode_t node;
 };
 
 struct bt_ascs {
 	struct bt_conn *conn;
-	struct bt_ascs_ase ases[ASE_COUNT];
+	sys_slist_t ases;
 };
+
+K_MEM_SLAB_DEFINE(ase_slab, sizeof(struct bt_ascs_ase),
+		  CONFIG_BT_ASCS_MAX_ACTIVE_ASES,
+		  __alignof__(struct bt_ascs_ase));
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
+
+static void bt_ascs_ase_return_to_slab(struct bt_ascs_ase *ase)
+{
+	__ASSERT(ase && ase->ascs, "Non-existing ASE or ASCS");
+
+	LOG_DBG("Returning ase %p to slab", ase);
+
+	sys_slist_find_and_remove(&ase->ascs->ases, &ase->node);
+	k_mem_slab_free(&ase_slab, (void **)&ase);
+}
+
+static struct bt_ascs_ase *bt_ascs_ase_get_from_slab(void)
+{
+	struct bt_ascs_ase *ase = NULL;
+
+	if (k_mem_slab_alloc(&ase_slab, (void **)&ase, K_NO_WAIT) < 0) {
+		LOG_DBG("Could not get ASE from slab, out of memory");
+	}
+
+	return ase;
+}
 
 static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 			       uint8_t state)
@@ -105,6 +139,10 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 			if (ops->released != NULL) {
 				ops->released(stream);
 			}
+			struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
+
+			/* Return the ase to slab */
+			bt_ascs_ase_return_to_slab(ase);
 
 			break;
 		case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
@@ -351,6 +389,26 @@ static void ascs_ep_get_status_enable(struct bt_audio_ep *ep,
 	enable->metadata_len = buf->len - enable->metadata_len;
 
 	LOG_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->dir, ep->cig_id, ep->cis_id);
+}
+
+static int ascs_ep_get_status_idle(uint8_t ase_id, struct net_buf_simple *buf)
+{
+	struct bt_ascs_ase_status *status;
+
+	if (!buf || ase_id > ASE_COUNT) {
+		return -EINVAL;
+	}
+
+	net_buf_simple_reset(buf);
+
+	status = net_buf_simple_add(buf, sizeof(*status));
+	status->id = ase_id;
+	status->state = BT_AUDIO_EP_STATE_IDLE;
+
+	LOG_DBG("id 0x%02x state %s", ase_id,
+		bt_audio_ep_state_str(status->state));
+
+	return 0;
 }
 
 static int ascs_ep_get_status(struct bt_audio_ep *ep,
@@ -823,12 +881,19 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(session->ases); i++) {
-		struct bt_ascs_ase *ase = &session->ases[i];
-		struct bt_audio_stream *stream = ase->ep.stream;
+	sys_snode_t *ase_node, *s;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&session->ases, ase_node, s) {
+		struct bt_audio_stream *stream;
+		struct bt_ascs_ase *ase;
+
+		ase = CONTAINER_OF(ase_node, struct bt_ascs_ase, node);
+		stream = ase->ep.stream;
 
 		if (ase->ep.status.state != BT_AUDIO_EP_STATE_IDLE) {
-			/* ase_process will handle the final state transition into idle state */
+			/* ase_process will handle the final state transition into idle
+			 * state, where the ase finally will be deallocated
+			 */
 			ase_release(ase);
 		}
 
@@ -997,7 +1062,6 @@ void ascs_ep_init(struct bt_audio_ep *ep, uint8_t id)
 
 static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
 {
-	memset(ase, 0, sizeof(*ase));
 	ascs_ep_init(&ase->ep, id);
 
 	/* Lookup ASE characteristic */
@@ -1009,30 +1073,19 @@ static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
 static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 {
 	struct bt_ascs_ase *ase;
-	int i;
 
-	if (id) {
-		if (id > ASE_COUNT) {
-			return NULL;
-		}
-		i = id;
-		ase = &ascs->ases[i - 1];
-		goto done;
+	if (!id || id > ASE_COUNT) {
+		return NULL;
 	}
 
-	for (i = 0; i < ASE_COUNT; i++) {
-		ase = &ascs->ases[i];
-
-		if (!ase->ep.status.id) {
-			i++;
-			goto done;
-		}
+	ase = bt_ascs_ase_get_from_slab();
+	if (!ase) {
+		return NULL;
 	}
 
-	return NULL;
+	sys_slist_append(&ascs->ases, &ase->node);
 
-done:
-	ase_init(ase, i);
+	ase_init(ase, id);
 	ase->ascs = ascs;
 
 	return ase;
@@ -1040,15 +1093,14 @@ done:
 
 static struct bt_ascs_ase *ase_find(struct bt_ascs *ascs, uint8_t id)
 {
-	struct bt_ascs_ase *ase;
+	sys_snode_t *ase_node;
 
-	if (!id || id > ASE_COUNT) {
-		return NULL;
-	}
+	SYS_SLIST_FOR_EACH_NODE(&ascs->ases, ase_node) {
+		struct bt_ascs_ase *ase = CONTAINER_OF(ase_node, struct bt_ascs_ase, node);
 
-	ase = &ascs->ases[id - 1];
-	if (ase->ep.status.id == id) {
-		return ase;
+		if (ase->ep.status.id == id) {
+			return ase;
+		}
 	}
 
 	return NULL;
@@ -1072,16 +1124,25 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 {
 	struct bt_ascs *ascs = ascs_get(conn);
 	struct bt_ascs_ase *ase;
+	uint8_t ase_id;
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
 
-	ase = ase_get(ascs, POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr)));
-	if (!ase) {
-		LOG_ERR("Unable to get ASE");
+	ase_id = POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr));
+
+	if (ase_id > ASE_COUNT) {
+		LOG_ERR("Unable to get ASE, id out of range");
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	ascs_ep_get_status(&ase->ep, &ase_buf);
+	ase = ase_find(ascs, ase_id);
+
+	/* If NULL, we haven't assigned an ASE, this also means that we are currently in IDLE */
+	if (!ase) {
+		ascs_ep_get_status_idle(ase_id, &ase_buf);
+	} else {
+		ascs_ep_get_status(&ase->ep, &ase_buf);
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, ase_buf.data,
 				 ase_buf.len);
@@ -1367,16 +1428,19 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 		LOG_DBG("ase 0x%02x cc_len %u", cfg->ase, cfg->cc_len);
 
-		if (cfg->ase) {
-			ase = ase_get(ascs, cfg->ase);
+		if (!cfg->ase || cfg->ase > ASE_COUNT) {
+			LOG_WRN("Invalid ASE ID: %u", cfg->ase);
+			ascs_cp_rsp_add(cfg->ase, BT_ASCS_CONFIG_OP,
+					BT_ASCS_RSP_INVALID_ASE, 0x00);
+			continue;
 		} else {
-			ase = ase_new(ascs, 0);
+			ase = ase_get(ascs, cfg->ase);
 		}
 
 		if (!ase) {
 			ascs_cp_rsp_add(cfg->ase, BT_ASCS_CONFIG_OP,
-					BT_ASCS_RSP_INVALID_ASE, 0x00);
-			LOG_WRN("Unknown ase 0x%02x", cfg->ase);
+					BT_ASCS_RSP_NO_MEM, 0x00);
+			LOG_WRN("No free ASE found for config ASE ID 0x%02x", cfg->ase);
 			continue;
 		}
 
