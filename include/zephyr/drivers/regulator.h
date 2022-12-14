@@ -21,6 +21,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +32,24 @@ typedef uint8_t regulator_dvs_state_t;
 
 /** Opaque type to store regulator modes */
 typedef uint8_t regulator_mode_t;
+
+/** Opaque bit map for regulator error flags (see @ref REGULATOR_ERRORS) */
+typedef uint8_t regulator_error_flags_t;
+
+/**
+ * @name Regulator error flags.
+ * @anchor REGULATOR_ERRORS
+ * @{
+ */
+
+/** Voltage is too high. */
+#define REGULATOR_ERROR_OVER_VOLTAGE BIT(0)
+/** Current is too high. */
+#define REGULATOR_ERROR_OVER_CURRENT BIT(1)
+/** Temperature is too high. */
+#define REGULATOR_ERROR_OVER_TEMP    BIT(2)
+
+/** @} */
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -54,6 +73,8 @@ __subsystem struct regulator_driver_api {
 				 int32_t max_ua);
 	int (*get_current_limit)(const struct device *dev, int32_t *curr_ua);
 	int (*set_mode)(const struct device *dev, regulator_mode_t mode);
+	int (*get_error_flags)(const struct device *dev,
+			       regulator_error_flags_t *flags);
 };
 
 /**
@@ -419,6 +440,29 @@ static inline int regulator_get_current_limit(const struct device *dev,
  * @retval -errno In case of any other error.
  */
 int regulator_set_mode(const struct device *dev, regulator_mode_t mode);
+
+/**
+ * @brief Get active error flags.
+ *
+ * @param dev Regulator device instance.
+ * @param[out] flags Where error flags will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
+ */
+static inline int regulator_get_error_flags(const struct device *dev,
+					    regulator_error_flags_t *flags)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->get_error_flags == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_error_flags(dev, flags);
+}
 
 #ifdef __cplusplus
 }
