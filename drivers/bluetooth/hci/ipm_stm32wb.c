@@ -1,11 +1,12 @@
 /* ipm_stm32wb.c - HCI driver for stm32wb shared ram */
 
 /*
- * Copyright (c) 2019 Linaro Ltd.
+ * Copyright (c) 2019-2022 Linaro Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32wb_rf
 
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
@@ -19,6 +20,8 @@
 #include "stm32_wpan_common.h"
 #include "shci.h"
 #include "shci_tl.h"
+
+static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_NODELABEL(ble_rf));
 
 #define POOL_SIZE (CFG_TLBLE_EVT_QUEUE_LENGTH * 4 * \
 		DIVC((sizeof(TL_PacketHeader_t) + TL_BLE_EVENT_FRAME_SIZE), 4))
@@ -82,7 +85,7 @@ static struct k_thread ipm_rx_thread_data;
 
 static bool c2_started_flag;
 
-static void stm32wb_start_ble(void)
+static void stm32wb_start_ble(uint32_t rf_clock)
 {
 	SHCI_C2_Ble_Init_Cmd_Packet_t ble_init_cmd_packet = {
 	  { { 0, 0, 0 } },                     /**< Header unused */
@@ -98,7 +101,7 @@ static void stm32wb_start_ble(void)
 	    CFG_BLE_MAX_ATT_MTU,
 	    CFG_BLE_SLAVE_SCA,
 	    CFG_BLE_MASTER_SCA,
-	    CFG_BLE_LSE_SOURCE,
+	    (rf_clock == STM32_SRC_LSE) ? CFG_BLE_LSE_SOURCE : 0,
 	    CFG_BLE_MAX_CONN_EVENT_LENGTH,
 	    CFG_BLE_HSE_STARTUP_TIME,
 	    CFG_BLE_VITERBI_MODE,
@@ -482,8 +485,20 @@ static int bt_ipm_ble_init(void)
 
 static int c2_reset(void)
 {
-	/* Select wakeup source of BLE RF */
-	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	int err;
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	err = clock_control_configure(clk, (clock_control_subsys_t) &clk_cfg[1],
+					NULL);
+	if (err < 0) {
+		LOG_ERR("Could not configure RF Wake up clock");
+		return err;
+	}
 
 	/* HSI48 clock and CLK48 clock source are enabled using the device tree */
 #if !STM32_HSI48_ENABLED
@@ -496,8 +511,11 @@ static int c2_reset(void)
 
 #endif /* !STM32_HSI48_ENABLED */
 
-	/* Reset IPCC */
-	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_IPCC);
+	err = clock_control_on(clk, (clock_control_subsys_t) &clk_cfg[0]);
+	if (err < 0) {
+		LOG_ERR("Could not enable IPCC clock");
+		return err;
+	}
 
 	/* Take BLE out of reset */
 	ipcc_reset();
@@ -510,7 +528,7 @@ static int c2_reset(void)
 	}
 	LOG_DBG("C2 unlocked");
 
-	stm32wb_start_ble();
+	stm32wb_start_ble(clk_cfg[1].bus);
 
 	c2_started_flag = true;
 
