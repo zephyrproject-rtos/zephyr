@@ -267,6 +267,8 @@ struct tcpc_config {
 struct tcpc_data {
 	/* VCONN callback function */
 	tcpc_vconn_control_cb_t vconn_cb;
+	/* VCONN Discharge callback function */
+	tcpc_vconn_discharge_cb_t vconn_discharge_cb;
 	/* Alert information */
 	struct alert_info alert_info;
 
@@ -309,6 +311,8 @@ struct tcpc_data {
 	struct msg_header_info msg_header;
 	/* Track VCONN on/off state */
 	bool ucpd_vconn_enable;
+	/* Track CC line that VCONN was active on */
+	enum tc_cc_polarity ucpd_vconn_cc;
 
 	/* Timer for amount of time to wait for receiving a GoodCRC */
 	struct k_timer goodcrc_rx_timer;
