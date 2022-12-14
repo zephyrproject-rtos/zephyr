@@ -60,6 +60,7 @@ static struct bt_audio_broadcast_sink *default_sink;
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 static struct bt_audio_stream *default_stream;
 static uint16_t seq_num;
+static size_t rx_cnt;
 
 struct named_lc3_preset {
 	const char *name;
@@ -1410,7 +1411,29 @@ static void audio_recv(struct bt_audio_stream *stream,
 		       const struct bt_iso_recv_info *info,
 		       struct net_buf *buf)
 {
-	shell_print(ctx_shell, "Incoming audio on stream %p len %u\n", stream, buf->len);
+	static struct bt_iso_recv_info last_info;
+
+	/* TODO: Make it possible to only print every X packets, and make X settable by the shell */
+	if ((rx_cnt % 100) == 0) {
+		shell_print(ctx_shell,
+			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u",
+			    rx_cnt, stream, buf->len, info->ts, info->seq_num,
+			    info->flags);
+	}
+
+	if (info->ts == last_info.ts) {
+		shell_error(ctx_shell, "[%zu]: Duplicate TS: %u",
+			    rx_cnt, info->ts);
+	}
+
+	if (info->seq_num == last_info.seq_num) {
+		shell_error(ctx_shell, "[%zu]: Duplicate seq_num: %u",
+			    rx_cnt, info->seq_num);
+	}
+
+	(void)memcpy(&last_info, info, sizeof(last_info));
+
+	rx_cnt++;
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SINK */
 
