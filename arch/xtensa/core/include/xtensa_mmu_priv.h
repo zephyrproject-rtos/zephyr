@@ -18,17 +18,36 @@
 #define Z_XTENSA_PTE_VPN_MASK 0xFFFFF000U
 #define Z_XTENSA_PTE_PPN_MASK 0xFFFFF000U
 #define Z_XTENSA_PTE_ATTR_MASK 0x0000000FU
+#define Z_XTENSA_PTE_ATTR_CACHED_MASK 0x0000000CU
 #define Z_XTENSA_L1_MASK 0x3FF00000U
 #define Z_XTENSA_L2_MASK 0x3FFFFFU
 
 #define Z_XTENSA_PPN_SHIFT 12U
 
 #define Z_XTENSA_PTE_RING_MASK 0x00000030U
+#define Z_XTENSA_PTE_RING_SHIFT 4U
 
 #define Z_XTENSA_PTE(paddr, ring, attr) \
 	(((paddr) & Z_XTENSA_PTE_PPN_MASK) | \
-	(((ring) << 4) & Z_XTENSA_PTE_RING_MASK) | \
+	(((ring) << Z_XTENSA_PTE_RING_SHIFT) & Z_XTENSA_PTE_RING_MASK) | \
 	((attr) & Z_XTENSA_PTE_ATTR_MASK))
+
+#define Z_XTENSA_PTE_ATTR_GET(pte) \
+	(pte) & Z_XTENSA_PTE_ATTR_MASK
+
+#define Z_XTENSA_PTE_ATTR_SET(pte, attr) \
+	(((pte) & ~Z_XTENSA_PTE_ATTR_MASK) | (attr))
+
+#define Z_XTENSA_PTE_RING_SET(pte, ring) \
+	(((pte) & ~Z_XTENSA_PTE_RING_MASK) | \
+	((ring) << Z_XTENSA_PTE_RING_SHIFT))
+
+#define Z_XTENSA_PTE_RING_GET(pte) \
+	(((pte) & ~Z_XTENSA_PTE_RING_MASK) >> Z_XTENSA_PTE_RING_SHIFT)
+
+#define Z_XTENSA_PTE_ASID_GET(pte, rasid) \
+	(((rasid) >> ((((pte) & Z_XTENSA_PTE_RING_MASK) \
+		       >> Z_XTENSA_PTE_RING_SHIFT) * 8)) & 0xFF)
 
 #define Z_XTENSA_TLB_ENTRY(vaddr, way) \
 	(((vaddr) & Z_XTENSA_PTE_PPN_MASK) | (way))
@@ -38,10 +57,37 @@
 	 (((vaddr) >> Z_XTENSA_PPN_SHIFT) & 0x03U))
 
 #define Z_XTENSA_L2_POS(vaddr) \
-	(((vaddr) & Z_XTENSA_L2_MASK) >> Z_XTENSA_PPN_SHIFT)
+	(((vaddr) & Z_XTENSA_L2_MASK) >> 12U)
+
+#define Z_XTENSA_L1_POS(vaddr) \
+	((vaddr) >> 22U)
+
+/* PTE attributes for entries in the L1 page table.  Should never be
+ * writable, may be cached in non-SMP contexts only
+ */
+#if CONFIG_MP_MAX_NUM_CPUS == 1
+#define Z_XTENSA_PAGE_TABLE_ATTR Z_XTENSA_MMU_CACHED_WB
+#else
+#define Z_XTENSA_PAGE_TABLE_ATTR 0
+#endif
+
+/* This ASID is shared between all domains and kernel. */
+#define Z_XTENSA_MMU_SHARED_ASID 255
+
+/* Fixed data TLB way to map the page table */
+#define Z_XTENSA_MMU_PTE_WAY 7
+
+/* Fixed data TLB way to map the vecbase */
+#define Z_XTENSA_MMU_VECBASE_WAY 8
 
 /* Kernel specific ASID. Ring field in the PTE */
 #define Z_XTENSA_KERNEL_RING 0
+
+/* User specific ASID. Ring field in the PTE */
+#define Z_XTENSA_USER_RING 2
+
+/* Ring value for MMU_SHARED_ASID */
+#define Z_XTENSA_SHARED_RING 3
 
 /* Number of data TLB ways [0-9] */
 #define Z_XTENSA_DTLB_WAYS 10
@@ -96,6 +142,14 @@
 #define Z_XTENSA_PAGE_TABLE_VADDR \
 	Z_XTENSA_PTE_ENTRY_VADDR(Z_XTENSA_PTEVADDR)
 
+/*
+ * Get asid for a given ring from rasid register.
+ * rasid contains four asid, one per ring.
+ */
+
+#define Z_XTENSA_RASID_ASID_GET(rasid, ring) \
+	(((rasid) >> ((ring) * 8)) & 0xff)
+
 static ALWAYS_INLINE void xtensa_rasid_set(uint32_t rasid)
 {
 	__asm__ volatile("wsr %0, rasid\n\t"
@@ -109,6 +163,16 @@ static ALWAYS_INLINE uint32_t xtensa_rasid_get(void)
 	__asm__ volatile("rsr %0, rasid" : "=a"(rasid));
 	return rasid;
 }
+
+static ALWAYS_INLINE void xtensa_rasid_asid_set(uint8_t asid, uint8_t pos)
+{
+	uint32_t rasid = xtensa_rasid_get();
+
+	rasid = (rasid & ~(0xff << (pos * 8))) | ((uint32_t)asid << (pos * 8));
+
+	xtensa_rasid_set(rasid);
+}
+
 
 static ALWAYS_INLINE void xtensa_itlb_entry_invalidate(uint32_t entry)
 {
@@ -201,6 +265,21 @@ static ALWAYS_INLINE void xtensa_ptevaddr_set(void *ptables)
 	__asm__ volatile("wsr.ptevaddr %0" : : "a"((uint32_t)ptables));
 }
 
+/**
+ * @brief Get the current page tables.
+ *
+ * The page tables is obtained by reading ptevaddr address.
+ *
+ * @return ptables The page tables address (virtual address)
+ */
+static ALWAYS_INLINE void *xtensa_ptevaddr_get(void)
+{
+	uint32_t ptables;
+
+	__asm__ volatile("rsr.ptevaddr %0" : "=a" (ptables));
+
+	return (void *)ptables;
+}
 /*
  * The following functions are helpful when debugging.
  */

@@ -174,6 +174,13 @@ static inline bool arch_is_in_isr(void)
 	return arch_curr_cpu()->nested != 0U;
 }
 
+#ifdef CONFIG_USERSPACE
+extern void z_xtensa_userspace_enter(k_thread_entry_t user_entry,
+				void *p1, void *p2, void *p3,
+				uintptr_t stack_end,
+				uintptr_t stack_start);
+#endif /* CONFIG_USERSPACE */
+
 #ifdef __cplusplus
 }
 #endif

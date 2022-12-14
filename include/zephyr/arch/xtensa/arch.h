@@ -29,6 +29,7 @@
 #include <zephyr/arch/common/addr_types.h>
 #include <zephyr/arch/xtensa/gdbstub.h>
 #include <zephyr/debug/sparse.h>
+#include <zephyr/sys/slist.h>
 
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
 
@@ -46,6 +47,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct arch_mem_domain {
+#ifdef CONFIG_XTENSA_MMU
+	uint32_t *ptables __aligned(CONFIG_MMU_PAGE_SIZE);
+	uint8_t asid;
+	bool dirty;
+#endif
+	sys_snode_t node;
+};
 
 extern void xtensa_arch_except(int reason_p);
 
