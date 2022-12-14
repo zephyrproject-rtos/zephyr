@@ -5,6 +5,7 @@
 
 #include <gen_offset.h>
 #include <kernel_offsets.h>
+#include <zephyr/arch/xtensa/thread.h>
 
 #include <xtensa-asm2-context.h>
 
@@ -59,5 +60,11 @@ GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fpu13);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fpu14);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fpu15);
 #endif
+
+#ifdef CONFIG_USERSPACE
+GEN_OFFSET_SYM(_thread_arch_t, psp);
+GEN_OFFSET_SYM(_thread_arch_t, ptables);
+#endif
+
 
 GEN_ABS_SYM_END
