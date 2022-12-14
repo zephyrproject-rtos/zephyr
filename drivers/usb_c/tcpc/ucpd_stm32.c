@@ -644,6 +644,8 @@ static void ucpd_manage_tx(struct alert_info *info)
 		 */
 		if (atomic_test_and_clear_bit(&info->evt, UCPD_EVT_TX_MSG_SUCCESS)) {
 			ucpd_set_tx_state(info->dev, STATE_WAIT_CRC_ACK);
+			/* Start the GoodCRC RX Timer */
+			k_timer_start(&data->goodcrc_rx_timer, K_USEC(1000), K_NO_WAIT);
 		} else if (atomic_test_and_clear_bit(&info->evt, UCPD_EVT_TX_MSG_DISC) ||
 			  atomic_test_and_clear_bit(&info->evt, UCPD_EVT_TX_MSG_FAIL)) {
 			if (data->tx_retry_count < data->tx_retry_max) {
@@ -705,7 +707,10 @@ static void ucpd_manage_tx(struct alert_info *info)
 			/* GoodCRC with matching ID was received */
 			ucpd_notify_handler(info, TCPC_ALERT_TRANSMIT_MSG_SUCCESS);
 			ucpd_set_tx_state(info->dev, STATE_IDLE);
-		} else if (atomic_test_and_clear_bit(&info->evt, UCPD_EVT_RX_GOOD_CRC)) {
+		} else if (k_timer_status_get(&data->goodcrc_rx_timer)) {
+			/* Stop the GoodCRC RX Timer */
+			k_timer_stop(&data->goodcrc_rx_timer);
+
 			/* GoodCRC w/out match or timeout waiting */
 			if (data->tx_retry_count < data->tx_retry_max) {
 				ucpd_set_tx_state(info->dev, STATE_ACTIVE_TCPM);
@@ -809,9 +814,7 @@ static void ucpd_alert_handler(struct k_work *item)
 	 */
 	do {
 		ucpd_manage_tx(info);
-	} while (data->ucpd_tx_request &&
-		 data->ucpd_tx_state == STATE_IDLE &&
-		 !data->ucpd_rx_msg_active);
+	} while (data->ucpd_tx_state != STATE_IDLE);
 }
 
 /**
@@ -1006,7 +1009,8 @@ static void ucpd_isr(const struct device *dev_inst[])
 	struct tcpc_data *data;
 	uint32_t sr;
 	struct alert_info *info;
-	uint32_t tx_done_mask = UCPD_SR_TXMSGSENT |
+	uint32_t tx_done_mask = UCPD_SR_TXUND |
+				UCPD_SR_TXMSGSENT |
 				UCPD_SR_TXMSGABT |
 				UCPD_SR_TXMSGDISC |
 				UCPD_SR_HRSTSENT |
@@ -1225,6 +1229,9 @@ static void ucpd_isr_init(const struct device *dev)
 	const struct tcpc_config *const config = dev->config;
 	struct tcpc_data *data = dev->data;
 	struct alert_info *info = &data->alert_info;
+
+	/* Init GoodCRC Receive timer */
+	k_timer_init(&data->goodcrc_rx_timer, NULL, NULL);
 
 	/* Disable all alert bits */
 	LL_UCPD_WriteReg(config->ucpd_port, IMR, 0);
