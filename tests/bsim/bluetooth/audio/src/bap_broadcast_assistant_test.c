@@ -66,7 +66,7 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	printk("Scan Recv: [DEVICE]: %s, broadcast_id %u, "
+	printk("Scan Recv: [DEVICE]: %s, broadcast_id 0x%06X, "
 	       "interval (ms) %u), SID 0x%x, RSSI %i\n",
 	       le_addr, broadcast_id, info->interval * 5 / 4,
 	       info->sid, info->rssi);

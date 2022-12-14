@@ -120,7 +120,7 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 					BT_BAP_BIG_ENC_STATE_BAD_CODE;
 
 	LOG_DBG("Receive State[%d]: src ID %u, addr %s, adv_sid %u, "
-		"broadcast_id %u, pa_sync_state %u, "
+		"broadcast_id 0x%06X, pa_sync_state %u, "
 		"encrypt state %u%s%s, num_subgroups %u",
 		recv_state->index, state->src_id, bt_addr_le_str(&state->addr), state->adv_sid,
 		state->broadcast_id, state->pa_sync_state, state->encrypt_state,
