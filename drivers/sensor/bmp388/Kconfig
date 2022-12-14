@@ -12,6 +12,20 @@ menuconfig BMP388
 
 if BMP388
 
+config BMP388_READ_WHEN_SUSPENDED
+	bool "Allow FORCED read when suspended"
+	depends on PM_DEVICE
+	help
+		Do not fail if sensor_sample_fetch() is called when sensor is in
+		PM_DEVICE_STATE_SUSPENDED state. Instead, put the BMP388 in FORCED mode,
+		and read one sample. The BMP388 will automatically go back to sleep.
+		bmp388_init() leaves the BMP388 in normal mode, so to take advantage of 
+		this, you need to use the pm_device API to suspend the BMP388 after init, 
+		then call sensor_sample_fetch() whenever required.
+		This uses one extra I2C transaction per sample, so its average consumption 
+		is higher than NORMAL mode when an equivalent ODR could be achieved in 
+		NORMAL mode, but potentially much lower when only doing reads on demand.
+
 choice BMP388_TRIGGER_MODE
 	prompt "Trigger mode"
 	default BMP388_TRIGGER_GLOBAL_THREAD

@@ -346,6 +346,9 @@ static int bmp388_sample_fetch(const struct device *dev,
 	struct bmp388_data *bmp388 = dev->data;
 	uint8_t raw[BMP388_SAMPLE_BUFFER_SIZE];
 	int ret = 0;
+	#ifdef CONFIG_BMP388_READ_WHEN_SUSPENDED
+	bool forced_mode_read = false;
+	#endif
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -354,11 +357,29 @@ static int bmp388_sample_fetch(const struct device *dev,
 
 	(void)pm_device_state_get(dev, &state);
 	if (state != PM_DEVICE_STATE_ACTIVE) {
+#ifdef CONFIG_BMP388_READ_WHEN_SUSPENDED
+		/* BMP388 is in SLEEP mode; enter FORCED mode to read, then back to SLEEP */
+		if (bmp388_byte_write(dev, BMP388_REG_PWR_CTRL, BMP388_PWR_CTRL_FORCED) < 0) {
+			LOG_ERR("Failed to set forced mode.");
+			return -EIO;
+		}
+		forced_mode_read = true;
+#else
 		return -EBUSY;
+#endif
 	}
 #endif
 
+#ifdef CONFIG_BMP388_READ_WHEN_SUSPENDED
+  if(!forced_mode_read)
+	{
+		/* don't set the device busy for reads in FORCED mode, we want it to 
+		 * stay SUSPENDED */
+		pm_device_busy_set(dev);
+	}
+#else
 	pm_device_busy_set(dev);
+#endif
 
 	/* Wait for status to indicate that data is ready. */
 	raw[0] = 0U;
