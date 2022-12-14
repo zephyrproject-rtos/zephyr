@@ -739,6 +739,7 @@ static int handle_metadata_update(const char *meta_str,
 		(void)memcpy(meta[i].value,
 			     default_preset->preset.codec.meta[i].data.data,
 			     default_preset->preset.codec.meta[i].data.data_len);
+		meta[i].data.type = default_preset->preset.codec.meta[i].data.type;
 		meta[i].data.data_len = default_preset->preset.codec.meta[i].data.data_len;
 		meta[i].data.data = meta[i].value;
 	}
