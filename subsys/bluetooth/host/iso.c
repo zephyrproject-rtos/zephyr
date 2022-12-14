@@ -207,8 +207,7 @@ static int hci_le_setup_iso_data_path(const struct bt_conn *iso, uint8_t dir,
 		 dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST,
 		 "invalid ISO data path dir: %u", dir);
 
-	if ((path->cc == NULL && path->cc_len != 0) ||
-	    (path->cc != NULL && path->cc_len == 0)) {
+	if ((path->cc == NULL && path->cc_len != 0)) {
 		LOG_DBG("Invalid ISO data path CC: %p %u", path->cc, path->cc_len);
 
 		return -EINVAL;
