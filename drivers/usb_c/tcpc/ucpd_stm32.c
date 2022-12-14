@@ -1023,15 +1023,24 @@ static void ucpd_isr(const struct device *dev_inst[])
 	 */
 
 	uint32_t ucpd_base;
+	uint32_t sr0;
+	uint32_t sr1;
 
 	/*
 	 * Since the UCPD peripherals share the same interrupt line, determine
 	 * which one generated the interrupt.
 	 */
-	if (LL_SYSCFG_IsActiveFlag_UCPD1()) {
+
+	/* Read UCPD1 Status Register */
+	sr0 = LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[0]->config)->ucpd_port, SR);
+
+	/* Read UCPD2 Status Register */
+	sr1 = LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[1]->config)->ucpd_port, SR);
+
+	if (sr0) {
 		/* UCPD1 interrupt is pending */
 		ucpd_base = UCPD1_BASE;
-	} else if (LL_SYSCFG_IsActiveFlag_UCPD2()) {
+	} else if (sr1) {
 		/* UCPD2 interrupt is pending */
 		ucpd_base = UCPD2_BASE;
 	} else {
