@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_USBC_DEVICE_UCPD_STM32_PRIV_H_
 #define ZEPHYR_DRIVERS_USBC_DEVICE_UCPD_STM32_PRIV_H_
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/usb_c/usbc_tcpc.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -308,6 +309,9 @@ struct tcpc_data {
 	struct msg_header_info msg_header;
 	/* Track VCONN on/off state */
 	bool ucpd_vconn_enable;
+
+	/* Timer for amount of time to wait for receiving a GoodCRC */
+	struct k_timer goodcrc_rx_timer;
 };
 
 #endif /* ZEPHYR_DRIVERS_USBC_DEVICE_UCPD_STM32_PRIV_H_ */
