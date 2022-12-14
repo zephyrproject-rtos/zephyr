@@ -20,11 +20,6 @@ LOG_MODULE_REGISTER(ucpd_stm32, CONFIG_USBC_LOG_LEVEL);
 
 #include "ucpd_stm32_priv.h"
 
-/**
- * @brief Zephyr has difficulty with shared interrupt. This flag is used to
- *        configure a shared interrupt once and is set to false afterwards.
- */
-static bool init_irq = true;
 static void config_tcpc_irq(void);
 
 /**
@@ -1337,12 +1332,12 @@ static const struct tcpc_driver_api driver_api = {
 #define DEV_INST_INIT(n) dev_inst[n] = DEVICE_DT_INST_GET(n);
 static void config_tcpc_irq(void)
 {
+	static int inst_num;
 	static const struct device
 	*dev_inst[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)];
 
-	if (init_irq) {
-		/* Only configure IRQ line once */
-		init_irq = false;
+	/* Initialize and enable shared irq on last instance */
+	if (++inst_num == DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)) {
 		DT_INST_FOREACH_STATUS_OKAY(DEV_INST_INIT)
 
 		IRQ_CONNECT(DT_INST_IRQN(0),
