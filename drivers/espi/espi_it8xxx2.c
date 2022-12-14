@@ -666,28 +666,6 @@ static bool espi_it8xxx2_channel_ready(const struct device *dev,
 	return sts;
 }
 
-static int espi_vw_set_valid(const struct device *dev,
-			enum espi_vwire_signal signal, uint8_t valid)
-{
-	const struct espi_it8xxx2_config *const config = dev->config;
-	struct espi_vw_regs *const vw_reg =
-		(struct espi_vw_regs *)config->base_espi_vw;
-	uint8_t vw_index = vw_channel_list[signal].vw_index;
-	uint8_t valid_mask = vw_channel_list[signal].valid_mask;
-
-	if (signal > ARRAY_SIZE(vw_channel_list)) {
-		return -EIO;
-	}
-
-	if (valid) {
-		vw_reg->VW_INDEX[vw_index] |= valid_mask;
-	} else {
-		vw_reg->VW_INDEX[vw_index] &= ~valid_mask;
-	}
-
-	return 0;
-}
-
 static int espi_it8xxx2_send_vwire(const struct device *dev,
 			enum espi_vwire_signal signal, uint8_t level)
 {
@@ -696,6 +674,7 @@ static int espi_it8xxx2_send_vwire(const struct device *dev,
 		(struct espi_vw_regs *)config->base_espi_vw;
 	uint8_t vw_index = vw_channel_list[signal].vw_index;
 	uint8_t level_mask = vw_channel_list[signal].level_mask;
+	uint8_t valid_mask = vw_channel_list[signal].valid_mask;
 
 	if (signal > ARRAY_SIZE(vw_channel_list)) {
 		return -EIO;
@@ -706,6 +685,8 @@ static int espi_it8xxx2_send_vwire(const struct device *dev,
 	} else {
 		vw_reg->VW_INDEX[vw_index] &= ~level_mask;
 	}
+
+	vw_reg->VW_INDEX[vw_index] |= valid_mask;
 
 	return 0;
 }
@@ -1341,7 +1322,7 @@ static void espi_it8xxx2_vwidx2_isr(const struct device *dev,
 	}
 }
 
-static void espi_vw_oob_rst_warm_isr(const struct device *dev)
+static void espi_vw_oob_rst_warn_isr(const struct device *dev)
 {
 	uint8_t level = 0;
 
@@ -1356,10 +1337,6 @@ static void espi_vw_pltrst_isr(const struct device *dev)
 	espi_it8xxx2_receive_vwire(dev, ESPI_VWIRE_SIGNAL_PLTRST, &pltrst);
 
 	if (pltrst) {
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SMI, 1);
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SCI, 1);
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK, 1);
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_RST_CPU_INIT, 1);
 		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_SMI, 1);
 		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_SCI, 1);
 		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK, 1);
@@ -1370,7 +1347,7 @@ static void espi_vw_pltrst_isr(const struct device *dev)
 }
 
 static const struct espi_vw_signal_t vwidx3_signals[] = {
-	{ESPI_VWIRE_SIGNAL_OOB_RST_WARN, espi_vw_oob_rst_warm_isr},
+	{ESPI_VWIRE_SIGNAL_OOB_RST_WARN, espi_vw_oob_rst_warn_isr},
 	{ESPI_VWIRE_SIGNAL_PLTRST,       espi_vw_pltrst_isr},
 };
 
@@ -1580,10 +1557,6 @@ static void espi_it8xxx2_peripheral_ch_en_isr(const struct device *dev,
  */
 static void espi_it8xxx2_vw_ch_en_isr(const struct device *dev, bool enable)
 {
-	if (enable) {
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SUS_ACK, 1);
-	}
-
 	espi_it8xxx2_ch_notify_system_state(dev, ESPI_CHANNEL_VWIRE, enable);
 }
 
@@ -1593,10 +1566,6 @@ static void espi_it8xxx2_vw_ch_en_isr(const struct device *dev, bool enable)
  */
 static void espi_it8xxx2_oob_ch_en_isr(const struct device *dev, bool enable)
 {
-	if (enable) {
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK, 1);
-	}
-
 	espi_it8xxx2_ch_notify_system_state(dev, ESPI_CHANNEL_OOB, enable);
 }
 
@@ -1607,8 +1576,6 @@ static void espi_it8xxx2_oob_ch_en_isr(const struct device *dev, bool enable)
 static void espi_it8xxx2_flash_ch_en_isr(const struct device *dev, bool enable)
 {
 	if (enable) {
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
 		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
 		espi_it8xxx2_send_vwire(dev,
 					ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
