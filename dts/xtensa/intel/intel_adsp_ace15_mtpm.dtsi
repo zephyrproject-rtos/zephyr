@@ -137,6 +137,9 @@
 		 * is discussed here:
 		 *
 		 * https://github.com/zephyrproject-rtos/zephyr/pull/50287#discussion_r974591009
+		 *
+		 * The hardware actually supports 16 ALH streams/FIFOs. Below description does
+		 * not fully represent hardware capabilities and is expected to be modified.
 		 */
 		alh0: alh0@24400 {
 			compatible = "intel,alh-dai";
@@ -145,6 +148,18 @@
 		};
 
 		alh1: alh1@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh2: alh2@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh3: alh3@24400 {
 			compatible = "intel,alh-dai";
 			reg = <0x00024400 0x00024600>;
 			status = "okay";
