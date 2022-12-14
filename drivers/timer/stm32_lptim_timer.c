@@ -348,9 +348,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	}
 #endif
 
-	/* Set LPTIM time base based on clck source freq
-	 * Time base = (2s * freq) - 1
-	 */
+	/* Set LPTIM time base based on clock source freq */
 	if (lptim_clock_freq == KHZ(32)) {
 		lptim_time_base = 0xF9FF;
 	} else if (lptim_clock_freq == 32768) {
@@ -358,6 +356,19 @@ static int sys_clock_driver_init(const struct device *dev)
 	} else {
 		return -EIO;
 	}
+
+	if (IS_ENABLED(DT_PROP(DT_DRV_INST(0), st_static_prescaler))) {
+		/*
+		 * LPTIM of the stm32, like stm32U5, which has a clock source x2.
+		 * A full 16bit LPTIM counter is counting 4s at 2 * 1/32768 (with LSE)
+		 * Time base = (4s * freq) - 1
+		 */
+		lptim_clock_freq = lptim_clock_freq / 2;
+	}
+	/*
+	 * Else, a full 16bit LPTIM counter is counting 2s at 1/32768 (with LSE)
+	 * Time base = (2s * freq) - 1
+	 */
 
 	/* Clear the event flag and possible pending interrupt */
 	IRQ_CONNECT(DT_INST_IRQN(0),
