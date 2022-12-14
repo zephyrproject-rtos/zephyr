@@ -84,7 +84,7 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 	(void)memset(name, 0, sizeof(name));
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "[DEVICE]: %s (%s), broadcast_id %u, "
+	shell_print(ctx_shell, "[DEVICE]: %s (%s), broadcast_id 0x%06X, "
 		    "interval (ms) %u), SID 0x%x, RSSI %i",
 		    le_addr, name, broadcast_id, info->interval * 5 / 4,
 		    info->sid, info->rssi);

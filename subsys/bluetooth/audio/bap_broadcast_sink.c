@@ -934,7 +934,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 	 * If it was then that means that we found a broadcast source
 	 */
 	if (broadcast_id != INVALID_BROADCAST_ID) {
-		LOG_DBG("Found broadcast source with address %s and id 0x%6X",
+		LOG_DBG("Found broadcast source with address %s and id 0x%06X",
 			bt_addr_le_str(info->addr), broadcast_id);
 
 		if (broadcast_sink_get_by_broadcast_id(broadcast_id) != NULL) {
