@@ -56,6 +56,14 @@
 /* definitions */
 
 #include <zephyr/logging/log.h>
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart) \
+	&& defined(CONFIG_USB_CDC_ACM_LOG_LEVEL) \
+	&& CONFIG_USB_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
+/* Prevent endless recursive logging loop and warn user about it */
+#warning "USB_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
+#undef CONFIG_USB_CDC_ACM_LOG_LEVEL
+#define CONFIG_USB_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
+#endif
 LOG_MODULE_REGISTER(usb_cdc_acm, CONFIG_USB_CDC_ACM_LOG_LEVEL);
 
 /* 115200bps, no parity, 1 stop bit, 8bit char */
