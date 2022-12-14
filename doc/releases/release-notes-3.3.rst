@@ -215,6 +215,30 @@ Boards & SoC Support
 
 * Removed support for these Xtensa boards:
 
+* Made these changes in ARM boards:
+
+  * The scratch partition has been removed for the following Nordic boards and
+    flash used by this area re-assigned to other partitions to free up space
+    and rely upon the swap-using-move algorithm in MCUboot (which does not
+    suffer from the same faults or stuck image issues as swap-using-scratch
+    does):
+    ``nrf21540dk_nrf52840``
+    ``nrf51dk_nrf51422``
+    ``nrf51dongle_nrf51422``
+    ``nrf52833dk_nrf52833``
+    ``nrf52840dk_nrf52811``
+    ``nrf52840dk_nrf52840``
+    ``nrf52840dongle_nrf52840``
+    ``nrf52dk_nrf52805``
+    ``nrf52dk_nrf52810``
+    ``nrf52dk_nrf52832``
+    ``nrf5340dk_nrf5340``
+    ``nrf9160dk_nrf52840``
+    ``nrf9160dk_nrf9160``
+
+    Note that MCUboot and MCUboot image updates from pre-Zephyr 3.3 might be
+    incompatible with Zephyr 3.3 onwards and vice versa.
+
 * Made these changes in other boards:
 
 * Added support for these following shields:
