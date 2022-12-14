@@ -60,18 +60,22 @@ struct friend_pdu_info {
 	uint32_t  iv_index;
 };
 
-NET_BUF_POOL_FIXED_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT,
-			  BT_MESH_ADV_DATA_SIZE, 8, NULL);
-
-static struct friend_adv {
+struct friend_adv {
 	uint16_t app_idx;
-} adv_pool[FRIEND_BUF_COUNT];
+	bool     seg;
+};
+
+NET_BUF_POOL_FIXED_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT, BT_MESH_ADV_DATA_SIZE,
+			  sizeof(struct friend_adv), NULL);
+
+static struct friend_adv adv_pool[FRIEND_BUF_COUNT];
 
 #define FRIEND_ADV(buf) (*(struct friend_adv **)net_buf_user_data(buf))
 
 static struct friend_adv *adv_alloc(int id)
 {
 	adv_pool[id].app_idx = BT_MESH_KEY_UNUSED;
+	adv_pool[id].seg = false;
 	return &adv_pool[id];
 }
 
@@ -130,14 +134,9 @@ static int friend_cred_create(struct bt_mesh_friend *frnd, uint8_t idx)
 
 static void purge_buffers(sys_slist_t *list)
 {
-	while (!sys_slist_is_empty(list)) {
-		struct net_buf *buf;
+	struct net_buf *buf;
 
-		buf = (void *)sys_slist_get_not_empty(list);
-
-		buf->frags = NULL;
-		buf->flags &= ~NET_BUF_FRAGS;
-
+	while ((buf = (void *)net_buf_slist_get(list))) {
 		net_buf_unref(buf);
 	}
 }
@@ -1141,8 +1140,7 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 		frnd->queue_size += seg->seg_count;
 		seg->seg_count = 0U;
 	} else {
-		/* Mark the buffer as having more to come after it */
-		buf->flags |= NET_BUF_FRAGS;
+		FRIEND_ADV(buf)->seg = true;
 	}
 }
 
@@ -1252,7 +1250,7 @@ static void friend_timeout(struct k_work *work)
 		return;
 	}
 
-	frnd->last = (void *)sys_slist_get(&frnd->queue);
+	frnd->last = (void *)net_buf_slist_get(&frnd->queue);
 	if (!frnd->last) {
 		LOG_WRN("Friendship not established with 0x%04x", frnd->lpn);
 		friend_clear(frnd);
@@ -1266,10 +1264,6 @@ static void friend_timeout(struct k_work *work)
 	if (encrypt_friend_pdu(frnd, frnd->last, false)) {
 		return;
 	}
-
-	/* Clear the flag we use for segment tracking */
-	frnd->last->flags &= ~NET_BUF_FRAGS;
-	frnd->last->frags = NULL;
 
 	LOG_DBG("Sending buf %p from Friend Queue of LPN 0x%04x", frnd->last, frnd->lpn);
 	frnd->queue_size--;
@@ -1411,8 +1405,6 @@ static void friend_purge_old_ack(struct bt_mesh_friend *frnd,
 
 			sys_slist_remove(&frnd->queue, prev, cur);
 			frnd->queue_size--;
-			/* Make sure old slist entry state doesn't remain */
-			buf->frags = NULL;
 
 			net_buf_unref(buf);
 			break;
@@ -1637,7 +1629,7 @@ static bool friend_queue_prepare_space(struct bt_mesh_friend *frnd, uint16_t add
 	pending_segments = false;
 
 	while (pending_segments || avail_space < seg_count) {
-		struct net_buf *buf = (void *)sys_slist_get(&frnd->queue);
+		struct net_buf *buf = (void *)net_buf_slist_get(&frnd->queue);
 
 		if (!buf) {
 			LOG_ERR("Unable to free up enough buffers");
@@ -1647,11 +1639,7 @@ static bool friend_queue_prepare_space(struct bt_mesh_friend *frnd, uint16_t add
 		frnd->queue_size--;
 		avail_space++;
 
-		pending_segments = (buf->flags & NET_BUF_FRAGS);
-
-		/* Make sure old slist entry state doesn't remain */
-		buf->frags = NULL;
-		buf->flags &= ~NET_BUF_FRAGS;
+		pending_segments = FRIEND_ADV(buf)->seg;
 
 		net_buf_unref(buf);
 	}
