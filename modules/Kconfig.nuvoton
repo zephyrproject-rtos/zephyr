@@ -59,4 +59,8 @@ menu "Nuvoton NuMaker drivers"
         bool "NuMaker high-speed USB 2.0 device controller"
         help
             Enable Nuvoton high-speed USB 2.0 device controller HAL module driver
+    config HAS_NUMAKER_ETH
+        bool "NuMaker ETH"
+        help
+            Enable Nuvoton ETH EMAC HAL module driver
 endmenu

@@ -28,4 +28,19 @@
                  <PA14MFP_USB_D_P 0x0000>,
                  <PA15MFP_USB_OTG_ID 0x0000>;
     };
+
+    /* EMAC multi-function pins for MDIO, TX, REFCLK, RX pins */
+    emac_default: emac_default {
+        pinmux = <PE8MFP_EMAC0_RMII_MDC 0x0000>,
+                 <PE9MFP_EMAC0_RMII_MDIO 0x0000>,
+                 <PE10MFP_EMAC0_RMII_TXD0 0x0000>,
+                 <PE11MFP_EMAC0_RMII_TXD1 0x0000>,
+                 <PE12MFP_EMAC0_RMII_TXEN 0x0000>,
+                 <PC8MFP_EMAC0_RMII_REFCLK 0x0000>,
+                 <PC7MFP_EMAC0_RMII_RXD0 0x0000>,
+                 <PC6MFP_EMAC0_RMII_RXD1 0x0000>,
+                 <PA7MFP_EMAC0_RMII_CRSDV 0x0000>,
+                 <PA6MFP_EMAC0_RMII_RXERR 0x0000>,
+                 <PB6MFP_EMAC0_PPS 0x0000>;
+    };
 };

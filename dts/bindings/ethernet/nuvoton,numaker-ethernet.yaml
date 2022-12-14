@@ -1,0 +1,28 @@
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NuMaker Ethernet controller
+
+compatible: "nuvoton,numaker-ethernet"
+
+include: ["ethernet.yaml", "ethernet,fixed-link.yaml", "base.yaml", "pinctrl-device.yaml"]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    reset:
+      required: true
+      type: int
+
+    clocks:
+      required: true
+      
+    phy-addr:
+      type: int
+      description: Address of the phy controller
+      required: true
+

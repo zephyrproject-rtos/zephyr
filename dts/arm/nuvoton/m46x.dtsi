@@ -540,6 +540,17 @@
 			label = "HSUSBD";
 			num-bidir-endpoints = <(12 + 2)>; /* Including control endpoints by +2 */
 		};
+
+		emac: ethernet@40012000 {
+			compatible = "nuvoton,numaker-ethernet";
+			reg = <0x40012000 0x105C>;
+			interrupts = <66 0>;
+            reset = <EMAC0_RST>;
+			status = "disabled";
+			label = "EMAC_0";
+			phy-addr = <1>;
+			clocks = <&pcc EMAC0_MODULE 0 0>;
+		};
 	};
 };
 
