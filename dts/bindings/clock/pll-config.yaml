@@ -1,0 +1,42 @@
+# Copyright NXP 2022
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic fixed-rate clock provider
+
+compatible: "pll-config"
+
+properties:
+    pll-ctrl-seli:
+      type: int
+      description: Bandwidth select I value
+      required: true
+
+    pll-ctrl-selp:
+      type: int
+      description: Bandwidth select P value
+      required: true
+
+    pll-ndec-ndiv:
+      type: int
+      description: PLL 550m Pre Divider
+      required: true
+
+    pll-pdec-pdiv:
+      type: int
+      description: PPL 550m Post Divider
+      required: true
+
+    pll-sscg1-mdiv:
+      type: int
+      description: PLL0 Spread Spectrum Control
+      required: false
+
+    pll-mdec-mdiv:
+      type: int
+      description: PLL1 Feddback ratio
+      required: false
+
+    pll-rate:
+      type: int
+      description: PLL clock frequency (Hz)
+      required: true
