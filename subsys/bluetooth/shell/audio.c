@@ -2133,8 +2133,8 @@ static int cmd_audio(const struct shell *sh, size_t argc, char **argv)
 SHELL_CMD_ARG_REGISTER(audio, &audio_cmds, "Bluetooth audio shell commands",
 		       cmd_audio, 1, 1);
 
-ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-			  const bool discoverable, const bool connectable)
+static ssize_t connectable_ad_data_add(struct bt_data *data_array,
+				       size_t data_array_size)
 {
 	static const uint8_t ad_ext_uuid16[] = {
 		IF_ENABLED(CONFIG_BT_MICP_MIC_DEV, (BT_UUID_16_ENCODE(BT_UUID_MICS_VAL),))
@@ -2147,10 +2147,6 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 		IF_ENABLED(CONFIG_BT_HAS, (BT_UUID_16_ENCODE(BT_UUID_HAS_VAL),)) /* Shall be last */
 	};
 	size_t ad_len = 0;
-
-	if (!discoverable) {
-		return 0;
-	}
 
 	if (IS_ENABLED(CONFIG_BT_ASCS)) {
 		static uint8_t ad_bap_announcement[8] = {
@@ -2196,7 +2192,7 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 
 		data_array[ad_len].type = BT_DATA_UUID16_SOME;
 
-		if (IS_ENABLED(CONFIG_BT_HAS) && IS_ENABLED(CONFIG_BT_PRIVACY) && connectable) {
+		if (IS_ENABLED(CONFIG_BT_HAS) && IS_ENABLED(CONFIG_BT_PRIVACY)) {
 			/* If the HA is in one of the GAP connectable modes and is using a
 			 * resolvable private address, the HA shall not include the Hearing Access
 			 * Service UUID in the Service UUID AD type field of the advertising data
@@ -2212,4 +2208,81 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 	}
 
 	return ad_len;
+}
+
+static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
+					  const size_t data_array_size)
+{
+	static const uint8_t ad_ext_uuid16[] = {
+		IF_ENABLED(CONFIG_BT_PACS, (BT_UUID_16_ENCODE(BT_UUID_PACS_VAL),))
+		IF_ENABLED(CONFIG_BT_CAP_ACCEPTOR, (BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),))
+	};
+	size_t ad_len = 0;
+
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
+		static const uint8_t ad_cap_announcement[3] = {
+			BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
+			BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
+		};
+
+		__ASSERT(data_array_size > ad_len, "No space for AD_CAP_ANNOUNCEMENT");
+		data_array[ad_len].type = BT_DATA_SVC_DATA16;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_cap_announcement);
+		data_array[ad_len].data = &ad_cap_announcement[0];
+		ad_len++;
+	}
+
+#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+	if (default_source) {
+		static uint8_t ad_bap_broadcast_announcement[5] = {
+			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
+		};
+		uint32_t broadcast_id;
+		int err;
+
+		err = bt_audio_broadcast_source_get_id(default_source,
+						       &broadcast_id);
+		if (err != 0) {
+			printk("Unable to get broadcast ID: %d\n", err);
+
+			return -1;
+		}
+
+		ad_bap_broadcast_announcement[2] = (uint8_t)(broadcast_id >> 16);
+		ad_bap_broadcast_announcement[3] = (uint8_t)(broadcast_id >> 8);
+		ad_bap_broadcast_announcement[4] = (uint8_t)(broadcast_id >> 0);
+		data_array[ad_len].type = BT_DATA_SVC_DATA16;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_bap_broadcast_announcement);
+		data_array[ad_len].data = ad_bap_broadcast_announcement;
+		ad_len++;
+	}
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+
+	if (ARRAY_SIZE(ad_ext_uuid16) > 0) {
+		if (data_array_size <= ad_len) {
+			shell_warn(ctx_shell, "No space for AD_UUID16");
+			return ad_len;
+		}
+
+		data_array[ad_len].type = BT_DATA_UUID16_SOME;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16);
+		data_array[ad_len].data = &ad_ext_uuid16[0];
+		ad_len++;
+	}
+
+	return ad_len;
+}
+
+ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+			  const bool discoverable, const bool connectable)
+{
+	if (!discoverable) {
+		return 0;
+	}
+
+	if (connectable) {
+		return connectable_ad_data_add(data_array, data_array_size);
+	} else {
+		return nonconnectable_ad_data_add(data_array, data_array_size);
+	}
 }
