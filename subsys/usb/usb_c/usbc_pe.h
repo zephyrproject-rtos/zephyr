@@ -11,8 +11,6 @@
 #include <zephyr/usb_c/usbc.h>
 #include <zephyr/drivers/usb_c/usbc_pd.h>
 #include <zephyr/drivers/usb_c/usbc_tc.h>
-#include <zephyr/smf.h>
-#include "usbc_timer.h"
 
 /**
  * @brief Policy Engine Errors
@@ -20,49 +18,6 @@
 enum pe_error {
 	/** Transmit error */
 	ERR_XMIT,
-};
-
-/**
- * @brief Policy Engine State Machine Object
- */
-struct policy_engine {
-	/** state machine context */
-	struct smf_ctx ctx;
-	/** Port device */
-	const struct device *dev;
-	/** state machine flags */
-	atomic_t flags;
-	/** current port power role (SOURCE or SINK) */
-	enum tc_power_role power_role;
-	/** current port data role (DFP or UFP) */
-	enum tc_data_role data_role;
-	/** port address where soft resets are sent */
-	enum pd_packet_type soft_reset_sop;
-	/** DPM request */
-	enum usbc_policy_request_t dpm_request;
-
-	/* Counters */
-
-	/**
-	 * This counter is used to retry the Hard Reset whenever there is no
-	 * response from the remote device.
-	 */
-	uint32_t hard_reset_counter;
-
-	/* Timers */
-
-	/** tTypeCSinkWaitCap timer */
-	struct usbc_timer_t pd_t_typec_sink_wait_cap;
-	/** tSenderResponse timer */
-	struct usbc_timer_t pd_t_sender_response;
-	/** tPSTransition timer */
-	struct usbc_timer_t pd_t_ps_transition;
-	/** tSinkRequest timer */
-	struct usbc_timer_t pd_t_sink_request;
-	/** tChunkingNotSupported timer */
-	struct usbc_timer_t pd_t_chunking_not_supported;
-	/** Time to wait before resending message after WAIT reception */
-	struct usbc_timer_t pd_t_wait_to_resend;
 };
 
 /**
