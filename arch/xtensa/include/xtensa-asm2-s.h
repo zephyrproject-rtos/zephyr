@@ -176,7 +176,8 @@
 	rsr.SCOMPARE1 a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
 #endif
-#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
+#if XCHAL_HAVE_THREADPTR && \
+	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
 	rur.THREADPTR a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
 #endif
@@ -408,6 +409,16 @@ _xstack_returned_\@:
 
 	l32i a2, a1, 0
 	l32i a2, a2, ___xtensa_irq_bsa_t_scratch_OFFSET
+
+#if XCHAL_HAVE_THREADPTR && defined(CONFIG_USERSPACE)
+	/* Clear up the threadptr because it is used
+	 * to check if a thread is runnig on user mode. Since
+	 * we are in a interruption we don't want the system
+	 * thinking it is possbly running in user mode.
+	 */
+	movi.n a0, 0
+	wur.THREADPTR a0
+#endif /* XCHAL_HAVE_THREADPTR && CONFIG_USERSPACE */
 
 	/* There's a gotcha with level 1 handlers: the INTLEVEL field
 	 * gets left at zero and not set like high priority interrupts
