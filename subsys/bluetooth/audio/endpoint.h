@@ -131,3 +131,4 @@ static inline const char *bt_audio_ep_state_str(uint8_t state)
 
 bool bt_audio_ep_is_broadcast_snk(const struct bt_audio_ep *ep);
 bool bt_audio_ep_is_broadcast_src(const struct bt_audio_ep *ep);
+bool bt_audio_ep_is_unicast_client(const struct bt_audio_ep *ep);
