@@ -32,23 +32,78 @@
 #include "usb.h"
 #endif
 
+#define SYSCON_NODE		DT_INST(0, nxp_lpc_syscon)
+
+/* System clock frequency. */
+extern uint32_t SystemCoreClock;
+
 #define CTIMER_CLOCK_SOURCE(node_id) \
 	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
 #define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
 #define TO_CLOCK_ATTACH_ID(inst, val) MUX_A(CM_CTIMERCLKSEL##inst, val)
 #define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
 
-#ifdef CONFIG_INIT_PLL0
+
+#if defined(CONFIG_INIT_PLL0)
+static void InitPLL0(void)
+{
 const pll_setup_t pll0Setup = {
-	.pllctrl = SYSCON_PLL0CTRL_CLKEN_MASK | SYSCON_PLL0CTRL_SELI(2U) |
-		   SYSCON_PLL0CTRL_SELP(31U),
-	.pllndec = SYSCON_PLL0NDEC_NDIV(125U),
-	.pllpdec = SYSCON_PLL0PDEC_PDIV(8U),
-	.pllsscg = {0x0U, (SYSCON_PLL0SSCG1_MDIV_EXT(3072U) | SYSCON_PLL0SSCG1_SEL_EXT_MASK)},
-	.pllRate = 24576000U,
-	.flags = PLL_SETUPFLAG_WAITLOCK}
-;
+	.pllctrl = SYSCON_PLL0CTRL_CLKEN_MASK |
+		SYSCON_PLL0CTRL_SELI(DT_PROP(DT_CHILD(SYSCON_NODE, pll0), pll_ctrl_seli)) |
+		SYSCON_PLL0CTRL_SELP(DT_PROP(DT_CHILD(SYSCON_NODE, pll0), pll_ctrl_selp)),
+	.pllndec = SYSCON_PLL0NDEC_NDIV(DT_PROP(DT_CHILD(SYSCON_NODE, pll0), pll_ndec_ndiv)),
+	.pllpdec = SYSCON_PLL0PDEC_PDIV(DT_PROP(DT_CHILD(SYSCON_NODE, pll0), pll_pdec_pdiv)),
+	.pllmdec = SYSCON_PLL0SSCG1_MDIV_EXT(DT_PROP(DT_CHILD(SYSCON_NODE, pll0), pll_sscg1_mdiv)),
+	.pllRate = DT_PROP(DT_CHILD(SYSCON_NODE, pll0), pll_rate),
+	.flags = PLL_SETUPFLAG_WAITLOCK};
+
+	/*!< Ensure XTAL16M is on  */
+	PMC->PDRUNCFGCLR0 |= PMC_PDRUNCFG0_PDEN_XTAL32M_MASK;
+	PMC->PDRUNCFGCLR0 |= PMC_PDRUNCFG0_PDEN_LDOXO32M_MASK;
+
+	/*!< Switch PLL0 clock source selector to XTAL16M */
+	CLOCK_AttachClk(kEXT_CLK_to_PLL0);
+
+	/* Ensure PLL is on */
+	POWER_DisablePD(kPDRUNCFG_PD_PLL0);
+	POWER_DisablePD(kPDRUNCFG_PD_PLL0_SSCG);
+
+	/*!< Configure PLL to the desired values */
+	CLOCK_SetPLL0Freq(&pll0Setup);
+
+	CLOCK_SetClkDiv(kCLOCK_DivPll0Clk, 0U, true);
+	CLOCK_SetClkDiv(kCLOCK_DivPll0Clk, 1U, false);
+}
 #endif
+
+
+#if (DT_PROP(DT_CLOCKS_CTLR_BY_NAME(SYSCON_NODE, sysclk), clock_frequency) == 150000000)
+static void InitPLL1(void)
+{
+const pll_setup_t pll1Setup = {
+	.pllctrl = SYSCON_PLL1CTRL_CLKEN_MASK |
+		SYSCON_PLL1CTRL_SELI(DT_PROP(DT_CHILD(SYSCON_NODE, pll1), pll_ctrl_seli)) |
+		SYSCON_PLL1CTRL_SELP(DT_PROP(DT_CHILD(SYSCON_NODE, pll1), pll_ctrl_selp)),
+	.pllndec = SYSCON_PLL1NDEC_NDIV(DT_PROP(DT_CHILD(SYSCON_NODE, pll1), pll_ndec_ndiv)),
+	.pllpdec = SYSCON_PLL1PDEC_PDIV(DT_PROP(DT_CHILD(SYSCON_NODE, pll1), pll_pdec_pdiv)),
+	.pllmdec = SYSCON_PLL1MDEC_MDIV(DT_PROP(DT_CHILD(SYSCON_NODE, pll1), pll_mdec_mdiv)),
+	.pllRate = DT_PROP(DT_CHILD(SYSCON_NODE, pll1), pll_rate),
+	.flags = PLL_SETUPFLAG_WAITLOCK};
+
+	/*!< Switch PLL1 clock source selector to XTAL16M */
+	CLOCK_AttachClk(kEXT_CLK_to_PLL1);
+
+	/* Ensure PLL is on */
+	POWER_DisablePD(kPDRUNCFG_PD_PLL1);
+
+	/*!< Configure PLL to the desired values */
+	CLOCK_SetPLL1Freq(&pll1Setup);
+
+	CLOCK_AttachClk(kPLL1_to_MAIN_CLK);
+}
+#endif
+
+
 
 /**
  *
@@ -58,59 +113,64 @@ const pll_setup_t pll0Setup = {
 
 static ALWAYS_INLINE void clock_init(void)
 {
-
-#if defined(CONFIG_SOC_LPC55S36)
-	/* Power Management Controller initialization */
+#if (CONFIG_SOC_LPC55S36)
+	/* Power Management Controller Initialization */
 	POWER_PowerInit();
 #endif
-
-#if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
-	defined(CONFIG_SOC_LPC55S28) || defined(CONFIG_SOC_LPC55S36) || \
-	defined(CONFIG_SOC_LPC55S69_CPU0)
     /*!< Set up the clock sources */
     /*!< Configure FRO192M */
 	/*!< Ensure FRO is on  */
 	POWER_DisablePD(kPDRUNCFG_PD_FRO192M);
 	/*!< Set up FRO to the 12 MHz, just for sure */
-	CLOCK_SetupFROClocking(12000000U);
+	CLOCK_SetupFROClocking(12000000);
 	/*!< Switch to FRO 12MHz first to ensure we can change the clock */
 	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
 
-	/* Enable FRO HF(96MHz) output */
-	CLOCK_SetupFROClocking(96000000U);
-
-#ifdef CONFIG_INIT_PLL0
-	/*!< Ensure XTAL16M is on  */
-	PMC->PDRUNCFGCLR0 |= PMC_PDRUNCFG0_PDEN_XTAL32M_MASK;
-	PMC->PDRUNCFGCLR0 |= PMC_PDRUNCFG0_PDEN_LDOXO32M_MASK;
-
-	/*!< Ensure CLK_IN is on  */
-	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_CLKIN_ENA_MASK;
-	ANACTRL->XO32M_CTRL |= ANACTRL_XO32M_CTRL_ENABLE_SYSTEM_CLK_OUT_MASK;
-
-	/*!< Switch PLL0 clock source selector to XTAL16M */
-	CLOCK_AttachClk(kEXT_CLK_to_PLL0);
-
-	/*!< Configure PLL to the desired values */
-	CLOCK_SetPLL0Freq(&pll0Setup);
-
-	CLOCK_SetClkDiv(kCLOCK_DivPll0Clk, 0U, true);
-	CLOCK_SetClkDiv(kCLOCK_DivPll0Clk, 1U, false);
+#if defined(CONFIG_INIT_PLL0) && !defined(CONFIG_SOC_LPC55S36)
+	/* Enable XTALHF clock */
+	POWER_DisablePD(kPDRUNCFG_PD_XTAL32M);
+	POWER_DisablePD(kPDRUNCFG_PD_LDOXO32M);
 #endif
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	/*!< Set FLASH wait states for core */
-	CLOCK_SetFLASHAccessCyclesForFreq(96000000U);
+	/* Set Voltage for one of the fastest clock outputs: System clock output */
+	POWER_SetVoltageForFreq(DT_PROP(DT_CLOCKS_CTLR_BY_NAME(SYSCON_NODE, sysclk),
+					clock_frequency));
+	/* Set FLASH wait states for core */
+	CLOCK_SetFLASHAccessCyclesForFreq(DT_PROP(DT_CLOCKS_CTLR_BY_NAME(SYSCON_NODE,
+									 sysclk),
+								clock_frequency));
 #endif
 
-    /*!< Set up dividers */
-	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false);
+	/*!< Ensure CLK_IN is on is either PLL is enabled  */
+#if ((DT_PROP(DT_CLOCKS_CTLR_BY_NAME(SYSCON_NODE, sysclk), clock_frequency) == 150000000) \
+	|| (defined(CONFIG_INIT_PLL0)))
+	CLOCK_SetupExtClocking(16000000);
+#if !defined(CONFIG_SOC_LPC55S36)
+	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_CLKIN_ENA_MASK;
+#endif
+	ANACTRL->XO32M_CTRL |= ANACTRL_XO32M_CTRL_ENABLE_SYSTEM_CLK_OUT_MASK;
+#endif
 
-    /*!< Set up clock selectors - Attach clocks to the peripheries */
+	/* Configuring the Main Clock output to either 150MHz with PLL1 or 96MHz with FRO */
+#if DT_PROP(DT_CLOCKS_CTLR_BY_NAME(SYSCON_NODE, sysclk), clock_frequency) == 150000000
+	InitPLL1();
+#else
+	CLOCK_SetupFROClocking(96000000);
+	/* Swtich MAIN_CLK to FRO_HF */
 	CLOCK_AttachClk(kFRO_HF_to_MAIN_CLK);
+#endif
+
+	/* Set AHBCLKDIV divider to value 1 */
+	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1, false);
+
+	/* Initialization for PLL0, currently tested for I2S */
+#ifdef CONFIG_INIT_PLL0
+	InitPLL0();
+#endif
 
 	/* Enables the clock for the I/O controller.: Enable Clock. */
-    CLOCK_EnableClock(kCLOCK_Iocon);
+	CLOCK_EnableClock(kCLOCK_Iocon);
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_usart, okay)
 #if defined(CONFIG_SOC_LPC55S36)
@@ -209,8 +269,6 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	CLOCK_SetClkDiv(kCLOCK_DivSdioClk, 3, true);
 #endif
 
-#endif /* CONFIG_SOC_LPC55S69_CPU0 */
-
 #if defined(CONFIG_SOC_LPC55S36) && defined(CONFIG_PWM)
 	/* Set the Submodule Clocks for FlexPWM */
 	SYSCON->PWM0SUBCTL |=
@@ -220,6 +278,9 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	  (SYSCON_PWM1SUBCTL_CLK0_EN_MASK | SYSCON_PWM1SUBCTL_CLK1_EN_MASK |
 	   SYSCON_PWM1SUBCTL_CLK2_EN_MASK);
 #endif
+
+	/* Set SystemCoreClock Variable */
+	SystemCoreClock = DT_PROP(DT_CLOCKS_CTLR_BY_NAME(SYSCON_NODE, sysclk), clock_frequency);
 }
 
 /**
