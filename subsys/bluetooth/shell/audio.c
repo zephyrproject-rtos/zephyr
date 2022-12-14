@@ -2144,7 +2144,7 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 		IF_ENABLED(CONFIG_BT_GTBS, (BT_UUID_16_ENCODE(BT_UUID_GTBS_VAL),))
 		IF_ENABLED(CONFIG_BT_TBS, (BT_UUID_16_ENCODE(BT_UUID_TBS_VAL),))
 		IF_ENABLED(CONFIG_BT_VCP_VOL_REND, (BT_UUID_16_ENCODE(BT_UUID_VCS_VAL),))
-		IF_ENABLED(CONFIG_BT_HAS, (BT_UUID_16_ENCODE(BT_UUID_HAS_VAL),))
+		IF_ENABLED(CONFIG_BT_HAS, (BT_UUID_16_ENCODE(BT_UUID_HAS_VAL),)) /* Shall be last */
 	};
 	size_t ad_len = 0;
 
@@ -2202,7 +2202,7 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 			 * Service UUID in the Service UUID AD type field of the advertising data
 			 * or scan response.
 			 */
-			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16) - 1;
+			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16) - BT_UUID_SIZE_16;
 		} else {
 			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16);
 		}
