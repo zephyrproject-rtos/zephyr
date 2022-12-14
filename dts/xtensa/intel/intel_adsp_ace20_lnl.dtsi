@@ -84,6 +84,18 @@
 		#clock-cells = <0>;
 	};
 
+	clkctl: clkctl {
+		compatible = "intel,adsp-shim-clkctl";
+		adsp-clkctl-clk-wovcro = <0>;
+		adsp-clkctl-clk-lpro = <1>;
+		adsp-clkctl-clk-hpro = <2>;
+		adsp-clkctl-freq-enc = <0xc 0x0 0x4>;
+		adsp-clkctl-freq-mask = <0x0 0x0 0x0>;
+		adsp-clkctl-freq-default = <2>;
+		adsp-clkctl-freq-lowest = <0>;
+		wovcro-supported;
+	};
+
 	audioclk: audio-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <24576000>;
@@ -385,7 +397,7 @@
 		};
 
 		tlb: tlb@17e000 {
-			compatible = "intel,adsp-tlb";
+			compatible = "intel,adsp-mtl-tlb";
 			reg = <0x17e000 0x1000>;
 			paddr-size = <12>;
 			exec-bit-idx = <14>;
