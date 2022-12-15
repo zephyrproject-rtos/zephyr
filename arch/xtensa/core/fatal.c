@@ -141,3 +141,11 @@ FUNC_NORETURN void z_system_halt(unsigned int reason)
 	CODE_UNREACHABLE;
 }
 #endif
+
+FUNC_NORETURN void arch_syscall_oops(void *ssf)
+{
+	z_arch_esf_t *esf = ssf;
+
+	z_xtensa_fatal_error(K_ERR_KERNEL_OOPS, esf);
+	CODE_UNREACHABLE;
+}
