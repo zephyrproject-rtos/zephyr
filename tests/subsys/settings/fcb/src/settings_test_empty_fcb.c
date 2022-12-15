@@ -19,6 +19,7 @@ ZTEST(settings_config_fcb, test_config_empty_fcb)
 	cf.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC;
 	cf.cf_fcb.f_sectors = fcb_sectors;
 	cf.cf_fcb.f_sector_cnt = ARRAY_SIZE(fcb_sectors);
+	cf.partition_id = SETTINGS_PARTITION;
 
 	rc = settings_fcb_src(&cf);
 	zassert_true(rc == 0, "settings_fcb_src call should succeed");

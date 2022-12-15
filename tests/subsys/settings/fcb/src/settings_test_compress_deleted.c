@@ -97,6 +97,7 @@ ZTEST(settings_config_fcb, test_config_compress_deleted)
 	cf.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC;
 	cf.cf_fcb.f_sectors = fcb_small_sectors;
 	cf.cf_fcb.f_sector_cnt = ARRAY_SIZE(fcb_small_sectors);
+	cf.partition_id = SETTINGS_PARTITION;
 
 	rc = settings_fcb_src(&cf);
 	zassert_true(rc == 0, "can't register FCB as configuration source");

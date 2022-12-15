@@ -18,6 +18,7 @@ extern "C" {
 struct settings_fcb {
 	struct settings_store cf_store;
 	struct fcb cf_fcb;
+	int partition_id;
 };
 
 extern int settings_fcb_src(struct settings_fcb *cf);

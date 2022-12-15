@@ -62,7 +62,7 @@ int settings_fcb_src(struct settings_fcb *cf)
 	cf->cf_fcb.f_scratch_cnt = 1;
 
 	while (1) {
-		rc = fcb_init(settings_fcb_get_flash_area(), &cf->cf_fcb);
+		rc = fcb_init(cf->partition_id, &cf->cf_fcb);
 		if (rc) {
 			return -EINVAL;
 		}
@@ -418,7 +418,9 @@ int settings_backend_init(void)
 	int rc;
 	const struct flash_area *fap;
 
-	rc = flash_area_get_sectors(settings_fcb_get_flash_area(), &cnt,
+	config_init_settings_fcb.partition_id = settings_fcb_get_flash_area();
+
+	rc = flash_area_get_sectors(config_init_settings_fcb.partition_id, &cnt,
 				    settings_fcb_area);
 	if (rc != 0 && rc != -ENOMEM) {
 		return rc;
@@ -428,7 +430,7 @@ int settings_backend_init(void)
 
 	rc = settings_fcb_src(&config_init_settings_fcb);
 	if (rc != 0) {
-		rc = flash_area_open(settings_fcb_get_flash_area(), &fap);
+		rc = flash_area_open(config_init_settings_fcb.partition_id, &fap);
 		if (rc != 0) {
 			return rc;
 		}

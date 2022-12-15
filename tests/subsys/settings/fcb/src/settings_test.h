@@ -19,6 +19,12 @@
 extern "C" {
 #endif
 
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
+#else
+#define SETTINGS_PARTITION FIXED_PARTITION_ID(storage_partition)
+#endif
+
 #define SETTINGS_TEST_FCB_VAL_STR_CNT   64
 #define SETTINGS_TEST_FCB_FLASH_CNT   4
 
