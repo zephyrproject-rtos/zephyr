@@ -459,6 +459,20 @@ config BT_CTLR_CENTRAL_SPACING
 	  (active clock jitter) + 17040 (PDU rx) = (radio event overheads +
 	  34234) microseconds.
 
+config BT_CTLR_CENTRAL_RESERVE_MAX
+	bool "Use maximum data PDU size time reservation for Central"
+	depends on BT_CENTRAL
+	default y
+	help
+	  Use the maximum data PDU size time reservation considering the Data
+	  length could be updated from default 27 bytes to maximum support size.
+	  If maximum time reservation is disabled then time reservation
+	  corresponding to the default data length at the time of the
+	  start/enable of Central role is used.
+
+	  Note, currently this value is only used to space multiple central
+	  connections and not for actual ticker time reservations.
+
 config BT_CTLR_SLOT_RESERVATION_UPDATE
 	bool "Update event length reservation after PHY or DLE update"
 	depends on !BT_LL_SW_LLCP_LEGACY && (BT_CTLR_DATA_LENGTH || BT_CTLR_PHY)
