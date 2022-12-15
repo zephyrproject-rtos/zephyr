@@ -13,13 +13,21 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
 
+static void uart_xmc4xxx_configure_service_requests(const struct device *dev);
+
+#define MAX_FIFO_SIZE 64
+#define USIC_IRQ_MIN  84
+#define USIC_IRQ_MAX  101
+#define IRQS_PER_USIC 6
+
 struct uart_xmc4xxx_config {
 	XMC_USIC_CH_t *uart;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t input_src;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	uart_irq_config_func_t irq_config_func;
-	uint8_t irq_num;
+	uint8_t irq_num_tx;
+	uint8_t irq_num_rx;
 #endif
 	uint8_t fifo_start_offset;
 	uint8_t fifo_tx_size;
@@ -31,7 +39,8 @@ struct uart_xmc4xxx_data {
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
-	uint8_t service_request;
+	uint8_t service_request_tx;
+	uint8_t service_request_rx;
 #endif
 };
 
@@ -65,7 +74,6 @@ static void uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
 	XMC_UART_CH_Transmit(config->uart, c);
 }
 
-#define MAX_FIFO_SIZE 64
 static int uart_xmc4xxx_init(const struct device *dev)
 {
 	int ret;
@@ -113,12 +121,53 @@ static int uart_xmc4xxx_init(const struct device *dev)
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	config->irq_config_func(dev);
+	uart_xmc4xxx_configure_service_requests(dev);
 #endif
 
 	return 0;
 }
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+
+static void uart_xmc4xxx_configure_service_requests(const struct device *dev)
+{
+	struct uart_xmc4xxx_data *data = dev->data;
+	const struct uart_xmc4xxx_config *config = dev->config;
+
+	__ASSERT(config->irq_num_tx >= USIC_IRQ_MIN && config->irq_num_tx <= USIC_IRQ_MAX,
+		 "Invalid irq number\n");
+	data->service_request_tx = (config->irq_num_tx - USIC_IRQ_MIN) % IRQS_PER_USIC;
+
+	if (config->fifo_tx_size > 0) {
+		XMC_USIC_CH_TXFIFO_SetInterruptNodePointer(
+			config->uart, XMC_USIC_CH_TXFIFO_INTERRUPT_NODE_POINTER_STANDARD,
+			data->service_request_tx);
+	} else {
+		XMC_USIC_CH_SetInterruptNodePointer(
+			config->uart, XMC_USIC_CH_INTERRUPT_NODE_POINTER_TRANSMIT_BUFFER,
+			data->service_request_tx);
+	}
+
+	__ASSERT(config->irq_num_rx >= USIC_IRQ_MIN && config->irq_num_rx <= USIC_IRQ_MAX,
+		 "Invalid irq number\n");
+	data->service_request_rx = (config->irq_num_rx - USIC_IRQ_MIN) % IRQS_PER_USIC;
+
+	if (config->fifo_rx_size > 0) {
+		XMC_USIC_CH_RXFIFO_SetInterruptNodePointer(
+			config->uart, XMC_USIC_CH_RXFIFO_INTERRUPT_NODE_POINTER_STANDARD,
+			data->service_request_rx);
+		XMC_USIC_CH_RXFIFO_SetInterruptNodePointer(
+			config->uart, XMC_USIC_CH_RXFIFO_INTERRUPT_NODE_POINTER_ALTERNATE,
+			data->service_request_rx);
+	} else {
+		XMC_USIC_CH_SetInterruptNodePointer(config->uart,
+						    XMC_USIC_CH_INTERRUPT_NODE_POINTER_RECEIVE,
+						    data->service_request_rx);
+		XMC_USIC_CH_SetInterruptNodePointer(
+			config->uart, XMC_USIC_CH_INTERRUPT_NODE_POINTER_ALTERNATE_RECEIVE,
+			data->service_request_rx);
+	}
+}
 
 static void uart_xmc4xxx_isr(void *arg)
 {
@@ -186,7 +235,7 @@ static void uart_xmc4xxx_irq_tx_enable(const struct device *dev)
 	} else {
 		XMC_USIC_CH_EnableEvent(config->uart, XMC_USIC_CH_EVENT_TRANSMIT_BUFFER);
 	}
-	XMC_USIC_CH_TriggerServiceRequest(config->uart, data->service_request);
+	XMC_USIC_CH_TriggerServiceRequest(config->uart, data->service_request_tx);
 }
 
 static void uart_xmc4xxx_irq_tx_disable(const struct device *dev)
@@ -280,14 +329,23 @@ static void uart_xmc4xxx_irq_callback_set(const struct device *dev,
 static int uart_xmc4xxx_irq_is_pending(const struct device *dev)
 {
 	const struct uart_xmc4xxx_config *config = dev->config;
-	uint32_t irq_num = config->irq_num;
+	uint32_t irq_num_tx = config->irq_num_tx;
+	uint32_t irq_num_rx = config->irq_num_rx;
+	bool tx_pending;
+	bool rx_pending;
 	uint32_t setpend;
 
 	/* the NVIC_ISPR_BASE address stores info which interrupts are pending */
 	/* bit 0 -> irq 0, bit 1 -> irq 1,...  */
-	setpend = *((uint32_t *)(NVIC_ISPR_BASE) + irq_num / 32);
-	irq_num = irq_num & 0x1f; /* take modulo 32 */
-	return (setpend & BIT(irq_num)) > 0;
+	setpend = *((uint32_t *)(NVIC_ISPR_BASE) + irq_num_tx / 32);
+	irq_num_tx = irq_num_tx & 0x1f; /* take modulo 32 */
+	tx_pending = setpend & BIT(irq_num_tx);
+
+	setpend = *((uint32_t *)(NVIC_ISPR_BASE) + irq_num_rx / 32);
+	irq_num_rx = irq_num_rx & 0x1f; /* take modulo 32 */
+	rx_pending = setpend & BIT(irq_num_rx);
+
+	return tx_pending || rx_pending;
 }
 #endif
 
@@ -308,58 +366,24 @@ static const struct uart_driver_api uart_xmc4xxx_driver_api = {
 #endif
 };
 
-#define USIC_IRQ_MIN  84
-#define USIC_IRQ_MAX  101
-#define IRQS_PER_USIC 6
-
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 #define XMC4XXX_IRQ_HANDLER(index)                                                         \
 static void uart_xmc4xxx_irq_setup_##index(const struct device *dev)                       \
 {                                                                                          \
-	const struct uart_xmc4xxx_config *config = dev->config;                            \
-	struct uart_xmc4xxx_data *data = dev->data;                                        \
-											   \
-	__ASSERT(config->irq_num >= USIC_IRQ_MIN && config->irq_num <= USIC_IRQ_MAX,       \
-		 "Invalid irq number\n");                                                  \
-											   \
-	data->service_request = (config->irq_num - USIC_IRQ_MIN) % IRQS_PER_USIC;          \
-											   \
-	if (config->fifo_tx_size > 0) {                                                    \
-		XMC_USIC_CH_TXFIFO_SetInterruptNodePointer(                                \
-			config->uart, XMC_USIC_CH_TXFIFO_INTERRUPT_NODE_POINTER_STANDARD,  \
-			data->service_request);                                            \
-	} else {                                                                           \
-		XMC_USIC_CH_SetInterruptNodePointer(                                       \
-			config->uart, XMC_USIC_CH_INTERRUPT_NODE_POINTER_TRANSMIT_BUFFER,  \
-			data->service_request);                                            \
-	}                                                                                  \
-                                                                                           \
-	if (config->fifo_rx_size > 0) {                                                    \
-		XMC_USIC_CH_RXFIFO_SetInterruptNodePointer(                                \
-			config->uart, XMC_USIC_CH_RXFIFO_INTERRUPT_NODE_POINTER_STANDARD,  \
-			data->service_request);                                            \
-		XMC_USIC_CH_RXFIFO_SetInterruptNodePointer(                                \
-			config->uart, XMC_USIC_CH_RXFIFO_INTERRUPT_NODE_POINTER_ALTERNATE, \
-			data->service_request);                                            \
-	} else {                                                                           \
-		XMC_USIC_CH_SetInterruptNodePointer(                                       \
-			config->uart, XMC_USIC_CH_INTERRUPT_NODE_POINTER_RECEIVE,          \
-			data->service_request);                                            \
-											   \
-		XMC_USIC_CH_SetInterruptNodePointer(                                       \
-			config->uart, XMC_USIC_CH_INTERRUPT_NODE_POINTER_ALTERNATE_RECEIVE,\
-			data->service_request);                                            \
-	}                                                                                  \
-											   \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, tx_rx, irq),                                \
-		    DT_INST_IRQ_BY_NAME(index, tx_rx, priority), uart_xmc4xxx_isr,         \
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, tx, irq),                                   \
+		    DT_INST_IRQ_BY_NAME(index, tx, priority), uart_xmc4xxx_isr,            \
 		    DEVICE_DT_INST_GET(index), 0);                                         \
-	irq_enable(DT_INST_IRQ_BY_NAME(index, tx_rx, irq));                                \
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
+		    DT_INST_IRQ_BY_NAME(index, rx, priority), uart_xmc4xxx_isr,            \
+		    DEVICE_DT_INST_GET(index), 0);                                         \
+	irq_enable(DT_INST_IRQ_BY_NAME(index, tx, irq));                                   \
+	irq_enable(DT_INST_IRQ_BY_NAME(index, rx, irq));                                   \
 }
 
-#define XMC4XXX_IRQ_STRUCT_INIT(index)                                                             \
-	.irq_config_func = uart_xmc4xxx_irq_setup_##index,                                         \
-	.irq_num = DT_INST_IRQ_BY_NAME(index, tx_rx, irq),
+#define XMC4XXX_IRQ_STRUCT_INIT(index)                                                     \
+	.irq_config_func = uart_xmc4xxx_irq_setup_##index,                                 \
+	.irq_num_tx = DT_INST_IRQ_BY_NAME(index, tx, irq),                                 \
+	.irq_num_rx = DT_INST_IRQ_BY_NAME(index, rx, irq),
 
 #else
 #define XMC4XXX_IRQ_HANDLER(index)
