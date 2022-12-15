@@ -723,6 +723,9 @@ static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
+	shell_info(sh, "Sending broadcast code:");
+	shell_hexdump(sh, broadcast_code, sizeof(broadcast_code));
+
 	result = bt_bap_broadcast_assistant_set_broadcast_code(default_conn,
 							       src_id,
 							       broadcast_code);
