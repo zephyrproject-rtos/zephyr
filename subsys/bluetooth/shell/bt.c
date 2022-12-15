@@ -139,6 +139,8 @@ static struct bt_scan_filter {
 	bool addr_set;
 	int8_t rssi;
 	bool rssi_set;
+	uint16_t pa_interval;
+	bool pa_interval_set;
 } scan_filter;
 
 
@@ -209,6 +211,11 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	}
 
 	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
+		return;
+	}
+
+	if (scan_filter.pa_interval_set &&
+	    (scan_filter.pa_interval > BT_CONN_INTERVAL_TO_MS(info->interval))) {
 		return;
 	}
 
@@ -1191,6 +1198,39 @@ static int cmd_scan_filter_set_rssi(const struct shell *sh, size_t argc, char *a
 		}
 
 		shell_print(sh, "value out of bounds (%d to %d)", INT8_MIN, INT8_MAX);
+		err = -ERANGE;
+	}
+
+	shell_print(sh, "error %d", err);
+	shell_help(sh);
+
+	return SHELL_CMD_HELP_PRINTED;
+}
+
+static int cmd_scan_filter_set_pa_interval(const struct shell *sh, size_t argc,
+					   char *argv[])
+{
+	unsigned long pa_interval;
+	int err = 0;
+
+	pa_interval = shell_strtoul(argv[1], 10, &err);
+
+	if (!err) {
+		if (IN_RANGE(pa_interval,
+			     BT_GAP_PER_ADV_MIN_INTERVAL,
+			     BT_GAP_PER_ADV_MAX_INTERVAL)) {
+			scan_filter.pa_interval = (uint16_t)pa_interval;
+			scan_filter.pa_interval_set = true;
+			shell_print(sh, "PA interval cutoff set at %u",
+				    scan_filter.pa_interval);
+
+			return 0;
+		}
+
+		shell_print(sh, "value out of bounds (%d to %d)",
+			    BT_GAP_PER_ADV_MIN_INTERVAL,
+			    BT_GAP_PER_ADV_MAX_INTERVAL);
+
 		err = -ERANGE;
 	}
 
@@ -3527,6 +3567,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_scan_filter_set_cmds,
 	SHELL_CMD_ARG(name, NULL, "<name>", cmd_scan_filter_set_name, 2, 0),
 	SHELL_CMD_ARG(addr, NULL, "<addr>", cmd_scan_filter_set_addr, 2, 0),
 	SHELL_CMD_ARG(rssi, NULL, "<rssi>", cmd_scan_filter_set_rssi, 1, 1),
+	SHELL_CMD_ARG(pa_interval, NULL, "<pa_interval>",
+		      cmd_scan_filter_set_pa_interval, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
