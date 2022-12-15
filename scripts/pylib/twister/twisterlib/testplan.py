@@ -570,7 +570,7 @@ class TestPlan:
         runnable = (self.options.device_testing or self.options.filter == 'runnable')
         force_toolchain = self.options.force_toolchain
         force_platform = self.options.force_platform
-        ignore_platform_hints = self.options.ignore_platform_hints
+        ignore_platform_key = self.options.ignore_platform_key
         emu_filter = self.options.emulation_only
 
         logger.debug("platform filter: " + str(platform_filter))
@@ -616,6 +616,8 @@ class TestPlan:
             platforms = self.platforms
 
         logger.info("Building initial testsuite list...")
+
+        keyed_tests = {}
 
         for ts_name, ts in self.testsuites.items():
 
@@ -748,18 +750,35 @@ class TestPlan:
                 if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
 
-                # platform_hint is a hint given by a test to describe at which level of integration a test should
-                # be run (none, arch, soc, board) with board being the default and implying the test should run everywhere.
+                # platform_key is a list of unique platform attributes that form a unique key a test
+                # will match against to determine if it should be scheduled to run.
                 #
-                # unset implies no hints, and the test is scheduled to run on every given platform
-                # arch implies that running the test once on the architecture is enough, priority is given to simulators if in the set of platforms
-                # family implies that running the test once for a family of SoCs is enough
-                # soc implies that running the test once per SoC is enough
-                # board implies that the test should be run on every physical (non-simulation!) board.
-                if set(ts.platform_hint) and ts.platform_hint == "arch" and not ("arch" in plat.platform_levels) and not ignore_platform_hints:
-                    cur_arch_test = arch_tests[(plat.arch, ts.name)]
-
-                    instance.add_filter("Excluded non-simulation platform (platform_level = 'arch')", Filters.PLATFORM)
+                # For example a test that requires running on each unique architecture only, may give the platform_key
+                # arch and the test will be run once per arch. Notably simulators are always given priority if they
+                # match the key.
+                #
+                # Another example might be the case where you wish the test to run on each unique soc or soc family in which
+                # case the platform_key could be given the soc or soc_family values to key on.
+                #
+                # Perhaps a more exotic example might be wanting to run the test once per arch, with and without atomic support.
+                # In that scenario arch, atomics might be given as the platform_key and each platform is then expected to provide
+                # both arch, and atomics as a pair of attributes describing it.
+                if not ignore_platform_key and set(ts.platform_key):
+                    # form a key by sorting the key fields first, then fetching the key fields from plat if they exist
+                    # if a field does not exist the test is still scheduled on that platform as its undeterminable.
+                    key_fields = ts.platform_key.sort()
+                    key = [getattr(plat, key_field) for key_field in key_fields]
+                    has_all_fields = True
+                    for key_field in key_fields:
+                        if key_field is None:
+                            has_all_fields = False
+                    if has_all_fields:
+                        key.append(ts.name)
+                        keyed_test = keyed_tests[key]
+                        if keyed_test is not None and keyed_test.plat.simulation != 'na':
+                                instance.add_filter(f"Excluded test already covered by platform_key {key} given fields {key_fields}")
+                        else:
+                            keyed_tests[key] = {'plat': plat, 'ts': ts}
 
                 test_configuration = ".".join([instance.platform.name,
                                                instance.testsuite.id])

@@ -130,9 +130,12 @@ mapping:
       "type":
         type: str
         enum: ["unit"]
-      "platform_hint":
-        type: ["arch", "soc_family", "soc", "board"]
+      "platform_key":
+        type: seq
         required: false
+        sequence:
+          - type: str
+          - enum: ["arch", "simulation", "toolchain", "type"]
       "skip":
         type: bool
         required: false

@@ -1,5 +1,7 @@
 common:
-  simulation_only: True
+  platform_key:
+    - arch
+    - simulation
   tags: rtio
   integration_platforms:
     - native_posix
