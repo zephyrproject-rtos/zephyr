@@ -33,6 +33,7 @@ FILE(GLOB ll_sw_sources
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp.c
 	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_conn.c
 	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ll_addr.c
+	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ll_feat.c
 )
 
 FILE(GLOB mock_sources

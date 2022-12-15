@@ -529,7 +529,7 @@ void ull_llcp_init(struct ll_conn *conn)
 
 	/* Reset the feature exchange fields */
 	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
-	conn->llcp.fex.features_used = LL_FEAT;
+	conn->llcp.fex.features_used = ll_feat_get();
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Reset encryption related state */

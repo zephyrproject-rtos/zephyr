@@ -130,7 +130,40 @@ void test_feat_exchange_central_loc(void)
 		ull_cp_release_tx(&conn, tx);
 		ull_cp_release_ntf(ntf);
 	}
-	zassert_equal(conn.lll.event_counter, feat_to_test, "Wrong event-count %d\n",
+
+	/* Test that host enabled feature makes it into feature exchange */
+	ll_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
+
+	/* Add host feature bit to expected features bit mask */
+	set_featureset[0] |= BIT64(BT_LE_FEAT_BIT_ISO_CHANNELS);
+
+	sys_put_le64(set_featureset[0], local_feature_req.features);
+	/* Initiate a Feature Exchange Procedure */
+	err = ull_cp_feature_exchange(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	event_prepare(&conn);
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_FEATURE_REQ, &conn, &tx, &local_feature_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_FEATURE_RSP, &conn, &remote_feature_rsp);
+
+	event_done(&conn);
+	/* There should be one host notification */
+
+	ut_rx_pdu(LL_FEATURE_RSP, &ntf, &exp_remote_feature_rsp);
+
+	ut_rx_q_is_empty();
+
+	ull_cp_release_tx(&conn, tx);
+	ull_cp_release_ntf(ntf);
+
+	/* Remove host feature bit again */
+	ll_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 0);
+
+	zassert_equal(conn.lll.event_counter, feat_to_test + 1, "Wrong event-count %d\n",
 		      conn.lll.event_counter);
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());

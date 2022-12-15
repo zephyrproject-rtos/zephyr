@@ -133,13 +133,13 @@ void llcp_pdu_encode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 #endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_PERIPHERAL */
 
 	p = &pdu->llctrl.feature_req;
-	sys_put_le64(LL_FEAT, p->features);
+	sys_put_le64(ll_feat_get(), p->features);
 }
 
 void llcp_pdu_encode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_feature_rsp *p;
-	uint64_t feature_rsp = LL_FEAT;
+	uint64_t feature_rsp = ll_feat_get();
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = PDU_DATA_LLCTRL_LEN(feature_rsp);
@@ -173,7 +173,7 @@ void llcp_pdu_decode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 	uint64_t featureset;
 
 	feature_filter(pdu->llctrl.feature_req.features, &featureset);
-	conn->llcp.fex.features_used = LL_FEAT & featureset;
+	conn->llcp.fex.features_used = ll_feat_get() & featureset;
 
 	featureset &= (FEAT_FILT_OCTET0 | conn->llcp.fex.features_used);
 	conn->llcp.fex.features_peer = featureset;
@@ -186,7 +186,7 @@ void llcp_pdu_decode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	uint64_t featureset;
 
 	feature_filter(pdu->llctrl.feature_rsp.features, &featureset);
-	conn->llcp.fex.features_used = LL_FEAT & featureset;
+	conn->llcp.fex.features_used = ll_feat_get() & featureset;
 
 	conn->llcp.fex.features_peer = featureset;
 	conn->llcp.fex.valid = 1;
