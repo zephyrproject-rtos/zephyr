@@ -1204,6 +1204,17 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 
 		/* check if connection update procedure is requested */
 		if (conn->llcp_cu.ack != conn->llcp_cu.req) {
+			/* Delay until all pending Tx in LLL is acknowledged,
+			 * new Tx PDUs will not be enqueued until we proceed to
+			 * initiate connection update and get acknowledged.
+			 * This is required to ensure PDU with instant can be
+			 * transmitted before instant expires.
+			 */
+			if (memq_peek(conn->lll.memq_tx.head,
+				      conn->lll.memq_tx.tail, NULL)) {
+				return 0;
+			}
+
 			/* switch to LLCP_CONN_UPD state machine */
 			conn->llcp_type = LLCP_CONN_UPD;
 			conn->llcp_ack -= 2U;
@@ -2019,6 +2030,7 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count)
 
 	while (conn->tx_head &&
 	       ((
+		 (conn->llcp_cu.req == conn->llcp_cu.ack) &&
 #if defined(CONFIG_BT_CTLR_PHY)
 		 !conn->llcp_phy.pause_tx &&
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -2938,6 +2950,7 @@ static inline void ctrl_tx_pause_enqueue(struct ll_conn *conn,
 	if (
 	    /* data/ctrl packet is in the head */
 	    conn->tx_head &&
+	    !conn->llcp_cu.pause_tx &&
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	    !conn->llcp_enc.pause_tx &&
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -3287,8 +3300,15 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 					     llctrl.conn_update_ind.win_offset);
 			pdu_ctrl_tx->llctrl.conn_update_ind.instant =
 				sys_cpu_to_le16(conn->llcp.conn_upd.instant);
+
 			/* move to in progress */
 			conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
+
+			/* Data PDU tx paused, as we ensure PDUs in LLL have all
+			 * been ack-ed.
+			 */
+			conn->llcp_cu.pause_tx = 1U;
+
 			/* enqueue control PDU */
 			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
 			ctrl_tx_enqueue(conn, tx);
@@ -3335,6 +3355,12 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 					      conn->lll.latency + 6;
 		pdu_ctrl_tx->llctrl.conn_update_ind.instant =
 			sys_cpu_to_le16(conn->llcp.conn_upd.instant);
+
+		/* Data PDU tx paused, as we ensure PDUs in LLL have all been
+		 * ack-ed.
+		 */
+		conn->llcp_cu.pause_tx = 1U;
+
 		/* enqueue control PDU */
 		ctrl_tx_enqueue(conn, tx);
 #endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
@@ -6646,6 +6672,12 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		/* Reset the transaction lock */
 		conn->common.txn_lock = 0U;
 		break;
+
+#if defined(CONFIG_BT_CENTRAL)
+	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
+		conn->llcp_cu.pause_tx = 0U;
+		break;
+#endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #if defined(CONFIG_BT_CENTRAL)
