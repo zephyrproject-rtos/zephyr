@@ -79,14 +79,11 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 					    uint32_t broadcast_id)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char name[30];
-
-	(void)memset(name, 0, sizeof(name));
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	shell_print(ctx_shell, "[DEVICE]: %s (%s), broadcast_id 0x%06X, "
 		    "interval (ms) %u), SID 0x%x, RSSI %i",
-		    le_addr, name, broadcast_id, info->interval * 5 / 4,
+		    le_addr, broadcast_id, info->interval * 5 / 4,
 		    info->sid, info->rssi);
 
 }
