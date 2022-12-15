@@ -99,7 +99,3 @@ add_custom_command(
 # Source files in this sample
 # Node (6) in the above graphic
 target_sources(app PRIVATE src/main.c ${UPDATE_OBJ} ${UPDATE_HEADER_OBJ})
-
-target_include_directories(app PRIVATE
-  $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
-)

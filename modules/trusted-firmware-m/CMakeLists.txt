@@ -408,9 +408,6 @@ if (CONFIG_BUILD_WITH_TFM)
 
   zephyr_include_directories(
     ${TFM_GENERATED_INCLUDES}
-    )
-
-  target_include_directories(tfm_api PRIVATE
     ${TFM_BINARY_DIR}/install/interface/include
     )
 
