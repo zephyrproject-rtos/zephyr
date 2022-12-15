@@ -17,3 +17,7 @@ MEMORY
 }
 
 #include <zephyr/arch/riscv/common/linker.ld>
+
+#ifdef CONFIG_MCUBOOT
+	ASSERT(__rom_region_size <= DT_REG_SIZE(DT_NODELABEL(boot_partition)), "boot_partition overflows")
+#endif

@@ -14,3 +14,7 @@ CONFIG_UART_CONSOLE=y
 
 # HW DSP options
 CONFIG_TELINK_B91_HWDSP=n
+
+# MCU boot application options
+CONFIG_MCUBOOT_SIGNATURE_KEY_FILE="bootloader/mcuboot/root-rsa-2048.pem"
+CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS="--max-sectors 4096"
