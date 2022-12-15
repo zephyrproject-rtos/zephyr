@@ -17,15 +17,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
-#if DT_HAS_CHOSEN(zephyr_settings_partition)
-#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
-#else
-#define SETTINGS_PARTITION FIXED_PARTITION_ID(storage_partition)
-#endif
-
 #define SETTINGS_FCB_VERS		1
 
-int settings_backend_init(void);
+struct settings_fcb_config {
+	int partition_id;
+	struct flash_sector *sectors;
+	size_t num_sectors;
+};
 
 static int settings_fcb_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
@@ -390,31 +388,29 @@ static void *settings_fcb_storage_get(struct settings_store *cs)
 
 #ifdef CONFIG_SETTINGS_FCB_INIT
 
-int settings_backend_init(void)
+static int settings_fcb_store_init(struct settings_store *store, const void *config)
 {
-	static struct flash_sector
-		settings_fcb_area[CONFIG_SETTINGS_FCB_NUM_AREAS + 1];
-	static struct settings_fcb config_init_settings_fcb = {
-		.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC,
-		.cf_fcb.f_sectors = settings_fcb_area,
-		.partition_id = SETTINGS_PARTITION,
-	};
-	uint32_t cnt = sizeof(settings_fcb_area) /
-		    sizeof(settings_fcb_area[0]);
-	int rc;
+	struct settings_fcb *settings = CONTAINER_OF(store, struct settings_fcb, cf_store);
+	const struct settings_fcb_config *settings_config = config;
+	uint32_t cnt = settings_config->num_sectors;
 	const struct flash_area *fap;
+	int rc;
 
-	rc = flash_area_get_sectors(config_init_settings_fcb.partition_id, &cnt,
-				    settings_fcb_area);
+	settings->cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC;
+	settings->cf_fcb.f_sectors = settings_config->sectors;
+	settings->partition_id = settings_config->partition_id;
+
+	rc = flash_area_get_sectors(settings->partition_id, &cnt,
+				    settings_config->sectors);
 	if (rc != 0 && rc != -ENOMEM) {
 		return rc;
 	}
 
-	config_init_settings_fcb.cf_fcb.f_sector_cnt = cnt;
+	settings->cf_fcb.f_sector_cnt = cnt;
 
-	rc = settings_fcb_src(&config_init_settings_fcb);
+	rc = settings_fcb_src(settings);
 	if (rc != 0) {
-		rc = flash_area_open(config_init_settings_fcb.partition_id, &fap);
+		rc = flash_area_open(settings->partition_id, &fap);
 		if (rc != 0) {
 			return rc;
 		}
@@ -426,20 +422,40 @@ int settings_backend_init(void)
 			return rc;
 		}
 
-		rc = settings_fcb_src(&config_init_settings_fcb);
+		rc = settings_fcb_src(settings);
 		if (rc != 0) {
 			return rc;
 		}
 	}
 
-	rc = settings_fcb_dst(&config_init_settings_fcb);
+	rc = settings_fcb_dst(settings);
 	if (rc != 0) {
 		return rc;
 	}
 
-	settings_mount_fcb_backend(&config_init_settings_fcb);
+	settings_mount_fcb_backend(settings);
 
 	return rc;
 }
+
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
+#else
+#define SETTINGS_PARTITION FIXED_PARTITION_ID(storage_partition)
+#endif
+
+static struct flash_sector settings_fcb_default_sectors[CONFIG_SETTINGS_FCB_NUM_AREAS + 1];
+
+static const struct settings_fcb_config settings_fcb_default_config = {
+	.partition_id = SETTINGS_PARTITION,
+	.sectors = settings_fcb_default_sectors,
+	.num_sectors = ARRAY_SIZE(settings_fcb_default_sectors),
+};
+
+static struct settings_fcb settings_fcb_default;
+
+SETTINGS_STORE_STATIC_DEFINE(fcb_default, 50, settings_fcb_store_init,
+			     &settings_fcb_default.cf_store,
+			     &settings_fcb_default_config);
 
 #endif /* CONFIG_SETTINGS_FCB_INIT */

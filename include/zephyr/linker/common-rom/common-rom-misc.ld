@@ -6,6 +6,7 @@
 
 #if defined(CONFIG_SETTINGS)
 	ITERABLE_SECTION_ROM(settings_handler_static, 4)
+	ITERABLE_SECTION_ROM(settings_store_static, 4)
 #endif
 
 #if defined(CONFIG_SENSOR_INFO)

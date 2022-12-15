@@ -360,6 +360,7 @@ int settings_commit_subtree(const char *subtree);
 struct settings_store_itf;
 
 /**
+ * @struct settings_store
  * Backend handler node for storage handling.
  */
 struct settings_store {
@@ -604,6 +605,50 @@ int settings_runtime_commit(const char *name);
  * @retval 0 on success, negative error code on failure.
  */
 int settings_storage_get(void **storage);
+
+/**
+ * @struct settings_store_static
+ * @brief Static settings backend structure.
+ *
+ * Static settings backend information. Instances of this structure are defined
+ * using @ref SETTINGS_STORE_STATIC_DEFINE.
+ */
+struct settings_store_static {
+	int (*init)(struct settings_store *store, const void *config);
+	struct settings_store *store;
+	const void *config;
+};
+
+/**
+ * @brief Statically define settings backend.
+ *
+ * Settings backends defined using this macro are automatically initialized as
+ * part of settings_backend_init(). Backend with lowest @a _priority number is
+ * initialized first, while backend with highest @a _priority number is
+ * initialized last.
+ *
+ * @note Backend with highest @a _priority number is the one use for saving
+ *       settings.
+ *
+ * @param _name Name of the static backend.
+ * @param _priority Priority of the static backend.
+ * @param _init Init function.
+ * @param _store Pointer to @ref settings_store structure.
+ * @param _config Opaque pointer passed to @a _init function.
+ */
+#define SETTINGS_STORE_STATIC_DEFINE(_name, _priority, _init,		\
+				     _store, _config)			\
+	BUILD_ASSERT(_priority >= 10 && _priority <= 99,		\
+		     "Use priority between 10 and 99");			\
+									\
+	const STRUCT_SECTION_ITERABLE(settings_store_static,		\
+			_CONCAT(_CONCAT(settings_store_static_,		\
+					_priority),			\
+				_name)) = {				\
+		.init = _init,						\
+		.store = _store,					\
+		.config = _config,					\
+	}
 
 #ifdef __cplusplus
 }

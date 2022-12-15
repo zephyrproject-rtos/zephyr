@@ -23,6 +23,24 @@ void settings_init(void);
 
 int settings_backend_init(void);
 
+#if !IS_ENABLED(CONFIG_SETTINGS_CUSTOM_INIT)
+
+int settings_backend_init(void)
+{
+	int err;
+
+	STRUCT_SECTION_FOREACH(settings_store_static, store) {
+		err = store->init(store->store, store->config);
+		if (err) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+#endif
+
 int settings_subsys_init(void)
 {
 

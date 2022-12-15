@@ -27,8 +27,6 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 #define SETTINGS_FILE_PATH		CONFIG_SETTINGS_FILE_PATH
 #endif
 
-int settings_backend_init(void);
-
 static int settings_file_load(struct settings_store *cs,
 			      const struct settings_load_arg *arg);
 static int settings_file_save(struct settings_store *cs, const char *name,
@@ -565,30 +563,37 @@ static int mkdir_for_file(const char *file_path)
 	return 0;
 }
 
-int settings_backend_init(void)
+static int settings_file_store_init(struct settings_store *store,
+				    const void *config)
 {
-	static struct settings_file config_init_settings_file = {
-		.cf_name = SETTINGS_FILE_PATH,
-		.cf_maxlines = SETTINGS_FILE_MAX_LINES
-	};
-	int rc;
+	struct settings_file *settings =
+		CONTAINER_OF(store, struct settings_file, cf_store);
+	int err;
 
-	rc = settings_file_src(&config_init_settings_file);
-	if (rc) {
-		return rc;
+	err = settings_file_src(settings);
+	if (err) {
+		return err;
 	}
 
-	rc = settings_file_dst(&config_init_settings_file);
-	if (rc) {
-		return rc;
+	err = settings_file_dst(settings);
+	if (err) {
+		return err;
 	}
 
-	settings_mount_file_backend(&config_init_settings_file);
+	settings_mount_file_backend(settings);
 
 	/*
 	 * Must be called after root FS has been initialized.
 	 */
-	return mkdir_for_file(config_init_settings_file.cf_name);
+	return mkdir_for_file(settings->cf_name);
 }
+
+static struct settings_file settings_file_default = {
+	.cf_name = SETTINGS_FILE_PATH,
+	.cf_maxlines = SETTINGS_FILE_MAX_LINES,
+};
+
+SETTINGS_STORE_STATIC_DEFINE(file_default, 50, settings_file_store_init,
+			     &settings_file_default.cf_store, NULL);
 
 #endif /* CONFIG_SETTINGS_FILE_INIT */

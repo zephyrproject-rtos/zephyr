@@ -17,11 +17,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
-#if DT_HAS_CHOSEN(zephyr_settings_partition)
-#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
-#else
-#define SETTINGS_PARTITION FIXED_PARTITION_ID(storage_partition)
-#endif
+struct settings_nvs_config {
+	int partition_id;
+	size_t sector_size_mult;
+	size_t sector_count;
+};
 
 struct settings_nvs_read_fn_arg {
 	struct nvs_fs *fs;
@@ -351,9 +351,12 @@ static void *settings_nvs_storage_get(struct settings_store *cs)
 
 #ifdef CONFIG_SETTINGS_NVS_INIT
 
-int settings_backend_init(void)
+static int settings_nvs_store_init(struct settings_store *store,
+				   const void *config)
 {
-	static struct settings_nvs default_settings_nvs;
+	struct settings_nvs *settings_nvs =
+		CONTAINER_OF(store, struct settings_nvs, cf_store);
+	const struct settings_nvs_config *settings_config = config;
 	int rc;
 	uint16_t cnt = 0;
 	size_t nvs_sector_size, nvs_size = 0;
@@ -361,25 +364,25 @@ int settings_backend_init(void)
 	struct flash_sector hw_flash_sector;
 	uint32_t sector_cnt = 1;
 
-	rc = flash_area_open(SETTINGS_PARTITION, &fa);
+	rc = flash_area_open(settings_config->partition_id, &fa);
 	if (rc) {
 		return rc;
 	}
 
-	rc = flash_area_get_sectors(SETTINGS_PARTITION, &sector_cnt,
+	rc = flash_area_get_sectors(settings_config->partition_id, &sector_cnt,
 				    &hw_flash_sector);
 	if (rc != 0 && rc != -ENOMEM) {
 		return rc;
 	}
 
-	nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT *
+	nvs_sector_size = settings_config->sector_size_mult *
 			  hw_flash_sector.fs_size;
 
 	if (nvs_sector_size > UINT16_MAX) {
 		return -EDOM;
 	}
 
-	while (cnt < CONFIG_SETTINGS_NVS_SECTOR_COUNT) {
+	while (cnt < settings_config->sector_count) {
 		nvs_size += nvs_sector_size;
 		if (nvs_size > fa->fa_size) {
 			break;
@@ -388,25 +391,43 @@ int settings_backend_init(void)
 	}
 
 	/* define the nvs file system using the page_info */
-	default_settings_nvs.cf_nvs.sector_size = nvs_sector_size;
-	default_settings_nvs.cf_nvs.sector_count = cnt;
-	default_settings_nvs.cf_nvs.offset = fa->fa_off;
-	default_settings_nvs.flash_dev = fa->fa_dev;
+	settings_nvs->cf_nvs.sector_size = nvs_sector_size;
+	settings_nvs->cf_nvs.sector_count = cnt;
+	settings_nvs->cf_nvs.offset = fa->fa_off;
+	settings_nvs->flash_dev = fa->fa_dev;
 
-	rc = settings_nvs_backend_init(&default_settings_nvs);
+	rc = settings_nvs_backend_init(settings_nvs);
 	if (rc) {
 		return rc;
 	}
 
-	rc = settings_nvs_src(&default_settings_nvs);
+	rc = settings_nvs_src(settings_nvs);
 
 	if (rc) {
 		return rc;
 	}
 
-	rc = settings_nvs_dst(&default_settings_nvs);
+	rc = settings_nvs_dst(settings_nvs);
 
 	return rc;
 }
+
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
+#else
+#define SETTINGS_PARTITION FIXED_PARTITION_ID(storage_partition)
+#endif
+
+static const struct settings_nvs_config settings_nvs_default_config = {
+	.partition_id = SETTINGS_PARTITION,
+	.sector_size_mult = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT,
+	.sector_count = CONFIG_SETTINGS_NVS_SECTOR_COUNT,
+};
+
+static struct settings_nvs settings_nvs_default;
+
+SETTINGS_STORE_STATIC_DEFINE(nvs_default, 50, settings_nvs_store_init,
+			     &settings_nvs_default.cf_store,
+			     &settings_nvs_default_config);
 
 #endif /* CONFIG_SETTINGS_NVS_INIT */
