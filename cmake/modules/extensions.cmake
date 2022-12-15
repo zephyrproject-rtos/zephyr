@@ -2152,8 +2152,8 @@ endfunction()
 #                                               If no board is given the current BOARD and
 #                                               BOARD_REVISION will be used.
 #
-#                    DTS <list>:   List to populate with DTS overlay files
-#                    KCONF <list>: List to populate with Kconfig fragment files
+#                    DTS <list>:   List to append DTS overlay files in <path> to
+#                    KCONF <list>: List to append Kconfig fragment files in <path> to
 #                    BUILD <type>: Build type to include for search.
 #                                  For example:
 #                                  BUILD debug, will look for <board>_debug.conf
