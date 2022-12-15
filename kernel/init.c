@@ -498,6 +498,7 @@ sys_rand_fallback:
  * @return Does not return
  */
 __boot_func
+FUNC_NO_STACK_PROTECTOR
 FUNC_NORETURN void z_cstart(void)
 {
 	/* gcov hook needed to get the coverage report.*/
