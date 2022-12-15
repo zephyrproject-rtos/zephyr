@@ -196,21 +196,21 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 
-	(void)memset(name, 0, sizeof(name));
-
-	bt_data_parse(buf, data_cb, name);
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
-	if (scan_filter.name_set && !is_substring(scan_filter.name, name)) {
+	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
 		return;
 	}
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	if (scan_filter.addr_set && !is_substring(scan_filter.addr, le_addr)) {
 		return;
 	}
 
-	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
+	(void)memset(name, 0, sizeof(name));
+
+	bt_data_parse(buf, data_cb, name);
+
+	if (scan_filter.name_set && !is_substring(scan_filter.name, name)) {
 		return;
 	}
 
