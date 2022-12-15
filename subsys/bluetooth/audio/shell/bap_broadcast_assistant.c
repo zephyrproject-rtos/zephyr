@@ -128,7 +128,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
-		shell_print(ctx_shell, "\t[%d]: BIS sync %u, metadata_len %u",
+		shell_print(ctx_shell, "\t[%d]: BIS sync 0x%04X, metadata_len %u",
 			    i, subgroup->bis_sync, subgroup->metadata_len);
 
 		net_buf_simple_init_with_data(&buf, (void *)subgroup->metadata,
