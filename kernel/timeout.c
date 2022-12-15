@@ -379,3 +379,15 @@ uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 		return sys_clock_tick_get() + MAX(1, dt);
 	}
 }
+
+#ifdef CONFIG_ZTEST
+void z_impl_sys_clock_tick_set(uint64_t tick)
+{
+	curr_tick = tick;
+}
+
+void z_vrfy_sys_clock_tick_set(uint64_t tick)
+{
+	z_impl_sys_clock_tick_set(tick);
+}
+#endif

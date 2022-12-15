@@ -21,6 +21,8 @@ extern "C" {
 __syscall void z_test_1cpu_start(void);
 __syscall void z_test_1cpu_stop(void);
 
+__syscall void sys_clock_tick_set(uint64_t tick);
+
 #ifdef __cplusplus
 }
 #endif
