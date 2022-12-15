@@ -51,8 +51,28 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_WATCHDOG;
 	}
 #endif
+#if defined(RCC_RSR_IWDG1RSTF)
+	if (LL_RCC_IsActiveFlag_IWDG1RST()) {
+		flags |= RESET_WATCHDOG;
+	}
+#endif
+#if defined(RCC_RSR_IWDG2RSTF)
+	if (LL_RCC_IsActiveFlag_IWDG2RST()) {
+		flags |= RESET_WATCHDOG;
+	}
+#endif
 #if defined(RCC_FLAG_WWDGRST)
 	if (LL_RCC_IsActiveFlag_WWDGRST()) {
+		flags |= RESET_WATCHDOG;
+	}
+#endif
+#if defined(RCC_RSR_WWDG1RSTF)
+	if (LL_RCC_IsActiveFlag_WWDG1RST()) {
+		flags |= RESET_WATCHDOG;
+	}
+#endif
+#if defined(RCC_RSR_WWDG2RSTF)
+	if (LL_RCC_IsActiveFlag_WWDG2RST()) {
 		flags |= RESET_WATCHDOG;
 	}
 #endif
