@@ -1,3 +1,7 @@
+common:
+  platform_key:
+    - arch
+    - simulation
 tests:
   subsys.rtio.api:
     filter: not CONFIG_ARCH_HAS_USERSPACE
