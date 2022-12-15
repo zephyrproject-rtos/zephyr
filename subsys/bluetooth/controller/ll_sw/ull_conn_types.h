@@ -169,6 +169,7 @@ struct ll_conn {
 			LLCP_CUI_STATE_REJECT,
 		} state:3 __packed;
 		uint8_t  cmd:1;
+		uint8_t  pause_tx:1;
 		uint16_t interval;
 		uint16_t latency;
 		uint16_t timeout;
