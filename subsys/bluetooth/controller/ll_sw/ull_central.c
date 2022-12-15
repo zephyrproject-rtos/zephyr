@@ -314,6 +314,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
 	conn->llcp_rx = NULL;
 	conn->llcp_cu.req = conn->llcp_cu.ack = 0;
+	conn->llcp_cu.pause_tx = 0U;
 	conn->llcp_feature.req = conn->llcp_feature.ack = 0;
 	conn->llcp_feature.features_conn = ll_feat_get();
 	conn->llcp_feature.features_peer = 0;
