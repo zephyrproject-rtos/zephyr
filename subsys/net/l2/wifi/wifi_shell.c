@@ -425,15 +425,16 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
-	SHELL_CMD(enable, NULL, "<SSID> <SSID length> [channel] [PSK]",
-		  cmd_wifi_ap_enable),
 	SHELL_CMD(disable, NULL,
 		  "Disable Access Point mode",
 		  cmd_wifi_ap_disable),
+	SHELL_CMD(enable, NULL, "<SSID> <SSID length> [channel] [PSK]",
+		  cmd_wifi_ap_enable),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
+	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
 	SHELL_CMD(connect, NULL,
 		  "Connect to a Wi-Fi AP\n"
 		  "\"<SSID>\"\n"
@@ -447,9 +448,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(disconnect, NULL, "Disconnect from the Wi-Fi AP",
 		  cmd_wifi_disconnect),
 	SHELL_CMD(scan, NULL, "Scan for Wi-Fi APs", cmd_wifi_scan),
-	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
-	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
+	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
 	SHELL_SUBCMD_SET_END
 );
 
