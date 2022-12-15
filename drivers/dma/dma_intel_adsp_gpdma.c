@@ -292,6 +292,9 @@ int intel_adsp_gpdma_get_attribute(const struct device *dev, uint32_t type, uint
 	case DMA_ATTR_COPY_ALIGNMENT:
 		*value = DMA_COPY_ALIGNMENT(DT_COMPAT_GET_ANY_STATUS_OKAY(intel_adsp_gpdma));
 		break;
+	case DMA_ATTR_MAX_BLOCK_COUNT:
+		*value = CONFIG_DMA_DW_LLI_POOL_SIZE;
+		break;
 	default:
 		return -EINVAL;
 	}

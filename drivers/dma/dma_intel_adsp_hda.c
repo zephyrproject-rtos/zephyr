@@ -280,6 +280,9 @@ int intel_adsp_hda_dma_get_attribute(const struct device *dev, uint32_t type, ui
 	case DMA_ATTR_COPY_ALIGNMENT:
 		*value = DMA_COPY_ALIGNMENT(DT_COMPAT_GET_ANY_STATUS_OKAY(intel_adsp_hda_link_out));
 		break;
+	case DMA_ATTR_MAX_BLOCK_COUNT:
+		*value = 1;
+		break;
 	default:
 		return -EINVAL;
 	}
