@@ -39,21 +39,6 @@ static const struct settings_store_itf settings_fcb_itf = {
 	.csi_storage_get = settings_fcb_storage_get
 };
 
-/**
- * @brief Get the flash area id of the storage partition
- *
- * The implementation of this function provided is weak to let user defines its own function.
- * This may prove useful for devices using bank swap, in that case the flash area id changes based
- * on the bank swap state.
- * See #47732
- *
- * @return Flash area id
- */
-__weak int settings_fcb_get_flash_area(void)
-{
-	return SETTINGS_PARTITION;
-}
-
 int settings_fcb_src(struct settings_fcb *cf)
 {
 	int rc;
@@ -412,13 +397,12 @@ int settings_backend_init(void)
 	static struct settings_fcb config_init_settings_fcb = {
 		.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC,
 		.cf_fcb.f_sectors = settings_fcb_area,
+		.partition_id = SETTINGS_PARTITION,
 	};
 	uint32_t cnt = sizeof(settings_fcb_area) /
 		    sizeof(settings_fcb_area[0]);
 	int rc;
 	const struct flash_area *fap;
-
-	config_init_settings_fcb.partition_id = settings_fcb_get_flash_area();
 
 	rc = flash_area_get_sectors(config_init_settings_fcb.partition_id, &cnt,
 				    settings_fcb_area);
