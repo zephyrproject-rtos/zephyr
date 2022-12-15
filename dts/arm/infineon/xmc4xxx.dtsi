@@ -92,6 +92,24 @@
 
 		};
 
+		dma0: dma0@50014000{
+			compatible = "infineon,xmc4xxx-dma";
+			reg = <0x50014000 0x2bc>;
+			interrupts = <105 1>;
+			dma-channels = <8>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
+
+		dma1: dma1@50018000 {
+			compatible = "infineon,xmc4xxx-dma";
+			reg = <0x50018000 0x15c>;
+			interrupts = <110 1>;
+			dma-channels = <4>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
+
 		usic0ch0: usic@40030000 {
 			reg = <0x40030000 0x1ff>;
 			clocks = <&sysclk>;
