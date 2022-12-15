@@ -261,6 +261,7 @@
 /drivers/dma/*pl330*                      @raveenp
 /drivers/dma/*iproc_pax*                  @raveenp
 /drivers/dma/*intel_adsp*                 @teburd @abonislawski
+/drivers/dma/*xmc4xxx*                    @talih0
 /drivers/ec_host_cmd_periph/              @jettr
 /drivers/edac/                            @finikorg
 /drivers/eeprom/                          @henrikbrixandersen
