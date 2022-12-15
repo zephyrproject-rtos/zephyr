@@ -229,7 +229,7 @@ static uint32_t bmp388_calculate_press_meas_time(uint8_t osr_pressure)
   uint32_t partial_out;
 
   partial_out  = bmp388_pow(base, osr_pressure);
-  press_meas_t = (uint32_t)(BMP3_SETTLE_TIME_PRESS + partial_out * BMP3_ADC_CONV_TIME);
+  press_meas_t = (uint32_t)(BMP388_SETTLE_TIME_PRESS_US + partial_out * BMP388_ADC_CONV_TIME_US);
 
   /* Output in microseconds */
   return press_meas_t;
@@ -243,7 +243,7 @@ static uint32_t bmp388_calculate_temp_meas_time(uint8_t osr_temp)
   uint32_t partial_out;
 
   partial_out = bmp388_pow(base, osr_temp);
-  temp_meas_t = (uint32_t)(BMP3_SETTLE_TIME_TEMP + partial_out * BMP3_ADC_CONV_TIME);
+  temp_meas_t = (uint32_t)(BMP388_SETTLE_TIME_TEMP_US + partial_out * BMP388_ADC_CONV_TIME_US);
 
   /* Output in microseconds */
   return temp_meas_t;
@@ -251,7 +251,7 @@ static uint32_t bmp388_calculate_temp_meas_time(uint8_t osr_temp)
 
 static int bmp388_validate_osr_and_odr_settings(uint8_t odr, uint8_t osr_pressure, uint8_t osr_temp)
 {
-  /* currently pressure and temp sampling are always enabled, so we must allow 
+  /* currently pressure and temp sampling are always enabled, so we must allow
    * time for both. If in the future bmp388_init() is extended to only enable
    * a single channel, this will need to be adapted, too.
    */
@@ -265,8 +265,8 @@ static int bmp388_validate_osr_and_odr_settings(uint8_t odr, uint8_t osr_pressur
   uint32_t meas_t_p = 0;
 
   /* Sampling period corresponding to ODR in microseconds  */
-  uint32_t const odr_period_lut[18] = {
-    5000, 10000, 20000, 40000, 80000, 160000, 320000, 
+  static uint32_t const odr_period_lut[18] = {
+    5000, 10000, 20000, 40000, 80000, 160000, 320000,
     640000, 1280000, 2560000, 5120000, 10240000, 20480000,
     40960000, 81920000, 163840000, 327680000, 655360000
   };
@@ -283,8 +283,8 @@ static int bmp388_validate_osr_and_odr_settings(uint8_t odr, uint8_t osr_pressur
     meas_t_p += bmp388_calculate_temp_meas_time(osr_temp);
   }
 
-  /* Constant 234us added to the summation of temperature and 
-   * pressure measurement duration 
+  /* Constant 234us added to the summation of temperature and
+   * pressure measurement duration
    */
   meas_t += meas_t_p;
   LOG_DBG("total meas_t: %uus", meas_t);
@@ -297,7 +297,7 @@ static int bmp388_validate_osr_and_odr_settings(uint8_t odr, uint8_t osr_pressur
   }
 
   /* If measurement duration is less than ODR duration
-   * then OSR and ODR settings are fine 
+   * then OSR and ODR settings are fine
    */
   return 0;
 }
@@ -382,10 +382,10 @@ static int bmp388_attr_set_oversampling(const struct device *dev,
 		pos = BMP388_OSR_PRESSURE_POS;
 		mask = BMP388_OSR_PRESSURE_MASK;
 		#if defined (CONFIG_BMP388_VALIDATE_TIMINGS)
-		/* check that the new press OSR would be consistent with the current 
+		/* check that the new press OSR would be consistent with the current
 		 * ODR and the current temp OSR */
-		if ( 0 > bmp388_validate_osr_and_odr_settings(data->odr, 
-														reg_val, 
+		if ( 0 > bmp388_validate_osr_and_odr_settings(data->odr,
+														reg_val,
 														data->osr_temp))
 		{
 			return -EINVAL;
@@ -396,10 +396,10 @@ static int bmp388_attr_set_oversampling(const struct device *dev,
 		pos = BMP388_OSR_TEMP_POS;
 		mask = BMP388_OSR_TEMP_MASK;
 		#if defined (CONFIG_BMP388_VALIDATE_TIMINGS)
-		/* check that the new temp OSR would be consistent with the current 
+		/* check that the new temp OSR would be consistent with the current
 		 * ODR and the current press OSR */
-		if ( 0 > bmp388_validate_osr_and_odr_settings(data->odr, 
-														data->osr_pressure, 
+		if ( 0 > bmp388_validate_osr_and_odr_settings(data->odr,
+														data->osr_pressure,
 														reg_val))
 		{
 			return -EINVAL;
@@ -772,8 +772,8 @@ static int bmp388_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_BMP388_VALIDATE_TIMINGS)
-	/* validate OSR vs ODR (i.e. the sampling period needs to 
-	 * be longer than sampling time) 
+	/* validate OSR vs ODR (i.e. the sampling period needs to
+	 * be longer than sampling time)
 	 */
 	if(0 > bmp388_validate_osr_and_odr_settings(bmp388->odr, bmp388->osr_pressure, bmp388->osr_temp))
 	{

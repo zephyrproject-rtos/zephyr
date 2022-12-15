@@ -101,13 +101,13 @@
 
 
 /** BMP3 pressure settling time (micro secs)*/
-#define BMP3_SETTLE_TIME_PRESS UINT16_C(392)
+#define BMP388_SETTLE_TIME_PRESS_US UINT16_C(392)
 
 /** BMP3 temperature settling time (micro secs) */
-#define BMP3_SETTLE_TIME_TEMP UINT16_C(313)
+#define BMP388_SETTLE_TIME_TEMP_US UINT16_C(313)
 
 /** BMP3 adc conversion time (micro secs) */
-#define BMP3_ADC_CONV_TIME UINT16_C(2000)
+#define BMP388_ADC_CONV_TIME_US UINT16_C(2000)
 
 struct bmp388_cal_data {
 	uint16_t t1;
