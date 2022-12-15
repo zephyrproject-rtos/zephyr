@@ -246,15 +246,20 @@ uint32_t sys_clock_elapsed(void)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	uint32_t lp_time = z_clock_lptim_getcounter();
+	uint32_t lp_time = 0;
 
-	/* In case of counter roll-over, add this value,
-	 * even if the irq has not yet been handled
+	/* In case of counter roll-over, add the autoreload value,
+	 * even if the irq has not yet been handled.
+	 * Check ARRM flag before loading counter to make
+	 * sure we don't use a counter close to ARR that
+	 * hasn't triggered ARRM yet, which would mistakenly
+	 * account for double the number of ticks.
 	 */
 	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM) != 0)
 	  && LL_LPTIM_IsEnabledIT_ARRM(LPTIM) != 0) {
 		lp_time += LL_LPTIM_GetAutoReload(LPTIM) + 1;
 	}
+	lp_time += z_clock_lptim_getcounter();
 
 	k_spin_unlock(&lock, key);
 
