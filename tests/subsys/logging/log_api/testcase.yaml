@@ -3,6 +3,9 @@ common:
     - qemu
     - native
   tags: log_api logging
+  platform_key:
+    - arch
+    - simulation
   integration_platforms:
     - native_posix
 tests:
