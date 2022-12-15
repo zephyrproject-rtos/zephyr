@@ -53,6 +53,7 @@ config USB_DC_STM32
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	select USB_DC_HAS_HS_SUPPORT if "$(DT_STM32_USBHS_SPEED)"
+	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  Enable STM32 family USB device controller shim driver.
 
