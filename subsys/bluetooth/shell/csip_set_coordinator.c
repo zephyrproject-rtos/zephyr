@@ -71,7 +71,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	conns[conn_index] = NULL;
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected_cb,
 	.disconnected = disconnected_cb
 };
@@ -156,6 +156,22 @@ static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set
 	return true;
 }
 
+static bool csip_found(struct bt_data *data, void *user_data);
+static void csip_set_coordinator_scan_recv(const struct bt_le_scan_recv_info *info,
+					   struct net_buf_simple *ad)
+{
+	/* We're only interested in connectable events */
+	if (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
+		if (cur_inst != NULL) {
+			bt_data_parse(ad, csip_found, (void *)info->addr);
+		}
+	}
+}
+
+static struct bt_le_scan_cb csip_set_coordinator_scan_callbacks = {
+	.recv = csip_set_coordinator_scan_recv
+};
+
 static bool csip_found(struct bt_data *data, void *user_data)
 {
 	if (bt_csip_set_coordinator_is_set_member(cur_inst->info.set_sirk, data)) {
@@ -182,6 +198,8 @@ static bool csip_found(struct bt_data *data, void *user_data)
 
 			(void)k_work_cancel_delayable(&discover_members_timer);
 
+			bt_le_scan_cb_unregister(&csip_set_coordinator_scan_callbacks);
+
 			err = bt_le_scan_stop();
 			if (err != 0) {
 				shell_error(ctx_shell,
@@ -197,21 +215,6 @@ static bool csip_found(struct bt_data *data, void *user_data)
 	return true;
 }
 
-static void csip_set_coordinator_scan_recv(const struct bt_le_scan_recv_info *info,
-					   struct net_buf_simple *ad)
-{
-	/* We're only interested in connectable events */
-	if (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
-		if (cur_inst != NULL) {
-			bt_data_parse(ad, csip_found, (void *)info->addr);
-		}
-	}
-}
-
-static struct bt_le_scan_cb csip_set_coordinator_scan_callbacks = {
-	.recv = csip_set_coordinator_scan_recv
-};
-
 static void discover_members_timer_handler(struct k_work *work)
 {
 	int err;
@@ -219,39 +222,29 @@ static void discover_members_timer_handler(struct k_work *work)
 	shell_error(ctx_shell, "Could not find all members (%u / %u)",
 		    members_found, cur_inst->info.set_size);
 
+	bt_le_scan_cb_unregister(&csip_set_coordinator_scan_callbacks);
+
 	err = bt_le_scan_stop();
 	if (err != 0) {
 		shell_error(ctx_shell, "Failed to stop scan: %d", err);
 	}
 }
 
-static int cmd_csip_set_coordinator_init(const struct shell *sh, size_t argc,
-					 char *argv[])
-{
-	static bool initialized;
-
-	if (initialized) {
-		return -EALREADY;
-	}
-
-	k_work_init_delayable(&discover_members_timer,
-			      discover_members_timer_handler);
-	bt_le_scan_cb_register(&csip_set_coordinator_scan_callbacks);
-	bt_csip_set_coordinator_register_cb(&cbs);
-	bt_conn_cb_register(&conn_callbacks);
-
-	initialized = true;
-
-	return 0;
-}
-
 static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 					     size_t argc, char *argv[])
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	static bool initialized;
 	long member_index = 0;
 	struct bt_conn *conn;
 	int err;
+
+	if (!initialized) {
+		k_work_init_delayable(&discover_members_timer,
+				      discover_members_timer_handler);
+		bt_csip_set_coordinator_register_cb(&cbs);
+		initialized = true;
+	}
 
 	if (argc > 1) {
 		member_index = strtol(argv[1], NULL, 0);
@@ -316,6 +309,8 @@ static int cmd_csip_set_coordinator_discover_members(const struct shell *sh,
 			    err);
 		return err;
 	}
+
+	bt_le_scan_cb_register(&csip_set_coordinator_scan_callbacks);
 
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
@@ -489,9 +484,6 @@ static int cmd_csip_set_coordinator(const struct shell *sh, size_t argc,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(csip_set_coordinator_cmds,
-	SHELL_CMD_ARG(init, NULL,
-		      "Initialize csip_set_coordinator",
-		      cmd_csip_set_coordinator_init, 1, 1),
 	SHELL_CMD_ARG(discover, NULL,
 		      "Run discover for CSIS on peer device [member_index]",
 		      cmd_csip_set_coordinator_discover, 1, 1),
