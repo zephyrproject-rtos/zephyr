@@ -580,10 +580,4 @@ source "subsys/net/lib/lwm2m/Kconfig.ucifi"
 
 endmenu
 
-menu "LPWAN Object Support"
-
-source "subsys/net/lib/lwm2m/Kconfig.lpwan"
-
-endmenu
-
 endif # LWM2M
