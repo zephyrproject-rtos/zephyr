@@ -2651,7 +2651,7 @@ function(target_byproducts)
 endfunction()
 
 ########################################################
-# 4. Zephyr devicetree function
+# 4. Devicetree extensions
 ########################################################
 # 4.1. dt_*
 #
