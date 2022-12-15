@@ -13,8 +13,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
 
-static void uart_xmc4xxx_configure_service_requests(const struct device *dev);
-
 #define MAX_FIFO_SIZE 64
 #define USIC_IRQ_MIN  84
 #define USIC_IRQ_MAX  101
@@ -74,60 +72,17 @@ static void uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
 	XMC_UART_CH_Transmit(config->uart, c);
 }
 
-static int uart_xmc4xxx_init(const struct device *dev)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+
+static void uart_xmc4xxx_isr(void *arg)
 {
-	int ret;
-	const struct uart_xmc4xxx_config *config = dev->config;
+	const struct device *dev = arg;
 	struct uart_xmc4xxx_data *data = dev->data;
-	uint8_t fifo_offset = config->fifo_start_offset;
 
-	data->config.data_bits = 8U;
-	data->config.stop_bits = 1U;
-
-	XMC_UART_CH_Init(config->uart, &(data->config));
-
-	if (config->fifo_tx_size > 0) {
-		/* fifos need to be aligned on fifo size */
-		fifo_offset = ROUND_UP(fifo_offset, BIT(config->fifo_tx_size));
-		XMC_USIC_CH_TXFIFO_Configure(config->uart, fifo_offset, config->fifo_tx_size, 1);
-		fifo_offset += BIT(config->fifo_tx_size);
+	if (data->user_cb) {
+		data->user_cb(dev, data->user_data);
 	}
-
-	if (config->fifo_rx_size > 0) {
-		/* fifos need to be aligned on fifo size */
-		fifo_offset = ROUND_UP(fifo_offset, BIT(config->fifo_rx_size));
-		XMC_USIC_CH_RXFIFO_Configure(config->uart, fifo_offset, config->fifo_rx_size, 0);
-		fifo_offset += BIT(config->fifo_rx_size);
-	}
-
-	if (fifo_offset > MAX_FIFO_SIZE) {
-		return -EINVAL;
-	}
-
-	/* Connect UART RX to logical 1. It is connected to proper pin after pinctrl is applied */
-	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD, 0x7);
-
-	/* Start the UART before pinctrl, because the USIC is driving the TX line */
-	/* low in off state */
-	XMC_UART_CH_Start(config->uart);
-
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		return ret;
-	}
-	/* Connect UART RX to the target pin */
-	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD,
-				   config->input_src);
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
-	config->irq_config_func(dev);
-	uart_xmc4xxx_configure_service_requests(dev);
-#endif
-
-	return 0;
 }
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 
 static void uart_xmc4xxx_configure_service_requests(const struct device *dev)
 {
@@ -169,13 +124,57 @@ static void uart_xmc4xxx_configure_service_requests(const struct device *dev)
 	}
 }
 
-static void uart_xmc4xxx_isr(void *arg)
+static int uart_xmc4xxx_irq_tx_ready(const struct device *dev)
 {
-	const struct device *dev = arg;
-	struct uart_xmc4xxx_data *data = dev->data;
+	const struct uart_xmc4xxx_config *config = dev->config;
 
-	if (data->user_cb) {
-		data->user_cb(dev, data->user_data);
+	if (config->fifo_tx_size > 0) {
+		return !XMC_USIC_CH_TXFIFO_IsFull(config->uart);
+	} else {
+		return XMC_USIC_CH_GetTransmitBufferStatus(config->uart) ==
+			XMC_USIC_CH_TBUF_STATUS_IDLE;
+	}
+}
+
+static void uart_xmc4xxx_irq_rx_disable(const struct device *dev)
+{
+	const struct uart_xmc4xxx_config *config = dev->config;
+
+	if (config->fifo_rx_size > 0) {
+		XMC_USIC_CH_RXFIFO_DisableEvent(config->uart,
+						XMC_USIC_CH_RXFIFO_EVENT_CONF_STANDARD |
+						XMC_USIC_CH_RXFIFO_EVENT_CONF_ALTERNATE);
+	} else {
+		XMC_USIC_CH_DisableEvent(config->uart, XMC_USIC_CH_EVENT_STANDARD_RECEIVE |
+						       XMC_USIC_CH_EVENT_ALTERNATIVE_RECEIVE);
+	}
+}
+static void uart_xmc4xxx_irq_rx_enable(const struct device *dev)
+{
+	const struct uart_xmc4xxx_config *config = dev->config;
+	uint32_t recv_status;
+
+	if (config->fifo_rx_size > 0) {
+		XMC_USIC_CH_RXFIFO_Flush(config->uart);
+		XMC_USIC_CH_RXFIFO_SetSizeTriggerLimit(config->uart, config->fifo_rx_size, 0);
+#if CONFIG_UART_XMC4XXX_RX_FIFO_INT_TRIGGER
+		config->uart->RBCTR |= BIT(USIC_CH_RBCTR_SRBTEN_Pos);
+#endif
+		XMC_USIC_CH_RXFIFO_EnableEvent(config->uart,
+					       XMC_USIC_CH_RXFIFO_EVENT_CONF_STANDARD |
+					       XMC_USIC_CH_RXFIFO_EVENT_CONF_ALTERNATE);
+	} else {
+		/* flush out any received bytes while the uart rx irq was disabled */
+		recv_status = XMC_USIC_CH_GetReceiveBufferStatus(config->uart);
+		if (recv_status & USIC_CH_RBUFSR_RDV0_Msk) {
+			XMC_UART_CH_GetReceivedData(config->uart);
+		}
+		if (recv_status & USIC_CH_RBUFSR_RDV1_Msk) {
+			XMC_UART_CH_GetReceivedData(config->uart);
+		}
+
+		XMC_USIC_CH_EnableEvent(config->uart, XMC_USIC_CH_EVENT_STANDARD_RECEIVE |
+						      XMC_USIC_CH_EVENT_ALTERNATIVE_RECEIVE);
 	}
 }
 
@@ -250,61 +249,6 @@ static void uart_xmc4xxx_irq_tx_disable(const struct device *dev)
 	}
 }
 
-static int uart_xmc4xxx_irq_tx_ready(const struct device *dev)
-{
-	const struct uart_xmc4xxx_config *config = dev->config;
-
-	if (config->fifo_tx_size > 0) {
-		return !XMC_USIC_CH_TXFIFO_IsFull(config->uart);
-	} else {
-		return XMC_USIC_CH_GetTransmitBufferStatus(config->uart) ==
-			XMC_USIC_CH_TBUF_STATUS_IDLE;
-	}
-}
-
-static void uart_xmc4xxx_irq_rx_enable(const struct device *dev)
-{
-	const struct uart_xmc4xxx_config *config = dev->config;
-	uint32_t recv_status;
-
-	if (config->fifo_rx_size > 0) {
-		XMC_USIC_CH_RXFIFO_Flush(config->uart);
-		XMC_USIC_CH_RXFIFO_SetSizeTriggerLimit(config->uart, config->fifo_rx_size, 0);
-#if CONFIG_UART_XMC4XXX_RX_FIFO_INT_TRIGGER
-		config->uart->RBCTR |= BIT(USIC_CH_RBCTR_SRBTEN_Pos);
-#endif
-		XMC_USIC_CH_RXFIFO_EnableEvent(config->uart,
-					       XMC_USIC_CH_RXFIFO_EVENT_CONF_STANDARD |
-					       XMC_USIC_CH_RXFIFO_EVENT_CONF_ALTERNATE);
-	} else {
-		/* flush out any received bytes while the uart rx irq was disabled */
-		recv_status = XMC_USIC_CH_GetReceiveBufferStatus(config->uart);
-		if (recv_status & USIC_CH_RBUFSR_RDV0_Msk) {
-			XMC_UART_CH_GetReceivedData(config->uart);
-		}
-		if (recv_status & USIC_CH_RBUFSR_RDV1_Msk) {
-			XMC_UART_CH_GetReceivedData(config->uart);
-		}
-
-		XMC_USIC_CH_EnableEvent(config->uart, XMC_USIC_CH_EVENT_STANDARD_RECEIVE |
-						      XMC_USIC_CH_EVENT_ALTERNATIVE_RECEIVE);
-	}
-}
-
-static void uart_xmc4xxx_irq_rx_disable(const struct device *dev)
-{
-	const struct uart_xmc4xxx_config *config = dev->config;
-
-	if (config->fifo_rx_size > 0) {
-		XMC_USIC_CH_RXFIFO_DisableEvent(config->uart,
-						XMC_USIC_CH_RXFIFO_EVENT_CONF_STANDARD |
-						XMC_USIC_CH_RXFIFO_EVENT_CONF_ALTERNATE);
-	} else {
-		XMC_USIC_CH_DisableEvent(config->uart, XMC_USIC_CH_EVENT_STANDARD_RECEIVE |
-						       XMC_USIC_CH_EVENT_ALTERNATIVE_RECEIVE);
-	}
-}
-
 static int uart_xmc4xxx_irq_rx_ready(const struct device *dev)
 {
 	const struct uart_xmc4xxx_config *config = dev->config;
@@ -348,6 +292,59 @@ static int uart_xmc4xxx_irq_is_pending(const struct device *dev)
 	return tx_pending || rx_pending;
 }
 #endif
+
+static int uart_xmc4xxx_init(const struct device *dev)
+{
+	int ret;
+	const struct uart_xmc4xxx_config *config = dev->config;
+	struct uart_xmc4xxx_data *data = dev->data;
+	uint8_t fifo_offset = config->fifo_start_offset;
+
+	data->config.data_bits = 8U;
+	data->config.stop_bits = 1U;
+
+	XMC_UART_CH_Init(config->uart, &(data->config));
+
+	if (config->fifo_tx_size > 0) {
+		/* fifos need to be aligned on fifo size */
+		fifo_offset = ROUND_UP(fifo_offset, BIT(config->fifo_tx_size));
+		XMC_USIC_CH_TXFIFO_Configure(config->uart, fifo_offset, config->fifo_tx_size, 1);
+		fifo_offset += BIT(config->fifo_tx_size);
+	}
+
+	if (config->fifo_rx_size > 0) {
+		/* fifos need to be aligned on fifo size */
+		fifo_offset = ROUND_UP(fifo_offset, BIT(config->fifo_rx_size));
+		XMC_USIC_CH_RXFIFO_Configure(config->uart, fifo_offset, config->fifo_rx_size, 0);
+		fifo_offset += BIT(config->fifo_rx_size);
+	}
+
+	if (fifo_offset > MAX_FIFO_SIZE) {
+		return -EINVAL;
+	}
+
+	/* Connect UART RX to logical 1. It is connected to proper pin after pinctrl is applied */
+	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD, 0x7);
+
+	/* Start the UART before pinctrl, because the USIC is driving the TX line */
+	/* low in off state */
+	XMC_UART_CH_Start(config->uart);
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+	/* Connect UART RX to the target pin */
+	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD,
+				   config->input_src);
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+	config->irq_config_func(dev);
+	uart_xmc4xxx_configure_service_requests(dev);
+#endif
+
+	return 0;
+}
 
 static const struct uart_driver_api uart_xmc4xxx_driver_api = {
 	.poll_in = uart_xmc4xxx_poll_in,
