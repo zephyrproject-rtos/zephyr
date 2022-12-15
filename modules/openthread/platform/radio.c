@@ -83,7 +83,8 @@ static const struct device *const radio_dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
 static struct ieee802154_radio_api *radio_api;
 
-static int8_t tx_power;
+/* Get the default tx output power from Kconfig */
+static int8_t tx_power = CONFIG_OPENTHREAD_DEFAULT_TX_POWER;
 static uint16_t channel;
 static bool promiscuous;
 
