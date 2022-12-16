@@ -242,15 +242,16 @@ bool pm_system_suspend(int32_t ticks)
 	}
 
 #if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
-	if ((z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) &&
-			(atomic_sub(&z_cpus_active, 1) == 1)) {
-		if (pm_suspend_devices()) {
-			pm_resume_devices();
-			z_cpus_pm_state[id].state = PM_STATE_ACTIVE;
-			(void)atomic_add(&z_cpus_active, 1);
-			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
-						   z_cpus_pm_state[id].state);
-			return false;
+	if (atomic_sub(&z_cpus_active, 1) == 1) {
+		if (z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) {
+			if (pm_suspend_devices()) {
+				pm_resume_devices();
+				z_cpus_pm_state[id].state = PM_STATE_ACTIVE;
+				(void)atomic_add(&z_cpus_active, 1);
+				SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
+							   z_cpus_pm_state[id].state);
+				return false;
+			}
 		}
 	}
 #endif
