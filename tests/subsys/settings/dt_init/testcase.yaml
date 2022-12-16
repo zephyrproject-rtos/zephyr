@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Marcin Niestroj
+
+common:
+  platform_allow: nrf52840dk_nrf52840 native_posix native_posix_64
+  integration_platforms:
+    - nrf52840dk_nrf52840
+    - native_posix
+
+tests:
+  system.settings.dt_init.fcb_nvs:
+    tags: settings_fcb settings_nvs
+    extra_args: DTC_OVERLAY_FILE=fcb_nvs.overlay
+  system.settings.dt_init.file_file_one_partition:
+    tags: settings_file
+    extra_args: DTC_OVERLAY_FILE=file_file_one_partition.overlay
+  system.settings.dt_init.file_file_two_partitions:
+    tags: settings_file
+    extra_args: DTC_OVERLAY_FILE=file_file_two_partitions.overlay
+  system.settings.dt_init.file_nvs:
+    tags: settings_file settings_nvs
+    extra_args: DTC_OVERLAY_FILE=file_nvs.overlay
+  system.settings.dt_init.nvs_fcb:
+    tags: settings_fcb settings_nvs
+    extra_args: DTC_OVERLAY_FILE=nvs_fcb.overlay
+  system.settings.dt_init.nvs_file:
+    tags: settings_file settings_nvs
+    extra_args: DTC_OVERLAY_FILE=nvs_file.overlay

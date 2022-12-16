@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2022 Marcin Niestroj
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+
+		settings_fs: settings_fs {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/settings";
+			partition = <&storage_partition>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+
+	settings {
+		settings_factory: settings-factory {
+			compatible = "zephyr,settings,file";
+			path = "/settings/factory";
+			priority = <10>;
+		};
+
+		settings_run: settings-run {
+			compatible = "zephyr,settings,file";
+			path = "/settings/run";
+			max-entries = <32>;
+			priority = <20>;
+		};
+	};
+};

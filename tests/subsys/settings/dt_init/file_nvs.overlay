@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2022 Marcin Niestroj
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+		settings_factory_partition: partition@80000 {
+			reg = <0x00080000 0x00010000>;
+		};
+
+		settings_run_partition: partition@90000 {
+			reg = <0x00090000 0x00010000>;
+		};
+	};
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+
+		settings_factory_fs: settings_factory_fs {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/settings_factory";
+			partition = <&settings_factory_partition>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+
+	settings {
+		settings_factory: settings-factory {
+			compatible = "zephyr,settings,file";
+			path = "/settings_factory/f";
+			priority = <10>;
+		};
+
+		settings_run: settings-run {
+			compatible = "zephyr,settings,nvs";
+			partition = <&settings_run_partition>;
+			sector-size-mult = <1>;
+			sector-count = <8>;
+			priority = <20>;
+		};
+	};
+};
