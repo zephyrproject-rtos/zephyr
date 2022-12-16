@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/net/lldp.h>
+#include <zephyr/drivers/hwinfo.h>
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 #include <zephyr/drivers/ptp_clock.h>
@@ -1032,6 +1033,9 @@ static void generate_mac(uint8_t *mac_addr)
 	mac_addr[3] = CONFIG_ETH_STM32_HAL_MAC3;
 	mac_addr[4] = CONFIG_ETH_STM32_HAL_MAC4;
 	mac_addr[5] = CONFIG_ETH_STM32_HAL_MAC5;
+#else
+	/* Nothing defined by the user, use device id */
+	hwinfo_get_device_id(&mac_addr[3], 3);
 #endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
 #endif
 }
