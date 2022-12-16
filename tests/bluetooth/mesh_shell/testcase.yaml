@@ -9,4 +9,4 @@ tests:
     platform_exclude: nrf52dk_nrf52810
   bluetooth.mesh.mesh_shell.legacy_adv:
     platform_allow: qemu_cortex_m3
-    extra_args: CONFIG_BT_EXT_ADV=n
+    extra_args: CONFIG_BT_EXT_ADV=n, CONFIG_LOG_MODE_MINIMAL=y
