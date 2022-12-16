@@ -7,8 +7,6 @@
 #ifndef SOCFPGA_RESETMANAGER_H
 #define SOCFPGA_RESETMANAGER_H
 
-#include <soc.h>
-
 #define SOCFPGA_BRIDGE_ENABLE	BIT(0)
 #define SOCFPGA_BRIDGE_HAS_MASK	BIT(1)
 
@@ -18,6 +16,9 @@
 #define F2SDRAM0_MASK		BIT(3)
 #define F2SDRAM1_MASK		BIT(4)
 #define F2SDRAM2_MASK		BIT(5)
+
+/* Reset manager register map */
+#define SOCFPGA_RSTMGR_REG_BASE			0xffd11000
 
 /* Register Mapping */
 
