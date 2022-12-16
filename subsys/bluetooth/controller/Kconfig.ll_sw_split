@@ -459,6 +459,14 @@ config BT_CTLR_CENTRAL_SPACING
 	  (active clock jitter) + 17040 (PDU rx) = (radio event overheads +
 	  34234) microseconds.
 
+config BT_CTLR_SLOT_RESERVATION_UPDATE
+	bool "Update event length reservation after PHY or DLE update"
+	depends on !BT_LL_SW_LLCP_LEGACY && (BT_CTLR_DATA_LENGTH || BT_CTLR_PHY)
+	default y
+	help
+	  Updates the event length reservation after a completed Data Length Update
+	  and/or PHY Update procedure to avoid overlap of radio events
+
 config BT_CTLR_LLL_PRIO
 	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
 	range 0 3 if SOC_SERIES_NRF51X
