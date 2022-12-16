@@ -48,3 +48,18 @@ endchoice
 
 config PM_DEVICE
 	default y if PM
+
+config TELINK_B91_REBOOT_ON_FAULT
+	bool "Reboot system when fault happened"
+	depends on SOC_SERIES_RISCV_TELINK_B91
+	default n
+	help
+		This option enables Telink B91 chip reboot after fault.
+
+config TELINK_B91_REBOOT_ON_FAULT_DELAY
+	int "Reboot system delay in mS"
+	depends on SOC_SERIES_RISCV_TELINK_B91 && TELINK_B91_REBOOT_ON_FAULT
+	default 1000
+	range 0 30000
+	help
+		This option sets Telink B91 chip reboot on fault delay in mS.
