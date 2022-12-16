@@ -18,8 +18,11 @@ if(CONFIG_FAT_FILESYSTEM_ELM)
 
   zephyr_library_sources_ifdef(CONFIG_FS_FATFS_LFN
     ${ZEPHYR_FATFS_MODULE_DIR}/option/ffunicode.c
-    ${ZEPHYR_FATFS_MODULE_DIR}/option/ffsystem.c
   )
+
+  if(DEFINED CONFIG_FS_FATFS_LFN OR DEFINED CONFIG_FS_FATFS_REENTRANT)
+    zephyr_library_sources(zfs_ffsystem.c)
+  endif()
 
   zephyr_library_link_libraries(ELMFAT)
   target_link_libraries(ELMFAT INTERFACE zephyr_interface)
