@@ -67,10 +67,7 @@ struct bt_mesh_friend {
 	struct k_work_delayable timer;
 
 	struct bt_mesh_friend_seg {
-		/* First received segment of a segmented message. Rest
-		 * segments are added as net_buf fragments.
-		 */
-		struct net_buf *buf;
+		sys_slist_t queue;
 
 		/* The target number of segments, i.e. not necessarily
 		 * the current number of segments, in the queue. This is
