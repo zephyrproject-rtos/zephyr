@@ -660,6 +660,13 @@ HALs
 MCUboot
 *******
 
+Storage
+*******
+
+* Flash Map API drops ``fa_device_id`` from :c:struct:`flash_area`, as it
+  is no longer needed by MCUboot, and has not been populated for a long
+  time now.
+
 Trusted Firmware-M
 ******************
 
