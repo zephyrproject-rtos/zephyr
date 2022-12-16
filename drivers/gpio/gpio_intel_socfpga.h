@@ -7,6 +7,9 @@
 #ifndef GPIO_INTEL_SOCFPGA_H
 #define GPIO_INTEL_SOCFPGA_H
 
+/* GPIO pinmux register base address */
+#define SOCFPGA_PINMUX_PIN0SEL_REG_BASE		0xffd13000
+
 #define GPIO_SWPORTA_DDR_OFFSET	0x04
 #define GPIO_EXT_PORTA_OFFSET	0x50
 #define GPIO_ID_CODE_OFFSET	0x64

@@ -18,7 +18,6 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
-#include <soc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/reset.h>
