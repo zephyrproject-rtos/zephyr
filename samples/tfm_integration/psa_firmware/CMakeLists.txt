@@ -51,7 +51,7 @@ set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot")
 add_custom_command(
   DEPENDS ${CONFIG_APP_FIRMWARE_UPDATE_IMAGE}
   OUTPUT ${UPDATE_SIGNED_HEX}
-  COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts
+  COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts${SEP}$ENV{PYTHONPATH}
     ${PYTHON_EXECUTABLE}
     ${TFM_MCUBOOT_DIR}/scripts/wrapper/wrapper.py
     --layout "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o"

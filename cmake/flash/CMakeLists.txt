@@ -130,7 +130,7 @@ endif()
 
 zephyr_get(WEST_DIR)
 if(WEST_DIR)
-  set(WEST "PYTHONPATH=${WEST_DIR}/src" "${PYTHON_EXECUTABLE};${WEST_DIR}/src/west/app/main.py;--zephyr-base=${ZEPHYR_BASE} ")
+  set(WEST "PYTHONPATH=${WEST_DIR}/src${SEP}$ENV{PYTHONPATH}" "${PYTHON_EXECUTABLE};${WEST_DIR}/src/west/app/main.py;--zephyr-base=${ZEPHYR_BASE} ")
 endif()
 
 # Generate the flash, debug, debugserver, attach targets within the build
