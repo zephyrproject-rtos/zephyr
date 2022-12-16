@@ -10,6 +10,7 @@ menuconfig ETH_STM32_HAL
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select USE_STM32_HAL_ETH
 	select NOCACHE_MEMORY if SOC_SERIES_STM32H7X && CPU_CORTEX_M7
+	select HWINFO
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
 	  all Ethernet enabled variants of the F2, F4, F7 and H7 series.
