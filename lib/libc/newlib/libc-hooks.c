@@ -104,10 +104,12 @@ static int malloc_prepare(const struct device *unused)
 
 #ifdef USE_MALLOC_PREPARE
 #ifdef CONFIG_MMU
+	/* To map the heap, we need both virtual and physical memory.  */
+	int mem_free = MIN(k_mem_free_get(), k_virt_free_range_max_get());
 	/* Need extra for the guard pages (before and after) which we
 	 * won't map.
 	 */
-	size_t max_alloc = k_mem_free_get() - CONFIG_MMU_PAGE_SIZE * 2;
+	size_t max_alloc = mem_free - CONFIG_MMU_PAGE_SIZE * 2;
 
 	max_heap_size = MIN(CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE,
 			    max_alloc);

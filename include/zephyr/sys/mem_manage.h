@@ -291,6 +291,13 @@ void z_phys_unmap(uint8_t *virt, size_t size);
 size_t k_mem_free_get(void);
 
 /**
+ * Return the amount of free virtual memory available
+ *
+ * @return Free virtual RAM, in bytes
+ */
+int k_virt_free_range_max_get(void);
+
+/**
  * Map anonymous memory into Zephyr's address space
  *
  * This function effectively increases the data space available to Zephyr.

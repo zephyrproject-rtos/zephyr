@@ -932,6 +932,28 @@ void z_mem_manage_boot_finish(void)
 #endif
 }
 
+int k_virt_free_range_max_get(void)
+{
+	int bit_val;
+	int free_pages = 0;
+	int free_pages_max = 0;
+	k_spinlock_key_t key = k_spin_lock(&z_mm_lock);
+
+	for (size_t i = 0; i < virt_region_bitmap.num_bits; ++i) {
+		sys_bitarray_test_bit(&virt_region_bitmap, i, &bit_val);
+		if (!bit_val) {
+			++free_pages;
+			continue;
+		}
+		free_pages_max = free_pages > free_pages_max ? free_pages : free_pages_max;
+		free_pages = 0;
+	}
+	k_spin_unlock(&z_mm_lock, key);
+	free_pages_max = free_pages > free_pages_max ? free_pages : free_pages_max;
+
+	return free_pages_max * CONFIG_MMU_PAGE_SIZE;
+}
+
 #ifdef CONFIG_DEMAND_PAGING
 
 #ifdef CONFIG_DEMAND_PAGING_STATS
