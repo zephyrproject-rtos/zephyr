@@ -512,7 +512,7 @@ static inline uint16_t conn_mtu(struct bt_conn *conn)
 	}
 #endif /* CONFIG_BT_BREDR */
 #if defined(CONFIG_BT_ISO)
-	if (conn->type == BT_CONN_TYPE_ISO && bt_dev.le.iso_mtu) {
+	if (conn->type == BT_CONN_TYPE_ISO) {
 		return bt_dev.le.iso_mtu;
 	}
 #endif /* CONFIG_BT_ISO */
