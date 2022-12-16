@@ -1871,7 +1871,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 		lazy = lll->latency_event + 1U;
 	}
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) && defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_PHY)
 	if (lll->evt_len_upd) {
 		uint32_t ready_delay, rx_time, tx_time, ticks_slot;
@@ -1912,10 +1912,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 		conn->ull.ticks_slot = ticks_slot;
 	}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH || CONFIG_BT_CTLR_PHY */
-#else /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+#else /* !CONFIG_BT_LL_SW_LLCP_LEGACY && CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
 	ticks_slot_plus = 0;
 	ticks_slot_minus = 0;
-#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY && CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
 
 	/* update conn ticker */
 	if (ticks_drift_plus || ticks_drift_minus ||
@@ -8276,9 +8276,11 @@ uint8_t ull_dle_update_eff(struct ll_conn *conn)
 	/* Note that we must use bitwise or and not logical or */
 	dle_changed = ull_dle_update_eff_rx(conn);
 	dle_changed |= ull_dle_update_eff_tx(conn);
+#if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
 	if (dle_changed) {
 		conn->lll.evt_len_upd = 1U;
 	}
+#endif
 
 
 	return dle_changed;
@@ -8312,10 +8314,12 @@ uint8_t ull_dle_update_eff_rx(struct ll_conn *conn)
 		conn->lll.dle.eff.max_rx_octets = eff_rx_octets;
 		dle_changed = 1U;
 	}
+#if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
 	/* we delay the update of event length to after the DLE procedure is finishede */
 	if (dle_changed) {
 		conn->lll.evt_len_upd_delayed = 1;
 	}
+#endif
 
 	return dle_changed;
 }
@@ -8350,11 +8354,13 @@ uint8_t ull_dle_update_eff_tx(struct ll_conn *conn)
 		dle_changed = 1U;
 	}
 
+#if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
 	if (dle_changed) {
 		conn->lll.evt_len_upd = 1U;
 	}
 	conn->lll.evt_len_upd |= conn->lll.evt_len_upd_delayed;
 	conn->lll.evt_len_upd_delayed = 0;
+#endif
 
 	return dle_changed;
 }
