@@ -41,4 +41,11 @@ config FLASH_LOAD_OFFSET
 config IMG_BLOCK_BUF_SIZE
 	default 256 if MCUBOOT_IMG_MANAGER
 
+# MCU boot application options
+config MCUBOOT_SIGNATURE_KEY_FILE
+	default "bootloader/mcuboot/root-rsa-2048.pem" if BOOTLOADER_MCUBOOT
+
+config MCUBOOT_EXTRA_IMGTOOL_ARGS
+	default "--max-sectors 4096" if BOOTLOADER_MCUBOOT
+
 endif
