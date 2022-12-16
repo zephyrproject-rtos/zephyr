@@ -17,6 +17,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
+#define DT_DRV_COMPAT		zephyr_settings_fcb
+
 #define SETTINGS_FCB_VERS		1
 
 struct settings_fcb_config {
@@ -386,9 +388,8 @@ static void *settings_fcb_storage_get(struct settings_store *cs)
 	return &cf->cf_fcb;
 }
 
-#ifdef CONFIG_SETTINGS_FCB_INIT
-
-static int settings_fcb_store_init(struct settings_store *store, const void *config)
+__unused static int settings_fcb_store_init(struct settings_store *store,
+					    const void *config)
 {
 	struct settings_fcb *settings = CONTAINER_OF(store, struct settings_fcb, cf_store);
 	const struct settings_fcb_config *settings_config = config;
@@ -437,6 +438,25 @@ static int settings_fcb_store_init(struct settings_store *store, const void *con
 
 	return rc;
 }
+
+#define SETTINGS_FCB_DEFINE(inst)					\
+static struct flash_sector settings_fcb_##inst##_sectors[DT_INST_PROP(inst, sector_count) + 1];	\
+									\
+static const struct settings_fcb_config settings_fcb_##inst##_config = { \
+	.partition_id = DT_FIXED_PARTITION_ID(DT_INST_PHANDLE(inst, partition)), \
+	.sectors = settings_fcb_##inst##_sectors,			\
+	.num_sectors = ARRAY_SIZE(settings_fcb_##inst##_sectors),	\
+};									\
+									\
+static struct settings_fcb settings_fcb_##inst;				\
+									\
+SETTINGS_DT_INST_STORE_STATIC_DEFINE(inst, settings_fcb_store_init,	\
+				     &settings_fcb_##inst.cf_store,	\
+				     &settings_fcb_##inst##_config);
+
+DT_INST_FOREACH_STATUS_OKAY(SETTINGS_FCB_DEFINE)
+
+#ifdef CONFIG_SETTINGS_FCB_INIT
 
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
 #define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))

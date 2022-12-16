@@ -1,0 +1,23 @@
+# Copyright (C) 2022 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Settings using FCB backend.
+
+compatible: "zephyr,settings,fcb"
+
+include: "zephyr,settings-common.yaml"
+
+properties:
+  partition:
+    type: phandle
+    required: true
+    description: |
+      Flash partition used for NVS storage, e.g. <&storage_partition>.
+
+  sector-count:
+    type: int
+    required: true
+    description: |
+      Number of sectors to allocate in the settings FCB. A smaller number is
+      used if the flash hardware cannot support this value.
