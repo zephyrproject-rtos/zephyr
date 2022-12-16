@@ -18,3 +18,5 @@ target_sources(app PRIVATE
 target_sources_ifdef(CONFIG_FLASH app PRIVATE
 		../common/test_fs_mkfs.c
 		src/test_fat_mkfs.c)
+target_sources_ifdef(CONFIG_FS_FATFS_REENTRANT app PRIVATE
+		src/test_fat_file_reentrant.c)

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2023 Husqvarna AB
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,9 @@ static void *fat_fs_basic_setup(void)
 	test_fat_fs();
 	test_fat_rename();
 	test_fs_open_flags();
+#ifdef CONFIG_FS_FATFS_REENTRANT
+	test_fat_file_reentrant();
+#endif /* CONFIG_FS_FATFS_REENTRANT */
 	test_fat_unmount();
 
 	return NULL;

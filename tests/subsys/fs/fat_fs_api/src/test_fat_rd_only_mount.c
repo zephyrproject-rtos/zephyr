@@ -6,10 +6,6 @@
 
 
 #include "test_fat.h"
-#include <ff.h>
-
-/* FatFs work area */
-static FATFS fat_fs;
 
 /* mounting info */
 static struct fs_mount_t fatfs_mnt = {
