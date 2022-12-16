@@ -115,7 +115,7 @@
 
 	soc {
 		flash: flash-controller@40022000 {
-			compatible = "st,stm32-flash-controller", "st,stm32u5-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32l5-flash-controller";
 			reg = <0x40022000 0x400>;
 			interrupts = <6 0>;
 
