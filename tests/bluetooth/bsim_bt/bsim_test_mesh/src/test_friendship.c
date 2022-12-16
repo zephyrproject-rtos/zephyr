@@ -293,6 +293,8 @@ static void test_friend_overflow(void)
 
 	k_sleep(K_SECONDS(3));
 
+	LOG_INF("Testing overflow with only unsegmented messages...");
+
 	/* Fill the queue */
 	for (int i = 0; i < CONFIG_BT_MESH_FRIEND_QUEUE_SIZE; i++) {
 		bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
@@ -301,6 +303,47 @@ static void test_friend_overflow(void)
 	/* Add one more message, which should overflow the queue and cause the
 	 * first message to be discarded.
 	 */
+	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+
+	ASSERT_OK(evt_wait(FRIEND_POLLED, K_SECONDS(35)),
+		  "Friend never polled");
+
+	/* LPN verifies that no more messages are in Friend Queue. */
+	k_sleep(K_SECONDS(10));
+
+	LOG_INF("Testing overflow with unsegmented message preempting segmented one...");
+
+	/* Make room in the Friend Queue for only one unsegmented message. */
+	bt_mesh_test_send(friend_lpn_addr,
+			  BT_MESH_SDU_UNSEG_MAX *
+			  (CONFIG_BT_MESH_FRIEND_QUEUE_SIZE - 1),
+			  0, K_SECONDS(1)),
+	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+	/* This message should preempt the segmented one. */
+	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+
+	ASSERT_OK(evt_wait(FRIEND_POLLED, K_SECONDS(35)),
+		  "Friend never polled");
+
+	/* LPN verifies that there are no more messages in the Friend Queue. */
+	k_sleep(K_SECONDS(10));
+
+	LOG_INF("Testing overflow with segmented message preempting another segmented...");
+
+	/* Make space in the Friend Queue for only 2 unsegmented messages so the next unsgemented
+	 * message won't preempt this segmented message.
+	 */
+	bt_mesh_test_send(friend_lpn_addr,
+			  BT_MESH_SDU_UNSEG_MAX *
+			  (CONFIG_BT_MESH_FRIEND_QUEUE_SIZE - 2),
+			  0, K_SECONDS(1));
+	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
+	/* This segmented message should preempt the previous segmented message. */
+	bt_mesh_test_send(friend_lpn_addr,
+			  BT_MESH_SDU_UNSEG_MAX *
+			  (CONFIG_BT_MESH_FRIEND_QUEUE_SIZE - 2),
+			  0, K_SECONDS(1));
+	/* This message should fit in Friend Queue as well. */
 	bt_mesh_test_send(friend_lpn_addr, 5, 0, K_NO_WAIT);
 
 	ASSERT_OK(evt_wait(FRIEND_POLLED, K_SECONDS(35)),
@@ -576,6 +619,7 @@ static void test_lpn_poll(void)
 static void test_lpn_overflow(void)
 {
 	struct bt_mesh_test_msg msg;
+	int exp_seq;
 	int err;
 
 	bt_mesh_test_setup();
@@ -587,6 +631,8 @@ static void test_lpn_overflow(void)
 
 	k_sleep(K_SECONDS(5));
 	ASSERT_OK(bt_mesh_lpn_poll(), "Poll failed");
+
+	LOG_INF("Testing overflow with only unsegmented messages...");
 
 	for (int i = 0; i < CONFIG_BT_MESH_FRIEND_QUEUE_SIZE; i++) {
 		ASSERT_OK(bt_mesh_test_recv_msg(&msg, K_SECONDS(2)),
@@ -608,6 +654,65 @@ static void test_lpn_overflow(void)
 			FAIL("Message %d: Invalid seq 0x%02x", i, msg.seq);
 		}
 	}
+
+	/* Not expecting any more messages from friend */
+	err = bt_mesh_test_recv_msg(&msg, K_SECONDS(10));
+	if (!err) {
+		FAIL("Unexpected additional message 0x%02x from 0x%04x",
+		     msg.seq, msg.ctx.addr);
+	}
+
+	LOG_INF("Testing overflow with unsegmented message preempting segmented one...");
+
+	ASSERT_OK(bt_mesh_lpn_poll(), "Poll failed");
+
+	/* Last seq from the previous step. */
+	exp_seq = CONFIG_BT_MESH_FRIEND_QUEUE_SIZE + 1;
+
+	exp_seq += 2; /* Skipping the first message in Friend Queue. */
+	ASSERT_OK(bt_mesh_test_recv_msg(&msg, K_SECONDS(2)),
+		  "Receive first unseg msg failed");
+	ASSERT_EQUAL(5, msg.len);
+	ASSERT_EQUAL(cfg->addr, msg.ctx.recv_dst);
+	ASSERT_EQUAL(exp_seq, msg.seq);
+
+	exp_seq++;
+	ASSERT_OK(bt_mesh_test_recv_msg(&msg, K_SECONDS(2)),
+		  "Receive the second unseg msg failed");
+	ASSERT_EQUAL(5, msg.len);
+	ASSERT_EQUAL(cfg->addr, msg.ctx.recv_dst);
+	ASSERT_EQUAL(exp_seq, msg.seq);
+
+	/* Not expecting any more messages from friend */
+	err = bt_mesh_test_recv_msg(&msg, K_SECONDS(10));
+	if (!err) {
+		FAIL("Unexpected additional message 0x%02x from 0x%04x",
+		     msg.seq, msg.ctx.addr);
+	}
+
+	LOG_INF("Testing overflow with segmented message preempting another segmented...");
+
+	ASSERT_OK(bt_mesh_lpn_poll(), "Poll failed");
+
+	exp_seq += 2; /* Skipping the first message in Friend Queue. */
+	ASSERT_OK(bt_mesh_test_recv_msg(&msg, K_SECONDS(2)),
+		  "Receive the first unseg msg failed");
+	ASSERT_EQUAL(5, msg.len);
+	ASSERT_EQUAL(cfg->addr, msg.ctx.recv_dst);
+	ASSERT_EQUAL(exp_seq, msg.seq);
+
+	exp_seq++;
+	ASSERT_OK(bt_mesh_test_recv_msg(&msg, K_SECONDS(20)),
+		  "Receive the seg msg failed");
+	ASSERT_EQUAL(BT_MESH_SDU_UNSEG_MAX * (CONFIG_BT_MESH_FRIEND_QUEUE_SIZE - 2),
+		     msg.len);
+	ASSERT_EQUAL(cfg->addr, msg.ctx.recv_dst);
+	ASSERT_EQUAL(exp_seq, msg.seq);
+
+	ASSERT_OK(bt_mesh_test_recv_msg(&msg, K_SECONDS(2)),
+		  "Receive the second unseg msg failed");
+	ASSERT_EQUAL(5, msg.len);
+	ASSERT_EQUAL(cfg->addr, msg.ctx.recv_dst);
 
 	/* Not expecting any more messages from friend */
 	err = bt_mesh_test_recv_msg(&msg, K_SECONDS(10));
