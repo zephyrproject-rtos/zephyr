@@ -7,6 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_TIMING_TIMING_H_
 #define ZEPHYR_INCLUDE_TIMING_TIMING_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <sys/arch_interface.h>
 #include <timing/types.h>
 
@@ -174,5 +178,9 @@ static inline uint32_t timing_freq_get_mhz(void)
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_TIMING_TIMING_H_ */
