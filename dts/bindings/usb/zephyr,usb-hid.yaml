@@ -1,0 +1,46 @@
+# Copyright (c) 2022 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Common fields for USB HID devices
+
+compatible: "zephyr,usb-hid"
+
+properties:
+
+    ep-mps-in:
+      type: int
+      default: 16
+      description: |
+        USB HID Device interrupt endpoint size for IN EP
+
+    poll-interval-in:
+      type: int
+      default: 9
+      description: |
+        USB HID Device polling interval defined in the USB Descriptor for IN EP
+
+    int-out-ep:
+      type: boolean
+      description: |
+        Enable USB HID Device Interrupt OUT Endpoint.
+
+    ep-mps-out:
+      type: int
+      default: 16
+      description: |
+        USB HID Device interrupt endpoint size for OUT EP
+
+    poll-interval-out:
+      type: int
+      default: 9
+      description: |
+        USB HID Device polling interval defined in the USB Descriptor for OUT EP
+
+    boot-protocol:
+      type: boolean
+      description: |
+        Sets bInterfaceSubClass to 1 and enables Set_Protocol and Get_Protocol
+        requests handling.
+        See Chapter 4.2 of Device Class Definition for Human Interface Devices 1.11
+        for more information.
