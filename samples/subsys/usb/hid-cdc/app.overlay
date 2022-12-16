@@ -5,6 +5,14 @@
  */
 
 &zephyr_udc0 {
+	usb_hid0: usb_hid0 {
+		compatible = "zephyr,usb-hid";
+	};
+
+	usb_hid1: usb_hid1 {
+		compatible = "zephyr,usb-hid";
+	};
+
 	cdc_acm_uart0 {
 		compatible = "zephyr,cdc-acm-uart";
 	};

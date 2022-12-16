@@ -151,9 +151,10 @@ void main(void)
 
 static int composite_pre_init(const struct device *dev)
 {
-	hdev = device_get_binding("HID_0");
-	if (hdev == NULL) {
-		LOG_ERR("Cannot get USB HID Device");
+	hdev = DEVICE_DT_GET(DT_NODELABEL(usb_hid0));
+	if (!device_is_ready(hdev)) {
+		LOG_ERR("HID device %s is not ready",
+			hdev->name);
 		return -ENODEV;
 	}
 

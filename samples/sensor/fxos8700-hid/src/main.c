@@ -177,9 +177,10 @@ void main(void)
 		return;
 	}
 
-	hid_dev = device_get_binding("HID_0");
-	if (hid_dev == NULL) {
-		LOG_ERR("Cannot get USB HID Device");
+	hid_dev = DEVICE_DT_GET(DT_NODELABEL(usb_hid0));
+	if (!device_is_ready(hid_dev)) {
+		LOG_ERR("HID device %s is not ready",
+			hid_dev->name);
 		return;
 	}
 

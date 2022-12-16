@@ -547,15 +547,16 @@ void main(void)
 
 	/* Configure devices */
 
-	hid0_dev = device_get_binding("HID_0");
-	if (hid0_dev == NULL) {
-		LOG_ERR("Cannot get USB HID 0 Device");
+	hid0_dev = DEVICE_DT_GET(DT_NODELABEL(usb_hid0));
+	if (!device_is_ready(hid0_dev)) {
+		LOG_ERR("HID device %s is not ready",
+			hid0_dev->name);
 		return;
 	}
-
-	hid1_dev = device_get_binding("HID_1");
-	if (hid1_dev == NULL) {
-		LOG_ERR("Cannot get USB HID 1 Device");
+	hid1_dev = DEVICE_DT_GET(DT_NODELABEL(usb_hid1));
+	if (!device_is_ready(hid1_dev)) {
+		LOG_ERR("HID device %s is not ready",
+			hid1_dev->name);
 		return;
 	}
 
