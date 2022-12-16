@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Husqvarna AB
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,6 +62,14 @@
 #undef FF_FS_EXFAT
 #define FF_FS_EXFAT		CONFIG_FS_FATFS_EXFAT
 #endif /* defined(CONFIG_FS_FATFS_EXFAT) */
+
+#if defined(CONFIG_FS_FATFS_REENTRANT)
+#undef FF_FS_REENTRANT
+#undef FF_FS_TIMEOUT
+#include <zephyr/kernel.h>
+#define FF_FS_REENTRANT		CONFIG_FS_FATFS_REENTRANT
+#define FF_FS_TIMEOUT		K_FOREVER
+#endif /* defined(CONFIG_FS_FATFS_REENTRANT) */
 
 /*
  * These options are override from default values, but have no Kconfig
