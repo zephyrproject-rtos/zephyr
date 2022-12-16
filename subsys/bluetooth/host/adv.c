@@ -900,6 +900,14 @@ static uint8_t get_adv_channel_map(uint32_t options)
 	return channel_map;
 }
 
+static inline bool adv_is_directed(const struct bt_le_ext_adv *adv)
+{
+	/* The advertiser is assumed to be directed when the peer address has
+	 * been set.
+	 */
+	return !bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY);
+}
+
 static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 				 struct bt_conn **out_conn)
 {
@@ -907,7 +915,7 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 
 	bt_dev.adv_conn_id = adv->id;
 
-	if (bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY)) {
+	if (!adv_is_directed(adv)) {
 		/* Undirected advertising */
 		conn = bt_conn_add_le(adv->id, BT_ADDR_LE_NONE);
 		if (!conn) {
@@ -937,7 +945,7 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 {
 	struct bt_conn *conn;
 
-	if (bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY)) {
+	if (!adv_is_directed(adv)) {
 		conn = bt_conn_lookup_state_le(adv->id, BT_ADDR_LE_NONE,
 					       BT_CONN_CONNECTING_ADV);
 	} else {
