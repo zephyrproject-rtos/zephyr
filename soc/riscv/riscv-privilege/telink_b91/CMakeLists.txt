@@ -5,6 +5,7 @@ zephyr_sources(
 	start.S
 	soc_irq.S
 	soc.c
+	halt.c
 )
 
 zephyr_sources_ifdef(CONFIG_PM
