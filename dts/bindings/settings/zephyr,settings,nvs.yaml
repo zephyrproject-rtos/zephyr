@@ -1,0 +1,29 @@
+# Copyright (C) 2022 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Settings using NVS backend.
+
+compatible: "zephyr,settings,nvs"
+
+include: "zephyr,settings-common.yaml"
+
+properties:
+  partition:
+    type: phandle
+    required: true
+    description: |
+      Flash partition used for NVS storage, e.g. <&storage_partition>.
+
+  sector-size-mult:
+    type: int
+    required: true
+    description: |
+      The sector size to use for the NVS settings area as a multiple of flash
+      erase block size.
+
+  sector-count:
+    type: int
+    required: true
+    description: |
+      Number of sectors used for the NVS settings area.

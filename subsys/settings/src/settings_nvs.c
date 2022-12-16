@@ -17,6 +17,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
+#define DT_DRV_COMPAT		zephyr_settings_nvs
+
 struct settings_nvs_config {
 	int partition_id;
 	size_t sector_size_mult;
@@ -349,10 +351,8 @@ static void *settings_nvs_storage_get(struct settings_store *cs)
 	return &cf->cf_nvs;
 }
 
-#ifdef CONFIG_SETTINGS_NVS_INIT
-
-static int settings_nvs_store_init(struct settings_store *store,
-				   const void *config)
+__unused static int settings_nvs_store_init(struct settings_store *store,
+					    const void *config)
 {
 	struct settings_nvs *settings_nvs =
 		CONTAINER_OF(store, struct settings_nvs, cf_store);
@@ -411,6 +411,23 @@ static int settings_nvs_store_init(struct settings_store *store,
 
 	return rc;
 }
+
+#define SETTINGS_NVS_DEFINE(inst)					\
+static const struct settings_nvs_config settings_nvs_##inst##_config = { \
+	.partition_id = DT_FIXED_PARTITION_ID(DT_INST_PHANDLE(inst, partition)), \
+	.sector_size_mult = DT_INST_PROP(inst, sector_size_mult),	\
+	.sector_count = DT_INST_PROP(inst, sector_count),		\
+};									\
+									\
+static struct settings_nvs settings_nvs_##inst;				\
+									\
+SETTINGS_DT_INST_STORE_STATIC_DEFINE(inst, settings_nvs_store_init,	\
+				     &settings_nvs_##inst.cf_store,	\
+				     &settings_nvs_##inst##_config);
+
+DT_INST_FOREACH_STATUS_OKAY(SETTINGS_NVS_DEFINE)
+
+#ifdef CONFIG_SETTINGS_NVS_INIT
 
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
 #define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
