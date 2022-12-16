@@ -650,6 +650,36 @@ struct settings_store_static {
 		.config = _config,					\
 	}
 
+/**
+ * @brief Statically define settings backend from devicetree node identifier.
+ *
+ * @param _node devicetree node identifier
+ * @param _init @see SETTINGS_STORE_STATIC_DEFINE()
+ * @param _store @see SETTINGS_STORE_STATIC_DEFINE()
+ * @param _config @see SETTINGS_STORE_STATIC_DEFINE()
+ *
+ * @see SETTINGS_STORE_STATIC_DEFINE()
+ */
+#define SETTINGS_DT_STORE_STATIC_DEFINE(_node, _init, _store, _config)	\
+	SETTINGS_STORE_STATIC_DEFINE(Z_SETTINGS_DT_STORE_NAME(_node),	\
+				     Z_SETTINGS_DT_STORE_PRIORITY(_node),	\
+				     _init, _store, _config)
+
+/**
+ * @brief Like SETTINGS_DT_STORE_STATIC_DEFINE(), but uses an instance of a
+ * `DT_DRV_COMPAT` compatible instead of a node identifier.
+ *
+ * @param _inst Instance number. The `node_id` argument to DEVICE_DT_DEFINE() is
+ *              set to `DT_DRV_INST(inst)`.
+ * @param _init @see SETTINGS_DT_STORE_STATIC_DEFINE()
+ * @param _store @see SETTINGS_DT_STORE_STATIC_DEFINE()
+ * @param _config @see SETTINGS_DT_STORE_STATIC_DEFINE()
+ *
+ * @see SETTINGS_DT_STORE_STATIC_DEFINE()
+ */
+#define SETTINGS_DT_INST_STORE_STATIC_DEFINE(_inst, _init, _store, _config) \
+	SETTINGS_DT_STORE_STATIC_DEFINE(DT_DRV_INST(_inst), _init, _store, _config)
+
 #ifdef __cplusplus
 }
 #endif

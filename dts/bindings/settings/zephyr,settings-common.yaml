@@ -1,0 +1,22 @@
+# Copyright (C) 2022 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties for Zephyr settings compatibles
+
+include: base.yaml
+
+properties:
+  priority:
+    type: int
+    description: |
+      Priority of settings backend initialization, used when multiple backends
+      are defined.
+
+      Backend with lowest priority number will be initialized first and settings
+      loading will be started from that backend.
+
+      Backend with highest priority number will be initialized and settings
+      defined in in will be loaded as last. This backend will be used for saving
+      settings.
+
+      Use a number between 10 and 99.
