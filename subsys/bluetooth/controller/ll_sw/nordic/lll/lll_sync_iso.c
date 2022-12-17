@@ -550,6 +550,8 @@ static void isr_rx(void *param)
 			}
 
 			isr_rx_ctrl_recv(lll, pdu);
+
+			goto isr_rx_done;
 		} else {
 			/* Check if there are 2 free rx buffers, one will be
 			 * consumed to receive the current PDU, and the other
