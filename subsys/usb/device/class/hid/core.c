@@ -82,7 +82,7 @@ struct usb_hid_config {
 	{								\
 		.bLength = sizeof(struct usb_hid_descriptor),		\
 		.bDescriptorType = USB_DESC_HID,			\
-		.bcdHID = sys_cpu_to_le16(USB_SRN_1_1),			\
+		.bcdHID = sys_cpu_to_le16(USB_HID_VERSION),		\
 		.bCountryCode = 0,					\
 		.bNumDescriptors = 1,					\
 		.subdesc[0] = {						\
