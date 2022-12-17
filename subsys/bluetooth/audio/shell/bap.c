@@ -27,6 +27,7 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 
 #include "shell/bt.h"
+#include "audio.h"
 
 #define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
 #define CONTEXT BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA
@@ -2620,16 +2621,7 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
-		static const uint8_t ad_cap_announcement[3] = {
-			BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
-			BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
-		};
-
-		__ASSERT(data_array_size > ad_len, "No space for AD_CAP_ANNOUNCEMENT");
-		data_array[ad_len].type = BT_DATA_SVC_DATA16;
-		data_array[ad_len].data_len = ARRAY_SIZE(ad_cap_announcement);
-		data_array[ad_len].data = &ad_cap_announcement[0];
-		ad_len++;
+		ad_len += cap_acceptor_ad_data_add(data_array, data_array_size - ad_len, true);
 	}
 
 	if (ARRAY_SIZE(ad_ext_uuid16) > 0) {

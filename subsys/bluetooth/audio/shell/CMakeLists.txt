@@ -52,7 +52,7 @@ zephyr_library_sources_ifdef(
   has.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER
+  CONFIG_BT_CAP_ACCEPTOR
   cap_acceptor.c
   )
 zephyr_library_sources_ifdef(
