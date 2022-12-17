@@ -619,6 +619,32 @@ struct settings_store_static {
 	const void *config;
 };
 
+#define Z_SETTINGS_STORE_NAME_FORMAT(_name, _priority)		\
+	_CONCAT(_CONCAT(settings_store_static_,			\
+			_priority),				\
+		_name)
+
+#define Z_SETTINGS_DT_STORE_NAME(_node)				\
+	DT_DEP_ORD(_node)
+
+#define Z_SETTINGS_DT_STORE_PRIORITY(_node)			\
+	DT_PROP_OR(_node, priority, 10)
+
+#define Z_SETTINGS_STORE_DECLARE(_name, _priority)		\
+	extern const struct settings_store_static		\
+		Z_SETTINGS_STORE_NAME_FORMAT(_name, _priority)
+
+#define Z_SETTINGS_DT_STORE_DECLARE(_node)				\
+	Z_SETTINGS_STORE_DECLARE(Z_SETTINGS_DT_STORE_NAME(_node),	\
+			       Z_SETTINGS_DT_STORE_PRIORITY(_node))
+
+#define Z_SETTINGS_STORE_GET(_name, _priority)			\
+	(&Z_SETTINGS_STORE_NAME_FORMAT(_name, _priority))
+
+#define Z_SETTINGS_DT_STORE_GET(_node)				\
+	Z_SETTINGS_STORE_GET(Z_SETTINGS_DT_STORE_NAME(_node),	\
+			   Z_SETTINGS_DT_STORE_PRIORITY(_node))
+
 /**
  * @brief Statically define settings backend.
  *
@@ -642,9 +668,7 @@ struct settings_store_static {
 		     "Use priority between 10 and 99");			\
 									\
 	const STRUCT_SECTION_ITERABLE(settings_store_static,		\
-			_CONCAT(_CONCAT(settings_store_static_,		\
-					_priority),			\
-				_name)) = {				\
+			Z_SETTINGS_STORE_NAME_FORMAT(_name, _priority)) = { \
 		.init = _init,						\
 		.store = _store,					\
 		.config = _config,					\
