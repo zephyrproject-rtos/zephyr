@@ -11,6 +11,8 @@ supported:
   - pwm
   - gpio
   - spi
+  - arduino_gpio
+  - arduino_i2c
 testing:
   ignore_tags:
     - net
