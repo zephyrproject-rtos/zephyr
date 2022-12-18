@@ -177,7 +177,7 @@ static inline int tcpc_is_cc_rp(enum tc_cc_voltage_state cc)
 static inline int tcpc_is_cc_open(enum tc_cc_voltage_state cc1,
 				  enum tc_cc_voltage_state cc2)
 {
-	return cc1 == TC_CC_VOLT_OPEN && cc2 == TC_CC_VOLT_OPEN;
+	return (cc1 < TC_CC_VOLT_RD) && (cc2 < TC_CC_VOLT_RD);
 }
 
 /**
