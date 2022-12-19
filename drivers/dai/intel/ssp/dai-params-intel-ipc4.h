@@ -252,4 +252,27 @@ struct dai_intel_ipc4_ssp_configuration_blob {
 	union dai_intel_ipc4_ssp_dma_control i2s_dma_control[0];
 } __packed;
 
+struct dai_intel_ipc4_ssp_clock_control {
+	uint32_t mdivctlr;
+	uint32_t mdivrcnt;
+	uint32_t mdivr[];
+} __packed;
+
+#define SSP_BLOB_VER_1_5 0xee000105
+
+struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 {
+	union dai_intel_ipc4_gateway_attributes gw_attr;
+
+	uint32_t version;
+	uint32_t size;
+
+	/* TDM time slot mappings */
+	uint32_t tdm_ts_group[DAI_INTEL_I2S_TDM_MAX_SLOT_MAP_COUNT];
+
+	/* i2s port configuration */
+	struct dai_intel_ipc4_ssp_config i2s_ssp_config;
+	/* optional configuration parameters */
+	struct dai_intel_ipc4_ssp_clock_control i2s_clock_control;
+} __packed;
+
 #endif
