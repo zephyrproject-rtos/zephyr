@@ -138,7 +138,7 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 
 	/* voltage may not be allowed, even if supported */
 	if ((min_uv < config->min_uv) || (max_uv > config->max_uv)) {
-		return -EINVAL;
+		return false;
 	}
 
 	volt_cnt = regulator_count_voltages(dev);
