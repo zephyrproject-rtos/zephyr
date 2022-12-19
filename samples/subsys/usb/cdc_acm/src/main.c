@@ -29,7 +29,7 @@ uint8_t ring_buffer[RING_BUF_SIZE];
 
 struct ring_buf ringbuf;
 
-#if IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT)
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 USBD_CONFIGURATION_DEFINE(config_1,
 			  USB_SCD_SELF_POWERED,
 			  200);
@@ -162,7 +162,7 @@ void main(void)
 		return;
 	}
 
-#if IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT)
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 		ret = enable_usb_device_next();
 #else
 		ret = usb_enable(NULL);

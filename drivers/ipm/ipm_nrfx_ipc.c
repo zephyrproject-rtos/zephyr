@@ -26,7 +26,7 @@ static struct ipm_nrf_data nrfx_ipm_data;
 static void gipm_init(void);
 static void gipm_send(uint32_t id);
 
-#if IS_ENABLED(CONFIG_IPM_NRF_SINGLE_INSTANCE)
+#if defined(CONFIG_IPM_NRF_SINGLE_INSTANCE)
 
 static void nrfx_ipc_handler(uint8_t event_idx, void *p_context)
 {
@@ -231,7 +231,7 @@ LISTIFY(NRFX_IPC_ID_MAX_VALUE, VIPM_DEVICE, (;), _);
 static void gipm_init(void)
 {
 	/* Init IPC */
-#if IS_ENABLED(CONFIG_IPM_NRF_SINGLE_INSTANCE)
+#if defined(CONFIG_IPM_NRF_SINGLE_INSTANCE)
 	nrfx_ipc_init(0, nrfx_ipc_handler, (void *)&nrfx_ipm_data);
 #else
 	nrfx_ipc_init(0, vipm_dispatcher, (void *)&nrfx_ipm_data);
