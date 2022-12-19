@@ -458,6 +458,15 @@ int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms)
 {
 	int i;
 
+	if (!service) {
+		return -EINVAL;
+	}
+
+	/* First, try if the service is already registered, and modify it*/
+	if (lwm2m_engine_update_service_period(service, period_ms) == 0) {
+		return 0;
+	}
+
 	/* find an unused service index node */
 	for (i = 0; i < MAX_PERIODIC_SERVICE; i++) {
 		if (!service_node_data[i].service_work) {
