@@ -189,7 +189,7 @@ int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
 	}
 
 	/* current limit may not be allowed, even if supported */
-	if ((min_ua < config->min_ua) || (max_ua > config->max_ua)) {
+	if ((min_ua > config->max_ua) || (max_ua < config->min_ua)) {
 		return -EINVAL;
 	}
 
