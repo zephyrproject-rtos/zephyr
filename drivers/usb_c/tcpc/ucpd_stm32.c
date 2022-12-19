@@ -1022,7 +1022,6 @@ static void ucpd_isr(const struct device *dev_inst[])
 	 * Multiple UCPD ports are available
 	 */
 
-	uint32_t ucpd_base;
 	uint32_t sr0;
 	uint32_t sr1;
 
@@ -1031,18 +1030,17 @@ static void ucpd_isr(const struct device *dev_inst[])
 	 * which one generated the interrupt.
 	 */
 
-	/* Read UCPD1 Status Register */
-	sr0 = LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[0]->config)->ucpd_port, SR);
+	/* Read UCPD1 and UCPD2 Status Registers */
 
-	/* Read UCPD2 Status Register */
-	sr1 = LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[1]->config)->ucpd_port, SR);
+	sr0 =
+	LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[0]->config)->ucpd_port, SR);
+	sr1 =
+	LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[1]->config)->ucpd_port, SR);
 
 	if (sr0) {
-		/* UCPD1 interrupt is pending */
-		ucpd_base = UCPD1_BASE;
+		dev = dev_inst[0];
 	} else if (sr1) {
-		/* UCPD2 interrupt is pending */
-		ucpd_base = UCPD2_BASE;
+		dev = dev_inst[1];
 	} else {
 		/*
 		 * The interrupt was triggered by some other device sharing this
@@ -1050,24 +1048,15 @@ static void ucpd_isr(const struct device *dev_inst[])
 		 */
 		return;
 	}
-
-	/* Find correct device instance for this port */
-	for (int i = 0; i < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); i++) {
-		dev = dev_inst[i];
-		config = dev->config;
-		if ((uint32_t)(config->ucpd_port) == ucpd_base) {
-			break;
-		}
-	}
 #else
 	/*
 	 * Only one UCPD port available
 	 */
 
 	dev = dev_inst[0];
-	config = dev->config;
 #endif /* Get the UCPD port that initiated that interrupt  */
 
+	config = dev->config;
 	data = dev->data;
 	info = &data->alert_info;
 
