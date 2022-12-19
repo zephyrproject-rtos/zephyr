@@ -201,9 +201,17 @@ static void uart_npcx_irq_tx_disable(const struct device *dev)
 	k_spin_unlock(&data->lock, key);
 }
 
+static bool uart_npcx_irq_tx_is_enabled(const struct device *dev)
+{
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
+
+	return IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_TEMPTY_EN);
+}
+
 static int uart_npcx_irq_tx_ready(const struct device *dev)
 {
-	return uart_npcx_tx_fifo_ready(dev);
+	return uart_npcx_tx_fifo_ready(dev) && uart_npcx_irq_tx_is_enabled(dev);
 }
 
 static int uart_npcx_irq_tx_complete(const struct device *dev)
@@ -231,6 +239,14 @@ static void uart_npcx_irq_rx_disable(const struct device *dev)
 	inst->UFRCTL &= ~(BIT(NPCX_UFRCTL_RNEMPTY_EN));
 }
 
+static bool uart_npcx_irq_rx_is_enabled(const struct device *dev)
+{
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
+
+	return IS_BIT_SET(inst->UFRCTL, NPCX_UFRCTL_RNEMPTY_EN);
+}
+
 static int uart_npcx_irq_rx_ready(const struct device *dev)
 {
 	return uart_npcx_rx_fifo_available(dev);
@@ -254,7 +270,8 @@ static void uart_npcx_irq_err_disable(const struct device *dev)
 
 static int uart_npcx_irq_is_pending(const struct device *dev)
 {
-	return (uart_npcx_irq_tx_ready(dev) || uart_npcx_irq_rx_ready(dev));
+	return uart_npcx_irq_tx_ready(dev) ||
+		(uart_npcx_irq_rx_ready(dev) && uart_npcx_irq_rx_is_enabled(dev));
 }
 
 static int uart_npcx_irq_update(const struct device *dev)
