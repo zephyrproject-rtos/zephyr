@@ -62,4 +62,10 @@ zephyr_library_sources_ifdef(
 	class/usbd_uac2.c
 )
 
+zephyr_library_sources_ifdef(
+	CONFIG_USBD_HID_SUPPORT
+	class/usbd_hid.c
+	class/usbd_hid_api.c
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbd_data.ld)
