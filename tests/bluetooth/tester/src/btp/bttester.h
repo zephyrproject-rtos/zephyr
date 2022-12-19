@@ -43,6 +43,12 @@ uint8_t tester_init_mesh(void);
 uint8_t tester_unregister_mesh(void);
 void tester_handle_mesh(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t len);
 
+uint8_t tester_init_vcp(void);
+uint8_t tester_unregister_vcp(void);
+void tester_handle_vcs(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t len);
+void tester_handle_aics(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t len);
+void tester_handle_vocs(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t len);
+
 uint8_t tester_init_gap(void);
 uint8_t tester_unregister_gap(void);
 void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,

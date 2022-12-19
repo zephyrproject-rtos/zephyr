@@ -60,7 +60,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 
 static void supported_services(uint8_t *data, uint16_t len)
 {
-	uint8_t buf[1];
+	uint8_t buf[2];
 	struct core_read_supported_services_rp *rp = (void *) buf;
 
 	(void)memset(buf, 0, sizeof(buf));
@@ -74,6 +74,12 @@ static void supported_services(uint8_t *data, uint16_t len)
 #if defined(CONFIG_BT_MESH)
 	tester_set_bit(buf, BTP_SERVICE_ID_MESH);
 #endif /* CONFIG_BT_MESH */
+#if defined(CONFIG_BT_AUDIO)
+	tester_set_bit(buf, BTP_SERVICE_ID_VCS);
+	tester_set_bit(buf, BTP_SERVICE_ID_IAS);
+	tester_set_bit(buf, BTP_SERVICE_ID_AICS);
+	tester_set_bit(buf, BTP_SERVICE_ID_VOCS);
+#endif /* CONFIG_BT_AUDIO */
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
 		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
@@ -105,6 +111,11 @@ static void register_service(uint8_t *data, uint16_t len)
 		status = tester_init_mesh();
 		break;
 #endif /* CONFIG_BT_MESH */
+#if defined(CONFIG_BT_AUDIO)
+	case BTP_SERVICE_ID_VCS:
+		status = tester_init_vcp();
+		break;
+#endif /* CONFIG_BT_VCS */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cmd->id);
 		status = BTP_STATUS_FAILED;
@@ -138,6 +149,11 @@ static void unregister_service(uint8_t *data, uint16_t len)
 		status = tester_unregister_mesh();
 		break;
 #endif /* CONFIG_BT_MESH */
+#if defined(CONFIG_BT_AUDIO)
+	case BTP_SERVICE_ID_VCS:
+		status = tester_unregister_vcp();
+		break;
+#endif /* CONFIG_BT_VCS */
 	default:
 		LOG_WRN("unknown id: 0x%x", cmd->id);
 		status = BTP_STATUS_FAILED;
@@ -216,7 +232,22 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 			tester_handle_mesh(cmd->hdr.opcode, cmd->hdr.index,
 					   cmd->hdr.data, len);
 			break;
-#endif /* CONFIG_BT_MESH */
+#endif /* CONFIG_BT_AUDIO */
+#if defined(CONFIG_BT_AUDIO)
+		case BTP_SERVICE_ID_VCS:
+			tester_handle_vcs(cmd->hdr.opcode, cmd->hdr.index,
+							  cmd->hdr.data, len);
+			break;
+		case BTP_SERVICE_ID_AICS:
+			tester_handle_aics(cmd->hdr.opcode, cmd->hdr.index,
+							   cmd->hdr.data, len);
+			break;
+		case BTP_SERVICE_ID_VOCS:
+			tester_handle_vocs(cmd->hdr.opcode, cmd->hdr.index,
+							   cmd->hdr.data, len);
+			break;
+		break;
+#endif /* CONFIG_BT_AUDIO */
 		default:
 			LOG_WRN("unknown service: 0x%x", cmd->hdr.service);
 			tester_rsp(cmd->hdr.service, cmd->hdr.opcode,

@@ -26,6 +26,7 @@
  * [Experimental] Users should note that the APIs can change as a part of ongoing development.
  */
 
+#include <stdbool.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
