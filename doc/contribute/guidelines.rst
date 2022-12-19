@@ -584,6 +584,13 @@ workflow here:
    review.  Email will be sent as review comments are made, or you can check
    on your pull request at https://github.com/zephyrproject-rtos/zephyr/pulls.
 
+   .. note:: As more commits are merged upstream, the GitHub PR page will show
+      a ``This branch is out-of-date with the base branch`` message and a
+      ``Update branch`` button on the PR page. That message should be ignored,
+      as the commits will be rebased as part of merging anyway, and triggering
+      a branch update from the GitHub UI will cause the PR approvals to be
+      dropped.
+
 #. While you're waiting for your pull request to be accepted and merged, you
    can create another branch to work on another issue. (Be sure to make your
    new branch off of main and not the previous branch.)::
