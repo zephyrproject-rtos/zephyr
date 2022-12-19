@@ -95,7 +95,7 @@
 		};
 
 		flash: flash-controller@40022000 {
-			compatible = "st,stm32-flash-controller", "st,stm32l0-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32f1-flash-controller";
 			reg = <0x40022000 0x400>;
 			interrupts = <3 0>;
 
