@@ -53,28 +53,44 @@ typedef uint8_t regulator_error_flags_t;
 
 /** @cond INTERNAL_HIDDEN */
 
+typedef int (*regulator_dvs_state_set_t)(const struct device *dev,
+					 regulator_dvs_state_t state);
+
 /** @brief Driver-specific API functions to support parent regulator control. */
 __subsystem struct regulator_parent_driver_api {
-	int (*dvs_state_set)(const struct device *dev,
-			     regulator_dvs_state_t state);
+	regulator_dvs_state_set_t dvs_state_set;
 };
+
+typedef int (*regulator_enable_t)(const struct device *dev);
+typedef int (*regulator_disable_t)(const struct device *dev);
+typedef unsigned int (*regulator_count_voltages_t)(const struct device *dev);
+typedef int (*regulator_list_voltage_t)(const struct device *dev,
+					unsigned int idx, int32_t *volt_uv);
+typedef int (*regulator_set_voltage_t)(const struct device *dev, int32_t min_uv,
+				       int32_t max_uv);
+typedef int (*regulator_get_voltage_t)(const struct device *dev,
+				       int32_t *volt_uv);
+typedef int (*regulator_set_current_limit_t)(const struct device *dev,
+					     int32_t min_ua, int32_t max_ua);
+typedef int (*regulator_get_current_limit_t)(const struct device *dev,
+					     int32_t *curr_ua);
+typedef int (*regulator_set_mode_t)(const struct device *dev,
+				    regulator_mode_t mode);
+typedef int (*regulator_get_error_flags_t)(
+	const struct device *dev, regulator_error_flags_t *flags);
 
 /** @brief Driver-specific API functions to support regulator control. */
 __subsystem struct regulator_driver_api {
-	int (*enable)(const struct device *dev);
-	int (*disable)(const struct device *dev);
-	unsigned int (*count_voltages)(const struct device *dev);
-	int (*list_voltage)(const struct device *dev, unsigned int idx,
-			    int32_t *volt_uv);
-	int (*set_voltage)(const struct device *dev, int32_t min_uv,
-			   int32_t max_uv);
-	int (*get_voltage)(const struct device *dev, int32_t *volt_uv);
-	int (*set_current_limit)(const struct device *dev, int32_t min_ua,
-				 int32_t max_ua);
-	int (*get_current_limit)(const struct device *dev, int32_t *curr_ua);
-	int (*set_mode)(const struct device *dev, regulator_mode_t mode);
-	int (*get_error_flags)(const struct device *dev,
-			       regulator_error_flags_t *flags);
+	regulator_enable_t enable;
+	regulator_disable_t disable;
+	regulator_count_voltages_t count_voltages;
+	regulator_list_voltage_t list_voltage;
+	regulator_set_voltage_t set_voltage;
+	regulator_get_voltage_t get_voltage;
+	regulator_set_current_limit_t set_current_limit;
+	regulator_get_current_limit_t get_current_limit;
+	regulator_set_mode_t set_mode;
+	regulator_get_error_flags_t get_error_flags;
 };
 
 /**
