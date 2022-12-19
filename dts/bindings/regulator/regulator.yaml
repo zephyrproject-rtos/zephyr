@@ -247,20 +247,6 @@ properties:
       1: Enable active discharge.
       Absence of this property will leave configuration to default.
 
-  regulator-coupled-with:
-    type: phandle-array
-    description: |
-      Regulators with which the regulator is coupled. The linkage is 2-way - all
-      coupled regulators should be linked with each other. A regulator should
-      not be coupled with its supplier.
-
-  regulator-coupled-max-spread:
-    type: array
-    description: |
-      Array of maximum spread between voltages of coupled regulators in
-      microvolts, each value in the array relates to the corresponding couple
-      specified by the regulator-coupled-with property.
-
   regulator-max-step-microvolt:
     type: int
     description: |
