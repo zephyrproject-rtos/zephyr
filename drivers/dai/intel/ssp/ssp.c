@@ -1533,46 +1533,64 @@ out:
 	return ret;
 }
 
-static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_config *cfg,
-				    const void *spec_config)
+static int dai_ssp_set_clock_control_ver_1_5(struct dai_intel_ssp *dp,
+					     const struct dai_intel_ipc4_ssp_mclk_config_2 *cc)
 {
-	const struct dai_intel_ipc4_ssp_configuration_blob *blob = spec_config;
+	/* currently we only support 1 divider */
+	if (cc->mdivrcnt != 1) {
+		LOG_ERR("%s bad clock divider count %u", __func__,
+			cc->mdivrcnt);
+		return -EINVAL;
+	}
+
+	/* ssp blob is set by pcm_hw_params for ipc4 stream, so enable
+	 * mclk and bclk at this time.
+	 */
+	dai_ssp_mn_set_mclk_blob(dp, cc->mdivctlr, cc->mdivr[0]);
+
+	return 0;
+}
+
+static int dai_ssp_set_clock_control_ver_1(struct dai_intel_ssp *dp,
+					   const struct dai_intel_ipc4_ssp_mclk_config *cc)
+{
+	/* ssp blob is set by pcm_hw_params for ipc4 stream, so enable
+	 * mclk and bclk at this time.
+	 */
+	dai_ssp_mn_set_mclk_blob(dp, cc->mdivc, cc->mdivr);
+
+	return 0;
+}
+
+static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_config *cfg,
+				   const struct dai_intel_ipc4_ssp_config *regs)
+{
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 	uint32_t ssc0, sstsa, ssrsa;
 
-	/* set config only once for playback or capture */
-	if (ssp->state[DAI_DIR_PLAYBACK] > DAI_STATE_READY ||
-	    ssp->state[DAI_DIR_CAPTURE] > DAI_STATE_READY)
-		return 0;
-
-	ssc0 = blob->i2s_driver_config.i2s_config.ssc0;
-	sstsa = blob->i2s_driver_config.i2s_config.sstsa;
-	ssrsa = blob->i2s_driver_config.i2s_config.ssrsa;
+	ssc0 = regs->ssc0;
+	sstsa = regs->sstsa;
+	ssrsa = regs->ssrsa;
 
 	sys_write32(ssc0, dai_base(dp) + SSCR0);
-	sys_write32(blob->i2s_driver_config.i2s_config.ssc2 & ~SSCR2_SFRMEN,
-			dai_base(dp) + SSCR2); /* hardware specific flow */
-	sys_write32(blob->i2s_driver_config.i2s_config.ssc1, dai_base(dp) + SSCR1);
-	sys_write32(blob->i2s_driver_config.i2s_config.ssc2 | SSCR2_SFRMEN,
-			dai_base(dp) + SSCR2); /* hardware specific flow */
-	sys_write32(blob->i2s_driver_config.i2s_config.ssc2, dai_base(dp) + SSCR2);
-	sys_write32(blob->i2s_driver_config.i2s_config.ssc3, dai_base(dp) + SSCR3);
-	sys_write32(blob->i2s_driver_config.i2s_config.sspsp, dai_base(dp) + SSPSP);
-	sys_write32(blob->i2s_driver_config.i2s_config.sspsp2, dai_base(dp) + SSPSP2);
-	sys_write32(blob->i2s_driver_config.i2s_config.ssioc, dai_base(dp) + SSIOC);
-	sys_write32(blob->i2s_driver_config.i2s_config.sscto, dai_base(dp) + SSTO);
+	sys_write32(regs->ssc2 & ~SSCR2_SFRMEN, dai_base(dp) + SSCR2); /* hardware specific flow */
+	sys_write32(regs->ssc1, dai_base(dp) + SSCR1);
+	sys_write32(regs->ssc2 | SSCR2_SFRMEN, dai_base(dp) + SSCR2); /* hardware specific flow */
+	sys_write32(regs->ssc2, dai_base(dp) + SSCR2);
+	sys_write32(regs->ssc3, dai_base(dp) + SSCR3);
+	sys_write32(regs->sspsp, dai_base(dp) + SSPSP);
+	sys_write32(regs->sspsp2, dai_base(dp) + SSPSP2);
+	sys_write32(regs->ssioc, dai_base(dp) + SSIOC);
+	sys_write32(regs->sscto, dai_base(dp) + SSTO);
 	sys_write32(sstsa, dai_base(dp) + SSTSA);
 	sys_write32(ssrsa, dai_base(dp) + SSRSA);
 
 	LOG_INF("%s sscr0 = 0x%08x, sscr1 = 0x%08x, ssto = 0x%08x, sspsp = 0x%0x", __func__,
-		ssc0, blob->i2s_driver_config.i2s_config.ssc1,
-		blob->i2s_driver_config.i2s_config.sscto,
-		blob->i2s_driver_config.i2s_config.sspsp);
+		ssc0, regs->ssc1, regs->sscto, regs->sspsp);
 	LOG_INF("%s sscr2 = 0x%08x, sspsp2 = 0x%08x, sscr3 = 0x%08x", __func__,
-		blob->i2s_driver_config.i2s_config.ssc2, blob->i2s_driver_config.i2s_config.sspsp2,
-		blob->i2s_driver_config.i2s_config.ssc3);
+		regs->ssc2, regs->sspsp2, regs->ssc3);
 	LOG_INF("%s ssioc = 0x%08x, ssrsa = 0x%08x, sstsa = 0x%08x", __func__,
-		blob->i2s_driver_config.i2s_config.ssioc, ssrsa, sstsa);
+		regs->ssioc, ssrsa, sstsa);
 
 	ssp->params.sample_valid_bits = SSCR0_DSIZE_GET(ssc0);
 	if (ssc0 & SSCR0_EDSS) {
@@ -1586,14 +1604,34 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 
 	ssp->state[DAI_DIR_PLAYBACK] = DAI_STATE_PRE_RUNNING;
 	ssp->state[DAI_DIR_CAPTURE] = DAI_STATE_PRE_RUNNING;
+}
 
-	/* ssp blob is set by pcm_hw_params for ipc4 stream, so enable
-	 * mclk and bclk at this time.
-	 */
-	dai_ssp_mn_set_mclk_blob(dp, blob->i2s_driver_config.mclk_config.mdivc,
-				 blob->i2s_driver_config.mclk_config.mdivr);
+static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_config *cfg,
+				   const void *spec_config)
+{
+	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob15 = spec_config;
+	const struct dai_intel_ipc4_ssp_configuration_blob *blob = spec_config;
+	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
+	int err;
+
+	/* set config only once for playback or capture */
+	if (ssp->state[DAI_DIR_PLAYBACK] > DAI_STATE_READY ||
+	    ssp->state[DAI_DIR_CAPTURE] > DAI_STATE_READY)
+		return 0;
+
+	if (blob15->version == SSP_BLOB_VER_1_5) {
+		dai_ssp_set_reg_config(dp, cfg, &blob15->i2s_ssp_config);
+		err = dai_ssp_set_clock_control_ver_1_5(dp, &blob15->i2s_mclk_control);
+		if (err)
+			return err;
+	} else {
+		dai_ssp_set_reg_config(dp, cfg, &blob->i2s_driver_config.i2s_config);
+		err = dai_ssp_set_clock_control_ver_1(dp, &blob->i2s_driver_config.mclk_config);
+		if (err)
+			return err;
+	}
+
 	ssp->clk_active |= SSP_CLK_MCLK_ES_REQ;
-
 	/* enable TRSE/RSRE before SSE */
 	dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE | SSCR1_RSRE, SSCR1_TSRE | SSCR1_RSRE);
 

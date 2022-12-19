@@ -188,6 +188,12 @@ struct dai_intel_ipc4_ssp_mclk_config {
 	uint32_t mdivr;
 } __packed;
 
+struct dai_intel_ipc4_ssp_mclk_config_2 {
+	uint32_t mdivctlr;
+	uint32_t mdivrcnt;
+	uint32_t mdivr[];
+} __packed;
+
 struct dai_intel_ipc4_ssp_driver_config {
 	struct dai_intel_ipc4_ssp_config i2s_config;
 	struct dai_intel_ipc4_ssp_mclk_config mclk_config;
@@ -250,6 +256,23 @@ struct dai_intel_ipc4_ssp_configuration_blob {
 
 	/* optional configuration parameters */
 	union dai_intel_ipc4_ssp_dma_control i2s_dma_control[0];
+} __packed;
+
+#define SSP_BLOB_VER_1_5 0xee000105
+
+struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 {
+	union dai_intel_ipc4_gateway_attributes gw_attr;
+
+	uint32_t version;
+	uint32_t size;
+
+	/* TDM time slot mappings */
+	uint32_t tdm_ts_group[DAI_INTEL_I2S_TDM_MAX_SLOT_MAP_COUNT];
+
+	/* i2s port configuration */
+	struct dai_intel_ipc4_ssp_config i2s_ssp_config;
+	/* clock configuration parameters */
+	struct dai_intel_ipc4_ssp_mclk_config_2 i2s_mclk_control;
 } __packed;
 
 #endif
