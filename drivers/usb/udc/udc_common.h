@@ -458,7 +458,7 @@ int udc_ctrl_submit_status(const struct device *dev,
 void udc_ctrl_update_stage(const struct device *dev,
 			   struct net_buf *const buf);
 
-#if IS_ENABLED(CONFIG_UDC_WORKQUEUE)
+#if defined(CONFIG_UDC_WORKQUEUE)
 extern struct k_work_q udc_work_q;
 
 static inline struct k_work_q *udc_get_work_q(void)

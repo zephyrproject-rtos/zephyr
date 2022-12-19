@@ -48,7 +48,7 @@ struct bt_csip_set_member_svc_inst {
 	bt_addr_le_t lock_client_addr;
 	struct bt_gatt_service *service_p;
 	struct csip_pending_notifications pend_notify[CONFIG_BT_MAX_PAIRED];
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	uint32_t age_counter;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
@@ -538,7 +538,7 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 
 		if (pend_notify->active &&
 		    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 			pend_notify->age = svc_inst->age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
@@ -555,14 +555,14 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 			bt_addr_le_copy(&pend_notify->addr,
 					bt_conn_get_dst(conn));
 			pend_notify->active = true;
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 			pend_notify->age = svc_inst->age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
 		}
 	}
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	struct csip_pending_notifications *oldest;
 
 	oldest = &svc_inst->pend_notify[0];

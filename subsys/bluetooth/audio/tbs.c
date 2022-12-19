@@ -92,7 +92,7 @@ struct gtbs_service_inst {
 	const struct bt_gatt_service_static *service_p;
 };
 
-#if IS_ENABLED(CONFIG_BT_GTBS)
+#if defined(CONFIG_BT_GTBS)
 #define READ_BUF_SIZE   (CONFIG_BT_TBS_MAX_CALLS * \
 			 sizeof(struct bt_tbs_current_call_item) * \
 			 CONFIG_BT_TBS_BEARER_COUNT)

@@ -475,7 +475,7 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 }
 #endif
 
-#if IS_ENABLED(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_NET_PKT_TXTIME)
 /**
  * @brief Convert 32-bit target time to absolute 64-bit target time.
  */
@@ -601,7 +601,7 @@ static int nrf5_tx(const struct device *dev,
 		ret = nrf5_tx_csma_ca(pkt, nrf5_radio->tx_psdu);
 		break;
 #endif
-#if IS_ENABLED(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_NET_PKT_TXTIME)
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
 		__ASSERT_NO_MSG(pkt);
@@ -998,7 +998,7 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		nrf5_data.rx_frames[i].rssi = power;
 		nrf5_data.rx_frames[i].lqi = lqi;
 
-#if IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
 		nrf5_data.rx_frames[i].time = nrf_802154_mhr_timestamp_get(time, data[0]);
 #endif
 
@@ -1085,7 +1085,7 @@ void nrf_802154_transmitted_raw(uint8_t *frame,
 		nrf5_data.ack_frame.rssi = metadata->data.transmitted.power;
 		nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
 
-#if IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
 		nrf5_data.ack_frame.time =
 			nrf_802154_mhr_timestamp_get(
 				metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);

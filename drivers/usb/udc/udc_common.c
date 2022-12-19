@@ -12,7 +12,7 @@
 #include "udc_common.h"
 
 #include <zephyr/logging/log.h>
-#if IS_ENABLED(CONFIG_UDC_DRIVER_LOG_LEVEL)
+#if defined(CONFIG_UDC_DRIVER_LOG_LEVEL)
 #define UDC_COMMON_LOG_LEVEL CONFIG_UDC_DRIVER_LOG_LEVEL
 #else
 #define UDC_COMMON_LOG_LEVEL LOG_LEVEL_NONE
@@ -1091,7 +1091,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 	data->stage = next_stage;
 }
 
-#if IS_ENABLED(CONFIG_UDC_WORKQUEUE)
+#if defined(CONFIG_UDC_WORKQUEUE)
 K_KERNEL_STACK_DEFINE(udc_work_q_stack, CONFIG_UDC_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q udc_work_q;

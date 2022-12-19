@@ -28,7 +28,7 @@ static struct sockaddr_in *in4_addr_my;
 
 static bool init_done;
 
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define TCP_RECEIVER_THREAD_PRIORITY K_PRIO_COOP(8)
 #else
 #define TCP_RECEIVER_THREAD_PRIORITY K_PRIO_PREEMPT(8)

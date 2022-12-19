@@ -1644,7 +1644,7 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
-#if IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)
+#if defined(CONFIG_NET_TCP_ISN_RFC6528)
 	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
 #endif
 
@@ -1679,7 +1679,7 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 
 	memcpy(buf.key, unique_key, sizeof(unique_key));
 
-#if IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)
+#if defined(CONFIG_NET_TCP_ISN_RFC6528)
 	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
 #endif
 
@@ -3401,7 +3401,7 @@ void net_tcp_init(void)
 	tcp_recv_cb = tp_tcp_recv_cb;
 #endif
 
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(0)
 #else
 #define THREAD_PRIORITY K_PRIO_PREEMPT(0)
