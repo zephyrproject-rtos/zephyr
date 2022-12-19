@@ -1038,6 +1038,26 @@ int usb_dc_ep_mps(const uint8_t ep)
 	return ep_state->ep_mps;
 }
 
+int usb_dc_wakeup_request(void)
+{
+	HAL_StatusTypeDef status;
+
+	status = HAL_PCD_ActivateRemoteWakeup(&usb_dc_stm32_state.pcd);
+	if (status != HAL_OK) {
+		return -EAGAIN;
+	}
+
+	/* Must be active from 1ms to 15ms as per reference manual. */
+	k_sleep(K_MSEC(2));
+
+	status = HAL_PCD_DeActivateRemoteWakeup(&usb_dc_stm32_state.pcd);
+	if (status != HAL_OK) {
+		return -EAGAIN;
+	}
+
+	return 0;
+}
+
 int usb_dc_detach(void)
 {
 	HAL_StatusTypeDef status;

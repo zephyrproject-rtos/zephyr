@@ -58,6 +58,7 @@ __aligned(XCHAL_DCACHE_LINESIZE) uint8_t d0i3_stack[CONFIG_MM_DRV_PAGE_SIZE];
 extern void power_down(bool disable_lpsram, uint32_t *hpsram_pg_mask,
 			   bool response_to_ipc);
 
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 /**
  *  @brief platform specific context restore procedure
  *
@@ -74,6 +75,14 @@ uint8_t *global_imr_ram_storage;
  * @biref a d3 restore boot entry point
  */
 extern void boot_entry_d3_restore(void);
+#else
+
+/*
+ * @biref FW entry point called by ROM during normal boot flow
+ */
+extern void rom_entry(void);
+
+#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 
 /* NOTE: This struct will grow with all values that have to be stored for
  * proper cpu restore after PG.
@@ -156,19 +165,6 @@ void power_gate_exit(void)
 	_restore_core_context();
 }
 
-static void ALWAYS_INLINE power_off_exit(void)
-{
-	__asm__(
-		"  movi  a0, 0\n\t"
-		"  movi  a1, 1\n\t"
-		"  movi  a2, 0x40020\n\t"/* PS_UM|PS_WOE */
-		"  wsr   a2, PS\n\t"
-		"  wsr   a1, WINDOWSTART\n\t"
-		"  wsr   a0, WINDOWBASE\n\t"
-		"  rsync\n\t");
-	_restore_core_context();
-}
-
 __asm__(".align 4\n\t"
 	"dsp_restore_vector:\n\t"
 	"  movi  a0, 0\n\t"
@@ -182,6 +178,20 @@ __asm__(".align 4\n\t"
 	"  movi a2, 0x1000\n\t"
 	"  add sp, sp, a2\n\t"
 	"  call0 power_gate_exit\n\t");
+
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+static void ALWAYS_INLINE power_off_exit(void)
+{
+	__asm__(
+		"  movi  a0, 0\n\t"
+		"  movi  a1, 1\n\t"
+		"  movi  a2, 0x40020\n\t"/* PS_UM|PS_WOE */
+		"  wsr   a2, PS\n\t"
+		"  wsr   a1, WINDOWSTART\n\t"
+		"  wsr   a0, WINDOWBASE\n\t"
+		"  rsync\n\t");
+	_restore_core_context();
+}
 
 __imr void pm_state_imr_restore(void)
 {
@@ -197,6 +207,7 @@ __imr void pm_state_imr_restore(void)
 	/* this function won't return, it will restore a saved state */
 	power_off_exit();
 }
+#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 
 __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -218,6 +229,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
 
 			imr_layout->imr_state.header.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE;
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 			imr_layout->imr_state.header.imr_restore_vector =
 					(void *)boot_entry_d3_restore;
 			imr_layout->imr_state.header.imr_ram_storage = global_imr_ram_storage;
@@ -249,7 +261,11 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 					(struct intel_adsp_tlb_api *)tlb_dev->api;
 
 			tlb_api->save_context(global_imr_ram_storage+LP_SRAM_SIZE);
-
+#else
+			imr_layout->imr_state.header.imr_restore_vector =
+					(void *)rom_entry;
+			z_xtensa_cache_flush(imr_layout, sizeof(*imr_layout));
+#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 			/* turn off all HPSRAM banks - get a full bitmap */
 			uint32_t ebb_banks = ace_hpsram_get_bank_count();
 			uint32_t hpsram_mask = (1 << ebb_banks) - 1;
@@ -285,6 +301,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 	if (state == PM_STATE_SOFT_OFF) {
 		if (cpu == 0) {
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 			struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
 
 			DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESUME;
@@ -300,6 +317,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			imr_layout->imr_state.header.imr_ram_storage = NULL;
 
 			z_xtensa_cache_flush_inv_all();
+#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 			z_xt_ints_on(core_desc[cpu].intenable);
 		}
 

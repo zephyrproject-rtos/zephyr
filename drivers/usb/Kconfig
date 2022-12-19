@@ -4,4 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "drivers/usb/udc/Kconfig"
+source "drivers/usb/uhc/Kconfig"
+source "drivers/usb/uvb/Kconfig"
 source "drivers/usb/device/Kconfig"

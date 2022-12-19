@@ -19,3 +19,11 @@ New USB device support
    :maxdepth: 1
 
    uds_next.rst
+
+USB host support
+################
+
+.. toctree::
+   :maxdepth: 1
+
+   uhc.rst

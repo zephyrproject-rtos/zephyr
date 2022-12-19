@@ -14,6 +14,7 @@
 
 #include <version.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/usb/class/usb_hub.h>
 
 #ifndef ZEPHYR_INCLUDE_USB_CH9_H_
 #define ZEPHYR_INCLUDE_USB_CH9_H_
