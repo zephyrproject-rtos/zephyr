@@ -1504,7 +1504,7 @@ bool lwm2m_rd_client_is_registred(struct lwm2m_ctx *client_ctx)
 	return true;
 }
 
-static int lwm2m_rd_client_init(const struct device *dev)
+int lwm2m_rd_client_init(void)
 {
 	client.ctx = NULL;
 	client.rd_message.ctx = NULL;
@@ -1516,5 +1516,13 @@ static int lwm2m_rd_client_init(const struct device *dev)
 
 }
 
-SYS_INIT(lwm2m_rd_client_init, APPLICATION,
+static int sys_lwm2m_rd_client_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return lwm2m_rd_client_init();
+}
+
+
+SYS_INIT(sys_lwm2m_rd_client_init, APPLICATION,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
