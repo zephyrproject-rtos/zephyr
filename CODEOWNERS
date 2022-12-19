@@ -458,6 +458,7 @@
 /drivers/watchdog/Kconfig.it8xxx2         @RuibinChang
 /drivers/watchdog/wdt_counter.c           @nordic-krch
 /drivers/watchdog/*rpi_pico*              @thedjnK
+/drivers/watchdog/*dw*                    @softwarecki
 /drivers/wifi/                            @rlubos @tbursztyka
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve

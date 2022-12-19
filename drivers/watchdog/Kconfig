@@ -94,4 +94,6 @@ source "drivers/watchdog/Kconfig.npm6001"
 
 source "drivers/watchdog/Kconfig.nxp_s32"
 
-endif
+source "drivers/watchdog/Kconfig.dw"
+
+endif # WATCHDOG
