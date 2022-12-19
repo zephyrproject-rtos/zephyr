@@ -573,12 +573,8 @@ workflow here:
    you want to open a pull request with.
 
 #. Review the pull request changes, and verify that you are opening a
-   pull request for the appropriate branch. The title and message from your
-   commit message should appear as well.
-
-#. If you're working on a subsystem branch that's not ``main``,
-   you may need to change the intended branch for the pull request
-   here, for example, by changing the base branch from ``main`` to ``net``.
+   pull request for the appropriate branch (if unsure, use `main`). The title
+   and message from your commit message should appear as well.
 
 #. GitHub will assign one or more suggested reviewers (based on the
    CODEOWNERS file in the repo). If you are a project member, you can
