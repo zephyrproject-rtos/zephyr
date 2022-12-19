@@ -37,7 +37,7 @@ config UART_CONSOLE
 	default CONSOLE
 
 config USB_DEVICE_INITIALIZE_AT_BOOT
-	default y
+	default y if !MCUBOOT
 
 config SHELL_BACKEND_SERIAL_CHECK_DTR
 	default SHELL
