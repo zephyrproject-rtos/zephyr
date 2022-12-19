@@ -148,7 +148,7 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 
 		(void)regulator_list_voltage(dev, idx, &volt_uv);
 
-		if ((volt_uv > min_uv) && (volt_uv < max_uv)) {
+		if ((volt_uv >= min_uv) && (volt_uv <= max_uv)) {
 			return true;
 		}
 	}
