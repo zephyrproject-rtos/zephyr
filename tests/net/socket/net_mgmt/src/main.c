@@ -26,7 +26,7 @@ static ZTEST_BMEM int fd;
 static ZTEST_BMEM struct in6_addr addr_v6;
 static ZTEST_DMEM struct in_addr addr_v4 = { { { 192, 0, 2, 3 } } };
 
-#if IS_ENABLED(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG)
+#if defined(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)

@@ -1023,7 +1023,7 @@ static int ppp_start(const struct device *dev)
 		 * configuration is enabled, and use that. If none are enabled,
 		 * then use our own config.
 		 */
-#if IS_ENABLED(CONFIG_GSM_MUX)
+#if defined(CONFIG_GSM_MUX)
 		const struct device *mux;
 
 		mux = uart_mux_find(CONFIG_GSM_MUX_DLCI_PPP);

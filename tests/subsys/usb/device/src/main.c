@@ -11,7 +11,7 @@
 #include <zephyr/usb/usb_device.h>
 
 /* Max packet size for endpoints */
-#if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
+#if defined(CONFIG_USB_DC_HAS_HS_SUPPORT)
 #define BULK_EP_MPS		512
 #else
 #define BULK_EP_MPS		64

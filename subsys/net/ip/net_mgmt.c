@@ -383,7 +383,7 @@ void net_mgmt_event_init(void)
 	(void)memset(events, 0, CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
 			sizeof(struct mgmt_event_entry));
 
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #else

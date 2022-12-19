@@ -2164,7 +2164,7 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 		}
 	}
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (!err && conn->sec_level >= BT_SECURITY_L2) {
 		if (conn->type == BT_CONN_TYPE_LE) {
 			bt_keys_update_usage(conn->id, bt_conn_get_dst(conn));

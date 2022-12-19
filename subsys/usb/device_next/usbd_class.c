@@ -16,7 +16,7 @@
 #include "usbd_ch9.h"
 
 #include <zephyr/logging/log.h>
-#if IS_ENABLED(CONFIG_USBD_LOG_LEVEL)
+#if defined(CONFIG_USBD_LOG_LEVEL)
 #define USBD_CLASS_LOG_LEVEL CONFIG_USBD_LOG_LEVEL
 #else
 #define USBD_CLASS_LOG_LEVEL LOG_LEVEL_NONE
