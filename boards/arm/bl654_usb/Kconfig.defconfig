@@ -42,6 +42,14 @@ config USB_DEVICE_INITIALIZE_AT_BOOT
 config SHELL_BACKEND_SERIAL_CHECK_DTR
 	default SHELL
 
+# Logger cannot use itself to log
+config USB_CDC_ACM_LOG_LEVEL
+	default 0
+
+# Set USB log level to error only
+config USB_DEVICE_LOG_LEVEL
+	default 1
+
 endif #BL654_USB_SERIAL_BACKEND_CDCACM
 
 config BT_CTLR
