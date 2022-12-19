@@ -19,7 +19,7 @@ if ETH_STM32_HAL
 
 config ETH_STM32_HAL_API_V2
 	bool "Use new HAL driver"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F4X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
 	help
 	  Use the new HAL driver instead of the legacy one.
 
