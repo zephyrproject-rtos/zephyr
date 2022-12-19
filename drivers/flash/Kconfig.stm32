@@ -2,6 +2,7 @@
 
 # Copyright (c) 2016 RnDity Sp. z o.o.
 # Copyright (c) 2017 BayLibre, SAS
+# Copyright (c) 2022 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FLASH_STM32
@@ -10,18 +11,8 @@ config SOC_FLASH_STM32
 		   DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	default y
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32F0X
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32F1X
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32F3X
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32L0X
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32L1X
 	select FLASH_PAGE_LAYOUT
 	select FLASH_HAS_PAGE_LAYOUT
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable flash driver for STM32 series
-
-config SOC_FLASH_STM32_V1
-	bool
-	help
-	  Enable the generic backend for the STM32 flash driver.
