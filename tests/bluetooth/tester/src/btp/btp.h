@@ -16,6 +16,10 @@
 #include "btp_gatt.h"
 #include "btp_l2cap.h"
 #include "btp_mesh.h"
+#include "btp_vcs.h"
+#include "btp_aics.h"
+#include "btp_vocs.h"
+#include "btp_ias.h"
 
 #define BTP_MTU 1024
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
@@ -27,6 +31,13 @@
 #define BTP_SERVICE_ID_GATT	2
 #define BTP_SERVICE_ID_L2CAP	3
 #define BTP_SERVICE_ID_MESH	4
+#define BTP_SERVICE_ID_MESH_MDL	5
+#define BTP_SERVICE_GATT_CLIENT	6
+#define BTP_SERVICE_GATT_SERVER	7
+#define BTP_SERVICE_ID_VCS	8
+#define BTP_SERVICE_ID_IAS	9
+#define BTP_SERVICE_ID_AICS	10
+#define BTP_SERVICE_ID_VOCS	11
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
