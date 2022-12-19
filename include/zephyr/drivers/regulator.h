@@ -125,13 +125,13 @@ struct regulator_common_config {
  */
 #define REGULATOR_DT_COMMON_CONFIG_INIT(node_id)                               \
 	{                                                                      \
-		.min_uv = DT_PROP_OR(node_id, regulator_min_microvolts,        \
+		.min_uv = DT_PROP_OR(node_id, regulator_min_microvolt,         \
 				     INT32_MIN),                               \
-		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolts,        \
+		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolt,         \
 				     INT32_MAX),                               \
-		.min_ua = DT_PROP_OR(node_id, regulator_min_microamps,         \
+		.min_ua = DT_PROP_OR(node_id, regulator_min_microamp,          \
 				     INT32_MIN),                               \
-		.max_ua = DT_PROP_OR(node_id, regulator_max_microamps,         \
+		.max_ua = DT_PROP_OR(node_id, regulator_max_microamp,          \
 				     INT32_MAX),                               \
 		.allowed_modes = (const regulator_mode_t [])                   \
 			DT_PROP_OR(node_id, regulator_allowed_modes, {}),      \
