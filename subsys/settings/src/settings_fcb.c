@@ -26,7 +26,6 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 #define SETTINGS_FCB_VERS		1
 
 int settings_backend_init(void);
-void settings_mount_fcb_backend(struct settings_fcb *cf);
 
 static int settings_fcb_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
