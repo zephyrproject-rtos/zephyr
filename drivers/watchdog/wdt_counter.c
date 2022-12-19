@@ -11,11 +11,14 @@
 #define WDT_CHANNEL_COUNT DT_PROP(DT_WDT_COUNTER, num_channels)
 #define DT_WDT_COUNTER DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
 
+#define WDT_SUPPORTED_CFG_FLAGS (WDT_FLAG_RESET_NONE | WDT_FLAG_RESET_SOC)
+
 extern void sys_arch_reboot(int type);
 
 struct wdt_counter_data {
 	wdt_callback_t callback[CONFIG_WDT_COUNTER_CH_COUNT];
 	uint32_t timeout[CONFIG_WDT_COUNTER_CH_COUNT];
+	uint8_t flags[CONFIG_WDT_COUNTER_CH_COUNT];
 	uint8_t alloc_cnt;
 };
 
@@ -57,8 +60,10 @@ static void counter_alarm_callback(const struct device *dev,
 		data->callback[chan_id](wdt_dev, chan_id);
 	}
 
-	LOG_PANIC();
-	sys_arch_reboot(0);
+	if (data->flags[chan_id] & WDT_FLAG_RESET_SOC) {
+		LOG_PANIC();
+		sys_arch_reboot(0);
+	}
 }
 
 static int timeout_set(const struct device *dev, int chan_id, bool cancel)
@@ -101,7 +106,7 @@ static int wdt_counter_install_timeout(const struct device *dev,
 				COUNTER_GUARD_PERIOD_LATE_TO_SET);
 	uint32_t timeout_ticks = counter_us_to_ticks(counter, cfg->window.max * 1000);
 
-	if (cfg->flags != WDT_FLAG_RESET_SOC) {
+	if (cfg->flags & ~WDT_SUPPORTED_CFG_FLAGS) {
 		return -ENOTSUP;
 	}
 
@@ -121,6 +126,7 @@ static int wdt_counter_install_timeout(const struct device *dev,
 	chan_id = data->alloc_cnt;
 	data->timeout[chan_id] = timeout_ticks;
 	data->callback[chan_id] = cfg->callback;
+	data->flags[chan_id] = cfg->flags;
 
 	int err = timeout_set(dev, chan_id, false);
 
