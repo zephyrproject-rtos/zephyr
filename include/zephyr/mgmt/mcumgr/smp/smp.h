@@ -27,7 +27,6 @@
 
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
-#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 
 #include <zcbor_common.h>
 
