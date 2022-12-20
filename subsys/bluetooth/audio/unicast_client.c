@@ -1479,11 +1479,18 @@ int bt_unicast_client_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 
 static void unicast_client_reset(struct bt_audio_ep *ep)
 {
+	struct bt_unicast_client_ep *client_ep = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
+
 	LOG_DBG("ep %p", ep);
 
 	bt_audio_stream_reset(ep->stream);
 
 	(void)memset(ep, 0, sizeof(*ep));
+
+	client_ep->cp_handle = 0U;
+	client_ep->handle = 0U;
+	(void)memset(&client_ep->discover, 0, sizeof(client_ep->discover));
+	/* Need to keep the subscribe params intact for the callback */
 }
 
 static void unicast_client_ep_reset(struct bt_conn *conn)
