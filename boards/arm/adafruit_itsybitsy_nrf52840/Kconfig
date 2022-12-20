@@ -9,6 +9,6 @@ config BOARD_ENABLE_DCDC
 	default y
 	depends on BOARD_ADAFRUIT_ITSYBITSY_NRF52840
 
-config BOARD_ENABLE_USB_CDC
+config BOARD_SERIAL_BACKEND_CDC_ACM
 	bool "USB CDC"
 	default y
