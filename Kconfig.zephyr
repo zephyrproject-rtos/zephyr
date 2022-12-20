@@ -292,6 +292,23 @@ config LINKER_LAST_SECTION_ID_PATTERN
 	  be used.
 	  The size of the pattern must not exceed 4 bytes.
 
+config LINKER_USE_NO_RELAX
+	bool
+	help
+	  Hidden symbol to allow features to force the use of no relax.
+
+config LINKER_USE_RELAX
+	bool "Linker optimization of call addressing"
+	depends on !LINKER_USE_NO_RELAX
+	default y
+	help
+	  This option performs global optimizations that become possible when the linker resolves
+	  addressing in the program, such as relaxing address modes and synthesizing new
+	  instructions in the output object file. For ld and lld, this enables `--relax`.
+	  On platforms where this is not supported, `--relax' is accepted, but ignored.
+	  Disabling it can reduce performance, as the linker is no longer able to substiture long /
+	  in-effective jump calls to shorter / more effective instructions.
+
 endmenu # "Linker Sections"
 
 endmenu
