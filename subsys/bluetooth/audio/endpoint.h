@@ -77,6 +77,7 @@ struct bt_audio_broadcast_stream_data {
 
 struct bt_audio_broadcast_source {
 	uint8_t stream_count;
+	uint8_t packing;
 	uint32_t broadcast_id; /* 24 bit */
 
 	struct bt_iso_big *big;
