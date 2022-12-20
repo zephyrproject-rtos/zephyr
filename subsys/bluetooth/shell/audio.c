@@ -1033,13 +1033,18 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (default_unicast_group == NULL) {
-		struct bt_audio_unicast_group_param params = {
+		struct bt_audio_unicast_group_stream_param stream_param = {
 			.stream = default_stream,
 			.qos = &default_preset->preset.qos,
 			.dir = stream_dir(default_stream)
 		};
+		struct bt_audio_unicast_group_param param = {
+			.packing = BT_ISO_PACKING_SEQUENTIAL,
+			.params = &stream_param,
+			.params_count = 1,
+		};
 
-		err = bt_audio_unicast_group_create(&params, 1, &default_unicast_group);
+		err = bt_audio_unicast_group_create(&param, &default_unicast_group);
 		if (err != 0) {
 			shell_error(sh, "Unable to create default unicast group: %d", err);
 			return -ENOEXEC;
