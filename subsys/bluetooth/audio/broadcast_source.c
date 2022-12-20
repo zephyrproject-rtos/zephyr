@@ -532,6 +532,12 @@ static bool valid_create_param(const struct bt_audio_broadcast_source_create_par
 		return false;
 	}
 
+	CHECKIF(param->packing != BT_ISO_PACKING_SEQUENTIAL &&
+		param->packing != BT_ISO_PACKING_INTERLEAVED) {
+		LOG_DBG("param->packing %u is invalid", param->packing);
+		return false;
+	}
+
 	qos = param->qos;
 	CHECKIF(qos == NULL) {
 		LOG_DBG("param->qos is NULL");
@@ -727,6 +733,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 		}
 	}
 	source->qos = qos;
+	source->packing = param->packing;
 
 	LOG_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
 
@@ -873,7 +880,7 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source,
 	param.num_bis = bis_count;
 	param.bis_channels = bis;
 	param.framing = source->qos->framing;
-	param.packing = 0; /*  TODO: Add to QoS struct */
+	param.packing = source->packing;
 	param.interval = source->qos->interval;
 	param.latency = source->qos->latency;
 

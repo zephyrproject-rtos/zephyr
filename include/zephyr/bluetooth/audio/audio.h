@@ -2052,6 +2052,15 @@ struct bt_audio_broadcast_source_create_param {
 
 	/** Quality of Service configuration. */
 	struct bt_codec_qos *qos;
+
+	/** @brief Broadcast Source packing mode.
+	 *
+	 *  @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 *
+	 *  @note This is a recommendation to the controller, which the
+	 *  controller may ignore.
+	 */
+	uint8_t packing;
 };
 
 /** @brief Create audio broadcast source.
