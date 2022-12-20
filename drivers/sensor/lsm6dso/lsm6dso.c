@@ -712,7 +712,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *lsm6dso = dev->data;
-	uint8_t chip_id;
+	uint8_t chip_id, master_on;
 	uint8_t odr, fs;
 
 	if (lsm6dso_device_id_get(ctx, &chip_id) < 0) {
@@ -731,6 +731,19 @@ static int lsm6dso_init_chip(const struct device *dev)
 	if (lsm6dso_i3c_disable_set(ctx, LSM6DSO_I3C_DISABLE) < 0) {
 		LOG_DBG("Failed to disable I3C");
 		return -EIO;
+	}
+
+	/* Per AN5192 §7.2.1, "… when applying the software reset procedure, the I2C master
+	 * must be disabled, followed by a 300 μs wait."
+	 */
+	if (lsm6dso_sh_master_get(ctx, &master_on) < 0) {
+		LOG_DBG("Failed to get I2C_MASTER status");
+		return -EIO;
+	}
+	if (master_on) {
+		LOG_DBG("Disable shub before reset");
+		lsm6dso_sh_master_set(ctx, 0);
+		k_busy_wait(300);
 	}
 
 	/* reset device */
