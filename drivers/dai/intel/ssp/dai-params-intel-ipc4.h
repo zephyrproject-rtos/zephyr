@@ -67,6 +67,62 @@ enum dai_intel_ipc4_connector_node_id_type {
 	dai_intel_ipc4_max_connector_node_id_type
 };
 
+struct ssp_intel_aux_tlv {
+	uint32_t type;
+	uint32_t size;
+	uint32_t val[];
+} __packed;
+
+struct ssp_intel_mn_ctl {
+	uint32_t div_m;
+	uint32_t div_n;
+} __packed;
+
+struct ssp_intel_clk_ctl {
+	uint32_t start;
+	uint32_t stop;
+} __packed;
+
+struct ssp_intel_tr_ctl {
+	uint32_t sampling_frequency;
+	uint32_t bit_depth;
+	uint32_t channel_map;
+	uint32_t channel_config;
+	uint32_t interleaving_style;
+	uint32_t format;
+} __packed;
+
+struct ssp_intel_run_ctl {
+	uint32_t enabled;
+} __packed;
+
+struct ssp_intel_node_ctl {
+	uint32_t node_id;
+	uint32_t sampling_rate;
+} __packed;
+
+struct ssp_intel_sync_ctl {
+	uint32_t sync_denominator;
+	uint32_t count;
+} __packed;
+
+struct ssp_intel_ext_ctl {
+	uint32_t ext_data;
+} __packed;
+
+struct ssp_intel_link_ctl {
+	uint32_t clock_source;
+} __packed;
+
+#define SSP_MN_DIVIDER_CONTROLS                 0
+#define SSP_DMA_CLK_CONTROLS                    1
+#define SSP_DMA_TRANSMISSION_START              2
+#define SSP_DMA_TRANSMISSION_STOP               3
+#define SSP_DMA_ALWAYS_RUNNING_MODE             4
+#define SSP_DMA_SYNC_DATA                       5
+#define SSP_DMA_CLK_CONTROLS_EXT                6
+#define SSP_LINK_CLK_SOURCE                     7
+
 /**< Base top-level structure of an address of a gateway. */
 /*!
  * The virtual index value, presented on the top level as raw 8 bits,
