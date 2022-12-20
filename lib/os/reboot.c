@@ -26,7 +26,9 @@ FUNC_NORETURN void sys_reboot(int type)
 #endif /* CONFIG_ICACHE */
 #endif /* CONFIG_ARCH_CACHE */
 
-	sys_clock_disable();
+	if (IS_ENABLED(CONFIG_SYSTEM_TIMER_HAS_DISABLE_SUPPORT)) {
+		sys_clock_disable();
+	}
 
 	sys_arch_reboot(type);
 
