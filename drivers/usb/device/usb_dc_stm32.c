@@ -64,8 +64,9 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
 #define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
-#define USB_CLOCK_BITS		DT_INST_CLOCKS_CELL(0, bits)
-#define USB_CLOCK_BUS		DT_INST_CLOCKS_CELL(0, bus)
+
+static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
+
 #if DT_INST_NODE_HAS_PROP(0, maximum_speed)
 #define USB_MAXIMUM_SPEED	DT_INST_PROP(0, maximum_speed)
 #endif
@@ -206,11 +207,11 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 static int usb_dc_stm32_clock_enable(void)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	struct stm32_pclken pclken = {
-		.bus = USB_CLOCK_BUS,
-		.enr = USB_CLOCK_BITS,
-	};
 
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 	/*
 	 * Some SoCs in STM32F0/L0/L4 series disable USB clock by
 	 * default.  We force USB clock source to MSI or PLL clock for this
@@ -268,12 +269,7 @@ static int usb_dc_stm32_clock_enable(void)
 
 #endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE */
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
-	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken[0]) != 0) {
 		LOG_ERR("Unable to enable USB clock");
 		return -EIO;
 	}
@@ -304,12 +300,8 @@ static int usb_dc_stm32_clock_enable(void)
 static int usb_dc_stm32_clock_disable(void)
 {
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	struct stm32_pclken pclken = {
-		.bus = USB_CLOCK_BUS,
-		.enr = USB_CLOCK_BITS,
-	};
 
-	if (clock_control_off(clk, (clock_control_subsys_t *)&pclken) != 0) {
+	if (clock_control_off(clk, (clock_control_subsys_t *)&pclken[0]) != 0) {
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
