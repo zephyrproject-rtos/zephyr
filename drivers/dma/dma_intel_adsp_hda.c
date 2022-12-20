@@ -202,6 +202,7 @@ int intel_adsp_hda_dma_status(const struct device *dev, uint32_t channel,
 	stat->read_position = *DGBRP(cfg->base, cfg->regblock_size, channel);
 	stat->pending_length = used;
 	stat->free = unused;
+	stat->enabled = *DGCS(cfg->base, cfg->regblock_size, channel) & DGCS_GEN;
 
 	return 0;
 }

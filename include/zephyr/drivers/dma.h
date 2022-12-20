@@ -219,6 +219,7 @@ struct dma_config {
  * DMA runtime status structure
  *
  * busy 			- is current DMA transfer busy or idle
+ * enabled			- is current DMA enabled
  * dir				- DMA transfer direction
  * pending_length 		- data length pending to be transferred in bytes
  * 					or platform dependent.
@@ -229,6 +230,7 @@ struct dma_config {
  */
 struct dma_status {
 	bool busy;
+	bool enabled;
 	enum dma_channel_direction dir;
 	uint32_t pending_length;
 	uint32_t free;
