@@ -895,10 +895,15 @@ static void unicast_group_del_stream(struct bt_audio_unicast_group *group,
 	__ASSERT_NO_MSG(stream != NULL);
 
 	if (sys_slist_find_and_remove(&group->streams, &stream->_node)) {
-		unicast_group_del_iso(group, stream->ep->iso);
+		struct bt_audio_ep *ep = stream->ep;
+
+		if (ep != NULL && ep->iso != NULL) {
+			unicast_group_del_iso(group, ep->iso);
+
+			bt_audio_iso_unbind_ep(ep->iso, ep);
+		}
 
 		stream->unicast_group = NULL;
-		bt_audio_iso_unbind_ep(stream->ep->iso, stream->ep);
 	}
 }
 
@@ -929,8 +934,14 @@ static void unicast_group_free(struct bt_audio_unicast_group *group)
 	__ASSERT_NO_MSG(group != NULL);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&group->streams, stream, next, _node) {
+		struct bt_audio_ep *ep = stream->ep;
+
 		stream->unicast_group = NULL;
-		bt_audio_iso_unbind_ep(stream->ep->iso, stream->ep);
+
+		if (ep != NULL && ep->iso != NULL) {
+			bt_audio_iso_unbind_ep(ep->iso, ep);
+		}
+
 		sys_slist_remove(&group->streams, NULL, &stream->_node);
 	}
 
