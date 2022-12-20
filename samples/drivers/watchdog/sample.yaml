@@ -22,6 +22,7 @@ tests:
     platform_allow: b_u585i_iot02a nucleo_f091rc nucleo_f103rb nucleo_f207zg nucleo_f429zi
         nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_l073rz nucleo_l152re
         nucleo_wb55rg nucleo_wl55jc stm32f3_disco stm32l562e_dk disco_l475_iot1
+        stm32h573i_dk
     integration_platforms:
       - nucleo_f103rb
   sample.drivers.watchdog.stm32h7_wwdg:
@@ -34,6 +35,7 @@ tests:
     platform_allow: b_u585i_iot02a nucleo_f091rc nucleo_f103rb nucleo_f207zg nucleo_f429zi
         nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_h743zi nucleo_l073rz nucleo_l152re
         nucleo_wb55rg nucleo_wl55jc stm32f3_disco stm32l562e_dk disco_l475_iot1
+        stm32h573i_dk
     integration_platforms:
       - nucleo_f103rb
   sample.drivers.watchdog.gd32_fwdgt:
