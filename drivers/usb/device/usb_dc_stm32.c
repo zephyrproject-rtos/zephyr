@@ -227,29 +227,6 @@ static int usb_dc_stm32_clock_enable(void)
 	/* Deprecated: enable HSI48 using device tree */
 #warning USB device requires HSI48 clock to be enabled using device tree
 #endif /* ! STM32_HSI48_ENABLED*/
-	/*
-	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
-	 * with 48 MHz RC to be enabled.
-	 * See ENREF_HSI48 in reference manual RM0367 section10.2.3:
-	 * "Reference control and status register (SYSCFG_CFGR3)"
-	 */
-#ifdef CONFIG_SOC_SERIES_STM32L0X
-	if (LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
-		LL_SYSCFG_VREFINT_EnableHSI48();
-	} else {
-		LOG_ERR("System Configuration Controller clock is "
-			"disabled. Unable to enable VREFINT which "
-			"is required by HSI48.");
-	}
-#endif /* CONFIG_SOC_SERIES_STM32L0X */
-
-	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-	/* Keeping this sequence for legacy: */
-	LL_RCC_HSI48_Enable();
-	while (!LL_RCC_HSI48_IsReady()) {
-		/* Wait for HSI48 to become ready */
-	}
 
 	LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_HSI48);
 
@@ -257,13 +234,6 @@ static int usb_dc_stm32_clock_enable(void)
 	/* VDDUSB independent USB supply (PWR clock is on) */
 	LL_PWR_EnableVDDUSB();
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
-
-#if !defined(CONFIG_SOC_SERIES_STM32WBX)
-	/* Specially for STM32WB, don't unlock the HSEM to prevent M0 core
-	 * to disable HSI48 clock used for RNG.
-	 */
-	z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 #elif defined(LL_RCC_USB_CLKSOURCE_NONE)
 	/* When MSI is configured in PLL mode with a 32.768 kHz clock source,
@@ -1018,18 +988,6 @@ int usb_dc_detach(void)
 {
 	HAL_StatusTypeDef status;
 	int ret;
-
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	/* Specially for STM32WB, unlock the HSEM when USB is no more used. */
-	z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
-
-	/*
-	 * TODO: AN5289 notes a process of locking Sem0, with possible waits
-	 * via interrupts before switching off CLK48, but lacking any actual
-	 * examples of that, that remains to be implemented.  See
-	 * https://github.com/zephyrproject-rtos/zephyr/pull/25850
-	 */
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 	LOG_DBG("HAL_PCD_DeInit");
 	status = HAL_PCD_DeInit(&usb_dc_stm32_state.pcd);
