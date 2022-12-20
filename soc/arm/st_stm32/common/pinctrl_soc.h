@@ -51,8 +51,8 @@ typedef struct pinctrl_soc_pin {
 #define STM32_PULL_DOWN   0x2
 #define STM32_PUSH_PULL   0x0
 #define STM32_OPEN_DRAIN  0x1
-#define STM32_OUTPUT_LOW  0x0
-#define STM32_OUTPUT_HIGH 0x1
+#define STM32_OUTPUT_LOW  0x1
+#define STM32_OUTPUT_HIGH 0x2
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 /**

@@ -74,7 +74,7 @@
  *    GPIO Output type    [ 6 ]
  *    GPIO Speed          [ 7 : 8 ]
  *    GPIO PUPD config    [ 9 : 10 ]
- *    GPIO Output data     [ 11 ]
+ *    GPIO Output data    [ 11: 12 ]
  *
  */
 
@@ -108,9 +108,9 @@
 #define STM32_PUPDR_SHIFT		9
 
 /* GPIO plain output value */
-#define STM32_ODR_0			(0x0 << STM32_ODR_SHIFT)
-#define STM32_ODR_1			(0x1 << STM32_ODR_SHIFT)
-#define STM32_ODR_MASK			0x1
-#define STM32_ODR_SHIFT			11
+#define STM32_ODR_0			(0x1 << STM32_ODR_SHIFT)
+#define STM32_ODR_1			(0x2 << STM32_ODR_SHIFT)
+#define STM32_ODR_MASK			0x3
+#define STM32_ODR_SHIFT			12
 
 #endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_H_ */
