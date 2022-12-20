@@ -1,0 +1,34 @@
+#
+# Copyright (c) 2018, SiFive Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: >
+    This binding gives a base representation of the shakti UART
+
+compatible: "shakti,uart0"
+
+properties:
+    reg:
+      required: true
+    label:
+      required: true
+    compatible:
+      type: string
+      required: true
+      description: compatible strings
+      constraint: "shakti,uart0"
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      required: true
+
+    interrupts:
+      type: array
+      required:
+      description: required interrupts
+      generation: define
+

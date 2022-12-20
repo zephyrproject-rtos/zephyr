@@ -1,0 +1,6 @@
+if BOARD_SHAKTI_VAJRA
+
+config BOARD
+	default "vajra"
+
+endif

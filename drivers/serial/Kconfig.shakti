@@ -1,0 +1,45 @@
+# Kconfig.fe310 - SiFive Freedom UART configuration option
+#
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_SHAKTI
+	bool "shakti serial driver"
+	depends on SOC_RISCV64_SHAKTI
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the Shakti serial driver.
+
+# ---------- Port 0 ----------
+
+menuconfig UART_SHAKTI_PORT_0
+	bool "Enable SHAKTI Port 0"
+	depends on UART_SHAKTI
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+config UART_SHAKTI_PORT_0_IRQ_PRIORITY
+	int "Port 0 Interrupt Priority"
+	default 1
+	depends on UART_SHAKTI_PORT_0
+	help
+	  Port 0 Interrupt Priority
+
+config UART_SHAKTI_PORT_0_RXCNT_IRQ
+	int "Port 0 RX Interrupt Threshold Count"
+	default 0
+	depends on UART_SHAKTI_PORT_0
+	help
+	  Port 0 RX Threshold at which the RX FIFO interrupt triggers.
+
+config UART_SHAKTI_PORT_0_TXCNT_IRQ
+	int "Port 0 TX Interrupt Threshold Count"
+	default 0
+	depends on UART_SHAKTI_PORT_0
+	help
+	  Port 0 TX Threshold at which the TX FIFO interrupt triggers.
+
