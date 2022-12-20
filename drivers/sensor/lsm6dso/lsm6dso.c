@@ -823,6 +823,11 @@ static int lsm6dso_init(const struct device *dev)
 	LOG_INF("Initialize device %s", dev->name);
 	data->dev = dev;
 
+	if (lsm6dso_init_chip(dev) < 0) {
+		LOG_DBG("failed to initialize chip");
+		return -EIO;
+	}
+
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lsm6dso_init_interrupt(dev) < 0) {
@@ -831,11 +836,6 @@ static int lsm6dso_init(const struct device *dev)
 		}
 	}
 #endif
-
-	if (lsm6dso_init_chip(dev) < 0) {
-		LOG_DBG("failed to initialize chip");
-		return -EIO;
-	}
 
 #ifdef CONFIG_LSM6DSO_SENSORHUB
 	data->shub_inited = true;
