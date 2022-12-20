@@ -313,6 +313,17 @@ static void clock_init(void)
 	flexspi_setup_clock(FLEXSPI0, 0U, 2U);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexspi2), nxp_imx_flexspi, okay)
+	/* Power up FlexSPI1 SRAM */
+	POWER_DisablePD(kPDRUNCFG_APD_FLEXSPI1_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_FLEXSPI1_SRAM);
+	POWER_ApplyPD();
+	/* Setup clock frequency for FlexSPI1 */
+	CLOCK_AttachClk(kMAIN_CLK_to_FLEXSPI1_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexspi1Clk, 1);
+	/* Reset peripheral module */
+	RESET_PeripheralReset(kFLEXSPI1_RST_SHIFT_RSTn);
+#endif
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
