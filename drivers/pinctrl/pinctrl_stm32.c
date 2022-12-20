@@ -236,13 +236,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		} else if (STM32_DT_PINMUX_FUNC(mux) == STM32_ANALOG) {
 			pin_cgf = STM32_MODER_ANALOG_MODE;
 		} else if (STM32_DT_PINMUX_FUNC(mux) == STM32_GPIO) {
-			uint32_t gpio_out = pins[i].pincfg &
-						(STM32_ODR_MASK << STM32_ODR_SHIFT);
-			if (gpio_out != 0) {
-				pin_cgf = pins[i].pincfg | STM32_MODER_OUTPUT_MODE;
-			} else {
-				pin_cgf = pins[i].pincfg | STM32_MODER_INPUT_MODE;
-			}
+			pin_cgf = pins[i].pincfg;
 		} else {
 			/* Not supported */
 			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
