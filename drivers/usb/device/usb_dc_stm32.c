@@ -212,53 +212,45 @@ static int usb_dc_stm32_clock_enable(void)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
-	/*
-	 * Some SoCs in STM32F0/L0/L4 series disable USB clock by
-	 * default.  We force USB clock source to MSI or PLL clock for this
-	 * SoCs.  However, if these parts have an HSI48 clock, use
-	 * that instead.  Example reference manual RM0360 for
-	 * STM32F030x4/x6/x8/xC and STM32F070x6/xB.
-	 */
-#if defined(RCC_HSI48_SUPPORT) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
-#if !STM32_HSI48_ENABLED
-	/* Deprecated: enable HSI48 using device tree */
-#warning USB device requires HSI48 clock to be enabled using device tree
-#endif /* ! STM32_HSI48_ENABLED*/
 
-	LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_HSI48);
+#if !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(CONFIG_SOC_SERIES_STM32F3X)
+
+#if (DT_INST_NUM_CLOCKS(0) == 1)
+	/* No domain clock selected, let's check that configuration is correct */
+
+#if defined(CONFIG_SOC_SERIES_STM32L0X) && \
+	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * STM32_PLL_MULTIPLIER) != MHZ(96)
+	/* PLL used as USB clock source (default), but its frequency doesn't fit */
+	/* Fix PLL freq or select HSI48 as USB clock source */
+#warning PLL clock not properly configured to be used as USB clock. Configure another clock.
+#elif !DT_NODE_HAS_COMPAT(DT_NODELABEL(clk_hsi48), fixed_clock) && \
+	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F7X)
+	/* No HSI48 available, a specific USB domain clock has to be selected */
+#warning USB domain clock not configured
+#endif
+
+#if DT_NODE_HAS_COMPAT(DT_NODELABEL(clk_hsi48), fixed_clock)  && !STM32_HSI48_ENABLED
+	/* On these series, HSI48 is available and set by default as USB clok source */
+	/* HSI48 clock not enabled */
+#warning HSI48 clock should be enabled or other domain clock selected
+#endif
+
+#endif /* (DT_INST_NUM_CLOCKS(0) == 1) */
 
 #ifdef CONFIG_SOC_SERIES_STM32U5X
 	/* VDDUSB independent USB supply (PWR clock is on) */
 	LL_PWR_EnableVDDUSB();
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 
-#elif defined(LL_RCC_USB_CLKSOURCE_NONE)
-	/* When MSI is configured in PLL mode with a 32.768 kHz clock source,
-	 * the MSI frequency can be automatically trimmed by hardware to reach
-	 * better than ±0.25% accuracy. In this mode the MSI can feed the USB
-	 * device. For now, we only use MSI for USB if not already used as
-	 * system clock source.
-	 */
-#if STM32_MSI_PLL_MODE && !STM32_SYSCLK_SRC_MSI
-	LL_RCC_MSI_Enable();
-	while (!LL_RCC_MSI_IsReady()) {
-		/* Wait for MSI to become ready */
+	if (DT_INST_NUM_CLOCKS(0) > 1) {
+		if (clock_control_configure(clk, (clock_control_subsys_t *)&pclken[1],
+									NULL) != 0) {
+			LOG_ERR("Could not select USB domain clock");
+			return -EIO;
+		}
 	}
-	/* Force 48 MHz mode */
-	LL_RCC_MSI_EnableRangeSelection();
-	LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_11);
-	LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_MSI);
-#else
-	if (LL_RCC_PLL_IsReady()) {
-		LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
-	} else {
-		LOG_ERR("Unable to set USB clock source to PLL.");
-	}
-#endif /* STM32_MSI_PLL_MODE && !STM32_SYSCLK_SRC_MSI */
 
 #elif defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
 
