@@ -1533,6 +1533,143 @@ out:
 	return ret;
 }
 
+static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len, int parsed_len)
+{
+	struct ssp_intel_sync_ctl *sync;
+	int size, size_left;
+
+	switch (aux_tlv->type) {
+	case SSP_MN_DIVIDER_CONTROLS:
+		size = sizeof(struct ssp_intel_mn_ctl);
+		break;
+	case SSP_DMA_CLK_CONTROLS:
+		size = sizeof(struct ssp_intel_clk_ctl);
+		break;
+	case SSP_DMA_TRANSMISSION_START:
+	case SSP_DMA_TRANSMISSION_STOP:
+		size = sizeof(struct ssp_intel_tr_ctl);
+	case SSP_DMA_ALWAYS_RUNNING_MODE:
+		size = sizeof(struct ssp_intel_run_ctl);
+		break;
+	case SSP_DMA_SYNC_DATA:
+		size = sizeof(struct ssp_intel_sync_ctl);
+		sync = (struct ssp_intel_sync_ctl *)&aux_tlv->val;
+		size += sync->count * sizeof(struct ssp_intel_node_ctl);
+		break;
+	case SSP_DMA_CLK_CONTROLS_EXT:
+		size = sizeof(struct ssp_intel_ext_ctl);
+		break;
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	case SSP_LINK_CLK_SOURCE:
+		size = sizeof(struct ssp_intel_link_ctl);
+		break;
+#endif
+	default:
+		LOG_ERR("%s undefined aux data type %u", __func__, aux_tlv->type);
+		return -EINVAL;
+	}
+
+	/* check for malformed struct, size greater than aux_data or described in tlv */
+	size_left = aux_len - parsed_len - sizeof(struct ssp_intel_aux_tlv);
+	if (size > size_left || size != aux_tlv->size) {
+		LOG_ERR("%s malformed struct, size %d, size_left %d, tlv_size %d", __func__, size,
+			size_left, aux_tlv->size);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_config)
+{
+	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob = spec_config;
+	int aux_tlv_size = sizeof(struct ssp_intel_aux_tlv);
+	int hop, i, j, cfg_len, pre_aux_len, aux_len;
+	struct ssp_intel_aux_tlv *aux_tlv;
+	struct ssp_intel_mn_ctl *mn;
+	struct ssp_intel_clk_ctl *clk;
+	struct ssp_intel_tr_ctl *tr;
+	struct ssp_intel_run_ctl *run;
+	struct ssp_intel_node_ctl *node;
+	struct ssp_intel_sync_ctl *sync;
+	struct ssp_intel_ext_ctl *ext;
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	struct ssp_intel_link_ctl *link;
+#endif
+	uint8_t *aux_ptr;
+
+	cfg_len = blob->size;
+	pre_aux_len = sizeof(*blob) + blob->i2s_mclk_control.mdivrcnt * sizeof(uint32_t);
+	aux_len = cfg_len - pre_aux_len;
+	aux_ptr = (uint8_t *)blob + pre_aux_len;
+
+	if (aux_len <= 0)
+		return 0;
+
+	for (i = 0; i < aux_len; i += hop) {
+		aux_tlv = (struct ssp_intel_aux_tlv *)(aux_ptr);
+		if (dai_ssp_check_aux_data(aux_tlv, aux_len, i)) {
+			return -EINVAL;
+		}
+		switch (aux_tlv->type) {
+		case SSP_MN_DIVIDER_CONTROLS:
+			mn = (struct ssp_intel_mn_ctl *)&aux_tlv->val;
+			LOG_INF("%s mn div_m %u, div_n %u", __func__, mn->div_m, mn->div_n);
+			break;
+		case SSP_DMA_CLK_CONTROLS:
+			clk = (struct ssp_intel_clk_ctl *)&aux_tlv->val;
+			LOG_INF("%s clk start %u, stop %u", __func__, clk->start, clk->stop);
+			break;
+		case SSP_DMA_TRANSMISSION_START:
+		case SSP_DMA_TRANSMISSION_STOP:
+			tr = (struct ssp_intel_tr_ctl *)&aux_tlv->val;
+			LOG_INF("%s tr sampling frequency %u, bit_depth %u, channel_map %u,",
+				__func__, tr->sampling_frequency, tr->bit_depth, tr->channel_map);
+			LOG_INF("channel_config %u, interleaving_style %u, format %u",
+				tr->channel_config, tr->interleaving_style, tr->format);
+			break;
+		case SSP_DMA_ALWAYS_RUNNING_MODE:
+			run = (struct ssp_intel_run_ctl *)&aux_tlv->val;
+			LOG_INF("%s run enabled %u", __func__, run->enabled);
+			break;
+		case SSP_DMA_SYNC_DATA:
+			sync = (struct ssp_intel_sync_ctl *)&aux_tlv->val;
+			LOG_INF("%s sync sync_denominator %u, count %u", __func__,
+				sync->sync_denominator, sync->count);
+			node = (struct ssp_intel_node_ctl *)((uint8_t *)sync +
+							     sizeof(struct ssp_intel_sync_ctl));
+			for (j = 0; j < sync->count; j++) {
+				LOG_INF("%s node node_id %u, sampling_rate %u", __func__,
+					node->node_id, node->sampling_rate);
+				node++;
+			}
+			break;
+		case SSP_DMA_CLK_CONTROLS_EXT:
+			ext = (struct ssp_intel_ext_ctl *)&aux_tlv->val;
+			LOG_INF("%s ext ext_data %u", __func__, ext->ext_data);
+			break;
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+		case SSP_LINK_CLK_SOURCE:
+			link = (struct ssp_intel_link_ctl *)&aux_tlv->val;
+
+			sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) |
+				    I2CLCTL_MLCS(link->clock_source), dai_ip_base(dp) +
+				    I2SLCTL_OFFSET);
+			LOG_INF("%s link clock_source %u", __func__, link->clock_source);
+			break;
+#endif
+		default:
+			LOG_ERR("%s undefined aux data type %u", __func__, aux_tlv->type);
+			return -EINVAL;
+		}
+
+		hop = aux_tlv->size + aux_tlv_size;
+		aux_ptr += hop;
+	}
+
+	return 0;
+}
+
 static int dai_ssp_set_clock_control_ver_1_5(struct dai_intel_ssp *dp,
 					     const struct dai_intel_ipc4_ssp_mclk_config_2 *cc)
 {
@@ -1620,6 +1757,9 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 		return 0;
 
 	if (blob15->version == SSP_BLOB_VER_1_5) {
+		err = dai_ssp_parse_aux_data(dp, spec_config);
+		if (err)
+			return err;
 		dai_ssp_set_reg_config(dp, cfg, &blob15->i2s_ssp_config);
 		err = dai_ssp_set_clock_control_ver_1_5(dp, &blob15->i2s_mclk_control);
 		if (err)
