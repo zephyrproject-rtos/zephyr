@@ -8,15 +8,14 @@ description: |
 compatible: "test-regulator-fixed"
 
 properties:
-    check-gpios:
-        type: phandle-array
-        required: true
-        description: |
-          Identity of a GPIO that is shorted to the GPIO identified in the
-          test regulator enable-gpios property.  This is used to confirm that
-          signal's state.
+  check-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identity of a GPIO that is shorted to the GPIO identified in the test
+      regulator enable-gpios property. This is used to confirm that signal's
+      state.
 
-          The active level in the flags cell of this must match the
-          active level of the flags cell in the regulator's enable-gpios
-          property, and the flags must include a PULL to the inactive
-          level.
+      The active level in the flags cell of this must match the active level
+      of the flags cell in the regulator's enable-gpios property, and the
+      flags must include a PULL to the inactive level.

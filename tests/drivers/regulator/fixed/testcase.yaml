@@ -1,21 +1,9 @@
-common:
-  tags: drivers gpio
-  depends_on: gpio
-  filter: dt_compat_enabled("test-regulator-fixed")
-  harness: ztest
-  harness_config:
-    fixture: regulator_loopback
-  integration_platforms:
-    - nrf52840dk_nrf52840
-
 tests:
   drivers.regulator.fixed:
-    depends_on: gpio
-  drivers.regulator.fixed.on_delay:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_ON_DELAYED"
-  drivers.regulator.fixed.off_delay:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_OFF_DELAYED"
-  drivers.regulator.fixed.boot_on:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_BOOT_ON"
-  drivers.regulator.fixed.always_on:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_ALWAYS_ON"
+    tags: drivers regulator
+    harness: ztest
+    harness_config:
+      fixture: regulator_gpio_loopback
+    platform_allow: nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
