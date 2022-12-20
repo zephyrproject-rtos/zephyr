@@ -1533,6 +1533,93 @@ out:
 	return ret;
 }
 
+static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_config)
+{
+	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob = spec_config;
+	int aux_tlv_size = sizeof(struct ssp_intel_aux_tlv);
+	int hop, i, j, cfg_len, pre_aux_len, aux_len;
+	struct ssp_intel_aux_tlv *aux_tlv;
+	struct ssp_intel_mn_ctl *mn;
+	struct ssp_intel_clk_ctl *clk;
+	struct ssp_intel_tr_ctl *tr;
+	struct ssp_intel_run_ctl *run;
+	struct ssp_intel_node_ctl *node;
+	struct ssp_intel_sync_ctl *sync;
+	struct ssp_intel_ext_ctl *ext;
+	struct ssp_intel_link_ctl *link;
+	uint8_t *aux_ptr;
+
+	cfg_len = blob->size;
+	pre_aux_len = sizeof(*blob) + blob->i2s_clock_control.mdivrcnt * sizeof(uint32_t);
+	aux_len = cfg_len - pre_aux_len;
+	aux_ptr = (uint8_t *)blob + pre_aux_len;
+
+	if (aux_len <= 0)
+		return 0;
+
+	for (i = 0; i < aux_len; i += hop) {
+		aux_tlv = (struct ssp_intel_aux_tlv *)(aux_ptr);
+		switch (aux_tlv->type) {
+		case SSP_MN_DIVIDER_CONTROLS:
+			mn = (struct ssp_intel_mn_ctl*)&aux_tlv->val;
+			LOG_INF("%s mn div_m %u", __func__, mn->div_m);
+			LOG_INF("%s mn div_n %u", __func__, mn->div_n);
+			break;
+		case SSP_DMA_CLK_CONTROLS:
+			clk =(struct ssp_intel_clk_ctl*)&aux_tlv->val;
+			LOG_INF("%s clk start %u", __func__, clk->start);
+			LOG_INF("%s clk stop %u", __func__, clk->stop);
+			break;
+		case SSP_DMA_TRANSMISSION_START:
+		case SSP_DMA_TRANSMISSION_STOP:
+			tr = (struct ssp_intel_tr_ctl *)&aux_tlv->val;
+			LOG_INF("%s tr sampling_frequency %u", __func__, tr->sampling_frequency);
+			LOG_INF("%s tr bit_depth; %u", __func__, tr->bit_depth);
+			LOG_INF("%s tr channel_map %u", __func__, tr->channel_map);
+			LOG_INF("%s tr channel_config%u", __func__, tr->channel_config);
+			LOG_INF("%s tr interleaving_style %u", __func__, tr->interleaving_style);
+			LOG_INF("%s tr format %u", __func__, tr->format);
+			break;
+		case SSP_DMA_ALWAYS_RUNNING_MODE:
+			run = (struct ssp_intel_run_ctl *)&aux_tlv->val;
+			LOG_INF("%s run enabled %u", __func__, run->enabled);
+			break;
+		case SSP_DMA_SYNC_DATA:
+			sync = (struct ssp_intel_sync_ctl *)&aux_tlv->val;
+			LOG_INF("%s sync sync_denominator %u", __func__, sync->sync_denominator);
+			LOG_INF("%s sync count %u", __func__, sync->count);
+			node = (struct ssp_intel_node_ctl *)((uint8_t *)sync +
+							     sizeof(struct ssp_intel_sync_ctl));
+			for (j = 0; j < sync->count; j++) {
+				LOG_INF("%s node node_id %u", __func__, node->node_id);
+				LOG_INF("%s node sampling_rate %u", __func__, node->sampling_rate);
+				node++;
+			}
+			break;
+		case SSP_DMA_CLK_CONTROLS_EXT:
+			ext = (struct ssp_intel_ext_ctl *)&aux_tlv->val;
+			LOG_INF("%s ext ext_data %u", __func__, ext->ext_data);
+			break;
+		case SSP_LINK_CLK_SOURCE:
+			link = (struct ssp_intel_link_ctl *)&aux_tlv->val;
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+			sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) |
+				    I2CLCTL_MLCS(link->clock_source), dai_ip_base(dp) +
+				    I2SLCTL_OFFSET);
+#endif
+			LOG_INF("%s link clock_source %u", __func__, link->clock_source);
+			break;
+		default:
+			LOG_ERR("%s undefined aux data type %u", __func__, aux_tlv->type);
+			return -EINVAL;
+		}
+		hop = aux_tlv->size + aux_tlv_size;
+		aux_ptr += hop;
+	}
+
+	return 0;
+}
+
 static int dai_ssp_set_clock_control_ver_1_5(struct dai_intel_ssp *dp,
 					     const struct dai_intel_ipc4_ssp_clock_control *cc)
 {
@@ -1620,6 +1707,9 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 		return 0;
 
 	if (blob15->version == SSP_BLOB_VER_1_5) {
+		err = dai_ssp_parse_aux_data(dp, spec_config);
+		if (err)
+			return err;
 		dai_ssp_set_reg_config(dp, cfg, &blob15->i2s_ssp_config);
 		err = dai_ssp_set_clock_control_ver_1_5(dp, &blob15->i2s_clock_control);
 		if (err)
