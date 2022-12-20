@@ -516,6 +516,11 @@ config USE_STM32_HAL_WWDG
 	help
 	  Enable STM32Cube System window watchdog (WWDG) HAL module driver
 
+config USE_STM32_HAL_XSPI
+	bool
+	help
+	  Enable STM32Cube OctoSPI (XSPI) HAL module driver
+
 config USE_STM32_LL_ADC
 	bool
 	help

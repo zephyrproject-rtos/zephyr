@@ -24,6 +24,8 @@
 #include "spi_nor.h"
 #include "jesd216.h"
 
+#include "flash_stm32_ospi.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
@@ -369,6 +371,8 @@ static int stm32_ospi_read_jedec_id(const struct device *dev)
 		return -EIO;
 	}
 #endif /* jedec_id */
+	LOG_DBG("Jedec ID = [%02x %02x %02x]",
+		dev_data->jedec_id[0], dev_data->jedec_id[1], dev_data->jedec_id[2]);
 
 	dev_data->cmd_status = 0;
 
@@ -1943,8 +1947,13 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	/* Initialize OSPI HAL structure completely */
 	dev_data->hospi.Init.FifoThreshold = 4;
 	dev_data->hospi.Init.ClockPrescaler = prescaler;
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* The stm32h5xx_hal_xspi does not reduce DEVSIZE before writing the DCR1 */
+	dev_data->hospi.Init.DeviceSize = find_lsb_set(dev_cfg->flash_size) - 2;
+#else
 	/* Give a bit position from 0 to 31 to the HAL init for the DCR1 reg */
 	dev_data->hospi.Init.DeviceSize = find_lsb_set(dev_cfg->flash_size) - 1;
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 	dev_data->hospi.Init.DualQuad = HAL_OSPI_DUALQUAD_DISABLE;
 	dev_data->hospi.Init.ChipSelectHighTime = 2;
 	dev_data->hospi.Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
@@ -2012,6 +2021,23 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 
 #endif /* OCTOSPIM */
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* OCTOSPI1 delay block init Function */
+	HAL_XSPI_DLYB_CfgTypeDef xspi_delay_block_cfg = {0};
+
+	(void)HAL_XSPI_DLYB_GetClockPeriod(&dev_data->hospi, &xspi_delay_block_cfg);
+	/*  with DTR, set the PhaseSel/4 (empiric value from stm32Cube) */
+	xspi_delay_block_cfg.PhaseSel /= 4;
+
+	if (HAL_XSPI_DLYB_SetConfig(&dev_data->hospi, &xspi_delay_block_cfg) != HAL_OK) {
+		LOG_ERR("XSPI DelayBlock failed");
+		return -EIO;
+	}
+
+	LOG_DBG("Delay Block Init");
+
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	/* Reset NOR flash memory : still with the SPI/STR config for the NOR */
 	if (stm32_ospi_mem_reset(dev) != 0) {
