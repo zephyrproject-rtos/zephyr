@@ -317,3 +317,30 @@ zephyr_udc0: &usbhs {
 		};
 	};
 };
+
+&flexspi2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexspi2>;
+	pinctrl-names = "default";
+	rx-clock-source = <3>;
+	ahb-prefetch;
+	ahb-bufferable;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	aps6408l: aps6408l@0 {
+		compatible = "nxp,imx-flexspi-aps6408l";
+		/* APS6408L is 8MB, 64MBit pSRAM */
+		size = <DT_SIZE_M(8 * 8)>;
+		reg = <0>;
+		spi-max-frequency = <198000000>;
+		status = "okay";
+		cs-interval-unit = <1>;
+		cs-interval = <5>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <1>;
+		column-space = <0>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
+	};
+};
