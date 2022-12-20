@@ -45,10 +45,6 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
 #define DT_DRV_COMPAT st_stm32_usb
 #define USB_IRQ_NAME  usb
-#if DT_INST_PROP(0, enable_pin_remap)
-#define USB_ENABLE_PIN_REMAP	DT_INST_PROP(0, enable_pin_remap)
-#warning "Property deprecated in favor of property 'remap-pa11-pa12' from 'st-stm32-pinctrl'"
-#endif
 #endif
 
 #define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
@@ -556,19 +552,6 @@ int usb_dc_attach(void)
 	} else {
 		LOG_ERR("System Configuration Controller clock is "
 			"disabled. Unable to enable IRQ remapping.");
-	}
-#endif
-
-	/*
-	 * For STM32F0 series SoCs on QFN28 and TSSOP20 packages enable PIN
-	 * pair PA11/12 mapped instead of PA9/10 (e.g. stm32f070x6)
-	 */
-#if USB_ENABLE_PIN_REMAP == 1
-	if (LL_APB1_GRP2_IsEnabledClock(LL_APB1_GRP2_PERIPH_SYSCFG)) {
-		LL_SYSCFG_EnablePinRemap();
-	} else {
-		LOG_ERR("System Configuration Controller clock is "
-			"disabled. Unable to enable pin remapping.");
 	}
 #endif
 
