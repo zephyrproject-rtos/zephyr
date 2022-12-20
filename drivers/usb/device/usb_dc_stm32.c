@@ -36,15 +36,27 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #error "Only one interface should be enabled at a time, OTG FS or OTG HS"
 #endif
 
+/*
+ * Vbus sensing is determined based on the presence of the hardware detection
+ * pin(s) in the device tree. E.g: pinctrl-0 = <&usb_otg_fs_vbus_pa9 ...>;
+ *
+ * The detection pins are dependent on the enabled USB driver and the physical
+ * interface(s) offered by the hardware. These are mapped to PA9 and/or PB13
+ * (subject to MCU), being the former the most widespread option.
+ */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-#define DT_DRV_COMPAT st_stm32_otghs
-#define USB_IRQ_NAME  otghs
+#define DT_DRV_COMPAT    st_stm32_otghs
+#define USB_IRQ_NAME     otghs
+#define USB_VBUS_SENSING (DT_NODE_EXISTS(DT_CHILD(DT_NODELABEL(pinctrl), usb_otg_hs_vbus_pa9)) || \
+			  DT_NODE_EXISTS(DT_CHILD(DT_NODELABEL(pinctrl), usb_otg_hs_vbus_pb13)))
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
-#define DT_DRV_COMPAT st_stm32_otgfs
-#define USB_IRQ_NAME  otgfs
+#define DT_DRV_COMPAT    st_stm32_otgfs
+#define USB_IRQ_NAME     otgfs
+#define USB_VBUS_SENSING DT_NODE_EXISTS(DT_CHILD(DT_NODELABEL(pinctrl), usb_otg_fs_vbus_pa9))
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
-#define DT_DRV_COMPAT st_stm32_usb
-#define USB_IRQ_NAME  usb
+#define DT_DRV_COMPAT    st_stm32_usb
+#define USB_IRQ_NAME     usb
+#define USB_VBUS_SENSING false
 #endif
 
 #define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
@@ -402,7 +414,7 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 #endif
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
-	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = DISABLE;
+	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = USB_VBUS_SENSING ? ENABLE : DISABLE;
 
 #ifndef CONFIG_SOC_SERIES_STM32F1X
 	usb_dc_stm32_state.pcd.Init.dma_enable = DISABLE;
