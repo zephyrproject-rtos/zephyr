@@ -28,7 +28,7 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow: nucleo_g474re nucleo_f207zg nucleo_f429zi nucleo_f746zg nucleo_wb55rg
-        nucleo_l152re nucleo_wl55jc nucleo_h743zi
+        nucleo_l152re nucleo_wl55jc nucleo_h743zi stm32h573i_dk
     integration_platforms:
       - nucleo_g474re
   drivers.spi.gd32_spi_interrupt.loopback:
