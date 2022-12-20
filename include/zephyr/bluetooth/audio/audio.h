@@ -1940,19 +1940,36 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
  * Parameter struct for the bt_audio_unicast_group_create() and
  * bt_audio_unicast_group_add_streams() functions.
  */
-struct bt_audio_unicast_group_param {
+struct bt_audio_unicast_group_stream_param {
 	/** Pointer to a stream object. */
 	struct bt_audio_stream *stream;
 
-	/** The QoS settings for the @ref bt_audio_unicast_group_param.stream. */
+	/** The QoS settings for the @ref bt_audio_unicast_group_stream_param.stream. */
 	struct bt_codec_qos *qos;
 
-	/** @brief The direction of the @ref bt_audio_unicast_group_param.stream
+	/** @brief The direction of the @ref bt_audio_unicast_group_stream_param.stream
 	 *
 	 * If two streams are being used for the same ACL connection but in
 	 * different directions, they may use the same CIS.
 	 */
 	enum bt_audio_dir dir;
+};
+
+struct bt_audio_unicast_group_param {
+	/** The number of parameters in @p params */
+	size_t params_count;
+
+	/** Array of stream parameters */
+	struct bt_audio_unicast_group_stream_param *params;
+
+	/** @brief Unicast Group packing mode.
+	 *
+	 *  @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 *
+	 *  @note This is a recommendation to the controller, which the
+	 *  controller may ignore.
+	 */
+	uint8_t packing;
 };
 
 /** @brief Create audio unicast group.
@@ -1961,15 +1978,12 @@ struct bt_audio_unicast_group_param {
  *  unicast client. Streams in a unicast group shall share the same interval,
  *  framing and latency (see @ref bt_codec_qos).
  *
- *  @param[in]  params         Array of stream parameters being used for
- *                             the group.
- *  @param[in]  num_param      Number of parameters in @p params.
- *  @param[out] unicast_group  Pointer to the unicast group created
+ *  @param[in]  param          The unicast group create parameters.
+ *  @param[out] unicast_group  Pointer to the unicast group created.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
-				  size_t num_param,
+int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param *param,
 				  struct bt_audio_unicast_group **unicast_group);
 
 /** @brief Add streams to a unicast group as a unicast client
@@ -1995,7 +2009,7 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
-				       struct bt_audio_unicast_group_param params[],
+				       struct bt_audio_unicast_group_stream_param params[],
 				       size_t num_param);
 
 /** @brief Delete audio unicast group.
