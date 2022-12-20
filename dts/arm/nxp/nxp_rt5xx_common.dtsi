@@ -473,6 +473,7 @@
 &flexspi2 {
 	compatible = "nxp,imx-flexspi";
 	status = "disabled";
+	interrupts = <42 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 };
