@@ -94,6 +94,9 @@ extern "C" {
  * This is cleaner since the compiler can generate errors and warnings
  * for @p do_something_with_foo even when @p CONFIG_FOO is undefined.
  *
+ * Note: Use of IS_ENABLED in a <tt>\#if</tt> statement is discouraged
+ *       as it doesn't provide any benefit vs plain <tt>\#if defined()</tt>
+ *
  * @param config_macro Macro to check
  * @return 1 if @p config_macro is defined to 1, 0 otherwise (including
  *         if @p config_macro is not defined)
