@@ -948,8 +948,7 @@ static void unicast_group_free(struct bt_audio_unicast_group *group)
 	group->allocated = false;
 }
 
-int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
-				  size_t num_param,
+int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param *param,
 				  struct bt_audio_unicast_group **out_unicast_group)
 {
 	struct bt_audio_unicast_group *unicast_group;
@@ -963,39 +962,44 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
 	/* Set out_unicast_group to NULL until the source has actually been created */
 	*out_unicast_group = NULL;
 
-	CHECKIF(params == NULL) {
+	CHECKIF(param == NULL) {
 		LOG_DBG("streams is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(num_param > UNICAST_GROUP_STREAM_CNT) {
-		LOG_DBG("Too many streams provided: %u/%u", num_param, UNICAST_GROUP_STREAM_CNT);
+	CHECKIF(param->params_count > UNICAST_GROUP_STREAM_CNT) {
+		LOG_DBG("Too many streams provided: %u/%u",
+			param->params_count, UNICAST_GROUP_STREAM_CNT);
 		return -EINVAL;
 	}
 
-	for (size_t i = 0U; i < num_param; i++) {
-		CHECKIF(params[i].stream == NULL ||
-			params[i].qos == NULL ||
-			(params[i].dir != BT_AUDIO_DIR_SINK &&
-			 params[i].dir != BT_AUDIO_DIR_SOURCE)) {
+	for (size_t i = 0U; i < param->params_count; i++) {
+		struct bt_audio_unicast_group_stream_param *stream_param = &param->params[i];
+
+		CHECKIF(stream_param->stream == NULL ||
+			stream_param->qos == NULL ||
+			(stream_param->dir != BT_AUDIO_DIR_SINK &&
+			 stream_param->dir != BT_AUDIO_DIR_SOURCE)) {
 			LOG_DBG("Invalid params[%zu] values", i);
 			return -EINVAL;
 		}
 
-		if (params[i].stream->group != NULL) {
-			LOG_DBG("params[%zu] stream (%p) already part of group %p", i,
-				params[i].stream, params[i].stream->group);
+		if (stream_param->stream->group != NULL) {
+			LOG_DBG("params[%zu] stream (%p) already part of group %p",
+				i, stream_param->stream,
+				stream_param->stream->group);
 			return -EALREADY;
 		}
 
 		if (group_qos == NULL) {
-			group_qos = params[i].qos;
-		} else if (!unicast_group_valid_qos(group_qos, params[i].qos)) {
+			group_qos = stream_param->qos;
+		} else if (!unicast_group_valid_qos(group_qos,
+						    stream_param->qos)) {
 			LOG_DBG("Stream[%zu] QoS incompatible with group QoS", i);
 			return -EINVAL;
 		}
 
-		CHECKIF(!bt_audio_valid_qos(params[i].qos)) {
+		CHECKIF(!bt_audio_valid_qos(stream_param->qos)) {
 			LOG_DBG("Invalid QoS");
 			return -EINVAL;
 		}
@@ -1007,9 +1011,13 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
 		return -ENOMEM;
 	}
 
-	for (size_t i = 0U; i < num_param; i++) {
-		err = unicast_group_add_stream(unicast_group, params[i].stream,
-					       params[i].qos, params[i].dir);
+	for (size_t i = 0U; i < param->params_count; i++) {
+		struct bt_audio_unicast_group_stream_param *stream_param = &param->params[i];
+
+		err = unicast_group_add_stream(unicast_group,
+					       stream_param->stream,
+					       stream_param->qos,
+					       stream_param->dir);
 		if (err < 0) {
 			LOG_DBG("unicast_group_add_stream failed: %d", err);
 			unicast_group_free(unicast_group);
@@ -1032,7 +1040,7 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
 }
 
 int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
-				       struct bt_audio_unicast_group_param params[],
+				       struct bt_audio_unicast_group_stream_param params[],
 				       size_t num_param)
 {
 	const struct bt_codec_qos *group_qos = unicast_group->qos;

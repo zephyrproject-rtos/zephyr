@@ -339,20 +339,25 @@ static size_t release_streams(size_t stream_cnt)
 static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 				 size_t stream_cnt)
 {
-	struct bt_audio_unicast_group_param params[ARRAY_SIZE(g_streams)];
+	struct bt_audio_unicast_group_stream_param stream_params[ARRAY_SIZE(g_streams)];
+	struct bt_audio_unicast_group_param param;
 
 	for (size_t i = 0U; i < stream_cnt; i++) {
-		params[i].stream = &g_streams[i];
-		params[i].qos = &preset_16_2_1.qos;
-		params[i].dir = BT_AUDIO_DIR_SINK; /* we only configure sinks */
+		stream_params[i].stream = &g_streams[i];
+		stream_params[i].qos = &preset_16_2_1.qos;
+		stream_params[i].dir = BT_AUDIO_DIR_SINK; /* we only configure sinks */
 	}
+
+	param.params = stream_params;
+	param.params_count = stream_cnt;
+	param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 	int err;
 
 	/* Require controller support for CIGs */
 	printk("Creating unicast group\n");
-	err = bt_audio_unicast_group_create(&params, 1, unicast_group);
+	err = bt_audio_unicast_group_create(&param, unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
 		return;
