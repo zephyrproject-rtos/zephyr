@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_NOR_PSRAM memc_stm32_nor_psram.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI memc_mcux_flexspi.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI_S27KS0641 memc_mcux_flexspi_s27ks0641.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI_APS6408L memc_mcux_flexspi_aps6408l.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_SAM_SMC memc_sam_smc.c)
 
