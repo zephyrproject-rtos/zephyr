@@ -46,4 +46,7 @@ config MP_MAX_NUM_CPUS
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	default n
 
+config XTENSA_CCOUNT_HZ
+	default SYS_CLOCK_HW_CYCLES_PER_SEC
+
 endif
