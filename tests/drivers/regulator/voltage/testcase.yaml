@@ -11,3 +11,5 @@ tests:
     extra_args: DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_npm6001.overlay SHIELD=npm6001_ek
     harness_config:
       fixture: npm6001_ek_to_adc
+  drivers.regulator.voltage.mimxrt685_evk_cm33:
+    platform_allow: mimxrt685_evk_cm33

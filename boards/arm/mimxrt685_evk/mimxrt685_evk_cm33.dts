@@ -232,19 +232,19 @@ i2s1: &flexcomm3 {
 		reg = <0x61>;
 		nxp,enable-modesel-pins;
 
-		BUCK1 {
+		buck1: BUCK1 {
 			regulator-boot-on;
 		};
 
-		BUCK2 {
+		buck2: BUCK2 {
 			regulator-boot-on;
 		};
 
-		LDO1 {
+		ldo1: LDO1 {
 			regulator-boot-on;
 		};
 
-		LDO2 {
+		ldo2: LDO2 {
 			regulator-boot-on;
 		};
 
