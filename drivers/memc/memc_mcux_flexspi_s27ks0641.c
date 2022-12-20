@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT   nxp_imx_flexspi_hyperram
+#define DT_DRV_COMPAT   nxp_imx_flexspi_s27ks0641
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
@@ -23,7 +23,7 @@
 	read-while-write hazards. This configuration is not recommended."
 #endif
 
-LOG_MODULE_REGISTER(memc_flexspi_hyperram, CONFIG_MEMC_LOG_LEVEL);
+LOG_MODULE_REGISTER(memc_flexspi_s27ks0641, CONFIG_MEMC_LOG_LEVEL);
 
 enum {
 	READ_DATA,
@@ -32,17 +32,17 @@ enum {
 	WRITE_REG,
 };
 
-struct memc_flexspi_hyperram_config {
+struct memc_flexspi_s27ks0641_config {
 	flexspi_port_t port;
 	flexspi_device_config_t config;
 };
 
 /* Device variables used in critical sections should be in this structure */
-struct memc_flexspi_hyperram_data {
+struct memc_flexspi_s27ks0641_data {
 	const struct device *controller;
 };
 
-static const uint32_t memc_flexspi_hyperram_lut[][4] = {
+static const uint32_t memc_flexspi_s27ks0641_lut[][4] = {
 	/* Read Data */
 	[READ_DATA] = {
 		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,             kFLEXSPI_8PAD, 0xA0,
@@ -84,11 +84,11 @@ static const uint32_t memc_flexspi_hyperram_lut[][4] = {
 	},
 };
 
-static int memc_flexspi_hyperram_get_vendor_id(const struct device *dev,
+static int memc_flexspi_s27ks0641_get_vendor_id(const struct device *dev,
 						uint16_t *vendor_id)
 {
-	const struct memc_flexspi_hyperram_config *config = dev->config;
-	struct memc_flexspi_hyperram_data *data = dev->data;
+	const struct memc_flexspi_s27ks0641_config *config = dev->config;
+	struct memc_flexspi_s27ks0641_data *data = dev->data;
 	uint32_t buffer = 0;
 	int ret;
 
@@ -110,10 +110,10 @@ static int memc_flexspi_hyperram_get_vendor_id(const struct device *dev,
 	return ret;
 }
 
-static int memc_flexspi_hyperram_init(const struct device *dev)
+static int memc_flexspi_s27ks0641_init(const struct device *dev)
 {
-	const struct memc_flexspi_hyperram_config *config = dev->config;
-	struct memc_flexspi_hyperram_data *data = dev->data;
+	const struct memc_flexspi_s27ks0641_config *config = dev->config;
+	struct memc_flexspi_s27ks0641_data *data = dev->data;
 	uint16_t vendor_id;
 
 	if (!device_is_ready(data->controller)) {
@@ -128,15 +128,15 @@ static int memc_flexspi_hyperram_init(const struct device *dev)
 	}
 
 	if (memc_flexspi_update_lut(data->controller, 0,
-				    (const uint32_t *) memc_flexspi_hyperram_lut,
-				    sizeof(memc_flexspi_hyperram_lut) / 4)) {
+				    (const uint32_t *) memc_flexspi_s27ks0641_lut,
+				    sizeof(memc_flexspi_s27ks0641_lut) / 4)) {
 		LOG_ERR("Could not update lut");
 		return -EINVAL;
 	}
 
 	memc_flexspi_reset(data->controller);
 
-	if (memc_flexspi_hyperram_get_vendor_id(dev, &vendor_id)) {
+	if (memc_flexspi_s27ks0641_get_vendor_id(dev, &vendor_id)) {
 		LOG_ERR("Could not read vendor id");
 		return -EIO;
 	}
@@ -179,25 +179,25 @@ static int memc_flexspi_hyperram_init(const struct device *dev)
 		.enableWriteMask = true,				\
 	}								\
 
-#define MEMC_FLEXSPI_HYPERRAM(n)				  \
-	static const struct memc_flexspi_hyperram_config	  \
-		memc_flexspi_hyperram_config_##n = {		  \
+#define MEMC_FLEXSPI_S27KS0641(n)				  \
+	static const struct memc_flexspi_s27ks0641_config	  \
+		memc_flexspi_s27ks0641_config_##n = {		  \
 		.port = DT_INST_REG_ADDR(n),			  \
 		.config = MEMC_FLEXSPI_DEVICE_CONFIG(n),	  \
 	};							  \
 								  \
-	static struct memc_flexspi_hyperram_data		  \
-		memc_flexspi_hyperram_data_##n = {		  \
+	static struct memc_flexspi_s27ks0641_data		  \
+		memc_flexspi_s27ks0641_data_##n = {		  \
 		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),	  \
 	};							  \
 								  \
 	DEVICE_DT_INST_DEFINE(n,				  \
-			      memc_flexspi_hyperram_init,	  \
+			      memc_flexspi_s27ks0641_init,	  \
 			      NULL,				  \
-			      &memc_flexspi_hyperram_data_##n,  \
-			      &memc_flexspi_hyperram_config_##n,  \
+			      &memc_flexspi_s27ks0641_data_##n,  \
+			      &memc_flexspi_s27ks0641_config_##n,  \
 			      POST_KERNEL,			  \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			      NULL);
 
-DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI_HYPERRAM)
+DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI_S27KS0641)
