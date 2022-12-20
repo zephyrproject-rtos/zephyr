@@ -90,6 +90,12 @@
 	status = "okay";
 };
 
+&clk_msi {
+	status = "okay";
+	msi-pll-mode;
+	msi-range = <11>; /* 48MHz USB bus clk */
+};
+
 &pll {
 	div-m = <1>;
 	mul-n = <20>;
