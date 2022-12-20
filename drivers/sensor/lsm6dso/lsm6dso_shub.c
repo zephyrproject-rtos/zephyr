@@ -441,11 +441,11 @@ static int lsm6dso_shub_wait_completed(stmdev_ctx_t *ctx)
 
 static inline void lsm6dso_shub_embedded_en(stmdev_ctx_t *ctx, bool on)
 {
-	if (on) {
-		(void) lsm6dso_mem_bank_set(ctx, LSM6DSO_SENSOR_HUB_BANK);
-	} else {
-		(void) lsm6dso_mem_bank_set(ctx, LSM6DSO_USER_BANK);
-	}
+	lsm6dso_func_cfg_access_t reg = {
+		.reg_access = on ? LSM6DSO_SENSOR_HUB_BANK : LSM6DSO_USER_BANK
+	};
+
+	lsm6dso_write_reg(ctx, LSM6DSO_FUNC_CFG_ACCESS, (uint8_t *)&reg, 1);
 
 	k_busy_wait(150);
 }
