@@ -61,6 +61,11 @@ ZTEST(regulator_voltage, test_output_voltage)
 			int32_t val_mv = 0;
 
 			(void)regulator_list_voltage(regs[i], j, &volt_uv);
+			/* Check if voltage is outside user constraints */
+			if (!regulator_is_supported_voltage(regs[i],
+				volt_uv, volt_uv)) {
+				continue;
+			}
 
 			ret = regulator_set_voltage(regs[i], volt_uv, volt_uv);
 			zassert_equal(ret, 0);
