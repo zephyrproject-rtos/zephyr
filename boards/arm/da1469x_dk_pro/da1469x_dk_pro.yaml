@@ -9,6 +9,7 @@ toolchain:
   - xtools
 supported:
   - arduino_gpio
+  - counter
   - gpio
   - watchdog
   - i2c
