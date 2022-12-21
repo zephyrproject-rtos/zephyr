@@ -41,6 +41,7 @@
 #define GICR_TYPER			0x0008
 #define GICR_STATUSR			0x0010
 #define GICR_WAKER			0x0014
+#define GICR_PWRR			0x0024
 #define GICR_PROPBASER			0x0070
 #define GICR_PENDBASER			0x0078
 
@@ -76,6 +77,14 @@
 /* GICR_WAKER */
 #define GICR_WAKER_PS			1
 #define GICR_WAKER_CA			2
+
+/* GICR_PWRR */
+#define GICR_PWRR_RDPD                          BIT(0)
+#define GICR_PWRR_RDAG                          BIT(1)
+#define GICR_PWRR_RDGPD                         BIT(2)
+#define GICR_PWRR_RDGPO                         BIT(3)
+#define GICR_PWRR_RDGO                          BIT(8)
+#define GICR_PWRR_RDG                           BIT(16)
 
 /* GICR_PROPBASER */
 #define GITR_PROPBASER_ID_BITS_MASK		0x1fUL
