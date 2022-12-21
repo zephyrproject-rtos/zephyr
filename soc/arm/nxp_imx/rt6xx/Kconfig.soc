@@ -109,11 +109,4 @@ config IMAGE_VECTOR_TABLE_OFFSET
 
 endif # NXP_IMX_RT6XX_BOOT_HEADER
 
-choice CODE_LOCATION
-	prompt "Code location selection"
-	default CODE_FLEXSPI
-config CODE_FLEXSPI
-	bool "Link code into external FlexSPI-controlled memory"
-endchoice
-
 endif # SOC_SERIES_IMX_RT6XX

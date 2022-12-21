@@ -36,8 +36,4 @@ config HEAP_MEM_POOL_SIZE
 
 endif # DMA_MCUX_LPC
 
-choice CODE_LOCATION
-	default CODE_FLEXSPI
-endchoice
-
 endif # BOARD_MIMXRT685_EVK
