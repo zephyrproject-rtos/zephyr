@@ -593,6 +593,30 @@ static int sdhc_spi_write_data(const struct device *dev, struct sdhc_data *data)
 	return 0;
 }
 
+static void sdhc_spi_error_recovery(const struct device *dev, uint32_t timeout)
+{
+	int ret;
+	const struct sdhc_command status_cmd = {
+		.opcode = SD_SEND_STATUS,
+		.arg = 0,
+		.response_type = SD_SPI_RSP_TYPE_R2,
+		.timeout_ms = 1000,
+		.retries = 1,
+	};
+	/* First, wait for the SPI device to no longer be busy */
+	ret = sdhc_spi_wait_unbusy(dev, timeout, 0);
+	if (ret) {
+		LOG_DBG("Card did not return to idle during error recovery");
+	}
+	/* Now send CMD13 to clear card errors */
+	ret = sdhc_spi_send_cmd(dev,
+		(struct sdhc_command *)&status_cmd,
+		false);
+	if (ret) {
+		LOG_DBG("Card error during CMD13 in error recovery");
+	}
+}
+
 static int sdhc_spi_request(const struct device *dev,
 	struct sdhc_command *cmd,
 	struct sdhc_data *data)
@@ -630,6 +654,10 @@ static int sdhc_spi_request(const struct device *dev,
 				sdhc_spi_send_cmd(dev,
 					(struct sdhc_command *)&stop_cmd,
 					false);
+			}
+			if (ret) {
+				/* Attempt to recover from error */
+				sdhc_spi_error_recovery(dev, data->timeout_ms);
 			}
 		} while ((ret != 0) && (retries-- > 0));
 	}
