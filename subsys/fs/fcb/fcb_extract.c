@@ -46,7 +46,7 @@ fcb_extract_finish_nolock(struct fcb *fcb, struct fcb_entry *loc)
 
 	while (write_len > 0) {
 		rc = fcb_flash_write(fcb, loc->fe_sector, loc->fe_data_off,
-							 buffer, MIN(write_len, max_write_len));
+		                     buffer, MIN(write_len, max_write_len));
 		if (rc) {
 			return -EIO;
 		}
@@ -62,7 +62,7 @@ fcb_extract_finish_nolock(struct fcb *fcb, struct fcb_entry *loc)
 
 	off = loc->fe_data_off + total_data_len;
 	rc = fcb_flash_read(fcb, loc->fe_sector, off,
-						buffer, crc_len);
+	                    buffer, crc_len);
 	if (rc) {
 		return -EIO;
 	}
@@ -72,7 +72,7 @@ fcb_extract_finish_nolock(struct fcb *fcb, struct fcb_entry *loc)
 		// Overwrite the old CRC to really invalidate the element
 		(void)memset(buffer, 0, sizeof(buffer));
 		rc = fcb_flash_write(fcb, loc->fe_sector, off,
-							 buffer, crc_len);
+		                     buffer, crc_len);
 		if (rc) {
 			return -EIO;
 		}
