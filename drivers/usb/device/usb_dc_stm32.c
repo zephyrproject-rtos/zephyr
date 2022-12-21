@@ -277,53 +277,14 @@ static int usb_dc_stm32_clock_enable(void)
 	}
 #endif /* STM32_MSI_PLL_MODE && !STM32_SYSCLK_SRC_MSI */
 
-#elif defined(RCC_CFGR_OTGFSPRE)
-	/* On STM32F105 and STM32F107 parts the USB OTGFSCLK is derived from
-	 * PLL1, and must result in a 48 MHz clock... the options to achieve
-	 * this are as below, controlled by the RCC_CFGR_OTGFSPRE bit.
-	 *   - PLLCLK * 2 / 2     i.e: PLLCLK == 48 MHz
-	 *   - PLLCLK * 2 / 3     i.e: PLLCLK == 72 MHz
-	 *
-	 * this requires that the system is running from PLLCLK
-	 */
-	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
-		switch (sys_clock_hw_cycles_per_sec()) {
-		case MHZ(48):
-			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_2);
-			break;
-		case MHZ(72):
-			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_3);
-			break;
-		default:
-			LOG_ERR("Unable to set USB clock source (incompatible PLLCLK rate)");
-			return -EIO;
-		}
-	} else {
-		LOG_ERR("Unable to set USB clock source (not using PLL1)");
-		return -EIO;
-	}
-#elif defined(RCC_CFGR_USBPRE)
-	/* on other STM32F1 family SOCs, we have a simple /1 or /1.5 divider on
-	 * the back of the RCC.  Similar strategy to the above, but we use the
-	 * correct flags
-	 */
-	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
-		switch (sys_clock_hw_cycles_per_sec()) {
-		case MHZ(48):
-			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
-			break;
-		case MHZ(72):
-			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_1_5);
-			break;
-		default:
-			LOG_ERR("Unable to set USB clock source (incompatible PLLCLK rate)");
-			return -EIO;
-		}
-	} else {
-		LOG_ERR("Unable to set USB clock source (not using PLL1)");
-		return -EIO;
-	}
-#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
+#elif defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
+
+#if (MHZ(48) == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) && !defined(STM32_PLL_USBPRE)
+	/* PLL output clock is set to 48MHz, it should not be divided */
+#warning USBPRE/OTGFSPRE should be set in rcc node
+#endif
+
+#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE */
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
