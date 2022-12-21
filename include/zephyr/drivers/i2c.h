@@ -410,6 +410,55 @@ static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
 	return device_is_ready(spec->bus);
 }
 
+/**
+ * @brief Dump out an I2C message
+ *
+ * Dumps out a list of I2C messages. For any that are writes (W), the data is
+ * displayed in hex. Setting dump_read will dump the data for read messages too,
+ * which only makes sense when called after the messages have been processed.
+ *
+ * It looks something like this (with name "testing"):
+ *
+ * @code
+ * D: I2C msg: testing, addr=56
+ * D:    W len=01: 06
+ * D:    W len=0e:
+ * D: contents:
+ * D: 00 01 02 03 04 05 06 07 |........
+ * D: 08 09 0a 0b 0c 0d       |......
+ * D:    W len=01: 0f
+ * D:    R len=01: 6c
+ * @endcode
+ *
+ * @param name Name of this dump, displayed at the top.
+ * @param msgs Array of messages to dump.
+ * @param num_msgs Number of messages to dump.
+ * @param addr Address of the I2C target device.
+ * @param dump_read Dump data from I2C reads, otherwise only writes have data dumped.
+ */
+void i2c_dump_msgs_rw(const char *name, const struct i2c_msg *msgs,
+		      uint8_t num_msgs, uint16_t addr, bool dump_read);
+
+/**
+ * @brief Dump out an I2C message, before it is executed.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+ *
+ * The read messages' data isn't dumped.
+ *
+ * @param name Name of this dump, displayed at the top.
+ * @param msgs Array of messages to dump.
+ * @param num_msgs Number of messages to dump.
+ * @param addr Address of the I2C target device.
+ */
+static inline void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
+				 uint8_t num_msgs, uint16_t addr)
+{
+	i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+}
+
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
 
 #include <zephyr/stats/stats.h>
@@ -660,6 +709,10 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 	int res =  api->transfer(dev, msgs, num_msgs, addr);
 
 	i2c_xfer_stats(dev, msgs, num_msgs);
+
+	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
+		i2c_dump_msgs_rw(dev->name, msgs, num_msgs, addr, true);
+	}
 
 	return res;
 }
@@ -1423,55 +1476,6 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
 {
 	return i2c_reg_update_byte(spec->bus, spec->addr,
 				   reg_addr, mask, value);
-}
-
-/**
- * @brief Dump out an I2C message
- *
- * Dumps out a list of I2C messages. For any that are writes (W), the data is
- * displayed in hex. Setting dump_read will dump the data for read messages too,
- * which only makes sense when called after the messages have been processed.
- *
- * It looks something like this (with name "testing"):
- *
- * @code
- * D: I2C msg: testing, addr=56
- * D:    W len=01: 06
- * D:    W len=0e:
- * D: contents:
- * D: 00 01 02 03 04 05 06 07 |........
- * D: 08 09 0a 0b 0c 0d       |......
- * D:    W len=01: 0f
- * D:    R len=01: 6c
- * @endcode
- *
- * @param name Name of this dump, displayed at the top.
- * @param msgs Array of messages to dump.
- * @param num_msgs Number of messages to dump.
- * @param addr Address of the I2C target device.
- * @param dump_read Dump data from I2C reads, otherwise only writes have data dumped.
- */
-void i2c_dump_msgs_rw(const char *name, const struct i2c_msg *msgs,
-		      uint8_t num_msgs, uint16_t addr, bool dump_read);
-
-/**
- * @brief Dump out an I2C message, before it is executed.
- *
- * This is equivalent to:
- *
- *     i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
- *
- * The read messages' data isn't dumped.
- *
- * @param name Name of this dump, displayed at the top.
- * @param msgs Array of messages to dump.
- * @param num_msgs Number of messages to dump.
- * @param addr Address of the I2C target device.
- */
-static inline void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
-				 uint8_t num_msgs, uint16_t addr)
-{
-	i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
 }
 
 #ifdef __cplusplus
