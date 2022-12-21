@@ -24,7 +24,7 @@
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define MAX_CYC 0xffffffffu
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
-#define MIN_DELAY 1000
+#define MIN_DELAY 1
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_NODELABEL(systimer0));
@@ -43,13 +43,18 @@ static void set_systimer_alarm(uint64_t time)
 	systimer_hal_select_alarm_mode(&systimer_hal,
 		SYSTIMER_LL_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_ONESHOT);
 
-	systimer_hal_set_alarm_target(&systimer_hal, SYSTIMER_LL_ALARM_OS_TICK_CORE0, time);
-	systimer_hal_enable_alarm_int(&systimer_hal, SYSTIMER_LL_ALARM_OS_TICK_CORE0);
+	systimer_counter_value_t alarm = {.val = time};
+
+	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0, false);
+	systimer_ll_set_alarm_target(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0, alarm.val);
+	systimer_ll_apply_alarm_value(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0);
+	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0, true);
+	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0, true);
 }
 
 static uint64_t get_systimer_alarm(void)
 {
-	return systimer_hal_get_time(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
+	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
 }
 
 static void sys_timer_isr(const void *arg)
