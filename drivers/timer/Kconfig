@@ -5,6 +5,8 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
+if SYS_CLOCK_EXISTS
+
 menu "Timer Drivers"
 
 config TIMER_HAS_64BIT_CYCLE_COUNTER
@@ -90,3 +92,5 @@ source "drivers/timer/Kconfig.xlnx_psttc"
 source "drivers/timer/Kconfig.xtensa"
 
 endmenu
+
+endif # SYS_CLOCK_EXISTS
