@@ -432,6 +432,7 @@ static void eth_init_pins(const struct device *dev)
 {
 	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
+	struct soc_gpio_pin *pin;
 	uint32_t idx;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -441,10 +442,10 @@ static void eth_init_pins(const struct device *dev)
 	eth->ROUTEPEN = 0;
 
 #if DT_INST_NODE_HAS_PROP(0, location_rmii)
-	struct soc_gpio_pin *pin;
-	for (idx = 0; idx < ARRAY_SIZE(cfg->pin_list->rmii); idx++)
-		pin = &cfg->pin_list->rmii[idx];
+	for (idx = 0; idx < ARRAY_SIZE(cfg->pin_list->rmii); idx++) {
+		pin = (struct soc_gpio_pin *)&cfg->pin_list->rmii[idx];
 		GPIO_PinModeSet(pin->port, pin->pin, pin->mode, pin->out);
+	}
 
 	eth->ROUTELOC1 |= (DT_INST_PROP(0, location_rmii) <<
 			   _ETH_ROUTELOC1_RMIILOC_SHIFT);
@@ -452,10 +453,10 @@ static void eth_init_pins(const struct device *dev)
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, location_mdio)
-	struct soc_gpio_pin *pin;
-	for (idx = 0; idx < ARRAY_SIZE(cfg->pin_list->mdio); idx++)
-		pin = &cfg->pin_list->mdio[idx];
+	for (idx = 0; idx < ARRAY_SIZE(cfg->pin_list->mdio); idx++) {
+		pin = (struct soc_gpio_pin *) = &cfg->pin_list->mdio[idx];
 		GPIO_PinModeSet(pin->port, pin->pin, pin->mode, pin->out);
+	}
 
 	eth->ROUTELOC1 |= (DT_INST_PROP(0, location_mdio) <<
 			   _ETH_ROUTELOC1_MDIOLOC_SHIFT);
