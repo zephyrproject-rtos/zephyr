@@ -129,6 +129,11 @@ Deprecated in this release
 
   NOTE: Only functions are marked as ``__deprecated``, type definitions are not.
 
+* STM32 Ethernet Mac address Kconfig related symbols (:kconfig:option:`CONFIG_ETH_STM32_HAL_RANDOM_MAC`,
+  :kconfig:option:`CONFIG_ETH_STM32_HAL_MAC4`, ...) have been deprecated in favor
+  of the use of zephyr generic device tree ``local-mac-address`` and ``zephyr,random-mac-address``
+  properties.
+
 * STM32 RTC source clock should now be configured using devicetree.
   Related Kconfig :kconfig:option:`CONFIG_COUNTER_RTC_STM32_CLOCK_LSI` and
   :kconfig:option:`CONFIG_COUNTER_RTC_STM32_CLOCK_LSE` options are now
@@ -297,6 +302,11 @@ Drivers and Sensors
 
 * Ethernet
 
+  * STM32: Default Mac address configuration is now uid based. Optionally, user can
+    configure it to be random or provide its own address using device tree.
+
+* Flash
+
   * Flash: Moved CONFIG_FLASH_FLEXSPI_XIP into the SOC level due to the flexspi clock initialization occurring in the SOC level.
 
   * NRF: Added CONFIG_SOC_FLASH_NRF_TIMEOUT_MULTIPLIER to allow tweaking the timeout of flash operations.
@@ -392,6 +402,8 @@ Devicetree
     * STM32 SoCs:
 
       * :dtcompatible: `st,stm32-lse-clock`: new ``lse-bypass`` property
+      * :dtcompatible: `st,stm32-ethernet`: now allows ``local-mac-address`` and
+         ``zephyr,random-mac-address`` properties.
 
 Libraries / Subsystems
 **********************
