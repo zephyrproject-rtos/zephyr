@@ -100,16 +100,6 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 	  This prevents faults when the data to write would be located on the
 	  flash itself.
 
-config FLASH_MCUX_FLEXSPI_XIP
-	bool "MCUX FlexSPI flash access with xip"
-	default y
-	depends on MEMC_MCUX_FLEXSPI
-	depends on (CODE_FLEXSPI || CODE_FLEXSPI2 || SOC_SERIES_IMX_RT6XX)
-	select XIP
-	help
-	  Allows using the flash API while running in XIP.
-	  WARNING: It is possible to overwrite the running application itself.
-
 if FLASH_MCUX_FLEXSPI_XIP
 
 choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
