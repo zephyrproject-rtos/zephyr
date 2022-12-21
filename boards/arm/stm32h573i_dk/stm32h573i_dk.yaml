@@ -20,3 +20,4 @@ supported:
   - spi
   - octospi
   - can
+  - i2c

@@ -189,6 +189,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | can bus                             |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -230,6 +232,8 @@ Default Zephyr Peripheral Mapping:
 - LD1 (green) : PI9
 - DAC1 channel 1 output : PA4
 - ADC1 channel 6 input : PF12
+- I2C_1 SDA/SCL : PB7/PB6 (Arduino I2C)
+- I2C_2 SDA/SCL : PB11/PB10  (Arduino USART3 pins)
 
 System Clock
 ------------
