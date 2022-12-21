@@ -1995,7 +1995,7 @@ void ull_adv_done(struct node_rx_event_done *done)
 	lll = &adv->lll;
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	if (done->extra.result != DONE_COMPLETED) {
+	if (done->extra.type == EVENT_DONE_EXTRA_TYPE_ADV && done->extra.result != DONE_COMPLETED) {
 		/* Event aborted or too late - try to re-schedule */
 		uint32_t ticks_elapsed;
 		uint32_t ticks_now;
@@ -2061,6 +2061,12 @@ void ull_adv_done(struct node_rx_event_done *done)
 			adv->lll.hdr.score -= 1;
 		}
 	}
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (done->extra.type == EVENT_DONE_EXTRA_TYPE_ADV && adv->lll.aux) {
+		/* Primary event of extended advertising done - wait for aux done */
+		return;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
