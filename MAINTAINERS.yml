@@ -973,6 +973,21 @@ Release Notes:
   labels:
     - "area: Neural Networks"
 
+"Drivers: Regulators"
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - danieldegrasse
+  files:
+    - drivers/regulator
+    - include/zephyr/drivers/regulator
+    - include/zephyr/drivers/regulator.h
+    - include/zephyr/dt-bindings/regulator
+    - tests/drivers/regulator
+  labels:
+    - "area: Regulators"
+
 "Drivers: PCI":
   status: maintained
   maintainers:
