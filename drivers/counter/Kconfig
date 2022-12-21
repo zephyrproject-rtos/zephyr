@@ -68,6 +68,8 @@ source "drivers/counter/Kconfig.esp32_tmr"
 
 source "drivers/counter/Kconfig.esp32_rtc"
 
+source "drivers/counter/Kconfig.smartbond_timer"
+
 source "drivers/counter/Kconfig.mcp7940n"
 
 source "drivers/counter/Kconfig.mcux_ctimer"
