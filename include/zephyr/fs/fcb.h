@@ -180,6 +180,31 @@ int fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *loc);
 int fcb_append_finish(struct fcb *fcb, struct fcb_entry *append_loc);
 
 /**
+ * Extracts first entry from circular buffer.
+ *
+ * When reading the
+ * contents for the entry, use loc->fe_sector and loc->fe_data_off with
+ * flash_area_read() to fcb flash_area.
+ * When you're finished, call fcb_extract_finish() with loc as argument.
+ *
+ * @param[in] fcb FCB instance structure.
+ * @param[out] loc entry location information
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int fcb_extract(struct fcb *fcb, struct fcb_entry *loc);
+
+/**
+ * Finishes entry extraction operation.
+ *
+ * @param[in] fcb FCB instance structure.
+ * @param[in] extract_loc entry location information
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int fcb_extract_finish(struct fcb *fcb, struct fcb_entry *extract_loc);
+
+/**
  * FCB Walk callback function type.
  *
  * Type of function which is expected to be called while walking over fcb

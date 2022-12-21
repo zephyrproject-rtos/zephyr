@@ -2,6 +2,7 @@
 
 zephyr_sources(
   fcb_append.c
+  fcb_extract.c
   fcb.c
   fcb_elem_info.c
   fcb_getnext.c
