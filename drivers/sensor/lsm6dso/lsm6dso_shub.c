@@ -446,8 +446,6 @@ static inline void lsm6dso_shub_embedded_en(stmdev_ctx_t *ctx, bool on)
 	};
 
 	lsm6dso_write_reg(ctx, LSM6DSO_FUNC_CFG_ACCESS, (uint8_t *)&reg, 1);
-
-	k_busy_wait(150);
 }
 
 static int lsm6dso_shub_read_embedded_regs(stmdev_ctx_t *ctx,
