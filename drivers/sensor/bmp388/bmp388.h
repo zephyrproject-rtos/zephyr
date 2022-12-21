@@ -99,6 +99,16 @@
 
 #define BMP388_SAMPLE_BUFFER_SIZE (6)
 
+
+/** BMP3 pressure settling time (micro secs)*/
+#define BMP388_SETTLE_TIME_PRESS_US UINT16_C(392)
+
+/** BMP3 temperature settling time (micro secs) */
+#define BMP388_SETTLE_TIME_TEMP_US UINT16_C(313)
+
+/** BMP3 adc conversion time (micro secs) */
+#define BMP388_ADC_CONV_TIME_US UINT16_C(2000)
+
 struct bmp388_cal_data {
 	uint16_t t1;
 	uint16_t t2;

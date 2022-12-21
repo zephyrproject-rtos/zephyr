@@ -12,6 +12,14 @@ menuconfig BMP388
 
 if BMP388
 
+config BMP388_VALIDATE_TIMINGS
+	bool "Validate OSR and ODR timings"
+	default y
+	help
+	  Validate that the sampling time will fit in a sampling period, as defined by OSR and ODR.
+	  This applies to init values from the device tree and to dynamically set ones.
+	  It is safe to disable this if you use static OSR/ODR that have been validated manually.
+
 choice BMP388_TRIGGER_MODE
 	prompt "Trigger mode"
 	default BMP388_TRIGGER_GLOBAL_THREAD
