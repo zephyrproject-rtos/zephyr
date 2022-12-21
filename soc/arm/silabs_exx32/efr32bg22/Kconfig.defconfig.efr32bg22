@@ -8,6 +8,3 @@ config GPIO_GECKO
 
 config SOC_FLASH_GECKO
 	default n
-
-config SPI_GECKO
-	default n
