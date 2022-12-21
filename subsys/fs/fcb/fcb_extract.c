@@ -32,23 +32,25 @@ fcb_extract_finish_nolock(struct fcb *fcb, struct fcb_entry *loc)
 {
 	int rc;
 	uint8_t buffer[MAX(fcb->f_align, FCB_TMP_BUF_SZ)];
+	uint16_t total_data_len = fcb_len_in_flash(fcb, loc->fe_data_len);
+	uint16_t write_len = total_data_len;
+	uint16_t max_write_len = sizeof(buffer);
 	uint8_t crc8[fcb->f_align];
+	uint16_t crc_len = fcb_len_in_flash(fcb, FCB_CRC_SZ);
 	off_t off;
 
 	(void)memset(buffer, 0, sizeof(buffer));
-	uint16_t total_len = fcb_len_in_flash(fcb, loc->fe_data_len);
-	uint16_t max_write_len = sizeof(buffer);
 	while (fcb_len_in_flash(fcb, max_write_len) > sizeof(buffer)) {
 		max_write_len /= 2;
 	}
 
-	while (total_len > 0) {
+	while (write_len > 0) {
 		rc = fcb_flash_write(fcb, loc->fe_sector, loc->fe_data_off,
-							 buffer, MIN(total_len, max_write_len));
+							 buffer, MIN(write_len, max_write_len));
 		if (rc) {
 			return -EIO;
 		}
-		total_len -= MIN(total_len, max_write_len);
+		write_len -= MIN(write_len, max_write_len);
 	}
 
 	(void)memset(crc8, 0xFF, sizeof(crc8));
@@ -58,20 +60,26 @@ fcb_extract_finish_nolock(struct fcb *fcb, struct fcb_entry *loc)
 		return rc;
 	}
 
-	off = loc->fe_data_off + fcb_len_in_flash(fcb, loc->fe_data_len);
+	off = loc->fe_data_off + total_data_len;
 	rc = fcb_flash_read(fcb, loc->fe_sector, off,
-						buffer, fcb_len_in_flash(fcb, FCB_CRC_SZ));
+						buffer, crc_len);
 	if (rc) {
 		return -EIO;
 	}
 
 	if (crc8[0] == buffer[0]) {
+		// Old CRC and new calculated CRC are the same
+		// Overwrite the old CRC to really invalidate the element
 		(void)memset(buffer, 0, sizeof(buffer));
 		rc = fcb_flash_write(fcb, loc->fe_sector, off,
-							 buffer, fcb_len_in_flash(fcb, FCB_CRC_SZ));
+							 buffer, crc_len);
 		if (rc) {
 			return -EIO;
 		}
+	}
+
+	if (fcb_getnext_in_sector(fcb, loc) != 0) {
+		rc = fcb_rotate(fcb);
 	}
 
 	return rc;

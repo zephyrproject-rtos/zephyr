@@ -193,8 +193,18 @@ fcb_free_sector_cnt(struct fcb *fcb)
 int
 fcb_is_empty(struct fcb *fcb)
 {
-	return (fcb->f_active.fe_sector == fcb->f_oldest &&
-	  fcb->f_active.fe_elem_off == fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area)));
+	if (fcb->f_active.fe_sector != fcb->f_oldest) {
+		return 0;
+	}
+	if (fcb->f_active.fe_elem_off == fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area))) {
+		return 1;
+	}
+	struct fcb_entry loc;
+	(void)memset(&loc, 0, sizeof(loc));
+	if (fcb_getnext(fcb, &loc) != 0) {
+		return 1;
+	}
+	return 0;
 }
 
 /**
