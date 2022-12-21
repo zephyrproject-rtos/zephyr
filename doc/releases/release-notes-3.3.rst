@@ -297,7 +297,7 @@ Drivers and Sensors
 
 * Ethernet
 
-* Flash
+  * Flash: Moved CONFIG_FLASH_FLEXSPI_XIP into the SOC level due to the flexspi clock initialization occurring in the SOC level.
 
   * NRF: Added CONFIG_SOC_FLASH_NRF_TIMEOUT_MULTIPLIER to allow tweaking the timeout of flash operations.
 
