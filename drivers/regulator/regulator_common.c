@@ -15,14 +15,19 @@ void regulator_common_data_init(const struct device *dev)
 
 int regulator_common_init_enable(const struct device *dev)
 {
+	const struct regulator_driver_api *api = dev->api;
 	const struct regulator_common_config *config = dev->config;
 	struct regulator_common_data *data = dev->data;
+	int ret;
+
+	if (config->initial_mode != REGULATOR_INITIAL_MODE_UNKNOWN) {
+		ret = regulator_set_mode(dev, config->initial_mode);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	if ((config->flags & REGULATOR_INIT_ENABLED) != 0U) {
-		const struct regulator_driver_api *api = dev->api;
-
-		int ret;
-
 		ret = api->enable(dev);
 		if (ret < 0) {
 			return ret;
