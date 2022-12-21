@@ -46,24 +46,21 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	uint32_t clock = 0U;
 	int ret;
 
-#if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
-	LL_RCC_ClocksTypeDef rcc_clocks;
-
-	/*
-	 * STM32F0/3 I2C's independent clock source supports only
-	 * HSI and SYSCLK, not APB1. We force clock variable to
-	 * SYSCLK frequency.
-	 */
-	LL_RCC_GetSystemClocksFreq(&rcc_clocks);
-	clock = rcc_clocks.SYSCLK_Frequency;
-#else
-	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			(clock_control_subsys_t *) &cfg->pclken[0], &clock) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate");
-		return -EIO;
+	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					   (clock_control_subsys_t)&cfg->pclken[1],
+					   &clock) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+			return -EIO;
+		}
+	} else {
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					   (clock_control_subsys_t *) &cfg->pclken[0],
+					   &clock) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+			return -EIO;
+		}
 	}
-
-#endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
 	data->dev_config = config;
 
