@@ -30,6 +30,14 @@ LOG_MODULE_REGISTER(i2c_ll_stm32);
 #define DT_DRV_COMPAT st_stm32_i2c_v1
 #endif
 
+/* This symbol takes the value 1 if one of the device instances */
+/* is configured in dts with a domain clock */
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32_I2C_DOMAIN_CLOCK_SUPPORT 1
+#else
+#define STM32_I2C_DOMAIN_CLOCK_SUPPORT 0
+#endif
+
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -241,7 +249,7 @@ static int i2c_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (cfg->pclk_len > 1) {
+	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		/* Enable I2C clock source */
 		ret = clock_control_configure(clk,
 					(clock_control_subsys_t *) &cfg->pclken[1],
