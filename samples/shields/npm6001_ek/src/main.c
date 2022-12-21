@@ -191,8 +191,6 @@ static int cmd_regulator_get(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	volt_uv = (int32_t)strtoul(argv[1], NULL, 10) * 1000;
-
 	ret = regulator_get_voltage(dev, &volt_uv);
 	if (ret < 0) {
 		shell_error(sh, "Could not get voltage (%d)", ret);
