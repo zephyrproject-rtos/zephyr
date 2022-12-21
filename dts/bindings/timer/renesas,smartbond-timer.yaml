@@ -1,0 +1,47 @@
+# Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
+# SPDX-License-Identifier: Apache-2.0
+
+description: Smartbond timers
+
+compatible: "renesas,smartbond-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-src:
+    type: phandle
+    description: |
+        Timer uses divn_clk or lp_clk
+
+  prescaler:
+    type: int
+    required: true
+    description: |
+      Clock prescaler at the input of the timer
+      Could be in range [0 .. 31] (CLK/(prescaler+1) )
+
+  countermode:
+    type: int
+    default: 0 # SMARTBOND_TIM_COUNTERMODE_UP - reset state
+    description: |
+      Sets timer counter mode.
+
+      Use constants defined in dt-bindings/timer/smartbond-timer.h.
+
+      * SMARTBOND_TIM_COUNTERMODE_UP             - used as upcounter.
+      * SMARTBOND_TIM_COUNTERMODE_DOWN           - used as downcounter.
+      * SMARTBOND_TIM_COUNTERMODE_CENTER_DOWN    - counts up and down alternatively.
+                                                   Output compare interrupt flags of output channels
+                                                   are set only when the counter is counting down.
+      * SMARTBOND_TIM_COUNTERMODE_CENTER_UP      - counts up and down alternatively.
+                                                   Output compare interrupt flags of output channels
+                                                   are set only when the counter is counting up.
+      * SMARTBOND_TIM_COUNTERMODE_CENTER_UP_DOWN - counts up and down alternatively.
+                                                   Output compare interrupt flags of output channels
+                                                   are set only when the counter is counting
+                                                   up or down.
+
+      If absent, then SMARTBOND_TIM_COUNTERMODE_UP is used (reset state).

@@ -89,6 +89,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_TIMER_GD32
 	DEVS_FOR_DT_COMPAT(gd_gd32_timer)
 #endif
+#ifdef CONFIG_COUNTER_SMARTBOND_TIMER
+	DEVS_FOR_DT_COMPAT(renesas_smartbond_timer)
+#endif
 };
 
 static const struct device *const period_devs[] = {

@@ -146,6 +146,38 @@
 			status = "okay";
 		};
 
+		timer1: timer@50010200 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50010200 0x300>;
+			interrupts = <16 0>;
+			prescaler = <1>;
+			status = "okay";
+		};
+
+		timer2: timer@50010300 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50010300 0x300>;
+			interrupts = <17 0>;
+			prescaler = <32>;
+			status = "okay";
+		};
+
+		timer3: timer@50040a00 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50040a00 0x300>;
+			interrupts = <34 0>;
+			prescaler = <31>;
+			status = "okay";
+		};
+
+		timer4: timer@50040b00 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50040b00 0x300>;
+			interrupts = <35 0>;
+			prescaler = <32>;
+			status = "disabled";
+		};
+
 		uart: uart@50020000 {
 			compatible = "renesas,smartbond-uart";
 			reg = <0x50020000 0x100>;

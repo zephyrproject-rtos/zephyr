@@ -1,0 +1,29 @@
+# Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_SMARTBOND_TIMER
+	bool "Smartbond counter driver 1"
+	default y
+	depends on DT_HAS_RENESAS_SMARTBOND_TIMER_ENABLED
+	help
+	  Enable the counter driver for Smartbond family of processors.
+
+if SOC_FAMILY_SMARTBOND
+
+config COUNTER_TIMER1
+	bool "Counter on TIMER"
+	select COUNTER_SMARTBOND_TIMER
+
+config COUNTER_TIMER2
+	bool "Counter on TIMER2"
+	select COUNTER_SMARTBOND_TIMER
+
+config COUNTER_TIMER3
+	bool "Counter on TIMER3"
+	select COUNTER_SMARTBOND_TIMER
+
+config COUNTER_TIMER4
+	bool "Counter on TIMER4"
+	select COUNTER_SMARTBOND_TIMER
+
+endif
