@@ -626,6 +626,9 @@ void *setup(void)
 	zassert_true(regulator_is_enabled(reg1));
 	zassert_true(regulator_is_enabled(reg2));
 
+	/* REG3 mode set at init time (initial-mode) */
+	zassert_equal(regulator_fake_set_mode_fake.call_count, 1U);
+
 	return NULL;
 }
 
