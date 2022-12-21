@@ -823,6 +823,34 @@ int lwm2m_engine_get_res_data(const char *pathstr, void **data_ptr, uint16_t *da
 	return lwm2m_engine_get_res_buf(pathstr, data_ptr, NULL, data_len, data_flags);
 }
 
+static int lwm2m_check_buf_sizes(uint8_t data_type, uint16_t resource_length, uint16_t buf_length)
+{
+	switch (data_type) {
+	case LWM2M_RES_TYPE_OPAQUE:
+	case LWM2M_RES_TYPE_STRING:
+		if (resource_length > buf_length) {
+			return -ENOMEM;
+		}
+		break;
+	case LWM2M_RES_TYPE_U32:
+	case LWM2M_RES_TYPE_U8:
+	case LWM2M_RES_TYPE_S64:
+	case LWM2M_RES_TYPE_S32:
+	case LWM2M_RES_TYPE_S16:
+	case LWM2M_RES_TYPE_S8:
+	case LWM2M_RES_TYPE_BOOL:
+	case LWM2M_RES_TYPE_FLOAT:
+	case LWM2M_RES_TYPE_OBJLNK:
+		if (resource_length != buf_length) {
+			return -EINVAL;
+		}
+		break;
+	default:
+		return 0;
+	}
+	return 0;
+}
+
 static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 {
 	int ret = 0;
@@ -870,17 +898,18 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 					&data_len);
 	}
 
-	/* TODO: handle data_len > buflen case */
-
 	if (data_ptr && data_len > 0) {
+		ret = lwm2m_check_buf_sizes(obj_field->data_type, data_len, buflen);
+		if (ret) {
+			LOG_ERR("Incorrect resource data length %u. Buffer length %u", data_len,
+				buflen);
+			k_mutex_unlock(&registry_lock);
+			return ret;
+		}
+
 		switch (obj_field->data_type) {
 
 		case LWM2M_RES_TYPE_OPAQUE:
-			if (data_len > buflen) {
-				k_mutex_unlock(&registry_lock);
-				return -ENOMEM;
-			}
-
 			memcpy(buf, data_ptr, data_len);
 			break;
 
