@@ -29,6 +29,12 @@ config I2C_STATS
 	help
 	  Enable I2C Stats.
 
+config I2C_DUMP_MESSAGES
+	bool "Log all I2C transactions"
+	depends on LOG
+	help
+	  Dump every I2C transaction to the system log as debug level log messages.
+
 config I2C_CALLBACK
 	bool "I2C asynchronous callback API"
 	help
