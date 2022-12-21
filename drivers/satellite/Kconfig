@@ -1,0 +1,26 @@
+# Satellite drivers configuration options
+
+# Copyright (c) 2022 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SATELLITE
+	bool "Satellite Drivers"
+	select EXPERIMENTAL
+
+if SATELLITE
+
+module = SATELLITE
+module-dep = LOG
+module-str = Log level for Satellite driver
+module-help = Sets log level for Satellite Device Drivers.
+source "subsys/logging/Kconfig.template.log_config"
+
+config SATELLITE_INIT_PRIORITY
+	int "Satellite driver init priority"
+	default 90
+	help
+	  Satellite device driver initialization priority.
+
+source "drivers/satellite/Kconfig.kineis-kim1"
+
+endif # SATELLITE

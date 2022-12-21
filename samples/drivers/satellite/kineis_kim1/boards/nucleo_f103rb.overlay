@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2022 Kickmaker
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <9600>;
+	status = "okay";
+	kim1 {
+		compatible = "kineis,kim1";
+		status = "okay";
+	};
+};
+
+/ {
+	aliases {
+	   kim1-module = &usart1;
+   };
+};

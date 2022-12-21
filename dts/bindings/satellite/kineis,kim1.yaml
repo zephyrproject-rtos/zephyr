@@ -1,0 +1,22 @@
+# Copyright (c) 2022 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+description: Kinéis KIM1 satellite module (AT Commands)
+
+compatible: "kineis,kim1"
+
+include: uart-device.yaml
+
+properties:
+
+    power-gpios:
+      type: phandle-array
+
+    reset-gpios:
+      type: phandle-array
+
+    pgood-gpios:
+      type: phandle-array
+
+    tx-status-gpios:
+      type: phandle-array

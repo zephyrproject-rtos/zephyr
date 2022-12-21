@@ -301,6 +301,7 @@ keithkoep	Keith & Koep GmbH
 keymile	Keymile GmbH
 khadas	Khadas
 kiebackpeter	Kieback & Peter GmbH
+kineis	Kineis
 kinetic	Kinetic Technologies
 kingdisplay	King & Display Technology Co., Ltd.
 kingnovel	Kingnovel Technology Co., Ltd.

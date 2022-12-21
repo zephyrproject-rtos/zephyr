@@ -1,0 +1,13 @@
+common:
+   tags: driver satellite kineis kim1
+   depends_on: satellite
+sample:
+   description: Demonstration of satellite Kineis KIM1 module
+   name: Kineis KIM1 Sample
+tests:
+   sample.driver.satellite.kineis_kim1:
+     harness: console
+     harness_config:
+      type: one_line
+      regex:
+        - "<inf> kim1_sample: Synchronous send OK"
