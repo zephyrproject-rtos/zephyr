@@ -1,0 +1,48 @@
+description: |
+    NXP ONFI NAND controller
+
+    Representation of a serial nand flash on a spi bus:
+
+        mx30lf2ge8ab: mx30lf2ge8ab@0 {
+                compatible = "nxp,onfi-nand";                
+                status = "okay";
+        };
+
+on-bus: semc
+
+compatible: "nxp,onfi-nand"
+
+properties:    
+      label:
+         type: string
+         required: false
+      reg:
+         type: array
+         required: true
+      status:
+         type: string
+         required: false
+         description: indicates the operational status of a device
+         enum:
+           - "ok" # Deprecated form
+           - "okay"
+           - "disabled"
+           - "reserved"
+           - "fail"
+           - "fail-sss"
+      block_size:
+         type: int
+         required: false
+      block_offset:
+         type: int
+         required: false
+      page_size:
+         type: int
+         required: false
+      page_offset:
+         type: int
+         required: false   
+
+
+       
+    

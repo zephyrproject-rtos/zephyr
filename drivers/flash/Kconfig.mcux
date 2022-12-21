@@ -30,6 +30,20 @@ config CHECK_BEFORE_READING
 
 endif # SOC_FLASH_MCUX
 
+if HAS_MCUX_SEMC
+
+menu "SEMC flash controller"
+
+config ONFI_NAND
+	bool "MCUX SEMC ONFI NAND driver"
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select MEMC
+	select MEMC_MCUX_SEMC
+endmenu
+
+endif # HAS_MCUX_SEMC
+
 if DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 
 menu "Flexspi flash driver"

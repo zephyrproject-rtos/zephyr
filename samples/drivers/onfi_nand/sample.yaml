@@ -1,0 +1,6 @@
+sample:
+  name: ONFI NAND Flash Sample
+tests:
+  sample.drivers.onfi.nand:
+    tags: onfi flash
+    

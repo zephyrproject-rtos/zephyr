@@ -8,6 +8,7 @@ zephyr_linker_sources_ifdef(CONFIG_MEMC_STM32_SDRAM SECTIONS memc_stm32_sdram.ld
 zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_NOR_PSRAM memc_stm32_nor_psram.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI memc_mcux_flexspi.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_SEMC memc_mcux_semc.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI_HYPERRAM memc_mcux_flexspi_hyperram.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_SAM_SMC memc_sam_smc.c)

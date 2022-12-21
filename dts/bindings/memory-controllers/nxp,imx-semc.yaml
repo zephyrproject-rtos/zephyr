@@ -5,7 +5,9 @@ description: NXP Smart External Memory Controller (SEMC)
 
 compatible: "nxp,imx-semc"
 
-include: base.yaml
+bus: semc
+
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
