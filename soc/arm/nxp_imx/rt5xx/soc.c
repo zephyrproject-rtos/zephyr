@@ -18,9 +18,12 @@
 #include <zephyr/irq.h>
 #include <zephyr/linker/sections.h>
 #include <soc.h>
-#include "flash_clock_setup.h"
 #include "fsl_power.h"
 #include "fsl_clock.h"
+
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
+#include "flash_clock_setup.h"
+#endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
@@ -214,12 +217,14 @@ static void clock_init(void)
 	/* Enable all FRO outputs */
 	CLOCK_EnableFroClk(kCLOCK_FroAllOutEn);
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	/*
 	 * Call function flexspi_clock_safe_config() to move FlexSPI clock to a stable
 	 * clock source to avoid instruction/data fetch issue when updating PLL and Main
 	 * clock if XIP(execute code on FLEXSPI memory).
 	 */
 	flexspi_clock_safe_config();
+#endif
 
 	/* Let CPU run on FRO with divider 2 for safe switching. */
 	CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 2);
@@ -300,11 +305,13 @@ static void clock_init(void)
 	/* Set CLKOUTFCLKDIV divider to value 100 */
 	CLOCK_SetClkDiv(kCLOCK_DivClockOut, 100U);
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	/*
 	 * Call function flexspi_setup_clock() to set user configured clock source/divider
 	 * for FlexSPI.
 	 */
 	flexspi_setup_clock(FLEXSPI0, 0U, 2U);
+#endif
 
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
