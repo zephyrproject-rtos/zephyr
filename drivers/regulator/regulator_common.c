@@ -7,8 +7,7 @@
 
 void regulator_common_data_init(const struct device *dev)
 {
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	struct regulator_common_data *data = dev->data;
 
 	(void)k_mutex_init(&data->lock);
 	data->refcnt = 0;
@@ -16,14 +15,11 @@ void regulator_common_data_init(const struct device *dev)
 
 int regulator_common_init_enable(const struct device *dev)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	const struct regulator_common_config *config = dev->config;
+	struct regulator_common_data *data = dev->data;
 
 	if ((config->flags & REGULATOR_INIT_ENABLED) != 0U) {
-		const struct regulator_driver_api *api =
-			(const struct regulator_driver_api *)dev->api;
+		const struct regulator_driver_api *api = dev->api;
 
 		int ret;
 
@@ -40,12 +36,9 @@ int regulator_common_init_enable(const struct device *dev)
 
 int regulator_enable(const struct device *dev)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	const struct regulator_driver_api *api = dev->api;
+	const struct regulator_common_config *config = dev->config;
+	struct regulator_common_data *data = dev->data;
 	int ret = 0;
 
 	/* enable not supported (always on) */
@@ -76,10 +69,8 @@ int regulator_enable(const struct device *dev)
 
 bool regulator_is_enabled(const struct device *dev)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	const struct regulator_common_config *config = dev->config;
+	struct regulator_common_data *data = dev->data;
 	bool enabled;
 
 	if ((config->flags & REGULATOR_ALWAYS_ON) != 0U) {
@@ -95,12 +86,9 @@ bool regulator_is_enabled(const struct device *dev)
 
 int regulator_disable(const struct device *dev)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	const struct regulator_driver_api *api = dev->api;
+	const struct regulator_common_config *config = dev->config;
+	struct regulator_common_data *data = dev->data;
 	int ret = 0;
 
 	/* disable not supported (always on) */
@@ -132,8 +120,7 @@ int regulator_disable(const struct device *dev)
 bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 				    int32_t max_uv)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
+	const struct regulator_common_config *config = dev->config;
 	unsigned int volt_cnt;
 
 	/* voltage may not be allowed, even if supported */
@@ -159,10 +146,8 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 int regulator_set_voltage(const struct device *dev, int32_t min_uv,
 			  int32_t max_uv)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_common_config *config = dev->config;
+	const struct regulator_driver_api *api = dev->api;
 
 	if (api->set_voltage == NULL) {
 		return -ENOSYS;
@@ -179,10 +164,8 @@ int regulator_set_voltage(const struct device *dev, int32_t min_uv,
 int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
 				int32_t max_ua)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_common_config *config = dev->config;
+	const struct regulator_driver_api *api = dev->api;
 
 	if (api->set_current_limit == NULL) {
 		return -ENOSYS;
@@ -198,10 +181,8 @@ int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
 
 int regulator_set_mode(const struct device *dev, regulator_mode_t mode)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_common_config *config = dev->config;
+	const struct regulator_driver_api *api = dev->api;
 
 	if (api->set_mode == NULL) {
 		return -ENOSYS;
