@@ -715,6 +715,16 @@ static int lsm6dso_init_chip(const struct device *dev)
 	uint8_t chip_id, master_on;
 	uint8_t odr, fs;
 
+	/* All registers except 0x01 are different between banks, including the WHO_AM_I
+	 * register and the register used for a SW reset.  If the lsm6dso wasn't on the user
+	 * bank when it reset, then both the chip id check and the sw reset will fail unless we
+	 * set the bank now.
+	 */
+	if (lsm6dso_mem_bank_set(ctx, LSM6DSO_USER_BANK) < 0) {
+		LOG_DBG("Failed to set user bank");
+		return -EIO;
+	}
+
 	if (lsm6dso_device_id_get(ctx, &chip_id) < 0) {
 		LOG_DBG("Failed reading chip id");
 		return -EIO;
