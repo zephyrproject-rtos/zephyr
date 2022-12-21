@@ -8,11 +8,9 @@ description: |
   When clk_hsi is used a fixed prescaler is applied. When input clock is hse or
   pll2, configurable prescaler is used.
 
-  Up to 2 output clocks could be supported and for each output clock, the
-  frequency can be computed with the following formula:
+  Output clock frequency can be computed with the following formula:
 
-    f(PLLCLK) = f(PLLIN) x PLLMUL       --> SYSCLK (System Clock)
-    f(USBCLK) = f(PLLCLK) * 2 / USBPRE  --> USB
+    f(PLLCLK) = f(PLLIN) x PLLMUL         --> SYSCLK (System Clock)
 
     with, depending on the case:
             f(PLLIN) = f(input_clk) / 2       if input_clk = clk_hsi
@@ -53,3 +51,10 @@ properties:
       description: |
           Configurable prescaler
           Valid range: 1 - 16
+
+    otgfspre:
+      type: boolean
+      description: |
+          Otpional PLL output divisor to generate a 48MHz USB clock.
+          When set, PLL output clock is not divided.
+          Otherwise, PLL output clock is divided by 1.5.
