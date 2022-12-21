@@ -448,6 +448,42 @@ static int regulator_npm6001_set_mode(const struct device *dev,
 		mode << NPM6001_BUCKXCONFPWMMODE_SETFORCEPWM_POS);
 }
 
+static int regulator_npm6001_get_mode(const struct device *dev,
+				      regulator_mode_t *mode)
+{
+	const struct regulator_npm6001_config *config = dev->config;
+	const struct regulator_npm6001_pconfig *pconfig = config->p->config;
+	uint8_t conf_reg, conf;
+	int ret;
+
+	switch (config->source) {
+	case NPM6001_SOURCE_BUCK0:
+		conf_reg = NPM6001_BUCK0CONFPWMMODE;
+		break;
+	case NPM6001_SOURCE_BUCK1:
+		conf_reg = NPM6001_BUCK1CONFPWMMODE;
+		break;
+	case NPM6001_SOURCE_BUCK2:
+		conf_reg = NPM6001_BUCK2CONFPWMMODE;
+		break;
+	case NPM6001_SOURCE_BUCK3:
+		conf_reg = NPM6001_BUCK3CONFPWMMODE;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	ret = i2c_reg_read_byte_dt(&pconfig->i2c, conf_reg, &conf);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*mode = (conf & NPM6001_BUCKXCONFPWMMODE_SETFORCEPWM_MSK) >>
+		NPM6001_BUCKXCONFPWMMODE_SETFORCEPWM_POS;
+
+	return 0;
+}
+
 static int regulator_npm6001_enable(const struct device *dev)
 {
 	const struct regulator_npm6001_config *config = dev->config;
@@ -610,6 +646,7 @@ static const struct regulator_driver_api api = {
 	.set_voltage = regulator_npm6001_set_voltage,
 	.get_voltage = regulator_npm6001_get_voltage,
 	.set_mode = regulator_npm6001_set_mode,
+	.get_mode = regulator_npm6001_get_mode,
 	.get_error_flags = regulator_npm6001_get_error_flags,
 };
 
