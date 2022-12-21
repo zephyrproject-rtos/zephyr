@@ -23,6 +23,9 @@ on:
     - '.github/workflows/doc-build.yml'
     - 'scripts/dts/**'
     - 'scripts/requirements-doc.txt'
+  pull_request_target:
+    paths:
+    - 'doc/**'
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
@@ -70,6 +73,23 @@ jobs:
       run: |
         west init -l .
 
+    - name: test-create-comment
+      if: github.event_name == 'pull_request_target'
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ github.event.pull_request_target.number }}
+        body: |
+          Just a test of comment auto-generate.
+
+    # This action should fail...
+    - name: test-create-comment-fail
+      if: github.event_name == 'pull_request_target'
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        body: |
+          This comment is should fail...
+
     - name: build-docs
       run: |
         if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
@@ -103,8 +123,27 @@ jobs:
         PR_NUM="${{ github.event.pull_request.number }}"
         DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/"
 
+        echo "PR_NUM=${PR_NUM}" >> ${GITHUB_ENV}
+        echo "DOC_URL=${DOC_URL}" >> ${GITHUB_ENV}
         echo "${PR_NUM}" > pr_num
         echo "Documentation will be available shortly at: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
+
+    - name: find-docs-comment
+      if: github.event_name == 'pull_request'
+      uses: peter-evans/create-or-update-comment@v2
+      id: fc
+      with:
+        issue-number: ${PR_NUM}
+        body-includes: This comment was written by the doc-build.yaml workflow.
+
+    - name: add-docs-comment
+      if: github.event_name == 'pull_request' && steps.fc.outputs.comment-id == ''
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${PR_NUM}
+        body: |
+          Documentation will be available shortly at: ${DOC_URL}
+          This comment was written by the doc-build.yaml workflow.
 
     - name: upload-pr-number
       uses: actions/upload-artifact@v3
@@ -115,7 +154,7 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.event_name != 'pull_request_target'
     runs-on: ubuntu-20.04
     container: texlive/texlive:latest
     timeout-minutes: 60
