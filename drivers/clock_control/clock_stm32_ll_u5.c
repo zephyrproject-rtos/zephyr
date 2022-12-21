@@ -13,6 +13,7 @@
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_system.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <stm32_ll_utils.h>
@@ -144,8 +145,6 @@ static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	volatile uint32_t *reg;
-	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
@@ -154,10 +153,8 @@ static inline int stm32_clock_control_on(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
-	reg_val = *reg;
-	reg_val |= pclken->enr;
-	*reg = reg_val;
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
+		     pclken->enr);
 
 	return 0;
 }
@@ -166,8 +163,6 @@ static inline int stm32_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	volatile uint32_t *reg;
-	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
@@ -176,10 +171,8 @@ static inline int stm32_clock_control_off(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
-	reg_val = *reg;
-	reg_val &= ~pclken->enr;
-	*reg = reg_val;
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
+		       pclken->enr);
 
 	return 0;
 }
@@ -189,8 +182,6 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 						void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	volatile uint32_t *reg;
-	uint32_t reg_val, dt_val;
 	int err;
 
 	ARG_UNUSED(dev);
@@ -202,13 +193,8 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
-	dt_val = STM32_CLOCK_VAL_GET(pclken->enr) <<
-					STM32_CLOCK_SHIFT_GET(pclken->enr);
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) +
-					STM32_CLOCK_REG_GET(pclken->enr));
-	reg_val = *reg;
-	reg_val |= dt_val;
-	*reg = reg_val;
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
+		     STM32_CLOCK_VAL_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
 
 	return 0;
 }
