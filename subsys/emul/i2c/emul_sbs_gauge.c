@@ -97,7 +97,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 
 	__ASSERT_NO_MSG(msgs && num_msgs);
 
-	i2c_dump_msgs("emul", msgs, num_msgs, addr);
+	i2c_dump_msgs_rw("emul", msgs, num_msgs, addr, false);
 	switch (num_msgs) {
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
