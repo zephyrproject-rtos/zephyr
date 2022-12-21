@@ -99,6 +99,12 @@ find some command examples.
 
 .. code-block:: bash
 
+   # get BUCK0 mode
+   npm6001 regulator modeget BUCK0
+   Hysteretic
+
+.. code-block:: bash
+
    # get active errors on BUCK0
    npm6001 regulator errors BUCK0
    Overcurrent:    [ ]
