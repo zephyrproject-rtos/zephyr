@@ -48,6 +48,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LWM2M_HELP_RESUME "LwM2M engine thread resume"
 #define LWM2M_HELP_LOCK "Lock the LwM2M registry"
 #define LWM2M_HELP_UNLOCK "Unlock the LwM2M registry"
+#define LWM2M_HELP_CACHE "Enable data cache for resource\n" \
+	"cache PATH NUM\n" \
+	"PATH is LwM2M path\n" \
+	"NUM how many elements to cache\n" \
 
 static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 {
@@ -466,6 +470,65 @@ static int cmd_unlock(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_cache(const struct shell *sh, size_t argc, char **argv)
+{
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	int rc;
+	int elems;
+	char *path;
+	struct lwm2m_time_series_elem *cache;
+	struct lwm2m_obj_path obj_path;
+
+	if (argc != 3) {
+		shell_error(sh, "wrong parameters\n");
+		return -EINVAL;
+	}
+
+	/* translate path -> path_obj */
+	rc = lwm2m_string_to_path(argv[1], &obj_path, '/');
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (obj_path.level < 3) {
+		shell_error(sh, "Path string not correct\n");
+		return -EINVAL;
+	}
+
+	if (lwm2m_cache_entry_get_by_object(&obj_path)) {
+		shell_error(sh, "Cache already enabled for %s\n", argv[1]);
+		return -ENOEXEC;
+	}
+
+	path = argv[1];
+
+	elems = atoi(argv[2]);
+	if (elems < 1) {
+		shell_error(sh, "Size must be 1 or more (given %d)\n", elems);
+		return -EINVAL;
+	}
+
+	cache = k_malloc(sizeof(struct lwm2m_time_series_elem) * elems);
+	if (!cache) {
+		shell_error(sh, "Out of memory\n");
+		return -ENOEXEC;
+	}
+
+	rc = lwm2m_engine_enable_cache(path, cache, elems);
+	if (rc) {
+		shell_error(sh, "lwm2m_engine_enable_cache(%s, %p, %d) returned %d\n", path, cache,
+			    elems, rc);
+		k_free(cache);
+		return -ENOEXEC;
+	}
+
+	return 0;
+#else
+	shell_error(sh, "No heap configured\n");
+	return -ENOEXEC;
+#endif
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lwm2m,
 	SHELL_COND_CMD_ARG(CONFIG_LWM2M_VERSION_1_1, send, NULL,
@@ -480,6 +543,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(resume, NULL, LWM2M_HELP_RESUME, cmd_resume, 1, 0),
 	SHELL_CMD_ARG(lock, NULL, LWM2M_HELP_LOCK, cmd_lock, 1, 0),
 	SHELL_CMD_ARG(unlock, NULL, LWM2M_HELP_UNLOCK, cmd_unlock, 1, 0),
+	SHELL_CMD_ARG(cache, NULL, LWM2M_HELP_CACHE, cmd_cache, 3, 0),
 
 	SHELL_SUBCMD_SET_END);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_LWM2M_SHELL, lwm2m, &sub_lwm2m,
