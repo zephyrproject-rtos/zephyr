@@ -3,6 +3,8 @@
 Peripherals
 ###########
 
+DO NOT MERGE: this is stub text to trigger a doc rebuild.
+
 .. toctree::
    :maxdepth: 1
 
