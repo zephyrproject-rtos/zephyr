@@ -76,6 +76,8 @@ typedef int (*regulator_get_current_limit_t)(const struct device *dev,
 					     int32_t *curr_ua);
 typedef int (*regulator_set_mode_t)(const struct device *dev,
 				    regulator_mode_t mode);
+typedef int (*regulator_get_mode_t)(const struct device *dev,
+				    regulator_mode_t *mode);
 typedef int (*regulator_get_error_flags_t)(
 	const struct device *dev, regulator_error_flags_t *flags);
 
@@ -90,6 +92,7 @@ __subsystem struct regulator_driver_api {
 	regulator_set_current_limit_t set_current_limit;
 	regulator_get_current_limit_t get_current_limit;
 	regulator_set_mode_t set_mode;
+	regulator_get_mode_t get_mode;
 	regulator_get_error_flags_t get_error_flags;
 };
 
@@ -456,6 +459,29 @@ static inline int regulator_get_current_limit(const struct device *dev,
  * @retval -errno In case of any other error.
  */
 int regulator_set_mode(const struct device *dev, regulator_mode_t mode);
+
+/**
+ * @brief Get mode.
+ *
+ * @param dev Regulator device instance.
+ * @param[out] mode Where mode will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
+ */
+static inline int regulator_get_mode(const struct device *dev,
+				     regulator_mode_t *mode)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->get_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_mode(dev, mode);
+}
 
 /**
  * @brief Get active error flags.

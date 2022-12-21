@@ -29,6 +29,8 @@ DECLARE_FAKE_VALUE_FUNC(int, regulator_fake_get_current_limit,
 			const struct device *, int32_t *);
 DECLARE_FAKE_VALUE_FUNC(int, regulator_fake_set_mode, const struct device *,
 			regulator_mode_t);
+DECLARE_FAKE_VALUE_FUNC(int, regulator_fake_get_mode, const struct device *,
+			regulator_mode_t *);
 DECLARE_FAKE_VALUE_FUNC(int, regulator_fake_get_error_flags,
 			const struct device *, regulator_error_flags_t *);
 
