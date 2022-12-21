@@ -34,12 +34,19 @@ void i2c_dump_msgs_rw(const char *name, const struct i2c_msg *msgs,
 		const bool is_read = msg->flags & I2C_MSG_READ;
 		const bool dump_data = dump_read || !is_read;
 
-		LOG_DBG("   %c %s%s len=%02x: ", is_read ? 'R' : 'W',
-			msg->flags & I2C_MSG_RESTART ? "Sr " : "",
-			msg->flags & I2C_MSG_STOP ? "P" : "",
-			msg->len);
-		if (dump_data) {
-			LOG_HEXDUMP_DBG(msg->buf, msg->len, "contents:");
+		if (msg->len == 1 && dump_data) {
+			LOG_DBG("   %c %s%s len=01: %02x", is_read ? 'R' : 'W',
+				msg->flags & I2C_MSG_RESTART ? "Sr " : "",
+				msg->flags & I2C_MSG_STOP ? "P" : "",
+				msg->buf[0]);
+		} else {
+			LOG_DBG("   %c %s%s len=%02x: ", is_read ? 'R' : 'W',
+				msg->flags & I2C_MSG_RESTART ? "Sr " : "",
+				msg->flags & I2C_MSG_STOP ? "P" : "",
+				msg->len);
+			if (dump_data) {
+				LOG_HEXDUMP_DBG(msg->buf, msg->len, "contents:");
+			}
 		}
 	}
 }
