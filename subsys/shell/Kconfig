@@ -245,6 +245,11 @@ config SHELL_LOG_FORMAT_TIMESTAMP
 	help
 	  Enable timestamp formatting.
 
+config SHELL_AUTOSTART
+	bool "Auto-start shell at boot"
+	default y
+	help
+	  If enabled, shell will be automatically started.
 
 source "subsys/shell/modules/Kconfig"
 

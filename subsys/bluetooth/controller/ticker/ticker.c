@@ -205,6 +205,7 @@ struct ticker_user_op_priority_set {
 struct ticker_user_op {
 	uint8_t op;			/* User operation */
 	uint8_t id;			/* Ticker node id */
+	uint8_t status;			/* Operation result */
 	union {
 		struct ticker_user_op_start        start;
 		struct ticker_user_op_update       update;
@@ -212,7 +213,6 @@ struct ticker_user_op {
 		struct ticker_user_op_slot_get     slot_get;
 		struct ticker_user_op_priority_set priority_set;
 	} params;			/* User operation parameters */
-	uint32_t status;		/* Operation result */
 	ticker_op_func fp_op_func;	/* Operation completion callback */
 	void  *op_context;		/* Context passed in completion callback */
 };
@@ -1246,7 +1246,7 @@ static uint8_t ticker_remainder_dec(struct ticker_node *ticker)
  *
  * @internal
  */
-static void ticker_job_op_cb(struct ticker_user_op *user_op, uint32_t status)
+static void ticker_job_op_cb(struct ticker_user_op *user_op, uint8_t status)
 {
 	user_op->op = TICKER_USER_OP_TYPE_NONE;
 	user_op->status = status;
@@ -1850,7 +1850,7 @@ static inline void ticker_job_op_start(struct ticker_node *ticker,
  *		      are un-scheduled
  * @internal
  */
-static inline uint32_t ticker_job_insert(struct ticker_instance *instance,
+static inline uint8_t ticker_job_insert(struct ticker_instance *instance,
 				      uint8_t id_insert,
 				      struct ticker_node *ticker,
 				      uint8_t *insert_head)
@@ -2098,7 +2098,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
  *		      are un-scheduled
  * @internal
  */
-static inline uint32_t ticker_job_insert(struct ticker_instance *instance,
+static inline uint8_t ticker_job_insert(struct ticker_instance *instance,
 				      uint8_t id_insert,
 				      struct ticker_node *ticker,
 				      uint8_t *insert_head)
@@ -2234,7 +2234,7 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 			struct ticker_user_op *user_op;
 			struct ticker_node *ticker;
 			uint8_t id_insert;
-			uint32_t status;
+			uint8_t status;
 
 			if (insert_head != TICKER_NULL) {
 				/* Prepare insert of ticker node specified by
@@ -2697,7 +2697,7 @@ void ticker_job(void *param)
  * @return TICKER_STATUS_SUCCESS if initialization was successful, otherwise
  * TICKER_STATUS_FAILURE
  */
-uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
+uint8_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 		  uint8_t count_user, void *user, uint8_t count_op, void *user_op,
 		  ticker_caller_id_get_cb_t caller_id_get_cb,
 		  ticker_sched_cb_t sched_cb,
@@ -2827,7 +2827,7 @@ void ticker_trigger(uint8_t instance_index)
  * run before exiting ticker_start
  */
 #if defined(CONFIG_BT_TICKER_EXT)
-uint32_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+uint8_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 		   uint32_t ticks_anchor, uint32_t ticks_first, uint32_t ticks_periodic,
 		   uint32_t remainder_periodic, uint16_t lazy, uint32_t ticks_slot,
 		   ticker_timeout_func fp_timeout_func, void *context,
@@ -2841,7 +2841,7 @@ uint32_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id
 				NULL);
 }
 
-uint32_t ticker_start_ext(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+uint8_t ticker_start_ext(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 		       uint32_t ticks_anchor, uint32_t ticks_first,
 		       uint32_t ticks_periodic, uint32_t remainder_periodic,
 		       uint16_t lazy, uint32_t ticks_slot,
@@ -2849,7 +2849,7 @@ uint32_t ticker_start_ext(uint8_t instance_index, uint8_t user_id, uint8_t ticke
 		       ticker_op_func fp_op_func, void *op_context,
 		       struct ticker_ext *ext_data)
 #else
-uint32_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+uint8_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 		   uint32_t ticks_anchor, uint32_t ticks_first, uint32_t ticks_periodic,
 		   uint32_t remainder_periodic, uint16_t lazy, uint32_t ticks_slot,
 		   ticker_timeout_func fp_timeout_func, void *context,
@@ -2934,7 +2934,7 @@ uint32_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id
  * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
  * before exiting ticker_update
  */
-uint32_t ticker_update(uint8_t instance_index, uint8_t user_id,
+uint8_t ticker_update(uint8_t instance_index, uint8_t user_id,
 		       uint8_t ticker_id, uint32_t ticks_drift_plus,
 		       uint32_t ticks_drift_minus, uint32_t ticks_slot_plus,
 		       uint32_t ticks_slot_minus, uint16_t lazy, uint8_t force,
@@ -2947,7 +2947,7 @@ uint32_t ticker_update(uint8_t instance_index, uint8_t user_id,
 				 force, fp_op_func, op_context, 0);
 }
 
-uint32_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
+uint8_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
 			   uint8_t ticker_id, uint32_t ticks_drift_plus,
 			   uint32_t ticks_drift_minus,
 			   uint32_t ticks_slot_plus, uint32_t ticks_slot_minus,
@@ -3018,7 +3018,7 @@ uint32_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
  * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
  * before exiting ticker_stop
  */
-uint32_t ticker_yield_abs(uint8_t instance_index, uint8_t user_id,
+uint8_t ticker_yield_abs(uint8_t instance_index, uint8_t user_id,
 			  uint8_t ticker_id, uint32_t ticks_at_yield,
 			  ticker_op_func fp_op_func, void *op_context)
 {
@@ -3072,7 +3072,7 @@ uint32_t ticker_yield_abs(uint8_t instance_index, uint8_t user_id,
  * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
  * before exiting ticker_stop
  */
-uint32_t ticker_stop(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+uint8_t ticker_stop(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 		  ticker_op_func fp_op_func, void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
@@ -3125,7 +3125,7 @@ uint32_t ticker_stop(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
  * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
  * before exiting ticker_stop
  */
-uint32_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id,
+uint8_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id,
 			 uint8_t ticker_id, uint32_t ticks_at_stop,
 			 ticker_op_func fp_op_func, void *op_context)
 {
@@ -3185,7 +3185,7 @@ uint32_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id,
  * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
  * before exiting ticker_next_slot_get
  */
-uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
+uint8_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
 			      uint8_t *ticker_id, uint32_t *ticks_current,
 			      uint32_t *ticks_to_expire,
 			      ticker_op_func fp_op_func, void *op_context)
@@ -3199,7 +3199,7 @@ uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
 					op_context);
 }
 
-uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
+uint8_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
 				  uint8_t *ticker_id, uint32_t *ticks_current,
 				  uint32_t *ticks_to_expire,
 				  uint32_t *remainder, uint16_t *lazy,
@@ -3275,7 +3275,7 @@ uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
  * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
  * before exiting ticker_job_idle_get
  */
-uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
+uint8_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 			  ticker_op_func fp_op_func, void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
@@ -3334,7 +3334,7 @@ uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
  * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
  * before exiting ticker_priority_set
  */
-uint32_t ticker_priority_set(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+uint8_t ticker_priority_set(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 			  int8_t priority, ticker_op_func fp_op_func,
 			  void *op_context)
 {

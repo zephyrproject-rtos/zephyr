@@ -31,8 +31,8 @@ Kconfig Options
 These options can be found in the following path :zephyr_file:`subsys/random/Kconfig`.
 
 :kconfig:option:`CONFIG_TEST_RANDOM_GENERATOR`
- For testing, this option permits random number APIs to return values
- that are not truly random.
+ For testing, this option allows a non-random number generator to be used and
+ permits random number APIs to return values that are not truly random.
 
 The random number generator choice group allows selection of the RNG
 source function for the system via the RNG_GENERATOR_CHOICE choice group.

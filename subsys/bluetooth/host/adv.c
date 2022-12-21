@@ -1810,7 +1810,7 @@ int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 		return -EINVAL;
 	}
 
-	if (!ad_len || !ad) {
+	if (ad_len != 0 && ad == NULL) {
 		return -EINVAL;
 	}
 

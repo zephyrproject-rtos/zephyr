@@ -86,6 +86,11 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
+	if (info->interval == 0U) {
+		/* Not broadcast periodic advertising - Ignore */
+		return;
+	}
+
 	(void)memset(name, 0, sizeof(name));
 
 	bt_data_parse(buf, data_cb, name);

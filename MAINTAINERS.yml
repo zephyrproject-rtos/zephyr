@@ -1249,6 +1249,14 @@ Formatted Output:
   labels:
     - "area: Formatting Output"
 
+Google Platforms:
+  status: maintained
+  maintainers:
+    - fabiobaltieri
+    - keith-zephyr
+  files:
+    - boards/*/google_*/
+
 IPC:
   status: maintained
   maintainers:

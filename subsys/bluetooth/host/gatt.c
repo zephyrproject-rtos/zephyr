@@ -1609,7 +1609,7 @@ static uint8_t get_service_handles(const struct bt_gatt_attr *attr,
 		return BT_GATT_ITER_STOP;
 	}
 
-	include->end_handle = handle;
+	include->end_handle = sys_cpu_to_le16(handle);
 
 	return BT_GATT_ITER_CONTINUE;
 }

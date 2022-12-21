@@ -8,7 +8,6 @@
 
 #include <nxp/nxp_rt6xx.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <zephyr/dt-bindings/regulator/pca9420.h>
 
 #include "mimxrt685_evk_cm33-pinctrl.dtsi"
 
@@ -234,30 +233,18 @@ i2s1: &flexcomm3 {
 		nxp,enable-modesel-pins;
 
 		BUCK1 {
-			regulator-min-microvolt = <500000>;
-			regulator-max-microvolt = <1800000>;
-			regulator-max-microamp = <250000>;
 			regulator-boot-on;
 		};
 
 		BUCK2 {
-			regulator-min-microvolt = <1500000>;
-			regulator-max-microvolt = <3300000>;
-			regulator-max-microamp = <500000>;
 			regulator-boot-on;
 		};
 
 		LDO1 {
-			regulator-min-microvolt = <1700000>;
-			regulator-max-microvolt = <1900000>;
-			regulator-max-microamp = <1000>;
 			regulator-boot-on;
 		};
 
 		LDO2 {
-			regulator-min-microvolt = <1500000>;
-			regulator-max-microvolt = <3300000>;
-			regulator-max-microamp = <250000>;
 			regulator-boot-on;
 		};
 

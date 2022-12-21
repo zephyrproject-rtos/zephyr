@@ -224,6 +224,13 @@
 			status = "disabled";
 		};
 
+		coretemp: coretemp@0x60040058 {
+			compatible = "espressif,esp32-temp";
+			friendly-name = "coretemp";
+			reg = <0x60040058 0x4>;
+			status = "disabled";
+		};
+
 	};
 
 };

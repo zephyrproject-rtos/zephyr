@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for creating temperature sensor device instance
+ */
+
+&coretemp {
+    status = "okay";
+};

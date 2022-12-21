@@ -122,7 +122,8 @@ Deprecated in this release
 
   :kconfig:option:`CONFIG_SETTINGS_FS` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE`
 
-  :kconfig:option:`CONFIG_SETTINGS_FS_DIR` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_DIR`
+  :kconfig:option:`CONFIG_SETTINGS_FS_DIR` in favor of creating all parent
+  directories from :kconfig:option:`CONFIG_SETTINGS_FILE_PATH`
 
   :kconfig:option:`CONFIG_SETTINGS_FS_FILE` in favor of :kconfig:option:`CONFIG_SETTINGS_FILE_PATH`
 
@@ -431,6 +432,11 @@ Libraries / Subsystems
 * LwM2M
 
   * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
+
+* Settings
+
+  * Replaced all :c:func:`k_panic` invocations within settings backend
+    initialization with returning / propagating error codes.
 
 HALs
 ****

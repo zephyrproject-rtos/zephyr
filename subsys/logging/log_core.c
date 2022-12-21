@@ -907,4 +907,4 @@ static int enable_logger(const struct device *arg)
 	return 0;
 }
 
-SYS_INIT(enable_logger, POST_KERNEL, 0);
+SYS_INIT(enable_logger, POST_KERNEL, CONFIG_LOG_CORE_INIT_PRIORITY);

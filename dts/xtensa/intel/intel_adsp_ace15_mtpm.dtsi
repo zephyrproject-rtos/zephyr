@@ -361,6 +361,7 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
+			power-domain = <&hst_domain>;
 			status = "okay";
 		};
 
@@ -372,6 +373,7 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
+			power-domain = <&hst_domain>;
 			status = "okay";
 		};
 
@@ -383,6 +385,7 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
+			power-domain = <&hst_domain>;
 			status = "okay";
 		};
 
@@ -394,6 +397,7 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
+			power-domain = <&hst_domain>;
 			status = "okay";
 		};
 
@@ -430,6 +434,7 @@
 			dma-buf-size-alignment = <4>;
 			dma-copy-alignment = <4>;
 			status = "okay";
+			power-domain = <&hub_ulp_domain>;
 		};
 
 		lpgpdma1: dma@7d000 {
@@ -442,6 +447,7 @@
 			dma-buf-size-alignment = <4>;
 			dma-copy-alignment = <4>;
 			status = "okay";
+			power-domain = <&io0_domain>;
 		};
 
 		sha: adsp-sha@17df00 {

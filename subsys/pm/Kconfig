@@ -104,6 +104,7 @@ config PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
 
 config PM_DEVICE_RUNTIME
 	bool "Runtime Device Power Management"
+	select EVENTS
 	help
 	  Enable Runtime Power Management to save power. With device runtime PM
 	  enabled, devices can be suspended or resumed based on the device
