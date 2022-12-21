@@ -95,14 +95,12 @@ ZTEST(regulator_api, test_common_config)
 
 ZTEST(regulator_api, test_enable_disable)
 {
-	/* REG1, REG2 initialized at init time (always-on/boot-on) */
-	zassert_equal(regulator_fake_enable_fake.call_count, 2U);
-	zassert_true(regulator_is_enabled(reg1));
-	zassert_true(regulator_is_enabled(reg2));
+	RESET_FAKE(regulator_fake_enable);
+	RESET_FAKE(regulator_fake_disable);
 
 	/* REG1 already enabled, not enabled again */
 	zassert_equal(regulator_enable(reg1), 0);
-	zassert_equal(regulator_fake_enable_fake.call_count, 2U);
+	zassert_equal(regulator_fake_enable_fake.call_count, 0U);
 
 	/* REG1: can't be disabled */
 	zassert_equal(regulator_disable(reg1), 0);
@@ -116,12 +114,12 @@ ZTEST(regulator_api, test_enable_disable)
 	/* REG2: enable again */
 	zassert_equal(regulator_enable(reg2), 0);
 	zassert_equal(regulator_fake_enable_fake.arg0_val, reg2);
-	zassert_equal(regulator_fake_enable_fake.call_count, 3U);
+	zassert_equal(regulator_fake_enable_fake.call_count, 1U);
 
 	/* REG0: enable */
 	zassert_equal(regulator_enable(reg0), 0);
 	zassert_equal(regulator_fake_enable_fake.arg0_val, reg0);
-	zassert_equal(regulator_fake_enable_fake.call_count, 4U);
+	zassert_equal(regulator_fake_enable_fake.call_count, 2U);
 
 	/* REG0: disable */
 	zassert_equal(regulator_disable(reg0), 0);
@@ -622,6 +620,11 @@ void *setup(void)
 	zassert_true(device_is_ready(reg1));
 	zassert_true(device_is_ready(reg2));
 	zassert_true(device_is_ready(reg3));
+
+	/* REG1, REG2 initialized at init time (always-on/boot-on) */
+	zassert_equal(regulator_fake_enable_fake.call_count, 2U);
+	zassert_true(regulator_is_enabled(reg1));
+	zassert_true(regulator_is_enabled(reg2));
 
 	return NULL;
 }
