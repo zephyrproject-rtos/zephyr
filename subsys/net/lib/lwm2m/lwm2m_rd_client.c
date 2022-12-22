@@ -1115,6 +1115,13 @@ static int sm_do_deregister(void)
 	struct lwm2m_message *msg;
 	int ret;
 
+	if (lwm2m_engine_connection_resume(client.ctx)) {
+		lwm2m_engine_context_close(client.ctx);
+		/* Connection failed, enter directly to deregistered state */
+		set_sm_state(ENGINE_DEREGISTERED);
+		return 0;
+	}
+
 	msg = rd_get_message();
 	if (!msg) {
 		LOG_ERR("Unable to get a lwm2m message!");
