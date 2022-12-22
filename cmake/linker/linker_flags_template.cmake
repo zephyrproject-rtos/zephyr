@@ -14,3 +14,6 @@ check_set_linker_property(TARGET linker APPEND PROPERTY sanitize_undefined)
 # If memory reporting is a post build command, please use
 # cmake/bintools/bintools.cmake insted.
 check_set_linker_property(TARGET linker PROPERTY memusage)
+
+# Extra warnings options for twister run
+set_property(TARGET linker PROPERTY warnings_as_errors)

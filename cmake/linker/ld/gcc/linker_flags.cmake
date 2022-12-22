@@ -7,6 +7,9 @@ if (NOT CONFIG_COVERAGE_GCOV)
   set_property(TARGET linker PROPERTY coverage -lgcov)
 endif()
 
+# Extra warnings options for twister run
+set_property(TARGET linker PROPERTY warnings_as_errors -Wl,--fatal-warnings)
+
 # ld/gcc linker flags for sanitizing.
 check_set_linker_property(TARGET linker APPEND PROPERTY sanitize_address -lasan)
 check_set_linker_property(TARGET linker APPEND PROPERTY sanitize_address -fsanitize=address)

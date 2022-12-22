@@ -65,6 +65,10 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b)
 
+# Extra warnings options for twister run
+set_property(TARGET compiler PROPERTY warnings_as_errors)
+set_property(TARGET asm PROPERTY warnings_as_errors)
+
 # Flag for disabling exeptions in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions)
 
