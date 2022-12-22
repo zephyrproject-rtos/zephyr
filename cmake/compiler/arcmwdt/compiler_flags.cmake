@@ -132,6 +132,10 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
 
+# Flags for set extra warnigs (ARCMWDT asm can't recognize --fatal-warnings. Skip it)
+set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
+set_property(TARGET asm PROPERTY warnings_as_errors -Werror)
+
 # Disable exeptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
 
