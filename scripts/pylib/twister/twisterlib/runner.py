@@ -289,21 +289,17 @@ class CMake:
     def run_cmake(self, args=""):
 
         if not self.options.disable_warnings_as_errors:
-            ldflags = "-Wl,--fatal-warnings"
-            cflags = "-Werror"
-            aflags = "-Werror -Wa,--fatal-warnings"
+            warnings_as_errors = 'y'
             gen_defines_args = "--edtlib-Werror"
         else:
-            ldflags = cflags = aflags = ""
+            warnings_as_errors = 'n'
             gen_defines_args = ""
 
         logger.debug("Running cmake on %s for %s" % (self.source_dir, self.platform.name))
         cmake_args = [
             f'-B{self.build_dir}',
             f'-DTC_RUNID={self.instance.run_id}',
-            f'-DEXTRA_CFLAGS={cflags}',
-            f'-DEXTRA_AFLAGS={aflags}',
-            f'-DEXTRA_LDFLAGS={ldflags}',
+            f'-DCONFIG_COMPILER_WARNINGS_AS_ERRORS={warnings_as_errors}',
             f'-DEXTRA_GEN_DEFINES_ARGS={gen_defines_args}',
             f'-G{self.env.generator}'
         ]
