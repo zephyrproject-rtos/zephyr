@@ -941,6 +941,36 @@ class BinaryFiles(ComplianceTest):
                 self.failure(f"Binary file not allowed: {fname}")
 
 
+class ImageSize(ComplianceTest):
+    """
+    Check that any added image is limited in size.
+    """
+    name = "ImageSize"
+    doc = "Check the size of image files."
+    path_hint = "<git-top>"
+
+    def run(self):
+        SIZE_LIMIT = 250 << 10
+        BOARD_SIZE_LIMIT = 100 << 10
+
+        for file in get_files(filter="d"):
+            full_path = os.path.join(GIT_TOP, file)
+            mime_type = magic.from_file(full_path, mime=True)
+
+            if not mime_type.startswith("image/"):
+                continue
+
+            size = os.path.getsize(full_path)
+
+            limit = SIZE_LIMIT
+            if file.startswith("boards/"):
+                limit = BOARD_SIZE_LIMIT
+
+            if size > limit:
+                self.failure(f"Image file too large: {file} reduce size to "
+                             f"less than {limit >> 10}kB")
+
+
 def init_logs(cli_arg):
     # Initializes logging
 
