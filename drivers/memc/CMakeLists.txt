@@ -12,6 +12,6 @@ zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI_HYPERRAM memc_mcux_flexspi
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_SAM_SMC memc_sam_smc.c)
 
-if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
+if((DEFINED CONFIG_FLASH_MCUX_FLEXSPI_XIP) AND (DEFINED CONFIG_FLASH))
   zephyr_code_relocate(memc_mcux_flexspi.c ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
 endif()
