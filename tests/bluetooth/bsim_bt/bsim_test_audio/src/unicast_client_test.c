@@ -352,7 +352,7 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 
 	/* Require controller support for CIGs */
 	printk("Creating unicast group\n");
-	err = bt_audio_unicast_group_create(&params, 1, unicast_group);
+	err = bt_audio_unicast_group_create(params, stream_cnt, unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
 		return;
