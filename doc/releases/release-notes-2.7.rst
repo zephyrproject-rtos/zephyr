@@ -2,6 +2,60 @@
 
 .. _zephyr_2.7:
 
+.. _zephyr_2.7.4:
+
+Zephyr 2.7.4
+####################
+
+This is an LTS maintenance release with fixes.
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 2.7.3 tagged
+release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+* :github:`25417` - net: socket: socketpair: check for ISR context
+* :github:`41012` - irq_enable() doesn’t support enabling NVIC IRQ number more than 127
+* :github:`44070` - west spdx TypeError: 'NoneType' object is not iterable
+* :github:`46072` - subsys/hawkBit: Debug log error in hawkbit example "CONFIG_LOG_STRDUP_MAX_STRING"
+* :github:`48056` - Possible null pointer dereference after k_mutex_lock times out
+* :github:`49102` - hawkbit - dns name randomly not resolved
+* :github:`49139` - can't run west or DT tests on windows / py 3.6
+* :github:`49564` - Newer versions of pylink are not supported in latest zephyr 2.7 release
+* :github:`49569` - Backport cmake string cache fix to v2.7 branch
+* :github:`50221` - tests: debug: test case subsys/debug/coredump failed on acrn_ehl_crb on branch v2.7
+* :github:`50467` - Possible memory corruption on ARC when userspace is enabled
+* :github:`50468` - Incorrect Z_THREAD_STACK_BUFFER in arch_start_cpu for Xtensa
+* :github:`50961` - drivers: counter: Update counter_set_channel_alarm documentation
+* :github:`51714` - Bluetooth: Application with buffer that cannot unref it in disconnect handler leads to advertising issues
+* :github:`51776` - POSIX API is not portable across arches
+* :github:`52247` - mgmt: mcumgr: image upload, then image erase, then image upload does not restart upload from start
+* :github:`52517` - lib: posix: sleep() does not return the number of seconds left if interrupted
+* :github:`52518` - lib: posix: usleep() does not follow the POSIX spec
+* :github:`52542` - lib: posix: make sleep() and usleep() standards-compliant
+* :github:`52591` - mcumgr user data size out of sync with net buffer user data size
+* :github:`52829` - kernel/sched: Fix SMP race on pend
+* :github:`53088` - Unable to chage initialization priority of logging subsys
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+* CVE-2022-2741: `Zephyr project bug tracker GHSA-hx5v-j59q-c3j8
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hx5v-j59q-c3j8>`_
+
+* CVE-2022-1841: `Zephyr project bug tracker GHSA-5c3j-p8cr-2pgh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-5c3j-p8cr-2pgh>`_
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
 .. _zephyr_2.7.3:
 
 Zephyr 2.7.3
