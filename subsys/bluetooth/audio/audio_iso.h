@@ -9,7 +9,8 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
 
-struct bt_audio_iso_ep {
+struct bt_audio_iso_dir {
+	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
 	struct bt_iso_chan_path path;
 	struct bt_iso_chan_io_qos qos;
@@ -20,8 +21,8 @@ struct bt_audio_iso {
 	struct bt_iso_chan chan;
 	struct bt_iso_chan_qos qos;
 
-	struct bt_audio_iso_ep rx;
-	struct bt_audio_iso_ep tx;
+	struct bt_audio_iso_dir rx;
+	struct bt_audio_iso_dir tx;
 
 	/* Must be at the end so that everything else in the structure can be
 	 * memset to zero without affecting the ref.
@@ -43,3 +44,10 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep);
 struct bt_audio_ep *bt_audio_iso_get_ep(bool unicast_client,
 					struct bt_audio_iso *iso,
 					enum bt_audio_dir dir);
+/* Unicast client-only functions*/
+void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso,
+			      struct bt_audio_stream *stream);
+void bt_audio_iso_unbind_stream(struct bt_audio_iso *audio_iso,
+				struct bt_audio_stream *stream);
+struct bt_audio_stream *bt_audio_iso_get_stream(struct bt_audio_iso *iso,
+						enum bt_audio_dir dir);

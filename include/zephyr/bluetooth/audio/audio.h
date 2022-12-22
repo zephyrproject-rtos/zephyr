@@ -1289,16 +1289,26 @@ struct bt_audio_lc3_preset {
  *  symmetric in both directions.
  */
 struct bt_audio_stream {
+	/** Stream direction */
+	enum bt_audio_dir dir;
+
 	/** Connection reference */
 	struct bt_conn *conn;
+
 	/** Endpoint reference */
 	struct bt_audio_ep *ep;
+
 	/** Codec Configuration */
 	struct bt_codec *codec;
+
 	/** QoS Configuration */
 	struct bt_codec_qos *qos;
+
 	/** Audio stream operations */
 	struct bt_audio_stream_ops *ops;
+
+	/** Audio ISO reference */
+	struct bt_audio_iso *audio_iso;
 
 	union {
 		void *group;

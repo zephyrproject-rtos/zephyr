@@ -362,20 +362,18 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 		FAIL("Unable to create unicast group: %d", err);
 		return;
 	}
-#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO*/
 }
 
 static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group)
 {
-#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 	int err;
-	/* Require controller support for CIGs */
+
 	err = bt_audio_unicast_group_delete(unicast_group);
 	if (err != 0) {
 		FAIL("Unable to delete unicast group: %d", err);
 		return;
 	}
-#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }
 
 static void test_main(void)
