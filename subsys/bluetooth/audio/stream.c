@@ -324,6 +324,10 @@ void bt_audio_stream_reset(struct bt_audio_stream *stream)
 		return;
 	}
 
+	if (stream->ep != NULL && stream->ep->iso != NULL) {
+		bt_audio_iso_unbind_ep(stream->ep->iso, stream->ep);
+	}
+
 	bt_audio_stream_detach(stream);
 }
 
@@ -1139,9 +1143,21 @@ fail:
 
 int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 {
+	struct bt_audio_stream *stream;
+
 	CHECKIF(unicast_group == NULL) {
 		LOG_DBG("unicast_group is NULL");
 		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, stream, _node) {
+		/* If a stream has an endpoint, it is not ready to be removed
+		 * from a group, as it is not in an idle state
+		 */
+		if (stream->ep != NULL) {
+			LOG_DBG("stream %p is not released", stream);
+			return -EINVAL;
+		}
 	}
 
 	if (unicast_group->cig != NULL) {

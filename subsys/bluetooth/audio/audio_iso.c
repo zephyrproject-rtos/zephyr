@@ -184,7 +184,8 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 
 	__ASSERT_NO_MSG(ep != NULL);
 	__ASSERT_NO_MSG(iso != NULL);
-	__ASSERT(ep->iso == iso, "ep %p not bound with iso", iso, ep);
+	__ASSERT(ep->iso == iso, "ep %p not bound with iso %p, was bound to %p",
+		 ep, iso, ep->iso);
 	__ASSERT(ep->dir == BT_AUDIO_DIR_SINK || ep->dir == BT_AUDIO_DIR_SOURCE,
 		 "Invalid dir: %u", ep->dir);
 
@@ -194,12 +195,12 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 	    bt_audio_ep_is_unicast_client(ep)) {
 		/* For the unicast client, the direction and tx/rx is reversed */
 		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-			__ASSERT(iso->rx.ep == NULL,
-				 "iso %p not bound with ep %p", iso, iso->rx.ep);
+			__ASSERT(iso->rx.ep == ep,
+				 "iso %p not bound with ep %p", iso, ep);
 			iso->rx.ep = NULL;
 		} else {
-			__ASSERT(iso->tx.ep == NULL,
-				 "iso %p not bound with ep %p", iso, iso->tx.ep);
+			__ASSERT(iso->tx.ep == ep,
+				 "iso %p not bound with ep %p", iso, ep);
 			iso->tx.ep = NULL;
 		}
 	} else {
