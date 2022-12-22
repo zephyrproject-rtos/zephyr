@@ -45,6 +45,10 @@
 #define reg_irq_risc0_en(i)      REG_ADDR8(0x140338 + i)
 #define reg_irq_risc1_en(i)      REG_ADDR8(0x140340 + i)
 
+/* GPIO Wakeup Enable registers */
+#define reg_wakeup_trig_pol_base 0x41
+#define reg_wakeup_trig_en_base  0x46
+
 /* Pull-up/down resistors */
 #define GPIO_PIN_UP_DOWN_FLOAT   ((uint8_t)0u)
 #define GPIO_PIN_PULLDOWN_100K   ((uint8_t)2u)
@@ -89,9 +93,47 @@ struct gpio_b91_data {
 	sys_slist_t callbacks;          /* list of callbacks */
 };
 
+#ifdef CONFIG_PM_DEVICE
+/* Set Wake-up Enable bit based on GPIO pin number */
+static inline void gpio_b91_irq_pin_wakeup_set(const struct device *dev, gpio_pin_t pin,
+	uint8_t trigger_type)
+{
+	const uint8_t wakeup_trigger_pol_reg = reg_wakeup_trig_pol_base +
+		GET_PORT_NUM(GET_GPIO(dev));
+	const uint8_t wakeup_trigger_en_reg = reg_wakeup_trig_en_base +
+		GET_PORT_NUM(GET_GPIO(dev));
+
+	switch (trigger_type) {
+	case INTR_RISING_EDGE:
+	case INTR_HIGH_LEVEL:
+		analog_write_reg8(wakeup_trigger_pol_reg,
+			analog_read_reg8(wakeup_trigger_pol_reg) & ~BIT(pin));
+		break;
+	case INTR_FALLING_EDGE:
+	case INTR_LOW_LEVEL:
+		analog_write_reg8(wakeup_trigger_pol_reg,
+			analog_read_reg8(wakeup_trigger_pol_reg) | BIT(pin));
+		break;
+	}
+	analog_write_reg8(wakeup_trigger_en_reg,
+		analog_read_reg8(wakeup_trigger_en_reg) | BIT(pin));
+}
+
+/* Clear Wake-up Enable bit based on GPIO pin number */
+static inline void gpio_b91_irq_pin_wakeup_clr(const struct device *dev, gpio_pin_t pin)
+{
+	const uint8_t wakeup_trigger_en_reg = reg_wakeup_trig_en_base +
+		GET_PORT_NUM(GET_GPIO(dev));
+
+	analog_write_reg8(wakeup_trigger_en_reg,
+		analog_read_reg8(wakeup_trigger_en_reg) & ~BIT(pin));
+}
+
+#endif /* CONFIG_PM_DEVICE */
+
 
 /* Set IRQ Enable bit based on IRQ number */
-static inline void gpiob_b91_irq_en_set(const struct device *dev, gpio_pin_t pin)
+static inline void gpio_b91_irq_en_set(const struct device *dev, gpio_pin_t pin)
 {
 	uint8_t irq = GET_IRQ_NUM(dev);
 
@@ -111,7 +153,7 @@ static inline void gpiob_b91_irq_en_set(const struct device *dev, gpio_pin_t pin
 }
 
 /* Clear IRQ Enable bit based on IRQ number */
-static inline void gpiob_b91_irq_en_clr(const struct device *dev, gpio_pin_t pin)
+static inline void gpio_b91_irq_en_clr(const struct device *dev, gpio_pin_t pin)
 {
 	uint8_t irq = GET_IRQ_NUM(dev);
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
@@ -125,6 +167,10 @@ static inline void gpiob_b91_irq_en_clr(const struct device *dev, gpio_pin_t pin
 	} else if (irq == IRQ_GPIO2_RISC1) {
 		BM_CLR(reg_irq_risc1_en(GET_PORT_NUM(gpio)), BIT(pin));
 	}
+
+#if CONFIG_PM_DEVICE
+	gpio_b91_irq_pin_wakeup_clr(dev, pin);
+#endif /* CONFIG_PM_DEVICE */
 }
 
 /* Get IRQ Enable register value */
@@ -219,7 +265,11 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 	BM_SET(reg_gpio_irq_risc_mask, irq_mask);
 
 	/* Enable peripheral interrupt */
-	gpiob_b91_irq_en_set(dev, pin);
+	gpio_b91_irq_en_set(dev, pin);
+
+#if CONFIG_PM_DEVICE
+	gpio_b91_irq_pin_wakeup_set(dev, pin, trigger_type);
+#endif /* CONFIG_PM_DEVICE */
 
 	/* Enable PLIC interrupt */
 	riscv_plic_irq_enable(irq_num);
@@ -434,7 +484,7 @@ static int gpio_b91_pin_interrupt_configure(const struct device *dev,
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:                /* GPIO interrupt disable */
-		gpiob_b91_irq_en_clr(dev, pin);
+		gpio_b91_irq_en_clr(dev, pin);
 		break;
 
 	case GPIO_INT_MODE_LEVEL:
