@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#if 0
 #if DT_NODE_HAS_STATUS(DT_INST(0, nxp_onfi_nand), okay)
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, nxp_onfi_nand))
 #define FLASH_NAME "NXP ONFI-NAND"
@@ -22,18 +22,19 @@
 #define FLASH_TEST_REGION_OFFSET      0x0
 #define FLASH_BLOCK_SIZE              0x40000U
 #define FLASH_PAGE_SIZE               (2048)
-
+#endif
 void main(void)
 {
+#if 0
 	static uint8_t expected[2048] = { 0 };
 	const size_t len = sizeof(expected);
 	static uint8_t buf[sizeof(expected)] = { 0 };
 	const struct device *flash_dev;
 	int rc;
-
-	printf("\n" FLASH_NAME " ONFI NAND Flash testing\n");
+#endif
+//	printf("\n" FLASH_NAME " ONFI NAND Flash testing\n");
 	printf("==========================\n");
-
+#if 0
 	flash_dev = device_get_binding(FLASH_DEVICE);
 
 	if (!flash_dev) {
@@ -96,5 +97,5 @@ void main(void)
 			++wp;
 		}
 	}
-
+#endif
 }
