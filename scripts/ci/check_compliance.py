@@ -57,7 +57,9 @@ def get_shas(refspec):
 def get_files(filter=None, paths=None):
     filter_arg = (f'--diff-filter={filter}',) if filter else ()
     paths_arg = ('--', *paths) if paths else ()
-    return git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
+    out = git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
+    files = out.splitlines()
+    return files
 
 class FmtdFailure(Failure):
 
@@ -688,7 +690,7 @@ class Nits(ComplianceTest):
 
     def run(self):
         # Loop through added/modified files
-        for fname in get_files(filter="d").splitlines():
+        for fname in get_files(filter="d"):
             if "Kconfig" in fname:
                 self.check_kconfig_header(fname)
                 self.check_redundant_zephyr_source(fname)
@@ -810,7 +812,7 @@ class PyLint(ComplianceTest):
                                                 "pylintrc"))
 
         # List of files added/modified by the commit(s).
-        files = get_files(filter="d").splitlines()
+        files = get_files(filter="d")
 
         # Filter out everything but Python files. Keep filenames
         # relative (to GIT_TOP) to stay farther from any command line
