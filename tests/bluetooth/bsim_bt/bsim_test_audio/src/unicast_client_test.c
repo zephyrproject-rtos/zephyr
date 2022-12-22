@@ -270,6 +270,19 @@ static void discover_sink(void)
 	WAIT_FOR_FLAG(flag_sink_discovered);
 }
 
+static size_t discovered_sink_count(void)
+{
+	size_t stream_cnt;
+
+	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
+		if (g_sinks[stream_cnt] == NULL) {
+			break;
+		}
+	}
+
+	return stream_cnt;
+}
+
 static int configure_stream(struct bt_audio_stream *stream,
 			    struct bt_audio_ep *ep)
 {
@@ -289,52 +302,37 @@ static int configure_stream(struct bt_audio_stream *stream,
 	return 0;
 }
 
-static size_t configure_streams(void)
+static void configure_streams(size_t stream_cnt)
 {
-	size_t stream_cnt;
-
-	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
-		struct bt_audio_stream *stream = &g_streams[stream_cnt];
+	for (size_t i = 0; i < stream_cnt; i++) {
+		struct bt_audio_stream *stream = &g_streams[i];
 		int err;
 
-		if (g_sinks[stream_cnt] == NULL) {
-			break;
-		}
-
-		err = configure_stream(stream, g_sinks[stream_cnt]);
+		err = configure_stream(stream, g_sinks[i]);
 		if (err != 0) {
 			FAIL("Unable to configure stream[%zu]: %d",
-			     stream_cnt, err);
-			return 0;
+			     i, err);
+			return;
 		}
 	}
-
-	return stream_cnt;
 }
 
-static size_t release_streams(size_t stream_cnt)
+static void release_streams(size_t stream_cnt)
 {
 	for (size_t i = 0; i < stream_cnt; i++) {
 		int err;
-
-		if (g_sinks[i] == NULL) {
-			break;
-		}
 
 		UNSET_FLAG(flag_stream_released);
 
 		err = bt_audio_stream_release(&g_streams[i]);
 		if (err != 0) {
 			FAIL("Unable to release stream[%zu]: %d", i, err);
-			return 0;
+			return;
 		}
 
 		WAIT_FOR_FLAG(flag_stream_released);
 	}
-
-	return stream_cnt;
 }
-
 
 static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 				 size_t stream_cnt)
@@ -388,17 +386,19 @@ static void test_main(void)
 
 	discover_sink();
 
+	stream_cnt = discovered_sink_count();
+
 	/* Run the stream setup multiple time to ensure states are properly
 	 * set and reset
 	 */
 	for (unsigned int i = 0U; i < iterations; i++) {
 		printk("\n########### Running iteration #%u\n\n", i);
 
-		printk("Configuring streams\n");
-		stream_cnt = configure_streams();
-
 		printk("Creating unicast group\n");
 		create_unicast_group(&unicast_group, stream_cnt);
+
+		printk("Configuring streams\n");
+		configure_streams(stream_cnt);
 
 		/* TODO: When babblesim supports ISO setup Audio streams */
 
