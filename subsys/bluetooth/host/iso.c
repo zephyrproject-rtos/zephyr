@@ -368,10 +368,11 @@ void bt_iso_connected(struct bt_conn *iso)
 
 	err = bt_iso_setup_data_path(chan);
 	if (err != 0) {
-		LOG_ERR("Unable to setup data path: %d", err);
+		if (false) {
+
 #if defined(CONFIG_BT_ISO_BROADCAST)
-		if (iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER ||
-		    iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
+		} else if (iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER ||
+			   iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
 			struct bt_iso_big *big;
 			int err;
 
@@ -381,9 +382,9 @@ void bt_iso_connected(struct bt_conn *iso)
 			if (err != 0) {
 				LOG_ERR("Could not terminate BIG: %d", err);
 			}
-		}
 #endif /* CONFIG_BT_ISO_BROADCAST */
-		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
+
+		} else if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
 		    iso->iso.info.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 			bt_conn_disconnect(iso,
 					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
