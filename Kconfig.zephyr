@@ -360,8 +360,12 @@ config NO_OPTIMIZATIONS
 	help
 	  Compiler optimizations will be set to -O0 independently of other
 	  options.
-
 endchoice
+
+config COMPILER_WARNINGS_AS_ERRORS
+	bool "Treat warnings as errors"
+	help
+	  Turn on "warning as error" toolchain flags
 
 config COMPILER_COLOR_DIAGNOSTICS
 	bool "Colored diagnostics"
