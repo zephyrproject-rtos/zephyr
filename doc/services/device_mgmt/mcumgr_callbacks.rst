@@ -38,7 +38,7 @@ application code as per:
 .. code-block:: c
 
     #include <zephyr/kernel.h>
-    #include <mgmt/mgmt.h>
+    #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
     #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 
     struct mgmt_callback my_callback;
@@ -61,17 +61,17 @@ application code as per:
         mgmt_callback_register(&my_callback);
     }
 
-This code registers a handler for the :c:enum:`MGMT_EVT_OP_CMD_DONE` event,
-which will be called after a MCUmgr command has been processed and output
-generated, note that this requires that
-:kconfig:option:`CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS` be enabled to
-receive this callback.
+This code registers a handler for the :c:enumerator:`MGMT_EVT_OP_CMD_DONE`
+event, which will be called after a MCUmgr command has been processed and
+output generated, note that this requires that
+:kconfig:option:`CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS` be enabled to receive
+this callback.
 
 Multiple callbacks can be setup to use a single function as a common callback,
 and many different functions can be used for each event by registering each
 group once, or all notifications for a whole group can be enabled by using one
 of the ``MGMT_EVT_OP_*_ALL`` events, alternatively a handler can setup for
-every notification by using :c:enum:`MGMT_EVT_OP_ALL`. When setting up
+every notification by using :c:enumerator:`MGMT_EVT_OP_ALL`. When setting up
 handlers, events can be combined that are in the same group only, for example
 5 img_mgmt callbacks can be setup with a single registration call, but to also
 setup a callback for an os_mgmt callback, this must be done as a separate
@@ -86,19 +86,20 @@ Events
 Events can be selected by enabling their corresponding Kconfig option:
 
  - :kconfig:option:`CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS`
-    MCUmgr command status (:c:enum:`MGMT_EVT_OP_CMD_RECV`,
-    :c:enum:`MGMT_EVT_OP_CMD_STATUS`, :c:enum:`MGMT_EVT_OP_CMD_DONE`)
+    MCUmgr command status (:c:enumerator:`MGMT_EVT_OP_CMD_RECV`,
+    :c:enumerator:`MGMT_EVT_OP_CMD_STATUS`,
+    :c:enumerator:`MGMT_EVT_OP_CMD_DONE`)
  - :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK`
-    fs_mgmt file access (:c:enum:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS`)
+    fs_mgmt file access (:c:enumerator:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS`)
  - :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK`
-    img_mgmt upload check (:c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK`)
+    img_mgmt upload check (:c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK`)
  - :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS`
-    img_mgmt upload status (:c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED`,
-    :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_STARTED`,
-    :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_PENDING`,
-    :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED`)
+    img_mgmt upload status (:c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED`,
+    :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_STARTED`,
+    :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_PENDING`,
+    :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED`)
  - :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_HOOK`
-    os_mgmt reset check (:c:enum:`MGMT_EVT_OP_OS_MGMT_RESET`)
+    os_mgmt reset check (:c:enumerator:`MGMT_EVT_OP_OS_MGMT_RESET`)
 
 Actions
 =======
@@ -113,7 +114,7 @@ An example of selectively denying file access:
 .. code-block:: c
 
     #include <zephyr/kernel.h>
-    #include <mgmt/mgmt.h>
+    #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
     #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
     #include <string.h>
 
@@ -154,11 +155,12 @@ An example of selectively denying file access:
         mgmt_callback_register(&my_callback);
     }
 
-This code registers a handler for the :c:enum:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS`
-event, which will be called after a fs_mgmt file read/write command has been
-received to check if access to the file should be allowed or not, note that
-this requires that :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK`
-be enabled to receive this callback.
+This code registers a handler for the
+:c:enumerator:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS` event, which will be called
+after a fs_mgmt file read/write command has been received to check if access to
+the file should be allowed or not, note that this requires that
+:kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK` be enabled to receive
+this callback.
 
 MCUmgr Command Callback Usage/Adding New Event Types
 ====================================================
@@ -175,7 +177,7 @@ An example MCUmgr command handler:
     #include <zephyr/kernel.h>
     #include <zcbor_common.h>
     #include <zcbor_encode.h>
-    #include <mgmt/mgmt.h>
+    #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
     #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 
     #define MGMT_EVT_GRP_USER_ONE MGMT_EVT_GRP_USER_CUSTOM_START
@@ -240,42 +242,46 @@ to register for callbacks using :c:func:`mgmt_callback_register` (note that
 enable the new notification system in addition to any migrations):
 
  * mgmt_evt
-    Using :c:enum:`MGMT_EVT_OP_CMD_RECV` if ``MGMT_EVT_OP_CMD_RECV`` was used,
-    :c:enum:`MGMT_EVT_OP_CMD_STATUS` if ``MGMT_EVT_OP_CMD_STATUS`` was used or
-    :c:enum:`MGMT_EVT_OP_CMD_DONE` if ``MGMT_EVT_OP_CMD_DONE`` was used, where
-    the provided data is :c:struct:`mgmt_evt_op_cmd_arg`.
+    Using :c:enumerator:`MGMT_EVT_OP_CMD_RECV`,
+    :c:enumerator:`MGMT_EVT_OP_CMD_STATUS`, or
+    :c:enumerator:`MGMT_EVT_OP_CMD_DONE` as drop-in replacements for events of
+    the same name, where the provided data is :c:struct:`mgmt_evt_op_cmd_arg`.
     :kconfig:option:`CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS` needs to be set.
  * fs_mgmt_register_evt_cb
-    Using :c:enum:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS` where the provided data is
-    :c:struct:`fs_mgmt_file_access`. Instead of returning true to allow the
-    action or false to deny, a MCUmgr result code needs to be returned,
-    :c:enum:`MGMT_ERR_EOK` will allow the action, any other return code will
-    disallow it and return that code to the client
-    (:c:enum:`MGMT_ERR_EACCESSDENIED` can be used for an access denied error).
-    :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS` needs to be set.
- * img_mgmt_register_callbacks
-    Using :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_STARTED` if ``dfu_started_cb``
-    was used, :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED` if ``dfu_stopped_cb``
-    was used, :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_PENDING` if ``dfu_pending_cb``
-    was used or :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` if
-    ``dfu_confirmed_cb`` was used. These callbacks do not have any return
-    status. :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS` needs to be
+    Using :c:enumerator:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS` where the provided
+    data is :c:struct:`fs_mgmt_file_access`. Instead of returning true to allow
+    the action or false to deny, a MCUmgr result code needs to be returned,
+    :c:enumerator:`MGMT_ERR_EOK` will allow the action, any other return code
+    will disallow it and return that code to the client
+    (:c:enumerator:`MGMT_ERR_EACCESSDENIED` can be used for an access denied
+    error). :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS` needs to be
     set.
+ * img_mgmt_register_callbacks
+    Using :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_STARTED` if
+    ``dfu_started_cb`` was used,
+    :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED` if ``dfu_stopped_cb`` was
+    used, :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_PENDING` if
+    ``dfu_pending_cb`` was used or
+    :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` if ``dfu_confirmed_cb``
+    was used. These callbacks do not have any return status.
+    :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS` needs to be set.
  * img_mgmt_set_upload_cb
-    Using :c:enum:`MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK` where the provided data is
-    :c:struct:`img_mgmt_upload_check`. Instead of returning true to allow the
-    action or false to deny, a MCUmgr result code needs to be returned,
-    :c:enum:`MGMT_ERR_EOK` will allow the action, any other return code will
-    disallow it and return that code to the client
-    (:c:enum:`MGMT_ERR_EACCESSDENIED` can be used for an access denied error).
-    :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK` needs to be set.
- * os_mgmt_register_reset_evt_cb
-    Using :c:enum:`MGMT_EVT_OP_OS_MGMT_RESET`.  Instead of returning true to
+    Using :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK` where the provided
+    data is :c:struct:`img_mgmt_upload_check`. Instead of returning true to
     allow the action or false to deny, a MCUmgr result code needs to be
-    returned, :c:enum:`MGMT_ERR_EOK` will allow the action, any other return
-    code will disallow it and return that code to the client
-    (:c:enum:`MGMT_ERR_EACCESSDENIED` can be used for an access denied error).
-    :kconfig:option:`CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS` needs to be set
+    returned, :c:enumerator:`MGMT_ERR_EOK` will allow the action, any other
+    return code will disallow it and return that code to the client
+    (:c:enumerator:`MGMT_ERR_EACCESSDENIED` can be used for an access denied
+    error). :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK` needs to
+    be set.
+ * os_mgmt_register_reset_evt_cb
+    Using :c:enumerator:`MGMT_EVT_OP_OS_MGMT_RESET`.  Instead of returning
+    true to allow the action or false to deny, a MCUmgr result code needs to be
+    returned, :c:enumerator:`MGMT_ERR_EOK` will allow the action, any other
+    return code will disallow it and return that code to the client
+    (:c:enumerator:`MGMT_ERR_EACCESSDENIED` can be used for an access denied
+    error). :kconfig:option:`CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS` needs to
+    be set.
 
 API Reference
 *************
