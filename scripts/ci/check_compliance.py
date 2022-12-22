@@ -59,6 +59,10 @@ def get_files(filter=None, paths=None):
     paths_arg = ('--', *paths) if paths else ()
     out = git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
     files = out.splitlines()
+    for file in list(files):
+        if not os.path.isfile(os.path.join(GIT_TOP, file)):
+            # Drop submodule directories from the list.
+            files.remove(file)
     return files
 
 class FmtdFailure(Failure):
@@ -856,13 +860,8 @@ def filter_py(root, fnames):
     # Uses the python-magic library, so that we can detect Python
     # files that don't end in .py as well. python-magic is a frontend
     # to libmagic, which is also used by 'file'.
-    #
-    # The extra os.path.isfile() is necessary because git includes
-    # submodule directories in its output.
-
     return [fname for fname in fnames
-            if os.path.isfile(os.path.join(root, fname)) and
-            (fname.endswith(".py") or
+            if (fname.endswith(".py") or
              magic.from_file(os.path.join(root, fname),
                              mime=True) == "text/x-python")]
 
