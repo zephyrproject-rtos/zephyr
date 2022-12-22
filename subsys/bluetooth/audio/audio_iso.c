@@ -9,6 +9,10 @@
 #include "audio_iso.h"
 #include "endpoint.h"
 
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_audio_iso, CONFIG_BT_AUDIO_ISO_LOG_LEVEL);
+
 /* TODO: Optimize the ISO_POOL_SIZE */
 #define ISO_POOL_SIZE CONFIG_BT_ISO_MAX_CHAN
 
@@ -147,6 +151,8 @@ void bt_audio_iso_bind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 	__ASSERT(ep->dir == BT_AUDIO_DIR_SINK || ep->dir == BT_AUDIO_DIR_SOURCE,
 		 "invalid dir: %u", ep->dir);
 
+	LOG_DBG("iso %p ep %p dir %u", iso, ep, ep->dir);
+
 	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
 	    bt_audio_ep_is_unicast_client(ep)) {
 		/* For the unicast client, the direction and tx/rx is reversed */
@@ -183,6 +189,8 @@ void bt_audio_iso_unbind_ep(struct bt_audio_iso *iso, struct bt_audio_ep *ep)
 	__ASSERT(ep->dir == BT_AUDIO_DIR_SINK || ep->dir == BT_AUDIO_DIR_SOURCE,
 		 "Invalid dir: %u", ep->dir);
 
+	LOG_DBG("iso %p ep %p dir %u", iso, ep, ep->dir);
+
 	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
 	    bt_audio_ep_is_unicast_client(ep)) {
 		/* For the unicast client, the direction and tx/rx is reversed */
@@ -218,6 +226,8 @@ struct bt_audio_ep *bt_audio_iso_get_ep(bool unicast_client,
 	__ASSERT(dir == BT_AUDIO_DIR_SINK || dir == BT_AUDIO_DIR_SOURCE,
 		 "invalid dir: %u", dir);
 
+	LOG_DBG("iso %p dir %u", iso, dir);
+
 	/* TODO FIX FOR CLIENT */
 	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) && unicast_client) {
 		/* For the unicast client, the direction and tx/rx is reversed */
@@ -247,6 +257,9 @@ void bt_audio_iso_bind_stream(struct bt_audio_iso *audio_iso,
 		 "stream %p bound with audio_iso %p already",
 		 stream, stream->audio_iso);
 
+	LOG_DBG("audio_iso %p stream %p dir %u",
+		audio_iso, stream, stream->dir);
+
 	/* For the unicast client, the direction and tx/rx is reversed */
 	if (stream->dir == BT_AUDIO_DIR_SOURCE) {
 		audio_iso_ep = &audio_iso->rx;
@@ -273,6 +286,9 @@ void bt_audio_iso_unbind_stream(struct bt_audio_iso *audio_iso,
 		 "stream %p not bound with an audio_iso",
 		 stream);
 
+	LOG_DBG("audio_iso %p stream %p dir %u",
+		audio_iso, stream, stream->dir);
+
 	/* For the unicast client, the direction and tx/rx is reversed */
 	if (stream->dir == BT_AUDIO_DIR_SOURCE) {
 		audio_iso_ep = &audio_iso->rx;
@@ -294,6 +310,8 @@ struct bt_audio_stream *bt_audio_iso_get_stream(struct bt_audio_iso *iso,
 {
 	__ASSERT(dir == BT_AUDIO_DIR_SINK || dir == BT_AUDIO_DIR_SOURCE,
 		 "invalid dir: %u", dir);
+
+	LOG_DBG("iso %p dir %u", iso, dir);
 
 	/* For the unicast client, the direction and tx/rx is reversed */
 	if (dir == BT_AUDIO_DIR_SOURCE) {
