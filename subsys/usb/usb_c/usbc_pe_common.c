@@ -702,10 +702,9 @@ void pe_drs_send_swap_run(void *obj)
 		return;
 	}
 
+	/* Transition to PE_SNK_READY on SenderResponseTimer timeout */
 	if (usbc_timer_expired(&pe->pd_t_sender_response)) {
-		/* Protocol Error */
-		policy_notify(dev, PROTOCOL_ERROR);
-		pe_send_soft_reset(dev, PD_PACKET_SOP);
+		pe_set_state(dev, PE_SNK_READY);
 	}
 }
 
