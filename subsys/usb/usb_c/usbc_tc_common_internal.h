@@ -33,6 +33,9 @@ enum tc_state_t {
 	TC_ATTACH_WAIT_SNK_STATE,
 	/** Attached Sink State */
 	TC_ATTACHED_SNK_STATE,
+
+	/** Number of TC States */
+	TC_STATE_COUNT
 };
 
 /**

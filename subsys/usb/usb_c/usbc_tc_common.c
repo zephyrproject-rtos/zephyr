@@ -127,6 +127,7 @@ void tc_set_state(const struct device *dev, const enum tc_state_t state)
 	struct usbc_port_data *data = dev->data;
 	struct tc_sm_t *tc = data->tc;
 
+	__ASSERT(state < ARRAY_SIZE(tc_states), "invalid tc_state %d", state);
 	smf_set_state(SMF_CTX(tc), &tc_states[state]);
 }
 
@@ -261,3 +262,4 @@ static const struct smf_state tc_states[] = {
 		NULL,
 		&tc_states[TC_CC_OPEN_SUPER_STATE]),
 };
+BUILD_ASSERT(ARRAY_SIZE(tc_states) == TC_STATE_COUNT);

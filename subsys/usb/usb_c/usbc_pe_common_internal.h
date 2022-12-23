@@ -55,6 +55,9 @@ enum usbc_pe_state {
 
 	/** PE_Suspend. Not part of the PD specification. */
 	PE_SUSPEND,
+
+	/** Number of PE States */
+	PE_STATE_COUNT
 };
 
 /**
