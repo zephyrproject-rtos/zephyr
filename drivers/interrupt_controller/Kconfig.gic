@@ -61,4 +61,11 @@ config GIC_V3_ITS
 	  Support for the optional Interrupt Translation Service used to translate
 	  hardware interrupt from PCIe MSI messages for example.
 
+config GIC_V3_600
+	bool "GIC-600 variant of GIC v3"
+	depends on GIC_V3
+	help
+	  Support for features present on GIC-600 but not on other GIC v3 such
+	  as GIC-500, eg. PWRR Power Register.
+
 endif # CPU_CORTEX

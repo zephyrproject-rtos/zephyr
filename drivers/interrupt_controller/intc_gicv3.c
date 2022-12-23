@@ -274,6 +274,7 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
  */
 static void gicv3_rdist_enable(mem_addr_t rdist)
 {
+#if defined(CONFIG_GIC_V3_600)
 	uint32_t pwrr = sys_read32(rdist + GICR_PWRR);
 
 	pwrr |= GICR_PWRR_RDAG;
@@ -282,6 +283,7 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
 	do {
 		pwrr = sys_read32(rdist + GICR_PWRR);
 	} while (pwrr & GICR_PWRR_RDGPO);
+#endif
 
 	if (!(sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA))) {
 		return;
