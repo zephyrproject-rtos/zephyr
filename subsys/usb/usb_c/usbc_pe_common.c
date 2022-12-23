@@ -21,7 +21,7 @@ static const struct smf_state pe_states[];
 /**
  * @brief Handle common DPM requests
  *
- * @retval True if the request was handled, else False
+ * @retval true if request was handled, else false
  */
 bool common_dpm_requests(const struct device *dev)
 {
@@ -33,10 +33,11 @@ bool common_dpm_requests(const struct device *dev)
 
 		if (pe->dpm_request == REQUEST_PE_DR_SWAP) {
 			pe_set_state(dev, PE_DRS_SEND_SWAP);
+			return true;
 		} else if (pe->dpm_request == REQUEST_PE_SOFT_RESET_SEND) {
 			pe_set_state(dev, PE_SEND_SOFT_RESET);
+			return true;
 		}
-		return true;
 	}
 
 	return false;
@@ -143,6 +144,9 @@ void pe_run(const struct device *dev, const int32_t dpm_request)
 			break;
 		}
 
+		/* Get any DPM Requests */
+		pe->dpm_request = dpm_request;
+
 		/*
 		 * 8.3.3.3.8 PE_SNK_Hard_Reset State
 		 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset
@@ -151,14 +155,11 @@ void pe_run(const struct device *dev, const int32_t dpm_request)
 		 */
 		if (dpm_request == REQUEST_PE_HARD_RESET_SEND) {
 			pe_set_state(dev, PE_SNK_HARD_RESET);
-		} else {
-			/* Pass the DPM request along to the state machine */
-			pe->dpm_request = dpm_request;
-			common_dpm_requests(dev);
 		}
 
 		/* Run state machine */
 		smf_run_state(SMF_CTX(pe));
+
 		break;
 	}
 }

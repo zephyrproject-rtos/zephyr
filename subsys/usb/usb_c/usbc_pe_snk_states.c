@@ -18,21 +18,28 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 /**
  * @brief Handle sink-specific DPM requests
  */
-bool sink_dpm_requests(const struct device *dev)
+void sink_dpm_requests(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
+	/*
+	 * Handle any common DPM Requests
+	 */
+	if (common_dpm_requests(dev)) {
+		return;
+	}
+
+	/*
+	 * Handle Sink DPM Requests
+	 */
 	if (pe->dpm_request > REQUEST_TC_END) {
 		atomic_set_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
 
 		if (pe->dpm_request == REQUEST_PE_GET_SRC_CAPS) {
 			pe_set_state(dev, PE_SNK_GET_SOURCE_CAP);
 		}
-		return true;
 	}
-
-	return false;
 }
 
 /**

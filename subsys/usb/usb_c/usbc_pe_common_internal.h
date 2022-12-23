@@ -310,4 +310,12 @@ bool policy_is_snk_at_default(const struct device *dev);
  */
 void policy_get_snk_cap(const struct device *dev, uint32_t **pdos, int *num_pdos);
 
+/**
+ * @brief Handle common DPM requests
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @retval true if request was handled, else false
+ */
+bool common_dpm_requests(const struct device *dev);
+
 #endif /* ZEPHYR_SUBSYS_USBC_PE_COMMON_INTERNAL_H_ */
