@@ -14,8 +14,8 @@
 #include "usbc_pe.h"
 #include "usbc_prl.h"
 
-#define PRIV_PORT_REQUEST_SUSPEND       -1
-#define PRIV_PORT_REQUEST_START         -2
+#define PRIV_PORT_REQUEST_SUSPEND -1
+#define PRIV_PORT_REQUEST_START	  -2
 
 /**
  * @brief Each layer of the stack is composed of state machines that can be
@@ -131,16 +131,13 @@ struct usbc_port_data {
 	 * Callback used by the Policy Engine to get the Sink Capabilities
 	 * from the Device Policy Manager
 	 */
-	int (*policy_cb_get_snk_cap)(const struct device *dev,
-				     uint32_t **pdos,
-				     int *num_pdos);
+	int (*policy_cb_get_snk_cap)(const struct device *dev, uint32_t **pdos, int *num_pdos);
 
 	/**
 	 * Callback used by the Policy Engine to send the received Source
 	 * Capabilities to the Device Policy Manager
 	 */
-	void (*policy_cb_set_src_cap)(const struct device *dev,
-				      const uint32_t *pdos,
+	void (*policy_cb_set_src_cap)(const struct device *dev, const uint32_t *pdos,
 				      const int num_pdos);
 	/**
 	 * Callback used by the Policy Engine to get the Request Data Object

@@ -50,8 +50,7 @@ void pe_suspend(const struct device *dev);
  * @param dev Pointer to the device structure for the driver instance
  * @param dpm_request Device Policy Manager request
  */
-void pe_run(const struct device *dev,
-	    const int32_t dpm_request);
+void pe_run(const struct device *dev, const int32_t dpm_request);
 
 /**
  * @brief Query if the Policy Engine is running
@@ -77,8 +76,7 @@ void pe_message_sent(const struct device *dev);
  * @param  e policy error
  * @param type port partner address where error was generated
  */
-void pe_report_error(const struct device *dev,
-		     const enum pe_error e,
+void pe_report_error(const struct device *dev, const enum pe_error e,
 		     const enum pd_packet_type type);
 
 /**
