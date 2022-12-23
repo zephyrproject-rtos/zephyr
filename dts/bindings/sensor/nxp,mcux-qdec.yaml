@@ -1,0 +1,28 @@
+# Copyright (c) 2022, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX QDEC
+
+compatible: "nxp,mcux-qdec"
+
+include: [pinctrl-device.yaml, sensor-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  counts-per-revolution:
+    type: int
+    required: true
+    description: |
+      This is a number that is used to determine how many revolutions
+      were done based on the current counter's value.
+
+  xbar:
+    type: phandle
+    required: true
+    description: |
+      The xbar phandle.
