@@ -31,12 +31,10 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 struct flash_pages_layout {
 	size_t pages_count; /* count of pages sequence of the same size */
 	size_t pages_size;
 };
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 /**
  * @}
@@ -251,6 +249,37 @@ struct flash_pages_info {
 };
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
+/**
+ *  @brief Get pointer to flash_pages_layout structure
+ *
+ *  Each flash layout entry describes continuous part of flash with the same
+ *  page size. This way, the flash layout is represented in efficient way
+ *  e.g. if all flash pages have the same size, whole flash will be described
+ *  in one entry.
+ *
+ *  This function provides direct access to the flash layout representation.
+ *  If you want to get information about page, please use flash_get_page_info_*
+ *  or flash_page_foreach instead.
+ *
+ * @param dev         Flash device whose layout to retrieve.
+ * @param layout      The flash layout will be returned in this argument.
+ * @param layout_size The number of elements in the returned layout.
+ */
+__syscall void flash_get_page_layout(const struct device *dev,
+				     const struct flash_pages_layout **layout,
+				     size_t *layout_size);
+
+static inline void
+z_impl_flash_get_page_layout(const struct device *dev,
+			     const struct flash_pages_layout **layout,
+			     size_t *layout_size)
+{
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->api;
+
+	api->page_layout(dev, layout, layout_size);
+}
+
 /**
  *  @brief  Get the size and start offset of flash page at certain flash offset.
  *
