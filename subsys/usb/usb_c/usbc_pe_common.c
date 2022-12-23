@@ -118,8 +118,7 @@ bool pe_is_running(const struct device *dev)
 /**
  * @brief Run the Policy Engine layer
  */
-void pe_run(const struct device *dev,
-	    const int32_t dpm_request)
+void pe_run(const struct device *dev, const int32_t dpm_request)
 {
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
@@ -218,8 +217,7 @@ void pe_message_sent(const struct device *dev)
 /**
  * @brief Informs the Policy Engine of an error.
  */
-void pe_report_error(const struct device *dev,
-		     const enum pe_error e,
+void pe_report_error(const struct device *dev, const enum pe_error e,
 		     const enum pd_packet_type type)
 {
 	struct usbc_port_data *data = dev->data;
@@ -250,10 +248,9 @@ void pe_report_error(const struct device *dev,
 	 *     response.
 	 */
 	/* All error types besides transmit errors are Protocol Errors. */
-	if ((e != ERR_XMIT &&
-	     atomic_test_bit(&pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS) == false) ||
-	     e == ERR_XMIT ||
-	     (atomic_test_bit(&pe->flags, PE_FLAGS_EXPLICIT_CONTRACT) == false &&
+	if ((e != ERR_XMIT && atomic_test_bit(&pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS) == false) ||
+	    e == ERR_XMIT ||
+	    (atomic_test_bit(&pe->flags, PE_FLAGS_EXPLICIT_CONTRACT) == false &&
 	     type == PD_PACKET_SOP)) {
 		policy_notify(dev, PROTOCOL_ERROR);
 		pe_send_soft_reset(dev, type);
@@ -342,8 +339,7 @@ bool pe_dpm_initiated_ams(const struct device *dev)
 /**
  * @brief Sets a Policy Engine state
  */
-void pe_set_state(const struct device *dev,
-			 const enum usbc_pe_state state)
+void pe_set_state(const struct device *dev, const enum usbc_pe_state state)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -373,8 +369,7 @@ enum usbc_pe_state pe_get_last_state(const struct device *dev)
 /**
  * @brief Send a soft reset message
  */
-void pe_send_soft_reset(const struct device *dev,
-			       const enum pd_packet_type type)
+void pe_send_soft_reset(const struct device *dev, const enum pd_packet_type type)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -385,9 +380,8 @@ void pe_send_soft_reset(const struct device *dev,
 /**
  * @brief Send a Power Delivery Data Message
  */
-void pe_send_data_msg(const struct device *dev,
-				 const enum pd_packet_type type,
-				 const enum pd_data_msg_type msg)
+void pe_send_data_msg(const struct device *dev, const enum pd_packet_type type,
+			const enum pd_data_msg_type msg)
 {
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
@@ -400,9 +394,8 @@ void pe_send_data_msg(const struct device *dev,
 /**
  * @brief Send a Power Delivery Control Message
  */
-void pe_send_ctrl_msg(const struct device *dev,
-				 const enum pd_packet_type type,
-				 const enum pd_ctrl_msg_type msg)
+void pe_send_ctrl_msg(const struct device *dev, const enum pd_packet_type type,
+			const enum pd_ctrl_msg_type msg)
 {
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
@@ -415,8 +408,7 @@ void pe_send_ctrl_msg(const struct device *dev,
 /**
  * @brief Request desired voltage from source.
  */
-void pe_send_request_msg(const struct device *dev,
-				const uint32_t rdo)
+void pe_send_request_msg(const struct device *dev, const uint32_t rdo)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
@@ -441,8 +433,7 @@ void extended_message_not_supported(const struct device *dev)
 
 	ext_header.raw_value = *payload;
 
-	if (ext_header.chunked &&
-	    ext_header.data_size > PD_MAX_EXTENDED_MSG_CHUNK_LEN) {
+	if (ext_header.chunked && ext_header.data_size > PD_MAX_EXTENDED_MSG_CHUNK_LEN) {
 		pe_set_state(dev, PE_SNK_CHUNK_RECEIVED);
 	} else {
 		pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
@@ -452,16 +443,13 @@ void extended_message_not_supported(const struct device *dev)
 /**
  * @brief Check if a specific control message was received
  */
-bool received_control_message(const struct device *dev,
-				     const union pd_header header,
-				     const enum pd_ctrl_msg_type mt)
+bool received_control_message(const struct device *dev, const union pd_header header,
+			      const enum pd_ctrl_msg_type mt)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
 
-	if (prl_rx->emsg.len == 0 &&
-	    header.message_type == mt &&
-	    header.extended == 0) {
+	if (prl_rx->emsg.len == 0 && header.message_type == mt && header.extended == 0) {
 		return true;
 	}
 
@@ -471,16 +459,13 @@ bool received_control_message(const struct device *dev,
 /**
  * @brief Check if a specific data message was received
  */
-bool received_data_message(const struct device *dev,
-				  const union pd_header header,
-				  const enum pd_data_msg_type mt)
+bool received_data_message(const struct device *dev, const union pd_header header,
+			   const enum pd_data_msg_type mt)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
 
-	if (prl_rx->emsg.len > 0 &&
-	    header.message_type == mt &&
-	    header.extended == 0) {
+	if (prl_rx->emsg.len > 0 && header.message_type == mt && header.extended == 0) {
 		return true;
 	}
 
@@ -490,8 +475,7 @@ bool received_data_message(const struct device *dev,
 /**
  * @brief Check a DPM policy
  */
-bool policy_check(const struct device *dev,
-			 const enum usbc_policy_check_t pc)
+bool policy_check(const struct device *dev, const enum usbc_policy_check_t pc)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -505,8 +489,7 @@ bool policy_check(const struct device *dev,
 /**
  * @brief Notify the DPM of a policy change
  */
-void policy_notify(const struct device *dev,
-			  const enum usbc_policy_notify_t notify)
+void policy_notify(const struct device *dev, const enum usbc_policy_notify_t notify)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -518,8 +501,7 @@ void policy_notify(const struct device *dev,
 /**
  * @brief Notify the DPM of a WAIT message reception
  */
-bool policy_wait_notify(const struct device *dev,
-			       const enum usbc_policy_wait_t notify)
+bool policy_wait_notify(const struct device *dev, const enum usbc_policy_wait_t notify)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -533,9 +515,7 @@ bool policy_wait_notify(const struct device *dev,
 /**
  * @brief Send the received source caps to the DPM
  */
-void policy_set_src_cap(const struct device *dev,
-			       const uint32_t *pdos,
-			       const int num_pdos)
+void policy_set_src_cap(const struct device *dev, const uint32_t *pdos, const int num_pdos)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -552,8 +532,7 @@ uint32_t policy_get_request_data_object(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 
 	/* This callback must be implemented */
-	__ASSERT(data->policy_cb_get_rdo != NULL,
-		 "Callback pointer should not be NULL");
+	__ASSERT(data->policy_cb_get_rdo != NULL, "Callback pointer should not be NULL");
 
 	return data->policy_cb_get_rdo(dev);
 }
@@ -575,15 +554,12 @@ bool policy_is_snk_at_default(const struct device *dev)
 /**
  * @brief Get sink caps from the DPM
  */
-void policy_get_snk_cap(const struct device *dev,
-			       uint32_t **pdos,
-			       int *num_pdos)
+void policy_get_snk_cap(const struct device *dev, uint32_t **pdos, int *num_pdos)
 {
 	struct usbc_port_data *data = dev->data;
 
 	/* This callback must be implemented */
-	__ASSERT(data->policy_cb_get_snk_cap != NULL,
-		 "Callback pointer should not be NULL");
+	__ASSERT(data->policy_cb_get_snk_cap != NULL, "Callback pointer should not be NULL");
 
 	data->policy_cb_get_snk_cap(dev, pdos, num_pdos);
 }
@@ -597,8 +573,8 @@ void pe_drs_evaluate_swap_entry(void *obj)
 	const struct device *dev = pe->dev;
 
 	/* Get evaluation of Data Role Swap request from Device Policy Manager */
-	if (policy_check(dev, (pe->data_role == TC_ROLE_UFP) ?
-			CHECK_DATA_ROLE_SWAP_TO_DFP : CHECK_DATA_ROLE_SWAP_TO_UFP)) {
+	if (policy_check(dev, (pe->data_role == TC_ROLE_UFP) ? CHECK_DATA_ROLE_SWAP_TO_DFP
+							     : CHECK_DATA_ROLE_SWAP_TO_UFP)) {
 		/*
 		 * PE_DRS_DFP_UFP_Accept_Swap and PE_DRS_UFP_DFP_Accept_Swap
 		 * State embedded here
@@ -634,8 +610,8 @@ void pe_drs_evaluate_swap_run(void *obj)
 			/* Notify TCPC of role update */
 			tcpc_set_roles(data->tcpc, pe->power_role, pe->data_role);
 			/* Inform Device Policy Manager of Data Role Change */
-			policy_notify(dev, (pe->data_role == TC_ROLE_UFP) ?
-				DATA_ROLE_IS_UFP : DATA_ROLE_IS_DFP);
+			policy_notify(dev, (pe->data_role == TC_ROLE_UFP) ? DATA_ROLE_IS_UFP
+									  : DATA_ROLE_IS_DFP);
 		}
 		pe_set_state(dev, PE_SNK_READY);
 	} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
@@ -699,8 +675,8 @@ void pe_drs_send_swap_run(void *obj)
 			/* Notify TCPC of role update */
 			tcpc_set_roles(data->tcpc, pe->power_role, pe->data_role);
 			/* Inform Device Policy Manager of Data Role Change */
-			policy_notify(dev, (pe->data_role == TC_ROLE_UFP) ?
-				DATA_ROLE_IS_UFP : DATA_ROLE_IS_DFP);
+			policy_notify(dev, (pe->data_role == TC_ROLE_UFP) ? DATA_ROLE_IS_UFP
+									  : DATA_ROLE_IS_DFP);
 		} else {
 			/* Protocol Error */
 			policy_notify(dev, PROTOCOL_ERROR);

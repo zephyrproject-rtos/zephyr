@@ -205,7 +205,6 @@ void pe_snk_select_capability_entry(void *obj)
 	policy_notify(dev, PD_CONNECTED);
 }
 
-
 /**
  * @brief PE_SNK_Select_Capability Run State
  */
@@ -274,7 +273,7 @@ void pe_snk_select_capability_run(void *obj)
 					 */
 					if (policy_wait_notify(dev, WAIT_SINK_REQUEST)) {
 						atomic_set_bit(&pe->flags,
-								PE_FLAGS_WAIT_SINK_REQUEST);
+							       PE_FLAGS_WAIT_SINK_REQUEST);
 						usbc_timer_start(&pe->pd_t_wait_to_resend);
 					}
 				}
@@ -721,7 +720,7 @@ void pe_soft_reset_entry(void *obj)
 /**
  * @brief PE_SNK_Soft_Reset Run State
  */
-void  pe_soft_reset_run(void *obj)
+void pe_soft_reset_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -770,7 +769,7 @@ void pe_send_not_supported_run(void *obj)
 	const struct device *dev = pe->dev;
 
 	if (atomic_test_bit(&pe->flags, PE_FLAGS_TX_COMPLETE) ||
-			atomic_test_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+	    atomic_test_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		atomic_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE);
 		atomic_clear_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED);
 		pe_set_state(dev, PE_SNK_READY);

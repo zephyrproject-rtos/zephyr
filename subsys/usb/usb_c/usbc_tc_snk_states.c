@@ -67,8 +67,7 @@ static void sink_power_sub_states(const struct device *dev)
 	}
 
 	/* Notify DPM of sink sub-state power change */
-	if (atomic_test_and_clear_bit(&tc->flags,
-				TC_FLAGS_RP_SUBSTATE_CHANGE)) {
+	if (atomic_test_and_clear_bit(&tc->flags, TC_FLAGS_RP_SUBSTATE_CHANGE)) {
 		if (data->policy_cb_notify) {
 			data->policy_cb_notify(dev, dpm_pwr_change_notify);
 		}
@@ -138,7 +137,7 @@ void tc_attach_wait_snk_run(void *obj)
 
 	/* Wait for CC debounce */
 	if (usbc_timer_running(&tc->tc_t_cc_debounce) &&
-		usbc_timer_expired(&tc->tc_t_cc_debounce) == false) {
+	    usbc_timer_expired(&tc->tc_t_cc_debounce) == false) {
 		return;
 	}
 
