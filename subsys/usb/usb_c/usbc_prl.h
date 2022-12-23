@@ -134,8 +134,7 @@ void prl_hard_reset_complete(const struct device *dev);
  * @param type SOP* packet sent from port partner
  * @param rev Revision sent from the port partner
  */
-void prl_set_rev(const struct device *dev,
-		 const enum pd_packet_type type,
+void prl_set_rev(const struct device *dev, const enum pd_packet_type type,
 		 const enum pd_rev_type rev);
 
 /**
@@ -146,8 +145,7 @@ void prl_set_rev(const struct device *dev,
  *
  * @retval revsion associated with the packet type
  */
-enum pd_rev_type prl_get_rev(const struct device *dev,
-			     const enum pd_packet_type type);
+enum pd_rev_type prl_get_rev(const struct device *dev, const enum pd_packet_type type);
 
 /**
  * @brief Instructs the Protocol Layer to send a Power Delivery control message
@@ -156,8 +154,7 @@ enum pd_rev_type prl_get_rev(const struct device *dev,
  * @param type The port partner to send this message to
  * @param msg The control message to send
  */
-void prl_send_ctrl_msg(const struct device *dev,
-		       const enum pd_packet_type type,
+void prl_send_ctrl_msg(const struct device *dev, const enum pd_packet_type type,
 		       const enum pd_ctrl_msg_type msg);
 
 /**
@@ -167,8 +164,7 @@ void prl_send_ctrl_msg(const struct device *dev,
  * @param type The port partner to send this message to
  * @param msg The data message to send
  */
-void prl_send_data_msg(const struct device *dev,
-		       const enum pd_packet_type type,
+void prl_send_data_msg(const struct device *dev, const enum pd_packet_type type,
 		       const enum pd_data_msg_type msg);
 
 /**

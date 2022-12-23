@@ -68,8 +68,7 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 		tcpc_get_cc(tcpc, &tc->cc1, &tc->cc2);
 
 		/* Detect polarity */
-		tc->cc_polarity = (tc->cc1 > tc->cc2) ?
-			TC_POLARITY_CC1 : TC_POLARITY_CC2;
+		tc->cc_polarity = (tc->cc1 > tc->cc2) ? TC_POLARITY_CC1 : TC_POLARITY_CC2;
 
 		/* Execute any asyncronous Device Policy Manager Requests */
 		if (dpm_request == REQUEST_TC_ERROR_RECOVERY) {
@@ -144,8 +143,7 @@ enum tc_state_t tc_get_state(const struct device *dev)
 /**
  * @brief Enable Power Delivery
  */
-void tc_pd_enable(const struct device *dev,
-		      const bool enable)
+void tc_pd_enable(const struct device *dev, const bool enable)
 {
 	if (enable) {
 		prl_start(dev);

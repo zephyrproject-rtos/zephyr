@@ -62,52 +62,52 @@ enum usbc_pe_state {
  */
 enum pe_flags {
 	/** Accept message received from port partner */
-	PE_FLAGS_ACCEPT                 = 0,
+	PE_FLAGS_ACCEPT = 0,
 	/**
 	 * Protocol Error was determined based on error recovery
 	 * current state
 	 */
-	PE_FLAGS_PROTOCOL_ERROR         = 1,
+	PE_FLAGS_PROTOCOL_ERROR = 1,
 	/** A message we requested to be sent has been transmitted */
-	PE_FLAGS_TX_COMPLETE            = 2,
+	PE_FLAGS_TX_COMPLETE = 2,
 	/** A message sent by a port partner has been received */
-	PE_FLAGS_MSG_RECEIVED           = 3,
+	PE_FLAGS_MSG_RECEIVED = 3,
 	/**
 	 * A hard reset has been requested by the DPM but has not been sent,
 	 * not currently used
 	 */
-	PE_FLAGS_HARD_RESET_PENDING     = 4,
+	PE_FLAGS_HARD_RESET_PENDING = 4,
 	/** An explicit contract is in place with our port partner */
-	PE_FLAGS_EXPLICIT_CONTRACT      = 5,
+	PE_FLAGS_EXPLICIT_CONTRACT = 5,
 	/**
 	 * Waiting for Sink Capabailities timed out.  Used for retry error
 	 * handling
 	 */
-	PE_FLAGS_SNK_WAIT_CAP_TIMEOUT   = 6,
+	PE_FLAGS_SNK_WAIT_CAP_TIMEOUT = 6,
 	/**
 	 * Flag to note current Atomic Message Sequence (AMS) is interruptible.
 	 * If this flag is not set the AMS is non-interruptible. This flag must
 	 * be set in the interruptible's message state entry.
 	 */
-	PE_FLAGS_INTERRUPTIBLE_AMS      = 7,
+	PE_FLAGS_INTERRUPTIBLE_AMS = 7,
 	/** Flag to trigger sending a Data Role Swap */
-	PE_FLAGS_DR_SWAP_TO_DFP         = 8,
+	PE_FLAGS_DR_SWAP_TO_DFP = 8,
 	/** Flag is set when an AMS is initiated by the Device Policy Manager */
-	PE_FLAGS_DPM_INITIATED_AMS      = 9,
+	PE_FLAGS_DPM_INITIATED_AMS = 9,
 	/** Flag to note message was discarded due to incoming message */
-	PE_FLAGS_MSG_DISCARDED          = 10,
+	PE_FLAGS_MSG_DISCARDED = 10,
 	/** Flag to trigger sending a soft reset */
-	PE_FLAGS_SEND_SOFT_RESET        = 11,
+	PE_FLAGS_SEND_SOFT_RESET = 11,
 	/**
 	 * This flag is set when a Wait message is received in response to a
 	 * Sink REQUEST
 	 */
-	PE_FLAGS_WAIT_SINK_REQUEST      = 12,
+	PE_FLAGS_WAIT_SINK_REQUEST = 12,
 	/**
 	 * This flag is set when a Wait message is received in response to a
 	 * Data Role Swap
 	 */
-	PE_FLAGS_WAIT_DATA_ROLE_SWAP    = 13
+	PE_FLAGS_WAIT_DATA_ROLE_SWAP = 13
 };
 
 /**
@@ -159,8 +159,7 @@ struct policy_engine {
  * @param dev Pointer to the device structure for the driver instance
  * @param state next PE State to enter
  */
-void pe_set_state(const struct device *dev,
-		  const enum usbc_pe_state state);
+void pe_set_state(const struct device *dev, const enum usbc_pe_state state);
 
 /**
  * @brief Get the Policy Engine's current state
@@ -184,8 +183,7 @@ enum usbc_pe_state pe_get_last_state(const struct device *dev);
  * @param dev Pointer to the device structure for the driver instance
  * @param type SOP* to send soft reset message
  */
-void pe_send_soft_reset(const struct device *dev,
-			const enum pd_packet_type type);
+void pe_send_soft_reset(const struct device *dev, const enum pd_packet_type type);
 
 /**
  * @brief Send a Power Delivery Data Message
@@ -215,8 +213,7 @@ void pe_send_ctrl_msg(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance
  * @param rdo Request Data Object to send
  */
-void pe_send_request_msg(const struct device *dev,
-			 const uint32_t rdo);
+void pe_send_request_msg(const struct device *dev, const uint32_t rdo);
 
 /**
  * @brief Transitions state after receiving an extended message.
@@ -233,8 +230,7 @@ void extended_message_not_supported(const struct device *dev);
  * @param mt message type to check
  * @retval true if the header contains the message type, else false
  */
-bool received_control_message(const struct device *dev,
-			      const union pd_header header,
+bool received_control_message(const struct device *dev, const union pd_header header,
 			      const enum pd_ctrl_msg_type mt);
 
 /**
@@ -245,8 +241,7 @@ bool received_control_message(const struct device *dev,
  * @param mt message type to check
  * @param true if the header contains the message type, else false
  */
-bool received_data_message(const struct device *dev,
-			   const union pd_header header,
+bool received_data_message(const struct device *dev, const union pd_header header,
 			   const enum pd_data_msg_type mt);
 
 /**
@@ -256,8 +251,7 @@ bool received_data_message(const struct device *dev,
  * @param pc The DPM policy to check
  * @retval true if the DPM approves the check, else false
  */
-bool policy_check(const struct device *dev,
-		  const enum usbc_policy_check_t pc);
+bool policy_check(const struct device *dev, const enum usbc_policy_check_t pc);
 
 /**
  * @brief Notify the DPM of a policy change
@@ -265,8 +259,7 @@ bool policy_check(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance
  * @param notify The notification to send the the DPM
  */
-void policy_notify(const struct device *dev,
-		   const enum usbc_policy_notify_t notify);
+void policy_notify(const struct device *dev, const enum usbc_policy_notify_t notify);
 
 /**
  * @brief Notify the DPM of a WAIT message reception
@@ -275,9 +268,7 @@ void policy_notify(const struct device *dev,
  * @param notify Wait message to send to DPM
  * @retval true if the Policy Engine should wait and try the action again
  */
-bool policy_wait_notify(const struct device *dev,
-			const enum usbc_policy_wait_t notify);
-
+bool policy_wait_notify(const struct device *dev, const enum usbc_policy_wait_t notify);
 
 /**
  * @brief Send the received source caps to the DPM
@@ -286,9 +277,7 @@ bool policy_wait_notify(const struct device *dev,
  * @param pdos pointer to pdos to send
  * @param num_pdos number of pdos to send
  */
-void policy_set_src_cap(const struct device *dev,
-			const uint32_t *pdos,
-			const int num_pdos);
+void policy_set_src_cap(const struct device *dev, const uint32_t *pdos, const int num_pdos);
 
 /**
  * @brief Get a Request Data Object from the DPM
@@ -313,8 +302,6 @@ bool policy_is_snk_at_default(const struct device *dev);
  * @param pdos pointer to pdo sink caps
  * @param num_pdos number of pdo sink caps
  */
-void policy_get_snk_cap(const struct device *dev,
-			uint32_t **pdos,
-			int *num_pdos);
+void policy_get_snk_cap(const struct device *dev, uint32_t **pdos, int *num_pdos);
 
 #endif /* ZEPHYR_SUBSYS_USBC_PE_COMMON_INTERNAL_H_ */

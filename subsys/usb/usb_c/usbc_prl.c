@@ -29,24 +29,24 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
  */
 enum prl_flags {
 	/** Flag to note message transmission completed */
-	PRL_FLAGS_TX_COMPLETE                   = 0,
+	PRL_FLAGS_TX_COMPLETE = 0,
 	/** Flag to note message was discarded */
-	PRL_FLAGS_TX_DISCARDED                  = 1,
+	PRL_FLAGS_TX_DISCARDED = 1,
 	/** Flag to note PRL waited for SINK_OK CC state before transmitting */
-	PRL_FLAGS_WAIT_SINK_OK                  = 2,
+	PRL_FLAGS_WAIT_SINK_OK = 2,
 	/** Flag to note transmission error occurred */
-	PRL_FLAGS_TX_ERROR                      = 3,
+	PRL_FLAGS_TX_ERROR = 3,
 	/** Flag to note PE triggered a hard reset */
-	PRL_FLAGS_PE_HARD_RESET                 = 4,
+	PRL_FLAGS_PE_HARD_RESET = 4,
 	/** Flag to note hard reset has completed */
-	PRL_FLAGS_HARD_RESET_COMPLETE           = 5,
+	PRL_FLAGS_HARD_RESET_COMPLETE = 5,
 	/** Flag to note port partner sent a hard reset */
-	PRL_FLAGS_PORT_PARTNER_HARD_RESET       = 6,
+	PRL_FLAGS_PORT_PARTNER_HARD_RESET = 6,
 	/**
 	 * Flag to note a message transmission has been requested. It is only
 	 * cleared when the message is sent to the TCPC layer.
 	 */
-	PRL_FLAGS_MSG_XMIT                      = 7,
+	PRL_FLAGS_MSG_XMIT = 7,
 };
 
 /**
@@ -94,10 +94,8 @@ static const struct smf_state prl_hr_states[];
 
 static void prl_tx_construct_message(const struct device *dev);
 static void prl_rx_wait_for_phy_message(const struct device *dev);
-static void prl_hr_set_state(const struct device *dev,
-			     const enum usbc_prl_hr_state_t state);
-static void prl_tx_set_state(const struct device *dev,
-			     const enum usbc_prl_tx_state_t state);
+static void prl_hr_set_state(const struct device *dev, const enum usbc_prl_hr_state_t state);
+static void prl_tx_set_state(const struct device *dev, const enum usbc_prl_tx_state_t state);
 static void prl_init(const struct device *dev);
 static enum usbc_prl_hr_state_t prl_hr_get_state(const struct device *dev);
 
@@ -167,8 +165,7 @@ void prl_hard_reset_complete(const struct device *dev)
  * @brief Directs the Protocol Layer to construct and transmit a Power Delivery
  *	  Control message.
  */
-void prl_send_ctrl_msg(const struct device *dev,
-		       const enum pd_packet_type type,
+void prl_send_ctrl_msg(const struct device *dev, const enum pd_packet_type type,
 		       const enum pd_ctrl_msg_type msg)
 {
 	struct usbc_port_data *data = dev->data;
@@ -191,8 +188,7 @@ void prl_send_ctrl_msg(const struct device *dev,
  * @note: Before calling this function prl_tx->emsg.data and prl_tx->emsg.len
  *	  must be set.
  */
-void prl_send_data_msg(const struct device *dev,
-		       const enum pd_packet_type type,
+void prl_send_data_msg(const struct device *dev, const enum pd_packet_type type,
 		       const enum pd_data_msg_type msg)
 {
 	struct usbc_port_data *data = dev->data;
@@ -317,8 +313,7 @@ void prl_run(const struct device *dev)
  * @brief Set revision for the give packet type. This function is called
  *	  from the Policy Engine.
  */
-void prl_set_rev(const struct device *dev,
-		 const enum pd_packet_type type,
+void prl_set_rev(const struct device *dev, const enum pd_packet_type type,
 		 const enum pd_rev_type rev)
 {
 	struct usbc_port_data *data = dev->data;
@@ -330,8 +325,7 @@ void prl_set_rev(const struct device *dev,
  * @brief Get the revision for the give packet type.
  *	  This function is called from the Policy Engine.
  */
-enum pd_rev_type prl_get_rev(const struct device *dev,
-			     const enum pd_packet_type type)
+enum pd_rev_type prl_get_rev(const struct device *dev, const enum pd_packet_type type)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -343,9 +337,7 @@ enum pd_rev_type prl_get_rev(const struct device *dev,
 /**
  * @brief Alert Handler called by the TCPC driver
  */
-static void alert_handler(const struct device *tcpc,
-			  void *port_dev,
-			  enum tcpc_alert alert)
+static void alert_handler(const struct device *tcpc, void *port_dev, enum tcpc_alert alert)
 {
 	const struct device *dev = (const struct device *)port_dev;
 	struct usbc_port_data *data = dev->data;
@@ -354,8 +346,7 @@ static void alert_handler(const struct device *tcpc,
 
 	switch (alert) {
 	case TCPC_ALERT_HARD_RESET_RECEIVED:
-		atomic_set_bit(&prl_hr->flags,
-				PRL_FLAGS_PORT_PARTNER_HARD_RESET);
+		atomic_set_bit(&prl_hr->flags, PRL_FLAGS_PORT_PARTNER_HARD_RESET);
 		break;
 	case TCPC_ALERT_TRANSMIT_MSG_FAILED:
 		atomic_set_bit(&prl_tx->flags, PRL_FLAGS_TX_ERROR);
@@ -378,8 +369,7 @@ static void alert_handler(const struct device *tcpc,
 /**
  * @brief Set the Protocol Layer Message Transmission state
  */
-static void prl_tx_set_state(const struct device *dev,
-			     const enum usbc_prl_tx_state_t state)
+static void prl_tx_set_state(const struct device *dev, const enum usbc_prl_tx_state_t state)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
@@ -390,8 +380,7 @@ static void prl_tx_set_state(const struct device *dev,
 /**
  * @brief Set the Protocol Layer Hard Reset state
  */
-static void prl_hr_set_state(const struct device *dev,
-			     const enum usbc_prl_hr_state_t state)
+static void prl_hr_set_state(const struct device *dev, const enum usbc_prl_hr_state_t state)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_hard_reset_t *prl_hr = data->prl_hr;
@@ -424,8 +413,7 @@ static void increment_msgid_counter(const struct device *dev)
 	}
 
 	prl_tx->msg_id_counter[prl_tx->last_xmit_type] =
-		(prl_tx->msg_id_counter[prl_tx->last_xmit_type] + 1) &
-		PD_MESSAGE_ID_COUNT;
+		(prl_tx->msg_id_counter[prl_tx->last_xmit_type] + 1) & PD_MESSAGE_ID_COUNT;
 }
 
 /**
@@ -442,11 +430,9 @@ static uint32_t get_sop_star_header(const struct device *dev)
 	header.message_type = prl_tx->msg_type;
 	header.port_data_role = is_sop_packet ? pe_get_data_role(dev) : 0;
 	header.specification_revision = data->rev[prl_tx->emsg.type];
-	header.port_power_role = is_sop_packet ?
-		pe_get_power_role(dev) : pe_get_cable_plug(dev);
+	header.port_power_role = is_sop_packet ? pe_get_power_role(dev) : pe_get_cable_plug(dev);
 	header.message_id = prl_tx->msg_id_counter[prl_tx->emsg.type];
-	header.number_of_data_objects =
-		PD_CONVERT_BYTES_TO_PD_HEADER_COUNT(prl_tx->emsg.len);
+	header.number_of_data_objects = PD_CONVERT_BYTES_TO_PD_HEADER_COUNT(prl_tx->emsg.len);
 	header.extended = false;
 
 	return header.raw_value;
@@ -462,9 +448,8 @@ static void prl_tx_construct_message(const struct device *dev)
 	const struct device *tcpc = data->tcpc;
 
 	/* The header is unused for hard reset, etc. */
-	prl_tx->emsg.header.raw_value = prl_tx->emsg.type < NUM_SOP_STAR_TYPES ?
-					  get_sop_star_header(dev) : 0;
-
+	prl_tx->emsg.header.raw_value =
+		prl_tx->emsg.type < NUM_SOP_STAR_TYPES ? get_sop_star_header(dev) : 0;
 
 	/* Save SOP* so the correct msg_id_counter can be incremented */
 	prl_tx->last_xmit_type = prl_tx->emsg.type;
@@ -534,8 +519,7 @@ static void prl_init(const struct device *dev)
 
 	/* Initialize the PRL_HR state machine */
 	prl_hr->flags = ATOMIC_INIT(0);
-	usbc_timer_init(&prl_hr->pd_t_hard_reset_complete,
-			PD_T_HARD_RESET_COMPLETE_MAX_MS);
+	usbc_timer_init(&prl_hr->pd_t_hard_reset_complete, PD_T_HARD_RESET_COMPLETE_MAX_MS);
 	prl_hr_set_state(dev, PRL_HR_WAIT_FOR_REQUEST);
 
 	/* Initialize the PRL_TX state machine */
@@ -626,8 +610,7 @@ static void prl_tx_wait_for_message_request_run(void *obj)
 		/*
 		 * Soft Reset Message pending
 		 */
-		if ((prl_tx->msg_type == PD_CTRL_SOFT_RESET) &&
-				(prl_tx->emsg.len == 0)) {
+		if ((prl_tx->msg_type == PD_CTRL_SOFT_RESET) && (prl_tx->emsg.len == 0)) {
 			prl_tx_set_state(dev, PRL_TX_LAYER_RESET_FOR_TRANSMIT);
 		}
 		/*
