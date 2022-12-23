@@ -98,7 +98,7 @@ static int flash_numaker_erase(const struct device *dev, off_t offset,
     key = irq_lock();
 	while (page_nums) {
         if(((len >= FMC_BANK_SIZE)) && ((addr % FMC_BANK_SIZE) == 0)) {
-            if(FMC_Erase_Bank(addr)) {
+            if(FMC_EraseBank(addr)) {
                 rc = -EIO;
                 goto move_exit;
             }
