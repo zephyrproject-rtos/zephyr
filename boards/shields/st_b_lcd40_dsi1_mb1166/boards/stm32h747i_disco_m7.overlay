@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2023 bytes at work AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &ltdc;
+	};
+};
+
+&ltdc {
+	status = "okay";
+	ext-sdram = <&sdram2>;
+
+	/* orisetech, otm8009a */
+	width = <800>;
+	height = <480>;
+	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
+	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
+	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
+	pclk-pol = <STM32_LTDC_PCPOL_ACTIVE_LOW>;
+	hsync-duration = <2>;
+	vsync-duration = <1>;
+	hbp-duration = <34>;
+	vbp-duration = <15>;
+	hfp-duration = <34>;
+	vfp-duration = <16>;
+
+	def-back-color-red = <0>;
+	def-back-color-green = <0>;
+	def-back-color-blue = <0>;
+};
+
+/* ltdc uses pll3_r as pixel clock */
+&pll3 {
+	status = "okay";
+	clocks = <&clk_hse>;
+	div-m = <5>;
+	mul-n = <132>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <24>; /* 27.5 MHz */
+};
+
+&mipi_dsi {
+	status = "okay";
+
+	/* DSI HOST dedicated PLL
+	 * F_VCO = CLK_IN / pll-idf * 2 * pll-ndiv
+	 * PHI = F_VCO / 2 / (1 << pll-odf) = lane_byte_clk
+	 *     = 25 MHz / 5 * 2 * 100 / 2 / (1<<0) / 8 = 62.5 MHz
+	 */
+	pll-ndiv = <100>;
+	pll-idf = <5>;
+	pll-odf = <0>;
+
+	vs-active-high;
+	hs-active-high;
+	de-active-high;
+};
+
+&otm8009a {
+	data-lanes = <2>;
+	pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+	rotation = <90>;
+};
