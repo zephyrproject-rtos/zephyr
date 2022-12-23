@@ -258,6 +258,18 @@ int fcb_walk(struct fcb *fcb, struct flash_sector *sector, fcb_walk_cb cb,
 int fcb_getnext(struct fcb *fcb, struct fcb_entry *loc);
 
 /**
+ * Get last fcb entry location.
+ *
+ * Function to obtain last fcb entry location
+ *
+ * @param[in] fcb FCB instance structure.
+ * @param[out] loc entry location information
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int fcb_getlast(struct fcb *fcb, struct fcb_entry *loc);
+
+/**
  * Rotate fcb sectors
  *
  * Function erases the data from oldest sector. Upon that the next sector

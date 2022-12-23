@@ -68,6 +68,9 @@ int fcb_getnext_in_sector(struct fcb *fcb, struct fcb_entry *loc);
 struct flash_sector *fcb_getnext_sector(struct fcb *fcb,
 					struct flash_sector *sector);
 int fcb_getnext_nolock(struct fcb *fcb, struct fcb_entry *loc);
+int fcb_getlast_nolock(struct fcb *fcb, struct fcb_entry *loc);
+
+int fcb_extract_finish_nolock(struct fcb *fcb, struct fcb_entry *loc);
 
 int fcb_elem_info(struct fcb *fcb, struct fcb_entry *loc);
 int fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, uint8_t *crc8p);

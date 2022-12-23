@@ -119,3 +119,46 @@ fcb_getnext(struct fcb *fcb, struct fcb_entry *loc)
 
 	return rc;
 }
+
+int
+fcb_getlast_nolock(struct fcb *fcb, struct fcb_entry *loc)
+{
+	int rc;
+	struct fcb_entry find_loc;
+
+	find_loc.fe_sector = fcb->f_active.fe_sector;
+	find_loc.fe_elem_off = fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area));
+	find_loc.fe_data_off = find_loc.fe_elem_off;
+	find_loc.fe_data_len = 0;
+	loc->fe_sector = find_loc.fe_sector;
+
+	do {
+		loc->fe_elem_off = find_loc.fe_elem_off;
+		loc->fe_data_off = find_loc.fe_data_off;
+		loc->fe_data_len = find_loc.fe_data_len;
+		rc = fcb_getnext_in_sector(fcb, &find_loc);
+		if (rc < 0) {
+			break;
+		}
+	} while (rc == 0);
+
+	if (loc->fe_data_len > 0) {
+		return 0;
+	}
+	return rc;
+}
+
+int
+fcb_getlast(struct fcb *fcb, struct fcb_entry *loc)
+{
+	int rc;
+
+	rc = k_mutex_lock(&fcb->f_mtx, K_FOREVER);
+	if (rc) {
+		return -EINVAL;
+	}
+	rc = fcb_getlast_nolock(fcb, loc);
+	k_mutex_unlock(&fcb->f_mtx);
+
+	return rc;
+}
