@@ -20,7 +20,7 @@
 		width = <296>;
 		height = <128>;
 		pp-width-bits = <16>;
-		pp-height-bits = <16>;
+		pp-height-bits = <8>;
 		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
 		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
