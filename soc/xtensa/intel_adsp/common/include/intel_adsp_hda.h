@@ -346,4 +346,28 @@ static inline bool intel_adsp_hda_wp_rp_eq(uint32_t base, uint32_t regblock_size
 	return *DGBWP(base, regblock_size, sid) == *DGBRP(base, regblock_size, sid);
 }
 
+static inline bool intel_adsp_hda_is_buffer_overrun(uint32_t base, uint32_t regblock_size,
+						    uint32_t sid)
+{
+	return (*DGCS(base, regblock_size, sid) & DGCS_BOR) == DGCS_BOR ? 1 : 0;
+}
+
+static inline bool intel_adsp_hda_is_buffer_underrun(uint32_t base, uint32_t regblock_size,
+						     uint32_t sid)
+{
+	return (*DGCS(base, regblock_size, sid) & DGCS_BUR) == DGCS_BUR ? 1 : 0;
+}
+
+static inline void intel_adsp_hda_overrun_clear(uint32_t base, uint32_t regblock_size,
+						uint32_t sid)
+{
+	*DGCS(base, regblock_size, sid) |= DGCS_BOR;
+}
+
+static inline void intel_adsp_hda_underrun_clear(uint32_t base, uint32_t regblock_size,
+						 uint32_t sid)
+{
+	*DGCS(base, regblock_size, sid) |= DGCS_BUR;
+}
+
 #endif /* ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H */

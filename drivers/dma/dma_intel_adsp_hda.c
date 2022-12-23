@@ -190,6 +190,7 @@ int intel_adsp_hda_dma_status(const struct device *dev, uint32_t channel,
 	struct dma_status *stat)
 {
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
+	bool xrun_det;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
@@ -202,6 +203,25 @@ int intel_adsp_hda_dma_status(const struct device *dev, uint32_t channel,
 	stat->read_position = *DGBRP(cfg->base, cfg->regblock_size, channel);
 	stat->pending_length = used;
 	stat->free = unused;
+
+	switch (cfg->direction) {
+	case MEMORY_TO_PERIPHERAL:
+		xrun_det = intel_adsp_hda_is_buffer_underrun(cfg->base, cfg->regblock_size,
+							     channel);
+		if (xrun_det) {
+			intel_adsp_hda_underrun_clear(cfg->base, cfg->regblock_size, channel);
+			return -EPIPE;
+		}
+	case PERIPHERAL_TO_MEMORY:
+		xrun_det = intel_adsp_hda_is_buffer_overrun(cfg->base, cfg->regblock_size,
+							    channel);
+		if (xrun_det) {
+			intel_adsp_hda_overrun_clear(cfg->base, cfg->regblock_size, channel);
+			return -EPIPE;
+		}
+	default:
+		break;
+	}
 
 	return 0;
 }
