@@ -70,6 +70,9 @@ enum usbc_prl_tx_state_t {
 
 	/** PRL_Tx_Suspend. Not part of the PD specification. */
 	PRL_TX_SUSPEND,
+
+	/** Number of PRL_TX States */
+	PRL_TX_STATE_COUNT
 };
 
 /**
@@ -87,6 +90,9 @@ enum usbc_prl_hr_state_t {
 
 	/** PRL_Hr_Suspend. Not part of the PD specification. */
 	PRL_HR_SUSPEND,
+
+	/** Number of PRL_HR States */
+	PRL_HR_STATE_COUNT
 };
 
 static const struct smf_state prl_tx_states[];
@@ -374,6 +380,7 @@ static void prl_tx_set_state(const struct device *dev, const enum usbc_prl_tx_st
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
 
+	__ASSERT(state < ARRAY_SIZE(prl_tx_states), "invalid prl_tx_state %d", state);
 	smf_set_state(SMF_CTX(prl_tx), &prl_tx_states[state]);
 }
 
@@ -385,6 +392,7 @@ static void prl_hr_set_state(const struct device *dev, const enum usbc_prl_hr_st
 	struct usbc_port_data *data = dev->data;
 	struct protocol_hard_reset_t *prl_hr = data->prl_hr;
 
+	__ASSERT(state < ARRAY_SIZE(prl_hr_states), "invalid prl_hr_state %d", state);
 	smf_set_state(SMF_CTX(prl_hr), &prl_hr_states[state]);
 }
 
@@ -1159,6 +1167,7 @@ static const struct smf_state prl_tx_states[] = {
 		NULL,
 		NULL),
 };
+BUILD_ASSERT(ARRAY_SIZE(prl_tx_states) == PRL_TX_STATE_COUNT);
 
 /**
  * @brief Protocol Layer Hard Reset State table
@@ -1190,3 +1199,4 @@ static const struct smf_state prl_hr_states[] = {
 		NULL,
 		NULL),
 };
+BUILD_ASSERT(ARRAY_SIZE(prl_hr_states) == PRL_HR_STATE_COUNT);

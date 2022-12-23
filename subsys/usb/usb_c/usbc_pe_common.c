@@ -343,6 +343,7 @@ void pe_set_state(const struct device *dev, const enum usbc_pe_state state)
 {
 	struct usbc_port_data *data = dev->data;
 
+	__ASSERT(state < ARRAY_SIZE(pe_states), "invalid pe_state %d", state);
 	smf_set_state(SMF_CTX(data->pe), &pe_states[state]);
 }
 
@@ -823,3 +824,4 @@ static const struct smf_state pe_states[] = {
 		NULL,
 		NULL),
 };
+BUILD_ASSERT(ARRAY_SIZE(pe_states) == PE_STATE_COUNT);
