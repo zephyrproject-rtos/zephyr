@@ -107,7 +107,10 @@ enum pe_flags {
 	 * This flag is set when a Wait message is received in response to a
 	 * Data Role Swap
 	 */
-	PE_FLAGS_WAIT_DATA_ROLE_SWAP = 13
+	PE_FLAGS_WAIT_DATA_ROLE_SWAP = 13,
+
+	/** Number of PE Flags */
+	PE_FLAGS_COUNT
 };
 
 /**
@@ -119,7 +122,7 @@ struct policy_engine {
 	/** Port device */
 	const struct device *dev;
 	/** state machine flags */
-	atomic_t flags;
+	ATOMIC_DEFINE(flags, PE_FLAGS_COUNT);
 	/** current port power role (SOURCE or SINK) */
 	enum tc_power_role power_role;
 	/** current port data role (DFP or UFP) */

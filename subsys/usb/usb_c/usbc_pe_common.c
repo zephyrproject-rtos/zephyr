@@ -29,7 +29,7 @@ bool common_dpm_requests(const struct device *dev)
 	struct policy_engine *pe = data->pe;
 
 	if (pe->dpm_request > REQUEST_TC_END) {
-		atomic_set_bit(&pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+		atomic_set_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
 
 		if (pe->dpm_request == REQUEST_PE_DR_SWAP) {
 			pe_set_state(dev, PE_DRS_SEND_SWAP);
@@ -91,7 +91,7 @@ static void pe_init(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
-	pe->flags = ATOMIC_INIT(0);
+	atomic_clear(pe->flags);
 
 	usbc_timer_init(&pe->pd_t_typec_sink_wait_cap, PD_T_TYPEC_SINK_WAIT_CAP_MAX_MS);
 	usbc_timer_init(&pe->pd_t_sender_response, PD_T_SENDER_RESPONSE_NOM_MS);
@@ -211,7 +211,7 @@ void pe_message_sent(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
-	atomic_set_bit(&pe->flags, PE_FLAGS_TX_COMPLETE);
+	atomic_set_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
 }
 
 /**
@@ -248,9 +248,9 @@ void pe_report_error(const struct device *dev, const enum pe_error e,
 	 *     response.
 	 */
 	/* All error types besides transmit errors are Protocol Errors. */
-	if ((e != ERR_XMIT && atomic_test_bit(&pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS) == false) ||
+	if ((e != ERR_XMIT && atomic_test_bit(pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS) == false) ||
 	    e == ERR_XMIT ||
-	    (atomic_test_bit(&pe->flags, PE_FLAGS_EXPLICIT_CONTRACT) == false &&
+	    (atomic_test_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT) == false &&
 	     type == PD_PACKET_SOP)) {
 		policy_notify(dev, PROTOCOL_ERROR);
 		pe_send_soft_reset(dev, type);
@@ -276,8 +276,8 @@ void pe_report_discard(const struct device *dev)
 	 * Clear local AMS indicator as our AMS message was discarded, and flag
 	 * the discard for the PE
 	 */
-	atomic_clear_bit(&pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
-	atomic_set_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED);
+	atomic_clear_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+	atomic_set_bit(pe->flags, PE_FLAGS_MSG_DISCARDED);
 }
 
 /**
@@ -289,7 +289,7 @@ void pe_message_received(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
-	atomic_set_bit(&pe->flags, PE_FLAGS_MSG_RECEIVED);
+	atomic_set_bit(pe->flags, PE_FLAGS_MSG_RECEIVED);
 }
 
 /**
@@ -308,7 +308,7 @@ void pe_hard_reset_sent(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
-	atomic_clear_bit(&pe->flags, PE_FLAGS_HARD_RESET_PENDING);
+	atomic_clear_bit(pe->flags, PE_FLAGS_HARD_RESET_PENDING);
 }
 
 /**
@@ -319,7 +319,7 @@ bool pe_is_explicit_contract(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
-	return atomic_test_bit(&pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
+	return atomic_test_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
 }
 
 /**
@@ -331,7 +331,7 @@ bool pe_dpm_initiated_ams(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
-	return atomic_test_bit(&pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+	return atomic_test_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
 }
 
 /** Private Policy Engine Layer API below */
@@ -387,7 +387,7 @@ void pe_send_data_msg(const struct device *dev, const enum pd_packet_type type,
 	struct policy_engine *pe = data->pe;
 
 	/* Clear any previous TX status before sending a new message */
-	atomic_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE);
+	atomic_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
 	prl_send_data_msg(dev, type, msg);
 }
 
@@ -401,7 +401,7 @@ void pe_send_ctrl_msg(const struct device *dev, const enum pd_packet_type type,
 	struct policy_engine *pe = data->pe;
 
 	/* Clear any previous TX status before sending a new message */
-	atomic_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE);
+	atomic_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
 	prl_send_ctrl_msg(dev, type, msg);
 }
 
@@ -602,7 +602,7 @@ void pe_drs_evaluate_swap_run(void *obj)
 	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
 
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		/* Only update data roles if last message sent was Accept */
 		if (prl_tx->msg_type == PD_CTRL_ACCEPT) {
 			/* Update Data Role */
@@ -614,7 +614,7 @@ void pe_drs_evaluate_swap_run(void *obj)
 									  : DATA_ROLE_IS_DFP);
 		}
 		pe_set_state(dev, PE_SNK_READY);
-	} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		/*
 		 * Inform Device Policy Manager that the message was
 		 * discarded
@@ -647,12 +647,12 @@ void pe_drs_send_swap_run(void *obj)
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
 	union pd_header header;
 
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		/* Start Sender Response Timer */
 		usbc_timer_start(&pe->pd_t_sender_response);
 	}
 
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		header = prl_rx->emsg.header;
 		if (received_control_message(dev, header, PD_CTRL_REJECT)) {
 			/*
@@ -666,7 +666,7 @@ void pe_drs_send_swap_run(void *obj)
 			 * needs to Wait
 			 */
 			if (policy_wait_notify(dev, WAIT_DATA_ROLE_SWAP)) {
-				atomic_set_bit(&pe->flags, PE_FLAGS_WAIT_DATA_ROLE_SWAP);
+				atomic_set_bit(pe->flags, PE_FLAGS_WAIT_DATA_ROLE_SWAP);
 				usbc_timer_start(&pe->pd_t_wait_to_resend);
 			}
 		} else if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
@@ -685,7 +685,7 @@ void pe_drs_send_swap_run(void *obj)
 		}
 		pe_set_state(dev, PE_SNK_READY);
 		return;
-	} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		/*
 		 * Inform Device Policy Manager that the message
 		 * was discarded
