@@ -24,7 +24,7 @@ bool sink_dpm_requests(const struct device *dev)
 	struct policy_engine *pe = data->pe;
 
 	if (pe->dpm_request > REQUEST_TC_END) {
-		atomic_set_bit(&pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+		atomic_set_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
 
 		if (pe->dpm_request == REQUEST_PE_GET_SRC_CAPS) {
 			pe_set_state(dev, PE_SNK_GET_SOURCE_CAP);
@@ -52,7 +52,7 @@ void pe_snk_startup_entry(void *obj)
 	pe->power_role = TC_ROLE_SINK;
 
 	/* Invalidate explicit contract */
-	atomic_clear_bit(&pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
+	atomic_clear_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
 
 	policy_notify(dev, NOT_PD_CONNECTED);
 }
@@ -129,7 +129,7 @@ void pe_snk_wait_for_capabilities_run(void *obj)
 	 * Transition to the PE_SNK_Evaluate_Capability state when:
 	 *  1) A Source_Capabilities Message is received.
 	 */
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		header = prl_rx->emsg.header;
 		if (received_data_message(dev, header, PD_DATA_SOURCE_CAP)) {
 			pe_set_state(dev, PE_SNK_EVALUATE_CAPABILITY);
@@ -139,7 +139,7 @@ void pe_snk_wait_for_capabilities_run(void *obj)
 
 	/* When the SinkWaitCapTimer times out, perform a Hard Reset. */
 	if (usbc_timer_expired(&pe->pd_t_typec_sink_wait_cap)) {
-		atomic_set_bit(&pe->flags, PE_FLAGS_SNK_WAIT_CAP_TIMEOUT);
+		atomic_set_bit(pe->flags, PE_FLAGS_SNK_WAIT_CAP_TIMEOUT);
 		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
 }
@@ -216,7 +216,7 @@ void pe_snk_select_capability_run(void *obj)
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
 	union pd_header header;
 
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		/*
 		 * The sent REQUEST message was discarded.  This can be at
 		 * the start of an AMS or in the middle. Handle what to
@@ -229,12 +229,12 @@ void pe_snk_select_capability_run(void *obj)
 		} else {
 			pe_set_state(dev, PE_SNK_READY);
 		}
-	} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		/* Start the SenderResponseTimer */
 		usbc_timer_start(&pe->pd_t_sender_response);
 	}
 
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		header = prl_rx->emsg.header;
 
 		/*
@@ -257,7 +257,7 @@ void pe_snk_select_capability_run(void *obj)
 		/* Only look at control messages */
 		if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
 			/* explicit contract is now in place */
-			atomic_set_bit(&pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
+			atomic_set_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
 			pe_set_state(dev, PE_SNK_TRANSITION_SINK);
 		} else if (received_control_message(dev, header, PD_CTRL_REJECT) ||
 			   received_control_message(dev, header, PD_CTRL_WAIT)) {
@@ -265,14 +265,14 @@ void pe_snk_select_capability_run(void *obj)
 			 * We had a previous explicit contract, so transition to
 			 * PE_SNK_Ready
 			 */
-			if (atomic_test_bit(&pe->flags, PE_FLAGS_EXPLICIT_CONTRACT)) {
+			if (atomic_test_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT)) {
 				if (received_control_message(dev, header, PD_CTRL_WAIT)) {
 					/*
 					 * Inform Device Policy Manager that Sink
 					 * Request needs to Wait
 					 */
 					if (policy_wait_notify(dev, WAIT_SINK_REQUEST)) {
-						atomic_set_bit(&pe->flags,
+						atomic_set_bit(pe->flags,
 							       PE_FLAGS_WAIT_SINK_REQUEST);
 						usbc_timer_start(&pe->pd_t_wait_to_resend);
 					}
@@ -342,7 +342,7 @@ void pe_snk_transition_sink_run(void *obj)
 	 * Transition to the PE_SNK_Hard_Reset state when:
 	 *  1) A Protocol Error occurs.
 	 */
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		header = prl_rx->emsg.header;
 
 		/*
@@ -391,8 +391,8 @@ void pe_snk_ready_entry(void *obj)
 	LOG_INF("PE_SNK_Ready");
 
 	/* Clear AMS Flags */
-	atomic_clear_bit(&pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS);
-	atomic_clear_bit(&pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+	atomic_clear_bit(pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS);
+	atomic_clear_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
 }
 
 /**
@@ -409,7 +409,7 @@ void pe_snk_ready_run(void *obj)
 	 * Handle incoming messages before discovery and DPMs other than hard
 	 * reset
 	 */
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		union pd_header header = prl_rx->emsg.header;
 
 		/* Extended Message Request */
@@ -472,10 +472,10 @@ void pe_snk_ready_run(void *obj)
 	 * Check if we are waiting to resend any messages
 	 */
 	if (usbc_timer_expired(&pe->pd_t_wait_to_resend)) {
-		if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_WAIT_SINK_REQUEST)) {
+		if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_WAIT_SINK_REQUEST)) {
 			pe_set_state(dev, PE_SNK_SELECT_CAPABILITY);
 			return;
-		} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_WAIT_DATA_ROLE_SWAP)) {
+		} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_WAIT_DATA_ROLE_SWAP)) {
 			pe_set_state(dev, PE_DRS_SEND_SWAP);
 			return;
 		}
@@ -503,7 +503,7 @@ void pe_snk_hard_reset_entry(void *obj)
 	 *       greater than nHardResetCount the Sink Shall assume that the
 	 *       Source is non-responsive.
 	 */
-	if (atomic_test_bit(&pe->flags, PE_FLAGS_SNK_WAIT_CAP_TIMEOUT) &&
+	if (atomic_test_bit(pe->flags, PE_FLAGS_SNK_WAIT_CAP_TIMEOUT) &&
 	    pe->hard_reset_counter > PD_N_HARD_RESET_COUNT) {
 		/* Inform the DPM that the port partner is not responsive */
 		policy_notify(dev, PORT_PARTNER_NOT_RESPONSIVE);
@@ -514,10 +514,10 @@ void pe_snk_hard_reset_entry(void *obj)
 	}
 
 	/* Set Hard Reset Pending Flag */
-	atomic_set_bit(&pe->flags, PE_FLAGS_HARD_RESET_PENDING);
+	atomic_set_bit(pe->flags, PE_FLAGS_HARD_RESET_PENDING);
 
-	atomic_clear_bit(&pe->flags, PE_FLAGS_SNK_WAIT_CAP_TIMEOUT);
-	atomic_clear_bit(&pe->flags, PE_FLAGS_PROTOCOL_ERROR);
+	atomic_clear_bit(pe->flags, PE_FLAGS_SNK_WAIT_CAP_TIMEOUT);
+	atomic_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR);
 
 	/* Request the generation of Hard Reset Signaling by the PHY Layer */
 	prl_execute_hard_reset(dev);
@@ -537,7 +537,7 @@ void pe_snk_hard_reset_run(void *obj)
 	 * Transition to the PE_SNK_Transition_to_default state when:
 	 *  1) The Hard Reset is complete.
 	 */
-	if (atomic_test_bit(&pe->flags, PE_FLAGS_HARD_RESET_PENDING)) {
+	if (atomic_test_bit(pe->flags, PE_FLAGS_HARD_RESET_PENDING)) {
 		return;
 	}
 
@@ -555,7 +555,7 @@ void pe_snk_transition_to_default_entry(void *obj)
 	LOG_INF("PE_SNK_Transition_to_default");
 
 	/* Reset flags */
-	pe->flags = ATOMIC_INIT(0);
+	atomic_clear(pe->flags);
 	pe->data_role = TC_ROLE_UFP;
 
 	/*
@@ -614,9 +614,9 @@ void pe_snk_get_source_cap_run(void *obj)
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
 
 	/* Wait until message is sent or dropped */
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		pe_set_state(dev, PE_SNK_READY);
-	} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		pe_send_soft_reset(dev, prl_rx->emsg.type);
 	}
 }
@@ -643,7 +643,7 @@ void pe_send_soft_reset_entry(void *obj)
 
 	/* Reset Protocol Layer */
 	prl_reset(dev);
-	atomic_set_bit(&pe->flags, PE_FLAGS_SEND_SOFT_RESET);
+	atomic_set_bit(pe->flags, PE_FLAGS_SEND_SOFT_RESET);
 }
 
 /**
@@ -661,29 +661,29 @@ void pe_send_soft_reset_run(void *obj)
 		return;
 	}
 
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_SEND_SOFT_RESET)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_SEND_SOFT_RESET)) {
 		/* Send Soft Reset message */
 		pe_send_ctrl_msg(dev, pe->soft_reset_sop, PD_CTRL_SOFT_RESET);
 		return;
 	}
 
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		/* Inform Device Policy Manager that the message was discarded */
 		policy_notify(dev, MSG_DISCARDED);
 		pe_set_state(dev, PE_SNK_READY);
-	} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		/* Start SenderResponse timer */
 		usbc_timer_start(&pe->pd_t_sender_response);
-	} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		header = prl_rx->emsg.header;
 
 		if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
 			pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
 		}
-	} else if (atomic_test_bit(&pe->flags, PE_FLAGS_PROTOCOL_ERROR) ||
+	} else if (atomic_test_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR) ||
 		   usbc_timer_expired(&pe->pd_t_sender_response)) {
-		if (atomic_test_bit(&pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
-			atomic_clear_bit(&pe->flags, PE_FLAGS_PROTOCOL_ERROR);
+		if (atomic_test_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+			atomic_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR);
 		} else {
 			policy_notify(dev, PORT_PARTNER_NOT_RESPONSIVE);
 		}
@@ -714,7 +714,7 @@ void pe_soft_reset_entry(void *obj)
 
 	/* Reset the Protocol Layer */
 	prl_reset(dev);
-	atomic_set_bit(&pe->flags, PE_FLAGS_SEND_SOFT_RESET);
+	atomic_set_bit(pe->flags, PE_FLAGS_SEND_SOFT_RESET);
 }
 
 /**
@@ -729,15 +729,15 @@ void pe_soft_reset_run(void *obj)
 		return;
 	}
 
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_SEND_SOFT_RESET)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_SEND_SOFT_RESET)) {
 		/* Send Accept message */
 		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_ACCEPT);
 		return;
 	}
 
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
-	} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
 		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
 }
@@ -768,10 +768,10 @@ void pe_send_not_supported_run(void *obj)
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
 
-	if (atomic_test_bit(&pe->flags, PE_FLAGS_TX_COMPLETE) ||
-	    atomic_test_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
-		atomic_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE);
-		atomic_clear_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED);
+	if (atomic_test_bit(pe->flags, PE_FLAGS_TX_COMPLETE) ||
+	    atomic_test_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+		atomic_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
+		atomic_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED);
 		pe_set_state(dev, PE_SNK_READY);
 	}
 }
@@ -833,9 +833,9 @@ void pe_snk_give_sink_cap_run(void *obj)
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
 
 	/* Wait until message is sent or dropped */
-	if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_TX_COMPLETE)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		pe_set_state(dev, PE_SNK_READY);
-	} else if (atomic_test_and_clear_bit(&pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		pe_send_soft_reset(dev, prl_rx->emsg.type);
 	}
 }
