@@ -177,6 +177,9 @@ void pe_snk_evaluate_capability_entry(void *obj)
 
 	LOG_INF("PE_SNK_Evaluate_Capability");
 
+	/* Inform the DPM of the reception of the source capabilities */
+	policy_notify(dev, SOURCE_CAPABILITIES_RECEIVED);
+
 	header = prl_rx->emsg.header;
 
 	/* Reset Hard Reset counter to zero */
@@ -606,7 +609,12 @@ void pe_snk_get_source_cap_entry(void *obj)
 
 	LOG_INF("PE_SNK_Get_Source_Cap");
 
-	/* Send a Get_Source_Cap Message */
+	/*
+	 * On entry to the PE_SNK_Get_Source_Cap state the Policy Engine
+	 * Shall request the Protocol Layer to send a get Source
+	 * Capabilities message in order to retrieve the Source’s
+	 * capabilities.
+	 */
 	pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_GET_SOURCE_CAP);
 }
 
@@ -619,12 +627,34 @@ void pe_snk_get_source_cap_run(void *obj)
 	const struct device *dev = pe->dev;
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+	union pd_header header;
 
 	/* Wait until message is sent or dropped */
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+		/* The Policy Engine Shall then start the SenderResponseTimer. */
+		usbc_timer_start(&pe->pd_t_sender_response);
+	}
+	/*
+	 * The Policy Engine Shall transition to the PE_SNK_Evaluate_Capability
+	 * State when:
+	 *	1: In SPR Mode and SPR Source Capabilities were requested and
+	 *	   a Source_Capabilities Message is received
+	 */
+	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+		header = prl_rx->emsg.header;
+
+		if (received_control_message(dev, header, PD_DATA_SOURCE_CAP)) {
+			pe_set_state(dev, PE_SNK_EVALUATE_CAPABILITY);
+		}
+	}
+	/*
+	 * The Policy Engine Shall transition to the PE_SNK_Ready state when:
+	 *	1: The SenderResponseTimer times out.
+	 */
+	else if (usbc_timer_expired(&pe->pd_t_sender_response)) {
 		pe_set_state(dev, PE_SNK_READY);
-	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
-		pe_send_soft_reset(dev, prl_rx->emsg.type);
+		/* Inform the DPM of the sender response timeout */
+		policy_notify(dev, SENDER_RESPONSE_TIMEOUT);
 	}
 }
 

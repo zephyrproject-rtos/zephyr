@@ -109,6 +109,10 @@ enum usbc_policy_notify_t {
 	POWER_CHANGE_1A5,
 	/** Sink SubPower state a 5V / 3A */
 	POWER_CHANGE_3A0,
+	/** Sender Response Timeout */
+	SENDER_RESPONSE_TIMEOUT,
+	/** Source Capabilities Received */
+	SOURCE_CAPABILITIES_RECEIVED,
 };
 
 /**
