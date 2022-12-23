@@ -680,11 +680,16 @@ void pe_drs_send_swap_run(void *obj)
 			policy_notify(dev, (pe->data_role == TC_ROLE_UFP) ? DATA_ROLE_IS_UFP
 									  : DATA_ROLE_IS_DFP);
 		} else {
-			/* Protocol Error */
-			policy_notify(dev, PROTOCOL_ERROR);
-			pe_send_soft_reset(dev, PD_PACKET_SOP);
+			/*
+			 * A Protocol Error during a Data Role Swap when the
+			 * DFP/UFP roles are changing shall directly trigger
+			 * a Type-C Error Recovery.
+			 */
+			usbc_request(dev, REQUEST_TC_ERROR_RECOVERY);
 			return;
 		}
+
+		/* return to ready state */
 		pe_set_state(dev, PE_SNK_READY);
 		return;
 	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
