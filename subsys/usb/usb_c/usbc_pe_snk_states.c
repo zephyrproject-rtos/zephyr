@@ -711,19 +711,26 @@ void pe_send_soft_reset_run(void *obj)
 	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		/* Start SenderResponse timer */
 		usbc_timer_start(&pe->pd_t_sender_response);
-	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	}
+	/*
+	 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
+	 * state when:
+	 * 	1: An Accept Message has been received on SOP
+	 */
+	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		header = prl_rx->emsg.header;
 
 		if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
 			pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
 		}
-	} else if (atomic_test_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR) ||
+	}
+	/*
+	 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset state when:
+	 * 	1: A SenderResponseTimer timeout occurs
+	 * 	2: Or the Protocol Layer indicates that a transmission error has occurred
+	 */
+	else if (atomic_test_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR) ||
 		   usbc_timer_expired(&pe->pd_t_sender_response)) {
-		if (atomic_test_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
-			atomic_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR);
-		} else {
-			policy_notify(dev, PORT_PARTNER_NOT_RESPONSIVE);
-		}
 		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
 }
