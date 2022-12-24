@@ -66,51 +66,46 @@ enum usbc_pe_state {
 enum pe_flags {
 	/** Accept message received from port partner */
 	PE_FLAGS_ACCEPT = 0,
-	/**
-	 * Protocol Error was determined based on error recovery
-	 * current state
-	 */
-	PE_FLAGS_PROTOCOL_ERROR = 1,
 	/** A message we requested to be sent has been transmitted */
-	PE_FLAGS_TX_COMPLETE = 2,
+	PE_FLAGS_TX_COMPLETE = 1,
 	/** A message sent by a port partner has been received */
-	PE_FLAGS_MSG_RECEIVED = 3,
+	PE_FLAGS_MSG_RECEIVED = 2,
 	/**
 	 * A hard reset has been requested by the DPM but has not been sent,
 	 * not currently used
 	 */
-	PE_FLAGS_HARD_RESET_PENDING = 4,
+	PE_FLAGS_HARD_RESET_PENDING = 3,
 	/** An explicit contract is in place with our port partner */
-	PE_FLAGS_EXPLICIT_CONTRACT = 5,
+	PE_FLAGS_EXPLICIT_CONTRACT = 4,
 	/**
 	 * Waiting for Sink Capabailities timed out.  Used for retry error
 	 * handling
 	 */
-	PE_FLAGS_SNK_WAIT_CAP_TIMEOUT = 6,
+	PE_FLAGS_SNK_WAIT_CAP_TIMEOUT = 5,
 	/**
 	 * Flag to note current Atomic Message Sequence (AMS) is interruptible.
 	 * If this flag is not set the AMS is non-interruptible. This flag must
 	 * be set in the interruptible's message state entry.
 	 */
-	PE_FLAGS_INTERRUPTIBLE_AMS = 7,
+	PE_FLAGS_INTERRUPTIBLE_AMS = 6,
 	/** Flag to trigger sending a Data Role Swap */
-	PE_FLAGS_DR_SWAP_TO_DFP = 8,
+	PE_FLAGS_DR_SWAP_TO_DFP = 7,
 	/** Flag is set when an AMS is initiated by the Device Policy Manager */
-	PE_FLAGS_DPM_INITIATED_AMS = 9,
+	PE_FLAGS_DPM_INITIATED_AMS = 8,
 	/** Flag to note message was discarded due to incoming message */
-	PE_FLAGS_MSG_DISCARDED = 10,
+	PE_FLAGS_MSG_DISCARDED = 9,
 	/** Flag to trigger sending a soft reset */
-	PE_FLAGS_SEND_SOFT_RESET = 11,
+	PE_FLAGS_SEND_SOFT_RESET = 10,
 	/**
 	 * This flag is set when a Wait message is received in response to a
 	 * Sink REQUEST
 	 */
-	PE_FLAGS_WAIT_SINK_REQUEST = 12,
+	PE_FLAGS_WAIT_SINK_REQUEST = 11,
 	/**
 	 * This flag is set when a Wait message is received in response to a
 	 * Data Role Swap
 	 */
-	PE_FLAGS_WAIT_DATA_ROLE_SWAP = 13,
+	PE_FLAGS_WAIT_DATA_ROLE_SWAP = 12,
 
 	/** Number of PE Flags */
 	PE_FLAGS_COUNT
