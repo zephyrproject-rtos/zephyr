@@ -94,6 +94,7 @@ void pe_send_not_supported_run(void *obj);
  */
 void pe_chunk_received_entry(void *obj);
 void pe_chunk_received_run(void *obj);
+void pe_chunk_received_exit(void *obj);
 
 /**
  * @brief PE_SNK_Give_Sink_Cap Entry state
