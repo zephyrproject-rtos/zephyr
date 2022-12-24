@@ -852,6 +852,13 @@ void pe_chunk_received_run(void *obj)
 	}
 }
 
+void pe_chunk_received_exit(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+
+	usbc_timer_stop(&pe->pd_t_chunking_not_supported);
+}
+
 /**
  * @brief PE_SNK_Give_Sink_Cap Entry state
  */
