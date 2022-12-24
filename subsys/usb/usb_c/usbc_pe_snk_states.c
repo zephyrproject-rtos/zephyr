@@ -527,7 +527,6 @@ void pe_snk_hard_reset_entry(void *obj)
 	atomic_set_bit(pe->flags, PE_FLAGS_HARD_RESET_PENDING);
 
 	atomic_clear_bit(pe->flags, PE_FLAGS_SNK_WAIT_CAP_TIMEOUT);
-	atomic_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR);
 
 	/* Request the generation of Hard Reset Signaling by the PHY Layer */
 	prl_execute_hard_reset(dev);
@@ -715,7 +714,7 @@ void pe_send_soft_reset_run(void *obj)
 	/*
 	 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
 	 * state when:
-	 * 	1: An Accept Message has been received on SOP
+	 *	1: An Accept Message has been received on SOP
 	 */
 	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		header = prl_rx->emsg.header;
@@ -726,11 +725,10 @@ void pe_send_soft_reset_run(void *obj)
 	}
 	/*
 	 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset state when:
-	 * 	1: A SenderResponseTimer timeout occurs
-	 * 	2: Or the Protocol Layer indicates that a transmission error has occurred
+	 *	1: A SenderResponseTimer timeout occurs (Handled in pe_report_error function)
+	 *	2: Or the Protocol Layer indicates that a transmission error has occurred
 	 */
-	else if (atomic_test_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR) ||
-		   usbc_timer_expired(&pe->pd_t_sender_response)) {
+	else if (usbc_timer_expired(&pe->pd_t_sender_response)) {
 		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
 }
@@ -779,11 +777,20 @@ void pe_soft_reset_run(void *obj)
 		return;
 	}
 
+	/*
+	 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
+	 * state when:
+	 *	1: The Accept Message has been sent on SOP.
+	 */
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
-	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
-		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
+	/*
+	 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset
+	 * state when:
+	 *	1: The Protocol Layer indicates that a transmission error
+	 *	   has occurred. (Handled in pe_report_error function)
+	 */
 }
 
 /**
