@@ -822,7 +822,7 @@ static const struct smf_state pe_states[] = {
 	[PE_SNK_CHUNK_RECEIVED] = SMF_CREATE_STATE(
 		pe_chunk_received_entry,
 		pe_chunk_received_run,
-		NULL,
+		pe_chunk_received_exit,
 		NULL),
 	[PE_SUSPEND] = SMF_CREATE_STATE(
 		pe_suspend_entry,
