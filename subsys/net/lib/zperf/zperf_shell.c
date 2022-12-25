@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
+LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include <ctype.h>
 #include <stdio.h>
@@ -31,7 +31,6 @@ LOG_MODULE_REGISTER(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include "ipv6.h" /* to get infinite lifetime */
 
-#define DEVICE_NAME "zperf shell"
 
 static const char *CONFIG =
 		"unified"
@@ -49,14 +48,6 @@ static const char *CONFIG =
 #endif
 		"";
 
-#define MY_SRC_PORT 50000
-#define DEF_PORT 5001
-#define DEF_PORT_STR STRINGIFY(DEF_PORT)
-
-#define ZPERF_VERSION "1.1"
-
-static struct in6_addr ipv6;
-
 static struct sockaddr_in6 in6_addr_my = {
 	.sin6_family = AF_INET6,
 	.sin6_port = htons(MY_SRC_PORT),
@@ -67,22 +58,21 @@ static struct sockaddr_in6 in6_addr_dst = {
 	.sin6_port = htons(DEF_PORT),
 };
 
-struct sockaddr_in6 *zperf_get_sin6(void)
-{
-	return &in6_addr_my;
-}
-
-static struct in_addr ipv4;
+static struct sockaddr_in in4_addr_dst = {
+	.sin_family = AF_INET,
+	.sin_port = htons(DEF_PORT),
+};
 
 static struct sockaddr_in in4_addr_my = {
 	.sin_family = AF_INET,
 	.sin_port = htons(MY_SRC_PORT),
 };
 
-static struct sockaddr_in in4_addr_dst = {
-	.sin_family = AF_INET,
-	.sin_port = htons(DEF_PORT),
-};
+static struct in6_addr ipv6;
+
+static struct in_addr ipv4;
+
+#define DEVICE_NAME "zperf shell"
 
 const uint32_t TIME_US[] = { 60 * 1000 * 1000, 1000 * 1000, 1000, 0 };
 const char *TIME_US_UNIT[] = { "m", "s", "ms", "us" };
@@ -136,11 +126,6 @@ static long parse_number(const char *string, const uint32_t *divisor_arr,
 	return (*divisor == 0U) ? dec : dec * *divisor;
 }
 
-struct sockaddr_in *zperf_get_sin(void)
-{
-	return &in4_addr_my;
-}
-
 static int parse_ipv6_addr(const struct shell *sh, char *host, char *port,
 			   struct sockaddr_in6 *addr)
 {
@@ -161,42 +146,6 @@ static int parse_ipv6_addr(const struct shell *sh, char *host, char *port,
 	if (!addr->sin6_port) {
 		shell_fprintf(sh, SHELL_WARNING,
 			      "Invalid port %s\n", port);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr)
-{
-	struct net_if_ipv6_prefix *prefix;
-	struct net_if_addr *ifaddr;
-	int prefix_len;
-	int ret;
-
-	if (!host) {
-		return -EINVAL;
-	}
-
-	ret = net_addr_pton(AF_INET6, host, addr);
-	if (ret < 0) {
-		return -EINVAL;
-	}
-
-	prefix_len = strtoul(prefix_str, NULL, 10);
-
-	ifaddr = net_if_ipv6_addr_add(net_if_get_default(),
-				      addr, NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		NET_ERR("Cannot set IPv6 address %s", host);
-		return -EINVAL;
-	}
-
-	prefix = net_if_ipv6_prefix_add(net_if_get_default(),
-					addr, prefix_len,
-					NET_IPV6_ND_INFINITE_LIFETIME);
-	if (!prefix) {
-		NET_ERR("Cannot set IPv6 prefix %s", prefix_str);
 		return -EINVAL;
 	}
 
@@ -227,50 +176,6 @@ static int parse_ipv4_addr(const struct shell *sh, char *host, char *port,
 	}
 
 	return 0;
-}
-
-int zperf_get_ipv4_addr(char *host, struct in_addr *addr)
-{
-	struct net_if_addr *ifaddr;
-	int ret;
-
-	if (!host) {
-		return -EINVAL;
-	}
-
-	ret = net_addr_pton(AF_INET, host, addr);
-	if (ret < 0) {
-		return -EINVAL;
-	}
-
-	ifaddr = net_if_ipv4_addr_add(net_if_get_default(),
-				      addr, NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		NET_ERR("Cannot set IPv4 address %s", host);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-const struct in_addr *zperf_get_default_if_in4_addr(void)
-{
-#if CONFIG_NET_IPV4
-	return net_if_ipv4_select_src_addr(NULL,
-					   net_ipv4_unspecified_address());
-#else
-	return NULL;
-#endif
-}
-
-const struct in6_addr *zperf_get_default_if_in6_addr(void)
-{
-#if CONFIG_NET_IPV6
-	return net_if_ipv6_select_src_addr(NULL,
-					   net_ipv6_unspecified_address());
-#else
-	return NULL;
-#endif
 }
 
 static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
