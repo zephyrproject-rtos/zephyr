@@ -39,6 +39,12 @@
 
 #define PACKET_SIZE_MAX CONFIG_NET_ZPERF_MAX_PACKET_SIZE
 
+#define MY_SRC_PORT 50000
+#define DEF_PORT 5001
+#define DEF_PORT_STR STRINGIFY(DEF_PORT)
+
+#define ZPERF_VERSION "1.1"
+
 struct zperf_udp_datagram {
 	int32_t id;
 	uint32_t tv_sec;
