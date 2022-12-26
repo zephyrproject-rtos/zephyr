@@ -553,6 +553,11 @@ config LWM2M_EVENT_LOG_OBJ_SUPPORT
 	help
 	  Include support for LWM2M Event Log Object (ID 20)
 
+config LWM2M_BINARYAPPDATA_OBJ_SUPPORT
+	bool "LwM2M BinaryAppDataContainer Object (19)"
+	help
+	  Include support for LWM2M BinaryAppDataContainer Object (ID 19)
+
 if LWM2M_GATEWAY_OBJ_SUPPORT
 
 config LWM2M_GATEWAY_MAX_INSTANCES
