@@ -224,10 +224,28 @@
 			status = "disabled";
 		};
 
-		coretemp: coretemp@0x60040058 {
+		coretemp: coretemp@60040058 {
 			compatible = "espressif,esp32-temp";
 			friendly-name = "coretemp";
 			reg = <0x60040058 0x4>;
+			status = "disabled";
+		};
+
+		adc0: adc@60040000 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x60040000 4>;
+			unit = <1>;
+			channel-count = <5>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@60040004 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x60040004 4>;
+			unit = <2>;
+			channel-count = <2>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 
