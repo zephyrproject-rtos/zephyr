@@ -236,26 +236,22 @@ class DevicetreeBindingsCheck(ComplianceTest):
         """
 
         dt_bindings = []
-        for file_name in get_files():
+        for file_name in get_files(filter="d"):
             if file_name.startswith('dts/bindings/') and file_name.endswith('.yaml'):
                 dt_bindings.append(file_name)
 
         return dt_bindings
 
     def required_false_check(self, dts_binding):
-        try:
-            with open(dts_binding) as file:
-                line_number = 0
-                for line in file:
-                    line_number += 1
-                    if 'required: false' in line:
-                        self.fmtd_failure(
-                            'warning', 'Devicetree Bindings', dts_binding,
-                            line_number, col=None,
-                            desc="'required: false' is redundant, please remove")
-        except Exception:
-            # error opening file (it was likely deleted by the commit)
-            return
+        with open(dts_binding) as file:
+            line_number = 0
+            for line in file:
+                line_number += 1
+                if 'required: false' in line:
+                    self.fmtd_failure(
+                        'warning', 'Devicetree Bindings', dts_binding,
+                        line_number, col=None,
+                        desc="'required: false' is redundant, please remove")
 
 
 class KconfigCheck(ComplianceTest):
