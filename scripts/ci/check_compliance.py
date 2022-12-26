@@ -225,9 +225,10 @@ class DevicetreeBindingsCheck(ComplianceTest):
     path_hint = "<zephyr-base>"
 
     def run(self, full=True):
-        dts_yaml = self.parse_dt_bindings()
+        dts_bindings = self.parse_dt_bindings()
 
-        self.required_false_check(dts_yaml)
+        for dts_binding in dts_bindings:
+            self.required_false_check(dts_binding)
 
     def parse_dt_bindings(self):
         """
@@ -241,21 +242,20 @@ class DevicetreeBindingsCheck(ComplianceTest):
 
         return dt_bindings
 
-    def required_false_check(self, dt_bindings):
-        for file_name in dt_bindings:
-            try:
-                with open(file_name) as file:
-                    line_number = 0
-                    for line in file:
-                        line_number += 1
-                        if 'required: false' in line:
-                            self.fmtd_failure(
-                                'warning', 'Devicetree Bindings', file_name,
-                                line_number, col=None,
-                                desc="'required: false' is redundant, please remove")
-            except Exception:
-                # error opening file (it was likely deleted by the commit)
-                continue
+    def required_false_check(self, dts_binding):
+        try:
+            with open(dts_binding) as file:
+                line_number = 0
+                for line in file:
+                    line_number += 1
+                    if 'required: false' in line:
+                        self.fmtd_failure(
+                            'warning', 'Devicetree Bindings', dts_binding,
+                            line_number, col=None,
+                            desc="'required: false' is redundant, please remove")
+        except Exception:
+            # error opening file (it was likely deleted by the commit)
+            return
 
 
 class KconfigCheck(ComplianceTest):
