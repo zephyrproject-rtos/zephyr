@@ -441,36 +441,6 @@ int lwm2m_information_interface_send(struct lwm2m_message *msg)
 	return 0;
 }
 
-int lwm2m_send_message(struct lwm2m_message *msg)
-{
-	int rc;
-
-	if (!msg || !msg->ctx) {
-		LOG_ERR("LwM2M message is invalid.");
-		return -EINVAL;
-	}
-
-	if (msg->type == COAP_TYPE_CON) {
-		coap_pending_cycle(msg->pending);
-	}
-
-	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
-
-	if (rc < 0) {
-		LOG_ERR("Failed to send packet, err %d", errno);
-		if (msg->type != COAP_TYPE_CON) {
-			lwm2m_reset_message(msg, true);
-		}
-
-		return -errno;
-	}
-
-	if (msg->type != COAP_TYPE_CON) {
-		lwm2m_reset_message(msg, true);
-	}
-
-	return 0;
-}
 int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
 {
 	struct lwm2m_message *msg;

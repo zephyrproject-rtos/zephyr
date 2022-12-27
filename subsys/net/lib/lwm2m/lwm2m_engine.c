@@ -633,14 +633,40 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 
 static int socket_send_message(struct lwm2m_ctx *client_ctx)
 {
+	int rc;
 	sys_snode_t *msg_node = sys_slist_get(&client_ctx->pending_sends);
 	struct lwm2m_message *msg;
 
 	if (!msg_node) {
 		return 0;
 	}
+
 	msg = SYS_SLIST_CONTAINER(msg_node, msg, node);
-	return lwm2m_send_message(msg);
+	if (!msg || !msg->ctx) {
+		LOG_ERR("LwM2M message is invalid.");
+		return -EINVAL;
+	}
+
+	if (msg->type == COAP_TYPE_CON) {
+		coap_pending_cycle(msg->pending);
+	}
+
+	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
+
+	if (rc < 0) {
+		LOG_ERR("Failed to send packet, err %d", errno);
+		if (msg->type != COAP_TYPE_CON) {
+			lwm2m_reset_message(msg, true);
+		}
+
+		return -errno;
+	}
+
+	if (msg->type != COAP_TYPE_CON) {
+		lwm2m_reset_message(msg, true);
+	}
+
+	return 0;
 }
 
 static void socket_reset_pollfd_events(void)
