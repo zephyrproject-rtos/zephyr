@@ -23,6 +23,10 @@
 #include <soc_context.h>
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_ISR_STACKING
+#include <soc_isr_stacking.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,6 +53,9 @@ struct soc_esf {
 #endif
 #endif
 
+#if defined(CONFIG_RISCV_SOC_HAS_ISR_STACKING)
+	SOC_ISR_STACKING_ESF_DECLARE;
+#else
 struct __esf {
 	unsigned long ra;		/* return address */
 
@@ -109,6 +116,7 @@ struct __esf {
 	struct soc_esf soc_context;
 #endif
 } __aligned(16);
+#endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
 typedef struct __esf z_arch_esf_t;
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
