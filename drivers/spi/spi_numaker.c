@@ -227,7 +227,7 @@ static int spi_numaker_transceive(const struct device *dev,
 	int ret;
 
     LOG_DBG("%s", __FUNCTION__);
-	spi_context_lock(ctx, false, NULL, config);
+	spi_context_lock(ctx, false, NULL, NULL, config);
     ctx->config = config;
     
 	ret = spi_numaker_configure(dev, config);

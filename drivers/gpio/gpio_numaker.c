@@ -15,7 +15,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_numaker.h>
 #endif
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include "NuMicro.h"
 
 #include <zephyr/logging/log.h>

@@ -44,7 +44,6 @@
 	soc {
 		scc: system-clock-controller@40000200 {
 			compatible = "nuvoton,numaker-scc";
-			label = "SCC";
 			reg = <0x40000200 0x100>;
 			#clock-cells = <0>;
 			/* hxt = "enable"; */
@@ -54,21 +53,18 @@
 
 			pcc: peripheral-clock-controller {
 				compatible = "nuvoton,numaker-pcc";
-				label = "PCC";
 				#clock-cells = <3>;
 			};
 		};
 
         fmc: flash-controller@4000c000 {
             compatible = "nuvoton,numaker-fmc";
-            label = "FLASH_CTRL";
             reg = <0x4000c000 0x110>;
             #address-cells = <1>;
             #size-cells = <1>;
 
             flash0: flash@0 {
                 compatible = "soc-nv-flash";
-                label = "FLASH_NUMAKER";
                 reg = <0 DT_SIZE_K(1024)>;
                 erase-block-size = <4096>;
                 write-block-size = <4>;
@@ -82,7 +78,6 @@
             reset = <UART0_RST>;
             clocks = <&pcc UART0_MODULE CLK_CLKSEL1_UART0SEL_HIRC CLK_CLKDIV0_UART0(1)>;
 			status = "disabled";
-			label = "UART_0";
 		};
 
 		uart1: serial@40071000 {
@@ -92,7 +87,6 @@
             reset = <UART1_RST>;
             clocks = <&pcc UART1_MODULE CLK_CLKSEL1_UART1SEL_HIRC CLK_CLKDIV0_UART1(1)>;
 			status = "disabled";
-			label = "UART_1";
 		};
 
 		uart2: serial@40072000 {
@@ -102,7 +96,6 @@
             reset = <UART2_RST>;
             clocks = <&pcc UART2_MODULE CLK_CLKSEL3_UART2SEL_HIRC CLK_CLKDIV4_UART2(1)>;
 			status = "disabled";
-			label = "UART_2";
 		};
 
 		uart3: serial@40073000 {
@@ -112,7 +105,6 @@
             reset = <UART3_RST>;
             clocks = <&pcc UART3_MODULE CLK_CLKSEL3_UART3SEL_HIRC CLK_CLKDIV4_UART3(1)>;
 			status = "disabled";
-			label = "UART_3";
 		};
 
 		uart4: serial@40074000 {
@@ -122,7 +114,6 @@
             reset = <UART4_RST>;
             clocks = <&pcc UART4_MODULE CLK_CLKSEL3_UART4SEL_HIRC CLK_CLKDIV4_UART4(1)>;
 			status = "disabled";
-			label = "UART_4";
 		};
 
 		uart5: serial@40075000 {
@@ -132,7 +123,6 @@
             reset = <UART5_RST>;
             clocks = <&pcc UART5_MODULE CLK_CLKSEL3_UART5SEL_HIRC CLK_CLKDIV4_UART5(1)>;
 			status = "disabled";
-			label = "UART_5";
 		};
 
 		uart6: serial@40076000 {
@@ -142,7 +132,6 @@
             reset = <UART6_RST>;
             clocks = <&pcc UART6_MODULE CLK_CLKSEL3_UART6SEL_HIRC CLK_CLKDIV4_UART6(1)>;
 			status = "disabled";
-			label = "UART_6";
 		};
 
 		uart7: serial@40077000 {
@@ -152,7 +141,6 @@
             reset = <UART7_RST>;
             clocks = <&pcc UART7_MODULE CLK_CLKSEL3_UART7SEL_HIRC CLK_CLKDIV4_UART7(1)>;
 			status = "disabled";
-			label = "UART_7";
 		};
         
 		uart8: serial@40078000 {
@@ -162,7 +150,6 @@
             reset = <UART8_RST>;
             clocks = <&pcc UART8_MODULE CLK_CLKSEL2_UART8SEL_HIRC CLK_CLKDIV5_UART8(1)>;
 			status = "disabled";
-			label = "UART_8";
 		};
         
 		uart9: serial@40079000 {
@@ -172,7 +159,6 @@
             reset = <UART9_RST>;
             clocks = <&pcc UART9_MODULE CLK_CLKSEL2_UART9SEL_HIRC CLK_CLKDIV5_UART9(1)>;
 			status = "disabled";
-			label = "UART_9";
 		};        
 
 		i2c0: i2c@40080000 {
@@ -183,7 +169,6 @@
 			reset = <I2C0_RST>;
 			clocks = <&pcc I2C0_MODULE 0 0>;
 			status = "disabled";
-			label = "I2C_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -196,7 +181,6 @@
 			reset = <I2C1_RST>;
 			clocks = <&pcc I2C1_MODULE 0 0>;
 			status = "disabled";
-			label = "I2C_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -209,7 +193,6 @@
 			reset = <I2C2_RST>;
 			clocks = <&pcc I2C2_MODULE 0 0>;
 			status = "disabled";
-			label = "I2C_2";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -222,7 +205,6 @@
 			reset = <I2C3_RST>;
 			clocks = <&pcc I2C3_MODULE 0 0>;
 			status = "disabled";
-			label = "I2C_3";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -235,7 +217,6 @@
 			reset = <I2C4_RST>;
 			clocks = <&pcc I2C4_MODULE 0 0>;
 			status = "disabled";
-			label = "I2C_4";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -243,10 +224,7 @@
 		pinctrl: pin-controller@40000500 {
 			compatible = "nuvoton,numaker-pinctrl";
 			reg = <0x40000500 0xa0>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 			status = "okay";
-			label = "PINCTRL";
 		};
 		gpioa: gpio@40004000 {
 			compatible = "nuvoton,numaker-gpio";
@@ -256,7 +234,6 @@
             clocks = <&pcc GPA_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <16 2>;
-			label = "GPIOA";
 		};
 
 		gpiob: gpio@40004040 {
@@ -267,7 +244,6 @@
             clocks = <&pcc GPB_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <17 2>;
-			label = "GPIOB";
 		};
 
 		gpioc: gpio@40004080 {
@@ -278,7 +254,6 @@
             clocks = <&pcc GPC_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <18 2>;
-			label = "GPIOC";
 		};
 
 		gpiod: gpio@400040c0 {
@@ -289,7 +264,6 @@
             clocks = <&pcc GPD_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <19 2>;
-			label = "GPIOD";
 		};
 
 		gpioe: gpio@40004100 {
@@ -300,7 +274,6 @@
             clocks = <&pcc GPE_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <20 2>;
-			label = "GPIOE";
 		};
 
 		gpiof: gpio@40004140 {
@@ -311,7 +284,6 @@
             clocks = <&pcc GPF_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <21 2>;
-			label = "GPIOF";
 		};
 
 		gpiog: gpio@40004180 {
@@ -322,7 +294,6 @@
             clocks = <&pcc GPG_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <72 2>;
-			label = "GPIOG";
 		};
 
 		gpioh: gpio@400041c0 {
@@ -333,7 +304,6 @@
             clocks = <&pcc GPH_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <88 2>;
-			label = "GPIOH";
 		};
 
 		gpioi: gpio@40004200 {
@@ -344,7 +314,6 @@
             clocks = <&pcc GPI_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <110 2>;
-			label = "GPIOI";
 		};
 
 		gpioj: gpio@40004240 {
@@ -355,7 +324,6 @@
             clocks = <&pcc GPJ_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <61 2>;
-			label = "GPIOJ";
 		};
 
         spi0: spi@40061000 {
@@ -363,7 +331,6 @@
 			reg = <0x40061000 0x6c>;
 			interrupts = <23 0>;
             reset = <SPI0_RST>;
-			label = "SPI_0";
 			clocks = <&pcc SPI0_MODULE CLK_CLKSEL2_SPI0SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -375,7 +342,6 @@
 			reg = <0x40062000 0x6c>;
 			interrupts = <51 0>;
             reset = <SPI1_RST>;
-			label = "SPI_1";
 			clocks = <&pcc SPI1_MODULE CLK_CLKSEL2_SPI1SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -387,7 +353,6 @@
 			reg = <0x40063000 0x6c>;
 			interrupts = <52 0>;
             reset = <SPI2_RST>;
-			label = "SPI_2";
 			clocks = <&pcc SPI2_MODULE CLK_CLKSEL3_SPI2SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -399,7 +364,6 @@
 			reg = <0x40064000 0x6c>;
 			interrupts = <62 0>;
             reset = <SPI3_RST>;
-			label = "SPI_3";
 			clocks = <&pcc SPI3_MODULE CLK_CLKSEL3_SPI3SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -411,7 +375,6 @@
 			reg = <0x40065000 0x6c>;
 			interrupts = <63 0>;
             reset = <SPI4_RST>;
-			label = "SPI_4";
 			clocks = <&pcc SPI4_MODULE CLK_CLKSEL4_SPI4SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -423,7 +386,6 @@
 			reg = <0x40066000 0x6c>;
 			interrupts = <57 0>;
             reset = <SPI5_RST>;
-			label = "SPI_5";
 			clocks = <&pcc SPI5_MODULE CLK_CLKSEL4_SPI5SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -435,7 +397,6 @@
 			reg = <0x40067000 0x6c>;
 			interrupts = <70 0>;
             reset = <SPI6_RST>;
-			label = "SPI_6";
 			clocks = <&pcc SPI6_MODULE CLK_CLKSEL4_SPI6SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -447,7 +408,6 @@
 			reg = <0x40068000 0x6c>;
 			interrupts = <77 0>;
             reset = <SPI7_RST>;
-			label = "SPI_7";
 			clocks = <&pcc SPI7_MODULE CLK_CLKSEL4_SPI7SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -459,7 +419,6 @@
 			reg = <0x4006b000 0x6c>;
 			interrupts = <108 0>;
             reset = <SPI8_RST>;
-			label = "SPI_8";
 			clocks = <&pcc SPI8_MODULE CLK_CLKSEL4_SPI8SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -471,7 +430,6 @@
 			reg = <0x4006c000 0x6c>;
 			interrupts = <111 0>;
             reset = <SPI9_RST>;
-			label = "SPI_9";
 			clocks = <&pcc SPI9_MODULE CLK_CLKSEL4_SPI9SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -483,7 +441,6 @@
 			reg = <0x4006d000 0x6c>;
 			interrupts = <119 0>;
             reset = <SPI10_RST>;
-			label = "SPI_10";
 			clocks = <&pcc SPI10_MODULE CLK_CLKSEL4_SPI10SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -497,7 +454,6 @@
             interrupt-names = "brake", "pair0", "pair1", "pair2";
             reset = <EPWM0_RST>;
             prescaler = <19>;
-			label = "EPWM_0";
 			clocks = <&pcc EPWM0_MODULE CLK_CLKSEL2_EPWM0SEL_PCLK0 0>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -510,7 +466,6 @@
             interrupt-names = "brake", "pair0", "pair1", "pair2";
             reset = <EPWM1_RST>;
             prescaler = <19>;
-			label = "EPWM_1";
 			clocks = <&pcc EPWM1_MODULE CLK_CLKSEL2_EPWM1SEL_PCLK1 0>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -524,7 +479,6 @@
 			clocks = <&pcc USBD_MODULE CLK_CLKSEL0_USBSEL_PLL_DIV2 CLK_CLKDIV0_USB(2)>;
 			dma-buffer-size = <1536>;
             status = "disabled";
-			label = "USBD";
 			num-bidir-endpoints = <25>;
 			disallow-iso-in-out-same-number;
 		};
@@ -537,7 +491,6 @@
 			clocks = <&pcc HSUSBD_MODULE 0 0>;
             dma-buffer-size = <4096>;
 			status = "disabled";
-			label = "HSUSBD";
 			num-bidir-endpoints = <(12 + 2)>; /* Including control endpoints by +2 */
 		};
 
@@ -547,7 +500,6 @@
 			interrupts = <66 0>;
             reset = <EMAC0_RST>;
 			status = "disabled";
-			label = "EMAC_0";
 			phy-addr = <1>;
 			clocks = <&pcc EMAC0_MODULE 0 0>;
 		};
@@ -572,7 +524,6 @@
 				reset = <CANFD0_RST>;
 				clocks = <&pcc CANFD0_MODULE CLK_CLKSEL0_CANFD0SEL_HCLK CLK_CLKDIV5_CANFD0(1)>;
 				status = "disabled";
-				label = "CANFD_0";
 				sjw = <1>;
 				sample-point = <875>;
 				sjw-data = <1>;
@@ -588,7 +539,6 @@
 				reset = <CANFD1_RST>;
 				clocks = <&pcc CANFD1_MODULE CLK_CLKSEL0_CANFD1SEL_HCLK CLK_CLKDIV5_CANFD1(1)>;
 				status = "disabled";
-				label = "CANFD_1";
 				sjw = <1>;
 				sample-point = <875>;
 				sjw-data = <1>;
@@ -604,7 +554,6 @@
 				reset = <CANFD2_RST>;
 				clocks = <&pcc CANFD2_MODULE CLK_CLKSEL0_CANFD2SEL_HCLK CLK_CLKDIV5_CANFD2(1)>;
 				status = "disabled";
-				label = "CANFD_2";
 				sjw = <1>;
 				sample-point = <875>;
 				sjw-data = <1>;
@@ -620,7 +569,6 @@
 				reset = <CANFD3_RST>;
 				clocks = <&pcc CANFD3_MODULE CLK_CLKSEL0_CANFD3SEL_HCLK CLK_CLKDIV5_CANFD3(1)>;
 				status = "disabled";
-				label = "CANFD_3";
 				sjw = <1>;
 				sample-point = <875>;
 				sjw-data = <1>;

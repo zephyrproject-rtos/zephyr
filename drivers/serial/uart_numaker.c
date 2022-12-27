@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/uart.h>
 #include <string.h>
+#include <zephyr/irq.h>
 #include "NuMicro.h"
 #ifdef CONFIG_CLOCK_CONTROL_NUMAKER_SCC
 #include <zephyr/drivers/clock_control.h>
@@ -376,7 +377,7 @@ static void uart_numaker_irq_err_disable(const struct device *dev)
 /* API implementation: irq_is_pending */
 static int uart_numaker_irq_is_pending(const struct device *dev)
 {
-	const struct uart_numaker_config *config = dev->config;
+	//const struct uart_numaker_config *config = dev->config;
     
     return (uart_numaker_irq_tx_ready(dev) || (uart_numaker_irq_rx_ready(dev)));
 }
