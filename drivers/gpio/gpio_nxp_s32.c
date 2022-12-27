@@ -25,7 +25,7 @@ struct eirq_nxp_s32_info {
 };
 #endif
 
-struct gpio_s32_config {
+struct gpio_nxp_s32_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 
@@ -37,7 +37,7 @@ struct gpio_s32_config {
 #endif
 };
 
-struct gpio_s32_data {
+struct gpio_nxp_s32_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 
@@ -46,10 +46,10 @@ struct gpio_s32_data {
 #endif
 };
 
-static int s32_gpio_configure(const struct device *dev, gpio_pin_t pin,
-			      gpio_flags_t flags)
+static int nxp_s32_gpio_configure(const struct device *dev, gpio_pin_t pin,
+				  gpio_flags_t flags)
 {
-	const struct gpio_s32_config *port_config = dev->config;
+	const struct gpio_nxp_s32_config *port_config = dev->config;
 	Siul2_Dio_Ip_GpioType *gpio_base = port_config->gpio_base;
 	Siul2_Port_Ip_PortType *port_base = port_config->port_base;
 	Siul2_Port_Ip_PortPullConfig pull_config;
@@ -99,20 +99,20 @@ static int s32_gpio_configure(const struct device *dev, gpio_pin_t pin,
 	return 0;
 }
 
-static int s32_gpio_port_get_raw(const struct device *port, uint32_t *value)
+static int nxp_s32_gpio_port_get_raw(const struct device *port, uint32_t *value)
 {
-	const struct gpio_s32_config *config = port->config;
+	const struct gpio_nxp_s32_config *config = port->config;
 
 	*value = Siul2_Dio_Ip_ReadPins(config->gpio_base);
 
 	return 0;
 }
 
-static int s32_gpio_port_set_masked_raw(const struct device *port,
-					gpio_port_pins_t mask,
-					gpio_port_value_t value)
+static int nxp_s32_gpio_port_set_masked_raw(const struct device *port,
+					    gpio_port_pins_t mask,
+					    gpio_port_value_t value)
 {
-	const struct gpio_s32_config *config = port->config;
+	const struct gpio_nxp_s32_config *config = port->config;
 	Siul2_Dio_Ip_GpioType *gpio_base = config->gpio_base;
 	gpio_port_pins_t pins_value = Siul2_Dio_Ip_GetPinsOutput(gpio_base);
 
@@ -122,30 +122,30 @@ static int s32_gpio_port_set_masked_raw(const struct device *port,
 	return 0;
 }
 
-static int s32_gpio_port_set_bits_raw(const struct device *port,
-				      gpio_port_pins_t pins)
+static int nxp_s32_gpio_port_set_bits_raw(const struct device *port,
+					  gpio_port_pins_t pins)
 {
-	const struct gpio_s32_config *config = port->config;
+	const struct gpio_nxp_s32_config *config = port->config;
 
 	Siul2_Dio_Ip_SetPins(config->gpio_base, pins);
 
 	return 0;
 }
 
-static int s32_gpio_port_clear_bits_raw(const struct device *port,
-					gpio_port_pins_t pins)
+static int nxp_s32_gpio_port_clear_bits_raw(const struct device *port,
+					    gpio_port_pins_t pins)
 {
-	const struct gpio_s32_config *config = port->config;
+	const struct gpio_nxp_s32_config *config = port->config;
 
 	Siul2_Dio_Ip_ClearPins(config->gpio_base, pins);
 
 	return 0;
 }
 
-static int s32_gpio_port_toggle_bits(const struct device *port,
-				     gpio_port_pins_t pins)
+static int nxp_s32_gpio_port_toggle_bits(const struct device *port,
+					 gpio_port_pins_t pins)
 {
-	const struct gpio_s32_config *config = port->config;
+	const struct gpio_nxp_s32_config *config = port->config;
 
 	Siul2_Dio_Ip_TogglePins(config->gpio_base, pins);
 
@@ -154,7 +154,7 @@ static int s32_gpio_port_toggle_bits(const struct device *port,
 
 #ifdef CONFIG_NXP_S32_EIRQ
 
-static uint8_t s32_gpio_pin_to_line(const struct eirq_nxp_s32_info *eirq_info, uint8_t pin)
+static uint8_t nxp_s32_gpio_pin_to_line(const struct eirq_nxp_s32_info *eirq_info, uint8_t pin)
 {
 	uint8_t i;
 
@@ -167,9 +167,9 @@ static uint8_t s32_gpio_pin_to_line(const struct eirq_nxp_s32_info *eirq_info, u
 	return SIUL2_ICU_IP_NUM_OF_CHANNELS;
 }
 
-static int s32_gpio_eirq_get_trigger(Siul2_Icu_Ip_EdgeType *edge_type,
-					enum gpio_int_mode mode,
-					enum gpio_int_trig trigger)
+static int nxp_s32_gpio_eirq_get_trigger(Siul2_Icu_Ip_EdgeType *edge_type,
+					 enum gpio_int_mode mode,
+					 enum gpio_int_trig trigger)
 {
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		*edge_type = SIUL2_ICU_DISABLE;
@@ -197,22 +197,22 @@ static int s32_gpio_eirq_get_trigger(Siul2_Icu_Ip_EdgeType *edge_type,
 	return 0;
 }
 
-static void s32_gpio_isr(uint8_t pin, void *arg)
+static void nxp_s32_gpio_isr(uint8_t pin, void *arg)
 {
 	const struct device *dev = (struct device *)arg;
-	struct gpio_s32_data *data = dev->data;
+	struct gpio_nxp_s32_data *data = dev->data;
 
 	gpio_fire_callbacks(&data->callbacks, dev, BIT(pin));
 }
 #endif /* CONFIG_NXP_S32_EIRQ */
 
-static int s32_gpio_pin_interrupt_configure(const struct device *dev,
-					    gpio_pin_t pin,
-					    enum gpio_int_mode mode,
-					    enum gpio_int_trig trig)
+static int nxp_s32_gpio_pin_interrupt_configure(const struct device *dev,
+						gpio_pin_t pin,
+						enum gpio_int_mode mode,
+						enum gpio_int_trig trig)
 {
 #ifdef CONFIG_NXP_S32_EIRQ
-	const struct gpio_s32_config *config = dev->config;
+	const struct gpio_nxp_s32_config *config = dev->config;
 	const struct eirq_nxp_s32_info *eirq_info = config->eirq_info;
 
 	uint8_t eirq_line;
@@ -227,7 +227,7 @@ static int s32_gpio_pin_interrupt_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	eirq_line = s32_gpio_pin_to_line(eirq_info, pin);
+	eirq_line = nxp_s32_gpio_pin_to_line(eirq_info, pin);
 
 	if (eirq_line == SIUL2_ICU_IP_NUM_OF_CHANNELS) {
 		/*
@@ -237,7 +237,7 @@ static int s32_gpio_pin_interrupt_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (s32_gpio_eirq_get_trigger(&edge_type, mode, trig)) {
+	if (nxp_s32_gpio_eirq_get_trigger(&edge_type, mode, trig)) {
 		return -ENOTSUP;
 	}
 
@@ -246,7 +246,7 @@ static int s32_gpio_pin_interrupt_configure(const struct device *dev,
 		eirq_nxp_s32_unset_callback(eirq_info->eirq_dev, eirq_line);
 	} else {
 		if (eirq_nxp_s32_set_callback(eirq_info->eirq_dev, eirq_line,
-						s32_gpio_isr, pin, (void *)dev)) {
+						nxp_s32_gpio_isr, pin, (void *)dev)) {
 			return -EBUSY;
 		}
 
@@ -264,11 +264,11 @@ static int s32_gpio_pin_interrupt_configure(const struct device *dev,
 #endif
 }
 
-static int s32_gpio_manage_callback(const struct device *dev,
-				    struct gpio_callback *cb, bool set)
+static int nxp_s32_gpio_manage_callback(const struct device *dev,
+					struct gpio_callback *cb, bool set)
 {
 #ifdef CONFIG_NXP_S32_EIRQ
-	struct gpio_s32_data *data = dev->data;
+	struct gpio_nxp_s32_data *data = dev->data;
 
 	return gpio_manage_callback(&data->callbacks, cb, set);
 #else
@@ -280,10 +280,10 @@ static int s32_gpio_manage_callback(const struct device *dev,
 #endif
 }
 
-static uint32_t s32_gpio_get_pending_int(const struct device *dev)
+static uint32_t nxp_s32_gpio_get_pending_int(const struct device *dev)
 {
 #ifdef CONFIG_NXP_S32_EIRQ
-	const struct gpio_s32_config *config = dev->config;
+	const struct gpio_nxp_s32_config *config = dev->config;
 	const struct eirq_nxp_s32_info *eirq_info = config->eirq_info;
 
 	if (eirq_info == NULL) {
@@ -307,16 +307,16 @@ static uint32_t s32_gpio_get_pending_int(const struct device *dev)
 #endif
 }
 
-static const struct gpio_driver_api gpio_s32_driver_api = {
-	.pin_configure = s32_gpio_configure,
-	.port_get_raw = s32_gpio_port_get_raw,
-	.port_set_masked_raw = s32_gpio_port_set_masked_raw,
-	.port_set_bits_raw = s32_gpio_port_set_bits_raw,
-	.port_clear_bits_raw = s32_gpio_port_clear_bits_raw,
-	.port_toggle_bits = s32_gpio_port_toggle_bits,
-	.pin_interrupt_configure = s32_gpio_pin_interrupt_configure,
-	.manage_callback = s32_gpio_manage_callback,
-	.get_pending_int = s32_gpio_get_pending_int
+static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
+	.pin_configure = nxp_s32_gpio_configure,
+	.port_get_raw = nxp_s32_gpio_port_get_raw,
+	.port_set_masked_raw = nxp_s32_gpio_port_set_masked_raw,
+	.port_set_bits_raw = nxp_s32_gpio_port_set_bits_raw,
+	.port_clear_bits_raw = nxp_s32_gpio_port_clear_bits_raw,
+	.port_toggle_bits = nxp_s32_gpio_port_toggle_bits,
+	.pin_interrupt_configure = nxp_s32_gpio_pin_interrupt_configure,
+	.manage_callback = nxp_s32_gpio_manage_callback,
+	.get_pending_int = nxp_s32_gpio_get_pending_int
 };
 
 /* Calculate the port pin mask based on ngpios and gpio-reserved-ranges node
@@ -332,80 +332,80 @@ static const struct gpio_driver_api gpio_s32_driver_api = {
  *
  * the generated mask will be will be 0x3C00.
  */
-#define GPIO_S32_RESERVED_PIN_MASK(n)						\
+#define GPIO_NXP_S32_RESERVED_PIN_MASK(n)					\
 	(GENMASK(DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 0) +		\
 			DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 1) - 1,	\
 		 DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 0)		\
 	))
 
-#define GPIO_S32_PORT_PIN_MASK(n)						\
+#define GPIO_NXP_S32_PORT_PIN_MASK(n)						\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpio_reserved_ranges),		\
 		(GPIO_PORT_PIN_MASK_FROM_DT_INST(n)				\
-			& ~(GPIO_S32_RESERVED_PIN_MASK(n))),			\
+			& ~(GPIO_NXP_S32_RESERVED_PIN_MASK(n))),		\
 		(GPIO_PORT_PIN_MASK_FROM_DT_INST(n)))
 
-#define GPIO_S32_REG_ADDR(n)							\
+#define GPIO_NXP_S32_REG_ADDR(n)						\
 	((Siul2_Dio_Ip_GpioType *)DT_INST_REG_ADDR_BY_NAME(n, pgpdo))
 
-#define GPIO_S32_PORT_REG_ADDR(n)						\
+#define GPIO_NXP_S32_PORT_REG_ADDR(n)						\
 	((Siul2_Port_Ip_PortType *)DT_INST_REG_ADDR_BY_NAME(n, mscr))
 
 #ifdef CONFIG_NXP_S32_EIRQ
-#define GPIO_S32_EIRQ_NODE(n)							\
+#define GPIO_NXP_S32_EIRQ_NODE(n)						\
 	DT_INST_PHANDLE(n, interrupt_parent)
 
-#define GPIO_S32_EIRQ_PIN_LINE(idx, n)						\
+#define GPIO_NXP_S32_EIRQ_PIN_LINE(idx, n)					\
 	{									\
 		.pin  = DT_INST_IRQ_BY_IDX(n, idx, gpio_pin),			\
 		.line = DT_INST_IRQ_BY_IDX(n, idx, eirq_line),			\
 	}
 
-#define GPIO_S32_SET_EIRQ_INFO(n)						\
+#define GPIO_NXP_S32_SET_EIRQ_INFO(n)						\
 	BUILD_ASSERT((DT_NODE_HAS_PROP(DT_DRV_INST(n), interrupt_parent) ==	\
 			DT_NODE_HAS_PROP(DT_DRV_INST(n), interrupts)),		\
 			"interrupts and interrupt-parent must be set when"	\
 			" using external interrupts");				\
-	IF_ENABLED(DT_NODE_HAS_STATUS(GPIO_S32_EIRQ_NODE(n), okay),		\
+	IF_ENABLED(DT_NODE_HAS_STATUS(GPIO_NXP_S32_EIRQ_NODE(n), okay),		\
 		(static struct eirq_nxp_s32_info eirq_nxp_s32_info_##n = {	\
-			.eirq_dev = DEVICE_DT_GET(GPIO_S32_EIRQ_NODE(n)),	\
+			.eirq_dev = DEVICE_DT_GET(GPIO_NXP_S32_EIRQ_NODE(n)),	\
 			.gpio_pin_lines = {					\
 				LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)),		\
-					GPIO_S32_EIRQ_PIN_LINE, (,), n)		\
+					GPIO_NXP_S32_EIRQ_PIN_LINE, (,), n)	\
 			},							\
 			.num_lines = DT_NUM_IRQS(DT_DRV_INST(n))		\
 		};								\
 		))
 
-#define GPIO_S32_GET_EIRQ_INFO(n)						\
-	.eirq_info = UTIL_AND(DT_NODE_HAS_STATUS(GPIO_S32_EIRQ_NODE(n), okay),	\
+#define GPIO_NXP_S32_GET_EIRQ_INFO(n)						\
+	.eirq_info = UTIL_AND(DT_NODE_HAS_STATUS(GPIO_NXP_S32_EIRQ_NODE(n), okay),\
 				&eirq_nxp_s32_info_##n)
 #else
-#define GPIO_S32_SET_EIRQ_INFO(n)
-#define GPIO_S32_GET_EIRQ_INFO(n)
+#define GPIO_NXP_S32_SET_EIRQ_INFO(n)
+#define GPIO_NXP_S32_GET_EIRQ_INFO(n)
 #endif /* CONFIG_NXP_S32_EIRQ */
 
-#define GPIO_S32_DEVICE_INIT(n)							\
-	GPIO_S32_SET_EIRQ_INFO(n)						\
-	static const struct gpio_s32_config gpio_s32_config_##n = {		\
+#define GPIO_NXP_S32_DEVICE_INIT(n)						\
+	GPIO_NXP_S32_SET_EIRQ_INFO(n)						\
+	static const struct gpio_nxp_s32_config gpio_nxp_s32_config_##n = {	\
 		.common = {							\
-			.port_pin_mask = GPIO_S32_PORT_PIN_MASK(n),		\
+			.port_pin_mask = GPIO_NXP_S32_PORT_PIN_MASK(n),		\
 		},								\
-		.gpio_base = GPIO_S32_REG_ADDR(n),				\
-		.port_base = GPIO_S32_PORT_REG_ADDR(n),				\
-		GPIO_S32_GET_EIRQ_INFO(n)					\
+		.gpio_base = GPIO_NXP_S32_REG_ADDR(n),				\
+		.port_base = GPIO_NXP_S32_PORT_REG_ADDR(n),			\
+		GPIO_NXP_S32_GET_EIRQ_INFO(n)					\
 	};									\
-	static struct gpio_s32_data gpio_s32_data_##n;				\
-	static int gpio_s32_init_##n(const struct device *dev)			\
+	static struct gpio_nxp_s32_data gpio_nxp_s32_data_##n;			\
+	static int gpio_nxp_s32_init_##n(const struct device *dev)		\
 	{									\
 		return 0;							\
 	}									\
 	DEVICE_DT_INST_DEFINE(n,						\
-			gpio_s32_init_##n,					\
+			gpio_nxp_s32_init_##n,					\
 			NULL,							\
-			&gpio_s32_data_##n,					\
-			&gpio_s32_config_##n,					\
+			&gpio_nxp_s32_data_##n,					\
+			&gpio_nxp_s32_config_##n,				\
 			POST_KERNEL,						\
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,			\
-			&gpio_s32_driver_api);
+			&gpio_nxp_s32_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(GPIO_S32_DEVICE_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_NXP_S32_DEVICE_INIT)
