@@ -838,6 +838,13 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			break;
 		case E8042_CLEAR_OBF:
 			/*
+			 * After enabling IBF/OBF clear mode, we have to make
+			 * sure that IBF interrupt is not triggered before
+			 * disabling the clear mode. Or the interrupt will keep
+			 * triggering until the watchdog is reset.
+			 */
+			unsigned int key = irq_lock();
+			/*
 			 * When IBFOBFCME is enabled, write 1 to COBF bit to
 			 * clear KBC OBF.
 			 */
@@ -846,6 +853,7 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			kbc_reg->KBHICR &= ~KBC_KBHICR_COBF;
 			/* Disable clear mode */
 			kbc_reg->KBHICR &= ~KBC_KBHICR_IBFOBFCME;
+			irq_unlock(key);
 			break;
 		case E8042_SET_FLAG:
 			kbc_reg->KBHISR |= (*data & 0xff);
