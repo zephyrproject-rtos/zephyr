@@ -146,7 +146,7 @@ static int cmd_vlist(const struct shell *sh, size_t argc, char **argv)
 		(void)regulator_list_voltage(dev, i, &volt_uv);
 
 		/* do not print repeated voltages */
-		if ((i > 0U) && (last_volt_uv != volt_uv)) {
+		if ((i == 0U) || (last_volt_uv != volt_uv)) {
 			microtoshell(sh, 'V', volt_uv);
 		}
 
