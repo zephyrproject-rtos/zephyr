@@ -55,7 +55,7 @@ source "drivers/pinctrl/Kconfig.rv32m1"
 source "drivers/pinctrl/Kconfig.xlnx"
 source "drivers/pinctrl/Kconfig.smartbond"
 source "drivers/pinctrl/Kconfig.xmc4xxx"
-source "drivers/pinctrl/Kconfig.s32"
+source "drivers/pinctrl/Kconfig.nxp_s32"
 source "drivers/pinctrl/Kconfig.gecko"
 
 endif # PINCTRL
