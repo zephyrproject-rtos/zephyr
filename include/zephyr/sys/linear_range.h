@@ -93,10 +93,6 @@ struct linear_range {
  */
 static inline uint32_t linear_range_values_count(const struct linear_range *r)
 {
-	if (r->step == 0U) {
-		return 1U;
-	}
-
 	return r->max_idx - r->min_idx + 1U;
 }
 

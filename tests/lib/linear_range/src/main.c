@@ -50,9 +50,9 @@ ZTEST(linear_range, test_linear_range_values_count)
 	zassert_equal(linear_range_values_count(&r[0]), 2U);
 	zassert_equal(linear_range_values_count(&r[1]), 2U);
 	zassert_equal(linear_range_values_count(&r[2]), 7U);
-	zassert_equal(linear_range_values_count(&r[3]), 1U);
+	zassert_equal(linear_range_values_count(&r[3]), 2U);
 
-	zassert_equal(linear_range_group_values_count(r, r_cnt), 12U);
+	zassert_equal(linear_range_group_values_count(r, r_cnt), 13U);
 }
 
 ZTEST(linear_range, test_linear_range_get_max_value)
