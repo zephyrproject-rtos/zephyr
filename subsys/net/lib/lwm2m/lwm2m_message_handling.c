@@ -2912,9 +2912,7 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 					  sys_slist_t *lwm2m_path_list,
 					  sys_slist_t *lwm2m_path_free_list)
 {
-	struct lwm2m_obj_path temp;
 	uint32_t bytes_available = 0;
-	int ret;
 
 	/* Check do we have still pending data to send */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
@@ -2923,12 +2921,9 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 			continue;
 		}
 
-		ret = lwm2m_string_to_path(cache_temp->read_info[i].cache_data->path, &temp, '/');
-		if (ret < 0) {
-			return false;
-		}
 		/* Add to linked list */
-		if (lwm2m_engine_add_path_to_list(lwm2m_path_list, lwm2m_path_free_list, &temp)) {
+		if (lwm2m_engine_add_path_to_list(lwm2m_path_list, lwm2m_path_free_list,
+						  &cache_temp->read_info[i].cache_data->path)) {
 			return false;
 		}
 
