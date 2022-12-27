@@ -7,14 +7,14 @@
 #ifndef ZEPHYR_DRIVERS_SERIAL_UART_S32_LINFLEXD_H_
 #define ZEPHYR_DRIVERS_SERIAL_UART_S32_LINFLEXD_H_
 
-struct uart_s32_config {
+struct uart_nxp_s32_config {
 	uint32_t instance;
 	LINFLEXD_Type *base;
 	const struct pinctrl_dev_config *pincfg;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-struct uart_s32_int {
+struct uart_nxp_s32_int {
 	bool tx_fifo_busy;
 	bool rx_fifo_busy;
 	bool irq_tx_enable;
@@ -23,11 +23,11 @@ struct uart_s32_int {
 };
 #endif
 
-struct uart_s32_data {
+struct uart_nxp_s32_data {
 	Linflexd_Uart_Ip_UserConfigType hw_cfg;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct uart_s32_int int_data;
+	struct uart_nxp_s32_int int_data;
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
