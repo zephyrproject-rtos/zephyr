@@ -1,7 +1,7 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config PINCTRL_S32
+config PINCTRL_NXP_S32
 	bool "Pin controller driver for NXP S32 processors"
 	default y
 	depends on DT_HAS_NXP_S32ZE_PINCTRL_ENABLED
