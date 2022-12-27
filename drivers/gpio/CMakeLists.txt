@@ -61,7 +61,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_XLNX_PS    gpio_xlnx_ps.c gpio_xlnx_ps_
 zephyr_library_sources_ifdef(CONFIG_GPIO_SN74HC595  gpio_sn74hc595.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_MCHP_MSS       gpio_mchp_mss.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SMARTBOND  gpio_smartbond.c)
-zephyr_library_sources_ifdef(CONFIG_GPIO_S32        gpio_s32.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_NXP_S32    gpio_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_TCA6424A   gpio_tca6424a.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   gpio_handlers.c)
