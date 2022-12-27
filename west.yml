@@ -16,11 +16,15 @@
 
 manifest:
   defaults:
-    remote: upstream
+    remote: origin
 
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: origin
+      url-base: https://github.com/sviraaj
+    - name: zedblox
+      url-base: https://github.com/zedblox
 
   #
   # Please add items below based on alphabetical order
