@@ -237,7 +237,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
 
         dt_bindings = []
         for file_name in get_files(filter="d"):
-            if file_name.startswith('dts/bindings/') and file_name.endswith('.yaml'):
+            if 'dts/bindings/' in file_name and file_name.endswith('.yaml'):
                 dt_bindings.append(file_name)
 
         return dt_bindings
