@@ -4450,6 +4450,24 @@ __syscall int k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout);
 __syscall int k_msgq_peek(struct k_msgq *msgq, void *data);
 
 /**
+ * @brief Peek/read a message from a message queue at the specified index
+ *
+ * This routine reads a message from message queue at the specified index
+ * and leaves the message in the queue.
+ * k_msgq_peek_at(msgq, data, 0) is equivalent to k_msgq_peek(msgq, data)
+ *
+ * @funcprops \isr_ok
+ *
+ * @param msgq Address of the message queue.
+ * @param data Address of area to hold the message read from the queue.
+ * @param idx Message queue index at which to peek
+ *
+ * @retval 0 Message read.
+ * @retval -ENOMSG Returned when the queue has no message at index.
+ */
+__syscall int k_msgq_peek_at(struct k_msgq *msgq, void *data, uint32_t idx);
+
+/**
  * @brief Purge a message queue.
  *
  * This routine discards all unreceived messages in a message queue's ring
