@@ -59,7 +59,7 @@ static int nu_int_i2c_poll_tran_heatbeat_timeout(const struct device *dev, uint3
 static int nu_int_i2c_is_trsn_done(const struct device *dev);
 static int nu_int_i2c_is_tran_started(const struct device *dev);
 static int nu_int_i2c_addr2data(int address, int read);
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 /* Convert zephyr address to BSP address. */
 static int nu_int_i2c_addr2bspaddr(int address);
 static void nu_int_i2c_enable_slave_if_registered(const struct device *dev);
@@ -76,7 +76,7 @@ static int nu_int_i2c_set_int(const struct device *dev, int inten);
 #define TRANCTRL_LASTDATANAKED  (1 << 2)    // Last data NACKed
 #define TRANCTRL_RECVDATA       (1 << 3)    // Receive data available
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 #define NoData         0    // the slave has not been addressed
 #define ReadAddressed  1    // the master has requested a read from this slave (slave = transmitter)
 #define WriteGeneral   2    // the master is writing to all slave
@@ -110,8 +110,8 @@ struct i2c_numaker_data {
     struct          k_sem lock;
     struct          k_sem xfer_sync;
     uint32_t        dev_config;
-#ifdef CONFIG_I2C_SLAVE
-    struct i2c_slave_config *   slave_config;
+#ifdef CONFIG_I2C_TARGET
+    struct i2c_target_config *   slave_config;
 #endif
 
     struct {
@@ -120,7 +120,7 @@ struct i2c_numaker_data {
         char *      tran_pos;
         char *      tran_end;
         int         inten;
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
         int         slaveaddr_state;
 #endif
     } i2c;    
@@ -165,7 +165,7 @@ static int i2c_numaker_configure(const struct device *dev,
     k_sem_take(&data->lock, K_FOREVER);
     nu_int_i2c_disable_int(dev);
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
     if (nu_int_i2c_is_slave_busy(dev)) {
         LOG_ERR("Reconfigure with slave being busy");
         err = -EBUSY;
@@ -286,7 +286,7 @@ static int i2c_numaker_transfer(const struct device *dev, struct i2c_msg *msgs,
     /* Do I2C stop to release bus ownership */
     nu_int_i2c_stop(dev);
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
     /* Enable slave mode if any slave registered */
     nu_int_i2c_enable_slave_if_registered(dev);
 #endif
@@ -299,15 +299,15 @@ cleanup:
     return err;
 }
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 static int i2c_numaker_slave_register(const struct device *dev,
-                       struct i2c_slave_config *slave_config)
+                       struct i2c_target_config *slave_config)
 {
     if (!slave_config) {
         return -EINVAL;
     }
 
-    if (slave_config->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS) {
+    if (slave_config->flags & I2C_ADDR_10_BITS) {
         LOG_ERR("10-bits address not supported");
         return -ENOTSUP;
     }
@@ -347,7 +347,7 @@ cleanup:
 }
 
 static int i2c_numaker_slave_unregister(const struct device *dev,
-                     struct i2c_slave_config *slave_config)
+                     struct i2c_target_config *slave_config)
 {
     if (!slave_config) {
         return -EINVAL;
@@ -411,9 +411,9 @@ static void i2c_numaker_isr(const struct device *dev)
     const struct i2c_numaker_config *config = dev->config;
     struct i2c_numaker_data *data = dev->data;
     I2C_T *i2c_base = config->i2c_base;
-#ifdef CONFIG_I2C_SLAVE
-    struct i2c_slave_config *slave_config = data->slave_config;
-    const struct i2c_slave_callbacks *slave_callbacks = slave_config ? slave_config->callbacks : NULL;
+#ifdef CONFIG_I2C_TARGET
+    struct i2c_target_config *slave_config = data->slave_config;
+    const struct i2c_target_callbacks *slave_callbacks = slave_config ? slave_config->callbacks : NULL;
     int err = 0;
     uint8_t data_tran;
 #endif
@@ -501,7 +501,7 @@ static void i2c_numaker_isr(const struct device *dev)
 
     //case 0x00:  // Bus error
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
     // Slave Transmit
     case 0xB8:  // Slave Transmit Data ACK
     case 0xA8:  // Slave Transmit Address ACK
@@ -671,7 +671,7 @@ static void i2c_numaker_isr(const struct device *dev)
             nu_int_i2c_disable_int(dev);
         }
         break;
-#endif  /* CONFIG_I2C_SLAVE */
+#endif  /* CONFIG_I2C_TARGET */
 
     case 0xF8:  // Bus Released
         break;
@@ -739,7 +739,7 @@ static int i2c_numaker_init(const struct device *dev)
 
     SYS_ResetModule(config->id_rst);
 
-    err = i2c_numaker_configure(dev, I2C_MODE_MASTER | i2c_map_dt_bitrate(config->bitrate));
+    err = i2c_numaker_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
     if (err != 0) {
         goto cleanup;
     }
@@ -756,9 +756,9 @@ static const struct i2c_driver_api i2c_numaker_driver_api = {
     .configure          = i2c_numaker_configure,
     .get_config         = i2c_numaker_get_config,
     .transfer           = i2c_numaker_transfer,
-#ifdef CONFIG_I2C_SLAVE
-    .slave_register     = i2c_numaker_slave_register,
-    .slave_unregister   = i2c_numaker_slave_unregister,
+#ifdef CONFIG_I2C_TARGET
+    .target_register    = i2c_numaker_slave_register,
+    .target_unregister  = i2c_numaker_slave_unregister,
 #endif
     .recover_bus        = i2c_numaker_recover_bus,
 };
@@ -831,7 +831,7 @@ static void nu_int_i2c_fsm_reset(const struct device *dev, uint32_t i2c_ctl)
     data->i2c.tran_ctrl = 0;
 
     I2C_SET_CONTROL_REG(i2c_base, i2c_ctl);
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
     data->i2c.slaveaddr_state = NoData;
 #endif
 }
@@ -1014,7 +1014,7 @@ static int nu_int_i2c_addr2data(int address, int read)
     return read ? ((address << 1) | 1) : (address << 1);
 }
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 static int nu_int_i2c_addr2bspaddr(int address)
 {
     return address;
