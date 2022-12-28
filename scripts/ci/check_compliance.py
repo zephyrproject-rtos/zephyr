@@ -20,6 +20,9 @@ import shlex
 from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
 import magic
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from get_maintainer import Maintainers, MaintainersError
+
 logger = None
 
 def git(*args, cwd=None):
@@ -965,6 +968,27 @@ class ImageSize(ComplianceTest):
             if size > limit:
                 self.failure(f"Image file too large: {file} reduce size to "
                              f"less than {limit >> 10}kB")
+
+
+class MaintainersFormat(ComplianceTest):
+    """
+    Check that MAINTAINERS file parses correctly.
+    """
+    name = "MaintainersFormat"
+    doc = "Check that MAINTAINERS file parses correctly."
+    path_hint = "<git-top>"
+
+    def run(self):
+        MAINTAINERS_FILES = ["MAINTAINERS.yml", "MAINTAINERS.yaml"]
+
+        for file in get_files(filter="d"):
+            if file not in MAINTAINERS_FILES:
+                continue
+
+            try:
+                Maintainers(file)
+            except MaintainersError as ex:
+                self.failure(f"Error parsing {file}: {ex}")
 
 
 def init_logs(cli_arg):
