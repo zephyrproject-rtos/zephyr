@@ -5,5 +5,6 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(device)
 
 target_sources(app PRIVATE
+  src/charging_mode.c
   src/pd_mode.c
 )
