@@ -3,7 +3,8 @@ tests:
     tags: drivers regulator
     harness: ztest
     harness_config:
-      fixture: regulator_gpio_loopback
+      fixture: gpio_loopback
+    depends_on: gpio
     platform_allow: nrf52840dk_nrf52840
     integration_platforms:
       - nrf52840dk_nrf52840
