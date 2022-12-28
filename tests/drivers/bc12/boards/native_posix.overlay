@@ -13,5 +13,6 @@
 		compatible = "diodes,pi3usb9201";
 		reg = <0x5f>;
 		intb-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		charging-mode = "BC12_TYPE_CDP";
 	};
 };
