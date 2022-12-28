@@ -74,6 +74,7 @@
 				volt-sel-mask = <0        0        0        0
 						 0x1      0x02     0x20     0x40    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrlb: pinctrl@f01618 {
@@ -92,6 +93,7 @@
 				volt-sel-mask = <0        0        0        0x02
 						 0x01     0x80     0x40     0x10    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrlc: pinctrl@f01620 {
@@ -110,6 +112,7 @@
 				volt-sel-mask = <0x80     0x20     0x10     0
 						 0x04     0        0x08     0x08    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrld: pinctrl@f01628 {
@@ -128,6 +131,7 @@
 				volt-sel-mask = <0x04     0x02     0x01     0x80
 						 0x40     0x10     0x20     0x40    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrle: pinctrl@f01630 {
@@ -146,6 +150,7 @@
 				volt-sel-mask = <0x20     0x40     0x80     0
 						 0x04     0x08     0x10     0x08    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrlf: pinctrl@f01638 {
@@ -164,6 +169,7 @@
 				volt-sel-mask = <0x10     0x20     0x04     0x02
 						 0x01     0x80     0x40     0x20    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrlg: pinctrl@f01640 {
@@ -182,6 +188,7 @@
 				volt-sel-mask = <0x04     0x10    0x08     0
 						 0        0       0x08     0       >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrlh: pinctrl@f01648 {
@@ -200,6 +207,7 @@
 				volt-sel-mask = <0x04     0x02     0x01     0
 						 0        0x80     0x01     0      >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrli: pinctrl@f01650 {
@@ -218,6 +226,7 @@
 				volt-sel-mask = <0x08     0x10     0x20     0x40
 						 0x80     0x10     0x20     0x40    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrlj: pinctrl@f01658 {
@@ -236,6 +245,7 @@
 				volt-sel-mask = <0x01     0x02     0x04     0x08
 						 0x01     0x02     0x04     0x04    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrlk: pinctrl@f01690 {
@@ -254,6 +264,7 @@
 				volt-sel-mask = <0x01     0x02     0x04     0x08
 						 0x10     0x20     0x40     0x80    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrll: pinctrl@f01698 {
@@ -272,6 +283,7 @@
 				volt-sel-mask = <0x01     0x02     0x04     0x08
 						 0x10     0x20     0x40     0x80    >;
 				#pinmux-cells = <2>;
+				gpio-group;
 			};
 
 			pinctrlm: pinctrl@f016a0 {
@@ -289,6 +301,34 @@
 						 0xf016ed 0xf016ed 0xf016ed NO_FUNC >;
 				volt-sel-mask = <0x10     0x10     0x10     0x10
 						 0x10     0x10     0x10     0       >;
+				#pinmux-cells = <2>;
+				gpio-group;
+			};
+
+			pinctrlksi: pinctrl@f01d06 {
+				compatible = "ite,it8xxx2-pinctrl-func";
+				reg = <0x00f01d06 1   /* KSIGCTRL */
+				       0x00f01d05 1>; /* KSICTRL */
+				pp-od-mask = <NO_FUNC>;
+				pullup-mask = <BIT(2)>;
+				#pinmux-cells = <2>;
+			};
+
+			pinctrlksoh: pinctrl@f01d0a {
+				compatible = "ite,it8xxx2-pinctrl-func";
+				reg = <0x00f01d0a 1   /* KSOHGCTRL */
+				       0x00f01d02 1>; /* KSOCTRL */
+				pp-od-mask = <BIT(0)>;
+				pullup-mask = <BIT(2)>;
+				#pinmux-cells = <2>;
+			};
+
+			pinctrlksol: pinctrl@f01d0d {
+				compatible = "ite,it8xxx2-pinctrl-func";
+				reg = <0x00f01d0d 1   /* KSOLGCTRL */
+				       0x00f01d02 1>; /* KSOCTRL */
+				pp-od-mask = <BIT(0)>;
+				pullup-mask = <BIT(2)>;
 				#pinmux-cells = <2>;
 			};
 		};
