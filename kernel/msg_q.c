@@ -315,6 +315,52 @@ static inline int z_vrfy_k_msgq_peek(struct k_msgq *msgq, void *data)
 #include <syscalls/k_msgq_peek_mrsh.c>
 #endif
 
+int z_impl_k_msgq_peek_at(struct k_msgq *msgq, void *data, uint32_t idx)
+{
+	k_spinlock_key_t key;
+	int result;
+	uint32_t bytes_to_end;
+	uint32_t byte_offset;
+	char *start_addr;
+
+	key = k_spin_lock(&msgq->lock);
+
+	if (msgq->used_msgs > idx) {
+		bytes_to_end = (msgq->buffer_end - msgq->read_ptr);
+		byte_offset = idx * msgq->msg_size;
+		start_addr = msgq->read_ptr;
+		/* check item available in start/end of ring buffer */
+		if (bytes_to_end <= byte_offset) {
+			/* Tweak the values in case */
+			byte_offset -= bytes_to_end;
+			/* wrap-around is required */
+			start_addr = msgq->buffer_start;
+		}
+		(void)memcpy(data, start_addr + byte_offset, msgq->msg_size);
+		result = 0;
+	} else {
+		/* don't wait for a message to become available */
+		result = -ENOMSG;
+	}
+
+	SYS_PORT_TRACING_OBJ_FUNC(k_msgq, peek, msgq, result);
+
+	k_spin_unlock(&msgq->lock, key);
+
+	return result;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_msgq_peek_at(struct k_msgq *msgq, void *data, uint32_t idx)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, msgq->msg_size));
+
+	return z_impl_k_msgq_peek_at(msgq, data, idx);
+}
+#include <syscalls/k_msgq_peek_at_mrsh.c>
+#endif
+
 void z_impl_k_msgq_purge(struct k_msgq *msgq)
 {
 	k_spinlock_key_t key;
