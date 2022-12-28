@@ -729,6 +729,33 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 }
 
 /**
+ * @brief Return ethernet device configuration information.
+ *
+ * @param iface Network interface
+ * @param config_type Config data to be retrieved
+ * @param config Output buffer for Ethernet configuration
+ *
+ * @return 0 if ok, <0 if error
+ */
+static inline
+int net_eth_get_config(struct net_if *iface, enum ethernet_config_type config_type,
+					   struct ethernet_config *config)
+{
+	const struct ethernet_api *eth =
+		(struct ethernet_api *)net_if_get_device(iface)->api;
+
+	if (!eth->get_config) {
+		return -EFAULT;
+	}
+
+	if (!config) {
+		return -EFAULT;
+	}
+
+	return eth->get_config(net_if_get_device(iface), config_type, config);
+}
+
+/**
  * @brief Add VLAN tag to the interface.
  *
  * @param iface Interface to use.
