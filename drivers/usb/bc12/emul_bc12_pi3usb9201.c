@@ -57,6 +57,31 @@ struct pi3usb9201_emul_cfg {
 	struct gpio_dt_spec intb_gpio;
 };
 
+static bool pi3usb9201_emul_interrupt_is_pending(const struct emul *target)
+{
+	struct pi3usb9201_emul_data *data = target->data;
+
+	if (data->reg[PI3USB9201_REG_CTRL_1] & PI3USB9201_REG_CTRL_1_INT_MASK) {
+		/* Interrupt is masked */
+		return false;
+	}
+
+	if ((data->reg[PI3USB9201_REG_CTRL_2] & PI3USB9201_REG_CTRL_2_START_DET) &&
+	    data->reg[PI3USB9201_REG_CLIENT_STS]) {
+		/* Cient detection is enabled and there are bits set in the
+		 * client status register
+		 */
+		return true;
+	}
+
+	if (data->reg[PI3USB9201_REG_HOST_STS]) {
+		/* Any bits set in the host status register generate an interrupt */
+		return true;
+	}
+
+	return false;
+}
+
 static int pi3usb9201_emul_set_reg(const struct emul *target, int reg, uint8_t val)
 {
 	struct pi3usb9201_emul_data *data = target->data;
@@ -80,12 +105,8 @@ static int pi3usb9201_emul_set_reg(const struct emul *target, int reg, uint8_t v
 		}
 	}
 
-	/* If interrupts are enabled, client detection is enabled, and there
-	 * are bits set in the client status register - generate an interrupt
-	 */
-	if (!(data->reg[PI3USB9201_REG_CTRL_1] & PI3USB9201_REG_CTRL_1_INT_MASK) &&
-	    (data->reg[PI3USB9201_REG_CTRL_2] & PI3USB9201_REG_CTRL_2_START_DET) &&
-	    data->reg[PI3USB9201_REG_CLIENT_STS]) {
+	/* Check if an interrupt should be asserted */
+	if (pi3usb9201_emul_interrupt_is_pending(target)) {
 		gpio_emul_input_set(cfg->intb_gpio.port, cfg->intb_gpio.pin, 0);
 	}
 
@@ -133,14 +154,14 @@ static void pi3usb9201_emul_reset(const struct emul *target)
 }
 
 #define PI3USB9201_EMUL_RESET_RULE_BEFORE(inst)                                                    \
-	pi3usb9201_emul_reset(&EMUL_DT_NAME_GET(DT_DRV_INST(inst)))
+	pi3usb9201_emul_reset(&EMUL_DT_NAME_GET(DT_DRV_INST(inst)));
 
 static void emul_pi3usb9201_reset_before(const struct ztest_unit_test *test, void *data)
 {
 	ARG_UNUSED(test);
 	ARG_UNUSED(data);
 
-	DT_INST_FOREACH_STATUS_OKAY(PI3USB9201_EMUL_RESET_RULE_BEFORE);
+	DT_INST_FOREACH_STATUS_OKAY(PI3USB9201_EMUL_RESET_RULE_BEFORE)
 }
 ZTEST_RULE(emul_isl923x_reset, emul_pi3usb9201_reset_before, NULL);
 
@@ -226,6 +247,35 @@ int pi3usb9201_emul_set_charging_partner(const struct emul *target, enum bc12_ty
 	return 0;
 }
 
+static int pi3usb9201_emul_set_pd_partner_state(const struct emul *target, bool connected)
+{
+	struct pi3usb9201_emul_data *data = target->data;
+	const struct pi3usb9201_emul_cfg *cfg = target->cfg;
+	uint8_t mode;
+
+	mode = data->reg[PI3USB9201_REG_CTRL_1];
+	mode >>= PI3USB9201_REG_CTRL_1_MODE_SHIFT;
+	mode &= PI3USB9201_REG_CTRL_1_MODE_MASK;
+
+	/* Driver must be configured for host mode SDP/CDP */
+	if (mode != PI3USB9201_SDP_HOST_MODE && mode != PI3USB9201_CDP_HOST_MODE) {
+		return -EACCES;
+	}
+
+	if (connected) {
+		data->reg[PI3USB9201_REG_HOST_STS] |= PI3USB9201_REG_HOST_STS_DEV_PLUG;
+	} else {
+		data->reg[PI3USB9201_REG_HOST_STS] |= PI3USB9201_REG_HOST_STS_DEV_UNPLUG;
+	}
+
+	/* Interrupt are enabled - assert the interrupt */
+	if (!(data->reg[PI3USB9201_REG_CTRL_1] & PI3USB9201_REG_CTRL_1_INT_MASK)) {
+		gpio_emul_input_set(cfg->intb_gpio.port, cfg->intb_gpio.pin, 0);
+	}
+
+	return 0;
+}
+
 /* Device instantiation */
 
 static struct i2c_emul_api pi3usb9201_emul_bus_api = {
@@ -234,6 +284,7 @@ static struct i2c_emul_api pi3usb9201_emul_bus_api = {
 
 static const struct bc12_emul_driver_api pi3usb9201_emul_backend_api = {
 	.set_charging_partner = pi3usb9201_emul_set_charging_partner,
+	.set_pd_partner = pi3usb9201_emul_set_pd_partner_state,
 };
 
 /**
