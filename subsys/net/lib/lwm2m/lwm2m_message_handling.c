@@ -432,13 +432,8 @@ int lwm2m_information_interface_send(struct lwm2m_message *msg)
 		return 0;
 	}
 #endif
-	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 
-	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
-	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		engine_update_tx_time();
-	}
-	return 0;
+	return lwm2m_send_message_async(msg);
 }
 
 int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
