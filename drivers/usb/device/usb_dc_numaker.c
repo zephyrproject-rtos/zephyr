@@ -162,14 +162,14 @@ struct nu_usb_dc_ep {
     uint32_t                    usbd_hw_ep_cfg; // Saved for easy control with BSP driver
 #endif
 
-    bool                        FIFO_need_own;  // For USBD, FIFO cannot access simultaneously by CPU and H/W, and needs ownership management
+    bool                        fifo_need_own;  // For USBD, FIFO cannot access simultaneously by CPU and H/W, and needs ownership management
 
     usb_dc_ep_callback          cb;             // Endpoint callback function
 
     uint32_t                    zero_end;       // Mark the end of fields which can initialize to zero
 
-    bool                        FIFO_own_sem_valid; // FIFO ownership semaphore valid
-    struct k_sem                FIFO_own_sem;       // FIFO ownership semaphore    
+    bool                        fifo_own_sem_valid; // FIFO ownership semaphore valid
+    struct k_sem                fifo_own_sem;       // FIFO ownership semaphore    
 };
 
 /* Endpoint management context */
@@ -695,8 +695,8 @@ int usb_dc_ep_write(const uint8_t ep_addr, const uint8_t *const data_buf,
     }
 
     /* Try to acquire EP DMA buffer ownership on behalf of H/W */
-    if (ep_cur->FIFO_need_own) {
-        rc = k_sem_take(&ep_cur->FIFO_own_sem, K_NO_WAIT);
+    if (ep_cur->fifo_need_own) {
+        rc = k_sem_take(&ep_cur->fifo_own_sem, K_NO_WAIT);
         if (rc < 0) {
             LOG_WRN("ep_addr 0x%02x busy", ep_addr);
             rc = -EAGAIN;
@@ -824,8 +824,8 @@ int usb_dc_ep_read_wait(uint8_t ep_addr, uint8_t *data_buf, uint32_t max_data_le
     }
 
     /* We cannot read on FIFO being owned by H/W */
-    if (ep_cur->FIFO_need_own) {
-        if (!k_sem_count_get(&ep_cur->FIFO_own_sem)) {
+    if (ep_cur->fifo_need_own) {
+        if (!k_sem_count_get(&ep_cur->fifo_own_sem)) {
             LOG_WRN("ep_addr 0x%02x busy", ep_addr);
             rc = -EAGAIN;
             goto cleanup;
@@ -891,8 +891,8 @@ int usb_dc_ep_read_continue(uint8_t ep_addr)
     }
 
     /* Try to acquire EP FIFO ownership on behalf of H/W */
-    if (ep_cur->FIFO_need_own) {
-        rc = k_sem_take(&ep_cur->FIFO_own_sem, K_NO_WAIT);
+    if (ep_cur->fifo_need_own) {
+        rc = k_sem_take(&ep_cur->fifo_own_sem, K_NO_WAIT);
         if (rc < 0) {
             LOG_DBG("ep_addr 0x%02x has triggered", ep_addr);
             rc = 0;
@@ -1602,15 +1602,15 @@ static void nu_usb_dc_ep_mgmt_init(struct usb_dc_numaker_device *dev)
 
         /* FIFO needs ownership or not */
 #if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd) && defined(CONFIG_USB_DC_NUMAKER_USBD)
-        ep_cur->FIFO_need_own = true;
+        ep_cur->fifo_need_own = true;
 #endif
 
         /* Initialize FIFO ownership semaphore if not yet, and signal H/W doesn't own it */
-        if (!ep_cur->FIFO_own_sem_valid) {
-            k_sem_init(&ep_cur->FIFO_own_sem, 1, 1);
-            ep_cur->FIFO_own_sem_valid = true;
+        if (!ep_cur->fifo_own_sem_valid) {
+            k_sem_init(&ep_cur->fifo_own_sem, 1, 1);
+            ep_cur->fifo_own_sem_valid = true;
         } else {
-            k_sem_give(&ep_cur->FIFO_own_sem);
+            k_sem_give(&ep_cur->fifo_own_sem);
         }
     }
 
@@ -1821,8 +1821,8 @@ static void nu_usb_dc_ep_bh(struct nu_usb_dc_ep *ep_cur, enum usb_dc_ep_cb_statu
         nu_usb_dc_ep_fifo_update(ep_cur);
 
         /* Relinquish EP FIFO ownership on behalf of H/W */
-        if (ep_cur->FIFO_need_own) {
-            k_sem_give(&ep_cur->FIFO_own_sem);
+        if (ep_cur->fifo_need_own) {
+            k_sem_give(&ep_cur->fifo_own_sem);
         }
     } else if (status_code == USB_DC_EP_DATA_IN) {
         __ASSERT_NO_MSG(USB_EP_DIR_IS_IN(ep_cur->ep_addr));
@@ -1831,8 +1831,8 @@ static void nu_usb_dc_ep_bh(struct nu_usb_dc_ep *ep_cur, enum usb_dc_ep_cb_statu
         nu_usb_dc_ep_fifo_update(ep_cur);
 
         /* Relinquish EP FIFO ownership on behalf of H/W */
-        if (ep_cur->FIFO_need_own) {
-            k_sem_give(&ep_cur->FIFO_own_sem);
+        if (ep_cur->fifo_need_own) {
+            k_sem_give(&ep_cur->fifo_own_sem);
         }
     }        
 }
@@ -2180,9 +2180,9 @@ static void nu_usb_dc_ep_abort(struct nu_usb_dc_ep *ep_cur)
 #endif
 
     /* Relinquish EP FIFO ownership on behalf of H/W */
-    if (ep_cur->FIFO_need_own) {
-        if (ep_cur->FIFO_own_sem_valid) {
-            k_sem_give(&ep_cur->FIFO_own_sem);
+    if (ep_cur->fifo_need_own) {
+        if (ep_cur->fifo_own_sem_valid) {
+            k_sem_give(&ep_cur->fifo_own_sem);
         }
     }
 }
