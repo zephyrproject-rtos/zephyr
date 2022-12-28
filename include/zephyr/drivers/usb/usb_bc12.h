@@ -65,6 +65,7 @@ extern "C" {
 enum bc12_role {
 	BC12_DISCONNECTED,
 	BC12_PORTABLE_DEVICE,
+	BC12_CHARGING_PORT,
 };
 
 /** @brief BC1.2 charging partner type. */
@@ -81,19 +82,34 @@ enum bc12_type {
 	BC12_TYPE_PROPRIETARY,
 	/** Unknown charging port, BC1.2 detection failed. */
 	BC12_TYPE_UNKNOWN,
+	/** Count of valid BC12 types. */
+	BC12_TYPE_COUNT,
 };
 
 /**
  * @brief BC1.2 detected partner state.
  *
- * @param type Charging partner type.
- * @param current_ma Current, in uA, that the charging partner provides.
- * @param voltage_mv Voltage, in uV, that the charging partner provides.
+ * @param bc12_role Current role of the BC1.2 device.
+ * @param type Charging partner type. Valid when bc12_role is BC12_PORTABLE_DEVICE.
+ * @param current_ma Current, in uA, that the charging partner provides. Valid when bc12_role is
+ * BC12_PORTABLE_DEVICE.
+ * @param voltage_mv Voltage, in uV, that the charging partner provides. Valid when bc12_role is
+ * BC12_PORTABLE_DEVICE.
+ * @param pd_partner_connected True if a PD partner is currently connected. Valid when bc12_role is
+ * BC12_CHARGING_PORT.
  */
 struct bc12_partner_state {
-	enum bc12_type type;
-	int current_ua;
-	int voltage_uv;
+	enum bc12_role bc12_role;
+	union {
+		struct {
+			enum bc12_type type;
+			int current_ua;
+			int voltage_uv;
+		};
+		struct {
+			bool pd_partner_connected;
+		};
+	};
 };
 
 /**

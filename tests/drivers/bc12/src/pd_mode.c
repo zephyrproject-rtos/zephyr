@@ -38,8 +38,13 @@ static void bc12_test_result_cb(const struct device *dev, struct bc12_partner_st
 	fixture->callback_count++;
 
 	if (state) {
-		LOG_INF("callback: type %d, voltage %d, current %d", state->type, state->voltage_uv,
-			state->current_ua);
+		if (state->bc12_role == BC12_PORTABLE_DEVICE) {
+			LOG_INF("charging partner: type %d, voltage %d, current %d", state->type,
+				state->voltage_uv, state->current_ua);
+		} else if (state->bc12_role == BC12_CHARGING_PORT) {
+			LOG_INF("portable device partner: connected %d",
+				state->pd_partner_connected);
+		}
 		fixture->partner_state = *state;
 	} else {
 		LOG_INF("callback: partner disconnect");
@@ -80,6 +85,7 @@ ZTEST_USER_F(bc12_pd_mode, test_bc12_sdp_charging_partner)
 	 * for SDP ports or when BC1.2 detection fails.
 	 */
 	zassert_equal(fixture->callback_count, 1);
+	zassert_equal(fixture->partner_state.bc12_role, BC12_PORTABLE_DEVICE);
 	zassert_equal(fixture->partner_state.type, BC12_TYPE_SDP);
 	zassert_equal(fixture->partner_state.current_ua, 2500);
 	zassert_equal(fixture->partner_state.voltage_uv, 5000 * 1000);
@@ -109,6 +115,7 @@ ZTEST_USER_F(bc12_pd_mode, test_bc12_cdp_charging_partner)
 	k_sleep(K_MSEC(100));
 
 	zassert_equal(fixture->callback_count, 1);
+	zassert_equal(fixture->partner_state.bc12_role, BC12_PORTABLE_DEVICE);
 	zassert_equal(fixture->partner_state.type, BC12_TYPE_CDP);
 	zassert_equal(fixture->partner_state.current_ua, 1500 * 1000);
 	zassert_equal(fixture->partner_state.voltage_uv, 5000 * 1000);
@@ -139,6 +146,7 @@ ZTEST_USER_F(bc12_pd_mode, test_bc12_sdp_to_dcp_charging_partner)
 	k_sleep(K_MSEC(100));
 
 	zassert_equal(fixture->callback_count, 1);
+	zassert_equal(fixture->partner_state.bc12_role, BC12_PORTABLE_DEVICE);
 	zassert_equal(fixture->partner_state.type, BC12_TYPE_SDP);
 	zassert_equal(fixture->partner_state.current_ua, 2500);
 	zassert_equal(fixture->partner_state.voltage_uv, 5000 * 1000);
@@ -154,6 +162,7 @@ ZTEST_USER_F(bc12_pd_mode, test_bc12_sdp_to_dcp_charging_partner)
 
 	/* The BC1.2 driver should invoke the callback once to report the new state. */
 	zassert_equal(fixture->callback_count, 1);
+	zassert_equal(fixture->partner_state.bc12_role, BC12_PORTABLE_DEVICE);
 	zassert_equal(fixture->partner_state.type, BC12_TYPE_DCP);
 	zassert_equal(fixture->partner_state.current_ua, 1500 * 1000);
 	zassert_equal(fixture->partner_state.voltage_uv, 5000 * 1000);
@@ -165,9 +174,7 @@ static void bc12_before(void *data)
 
 	fixture->callback_count = 0;
 	fixture->disconnect_detected = 0;
-	fixture->partner_state.type = BC12_TYPE_NONE;
-	fixture->partner_state.current_ua = 0;
-	fixture->partner_state.voltage_uv = 0;
+	memset(&fixture->partner_state, 0, sizeof(struct bc12_partner_state));
 
 	bc12_set_result_cb(fixture->bc12_dev, &bc12_test_result_cb, fixture);
 }
