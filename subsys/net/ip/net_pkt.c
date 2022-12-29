@@ -1775,15 +1775,17 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 
 static int32_t net_pkt_find_offset(struct net_pkt *pkt, uint8_t *ptr)
 {
-	struct net_buf *buf = pkt->buffer;
+	struct net_buf *buf;
 	uint32_t ret = -EINVAL;
 	uint16_t offset;
 
-	if (!(ptr && pkt && buf)) {
+	if (!ptr || !pkt || !pkt->buffer) {
 		return ret;
 	}
 
 	offset = 0U;
+	buf = pkt->buffer;
+
 	while (buf) {
 		if (buf->data <= ptr && ptr <= (buf->data + buf->len)) {
 			ret = offset + (ptr - buf->data);
