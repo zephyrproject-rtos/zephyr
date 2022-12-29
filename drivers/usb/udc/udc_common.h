@@ -59,6 +59,26 @@ struct udc_ep_config *udc_get_ep_cfg(const struct device *dev,
 				     const uint8_t ep);
 
 /**
+ * @brief Checks if the endpoint is busy
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Endpoint address
+ *
+ * @return true if endpoint is busy
+ */
+bool udc_ep_is_busy(const struct device *dev, const uint8_t ep);
+
+/**
+ * @brief Helper function to set endpoint busy state
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Endpoint address
+ * @param[in] busy   Busy state
+ */
+void udc_ep_set_busy(const struct device *dev, const uint8_t ep,
+		     const bool busy);
+
+/**
  * @brief Get UDC request from endpoint FIFO.
  *
  * This function removes request from endpoint FIFO.

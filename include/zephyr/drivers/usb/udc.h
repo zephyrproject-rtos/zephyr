@@ -80,6 +80,8 @@ struct udc_ep_stat {
 	uint32_t data1 : 1;
 	/** If double buffering is supported, last used buffer is odd */
 	uint32_t odd : 1;
+	/** Endpoint is busy */
+	uint32_t busy : 1;
 };
 
 /**

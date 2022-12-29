@@ -46,6 +46,25 @@ struct udc_ep_config *udc_get_ep_cfg(const struct device *dev, const uint8_t ep)
 	return data->ep_lut[USB_EP_LUT_IDX(ep)];
 }
 
+bool udc_ep_is_busy(const struct device *dev, const uint8_t ep)
+{
+	struct udc_ep_config *ep_cfg;
+
+	ep_cfg = udc_get_ep_cfg(dev, ep);
+	__ASSERT(ep_cfg != NULL, "ep 0x%02x is not available", ep);
+
+	return ep_cfg->stat.busy;
+}
+
+void udc_ep_set_busy(const struct device *dev, const uint8_t ep, const bool busy)
+{
+	struct udc_ep_config *ep_cfg;
+
+	ep_cfg = udc_get_ep_cfg(dev, ep);
+	__ASSERT(ep_cfg != NULL, "ep 0x%02x is not available", ep);
+	ep_cfg->stat.busy = busy;
+}
+
 int udc_register_ep(const struct device *dev, struct udc_ep_config *const cfg)
 {
 	struct udc_data *data = dev->data;
