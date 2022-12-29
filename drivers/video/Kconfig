@@ -15,7 +15,7 @@ if VIDEO
 
 config VIDEO_INIT_PRIORITY
 	int "Video initialization priority"
-	default 90
+	default 60
 	help
 	  System initialization priority for video drivers.
 
