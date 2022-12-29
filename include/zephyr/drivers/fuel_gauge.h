@@ -193,7 +193,7 @@ typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
 
 /* Caching is entirely on the onus of the client */
 
-__subsystem struct battery_driver_api {
+__subsystem struct fuel_gauge_driver_api {
 	fuel_gauge_get_property_t get_property;
 	fuel_gauge_set_property_t set_property;
 };
