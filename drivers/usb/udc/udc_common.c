@@ -121,10 +121,11 @@ struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep,
 	struct net_buf *buf = NULL;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
-	if (ep_cfg != NULL) {
-		buf = k_fifo_peek_head(&ep_cfg->fifo);
+	if (ep_cfg == NULL) {
+		return NULL;
 	}
 
+	buf = k_fifo_peek_head(&ep_cfg->fifo);
 	if (buf == NULL && pending) {
 		ep_cfg->stat.pending = 1;
 	}
