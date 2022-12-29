@@ -369,8 +369,10 @@ static int video_mcux_csi_init(const struct device *dev)
 
 	CSI_GetDefaultConfig(&data->csi_config);
 
-	/* check if there is any sensor device (video ctrl device) */
-	if (!device_is_ready(config->sensor_dev)) {
+	/* check if there is any sensor device (video ctrl device)
+	 * the device is not yet initialized so we only check if it exists
+	 */
+	if (config->sensor_dev == NULL) {
 		return -ENODEV;
 	}
 
@@ -440,9 +442,14 @@ static int video_mcux_csi_init_0(const struct device *dev)
 	return video_mcux_csi_init(dev);
 }
 
+/* CONFIG_KERNEL_INIT_PRIORITY_DEVICE is used to make sure the
+ * CSI peripheral is initialized before the camera, which is
+ * necessary since the clock to the camera is provided by the
+ * CSI peripheral.
+ */
 DEVICE_DT_INST_DEFINE(0, &video_mcux_csi_init_0,
 		    NULL, &video_mcux_csi_data_0,
 		    &video_mcux_csi_config_0,
-		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &video_mcux_csi_driver_api);
 #endif

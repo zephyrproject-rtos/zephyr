@@ -409,6 +409,6 @@ static int mt9m114_init_0(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &mt9m114_init_0, NULL,
 		    &mt9m114_data_0, &mt9m114_cfg_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &mt9m114_driver_api);
 #endif
