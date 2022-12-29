@@ -486,6 +486,34 @@ static bool lwm2m_validate_time_resource_lenghts(uint16_t resource_length, uint1
 	return true;
 }
 
+static int lwm2m_check_buf_sizes(uint8_t data_type, uint16_t resource_length, uint16_t buf_length)
+{
+	switch (data_type) {
+	case LWM2M_RES_TYPE_OPAQUE:
+	case LWM2M_RES_TYPE_STRING:
+		if (resource_length > buf_length) {
+			return -ENOMEM;
+		}
+		break;
+	case LWM2M_RES_TYPE_U32:
+	case LWM2M_RES_TYPE_U8:
+	case LWM2M_RES_TYPE_S64:
+	case LWM2M_RES_TYPE_S32:
+	case LWM2M_RES_TYPE_S16:
+	case LWM2M_RES_TYPE_S8:
+	case LWM2M_RES_TYPE_BOOL:
+	case LWM2M_RES_TYPE_FLOAT:
+	case LWM2M_RES_TYPE_OBJLNK:
+		if (resource_length != buf_length) {
+			return -EINVAL;
+		}
+		break;
+	default:
+		return 0;
+	}
+	return 0;
+}
+
 static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len)
 {
 	struct lwm2m_obj_path path;
@@ -550,11 +578,12 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 		return -EINVAL;
 	}
 
-	/* check length (note: we add 1 to string length for NULL pad) */
-	if (len > max_data_len - (obj_field->data_type == LWM2M_RES_TYPE_STRING ? 1 : 0)) {
-		LOG_ERR("length %u is too long for res instance %d data", len, path.res_id);
+	ret = lwm2m_check_buf_sizes(obj_field->data_type, len, max_data_len);
+	if (ret) {
+		LOG_ERR("Incorrect buffer length %u for res data length %u", len,
+			max_data_len);
 		k_mutex_unlock(&registry_lock);
-		return -ENOMEM;
+		return ret;
 	}
 
 	if (memcmp(data_ptr, value, len) != 0) {
@@ -579,6 +608,13 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 		break;
 
 	case LWM2M_RES_TYPE_STRING:
+		/* check length (note: we add 1 to string length for NULL pad) */
+		if (len > max_data_len - 1) {
+			LOG_ERR("String length %u is too long for res instance %d data", len,
+				path.res_id);
+			k_mutex_unlock(&registry_lock);
+			return -ENOMEM;
+		}
 		memcpy((uint8_t *)data_ptr, value, len);
 		((uint8_t *)data_ptr)[len] = '\0';
 		break;
@@ -815,34 +851,6 @@ int lwm2m_engine_get_res_data(const char *pathstr, void **data_ptr, uint16_t *da
 			      uint8_t *data_flags)
 {
 	return lwm2m_engine_get_res_buf(pathstr, data_ptr, NULL, data_len, data_flags);
-}
-
-static int lwm2m_check_buf_sizes(uint8_t data_type, uint16_t resource_length, uint16_t buf_length)
-{
-	switch (data_type) {
-	case LWM2M_RES_TYPE_OPAQUE:
-	case LWM2M_RES_TYPE_STRING:
-		if (resource_length > buf_length) {
-			return -ENOMEM;
-		}
-		break;
-	case LWM2M_RES_TYPE_U32:
-	case LWM2M_RES_TYPE_U8:
-	case LWM2M_RES_TYPE_S64:
-	case LWM2M_RES_TYPE_S32:
-	case LWM2M_RES_TYPE_S16:
-	case LWM2M_RES_TYPE_S8:
-	case LWM2M_RES_TYPE_BOOL:
-	case LWM2M_RES_TYPE_FLOAT:
-	case LWM2M_RES_TYPE_OBJLNK:
-		if (resource_length != buf_length) {
-			return -EINVAL;
-		}
-		break;
-	default:
-		return 0;
-	}
-	return 0;
 }
 
 static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
