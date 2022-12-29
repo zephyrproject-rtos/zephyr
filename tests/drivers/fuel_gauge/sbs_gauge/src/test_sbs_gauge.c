@@ -20,26 +20,18 @@ struct sbs_gauge_new_api_fixture {
 
 static void *sbs_gauge_new_api_setup(void)
 {
+	static ZTEST_DMEM struct sbs_gauge_new_api_fixture fixture;
 
-	static struct sbs_gauge_new_api_fixture fixture;
-	const struct device *dev = DEVICE_DT_GET_ANY(sbs_sbs_gauge_new_api);
-	const struct fuel_gauge_driver_api *api = dev->api;
+	fixture.dev = DEVICE_DT_GET_ANY(sbs_sbs_gauge_new_api);
 
-	fixture.dev = dev;
-	fixture.api = api;
+	k_object_access_all_grant(fixture.dev);
 
 	zassert_true(device_is_ready(fixture.dev), "Fuel Gauge not found");
-	zassert_not_null(api);
 
 	return &fixture;
 }
 
-ZTEST_F(sbs_gauge_new_api, test_implemented_apis)
-{
-	zassert_not_equal(NULL, fixture->api->get_property);
-}
-
-ZTEST_F(sbs_gauge_new_api, test_get_all_props_failed_returns_negative)
+ZTEST_USER_F(sbs_gauge_new_api, test_get_all_props_failed_returns_negative)
 {
 	struct fuel_gauge_get_property props[] = {
 		{
@@ -48,7 +40,7 @@ ZTEST_F(sbs_gauge_new_api, test_get_all_props_failed_returns_negative)
 		},
 	};
 
-	int ret = fixture->api->get_property(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
 		      props[0].property_type);
@@ -56,7 +48,7 @@ ZTEST_F(sbs_gauge_new_api, test_get_all_props_failed_returns_negative)
 	zassert_true(ret < 0);
 }
 
-ZTEST_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_count)
+ZTEST_USER_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_count)
 {
 	struct fuel_gauge_get_property props[] = {
 		{
@@ -74,7 +66,7 @@ ZTEST_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_count)
 
 	};
 
-	int ret = fixture->api->get_property(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
 		      props[0].property_type);
@@ -88,7 +80,7 @@ ZTEST_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_count)
 	zassert_equal(ret, 2);
 }
 
-ZTEST_F(sbs_gauge_new_api, test_set_all_props_failed_returns_negative)
+ZTEST_USER_F(sbs_gauge_new_api, test_set_all_props_failed_returns_negative)
 {
 	struct fuel_gauge_set_property props[] = {
 		{
@@ -97,7 +89,7 @@ ZTEST_F(sbs_gauge_new_api, test_set_all_props_failed_returns_negative)
 		},
 	};
 
-	int ret = fixture->api->set_property(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_set_prop(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Setting bad property %d has a good status.",
 		      props[0].property_type);
@@ -105,7 +97,7 @@ ZTEST_F(sbs_gauge_new_api, test_set_all_props_failed_returns_negative)
 	zassert_true(ret < 0);
 }
 
-ZTEST_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_count)
+ZTEST_USER_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_count)
 {
 	struct fuel_gauge_set_property props[] = {
 		{
@@ -125,7 +117,7 @@ ZTEST_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_count)
 
 	};
 
-	int ret = fixture->api->set_property(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_set_prop(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Setting bad property %d has a good status.",
 		      props[0].property_type);
@@ -139,7 +131,7 @@ ZTEST_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_count)
 	zassert_equal(ret, 2);
 }
 
-ZTEST_F(sbs_gauge_new_api, test_set_prop_can_be_get)
+ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 {
 	uint16_t word = BIT(15) | BIT(0);
 	struct fuel_gauge_set_property set_prop = {
@@ -149,19 +141,19 @@ ZTEST_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 		.value.sbs_mfr_access_word = word,
 	};
 
-	zassert_ok(fixture->api->set_property(fixture->dev, &set_prop, 1));
+	zassert_ok(fuel_gauge_set_prop(fixture->dev, &set_prop, 1));
 	zassert_ok(set_prop.status);
 
 	struct fuel_gauge_get_property get_prop = {
 		.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
 	};
 
-	zassert_ok(fixture->api->get_property(fixture->dev, &get_prop, 1));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, &get_prop, 1));
 	zassert_ok(get_prop.status);
 	zassert_equal(get_prop.value.sbs_mfr_access_word, word);
 }
 
-ZTEST_F(sbs_gauge_new_api, test_get_props__returns_ok)
+ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 {
 	/* Validate what props are supported by the driver */
 
@@ -219,7 +211,7 @@ ZTEST_F(sbs_gauge_new_api, test_get_props__returns_ok)
 		},
 	};
 
-	int ret = fixture->api->get_property(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
 
 	for (int i = 0; i < ARRAY_SIZE(props); i++) {
 		zassert_ok(props[i].status, "Property %d getting %d has a bad status.", i,
@@ -229,7 +221,7 @@ ZTEST_F(sbs_gauge_new_api, test_get_props__returns_ok)
 	zassert_ok(ret);
 }
 
-ZTEST_F(sbs_gauge_new_api, test_set_props__returns_ok)
+ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 {
 	/* Validate what props are supported by the driver */
 
@@ -239,7 +231,7 @@ ZTEST_F(sbs_gauge_new_api, test_set_props__returns_ok)
 		},
 	};
 
-	int ret = fixture->api->set_property(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_set_prop(fixture->dev, props, ARRAY_SIZE(props));
 
 	for (int i = 0; i < ARRAY_SIZE(props); i++) {
 		zassert_ok(props[i].status, "Property %d writing %d has a bad status.", i,
