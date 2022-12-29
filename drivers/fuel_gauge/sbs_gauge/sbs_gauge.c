@@ -201,7 +201,7 @@ static int sbs_gauge_init(const struct device *dev)
 	return 0;
 }
 
-static const struct battery_driver_api sbs_gauge_driver_api = {
+static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
 	.get_property = &sbs_gauge_get_props,
 	.set_property = &sbs_gauge_set_props,
 };
