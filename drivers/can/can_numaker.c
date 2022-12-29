@@ -176,6 +176,9 @@ cleanup:
 }
 
 static const struct can_driver_api can_numaker_driver_api = {
+    .get_capabilities = can_mcan_get_capabilities,
+    .start = can_mcan_start,
+    .stop = can_mcan_stop,
     .set_mode = can_mcan_set_mode,
     .set_timing = can_mcan_set_timing,
     .send = can_mcan_send,
@@ -192,7 +195,7 @@ static const struct can_driver_api can_numaker_driver_api = {
     /* Nominal bit timing limits
      *
      * NUMAKER MCAN timing limits are specified in the "Nominal bit timing and
-	 * prescaler register (NBTP)" table in the SoC reference manual.
+     * prescaler register (NBTP)" table in the SoC reference manual.
      *
      * NOTE: The values here are the "physical" timing limits, whereas the register
      *       field limits are physical values minus 1 (which is handled by the
@@ -217,7 +220,7 @@ static const struct can_driver_api can_numaker_driver_api = {
     /* Data bit timing limits
      *
      * NUMAKER MCAN timing limits are specified in the "Data bit timing and
-	 * prescaler register (DBTP)" table in the SoC reference manual.
+     * prescaler register (DBTP)" table in the SoC reference manual.
      *
      * NOTE: Same "minus one" concern as above.
      */
