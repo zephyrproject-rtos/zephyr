@@ -10,3 +10,4 @@ toolchain:
 supported:
   - ble
   - netif:openthread
+  - gpio
