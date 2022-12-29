@@ -15,7 +15,7 @@
 
 struct sbs_gauge_new_api_fixture {
 	const struct device *dev;
-	const struct battery_driver_api *api;
+	const struct fuel_gauge_driver_api *api;
 };
 
 static void *sbs_gauge_new_api_setup(void)
@@ -23,7 +23,7 @@ static void *sbs_gauge_new_api_setup(void)
 
 	static struct sbs_gauge_new_api_fixture fixture;
 	const struct device *dev = DEVICE_DT_GET_ANY(sbs_sbs_gauge_new_api);
-	const struct battery_driver_api *api = dev->api;
+	const struct fuel_gauge_driver_api *api = dev->api;
 
 	fixture.dev = dev;
 	fixture.api = api;
