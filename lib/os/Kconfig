@@ -176,4 +176,6 @@ rsource "Kconfig.cbprintf"
 
 rsource "Kconfig.heap"
 
+rsource "Kconfig.hash_func"
+
 endmenu

@@ -64,6 +64,9 @@ zephyr_sources_ifdef(CONFIG_SYS_MEM_BLOCKS mem_blocks.c)
 
 zephyr_sources_ifdef(CONFIG_WINSTREAM winstream.c)
 
+zephyr_sources_ifdef(CONFIG_SYS_HASH_FUNC32_DJB2 hash_func32_djb2.c)
+zephyr_sources_ifdef(CONFIG_SYS_HASH_FUNC32_MURMUR3 hash_func32_murmur3.c)
+
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include
