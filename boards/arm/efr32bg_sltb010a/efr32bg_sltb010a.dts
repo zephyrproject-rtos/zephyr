@@ -18,6 +18,7 @@
 		sw0 = &button0;
 		spi-flash0 = &mx25r80;
 		spi0 = &usart0;
+		watchdog0 = &wdog0;
 	};
 
 	chosen {
@@ -87,6 +88,10 @@
 	status = "okay";
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+};
+
+&wdog0 {
+	status = "okay";
 };
 
 &flash0 {
