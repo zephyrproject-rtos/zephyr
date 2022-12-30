@@ -688,6 +688,36 @@ static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
 }
 
 /**
+ * @brief Helper function for converting radians to 10 micro degrees.
+ *
+ * When the unit is 1 micro degree, the range that the int32_t can represent is
+ * +/-2147.483 degrees. In order to increase this range, here we use 10 micro
+ * degrees as the unit.
+ *
+ * @param rad A pointer to a sensor_value struct, holding the value in radians.
+ *
+ * @return The converted value, in 10 micro degrees.
+ */
+static inline int32_t sensor_rad_to_10udegrees(const struct sensor_value *rad)
+{
+	int64_t micro_rad_s = rad->val1 * 1000000LL + rad->val2;
+
+	return (micro_rad_s * 180LL * 100000LL) / SENSOR_PI;
+}
+
+/**
+ * @brief Helper function for converting 10 micro degrees to radians.
+ *
+ * @param d The value (in 10 micro degrees) to be converted.
+ * @param rad A pointer to a sensor_value struct, where the result is stored.
+ */
+static inline void sensor_10udegrees_to_rad(int32_t d, struct sensor_value *rad)
+{
+	rad->val1 = ((int64_t)d * SENSOR_PI / 180LL / 100000LL) / 1000000LL;
+	rad->val2 = ((int64_t)d * SENSOR_PI / 180LL / 100000LL) % 1000000LL;
+}
+
+/**
  * @brief Helper function for converting struct sensor_value to double.
  *
  * @param val A pointer to a sensor_value struct.
