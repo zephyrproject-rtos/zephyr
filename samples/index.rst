@@ -28,6 +28,7 @@ Samples and Demos
    modules/*
    compression/*
    fuel_gauge/*
+   coop_synchronization/*
 
 .. comment
    To add a new sample document, please use the template available under
