@@ -631,6 +631,33 @@ static inline void sensor_g_to_ms2(int32_t g, struct sensor_value *ms2)
 }
 
 /**
+ * @brief Helper function to convert acceleration from m/s^2 to micro Gs
+ *
+ * @param ms2 A pointer to a sensor_value struct holding the acceleration,
+ *            in m/s^2.
+ *
+ * @return The converted value, in micro Gs.
+ */
+static inline int32_t sensor_ms2_to_ug(const struct sensor_value *ms2)
+{
+	int64_t micro_ms2 = ms2->val1 * 1000000LL + ms2->val2;
+
+	return (micro_ms2 * 1000000LL) / SENSOR_G;
+}
+
+/**
+ * @brief Helper function to convert acceleration from micro Gs to m/s^2
+ *
+ * @param ug The micro G value to be converted.
+ * @param ms2 A pointer to a sensor_value struct, where the result is stored.
+ */
+static inline void sensor_ug_to_ms2(int32_t ug, struct sensor_value *ms2)
+{
+	ms2->val1 = ((int64_t)ug * SENSOR_G / 1000000LL) / 1000000LL;
+	ms2->val2 = ((int64_t)ug * SENSOR_G / 1000000LL) % 1000000LL;
+}
+
+/**
  * @brief Helper function for converting radians to degrees.
  *
  * @param rad A pointer to a sensor_value struct, holding the value in radians.
