@@ -31,13 +31,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"-b \tRead value as bool (1/0)\n" \
 	"-uX\tRead value as uintX_t\n" \
 	"-sX\tRead value as intX_t\n" \
-	"-f \tRead value as float\n"
+	"-f \tRead value as float\n" \
+	"-t \tRead value as time_t\n"
 #define LWM2M_HELP_WRITE "Write into LwM2M resource\nwrite PATH [OPTIONS] VALUE\n" \
-	"-s \tValue as string (default)\n" \
-	"-b \tValue as bool\n" \
-	"-uX\tValue as uintX_t\n" \
-	"-sX\tValue as intX_t\n" \
-	"-f \tValue as float\n"
+	"-s \tWrite value as string (default)\n" \
+	"-b \tWrite value as bool\n" \
+	"-uX\tWrite value as uintX_t\n" \
+	"-sX\tWrite value as intX_t\n" \
+	"-f \tWrite value as float\n" \
+	"-t \tWrite value as time_t\n"
 #define LWM2M_HELP_START "Start the LwM2M RD (Registration / Discovery) Client\n" \
 	"start EP_NAME [BOOTSTRAP FLAG]\n" \
 	"-b \tSet the bootstrap flag (default 0)\n"
@@ -245,6 +247,14 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 			goto out;
 		}
 		shell_print(sh, "%d\n", temp);
+	} else if (strcmp(dtype, "-t") == 0) {
+		time_t temp;
+
+		ret = lwm2m_engine_get_time(pathstr, &temp);
+		if (ret != 0) {
+			goto out;
+		}
+		shell_print(sh, "%lld\n", temp);
 	} else {
 		shell_error(sh, "can't recognize data type %s\n", dtype);
 		shell_help(sh);
@@ -321,6 +331,9 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 		} else if (strcmp(dtype, "-b") == 0) {
 			ret = lwm2m_engine_set_bool(pathstr,
 						    strtoul(value, &e, 10));
+		} else if (strcmp(dtype, "-t") == 0) {
+			ret = lwm2m_engine_set_time(pathstr,
+						    strtoll(value, &e, 10));
 		} else {
 			shell_error(sh, "can't recognize data type %s\n",
 				    dtype);
