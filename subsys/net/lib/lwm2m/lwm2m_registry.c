@@ -473,7 +473,7 @@ int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data
 	return lwm2m_engine_set_res_buf(pathstr, data_ptr, data_len, data_len, data_flags);
 }
 
-static bool lwm2m_validate_time_resource_lenghts(uint16_t resource_length, uint16_t buf_length)
+static bool lwm2m_validate_time_resource_length(uint16_t resource_length, uint16_t buf_length)
 {
 	if (resource_length != sizeof(time_t) && resource_length != sizeof(uint32_t)) {
 		return false;
@@ -632,7 +632,7 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 		break;
 
 	case LWM2M_RES_TYPE_TIME:
-		if (!lwm2m_validate_time_resource_lenghts(max_data_len, len)) {
+		if (!lwm2m_validate_time_resource_length(max_data_len, len)) {
 			LOG_ERR("Time Set: buffer length %u  max data len %u not supported", len,
 				max_data_len);
 			return -EINVAL;
@@ -923,7 +923,7 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 			*(uint32_t *)buf = *(uint32_t *)data_ptr;
 			break;
 		case LWM2M_RES_TYPE_TIME:
-			if (!lwm2m_validate_time_resource_lenghts(data_len, buflen)) {
+			if (!lwm2m_validate_time_resource_length(data_len, buflen)) {
 				LOG_ERR("Time get buffer length %u  data len %u not supported",
 					buflen, data_len);
 				return -EINVAL;

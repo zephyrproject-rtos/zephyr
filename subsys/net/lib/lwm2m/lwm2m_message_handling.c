@@ -909,7 +909,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 
 			if (len > data_len) {
 				LOG_ERR("Received data won't fit into provided "
-					"bufffer");
+					"buffer");
 				return -ENOMEM;
 			}
 
@@ -2615,7 +2615,7 @@ msg_init:
 	if (ret < 0) {
 		if (lwm2m_timeseries_data_rebuild(msg, ret)) {
 			/* Message Build fail by ENOMEM and data include timeseries data.
-			 * Try rebuild message again by limiting timeseries data entry lenghts.
+			 * Try rebuild message again by limiting timeseries data entry lengths.
 			 */
 			goto msg_init;
 		}
@@ -2958,7 +2958,7 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 #endif
 
 	/* Validate Connection */
-	if (!lwm2m_rd_client_is_registred(ctx)) {
+	if (!lwm2m_rd_client_is_registered(ctx)) {
 		return -EPERM;
 	}
 
@@ -3049,7 +3049,7 @@ msg_init:
 	if (ret < 0) {
 		if (lwm2m_timeseries_data_rebuild(msg, ret)) {
 			/* Message Build fail by ENOMEM and data include timeseries data.
-			 * Try rebuild message again by limiting timeseries data entry lenghts.
+			 * Try rebuild message again by limiting timeseries data entry lengths.
 			 */
 			goto msg_init;
 		}

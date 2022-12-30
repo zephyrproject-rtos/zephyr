@@ -813,15 +813,15 @@ static int get_objlnk(struct lwm2m_input_context *in,
 	int64_t tmp;
 	int len, total_len;
 	struct json_in_formatter_data *fd;
-	char *demiliter_pos;
+	char *delimiter_pos;
 
 	fd = engine_get_in_user_data(in);
 	if (!fd || (fd->object_bit_field & JSON_OV_TYPE) == 0) {
 		return -EINVAL;
 	}
 
-	demiliter_pos = strchr(fd->array_object.val_object_link, ':');
-	if (!demiliter_pos) {
+	delimiter_pos = strchr(fd->array_object.val_object_link, ':');
+	if (!delimiter_pos) {
 		return -ENODATA;
 	}
 
@@ -830,7 +830,7 @@ static int get_objlnk(struct lwm2m_input_context *in,
 	fd->array_object.val_float.length = strlen(fd->array_object.val_object_link);
 
 	/* Set String end for first item  */
-	*demiliter_pos = '\0';
+	*delimiter_pos = '\0';
 
 	len = read_int(in, &tmp, false);
 	if (len <= 0) {
@@ -841,9 +841,9 @@ static int get_objlnk(struct lwm2m_input_context *in,
 	value->obj_id = (uint16_t)tmp;
 
 	len++;  /* +1 for ':' delimiter. */
-	demiliter_pos++;
-	fd->array_object.val_float.start = demiliter_pos;
-	fd->array_object.val_float.length = strlen(demiliter_pos);
+	delimiter_pos++;
+	fd->array_object.val_float.start = delimiter_pos;
+	fd->array_object.val_float.length = strlen(delimiter_pos);
 
 	len = read_int(in, &tmp, false);
 	if (len <= 0) {

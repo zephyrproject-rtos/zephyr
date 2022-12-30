@@ -351,7 +351,7 @@ static int put_name_nth_ri(struct lwm2m_output_context *out, struct lwm2m_obj_pa
 	if (path->res_inst_id > 0) {
 		ret = put_begin_ri(out, path);
 	} else if (record && record->_record_t_present) {
-		/* Name need to be add for each time serialized record */
+		/* Name need to be added for each time serialized record */
 		ret = put_begin_r(out, path);
 	}
 

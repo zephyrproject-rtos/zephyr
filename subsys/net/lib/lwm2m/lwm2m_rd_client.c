@@ -1501,7 +1501,7 @@ int lwm2m_rd_client_timeout(struct lwm2m_ctx *client_ctx)
 	return 0;
 }
 
-bool lwm2m_rd_client_is_registred(struct lwm2m_ctx *client_ctx)
+bool lwm2m_rd_client_is_registered(struct lwm2m_ctx *client_ctx)
 {
 	if (client.ctx != client_ctx || !sm_is_registered()) {
 		return false;

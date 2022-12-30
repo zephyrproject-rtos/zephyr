@@ -42,7 +42,7 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
  * @brief Converts the token to a printable format.
  *
  * @param[in] token Token to be printed
- * @param[in] tkl Lenghts of token
+ * @param[in] tkl Token length
  * @return char buffer with the string representation of the token
  */
 char *sprint_token(const uint8_t *token, uint8_t tkl);
@@ -53,7 +53,7 @@ char *sprint_token(const uint8_t *token, uint8_t tkl);
  *
  * @param[in] msg lwm2m message to signal for which resource the write access should checked
  * @param[in] obj_inst Engine object instance to signal which object the resource belongs to
- * @param[out] obj_field Engine obejct field buffer pointer to store the field being checked
+ * @param[out] obj_field Engine object field buffer pointer to store the field being checked
  * @return 0 for successful validation and negative in all other cases
  */
 int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,

@@ -282,7 +282,7 @@ bool lwm2m_engine_bootstrap_override(struct lwm2m_ctx *client_ctx, struct lwm2m_
 	}
 
 	if (path->obj_id == LWM2M_OBJECT_SECURITY_ID || path->obj_id == LWM2M_OBJECT_SERVER_ID) {
-		/* Bootstrap server have a access to Security and Server object */
+		/* Bootstrap servers have access to Security and Server object */
 		return true;
 	}
 
@@ -728,7 +728,7 @@ static void socket_loop(void)
 			}
 			if (sock_ctx[i] != NULL &&
 			    sys_slist_is_empty(&sock_ctx[i]->pending_sends) &&
-			    lwm2m_rd_client_is_registred(sock_ctx[i])) {
+			    lwm2m_rd_client_is_registered(sock_ctx[i])) {
 				check_notifications(sock_ctx[i], timestamp);
 			}
 		}
