@@ -1,6 +1,7 @@
 identifier: native_posix_64
 name: Native 64-bit POSIX port
 type: native
+simulation: native
 arch: posix
 ram: 65536
 flash: 65536
@@ -14,4 +15,8 @@ supported:
   - netif:eth
   - usb_device
   - adc
+  - i2c
+  - spi
   - gpio
+testing:
+  default: true
