@@ -17,6 +17,8 @@ import tempfile
 import traceback
 import shlex
 
+from yamllint import config, linter
+
 from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
 import magic
 
@@ -989,6 +991,36 @@ class MaintainersFormat(ComplianceTest):
                 Maintainers(file)
             except MaintainersError as ex:
                 self.failure(f"Error parsing {file}: {ex}")
+
+
+class YAMLLint(ComplianceTest):
+    """
+    YAMLLint
+    """
+    name = "YAMLLint"
+    doc = "Check YAML files with YAMLLint."
+    path_hint = "<git-top>"
+
+    def run(self):
+        config_file = os.path.join(ZEPHYR_BASE, ".yamllint")
+
+        for file in get_files(filter="d"):
+            if Path(file).suffix not in ['.yaml', '.yml']:
+                continue
+
+            yaml_config = config.YamlLintConfig(file=config_file)
+
+            if file.startswith(".github/"):
+                # Tweak few rules for workflow files.
+                yaml_config.rules["line-length"] = False
+                yaml_config.rules["truthy"]["allowed-values"].extend(['on', 'off'])
+            elif file == ".codecov.yml":
+                yaml_config.rules["truthy"]["allowed-values"].extend(['yes', 'no'])
+
+            with open(file, 'r') as fp:
+                for p in linter.run(fp, yaml_config):
+                    self.fmtd_failure('warning', f'YAMLLint ({p.rule})', file,
+                                      p.line, col=p.column, desc=p.desc)
 
 
 def init_logs(cli_arg):
