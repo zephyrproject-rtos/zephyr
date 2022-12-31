@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 O.S.Systems
+ * Copyright (c) 2018-2023 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/sys/reboot.h>
-#include <tinycrypt/sha256.h>
 #include <zephyr/data/json.h>
 #include <zephyr/storage/flash_map.h>
 
@@ -27,6 +26,7 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
 #include "updatehub_timer.h"
+#include "updatehub_integrity.h"
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 #define CA_CERTIFICATE_TAG 1
@@ -44,8 +44,6 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
  */
 #define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
 #define MAX_IP_SIZE 30
-
-#define SHA256_HEX_DIGEST_SIZE	((TC_SHA256_DIGEST_SIZE * 2) + 1)
 
 #if defined(CONFIG_UPDATEHUB_CE)
 #define UPDATEHUB_SERVER CONFIG_UPDATEHUB_SERVER
@@ -66,9 +64,9 @@ static struct updatehub_context {
 	struct coap_block_context block;
 	struct k_sem semaphore;
 	struct flash_img_context flash_ctx;
-	struct tc_sha256_state_struct sha256sum;
+	struct updatehub_crypto_context crypto_ctx;
 	enum updatehub_response code_status;
-	uint8_t hash[TC_SHA256_DIGEST_SIZE];
+	uint8_t hash[SHA256_BIN_DIGEST_SIZE];
 	uint8_t uri_path[MAX_PATH_SIZE];
 	uint8_t payload[MAX_PAYLOAD_SIZE];
 	int downloaded_size;
@@ -118,21 +116,21 @@ static void prepare_fds(void)
 
 static int metadata_hash_get(char *metadata)
 {
-	struct tc_sha256_state_struct sha256sum;
+	struct updatehub_crypto_context local_crypto_ctx;
 
-	if (tc_sha256_init(&sha256sum) == 0) {
+	if (updatehub_integrity_init(&local_crypto_ctx)) {
 		return -1;
 	}
 
-	if (tc_sha256_update(&sha256sum, metadata, strlen(metadata)) == 0) {
+	if (updatehub_integrity_update(&local_crypto_ctx, metadata, strlen(metadata))) {
 		return -1;
 	}
 
-	if (tc_sha256_final(ctx.hash, &sha256sum) == 0) {
+	if (updatehub_integrity_finish(&local_crypto_ctx, ctx.hash, sizeof(ctx.hash))) {
 		return -1;
 	}
 
-	if (bin2hex_str(ctx.hash, TC_SHA256_DIGEST_SIZE,
+	if (bin2hex_str(ctx.hash, SHA256_BIN_DIGEST_SIZE,
 		update_info.package_uid, SHA256_HEX_DIGEST_SIZE)) {
 		return -1;
 	}
@@ -367,12 +365,12 @@ static bool install_update_cb_sha256(void)
 {
 	char sha256[SHA256_HEX_DIGEST_SIZE];
 
-	if (tc_sha256_final(ctx.hash, &ctx.sha256sum) < 1) {
+	if (updatehub_integrity_finish(&ctx.crypto_ctx, ctx.hash, sizeof(ctx.hash))) {
 		LOG_ERR("Could not finish sha256sum");
 		return false;
 	}
 
-	if (bin2hex_str(ctx.hash, TC_SHA256_DIGEST_SIZE,
+	if (bin2hex_str(ctx.hash, SHA256_BIN_DIGEST_SIZE,
 		sha256, SHA256_HEX_DIGEST_SIZE)) {
 		LOG_ERR("Could not create sha256sum hex representation");
 		return false;
@@ -461,9 +459,9 @@ static void install_update_cb(void)
 	ctx.downloaded_size = ctx.downloaded_size + payload_len;
 
 #ifdef _DOWNLOAD_SHA256_VERIFICATION
-	if (tc_sha256_update(&ctx.sha256sum,
+	if (updatehub_integrity_update(&ctx.crypto_ctx,
 			     payload_start,
-			     payload_len) < 1) {
+			     payload_len)) {
 		LOG_ERR("Could not update sha256sum");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto cleanup;
@@ -506,7 +504,7 @@ static void install_update_cb(void)
 #else
 		if (hex2bin(update_info.sha256sum_image,
 			    SHA256_HEX_DIGEST_SIZE - 1, ctx.hash,
-			    TC_SHA256_DIGEST_SIZE) != TC_SHA256_DIGEST_SIZE) {
+			    SHA256_BIN_DIGEST_SIZE) != SHA256_BIN_DIGEST_SIZE) {
 			LOG_ERR("Firmware - metadata validation has failed");
 			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 			goto cleanup;
@@ -541,7 +539,7 @@ static enum updatehub_response install_update(void)
 	}
 
 #ifdef _DOWNLOAD_SHA256_VERIFICATION
-	if (tc_sha256_init(&ctx.sha256sum) < 1) {
+	if (updatehub_integrity_init(&ctx.crypto_ctx)) {
 		LOG_ERR("Could not start sha256sum");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto error;
