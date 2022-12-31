@@ -568,7 +568,7 @@ ZTEST(log_msg, test_saturate)
 	Z_LOG_MSG2_CREATE3(0, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
 	z_log_msg_runtime_create(0, (void *)1, 2, NULL, 0, 0, "test");
 
-	zassert_equal(z_log_dropped_read_and_clear(), 3, "No dropped messages.");
+	zassert_equal(z_log_dropped_read_and_clear(), 3, "Wrong number of dropped messages.");
 
 	for (int i = 0; i < exp_capacity; i++) {
 		msg = z_log_msg_claim(NULL);
