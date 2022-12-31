@@ -166,8 +166,7 @@
 			   #size-cells = <1>;
 
 			   partition@0 {
-			       label = "nor";
-			       reg = <0x00000000 DT_SIZE_M(4)>;
+			       reg = <0x00000000 DT_SIZE_M(64)>;
 			   };
 		};
 	};
