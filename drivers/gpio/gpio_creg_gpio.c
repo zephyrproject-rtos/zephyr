@@ -39,13 +39,6 @@ struct creg_gpio_config {
 	uint8_t on_val;
 };
 
-static int pin_config(const struct device *dev,
-		       gpio_pin_t pin,
-		       gpio_flags_t flags)
-{
-	return -ENOTSUP;
-}
-
 static int port_get(const struct device *dev,
 		    gpio_port_value_t *value)
 {
@@ -116,6 +109,50 @@ static int pin_interrupt_configure(const struct device *dev,
 				   enum gpio_int_mode mode,
 				   enum gpio_int_trig trig)
 {
+	return -ENOTSUP;
+}
+
+static int pin_config(const struct device *dev,
+		       gpio_pin_t pin,
+		       gpio_flags_t flags)
+{
+	const struct creg_gpio_config *cfg = dev->config;
+	uint32_t io_flags;
+	bool pin_is_output;
+
+	/* Check for invalid pin number */
+	if (pin >= cfg->ngpios) {
+		return -EINVAL;
+	}
+
+	/* Does not support disconnected pin, and
+	 * not supporting both input/output at same time.
+	 */
+	io_flags = flags & (GPIO_INPUT | GPIO_OUTPUT);
+	if ((io_flags == GPIO_DISCONNECTED)
+	    || (io_flags == (GPIO_INPUT | GPIO_OUTPUT))) {
+		return -ENOTSUP;
+	}
+
+	/* No open-drain support */
+	if ((flags & GPIO_SINGLE_ENDED) != 0U) {
+		return -ENOTSUP;
+	}
+
+	/* Does not support pull-up/pull-down */
+	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
+		return -ENOTSUP;
+	}
+
+	pin_is_output = (flags & GPIO_OUTPUT) != 0U;
+	if (pin_is_output) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			return port_set_bits(dev, BIT(pin));
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+			return port_clear_bits(dev, BIT(pin));
+		}
+	}
+
 	return -ENOTSUP;
 }
 
