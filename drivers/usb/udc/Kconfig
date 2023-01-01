@@ -51,5 +51,6 @@ source "drivers/usb/udc/Kconfig.nrf"
 source "drivers/usb/udc/Kconfig.kinetis"
 source "drivers/usb/udc/Kconfig.skeleton"
 source "drivers/usb/udc/Kconfig.virtual"
+source "drivers/usb/udc/Kconfig.stm32"
 
 endif # UDC_DRIVER
