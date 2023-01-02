@@ -201,6 +201,11 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	ai_state.dns_id = 0;
 	k_sem_init(&ai_state.sem, 0, K_SEM_MAX_LIMIT);
 
+	/* In case IPv4 is not supported, force to check only for IPv6 */
+	if (family == AF_UNSPEC && !IS_ENABLED(CONFIG_NET_IPV4)) {
+		family = AF_INET6;
+	}
+
 	/* If the family is AF_UNSPEC, then we query IPv4 address first */
 	ret = exec_query(host, family, &ai_state);
 	if (ret == 0) {
