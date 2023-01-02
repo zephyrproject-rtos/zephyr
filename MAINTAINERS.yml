@@ -2557,8 +2557,8 @@ West:
     - manifest-loramac-node
 
 "West project: lvgl":
-  status: maintained
-  maintainers:
+  status: odd fixes
+  collaborators:
     - brgl
   files:
     - modules/Kconfig.lvgl
