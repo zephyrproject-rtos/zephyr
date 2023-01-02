@@ -1,0 +1,44 @@
+# ESP32 board configuration
+
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ESP32S3
+
+if BOOTLOADER_MCUBOOT
+	config HAS_FLASH_LOAD_OFFSET
+		default y
+
+	config MCUBOOT_GENERATE_UNSIGNED_IMAGE
+		default y
+
+	config MCUBOOT_GENERATE_CONFIRMED_IMAGE
+		default y
+
+	config ROM_START_OFFSET
+		default 0x20
+
+	config HAS_DYNAMIC_DEVICE_HANDLES
+		default y
+endif
+
+config SOC
+	default "esp32s3"
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32s3"
+
+config HEAP_MEM_POOL_SIZE
+	default 32768
+
+config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
+	default n
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config XTENSA_CCOUNT_HZ
+	default SYS_CLOCK_HW_CYCLES_PER_SEC
+
+endif
