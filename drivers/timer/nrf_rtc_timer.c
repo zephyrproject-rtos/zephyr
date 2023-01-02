@@ -11,6 +11,7 @@
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
 #include <hal/nrf_rtc.h>
 #include <zephyr/irq.h>
@@ -592,12 +593,17 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
-	/* If timeout is set to max we assume that system is idle and timeout
-	 * is set to forever.
-	 */
-	sys_busy = (ticks < (MAX_TICKS - 1));
+	if (ticks == K_TICKS_FOREVER) {
+		cyc = MAX_TICKS * CYC_PER_TICK;
+		sys_busy = false;
+	} else {
+		/* Value of ticks can be zero or negative, what means "announce
+		 * the next tick" (the same as ticks equal to 1).
+		 */
+		cyc = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
+		cyc *= CYC_PER_TICK;
+		sys_busy = true;
+	}
 
 	uint32_t unannounced = z_nrf_rtc_timer_read() - last_count;
 
@@ -607,15 +613,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * before the existing one triggers the interrupt.
 	 */
 	if (unannounced >= COUNTER_HALF_SPAN) {
-		ticks = 0;
+		cyc = 0;
 	}
 
 	/* Get the cycles from last_count to the tick boundary after
 	 * the requested ticks have passed starting now.
 	 */
-	cyc = ticks * CYC_PER_TICK + 1 + unannounced;
-	cyc += (CYC_PER_TICK - 1);
-	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
+	cyc += unannounced;
+	cyc = ceiling_fraction(cyc, CYC_PER_TICK) * CYC_PER_TICK;
 
 	/* Due to elapsed time the calculation above might produce a
 	 * duration that laps the counter.  Don't let it.
