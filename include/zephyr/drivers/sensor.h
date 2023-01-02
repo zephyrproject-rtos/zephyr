@@ -755,24 +755,62 @@ static inline int sensor_value_from_double(struct sensor_value *val, double inp)
 
 #ifdef CONFIG_SENSOR_INFO
 
+struct sensor_info;
+
+struct sensor_reporter {
+	const struct sensor_info *info;
+	uint32_t interval;
+	uint32_t sensitivity;
+};
+
 struct sensor_info {
 	const struct device *dev;
 	const char *vendor;
 	const char *model;
 	const char *friendly_name;
+	size_t num_reporters;
+	const struct sensor_reporter *reporters;
 };
+
+#define SENSOR_REPORTER_BY_IDX(node_id, prop, idx)					\
+	{										\
+		.info = &SENSOR_INFO_DT_NAME(DT_PHANDLE_BY_IDX(node_id, prop, idx)),	\
+		.interval = DT_PHA_BY_IDX_OR(node_id, prop, idx, interval, 0),		\
+		.sensitivity = DT_PHA_BY_IDX_OR(node_id, prop, idx, sensitivity, 0),	\
+	}
+
+#define SENSOR_REPORTERS_DT_NAME(node_id)						\
+	_CONCAT(__sensor_reporters, DEVICE_DT_NAME_GET(node_id))
+
+#define SENSOR_REPORTERS_DT_DEFINE(node_id)						\
+	static const struct sensor_reporter SENSOR_REPORTERS_DT_NAME(node_id)[] = {	\
+		DT_FOREACH_PROP_ELEM_SEP(node_id, reporters,				\
+			SENSOR_REPORTER_BY_IDX, (,))					\
+	};
 
 #define SENSOR_INFO_DT_NAME(node_id)							\
 	_CONCAT(__sensor_info, DEVICE_DT_NAME_GET(node_id))
 
 #define SENSOR_INFO_DT_DEFINE(node_id)							\
-	static const STRUCT_SECTION_ITERABLE(sensor_info,				\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, reporters),				\
+		(SENSOR_REPORTERS_DT_DEFINE(node_id)), ())				\
+											\
+	const STRUCT_SECTION_ITERABLE(sensor_info,					\
 			SENSOR_INFO_DT_NAME(node_id)) = {				\
 		.dev = DEVICE_DT_GET(node_id),						\
 		.vendor = DT_NODE_VENDOR_OR(node_id, NULL),				\
 		.model = DT_NODE_MODEL_OR(node_id, NULL),				\
 		.friendly_name = DT_PROP_OR(node_id, friendly_name, NULL),		\
+		.num_reporters = DT_PROP_LEN_OR(node_id, reporters, 0),			\
+		.reporters = COND_CODE_1(DT_NODE_HAS_PROP(node_id, reporters),		\
+				(&SENSOR_REPORTERS_DT_NAME(node_id)[0]),		\
+				(NULL)),						\
 	};
+
+#define Z_MAYBE_SENSOR_INFO_DECLARE_INTERNAL(node_id)					\
+	extern const struct sensor_info SENSOR_INFO_DT_NAME(node_id);
+
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_SENSOR_INFO_DECLARE_INTERNAL)
 
 #else
 

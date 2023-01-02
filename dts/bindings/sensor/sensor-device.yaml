@@ -17,3 +17,18 @@ properties:
       This property is defined in the Generic Sensor Property Usages of the HID
       Usage Tables specification
       (https://usb.org/sites/default/files/hut1_3_0.pdf, section 22.5).
+
+  reporters:
+    type: phandle-array
+    description: |
+      Sensor input reporter specifiers, used by virtual sensors to synthesize
+      sensor channels from one or more other sensors. For example, a lid angle
+      sensor synthesized from a lid accelerometer and a base accelerometer.
+
+  reporter-names:
+    type: string-array
+    description: Provided names of sensor input reporter specifiers
+
+reporter-cells:
+  - interval
+  - sensitivity
