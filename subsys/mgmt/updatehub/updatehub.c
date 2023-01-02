@@ -620,7 +620,7 @@ static int report(enum updatehub_state state)
 	int ret = -1;
 	const char *exec = state_name(state);
 	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
-	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
+	char *firmware_version = k_malloc(FIRMWARE_IMG_VER_STRLEN_MAX);
 
 	if (device_id == NULL || firmware_version == NULL) {
 		LOG_ERR("Could not alloc device_id or firmware_version memory");
@@ -631,7 +631,9 @@ static int report(enum updatehub_state state)
 		goto error;
 	}
 
-	if (!updatehub_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX)) {
+	if (!updatehub_get_firmware_version(FIXED_PARTITION_ID(slot0_partition),
+					    firmware_version,
+					    FIRMWARE_IMG_VER_STRLEN_MAX)) {
 		goto error;
 	}
 
@@ -769,7 +771,7 @@ enum updatehub_response updatehub_probe(void)
 	char *metadata = k_malloc(MAX_DOWNLOAD_DATA);
 	char *metadata_copy = k_malloc(MAX_DOWNLOAD_DATA);
 	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
-	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
+	char *firmware_version = k_malloc(FIRMWARE_IMG_VER_STRLEN_MAX);
 
 	size_t sha256size;
 
@@ -786,7 +788,9 @@ enum updatehub_response updatehub_probe(void)
 		goto error;
 	}
 
-	if (!updatehub_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX)) {
+	if (!updatehub_get_firmware_version(FIXED_PARTITION_ID(slot0_partition),
+					    firmware_version,
+					    FIRMWARE_IMG_VER_STRLEN_MAX)) {
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
 		goto error;
 	}
