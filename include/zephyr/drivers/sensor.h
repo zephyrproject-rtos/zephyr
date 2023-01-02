@@ -762,31 +762,20 @@ struct sensor_info {
 	const char *friendly_name;
 };
 
-#define SENSOR_INFO_INITIALIZER(_dev, _vendor, _model, _friendly_name)	\
-	{								\
-		.dev = _dev,						\
-		.vendor = _vendor,					\
-		.model = _model,					\
-		.friendly_name = _friendly_name,			\
-	}
-
-#define SENSOR_INFO_DEFINE(name, ...)					\
-	static const STRUCT_SECTION_ITERABLE(sensor_info, name) =	\
-		SENSOR_INFO_INITIALIZER(__VA_ARGS__)
-
-#define SENSOR_INFO_DT_NAME(node_id)					\
+#define SENSOR_INFO_DT_NAME(node_id)							\
 	_CONCAT(__sensor_info, DEVICE_DT_NAME_GET(node_id))
 
-#define SENSOR_INFO_DT_DEFINE(node_id)					\
-	SENSOR_INFO_DEFINE(SENSOR_INFO_DT_NAME(node_id),		\
-			   DEVICE_DT_GET(node_id),			\
-			   DT_NODE_VENDOR_OR(node_id, NULL),		\
-			   DT_NODE_MODEL_OR(node_id, NULL),		\
-			   DT_PROP_OR(node_id, friendly_name, NULL))	\
+#define SENSOR_INFO_DT_DEFINE(node_id)							\
+	static const STRUCT_SECTION_ITERABLE(sensor_info,				\
+			SENSOR_INFO_DT_NAME(node_id)) = {				\
+		.dev = DEVICE_DT_GET(node_id),						\
+		.vendor = DT_NODE_VENDOR_OR(node_id, NULL),				\
+		.model = DT_NODE_MODEL_OR(node_id, NULL),				\
+		.friendly_name = DT_PROP_OR(node_id, friendly_name, NULL),		\
+	};
 
 #else
 
-#define SENSOR_INFO_DEFINE(name, ...)
 #define SENSOR_INFO_DT_DEFINE(node_id)
 
 #endif /* CONFIG_SENSOR_INFO */
