@@ -872,7 +872,7 @@ endif # BOOTLOADER_MCUBOOT
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
-	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3) && !BOOTLOADER_MCUBOOT
+	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3 || SOC_ESP32S3) && !BOOTLOADER_MCUBOOT
 	default y
 	help
 	  This option will trigger the compilation of the ESP-IDF bootloader
