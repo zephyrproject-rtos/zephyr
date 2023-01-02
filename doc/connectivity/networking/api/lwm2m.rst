@@ -449,10 +449,10 @@ Supported resource types:
 Enabling and configuring
 ========================
 
-Enable data cache by selecting :kconfig:option:`CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT`.
+Enable time series storage by selecting :kconfig:option:`CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT`.
 Application needs to allocate an array of :c:struct:`lwm2m_time_series_elem` structures and then
-enable the cache by calling :c:func:`lwm2m_engine_enable_cache` for a given resource. Earch resource
-must be enabled separately and each resource needs their own storage.
+enable the cache by calling :c:func:`lwm2m_engine_enable_cache` for a given resource. Each resource
+must be enabled separately and each resource needs its own storage.
 
 .. code-block:: c
 
@@ -462,9 +462,9 @@ must be enabled separately and each resource needs their own storage.
   lwm2m_engine_enable_cache(LWM2M_PATH(IPSO_OBJECT_TEMP_SENSOR_ID, 0, SENSOR_VALUE_RID),
           temperature_cache, ARRAY_SIZE(temperature_cache));
 
-LwM2M engine have room for four resources that have cache enabled. Limit can be increased by
-changing :kconfig:option:`CONFIG_LWM2M_MAX_CACHED_RESOURCES`. This affects a static memory usage of
-engine.
+The LwM2M engine has room for four resources that have cache enabled. Limit can be increased by
+changing :kconfig:option:`CONFIG_LWM2M_MAX_STORED_TIME_SERIES_RESOURCES`. This affects the static
+memory usage of the engine.
 
 Data caches depends on one of the SenML data formats
 :kconfig:option:`CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT` or

@@ -1020,7 +1020,7 @@ static int lwm2m_engine_init(const struct device *dev)
 
 	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
 
-	if (IS_ENABLED(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)) {
+	if (IS_ENABLED(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)) {
 		/* Init data cache */
 		lwm2m_engine_data_cache_init();
 	}

@@ -212,7 +212,7 @@ struct lwm2m_time_series_resource {
 	struct ring_buf rb;
 };
 
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 
 #define LWM2M_LIMITED_TIMESERIES_RESOURCE_COUNT 20
 
@@ -224,7 +224,7 @@ struct lwm2m_cache_read_entry {
 };
 
 struct lwm2m_cache_read_info {
-	struct lwm2m_cache_read_entry read_info[CONFIG_LWM2M_MAX_CACHED_RESOURCES];
+	struct lwm2m_cache_read_entry read_info[CONFIG_LWM2M_MAX_STORED_TIME_SERIES_RESOURCES];
 	int entry_limit;
 	int entry_size;
 };

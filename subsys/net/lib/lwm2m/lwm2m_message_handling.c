@@ -314,7 +314,7 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 	} else {
 		msg->message_timeout_cb = NULL;
 		(void)memset(&msg->cpkt, 0, sizeof(msg->cpkt));
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 		msg->cache_info = NULL;
 #endif
 	}
@@ -340,7 +340,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	}
 
 	lm2m_message_clear_allocations(msg);
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	msg->cache_info = NULL;
 #endif
 
@@ -1017,7 +1017,7 @@ static int lwm2m_read_resource_data(struct lwm2m_message *msg, void *data_ptr, s
 static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 				  struct lwm2m_time_series_resource *cached_data, uint8_t data_type)
 {
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	int ret;
 	struct lwm2m_time_series_elem buf;
 	struct lwm2m_cache_read_entry *read_info;
@@ -1111,7 +1111,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 static bool lwm2m_accept_timeseries_read(struct lwm2m_message *msg,
 					 struct lwm2m_time_series_resource *cached_data)
 {
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	if (cached_data && msg->cache_info && lwm2m_cache_size(cached_data) &&
 	    msg->out.writer->put_data_timestamp) {
 		return true;
@@ -2401,7 +2401,7 @@ static struct lwm2m_obj_path *lwm2m_read_first_path_ptr(sys_slist_t *lwm2m_path_
 
 static void notify_cached_pending_data_trig(struct observe_node *obs)
 {
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	struct lwm2m_time_series_resource *cached_data;
 	struct lwm2m_obj_path_list *entry;
 
@@ -2485,7 +2485,7 @@ static int do_send_op(struct lwm2m_message *msg, uint16_t content_format,
 
 static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_code)
 {
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	struct lwm2m_cache_read_info *cache_temp;
 
 	if (error_code != -ENOMEM) {
@@ -2531,7 +2531,7 @@ int generate_notify_message(struct lwm2m_ctx *ctx, struct observe_node *obs, voi
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_obj_path *path;
 	int ret = 0;
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	struct lwm2m_cache_read_info cache_temp_info;
 
 	cache_temp_info.entry_size = 0;
@@ -2588,7 +2588,7 @@ msg_init:
 		LOG_ERR("Unable to init lwm2m message! (err: %d)", ret);
 		goto cleanup;
 	}
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	msg->cache_info = &cache_temp_info;
 #endif
 
@@ -2626,7 +2626,7 @@ msg_init:
 	obs->active_tx_operation = true;
 	obs->resource_update = false;
 	lwm2m_information_interface_send(msg);
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	msg->cache_info = NULL;
 #endif
 
@@ -2903,7 +2903,7 @@ static void do_send_timeout_cb(struct lwm2m_message *msg)
 }
 #endif
 
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cache_temp,
 					  sys_slist_t *lwm2m_path_list,
 					  sys_slist_t *lwm2m_path_free_list)
@@ -2950,7 +2950,7 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm2m_path_list;
 	sys_slist_t lwm2m_path_free_list;
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	struct lwm2m_cache_read_info cache_temp_info;
 
 	cache_temp_info.entry_size = 0;
@@ -2998,7 +2998,7 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	/* Clear path which are part are part of recursive path /1 will include /1/0/1 */
 	lwm2m_engine_clear_duplicate_path(&lwm2m_path_list, &lwm2m_path_free_list);
 	lwm2m_registry_lock();
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 msg_alloc:
 #endif
 	/* Allocate Message buffer */
@@ -3029,7 +3029,7 @@ msg_init:
 	if (ret) {
 		goto cleanup;
 	}
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	msg->cache_info = &cache_temp_info;
 #endif
 
@@ -3057,13 +3057,13 @@ msg_init:
 		LOG_ERR("Send (err:%d)", ret);
 		goto cleanup;
 	}
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	msg->cache_info = NULL;
 #endif
 	LOG_INF("Send op to server (/dp)");
 	lwm2m_information_interface_send(msg);
 
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	if (cache_temp_info.entry_size) {
 		/* Init Path list for continuous message allocation */
 		lwm2m_engine_path_list_init(&lwm2m_path_list, &lwm2m_path_free_list,
