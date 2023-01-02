@@ -35,9 +35,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/types.h>
 
 #include <fcntl.h>
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 #include "lwm2m_rd_client.h"
-#endif
 
 #define BINDING_OPT_MAX_LEN 3 /* "UQ" */
 #define QUEUE_OPT_MAX_LEN   2 /* "Q" */
@@ -308,9 +306,7 @@ int lwm2m_engine_create_obj_inst(const char *pathstr)
 		return ret;
 	}
 
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 	engine_trigger_update(true);
-#endif
 
 	return 0;
 }
@@ -338,9 +334,7 @@ int lwm2m_engine_delete_obj_inst(const char *pathstr)
 		return ret;
 	}
 
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 	engine_trigger_update(true);
-#endif
 
 	return 0;
 }
@@ -1405,11 +1399,9 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 			*created = 1U;
 		}
 
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 		if (!msg->ctx->bootstrap_mode) {
 			engine_trigger_update(true);
 		}
-#endif
 	}
 
 	return ret;

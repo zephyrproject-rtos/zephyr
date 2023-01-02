@@ -47,6 +47,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_util.h"
+#include "lwm2m_rd_client.h"
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
 #endif
@@ -58,9 +59,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 #ifdef CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT
 #include "lwm2m_rw_senml_cbor.h"
-#endif
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-#include "lwm2m_rd_client.h"
 #endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
@@ -689,16 +687,12 @@ static void socket_loop(void)
 	while (1) {
 		/* Check is Thread Suspend Requested */
 		if (suspend_engine_thread) {
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 			lwm2m_rd_client_pause();
-#endif
 			suspend_engine_thread = false;
 			active_engine_thread = false;
 			k_thread_suspend(engine_thread_id);
 			active_engine_thread = true;
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 			lwm2m_rd_client_resume();
-#endif
 		}
 
 		timestamp = k_uptime_get();
