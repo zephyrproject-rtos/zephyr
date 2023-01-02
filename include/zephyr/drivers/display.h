@@ -43,6 +43,8 @@ enum display_pixel_format {
 	PIXEL_FORMAT_ARGB_8888		= BIT(3),
 	PIXEL_FORMAT_RGB_565		= BIT(4),
 	PIXEL_FORMAT_BGR_565		= BIT(5),
+	PIXEL_FORMAT_GRAY4		= BIT(6), /* 2-bit/4-level grayscale, 0 is black */
+	PIXEL_FORMAT_GRAY16		= BIT(7), /* 4-bit/16-level grayscale, 0 is black */
 };
 
 /**
