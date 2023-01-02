@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 O.S.Systems
+ * Copyright (c) 2018-2023 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,10 +56,12 @@ static int cmd_info(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 
 	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
-	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
+	char *firmware_version = k_malloc(FIRMWARE_IMG_VER_STRLEN_MAX);
 
 	updatehub_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE);
-	updatehub_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX);
+	updatehub_get_firmware_version(FIXED_PARTITION_ID(slot0_partition),
+				       firmware_version,
+				       FIRMWARE_IMG_VER_STRLEN_MAX);
 
 	shell_fprintf(shell, SHELL_NORMAL, "Unique device id: %s\n",
 		      device_id);
