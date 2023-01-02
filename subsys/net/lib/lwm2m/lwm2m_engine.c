@@ -1021,8 +1021,8 @@ static int lwm2m_engine_init(const struct device *dev)
 	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
 
 	if (IS_ENABLED(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)) {
-		/* Init data cache */
-		lwm2m_engine_data_cache_init();
+		/* Init time series data storage */
+		lwm2m_engine_time_series_storage_init();
 	}
 
 	/* start sock receive thread */

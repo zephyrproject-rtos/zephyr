@@ -493,7 +493,7 @@ struct lwm2m_message {
 	struct coap_pending *pending;
 	struct coap_reply *reply;
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	struct lwm2m_cache_read_info *cache_info;
+	struct lwm2m_time_series_read_info *time_series_info;
 #endif
 
 	/** Message configuration */

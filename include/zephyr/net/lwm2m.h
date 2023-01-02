@@ -1445,8 +1445,8 @@ struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
  * @return 0 for success or negative in case of error.
  *
  */
-int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
-			      size_t cache_len);
+int lwm2m_engine_enable_time_series_storage(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
+					    size_t cache_len);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

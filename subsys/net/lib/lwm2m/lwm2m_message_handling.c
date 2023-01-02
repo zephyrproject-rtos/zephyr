@@ -315,7 +315,7 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 		msg->message_timeout_cb = NULL;
 		(void)memset(&msg->cpkt, 0, sizeof(msg->cpkt));
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-		msg->cache_info = NULL;
+		msg->time_series_info = NULL;
 #endif
 	}
 }
@@ -341,7 +341,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 
 	lm2m_message_clear_allocations(msg);
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	msg->cache_info = NULL;
+	msg->time_series_info = NULL;
 #endif
 
 	r = coap_packet_init(&msg->cpkt, msg->msg_data, sizeof(msg->msg_data), COAP_VERSION_1,
@@ -1014,34 +1014,34 @@ static int lwm2m_read_resource_data(struct lwm2m_message *msg, void *data_ptr, s
 	return ret;
 }
 
-static int lwm2m_read_cached_data(struct lwm2m_message *msg,
-				  struct lwm2m_time_series_resource *cached_data, uint8_t data_type)
+static int lwm2m_read_time_series_data(struct lwm2m_message *msg,
+				  struct lwm2m_time_series_resource *time_series_data, uint8_t data_type)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	int ret;
 	struct lwm2m_time_series_elem buf;
-	struct lwm2m_cache_read_entry *read_info;
-	size_t  length = lwm2m_cache_size(cached_data);
+	struct lwm2m_time_series_read_entry *read_info;
+	size_t length = lwm2m_time_series_size(time_series_data);
 
-	LOG_DBG("Read cached data size %u", length);
+	LOG_DBG("Read time series data size %u", length);
 
-	if (msg->cache_info) {
-		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
+	if (msg->time_series_info) {
+		read_info = &msg->time_series_info->read_info[msg->time_series_info->entry_size];
 		/* Store original timeseries ring buffer get states for failure handling */
-		read_info->cache_data = cached_data;
-		read_info->original_get_base = cached_data->rb.get_base;
-		read_info->original_get_head = cached_data->rb.get_head;
-		read_info->original_get_tail = cached_data->rb.get_tail;
-		msg->cache_info->entry_size++;
-		if (msg->cache_info->entry_limit) {
-			length = MIN(length, msg->cache_info->entry_limit);
+		read_info->time_series_data = time_series_data;
+		read_info->original_get_base = time_series_data->rb.get_base;
+		read_info->original_get_head = time_series_data->rb.get_head;
+		read_info->original_get_tail = time_series_data->rb.get_tail;
+		msg->time_series_info->entry_size++;
+		if (msg->time_series_info->entry_limit) {
+			length = MIN(length, msg->time_series_info->entry_limit);
 			LOG_DBG("Limited number of read %d", length);
 		}
 	}
 
 	for (size_t i = 0; i < length; i++) {
 
-		if (!lwm2m_cache_read(cached_data, &buf)) {
+		if (!lwm2m_time_series_read(time_series_data, &buf)) {
 			LOG_ERR("Read operation fail");
 			return -ENOMEM;
 		}
@@ -1109,10 +1109,10 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 }
 
 static bool lwm2m_accept_timeseries_read(struct lwm2m_message *msg,
-					 struct lwm2m_time_series_resource *cached_data)
+					 struct lwm2m_time_series_resource *time_series_data)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	if (cached_data && msg->cache_info && lwm2m_cache_size(cached_data) &&
+	if (time_series_data && msg->time_series_info && lwm2m_time_series_size(time_series_data) &&
 	    msg->out.writer->put_data_timestamp) {
 		return true;
 	}
@@ -1126,7 +1126,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm
 	int i, loop_max = 1, found_values = 0;
 	uint16_t res_inst_id_tmp = 0U;
 	void *data_ptr = NULL;
-	struct lwm2m_time_series_resource *cached_data = NULL;
+	struct lwm2m_time_series_resource *time_series_data = NULL;
 	size_t data_len = 0;
 	struct lwm2m_obj_path temp_path;
 	int ret = 0;
@@ -1181,11 +1181,11 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm
 			temp_path.level = LWM2M_PATH_LEVEL_RESOURCE_INST;
 		}
 
-		cached_data = lwm2m_cache_entry_get_by_object(&temp_path);
+		time_series_data = lwm2m_time_series_entry_get_by_object(&temp_path);
 
-		if (lwm2m_accept_timeseries_read(msg, cached_data)) {
+		if (lwm2m_accept_timeseries_read(msg, time_series_data)) {
 			/* Content Format Writer have to support timestamp write */
-			ret = lwm2m_read_cached_data(msg, cached_data, obj_field->data_type);
+			ret = lwm2m_read_time_series_data(msg, time_series_data, obj_field->data_type);
 		} else {
 			/* setup initial data elements */
 			data_ptr = res->res_instances[i].data_ptr;
@@ -2399,15 +2399,15 @@ static struct lwm2m_obj_path *lwm2m_read_first_path_ptr(sys_slist_t *lwm2m_path_
 	return &entry->path;
 }
 
-static void notify_cached_pending_data_trig(struct observe_node *obs)
+static void notify_time_series_pending_data_trig(struct observe_node *obs)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	struct lwm2m_time_series_resource *cached_data;
+	struct lwm2m_time_series_resource *time_series_data;
 	struct lwm2m_obj_path_list *entry;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&obs->path_list, entry, node) {
-		cached_data = lwm2m_cache_entry_get_by_object(&entry->path);
-		if (!cached_data || lwm2m_cache_size(cached_data) == 0) {
+		time_series_data = lwm2m_time_series_entry_get_by_object(&entry->path);
+		if (!time_series_data || lwm2m_time_series_size(time_series_data) == 0) {
 			continue;
 		}
 
@@ -2456,7 +2456,7 @@ static int notify_message_reply_cb(const struct coap_packet *response, struct co
 						     lwm2m_read_first_path_ptr(&obs->path_list),
 						     reply->user_data);
 			}
-			notify_cached_pending_data_trig(obs);
+			notify_time_series_pending_data_trig(obs);
 		}
 	}
 
@@ -2486,39 +2486,39 @@ static int do_send_op(struct lwm2m_message *msg, uint16_t content_format,
 static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_code)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	struct lwm2m_cache_read_info *cache_temp;
+	struct lwm2m_time_series_read_info *time_series_temp;
 
 	if (error_code != -ENOMEM) {
 		return false;
 	}
 
-	cache_temp = msg->cache_info;
+	time_series_temp = msg->time_series_info;
 
-	if (!cache_temp || !cache_temp->entry_size) {
+	if (!time_series_temp || !time_series_temp->entry_size) {
 		return false;
 	}
 
 	/* Put Ring buffer back to original */
-	for (int i = 0; i < cache_temp->entry_size; i++) {
-		cache_temp->read_info[i].cache_data->rb.get_head =
-			cache_temp->read_info[i].original_get_head;
-		cache_temp->read_info[i].cache_data->rb.get_tail =
-			cache_temp->read_info[i].original_get_tail;
-		cache_temp->read_info[i].cache_data->rb.get_base =
-			cache_temp->read_info[i].original_get_base;
+	for (int i = 0; i < time_series_temp->entry_size; i++) {
+		time_series_temp->read_info[i].time_series_data->rb.get_head =
+			time_series_temp->read_info[i].original_get_head;
+		time_series_temp->read_info[i].time_series_data->rb.get_tail =
+			time_series_temp->read_info[i].original_get_tail;
+		time_series_temp->read_info[i].time_series_data->rb.get_base =
+			time_series_temp->read_info[i].original_get_base;
 	}
 
-	if (cache_temp->entry_limit) {
+	if (time_series_temp->entry_limit) {
 		/* Limited number of message build fail also */
 		return false;
 	}
 
 	/* Limit re-build entry count */
-	cache_temp->entry_limit = LWM2M_LIMITED_TIMESERIES_RESOURCE_COUNT / cache_temp->entry_size;
-	cache_temp->entry_size = 0;
+	time_series_temp->entry_limit = LWM2M_LIMITED_TIMESERIES_RESOURCE_COUNT / time_series_temp->entry_size;
+	time_series_temp->entry_size = 0;
 
 	lwm2m_reset_message(msg, false);
-	LOG_INF("Try re-buildbuild again with limited cache size %d", cache_temp->entry_limit);
+	LOG_INF("Try re-buildbuild again with limited time series size %d", time_series_temp->entry_limit);
 	return true;
 #else
 	return false;
@@ -2532,10 +2532,10 @@ int generate_notify_message(struct lwm2m_ctx *ctx, struct observe_node *obs, voi
 	struct lwm2m_obj_path *path;
 	int ret = 0;
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	struct lwm2m_cache_read_info cache_temp_info;
+	struct lwm2m_time_series_read_info time_series_temp_info;
 
-	cache_temp_info.entry_size = 0;
-	cache_temp_info.entry_limit = 0;
+	time_series_temp_info.entry_size = 0;
+	time_series_temp_info.entry_limit = 0;
 #endif
 
 	msg = lwm2m_get_message(ctx);
@@ -2589,7 +2589,7 @@ msg_init:
 		goto cleanup;
 	}
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	msg->cache_info = &cache_temp_info;
+	msg->time_series_info = &time_series_temp_info;
 #endif
 
 	/* lwm2m_init_message() cleans the coap reply fields, so we assign our data here */
@@ -2627,7 +2627,7 @@ msg_init:
 	obs->resource_update = false;
 	lwm2m_information_interface_send(msg);
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	msg->cache_info = NULL;
+	msg->time_series_info = NULL;
 #endif
 
 	LOG_DBG("NOTIFY MSG: SENT");
@@ -2904,26 +2904,26 @@ static void do_send_timeout_cb(struct lwm2m_message *msg)
 #endif
 
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cache_temp,
+static bool init_next_pending_timeseries_data(struct lwm2m_time_series_read_info *time_series_temp,
 					  sys_slist_t *lwm2m_path_list,
 					  sys_slist_t *lwm2m_path_free_list)
 {
 	uint32_t bytes_available = 0;
 
 	/* Check do we have still pending data to send */
-	for (int i = 0; i < cache_temp->entry_size; i++) {
-		if (ring_buf_is_empty(&cache_temp->read_info[i].cache_data->rb)) {
-			/* Skip Emtpy cached buffers */
+	for (int i = 0; i < time_series_temp->entry_size; i++) {
+		if (ring_buf_is_empty(&time_series_temp->read_info[i].time_series_data->rb)) {
+			/* Skip empty buffers */
 			continue;
 		}
 
 		/* Add to linked list */
 		if (lwm2m_engine_add_path_to_list(lwm2m_path_list, lwm2m_path_free_list,
-						  &cache_temp->read_info[i].cache_data->path)) {
+						  &time_series_temp->read_info[i].time_series_data->path)) {
 			return false;
 		}
 
-		bytes_available += ring_buf_size_get(&cache_temp->read_info[i].cache_data->rb);
+		bytes_available += ring_buf_size_get(&time_series_temp->read_info[i].time_series_data->rb);
 	}
 
 	if (bytes_available == 0) {
@@ -2931,8 +2931,8 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 	}
 
 	LOG_INF("Allocate a new message for pending data %u", bytes_available);
-	cache_temp->entry_size = 0;
-	cache_temp->entry_limit = 0;
+	time_series_temp->entry_size = 0;
+	time_series_temp->entry_limit = 0;
 	return true;
 }
 #endif
@@ -2951,10 +2951,10 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	sys_slist_t lwm2m_path_list;
 	sys_slist_t lwm2m_path_free_list;
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	struct lwm2m_cache_read_info cache_temp_info;
+	struct lwm2m_time_series_read_info time_series_temp_info;
 
-	cache_temp_info.entry_size = 0;
-	cache_temp_info.entry_limit = 0;
+	time_series_temp_info.entry_size = 0;
+	time_series_temp_info.entry_limit = 0;
 #endif
 
 	/* Validate Connection */
@@ -3030,7 +3030,7 @@ msg_init:
 		goto cleanup;
 	}
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	msg->cache_info = &cache_temp_info;
+	msg->time_series_info = &time_series_temp_info;
 #endif
 
 	ret = select_writer(&msg->out, content_format);
@@ -3058,19 +3058,19 @@ msg_init:
 		goto cleanup;
 	}
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	msg->cache_info = NULL;
+	msg->time_series_info = NULL;
 #endif
 	LOG_INF("Send op to server (/dp)");
 	lwm2m_information_interface_send(msg);
 
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	if (cache_temp_info.entry_size) {
+	if (time_series_temp_info.entry_size) {
 		/* Init Path list for continuous message allocation */
 		lwm2m_engine_path_list_init(&lwm2m_path_list, &lwm2m_path_free_list,
 					    lwm2m_path_list_buf,
 					    CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE);
 
-		if (init_next_pending_timeseries_data(&cache_temp_info, &lwm2m_path_list,
+		if (init_next_pending_timeseries_data(&time_series_temp_info, &lwm2m_path_list,
 						     &lwm2m_path_free_list)) {
 			goto msg_alloc;
 		}

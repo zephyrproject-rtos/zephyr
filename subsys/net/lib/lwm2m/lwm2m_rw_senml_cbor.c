@@ -46,7 +46,7 @@ struct cbor_out_fmt_data {
 		uint8_t name_cnt;
 	};
 
-	/* Basetime for Cached data timestamp */
+	/* Basetime for time series data timestamp */
 	time_t basetime;
 
 	/* Storage for object links */
