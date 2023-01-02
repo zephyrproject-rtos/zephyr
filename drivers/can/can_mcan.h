@@ -180,8 +180,8 @@ struct can_mcan_data {
 	void *state_change_cb_data;
 	uint32_t std_filt_rtr;
 	uint32_t std_filt_rtr_mask;
-	uint8_t ext_filt_rtr;
-	uint8_t ext_filt_rtr_mask;
+	uint16_t ext_filt_rtr;
+	uint16_t ext_filt_rtr_mask;
 	struct can_mcan_mm mm;
 	bool started;
 	void *custom;
