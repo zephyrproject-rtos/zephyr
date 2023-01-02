@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_object.h"
 #include "lwm2m_util.h"
+#include "lwm2m_rd_client.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -39,9 +40,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <fcntl.h>
 
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-#include "lwm2m_rd_client.h"
-#endif
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
 #endif
@@ -53,9 +51,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 #ifdef CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT
 #include "lwm2m_rw_senml_cbor.h"
-#endif
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-#include "lwm2m_rd_client.h"
 #endif
 
 #define OBSERVE_COUNTER_START 0U

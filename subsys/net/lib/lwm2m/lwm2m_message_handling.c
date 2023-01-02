@@ -49,6 +49,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_util.h"
+#include "lwm2m_rd_client.h"
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
 #endif
@@ -61,9 +62,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #ifdef CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT
 #include "lwm2m_rw_senml_cbor.h"
 #endif
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-#include "lwm2m_rd_client.h"
-#endif
+
 /* TODO: figure out what's correct value */
 #define TIMEOUT_BLOCKWISE_TRANSFER_MS (MSEC_PER_SEC * 30)
 
@@ -398,7 +397,7 @@ cleanup:
 
 int lwm2m_send_message_async(struct lwm2m_message *msg)
 {
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED) && defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	int ret;
 
 	ret = lwm2m_rd_client_connection_resume(msg->ctx);
@@ -409,8 +408,7 @@ int lwm2m_send_message_async(struct lwm2m_message *msg)
 #endif
 	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 
-	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
-	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
 		engine_update_tx_time();
 	}
 	return 0;
@@ -418,7 +416,7 @@ int lwm2m_send_message_async(struct lwm2m_message *msg)
 
 int lwm2m_information_interface_send(struct lwm2m_message *msg)
 {
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED) && defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	int ret;
 
 	ret = lwm2m_rd_client_connection_resume(msg->ctx);
@@ -1260,11 +1258,9 @@ static int lwm2m_delete_handler(struct lwm2m_message *msg)
 		return ret;
 	}
 
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 	if (!msg->ctx->bootstrap_mode) {
 		engine_trigger_update(true);
 	}
-#endif
 
 	return 0;
 }
