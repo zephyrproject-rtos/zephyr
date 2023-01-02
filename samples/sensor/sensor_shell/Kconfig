@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Sensor shell sample application"
+
+menu "Application configuration"
+
+config APP_SENSOR_VIRTUAL
+	bool "Virtual sensor driver"
+	default y
+	depends on DT_HAS_SENSOR_VIRTUAL_ENABLED
+
+endmenu
+
+source "Kconfig.zephyr"

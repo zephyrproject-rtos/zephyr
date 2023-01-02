@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	virtual-sensors {
+		hinge-angle {
+			compatible = "sensor-virtual";
+			friendly-name = "Hinge Angle";
+			reporters = <&lid_accel 10 0>, <&base_accel 5 0>;
+			reporter-names = "lid-accel", "base-accel";
+			status = "okay";
+		};
+
+		motion-detect {
+			compatible = "sensor-virtual";
+			friendly-name = "Motion Detect";
+			reporters = <&base_accel 20 0>;
+			status = "okay";
+		};
+	};
+};
+
+&i2c0 {
+	base_accel: bmi160@1 {
+		compatible = "bosch,bmi160";
+		reg = <0x1>;
+		friendly-name = "Base Accelerometer";
+		#reporter-cells = <2>;
+	};
+
+	lid_accel: bmi160@2 {
+		compatible = "bosch,bmi160";
+		reg = <0x2>;
+		friendly-name = "Lid Accelerometer";
+		#reporter-cells = <2>;
+	};
+};

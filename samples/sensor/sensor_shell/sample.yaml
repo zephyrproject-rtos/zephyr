@@ -4,6 +4,7 @@ tests:
   sample.sensor.shell:
     integration_platforms:
       - frdm_k64f
+      - native_posix
     filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
     tags: shell
     harness: keyboard
