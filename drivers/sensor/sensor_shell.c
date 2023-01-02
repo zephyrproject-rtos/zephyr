@@ -221,11 +221,20 @@ static int cmd_get_sensor_info(const struct shell *sh, size_t argc,
 	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
 		shell_print(sh,
 			    "device name: %s, vendor: %s, model: %s, "
-			    "friendly name: %s",
+			    "friendly name: %s, num reporters: %zu",
 			    sensor->dev->name,
 			    sensor->vendor ? sensor->vendor : null_str,
 			    sensor->model ? sensor->model : null_str,
-			    sensor->friendly_name ? sensor->friendly_name : null_str);
+			    sensor->friendly_name ? sensor->friendly_name : null_str,
+			    sensor->num_reporters);
+		for (int i = 0; i < sensor->num_reporters; i++) {
+			shell_print(sh,
+				    "\treporter: %d, name: %s, interval: %d, sensitivity: %d",
+				    i,
+				    sensor->reporters[i].info->dev->name,
+				    sensor->reporters[i].interval,
+				    sensor->reporters[i].sensitivity);
+		}
 	}
 	return 0;
 #else
