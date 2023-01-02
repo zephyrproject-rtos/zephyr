@@ -66,11 +66,6 @@ static void set_comparator(int32_t chan, uint32_t cyc)
 	nrf_rtc_cc_set(RTC, chan, cyc & COUNTER_MAX);
 }
 
-static uint32_t get_comparator(int32_t chan)
-{
-	return nrf_rtc_cc_get(RTC, chan);
-}
-
 static bool event_check(int32_t chan)
 {
 	return nrf_rtc_event_check(RTC, RTC_CHANNEL_EVENT_ADDR(chan));
@@ -387,7 +382,7 @@ static inline bool in_anchor_range(uint32_t cc_value)
 	return (cc_value >= ANCHOR_RANGE_START) && (cc_value < ANCHOR_RANGE_END);
 }
 
-static inline bool anchor_update(uint32_t cc_value)
+static inline void anchor_update(uint32_t cc_value)
 {
 	/* Update anchor when far from overflow */
 	if (in_anchor_range(cc_value)) {
@@ -397,10 +392,7 @@ static inline bool anchor_update(uint32_t cc_value)
 		 * `z_nrf_rtc_timer_read`.
 		 */
 		anchor = (((uint64_t)overflow_cnt) << COUNTER_BIT_WIDTH) + cc_value;
-		return true;
 	}
-
-	return false;
 }
 
 static void sys_clock_timeout_handler(int32_t chan,
@@ -412,7 +404,7 @@ static void sys_clock_timeout_handler(int32_t chan,
 
 	last_count += dticks * CYC_PER_TICK;
 
-	bool anchor_updated = anchor_update(cc_value);
+	anchor_update(cc_value);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* protection is not needed because we are in the RTC interrupt
@@ -424,19 +416,6 @@ static void sys_clock_timeout_handler(int32_t chan,
 
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
 			   (int32_t)dticks : (dticks > 0));
-
-	if (cc_value == get_comparator(chan)) {
-		/* New value was not set. Set something that can update anchor.
-		 * If anchor was updated we can enable same CC value to trigger
-		 * interrupt after full cycle. Else set event in anchor update
-		 * range. Since anchor was not updated we know that it's very
-		 * far from mid point so setting is done without any protection.
-		 */
-		if (!anchor_updated) {
-			set_comparator(chan, COUNTER_HALF_SPAN);
-		}
-		event_enable(chan);
-	}
 }
 
 static bool channel_processing_check_and_clear(int32_t chan)
@@ -627,6 +606,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	/* Due to elapsed time the calculation above might produce a
 	 * duration that laps the counter.  Don't let it.
+	 * This limitation also guarantees that the anchor will be properly
+	 * updated before every overflow (see anchor_update()).
 	 */
 	if (cyc > MAX_CYCLES) {
 		cyc = MAX_CYCLES;
