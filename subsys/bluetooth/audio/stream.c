@@ -851,15 +851,11 @@ static void unicast_client_codec_qos_to_iso_qos(struct bt_audio_iso *iso,
 
 	bt_audio_codec_qos_to_iso_qos(io_qos, qos);
 
-	/* If the opposing ASE of the CIS is not yet configured, we
-	 * assume that it will use the same QoS value.
-	 *
-	 * This allows us to actually create the CIG and only start the
-	 * CIS in one direction, and then later connect the CIS (assuming that
-	 * the QoS values are equal)
-	 */
 	if (other_io_qos != NULL) {
-		bt_audio_codec_qos_to_iso_qos(other_io_qos, qos);
+		/* If the opposing ASE of the CIS is not yet configured, we
+		 * still need to set the PHY value when creating the CIG.
+		 */
+		other_io_qos->phy = io_qos->phy;
 	}
 }
 
