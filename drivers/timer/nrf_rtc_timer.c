@@ -428,7 +428,7 @@ static bool channel_processing_check_and_clear(int32_t chan)
 		/* The processing of channel can be caused by CC match
 		 * or be forced.
 		 */
-		result = atomic_and(&force_isr_mask, ~BIT(chan)) ||
+		result = (atomic_and(&force_isr_mask, ~BIT(chan)) & BIT(chan)) ||
 			 event_check(chan);
 
 		if (result) {
