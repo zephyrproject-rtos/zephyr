@@ -29,6 +29,11 @@
 
 #include <zephyr/logging/log.h>
 
+BUILD_ASSERT(CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 ||
+	     CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0,
+	     "CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT or "
+	     "CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT shall be non-zero");
+
 LOG_MODULE_REGISTER(bt_unicast_client, CONFIG_BT_AUDIO_UNICAST_CLIENT_LOG_LEVEL);
 
 #define PAC_DIR_UNUSED(dir) ((dir) != BT_AUDIO_DIR_SINK && (dir) != BT_AUDIO_DIR_SOURCE)
@@ -58,10 +63,14 @@ static const struct bt_uuid *ase_src_uuid = BT_UUID_ASCS_ASE_SRC;
 static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
 
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 static struct bt_unicast_client_ep snks[CONFIG_BT_MAX_CONN]
 				       [CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 static struct bt_unicast_client_ep srcs[CONFIG_BT_MAX_CONN]
 				       [CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_subscribe_params snk_loc_subscribe[CONFIG_BT_MAX_CONN];
@@ -237,17 +246,21 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 
 bool bt_audio_ep_is_unicast_client(const struct bt_audio_ep *ep)
 {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	for (size_t i = 0U; i < ARRAY_SIZE(snks); i++) {
 		if (PART_OF_ARRAY(snks[i], ep)) {
 			return true;
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	for (size_t i = 0U; i < ARRAY_SIZE(srcs); i++) {
 		if (PART_OF_ARRAY(srcs[i], ep)) {
 			return true;
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 	return false;
 }
@@ -270,12 +283,12 @@ static void unicast_client_ep_init(struct bt_audio_ep *ep, uint16_t handle,
 static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
 						  uint16_t handle)
 {
-	size_t i;
 	uint8_t index;
 
 	index = bt_conn_index(conn);
 
-	for (i = 0; i < ARRAY_SIZE(snks[index]); i++) {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(snks[index]); i++) {
 		struct bt_unicast_client_ep *client_ep = &snks[index][i];
 
 		if ((handle && client_ep->handle == handle) ||
@@ -283,8 +296,10 @@ static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
 			return &client_ep->ep;
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
-	for (i = 0; i < ARRAY_SIZE(srcs[index]); i++) {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(srcs[index]); i++) {
 		struct bt_unicast_client_ep *client_ep = &srcs[index][i];
 
 		if ((handle && client_ep->handle == handle) ||
@@ -292,6 +307,7 @@ static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
 			return &client_ep->ep;
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 	return NULL;
 }
@@ -323,14 +339,18 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 	index = bt_conn_index(conn);
 
 	switch (dir) {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	case BT_AUDIO_DIR_SINK:
 		cache = snks[index];
 		size = ARRAY_SIZE(snks[index]);
 		break;
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	case BT_AUDIO_DIR_SOURCE:
 		cache = srcs[index];
 		size = ARRAY_SIZE(srcs[index]);
 		break;
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 	default:
 		return NULL;
 	}
@@ -1153,7 +1173,6 @@ static int unicast_client_ep_subscribe(struct bt_conn *conn,
 
 static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 {
-	size_t i;
 	uint8_t index;
 
 	LOG_DBG("conn %p 0x%04x", conn, handle);
@@ -1173,21 +1192,25 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		bt_gatt_subscribe(conn, &cp_subscribe[index]);
 	}
 
-	for (i = 0; i < ARRAY_SIZE(snks[index]); i++) {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(snks[index]); i++) {
 		struct bt_unicast_client_ep *client_ep = &snks[index][i];
 
 		if (client_ep->handle) {
 			client_ep->cp_handle = handle;
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
-	for (i = 0; i < ARRAY_SIZE(srcs[index]); i++) {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(srcs[index]); i++) {
 		struct bt_unicast_client_ep *client_ep = &srcs[index][i];
 
 		if (client_ep->handle) {
 			client_ep->cp_handle = handle;
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 }
 
 NET_BUF_SIMPLE_DEFINE_STATIC(ep_buf, CONFIG_BT_L2CAP_TX_MTU);
@@ -1495,24 +1518,27 @@ static void unicast_client_reset(struct bt_audio_ep *ep)
 
 static void unicast_client_ep_reset(struct bt_conn *conn)
 {
-	size_t i;
 	uint8_t index;
 
 	LOG_DBG("conn %p", conn);
 
 	index = bt_conn_index(conn);
 
-	for (i = 0; i < ARRAY_SIZE(snks[index]); i++) {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(snks[index]); i++) {
 		struct bt_audio_ep *ep = &snks[index][i].ep;
 
 		unicast_client_reset(ep);
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
-	for (i = 0; i < ARRAY_SIZE(srcs[index]); i++) {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(srcs[index]); i++) {
 		struct bt_audio_ep *ep = &srcs[index][i].ep;
 
 		unicast_client_reset(ep);
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 }
 
 int bt_unicast_client_config(struct bt_audio_stream *stream,
