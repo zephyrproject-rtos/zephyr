@@ -1348,8 +1348,8 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		 */
 		sspsp |= SSPSP_SFRMP(!inverted_frame);
 
-		active_tx_slots = popcount(ssp->params.tx_slots);
-		active_rx_slots = popcount(ssp->params.rx_slots);
+		active_tx_slots = POPCOUNT(ssp->params.tx_slots);
+		active_rx_slots = POPCOUNT(ssp->params.rx_slots);
 
 		/*
 		 * handle TDM mode, TDM mode has padding at the end of
@@ -1837,9 +1837,9 @@ static const struct dai_config *dai_ssp_config_get(const struct device *dev, enu
 	params->rate = ssp->params.fsync_rate;
 
 	if (dir == DAI_DIR_PLAYBACK) {
-		params->channels = popcount(ssp->params.tx_slots);
+		params->channels = POPCOUNT(ssp->params.tx_slots);
 	} else {
-		params->channels = popcount(ssp->params.rx_slots);
+		params->channels = POPCOUNT(ssp->params.rx_slots);
 	}
 
 	params->word_size = ssp->params.sample_valid_bits;
