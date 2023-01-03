@@ -92,7 +92,7 @@ static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 		return;
 	}
 
-	buf = udc_buf_peek(dev, ep, false);
+	buf = udc_buf_peek(dev, ep);
 	if (buf != NULL) {
 		nrfx_usbd_transfer_t xfer = {
 			.p_data = {.tx = buf->data},
@@ -142,7 +142,7 @@ static void udc_event_fake_status_in(const struct device *dev)
 {
 	struct net_buf *buf;
 
-	buf = udc_buf_get(dev, USB_CONTROL_EP_IN, true);
+	buf = udc_buf_get(dev, USB_CONTROL_EP_IN);
 	if (unlikely(buf == NULL)) {
 		LOG_DBG("ep 0x%02x queue is empty", USB_CONTROL_EP_IN);
 		return;
@@ -160,7 +160,7 @@ static void udc_event_xfer_in(const struct device *dev,
 
 	switch (event->data.eptransfer.status) {
 	case NRFX_USBD_EP_OK:
-		buf = udc_buf_get(dev, ep, true);
+		buf = udc_buf_get(dev, ep);
 		if (buf == NULL) {
 			LOG_ERR("ep 0x%02x queue is empty", ep);
 			__ASSERT_NO_MSG(false);
@@ -221,7 +221,7 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 		return;
 	}
 
-	buf = udc_buf_peek(dev, ep, true);
+	buf = udc_buf_peek(dev, ep);
 	if (buf != NULL) {
 		nrfx_usbd_transfer_t xfer = {
 			.p_data = {.rx = buf->data},
@@ -266,7 +266,7 @@ static void udc_event_xfer_out(const struct device *dev,
 			LOG_ERR("OUT transfer failed %d", err_code);
 		}
 
-		buf = udc_buf_get(dev, ep, true);
+		buf = udc_buf_get(dev, ep);
 		if (buf == NULL) {
 			LOG_ERR("ep 0x%02x ok, queue is empty", ep);
 			return;
