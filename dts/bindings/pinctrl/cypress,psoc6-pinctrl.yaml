@@ -22,18 +22,18 @@ compatible: "cypress,psoc6-pinctrl"
 include: base.yaml
 
 properties:
-    "#address-cells":
-      required: true
-      const: 1
-    "#size-cells":
-      required: true
-      const: 1
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 1
 
 child-binding:
-    description: cypress pins
+  description: cypress pins
 
-    include: pincfg-node.yaml
+  include: pincfg-node.yaml
 
-    properties:
-      "cypress,pins":
-        type: phandle-array
+  properties:
+    "cypress,pins":
+      type: phandle-array

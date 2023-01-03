@@ -7,9 +7,9 @@ compatible: "zephyr,ec-host-cmd-periph-espi"
 include: base.yaml
 
 properties:
-    bus:
-      required: true
-      type: phandle
-      description:
-        Phandle to the eSPI bus which will be used for communication with AP
-        by the host commands subsystem
+  bus:
+    required: true
+    type: phandle
+    description:
+      Phandle to the eSPI bus which will be used for communication with AP
+      by the host commands subsystem

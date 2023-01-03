@@ -10,8 +10,8 @@ compatible: "ti,tmp007"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      description: |
-        Identifies the ALERT signal, which is active-low open drain when
-        produced by the sensor.
+  int-gpios:
+    type: phandle-array
+    description: |
+      Identifies the ALERT signal, which is active-low open drain when
+      produced by the sensor.

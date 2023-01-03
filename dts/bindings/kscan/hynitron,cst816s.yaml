@@ -8,16 +8,16 @@ compatible: "hynitron,cst816s"
 include: i2c-device.yaml
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      description: |
-        The irq signal defaults to active low as produced by the
-        sensor. The property value should ensure the flags properly
-        describe the signal that is presented to the driver.
+  irq-gpios:
+    type: phandle-array
+    description: |
+      The irq signal defaults to active low as produced by the
+      sensor. The property value should ensure the flags properly
+      describe the signal that is presented to the driver.
 
-    rst-gpios:
-      type: phandle-array
-      description: |
-        The reset signal defaults to active low to the
-        sensor. The property value should ensure the flags properly
-        describe the signal that is presented to the driver.
+  rst-gpios:
+    type: phandle-array
+    description: |
+      The reset signal defaults to active low to the
+      sensor. The property value should ensure the flags properly
+      describe the signal that is presented to the driver.

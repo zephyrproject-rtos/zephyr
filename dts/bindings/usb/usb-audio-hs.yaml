@@ -14,10 +14,10 @@ properties:
     type: int
     default: 16
     enum:
-     - 8
-     - 16
-     - 24
-     - 32
+      - 8
+      - 16
+      - 24
+      - 32
   mic-sync-type:
     default: "Synchronous"
     type: string
@@ -26,18 +26,18 @@ properties:
       Default value is Sychronous.
       Adaptive is not supported.
     enum:
-     - "No Synchronization"
-     - "Asynchronous"
-     - "Adaptive"
-     - "Synchronous"
+      - "No Synchronization"
+      - "Asynchronous"
+      - "Adaptive"
+      - "Synchronous"
   hp-resolution:
     type: int
     default: 16
     enum:
-     - 8
-     - 16
-     - 24
-     - 32
+      - 8
+      - 16
+      - 24
+      - 32
   # microphone channel configuration options
   mic-channel-l:
     type: boolean

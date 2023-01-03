@@ -8,7 +8,7 @@ include: base.yaml
 bus: pcie
 
 properties:
-    "#address-cells":
-      required: true
-    "#size-cells":
-      required: true
+  "#address-cells":
+    required: true
+  "#size-cells":
+    required: true

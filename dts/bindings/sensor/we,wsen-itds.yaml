@@ -8,33 +8,33 @@ compatible: "we,wsen-itds"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      description: |
-        This property specifies the connection for INT0, the driver maps
-        all interrupts to INT0 as default. The signal to output high when
-        data produced by the sensor.
+  int-gpios:
+    type: phandle-array
+    description: |
+      This property specifies the connection for INT0, the driver maps
+      all interrupts to INT0 as default. The signal to output high when
+      data produced by the sensor.
 
-    odr:
-      type: string
-      required: true
-      description: Output data rate in Hz
-      enum:
-        - "1.6"
-        - "12.5"
-        - "25"
-        - "50"
-        - "100"
-        - "200"
-        - "400"
-        - "800"
-        - "1600"
+  odr:
+    type: string
+    required: true
+    description: Output data rate in Hz
+    enum:
+      - "1.6"
+      - "12.5"
+      - "25"
+      - "50"
+      - "100"
+      - "200"
+      - "400"
+      - "800"
+      - "1600"
 
-    op-mode:
-      type: string
-      required: true
-      description: Operating mode of sensor
-      enum:
-        - "low-power"
-        - "normal"
-        - "high-perf"
+  op-mode:
+    type: string
+    required: true
+    description: Operating mode of sensor
+    enum:
+      - "low-power"
+      - "normal"
+      - "high-perf"

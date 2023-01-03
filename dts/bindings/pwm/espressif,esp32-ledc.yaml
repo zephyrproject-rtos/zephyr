@@ -131,6 +131,6 @@ child-binding:
         one of four high-speed/low-speed timers.
 
 pwm-cells:
-  - channel
-  - period
-  - flags
+- channel
+- period
+- flags

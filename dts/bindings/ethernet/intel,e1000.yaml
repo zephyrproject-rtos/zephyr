@@ -8,5 +8,5 @@ compatible: "intel,e1000"
 include: [base.yaml, pcie-device.yaml]
 
 properties:
-    interrupts:
-      required: true
+  interrupts:
+    required: true

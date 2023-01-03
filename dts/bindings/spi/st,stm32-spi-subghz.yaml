@@ -12,9 +12,9 @@ include:
       - pinctrl-names
 
 properties:
-    use-subghzspi-nss:
-      type: boolean
-      required: true
-      description: |
-        Control the SUBGHZPI NSS line using the PWR HAL functions. This is for
-        the special purpose SUBGHZSPI interface found in the STM32WL series.
+  use-subghzspi-nss:
+    type: boolean
+    required: true
+    description: |
+      Control the SUBGHZPI NSS line using the PWR HAL functions. This is for
+      the special purpose SUBGHZSPI interface found in the STM32WL series.

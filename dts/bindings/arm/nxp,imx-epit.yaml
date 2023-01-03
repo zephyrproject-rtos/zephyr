@@ -9,17 +9,17 @@ include: base.yaml
 
 properties:
   reg:
-      required: true
+    required: true
 
   interrupts:
-      required: true
+    required: true
 
   prescaler:
-     type: int
-     required: true
-     description: Set the EPIT prescaler between 0 and 4095
+    type: int
+    required: true
+    description: Set the EPIT prescaler between 0 and 4095
 
   rdc:
-     type: int
-     required: true
-     description: Set the RDC permission for this peripheral
+    type: int
+    required: true
+    description: Set the RDC permission for this peripheral

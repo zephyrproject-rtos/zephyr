@@ -8,5 +8,5 @@ compatible: "snps,designware-i2c"
 include: [i2c-controller.yaml, pinctrl-device.yaml, pcie-device.yaml]
 
 properties:
-    interrupts:
-      required: true
+  interrupts:
+    required: true

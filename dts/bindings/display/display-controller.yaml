@@ -4,14 +4,14 @@
 include: base.yaml
 
 properties:
-    height:
-      type: int
-      required: true
-      description: |
-        Height of the panel driven by the controller, with the units in pixels.
+  height:
+    type: int
+    required: true
+    description: |
+      Height of the panel driven by the controller, with the units in pixels.
 
-    width:
-      type: int
-      required: true
-      description: |
-        Width of the panel driven by the controller, with the units in pixels.
+  width:
+    type: int
+    required: true
+    description: |
+      Width of the panel driven by the controller, with the units in pixels.

@@ -8,120 +8,120 @@ compatible: "atmel,rf2xx"
 include: spi-device.yaml
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      required: true
+  irq-gpios:
+    type: phandle-array
+    required: true
 
-    reset-gpios:
-      type: phandle-array
-      required: true
+  reset-gpios:
+    type: phandle-array
+    required: true
 
-    slptr-gpios:
-      type: phandle-array
-      required: true
-      description: |
-        Multi-functional pin that controls sleep, deep sleep, transmit
-        start and receive states
+  slptr-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Multi-functional pin that controls sleep, deep sleep, transmit
+      start and receive states
 
-    dig2-gpios:
-      type: phandle-array
-      description: RX and TX Frame Time Stamping(TX_ARET)
+  dig2-gpios:
+    type: phandle-array
+    description: RX and TX Frame Time Stamping(TX_ARET)
 
-    clkm-gpios:
-      type: phandle-array
-      description: Master clock signal output
+  clkm-gpios:
+    type: phandle-array
+    description: Master clock signal output
 
-    local-mac-address:
-      type: uint8-array
-      description: |
-        Specifies the MAC address that was assigned to the network
-        device
+  local-mac-address:
+    type: uint8-array
+    description: |
+      Specifies the MAC address that was assigned to the network
+      device
 
-    channel-page:
-      type: int
-      enum:
-        - 0
-        - 2
-        - 5
-      description: |
-        Selects Channel Page accordingly with IEEE 802.15.4 standard. The Page 0
-        is used in both Sub-Giga and 2.4GHz. It allows select channels 0-10 in
-        Sub-Giga band (0: BPSK-20, 1-10: BPSK-40) and 11-26 in 2.4GHz band
-        (11-26: O-QPSK-250). Channel 2 is for Sub-Giga and selects
-        (0: OQPSK-SIN-RC-100, 1-10: OQPSK-SIN-250). Channel 5 is for Sub-Giga
-        (JAPAN) and selects (0-3: OQPSK-RC-250) .
-          0: Page 0 - BPSK-20 [0], BPSK-40 [1-10], O-QPSK-250 [11-26].
-          2: Page 2 - OQPSK-SIN-RC-100 [0], OQPSK-SIN-250 [1-10].
-          5: Page 5 - OQPSK-RC-250 [0-3].
+  channel-page:
+    type: int
+    enum:
+      - 0
+      - 2
+      - 5
+    description: |
+      Selects Channel Page accordingly with IEEE 802.15.4 standard. The Page 0
+      is used in both Sub-Giga and 2.4GHz. It allows select channels 0-10 in
+      Sub-Giga band (0: BPSK-20, 1-10: BPSK-40) and 11-26 in 2.4GHz band
+      (11-26: O-QPSK-250). Channel 2 is for Sub-Giga and selects
+      (0: OQPSK-SIN-RC-100, 1-10: OQPSK-SIN-250). Channel 5 is for Sub-Giga
+      (JAPAN) and selects (0-3: OQPSK-RC-250) .
+        0: Page 0 - BPSK-20 [0], BPSK-40 [1-10], O-QPSK-250 [11-26].
+        2: Page 2 - OQPSK-SIN-RC-100 [0], OQPSK-SIN-250 [1-10].
+        5: Page 5 - OQPSK-RC-250 [0-3].
 
-    tx-pwr-table:
-      type: uint8-array
-      default: [0x00]
-      description: |
-        This is the Transmission Power Mapping Table array used to comply with
-        local regulations. By default this value set an output power above 0dBm
-        for all transceivers. This property must be used with tx-pwr-min and
-        tx-pwr-max for normal operations. The number of elements is defined by
-        the size of the tx-pwr-table array property. The max entry value for
-        2.4GHz is 0x0f and 0xff for Sub-Giga. See PHY_TX_PWR at datasheet for
-        more details.
+  tx-pwr-table:
+    type: uint8-array
+    default: [0x00]
+    description: |
+      This is the Transmission Power Mapping Table array used to comply with
+      local regulations. By default this value set an output power above 0dBm
+      for all transceivers. This property must be used with tx-pwr-min and
+      tx-pwr-max for normal operations. The number of elements is defined by
+      the size of the tx-pwr-table array property. The max entry value for
+      2.4GHz is 0x0f and 0xff for Sub-Giga. See PHY_TX_PWR at datasheet for
+      more details.
 
-        The output power is determined by following formula:
+      The output power is determined by following formula:
 
-          linear_step = (tx-pwr-max - tx-pwr-min)
-                      / (sizeof(tx-pwr-table) - 1.0);
-          table_index = abs((value_in_dbm - tx-pwr-max) / linear_step);
-          output_power = tx-pwr-table[table_index];
+        linear_step = (tx-pwr-max - tx-pwr-min)
+                    / (sizeof(tx-pwr-table) - 1.0);
+        table_index = abs((value_in_dbm - tx-pwr-max) / linear_step);
+        output_power = tx-pwr-table[table_index];
 
-        Using AT86RF233 as example without external PA. By the datasheet the
-        tx-pwr-min = -17 dBm and tx-pwr-max = +4 dBm. Using 48 elements in the
-        tx-pwr-table array. The table array is filled from higher to lower power.
+      Using AT86RF233 as example without external PA. By the datasheet the
+      tx-pwr-min = -17 dBm and tx-pwr-max = +4 dBm. Using 48 elements in the
+      tx-pwr-table array. The table array is filled from higher to lower power.
 
-          tx-pwr-min = [01 11];	/* -17.0 dBm */
-          tx-pwr-max = [00 04];	/*   4.0 dBm */
-          tx-pwr-table = [00 01 03 04 05 05 06 06
-                          07 07 07 08 08 09 09 0a
-                          0a 0a 0b 0b 0b 0b 0c 0c
-                          0c 0c 0d 0d 0d 0d 0d 0d
-                          0d 0d 0e 0e 0e 0e 0e 0e
-                          0e 0e 0e 0e 0e 0e 0f 0f];
+        tx-pwr-min = [01 11];	/* -17.0 dBm */
+        tx-pwr-max = [00 04];	/*   4.0 dBm */
+        tx-pwr-table = [00 01 03 04 05 05 06 06
+                        07 07 07 08 08 09 09 0a
+                        0a 0a 0b 0b 0b 0b 0c 0c
+                        0c 0c 0d 0d 0d 0d 0d 0d
+                        0d 0d 0e 0e 0e 0e 0e 0e
+                        0e 0e 0e 0e 0e 0e 0f 0f];
 
-        The values in the table are filled based on table 9-9 [TX Output Power]
-        using the linear step in dBm as:
+      The values in the table are filled based on table 9-9 [TX Output Power]
+      using the linear step in dBm as:
 
-          linear_step = (4 - (-17)) / (48 - 1) => ~0.45 dBm
+        linear_step = (4 - (-17)) / (48 - 1) => ~0.45 dBm
 
-        Assuming that user wants set 0 dBm as output power:
+      Assuming that user wants set 0 dBm as output power:
 
-          table_index = abs((0 - 4) / 0.45) => 8.95 ( round to 9 )
-          output_power = tx-pwr-table[9] => 0x07 ( 0 dBm as table 9-9 )
+        table_index = abs((0 - 4) / 0.45) => 8.95 ( round to 9 )
+        output_power = tx-pwr-table[9] => 0x07 ( 0 dBm as table 9-9 )
 
-        Note when tx-pwr-min is [0x00, 0x00] and tx-pwr-max is [0x00, 0x00]
-        the linear step is zero. This means that table_index will be always the
-        first element of the tx-pwr-table array, which is 0x00 by default. This
-        is defined as general case when user not define any tx-pwr-* entries. It
-        sets the transceiver to use always a value above 0 dBm as output power.
+      Note when tx-pwr-min is [0x00, 0x00] and tx-pwr-max is [0x00, 0x00]
+      the linear step is zero. This means that table_index will be always the
+      first element of the tx-pwr-table array, which is 0x00 by default. This
+      is defined as general case when user not define any tx-pwr-* entries. It
+      sets the transceiver to use always a value above 0 dBm as output power.
 
-    tx-pwr-min:
-      type: uint8-array
-      default: [0x00, 0x00]
-      description: |
-        This value represent minimum normalized value in dBm for the transceiver
-        output power. This property must be used when tx-pwr-table is defined.
-        The value is represented by two entries where first element represents
-        the signal indication [0x00-positive, 0x01-negative] and second element
-        is the minimal value in dBm for the transceiver output power. By default,
-        the combination of tx-pwr-min as [0x00, 0x00] and tx-pwr-max as [0x00,
-        0x00] will create a fixed transmission power.
+  tx-pwr-min:
+    type: uint8-array
+    default: [0x00, 0x00]
+    description: |
+      This value represent minimum normalized value in dBm for the transceiver
+      output power. This property must be used when tx-pwr-table is defined.
+      The value is represented by two entries where first element represents
+      the signal indication [0x00-positive, 0x01-negative] and second element
+      is the minimal value in dBm for the transceiver output power. By default,
+      the combination of tx-pwr-min as [0x00, 0x00] and tx-pwr-max as [0x00,
+      0x00] will create a fixed transmission power.
 
-    tx-pwr-max:
-      type: uint8-array
-      default: [0x00, 0x00]
-      description: |
-        This value represent maximum normalized value in dBm for the transceiver
-        output power. This property must be used when tx-pwr-table is defined.
-        The value is represented by two entries where first element represents
-        the signal indication [ 0x00-positive] and second element is the maximum
-        value in dBm for the transceiver output power. By default, the
-        combination of tx-pwr-max as [0x00, 0x00] and tx-pwr-min as [0x00,
-        0x00] will create a fixed transmission power.
+  tx-pwr-max:
+    type: uint8-array
+    default: [0x00, 0x00]
+    description: |
+      This value represent maximum normalized value in dBm for the transceiver
+      output power. This property must be used when tx-pwr-table is defined.
+      The value is represented by two entries where first element represents
+      the signal indication [ 0x00-positive] and second element is the maximum
+      value in dBm for the transceiver output power. By default, the
+      combination of tx-pwr-max as [0x00, 0x00] and tx-pwr-min as [0x00,
+      0x00] will create a fixed transmission power.
