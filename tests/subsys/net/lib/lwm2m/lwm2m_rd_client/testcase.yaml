@@ -1,0 +1,9 @@
+common:
+  depends_on: netif
+tests:
+  subsys.net.lib.lwm2m_rd_client:
+    tags: net lwm2m
+    platform_allow: native_posix qemu_x86 qemu_x86_64
+    integration_platforms:
+      - native_posix
+      - qemu_x86
