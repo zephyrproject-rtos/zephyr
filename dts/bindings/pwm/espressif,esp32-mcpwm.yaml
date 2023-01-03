@@ -17,7 +17,8 @@ description: |
   and asymmetric configuration. MCPWMxA and MCPWMxB will share the same timer, thus having the same
   operating frequency.
 
-  The driver currently always use the timer x for operator x. Timer 0 will use operator 0 for PWM0A/B.
+  The driver currently always use the timer x for operator x. Timer 0 will use operator 0 for
+  PWM0A/B.
   Timer 1 will use operator 1 for PWM1A/B, and so on.
 
   Mapping channel ID:

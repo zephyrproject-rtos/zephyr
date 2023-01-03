@@ -30,7 +30,8 @@ tests:
       - CONFIG_MAIN_STACK_SIZE=1152
   portability.posix.common.tls.newlib:
     platform_exclude: nsim_sem_mpu_stack_guard ehl_crb lpcxpresso55s06
-    filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and
+      CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y

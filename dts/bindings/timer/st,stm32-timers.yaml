@@ -42,6 +42,7 @@ properties:
                                                    are set only when the counter is counting up.
           * STM32_TIM_COUNTERMODE_CENTER_UP_DOWN - counts up and down alternatively.
                                                    Output compare interrupt flags of output channels
-                                                   are set only when the counter is counting up or down.
+                                                   are set only when the counter is counting up or
+                                                   down.
 
           If absent, then STM32_TIM_COUNTERMODE_UP is used (reset state).

@@ -18,7 +18,8 @@ tests:
       fixture: gpio_loopback
     extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;boards/nrf_uart.overlay"
   drivers.uart.async_api.rtt:
-    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_HAS_SEGGER_RTT and not CONFIG_UART_MCUX_LPUART
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_HAS_SEGGER_RTT and
+      not CONFIG_UART_MCUX_LPUART
     extra_args: DTC_OVERLAY_FILE=boards/segger_rtt.overlay
     extra_configs:
       - CONFIG_USE_SEGGER_RTT=y
