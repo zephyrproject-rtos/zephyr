@@ -532,7 +532,6 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	uint16_t handle_iter;
-	bool has_cis;
 
 	cig = ll_conn_iso_group_get_by_id(cig_id);
 	if (!cig) {
@@ -566,12 +565,11 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 
 	/* CIG exists and is not active */
 	handle_iter = UINT16_MAX;
-	has_cis = false;
 
 	for (int i = 0; i < cig->cis_count; i++)  {
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		if (!cis) {
-			break;
+			continue;
 		}
 
 		/* Remove data path and ISOAL sink/source associated with this CIS
@@ -580,16 +578,14 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 		ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
 		ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 
-		has_cis = true;
+		ll_conn_iso_stream_release(cis);
 	}
 
-	if (has_cis) {
-		/* Clear configuration only - let CIS disconnection release instance */
-		cig->cis_count = 0;
-	} else {
-		/* No CISes associated with the CIG - release the instance */
-		ll_conn_iso_group_release(cig);
-	}
+	/* Clear configuration */
+	cig->cis_count = 0;
+
+	/* Release the CIG instance */
+	ll_conn_iso_group_release(cig);
 
 	return BT_HCI_ERR_SUCCESS;
 }
