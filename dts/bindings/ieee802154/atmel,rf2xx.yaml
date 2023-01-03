@@ -56,7 +56,7 @@ properties:
 
     tx-pwr-table:
       type: uint8-array
-      default: [ 0x00 ]
+      default: [0x00]
       description: |
         This is the Transmission Power Mapping Table array used to comply with
         local regulations. By default this value set an output power above 0dBm
@@ -86,7 +86,7 @@ properties:
                           0d 0d 0e 0e 0e 0e 0e 0e
                           0e 0e 0e 0e 0e 0e 0f 0f];
 
-        The values in the table are filled based on table 9-9 [ TX Output Power ]
+        The values in the table are filled based on table 9-9 [TX Output Power]
         using the linear step in dBm as:
 
           linear_step = (4 - (-17)) / (48 - 1) => ~0.45 dBm
@@ -96,7 +96,7 @@ properties:
           table_index = abs((0 - 4) / 0.45) => 8.95 ( round to 9 )
           output_power = tx-pwr-table[9] => 0x07 ( 0 dBm as table 9-9 )
 
-        Note when tx-pwr-min is [ 0x00, 0x00 ] and tx-pwr-max is [ 0x00, 0x00 ]
+        Note when tx-pwr-min is [0x00, 0x00] and tx-pwr-max is [0x00, 0x00]
         the linear step is zero. This means that table_index will be always the
         first element of the tx-pwr-table array, which is 0x00 by default. This
         is defined as general case when user not define any tx-pwr-* entries. It
@@ -104,24 +104,24 @@ properties:
 
     tx-pwr-min:
       type: uint8-array
-      default: [ 0x00, 0x00 ]
+      default: [0x00, 0x00]
       description: |
         This value represent minimum normalized value in dBm for the transceiver
         output power. This property must be used when tx-pwr-table is defined.
         The value is represented by two entries where first element represents
-        the signal indication [ 0x00-positive, 0x01-negative] and second element
+        the signal indication [0x00-positive, 0x01-negative] and second element
         is the minimal value in dBm for the transceiver output power. By default,
-        the combination of tx-pwr-min as [ 0x00, 0x00 ] and tx-pwr-max as [ 0x00,
-        0x00 ] will create a fixed transmission power.
+        the combination of tx-pwr-min as [0x00, 0x00] and tx-pwr-max as [0x00,
+        0x00] will create a fixed transmission power.
 
     tx-pwr-max:
       type: uint8-array
-      default: [ 0x00, 0x00 ]
+      default: [0x00, 0x00]
       description: |
         This value represent maximum normalized value in dBm for the transceiver
         output power. This property must be used when tx-pwr-table is defined.
         The value is represented by two entries where first element represents
-        the signal indication [ 0x00-positive ] and second element is the maximum
+        the signal indication [ 0x00-positive] and second element is the maximum
         value in dBm for the transceiver output power. By default, the
-        combination of tx-pwr-max as [ 0x00, 0x00 ] and tx-pwr-min as [ 0x00,
-        0x00 ] will create a fixed transmission power.
+        combination of tx-pwr-max as [0x00, 0x00] and tx-pwr-min as [0x00,
+        0x00] will create a fixed transmission power.

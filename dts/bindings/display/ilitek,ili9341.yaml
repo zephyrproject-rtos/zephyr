@@ -67,7 +67,7 @@ properties:
 
     etmod:
       type: uint8-array
-      default: [ 0x06 ]
+      default: [0x06]
       description:
         Entry Mode Set (ETMOD) register value.
 
