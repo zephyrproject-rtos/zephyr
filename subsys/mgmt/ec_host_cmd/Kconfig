@@ -25,6 +25,7 @@ config EC_HOST_CMD_HANDLER_TX_BUFFER
 	int "Buffer size in bytes for TX buffer shared by all EC host commands"
 	default 0 if EC_HOST_CMD_BACKEND_ESPI
 	default 0 if EC_HOST_CMD_BACKEND_SHI
+	default 256 if EC_HOST_CMD_BACKEND_UART
 	default 256
 	help
 	  Buffer size in bytes for TX buffer defined by the host command handler.
@@ -36,6 +37,7 @@ config EC_HOST_CMD_HANDLER_RX_BUFFER
 	int "Buffer size in bytes for RX buffer shared by all EC host commands"
 	default 256 if EC_HOST_CMD_BACKEND_ESPI
 	default 0 if EC_HOST_CMD_BACKEND_SHI
+	default 544 if EC_HOST_CMD_BACKEND_UART
 	default 256
 	help
 	  Buffer size in bytes for TX buffer defined by the host command handler.
