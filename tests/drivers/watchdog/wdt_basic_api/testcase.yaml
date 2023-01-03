@@ -1,6 +1,6 @@
 common:
-    depends_on: watchdog
-    tags: drivers watchdog
+  depends_on: watchdog
+  tags: drivers watchdog
 tests:
   drivers.watchdog:
     filter: >
