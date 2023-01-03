@@ -731,8 +731,6 @@ static inline void mcux_flexcan_transfer_rx_idle(const struct device *dev,
 		function(dev, &frame, arg);
 
 		/* Setup RX message buffer to receive next message */
-		FLEXCAN_SetRxMbConfig(config->base, mb,
-				      &data->rx_cbs[alloc].mb_config, true);
 		xfer.frame = &data->rx_cbs[alloc].frame;
 		xfer.mbIdx = mb;
 		status = FLEXCAN_TransferReceiveNonBlocking(config->base,
@@ -774,6 +772,9 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 		mcux_flexcan_transfer_tx_idle(data->dev, mb);
 		break;
 	case kStatus_FLEXCAN_RxOverflow:
+		__fallthrough;
+	case kStatus_Fail:
+		/* If reading an RX MB failed mark it as idle to be reprocessed. */
 		__fallthrough;
 	case kStatus_FLEXCAN_RxIdle:
 		mcux_flexcan_transfer_rx_idle(data->dev, mb);
