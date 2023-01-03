@@ -6,8 +6,6 @@ description: STM32 SUBGHZ SPI controller
 compatible: "st,stm32-spi-subghz"
 
 include:
-
-include:
   - name: st,stm32-spi-common.yaml
     property-blocklist:
       - pinctrl-0
