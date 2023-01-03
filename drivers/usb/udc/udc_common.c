@@ -83,27 +83,16 @@ int udc_register_ep(const struct device *dev, struct udc_ep_config *const cfg)
 	return 0;
 }
 
-struct net_buf *udc_buf_get(const struct device *dev, const uint8_t ep,
-			    const bool pending)
+struct net_buf *udc_buf_get(const struct device *dev, const uint8_t ep)
 {
 	struct udc_ep_config *ep_cfg;
-	struct net_buf *buf;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 	if (ep_cfg == NULL) {
 		return NULL;
 	}
 
-	buf = net_buf_get(&ep_cfg->fifo, K_NO_WAIT);
-	if (buf != NULL) {
-		ep_cfg->stat.pending = 0;
-	} else {
-		if (pending) {
-			ep_cfg->stat.pending = 1;
-		}
-	}
-
-	return buf;
+	return net_buf_get(&ep_cfg->fifo, K_NO_WAIT);
 }
 
 struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
@@ -133,28 +122,16 @@ struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
 	return buf;
 }
 
-struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep,
-			     const bool pending)
+struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep)
 {
 	struct udc_ep_config *ep_cfg;
-	struct net_buf *buf = NULL;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 	if (ep_cfg == NULL) {
 		return NULL;
 	}
 
-	buf = k_fifo_peek_head(&ep_cfg->fifo);
-	if (buf == NULL && pending) {
-		ep_cfg->stat.pending = 1;
-	}
-
-	if (buf != NULL) {
-		ep_cfg->stat.pending = 0;
-	}
-
-
-	return buf;
+	return k_fifo_peek_head(&ep_cfg->fifo);
 }
 
 void udc_buf_put(struct udc_ep_config *const ep_cfg,
@@ -361,7 +338,6 @@ int udc_ep_enable_internal(const struct device *dev,
 
 	cfg->stat.odd = 0;
 	cfg->stat.halted = 0;
-	cfg->stat.pending = 0;
 	cfg->stat.data1 = false;
 	ret = api->ep_enable(dev, cfg);
 	cfg->stat.enabled = ret ? false : true;

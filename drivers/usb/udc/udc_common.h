@@ -87,13 +87,11 @@ void udc_ep_set_busy(const struct device *dev, const uint8_t ep,
  *
  * @param[in] dev     Pointer to device struct of the driver instance
  * @param[in] ep      Endpoint representation structure
- * @param[in] pending Mark endpoint pending if there is no request in the FIFO
  *
  * @return pointer to UDC request or NULL on error.
  */
 struct net_buf *udc_buf_get(const struct device *dev,
-			    const uint8_t ep,
-			    const bool pending);
+			    const uint8_t ep);
 
 /**
  * @brief Get all UDC request from endpoint FIFO.
@@ -118,13 +116,11 @@ struct net_buf *udc_buf_get_all(const struct device *dev,
  *
  * @param[in] dev     Pointer to device struct of the driver instance
  * @param[in] ep      Endpoint representation structure
- * @param[in] pending Mark endpoint pending if there is no request in the FIFO
  *
  * @return pointer to request or NULL on error.
  */
 struct net_buf *udc_buf_peek(const struct device *dev,
-			     const uint8_t ep,
-			     const bool pending);
+			     const uint8_t ep);
 
 /**
  * @brief Put request at the tail of endpoint FIFO.

@@ -181,7 +181,7 @@ static int usbfsotg_xfer_start(const struct device *dev,
 	uint8_t *data_ptr;
 	size_t len;
 
-	buf = udc_buf_peek(dev, cfg->addr, true);
+	buf = udc_buf_peek(dev, cfg->addr);
 	if (buf == NULL) {
 		return -ENODATA;
 	}
@@ -301,7 +301,7 @@ static inline int work_handler_setup(const struct device *dev)
 	struct net_buf *buf;
 	int err;
 
-	buf = udc_buf_get(dev, USB_CONTROL_EP_OUT, true);
+	buf = udc_buf_get(dev, USB_CONTROL_EP_OUT);
 	if (buf == NULL) {
 		return -ENODATA;
 	}
@@ -354,7 +354,7 @@ static inline int work_handler_out(const struct device *dev,
 	struct net_buf *buf;
 	int err = 0;
 
-	buf = udc_buf_get(dev, ep, true);
+	buf = udc_buf_get(dev, ep);
 	if (buf == NULL) {
 		return -ENODATA;
 	}
@@ -392,7 +392,7 @@ static inline int work_handler_in(const struct device *dev,
 {
 	struct net_buf *buf;
 
-	buf = udc_buf_get(dev, ep, true);
+	buf = udc_buf_get(dev, ep);
 	if (buf == NULL) {
 		return -ENODATA;
 	}
@@ -562,7 +562,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 			priv->busy[odd] = false;
 			priv->out_buf[odd] = NULL;
 		} else {
-			buf = udc_buf_peek(dev, ep_cfg->addr, true);
+			buf = udc_buf_peek(dev, ep_cfg->addr);
 		}
 
 		if (buf == NULL) {
@@ -591,7 +591,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 		ep_cfg->stat.odd = !odd;
 		ep_cfg->stat.data1 = !data1;
 
-		buf = udc_buf_peek(dev, ep_cfg->addr, true);
+		buf = udc_buf_peek(dev, ep_cfg->addr);
 		if (buf == NULL) {
 			LOG_ERR("No buffer for ep 0x%02x", ep);
 			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS, NULL);
