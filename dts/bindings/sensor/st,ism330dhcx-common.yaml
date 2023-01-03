@@ -76,9 +76,9 @@ properties:
              2   2g (0.061 mg/LSB)
       enum:
         - 16
-        -  8
-        -  4
-        -  2
+        - 8
+        - 4
+        - 2
 
     gyro-odr:
       type: int
