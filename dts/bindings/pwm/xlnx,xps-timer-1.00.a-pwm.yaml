@@ -2,7 +2,7 @@ description: Xilinx AXI Timer IP node (PWM controller)
 
 compatible: "xlnx,xps-timer-1.00.a-pwm"
 
-include: [ "xlnx,xps-timer-1.00.a.yaml", pwm-controller.yaml ]
+include: ["xlnx,xps-timer-1.00.a.yaml", pwm-controller.yaml]
 
 properties:
     xlnx,gen0-assert:

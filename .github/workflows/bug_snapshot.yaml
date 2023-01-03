@@ -8,7 +8,7 @@ name: Bug Snapshot
 
 on:
   workflow_dispatch:
-    branches: [ main ]
+    branches: [main]
   schedule:
     # Run daily at 14:05
     - cron: '5 14 * * *'

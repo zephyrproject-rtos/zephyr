@@ -77,7 +77,7 @@ description: |
   The fifo-threshold cell that places the fourth is configuring FIFO threshold.
   The behavior of burst transfer determines by data-width in the config cell,
   burst-length in the dma_config struct, and fifo-threshold.
-  A single burst transfer transfers [ (4 * fifo-threshold) ] bytes using with DMA's FIFO.
+  A single burst transfer transfers [(4 * fifo-threshold)] bytes using with DMA's FIFO.
   Where (data-width * burst-length) must be multiple numbers of burst transfer size.
   For example, In the case of data-width is 'byte' and burst-length is 8.
   If the fifo-threshold is a 2-word case, it runs one burst transfer to transfer 8 bytes.
@@ -85,7 +85,7 @@ description: |
 
 compatible: "gd,gd32-dma-v1"
 
-include: [ "reset-device.yaml", "gd,gd32-dma-base.yaml" ]
+include: ["reset-device.yaml", "gd,gd32-dma-base.yaml"]
 
 properties:
   "#dma-cells":

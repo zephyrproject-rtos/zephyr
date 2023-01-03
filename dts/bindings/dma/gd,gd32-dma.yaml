@@ -64,7 +64,7 @@ description: |
 
 compatible: "gd,gd32-dma"
 
-include: [ "gd,gd32-dma-base.yaml" ]
+include: ["gd,gd32-dma-base.yaml"]
 
 properties:
   "#dma-cells":
