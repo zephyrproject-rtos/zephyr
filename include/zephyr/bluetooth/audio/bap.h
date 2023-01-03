@@ -83,6 +83,77 @@ enum bt_bap_ep_state {
 	BT_BAP_EP_STATE_RELEASING = 0x06,
 };
 
+/**
+ * @brief Response Status Code
+ *
+ * These are sent by the server to the client when a stream operation is
+ * requested.
+ */
+enum bt_bap_ascs_rsp_code {
+	/** Server completed operation successfully */
+	BT_BAP_ASCS_RSP_CODE_SUCCESS = 0x00,
+	/** Server did not support operation by client */
+	BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED = 0x01,
+	/** Server rejected due to invalid operation length */
+	BT_BAP_ASCS_RSP_CODE_INVALID_LENGTH = 0x02,
+	/** Invalid ASE ID */
+	BT_BAP_ASCS_RSP_CODE_INVALID_ASE = 0x03,
+	/** Invalid ASE state */
+	BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE = 0x04,
+	/** Invalid operation for direction */
+	BT_BAP_ASCS_RSP_CODE_INVALID_DIR = 0x05,
+	/** Capabilities not supported by server */
+	BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED = 0x06,
+	/** Configuration parameters not supported by server */
+	BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED = 0x07,
+	/** Configuration parameters rejected by server */
+	BT_BAP_ASCS_RSP_CODE_CONF_REJECTED = 0x08,
+	/** Invalid Configuration parameters */
+	BT_BAP_ASCS_RSP_CODE_CONF_INVALID = 0x09,
+	/** Unsupported metadata */
+	BT_BAP_ASCS_RSP_CODE_METADATA_UNSUPPORTED = 0x0a,
+	/** Metadata rejected by server */
+	BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED = 0x0b,
+	/** Invalid metadata */
+	BT_BAP_ASCS_RSP_CODE_METADATA_INVALID = 0x0c,
+	/** Server has insufficient resources */
+	BT_BAP_ASCS_RSP_CODE_NO_MEM = 0x0d,
+	/** Unspecified error */
+	BT_BAP_ASCS_RSP_CODE_UNSPECIFIED = 0x0e,
+};
+
+/**
+ * @brief Response Reasons
+ *
+ * These are used if the @ref bt_bap_ascs_rsp_code value is
+ * @ref BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED, @ref BT_BAP_ASCS_RSP_CODE_CONF_REJECTED or
+ * @ref BT_BAP_ASCS_RSP_CODE_CONF_INVALID.
+ */
+enum bt_bap_ascs_reason {
+	/** No reason */
+	BT_BAP_ASCS_REASON_NONE = 0x00,
+	/** Codec ID */
+	BT_BAP_ASCS_REASON_CODEC = 0x01,
+	/** Codec configuration */
+	BT_BAP_ASCS_REASON_CODEC_DATA = 0x02,
+	/** SDU interval */
+	BT_BAP_ASCS_REASON_INTERVAL = 0x03,
+	/** Framing */
+	BT_BAP_ASCS_REASON_FRAMING = 0x04,
+	/** PHY */
+	BT_BAP_ASCS_REASON_PHY = 0x05,
+	/** Maximum SDU size*/
+	BT_BAP_ASCS_REASON_SDU = 0x06,
+	/** RTN */
+	BT_BAP_ASCS_REASON_RTN = 0x07,
+	/** Max transport latency */
+	BT_BAP_ASCS_REASON_LATENCY = 0x08,
+	/** Presendation delay */
+	BT_BAP_ASCS_REASON_PD = 0x09,
+	/** Invalid CIS mapping */
+	BT_BAP_ASCS_REASON_CIS = 0x0a,
+};
+
 /** @brief Abstract Audio Broadcast Source structure. */
 struct bt_bap_broadcast_source;
 
@@ -801,6 +872,108 @@ struct bt_bap_unicast_client_cb {
 	 */
 	void (*available_contexts)(struct bt_conn *conn, enum bt_audio_context snk_ctx,
 				   enum bt_audio_context src_ctx);
+
+	/**
+	 * @brief Callback function for bt_bap_stream_config() and bt_bap_stream_reconfig().
+	 *
+	 * Called when the codec configure operation is completed on the server.
+	 *
+	 * @param stream   Stream the operation was performed on.
+	 * @param rsp_code Response code.
+	 * @param reason   Reason code.
+	 */
+	void (*config)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		       enum bt_bap_ascs_reason reason);
+
+	/**
+	 * @brief Callback function for bt_bap_stream_qos().
+	 *
+	 * Called when the QoS configure operation is completed on the server.
+	 * This will be called for each stream in the group that was being QoS
+	 * configured.
+	 *
+	 * @param stream   Stream the operation was performed on.
+	 * @param rsp_code Response code.
+	 * @param reason   Reason code.
+	 */
+	void (*qos)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		    enum bt_bap_ascs_reason reason);
+
+	/**
+	 * @brief Callback function for bt_bap_stream_enable().
+	 *
+	 * Called when the enable operation is completed on the server.
+	 *
+	 * @param stream   Stream the operation was performed on.
+	 * @param rsp_code Response code.
+	 * @param reason   Reason code.
+	 */
+	void (*enable)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		       enum bt_bap_ascs_reason reason);
+
+	/**
+	 * @brief Callback function for bt_bap_stream_start().
+	 *
+	 * Called when the start operation is completed on the server. This will
+	 * only be called if the stream supplied to bt_bap_stream_start() is
+	 * for a @ref BT_AUDIO_DIR_SOURCE endpoint.
+	 *
+	 * @param stream   Stream the operation was performed on.
+	 * @param rsp_code Response code.
+	 * @param reason   Reason code.
+	 */
+	void (*start)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		      enum bt_bap_ascs_reason reason);
+
+	/**
+	 * @brief Callback function for bt_bap_stream_stop().
+	 *
+	 * Called when the stop operation is completed on the server. This will
+	 * only be called if the stream supplied to bt_bap_stream_stop() is
+	 * for a @ref BT_AUDIO_DIR_SOURCE endpoint.
+	 *
+	 * @param stream   Stream the operation was performed on.
+	 * @param rsp_code Response code.
+	 * @param reason   Reason code.
+	 */
+	void (*stop)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		     enum bt_bap_ascs_reason reason);
+
+	/**
+	 * @brief Callback function for bt_bap_stream_disable().
+	 *
+	 * Called when the disable operation is completed on the server.
+	 *
+	 * @param stream   Stream the operation was performed on.
+	 * @param rsp_code Response code.
+	 * @param reason   Reason code.
+	 */
+	void (*disable)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+			enum bt_bap_ascs_reason reason);
+
+	/**
+	 * @brief Callback function for bt_bap_stream_metadata().
+	 *
+	 * Called when the metadata operation is completed on the server.
+	 *
+	 * @param stream   Stream the operation was performed on.
+	 * @param rsp_code Response code.
+	 * @param reason   Reason code.
+	 */
+	void (*metadata)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+			 enum bt_bap_ascs_reason reason);
+
+	/**
+	 * @brief Callback function for bt_bap_stream_release().
+	 *
+	 * Called when the release operation is completed on the server.
+	 *
+	 * @param stream   Stream the operation was performed on.
+	 * @param rsp_code Response code.
+	 * @param reason   Reason code.
+	 */
+	void (*release)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+			enum bt_bap_ascs_reason reason);
 };
 
 /**
