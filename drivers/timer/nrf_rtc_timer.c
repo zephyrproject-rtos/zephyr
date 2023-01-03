@@ -219,7 +219,7 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 
 /** @brief Function safely sets absolute alarm.
  *
- * It assumes that provided value is less than COUNTER_HALF_SPAN from now.
+ * It assumes that provided value is at most COUNTER_HALF_SPAN cycles from now.
  * It detects late setting and also handle +1 cycle case.
  *
  * @param[in] chan A channel for which a new CC value is to be set.
@@ -228,6 +228,11 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
  */
 static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
 {
+	/* Ensure that the value exposed in this driver API is consistent with
+	 * assumptions of this function.
+	 */
+	BUILD_ASSERT(NRF_RTC_TIMER_MAX_SCHEDULE_SPAN <= COUNTER_HALF_SPAN);
+
 	uint32_t cc_val = abs_val & COUNTER_MAX;
 	uint32_t cc_inc = 2;
 
@@ -267,7 +272,7 @@ static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
 		 * But if the COMPARE event turns out to be already generated,
 		 * there is obviously no need to continue the loop.
 		 */
-		if ((counter_sub(cc_val, now + 2) > COUNTER_HALF_SPAN) &&
+		if ((counter_sub(cc_val, now + 2) > (COUNTER_HALF_SPAN - 2)) &&
 		    !event_check(chan)) {
 			cc_val = now + cc_inc;
 			cc_inc++;
@@ -286,7 +291,7 @@ static int compare_set_nolocks(int32_t chan, uint64_t target_time,
 	uint64_t curr_time = z_nrf_rtc_timer_read();
 
 	if (curr_time < target_time) {
-		if (target_time - curr_time > COUNTER_SPAN) {
+		if (target_time - curr_time > COUNTER_HALF_SPAN) {
 			/* Target time is too distant. */
 			return -EINVAL;
 		}
