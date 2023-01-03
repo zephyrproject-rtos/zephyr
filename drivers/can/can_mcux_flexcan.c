@@ -772,6 +772,7 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 		mcux_flexcan_transfer_tx_idle(data->dev, mb);
 		break;
 	case kStatus_FLEXCAN_RxOverflow:
+		CAN_STATS_RX_OVERRUN_INC(data->dev);
 		__fallthrough;
 	case kStatus_Fail:
 		/* If reading an RX MB failed mark it as idle to be reprocessed. */
