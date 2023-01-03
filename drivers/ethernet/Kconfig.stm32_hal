@@ -48,12 +48,27 @@ config ETH_STM32_HAL_PHY_ADDRESS
 	help
 	  The phy address to use.
 
+choice
+	prompt "Mac address definition method"
+	help
+	  The driver supports 2 methods to define 3 last bytes of MAC address
+	  1. Statically defined by user
+	  2. Generated dynamically at each boot
+	  By default random method is used.
+
 config ETH_STM32_HAL_RANDOM_MAC
 	bool "Random MAC address"
 	depends on ENTROPY_GENERATOR
-	default y
 	help
 	  Generate a random MAC address dynamically.
+
+config ETH_STM32_HAL_USER_STATIC_MAC
+	bool "User defined MAC address"
+	help
+	  3 last bytes of MAC address are defined by user thanks to
+	  ETH_STM32_HAL_MAC3, ETH_STM32_HAL_MAC4 and ETH_STM32_HAL_MAC5.
+
+endchoice
 
 if !ETH_STM32_HAL_RANDOM_MAC
 
