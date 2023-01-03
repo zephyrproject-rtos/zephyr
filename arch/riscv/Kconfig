@@ -77,6 +77,18 @@ config RISCV_SOC_HAS_ISR_STACKING
 	    saved on the stack by the hardware, and the registers saved by the
 	    software macros. The structure must be called '__esf'.
 
+config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	bool
+	help
+	  Hidden option to allow SoC to overwrite arch_irq_lock(),
+	  arch_irq_unlock() and arch_irq_unlocked() functions with
+	  platform-specific versions named z_soc_irq_lock(), z_soc_irq_unlock()
+	  and z_soc_irq_unlocked().
+
+	  Enable this hidden option and specialize the z_soc_* functions when
+	  the RISC-V SoC needs to do something different and more than reading and
+	  writing the mstatus register to lock and unlock the IRQs.
+
 config RISCV_SOC_CONTEXT_SAVE
 	bool "SOC-based context saving in IRQ handlers"
 	select RISCV_SOC_OFFSETS

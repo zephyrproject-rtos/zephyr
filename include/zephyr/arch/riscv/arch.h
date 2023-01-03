@@ -220,6 +220,9 @@ extern void z_irq_spurious(const void *unused);
  */
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	return z_soc_irq_lock();
+#else
 	unsigned int key;
 
 	__asm__ volatile ("csrrc %0, mstatus, %1"
@@ -228,6 +231,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 			  : "memory");
 
 	return key;
+#endif
 }
 
 /*
@@ -236,15 +240,23 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
  */
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	z_soc_irq_unlock(key);
+#else
 	__asm__ volatile ("csrs mstatus, %0"
 			  :
 			  : "r" (key & MSTATUS_IEN)
 			  : "memory");
+#endif
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	return z_soc_irq_unlocked(key);
+#else
 	return (key & MSTATUS_IEN) != 0;
+#endif
 }
 
 static ALWAYS_INLINE void arch_nop(void)
