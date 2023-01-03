@@ -12,15 +12,15 @@ compatible: "actinius-charger-enable"
 include: base.yaml
 
 properties:
-    gpios:
-      type: phandle-array
-      required: true
-      description: Pin used to enable/disable the charger
+  gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to enable/disable the charger
 
-    charger:
-      type: string
-      required: true
-      enum:
-        - "auto"
-        - "disabled"
-      description: Charger enable choice (auto or disabled)
+  charger:
+    type: string
+    required: true
+    enum:
+      - "auto"
+      - "disabled"
+    description: Charger enable choice (auto or disabled)

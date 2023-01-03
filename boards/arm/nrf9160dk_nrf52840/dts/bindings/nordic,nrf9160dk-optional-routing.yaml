@@ -8,11 +8,11 @@ compatible: "nordic,nrf9160dk-optional-routing"
 include: base.yaml
 
 properties:
-    status:
-      required: true
+  status:
+    required: true
 
-    control-gpios:
-      type: phandle-array
-      required: true
-      description: |
-        GPIO to use to control the analog switch.
+  control-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use to control the analog switch.

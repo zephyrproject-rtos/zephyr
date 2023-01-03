@@ -12,15 +12,15 @@ compatible: "actinius-sim-select"
 include: base.yaml
 
 properties:
-    sim-gpios:
-      type: phandle-array
-      required: true
-      description: Pin used to select the SIM
+  sim-gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to select the SIM
 
-    sim:
-      type: string
-      required: true
-      enum:
-        - "esim"
-        - "external"
-      description: SIM choice (eSIM or external nano-SIM)
+  sim:
+    type: string
+    required: true
+    enum:
+      - "esim"
+      - "external"
+    description: SIM choice (eSIM or external nano-SIM)
