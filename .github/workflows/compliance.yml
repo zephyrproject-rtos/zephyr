@@ -61,7 +61,7 @@ jobs:
 
     - name: upload-results
       uses: actions/upload-artifact@v3
-      continue-on-error: True
+      continue-on-error: true
       with:
         name: compliance.xml
         path: compliance.xml

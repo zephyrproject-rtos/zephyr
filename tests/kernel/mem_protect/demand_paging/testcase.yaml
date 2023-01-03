@@ -1,5 +1,5 @@
 common:
-  ignore_faults: True
+  ignore_faults: true
 tests:
   kernel.demand_paging:
     tags: kernel mmu demand_paging
