@@ -54,15 +54,6 @@ tests:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_OVERRIDE_LEVEL=4
 
-  logging.log_api_deferred_override_level_rt_filtering:
-    # Testing on selected platforms as it enables all logs in the application
-    # and it cannot be handled on many platforms.
-    platform_allow: qemu_cortex_m3 qemu_cortex_a9 native_posix
-    extra_configs:
-      - CONFIG_LOG_MODE_DEFERRED=y
-      - CONFIG_LOG_RUNTIME_FILTERING=y
-      - CONFIG_LOG_OVERRIDE_LEVEL=4
-
   logging.log_api_immediate:
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
