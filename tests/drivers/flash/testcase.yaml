@@ -37,8 +37,9 @@ tests:
     integration_platforms:
       - mimxrt1060_evk
   drivers.flash.stm32:
-    platform_allow: nucleo_f103rb nucleo_f207zg stm32f3_disco nucleo_f429zi stm32f746g_disco nucleo_g0b1re nucleo_g474re
-                    nucleo_h743zi nucleo_l152re disco_l475_iot1 nucleo_wb55rg nucleo_wl55jc stm32l562e_dk stm32l562e_dk_ns
+    platform_allow: nucleo_f103rb nucleo_f207zg stm32f3_disco nucleo_f429zi stm32f746g_disco
+      nucleo_g0b1re nucleo_g474re nucleo_h743zi nucleo_l152re disco_l475_iot1 nucleo_wb55rg
+      nucleo_wl55jc stm32l562e_dk stm32l562e_dk_ns
     integration_platforms:
       - nucleo_f103rb
     filter: (dt_compat_enabled("st,stm32-flash-controller") or

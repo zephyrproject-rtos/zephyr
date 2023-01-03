@@ -8,8 +8,8 @@ description: |
     edges of the board.
 
     Documentation:
-    * https://www.mikroe.com/mikrobus
-    * https://download.mikroe.com/documents/standards/mikrobus/mikrobus-standard-specification-v200.pdf
+    https://www.mikroe.com/mikrobus
+    https://download.mikroe.com/documents/standards/mikrobus/mikrobus-standard-specification-v200.pdf
 
     This binding provides a nexus mapping for 10 pins, left side pins are
     numbered 0 - 5 (AN - MOSI), the right side pins are numbered 6 - 10

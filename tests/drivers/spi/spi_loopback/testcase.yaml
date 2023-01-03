@@ -1,7 +1,8 @@
 common:
   depends_on: spi
   tags: drivers spi dma
-  filter: dt_compat_enabled("test-spi-loopback-slow") and dt_compat_enabled("test-spi-loopback-fast")
+  filter: dt_compat_enabled("test-spi-loopback-slow") and
+    dt_compat_enabled("test-spi-loopback-fast")
   harness: ztest
   harness_config:
     fixture: spi_loopback
@@ -10,10 +11,12 @@ tests:
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
   drivers.mcux_dspi_dma.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf" DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
+    extra_args: OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
+      DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
     platform_allow: frdm_k64f
   drivers.sam_spi_dma.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-sam-spi-dma.conf" DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
+    extra_args: OVERLAY_CONFIG="overlay-sam-spi-dma.conf"
+      DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
     platform_allow: sam_e70_xplained sam_v71_xult tdk_robokit1
     integration_platforms:
       - sam_e70_xplained

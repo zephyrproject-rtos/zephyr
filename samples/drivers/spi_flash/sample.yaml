@@ -3,7 +3,8 @@ sample:
 tests:
   sample.drivers.spi.flash:
     tags: spi flash
-    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor") or dt_compat_enabled("st,stm32-ospi-nor")
+    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor") or
+      dt_compat_enabled("st,stm32-ospi-nor")
     platform_exclude: hifive_unmatched
     harness: console
     harness_config:

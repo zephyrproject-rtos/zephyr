@@ -11,7 +11,8 @@ common:
             - "jedec-id ="
 tests:
   sample.drivers.jesd216:
-    platform_exclude: hifive1 hifive_unleashed hifive_unmatched mimxrt1170_evk_cm7 mimxrt1170_evk_cm4
+    platform_exclude: hifive1 hifive_unleashed hifive_unmatched mimxrt1170_evk_cm7
+      mimxrt1170_evk_cm4
     filter: dt_compat_enabled("jedec,spi-nor")
     depends_on: spi
   sample.drivers.jesd216.nrf52840dk_spi:

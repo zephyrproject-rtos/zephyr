@@ -21,9 +21,11 @@ properties:
     scl-gpios:
       type: phandle-array
       description: |
-        GPIO to which the I2C SCL signal is routed. This is only needed for I2C bus recovery support.
+        GPIO to which the I2C SCL signal is routed. This is only needed for I2C bus recovery
+        support.
 
     sda-gpios:
       type: phandle-array
       description: |
-        GPIO to which the I2C SDA signal is routed. This is only needed for I2C bus recovery support.
+        GPIO to which the I2C SDA signal is routed. This is only needed for I2C bus recovery
+        support.

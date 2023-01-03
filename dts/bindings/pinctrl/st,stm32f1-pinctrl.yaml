@@ -59,7 +59,8 @@ child-binding:
           required: true
           type: int
           description: |
-            Adapted from https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
+            Adapted from
+            https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
             Integer array, represents gpio pin number and mux setting.
             These defines are calculated as: ((port * 16 + line) << 8) | (function << 6) | remap)
             With:

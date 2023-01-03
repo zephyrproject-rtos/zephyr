@@ -16,7 +16,8 @@ child-binding:
     properties:
        label:
           type: string
-          description: Human readable string describing the device (used as device_get_binding() argument)
+          description: |
+            Human readable string describing the device (used as device_get_binding() argument)
        read-only:
           type: boolean
           description: if the partition is read-only or not
