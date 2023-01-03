@@ -5,7 +5,7 @@ arch: arm64
 toolchain:
   - zephyr
   - cross-compile
-ram:  128
+ram: 128
 testing:
   ignore_tags:
     - net
