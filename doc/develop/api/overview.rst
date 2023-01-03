@@ -42,7 +42,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 1.10
 
    * - :ref:`can_api`
-     - Unstable
+     - Stable
      - 1.14
 
    * - :ref:`counter_api`
