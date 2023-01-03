@@ -10,7 +10,7 @@
 /* Response Status Code */
 #define BT_ASCS_RSP_SUCCESS              0x00
 #define BT_ASCS_RSP_NOT_SUPPORTED        0x01
-#define BT_ASCS_RSP_TRUNCATED            0x02
+#define BT_ASCS_RSP_INVALID_LENGTH       0x02
 #define BT_ASCS_RSP_INVALID_ASE          0x03
 #define BT_ASCS_RSP_INVALID_ASE_STATE    0x04
 #define BT_ASCS_RSP_INVALID_DIR          0x05
@@ -299,8 +299,8 @@ static inline const char *bt_ascs_rsp_str(uint8_t code)
 		return "Success";
 	case BT_ASCS_RSP_NOT_SUPPORTED:
 		return "Unsupported Opcode";
-	case BT_ASCS_RSP_TRUNCATED:
-		return "Truncated Operation";
+	case BT_ASCS_RSP_INVALID_LENGTH:
+		return "Invalid Length";
 	case BT_ASCS_RSP_INVALID_ASE:
 		return "Invalid ASE_ID";
 	case BT_ASCS_RSP_INVALID_ASE_STATE:
