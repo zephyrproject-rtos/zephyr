@@ -47,7 +47,6 @@ description: |
   IOCON_FILTR- set by nxp,analog-filter
 
 
-
 compatible: "nxp,lpc-iocon-pinctrl"
 
 include: base.yaml

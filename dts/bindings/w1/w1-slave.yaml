@@ -9,7 +9,7 @@ on-bus: w1
 
 properties:
     family-code:
-      type : int
+      type: int
       description: |
           8-bit 1-Wire family code, which is also part of the 64 bit ROM ID.
     overdrive-speed:

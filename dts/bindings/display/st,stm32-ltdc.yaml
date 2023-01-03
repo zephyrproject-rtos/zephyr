@@ -5,7 +5,7 @@ description: STM32 LCD-TFT display controller
 
 compatible: "st,stm32-ltdc"
 
-include: [display-controller.yaml,  pinctrl-device.yaml]
+include: [display-controller.yaml, pinctrl-device.yaml]
 
 properties:
     disp-on-gpios:
