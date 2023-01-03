@@ -9,5 +9,5 @@ simulation: qemu
 testing:
   default: true
   only_tags:
-     - kernel
-     - userspace
+    - kernel
+    - userspace

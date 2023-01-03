@@ -10,4 +10,4 @@ toolchain:
 testing:
   default: true
   only_tags:
-     - kernel
+    - kernel
