@@ -6,39 +6,39 @@ description: Intel ADSP clock controlling related constants.
 compatible: "intel,adsp-shim-clkctl"
 
 properties:
-    adsp-clkctl-clk-wovcro:
-        type: int
-        description: |
-          Index of WOVCRO clock encoding in the encoding array (if wovcro-supported is true).
+  adsp-clkctl-clk-wovcro:
+    type: int
+    description: |
+      Index of WOVCRO clock encoding in the encoding array (if wovcro-supported is true).
 
-    adsp-clkctl-clk-lpro:
-        type: int
-        description: Index of LPRO clock encoding in the encoding array.
+  adsp-clkctl-clk-lpro:
+    type: int
+    description: Index of LPRO clock encoding in the encoding array.
 
-    adsp-clkctl-clk-hpro:
-        type: int
-        description: Index of HPRO clock encoding in the encoding array.
+  adsp-clkctl-clk-hpro:
+    type: int
+    description: Index of HPRO clock encoding in the encoding array.
 
-    adsp-clkctl-freq-enc:
-        type: array
-        required: true
-        description: Array that encodes what is needed to enable each clock.
+  adsp-clkctl-freq-enc:
+    type: array
+    required: true
+    description: Array that encodes what is needed to enable each clock.
 
-    adsp-clkctl-freq-mask:
-        type: array
-        description: Array that encodes needed masks to enable each clock.
+  adsp-clkctl-freq-mask:
+    type: array
+    description: Array that encodes needed masks to enable each clock.
 
-    adsp-clkctl-freq-default:
-        type: int
-        required: true
-        description: Index for the default clock.
+  adsp-clkctl-freq-default:
+    type: int
+    required: true
+    description: Index for the default clock.
 
-    adsp-clkctl-freq-lowest:
-        type: int
-        required: true
-        description: Index for the lowest frequency clock.
+  adsp-clkctl-freq-lowest:
+    type: int
+    required: true
+    description: Index for the lowest frequency clock.
 
-    wovcro-supported:
-        type: boolean
-        description: |
-          If WoV clock ring oscillator is supported.
+  wovcro-supported:
+    type: boolean
+    description: |
+      If WoV clock ring oscillator is supported.

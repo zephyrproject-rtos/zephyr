@@ -8,18 +8,18 @@ compatible: "segger,rtt-uart"
 include: uart-controller.yaml
 
 properties:
-    tx-buffer-size:
-      type: int
-      default: 1024
-      description: |
-        Size of the RTT up buffer for transmission
-        Not used for RTT channel 0 as channel 0 is initialized at compile time,
-        see SEGGER_RTT_BUFFER_SIZE_UP.
+  tx-buffer-size:
+    type: int
+    default: 1024
+    description: |
+      Size of the RTT up buffer for transmission
+      Not used for RTT channel 0 as channel 0 is initialized at compile time,
+      see SEGGER_RTT_BUFFER_SIZE_UP.
 
-    rx-buffer-size:
-      type: int
-      default: 16
-      description: |
-        Size of the RTT down buffer for reception
-        Not used for RTT channel 0 as channel 0 is initialized at compile time,
-        see SEGGER_RTT_BUFFER_SIZE_DOWN.
+  rx-buffer-size:
+    type: int
+    default: 16
+    description: |
+      Size of the RTT down buffer for reception
+      Not used for RTT channel 0 as channel 0 is initialized at compile time,
+      see SEGGER_RTT_BUFFER_SIZE_DOWN.

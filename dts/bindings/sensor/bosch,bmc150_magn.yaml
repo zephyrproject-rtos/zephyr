@@ -10,5 +10,5 @@ compatible: "bosch,bmc150_magn"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    drdy-gpios:
-      type: phandle-array
+  drdy-gpios:
+    type: phandle-array

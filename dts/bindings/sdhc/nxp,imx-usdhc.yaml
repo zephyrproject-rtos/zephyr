@@ -36,7 +36,7 @@ properties:
       Max drive current in mA at 3.3V. A value of zero indicates no maximum
       is specified by the driver.
   clocks:
-      required: true
+    required: true
 
   pwr-gpios:
     type: phandle-array

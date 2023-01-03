@@ -8,9 +8,9 @@ description: |
 
 compatible: "nuvoton,npcx-pinctrl-conf"
 child-binding:
-    description: NPCX Pinmux configuration child node
-    properties:
-        alts:
-            type: phandle-array
-            required: true
-            description: A SCFG ALT (Alternative controllers) specifier for pinmuxing of npcx ec
+  description: NPCX Pinmux configuration child node
+  properties:
+    alts:
+      type: phandle-array
+      required: true
+      description: A SCFG ALT (Alternative controllers) specifier for pinmuxing of npcx ec

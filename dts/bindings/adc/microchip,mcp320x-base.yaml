@@ -3,8 +3,8 @@
 include: [adc-controller.yaml, spi-device.yaml]
 
 properties:
-    "#io-channel-cells":
-      const: 1
+  "#io-channel-cells":
+    const: 1
 
 io-channel-cells:
-    - channel
+  - channel

@@ -8,25 +8,25 @@ compatible: "nxp,lpc-gpio"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
-    port:
-      type: int
-      required: true
-      description: The GPIO port this node describes
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
+  port:
+    type: int
+    required: true
+    description: The GPIO port this node describes
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
 
 gpio-cells:
   - pin

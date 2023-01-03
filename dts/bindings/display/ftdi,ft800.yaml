@@ -8,99 +8,99 @@ compatible: "ftdi,ft800"
 include: spi-device.yaml
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      description: Optional IRQ line of FT800 controller
+  irq-gpios:
+    type: phandle-array
+    description: Optional IRQ line of FT800 controller
 
-    pclk:
-      type: int
-      required: true
-      description: |
-        The value to divide the main clock by for PCLK. If the
-        typical main clock was 48MHz and this value is 5, the PCLK
-        will be 9.6 MHz. Must be positive value to enable the screen
+  pclk:
+    type: int
+    required: true
+    description: |
+      The value to divide the main clock by for PCLK. If the
+      typical main clock was 48MHz and this value is 5, the PCLK
+      will be 9.6 MHz. Must be positive value to enable the screen
 
-    pclk_pol:
-      type: int
-      required: true
-      description: |
-        Polarity of PCLK. If it is set to zero, PCLK polarity is on
-        the rising edge. If it is set to one, PCLK polarity is on
-        the falling edge.
+  pclk_pol:
+    type: int
+    required: true
+    description: |
+      Polarity of PCLK. If it is set to zero, PCLK polarity is on
+      the rising edge. If it is set to one, PCLK polarity is on
+      the falling edge.
 
-    cspread:
-      type: int
-      required: true
-      description: |
-        Controls the transition of RGB signals with PCLK active clock
-        edge. When set to 0, R[7:2],G[7:2] and B[7:2] signals change
-        following the active edge of PCLK. When set to 1, R[7:2]
-        changes a PCLK clock early and B[7:2] a PCLK clock later,
-        which helps reduce the system noise.
+  cspread:
+    type: int
+    required: true
+    description: |
+      Controls the transition of RGB signals with PCLK active clock
+      edge. When set to 0, R[7:2],G[7:2] and B[7:2] signals change
+      following the active edge of PCLK. When set to 1, R[7:2]
+      changes a PCLK clock early and B[7:2] a PCLK clock later,
+      which helps reduce the system noise.
 
-    swizzle:
-      type: int
-      required: true
-      description: |
-        Controls the arrangement of output RGB pins, which may help
-        support different LCD panel. Please check FT800 Programmers
-        Guide for details.
+  swizzle:
+    type: int
+    required: true
+    description: |
+      Controls the arrangement of output RGB pins, which may help
+      support different LCD panel. Please check FT800 Programmers
+      Guide for details.
 
-    vsize:
-      type: int
-      required: true
-      description: Number of visible lines of pixels in one frame
+  vsize:
+    type: int
+    required: true
+    description: Number of visible lines of pixels in one frame
 
-    voffset:
-      type: int
-      required: true
-      description: Number of invisible lines at the beginning of a new frame
+  voffset:
+    type: int
+    required: true
+    description: Number of invisible lines at the beginning of a new frame
 
-    vcycle:
-      type: int
-      required: true
-      description: |
-        Number of all lines in a frame. It includes all visible and
-        invisible lines at the beginning and at the end of a frame.
+  vcycle:
+    type: int
+    required: true
+    description: |
+      Number of all lines in a frame. It includes all visible and
+      invisible lines at the beginning and at the end of a frame.
 
-    vsync0:
-      type: int
-      required: true
-      description: |
-        Number of lines for the high state of signal VSYNC at
-        the start of new frame.
+  vsync0:
+    type: int
+    required: true
+    description: |
+      Number of lines for the high state of signal VSYNC at
+      the start of new frame.
 
-    vsync1:
-      type: int
-      required: true
-      description: |
-        Number of lines for signal VSYNC toggle takes at the start
-        of new frame.
+  vsync1:
+    type: int
+    required: true
+    description: |
+      Number of lines for signal VSYNC toggle takes at the start
+      of new frame.
 
-    hsize:
-      type: int
-      required: true
-      description: Number of PCLK cycles per visible part of horizontal line
+  hsize:
+    type: int
+    required: true
+    description: Number of PCLK cycles per visible part of horizontal line
 
-    hoffset:
-      type: int
-      required: true
-      description: |
-        Number of PCLK cycles before pixels are scanned out for
-        given line
+  hoffset:
+    type: int
+    required: true
+    description: |
+      Number of PCLK cycles before pixels are scanned out for
+      given line
 
-    hcycle:
-      type: int
-      required: true
-      description: Number of total PCLK cycles per horizontal line scan.
+  hcycle:
+    type: int
+    required: true
+    description: Number of total PCLK cycles per horizontal line scan.
 
-    hsync0:
-      type: int
-      required: true
-      description: Number of PCLK cycles of HSYNC high state during start of
-        line
+  hsync0:
+    type: int
+    required: true
+    description: Number of PCLK cycles of HSYNC high state during start of
+      line
 
-    hsync1:
-      type: int
-      required: true
-      description: Number of PCLK cycles for HSYNC toggle during start of line.
+  hsync1:
+    type: int
+    required: true
+    description: Number of PCLK cycles for HSYNC toggle during start of line.

@@ -24,43 +24,43 @@ include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
 on-bus: qspi
 
 properties:
-    reg:
-      required: true
-    qspi-max-frequency:
-      type: int
-      required: true
-      description: Maximum clock frequency of device's QSPI interface in Hz
-    size:
-      required: true
-      description: Flash Memory size in bits
-    reset-gpios:
-      type: phandle-array
-      description: RESETn pin
-    reset-gpios-duration:
-      type: int
-      description: The duration (in ms) for the flash memory reset pulse
-    reset-cmd:
-      type: boolean
-      description: Send reset command on initialization
-    reset-cmd-wait:
-      type: int
-      default: 10
-      description: The duration (in us) to wait after reset command
-    spi-bus-width:
-      type: int
-      description: The width of (Q)SPI bus to which flash memory is connected.
-                   Now only value of 4 (when using SIO[0123]) is supported.
-    writeoc:
-      type: string
-      enum:
-        - "PP_1_1_4"      # Quad data line SPI, PP 1-1-4 (0x32)
-        - "PP_1_4_4"      # Quad data line SPI, PP 1-4-4 (0x38)
-      description: |
-        The value encodes number of I/O lines used for the opcode,
-        address, and data.
+  reg:
+    required: true
+  qspi-max-frequency:
+    type: int
+    required: true
+    description: Maximum clock frequency of device's QSPI interface in Hz
+  size:
+    required: true
+    description: Flash Memory size in bits
+  reset-gpios:
+    type: phandle-array
+    description: RESETn pin
+  reset-gpios-duration:
+    type: int
+    description: The duration (in ms) for the flash memory reset pulse
+  reset-cmd:
+    type: boolean
+    description: Send reset command on initialization
+  reset-cmd-wait:
+    type: int
+    default: 10
+    description: The duration (in us) to wait after reset command
+  spi-bus-width:
+    type: int
+    description: The width of (Q)SPI bus to which flash memory is connected.
+                 Now only value of 4 (when using SIO[0123]) is supported.
+  writeoc:
+    type: string
+    enum:
+      - "PP_1_1_4"      # Quad data line SPI, PP 1-1-4 (0x32)
+      - "PP_1_4_4"      # Quad data line SPI, PP 1-4-4 (0x38)
+    description: |
+      The value encodes number of I/O lines used for the opcode,
+      address, and data.
 
-        There is no info about quad page program opcodes in the SFDP
-        tables, hence it has been assumed that NOR flash memory
-        supporting 1-4-4 mode also would support fast page programming.
+      There is no info about quad page program opcodes in the SFDP
+      tables, hence it has been assumed that NOR flash memory
+      supporting 1-4-4 mode also would support fast page programming.
 
-        If absent, then 1-4-4 program page is used in quad mode.
+      If absent, then 1-4-4 program page is used in quad mode.

@@ -5,16 +5,16 @@ compatible: "arm,v7m-nvic"
 include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    arm,num-irq-priority-bits:
-      required: true
-      type: int
-      description: number of bits of IRQ priorities
+  arm,num-irq-priority-bits:
+    required: true
+    type: int
+    description: number of bits of IRQ priorities
 
-    "#interrupt-cells":
-      const: 2
+  "#interrupt-cells":
+    const: 2
 
 interrupt-cells:
   - irq

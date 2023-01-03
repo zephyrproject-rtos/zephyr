@@ -10,6 +10,6 @@ compatible: "st,lsm6dsl"
 include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
-    irq-gpios:
-      # This signal is active high when produced by the sensor
-      type: phandle-array
+  irq-gpios:
+    # This signal is active high when produced by the sensor
+    type: phandle-array

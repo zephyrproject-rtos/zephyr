@@ -10,9 +10,9 @@ compatible: "isil,isl29035"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      description: |
-        The INT pin defaults to active low when produced by the sensor.
-        The property value should ensure the flags properly describe the
-        signal that is presented to the driver.
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe the
+      signal that is presented to the driver.

@@ -8,5 +8,5 @@ compatible: "focaltech,ft5336"
 include: [kscan.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
+  int-gpios:
+    type: phandle-array

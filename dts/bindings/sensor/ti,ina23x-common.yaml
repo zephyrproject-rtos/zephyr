@@ -7,38 +7,38 @@
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    config:
-      type: int
-      required: true
-      description: |
-        Value of the configuration register
-        e.g shunt voltage and bus voltage ADC conversion
-        times and averaging, operating mode for INA230 or
-        delay for initial ADC conversion, shunt full scale range
-        for INA237.
+  config:
+    type: int
+    required: true
+    description: |
+      Value of the configuration register
+      e.g shunt voltage and bus voltage ADC conversion
+      times and averaging, operating mode for INA230 or
+      delay for initial ADC conversion, shunt full scale range
+      for INA237.
 
-    current-lsb-microamps:
-      type: int
-      required: true
-      description: |
-        This value should be selected so that measurement resolution is
-        maximized, that is:
+  current-lsb-microamps:
+    type: int
+    required: true
+    description: |
+      This value should be selected so that measurement resolution is
+      maximized, that is:
 
-          current-lsb(A) = maximum expected current(A) / 2^15
+        current-lsb(A) = maximum expected current(A) / 2^15
 
-        (sensor has 15 bits). For example, if maximum expected current is 15A:
+      (sensor has 15 bits). For example, if maximum expected current is 15A:
 
-          current-lsb(A) = 15A / 2^15 ~= 457uA
+        current-lsb(A) = 15A / 2^15 ~= 457uA
 
-        Rounded values may be used for convenience, e.g. 500uA/LSB or 1mA/LSB
-        while keeping a good measurement resolution. The units are in uA/LSB
-        so that low maximum currents can be measured with enough resolution.
+      Rounded values may be used for convenience, e.g. 500uA/LSB or 1mA/LSB
+      while keeping a good measurement resolution. The units are in uA/LSB
+      so that low maximum currents can be measured with enough resolution.
 
-    rshunt-milliohms:
-      type: int
-      required: true
-      description: Shunt resistor value in milliohms
+  rshunt-milliohms:
+    type: int
+    required: true
+    description: Shunt resistor value in milliohms
 
-    alert-gpios:
-      type: phandle-array
-      description: Alert pin
+  alert-gpios:
+    type: phandle-array
+    description: Alert pin
