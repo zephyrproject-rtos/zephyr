@@ -16,11 +16,11 @@ tests:
       type: multi_line
       ordered: true
       regex:
-        -  "Writing 1 to efd"
-        -  "Writing 2 to efd"
-        -  "Writing 3 to efd"
-        -  "Writing 4 to efd"
-        -  "Completed write loop"
-        -  "About to read"
-        -  "Read 10 \\(0xa\\) from efd"
-        -  "Finished"
+        - "Writing 1 to efd"
+        - "Writing 2 to efd"
+        - "Writing 3 to efd"
+        - "Writing 4 to efd"
+        - "Completed write loop"
+        - "About to read"
+        - "Read 10 \\(0xa\\) from efd"
+        - "Finished"
