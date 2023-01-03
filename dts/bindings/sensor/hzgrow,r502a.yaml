@@ -18,11 +18,9 @@ properties:
       It is used to trigger a fingerprint enroll or match operations.
   vin-gpios:
     type: phandle-array
-    required: false
     description: |
       Voltage input pin to the fingerprint sensor.
   act-gpios:
     type: phandle-array
-    required: false
     description: |
       Finger detection power pin to detect the presence of finger.

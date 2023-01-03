@@ -15,11 +15,9 @@ properties:
     default: 1024
     description: |
       Size of the virtual CDC ACM UART TX FIFO
-    required: false
 
   rx-fifo-size:
     type: int
     default: 1024
     description: |
       Size of the virtual CDC ACM UART RX FIFO
-    required: false

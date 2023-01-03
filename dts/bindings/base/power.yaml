@@ -6,7 +6,6 @@
 properties:
   supply-gpios:
     type: phandle-array
-    required: false
     description: |
       GPIO specifier that controls power to the device.
 
@@ -18,7 +17,6 @@ properties:
 
   vin-supply:
     type: phandle
-    required: false
     description: |
       Reference to the regulator that controls power to the device.
       The referenced devicetree node must have a regulator compatible.

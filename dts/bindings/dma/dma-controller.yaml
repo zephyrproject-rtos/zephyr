@@ -34,10 +34,8 @@ properties:
 
   dma-buf-size-alignment:
     type: int
-    required: false
     description: Memory size alignment requirement for DMA buffers used by the controller.
 
   dma-copy-alignment:
     type: int
-    required: false
     description: Minimal chunk of data possible to be copied by the controller.

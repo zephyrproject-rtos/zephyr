@@ -119,7 +119,6 @@ child-binding:
         pin's PIO type and default drive strength.
 
     microchip,output-func-invert:
-      required: false
       type: boolean
       description:
         Invert polarity of an output alternate function. Input functions
