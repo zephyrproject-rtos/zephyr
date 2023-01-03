@@ -1,6 +1,11 @@
 /*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * Generated using zcbor version 0.6.0
- * https://github.com/NordicSemiconductor/zcbor
+ * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
  */
 
@@ -10,10 +15,6 @@
 #include <string.h>
 #include "zcbor_decode.h"
 #include "lwm2m_senml_cbor_decode.h"
-
-#if DEFAULT_MAX_QTY != 99
-#error "The type file was generated with a different default_max_qty than this file"
-#endif
 
 static bool decode_repeated_record_bn(zcbor_state_t *state, struct record_bn *result);
 static bool decode_repeated_record_bt(zcbor_state_t *state, struct record_bt *result);
@@ -45,11 +46,11 @@ static bool decode_repeated_record_bt(zcbor_state_t *state, struct record_bt *re
 {
 	zcbor_print("%s\r\n", __func__);
 
-	bool tmp_result = ((((zcbor_int32_expect(state, (-3)))) &&
-			    (zcbor_int64_decode(state, (&(*result)._record_bt))) &&
-			    ((((*result)._record_bt >= -9223372036854775807LL) &&
-			      ((*result)._record_bt <= 9223372036854775807LL)) ||
-			     (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))));
+	bool tmp_result =
+		((((zcbor_int32_expect(state, (-3)))) &&
+		  (zcbor_int64_decode(state, (&(*result)._record_bt))) &&
+		  ((((*result)._record_bt >= INT64_MIN) && ((*result)._record_bt <= INT64_MAX)) ||
+		   (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))));
 
 	if (!tmp_result) {
 		zcbor_trace();
@@ -76,11 +77,11 @@ static bool decode_repeated_record_t(zcbor_state_t *state, struct record_t *resu
 {
 	zcbor_print("%s\r\n", __func__);
 
-	bool tmp_result = ((((zcbor_uint32_expect(state, (6)))) &&
-			    (zcbor_int64_decode(state, (&(*result)._record_t))) &&
-			    ((((*result)._record_t >= -9223372036854775807LL) &&
-			      ((*result)._record_t <= 9223372036854775807LL)) ||
-			     (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))));
+	bool tmp_result =
+		((((zcbor_uint32_expect(state, (6)))) &&
+		  (zcbor_int64_decode(state, (&(*result)._record_t))) &&
+		  ((((*result)._record_t >= INT64_MIN) && ((*result)._record_t <= INT64_MAX)) ||
+		   (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))));
 
 	if (!tmp_result) {
 		zcbor_trace();
@@ -99,8 +100,8 @@ static bool decode_repeated_record_union(zcbor_state_t *state, struct record_uni
 		(((zcbor_union_start_code(state) &&
 		   (int_res = (((((zcbor_uint32_expect_union(state, (2)))) &&
 				 (zcbor_int64_decode(state, (&(*result)._union_vi))) &&
-				 ((((*result)._union_vi >= -9223372036854775807LL) &&
-				   ((*result)._union_vi <= 9223372036854775807LL)) ||
+				 ((((*result)._union_vi >= INT64_MIN) &&
+				   ((*result)._union_vi <= INT64_MAX)) ||
 				  (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) &&
 				(((*result)._record_union_choice = _union_vi), true)) ||
 			       ((((zcbor_uint32_expect_union(state, (2)))) &&
@@ -142,8 +143,8 @@ static bool decode_value(zcbor_state_t *state, struct value_ *result)
 			       (((zcbor_bstr_decode(state, (&(*result)._value_bstr)))) &&
 				(((*result)._value_choice = _value_bstr), true)) ||
 			       (((zcbor_int64_decode(state, (&(*result)._value_int))) &&
-				 ((((*result)._value_int >= -9223372036854775807LL) &&
-				   ((*result)._value_int <= 9223372036854775807LL)) ||
+				 ((((*result)._value_int >= INT64_MIN) &&
+				   ((*result)._value_int <= INT64_MAX)) ||
 				  (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) &&
 				(((*result)._value_choice = _value_int), true)) ||
 			       (((zcbor_float_decode(state, (&(*result)._value_float)))) &&
@@ -208,7 +209,8 @@ static bool decode_record(zcbor_state_t *state, struct record *result)
 		     zcbor_present_decode(&((*result)._record_union_present),
 					  (zcbor_decoder_t *)decode_repeated_record_union, state,
 					  (&(*result)._record_union)) &&
-		     zcbor_multi_decode(0, 5, &(*result)._record__key_value_pair_count,
+		     zcbor_multi_decode(0, ZCBOR_ARRAY_SIZE(result->_record__key_value_pair),
+					&(*result)._record__key_value_pair_count,
 					(zcbor_decoder_t *)decode_repeated_record__key_value_pair,
 					state, (&(*result)._record__key_value_pair),
 					sizeof(struct record__key_value_pair))) ||
@@ -226,13 +228,14 @@ static bool decode_lwm2m_senml(zcbor_state_t *state, struct lwm2m_senml *result)
 {
 	zcbor_print("%s\r\n", __func__);
 
-	bool tmp_result = ((
-		(zcbor_list_start_decode(state) &&
-		 ((zcbor_multi_decode(1, 99, &(*result)._lwm2m_senml__record_count,
-				      (zcbor_decoder_t *)decode_record, state,
-				      (&(*result)._lwm2m_senml__record), sizeof(struct record))) ||
-		  (zcbor_list_map_end_force_decode(state), false)) &&
-		 zcbor_list_end_decode(state))));
+	bool tmp_result =
+		(((zcbor_list_start_decode(state) &&
+		   ((zcbor_multi_decode(
+			    1, ZCBOR_ARRAY_SIZE(result->_lwm2m_senml__record),
+			    &(*result)._lwm2m_senml__record_count, (zcbor_decoder_t *)decode_record,
+			    state, (&(*result)._lwm2m_senml__record), sizeof(struct record))) ||
+		    (zcbor_list_map_end_force_decode(state), false)) &&
+		   zcbor_list_end_decode(state))));
 
 	if (!tmp_result) {
 		zcbor_trace();
