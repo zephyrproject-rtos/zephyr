@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2022 NXP
+
+mainmenu "Disk driver performance test"
+
+config MAIN_STACK_SIZE
+	default 1280 if (MMC_STACK && IMX_USDHC)
+
+source "Kconfig.zephyr"
