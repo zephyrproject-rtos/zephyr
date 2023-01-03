@@ -461,6 +461,7 @@ STATS_SECT_ENTRY32(stuff_error)
 STATS_SECT_ENTRY32(crc_error)
 STATS_SECT_ENTRY32(form_error)
 STATS_SECT_ENTRY32(ack_error)
+STATS_SECT_ENTRY32(rx_overrun)
 STATS_SECT_END;
 
 STATS_NAME_START(can)
@@ -470,6 +471,7 @@ STATS_NAME(can, stuff_error)
 STATS_NAME(can, crc_error)
 STATS_NAME(can, form_error)
 STATS_NAME(can, ack_error)
+STATS_NAME(can, rx_overrun)
 STATS_NAME_END(can);
 
 /** @endcond */
@@ -559,6 +561,18 @@ struct can_device_state {
 #define CAN_STATS_ACK_ERROR_INC(dev_)			\
 	STATS_INC(Z_CAN_GET_STATS(dev_), ack_error)
 
+/**
+ * @brief Increment the RX overrun counter for a CAN device
+ *
+ * The RX overrun counter is incremented when the CAN controller receives a CAN
+ * frame matching an installed filter but lacks the capacity to store it (either
+ * due to an already full RX mailbox or a full RX FIFO).
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define CAN_STATS_RX_OVERRUN_INC(dev_)			\
+	STATS_INC(Z_CAN_GET_STATS(dev_), rx_overrun)
+
 /** @cond INTERNAL_HIDDEN */
 
 /**
@@ -579,7 +593,7 @@ struct can_device_state {
 	{								\
 		struct can_device_state *state =			\
 			CONTAINER_OF(dev->state, struct can_device_state, devstate); \
-		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 6,	\
+		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 7,	\
 			   STATS_NAME_INIT_PARMS(can));			\
 		stats_register(dev->name, &(state->stats.s_hdr));	\
 		return init_fn(dev);					\
@@ -626,6 +640,7 @@ struct can_device_state {
 #define CAN_STATS_CRC_ERROR_INC(dev_)
 #define CAN_STATS_FORM_ERROR_INC(dev_)
 #define CAN_STATS_ACK_ERROR_INC(dev_)
+#define CAN_STATS_RX_OVERRUN_INC(dev_)
 
 #define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
