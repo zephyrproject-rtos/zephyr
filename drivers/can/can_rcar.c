@@ -346,6 +346,7 @@ static void can_rcar_error(const struct device *dev)
 	}
 	if (eifr & RCAR_CAN_EIFR_ORIF) {
 		LOG_DBG("Receive overrun error interrupt\n");
+		CAN_STATS_RX_OVERRUN_INC(dev);
 		sys_write8((uint8_t)~RCAR_CAN_EIFR_ORIF,
 			   config->reg_addr + RCAR_CAN_EIFR);
 	}
