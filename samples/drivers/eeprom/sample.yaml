@@ -23,6 +23,6 @@ tests:
     extra_args: SHIELD=x_nucleo_eeprma2
     harness: console
     harness_config:
-        fixture: fixture_shield_x_nucleo_eeprma2
+      fixture: fixture_shield_x_nucleo_eeprma2
     integration_platforms:
       - nucleo_f070rb

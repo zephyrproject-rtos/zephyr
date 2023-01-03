@@ -11,4 +11,4 @@ tests:
     harness_config:
       type: one_line
       regex:
-      - "Hello World! (.*)"
+        - "Hello World! (.*)"

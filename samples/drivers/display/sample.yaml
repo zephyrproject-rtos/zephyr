@@ -79,9 +79,9 @@ tests:
     platform_allow: native_posix
     extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
-        - CONFIG_DUMMY_DISPLAY=y
-        - CONFIG_SDL_DISPLAY=n
-        - CONFIG_TEST=y
+      - CONFIG_DUMMY_DISPLAY=y
+      - CONFIG_SDL_DISPLAY=n
+      - CONFIG_TEST=y
     tags: display
   sample.display.max7219:
     platform_allow: nrf52840dk_nrf52840
