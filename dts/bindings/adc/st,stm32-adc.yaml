@@ -9,40 +9,40 @@ compatible: "st,stm32-adc"
 include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    "#io-channel-cells":
-      const: 1
+  "#io-channel-cells":
+    const: 1
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
-    vref-mv:
-      type: int
-      default: 3300
-      description: Indicates the reference voltage of the ADC in mV (on the target board).
+  vref-mv:
+    type: int
+    default: 3300
+    description: Indicates the reference voltage of the ADC in mV (on the target board).
 
-    has-temp-channel:
-      type: boolean
-      description: Indicates if the ADC has a dedicated internal temperature sensor channel.
+  has-temp-channel:
+    type: boolean
+    description: Indicates if the ADC has a dedicated internal temperature sensor channel.
 
-    has-vref-channel:
-      type: boolean
-      description: Indicates if the ADC has a dedicated internal voltage reference channel.
+  has-vref-channel:
+    type: boolean
+    description: Indicates if the ADC has a dedicated internal voltage reference channel.
 
-    has-vbat-channel:
-      type: boolean
-      description: Indicates if the ADC has a dedicated internal vbat monitoring channel.
+  has-vbat-channel:
+    type: boolean
+    description: Indicates if the ADC has a dedicated internal vbat monitoring channel.
 
 io-channel-cells:
-    - input
+  - input

@@ -14,128 +14,128 @@ compatible: "usb-c-connector"
 include: base.yaml
 
 properties:
-    tcpc:
-        type: phandle
-        required: true
-        description: |
-            Type-C Port Controller for this port.
+  tcpc:
+    type: phandle
+    required: true
+    description: |
+        Type-C Port Controller for this port.
 
-    vbus:
-        type: phandle
-        required: true
-        description: |
-            VBUS measurement and control for this port.
+  vbus:
+    type: phandle
+    required: true
+    description: |
+        VBUS measurement and control for this port.
 
-    power-role:
-        type: string
-        required: true
-        enum:
-          - "sink"
-          - "source"
-          - "dual"
-        description: |
-          The Port power role. "dual" for Dual Role Port.
+  power-role:
+    type: string
+    required: true
+    enum:
+      - "sink"
+      - "source"
+      - "dual"
+    description: |
+      The Port power role. "dual" for Dual Role Port.
 
-    try-power-role:
-        type: string
-        enum:
-          - "sink"
-          - "source"
-          - "dual"
-        description: |
-          Preferred power role.
+  try-power-role:
+    type: string
+    enum:
+      - "sink"
+      - "source"
+      - "dual"
+    description: |
+      Preferred power role.
 
-    data-role:
-        type: string
-        enum:
-          - "host"
-          - "device"
-          - "dual"
-        description: |
-          The Port data role.
-            * "host" for Downstream Facing Port (DFP)
-            * "device" for Upstream Facing Port (UFP)
-            * "dual" for Dual Role Data
+  data-role:
+    type: string
+    enum:
+      - "host"
+      - "device"
+      - "dual"
+    description: |
+      The Port data role.
+        * "host" for Downstream Facing Port (DFP)
+        * "device" for Upstream Facing Port (UFP)
+        * "dual" for Dual Role Data
 
-    typec-power-opmode:
-        type: string
-        enum:
-          - "default"
-          - "1.5A"
-          - "3.0A"
-        description: |
-          Initial Type C advertised power, determined by the Rp when
-          operating as a Source.
-          * "default" corresponds to default USB voltage and current
-            defined by the  USB 2.0 and USB 3.2 specifications.
-              * 5V@500mA for USB 2.0
-              * 5V@900mA for USB 3.2 single-lane
-              * 5V@1500mA for USB 3.2 dual-lane
-          * "1.5A" and "3.0A", 5V@1.5A and 5V@3.0A.
+  typec-power-opmode:
+    type: string
+    enum:
+      - "default"
+      - "1.5A"
+      - "3.0A"
+    description: |
+      Initial Type C advertised power, determined by the Rp when
+      operating as a Source.
+      * "default" corresponds to default USB voltage and current
+        defined by the  USB 2.0 and USB 3.2 specifications.
+          * 5V@500mA for USB 2.0
+          * 5V@900mA for USB 3.2 single-lane
+          * 5V@1500mA for USB 3.2 dual-lane
+      * "1.5A" and "3.0A", 5V@1.5A and 5V@3.0A.
 
-    pd-disable:
-        type: boolean
-        description: |
-          Disables power delivery when true
+  pd-disable:
+    type: boolean
+    description: |
+      Disables power delivery when true
 
-    source-pdos:
-        type: array
-        description: |
-          An array of source Power Data Objects (PDOs).
-          Use tht following macros to define the PDOs, defined in
-          dt-bindings/usb-c/pd.h.
-            * PDO_FIXED
-            * PDO_BATT
-            * PDO_VAR
-            * PDO_PPS_APDO
-          Valid range: 1 - 7
+  source-pdos:
+    type: array
+    description: |
+      An array of source Power Data Objects (PDOs).
+      Use tht following macros to define the PDOs, defined in
+      dt-bindings/usb-c/pd.h.
+        * PDO_FIXED
+        * PDO_BATT
+        * PDO_VAR
+        * PDO_PPS_APDO
+      Valid range: 1 - 7
 
-    sink-pdos:
-        type: array
-        description: |
-          An array of sink Power Data Objects (PDOs).
-          Use tht following macros to define the PDOs, defined in
-          dt-bindings/usb-c/pd.h.
-            * PDO_FIXED
-            * PDO_BATT
-            * PDO_VAR
-            * PDO_PPS_APDO
-          Valid range: 1 - 7
+  sink-pdos:
+    type: array
+    description: |
+      An array of sink Power Data Objects (PDOs).
+      Use tht following macros to define the PDOs, defined in
+      dt-bindings/usb-c/pd.h.
+        * PDO_FIXED
+        * PDO_BATT
+        * PDO_VAR
+        * PDO_PPS_APDO
+      Valid range: 1 - 7
 
-    sink-vdos:
-        type: array
-        description: |
-          An array of sink Vendor Defined Objects (VDOs).
-          Use tht following macros to define the VDOs, defined in
-          dt-bindings/usb-c/pd.h.
-            * VDO_IDH
-            * VDO_CERT
-            * VDO_PRODUCT
-            * VDO_UFP
-            * VDO_DFP
-            * VDO_PCABLE
-            * VDO_ACABLE
-            * VDO_VPD
-          Valid range: 3 - 6
+  sink-vdos:
+    type: array
+    description: |
+      An array of sink Vendor Defined Objects (VDOs).
+      Use tht following macros to define the VDOs, defined in
+      dt-bindings/usb-c/pd.h.
+        * VDO_IDH
+        * VDO_CERT
+        * VDO_PRODUCT
+        * VDO_UFP
+        * VDO_DFP
+        * VDO_PCABLE
+        * VDO_ACABLE
+        * VDO_VPD
+      Valid range: 3 - 6
 
-    sink-vdos-v1:
-        type: array
-        description: |
-          An array of sink Vendor Defined Objects (VDOs).
-          Use tht following macros to define the VDOs, defined in
-          dt-bindings/usb-c/pd.h.
-            * VDO_IDH
-            * VDO_CERT
-            * VDO_PRODUCT
-            * VDO_CABLE
-            * VDO_AMA
-          Valid range: 3 - 6
+  sink-vdos-v1:
+    type: array
+    description: |
+      An array of sink Vendor Defined Objects (VDOs).
+      Use tht following macros to define the VDOs, defined in
+      dt-bindings/usb-c/pd.h.
+        * VDO_IDH
+        * VDO_CERT
+        * VDO_PRODUCT
+        * VDO_CABLE
+        * VDO_AMA
+      Valid range: 3 - 6
 
-    op-sink-microwatt:
-        type: int
-        description: |
-          Minimum power, in microwatts, needed by the sink. A Capability
-          Mismatch is sent to the Source if the power can't be met.
+  op-sink-microwatt:
+    type: int
+    description: |
+      Minimum power, in microwatts, needed by the sink. A Capability
+      Mismatch is sent to the Source if the power can't be met.
 
   # EXAMPLE:
   #

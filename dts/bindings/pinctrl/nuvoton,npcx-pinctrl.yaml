@@ -43,56 +43,56 @@ compatible: "nuvoton,npcx-pinctrl"
 include: base.yaml
 
 child-binding:
-    description: |
-      NPCX pin controller pin configuration nodes
+  description: |
+    NPCX pin controller pin configuration nodes
 
-    include:
-      - name: pincfg-node.yaml
-        property-allowlist:
-          - bias-pull-down
-          - bias-pull-up
-          - drive-open-drain
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-pull-down
+        - bias-pull-up
+        - drive-open-drain
 
-    properties:
-      pinmux:
-        type: phandle
-        description: Configurations of pinmux selection
-      periph-pupd:
-        type: array
-        description: |
-          A map to PUPD_ENn register/bit that enable pull-up/down of NPCX peripheral devices.
-          Please don't overwrite this property in the board-level DT driver.
-      psl-offset:
-        type: int
-        description: |
-          Offset to PSL_CTS register that is used for PSL input's status and detection mode.
-          Please don't overwrite this property in the board-level DT driver.
-      psl-polarity:
-        type: phandle
-        description: |
-          A map to DEVALTn that configures detection polarity of PSL input pads.
-          Please don't overwrite this property in the board-level DT driver.
-      pinmux-locked:
-        type: boolean
-        description: Lock pinmux selection
-      pinmux-gpio:
-        type: boolean
-        description: Inverse pinmux selection to GPIO
-      psl-in-mode:
-        type: string
-        description: |
-          The assertion detection mode of PSL input selection
-          - "level": Select the detection mode to level detection
-          - "edge": Select the detection mode to edge detection
-        enum:
-          - "level"
-          - "edge"
-      psl-in-pol:
-        type: string
-        description: |
-          The assertion detection polarity of PSL input selection
-          - "low-falling": Select the detection polarity to low/falling
-          - "high-rising": Select the detection polarity to high/rising
-        enum:
-          - "low-falling"
-          - "high-rising"
+  properties:
+    pinmux:
+      type: phandle
+      description: Configurations of pinmux selection
+    periph-pupd:
+      type: array
+      description: |
+        A map to PUPD_ENn register/bit that enable pull-up/down of NPCX peripheral devices.
+        Please don't overwrite this property in the board-level DT driver.
+    psl-offset:
+      type: int
+      description: |
+        Offset to PSL_CTS register that is used for PSL input's status and detection mode.
+        Please don't overwrite this property in the board-level DT driver.
+    psl-polarity:
+      type: phandle
+      description: |
+        A map to DEVALTn that configures detection polarity of PSL input pads.
+        Please don't overwrite this property in the board-level DT driver.
+    pinmux-locked:
+      type: boolean
+      description: Lock pinmux selection
+    pinmux-gpio:
+      type: boolean
+      description: Inverse pinmux selection to GPIO
+    psl-in-mode:
+      type: string
+      description: |
+        The assertion detection mode of PSL input selection
+        - "level": Select the detection mode to level detection
+        - "edge": Select the detection mode to edge detection
+      enum:
+        - "level"
+        - "edge"
+    psl-in-pol:
+      type: string
+      description: |
+        The assertion detection polarity of PSL input selection
+        - "low-falling": Select the detection polarity to low/falling
+        - "high-rising": Select the detection polarity to high/rising
+      enum:
+        - "low-falling"
+        - "high-rising"

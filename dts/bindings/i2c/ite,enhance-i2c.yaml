@@ -8,12 +8,12 @@ compatible: "ite,enhance-i2c"
 include: ite,common-i2c.yaml
 
 properties:
-    prescale-scl-low:
-      type: int
-      description: |
-        This option is used to configure the I2C speed prescaler for
-        the SCL low period. When set to >= 1, it will increase the
-        low period of the SCL clock and so reduce the signal frequency.
-        The resulting SCL cycle time is given by the following formula:
-        SCL cycle = 2 * (psr + prescale_tweak + 2) *
-                    SMBus clock cycle
+  prescale-scl-low:
+    type: int
+    description: |
+      This option is used to configure the I2C speed prescaler for
+      the SCL low period. When set to >= 1, it will increase the
+      low period of the SCL clock and so reduce the signal frequency.
+      The resulting SCL cycle time is given by the following formula:
+      SCL cycle = 2 * (psr + prescale_tweak + 2) *
+                  SMBus clock cycle

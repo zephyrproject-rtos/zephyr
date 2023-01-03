@@ -8,5 +8,5 @@ compatible: "silabs,gecko-rtcc"
 include: rtc.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true

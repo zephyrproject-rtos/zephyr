@@ -14,12 +14,12 @@ include:
 
 properties:
 
-    apb3-prescaler:
-      type: int
-      required: true
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
+  apb3-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16

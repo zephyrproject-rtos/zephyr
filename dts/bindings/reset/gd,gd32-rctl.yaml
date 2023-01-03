@@ -25,8 +25,8 @@ compatible: "gd,gd32-rctl"
 include: [reset-controller.yaml, base.yaml]
 
 properties:
-    "#reset-cells":
-      const: 1
+  "#reset-cells":
+    const: 1
 
 reset-cells:
   - id

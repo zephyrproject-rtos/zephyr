@@ -9,10 +9,10 @@ include: [interrupt-controller.yaml, base.yaml]
 
 properties:
   reg:
-      required: true
+    required: true
 
   "#interrupt-cells":
-      const: 2
+    const: 2
 
 interrupt-cells:
   - irq

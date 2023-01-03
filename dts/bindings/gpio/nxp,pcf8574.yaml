@@ -8,17 +8,17 @@ compatible: "nxp,pcf8574"
 include: [i2c-device.yaml, gpio-controller.yaml]
 
 properties:
-    ngpios:
-      required: true
-      const: 8
+  ngpios:
+    required: true
+    const: 8
 
-    int-gpios:
-      type: phandle-array
-      description: |
-        GPIO connected to the controller INT pin. This pin is active-low.
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the controller INT pin. This pin is active-low.
 
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
 gpio-cells:
   - pin

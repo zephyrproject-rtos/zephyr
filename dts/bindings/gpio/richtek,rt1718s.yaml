@@ -31,6 +31,6 @@ compatible: "richtek,rt1718s"
 include: [i2c-device.yaml]
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      description: Interrupt GPIO pin connected from the chip(IRQB)
+  irq-gpios:
+    type: phandle-array
+    description: Interrupt GPIO pin connected from the chip(IRQB)

@@ -6,14 +6,14 @@ description: Atmel SAM0 RTC
 compatible: "atmel,sam0-rtc"
 
 include:
-    - name: rtc.yaml
-    - name: pinctrl-device.yaml
+  - name: rtc.yaml
+  - name: pinctrl-device.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    clock-generator:
-      type: int
-      description: clock generator index
-      required: true
+  clock-generator:
+    type: int
+    description: clock generator index
+    required: true

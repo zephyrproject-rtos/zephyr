@@ -3,25 +3,25 @@ description: Flash partitions parent node
 compatible: "fixed-partitions"
 
 properties:
-    "#address-cells":
-        type: int
-        description: number of address cells in reg property
+  "#address-cells":
+    type: int
+    description: number of address cells in reg property
 
-    "#size-cells":
-        type: int
-        description: number of size cells in reg property
+  "#size-cells":
+    type: int
+    description: number of size cells in reg property
 
 child-binding:
-    description: Flash partition child node
-    properties:
-       label:
-          type: string
-          description: |
-            Human readable string describing the device (used as device_get_binding() argument)
-       read-only:
-          type: boolean
-          description: if the partition is read-only or not
-       reg:
-          type: array
-          description: register space
-          required: true
+  description: Flash partition child node
+  properties:
+    label:
+      type: string
+      description: |
+        Human readable string describing the device (used as device_get_binding() argument)
+    read-only:
+      type: boolean
+      description: if the partition is read-only or not
+    reg:
+      type: array
+      description: register space
+      required: true

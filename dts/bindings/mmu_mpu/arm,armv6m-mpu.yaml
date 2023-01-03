@@ -8,11 +8,11 @@ compatible: "arm,armv6m-mpu"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    arm,num-mpu-regions:
-      required: true
-      type: int
-      const: 8
-      description: number of MPU regions supported by hardware
+  arm,num-mpu-regions:
+    required: true
+    type: int
+    const: 8
+    description: number of MPU regions supported by hardware

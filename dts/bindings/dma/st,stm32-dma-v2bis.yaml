@@ -64,8 +64,8 @@ include:
   - name: st,stm32-dma.yaml
 
 properties:
-    "#dma-cells":
-      const: 2
+  "#dma-cells":
+    const: 2
 
 # Parameter syntax of stm32 follows the dma client dts syntax
 # in the Linux kernel declared in
