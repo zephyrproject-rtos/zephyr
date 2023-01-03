@@ -19,7 +19,8 @@ tests:
   sample.mcumgr.smp_svr.cdc:
     extra_args: OVERLAY_CONFIG="overlay-cdc.conf"
                 DTC_OVERLAY_FILE="usb.overlay"
-    platform_allow: nrf52833dk_nrf52820 nrf52833dk_nrf52833 nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp pinnacle_100_dvk
+    platform_allow: nrf52833dk_nrf52820 nrf52833dk_nrf52833 nrf52840dk_nrf52840
+      nrf5340dk_nrf5340_cpuapp pinnacle_100_dvk
     integration_platforms:
       - nrf52833dk_nrf52820
       - nrf52833dk_nrf52833

@@ -81,7 +81,8 @@ description: |
   Where (data-width * burst-length) must be multiple numbers of burst transfer size.
   For example, In the case of data-width is 'byte' and burst-length is 8.
   If the fifo-threshold is a 2-word case, it runs one burst transfer to transfer 8 bytes.
-  Or the fifo-threshold is a 4-word case, runs two times burst transfer to transferring 8 bytes each time.
+  Or the fifo-threshold is a 4-word case, runs two times burst transfer to transferring 8 bytes each
+  time.
 
 compatible: "gd,gd32-dma-v1"
 

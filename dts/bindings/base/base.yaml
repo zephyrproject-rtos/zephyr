@@ -57,7 +57,8 @@ properties:
         type: string
         required: false
         deprecated: true
-        description: Human readable string describing the device (used as device_get_binding() argument)
+        description: |
+          Human readable string describing the device (used as device_get_binding() argument)
 
     clocks:
         type: phandle-array

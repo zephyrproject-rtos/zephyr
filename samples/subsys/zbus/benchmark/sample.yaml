@@ -19,7 +19,9 @@ tests:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_ASYNC=y
-    platform_exclude: qemu_x86 qemu_x86_64 qemu_riscv32_smp native_posix native_posix_64 qemu_riscv32_smp qemu_cortex_a53_smp qemu_riscv64_smp qemu_leon3 qemu_xtensa qemu_cortex_a53 qemu_riscv32 qemu_malta qemu_malta_be qemu_arc_hs6x qemu_riscv64 m2gl025_miv hifive_unleashed
+    platform_exclude: qemu_x86 qemu_x86_64 qemu_riscv32_smp native_posix native_posix_64
+      qemu_riscv32_smp qemu_cortex_a53_smp qemu_riscv64_smp qemu_leon3 qemu_xtensa qemu_cortex_a53
+      qemu_riscv32 qemu_malta qemu_malta_be qemu_arc_hs6x qemu_riscv64 m2gl025_miv hifive_unleashed
   sample.zbus.benchmark_sync:
     tags: zbus
     min_ram: 16
@@ -38,4 +40,6 @@ tests:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_ASYNC=n
-    platform_exclude: qemu_x86 qemu_x86_64 qemu_riscv32_smp native_posix native_posix_64 qemu_riscv32_smp qemu_cortex_a53_smp qemu_riscv64_smp qemu_leon3 qemu_xtensa qemu_cortex_a53 qemu_riscv32 m2gl025_miv m2gl025_miv
+    platform_exclude: qemu_x86 qemu_x86_64 qemu_riscv32_smp native_posix native_posix_64
+      qemu_riscv32_smp qemu_cortex_a53_smp qemu_riscv64_smp qemu_leon3 qemu_xtensa qemu_cortex_a53
+      qemu_riscv32 m2gl025_miv m2gl025_miv

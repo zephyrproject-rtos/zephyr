@@ -21,12 +21,12 @@ properties:
         into the coredump. The memory-regions array can contain 0 or more entries, and more
         regions can be added at runtime through the coredump_device_register_memory API.
         A device of type COREDUMP_TYPE_CALLBACK must specify exactly one entry in the
-        memory-regions array with a size of 0 and a desired size. The coredump device will statically
-        allocate a block of memory of the desired size and provide a callback with a pointer to
-        that memory which will be invoked at the time of a dump. This allows a consumer to add data
-        into the coredump that may not be directly accessible through a memcpy and/or provides an
-        opportunity to manipulate data for inclusion in the dump. The coredump_device_register_memory
-        API is not available for a device of this type.
+        memory-regions array with a size of 0 and a desired size. The coredump device will
+        statically allocate a block of memory of the desired size and provide a callback with a
+        pointer to that memory which will be invoked at the time of a dump. This allows a consumer
+        to add data into the coredump that may not be directly accessible through a memcpy and/or
+        provides an opportunity to manipulate data for inclusion in the dump. The
+        coredump_device_register_memory API is not available for a device of this type.
       enum:
         - "COREDUMP_TYPE_MEMCPY"
         - "COREDUMP_TYPE_CALLBACK"

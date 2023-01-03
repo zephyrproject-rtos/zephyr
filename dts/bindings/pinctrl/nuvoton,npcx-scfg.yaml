@@ -19,7 +19,8 @@ properties:
     "#lvol-cells":
         type: int
         required: true
-        description: Number of items to expect in a SCFG LV_GPIO_CTL (Low level IO controllers) specifier
+        description: |
+          Number of items to expect in a SCFG LV_GPIO_CTL (Low level IO controllers) specifier
 
 alt-cells:
     - group

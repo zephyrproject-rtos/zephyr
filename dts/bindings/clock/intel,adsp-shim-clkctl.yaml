@@ -8,7 +8,8 @@ compatible: "intel,adsp-shim-clkctl"
 properties:
     adsp-clkctl-clk-wovcro:
         type: int
-        description: Index of WOVCRO clock encoding in the encoding array (if wovcro-supported is true).
+        description: |
+          Index of WOVCRO clock encoding in the encoding array (if wovcro-supported is true).
 
     adsp-clkctl-clk-lpro:
         type: int
