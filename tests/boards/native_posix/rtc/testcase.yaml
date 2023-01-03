@@ -5,5 +5,5 @@ tests:
     integration_platforms:
       - native_posix
     build_only: true
-#Note: this test depends too much on not having a high host load to pass.
+# Note: this test depends too much on not having a high host load to pass.
 #      Therefore it should not be run in automated regression
