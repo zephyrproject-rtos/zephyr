@@ -422,6 +422,15 @@ static int run_test(struct unit_test *test)
 
 #endif /* !KERNEL */
 
+void end_report(void)
+{
+	if (test_status) {
+		TC_END_REPORT(TC_FAIL);
+	} else {
+		TC_END_REPORT(TC_PASS);
+	}
+}
+
 int z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 {
 	int fail = 0;
@@ -446,15 +455,6 @@ int z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 	test_status = (test_status || fail) ? 1 : 0;
 
 	return fail;
-}
-
-void end_report(void)
-{
-	if (test_status) {
-		TC_END_REPORT(TC_FAIL);
-	} else {
-		TC_END_REPORT(TC_PASS);
-	}
 }
 
 #ifdef CONFIG_USERSPACE
@@ -514,14 +514,20 @@ void __weak test_main(void)
 	ztest_verify_all_registered_test_suites_ran();
 }
 
-#ifndef KERNEL
-int main(void)
+int ztest_main(void)
 {
 	z_init_mock();
 	test_main();
 	end_report();
 
 	return test_status;
+}
+
+#ifndef CONFIG_ZTEST_STANDALONE_EXECUTION
+#ifndef KERNEL
+int main(void)
+{
+	return ztest_main();
 }
 #else
 void main(void)
@@ -556,9 +562,7 @@ void main(void)
 #endif
 #endif /* CONFIG_USERSPACE */
 
-	z_init_mock();
-	test_main();
-	end_report();
+	ztest_main();
 	if (IS_ENABLED(CONFIG_ZTEST_RETEST_IF_PASSED)) {
 		static __noinit struct {
 			uint32_t magic;
@@ -595,3 +599,4 @@ void main(void)
 #endif
 }
 #endif
+#endif /* CONFIG_ZTEST_STANDALONE_EXECUTION */

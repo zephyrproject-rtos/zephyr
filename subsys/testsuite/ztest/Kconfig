@@ -75,6 +75,7 @@ config ZTEST_TC_UTIL_USER_OVERRIDE
 config ZTEST_RETEST_IF_PASSED
 	bool "Reset the board to test again if the test passed"
 	select REBOOT
+	depends on !ZTEST_STANDALONE_EXECUTION
 	help
 	  If the test passed reset the board so it is run again.  This
 	  may be used as an alternative to manual resets when
@@ -98,11 +99,20 @@ config ZTEST_ASSERT_HOOK
 
 config ZTEST_NO_YIELD
 	bool "Do not yield to the idle thread after tests complete"
+	depends on !ZTEST_STANDALONE_EXECUTION
 	help
 	  When the tests complete, do not yield to the idle thread and instead
 	  spin in a loop. This is useful for low power mode tests, where
 	  yielding to the idle thread may put the board into a low power state
 	  where a debugger cannot connect to it.
+
+config ZTEST_STANDALONE_EXECUTION
+	bool "Execute tests manually from anywhere"
+	help
+	  Run tests from anywhere by calling test_main().
+	  Reports are printed after each test suite is executed.
+	  The main() function is not redefined allowing the user
+	  to use ZTest from anywhere.
 
 if ZTEST_NEW_API
 

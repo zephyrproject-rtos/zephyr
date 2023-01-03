@@ -1017,14 +1017,20 @@ void __weak test_main(void)
 	ztest_verify_all_test_suites_ran();
 }
 
-#ifndef KERNEL
-int main(void)
+int ztest_main(void)
 {
 	z_init_mock();
 	test_main();
 	end_report();
 
 	return test_status;
+}
+
+#ifndef CONFIG_ZTEST_STANDALONE_EXECUTION
+#ifndef KERNEL
+int main(void)
+{
+	return ztest_main();
 }
 #else
 void main(void)
@@ -1042,9 +1048,7 @@ void main(void)
 #endif
 #endif /* CONFIG_USERSPACE */
 
-	z_init_mock();
-	test_main();
-	end_report();
+	ztest_main();
 	flush_log();
 	LOG_PANIC();
 	if (IS_ENABLED(CONFIG_ZTEST_RETEST_IF_PASSED)) {
@@ -1070,3 +1074,4 @@ void main(void)
 	}
 }
 #endif
+#endif /* CONFIG_ZTEST_STANDALONE_EXECUTION */

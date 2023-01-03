@@ -57,6 +57,14 @@ extern "C" {
 
 void test_main(void);
 
+/**
+ * @brief Init mocks, run all tests and report
+ *
+ * @return 0 on success
+ * @return positive error codes on error
+ */
+int ztest_main(void);
+
 #ifdef __cplusplus
 }
 #endif
