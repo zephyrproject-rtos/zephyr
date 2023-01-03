@@ -37,7 +37,7 @@ properties:
 # in the Linux kernel declared in
 # https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/tree/Bindings/dma/fsl-edma.txt
 #
-#- #dma-cells : Must be <2>.
+# - #dma-cells : Must be <2>.
 #  The 1st cell specifies the DMAMUX(0 for DMAMUX0 and 1 for DMAMUX1).
 #    Specific request source can only be multiplexed by specific channels
 #    group called DMAMUX.
