@@ -11,9 +11,6 @@ properties:
   reg:
     required: true
 
-  interrupts:
-    required: false
-
   core-clock-div:
     type: int
     required: true
@@ -81,12 +78,10 @@ properties:
 
   clkmon-bypass:
     type: boolean
-    required: false
     description: Bypass clkmon check of crystal or XTAL2 single-ended clock.
 
   internal-osc-disable:
     type: boolean
-    required: false
     description: |
       If the internal silicon 32KHz oscillator is not chosen as the source
       for PLL and Periheral devices then disable the internal 32KHz

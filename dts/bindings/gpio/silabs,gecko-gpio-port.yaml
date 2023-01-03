@@ -10,7 +10,6 @@ properties:
 
   peripheral-id:
     type: int
-    required: false
     description: peripheral ID
 
   "#gpio-cells":

@@ -15,6 +15,5 @@ properties:
 
   reset-gpios:
     type: phandle-array
-    required: false
     description: |
       GPIO connected to the ulpi RESET pin.

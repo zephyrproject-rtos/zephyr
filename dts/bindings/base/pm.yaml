@@ -5,7 +5,6 @@
 
 properties:
   wakeup-source:
-    required: false
     type: boolean
     description: |
       Property to identify that a device can be used as wake up source.
@@ -18,7 +17,6 @@ properties:
       the system) by default but they can be enabled at runtime if necessary.
 
   power-domain:
-    required: false
     type: phandle
     description: |
 
