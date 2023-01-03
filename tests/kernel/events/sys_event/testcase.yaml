@@ -2,4 +2,4 @@ tests:
   kernel.events.usage:
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel userspace
-    ignore_faults: True
+    ignore_faults: true

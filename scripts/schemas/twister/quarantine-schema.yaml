@@ -11,7 +11,7 @@ type: seq
 matching: all
 sequence:
   - type: map
-    required: yes
+    required: true
     matching: all
     mapping:
       "scenarios":
@@ -19,13 +19,13 @@ sequence:
         required: true
         sequence:
           - type: str
-          - unique: True
+          - unique: true
       "platforms":
         required: true
         type: seq
         sequence:
           - type: str
-          - unique: True
+          - unique: true
       "comment":
         type: str
         required: false

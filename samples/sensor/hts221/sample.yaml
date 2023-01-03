@@ -9,7 +9,7 @@ common:
     depends_on: i2c hts221
     harness_config:
         type: multi_line
-        ordered: yes
+        ordered: true
         regex:
             - "Observation:(.*)"
             - "Temperature:(.*) C"
