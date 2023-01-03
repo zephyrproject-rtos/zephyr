@@ -1002,7 +1002,7 @@ static inline int32_t ack_timeout(struct seg_rx *rx)
 	     (ttl * (int32_t)CONFIG_BT_MESH_SEG_ACK_PER_HOP_TIMEOUT);
 
 	/* Add timeout for evenry not yet received segment. */
-	to += ((rx->seg_n + 1) - popcount(rx->block)) *
+	to += ((rx->seg_n + 1) - POPCOUNT(rx->block)) *
 		(int32_t)CONFIG_BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT;
 
 	/* Make sure we don't send more frequently than the duration for

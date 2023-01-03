@@ -748,10 +748,10 @@ static inline int group_popcount(atomic_t *target)
 	int i, count = 0;
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
-		count += popcount(atomic_get(&target[i]));
+		count += POPCOUNT(atomic_get(&target[i]));
 	}
 #else
-	return popcount(atomic_get(target));
+	return POPCOUNT(atomic_get(target));
 #endif
 }
 
