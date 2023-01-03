@@ -2771,14 +2771,14 @@ West:
     - manifest-psa-arch-tests
 
 "West project: uoscore-uedhoc":
-    status: maintained
-    maintainers:
-        - rlubos
-        - StefanHri
-    files:
-        - modules/uoscore-uedhoc/
-    labels:
-        - manifest-uoscore-uedhoc
+  status: maintained
+  maintainers:
+    - rlubos
+    - StefanHri
+  files:
+    - modules/uoscore-uedhoc/
+  labels:
+    - manifest-uoscore-uedhoc
 
 "West project: zcbor":
   status: maintained
