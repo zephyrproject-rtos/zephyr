@@ -57,6 +57,11 @@
 	sram0: memory@a0020000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
+
+/* Without DT_REG_ADDR_U(), sparse warning: 'decimal constant 2684485632
+   is between LONG_MAX and ULONG_MAX. For C99 that means long long, C90
+   compilers are very likely to produce unsigned long (and a warning)
+   here' */
 		reg = <0xa0020000 DT_SIZE_K(2816)>;
 	};
 

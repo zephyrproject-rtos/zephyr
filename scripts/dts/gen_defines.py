@@ -420,6 +420,11 @@ def write_regs(node):
             idx_macro = f"{path_id}_REG_IDX_{i}_VAL_ADDRESS"
             idx_vals.append((idx_macro,
                              f"{reg.addr} /* {hex(reg.addr)} */"))
+            # unsigned HACK / demo; NOT A FIX.
+            # linker scripts don't like the 'u' suffix at all
+            idx_vals.append((idx_macro + "_U",
+                             f"{reg.addr}u /* {hex(reg.addr)} */"))
+
             if reg.name:
                 name_macro = f"{path_id}_REG_NAME_{reg.name}_VAL_ADDRESS"
                 name_vals.append((name_macro, f"DT_{idx_macro}"))

@@ -2061,6 +2061,8 @@
  */
 #define DT_REG_ADDR_BY_IDX(node_id, idx) \
 	DT_CAT4(node_id, _REG_IDX_, idx, _VAL_ADDRESS)
+#define DT_REG_ADDR_BY_IDX_U(node_id, idx) \
+	DT_CAT4(node_id, _REG_IDX_, idx, _VAL_ADDRESS_U)
 
 /**
  * @brief Get the size of the register block at index @p idx
@@ -2084,6 +2086,7 @@
  * @return node's register block address
  */
 #define DT_REG_ADDR(node_id) DT_REG_ADDR_BY_IDX(node_id, 0)
+#define DT_REG_ADDR_U(node_id) DT_REG_ADDR_BY_IDX_U(node_id, 0)
 
 /**
  * @brief Get a node's (only) register block size
