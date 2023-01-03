@@ -549,7 +549,7 @@ ZTEST(log_msg, test_saturate)
 	uint32_t exp_len =
 		ROUND_UP(offsetof(struct log_msg, data) + 2 * sizeof(void *),
 			 Z_LOG_MSG2_ALIGNMENT);
-	uint32_t exp_capacity = (CONFIG_LOG_BUFFER_SIZE - 1) / exp_len;
+	uint32_t exp_capacity = CONFIG_LOG_BUFFER_SIZE / exp_len;
 	int mode;
 	union log_msg_generic *msg;
 
@@ -574,9 +574,11 @@ ZTEST(log_msg, test_saturate)
 		msg = z_log_msg_claim(NULL);
 		zassert_equal(log_msg_get_timestamp(&msg->log), i,
 				"Unexpected timestamp used for message id");
+		z_log_msg_free(msg);
 	}
 
 	msg = z_log_msg_claim(NULL);
+
 	zassert_equal(msg, NULL, "Expected no pending messages");
 }
 
