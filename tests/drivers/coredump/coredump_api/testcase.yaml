@@ -3,8 +3,8 @@
 
 common:
   tags: coredump
-  ignore_faults: True
-  ignore_qemu_crash: True
+  ignore_faults: true
+  ignore_qemu_crash: true
 tests:
   drivers.coredump.api.qemu_riscv32:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP

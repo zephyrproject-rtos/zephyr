@@ -5,7 +5,7 @@ common:
     - qemu_cortex_m3
     - nsim_em
   tags: kernel scheduler
-  ignore_faults: True
+  ignore_faults: true
 tests:
   kernel.no-mt.cpu_exception:
     extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=0
