@@ -237,6 +237,81 @@ struct lwm2m_time_series_elem {
 };
 
 /**
+ * @brief Callback to get the length of time series data available in storage
+ *
+ * This callback should return the number of struct @ref lwm2m_time_series_elem
+ * managed by the application (e.g. stored in internal or external flash memory)
+ * and available to be sent to the LwM2M server.
+ *
+ * @param[in] read_write_ctx Application context for the read/write operations.
+ *
+ * @return Callback returns the length of data available to be sent.
+ */
+typedef size_t (*lwm2m_time_series_size_t)(void *read_write_ctx);
+
+/**
+ * @brief Callback to write a timestamped data point to storage
+ *
+ * The LwM2M engine calls this callback to store a new timestamped data point
+ * to storage.
+ *
+ * @param[in] read_write_ctx Application context for the read/write operations.
+ * @param[in] buf Timestamped data to be persisted.
+ *
+ * @return True if the write was successful.
+ *         False if the write failed.
+ */
+typedef bool (*lwm2m_time_series_write_cb_t)(void *read_write_ctx, struct lwm2m_time_series_elem *buf);
+
+/**
+ * @brief Callback to begin reading from time series storage
+ *
+ * The LwM2M engine calls this callback when it starts reading data for
+ * a time series resource.
+ *
+ * @param[in] read_write_ctx Application context for the read/write operations.
+ */
+typedef void (*lwm2m_time_series_read_begin_cb_t)(void *read_write_ctx);
+
+/**
+ * @brief Callback to get the next timestamped data point from storage
+ *
+ * The LwM2M engine calls this callback when it needs the next timestamped data
+ * point for serialization into a CoAP packet.
+ *
+ * @param[in] read_write_ctx Application context for the read/write operations.
+ * @param[out] buf Time series element to be filled for serialization in the CoAP packet.
+ *
+ * @return True if the read was successful.
+ *         False if the read failed.
+ */
+typedef bool (*lwm2m_time_series_read_next_cb_t)(void *read_write_ctx, struct lwm2m_time_series_elem *buf);
+
+/**
+ * @brief Callback to end reading from time series storage
+ *
+ * The LwM2M engine calls this callback when it stops reading data for
+ * a time series resource.
+ *
+ * @param[in] read_write_ctx Application context for the read/write operations.
+ * @param[in] success True if the data read was successfully serialized in a CoAP packet.
+ *                    False if the data read failed to be serialized in a CoAP packet.
+ */
+typedef void (*lwm2m_time_series_read_end_cb_t)(void *read_write_ctx, bool success);
+
+/**
+ * @brief Callback to notify application of reply to a read/send/notify
+ *
+ * The LwM2M engine calls this callback when it received a reply from the
+ * LwM2M server associated with a read from time series storage.
+ *
+ * @param[in] read_write_ctx Application context for the read/write operations.
+ * @param[in] timeout True if the request timed out.
+ * @param[in] code CoAP request response code if the request did not timeout, otherwise 0.
+ */
+typedef void (*lwm2m_time_series_read_reply_cb_t)(void *read_write_ctx, bool timeout, uint8_t code);
+
+/**
  * @brief Asynchronous callback to get a resource buffer and length.
  *
  * Prior to accessing the data buffer of a resource, the engine can
@@ -1433,20 +1508,46 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
 
 /** 
- * @brief Enable data cache for a resource.
+ * @brief Enable RAM cache for a resource.
  *
- * Application may enable caching of resource data by allocating buffer for LwM2M engine to use.
- * Buffer must be size of struct @ref lwm2m_time_series_elem times cache_len
+ * Application may enable caching of resource data by allocating a buffer for LwM2M engine to use.
+ * Buffer must be size of struct @ref lwm2m_time_series_elem times cache_len.
  *
- * @param resource_path LwM2M resourcepath string "obj/obj-inst/res(/res-inst)"
- * @param data_cache Pointer to Data cache array
+ * @param resource_path LwM2M resource path string "obj/obj-inst/res(/res-inst)"
+ * @param data_cache Pointer to data cache array
  * @param cache_len number of cached entries
  * 
  * @return 0 for success or negative in case of error.
  *
  */
-int lwm2m_engine_enable_time_series_storage(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
-					    size_t cache_len);
+int lwm2m_engine_enable_ram_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
+				  size_t cache_len);
+
+/**
+ * @brief Enable application storage for a resource.
+ *
+ * Application may provide callbacks to be called for non volatile storage of timestamped
+ * data (time series).
+ *
+ * @param resource_path LwM2M resource path string "obj/obj-inst/res(/res-inst)"
+ * @param read_write_ctx Application context available in callbacks
+ * @param size_cb Callback called when the engine needs to know the current length of data stored
+ * @param write_cb Callback called when the engine has a new value to write
+ * @param read_begin_cb Callback called when the engine starts reading data to be sent
+ * @param read_next_cb Callback called when the engine needs the next elements for serialization
+ * @param read_end_cb Callback called when the engine finished reading data
+ * @param read_reply_cb Callback called when the server has acked the data or timed out
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_enable_app_storage(char const *resource_path,
+				    void *read_write_ctx,
+                                    lwm2m_time_series_size_t size_cb,
+				    lwm2m_time_series_write_cb_t write_cb,
+				    lwm2m_time_series_read_begin_cb_t read_begin_cb,
+				    lwm2m_time_series_read_next_cb_t read_next_cb,
+				    lwm2m_time_series_read_end_cb_t read_end_cb,
+				    lwm2m_time_series_read_reply_cb_t read_reply_cb);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

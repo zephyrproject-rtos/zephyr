@@ -16,13 +16,15 @@
 #define LOG_LEVEL	CONFIG_LWM2M_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/ring_buffer.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_engine.h"
 #include "lwm2m_object.h"
 #include "lwm2m_obj_access_control.h"
 #include "lwm2m_util.h"
+#ifdef CONFIG_LWM2M_RESOURCE_TIME_SERIES_RAM_CACHE
+#include "lwm2m_ram_cache.h"
+#endif
 
 #include <ctype.h>
 #include <errno.h>
@@ -697,6 +699,7 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 	lwm2m_engine_time_series_write(obj_field, &path, value, len);
 #endif
+	LOG_DBG("Setting value for path %s", pathstr);
 
 	if (res->post_write_cb) {
 		ret = res->post_write_cb(obj_inst->obj_inst_id, res->res_id, res_inst->res_inst_id,
@@ -1551,7 +1554,7 @@ static void lwm2m_engine_time_series_write(struct lwm2m_engine_obj_field *obj_fi
 		break;
 	}
 
-	if (!lwm2m_time_series_write(time_series_entry, &elements)) {
+	if (!time_series_entry->write_cb(time_series_entry->read_write_ctx, &elements)) {
 		LOG_WRN("Time series storage full");
 	}
 }
@@ -1581,37 +1584,34 @@ struct lwm2m_time_series_resource *lwm2m_time_series_entry_get_by_object(struct 
 
 }
 
-int lwm2m_engine_enable_time_series_storage(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
-					    size_t cache_len)
+static int lwm2m_engine_enable_time_series_storage(char const *res_path_str, struct lwm2m_obj_path *res_obj_path)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	struct lwm2m_obj_path path;
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_time_series_resource *time_series_entry;
 	int ret = 0;
-	size_t time_series_entry_size = sizeof(struct lwm2m_time_series_elem);
 
-	/* translate path -> path_obj */
-	ret = lwm2m_string_to_path(resource_path, &path, '/');
+	/* translate res_path_str -> res_obj_path */
+	ret = lwm2m_string_to_path(res_path_str, res_obj_path, '/');
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
+	if (res_obj_path->level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
 
 	/* look up resource obj */
-	ret = path_to_objs(&path, &obj_inst, &obj_field, NULL, &res_inst);
+	ret = path_to_objs(res_obj_path, &obj_inst, &obj_field, NULL, &res_inst);
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (!res_inst) {
-		LOG_ERR("res instance %d not found", path.res_inst_id);
+		LOG_ERR("res instance %d not found", res_obj_path->res_inst_id);
 		return -ENOENT;
 	}
 
@@ -1627,7 +1627,7 @@ int lwm2m_engine_enable_time_series_storage(char const *resource_path, struct lw
 	case LWM2M_RES_TYPE_BOOL:
 	case LWM2M_RES_TYPE_FLOAT:
 		/* Support only fixed width resource types */
-		time_series_entry = lwm2m_time_series_entry_allocate(&path);
+		time_series_entry = lwm2m_time_series_entry_allocate(res_obj_path);
 		break;
 	default:
 		time_series_entry = NULL;
@@ -1638,14 +1638,72 @@ int lwm2m_engine_enable_time_series_storage(char const *resource_path, struct lw
 		return -ENODATA;
 	}
 
-	ring_buf_init(&time_series_entry->rb, time_series_entry_size * cache_len, (uint8_t *)data_cache);
-
 	return 0;
 #else
 	LOG_ERR("LwM2M resource time series storage is only supported for "
 		"CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT");
 	return -ENOTSUP;
 #endif /* CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT */
+}
+
+int lwm2m_engine_enable_ram_cache(char const *res_path_str, struct lwm2m_time_series_elem *data_cache,
+				  size_t cache_len)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_RAM_CACHE)
+	int ret;
+	int i;
+	struct lwm2m_obj_path res_obj_path;
+	struct lwm2m_time_series_resource *entry;
+
+	ret = lwm2m_engine_enable_time_series_storage(res_path_str, &res_obj_path);
+	if (ret < 0) {
+		return ret;
+	}
+
+	entry = lwm2m_time_series_entry_get_by_object(&res_obj_path);
+
+	for (i = 0; i < ARRAY_SIZE(lwm2m_time_series_entries); i++) {
+		if (lwm2m_obj_path_equal(&lwm2m_time_series_entries[i].path, &res_obj_path)) {
+			break;
+		}
+	}
+
+	entry->read_write_ctx = lwm2m_time_series_ram_cache_init(i, data_cache, cache_len);
+	entry->size_cb = lwm2m_time_series_ram_cache_size;
+	entry->write_cb = lwm2m_time_series_ram_cache_write;
+	entry->read_begin_cb = lwm2m_time_series_ram_cache_read_begin;
+	entry->read_next_cb = lwm2m_time_series_ram_cache_read_next;
+	entry->read_end_cb = lwm2m_time_series_ram_cache_read_end;
+#endif /* CONFIG_LWM2M_RESOURCE_TIME_SERIES_RAM_CACHE */
+	return 0;
+}
+
+int lwm2m_engine_enable_app_storage(char const *res_path_str, void *read_write_ctx,
+				    lwm2m_time_series_size_t size_cb, lwm2m_time_series_write_cb_t write_cb,
+				    lwm2m_time_series_read_begin_cb_t read_begin_cb, lwm2m_time_series_read_next_cb_t read_next_cb,
+				    lwm2m_time_series_read_end_cb_t read_end_cb, lwm2m_time_series_read_reply_cb_t read_reply_cb)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_APP_STORAGE)
+	int ret;
+	struct lwm2m_obj_path res_obj_path;
+	struct lwm2m_time_series_resource *entry;
+
+	ret = lwm2m_engine_enable_time_series_storage(res_path_str, &res_obj_path);
+	if (ret < 0) {
+		return ret;
+	}
+
+	entry = lwm2m_time_series_entry_get_by_object(&res_obj_path);
+
+	entry->read_write_ctx = read_write_ctx;
+	entry->size_cb = size_cb;
+	entry->write_cb = write_cb;
+	entry->read_begin_cb = read_begin_cb;
+	entry->read_next_cb = read_next_cb;
+	entry->read_end_cb = read_end_cb;
+	entry->read_reply_cb = read_reply_cb;
+#endif /* CONFIG_LWM2M_RESOURCE_TIME_SERIES_APP_STORAGE */
+	return 0;
 }
 
 int lwm2m_engine_time_series_storage_init(void)
@@ -1660,86 +1718,4 @@ int lwm2m_engine_time_series_storage_init(void)
 	}
 #endif
 	return 0;
-}
-
-bool lwm2m_time_series_write(struct lwm2m_time_series_resource *time_series_entry,
-		       struct lwm2m_time_series_elem *buf)
-{
-#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	uint32_t length;
-	uint8_t *buf_ptr;
-	uint32_t element_size = sizeof(struct lwm2m_time_series_elem);
-
-	if (ring_buf_space_get(&time_series_entry->rb) < element_size) {
-		/* No space  */
-		if (IS_ENABLED(CONFIG_LWM2M_CACHE_DROP_LATEST)) {
-			return false;
-		}
-		/* Free entry */
-		length = ring_buf_get_claim(&time_series_entry->rb, &buf_ptr, element_size);
-		ring_buf_get_finish(&time_series_entry->rb, length);
-	}
-
-	length = ring_buf_put_claim(&time_series_entry->rb, &buf_ptr, element_size);
-
-	if (length != element_size) {
-		ring_buf_put_finish(&time_series_entry->rb, 0);
-		LOG_ERR("Allocation failed %u", length);
-		return false;
-	}
-
-	ring_buf_put_finish(&time_series_entry->rb, length);
-	/* Store data */
-	memcpy(buf_ptr, buf, element_size);
-	return true;
-#else
-	return NULL;
-#endif
-}
-
-bool lwm2m_time_series_read(struct lwm2m_time_series_resource *time_series_entry,
-		      struct lwm2m_time_series_elem *buf)
-{
-#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	uint32_t length;
-	uint8_t *buf_ptr;
-	uint32_t element_size = sizeof(struct lwm2m_time_series_elem);
-
-	if (ring_buf_is_empty(&time_series_entry->rb)) {
-		return false;
-	}
-
-	length = ring_buf_get_claim(&time_series_entry->rb, &buf_ptr, element_size);
-
-	if (length != element_size) {
-		LOG_ERR("Time series read fail %u", length);
-		ring_buf_get_finish(&time_series_entry->rb, 0);
-		return false;
-	}
-
-	/* Read Data */
-	memcpy(buf, buf_ptr, element_size);
-	ring_buf_get_finish(&time_series_entry->rb, length);
-	return true;
-
-#else
-	return NULL;
-#endif
-}
-
-size_t lwm2m_time_series_size(struct lwm2m_time_series_resource *time_series_entry)
-{
-#if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
-	uint32_t bytes_available;
-
-	if (ring_buf_is_empty(&time_series_entry->rb)) {
-		return 0;
-	}
-
-	bytes_available = ring_buf_size_get(&time_series_entry->rb);
-
-	return (bytes_available / sizeof(struct lwm2m_time_series_elem));
-#else
-	return 0;
-#endif
 }

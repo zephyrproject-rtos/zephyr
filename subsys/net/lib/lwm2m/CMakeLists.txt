@@ -18,6 +18,11 @@ zephyr_library_sources(
     lwm2m_rd_client.c
     )
 
+# LwM2M RAM Cache Support
+zephyr_library_sources_ifdef(CONFIG_LWM2M_RESOURCE_TIME_SERIES_RAM_CACHE
+    lwm2m_ram_cache.c
+    )
+
 # LWM2M Object Support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_CONN_MON_OBJ_SUPPORT
     lwm2m_obj_connmon.c

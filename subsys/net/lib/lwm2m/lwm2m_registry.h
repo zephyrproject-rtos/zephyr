@@ -5,7 +5,6 @@
  */
 #ifndef LWM2M_REGISTRY_H
 #define LWM2M_REGISTRY_H
-#include <zephyr/sys/ring_buffer.h>
 #include "lwm2m_object.h"
 
 /**
@@ -203,39 +202,34 @@ sys_slist_t *lwm2m_engine_obj_inst_list(void);
 /**
  * LwM2M time series resource data storage
  */
+
 struct lwm2m_time_series_resource {
 	/* object list */
 	sys_snode_t node;
 	/* Resource Path url */
 	struct lwm2m_obj_path path;
-	/* Ring buffer */
-	struct ring_buf rb;
+
+	void *read_write_ctx;
+	lwm2m_time_series_write_cb_t write_cb;
+	lwm2m_time_series_read_begin_cb_t read_begin_cb;
+	lwm2m_time_series_read_next_cb_t read_next_cb;
+	lwm2m_time_series_read_end_cb_t read_end_cb;
+	lwm2m_time_series_read_reply_cb_t read_reply_cb;
+	lwm2m_time_series_size_t size_cb;
 };
 
 #if defined(CONFIG_LWM2M_RESOURCE_TIME_SERIES_STORAGE_SUPPORT)
 
-#define LWM2M_LIMITED_TIMESERIES_RESOURCE_COUNT 20
-
-struct lwm2m_time_series_read_entry {
-	struct lwm2m_time_series_resource *time_series_data;
-	int32_t original_get_head;
-	int32_t original_get_tail;
-	int32_t original_get_base;
-};
-
 struct lwm2m_time_series_read_info {
-	struct lwm2m_time_series_read_entry read_info[CONFIG_LWM2M_MAX_STORED_TIME_SERIES_RESOURCES];
-	int entry_limit;
-	int entry_size;
+	struct lwm2m_time_series_resource* read_resources[CONFIG_LWM2M_MAX_STORED_TIME_SERIES_RESOURCES];
+	int resource_count;
+	int read_attempts;
+	int read_limit;
+	uint16_t content_format;
 };
 #endif
 
 int lwm2m_engine_time_series_storage_init(void);
 struct lwm2m_time_series_resource *lwm2m_time_series_entry_get_by_object(struct lwm2m_obj_path *obj_path);
-bool lwm2m_time_series_write(struct lwm2m_time_series_resource *time_series_entry,
-		       struct lwm2m_time_series_elem *buf);
-bool lwm2m_time_series_read(struct lwm2m_time_series_resource *time_series_entry,
-		      struct lwm2m_time_series_elem *buf);
-size_t lwm2m_time_series_size(struct lwm2m_time_series_resource *time_series_entry);
 
 #endif /* LWM2M_REGISTRY_H */
