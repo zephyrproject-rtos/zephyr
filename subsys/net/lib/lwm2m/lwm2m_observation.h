@@ -8,7 +8,7 @@
 #include "lwm2m_object.h"
 
 int lwm2m_notify_observer(uint16_t obj_id, uint16_t obj_inst_id, uint16_t res_id);
-int lwm2m_notify_observer_path(struct lwm2m_obj_path *path);
+int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path);
 
 #define MAX_TOKEN_LEN 8
 

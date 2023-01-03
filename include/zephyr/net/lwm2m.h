@@ -683,146 +683,331 @@ void lwm2m_registry_unlock(void);
 /**
  * @brief Set resource (instance) value (opaque buffer)
  *
+ * @deprecated Use lwm2m_set_opaque() instead.
+ *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] data_ptr Data buffer
  * @param[in] data_len Length of buffer
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_opaque(const char *pathstr, const char *data_ptr, uint16_t data_len);
 
 /**
+ * @brief Set resource (instance) value (opaque buffer)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] data_ptr Data buffer
+ * @param[in] data_len Length of buffer
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_opaque(const struct lwm2m_obj_path *path, const char *data_ptr, uint16_t data_len);
+
+/**
  * @brief Set resource (instance) value (string)
+ *
+ * @deprecated Use lwm2m_set_string() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] data_ptr NULL terminated char buffer
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_string(const char *pathstr, const char *data_ptr);
 
 /**
+ * @brief Set resource (instance) value (string)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] data_ptr NULL terminated char buffer
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_string(const struct lwm2m_obj_path *path, const char *data_ptr);
+
+/**
  * @brief Set resource (instance) value (u8)
+ *
+ * @deprecated Use lwm2m_set_u8() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value u8 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_u8(const char *pathstr, uint8_t value);
 
 /**
+ * @brief Set resource (instance) value (u8)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value u8 value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_u8(const struct lwm2m_obj_path *path, uint8_t value);
+
+/**
  * @brief Set resource (instance) value (u16)
+ *
+ * @deprecated Use lwm2m_set_u16() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value u16 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_u16(const char *pathstr, uint16_t value);
 
 /**
+ * @brief Set resource (instance) value (u16)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value u16 value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_u16(const struct lwm2m_obj_path *path, uint16_t value);
+
+/**
  * @brief Set resource (instance) value (u32)
+ *
+ * @deprecated Use lwm2m_set_u32() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value u32 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_u32(const char *pathstr, uint32_t value);
 
 /**
+ * @brief Set resource (instance) value (u32)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value u32 value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_u32(const struct lwm2m_obj_path *path, uint32_t value);
+
+/**
  * @brief Set resource (instance) value (u64)
+ *
+ * @deprecated Use lwm2m_set_u64() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value u64 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_u64(const char *pathstr, uint64_t value);
 
 /**
+ * @brief Set resource (instance) value (u64)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value u64 value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_u64(const struct lwm2m_obj_path *path, uint64_t value);
+
+/**
  * @brief Set resource (instance) value (s8)
+ *
+ * @deprecated Use lwm2m_set_s8() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value s8 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_s8(const char *pathstr, int8_t value);
 
 /**
+ * @brief Set resource (instance) value (s8)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value s8 value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_s8(const struct lwm2m_obj_path *path, int8_t value);
+
+/**
  * @brief Set resource (instance) value (s16)
+ *
+ * @deprecated Use lwm2m_set_s16() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value s16 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_s16(const char *pathstr, int16_t value);
 
 /**
+ * @brief Set resource (instance) value (s16)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value s16 value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_s16(const struct lwm2m_obj_path *path, int16_t value);
+
+/**
  * @brief Set resource (instance) value (s32)
+ *
+ * @deprecated Use lwm2m_set_s32() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value s32 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_s32(const char *pathstr, int32_t value);
 
 /**
+ * @brief Set resource (instance) value (s32)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value s32 value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_s32(const struct lwm2m_obj_path *path, int32_t value);
+
+/**
  * @brief Set resource (instance) value (s64)
+ *
+ * @deprecated Use lwm2m_set_s64() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value s64 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_s64(const char *pathstr, int64_t value);
 
 /**
+ * @brief Set resource (instance) value (s64)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value s64 value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_s64(const struct lwm2m_obj_path *path, int64_t value);
+
+/**
  * @brief Set resource (instance) value (bool)
+ *
+ * @deprecated Use lwm2m_set_bool() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value bool value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_bool(const char *pathstr, bool value);
 
 /**
+ * @brief Set resource (instance) value (bool)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value bool value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_bool(const struct lwm2m_obj_path *path, bool value);
+
+/**
  * @brief Set resource (instance) value (double)
+ *
+ * @deprecated Use lwm2m_set_f64() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value double value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_float(const char *pathstr, const double *value);
 
 /**
+ * @brief Set resource (instance) value (double)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value double value
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_f64(const struct lwm2m_obj_path *path, const double value);
+
+/**
  * @brief Set resource (instance) value (ObjLnk)
+ *
+ * @deprecated Use lwm2m_set_objlnk() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value pointer to the lwm2m_objlnk structure
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_objlnk(const char *pathstr, const struct lwm2m_objlnk *value);
 
 /**
+ * @brief Set resource (instance) value (ObjLnk)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value pointer to the lwm2m_objlnk structure
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_objlnk(const struct lwm2m_obj_path *path, const struct lwm2m_objlnk *value);
+
+/**
  * @brief Set resource (instance) value (Time)
+ *
+ * @deprecated Use lwm2m_set_time() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value Epoch timestamp
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_time(const char *pathstr, time_t value);
 
 /**
+ * @brief Set resource (instance) value (Time)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] value Epoch timestamp
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_time(const struct lwm2m_obj_path *path, time_t value);
+
+/**
  * @brief Get resource (instance) value (opaque buffer)
+ *
+ * @deprecated Use lwm2m_get_opaque() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] buf Data buffer to copy data into
@@ -830,10 +1015,24 @@ int lwm2m_engine_set_time(const char *pathstr, time_t value);
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_opaque(const char *pathstr, void *buf, uint16_t buflen);
 
 /**
+ * @brief Get resource (instance) value (opaque buffer)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] buf Data buffer to copy data into
+ * @param[in] buflen Length of buffer
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_opaque(const struct lwm2m_obj_path *path, void *buf, uint16_t buflen);
+
+/**
  * @brief Get resource (instance) value (string)
+ *
+ * @deprecated Use lwm2m_get_string() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] str String buffer to copy data into
@@ -841,128 +1040,295 @@ int lwm2m_engine_get_opaque(const char *pathstr, void *buf, uint16_t buflen);
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_string(const char *pathstr, void *str, uint16_t strlen);
 
 /**
+ * @brief Get resource (instance) value (string)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] str String buffer to copy data into
+ * @param[in] strlen Length of buffer
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_string(const struct lwm2m_obj_path *path, void *str, uint16_t strlen);
+
+/**
  * @brief Get resource (instance) value (u8)
+ *
+ * @deprecated Use lwm2m_get_u8() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value u8 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_u8(const char *pathstr, uint8_t *value);
 
 /**
+ * @brief Get resource (instance) value (u8)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value u8 buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_u8(const struct lwm2m_obj_path *path, uint8_t *value);
+
+/**
  * @brief Get resource (instance) value (u16)
+ *
+ * @deprecated Use lwm2m_get_u16() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value u16 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_u16(const char *pathstr, uint16_t *value);
 
 /**
+ * @brief Get resource (instance) value (u16)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value u16 buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_u16(const struct lwm2m_obj_path *path, uint16_t *value);
+
+/**
  * @brief Get resource (instance) value (u32)
+ *
+ * @deprecated Use lwm2m_get_u32() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value u32 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_u32(const char *pathstr, uint32_t *value);
 
 /**
+ * @brief Get resource (instance) value (u32)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value u32 buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_u32(const struct lwm2m_obj_path *path, uint32_t *value);
+
+/**
  * @brief Get resource (instance) value (u64)
+ *
+ * @deprecated Use lwm2m_get_u64() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value u64 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_u64(const char *pathstr, uint64_t *value);
 
 /**
+ * @brief Get resource (instance) value (u64)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value u64 buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_u64(const struct lwm2m_obj_path *path, uint64_t *value);
+
+/**
  * @brief Get resource (instance) value (s8)
+ *
+ * @deprecated Use lwm2m_get_s8() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value s8 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_s8(const char *pathstr, int8_t *value);
 
 /**
+ * @brief Get resource (instance) value (s8)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value s8 buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_s8(const struct lwm2m_obj_path *path, int8_t *value);
+
+/**
  * @brief Get resource (instance) value (s16)
+ *
+ * @deprecated Use lwm2m_get_s16() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value s16 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_s16(const char *pathstr, int16_t *value);
 
 /**
+ * @brief Get resource (instance) value (s16)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value s16 buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_s16(const struct lwm2m_obj_path *path, int16_t *value);
+
+/**
  * @brief Get resource (instance) value (s32)
+ *
+ * @deprecated Use lwm2m_get_s32() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value s32 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_s32(const char *pathstr, int32_t *value);
 
 /**
+ * @brief Get resource (instance) value (s32)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value s32 buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_s32(const struct lwm2m_obj_path *path, int32_t *value);
+
+/**
  * @brief Get resource (instance) value (s64)
+ *
+ * @deprecated Use lwm2m_get_s64() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value s64 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_s64(const char *pathstr, int64_t *value);
 
 /**
+ * @brief Get resource (instance) value (s64)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value s64 buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_s64(const struct lwm2m_obj_path *path, int64_t *value);
+
+/**
  * @brief Get resource (instance) value (bool)
+ *
+ * @deprecated Use lwm2m_get_bool() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value bool buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_bool(const char *pathstr, bool *value);
 
 /**
+ * @brief Get resource (instance) value (bool)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value bool buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_bool(const struct lwm2m_obj_path *path, bool *value);
+
+/**
  * @brief Get resource (instance) value (double)
+ *
+ * @deprecated Use lwm2m_get_f64() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] buf double buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_float(const char *pathstr, double *buf);
 
 /**
+ * @brief Get resource (instance) value (double)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] value double buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_f64(const struct lwm2m_obj_path *path, double *value);
+
+/**
  * @brief Get resource (instance) value (ObjLnk)
+ *
+ * @deprecated Use lwm2m_get_objlnk() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] buf lwm2m_objlnk buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_objlnk(const char *pathstr, struct lwm2m_objlnk *buf);
 
 /**
+ * @brief Get resource (instance) value (ObjLnk)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] buf lwm2m_objlnk buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_objlnk(const struct lwm2m_obj_path *path, struct lwm2m_objlnk *buf);
+
+/**
  * @brief Get resource (instance) value (Time)
+ *
+ * @deprecated Use lwm2m_get_time() instead.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] buf time_t pointer to copy data
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_get_time(const char *pathstr, time_t *buf);
 
+/**
+ * @brief Get resource (instance) value (Time)
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[out] buf time_t pointer to copy data
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_time(const struct lwm2m_obj_path *path, time_t *buf);
 
 /**
  * @brief Set resource (instance) read callback
