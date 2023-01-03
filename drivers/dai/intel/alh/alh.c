@@ -50,7 +50,7 @@ static int dai_alh_set_config_blob(struct dai_intel_alh *dp, const struct dai_co
 
 		if (IPC4_ALH_DAI_INDEX(alh_id) == dp->index) {
 			alh->params.stream_id = alh_id;
-			alh->params.channels = popcount(alh_cfg->mapping[i].channel_mask);
+			alh->params.channels = POPCOUNT(alh_cfg->mapping[i].channel_mask);
 			break;
 		}
 	}
