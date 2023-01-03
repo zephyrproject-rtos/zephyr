@@ -170,6 +170,38 @@ static bool unicast_client_can_disconnect_stream(const struct bt_bap_stream *str
 	return false;
 }
 
+static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
+						     uint8_t id)
+{
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 || CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	const uint8_t conn_index = bt_conn_index(conn);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 ||                                        \
+	* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0                                           \
+	*/
+
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
+		const struct bt_bap_unicast_client_ep *client_ep = &snks[conn_index][i];
+
+		if (client_ep->ep.status.id == id) {
+			return client_ep->ep.stream;
+		}
+	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
+		const struct bt_bap_unicast_client_ep *client_ep = &srcs[conn_index][i];
+
+		if (client_ep->ep.status.id == id) {
+			return client_ep->ep.stream;
+		}
+	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+
+	return NULL;
+}
+
 static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 				       const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
@@ -1192,8 +1224,6 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 					uint16_t length)
 {
 	struct bt_ascs_cp_rsp *rsp;
-	int i;
-
 	struct net_buf_simple buf;
 
 	LOG_DBG("conn %p len %u", conn, length);
@@ -1213,8 +1243,9 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 
 	rsp = net_buf_simple_pull_mem(&buf, sizeof(*rsp));
 
-	for (i = 0; i < rsp->num_ase; i++) {
+	for (uint8_t i = 0U; i < rsp->num_ase; i++) {
 		struct bt_ascs_cp_ase_rsp *ase_rsp;
+		struct bt_bap_stream *stream;
 
 		if (buf.len < sizeof(*ase_rsp)) {
 			LOG_ERR("Control Point Notification too small");
@@ -1224,10 +1255,66 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 		ase_rsp = net_buf_simple_pull_mem(&buf, sizeof(*ase_rsp));
 
 		LOG_DBG("op %s (0x%02x) id 0x%02x code %s (0x%02x) "
-			"reason %s (0x%02x)",
-			bt_ascs_op_str(rsp->op), rsp->op, ase_rsp->id,
-			bt_ascs_rsp_str(ase_rsp->code), ase_rsp->code,
-			bt_ascs_reason_str(ase_rsp->reason), ase_rsp->reason);
+			"reason %s (0x%02x)", bt_ascs_op_str(rsp->op), rsp->op,
+			ase_rsp->id, bt_ascs_rsp_str(ase_rsp->code),
+			ase_rsp->code, bt_ascs_reason_str(ase_rsp->reason),
+			ase_rsp->reason);
+
+		if (unicast_client_cbs == NULL) {
+			continue;
+		}
+
+		stream = audio_stream_by_ep_id(conn, ase_rsp->id);
+		if (stream == NULL) {
+			LOG_DBG("Could not find stream by id %u", ase_rsp->id);
+			continue;
+		}
+
+		switch (rsp->op) {
+		case BT_ASCS_CONFIG_OP:
+			if (unicast_client_cbs->config != NULL) {
+				unicast_client_cbs->config(stream, ase_rsp->code, ase_rsp->reason);
+			}
+			break;
+		case BT_ASCS_QOS_OP:
+			if (unicast_client_cbs->qos != NULL) {
+				unicast_client_cbs->qos(stream, ase_rsp->code, ase_rsp->reason);
+			}
+			break;
+		case BT_ASCS_ENABLE_OP:
+			if (unicast_client_cbs->enable != NULL) {
+				unicast_client_cbs->enable(stream, ase_rsp->code, ase_rsp->reason);
+			}
+			break;
+		case BT_ASCS_START_OP:
+			if (unicast_client_cbs->start != NULL) {
+				unicast_client_cbs->start(stream, ase_rsp->code, ase_rsp->reason);
+			}
+			break;
+		case BT_ASCS_DISABLE_OP:
+			if (unicast_client_cbs->disable != NULL) {
+				unicast_client_cbs->disable(stream, ase_rsp->code, ase_rsp->reason);
+			}
+			break;
+		case BT_ASCS_STOP_OP:
+			if (unicast_client_cbs->stop != NULL) {
+				unicast_client_cbs->stop(stream, ase_rsp->code, ase_rsp->reason);
+			}
+			break;
+		case BT_ASCS_METADATA_OP:
+			if (unicast_client_cbs->metadata != NULL) {
+				unicast_client_cbs->metadata(stream, ase_rsp->code,
+							     ase_rsp->reason);
+			}
+			break;
+		case BT_ASCS_RELEASE_OP:
+			if (unicast_client_cbs->release != NULL) {
+				unicast_client_cbs->release(stream, ase_rsp->code, ase_rsp->reason);
+			}
+			break;
+		default:
+			break;
+		}
 	}
 
 	return BT_GATT_ITER_CONTINUE;
