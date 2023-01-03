@@ -889,7 +889,7 @@ static void ascs_cp_rsp_add(uint8_t id, uint8_t op, uint8_t code,
 	 * set to 0xFF.
 	 */
 	case BT_ASCS_RSP_NOT_SUPPORTED:
-	case BT_ASCS_RSP_TRUNCATED:
+	case BT_ASCS_RSP_INVALID_LENGTH:
 		rsp->num_ase = 0xff;
 		break;
 	default:
@@ -2649,7 +2649,7 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 	}
 
 	if (ret == BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN)) {
-		ascs_cp_rsp_add(0, req->op, BT_ASCS_RSP_TRUNCATED,
+		ascs_cp_rsp_add(0, req->op, BT_ASCS_RSP_INVALID_LENGTH,
 				BT_ASCS_REASON_NONE);
 	}
 
