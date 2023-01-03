@@ -19,7 +19,7 @@ tests:
     tags: pwm_mcux_pwt
     extra_configs:
       - CONFIG_PWM_CAPTURE=y
-  drivers.pwm.mcux.ftm.build:
+  drivers.pwm.mcux.tpm.build:
     platform_allow: frdm_kw41z
     tags: pwm_mcux_tpm
   drivers.pwm.mcux.build:

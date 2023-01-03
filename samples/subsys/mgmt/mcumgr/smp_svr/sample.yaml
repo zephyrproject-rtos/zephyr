@@ -31,7 +31,7 @@ tests:
     platform_allow: nrf52840dk_nrf52840 pinnacle_100_dvk mg100
     integration_platforms:
       - nrf52840dk_nrf52840
-  sample.mcumgr.smp_svr.serial:
+  sample.mcumgr.smp_svr.serial-console:
     extra_args: OVERLAY_CONFIG="overlay-serial-console.conf"
     platform_allow: nrf52840dk_nrf52840 pinnacle_100_dvk mg100
     integration_platforms:

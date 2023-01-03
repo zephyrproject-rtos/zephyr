@@ -125,8 +125,7 @@ tests:
       - CONFIG_PICOLIBC=y
 
   libraries.cbprintf_package_fp.picolibc:
-    filter: CONFIG_CPU_HAS_FPU
-    filter: CONFIG_PICOLIBC_SUPPORTED
+    filter: CONFIG_CPU_HAS_FPU and CONFIG_PICOLIBC_SUPPORTED
     tags: picolibc
     extra_configs:
       - CONFIG_CBPRINTF_FP_SUPPORT=y
@@ -153,8 +152,7 @@ tests:
       - CONFIG_PICOLIBC=y
 
   libraries.cbprintf_package_fp_cpp.picolibc:
-    filter: CONFIG_CPU_HAS_FPU
-    filter: CONFIG_PICOLIBC_SUPPORTED
+    filter: CONFIG_CPU_HAS_FPU and CONFIG_PICOLIBC_SUPPORTED
     tags: picolibc
     extra_configs:
       - CONFIG_CPLUSPLUS=y
