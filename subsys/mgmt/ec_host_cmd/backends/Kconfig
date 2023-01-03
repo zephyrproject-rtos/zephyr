@@ -23,6 +23,13 @@ config EC_HOST_CMD_BACKEND_SHI
 	  Enable support for Embedded Controller host commands using
 	  the Serial Host Interface.
 
+config EC_HOST_CMD_BACKEND_UART
+	bool "Host commands support using UART"
+	depends on UART_ASYNC_API
+	help
+	  Enable support for Embedded Controller host commands using
+	  the UART.
+
 if EC_HOST_CMD_BACKEND_SHI
 
 choice EC_HOST_CMD_BACKEND_SHI_DRIVER

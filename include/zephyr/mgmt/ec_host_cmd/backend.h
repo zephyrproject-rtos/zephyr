@@ -136,6 +136,18 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_npcx(void);
 struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_ite(void);
 
 /**
+ * @brief Get the UART Host Command backend pointer
+ *
+ * Get the UART pointer backend and pass a pointer to UART device instance that will be used for
+ * the Host Command communication.
+ *
+ * @param dev Pointer to UART device instance.
+ *
+ * @retval The UART backend pointer.
+ */
+struct ec_host_cmd_backend *ec_host_cmd_backend_get_uart(const struct device *dev);
+
+/**
  * @}
  */
 

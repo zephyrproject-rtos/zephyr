@@ -17,3 +17,7 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
 	CONFIG_EC_HOST_CMD_BACKEND_SHI_ITE
 	ec_host_cmd_backend_shi_ite.c)
+
+zephyr_library_sources_ifdef(
+	CONFIG_EC_HOST_CMD_BACKEND_UART
+	ec_host_cmd_backend_uart.c)

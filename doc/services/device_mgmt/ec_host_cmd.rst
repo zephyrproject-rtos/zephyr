@@ -40,6 +40,7 @@ The supported backend and peripheral drivers:
   * SHI - ITE and NPCX
   * eSPI - any eSPI slave driver that support :kconfig:option:`CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD` and
     :kconfig:option:`CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE`
+  * UART - any UART driver that supports the asynchronous API
 
 Initialization
 **************
