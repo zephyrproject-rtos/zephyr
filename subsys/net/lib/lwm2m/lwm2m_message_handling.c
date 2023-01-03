@@ -803,7 +803,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 				*(uint32_t *)write_buf = (uint32_t)temp_time;
 				len = sizeof(uint32_t);
 			} else {
-				LOG_ERR("Time resource buf len not supported %d", write_buf_len);
+				LOG_ERR("Time resource buf len not supported %zu", write_buf_len);
 				ret = -EINVAL;
 			}
 
@@ -988,7 +988,7 @@ static int lwm2m_read_resource_data(struct lwm2m_message *msg, void *data_ptr, s
 			ret = engine_put_time(&msg->out, &msg->path,
 					      (time_t) *((uint32_t *)data_ptr));
 		} else {
-			LOG_ERR("Resource time length not supported %d", data_len);
+			LOG_ERR("Resource time length not supported %zu", data_len);
 			ret = -EINVAL;
 		}
 

@@ -143,7 +143,8 @@ void clear_attrs(void *ref)
 	}
 }
 
-static bool lwm2m_observer_path_compare(struct lwm2m_obj_path *o_p, struct lwm2m_obj_path *p)
+static bool lwm2m_observer_path_compare(const struct lwm2m_obj_path *o_p,
+					const struct lwm2m_obj_path *p)
 {
 	/* check obj id matched or not */
 	if (p->obj_id != o_p->obj_id) {
@@ -173,7 +174,7 @@ static bool lwm2m_observer_path_compare(struct lwm2m_obj_path *o_p, struct lwm2m
 	return true;
 }
 
-static bool lwm2m_notify_observer_list(sys_slist_t *path_list, struct lwm2m_obj_path *path)
+static bool lwm2m_notify_observer_list(sys_slist_t *path_list, const struct lwm2m_obj_path *path)
 {
 	struct lwm2m_obj_path_list *o_p;
 
@@ -334,7 +335,7 @@ int engine_observe_attribute_list_get(sys_slist_t *path_list, struct notificatio
 	return 0;
 }
 
-int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
+int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 {
 	struct observe_node *obs;
 	struct notification_attrs nattrs = {0};
