@@ -59,7 +59,7 @@ if(CONFIG_SOC_FLASH_STM32)
     zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32WBX flash_stm32wbx.c)
     zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32G0X flash_stm32g0x.c)
     zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32G4X flash_stm32g4x.c)
-    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32U5X flash_stm32l5.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32U5X flash_stm32l5x.c)
   endif()
 endif()
 
