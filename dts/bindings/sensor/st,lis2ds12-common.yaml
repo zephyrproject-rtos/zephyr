@@ -21,9 +21,9 @@ properties:
 
       enum:
         - 16 # 16g (0.488 mg/LSB)
-        -  8 #  8g (0.244 mg/LSB)
-        -  4 #  4g (0.122 mg/LSB)
-        -  2 #  2g (0.061 mg/LSB)
+        - 8  #  8g (0.244 mg/LSB)
+        - 4  #  4g (0.122 mg/LSB)
+        - 2  #  2g (0.061 mg/LSB)
 
     power-mode:
       type: int
