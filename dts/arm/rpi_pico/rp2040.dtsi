@@ -33,15 +33,14 @@
 			reg = <0x20000000 DT_SIZE_K(264)>;
 		};
 
-		flash_controller: flash-controller@10000000 {
+		ssi: flash-controller@18000000 {
 			compatible = "raspberrypi,pico-flash-controller";
-			reg = <0x10000000 DT_SIZE_K(4)>;
-			interrupts = <15 0>;
+			reg = <0x18000000 0xfc>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			flash0: flash@0 {
+			flash0: flash@10000000 {
 				compatible = "soc-nv-flash";
 				write-block-size = <1>;
 				erase-block-size = <DT_SIZE_K(4)>;
