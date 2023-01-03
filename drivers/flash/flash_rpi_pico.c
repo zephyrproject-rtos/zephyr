@@ -27,10 +27,11 @@ LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 #define DT_DRV_COMPAT raspberrypi_pico_flash_controller
 
 #define PAGE_SIZE 256
-#define SECTOR_SIZE DT_PROP(DT_CHILD(DT_NODELABEL(flash_controller), flash_0), erase_block_size)
+#define SECTOR_SIZE DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
 #define ERASE_VALUE 0xff
 #define FLASH_SIZE KB(CONFIG_FLASH_SIZE)
-#define FLASH_BASE DT_REG_ADDR(DT_NODELABEL(flash_controller))
+#define FLASH_BASE CONFIG_FLASH_BASE_ADDRESS
+#define SSI_BASE_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_flash_controller))
 
 static const struct flash_parameters flash_rpi_parameters = {
 	.write_block_size = 1,
@@ -56,7 +57,7 @@ enum outover {
 	OUTOVER_HIGH
 };
 
-static ssi_hw_t *const ssi = (ssi_hw_t *)XIP_SSI_BASE;
+static ssi_hw_t *const ssi = (ssi_hw_t *)SSI_BASE_ADDRESS;
 static uint32_t boot2_copyout[BOOT2_SIZE_WORDS];
 static bool boot2_copyout_valid;
 
