@@ -7,9 +7,9 @@ tests:
     depends_on: i2c
     filter: dt_compat_enabled("st,lps22hh")
     harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "Temperature: (.*)"
-            - "Pressure: (.*)"
-        fixture: fixture_i2c_lps22hh
+      type: multi_line
+      ordered: true
+      regex:
+        - "Temperature: (.*)"
+        - "Pressure: (.*)"
+      fixture: fixture_i2c_lps22hh
