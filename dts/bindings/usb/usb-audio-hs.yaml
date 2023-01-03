@@ -38,7 +38,7 @@ properties:
      - 16
      - 24
      - 32
-# microphone channel configuration options
+  # microphone channel configuration options
   mic-channel-l:
     type: boolean
     description: Enable (l) channel.
@@ -78,7 +78,7 @@ properties:
   mic-channel-cfg:
     type: boolean
     description: Enable (cfg) channel.
-# microphone feature unit configuration options
+  # microphone feature unit configuration options
   mic-feature-mute:
     type: boolean
     required: true
@@ -158,7 +158,7 @@ properties:
   hp-channel-cfg:
     type: boolean
     description: Enable (cfg) channel.
-# headphones feature unit configuration options
+  # headphones feature unit configuration options
   hp-feature-mute:
     type: boolean
     required: true

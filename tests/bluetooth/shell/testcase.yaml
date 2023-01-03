@@ -41,7 +41,7 @@ tests:
     extra_args: CONF_FILE="log.conf"
     tags: bluetooth
 
-# Bluetooth Audio Compile validation tests
+  # Bluetooth Audio Compile validation tests
   bluetooth.shell.audio:
     extra_args: CONF_FILE="audio.conf"
     build_only: true

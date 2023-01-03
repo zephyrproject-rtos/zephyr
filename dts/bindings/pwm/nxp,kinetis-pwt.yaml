@@ -33,6 +33,6 @@ properties:
 
 pwm-cells:
   - channel
-# period in terms of nanoseconds
+  # period in terms of nanoseconds
   - period
   - flags
