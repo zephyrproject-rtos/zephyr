@@ -49,8 +49,8 @@ bluetooth:
 cmsis_dsp:
     files:
         - modules/Kconfig.cmsis_dsp
-# we have no means of telling file changes in a module, so for assume any
-# change to west.yml is updating something we need to re-test for.
+        # we have no means of telling file changes in a module, so for assume any
+        # change to west.yml is updating something we need to re-test for.
         - west.yml
 
 kernel:

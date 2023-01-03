@@ -30,7 +30,7 @@ properties:
      - "Asynchronous"
      - "Adaptive"
      - "Synchronous"
-# channel configuration options
+  # channel configuration options
   channel-l:
     type: boolean
     description: Enable (l) channel.
@@ -70,7 +70,7 @@ properties:
   channel-cfg:
     type: boolean
     description: Enable (cfg) channel.
-# feature unit configuration options
+  # feature unit configuration options
   feature-mute:
     type: boolean
     required: true
