@@ -3,15 +3,15 @@ sample:
     Zephyr application
   name: hello world user
 common:
-    integration_platforms:
-      - mps2_an385
-    platform_exclude: intel_adsp_cavs15
-    tags: introduction
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "Hello World from UserSpace! (.*)"
+  integration_platforms:
+    - mps2_an385
+  platform_exclude: intel_adsp_cavs15
+  tags: introduction
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello World from UserSpace! (.*)"
 tests:
   sample.helloworld:
     filter: CONFIG_ARCH_HAS_USERSPACE

@@ -2,12 +2,12 @@ sample:
   description: syscall performances sample
   name: syscall performances
 common:
-    tags: userspace
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "User thread"
+  tags: userspace
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "User thread"
 tests:
   sample.syscall_performances:
     filter: CONFIG_ARCH_HAS_USERSPACE

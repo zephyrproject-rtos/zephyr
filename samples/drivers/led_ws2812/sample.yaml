@@ -6,4 +6,4 @@ tests:
     tags: LED
     filter: dt_compat_enabled("worldsemi,ws2812-spi")
     harness_config:
-        fixture: fixture_led_ws2812
+      fixture: fixture_led_ws2812

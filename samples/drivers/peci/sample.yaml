@@ -9,7 +9,7 @@ tests:
     tags: drivers peci
     harness: console
     harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "mb data(.*)"
+      type: multi_line
+      ordered: true
+      regex:
+        - "mb data(.*)"

@@ -8,14 +8,14 @@ tests:
     platform_exclude: hifive_unmatched
     harness: console
     harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "Test 1: Flash erase"
-            - "Flash erase succeeded!"
-            - "Test 2: Flash write"
-            - "Attempting to write 4 bytes"
-            - "Data read matches data written. Good!!"
+      type: multi_line
+      ordered: true
+      regex:
+        - "Test 1: Flash erase"
+        - "Flash erase succeeded!"
+        - "Test 2: Flash write"
+        - "Attempting to write 4 bytes"
+        - "Data read matches data written. Good!!"
     depends_on: spi
   sample.drivers.spi.flash_dpd:
     tags: spi flash

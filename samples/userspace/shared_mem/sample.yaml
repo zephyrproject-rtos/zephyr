@@ -3,14 +3,14 @@ sample:
     example application
   name: protected memory
 common:
-    integration_platforms:
-      - mps2_an385
-    tags: userspace
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "MSG"
+  integration_platforms:
+    - mps2_an385
+  tags: userspace
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "MSG"
 tests:
   sample.kernel.memory_protection.shared_mem:
     filter: CONFIG_ARCH_HAS_USERSPACE
