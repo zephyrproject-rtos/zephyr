@@ -104,10 +104,10 @@ properties:
       const: 3
 
 pwm-cells:
-# The rpi pico pwm peripheral is divided in 8 slices with an individual
-# clock setting and two output channels. The pwm channels are mapped the
-# following way PWM_CH0_A is addressed as <&pwm 0 PWM_FLAGS>, PWM_CH0B
-# is <&pwm 1 PMW_FLAGS>, PWM_CH1_A si <&pwm 2 PWM_FLAGS> and so on.
+  # The rpi pico pwm peripheral is divided in 8 slices with an individual
+  # clock setting and two output channels. The pwm channels are mapped the
+  # following way PWM_CH0_A is addressed as <&pwm 0 PWM_FLAGS>, PWM_CH0B
+  # is <&pwm 1 PMW_FLAGS>, PWM_CH1_A si <&pwm 2 PWM_FLAGS> and so on.
   - channel
   - period
   - flags

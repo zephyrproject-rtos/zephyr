@@ -271,7 +271,7 @@ jobs:
       OPENSEARCH_PASS: ${{ secrets.OPENSEARCH_PASS }}
     needs: twister-build
     runs-on: ubuntu-20.04
-      # the build-and-test job might be skipped, we don't need to run this job then
+    # the build-and-test job might be skipped, we don't need to run this job then
     if: success() || failure()
 
     steps:

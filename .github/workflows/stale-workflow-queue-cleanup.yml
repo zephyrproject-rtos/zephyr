@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     branches: [main]
   schedule:
-    # everyday at 15:00
+  # everyday at 15:00
   - cron: '0 15 * * *'
 
 concurrency:
