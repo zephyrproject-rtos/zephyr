@@ -1,10 +1,10 @@
 common:
-    tags: drivers console
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "Hello World from Console"
+  tags: drivers console
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello World from Console"
 
 tests:
   drivers.console.uart:

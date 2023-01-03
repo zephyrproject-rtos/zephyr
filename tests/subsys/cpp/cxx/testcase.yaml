@@ -1,9 +1,9 @@
 common:
-    tags: cpp
-    toolchain_exclude: xcc
-    integration_platforms:
-      - mps2_an385
-      - qemu_cortex_a53
+  tags: cpp
+  toolchain_exclude: xcc
+  integration_platforms:
+    - mps2_an385
+    - qemu_cortex_a53
 
 tests:
   cpp.main.minimal:
