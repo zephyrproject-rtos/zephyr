@@ -19,6 +19,7 @@
 #include <zephyr/dt-bindings/sensor/iis2iclx.h>
 #include <zephyr/dt-bindings/sensor/lis2du12.h>
 #include <zephyr/dt-bindings/sensor/lis2de12.h>
+#include <zephyr/dt-bindings/sensor/tmag5273.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -914,4 +915,14 @@ test_i2c_vishay_vcnl36825t: vcnl36825t@81 {
 	multi-pulse = <8>;
 
 	low-power;
+};
+
+test_i2c_tmag5273: tmag5273@82 {
+	compatible = "ti,tmag5273";
+	status = "okay";
+	reg = <0x82>;
+	int-gpios = <&test_gpio 15 1>;
+
+	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
+	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
 };
