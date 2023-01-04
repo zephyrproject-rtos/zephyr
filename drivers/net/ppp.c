@@ -747,21 +747,7 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 			protocol = htons(PPP_IP);
 		} else if (net_pkt_family(pkt) == AF_INET6) {
 			protocol = htons(PPP_IPV6);
-		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-			   net_pkt_family(pkt) == AF_PACKET) {
-			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
-
-			switch (type) {
-			case 0x60:
-				protocol = htons(PPP_IPV6);
-				break;
-			case 0x40:
-				protocol = htons(PPP_IP);
-				break;
-			default:
-				return -EPROTONOSUPPORT;
-			}
-		} else {
+		}  else {
 			return -EPROTONOSUPPORT;
 		}
 	}
