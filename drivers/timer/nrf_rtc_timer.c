@@ -670,7 +670,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	}
 
 	uint32_t initial_timeout = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
-		MAX_TICKS : (counter() + CYC_PER_TICK);
+		MAX_CYCLES : CYC_PER_TICK;
 
 	compare_set(0, initial_timeout, sys_clock_timeout_handler, NULL);
 
