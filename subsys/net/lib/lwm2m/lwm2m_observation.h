@@ -72,7 +72,7 @@ void lwm2m_engine_path_list_init(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2
 int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
 				  struct lwm2m_obj_path *path);
 
-int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, struct lwm2m_obj_path *path,
+int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, const struct lwm2m_obj_path *path,
 				 void **ref);
 
 /**
