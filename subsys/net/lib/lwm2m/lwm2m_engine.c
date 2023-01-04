@@ -683,16 +683,30 @@ static void socket_loop(void)
 	int i, rc;
 	int64_t timestamp;
 	int32_t timeout, next_retransmit;
+	bool rd_client_paused;
 
 	while (1) {
+		rd_client_paused = false;
 		/* Check is Thread Suspend Requested */
 		if (suspend_engine_thread) {
-			lwm2m_rd_client_pause();
+			rc = lwm2m_rd_client_pause();
+			if (rc == 0) {
+				rd_client_paused = true;
+			} else {
+				LOG_ERR("Could not pause RD client");
+			}
+
 			suspend_engine_thread = false;
 			active_engine_thread = false;
 			k_thread_suspend(engine_thread_id);
 			active_engine_thread = true;
-			lwm2m_rd_client_resume();
+
+			if (rd_client_paused) {
+				rc = lwm2m_rd_client_resume();
+				if (rc < 0) {
+					LOG_ERR("Could not resume RD client");
+				}
+			}
 		}
 
 		timestamp = k_uptime_get();
