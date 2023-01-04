@@ -170,25 +170,20 @@ static ALWAYS_INLINE void usbfsotg_resume_tx(const struct device *dev)
 	base->CTL &= ~USB_CTL_TXSUSPENDTOKENBUSY_MASK;
 }
 
-/* Initiate a new transfer, must not be used for control endpoint OUT */
-static int usbfsotg_xfer_start(const struct device *dev,
-			       struct udc_ep_config *const cfg)
+static int usbfsotg_xfer_continue(const struct device *dev,
+				  struct udc_ep_config *const cfg,
+				  struct net_buf *const buf)
 {
 	const struct usbfsotg_config *config = dev->config;
 	USB_Type *base = config->base;
 	struct usbfsotg_bd *bd;
-	struct net_buf *buf;
 	uint8_t *data_ptr;
 	size_t len;
 
-	buf = udc_buf_peek(dev, cfg->addr);
-	if (buf == NULL) {
-		return -ENODATA;
-	}
-
 	bd = usbfsotg_get_ebd(dev, cfg, false);
-	if (usbfsotg_bd_is_busy(bd)) {
-		LOG_DBG("ep 0x%02x buf busy", cfg->addr);
+	if (unlikely(usbfsotg_bd_is_busy(bd))) {
+		LOG_ERR("ep 0x%02x buf busy", cfg->addr);
+		__ASSERT_NO_MSG(false);
 		return -EBUSY;
 	}
 
@@ -211,6 +206,20 @@ static int usbfsotg_xfer_start(const struct device *dev,
 		bd->bd_fields);
 
 	return 0;
+}
+
+/* Initiate a new transfer, must not be used for control endpoint OUT */
+static int usbfsotg_xfer_next(const struct device *dev,
+			      struct udc_ep_config *const cfg)
+{
+	struct net_buf *buf;
+
+	buf = udc_buf_peek(dev, cfg->addr);
+	if (buf == NULL) {
+		return -ENODATA;
+	}
+
+	return usbfsotg_xfer_continue(dev, cfg, buf);
 }
 
 static inline int usbfsotg_ctrl_feed_start(const struct device *dev,
@@ -465,9 +474,11 @@ static void xfer_work_handler(struct k_work *item)
 			break;
 		case USBFSOTG_EVT_DOUT:
 			err = work_handler_out(ev->dev, ev->ep);
+			udc_ep_set_busy(ev->dev, ev->ep, false);
 			break;
 		case USBFSOTG_EVT_DIN:
 			err = work_handler_in(ev->dev, ev->ep);
+			udc_ep_set_busy(ev->dev, ev->ep, false);
 			break;
 		case USBFSOTG_EVT_CLEAR_HALT:
 			err = usbfsotg_ep_clear_halt(ev->dev, ep_cfg);
@@ -481,8 +492,10 @@ static void xfer_work_handler(struct k_work *item)
 		}
 
 		/* Peek next transer */
-		if (ev->ep != USB_CONTROL_EP_OUT) {
-			usbfsotg_xfer_start(ev->dev, ep_cfg);
+		if (ev->ep != USB_CONTROL_EP_OUT && !udc_ep_is_busy(ev->dev, ev->ep)) {
+			if (usbfsotg_xfer_next(ev->dev, ep_cfg) == 0) {
+				udc_ep_set_busy(ev->dev, ev->ep, true);
+			}
 		}
 
 xfer_work_error:
@@ -576,7 +589,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 			if (ep == USB_CONTROL_EP_OUT) {
 				usbfsotg_ctrl_feed_start(dev, buf);
 			} else {
-				usbfsotg_xfer_start(dev, ep_cfg);
+				usbfsotg_xfer_continue(dev, ep_cfg, buf);
 			}
 		} else {
 			if (ep == USB_CONTROL_EP_OUT) {
@@ -600,10 +613,10 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 
 		net_buf_pull(buf, len);
 		if (buf->len) {
-			usbfsotg_xfer_start(dev, ep_cfg);
+			usbfsotg_xfer_continue(dev, ep_cfg, buf);
 		} else {
 			if (udc_ep_buf_has_zlp(buf)) {
-				usbfsotg_xfer_start(dev, ep_cfg);
+				usbfsotg_xfer_continue(dev, ep_cfg, buf);
 				udc_ep_buf_clear_zlp(buf);
 				break;
 			}
@@ -717,6 +730,8 @@ static int usbfsotg_ep_dequeue(const struct device *dev,
 	if (buf) {
 		udc_submit_event(dev, UDC_EVT_EP_REQUEST, -ECONNABORTED, buf);
 	}
+
+	udc_ep_set_busy(dev, cfg->addr, false);
 
 	return 0;
 }
