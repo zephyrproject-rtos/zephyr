@@ -1,3 +1,9 @@
+# Flash network CPU before other cores as a --recover operation on the network
+# core will erase both cores.
+board_flash_priority:
+  - thingy53_nrf5340_cpunet
+  - thingy53_nrf5340_cpuapp
+  - thingy53_nrf5340_cpuapp_ns
 # Recovery is only needed once per core.
 board_single_commands:
   - --recover: [
