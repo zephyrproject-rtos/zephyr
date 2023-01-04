@@ -405,7 +405,7 @@ static void sys_clock_timeout_handler(int32_t chan,
 				      void *user_data)
 {
 	uint32_t cc_value = absolute_time_to_cc(expire_time);
-	uint64_t dticks = (expire_time - last_count) / CYC_PER_TICK;
+	uint32_t dticks = (uint32_t)(expire_time - last_count) / CYC_PER_TICK;
 
 	last_count += dticks * CYC_PER_TICK;
 
@@ -419,8 +419,7 @@ static void sys_clock_timeout_handler(int32_t chan,
 					  sys_clock_timeout_handler, NULL);
 	}
 
-	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
-			   (int32_t)dticks : (dticks > 0));
+	sys_clock_announce(dticks);
 }
 
 static bool channel_processing_check_and_clear(int32_t chan)
