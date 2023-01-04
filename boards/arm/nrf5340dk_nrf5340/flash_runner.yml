@@ -1,0 +1,9 @@
+# Recovery is only needed once per core.
+board_single_commands:
+  - --recover: [
+      nrf5340dk_nrf5340_cpunet,
+    ]
+  - --recover: [
+      nrf5340dk_nrf5340_cpuapp,
+      nrf5340dk_nrf5340_cpuapp_ns,
+    ]
