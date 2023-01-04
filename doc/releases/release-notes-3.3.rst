@@ -257,12 +257,41 @@ Boards & SoC Support
     Note that MCUboot and MCUboot image updates from pre-Zephyr 3.3 might be
     incompatible with Zephyr 3.3 onwards and vice versa.
 
+  * When using sysbuild with the following boards with ``west flash``, reset
+    of the board will only be performed once all images for a core have been
+    programmed, fixing an issue whereby later images might fail to be
+    programmed to a board:
+    ``nrf5340dk_nrf5340``
+    ``thingy53_nrf5340``
+    ``nrf9160dk_nrf9160``
+
+  * When using sysbuild with the following boards with ``west flash``, the
+    ``--recover`` argument will only recover the devices once per core instead
+    of once per image flashed, fixing an issue whereby the board could be
+    unbootable:
+    ``nrf5340dk_nrf5340``
+    ``thingy53_nrf5340``
+    ``nrf9160dk_nrf9160``
+
+  * When using sysbuild with the following boards with ``west flash``, the
+    images are now flashed in order of network core (if present),
+    application secure core, application non-secure core:
+    ``nrf5340dk_nrf5340``
+    ``thingy53_nrf5340``
+    ``nrf9160dk_nrf9160``
+
 * Made these changes in other boards:
 
 * Added support for these following shields:
 
 Build system and infrastructure
 *******************************
+
+* Added optional board configuration for boards using sysbuild to flash
+  multiple images to a single or many cores that allows setting the order of
+  which boards get flashed, limiting commands to be ran once per set of boards
+  and preventing reset of a set of boards until all images for those boards
+  have been flashed.
 
 Drivers and Sensors
 *******************
