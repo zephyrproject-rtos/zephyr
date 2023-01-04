@@ -225,6 +225,20 @@ static inline void intel_adsp_hda_disable(uint32_t base, uint32_t regblock_size,
 	*DGCS(base, regblock_size, sid) &= ~(DGCS_GEN | DGCS_FIFORDY);
 }
 
+
+/**
+ * @brief Check if stream is enabled
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ */
+static inline bool intel_adsp_hda_is_enabled(uint32_t base, uint32_t regblock_size, uint32_t sid)
+{
+	return *DGCS(base, regblock_size, sid) & (DGCS_GEN | DGCS_FIFORDY);
+}
+
+
 /**
  * @brief Determine the number of unused bytes in the buffer
  *
