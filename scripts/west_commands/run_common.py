@@ -1,4 +1,5 @@
 # Copyright (c) 2018 Open Source Foundries Limited.
+# Copyright (c) 2023 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -15,6 +16,7 @@ import tempfile
 import textwrap
 import traceback
 
+from dataclasses import dataclass
 from west import log
 from build_helpers import find_build_dir, is_zephyr_build, load_domains, \
     FIND_BUILD_DIR_DESCRIPTION
@@ -77,6 +79,12 @@ class WestLogHandler(logging.Handler):
             log.dbg(fmt)
         else:
             log.dbg(fmt, level=log.VERBOSE_EXTREME)
+
+@dataclass
+class UsedFlashCommand:
+    command: str
+    boards: list
+    ran: bool = False
 
 def command_verb(command):
     return "flash" if command.name == "flash" else "debug"
@@ -147,6 +155,14 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
+    # Holds a list of single-use commands, this is useful for sysbuild images
+    # whereby there are multiple images per board with flash commands that can
+    # interfere with other images if they run one per time an image is flashed.
+    used_cmds = []
+
+    # Holds a dictionary of processed board names for flash running information.
+    processed_boards = {}
+
     if user_args.context:
         dump_context(command, user_args, user_runner_args)
         return
@@ -165,15 +181,51 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
             # Get the user specified domains.
             domains = load_domains(build_dir).get_domains(user_args.domain)
 
-    if len(domains) > 1 and len(user_runner_args) > 0:
-        log.wrn("Specifying runner options for multiple domains is experimental.\n"
-                "If problems are experienced, please specify a single domain "
-                "using '--domain <domain>'")
+    if len(domains) > 1:
+        if len(user_runner_args) > 0:
+            log.wrn("Specifying runner options for multiple domains is experimental.\n"
+                    "If problems are experienced, please specify a single domain "
+                    "using '--domain <domain>'")
+
+        # Process all domains to load board names and populate flash runner
+        # parameters.
+        for d in domains:
+            if d.build_dir is None:
+                build_dir = get_build_dir(user_args)
+            else:
+                build_dir = d.build_dir
+
+            cache = load_cmake_cache(build_dir, user_args)
+            board = cache['CACHED_BOARD']
+
+            # Load board flash runner configuration (if it exists) and store
+            # single-use commands in a dictionary so that they get executed
+            # once per unique board name.
+            if cache['BOARD_DIR'] not in processed_boards:
+                board_runner_test_file = Path(cache['BOARD_DIR']) / 'flash_runner.yml'
+
+                try:
+                    with open(board_runner_test_file, 'r') as f:
+                        board_runner_yaml = yaml.safe_load(f.read())
+
+                except FileNotFoundError:
+                    continue
+
+                processed_boards[cache['BOARD_DIR']] = True
+
+                # Board single commands.
+                if len(user_runner_args) > 0:
+                    if 'board_single_commands' in board_runner_yaml:
+                        for grp in board_runner_yaml['board_single_commands']:
+                            for c, b in grp.items():
+                                used_cmds.append(UsedFlashCommand(c, b))
 
     for d in domains:
-        do_run_common_image(command, user_args, user_runner_args, d.build_dir)
+        do_run_common_image(command, user_args, user_runner_args, d.build_dir,
+                            used_cmds)
 
-def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
+def do_run_common_image(command, user_args, user_runner_args, build_dir=None,
+                        used_cmds=None):
     command_name = command.name
     if build_dir is None:
         build_dir = get_build_dir(user_args)
@@ -200,6 +252,21 @@ def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
     # If the user passed -- to force the parent argument parser to stop
     # parsing, it will show up here, and needs to be filtered out.
     runner_args = [arg for arg in user_runner_args if arg != '--']
+
+    # Check if there are any commands that should only be ran once per board
+    # and if so, remove them for all but the first iteration of the flash
+    # runner per unique board name.
+    if len(used_cmds) > 0 and len(runner_args) > 0:
+        for a in runner_args:
+            i = 0
+            while i < len(used_cmds):
+                if used_cmds[i].command == a and board in used_cmds[i].boards:
+                    if used_cmds[i].ran is False:
+                        used_cmds[i].ran = True
+                    else:
+                        runner_args.pop(runner_args.index(a))
+
+                i = i + 1
 
     # Arguments in this order to allow specific to override general:
     #
