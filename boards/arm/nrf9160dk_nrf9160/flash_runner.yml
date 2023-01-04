@@ -8,3 +8,12 @@ board_single_commands:
     nrf9160dk_nrf9160,
     nrf9160dk_nrf9160_ns,
   ]
+
+# Prevent resetting the cores whilst flashing multiple images until all images
+# for each core have been flashed, this allows security bits to be set during
+# programming without them interfering with additional flashing processes.
+board_delay_reset:
+  - [
+    nrf9160dk_nrf9160,
+    nrf9160dk_nrf9160_ns,
+  ]
