@@ -71,11 +71,22 @@ int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_e
 /**
  * @brief Gets the resource specified by @p pathstr.
  *
+ * @deprecated Use lwm2m_get_resource() instead.
+ *
  * @param[in] pathstr Path to resource (i.e 100/100/100/x, the fourth component is optional)
  * @param[out] res Engine resource buffer pointer.
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_get_resource(const char *pathstr, struct lwm2m_engine_res **res);
+
+/**
+ * @brief Gets the resource specified by @p path.
+ *
+ * @param[in] path Path to resource (i.e 100/100/100/x, the fourth component is optional)
+ * @param[out] res Engine resource buffer pointer.
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_get_resource(const struct lwm2m_obj_path *path, struct lwm2m_engine_res **res);
 
 /**
  * @brief Returns pointer to the object in the registry specified by @p path.
