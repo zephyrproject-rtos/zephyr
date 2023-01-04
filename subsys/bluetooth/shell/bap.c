@@ -840,9 +840,73 @@ static void available_contexts_cb(struct bt_conn *conn,
 	shell_print(ctx_shell, "snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
+static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		      enum bt_bap_ascs_reason reason)
+{
+	shell_print(ctx_shell, "stream %p config operation rsp_code %u reason %u",
+		    stream, rsp_code, reason);
+}
+
+static void qos_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		   enum bt_bap_ascs_reason reason)
+{
+	shell_print(ctx_shell, "stream %p qos operation rsp_code %u reason %u",
+		    stream, rsp_code, reason);
+}
+
+static void enable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		      enum bt_bap_ascs_reason reason)
+{
+	shell_print(ctx_shell, "stream %p enable operation rsp_code %u reason %u",
+		    stream, rsp_code, reason);
+}
+
+static void start_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		     enum bt_bap_ascs_reason reason)
+{
+	shell_print(ctx_shell, "stream %p start operation rsp_code %u reason %u",
+		    stream, rsp_code, reason);
+}
+
+static void stop_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		    enum bt_bap_ascs_reason reason)
+{
+	shell_print(ctx_shell, "stream %p stop operation rsp_code %u reason %u",
+		    stream, rsp_code, reason);
+}
+
+static void disable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		       enum bt_bap_ascs_reason reason)
+{
+	shell_print(ctx_shell, "stream %p disable operation rsp_code %u reason %u",
+		    stream, rsp_code, reason);
+}
+
+static void metadata_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+			enum bt_bap_ascs_reason reason)
+{
+	shell_print(ctx_shell, "stream %p metadata operation rsp_code %u reason %u",
+		    stream, rsp_code, reason);
+}
+
+static void release_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		       enum bt_bap_ascs_reason reason)
+{
+	shell_print(ctx_shell, "stream %p release operation rsp_code %u reason %u",
+		    stream, rsp_code, reason);
+}
+
 const struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
+	.config = config_cb,
+	.qos = qos_cb,
+	.enable = enable_cb,
+	.start = start_cb,
+	.stop = stop_cb,
+	.disable = disable_cb,
+	.metadata = metadata_cb,
+	.release = release_cb,
 };
 
 static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
