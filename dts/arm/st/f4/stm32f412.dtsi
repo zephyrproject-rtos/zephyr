@@ -194,5 +194,29 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000002>;
 			status = "disabled";
 		};
+
+		can1: can@40006400 {
+			compatible = "st,stm32-can";
+			reg = <0x40006400 0x400>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			status = "disabled";
+			sjw = <1>;
+			sample-point = <875>;
+		};
+
+		can2: can@40006800 {
+			compatible = "st,stm32-can";
+			reg = <0x40006800 0x400>;
+			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			/* also enabling clock for can1 (master instance) */
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
+			master-can-reg = <0x40006400>;
+			status = "disabled";
+			sjw = <1>;
+			sample-point = <875>;
+		};
 	};
 };
