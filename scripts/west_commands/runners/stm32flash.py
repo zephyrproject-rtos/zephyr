@@ -72,9 +72,6 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--serial-mode', default='8e1', required=False,
                             help='serial port mode, default \'8e1\'')
 
-        parser.add_argument('--reset', default=False, required=False, action='store_true',
-                            help='reset device at exit, default False')
-
         parser.add_argument('--verify', default=False, required=False, action='store_true',
                             help='verify writes, default False')
 

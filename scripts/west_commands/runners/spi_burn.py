@@ -29,7 +29,7 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug'}, erase=True, flash_addr=True)
+        return RunnerCaps(commands={'flash', 'debug'}, erase=True, reset=False, flash_addr=True)
 
     @classmethod
     def do_add_parser(cls, parser):

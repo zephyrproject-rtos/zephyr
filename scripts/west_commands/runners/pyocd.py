@@ -77,7 +77,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          dev_id=True, flash_addr=True, erase=True,
+                          dev_id=True, flash_addr=True, erase=True, reset=False,
                           tool_opt=True)
 
     @classmethod

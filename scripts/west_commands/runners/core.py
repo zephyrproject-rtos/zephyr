@@ -228,6 +228,9 @@ class RunnerCaps:
       erased by the underlying tool before flashing; UICR on nRF SoCs
       is one example.)
 
+    - reset: whether the runner supports a --reset option, which
+      resets the device after a flash operation is complete.
+
     - tool_opt: whether the runner supports a --tool-opt (-O) option, which
       can be given multiple times and is passed on to the underlying tool
       that the runner wraps.
@@ -239,12 +242,14 @@ class RunnerCaps:
                  dev_id: bool = False,
                  flash_addr: bool = False,
                  erase: bool = False,
+                 reset: bool = False,
                  tool_opt: bool = False,
                  file: bool = False):
         self.commands = commands
         self.dev_id = dev_id
         self.flash_addr = bool(flash_addr)
         self.erase = bool(erase)
+        self.reset = bool(reset)
         self.tool_opt = bool(tool_opt)
         self.file = bool(file)
 
@@ -253,6 +258,7 @@ class RunnerCaps:
                 f'dev_id={self.dev_id}, '
                 f'flash_addr={self.flash_addr}, '
                 f'erase={self.erase}, '
+                f'reset={self.reset}, '
                 f'tool_opt={self.tool_opt}, '
                 f'file={self.file}'
                 ')')
@@ -510,6 +516,11 @@ class ZephyrBinaryRunner(abc.ABC):
                             help=("mass erase flash before loading, or don't"
                                   if caps.erase else argparse.SUPPRESS))
 
+        parser.add_argument('--reset', '--no-reset', nargs=0,
+                            action=_ToggleAction,
+                            help=("reset device after flashing, or don't"
+                                  if caps.reset else argparse.SUPPRESS))
+
         parser.add_argument('-O', '--tool-opt', dest='tool_opt',
                             default=[], action='append',
                             help=(cls.tool_opt_help() if caps.tool_opt
@@ -538,6 +549,8 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--dt-flash')
         if args.erase and not caps.erase:
             _missing_cap(cls, '--erase')
+        if args.reset and not caps.reset:
+            _missing_cap(cls, '--reset')
         if args.tool_opt and not caps.tool_opt:
             _missing_cap(cls, '--tool-opt')
         if args.file and not caps.file:
@@ -550,6 +563,8 @@ class ZephyrBinaryRunner(abc.ABC):
         ret = cls.do_create(cfg, args)
         if args.erase:
             ret.logger.info('mass erase requested')
+        if args.reset:
+            ret.logger.info('reset after flashing requested')
         return ret
 
     @classmethod

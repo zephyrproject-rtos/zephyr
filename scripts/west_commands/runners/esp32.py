@@ -16,13 +16,17 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for espidf.'''
 
     def __init__(self, cfg, device, boot_address, part_table_address,
-                 app_address, erase=False, baud=921600, flash_size='detect',
+                 app_address, erase=False, reset=True, baud=921600, flash_size='detect',
                  flash_freq='40m', flash_mode='dio', espidf='espidf',
                  bootloader_bin=None, partition_table_bin=None):
         super().__init__(cfg)
         self.elf = cfg.elf_file
         self.app_bin = cfg.bin_file
         self.erase = bool(erase)
+        if reset is None:
+            self.reset = True
+        else:
+            self.reset = bool(reset)
         self.device = device
         self.boot_address = boot_address
         self.part_table_address = part_table_address
@@ -41,7 +45,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, erase=True)
+        return RunnerCaps(commands={'flash'}, erase=True, reset=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -86,9 +90,10 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             cfg, args.esp_device, boot_address=args.esp_boot_address,
             part_table_address=args.esp_partition_table_address,
             app_address=args.esp_app_address, erase=args.erase,
-            baud=args.esp_baud_rate, flash_size=args.esp_flash_size,
-            flash_freq=args.esp_flash_freq, flash_mode=args.esp_flash_mode,
-            espidf=espidf, bootloader_bin=args.esp_flash_bootloader,
+            reset=args.reset, baud=args.esp_baud_rate,
+            flash_size=args.esp_flash_size, flash_freq=args.esp_flash_freq,
+            flash_mode=args.esp_flash_mode, espidf=espidf,
+            bootloader_bin=args.esp_flash_bootloader,
             partition_table_bin=args.esp_flash_partition_table)
 
     def do_run(self, command, **kwargs):
@@ -105,7 +110,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             cmd_flash.extend(['--port', self.device])
         cmd_flash.extend(['--baud', self.baud])
         cmd_flash.extend(['--before', 'default_reset'])
-        cmd_flash.extend(['--after', 'hard_reset', 'write_flash', '-u'])
+        if self.reset is True:
+            cmd_flash.extend(['--after', 'hard_reset', 'write_flash', '-u'])
         cmd_flash.extend(['--flash_mode', self.flash_mode])
         cmd_flash.extend(['--flash_freq', self.flash_freq])
         cmd_flash.extend(['--flash_size', self.flash_size])
