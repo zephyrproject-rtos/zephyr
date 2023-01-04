@@ -300,8 +300,6 @@ C library:
     - stephanosio
   collaborators:
     - nashif
-    - enjiamai
-    - KangJianX
     - keith-packard
     - cfriedt
   files:
@@ -387,7 +385,6 @@ Debug:
     - nashif
   collaborators:
     - dcpleung
-    - chen-png
     - mrkhldn
   files:
     - include/zephyr/debug/
@@ -542,7 +539,6 @@ Release Notes:
   collaborators:
     - lyakh
     - lgirdwood
-    - mengxianglinx
     - marc-hb
     - kv2019i
   files:
@@ -1126,7 +1122,6 @@ Release Notes:
   maintainers:
     - andyross
   collaborators:
-    - KangJianX
     - teburd
   files:
     - drivers/timer/
@@ -1383,7 +1378,6 @@ Logging:
   maintainers:
     - nordic-krch
   collaborators:
-    - chen-png
     - aasthagr
     - dcpleung
   files:
@@ -1508,7 +1502,6 @@ Networking:
   collaborators:
     - tbursztyka
     - pfalcon
-    - mengxianglinx
   files:
     - drivers/net/
     - include/zephyr/net/
@@ -1645,8 +1638,6 @@ POSIX API layer:
     - cfriedt
   collaborators:
     - pfalcon
-    - enjiamai
-    - KangJianX
   files:
     - include/zephyr/posix/
     - lib/posix/
@@ -1660,10 +1651,9 @@ Power management:
     - ceolin
   collaborators:
     - nashif
-    - mengxianglinx
     - gmarull
     - teburd
-    - yinfangw
+    - tmleman
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
@@ -1697,10 +1687,8 @@ Twister:
   maintainers:
     - nashif
   collaborators:
-    - chen-png
     - galak
     - PerMac
-    - enjiamai
     - hakehuang
     - gopiotr
   files:
@@ -1882,7 +1870,6 @@ Intel Platforms (Xtensa):
     - dcpleung
     - lyakh
     - lgirdwood
-    - mengxianglinx
     - marc-hb
     - kv2019i
     - MaureenHelm
@@ -2208,7 +2195,7 @@ Userspace:
   maintainers:
     - dcpleung
   collaborators:
-    - enjiamai
+    - ceolin
   files:
     - doc/kernel/usermode/kernelobjects.rst
     - include/zephyr/app_memory/
@@ -2821,7 +2808,6 @@ x86 arch:
     - nashif
     - dcpleung
     - ceolin
-    - enjiamai
     - aasthagr
     - laurenmurphyx64
   files:
