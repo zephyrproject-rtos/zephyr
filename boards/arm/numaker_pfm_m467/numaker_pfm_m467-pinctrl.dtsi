@@ -7,46 +7,46 @@
 #include "pinctrl/m467hjhae-pinctrl.h"
 
 &pinctrl {
-    uart0_default: uart0_default {
-        pinmux = <PB12MFP_UART0_RXD 0x0000>,
-                 <PB13MFP_UART0_TXD 0x0000>;
-    };
+	uart0_default: uart0_default {
+		pinmux = <PB12MFP_UART0_RXD 0x0000>,
+				 <PB13MFP_UART0_TXD 0x0000>;
+	};
 
 /* TX/RX/RTS/CTS/RST --> D1/D0/A2/A3/D2 --> PB3/PB2/PB8/PB9/PC9 */
-    uart1_default: uart1_default {
-        pinmux = <PB9MFP_UART1_nCTS 0x0000>,
-                <PB8MFP_UART1_nRTS 0x0000>,
-                <PB2MFP_UART1_RXD 0x0000>,
-                <PB3MFP_UART1_TXD 0x0000>,
-                <PC9MFP_GPIO 0x0000>;
-    };
+	uart1_default: uart1_default {
+		pinmux = <PB9MFP_UART1_nCTS 0x0000>,
+				<PB8MFP_UART1_nRTS 0x0000>,
+				<PB2MFP_UART1_RXD 0x0000>,
+				<PB3MFP_UART1_TXD 0x0000>,
+				<PC9MFP_GPIO 0x0000>;
+	};
 
-    /* USBD multi-function pins for VBUS, D+, D-, and ID pins */
-    usbd_default: usbd_default {
-        pinmux = <PA12MFP_USB_VBUS 0x0000>,
-                 <PA13MFP_USB_D_N 0x0000>,
-                 <PA14MFP_USB_D_P 0x0000>,
-                 <PA15MFP_USB_OTG_ID 0x0000>;
-    };
+	/* USBD multi-function pins for VBUS, D+, D-, and ID pins */
+	usbd_default: usbd_default {
+		pinmux = <PA12MFP_USB_VBUS 0x0000>,
+				 <PA13MFP_USB_D_N 0x0000>,
+				 <PA14MFP_USB_D_P 0x0000>,
+				 <PA15MFP_USB_OTG_ID 0x0000>;
+	};
 
-    /* EMAC multi-function pins for MDIO, TX, REFCLK, RX pins */
-    emac_default: emac_default {
-        pinmux = <PE8MFP_EMAC0_RMII_MDC 0x0000>,
-                 <PE9MFP_EMAC0_RMII_MDIO 0x0000>,
-                 <PE10MFP_EMAC0_RMII_TXD0 0x0000>,
-                 <PE11MFP_EMAC0_RMII_TXD1 0x0000>,
-                 <PE12MFP_EMAC0_RMII_TXEN 0x0000>,
-                 <PC8MFP_EMAC0_RMII_REFCLK 0x0000>,
-                 <PC7MFP_EMAC0_RMII_RXD0 0x0000>,
-                 <PC6MFP_EMAC0_RMII_RXD1 0x0000>,
-                 <PA7MFP_EMAC0_RMII_CRSDV 0x0000>,
-                 <PA6MFP_EMAC0_RMII_RXERR 0x0000>,
-                 <PB6MFP_EMAC0_PPS 0x0000>;
-    };
+	/* EMAC multi-function pins for MDIO, TX, REFCLK, RX pins */
+	emac_default: emac_default {
+		pinmux = <PE8MFP_EMAC0_RMII_MDC 0x0000>,
+				 <PE9MFP_EMAC0_RMII_MDIO 0x0000>,
+				 <PE10MFP_EMAC0_RMII_TXD0 0x0000>,
+				 <PE11MFP_EMAC0_RMII_TXD1 0x0000>,
+				 <PE12MFP_EMAC0_RMII_TXEN 0x0000>,
+				 <PC8MFP_EMAC0_RMII_REFCLK 0x0000>,
+				 <PC7MFP_EMAC0_RMII_RXD0 0x0000>,
+				 <PC6MFP_EMAC0_RMII_RXD1 0x0000>,
+				 <PA7MFP_EMAC0_RMII_CRSDV 0x0000>,
+				 <PA6MFP_EMAC0_RMII_RXERR 0x0000>,
+				 <PB6MFP_EMAC0_PPS 0x0000>;
+	};
 
-    /* CAN TX/RX --> PJ10/PJ11 */
-    canfd0_default: canfd0_default {
-        pinmux = <PJ10MFP_CAN0_TXD 0x0000>,
-                 <PJ11MFP_CAN0_RXD 0x0000>;
-    };
+	/* CAN TX/RX --> PJ10/PJ11 */
+	canfd0_default: canfd0_default {
+		pinmux = <PJ10MFP_CAN0_TXD 0x0000>,
+				 <PJ11MFP_CAN0_RXD 0x0000>;
+	};
 };

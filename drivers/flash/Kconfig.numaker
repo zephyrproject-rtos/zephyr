@@ -6,7 +6,7 @@
 config SOC_FLASH_NUMAKER
 	bool "Nuvoton NUMAKER MCU flash driver"
 	depends on SOC_FAMILY_NUMAKER
-    select HAS_NUMAKER_FMC
+	select HAS_NUMAKER_FMC
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	default y

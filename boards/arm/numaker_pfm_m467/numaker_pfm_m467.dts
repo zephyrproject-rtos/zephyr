@@ -21,7 +21,7 @@
 		sw1 = &user_button_2;
 	};
 
-    
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -63,9 +63,9 @@
 };
 
 &scc {
-    /* For USB 1.1 Host/Device/OTG, configure to 192MHz, which can generate necessary 48MHz.
-     * For USB 2.0 Host/Device/OTG or no USB application, comment out to use default. */
-    core-clock = <192000000>;
+	/* For USB 1.1 Host/Device/OTG, configure to 192MHz, which can generate necessary 48MHz.
+	 * For USB 2.0 Host/Device/OTG or no USB application, comment out to use default. */
+	core-clock = <192000000>;
 };
 
 &gpiob {
@@ -104,7 +104,7 @@
 
 &uart0 {
 	current-speed = <115200>;
-    pinctrl-0 = <&uart0_default>;
+	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -119,13 +119,13 @@
 zephyr_udc0: &usbd {
 	pinctrl-0 = <&usbd_default>;
 	pinctrl-names = "default";
-    status = "okay";
+	status = "okay";
 };
 
 &emac {
-    pinctrl-0 = <&emac_default>;
-    pinctrl-names = "default";
-    status = "okay";
+	pinctrl-0 = <&emac_default>;
+	pinctrl-names = "default";
+	status = "okay";
  };
 
 &canfd0 {

@@ -6,8 +6,8 @@
 config ETH_NUMAKER
 	bool "Nuvoton NUMAKER MCU Ethernet driver"
 	depends on SOC_FAMILY_NUMAKER
-    select HAS_NUMAKER_ETH
-    default y
+	select HAS_NUMAKER_ETH
+	default y
 	help
 	  This option enables the Ethernet driver for Nuvoton NUMAKER family of processors. Say y if you wish to enable NUMAKER ETH.
 

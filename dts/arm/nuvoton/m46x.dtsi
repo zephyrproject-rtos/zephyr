@@ -31,7 +31,7 @@
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
-        reg = <0x20000000 DT_SIZE_K(512)>;
+		reg = <0x20000000 DT_SIZE_K(512)>;
 	};
 
 	sysclk: system-clock {
@@ -39,8 +39,7 @@
 		clock-frequency = <200000000>;
 		#clock-cells = <0>;
 	};
-    
- 
+
 	soc {
 		scc: system-clock-controller@40000200 {
 			compatible = "nuvoton,numaker-scc";
@@ -57,26 +56,26 @@
 			};
 		};
 
-        fmc: flash-controller@4000c000 {
-            compatible = "nuvoton,numaker-fmc";
-            reg = <0x4000c000 0x110>;
-            #address-cells = <1>;
-            #size-cells = <1>;
+		fmc: flash-controller@4000c000 {
+			compatible = "nuvoton,numaker-fmc";
+			reg = <0x4000c000 0x110>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-            flash0: flash@0 {
-                compatible = "soc-nv-flash";
-                reg = <0 DT_SIZE_K(1024)>;
-                erase-block-size = <4096>;
-                write-block-size = <4>;
-            };
-        };
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_K(1024)>;
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
+		};
 
 		uart0: serial@40070000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40070000 0x1000>;
 			interrupts = <36 0>;
-            reset = <UART0_RST>;
-            clocks = <&pcc UART0_MODULE CLK_CLKSEL1_UART0SEL_HIRC CLK_CLKDIV0_UART0(1)>;
+			reset = <UART0_RST>;
+			clocks = <&pcc UART0_MODULE CLK_CLKSEL1_UART0SEL_HIRC CLK_CLKDIV0_UART0(1)>;
 			status = "disabled";
 		};
 
@@ -84,8 +83,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40071000 0x1000>;
 			interrupts = <37 0>;
-            reset = <UART1_RST>;
-            clocks = <&pcc UART1_MODULE CLK_CLKSEL1_UART1SEL_HIRC CLK_CLKDIV0_UART1(1)>;
+			reset = <UART1_RST>;
+			clocks = <&pcc UART1_MODULE CLK_CLKSEL1_UART1SEL_HIRC CLK_CLKDIV0_UART1(1)>;
 			status = "disabled";
 		};
 
@@ -93,8 +92,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40072000 0x1000>;
 			interrupts = <48 0>;
-            reset = <UART2_RST>;
-            clocks = <&pcc UART2_MODULE CLK_CLKSEL3_UART2SEL_HIRC CLK_CLKDIV4_UART2(1)>;
+			reset = <UART2_RST>;
+			clocks = <&pcc UART2_MODULE CLK_CLKSEL3_UART2SEL_HIRC CLK_CLKDIV4_UART2(1)>;
 			status = "disabled";
 		};
 
@@ -102,8 +101,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40073000 0x1000>;
 			interrupts = <49 0>;
-            reset = <UART3_RST>;
-            clocks = <&pcc UART3_MODULE CLK_CLKSEL3_UART3SEL_HIRC CLK_CLKDIV4_UART3(1)>;
+			reset = <UART3_RST>;
+			clocks = <&pcc UART3_MODULE CLK_CLKSEL3_UART3SEL_HIRC CLK_CLKDIV4_UART3(1)>;
 			status = "disabled";
 		};
 
@@ -111,8 +110,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40074000 0x1000>;
 			interrupts = <74 0>;
-            reset = <UART4_RST>;
-            clocks = <&pcc UART4_MODULE CLK_CLKSEL3_UART4SEL_HIRC CLK_CLKDIV4_UART4(1)>;
+			reset = <UART4_RST>;
+			clocks = <&pcc UART4_MODULE CLK_CLKSEL3_UART4SEL_HIRC CLK_CLKDIV4_UART4(1)>;
 			status = "disabled";
 		};
 
@@ -120,8 +119,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40075000 0x1000>;
 			interrupts = <75 0>;
-            reset = <UART5_RST>;
-            clocks = <&pcc UART5_MODULE CLK_CLKSEL3_UART5SEL_HIRC CLK_CLKDIV4_UART5(1)>;
+			reset = <UART5_RST>;
+			clocks = <&pcc UART5_MODULE CLK_CLKSEL3_UART5SEL_HIRC CLK_CLKDIV4_UART5(1)>;
 			status = "disabled";
 		};
 
@@ -129,8 +128,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40076000 0x1000>;
 			interrupts = <102 0>;
-            reset = <UART6_RST>;
-            clocks = <&pcc UART6_MODULE CLK_CLKSEL3_UART6SEL_HIRC CLK_CLKDIV4_UART6(1)>;
+			reset = <UART6_RST>;
+			clocks = <&pcc UART6_MODULE CLK_CLKSEL3_UART6SEL_HIRC CLK_CLKDIV4_UART6(1)>;
 			status = "disabled";
 		};
 
@@ -138,28 +137,28 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40077000 0x1000>;
 			interrupts = <103 0>;
-            reset = <UART7_RST>;
-            clocks = <&pcc UART7_MODULE CLK_CLKSEL3_UART7SEL_HIRC CLK_CLKDIV4_UART7(1)>;
+			reset = <UART7_RST>;
+			clocks = <&pcc UART7_MODULE CLK_CLKSEL3_UART7SEL_HIRC CLK_CLKDIV4_UART7(1)>;
 			status = "disabled";
 		};
-        
+
 		uart8: serial@40078000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40078000 0x1000>;
 			interrupts = <99 0>;
-            reset = <UART8_RST>;
-            clocks = <&pcc UART8_MODULE CLK_CLKSEL2_UART8SEL_HIRC CLK_CLKDIV5_UART8(1)>;
+			reset = <UART8_RST>;
+			clocks = <&pcc UART8_MODULE CLK_CLKSEL2_UART8SEL_HIRC CLK_CLKDIV5_UART8(1)>;
 			status = "disabled";
 		};
-        
+
 		uart9: serial@40079000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40079000 0x1000>;
 			interrupts = <100 0>;
-            reset = <UART9_RST>;
-            clocks = <&pcc UART9_MODULE CLK_CLKSEL2_UART9SEL_HIRC CLK_CLKDIV5_UART9(1)>;
+			reset = <UART9_RST>;
+			clocks = <&pcc UART9_MODULE CLK_CLKSEL2_UART9SEL_HIRC CLK_CLKDIV5_UART9(1)>;
 			status = "disabled";
-		};        
+		};
 
 		i2c0: i2c@40080000 {
 			compatible = "nuvoton,numaker-i2c";
@@ -231,7 +230,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004000 0x40>;
-            clocks = <&pcc GPA_MODULE 0 0>;
+			clocks = <&pcc GPA_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <16 2>;
 		};
@@ -241,7 +240,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004040 0x40>;
-            clocks = <&pcc GPB_MODULE 0 0>;
+			clocks = <&pcc GPB_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <17 2>;
 		};
@@ -251,7 +250,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004080 0x40>;
-            clocks = <&pcc GPC_MODULE 0 0>;
+			clocks = <&pcc GPC_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <18 2>;
 		};
@@ -261,7 +260,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x400040c0 0x40>;
-            clocks = <&pcc GPD_MODULE 0 0>;
+			clocks = <&pcc GPD_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <19 2>;
 		};
@@ -271,7 +270,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004100 0x40>;
-            clocks = <&pcc GPE_MODULE 0 0>;
+			clocks = <&pcc GPE_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <20 2>;
 		};
@@ -281,7 +280,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004140 0x40>;
-            clocks = <&pcc GPF_MODULE 0 0>;
+			clocks = <&pcc GPF_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <21 2>;
 		};
@@ -291,7 +290,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004180 0x40>;
-            clocks = <&pcc GPG_MODULE 0 0>;
+			clocks = <&pcc GPG_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <72 2>;
 		};
@@ -301,7 +300,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x400041c0 0x40>;
-            clocks = <&pcc GPH_MODULE 0 0>;
+			clocks = <&pcc GPH_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <88 2>;
 		};
@@ -311,7 +310,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004200 0x40>;
-            clocks = <&pcc GPI_MODULE 0 0>;
+			clocks = <&pcc GPI_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <110 2>;
 		};
@@ -321,175 +320,175 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004240 0x40>;
-            clocks = <&pcc GPJ_MODULE 0 0>;
+			clocks = <&pcc GPJ_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <61 2>;
 		};
 
-        spi0: spi@40061000 {
+		spi0: spi@40061000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x40061000 0x6c>;
 			interrupts = <23 0>;
-            reset = <SPI0_RST>;
+			reset = <SPI0_RST>;
 			clocks = <&pcc SPI0_MODULE CLK_CLKSEL2_SPI0SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi1: spi@40062000 {
+		spi1: spi@40062000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x40062000 0x6c>;
 			interrupts = <51 0>;
-            reset = <SPI1_RST>;
+			reset = <SPI1_RST>;
 			clocks = <&pcc SPI1_MODULE CLK_CLKSEL2_SPI1SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi2: spi@40063000 {
+		spi2: spi@40063000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x40063000 0x6c>;
 			interrupts = <52 0>;
-            reset = <SPI2_RST>;
+			reset = <SPI2_RST>;
 			clocks = <&pcc SPI2_MODULE CLK_CLKSEL3_SPI2SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi3: spi@40064000 {
+		spi3: spi@40064000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x40064000 0x6c>;
 			interrupts = <62 0>;
-            reset = <SPI3_RST>;
+			reset = <SPI3_RST>;
 			clocks = <&pcc SPI3_MODULE CLK_CLKSEL3_SPI3SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi4: spi@40065000 {
+		spi4: spi@40065000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x40065000 0x6c>;
 			interrupts = <63 0>;
-            reset = <SPI4_RST>;
+			reset = <SPI4_RST>;
 			clocks = <&pcc SPI4_MODULE CLK_CLKSEL4_SPI4SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi5: spi@40066000 {
+		spi5: spi@40066000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x40066000 0x6c>;
 			interrupts = <57 0>;
-            reset = <SPI5_RST>;
+			reset = <SPI5_RST>;
 			clocks = <&pcc SPI5_MODULE CLK_CLKSEL4_SPI5SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi6: spi@40067000 {
+		spi6: spi@40067000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x40067000 0x6c>;
 			interrupts = <70 0>;
-            reset = <SPI6_RST>;
+			reset = <SPI6_RST>;
 			clocks = <&pcc SPI6_MODULE CLK_CLKSEL4_SPI6SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi7: spi@40068000 {
+		spi7: spi@40068000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x40068000 0x6c>;
 			interrupts = <77 0>;
-            reset = <SPI7_RST>;
+			reset = <SPI7_RST>;
 			clocks = <&pcc SPI7_MODULE CLK_CLKSEL4_SPI7SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi8: spi@4006b000 {
+		spi8: spi@4006b000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x4006b000 0x6c>;
 			interrupts = <108 0>;
-            reset = <SPI8_RST>;
+			reset = <SPI8_RST>;
 			clocks = <&pcc SPI8_MODULE CLK_CLKSEL4_SPI8SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi9: spi@4006c000 {
+		spi9: spi@4006c000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x4006c000 0x6c>;
 			interrupts = <111 0>;
-            reset = <SPI9_RST>;
+			reset = <SPI9_RST>;
 			clocks = <&pcc SPI9_MODULE CLK_CLKSEL4_SPI9SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        spi10: spi@4006d000 {
+		spi10: spi@4006d000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x4006d000 0x6c>;
 			interrupts = <119 0>;
-            reset = <SPI10_RST>;
+			reset = <SPI10_RST>;
 			clocks = <&pcc SPI10_MODULE CLK_CLKSEL4_SPI10SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-        epwm0: epwm@40058000 {
+		epwm0: epwm@40058000 {
 			compatible = "nuvoton,numaker-pwm";
 			reg = <0x40058000 0x37c>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
-            interrupt-names = "brake", "pair0", "pair1", "pair2";
-            reset = <EPWM0_RST>;
-            prescaler = <19>;
+			interrupt-names = "brake", "pair0", "pair1", "pair2";
+			reset = <EPWM0_RST>;
+			prescaler = <19>;
 			clocks = <&pcc EPWM0_MODULE CLK_CLKSEL2_EPWM0SEL_PCLK0 0>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-        epwm1: epwm@40059000 {
+		epwm1: epwm@40059000 {
 			compatible = "nuvoton,numaker-pwm";
 			reg = <0x40059000 0x37c>;
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
-            interrupt-names = "brake", "pair0", "pair1", "pair2";
-            reset = <EPWM1_RST>;
-            prescaler = <19>;
+			interrupt-names = "brake", "pair0", "pair1", "pair2";
+			reset = <EPWM1_RST>;
+			prescaler = <19>;
 			clocks = <&pcc EPWM1_MODULE CLK_CLKSEL2_EPWM1SEL_PCLK1 0>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-        usbd: usbd@400c0000 {
+		usbd: usbd@400c0000 {
 			compatible = "nuvoton,numaker-usbd";
 			reg = <0x400c0000 0x1000>;
 			interrupts = <53 0>;
 			reset = <USBD_RST>;
 			clocks = <&pcc USBD_MODULE CLK_CLKSEL0_USBSEL_PLL_DIV2 CLK_CLKDIV0_USB(2)>;
 			dma-buffer-size = <1536>;
-            status = "disabled";
+			status = "disabled";
 			num-bidir-endpoints = <25>;
 			disallow-iso-in-out-same-number;
 		};
 
-        hsusbd: hsusbd@40019000 {
+		hsusbd: hsusbd@40019000 {
 			compatible = "nuvoton,numaker-hsusbd";
 			reg = <0x40019000 0x1000>;
 			interrupts = <65 0>;
 			reset = <HSUSBD_RST>;
 			clocks = <&pcc HSUSBD_MODULE 0 0>;
-            dma-buffer-size = <4096>;
+			dma-buffer-size = <4096>;
 			status = "disabled";
 			num-bidir-endpoints = <(12 + 2)>; /* Including control endpoints by +2 */
 		};
@@ -498,7 +497,7 @@
 			compatible = "nuvoton,numaker-ethernet";
 			reg = <0x40012000 0x105C>;
 			interrupts = <66 0>;
-            reset = <EMAC0_RST>;
+			reset = <EMAC0_RST>;
 			status = "disabled";
 			phy-addr = <1>;
 			clocks = <&pcc EMAC0_MODULE 0 0>;
@@ -515,12 +514,12 @@
 			rx-buffer-elements = <3>;
 			tx-buffer-elements = <3>;
 
-        	canfd0: canfd@40020000 {
+			canfd0: canfd@40020000 {
 				compatible = "nuvoton,numaker";
 				reg = <0x40020000 0x200>, <0x40020200 0x1800>;
-            	reg-names = "m_can", "message_ram";
+				reg-names = "m_can", "message_ram";
 				interrupts = <112 0>, <113 0>;
-            	interrupt-names = "LINE_0", "LINE_1";
+				interrupt-names = "LINE_0", "LINE_1";
 				reset = <CANFD0_RST>;
 				clocks = <&pcc CANFD0_MODULE CLK_CLKSEL0_CANFD0SEL_HCLK CLK_CLKDIV5_CANFD0(1)>;
 				status = "disabled";
@@ -530,12 +529,12 @@
 				sample-point-data = <875>;
 			};
 
-        	canfd1: canfd@40024000 {
+			canfd1: canfd@40024000 {
 				compatible = "nuvoton,numaker";
 				reg = <0x40024000 0x200>, <0x40024200 0x1800>;
-            	reg-names = "m_can", "message_ram";
+				reg-names = "m_can", "message_ram";
 				interrupts = <114 0>, <115 0>;
-            	interrupt-names = "LINE_0", "LINE_1";
+				interrupt-names = "LINE_0", "LINE_1";
 				reset = <CANFD1_RST>;
 				clocks = <&pcc CANFD1_MODULE CLK_CLKSEL0_CANFD1SEL_HCLK CLK_CLKDIV5_CANFD1(1)>;
 				status = "disabled";
@@ -545,12 +544,12 @@
 				sample-point-data = <875>;
 			};
 
-        	canfd2: canfd@40028000 {
+			canfd2: canfd@40028000 {
 				compatible = "nuvoton,numaker";
 				reg = <0x40028000 0x200>, <0x40028200 0x1800>;
-            	reg-names = "m_can", "message_ram";
+				reg-names = "m_can", "message_ram";
 				interrupts = <120 0>, <121 0>;
-            	interrupt-names = "LINE_0", "LINE_1";
+				interrupt-names = "LINE_0", "LINE_1";
 				reset = <CANFD2_RST>;
 				clocks = <&pcc CANFD2_MODULE CLK_CLKSEL0_CANFD2SEL_HCLK CLK_CLKDIV5_CANFD2(1)>;
 				status = "disabled";
@@ -560,12 +559,12 @@
 				sample-point-data = <875>;
 			};
 
-        	canfd3: canfd@4002c000 {
+			canfd3: canfd@4002c000 {
 				compatible = "nuvoton,numaker";
 				reg = <0x4002c000 0x200>, <0x4002c200 0x1800>;
-            	reg-names = "m_can", "message_ram";
+				reg-names = "m_can", "message_ram";
 				interrupts = <122 0>, <123 0>;
-            	interrupt-names = "LINE_0", "LINE_1";
+				interrupt-names = "LINE_0", "LINE_1";
 				reset = <CANFD3_RST>;
 				clocks = <&pcc CANFD3_MODULE CLK_CLKSEL0_CANFD3SEL_HCLK CLK_CLKDIV5_CANFD3(1)>;
 				status = "disabled";
@@ -574,7 +573,7 @@
 				sjw-data = <1>;
 				sample-point-data = <875>;
 			};
-        };
+		};
 	};
 };
 
