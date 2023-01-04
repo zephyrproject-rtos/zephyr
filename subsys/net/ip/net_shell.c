@@ -3536,6 +3536,177 @@ static int cmd_net_ipv6(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_net_ip6_add(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	struct net_if *iface = NULL;
+	int idx;
+	struct in6_addr addr;
+
+	if (argc != 3) {
+		PR_ERROR("Correct usage: net ipv6 add <index> <address>\n");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOENT;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[2], &addr)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	if (!net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0)) {
+		PR_ERROR("Failed to add %s address to interface %p\n", argv[2], iface);
+	}
+
+#else /* CONFIG_NET_NATIVE_IPV6 */
+	PR_INFO("Set %s and %s to enable native %s support.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6", "IPv6");
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+	return 0;
+}
+
+static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	struct net_if *iface = NULL;
+	int idx;
+	struct in6_addr addr;
+
+	if (argc != 3) {
+		PR_ERROR("Correct usage: net ipv6 del <index> <address>\n");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[2], &addr)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	if (!net_if_ipv6_addr_rm(iface, &addr)) {
+		PR_ERROR("Failed to delete %s\n", argv[2]);
+		return -1;
+	}
+
+#else /* CONFIG_NET_NATIVE_IPV6 */
+	PR_INFO("Set %s and %s to enable native %s support.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6", "IPv6");
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+	return 0;
+}
+
+static int cmd_net_ip6_route_add(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV6) && (CONFIG_NET_ROUTE)
+	struct net_if *iface = NULL;
+	int idx;
+	struct net_route_entry *route;
+	struct in6_addr gw = {0};
+	struct in6_addr prefix = {0};
+
+	if (argc != 4) {
+		PR_ERROR("Correct usage: net route add <index> "
+				 "<destination> <gateway>\n");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[2], &prefix)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[3], &gw)) {
+		PR_ERROR("Invalid gateway: %s\n", argv[3]);
+		return -EINVAL;
+	}
+
+	route = net_route_add(iface, &prefix, NET_IPV6_DEFAULT_PREFIX_LEN,
+				&gw, NET_IPV6_ND_INFINITE_LIFETIME,
+				NET_ROUTE_PREFERENCE_MEDIUM);
+	if (route == NULL) {
+		PR_ERROR("Failed to add route\n");
+		return -ENOEXEC;
+	}
+
+#else /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_ROUTE */
+	PR_INFO("Set %s and %s to enable native %s support."
+			" And enable CONFIG_NET_ROUTE.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6", "IPv6");
+#endif /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_ROUTE */
+	return 0;
+}
+
+static int cmd_net_ip6_route_del(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV6) && (CONFIG_NET_ROUTE)
+	struct net_if *iface = NULL;
+	int idx;
+	struct net_route_entry *route;
+	struct in6_addr prefix = { 0 };
+
+	if (argc != 3) {
+		PR_ERROR("Correct usage: net route del <index> <destination>\n");
+		return -EINVAL;
+	}
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[2], &prefix)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	route = net_route_lookup(iface, &prefix);
+	if (route) {
+		net_route_del(route);
+	}
+#else /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_ROUTE */
+	PR_INFO("Set %s and %s to enable native %s support."
+			" And enable CONFIG_NET_ROUTE\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6", "IPv6");
+#endif /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_ROUTE */
+	return 0;
+}
+
 #if defined(CONFIG_NET_NATIVE_IPV4)
 static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 {
@@ -6151,6 +6322,28 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip6,
+	SHELL_CMD(add, NULL,
+		  "'net ipv6 add <index> <address>' adds the address to the interface.",
+		  cmd_net_ip6_add),
+	SHELL_CMD(del, NULL,
+		  "'net ipv6 del <index> <address>' deletes the address from the interface.",
+		  cmd_net_ip6_del),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_route,
+	SHELL_CMD(add, NULL,
+		  "'net route add <index> <destination> <gateway>'"
+		  " adds the route to the destination.",
+		  cmd_net_ip6_route_add),
+	SHELL_CMD(del, NULL,
+		  "'net route del <index> <destination>'"
+		  " deletes the route to the destination.",
+		  cmd_net_ip6_route_del),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ppp,
 	SHELL_CMD(ping, IFACE_PPP_DYN_CMD,
 		  "'net ppp ping <index>' sends Echo-request to PPP interface.",
@@ -6326,7 +6519,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_CMD(iface, &net_cmd_iface,
 		  "Print information about network interfaces.",
 		  cmd_net_iface),
-	SHELL_CMD(ipv6, NULL,
+	SHELL_CMD(ipv6, &net_cmd_ip6,
 		  "Print information about IPv6 specific information and "
 		  "configuration.",
 		  cmd_net_ipv6),
@@ -6342,7 +6535,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_CMD(pkt, &net_cmd_pkt, "net_pkt information.", cmd_net_pkt),
 	SHELL_CMD(ppp, &net_cmd_ppp, "PPP information.", cmd_net_ppp_status),
 	SHELL_CMD(resume, NULL, "Resume a network interface", cmd_net_resume),
-	SHELL_CMD(route, NULL, "Show network route.", cmd_net_route),
+	SHELL_CMD(route, &net_cmd_route, "Show network route.", cmd_net_route),
 	SHELL_CMD(stacks, NULL, "Show network stacks information.",
 		  cmd_net_stacks),
 	SHELL_CMD(stats, &net_cmd_stats, "Show network statistics.",
