@@ -64,6 +64,7 @@ source "drivers/ethernet/Kconfig.adin2111"
 source "drivers/ethernet/Kconfig.numaker"
 source "drivers/ethernet/Kconfig.lan865x"
 
+source "drivers/ethernet/dwc_xgmac/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
 
 endif # "Ethernet Drivers"
