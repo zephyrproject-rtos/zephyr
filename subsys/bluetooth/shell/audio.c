@@ -1068,13 +1068,21 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 		struct bt_audio_unicast_group_stream_param stream_param = {
 			.stream = default_stream,
 			.qos = &default_preset->preset.qos,
-			.dir = stream_dir(default_stream)
 		};
+		struct bt_audio_unicast_group_stream_pair_param pair_param;
 		struct bt_audio_unicast_group_param param = {
 			.packing = BT_ISO_PACKING_SEQUENTIAL,
-			.params = &stream_param,
+			.params = &pair_param,
 			.params_count = 1,
 		};
+
+		if (stream_dir(default_stream) == BT_AUDIO_DIR_SOURCE) {
+			pair_param.rx_param = &stream_param;
+			pair_param.tx_param = NULL;
+		} else {
+			pair_param.rx_param = NULL;
+			pair_param.tx_param = &stream_param;
+		}
 
 		err = bt_audio_unicast_group_create(&param, &default_unicast_group);
 		if (err != 0) {
