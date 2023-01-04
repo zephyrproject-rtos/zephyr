@@ -1874,6 +1874,11 @@ Intel Platforms (Xtensa):
     - kv2019i
     - MaureenHelm
     - ceolin
+    - aborisovich
+    - tmleman
+    - softwarecki
+    - jxstelter
+    - marcinszkudlinski
   files:
     - boards/xtensa/intel_*/
     - soc/xtensa/intel_*/
