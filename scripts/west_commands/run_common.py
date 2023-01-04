@@ -161,6 +161,17 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
     # flashing specific boards prior to others.
     board_priority = []
 
+    # Holds a list of board image flash counts , the first element is number
+    # of images flashed so far and second element is total number of images
+    # for a given board.
+    board_image_count = {}
+
+    # Holds a dictionary of boards that should be prevented from being reset
+    # if there are multiple images to flash. This allows for flashing of
+    # images that e.g. setup security but allow for the remaining images to
+    # be flashed before that protection is enabled.
+    board_reset = []
+
     if user_args.context:
         dump_context(command, user_args, user_runner_args)
         return
@@ -196,6 +207,15 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
             cache = load_cmake_cache(build_dir, user_args)
             board = cache['CACHED_BOARD']
 
+            try:
+                if board_image_count[board]:
+                    board_image_count[board][1] = board_image_count[board][1] + 1
+
+            except KeyError:
+                # This sets up the default entry for a board, no flashed images
+                # and one image in total.
+                board_image_count[board] = [0, 1]
+
             # Load board flash runner configuration (if it exists) and store
             # single-use commands in a dictionary so that they get executed
             # once per unique board name.
@@ -229,6 +249,14 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
                     except KeyError:
                         pass
 
+                    # Board delay reset.
+                    try:
+                        for c in board_runner_test_yaml['board_delay_reset']:
+                            board_reset.append(c)
+
+                    except KeyError:
+                        pass
+
                 except FileNotFoundError:
                     pass
 
@@ -256,15 +284,22 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
 
     for d in domains:
         do_run_common_image(command, user_args, user_runner_args, d.build_dir,
-                            used_cmds)
+                            used_cmds, board_image_count, board_reset)
 
 def do_run_common_image(command, user_args, user_runner_args, build_dir=None,
-                        used_cmds=None):
+                        used_cmds=None, board_image_count=None, board_reset=None):
     command_name = command.name
     if build_dir is None:
         build_dir = get_build_dir(user_args)
     cache = load_cmake_cache(build_dir, user_args)
     board = cache['CACHED_BOARD']
+
+    try:
+        if board_image_count is not None:
+            board_image_count[board][0] = board_image_count[board][0] + 1
+
+    except KeyError:
+        pass
 
     # Load runners.yaml.
     yaml_path = runners_yaml_path(build_dir, board)
@@ -308,6 +343,38 @@ def do_run_common_image(command, user_args, user_runner_args, build_dir=None,
 
     except KeyError:
         pass
+
+    # If flashing multiple images, the runner supports reset after flashing and
+    # the board has enabled this functionality, check if the board should be
+    # reset or not. If this is not specified in the board file, leave it up to
+    # the runner's default configuration to decide if a reset should occur.
+    if runner_cls.capabilities().reset is True:
+        reset = True
+        if board_image_count is not None:
+            try:
+                for b in board_reset:
+                    if type(b.index(board)):
+                        for d in b:
+                            try:
+                                if board_image_count[d][0] != board_image_count[d][1]:
+                                    # Remaining images to be flashed, prevent
+                                    # reset for this flash.
+                                    reset = False
+                                    break
+
+                            except KeyError:
+                                # OK to skip waiting for images to be flashed
+                                # for targets that are not part of this
+                                # project.
+                                pass
+
+                        if reset is True:
+                            runner_args.append('--reset')
+                        else:
+                            runner_args.append('--no-reset')
+
+            except ValueError:
+                pass
 
     # Arguments in this order to allow specific to override general:
     #

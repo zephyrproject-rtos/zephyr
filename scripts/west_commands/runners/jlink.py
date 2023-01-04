@@ -35,7 +35,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, device, dev_id=None,
                  commander=DEFAULT_JLINK_EXE,
-                 dt_flash=True, erase=True, reset_after_load=False,
+                 dt_flash=True, erase=True, reset=False,
                  iface='swd', speed='auto',
                  loader=None,
                  gdbserver='JLinkGDBServer',
@@ -54,7 +54,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.commander = commander
         self.dt_flash = dt_flash
         self.erase = erase
-        self.reset_after_load = reset_after_load
+        self.reset = reset
         self.gdbserver = gdbserver
         self.iface = iface
         self.speed = speed
@@ -74,7 +74,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          dev_id=True, flash_addr=True, erase=True,
+                          dev_id=True, flash_addr=True, erase=True, reset=True,
                           tool_opt=True, file=True)
 
     @classmethod
@@ -111,12 +111,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--commander', default=DEFAULT_JLINK_EXE,
                             help=f'''J-Link Commander, default is
                             {DEFAULT_JLINK_EXE}''')
-        parser.add_argument('--reset-after-load', '--no-reset-after-load',
-                            dest='reset_after_load', nargs=0,
-                            action=ToggleAction,
-                            help='reset after loading? (default: no)')
-
-        parser.set_defaults(reset_after_load=False)
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -125,7 +119,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  commander=args.commander,
                                  dt_flash=args.dt_flash,
                                  erase=args.erase,
-                                 reset_after_load=args.reset_after_load,
+                                 reset=args.reset,
                                  iface=args.iface, speed=args.speed,
                                  gdbserver=args.gdbserver,
                                  loader=args.loader,
@@ -264,7 +258,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 client_cmd += ['-ex', 'monitor halt',
                                '-ex', 'monitor reset',
                                '-ex', 'load']
-                if self.reset_after_load:
+                if self.reset:
                     client_cmd += ['-ex', 'monitor reset']
             if not self.gdb_host:
                 self.require(self.gdbserver)
@@ -324,7 +318,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # Flash the selected build artifact
         lines.append(flash_cmd)
 
-        if self.reset_after_load:
+        if self.reset:
             lines.append('r') # Reset and halt the target
 
         lines.append('g') # Start the CPU

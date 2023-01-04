@@ -10,13 +10,17 @@ DEFAULT_EZFLASHCLI = "ezFlashCLI"
 class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for ezFlashCLI'''
 
-    def __init__(self, cfg, tool, sn, erase=False):
+    def __init__(self, cfg, tool, sn, erase=False, reset=True):
         super().__init__(cfg)
         self.bin_ = cfg.bin_file
 
         self.tool = tool
         self.sn_arg = ['-j', f'{sn}'] if sn is not None else []
         self.erase = bool(erase)
+        if reset is None:
+            self.reset = True
+        else:
+            self.reset = bool(reset)
 
     @classmethod
     def name(cls):
@@ -24,7 +28,7 @@ class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, erase=True)
+        return RunnerCaps(commands={'flash'}, erase=True, reset=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -37,7 +41,7 @@ class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def do_create(cls, cfg, args):
         return EzFlashCliBinaryRunner(cfg, tool=args.tool, sn=args.sn,
-                                      erase=args.erase)
+                                      erase=args.erase, reset=args.reset)
 
     def program_bin(self):
         if self.erase:
@@ -47,12 +51,13 @@ class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
         self.logger.info(f"Flashing {self.bin_}...")
         self.check_call([self.tool] + self.sn_arg + ["image_flash", self.bin_])
 
-    def reset(self):
-        self.logger.info("Resetting...")
-        self.check_call([self.tool] + self.sn_arg + ["go"])
+    def perform_reset(self):
+        if self.reset:
+            self.logger.info("Resetting...")
+            self.check_call([self.tool] + self.sn_arg + ["go"])
 
     def do_run(self, command, **kwargs):
         self.require(self.tool)
         self.ensure_output('bin')
         self.program_bin()
-        self.reset()
+        self.perform_reset()

@@ -1,5 +1,5 @@
 # Copyright (c) 2017 Linaro Limited.
-# Copyright (c) 2019 Nordic Semiconductor ASA.
+# Copyright (c) 2019-2023 Nordic Semiconductor ASA.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -26,7 +26,7 @@ VerifyError = 55
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
-    def __init__(self, cfg, family, softreset, dev_id, erase=False,
+    def __init__(self, cfg, family, softreset, dev_id, erase=False, reset=True,
                  tool_opt=[], force=False, recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
@@ -34,6 +34,10 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         self.softreset = softreset
         self.dev_id = dev_id
         self.erase = bool(erase)
+        if reset is None:
+            self.reset = True
+        else:
+            self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
 
@@ -47,7 +51,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, dev_id=True, erase=True,
+        return RunnerCaps(commands={'flash'}, dev_id=True, erase=True, reset=True,
                           tool_opt=True)
 
     @classmethod
@@ -82,8 +86,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     def do_create(cls, cfg, args):
         return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
                                     args.dev_id, erase=args.erase,
-                                    tool_opt=args.tool_opt, force=args.force,
-                                    recover=args.recover)
+                                    reset=args.reset, tool_opt=args.tool_opt,
+                                    force=args.force, recover=args.recover)
 
     def ensure_snr(self):
         if not self.dev_id or "*" in self.dev_id:
@@ -381,7 +385,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         if self.recover:
             self.recover_target()
         self.program_hex()
-        self.reset_target()
+        if self.reset:
+            self.reset_target()
 
         self.logger.info(f'Board with serial number {self.dev_id} '
                          'flashed successfully.')
