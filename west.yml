@@ -234,7 +234,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 887798f6e67203e6a77059a86edf41bb136a3c0b
+      revision: 13abde213930ffdf600cf8f01113da8a5fdd9d9c
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
