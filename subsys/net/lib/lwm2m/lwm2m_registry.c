@@ -282,10 +282,29 @@ int lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id)
 	return ret;
 }
 
+int lwm2m_create_object_inst(const struct lwm2m_obj_path *path)
+{
+	struct lwm2m_engine_obj_inst *obj_inst;
+	int ret = 0;
+
+	if (path->level != LWM2M_PATH_LEVEL_OBJECT_INST) {
+		LOG_ERR("path must have 2 parts");
+		return -EINVAL;
+	}
+
+	ret = lwm2m_create_obj_inst(path->obj_id, path->obj_inst_id, &obj_inst);
+	if (ret < 0) {
+		return ret;
+	}
+
+	engine_trigger_update(true);
+
+	return 0;
+}
+
 int lwm2m_engine_create_obj_inst(const char *pathstr)
 {
 	struct lwm2m_obj_path path;
-	struct lwm2m_engine_obj_inst *obj_inst;
 	int ret = 0;
 
 	LOG_DBG("path:%s", pathstr);
@@ -296,12 +315,19 @@ int lwm2m_engine_create_obj_inst(const char *pathstr)
 		return ret;
 	}
 
-	if (path.level != 2U) {
+	return lwm2m_create_object_inst(&path);
+}
+
+int lwm2m_delete_object_inst(const struct lwm2m_obj_path *path)
+{
+	int ret = 0;
+
+	if (path->level != LWM2M_PATH_LEVEL_OBJECT_INST) {
 		LOG_ERR("path must have 2 parts");
 		return -EINVAL;
 	}
 
-	ret = lwm2m_create_obj_inst(path.obj_id, path.obj_inst_id, &obj_inst);
+	ret = lwm2m_delete_obj_inst(path->obj_id, path->obj_inst_id);
 	if (ret < 0) {
 		return ret;
 	}
@@ -324,19 +350,7 @@ int lwm2m_engine_delete_obj_inst(const char *pathstr)
 		return ret;
 	}
 
-	if (path.level != 2U) {
-		LOG_ERR("path must have 2 parts");
-		return -EINVAL;
-	}
-
-	ret = lwm2m_delete_obj_inst(path.obj_id, path.obj_inst_id);
-	if (ret < 0) {
-		return ret;
-	}
-
-	engine_trigger_update(true);
-
-	return 0;
+	return lwm2m_delete_object_inst(&path);
 }
 
 struct lwm2m_engine_obj_inst *lwm2m_engine_get_obj_inst(const struct lwm2m_obj_path *path)
@@ -1525,48 +1539,41 @@ int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_e
 	return 0;
 }
 
-int lwm2m_engine_create_res_inst(const char *pathstr)
+int lwm2m_create_res_inst(const struct lwm2m_obj_path *path)
 {
 	int ret;
 	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
-	struct lwm2m_obj_path path;
 
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (path.level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
+	if (path->level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
 		LOG_ERR("path must have 4 parts");
 		return -EINVAL;
 	}
 	k_mutex_lock(&registry_lock, K_FOREVER);
-	ret = path_to_objs(&path, NULL, NULL, &res, &res_inst);
+	ret = path_to_objs(path, NULL, NULL, &res, &res_inst);
 	if (ret < 0) {
 		k_mutex_unlock(&registry_lock);
 		return ret;
 	}
 
 	if (!res) {
-		LOG_ERR("resource %u not found", path.res_id);
+		LOG_ERR("resource %u not found", path->res_id);
 		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
 	if (res_inst && res_inst->res_inst_id != RES_INSTANCE_NOT_CREATED) {
-		LOG_ERR("res instance %u already exists", path.res_inst_id);
+		LOG_ERR("res instance %u already exists", path->res_inst_id);
 		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
 	k_mutex_unlock(&registry_lock);
-	return lwm2m_engine_allocate_resource_instance(res, &res_inst, path.res_inst_id);
+	return lwm2m_engine_allocate_resource_instance(res, &res_inst, path->res_inst_id);
 }
 
-int lwm2m_engine_delete_res_inst(const char *pathstr)
+int lwm2m_engine_create_res_inst(const char *pathstr)
 {
 	int ret;
-	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_obj_path path;
 
 	ret = lwm2m_string_to_path(pathstr, &path, '/');
@@ -1574,19 +1581,27 @@ int lwm2m_engine_delete_res_inst(const char *pathstr)
 		return ret;
 	}
 
-	if (path.level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
+	return lwm2m_create_res_inst(&path);
+}
+
+int lwm2m_delete_res_inst(const struct lwm2m_obj_path *path)
+{
+	int ret;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
+
+	if (path->level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
 		LOG_ERR("path must have 4 parts");
 		return -EINVAL;
 	}
 	k_mutex_lock(&registry_lock, K_FOREVER);
-	ret = path_to_objs(&path, NULL, NULL, NULL, &res_inst);
+	ret = path_to_objs(path, NULL, NULL, NULL, &res_inst);
 	if (ret < 0) {
 		k_mutex_unlock(&registry_lock);
 		return ret;
 	}
 
 	if (!res_inst) {
-		LOG_ERR("res instance %u not found", path.res_inst_id);
+		LOG_ERR("res instance %u not found", path->res_inst_id);
 		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
@@ -1597,6 +1612,19 @@ int lwm2m_engine_delete_res_inst(const char *pathstr)
 	res_inst->res_inst_id = RES_INSTANCE_NOT_CREATED;
 	k_mutex_unlock(&registry_lock);
 	return 0;
+}
+
+int lwm2m_engine_delete_res_inst(const char *pathstr)
+{
+	int ret;
+	struct lwm2m_obj_path path;
+
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lwm2m_delete_res_inst(&path);
 }
 /* Register callbacks */
 
