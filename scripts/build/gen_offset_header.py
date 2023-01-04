@@ -62,7 +62,7 @@ def gen_offset_header(input_name, input_file, output_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument(
         "-i",

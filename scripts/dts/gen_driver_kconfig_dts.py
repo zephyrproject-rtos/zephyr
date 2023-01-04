@@ -36,7 +36,7 @@ def binding_paths(bindings_dirs):
 def parse_args():
     # Returns parsed command-line arguments
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--kconfig-out", required=True,
                         help="path to write the Kconfig file")
     parser.add_argument("--bindings-dirs", nargs='+', required=True,

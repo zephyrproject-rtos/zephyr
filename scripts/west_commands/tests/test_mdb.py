@@ -21,7 +21,7 @@ TEST_BOARD_NSIM_ARGS = '@' + path.join(RC_BOARD_DIR, 'support', TEST_NSIM_ARGS)
 # mdb-nsim
 TEST_NSIM_FLASH_CASES = [
     {
-        'i': ['--cores=1', '--nsim=' + TEST_NSIM_ARGS],
+        'i': ['--cores=1', '--nsim_args=' + TEST_NSIM_ARGS],
         'o': [TEST_DRIVER_CMD, '-nooptions', '-nogoifmain',
            '-toggle=include_local_symbols=1',
            '-nsim', TEST_BOARD_NSIM_ARGS,
@@ -30,7 +30,7 @@ TEST_NSIM_FLASH_CASES = [
 
 TEST_NSIM_DEBUG_CASES = [
     {
-        'i': ['--cores=1', '--nsim=' + TEST_NSIM_ARGS],
+        'i': ['--cores=1', '--nsim_args=' + TEST_NSIM_ARGS],
         'o': [TEST_DRIVER_CMD, '-nooptions', '-nogoifmain',
            '-toggle=include_local_symbols=1',
            '-nsim', TEST_BOARD_NSIM_ARGS,
@@ -38,7 +38,7 @@ TEST_NSIM_DEBUG_CASES = [
           ]
     }]
 
-TEST_NSIM_MULTICORE_CASES = [['--cores=2', '--nsim=' + TEST_NSIM_ARGS]]
+TEST_NSIM_MULTICORE_CASES = [['--cores=2', '--nsim_args=' + TEST_NSIM_ARGS]]
 TEST_NSIM_CORE1 = [TEST_DRIVER_CMD, '-pset=1', '-psetname=core0', '',
               '-nooptions', '-nogoifmain', '-toggle=include_local_symbols=1',
               '-nsim', TEST_BOARD_NSIM_ARGS, RC_KERNEL_ELF]
@@ -121,7 +121,7 @@ def mdb(runner_config, tmpdir, mdb_runner):
         if isinstance(args, dict):
             return mdb_runner(runner_config, TEST_TARGET, **args)
         elif isinstance(args, list):
-            parser = argparse.ArgumentParser()
+            parser = argparse.ArgumentParser(allow_abbrev=False)
             mdb_runner.add_parser(parser)
             arg_namespace = parser.parse_args(args)
             return mdb_runner.create(runner_config, arg_namespace)

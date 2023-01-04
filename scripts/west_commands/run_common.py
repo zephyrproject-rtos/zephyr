@@ -224,7 +224,7 @@ def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
     #   arguments
     # - create a RunnerConfig using 'user_args' and the result
     #   of parsing 'final_argv'
-    parser = argparse.ArgumentParser(prog=runner_name)
+    parser = argparse.ArgumentParser(prog=runner_name, allow_abbrev=False)
     add_parser_common(command, parser=parser)
     runner_cls.add_parser(parser)
     args, unknown = parser.parse_known_args(args=final_argv)
@@ -504,7 +504,7 @@ def dump_runner_option_help(cls, indent=''):
     # Print help text for class-specific command line options for the
     # given runner class.
 
-    dummy_parser = argparse.ArgumentParser(prog='', add_help=False)
+    dummy_parser = argparse.ArgumentParser(prog='', add_help=False, allow_abbrev=False)
     cls.add_parser(dummy_parser)
     formatter = dummy_parser._get_formatter()
     for group in dummy_parser._action_groups:

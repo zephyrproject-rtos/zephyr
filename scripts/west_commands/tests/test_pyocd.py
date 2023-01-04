@@ -141,7 +141,7 @@ def pyocd(runner_config, tmpdir):
         if isinstance(args, dict):
             return PyOcdBinaryRunner(runner_config, TEST_TARGET, **args)
         elif isinstance(args, list):
-            parser = argparse.ArgumentParser()
+            parser = argparse.ArgumentParser(allow_abbrev=False)
             PyOcdBinaryRunner.add_parser(parser)
             arg_namespace = parser.parse_args(args)
             return PyOcdBinaryRunner.create(runner_config, arg_namespace)
