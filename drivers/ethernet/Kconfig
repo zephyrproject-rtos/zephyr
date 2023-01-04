@@ -61,6 +61,7 @@ source "drivers/ethernet/Kconfig.smsc91x"
 source "drivers/ethernet/Kconfig.ivshmem"
 source "drivers/ethernet/Kconfig.adin2111"
 
+source "drivers/ethernet/dwc_xgmac/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
 
 endif # "Ethernet Drivers"

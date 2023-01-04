@@ -1,0 +1,83 @@
+#
+#Synopsys DesignWare XGMAC configuration options
+#
+#Copyright(c) 2023, Intel Corporation
+#SPDX - License - Identifier : Apache - 2.0
+#
+
+DT_COMPAT_DWC_XGMAC := snps,dwcxgmac
+
+menu "DWC XGMAC configuration"
+
+config ETH_DWC_XGMAC
+	bool "Synopsys DesignWareCore XGMAC Ethernet driver"
+	default y if $(dt_compat_enabled,$(DT_COMPAT_DWC_XGMAC))
+	help
+	  This is a driver for the Synopsys DesignWare XGMAC, also referred to
+	  as "DesignWare Cores Ethernet XGMAC". Hardware versions
+	  3.x are supported.
+
+	  Platform specific glue support is also required. This driver is
+	  currently available on targets using the Intel Agilex5 series.
+
+if  ETH_DWC_XGMAC
+
+config ETH_DWC_XGMAC_BOTTOM_HALF_WORK_QUEUE
+	bool "IRQ Bottom Half work Queue"
+	default y
+
+config ETH_DWC_XGMAC_POLLING_MODE
+	bool "Polling mode"
+	default n
+
+config ETH_DWC_XGMAC_INTERRUPT_POLLING_INTERVAL_US
+	int "XGMAC interrupt polling interval in us"
+	default 500
+	help
+	  sleep interval in ms used in ethernet driver
+
+config ETH_XGMAC_MAX_QUEUES
+	int
+	default 8
+	help
+	  Number hardware queues supported by the XGMAC IP
+
+config ETH_DWC_XGMAC_RX_CS_OFFLOAD
+	bool "RX checksum offload"
+	default y
+	help
+	  Enable receive checksum offload for TCP/UDP/IP packets
+
+config ETH_DWC_XGMAC_TX_CS_OFFLOAD
+	bool "TX checksum offload"
+	default y
+	help
+	  Enable transmit checksum offload for TCP/UDP/IP packets
+
+config ETH_DWC_XGMAC_PROMISCUOUS
+	bool "Promiscuous mode"
+	default n
+	help
+	  Enable promiscuous mode.
+
+config ETH_DWC_XGMAC_HW_FILTERING
+	bool "H/W L2 Filtering"
+	default n
+	help
+	  Enable Hrdware support for L2 filtering of packets.
+
+config ETH__DWC_XGMAC_HW_L3_L4_FILTERING
+	bool "H/W L3 L4 Filtering"
+	default n
+	help
+	  Enable Hrdware support for L3 L4 filtering of packets.
+
+config ETH_DWC_XGMAC_ARP_OFFLOAD
+	bool "ARP Offload"
+	default n
+	help
+	  Enable ARP hardware offloading support.
+
+endif # ETH_DWC_XGMAC
+
+endmenu
