@@ -157,6 +157,10 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
     # Holds a list of processed board names for flash running information.
     processed_boards = {}
 
+    # Holds a dictionary of board flashing priorities which allows for
+    # flashing specific boards prior to others.
+    board_priority = []
+
     if user_args.context:
         dump_context(command, user_args, user_runner_args)
         return
@@ -216,8 +220,39 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
                         except KeyError:
                             pass
 
+                    # Board flashing priority.
+                    try:
+                        for c in board_runner_test_yaml['board_flash_priority']:
+                            board_priority.append(len(board_priority))
+                            board_priority[len(board_priority)-1] = c
+
+                    except KeyError:
+                        pass
+
                 except FileNotFoundError:
                     pass
+
+    if len(board_priority) > 0:
+        # Board flash priorities have been set, re-arrange the order in which
+        # they are flashed to preserve the required conditions.
+        domains_ordered = []
+        for p in board_priority:
+            for d in domains.copy():
+                tmp_build_dir = d.build_dir
+                if tmp_build_dir is None:
+                    tmp_build_dir = get_build_dir(user_args)
+                cache = load_cmake_cache(tmp_build_dir, user_args)
+                board = cache['CACHED_BOARD']
+
+                if board == p:
+                    domains_ordered.append(d)
+                    domains.remove(d)
+
+        # Add in rest of boards in their natural order.
+        for d in domains:
+            domains_ordered.append(d)
+
+        domains = domains_ordered
 
     for d in domains:
         do_run_common_image(command, user_args, user_runner_args, d.build_dir,
