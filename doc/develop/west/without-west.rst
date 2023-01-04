@@ -69,6 +69,10 @@ If you don't have west installed and your application *does* need one
 of these repositories, you must set :makevar:`ZEPHYR_MODULES`
 yourself as shown above.
 
+The implementation CMake uses to set :makevar:`ZEPHYR_MODULES` can be
+found in the Zephyr source code in  :file:`cmake/modules/zephyr_module.cmake`.
+It is primarily a regex which parses the result of ``west list``
+
 See :ref:`modules` for more details.
 
 Similarly, if your application requires binary blobs and you are not using
