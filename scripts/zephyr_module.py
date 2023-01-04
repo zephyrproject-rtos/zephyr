@@ -539,7 +539,7 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
 def main():
     parser = argparse.ArgumentParser(description='''
     Process a list of projects and create Kconfig / CMake include files for
-    projects which are also a Zephyr module''')
+    projects which are also a Zephyr module''', allow_abbrev=False)
 
     parser.add_argument('--kconfig-out',
                         help="""File to write with resulting KConfig import

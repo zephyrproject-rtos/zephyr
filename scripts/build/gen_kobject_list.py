@@ -981,7 +981,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument("-k", "--kernel", required=False,
                         help="Input zephyr ELF binary")

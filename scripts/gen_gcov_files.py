@@ -65,7 +65,7 @@ def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
     parser.add_argument("-i", "--input", required=True,
                         help="Input dump data")
     parser.add_argument("-v", "--verbose", action="count", default=0,

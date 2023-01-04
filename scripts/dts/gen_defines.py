@@ -185,7 +185,7 @@ def node_z_path_id(node):
 def parse_args():
     # Returns parsed command-line arguments
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--dts", required=True, help="DTS file")
     parser.add_argument("--dtc-flags",
                         help="'dtc' devicetree compiler flags, some of which "

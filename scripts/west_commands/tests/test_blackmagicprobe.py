@@ -71,7 +71,7 @@ def test_blackmagicprobe_init(cc, req, command, runner_config):
 def test_blackmagicprobe_create(cc, req, command, runner_config):
     '''Test commands using a runner created from command line parameters.'''
     args = ['--gdb-serial', TEST_GDB_SERIAL]
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     BlackMagicProbeRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = BlackMagicProbeRunner.create(runner_config, arg_namespace)
@@ -84,7 +84,7 @@ def test_blackmagicprobe_create(cc, req, command, runner_config):
 def test_blackmagicprobe_connect_rst(cc, req, command, runner_config):
     '''Test that commands list the correct connect_rst value when enabled.'''
     args = ['--gdb-serial', TEST_GDB_SERIAL, '--connect-rst']
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     BlackMagicProbeRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = BlackMagicProbeRunner.create(runner_config, arg_namespace)

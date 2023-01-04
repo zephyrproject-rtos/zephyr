@@ -118,7 +118,7 @@ def flash_kernel(device_id, input_sof, kernel_hex):
     pof_file.close()
 
 def main():
-    parser = argparse.ArgumentParser(description="Flash zephyr onto Altera boards")
+    parser = argparse.ArgumentParser(description="Flash zephyr onto Altera boards", allow_abbrev=False)
     parser.add_argument("-s", "--sof",
             help=".sof file with Nios II CPU configuration")
     parser.add_argument("-k", "--kernel",

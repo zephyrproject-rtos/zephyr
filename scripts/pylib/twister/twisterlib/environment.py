@@ -39,7 +39,8 @@ def add_parse_arguments(parser = None):
     if parser is None:
         parser = argparse.ArgumentParser(
             description=__doc__,
-            formatter_class=argparse.RawDescriptionHelpFormatter)
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            allow_abbrev=False)
     parser.fromfile_prefix_chars = "+"
 
     case_select = parser.add_argument_group("Test case selection",

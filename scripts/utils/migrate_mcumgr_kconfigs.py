@@ -151,7 +151,7 @@ def process_tree(project):
                 process_file(p)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument(
         "-r", "--root", type=Path, required=True, help="Zephyr-based project path"
     )

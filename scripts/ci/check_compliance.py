@@ -327,7 +327,7 @@ class KconfigCheck(ComplianceTest):
                                                "gen_driver_kconfig_dts.py")
         binding_path = os.path.join(ZEPHYR_BASE, "dts", "bindings")
         cmd = [sys.executable, zephyr_drv_kconfig_path,
-               '--kconfig-out', kconfig_dts_file, '--bindings', binding_path]
+               '--kconfig-out', kconfig_dts_file, '--bindings-dirs', binding_path]
         try:
             subprocess.run(cmd, check=True, stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT)
@@ -1077,7 +1077,7 @@ def parse_args():
 
     default_range = 'HEAD~1..HEAD'
     parser = argparse.ArgumentParser(
-        description="Check for coding style and documentation warnings.")
+        description="Check for coding style and documentation warnings.", allow_abbrev=False)
     parser.add_argument('-c', '--commits', default=default_range,
                         help=f'''Commit range in the form: a..[b], default is
                         {default_range}''')

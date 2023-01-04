@@ -75,7 +75,7 @@ def update_includes(project, dry_run):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument(
         "-p", "--project", type=Path, required=True, help="Zephyr-based project path"
     )
