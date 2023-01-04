@@ -1,0 +1,9 @@
+#Copyright(c) 2021 IP - Logix Inc.
+#SPDX - License - Identifier : Apache - 2.0
+
+config MDIO_DWCXGMAC
+	bool "synopsys mdio driver"
+	depends on ETH_DWC_XGMAC
+	default y
+	help
+		Enable Synopsys dwc xgmac MDIO driver.
