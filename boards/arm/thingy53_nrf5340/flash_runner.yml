@@ -1,0 +1,16 @@
+# Recovery/erase is only needed once per core.
+board_single_commands:
+  - --recover: [
+    thingy53_nrf5340_cpunet,
+  ]
+  - --recover: [
+    thingy53_nrf5340_cpuapp,
+    thingy53_nrf5340_cpuapp_ns,
+  ]
+  - --erase: [
+    thingy53_nrf5340_cpunet,
+  ]
+  - --erase: [
+    thingy53_nrf5340_cpuapp,
+    thingy53_nrf5340_cpuapp_ns,
+  ]
