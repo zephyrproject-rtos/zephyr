@@ -78,10 +78,6 @@ spec:
     persistentVolumeClaim:
       claimName: "ctools"
       readOnly: true
-  - name: "swbldreleases2"
-    persistentVolumeClaim:
-      claimName: "swbldreleases2"
-      readOnly: true
   - name: "swbldreleases5"
     persistentVolumeClaim:
       claimName: "swbldreleases5"
@@ -150,9 +146,6 @@ spec:
       readOnly: true
     - mountPath: "/nfs/site/disks/psg_ctools_1"
       name: "ctools"
-      readOnly: true
-    - mountPath: "/nfs/site/disks/swbld_releases_2"
-      name: "swbldreleases2"
       readOnly: true
     - mountPath: "/nfs/site/disks/swbld_releases_5"
       name: "swbldreleases5"
