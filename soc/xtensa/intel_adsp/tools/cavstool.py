@@ -683,7 +683,7 @@ async def main():
                 ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
 
 
-ap = argparse.ArgumentParser(description="DSP loader/logger tool")
+ap = argparse.ArgumentParser(description="DSP loader/logger tool", allow_abbrev=False)
 ap.add_argument("-q", "--quiet", action="store_true",
                 help="No loader output, just DSP logging")
 ap.add_argument("-v", "--verbose", action="store_true",

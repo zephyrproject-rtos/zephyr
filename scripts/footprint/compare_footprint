@@ -70,7 +70,8 @@ def init_logs():
 def parse_args():
     parser = argparse.ArgumentParser(
                 description="Compare footprint apps RAM and ROM sizes. Note: "
-                "To run it you need to set up the same environment as twister.")
+                "To run it you need to set up the same environment as twister.",
+                allow_abbrev=False)
     parser.add_argument('-b', '--base-commit', default=None,
                         help="Commit ID to use as base for footprint "
                                     "compare. Default is parent current commit."

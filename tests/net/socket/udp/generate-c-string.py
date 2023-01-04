@@ -11,7 +11,7 @@ from math import ceil
 CHUNK = "This is a fragment of generated C string. "
 
 
-parser = ArgumentParser(description="Generate C string of arbitrary size")
+parser = ArgumentParser(description="Generate C string of arbitrary size", allow_abbrev=False)
 parser.add_argument("-s", "--size", help="Size of string (without NULL termination)",
                     required=True, type=int)
 parser.add_argument("filepath", help="Output filepath")

@@ -69,7 +69,7 @@ def test_canopen_program_create(cpd, test_case, runner_config):
     mock.wait_for_flash_status_ok.return_value = 0
     mock.swid.return_value = 0
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     CANopenBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = CANopenBinaryRunner.create(runner_config, arg_namespace)

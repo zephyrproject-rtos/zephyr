@@ -24,7 +24,7 @@ def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument("-M", "--maintainer-file", required=False, default="MAINTAINERS.yml",
                         help="Maintainer file to be used.")

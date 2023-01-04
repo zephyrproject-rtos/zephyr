@@ -52,7 +52,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
 def parse_args():
     # Returns parsed command-line arguments
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--cmake-out", required=True,
                         help="path to write the CMake property file")
     parser.add_argument("--edt-pickle", required=True,

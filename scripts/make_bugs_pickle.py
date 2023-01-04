@@ -35,7 +35,7 @@ For more information, see:
     https://pygithub.readthedocs.io/en/latest/github_objects/Issue.html
   - pickle: https://docs.python.org/3/library/pickle.html
 ''',
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
     parser.add_argument('out_file', metavar='OUTFILE', type=Path, nargs='?',
                         help='''file to write pickle data to (default:
                         stdout)''')

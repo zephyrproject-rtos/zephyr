@@ -88,7 +88,7 @@ def find_arch2board_set_in(root, arches):
     return ret
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     add_args(parser)
     return parser.parse_args()
 

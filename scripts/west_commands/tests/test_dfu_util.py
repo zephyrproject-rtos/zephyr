@@ -128,7 +128,7 @@ def test_dfu_util_create(cc, req, gfa, find_device, tc, runner_config, tmpdir):
         f.write('\n')
     runner_config = runner_config._replace(build_dir=os.fspath(tmpdir))
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     DfuUtilBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = DfuUtilBinaryRunner.create(runner_config, arg_namespace)

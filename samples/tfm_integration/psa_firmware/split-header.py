@@ -20,7 +20,7 @@ def dump_header(infile, image, header):
     inhex.tobinfile(header, start=start, end=end-1)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('input')
     parser.add_argument('image')
     parser.add_argument('header')

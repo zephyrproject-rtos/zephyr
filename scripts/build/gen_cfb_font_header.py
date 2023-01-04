@@ -194,7 +194,7 @@ def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description="Character Frame Buffer (CFB) font header file generator",
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument(
         "-z", "--zephyr-base",

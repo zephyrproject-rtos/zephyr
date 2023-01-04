@@ -79,7 +79,7 @@ def gen_strerror_table(input, output):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument(
         '-i',
         '--input',
