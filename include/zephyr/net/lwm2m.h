@@ -1403,6 +1403,8 @@ int lwm2m_get_time(const struct lwm2m_obj_path *path, time_t *buf);
 /**
  * @brief Set resource (instance) read callback
  *
+ * @deprecated Use lwm2m_register_read_callback() instead.
+ *
  * LwM2M clients can use this to set the callback function for resource reads when data
  * handling in the LwM2M engine needs to be bypassed.
  * For example reading back opaque binary data from external storage.
@@ -1418,11 +1420,34 @@ int lwm2m_get_time(const struct lwm2m_obj_path *path, time_t *buf);
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_register_read_callback(const char *pathstr,
 					lwm2m_engine_get_data_cb_t cb);
 
 /**
+ * @brief Set resource (instance) read callback
+ *
+ * LwM2M clients can use this to set the callback function for resource reads when data
+ * handling in the LwM2M engine needs to be bypassed.
+ * For example reading back opaque binary data from external storage.
+ *
+ * This callback should not generally be used for any data that might be observed as
+ * engine does not have any knowledge of data changes.
+ *
+ * When separate buffer for data should be used, use lwm2m_engine_set_res_buf() instead
+ * to set the storage.
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] cb Read resource callback
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_register_read_callback(const struct lwm2m_obj_path *path, lwm2m_engine_get_data_cb_t cb);
+
+/**
  * @brief Set resource (instance) pre-write callback
+ *
+ * @deprecated Use lwm2m_register_pre_write_callback() instead.
  *
  * This callback is triggered before setting the value of a resource.  It
  * can pass a special data buffer to the engine so that the actual resource
@@ -1433,11 +1458,29 @@ int lwm2m_engine_register_read_callback(const char *pathstr,
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_register_pre_write_callback(const char *pathstr,
 					     lwm2m_engine_get_data_cb_t cb);
 
 /**
+ * @brief Set resource (instance) pre-write callback
+ *
+ * This callback is triggered before setting the value of a resource.  It
+ * can pass a special data buffer to the engine so that the actual resource
+ * value can be calculated later, etc.
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] cb Pre-write resource callback
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_register_pre_write_callback(const struct lwm2m_obj_path *path,
+				      lwm2m_engine_get_data_cb_t cb);
+
+/**
  * @brief Set resource (instance) validation callback
+ *
+ * @deprecated Use lwm2m_register_validate_callback() instead.
  *
  * This callback is triggered before setting the value of a resource to the
  * resource data buffer.
@@ -1456,11 +1499,37 @@ int lwm2m_engine_register_pre_write_callback(const char *pathstr,
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_register_validate_callback(const char *pathstr,
 					    lwm2m_engine_set_data_cb_t cb);
 
 /**
+ * @brief Set resource (instance) validation callback
+ *
+ * This callback is triggered before setting the value of a resource to the
+ * resource data buffer.
+ *
+ * The callback allows an LwM2M client or object to validate the data before
+ * writing and notify an error if the data should be discarded for any reason
+ * (by returning a negative error code).
+ *
+ * @note All resources that have a validation callback registered are initially
+ *       decoded into a temporary validation buffer. Make sure that
+ *       ``CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE`` is large enough to
+ *       store each of the validated resources (individually).
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] cb Validate resource data callback
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_register_validate_callback(const struct lwm2m_obj_path *path,
+				     lwm2m_engine_set_data_cb_t cb);
+
+/**
  * @brief Set resource (instance) post-write callback
+ *
+ * @deprecated Use lwm2m_register_post_write_callback() instead.
  *
  * This callback is triggered after setting the value of a resource to the
  * resource data buffer.
@@ -1473,11 +1542,31 @@ int lwm2m_engine_register_validate_callback(const char *pathstr,
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_register_post_write_callback(const char *pathstr,
 					      lwm2m_engine_set_data_cb_t cb);
 
 /**
+ * @brief Set resource (instance) post-write callback
+ *
+ * This callback is triggered after setting the value of a resource to the
+ * resource data buffer.
+ *
+ * It allows an LwM2M client or object to post-process the value of a resource
+ * or trigger other related resource calculations.
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] cb Post-write resource callback
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_register_post_write_callback(const struct lwm2m_obj_path *path,
+				       lwm2m_engine_set_data_cb_t cb);
+
+/**
  * @brief Set resource execute event callback
+ *
+ * @deprecated Use lwm2m_register_exec_callback() instead.
  *
  * This event is triggered when the execute method of a resource is enabled.
  *
@@ -1486,8 +1575,37 @@ int lwm2m_engine_register_post_write_callback(const char *pathstr,
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_register_exec_callback(const char *pathstr,
 					lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Set resource execute event callback
+ *
+ * This event is triggered when the execute method of a resource is enabled.
+ *
+ * @param[in] path LwM2M path as a struct
+ * @param[in] cb Execute resource callback
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_register_exec_callback(const struct lwm2m_obj_path *path, lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Set object instance create event callback
+ *
+ * @deprecated Use lwm2m_register_create_callback instead.
+ *
+ * This event is triggered when an object instance is created.
+ *
+ * @param[in] obj_id LwM2M object id
+ * @param[in] cb Create object instance callback
+ *
+ * @return 0 for success or negative in case of error.
+ */
+__deprecated
+int lwm2m_engine_register_create_callback(uint16_t obj_id,
+					  lwm2m_engine_user_cb_t cb);
 
 /**
  * @brief Set object instance create event callback
@@ -1499,7 +1617,23 @@ int lwm2m_engine_register_exec_callback(const char *pathstr,
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_register_create_callback(uint16_t obj_id,
+int lwm2m_register_create_callback(uint16_t obj_id,
+				   lwm2m_engine_user_cb_t cb);
+
+/**
+ * @brief Set object instance delete event callback
+ *
+ * @deprecated Use lwm2m_register_delete_callback instead
+ *
+ * This event is triggered when an object instance is deleted.
+ *
+ * @param[in] obj_id LwM2M object id
+ * @param[in] cb Delete object instance callback
+ *
+ * @return 0 for success or negative in case of error.
+ */
+__deprecated
+int lwm2m_engine_register_delete_callback(uint16_t obj_id,
 					  lwm2m_engine_user_cb_t cb);
 
 /**
@@ -1512,7 +1646,7 @@ int lwm2m_engine_register_create_callback(uint16_t obj_id,
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_register_delete_callback(uint16_t obj_id,
+int lwm2m_register_delete_callback(uint16_t obj_id,
 					  lwm2m_engine_user_cb_t cb);
 
 /**

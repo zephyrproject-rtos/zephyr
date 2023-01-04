@@ -1411,6 +1411,16 @@ int lwm2m_engine_get_time(const char *pathstr, time_t *buf)
 	return lwm2m_get_time(&path, buf);
 }
 
+int lwm2m_get_resource(const struct lwm2m_obj_path *path, struct lwm2m_engine_res **res)
+{
+	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
+		LOG_ERR("path must have 3 parts");
+		return -EINVAL;
+	}
+
+	return path_to_objs(path, NULL, NULL, res, NULL);
+}
+
 int lwm2m_engine_get_resource(const char *pathstr, struct lwm2m_engine_res **res)
 {
 	int ret;
@@ -1421,12 +1431,7 @@ int lwm2m_engine_get_resource(const char *pathstr, struct lwm2m_engine_res **res
 		return ret;
 	}
 
-	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
-		LOG_ERR("path must have 3 parts");
-		return -EINVAL;
-	}
-
-	return path_to_objs(&path, NULL, NULL, res, NULL);
+	return lwm2m_get_resource(&path, res);
 }
 
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in, uint8_t *buf, size_t buflen,
@@ -1628,12 +1633,12 @@ int lwm2m_engine_delete_res_inst(const char *pathstr)
 }
 /* Register callbacks */
 
-int lwm2m_engine_register_read_callback(const char *pathstr, lwm2m_engine_get_data_cb_t cb)
+int lwm2m_register_read_callback(const struct lwm2m_obj_path *path, lwm2m_engine_get_data_cb_t cb)
 {
 	int ret;
 	struct lwm2m_engine_res *res = NULL;
 
-	ret = lwm2m_engine_get_resource(pathstr, &res);
+	ret = lwm2m_get_resource(path, &res);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1642,12 +1647,26 @@ int lwm2m_engine_register_read_callback(const char *pathstr, lwm2m_engine_get_da
 	return 0;
 }
 
-int lwm2m_engine_register_pre_write_callback(const char *pathstr, lwm2m_engine_get_data_cb_t cb)
+int lwm2m_engine_register_read_callback(const char *pathstr, lwm2m_engine_get_data_cb_t cb)
+{
+	int ret;
+	struct lwm2m_obj_path path;
+
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lwm2m_register_read_callback(&path, cb);
+}
+
+int lwm2m_register_pre_write_callback(const struct lwm2m_obj_path *path,
+				      lwm2m_engine_get_data_cb_t cb)
 {
 	int ret;
 	struct lwm2m_engine_res *res = NULL;
 
-	ret = lwm2m_engine_get_resource(pathstr, &res);
+	ret = lwm2m_get_resource(path, &res);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1656,19 +1675,56 @@ int lwm2m_engine_register_pre_write_callback(const char *pathstr, lwm2m_engine_g
 	return 0;
 }
 
-int lwm2m_engine_register_validate_callback(const char *pathstr, lwm2m_engine_set_data_cb_t cb)
+int lwm2m_engine_register_pre_write_callback(const char *pathstr, lwm2m_engine_get_data_cb_t cb)
+{
+	int ret;
+	struct lwm2m_obj_path path;
+
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lwm2m_register_pre_write_callback(&path, cb);
+}
+
+int lwm2m_register_validate_callback(const struct lwm2m_obj_path *path,
+				     lwm2m_engine_set_data_cb_t cb)
 {
 #if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 	int ret;
 	struct lwm2m_engine_res *res = NULL;
 
-	ret = lwm2m_engine_get_resource(pathstr, &res);
+	ret = lwm2m_get_resource(path, &res);
 	if (ret < 0) {
 		return ret;
 	}
 
 	res->validate_cb = cb;
 	return 0;
+#else
+	ARG_UNUSED(path);
+	ARG_UNUSED(cb);
+
+	LOG_ERR("Validation disabled. Set "
+		"CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 to "
+		"enable validation support.");
+	return -ENOTSUP;
+#endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
+}
+
+int lwm2m_engine_register_validate_callback(const char *pathstr, lwm2m_engine_set_data_cb_t cb)
+{
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
+	int ret;
+	struct lwm2m_obj_path path;
+
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lwm2m_register_validate_callback(&path, cb);
 #else
 	ARG_UNUSED(pathstr);
 	ARG_UNUSED(cb);
@@ -1680,12 +1736,13 @@ int lwm2m_engine_register_validate_callback(const char *pathstr, lwm2m_engine_se
 #endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
 }
 
-int lwm2m_engine_register_post_write_callback(const char *pathstr, lwm2m_engine_set_data_cb_t cb)
+int lwm2m_register_post_write_callback(const struct lwm2m_obj_path *path,
+				       lwm2m_engine_set_data_cb_t cb)
 {
 	int ret;
 	struct lwm2m_engine_res *res = NULL;
 
-	ret = lwm2m_engine_get_resource(pathstr, &res);
+	ret = lwm2m_get_resource(path, &res);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1694,12 +1751,25 @@ int lwm2m_engine_register_post_write_callback(const char *pathstr, lwm2m_engine_
 	return 0;
 }
 
-int lwm2m_engine_register_exec_callback(const char *pathstr, lwm2m_engine_execute_cb_t cb)
+int lwm2m_engine_register_post_write_callback(const char *pathstr, lwm2m_engine_set_data_cb_t cb)
+{
+	int ret;
+	struct lwm2m_obj_path path;
+
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lwm2m_register_post_write_callback(&path, cb);
+}
+
+int lwm2m_register_exec_callback(const struct lwm2m_obj_path *path, lwm2m_engine_execute_cb_t cb)
 {
 	int ret;
 	struct lwm2m_engine_res *res = NULL;
 
-	ret = lwm2m_engine_get_resource(pathstr, &res);
+	ret = lwm2m_get_resource(path, &res);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1708,7 +1778,20 @@ int lwm2m_engine_register_exec_callback(const char *pathstr, lwm2m_engine_execut
 	return 0;
 }
 
-int lwm2m_engine_register_create_callback(uint16_t obj_id, lwm2m_engine_user_cb_t cb)
+int lwm2m_engine_register_exec_callback(const char *pathstr, lwm2m_engine_execute_cb_t cb)
+{
+	int ret;
+	struct lwm2m_obj_path path;
+
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lwm2m_register_exec_callback(&path, cb);
+}
+
+int lwm2m_register_create_callback(uint16_t obj_id, lwm2m_engine_user_cb_t cb)
 {
 	struct lwm2m_engine_obj *obj = NULL;
 
@@ -1722,7 +1805,12 @@ int lwm2m_engine_register_create_callback(uint16_t obj_id, lwm2m_engine_user_cb_
 	return 0;
 }
 
-int lwm2m_engine_register_delete_callback(uint16_t obj_id, lwm2m_engine_user_cb_t cb)
+int lwm2m_engine_register_create_callback(uint16_t obj_id, lwm2m_engine_user_cb_t cb)
+{
+	return lwm2m_register_create_callback(obj_id, cb);
+}
+
+int lwm2m_register_delete_callback(uint16_t obj_id, lwm2m_engine_user_cb_t cb)
 {
 	struct lwm2m_engine_obj *obj = NULL;
 
@@ -1734,6 +1822,11 @@ int lwm2m_engine_register_delete_callback(uint16_t obj_id, lwm2m_engine_user_cb_
 
 	obj->user_delete_cb = cb;
 	return 0;
+}
+
+int lwm2m_engine_register_delete_callback(uint16_t obj_id, lwm2m_engine_user_cb_t cb)
+{
+	return lwm2m_register_delete_callback(obj_id, cb);
 }
 /* Generic data handlers */
 
