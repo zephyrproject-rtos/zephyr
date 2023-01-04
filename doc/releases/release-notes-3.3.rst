@@ -418,6 +418,18 @@ Drivers and Sensors
 
 * USB
 
+  * STM32F1: Clock bus configuration is not done automatically by driver anymore.
+    It is user's responsibility to configure the proper bus prescaler using clock_control
+    device tree node to achieve a 48MHz bus clock. Note that, in most cases, core clock
+    is 72MHz and default prescaler configuration is set to achieve 48MHz USB bus clock.
+    Prescaler only needs to be configured manually when core clock is already 48MHz.
+
+  * STM32 (non F1): Clock bus configuration is now expected to be done in device tree
+    using ``clocks`` node property. When a dedicated HSI 48MHz clock is available on target,
+    is it configured by default as the USB bus clock, but user has the ability to select
+    another 48MHz clock source. When no HSI48 is available, a specific 48MHz bus clock
+    source should be configured by user.
+
 * W1
 
 * Watchdog
