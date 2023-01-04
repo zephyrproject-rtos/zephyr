@@ -1,0 +1,6 @@
+# Recovery is only needed once per core.
+board_single_commands:
+  - --recover: [
+      nrf9160dk_nrf9160,
+      nrf9160dk_nrf9160_ns,
+    ]
