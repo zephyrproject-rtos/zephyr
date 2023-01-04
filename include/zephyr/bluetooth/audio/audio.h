@@ -1946,24 +1946,25 @@ int bt_audio_stream_release(struct bt_audio_stream *stream);
 int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
 			 uint16_t seq_num, uint32_t ts);
 
+struct bt_audio_unicast_group_stream_param {
+	/** Pointer to a stream object. */
+	struct bt_audio_stream *stream;
+
+	/** The QoS settings for the stream object. */
+	struct bt_codec_qos *qos;
+};
+
 /** @brief Parameter struct for the unicast group functions
  *
  * Parameter struct for the bt_audio_unicast_group_create() and
  * bt_audio_unicast_group_add_streams() functions.
  */
-struct bt_audio_unicast_group_stream_param {
-	/** Pointer to a stream object. */
-	struct bt_audio_stream *stream;
+struct bt_audio_unicast_group_stream_pair_param {
+	/** Pointer to a receiving stream parameters. */
+	struct bt_audio_unicast_group_stream_param *rx_param;
 
-	/** The QoS settings for the @ref bt_audio_unicast_group_stream_param.stream. */
-	struct bt_codec_qos *qos;
-
-	/** @brief The direction of the @ref bt_audio_unicast_group_stream_param.stream
-	 *
-	 * If two streams are being used for the same ACL connection but in
-	 * different directions, they may use the same CIS.
-	 */
-	enum bt_audio_dir dir;
+	/** Pointer to a transmiting stream parameters. */
+	struct bt_audio_unicast_group_stream_param *tx_param;
 };
 
 struct bt_audio_unicast_group_param {
@@ -1971,7 +1972,7 @@ struct bt_audio_unicast_group_param {
 	size_t params_count;
 
 	/** Array of stream parameters */
-	struct bt_audio_unicast_group_stream_param *params;
+	struct bt_audio_unicast_group_stream_pair_param *params;
 
 	/** @brief Unicast Group packing mode.
 	 *
@@ -2020,7 +2021,7 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param *param,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
-				       struct bt_audio_unicast_group_stream_param params[],
+				       struct bt_audio_unicast_group_stream_pair_param params[],
 				       size_t num_param);
 
 /** @brief Delete audio unicast group.
