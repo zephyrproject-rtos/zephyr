@@ -19,17 +19,22 @@ if COUNTER_RTC_STM32
 
 choice COUNTER_RTC_STM32_CLOCK_SRC
 	bool "RTC clock source"
+	optional
 	depends on COUNTER_RTC_STM32
 
 config COUNTER_RTC_STM32_CLOCK_LSI
 	bool "LSI"
+	select DEPRECATED
 	help
 	  Use LSI as RTC clock
+	  Deprecated in favor of device tree secondary domain clock
 
 config COUNTER_RTC_STM32_CLOCK_LSE
 	bool "LSE"
+	select DEPRECATED
 	help
 	  Use LSE as RTC clock
+	  Deprecated in favor of device tree secondary domain clock
 
 endchoice #COUNTER_RTC_STM32_CLOCK_SRC
 
