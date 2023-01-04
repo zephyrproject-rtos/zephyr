@@ -83,7 +83,6 @@ static struct bt_gatt_subscribe_params avail_ctx_subscribe[CONFIG_BT_MAX_CONN];
  * needs to be done in serial to avoid using the same discover parameters
  * twice
  */
-static struct bt_gatt_discover_params cp_disc[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_discover_params loc_cc_disc[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_discover_params avail_ctx_cc_disc[CONFIG_BT_MAX_CONN];
 
@@ -1196,7 +1195,24 @@ static int unicast_client_ep_subscribe(struct bt_conn *conn,
 	return bt_gatt_subscribe(conn, &client_ep->subscribe);
 }
 
-static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
+static void unicast_client_cp_sub_cb(struct bt_conn *conn, uint8_t err,
+				     struct bt_gatt_subscribe_params *sub_params)
+{
+	struct bt_audio_discover_params *params;
+
+	LOG_DBG("conn %p err %u", conn, err);
+
+	params = CONTAINER_OF(sub_params->disc_params,
+			      struct bt_audio_discover_params,
+			      discover);
+
+	params->err = err;
+	params->func(conn, NULL, NULL, params);
+}
+
+static void unicast_client_ep_set_cp(struct bt_conn *conn,
+				     struct bt_audio_discover_params *params,
+				     uint16_t handle)
 {
 	uint8_t index;
 
@@ -1205,16 +1221,28 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 	index = bt_conn_index(conn);
 
 	if (!cp_subscribe[index].value_handle) {
+		int err;
+
 		cp_subscribe[index].value_handle = handle;
 		cp_subscribe[index].ccc_handle = 0x0000;
 		cp_subscribe[index].end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-		cp_subscribe[index].disc_params = &cp_disc[index];
+		cp_subscribe[index].disc_params = &params->discover;
 		cp_subscribe[index].notify = unicast_client_cp_notify;
 		cp_subscribe[index].value = BT_GATT_CCC_NOTIFY;
+		cp_subscribe[index].subscribe = unicast_client_cp_sub_cb;
 		atomic_set_bit(cp_subscribe[index].flags,
 			       BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
-		bt_gatt_subscribe(conn, &cp_subscribe[index]);
+		err = bt_gatt_subscribe(conn, &cp_subscribe[index]);
+		if (err != 0) {
+			LOG_DBG("Failed to subscribe: %d", err);
+
+			params->err = BT_ATT_ERR_UNLIKELY;
+
+			params->func(conn, NULL, NULL, params);
+
+			return;
+		}
 	}
 
 #if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -1808,10 +1836,7 @@ static uint8_t unicast_client_cp_discover_func(struct bt_conn *conn,
 
 	LOG_DBG("conn %p attr %p handle 0x%04x", conn, attr, chrc->value_handle);
 
-	params->err = 0;
-	unicast_client_ep_set_cp(conn, chrc->value_handle);
-
-	params->func(conn, NULL, NULL, params);
+	unicast_client_ep_set_cp(conn, params, chrc->value_handle);
 
 	return BT_GATT_ITER_STOP;
 }
