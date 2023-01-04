@@ -250,6 +250,10 @@ int intel_adsp_hda_dma_start(const struct device *dev, uint32_t channel)
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
+	if (intel_adsp_hda_is_enabled(cfg->base, cfg->regblock_size, channel)) {
+		return 0;
+	}
+
 	intel_adsp_hda_enable(cfg->base, cfg->regblock_size, channel);
 	if (cfg->direction == MEMORY_TO_PERIPHERAL) {
 		size = intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
@@ -264,6 +268,10 @@ int intel_adsp_hda_dma_stop(const struct device *dev, uint32_t channel)
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
+
+	if (!intel_adsp_hda_is_enabled(cfg->base, cfg->regblock_size, channel)) {
+		return 0;
+	}
 
 	intel_adsp_hda_disable(cfg->base, cfg->regblock_size, channel);
 
