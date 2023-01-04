@@ -271,7 +271,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	/* in LL_TIM_CC_DisableChannel and LL_TIM_CC_IsEnabledChannel,
 	 * the channel param could be the complementary one
 	 */
-	if ((flags & PWM_STM32_COMPLEMENTARY_MASK) == PWM_STM32_COMPLEMENTARY) {
+	if ((flags & STM32_PWM_COMPLEMENTARY_MASK) == STM32_PWM_COMPLEMENTARY) {
 		if (channel > ARRAY_SIZE(ch2ll_n)) {
 			/* setting a flag on a channel that has not this capability */
 			LOG_ERR("Channel %d has NO complementary output", channel);
@@ -310,8 +310,8 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 		oc_init.OCMode = LL_TIM_OCMODE_PWM1;
 
 #if defined(LL_TIM_CHANNEL_CH1N)
-		/* the flags holds the PWM_STM32_COMPLEMENTARY information */
-		if ((flags & PWM_STM32_COMPLEMENTARY_MASK) == PWM_STM32_COMPLEMENTARY) {
+		/* the flags holds the STM32_PWM_COMPLEMENTARY information */
+		if ((flags & STM32_PWM_COMPLEMENTARY_MASK) == STM32_PWM_COMPLEMENTARY) {
 			oc_init.OCNState = LL_TIM_OCSTATE_ENABLE;
 			oc_init.OCNPolarity = get_polarity(flags);
 		} else {
