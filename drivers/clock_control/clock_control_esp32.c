@@ -476,7 +476,7 @@ static const struct clock_control_driver_api clock_control_esp32_api = {
 
 static const struct esp32_clock_config esp32_clock_config0 = {
 	.clk_src_sel = ESP32_CLOCK_SOURCE,
-	.cpu_freq = DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency) / 10000000,
+	.cpu_freq = DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency) / 1000000,
 	.xtal_freq_sel = DT_INST_PROP(0, xtal_freq),
 	.xtal_div = ESP32_CLOCK_XTAL_DIV
 };
