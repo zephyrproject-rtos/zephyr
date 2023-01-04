@@ -1,0 +1,7 @@
+sample:
+  description: Demonstration of auxdisplay driver
+  name: Auxiliary display sample
+tests:
+  sample.drivers.auxdisplay:
+    tags: auxdisplay
+    platform_allow: nucleo_f746zg
