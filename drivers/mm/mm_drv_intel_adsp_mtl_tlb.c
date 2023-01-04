@@ -23,6 +23,7 @@
 #include "mm_drv_intel_adsp.h"
 
 #include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
+#include <zephyr/debug/sparse.h>
 
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
@@ -290,7 +291,7 @@ int sys_mm_drv_map_region(void *virt, uintptr_t phys,
 		goto out;
 	}
 
-	va = (uint8_t *)z_soc_cached_ptr(virt);
+	va = (__sparse_force uint8_t *)z_soc_cached_ptr(virt);
 	pa = phys;
 
 	key = k_spin_lock(&sys_mm_drv_common_lock);
@@ -318,7 +319,7 @@ out:
 int sys_mm_drv_map_array(void *virt, uintptr_t *phys,
 			 size_t cnt, uint32_t flags)
 {
-	void *va = z_soc_cached_ptr(virt);
+	void *va = (__sparse_force void *)z_soc_cached_ptr(virt);
 
 	return sys_mm_drv_simple_map_array(va, phys, cnt, flags);
 }
@@ -387,7 +388,7 @@ out:
 
 int sys_mm_drv_unmap_region(void *virt, size_t size)
 {
-	void *va = z_soc_cached_ptr(virt);
+	void *va = (__sparse_force void *)z_soc_cached_ptr(virt);
 
 	return sys_mm_drv_simple_unmap_region(va, size);
 }
@@ -478,8 +479,8 @@ out:
 int sys_mm_drv_remap_region(void *virt_old, size_t size,
 			    void *virt_new)
 {
-	void *va_new = z_soc_cached_ptr(virt_new);
-	void *va_old = z_soc_cached_ptr(virt_old);
+	void *va_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
+	void *va_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
 
 	return sys_mm_drv_simple_remap_region(va_old, size, va_new);
 }
@@ -491,8 +492,8 @@ int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
 	size_t offset;
 	int ret = 0;
 
-	virt_new = z_soc_cached_ptr(virt_new);
-	virt_old = z_soc_cached_ptr(virt_old);
+	virt_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
+	virt_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
 
 	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt_old) ||
 		!sys_mm_drv_is_virt_addr_aligned(virt_new) ||
@@ -589,8 +590,8 @@ int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new,
 {
 	int ret;
 
-	void *va_new = z_soc_cached_ptr(virt_new);
-	void *va_old = z_soc_cached_ptr(virt_old);
+	void *va_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
+	void *va_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
 
 	ret = sys_mm_drv_simple_move_array(va_old, size, va_new,
 					    phys_new, phys_cnt);
@@ -766,7 +767,8 @@ __imr void adsp_mm_restore_context(void *storage_buffer)
 
 	while (phys_addr != 0) {
 		uint32_t phys_addr_uncached =
-				POINTER_TO_UINT(z_soc_uncached_ptr(UINT_TO_POINTER(phys_addr)));
+				POINTER_TO_UINT(z_soc_uncached_ptr(
+					(void __sparse_cache *)UINT_TO_POINTER(phys_addr)));
 		uint32_t phys_offset = phys_addr - L2_SRAM_BASE;
 		uint32_t bank_idx = (phys_offset / SRAM_BANK_SIZE);
 
