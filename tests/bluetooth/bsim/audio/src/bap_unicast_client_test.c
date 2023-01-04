@@ -31,6 +31,7 @@ static atomic_t flag_stream_qos_configured;
 CREATE_FLAG(flag_stream_enabled);
 CREATE_FLAG(flag_stream_started);
 CREATE_FLAG(flag_stream_released);
+CREATE_FLAG(flag_operation_success);
 
 static void stream_configured(struct bt_bap_stream *stream,
 			      const struct bt_codec_qos_pref *pref)
@@ -112,9 +113,98 @@ static void available_contexts_cb(struct bt_conn *conn,
 	printk("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
+
+static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		      enum bt_bap_ascs_reason reason)
+{
+	printk("stream %p config operation rsp_code %u reason %u\n", stream, rsp_code, reason);
+
+	if (rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		SET_FLAG(flag_operation_success);
+	}
+}
+
+static void qos_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		   enum bt_bap_ascs_reason reason)
+{
+	printk("stream %p qos operation rsp_code %u reason %u\n", stream, rsp_code, reason);
+
+	if (rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		SET_FLAG(flag_operation_success);
+	}
+}
+
+static void enable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		      enum bt_bap_ascs_reason reason)
+{
+	printk("stream %p enable operation rsp_code %u reason %u\n", stream, rsp_code, reason);
+
+	if (rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		SET_FLAG(flag_operation_success);
+	}
+}
+
+static void start_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		     enum bt_bap_ascs_reason reason)
+{
+	printk("stream %p start operation rsp_code %u reason %u\n", stream, rsp_code, reason);
+
+	if (rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		SET_FLAG(flag_operation_success);
+	}
+}
+
+static void stop_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		    enum bt_bap_ascs_reason reason)
+{
+	printk("stream %p stop operation rsp_code %u reason %u\n", stream, rsp_code, reason);
+
+	if (rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		SET_FLAG(flag_operation_success);
+	}
+}
+
+static void disable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		       enum bt_bap_ascs_reason reason)
+{
+	printk("stream %p disable operation rsp_code %u reason %u\n", stream, rsp_code, reason);
+
+	if (rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		SET_FLAG(flag_operation_success);
+	}
+}
+
+static void metadata_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+			enum bt_bap_ascs_reason reason)
+{
+	printk("stream %p metadata operation rsp_code %u reason %u\n", stream, rsp_code, reason);
+
+	if (rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		SET_FLAG(flag_operation_success);
+	}
+}
+
+static void release_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+		       enum bt_bap_ascs_reason reason)
+{
+	printk("stream %p release operation rsp_code %u reason %u\n", stream, rsp_code, reason);
+
+	if (rsp_code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		SET_FLAG(flag_operation_success);
+	}
+}
+
 const struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
+	.config = config_cb,
+	.qos = qos_cb,
+	.enable = enable_cb,
+	.start = start_cb,
+	.stop = stop_cb,
+	.disable = disable_cb,
+	.metadata = metadata_cb,
+	.release = release_cb,
 };
 
 static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
@@ -267,6 +357,7 @@ static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep
 	int err;
 
 	UNSET_FLAG(flag_stream_codec_configured);
+	UNSET_FLAG(flag_operation_success);
 
 	err = bt_bap_stream_config(default_conn, stream, ep,
 				     &preset_16_2_1.codec);
@@ -276,6 +367,7 @@ static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep
 	}
 
 	WAIT_FOR_FLAG(flag_stream_codec_configured);
+	WAIT_FOR_FLAG(flag_operation_success);
 
 	return 0;
 }
@@ -393,6 +485,7 @@ static size_t release_streams(size_t stream_cnt)
 			break;
 		}
 
+		UNSET_FLAG(flag_operation_success);
 		UNSET_FLAG(flag_stream_released);
 
 		err = bt_bap_stream_release(&g_streams[i]);
@@ -401,6 +494,7 @@ static size_t release_streams(size_t stream_cnt)
 			return 0;
 		}
 
+		WAIT_FOR_FLAG(flag_operation_success);
 		WAIT_FOR_FLAG(flag_stream_released);
 	}
 
