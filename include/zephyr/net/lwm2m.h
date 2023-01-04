@@ -610,6 +610,8 @@ struct lwm2m_objlnk {
 /**
  * @brief Change an observer's pmin value.
  *
+ * @deprecated Use lwm2m_update_observer_min_period() instead.
+ *
  * LwM2M clients use this function to modify the pmin attribute
  * for an observation being made.
  * Example to update the pmin of a temperature sensor value being observed:
@@ -621,11 +623,31 @@ struct lwm2m_objlnk {
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
 					    uint32_t period_s);
 
 /**
+ * @brief Change an observer's pmin value.
+ *
+ * LwM2M clients use this function to modify the pmin attribute
+ * for an observation being made.
+ * Example to update the pmin of a temperature sensor value being observed:
+ * lwm2m_update_observer_min_period(client_ctx, &LWM2M_OBJ(3303, 0, 5700), 5);
+ *
+ * @param[in] client_ctx LwM2M context
+ * @param[in] path LwM2M path as a struct
+ * @param[in] period_s Value of pmin to be given (in seconds).
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_update_observer_min_period(struct lwm2m_ctx *client_ctx,
+				     const struct lwm2m_obj_path *path, uint32_t period_s);
+
+/**
  * @brief Change an observer's pmax value.
+ *
+ * @deprecated Use lwm2m_update_observer_max_period() instead.
  *
  * LwM2M clients use this function to modify the pmax attribute
  * for an observation being made.
@@ -638,8 +660,26 @@ int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const 
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_update_observer_max_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
 					    uint32_t period_s);
+
+/**
+ * @brief Change an observer's pmax value.
+ *
+ * LwM2M clients use this function to modify the pmax attribute
+ * for an observation being made.
+ * Example to update the pmax of a temperature sensor value being observed:
+ * lwm2m__update_observer_max_period(client_ctx, &LWM2M_OBJ(3303, 0, 5700), 5);
+ *
+ * @param[in] client_ctx LwM2M context
+ * @param[in] path LwM2M path as a struct
+ * @param[in] period_s Value of pmax to be given (in seconds).
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
+				     const struct lwm2m_obj_path *path, uint32_t period_s);
 
 /**
  * @brief Create an LwM2M object instance.
@@ -1664,6 +1704,8 @@ int lwm2m_update_device_service_period(uint32_t period_ms);
 /**
  * @brief Check whether a path is observed
  *
+ * @deprecated Use lwm2m_path_is_observed() instead.
+ *
  * @param[in] pathstr LwM2M path string to check, e.g. "3/0/1"
  *
  * @return true when there exists an observation of the same level
@@ -1672,7 +1714,21 @@ int lwm2m_update_device_service_period(uint32_t period_ms);
  *         E.g. true if path refers to a resource and the parent object has an
  *         observation, false for the inverse.
  */
+__deprecated
 bool lwm2m_engine_path_is_observed(const char *pathstr);
+
+/**
+ * @brief Check whether a path is observed
+ *
+ * @param[in] path LwM2M path as a struct to check
+ *
+ * @return true when there exists an observation of the same level
+ *         or lower as the given path, false if it doesn't or path is not a
+ *         valid LwM2M-path.
+ *         E.g. true if path refers to a resource and the parent object has an
+ *         observation, false for the inverse.
+ */
+bool lwm2m_path_is_observed(const struct lwm2m_obj_path *path);
 
 /**
  * @brief Stop the LwM2M engine
