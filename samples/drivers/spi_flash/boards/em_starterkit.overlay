@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2023 Synopsys.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	cs-gpios = <&creg_gpio 5 GPIO_ACTIVE_HIGH>;
+};
