@@ -29,3 +29,8 @@ tests:
     tags: test_framework
     integration_platforms:
       - native_posix
+  testing.ztest.base.standalone:
+    extra_args: CONF_FILE=prj_standalone.conf
+    tags: test_framework
+    integration_platforms:
+      - native_posix

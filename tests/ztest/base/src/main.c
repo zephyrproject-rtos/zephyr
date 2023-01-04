@@ -166,3 +166,14 @@ ZTEST(fail_in_setup, test_should_never_run)
 }
 
 ZTEST_SUITE(fail_in_setup, NULL, fail_in_setup_setup, NULL, NULL, NULL);
+
+#if CONFIG_ZTEST_STANDALONE_EXECUTION
+
+/* Standalone usage of ZTest needs the definition of the main function */
+void main(void)
+{
+	/* run the tests */
+	ztest_main();
+}
+
+#endif
