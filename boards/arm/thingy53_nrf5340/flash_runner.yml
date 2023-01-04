@@ -14,3 +14,15 @@ board_single_commands:
     thingy53_nrf5340_cpuapp,
     thingy53_nrf5340_cpuapp_ns,
   ]
+
+# Prevent resetting the cores whilst flashing multiple images until all images
+# for each core have been flashed, this allows security bits to be set during
+# programming without them interfering with additional flashing processes.
+board_delay_reset:
+  - [
+    thingy53_nrf5340_cpuapp,
+    thingy53_nrf5340_cpuapp_ns,
+  ]
+  - [
+    thingy53_nrf5340_cpunet,
+  ]
