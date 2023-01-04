@@ -257,6 +257,22 @@ Boards & SoC Support
     Note that MCUboot and MCUboot image updates from pre-Zephyr 3.3 might be
     incompatible with Zephyr 3.3 onwards and vice versa.
 
+  * When using sysbuild with the following boards with ``west flash``, reset
+    of the board will only be performed once all images for a core have been
+    programmed, fixing an issue whereby later images might fail to be
+    programmed to a board:
+    ``nrf5340dk_nrf5340``
+    ``thingy53_nrf5340``
+    ``nrf9160dk_nrf9160``
+
+  * When using sysbuild with the following boards with ``west flash``, the
+    ``--recover`` and ``--erase`` arguments will only recover/erase the
+    devices once per core instead of once per image flashed, fixing an issue
+    whereby the board could be unbootable:
+    ``nrf5340dk_nrf5340``
+    ``thingy53_nrf5340``
+    ``nrf9160dk_nrf9160``
+
 * Made these changes in other boards:
 
 * Added support for these following shields:
