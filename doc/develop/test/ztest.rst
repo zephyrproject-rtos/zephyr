@@ -203,6 +203,17 @@ function can be written as following::
       ztest_verify_all_test_suites_ran();
     }
 
+Standalone execution
+====================
+
+By default, the ZTest framework creates a new Zephyr application when enabled:
+the ``main`` function is defined in the framework and tests are automatically
+executed from there.
+
+You can still decide to execute the tests from any application by setting
+:kconfig:option:`CONFIG_ZTEST_STANDALONE_EXECUTION=y`.
+Then, explicit execution of ``ztest_main()`` is needed to run the tests.
+Test reports are printed after each test suite is fully executed.
 
 Quick start - Integration testing
 *********************************
