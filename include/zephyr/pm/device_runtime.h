@@ -148,13 +148,13 @@ bool pm_device_runtime_is_enabled(const struct device *dev);
 static inline int pm_device_runtime_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return -ENOSYS;
+	return 0;
 }
 
 static inline int pm_device_runtime_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return -ENOSYS;
+	return 0;
 }
 
 static inline int pm_device_runtime_get(const struct device *dev)
