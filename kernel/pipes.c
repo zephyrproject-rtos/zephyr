@@ -478,6 +478,16 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 
 	z_sched_wait(&pipe->lock, key, &pipe->wait_q.writers, timeout, NULL);
 
+	/*
+	 * On SMP systems, threads in the processing list may timeout before
+	 * the data has finished copying. The following spin lock/unlock pair
+	 * prevents those threads from executing further until the data copying
+	 * is complete.
+	 */
+
+	key = k_spin_lock(&pipe->lock);
+	k_spin_unlock(&pipe->lock, key);
+
 	*bytes_written = bytes_to_write - src_desc->bytes_to_xfer;
 
 	int ret = pipe_return_code(min_xfer, src_desc->bytes_to_xfer,
@@ -647,6 +657,16 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 	_current->base.swap_data = dest_desc;
 
 	z_sched_wait(&pipe->lock, key, &pipe->wait_q.readers, timeout, NULL);
+
+	/*
+	 * On SMP systems, threads in the processing list may timeout before
+	 * the data has finished copying. The following spin lock/unlock pair
+	 * prevents those threads from executing further until the data copying
+	 * is complete.
+	 */
+
+	key = k_spin_lock(&pipe->lock);
+	k_spin_unlock(&pipe->lock, key);
 
 	*bytes_read = bytes_to_read - dest_desc->bytes_to_xfer;
 
