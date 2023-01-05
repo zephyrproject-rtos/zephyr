@@ -24,23 +24,26 @@ Overview
 Zephyr's build system is based on `CMake`_.
 
 The build system is application-centric, and requires Zephyr-based applications
-to initiate building the kernel source tree. The application build controls
+to initiate building the Zephyr source code. The application build controls
 the configuration and build process of both the application and Zephyr itself,
 compiling them into a single binary.
 
-Zephyr's base directory hosts Zephyr's own source code, its kernel
-configuration options, and its build definitions.
+The main zephyr repository contains Zephyr's source code, configuration files,
+and build system. You also likely have installed various :ref:`modules`
+alongside the zephyr repository, which provide third party source code
+integration.
 
-The files in the **application directory** link Zephyr with the
+The files in the **application directory** link Zephyr and any modules with the
 application. This directory contains all application-specific files, such as
-configuration options and source code.
+application-specific configuration files and source code.
 
-An application in its simplest form has the following contents:
+Here are the files in a simple Zephyr application:
 
 .. code-block:: none
 
    <app>
    ├── CMakeLists.txt
+   ├── app.overlay
    ├── prj.conf
    └── src
        └── main.c
@@ -50,25 +53,40 @@ These contents are:
 * **CMakeLists.txt**: This file tells the build system where to find the other
   application files, and links the application directory with Zephyr's CMake
   build system. This link provides features supported by Zephyr's build system,
-  such as board-specific kernel configuration files, the ability to run and
+  such as board-specific configuration files, the ability to run and
   debug compiled binaries on real or emulated hardware, and more.
 
-* **Kernel configuration files**: An application typically provides a
-  Kconfig configuration file (usually called :file:`prj.conf`) that specifies
-  application-specific values for one or more kernel configuration options.
-  These application settings are merged with board-specific settings to produce
-  a kernel configuration.
+* **app.overlay**: This is a devicetree overlay file that specifies
+  application-specific changes which should be applied to the base devicetree
+  for any board you build for. The purpose of devicetree overlays is
+  usually to configure something about the hardware used by the application.
+
+  The build system looks for :file:`app.overlay` by default, but you can add
+  more devicetree overlays, and other default files are also searched for.
+
+  See :ref:`devicetree` for more information about devicetree.
+
+* **prj.conf**: This is a Kconfig fragment that specifies application-specific
+  values for one or more Kconfig options. These application settings are merged
+  with other settings to produce the final configuration. The purpose of
+  Kconfig fragments is usually to configure the software features used by
+  the application.
+
+  The build system looks for :file:`prj.conf` by default, but you can add more
+  Kconfig fragments, and other default files are also searched for.
 
   See :ref:`application-kconfig` below for more information.
 
-* **Application source code files**: An application typically provides one
-  or more application-specific files, written in C or assembly language. These
-  files are usually located in a sub-directory called :file:`src`.
+* **main.c**: A source code file. Applications typically contain source files
+  written in C, C++, or assembly language. The Zephyr convention is to place
+  them in a subdirectory of :file:`<app>` named :file:`src`.
 
-Once an application has been defined, you can use CMake to create project files
-for building it from a directory where you want to host these files. This is
-known as the **build directory**. Application build artifacts are always
-generated in a build directory; Zephyr does not support "in-tree" builds.
+Once an application has been defined, you will use CMake to generate a **build
+directory**, which contains the files you need to build the application and
+Zephyr, then link them together into a final binary you can run on your board.
+The easiest way to do this is with :ref:`west build <west-building>`, but you
+can use CMake directly also. Application build artifacts are always generated
+in a separate build directory: Zephyr does not support "in-tree" builds.
 
 The following sections describe how to create, build, and run Zephyr
 applications, followed by more detailed reference material.
