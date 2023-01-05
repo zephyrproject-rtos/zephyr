@@ -381,9 +381,9 @@ static void ascs_ep_get_status_config(struct bt_audio_ep *ep,
 	cfg->codec.cid = sys_cpu_to_le16(ep->codec.cid);
 	cfg->codec.vid = sys_cpu_to_le16(ep->codec.vid);
 
-	LOG_DBG("dir 0x%02x unframed_supported 0x%02x phy 0x%02x rtn %u "
+	LOG_DBG("dir %s unframed_supported 0x%02x phy 0x%02x rtn %u "
 	       "latency %u pd_min %u pd_max %u codec 0x%02x",
-	       ep->dir, pref->unframed_supported, pref->phy,
+	       bt_audio_dir_str(ep->dir), pref->unframed_supported, pref->phy,
 	       pref->rtn, pref->latency, pref->pd_min, pref->pd_max,
 	       ep->stream->codec->id);
 
@@ -408,9 +408,9 @@ static void ascs_ep_get_status_qos(struct bt_audio_ep *ep,
 	qos->latency = sys_cpu_to_le16(ep->stream->qos->latency);
 	sys_put_le24(ep->stream->qos->pd, qos->pd);
 
-	LOG_DBG("dir 0x%02x codec 0x%02x interval %u framing 0x%02x phy 0x%02x "
+	LOG_DBG("dir %s codec 0x%02x interval %u framing 0x%02x phy 0x%02x "
 	       "rtn %u latency %u pd %u",
-	       ep->dir, ep->stream->codec->id,
+	       bt_audio_dir_str(ep->dir), ep->stream->codec->id,
 	       ep->stream->qos->interval, ep->stream->qos->framing,
 	       ep->stream->qos->phy, ep->stream->qos->rtn,
 	       ep->stream->qos->latency, ep->stream->qos->pd);
@@ -429,7 +429,8 @@ static void ascs_ep_get_status_enable(struct bt_audio_ep *ep,
 	ascs_codec_data_add(buf, "meta", ep->codec.meta_count, ep->codec.meta);
 	enable->metadata_len = buf->len - enable->metadata_len;
 
-	LOG_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->dir, ep->cig_id, ep->cis_id);
+	LOG_DBG("dir %s cig 0x%02x cis 0x%02x",
+		bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
 }
 
 static int ascs_ep_get_status_idle(uint8_t ase_id, struct net_buf_simple *buf)
@@ -1207,14 +1208,14 @@ static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 		return -EINVAL;
 	}
 
-	LOG_DBG("ep %p dir %u codec id 0x%02x cid 0x%04x vid 0x%04x len %u", ep, ep->dir, id, cid,
-		vid, len);
+	LOG_DBG("ep %p dir %s codec id 0x%02x cid 0x%04x vid 0x%04x len %u",
+		ep, bt_audio_dir_str(ep->dir), id, cid, vid, len);
 
 	bt_pacs_cap_foreach(ep->dir, codec_lookup_id, &lookup_data);
 
 	if (lookup_data.codec == NULL) {
-		LOG_DBG("Codec with id %u for dir %u is not supported by our capabilities",
-			id, ep->dir);
+		LOG_DBG("Codec with id %u for dir %s is not supported by our capabilities",
+			id, bt_audio_dir_str(ep->dir));
 
 		return -ENOENT;
 	}
@@ -1504,8 +1505,8 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 		}
 
 		if (bt_audio_iso_get_ep(false, iso, ep->dir) != NULL) {
-			LOG_ERR("iso %p already in use in dir %u",
-			       &iso->chan, ep->dir);
+			LOG_ERR("iso %p already in use in dir %s",
+			       &iso->chan, bt_audio_dir_str(ep->dir));
 			bt_audio_iso_unref(iso);
 			return -EALREADY;
 		}

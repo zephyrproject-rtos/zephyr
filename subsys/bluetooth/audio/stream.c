@@ -22,6 +22,7 @@
 #include "../host/iso_internal.h"
 
 #include "audio_iso.h"
+#include "audio_internal.h"
 #include "endpoint.h"
 #include "unicast_client_internal.h"
 #include "unicast_server.h"
@@ -872,7 +873,8 @@ static int unicast_group_add_stream(struct bt_audio_unicast_group *group,
 	__ASSERT_NO_MSG(stream->ep == NULL ||
 			(stream->ep != NULL && stream->ep->iso == NULL));
 
-	LOG_DBG("group %p stream %p dir %u", group, stream, dir);
+	LOG_DBG("group %p stream %p dir %s",
+		group, stream, bt_audio_dir_str(dir));
 
 	iso = get_new_iso(group, stream->conn, dir);
 	if (iso == NULL) {
