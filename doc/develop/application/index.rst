@@ -5,12 +5,18 @@ Application Development
 
 .. note::
 
-   In this document, we'll assume your **application directory** is
-   :file:`<home>/app`, and that its **build directory** is
-   :file:`<home>/app/build`.
-   (These terms are defined in the following Overview.)
-   On Linux/macOS, <home> is equivalent to ``~``, whereas on Windows it's
-   ``%userprofile%``.
+   In this document, we'll assume:
+
+   - your **application directory**, :file:`<app>`, is something like :file:`<home>/zephyrproject/app`
+   - its **build directory** is :file:`<app>/build`
+
+   These terms are defined below. On Linux/macOS, <home> is equivalent to
+   ``~``. On Windows, it's ``%userprofile%``.
+
+   Keeping your application inside the workspace (:file:`<home>/zephyrproject`)
+   makes it easier to use ``west build`` and other commands with it. (You can
+   put your application anywhere as long as :ref:`ZEPHYR_BASE
+   <important-build-vars>` is set appropriately, though.)
 
 Overview
 ********
@@ -33,7 +39,7 @@ An application in its simplest form has the following contents:
 
 .. code-block:: none
 
-   <home>/app
+   <app>
    ├── CMakeLists.txt
    ├── prj.conf
    └── src
@@ -645,14 +651,7 @@ Using CMake directly:
 Basics
 ======
 
-.. note::
-
-   In the below example, ``west`` is used outside of a west workspace. For this
-   to work, you must set the ``ZEPHYR_BASE`` environment variable to the path
-   of your zephyr git repository, using one of the methods on the
-   :ref:`Environment Variables <env_vars>` page.
-
-#. Navigate to the application directory :file:`<home>/app`.
+#. Navigate to the application directory :file:`<app>`.
 #. Enter the following commands to build the application's :file:`zephyr.elf`
    image for the board specified in the command-line parameters:
 
@@ -691,7 +690,7 @@ When using the Ninja generator a build directory looks like this:
 
 .. code-block:: none
 
-   <home>/app/build
+   <app>/build
    ├── build.ninja
    ├── CMakeCache.txt
    ├── CMakeFiles
@@ -751,7 +750,7 @@ the build system to rebuild the entire application from scratch with the
 following procedure:
 
 #. Open a terminal console on your host computer, and navigate to the
-   build directory :file:`<home>/app/build`.
+   build directory :file:`<app>/build`.
 
 #. Enter one of the following commands, depending on whether you want to use
    ``west`` or ``cmake`` directly to delete the application's generated
@@ -844,7 +843,7 @@ hardware:
    this via USB.
 
 #. Run one of these console commands from the build directory,
-   :file:`<home>/app/build`, to flash the compiled Zephyr image and run it on
+   :file:`<app>/build`, to flash the compiled Zephyr image and run it on
    your board:
 
    .. code-block:: console
@@ -894,7 +893,7 @@ hardware. Follow these instructions to run an application via QEMU:
    - ``qemu_cortex_m3`` to emulate running on an ARM Cortex M3-based board
 
 #. Run one of these console commands from the build directory,
-   :file:`<home>/app/build`, to run the Zephyr binary in QEMU:
+   :file:`<app>/build`, to run the Zephyr binary in QEMU:
 
    .. code-block:: console
 
