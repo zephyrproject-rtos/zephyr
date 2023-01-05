@@ -191,25 +191,26 @@ following example, ``app`` is a Zephyr freestanding application:
             └── main.c
 
 Example workspace application
-******************************
+*****************************
 
-A reference :ref:`workspace application <zephyr-workspace-app>` contained in its
-own Git repository can be found in the `Example Application`_ repository.
-It can be used as a reference on how to structure out-of-tree, Zephyr-based workspace applications
-using the :ref:`T2 star topology <west-t2>`. It also demonstrates the out-of-tree
-use of features commonly used in applications such as:
+The `example-application`_ Git repository contains a reference :ref:`workspace
+application <zephyr-workspace-app>`. It can be used as a reference when
+creating your own application.
 
-- Custom boards
-- Custom devicetree bindings
-- Custom drivers
-- Continuous Integration (CI) setup
-- An example west :ref:`extension <west-extensions>` command
+The example-application repository demonstrates how to use several
+commonly-used features, such as:
+
+- Custom :ref:`board ports <board_porting_guide>`
+- Custom :ref:`devicetree bindings <dt-bindings>`
+- Custom :ref:`device drivers <device_model_api>`
+- Continuous Integration (CI) setup, including using :ref:`twister <twister_script>`
+- A custom west :ref:`extension command <west-extensions>`
 
 Creating an Application
 ***********************
 
 Follow these steps to create a new application directory. (Refer to
-the `Example Application`_ repository for a reference standalone application in its own Git repository
+the `example-application`_ repository for a reference standalone application in its own Git repository
 or to :ref:`samples-and-demos` for existing applications provided as part of
 Zephyr.)
 
@@ -1435,4 +1436,4 @@ CONFIG_DEBUG_THREAD_INFO=y in your application.
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
 .. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
 .. _using Chocolatey: https://chocolatey.org/packages/RapidEE
-.. _Example Application: https://github.com/zephyrproject-rtos/example-application
+.. _example-application: https://github.com/zephyrproject-rtos/example-application
