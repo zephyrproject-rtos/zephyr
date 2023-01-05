@@ -496,7 +496,7 @@ ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_long)
 	zassert_equal(num_verified, NUM_BLOCKS, "Invalid RX blocks received");
 }
 
-void *test_i2s_speed_configure(void)
+static void *test_i2s_speed_configure(void)
 {
 	/* Configure I2S TX transfer. */
 	int ret;
@@ -519,7 +519,7 @@ void *test_i2s_speed_configure(void)
 	return 0;
 }
 
-void *test_i2s_speed_rxtx_configure(void)
+static void *test_i2s_speed_rxtx_configure(void)
 {
 	int ret;
 
@@ -545,3 +545,7 @@ void *test_i2s_speed_rxtx_configure(void)
 
 	return 0;
 }
+
+
+ZTEST_SUITE(drivers_i2s_speed, NULL, test_i2s_speed_configure, NULL, NULL, NULL);
+ZTEST_SUITE(drivers_i2s_speed_both_rxtx, NULL, test_i2s_speed_rxtx_configure, NULL, NULL, NULL);
