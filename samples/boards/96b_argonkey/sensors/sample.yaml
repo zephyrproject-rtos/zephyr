@@ -5,5 +5,5 @@ tests:
   sample.board.96b_argonkey.sensors:
     harness: sensor
     platform_allow: 96b_argonkey
-    tags: sensors
+    tags: sensors gpio
     depends_on: i2c spi gpio

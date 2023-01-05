@@ -5,5 +5,5 @@ tests:
   sample.board.96b_argonkey.microphone:
     harness: sensor
     platform_allow: 96b_argonkey
-    tags: sensors
+    tags: sensors gpio
     depends_on: i2s gpio

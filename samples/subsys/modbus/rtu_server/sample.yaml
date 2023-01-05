@@ -6,7 +6,7 @@ tests:
     platform_allow: nrf52840dk_nrf52840 frdm_k64f
     integration_platforms:
       - nrf52840dk_nrf52840
-    tags: uart modbus
+    tags: uart modbus gpio
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
             dt_enabled_alias_with_parent_compat("led1", "gpio-leds") and
             dt_enabled_alias_with_parent_compat("led2", "gpio-leds")
@@ -16,7 +16,7 @@ tests:
     platform_allow: nrf52840dk_nrf52840 frdm_k64f
     integration_platforms:
       - nrf52840dk_nrf52840
-    tags: usb modbus
+    tags: usb modbus gpio
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
             dt_enabled_alias_with_parent_compat("led1", "gpio-leds") and
             dt_enabled_alias_with_parent_compat("led2", "gpio-leds")

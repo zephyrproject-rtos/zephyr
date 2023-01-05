@@ -1,4 +1,4 @@
 tests:
   drivers.spi.dt_spec:
-    tags: drivers spi devicetree
+    tags: drivers spi devicetree gpio
     depends_on: spi gpio

@@ -1,6 +1,6 @@
 common:
   build_only: true
-  tags: drivers eeprom
+  tags: drivers eeprom gpio
 tests:
   drivers.eeprom.build:
     min_ram: 32

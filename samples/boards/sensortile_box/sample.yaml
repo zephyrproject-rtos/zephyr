@@ -5,5 +5,5 @@ tests:
   sample.board.sensortile_box.sensors:
     harness: sensor
     platform_allow: sensortile_box
-    tags: sensors
+    tags: sensors gpio
     depends_on: i2c spi gpio

@@ -3,6 +3,6 @@ sample:
 tests:
   sample.drivers.lcd.hd44780:
     platform_allow: arduino_due
-    tags: display
+    tags: display gpio
     harness: display
     depends_on: gpio

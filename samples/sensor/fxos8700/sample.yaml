@@ -1,6 +1,6 @@
 common:
   harness: sensor
-  tags: sensors
+  tags: sensors gpio
   depends_on: i2c gpio
 sample:
   name: FXOS8700 Accelerometer/Magnetometer Sensor

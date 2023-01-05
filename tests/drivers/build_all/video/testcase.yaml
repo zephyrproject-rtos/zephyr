@@ -1,6 +1,6 @@
 common:
   build_only: true
-  tags: drivers video
+  tags: drivers video gpio
 tests:
   drivers.video.build:
     platform_allow: native_posix

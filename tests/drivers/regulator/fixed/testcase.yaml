@@ -1,6 +1,6 @@
 tests:
   drivers.regulator.fixed:
-    tags: drivers regulator
+    tags: drivers regulator gpio
     harness: ztest
     harness_config:
       fixture: gpio_loopback

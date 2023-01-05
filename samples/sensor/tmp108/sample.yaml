@@ -3,7 +3,7 @@ sample:
 tests:
   sample.sensor.tmp108:
     harness: console
-    tags: sensors
+    tags: sensors gpio
     depends_on: i2c gpio
     filter: dt_compat_enabled("ti,tmp108")
     harness_config:

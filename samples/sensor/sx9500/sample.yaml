@@ -3,6 +3,6 @@ sample:
 tests:
   sample.sensor.sx9500:
     harness: sensor
-    tags: sensors
+    tags: sensors gpio
     depends_on: i2c gpio
     filter: dt_compat_enabled("semtech,sx9500")
