@@ -363,6 +363,26 @@ static inline bool z_sched_wake_all(_wait_q_t *wait_q, int swap_retval,
 int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 		 _wait_q_t *wait_q, k_timeout_t timeout, void **data);
 
+/**
+ * @brief Walks the wait queue invoking the callback on each waiting thread
+ *
+ * This function walks the wait queue invoking the callback function on each
+ * waiting thread while holding sched_spinlock. This can be useful for routines
+ * that need to operate on multiple waiting threads.
+ *
+ * CAUTION! As a wait queue is of indeterminant length, the scheduler will be
+ * locked for an indeterminant amount of time. This may impact system
+ * performance. As such, care must be taken when using both this function and
+ * the specified callback.
+ *
+ * @param wait_q Identifies the wait queue to walk
+ * @param func   Callback to invoke on each waiting thread
+ * @param data   Custom data passed to the callback
+ *
+ * @retval non-zero if walk is terminated by the callback; otherwise 0
+ */
+int z_sched_waitq_walk(_wait_q_t *wait_q,
+		       int (*func)(struct k_thread *, void *), void *data);
 
 /** @brief Halt thread cycle usage accounting.
  *
