@@ -3358,10 +3358,16 @@ static k_timeout_t credit_based_connection_delay(struct bt_conn *conn)
 		}
 
 		const uint8_t rand_delay = random & 0x7; /* Small random delay for IOP */
-		const uint32_t calculated_delay =
-			2 * (conn->le.latency + 1) * BT_CONN_INTERVAL_TO_MS(conn->le.interval);
+		/* The maximum value of (latency + 1) * 2 multipled with the
+		 * maximum connection interval has a maximum value of
+		 * 4000000000 which can be stored in 32-bits, so this won't
+		 * result in an overflow
+		 */
+		const uint32_t calculated_delay_us =
+			2 * (conn->le.latency + 1) * BT_CONN_INTERVAL_TO_US(conn->le.interval);
+		const uint32_t calculated_delay_ms = calculated_delay_us / USEC_PER_MSEC;
 
-		return K_MSEC(MAX(100, calculated_delay + rand_delay));
+		return K_MSEC(MAX(100, calculated_delay_ms + rand_delay));
 	}
 
 	/* Must be either central or peripheral */

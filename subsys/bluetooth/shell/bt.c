@@ -221,7 +221,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s "
 		    "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s, "
-		    "Interval: 0x%04x (%u ms), SID: 0x%x",
+		    "Interval: 0x%04x (%u us), SID: 0x%x",
 		    le_addr, info->adv_type, info->rssi, name,
 		    (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
 		    (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
@@ -229,7 +229,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		    (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
 		    (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
 		    phy2str(info->primary_phy), phy2str(info->secondary_phy),
-		    info->interval, BT_CONN_INTERVAL_TO_MS(info->interval),
+		    info->interval, BT_CONN_INTERVAL_TO_US(info->interval),
 		    info->sid);
 
 	/* Store address for later use */
@@ -631,9 +631,9 @@ static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 	}
 
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
-		    "Interval 0x%04x (%u ms), PHY %s, SD 0x%04X, PAST peer %s",
+		    "Interval 0x%04x (%u us), PHY %s, SD 0x%04X, PAST peer %s",
 		    bt_le_per_adv_sync_get_index(sync), le_addr,
-		    info->interval, BT_CONN_INTERVAL_TO_MS(info->interval),
+		    info->interval, BT_CONN_INTERVAL_TO_US(info->interval),
 		    phy2str(info->phy), info->service_data, past_peer);
 
 	if (info->conn) { /* if from PAST */
@@ -685,12 +685,12 @@ static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
 
 	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
 	shell_print(ctx_shell, "BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
-		    "nse 0x%02x, interval 0x%04x (%u ms), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
+		    "nse 0x%02x, interval 0x%04x (%u us), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
 		    "max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
 		    "%sencrypted",
 		    bt_le_per_adv_sync_get_index(sync), le_addr, biginfo->sid, biginfo->num_bis,
 		    biginfo->sub_evt_count, biginfo->iso_interval,
-		    BT_CONN_INTERVAL_TO_MS(biginfo->iso_interval), biginfo->burst_number,
+		    BT_CONN_INTERVAL_TO_US(biginfo->iso_interval), biginfo->burst_number,
 		    biginfo->offset, biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
 		    biginfo->max_sdu, phy2str(biginfo->phy), biginfo->framing,
 		    biginfo->encryption ? "" : "not ");
@@ -2541,12 +2541,11 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		print_le_addr("Remote on-air", info.le.remote);
 		print_le_addr("Local on-air", info.le.local);
 
-		shell_print(ctx_shell, "Interval: 0x%04x (%u ms)",
+		shell_print(ctx_shell, "Interval: 0x%04x (%u us)",
 			    info.le.interval,
-			    BT_CONN_INTERVAL_TO_MS(info.le.interval));
-		shell_print(ctx_shell, "Latency: 0x%04x (%u ms)",
-			    info.le.latency,
-			    BT_CONN_INTERVAL_TO_MS(info.le.latency));
+			    BT_CONN_INTERVAL_TO_US(info.le.interval));
+		shell_print(ctx_shell, "Latency: 0x%04x",
+			    info.le.latency);
 		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
 			    info.le.timeout, info.le.timeout * 10);
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
