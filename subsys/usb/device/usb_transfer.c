@@ -151,9 +151,7 @@ done:
 		k_sem_give(&trans->sem);
 
 		/* Transfer completion callback */
-		if (trans->status != -ECANCELED) {
-			cb(ep, tsize, priv);
-		}
+		cb(ep, tsize, priv);
 	}
 }
 
