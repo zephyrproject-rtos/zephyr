@@ -296,7 +296,7 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 
 restart_out_transfer:
 	usb_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, ep_out_buf,
-		     sizeof(ep_out_buf), USB_TRANS_READ | USB_TRANS_NO_ZLP,
+		     sizeof(ep_out_buf), USB_TRANS_READ,
 		     acl_read_cb, NULL);
 }
 
