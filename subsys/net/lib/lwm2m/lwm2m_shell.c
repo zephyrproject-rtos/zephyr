@@ -166,6 +166,12 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	const char *dtype = "-s"; /* default */
 	const char *pathstr = argv[1];
 	int ret = 0;
+	struct lwm2m_obj_path path;
+
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (argc > 2) { /* read + path + options(data type) */
 		dtype = argv[2];
@@ -174,8 +180,8 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 		const char *buff;
 		uint16_t buff_len = 0;
 
-		ret = lwm2m_engine_get_res_buf(pathstr, (void **)&buff,
-					       &buff_len, NULL, NULL);
+		ret = lwm2m_get_res_buf(&path, (void **)&buff,
+					&buff_len, NULL, NULL);
 		if (ret != 0) {
 			goto out;
 		}
@@ -183,7 +189,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-s8") == 0) {
 		int8_t temp = 0;
 
-		ret = lwm2m_engine_get_s8(pathstr, &temp);
+		ret = lwm2m_get_s8(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -191,7 +197,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-s16") == 0) {
 		int16_t temp = 0;
 
-		ret = lwm2m_engine_get_s16(pathstr, &temp);
+		ret = lwm2m_get_s16(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -199,7 +205,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-s32") == 0) {
 		int32_t temp = 0;
 
-		ret = lwm2m_engine_get_s32(pathstr, &temp);
+		ret = lwm2m_get_s32(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -207,7 +213,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-s64") == 0) {
 		int64_t temp = 0;
 
-		ret = lwm2m_engine_get_s64(pathstr, &temp);
+		ret = lwm2m_get_s64(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -215,7 +221,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-u8") == 0) {
 		uint8_t temp = 0;
 
-		ret = lwm2m_engine_get_u8(pathstr, &temp);
+		ret = lwm2m_get_u8(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -223,7 +229,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-u16") == 0) {
 		uint16_t temp = 0;
 
-		ret = lwm2m_engine_get_u16(pathstr, &temp);
+		ret = lwm2m_get_u16(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -231,7 +237,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-u32") == 0) {
 		uint32_t temp = 0;
 
-		ret = lwm2m_engine_get_u32(pathstr, &temp);
+		ret = lwm2m_get_u32(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -239,7 +245,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-u64") == 0) {
 		uint64_t temp = 0;
 
-		ret = lwm2m_engine_get_u64(pathstr, &temp);
+		ret = lwm2m_get_u64(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -247,7 +253,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-f") == 0) {
 		double temp = 0;
 
-		ret = lwm2m_engine_get_float(pathstr, &temp);
+		ret = lwm2m_get_f64(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -255,7 +261,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-b") == 0) {
 		bool temp;
 
-		ret = lwm2m_engine_get_bool(pathstr, &temp);
+		ret = lwm2m_get_bool(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -263,7 +269,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-t") == 0) {
 		time_t temp;
 
-		ret = lwm2m_engine_get_time(pathstr, &temp);
+		ret = lwm2m_get_time(&path, &temp);
 		if (ret != 0) {
 			goto out;
 		}
@@ -298,6 +304,12 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	const char *pathstr = argv[1];
 	const char *dtype;
 	char *value;
+	struct lwm2m_obj_path path;
+
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (argc == 4) { /* write path options value */
 		dtype = argv[2];
@@ -308,45 +320,35 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	if (strcmp(dtype, "-s") == 0) {
-		ret = lwm2m_engine_set_string(pathstr, value);
+		ret = lwm2m_set_string(&path, value);
 	} else if (strcmp(dtype, "-f") == 0) {
 		double new = 0;
 
 		lwm2m_atof(value, &new); /* Convert string -> float */
-		ret = lwm2m_engine_set_float(pathstr, &new);
+		ret = lwm2m_set_f64(&path, new);
 	} else { /* All the types using stdlib funcs*/
 		char *e;
 
 		if (strcmp(dtype, "-s8") == 0) {
-			ret = lwm2m_engine_set_s8(pathstr,
-						  strtol(value, &e, 10));
+			ret = lwm2m_set_s8(&path, strtol(value, &e, 10));
 		} else if (strcmp(dtype, "-s16") == 0) {
-			ret = lwm2m_engine_set_s16(pathstr,
-						   strtol(value, &e, 10));
+			ret = lwm2m_set_s16(&path, strtol(value, &e, 10));
 		} else if (strcmp(dtype, "-s32") == 0) {
-			ret = lwm2m_engine_set_s32(pathstr,
-						   strtol(value, &e, 10));
+			ret = lwm2m_set_s32(&path, strtol(value, &e, 10));
 		} else if (strcmp(dtype, "-s64") == 0) {
-			ret = lwm2m_engine_set_s64(pathstr,
-						   strtoll(value, &e, 10));
+			ret = lwm2m_set_s64(&path, strtoll(value, &e, 10));
 		} else if (strcmp(dtype, "-u8") == 0) {
-			ret = lwm2m_engine_set_u8(pathstr,
-						  strtoul(value, &e, 10));
+			ret = lwm2m_set_u8(&path, strtoul(value, &e, 10));
 		} else if (strcmp(dtype, "-u16") == 0) {
-			ret = lwm2m_engine_set_u16(pathstr,
-						   strtoul(value, &e, 10));
+			ret = lwm2m_set_u16(&path, strtoul(value, &e, 10));
 		} else if (strcmp(dtype, "-u32") == 0) {
-			ret = lwm2m_engine_set_u32(pathstr,
-						   strtoul(value, &e, 10));
+			ret = lwm2m_set_u32(&path, strtoul(value, &e, 10));
 		} else if (strcmp(dtype, "-u64") == 0) {
-			ret = lwm2m_engine_set_u64(pathstr,
-						   strtoull(value, &e, 10));
+			ret = lwm2m_set_u64(&path, strtoull(value, &e, 10));
 		} else if (strcmp(dtype, "-b") == 0) {
-			ret = lwm2m_engine_set_bool(pathstr,
-						    strtoul(value, &e, 10));
+			ret = lwm2m_set_bool(&path, strtoul(value, &e, 10));
 		} else if (strcmp(dtype, "-t") == 0) {
-			ret = lwm2m_engine_set_time(pathstr,
-						    strtoll(value, &e, 10));
+			ret = lwm2m_set_time(&path, strtoll(value, &e, 10));
 		} else {
 			shell_error(sh, "can't recognize data type %s\n",
 				    dtype);
@@ -501,7 +503,6 @@ static int cmd_cache(const struct shell *sh, size_t argc, char **argv)
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 	int rc;
 	int elems;
-	char *path;
 	struct lwm2m_time_series_elem *cache;
 	struct lwm2m_obj_path obj_path;
 
@@ -526,8 +527,6 @@ static int cmd_cache(const struct shell *sh, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	path = argv[1];
-
 	elems = atoi(argv[2]);
 	if (elems < 1) {
 		shell_error(sh, "Size must be 1 or more (given %d)\n", elems);
@@ -540,10 +539,11 @@ static int cmd_cache(const struct shell *sh, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	rc = lwm2m_engine_enable_cache(path, cache, elems);
+	rc = lwm2m_enable_cache(&obj_path, cache, elems);
 	if (rc) {
-		shell_error(sh, "lwm2m_engine_enable_cache(%s, %p, %d) returned %d\n", path, cache,
-			    elems, rc);
+		shell_error(sh, "lwm2m_enable_cache(%u/%u/%u/%u, %p, %d) returned %d\n",
+			    obj_path.obj_id, obj_path.obj_inst_id, obj_path.res_id,
+			    obj_path.res_inst_id, cache, elems, rc);
 		k_free(cache);
 		return -ENOEXEC;
 	}
