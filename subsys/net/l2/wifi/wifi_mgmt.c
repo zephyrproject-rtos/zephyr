@@ -293,3 +293,24 @@ void wifi_mgmt_raise_twt_event(struct net_if *iface, struct wifi_twt_params *twt
 					iface, twt_params,
 					sizeof(struct wifi_twt_params));
 }
+
+static int wifi_reg_domain(uint32_t mgmt_request, struct net_if *iface,
+			   void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
+			(struct net_wifi_mgmt_offload *) dev->api;
+	struct wifi_reg_domain *reg_domain = data;
+
+	if (off_api == NULL || off_api->reg_domain == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*reg_domain)) {
+		return -EINVAL;
+	}
+
+	return off_api->reg_domain(dev, reg_domain);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN, wifi_reg_domain);
