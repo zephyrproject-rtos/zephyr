@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2023 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -13,7 +13,9 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/device.h>
 
-struct fcb test_fcb;
+struct fcb test_fcb = {0};
+struct fcb test_fcb_crc_disabled = { .f_flags = FCB_FLAGS_CRC_DISABLED };
+
 uint8_t fcb_test_erase_value;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
@@ -108,20 +110,17 @@ int fcb_test_cnt_elems_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 	return 0;
 }
 
-void fcb_tc_pretest(int sectors)
+void fcb_tc_pretest(int sectors, struct fcb *_fcb)
 {
-	struct fcb *fcb;
 	int rc = 0;
 
 	test_fcb_wipe();
-	fcb = &test_fcb;
-	(void)memset(fcb, 0, sizeof(*fcb));
-	fcb->f_erase_value = fcb_test_erase_value;
-	fcb->f_sector_cnt = sectors;
-	fcb->f_sectors = test_fcb_sector; /* XXX */
+	_fcb->f_erase_value = fcb_test_erase_value;
+	_fcb->f_sector_cnt = sectors;
+	_fcb->f_sectors = test_fcb_sector; /* XXX */
 
 	rc = 0;
-	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
+	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, _fcb);
 	if (rc != 0) {
 		printf("%s rc == %xm, %d\n", __func__, rc, rc);
 		zassert_true(rc == 0, "fbc initialization failure");
@@ -130,12 +129,17 @@ void fcb_tc_pretest(int sectors)
 
 static void fcb_pretest_2_sectors(void *data)
 {
-	fcb_tc_pretest(2);
+	fcb_tc_pretest(2, &test_fcb);
 }
 
 static void fcb_pretest_4_sectors(void *data)
 {
-	fcb_tc_pretest(4);
+	fcb_tc_pretest(4, &test_fcb);
+}
+
+static void fcb_pretest_crc_disabled(void *data)
+{
+	fcb_tc_pretest(2, &test_fcb_crc_disabled);
 }
 
 /*
@@ -167,3 +171,5 @@ ZTEST(fcb_test_without_set, test_get_flash_erase_value)
 ZTEST_SUITE(fcb_test_without_set, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(fcb_test_with_2sectors_set, NULL, NULL, fcb_pretest_2_sectors, NULL, NULL);
 ZTEST_SUITE(fcb_test_with_4sectors_set, NULL, NULL, fcb_pretest_4_sectors, NULL, NULL);
+
+ZTEST_SUITE(fcb_test_crc_disabled, NULL, NULL, fcb_pretest_crc_disabled, NULL, NULL);
