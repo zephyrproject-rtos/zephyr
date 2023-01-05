@@ -2937,8 +2937,8 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 }
 #endif
 
-int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
-		      bool confirmation_request)
+int lwm2m_send(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
+	       uint8_t path_list_size, bool confirmation_request)
 {
 #if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
 	struct lwm2m_message *msg;
@@ -2946,7 +2946,6 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	uint16_t content_format;
 
 	/* Path list buffer */
-	struct lwm2m_obj_path temp;
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm2m_path_list;
 	sys_slist_t lwm2m_path_free_list;
@@ -2986,12 +2985,9 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 
 	/* Parse Path to internal used object path format */
 	for (int i = 0; i < path_list_size; i++) {
-		ret = lwm2m_string_to_path(path_list[i], &temp, '/');
-		if (ret < 0) {
-			return ret;
-		}
 		/* Add to linked list */
-		if (lwm2m_engine_add_path_to_list(&lwm2m_path_list, &lwm2m_path_free_list, &temp)) {
+		if (lwm2m_engine_add_path_to_list(&lwm2m_path_list, &lwm2m_path_free_list,
+						  &path_list[i])) {
 			return -1;
 		}
 	}
@@ -3086,4 +3082,25 @@ cleanup:
 	LOG_WRN("LwM2M send is only supported for CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1");
 	return -ENOTSUP;
 #endif
+}
+
+int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
+		      bool confirmation_request)
+{
+	int ret;
+	struct lwm2m_obj_path lwm2m_path_list[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
+
+	if (path_list_size > CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE) {
+		return -E2BIG;
+	}
+
+	for (int i = 0; i < path_list_size; i++) {
+		/* translate path -> path_obj */
+		ret = lwm2m_string_to_path(path_list[i], &lwm2m_path_list[i], '/');
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return lwm2m_send(ctx, lwm2m_path_list, path_list_size, confirmation_request);
 }
