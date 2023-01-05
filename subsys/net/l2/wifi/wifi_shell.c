@@ -735,6 +735,67 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+
+static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
+			       char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_reg_domain regd = {0};
+	int ret;
+
+	if (argc == 1) {
+		regd.oper = WIFI_MGMT_GET;
+	} else if (argc >= 2 && argc <= 3) {
+		regd.oper = WIFI_MGMT_SET;
+		if (strlen(argv[1]) != 2) {
+			shell_fprintf(sh, SHELL_WARNING,
+				"Invalid reg domain: Length should be two letters/digits\n");
+			return -ENOEXEC;
+		}
+
+		/* Two letter country code with special case of 00 for WORLD */
+		if (((argv[1][0] < 'A' || argv[1][0] > 'Z') ||
+			(argv[1][1] < 'A' || argv[1][1] > 'Z')) &&
+			(argv[1][0] != '0' || argv[1][1] != '0')) {
+			shell_fprintf(sh, SHELL_WARNING, "Invalid reg domain %c%c\n", argv[1][0],
+				argv[1][1]);
+			return -ENOEXEC;
+		}
+		regd.country_code[0] = argv[1][0];
+		regd.country_code[1] = argv[1][1];
+
+		if (argc == 3) {
+			if (strncmp(argv[2], "-f", 2) == 0) {
+				regd.force = true;
+			} else {
+				shell_fprintf(sh, SHELL_WARNING, "Invalid option %s\n", argv[2]);
+				return -ENOEXEC;
+			}
+		}
+	} else {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_REG_DOMAIN, iface,
+		       &regd, sizeof(regd));
+	if (ret) {
+		shell_fprintf(sh, SHELL_WARNING, "Cannot %s Regulatory domain: %d\n",
+			regd.oper == WIFI_MGMT_GET ? "get" : "set", ret);
+		return -ENOEXEC;
+	}
+
+	if (regd.oper == WIFI_MGMT_GET) {
+		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Regulatory domain is: %c%c\n",
+			regd.country_code[0], regd.country_code[1]);
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Regulatory domain set to: %c%c\n",
+			regd.country_code[0], regd.country_code[1]);
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD(disable, NULL,
 		  "Disable Access Point mode",
@@ -785,6 +846,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
 	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows", NULL),
+	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
+	SHELL_CMD(reg_domain, NULL,
+		"Set or Get Wi-Fi regulatory domain\n"
+		"Usage: wifi reg_domain [ISO/IEC 3166-1 alpha2] [-f]\n"
+		"-f: Force to use this regulatory hint over any other regulatory hints\n"
+		"Note: This may cause regulatory compliance issues, use it at your own risk.",
+		cmd_wifi_reg_domain),
 	SHELL_SUBCMD_SET_END
 );
 
