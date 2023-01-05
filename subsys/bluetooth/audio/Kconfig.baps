@@ -383,9 +383,10 @@ config BT_AUDIO_STREAM
 	default y if BT_ASCS || BT_AUDIO_UNICAST_CLIENT || \
 			BT_AUDIO_BROADCAST_SOURCE || BT_AUDIO_BROADCAST_SINK
 
+parent-module = BT
 module = BT_AUDIO_ISO
 module-str = "Bluetooth Audio ISO"
-source "subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config_inherit"
 
 rsource "Kconfig.pacs"
 rsource "Kconfig.ascs"
