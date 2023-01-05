@@ -578,73 +578,26 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(dev_cfg != NULL);
 
-#if CONFIG_SOC_SERIES_STM32L4X
-	/* Configure PLLSA11 to enable 48M domain */
-	LL_RCC_PLLSAI1_ConfigDomain_48M(LL_RCC_PLLSOURCE_MSI,
-					LL_RCC_PLLM_DIV_1,
-					24, LL_RCC_PLLSAI1Q_DIV_2);
+#if (DT_INST_NUM_CLOCKS(0) == 1)
+	/* No domain clock selected, let's check that the configuration is correct */
 
-	/* Enable PLLSA1 */
-	LL_RCC_PLLSAI1_Enable();
+#if defined(CONFIG_SOC_SERIES_STM32L0X) && \
+	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * STM32_PLL_MULTIPLIER) != MHZ(96)
+	/* PLL used as RNG clock source (default), but its frequency doesn't fit */
+	/* Fix PLL freq or select HSI48 as RNG clock source */
+#warning PLL clock not properly configured to be used as RNG clock. Configure another clock.
+#elif !DT_NODE_HAS_COMPAT(DT_NODELABEL(clk_hsi48), fixed_clock)
+	/* No HSI48 available, a specific RNG domain clock has to be selected */
+#warning RNG domain clock not configured
+#endif
 
-	/*  Enable PLLSAI1 output mapped on 48MHz domain clock */
-	LL_RCC_PLLSAI1_EnableDomain_48M();
+#if DT_NODE_HAS_COMPAT(DT_NODELABEL(clk_hsi48), fixed_clock)  && !STM32_HSI48_ENABLED
+	/* On these series, HSI48 is available and set by default as RNG clock source */
+	/* HSI48 clock not enabled */
+#warning HSI48 clock should be enabled or other domain clock selected
+#endif
 
-	/* Wait for PLLSA1 ready flag */
-	while (LL_RCC_PLLSAI1_IsReady() != 1) {
-	}
-
-	/*  Write the peripherals independent clock configuration register :
-	 *  choose PLLSAI1 source as the 48 MHz clock is needed for the RNG
-	 *  Linear Feedback Shift Register
-	 */
-	 LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLLSAI1);
-#elif CONFIG_SOC_SERIES_STM32WLX || CONFIG_SOC_SERIES_STM32G0X
-	LL_RCC_PLL_EnableDomain_RNG();
-	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLL);
-#elif defined(RCC_CR2_HSI48ON) || defined(RCC_CR_HSI48ON) \
-	|| defined(RCC_CRRCR_HSI48ON)
-#if !STM32_HSI48_ENABLED
-	/* Deprecated: enable HSI48 using device tree */
-#warning RNG requires HSI48 clock to be enabled using device tree
-
-	/* Keeping this sequence for legacy: */
-#if CONFIG_SOC_SERIES_STM32L0X
-	/* We need SYSCFG to control VREFINT, so make sure it is clocked */
-	if (!LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
-		return -EINVAL;
-	}
-	/* HSI48 requires VREFINT (see RM0376 section 7.2.4). */
-	LL_SYSCFG_VREFINT_EnableHSI48();
-#endif /* CONFIG_SOC_SERIES_STM32L0X */
-
-	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	/* Use the HSI48 for the RNG */
-	LL_RCC_HSI48_Enable();
-	while (!LL_RCC_HSI48_IsReady()) {
-		/* Wait for HSI48 to become ready */
-	}
-#else /* !STM32_HSI48_ENABLED */
-	/* HSI48 is enabled by the DTS : lock the HSI48 clock for RNG use */
-	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-#endif /* !STM32_HSI48_ENABLED */
-
-	/* HSI48 Clock is enabled through the DTS: set as RNG clock source */
-#if defined(CONFIG_SOC_SERIES_STM32WBX)
-	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_CLK48);
-	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
-
-	/* Don't unlock the HSEM to prevent M0 core
-	 * to disable HSI48 clock used for RNG.
-	 */
-#else
-	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_HSI48);
-
-	/* Unlock the HSEM if it is not STM32WB */
-	z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
+#endif /* (DT_INST_NUM_CLOCKS(0) == 1) */
 
 	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
@@ -655,6 +608,14 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	res = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&dev_cfg->pclken[0]);
 	__ASSERT_NO_MSG(res == 0);
+
+	/* Configure domain clock if any */
+	if (DT_INST_NUM_CLOCKS(0) > 1) {
+		res = clock_control_configure(dev_data->clock,
+					      (clock_control_subsys_t *)&dev_cfg->pclken[1],
+					      NULL);
+		__ASSERT(res == 0, "Could not select RNG domain clock");
+	}
 
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&dev_data->sem_lock, 1, 1);
