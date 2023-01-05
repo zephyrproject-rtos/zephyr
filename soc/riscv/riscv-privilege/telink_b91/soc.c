@@ -4,9 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "sys.h"
-#include "clock.h"
+#include <sys.h>
+#include <clock.h>
+#include <gpio_default.h>
+#include <ext_driver/ext_pm.h>
 #include <zephyr/device.h>
+
 
 /* Software reset defines */
 #define reg_reset                   REG_ADDR8(0x1401ef)
@@ -75,8 +78,18 @@ static int soc_b91_init(void)
 	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 
+#if (defined(CONFIG_PM) && defined(CONFIG_BT_B91))
+	/* Select internal 32K for BLE PM, ASAP after boot */
+	blc_pm_select_internal_32k_crystal();
+#endif /* CONFIG_PM && CONFIG_BT_B91 */
+
 	/* system init */
 	sys_init(POWER_MODE, VBAT_TYPE);
+
+#if CONFIG_PM
+	/* set GPIOs to default state */
+	gpio_init(1);
+#endif /* CONFIG_PM */
 
 	/* clocks init: CCLK, HCLK, PCLK */
 	switch (cclk) {

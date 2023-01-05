@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ext_driver/ext_pm.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
 #include <stimer.h>
+#include <b91_sleep.h>
 #include <zephyr/kernel.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -96,10 +96,11 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
 				stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
 			}
-			cpu_sleep_wakeup_32k_rc(SUSPEND_MODE, PM_WAKEUP_TIMER,
-						tl_sleep_tick + stimer_sleep_ticks);
-			current_time += systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
-			set_mtime(current_time);
+			if (b91_suspend(tl_sleep_tick + stimer_sleep_ticks)) {
+				current_time +=
+					systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
+				set_mtime(current_time);
+			}
 		}
 		break;
 
