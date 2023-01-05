@@ -76,7 +76,7 @@ BUILD_ASSERT((CONFIG_ENTROPY_STM32_THR_POOL_SIZE &
 	     "The CONFIG_ENTROPY_STM32_THR_POOL_SIZE must be a power of 2!");
 
 struct entropy_stm32_rng_dev_cfg {
-	struct stm32_pclken pclken;
+	struct stm32_pclken *pclken;
 };
 
 struct entropy_stm32_rng_dev_data {
@@ -91,9 +91,10 @@ struct entropy_stm32_rng_dev_data {
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_STM32_THR_POOL_SIZE);
 };
 
-static const struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
-	.pclken	= { .bus = DT_INST_CLOCKS_CELL(0, bus),
-		    .enr = DT_INST_CLOCKS_CELL(0, bits) },
+static struct stm32_pclken pclken_rng[] = STM32_DT_INST_CLOCKS(0);
+
+static struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
+	.pclken	= pclken_rng
 };
 
 static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
@@ -652,7 +653,7 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	}
 
 	res = clock_control_on(dev_data->clock,
-		(clock_control_subsys_t *)&dev_cfg->pclken);
+		(clock_control_subsys_t *)&dev_cfg->pclken[0]);
 	__ASSERT_NO_MSG(res == 0);
 
 	/* Locking semaphore initialized to 1 (unlocked) */
