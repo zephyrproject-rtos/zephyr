@@ -190,12 +190,15 @@ following example, ``app`` is a Zephyr freestanding application:
         └── src/
             └── main.c
 
-Example workspace application
-*****************************
+Creating an Application
+***********************
+
+example-application
+===================
 
 The `example-application`_ Git repository contains a reference :ref:`workspace
-application <zephyr-workspace-app>`. It can be used as a reference when
-creating your own application.
+application <zephyr-workspace-app>`. It is recommended to use it as a reference
+when creating your own application as described in the following sections.
 
 The example-application repository demonstrates how to use several
 commonly-used features, such as:
@@ -206,20 +209,90 @@ commonly-used features, such as:
 - Continuous Integration (CI) setup, including using :ref:`twister <twister_script>`
 - A custom west :ref:`extension command <west-extensions>`
 
-Creating an Application
-***********************
+Basic example-application Usage
+===============================
 
-Follow these steps to create a new application directory. (Refer to
-the `example-application`_ repository for a reference standalone application in its own Git repository
-or to :ref:`samples-and-demos` for existing applications provided as part of
-Zephyr.)
+The easiest way to get started with the example-application repository within
+an existing Zephyr workspace is to follow these steps:
 
-#. Create an application directory on your workstation computer, outside of the
-   Zephyr base directory.  Usually you'll want to create it somewhere under
-   your user's home directory.
+.. code-block:: console
 
-   For example, in a Unix shell or Windows ``cmd.exe`` prompt, navigate to
-   where you want to create your application, then enter:
+   cd <home>/zephyrproject
+   git clone https://github.com/zephyrproject-rtos/example-application my-app
+
+The directory name :file:`my-app` above is arbitrary: change it as needed. You
+can now go into this directory and adapt its contents to suit your needs. Since
+you are using an existing Zephyr workspace, you can use ``west build`` or any
+other west commands to build, flash, and debug.
+
+Advanced example-application Usage
+==================================
+
+You can also use the example-application repository as a starting point for
+building your own customized Zephyr-based software distribution. This lets you
+do things like:
+
+- remove Zephyr modules you don't need
+- add additional custom repositories of your own
+- override repositories provided by Zephyr with your own versions
+- share the results with others and collaborate further
+
+The example-application repository contains a :file:`west.yml` file and is
+therefore also a west :ref:`manifest repository <west-workspace>`. Use this to
+create a new, customized workspace by following these steps:
+
+.. code-block:: console
+
+   cd <home>
+   mkdir my-workspace
+   cd my-workspace
+   git clone https://github.com/zephyrproject-rtos/example-application my-manifest-repo
+   west init -l my-manifest-repo
+
+This will create a new workspace with the :ref:`T2 topology <west-t2>`, with
+:file:`my-manifest-repo` as the manifest repository. The :file:`my-workspace`
+and :file:`my-manifest-repo` names are arbitrary: change them as needed.
+
+Next, customize the manifest repository. The initial contents of this
+repository will match the example-application's contents when you clone it. You
+can then edit :file:`my-manifest-repo/west.yml` to your liking, changing the
+set of repositories in it as you wish. See :ref:`west-manifest-import` for many
+examples of how to add or remove different repositories from your workspace as
+needed. Make any other changes you need to other files.
+
+When you are satisfied, you can run:
+
+.. code-block::
+
+   west update
+
+and your workspace will be ready for use.
+
+If you push the resulting :file:`my-manifest-repo` repository somewhere else,
+you can share your work with others. For example, let's say you push the
+repository to ``https://git.example.com/my-manifest-repo``. Other people can
+then set up a matching workspace by running:
+
+.. code-block::
+
+   west init -m https://git.example.com/my-manifest-repo my-workspace
+   cd my-workspace
+   west update
+
+From now on, you can collaborate on the shared software by pushing changes to
+the repositories you are using and updating :file:`my-manifest-repo/west.yml`
+as needed to add and remove repositories, or change their contents.
+
+Creating an Application by Hand
+===============================
+
+You can follow these steps to create a basic application directory from
+scratch. However, using the `example-application`_ repository or one of
+Zephyr's :ref:`samples-and-demos` as a starting point is likely to be easier.
+
+#. Create an application directory.
+
+   For example, in a Unix shell or Windows ``cmd.exe`` prompt:
 
    .. code-block:: console
 
@@ -229,10 +302,12 @@ Zephyr.)
 
       Building Zephyr or creating an application in a directory with spaces
       anywhere on the path is not supported. So the Windows path
-      :file:`C:\\Users\\YourName\\app` will work, but :file:`C:\\Users\\Your
-      Name\\app` will not.
+      :file:`C:\\Users\\YourName\\app` will work, but
+      :file:`C:\\Users\\Your Name\\app` will not.
 
-#. It's recommended to place all application source code in a subdirectory
+#. Create your source code files.
+
+   It's recommended to place all application source code in a subdirectory
    named :file:`src`.  This makes it easier to distinguish between project
    files and sources.
 
@@ -258,35 +333,37 @@ Zephyr.)
 
       target_sources(app PRIVATE src/main.c)
 
-   ``cmake_minimum_required()`` is required to be in your
-   :file:`CMakeLists.txt` by CMake. It is also invoked by the Zephyr
-   package. The most recent of the two versions will be enforced by CMake.
+   Notes:
 
-   ``find_package(Zephyr)`` pulls in the Zephyr build system, which creates a
-   CMake target named ``app`` (see :ref:`cmake_pkg`). Adding sources to this
-   target is how you include them in the build. The Zephyr package will define
-   ``Zephyr-Kernel`` as a CMake project and enable support for the ``C``,
-   ``CXX``, ``ASM`` languages.
+   - The ``cmake_minimum_required()`` call is required by CMake. It is also
+     invoked by the Zephyr package on the next line. CMake will error out if
+     its version is older than either the version in your
+     :file:`CMakeLists.txt` or the version number in the Zephyr package.
 
-   ``project(my_zephyr_app)`` is required for defining your application
-   project.  This must be called after ``find_package(Zephyr)`` to avoid
-   interference with Zephyr's ``project(Zephyr-Kernel)``.
+   - ``find_package(Zephyr)`` pulls in the Zephyr build system, which creates a
+     CMake target named ``app`` (see :ref:`cmake_pkg`). Adding sources to this
+     target is how you include them in the build. The Zephyr package will
+     define ``Zephyr-Kernel`` as a CMake project and enable support for the
+     ``C``, ``CXX``, ``ASM`` languages.
 
-   ``target_sources(app PRIVATE src/main.c)`` is to add your source file to the
-   ``app`` target. This must come after ``find_package(Zephyr)`` which defines
-   the target.
+   - ``project(my_zephyr_app)`` defines your application's CMake
+     project.  This must be called after ``find_package(Zephyr)`` to avoid
+     interference with Zephyr's ``project(Zephyr-Kernel)``.
 
-#. Set Kconfig configuration options. See :ref:`application-kconfig`.
+   - ``target_sources(app PRIVATE src/main.c)`` is to add your source file to
+     the ``app`` target. This must come after ``find_package(Zephyr)`` which
+     defines the target. You can add as many files as you want with
+     ``target_sources()``.
 
-#. Configure any devicetree overlays needed by your application.
-   See :ref:`set-devicetree-overlays`.
+#. Create at least one Kconfig fragment for your application (usually named
+   :file:`prj.conf`) and set Kconfig option values needed by your application
+   there. See :ref:`application-kconfig`.
 
-.. note::
+#. Configure any devicetree overlays needed by your application, usually in a
+   file named :file:`app.overlay`. See :ref:`set-devicetree-overlays`.
 
-   ``include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)``
-   is still supported for backward compatibility with older applications.
-   Including ``boilerplate.cmake`` directly in the sample still requires using
-   :ref:`zephyr-env` before building the application.
+#. Set up any other files you may need, such as :ref:`twister <twister_script>`
+   configuration files, continuous integration files, documentation, etc.
 
 .. _important-build-vars:
 
