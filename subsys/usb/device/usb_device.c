@@ -1246,13 +1246,11 @@ static void forward_status_cb(enum usb_dc_status_code status, const uint8_t *par
 		usb_reset_alt_setting();
 	}
 
-	if (status == USB_DC_DISCONNECTED || status == USB_DC_SUSPEND || status == USB_DC_RESET) {
+	if (status == USB_DC_DISCONNECTED || status == USB_DC_RESET) {
 		if (usb_dev.configured) {
 			usb_cancel_transfers();
-			if (status == USB_DC_DISCONNECTED || status == USB_DC_RESET) {
-				foreach_ep(disable_interface_ep);
-				usb_dev.configured = false;
-			}
+			foreach_ep(disable_interface_ep);
+			usb_dev.configured = false;
 		}
 	}
 

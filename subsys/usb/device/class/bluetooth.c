@@ -340,11 +340,6 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 		tmp = atomic_clear(&suspended);
 		if (tmp) {
 			LOG_DBG("Device resumed from suspend");
-			if (configured) {
-				/* Start reading */
-				acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr,
-					    0, NULL);
-			}
 		} else {
 			LOG_DBG("Spurious resume event");
 		}
