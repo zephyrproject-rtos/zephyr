@@ -21,6 +21,12 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 
+struct waitq_walk_data {
+	sys_dlist_t *list;
+	size_t       bytes_requested;
+	size_t       bytes_available;
+};
+
 static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 			     void *data, size_t bytes_to_read,
 			     size_t *bytes_read, size_t min_xfer,
@@ -201,6 +207,27 @@ static size_t pipe_xfer(unsigned char *dest, size_t dest_size,
 }
 
 /**
+ * @brief Callback routine used to populate wait list
+ *
+ * @return 1 to stop further walking; 0 to continue walking
+ */
+static int pipe_walk_op(struct k_thread *thread, void *data)
+{
+	struct waitq_walk_data *walk_data = data;
+	struct _pipe_desc *desc = (struct _pipe_desc *)thread->base.swap_data;
+
+	sys_dlist_append(walk_data->list, &desc->node);
+
+	walk_data->bytes_available += desc->bytes_to_xfer;
+
+	if (walk_data->bytes_available >= walk_data->bytes_requested) {
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Popluate pipe descriptors for copying to/from waiters' buffers
  *
  * This routine cycles through the waiters on the wait queue and creates
@@ -213,22 +240,15 @@ static size_t pipe_waiter_list_populate(sys_dlist_t  *list,
 					_wait_q_t    *wait_q,
 					size_t        bytes_to_xfer)
 {
-	struct k_thread  *thread;
-	struct _pipe_desc *curr;
-	size_t num_bytes = 0U;
+	struct waitq_walk_data walk_data;
 
-	_WAIT_Q_FOR_EACH(wait_q, thread) {
-		curr = (struct _pipe_desc *)thread->base.swap_data;
+	walk_data.list            = list;
+	walk_data.bytes_requested = bytes_to_xfer;
+	walk_data.bytes_available = 0;
 
-		sys_dlist_append(list, &curr->node);
+	(void) z_sched_waitq_walk(wait_q, pipe_walk_op, &walk_data);
 
-		num_bytes += curr->bytes_to_xfer;
-		if (num_bytes >= bytes_to_xfer) {
-			break;
-		}
-	}
-
-	return num_bytes;
+	return walk_data.bytes_available;
 }
 
 /**
