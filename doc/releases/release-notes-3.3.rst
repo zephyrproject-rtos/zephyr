@@ -504,6 +504,9 @@ Libraries / Subsystems
   * Added new API call `fs_mkfs`.
   * Added new sample `samples/subsys/fs/format`.
   * FAT FS driver has been updated to version 0.15 w/patch1.
+  * Added the option to disable CRC checking in :ref:`fcb_api` by enabling the
+    Kconfig option :kconfig:option:`CONFIG_FCB_ALLOW_FIXED_ENDMARKER`
+    and setting the `FCB_FLAGS_CRC_DISABLED` flag in the :c:struct:`fcb` struct.
 
 * Management
 
