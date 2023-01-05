@@ -96,25 +96,36 @@ applications, followed by more detailed reference material.
 Application types
 *****************
 
-Based on where the source code of the application is located we can distinguish
-between three basic application types.
+We distinguish three basic types of Zephyr application based on where
+:file:`<app>` is located:
 
-* Zephyr repository application
-* Zephyr workspace application
-* Zephyr freestanding application
+.. table::
 
-You can find out more about how the build system supports all the application
-types described in this section in the :ref:`cmake_pkg` section.
+   +------------------------------+--------------------------------+
+   | Application type             | :file:`<app>` location         |
+   +------------------------------+--------------------------------+
+   | :ref:`repository             | zephyr repository              |
+   | <zephyr-repo-app>`           |                                |
+   +------------------------------+--------------------------------+
+   | :ref:`workspace              | west workspace where Zephyr is |
+   | <zephyr-workspace-app>`      | installed                      |
+   +------------------------------+--------------------------------+
+   | :ref:`freestanding           | other locations                |
+   | <zephyr-freestanding-app>`   |                                |
+   +------------------------------+--------------------------------+
+
+We'll discuss these more below. To learn how the build system supports each
+type, see :ref:`cmake_pkg`.
 
 .. _zephyr-repo-app:
 
 Zephyr repository application
 =============================
 
-An application located within the ``zephyr`` folder in a Zephyr :ref:`west
-workspace <west-workspaces>` is referred to as a Zephyr repository application.
-In the following example, the :ref:`hello_world sample <hello_world>` is a
-Zephyr repository application:
+An application located within the ``zephyr`` source code repository in a Zephyr
+:ref:`west workspace <west-workspaces>` is referred to as a Zephyr repository
+application. In the following example, the :ref:`hello_world sample
+<hello_world>` is a Zephyr repository application:
 
 .. code-block:: none
 
@@ -137,9 +148,8 @@ Zephyr workspace application
 ============================
 
 An application located within a :ref:`workspace <west-workspaces>`, but outside
-the Zephyr repository (and thus folder) itself, is referred to as a Zephyr
-workspace application.  In the following example, ``app`` is a Zephyr workspace
-application:
+the zephyr repository itself, is referred to as a Zephyr workspace application.
+In the following example, ``app`` is a Zephyr workspace application:
 
 .. code-block:: none
 
