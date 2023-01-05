@@ -199,6 +199,9 @@ Deprecated in this release
 
 * SPI DT :c:func:`spi_is_ready` function has been deprecated in favor of :c:func:`spi_is_ready_dt`.
 
+* LwM2M APIs using string references as LwM2M paths has been deprecated in favor of functions
+  using :c:struct:`lwm2m_path_obj` instead.
+
 Stable API changes in this release
 ==================================
 
