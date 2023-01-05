@@ -118,7 +118,7 @@
 /**
  * @brief Initialize an HDA stream for use with the firmware
  *
- * @param hda Stream set to work with
+ * @param base Base address of the IP register block
  * @param sid Stream ID
  */
 static inline void intel_adsp_hda_init(uint32_t base, uint32_t regblock_size, uint32_t sid)
@@ -136,7 +136,7 @@ static inline void intel_adsp_hda_init(uint32_t base, uint32_t regblock_size, ui
  * that is required. It must be set *after* the host has configured its own buffers.
  *
  *
- * @param hda Stream set to work with
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  * @param buf Buffer address to use for the shared FIFO. Must be in L2 and 128 byte aligned.
@@ -187,7 +187,7 @@ static inline int intel_adsp_hda_set_buffer(uint32_t base,
 /**
  * @brief Get the buffer size
  *
- * @param hda Stream set to work with
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  *
@@ -197,14 +197,13 @@ static inline uint32_t intel_adsp_hda_get_buffer_size(uint32_t base,
 					    uint32_t regblock_size,
 					    uint32_t sid)
 {
-
 	return *DGBS(base, regblock_size, sid);
 }
 
 /**
  * @brief Enable the stream
  *
- * @param hda HDA stream set
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  */
@@ -216,7 +215,7 @@ static inline void intel_adsp_hda_enable(uint32_t base, uint32_t regblock_size, 
 /**
  * @brief Disable stream
  *
- * @param hda HDA stream set
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  */
