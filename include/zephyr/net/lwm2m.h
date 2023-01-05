@@ -2089,6 +2089,8 @@ char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path);
 /** 
  * @brief LwM2M SEND operation to given path list
  *
+ * @deprecated Use lwm2m_send() instead.
+ *
  * @param ctx LwM2M context
  * @param path_list LwM2M Path string list
  * @param path_list_size Length of path list. Max size is CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE
@@ -2099,6 +2101,20 @@ char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path);
  */
 int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
 		      bool confirmation_request);
+
+/** 
+ * @brief LwM2M SEND operation to given path list
+ *
+ * @param ctx LwM2M context
+ * @param path_list LwM2M path struct list
+ * @param path_list_size Length of path list. Max size is CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE
+ * @param confirmation_request True request confirmation for operation.
+ * 
+ * @return 0 for success or negative in case of error.
+ *
+ */
+int lwm2m_send(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
+	       uint8_t path_list_size, bool confirmation_request);
 
 /** 
  * @brief Returns LwM2M client context
