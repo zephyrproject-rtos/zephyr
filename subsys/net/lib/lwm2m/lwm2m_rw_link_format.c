@@ -265,13 +265,7 @@ static int put_corelink_ssid(struct lwm2m_output_context *out,
 	case LWM2M_OBJECT_SECURITY_ID: {
 		bool bootstrap_inst;
 
-		ret = snprintk(buf, buflen, "0/%d/1",
-			       path->obj_inst_id);
-		if (ret < 0 || ret >= buflen) {
-			return -ENOMEM;
-		}
-
-		ret = lwm2m_engine_get_bool(buf, &bootstrap_inst);
+		ret = lwm2m_get_bool(&LWM2M_OBJ(0, path->obj_inst_id, 1), &bootstrap_inst);
 		if (ret < 0) {
 			return ret;
 		}
@@ -283,13 +277,11 @@ static int put_corelink_ssid(struct lwm2m_output_context *out,
 			return 0;
 		}
 
-		ret = snprintk(buf, buflen, "0/%d/10",
-				path->obj_inst_id);
 		if (ret < 0 || ret >= buflen) {
 			return -ENOMEM;
 		}
 
-		ret = lwm2m_engine_get_u16(buf, &server_id);
+		ret = lwm2m_get_u16(&LWM2M_OBJ(0, path->obj_inst_id, 10), &server_id);
 		if (ret < 0) {
 			return ret;
 		}
@@ -298,12 +290,7 @@ static int put_corelink_ssid(struct lwm2m_output_context *out,
 	}
 
 	case LWM2M_OBJECT_SERVER_ID:
-		ret = snprintk(buf, buflen, "1/%d/0", path->obj_inst_id);
-		if (ret < 0 || ret >= buflen) {
-			return -ENOMEM;
-		}
-
-		ret = lwm2m_engine_get_u16(buf, &server_id);
+		ret = lwm2m_get_u16(&LWM2M_OBJ(1, path->obj_inst_id, 0), &server_id);
 		if (ret < 0) {
 			return ret;
 		}

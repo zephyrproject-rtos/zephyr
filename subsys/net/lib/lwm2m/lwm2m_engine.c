@@ -317,14 +317,12 @@ int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 static bool bootstrap_delete_allowed(int obj_id, int obj_inst_id)
 {
-	char pathstr[MAX_RESOURCE_LEN];
 	bool bootstrap_server;
 	int ret;
 
 	if (obj_id == LWM2M_OBJECT_SECURITY_ID) {
-		snprintk(pathstr, sizeof(pathstr), "%d/%d/1", LWM2M_OBJECT_SECURITY_ID,
-			 obj_inst_id);
-		ret = lwm2m_engine_get_bool(pathstr, &bootstrap_server);
+		ret = lwm2m_get_bool(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, obj_inst_id, 1),
+					    &bootstrap_server);
 		if (ret < 0) {
 			return false;
 		}
@@ -787,16 +785,15 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 	void *cred = NULL;
 	uint16_t cred_len;
 	uint8_t cred_flags;
-	char pathstr[MAX_RESOURCE_LEN];
 
 	/* ignore error value */
 	tls_credential_delete(client_ctx->tls_tag, type);
 
-	snprintk(pathstr, sizeof(pathstr), "0/%d/%u", client_ctx->sec_obj_inst, res_id);
-
-	ret = lwm2m_engine_get_res_buf(pathstr, &cred, NULL, &cred_len, &cred_flags);
+	ret = lwm2m_get_res_buf(&LWM2M_OBJ(0, client_ctx->sec_obj_inst, res_id), &cred, NULL,
+				&cred_len, &cred_flags);
 	if (ret < 0) {
-		LOG_ERR("Unable to get resource data for '%s'", pathstr);
+		LOG_ERR("Unable to get resource data for %d/%d/%d", 0,  client_ctx->sec_obj_inst,
+			res_id);
 		return ret;
 	}
 
@@ -957,15 +954,14 @@ int lwm2m_engine_stop(struct lwm2m_ctx *client_ctx)
 
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 {
-	char pathstr[MAX_RESOURCE_LEN];
 	char *url;
 	uint16_t url_len;
 	uint8_t url_data_flags;
 	int ret = 0U;
 
 	/* get the server URL */
-	snprintk(pathstr, sizeof(pathstr), "0/%d/0", client_ctx->sec_obj_inst);
-	ret = lwm2m_engine_get_res_buf(pathstr, (void **)&url, NULL, &url_len, &url_data_flags);
+	ret = lwm2m_get_res_buf(&LWM2M_OBJ(0, client_ctx->sec_obj_inst, 0), (void **)&url, NULL,
+				&url_len, &url_data_flags);
 	if (ret < 0) {
 		return ret;
 	}
