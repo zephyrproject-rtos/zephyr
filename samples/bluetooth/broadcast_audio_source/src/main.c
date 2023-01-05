@@ -114,6 +114,7 @@ static int setup_broadcast_source(struct bt_audio_broadcast_source **source)
 	create_param.params = subgroup_param;
 	create_param.qos = &preset_16_2_1.qos;
 	create_param.encryption = false;
+	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
 	       ARRAY_SIZE(subgroup_param),
