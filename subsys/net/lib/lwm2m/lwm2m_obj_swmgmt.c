@@ -205,11 +205,11 @@ static void *callback_read_not_defined(uint16_t obj_inst_id, uint16_t res_id, ui
 static void set_sw_update_state(struct lwm2m_swmgmt_data *instance, uint8_t state)
 {
 	int ret;
-	char obj_path[LWM2M_MAX_PATH_STR_SIZE];
+	struct lwm2m_obj_path obj_path = LWM2M_OBJ(LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID,
+						   instance->obj_inst_id,
+						   SWMGMT_UPDATE_STATE_ID);
 
-	(void)snprintk(obj_path, sizeof(obj_path), "%d/%d/%d", LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID,
-		       instance->obj_inst_id, SWMGMT_UPDATE_STATE_ID);
-	ret = lwm2m_engine_set_u8(obj_path, state);
+	ret = lwm2m_set_u8(obj_path, state);
 	if (ret != 0) {
 		LOG_ERR("Could not set state");
 	}
@@ -218,11 +218,11 @@ static void set_sw_update_state(struct lwm2m_swmgmt_data *instance, uint8_t stat
 static void set_sw_update_result(struct lwm2m_swmgmt_data *instance, uint8_t result)
 {
 	int ret;
-	char obj_path[LWM2M_MAX_PATH_STR_SIZE];
+	struct lwm2m_obj_path obj_path = LWM2M_OBJ(LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID,
+						   instance->obj_inst_id,
+						   SWMGMT_UPDATE_RESULT_ID);
 
-	(void)snprintk(obj_path, sizeof(obj_path), "%d/%d/%d", LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID,
-		       instance->obj_inst_id, SWMGMT_UPDATE_RESULT_ID);
-	ret = lwm2m_engine_set_u8(obj_path, result);
+	ret = lwm2m_set_u8(&obj_path, result);
 	if (ret != 0) {
 		LOG_ERR("Could not set result");
 	}
@@ -231,11 +231,11 @@ static void set_sw_update_result(struct lwm2m_swmgmt_data *instance, uint8_t res
 static void set_sw_update_act_state(struct lwm2m_swmgmt_data *instance, bool state)
 {
 	int ret;
-	char obj_path[LWM2M_MAX_PATH_STR_SIZE];
+	struct lwm2m_obj_path obj_path = LWM2M_OBJ(LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID,
+						   instance->obj_inst_id,
+						   SWMGMT_ACTIVATION_UPD_STATE_ID);
 
-	(void)snprintk(obj_path, sizeof(obj_path), "%d/%d/%d", LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID,
-		       instance->obj_inst_id, SWMGMT_ACTIVATION_UPD_STATE_ID);
-	ret = lwm2m_engine_set_bool(obj_path, state);
+	ret = lwm2m_set_bool(&obj_path, state);
 	if (ret != 0) {
 		LOG_ERR("Could not set activation state");
 	}
