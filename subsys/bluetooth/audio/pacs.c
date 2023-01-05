@@ -662,8 +662,8 @@ int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 		return -EINVAL;
 	}
 
-	LOG_DBG("cap %p dir 0x%02x codec 0x%02x codec cid 0x%04x "
-	       "codec vid 0x%04x", cap, dir, cap->codec->id,
+	LOG_DBG("cap %p dir %s codec 0x%02x codec cid 0x%04x "
+	       "codec vid 0x%04x", cap, bt_audio_dir_str(dir), cap->codec->id,
 	       cap->codec->cid, cap->codec->vid);
 
 	sys_slist_append(&pac->list, &cap->_node);
@@ -687,7 +687,7 @@ int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 		return -EINVAL;
 	}
 
-	LOG_DBG("cap %p dir 0x%02x", cap, dir);
+	LOG_DBG("cap %p dir %s", cap, bt_audio_dir_str(dir));
 
 	if (!sys_slist_find_and_remove(&pac->list, &cap->_node)) {
 		return -ENOENT;
