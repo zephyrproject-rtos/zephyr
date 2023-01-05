@@ -83,7 +83,7 @@ static int device_reboot_cb(uint16_t obj_inst_id,
 	/* Add an error for testing */
 	lwm2m_device_add_err(LWM2M_DEVICE_ERROR_LOW_POWER);
 	/* Change the battery voltage for testing */
-	lwm2m_engine_set_s32("3/0/7/0", (bat_mv - 1));
+	lwm2m_set_s32(&LWM2M_OBJ(3, 0, 7, 0), (bat_mv - 1));
 
 	return 0;
 }
@@ -95,7 +95,7 @@ static int device_factory_default_cb(uint16_t obj_inst_id,
 	/* Add an error for testing */
 	lwm2m_device_add_err(LWM2M_DEVICE_ERROR_GPS_FAILURE);
 	/* Change the USB current for testing */
-	lwm2m_engine_set_s32("3/0/8/1", (usb_ma - 1));
+	lwm2m_set_s32(&LWM2M_OBJ(3, 0, 8, 1), (usb_ma - 1));
 
 	return 0;
 }
@@ -110,7 +110,8 @@ static int lwm2m_setup(void)
 	/* setup SECURITY object */
 
 	/* Server URL */
-	ret = lwm2m_engine_get_res_buf("0/0/0", (void **)&server_url, &server_url_len, NULL, NULL);
+	ret = lwm2m_get_res_buf(&LWM2M_OBJ(0, 0, 0), (void **)&server_url, &server_url_len, NULL,
+				NULL);
 	if (ret < 0) {
 		return ret;
 	}
@@ -120,88 +121,68 @@ static int lwm2m_setup(void)
 				  strchr(SERVER_ADDR, ':') ? "[" : "", SERVER_ADDR,
 				  strchr(SERVER_ADDR, ':') ? "]" : "");
 
-	lwm2m_engine_set_res_data_len("0/0/0", server_url_len + 1);
+	lwm2m_set_res_data_len(&LWM2M_OBJ(0, 0, 0), server_url_len + 1);
 
 	/* Security Mode */
-	lwm2m_engine_set_u8("0/0/2", IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? 0 : 3);
+	lwm2m_set_u8(&LWM2M_OBJ(0, 0, 2), IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? 0 : 3);
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	lwm2m_engine_set_string("0/0/3", (char *)client_psk_id);
-	lwm2m_engine_set_opaque("0/0/5",
+	lwm2m_set_string(&LWM2M_OBJ(0, 0, 3), (char *)client_psk_id);
+	lwm2m_set_opaque(&LWM2M_OBJ(0, 0, 5),
 				(void *)client_psk, sizeof(client_psk));
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	/* Mark 1st instance of security object as a bootstrap server */
-	lwm2m_engine_set_u8("0/0/1", 1);
+	lwm2m_set_u8(&LWM2M_OBJ(0, 0, 1), 1);
 
 	/* Create 2nd instance of security object needed for bootstrap */
-	lwm2m_engine_create_obj_inst("0/1");
+	lwm2m_create_object_inst(&LWM2M_OBJ(0, 1));
 #else
 	/* Match Security object instance with a Server object instance with
 	 * Short Server ID.
 	 */
-	lwm2m_engine_set_u16("0/0/10", CONFIG_LWM2M_SERVER_DEFAULT_SSID);
-	lwm2m_engine_set_u16("1/0/0", CONFIG_LWM2M_SERVER_DEFAULT_SSID);
+	lwm2m_set_u16(&LWM2M_OBJ(0, 0, 10), CONFIG_LWM2M_SERVER_DEFAULT_SSID);
+	lwm2m_set_u16(&LWM2M_OBJ(1, 0, 0), CONFIG_LWM2M_SERVER_DEFAULT_SSID);
 #endif
 
 	/* setup SERVER object */
 
 	/* setup DEVICE object */
 
-	lwm2m_engine_set_res_buf("3/0/0", CLIENT_MANUFACTURER,
-				 sizeof(CLIENT_MANUFACTURER),
-				 sizeof(CLIENT_MANUFACTURER),
-				 LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_buf("3/0/1", CLIENT_MODEL_NUMBER,
-				 sizeof(CLIENT_MODEL_NUMBER),
-				 sizeof(CLIENT_MODEL_NUMBER),
-				 LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_buf("3/0/2", CLIENT_SERIAL_NUMBER,
-				 sizeof(CLIENT_SERIAL_NUMBER),
-				 sizeof(CLIENT_SERIAL_NUMBER),
-				 LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_buf("3/0/3", CLIENT_FIRMWARE_VER,
-				 sizeof(CLIENT_FIRMWARE_VER),
-				 sizeof(CLIENT_FIRMWARE_VER),
-				 LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_register_exec_callback("3/0/4", device_reboot_cb);
-	lwm2m_engine_register_exec_callback("3/0/5", device_factory_default_cb);
-	lwm2m_engine_set_res_buf("3/0/9", &bat_level, sizeof(bat_level),
-				 sizeof(bat_level), 0);
-	lwm2m_engine_set_res_buf("3/0/10", &mem_free, sizeof(mem_free),
-				 sizeof(mem_free), 0);
-	lwm2m_engine_set_res_buf("3/0/17", CLIENT_DEVICE_TYPE,
-				 sizeof(CLIENT_DEVICE_TYPE),
-				 sizeof(CLIENT_DEVICE_TYPE),
-				 LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_buf("3/0/18", CLIENT_HW_VER,
-				 sizeof(CLIENT_HW_VER), sizeof(CLIENT_HW_VER),
-				 LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_buf("3/0/20", &bat_status, sizeof(bat_status),
-				 sizeof(bat_status), 0);
-	lwm2m_engine_set_res_buf("3/0/21", &mem_total, sizeof(mem_total),
-				 sizeof(mem_total), 0);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 0), CLIENT_MANUFACTURER, sizeof(CLIENT_MANUFACTURER),
+			  sizeof(CLIENT_MANUFACTURER), LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 1), CLIENT_MODEL_NUMBER, sizeof(CLIENT_MODEL_NUMBER),
+			  sizeof(CLIENT_MODEL_NUMBER), LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 2), CLIENT_SERIAL_NUMBER, sizeof(CLIENT_SERIAL_NUMBER),
+			  sizeof(CLIENT_SERIAL_NUMBER), LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 3), CLIENT_FIRMWARE_VER, sizeof(CLIENT_FIRMWARE_VER),
+			  sizeof(CLIENT_FIRMWARE_VER), LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_register_exec_callback(&LWM2M_OBJ(3, 0, 4), device_reboot_cb);
+	lwm2m_register_exec_callback(&LWM2M_OBJ(3, 0, 5), device_factory_default_cb);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 9), &bat_level, sizeof(bat_level), sizeof(bat_level), 0);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 10), &mem_free, sizeof(mem_free), sizeof(mem_free), 0);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 17), CLIENT_DEVICE_TYPE, sizeof(CLIENT_DEVICE_TYPE),
+			  sizeof(CLIENT_DEVICE_TYPE), LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 18), CLIENT_HW_VER, sizeof(CLIENT_HW_VER),
+			  sizeof(CLIENT_HW_VER), LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 20), &bat_status, sizeof(bat_status),
+			  sizeof(bat_status), 0);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 21), &mem_total, sizeof(mem_total),
+			  sizeof(mem_total), 0);
 
 	/* add power source resource instances */
-	lwm2m_engine_create_res_inst("3/0/6/0");
-	lwm2m_engine_set_res_buf("3/0/6/0", &bat_idx, sizeof(bat_idx),
-				 sizeof(bat_idx), 0);
-
-	lwm2m_engine_create_res_inst("3/0/7/0");
-	lwm2m_engine_set_res_buf("3/0/7/0", &bat_mv, sizeof(bat_mv),
-				 sizeof(bat_mv), 0);
-	lwm2m_engine_create_res_inst("3/0/8/0");
-	lwm2m_engine_set_res_buf("3/0/8/0", &bat_ma, sizeof(bat_ma),
-				 sizeof(bat_ma), 0);
-	lwm2m_engine_create_res_inst("3/0/6/1");
-	lwm2m_engine_set_res_buf("3/0/6/1", &usb_idx, sizeof(usb_idx),
-				 sizeof(usb_idx), 0);
-	lwm2m_engine_create_res_inst("3/0/7/1");
-	lwm2m_engine_set_res_buf("3/0/7/1", &usb_mv, sizeof(usb_mv),
-				 sizeof(usb_mv), 0);
-	lwm2m_engine_create_res_inst("3/0/8/1");
-	lwm2m_engine_set_res_buf("3/0/8/1", &usb_ma, sizeof(usb_ma),
-				 sizeof(usb_ma), 0);
+	lwm2m_create_res_inst(&LWM2M_OBJ(3, 0, 6, 0));
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 6, 0), &bat_idx, sizeof(bat_idx), sizeof(bat_idx), 0);
+	lwm2m_create_res_inst(&LWM2M_OBJ(3, 0, 7, 0));
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 7, 0), &bat_mv, sizeof(bat_mv), sizeof(bat_mv), 0);
+	lwm2m_create_res_inst(&LWM2M_OBJ(3, 0, 8, 0));
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 8, 0), &bat_ma, sizeof(bat_ma), sizeof(bat_ma), 0);
+	lwm2m_create_res_inst(&LWM2M_OBJ(3, 0, 6, 1));
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 6, 1), &usb_idx, sizeof(usb_idx), sizeof(usb_idx), 0);
+	lwm2m_create_res_inst(&LWM2M_OBJ(3, 0, 7, 1));
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 7, 1), &usb_mv, sizeof(usb_mv), sizeof(usb_mv), 0);
+	lwm2m_create_res_inst(&LWM2M_OBJ(3, 0, 8, 1));
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 8, 1), &usb_ma, sizeof(usb_ma), sizeof(usb_ma), 0);
 
 	/* setup FIRMWARE object */
 	if (IS_ENABLED(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)) {
