@@ -62,6 +62,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 	int path_cnt = argc - 1;
 	bool confirmable = true;
 	int ignore_cnt = 1; /* Subcmd + arguments preceding the path list */
+	struct lwm2m_obj_path lwm2m_path_list[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 
 	if (!ctx) {
 		shell_error(sh, "no lwm2m context yet\n");
@@ -86,8 +87,20 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	ret = lwm2m_engine_send(ctx, (const char **)&(argv[ignore_cnt]),
-				path_cnt, confirmable);
+	if (path_cnt > CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE) {
+		return -E2BIG;
+	}
+
+	for (int i = ignore_cnt; i < path_cnt; i++) {
+		/* translate path -> path_obj */
+		ret = lwm2m_string_to_path(argv[i], &lwm2m_path_list[i], '/');
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	ret = lwm2m_send(ctx, lwm2m_path_list, path_cnt, confirmable);
+
 	if (ret < 0) {
 		shell_error(sh, "can't do send operation, request failed\n");
 		return -ENOEXEC;
