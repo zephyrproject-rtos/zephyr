@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include <zephyr/drivers/flash.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/data/json.h>
+#include <zephyr/dfu/mcuboot.h>
 #include <zephyr/storage/flash_map.h>
 
 #include "include/updatehub.h"
@@ -762,6 +763,18 @@ static void probe_cb(char *metadata, size_t metadata_size)
 	LOG_INF("Probe metadata received");
 }
 
+int updatehub_confirm(void)
+{
+	return boot_write_img_confirmed();
+}
+
+int updatehub_reboot(void)
+{
+	sys_reboot(SYS_REBOOT_WARM);
+
+	return 0;
+}
+
 enum updatehub_response updatehub_probe(void)
 {
 	struct probe request;
@@ -985,14 +998,14 @@ static void autohandler(struct k_work *work)
 			"confirmed image.");
 
 		LOG_PANIC();
-		sys_reboot(SYS_REBOOT_WARM);
+		updatehub_reboot();
 		break;
 
 	case UPDATEHUB_HAS_UPDATE:
 		switch (updatehub_update()) {
 		case UPDATEHUB_OK:
 			LOG_PANIC();
-			sys_reboot(SYS_REBOOT_WARM);
+			updatehub_reboot();
 			break;
 
 		default:
