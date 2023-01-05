@@ -408,6 +408,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>;
 			interrupts = <67 1>;
 			interrupt-names = "wakeup";
+			st,static-prescaler;
 			status = "disabled";
 		};
 
