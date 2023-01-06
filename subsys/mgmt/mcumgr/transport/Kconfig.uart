@@ -11,6 +11,7 @@
 
 menuconfig MCUMGR_TRANSPORT_UART
 	bool "UART mcumgr SMP transport"
+	select CONSOLE
 	select UART_MCUMGR
 	select BASE64
 	help
