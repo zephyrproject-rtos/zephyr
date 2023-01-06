@@ -180,8 +180,7 @@ static void bt_h4_read(uint8_t ep, int size, void *priv)
 restart_out_transfer:
 	/* Start a new read transfer */
 	usb_transfer(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr, data,
-		     USB_MAX_FS_BULK_MPS, USB_TRANS_READ | USB_TRANS_NO_ZLP,
-		      bt_h4_read, NULL);
+		     USB_MAX_FS_BULK_MPS, USB_TRANS_READ, bt_h4_read, NULL);
 }
 
 static void hci_tx_thread(void)
