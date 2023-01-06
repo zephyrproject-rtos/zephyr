@@ -336,6 +336,7 @@ static int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI_KER) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_CSI_KER) && IS_ENABLED(STM32_CSI_ENABLED)) ||
+	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL1_P) && IS_ENABLED(STM32_PLL_P_ENABLED)) ||
@@ -487,6 +488,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = STM32_LSI_FREQ;
 		break;
 #endif /* STM32_LSI_ENABLED */
+#if defined(STM32_HSI48_ENABLED)
+	case STM32_SRC_HSI48:
+		*rate = STM32_HSI48_FREQ;
+		break;
+#endif /* STM32_HSI48_ENABLED */
 #if defined(STM32_PLL_ENABLED)
 	case STM32_SRC_PLL1_P:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
