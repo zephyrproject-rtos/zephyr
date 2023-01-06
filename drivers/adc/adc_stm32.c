@@ -349,6 +349,9 @@ static void adc_stm32_calib(const struct device *dev)
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, LL_ADC_SINGLE_ENDED);
 #endif
+	/* Make sure ADCAL is cleared before returning for proper operations
+	 * on the ADC control register, for enabling the peripheral for example
+	 */
 	while (LL_ADC_IsCalibrationOnGoing(adc)) {
 	}
 }
@@ -357,13 +360,49 @@ static void adc_stm32_calib(const struct device *dev)
 /*
  * Disable ADC peripheral, and wait until it is disabled
  */
-static inline void adc_stm32_disable(ADC_TypeDef *adc)
+static void adc_stm32_disable(ADC_TypeDef *adc)
 {
 	if (LL_ADC_IsEnabled(adc) != 1UL) {
 		return;
 	}
 
+	/* Stop ongoing conversion if any
+	 * Software must poll ADSTART (or JADSTART) until the bit is reset before assuming
+	 * the ADC is completely stopped.
+	 */
+
+#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(STM32F3X_ADC_V2_5) && \
+	!defined(CONFIG_SOC_SERIES_STM32L1X)
+	if (LL_ADC_REG_IsConversionOngoing(adc)) {
+		LL_ADC_REG_StopConversion(adc);
+		while (LL_ADC_REG_IsConversionOngoing(adc)) {
+		}
+	}
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX)
+	if (LL_ADC_INJ_IsConversionOngoing(adc)) {
+		LL_ADC_INJ_StopConversion(adc);
+		while (LL_ADC_INJ_IsConversionOngoing(adc)) {
+		}
+	}
+#endif
+
 	LL_ADC_Disable(adc);
+
+	/* Wait ADC is fully disabled so that we don't leave the driver into intermediate state
+	 * which could prevent enabling the peripheral
+	 */
 	while (LL_ADC_IsEnabled(adc) == 1UL) {
 	}
 }
