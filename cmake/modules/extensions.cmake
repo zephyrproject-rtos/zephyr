@@ -436,7 +436,7 @@ endmacro()
 # ZEPHYR_MODULE/drivers/entropy/CMakeLists.txt
 # with content:
 # zephyr_library_amend()
-# zephyr_library_add_sources(...)
+# zephyr_library_sources(...)
 #
 # It is also possible to use generator expression when amending to Zephyr
 # libraries.
