@@ -49,6 +49,11 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
+		usbotg_fs: otgfs@50000000 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
 	};
 
 	die_temp: dietemp {
