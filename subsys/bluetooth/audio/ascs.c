@@ -61,6 +61,7 @@ struct bt_ascs_ase {
 	struct bt_audio_ep ep;
 	const struct bt_gatt_attr *attr;
 	sys_snode_t node;
+	struct k_work_delayable disconnect_work;
 };
 
 struct bt_ascs {
@@ -121,8 +122,71 @@ static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 	}
 }
 
-static int ascs_stream_disconnect(struct bt_audio_stream *stream)
+static void ascs_disconnect_stream_work_handler(struct k_work *work)
 {
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_ascs_ase *ase = CONTAINER_OF(d_work, struct bt_ascs_ase,
+					       disconnect_work);
+	struct bt_audio_ep *ep = &ase->ep;
+	struct bt_audio_stream *stream = ep->stream;
+	struct bt_audio_stream *pair_stream;
+
+	__ASSERT(stream != NULL &&
+		 ep->iso != NULL &&
+		 ep->iso->chan.state != BT_ISO_STATE_CONNECTED,
+		 "Invalid endpoint %p, iso %p or stream %p",
+		 ep, ep->iso, stream);
+
+	if (ep->dir == BT_AUDIO_DIR_SINK) {
+		pair_stream = ep->iso->tx.stream;
+	} else {
+		pair_stream = ep->iso->rx.stream;
+	}
+
+	LOG_DBG("ase %p ep %p stream %p pair_stream %p",
+		ase, ep, stream, pair_stream);
+
+	if (pair_stream != NULL) {
+		struct bt_ascs_ase *pair_ase;
+
+		__ASSERT(pair_stream->ep != NULL, "Invalid pair_stream %p",
+			 pair_stream);
+
+		if (pair_stream->ep->status.state == BT_AUDIO_EP_STATE_STREAMING) {
+			/* Should not disconnect ISO if the stream is paired
+			 * with another one in the streaming state
+			 */
+
+			return;
+		}
+
+		pair_ase = CONTAINER_OF(pair_stream->ep, struct bt_ascs_ase,
+					ep);
+
+		/* Cancel pair ASE disconnect work if pending */
+		(void)k_work_cancel_delayable(&pair_ase->disconnect_work);
+	}
+
+
+	if (stream != NULL &&
+	    ep->iso != NULL &&
+	    ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
+		const int err = bt_audio_stream_disconnect(stream);
+
+		if (err != 0) {
+			LOG_ERR("Failed to disconnect CIS %p: %d",
+				stream, err);
+		}
+	}
+}
+
+static int ascs_disconnect_stream(struct bt_audio_stream *stream)
+{
+	struct bt_ascs_ase *ase = CONTAINER_OF(stream->ep, struct bt_ascs_ase,
+					       ep);
+
+	LOG_DBG("%p", stream);
+
 	/* Stop listening */
 	for (size_t i = 0; i < ARRAY_SIZE(enabling); i++) {
 		if (enabling[i] == stream) {
@@ -131,7 +195,8 @@ static int ascs_stream_disconnect(struct bt_audio_stream *stream)
 		}
 	}
 
-	return bt_audio_stream_disconnect(stream);
+	return k_work_reschedule(&ase->disconnect_work,
+				 K_MSEC(CONFIG_BT_ASCS_ISO_DISCONNECT_DELAY));
 }
 
 void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
@@ -346,9 +411,9 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				/* Either the client or the server may disconnect the
 				 * CISes when entering the releasing state.
 				 */
-				const int err = ascs_stream_disconnect(stream);
+				const int err = ascs_disconnect_stream(stream);
 
-				if (err != 0) {
+				if (err < 0) {
 					LOG_ERR("Failed to disconnect stream %p: %d",
 						stream, err);
 				}
@@ -715,6 +780,7 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 
 static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 {
+	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 	const struct bt_audio_stream_ops *ops;
 	struct bt_audio_stream *stream;
 	int err;
@@ -740,6 +806,9 @@ static void ascs_ep_iso_disconnected(struct bt_audio_ep *ep, uint8_t reason)
 
 		return;
 	}
+
+	/* Cancel ASE disconnect work if pending */
+	(void)k_work_cancel_delayable(&ase->disconnect_work);
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream, reason);
@@ -1153,6 +1222,9 @@ static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
 	bt_gatt_foreach_attr_type(0x0001, 0xffff, ASE_UUID(id), NULL, 0, ase_attr_cb, ase);
 
 	__ASSERT(ase->attr, "ASE characteristic not found\n");
+
+	k_work_init_delayable(&ase->disconnect_work,
+			      ascs_disconnect_stream_work_handler);
 }
 
 static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
@@ -2372,18 +2444,13 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	 * for that ASE by following the Connected Isochronous Stream Terminate
 	 * procedure defined in Volume 3, Part C, Section 9.3.15.
 	 */
-	err = ascs_stream_disconnect(stream);
-	if (err != -ENOTCONN && err != 0) {
-		LOG_ERR("Could not disconnect the CIS: %d", err);
+	err = ascs_disconnect_stream(stream);
+	if (err < 0) {
+		LOG_ERR("Failed to disconnect stream %p: %d", stream, err);
 		return;
 	}
 
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
-	err = ascs_iso_listen(stream);
-	if (err != 0) {
-		LOG_ERR("Could not make stream listen: %d", err);
-		return;
-	}
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_STOP_OP);
 }
