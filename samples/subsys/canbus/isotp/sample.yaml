@@ -2,7 +2,7 @@ sample:
   name: ISO-TP lib sample
 tests:
   sample.subsys.canbus.isotp:
-    tags: can
+    tags: can isotp
     depends_on: can
     filter: dt_chosen_enabled("zephyr,canbus")
     harness: console
