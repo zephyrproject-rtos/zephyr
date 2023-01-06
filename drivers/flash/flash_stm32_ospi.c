@@ -410,18 +410,18 @@ static int stm32_ospi_read_sfdp(const struct device *dev, off_t addr,
 	if (dev_cfg->data_mode == OSPI_OPI_MODE) {
 		cmd.Instruction = JESD216_OCMD_READ_SFDP;
 		cmd.DummyCycles = 20U;
+		cmd.AddressSize = HAL_OSPI_ADDRESS_32_BITS;
 	} else {
 		cmd.Instruction = JESD216_CMD_READ_SFDP;
 		cmd.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
 		cmd.DataMode = HAL_OSPI_DATA_1_LINE;
 		cmd.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
 		cmd.DummyCycles = 8U;
+		cmd.AddressSize = HAL_OSPI_ADDRESS_24_BITS;
 	}
 	cmd.Address = addr;
 	cmd.NbData = size;
-	cmd.AddressSize = ((dev_cfg->data_mode == OSPI_OPI_MODE)
-				?  HAL_OSPI_ADDRESS_32_BITS
-				:  HAL_OSPI_ADDRESS_24_BITS);
+
 	HAL_StatusTypeDef hal_ret;
 
 	hal_ret = HAL_OSPI_Command(&dev_data->hospi, &cmd, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
@@ -1962,6 +1962,8 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -EIO;
 	}
 
+	LOG_DBG("OSPI Init'd");
+
 #if defined(OCTOSPIM)
 	/* OCTOSPI I/O manager init Function */
 	OSPIM_CfgTypeDef ospi_mgr_cfg = {0};
@@ -1998,6 +2000,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -EIO;
 	}
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
+
 #endif /* OCTOSPIM */
 
 	/* Reset NOR flash memory : still with the SPI/STR config for the NOR */
@@ -2006,12 +2009,16 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -EIO;
 	}
 
+	LOG_DBG("Reset Mem (SPI/STR)");
+
 	/* Check if memory is ready in the SPI/STR mode */
 	if (stm32_ospi_mem_ready(&dev_data->hospi,
 		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("OSPI memory not ready");
 		return -EIO;
 	}
+
+	LOG_DBG("Mem Ready (SPI/STR)");
 
 #if defined(CONFIG_FLASH_JESD216_API)
 	/* Process with the RDID (jedec read ID) instruction at init and fill jedec_id Table */
