@@ -37,9 +37,8 @@ enum k_fatal_error_reason {
 	/** High severity software error */
 	K_ERR_KERNEL_PANIC,
 
-	/* TODO: add more codes for exception types that are common across
-	 * architectures
-	 */
+	/** Arch specific fatal errors */
+	K_ERR_ARCH_START = 16
 };
 
 /** @} */
