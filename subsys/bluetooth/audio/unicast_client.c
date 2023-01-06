@@ -503,7 +503,8 @@ static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
 }
 
 static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
-					struct net_buf_simple *buf)
+					struct net_buf_simple *buf,
+					uint8_t old_state)
 {
 	struct bt_ascs_ase_status_qos *qos;
 	struct bt_audio_stream *stream;
@@ -517,6 +518,21 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 	if (stream == NULL) {
 		LOG_ERR("No stream active for endpoint");
 		return;
+	}
+
+	if (ep->dir == BT_AUDIO_DIR_SINK &&
+	    stream->ops != NULL &&
+	    stream->ops->disabled != NULL) {
+		/* If the old state was enabling or streaming, then the sink
+		 * ASE has been disabled. Since the sink ASE does not have a
+		 * disabling state, we can check if by comparing the old_state
+		 */
+		const bool disabled = old_state == BT_AUDIO_EP_STATE_ENABLING ||
+				      old_state == BT_AUDIO_EP_STATE_STREAMING;
+
+		if (disabled) {
+			stream->ops->disabled(stream);
+		}
 	}
 
 	qos = net_buf_simple_pull_mem(buf, sizeof(*qos));
@@ -807,7 +823,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 			}
 		}
 
-		unicast_client_ep_qos_state(ep, buf);
+		unicast_client_ep_qos_state(ep, buf, old_state);
 		break;
 	case BT_AUDIO_EP_STATE_ENABLING:
 		switch (old_state) {
