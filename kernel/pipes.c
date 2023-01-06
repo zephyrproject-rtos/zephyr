@@ -349,9 +349,10 @@ static size_t pipe_write(struct k_pipe *pipe, sys_dlist_t *src_list,
 			}
 		} else if (dest->bytes_to_xfer == 0U) {
 
-			/* A thread's read request has been satisfied. */
+			/* The thread's read request has been satisfied. */
 
-			(void) z_sched_wake(&pipe->wait_q.readers, 0, NULL);
+			z_unpend_thread(dest->thread);
+			z_ready_thread(dest->thread);
 
 			*reschedule = true;
 		}
@@ -586,7 +587,8 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 
 			/* The thread's write request has been satisfied. */
 
-			(void) z_sched_wake(&pipe->wait_q.writers, 0, NULL);
+			z_unpend_thread(src_desc->thread);
+			z_ready_thread(src_desc->thread);
 
 			reschedule_needed = true;
 		}
