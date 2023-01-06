@@ -139,6 +139,13 @@ static int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_LSI */
+#if defined(STM32_SRC_HSI48)
+	case STM32_SRC_HSI48:
+		if (!IS_ENABLED(STM32_HSI48_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_HSI48 */
 #if defined(STM32_SRC_MSI)
 	case STM32_SRC_MSI:
 		if (!IS_ENABLED(STM32_MSI_ENABLED)) {
@@ -374,6 +381,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = STM32_HSE_FREQ;
 		break;
 #endif
+#if defined(STM32_HSI48_ENABLED)
+	case STM32_SRC_HSI48:
+		*rate = STM32_HSI48_FREQ;
+		break;
+#endif /* STM32_HSI48_ENABLED */
 	default:
 		return -ENOTSUP;
 	}
