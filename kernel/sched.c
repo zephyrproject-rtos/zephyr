@@ -178,6 +178,7 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 }
 #endif
 
+#if defined(CONFIG_SCHED_DUMB) || defined(CONFIG_WAITQ_DUMB)
 static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq,
 					  struct k_thread *thread)
 {
@@ -195,6 +196,7 @@ static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq,
 
 	sys_dlist_append(pq, &thread->base.qnode_dlist);
 }
+#endif
 
 static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 {
