@@ -13,6 +13,9 @@
 #include <zephyr/zbus/zbus.h>
 LOG_MODULE_DECLARE(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
+#define CONSUMER_STACK_SIZE (CONFIG_IDLE_STACK_SIZE + CONFIG_BM_MESSAGE_SIZE)
+#define PRODUCER_STACK_SIZE (CONFIG_MAIN_STACK_SIZE + CONFIG_BM_MESSAGE_SIZE)
+
 ZBUS_CHAN_DEFINE(bm_channel,		   /* Name */
 		 struct external_data_msg, /* Message type */
 
@@ -91,8 +94,7 @@ ZBUS_SUBSCRIBER_DEFINE(s16, 4);
 		}                                                                                  \
 	}                                                                                          \
                                                                                                    \
-	K_THREAD_DEFINE(name##_id, CONFIG_BM_MESSAGE_SIZE + 196, name##_task, NULL, NULL, NULL, 3, \
-			0, 0);
+	K_THREAD_DEFINE(name##_id, CONSUMER_STACK_SIZE, name##_task, NULL, NULL, NULL, 3, 0, 0);
 
 S_TASK(s1)
 #if (CONFIG_BM_ONE_TO >= 2LLU)
@@ -213,4 +215,4 @@ static void producer_thread(void)
 	printk("\n@%u\n", duration);
 }
 
-K_THREAD_DEFINE(producer_thread_id, 1024, producer_thread, NULL, NULL, NULL, 5, 0, 0);
+K_THREAD_DEFINE(producer_thread_id, PRODUCER_STACK_SIZE, producer_thread, NULL, NULL, NULL, 5, 0, 0);
