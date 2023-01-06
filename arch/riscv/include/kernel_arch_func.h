@@ -29,8 +29,8 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	__asm__ volatile ("li tp, 0");
 #endif
-#ifdef CONFIG_USERSPACE
-	csr_write(mscratch, 0);
+#if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
+	csr_write(mscratch, &_kernel.cpus[0]);
 #endif
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();

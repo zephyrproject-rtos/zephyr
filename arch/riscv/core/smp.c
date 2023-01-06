@@ -33,6 +33,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 void z_riscv_secondary_cpu_init(int cpu_num)
 {
+	csr_write(mscratch, &_kernel.cpus[cpu_num]);
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	__asm__("mv tp, %0" : : "r" (z_idle_threads[cpu_num].tls));
 #endif

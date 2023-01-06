@@ -121,4 +121,10 @@ GEN_SOC_OFFSET_SYMS();
 
 GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, sizeof(z_arch_esf_t));
 
+#ifdef CONFIG_USERSPACE
+GEN_OFFSET_SYM(_cpu_arch_t, user_exc_sp);
+GEN_OFFSET_SYM(_cpu_arch_t, user_exc_tmp0);
+GEN_OFFSET_SYM(_cpu_arch_t, user_exc_tmp1);
+#endif
+
 GEN_ABS_SYM_END
