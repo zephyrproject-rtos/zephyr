@@ -10,6 +10,8 @@
 	soc {
 		usbotg_fs: usb@50000000 {
 			num-bidir-endpoints = <6>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>,
+				 <&rcc STM32_SRC_PLL_Q CLK48M_SEL(0)>;
 		};
 
 		usbotg_hs: usb@40040000 {
