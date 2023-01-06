@@ -32,6 +32,10 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
 	csr_write(mscratch, &_kernel.cpus[0]);
 #endif
+#ifdef CONFIG_SMP
+	_kernel.cpus[0].arch.hartid = csr_read(mhartid);
+	_kernel.cpus[0].arch.online = true;
+#endif
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
 #endif
