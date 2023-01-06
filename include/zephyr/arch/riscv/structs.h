@@ -14,6 +14,10 @@ struct _cpu_arch {
 	unsigned long user_exc_tmp0;
 	unsigned long user_exc_tmp1;
 #endif
+#ifdef CONFIG_SMP
+	unsigned long hartid;
+	bool online;
+#endif
 };
 
 #endif /* ZEPHYR_INCLUDE_RISCV_STRUCTS_H_ */
