@@ -27,6 +27,14 @@
 extern void arm_core_mpu_disable(void);
 #endif
 
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#define PERMISSION_EXCEPTION K_ERR_ARM_PERMISSION_FAULT
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#define PERMISSION_EXCEPTION K_ERR_ARM_MEM_DATA_ACCESS
+#else
+#define PERMISSION_EXCEPTION K_ERR_CPU_EXCEPTION
+#endif
+
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
@@ -151,7 +159,11 @@ ZTEST_USER(userspace, test_write_control)
 #else
 	uint32_t val;
 
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+	set_fault(K_ERR_ARM_UNDEFINED_INSTRUCTION);
+#else
 	set_fault(K_ERR_CPU_EXCEPTION);
+#endif
 
 	val = __get_SCTLR();
 	val |= SCTLR_DZ_Msk;
@@ -218,7 +230,13 @@ ZTEST_USER(userspace, test_disable_mmu_mpu)
 
 #elif defined(CONFIG_ARM)
 #ifndef CONFIG_TRUSTED_EXECUTION_NONSECURE
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+	set_fault(K_ERR_ARM_UNDEFINED_INSTRUCTION);
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	set_fault(K_ERR_ARM_BUS_PRECISE_DATA_BUS);
+#else
 	set_fault(K_ERR_CPU_EXCEPTION);
+#endif
 
 	arm_core_mpu_disable();
 #else
@@ -258,7 +276,7 @@ ZTEST_USER(userspace, test_read_kernram)
 	/* Try to read from kernel RAM. */
 	void *p;
 
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	p = _current->init_data;
 	printk("%p\n", p);
@@ -273,7 +291,7 @@ ZTEST_USER(userspace, test_read_kernram)
 ZTEST_USER(userspace, test_write_kernram)
 {
 	/* Try to write to kernel RAM. */
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	_current->init_data = NULL;
 	zassert_unreachable("Write to kernel RAM did not fault");
@@ -308,7 +326,7 @@ ZTEST_USER(userspace, test_write_kernro)
 	zassert_true(in_rodata,
 		     "_k_neg_eagain is not in rodata");
 
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	_k_neg_eagain = -EINVAL;
 	zassert_unreachable("Write to kernel RO did not fault");
@@ -322,7 +340,7 @@ ZTEST_USER(userspace, test_write_kernro)
 ZTEST_USER(userspace, test_write_kerntext)
 {
 	/* Try to write to kernel text. */
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	memset(&z_is_thread_essential, 0, 4);
 	zassert_unreachable("Write to kernel text did not fault");
@@ -337,7 +355,7 @@ static int kernel_data;
  */
 ZTEST_USER(userspace, test_read_kernel_data)
 {
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	printk("%d\n", kernel_data);
 	zassert_unreachable("Read from data did not fault");
@@ -350,7 +368,7 @@ ZTEST_USER(userspace, test_read_kernel_data)
  */
 ZTEST_USER(userspace, test_write_kernel_data)
 {
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	kernel_data = 1;
 	zassert_unreachable("Write to  data did not fault");
@@ -383,7 +401,7 @@ ZTEST_USER(userspace, test_read_priv_stack)
 #else
 #error "Not implemented for this architecture"
 #endif
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	printk("%c\n", *priv_stack_ptr);
 	zassert_unreachable("Read from privileged stack did not fault");
@@ -407,7 +425,7 @@ ZTEST_USER(userspace, test_write_priv_stack)
 #else
 #error "Not implemented for this architecture"
 #endif
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	*priv_stack_ptr = 42;
 	zassert_unreachable("Write to privileged stack did not fault");
@@ -472,7 +490,7 @@ static void uthread_read_body(void *p1, void *p2, void *p3)
 {
 	unsigned int *vptr = p1;
 
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 	printk("%u\n", *vptr);
 	zassert_unreachable("Read from other thread stack did not fault");
 }
@@ -481,7 +499,7 @@ static void uthread_write_body(void *p1, void *p2, void *p3)
 {
 	unsigned int *vptr = p1;
 
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 	*vptr = 2U;
 	zassert_unreachable("Write to other thread stack did not fault");
 }
@@ -691,7 +709,7 @@ ZTEST(userspace_domain, test_1st_init_and_access_other_memdomain)
 	 * contains default_bool. This should fault when we try to write it.
 	 */
 	k_mem_domain_add_thread(&alternate_domain, k_current_get());
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 	spawn_user(&default_bool);
 }
 
@@ -742,7 +760,7 @@ ZTEST(userspace_domain, test_domain_remove_part_drop_to_user)
 	/* We added alt_part to the default domain in the previous test,
 	 * remove it, and then try to access again.
 	 */
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	zassert_equal(
 		k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part),
@@ -792,7 +810,7 @@ ZTEST(userspace_domain_ctx, test_domain_remove_part_context_switch)
 	/* We added alt_part to the default domain in the previous test,
 	 * remove it, and then try to access again.
 	 */
-	set_fault(K_ERR_CPU_EXCEPTION);
+	set_fault(PERMISSION_EXCEPTION);
 
 	zassert_equal(
 		k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part),
