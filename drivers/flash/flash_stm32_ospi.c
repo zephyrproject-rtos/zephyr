@@ -1934,7 +1934,8 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	/* Initialize OSPI HAL structure completely */
 	dev_data->hospi.Init.FifoThreshold = 4;
 	dev_data->hospi.Init.ClockPrescaler = prescaler;
-	dev_data->hospi.Init.DeviceSize = find_lsb_set(dev_cfg->flash_size);
+	/* Give a bit position from 0 to 31 to the HAL init for the DCR1 reg */
+	dev_data->hospi.Init.DeviceSize = find_lsb_set(dev_cfg->flash_size) - 1;
 	dev_data->hospi.Init.DualQuad = HAL_OSPI_DUALQUAD_DISABLE;
 	dev_data->hospi.Init.ChipSelectHighTime = 2;
 	dev_data->hospi.Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
