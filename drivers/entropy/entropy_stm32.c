@@ -233,6 +233,11 @@ static int random_byte_get(void)
 	unsigned int key;
 	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
 
+	if (IS_ENABLED(CONFIG_ENTROPY_STM32_CLK_CHECK)) {
+		__ASSERT(LL_RNG_IsActiveFlag_CECS(rng) == 0,
+			 "Clock configuration error. See reference manual");
+	}
+
 	key = irq_lock();
 
 	if (LL_RNG_IsActiveFlag_SEIS(rng) && (recover_seed_error(rng) < 0)) {
@@ -577,27 +582,6 @@ static int entropy_stm32_rng_init(const struct device *dev)
 
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(dev_cfg != NULL);
-
-#if (DT_INST_NUM_CLOCKS(0) == 1)
-	/* No domain clock selected, let's check that the configuration is correct */
-
-#if defined(CONFIG_SOC_SERIES_STM32L0X) && \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * STM32_PLL_MULTIPLIER) != MHZ(96)
-	/* PLL used as RNG clock source (default), but its frequency doesn't fit */
-	/* Fix PLL freq or select HSI48 as RNG clock source */
-#warning PLL clock not properly configured to be used as RNG clock. Configure another clock.
-#elif !DT_NODE_HAS_COMPAT(DT_NODELABEL(clk_hsi48), fixed_clock)
-	/* No HSI48 available, a specific RNG domain clock has to be selected */
-#warning RNG domain clock not configured
-#endif
-
-#if DT_NODE_HAS_COMPAT(DT_NODELABEL(clk_hsi48), fixed_clock)  && !STM32_HSI48_ENABLED
-	/* On these series, HSI48 is available and set by default as RNG clock source */
-	/* HSI48 clock not enabled */
-#warning HSI48 clock should be enabled or other domain clock selected
-#endif
-
-#endif /* (DT_INST_NUM_CLOCKS(0) == 1) */
 
 	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
