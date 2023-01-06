@@ -213,32 +213,6 @@ static int usb_dc_stm32_clock_enable(void)
 		return -ENODEV;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(CONFIG_SOC_SERIES_STM32F3X)
-
-#if (DT_INST_NUM_CLOCKS(0) == 1)
-	/* No domain clock selected, let's check that configuration is correct */
-
-#if defined(CONFIG_SOC_SERIES_STM32L0X) && \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * STM32_PLL_MULTIPLIER) != MHZ(96)
-	/* PLL used as USB clock source (default), but its frequency doesn't fit */
-	/* Fix PLL freq or select HSI48 as USB clock source */
-#warning PLL clock not properly configured to be used as USB clock. Configure another clock.
-#elif !DT_NODE_HAS_COMPAT(DT_NODELABEL(clk_hsi48), fixed_clock) && \
-	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X)
-	/* No HSI48 available, a specific USB domain clock has to be selected */
-#warning USB domain clock not configured
-#endif
-
-#if DT_NODE_HAS_COMPAT(DT_NODELABEL(clk_hsi48), fixed_clock)  && !STM32_HSI48_ENABLED
-	/* On these series, HSI48 is available and set by default as USB clok source */
-	/* HSI48 clock not enabled */
-#warning HSI48 clock should be enabled or other domain clock selected
-#endif
-
-#endif /* (DT_INST_NUM_CLOCKS(0) == 1) */
-
 #ifdef CONFIG_SOC_SERIES_STM32U5X
 	/* VDDUSB independent USB supply (PWR clock is on) */
 	LL_PWR_EnableVDDUSB();
@@ -252,19 +226,36 @@ static int usb_dc_stm32_clock_enable(void)
 		}
 	}
 
-#elif defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
+	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken[0]) != 0) {
+		LOG_ERR("Unable to enable USB clock");
+		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_USB_DC_STM32_CLOCK_CHECK)) {
+		uint32_t usb_clock_rate;
+
+		if (clock_control_get_rate(clk,
+					   (clock_control_subsys_t *)&pclken[1],
+					   &usb_clock_rate) != 0) {
+			LOG_ERR("Failed to get USB domain clock rate");
+			return -EIO;
+		}
+
+		if (usb_clock_rate != MHZ(48)) {
+			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
+			return -ENOTSUP;
+		}
+	}
+
+	/* Previous check won't work in case of F1/F3. Add build time check */
+#if defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
 
 #if (MHZ(48) == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) && !defined(STM32_PLL_USBPRE)
 	/* PLL output clock is set to 48MHz, it should not be divided */
 #warning USBPRE/OTGFSPRE should be set in rcc node
 #endif
 
-#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE */
-
-	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken[0]) != 0) {
-		LOG_ERR("Unable to enable USB clock");
-		return -EIO;
-	}
+#endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)
