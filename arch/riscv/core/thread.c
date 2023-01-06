@@ -80,9 +80,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* Clear user thread context */
 	z_riscv_pmp_usermode_init(thread);
 	thread->arch.priv_stack_start = 0;
-
-	/* the unwound stack pointer upon exiting exception */
-	stack_init->sp = (unsigned long)(stack_init + 1);
 #endif /* CONFIG_USERSPACE */
 
 	/* Assign thread entry point and mstatus.MPRV mode. */
@@ -242,8 +239,8 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	z_riscv_pmp_usermode_prepare(_current);
 	z_riscv_pmp_usermode_enable(_current);
 
-	/* exception stack has to be in mscratch */
-	csr_write(mscratch, top_of_priv_stack);
+	/* preserve stack pointer for next exception entry */
+	arch_curr_cpu()->arch.user_exc_sp = top_of_priv_stack;
 
 	is_user_mode = true;
 
