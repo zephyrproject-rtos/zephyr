@@ -63,15 +63,13 @@
 	RV_I(	op a7, __z_arch_esf_t_a7_OFFSET(sp)	);\
 	RV_E(	op ra, __z_arch_esf_t_ra_OFFSET(sp)	)
 
-#ifdef CONFIG_SMP
-#define GET_CURRENT_CPU(dst, tmp) \
-	csrr tmp, mhartid				;\
-	la dst, _kernel + ___kernel_t_cpus_OFFSET	;\
-	shiftmul_add dst, tmp, ___cpu_t_SIZEOF
+	.macro get_current_cpu dst
+#if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
+	csrr \dst, mscratch
 #else
-#define GET_CURRENT_CPU(dst, tmp) \
-	la dst, _kernel + ___kernel_t_cpus_OFFSET
+	la \dst, _kernel + ___kernel_t_cpus_OFFSET
 #endif
+	.endm
 
 /* imports */
 GDATA(_sw_isr_table)
@@ -129,17 +127,43 @@ GTEXT(_isr_wrapper)
 SECTION_FUNC(exception.entry, _isr_wrapper)
 
 #ifdef CONFIG_USERSPACE
-	/*
-	 * The scratch register contains either the privileged stack pointer
-	 * to use when interrupting a user mode thread, or 0 when interrupting
-	 * kernel mode in which case the current stack should be used.
-	 */
-	csrrw sp, mscratch, sp
-	bnez sp, 1f
+	/* retrieve address of _current_cpu preserving s0 */
+	csrrw s0, mscratch, s0
 
-	/* restore privileged stack pointer and zero the scratch reg */
-	csrrw sp, mscratch, sp
+	/* preserve t0 and t1 temporarily */
+	sr t0, _curr_cpu_arch_user_exc_tmp0(s0)
+	sr t1, _curr_cpu_arch_user_exc_tmp1(s0)
+
+	/* determine if we come from user space */
+	csrr t0, mstatus
+	li t1, MSTATUS_MPP
+	and t0, t0, t1
+	bnez t0, 1f
+
+	/* in user space we were: switch to our privileged stack */
+	mv t0, sp
+	lr sp, _curr_cpu_arch_user_exc_sp(s0)
+
+	/* Save user stack value. Coming from user space, we know this
+	 * can't overflow the privileged stack. The esf will be allocated
+	 * later but it is safe to store our saved user sp here. */
+	sr t0, (-__z_arch_esf_t_SIZEOF + __z_arch_esf_t_sp_OFFSET)(sp)
+
+	/* Make sure tls pointer is sane */
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lr tp, _thread_offset_to_tls(t0)
+
+	/* Clear our per-thread usermode flag */
+	lui t0, %tprel_hi(is_user_mode)
+	add t0, t0, tp, %tprel_add(is_user_mode)
+	sb zero, %tprel_lo(is_user_mode)(t0)
 1:
+	/* retrieve original t0/t1 values */
+	lr t0, _curr_cpu_arch_user_exc_tmp0(s0)
+	lr t1, _curr_cpu_arch_user_exc_tmp1(s0)
+
+	/* retrieve original s0 and restore _current_cpu in mscratch */
+	csrrw s0, mscratch, s0
 #endif
 
 #ifdef CONFIG_RISCV_SOC_HAS_ISR_STACKING
@@ -152,32 +176,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 
 	/* Save s0 in the esf and load it with &_current_cpu. */
 	sr s0, __z_arch_esf_t_s0_OFFSET(sp)
-	GET_CURRENT_CPU(s0, t0)
-
-#ifdef CONFIG_USERSPACE
-	/*
-	 * The scratch register now contains either the user mode stack
-	 * pointer, or 0 if entered from kernel mode. Retrieve that value
-	 * and zero the scratch register as we are in kernel mode now.
-	 */
-	csrrw t0, mscratch, zero
-	bnez t0, 1f
-
-	/* came from kernel mode: adjust stack value */
-	add t0, sp, __z_arch_esf_t_SIZEOF
-1:
-	/* save stack value to be restored later */
-	sr t0, __z_arch_esf_t_sp_OFFSET(sp)
-
-	/* Make sure tls pointer is sane */
-	lr t0, ___cpu_t_current_OFFSET(s0)
-	lr tp, _thread_offset_to_tls(t0)
-
-	/* Clear our per-thread usermode flag */
-	lui t0, %tprel_hi(is_user_mode)
-	add t0, t0, tp, %tprel_add(is_user_mode)
-	sb zero, %tprel_lo(is_user_mode)(t0)
-#endif
+	get_current_cpu s0
 
 	/* Save MEPC register */
 	csrr t0, mepc
@@ -531,7 +530,7 @@ z_riscv_thread_start:
 might_have_rescheduled:
 #ifdef CONFIG_SMP
 	/* reload s0 with &_current_cpu as it might have changed */
-	GET_CURRENT_CPU(s0, t0)
+	get_current_cpu s0
 #endif
 
 no_reschedule:
@@ -572,8 +571,8 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 #ifdef CONFIG_USERSPACE
 	/*
 	 * Check if we are returning to user mode. If so then we must
-	 * set is_user_mode to true and load the scratch register with
-	 * the stack pointer to be used with the next exception to come.
+	 * set is_user_mode to true and preserve our kernel mode stack for
+	 * the next exception to come.
 	 */
 	li t1, MSTATUS_MPP
 	and t0, t2, t1
@@ -591,10 +590,19 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	add t0, t0, tp, %tprel_add(is_user_mode)
 	sb t1, %tprel_lo(is_user_mode)(t0)
 
-	/* load scratch reg with stack pointer for next exception entry */
+	/* preserve stack pointer for next exception entry */
 	add t0, sp, __z_arch_esf_t_SIZEOF
-	csrw mscratch, t0
+	sr t0, _curr_cpu_arch_user_exc_sp(s0)
+
+	j 2f
 1:
+	/*
+	 * We are returning to kernel mode. Store the stack pointer to
+	 * be re-loaded further down.
+	 */
+	addi t0, sp, __z_arch_esf_t_SIZEOF
+	sr t0, __z_arch_esf_t_sp_OFFSET(sp)
+2:
 #endif
 
 	/* Restore s0 (it is no longer ours) */
