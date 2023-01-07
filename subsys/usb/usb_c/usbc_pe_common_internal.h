@@ -106,6 +106,10 @@ enum pe_flags {
 	 * Data Role Swap
 	 */
 	PE_FLAGS_WAIT_DATA_ROLE_SWAP = 12,
+	/**
+	 * This flag is set when a protocol error occurs.
+	 */
+	PE_FLAGS_PROTOCOL_ERROR = 13,
 
 	/** Number of PE Flags */
 	PE_FLAGS_COUNT

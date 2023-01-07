@@ -230,7 +230,7 @@ void pe_report_error(const struct device *dev, const enum pe_error e,
 	 */
 	if (pe_get_state(dev) == PE_SEND_SOFT_RESET ||
 	    pe_get_state(dev) == PE_SOFT_RESET) {
-		pe_set_state(dev, PE_SNK_HARD_RESET);
+		atomic_set_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR);
 		return;
 	}
 

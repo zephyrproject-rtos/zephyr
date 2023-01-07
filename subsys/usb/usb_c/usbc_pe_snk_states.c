@@ -725,10 +725,11 @@ void pe_send_soft_reset_run(void *obj)
 	}
 	/*
 	 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset state when:
-	 *	1: A SenderResponseTimer timeout occurs (Handled in pe_report_error function)
+	 *	1: A SenderResponseTimer timeout occurs
 	 *	2: Or the Protocol Layer indicates that a transmission error has occurred
 	 */
-	else if (usbc_timer_expired(&pe->pd_t_sender_response)) {
+	else if (usbc_timer_expired(&pe->pd_t_sender_response) ||
+		 atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
 		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
 }
@@ -774,23 +775,24 @@ void pe_soft_reset_run(void *obj)
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_SEND_SOFT_RESET)) {
 		/* Send Accept message */
 		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_ACCEPT);
-		return;
 	}
-
 	/*
 	 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
 	 * state when:
 	 *	1: The Accept Message has been sent on SOP.
 	 */
-	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
 	}
 	/*
 	 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset
 	 * state when:
 	 *	1: The Protocol Layer indicates that a transmission error
-	 *	   has occurred. (Handled in pe_report_error function)
+	 *	   has occurred.
 	 */
+	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+		pe_set_state(dev, PE_SNK_HARD_RESET);
+	}
 }
 
 /**
