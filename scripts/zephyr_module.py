@@ -72,6 +72,9 @@ mapping:
           dts_root:
             required: false
             type: str
+          snippet_root:
+            required: false
+            type: str
           soc_root:
             required: false
             type: str
@@ -222,7 +225,7 @@ def process_settings(module, meta):
     out_text = ""
 
     if build_settings is not None:
-        for root in ['board', 'dts', 'soc', 'arch', 'module_ext', 'sca']:
+        for root in ['board', 'dts', 'snippet', 'soc', 'arch', 'module_ext', 'sca']:
             setting = build_settings.get(root+'_root', None)
             if setting is not None:
                 root_path = PurePath(module) / setting
