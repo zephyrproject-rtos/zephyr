@@ -2540,8 +2540,8 @@ endfunction(zephyr_check_cache variable)
 #   zephyr_boilerplate_watch(SOME_BOILERPLATE_VAR)
 #
 # Inform the build system that SOME_BOILERPLATE_VAR, a variable
-# handled in cmake/app/boilerplate.cmake, is now fixed and should no
-# longer be changed.
+# handled in the Zephyr package's boilerplate code, is now fixed and
+# should no longer be changed.
 #
 # This function uses variable_watch() to print a noisy warning
 # if the variable is set after it returns.
