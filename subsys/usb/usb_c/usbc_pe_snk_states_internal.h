@@ -8,6 +8,16 @@
 #define ZEPHYR_SUBSYS_USBC_PE_SNK_STATES_INTERNAL_H_
 
 /**
+ * @brief Init the PE Sink State machine
+ */
+void pe_snk_init(const struct device *dev);
+
+/**
+ * @brief Handle Sink-specific DPM requests
+ */
+bool sink_dpm_requests(const struct device *dev);
+
+/**
  * @brief PE_SNK_Startup Entry State
  */
 void pe_snk_startup_entry(void *obj);
@@ -69,32 +79,6 @@ void pe_snk_transition_to_default_run(void *obj);
 void pe_snk_get_source_cap_entry(void *obj);
 void pe_snk_get_source_cap_run(void *obj);
 void pe_snk_get_source_cap_exit(void *obj);
-
-/**
- * @brief PE_Send_Soft_Reset Entry State
- */
-void pe_send_soft_reset_entry(void *obj);
-void pe_send_soft_reset_run(void *obj);
-void pe_send_soft_reset_exit(void *obj);
-
-/**
- * @brief PE_SNK_Soft_Reset Entry State
- */
-void pe_soft_reset_entry(void *obj);
-void pe_soft_reset_run(void *obj);
-
-/*
- * @brief PE_Not_Supported Entry State
- */
-void pe_send_not_supported_entry(void *obj);
-void pe_send_not_supported_run(void *obj);
-
-/**
- * @brief PE_Chunk_Received Entry State
- */
-void pe_chunk_received_entry(void *obj);
-void pe_chunk_received_run(void *obj);
-void pe_chunk_received_exit(void *obj);
 
 /**
  * @brief PE_SNK_Give_Sink_Cap Entry state

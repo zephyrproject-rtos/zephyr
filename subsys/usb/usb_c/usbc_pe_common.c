@@ -92,18 +92,17 @@ static void pe_init(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
+	/* Clear all flags */
 	atomic_clear(pe->flags);
 
-	usbc_timer_init(&pe->pd_t_typec_sink_wait_cap, PD_T_TYPEC_SINK_WAIT_CAP_MAX_MS);
+	/* Initialize common timers */
 	usbc_timer_init(&pe->pd_t_sender_response, PD_T_SENDER_RESPONSE_NOM_MS);
-	usbc_timer_init(&pe->pd_t_ps_transition, PD_T_SPR_PS_TRANSITION_NOM_MS);
 	usbc_timer_init(&pe->pd_t_chunking_not_supported, PD_T_CHUNKING_NOT_SUPPORTED_NOM_MS);
-	usbc_timer_init(&pe->pd_t_wait_to_resend, PD_T_SINK_REQUEST_MIN_MS);
 
-	pe->data_role = TC_ROLE_UFP;
+	/* Initialize common counters */
 	pe->hard_reset_counter = 0;
 
-	pe_set_state(dev, PE_SNK_STARTUP);
+	pe_snk_init(dev);
 }
 
 /**
@@ -162,6 +161,21 @@ void pe_run(const struct device *dev, const int32_t dpm_request)
 
 		break;
 	}
+}
+
+/**
+ * @brief Sets Data Role
+ */
+void pe_set_data_role(const struct device *dev, enum tc_data_role dr)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+
+	/* Update data role */
+	pe->data_role = dr;
+
+	/* Notify TCPC of role update */
+	tcpc_set_roles(data->tcpc, pe->power_role, pe->data_role);
 }
 
 /**
@@ -437,7 +451,7 @@ void extended_message_not_supported(const struct device *dev)
 	ext_header.raw_value = *payload;
 
 	if (ext_header.chunked && ext_header.data_size > PD_MAX_EXTENDED_MSG_CHUNK_LEN) {
-		pe_set_state(dev, PE_SNK_CHUNK_RECEIVED);
+		pe_set_state(dev, PE_CHUNK_RECEIVED);
 	} else {
 		pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
 	}
@@ -570,7 +584,7 @@ void policy_get_snk_cap(const struct device *dev, uint32_t **pdos, int *num_pdos
 /**
  * @brief PE_DRS_Evaluate_Swap Entry state
  */
-void pe_drs_evaluate_swap_entry(void *obj)
+static void pe_drs_evaluate_swap_entry(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -597,7 +611,7 @@ void pe_drs_evaluate_swap_entry(void *obj)
 /**
  * @brief PE_DRS_Evaluate_Swap Run state
  */
-void pe_drs_evaluate_swap_run(void *obj)
+static void pe_drs_evaluate_swap_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -609,9 +623,8 @@ void pe_drs_evaluate_swap_run(void *obj)
 		/* Only update data roles if last message sent was Accept */
 		if (prl_tx->msg_type == PD_CTRL_ACCEPT) {
 			/* Update Data Role */
-			pe->data_role = (pe->data_role == TC_ROLE_UFP) ? TC_ROLE_DFP : TC_ROLE_UFP;
-			/* Notify TCPC of role update */
-			tcpc_set_roles(data->tcpc, pe->power_role, pe->data_role);
+			pe_set_data_role(dev, (pe->data_role == TC_ROLE_UFP)
+						? TC_ROLE_DFP : TC_ROLE_UFP);
 			/* Inform Device Policy Manager of Data Role Change */
 			policy_notify(dev, (pe->data_role == TC_ROLE_UFP) ? DATA_ROLE_IS_UFP
 									  : DATA_ROLE_IS_DFP);
@@ -630,7 +643,7 @@ void pe_drs_evaluate_swap_run(void *obj)
 /**
  * @brief PE_DRS_Send_Swap Entry state
  */
-void pe_drs_send_swap_entry(void *obj)
+static void pe_drs_send_swap_entry(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -642,7 +655,7 @@ void pe_drs_send_swap_entry(void *obj)
 /**
  * @brief PE_DRS_Send_Swap Run state
  */
-void pe_drs_send_swap_run(void *obj)
+static void pe_drs_send_swap_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -710,9 +723,9 @@ void pe_drs_send_swap_run(void *obj)
 }
 
 /**
- * @brief PE_Send_Not_Supported Exit state
+ * @brief PE_DRS_Send_Swap Exit state
  */
-void pe_drs_send_swap_exit(void *obj)
+static void pe_drs_send_swap_exit(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 
@@ -720,6 +733,229 @@ void pe_drs_send_swap_exit(void *obj)
 	usbc_timer_stop(&pe->pd_t_sender_response);
 }
 
+/**
+ * @brief The PE_SOFT_RESET state has two embedded states
+ *	  that handle sending an accept message.
+ */
+enum pe_soft_reset_submachine_states {
+	/* Send Accept message sub state */
+	PE_SOFT_RESET_RUN_SEND_ACCEPT_MSG,
+	/* Wait for Accept message to be sent or an error sub state */
+	PE_SOFT_RESET_RUN_SEND_ACCEPT_MSG_COMPLETE
+};
+
+/**
+ * @brief 8.3.3.4.2.1 PE_SNK_Send_Soft_Reset State
+ */
+static void pe_soft_reset_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	/* Reset the protocol layer */
+	prl_reset(dev);
+
+	/* Initialize PE Submachine */
+	pe->submachine = PE_SOFT_RESET_RUN_SEND_ACCEPT_MSG;
+}
+
+static void pe_soft_reset_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	if (!prl_is_running(dev)) {
+		return;
+	}
+
+	switch (pe->submachine) {
+	case PE_SOFT_RESET_RUN_SEND_ACCEPT_MSG:
+		/* Send Accept message to SOP */
+		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_ACCEPT);
+		/* Start Sender Response Timer */
+		usbc_timer_start(&pe->pd_t_sender_response);
+		/* Move to next substate */
+		pe->submachine = PE_SOFT_RESET_RUN_SEND_ACCEPT_MSG_COMPLETE;
+		break;
+	case PE_SOFT_RESET_RUN_SEND_ACCEPT_MSG_COMPLETE:
+		/*
+		 * The Policy Engine Shall transition to the
+		 * PE_SRC_Send_Capabilities state when:
+		 *      1: Accept message sent to SOP
+		 */
+		if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+			pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
+		} else if (usbc_timer_expired(&pe->pd_t_sender_response) ||
+			   atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+			/*
+			 * The Policy Engine Shall transition to the
+			 * PE_SRC_Hard_Reset state when:
+			 *      1: A SenderResponseTimer timeout occurs.
+			 *      2: OR the Protocol Layer indicates that a
+			 *         transmission error has occurred.
+			 */
+			pe_set_state(dev, PE_SNK_HARD_RESET);
+		}
+		break;
+	}
+}
+
+static void pe_soft_reset_exit(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+
+	/* Stop Sender Response Timer */
+	usbc_timer_stop(&pe->pd_t_sender_response);
+}
+
+/**
+ * @brief PE_Send_Soft_Reset Entry State
+ */
+static void pe_send_soft_reset_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_SNK_Send_Soft_Reset");
+
+	/* Reset Protocol Layer */
+	prl_reset(dev);
+	atomic_set_bit(pe->flags, PE_FLAGS_SEND_SOFT_RESET);
+}
+
+/**
+ * @brief PE_Send_Soft_Reset Run State
+ */
+static void pe_send_soft_reset_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+	union pd_header header;
+
+	if (prl_is_running(dev) == false) {
+		return;
+	}
+
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_SEND_SOFT_RESET)) {
+		/* Send Soft Reset message */
+		pe_send_ctrl_msg(dev, pe->soft_reset_sop, PD_CTRL_SOFT_RESET);
+		return;
+	}
+
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+		/* Inform Device Policy Manager that the message was discarded */
+		policy_notify(dev, MSG_DISCARDED);
+		pe_set_state(dev, PE_SNK_READY);
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+		/* Start SenderResponse timer */
+		usbc_timer_start(&pe->pd_t_sender_response);
+	}
+	/*
+	 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
+	 * state when:
+	 *      1: An Accept Message has been received on SOP
+	 */
+	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+		header = prl_rx->emsg.header;
+
+		if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
+			pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
+		}
+	}
+	/*
+	 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset state when:
+	 *      1: A SenderResponseTimer timeout occurs (Handled in pe_report_error function)
+	 *      2: Or the Protocol Layer indicates that a transmission error has occurred
+	 */
+	else if (usbc_timer_expired(&pe->pd_t_sender_response) ||
+		 atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+		pe_set_state(dev, PE_SNK_HARD_RESET);
+	}
+}
+
+/**
+ * @brief PE_Send_Soft_Reset Exit State
+ */
+static void pe_send_soft_reset_exit(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+
+	/* Stop Sender Response Timer */
+	usbc_timer_stop(&pe->pd_t_sender_response);
+}
+
+
+
+/**
+ * @brief 8.3.3.6.2.1 PE_SNK_Send_Not_Supported State
+ */
+static void pe_send_not_supported_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_Not_Supported");
+
+	/* Request the Protocol Layer to send a Not_Supported or Reject Message. */
+	if (prl_get_rev(dev, PD_PACKET_SOP) > PD_REV20) {
+		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_NOT_SUPPORTED);
+	} else {
+		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_REJECT);
+	}
+}
+
+static void pe_send_not_supported_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	if (atomic_test_bit(pe->flags, PE_FLAGS_TX_COMPLETE) ||
+			atomic_test_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+		atomic_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
+		atomic_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED);
+		pe_set_state(dev, PE_SNK_READY);
+	}
+}
+
+/**
+ * @brief 8.3.3.6.2.3 PE_SNK_Chunk_Received State
+ */
+static void pe_chunk_received_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+
+	LOG_INF("PE_SNK_Chunk_Received");
+
+	/*
+	 * On entry to the PE_SNK_Chunk_Received state, the Policy Engine
+	 * Shall initialize and run the ChunkingNotSupportedTimer.
+	 */
+	usbc_timer_start(&pe->pd_t_chunking_not_supported);
+}
+
+/**
+ * @brief PE_Chunk_Received Run State
+ */
+static void pe_chunk_received_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	/*
+	 * The Policy Engine Shall transition to PE_SNK_Send_Not_Supported
+	 * when:
+	 *	1: The ChunkingNotSupportedTimer has timed out.
+	 */
+	if (usbc_timer_expired(&pe->pd_t_chunking_not_supported)) {
+		pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
+	}
+}
+
+/**
+ * @brief Suspend State
+ */
 static void pe_suspend_entry(void *obj)
 {
 	LOG_INF("PE_SUSPEND");
@@ -789,6 +1025,11 @@ static const struct smf_state pe_states[] = {
 		pe_snk_transition_sink_run,
 		pe_snk_transition_sink_exit,
 		NULL),
+	[PE_SNK_GET_SOURCE_CAP] = SMF_CREATE_STATE(
+		pe_snk_get_source_cap_entry,
+		pe_snk_get_source_cap_run,
+		pe_snk_get_source_cap_exit,
+		NULL),
 	[PE_SEND_SOFT_RESET] = SMF_CREATE_STATE(
 		pe_send_soft_reset_entry,
 		pe_send_soft_reset_run,
@@ -797,7 +1038,7 @@ static const struct smf_state pe_states[] = {
 	[PE_SOFT_RESET] = SMF_CREATE_STATE(
 		pe_soft_reset_entry,
 		pe_soft_reset_run,
-		NULL,
+		pe_soft_reset_exit,
 		NULL),
 	[PE_SEND_NOT_SUPPORTED] = SMF_CREATE_STATE(
 		pe_send_not_supported_entry,
@@ -814,15 +1055,10 @@ static const struct smf_state pe_states[] = {
 		pe_drs_send_swap_run,
 		pe_drs_send_swap_exit,
 		NULL),
-	[PE_SNK_GET_SOURCE_CAP] = SMF_CREATE_STATE(
-		pe_snk_get_source_cap_entry,
-		pe_snk_get_source_cap_run,
-		pe_snk_get_source_cap_exit,
-		NULL),
-	[PE_SNK_CHUNK_RECEIVED] = SMF_CREATE_STATE(
+	[PE_CHUNK_RECEIVED] = SMF_CREATE_STATE(
 		pe_chunk_received_entry,
 		pe_chunk_received_run,
-		pe_chunk_received_exit,
+		NULL,
 		NULL),
 	[PE_SUSPEND] = SMF_CREATE_STATE(
 		pe_suspend_entry,
