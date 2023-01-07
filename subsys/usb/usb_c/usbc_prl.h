@@ -12,7 +12,7 @@
 #include <zephyr/drivers/usb_c/usbc_tcpc.h>
 #include <zephyr/smf.h>
 
-#include "usbc_pe.h"
+#include "usbc_pe_common_internal.h"
 #include "usbc_timer.h"
 
 /**
