@@ -81,6 +81,7 @@ list(APPEND zephyr_cmake_modules zephyr_module)
 
 list(APPEND zephyr_cmake_modules boards)
 list(APPEND zephyr_cmake_modules shields)
+list(APPEND zephyr_cmake_modules snippets)
 list(APPEND zephyr_cmake_modules arch)
 list(APPEND zephyr_cmake_modules configuration_files)
 
