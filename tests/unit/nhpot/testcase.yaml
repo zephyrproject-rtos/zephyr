@@ -1,0 +1,7 @@
+# Copyright 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  utilities.nhpot:
+    tags: nhpot
+    type: unit
