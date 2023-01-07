@@ -18,7 +18,7 @@ tests:
         - "D: Instance ID 1 assigned to app ID 0x0000000000000001.*"
         - "EchoApp::nanoappStart\\(\\)"
         - "EchoApp::nanoappHandleEvent\\(sender_instance_id=0, event_type=1,
-          event_data@\\(nil\\)\\)"
+          event_data@(\\(nil\\))|0\\)"
         - "Event \\(1\\) complete!"
         - "EchoApp::nanoappEnd\\(\\)"
         - "I: Exiting EventLoop.*"
