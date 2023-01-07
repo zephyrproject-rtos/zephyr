@@ -795,14 +795,22 @@ static void add_sink(struct bt_audio_ep *ep, uint8_t index)
 {
 	shell_print(ctx_shell, "Sink #%u: ep %p", index, ep);
 
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT == 0
+	__ASSERT(false, "No sinks configured");
+#else
 	snks[index] = ep;
+#endif
 }
 
 static void add_source(struct bt_audio_ep *ep, uint8_t index)
 {
 	shell_print(ctx_shell, "Source #%u: ep %p", index, ep);
 
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT == 0
+	__ASSERT(false, "No sources configured");
+#else
 	srcs[index] = ep;
+#endif
 }
 
 static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
