@@ -199,10 +199,9 @@ static void producer_thread(void)
 	}
 	uint32_t duration = (k_uptime_get_32() - start);
 
-	if (duration == 0) {
-		LOG_ERR("Something wrong. Duration is zero!\n");
-		k_oops();
-	}
+	if (duration == 0)
+		duration = 1;
+
 	uint64_t i = (BYTES_TO_BE_SENT * 1000) / duration;
 	uint64_t f = ((BYTES_TO_BE_SENT * 100000) / duration) % 100;
 
