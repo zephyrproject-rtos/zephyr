@@ -116,6 +116,7 @@ add_subdirectory_ifdef(CONFIG_TACH_IT8XXX2	ite_tach_it8xxx2)
 add_subdirectory_ifdef(CONFIG_VCMP_IT8XXX2	ite_vcmp_it8xxx2)
 add_subdirectory_ifdef(CONFIG_PCNT_ESP32	pcnt_esp32)
 add_subdirectory_ifdef(CONFIG_ESP32_TEMP	esp32_temp)
+add_subdirectory_ifdef(CONFIG_RPI_PICO_TEMP	rpi_pico_temp)
 
 if(CONFIG_USERSPACE OR CONFIG_SENSOR_SHELL OR CONFIG_SENSOR_SHELL_BATTERY)
 # The above if() is needed or else CMake would complain about

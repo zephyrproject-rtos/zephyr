@@ -12,6 +12,10 @@
 #include "rpi_pico_common.dtsi"
 
 / {
+	aliases {
+		die-temp0 = &die_temp;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -184,6 +188,12 @@
 
 	pinctrl: pin-controller {
 		compatible = "raspberrypi,pico-pinctrl";
+	};
+
+	die_temp: dietemp {
+		compatible = "raspberrypi,pico-temp";
+		io-channels = <&adc 4>;
+		status = "disabled";
 	};
 };
 
