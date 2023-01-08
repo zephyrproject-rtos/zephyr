@@ -11,21 +11,21 @@ The DSP API provides an architecture agnostic way for signal processing.
 Currently, the API will work on any architecture but will likely not be
 optimized. The status of the various architectures can be found below:
 
-+--------------+-------------+
-| Architecture | Status      |
-+--------------+-------------+
-| ARC          | Unoptimized |
-| ARM          | Optimized   |
-| ARM64        | Optimized   |
-| MIPS         | Unoptimized |
-| NIOS2        | Unoptimized |
-| POSIX        | Unoptimized |
-| RISCV        | Unoptimized |
-| RISCV64      | Unoptimized |
-| SPARC        | Unoptimized |
-| X86          | Unoptimized |
-| XTENSA       | Unoptimized |
-+--------------+-------------+
+============ =============
+Architecture Status
+============ =============
+ARC          Unoptimized
+ARM          Optimized
+ARM64        Optimized
+MIPS         Unoptimized
+NIOS2        Unoptimized
+POSIX        Unoptimized
+RISCV        Unoptimized
+RISCV64      Unoptimized
+SPARC        Unoptimized
+X86          Unoptimized
+XTENSA       Unoptimized
+============ =============
 
 Using zDSP
 **********
