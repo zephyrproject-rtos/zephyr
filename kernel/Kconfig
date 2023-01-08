@@ -945,6 +945,7 @@ config TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 config THREAD_LOCAL_STORAGE
 	bool "Thread Local Storage (TLS)"
 	depends on ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	default y
 	select NEED_LIBC_MEM_PARTITION if (CPU_CORTEX_M && USERSPACE)
 	help
 	  This option enables thread local storage (TLS) support in kernel.
