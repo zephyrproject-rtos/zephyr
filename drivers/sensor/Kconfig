@@ -271,4 +271,6 @@ source "drivers/sensor/pcnt_esp32/Kconfig"
 
 source "drivers/sensor/esp32_temp/Kconfig"
 
+source "drivers/sensor/rpi_pico_temp/Kconfig"
+
 endif # SENSOR
