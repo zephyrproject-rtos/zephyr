@@ -22,22 +22,24 @@ File management group defines following commands:
     +-------------------+-----------------------------------------------+
     | ``3``             | Supported file hash/checksum types            |
     +-------------------+-----------------------------------------------+
+    | ``4``             | File close                                    |
+    +-------------------+-----------------------------------------------+
 
 File download
 *************
 
 Command allows to download contents of an existing file from specified path
-of a target device. The command is stateless and mcumgr does not hold file
-in open state after response to the command is issued, instead a client
-application is supposed to keep track of data it has already downloaded,
-and issue subsequent requests, with modified offset, to gather entire file.
+of a target device. Client applications must keep track of data they have
+already downloaded and where their position in the file is (MCUmgr will cache
+these also), and issue subsequent requests, with modified offset, to gather
+the entire file.
 Request does not carry size of requested chunk, the size is specified
 by application itself.
-Mcumgr server side re-opens a file for each subsequent request, and current
-specification does not provide means to identify subsequent requests as
-belonging to specified download session. This means that the file is not
-locked in any way or exclusively owned by mcumgr, for the time of download
-session, and may change between requests or even be removed.
+Note that file handles will remain open for consecutive requests (as long as
+an idle timeout has not been reached and another transport does not make use
+of uploading/downloading files using fs_mgmt), but files are not exclusively
+owned by MCUmgr, for the time of download session, and may change between
+requests or even be removed.
 
 .. note::
     By default, all file upload requests are unconditionally allowed. However,
@@ -142,11 +144,14 @@ existing file or create a new one if it does not exist at specified path.
 The protocol supports stateless upload where each requests carries different chunk
 of a file and it is client side responsibility to track progress of upload.
 
-Mcumgr server side re-opens a file for each subsequent request, and current
-specification does not provide means to identify subsequent requests as
-belonging to specified upload session. This means that the file is not
-locked in any way or exclusively owned by mcumgr, for the time of upload
-session, and may change between requests or even be removed.
+Note that file handles will remain open for consecutive requests (as long as
+an idle timeout has not been reached, but files are not exclusively owned by
+MCUmgr, for the time of download session, and may change between requests or
+even be removed. Note that file handles will remain open for consecutive
+requests (as long as an idle timeout has not been reached and another transport
+does not make use of uploading/downloading files using fs_mgmt), but files are
+not exclusively owned by MCUmgr, for the time of download session, and may
+change between requests or even be removed.
 
 .. note::
     Weirdly, the current Zephyr implementation is half-stateless as is able to hold
@@ -334,6 +339,10 @@ Command allows to generate a hash/checksum of an existing file at a specified
 path on a target device. Note that kernel heap memory is required for buffers to
 be allocated for this to function, and large stack memory buffers are required
 for generation of the output hash/checksum.
+Requires :kconfig:option:`CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH` to be enabled for
+the base functionality, supported hash/checksum are opt-in with
+:kconfig:option:`CONFIG_MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32` or
+:kconfig:option:`CONFIG_MCUMGR_GRP_FS_HASH_SHA256`.
 
 File hash/checksum request
 ==========================
@@ -531,3 +540,58 @@ where:
     +-----------------------+---------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
+
+File close
+**********
+
+Command allows closing any open file handles held by fs_mgmt upload/download
+requests that might have stalled or be incomplete.
+
+File close request
+==================
+
+File close request header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``2``  | ``8``        |  ``4``         |
+    +--------+--------------+----------------+
+
+The command sends empty CBOR map as data.
+
+File close response
+===================
+
+File close response header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``3``  | ``8``        |  ``4``         |
+    +--------+--------------+----------------+
+
+The command sends an empty CBOR map as data if successful.
+In case of error the CBOR data takes the form:
+
+.. code-block:: none
+
+    {
+        (str)"rc"           : (int)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +-----------------------+---------------------------------------------------+
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
+    +-----------------------+---------------------------------------------------+
