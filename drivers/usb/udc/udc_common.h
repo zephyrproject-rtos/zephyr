@@ -51,7 +51,7 @@ void udc_set_suspended(const struct device *dev, const bool value);
  * @brief Get pointer to endpoint configuration structure.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] ep     Endpoint representation structure
+ * @param[in] ep     Endpoint address
  *
  * @return pointer to endpoint configuration or NULL on error.
  */
@@ -86,7 +86,7 @@ void udc_ep_set_busy(const struct device *dev, const uint8_t ep,
  * be passed to the higher level.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] ep      Endpoint representation structure
+ * @param[in] ep      Endpoint address
  *
  * @return pointer to UDC request or NULL on error.
  */
@@ -101,7 +101,7 @@ struct net_buf *udc_buf_get(const struct device *dev,
  * is typically used to dequeue endpoint FIFO.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] ep     Endpoint representation structure
+ * @param[in] ep     Endpoint address
  *
  * @return pointer to UDC request or NULL on error.
  */
@@ -115,7 +115,7 @@ struct net_buf *udc_buf_get_all(const struct device *dev,
  * Use it when request buffer is required for a transfer.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] ep      Endpoint representation structure
+ * @param[in] ep      Endpoint address
  *
  * @return pointer to request or NULL on error.
  */
@@ -177,7 +177,7 @@ int udc_ep_enable_internal(const struct device *dev,
  * This function can be used by the driver to disable control IN/OUT endpoint.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] ep     Endpoint representation structure
+ * @param[in] ep     Endpoint address
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -ENODEV endpoint is not assigned or no configuration found
