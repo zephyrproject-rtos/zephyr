@@ -308,6 +308,29 @@ static inline bool is_power_of_two(unsigned int x)
 }
 
 /**
+ * @brief Return log2 of an unsigned number, rounded up to nearest integer.
+ * @param val value to get log2ceil of
+ * @return log2 of @p val. The answer is rounded up to the nearest integer.
+ *         For @p val of 0, return 0.
+ */
+static inline uint8_t log2ceil(size_t val)
+{
+	if (val <= 1) {
+		return 0;
+	}
+
+#if SIZE_MAX <= UINT_MAX
+	return ((sizeof(unsigned int) * 8) - (uint8_t)__builtin_clz((unsigned int)val - 1));
+#elif SIZE_MAX <= ULONG_MAX
+	return ((sizeof(unsigned long) * 8) - (uint8_t)__builtin_clzl((unsigned long)val - 1));
+#else
+	return ((sizeof(unsigned long long) * 8)
+		- (uint8_t)__builtin_clzll((unsigned long long)val - 1));
+#endif
+}
+
+
+/**
  * @brief Arithmetic shift right
  * @param value value to shift
  * @param shift number of bits to shift

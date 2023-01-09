@@ -510,7 +510,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	 * Map the endpoint size to the buffer size. Only power of 2 buffer
 	 * sizes between 8 and 1024 are possible, get the next power of 2.
 	 */
-	log2ceil_mps = 32 - __builtin_clz((MAX(cfg->ep_mps, 8) << 1) - 1) - 1;
+	log2ceil_mps = log2ceil(MAX(cfg->ep_mps, 8) << 1);
 	regval |= USBHS_DEVEPTCFG_EPSIZE(log2ceil_mps - 3);
 	dev_data.ep_data[ep_idx].mps = cfg->ep_mps;
 
