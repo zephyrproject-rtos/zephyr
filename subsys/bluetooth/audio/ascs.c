@@ -512,7 +512,8 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 		return;
 	}
 
-	if (ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA) &&
+	    ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
 		LOG_DBG("ep %p is not in the streaming state: %s",
 		       ep, bt_audio_ep_state_str(ep->status.state));
 		return;
