@@ -25,7 +25,7 @@
 __imr void power_init(void)
 {
 	/* Disable idle power gating */
-	DFDSPBRCP.bootctl[0].bctl |= DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
+	DSPCS.bootctl[0].bctl |= DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 }
 
 #ifdef CONFIG_PM
@@ -218,9 +218,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* save interrupt state and turn off all interrupts */
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
-		core_desc[cpu].bctl = DFDSPBRCP.bootctl[cpu].bctl;
-		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESTART_COMMAND;
-		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPCG;
+		core_desc[cpu].bctl = DSPCS.bootctl[cpu].bctl;
+		DSPCS.bootctl[cpu].wdtcs = DSPBR_WDT_RESTART_COMMAND;
+		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = false;
 		z_xtensa_cache_flush_inv_all();
 		if (cpu == 0) {
@@ -280,14 +280,14 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
-		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPPG;
-		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPCG;
+		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPPG;
+		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		ACE_PWRCTL->wpdsphpxpg &= ~BIT(cpu);
 		if (cpu == 0) {
-			uint32_t battr = DFDSPBRCP.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
+			uint32_t battr = DSPCS.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
 
-			battr |= (DFDSPBRCP_BATTR_LPSCTL_RESTORE_BOOT & LPSCTL_BATTR_MASK);
-			DFDSPBRCP.bootctl[cpu].battr = battr;
+			battr |= (DSPBR_BATTR_LPSCTL_RESTORE_BOOT & LPSCTL_BATTR_MASK);
+			DSPCS.bootctl[cpu].battr = battr;
 		}
 		power_gate_entry(cpu);
 	} else {
@@ -306,10 +306,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 			struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
 
-			DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESUME;
+			DSPCS.bootctl[cpu].wdtcs = DSPBR_WDT_RESUME;
 			/* restore clock gating state */
-			DFDSPBRCP.bootctl[cpu].bctl |=
-					(core_desc[0].bctl & DFDSPBRCP_BCTL_WAITIPCG);
+			DSPCS.bootctl[cpu].bctl |=
+					(core_desc[0].bctl & DSPBR_BCTL_WAITIPCG);
 			soc_cpus_active[cpu] = true;
 
 			/* clean storage and restore information */
@@ -341,10 +341,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			k_busy_wait(HW_STATE_CHECK_DELAY);
 		}
 
-		DFDSPBRCP.bootctl[cpu].bctl |=
-			DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
+		DSPCS.bootctl[cpu].bctl |=
+			DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 		if (cpu == 0) {
-			DFDSPBRCP.bootctl[cpu].battr &= (~LPSCTL_BATTR_MASK);
+			DSPCS.bootctl[cpu].battr &= (~LPSCTL_BATTR_MASK);
 		}
 
 		soc_cpus_active[cpu] = true;
