@@ -391,6 +391,17 @@ Libraries / Subsystems
     set with
     :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME`.
 
+  * MCUmgr fs_mgmt upload and download now caches the file handle to improve
+    throughput when transferring data, the file is no longer opened and closed
+    for each part of a transfer. In addition, new functionality has been added
+    that will allow closing file handles of uploaded/downloaded files if they
+    are idle for a period of time, the timeout is set with
+    :kconfig:option:`MCUMGR_GRP_FS_FILE_AUTOMATIC_IDLE_CLOSE_TIME`. There is a
+    new command that can be used to close open file handles which can be used
+    after a file upload is complete to ensure that the file handle is closed
+    correctly, allowing other transports or other parts of the application
+    code to use it.
+
 HALs
 ****
 
