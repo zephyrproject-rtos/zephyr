@@ -60,7 +60,7 @@ static int regulator_fake_init(const struct device *dev)
 {
 	regulator_common_data_init(dev);
 
-	return regulator_common_init_enable(dev);
+	return regulator_common_init(dev, false);
 }
 
 /* parent regulator */
