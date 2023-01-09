@@ -83,6 +83,9 @@ Removed APIs in this release
 
 * Removed :kconfig:option:`CONFIG_COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET`
 
+* Removed deprecated tinycbor module, code that uses this module should be
+  updated to use zcbor as a replacement.
+
 Deprecated in this release
 ==========================
 
