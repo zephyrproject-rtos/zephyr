@@ -216,6 +216,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	LOG_DBG("code 0x%02x", hdr->code);
 
 	if (!atomic_test_bit(chan->flags, ATT_CONNECTED)) {
+		LOG_ERR("ATT channel not connected");
 		return -EINVAL;
 	}
 
@@ -2863,8 +2864,10 @@ static struct bt_att *att_get(struct bt_conn *conn)
 	}
 
 	att_chan = ATT_CHAN(chan);
-	__ASSERT(atomic_test_bit(att_chan->flags, ATT_CONNECTED),
-		 "ATT channel not connected");
+	if (!atomic_test_bit(att_chan->flags, ATT_CONNECTED)) {
+		LOG_ERR("ATT channel not connected");
+		return NULL;
+	}
 
 	return att_chan->att;
 }
@@ -2957,6 +2960,7 @@ static void att_chan_detach(struct bt_att_chan *chan)
 	}
 
 	chan->att = NULL;
+	atomic_clear_bit(chan->flags, ATT_CONNECTED);
 }
 
 static void att_timeout(struct k_work *work)
