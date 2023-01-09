@@ -17,7 +17,7 @@ module = EC_HC
 module-str = ec-host-commands
 source "subsys/logging/Kconfig.template.log_config"
 
-choice
+choice EC_HOST_CMD_PERIPH_TYPE
 	prompt "Host commands peripheral"
 
 config EC_HOST_CMD_SIMULATOR
