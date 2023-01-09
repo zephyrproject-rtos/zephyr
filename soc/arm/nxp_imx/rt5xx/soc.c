@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, NXP
+ * Copyright 2022-2023, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -303,6 +303,33 @@ static void clock_init(void)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pmic_i2c), nxp_lpc_i2c, okay)
 	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM15);
 #endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lcdif), nxp_dcnano_lcdif, okay) && CONFIG_DISPLAY
+	POWER_DisablePD(kPDRUNCFG_APD_DCNANO_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_DCNANO_SRAM);
+	POWER_ApplyPD();
+
+	CLOCK_AttachClk(kAUX0_PLL_to_DCPIXEL_CLK);
+	/* Note- pixel clock follows formula
+	 * (height + VSW + VFP + VBP) * (width + HSW + HFP + HBP) * frame rate.
+	 * this means the clock divider will vary depending on
+	 * the attached display.
+	 */
+	CLOCK_SetClkDiv(kCLOCK_DivDcPixelClk,
+		DT_PROP(DT_NODELABEL(lcdif), clk_div));
+
+	CLOCK_EnableClock(kCLOCK_DisplayCtrl);
+	RESET_ClearPeripheralReset(kDISP_CTRL_RST_SHIFT_RSTn);
+
+	CLOCK_EnableClock(kCLOCK_AxiSwitch);
+	RESET_ClearPeripheralReset(kAXI_SWITCH_RST_SHIFT_RSTn);
+#if defined(CONFIG_MEMC) && DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexspi2), \
+	nxp_imx_flexspi, okay)
+	/* Enable write-through for FlexSPI1 space */
+	CACHE64_POLSEL0->REG1_TOP = 0x27FFFC00U;
+	CACHE64_POLSEL0->POLSEL   = 0x11U;
+#endif
+#endif
+
 	/* Switch CLKOUT to FRO_DIV2 */
 	CLOCK_AttachClk(kFRO_DIV2_to_CLKOUT);
 
@@ -362,6 +389,49 @@ static void clock_init(void)
 	/* Set main clock to FRO as deep sleep clock by default. */
 	POWER_SetDeepSleepClock(kDeepSleepClk_Fro);
 }
+
+#if CONFIG_MIPI_DSI
+void imxrt_pre_init_display_interface(void)
+{
+	/* Assert MIPI DPHY reset. */
+	RESET_SetPeripheralReset(kMIPI_DSI_PHY_RST_SHIFT_RSTn);
+	POWER_DisablePD(kPDRUNCFG_APD_MIPIDSI_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_MIPIDSI_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PD_MIPIDSI);
+	POWER_ApplyPD();
+
+	/* RxClkEsc max 60MHz, TxClkEsc 12 to 20MHz. */
+	CLOCK_AttachClk(kFRO_DIV1_to_MIPI_DPHYESC_CLK);
+	/* RxClkEsc = 192MHz / 4 = 48MHz. */
+	CLOCK_SetClkDiv(kCLOCK_DivDphyEscRxClk, 4);
+	/* TxClkEsc = 192MHz / 4 / 3 = 16MHz. */
+	CLOCK_SetClkDiv(kCLOCK_DivDphyEscTxClk, 3);
+
+	/*
+	 * The DPHY bit clock must be fast enough to send out the pixels,
+	 * it should be larger than:
+	 *
+	 *     (Pixel clock * bit per output pixel) / number of MIPI data lane
+	 *
+	 * DPHY supports up to 895.1MHz bit clock.
+	 * Note: AUX1 PLL clock is system pll clock * 18 / pfd.
+	 * system pll clock is configured at 528MHz by default.
+	 */
+	CLOCK_AttachClk(kAUX1_PLL_to_MIPI_DPHY_CLK);
+	CLOCK_InitSysPfd(kCLOCK_Pfd3,
+		DT_PROP(DT_NODELABEL(mipi_dsi), dphy_clk_div));
+	CLOCK_SetClkDiv(kCLOCK_DivDphyClk, 1);
+
+	/* Clear DSI control reset (Note that DPHY reset is cleared later)*/
+	RESET_ClearPeripheralReset(kMIPI_DSI_CTRL_RST_SHIFT_RSTn);
+}
+
+void imxrt_post_init_display_interface(void)
+{
+	/* Deassert MIPI DPHY reset. */
+	RESET_ClearPeripheralReset(kMIPI_DSI_PHY_RST_SHIFT_RSTn);
+}
+#endif
 
 /**
  *
