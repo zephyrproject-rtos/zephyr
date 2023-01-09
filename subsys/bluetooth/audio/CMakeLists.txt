@@ -3,7 +3,6 @@
 zephyr_library()
 zephyr_library_sources(
 	audio.c
-	audio_iso.c
 )
 
 if (CONFIG_BT_VOCS OR CONFIG_BT_VOCS_CLIENT)
@@ -48,7 +47,7 @@ zephyr_library_sources_ifdef(CONFIG_MCTL media_proxy.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_ASCS ascs.c)
 zephyr_library_sources_ifdef(CONFIG_BT_PACS pacs.c)
-zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_STREAM stream.c codec.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_STREAM stream.c codec.c audio_iso.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_UNICAST_SERVER unicast_server.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_UNICAST_CLIENT unicast_client.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_BROADCAST_SOURCE broadcast_source.c)
