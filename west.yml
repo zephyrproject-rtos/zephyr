@@ -26,7 +26,7 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: canopennode
-      revision: 53d3415c14d60f8f4bfca54bfbc5d5a667d7e724
+      revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
       path: modules/lib/canopennode
     - name: chre
       revision: fe0ab36e0fa7453a4c9b97bedac89709f45cf965
