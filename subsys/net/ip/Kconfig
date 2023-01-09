@@ -480,7 +480,7 @@ config NET_TCP_MAX_RECV_WINDOW_SIZE
 config NET_TCP_RECV_QUEUE_TIMEOUT
 	int "How long to queue received data (in ms)"
 	depends on NET_TCP
-	default 100
+	default 2000
 	range 0 10000
 	help
 	  If we receive out-of-order TCP data, we queue it. This value tells
