@@ -11,6 +11,14 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/zbus/zbus.h>
+
+#if defined(CONFIG_ARCH_POSIX)
+#include "native_rtc.h"
+#define GET_ARCH_TIME_NS() (native_rtc_gettime_us(RTC_CLOCK_PSEUDOHOSTREALTIME) * NSEC_PER_USEC)
+#else
+#define GET_ARCH_TIME_NS() (k_cyc_to_ns_near32(sys_clock_cycle_get_32()))
+#endif
+
 LOG_MODULE_DECLARE(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
 #define CONSUMER_STACK_SIZE (CONFIG_IDLE_STACK_SIZE + CONFIG_BM_MESSAGE_SIZE)
@@ -185,7 +193,7 @@ static void producer_thread(void)
 
 	zbus_chan_finish(&bm_channel);
 
-	uint32_t start_ns = k_cyc_to_ns_near32(sys_clock_cycle_get_32());
+	uint32_t start_ns = GET_ARCH_TIME_NS();
 
 	for (uint64_t internal_count = BYTES_TO_BE_SENT / CONFIG_BM_ONE_TO; internal_count > 0;
 	     internal_count -= CONFIG_BM_MESSAGE_SIZE) {
@@ -200,7 +208,7 @@ static void producer_thread(void)
 		zbus_chan_notify(&bm_channel, K_MSEC(200));
 	}
 
-	uint32_t end_ns = k_cyc_to_ns_near32(sys_clock_cycle_get_32());
+	uint32_t end_ns = GET_ARCH_TIME_NS();
 
 	uint32_t duration = end_ns - start_ns;
 
@@ -218,4 +226,5 @@ static void producer_thread(void)
 	printk("\n@%u\n", duration);
 }
 
-K_THREAD_DEFINE(producer_thread_id, PRODUCER_STACK_SIZE, producer_thread, NULL, NULL, NULL, 5, 0, 0);
+K_THREAD_DEFINE(producer_thread_id, PRODUCER_STACK_SIZE, producer_thread,
+		NULL, NULL, NULL, 5, 0, 0);
