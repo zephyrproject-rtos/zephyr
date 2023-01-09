@@ -27,6 +27,9 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include <zephyr/net/ppp.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/sys/printk.h>
+#if defined(CONFIG_NET_L2_ETHERNET)
+#include <zephyr/net/ethernet.h>
+#endif /* CONFIG_NET_L2_ETHERNET */
 
 #include "route.h"
 #include "icmpv6.h"
@@ -3563,6 +3566,59 @@ static int cmd_net_iface(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])
+{
+#if !defined(CONFIG_NET_L2_ETHERNET)
+	PR_WARNING("Unsupported command, please enable CONFIG_NET_L2_ETHERNET\n");
+	return -ENOEXEC;
+#else
+	struct net_if *iface;
+	struct net_eth_addr mac_addr;
+	int idx;
+	int ret;
+
+	if (argc < 3) {
+		PR_WARNING("Missing interface index and/or MAC address\n");
+		goto err;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		goto err;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		goto err;
+	}
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		PR_WARNING("MAC address can be set only for Ethernet\n");
+		goto err;
+	}
+
+	if (net_bytes_from_str(mac_addr.addr, sizeof(mac_addr), argv[2]) < 0) {
+		PR_WARNING("Invalid MAC address\n");
+		goto err;
+	}
+
+	ret = net_if_set_link_addr(iface, mac_addr.addr, sizeof(mac_addr), NET_LINK_ETHERNET);
+	if (ret < 0) {
+		if (ret == -EPERM) {
+			PR_WARNING("MAC address cannot be set when interface is operational\n");
+			goto err;
+		}
+		PR_WARNING("Failed to set MAC address (%d)\n", ret);
+		goto err;
+	}
+
+	return 0;
+err:
+	return -ENOEXEC;
+#endif /* CONFIG_NET_L2_ETHERNET */
+}
+
 struct ctx_info {
 	int pos;
 	bool are_external_pools;
@@ -5914,6 +5970,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 		  "'net iface <index>' shows network interface "
 		  "information.",
 		  cmd_net_iface),
+	SHELL_CMD(set_mac, IFACE_DYN_CMD,
+		  "'net iface set_mac <index> <MAC>' sets MAC address for the network interface.",
+		  cmd_net_set_mac),
 	SHELL_SUBCMD_SET_END
 );
 
