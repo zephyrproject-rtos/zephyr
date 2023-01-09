@@ -350,6 +350,11 @@ build the specific target for the target, for example::
 
   west build --sysbuild --domain hello_world --target help
 
+Use a snippet
+-------------
+
+See :ref:`using-snippets`.
+
 .. _west-building-config:
 
 Configuration Options

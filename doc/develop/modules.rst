@@ -850,6 +850,12 @@ Build settings supported in the :file:`module.yml` file are:
 - ``dts_root``: Contains additional dts files related to the architecture/soc
   families. Additional dts files must be located in a :file:`<dts_root>/dts`
   folder.
+- ``snippet_root``: Contains additional snippets that are available for use.
+  These snippets must be defined in :file:`snippet.yml` files underneath the
+  :file:`<snippet_root>/snippets` folder. For example, if you have
+  ``snippet_root: foo``, then you should place your module's
+  :file:`snippet.yml` files in :file:`<your-module>/foo/snippets` or any
+  nested subdirectory.
 - ``soc_root``: Contains additional SoCs that are available to the build
   system. Additional SoCs must be located in a :file:`<soc_root>/soc` folder.
 - ``arch_root``: Contains additional architectures that are available to the
