@@ -375,7 +375,7 @@ where:
     +-----------------------+-----------------------------------------------------+
 
 The "off" field is only included in responses to successfully processed requests;
-if "rc" is negative the "off' may not appear.
+if "rc" is negative then "off" may not appear.
 
 Image erase
 ***********
