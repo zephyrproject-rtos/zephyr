@@ -603,8 +603,7 @@ static int regulator_npm6001_init(const struct device *dev)
 	if (!device_is_ready(config->p)) {
 		return -ENODEV;
 	}
-
-	return regulator_common_init_enable(dev);
+	return regulator_common_init(dev, false);
 }
 
 static int regulator_npm6001_common_init(const struct device *dev)

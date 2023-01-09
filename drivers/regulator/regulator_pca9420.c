@@ -343,7 +343,7 @@ static int regulator_pca9420_init(const struct device *dev)
 		}
 	}
 
-	return regulator_common_init_enable(dev);
+	return regulator_common_init(dev, false);
 }
 
 int regulator_pca9420_dvs_state_set(const struct device *dev,
