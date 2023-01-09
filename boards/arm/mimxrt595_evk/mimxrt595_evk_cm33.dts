@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, NXP
+ * Copyright 2022-2023, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
+		kscan0 = &touch_controller;
 	};
 
 	chosen {
@@ -34,6 +35,8 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
+		zephyr,display = &lcdif;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	gpio_keys {
@@ -123,6 +126,13 @@
 		 * this state.
 		 */
 	};
+
+	en_mipi_display: enable-mipi-display {
+		compatible = "regulator-fixed";
+		regulator-name = "en_mipi_display";
+		enable-gpios = <&gpio3 15 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
 };
 
 &cpu0 {
@@ -140,6 +150,45 @@
 
 &rtc {
 	status = "okay";
+};
+
+&lcdif {
+	status = "okay";
+	width = <720>;
+	height = <1280>;
+	clk-div = <7>;
+	polarity = <12>;
+	hsync = <8>;
+	hfp = <32>;
+	hbp = <32>;
+	vsync = <2>;
+	vfp = <16>;
+	vbp = <14>;
+	backlight-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+	data-bus-width = "24-bit";
+	pixel-format = "rgb-565";
+};
+
+&mipi_dsi {
+	status = "okay";
+	nxp,lcdif = <&lcdif>;
+	dpi-color-coding = "24-bit";
+	dpi-pixel-packet = "24-bit";
+	dpi-video-mode = "burst";
+	dpi-bllp-mode = "low-power";
+	autoinsert-eotp;
+	dphy-clk-div = <12>;
+
+	rm68200@0 {
+		status = "okay";
+		compatible = "raydium,rm68200";
+		reg = <0x0>;
+		reset-gpios = <&gpio3 21 GPIO_ACTIVE_HIGH>;
+		data-lanes = <2>;
+		width = <720>;
+		height = <1280>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+	};
 };
 
 &flexcomm0 {
@@ -164,6 +213,13 @@ arduino_i2c: &flexcomm4 {
 		reg = <0x1e>;
 		int1-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+	};
+
+	touch_controller: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio4 4 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -380,6 +436,10 @@ zephyr_udc0: &usbhs {
 	};
 };
 
+/*
+ * Configure FlexSPI2 to use 1KB of AHB RX buffer for GPU/Display master.
+ * This will improve performance when using external pSRAM with the LCDIF.
+ */
 &flexspi2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexspi2>;
@@ -389,6 +449,7 @@ zephyr_udc0: &usbhs {
 	ahb-bufferable;
 	ahb-cacheable;
 	ahb-read-addr-opt;
+	rx-buffer-config = <1 7 11 1024>;
 	aps6408l: aps6408l@0 {
 		compatible = "nxp,imx-flexspi-aps6408l";
 		/* APS6408L is 8MB, 64MBit pSRAM */
