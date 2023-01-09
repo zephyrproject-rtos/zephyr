@@ -147,6 +147,8 @@ name:
   The actual name of the board as it appears in marketing material.
 type:
   Type of the board or configuration, currently we support 2 types: mcu, qemu
+simulation:
+  Simulator used to simulate the platform, e.g. qemu.
 arch:
   Architecture of the board
 toolchain:
