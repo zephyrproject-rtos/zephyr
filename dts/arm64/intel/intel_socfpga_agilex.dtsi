@@ -233,6 +233,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
+		resets = <&reset RSTMGR_I2C0_RSTLINE>;
 	};
 
 	i2c1: i2c@ffC02900 {
@@ -245,6 +246,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
+		resets = <&reset RSTMGR_I2C1_RSTLINE>;
 	};
 
 	i2c2: i2c@ffC02A00 {
@@ -257,6 +259,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
+		resets = <&reset RSTMGR_I2C2_RSTLINE>;
 	};
 
 	i2c3: i2c@ffC02B00 {
@@ -269,6 +272,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
+		resets = <&reset RSTMGR_I2C3_RSTLINE>;
 	};
 
 	i2c4: i2c@ffC02C00 {
@@ -281,5 +285,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
+		resets = <&reset RSTMGR_I2C4_RSTLINE>;
 	};
 };

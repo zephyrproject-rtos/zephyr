@@ -10,6 +10,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <stdbool.h>
+#include <zephyr/drivers/reset.h>
 
 #define DT_DRV_COMPAT snps_designware_i2c
 
@@ -26,6 +27,8 @@ extern "C" {
 
 
 typedef void (*i2c_isr_cb_t)(const struct device *port);
+
+typedef bool (*reset_config_func_t)(void);
 
 
 #define IC_ACTIVITY                     (1 << 0)
@@ -89,6 +92,8 @@ struct i2c_dw_rom_config {
 	DEVICE_MMIO_ROM;
 	i2c_isr_cb_t	config_func;
 	uint32_t		bitrate;
+
+	reset_config_func_t reset_config_func;
 
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pcfg;
