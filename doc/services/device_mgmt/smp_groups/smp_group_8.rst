@@ -43,11 +43,12 @@ requests or even be removed.
 
 .. note::
     By default, all file upload requests are unconditionally allowed. However,
-    if the Kconfig option :kconfig:option:`FS_MGMT_FILE_ACCESS_HOOK` is enabled,
-    then an application can register a callback handler for ``fs_mgmt_on_evt_cb``
-    by calling ``fs_mgmt_register_evt_cb()`` with the handler supplied. This can
-    be used to allow or decline access to reading from or writing to a
-    particular file, or for rewriting the path supplied by the client.
+    if the Kconfig option :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK`
+    is enabled, then an application can register a callback handler for
+    ``fs_mgmt_on_evt_cb`` by calling ``fs_mgmt_register_evt_cb()`` with the
+    handler supplied. This can be used to allow or decline access to reading
+    from or writing to a particular file, or for rewriting the path supplied by
+    the client.
 
 File download request
 =====================
@@ -161,11 +162,12 @@ change between requests or even be removed.
 
 .. note::
     By default, all file upload requests are unconditionally allowed. However,
-    if the Kconfig option :kconfig:option:`FS_MGMT_FILE_ACCESS_HOOK` is enabled,
-    then an application can register a callback handler for ``fs_mgmt_on_evt_cb``
-    by calling ``fs_mgmt_register_evt_cb()`` with the handler supplied. This can
-    be used to allow or decline access to reading from or writing to a
-    particular file, or for rewriting the path supplied by the client.
+    if the Kconfig option :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK`
+    is enabled, then an application can register a callback handler for
+    ``fs_mgmt_on_evt_cb`` by calling ``fs_mgmt_register_evt_cb()`` with the
+    handler supplied. This can be used to allow or decline access to reading
+    from or writing to a particular file, or for rewriting the path supplied by
+    the client.
 
 File upload request
 ===================
