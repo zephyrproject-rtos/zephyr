@@ -819,14 +819,59 @@ static int sm_bootstrap_trans_done(void)
 }
 #endif
 
+static int get_register_op_payload(uint8_t *const temp_data, size_t *const payload_size)
+{
+	int ret;
+
+	// Workaround: create a temp message as it is needed for calling do_register_op_link_format
+	struct lwm2m_message tmp_msg = {};
+	struct lwm2m_ctx temp_lwm2m_context = {};
+	tmp_msg.ctx = &temp_lwm2m_context;
+	ret = lwm2m_init_message(&tmp_msg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	tmp_msg.cpkt[0].data = temp_data;
+	tmp_msg.out.out_cpkt = &tmp_msg.cpkt[0];
+	tmp_msg.out.out_cpkt->offset = 0;
+	tmp_msg.out.out_cpkt->max_len = CONFIG_LWM2M_COAP_MAX_BLOCK_NUM * MAX_PACKET_SIZE;
+	tmp_msg.out.writer = &link_format_writer;
+
+	ret = do_register_op_link_format(&tmp_msg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*payload_size = tmp_msg.cpkt[0].offset;
+
+	return ret;
+}
+
 static int sm_send_registration(bool send_obj_support_data,
 				coap_reply_t reply_cb,
 				lwm2m_message_timeout_cb_t timeout_cb)
 {
-	struct lwm2m_message *msg;
+	struct lwm2m_message *msg = NULL;
+	memset(client.payload, 0, sizeof(client.payload));
+	size_t payload_size;
+	struct coap_block_context block_ctx;
 	int ret;
 	char binding[CLIENT_BINDING_LEN];
 	char queue[CLIENT_QUEUE_LEN];
+	bool block_transfer;
+
+	ret = get_register_op_payload(client.payload, &payload_size);
+
+	if (ret < 0) {
+		goto cleanup;
+	}
+
+	block_transfer = payload_size > CONFIG_LWM2M_COAP_BLOCK_SIZE;
+
+	if (block_transfer) {
+		coap_block_transfer_init(&block_ctx, lwm2m_default_block_size(), payload_size);
+	}
 
 	msg = rd_get_message();
 	if (!msg) {
@@ -846,111 +891,135 @@ static int sm_send_registration(bool send_obj_support_data,
 		goto cleanup;
 	}
 
-	ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send], COAP_OPTION_URI_PATH,
-					LWM2M_RD_CLIENT_URI, strlen(LWM2M_RD_CLIENT_URI));
-	if (ret < 0) {
-		goto cleanup;
-	}
+	for (uint_fast8_t block_num = 0; block_num < CONFIG_LWM2M_COAP_MAX_BLOCK_NUM; ++block_num) {
 
-	if (sm_is_registered()) {
-		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
-						COAP_OPTION_URI_PATH, client.server_ep,
-						strlen(client.server_ep));
-		if (ret < 0) {
-			goto cleanup;
-		}
-	}
-
-	if (send_obj_support_data) {
-		ret = coap_append_option_int(&msg->cpkt[msg->block_to_send],
-					     COAP_OPTION_CONTENT_FORMAT,
-					     LWM2M_FORMAT_APP_LINK_FORMAT);
-		if (ret < 0) {
-			goto cleanup;
-		}
-	}
-
-	if (!sm_is_registered()) {
-		snprintk(query_buffer, sizeof(query_buffer) - 1,
-			"lwm2m=%s", LWM2M_PROTOCOL_VERSION_STRING);
-		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
-						COAP_OPTION_URI_QUERY, query_buffer,
-						strlen(query_buffer));
+		ret = coap_packet_append_option(&msg->cpkt[block_num], COAP_OPTION_URI_PATH,
+						LWM2M_RD_CLIENT_URI, strlen(LWM2M_RD_CLIENT_URI));
 		if (ret < 0) {
 			goto cleanup;
 		}
 
-		snprintk(query_buffer, sizeof(query_buffer) - 1,
-			 "ep=%s", client.ep_name);
-		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
-						COAP_OPTION_URI_QUERY, query_buffer,
-						strlen(query_buffer));
-		if (ret < 0) {
-			goto cleanup;
-		}
-	}
-
-	/* Send lifetime only if changed or on initial registration.*/
-	if (sm_update_lifetime(client.ctx->srv_obj_inst, &client.lifetime) ||
-	    !sm_is_registered()) {
-		snprintk(query_buffer, sizeof(query_buffer) - 1,
-			 "lt=%d", client.lifetime);
-		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
-						COAP_OPTION_URI_QUERY, query_buffer,
-						strlen(query_buffer));
-		if (ret < 0) {
-			goto cleanup;
-		}
-	}
-
-	lwm2m_engine_get_binding(binding);
-	lwm2m_engine_get_queue_mode(queue);
-	/* UDP is a default binding, no need to add option if UDP without queue is used. */
-	if ((!sm_is_registered() && (strcmp(binding, "U") != 0 || strcmp(queue, "Q") == 0))) {
-		snprintk(query_buffer, sizeof(query_buffer) - 1,
-			 "b=%s", binding);
-
-		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
-						COAP_OPTION_URI_QUERY, query_buffer,
-						strlen(query_buffer));
-		if (ret < 0) {
-			goto cleanup;
-		}
-
-#if CONFIG_LWM2M_VERSION_1_1
-		/* In LwM2M 1.1, queue mode is a separate parameter */
-		uint16_t len = strlen(queue);
-
-		if (len) {
-			ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
-							COAP_OPTION_URI_QUERY, queue, len);
+		if (sm_is_registered()) {
+			ret = coap_packet_append_option(&msg->cpkt[block_num], COAP_OPTION_URI_PATH,
+							client.server_ep, strlen(client.server_ep));
 			if (ret < 0) {
 				goto cleanup;
 			}
 		}
-#endif
-	}
 
-	if (send_obj_support_data) {
-		ret = coap_packet_append_payload_marker(&msg->cpkt[msg->block_to_send]);
-		if (ret < 0) {
-			goto cleanup;
+		if (send_obj_support_data) {
+			ret = coap_append_option_int(&msg->cpkt[block_num],
+						     COAP_OPTION_CONTENT_FORMAT,
+						     LWM2M_FORMAT_APP_LINK_FORMAT);
+			if (ret < 0) {
+				goto cleanup;
+			}
 		}
 
-		msg->out.out_cpkt = &msg->cpkt[msg->block_to_send];
-		msg->out.writer = &link_format_writer;
+		if (!sm_is_registered()) {
+			snprintk(query_buffer, sizeof(query_buffer) - 1, "lwm2m=%s",
+				 LWM2M_PROTOCOL_VERSION_STRING);
+			ret = coap_packet_append_option(&msg->cpkt[block_num],
+							COAP_OPTION_URI_QUERY, query_buffer,
+							strlen(query_buffer));
+			if (ret < 0) {
+				goto cleanup;
+			}
 
-		ret = do_register_op_link_format(msg);
-		if (ret < 0) {
-			goto cleanup;
+			snprintk(query_buffer, sizeof(query_buffer) - 1, "ep=%s", client.ep_name);
+			ret = coap_packet_append_option(&msg->cpkt[block_num],
+							COAP_OPTION_URI_QUERY, query_buffer,
+							strlen(query_buffer));
+			if (ret < 0) {
+				goto cleanup;
+			}
+		}
+
+		/* Send lifetime only if changed or on initial registration.*/
+		if (sm_update_lifetime(client.ctx->srv_obj_inst, &client.lifetime) ||
+		    !sm_is_registered()) {
+			snprintk(query_buffer, sizeof(query_buffer) - 1, "lt=%d", client.lifetime);
+			ret = coap_packet_append_option(&msg->cpkt[block_num],
+							COAP_OPTION_URI_QUERY, query_buffer,
+							strlen(query_buffer));
+			if (ret < 0) {
+				goto cleanup;
+			}
+		}
+
+		lwm2m_engine_get_binding(binding);
+		lwm2m_engine_get_queue_mode(queue);
+		/* UDP is a default binding, no need to add option if UDP without queue is used. */
+		if ((!sm_is_registered() &&
+		     (strcmp(binding, "U") != 0 || strcmp(queue, "Q") == 0))) {
+			snprintk(query_buffer, sizeof(query_buffer) - 1, "b=%s", binding);
+
+			ret = coap_packet_append_option(&msg->cpkt[block_num],
+							COAP_OPTION_URI_QUERY, query_buffer,
+							strlen(query_buffer));
+			if (ret < 0) {
+				goto cleanup;
+			}
+
+#if CONFIG_LWM2M_VERSION_1_1
+			/* In LwM2M 1.1, queue mode is a separate parameter */
+			uint16_t len = strlen(queue);
+
+			if (len) {
+				ret = coap_packet_append_option(&msg->cpkt[block_num],
+								COAP_OPTION_URI_QUERY, queue, len);
+				if (ret < 0) {
+					goto cleanup;
+				}
+			}
+#endif
+		}
+
+		if (block_transfer) {
+			ret = coap_append_block1_option(&msg->cpkt[block_num], &block_ctx);
+			if (ret < 0) {
+				goto cleanup;
+			}
+		}
+
+		if (send_obj_support_data) {
+			ret = coap_packet_append_payload_marker(&msg->cpkt[block_num]);
+			if (ret < 0) {
+				goto cleanup;
+			}
+
+			if (msg->cpkt[block_num].offset > CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE) {
+				LOG_WRN("CoAP header too big. Size: %d, reserved %d",
+					msg->cpkt[block_num].offset,
+					CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE);
+			}
+
+			const size_t block_offset = block_num * CONFIG_LWM2M_COAP_BLOCK_SIZE;
+			const size_t block_size =
+				MIN(payload_size - block_offset, CONFIG_LWM2M_COAP_BLOCK_SIZE);
+			ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt[block_num]),
+					 &client.payload[block_offset], block_size);
+			if (ret < 0) {
+				goto cleanup;
+			}
+		}
+
+		if (block_transfer) {
+			block_ctx.current += CONFIG_LWM2M_COAP_BLOCK_SIZE;
+			msg->last_used_block_index++;
+
+			if (block_ctx.current >= block_ctx.total_size) {
+				break;
+			}
+		} else {
+			break;
 		}
 	}
 
 	lwm2m_send_message_async(msg);
 
 	/* log the registration attempt */
-	LOG_DBG("registration sent [%s]",
-		lwm2m_sprint_ip_addr(&client.ctx->remote_addr));
+	LOG_DBG("registration sent [%s]", lwm2m_sprint_ip_addr(&client.ctx->remote_addr));
 
 	return 0;
 
@@ -1521,5 +1590,22 @@ static int lwm2m_rd_client_init(const struct device *dev)
 
 }
 
-SYS_INIT(lwm2m_rd_client_init, APPLICATION,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#ifdef CONFIG_LWM2M_BLOCK_TRANSFER_TESTS
+/* These wrappers are used for tests to get access to
+ * static functions. They need to be declared manually in the
+ * tests before use. */
+void test_lwm2m_rd_client_setup(struct lwm2m_ctx *ctx)
+{
+	client.rd_message.ctx = NULL;
+	client.ctx = ctx;
+	client.engine_state = ENGINE_REGISTRATION_DONE;
+}
+
+int test_call_sm_send_registration(bool send_obj_support_data, coap_reply_t reply_cb,
+				   lwm2m_message_timeout_cb_t timeout_cb)
+{
+	return sm_send_registration(send_obj_support_data, reply_cb, timeout_cb);
+}
+#endif /* CONFIG_LWM2M_BLOCK_TRANSFER_TESTS */
+
+SYS_INIT(lwm2m_rd_client_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

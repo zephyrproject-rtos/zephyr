@@ -605,6 +605,14 @@ config LWM2M_GATEWAY_IOT_DEVICE_OBJECTS_MAX_STR_SIZE
 
 endif # LWM2M_GATEWAY_OBJ_SUPPORT
 
+config LWM2M_BLOCK_TRANSFER_TESTS
+	bool "Provide functionality to allow testing"
+	default n
+	help
+	  This option enables some functions and function attributes used
+	  for block transfer testing. This option is solely for
+	  testing and should never be enabled on production devices.
+
 menu "IPSO Alliance Smart Object Support"
 
 source "subsys/net/lib/lwm2m/Kconfig.ipso"

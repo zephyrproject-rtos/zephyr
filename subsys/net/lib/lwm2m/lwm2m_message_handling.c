@@ -63,6 +63,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_senml_cbor.h"
 #endif
 
+#ifdef CONFIG_LWM2M_BLOCK_TRANSFER_TESTS
+/* Weak function that can be faked by fff */
+#define TEST_FAKEABLE_FUNCTION __attribute__((weak))
+#else
+#define TEST_FAKEABLE_FUNCTION
+#endif /* CONFIG_LWM2M_BLOCK_TRANSFER_TESTS */
+
 /* TODO: figure out what's correct value */
 #define TIMEOUT_BLOCKWISE_TRANSFER_MS (MSEC_PER_SEC * 30)
 
@@ -435,6 +442,7 @@ cleanup:
 	return r;
 }
 
+TEST_FAKEABLE_FUNCTION
 int lwm2m_send_message_async(struct lwm2m_message *msg)
 {
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
