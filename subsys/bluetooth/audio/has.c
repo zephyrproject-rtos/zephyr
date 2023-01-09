@@ -135,7 +135,8 @@ static struct has_preset {
 static uint8_t has_preset_num;
 
 /* Active preset notification work */
-static struct k_work active_preset_work;
+static void active_preset_work_process(struct k_work *work);
+static K_WORK_DEFINE(active_preset_work, active_preset_work_process);
 
 static void process_control_point_work(struct k_work *work);
 
@@ -1179,10 +1180,6 @@ int bt_has_register(const struct bt_has_register_param *param)
 		LOG_DBG("HAS service register failed: %d", err);
 		return err;
 	}
-
-#if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
-	k_work_init(&active_preset_work, active_preset_work_process);
-#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 	registered = true;
 
