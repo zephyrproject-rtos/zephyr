@@ -5,6 +5,7 @@
  */
 
 #include <st/f4/stm32f401.dtsi>
+#include <zephyr/dt-bindings/clock/stm32f410_clock.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
