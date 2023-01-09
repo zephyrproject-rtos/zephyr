@@ -40,12 +40,13 @@ choice RNG_GENERATOR_CHOICE
 	  to support random request then select that. Otherwise, select the
 	  XOSHIRO algorithm
 
-config RANDOM_TEST_GENERATOR
+config TIMER_RANDOM_GENERATOR
 	bool "System timer clock based number generator"
 	depends on TEST_RANDOM_GENERATOR
 	help
-	  This number generator is not random and used only for testing.
-	  Does not rely on an entropy driver, so can be used without entropy.
+	  This options enables number generator based on system timer
+	  clock. This number generator is not random and used for
+	  testing only.
 
 config ENTROPY_DEVICE_RANDOM_GENERATOR
 	bool "Use entropy driver to generate random numbers"
