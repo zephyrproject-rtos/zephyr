@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, NXP
+ * Copyright 2022-2023, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	chosen {
@@ -271,6 +272,13 @@
 		status = "disabled";
 	};
 
+	lcdif: lcdif@210000 {
+		compatible = "nxp,dcnano-lcdif";
+		reg = <0x210000 0x1000>;
+		interrupts = <69 0>;
+		status = "disabled";
+	};
+
 	usbhs: usbhs@144000 {
 		compatible = "nxp,mcux-usbd";
 		reg = <0x144000 0x1000>;
@@ -459,6 +467,19 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+	};
+
+	mipi_dsi: mipi_dsi@31000 {
+		compatible = "nxp,mipi-dsi-2l";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x31000 0x1000>;
+		interrupts = <87 0>;
+		clocks = <&clkctl1 MCUX_MIPI_DSI_DPHY_CLK>,
+			<&clkctl1 MCUX_MIPI_DSI_ESC_CLK>,
+			<&clkctl1 MCUX_LCDIF_PIXEL_CLK>;
+		clock-names = "dphy", "esc", "pixel";
+		status = "disabled";
 	};
 };
 
