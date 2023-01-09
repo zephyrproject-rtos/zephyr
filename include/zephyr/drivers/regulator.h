@@ -194,18 +194,22 @@ struct regulator_common_data {
 void regulator_common_data_init(const struct device *dev);
 
 /**
- * @brief Common function to enable regulator at init time.
+ * @brief Common function to initialize the regulator at init time.
  *
  * This function can be called after drivers initialize the regulator. It
  * will automatically enable the regulator if it is set to `regulator-boot-on`
- * or `regulator-always-on` and increase its usage count.
+ * or `regulator-always-on` and increase its usage count. It will also configure
+ * the regulator mode if `regulator-initial-mode` is set. Regulators that are
+ * enabled by default in hardware, must set @p is_enabled to `true`.
  *
  * @param dev Regulator device instance
+ * @param is_enabled Indicate if the regulator is enabled by default in
+ * hardware.
  *
  * @retval 0 If enabled successfully.
  * @retval -errno Negative errno in case of failure.
  */
-int regulator_common_init_enable(const struct device *dev);
+int regulator_common_init(const struct device *dev, bool is_enabled);
 
 /** @endcond */
 
