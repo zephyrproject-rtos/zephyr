@@ -31,17 +31,6 @@ LOG_MODULE_REGISTER(spi_gd32);
 
 #define GD32_SPI_PSC_MAX	0x7U
 
-#if defined(CONFIG_SOC_SERIES_GD32F4XX) || \
-	defined(CONFIG_SOC_SERIES_GD32F403) || \
-	defined(CONFIG_SOC_SERIES_GD32VF103) || \
-	defined(CONFIG_SOC_SERIES_GD32E10X)
-#define RCU_APB1EN_OFFSET	APB1EN_REG_OFFSET
-#elif defined(CONFIG_SOC_SERIES_GD32F3X0)
-#define RCU_APB1EN_OFFSET	IDX_APB1EN
-#else
-#error Unknown GD32 soc series
-#endif
-
 #ifdef CONFIG_SPI_GD32_DMA
 
 enum spi_gd32_dma_direction {
