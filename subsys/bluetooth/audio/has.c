@@ -1128,6 +1128,7 @@ int bt_has_preset_name_change(uint8_t index, const char *name)
 
 int bt_has_register(const struct bt_has_register_param *param)
 {
+	static bool registered;
 	int err;
 
 	LOG_DBG("param %p", param);
@@ -1135,6 +1136,10 @@ int bt_has_register(const struct bt_has_register_param *param)
 	CHECKIF(!param) {
 		LOG_DBG("NULL params pointer");
 		return -EINVAL;
+	}
+
+	if (registered) {
+		return -EALREADY;
 	}
 
 	/* Initialize the supported features characteristic value */
@@ -1178,6 +1183,8 @@ int bt_has_register(const struct bt_has_register_param *param)
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
 	k_work_init(&active_preset_work, active_preset_work_process);
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
+
+	registered = true;
 
 	return 0;
 }
