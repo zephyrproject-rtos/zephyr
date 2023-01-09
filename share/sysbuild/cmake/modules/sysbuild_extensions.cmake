@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Nordic Semiconductor
+# Copyright (c) 2021-2023 Nordic Semiconductor
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -251,6 +251,9 @@ function(ExternalZephyrProject_Add)
       menuconfig
       hardenconfig
       guiconfig
+      ram_report
+      rom_report
+      footprint
       ${EXTRA_KCONFIG_TARGETS}
       )
 
