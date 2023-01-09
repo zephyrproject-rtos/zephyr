@@ -508,7 +508,18 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 
 	ep = iso->rx.ep;
 	if (ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		/* In the case that the CIS has been setup as bidirectional, and
+		 * only one of the directions have an ASE configured yet,
+		 * we should only care about valid ISO packets when doing this
+		 * check. The reason is that some controllers send HCI ISO data
+		 * packets to the host, even if no SDU was sent on the remote
+		 * side. This basically means that empty PDUs are sent to the
+		 * host as HCI ISO data packets, which we should just ignore
+		 */
+		if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
+			LOG_ERR("iso %p not bound with ep", chan);
+		}
+
 		return;
 	}
 
