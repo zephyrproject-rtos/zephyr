@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 NXP
+ * Copyright 2020-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,13 @@
 
 LOG_MODULE_REGISTER(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
 
+struct memc_flexspi_buf_cfg {
+	uint16_t prefetch;
+	uint16_t priority;
+	uint16_t master_id;
+	uint16_t buf_size;
+} __packed;
+
 /* flexspi device data should be stored in RAM to avoid read-while-write hazards */
 struct memc_flexspi_data {
 	FLEXSPI_Type *base;
@@ -45,6 +52,8 @@ struct memc_flexspi_data {
 	const struct pinctrl_dev_config *pincfg;
 #endif
 	size_t size[kFLEXSPI_PortCount];
+	struct memc_flexspi_buf_cfg *buf_cfg;
+	uint8_t buf_cfg_cnt;
 };
 
 void memc_flexspi_wait_bus_idle(const struct device *dev)
@@ -170,6 +179,20 @@ static int memc_flexspi_init(const struct device *dev)
 	flexspi_config.enableSckBDiffOpt = data->sck_differential_clock;
 	flexspi_config.rxSampleClock = data->rx_sample_clock;
 
+	/* Configure AHB RX buffers, if any configuration settings are present */
+	__ASSERT(data->buf_cfg_cnt < FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT,
+		"Maximum RX buffer configuration count exceeded");
+	for (uint8_t i = 0; i < data->buf_cfg_cnt; i++) {
+		/* Should AHB prefetch up to buffer size? */
+		flexspi_config.ahbConfig.buffer[i].enablePrefetch = data->buf_cfg[i].prefetch;
+		/* AHB access priority (used for suspending control of AHB prefetching )*/
+		flexspi_config.ahbConfig.buffer[i].priority = data->buf_cfg[i].priority;
+		/* AHB master index, SOC specific */
+		flexspi_config.ahbConfig.buffer[i].masterIndex = data->buf_cfg[i].master_id;
+		/* RX buffer allocation (total available buffer space is instance/SOC specific) */
+		flexspi_config.ahbConfig.buffer[i].bufferSize = data->buf_cfg[i].buf_size;
+	}
+
 	FLEXSPI_Init(data->base, &flexspi_config);
 
 	return 0;
@@ -226,6 +249,9 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 
 #define MEMC_FLEXSPI(n)							\
 	PINCTRL_DEFINE(n)						\
+	static uint16_t  buf_cfg_##n[] =				\
+		DT_INST_PROP_OR(n, rx_buffer_config, {0});		\
+									\
 	static struct memc_flexspi_data					\
 		memc_flexspi_data_##n = {				\
 		.base = (FLEXSPI_Type *) DT_INST_REG_ADDR(n),		\
@@ -238,6 +264,9 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 		.combination_mode = DT_INST_PROP(n, combination_mode),	\
 		.sck_differential_clock = DT_INST_PROP(n, sck_differential_clock),	\
 		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),	\
+		.buf_cfg = (struct memc_flexspi_buf_cfg *)buf_cfg_##n,	\
+		.buf_cfg_cnt = sizeof(buf_cfg_##n) /			\
+			sizeof(struct memc_flexspi_buf_cfg),		\
 		PINCTRL_INIT(n)						\
 	};								\
 									\
