@@ -634,6 +634,7 @@ static int socket_send_message(struct lwm2m_ctx *client_ctx)
 	int rc;
 	sys_snode_t *msg_node = sys_slist_get(&client_ctx->pending_sends);
 	struct lwm2m_message *msg;
+	uint8_t next_msg;
 
 	if (!msg_node) {
 		return 0;
@@ -649,7 +650,8 @@ static int socket_send_message(struct lwm2m_ctx *client_ctx)
 		coap_pending_cycle(msg->pending);
 	}
 
-	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
+	next_msg = msg->block_to_send;
+	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt[next_msg].data, msg->cpkt[next_msg].offset, 0);
 
 	if (rc < 0) {
 		LOG_ERR("Failed to send packet, err %d", errno);

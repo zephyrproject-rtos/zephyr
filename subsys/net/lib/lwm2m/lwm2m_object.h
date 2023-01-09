@@ -448,6 +448,9 @@ struct lwm2m_output_context {
 	const struct lwm2m_writer *writer;
 	struct coap_packet *out_cpkt;
 
+	/* Corresponding block context. NULL if block transfer is not used. */
+	struct lwm2m_block_context *block_ctx;
+
 	/* private output data */
 	void *user_data;
 };
@@ -484,10 +487,16 @@ struct lwm2m_message {
 	struct lwm2m_obj_path path;
 
 	/** CoAP packet data related to the outgoing message */
-	struct coap_packet cpkt;
+	struct coap_packet cpkt[CONFIG_LWM2M_COAP_MAX_BLOCK_NUM];
 
 	/** Buffer data related outgoing message */
-	uint8_t msg_data[MAX_PACKET_SIZE];
+	uint8_t msg_data[CONFIG_LWM2M_COAP_MAX_BLOCK_NUM][MAX_PACKET_SIZE];
+
+	/** Number of CoAP blocks used for this lwm2m message */
+	uint8_t last_used_block_index;
+
+	/** Index of the block that is sent next */
+	uint8_t block_to_send;
 
 	/** Message transmission handling for TYPE_CON */
 	struct coap_pending *pending;

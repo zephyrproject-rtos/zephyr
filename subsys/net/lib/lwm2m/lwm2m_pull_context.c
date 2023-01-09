@@ -156,7 +156,8 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 	/* add path portions (separated by slashes) */
 	while (len > 0 && (next_slash = strchr(cursor, '/')) != NULL) {
 		if (next_slash != cursor) {
-			ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH, cursor,
+			ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
+							COAP_OPTION_URI_PATH, cursor,
 							next_slash - cursor);
 			if (ret < 0) {
 				LOG_ERR("Error adding URI_PATH");
@@ -171,7 +172,8 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 
 	if (len > 0) {
 		/* flush the rest */
-		ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH, cursor, len);
+		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
+						COAP_OPTION_URI_PATH, cursor, len);
 		if (ret < 0) {
 			LOG_ERR("Error adding URI_PATH");
 			goto cleanup;
@@ -179,7 +181,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 	}
 #endif
 
-	ret = coap_append_block2_option(&msg->cpkt, ctx);
+	ret = coap_append_block2_option(&msg->cpkt[msg->block_to_send], ctx);
 	if (ret < 0) {
 		LOG_ERR("Unable to add block2 option.");
 		goto cleanup;
@@ -194,7 +196,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 	}
 #else
 	/* Ask the server to provide a size estimate */
-	ret = coap_append_option_int(&msg->cpkt, COAP_OPTION_SIZE2, 0);
+	ret = coap_append_option_int(&msg->cpkt[msg->block_to_send], COAP_OPTION_SIZE2, 0);
 	if (ret < 0) {
 		LOG_ERR("Unable to add size2 option.");
 		goto cleanup;

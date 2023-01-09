@@ -124,6 +124,8 @@ struct lwm2m_rd_client_info {
 	bool trigger_update : 1;
 	bool update_objects : 1;
 	bool close_socket : 1;
+
+	uint8_t payload[CONFIG_LWM2M_COAP_MAX_BLOCK_NUM * MAX_PACKET_SIZE];
 } client;
 
 /* Allocate some data for queries and updates. Make sure it's large enough to
@@ -475,6 +477,8 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 			client.server_ep);
 
 		return 0;
+	} else if (code == COAP_RESPONSE_CODE_CONTINUE) {
+		return 0;
 	}
 
 	LOG_ERR("Failed with code %u.%u (%s). Not Retrying.",
@@ -717,15 +721,14 @@ static int sm_send_bootstrap_registration(void)
 	}
 
 	/* TODO: handle return error */
-	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-				  "bs", strlen("bs"));
+	coap_packet_append_option(&msg->cpkt[msg->block_to_send], COAP_OPTION_URI_PATH, "bs",
+				  strlen("bs"));
 
 	snprintk(query_buffer, sizeof(query_buffer) - 1, "ep=%s",
 		 client.ep_name);
 	/* TODO: handle return error */
-	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
+	coap_packet_append_option(&msg->cpkt[msg->block_to_send], COAP_OPTION_URI_QUERY,
 				  query_buffer, strlen(query_buffer));
-
 
 	if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1)) {
 		int pct = LWM2M_FORMAT_OMA_TLV;
@@ -738,8 +741,8 @@ static int sm_send_bootstrap_registration(void)
 
 		snprintk(query_buffer, sizeof(query_buffer) - 1, "pct=%d", pct);
 
-		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
-				  query_buffer, strlen(query_buffer));
+		coap_packet_append_option(&msg->cpkt[msg->block_to_send], COAP_OPTION_URI_QUERY,
+					  query_buffer, strlen(query_buffer));
 	}
 
 	/* log the bootstrap attempt */
@@ -843,26 +846,25 @@ static int sm_send_registration(bool send_obj_support_data,
 		goto cleanup;
 	}
 
-	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-					LWM2M_RD_CLIENT_URI,
-					strlen(LWM2M_RD_CLIENT_URI));
+	ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send], COAP_OPTION_URI_PATH,
+					LWM2M_RD_CLIENT_URI, strlen(LWM2M_RD_CLIENT_URI));
 	if (ret < 0) {
 		goto cleanup;
 	}
 
 	if (sm_is_registered()) {
-		ret = coap_packet_append_option(
-			&msg->cpkt, COAP_OPTION_URI_PATH,
-			client.server_ep, strlen(client.server_ep));
+		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
+						COAP_OPTION_URI_PATH, client.server_ep,
+						strlen(client.server_ep));
 		if (ret < 0) {
 			goto cleanup;
 		}
 	}
 
 	if (send_obj_support_data) {
-		ret = coap_append_option_int(
-			&msg->cpkt, COAP_OPTION_CONTENT_FORMAT,
-			LWM2M_FORMAT_APP_LINK_FORMAT);
+		ret = coap_append_option_int(&msg->cpkt[msg->block_to_send],
+					     COAP_OPTION_CONTENT_FORMAT,
+					     LWM2M_FORMAT_APP_LINK_FORMAT);
 		if (ret < 0) {
 			goto cleanup;
 		}
@@ -871,18 +873,18 @@ static int sm_send_registration(bool send_obj_support_data,
 	if (!sm_is_registered()) {
 		snprintk(query_buffer, sizeof(query_buffer) - 1,
 			"lwm2m=%s", LWM2M_PROTOCOL_VERSION_STRING);
-		ret = coap_packet_append_option(
-			&msg->cpkt, COAP_OPTION_URI_QUERY,
-			query_buffer, strlen(query_buffer));
+		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
+						COAP_OPTION_URI_QUERY, query_buffer,
+						strlen(query_buffer));
 		if (ret < 0) {
 			goto cleanup;
 		}
 
 		snprintk(query_buffer, sizeof(query_buffer) - 1,
 			 "ep=%s", client.ep_name);
-		ret = coap_packet_append_option(
-			&msg->cpkt, COAP_OPTION_URI_QUERY,
-			query_buffer, strlen(query_buffer));
+		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
+						COAP_OPTION_URI_QUERY, query_buffer,
+						strlen(query_buffer));
 		if (ret < 0) {
 			goto cleanup;
 		}
@@ -893,9 +895,9 @@ static int sm_send_registration(bool send_obj_support_data,
 	    !sm_is_registered()) {
 		snprintk(query_buffer, sizeof(query_buffer) - 1,
 			 "lt=%d", client.lifetime);
-		ret = coap_packet_append_option(
-			&msg->cpkt, COAP_OPTION_URI_QUERY,
-			query_buffer, strlen(query_buffer));
+		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
+						COAP_OPTION_URI_QUERY, query_buffer,
+						strlen(query_buffer));
 		if (ret < 0) {
 			goto cleanup;
 		}
@@ -908,9 +910,9 @@ static int sm_send_registration(bool send_obj_support_data,
 		snprintk(query_buffer, sizeof(query_buffer) - 1,
 			 "b=%s", binding);
 
-		ret = coap_packet_append_option(
-			&msg->cpkt, COAP_OPTION_URI_QUERY,
-			query_buffer, strlen(query_buffer));
+		ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
+						COAP_OPTION_URI_QUERY, query_buffer,
+						strlen(query_buffer));
 		if (ret < 0) {
 			goto cleanup;
 		}
@@ -920,9 +922,8 @@ static int sm_send_registration(bool send_obj_support_data,
 		uint16_t len = strlen(queue);
 
 		if (len) {
-			ret = coap_packet_append_option(
-				&msg->cpkt, COAP_OPTION_URI_QUERY,
-				queue, len);
+			ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send],
+							COAP_OPTION_URI_QUERY, queue, len);
 			if (ret < 0) {
 				goto cleanup;
 			}
@@ -931,12 +932,12 @@ static int sm_send_registration(bool send_obj_support_data,
 	}
 
 	if (send_obj_support_data) {
-		ret = coap_packet_append_payload_marker(&msg->cpkt);
+		ret = coap_packet_append_payload_marker(&msg->cpkt[msg->block_to_send]);
 		if (ret < 0) {
 			goto cleanup;
 		}
 
-		msg->out.out_cpkt = &msg->cpkt;
+		msg->out.out_cpkt = &msg->cpkt[msg->block_to_send];
 		msg->out.writer = &link_format_writer;
 
 		ret = do_register_op_link_format(msg);
@@ -1141,18 +1142,16 @@ static int sm_do_deregister(void)
 		goto cleanup;
 	}
 
-	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-					LWM2M_RD_CLIENT_URI,
-					strlen(LWM2M_RD_CLIENT_URI));
+	ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send], COAP_OPTION_URI_PATH,
+					LWM2M_RD_CLIENT_URI, strlen(LWM2M_RD_CLIENT_URI));
 	if (ret < 0) {
 		LOG_ERR("Failed to encode URI path option (err:%d).", ret);
 		goto cleanup;
 	}
 
 	/* include server endpoint in URI PATH */
-	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-					client.server_ep,
-					strlen(client.server_ep));
+	ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send], COAP_OPTION_URI_PATH,
+					client.server_ep, strlen(client.server_ep));
 	if (ret < 0) {
 		LOG_ERR("Failed to encode URI path option (err:%d).", ret);
 		goto cleanup;

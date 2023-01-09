@@ -172,6 +172,45 @@ static void free_block_ctx(struct lwm2m_block_context *ctx)
 	ctx->tkl = 0U;
 }
 
+static int init_message_pending(struct lwm2m_message *msg)
+{
+	int r;
+	msg->pending = coap_pending_next_unused(msg->ctx->pendings, ARRAY_SIZE(msg->ctx->pendings));
+	if (!msg->pending) {
+		LOG_ERR("Unable to find a free pending to track "
+			"retransmissions.");
+		return -ENOMEM;
+	}
+
+	r = coap_pending_init(msg->pending, &msg->cpkt[msg->block_to_send], &msg->ctx->remote_addr,
+			      CONFIG_COAP_MAX_RETRANSMIT);
+	if (r < 0) {
+		LOG_ERR("Unable to initialize a pending "
+			"retransmission (err:%d).",
+			r);
+	}
+
+	return r;
+}
+
+static int init_message_reply(struct lwm2m_message *msg)
+{
+	if (msg->reply_cb) {
+		msg->reply =
+			coap_reply_next_unused(msg->ctx->replies, ARRAY_SIZE(msg->ctx->replies));
+		if (!msg->reply) {
+			LOG_ERR("No resources for waiting for replies.");
+			return -ENOMEM;
+		}
+
+		coap_reply_clear(msg->reply);
+		coap_reply_init(msg->reply, &msg->cpkt[msg->block_to_send]);
+
+		msg->reply->reply = msg->reply_cb;
+	}
+	return 0;
+}
+
 void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 {
 	struct lwm2m_message *msg;
@@ -294,7 +333,13 @@ void lm2m_message_clear_allocations(struct lwm2m_message *msg)
 	}
 }
 
-void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
+enum message_release {
+	MESSAGE_RELEASE_COAP_ONLY,
+	MESSAGE_RELEASE_ALL,
+	MESSAGE_RELEASE_NONE
+};
+
+void reset_message(struct lwm2m_message *msg, enum message_release release)
 {
 	if (!msg) {
 		return;
@@ -309,15 +354,24 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 #endif
 	}
 
-	if (release) {
+	switch (release) {
+	case MESSAGE_RELEASE_ALL:
 		(void)memset(msg, 0, sizeof(*msg));
-	} else {
+		break;
+	case MESSAGE_RELEASE_COAP_ONLY:
 		msg->message_timeout_cb = NULL;
-		(void)memset(&msg->cpkt, 0, sizeof(msg->cpkt));
+		(void)memset(msg->cpkt, 0, sizeof(msg->cpkt));
+		break;
+	case MESSAGE_RELEASE_NONE:
+		break;
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 		msg->cache_info = NULL;
 #endif
 	}
+}
+void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
+{
+	reset_message(msg, release ? MESSAGE_RELEASE_ALL : MESSAGE_RELEASE_COAP_ONLY);
 }
 
 int lwm2m_init_message(struct lwm2m_message *msg)
@@ -330,6 +384,9 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		LOG_ERR("LwM2M message is invalid.");
 		return -EINVAL;
 	}
+
+	msg->last_used_block_index = 0;
+	msg->block_to_send = 0;
 
 	if (msg->tkl == LWM2M_MSG_TOKEN_GENERATE_NEW) {
 		tokenlen = 8U;
@@ -344,11 +401,15 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	msg->cache_info = NULL;
 #endif
 
-	r = coap_packet_init(&msg->cpkt, msg->msg_data, sizeof(msg->msg_data), COAP_VERSION_1,
-			     msg->type, tokenlen, token, msg->code, msg->mid);
-	if (r < 0) {
-		LOG_ERR("coap packet init error (err:%d)", r);
-		goto cleanup;
+	for (uint_fast8_t i = 0; i < CONFIG_LWM2M_COAP_MAX_BLOCK_NUM; ++i) {
+		r = coap_packet_init(&msg->cpkt[i], msg->msg_data[i], sizeof(msg->msg_data[i]),
+				     COAP_VERSION_1, msg->type, tokenlen, token, msg->code,
+				     msg->mid);
+		msg->mid = coap_next_id();
+		if (r < 0) {
+			LOG_ERR("coap packet init error (err:%d)", r);
+			goto cleanup;
+		}
 	}
 
 	/* only TYPE_CON messages need pending tracking / reply handling */
@@ -356,35 +417,14 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		return 0;
 	}
 
-	msg->pending = coap_pending_next_unused(msg->ctx->pendings, ARRAY_SIZE(msg->ctx->pendings));
-	if (!msg->pending) {
-		LOG_ERR("Unable to find a free pending to track "
-			"retransmissions.");
-		r = -ENOMEM;
-		goto cleanup;
-	}
-
-	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr,
-			      CONFIG_COAP_MAX_RETRANSMIT);
+	r = init_message_pending(msg);
 	if (r < 0) {
-		LOG_ERR("Unable to initialize a pending "
-			"retransmission (err:%d).",
-			r);
 		goto cleanup;
 	}
 
-	if (msg->reply_cb) {
-		msg->reply =
-			coap_reply_next_unused(msg->ctx->replies, ARRAY_SIZE(msg->ctx->replies));
-		if (!msg->reply) {
-			LOG_ERR("No resources for waiting for replies.");
-			r = -ENOMEM;
-			goto cleanup;
-		}
-
-		coap_reply_clear(msg->reply);
-		coap_reply_init(msg->reply, &msg->cpkt);
-		msg->reply->reply = msg->reply_cb;
+	r = init_message_reply(msg);
+	if (r < 0) {
+		goto cleanup;
 	}
 
 	return 0;
@@ -1808,7 +1848,7 @@ int handle_request(struct coap_packet *request, struct lwm2m_message *msg)
 
 	/* set CoAP request / message */
 	msg->in.in_cpkt = request;
-	msg->out.out_cpkt = &msg->cpkt;
+	msg->out.out_cpkt = &msg->cpkt[msg->block_to_send];
 
 	/* set default reader/writer */
 	msg->in.reader = &plain_text_reader;
@@ -2219,10 +2259,10 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 	 * - CoAP message type (byte 0, bits 2 and 3)
 	 * - CoAP message id (bytes 2 and 3)
 	 */
-	msg->cpkt.data[0] &= ~(0x3 << 4);
-	msg->cpkt.data[0] |= (msg->type & 0x3) << 4;
-	msg->cpkt.data[2] = msg->mid >> 8;
-	msg->cpkt.data[3] = (uint8_t)msg->mid;
+	msg->cpkt[msg->block_to_send].data[0] &= ~(0x3 << 4);
+	msg->cpkt[msg->block_to_send].data[0] |= (msg->type & 0x3) << 4;
+	msg->cpkt[msg->block_to_send].data[2] = msg->mid >> 8;
+	msg->cpkt[msg->block_to_send].data[3] = (uint8_t)msg->mid;
 
 	if (msg->pending) {
 		coap_pending_clear(msg->pending);
@@ -2236,8 +2276,8 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 		return -ENOMEM;
 	}
 
-	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr,
-				CONFIG_COAP_MAX_RETRANSMIT);
+	ret = coap_pending_init(msg->pending, &msg->cpkt[msg->block_to_send],
+				&msg->ctx->remote_addr, CONFIG_COAP_MAX_RETRANSMIT);
 	if (ret < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",
@@ -2256,6 +2296,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 	struct coap_packet response;
 	int r;
 	uint8_t token[8];
+	bool more_blocks = false;
+	uint8_t block_num;
 
 	r = coap_packet_parse(&response, buf, buf_len, NULL, 0);
 	if (r < 0) {
@@ -2305,6 +2347,32 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 			}
 		}
 
+		if (coap_header_get_code(&response) == COAP_RESPONSE_CODE_CONTINUE) {
+
+			r = coap_get_block1_option(&response, &more_blocks, &block_num);
+			if (r < 0) {
+				LOG_ERR("Missing block1 option in response with continue");
+			}
+			if (r != CONFIG_LWM2M_COAP_MAX_MSG_SIZE) {
+				LOG_WRN("Server requests different block size: ignore");
+			}
+			if (!more_blocks) {
+				LOG_WRN("Missing more flag in response with continue");
+			}
+			if (block_num + 1 > msg->last_used_block_index) {
+				LOG_ERR("Missing more flag in response with continue");
+				more_blocks = false; // reset message
+			} else {
+				msg->block_to_send++;
+
+				reset_message(msg, MESSAGE_RELEASE_NONE);
+				init_message_pending(msg);
+				init_message_reply(msg);
+
+				lwm2m_send_message_async(msg);
+			}
+		}
+
 		/* skip release if reply->user_data has error condition */
 		if (reply && reply->user_data == (void *)COAP_REPLY_STATUS_ERROR) {
 			/* reset reply->user_data for next time */
@@ -2314,7 +2382,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		}
 
 		/* free up msg resources */
-		if (msg) {
+		if (msg && !more_blocks) {
 			lwm2m_reset_message(msg, true);
 		}
 
@@ -2581,7 +2649,7 @@ msg_init:
 	msg->tkl = obs->tkl;
 	msg->reply_cb = notify_message_reply_cb;
 	msg->message_timeout_cb = notify_message_timeout_cb;
-	msg->out.out_cpkt = &msg->cpkt;
+	msg->out.out_cpkt = &msg->cpkt[msg->block_to_send];
 
 	ret = lwm2m_init_message(msg);
 	if (ret < 0) {
@@ -2597,7 +2665,8 @@ msg_init:
 
 	/* each notification should increment the obs counter */
 	obs->counter++;
-	ret = coap_append_option_int(&msg->cpkt, COAP_OPTION_OBSERVE, obs->counter);
+	ret = coap_append_option_int(&msg->cpkt[msg->block_to_send], COAP_OPTION_OBSERVE,
+				     obs->counter);
 	if (ret < 0) {
 		LOG_ERR("OBSERVE option error: %d", ret);
 		goto cleanup;
@@ -3023,7 +3092,7 @@ msg_init:
 	msg->code = COAP_METHOD_POST;
 	msg->mid = coap_next_id();
 	msg->tkl = LWM2M_MSG_TOKEN_GENERATE_NEW;
-	msg->out.out_cpkt = &msg->cpkt;
+	msg->out.out_cpkt = &msg->cpkt[msg->block_to_send];
 
 	ret = lwm2m_init_message(msg);
 	if (ret) {
@@ -3038,8 +3107,8 @@ msg_init:
 		goto cleanup;
 	}
 
-	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH, LWM2M_DP_CLIENT_URI,
-					strlen(LWM2M_DP_CLIENT_URI));
+	ret = coap_packet_append_option(&msg->cpkt[msg->block_to_send], COAP_OPTION_URI_PATH,
+					LWM2M_DP_CLIENT_URI, strlen(LWM2M_DP_CLIENT_URI));
 	if (ret < 0) {
 		goto cleanup;
 	}

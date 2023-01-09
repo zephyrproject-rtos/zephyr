@@ -129,23 +129,23 @@ static void context_reset(void)
 	memset(&test_msg, 0, sizeof(test_msg));
 
 	test_msg.out.writer = &senml_cbor_writer;
-	test_msg.out.out_cpkt = &test_msg.cpkt;
+	test_msg.out.out_cpkt = &test_msg.cpkt[0];
 
 	test_msg.in.reader = &senml_cbor_reader;
-	test_msg.in.in_cpkt = &test_msg.cpkt;
+	test_msg.in.in_cpkt = &test_msg.cpkt[0];
 
 	test_msg.path.level = LWM2M_PATH_LEVEL_RESOURCE;
 	test_msg.path.obj_id = TEST_OBJ_ID;
 	test_msg.path.obj_inst_id = TEST_OBJ_INST_ID;
 
-	test_msg.cpkt.data = test_msg.msg_data;
-	test_msg.cpkt.max_len = sizeof(test_msg.msg_data);
+	test_msg.cpkt[0].data = test_msg.msg_data[0];
+	test_msg.cpkt[0].max_len = sizeof(test_msg.msg_data);
 }
 
 static void test_payload_set(struct test_payload_buffer payload)
 {
-	memcpy(test_msg.msg_data + 1, payload.data, payload.len);
-	test_msg.cpkt.offset = payload.len + 1;
+	memcpy(test_msg.msg_data[0] + 1, payload.data, payload.len);
+	test_msg.cpkt[0].offset = payload.len + 1;
 	test_msg.in.offset = 1;
 }
 
@@ -162,7 +162,7 @@ static void test_prepare_nomem(void *dummy)
 
 	/* Leave some space for Content-format option */
 
-	test_msg.cpkt.offset = sizeof(test_msg.msg_data) - TEST_PAYLOAD_OFFSET;
+	test_msg.cpkt[0].offset = sizeof(test_msg.msg_data) - TEST_PAYLOAD_OFFSET;
 }
 
 static void test_prepare_nodata(void *dummy)
@@ -238,14 +238,11 @@ ZTEST(net_content_senml_cbor, test_put_s8)
 
 		offset += TEST_PAYLOAD_OFFSET;
 
-		zassert_mem_equal(test_msg.msg_data + offset,
-				  expected_payload[i].data,
-				  expected_payload[i].len,
-				  "Invalid payload format");
+		zassert_mem_equal(test_msg.msg_data[0] + offset, expected_payload[i].data,
+				  expected_payload[i].len, "Invalid payload format");
 
 		offset += expected_payload[i].len;
-		zassert_equal(test_msg.cpkt.offset, offset,
-			      "Invalid packet offset");
+		zassert_equal(test_msg.cpkt[0].offset, offset, "Invalid packet offset");
 	}
 }
 
@@ -326,14 +323,11 @@ ZTEST(net_content_senml_cbor, test_put_s16)
 
 		offset += TEST_PAYLOAD_OFFSET;
 
-		zassert_mem_equal(test_msg.msg_data + offset,
-				  expected_payload[i].data,
-				  expected_payload[i].len,
-				  "Invalid payload format");
+		zassert_mem_equal(test_msg.msg_data[0] + offset, expected_payload[i].data,
+				  expected_payload[i].len, "Invalid payload format");
 
 		offset += expected_payload[i].len;
-		zassert_equal(test_msg.cpkt.offset, offset,
-			      "Invalid packet offset");
+		zassert_equal(test_msg.cpkt[0].offset, offset, "Invalid packet offset");
 	}
 }
 
@@ -414,14 +408,11 @@ ZTEST(net_content_senml_cbor, test_put_s32)
 
 		offset += TEST_PAYLOAD_OFFSET;
 
-		zassert_mem_equal(test_msg.msg_data + offset,
-				  expected_payload[i].data,
-				  expected_payload[i].len,
-				  "Invalid payload format");
+		zassert_mem_equal(test_msg.msg_data[0] + offset, expected_payload[i].data,
+				  expected_payload[i].len, "Invalid payload format");
 
 		offset += expected_payload[i].len;
-		zassert_equal(test_msg.cpkt.offset, offset,
-			      "Invalid packet offset");
+		zassert_equal(test_msg.cpkt[0].offset, offset, "Invalid packet offset");
 	}
 }
 
@@ -502,14 +493,11 @@ ZTEST(net_content_senml_cbor, test_put_s64)
 
 		offset += TEST_PAYLOAD_OFFSET;
 
-		zassert_mem_equal(test_msg.msg_data + offset,
-				  expected_payload[i].data,
-				  expected_payload[i].len,
-				  "Invalid payload format");
+		zassert_mem_equal(test_msg.msg_data[0] + offset, expected_payload[i].data,
+				  expected_payload[i].len, "Invalid payload format");
 
 		offset += expected_payload[i].len;
-		zassert_equal(test_msg.cpkt.offset, offset,
-			      "Invalid packet offset");
+		zassert_equal(test_msg.cpkt[0].offset, offset, "Invalid packet offset");
 	}
 }
 
@@ -549,11 +537,9 @@ ZTEST(net_content_senml_cbor, test_put_string)
 	ret = do_read_op_senml_cbor(&test_msg);
 	zassert_true(ret >= 0, "Error reported");
 
-	zassert_mem_equal(test_msg.msg_data + TEST_PAYLOAD_OFFSET,
-			 expected_payload.data, expected_payload.len,
-			  "Invalid payload format");
-	zassert_equal(test_msg.cpkt.offset,
-		      expected_payload.len + TEST_PAYLOAD_OFFSET,
+	zassert_mem_equal(test_msg.msg_data[0] + TEST_PAYLOAD_OFFSET, expected_payload.data,
+			  expected_payload.len, "Invalid payload format");
+	zassert_equal(test_msg.cpkt[0].offset, expected_payload.len + TEST_PAYLOAD_OFFSET,
 		      "Invalid packet offset");
 }
 
@@ -681,14 +667,11 @@ ZTEST(net_content_senml_cbor, test_put_float)
 		zassert_true(ret >= 0, "Error reported");
 
 		offset += TEST_PAYLOAD_OFFSET;
-		zassert_mem_equal(test_msg.msg_data + offset,
-				  expected_payload[i].data,
-				  expected_payload[i].len,
-				  "Invalid payload format");
+		zassert_mem_equal(test_msg.msg_data[0] + offset, expected_payload[i].data,
+				  expected_payload[i].len, "Invalid payload format");
 
 		offset += expected_payload[i].len;
-		zassert_equal(test_msg.cpkt.offset, offset,
-			      "Invalid packet offset");
+		zassert_equal(test_msg.cpkt[0].offset, offset, "Invalid packet offset");
 	}
 }
 
@@ -751,14 +734,11 @@ ZTEST(net_content_senml_cbor, test_put_bool)
 
 		offset += TEST_PAYLOAD_OFFSET;
 
-		zassert_mem_equal(test_msg.msg_data + offset,
-				  expected_payload[i].data,
-				  expected_payload[i].len,
-				  "Invalid payload format");
+		zassert_mem_equal(test_msg.msg_data[0] + offset, expected_payload[i].data,
+				  expected_payload[i].len, "Invalid payload format");
 
 		offset += expected_payload[i].len;
-		zassert_equal(test_msg.cpkt.offset, offset,
-			      "Invalid packet offset");
+		zassert_equal(test_msg.cpkt[0].offset, offset, "Invalid packet offset");
 	}
 }
 
@@ -844,14 +824,11 @@ ZTEST(net_content_senml_cbor, test_put_objlnk)
 
 		offset += TEST_PAYLOAD_OFFSET;
 
-		zassert_mem_equal(test_msg.msg_data + offset,
-				  expected_payload[i].data,
-				  expected_payload[i].len,
-				  "Invalid payload format");
+		zassert_mem_equal(test_msg.msg_data[0] + offset, expected_payload[i].data,
+				  expected_payload[i].len, "Invalid payload format");
 
 		offset += expected_payload[i].len;
-		zassert_equal(test_msg.cpkt.offset, offset,
-			      "Invalid packet offset");
+		zassert_equal(test_msg.cpkt[0].offset, offset, "Invalid packet offset");
 	}
 }
 
@@ -891,11 +868,9 @@ static void test_put_opaque(void)
 	ret = do_read_op_senml_cbor(&test_msg);
 	zassert_true(ret >= 0, "Error reported");
 
-	zassert_mem_equal(test_msg.msg_data + TEST_PAYLOAD_OFFSET,
-			 expected_payload.data, expected_payload.len,
-			  "Invalid payload format");
-	zassert_equal(test_msg.cpkt.offset,
-		      expected_payload.len + TEST_PAYLOAD_OFFSET,
+	zassert_mem_equal(test_msg.msg_data[0] + TEST_PAYLOAD_OFFSET, expected_payload.data,
+			  expected_payload.len, "Invalid payload format");
+	zassert_equal(test_msg.cpkt[0].offset, expected_payload.len + TEST_PAYLOAD_OFFSET,
 		      "Invalid packet offset");
 }
 
@@ -936,13 +911,10 @@ ZTEST(net_content_senml_cbor, test_put_time)
 	ret = do_read_op_senml_cbor(&test_msg);
 
 	zassert_true(ret >= 0, "Error reported");
-	zassert_mem_equal(test_msg.msg_data + TEST_PAYLOAD_OFFSET,
-				expected_payload.data,
-				expected_payload.len,
-				"Invalid payload format");
-	zassert_equal(test_msg.cpkt.offset, expected_payload.len + TEST_PAYLOAD_OFFSET,
-				"Invalid packet offset");
-
+	zassert_mem_equal(test_msg.msg_data[0] + TEST_PAYLOAD_OFFSET, expected_payload.data,
+			  expected_payload.len, "Invalid payload format");
+	zassert_equal(test_msg.cpkt[0].offset, expected_payload.len + TEST_PAYLOAD_OFFSET,
+		      "Invalid packet offset");
 }
 
 ZTEST(net_content_senml_cbor_nomem, test_put_time_nomem)
