@@ -140,7 +140,7 @@ static int write_value(const struct device *dev, off_t offset,
 
 	/* Check if this half word is erased */
 	if (*flash != FLASH_ERASED_VALUE) {
-		LOG_DBG("Flash location not erased");
+		LOG_ERR("Flash location not erased");
 		return -EIO;
 	}
 
