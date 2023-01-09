@@ -2688,13 +2688,6 @@ West:
   labels:
     - manifest-tflite-micro
 
-"West project: tinycbor":
-  status: obsolete
-  files:
-    - modules/Kconfig.tinycbor
-  labels:
-    - manifest-tinycbor
-
 "West project: tinycrypt":
   status: odd fixes
   files:
