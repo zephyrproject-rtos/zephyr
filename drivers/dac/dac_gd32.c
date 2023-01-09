@@ -20,10 +20,14 @@
 LOG_MODULE_REGISTER(dac_gd32, CONFIG_DAC_LOG_LEVEL);
 
 /**
- * GD32 DAC HAL use different DAC0 interface for 2 or 1 output channels SoCs.
- * Unify the DAC0 interface to DAC0_xx.
+ * For some gd32 series which only have 1 DAC, their HAL name may not same as others.
+ * Below definitions help to unify the HAL name.
  */
-#if DT_INST_PROP(0, num_channels) == 1
+#if defined(CONFIG_SOC_SERIES_GD32A50X)
+#define DAC_CTL_DEN0 DAC_CTL_DEN
+#define DAC0_R8DH    OUT_R8DH
+#define DAC0_R12DH   OUT_R12DH
+#elif defined(CONFIG_SOC_SERIES_GD32F3X0)
 #define DAC_CTL_DEN0 DAC_CTL_DEN
 #define DAC0_R8DH    DAC_R8DH
 #define DAC0_R12DH   DAC_R12DH
