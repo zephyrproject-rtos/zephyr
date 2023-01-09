@@ -817,6 +817,22 @@ static inline int gpio_pin_is_input(const struct device *port, gpio_pin_t pin)
 }
 
 /**
+ * @brief Check if a single pin from @p gpio_dt_spec is configured for input
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_is_input(spec->port, spec->pin);
+ *
+ * @param spec GPIO specification from devicetree.
+ *
+ * @return A value from gpio_pin_is_input().
+ */
+static inline int gpio_pin_is_input_dt(const struct gpio_dt_spec *spec)
+{
+	return gpio_pin_is_input(spec->port, spec->pin);
+}
+
+/**
  * @brief Check if @p pin is configured for output
  *
  * @param port Pointer to device structure for the driver instance.
@@ -843,6 +859,22 @@ static inline int gpio_pin_is_output(const struct device *port, gpio_pin_t pin)
 	}
 
 	return (int)!!((gpio_port_pins_t)BIT(pin) & pins);
+}
+
+/**
+ * @brief Check if a single pin from @p gpio_dt_spec is configured for output
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_is_output(spec->port, spec->pin);
+ *
+ * @param spec GPIO specification from devicetree.
+ *
+ * @return A value from gpio_pin_is_output().
+ */
+static inline int gpio_pin_is_output_dt(const struct gpio_dt_spec *spec)
+{
+	return gpio_pin_is_output(spec->port, spec->pin);
 }
 
 /**
