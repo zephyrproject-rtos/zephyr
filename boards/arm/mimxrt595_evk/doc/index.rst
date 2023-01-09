@@ -105,6 +105,10 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 +-----------+------------+-------------------------------------+
 | SDHC      | on-chip    | disk access (works with eMMC & SD)  |
 +-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with RM68200|
+|           |            | based MIPI display                  |
+|           |            | (`RK055HDMIPI4M`_)                  |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -293,3 +297,6 @@ steps:
 
 .. _i.MX RT595 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMXRT500RM
+
+.. _RK055HDMIPI4M:
+   https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/5-5-lcd-panel:RK055HDMIPI4M
