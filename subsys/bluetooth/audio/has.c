@@ -116,7 +116,6 @@ static struct has_client {
 	} ntf_bonded;
 	struct bt_has_cp_read_presets_req read_presets_req;
 	struct k_work control_point_work;
-	struct k_work_sync control_point_work_sync;
 } has_client_list[BT_HAS_MAX_CONN];
 
 /* HAS internal preset representation */
