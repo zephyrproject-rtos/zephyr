@@ -220,9 +220,6 @@ manifest:
       revision: 9156d050927012da87079064db59d07f03b8baf6
       path: modules/lib/tflite-micro
       repo-path: tflite-micro
-    - name: tinycbor
-      revision: 9e1f34bc08123aaad7666d3652aaa839e8178b3b
-      path: modules/lib/tinycbor
     - name: tinycrypt
       revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
       path: modules/crypto/tinycrypt
