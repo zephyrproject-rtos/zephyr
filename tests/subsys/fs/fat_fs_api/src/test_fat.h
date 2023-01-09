@@ -9,7 +9,19 @@
 #include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 
-#define FATFS_MNTP	"/NAND:"
+#ifdef CONFIG_DISK_DRIVER_RAM
+#define DISK_NAME CONFIG_DISK_RAM_VOLUME_NAME
+#elif defined(CONFIG_DISK_DRIVER_FLASH)
+#define DISK_NAME DT_PROP(DT_NODELABEL(test_disk), disk_name)
+#elif defined(CONFIG_DISK_DRIVER_SDMMC)
+#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
+#elif defined(CONFIG_DISK_DRIVER_MMC)
+#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#else
+#error "Failed to select DISK access type"
+#endif
+
+#define FATFS_MNTP	"/"DISK_NAME":"
 #if defined(CONFIG_FS_FATFS_LFN)
 #define TEST_FILE	FATFS_MNTP \
 	"/testlongfilenamethatsmuchlongerthan8.3chars.text"
