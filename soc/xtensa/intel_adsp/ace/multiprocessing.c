@@ -129,11 +129,6 @@ void soc_mp_startup(uint32_t cpu)
 	/* Prevent idle from powering us off */
 	DSPCS.bootctl[cpu].bctl |=
 		DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
-	/* checking if WDT was stopped during D3 transition */
-	if (DSPCS.bootctl[cpu].wdtcs & DSPBR_WDT_RESUME) {
-		DSPCS.bootctl[cpu].wdtcs = DSPBR_WDT_RESUME;
-		/* TODO: delete this IF when FW starts using imr restore vector */
-	}
 }
 
 void arch_sched_ipi(void)
