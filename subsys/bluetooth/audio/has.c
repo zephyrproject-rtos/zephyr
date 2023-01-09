@@ -111,7 +111,8 @@ static struct has_client {
 	} params;
 
 	struct  {
-		bool is_pending;
+		bool pending_active_index;
+		bool pending_cp;
 		uint8_t preset_changed_index_next;
 	} ntf_bonded;
 	struct bt_has_cp_read_presets_req read_presets_req;
@@ -163,7 +164,7 @@ static struct has_client *client_get_or_new(struct bt_conn *conn)
 	return client;
 }
 
-static bool read_presets_req_is_pending(struct has_client *client)
+static bool read_presets_req_pending_cp(struct has_client *client)
 {
 	return client->read_presets_req.num_presets > 0;
 }
@@ -179,7 +180,8 @@ static void client_free(struct has_client *client)
 
 	read_presets_req_free(client);
 
-	client->ntf_bonded.is_pending = false;
+	client->ntf_bonded.pending_cp = false;
+	client->ntf_bonded.pending_active_index = false;
 
 	bt_conn_unref(client->conn);
 
@@ -215,10 +217,12 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	}
 
 	/* Notify after reconnection */
-	if (client->ntf_bonded.is_pending) {
+	if (client->ntf_bonded.pending_active_index) {
 		/* Emit active preset notification */
 		k_work_submit(&active_preset_work);
+	}
 
+	if (client->ntf_bonded.pending_cp) {
 		/* Emit preset changed notifications */
 		k_work_submit(&client->control_point_work);
 	}
@@ -239,10 +243,6 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		LOG_ERR("Failed to allocate client");
 		return;
 	}
-
-	/* Mark preset changed operation as pending */
-	client->ntf_bonded.is_pending = true;
-	client->ntf_bonded.preset_changed_index_next = BT_HAS_PRESET_INDEX_FIRST;
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -355,7 +355,8 @@ static void control_point_ntf_complete(struct bt_conn *conn, void *user_data)
 
 	/* Resubmit if needed */
 	if (client != NULL &&
-	    (read_presets_req_is_pending(client) || client->ntf_bonded.is_pending)) {
+	    (read_presets_req_pending_cp(client) ||
+	     client->ntf_bonded.pending_cp)) {
 		k_work_submit(&client->control_point_work);
 	}
 }
@@ -408,6 +409,13 @@ static int control_point_send_all(struct net_buf_simple *buf)
 		int err;
 
 		if (!client->conn) {
+			/* Mark preset changed operation as pending */
+			client->ntf_bonded.pending_cp = true;
+			/* For simplicity we simply start with the first index,
+			 * rather than keeping detailed logs of which clients
+			 * have knowledge of which presets
+			 */
+			client->ntf_bonded.preset_changed_index_next = BT_HAS_PRESET_INDEX_FIRST;
 			continue;
 		}
 
@@ -509,7 +517,7 @@ static void process_control_point_work(struct k_work *work)
 		return;
 	}
 
-	if (read_presets_req_is_pending(client)) {
+	if (read_presets_req_pending_cp(client)) {
 		const struct has_preset *preset = NULL;
 		bool is_last = true;
 
@@ -543,7 +551,7 @@ static void process_control_point_work(struct k_work *work)
 			client->read_presets_req.start_index = preset->index + 1;
 			client->read_presets_req.num_presets--;
 		}
-	} else if (client->ntf_bonded.is_pending) {
+	} else if (client->ntf_bonded.pending_cp) {
 		const struct has_preset *preset = NULL;
 		const struct has_preset *next = NULL;
 		bool is_last = true;
@@ -566,7 +574,7 @@ static void process_control_point_work(struct k_work *work)
 		}
 
 		if (err || is_last) {
-			client->ntf_bonded.is_pending = false;
+			client->ntf_bonded.pending_cp = false;
 		} else {
 			client->ntf_bonded.preset_changed_index_next = preset->index + 1;
 		}
@@ -608,7 +616,7 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 	}
 
 	/* Reject if already in progress */
-	if (read_presets_req_is_pending(client)) {
+	if (read_presets_req_pending_cp(client)) {
 		return BT_HAS_ERR_OPERATION_NOT_POSSIBLE;
 	}
 
@@ -704,7 +712,23 @@ static void active_preset_work_process(struct k_work *work)
 {
 	const uint8_t active_index = bt_has_preset_active_get();
 
-	bt_gatt_notify(NULL, ACTIVE_PRESET_INDEX_ATTR, &active_index, sizeof(active_index));
+	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
+		struct has_client *client = &has_client_list[i];
+		int err;
+
+		if (client->conn == NULL) {
+			/* mark to notify on reconnect */
+			client->ntf_bonded.pending_active_index = true;
+			continue;
+		}
+
+		err = bt_gatt_notify(client->conn, ACTIVE_PRESET_INDEX_ATTR,
+				     &active_index, sizeof(active_index));
+		if (err != 0) {
+			LOG_DBG("failed to notify for %p: %d",
+				client->conn, err);
+		}
+	}
 }
 
 static void preset_active_set(uint8_t index)
