@@ -259,6 +259,8 @@ static int wdt_gecko_init(const struct device *dev)
 
 #if defined(_SILICON_LABS_32B_SERIES_2)
 	CMU_ClockSelectSet(config->clock, cmuSelect_ULFRCO);
+	/* Enable Watchdog clock. */
+	CMU_ClockEnable(cmuClock_WDOG0, true);
 #endif
 
 	/* Enable IRQs */
