@@ -357,6 +357,13 @@ config BT_SMP
 	  (SMP), making it possible to pair devices over LE.
 
 if BT_SMP
+config BT_PASSKEY_KEYPRESS
+	bool "Passkey Keypress Notification support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support for receiving and sending Keypress Notifications during
+	  Passkey Entry during pairing.
+
 config BT_PRIVACY
 	bool "Privacy Feature"
 	help

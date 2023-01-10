@@ -21,6 +21,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/settings/settings.h>
@@ -3054,6 +3055,19 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 	shell_print(ctx_shell, "Passkey for %s: %s", addr, passkey_str);
 }
 
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+static void auth_passkey_display_keypress(struct bt_conn *conn,
+					  enum bt_conn_auth_keypress type)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	shell_print(ctx_shell, "Passkey keypress notification from %s: type %d",
+		    addr, type);
+}
+#endif
+
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -3250,6 +3264,9 @@ void bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 
 static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+	.passkey_display_keypress = auth_passkey_display_keypress,
+#endif
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
 #if defined(CONFIG_BT_BREDR)
@@ -3582,6 +3599,36 @@ static int cmd_auth_passkey(const struct shell *sh,
 	return 0;
 }
 
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+static int cmd_auth_passkey_notify(const struct shell *sh,
+				   size_t argc, char *argv[])
+{
+	unsigned long type;
+	int err;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	err = 0;
+	type = shell_strtoul(argv[1], 0, &err);
+	if (err || !IN_RANGE(type, BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
+			     BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
+		shell_error(sh, "<type> must be a value in range of enum bt_conn_auth_keypress");
+		return -EINVAL;
+	}
+
+	err = bt_conn_auth_keypress_notify(default_conn, type);
+	if (err) {
+		shell_error(sh, "bt_conn_auth_keypress_notify errno %d", err);
+		return err;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_PASSKEY_KEYPRESS */
+
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -3794,6 +3841,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_auth, 2, 0),
 	SHELL_CMD_ARG(auth-cancel, NULL, HELP_NONE, cmd_auth_cancel, 1, 0),
 	SHELL_CMD_ARG(auth-passkey, NULL, "<passkey>", cmd_auth_passkey, 2, 0),
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+	SHELL_CMD_ARG(auth-passkey-notify, NULL, "<type>",
+		      cmd_auth_passkey_notify, 2, 0),
+#endif /* CONFIG_BT_PASSKEY_KEYPRESS */
 	SHELL_CMD_ARG(auth-passkey-confirm, NULL, HELP_NONE,
 		      cmd_auth_passkey_confirm, 1, 0),
 	SHELL_CMD_ARG(auth-pairing-confirm, NULL, HELP_NONE,
