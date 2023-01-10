@@ -86,42 +86,6 @@ struct session *get_session(const struct sockaddr *addr,
 	return active;
 }
 
-/* TODO Unify session handling */
-struct session *get_tcp_session(int sock)
-{
-	struct session *free = NULL;
-	int i = 0;
-
-	if (sock < 0) {
-		NET_ERR("Error! Invalid socket.\n");
-		return NULL;
-	}
-
-	/* Check whether we already have an active session */
-	while (i < SESSION_MAX) {
-		struct session *ptr = &sessions[SESSION_TCP][i];
-
-		if (ptr->sock == sock) {
-			return ptr;
-		}
-
-		if (ptr->state == STATE_NULL ||
-		    ptr->state == STATE_COMPLETED) {
-			/* We found a free slot - just in case */
-			free = ptr;
-			break;
-		}
-
-		i++;
-	}
-
-	if (free) {
-		free->sock = sock;
-	}
-
-	return free;
-}
-
 void zperf_reset_session_stats(struct session *session)
 {
 	if (!session) {

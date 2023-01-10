@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,9 +37,6 @@ struct session {
 	uint16_t port;
 	struct net_addr ip;
 
-	/* TCP session */
-	int sock;
-
 	enum state state;
 
 	/* Stat data */
@@ -58,7 +56,6 @@ struct session {
 
 struct session *get_session(const struct sockaddr *addr,
 			    enum session_proto proto);
-struct session *get_tcp_session(int sock);
 void zperf_session_init(void);
 void zperf_reset_session_stats(struct session *session);
 
