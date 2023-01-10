@@ -417,6 +417,13 @@ out:
 	return ret;
 }
 
+bool dw_dma_is_enabled(const struct device *dev, uint32_t channel)
+{
+	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
+
+	return dw_read(dev_cfg->base, DW_DMA_CHAN_EN) & DW_CHAN_MASK(channel);
+}
+
 int dw_dma_start(const struct device *dev, uint32_t channel)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
@@ -426,6 +433,10 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	/* validate channel */
 	if (channel >= DW_MAX_CHAN) {
 		ret = -EINVAL;
+		goto out;
+	}
+
+	if (dw_dma_is_enabled(dev, channel)) {
 		goto out;
 	}
 
@@ -510,6 +521,10 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 
 	if (channel >= DW_MAX_CHAN) {
 		ret = -EINVAL;
+		goto out;
+	}
+
+	if (!dw_dma_is_enabled(dev, channel)) {
 		goto out;
 	}
 
