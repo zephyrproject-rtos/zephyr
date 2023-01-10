@@ -1,0 +1,11 @@
+/ {
+        chosen {
+		zephyr,bt-c2h-uart = &test_uart;
+        };
+
+	test_uart: test_uart {
+		compatible = "vnd,serial";
+		status = "okay";
+		buffer-size = <100>;
+	};
+};

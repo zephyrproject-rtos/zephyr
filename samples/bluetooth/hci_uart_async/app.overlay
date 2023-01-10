@@ -1,0 +1,31 @@
+/* This is the default app device tree overlay. This file is ignored if
+ * there is a board-specific overlay in `./boards`.
+ *
+ * Most boards define a convenient `&uart0`. It's used here to make the
+ * sample 'just work' automatically for those boards.
+ */
+
+bt_c2h_uart: &uart0 {
+        status = "okay";
+        current-speed = <1000000>;
+	hw-flow-control;
+};
+
+/ {
+        chosen {
+                zephyr,bt-c2h-uart = &bt_c2h_uart;
+        };
+};
+
+/* Some boards are by default assigning the &uart0 to these other
+ * functions. Removing the assignments will ensure a compilation error
+ * instead of accidental interference.
+ */
+/ {
+        chosen {
+                 /delete-property/ zephyr,console;
+                 /delete-property/ zephyr,shell-uart;
+                 /delete-property/ zephyr,uart-mcumgr;
+                 /delete-property/ zephyr,bt-mon-uart;
+        };
+};
