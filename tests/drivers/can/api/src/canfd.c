@@ -45,27 +45,12 @@ static const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbu
 static struct k_sem rx_callback_sem;
 static struct k_sem tx_callback_sem;
 
-CAN_MSGQ_DEFINE(can_msgq, 5);
+extern struct k_msgq can_msgq;
 
-/**
- * @brief Standard (11-bit) CAN ID frame 1.
- */
-const struct can_frame test_std_frame_1 = {
-	.flags   = 0,
-	.id      = TEST_CAN_STD_ID_1,
-	.dlc     = 8,
-	.data    = { 1, 2, 3, 4, 5, 6, 7, 8 }
-};
-
-/**
- * @brief Standard (11-bit) CAN ID frame 2.
- */
-const struct can_frame test_std_frame_2 = {
-	.flags   = 0,
-	.id      = TEST_CAN_STD_ID_2,
-	.dlc     = 8,
-	.data    = { 1, 2, 3, 4, 5, 6, 7, 8 }
-};
+extern const struct can_frame test_std_frame_1;
+extern const struct can_frame test_std_frame_2;
+extern const struct can_filter test_std_filter_1;
+extern const struct can_filter test_std_filter_2;
 
 /**
  * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
@@ -93,24 +78,6 @@ const struct can_frame test_std_frame_fd_2 = {
 		    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
 		    46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
 		    61, 62, 63, 64 }
-};
-
-/**
- * @brief Standard (11-bit) CAN ID filter 1.
- */
-const struct can_filter test_std_filter_1 = {
-	.flags = CAN_FILTER_DATA,
-	.id = TEST_CAN_STD_ID_1,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
- * @brief Standard (11-bit) CAN ID filter 2.
- */
-const struct can_filter test_std_filter_2 = {
-	.flags = CAN_FILTER_DATA,
-	.id = TEST_CAN_STD_ID_2,
-	.mask = CAN_STD_ID_MASK
 };
 
 /**
@@ -424,6 +391,28 @@ ZTEST_USER(canfd, test_set_timing_data_while_started)
 	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
 }
 
+static bool canfd_predicate(const void *state)
+{
+	can_mode_t cap;
+	int err;
+
+	ARG_UNUSED(state);
+
+	if (!device_is_ready(can_dev)) {
+		TC_PRINT("CAN device not ready");
+		return false;
+	}
+
+	err = can_get_capabilities(can_dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN controller capabilities (err %d)", err);
+
+	if ((cap & CAN_MODE_FD) == 0) {
+		return false;
+	}
+
+	return true;
+}
+
 void *canfd_setup(void)
 {
 	int err;
@@ -431,7 +420,7 @@ void *canfd_setup(void)
 	k_sem_init(&rx_callback_sem, 0, 2);
 	k_sem_init(&tx_callback_sem, 0, 2);
 
-	zassert_true(device_is_ready(can_dev), "CAN device not ready");
+	(void)can_stop(can_dev);
 
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
 	zassert_equal(err, 0, "failed to set CAN-FD loopback mode (err %d)", err);
@@ -442,4 +431,4 @@ void *canfd_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(canfd, NULL, canfd_setup, NULL, NULL, NULL);
+ZTEST_SUITE(canfd, canfd_predicate, canfd_setup, NULL, NULL, NULL);
