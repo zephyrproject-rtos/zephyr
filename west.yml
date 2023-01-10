@@ -68,8 +68,9 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 024ed9e3a7e0c093a3c7427d98dbade20e16c52d
+      revision: pull/31/head
       path: modules/hal/gigadevice
+      west-commands: zephyr/west/west-commands.yml
       groups:
         - hal
     - name: hal_infineon
