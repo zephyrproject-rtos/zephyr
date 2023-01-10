@@ -136,7 +136,7 @@ extern size_t cache_instr_line_size_get(void);
  */
 static inline void sys_cache_data_enable(void)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	cache_data_enable();
 #endif
 }
@@ -149,7 +149,7 @@ static inline void sys_cache_data_enable(void)
  */
 static inline void sys_cache_data_disable(void)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	cache_data_disable();
 #endif
 }
