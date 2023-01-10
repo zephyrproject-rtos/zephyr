@@ -1113,87 +1113,64 @@ struct smb_reg {
 	volatile uint8_t SMBCTL3;
 	/* 0x00F: SMB Bus Timeout */
 	volatile uint8_t SMBT_OUT;
-	/* 0x010: SMB Own Address 3 */
-	volatile uint8_t SMBADDR3;
-	/* 0x011: SMB Own Address 7 */
-	volatile uint8_t SMBADDR7;
-	/* 0x012: SMB Own Address 4 */
-	volatile uint8_t SMBADDR4;
-	/* 0x013: SMB Own Address 8 */
-	volatile uint8_t SMBADDR8;
-	/* 0x014: SMB Own Address 5 */
-	volatile uint8_t SMBADDR5;
-	volatile uint8_t reserved8;
-	/* 0x016: SMB Own Address 6 */
-	volatile uint8_t SMBADDR6;
-	volatile uint8_t reserved9;
-	/* 0x018: SMB Control Status 2 */
-	volatile uint8_t SMBCST2;
-	/* 0x019: SMB Control Status 3 */
-	volatile uint8_t SMBCST3;
-	/* 0x01A: SMB Control 4 */
-	volatile uint8_t SMBCTL4;
-	volatile uint8_t reserved10;
-	/* 0x01C: SMB SCL Low Time */
-	volatile uint8_t SMBSCLLT;
-	/* 0x01D: SMB FIFO Control */
-	volatile uint8_t SMBFIF_CTL;
-	/* 0x01E: SMB SCL High Time */
-	volatile uint8_t SMBSCLHT;
-	volatile uint8_t reserved11;
-};
-
-/*
- * SMBUS (SMB) FIFO device registers
- */
-struct smb_fifo_reg {
-	/* 0x000: SMB Serial Data */
-	volatile uint8_t SMBSDA;
-	volatile uint8_t reserved1;
-	/* 0x002: SMB Status */
-	volatile uint8_t SMBST;
-	volatile uint8_t reserved2;
-	/* 0x004: SMB Control Status */
-	volatile uint8_t SMBCST;
-	volatile uint8_t reserved3;
-	/* 0x006: SMB Control 1 */
-	volatile uint8_t SMBCTL1;
-	volatile uint8_t reserved4;
-	/* 0x008: SMB Own Address */
-	volatile uint8_t SMBADDR1;
-	volatile uint8_t reserved5;
-	/* 0x00A: SMB Control 2 */
-	volatile uint8_t SMBCTL2;
-	volatile uint8_t reserved6;
-	/* 0x00C: SMB Own Address */
-	volatile uint8_t SMBADDR2;
-	volatile uint8_t reserved7;
-	/* 0x00E: SMB Control 3 */
-	volatile uint8_t SMBCTL3;
-	/* 0x00F: SMB Bus Timeout */
-	volatile uint8_t SMBT_OUT;
-	/* 0x010: SMB FIFO Control */
-	volatile uint8_t SMBFIF_CTS;
-	volatile uint8_t reserved8;
-	/* 0x012: SMB Tx-FIFO Control */
-	volatile uint8_t SMBTXF_CTL;
-	volatile uint8_t reserved9;
-	/* 0x014: SMB Bus Timeout */
-	volatile uint8_t SMB_T_OUT;
-	volatile uint8_t reserved10[3];
-	/* 0x018: SMB Control Status 2 */
-	volatile uint8_t SMBCST2;
-	/* 0x019: SMB Control Status 3 */
-	volatile uint8_t SMBCST3;
-	/* 0x01A: SMB Tx-FIFO Status */
-	volatile uint8_t SMBTXF_STS;
-	volatile uint8_t reserved11;
-	/* 0x01C: SMB Rx-FIFO Status */
-	volatile uint8_t SMBRXF_STS;
-	volatile uint8_t reserved12;
-	/* 0x01E: SMB Rx-FIFO Control */
-	volatile uint8_t SMBRXF_CTL;
-	volatile uint8_t reserved13;
+	union {
+		/* Bank 0 */
+		struct {
+			/* 0x010: SMB Own Address 3 */
+			volatile uint8_t SMBADDR3;
+			/* 0x011: SMB Own Address 7 */
+			volatile uint8_t SMBADDR7;
+			/* 0x012: SMB Own Address 4 */
+			volatile uint8_t SMBADDR4;
+			/* 0x013: SMB Own Address 8 */
+			volatile uint8_t SMBADDR8;
+			/* 0x014: SMB Own Address 5 */
+			volatile uint8_t SMBADDR5;
+			volatile uint8_t reserved8;
+			/* 0x016: SMB Own Address 6 */
+			volatile uint8_t SMBADDR6;
+			volatile uint8_t reserved9;
+			/* 0x018: SMB Control Status 2 */
+			volatile uint8_t SMBCST2;
+			/* 0x019: SMB Control Status 3 */
+			volatile uint8_t SMBCST3;
+			/* 0x01A: SMB Control 4 */
+			volatile uint8_t SMBCTL4;
+			volatile uint8_t reserved10;
+			/* 0x01C: SMB SCL Low Time */
+			volatile uint8_t SMBSCLLT;
+			/* 0x01D: SMB FIFO Control */
+			volatile uint8_t SMBFIF_CTL;
+			/* 0x01E: SMB SCL High Time */
+			volatile uint8_t SMBSCLHT;
+			volatile uint8_t reserved11;
+		};
+		/* Bank 1 */
+		struct {
+			/* 0x010: SMB FIFO Control */
+			volatile uint8_t SMBFIF_CTS;
+			volatile uint8_t reserved12;
+			/* 0x012: SMB Tx-FIFO Control */
+			volatile uint8_t SMBTXF_CTL;
+			volatile uint8_t reserved13;
+			/* 0x014: SMB Bus Timeout */
+			volatile uint8_t SMB_T_OUT;
+			volatile uint8_t reserved14[3];
+			/* 0x018: SMB Control Status 2 (FIFO) */
+			volatile uint8_t SMBCST2_FIFO;
+			/* 0x019: SMB Control Status 3 (FIFO) */
+			volatile uint8_t SMBCST3_FIFO;
+			/* 0x01A: SMB Tx-FIFO Status */
+			volatile uint8_t SMBTXF_STS;
+			volatile uint8_t reserved15;
+			/* 0x01C: SMB Rx-FIFO Status */
+			volatile uint8_t SMBRXF_STS;
+			volatile uint8_t reserved16;
+			/* 0x01E: SMB Rx-FIFO Control */
+			volatile uint8_t SMBRXF_CTL;
+			volatile uint8_t reserved17[1];
+		};
+	};
 };
 
 /* SMB register fields */
