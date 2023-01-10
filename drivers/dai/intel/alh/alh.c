@@ -89,17 +89,24 @@ static void alh_release_ownership(void)
 }
 
 
-static const struct dai_config *dai_alh_config_get(const struct device *dev, enum dai_dir dir)
+static int dai_alh_config_get(const struct device *dev, struct dai_config *cfg,
+			      enum dai_dir dir)
 {
 	struct dai_config *params = (struct dai_config *)dev->config;
 	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
 	struct dai_intel_alh_pdata *alh = dai_get_drvdata(dp);
 
+	if (!cfg) {
+		return -EINVAL;
+	}
+
 	params->rate = alh->params.rate;
 	params->channels = alh->params.channels;
 	params->word_size = ALH_WORD_SIZE_DEFAULT;
 
-	return params;
+	*cfg = *params;
+
+	return 0;
 }
 
 static int dai_alh_config_set(const struct device *dev, const struct dai_config *cfg,

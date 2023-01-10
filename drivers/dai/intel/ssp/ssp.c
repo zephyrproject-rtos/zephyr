@@ -1825,14 +1825,20 @@ static int dai_ssp_trigger(const struct device *dev, enum dai_dir dir,
 	return 0;
 }
 
-static const struct dai_config *dai_ssp_config_get(const struct device *dev, enum dai_dir dir)
+static int dai_ssp_config_get(const struct device *dev, struct dai_config *cfg, enum dai_dir dir)
 {
 	struct dai_config *params = (struct dai_config *)dev->config;
 	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 
-	if (!ssp)
-		return params;
+	if (!cfg) {
+		return -EINVAL;
+	}
+
+	if (!ssp) {
+		*cfg = *params;
+		return 0;
+	}
 
 	params->rate = ssp->params.fsync_rate;
 
@@ -1844,7 +1850,9 @@ static const struct dai_config *dai_ssp_config_get(const struct device *dev, enu
 
 	params->word_size = ssp->params.sample_valid_bits;
 
-	return params;
+	*cfg = *params;
+
+	return 0;
 }
 
 static int dai_ssp_config_set(const struct device *dev, const struct dai_config *cfg,
