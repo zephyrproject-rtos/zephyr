@@ -84,23 +84,12 @@ Programming and debugging
 Building & Flashing
 ===================
 
-In order to upload the application to the device, you'll need OpenOCD with
-GD32V support. Download the tarball for your OS from the
-`SiPEED longan nano download site
-<http://dl.sipeed.com/LONGAN/platformio/dl-packages/>`_ and extract it.
-
-The Zephyr SDK uses a bundled version of OpenOCD by default. You can
-overwrite that behavior by adding the
-``-DOPENOCD=<path/to/riscv-openocd/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/riscv-openocd/share/openocd/scripts>``
-parameter when building:
-
 Here is an example for building the :ref:`blinky-sample` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: longan_nano
    :goals: build flash
-   :gen-args: -DOPENOCD=<path/to/riscv-openocd/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/riscv-openocd/share/openocd/scripts>
 
 When using a custom toolchain it should be enough to have the downloaded
 version of the binary in your ``PATH``.
