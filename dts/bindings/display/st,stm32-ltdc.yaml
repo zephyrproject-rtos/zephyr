@@ -33,7 +33,9 @@ properties:
     required: true
 
   pinctrl-0:
-    required: true
+    description: |
+      Provide a pin configuration for using parallel pixel output. In combination with DSI HOST
+      the pin configuration is not necessary due to dedicated (MIPI D-PHY) pins.
 
   hsync-pol:
     type: int
