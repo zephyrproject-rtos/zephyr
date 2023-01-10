@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +15,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include "zperf_session.h"
 
-#define SESSION_MAX 4
+#define SESSION_MAX CONFIG_NET_ZPERF_MAX_SESSIONS
 
 static struct session sessions[SESSION_PROTO_END][SESSION_MAX];
 
