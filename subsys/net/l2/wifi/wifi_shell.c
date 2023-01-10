@@ -370,6 +370,8 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 		shell_fprintf(sh, SHELL_NORMAL, "MFP: %s\n",
 				wifi_mfp_txt(status.mfp));
 		shell_fprintf(sh, SHELL_NORMAL, "RSSI: %d\n", status.rssi);
+		shell_fprintf(sh, SHELL_NORMAL, "Beacon Interval: %d\n", status.beacon_interval);
+		shell_fprintf(sh, SHELL_NORMAL, "DTIM: %d\n", status.dtim_period);
 	}
 
 	return 0;
