@@ -1,0 +1,9 @@
+# This file is a YAML list of property names that are OK to contain
+# underscores because they are from upstream Linux or some other
+# authoritative source.
+#
+# Otherwise, the preferred word separator in DT property names is '-',
+# not '_'.
+
+- mmc-hs200-1_8v
+- mmc-hs400-1_8v

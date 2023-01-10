@@ -19,6 +19,7 @@ import traceback
 import shlex
 
 from yamllint import config, linter
+import yaml
 
 from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
 import magic
@@ -247,6 +248,8 @@ class CheckPatch(ComplianceTest):
             if len(matches) == 0:
                 self.failure(output)
 
+with open(Path(__file__).parent / 'check_compliance_ok_properties.yaml', 'r') as f:
+    DT_OK_PROPERTIES = set(yaml.safe_load(f.read()))
 
 class DevicetreeBindingsCheck(ComplianceTest):
     """
@@ -285,6 +288,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
         # This does a bit more work than necessary, but that should
         # be OK.
         for binding in edtlib.bindings_from_dirs(bindings_dirs):
+            self.check_recursively(binding, self.property_name_check)
             self.check_recursively(binding, self.required_false_check)
 
     @staticmethod
@@ -292,6 +296,20 @@ class DevicetreeBindingsCheck(ComplianceTest):
         while binding is not None:
             check_function(binding)
             binding = binding.child_binding
+
+    def property_name_check(self, binding):
+        for prop_name in binding.prop2specs:
+            if '_' in prop_name and prop_name not in DT_OK_PROPERTIES:
+                better_prop = prop_name.replace('_', '-')
+                self.failure(
+                    f'{binding.path}: property "{prop_name}" contains '
+                    'underscores.\n'
+                    f'\tUse "{better_prop}" instead unless '
+                    'this property name is from Linux or another authoritative '
+                    f'upstream source of bindings for compatible "{binding.compatible}".\n'
+                    '\tHint: update check_compliance_ok_properties.yaml if you need to '
+                    'override this check for this property.'
+                )
 
     def required_false_check(self, binding):
         raw_props = binding.raw.get('properties', {})
