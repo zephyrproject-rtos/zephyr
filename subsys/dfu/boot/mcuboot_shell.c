@@ -1,16 +1,17 @@
 /*
  * Copyright (c) 2020 Grinn
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "bootutil/bootutil_public.h"
 #include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/mcuboot_partitions.h>
 #include <zephyr/init.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 
-#include "mcuboot_priv.h"
 
 #ifdef CONFIG_RETENTION_BOOT_MODE
 #include <zephyr/retention/bootmode.h>
@@ -25,9 +26,9 @@ struct area_desc {
 };
 
 static const struct area_desc areas[] = {
-	{"primary", FLASH_AREA_IMAGE_PRIMARY},
-#ifdef FLASH_AREA_IMAGE_SECONDARY
-	{"secondary", FLASH_AREA_IMAGE_SECONDARY},
+	{"primary", ZEPHYR_MCUBOOT_APP_0_PRIMARY_SLOT_ID},
+#ifdef ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_ID
+	{"secondary", ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_ID},
 #endif
 };
 
