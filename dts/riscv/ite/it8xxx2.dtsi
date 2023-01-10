@@ -101,13 +101,6 @@
 			       0xf010ce 3>;	/* SCAR23 */
 		};
 
-		intc: interrupt-controller@f03f00 {
-			compatible = "ite,it8xxx2-intc";
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			reg = <0x00f03f00 0x0100>;
-		};
 		uart1: uart@f02700 {
 			compatible = "ns16550";
 			reg = <0x00f02700 0x0020>;
@@ -145,14 +138,6 @@
 			port-num = <2>;
 			gpios = <&gpioh 1 0>;
 			uart-dev = <&uart2>;
-		};
-
-		twd0: watchdog@f01f00 {
-			compatible = "ite,it8xxx2-watchdog";
-			reg = <0x00f01f00 0x0062>;
-			interrupts = <IT8XXX2_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING   /* Warning timer */
-				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
-			interrupt-parent = <&intc>;
 		};
 
 		timer: timer@f01f10 {
