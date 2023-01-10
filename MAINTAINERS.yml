@@ -1324,6 +1324,8 @@ Kernel:
     - tests/kernel/
     - include/zephyr/sys_clock.h
     - samples/kernel/
+  files-exclude:
+    - tests/kernel/mem_protect/
   labels:
     - "area: Kernel"
 
