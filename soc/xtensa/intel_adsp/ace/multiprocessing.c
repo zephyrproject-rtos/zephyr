@@ -152,7 +152,7 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-	CHECKIF(!soc_cpus_active[id]) {
+	CHECKIF(soc_cpus_active[id]) {
 		return -EINVAL;
 	}
 
@@ -169,9 +169,6 @@ int soc_adsp_halt_cpu(int id)
 		__ASSERT(false, "%s secondary core has not powered down", __func__);
 		return -EINVAL;
 	}
-
-	/* Stop sending IPIs to this core */
-	soc_cpus_active[id] = false;
 
 	return 0;
 }
