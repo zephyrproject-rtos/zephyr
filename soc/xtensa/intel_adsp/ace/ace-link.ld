@@ -266,9 +266,11 @@ SECTIONS {
     *(.gnu.version_r)
     KEEP (*(.eh_frame))
     KEEP (*crtbegin.o(.ctors))
+#ifndef CONFIG_CPP_STATIC_INIT_GNU
     KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
     KEEP (*(SORT(.ctors.*)))
     KEEP (*(.ctors))
+#endif
     KEEP (*crtbegin.o(.dtors))
     KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
     KEEP (*(SORT(.dtors.*)))
