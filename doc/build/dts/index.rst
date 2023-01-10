@@ -27,6 +27,7 @@ development.
    design.rst
    bindings.rst
    api-usage.rst
+   zephyr-user-node.rst
    howtos.rst
    troubleshooting.rst
    dt-vs-kconfig.rst
