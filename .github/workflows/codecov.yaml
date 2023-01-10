@@ -3,6 +3,10 @@ name: Code Coverage with codecov
 on:
   schedule:
     - cron: '25 */3 * * 1-5'
+  pull_request_target:
+    branches:
+      - main
+      - v*-branch
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
@@ -81,7 +85,7 @@ jobs:
           test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
           ccache -M 10G -s
 
-      - name: Run Tests with Twister (Push)
+      - name: Run Tests with Twister
         continue-on-error: true
         run: |
           export ZEPHYR_BASE=${PWD}
@@ -164,7 +168,7 @@ jobs:
           lcov ${{ steps.get-coverage-files.outputs.mergefiles }} -o merged.info --rc lcov_branch_coverage=1
 
       - name: Upload coverage to Codecov
-        if: always()
+        if: github.event_name == 'schedule'
         uses: codecov/codecov-action@v2
         with:
           directory: ./coverage/reports
@@ -172,3 +176,9 @@ jobs:
           fail_ci_if_error: false
           verbose: true
           files: merged.info
+
+      - name: Report LCOV
+        uses: zgosalvez/github-actions-report-lcov@v3.0.4
+        with:
+          coverage-files: ./coverage/reports/merged.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
