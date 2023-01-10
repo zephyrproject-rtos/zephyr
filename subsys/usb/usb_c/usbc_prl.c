@@ -620,11 +620,9 @@ static void prl_tx_wait_for_message_request_run(void *obj)
 		 */
 		if ((prl_tx->msg_type == PD_CTRL_SOFT_RESET) && (prl_tx->emsg.len == 0)) {
 			prl_tx_set_state(dev, PRL_TX_LAYER_RESET_FOR_TRANSMIT);
-		}
-		/*
-		 * Message pending (except Soft Reset)
-		 */
-		else {
+		} else {
+			/* Message pending (except Soft Reset) */
+
 			/* NOTE: PRL_TX_Construct_Message State embedded here */
 			prl_tx_construct_message(dev);
 			prl_tx_set_state(dev, PRL_TX_WAIT_FOR_PHY_RESPONSE);
@@ -796,13 +794,13 @@ static void prl_tx_snk_pending_run(void *obj)
 	 */
 	if ((prl_tx->msg_type == PD_CTRL_SOFT_RESET) && (prl_tx->emsg.len == 0)) {
 		prl_tx_set_state(dev, PRL_TX_LAYER_RESET_FOR_TRANSMIT);
-	}
-	/*
-	 * The Protocol Layer Shall transition to the PRL_Tx_Construct_Message
-	 * state when Rp is set to SinkTxOk and a Soft_Reset Message is not
-	 * pending.
-	 */
-	else if (cc1 == TC_CC_VOLT_RP_3A0 || cc2 == TC_CC_VOLT_RP_3A0) {
+	} else if (cc1 == TC_CC_VOLT_RP_3A0 || cc2 == TC_CC_VOLT_RP_3A0) {
+		/*
+		 * The Protocol Layer Shall transition to the PRL_Tx_Construct_Message
+		 * state when Rp is set to SinkTxOk and a Soft_Reset Message is not
+		 * pending.
+		 */
+
 		/*
 		 * Message pending (except Soft Reset) &
 		 * Rp = SinkTxOk
@@ -932,12 +930,12 @@ static void prl_hr_reset_layer_entry(void *obj)
 		 */
 		prl_hr_send_msg_to_phy(dev);
 		prl_hr_set_state(dev, PRL_HR_WAIT_FOR_PHY_HARD_RESET_COMPLETE);
-	}
-	/*
-	 * Protocol Layer reset complete &
-	 * Hard Reset was initiated by Port Partner
-	 */
-	else {
+	} else {
+		/*
+		 * Protocol Layer reset complete &
+		 * Hard Reset was initiated by Port Partner
+		 */
+
 		/* Inform Policy Engine of the Hard Reset */
 		pe_got_hard_reset(dev);
 		prl_hr_set_state(dev, PRL_HR_WAIT_FOR_PE_HARD_RESET_COMPLETE);

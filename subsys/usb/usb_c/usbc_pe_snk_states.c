@@ -289,12 +289,11 @@ void pe_snk_select_capability_run(void *obj)
 				}
 
 				pe_set_state(dev, PE_SNK_READY);
-			}
-			/*
-			 * No previous explicit contract, so transition
-			 * to PE_SNK_Wait_For_Capabilities
-			 */
-			else {
+			} else {
+				/*
+				 * No previous explicit contract, so transition
+				 * to PE_SNK_Wait_For_Capabilities
+				 */
 				pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
 			}
 		} else {
@@ -426,9 +425,8 @@ void pe_snk_ready_run(void *obj)
 		if (header.extended) {
 			extended_message_not_supported(dev);
 			return;
-		}
-		/* Data Messages */
-		else if (header.number_of_data_objects > 0) {
+		} else if (header.number_of_data_objects > 0) {
+			/* Data Messages */
 			switch (header.message_type) {
 			case PD_DATA_SOURCE_CAP:
 				pe_set_state(dev, PE_SNK_EVALUATE_CAPABILITY);
@@ -437,9 +435,8 @@ void pe_snk_ready_run(void *obj)
 				pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
 			}
 			return;
-		}
-		/* Control Messages */
-		else {
+		} else {
+			/* Control Messages */
 			switch (header.message_type) {
 			case PD_CTRL_GOOD_CRC:
 				/* Do nothing */
@@ -632,25 +629,23 @@ void pe_snk_get_source_cap_run(void *obj)
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		/* The Policy Engine Shall then start the SenderResponseTimer. */
 		usbc_timer_start(&pe->pd_t_sender_response);
-	}
-	/*
-	 * The Policy Engine Shall transition to the PE_SNK_Evaluate_Capability
-	 * State when:
-	 *	1: In SPR Mode and SPR Source Capabilities were requested and
-	 *	   a Source_Capabilities Message is received
-	 */
-	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+		/*
+		 * The Policy Engine Shall transition to the PE_SNK_Evaluate_Capability
+		 * State when:
+		 *	1: In SPR Mode and SPR Source Capabilities were requested and
+		 *	   a Source_Capabilities Message is received
+		 */
 		header = prl_rx->emsg.header;
 
 		if (received_control_message(dev, header, PD_DATA_SOURCE_CAP)) {
 			pe_set_state(dev, PE_SNK_EVALUATE_CAPABILITY);
 		}
-	}
-	/*
-	 * The Policy Engine Shall transition to the PE_SNK_Ready state when:
-	 *	1: The SenderResponseTimer times out.
-	 */
-	else if (usbc_timer_expired(&pe->pd_t_sender_response)) {
+	} else if (usbc_timer_expired(&pe->pd_t_sender_response)) {
+		/*
+		 * The Policy Engine Shall transition to the PE_SNK_Ready state when:
+		 *	1: The SenderResponseTimer times out.
+		 */
 		pe_set_state(dev, PE_SNK_READY);
 		/* Inform the DPM of the sender response timeout */
 		policy_notify(dev, SENDER_RESPONSE_TIMEOUT);
@@ -710,26 +705,24 @@ void pe_send_soft_reset_run(void *obj)
 	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 		/* Start SenderResponse timer */
 		usbc_timer_start(&pe->pd_t_sender_response);
-	}
-	/*
-	 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
-	 * state when:
-	 *	1: An Accept Message has been received on SOP
-	 */
-	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+		/*
+		 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
+		 * state when:
+		 *	1: An Accept Message has been received on SOP
+		 */
 		header = prl_rx->emsg.header;
 
 		if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
 			pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
 		}
-	}
-	/*
-	 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset state when:
-	 *	1: A SenderResponseTimer timeout occurs
-	 *	2: Or the Protocol Layer indicates that a transmission error has occurred
-	 */
-	else if (usbc_timer_expired(&pe->pd_t_sender_response) ||
-		 atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+	} else if (usbc_timer_expired(&pe->pd_t_sender_response) ||
+			atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+		/*
+		 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset state when:
+		 *	1: A SenderResponseTimer timeout occurs
+		 *	2: Or the Protocol Layer indicates that a transmission error has occurred
+		 */
 		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
 }
@@ -775,22 +768,20 @@ void pe_soft_reset_run(void *obj)
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_SEND_SOFT_RESET)) {
 		/* Send Accept message */
 		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_ACCEPT);
-	}
-	/*
-	 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
-	 * state when:
-	 *	1: The Accept Message has been sent on SOP.
-	 */
-	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+		/*
+		 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
+		 * state when:
+		 *	1: The Accept Message has been sent on SOP.
+		 */
 		pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
-	}
-	/*
-	 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset
-	 * state when:
-	 *	1: The Protocol Layer indicates that a transmission error
-	 *	   has occurred.
-	 */
-	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+		/*
+		 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset
+		 * state when:
+		 *	1: The Protocol Layer indicates that a transmission error
+		 *	   has occurred.
+		 */
 		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
 }
