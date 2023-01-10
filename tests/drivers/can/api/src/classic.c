@@ -11,7 +11,7 @@
 /**
  * @addtogroup t_can_driver
  * @{
- * @defgroup t_can_api test_can_api
+ * @defgroup t_can_classic test_can_classic
  * @}
  */
 
@@ -676,7 +676,7 @@ void send_receive_rtr(const struct can_filter *data_filter,
 /**
  * @brief Test getting the CAN core clock rate.
  */
-ZTEST_USER(can_api, test_get_core_clock)
+ZTEST_USER(can_classic, test_get_core_clock)
 {
 	uint32_t rate;
 	int err;
@@ -689,7 +689,7 @@ ZTEST_USER(can_api, test_get_core_clock)
 /**
  * @brief Test getting the CAN controller capabilities.
  */
-ZTEST_USER(can_api, test_get_capabilities)
+ZTEST_USER(can_classic, test_get_capabilities)
 {
 	can_mode_t cap;
 	int err;
@@ -714,7 +714,7 @@ static void state_change_callback(const struct device *dev, enum can_state state
 /**
  * @brief Test setting the CAN state change callback.
  */
-ZTEST(can_api, test_set_state_change_callback)
+ZTEST(can_classic, test_set_state_change_callback)
 {
 	/* It is not possible to provoke a change of state, but test the API call */
 	can_set_state_change_callback(can_dev, state_change_callback, NULL);
@@ -724,7 +724,7 @@ ZTEST(can_api, test_set_state_change_callback)
 /**
  * @brief Test setting a too high bitrate.
  */
-ZTEST_USER(can_api, test_set_bitrate_too_high)
+ZTEST_USER(can_classic, test_set_bitrate_too_high)
 {
 	uint32_t max;
 	int err;
@@ -750,7 +750,7 @@ ZTEST_USER(can_api, test_set_bitrate_too_high)
 /**
  * @brief Test setting bitrate.
  */
-ZTEST_USER(can_api, test_set_bitrate)
+ZTEST_USER(can_classic, test_set_bitrate)
 {
 	int err;
 
@@ -770,7 +770,7 @@ ZTEST_USER(can_api, test_set_bitrate)
  * This basic test work since the CAN controller is in loopback mode and
  * therefore ACKs its own frame.
  */
-ZTEST_USER(can_api, test_send_and_forget)
+ZTEST_USER(can_classic, test_send_and_forget)
 {
 	send_test_frame(can_dev, &test_std_frame_1);
 }
@@ -780,7 +780,7 @@ ZTEST_USER(can_api, test_send_and_forget)
  *
  * Test each filter type but only one filter at a time.
  */
-ZTEST(can_api, test_add_filter)
+ZTEST(can_classic, test_add_filter)
 {
 	int filter_id;
 
@@ -852,7 +852,7 @@ static void add_remove_max_filters(bool ide)
 /**
  * @brief Test max standard (11-bit) CAN RX filters.
  */
-ZTEST_USER(can_api, test_max_std_filters)
+ZTEST_USER(can_classic, test_max_std_filters)
 {
 	add_remove_max_filters(false);
 }
@@ -860,7 +860,7 @@ ZTEST_USER(can_api, test_max_std_filters)
 /**
  * @brief Test max extended (29-bit) CAN RX filters.
  */
-ZTEST_USER(can_api, test_max_ext_filters)
+ZTEST_USER(can_classic, test_max_ext_filters)
 {
 	add_remove_max_filters(true);
 }
@@ -868,7 +868,7 @@ ZTEST_USER(can_api, test_max_ext_filters)
 /**
  * @brief Test that no message is received when nothing was sent.
  */
-ZTEST_USER(can_api, test_receive_timeout)
+ZTEST_USER(can_classic, test_receive_timeout)
 {
 	struct can_frame frame;
 	int filter_id;
@@ -885,7 +885,7 @@ ZTEST_USER(can_api, test_receive_timeout)
 /**
  * @brief Test that transmit callback function is called.
  */
-ZTEST(can_api, test_send_callback)
+ZTEST(can_classic, test_send_callback)
 {
 	int err;
 
@@ -900,7 +900,7 @@ ZTEST(can_api, test_send_callback)
 /**
  * @brief Test send/receive with standard (11-bit) CAN IDs.
  */
-ZTEST(can_api, test_send_receive_std_id)
+ZTEST(can_classic, test_send_receive_std_id)
 {
 	send_receive(&test_std_filter_1, &test_std_filter_2,
 		     &test_std_frame_1, &test_std_frame_2);
@@ -909,7 +909,7 @@ ZTEST(can_api, test_send_receive_std_id)
 /**
  * @brief Test send/receive with extended (29-bit) CAN IDs.
  */
-ZTEST(can_api, test_send_receive_ext_id)
+ZTEST(can_classic, test_send_receive_ext_id)
 {
 	send_receive(&test_ext_filter_1, &test_ext_filter_2,
 		     &test_ext_frame_1, &test_ext_frame_2);
@@ -918,7 +918,7 @@ ZTEST(can_api, test_send_receive_ext_id)
 /**
  * @brief Test send/receive with standard (11-bit) masked CAN IDs.
  */
-ZTEST(can_api, test_send_receive_std_id_masked)
+ZTEST(can_classic, test_send_receive_std_id_masked)
 {
 	send_receive(&test_std_masked_filter_1, &test_std_masked_filter_2,
 		     &test_std_frame_1, &test_std_frame_2);
@@ -927,7 +927,7 @@ ZTEST(can_api, test_send_receive_std_id_masked)
 /**
  * @brief Test send/receive with extended (29-bit) masked CAN IDs.
  */
-ZTEST(can_api, test_send_receive_ext_id_masked)
+ZTEST(can_classic, test_send_receive_ext_id_masked)
 {
 	send_receive(&test_ext_masked_filter_1, &test_ext_masked_filter_2,
 		     &test_ext_frame_1, &test_ext_frame_2);
@@ -936,7 +936,7 @@ ZTEST(can_api, test_send_receive_ext_id_masked)
 /**
  * @brief Test send/receive with messages buffered in a CAN message queue.
  */
-ZTEST_USER(can_api, test_send_receive_msgq)
+ZTEST_USER(can_classic, test_send_receive_msgq)
 {
 	struct k_msgq_attrs attrs;
 	struct can_frame frame;
@@ -976,7 +976,7 @@ ZTEST_USER(can_api, test_send_receive_msgq)
 /**
  * @brief Test send/receive with standard (11-bit) CAN IDs and remote transmission request (RTR).
  */
-ZTEST_USER(can_api, test_send_receive_std_id_rtr)
+ZTEST_USER(can_classic, test_send_receive_std_id_rtr)
 {
 	send_receive_rtr(&test_std_filter_1, &test_std_rtr_filter_1,
 			 &test_std_frame_1, &test_std_rtr_frame_1);
@@ -985,7 +985,7 @@ ZTEST_USER(can_api, test_send_receive_std_id_rtr)
 /**
  * @brief Test send/receive with extended (29-bit) CAN IDs and remote transmission request (RTR).
  */
-ZTEST_USER(can_api, test_send_receive_ext_id_rtr)
+ZTEST_USER(can_classic, test_send_receive_ext_id_rtr)
 {
 	send_receive_rtr(&test_ext_filter_1, &test_ext_rtr_filter_1,
 			 &test_ext_frame_1, &test_ext_rtr_frame_1);
@@ -994,7 +994,7 @@ ZTEST_USER(can_api, test_send_receive_ext_id_rtr)
 /**
  * @brief Test that non-matching CAN frames do not pass a filter.
  */
-ZTEST(can_api, test_send_receive_wrong_id)
+ZTEST(can_classic, test_send_receive_wrong_id)
 {
 	struct can_frame frame_buffer;
 	int filter_id;
@@ -1013,7 +1013,7 @@ ZTEST(can_api, test_send_receive_wrong_id)
 /**
  * @brief Test that frames with invalid Data Length Code (DLC) are rejected.
  */
-ZTEST_USER(can_api, test_send_invalid_dlc)
+ZTEST_USER(can_classic, test_send_invalid_dlc)
 {
 	struct can_frame frame = {0};
 	int err;
@@ -1028,7 +1028,7 @@ ZTEST_USER(can_api, test_send_invalid_dlc)
 /**
  * @brief Test that CAN-FD format frames are rejected in non-FD mode.
  */
-ZTEST_USER(can_api, test_send_fd_format)
+ZTEST_USER(can_classic, test_send_fd_format)
 {
 	int err;
 
@@ -1039,7 +1039,7 @@ ZTEST_USER(can_api, test_send_fd_format)
 /**
  * @brief Test CAN controller bus recovery.
  */
-ZTEST_USER(can_api, test_recover)
+ZTEST_USER(can_classic, test_recover)
 {
 	int err;
 
@@ -1055,7 +1055,7 @@ ZTEST_USER(can_api, test_recover)
 /**
  * @brief Test retrieving the state of the CAN controller.
  */
-ZTEST_USER(can_api, test_get_state)
+ZTEST_USER(can_classic, test_get_state)
 {
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
@@ -1077,7 +1077,7 @@ ZTEST_USER(can_api, test_get_state)
 /**
  * @brief Test that CAN RX filters are preserved through CAN controller mode changes.
  */
-ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
+ZTEST_USER(can_classic, test_filters_preserved_through_mode_change)
 {
 	struct can_frame frame;
 	enum can_state state;
@@ -1119,7 +1119,7 @@ ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
 /**
  * @brief Test that CAN RX filters are preserved through CAN controller bitrate changes.
  */
-ZTEST_USER(can_api, test_filters_preserved_through_bitrate_change)
+ZTEST_USER(can_classic, test_filters_preserved_through_bitrate_change)
 {
 	struct can_frame frame;
 	enum can_state state;
@@ -1161,7 +1161,7 @@ ZTEST_USER(can_api, test_filters_preserved_through_bitrate_change)
 /**
  * @brief Test that CAN RX filters can be added while CAN controller is stopped.
  */
-ZTEST_USER(can_api, test_filters_added_while_stopped)
+ZTEST_USER(can_classic, test_filters_added_while_stopped)
 {
 	struct can_frame frame;
 	int filter_id;
@@ -1187,7 +1187,7 @@ ZTEST_USER(can_api, test_filters_added_while_stopped)
 /**
  * @brief Test stopping is not allowed while stopped.
  */
-ZTEST_USER(can_api, test_stop_while_stopped)
+ZTEST_USER(can_classic, test_stop_while_stopped)
 {
 	int err;
 
@@ -1205,7 +1205,7 @@ ZTEST_USER(can_api, test_stop_while_stopped)
 /**
  * @brief Test starting is not allowed while started.
  */
-ZTEST_USER(can_api, test_start_while_started)
+ZTEST_USER(can_classic, test_start_while_started)
 {
 	int err;
 
@@ -1217,7 +1217,7 @@ ZTEST_USER(can_api, test_start_while_started)
 /**
  * @brief Test recover is not allowed while started.
  */
-ZTEST_USER(can_api, test_recover_while_stopped)
+ZTEST_USER(can_classic, test_recover_while_stopped)
 {
 	int err;
 
@@ -1235,7 +1235,7 @@ ZTEST_USER(can_api, test_recover_while_stopped)
 /**
  * @brief Test sending is not allowed while stopped.
  */
-ZTEST_USER(can_api, test_send_while_stopped)
+ZTEST_USER(can_classic, test_send_while_stopped)
 {
 	int err;
 
@@ -1253,7 +1253,7 @@ ZTEST_USER(can_api, test_send_while_stopped)
 /**
  * @brief Test setting bitrate is not allowed while started.
  */
-ZTEST_USER(can_api, test_set_bitrate_while_started)
+ZTEST_USER(can_classic, test_set_bitrate_while_started)
 {
 	int err;
 
@@ -1265,7 +1265,7 @@ ZTEST_USER(can_api, test_set_bitrate_while_started)
 /**
  * @brief Test setting timing is not allowed while started.
  */
-ZTEST_USER(can_api, test_set_timing_while_started)
+ZTEST_USER(can_classic, test_set_timing_while_started)
 {
 	struct can_timing timing;
 	int err;
@@ -1283,7 +1283,7 @@ ZTEST_USER(can_api, test_set_timing_while_started)
 /**
  * @brief Test setting mode is not allowed while started.
  */
-ZTEST_USER(can_api, test_set_mode_while_started)
+ZTEST_USER(can_classic, test_set_mode_while_started)
 {
 	int err;
 
@@ -1292,7 +1292,7 @@ ZTEST_USER(can_api, test_set_mode_while_started)
 	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
 }
 
-void *can_api_setup(void)
+void *can_classic_setup(void)
 {
 	int err;
 
@@ -1304,6 +1304,8 @@ void *can_api_setup(void)
 
 	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
+	(void)can_stop(can_dev);
+
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback mode (err %d)", err);
 
@@ -1313,4 +1315,4 @@ void *can_api_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(can_api, NULL, can_api_setup, NULL, NULL, NULL);
+ZTEST_SUITE(can_classic, NULL, can_classic_setup, NULL, NULL, NULL);
