@@ -651,7 +651,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 		}
 
 		switch (argv[i][1]) {
-		case 'S':
+		case 'S': {
 			int tos = parse_arg(&i, argc, argv);
 
 			if (tos < 0 || tos > UINT8_MAX) {
@@ -663,6 +663,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			param.options.tos = tos;
 			opt_cnt += 2;
 			break;
+		}
 
 		case 'a':
 			async = true;
@@ -813,7 +814,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 		}
 
 		switch (argv[i][1]) {
-		case 'S':
+		case 'S': {
 			int tos = parse_arg(&i, argc, argv);
 
 			if (tos < 0 || tos > UINT8_MAX) {
@@ -825,6 +826,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			param.options.tos = tos;
 			opt_cnt += 2;
 			break;
+		}
 
 		case 'a':
 			async = true;
