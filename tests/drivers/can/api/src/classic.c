@@ -8,255 +8,14 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/ztest.h>
 
+#include "common.h"
+
 /**
  * @addtogroup t_can_driver
  * @{
  * @defgroup t_can_classic test_can_classic
  * @}
  */
-
-/**
- * Test bitrates in bits/second.
- */
-#define TEST_BITRATE_1 125000
-#define TEST_BITRATE_2 250000
-
-/**
- * Test sample points in per mille.
- */
-#define TEST_SAMPLE_POINT 875
-
-/**
- * @brief Test timeouts.
- */
-#define TEST_SEND_TIMEOUT    K_MSEC(100)
-#define TEST_RECEIVE_TIMEOUT K_MSEC(100)
-#define TEST_RECOVER_TIMEOUT K_MSEC(100)
-
-/**
- * @brief Standard (11-bit) CAN IDs and masks used for testing.
- */
-#define TEST_CAN_STD_ID_1      0x555
-#define TEST_CAN_STD_ID_2      0x556
-#define TEST_CAN_STD_MASK_ID_1 0x55A
-#define TEST_CAN_STD_MASK_ID_2 0x56A
-#define TEST_CAN_STD_MASK      0x7F0
-#define TEST_CAN_SOME_STD_ID   0x123
-
-/**
- * @brief Extended (29-bit) CAN IDs and masks used for testing.
- */
-#define TEST_CAN_EXT_ID_1      0x15555555
-#define TEST_CAN_EXT_ID_2      0x15555556
-#define TEST_CAN_EXT_MASK_ID_1 0x1555555A
-#define TEST_CAN_EXT_MASK_ID_2 0x1555556A
-#define TEST_CAN_EXT_MASK      0x1FFFFFF0
-
-/**
- * @brief Global variables.
- */
-static ZTEST_DMEM const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
-static struct k_sem rx_callback_sem;
-static struct k_sem tx_callback_sem;
-
-CAN_MSGQ_DEFINE(can_msgq, 5);
-
-/**
- * @brief Standard (11-bit) CAN ID frame 1.
- */
-const struct can_frame test_std_frame_1 = {
-	.flags   = 0,
-	.id      = TEST_CAN_STD_ID_1,
-	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
-};
-
-/**
- * @brief Standard (11-bit) CAN ID frame 2.
- */
-const struct can_frame test_std_frame_2 = {
-	.flags   = 0,
-	.id      = TEST_CAN_STD_ID_2,
-	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
-};
-
-/**
- * @brief Extended (29-bit) CAN ID frame 1.
- */
-const struct can_frame test_ext_frame_1 = {
-	.flags   = CAN_FRAME_IDE,
-	.id      = TEST_CAN_EXT_ID_1,
-	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
-};
-
-/**
- * @brief Extended (29-bit) CAN ID frame 1.
- */
-const struct can_frame test_ext_frame_2 = {
-	.flags   = CAN_FRAME_IDE,
-	.id      = TEST_CAN_EXT_ID_2,
-	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
-};
-
-/**
- * @brief Standard (11-bit) CAN ID RTR frame 1.
- */
-const struct can_frame test_std_rtr_frame_1 = {
-	.flags   = CAN_FRAME_RTR,
-	.id      = TEST_CAN_STD_ID_1,
-	.dlc     = 0,
-	.data    = {0}
-};
-
-/**
- * @brief Extended (29-bit) CAN ID RTR frame 1.
- */
-const struct can_frame test_ext_rtr_frame_1 = {
-	.flags   = CAN_FRAME_IDE | CAN_FILTER_RTR,
-	.id      = TEST_CAN_EXT_ID_1,
-	.dlc     = 0,
-	.data    = {0}
-};
-
-/**
- * @brief Standard (11-bit) CAN ID FD format frame 1.
- */
-const struct can_frame test_std_fdf_frame_1 = {
-	.flags   = CAN_FRAME_FDF,
-	.id      = TEST_CAN_STD_ID_1,
-	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
-};
-
-/**
- * @brief Standard (11-bit) CAN ID filter 1. This filter matches
- * ``test_std_frame_1``.
- */
-const struct can_filter test_std_filter_1 = {
-	.flags = CAN_FILTER_DATA,
-	.id = TEST_CAN_STD_ID_1,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
- * @brief Standard (11-bit) CAN ID filter 2. This filter matches
- * ``test_std_frame_2``.
- */
-const struct can_filter test_std_filter_2 = {
-	.flags = CAN_FILTER_DATA,
-	.id = TEST_CAN_STD_ID_2,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
- * @brief Standard (11-bit) CAN ID masked filter 1. This filter matches
- * ``test_std_frame_1``.
- */
-const struct can_filter test_std_masked_filter_1 = {
-	.flags = CAN_FILTER_DATA,
-	.id = TEST_CAN_STD_MASK_ID_1,
-	.mask = TEST_CAN_STD_MASK
-};
-
-/**
- * @brief Standard (11-bit) CAN ID masked filter 2. This filter matches
- * ``test_std_frame_2``.
- */
-const struct can_filter test_std_masked_filter_2 = {
-	.flags = CAN_FILTER_DATA,
-	.id = TEST_CAN_STD_MASK_ID_2,
-	.mask = TEST_CAN_STD_MASK
-};
-
-/**
- * @brief Extended (29-bit) CAN ID filter 1. This filter matches
- * ``test_ext_frame_1``.
- */
-const struct can_filter test_ext_filter_1 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
-	.id = TEST_CAN_EXT_ID_1,
-	.mask = CAN_EXT_ID_MASK
-};
-
-/**
- * @brief Extended (29-bit) CAN ID filter 2. This filter matches
- * ``test_ext_frame_2``.
- */
-const struct can_filter test_ext_filter_2 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
-	.id = TEST_CAN_EXT_ID_2,
-	.mask = CAN_EXT_ID_MASK
-};
-
-/**
- * @brief Extended (29-bit) CAN ID masked filter 1. This filter matches
- * ``test_ext_frame_1``.
- */
-const struct can_filter test_ext_masked_filter_1 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
-	.id = TEST_CAN_EXT_MASK_ID_1,
-	.mask = TEST_CAN_EXT_MASK
-};
-
-/**
- * @brief Extended (29-bit) CAN ID masked filter 2. This filter matches
- * ``test_ext_frame_2``.
- */
-const struct can_filter test_ext_masked_filter_2 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
-	.id = TEST_CAN_EXT_ID_1,
-	.mask = TEST_CAN_EXT_MASK
-};
-
-/**
- * @brief Standard (11-bit) CAN ID RTR filter 1. This filter matches
- * ``test_std_rtr_frame_1``.
- */
-const struct can_filter test_std_rtr_filter_1 = {
-	.flags = CAN_FILTER_RTR,
-	.id = TEST_CAN_STD_ID_1,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
- * @brief Extended (29-bit) CAN ID RTR filter 1. This filter matches
- * ``test_ext_rtr_frame_1``.
- */
-const struct can_filter test_ext_rtr_filter_1 = {
-	.flags = CAN_FILTER_RTR | CAN_FILTER_IDE,
-	.id = TEST_CAN_EXT_ID_1,
-	.mask = CAN_EXT_ID_MASK
-};
-
-/**
- * @brief Standard (11-bit) CAN ID filter. This filter matches
- * ``TEST_CAN_SOME_STD_ID``.
- */
-const struct can_filter test_std_some_filter = {
-	.flags = CAN_FILTER_DATA,
-	.id = TEST_CAN_SOME_STD_ID,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
- * @brief Assert that two CAN frames are equal given a CAN ID mask.
- *
- * @param frame1  First CAN frame.
- * @param frame2  Second CAN frame.
- * @param id_mask CAN ID mask.
- */
-static inline void assert_frame_equal(const struct can_frame *frame1,
-				      const struct can_frame *frame2,
-				      uint32_t id_mask)
-{
-	zassert_equal(frame1->flags, frame2->flags, "Flags do not match");
-	zassert_equal(frame1->id | id_mask, frame2->id | id_mask, "ID does not match");
-	zassert_equal(frame1->dlc, frame2->dlc, "DLC does not match");
-	zassert_mem_equal(frame1->data, frame2->data, frame1->dlc, "Received data differ");
-}
 
 /**
  * @brief Standard (11-bit) CAN ID transmit callback 1.
@@ -1030,9 +789,14 @@ ZTEST_USER(can_classic, test_send_invalid_dlc)
  */
 ZTEST_USER(can_classic, test_send_fd_format)
 {
+	struct can_frame frame = {0};
 	int err;
 
-	err = can_send(can_dev, &test_std_fdf_frame_1, TEST_SEND_TIMEOUT, NULL, NULL);
+	frame.id = TEST_CAN_STD_ID_1;
+	frame.dlc = 0;
+	frame.flags = CAN_FRAME_FDF;
+
+	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
 	zassert_equal(err, -ENOTSUP, "sent a CAN-FD format frame in non-FD mode");
 }
 
