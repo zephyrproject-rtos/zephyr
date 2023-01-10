@@ -3,10 +3,19 @@
 Devicetree bindings syntax
 ##########################
 
-Zephyr bindings files are YAML files. The top-level value in the file is a
-mapping. A :ref:`simple example <dt-bindings-simple-example>` is given above.
+This page documents the syntax of Zephyr's bindings format. Zephyr bindings
+files are YAML files. A :ref:`simple example <dt-bindings-simple-example>` was
+given in the introduction page.
 
-The top-level keys in the mapping look like this:
+.. contents:: Contents
+   :local:
+   :depth: 3
+
+Top level keys
+**************
+
+The top level of a bindings file maps keys to values. The top-level keys look
+like this:
 
 .. code-block:: yaml
 
@@ -22,7 +31,7 @@ The top-level keys in the mapping look like this:
    # You can include definitions from other bindings using this syntax:
    include: other.yaml
 
-   # Used to match nodes to this binding as discussed above:
+   # Used to match nodes to this binding:
    compatible: "manufacturer,foo-device"
 
    properties:
@@ -47,20 +56,7 @@ The top-level keys in the mapping look like this:
      # "Specifier" cell names for the 'foo' domain go here; example 'foo'
      # values are 'gpio', 'pwm', and 'dma'. See below for more information.
 
-The following sections describe these keys in more detail:
-
-- :ref:`dt-bindings-description`
-- :ref:`dt-bindings-compatible`
-- :ref:`dt-bindings-properties`
-- :ref:`dt-bindings-child`
-- :ref:`dt-bindings-bus`
-- :ref:`dt-bindings-on-bus`
-- :ref:`dt-bindings-cells`
-- :ref:`dt-bindings-include`
-
-The ``include:`` key usually appears early in the binding file, but it is
-documented last here because you need to know how the other keys work before
-understanding ``include:``.
+These keys are explained in the following sections.
 
 .. _dt-bindings-description:
 
@@ -75,8 +71,8 @@ datasheets or example nodes or properties as well.
 Compatible
 **********
 
-This key is used to match nodes to this binding as described above.
-It should look like this in a binding file:
+This key is used to match nodes to this binding as described in
+:ref:`dt-binding-compat`. It should look like this in a binding file:
 
 .. code-block:: YAML
 
@@ -115,17 +111,14 @@ vendor. In these cases, there is no vendor prefix. One example is the
 :dtcompatible:`gpio-leds` compatible which is commonly used to describe board
 LEDs connected to GPIOs.
 
-If more than one binding for a compatible is found, an error is raised.
-
 .. _dt-bindings-properties:
 
 Properties
 **********
 
-The ``properties:`` key describes the properties that nodes which match the
-binding can contain.
-
-For example, a binding for a UART peripheral might look something like this:
+The ``properties:`` key describes properties that nodes which match the binding
+contain. For example, a binding for a UART peripheral might look something like
+this:
 
 .. code-block:: YAML
 
@@ -141,22 +134,42 @@ For example, a binding for a UART peripheral might look something like this:
        description: current baud rate
        required: true
 
-The properties in the following node would be validated by the above binding:
+In this example, a node with compatible ``"manufacturer,serial"`` must contain
+a node named ``current-speed``. The property's value must be a single integer.
+Similarly, the node must contain a ``reg`` property.
 
-.. code-block:: devicetree
+The build system uses bindings to generate C macros for devicetree properties
+that appear in DTS files. You can read more about how to get property values in
+source code from these macros in :ref:`dt-from-c`. Generally speaking, the
+build system only generates macros for properties listed in the ``properties:``
+key for the matching binding. Properties not mentioned in the binding are
+generally ignored by the build system.
 
-   my-serial@deadbeef {
-   	compatible = "manufacturer,serial";
-   	reg = <0xdeadbeef 0x1000>;
-   	current-speed = <115200>;
-   };
+The one exception is that the build system will always generate macros for
+standard properties, like :ref:`reg <dt-important-props>`, whose meaning is
+defined by the devicetree specification. This happens regardless of whether the
+node has a matching binding or not.
 
-This is used to check that required properties appear, and to control the
-format of output generated for them.
+Property entry syntax
+=====================
 
-Except for some special properties, like ``reg``, whose meaning is defined by
-the devicetree specification itself, only properties listed in the
-``properties:`` key will have generated macros.
+Property entries in ``properties:`` are written in this syntax:
+
+.. code-block:: none
+
+   <property name>:
+     required: <true | false>
+     type: <string | int | boolean | array | uint8-array | string-array |
+            phandle | phandles | phandle-array | path | compound>
+     deprecated: <true | false>
+     default: <default>
+     description: <description of the property>
+     enum:
+       - <item1>
+       - <item2>
+       ...
+       - <itemN>
+     const: <string | int | array | uint8-array | string-array>
 
 .. _dt-bindings-example-properties:
 
@@ -229,40 +242,18 @@ Here are some more examples.
            type: uint8-array
            default: [0x12, 0x34] # Same as 'uint8-array-with-default = [12 34]'
 
-Property entry syntax
-=====================
+required
+========
 
-As shown by the above examples, each property entry in a binding looks like
-this:
+Adding ``required: true`` to a property definition will fail the build if a
+node matches the binding, but does not contain the property.
 
-.. code-block:: none
-
-   <property name>:
-     required: <true | false>
-     type: <string | int | boolean | array | uint8-array | string-array |
-            phandle | phandles | phandle-array | path | compound>
-     deprecated: <true | false>
-     default: <default>
-     description: <description of the property>
-     enum:
-       - <item1>
-       - <item2>
-       ...
-       - <itemN>
-     const: <string | int | array | uint8-array | string-array>
-
-Required properties
-===================
-
-If a node matches a binding but is missing any property which the binding
-defines with ``required: true``, the build fails.
-
-Note: A property is implicitly optional unless ``required: true`` is
-specified. Using ``required: false`` is therefore redundant and strongly
+The default setting is ``required: false``; that is, properties are optional by
+default. Using ``required: false`` is therefore redundant and strongly
 discouraged.
 
-Property types
-==============
+type
+====
 
 The type of a property constrains its values.
 The following types are available. See :ref:`dt-writing-property-values`
@@ -321,8 +312,8 @@ for more details about writing values of each type in a DTS file.
      - a catch-all for more complex types (no macros will be generated)
      - ``foo = <&label>, [01 02];``
 
-Deprecated properties
-=====================
+deprecated
+==========
 
 A property with ``deprecated: true`` indicates to both the user and the tooling
 that the property is meant to be phased out.
@@ -331,10 +322,13 @@ The tooling will report a warning if the devicetree includes the property that
 is flagged as deprecated. (This warning is upgraded to an error in the
 :ref:`twister_script` for upstream pull requests.)
 
+The default setting is ``deprecated: false``. Using ``deprecated: false`` is
+therefore redundant and strongly discouraged.
+
 .. _dt-bindings-default:
 
-Default values for properties
-=============================
+default
+=======
 
 The optional ``default:`` setting gives a value that will be used if the
 property is missing from the devicetree node.
@@ -358,16 +352,17 @@ For rules related to ``default`` in upstream Zephyr bindings, see
 :ref:`dt-bindings-default-rules`.
 
 See :ref:`dt-bindings-example-properties` for examples. Putting ``default:`` on
-any property type besides those used in the examples will raise an error.
+any property type besides those used in :ref:`dt-bindings-example-properties`
+will raise an error.
 
-Enum values
-===========
+enum
+====
 
 The ``enum:`` line is followed by a list of values the property may contain. If
 a property value in DTS is not in the ``enum:`` list in the binding, an error
 is raised. See :ref:`dt-bindings-example-properties` for examples.
 
-Const
+const
 =====
 
 This specifies a constant value the property must take. It is mainly useful for
