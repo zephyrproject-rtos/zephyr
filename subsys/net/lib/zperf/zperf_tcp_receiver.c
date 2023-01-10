@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,14 +53,14 @@ static bool tcp_server_stop;
 static uint16_t tcp_server_port;
 static K_SEM_DEFINE(tcp_server_run, 0, 1);
 
-static void tcp_received(int sock, size_t datalen)
+static void tcp_received(const struct sockaddr *addr, size_t datalen)
 {
 	struct session *session;
 	int64_t time;
 
 	time = k_uptime_ticks();
 
-	session = get_tcp_session(sock);
+	session = get_session(addr, SESSION_TCP);
 	if (!session) {
 		NET_ERR("Cannot get a session!");
 		return;
@@ -233,6 +234,8 @@ static void tcp_server_session(void)
 	NET_INFO("Listening on port %d", tcp_server_port);
 
 	while (true) {
+		struct sockaddr addr_ipv4, addr_ipv6;
+
 		ret = zsock_poll(fds, ARRAY_SIZE(fds), POLL_TIMEOUT_MS);
 		if (ret < 0) {
 			NET_ERR("TCP receiver poll error (%d)", errno);
@@ -248,8 +251,8 @@ static void tcp_server_session(void)
 		}
 
 		for (int i = 0; i < ARRAY_SIZE(fds); i++) {
-			struct sockaddr addr;
-			socklen_t addrlen = sizeof(addr);
+			struct sockaddr *addr = &addr_ipv6;
+			socklen_t addrlen = sizeof(struct sockaddr);
 
 			if ((fds[i].revents & ZSOCK_POLLERR) ||
 			    (fds[i].revents & ZSOCK_POLLNVAL)) {
@@ -264,9 +267,10 @@ static void tcp_server_session(void)
 
 			switch (i) {
 			case SOCK_ID_IPV4_LISTEN:
+				addr = &addr_ipv4;
+				__fallthrough;
 			case SOCK_ID_IPV6_LISTEN:{
-				int sock = zsock_accept(fds[i].fd, &addr,
-							&addrlen);
+				int sock = zsock_accept(fds[i].fd, addr, &addrlen);
 
 				if (sock < 0) {
 					NET_ERR("TCP receiver IPv%d accept error",
@@ -292,6 +296,8 @@ static void tcp_server_session(void)
 			}
 
 			case SOCK_ID_IPV4_DATA:
+				addr = &addr_ipv4;
+				__fallthrough;
 			case SOCK_ID_IPV6_DATA:
 				ret = zsock_recv(fds[i].fd, buf, sizeof(buf), 0);
 				if (ret < 0) {
@@ -301,7 +307,7 @@ static void tcp_server_session(void)
 					goto error;
 				}
 
-				tcp_received(fds[i].fd, ret);
+				tcp_received(addr, ret);
 
 				if (ret == 0) {
 					zsock_close(fds[i].fd);
