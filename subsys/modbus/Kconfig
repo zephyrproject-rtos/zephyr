@@ -47,6 +47,29 @@ config MODBUS_SERIAL
 	help
 	  Enable Modbus over serial line support.
 
+choice
+
+	prompt "Supported serial drivers"
+	default MODBUS_SERIAL_IRQ
+	help
+	  Specify which serial driver to be used.
+
+config MODBUS_SERIAL_IRQ
+	bool "Modbus over serial line using IRQ uart driver"
+	depends on SERIAL && SERIAL_HAS_DRIVER
+	depends on DT_HAS_ZEPHYR_MODBUS_SERIAL_ENABLED
+	help
+	  Enable Modbus over serial line support using IRQ method.
+
+config MODBUS_SERIAL_ASYNC
+	bool "Modbus over serial line using Async uart driver"
+	depends on SERIAL && SERIAL_HAS_DRIVER && UART_ASYNC_API
+	depends on DT_HAS_ZEPHYR_MODBUS_SERIAL_ENABLED
+	help
+	  Enable Modbus over serial line support using ASYNC method.
+
+endchoice
+
 config MODBUS_ASCII_MODE
 	depends on MODBUS_SERIAL
 	bool "Modbus transmission mode ASCII"

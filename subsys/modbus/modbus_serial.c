@@ -37,14 +37,31 @@ static void modbus_serial_tx_on(struct modbus_context *ctx)
 		gpio_pin_set(cfg->de->port, cfg->de->pin, 1);
 	}
 
+#if defined CONFIG_MODBUS_SERIAL_IRQ
 	uart_irq_tx_enable(cfg->dev);
+#endif
+
+#if defined CONFIG_MODBUS_SERIAL_ASYNC
+	int ret;
+	uint8_t *buf = cfg->uart_buf;
+	ret = uart_tx(cfg->dev, buf, cfg->uart_buf_ctr, SYS_FOREVER_US);
+
+	if (ret) {
+		LOG_ERR("uart_tx() failed, err %d", ret);
+	}
+	LOG_HEXDUMP_DBG(cfg->uart_buf_ptr, cfg->uart_buf_ctr, "TX data sent:");
+	cfg->uart_buf_ptr += cfg->uart_buf_ctr;
+	cfg->uart_buf_ctr = 0;
+#endif
 }
 
 static void modbus_serial_tx_off(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 
+#if defined CONFIG_MODBUS_SERIAL_IRQ
 	uart_irq_tx_disable(cfg->dev);
+#endif
 	if (cfg->de != NULL) {
 		gpio_pin_set(cfg->de->port, cfg->de->pin, 0);
 	}
@@ -58,14 +75,26 @@ static void modbus_serial_rx_on(struct modbus_context *ctx)
 		gpio_pin_set(cfg->re->port, cfg->re->pin, 1);
 	}
 
+#if defined CONFIG_MODBUS_SERIAL_IRQ
 	uart_irq_rx_enable(cfg->dev);
+#endif
+
+#if defined CONFIG_MODBUS_SERIAL_ASYNC
+	uart_rx_enable(cfg->dev, cfg->uart_buf, sizeof(cfg->uart_buf), cfg->rtu_timeout);
+#endif
 }
 
 static void modbus_serial_rx_off(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 
+#if defined CONFIG_MODBUS_SERIAL_IRQ
 	uart_irq_rx_disable(cfg->dev);
+#endif
+
+#if defined CONFIG_MODBUS_SERIAL_ASYNC
+	uart_rx_disable(cfg->dev);
+#endif
 	if (cfg->re != NULL) {
 		gpio_pin_set(cfg->re->port, cfg->re->pin, 0);
 	}
@@ -263,7 +292,6 @@ static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 	crc_idx = cfg->uart_buf_ctr - sizeof(uint16_t);
 
 	memcpy(ctx->rx_adu.data, data_ptr, ctx->rx_adu.length);
-
 	ctx->rx_adu.crc = sys_get_le16(&cfg->uart_buf[crc_idx]);
 	/* Calculate CRC over address, function code, and payload */
 	calc_crc = crc16_ansi(&cfg->uart_buf[0],
@@ -304,6 +332,7 @@ static void rtu_tx_adu(struct modbus_context *ctx)
 	modbus_serial_tx_on(ctx);
 }
 
+#if defined CONFIG_MODBUS_SERIAL_IRQ
 /*
  * A byte has been received from a serial port. We just store it in the buffer
  * for processing when a complete packet has been received.
@@ -416,6 +445,8 @@ static void rtu_tmr_handler(struct k_timer *t_id)
 	k_work_submit(&ctx->server_work);
 }
 
+#endif
+
 static int configure_gpio(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
@@ -499,6 +530,55 @@ int modbus_serial_tx_adu(struct modbus_context *ctx)
 	return -ENOTSUP;
 }
 
+#if defined CONFIG_MODBUS_SERIAL_ASYNC
+static void async_callback(const struct device *dev,
+				   struct uart_event *evt, void *user_data)
+{
+	struct modbus_context *ctx = (struct modbus_context *)user_data;
+	struct modbus_serial_config *cfg;
+
+	if (ctx == NULL) {
+		LOG_ERR("Modbus hardware is not properly initialized");
+		return;
+	}
+	cfg = ctx->cfg;
+
+	switch (evt->type) {
+	case UART_TX_DONE:
+		LOG_DBG("UART_TX_DONE: sent %d bytes", evt->data.tx.len);
+		cfg->uart_buf_ptr = &cfg->uart_buf[0];
+		modbus_serial_tx_off(ctx);
+		modbus_serial_rx_on(ctx);
+		break;
+	case UART_TX_ABORTED:
+		LOG_DBG("Tx aborted");
+		break;
+	case UART_RX_RDY:
+		cfg->uart_buf_ctr += evt->data.rx.len;
+		k_work_submit(&ctx->server_work);
+		cfg->uart_buf_ptr = &cfg->uart_buf[0];
+		LOG_DBG("Received data offset %d bytes", evt->data.rx.offset);
+		LOG_DBG("Received data length %d bytes", evt->data.rx.len);
+		LOG_HEXDUMP_DBG(cfg->uart_buf_ptr, cfg->uart_buf_ctr, "RX Data dump :");
+		break;
+	case UART_RX_BUF_REQUEST:
+		LOG_DBG("UART_RX_BUF_REQUEST");
+		break;
+	case UART_RX_BUF_RELEASED:
+		LOG_DBG("UART_RX_BUF_RELEASED");
+		break;
+	case UART_RX_DISABLED:
+		LOG_DBG("UART_RX_DISABLED");
+		break;
+	case UART_RX_STOPPED:
+		LOG_DBG("UART_RX_STOPPED: stop reason %d", evt->data.rx_stop.reason);
+		break;
+	default:
+		break;
+	}
+}
+#endif
+
 int modbus_serial_init(struct modbus_context *ctx,
 		       struct modbus_iface_param param)
 {
@@ -568,7 +648,7 @@ int modbus_serial_init(struct modbus_context *ctx,
 		cfg->rtu_timeout = (numof_bits * if_delay_max) /
 				   param.serial.baud;
 	} else {
-		cfg->rtu_timeout = (numof_bits * if_delay_max) / 38400;
+		cfg->rtu_timeout = (numof_bits * if_delay_max) / param.serial.baud;
 	}
 
 	if (configure_gpio(ctx) != 0) {
@@ -578,9 +658,19 @@ int modbus_serial_init(struct modbus_context *ctx,
 	cfg->uart_buf_ctr = 0;
 	cfg->uart_buf_ptr = &cfg->uart_buf[0];
 
+#if defined CONFIG_MODBUS_SERIAL_IRQ
 	uart_irq_callback_user_data_set(cfg->dev, uart_cb_handler, ctx);
 	k_timer_init(&cfg->rtu_timer, rtu_tmr_handler, NULL);
 	k_timer_user_data_set(&cfg->rtu_timer, ctx);
+#endif
+
+#if defined CONFIG_MODBUS_SERIAL_ASYNC
+	int ret = uart_callback_set(cfg->dev, async_callback, ctx);
+
+	if (ret < 0) {
+		LOG_ERR("uart callback setup failed");
+	}
+#endif
 
 	modbus_serial_rx_on(ctx);
 	LOG_INF("RTU timeout %u us", cfg->rtu_timeout);
