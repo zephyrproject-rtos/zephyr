@@ -232,10 +232,12 @@ static int stm32_ltdc_init(const struct device *dev)
 	}
 
 	/* Configure DT provided pins */
-	err = pinctrl_apply_state(config->pctrl, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		LOG_ERR("LTDC pinctrl setup failed");
-		return err;
+	if (!IS_ENABLED(CONFIG_MIPI_DSI)) {
+		err = pinctrl_apply_state(config->pctrl, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			LOG_ERR("LTDC pinctrl setup failed");
+			return err;
+		}
 	}
 
 	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
@@ -385,8 +387,16 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 #define FRAME_BUFFER_SECTION
 #endif /* DT_INST_NODE_HAS_PROP(0, ext_sdram) */
 
+#ifdef CONFIG_MIPI_DSI
+#define STM32_LTDC_DEVICE_PINCTRL_INIT(n)
+#define STM32_LTDC_DEVICE_PINCTRL_GET(n) (NULL)
+#else
+#define STM32_LTDC_DEVICE_PINCTRL_INIT(n) PINCTRL_DT_INST_DEFINE(n)
+#define STM32_LTDC_DEVICE_PINCTRL_GET(n) PINCTRL_DT_INST_DEV_CONFIG_GET(n)
+#endif
+
 #define STM32_LTDC_DEVICE(inst)									\
-	PINCTRL_DT_INST_DEFINE(inst);								\
+	STM32_LTDC_DEVICE_PINCTRL_INIT(inst);							\
 	PM_DEVICE_DT_INST_DEFINE(inst, stm32_ltdc_pm_action);					\
 	/* frame buffer aligned to cache line width for optimal cache flushing */		\
 	FRAME_BUFFER_SECTION static uint8_t __aligned(32)					\
@@ -462,7 +472,7 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 			.enr = DT_INST_CLOCKS_CELL(inst, bits),					\
 			.bus = DT_INST_CLOCKS_CELL(inst, bus)					\
 		},										\
-		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
+		.pctrl = STM32_LTDC_DEVICE_PINCTRL_GET(inst),					\
 	};											\
 	DEVICE_DT_INST_DEFINE(inst,								\
 			&stm32_ltdc_init,							\
