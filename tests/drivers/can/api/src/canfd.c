@@ -8,110 +8,14 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/ztest.h>
 
+#include "common.h"
+
 /**
  * @addtogroup t_can_driver
  * @{
  * @defgroup t_can_canfd test_can_canfd
  * @}
  */
-
-/**
- * Test bitrates in bits/second.
- */
-#define TEST_BITRATE 1000000
-
-/**
- * Test sample points in per mille.
- */
-#define TEST_SAMPLE_POINT 750
-
-
-/**
- * @brief Test timeouts.
- */
-#define TEST_SEND_TIMEOUT    K_MSEC(100)
-#define TEST_RECEIVE_TIMEOUT K_MSEC(100)
-
-/**
- * @brief Standard (11-bit) CAN IDs used for testing.
- */
-#define TEST_CAN_STD_ID_1      0x555
-#define TEST_CAN_STD_ID_2      0x556
-
-/**
- * @brief Global variables.
- */
-static const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
-static struct k_sem rx_callback_sem;
-static struct k_sem tx_callback_sem;
-
-extern struct k_msgq can_msgq;
-
-extern const struct can_frame test_std_frame_1;
-extern const struct can_frame test_std_frame_2;
-extern const struct can_filter test_std_filter_1;
-extern const struct can_filter test_std_filter_2;
-
-/**
- * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
- */
-const struct can_frame test_std_frame_fd_1 = {
-	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
-	.id      = TEST_CAN_STD_ID_1,
-	.dlc     = 0xf,
-	.data    = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
-		    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-		    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
-		    46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-		    61, 62, 63, 64 }
-};
-
-/**
- * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
- */
-const struct can_frame test_std_frame_fd_2 = {
-	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
-	.id      = TEST_CAN_STD_ID_2,
-	.dlc     = 0xf,
-	.data    = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
-		    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-		    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
-		    46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-		    61, 62, 63, 64 }
-};
-
-/**
- * @brief Standard (11-bit) CAN-FD ID filter 1.
- */
-const struct can_filter test_std_filter_fd_1 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_FDF,
-	.id = TEST_CAN_STD_ID_1,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
- * @brief Standard (11-bit) CAN-FD ID filter 2.
- */
-const struct can_filter test_std_filter_fd_2 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_FDF,
-	.id = TEST_CAN_STD_ID_2,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
- * @brief Assert that two CAN frames are equal.
- *
- * @param frame1  First CAN frame.
- * @param frame2  Second CAN frame.
- */
-static inline void assert_frame_equal(const struct can_frame *frame1,
-				      const struct can_frame *frame2)
-{
-	zassert_equal(frame1->flags, frame2->flags, "Flags do not match");
-	zassert_equal(frame1->id, frame2->id, "ID does not match");
-	zassert_equal(frame1->dlc, frame2->dlc, "DLC does not match");
-	zassert_mem_equal(frame1->data, frame2->data, frame1->dlc, "Received data differ");
-}
 
 static void tx_std_callback_1(const struct device *dev, int error, void *user_data)
 {
@@ -137,7 +41,7 @@ static void rx_std_callback_1(const struct device *dev, struct can_frame *frame,
 {
 	struct can_filter *filter = user_data;
 
-	assert_frame_equal(frame, &test_std_frame_1);
+	assert_frame_equal(frame, &test_std_frame_1, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
 	zassert_equal_ptr(filter, &test_std_filter_1, "filter does not match");
 
@@ -148,7 +52,7 @@ static void rx_std_callback_2(const struct device *dev, struct can_frame *frame,
 {
 	struct can_filter *filter = user_data;
 
-	assert_frame_equal(frame, &test_std_frame_2);
+	assert_frame_equal(frame, &test_std_frame_2, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
 	zassert_equal_ptr(filter, &test_std_filter_2, "filter does not match");
 
@@ -160,9 +64,9 @@ static void rx_std_callback_fd_1(const struct device *dev, struct can_frame *fra
 {
 	struct can_filter *filter = user_data;
 
-	assert_frame_equal(frame, &test_std_frame_fd_1);
+	assert_frame_equal(frame, &test_std_fdf_frame_1, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
-	zassert_equal_ptr(filter, &test_std_filter_fd_1, "filter does not match");
+	zassert_equal_ptr(filter, &test_std_fdf_filter_1, "filter does not match");
 
 	k_sem_give(&rx_callback_sem);
 }
@@ -172,9 +76,9 @@ static void rx_std_callback_fd_2(const struct device *dev, struct can_frame *fra
 {
 	struct can_filter *filter = user_data;
 
-	assert_frame_equal(frame, &test_std_frame_fd_2);
+	assert_frame_equal(frame, &test_std_fdf_frame_2, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
-	zassert_equal_ptr(filter, &test_std_filter_fd_2, "filter does not match");
+	zassert_equal_ptr(filter, &test_std_fdf_filter_2, "filter does not match");
 
 	k_sem_give(&rx_callback_sem);
 }
@@ -284,7 +188,7 @@ static void send_receive(const struct can_filter *filter1,
 	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
 	zassert_equal(err, 0, "receive timeout");
 
-	assert_frame_equal(&frame_buffer, frame1);
+	assert_frame_equal(&frame_buffer, frame1, 0);
 	can_remove_rx_filter(can_dev, filter_id_1);
 
 	k_sem_reset(&tx_callback_sem);
@@ -348,8 +252,8 @@ ZTEST(canfd, test_send_receive_classic)
  */
 ZTEST(canfd, test_send_receive_fd)
 {
-	send_receive(&test_std_filter_fd_1, &test_std_filter_fd_2,
-		     &test_std_frame_fd_1, &test_std_frame_fd_2);
+	send_receive(&test_std_fdf_filter_1, &test_std_fdf_filter_2,
+		     &test_std_fdf_frame_1, &test_std_fdf_frame_2);
 }
 
 /**
@@ -357,8 +261,8 @@ ZTEST(canfd, test_send_receive_fd)
  */
 ZTEST(canfd, test_send_receive_mixed)
 {
-	send_receive(&test_std_filter_fd_1, &test_std_filter_2,
-		     &test_std_frame_fd_1, &test_std_frame_2);
+	send_receive(&test_std_fdf_filter_1, &test_std_filter_2,
+		     &test_std_fdf_frame_1, &test_std_frame_2);
 }
 
 /**
@@ -368,7 +272,7 @@ ZTEST_USER(canfd, test_set_bitrate_data_while_started)
 {
 	int err;
 
-	err = can_set_bitrate_data(can_dev, TEST_BITRATE);
+	err = can_set_bitrate_data(can_dev, TEST_BITRATE_3);
 	zassert_not_equal(err, 0, "changed data bitrate while started");
 	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
 }
@@ -383,7 +287,7 @@ ZTEST_USER(canfd, test_set_timing_data_while_started)
 
 	timing.sjw = CAN_SJW_NO_CHANGE;
 
-	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE, TEST_SAMPLE_POINT);
+	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE_3, TEST_SAMPLE_POINT);
 	zassert_ok(err, "failed to calculate data timing (err %d)", err);
 
 	err = can_set_timing(can_dev, &timing);
