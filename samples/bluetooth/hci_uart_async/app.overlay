@@ -1,0 +1,10 @@
+/ {
+        chosen {
+                zephyr,bt-c2h-uart = &uart0;
+        };
+};
+
+&uart0 {
+	current-speed = <1000000>;
+	hw-flow-control;
+};

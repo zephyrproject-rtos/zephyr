@@ -1,0 +1,6 @@
+tests:
+  bluetooth.samples.hci_uart_async:
+    tags: bluetooth uart
+    harness: ztest
+    platform_allow:
+      - native_posix
