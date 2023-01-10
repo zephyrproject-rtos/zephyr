@@ -161,6 +161,32 @@ enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 	return NET_DROP;
 }
 
+static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
+{
+	struct in_addr netmask = { { { 255, 255, 0, 0 } } };
+
+	if (ipv4auto->announce_cnt <=
+		(IPV4_AUTOCONF_ANNOUNCE_NUM - 1)) {
+		net_ipaddr_copy(&ipv4auto->current_ip,
+				&ipv4auto->requested_ip);
+		ipv4_autoconf_send_announcement(ipv4auto);
+		return;
+	}
+
+	/* Success, add new IPv4 address. */
+	if (!net_if_ipv4_addr_add(ipv4auto->iface,
+					&ipv4auto->requested_ip,
+					NET_ADDR_AUTOCONF, 0)) {
+		NET_DBG("Failed to add IPv4 addr to iface %p",
+			ipv4auto->iface);
+		return;
+	}
+
+	net_if_ipv4_set_netmask(ipv4auto->iface, &netmask);
+
+	ipv4auto->state = NET_IPV4_AUTOCONF_ASSIGNED;
+}
+
 static void ipv4_autoconf_send(struct net_if_ipv4_autoconf *ipv4auto)
 {
 	switch (ipv4auto->state) {
@@ -197,25 +223,9 @@ static void ipv4_autoconf_send(struct net_if_ipv4_autoconf *ipv4auto)
 		}
 		__fallthrough;
 	case NET_IPV4_AUTOCONF_ANNOUNCE:
-		if (ipv4auto->announce_cnt <=
-		    (IPV4_AUTOCONF_ANNOUNCE_NUM - 1)) {
-			net_ipaddr_copy(&ipv4auto->current_ip,
-					&ipv4auto->requested_ip);
-			ipv4_autoconf_send_announcement(ipv4auto);
-			break;
-		}
-
-		/* success, add new IPv4 address */
-		if (!net_if_ipv4_addr_add(ipv4auto->iface,
-					  &ipv4auto->requested_ip,
-					  NET_ADDR_AUTOCONF, 0)) {
-			NET_DBG("Failed to add IPv4 addr to iface %p",
-				ipv4auto->iface);
-			return;
-		}
-
-		ipv4auto->state = NET_IPV4_AUTOCONF_ASSIGNED;
+		ipv4_autoconf_addr_set(ipv4auto);
 		break;
+
 	default:
 		break;
 	}
