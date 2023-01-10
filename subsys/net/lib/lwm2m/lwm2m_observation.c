@@ -459,7 +459,7 @@ static void engine_observe_node_init(struct observe_node *obs, const uint8_t *to
 static void remove_observer_path_from_list(struct lwm2m_ctx *ctx, struct observe_node *obs,
 					   struct lwm2m_obj_path_list *o_p, sys_snode_t *prev_node)
 {
-	char buf[LWM2M_MAX_PATH_STR_LEN];
+	char buf[LWM2M_MAX_PATH_STR_SIZE];
 
 	LOG_DBG("Removing observer %p for path %s", obs, lwm2m_path_log_buf(buf, &o_p->path));
 	if (ctx->observe_cb) {
@@ -799,7 +799,7 @@ char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path)
 #if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
 static int engine_remove_observer_by_path(struct lwm2m_ctx *ctx, struct lwm2m_obj_path *path)
 {
-	char buf[LWM2M_MAX_PATH_STR_LEN];
+	char buf[LWM2M_MAX_PATH_STR_SIZE];
 	struct observe_node *obs;
 	struct lwm2m_obj_path_list obs_path_list_buf;
 	sys_slist_t lwm2m_path_list;
