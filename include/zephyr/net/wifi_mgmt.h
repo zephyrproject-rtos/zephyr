@@ -180,6 +180,8 @@ struct wifi_iface_status {
 	enum wifi_security_type security;
 	enum wifi_mfp_options mfp;
 	int rssi;
+	unsigned short dtim_period;
+	unsigned char beacon_interval;
 };
 
 struct wifi_ps_params {
