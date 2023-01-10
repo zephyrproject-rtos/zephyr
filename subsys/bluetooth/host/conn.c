@@ -14,6 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/__assert.h>
@@ -3068,6 +3069,19 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 	return -EINVAL;
 }
+
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+int bt_conn_auth_keypress_notify(struct bt_conn *conn,
+				 enum bt_conn_auth_keypress type)
+{
+	if (IS_ENABLED(CONFIG_BT_SMP) && conn->type == BT_CONN_TYPE_LE) {
+		return bt_smp_auth_keypress_notify(conn, type);
+	}
+
+	LOG_ERR("Not implemented for conn type %d", conn->type);
+	return -EINVAL;
+}
+#endif
 
 int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 {
