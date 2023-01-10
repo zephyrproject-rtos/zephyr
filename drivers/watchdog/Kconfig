@@ -96,6 +96,8 @@ source "drivers/watchdog/Kconfig.nxp_s32"
 
 source "drivers/watchdog/Kconfig.dw"
 
+source "drivers/watchdog/Kconfig.intel_adsp"
+
 source "drivers/watchdog/Kconfig.smartbond"
 
 source "drivers/watchdog/Kconfig.ti_tps382x"
