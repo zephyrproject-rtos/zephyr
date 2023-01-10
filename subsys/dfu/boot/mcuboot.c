@@ -18,8 +18,7 @@
 
 #include "bootutil/bootutil_public.h"
 #include <zephyr/dfu/mcuboot.h>
-
-#include "mcuboot_priv.h"
+#include <zephyr/dfu/mcuboot_partitions.h>
 
 /*
  * Helpers for image headers and trailers, as defined by mcuboot.
@@ -151,24 +150,23 @@ int mcuboot_swap_type_multi(int image_index)
 
 int mcuboot_swap_type(void)
 {
-#ifdef FLASH_AREA_IMAGE_SECONDARY
+#if ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS
 	return boot_swap_type();
 #else
 	return BOOT_SWAP_TYPE_NONE;
-#endif
-
+#endif /* !ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS */
 }
 
 int boot_request_upgrade(int permanent)
 {
-#ifdef FLASH_AREA_IMAGE_SECONDARY
+#if ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS
 	int rc;
 
 	rc = boot_set_pending(permanent);
 	if (rc) {
 		return -EFAULT;
 	}
-#endif /* FLASH_AREA_IMAGE_SECONDARY */
+#endif /* ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS */
 	return 0;
 }
 
@@ -189,7 +187,7 @@ bool boot_is_img_confirmed(void)
 	const struct flash_area *fa;
 	int rc;
 
-	rc = flash_area_open(FLASH_AREA_IMAGE_PRIMARY, &fa);
+	rc = flash_area_open(ZEPHYR_MCUBOOT_APP_0_PRIMARY_SLOT_ID, &fa);
 	if (rc) {
 		return false;
 	}
