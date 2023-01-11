@@ -3,14 +3,15 @@
 Devicetree API
 ##############
 
-This is a reference page for the ``<devicetree.h>`` API. The API is macro
+This is a reference page for the ``<zephyr/devicetree.h>`` API. The API is macro
 based. Use of these macros has no impact on scheduling. They can be used from
 any calling context and at file scope.
 
-Some of these require a special macro named ``DT_DRV_COMPAT`` to be defined
-before they can be used; these are discussed individually below. These macros
-are generally meant for use within :ref:`device drivers <device_model_api>`,
-though they can be used outside of drivers with appropriate care.
+Some of these -- the ones beginning with ``DT_INST_`` -- require a special
+macro named ``DT_DRV_COMPAT`` to be defined before they can be used; these are
+discussed individually below. These macros are generally meant for use within
+:ref:`device drivers <device_model_api>`, though they can be used outside of
+drivers with appropriate care.
 
 .. contents:: Contents
    :local:
