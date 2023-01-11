@@ -8,23 +8,25 @@ changes are expected. The following are the general design goals, along with
 specific examples about how they impact Zephyr's source code, and areas where
 more work remains to be done.
 
-Single source for all hardware information
-******************************************
+Single source for hardware information
+**************************************
 
-Zephyr shall obtain its hardware descriptions exclusively from devicetree.
+Zephyr's built-in device drivers and sample applications shall obtain
+configurable hardware descriptions from devicetree.
 
 Examples
 ========
 
 - New device drivers shall use devicetree APIs to determine which :ref:`devices
-  to create <dt-create-devices>` if possible.
+  to create <dt-create-devices>`.
 
 - In-tree sample applications shall use :ref:`aliases <dt-alias-chosen>` to
   determine which of multiple possible generic devices of a given type will be
   used in the current build. For example, the :ref:`blinky-sample` uses this to
   determine the LED to blink.
 
-- Boot-time pin muxing and pin control can be accomplished via devicetree.
+- Boot-time pin muxing and pin control for new SoCs shall be accomplished via a
+  devicetree-based pinctrl driver
 
 Example remaining work
 ======================
@@ -33,7 +35,7 @@ Example remaining work
   determine the hardware supported by a board. This should be obtained from
   devicetree instead.
 
-- Various device drivers currently use Kconfig to determine which instances of a
+- Legacy device drivers currently use Kconfig to determine which instances of a
   particular compatible are enabled. This can and should be done with devicetree
   overlays instead.
 
