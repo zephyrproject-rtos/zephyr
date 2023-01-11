@@ -878,6 +878,15 @@ config BT_MESH_FRIEND_SEG_RX
 	  many elements we can simultaneously be receiving segmented
 	  messages from when the messages are going into the Friend queue.
 
+config BT_MESH_FRIEND_ADV_LATENCY
+	int "Latency for enabling advertising"
+	default 0
+	help
+	  Latency in milliseconds that it takes to start friend advertising
+	  after requesting it. Used to tune the receive delay window to make
+	  Friend poll events more efficient by compensating for the time the
+	  non-ideal latency otherwise would add to the delay.
+
 endif # BT_MESH_FRIEND
 
 config BT_MESH_CFG_CLI
