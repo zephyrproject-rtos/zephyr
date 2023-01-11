@@ -4,22 +4,25 @@
 The ``/zephyr,user`` node
 #########################
 
-Zephyr's devicetree scripts can "infer" a binding for the special
-``/zephyr,user`` node based on the values observed in its properties.
+Zephyr's devicetree scripts handle the ``/zephyr,user`` node as a special case:
+you can put essentially arbitrary properties inside it and retrieve their
+values without having to write a binding. It is meant as a convenient container
+when only a few simple properties are needed.
 
-This node matches a binding which is dynamically created by the build system
-based on the values of its properties in the final devicetree. It does not have
-a ``compatible`` property.
+.. note::
 
-This node is meant for sample code and applications. The devicetree API
-provides it as a convenient container when only a few simple properties are
-needed, such as storing a hardware-dependent value, phandle(s), or GPIO pin.
+   This node is meant for sample code and user applications. It should not be
+   used in the upstream Zephyr source code for device drivers, subsystems, etc.
 
-For example, with this DTS fragment:
+Simple values
+*************
+
+You can store numeric or array values in ``/zephyr,user`` if you want them to
+be configurable at build time via devicetree.
+
+For example, with this devicetree overlay:
 
 .. code-block:: devicetree
-
-   #include <zephyr/dt-bindings/gpio/gpio.h>
 
    / {
 	zephyr,user {
@@ -29,14 +32,10 @@ For example, with this DTS fragment:
 		numbers = <1>, <2>, <3>;
 		string = "text";
 		strings = "a", "b", "c";
-
-		handle = <&gpio0>;
-		handles = <&gpio0>, <&gpio1>;
-		signal-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 	};
    };
 
-You can get the simple values like this:
+You can get the above property values in C/C++ code like this:
 
 .. code-block:: C
 
@@ -48,6 +47,24 @@ You can get the simple values like this:
    DT_PROP(ZEPHYR_USER_NODE, numbers) // {1, 2, 3}
    DT_PROP(ZEPHYR_USER_NODE, string)  // "text"
    DT_PROP(ZEPHYR_USER_NODE, strings) // {"a", "b", "c"}
+
+Devices
+*******
+
+You can store :ref:`phandles <dt-phandles>` in ``/zephyr,user`` if you want to
+be able to reconfigure which devices your application uses in simple cases
+using devicetree overlays.
+
+For example, with this devicetree overlay:
+
+.. code-block:: devicetree
+
+   / {
+	zephyr,user {
+		handle = <&gpio0>;
+		handles = <&gpio0>, <&gpio1>;
+        };
+   };
 
 You can convert the phandles in the ``handle`` and ``handles`` properties to
 device pointers like this:
@@ -77,8 +94,26 @@ device pointers like this:
    	DT_FOREACH_PROP_ELEM(ZEPHYR_USER_NODE, handles, PHANDLE_TO_DEVICE)
    };
 
-And you can convert the pin defined in ``signal-gpios`` to a ``struct
-gpio_dt_spec``, then use it like this:
+GPIOs
+*****
+
+The ``/zephyr,user`` node is a convenient place to store application-specific
+GPIOs that you want to be able to reconfigure with a devicetree overlay.
+
+For example, with this devicetree overlay:
+
+.. code-block:: devicetree
+
+   #include <zephyr/dt-bindings/gpio/gpio.h>
+
+   / {
+	zephyr,user {
+		signal-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+        };
+   };
+
+You can convert the pin defined in ``signal-gpios`` to a ``struct
+gpio_dt_spec`` in your source code, then use it like this:
 
 .. code-block:: C
 
