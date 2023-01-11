@@ -96,4 +96,6 @@ source "drivers/adc/Kconfig.gecko"
 
 source "drivers/adc/Kconfig.ifx_cat1"
 
+source "drivers/adc/Kconfig.smartbond"
+
 endif # ADC
