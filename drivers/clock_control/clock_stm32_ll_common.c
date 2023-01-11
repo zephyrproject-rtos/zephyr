@@ -242,6 +242,11 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
+	}
+
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
 		     STM32_CLOCK_VAL_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
 
