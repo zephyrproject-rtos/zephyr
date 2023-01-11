@@ -22,6 +22,7 @@ extern enum bst_result_t bst_result;
 static struct bt_conn *g_conn;
 
 CREATE_FLAG(flag_connected);
+CREATE_FLAG(flag_bonded);
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -56,6 +57,17 @@ static struct bt_conn_cb conn_cbs = {
 	.disconnected = disconnected,
 };
 
+static void pairing_complete_cb(struct bt_conn *conn, bool bonded)
+{
+	if (conn == g_conn && bonded) {
+		SET_FLAG(flag_bonded);
+	}
+}
+
+static struct bt_conn_auth_info_cb auto_info_cbs = {
+	.pairing_complete = pairing_complete_cb,
+};
+
 static void common_init(void)
 {
 	int err;
@@ -69,6 +81,7 @@ static void common_init(void)
 	printk("Bluetooth initialized\n");
 
 	bt_conn_cb_register(&conn_cbs);
+	bt_conn_auth_info_cb_register(&auto_info_cbs);
 }
 
 static void create_per_adv_set(struct bt_le_ext_adv **adv)
@@ -227,6 +240,42 @@ static void main_per_adv_conn_advertiser(void)
 	PASS("Periodic advertiser passed\n");
 }
 
+static void main_per_adv_conn_privacy_advertiser(void)
+{
+	struct bt_le_ext_adv *conn_adv;
+	struct bt_le_ext_adv *per_adv;
+
+	common_init();
+
+	create_conn_adv_set(&conn_adv);
+
+	start_ext_adv_set(conn_adv);
+
+	WAIT_FOR_FLAG(flag_connected);
+	WAIT_FOR_FLAG(flag_bonded);
+
+	/* Start periodic advertising after bonding so that the scanner gets
+	 * the resolved address
+	 */
+	create_per_adv_set(&per_adv);
+	start_per_adv_set(per_adv);
+	start_ext_adv_set(per_adv);
+
+	/* Advertise for a bit */
+	k_sleep(K_SECONDS(10));
+
+	stop_per_adv_set(per_adv);
+	stop_ext_adv_set(per_adv);
+	stop_ext_adv_set(conn_adv);
+
+	delete_adv_set(per_adv);
+	per_adv = NULL;
+	delete_adv_set(conn_adv);
+	conn_adv = NULL;
+
+	PASS("Periodic advertiser passed\n");
+}
+
 static const struct bst_test_instance per_adv_advertiser[] = {
 	{
 		.test_id = "per_adv_advertiser",
@@ -243,6 +292,14 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_advertiser
+	},
+	{
+		.test_id = "per_adv_conn_privacy_advertiser",
+		.test_descr = "Periodic advertising test with concurrent ACL "
+			      "with bonding and PA sync.",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = main_per_adv_conn_privacy_advertiser
 	},
 	BSTEST_END_MARKER
 };
