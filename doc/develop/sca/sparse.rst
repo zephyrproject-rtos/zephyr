@@ -19,8 +19,8 @@ Running with sparse
 *******************
 
 To run a sparse verification build :ref:`west build <west-building>` should be
-called with a ``-DSPARSE=y`` parameter, e.g.
+called with a ``-DZEPHYR_SCA_VARIANT=sparse`` parameter, e.g.
 
 .. code-block:: shell
 
-    west build -d hello -b intel_adsp_cavs25 zephyr/samples/hello_world -- -DSPARSE=y
+    west build -d hello -b intel_adsp_cavs25 zephyr/samples/hello_world -- -DZEPHYR_SCA_VARIANT=sparse
