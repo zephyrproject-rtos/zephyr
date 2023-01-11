@@ -7,6 +7,8 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/smartbond-adc.h>
+#include <zephyr/dt-bindings/pinctrl/smartbond-pinctrl.h>
 
 / {
 	chosen {
@@ -152,6 +154,24 @@
 			periph-clock-config = <0x01>;
 			interrupts = <5 0>;
 			status = "disabled";
+		};
+
+		adc: adc@50030900 {
+			compatible = "renesas,smartbond-adc";
+			reg = <0x50030900 0x1C>;
+			interrupts = <27 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+
+		sdadc: sdadc@50020800 {
+			compatible = "renesas,smartbond-sdadc";
+			reg = <0x50020800 0x1C>;
+			interrupts = <28 0>;
+			clock-freq = <2>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		trng: trng@50040c00 {
