@@ -1,6 +1,6 @@
 # LPC LPC55XXX Series
 
-# Copyright (c) 2019, NXP
+# Copyright 2019, 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -119,6 +119,14 @@ config SOC_PART_NUMBER_LPC55XXX
 
 config INIT_PLL0
 	bool "Initialize PLL0"
+
+config INIT_PLL1
+	bool "Initialize PLL1"
+	default "y"
+	depends on !SOC_LPC55S06
+	help
+	  In the LPC55XXX Family, this is currently being used to set the
+	  core clock value at it's highest frequency which clocks at 150MHz.
 
 config SECOND_CORE_MCUX
 	bool "LPC55xxx's second core"
