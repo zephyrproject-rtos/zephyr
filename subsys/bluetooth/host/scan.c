@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
 
+#include "addr_internal.h"
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "direction_internal.h"
@@ -453,10 +454,8 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	if (addr->type == BT_ADDR_LE_PUBLIC_ID ||
-	    addr->type == BT_ADDR_LE_RANDOM_ID) {
-		bt_addr_le_copy(&id_addr, addr);
-		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+	if (bt_addr_le_is_resolved(addr)) {
+		bt_addr_le_copy_resolved(&id_addr, addr);
 	} else if (addr->type == BT_HCI_PEER_ADDR_ANONYMOUS) {
 		bt_addr_le_copy(&id_addr, BT_ADDR_LE_ANY);
 	} else {
@@ -912,10 +911,8 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		return;
 	}
 
-	if (evt->adv_addr.type == BT_ADDR_LE_PUBLIC_ID ||
-	    evt->adv_addr.type == BT_ADDR_LE_RANDOM_ID) {
-		bt_addr_le_copy(&id_addr, &evt->adv_addr);
-		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+	if (bt_addr_le_is_resolved(&evt->adv_addr)) {
+		bt_addr_le_copy_resolved(&id_addr, &evt->adv_addr);
 	} else {
 		bt_addr_le_copy(&id_addr,
 				bt_lookup_id_addr(BT_ID_DEFAULT,
@@ -979,13 +976,13 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	if (atomic_test_bit(pending_per_adv_sync->flags,
 			    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
 		/* Now we know which address and SID we synchronized to. */
-		bt_addr_le_copy(&pending_per_adv_sync->addr, &id_addr);
 		pending_per_adv_sync->sid = evt->sid;
 
-		/* Translate "enhanced" identity address type to normal one */
-		if (pending_per_adv_sync->addr.type == BT_ADDR_LE_PUBLIC_ID ||
-		    pending_per_adv_sync->addr.type == BT_ADDR_LE_RANDOM_ID) {
-			pending_per_adv_sync->addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		if (bt_addr_le_is_resolved(&pending_per_adv_sync->addr)) {
+			bt_addr_le_copy_resolved(&pending_per_adv_sync->addr,
+						 &id_addr);
+		} else {
+			bt_addr_le_copy(&pending_per_adv_sync->addr, &id_addr);
 		}
 	}
 
@@ -1055,10 +1052,8 @@ void bt_hci_le_past_received(struct net_buf *buf)
 
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED);
 
-	if (evt->addr.type == BT_ADDR_LE_PUBLIC_ID ||
-	    evt->addr.type == BT_ADDR_LE_RANDOM_ID) {
-		bt_addr_le_copy(&id_addr, &evt->addr);
-		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+	if (bt_addr_le_is_resolved(&evt->addr)) {
+		bt_addr_le_copy_resolved(&id_addr, &evt->addr);
 	} else {
 		bt_addr_le_copy(&id_addr,
 				bt_lookup_id_addr(BT_ID_DEFAULT, &evt->addr));

@@ -27,6 +27,7 @@
 
 #include "common/assert.h"
 
+#include "addr_internal.h"
 #include "hci_core.h"
 #include "id.h"
 #include "adv.h"
@@ -2817,10 +2818,8 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
-	if (peer->type == BT_ADDR_LE_PUBLIC_ID ||
-	    peer->type == BT_ADDR_LE_RANDOM_ID) {
-		bt_addr_le_copy(&dst, peer);
-		dst.type -= BT_ADDR_LE_PUBLIC_ID;
+	if (bt_addr_le_is_resolved(peer)) {
+		bt_addr_le_copy_resolved(&dst, peer);
 	} else {
 		bt_addr_le_copy(&dst, bt_lookup_id_addr(BT_ID_DEFAULT, peer));
 	}
