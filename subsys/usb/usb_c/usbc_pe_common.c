@@ -654,6 +654,7 @@ static void pe_drs_send_swap_entry(void *obj)
 
 /**
  * @brief PE_DRS_Send_Swap Run state
+ *	  NOTE: Sender Response Timer is handled in super state.
  */
 static void pe_drs_send_swap_run(void *obj)
 {
@@ -662,11 +663,6 @@ static void pe_drs_send_swap_run(void *obj)
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
 	union pd_header header;
-
-	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
-		/* Start Sender Response Timer */
-		usbc_timer_start(&pe->pd_t_sender_response);
-	}
 
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		header = prl_rx->emsg.header;
@@ -715,22 +711,16 @@ static void pe_drs_send_swap_run(void *obj)
 		pe_set_state(dev, PE_SNK_READY);
 		return;
 	}
-
-	/* Transition to PE_SNK_READY on SenderResponseTimer timeout */
-	if (usbc_timer_expired(&pe->pd_t_sender_response)) {
-		pe_set_state(dev, PE_SNK_READY);
-	}
 }
 
-/**
- * @brief PE_DRS_Send_Swap Exit state
- */
-static void pe_drs_send_swap_exit(void *obj)
+static void pe_suspend_entry(void *obj)
 {
-	struct policy_engine *pe = (struct policy_engine *)obj;
+	LOG_INF("PE_SUSPEND");
+}
 
-	/* Stop Sender Response Timer */
-	usbc_timer_stop(&pe->pd_t_sender_response);
+static void pe_suspend_run(void *obj)
+{
+	/* DO NOTHING */
 }
 
 /**
@@ -745,7 +735,7 @@ enum pe_soft_reset_submachine_states {
 };
 
 /**
- * @brief 8.3.3.4.2.1 PE_SNK_Send_Soft_Reset State
+ * @brief 8.3.3.4.2.2 PE_SNK_Soft_Reset State
  */
 static void pe_soft_reset_entry(void *obj)
 {
@@ -772,8 +762,6 @@ static void pe_soft_reset_run(void *obj)
 	case PE_SOFT_RESET_RUN_SEND_ACCEPT_MSG:
 		/* Send Accept message to SOP */
 		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_ACCEPT);
-		/* Start Sender Response Timer */
-		usbc_timer_start(&pe->pd_t_sender_response);
 		/* Move to next substate */
 		pe->submachine = PE_SOFT_RESET_RUN_SEND_ACCEPT_MSG_COMPLETE;
 		break;
@@ -785,13 +773,11 @@ static void pe_soft_reset_run(void *obj)
 		 */
 		if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
 			pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
-		} else if (usbc_timer_expired(&pe->pd_t_sender_response) ||
-			   atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+		} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
 			/*
 			 * The Policy Engine Shall transition to the
 			 * PE_SRC_Hard_Reset state when:
-			 *      1: A SenderResponseTimer timeout occurs.
-			 *      2: OR the Protocol Layer indicates that a
+			 *      1: Protocol Layer indicates that a
 			 *         transmission error has occurred.
 			 */
 			pe_set_state(dev, PE_SNK_HARD_RESET);
@@ -800,16 +786,9 @@ static void pe_soft_reset_run(void *obj)
 	}
 }
 
-static void pe_soft_reset_exit(void *obj)
-{
-	struct policy_engine *pe = (struct policy_engine *)obj;
-
-	/* Stop Sender Response Timer */
-	usbc_timer_stop(&pe->pd_t_sender_response);
-}
-
 /**
  * @brief PE_Send_Soft_Reset Entry State
+ *	  NOTE: Sender Response Timer is handled in super state.
  */
 static void pe_send_soft_reset_entry(void *obj)
 {
@@ -848,45 +827,26 @@ static void pe_send_soft_reset_run(void *obj)
 		/* Inform Device Policy Manager that the message was discarded */
 		policy_notify(dev, MSG_DISCARDED);
 		pe_set_state(dev, PE_SNK_READY);
-	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
-		/* Start SenderResponse timer */
-		usbc_timer_start(&pe->pd_t_sender_response);
-	}
-	/*
-	 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
-	 * state when:
-	 *      1: An Accept Message has been received on SOP
-	 */
-	else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+		/*
+		 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
+		 * state when:
+		 *      1: An Accept Message has been received on SOP
+		 */
 		header = prl_rx->emsg.header;
 
 		if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
 			pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
 		}
-	}
-	/*
-	 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset state when:
-	 *      1: A SenderResponseTimer timeout occurs (Handled in pe_report_error function)
-	 *      2: Or the Protocol Layer indicates that a transmission error has occurred
-	 */
-	else if (usbc_timer_expired(&pe->pd_t_sender_response) ||
-		 atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+		/*
+		 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset state when:
+		 *      1: A SenderResponseTimer timeout occurs (Handled in Super State)
+		 *      2: Or the Protocol Layer indicates that a transmission error has occurred
+		 */
 		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
 }
-
-/**
- * @brief PE_Send_Soft_Reset Exit State
- */
-static void pe_send_soft_reset_exit(void *obj)
-{
-	struct policy_engine *pe = (struct policy_engine *)obj;
-
-	/* Stop Sender Response Timer */
-	usbc_timer_stop(&pe->pd_t_sender_response);
-}
-
-
 
 /**
  * @brief 8.3.3.6.2.1 PE_SNK_Send_Not_Supported State
@@ -956,23 +916,73 @@ static void pe_chunk_received_run(void *obj)
 	}
 }
 
-/**
- * @brief Suspend State
+/*
+ * @brief Super State for any message that requires
+ *	  Sender Response Timer functionality
  */
-static void pe_suspend_entry(void *obj)
+static void pe_sender_response_run(void *obj)
 {
-	LOG_INF("PE_SUSPEND");
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+	enum usbc_pe_state current_state = pe_get_state(dev);
+
+	/* Start the Sender Response Timer after the message is sent */
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+		/* Start Sender Response Timer */
+		usbc_timer_start(&pe->pd_t_sender_response);
+	}
+
+	/* Check if the Sender Response Timer has expired */
+	if (usbc_timer_expired(&pe->pd_t_sender_response)) {
+		/*
+		 * Handle Sender Response Timeouts
+		 */
+		switch (current_state) {
+		/* Sink states */
+		case PE_SNK_SELECT_CAPABILITY:
+			pe_set_state(dev, PE_SNK_HARD_RESET);
+			break;
+		case PE_SNK_GET_SOURCE_CAP:
+			pe_set_state(dev, PE_SNK_READY);
+			break;
+
+		/*
+		 * Common states:
+		 * Could transition to a Sink or Source states,
+		 * depending on the current Data Role
+		 */
+		case PE_SEND_SOFT_RESET:
+			pe_set_state(dev, PE_SNK_HARD_RESET);
+			break;
+		case PE_DRS_SEND_SWAP:
+			pe_set_state(dev, PE_SNK_READY);
+			break;
+
+		/* This should not happen. Implementation error */
+		default:
+			LOG_INF("Unhandled Sender Response Timeout State!");
+		}
+	}
 }
 
-static void pe_suspend_run(void *obj)
+static void pe_sender_response_exit(void *obj)
 {
-	/* DO NOTHING */
+	struct policy_engine *pe = (struct policy_engine *)obj;
+
+	/* Stop Sender Response Timer */
+	usbc_timer_stop(&pe->pd_t_sender_response);
 }
 
 /**
  * @brief Policy engine State table
  */
 static const struct smf_state pe_states[] = {
+	/* PE Super States */
+	[PE_SENDER_RESPONSE_PARENT] = SMF_CREATE_STATE(
+		NULL,
+		pe_sender_response_run,
+		pe_sender_response_exit,
+		NULL),
 	[PE_SNK_STARTUP] = SMF_CREATE_STATE(
 		pe_snk_startup_entry,
 		pe_snk_startup_run,
@@ -996,8 +1006,8 @@ static const struct smf_state pe_states[] = {
 	[PE_SNK_SELECT_CAPABILITY] = SMF_CREATE_STATE(
 		pe_snk_select_capability_entry,
 		pe_snk_select_capability_run,
-		pe_snk_select_capability_exit,
-		NULL),
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT]),
 	[PE_SNK_READY] = SMF_CREATE_STATE(
 		pe_snk_ready_entry,
 		pe_snk_ready_run,
@@ -1021,27 +1031,22 @@ static const struct smf_state pe_states[] = {
 	[PE_SNK_GET_SOURCE_CAP] = SMF_CREATE_STATE(
 		pe_snk_get_source_cap_entry,
 		pe_snk_get_source_cap_run,
-		pe_snk_get_source_cap_exit,
-		NULL),
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT]),
 	[PE_SNK_TRANSITION_SINK] = SMF_CREATE_STATE(
 		pe_snk_transition_sink_entry,
 		pe_snk_transition_sink_run,
 		pe_snk_transition_sink_exit,
 		NULL),
-	[PE_SNK_GET_SOURCE_CAP] = SMF_CREATE_STATE(
-		pe_snk_get_source_cap_entry,
-		pe_snk_get_source_cap_run,
-		pe_snk_get_source_cap_exit,
-		NULL),
 	[PE_SEND_SOFT_RESET] = SMF_CREATE_STATE(
 		pe_send_soft_reset_entry,
 		pe_send_soft_reset_run,
-		pe_send_soft_reset_exit,
-		NULL),
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT]),
 	[PE_SOFT_RESET] = SMF_CREATE_STATE(
 		pe_soft_reset_entry,
 		pe_soft_reset_run,
-		pe_soft_reset_exit,
+		NULL,
 		NULL),
 	[PE_SEND_NOT_SUPPORTED] = SMF_CREATE_STATE(
 		pe_send_not_supported_entry,
@@ -1056,8 +1061,8 @@ static const struct smf_state pe_states[] = {
 	[PE_DRS_SEND_SWAP] = SMF_CREATE_STATE(
 		pe_drs_send_swap_entry,
 		pe_drs_send_swap_run,
-		pe_drs_send_swap_exit,
-		NULL),
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT]),
 	[PE_CHUNK_RECEIVED] = SMF_CREATE_STATE(
 		pe_chunk_received_entry,
 		pe_chunk_received_run,

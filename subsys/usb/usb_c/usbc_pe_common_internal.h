@@ -64,6 +64,14 @@ enum usbc_pe_state {
 	/** PE_Suspend. Not part of the PD specification. */
 	PE_SUSPEND,
 
+	/**
+	 * NOTE: The states below should not be called directly. They're used
+	 * internally by the state machine.
+	 */
+
+	/** PE_SENDER_RESPONSE_PARENT. Not part of the PD specification. */
+	PE_SENDER_RESPONSE_PARENT,
+
 	/** Number of PE States */
 	PE_STATE_COUNT
 };
