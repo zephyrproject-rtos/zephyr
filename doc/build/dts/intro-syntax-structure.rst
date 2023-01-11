@@ -366,6 +366,9 @@ curious about details, see the devicetree specification.
 
 Additional notes on the above:
 
+- The values in the ``phandle``, ``phandles``, and ``phandle-array`` types are
+  are described further in :ref:`dt-phandles`
+
 - Boolean properties are true if present. They should not have a value.
   A boolean property is only false if it is completely missing in the DTS.
 

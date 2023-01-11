@@ -170,6 +170,7 @@ Property entries in ``properties:`` are written in this syntax:
        ...
        - <itemN>
      const: <string | int | array | uint8-array | string-array>
+     specifier-space: <space-name>
 
 .. _dt-bindings-example-properties:
 
@@ -255,9 +256,10 @@ discouraged.
 type
 ====
 
-The type of a property constrains its values.
-The following types are available. See :ref:`dt-writing-property-values`
-for more details about writing values of each type in a DTS file.
+The type of a property constrains its values. The following types are
+available. See :ref:`dt-writing-property-values` for more details about writing
+values of each type in a DTS file. See :ref:`dt-phandles` for more information
+about the ``phandle*`` type properties.
 
 .. list-table::
    :header-rows: 1
@@ -368,6 +370,73 @@ const
 This specifies a constant value the property must take. It is mainly useful for
 constraining the values of common properties for a particular piece of
 hardware.
+
+.. _dt-bindings-specifier-space:
+
+specifier-space
+===============
+
+.. warning::
+
+   It is an abuse of this feature to use it to name properties in
+   unconventional ways.
+
+   For example, this feature is not meant for cases like naming a property
+   ``my-pin``, then assigning it to the "gpio" specifier space using this
+   feature. Properties which refer to GPIOs should use conventional names, i.e.
+   end in ``-gpios`` or ``-gpio``.
+
+This property, if present, manually sets the specifier space associated with a
+property with type ``phandle-array``.
+
+Normally, the specifier space is encoded implicitly in the property name. A
+property named ``foos`` with type ``phandle-array`` implicitly has specifier
+space ``foo``. As a special case, ``*-gpios`` properties have specifier space
+"gpio", so that ``foo-gpios`` will have specifier space "gpio" rather than
+"foo-gpio".
+
+You can use ``specifier-space`` to manually provide a space if
+using this convention would result in an awkward or unconventional name.
+
+For example:
+
+.. code-block:: YAML
+
+   compatible: ...
+   properties:
+     bar:
+       type: phandle-array
+       specifier-space: my-custom-space
+
+Above, the ``bar`` property's specifier space is set to "my-custom-space".
+
+You could then use the property in a devicetree like this:
+
+.. code-block:: DTS
+
+   controller1: custom-controller@1000 {
+           #my-custom-space-cells = <2>;
+   };
+
+   controller2: custom-controller@2000 {
+           #my-custom-space-cells = <1>;
+   };
+
+   my-node {
+           bar = <&controller1 10 20>, <&controller2 30>;
+   };
+
+Generally speaking, you should reserve this feature for cases where the
+implicit specifier space naming convention doesn't work. One appropriate
+example is an ``mboxes`` property with specifier space "mbox", not "mboxe". You
+can write this property as follows:
+
+.. code-block:: YAML
+
+   properties:
+     mboxes:
+       type: phandle-array
+       specifier-space: mbox
 
 .. _dt-bindings-child:
 
@@ -548,53 +617,31 @@ for a binding for ``sensor@0``.
 Specifier cell names (\*-cells)
 *******************************
 
-Specifier cells are usually used with ``phandle-array`` type properties briefly
-introduced above.
+This section documents how to name the cells in a specifier within a binding.
+These concepts are discussed in detail later in this guide in
+:ref:`dt-phandle-arrays`.
 
-To understand the purpose of ``*-cells``, assume that some node has the
-following ``pwms`` property with type ``phandle-array``:
+Consider a binding for a node whose phandle may appear in a ``phandle-array``
+property, like the PWM controllers ``pwm1`` and ``pwm2`` in this example:
 
-.. code-block:: none
+.. code-block:: DTS
 
-   my-device {
-   	pwms = <&pwm0 1 2>, <&pwm3 4>;
+   pwm1: pwm@deadbeef {
+       compatible = "foo,pwm";
+       #pwm-cells = <2>;
    };
 
-The tooling strips the final ``s`` from the property name of such properties,
-resulting in ``pwm``. Then the value of the ``#pwm-cells`` property is
-looked up in each of the PWM controller nodes ``pwm0`` and ``pwm3``, like so:
-
-.. code-block:: devicetree
-
-   pwm0: pwm@0 {
-   	compatible = "foo,pwm";
-   	#pwm-cells = <2>;
+   pwm2: pwm@deadbeef {
+       compatible = "foo,pwm";
+       #pwm-cells = <1>;
    };
 
-   pwm3: pwm@3 {
-   	compatible = "bar,pwm";
-   	#pwm-cells = <1>;
+   my-node {
+       pwms = <&pwm1 1 2000>, <&pwm2 3000>;
    };
 
-The ``&pwm0 1 2`` part of the property value has two cells, ``1`` and ``2``,
-which matches ``#pwm-cells = <2>;``, so these cells are considered the
-*specifier* associated with ``pwm0`` in the phandle array.
-
-Similarly, the cell ``4`` is the specifier associated with ``pwm3``.
-
-The number of PWM cells in the specifiers in ``pwms`` must match the
-``#pwm-cells`` values, as shown above. If there is a mismatch, an error is
-raised. For example, this node would result in an error:
-
-.. code-block:: devicetree
-
-   my-bad-device {
-   	/* wrong: 2 cells given in the specifier, but #pwm-cells is 1 in pwm3. */
-   	pwms = <&pwm3 5 6>;
-   };
-
-The binding for each PWM controller must also have a ``*-cells`` key, in this
-case ``pwm-cells``, giving names to the cells in each specifier:
+The bindings for compatible ``"foo,pwm"`` and ``"bar,pwm"`` must give a name to
+the cells that appear in a PWM specifier using ``pwm-cells:``, like this:
 
 .. code-block:: YAML
 
@@ -617,22 +664,9 @@ giving a name to each entry.
 This allows the cells in the specifiers to be accessed by name, e.g. using APIs
 like :c:macro:`DT_PWMS_CHANNEL_BY_NAME`.
 
-Because other property names are derived from the name of the property by
-removing the final ``s``, the property name must end in ``s``. An error is
-raised if it doesn't.
-
-An alternative is using a ``specifier-space`` property to indicate the base
-property name for ``*-names`` and ``*-cells``.
-
-``*-gpios`` properties are special-cased so that e.g. ``foo-gpios`` resolves to
-``#gpio-cells`` rather than ``#foo-gpio-cells``.
-
 If the specifier is empty (e.g. ``#clock-cells = <0>``), then ``*-cells`` can
 either be omitted (recommended) or set to an empty array. Note that an empty
 array is specified as e.g. ``clock-cells: []`` in YAML.
-
-All ``phandle-array`` type properties support mapping through ``*-map``
-properties, e.g. ``gpio-map``, as defined by the Devicetree specification.
 
 .. _dt-bindings-include:
 
@@ -754,3 +788,13 @@ Finally, you can filter from a child binding like this:
        child-binding:
          property-allowlist:
            - child-prop-to-allow
+
+Nexus nodes and maps
+********************
+
+All ``phandle-array`` type properties support mapping through ``*-map``
+properties, e.g. ``gpio-map``, as defined by the Devicetree specification.
+
+This is used, for example, to define connector nodes for common breakout
+headers, such as the ``arduino_header`` nodes that are conventionally defined
+in the devicetrees for boards with Arduino compatible expansion headers.

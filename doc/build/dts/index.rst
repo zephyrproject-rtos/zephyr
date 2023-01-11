@@ -27,6 +27,7 @@ development.
    design.rst
    bindings.rst
    api-usage.rst
+   phandles.rst
    zephyr-user-node.rst
    howtos.rst
    troubleshooting.rst
