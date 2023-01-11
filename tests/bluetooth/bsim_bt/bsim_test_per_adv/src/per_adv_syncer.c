@@ -24,6 +24,7 @@ static bt_addr_le_t per_addr;
 static uint8_t per_sid;
 
 CREATE_FLAG(flag_connected);
+CREATE_FLAG(flag_bonded);
 CREATE_FLAG(flag_per_adv);
 CREATE_FLAG(flag_per_adv_sync);
 CREATE_FLAG(flag_per_adv_sync_lost);
@@ -59,6 +60,17 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static struct bt_conn_cb conn_cbs = {
 	.connected = connected,
 	.disconnected = disconnected,
+};
+
+static void pairing_complete_cb(struct bt_conn *conn, bool bonded)
+{
+	if (conn == g_conn && bonded) {
+		SET_FLAG(flag_bonded);
+	}
+}
+
+static struct bt_conn_auth_info_cb auto_info_cbs = {
+	.pairing_complete = pairing_complete_cb,
 };
 
 static void scan_recv(const struct bt_le_scan_recv_info *info,
@@ -141,6 +153,7 @@ static void common_init(void)
 	bt_le_scan_cb_register(&scan_callbacks);
 	bt_le_per_adv_sync_cb_register(&sync_callbacks);
 	bt_conn_cb_register(&conn_cbs);
+	bt_conn_auth_info_cb_register(&auto_info_cbs);
 }
 
 static void start_scan(void)
@@ -177,6 +190,19 @@ static void create_pa_sync(struct bt_le_per_adv_sync **sync)
 	printk("Waiting for periodic sync...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync);
 	printk("Periodic sync established.\n");
+}
+
+static void start_bonding(void)
+{
+	int err;
+
+	printk("Setting security...");
+	err = bt_conn_set_security(g_conn, BT_SECURITY_L2);
+	if (err) {
+		FAIL("Failed to set security: %d\n", err);
+		return;
+	}
+	printk("done.\n");
 }
 
 static void main_per_adv_syncer(void)
@@ -223,6 +249,37 @@ static void main_per_adv_conn_syncer(void)
 	PASS("Periodic advertising syncer passed\n");
 }
 
+static void main_per_adv_conn_privacy_syncer(void)
+{
+	struct bt_le_per_adv_sync *sync = NULL;
+
+	common_init();
+	start_scan();
+
+	printk("Waiting for connection...");
+	WAIT_FOR_FLAG(flag_connected);
+	printk("done.\n");
+
+	start_bonding();
+
+	printk("Waiting for bonding...");
+	WAIT_FOR_FLAG(flag_bonded);
+	printk("done.\n");
+
+	start_scan();
+
+	printk("Waiting for periodic advertising...\n");
+	WAIT_FOR_FLAG(flag_per_adv);
+	printk("Found periodic advertising.\n");
+
+	create_pa_sync(&sync);
+
+	printk("Waiting for periodic sync lost...\n");
+	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
+
+	PASS("Periodic advertising syncer passed\n");
+}
+
 static const struct bst_test_instance per_adv_syncer[] = {
 	{
 		.test_id = "per_adv_syncer",
@@ -240,6 +297,15 @@ static const struct bst_test_instance per_adv_syncer[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_syncer
+	},
+	{
+		.test_id = "per_adv_conn_privacy_syncer",
+		.test_descr = "Periodic advertising sync test, but where "
+			      "advertiser and syncer are bonded and using  "
+			      "privacy",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = main_per_adv_conn_privacy_syncer
 	},
 	BSTEST_END_MARKER
 };
