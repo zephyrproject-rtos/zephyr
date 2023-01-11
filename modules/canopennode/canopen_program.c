@@ -9,6 +9,7 @@
 #include <canopennode.h>
 #include <zephyr/dfu/flash_img.h>
 #include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/mcuboot_partitions.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/crc.h>
 
@@ -344,9 +345,9 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 	 * started upon receiveing the next 'start' command.
 	 */
 	if (ctx.flash_written) {
-		fa_id = FIXED_PARTITION_ID(slot1_partition);
+		fa_id = ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_ID;
 	} else {
-		fa_id = FIXED_PARTITION_ID(slot0_partition);
+		fa_id = ZEPHYR_MCUBOOT_APP_0_PRIMARY_SLOT_ID;
 	}
 
 	err = boot_read_bank_header(fa_id, &header, sizeof(header));
