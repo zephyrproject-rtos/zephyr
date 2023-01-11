@@ -670,6 +670,16 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 	return false;
 }
 
+static inline bool net_eth_is_addr_group(struct net_eth_addr *addr)
+{
+	return addr->addr[0] & 0x01;
+}
+
+static inline bool net_eth_is_addr_valid(struct net_eth_addr *addr)
+{
+	return !net_eth_is_addr_unspecified(addr) && !net_eth_is_addr_group(addr);
+}
+
 static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
 {
 #if defined(CONFIG_NET_GPTP) || defined(CONFIG_NET_LLDP)
