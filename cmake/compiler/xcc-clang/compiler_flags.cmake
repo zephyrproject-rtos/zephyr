@@ -15,3 +15,9 @@ endif()
 
 # Clang version used by Xtensa does not support -fno-pic and -fno-pie
 set_compiler_property(PROPERTY no_position_independent "")
+
+# Compiler flag to instruct the assembler to translate direct calls to
+# indirect calls unless it can determine that the target of a direct call.
+#
+# xcc-clang is odd and uses mlongcalls flag
+set_compiler_property(PROPERTY long_calls "-mlongcalls")
