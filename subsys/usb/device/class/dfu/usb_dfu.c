@@ -45,6 +45,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/mcuboot_partitions.h>
 #include <zephyr/dfu/flash_img.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/reboot.h>
@@ -55,9 +56,6 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dfu, CONFIG_USB_DEVICE_LOG_LEVEL);
-
-#define SLOT0_PARTITION			slot0_partition
-#define SLOT1_PARTITION			slot1_partition
 
 #define FIRMWARE_IMAGE_0_LABEL "image_0"
 #define FIRMWARE_IMAGE_1_LABEL "image_1"
@@ -141,7 +139,7 @@ struct dev_dfu_mode_descriptor {
 	struct usb_cfg_descriptor cfg_descr;
 	struct usb_sec_dfu_config {
 		struct usb_if_descriptor if0;
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS
 		struct usb_if_descriptor if1;
 #endif
 		struct dfu_runtime_descriptor dfu_descr;
@@ -197,7 +195,7 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 			.bInterfaceProtocol = DFU_MODE_PROTOCOL,
 			.iInterface = 4,
 		},
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS
 		.if1 = {
 			.bLength = sizeof(struct usb_if_descriptor),
 			.bDescriptorType = USB_DESC_INTERFACE,
@@ -251,7 +249,7 @@ struct usb_string_desription {
 		uint8_t bString[USB_BSTRING_LENGTH(FIRMWARE_IMAGE_0_LABEL)];
 	} __packed utf16le_image0;
 
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS
 	struct image_1_descriptor {
 		uint8_t bLength;
 		uint8_t bDescriptorType;
@@ -294,7 +292,7 @@ struct usb_string_desription string_descr = {
 		.bDescriptorType = USB_DESC_STRING,
 		.bString = FIRMWARE_IMAGE_0_LABEL,
 	},
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS
 	/* Image 1 String Descriptor */
 	.utf16le_image1 = {
 		.bLength = USB_STRING_DESCRIPTOR_LENGTH(
@@ -327,10 +325,11 @@ struct dfu_data_t {
 	uint16_t bwPollTimeout;
 };
 
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
-	#define DOWNLOAD_FLASH_AREA_ID FIXED_PARTITION_ID(SLOT1_PARTITION)
+#if ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS
+	#define DOWNLOAD_FLASH_AREA_ID ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_ID
 #else
-	#define DOWNLOAD_FLASH_AREA_ID FIXED_PARTITION_ID(SLOT0_PARTITION)
+	/* This is only possible when running from slot other than primary */
+	#define DOWNLOAD_FLASH_AREA_ID ZEPHYR_MCUBOOT_APP_0_PRIMARY_SLOT_ID
 #endif
 
 
@@ -809,11 +808,11 @@ static int dfu_custom_handle_req(struct usb_setup_packet *setup,
 		switch (setup->wValue) {
 		case 0:
 			dfu_data.flash_area_id =
-			    FIXED_PARTITION_ID(SLOT0_PARTITION);
+			    ZEPHYR_MCUBOOT_APP_0_PRIMARY_SLOT_ID;
 			break;
-#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+#if ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_EXISTS
 		case 1:
-			dfu_data.flash_area_id = DOWNLOAD_FLASH_AREA_ID;
+			dfu_data.flash_area_id = ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_ID;
 			break;
 #endif
 		default:
