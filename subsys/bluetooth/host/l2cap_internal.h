@@ -381,3 +381,16 @@ void bt_l2cap_register_ecred_cb(const struct bt_l2cap_ecred_cb *cb);
 
 /* Returns a server if it exists for given psm. */
 struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm);
+
+/** Override tx MTU for the given channel.
+ *
+ *  This is used to make the L2CAP layer enforce a max message size on behalf of
+ *  an upper layer, as a convenience.
+ *
+ *  Should work in the @ref bt_l2cap_chan_ops.connected @ref
+ *  bt_l2cap_chan_ops.reconfigured callbacks.
+ */
+static inline void bt_l2cap_set_tx_mtu(struct bt_l2cap_le_chan *ch, uint16_t mtu)
+{
+	ch->tx.mtu = mtu;
+}

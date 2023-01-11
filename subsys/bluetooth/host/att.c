@@ -3010,14 +3010,20 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 #if defined(CONFIG_BT_EATT)
 static void cap_eatt_mtu(struct bt_l2cap_le_chan *le_chan)
 {
-	if (le_chan->tx.mtu > le_chan->rx.mtu) {
-		LOG_DBG("chan %p (0x%04x): saturating TX MTU to ATT buffer size (%d)", le_chan,
-			le_chan->tx.cid, CONFIG_BT_L2CAP_TX_MTU);
-	}
+	uint16_t att_mtu = le_chan->tx.mtu;
 
-	le_chan->tx.mps = MIN(le_chan->tx.mps,
-			      BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU));
-	le_chan->tx.mtu = MIN(le_chan->tx.mtu, CONFIG_BT_L2CAP_TX_MTU);
+	att_mtu = MIN(att_mtu, CONFIG_BT_L2CAP_TX_MTU);
+
+	/* Bluetooth core specification vol.3 5.3.1 says that ATT MTU must be
+	 * capped to the minimum of both devices' RX MTU.
+	 */
+	att_mtu = MIN(att_mtu, le_chan->rx.mtu);
+
+	LOG_DBG("chan %p (0x%04x): tx.mtu %d=min(BT_L2CAP_TX_MTU=%d, rx.mtu=%d, tx.mtu=%d)",
+		le_chan, le_chan->tx.cid,
+		att_mtu, CONFIG_BT_L2CAP_TX_MTU, le_chan->rx.mtu, le_chan->tx.mtu);
+
+	bt_l2cap_set_tx_mtu(le_chan, att_mtu);
 }
 #endif
 
