@@ -421,7 +421,17 @@ config BT_MESH_ADV_EXT_GATT_SEPARATE
 	depends on BT_MESH_GATT_SERVER
 	help
 	  Use a separate extended advertising set for GATT Server Advertising,
-	  otherwise will be used a shared advertising set.
+	  otherwise a shared advertising set will be used.
+
+config BT_MESH_ADV_EXT_FRIEND_SEPARATE
+	bool "Use a separate extended advertising set for Friend advertising"
+	depends on BT_MESH_FRIEND
+	help
+	  Use a separate extended advertising set for Friend advertising,
+	  otherwise a shared advertising set will be used. Using the separate
+	  extended advertising set makes the Friend node send friendship
+	  messages as close to the start of the ReceiveWindow as possible,
+	  thus reducing the scanning time on the Low Power node.
 
 endif # BT_MESH_ADV_EXT
 
@@ -880,12 +890,14 @@ config BT_MESH_FRIEND_SEG_RX
 
 config BT_MESH_FRIEND_ADV_LATENCY
 	int "Latency for enabling advertising"
+	range 0 4
 	default 0
 	help
-	  Latency in milliseconds that it takes to start friend advertising
-	  after requesting it. Used to tune the receive delay window to make
-	  Friend poll events more efficient by compensating for the time the
-	  non-ideal latency otherwise would add to the delay.
+	  Latency in milliseconds between request for and start of Friend
+	  advertising. Used to tune the ReceiveDelay, making Friend
+	  start sending a message earlier thus compensating for the time between
+	  pushing the message to the Bluetooth host and the actual advertising
+	  start.
 
 endif # BT_MESH_FRIEND
 
