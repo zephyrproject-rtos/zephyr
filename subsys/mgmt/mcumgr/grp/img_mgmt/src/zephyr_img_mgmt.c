@@ -9,6 +9,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/mcuboot_partitions.h>
 #include <zephyr/dfu/flash_img.h>
 #include <zephyr/logging/log.h>
 #include <bootutil/bootutil_public.h>
@@ -23,24 +24,19 @@
 
 LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
-#define SLOT0_PARTITION		slot0_partition
-#define SLOT1_PARTITION		slot1_partition
-#define SLOT2_PARTITION		slot2_partition
-#define SLOT3_PARTITION		slot3_partition
-
 BUILD_ASSERT(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1 ||
 	     (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2 &&
-	      FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
-	      FIXED_PARTITION_EXISTS(SLOT3_PARTITION)),
-	     "Missing partitions?");
+	      ZEPHYR_MCUBOOT_APP_1_PRIMARY_SLOT_EXISTS &&
+	      ZEPHYR_MCUBOOT_APP_1_SECONDARY_SLOT_EXISTS),
+	     "Missing MCUboot app partitions?");
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD) &&		\
 	!(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1)
 /* In case when direct upload is enabled, slot2 and slot3 are optional
  * as long as there is support for one application image only.
  */
-#define ADD_SLOT_2_CONDITION FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
-#define ADD_SLOT_3_CONDITION FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
+#define ADD_SLOT_2_CONDITION ZEPHYR_MCUBOOT_APP_1_PRIMARY_SLOT_EXISTS
+#define ADD_SLOT_3_CONDITION ZEPHYR_MCUBOOT_APP_1_SECONDARY_SLOT_EXISTS
 #elif (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1)
 /* For more than one application image slot2 and slot3 are required. */
 #define ADD_SLOT_2_CONDITION 1
@@ -65,6 +61,9 @@ img_mgmt_slot_to_image(int slot)
 		return 1;
 #endif
 #if ADD_SLOT_3_CONDITION
+	case 2:
+		return 1;
+#endif
 	case 3:
 		return 1;
 #endif
@@ -160,22 +159,22 @@ img_mgmt_flash_area_id(int slot)
 
 	switch (slot) {
 	case 0:
-		fa_id = FIXED_PARTITION_ID(SLOT0_PARTITION);
+		fa_id = ZEPHYR_MCUBOOT_APP_0_PRIMARY_SLOT_ID;
 		break;
 
 	case 1:
-		fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
+		fa_id = ZEPHYR_MCUBOOT_APP_0_SECONDARY_SLOT_ID;
 		break;
 
 #if ADD_SLOT_2_CONDITION
 	case 2:
-		fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);
+		fa_id = ZEPHYR_MCUBOOT_APP_1_PRIMARY_SLOT_ID;
 		break;
 #endif
 
 #if ADD_SLOT_3_CONDITION
 	case 3:
-		fa_id = FIXED_PARTITION_ID(SLOT3_PARTITION);
+		fa_id = ZEPHYR_MCUBOOT_APP_1_SECONDARY_SLOT_ID;
 		break;
 #endif
 
