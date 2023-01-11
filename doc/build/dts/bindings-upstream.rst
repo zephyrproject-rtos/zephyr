@@ -12,6 +12,9 @@ Decisions made by the Zephyr devicetree maintainer override the contents of
 this section. If that happens, though, please let them know so they can update
 this page, or you can send a patch yourself.
 
+.. contents:: Contents
+   :local:
+
 Always check for existing bindings
 **********************************
 
@@ -38,49 +41,59 @@ In particular, this rule applies if:
 General rules
 *************
 
-- Bindings which match a compatible must have file names based on the compatible.
+File names
+==========
 
-  - For example, a binding for compatible ``vnd,foo`` must be named ``vnd,foo.yaml``.
-  - If the binding is bus-specific, you can append the bus to the file name;
-    for example, if the binding YAML has ``on-bus: bar``, you may name the file
-    ``vnd,foo-bar.yaml``.
+Bindings which match a compatible must have file names based on the compatible.
 
-- All recommendations in :ref:`dt-bindings-default` are requirements when
-  submitting the binding.
+- For example, a binding for compatible ``vnd,foo`` must be named ``vnd,foo.yaml``.
+- If the binding is bus-specific, you can append the bus to the file name;
+  for example, if the binding YAML has ``on-bus: bar``, you may name the file
+  ``vnd,foo-bar.yaml``.
 
-  In particular, if you use the ``default:`` feature, you must justify the
-  value in the property's description.
+Recommendations are requirements
+================================
 
-- There are two ways to write property ``description:`` strings that are always
-  OK.
+All recommendations in :ref:`dt-bindings-default` are requirements when
+submitting the binding.
 
-  If your description is short, it's fine to use this style:
+In particular, if you use the ``default:`` feature, you must justify the
+value in the property's description.
 
-  .. code-block:: yaml
+Descriptions
+============
 
-     description: my short string
+There are only two acceptable ways to write property ``description:``
+strings.
 
-  If your description is long or spans multiple lines, you must use this
-  style:
+If your description is short, it's fine to use this style:
 
-  .. code-block:: yaml
+.. code-block:: yaml
 
-     description: |
-       My very long string
-       goes here.
-       Look at all these lines!
+   description: my short string
 
-  This ``|`` style prevents YAML parsers from removing the newlines in
-  multi-line descriptions. This in turn makes these long strings
-  display properly in the :ref:`devicetree_binding_index`.
+If your description is long or spans multiple lines, you must use this
+style:
 
-  Do not use any other style for long or multi-line strings.
+.. code-block:: yaml
 
-- Do not use uppercase letters (``A`` through ``Z``) or underscores (``_``) in
-  property names. Use lowercase letters (``a`` through ``z``) instead of
-  uppercase. Use dashes (``-``) instead of underscores. (The one exception to
-  this rule is if you are replicating a well-established binding from somewhere
-  like Linux.)
+   description: |
+     My very long string
+     goes here.
+     Look at all these lines!
+
+This ``|`` style prevents YAML parsers from removing the newlines in
+multi-line descriptions. This in turn makes these long strings
+display properly in the :ref:`devicetree_binding_index`.
+
+Naming conventions
+==================
+
+Do not use uppercase letters (``A`` through ``Z``) or underscores (``_``) in
+property names. Use lowercase letters (``a`` through ``z``) instead of
+uppercase. Use dashes (``-``) instead of underscores. (The one exception to
+this rule is if you are replicating a well-established binding from somewhere
+like Linux.)
 
 Rules for vendor prefixes
 *************************
