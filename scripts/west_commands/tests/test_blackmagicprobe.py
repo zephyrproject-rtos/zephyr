@@ -45,9 +45,9 @@ EXPECTED_COMMANDS = {
 }
 
 EXPECTED_CONNECT_SRST_COMMAND = {
-        'attach': 'monitor connect_srst disable',
-        'debug': 'monitor connect_srst enable',
-        'flash': 'monitor connect_srst enable',
+        'attach': 'monitor connect_rst disable',
+        'debug': 'monitor connect_rst enable',
+        'flash': 'monitor connect_rst enable',
 }
 
 def require_patch(program):
@@ -78,9 +78,9 @@ def test_blackmagicprobe_create(cc, req, command, runner_config):
 @pytest.mark.parametrize('command', EXPECTED_CONNECT_SRST_COMMAND)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_blackmagicprobe_connect_srst(cc, req, command, runner_config):
-    '''Test that commands list the correct connect_srst value when enabled.'''
-    args = ['--gdb-serial', TEST_GDB_SERIAL, '--connect-srst']
+def test_blackmagicprobe_connect_rst(cc, req, command, runner_config):
+    '''Test that commands list the correct connect_rst value when enabled.'''
+    args = ['--gdb-serial', TEST_GDB_SERIAL, '--connect-rst']
     parser = argparse.ArgumentParser()
     BlackMagicProbeRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
