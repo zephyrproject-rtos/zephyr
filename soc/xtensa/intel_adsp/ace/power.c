@@ -304,27 +304,26 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	uint32_t cpu = arch_proc_id();
 
 	if (state == PM_STATE_SOFT_OFF) {
-		if (cpu == 0) {
-#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
-			struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
+		DSPCS.bootctl[cpu].wdtcs = DSPBR_WDT_RESUME;
+		/* restore clock gating state */
+		DSPCS.bootctl[cpu].bctl |=
+			(core_desc[0].bctl & DSPBR_BCTL_WAITIPCG);
 
-			DSPCS.bootctl[cpu].wdtcs = DSPBR_WDT_RESUME;
-			/* restore clock gating state */
-			DSPCS.bootctl[cpu].bctl |=
-					(core_desc[0].bctl & DSPBR_BCTL_WAITIPCG);
-			soc_cpus_active[cpu] = true;
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+		if (cpu == 0) {
+			struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
 
 			/* clean storage and restore information */
 			z_xtensa_cache_inv(imr_layout, sizeof(*imr_layout));
 			imr_layout->imr_state.header.adsp_imr_magic = 0;
 			imr_layout->imr_state.header.imr_restore_vector = NULL;
 			imr_layout->imr_state.header.imr_ram_storage = NULL;
-
-			z_xtensa_cache_flush_inv_all();
-#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
-			z_xt_ints_on(core_desc[cpu].intenable);
 		}
+#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 
+		soc_cpus_active[cpu] = true;
+		z_xtensa_cache_flush_inv_all();
+		z_xt_ints_on(core_desc[cpu].intenable);
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
 		if (cpu != 0) {
 			/* NOTE: HW should support dynamic power gating on secondary cores.
