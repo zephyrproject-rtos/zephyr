@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2023, STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_hse {
+	/* HSE not used on this board revision */
+	status = "disabled";
+};
+
+&clk_hsi {
+	/* use HSI */
+	status = "okay";
+};
+
+&pll {
+	/delete-property/ div-m;
+	div-m = <16>;
+	/delete-property/ clocks;
+	clocks = <&clk_hsi>;
+};

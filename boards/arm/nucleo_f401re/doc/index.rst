@@ -127,7 +127,8 @@ System Clock
 
 Nucleo F401RE System Clock could be driven by internal or external oscillator,
 as well as main PLL clock. By default System clock is driven by PLL clock at 84MHz,
-driven by 8MHz high speed external clock.
+- driven by 8MHz high speed external clock (HSE) for board revision C02 and above
+- driven by 16MHz high speed internal clock (HSI) for board revision C01
 
 Serial Port
 ===========
