@@ -68,7 +68,7 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 024ed9e3a7e0c093a3c7427d98dbade20e16c52d
+      revision: 2994b7dde8b0b0fa9b9c0ccb13474b6a486cddc3
       path: modules/hal/gigadevice
       groups:
         - hal
