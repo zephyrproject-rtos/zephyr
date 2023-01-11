@@ -310,6 +310,19 @@ extra_configs: <list of extra configurations>
             extra_configs:
               - CONFIG_ADC_ASYNC=y
 
+    Using namespacing, it is possible to apply a configuration only to some
+    hardware. Currently both architectures and platforms are supported::
+
+        common:
+          tags: drivers adc
+        tests:
+          test:
+            depends_on: adc
+          test_async:
+            extra_configs:
+              - arch:x86:CONFIG_ADC_ASYNC=y
+              - platform:qemu_x86:CONFIG_DEBUG=y
+
 
 build_only: <True|False> (default False)
     If true, don't try to run the test even if the
