@@ -86,7 +86,7 @@ bool __weak shell_mqtt_get_devid(char *id, int id_max_len)
 	}
 
 	(void)memset(id, 0, id_max_len);
-	length = bin2hex(hwinfo_id, (size_t)length, id, id_max_len - 1);
+	length = bin2hex(hwinfo_id, (size_t)length, id, id_max_len);
 
 	return length > 0;
 }
