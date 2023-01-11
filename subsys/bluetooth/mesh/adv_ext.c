@@ -68,6 +68,9 @@ static bool schedule_send(struct bt_mesh_ext_adv *adv);
 
 static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_main) = {
 	.tag = (
+#if !defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
+		BT_MESH_FRIEND_ADV |
+#endif
 #if !defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
 		BT_MESH_PROXY_ADV |
 #endif /* !CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
@@ -88,15 +91,27 @@ static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_relay[CONFIG_BT_MESH_RELAY_A
 };
 #endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
 
+#if defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
+#define ADV_EXT_FRIEND 1
+static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_friend) = {
+	.tag = BT_MESH_FRIEND_ADV,
+	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
+};
+#else /* CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE */
+#define ADV_EXT_FRIEND 0
+#endif /* CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE */
+
 #if defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
-#define BT_MESH_ADV_COUNT			(1 + CONFIG_BT_MESH_RELAY_ADV_SETS + 1)
+#define ADV_EXT_GATT 1
 static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_gatt) = {
 	.tag = BT_MESH_PROXY_ADV,
 	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 };
 #else /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
-#define BT_MESH_ADV_COUNT			(1 + CONFIG_BT_MESH_RELAY_ADV_SETS)
+#define ADV_EXT_GATT 0
 #endif /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
+
+#define BT_MESH_ADV_COUNT (1 + CONFIG_BT_MESH_RELAY_ADV_SETS + ADV_EXT_FRIEND + ADV_EXT_GATT)
 
 BUILD_ASSERT(CONFIG_BT_EXT_ADV_MAX_ADV_SET >= BT_MESH_ADV_COUNT,
 	     "Insufficient adv instances");
@@ -208,6 +223,21 @@ static int buf_send(struct bt_mesh_ext_adv *adv, struct net_buf *buf)
 	return err;
 }
 
+static const char *adv_tag_to_str(enum bt_mesh_adv_tag tag)
+{
+	if (tag & BT_MESH_LOCAL_ADV) {
+		return "local adv";
+	} else if (tag & BT_MESH_PROXY_ADV) {
+		return "proxy adv";
+	} else if (tag & BT_MESH_RELAY_ADV) {
+		return "relay adv";
+	} else if (tag & BT_MESH_FRIEND_ADV) {
+		return "friend adv";
+	} else {
+		return "(unknown tag)";
+	}
+}
+
 static void send_pending_adv(struct k_work *work)
 {
 	struct bt_mesh_ext_adv *adv;
@@ -223,7 +253,8 @@ static void send_pending_adv(struct k_work *work)
 		 */
 		int64_t duration = k_uptime_delta(&adv->timestamp);
 
-		LOG_DBG("Advertising stopped after %u ms", (uint32_t)duration);
+		LOG_DBG("Advertising stopped after %u ms for (%u) %s", (uint32_t)duration, adv->tag,
+		       adv_tag_to_str(adv->tag));
 
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 		atomic_clear_bit(adv->flags, ADV_FLAG_PROXY);
@@ -297,12 +328,16 @@ static bool schedule_send(struct bt_mesh_ext_adv *adv)
 
 	atomic_clear_bit(adv->flags, ADV_FLAG_SCHEDULE_PENDING);
 
-	/* The controller will send the next advertisement immediately.
-	 * Introduce a delay here to avoid sending the next mesh packet closer
-	 * to the previous packet than what's permitted by the specification.
-	 */
-	delta = k_uptime_delta(&timestamp);
-	k_work_reschedule(&adv->work, K_MSEC(ADV_INT_FAST_MS - delta));
+	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) && adv->tag & BT_MESH_FRIEND_ADV) {
+		k_work_reschedule(&adv->work, K_NO_WAIT);
+	} else {
+		/* The controller will send the next advertisement immediately.
+		 * Introduce a delay here to avoid sending the next mesh packet closer
+		 * to the previous packet than what's permitted by the specification.
+		 */
+		delta = k_uptime_delta(&timestamp);
+		k_work_reschedule(&adv->work, K_MSEC(ADV_INT_FAST_MS - delta));
+	}
 
 	return true;
 }
@@ -331,6 +366,13 @@ void bt_mesh_adv_buf_relay_ready(void)
 	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)) {
 		(void)schedule_send(&adv_main);
 	}
+}
+
+void bt_mesh_adv_buf_friend_ready(void)
+{
+#if defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
+	(void)schedule_send(&adv_friend);
+#endif
 }
 
 void bt_mesh_adv_init(void)
