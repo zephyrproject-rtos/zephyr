@@ -53,7 +53,7 @@ static K_SEM_DEFINE(sem_security_updated, 0, 1);
 static K_SEM_DEFINE(sem_sinks_discovered, 0, 1);
 static K_SEM_DEFINE(sem_sources_discovered, 0, 1);
 static K_SEM_DEFINE(sem_stream_configured, 0, 1);
-static K_SEM_DEFINE(sem_stream_qos, 0, 1);
+static K_SEM_DEFINE(sem_stream_qos, 0, ARRAY_SIZE(sinks) + ARRAY_SIZE(sources));
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
 
@@ -952,10 +952,9 @@ static int set_stream_qos(void)
 		return err;
 	}
 
-	err = k_sem_take(&sem_stream_qos, K_FOREVER);
-	if (err != 0) {
-		printk("failed to take sem_stream_qos (err %d)\n", err);
-		return err;
+	for (size_t i = 0U; i < configured_stream_count; i++) {
+		printk("QoS: waiting for %zu streams\n", configured_stream_count);
+		k_sem_take(&sem_stream_qos, K_FOREVER);
 	}
 
 	return 0;
