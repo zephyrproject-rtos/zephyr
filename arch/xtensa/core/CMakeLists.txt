@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_cc_option(-mlongcalls)
-
+zephyr_compile_options($<TARGET_PROPERTY:compiler,long_calls>)
 zephyr_library()
 
 zephyr_library_sources(

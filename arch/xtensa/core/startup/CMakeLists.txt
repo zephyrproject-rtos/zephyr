@@ -3,10 +3,10 @@
 if(CONFIG_XTENSA_RESET_VECTOR)
   zephyr_library()
 
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,long_calls>)
   zephyr_library_cc_option(
     -c
     -mtext-section-literals
-    -mlongcalls
     )
 
   zephyr_library_sources(
