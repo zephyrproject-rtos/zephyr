@@ -12,3 +12,6 @@ properties:
     required: true
   interrupts:
     required: true
+  emac-index:
+    type: int
+    required: true
