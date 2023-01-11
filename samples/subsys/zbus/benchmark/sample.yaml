@@ -19,6 +19,7 @@ tests:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_ASYNC=y
+      - CONFIG_IDLE_STACK_SIZE=1024
   sample.zbus.benchmark_sync:
     tags: zbus
     min_ram: 16
@@ -37,3 +38,4 @@ tests:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_ASYNC=n
+      - CONFIG_IDLE_STACK_SIZE=1024
