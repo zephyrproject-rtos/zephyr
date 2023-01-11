@@ -13,7 +13,7 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 class BlackMagicProbeRunner(ZephyrBinaryRunner):
     '''Runner front-end for Black Magic probe.'''
 
-    def __init__(self, cfg, gdb_serial, connect_srst=False):
+    def __init__(self, cfg, gdb_serial, connect_rst=False):
         super().__init__(cfg)
         self.gdb = [cfg.gdb] if cfg.gdb else None
         # as_posix() because gdb doesn't recognize backslashes as path
@@ -22,14 +22,18 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
         # https://github.com/zephyrproject-rtos/zephyr/issues/50789
         self.elf_file = Path(cfg.elf_file).as_posix()
         self.gdb_serial = gdb_serial
-        if connect_srst:
-            self.connect_srst_enable_arg = [
-                    '-ex', "monitor connect_srst enable"]
-            self.connect_srst_disable_arg = [
-                    '-ex', "monitor connect_srst disable"]
+        if connect_rst:
+            self.connect_rst_enable_arg = [
+                    '-ex', "monitor connect_rst enable",
+                    '-ex', "monitor connect_srst enable",
+                    ]
+            self.connect_rst_disable_arg = [
+                    '-ex', "monitor connect_rst disable",
+                    '-ex', "monitor connect_srst disable",
+                    ]
         else:
-            self.connect_srst_enable_arg = []
-            self.connect_srst_disable_arg = []
+            self.connect_rst_enable_arg = []
+            self.connect_rst_disable_arg = []
 
     @classmethod
     def name(cls):
@@ -41,13 +45,13 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
-        return BlackMagicProbeRunner(cfg, args.gdb_serial, args.connect_srst)
+        return BlackMagicProbeRunner(cfg, args.gdb_serial, args.connect_rst)
 
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--gdb-serial', default='/dev/ttyACM0',
                             help='GDB serial port')
-        parser.add_argument('--connect-srst', action='store_true',
+        parser.add_argument('--connect-rst', '--connect-srst', action='store_true',
                             help='Assert SRST during connect? (default: no)')
 
     def bmp_flash(self, command, **kwargs):
@@ -57,7 +61,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
                    ['-ex', "set confirm off",
                     '-ex', "target extended-remote {}".format(
                         self.gdb_serial)] +
-                    self.connect_srst_enable_arg +
+                    self.connect_rst_enable_arg +
                    ['-ex', "monitor swdp_scan",
                     '-ex', "attach 1",
                     '-ex', "load {}".format(self.elf_file),
@@ -79,7 +83,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
                        ['-ex', "set confirm off",
                         '-ex', "target extended-remote {}".format(
                             self.gdb_serial)] +
-                        self.connect_srst_disable_arg +
+                        self.connect_rst_disable_arg +
                        ['-ex', "monitor swdp_scan",
                         '-ex', "attach 1"])
         else:
@@ -87,7 +91,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
                        ['-ex', "set confirm off",
                         '-ex', "target extended-remote {}".format(
                             self.gdb_serial)] +
-                        self.connect_srst_disable_arg +
+                        self.connect_rst_disable_arg +
                        ['-ex', "monitor swdp_scan",
                         '-ex', "attach 1",
                         '-ex', "file {}".format(self.elf_file)])
@@ -100,7 +104,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
                    ['-ex', "set confirm off",
                     '-ex', "target extended-remote {}".format(
                         self.gdb_serial)] +
-                    self.connect_srst_enable_arg +
+                    self.connect_rst_enable_arg +
                    ['-ex', "monitor swdp_scan",
                     '-ex', "attach 1",
                     '-ex', "file {}".format(self.elf_file),
