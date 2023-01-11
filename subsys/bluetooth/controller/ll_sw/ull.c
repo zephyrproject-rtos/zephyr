@@ -512,12 +512,6 @@ static void *mark_update;
 #define BT_BUF_ACL_TX_COUNT 0
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
-#define BT_CTLR_ISO_TX_BUFFERS CONFIG_BT_CTLR_ISO_TX_BUFFERS
-#else
-#define BT_CTLR_ISO_TX_BUFFERS 0
-#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
-
 static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
 		    BT_BUF_ACL_TX_COUNT + BT_CTLR_ISO_TX_BUFFERS);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
