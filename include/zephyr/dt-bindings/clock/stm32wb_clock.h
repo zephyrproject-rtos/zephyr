@@ -90,5 +90,7 @@
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 /** CSR devices */
 #define RFWKP_SEL(val)		STM32_CLOCK(val, 3, 14, CSR_REG)
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB_CLOCK_H_ */
