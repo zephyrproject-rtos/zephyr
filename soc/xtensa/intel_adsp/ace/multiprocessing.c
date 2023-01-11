@@ -96,6 +96,17 @@ void soc_start_core(int cpu_num)
 		DSPCS.bootctl[cpu_num].battr |= DSPBR_BATTR_LPSCTL_BATTR_SLAVE_CORE;
 	}
 
+	/* Setting the Power Active bit to the off state before powering up the core. This step is
+	 * required by the HW if we are starting core for a second time. Without this sequence, the
+	 * core will not power on properly when doing transition D0->D3->D0.
+	 */
+	DSPCS.capctl[cpu_num].ctl &= ~DSPCS_CTL_SPA;
+
+	/* Checking current power status of the core. */
+	while (((DSPCS.capctl[cpu_num].ctl & DSPCS_CTL_CPA) == DSPCS_CTL_CPA)) {
+		k_busy_wait(HW_STATE_CHECK_DELAY);
+	}
+
 	DSPCS.capctl[cpu_num].ctl |= DSPCS_CTL_SPA;
 
 	/* Waiting for power up */
