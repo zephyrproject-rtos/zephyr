@@ -57,4 +57,7 @@
 
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 16, CSR_REG)
 
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L1_CLOCK_H_ */

@@ -92,5 +92,7 @@
 #define CK48M_SEL(val)		STM32_CLOCK(val, 1, 27, DKCFGR2_REG)
 #define SDMMC1_SEL(val)		STM32_CLOCK(val, 1, 28, DKCFGR2_REG)
 #define SDMMC2_SEL(val)		STM32_CLOCK(val, 1, 29, DKCFGR2_REG)
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F7_CLOCK_H_ */
