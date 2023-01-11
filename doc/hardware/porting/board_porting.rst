@@ -641,6 +641,30 @@ example will result in the following error message:
 
    Board revision `0.7.0` not found.  Please specify a valid board revision.
 
+Alphanum revision matching
+==========================
+
+Let's say instead that you need to support revisions ``A0``, ``C01``, and ``C02`` of
+the ``plank`` board. Create the following additional files in the board
+directory:
+
+.. code-block:: none
+
+   boards/<ARCH>/plank
+   ├── plank_A0.conf
+   ├── plank_A0.overlay
+   ├── plank_C01.conf
+   ├── plank_C01.overlay
+   ├── plank_C02.conf
+   ├── plank_C02.overlay
+   └── revision.cmake
+
+And add the following to :file:`revision.cmake`:
+
+.. code-block:: cmake
+
+   board_check_revision(FORMAT ALPHANUM)
+
 Letter revision matching
 ========================
 
@@ -694,7 +718,7 @@ board_check_revision() details
 
 .. code-block:: cmake
 
-   board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>
+   board_check_revision(FORMAT <ALPHANUM | LETTER | NUMBER | ALPHANUM | MAJOR.MINOR.PATCH>
                         [EXACT]
                         [DEFAULT_REVISION <revision>]
                         [HIGHEST_REVISION <revision>]
@@ -703,6 +727,7 @@ board_check_revision() details
 
 This function supports the following arguments:
 
+* ``FORMAT ALPHANUM``: matches single letter followed by integer revisions
 * ``FORMAT LETTER``: matches single letter revisions from ``A`` to ``Z`` only
 * ``FORMAT NUMBER``: matches integer revisions
 * ``FORMAT MAJOR.MINOR.PATCH``: matches exactly three digits. The command line

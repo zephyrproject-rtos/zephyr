@@ -849,7 +849,9 @@ endfunction()
 # When `EXACT` is not specified, this function will set the Zephyr build system
 # variable `ACTIVE_BOARD_REVISION` with the selected revision.
 #
-# FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>: Specify the revision format.
+# FORMAT <ALPHANUM | LETTER | NUMBER | MAJOR.MINOR.PATCH>: Specify the revision format.
+#         ALPHANUM:           Revision format is a single letter from A - Z
+#                             followed by one or two integer number  ('C02')
 #         LETTER:             Revision format is a single letter from A - Z.
 #         NUMBER:             Revision format is a single integer number.
 #         MAJOR.MINOR.PATCH:  Revision format is three numbers, separated by `.`,
@@ -915,7 +917,9 @@ function(board_check_revision)
     endif()
   endif()
 
-  if(BOARD_REV_FORMAT STREQUAL LETTER)
+  if(BOARD_REV_FORMAT STREQUAL ALPHANUM)
+    set(revision_regex "([A-Z][0-9]+)")
+  elseif(BOARD_REV_FORMAT STREQUAL LETTER)
     set(revision_regex "([A-Z])")
   elseif(BOARD_REV_FORMAT STREQUAL NUMBER)
     set(revision_regex "([0-9]+)")
@@ -935,7 +939,7 @@ function(board_check_revision)
     endif()
   else()
     message(FATAL_ERROR "Invalid format specified for \
-    `board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>)`")
+    `board_check_revision(FORMAT <ALPHANUM | LETTER | NUMBER | MAJOR.MINOR.PATCH>)`")
   endif()
 
   if(NOT (BOARD_REVISION MATCHES "^${revision_regex}$"))
