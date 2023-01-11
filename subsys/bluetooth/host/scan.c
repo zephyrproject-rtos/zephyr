@@ -885,6 +885,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	struct bt_le_per_adv_sync_synced_info sync_info;
 	struct bt_le_per_adv_sync *pending_per_adv_sync;
 	struct bt_le_per_adv_sync_cb *listener;
+	bt_addr_le_t id_addr;
 	bool unexpected_evt;
 	int err;
 
@@ -911,11 +912,21 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		return;
 	}
 
+	if (evt->adv_addr.type == BT_ADDR_LE_PUBLIC_ID ||
+	    evt->adv_addr.type == BT_ADDR_LE_RANDOM_ID) {
+		bt_addr_le_copy(&id_addr, &evt->adv_addr);
+		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+	} else {
+		bt_addr_le_copy(&id_addr,
+				bt_lookup_id_addr(BT_ID_DEFAULT,
+						  &evt->adv_addr));
+	}
+
 	if (!pending_per_adv_sync ||
 	    (!atomic_test_bit(pending_per_adv_sync->flags,
 			      BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
 	     ((pending_per_adv_sync->sid != evt->sid) ||
-	      !bt_addr_le_eq(&pending_per_adv_sync->addr, &evt->adv_addr)))) {
+	      !bt_addr_le_eq(&pending_per_adv_sync->addr, &id_addr)))) {
 		LOG_ERR("Unexpected per adv sync established event");
 		/* Request terminate of pending periodic advertising in controller */
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->handle));
@@ -936,7 +947,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 				 * Already set if not using the sync list
 				 */
 				bt_addr_le_copy(&pending_per_adv_sync->addr,
-						&evt->adv_addr);
+						&id_addr);
 				pending_per_adv_sync->sid = evt->sid;
 			}
 
@@ -968,7 +979,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	if (atomic_test_bit(pending_per_adv_sync->flags,
 			    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
 		/* Now we know which address and SID we synchronized to. */
-		bt_addr_le_copy(&pending_per_adv_sync->addr, &evt->adv_addr);
+		bt_addr_le_copy(&pending_per_adv_sync->addr, &id_addr);
 		pending_per_adv_sync->sid = evt->sid;
 
 		/* Translate "enhanced" identity address type to normal one */
@@ -1018,6 +1029,7 @@ void bt_hci_le_past_received(struct net_buf *buf)
 	struct bt_le_per_adv_sync_synced_info sync_info;
 	struct bt_le_per_adv_sync_cb *listener;
 	struct bt_le_per_adv_sync *per_adv_sync;
+	bt_addr_le_t id_addr;
 
 	if (evt->status) {
 		/* No sync created, don't notify app */
@@ -1043,11 +1055,20 @@ void bt_hci_le_past_received(struct net_buf *buf)
 
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED);
 
+	if (evt->addr.type == BT_ADDR_LE_PUBLIC_ID ||
+	    evt->addr.type == BT_ADDR_LE_RANDOM_ID) {
+		bt_addr_le_copy(&id_addr, &evt->addr);
+		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+	} else {
+		bt_addr_le_copy(&id_addr,
+				bt_lookup_id_addr(BT_ID_DEFAULT, &evt->addr));
+	}
+
 	per_adv_sync->handle = sys_le16_to_cpu(evt->sync_handle);
 	per_adv_sync->interval = sys_le16_to_cpu(evt->interval);
 	per_adv_sync->clock_accuracy = sys_le16_to_cpu(evt->clock_accuracy);
 	per_adv_sync->phy = evt->phy;
-	bt_addr_le_copy(&per_adv_sync->addr, &evt->addr);
+	bt_addr_le_copy(&per_adv_sync->addr, &id_addr);
 	per_adv_sync->sid = evt->adv_sid;
 
 	sync_info.interval = per_adv_sync->interval;
