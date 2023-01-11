@@ -176,7 +176,7 @@ manifest:
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
     - name: mbedtls
-      revision: 6e166050075688fd3cf3d0cb3fc34a1c52df2496
+      revision: pull/38/head
       path: modules/crypto/mbedtls
       groups:
         - crypto
