@@ -3598,8 +3598,9 @@ static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])
 		goto err;
 	}
 
-	if (net_bytes_from_str(mac_addr.addr, sizeof(mac_addr), argv[2]) < 0) {
-		PR_WARNING("Invalid MAC address\n");
+	if ((net_bytes_from_str(mac_addr.addr, sizeof(mac_addr), argv[2]) < 0) ||
+	    !net_eth_is_addr_valid(&mac_addr)) {
+		PR_WARNING("Invalid MAC address: %s\n", argv[2]);
 		goto err;
 	}
 
@@ -3612,6 +3613,10 @@ static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])
 		PR_WARNING("Failed to set MAC address (%d)\n", ret);
 		goto err;
 	}
+
+	PR_INFO("MAC address set to %s\n",
+		net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+		net_if_get_link_addr(iface)->len));
 
 	return 0;
 err:
