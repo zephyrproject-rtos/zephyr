@@ -405,7 +405,8 @@
 			compatible = "st,stm32-rng";
 			reg = <0x50060800 0x400>;
 			interrupts = <80 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
 			status = "disabled";
 		};
 	};

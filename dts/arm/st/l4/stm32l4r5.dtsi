@@ -35,6 +35,11 @@
 			undershoot-prevention;
 		};
 
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
+
 		pinctrl: pin-controller@48000000 {
 			gpiod: gpio@48000c00 {
 				compatible = "st,stm32-gpio";
