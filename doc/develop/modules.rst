@@ -724,6 +724,10 @@ Build settings supported in the :file:`module.yml` file are:
   :file:`<arch_root>/arch` folder.
 - ``module_ext_root``: Contains :file:`CMakeLists.txt` and :file:`Kconfig` files
   for Zephyr modules, see also :ref:`modules_module_ext_root`.
+- ``sca_root``: Contains additional :ref:`SCA <sca>` tool implementations
+  available to the build system. Each tool must be located in
+  :file:`<sca_root>/sca/<tool>` folder. The folder must contain a
+  :file:`sca.cmake`.
 
 Example of a :file:`module.yaml` file containing additional roots, and the
 corresponding file system layout.
