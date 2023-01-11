@@ -664,3 +664,10 @@ test_i2c_wsen_tids: wsen_tids@67 {
 	int-gpios = <&test_gpio 0 0>;
 	odr = <25>;
 };
+
+test_i2c_vl53l1x: vl53l1x@68 {
+	compatible = "st,vl53l1x";
+	reg = <0x68>;
+	int-gpios = <&test_gpio 0 0>;
+	xshut-gpios = <&test_gpio 0 0>;
+};
