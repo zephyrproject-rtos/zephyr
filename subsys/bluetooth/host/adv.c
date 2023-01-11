@@ -12,6 +12,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 
+#include "addr_internal.h"
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "id.h"
@@ -2092,10 +2093,8 @@ void bt_hci_le_scan_req_received(struct net_buf *buf)
 		struct bt_le_ext_adv_scanned_info info;
 		bt_addr_le_t id_addr;
 
-		if (evt->addr.type == BT_ADDR_LE_PUBLIC_ID ||
-		    evt->addr.type == BT_ADDR_LE_RANDOM_ID) {
-			bt_addr_le_copy(&id_addr, &evt->addr);
-			id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		if (bt_addr_le_is_resolved(&evt->addr)) {
+			bt_addr_le_copy_resolved(&id_addr, &evt->addr);
 		} else {
 			bt_addr_le_copy(&id_addr,
 					bt_lookup_id_addr(adv->id, &evt->addr));
