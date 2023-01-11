@@ -1,0 +1,8 @@
+# STM32L4P5G discovery kit configuration
+
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32L4P5G_DK
+	bool "STM32L4P5G IOT Discovery kit"
+	depends on SOC_STM32L4P5XX

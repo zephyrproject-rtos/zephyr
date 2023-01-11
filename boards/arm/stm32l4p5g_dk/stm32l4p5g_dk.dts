@@ -1,0 +1,215 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l4/stm32l4p5Xg.dtsi>
+#include <st/l4/stm32l4p5agixp-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32L4P5G-DK discovery kit";
+	compatible = "st,stm32l4p5g-dk";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &mx25lm51245;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpiog 13 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		blue_led_2: led_2 {
+			gpios = <&gpiog 14 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_2;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		spi-flash0 = &mx25lm51245;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <30>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(120)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_nss_pi0
+		&spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pf14 &i2c4_sda_pf15>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x10000 and ending at
+		 * offset 0x1ffff is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(432)>;
+		};
+		slot1_partition: partition@8c000 {
+			label = "image-1";
+			reg = <0x0008C000 DT_SIZE_K(432)>;
+		};
+		scratch_partition: partition@f8000 {
+			label = "image-scratch";
+			reg = <0x000F8000 DT_SIZE_K(16)>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&octospi2 {
+	pinctrl-0 = <&octospim_p2_clk_pf4 &octospim_p2_ncs_pg12
+		     &octospim_p2_io0_pf0 &octospim_p2_io1_pf1
+		     &octospim_p2_io2_pf2 &octospim_p2_io3_pf3
+		     &octospim_p2_io4_pg0 &octospim_p2_io5_pg1
+		     &octospim_p2_io6_pg9 &octospim_p2_io7_pg10
+		     &octospim_p2_dqs_pf12>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	mx25lm51245: ospi-nor-flash@0 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0>;
+		ospi-max-frequency = <DT_FREQ_M(10)>;
+		size = <DT_SIZE_M(512)>; /* 64 MBytes */
+		spi-bus-width = <OSPI_OPI_MODE>;
+		data-rate = <OSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		sfdp-bfp = [
+			53 46 44 50 06 01 02 ff
+			00 06 01 10 30 00 00 ff
+			c2 00 01 04 10 01 00 ff
+			84 00 01 02 c0 00 00 ff
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			e5 20 fb ff ff ff ff 1f
+			44 eb 08 6b 08 3b 04 bb
+			fe ff ff ff ff ff 00 ff
+			ff ff 44 eb 0c 20 0f 52
+			10 d8 00 ff d6 49 c5 00
+			81 df 04 e3 44 03 67 38
+			30 b0 30 b0 f7 bd d5 5c
+			4a 9e 29 ff f0 50 f9 85
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			7f ef ff ff 21 5c dc ff
+	];
+			partitions {
+			   compatible = "fixed-partitions";
+			   #address-cells = <1>;
+			   #size-cells = <1>;
+
+			   partition@0 {
+			       label = "nor";
+			       reg = <0x00000000 DT_SIZE_M(4)>;
+			   };
+		};
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
