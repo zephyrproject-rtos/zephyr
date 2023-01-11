@@ -7,6 +7,10 @@
 #include <st/f4/stm32f4.dtsi>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	soc {
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi";
@@ -91,6 +95,13 @@
 			#io-channel-cells = <1>;
 		};
 
+		rng: rng@40080000 {
+			compatible = "st,stm32-rng";
+			reg = <0x40080000 0x400>;
+			interrupts = <80 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x80000000>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {

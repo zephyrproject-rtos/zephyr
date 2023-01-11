@@ -7,11 +7,9 @@
 #include <st/f4/stm32f410.dtsi>
 
 /delete-node/ &dac1;
-/ {
-	chosen {
-		zephyr,entropy = &rng;
-	};
+/delete-node/ &rng;
 
+/ {
 	soc {
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x1c00>;
