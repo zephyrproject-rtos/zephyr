@@ -1034,7 +1034,7 @@ init_friend:
 	frnd->lpn = rx->ctx.addr;
 	frnd->num_elem = msg->num_elem;
 	frnd->subnet = rx->sub;
-	frnd->recv_delay = msg->recv_delay;
+	frnd->recv_delay = msg->recv_delay - CONFIG_BT_MESH_FRIEND_ADV_LATENCY;
 	frnd->poll_to = poll_to * 100U;
 	frnd->lpn_counter = sys_be16_to_cpu(msg->lpn_counter);
 	frnd->clear.frnd = sys_be16_to_cpu(msg->prev_addr);
