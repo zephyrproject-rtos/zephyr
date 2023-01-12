@@ -24,10 +24,10 @@
 
 #ifdef CONFIG_NOCACHE_MEMORY
 static __aligned(32) char tx_data[RX_BUFF_SIZE] __used
-	__attribute__((__section__(".nocache")));
+	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION)));
 static const char TX_DATA[] = "It is harder to be kind than to be wise........";
 static __aligned(32) char rx_data[RX_BUFF_SIZE] __used
-	__attribute__((__section__(".nocache.dma")));
+	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION".dma")));
 #else
 static const char tx_data[] = "It is harder to be kind than to be wise........";
 static char rx_data[RX_BUFF_SIZE] = { 0 };
@@ -90,6 +90,7 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 		return TC_FAIL;
 	}
 	k_sleep(K_MSEC(2000));
+
 	TC_PRINT("%s\n", rx_data);
 	if (strcmp(tx_data, rx_data) != 0) {
 		return TC_FAIL;
