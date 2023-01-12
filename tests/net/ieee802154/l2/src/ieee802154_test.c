@@ -444,36 +444,128 @@ out:
 	return result;
 }
 
-static bool test_ack_reply(struct ieee802154_pkt_test *t)
+static bool test_recv_and_ack_reply(struct ieee802154_pkt_test *t)
 {
+	/* Incoming IEEE 802.15.4 packet with payload header compression. */
 	static uint8_t data_pkt[] = {
-		0x61, 0xdc, 0x16, 0xcd, 0xab, 0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b,
-		0x12, 0x00, 0x26, 0x18, 0x32, 0x00, 0x00, 0x4b, 0x12, 0x00, 0x7b,
-		0x00, 0x3a, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x20, 0x01, 0x0d, 0xb8,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x02, 0x87, 0x00, 0x8b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x01,
-		0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
-		0x16, 0xf0, 0x02, 0xff, 0x16, 0xf0, 0x12, 0xff, 0x16, 0xf0, 0x32,
-		0xff, 0x16, 0xf0, 0x00, 0xff, 0x16, 0xf0, 0x00, 0xff, 0x16
+		/* IEEE 802.15.4 MHR */
+		0x61, 0xd8,					/* FCF with AR bit set */
+		0x16,						/* Sequence */
+		0xcd, 0xab,					/* Destination PAN */
+		0xff, 0xff,					/* Destination Address */
+		0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b, 0x12, 0x00, /* Source Address */
+		/* IEEE 802.15.4 MAC Payload */
+		0x7b, 0x39, /* IPHC header, SAM: compressed, DAM: 48-bits inline */
+		0x3a,	    /* Next header: ICMPv6 */
+		0x02, 0x01, 0xff, 0x4b, 0x12, 0x00, /* IPv6 Destination */
+		0x87,				    /* Type: NS */
+		0x00,				    /* Code*/
+		0xb7, 0x45,			    /* Checksum */
+		0x00, 0x00, 0x00, 0x00,		    /* Reserved */
+		0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x70, 0x14, 0xa6, 0x1c, 0x00, 0x4b,
+		0x12, 0x00, /* Target Address */
+		0x01,	    /* ICMPv6 Option: Source LL address */
+		0x02,	    /* Length */
+		0xe5, 0xac, 0xa1, 0x1c, 0x00, 0x4b, 0x12, 0x00, /* LL address */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		/* Padding */
+	};
+	/* Expected uncompressed IPv6 payload. */
+	static uint8_t expected_rx_pkt[] = {
+		0x60, 0x00, 0x00, 0x00, /* IPv6, Traffic Class, Flow Label */
+		0x00, 0x28,		/* Payload Length */
+		0x3a,			/* Next header: ICMPv6 */
+		0xff,			/* Hop Limit */
+		0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x02, 0x12, 0x4b, 0x00, 0x00, 0x9e, 0xa3, 0xc2, /* Source */
+		0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x01, 0xff, 0x4b, 0x12, 0x00, /* Destination */
+		0x87,						/* Type: NS */
+		0x00,						/* Code*/
+		0xb7, 0x45,					/* Checksum */
+		0x00, 0x00, 0x00, 0x00,				/* Reserved */
+		0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x70, 0x14, 0xa6, 0x1c, 0x00, 0x4b, 0x12, 0x00, /* Target Address */
+		0x01, /* ICMPv6 Option: Source LL address */
+		0x02, /* Length */
+		0xe5, 0xac, 0xa1, 0x1c, 0x00, 0x4b, 0x12, 0x00, /* LL address */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		/* Padding */
+	};
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct sockaddr_ll recv_src_sll = {0};
+	struct sockaddr_ll socket_sll = {
+		.sll_ifindex = net_if_get_by_iface(iface),
+		.sll_family = AF_PACKET,
+		.sll_protocol = ETH_P_IEEE802154,
+	};
+	uint8_t received_payload[80] = {0};
+	struct timeval timeo_optval = {
+		.tv_sec = 1,
+		.tv_usec = 0,
 	};
 	struct ieee802154_mpdu mpdu;
-	struct net_pkt *pkt;
+	socklen_t recv_src_sll_len;
 	struct net_buf *frag;
+	struct net_pkt *rx_pkt;
+	bool result = false;
+	uint8_t mac_be[8];
+	int received_len;
+	int fd;
 
 	NET_INFO("- Sending ACK reply to a data packet\n");
 
-	pkt = net_pkt_rx_alloc(K_FOREVER);
-	frag = net_pkt_get_frag(pkt, sizeof(data_pkt), K_FOREVER);
+	fd = socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
+	if (fd < 0) {
+		NET_ERR("*** Failed to create DGRAM socket : %d\n", errno);
+		goto out;
+	}
+
+	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+		NET_ERR("*** Failed to bind packet socket : %d\n", errno);
+		goto release_fd;
+	}
+
+	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval, sizeof(timeo_optval))) {
+		NET_ERR("*** Failed to set reception timeout on packet socket : %d\n", errno);
+		goto release_fd;
+	}
+
+	rx_pkt = net_pkt_rx_alloc(K_FOREVER);
+	frag = net_pkt_get_frag(rx_pkt, sizeof(data_pkt), K_FOREVER);
 
 	memcpy(frag->data, data_pkt, sizeof(data_pkt));
 	frag->len = sizeof(data_pkt);
 
-	net_pkt_frag_add(pkt, frag);
+	net_pkt_frag_add(rx_pkt, frag);
 
-	if (net_recv_data(iface, pkt) < 0) {
+	if (net_recv_data(iface, rx_pkt) < 0) {
 		NET_ERR("Recv data failed");
-		return false;
+		goto release_rx_pkt;
+	}
+
+	recv_src_sll_len = sizeof(recv_src_sll);
+	received_len = recvfrom(fd, received_payload, sizeof(received_payload), 0,
+				(struct sockaddr *)&recv_src_sll, &recv_src_sll_len);
+	if (received_len < 0) {
+		NET_ERR("*** Failed to receive packet, errno %d\n", errno);
+		goto release_rx_pkt;
+	}
+
+	sys_memcpy_swap(mac_be, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+	if (recv_src_sll_len != sizeof(struct sockaddr_ll) ||
+	    recv_src_sll.sll_ifindex != net_if_get_by_iface(iface) ||
+	    recv_src_sll.sll_family != AF_PACKET || recv_src_sll.sll_protocol != ETH_P_IEEE802154 ||
+	    recv_src_sll.sll_halen != IEEE802154_EXT_ADDR_LENGTH ||
+	    memcmp(recv_src_sll.sll_addr, mac_be, IEEE802154_EXT_ADDR_LENGTH)) {
+		NET_ERR("*** Received socket address does not compare\n", errno);
+		goto release_rx_pkt;
+	}
+
+	pkt_hexdump(received_payload, received_len);
+
+	if (memcmp(expected_rx_pkt, received_payload,
+		   sizeof(expected_rx_pkt))) {
+		NET_ERR("*** Received uncompressed IPv6 payload does not compare\n");
+		goto release_rx_pkt;
 	}
 
 	k_yield();
@@ -482,7 +574,7 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 	/* an ACK packet should be in current_pkt */
 	if (!current_pkt->frags) {
 		NET_ERR("*** No ACK reply sent\n");
-		return false;
+		goto release_rx_pkt;
 	}
 
 	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
@@ -490,19 +582,26 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** ACK Reply is invalid\n");
-		return false;
+		goto release_tx_frag;
 	}
 
 	if (memcmp(mpdu.mhr.fs, t->mhr_check.fc_seq,
 		   sizeof(struct ieee802154_fcf_seq))) {
 		NET_ERR("*** ACK Reply does not compare\n");
-		return false;
+		goto release_tx_frag;
 	}
 
+	result = true;
+
+release_tx_frag:
 	net_pkt_frag_unref(current_pkt->frags);
 	current_pkt->frags = NULL;
-
-	return true;
+release_rx_pkt:
+	net_pkt_unref(rx_pkt);
+release_fd:
+	close(fd);
+out:
+	return result;
 }
 
 static bool test_packet_cloning_with_cb(void)
@@ -609,11 +708,11 @@ ZTEST(ieee802154_l2, test_parsing_ack_pkt)
 	zassert_true(ret, "ACK parsed");
 }
 
-ZTEST(ieee802154_l2, test_replying_ack_pkt)
+ZTEST(ieee802154_l2, test_receiving_pkt_and_replying_ack_pkt)
 {
 	bool ret;
 
-	ret = test_ack_reply(&test_ack_pkt);
+	ret = test_recv_and_ack_reply(&test_ack_pkt);
 
 	zassert_true(ret, "ACK replied");
 }
