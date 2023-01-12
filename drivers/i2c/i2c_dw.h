@@ -102,6 +102,7 @@ struct i2c_dw_rom_config {
 struct i2c_dw_dev_config {
 	DEVICE_MMIO_RAM;
 	struct k_sem		device_sync_sem;
+	struct k_mutex		bus_mutex;
 	uint32_t app_config;
 
 	uint8_t			*xfr_buf;
