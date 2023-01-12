@@ -67,6 +67,6 @@ config RISCV_SOC_INTERRUPT_INIT
 
 endif # ITE_IT8XXX2_INTC
 
-source "soc/riscv/riscv-ite/it8xxx2/Kconfig.defconfig.it81*"
+source "soc/riscv/riscv-ite/it8xxx2/Kconfig.defconfig.it8*"
 
 endif # SOC_SERIES_RISCV32_IT8XXX2
