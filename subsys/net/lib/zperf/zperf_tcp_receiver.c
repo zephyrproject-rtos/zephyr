@@ -161,7 +161,7 @@ static void tcp_server_session(void)
 				 (struct sockaddr *)in4_addr_my,
 				 sizeof(struct sockaddr_in));
 		if (ret < 0) {
-			NET_ERR("Cannot bind IPv4 UDP port %d (%d)",
+			NET_ERR("Cannot bind IPv4 TCP port %d (%d)",
 				ntohs(in4_addr_my->sin_port), errno);
 			goto error;
 		}
@@ -217,7 +217,7 @@ static void tcp_server_session(void)
 				 (struct sockaddr *)in6_addr_my,
 				 sizeof(struct sockaddr_in6));
 		if (ret < 0) {
-			NET_ERR("Cannot bind IPv6 UDP port %d (%d)",
+			NET_ERR("Cannot bind IPv6 TCP port %d (%d)",
 				ntohs(in6_addr_my->sin6_port), errno);
 			goto error;
 		}
