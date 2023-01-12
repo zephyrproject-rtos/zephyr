@@ -39,7 +39,7 @@ config IPC_SERVICE_BACKEND_ICMSG_ME_SHMEM_RESET
 
 config IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
 	bool "Nocopy feature for receive path"
-	select IPC_SERVICE_ICMSG_NOCOPY_RX
+	select IPC_SERVICE_ICMSG_ME_NOCOPY_RX
 	help
 	  Enable nocopy feature for receive path of multiendpoint icmsg
 	  ipc_service backend. This features enables functions to hold and

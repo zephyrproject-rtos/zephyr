@@ -28,3 +28,19 @@ menuconfig IPC_SERVICE_ICMSG
 if IPC_SERVICE_ICMSG
 	rsource "Kconfig.icmsg"
 endif
+
+config IPC_SERVICE_ICMSG_ME
+	bool "icmsg IPC library with multi-endpoint functionality"
+	select IPC_SERVICE_ICMSG
+	select EVENTS
+	help
+	  Multi-endpoint functionality for the icmsg library
+
+config IPC_SERVICE_ICMSG_ME_NOCOPY_RX
+	bool
+	depends on IPC_SERVICE_ICMSG_ME
+	select IPC_SERVICE_ICMSG_NOCOPY_RX
+	help
+	  Enable nocopy feature for receiving path of the multi-endpoint
+	  feature of the icmsg library. This features might be used by backends
+	  based on multi-endpoint icmsg.
