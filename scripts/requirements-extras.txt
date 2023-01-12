@@ -24,6 +24,9 @@ imgtool>=1.9
 # used by nanopb module to generate sources from .proto files
 grpcio-tools
 
+# needed for building Pigweed module
+pigweed>=0.0.13
+
 # used by scripts/release/bug_bash.py for generating top ten bug squashers
 PyGithub
 

@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: pigweed-remote
+      url-base: https://pigweed.googlesource.com/pigweed
 
   #
   # Please add items below based on alphabetical order
@@ -208,6 +210,9 @@ manifest:
     - name: picolibc
       path: modules/lib/picolibc
       revision: 04ada5951cbaf8e7b17f8226ce31cb6837c28ba7
+    - name: pigweed
+      path: modules/lib/pigweed
+      revision: 4f10c431a51eb1929944653645bca992c17b140b
     - name: segger
       revision: e2ff2200556e8a8f962921444275c04971a2bb3d
       path: modules/debug/segger
