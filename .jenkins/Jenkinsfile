@@ -3,6 +3,8 @@ def linuxBuildStageLabel = "Linux-Build-${UUID.randomUUID().toString()}"
 def jenkinsSlaveContainerName = 'jnlp'
 def jenkinsSlaveImage = 'amr-registry-pre.caas.intel.com/pse-pswe-software-ba/jenkins/jnlp-slave'
 def buildNumber = currentBuild.number
+def branchName = env.BRANCH_NAME
+def targetBranch = 'main'
 containerImage =''
 
 def cloudName = 'kubernetes_embedded'
@@ -206,21 +208,36 @@ spec:
                         try {
                             sh """#!/bin/bash -x
                             cd $WORKSPACE
+                            git config --add remote.origin.fetch +refs/heads/$targetBranch:refs/remotes/origin/$targetBranch
+                            git fetch --force origin
+                            git format-patch origin/$targetBranch >patch.txt
+                            sh .jenkins/test_checkpatch.sh patch.txt
+
+                            """
+                        }
+                        catch (Exception e) {
+                            error 'checkpatch error'
+                            exit -1
+                        }
+                        try {
+                            sh """#!/bin/bash -x
+                            cd $WORKSPACE
                             chmod 755 .jenkins/buildScript_agilex.sh
                             .jenkins/buildScript_agilex.sh ${buildNumber}
                             chmod 755 .jenkins/buildScript_niosv-m.sh
                             .jenkins/buildScript_niosv-m.sh ${buildNumber}
   
                             """
-                        } catch (Exception e) {
-			    error 'Test error'
+                        }
+                        catch (Exception e) {
+                            error 'Test error'
                             exit -1
                         }
                     }
                 }
             }
         }
-        stage("Regtest") {
+	stage("Regtest"){
             steps {
                 script {
                     build job: "Embedded_CI/zephyr-regtest",  parameters: [string(name: 'JOB_NO_BUILD', value: String.valueOf(BUILD_NUMBER)), string(name: 'GIT_BRANCH_NAME', value: env.BRANCH_NAME)], wait: true
