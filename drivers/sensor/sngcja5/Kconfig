@@ -1,0 +1,12 @@
+# SN-GCJA5 laser particle sensor configuration options
+
+# Copyright (c) 2023 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SNGCJA5
+	bool "SN-GCJA5 laser particle sensor"
+	default y
+	depends on DT_HAS_PANASONIC_SNGCJA5_ENABLED
+	select I2C
+	help
+	  Enable driver for SN-GCJA5 laser particle sensor.
