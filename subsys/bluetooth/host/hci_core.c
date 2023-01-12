@@ -3796,9 +3796,9 @@ int bt_disable(void)
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 
-#if defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
-#endif /* CONFIG_BT_EXT_ADV || CONFIG_BT_BROADCASTER */
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_PRIVACY)
 	k_work_cancel_delayable(&bt_dev.rpa_update);
