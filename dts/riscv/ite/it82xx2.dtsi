@@ -24,6 +24,11 @@
 			interrupt-parent = <&intc>;
 		};
 
+		gpiogcr: gpio-gcr@f03e00 {
+			compatible = "ite,it8xxx2-gpiogcr";
+			reg = <0x00f03e00 0x2f>;
+		};
+
 		i2c0: i2c@f04300 {
 			compatible = "ite,enhance-i2c";
 			#address-cells = <1>;
