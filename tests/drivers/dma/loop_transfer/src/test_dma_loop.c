@@ -59,9 +59,9 @@
 #if CONFIG_NOCACHE_MEMORY
 static const char TX_DATA[] = DATA;
 static __aligned(32) char tx_data[1024] __used
-	__attribute__((__section__(".nocache")));
+	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION)));
 static __aligned(32) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
-	__attribute__((__section__(".nocache.dma")));
+	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION".dma")));
 #else
 /* this src memory shall be in RAM to support usingas a DMA source pointer.*/
 static char tx_data[] = DATA;
