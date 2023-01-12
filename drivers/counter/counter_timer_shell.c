@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #define ARGV_DEV           1
 #define ARGV_CHN           2
@@ -88,10 +89,11 @@ static int cmd_timer_oneshot(const struct shell *shctx,
 	ARG_UNUSED(argc);
 	const struct device *timer_dev;
 	struct counter_alarm_cfg alarm_cfg;
-	uint64_t delay = 0;
-	uint32_t channel = 0;
+	unsigned long delay = 0;
+	unsigned long channel = 0;
 	volatile bool alarm_flag = false;
 	int32_t err = 0;
+	char *endptr;
 
 	timer_dev = device_get_binding(argv[ARGV_DEV]);
 	if (!timer_dev) {
@@ -99,15 +101,26 @@ static int cmd_timer_oneshot(const struct shell *shctx,
 		return -ENODEV;
 	}
 
-	delay = strtol(argv[ARGV_ONESHOT_TIME], NULL, 10);
-	channel = strtol(argv[ARGV_CHN], NULL, 10);
+	errno = 0;
+	delay = strtoul(argv[ARGV_ONESHOT_TIME], &endptr, 10);
+	if (*endptr || (delay == LONG_MAX && errno)) {
+		shell_error(shctx, "Timer: invalid delay:%ld", delay);
+		return -EINVAL;
+	}
+
+	errno = 0;
+	channel = strtoul(argv[ARGV_CHN], &endptr, 10);
+	if (*endptr || (channel == LONG_MAX && errno)) {
+		shell_error(shctx, "Timer: failed to set channel:%ld", channel);
+		return -EINVAL;
+	}
 
 	alarm_cfg.flags = 0;
-	alarm_cfg.ticks = counter_us_to_ticks(timer_dev, delay);
+	alarm_cfg.ticks = counter_us_to_ticks(timer_dev, (uint64_t)delay);
 	alarm_cfg.callback = timer_alarm_handler;
 	alarm_cfg.user_data = (void *)&alarm_flag;
 
-	err = counter_set_channel_alarm(timer_dev, channel, &alarm_cfg);
+	err = counter_set_channel_alarm(timer_dev, (uint8_t)channel, &alarm_cfg);
 	if (err != 0) {
 		shell_error(shctx, "%s is not available err:%d", argv[ARGV_DEV], err);
 		return err;
@@ -129,9 +142,10 @@ static int cmd_timer_periodic(const struct shell *shctx,
 	ARG_UNUSED(argc);
 	const struct device *timer_dev;
 	struct counter_top_cfg top_cfg;
-	uint64_t delay = 0;
+	unsigned long delay = 0;
 	volatile uint32_t count = 0;
 	int32_t err = 0;
+	char *endptr;
 
 	timer_dev = device_get_binding(argv[ARGV_DEV]);
 	if (!timer_dev) {
@@ -139,10 +153,15 @@ static int cmd_timer_periodic(const struct shell *shctx,
 		return -ENODEV;
 	}
 
-	delay = strtol(argv[ARGV_PERIODIC_TIME], NULL, 10);
+	errno = 0;
+	delay = strtoul(argv[ARGV_PERIODIC_TIME], &endptr, 10);
+	if (*endptr || (delay == LONG_MAX && errno)) {
+		shell_error(shctx, "Timer: invalid delay:%ld", delay);
+		return -EINVAL;
+	}
 
 	top_cfg.flags = 0;
-	top_cfg.ticks = counter_us_to_ticks(timer_dev, delay);
+	top_cfg.ticks = counter_us_to_ticks(timer_dev, (uint64_t)delay);
 	top_cfg.callback = timer_top_handler;
 	top_cfg.user_data = (void *)&count;
 
