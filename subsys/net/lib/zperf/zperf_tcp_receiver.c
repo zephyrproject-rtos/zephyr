@@ -68,7 +68,6 @@ static void tcp_received(const struct sockaddr *addr, size_t datalen)
 
 	switch (session->state) {
 	case STATE_COMPLETED:
-		break;
 	case STATE_NULL:
 		zperf_reset_session_stats(session);
 		session->start_time = k_uptime_ticks();
@@ -97,13 +96,7 @@ static void tcp_received(const struct sockaddr *addr, size_t datalen)
 				tcp_session_cb(ZPERF_SESSION_FINISHED, &results,
 					       tcp_user_data);
 			}
-
-			session->state = STATE_NULL;
 		}
-
-
-		break;
-	case STATE_LAST_PACKET_RECEIVED:
 		break;
 	default:
 		NET_ERR("Unsupported case");
