@@ -15,8 +15,3 @@
 		check-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };
-
-&uart1 {
-	/* Default-enabled Arduino UART steals the pins we want. */
-	status = "disabled";
-};
