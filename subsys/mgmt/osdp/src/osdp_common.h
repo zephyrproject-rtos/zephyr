@@ -10,8 +10,6 @@
 #include <zephyr/mgmt/osdp.h>
 #include <zephyr/sys/__assert.h>
 
-#define STR(x) #x
-
 #define OSDP_RESP_TOUT_MS              (200)
 
 #define OSDP_QUEUE_SLAB_SIZE \
