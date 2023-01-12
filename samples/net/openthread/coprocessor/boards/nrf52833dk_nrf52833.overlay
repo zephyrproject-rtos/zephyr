@@ -10,3 +10,7 @@
 		zephyr,console = &uart1;
 	};
 };
+
+&uart1 {
+	status = "okay";
+};
