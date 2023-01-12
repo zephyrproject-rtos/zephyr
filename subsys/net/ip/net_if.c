@@ -4159,6 +4159,21 @@ exit:
 	}
 }
 
+static void init_igmp(struct net_if *iface)
+{
+#if defined(CONFIG_NET_IPV4_IGMP)
+	/* Ensure IPv4 is enabled for this interface */
+	if (iface->config.ip.ipv4 == NULL) {
+		return;
+	}
+
+	net_ipv4_igmp_init(iface);
+#else
+	ARG_UNUSED(iface);
+	return;
+#endif
+}
+
 int net_if_up(struct net_if *iface)
 {
 	int status = 0;
@@ -4186,6 +4201,8 @@ int net_if_up(struct net_if *iface)
 	if (status < 0) {
 		goto out;
 	}
+
+	init_igmp(iface);
 
 done:
 	net_if_flag_set(iface, NET_IF_UP);
