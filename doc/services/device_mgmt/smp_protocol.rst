@@ -156,6 +156,8 @@ groups. Below table presents list of common groups:
     +---------------+-----------------------------------------------+
     | ``9``         | :ref:`mcumgr_smp_group_9`                     |
     +---------------+-----------------------------------------------+
+    | ``16``-``48`` | Named groups                                  |
+    +---------------+-----------------------------------------------+
     | ``63``        | Zephyr specific basic commands group          |
     +---------------+-----------------------------------------------+
     | ``64``        | This is the base group for defining           |
@@ -165,6 +167,26 @@ groups. Below table presents list of common groups:
 The payload for above groups, except for ``64`` which is not defined,
 is always CBOR encoded. The group ``64``, and above, are free to be defined
 by application developers and are not defined within this documentation.
+
+Named Groups
+============
+
+Named groups may not have constant ``Group ID``, which means that a client
+software needs to first query for an ID, using Group 0 command
+:ref:`mcumgr_smp_group_0_named_group_discovery`.
+Named groups are given two part identifier, where first part identifies
+group provider/vendor and second identifiers group within provider/vendor
+definitions.
+Groups that already have static identifiers defined in
+:ref:`mcumgr_smp_protocol_group_ids` will not be discoverable with the
+mechanism.
+Named groups are provided to replace Zephyr specific groups, numbered
+down from 64, and user specific groups, numbered up from 64, as currently
+existing static allocation of groups may cause conflicts when user wants
+to use libraries adding SMP commands from different vendors, where all
+groups use the same base number.
+CBOR payload of named groups always contains
+:ref:`_mcumgr_smp_protocol_groups_state_token`.
 
 Minimal response
 ****************
@@ -193,6 +215,11 @@ where:
 
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    +-----------------------+---------------------------------------------------+
+    | "#"                   | Optional group registration state token, used     |
+    |                       | with named groups and named groups discovery      |
+    |                       | requests.                                         |
+    |                       | :ref:`mcumgr_smp_protocol_groupis_state_token`    |
     +-----------------------+---------------------------------------------------+
 
 .. _mcumgr_smp_protocol_status_codes:
@@ -244,6 +271,9 @@ Status/error codes in responses
     |               | request and may not process incoming one.     |
     |               | Client should re-try later.                   |
     +---------------+-----------------------------------------------+
+    | ``11``        | Incorrect group state token.                  |
+    |               | :ref:`mcumgr_smp_protocol_groups_state_token` |
+    +---------------+-----------------------------------------------+
     | ``256``       | This is base error number of user defined     |
     |               | error codes.                                  |
     +---------------+-----------------------------------------------+
@@ -251,6 +281,28 @@ Status/error codes in responses
 
 Zephyr uses ``MGMT_ERR_`` prefixed definitions gathered in this header file
 :zephyr_file:`subsys/mgmt/mcumgr/lib/mgmt/include/mgmt/mgmt.h`
+
+.. _mcumgr_smp_protocol_groups_state_token:
+
+Groups Registration sate token
+==============================
+
+The token is used to identify state of group registration and is required
+to be sent with requests to named groups. The token is obtained with
+group discovery request when MCUmgr returns information on ID given to
+named group and should be unique for each group.
+If a system is able to keep named groups with the same IDs between group
+registrations/de-registrations, and also system restarts, then the value of
+token may be also constant for each group.
+Otherwise such token should be generated with first group discovery request
+from last group registration.
+Token with value 0 is considered incorrect token.
+The token is used to make sure that a client software is still sending
+request to a group it has requested ID for, to avoid cases when system gets
+restarted or group has been de-registered/registered and now ID belongs
+to a different group.
+The token is encoded with each named group request CBOR data as "#" string
+key with 32-bit integer token value.
 
 Specifications of management groups supported by Zephyr
 *******************************************************

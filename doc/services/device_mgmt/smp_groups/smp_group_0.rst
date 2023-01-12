@@ -28,6 +28,8 @@ OS management group defines following commands:
     +-------------------+-----------------------------------------------+
     | ``7``             | OS/Application info                           |
     +-------------------+-----------------------------------------------+
+    | ``8``             | Named group discovery                         |
+    +-------------------+-----------------------------------------------+
 
 Echo command
 ************
@@ -669,3 +671,92 @@ where:
     | "rc"         | :ref:`mcumgr_smp_protocol_status_codes`; will not appear   |
     |              | if 0                                                       |
     +--------------+------------------------------------------------------------+
+
+.. _mcumgr_smp_group_0_named_group_discovery:
+
+Named Group Discovery
+*********************
+
+Used to obtain group ID for Named Groups, which are groups that does not have
+to have constant Group ID, as it may depend on group order registration.
+To use such groups client software needs to first query for the Group ID
+using two string query, where first string identifies "vendor" and the
+second the vendor specific group. For example query for "Zephyr"/"ImgMgt" could
+return 6 if "ImgMgmt" would mean Image Management group.
+
+Named Group Discovery Request
+=============================
+
+Named Group Discovery Group request header fields:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``0``  | ``0``        |  ``8``         |
+    +--------+--------------+----------------+
+
+CBOR data of request:
+
+.. code-block:: none
+
+    {
+        (str)"vendor"  : (str)
+        (str)"group"   : (str)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +----------+-------------------------------------------------------------------+
+    | "vendor" | Vendor idenrifier, max 16 characters without terminating nullS    |
+    |          | character.                                                        |
+    +----------+-------------------------------------------------------------------+
+    | "group"  | Group identifier within vendor definition scope, max 16           |
+    |          | characters without terminating null character.                    |
+    +----------+-------------------------------------------------------------------+
+
+Named Group Discovery Response
+==============================
+
+OS/Application info response header fields
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``2``  | ``0``        |  ``8``         |
+    +--------+--------------+----------------+
+
+CBOR data of response:
+
+.. code-block:: none
+
+    {
+        (str)"vendor"      : (str)
+        (str)"group"       : (str)
+        (str)"#"           : (int)
+        (opt,str)"rc"      : (int)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +----------+-------------------------------------------------------------------+
+    | "vendor" | Vendor identifier from request this is response to.               |
+    +----------+-------------------------------------------------------------------+
+    | "group"  | Group identifier from request.                                    |
+    +----------+-------------------------------------------------------------------+
+    | "#"      | Group registration state token                                    |
+    |          | :ref:`mcumgr_smp_protocol_groups_state_token`                     |
+    +----------+-------------------------------------------------------------------+
+    | "rc"     | :ref:`mcumgr_smp_protocol_status_codes`; will not appear if 0     |
+    +----------+-------------------------------------------------------------------+
