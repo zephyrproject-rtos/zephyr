@@ -94,6 +94,12 @@ enum bt_audio_parental_rating {
 	BT_AUDIO_PARENTAL_RATING_AGE_18_OR_ABOVE  = 0x0F
 };
 
+/** @brief Audio Active State defined by the Generic Audio assigned numbers (bluetooth.com). */
+enum bt_audio_active_state {
+	BT_AUDIO_ACTIVE_STATE_DISABLED       = 0x00,
+	BT_AUDIO_ACTIVE_STATE_ENABLED        = 0x01,
+};
+
 /**
  * @brief Codec metadata type IDs
  *
@@ -109,7 +115,7 @@ enum bt_audio_metadata_type {
 	 *
 	 * See the BT_AUDIO_CONTEXT_* for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_PREF_CONTEXT      = 0x01,
+	BT_AUDIO_METADATA_TYPE_PREF_CONTEXT        = 0x01,
 
 	/** @brief Streaming audio context.
 	 *
@@ -120,34 +126,43 @@ enum bt_audio_metadata_type {
 	 *
 	 * See the BT_AUDIO_CONTEXT_* for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT    = 0x02,
+	BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT      = 0x02,
 
 	/** UTF-8 encoded title or summary of stream content */
-	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO      = 0x03,
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO        = 0x03,
 
 	/** @brief Stream language
 	 *
 	 * 3 octet lower case language code defined by ISO 639-3
 	 */
-	BT_AUDIO_METADATA_TYPE_STREAM_LANG       = 0x04,
+	BT_AUDIO_METADATA_TYPE_STREAM_LANG         = 0x04,
 
 	/** Array of 8-bit CCID values */
-	BT_AUDIO_METADATA_TYPE_CCID_LIST         = 0x05,
+	BT_AUDIO_METADATA_TYPE_CCID_LIST           = 0x05,
 
 	/** @brief Parental rating
 	 *
 	 * See @ref bt_audio_parental_rating for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_PARENTAL_RATING   = 0x06,
+	BT_AUDIO_METADATA_TYPE_PARENTAL_RATING     = 0x06,
 
 	/** UTF-8 encoded URI for additional Program information */
-	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI  = 0x07,
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI    = 0x07,
+
+	/** @brief Audio active state
+	 *
+	 * See @ref bt_audio_active_state for valid values.
+	 */
+	BT_AUDIO_METADATA_TYPE_AUDIO_STATE         = 0x08,
+
+	/** Broadcast Audio Immediate Rendering flag  */
+	BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE = 0x09,
 
 	/** Extended metadata */
-	BT_AUDIO_METADATA_TYPE_EXTENDED          = 0xFE,
+	BT_AUDIO_METADATA_TYPE_EXTENDED            = 0xFE,
 
 	/** Vendor specific metadata */
-	BT_AUDIO_METADATA_TYPE_VENDOR            = 0xFF,
+	BT_AUDIO_METADATA_TYPE_VENDOR              = 0xFF,
 };
 
 /* Unicast Announcement Type, Generic Audio */
