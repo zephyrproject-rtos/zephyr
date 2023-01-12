@@ -88,12 +88,13 @@ static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *
  * a byte is interpreted as 8 pixels ordered vertically among each other.
  */
 static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
-			     char c, uint16_t x, uint16_t y)
+				char c, uint16_t x, uint16_t y,
+				bool draw_bg)
 {
 	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
-	uint8_t *glyph_ptr;
-	bool need_reverse = (((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0)
+	const bool need_reverse = (((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0)
 			     != ((fptr->caps & CFB_FONT_MSB_FIRST) != 0));
+	uint8_t *glyph_ptr;
 
 	if (c < fptr->first_char || c > fptr->last_char) {
 		c = ' ';
@@ -105,24 +106,78 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	}
 
 	for (size_t g_x = 0; g_x < fptr->width; g_x++) {
-		uint32_t y_segment = y / 8U;
+		const int16_t fb_x = x + g_x;
 
-		for (size_t g_y = 0; g_y < fptr->height / 8U; g_y++) {
-			uint32_t fb_y = (y_segment + g_y) * fb->x_res;
+		for (size_t g_y = 0; g_y < fptr->height; g_y++) {
+			/*
+			 * Process glyph rendering in the y direction
+			 * by separating per 8-line boundaries.
+			 */
+
+			const int16_t fb_y = y + g_y;
+			const size_t fb_index = (fb_y / 8U) * fb->x_res + fb_x;
+			const size_t offset = y % 8;
+			uint8_t bg_mask;
 			uint8_t byte;
 
-			if ((fb_y + x + g_x) >= fb->size) {
-				return 0;
+			if (fb_x < 0 || fb->x_res <= fb_x || fb_y < 0 || fb->y_res <= fb_y) {
+				continue;
 			}
 
-			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y);
+			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
+
+			if (offset == 0) {
+				/*
+				 * The start row is on an 8-line boundary.
+				 * Therefore, it can set the value directly.
+				 */
+				bg_mask = 0;
+				g_y += 7;
+			} else if (g_y == 0) {
+				/*
+				 * If the starting row is not on the 8-line boundary,
+				 * shift the glyph to the starting line, and create a mask
+				 * from the 8-line boundary to the starting line.
+				 */
+				byte = byte << offset;
+				bg_mask = BIT_MASK(offset);
+				g_y += (7 - offset);
+			} else {
+				/*
+				 * After the starting row, read and concatenate the next 8-rows
+				 * glyph and clip to the 8-line boundary and write 8-lines
+				 * at the time.
+				 * Create a mask to prevent overwriting the drawing contents
+				 * after the end row.
+				 */
+				const size_t lines = ((fptr->height - g_y) < 8) ? offset : 8;
+
+				if (lines == 8) {
+					uint16_t byte2 = byte;
+
+					byte2 |= (get_glyph_byte(glyph_ptr, fptr, g_x,
+								 (g_y + 8) / 8))
+						  << 8;
+					byte = (byte2 >> (8 - offset)) & BIT_MASK(lines);
+				} else {
+					byte = (byte >> (8 - offset)) & BIT_MASK(lines);
+				}
+
+				bg_mask = (BIT_MASK(8 - lines) << (lines)) & 0xFF;
+				g_y += (lines - 1);
+			}
+
 			if (need_reverse) {
 				byte = byte_reverse(byte);
+				bg_mask = byte_reverse(bg_mask);
 			}
 
-			fb->buf[fb_y + x + g_x] = byte;
-		}
+			if (draw_bg) {
+				fb->buf[fb_index] &= bg_mask;
+			}
 
+			fb->buf[fb_index] |= byte;
+		}
 	}
 
 	return fptr->width;
@@ -144,13 +199,13 @@ int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint1
 		return -EINVAL;
 	}
 
-	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) && !(y % 8)) {
+	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
 		for (size_t i = 0; i < strlen(str); i++) {
 			if (x + fptr->width > fb->x_res) {
 				x = 0U;
 				y += fptr->height;
 			}
-			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y);
+			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y, true);
 		}
 		return 0;
 	}
