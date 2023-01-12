@@ -72,6 +72,8 @@ The efr32bg_sltb010a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | true random number generator        |
 +-----------+------------+-------------------------------------+
+| I2C(M/S)  | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/efr32bg_sltb010a/efr32bg_sltb010a_defconfig``.
