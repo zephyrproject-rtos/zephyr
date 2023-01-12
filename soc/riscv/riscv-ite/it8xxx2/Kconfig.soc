@@ -20,6 +20,18 @@ config SOC_IT8XXX2
 
 endchoice
 
+config SOC_IT8XXX2_REG_SET_V1
+	bool
+	help
+	  This option is selected by a variable of which soc, and will
+	  determine the register for the IT81xx2 specification.
+
+config SOC_IT8XXX2_REG_SET_V2
+	bool
+	help
+	  This option is selected by a variable of which soc, and will
+	  determine the register for the IT82xx2 specification.
+
 if SOC_IT8XXX2
 
 choice IT8XXX2_SERIES
@@ -28,15 +40,27 @@ choice IT8XXX2_SERIES
 
 config SOC_IT81302_BX
 	bool "IT81302 BX version"
+	select SOC_IT8XXX2_REG_SET_V1
 
 config SOC_IT81202_BX
 	bool "IT81202 BX version"
+	select SOC_IT8XXX2_REG_SET_V1
 
 config SOC_IT81302_CX
 	bool "IT81302 CX version"
+	select SOC_IT8XXX2_REG_SET_V1
 
 config SOC_IT81202_CX
 	bool "IT81202 CX version"
+	select SOC_IT8XXX2_REG_SET_V1
+
+config SOC_IT82202_AX
+	bool "IT82202 AX version"
+	select SOC_IT8XXX2_REG_SET_V2
+
+config SOC_IT82302_AX
+	bool "IT82302 AX version"
+	select SOC_IT8XXX2_REG_SET_V2
 
 endchoice
 
