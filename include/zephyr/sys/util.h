@@ -26,6 +26,90 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 
+/** @brief Number of bits that make up a type */
+#define NUM_BITS(t) (sizeof(t) * 8)
+
+#ifdef __cplusplus
+template <typename T> static inline constexpr int __z_log2_impl(T x)
+{
+	if (sizeof(x) < sizeof(unsigned int)) {
+		return ((x) < 1) * (-1) +
+		       ((x) >= 1) * (NUM_BITS(unsigned int) - __builtin_clz(x) - 1);
+	} else if (sizeof(x) <= sizeof(unsigned long long)) {
+		return ((x) < 1) * (-1) +
+		       ((x) >= 1) * (NUM_BITS(unsigned long long) - __builtin_clzll(x) - 1);
+	}
+
+	/* No declaration of __ASSERT is available here */
+	static_assert(sizeof(x) <= sizeof(unsigned long long), "unsupported type for LOG2()");
+
+	return -1;
+}
+
+template <typename T> static inline constexpr int __z_log2ceil_impl(T x)
+{
+	if (sizeof(x) < sizeof(unsigned int)) {
+		return (x > 1) * (NUM_BITS(unsigned int) - __builtin_clz(x - 1));
+	} else if (sizeof(x) <= sizeof(unsigned long long)) {
+		return (x > 1) * (NUM_BITS(unsigned long long) - __builtin_clzll(x - 1));
+	}
+
+	/* No declaration of __ASSERT is available here */
+	static_assert(sizeof(x) <= sizeof(unsigned long long), "unsupported type for LOG2CEIL()");
+
+	return -1;
+}
+
+template <typename T> static inline constexpr uint64_t __z_nhpot_impl(T x)
+{
+	int l2c = __z_log2ceil_impl(x);
+
+	return (l2c != NUM_BITS(unsigned long long)) * (1ULL << l2c);
+}
+#else
+#define __z_log2_impl(x)                                                                           \
+	(((x) < 1) * (-1) +                                                                        \
+	 ((x) >= 1) * _Generic((x), char                                                           \
+			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), unsigned char    \
+			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), short            \
+			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), unsigned short   \
+			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), int              \
+			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), unsigned int     \
+			       : (NUM_BITS(unsigned int) - __builtin_clz(x) - 1), long             \
+			       : (NUM_BITS(unsigned long) - __builtin_clzl(x) - 1), unsigned long  \
+			       : (NUM_BITS(unsigned long) - __builtin_clzl(x) - 1), long long      \
+			       : (NUM_BITS(unsigned long long) - __builtin_clzll(x) - 1),          \
+				 unsigned long long                                                \
+			       : (NUM_BITS(unsigned long long) - __builtin_clzll(x) - 1)))
+
+#define __z_log2ceil_impl(x)                                                                       \
+	(((x) > 1) *                                                                               \
+	 _Generic((x), char                                                                        \
+		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), unsigned char                 \
+		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), short                         \
+		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), unsigned short                \
+		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), int                           \
+		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), unsigned int                  \
+		  : (NUM_BITS(unsigned int) - __builtin_clz((x)-1)), long                          \
+		  : (NUM_BITS(unsigned long) - __builtin_clzl((x)-1)), unsigned long               \
+		  : (NUM_BITS(unsigned long) - __builtin_clzl((x)-1)), long long                   \
+		  : (NUM_BITS(unsigned long long) - __builtin_clzll((x)-1)), unsigned long long    \
+		  : (NUM_BITS(unsigned long long) - __builtin_clzll((x)-1))))
+
+#define __z_nhpot_impl(x)                                                              \
+	_Generic((x), char                                                             \
+					     : (1UL << LOG2CEIL(x)), unsigned char                 \
+					     : (1UL << LOG2CEIL(x)), short                         \
+					     : (1UL << LOG2CEIL(x)), unsigned short                \
+					     : (1ULL << LOG2CEIL(x)), int                          \
+					     : (1ULL << LOG2CEIL(x)), unsigned int                 \
+					     : (1ULL << LOG2CEIL(x)), long                         \
+					     : (1ULL << LOG2CEIL(x)), unsigned long                \
+					     : (1ULL << LOG2CEIL(x)), long long                    \
+					     : (1ULL << LOG2CEIL(x)), unsigned long long           \
+					     : (1ULL << LOG2CEIL(x)))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -314,7 +398,7 @@ extern "C" {
  */
 static inline bool is_power_of_two(unsigned int x)
 {
-	return (x != 0U) && ((x & (x - 1U)) == 0U);
+	return IS_POWER_OF_TWO(x);
 }
 
 /**
@@ -508,6 +592,35 @@ char *utf8_trunc(char *utf8_str);
  */
 char *utf8_lcpy(char *dst, const char *src, size_t n);
 
+/**
+ * @brief Compute log2(x)
+ *
+ * @param x An unsigned integral value
+ *
+ * @param x value to compute logarithm of (positive only)
+ *
+ * @return log2(x) when 1 <= x <= max(x), -1 when x < 1
+ */
+#define LOG2(x) __z_log2_impl(x)
+
+/**
+ * @brief Compute ceil(log2(x))
+ *
+ * @param x An unsigned integral value
+ *
+ * @return ceil(log2(x)) when 1 <= x <= max(type(x)), 0 when x < 1
+ */
+#define LOG2CEIL(x) __z_log2ceil_impl(x)
+
+/**
+ * @brief Compute 2^ceil(log2(x))
+ *
+ * @param x An unsigned integral value
+ *
+ * @return 2^ceil(log2(x)) or 0 if 2^ceil(log2(x)) would saturate 64-bits
+ */
+#define NHPOT(x) __z_nhpot_impl(x)
+
 #ifdef __cplusplus
 }
 #endif
@@ -548,7 +661,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  */
 #define WAIT_FOR(expr, timeout, delay_stmt)                                                        \
 	({                                                                                         \
-		uint32_t cycle_count = k_us_to_cyc_ceil32(timeout); \
+		uint32_t cycle_count = k_us_to_cyc_ceil32(timeout);                                \
 		uint32_t start = k_cycle_get_32();                                                 \
 		while (!(expr) && (cycle_count > (k_cycle_get_32() - start))) {                    \
 			delay_stmt;                                                                \
