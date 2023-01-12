@@ -2340,6 +2340,23 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	lll = &adv->lll;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (lll->aux) {
+		/* Check if we are about to exceed the duration or max events limit
+		 * Usually this will be handled in ull_adv_done(), but in cases where
+		 * the extended advertising events overlap (ie. several primary advertisings
+		 * point to the same AUX_ADV_IND packet) the ticker will not be stopped
+		 * in time. To handle this, we simply ignore the extra ticker callback and
+		 * wait for the usual ull_adv_done() handling to run
+		 */
+		if ((adv->max_events && adv->event_counter >= adv->max_events) ||
+		    (adv->remain_duration_us &&
+		     adv->remain_duration_us <= (uint64_t)adv->interval * ADV_INT_UNIT_US)) {
+			return;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 	if (IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) ||
 	    (lazy != TICKER_LAZY_MUST_EXPIRE)) {
 		/* Increment prepare reference count */
