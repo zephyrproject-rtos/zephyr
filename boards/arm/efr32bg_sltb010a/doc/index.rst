@@ -62,6 +62,8 @@ The efr32bg_sltb010a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | stimer                              |
 +-----------+------------+-------------------------------------+
+| SPI(M/S)  | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | flash memory                        |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
