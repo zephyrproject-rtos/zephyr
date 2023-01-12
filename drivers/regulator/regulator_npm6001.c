@@ -149,7 +149,7 @@ static int regulator_npm6001_buck012_set_voltage(
 	int ret;
 
 	ret = linear_range_get_win_index(range, min_uv, max_uv, &idx);
-	if (ret < 0) {
+	if (ret == -EINVAL) {
 		return ret;
 	}
 
@@ -205,7 +205,7 @@ static int regulator_npm6001_buck3_set_voltage(const struct device *dev,
 	int ret;
 
 	ret = linear_range_get_win_index(&buck3_range, min_uv, max_uv, &idx);
-	if (ret < 0) {
+	if (ret == -EINVAL) {
 		return ret;
 	}
 
