@@ -466,8 +466,14 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_KEYSET_DATA_LEN) {
 			break;
 		}
+		/* only key_type == 1 (SCBK) and key_len == 16 is supported */
+		if (buf[pos] != 1 || buf[pos + 1] != 16) {
+			LOG_ERR("Keyset invalid len/type: %d/%d",
+				buf[pos], buf[pos + 1]);
+			break;
+		}
+		ret = OSDP_PD_ERR_REPLY;
 		if (!pd_cmd_cap_ok(pd, NULL)) {
-			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
 		/**
@@ -480,12 +486,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR("Keyset with SC inactive");
 			break;
 		}
-		/* only key_type == 1 (SCBK) and key_len == 16 is supported */
-		if (buf[pos] != 1 || buf[pos + 1] != 16) {
-			LOG_ERR("Keyset invalid len/type: %d/%d",
-				buf[pos], buf[pos + 1]);
-			break;
-		}
 		cmd.id = OSDP_CMD_KEYSET;
 		cmd.keyset.type = buf[pos++];
 		cmd.keyset.length = buf[pos++];
@@ -494,7 +494,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR("Keyset without a command callback! The SC new "
 				"SCBK will be lost when the PD reboots.");
 		} else if (!do_command_callback(pd, &cmd)) {
-			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
 		memcpy(pd->sc.scbk, cmd.keyset.data, 16);
