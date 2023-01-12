@@ -1142,24 +1142,26 @@ int bt_has_register(const struct bt_has_register_param *param)
 
 	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT)) {
 		has.features |= BT_HAS_FEAT_DYNAMIC_PRESETS;
-	}
 
-	if (param->preset_sync_support) {
-		if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
-			LOG_DBG("Preset sync support only available for binaural hearing aid type");
-			return -EINVAL;
+		if (param->preset_sync_support) {
+			if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
+				LOG_DBG("Preset sync support only available "
+					"for binaural hearing aid type");
+				return -EINVAL;
+			}
+
+			has.features |= BT_HAS_FEAT_PRESET_SYNC_SUPP;
 		}
 
-		has.features |= BT_HAS_FEAT_PRESET_SYNC_SUPP;
-	}
+		if (param->independent_presets) {
+			if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
+				LOG_DBG("Independent presets only available "
+					"for binaural hearing aid type");
+				return -EINVAL;
+			}
 
-	if (param->independent_presets) {
-		if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
-			LOG_DBG("Independent presets only available for binaural hearing aid type");
-			return -EINVAL;
+			has.features |= BT_HAS_FEAT_INDEPENDENT_PRESETS;
 		}
-
-		has.features |= BT_HAS_FEAT_INDEPENDENT_PRESETS;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC)) {
