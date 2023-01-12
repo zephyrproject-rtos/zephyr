@@ -27,6 +27,15 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 		}
 	}
 
+	/* regulator voltage needs to be within allowed range before enabling */
+	if ((config->min_uv > INT32_MIN) || (config->max_uv < INT32_MAX)) {
+		ret = regulator_set_voltage(dev, config->min_uv,
+					    config->max_uv);
+		if ((ret < 0) && (ret != -ENOSYS)) {
+			return ret;
+		}
+	}
+
 	if (is_enabled) {
 		data->refcnt++;
 	} else if ((config->flags & REGULATOR_INIT_ENABLED) != 0U) {
