@@ -3,7 +3,6 @@
 
 menuconfig REGULATOR
 	bool "Regulator drivers"
-	select ONOFF
 	help
 	  Include drivers for current/voltage regulators in system config
 
