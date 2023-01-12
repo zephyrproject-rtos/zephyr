@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+syntax = "proto3";
+
+package rpc_demo;
+
+message GetVersionResponse {
+  uint32 version_number = 1;
+}
+
+message ThreeAxisData {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message SensorInfo {
+  string name = 1;
+  enum Type {
+    ACCEL = 0;
+    GYRO = 1;
+    MAG = 2;
+  }
+  Type type = 2;
+  uint32 sample_frequency_hz = 3;
+}
+
+message GetSensorListResponse {
+  repeated SensorInfo sensors = 1;
+}
+
+message UpdateSensorFrequencyRequest {
+  uint32 sensor_index = 1;
+  uint32 sample_frequency_hz = 2;
+}
+
+message UpdateSensorFrequencyResponse {
+  uint32 sample_frequency_hz = 1;
+}
+
+message GetSensorSamplesRequest {
+  uint32 sensor_index = 1;
+}
+
+message GetSensorSamplesResponse {
+  repeated ThreeAxisData data = 1;
+}
+
+message Empty {}
+
+enum RpcClientChannelId {
+  UNASSIGNED = 0;
+  DEFAULT = 1;
+}
+
+service DemoService {
+  rpc GetVersion(Empty) returns (GetVersionResponse) {}
+  rpc GetSensorList(Empty) returns (GetSensorListResponse) {}
+  rpc UpdateSensorFrequency(UpdateSensorFrequencyRequest)
+      returns (UpdateSensorFrequencyResponse) {}
+  rpc GetSensorSamples(GetSensorSamplesRequest)
+      returns (GetSensorSamplesResponse) {}
+}

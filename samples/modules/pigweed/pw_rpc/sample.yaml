@@ -1,0 +1,23 @@
+sample:
+  description: A simple sample of the Pigweed pw_rpc sub module.
+  name: pw_rpc sample
+tests:
+  sample.modules.pw_rpc:
+    tags: pw_rpc
+    platform_allow: native_posix
+    timeout: 10
+    modules:
+      - pigweed
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "(.*)Starting RPC demo(.*)"
+        - "(.*)Service waiting for data(.*)"
+        - "(.*)Starting pw_rpc service(.*)"
+        - "(.*)Service got packet!(.*)"
+        - "(.*)Client waiting for response(.*)"
+        - "(.*)Reading bytes(.*)"
+        - "(.*)Client got packet!(.*)"
+        - "(.*)Received version #5(.*)"
