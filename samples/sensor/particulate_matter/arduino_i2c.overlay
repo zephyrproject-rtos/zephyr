@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023 Panasonic Industrial Devices Europe GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ / {
+	aliases {
+		particle0 = &sngcja5;
+	};
+};
+
+&arduino_i2c {
+	status = "okay";
+	sngcja5: sngcja5@33 {
+		compatible = "panasonic,sngcja5";
+		reg = <0x33>;
+	};
+};
