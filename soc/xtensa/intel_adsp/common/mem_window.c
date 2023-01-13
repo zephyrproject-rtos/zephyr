@@ -26,7 +26,7 @@ __imr int mem_win_init(const struct device *dev)
 		bbzero((void *)config->mem_base, config->size);
 	}
 
-	sys_write32(config->size | 0x7, DMWLO(config->base_addr));
+	sys_write32((config->size - 1) | 0x7, DMWLO(config->base_addr));
 	if (config->read_only) {
 		sys_write32((config->mem_base | ADSP_DMWBA_READONLY | ADSP_DMWBA_ENABLE),
 			    DMWBA(config->base_addr));
