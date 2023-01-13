@@ -2,13 +2,16 @@ description: stm32 sdmmc disk access
 
 compatible: "st,stm32-sdmmc"
 
-include: [mmc.yaml, pinctrl-device.yaml]
+include: [mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   clocks:
     required: true
 
   reg:
+    required: true
+
+  resets:
     required: true
 
   pinctrl-0:
