@@ -18,6 +18,7 @@
 #define HELP_NONE "[none]"
 #define HELP_INIT "call \"cfb init\" first"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
+#define HELP_INVERT "[<x> <y> <width> <height>]"
 
 static const struct device *const dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
@@ -289,21 +290,49 @@ static int cmd_invert(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
 	if (!dev) {
 		shell_error(shell, HELP_INIT);
 		return -ENODEV;
 	}
 
-	err = cfb_framebuffer_invert(dev);
+	if (argc == 1) {
+		uint8_t width = cfb_get_display_parameter(dev, CFB_DISPLAY_WIDTH);
+		uint8_t height = cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGH);
+
+		err = cfb_invert_area(dev, 0, 0, width, height);
+		if (err) {
+			shell_error(shell, "Error inverting area");
+			return err;
+		}
+
+		err = cfb_framebuffer_invert(dev);
+		if (err) {
+			return err;
+		}
+	} else if (argc == 5) {
+		int x, y, w, h;
+
+		x = strtol(argv[1], NULL, 10);
+		y = strtol(argv[2], NULL, 10);
+		w = strtol(argv[3], NULL, 10);
+		h = strtol(argv[4], NULL, 10);
+
+		err = cfb_invert_area(dev, x, y, w, h);
+		if (err) {
+			shell_error(shell, "Error invert area");
+			return err;
+		}
+	} else {
+		shell_help(shell);
+		return 0;
+	}
+
 	if (err) {
 		shell_error(shell, "Error inverting Framebuffer");
 		return err;
 	}
 
-	cmd_cfb_print(shell, 0, 0, "");
+	cfb_framebuffer_finalize(dev);
 
 	shell_print(shell, "Framebuffer Inverted");
 
@@ -524,7 +553,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_CMD_ARG(get_fonts, NULL, HELP_NONE, cmd_get_fonts, 1, 0),
 	SHELL_CMD_ARG(set_font, NULL, "<idx>", cmd_set_font, 2, 0),
 	SHELL_CMD_ARG(set_kerning, NULL, "<kerning>", cmd_set_kerning, 2, 0),
-	SHELL_CMD_ARG(invert, NULL, HELP_NONE, cmd_invert, 1, 0),
+	SHELL_CMD_ARG(invert, NULL, HELP_INVERT, cmd_invert, 1, 5),
 	SHELL_CMD_ARG(print, NULL, HELP_PRINT, cmd_print, 4, 0),
 	SHELL_CMD(scroll, &sub_cmd_scroll, "scroll a text in vertical or "
 		  "horizontal direction", NULL),
