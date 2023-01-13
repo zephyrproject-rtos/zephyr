@@ -166,13 +166,6 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 		goto out;
 	}
 
-	/* Check bounds of virtual address space */
-	CHECKIF((va <= UNUSED_L2_START_ALIGNED) ||
-		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
-		ret = -EINVAL;
-		goto out;
-	}
-
 	/*
 	 * When the provided physical address is NULL
 	 * then it is a signal to the Intel ADSP TLB driver to
