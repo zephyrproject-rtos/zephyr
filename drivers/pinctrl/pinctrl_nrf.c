@@ -163,6 +163,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #if defined(NRF_PSEL_TWIM)
 		case NRF_FUN_TWIM_SCL:
 			NRF_PSEL_TWIM(reg, SCL) = pin;
+#if !defined(NRF5340_XXAA)
 			if (drive == NRF_DRIVE_S0S1) {
 				/* Override the default drive setting with one
 				 * suitable for TWI/TWIM peripherals (S0D1).
@@ -172,14 +173,17 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 				 */
 				drive = NRF_DRIVE_S0D1;
 			}
+#if !defined(NRF5340_XXAA)
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
 		case NRF_FUN_TWIM_SDA:
 			NRF_PSEL_TWIM(reg, SDA) = pin;
+#if !defined(NRF5340_XXAA)
 			if (drive == NRF_DRIVE_S0S1) {
 				drive = NRF_DRIVE_S0D1;
 			}
+#if !defined(NRF5340_XXAA)
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
