@@ -359,8 +359,6 @@ int net_context_unref(struct net_context *context)
 
 	k_mutex_lock(&context->lock, K_FOREVER);
 
-	net_tcp_unref(context);
-
 	if (context->conn_handler) {
 		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP) ||
 		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN) ||
