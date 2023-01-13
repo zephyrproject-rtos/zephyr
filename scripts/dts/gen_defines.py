@@ -358,6 +358,7 @@ def write_special_props(node):
     # we can't capture with the current bindings language.
     write_pinctrls(node)
     write_fixed_partitions(node)
+    write_gpio_hogs(node)
 
 def write_ranges(node):
     # ranges property: edtlib knows the right #address-cells and
@@ -607,6 +608,21 @@ def write_fixed_partitions(node):
     out_dt_define(f"{node.z_path_id}_PARTITION_ID", flash_area_num)
     flash_area_num += 1
 
+
+def write_gpio_hogs(node):
+    # Write special macros for gpio-hog node properties.
+
+    macro = f"{node.z_path_id}_GPIO_HOGS"
+    macro2val = {}
+    for i, entry in enumerate(node.gpio_hogs):
+        macro2val.update(controller_and_data_macros(entry, i, macro))
+
+    if macro2val:
+        out_comment("GPIO hog properties:")
+        out_dt_define(f"{macro}_EXISTS", 1)
+        out_dt_define(f"{macro}_NUM", len(node.gpio_hogs))
+        for macro, val in macro2val.items():
+            out_dt_define(macro, val)
 
 def write_vanilla_props(node):
     # Writes macros for any and all properties defined in the

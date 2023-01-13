@@ -671,6 +671,11 @@ class Node:
       The device's SPI GPIO chip select as a ControllerAndData instance, if it
       exists, and None otherwise. See
       Documentation/devicetree/bindings/spi/spi-controller.yaml in the Linux kernel.
+
+    gpio_hogs:
+      A list of ControllerAndData objects for the GPIOs hogged by the node. The
+      list is empty if the node does not hog any GPIOs. Only relevant for GPIO hog
+      nodes.
     """
     @property
     def name(self):
@@ -836,6 +841,35 @@ class Node:
                  f"{self.bus_node!r} ({len(parent_cs_lst)})")
 
         return parent_cs_lst[cs_index]
+
+    @property
+    def gpio_hogs(self):
+        "See the class docstring"
+
+        if "gpio-hog" not in self.props:
+            return []
+
+        if not self.parent or not "gpio-controller" in self.parent.props:
+            _err(f"GPIO hog {self!r} lacks parent GPIO controller node")
+
+        if not "#gpio-cells" in self.parent._node.props:
+            _err(f"GPIO hog {self!r} parent node lacks #gpio-cells")
+
+        n_cells = self.parent._node.props["#gpio-cells"].to_num()
+        res = []
+
+        for item in _slice(self._node, "gpios", 4*n_cells,
+                           f"4*(<#gpio-cells> (= {n_cells})"):
+            entry = ControllerAndData()
+            entry.node = self
+            entry.controller = self.parent
+            entry.data = self._named_cells(entry.controller, item, "gpio")
+            entry.basename = "gpio"
+            entry.name = None
+
+            res.append(entry)
+
+        return res
 
     def __repr__(self):
         if self.binding_path:
