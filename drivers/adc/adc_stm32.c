@@ -1457,32 +1457,35 @@ static void adc_stm32_irq_init(void)
 	}
 }
 
-#define ADC_STM32_CONFIG(index)						\
-static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
-	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
+#define ADC_STM32_IRQ_CONFIG(index)
+#define ADC_STM32_IRQ_FUNC(index)					\
 	.irq_cfg_func = adc_stm32_irq_init,				\
-	.pclken = {							\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
-		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
-	},								\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
-	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
-	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
-};
+
 #else
-#define ADC_STM32_CONFIG(index)						\
+
+#define ADC_STM32_IRQ_CONFIG(index)					\
 static void adc_stm32_cfg_func_##index(void)				\
 {									\
 	IRQ_CONNECT(DT_INST_IRQN(index),				\
 		    DT_INST_IRQ(index, priority),			\
 		    adc_stm32_isr, DEVICE_DT_INST_GET(index), 0);	\
 	irq_enable(DT_INST_IRQN(index));				\
-}									\
+}
+#define ADC_STM32_IRQ_FUNC(index)					\
+	.irq_cfg_func = adc_stm32_cfg_func_##index,
+
+#endif /* CONFIG_ADC_STM32_SHARED_IRQS */
+
+
+#define ADC_STM32_INIT(index)						\
+									\
+PINCTRL_DT_INST_DEFINE(index);						\
+									\
+ADC_STM32_IRQ_CONFIG(index)						\
 									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
-	.irq_cfg_func = adc_stm32_cfg_func_##index,			\
+	ADC_STM32_IRQ_FUNC(index)					\
 	.pclken = {							\
 		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
@@ -1491,14 +1494,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
 	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
 	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
-};
-#endif /* CONFIG_ADC_STM32_SHARED_IRQS */
-
-#define STM32_ADC_INIT(index)						\
-									\
-PINCTRL_DT_INST_DEFINE(index);						\
-									\
-ADC_STM32_CONFIG(index)							\
+};									\
 									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),		\
@@ -1512,4 +1508,4 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 		    &api_stm32_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(STM32_ADC_INIT)
+DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_INIT)
