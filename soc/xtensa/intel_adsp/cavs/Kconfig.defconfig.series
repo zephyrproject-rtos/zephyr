@@ -40,6 +40,12 @@ config 2ND_LEVEL_INTERRUPTS
 config DYNAMIC_INTERRUPTS
 	default y
 
+config HP_SRAM_RESERVE
+	default 131072
+
+config MEMORY_WIN_2_SIZE
+	default 32768
+
 if LOG
 
 config LOG_BACKEND_ADSP

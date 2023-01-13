@@ -55,6 +55,12 @@ config SYS_CLOCK_TICKS_PER_SEC
 config DYNAMIC_INTERRUPTS
 	default y
 
+config HP_SRAM_RESERVE
+	default 131072
+
+config MEMORY_WIN_2_SIZE
+	default 32768
+
 if LOG
 
 config LOG_BACKEND_ADSP
