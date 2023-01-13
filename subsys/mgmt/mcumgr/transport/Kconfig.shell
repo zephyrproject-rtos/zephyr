@@ -11,8 +11,7 @@
 
 menuconfig MCUMGR_TRANSPORT_SHELL
 	bool "Shell mcumgr SMP transport"
-	select SHELL
-	select SHELL_BACKEND_SERIAL
+	depends on SHELL
 	select BASE64
 	help
 	  Enables handling of SMP commands received over shell.  This allows
