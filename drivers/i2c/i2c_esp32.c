@@ -8,7 +8,6 @@
 #define DT_DRV_COMPAT espressif_esp32_i2c
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <soc/i2c_reg.h>
 #include <esp32/rom/gpio.h>
 #include <soc/gpio_sig_map.h>
 #include <hal/i2c_ll.h>
@@ -242,21 +241,25 @@ static int i2c_esp32_recover(const struct device *dev)
 static void IRAM_ATTR i2c_esp32_configure_timeout(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
 	if (config->scl_timeout > 0) {
 		i2c_sclk_t sclk = i2c_get_clk_src(config->bitrate);
-		uint32_t clk_freq_mhz = I2C_LL_CLK_SRC_FREQ(sclk);
-		uint32_t timeout_cycles = MIN(I2C_TIME_OUT_REG_V,
+		uint32_t clk_freq_mhz = i2c_clk_alloc[sclk];
+		uint32_t timeout_cycles = MIN(I2C_LL_MAX_TIMEOUT,
 					      clk_freq_mhz / MHZ(1) * config->scl_timeout);
-		sys_clear_bits(I2C_TO_REG(config->index), I2C_TIME_OUT_REG);
-		sys_set_bits(I2C_TO_REG(config->index), timeout_cycles << I2C_TIME_OUT_REG_S);
+		i2c_hal_set_tout(&data->hal, timeout_cycles);
 		LOG_DBG("SCL timeout: %d us, value: %d", config->scl_timeout, timeout_cycles);
 	} else {
 		/* Disabling the timeout by clearing the I2C_TIME_OUT_EN bit does not seem to work,
 		 * at least for ESP32-C3 (tested with communication to bq76952 chip). So we set the
 		 * timeout to maximum supported value instead.
 		 */
-		sys_set_bits(I2C_TO_REG(config->index), I2C_TIME_OUT_REG);
+#if defined(CONFIG_SOC_ESP32C3) || defined(CONFIG_SOC_ESP32)
+		i2c_hal_set_tout(&data->hal, I2C_LL_MAX_TIMEOUT);
+#else
+		i2c_hal_set_tout_en(&data->hal, 0);
+#endif
 	}
 }
 
