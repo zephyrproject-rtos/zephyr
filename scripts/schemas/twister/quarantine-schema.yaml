@@ -25,19 +25,19 @@ sequence:
         type: seq
         sequence:
           - type: str
-          - unique: True
+          - unique: true
       "architectures":
         required: false
         type: seq
         sequence:
           - type: str
-          - unique: True
+          - unique: true
       "simulations":
         required: false
         type: seq
         sequence:
           - type: str
-          - unique: True
+          - unique: true
       "comment":
         type: str
         required: false
