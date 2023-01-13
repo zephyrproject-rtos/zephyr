@@ -44,5 +44,11 @@ properties:
     type: boolean
     description: Indicates if the ADC has a dedicated internal vbat monitoring channel.
 
+  st,resolutions:
+    type: array
+    description: |
+      Resolutions supoprted by the ADC instance. Maximum supported resolution is expected
+      to be the first array element.
+
 io-channel-cells:
   - input
