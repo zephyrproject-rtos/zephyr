@@ -27,6 +27,22 @@ void telemetry_init(void)
 	memset(shared_telemetry_buffer.data, 0, shared_telemetry_buffer.size);
 	z_xtensa_cache_flush_inv(shared_telemetry_buffer.data, shared_telemetry_buffer.size);
 
+	struct TelemetryWndData *telemetry_data =
+		(struct TelemetryWndData *)(shared_telemetry_buffer.data);
+
+	telemetry_data->separator_1 = 0x0000C0DE;
+	telemetry_data->separator_2 = 0x0DEC0DE2;
+	telemetry_data->separator_3 = 0x0DEC0DE3;
+	telemetry_data->separator_4 = 0x0DEC0DE4;
+	telemetry_data->separator_5 = 0x0DEC0DE5;
+	telemetry_data->separator_6 = 0x0DEC0DE6;
+	telemetry_data->separator_7 = 0x0DEC0DE7;
+	telemetry_data->separator_8 = 0x0DEC0DE8;
+	telemetry_data->separator_9 = 0x0DEC0DE9;
+	telemetry_data->separator_10 = 0x0DEC0DEA;
+	telemetry_data->separator_11 = 0x0DEC0DEB;
+
+	z_xtensa_cache_flush_inv(shared_telemetry_buffer.data, shared_telemetry_buffer.size);
 }
 
 struct byte_array telemetry_get_buffer(void)
