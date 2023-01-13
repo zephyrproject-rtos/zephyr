@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "OpenTitan implementation"
+	depends on SOC_SERIES_RISCV_OPENTITAN
+
+config SOC_RISCV_OPENTITAN
+	bool "OpenTitan implementation"
+	select ATOMIC_OPERATIONS_C
+	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_ISA_EXT_ZBA
+	select RISCV_ISA_EXT_ZBB
+	select RISCV_ISA_EXT_ZBC
+	select RISCV_ISA_EXT_ZBS
+
+endchoice
