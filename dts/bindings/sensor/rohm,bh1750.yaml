@@ -1,7 +1,8 @@
 # Copyright (c) 2022, Michal Morsisko
+# Copyright (c) 2023, Sngular People SL. Jeronimo Agullo
 # SPDX-License-Identifier: Apache-2.0
 
-description: Rohm BH1750 ambient light sensor.
+description: BH1750 ambient light sensor sensor
 
 compatible: "rohm,bh1750"
 
@@ -12,19 +13,30 @@ properties:
     type: int
     default: 1
     description: |
-      Resolution of the measurement result
-      0 = low resolution
-      1 = high resolution
-      2 = high resolution 2
-      The default mode number 1 is mentioned
-      in the datasheet as recommended by the
-      sensor manufacturer. One should pick
-      other mode, if higher or lower resolution
-      is desired.
+      Sensor resolution.
+      The values are the corresponding hexadecimal values to
+      write to configuration register.
+      Default H-resolution mode (1lx) since it is the recommended
+      mode in the page 5 of datasheet.
     enum:
-      - 0
-      - 1
-      - 2
+      - 0 # 0.5 lx - Measurement Time is typically 120ms
+      - 1 # 1 lx - Measurement Time is typically 120ms
+      - 3 # 4 lx - Measurement Time is typically 16ms
+
+  mode:
+    type: int
+    default: 0
+    description: |
+      Specifies the measurement mode used by the driver.
+      The options are continuously mode (one new measurement
+      is ready continuously) or one-time-mode (perform only one
+      measurement and then set sensor power down mode).
+      Default CONTINUOUSLY-MODE for continuous sensing, more
+      common value.
+    enum:
+      - 0 # CONTINUOUSLY-MODE
+      - 1 # ONE-TIME-MODE
+
   mtreg:
     type: int
     default: 69

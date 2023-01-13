@@ -1,6 +1,7 @@
 # BH1750 ambient light sensor configuration options
-
 # Copyright (c) 2022 Michal Morsisko
+# Copyright (c) 2023 Sngular People SL. Jeronimo Agullo
+#
 # SPDX-License-Identifier: Apache-2.0
 
 config BH1750
