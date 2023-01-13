@@ -31,4 +31,9 @@ zephyr_library_sources_ifdef(
 	class/usbd_cdc_acm.c
 )
 
+zephyr_library_sources_ifdef(
+	CONFIG_USBD_BT_HCI
+	class/bt_hci.c
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbd_data.ld)
