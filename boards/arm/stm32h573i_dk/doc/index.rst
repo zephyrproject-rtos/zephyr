@@ -78,6 +78,7 @@ They operate at a frequency of up to 250 MHz.
   - True random number generator, NIST SP800-90B compliant
   - 96-bit unique ID
   - Active tampers
+  - True Random Number Generator (RNG) NIST SP800-90B compliant
 
 - Clock management:
 
@@ -167,8 +168,12 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random number generator        |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -206,6 +211,7 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - USART_1 TX/RX : PA9/PA10 (VCP)
+- USART_3 TX/RX : PB11/PB10  (Arduino USART3)
 - USER_PB : PC13
 - LD1 (green) : PI9
 

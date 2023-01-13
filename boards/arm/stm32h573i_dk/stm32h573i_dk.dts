@@ -52,7 +52,12 @@
 	aliases {
 		led0 = &blue_led_0;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
+};
+
+&clk_hsi48 {
+	status = "okay";
 };
 
 &clk_hse {
@@ -87,6 +92,10 @@
 	status = "okay";
 };
 
+&rng {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -116,4 +125,8 @@
 			reg = <0x000f0000 DT_SIZE_K(64)>;
 		};
 	};
+};
+
+&iwdg {
+	status = "okay";
 };
