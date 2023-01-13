@@ -616,7 +616,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	case REPLY_PDCAP:
 		assert_buf_len(REPLY_PDCAP_LEN, max_len);
 		buf[len++] = pd->reply_id;
-		for (i = 0; i < OSDP_PD_CAP_SENTINEL; i++) {
+		for (i = 1; i < OSDP_PD_CAP_SENTINEL; i++) {
 			if (pd->cap[i].function_code != i) {
 				continue;
 			}
