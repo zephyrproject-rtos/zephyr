@@ -332,6 +332,6 @@ def test_quarantine(class_testplan, platforms_list, test_data,
         else:
             if testname in expected_val:
                 assert instance.status == 'filtered'
-                assert instance.reason == expected_val[testname]
+                assert instance.reason == "Quarantine: " + expected_val[testname]
             else:
                 assert not instance.status
