@@ -318,9 +318,9 @@ static int emul_bosch_bmi160_init(const struct emul *target, const struct device
 	static uint8_t bmi160_emul_reg_##n[BMI160_REG_COUNT];                                      \
 	static struct bmi160_emul_data bmi160_emul_data_##n;
 
-#define BMI160_EMUL_DEFINE(n, api)                                                                 \
+#define BMI160_EMUL_DEFINE(n, bus_api)                                                             \
 	EMUL_DT_INST_DEFINE(n, emul_bosch_bmi160_init, &bmi160_emul_data_##n,                      \
-			    &bmi160_emul_cfg_##n, &api)
+			    &bmi160_emul_cfg_##n, &bus_api, NULL)
 
 /* Instantiation macros used when a device is on a SPI bus */
 #define BMI160_EMUL_SPI(n)                                                                         \

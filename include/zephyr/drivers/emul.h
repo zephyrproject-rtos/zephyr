@@ -81,6 +81,8 @@ struct emul {
 		struct espi_emul *espi;
 		struct spi_emul *spi;
 	} bus;
+	/** Address of the API structure exposed by the emulator instance */
+	const void *backend_api;
 };
 
 /**
@@ -120,8 +122,9 @@ extern const struct emul __emul_list_end[];
  * @param data_ptr emulator-specific data
  * @param cfg_ptr emulator-specific configuration data
  * @param bus_api emulator-specific bus api
+ * @param _backend_api emulator-specific backend api
  */
-#define EMUL_DT_DEFINE(node_id, init_fn, data_ptr, cfg_ptr, bus_api)                               \
+#define EMUL_DT_DEFINE(node_id, init_fn, data_ptr, cfg_ptr, bus_api, _backend_api)                 \
 	static struct Z_EMUL_BUS(node_id, i2c_emul, espi_emul, spi_emul)                           \
 		Z_EMUL_REG_BUS_IDENTIFIER(node_id) = {                                             \
 			.api = bus_api,                                                            \
@@ -137,6 +140,7 @@ extern const struct emul __emul_list_end[];
 				       EMUL_BUS_TYPE_SPI),                                         \
 		.bus = {.Z_EMUL_BUS(node_id, i2c, espi, spi) =                                     \
 				&(Z_EMUL_REG_BUS_IDENTIFIER(node_id))},                            \
+		.backend_api = (_backend_api),                                                     \
 	};
 
 /**
