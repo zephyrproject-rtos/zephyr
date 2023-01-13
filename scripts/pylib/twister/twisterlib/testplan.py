@@ -134,6 +134,9 @@ class TestPlan:
             logger.error("No quarantine list given to be verified")
             raise TwisterRuntimeError("No quarantine list given to be verified")
         if ql:
+            for quarantine_file in ql:
+                # validate quarantine yaml file against the provided schema
+                scl.yaml_load_verify(quarantine_file, self.quarantine_schema)
             self.quarantine = Quarantine(ql)
 
     def load(self):
