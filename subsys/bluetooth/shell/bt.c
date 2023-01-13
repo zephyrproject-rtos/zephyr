@@ -2269,6 +2269,28 @@ static int cmd_per_adv_sync_transfer(const struct shell *sh, size_t argc,
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER) && defined(CONFIG_BT_PER_ADV)
+static int cmd_per_adv_set_info_transfer(const struct shell *sh, size_t argc,
+					 char *argv[])
+{
+	const struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	int err;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "%s: at least, one connection is required",
+			    sh->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
+
+	err = bt_le_per_adv_set_info_transfer(adv, default_conn, 0U);
+	if (err) {
+		shell_error(sh, "Periodic advertising sync transfer failed (%d)", err);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER && CONFIG_BT_PER_ADV */
+
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
@@ -3669,8 +3691,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_past_unsubscribe, 1, 1),
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
+#if defined(CONFIG_BT_PER_ADV_SYNC)
 	SHELL_CMD_ARG(per-adv-sync-transfer, NULL, "[<index>]",
 		      cmd_per_adv_sync_transfer, 1, 1),
+#endif /* CONFIG_BT_PER_ADV_SYNC */
+#if defined(CONFIG_BT_PER_ADV)
+	SHELL_CMD_ARG(per-adv-set-info-transfer, NULL, "",
+		      cmd_per_adv_set_info_transfer, 1, 0),
+#endif /* CONFIG_BT_PER_ADV */
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 #if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE EXT_ADV_SCAN_OPT,
