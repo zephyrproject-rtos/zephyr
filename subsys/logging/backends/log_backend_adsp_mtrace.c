@@ -13,7 +13,12 @@
 #include <soc.h>
 
 #include <adsp_memory.h>
-#include <adsp_debug_window.h>
+
+#if CONFIG_MM_DRV
+#define PAGE_SIZE CONFIG_MM_DRV_PAGE_SIZE
+#else
+#define PAGE_SIZE 0x1000
+#endif
 
 /*
  * A lock is needed as log_process() and log_panic() have no internal locks
@@ -52,30 +57,39 @@ static bool mtrace_panic_mode;
  * is one ahead of the DSP writer pointer.
  */
 
-#define MTRACE_LOG_BUF_SIZE		(ADSP_DW_SLOT_SIZE - 2 * sizeof(uint32_t))
+#define MTRACE_LOG_BUF_SIZE		(PAGE_SIZE - 2 * sizeof(uint32_t))
 
-#define MTRACE_LOGGING_SLOT_TYPE(n)	(ADSP_DW_SLOT_DEBUG_LOG | ((n) & ADSP_DW_SLOT_CORE_MASK))
-
-#define MTRACE_CORE		0
+struct byte_array shared_mtrace_buffer;
 
 struct adsp_debug_slot {
 	uint32_t host_ptr;
 	uint32_t dsp_ptr;
-	uint8_t data[ADSP_DW_SLOT_SIZE - sizeof(uint32_t) * 2];
+	uint8_t data[PAGE_SIZE - sizeof(uint32_t) * 2];
 } __packed;
 
-static void mtrace_init(void)
+void log_backend_adsp_mtrace_init(void)
 {
-	if (ADSP_DW->descs[0].type == MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE)) {
-		return;
-	}
+	shared_mtrace_buffer.data = 0;
+	shared_mtrace_buffer.size = 0;
+}
 
-	ADSP_DW->descs[0].type = MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE);
+struct byte_array log_backend_adsp_mtrace_get_buffer(void)
+{
+	return shared_mtrace_buffer;
+}
+
+void log_backend_adsp_mtrace_set_buffer(struct byte_array buffer)
+{
+	shared_mtrace_buffer = buffer;
 }
 
 static size_t mtrace_out(int8_t *str, size_t len, size_t *space_left)
 {
-	struct adsp_debug_slot *slot = (struct adsp_debug_slot *)(ADSP_DW->slots[0]);
+
+	if (!shared_mtrace_buffer.data)
+		return 0;
+
+	struct adsp_debug_slot *slot = (struct adsp_debug_slot *)(shared_mtrace_buffer.data);
 	uint8_t *data = slot->data;
 	uint32_t r = slot->host_ptr;
 	uint32_t w = slot->dsp_ptr;
@@ -201,8 +215,6 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 static void init(const struct log_backend *const backend)
 {
 	ARG_UNUSED(backend);
-
-	mtrace_init();
 }
 
 const struct log_backend_api log_backend_adsp_mtrace_api = {
@@ -217,8 +229,6 @@ LOG_BACKEND_DEFINE(log_backend_adsp_mtrace, log_backend_adsp_mtrace_api, true);
 
 void adsp_mtrace_log_init(adsp_mtrace_log_hook_t hook)
 {
-	mtrace_init();
-
 	mtrace_hook = hook;
 	mtrace_active = true;
 }

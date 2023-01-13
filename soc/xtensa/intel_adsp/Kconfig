@@ -16,6 +16,7 @@ config SOC_FAMILY
 
 # Select SoC Part No. and configuration options
 source "soc/xtensa/intel_adsp/*/Kconfig.soc"
+source "soc/xtensa/intel_adsp/common/drivers/Kconfig"
 
 DT_COMPAT_INTEL_ADSP_HOST_IPC := intel,adsp-host-ipc
 DT_COMPAT_INTEL_ADSP_IDC := intel,adsp-idc

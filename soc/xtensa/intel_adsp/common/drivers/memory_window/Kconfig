@@ -1,0 +1,14 @@
+# Debug memory window driver configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DYNAMIC_SLOTS
+	bool "Support for dynamic slots allocation for memory windows"
+	depends on SOC_FAMILY_INTEL_ADSP
+	default y
+
+config DEBUG_MEMORY_WINDOW
+	bool "Debug memory window"
+	depends on SOC_FAMILY_INTEL_ADSP && DYNAMIC_SLOTS
+	default y

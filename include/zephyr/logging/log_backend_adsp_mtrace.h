@@ -9,6 +9,12 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <adsp_types.h>
+#include <zephyr/device.h>
+
+void log_backend_adsp_mtrace_init(void);
+struct byte_array log_backend_adsp_mtrace_get_buffer(void);
+void log_backend_adsp_mtrace_set_buffer(struct byte_array buffer);
 
 /**
  *@brief mtracelogger requires a hook for IPC messages
