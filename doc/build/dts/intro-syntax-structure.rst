@@ -253,7 +253,10 @@ reg
     (i.e. is different depending on the compatible property).
 
     The ``reg`` property is a sequence of ``(address, length)`` pairs. Each
-    pair is called a "register block". Here are some common patterns:
+    pair is called a "register block". Values are conventionally written
+    in hex.
+
+    Here are some common patterns:
 
     - Devices accessed via memory-mapped I/O registers (like ``i2c@40003000``):
       ``address`` is usually the base address of the I/O register space, and
