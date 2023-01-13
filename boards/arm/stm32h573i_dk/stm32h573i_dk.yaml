@@ -10,3 +10,5 @@ supported:
   - arduino_gpio
   - gpio
   - uart
+  - watchdog
+  - entropy
