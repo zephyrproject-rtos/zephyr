@@ -342,6 +342,7 @@ logictechno	Logic Technologies Limited
 longcheer	Longcheer Technology (Shanghai) Co., Ltd.
 lontium	Lontium Semiconductor Corporation
 loongson	Loongson Technology Corporation Limited
+lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
