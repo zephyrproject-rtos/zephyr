@@ -31,6 +31,7 @@
 LOG_MODULE_REGISTER(adc_stm32);
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/irq.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
@@ -88,31 +89,6 @@ static const uint32_t table_seq_len[] = {
 	SEQ_LEN(16),
 };
 #endif
-
-#define RES(n)		LL_ADC_RESOLUTION_##n##B
-static const uint32_t table_resolution[] = {
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(STM32F3X_ADC_V2_5)
-	RES(12),
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	RES(6),
-	RES(8),
-	RES(10),
-	RES(12),
-	RES(14),
-#elif !defined(CONFIG_SOC_SERIES_STM32H7X)
-	RES(6),
-	RES(8),
-	RES(10),
-	RES(12),
-#else
-	RES(8),
-	RES(10),
-	RES(12),
-	RES(14),
-	RES(16),
-#endif
-};
 
 #define SMP_TIME(x, y)		LL_ADC_SAMPLINGTIME_##x##CYCLE##y
 
@@ -266,6 +242,8 @@ struct adc_stm32_cfg {
 	bool has_temp_channel;
 	bool has_vref_channel;
 	bool has_vbat_channel;
+	int8_t res_table_size;
+	int8_t res_table[];
 };
 
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
@@ -698,62 +676,16 @@ static int start_read(const struct device *dev,
 	const struct adc_stm32_cfg *config = dev->config;
 	struct adc_stm32_data *data = dev->data;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-	uint8_t resolution;
-	int err;
+	uint8_t resolution = 0xFF;
+	int err, i;
 
-	switch (sequence->resolution) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(STM32F3X_ADC_V2_5)
-	case 12:
-		resolution = table_resolution[0];
-		break;
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	case 6:
-		resolution = table_resolution[0];
-		break;
-	case 8:
-		resolution = table_resolution[1];
-		break;
-	case 10:
-		resolution = table_resolution[2];
-		break;
-	case 12:
-		resolution = table_resolution[3];
-		break;
-	case 14:
-		resolution = table_resolution[4];
-		break;
-#elif !defined(CONFIG_SOC_SERIES_STM32H7X)
-	case 6:
-		resolution = table_resolution[0];
-		break;
-	case 8:
-		resolution = table_resolution[1];
-		break;
-	case 10:
-		resolution = table_resolution[2];
-		break;
-	case 12:
-		resolution = table_resolution[3];
-		break;
-#else
-	case 8:
-		resolution = table_resolution[0];
-		break;
-	case 10:
-		resolution = table_resolution[1];
-		break;
-	case 12:
-		resolution = table_resolution[2];
-		break;
-	case 14:
-		resolution = table_resolution[3];
-		break;
-	case 16:
-		resolution = table_resolution[4];
-		break;
-#endif
-	default:
+	for (i = 0; i < config->res_table_size; i++) {
+		if (sequence->resolution == STM32_ADC_RES_VAL(config->res_table[i])) {
+			resolution = STM32_ADC_RES_RES(config->res_table[i]);
+		}
+	}
+
+	if (resolution == 0xFF) {
 		LOG_ERR("Invalid resolution");
 		return -EINVAL;
 	}
@@ -1434,6 +1366,8 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
 	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
 	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
+	.res_table = DT_INST_PROP(index, st_resolutions),		\
+	.res_table_size = DT_INST_PROP_LEN(index, st_resolutions)	\
 };									\
 									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
