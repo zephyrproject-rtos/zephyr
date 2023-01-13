@@ -68,4 +68,37 @@
 	i2c_sda_pe3_default: i2c_sda_pe3_default {
 		pinmux = <B91_PINMUX_SET(B91_PORT_E, B91_PIN_3, B91_FUNC_A)>;
 	};
+
+	/* Define ADC pins: PB0..PB7, PD0-PD1 */
+
+	adc_pb0_default: adc_pb0_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_0, B91_FUNC_A)>;
+	};
+	adc_pb1_default: adc_pb1_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_1, B91_FUNC_A)>;
+	};
+	adc_pb2_default: adc_pb2_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_2, B91_FUNC_A)>;
+	};
+	adc_pb3_default: adc_pb3_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_3, B91_FUNC_A)>;
+	};
+	adc_pb4_default: adc_pb4_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_4, B91_FUNC_A)>;
+	};
+	adc_pb5_default: adc_pb5_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_5, B91_FUNC_A)>;
+	};
+	adc_pb6_default: adc_pb6_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_6, B91_FUNC_A)>;
+	};
+	adc_pb7_default: adc_pb7_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_7, B91_FUNC_A)>;
+	};
+	adc_pd0_default: adc_pd0_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_D, B91_PIN_0, B91_FUNC_A)>;
+	};
+	adc_pd1_default: adc_pd1_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_D, B91_PIN_1, B91_FUNC_A)>;
+	};
 };
