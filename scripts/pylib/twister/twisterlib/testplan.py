@@ -753,7 +753,7 @@ class TestPlan:
                         instance.testsuite.id, plat.name, plat.arch, plat.simulation
                     )
                     if matched_quarantine and not self.options.quarantine_verify:
-                        instance.add_filter(matched_quarantine, Filters.QUARENTINE)
+                        instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARENTINE)
                     if not matched_quarantine and self.options.quarantine_verify:
                         instance.add_filter("Not under quarantine", Filters.QUARENTINE)
 

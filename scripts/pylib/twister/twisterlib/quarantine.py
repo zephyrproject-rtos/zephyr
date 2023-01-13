@@ -40,7 +40,7 @@ class QuarantineElement:
     platforms: list[str] = field(default_factory=list)
     architectures: list[str] = field(default_factory=list)
     simulations: list[str] = field(default_factory=list)
-    comment: str = 'under quarantine'
+    comment: str = 'NA'
 
     def __post_init__(self):
         # If there is no entry in filters then take all possible values.
