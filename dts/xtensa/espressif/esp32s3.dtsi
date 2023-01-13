@@ -6,6 +6,7 @@
 #include <mem.h>
 #include <xtensa/xtensa.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp32s3-xtensa-intmux.h>
 #include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
@@ -148,6 +149,28 @@
 				interrupt-parent = <&intc>;
 				ngpios = <13>;
 			};
+		};
+
+		i2c0: i2c@60013000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60013000 DT_SIZE_K(4)>;
+			interrupts = <I2C_EXT0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2C0_MODULE>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@60027000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60027000 DT_SIZE_K(4)>;
+			interrupts = <I2C_EXT1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2C1_MODULE>;
+			status = "disabled";
 		};
 
 	};
