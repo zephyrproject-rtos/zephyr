@@ -12,6 +12,10 @@
 	model = "esp32s3_devkitm";
 	compatible = "espressif,esp32s3";
 
+	aliases {
+		i2c-0 = &i2c0;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
@@ -54,6 +58,18 @@
 
 &gpio1 {
 	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
