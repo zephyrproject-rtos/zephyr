@@ -182,6 +182,8 @@
 	status = "okay";
 	vref-internal-mv = <1200>;
 	sample-freq = <DT_FREQ_K(96)>;
+	pinctrl-0 = <&adc_pb0_default>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usbd {
