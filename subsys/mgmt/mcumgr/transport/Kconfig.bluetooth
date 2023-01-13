@@ -11,8 +11,7 @@
 
 menuconfig MCUMGR_TRANSPORT_BT
 	bool "Bluetooth mcumgr SMP transport"
-	select BT
-	select BT_PERIPHERAL
+	depends on BT_PERIPHERAL
 	select BT_GATT_DYNAMIC_DB
 	help
 	  Enables handling of SMP commands received over Bluetooth.
