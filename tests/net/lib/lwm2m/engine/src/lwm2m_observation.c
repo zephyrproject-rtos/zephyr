@@ -54,8 +54,8 @@ static void assert_path_list_order(sys_slist_t *lwm2m_path_list)
 	uint16_t res_id_max;
 	uint16_t res_inst_id_max;
 
-	char next_path_str[LWM2M_MAX_PATH_STR_LEN];
-	char prev_path_str[LWM2M_MAX_PATH_STR_LEN];
+	char next_path_str[LWM2M_MAX_PATH_STR_SIZE];
+	char prev_path_str[LWM2M_MAX_PATH_STR_SIZE];
 
 	if (sys_slist_is_empty(lwm2m_path_list)) {
 		return;
@@ -230,9 +230,9 @@ static void print_path_list(sys_slist_t *lwm2m_path_list, const char *name)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(lwm2m_path_list, entry, tmp, node) {
-		char buf[LWM2M_MAX_PATH_STR_LEN];
+		char buf[LWM2M_MAX_PATH_STR_SIZE];
 
-		lwm2m_path_to_string(buf, LWM2M_MAX_PATH_STR_LEN, &entry->path, entry->path.level);
+		lwm2m_path_to_string(buf, LWM2M_MAX_PATH_STR_SIZE, &entry->path, entry->path.level);
 		TEST_VERBOSE_PRINT("- %s\n", buf);
 	}
 }
