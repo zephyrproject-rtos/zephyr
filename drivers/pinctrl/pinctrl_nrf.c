@@ -173,7 +173,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 				 */
 				drive = NRF_DRIVE_S0D1;
 			}
-#if !defined(NRF5340_XXAA)
+#endif /* !defined(NRF5340_XXAA) */
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
@@ -183,7 +183,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			if (drive == NRF_DRIVE_S0S1) {
 				drive = NRF_DRIVE_S0D1;
 			}
-#if !defined(NRF5340_XXAA)
+#endif /* !defined(NRF5340_XXAA) */
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
