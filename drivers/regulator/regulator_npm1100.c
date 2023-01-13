@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/dt-bindings/regulator/npm1100.h>
+#include <zephyr/toolchain.h>
 
 struct regulator_npm1100_pconfig {
 	struct gpio_dt_spec iset;
@@ -57,7 +58,7 @@ static int regulator_npm1100_get_mode(const struct device *dev,
 	return 0;
 }
 
-static int regulator_npm1100_init(const struct device *dev)
+static __unused int regulator_npm1100_init(const struct device *dev)
 {
 	const struct regulator_npm1100_config *config = dev->config;
 	int ret;
@@ -100,7 +101,7 @@ static int regulator_npm1100_common_init(const struct device *dev)
 	return 0;
 }
 
-static const struct regulator_driver_api api = {
+static const __unused struct regulator_driver_api api = {
 	.set_mode = regulator_npm1100_set_mode,
 	.get_mode = regulator_npm1100_get_mode,
 };
