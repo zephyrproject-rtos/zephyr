@@ -850,6 +850,6 @@ DEVICE_DT_DEFINE(DT_INST(0, intel_adsp_mtl_tlb),
 		NULL,
 		NULL,
 		NULL,
-		POST_KERNEL,
+		EARLY,
 		0,
 		&adsp_tlb_api_func);

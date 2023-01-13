@@ -17,6 +17,7 @@
 #define DMWLO(win_base) (win_base + 0x4)
 
 #define DT_DRV_COMPAT intel_adsp_mem_window
+#define MEMORY_WINDOW_INIT_PRIORITY 36
 
 __imr int mem_win_init(const struct device *dev)
 {
@@ -47,7 +48,7 @@ __imr int mem_win_init(const struct device *dev)
 		.initialize = DT_PROP(MEM_WINDOW_NODE(n), initialize),                             \
 	};                                                                                         \
 	DEVICE_DT_DEFINE(MEM_WINDOW_NODE(n), mem_win_init, NULL, NULL, &mem_win_config_##n, EARLY, \
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+			 MEMORY_WINDOW_INIT_PRIORITY, NULL);
 
 #if DT_NODE_HAS_STATUS(MEM_WINDOW_NODE(0), okay)
 MEM_WINDOW_DEFINE(0)
