@@ -260,6 +260,33 @@ int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
 			   uintptr_t phys_new);
 
 /**
+ * @brief Mirrors memory region
+ *
+ * Behavior when providing unaligned addresses/sizes is undefined, these
+ * are assumed to be page aligned.
+ *
+ * Note that the virtual memory at the original region must be mapped
+ * and new addresses must be unmapped in the memory domains of any
+ * runnable Zephyr thread as this does not deal with memory domains.
+ *
+ *
+ * @param virt_old Page-aligned base virtual address of existing memory
+ * @param size Page-aligned size of the mapped memory region in bytes
+ * @param virt_new Page-aligned base virtual address to which to map
+ *                 new physical pages
+ * @param phys_new Page-aligned base physical address to contain
+ *                 the moved memory
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid arguments are provided
+ * @retval -EFAULT if old virtual addresses are not all mapped or
+ *                 new virtual addresses are not all unmapped
+ */
+
+int sys_mm_drv_mirror_region(void *virt_old, size_t size, void *virt_new,
+			   uintptr_t phys_new);
+
+/**
  * @brief Physically move memory, with copy
  *
  * This maps a region of physical memory into the new virtual address space
