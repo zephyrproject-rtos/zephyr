@@ -299,6 +299,16 @@ int modem_cmd_handler_tx_lock(struct modem_cmd_handler *handler,
  */
 void modem_cmd_handler_tx_unlock(struct modem_cmd_handler *handler);
 
+/**
+ * @brief  Disable the end of line character(s) after sending a command
+ */
+void modem_cmd_handler_disable_eol(struct modem_cmd_handler *handler);
+
+/**
+ * @brief  Restore the end of line character(s) after sending a command
+ */
+void modem_cmd_handler_restore_eol(struct modem_cmd_handler *handler);
+
 
 #ifdef __cplusplus
 }
