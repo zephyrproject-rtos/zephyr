@@ -70,6 +70,27 @@ Changes in this release
   :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT` should be
   disabled and the application should call :c:func:`smp_bt_start` at startup.
 
+* MCUmgr transport Kconfigs have changed from ``select`` to ``depends on``
+  which means that for applications using the Bluetooth transport,
+  applications will now need to enable the following:
+
+  * :kconfig:option:`CONFIG_BT`
+  * :kconfig:option:`CONFIG_BT_PERIPHERAL`
+
+  For CDC or serial transports:
+
+  * :kconfig:option:`CONFIG_CONSOLE`
+
+  For shell transport:
+
+  * :kconfig:option:`CONFIG_SHELL`
+  * :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL`
+
+  For UDP transport:
+
+  * :kconfig:option:`CONFIG_NETWORKING`
+  * :kconfig:option:`CONFIG_NET_UDP`
+
 Removed APIs in this release
 ============================
 
