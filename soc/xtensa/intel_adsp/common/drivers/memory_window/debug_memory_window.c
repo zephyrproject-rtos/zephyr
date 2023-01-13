@@ -10,6 +10,7 @@
 #include <zephyr/devicetree.h>
 
 #include <memory_window/dynamic_slots.h>
+#include <telemetry/telemetry_intel.h>
 #include <zephyr/logging/log_backend_adsp_mtrace.h>
 
 #define DEBUG_MEMORY_WINDOW_INIT_PRIORITY 38
@@ -29,6 +30,14 @@ int debug_memory_window_init(const struct device *d)
 	if (err != 0) {
 		return err;
 	}
+
+#if CONFIG_TELEMETRY_INTEL
+	telemetry_init();
+	err = dynamic_slots_map_slot(SLOT_TELEMETRY, dev, 0, telemetry_get_buffer().data);
+	if (err < 0) {
+		return err;
+	}
+#endif
 
 #if CONFIG_LOG_BACKEND_ADSP_MTRACE
 	log_backend_adsp_mtrace_init();

@@ -1,0 +1,9 @@
+# Debug memory window driver configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TELEMETRY_INTEL
+	bool "Support for Intel telemetry"
+	depends on SOC_FAMILY_INTEL_ADSP
+	default y

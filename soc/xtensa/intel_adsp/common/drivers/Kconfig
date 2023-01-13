@@ -7,4 +7,6 @@ menu "SOC Device Drivers"
 
 source "soc/xtensa/intel_adsp/common/drivers/memory_window/Kconfig"
 
+source "soc/xtensa/intel_adsp/common/drivers/telemetry/Kconfig"
+
 endmenu
