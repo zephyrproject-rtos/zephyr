@@ -271,6 +271,35 @@ int sys_mm_drv_simple_move_array(void *virt_old, size_t size,
 				 uintptr_t *phys_new, size_t phys_cnt);
 
 /**
+ * @brief Simple implementation of sys_mm_drv_mirror_region()
+ *
+ * This provides a simple implementation for sys_mm_drv_mirror_region()
+ * which is marked as a weak alias to sys_mm_drv_mirror_region().
+ *
+ * Drivers do not have to implement their own sys_mm_drv_mirror_region()
+ * if this works for them. Or they can override sys_mm_drv_mirror_region()
+ * and call sys_mm_drv_simple_mirror_region() with some pre-processing done.
+ * Or the drivers can implement their own sys_mm_drv_mirror_region(), then
+ * this function will not be used.
+ *
+ * @see sys_mm_drv_mirror_region
+ *
+ * @param virt_old Page-aligned base virtual address of existing memory
+ * @param size Page-aligned size of the mapped memory region in bytes
+ * @param virt_new Page-aligned base virtual address to which to map
+ *                 new physical pages
+ * @param phys_new Page-aligned base physical address to contain
+ *                 the moved memory
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid arguments are provided
+ * @retval -EFAULT if old virtual addresses are not all mapped or
+ *                 new virtual addresses are not all unmapped
+ */
+int sys_mm_drv_simple_mirror_region(void *virt_old, size_t size,
+				  void *virt_new, uintptr_t phys_new);
+
+/**
  * @brief Update memory region flags
  *
  * This changes the attributes of physical memory which is already

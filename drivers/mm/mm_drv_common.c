@@ -435,6 +435,68 @@ out:
 __weak FUNC_ALIAS(sys_mm_drv_simple_move_array,
 		  sys_mm_drv_move_array, int);
 
+int sys_mm_drv_simple_mirror_region(void *virt_old, size_t size,
+				  void *virt_new, uintptr_t phys_new)
+{
+	k_spinlock_key_t key;
+	size_t offset;
+	int ret = 0;
+
+	CHECKIF(!sys_mm_drv_is_addr_aligned(phys_new) ||
+		!sys_mm_drv_is_virt_addr_aligned(virt_old) ||
+		!sys_mm_drv_is_virt_addr_aligned(virt_new) ||
+		!sys_mm_drv_is_size_aligned(size)) {
+		return -EINVAL;
+	}
+
+	if ((POINTER_TO_UINT(virt_new) >= POINTER_TO_UINT(virt_old)) &&
+	    (POINTER_TO_UINT(virt_new) < (POINTER_TO_UINT(virt_old) + size))) {
+		return -EINVAL; /* overlaps */
+	}
+
+	key = k_spin_lock(&sys_mm_drv_common_lock);
+
+	if (!sys_mm_drv_is_virt_region_mapped(virt_old, size) ||
+	    !sys_mm_drv_is_virt_region_unmapped(virt_new, size)) {
+		k_spin_unlock(&sys_mm_drv_common_lock, key);
+		return -EINVAL;
+	}
+
+	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
+		uint8_t *va_old = (uint8_t *)virt_old + offset;
+		uint8_t *va_new = (uint8_t *)virt_new + offset;
+		uintptr_t pa = phys_new + offset;
+		uint32_t flags;
+
+		ret = sys_mm_drv_page_flag_get(va_old, &flags);
+
+		if (ret != 0) {
+			__ASSERT(false, "cannot query page %p\n", va_old);
+			break;
+		}
+		/*
+		 * Only map the new page when we can retrieve
+		 * flags of the old mapped page as We don't
+		 * want to map with unknown random flags.
+		 */
+		ret = sys_mm_drv_map_page(va_new, pa, flags);
+
+		if (ret != 0) {
+			__ASSERT(false, "cannot map 0x%lx to %p\n", pa, va_new);
+			break;
+		}
+
+		(void)memcpy(va_new, va_old, CONFIG_MM_DRV_PAGE_SIZE);
+
+	}
+
+	k_spin_unlock(&sys_mm_drv_common_lock, key);
+	return ret;
+}
+
+__weak FUNC_ALIAS(sys_mm_drv_simple_mirror_region,
+		  sys_mm_drv_mirror_region, int);
+
 int sys_mm_drv_simple_update_region_flags(void *virt, size_t size, uint32_t flags)
 {
 	k_spinlock_key_t key;

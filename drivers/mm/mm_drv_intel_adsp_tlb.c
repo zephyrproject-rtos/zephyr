@@ -327,3 +327,23 @@ int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new,
 
 	return ret;
 }
+
+int sys_mm_drv_mirror_region(void *virt_old, size_t size, void *virt_new,
+			   uintptr_t phys_new)
+{
+	int ret;
+
+	void *va_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
+	void *va_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
+
+	ret = sys_mm_drv_simple_mirror_region(va_old, size, va_new, phys_new);
+
+	/*
+	 * Since memcpy() is done in virtual space, need to
+	 * flush the cache to make sure the backing physical
+	 * pages have the new data.
+	 */
+	z_xtensa_cache_flush(va_new, size);
+
+	return ret;
+}
