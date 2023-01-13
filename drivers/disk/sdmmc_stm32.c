@@ -12,6 +12,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <soc.h>
@@ -75,6 +76,7 @@ struct stm32_sdmmc_priv {
 	struct gpio_dt_spec pe;
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
+	const struct reset_dt_spec reset;
 
 #if STM32_SDMMC_USE_DMA
 	struct sdmmc_dma_stream dma_rx;
@@ -286,6 +288,12 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	err = stm32_sdmmc_clock_enable(priv);
 	if (err) {
 		LOG_ERR("failed to init clocks");
+		return err;
+	}
+
+	err = reset_line_toggle_dt(&priv->reset);
+	if (err) {
+		LOG_ERR("failed to reset peripheral");
 		return err;
 	}
 
@@ -583,6 +591,11 @@ static int disk_stm32_sdmmc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (!device_is_ready(priv->reset.dev)) {
+		LOG_ERR("reset control device not ready");
+		return -ENODEV;
+	}
+
 	k_work_init(&priv->work, stm32_sdmmc_cd_handler);
 
 	/* Configure dt provided device signals when available */
@@ -694,6 +707,7 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
 	},
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	.reset = RESET_DT_SPEC_INST_GET(0),
 	SDMMC_DMA_CHANNEL(rx, RX)
 	SDMMC_DMA_CHANNEL(tx, TX)
 };
