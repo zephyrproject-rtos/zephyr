@@ -80,6 +80,9 @@ class QuarantineData:
         with open(filename, 'r', encoding='UTF-8') as yaml_fd:
             qlist_raw_data: list[dict] = safe_load(yaml_fd)
         try:
+            if not qlist_raw_data:
+                # in case of loading empty quarantine file
+                return cls()
             return cls(qlist_raw_data)
 
         except Exception as e:
