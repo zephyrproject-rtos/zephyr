@@ -208,4 +208,6 @@ source "drivers/serial/Kconfig.nxp_s32"
 
 source "drivers/serial/Kconfig.cdns"
 
+source "drivers/serial/Kconfig.opentitan"
+
 endif # SERIAL
