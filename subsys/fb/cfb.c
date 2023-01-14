@@ -183,7 +183,8 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	return fptr->width;
 }
 
-int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint16_t y)
+static int draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y,
+		     bool wrap)
 {
 	const struct char_framebuffer *fb = &char_fb;
 	const struct cfb_font *fptr;
@@ -201,17 +202,27 @@ int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint1
 
 	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
 		for (size_t i = 0; i < strlen(str); i++) {
-			if (x + fptr->width > fb->x_res) {
+			if ((x + fptr->width > fb->x_res) && wrap) {
 				x = 0U;
 				y += fptr->height;
 			}
-			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y, true);
+			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y, wrap);
 		}
 		return 0;
 	}
 
 	LOG_ERR("Unsupported framebuffer configuration");
 	return -EINVAL;
+}
+
+int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y)
+{
+	return draw_text(dev, str, x, y, false);
+}
+
+int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint16_t y)
+{
+	return draw_text(dev, str, x, y, true);
 }
 
 int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
