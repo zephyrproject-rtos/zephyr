@@ -1209,6 +1209,7 @@ void gsm_ppp_recover_cmux(const struct device *dev)
 				    NULL, 0,
 				    disconnect_cmux[i], &gsm->sem_response,
 				    GSM_CMD_AT_TIMEOUT);
+		k_msleep(1);
 	}
 
 	modem_cmd_handler_restore_eol(&gsm->context.cmd_handler);
