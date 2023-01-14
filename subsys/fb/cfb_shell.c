@@ -119,6 +119,29 @@ static int cmd_print(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_draw_text(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	int x, y;
+
+	if (!dev) {
+		shell_error(sh, HELP_INIT);
+		return -ENODEV;
+	}
+
+	x = strtol(argv[1], NULL, 10);
+	y = strtol(argv[2], NULL, 10);
+	err = cfb_draw_text(dev, argv[3], x, y);
+	if (err) {
+		shell_error(sh, "Failed text drawing to Framebuffer error=%d", err);
+		return err;
+	}
+
+	err = cfb_framebuffer_finalize(dev);
+
+	return err;
+}
+
 static int cmd_scroll_vert(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err = 0;
@@ -488,6 +511,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_scroll,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_draw,
+	SHELL_CMD_ARG(text, NULL, HELP_PRINT, cmd_draw_text, 4, 0),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_CMD_ARG(init, NULL, HELP_NONE, cmd_init, 1, 0),
 	SHELL_CMD_ARG(get_device, NULL, HELP_NONE, cmd_get_device, 1, 0),
@@ -500,6 +528,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_CMD_ARG(print, NULL, HELP_PRINT, cmd_print, 4, 0),
 	SHELL_CMD(scroll, &sub_cmd_scroll, "scroll a text in vertical or "
 		  "horizontal direction", NULL),
+	SHELL_CMD(draw, &sub_cmd_draw, "drawing text", NULL),
 	SHELL_CMD_ARG(clear, NULL, HELP_NONE, cmd_clear, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
