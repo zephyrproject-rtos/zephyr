@@ -244,6 +244,7 @@ int cfb_framebuffer_finalize(const struct device *dev)
 	const struct display_driver_api *api = dev->api;
 	const struct char_framebuffer *fb = &char_fb;
 	struct display_buffer_descriptor desc;
+	int err;
 
 	if (!fb || !fb->buf) {
 		return -ENODEV;
@@ -256,6 +257,9 @@ int cfb_framebuffer_finalize(const struct device *dev)
 
 	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
 		cfb_invert(fb);
+		err = api->write(dev, 0, 0, &desc, fb->buf);
+		cfb_invert(fb);
+		return err;
 	}
 
 	return api->write(dev, 0, 0, &desc, fb->buf);
