@@ -1,0 +1,7 @@
+# Copyright 2023 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Mock VBUS used for testing
+
+compatible: "mock-vbus-adc"

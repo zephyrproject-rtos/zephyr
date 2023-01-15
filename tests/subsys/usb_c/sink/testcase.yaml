@@ -1,0 +1,5 @@
+tests:
+  usb_c.sink:
+    platform_exclude: qemu_leon3 qemu_malta_be qemu_x86_64 qemu_riscv64_smp
+                      qemu_cortex_a53_smp qemu_riscv32_smp
+    tags: usb_c

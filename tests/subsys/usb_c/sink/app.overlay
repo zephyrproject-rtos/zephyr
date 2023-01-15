@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2023 The Chromium OS Authors.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <dt-bindings/usb-c/pd.h>
+
+/ {
+	mock_tcpc: tcpc {
+		compatible = "mock-tcpc";
+	};
+
+	mock_vbus: vbus {
+		compatible = "mock-vbus-adc";
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port1: usbc-port@1 {
+			compatible = "usb-c-connector";
+			reg = <1>;
+			tcpc = <&mock_tcpc>;
+			vbus = <&mock_vbus>;
+			power-role = "sink";
+			sink-pdos = <PDO_FIXED(5000, 100, 0)>;
+		};
+	};
+};
