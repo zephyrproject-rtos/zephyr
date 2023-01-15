@@ -66,6 +66,23 @@
 		};
 	};
 
+	pwm0_default: pwm0_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 7)>,
+				<NRF_PSEL(PWM_OUT1, 0, 25)>,
+				<NRF_PSEL(PWM_OUT2, 0, 26)>;
+		};
+	};
+
+	pwm0_sleep: pwm0_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 7)>,
+				<NRF_PSEL(PWM_OUT1, 0, 25)>,
+				<NRF_PSEL(PWM_OUT2, 0, 26)>;
+			low-power-enable;
+		};
+	};
+
 	spi4_default: spi4_default {
 		group1 {
 			psels = <NRF_PSEL(SPIM_SCK, 0, 8)>,
