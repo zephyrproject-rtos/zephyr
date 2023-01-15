@@ -29,6 +29,28 @@
 		compatible = "nordic,npm1100";
 		nordic,iset-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
 	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		rgb1_red_pwm_led: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+		rgb1_green_pwm_led: pwm_led_1 {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+		rgb1_blue_pwm_led: pwm_led_2 {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		pwm-led0 = &rgb1_red_pwm_led;
+		pwm-led1 = &rgb1_green_pwm_led;
+		pwm-led2 = &rgb1_blue_pwm_led;
+		red-pwm-led = &rgb1_red_pwm_led;
+		green-pwm-led = &rgb1_green_pwm_led;
+		blue-pwm-led = &rgb1_blue_pwm_led;
+	};
 };
 
 &adc {
@@ -140,6 +162,9 @@
 
 &pwm0 {
 	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &timer0 {
