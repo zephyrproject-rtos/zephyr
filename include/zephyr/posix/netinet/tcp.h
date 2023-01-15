@@ -8,4 +8,12 @@
 
 #include <zephyr/net/socket.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* ZEPHYR_INCLUDE_POSIX_NETINET_TCP_H_ */

@@ -27,7 +27,15 @@
 #define F_GETFL 3
 #define F_SETFL 4
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int open(const char *name, int flags, ...);
 int fcntl(int fildes, int cmd, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_POSIX_FCNTL_H_ */
