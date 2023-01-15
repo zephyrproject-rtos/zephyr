@@ -29,6 +29,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 1.13
 
+   * - :ref:`auxdisplay_api`
+     - Unstable
+     - 3.3
+
    * - :ref:`bluetooth_api`
      - Stable
      - 1.0
