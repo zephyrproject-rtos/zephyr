@@ -99,13 +99,6 @@
 	pinctrl-names = "default";
 };
 
-&i2c1 {
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	status = "okay";
-	pinctrl-0 = <&i2c1_default>;
-	pinctrl-names = "default";
-};
-
 &spi0 {
 	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";

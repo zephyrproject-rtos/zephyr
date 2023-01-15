@@ -24,14 +24,6 @@
 		};
 	};
 
-	i2c1_default: i2c1_default {
-		group1 {
-			pinmux = <I2C1_SDA_P14>, <I2C1_SCL_P15>;
-			input-enable;
-			input-schmitt-enable;
-		};
-	};
-
 	spi0_default: spi0_default {
 		group1 {
 			pinmux = <SPI0_CSN_P17>, <SPI0_SCK_P18>, <SPI0_TX_P19>;
