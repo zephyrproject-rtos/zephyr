@@ -434,7 +434,7 @@ static inline int set_src_available_contexts(uint16_t contexts)
 static inline int set_src_supported_contexts(uint16_t contexts)
 {
 	return set_supported_contexts(contexts, &src_supported_contexts,
-				      &snk_supported_contexts);
+				      &src_available_contexts);
 }
 #else
 static inline int set_src_available_contexts(uint16_t contexts)
