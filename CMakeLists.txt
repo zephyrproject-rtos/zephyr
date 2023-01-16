@@ -339,7 +339,7 @@ if(NOT CONFIG_NATIVE_APPLICATION)
   toolchain_ld_baremetal()
 endif()
 
-if(NOT CONFIG_MINIMAL_LIBCPP)
+if(CONFIG_CPP AND NOT CONFIG_MINIMAL_LIBCPP)
   # @Intent: Set linker specific flags for C++
   toolchain_ld_cpp()
 endif()
