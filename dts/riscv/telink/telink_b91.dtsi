@@ -228,7 +228,6 @@
 			num-in-endpoints = <6>;
 			num-out-endpoints = <2>;
 			status = "disabled";
-			label = "USBD";
 		};
 
 		pinctrl: pinctrl@80140330 {
