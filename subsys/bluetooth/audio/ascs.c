@@ -1012,7 +1012,9 @@ static void ase_stream_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 {
 	LOG_DBG("ase %p stream %p", ase, stream);
 	ase->ep.stream = stream;
-	stream->conn = ascs->conn;
+	if (stream->conn == NULL) {
+		stream->conn = bt_conn_ref(ascs->conn);
+	}
 	stream->ep = &ase->ep;
 }
 

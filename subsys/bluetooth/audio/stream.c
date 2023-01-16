@@ -81,7 +81,9 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 	if (conn != NULL) {
 		__ASSERT(stream->conn == NULL || stream->conn == conn,
 			 "stream->conn %p already attached", stream->conn);
-		stream->conn = bt_conn_ref(conn);
+		if (stream->conn == NULL) {
+			stream->conn = bt_conn_ref(conn);
+		}
 	}
 	stream->codec = codec;
 	stream->ep = ep;
