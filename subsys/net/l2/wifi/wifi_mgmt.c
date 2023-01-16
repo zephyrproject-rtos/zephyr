@@ -314,3 +314,24 @@ static int wifi_reg_domain(uint32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN, wifi_reg_domain);
+
+static int wifi_set_power_save_timeout(uint32_t mgmt_request, struct net_if *iface,
+				       void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
+		(struct net_wifi_mgmt_offload *) dev->api;
+	struct wifi_ps_timeout_params *ps_timeout = data;
+
+	if (off_api == NULL || off_api->set_power_save_timeout == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*ps_timeout)) {
+		return -EINVAL;
+	}
+
+	return off_api->set_power_save_timeout(dev, ps_timeout);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT, wifi_set_power_save_timeout);
