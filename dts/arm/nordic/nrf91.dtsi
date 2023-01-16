@@ -27,6 +27,7 @@
 	};
 
 	chosen {
+		zephyr,entropy = &cryptocell;
 		zephyr,flash-controller = &flash_controller;
 	};
 
@@ -50,7 +51,7 @@
 			reg = <0x50840000 0x1000>, <0x50841000 0x1000>;
 			reg-names = "wrapper", "core";
 			interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		ctrlap: ctrlap@50006000 {
