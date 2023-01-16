@@ -66,7 +66,8 @@ This sample use two applications, two devices need to be setup.
 The first one should be flashed with the central and the second one with the
 peripheral.
 
-The two devices need to be close enough to be able to connect.
+The two devices will connect only if they are close to each other, because of
+RSSI filtering.
 
 Building and Running
 ********************
