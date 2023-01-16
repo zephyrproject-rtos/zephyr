@@ -25,6 +25,7 @@
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+#define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #include "adc_context.h"
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
@@ -1034,10 +1035,19 @@ static void adc_stm32_isr(const struct device *dev)
 	if (++data->samples_count == data->channel_count) {
 		data->samples_count = 0;
 		adc_context_on_sampling_done(&data->ctx, dev);
-		adc_stm32_teardown_channels(dev);
 	}
 
 	LOG_DBG("%s ISR triggered.", dev->name);
+}
+
+static void adc_context_on_complete(struct adc_context *ctx, int status)
+{
+	struct adc_stm32_data *data =
+		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
+
+	ARG_UNUSED(status);
+
+	adc_stm32_teardown_channels(data->dev);
 }
 
 static int adc_stm32_read(const struct device *dev,
