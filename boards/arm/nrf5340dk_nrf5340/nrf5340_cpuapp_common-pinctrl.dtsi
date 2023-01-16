@@ -8,6 +8,7 @@
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 1, 2)>,
 				<NRF_PSEL(TWIM_SCL, 1, 3)>;
+			bias-pull-up;
 		};
 	};
 
