@@ -158,6 +158,7 @@
 /boards/arm/stm32*_eval/                  @erwango @ABOSTM @FRASTM
 /boards/arm/rcar_h3ulcb/                  @aaillet @pmarzin
 /boards/arm/ubx_bmd345eval_nrf52840/      @Navin-Sankar @brec-u-blox
+/boards/arm/nrf5340_audio_dk_nrf5340      @koffes @alexsven @erikrobstad @rick1082 @gWacey
 /boards/common/                           @mbolivar-nordic
 /boards/deprecated.cmake                  @tejlmand
 /boards/mips/                             @frantony
