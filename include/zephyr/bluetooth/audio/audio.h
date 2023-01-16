@@ -2091,7 +2091,16 @@ struct bt_audio_broadcast_source_create_param {
 	/** Whether or not to encrypt the streams. */
 	bool encryption;
 
-	/** @brief Broadcast code */
+	/**
+	 * @brief Broadcast code
+	 *
+	 * If the value is a string or a the value is less than 16 octets,
+	 * the remaining octets shall be 0.
+	 *
+	 * Example:
+	 *   The string "Broadcast Code" shall be
+	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
+	 */
 	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
 };
 
@@ -2262,6 +2271,12 @@ int bt_audio_broadcast_sink_scan_stop(void);
  *  @param broadcast_code     The 16-octet broadcast code. Shall be supplied if
  *                            the broadcast is encrypted (see the syncable
  *                            callback).
+ *                            If the value is a string or a the value is less
+ *                            than 16 octets, the remaining octets shall be 0.
+ *
+ *                            Example:
+ *                            The string "Broadcast Code" shall be
+ *                            [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
  *
  *  @return 0 in case of success or negative value in case of error.
  */
