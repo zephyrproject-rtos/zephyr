@@ -210,4 +210,6 @@ source "drivers/serial/Kconfig.cdns"
 
 source "drivers/serial/Kconfig.opentitan"
 
+source "drivers/serial/Kconfig.altera"
+
 endif # SERIAL
