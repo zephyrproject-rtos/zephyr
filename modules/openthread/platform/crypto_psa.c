@@ -8,6 +8,11 @@
 
 #include <psa/crypto.h>
 
+#if defined(CONFIG_OPENTHREAD_ECDSA)
+#include <string.h>
+#include <zephyr/sys/__assert.h>
+#endif
+
 static otError psaToOtError(psa_status_t aStatus)
 {
 	switch (aStatus) {
@@ -15,6 +20,8 @@ static otError psaToOtError(psa_status_t aStatus)
 		return OT_ERROR_NONE;
 	case PSA_ERROR_INVALID_ARGUMENT:
 		return OT_ERROR_INVALID_ARGS;
+	case PSA_ERROR_BUFFER_TOO_SMALL:
+		return OT_ERROR_NO_BUFS;
 	default:
 		return OT_ERROR_FAILED;
 	}
@@ -418,3 +425,142 @@ otError otPlatCryptoRandomGet(uint8_t *aBuffer, uint16_t aSize)
 {
 	return psaToOtError(psa_generate_random(aBuffer, aSize));
 }
+
+#if defined(CONFIG_OPENTHREAD_ECDSA)
+
+otError otPlatCryptoEcdsaGenerateKey(otPlatCryptoEcdsaKeyPair *aKeyPair)
+{
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id = 0;
+	psa_status_t status;
+	size_t exported_length;
+
+	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_EXPORT);
+	psa_set_key_algorithm(&attributes, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256));
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attributes, 256);
+
+	status = psa_generate_key(&attributes, &key_id);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+	status = psa_export_key(key_id, aKeyPair->mDerBytes, OT_CRYPTO_ECDSA_MAX_DER_SIZE,
+				&exported_length);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+	aKeyPair->mDerLength = exported_length;
+
+out:
+	psa_reset_key_attributes(&attributes);
+	psa_destroy_key(key_id);
+
+	return psaToOtError(status);
+}
+
+otError otPlatCryptoEcdsaGetPublicKey(const otPlatCryptoEcdsaKeyPair *aKeyPair,
+				      otPlatCryptoEcdsaPublicKey *aPublicKey)
+{
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id = 0;
+	psa_status_t status;
+	size_t exported_length;
+	uint8_t buffer[1 + OT_CRYPTO_ECDSA_PUBLIC_KEY_SIZE];
+
+	psa_set_key_algorithm(&attributes, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256));
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attributes, 256);
+
+	status = psa_import_key(&attributes, aKeyPair->mDerBytes, aKeyPair->mDerLength, &key_id);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+	status = psa_export_public_key(key_id, buffer, sizeof(buffer), &exported_length);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+	__ASSERT_NO_MSG(exported_length == sizeof(buffer));
+	memcpy(aPublicKey->m8, buffer + 1, OT_CRYPTO_ECDSA_PUBLIC_KEY_SIZE);
+
+out:
+	psa_reset_key_attributes(&attributes);
+	psa_destroy_key(key_id);
+
+	return psaToOtError(status);
+}
+
+otError otPlatCryptoEcdsaSign(const otPlatCryptoEcdsaKeyPair *aKeyPair,
+			      const otPlatCryptoSha256Hash *aHash,
+			      otPlatCryptoEcdsaSignature *aSignature)
+{
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id;
+	psa_status_t status;
+	size_t signature_length;
+
+	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_HASH);
+	psa_set_key_algorithm(&attributes, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256));
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attributes, 256);
+
+	status = psa_import_key(&attributes, aKeyPair->mDerBytes, aKeyPair->mDerLength, &key_id);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+	status = psa_sign_hash(key_id, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), aHash->m8,
+			       OT_CRYPTO_SHA256_HASH_SIZE, aSignature->m8,
+			       OT_CRYPTO_ECDSA_SIGNATURE_SIZE, &signature_length);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+out:
+	psa_reset_key_attributes(&attributes);
+	psa_destroy_key(key_id);
+
+	return psaToOtError(status);
+}
+
+otError otPlatCryptoEcdsaVerify(const otPlatCryptoEcdsaPublicKey *aPublicKey,
+				const otPlatCryptoSha256Hash *aHash,
+				const otPlatCryptoEcdsaSignature *aSignature)
+{
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id;
+	psa_status_t status;
+	uint8_t buffer[1 + OT_CRYPTO_ECDSA_PUBLIC_KEY_SIZE];
+
+	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_HASH);
+	psa_set_key_algorithm(&attributes, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256));
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attributes, 256);
+
+	/*
+	 * `psa_import_key` expects a key format as specified by SEC1 &sect;2.3.3 for the
+	 * uncompressed representation of the ECPoint.
+	 */
+	buffer[0] = 0x04;
+	memcpy(buffer + 1, aPublicKey->m8, OT_CRYPTO_ECDSA_PUBLIC_KEY_SIZE);
+	status = psa_import_key(&attributes, buffer, sizeof(buffer), &key_id);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+	status = psa_verify_hash(key_id, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), aHash->m8,
+				 OT_CRYPTO_SHA256_HASH_SIZE, aSignature->m8,
+				 OT_CRYPTO_ECDSA_SIGNATURE_SIZE);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+out:
+	psa_reset_key_attributes(&attributes);
+	psa_destroy_key(key_id);
+
+	return psaToOtError(status);
+}
+
+#endif /* #if CONFIG_OPENTHREAD_ECDSA */

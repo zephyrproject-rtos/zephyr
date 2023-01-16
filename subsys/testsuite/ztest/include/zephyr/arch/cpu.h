@@ -6,17 +6,27 @@
 
 /* This file exists as a hack around Zephyr's dependencies */
 
+#include <inttypes.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Architecture thread structure */
 struct _callee_saved {
+#ifdef CONFIG_CPP
+	/* C++ does not allow empty structs, add an extra 1 byte */
+	uint8_t c;
+#endif
 };
 
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
+#ifdef CONFIG_CPP
+	/* C++ does not allow empty structs, add an extra 1 byte */
+	uint8_t c;
+#endif
 };
 
 typedef struct _thread_arch _thread_arch_t;

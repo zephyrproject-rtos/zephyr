@@ -75,6 +75,43 @@ static int cmd_preset_unreg(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_has_register(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	struct bt_has_register_param param = {
+		.type = BT_HAS_HEARING_AID_TYPE_MONAURAL,
+		.preset_sync_support = false,
+		.independent_presets = false
+	};
+
+	for (size_t argn = 1; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (strcmp(arg, "binaural") == 0) {
+			param.type = BT_HAS_HEARING_AID_TYPE_BINAURAL;
+		} else if (strcmp(arg, "monaural") == 0) {
+			param.type = BT_HAS_HEARING_AID_TYPE_MONAURAL;
+		} else if (strcmp(arg, "banded") == 0) {
+			param.type = BT_HAS_HEARING_AID_TYPE_BANDED;
+		} else if (strcmp(arg, "sync") == 0) {
+			param.preset_sync_support = true;
+		} else if (strcmp(arg, "independent") == 0) {
+			param.independent_presets = true;
+		} else {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	err = bt_has_register(&param);
+	if (err != 0) {
+		shell_error(sh, "Could not register HAS: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
 struct print_list_entry_data {
 	int num;
 	const struct shell *sh;
@@ -216,6 +253,10 @@ static int cmd_has(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(has_cmds,
+	SHELL_CMD_ARG(register, NULL,
+		      "Initialize the service and register type "
+		      "[binaural | monaural(default) | banded] [sync] [independent]",
+		      cmd_has_register, 1, 3),
 	SHELL_CMD_ARG(preset-reg, NULL, "Register preset <index> <properties> <name>",
 		      cmd_preset_reg, 4, 0),
 	SHELL_CMD_ARG(preset-unreg, NULL, "Unregister preset <index>", cmd_preset_unreg, 2, 0),

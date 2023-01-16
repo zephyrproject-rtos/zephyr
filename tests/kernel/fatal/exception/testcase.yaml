@@ -1,26 +1,28 @@
+common:
+  ignore_faults: true
 tests:
   kernel.common.stack_protection:
     extra_args: CONF_FILE=prj.conf
     platform_exclude: twr_ke18f
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
-    tags: kernel ignore_faults userspace
+    tags: kernel userspace
   kernel.common.stack_protection_no_userspace:
     extra_args: CONF_FILE=protection_no_userspace.conf
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
     arch_allow: arm
-    tags: kernel ignore_faults memory_protection
+    tags: kernel memory_protection
   kernel.common.stack_protection_arm_fpu_sharing:
     extra_args: CONF_FILE=prj_arm_fpu_sharing.conf
     platform_exclude: twr_ke18f
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION and CONFIG_ARMV7_M_ARMV8_M_FP
-    tags: fpu kernel ignore_faults userspace
+    tags: fpu kernel userspace
   kernel.common.stack_protection_armv8m_mpu_stack_guard:
     extra_args: CONF_FILE=prj_armv8m_mpu_stack_guard.conf
     filter: CONFIG_ARM_MPU and CONFIG_ARMV8_M_MAINLINE
     arch_allow: arm
-    tags: kernel ignore_faults userspace
+    tags: kernel userspace
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf
     # FIXME: See issue #39948
     platform_exclude: qemu_cortex_a9
-    tags: kernel ignore_faults
+    tags: kernel

@@ -122,7 +122,7 @@ static int settings_nvs_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg)
 {
 	int ret = 0;
-	struct settings_nvs *cf = (struct settings_nvs *)cs;
+	struct settings_nvs *cf = CONTAINER_OF(cs, struct settings_nvs, cf_store);
 	struct settings_nvs_read_fn_arg read_fn_arg;
 	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
 	char buf;
@@ -189,7 +189,7 @@ static int settings_nvs_load(struct settings_store *cs,
 static int settings_nvs_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len)
 {
-	struct settings_nvs *cf = (struct settings_nvs *)cs;
+	struct settings_nvs *cf = CONTAINER_OF(cs, struct settings_nvs, cf_store);
 	char rdname[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
 	uint16_t name_id, write_name_id;
 	bool delete, write_name;
@@ -359,10 +359,8 @@ int settings_backend_init(void)
 
 	rc = flash_area_get_sectors(SETTINGS_PARTITION, &sector_cnt,
 				    &hw_flash_sector);
-	if (rc == -ENODEV) {
+	if (rc != 0 && rc != -ENOMEM) {
 		return rc;
-	} else if (rc != 0 && rc != -ENOMEM) {
-		k_panic();
 	}
 
 	nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT *
@@ -404,7 +402,7 @@ int settings_backend_init(void)
 
 static void *settings_nvs_storage_get(struct settings_store *cs)
 {
-	struct settings_nvs *cf = (struct settings_nvs *)cs;
+	struct settings_nvs *cf = CONTAINER_OF(cs, struct settings_nvs, cf_store);
 
 	return &cf->cf_nvs;
 }

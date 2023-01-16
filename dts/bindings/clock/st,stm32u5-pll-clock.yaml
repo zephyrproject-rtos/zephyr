@@ -30,46 +30,44 @@ include: [clock-controller.yaml, base.yaml]
 
 properties:
 
-    "#clock-cells":
-      const: 0
+  "#clock-cells":
+    const: 0
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    div-m:
-      type: int
-      required: true
-      description: |
-          Prescaler for PLLx
-          input clock
-          Valid range: 1 - 16
+  div-m:
+    type: int
+    required: true
+    description: |
+        Prescaler for PLLx
+        input clock
+        Valid range: 1 - 16
 
-    mul-n:
-      type: int
-      required: true
-      description: |
-          PLLx multiplication factor for VCO
-          Valid range: 4 - 512
+  mul-n:
+    type: int
+    required: true
+    description: |
+        PLLx multiplication factor for VCO
+        Valid range: 4 - 512
 
-    div-p:
-      type: int
-      required: false
-      description: |
-          PLLx DIVP division factor
-          Valid range: 1 - 128
+  div-p:
+    type: int
+    description: |
+        PLLx DIVP division factor
+        Valid range: 1 - 128
 
-    div-q:
-      type: int
-      required: false
-      description: |
-          PLLx DIVQ division factor
-          Valid range: 1 - 128
+  div-q:
+    type: int
+    description: |
+        PLLx DIVQ division factor
+        Valid range: 1 - 128
 
-    div-r:
-      type: int
-      required: true
-      description: |
-          PLLx DIVR division factor
-          On PLL1, only division by 1 and even division values are allowed.
-          No restrictions for PLL2 and PLL3
-          Valid range: 1 - 128
+  div-r:
+    type: int
+    required: true
+    description: |
+        PLLx DIVR division factor
+        On PLL1, only division by 1 and even division values are allowed.
+        No restrictions for PLL2 and PLL3
+        Valid range: 1 - 128

@@ -1,20 +1,19 @@
 # Copyright (c) 2021 Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - drive-push-pull
-            - drive-open-drain
-            - bias-disable
-            - bias-pull-down
-            - bias-pull-up
+include: base.yaml
 
 child-binding:
   child-binding:
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-push-pull
+          - drive-open-drain
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+
     properties:
       pinmux:
         required: true

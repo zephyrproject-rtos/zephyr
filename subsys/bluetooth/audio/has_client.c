@@ -15,9 +15,9 @@
 
 #include "has_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HAS_CLIENT)
-#define LOG_MODULE_NAME bt_has_client
-#include "../common/log.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_has_client, CONFIG_BT_HAS_CLIENT_LOG_LEVEL);
 
 #define HAS_INST(_has) CONTAINER_OF(_has, struct has_inst, has)
 #define HANDLE_IS_VALID(handle) ((handle) != 0x0000)
@@ -95,17 +95,17 @@ static void handle_read_preset_rsp(struct has_inst *inst, struct net_buf_simple 
 	char name[BT_HAS_PRESET_NAME_MAX + 1]; /* + 1 byte for null-terminator */
 	size_t name_len;
 
-	BT_DBG("conn %p buf %p", (void *)inst->conn, buf);
+	LOG_DBG("conn %p buf %p", (void *)inst->conn, buf);
 
 	if (buf->len < sizeof(*pdu)) {
-		BT_ERR("malformed PDU");
+		LOG_ERR("malformed PDU");
 		return;
 	}
 
 	pdu = net_buf_simple_pull_mem(buf, sizeof(*pdu));
 
 	if (pdu->is_last > BT_HAS_IS_LAST) {
-		BT_WARN("unexpected is_last value 0x%02x", pdu->is_last);
+		LOG_WRN("unexpected is_last value 0x%02x", pdu->is_last);
 	}
 
 	record.index = pdu->index;
@@ -114,7 +114,7 @@ static void handle_read_preset_rsp(struct has_inst *inst, struct net_buf_simple 
 
 	name_len = buf->len + 1; /* + 1 byte for NULL terminator */
 	if (name_len > ARRAY_SIZE(name)) {
-		BT_WARN("name is too long (%zu > %u)", buf->len, BT_HAS_PRESET_NAME_MAX);
+		LOG_WRN("name is too long (%zu > %u)", buf->len, BT_HAS_PRESET_NAME_MAX);
 
 		name_len = ARRAY_SIZE(name);
 	}
@@ -132,7 +132,7 @@ static void handle_generic_update(struct has_inst *inst, struct net_buf_simple *
 	size_t name_len;
 
 	if (buf->len < sizeof(*pdu)) {
-		BT_ERR("malformed PDU");
+		LOG_ERR("malformed PDU");
 		return;
 	}
 
@@ -144,7 +144,7 @@ static void handle_generic_update(struct has_inst *inst, struct net_buf_simple *
 
 	name_len = buf->len + 1; /* + 1 byte for NULL terminator */
 	if (name_len > ARRAY_SIZE(name)) {
-		BT_WARN("name is too long (%zu > %u)", buf->len, BT_HAS_PRESET_NAME_MAX);
+		LOG_WRN("name is too long (%zu > %u)", buf->len, BT_HAS_PRESET_NAME_MAX);
 
 		name_len = ARRAY_SIZE(name);
 	}
@@ -157,7 +157,7 @@ static void handle_generic_update(struct has_inst *inst, struct net_buf_simple *
 static void handle_preset_deleted(struct has_inst *inst, struct net_buf_simple *buf, bool is_last)
 {
 	if (buf->len < sizeof(uint8_t)) {
-		BT_ERR("malformed PDU");
+		LOG_ERR("malformed PDU");
 		return;
 	}
 
@@ -168,7 +168,7 @@ static void handle_preset_availability(struct has_inst *inst, struct net_buf_sim
 				       bool available, bool is_last)
 {
 	if (buf->len < sizeof(uint8_t)) {
-		BT_ERR("malformed PDU");
+		LOG_ERR("malformed PDU");
 		return;
 	}
 
@@ -180,17 +180,17 @@ static void handle_preset_changed(struct has_inst *inst, struct net_buf_simple *
 {
 	const struct bt_has_cp_preset_changed *pdu;
 
-	BT_DBG("conn %p buf %p", (void *)inst->conn, buf);
+	LOG_DBG("conn %p buf %p", (void *)inst->conn, buf);
 
 	if (buf->len < sizeof(*pdu)) {
-		BT_ERR("malformed PDU");
+		LOG_ERR("malformed PDU");
 		return;
 	}
 
 	pdu = net_buf_simple_pull_mem(buf, sizeof(*pdu));
 
 	if (pdu->is_last > BT_HAS_IS_LAST) {
-		BT_WARN("unexpected is_last 0x%02x", pdu->is_last);
+		LOG_WRN("unexpected is_last 0x%02x", pdu->is_last);
 	}
 
 	switch (pdu->change_id) {
@@ -215,7 +215,7 @@ static void handle_preset_changed(struct has_inst *inst, struct net_buf_simple *
 		}
 		return;
 	default:
-		BT_WARN("unknown change_id 0x%02x", pdu->change_id);
+		LOG_WRN("unknown change_id 0x%02x", pdu->change_id);
 	}
 }
 
@@ -227,7 +227,7 @@ static uint8_t control_point_notify_cb(struct bt_conn *conn,
 	struct net_buf_simple buf;
 	struct has_inst *inst;
 
-	BT_DBG("conn %p params %p data %p len %u", (void *)conn, params, data, len);
+	LOG_DBG("conn %p params %p data %p len %u", (void *)conn, params, data, len);
 
 	if (!conn) { /* Unpaired, continue receiving notifications */
 		return BT_GATT_ITER_CONTINUE;
@@ -267,7 +267,7 @@ static uint8_t control_point_notify_cb(struct bt_conn *conn,
 
 static void discover_complete(struct has_inst *inst)
 {
-	BT_DBG("conn %p", (void *)inst->conn);
+	LOG_DBG("conn %p", (void *)inst->conn);
 
 	atomic_clear_bit(inst->flags, HAS_DISCOVER_IN_PROGRESS);
 
@@ -284,7 +284,7 @@ static void discover_complete(struct has_inst *inst)
 
 static void discover_failed(struct bt_conn *conn, int err)
 {
-	BT_DBG("conn %p", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	client_cb->discover(conn, err, NULL, 0, 0);
 }
@@ -313,7 +313,7 @@ static void read_presets_req_cb(struct bt_conn *conn, uint8_t err,
 
 	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
-	BT_DBG("conn %p err 0x%02x param %p", (void *)conn, err, params);
+	LOG_DBG("conn %p err 0x%02x param %p", (void *)conn, err, params);
 
 	atomic_clear_bit(inst->flags, HAS_CP_OPERATION_IN_PROGRESS);
 
@@ -329,8 +329,8 @@ static int read_presets_req(struct has_inst *inst, uint8_t start_index, uint8_t 
 
 	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*hdr) + sizeof(*req));
 
-	BT_DBG("conn %p start_index 0x%02x num_presets %d", (void *)inst->conn, start_index,
-	       num_presets);
+	LOG_DBG("conn %p start_index 0x%02x num_presets %d", (void *)inst->conn, start_index,
+		num_presets);
 
 	hdr = net_buf_simple_add(&buf, sizeof(*hdr));
 	hdr->opcode = BT_HAS_OP_READ_PRESET_REQ;
@@ -348,7 +348,7 @@ static void set_active_preset_cb(struct bt_conn *conn, uint8_t err,
 
 	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
-	BT_DBG("conn %p err 0x%02x param %p", (void *)conn, err, params);
+	LOG_DBG("conn %p err 0x%02x param %p", (void *)conn, err, params);
 
 	atomic_clear_bit(inst->flags, HAS_CP_OPERATION_IN_PROGRESS);
 
@@ -364,7 +364,7 @@ static int preset_set(struct has_inst *inst, uint8_t opcode, uint8_t index)
 
 	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*hdr) + sizeof(*req));
 
-	BT_DBG("conn %p opcode 0x%02x index 0x%02x", (void *)inst->conn, opcode, index);
+	LOG_DBG("conn %p opcode 0x%02x index 0x%02x", (void *)inst->conn, opcode, index);
 
 	hdr = net_buf_simple_add(&buf, sizeof(*hdr));
 	hdr->opcode = opcode;
@@ -380,7 +380,7 @@ static int preset_set_next_or_prev(struct has_inst *inst, uint8_t opcode)
 
 	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*hdr));
 
-	BT_DBG("conn %p opcode 0x%02x", (void *)inst->conn, opcode);
+	LOG_DBG("conn %p opcode 0x%02x", (void *)inst->conn, opcode);
 
 	hdr = net_buf_simple_add(&buf, sizeof(*hdr));
 	hdr->opcode = opcode;
@@ -397,7 +397,7 @@ static uint8_t active_index_update(struct has_inst *inst, const void *data, uint
 
 	inst->has.active_index = net_buf_simple_pull_u8(&buf);
 
-	BT_DBG("conn %p index 0x%02x", (void *)inst->conn, inst->has.active_index);
+	LOG_DBG("conn %p index 0x%02x", (void *)inst->conn, inst->has.active_index);
 
 	return prev;
 }
@@ -409,7 +409,7 @@ static uint8_t active_preset_notify_cb(struct bt_conn *conn,
 	struct has_inst *inst;
 	uint8_t prev;
 
-	BT_DBG("conn %p params %p data %p len %u", (void *)conn, params, data, len);
+	LOG_DBG("conn %p params %p data %p len %u", (void *)conn, params, data, len);
 
 	if (!conn) {
 		/* Unpaired, stop receiving notifications from device */
@@ -457,7 +457,7 @@ static void active_index_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 
 	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
-	BT_DBG("conn %p att_err 0x%02x params %p", (void *)inst->conn, att_err, params);
+	LOG_DBG("conn %p att_err 0x%02x params %p", (void *)inst->conn, att_err, params);
 
 	if (att_err != BT_ATT_ERR_SUCCESS) {
 		/* Cleanup instance so that it can be reused */
@@ -471,7 +471,7 @@ static void active_index_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 
 static int active_index_subscribe(struct has_inst *inst, uint16_t value_handle)
 {
-	BT_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
+	LOG_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->active_index_subscription.notify = active_preset_notify_cb;
 	inst->active_index_subscription.subscribe = active_index_subscribe_cb;
@@ -494,8 +494,8 @@ static uint8_t active_index_read_cb(struct bt_conn *conn, uint8_t att_err,
 
 	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
-	BT_DBG("conn %p att_err 0x%02x params %p data %p len %u", (void *)conn, att_err, params,
-	       data, len);
+	LOG_DBG("conn %p att_err 0x%02x params %p data %p len %u", (void *)conn, att_err, params,
+		data, len);
 
 	if (att_err != BT_ATT_ERR_SUCCESS || len == 0) {
 		goto fail;
@@ -505,7 +505,7 @@ static uint8_t active_index_read_cb(struct bt_conn *conn, uint8_t att_err,
 
 	err = active_index_subscribe(inst, params->by_uuid.start_handle);
 	if (err) {
-		BT_ERR("Subscribe failed (err %d)", err);
+		LOG_ERR("Subscribe failed (err %d)", err);
 		goto fail;
 	}
 
@@ -522,7 +522,7 @@ fail:
 
 static int active_index_read(struct has_inst *inst)
 {
-	BT_DBG("conn %p", (void *)inst->conn);
+	LOG_DBG("conn %p", (void *)inst->conn);
 
 	(void)memset(&inst->params.read, 0, sizeof(inst->params.read));
 
@@ -545,7 +545,7 @@ static void control_point_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 
 	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
-	BT_DBG("conn %p att_err 0x%02x", (void *)inst->conn, att_err);
+	LOG_DBG("conn %p att_err 0x%02x", (void *)inst->conn, att_err);
 
 	if (att_err != BT_ATT_ERR_SUCCESS) {
 		goto fail;
@@ -553,7 +553,7 @@ static void control_point_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 
 	err = active_index_read(inst);
 	if (err) {
-		BT_ERR("Active Preset Index read failed (err %d)", err);
+		LOG_ERR("Active Preset Index read failed (err %d)", err);
 		goto fail;
 	}
 
@@ -569,7 +569,7 @@ fail:
 static int control_point_subscribe(struct has_inst *inst, uint16_t value_handle,
 				   uint8_t properties)
 {
-	BT_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
+	LOG_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->control_point_subscription.notify = control_point_notify_cb;
 	inst->control_point_subscription.subscribe = control_point_subscribe_cb;
@@ -597,10 +597,10 @@ static uint8_t control_point_discover_cb(struct bt_conn *conn, const struct bt_g
 
 	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
-	BT_DBG("conn %p attr %p params %p", (void *)inst->conn, attr, params);
+	LOG_DBG("conn %p attr %p params %p", (void *)inst->conn, attr, params);
 
 	if (!attr) {
-		BT_INFO("Control Point not found");
+		LOG_INF("Control Point not found");
 		discover_complete(inst);
 		return BT_GATT_ITER_STOP;
 	}
@@ -609,7 +609,7 @@ static uint8_t control_point_discover_cb(struct bt_conn *conn, const struct bt_g
 
 	err = control_point_subscribe(inst, chrc->value_handle, chrc->properties);
 	if (err) {
-		BT_ERR("Subscribe failed (err %d)", err);
+		LOG_ERR("Subscribe failed (err %d)", err);
 
 		/* Cleanup instance so that it can be reused */
 		inst_cleanup(inst);
@@ -622,7 +622,7 @@ static uint8_t control_point_discover_cb(struct bt_conn *conn, const struct bt_g
 
 static int control_point_discover(struct has_inst *inst)
 {
-	BT_DBG("conn %p", (void *)inst->conn);
+	LOG_DBG("conn %p", (void *)inst->conn);
 
 	(void)memset(&inst->params.discover, 0, sizeof(inst->params.discover));
 
@@ -645,7 +645,7 @@ static void features_update(struct has_inst *inst, const void *data, uint16_t le
 
 	inst->has.features = net_buf_simple_pull_u8(&buf);
 
-	BT_DBG("conn %p features 0x%02x", (void *)inst->conn, inst->has.features);
+	LOG_DBG("conn %p features 0x%02x", (void *)inst->conn, inst->has.features);
 }
 
 static uint8_t features_read_cb(struct bt_conn *conn, uint8_t att_err,
@@ -656,8 +656,8 @@ static uint8_t features_read_cb(struct bt_conn *conn, uint8_t att_err,
 
 	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
-	BT_DBG("conn %p att_err 0x%02x params %p data %p len %u", (void *)conn, att_err, params,
-	       data, len);
+	LOG_DBG("conn %p att_err 0x%02x params %p data %p len %u", (void *)conn, att_err, params,
+		data, len);
 
 	if (att_err != BT_ATT_ERR_SUCCESS || len == 0) {
 		goto fail;
@@ -673,7 +673,7 @@ static uint8_t features_read_cb(struct bt_conn *conn, uint8_t att_err,
 
 	err = control_point_discover(inst);
 	if (err) {
-		BT_ERR("Control Point discover failed (err %d)", err);
+		LOG_ERR("Control Point discover failed (err %d)", err);
 		goto fail;
 	}
 
@@ -690,7 +690,7 @@ fail:
 
 static int features_read(struct has_inst *inst, uint16_t value_handle)
 {
-	BT_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
+	LOG_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->params.read.func = features_read_cb;
 	inst->params.read.handle_count = 1u;
@@ -708,7 +708,7 @@ static void features_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 
 	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
-	BT_DBG("conn %p att_err 0x%02x params %p", (void *)inst->conn, att_err, params);
+	LOG_DBG("conn %p att_err 0x%02x params %p", (void *)inst->conn, att_err, params);
 
 	if (att_err != BT_ATT_ERR_SUCCESS) {
 		goto fail;
@@ -716,7 +716,7 @@ static void features_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 
 	err = features_read(inst, inst->features_subscription.value_handle);
 	if (err) {
-		BT_ERR("Read failed (err %d)", err);
+		LOG_ERR("Read failed (err %d)", err);
 		goto fail;
 	}
 
@@ -734,7 +734,7 @@ static uint8_t features_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe
 {
 	struct has_inst *inst;
 
-	BT_DBG("conn %p params %p data %p len %u", (void *)conn, params, data, len);
+	LOG_DBG("conn %p params %p data %p len %u", (void *)conn, params, data, len);
 
 	if (!conn) {
 		/* Unpaired, stop receiving notifications from device */
@@ -766,7 +766,7 @@ static uint8_t features_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe
 
 static int features_subscribe(struct has_inst *inst, uint16_t value_handle)
 {
-	BT_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
+	LOG_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->features_subscription.notify = features_notify_cb;
 	inst->features_subscription.subscribe = features_subscribe_cb;
@@ -789,7 +789,7 @@ static uint8_t features_discover_cb(struct bt_conn *conn, const struct bt_gatt_a
 
 	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
-	BT_DBG("conn %p attr %p params %p", (void *)conn, attr, params);
+	LOG_DBG("conn %p attr %p params %p", (void *)conn, attr, params);
 
 	if (!attr) {
 		err = -ENOENT;
@@ -802,13 +802,13 @@ static uint8_t features_discover_cb(struct bt_conn *conn, const struct bt_gatt_a
 	if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 		err = features_subscribe(inst, chrc->value_handle);
 		if (err) {
-			BT_ERR("Subscribe failed (err %d)", err);
+			LOG_ERR("Subscribe failed (err %d)", err);
 			goto fail;
 		}
 	} else {
 		err = features_read(inst, chrc->value_handle);
 		if (err) {
-			BT_ERR("Read failed (err %d)", err);
+			LOG_ERR("Read failed (err %d)", err);
 			goto fail;
 		}
 	}
@@ -826,7 +826,7 @@ fail:
 
 static int features_discover(struct has_inst *inst)
 {
-	BT_DBG("conn %p", (void *)inst->conn);
+	LOG_DBG("conn %p", (void *)inst->conn);
 
 	(void)memset(&inst->params.discover, 0, sizeof(inst->params.discover));
 
@@ -869,7 +869,7 @@ int bt_has_client_discover(struct bt_conn *conn)
 	struct has_inst *inst;
 	int err;
 
-	BT_DBG("conn %p", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	CHECKIF(!conn || !client_cb || !client_cb->discover) {
 		return -EINVAL;
@@ -910,7 +910,7 @@ int bt_has_client_presets_read(struct bt_has *has, uint8_t start_index, uint8_t 
 	struct has_inst *inst = HAS_INST(has);
 	int err;
 
-	BT_DBG("conn %p start_index 0x%02x count %d", (void *)inst->conn, start_index, count);
+	LOG_DBG("conn %p start_index 0x%02x count %d", (void *)inst->conn, start_index, count);
 
 	if (!inst->conn) {
 		return -ENOTCONN;
@@ -942,7 +942,7 @@ int bt_has_client_preset_set(struct bt_has *has, uint8_t index, bool sync)
 	struct has_inst *inst = HAS_INST(has);
 	uint8_t opcode;
 
-	BT_DBG("conn %p index 0x%02x", (void *)inst->conn, index);
+	LOG_DBG("conn %p index 0x%02x", (void *)inst->conn, index);
 
 	if (!inst->conn) {
 		return -ENOTCONN;
@@ -971,7 +971,7 @@ int bt_has_client_preset_next(struct bt_has *has, bool sync)
 	struct has_inst *inst = HAS_INST(has);
 	uint8_t opcode;
 
-	BT_DBG("conn %p sync %d", (void *)inst->conn, sync);
+	LOG_DBG("conn %p sync %d", (void *)inst->conn, sync);
 
 	if (!inst->conn) {
 		return -ENOTCONN;
@@ -996,7 +996,7 @@ int bt_has_client_preset_prev(struct bt_has *has, bool sync)
 	struct has_inst *inst = HAS_INST(has);
 	uint8_t opcode;
 
-	BT_DBG("conn %p sync %d", (void *)inst->conn, sync);
+	LOG_DBG("conn %p sync %d", (void *)inst->conn, sync);
 
 	if (!inst->conn) {
 		return -ENOTCONN;

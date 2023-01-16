@@ -5,6 +5,7 @@
 
 menuconfig EC_HOST_CMD_PERIPH
 	bool "Embedded Controller Host Command peripheral support"
+	depends on EC_HOST_CMD
 	help
 	  Enable the embedded controller host command peripheral driver. This
 	  is needed by the EC host command framework to send and receive data
@@ -12,11 +13,77 @@ menuconfig EC_HOST_CMD_PERIPH
 
 if EC_HOST_CMD_PERIPH
 
+module = EC_HC
+module-str = ec-host-commands
+source "subsys/logging/Kconfig.template.log_config"
+
+choice EC_HOST_CMD_PERIPH_TYPE
+	prompt "Host commands peripheral"
+
 config EC_HOST_CMD_SIMULATOR
 	bool "Embedded Controller Host Command Peripheral Simulator"
-	default y
 	depends on DT_HAS_ZEPHYR_SIM_EC_HOST_CMD_PERIPH_ENABLED
 	help
 	  Enable the EC host command simulator.
+
+config EC_HOST_CMD_PERIPH_ESPI
+	bool "Host commands support using eSPI bus"
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD
+	depends on ESPI_PERIPHERAL_CUSTOM_OPCODE
+	depends on DT_HAS_ZEPHYR_EC_HOST_CMD_PERIPH_ESPI_ENABLED
+	help
+	  Enable support for Embedded Controller host commands using
+	  the eSPI bus.
+
+config EC_HOST_CMD_PERIPH_SHI
+	bool "Host commands support using SHI"
+	help
+	  Enable support for Embedded Controller host commands using
+	  the Serial Host Interface.
+
+endchoice
+
+if EC_HOST_CMD_PERIPH_SHI
+
+choice EC_HOST_CMD_PERIPH_SHI_DRIVER
+	prompt "SHI driver"
+	default EC_HOST_CMD_PERIPH_SHI_NPCX if SOC_FAMILY_NPCX
+	default EC_HOST_CMD_PERIPH_SHI_ITE if SOC_IT8XXX2
+
+config EC_HOST_CMD_PERIPH_SHI_NPCX
+	bool "SHI by Nuvoton"
+	depends on DT_HAS_NUVOTON_NPCX_SHI_ENABLED
+	help
+	  This option enables the driver for SHI peripheral in the
+	  Nuvoton NPCX chip.
+
+config EC_HOST_CMD_PERIPH_SHI_ITE
+	bool "SHI by ITE"
+	depends on DT_HAS_ITE_IT8XXX2_SHI_ENABLED
+	help
+	  This option enables the driver for SHI peripheral in the
+	  ITE IT8xxx2 chips family.
+
+endchoice
+
+config EC_HOST_CMD_PERIPH_SHI_MAX_REQUEST
+	int "Max data size for the version 3 request packet"
+	default 544 if EC_HOST_CMD_PERIPH_SHI_NPCX
+	default 256 if EC_HOST_CMD_PERIPH_SHI_ITE
+	help
+	  This option indicates maximum data size for a version 3 request
+	  packet. This must be big enough to handle a request header of host
+	  command, flash write offset/size, and 512 bytes of flash data.
+
+config EC_HOST_CMD_PERIPH_SHI_MAX_RESPONSE
+	int "Max data size for the version 3 response packet"
+	default 544 if EC_HOST_CMD_PERIPH_SHI_NPCX
+	default 248 if EC_HOST_CMD_PERIPH_SHI_ITE
+	help
+	  This option indicates maximum data size for a version 3 response
+	  packet. This must be big enough to handle a response header of host
+	  command, flash read offset/size, and 512 bytes of flash data.
+
+endif # EC_HOST_CMD_PERIPH_SHI
 
 endif # EC_HOST_CMD_PERIPH

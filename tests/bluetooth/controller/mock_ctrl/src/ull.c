@@ -178,6 +178,12 @@ void ll_rx_sched(void)
 {
 }
 
+void ll_rx_put_sched(memq_link_t *link, void *rx)
+{
+	ll_rx_put(link, rx);
+	ll_rx_sched();
+}
+
 void *ll_pdu_rx_alloc_peek(uint8_t count)
 {
 	if (count > MFIFO_AVAIL_COUNT_GET(ll_pdu_rx_free)) {
@@ -250,6 +256,10 @@ void ull_rx_put(memq_link_t *link, void *rx)
 }
 
 void ull_rx_sched(void)
+{
+}
+
+void ull_rx_put_sched(memq_link_t *link, void *rx)
 {
 }
 

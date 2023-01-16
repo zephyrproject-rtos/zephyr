@@ -12,3 +12,80 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&spi0 {
+	clock-frequency = <100000000>;
+};
+
+&spi1 {
+	clock-frequency = <100000000>;
+};
+
+&spi2 {
+	clock-frequency = <100000000>;
+};
+
+&spi3 {
+	clock-frequency = <120000000>;
+};
+
+&spi4 {
+	clock-frequency = <120000000>;
+};
+
+&spi5 {
+	clock-frequency = <120000000>;
+};
+
+&spi6 {
+	clock-frequency = <120000000>;
+};
+
+&spi7 {
+	clock-frequency = <100000000>;
+};
+
+&spi8 {
+	clock-frequency = <100000000>;
+};
+
+&spi9 {
+	clock-frequency = <100000000>;
+};
+
+&stm0 {
+	clock-frequency = <133333333>;
+};
+
+&stm1 {
+	clock-frequency = <133333333>;
+};
+
+&stm2 {
+	clock-frequency = <133333333>;
+};
+
+&stm3 {
+	clock-frequency = <133333333>;
+};
+
+&swt0 {
+	clock-frequency = <48000000>;
+	status = "okay";
+};
+
+&swt1 {
+	clock-frequency = <48000000>;
+};
+
+&swt2 {
+	clock-frequency = <48000000>;
+};
+
+&swt3 {
+	clock-frequency = <48000000>;
+};
+
+&swt4 {
+	clock-frequency = <48000000>;
+};

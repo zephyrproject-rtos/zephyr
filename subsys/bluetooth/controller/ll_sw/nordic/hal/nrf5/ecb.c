@@ -14,9 +14,6 @@
 #include "util/mem.h"
 #include "hal/ecb.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_hal_ecb
-#include "common/log.h"
 #include "hal/debug.h"
 
 struct ecb_param {

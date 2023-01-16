@@ -5,13 +5,12 @@ compatible: "silabs,gecko-gpio"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    location-swo:
-      type: int
-      required: false
-      description: Serial Wire Output (SWO) PIN location
+  location-swo:
+    type: int
+    description: Serial Wire Output (SWO) PIN location

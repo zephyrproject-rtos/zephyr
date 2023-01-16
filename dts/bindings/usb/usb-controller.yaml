@@ -8,21 +8,19 @@ include: base.yaml
 bus: usb
 
 properties:
-    maximum-speed:
-      type: string
-      required: false
-      description: Configures USB controllers to work up to a specific
-                   speed. Valid arguments are "super-speed", "high-speed",
-                   "full-speed" and "low-speed". If this is not passed
-                   via DT, USB controllers should use their maximum
-                   hardware capability.
-      enum:
-         - "low-speed"
-         - "full-speed"
-         - "high-speed"
-         - "super-speed"
+  maximum-speed:
+    type: string
+    description: Configures USB controllers to work up to a specific
+                 speed. Valid arguments are "super-speed", "high-speed",
+                 "full-speed" and "low-speed". If this is not passed
+                 via DT, USB controllers should use their maximum
+                 hardware capability.
+    enum:
+      - "low-speed"
+      - "full-speed"
+      - "high-speed"
+      - "super-speed"
 
-    vbus-gpios:
-      type: phandle-array
-      required: false
-      description: Control VBUS via GPIO pin.
+  vbus-gpios:
+    type: phandle-array
+    description: Control VBUS via GPIO pin.

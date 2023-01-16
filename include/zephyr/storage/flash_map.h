@@ -56,8 +56,6 @@ extern "C" {
 struct flash_area {
 	/** ID number */
 	uint8_t fa_id;
-	/** Provided for compatibility with MCUboot */
-	uint8_t fa_device_id;
 	uint16_t pad16;
 	/** Start offset from the beginning of the flash device */
 	off_t fa_off;

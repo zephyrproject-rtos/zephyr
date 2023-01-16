@@ -508,8 +508,11 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 {
 	struct net_buf *hdr_frag;
 	struct net_eth_hdr *hdr;
+	size_t hdr_len = IS_ENABLED(CONFIG_NET_VLAN) ?
+			 sizeof(struct net_eth_vlan_hdr) :
+			 sizeof(struct net_eth_hdr);
 
-	hdr_frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+	hdr_frag = net_pkt_get_frag(pkt, hdr_len, NET_BUF_TIMEOUT);
 	if (!hdr_frag) {
 		return NULL;
 	}
@@ -729,6 +732,7 @@ error:
 
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
+	int ret = 0;
 	const struct ethernet_api *eth =
 		net_if_get_device(iface)->api;
 
@@ -740,15 +744,15 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 		net_arp_clear_cache(iface);
 
 		if (eth->stop) {
-			eth->stop(net_if_get_device(iface));
+			ret = eth->stop(net_if_get_device(iface));
 		}
 	} else {
 		if (eth->start) {
-			eth->start(net_if_get_device(iface));
+			ret = eth->start(net_if_get_device(iface));
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 enum net_l2_flags ethernet_flags(struct net_if *iface)

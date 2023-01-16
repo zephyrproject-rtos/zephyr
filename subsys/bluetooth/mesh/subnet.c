@@ -19,9 +19,6 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_KEYS)
-#define LOG_MODULE_NAME bt_mesh_net_keys
-#include "common/log.h"
 #include "common/bt_str.h"
 
 #include "crypto.h"
@@ -39,6 +36,10 @@
 #include "settings.h"
 #include "host/ecc.h"
 #include "prov.h"
+
+#define LOG_LEVEL CONFIG_BT_MESH_KEYS_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_mesh_net_keys);
 
 /* Tracking of what storage changes are pending for Net Keys. We track this in
  * a separate array here instead of within the respective bt_mesh_subnet
@@ -78,14 +79,14 @@ static void clear_net_key(uint16_t net_idx)
 	char path[20];
 	int err;
 
-	BT_DBG("NetKeyIndex 0x%03x", net_idx);
+	LOG_DBG("NetKeyIndex 0x%03x", net_idx);
 
 	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", net_idx);
 	err = settings_delete(path);
 	if (err) {
-		BT_ERR("Failed to clear NetKeyIndex 0x%03x", net_idx);
+		LOG_ERR("Failed to clear NetKeyIndex 0x%03x", net_idx);
 	} else {
-		BT_DBG("Cleared NetKeyIndex 0x%03x", net_idx);
+		LOG_DBG("Cleared NetKeyIndex 0x%03x", net_idx);
 	}
 }
 
@@ -98,11 +99,11 @@ static void store_subnet(uint16_t net_idx)
 
 	sub = bt_mesh_subnet_get(net_idx);
 	if (!sub) {
-		BT_WARN("NetKeyIndex 0x%03x not found", net_idx);
+		LOG_WRN("NetKeyIndex 0x%03x not found", net_idx);
 		return;
 	}
 
-	BT_DBG("NetKeyIndex 0x%03x", net_idx);
+	LOG_DBG("NetKeyIndex 0x%03x", net_idx);
 
 	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", net_idx);
 
@@ -113,9 +114,9 @@ static void store_subnet(uint16_t net_idx)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		BT_ERR("Failed to store NetKey value");
+		LOG_ERR("Failed to store NetKey value");
 	} else {
-		BT_DBG("Stored NetKey value");
+		LOG_DBG("Stored NetKey value");
 	}
 }
 
@@ -164,7 +165,7 @@ static void update_subnet_settings(uint16_t net_idx, bool store)
 	struct net_key_update *update, *free_slot;
 	uint8_t clear = store ? 0U : 1U;
 
-	BT_DBG("NetKeyIndex 0x%03x", net_idx);
+	LOG_DBG("NetKeyIndex 0x%03x", net_idx);
 
 	update = net_key_update_find(net_idx, &free_slot);
 	if (update) {
@@ -197,7 +198,7 @@ void bt_mesh_subnet_store(uint16_t net_idx)
 
 static void key_refresh(struct bt_mesh_subnet *sub, uint8_t new_phase)
 {
-	BT_DBG("Phase 0x%02x -> 0x%02x", sub->kr_phase, new_phase);
+	LOG_DBG("Phase 0x%02x -> 0x%02x", sub->kr_phase, new_phase);
 
 	switch (new_phase) {
 	/* Added second set of keys */
@@ -225,7 +226,7 @@ static void key_refresh(struct bt_mesh_subnet *sub, uint8_t new_phase)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		BT_DBG("Storing Updated NetKey persistently");
+		LOG_DBG("Storing Updated NetKey persistently");
 		bt_mesh_subnet_store(sub->net_idx);
 	}
 }
@@ -292,41 +293,40 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys,
 
 	err = msg_cred_create(&keys->msg, &p, 1, key);
 	if (err) {
-		BT_ERR("Unable to generate NID, EncKey & PrivacyKey");
+		LOG_ERR("Unable to generate NID, EncKey & PrivacyKey");
 		return err;
 	}
 
 	memcpy(keys->net, key, 16);
 
-	BT_DBG("NID 0x%02x EncKey %s", keys->msg.nid,
-	       bt_hex(keys->msg.enc, 16));
-	BT_DBG("PrivacyKey %s", bt_hex(keys->msg.privacy, 16));
+	LOG_DBG("NID 0x%02x EncKey %s", keys->msg.nid, bt_hex(keys->msg.enc, 16));
+	LOG_DBG("PrivacyKey %s", bt_hex(keys->msg.privacy, 16));
 
 	err = bt_mesh_k3(key, keys->net_id);
 	if (err) {
-		BT_ERR("Unable to generate Net ID");
+		LOG_ERR("Unable to generate Net ID");
 		return err;
 	}
 
-	BT_DBG("NetID %s", bt_hex(keys->net_id, 8));
+	LOG_DBG("NetID %s", bt_hex(keys->net_id, 8));
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	err = bt_mesh_identity_key(key, keys->identity);
 	if (err) {
-		BT_ERR("Unable to generate IdentityKey");
+		LOG_ERR("Unable to generate IdentityKey");
 		return err;
 	}
 
-	BT_DBG("IdentityKey %s", bt_hex(keys->identity, 16));
+	LOG_DBG("IdentityKey %s", bt_hex(keys->identity, 16));
 #endif /* GATT_PROXY */
 
 	err = bt_mesh_beacon_key(key, keys->beacon);
 	if (err) {
-		BT_ERR("Unable to generate beacon key");
+		LOG_ERR("Unable to generate beacon key");
 		return err;
 	}
 
-	BT_DBG("BeaconKey %s", bt_hex(keys->beacon, 16));
+	LOG_DBG("BeaconKey %s", bt_hex(keys->beacon, 16));
 
 	keys->valid = 1U;
 
@@ -338,7 +338,7 @@ uint8_t bt_mesh_subnet_add(uint16_t net_idx, const uint8_t key[16])
 	struct bt_mesh_subnet *sub = NULL;
 	int err;
 
-	BT_DBG("0x%03x", net_idx);
+	LOG_DBG("0x%03x", net_idx);
 
 	sub = subnet_alloc(net_idx);
 	if (!sub) {
@@ -370,7 +370,7 @@ uint8_t bt_mesh_subnet_add(uint16_t net_idx, const uint8_t key[16])
 	subnet_evt(sub, BT_MESH_KEY_ADDED);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		BT_DBG("Storing NetKey persistently");
+		LOG_DBG("Storing NetKey persistently");
 		bt_mesh_subnet_store(sub->net_idx);
 	}
 
@@ -387,7 +387,7 @@ uint8_t bt_mesh_subnet_update(uint16_t net_idx, const uint8_t key[16])
 	struct bt_mesh_subnet *sub;
 	int err;
 
-	BT_DBG("0x%03x", net_idx);
+	LOG_DBG("0x%03x", net_idx);
 
 	sub = bt_mesh_subnet_get(net_idx);
 	if (!sub) {
@@ -430,7 +430,7 @@ uint8_t bt_mesh_subnet_del(uint16_t net_idx)
 {
 	struct bt_mesh_subnet *sub;
 
-	BT_DBG("0x%03x", net_idx);
+	LOG_DBG("0x%03x", net_idx);
 
 	sub = bt_mesh_subnet_get(net_idx);
 	if (!sub) {
@@ -471,7 +471,7 @@ uint8_t bt_mesh_subnet_kr_phase_set(uint16_t net_idx, uint8_t *phase)
 	};
 	struct bt_mesh_subnet *sub;
 
-	BT_DBG("0x%03x", net_idx);
+	LOG_DBG("0x%03x", net_idx);
 
 	sub = bt_mesh_subnet_get(net_idx);
 	if (!sub) {
@@ -492,8 +492,7 @@ uint8_t bt_mesh_subnet_kr_phase_set(uint16_t net_idx, uint8_t *phase)
 		return STATUS_SUCCESS;
 	}
 
-	BT_WARN("Invalid KR transition: 0x%02x -> 0x%02x", sub->kr_phase,
-		*phase);
+	LOG_WRN("Invalid KR transition: 0x%02x -> 0x%02x", sub->kr_phase, *phase);
 
 	*phase = sub->kr_phase;
 
@@ -718,7 +717,7 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 {
 	int i, j;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 #if defined(CONFIG_BT_MESH_LOW_POWER)
 	if (bt_mesh_lpn_waiting_update()) {
@@ -801,18 +800,18 @@ static int net_key_set(const char *name, size_t len_rd,
 	uint16_t net_idx;
 
 	if (!name) {
-		BT_ERR("Insufficient number of arguments");
+		LOG_ERR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
 	net_idx = strtol(name, NULL, 16);
 	err = bt_mesh_settings_set(read_cb, cb_arg, &key, sizeof(key));
 	if (err) {
-		BT_ERR("Failed to set \'net-key\'");
+		LOG_ERR("Failed to set \'net-key\'");
 		return err;
 	}
 
-	BT_DBG("NetKeyIndex 0x%03x recovered from storage", net_idx);
+	LOG_DBG("NetKeyIndex 0x%03x recovered from storage", net_idx);
 
 	return bt_mesh_subnet_set(
 		net_idx, key.kr_phase, key.val[0],

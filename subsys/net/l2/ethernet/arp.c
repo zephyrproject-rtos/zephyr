@@ -281,7 +281,10 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	 * request and we want to send it again.
 	 */
 	if (entry) {
-		k_fifo_put(&entry->pending_queue, net_pkt_ref(pending));
+		if (!net_pkt_ipv4_auto(pkt)) {
+			k_fifo_put(&entry->pending_queue, net_pkt_ref(pending));
+		}
+
 		entry->iface = net_pkt_iface(pkt);
 
 		net_ipaddr_copy(&entry->ip, next_addr);
@@ -385,7 +388,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			 * in the pending list and if so, resend the request, otherwise just
 			 * append the packet to the request fifo list.
 			 */
-			if (k_queue_unique_append(&entry->pending_queue._queue,
+			if (!net_pkt_ipv4_auto(pkt) &&
+			    k_queue_unique_append(&entry->pending_queue._queue,
 						  net_pkt_ref(pkt))) {
 				k_mutex_unlock(&arp_mutex);
 				return NULL;

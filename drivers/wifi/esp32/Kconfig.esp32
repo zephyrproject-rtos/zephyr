@@ -219,7 +219,6 @@ config ESP32_WIFI_SW_COEXIST_ENABLE
 
 config ESP32_WIFI_IRAM_OPT
 	bool "WiFi IRAM speed optimization"
-	default y
 	help
 	  Select this option to place frequently called Wi-Fi library functions in IRAM.
 	  When this option is disabled, more than 10Kbytes of IRAM memory will be saved
@@ -227,7 +226,6 @@ config ESP32_WIFI_IRAM_OPT
 
 config ESP32_WIFI_RX_IRAM_OPT
 	bool "WiFi RX IRAM speed optimization"
-	default y
 	help
 	  Select this option to place frequently called Wi-Fi library RX functions in IRAM.
 	  When this option is disabled, more than 17Kbytes of IRAM memory will be saved

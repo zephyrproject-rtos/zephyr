@@ -20,7 +20,7 @@
  */
 
 #include <zephyr/types.h>
-#include <zephyr/bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
 
@@ -39,14 +39,15 @@ extern "C" {
  * @kconfig{BT_CAP_ACCEPTOR_SET_MEMBER}. If @kconfig{BT_CAP_ACCEPTOR_SET_MEMBER}
  * is not enabled, the Common Audio Service will by statically registered.
  *
- * @param[in]  param Coordinated Set Identification Service register parameters.
- * @param[out] csis  Pointer to the registered Coordinated Set Identification
- *                   Service.
+ * @param[in]  param     Coordinated Set Identification Service register
+ *                       parameters.
+ * @param[out] svc_inst  Pointer to the registered Coordinated Set
+ *                       Identification Service.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_cap_acceptor_register(const struct bt_csis_register_param *param,
-			     struct bt_csis **csis);
+int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *param,
+			     struct bt_csip_set_member_svc_inst **svc_inst);
 
 /** Callback structure for CAP procedures */
 struct bt_cap_initiator_cb {
@@ -63,8 +64,9 @@ struct bt_cap_initiator_cb {
 	 *                  NULL on error or if remote device does not include
 	 *                  Coordinated Set Identification Service.
 	 */
-	void (*unicast_discovery_complete)(struct bt_conn *conn, int err,
-					   const struct bt_csis_client_csis_inst *csis_inst);
+	void (*unicast_discovery_complete)(
+		struct bt_conn *conn, int err,
+		const struct bt_csip_set_coordinator_csis_inst *csis_inst);
 
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_start().
@@ -133,7 +135,7 @@ union bt_cap_set_member {
 	struct bt_conn *member;
 
 	/** CSIP Coordinated Set struct used if type is BT_CAP_SET_TYPE_CSIP. */
-	struct bt_csis_client_set_member *csip;
+	struct bt_csip_set_coordinator_set_member *csip;
 };
 
 struct bt_cap_stream {

@@ -167,3 +167,10 @@ config OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
 	bool "Stay awake between packet fragments"
 	help
 	  This optimization is done at the expense of power consumption on SED/SSED devices.
+
+config OPENTHREAD_DEFAULT_TX_POWER
+	int "OpenThread default tx power in dBm"
+	range -40 20 if NRF_802154_RADIO_DRIVER
+	default 0
+	help
+	  Set the default TX output power [dBm] in radio driver for OpenThread purpose.

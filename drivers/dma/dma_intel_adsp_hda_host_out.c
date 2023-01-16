@@ -19,6 +19,7 @@ static const struct dma_driver_api intel_adsp_hda_dma_host_out_api = {
 	.start = intel_adsp_hda_dma_start,
 	.stop = intel_adsp_hda_dma_stop,
 	.get_status = intel_adsp_hda_dma_status,
+	.get_attribute = intel_adsp_hda_dma_get_attribute,
 	.chan_filter = intel_adsp_hda_dma_chan_filter,
 };
 
@@ -32,7 +33,10 @@ static const struct dma_driver_api intel_adsp_hda_dma_host_out_api = {
 												   \
 	static struct intel_adsp_hda_dma_data intel_adsp_hda_dma##inst##_data = {};                \
 												   \
-	DEVICE_DT_INST_DEFINE(inst, &intel_adsp_hda_dma_init, NULL,                                \
+	PM_DEVICE_DT_INST_DEFINE(inst, intel_adsp_hda_dma_pm_action);				   \
+												   \
+	DEVICE_DT_INST_DEFINE(inst, &intel_adsp_hda_dma_init,					   \
+			      PM_DEVICE_DT_INST_GET(inst),					   \
 			      &intel_adsp_hda_dma##inst##_data,                                    \
 			      &intel_adsp_hda_dma##inst##_config, POST_KERNEL,                     \
 			      CONFIG_DMA_INIT_PRIORITY,                                            \

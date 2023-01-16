@@ -196,6 +196,7 @@ static const struct ec2i_t pmc2_settings[] = {
  * Linker script of h2ram.ld will make the pool 4K aligned.
  */
 #define IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX 0x1000
+#define IT8XXX2_ESPI_H2RAM_OFFSET_MASK   GENMASK(3, 0)
 
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
 #define H2RAM_ACPI_SHM_MAX ((CONFIG_ESPI_IT8XXX2_ACPI_SHM_H2RAM_SIZE) + \
@@ -249,7 +250,9 @@ static void smfi_it8xxx2_init(const struct device *dev)
 	/* Set the host to RAM cycle address offset */
 	h2ram_offset = ((uint32_t)h2ram_pool & 0xffff) /
 				IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX;
-	gctrl->GCTRL_H2ROFSR |= h2ram_offset;
+	gctrl->GCTRL_H2ROFSR =
+		(gctrl->GCTRL_H2ROFSR & ~IT8XXX2_ESPI_H2RAM_OFFSET_MASK) |
+		h2ram_offset;
 
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	memset(&h2ram_pool[CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM], 0,
@@ -666,28 +669,6 @@ static bool espi_it8xxx2_channel_ready(const struct device *dev,
 	return sts;
 }
 
-static int espi_vw_set_valid(const struct device *dev,
-			enum espi_vwire_signal signal, uint8_t valid)
-{
-	const struct espi_it8xxx2_config *const config = dev->config;
-	struct espi_vw_regs *const vw_reg =
-		(struct espi_vw_regs *)config->base_espi_vw;
-	uint8_t vw_index = vw_channel_list[signal].vw_index;
-	uint8_t valid_mask = vw_channel_list[signal].valid_mask;
-
-	if (signal > ARRAY_SIZE(vw_channel_list)) {
-		return -EIO;
-	}
-
-	if (valid) {
-		vw_reg->VW_INDEX[vw_index] |= valid_mask;
-	} else {
-		vw_reg->VW_INDEX[vw_index] &= ~valid_mask;
-	}
-
-	return 0;
-}
-
 static int espi_it8xxx2_send_vwire(const struct device *dev,
 			enum espi_vwire_signal signal, uint8_t level)
 {
@@ -696,6 +677,7 @@ static int espi_it8xxx2_send_vwire(const struct device *dev,
 		(struct espi_vw_regs *)config->base_espi_vw;
 	uint8_t vw_index = vw_channel_list[signal].vw_index;
 	uint8_t level_mask = vw_channel_list[signal].level_mask;
+	uint8_t valid_mask = vw_channel_list[signal].valid_mask;
 
 	if (signal > ARRAY_SIZE(vw_channel_list)) {
 		return -EIO;
@@ -706,6 +688,8 @@ static int espi_it8xxx2_send_vwire(const struct device *dev,
 	} else {
 		vw_reg->VW_INDEX[vw_index] &= ~level_mask;
 	}
+
+	vw_reg->VW_INDEX[vw_index] |= valid_mask;
 
 	return 0;
 }
@@ -805,6 +789,9 @@ static int espi_it8xxx2_read_lpc_request(const struct device *dev,
 			*data = (uint32_t)&h2ram_pool[
 				CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM];
 			break;
+		case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY_SIZE:
+			*data = CONFIG_ESPI_IT8XXX2_HC_H2RAM_SIZE;
+			break;
 		default:
 			return -EINVAL;
 		}
@@ -854,6 +841,13 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			break;
 		case E8042_CLEAR_OBF:
 			/*
+			 * After enabling IBF/OBF clear mode, we have to make
+			 * sure that IBF interrupt is not triggered before
+			 * disabling the clear mode. Or the interrupt will keep
+			 * triggering until the watchdog is reset.
+			 */
+			unsigned int key = irq_lock();
+			/*
 			 * When IBFOBFCME is enabled, write 1 to COBF bit to
 			 * clear KBC OBF.
 			 */
@@ -862,6 +856,7 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			kbc_reg->KBHICR &= ~KBC_KBHICR_COBF;
 			/* Disable clear mode */
 			kbc_reg->KBHICR &= ~KBC_KBHICR_IBFOBFCME;
+			irq_unlock(key);
 			break;
 		case E8042_SET_FLAG:
 			kbc_reg->KBHISR |= (*data & 0xff);
@@ -1338,7 +1333,7 @@ static void espi_it8xxx2_vwidx2_isr(const struct device *dev,
 	}
 }
 
-static void espi_vw_oob_rst_warm_isr(const struct device *dev)
+static void espi_vw_oob_rst_warn_isr(const struct device *dev)
 {
 	uint8_t level = 0;
 
@@ -1353,10 +1348,6 @@ static void espi_vw_pltrst_isr(const struct device *dev)
 	espi_it8xxx2_receive_vwire(dev, ESPI_VWIRE_SIGNAL_PLTRST, &pltrst);
 
 	if (pltrst) {
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SMI, 1);
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SCI, 1);
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK, 1);
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_RST_CPU_INIT, 1);
 		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_SMI, 1);
 		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_SCI, 1);
 		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK, 1);
@@ -1367,7 +1358,7 @@ static void espi_vw_pltrst_isr(const struct device *dev)
 }
 
 static const struct espi_vw_signal_t vwidx3_signals[] = {
-	{ESPI_VWIRE_SIGNAL_OOB_RST_WARN, espi_vw_oob_rst_warm_isr},
+	{ESPI_VWIRE_SIGNAL_OOB_RST_WARN, espi_vw_oob_rst_warn_isr},
 	{ESPI_VWIRE_SIGNAL_PLTRST,       espi_vw_pltrst_isr},
 };
 
@@ -1577,10 +1568,6 @@ static void espi_it8xxx2_peripheral_ch_en_isr(const struct device *dev,
  */
 static void espi_it8xxx2_vw_ch_en_isr(const struct device *dev, bool enable)
 {
-	if (enable) {
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SUS_ACK, 1);
-	}
-
 	espi_it8xxx2_ch_notify_system_state(dev, ESPI_CHANNEL_VWIRE, enable);
 }
 
@@ -1590,10 +1577,6 @@ static void espi_it8xxx2_vw_ch_en_isr(const struct device *dev, bool enable)
  */
 static void espi_it8xxx2_oob_ch_en_isr(const struct device *dev, bool enable)
 {
-	if (enable) {
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK, 1);
-	}
-
 	espi_it8xxx2_ch_notify_system_state(dev, ESPI_CHANNEL_OOB, enable);
 }
 
@@ -1604,8 +1587,6 @@ static void espi_it8xxx2_oob_ch_en_isr(const struct device *dev, bool enable)
 static void espi_it8xxx2_flash_ch_en_isr(const struct device *dev, bool enable)
 {
 	if (enable) {
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
-		espi_vw_set_valid(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
 		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
 		espi_it8xxx2_send_vwire(dev,
 					ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);

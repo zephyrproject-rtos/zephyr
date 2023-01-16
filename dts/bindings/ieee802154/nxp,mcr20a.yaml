@@ -8,20 +8,20 @@ compatible: "nxp,mcr20a"
 include: spi-device.yaml
 
 properties:
-    irqb-gpios:
-      type: phandle-array
-      required: true
-      description: Interrupt pin.
+  irqb-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin.
 
-        The interrupt pin of MCR20A is open-drain, active low.
-        If connected directly the MCU pin should be configured
-        as pull-up, active low.
+      The interrupt pin of MCR20A is open-drain, active low.
+      If connected directly the MCU pin should be configured
+      as pull-up, active low.
 
-    reset-gpios:
-      type: phandle-array
-      required: true
-      description: RESET pin.
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: RESET pin.
 
-        The RESET pin of MCR20A is active low.
-        If connected directly the MCU pin should be configured
-        as active low.
+      The RESET pin of MCR20A is active low.
+      If connected directly the MCU pin should be configured
+      as active low.

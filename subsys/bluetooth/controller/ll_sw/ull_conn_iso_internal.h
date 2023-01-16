@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define IS_PERIPHERAL(cig) \
+	(IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO) && \
+	 (cig->lll.role == BT_HCI_ROLE_PERIPHERAL))
+
+#define IS_CENTRAL(cig) \
+	(IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO) && \
+	 (cig->lll.role == BT_HCI_ROLE_CENTRAL))
+
 /* Helper functions to initialize and reset ull_conn_iso module */
 int ull_conn_iso_init(void);
 int ull_conn_iso_reset(void);
@@ -24,6 +32,7 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_acl(struct ll_conn *conn,
 struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_group *cig,
 							   uint16_t *handle_iter);
 
+void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t cis_handle);
 void ull_conn_iso_done(struct node_rx_event_done *done);
 void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis);
 void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
@@ -36,3 +45,7 @@ void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
 				      uint32_t resume_timeout);
 void ull_conn_iso_transmit_test_cig_interval(uint16_t handle,
 					     uint32_t ticks_at_expire);
+
+void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			    uint32_t remainder, uint16_t lazy, uint8_t force,
+			    void *param);

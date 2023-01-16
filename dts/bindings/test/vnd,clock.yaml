@@ -8,8 +8,8 @@ compatible: "vnd,clock"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    "#clock-cells":
-      const: 2
+  "#clock-cells":
+    const: 2
 
 clock-cells:
   - bus

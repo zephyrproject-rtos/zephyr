@@ -5,21 +5,13 @@ tests:
   benchmark.kernel.application:
     arch_allow: x86 arm riscv32 riscv64
     min_flash: 34
-    min_ram: 32
-  benchmark.kernel.application.fp.arm:
-    extra_args: CONF_FILE=prj_fp.conf
-    arch_allow: arm
-    filter: CONFIG_ARMV7_M_ARMV8_M_FP
-    min_flash: 34
-    min_ram: 32
-    slow: true
-  benchmark.kernel.application.fp.x86.fpu:
+  benchmark.kernel.application.fp:
     extra_args: CONF_FILE=prj_fp.conf
     extra_configs:
-      - CONFIG_X86_SSE=y
-      - CONFIG_X86_SSE_FP_MATH=n
-    arch_allow: x86
-    filter: CONFIG_CPU_HAS_FPU
+      - arch:x86:CONFIG_X86_SSE=y
+      - arch:x86:CONFIG_X86_SSE_FP_MATH=n
+    arch_allow: x86 arm
+    filter: CONFIG_CPU_HAS_FPU or CONFIG_ARMV7_M_ARMV8_M_FP
     min_flash: 34
     min_ram: 32
     slow: true

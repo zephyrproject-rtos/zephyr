@@ -41,6 +41,9 @@ config BT_OTS_OACP_CREATE_SUPPORT
 	depends on BT_OTS_OACP_WRITE_SUPPORT
 	depends on BT_OTS_OBJ_NAME_WRITE_SUPPORT
 
+config BT_OTS_OACP_CHECKSUM_SUPPORT
+	bool "Support OACP Calculate Checksum operation"
+
 config BT_OTS_OACP_DELETE_SUPPORT
 	bool "Support OACP Delete Operation"
 
@@ -79,10 +82,17 @@ if BT_OTS_CLIENT
 
 # TODO: Unify logging for OTS server and client - the client uses
 # "BT" debugging, the server does not.
+
 config BT_DEBUG_OTS_CLIENT
 	bool "Object Transfer Service Client debug"
+	select DEPRECATED
 	help
 	  Use this option to enable Object Transfer Client debug logs
+
+module = BT_OTS_CLIENT
+legacy-debug-sym = BT_DEBUG_OTS_CLIENT
+module-str = "Object Transfer Service Client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_OTS_CLIENT
 

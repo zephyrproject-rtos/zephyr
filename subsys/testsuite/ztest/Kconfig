@@ -146,6 +146,12 @@ config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
 
 endif #ZTEST_SHUFFLE
 
+config ZTEST_SUMMARY
+	bool "Display test summary"
+	default y
+	help
+	  This option controls output of a test summary.
+
 config ZTEST_VERBOSE_OUTPUT
 	bool "Verbose test output"
 	default y

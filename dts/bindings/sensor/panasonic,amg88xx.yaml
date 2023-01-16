@@ -8,11 +8,11 @@ compatible: "panasonic,amg88xx"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      required: true
-      description: Interrupt pin.
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin.
 
-        The interrupt pin of AMG88XX is open-drain, active low.
-        If connected directly the MCU pin should be configured
-        as pull-up, active low.
+      The interrupt pin of AMG88XX is open-drain, active low.
+      If connected directly the MCU pin should be configured
+      as pull-up, active low.

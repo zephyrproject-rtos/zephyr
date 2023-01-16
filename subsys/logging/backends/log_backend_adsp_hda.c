@@ -22,7 +22,7 @@ static uint32_t hda_log_chan;
 /*
  * HDA requires 128 byte aligned data and 128 byte aligned transfers.
  */
-#define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(hda_host_in))
+#define ALIGNMENT DMA_BUF_ADDR_ALIGNMENT(DT_NODELABEL(hda_host_in))
 static __aligned(ALIGNMENT) uint8_t hda_log_buf[CONFIG_LOG_BACKEND_ADSP_HDA_SIZE];
 static volatile uint32_t hda_log_buffered;
 static struct k_timer hda_log_timer;

@@ -13,11 +13,11 @@ description: |
 compatible: "nxp,imx-iomuxc"
 
 include:
-    - name: base.yaml
+  - name: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
 child-binding:
   description: MCUX RT pin mux option
@@ -34,7 +34,6 @@ child-binding:
         daisy_val: value to write to input_reg
         cfg_reg: register that will configure pin pull, drive strength, and open drain
     gpr:
-      required: false
       type: array
       description: |
         An array of values defining the GPR bit write required, if one exists.
@@ -50,7 +49,6 @@ child-binding:
     # macro cannot work using preprocessor equality statements (like DT_ENUM_IDX(prop) == val),
     # so we cannot use an enum and instead must use individual properties.
     pin-pue:
-      required: false
       type: boolean
       description: |
           RT11xx parts have multiple types of IOMUXC registers defined, with
@@ -58,7 +56,6 @@ child-binding:
           to the pinctrl driver the type of register this pinmux represents,
           and should not be modified by the user.
     pin-pdrv:
-      required: false
       type: boolean
       description: |
           RT11xx parts have multiple types of IOMUXC registers defined, with
@@ -66,7 +63,6 @@ child-binding:
           to the pinctrl driver the type of register this pinmux represents,
           and should not be modified by the user.
     pin-lpsr:
-      required: false
       type: boolean
       description: |
           RT11xx parts have multiple types of IOMUXC registers defined, with
@@ -74,7 +70,6 @@ child-binding:
           to the pinctrl driver the type of register this pinmux represents,
           and should not be modified by the user.
     pin-snvs:
-      required: false
       type: boolean
       description: |
           RT11xx parts have multiple types of IOMUXC registers defined, with

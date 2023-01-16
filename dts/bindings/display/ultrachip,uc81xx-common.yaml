@@ -7,37 +7,36 @@ description: UltraChip UC81xx EPD display controller common properties
 include: [spi-device.yaml, display-controller.yaml]
 
 properties:
-    reset-gpios:
-      type: phandle-array
-      required: true
-      description: RESET pin.
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: RESET pin.
 
-        The RESET pin of UC81xx is active low.
-        If connected directly the MCU pin should be configured
-        as active low.
+      The RESET pin of UC81xx is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
 
-    dc-gpios:
-      type: phandle-array
-      required: true
-      description: DC pin.
+  dc-gpios:
+    type: phandle-array
+    required: true
+    description: DC pin.
 
-        The DC pin of UC81xx is active low (transmission command byte).
-        If connected directly the MCU pin should be configured
-        as active low.
+      The DC pin of UC81xx is active low (transmission command byte).
+      If connected directly the MCU pin should be configured
+      as active low.
 
-    busy-gpios:
-      type: phandle-array
-      required: true
-      description: BUSY pin.
+  busy-gpios:
+    type: phandle-array
+    required: true
+    description: BUSY pin.
 
-        The BUSY pin of UC81xx is active low.
-        If connected directly the MCU pin should be configured
-        as active low.
+      The BUSY pin of UC81xx is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
 
-    softstart:
-      type: uint8-array
-      required: false
-      description: Booster Soft Start (BTST) values
+  softstart:
+    type: uint8-array
+    description: Booster Soft Start (BTST) values
 
 child-binding:
   description: |
@@ -63,57 +62,46 @@ child-binding:
   properties:
     pwr:
       type: uint8-array
-      required: false
       description: Power Setting (PWR) values
 
     cdi:
       type: int
-      required: false
       description: |
         VCOM and data interval value. This value is optional but must
         be provided to enable border refresh control.
 
     tcon:
       type: int
-      required: false
       description: TCON setting value
 
     pll:
       type: int
-      required: false
       description: PLL / frame rate control
 
     vdcs:
       type: int
-      required: false
       description: VCOM DC settings
 
     lutc:
       type: uint8-array
-      required: false
       description: VCOM LUT
 
     lutww:
       type: uint8-array
-      required: false
       description: White-to-white LUT
 
     lutkw:
       type: uint8-array
-      required: false
       description: Black-to-white LUT
 
     lutwk:
       type: uint8-array
-      required: false
       description: White-to-black LUT
 
     lutkk:
       type: uint8-array
-      required: false
       description: White-to-black LUT
 
     lutbd:
       type: uint8-array
-      required: false
       description: Border LUT

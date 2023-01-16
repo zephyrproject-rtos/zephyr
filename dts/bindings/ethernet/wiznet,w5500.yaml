@@ -8,19 +8,18 @@ compatible: "wiznet,w5500"
 include: [spi-device.yaml, ethernet.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      required: true
-      description: Interrupt pin.
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin.
 
-        The interrupt pin of W5500 is active low.
-        If connected directly the MCU pin should be configured
-        as active low.
-    reset-gpios:
-      type: phandle-array
-      required: false
-      description: Reset pin.
+      The interrupt pin of W5500 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+  reset-gpios:
+    type: phandle-array
+    description: Reset pin.
 
-        The reset pin of W5500 is active low.
-        If connected directly the MCU pin should be configured
-        as active low.
+      The reset pin of W5500 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.

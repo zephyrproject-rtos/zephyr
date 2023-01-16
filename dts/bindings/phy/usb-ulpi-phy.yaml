@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding is to be used by all the usb transceivers which are an external
+    ULPI phy
+
+compatible: "usb-ulpi-phy"
+
+include: phy-controller.yaml
+
+properties:
+  "#phy-cells":
+    const: 0
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the ulpi RESET pin.

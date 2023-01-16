@@ -20,8 +20,10 @@
 #define NPCX_GPIO_VOLTAGE_MASK	(1U << NPCX_GPIO_VOLTAGE_POS)
 /** @endcond */
 
+/** Set pin at the default voltage level (3.3V) */
+#define NPCX_GPIO_VOLTAGE_DEFAULT	(0U << NPCX_GPIO_VOLTAGE_POS)
 /** Set pin voltage level at 1.8 V */
-#define NPCX_GPIO_VOLTAGE_1P8	(0U << NPCX_GPIO_VOLTAGE_POS)
+#define NPCX_GPIO_VOLTAGE_1P8		(1U << NPCX_GPIO_VOLTAGE_POS)
 
 /** @} */
 

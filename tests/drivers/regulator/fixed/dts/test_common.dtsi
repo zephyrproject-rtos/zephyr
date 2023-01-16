@@ -5,25 +5,13 @@
 
 / {
 	regulator {
-		compatible =
-#if APP_DTS_REGULATOR_SYNC
-			"regulator-fixed-sync",
-#endif
-			"regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "test";
-#ifdef APP_DTS_REGULATOR_ALWAYS_ON
-		regulator-always-on;
-#endif /* APP_DTS_REGULATOR_ALWAYS_ON */
-#ifdef APP_DTS_REGULATOR_BOOT_ON
 		regulator-boot-on;
-#endif /* APP_DTS_REGULATOR_BOOT_ON */
-#ifdef APP_DTS_REGULATOR_ON_DELAYED
-		startup-delay-us = <10000>;
-#endif /* APP_DTS_REGULATOR_ON_DELAYED */
-#ifdef APP_DTS_REGULATOR_OFF_DELAYED
+		startup-delay-us = <1000000>;
 		off-on-delay-us = <20000>;
-#endif /* APP_DTS_REGULATOR_OFF_DELAYED */
 	};
+
 	resources {
 		compatible = "test-regulator-fixed";
 	};

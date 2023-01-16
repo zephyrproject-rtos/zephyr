@@ -1,4 +1,4 @@
 tests:
-  bluetooth.df.conectionless_cte_tx:
+  bluetooth.df.connectionless_cte_tx:
     platform_allow: nrf52_bsim
     tags: bluetooth

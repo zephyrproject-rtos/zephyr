@@ -6,20 +6,19 @@ description: Microchip XEC eSPI Virtual Wire routing
 compatible: "microchip,xec-espi-vw-routing"
 
 child-binding:
-    description: |
-      Child node containing the routing of an eSPI virtual wire to the SoC
-      VW registers and ECIA GIRQ registers.
-    properties:
-       vw-reg:
-          type: array
-          required: true
-          description: vw signal's register index and vw bitmask.
+  description: |
+    Child node containing the routing of an eSPI virtual wire to the SoC
+    VW registers and ECIA GIRQ registers.
+  properties:
+    vw-reg:
+      type: array
+      required: true
+      description: vw signal's register index and vw bitmask.
 
-       vw-girq:
-        type: array
-        required: false
-        description: |
-            Routing of MSVW source to aggregated GIRQs
+    vw-girq:
+      type: array
+      description: |
+         Routing of MSVW source to aggregated GIRQs
 
-            Example: OOB_RST_WARN is source 2 of MSVW01 routed to GIRQ24 b[5]
-               vw-girq = <24 5>;
+         Example: OOB_RST_WARN is source 2 of MSVW01 routed to GIRQ24 b[5]
+            vw-girq = <24 5>;

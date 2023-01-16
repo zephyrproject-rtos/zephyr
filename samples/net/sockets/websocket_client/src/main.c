@@ -201,7 +201,7 @@ static void recv_data_wso_api(int sock, size_t amount, uint8_t *buf,
 					 &message_type,
 					 &remaining,
 					 0);
-		if (ret <= 0) {
+		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				k_sleep(K_MSEC(50));
 				continue;

@@ -19,14 +19,14 @@
 /** Fixed clocks  */
 #define STM32_SRC_HSI		0x001
 #define STM32_SRC_LSE		0x002
-#define STM32_SRC_LSI		0x007
-/* #define STM32_SRC_HSI48	0x003 */
+#define STM32_SRC_LSI		0x003
+#define STM32_SRC_HSI48		0x004
 /** System clock */
-#define STM32_SRC_SYSCLK	0x004
+#define STM32_SRC_SYSCLK	0x005
 /** Bus clock */
-#define STM32_SRC_PCLK		0x005
+#define STM32_SRC_PCLK		0x006
 /** PLL clock */
-#define STM32_SRC_PLLCLK	0x006
+#define STM32_SRC_PLLCLK	0x007
 
 #define STM32_CLOCK_REG_MASK    0xFFU
 #define STM32_CLOCK_REG_SHIFT   0U
@@ -73,5 +73,7 @@
 #define USART3_SEL(val)		STM32_CLOCK(val, 3, 18, CFGR3_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F0_CLOCK_H_ */

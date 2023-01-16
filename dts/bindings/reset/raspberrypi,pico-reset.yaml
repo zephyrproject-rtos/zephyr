@@ -8,18 +8,16 @@ compatible: "raspberrypi,pico-reset"
 include: [base.yaml, reset-controller.yaml]
 
 properties:
-    reg:
-      required: true
-    reg-width:
-      type: int
-      required: false
-      description: The width of the reset registers in bytes. Default is 4 bytes.
-    active-low:
-      type: int
-      required: false
-      description: Set if reset is active low. Default is 0, which means active-high.
-    "#reset-cells":
-      const: 1
+  reg:
+    required: true
+  reg-width:
+    type: int
+    description: The width of the reset registers in bytes. Default is 4 bytes.
+  active-low:
+    type: int
+    description: Set if reset is active low. Default is 0, which means active-high.
+  "#reset-cells":
+    const: 1
 
 reset-cells:
 - id

@@ -11,6 +11,9 @@ tests:
     tags: kernel timer
     platform_allow: qemu_cortex_m3 nsim_em nsim_em7d_v22 nsim_hs nsim_hs_mpuv6
       nsim_hs5x nsim_hs6x qemu_arc_em qemu_arc_hs qemu_arc_hs6x
+    integration_platforms:
+      - qemu_cortex_m3
+      - nsim_em
     extra_configs:
       - CONFIG_MULTITHREADING=n
       - CONFIG_TEST_USERSPACE=n

@@ -802,6 +802,8 @@ __comp_west_runner_cmd()
 	"
 
 	local file_opts="
+		--file -f
+		--file-type -t
 		--elf-file
 		--hex-file
 		--bin-file

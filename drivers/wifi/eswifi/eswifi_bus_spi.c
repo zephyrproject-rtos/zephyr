@@ -242,7 +242,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	gpio_pin_configure_dt(&cfg->dr, GPIO_INPUT);
 
 	/* SPI BUS */
-	if (!spi_is_ready(&cfg->bus)) {
+	if (!spi_is_ready_dt(&cfg->bus)) {
 		LOG_ERR("SPI bus is not ready");
 		return -ENODEV;
 	};

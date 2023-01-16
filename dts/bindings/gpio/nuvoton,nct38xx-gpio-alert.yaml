@@ -16,13 +16,13 @@ compatible: "nuvoton,nct38xx-gpio-alert"
 include: [base.yaml]
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      required: true
-      description: Interrupt GPIO pin
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt GPIO pin
 
-    nct38xx-dev:
-      type: phandles
-      required: true
-      description: |
-        NCT38XX devices which alert are handled by this alert handler.
+  nct38xx-dev:
+    type: phandles
+    required: true
+    description: |
+      NCT38XX devices which alert are handled by this alert handler.

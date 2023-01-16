@@ -10,31 +10,29 @@ compatible: "voltage-divider"
 include: base.yaml
 
 properties:
-    io-channels:
-      required: true
-      description: |
-        Channels available with this divider configuration.
+  io-channels:
+    required: true
+    description: |
+      Channels available with this divider configuration.
 
-    output-ohms:
-      type: int
-      required: true
-      description: |
-        Resistance of the lower leg of the voltage divider
+  output-ohms:
+    type: int
+    required: true
+    description: |
+      Resistance of the lower leg of the voltage divider
 
-    full-ohms:
-      type: int
-      required: false
-      description: |
-        Resistance of the full path through the voltage divider.
+  full-ohms:
+    type: int
+    description: |
+      Resistance of the full path through the voltage divider.
 
-        If absent or zero the driver assumes that the upper leg is a
-        resistance-based sensor.
+      If absent or zero the driver assumes that the upper leg is a
+      resistance-based sensor.
 
-    power-gpios:
-      type: phandle-array
-      required: false
-      description: |
-        Control power to the voltage divider inputs.
+  power-gpios:
+    type: phandle-array
+    description: |
+      Control power to the voltage divider inputs.
 
-        If present the corresponding GPIO must be set to an active level
-        to enable the divider input.
+      If present the corresponding GPIO must be set to an active level
+      to enable the divider input.

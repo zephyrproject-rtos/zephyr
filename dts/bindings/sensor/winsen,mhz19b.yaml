@@ -19,6 +19,5 @@ properties:
 
   abc-on:
     type: boolean
-    required: false
     description: |
       Enable ABC self-calibration function

@@ -5,9 +5,9 @@ tests:
     tags: drivers kscan
     harness: console
     harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "kb data(.*)"
-        fixture: fixture_connect_keyboard
+      type: multi_line
+      ordered: true
+      regex:
+        - "kb data(.*)"
+      fixture: fixture_connect_keyboard
     depends_on: kscan

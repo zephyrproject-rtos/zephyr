@@ -2,7 +2,7 @@ sample:
   name: 1-Wire scanner sample
 
 common:
-    harness: console
+  harness: console
 
 tests:
   sample.drivers.w1.scanner.ds2484:

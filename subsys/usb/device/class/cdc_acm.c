@@ -55,9 +55,16 @@
 
 /* definitions */
 
-#define LOG_LEVEL CONFIG_USB_CDC_ACM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_cdc_acm);
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart) \
+	&& defined(CONFIG_USB_CDC_ACM_LOG_LEVEL) \
+	&& CONFIG_USB_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
+/* Prevent endless recursive logging loop and warn user about it */
+#warning "USB_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
+#undef CONFIG_USB_CDC_ACM_LOG_LEVEL
+#define CONFIG_USB_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
+#endif
+LOG_MODULE_REGISTER(usb_cdc_acm, CONFIG_USB_CDC_ACM_LOG_LEVEL);
 
 /* 115200bps, no parity, 1 stop bit, 8bit char */
 #define CDC_ACM_DEFAULT_BAUDRATE {sys_cpu_to_le32(115200), 0, 0, 8}
@@ -97,7 +104,7 @@ struct cdc_acm_dev_data_t {
 #if defined(CONFIG_CDC_ACM_DTE_RATE_CALLBACK_SUPPORT)
 	cdc_dte_rate_callback_t rate_cb;
 #endif
-	struct k_work tx_work;
+	struct k_work_delayable tx_work;
 	/* Tx ready status. Signals when */
 	bool tx_ready;
 	bool rx_ready;				/* Rx ready status */
@@ -219,7 +226,7 @@ static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
 		return;
 	}
 
-	k_work_submit_to_queue(&USB_WORK_Q, &dev_data->tx_work);
+	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
 }
 
 static void tx_work_handler(struct k_work *work)
@@ -478,7 +485,7 @@ static int cdc_acm_init(const struct device *dev)
 		dev, dev_data, dev->config, &cdc_acm_data_devlist);
 
 	k_work_init(&dev_data->cb_work, cdc_acm_irq_callback_work_handler);
-	k_work_init(&dev_data->tx_work, tx_work_handler);
+	k_work_init_delayable(&dev_data->tx_work, tx_work_handler);
 
 	return ret;
 }
@@ -514,7 +521,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
 
-	k_work_submit_to_queue(&USB_WORK_Q, &dev_data->tx_work);
+	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
 
 	/* Return written to ringbuf data len */
 	return wrote;
@@ -1017,7 +1024,11 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 		}
 	}
 
-	k_work_submit_to_queue(&USB_WORK_Q, &dev_data->tx_work);
+	/* Schedule with minimal timeout to make it possible to send more than
+	 * one byte per USB transfer. The latency increase is negligible while
+	 * the increased throughput and reduced CPU usage is easily observable.
+	 */
+	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_MSEC(1));
 }
 
 static const struct uart_driver_api cdc_acm_driver_api = {

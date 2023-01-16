@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/kobject.h>
+#include <zephyr/sys/libc-hooks.h>
 #include <zephyr/app_memory/mem_domain.h>
 #include <zephyr/rtio/rtio_spsc.h>
 #include <zephyr/rtio/rtio.h>
@@ -468,13 +469,18 @@ void rtio_syscall_test(void *p1, void *p2, void *p3)
 #ifdef CONFIG_USERSPACE
 ZTEST(rtio_api, test_rtio_syscalls_usermode)
 {
-	struct k_mem_partition *part0 = &rtio_partition;
+	struct k_mem_partition *parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&rtio_partition
+	};
 
 	TC_PRINT("syscalls from user mode test\n");
 	TC_PRINT("test iodev init\n");
 	rtio_iodev_test_init(&iodev_test_syscall);
 	TC_PRINT("mem domain init\n");
-	k_mem_domain_init(&rtio_domain, 1, &part0);
+	k_mem_domain_init(&rtio_domain, ARRAY_SIZE(parts), parts);
 	TC_PRINT("mem domain add current\n");
 	k_mem_domain_add_thread(&rtio_domain, k_current_get());
 	TC_PRINT("rtio access grant\n");

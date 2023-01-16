@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "util/memq.h"
 
@@ -29,8 +30,10 @@
 #include "isoal.h"
 #include "ull_iso_types.h"
 
-#define LOG_MODULE_NAME bt_ctlr_isoal
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_ctlr_isoal, LOG_LEVEL_DBG);
+
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
@@ -205,6 +208,7 @@ isoal_status_t isoal_sink_create(
 	session->handle = handle;
 	session->framed = framed;
 	session->sdu_interval = sdu_interval;
+	session->burst_number = burst_number;
 
 	/* Todo: Next section computing various constants, should potentially be a
 	 * function in itself as a number of the dependencies could be changed while
@@ -700,6 +704,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	if (sp->fsm == ISOAL_START) {
 		struct isoal_sdu_produced *sdu;
 		uint32_t anchorpoint;
+		uint16_t sdu_offset;
 		int32_t latency;
 
 		sp->sdu_status = ISOAL_SDU_STATUS_VALID;
@@ -708,11 +713,43 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 		session->seqn++;
 		seq_err = false;
 
-		/* Todo: anchorpoint must be reference anchor point, should be fixed in LL */
+		/* The incoming time stamp for each PDU is expected to be the
+		 * CIS / BIS reference anchor point. SDU reference point is
+		 * reconstructed by adding the precalculated latency constant.
+		 *
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		 * 3.2.2 SDU synchronization reference using unframed PDUs:
+		 *
+		 * The CIS reference anchor point is computed excluding any
+		 * retransmissions or missed subevents and shall be set to the
+		 * start of the isochronous event in which the first PDU
+		 * containing the SDU could have been transferred.
+		 *
+		 * The BIG reference anchor point is the anchor point of the BIG
+		 * event that the PDU is associated with.
+		 */
 		anchorpoint = meta->timestamp;
 		latency = session->latency_unframed;
 		sdu = &sp->sdu;
 		sdu->timestamp = isoal_get_wrapped_time_us(anchorpoint, latency);
+
+		/* If there are multiple SDUs in an ISO interval
+		 * (SDU interval < ISO Interval) every SDU after the first
+		 * should add an SDU interval to the time stamp.
+		 *
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		 * 3.2.2 SDU synchronization reference using unframed PDUs:
+		 *
+		 * All PDUs belonging to a burst as defined by the configuration
+		 * of BN have the same reference anchor point. When multiple
+		 * SDUs have the same reference anchor point, the first SDU uses
+		 * the reference anchor point timing. Each subsequent SDU
+		 * increases the SDU synchronization reference timing with one
+		 * SDU interval.
+		 */
+		sdu_offset = (meta->payload_number % session->burst_number) / session->pdus_per_sdu;
+		sdu->timestamp = isoal_get_wrapped_time_us(sdu->timestamp,
+					sdu_offset * session->sdu_interval);
 	} else {
 		sp->pdu_cnt++;
 	}
@@ -751,7 +788,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 		} else  {
 			/* Unsupported case */
 			err = ISOAL_STATUS_ERR_UNSPECIFIED;
-			BT_ERR("Invalid unframed LLID (%d)", llid);
+			LOG_ERR("Invalid unframed LLID (%d)", llid);
 			LL_ASSERT(0);
 		}
 		break;
@@ -1223,7 +1260,7 @@ static isoal_status_t isoal_check_source_hdl_valid(isoal_source_handle_t hdl)
 		return ISOAL_STATUS_OK;
 	}
 
-	BT_ERR("Invalid source handle (0x%02x)", hdl);
+	LOG_ERR("Invalid source handle (0x%02x)", hdl);
 
 	return ISOAL_STATUS_ERR_UNSPECIFIED;
 }
@@ -1404,7 +1441,7 @@ static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
 		/* If it fails, the node will be released and no further attempt
 		 * will be possible
 		 */
-		BT_ERR("Failed to enqueue node (%p)", node_tx);
+		LOG_ERR("Failed to enqueue node (%p)", node_tx);
 		source_ctx->session.pdu_release(node_tx, handle, status);
 	}
 

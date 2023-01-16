@@ -26,12 +26,10 @@ properties:
 
   spi-cpol:
     type: boolean
-    required: false
     description: Set SPI clock polarity.
 
   spi-cpha:
     type: boolean
-    required: false
     description: Set SPI clock phase.
 
   spi-one-frame:

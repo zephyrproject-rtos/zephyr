@@ -10,12 +10,13 @@
 #include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/constants.h>
 
-#define BT_DBG_ENABLED	IS_ENABLED(CONFIG_BT_DEBUG_CRYPTO)
-#define LOG_MODULE_NAME bt_crypto
 #include "common/bt_str.h"
-#include "common/log.h"
-
 #include "bt_crypto.h"
+
+#define LOG_LEVEL CONFIG_BT_CRYPTO_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_crypto);
+
 
 int bt_crypto_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len, uint8_t *out)
 {

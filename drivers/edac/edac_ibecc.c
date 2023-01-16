@@ -194,7 +194,11 @@ static int inject_error_trigger(const struct device *dev)
 static int ecc_error_log_get(const struct device *dev, uint64_t *value)
 {
 	*value = ibecc_read_reg64(dev, IBECC_ECC_ERROR_LOG);
-	if (*value == 0) {
+	/**
+	 * The ECC Error log register is only valid when ECC_ERROR_CERRSTS
+	 * or ECC_ERROR_MERRSTS error status bits are set
+	 */
+	if ((*value & (ECC_ERROR_MERRSTS | ECC_ERROR_CERRSTS)) == 0) {
 		return -ENODATA;
 	}
 

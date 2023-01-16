@@ -66,6 +66,10 @@
 	};
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(24)>;
 	status = "okay";
@@ -240,7 +244,7 @@
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
 		ospi-max-frequency = <DT_FREQ_M(50)>;
-		size = <DT_SIZE_M(64)>;
+		size = <DT_SIZE_M(512)>; /* 512 Megabits */
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
 		status = "okay";

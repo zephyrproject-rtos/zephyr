@@ -28,11 +28,7 @@ struct getopt_state {
 #endif
 };
 
-extern int opterr;	/* if error message should be printed */
-extern int optind;	/* index into parent argv vector */
-extern int optopt;	/* character checked for validity */
 extern int optreset;	/* reset getopt */
-extern char *optarg;	/* argument associated with option */
 
 #define no_argument        0
 #define required_argument  1
@@ -57,27 +53,6 @@ void getopt_init(void);
 
 /* Function returns getopt_state structure for the current thread. */
 struct getopt_state *getopt_state_get(void);
-
-/**
- * @brief Parses the command-line arguments.
- *
- * It is based on FreeBSD implementation.
- *
- * @param[in] argc	Arguments count.
- * @param[in] argv	Arguments.
- * @param[in] options	String containing the legitimate option characters.
- *
- * @return		If an option was successfully found, function returns
- *			the option character.
- * @return		If options have been detected that is not in @p options
- *			function will return '?'.
- *			If function encounters an option with a missing
- *			argument, then the return value depends on the first
- *			character in optstring: if it is ':', then ':' is
- *			returned; otherwise '?' is returned.
- * @return -1		If all options have been parsed.
- */
-int getopt(int nargc, char *const nargv[], const char *ostr);
 
 /**
  * @brief Parses the command-line arguments.

@@ -8,92 +8,86 @@ compatible: "nordic,nrf-i2s"
 include: [i2s-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    sck-pin:
-      type: int
-      deprecated: true
-      required: false
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  sck-pin:
+    type: int
+    deprecated: true
+    description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
 
-        The SCK pin to use.
+      The SCK pin to use.
 
-        For pins P0.0 through P0.31, use the pin number. For example,
-        to use P0.16 for SCK, set:
+      For pins P0.0 through P0.31, use the pin number. For example,
+      to use P0.16 for SCK, set:
 
-            sck-pin = <16>;
+          sck-pin = <16>;
 
-        For pins P1.0 through P1.31, add 32 to the pin number. For
-        example, to use P1.2 for SCK, set:
+      For pins P1.0 through P1.31, add 32 to the pin number. For
+      example, to use P1.2 for SCK, set:
 
-            sck-pin = <34>;  /* 32 + 2 */
+          sck-pin = <34>;  /* 32 + 2 */
 
-    lrck-pin:
-      type: int
-      deprecated: true
-      required: false
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  lrck-pin:
+    type: int
+    deprecated: true
+    description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
 
-        The LRCK pin to use. The pin numbering scheme is the same as
-        the sck-pin property's.
+      The LRCK pin to use. The pin numbering scheme is the same as
+      the sck-pin property's.
 
-    sdout-pin:
-      type: int
-      deprecated: true
-      required: false
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  sdout-pin:
+    type: int
+    deprecated: true
+    description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
 
-        The SDOUT pin to use. The pin numbering scheme is the same as
-        the sck-pin property's.
+      The SDOUT pin to use. The pin numbering scheme is the same as
+      the sck-pin property's.
 
-    sdin-pin:
-      type: int
-      deprecated: true
-      required: false
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  sdin-pin:
+    type: int
+    deprecated: true
+    description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
 
-        The SDIN pin to use. The pin numbering scheme is the same as
-        the sck-pin property's.
+      The SDIN pin to use. The pin numbering scheme is the same as
+      the sck-pin property's.
 
-    mck-pin:
-      type: int
-      deprecated: true
-      required: false
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  mck-pin:
+    type: int
+    deprecated: true
+    description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
 
-        The MCK pin to use. The pin numbering scheme is the same as
-        the sck-pin property's.
+      The MCK pin to use. The pin numbering scheme is the same as
+      the sck-pin property's.
 
-    clock-source:
-      type: string
-      required: false
-      default: "PCLK32M_HFXO"
-      description: |
-        Clock source to be used by the I2S peripheral for the master clock
-        (MCK) generator. The generator is only needed when the I2S peripheral
-        is operating in Master mode. The following options are available:
-        - "PCLK32M": 32 MHz peripheral clock, synchronous to HFCLK
-        - "PCLK32M_HFXO": PCLK32M running off the 32 MHz crystal oscillator
-          (HFXO) for better clock accuracy and jitter performance
-        - "ACLK": Audio PLL clock with configurable frequency (frequency for
-          this clock must be set via the "hfclkaudio-frequency" property
-          in the "nordic,nrf-clock" node); this clock source is only available
-          in the nRF53 Series SoCs and it requires the use of HFXO
-      enum:
-        - "PCLK32M"
-        - "PCLK32M_HFXO"
-        - "ACLK"
+  clock-source:
+    type: string
+    default: "PCLK32M_HFXO"
+    description: |
+      Clock source to be used by the I2S peripheral for the master clock
+      (MCK) generator. The generator is only needed when the I2S peripheral
+      is operating in Master mode. The following options are available:
+      - "PCLK32M": 32 MHz peripheral clock, synchronous to HFCLK
+      - "PCLK32M_HFXO": PCLK32M running off the 32 MHz crystal oscillator
+        (HFXO) for better clock accuracy and jitter performance
+      - "ACLK": Audio PLL clock with configurable frequency (frequency for
+        this clock must be set via the "hfclkaudio-frequency" property
+        in the "nordic,nrf-clock" node); this clock source is only available
+        in the nRF53 Series SoCs and it requires the use of HFXO
+    enum:
+      - "PCLK32M"
+      - "PCLK32M_HFXO"
+      - "ACLK"

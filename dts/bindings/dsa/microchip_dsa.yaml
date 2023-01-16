@@ -6,37 +6,31 @@ description: |
 
 include: [spi-device.yaml]
 properties:
-    dsa-master-port:
-       type: phandle
-       required: false
-       description: Phandle to master port.
-    dsa-slave-ports:
-       type: int
-       required: false
-       description: Number of slave ports on the switch
-    spi-cpha:
-       type: boolean
-       required: false
-       description: |
-          Set to indicate phase starts with asserted half-phase (CPHA=1).
-          For this driver using this property requires also using cpol.
-    spi-cpol:
-        type: boolean
-        required: false
-        description: |
-          Set to indicate clock leading edge is falling (CPOL=1).
-          For this driver using this property requires also using cpha.
-    reset-gpios:
-        type: phandle-array
-        required: false
-        description: |
-          The pin is asserted for 10ms during boot to reset the KSZ8794.
+  dsa-master-port:
+    type: phandle
+    description: Phandle to master port.
+  dsa-slave-ports:
+    type: int
+    description: Number of slave ports on the switch
+  spi-cpha:
+    type: boolean
+    description: |
+       Set to indicate phase starts with asserted half-phase (CPHA=1).
+       For this driver using this property requires also using cpol.
+  spi-cpol:
+    type: boolean
+    description: |
+      Set to indicate clock leading edge is falling (CPOL=1).
+      For this driver using this property requires also using cpha.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The pin is asserted for 10ms during boot to reset the KSZ8794.
 
 child-binding:
-    description: Properties of slave port
-    properties:
-        local-mac-address:
-            type: uint8-array
-            required: false
-            description: |
-              Specifies the MAC address that was assigned to the port
+  description: Properties of slave port
+  properties:
+    local-mac-address:
+      type: uint8-array
+      description: |
+        Specifies the MAC address that was assigned to the port

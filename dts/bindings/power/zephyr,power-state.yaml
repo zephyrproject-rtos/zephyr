@@ -6,31 +6,28 @@ description: Properties for power management state
 compatible: "zephyr,power-state"
 
 properties:
-    power-state-name:
-        type: string
-        required: true
-        description: indicates a power state
-        enum:
-            - "active"
-            - "runtime-idle"
-            - "suspend-to-idle"
-            - "standby"
-            - "suspend-to-ram"
-            - "suspend-to-disk"
-            - "soft-off"
-    substate-id:
-        type: int
-        required: false
-        description: Platform specific identification.
-    min-residency-us:
-        type: int
-        required: false
-        description: |
-            Minimum residency duration in microseconds. It is the minimum time for a
-            given idle state to be worthwhile energywise. It includes the time to enter
-            in this state.
-    exit-latency-us:
-        type: int
-        required: false
-        description: |
-            Worst case latency in microseconds required to exit the idle state.
+  power-state-name:
+    type: string
+    required: true
+    description: indicates a power state
+    enum:
+      - "active"
+      - "runtime-idle"
+      - "suspend-to-idle"
+      - "standby"
+      - "suspend-to-ram"
+      - "suspend-to-disk"
+      - "soft-off"
+  substate-id:
+    type: int
+    description: Platform specific identification.
+  min-residency-us:
+    type: int
+    description: |
+        Minimum residency duration in microseconds. It is the minimum time for a
+        given idle state to be worthwhile energywise. It includes the time to enter
+        in this state.
+  exit-latency-us:
+    type: int
+    description: |
+        Worst case latency in microseconds required to exit the idle state.

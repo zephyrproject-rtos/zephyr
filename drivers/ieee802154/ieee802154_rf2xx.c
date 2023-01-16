@@ -964,7 +964,7 @@ static inline int configure_spi(const struct device *dev)
 {
 	const struct rf2xx_config *conf = dev->config;
 
-	if (!spi_is_ready(&conf->spi)) {
+	if (!spi_is_ready_dt(&conf->spi)) {
 		LOG_ERR("SPI bus %s is not ready",
 			conf->spi.bus->name);
 		return -ENODEV;

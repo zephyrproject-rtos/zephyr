@@ -17,11 +17,21 @@ if EC_HOST_CMD
 
 config EC_HOST_CMD_HANDLER_STACK_SIZE
 	int "Stack size for the EC host command handler thread"
-	default 512
+	default 800
 
 config EC_HOST_CMD_HANDLER_TX_BUFFER
 	int "Buffer size in bytes for TX buffer shared by all EC host commands"
+	default EC_HOST_CMD_PERIPH_SHI_MAX_RESPONSE if EC_HOST_CMD_PERIPH_SHI
 	default 256
+
+config EC_HOST_CMD_HANDLER_PRIO
+	int "Priority of host command task"
+	default 13
+	help
+	  Priority of the kernel task that handles the host commands.
+	  If the priority is too low (high in value), the host commands handler may be unable to
+	  process the command on time and the AP will abort the waiting for response and be unable
+	  to boot the system properly.
 
 endif # EC_HOST_CMD
 

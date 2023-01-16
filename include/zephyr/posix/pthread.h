@@ -22,8 +22,8 @@ extern "C" {
 #endif
 
 /* Pthread detach/joinable */
-#define PTHREAD_CREATE_JOINABLE     1
-#define PTHREAD_CREATE_DETACHED     2
+#define PTHREAD_CREATE_DETACHED 0
+#define PTHREAD_CREATE_JOINABLE 1
 
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
@@ -31,10 +31,20 @@ extern "C" {
 #define PTHREAD_CANCEL_DISABLE	BIT(_PTHREAD_CANCEL_POS)
 
 /* Passed to pthread_once */
-#define PTHREAD_ONCE_INIT 1
+#define PTHREAD_ONCE_INIT                                                                          \
+	{                                                                                          \
+		1, 0                                                                               \
+	}
 
 /* The minimum allowable stack size */
 #define PTHREAD_STACK_MIN Z_KERNEL_STACK_SIZE_ADJUST(0)
+
+/**
+ * @brief Declare a condition variable as initialized
+ *
+ * Initialize a condition variable with the default condition variable attributes.
+ */
+#define PTHREAD_COND_INITIALIZER (-1)
 
 /**
  * @brief Declare a pthread condition variable
@@ -44,35 +54,23 @@ extern "C" {
  * strategies for kernel objects.
  *
  * @param name Symbol name of the condition variable
+ * @deprecated Use @c PTHREAD_COND_INITIALIZER instead.
  */
-#define PTHREAD_COND_DEFINE(name)					\
-	struct pthread_cond name = {					\
-		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),			\
-	}
+#define PTHREAD_COND_DEFINE(name) pthread_cond_t name = PTHREAD_COND_INITIALIZER
 
 /**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  */
-static inline int pthread_cond_init(pthread_cond_t *cv,
-				    const pthread_condattr_t *att)
-{
-	ARG_UNUSED(att);
-	z_waitq_init(&cv->wait_q);
-	return 0;
-}
+int pthread_cond_init(pthread_cond_t *cv, const pthread_condattr_t *att);
 
 /**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  */
-static inline int pthread_cond_destroy(pthread_cond_t *cv)
-{
-	ARG_UNUSED(cv);
-	return 0;
-}
+int pthread_cond_destroy(pthread_cond_t *cv);
 
 /**
  * @brief POSIX threading compatibility API

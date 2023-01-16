@@ -23,7 +23,6 @@ properties:
 
   filter-prescaler:
     type: int
-    required: false
     description: |
       Setting the prescaler which selects the clock for all digital filters.
       Valid range: 0 - 15.

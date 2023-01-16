@@ -1,7 +1,8 @@
 common:
   timeout: 180
   min_ram: 34
-  tags: kernel threads sched userspace ignore_faults
+  tags: kernel threads scheduler userspace
+  ignore_faults: true
 tests:
   kernel.scheduler:
     filter: not CONFIG_SCHED_MULTIQ

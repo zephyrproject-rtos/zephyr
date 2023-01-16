@@ -1094,6 +1094,9 @@ struct bt_le_ext_adv_info {
 
 	/** Currently selected Transmit Power (dBM). */
 	int8_t                     tx_power;
+
+	/** Current local advertising address used. */
+	const bt_addr_le_t         *addr;
 };
 
 /**

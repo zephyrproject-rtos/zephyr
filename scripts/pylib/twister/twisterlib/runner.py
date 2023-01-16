@@ -1,6 +1,7 @@
 # vim: set syntax=python ts=4 :
 #
 # Copyright (c) 20180-2022 Intel Corporation
+# Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -21,6 +22,7 @@ from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.log_helper import log_command
 from domains import Domains
+from twisterlib.testinstance import TestInstance
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -544,7 +546,7 @@ class ProjectBuilder(FilterBuilder):
 
         elif op == "gather_metrics":
             self.gather_metrics(self.instance)
-            if self.instance.run and self.instance.handler:
+            if self.instance.run and self.instance.handler.ready:
                 pipeline.put({"op": "run", "test": self.instance})
             else:
                 pipeline.put({"op": "report", "test": self.instance})
@@ -575,16 +577,19 @@ class ProjectBuilder(FilterBuilder):
                 done.put(self.instance)
                 self.report_out(results)
 
-            if self.options.runtime_artifact_cleanup and not self.options.coverage and self.instance.status == "passed":
-                pipeline.put({
-                    "op": "cleanup",
-                    "test": self.instance
-                })
+            if not self.options.coverage:
+                if self.options.prep_artifacts_for_testing:
+                    pipeline.put({"op": "cleanup", "mode": "device", "test": self.instance})
+                elif self.options.runtime_artifact_cleanup == "pass" and self.instance.status == "passed":
+                    pipeline.put({"op": "cleanup", "mode": "passed", "test": self.instance})
+                elif self.options.runtime_artifact_cleanup == "all":
+                    pipeline.put({"op": "cleanup", "mode": "all", "test": self.instance})
 
         elif op == "cleanup":
-            if self.options.device_testing or self.options.prep_artifacts_for_testing:
+            mode = message.get("mode")
+            if mode == "device":
                 self.cleanup_device_testing_artifacts()
-            else:
+            elif mode == "pass" or (mode == "all" and self.instance.reason != "Cmake build failure"):
                 self.cleanup_artifacts()
 
     def determine_testcases(self, results):
@@ -627,7 +632,7 @@ class ProjectBuilder(FilterBuilder):
     def cleanup_artifacts(self, additional_keep=[]):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
         allow = [
-            'zephyr/.config',
+            os.path.join('zephyr', '.config'),
             'handler.log',
             'build.log',
             'device.log',
@@ -636,10 +641,13 @@ class ProjectBuilder(FilterBuilder):
             'Makefile',
             'CMakeCache.txt',
             'build.ninja',
-            'CMakeFiles/rules.ninja'
+            os.path.join('CMakeFiles', 'rules.ninja')
             ]
 
         allow += additional_keep
+
+        if self.options.runtime_artifact_cleanup == 'all':
+            allow += [os.path.join('twister', 'testsuite_extra.conf')]
 
         allow = [os.path.join(self.instance.build_dir, file) for file in allow]
 
@@ -661,13 +669,19 @@ class ProjectBuilder(FilterBuilder):
 
         sanitizelist = [
             'CMakeCache.txt',
-            'zephyr/runners.yaml',
+            os.path.join('zephyr', 'runners.yaml'),
         ]
-        keep = [
-            'zephyr/zephyr.hex',
-            'zephyr/zephyr.bin',
-            'zephyr/zephyr.elf',
-            ]
+        platform = self.instance.platform
+        if platform.binaries:
+            keep = []
+            for binary in platform.binaries:
+                keep.append(os.path.join('zephyr', binary ))
+        else:
+            keep = [
+                os.path.join('zephyr', 'zephyr.hex'),
+                os.path.join('zephyr', 'zephyr.bin'),
+                os.path.join('zephyr', 'zephyr.elf'),
+                ]
 
         keep += sanitizelist
 
@@ -730,7 +744,7 @@ class ProjectBuilder(FilterBuilder):
             elif instance.status in ["skipped", "filtered"]:
                 more_info = instance.reason
             else:
-                if instance.handler and instance.run:
+                if instance.handler.ready and instance.run:
                     more_info = instance.handler.type_str
                     htime = instance.execution_time
                     if htime:
@@ -775,7 +789,7 @@ class ProjectBuilder(FilterBuilder):
         instance = self.instance
         args = self.testsuite.extra_args[:]
 
-        if instance.handler:
+        if instance.handler.ready:
             args += instance.handler.args
 
         # merge overlay files into one variable
@@ -817,7 +831,7 @@ class ProjectBuilder(FilterBuilder):
 
         instance = self.instance
 
-        if instance.handler:
+        if instance.handler.ready:
             if instance.handler.type_str == "device":
                 instance.handler.duts = self.duts
 
@@ -827,33 +841,41 @@ class ProjectBuilder(FilterBuilder):
                     self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
                     instance.handler.seed = self.options.seed
 
+            if self.options.extra_test_args and instance.platform.arch == "posix":
+                instance.handler.extra_test_args = self.options.extra_test_args
+
             instance.handler.handle()
 
         sys.stdout.flush()
 
-    def gather_metrics(self, instance):
+    def gather_metrics(self, instance: TestInstance):
         if self.options.enable_size_report and not self.options.cmake_only:
-            self.calc_one_elf_size(instance)
+            self.calc_size(instance=instance, from_buildlog=self.options.footprint_from_buildlog)
         else:
-            instance.metrics["ram_size"] = 0
-            instance.metrics["rom_size"] = 0
+            instance.metrics["used_ram"] = 0
+            instance.metrics["used_rom"] = 0
+            instance.metrics["available_rom"] = 0
+            instance.metrics["available_ram"] = 0
             instance.metrics["unrecognized"] = []
 
     @staticmethod
-    def calc_one_elf_size(instance):
+    def calc_size(instance: TestInstance, from_buildlog: bool):
         if instance.status not in ["error", "failed", "skipped"]:
-            if instance.platform.type != "native":
-                size_calc = instance.calculate_sizes()
-                instance.metrics["ram_size"] = size_calc.get_ram_size()
-                instance.metrics["rom_size"] = size_calc.get_rom_size()
+            if not instance.platform.type in ["native", "qemu", "unit"]:
+                generate_warning = bool(instance.platform.type == "mcu")
+                size_calc = instance.calculate_sizes(from_buildlog=from_buildlog, generate_warning=generate_warning)
+                instance.metrics["used_ram"] = size_calc.get_used_ram()
+                instance.metrics["used_rom"] = size_calc.get_used_rom()
+                instance.metrics["available_rom"] = size_calc.get_available_rom()
+                instance.metrics["available_ram"] = size_calc.get_available_ram()
                 instance.metrics["unrecognized"] = size_calc.unrecognized_sections()
             else:
-                instance.metrics["ram_size"] = 0
-                instance.metrics["rom_size"] = 0
+                instance.metrics["used_ram"] = 0
+                instance.metrics["used_rom"] = 0
+                instance.metrics["available_rom"] = 0
+                instance.metrics["available_ram"] = 0
                 instance.metrics["unrecognized"] = []
-
             instance.metrics["handler_time"] = instance.execution_time
-
 
 
 class TwisterRunner:

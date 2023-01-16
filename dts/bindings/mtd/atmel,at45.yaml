@@ -35,7 +35,6 @@ properties:
 
   use-udpd:
     type: boolean
-    required: false
     description: |
       When set, the driver will use the Ultra-Deep Power-Down command instead
       of the default Deep Power-Down one to put the chip into low power mode.
@@ -47,7 +46,6 @@ properties:
 
   enter-dpd-delay:
     type: int
-    required: false
     default: 0
     description: |
       Time, in nanoseconds, needed by the chip to enter the Deep Power-Down
@@ -56,7 +54,6 @@ properties:
 
   exit-dpd-delay:
     type: int
-    required: false
     default: 0
     description: |
       Time, in nanoseconds, needed by the chip to exit from the Deep Power-Down
@@ -65,7 +62,6 @@ properties:
 
   reset-gpios:
     type: phandle-array
-    required: false
     description: |
       The RESET pin of AT45 is active low.
       If connected directly the MCU pin should be configured
@@ -73,7 +69,6 @@ properties:
 
   wp-gpios:
     type: phandle-array
-    required: false
     description: |
       The WP pin of AT45 is active low.
       If connected directly the MCU pin should be configured

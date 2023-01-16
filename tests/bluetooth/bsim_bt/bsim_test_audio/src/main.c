@@ -6,12 +6,12 @@
 
 #include "bstests.h"
 
-extern struct bst_test_list *test_vcs_install(struct bst_test_list *tests);
-extern struct bst_test_list *test_vcs_client_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_vcp_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_vcp_vol_ctlr_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_micp_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_micp_mic_ctlr_install(struct bst_test_list *tests);
-extern struct bst_test_list *test_csis_install(struct bst_test_list *tests);
-extern struct bst_test_list *test_csis_client_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_csip_set_member_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_csip_set_coordinator_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_tbs_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_tbs_client_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_mcs_install(struct bst_test_list *tests);
@@ -32,12 +32,12 @@ extern struct bst_test_list *test_ias_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_ias_client_install(struct bst_test_list *tests);
 
 bst_test_install_t test_installers[] = {
-	test_vcs_install,
-	test_vcs_client_install,
+	test_vcp_install,
+	test_vcp_vol_ctlr_install,
 	test_micp_install,
 	test_micp_mic_ctlr_install,
-	test_csis_install,
-	test_csis_client_install,
+	test_csip_set_member_install,
+	test_csip_set_coordinator_install,
 	test_tbs_install,
 	test_tbs_client_install,
 	test_mcs_install,

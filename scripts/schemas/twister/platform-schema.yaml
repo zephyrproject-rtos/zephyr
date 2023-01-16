@@ -24,7 +24,9 @@ mapping:
     enum: ["mcu", "qemu", "sim", "unit", "native"]
   "simulation":
     type: str
-    enum: ["qemu", "simics", "xt-sim", "renode", "nsim", "mdb-nsim", "tsim", "armfvp"]
+    enum: ["qemu", "simics", "xt-sim", "renode", "nsim", "mdb-nsim", "tsim", "armfvp", "native"]
+  "simulation_exec":
+    type: str
   "arch":
     type: str
   "toolchain":
@@ -53,11 +55,14 @@ mapping:
         required: false
       "default":
         type: bool
+      "binaries":
+        type: seq
+        seq:
+          - type: str
       "only_tags":
         type: seq
         seq:
-          -
-            type: str
+          - type: str
       "ignore_tags":
         type: seq
         seq:

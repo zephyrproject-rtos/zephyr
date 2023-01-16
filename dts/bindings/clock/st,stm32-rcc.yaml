@@ -72,65 +72,64 @@ compatible: "st,stm32-rcc"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    "#clock-cells":
-      const: 2
+  "#clock-cells":
+    const: 2
 
-    clock-frequency:
-      required: true
-      type: int
-      description: |
-        default frequency in Hz for clock output
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
 
-    ahb-prescaler:
-      type: int
-      required: true
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
-        - 64
-        - 128
-        - 256
-        - 512
-      description: |
-          AHB prescaler. Defines actual core clock frequency (HCLK)
-          based on system frequency input.
-          The HCLK clocks CPU, AHB, memories and DMA.
+  ahb-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        AHB prescaler. Defines actual core clock frequency (HCLK)
+        based on system frequency input.
+        The HCLK clocks CPU, AHB, memories and DMA.
 
-    apb1-prescaler:
-      type: int
-      required: true
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
+  apb1-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
 
-    apb2-prescaler:
-      type: int
-      required: true
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
+  apb2-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
 
-    undershoot-prevention:
-      type: boolean
-      required: false
-      description: |
-        On some parts, it could be required to set up highest core frequencies
-        (>80MHz) in two steps in order to prevent undershoot.
-        This is done by applying an intermediate AHB prescaler before switching
-        System Clock source to PLL. Once done, prescaler is set back to expected
-        value.
+  undershoot-prevention:
+    type: boolean
+    description: |
+      On some parts, it could be required to set up highest core frequencies
+      (>80MHz) in two steps in order to prevent undershoot.
+      This is done by applying an intermediate AHB prescaler before switching
+      System Clock source to PLL. Once done, prescaler is set back to expected
+      value.
 
 clock-cells:
   - bus

@@ -42,7 +42,6 @@ struct lwm2m_message *find_msg(struct coap_pending *pending, struct coap_reply *
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
 void lm2m_message_clear_allocations(struct lwm2m_message *msg);
 int lwm2m_init_message(struct lwm2m_message *msg);
-int lwm2m_send_message(struct lwm2m_message *msg);
 int lwm2m_send_message_async(struct lwm2m_message *msg);
 
 int handle_request(struct coap_packet *request, struct lwm2m_message *msg);

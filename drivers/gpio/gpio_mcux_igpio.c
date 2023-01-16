@@ -56,8 +56,8 @@ static int mcux_igpio_configure(const struct device *dev,
 
 	/* Some SOCs have non-contiguous gpio pin layouts, account for this */
 	for (i = 0; i < config->gap_count; i++) {
-		if (cfg_idx >= config->pin_gaps[i].start) {
-			if (cfg_idx < (config->pin_gaps[i].start +
+		if (pin >= config->pin_gaps[i].start) {
+			if (pin < (config->pin_gaps[i].start +
 				config->pin_gaps[i].len)) {
 				/* Pin is not connected to a mux */
 				return -ENOTSUP;

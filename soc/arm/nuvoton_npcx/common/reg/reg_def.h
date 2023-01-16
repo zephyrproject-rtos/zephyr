@@ -1113,87 +1113,64 @@ struct smb_reg {
 	volatile uint8_t SMBCTL3;
 	/* 0x00F: SMB Bus Timeout */
 	volatile uint8_t SMBT_OUT;
-	/* 0x010: SMB Own Address 3 */
-	volatile uint8_t SMBADDR3;
-	/* 0x011: SMB Own Address 7 */
-	volatile uint8_t SMBADDR7;
-	/* 0x012: SMB Own Address 4 */
-	volatile uint8_t SMBADDR4;
-	/* 0x013: SMB Own Address 8 */
-	volatile uint8_t SMBADDR8;
-	/* 0x014: SMB Own Address 5 */
-	volatile uint8_t SMBADDR5;
-	volatile uint8_t reserved8;
-	/* 0x016: SMB Own Address 6 */
-	volatile uint8_t SMBADDR6;
-	volatile uint8_t reserved9;
-	/* 0x018: SMB Control Status 2 */
-	volatile uint8_t SMBCST2;
-	/* 0x019: SMB Control Status 3 */
-	volatile uint8_t SMBCST3;
-	/* 0x01A: SMB Control 4 */
-	volatile uint8_t SMBCTL4;
-	volatile uint8_t reserved10;
-	/* 0x01C: SMB SCL Low Time */
-	volatile uint8_t SMBSCLLT;
-	/* 0x01D: SMB FIFO Control */
-	volatile uint8_t SMBFIF_CTL;
-	/* 0x01E: SMB SCL High Time */
-	volatile uint8_t SMBSCLHT;
-	volatile uint8_t reserved11;
-};
-
-/*
- * SMBUS (SMB) FIFO device registers
- */
-struct smb_fifo_reg {
-	/* 0x000: SMB Serial Data */
-	volatile uint8_t SMBSDA;
-	volatile uint8_t reserved1;
-	/* 0x002: SMB Status */
-	volatile uint8_t SMBST;
-	volatile uint8_t reserved2;
-	/* 0x004: SMB Control Status */
-	volatile uint8_t SMBCST;
-	volatile uint8_t reserved3;
-	/* 0x006: SMB Control 1 */
-	volatile uint8_t SMBCTL1;
-	volatile uint8_t reserved4;
-	/* 0x008: SMB Own Address */
-	volatile uint8_t SMBADDR1;
-	volatile uint8_t reserved5;
-	/* 0x00A: SMB Control 2 */
-	volatile uint8_t SMBCTL2;
-	volatile uint8_t reserved6;
-	/* 0x00C: SMB Own Address */
-	volatile uint8_t SMBADDR2;
-	volatile uint8_t reserved7;
-	/* 0x00E: SMB Control 3 */
-	volatile uint8_t SMBCTL3;
-	/* 0x00F: SMB Bus Timeout */
-	volatile uint8_t SMBT_OUT;
-	/* 0x010: SMB FIFO Control */
-	volatile uint8_t SMBFIF_CTS;
-	volatile uint8_t reserved8;
-	/* 0x012: SMB Tx-FIFO Control */
-	volatile uint8_t SMBTXF_CTL;
-	volatile uint8_t reserved9;
-	/* 0x014: SMB Bus Timeout */
-	volatile uint8_t SMB_T_OUT;
-	volatile uint8_t reserved10[3];
-	/* 0x018: SMB Control Status 2 */
-	volatile uint8_t SMBCST2;
-	/* 0x019: SMB Control Status 3 */
-	volatile uint8_t SMBCST3;
-	/* 0x01A: SMB Tx-FIFO Status */
-	volatile uint8_t SMBTXF_STS;
-	volatile uint8_t reserved11;
-	/* 0x01C: SMB Rx-FIFO Status */
-	volatile uint8_t SMBRXF_STS;
-	volatile uint8_t reserved12;
-	/* 0x01E: SMB Rx-FIFO Control */
-	volatile uint8_t SMBRXF_CTL;
-	volatile uint8_t reserved13;
+	union {
+		/* Bank 0 */
+		struct {
+			/* 0x010: SMB Own Address 3 */
+			volatile uint8_t SMBADDR3;
+			/* 0x011: SMB Own Address 7 */
+			volatile uint8_t SMBADDR7;
+			/* 0x012: SMB Own Address 4 */
+			volatile uint8_t SMBADDR4;
+			/* 0x013: SMB Own Address 8 */
+			volatile uint8_t SMBADDR8;
+			/* 0x014: SMB Own Address 5 */
+			volatile uint8_t SMBADDR5;
+			volatile uint8_t reserved8;
+			/* 0x016: SMB Own Address 6 */
+			volatile uint8_t SMBADDR6;
+			volatile uint8_t reserved9;
+			/* 0x018: SMB Control Status 2 */
+			volatile uint8_t SMBCST2;
+			/* 0x019: SMB Control Status 3 */
+			volatile uint8_t SMBCST3;
+			/* 0x01A: SMB Control 4 */
+			volatile uint8_t SMBCTL4;
+			volatile uint8_t reserved10;
+			/* 0x01C: SMB SCL Low Time */
+			volatile uint8_t SMBSCLLT;
+			/* 0x01D: SMB FIFO Control */
+			volatile uint8_t SMBFIF_CTL;
+			/* 0x01E: SMB SCL High Time */
+			volatile uint8_t SMBSCLHT;
+			volatile uint8_t reserved11;
+		};
+		/* Bank 1 */
+		struct {
+			/* 0x010: SMB FIFO Control */
+			volatile uint8_t SMBFIF_CTS;
+			volatile uint8_t reserved12;
+			/* 0x012: SMB Tx-FIFO Control */
+			volatile uint8_t SMBTXF_CTL;
+			volatile uint8_t reserved13;
+			/* 0x014: SMB Bus Timeout */
+			volatile uint8_t SMB_T_OUT;
+			volatile uint8_t reserved14[3];
+			/* 0x018: SMB Control Status 2 (FIFO) */
+			volatile uint8_t SMBCST2_FIFO;
+			/* 0x019: SMB Control Status 3 (FIFO) */
+			volatile uint8_t SMBCST3_FIFO;
+			/* 0x01A: SMB Tx-FIFO Status */
+			volatile uint8_t SMBTXF_STS;
+			volatile uint8_t reserved15;
+			/* 0x01C: SMB Rx-FIFO Status */
+			volatile uint8_t SMBRXF_STS;
+			volatile uint8_t reserved16;
+			/* 0x01E: SMB Rx-FIFO Control */
+			volatile uint8_t SMBRXF_CTL;
+			volatile uint8_t reserved17[1];
+		};
+	};
 };
 
 /* SMB register fields */
@@ -1633,4 +1610,88 @@ struct kbs_reg {
 #define KBS_CFG_INDX_RTYTO               2 /* Keyboard Scan Retry Timeout */
 #define KBS_CFG_INDX_CNUM                3 /* Keyboard Scan Columns Number */
 #define KBS_CFG_INDX_CDIV                4 /* Keyboard Scan Clock Divisor */
+
+/* SHI (Serial Host Interface) registers */
+struct shi_reg {
+	volatile uint8_t reserved1;
+	/* 0x001: SHI Configuration 1 */
+	volatile uint8_t SHICFG1;
+	/* 0x002: SHI Configuration 2 */
+	volatile uint8_t SHICFG2;
+	volatile uint8_t reserved2[2];
+	/* 0x005: Event Enable */
+	volatile uint8_t EVENABLE;
+	/* 0x006: Event Status */
+	volatile uint8_t EVSTAT;
+	/* 0x007: SHI Capabilities */
+	volatile uint8_t CAPABILITY;
+	/* 0x008: Status */
+	volatile uint8_t STATUS;
+	volatile uint8_t reserved3;
+	/* 0x00A: Input Buffer Status */
+	volatile uint8_t IBUFSTAT;
+	/* 0x00B: Output Buffer Status */
+	volatile uint8_t OBUFSTAT;
+	/* 0x00C: SHI Configuration 3 */
+	volatile uint8_t SHICFG3;
+	/* 0x00D: SHI Configuration 4 */
+	volatile uint8_t SHICFG4;
+	/* 0x00E: SHI Configuration 5 */
+	volatile uint8_t SHICFG5;
+	/* 0x00F: Event Status 2 */
+	volatile uint8_t EVSTAT2;
+	/* 0x010: Event Enable 2 */
+	volatile uint8_t EVENABLE2;
+	volatile uint8_t reserved4[15];
+	/* 0x20~0x9F: Output Buffer */
+	volatile uint8_t OBUF[128];
+	/* 0xA0~0x11F: Input Buffer */
+	volatile uint8_t IBUF[128];
+};
+
+/* SHI register fields */
+#define NPCX_SHICFG1_EN                  0
+#define NPCX_SHICFG1_MODE                1
+#define NPCX_SHICFG1_WEN                 2
+#define NPCX_SHICFG1_AUTIBF              3
+#define NPCX_SHICFG1_AUTOBE              4
+#define NPCX_SHICFG1_DAS                 5
+#define NPCX_SHICFG1_CPOL                6
+#define NPCX_SHICFG1_IWRAP               7
+#define NPCX_SHICFG2_SIMUL               0
+#define NPCX_SHICFG2_BUSY                1
+#define NPCX_SHICFG2_ONESHOT             2
+#define NPCX_SHICFG2_SLWU                3
+#define NPCX_SHICFG2_REEN                4
+#define NPCX_SHICFG2_RESTART             5
+#define NPCX_SHICFG2_REEVEN              6
+#define NPCX_EVENABLE_OBEEN              0
+#define NPCX_EVENABLE_OBHEEN             1
+#define NPCX_EVENABLE_IBFEN              2
+#define NPCX_EVENABLE_IBHFEN             3
+#define NPCX_EVENABLE_EOREN              4
+#define NPCX_EVENABLE_EOWEN              5
+#define NPCX_EVENABLE_STSREN             6
+#define NPCX_EVENABLE_IBOREN             7
+#define NPCX_EVSTAT_OBE                  0
+#define NPCX_EVSTAT_OBHE                 1
+#define NPCX_EVSTAT_IBF                  2
+#define NPCX_EVSTAT_IBHF                 3
+#define NPCX_EVSTAT_EOR                  4
+#define NPCX_EVSTAT_EOW                  5
+#define NPCX_EVSTAT_STSR                 6
+#define NPCX_EVSTAT_IBOR                 7
+#define NPCX_STATUS_OBES                 6
+#define NPCX_STATUS_IBFS                 7
+#define NPCX_SHICFG3_OBUFLVLDIS          7
+#define NPCX_SHICFG4_IBUFLVLDIS          7
+#define NPCX_SHICFG5_IBUFLVL2            FIELD(0, 6)
+#define NPCX_SHICFG5_IBUFLVL2DIS         7
+#define NPCX_EVSTAT2_IBHF2               0
+#define NPCX_EVSTAT2_CSNRE               1
+#define NPCX_EVSTAT2_CSNFE               2
+#define NPCX_EVENABLE2_IBHF2EN           0
+#define NPCX_EVENABLE2_CSNREEN           1
+#define NPCX_EVENABLE2_CSNFEEN           2
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

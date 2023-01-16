@@ -96,6 +96,10 @@ struct e1000_dev {
 #endif
 };
 
+struct e1000_config {
+	void (*config_func)(const struct e1000_dev *dev);
+};
+
 static const char *e1000_reg_to_string(enum e1000_reg_t r)
 	__attribute__((unused));
 

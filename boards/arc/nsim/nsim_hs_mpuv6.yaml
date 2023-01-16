@@ -2,6 +2,7 @@ identifier: nsim_hs_mpuv6
 name: HS (with MPU v6) nSIM simulator
 type: sim
 simulation: nsim
+simulation_exec: nsimdrv
 arch: arc
 toolchain:
   - zephyr

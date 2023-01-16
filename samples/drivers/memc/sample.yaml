@@ -1,0 +1,16 @@
+sample:
+  description: Memory controller sample
+  name: memc driver sample
+common:
+  tags: memc
+  filter: dt_alias_exists("sram-ext")
+  integration_platforms:
+    - mimxrt595_evk_cm33
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Read data matches written data"
+tests:
+  sample.drivers.memc:
+    tags: memc

@@ -16,6 +16,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/mayfly.h"
 #include "util/dbuf.h"
 
 #include "pdu.h"
@@ -39,9 +40,6 @@
 #include "ull_llcp_internal.h"
 #include "ull_conn_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_llcp_local
-#include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 
@@ -84,6 +82,35 @@ static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		llcp_proc_ctx_release(ctx);
 	}
 }
+
+/*
+ * LLCP Local Request Shared Data Locking
+ */
+
+static ALWAYS_INLINE uint32_t shared_data_access_lock(void)
+{
+	bool enabled;
+
+	if (mayfly_is_running()) {
+		/* We are in Mayfly context, nothing to be done */
+		return false;
+	}
+
+	/* We are in thread context and have to disable TICKER_USER_ID_ULL_HIGH */
+	enabled = mayfly_is_enabled(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH) != 0U;
+	mayfly_enable(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH, 0U);
+
+	return enabled;
+}
+
+static ALWAYS_INLINE void shared_data_access_unlock(bool key)
+{
+	if (key) {
+		/* We are in thread context and have to reenable TICKER_USER_ID_ULL_HIGH */
+		mayfly_enable(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH, 1U);
+	}
+}
+
 /*
  * LLCP Local Request FSM
  */
@@ -95,22 +122,48 @@ static void lr_set_state(struct ll_conn *conn, enum lr_state state)
 
 void llcp_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
 {
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+
+	bool key = shared_data_access_lock();
+
 	sys_slist_append(&conn->llcp.local.pend_proc_list, &ctx->node);
+
+	shared_data_access_unlock(key);
 }
 
 static struct proc_ctx *lr_dequeue(struct ll_conn *conn)
 {
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+
 	struct proc_ctx *ctx;
 
+	bool key = shared_data_access_lock();
+
 	ctx = (struct proc_ctx *)sys_slist_get(&conn->llcp.local.pend_proc_list);
+
+	shared_data_access_unlock(key);
+
 	return ctx;
 }
 
 struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 {
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+
 	struct proc_ctx *ctx;
 
+	bool key = shared_data_access_lock();
+
 	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
+
+	shared_data_access_unlock(key);
+
 	return ctx;
 }
 
@@ -201,6 +254,11 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case PROC_CIS_CREATE:
+		llcp_lp_cc_rx(conn, ctx, rx);
+		break;
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 	case PROC_SCA_UPDATE:
 		llcp_lp_comm_rx(conn, ctx, rx);
@@ -321,6 +379,11 @@ static void lr_act_run(struct ll_conn *conn)
 		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case PROC_CIS_CREATE:
+		llcp_lp_cc_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	case PROC_CIS_TERMINATE:
 		llcp_lp_comm_run(conn, ctx, NULL);

@@ -6,27 +6,26 @@ description: NPCX-MIWU group-interrupt mapping child node
 compatible: "nuvoton,npcx-miwu-int-map"
 
 properties:
-    parent:
-        type: phandle
-        required: true
-        description: parent device node of miwu groups
+  parent:
+    type: phandle
+    required: true
+    description: parent device node of miwu groups
 
 child-binding:
-    description: Child node to present the mapping between MIWU group and interrupt
-    properties:
-       irq:
-          type: int
-          required: true
-          description: irq for miwu group
-       irq-prio:
-          type: int
-          required: true
-          description: irq's priority for miwu group. The valid number is from 0 to 7.
-       group-mask:
-          type: int
-          required: true
-          description: group bit-mask for miwu interrupts
-       groups:
-          type: array
-          required: false
-          description: groups shared the same interrupt
+  description: Child node to present the mapping between MIWU group and interrupt
+  properties:
+    irq:
+      type: int
+      required: true
+      description: irq for miwu group
+    irq-prio:
+      type: int
+      required: true
+      description: irq's priority for miwu group. The valid number is from 0 to 7.
+    group-mask:
+      type: int
+      required: true
+      description: group bit-mask for miwu interrupts
+    groups:
+      type: array
+      description: groups shared the same interrupt

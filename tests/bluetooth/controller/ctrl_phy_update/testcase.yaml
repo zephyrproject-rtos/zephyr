@@ -1,8 +1,8 @@
 common:
-    tags: test_framework bluetooth bt_phy_update bt_ull_llcp
+  tags: test_framework bluetooth bt_phy_update bt_ull_llcp
 tests:
   bluetooth.controller.ctrl_phy_update.test:
-     type: unit
+    type: unit
   bluetooth.controller.ctrl_phy_update.test_reduced_buf:
-     type: unit
-     extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override_rx_cnt.h"
+    type: unit
+    extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override_rx_cnt.h"

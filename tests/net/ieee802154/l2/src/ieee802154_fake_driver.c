@@ -48,7 +48,7 @@ static inline void insert_frag(struct net_pkt *pkt, struct net_buf *frag)
 {
 	struct net_buf *new_frag;
 
-	new_frag = net_pkt_get_frag(pkt, K_SECONDS(1));
+	new_frag = net_pkt_get_frag(pkt, frag->len, K_SECONDS(1));
 	if (!new_frag) {
 		return;
 	}

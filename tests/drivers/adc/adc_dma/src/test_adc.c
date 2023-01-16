@@ -38,7 +38,7 @@
 #define SAMPLE_INTERVAL_US (10000U)
 
 #define BUFFER_SIZE 24
-#define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(test_dma))
+#define ALIGNMENT DMA_BUF_ADDR_ALIGNMENT(DT_NODELABEL(test_dma))
 static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer[BUFFER_SIZE];
 static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer2[2][BUFFER_SIZE];
 static int current_buf_inx;

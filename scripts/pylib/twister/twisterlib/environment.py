@@ -2,6 +2,7 @@
 # vim: set syntax=python ts=4 :
 #
 # Copyright (c) 2018 Intel Corporation
+# Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -47,10 +48,11 @@ except subprocess.CalledProcessError as e:
 canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 canonical_topdir = os.path.realpath(topdir)
 
-def parse_arguments(args):
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+def add_parse_arguments(parser = None):
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description=__doc__,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.fromfile_prefix_chars = "+"
 
     case_select = parser.add_argument_group("Test case selection",
@@ -182,6 +184,11 @@ Artificially long but functional example:
         "--prep-artifacts-for-testing", action="store_true",
         help="Generate artifacts for testing, do not attempt to run the"
               "code on targets.")
+
+    parser.add_argument(
+        "--package-artifacts",
+        help="Package artifacts needed for flashing in a file to be used with --test-only"
+        )
 
     test_or_build.add_argument(
         "--test-only", action="store_true",
@@ -340,7 +347,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
 
-    parser.add_argument("--gcov-tool", default=None,
+    parser.add_argument("--gcov-tool", type=Path, default=None,
                         help="Path to the gcov tool to use for code coverage "
                              "reports")
 
@@ -355,6 +362,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-i", "--inline-logs", action="store_true",
         help="Upon test failure, print relevant log data to stdout "
              "instead of just a path to it.")
+
+    parser.add_argument("--ignore-platform-key", action="store_true",
+                        help="Do not filter based on platform key")
 
     parser.add_argument(
         "-j", "--jobs", type=int,
@@ -379,8 +389,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         help="Specify a file where to save logs.")
 
     parser.add_argument(
-        "-M", "--runtime-artifact-cleanup", action="store_true",
-        help="Delete artifacts of passing tests.")
+        "-M", "--runtime-artifact-cleanup", choices=['pass', 'all'],
+        default=None, const='pass', nargs='?',
+        help="""Cleanup test artifacts. The default behavior is 'pass'
+        which only removes artifacts of passing tests. If you wish to
+        remove all artificats including those of failed tests, use 'all'.""")
 
     test_xor_generator.add_argument(
         "-N", "--ninja", action="store_true",
@@ -528,7 +541,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "'--ninja' argument (to use Ninja build generator).")
 
     parser.add_argument(
-        "--show-footprint", action="store_true",
+        "--show-footprint",
+        action="store_true",
+        required = "--footprint-from-buildlog" in sys.argv,
         help="Show footprint statistics and deltas since last release."
     )
 
@@ -615,7 +630,21 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "stdout detailing RAM/ROM sizes on the specified filenames. "
              "All other command line arguments ignored.")
 
-    options = parser.parse_args(args)
+    parser.add_argument(
+        "--footprint-from-buildlog",
+        action = "store_true",
+        help="Get information about memory footprint from generated build.log. "
+             "Requires using --show-footprint option.")
+
+    parser.add_argument("extra_test_args", nargs=argparse.REMAINDER,
+        help="Additional args following a '--' are passed to the test binary")
+
+    return parser
+
+
+def parse_arguments(parser, args, options = None):
+    if options is None:
+        options = parser.parse_args(args)
 
     # Very early error handling
     if options.short_build_path and not options.ninja:
@@ -668,6 +697,29 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
             sc = SizeCalculator(fn, [])
             sc.size_report()
         sys.exit(1)
+
+    if len(options.extra_test_args) > 0:
+        # extra_test_args is a list of CLI args that Twister did not recognize
+        # and are intended to be passed through to the ztest executable. This
+        # list should begin with a "--". If not, there is some extra
+        # unrecognized arg(s) that shouldn't be there. Tell the user there is a
+        # syntax error.
+        if options.extra_test_args[0] != "--":
+            try:
+                double_dash = options.extra_test_args.index("--")
+            except ValueError:
+                double_dash = len(options.extra_test_args)
+            unrecognized = " ".join(options.extra_test_args[0:double_dash])
+
+            logger.error("Unrecognized arguments found: '%s'. Use -- to "
+                         "delineate extra arguments for test binary or pass "
+                         "-h for help.",
+                         unrecognized)
+
+            sys.exit(1)
+
+        # Strip off the initial "--" following validation.
+        options.extra_test_args = options.extra_test_args[1:]
 
     return options
 

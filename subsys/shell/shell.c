@@ -1321,10 +1321,12 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 					   log_level);
 	}
 
-	/* Enable shell and print prompt. */
-	err = shell_start(shell);
-	if (err != 0) {
-		return;
+	if (IS_ENABLED(CONFIG_SHELL_AUTOSTART)) {
+		/* Enable shell and print prompt. */
+		err = shell_start(shell);
+		if (err != 0) {
+			return;
+		}
 	}
 
 	while (true) {
@@ -1688,6 +1690,10 @@ void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 	__ASSERT_NO_MSG(sh);
 
 	sh->ctx->bypass = bypass;
+
+	if (bypass == NULL) {
+		cmd_buffer_clear(sh);
+	}
 }
 
 bool shell_ready(const struct shell *sh)

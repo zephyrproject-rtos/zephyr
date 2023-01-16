@@ -238,10 +238,10 @@ static void virt_region_free(void *vaddr, size_t size)
 	}
 
 	__ASSERT((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
-		 && ((vaddr_u8 + size) < Z_VIRT_REGION_END_ADDR),
+		 && ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR),
 		 "invalid virtual address region %p (%zu)", vaddr_u8, size);
 	if (!((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
-	      && ((vaddr_u8 + size) < Z_VIRT_REGION_END_ADDR))) {
+	      && ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR))) {
 		return;
 	}
 
@@ -786,7 +786,7 @@ void z_phys_unmap(uint8_t *virt, size_t size)
 		aligned_virt, aligned_size, addr_offset);
 
 	arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
-	virt_region_free(virt, size);
+	virt_region_free(UINT_TO_POINTER(aligned_virt), aligned_size);
 	k_spin_unlock(&z_mm_lock, key);
 }
 

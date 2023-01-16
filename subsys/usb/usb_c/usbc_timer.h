@@ -27,8 +27,7 @@ struct usbc_timer_t {
  * @param usbc_timer timer object
  * @param timeout_ms timer timeout in ms
  */
-void usbc_timer_init(struct usbc_timer_t *usbc_timer,
-		     uint32_t timeout_ms);
+void usbc_timer_init(struct usbc_timer_t *usbc_timer, uint32_t timeout_ms);
 
 /**
  * @brief Start a timer

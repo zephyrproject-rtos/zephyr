@@ -80,7 +80,7 @@ int net_icmpv6_finalize(struct net_pkt *pkt)
 	}
 
 	icmp_hdr->chksum = 0U;
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
 		icmp_hdr->chksum = net_calc_chksum_icmpv6(pkt);
 	}
 
@@ -380,7 +380,24 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	echo_req->sequence   = htons(sequence);
 
 	net_pkt_set_data(pkt, &icmpv6_access);
-	net_pkt_write(pkt, data, data_size);
+
+	if (data != NULL && data_size > 0) {
+		net_pkt_write(pkt, data, data_size);
+	} else if (data == NULL && data_size > 0) {
+		/* Generate payload. */
+		if (data_size >= sizeof(uint32_t)) {
+			uint32_t time_stamp = htonl(k_cycle_get_32());
+
+			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			data_size -= sizeof(time_stamp);
+		}
+
+		for (size_t i = 0; i < data_size; i++) {
+			net_pkt_write_u8(pkt, (uint8_t)i);
+		}
+	} else {
+		/* No payload. */
+	}
 
 	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);

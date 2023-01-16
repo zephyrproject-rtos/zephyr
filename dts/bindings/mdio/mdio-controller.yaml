@@ -8,18 +8,17 @@ include: base.yaml
 bus: mdio
 
 properties:
-    protocol:
-      required: false
-      type: string
-      description: |
-        MDIO bus framing protocol to use for communication. Most devices
-        support clause 22.
+  protocol:
+    type: string
+    description: |
+      MDIO bus framing protocol to use for communication. Most devices
+      support clause 22.
 
-        - clause 22: IEEE802.3 clause 22 frame format
-        - clause 45: IEEE802.3 clause 45 frame format
-        - micrel SMI: Micrel Serial Management Interface frame format
-      enum:
-        - "clause 22"
-        - "clause 45"
-        - "micrel SMI"
-      default: "clause 22"
+      - clause 22: IEEE802.3 clause 22 frame format
+      - clause 45: IEEE802.3 clause 45 frame format
+      - micrel SMI: Micrel Serial Management Interface frame format
+    enum:
+      - "clause 22"
+      - "clause 45"
+      - "micrel SMI"
+    default: "clause 22"

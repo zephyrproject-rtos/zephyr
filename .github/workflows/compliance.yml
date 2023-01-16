@@ -3,22 +3,6 @@ name: Compliance Checks
 on: pull_request
 
 jobs:
-  maintainer_check:
-    runs-on: ubuntu-20.04
-    name: Check MAINTAINERS file
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
-        fetch-depth: 0
-    - name: Run Maintainers Script
-      id: maintainer
-      env:
-        BASE_REF: ${{ github.base_ref }}
-      run: |
-        python3 ./scripts/get_maintainer.py path CMakeLists.txt
-
   check_compliance:
     runs-on: ubuntu-20.04
     name: Run compliance checks on patch series (PR)
@@ -43,7 +27,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic lxml junitparser gitlint pylint pykwalify
+        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint
         pip3 install west
 
     - name: west setup
@@ -53,6 +37,9 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         git remote -v
+        # Ensure there's no merge commits in the PR
+        [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
+        (echo "::error ::Merge commits not allowed, rebase instead";false)
         git rebase origin/${BASE_REF}
         # debug
         git log  --pretty=oneline | head -n 10
@@ -69,13 +56,12 @@ jobs:
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
-        ./scripts/ci/check_compliance.py --annotate -m Devicetree -m Gitlint \
-        -m Identity -m Nits -m pylint -m checkpatch -m Kconfig \
+        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic \
         -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@v3
-      continue-on-error: True
+      continue-on-error: true
       with:
         name: compliance.xml
         path: compliance.xml
@@ -86,13 +72,15 @@ jobs:
           exit 1;
         fi
 
-        for file in Nits.txt checkpatch.txt Identity.txt Gitlint.txt pylint.txt Devicetree.txt Kconfig.txt; do
-          if [[ -s $file ]]; then
-            errors=$(cat $file)
+        files=($(./scripts/ci/check_compliance.py -l))
+        for file in "${files[@]}"; do
+          f="${file}.txt"
+          if [[ -s $f ]]; then
+            errors=$(cat $f)
             errors="${errors//'%'/'%25'}"
             errors="${errors//$'\n'/'%0A'}"
             errors="${errors//$'\r'/'%0D'}"
-            echo "::error file=${file}::$errors"
+            echo "::error file=${f}::$errors"
             exit=1
           fi
         done

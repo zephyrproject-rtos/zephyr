@@ -147,6 +147,8 @@ name:
   The actual name of the board as it appears in marketing material.
 type:
   Type of the board or configuration, currently we support 2 types: mcu, qemu
+simulation:
+  Simulator used to simulate the platform, e.g. qemu.
 arch:
   Architecture of the board
 toolchain:
@@ -310,6 +312,19 @@ extra_configs: <list of extra configurations>
             extra_configs:
               - CONFIG_ADC_ASYNC=y
 
+    Using namespacing, it is possible to apply a configuration only to some
+    hardware. Currently both architectures and platforms are supported::
+
+        common:
+          tags: drivers adc
+        tests:
+          test:
+            depends_on: adc
+          test_async:
+            extra_configs:
+              - arch:x86:CONFIG_ADC_ASYNC=y
+              - platform:qemu_x86:CONFIG_DEBUG=y
+
 
 build_only: <True|False> (default False)
     If true, don't try to run the test even if the
@@ -374,6 +389,25 @@ harness: <string>
     sensor and IO testing.
     Usually pertains to external dependency domains but can be anything such as
     console, sensor, net, keyboard, Bluetooth or pytest.
+
+platform_key: <list of platform attributes>
+    Often a test needs to only be built and run once to qualify as passing.
+    Imagine a library of code that depends on the platform architecture where
+    passing the test on a single platform for each arch is enough to qualify the
+    tests and code as passing. The platform_key attribute enables doing just
+    that.
+
+    For example to key on (arch, simulation) to ensure a test is run once
+    per arch and simulation (as would be most common)::
+
+      platform_key:
+        - arch
+        - simulation
+
+    Adding platform (board) attributes to include things such as soc name,
+    soc family, and perhaps sets of IP blocks implementing each peripheral
+    interface would enable other interesting uses. For example, this could enable
+    building and running SPI tests once for eacn unique IP block.
 
 harness_config: <harness configuration options>
     Extra harness configuration options to be used to select a board and/or

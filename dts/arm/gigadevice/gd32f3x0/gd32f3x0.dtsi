@@ -97,7 +97,7 @@
 			interrupts = <9 0>, <10 0>, <11 0>, <48 0>;
 			clocks = <&cctl GD32_CLOCK_DMA>;
 			dma-channels = <7>;
-			#dma-cells = <1>;
+			#dma-cells = <2>;
 			status = "disabled";
 		};
 

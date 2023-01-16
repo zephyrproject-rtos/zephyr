@@ -8,18 +8,16 @@ compatible: "inventek,eswifi"
 include: spi-device.yaml
 
 properties:
-    resetn-gpios:
-      type: phandle-array
-      required: true
+  resetn-gpios:
+    type: phandle-array
+    required: true
 
-    data-gpios:
-      type: phandle-array
-      required: true
+  data-gpios:
+    type: phandle-array
+    required: true
 
-    wakeup-gpios:
-      type: phandle-array
-      required: false
+  wakeup-gpios:
+    type: phandle-array
 
-    boot0-gpios:
-      type: phandle-array
-      required: false
+  boot0-gpios:
+    type: phandle-array

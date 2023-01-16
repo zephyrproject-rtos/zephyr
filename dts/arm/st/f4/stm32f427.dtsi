@@ -5,6 +5,7 @@
  */
 
 #include <st/f4/stm32f407.dtsi>
+#include <zephyr/dt-bindings/clock/stm32f427_clock.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
@@ -33,6 +34,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40007800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x40000000>;
+			resets = <&rctl STM32_RESET(APB1, 30U)>;
 			interrupts = <82 0>;
 			status = "disabled";
 		};
@@ -41,6 +43,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40007c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
+			resets = <&rctl STM32_RESET(APB1, 31U)>;
 			interrupts = <83 0>;
 			status = "disabled";
 		};
@@ -55,8 +58,8 @@
 			status = "disabled";
 		};
 
-		/* spi5 is present on all STM32F429XX SoCs except
-		 * STM32F429vX SoCs. Delete node in stm32f429vX.dtsi.
+		/* spi5 is present on all STM32F427XX and derivates SoCs except
+		 * some vX variants. Delete node in vX.dtsi.
 		 */
 		 spi5: spi@40015000 {
 			compatible = "st,stm32-spi";
@@ -68,8 +71,8 @@
 			status = "disabled";
 		};
 
-		/* spi6 is present on all STM32F429XX SoCs except
-		 * STM32F429vX SoCs. Delete node in stm32f429vX.dtsi.
+		/* spi6 is present on all STM32F427XX and derivates SoCs except
+		 * some vX variants. Delete node in vX.dtsi.
 		 */
 		spi6: spi@40015400 {
 			compatible = "st,stm32-spi";

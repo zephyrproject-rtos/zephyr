@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_NPM6001_EK
+
+config GPIO
+	default y
+
+config REGULATOR
+	default y
+
+config WATCHDOG
+	default y
+
+endif # SHIELD_NPM6001_EK

@@ -8,23 +8,21 @@ compatible: "ti,lp503x"
 include: ["i2c-device.yaml", "led-controller.yaml"]
 
 properties:
-    max_curr_opt:
-      type: boolean
-      required: false
-      description: |
-        If enabled the maximum current output is set to 35 mA (25.5 mA else).
-    log_scale_en:
-      type: boolean
-      required: false
-      description: |
-        If enabled a logarithmic dimming scale curve is used for LED brightness
-        control. A linear dimming scale curve is used else.
+  max_curr_opt:
+    type: boolean
+    description: |
+      If enabled the maximum current output is set to 35 mA (25.5 mA else).
+  log_scale_en:
+    type: boolean
+    description: |
+      If enabled a logarithmic dimming scale curve is used for LED brightness
+      control. A linear dimming scale curve is used else.
 
 child-binding:
-    properties:
-        label:
-          required: true
-        index:
-          required: true
-        color-mapping:
-          required: true
+  properties:
+    label:
+      required: true
+    index:
+      required: true
+    color-mapping:
+      required: true

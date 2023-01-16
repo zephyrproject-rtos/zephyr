@@ -128,11 +128,13 @@ static int gpio_npcx_config(const struct device *dev,
 
 	/* Does this IO pad support low-voltage input (1.8V) detection? */
 	if (lvol->ctrl != NPCX_DT_LVOL_CTRL_NONE) {
+		gpio_flags_t volt = flags & NPCX_GPIO_VOLTAGE_MASK;
+
 		/*
 		 * If this IO pad is configured for low-voltage input detection,
 		 * the related drive type must select to open-drain also.
 		 */
-		if ((flags & NPCX_GPIO_VOLTAGE_1P8) != 0) {
+		if (volt == NPCX_GPIO_VOLTAGE_1P8) {
 			flags |= GPIO_OPEN_DRAIN;
 			npcx_lvol_set_detect_level(lvol->ctrl, lvol->bit, true);
 		} else {

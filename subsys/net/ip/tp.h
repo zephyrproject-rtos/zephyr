@@ -16,7 +16,7 @@ extern "C" {
 #include <zephyr/net/net_pkt.h>
 #include "connection.h"
 
-#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
+#if defined(CONFIG_NET_TEST_PROTOCOL)
 
 #define TP_SEQ 0
 #define TP_ACK 1

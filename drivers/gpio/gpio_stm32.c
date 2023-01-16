@@ -550,8 +550,8 @@ static int gpio_stm32_config(const struct device *dev,
 
 	gpio_stm32_configure_raw(dev, pin, pincfg, 0);
 
-	/* Release clock only if configuration doesn't require bank writes */
-	if ((flags & GPIO_OUTPUT) == 0) {
+	/* Release clock only if pin is disconnected */
+	if (((flags & GPIO_OUTPUT) == 0) && ((flags & GPIO_INPUT) == 0)) {
 		err = pm_device_runtime_put(dev);
 		if (err < 0) {
 			return err;
@@ -711,11 +711,7 @@ static int gpio_stm32_init(const struct device *dev)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	/* Port G[15:2] requires external power supply */
 	/* Cf: L4/L5 RM, Chapter "Independent I/O supply rail" */
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_PWR_EnableVDDIO2();
-#else
 	LL_PWR_EnableVddIO2();
-#endif
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif
 	/* enable port clock (if runtime PM is not enabled) */

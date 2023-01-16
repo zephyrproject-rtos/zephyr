@@ -95,6 +95,8 @@ source "drivers/sensor/fxos8700/Kconfig"
 
 source "drivers/sensor/grove/Kconfig"
 
+source "drivers/sensor/grow_r502a/Kconfig"
+
 source "drivers/sensor/ti_hdc/Kconfig"
 
 source "drivers/sensor/ti_hdc20xx/Kconfig"
@@ -110,6 +112,10 @@ source "drivers/sensor/i3g4250d/Kconfig"
 source "drivers/sensor/icm42605/Kconfig"
 
 source "drivers/sensor/icm42670/Kconfig"
+
+source "drivers/sensor/icm42688/Kconfig"
+
+source "drivers/sensor/icp10125/Kconfig"
 
 source "drivers/sensor/iis2dh/Kconfig"
 
@@ -260,5 +266,7 @@ source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
 source "drivers/sensor/ite_vcmp_it8xxx2/Kconfig"
 
 source "drivers/sensor/pcnt_esp32/Kconfig"
+
+source "drivers/sensor/esp32_temp/Kconfig"
 
 endif # SENSOR

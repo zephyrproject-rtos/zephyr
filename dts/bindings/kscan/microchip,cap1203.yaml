@@ -8,6 +8,5 @@ compatible: "microchip,cap1203"
 include: [kscan.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      required: false
+  int-gpios:
+    type: phandle-array

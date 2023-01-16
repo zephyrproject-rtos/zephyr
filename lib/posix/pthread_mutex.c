@@ -21,7 +21,7 @@ int64_t timespec_to_timeoutms(const struct timespec *abstime);
 /*
  *  Default mutex attrs.
  */
-static const pthread_mutexattr_t def_attr = {
+static const struct pthread_mutexattr def_attr = {
 	.type = PTHREAD_MUTEX_DEFAULT,
 };
 
@@ -33,7 +33,7 @@ SYS_BITARRAY_DEFINE_STATIC(posix_mutex_bitarray, CONFIG_MAX_PTHREAD_MUTEX_COUNT)
  * perspective of the application). With a linear space, this means that
  * the theoretical pthread_mutex_t range is [0,2147483647].
  */
-BUILD_ASSERT(CONFIG_MAX_PTHREAD_MUTEX_COUNT < PTHREAD_MUTEX_MASK_INIT,
+BUILD_ASSERT(CONFIG_MAX_PTHREAD_MUTEX_COUNT < PTHREAD_OBJ_MASK_INIT,
 	"CONFIG_MAX_PTHREAD_MUTEX_COUNT is too high");
 
 static inline size_t posix_mutex_to_offset(struct posix_mutex *m)
@@ -43,7 +43,7 @@ static inline size_t posix_mutex_to_offset(struct posix_mutex *m)
 
 static inline size_t to_posix_mutex_idx(pthread_mutex_t mut)
 {
-	return mark_pthread_mutex_uninitialized(mut);
+	return mark_pthread_obj_uninitialized(mut);
 }
 
 struct posix_mutex *get_posix_mutex(pthread_mutex_t mu)
@@ -52,7 +52,7 @@ struct posix_mutex *get_posix_mutex(pthread_mutex_t mu)
 	size_t bit = to_posix_mutex_idx(mu);
 
 	/* if the provided mutex does not claim to be initialized, its invalid */
-	if (!is_pthread_mutex_initialized(mu)) {
+	if (!is_pthread_obj_initialized(mu)) {
 		return NULL;
 	}
 
@@ -85,7 +85,7 @@ struct posix_mutex *to_posix_mutex(pthread_mutex_t *mu)
 	}
 
 	/* Record the associated posix_mutex in mu and mark as initialized */
-	*mu = mark_pthread_mutex_initialized(bit);
+	*mu = mark_pthread_obj_initialized(bit);
 
 	/* Initialize the posix_mutex */
 	m = &posix_mutex_pool[bit];
@@ -174,11 +174,11 @@ int pthread_mutex_timedlock(pthread_mutex_t *m,
  *
  * See IEEE 1003.1
  */
-int pthread_mutex_init(pthread_mutex_t *mu,
-				     const pthread_mutexattr_t *attr)
+int pthread_mutex_init(pthread_mutex_t *mu, const pthread_mutexattr_t *_attr)
 {
 	k_spinlock_key_t key;
 	struct posix_mutex *m;
+	const struct pthread_mutexattr *attr = (const struct pthread_mutexattr *)_attr;
 
 	*mu = PTHREAD_MUTEX_INITIALIZER;
 	key = k_spin_lock(&z_pthread_spinlock);
@@ -301,8 +301,9 @@ int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
  *
  * See IEEE 1003.1
  */
-int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
+int pthread_mutexattr_gettype(const pthread_mutexattr_t *_attr, int *type)
 {
+	const struct pthread_mutexattr *attr = (const struct pthread_mutexattr *)_attr;
 	*type = attr->type;
 	return 0;
 }
@@ -312,8 +313,9 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
  *
  * See IEEE 1003.1
  */
-int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+int pthread_mutexattr_settype(pthread_mutexattr_t *_attr, int type)
 {
+	struct pthread_mutexattr *attr = (struct pthread_mutexattr *)_attr;
 	int retc = EINVAL;
 
 	if ((type == PTHREAD_MUTEX_NORMAL) ||

@@ -105,7 +105,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 {
 	const struct mcp23xxx_config *config = dev->config;
 
-	if (!spi_is_ready(&config->bus.spi)) {
+	if (!spi_is_ready_dt(&config->bus.spi)) {
 		LOG_ERR("SPI bus %s not ready", config->bus.spi.bus->name);
 		return -ENODEV;
 	}

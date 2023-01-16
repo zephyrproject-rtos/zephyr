@@ -8,5 +8,16 @@ compatible: "st,stm32-lptim"
 include:
   - name: st,stm32-timers.yaml
     property-blocklist:
-        - st,prescaler
-        - st,countermode
+      # 'resets' property is not supported yet
+      - resets
+      - st,prescaler
+      - st,countermode
+
+properties:
+  st,static-prescaler:
+    type: boolean
+    description: |
+        Clock x2 factor at the input of the LPTIM,
+        depending on the serie.
+        For example, stm32U5x have a x2-factor for LPTIM1,3,4.
+        To be adapted once the value is selectable.

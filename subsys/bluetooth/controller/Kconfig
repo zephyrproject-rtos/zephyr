@@ -853,6 +853,28 @@ config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 	help
 	  Maximum number of CIS subevents.
 
+choice
+	prompt "CIS Creation Policy Selection"
+	default BT_CTLR_CONN_ISO_RELIABILITY_POLICY
+
+config BT_CTLR_CONN_ISO_RELIABILITY_POLICY
+	bool "CIS creation policy for reliability"
+	depends on BT_CTLR_CENTRAL_ISO
+	help
+	  Select this option to use reliability policy for CIS creation. This
+	  favors a CIS layout/configuration which utilizes the full range of the
+	  Max_Transmission_Latency for maximum retransmission and payload
+	  recovery.
+
+config BT_CTLR_CONN_ISO_LOW_LATENCY_POLICY
+	bool "CIS creation policy for low latency"
+	depends on BT_CTLR_CENTRAL_ISO
+	help
+	  Select this option to use low latency policy for CIS creation. This
+	  favors a CIS layout/configuration which compacts payload transmission
+	  for lowest possible latency.
+endchoice
+
 config BT_CTLR_ISO
 	bool
 	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO

@@ -21,6 +21,8 @@
 #define STM32_SRC_HSE		0x002
 #define STM32_SRC_LSE		0x003
 #define STM32_SRC_LSI		0x004
+/** System clock */
+#define STM32_SRC_SYSCLK	0x005
 
 /**
  * @brief STM32 clock configuration bit field.
@@ -57,5 +59,7 @@
 /** @brief Device domain clocks selection helpers */
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_ */

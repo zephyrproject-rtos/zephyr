@@ -14,9 +14,39 @@ menu "Hearing Aid"
 
 config HAP_HA_SET_RANK
 	int "Device rank in set"
-	depends on BT_CSIS
+	depends on BT_CSIP_SET_MEMBER
 	range 1 2
 	help
 	  Rank of this device in set.
+
+choice HAP_HA_HEARING_AID_TYPE_CHOICE
+	prompt "Hearing Aid Type selection"
+	help
+	  Select the Hearing Aid Type to compile.
+
+config HAP_HA_HEARING_AID_MONAURAL
+	bool "Monaural Hearing Aid"
+
+config HAP_HA_HEARING_AID_BINAURAL
+	depends on BT_CSIP_SET_MEMBER
+	bool "Binaural Hearing Aid"
+
+config HAP_HA_HEARING_AID_BANDED
+	bool "Banded Hearing Aid"
+
+endchoice # HAP_HA_HEARING_AID_TYPE_CHOICE
+
+choice HAP_HA_HEARING_AID_LOCATION
+	prompt "Hearing Aid Device Location"
+	help
+	  Select the Hearing Aid Device location.
+
+config HAP_HA_HEARING_AID_LEFT
+	bool "Left Ear"
+
+config HAP_HA_HEARING_AID_RIGHT
+	bool "Right Ear"
+
+endchoice # HAP_HA_HEARING_AID_LOCATION
 
 endmenu

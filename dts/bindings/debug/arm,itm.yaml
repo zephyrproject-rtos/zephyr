@@ -7,7 +7,6 @@
 include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-    swo-ref-frequency:
-      type: int
-      required: false
-      description: Reference clock frequency for SWO if different than CPU clock.
+  swo-ref-frequency:
+    type: int
+    description: Reference clock frequency for SWO if different than CPU clock.

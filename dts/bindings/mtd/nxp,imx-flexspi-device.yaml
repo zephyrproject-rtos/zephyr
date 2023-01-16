@@ -6,94 +6,85 @@ description: NXP FlexSPI device
 include: [spi-device.yaml, "jedec,jesd216.yaml"]
 
 properties:
-    cs-interval-unit:
-      type: int
-      required: false
-      default: 1
-      enum:
-        - 1
-        - 256
-      description: |
-        Chip select interval units, in serial clock cycles. See the
-        CSINTERVALUNIT field in registers FLASHA1CR0 through FLASHB2CR0. The
-        default corresponds to the reset value of the register field.
+  cs-interval-unit:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 256
+    description: |
+      Chip select interval units, in serial clock cycles. See the
+      CSINTERVALUNIT field in registers FLASHA1CR0 through FLASHB2CR0. The
+      default corresponds to the reset value of the register field.
 
-    cs-interval:
-      type: int
-      required: false
-      default: 0
-      description: |
-        Minimum interval between chip select deassertion and assertion. See the
-        CSINTERVAL field in registers FLASHA1CR0 through FLASHB2CR0. The
-        default corresponds to the reset value of the register field.
+  cs-interval:
+    type: int
+    default: 0
+    description: |
+      Minimum interval between chip select deassertion and assertion. See the
+      CSINTERVAL field in registers FLASHA1CR0 through FLASHB2CR0. The
+      default corresponds to the reset value of the register field.
 
-    cs-setup-time:
-      type: int
-      required: false
-      default: 3
-      description: |
-        Chip select setup time, in serial clock cycles. See the TCSS field in
-        registers FLASHA1CR0 through FLASHB2CR0. The default corresponds to the
-        reset value of the register field.
+  cs-setup-time:
+    type: int
+    default: 3
+    description: |
+      Chip select setup time, in serial clock cycles. See the TCSS field in
+      registers FLASHA1CR0 through FLASHB2CR0. The default corresponds to the
+      reset value of the register field.
 
-    cs-hold-time:
-      type: int
-      required: false
-      default: 3
-      description: |
-        Chip select hold time, in serial clock cycles. See the TCSH field in
-        registers FLASHA1CR0 through FLASHB2CR0. The default corresponds to the
-        reset value of the register field.
+  cs-hold-time:
+    type: int
+    default: 3
+    description: |
+      Chip select hold time, in serial clock cycles. See the TCSH field in
+      registers FLASHA1CR0 through FLASHB2CR0. The default corresponds to the
+      reset value of the register field.
 
-    data-valid-time:
-      type: int
-      required: false
-      default: 0
-      description: |
-        Data valid time, in nanoseconds. See the registers DLLACR through
-        DLLBCR.
+  data-valid-time:
+    type: int
+    default: 0
+    description: |
+      Data valid time, in nanoseconds. See the registers DLLACR through
+      DLLBCR.
 
-    column-space:
-      type: int
-      required: false
-      default: 0
-      description: |
-        Column address bit width. Set to zero if the flash does not support
-        column address. See the CAS field in registers FLASHA1CR0 through
-        FLASHB2CR0. The default corresponds to the reset value of the register
-        field.
+  column-space:
+    type: int
+    default: 0
+    description: |
+      Column address bit width. Set to zero if the flash does not support
+      column address. See the CAS field in registers FLASHA1CR0 through
+      FLASHB2CR0. The default corresponds to the reset value of the register
+      field.
 
-    word-addressable:
-      type: boolean
-      required: false
-      description: |
-        Don't transmit the least significant address bit when the flash is word
-        addressable. See the WA field in registers FLASHA1CR0 through
-        FLASHB2CR0.
+  word-addressable:
+    type: boolean
+    description: |
+      Don't transmit the least significant address bit when the flash is word
+      addressable. See the WA field in registers FLASHA1CR0 through
+      FLASHB2CR0.
 
-    ahb-write-wait-unit:
-      type: int
-      required: false
-      default: 2
-      enum:
-        - 2
-        - 8
-        - 32
-        - 128
-        - 512
-        - 2048
-        - 8192
-        - 32768
-      description: |
-        AHB write wait interval units, in AHB clock cycles. See the AWRWAITUNIT
-        field in registers FLASHA1CR2 through FLASHB2CR2. The default
-        corresponds to the reset value of the register field.
+  ahb-write-wait-unit:
+    type: int
+    default: 2
+    enum:
+      - 2
+      - 8
+      - 32
+      - 128
+      - 512
+      - 2048
+      - 8192
+      - 32768
+    description: |
+      AHB write wait interval units, in AHB clock cycles. See the AWRWAITUNIT
+      field in registers FLASHA1CR2 through FLASHB2CR2. The default
+      corresponds to the reset value of the register field.
 
-    ahb-write-wait-interval:
-      type: int
-      required: false
-      default: 0
-      description: |
-        Time to wait between AHB triggered command sequences. See the AWRWAIT
-        field in registers FLASHA1CR2 through FLASHB2CR2. The default
-        corresponds to the reset value of the register field.
+  ahb-write-wait-interval:
+    type: int
+    default: 0
+    description: |
+      Time to wait between AHB triggered command sequences. See the AWRWAIT
+      field in registers FLASHA1CR2 through FLASHB2CR2. The default
+      corresponds to the reset value of the register field.

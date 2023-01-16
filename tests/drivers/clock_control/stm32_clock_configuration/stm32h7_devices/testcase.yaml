@@ -1,11 +1,13 @@
 common:
-    timeout: 5
-    platform_allow: nucleo_h723zg
+  timeout: 5
+  platform_allow: nucleo_h723zg
 tests:
   drivers.stm32_clock_configuration.h7_dev.spi1_pllq_1_d1ppre_1:
     extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_pllq_1_d1ppre_1.overlay"
   drivers.stm32_clock_configuration.h7_dev.spi1_pllq_2_d1ppre_4:
     extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_pllq_2_d1ppre_4.overlay"
+  drivers.stm32_clock_configuration.h7_dev.spi1_pll2p_1:
+    extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_pll2p_1.overlay"
   drivers.stm32_clock_configuration.h7_dev.spi1_pll3p_1_d1ppre_4:
     extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_pll3p_1_d1ppre_4.overlay"
   drivers.stm32_clock_configuration.h7_dev.spi1_per_ck_d1ppre_1:

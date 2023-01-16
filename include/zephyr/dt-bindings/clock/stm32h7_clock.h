@@ -14,10 +14,9 @@
 #define STM32_SRC_PLL1_P	0x001
 #define STM32_SRC_PLL1_Q	0x002
 #define STM32_SRC_PLL1_R	0x003
-/** PLL2 not yet supported */
-/* #define STM32_SRC_PLL2_P	0x004 */
-/* #define STM32_SRC_PLL2_Q	0x005 */
-/* #define STM32_SRC_PLL2_R	0x006 */
+#define STM32_SRC_PLL2_P	0x004
+#define STM32_SRC_PLL2_Q	0x005
+#define STM32_SRC_PLL2_R	0x006
 #define STM32_SRC_PLL3_P	0x007
 #define STM32_SRC_PLL3_Q	0x008
 #define STM32_SRC_PLL3_R	0x009
@@ -25,8 +24,7 @@
 #define STM32_SRC_HSE		0x00A
 #define STM32_SRC_LSE		0x00B
 #define STM32_SRC_LSI		0x00C
-/** Oscillators not yet supported */
-/* #define STM32_SRC_HSI48	0x00D */
+#define STM32_SRC_HSI48		0x00D
 #define STM32_SRC_HSI_KER	0x00E /* HSI + HSIKERON */
 #define STM32_SRC_CSI_KER	0x00F /* CSI + CSIKERON */
 /** Core clock */

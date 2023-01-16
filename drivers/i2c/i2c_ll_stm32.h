@@ -29,7 +29,8 @@ struct i2c_stm32_config {
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	irq_config_func_t irq_config_func;
 #endif
-	struct stm32_pclken pclken;
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
 	I2C_TypeDef *i2c;
 	uint32_t bitrate;
 	const struct pinctrl_dev_config *pcfg;

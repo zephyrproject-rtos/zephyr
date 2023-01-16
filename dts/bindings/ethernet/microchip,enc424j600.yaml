@@ -9,11 +9,11 @@ compatible: "microchip,enc424j600"
 include: [spi-device.yaml, ethernet.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      required: true
-      description: Interrupt pin.
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin.
 
-        The interrupt pin of ENC424J600 is active low.
-        If connected directly the MCU pin should be configured
-        as active low.
+      The interrupt pin of ENC424J600 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.

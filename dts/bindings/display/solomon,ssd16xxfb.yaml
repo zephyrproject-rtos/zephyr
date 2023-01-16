@@ -8,101 +8,90 @@ compatible: "solomon,ssd16xxfb"
 include: [spi-device.yaml, display-controller.yaml]
 
 properties:
-    pp-height-bits:
-      type: int
-      required: true
-      description: Number of bits used for the height parameters
+  pp-height-bits:
+    type: int
+    required: true
+    description: Number of bits used for the height parameters
 
-    pp-width-bits:
-      type: int
-      required: true
-      description: Number of bits used for the width parameters
+  pp-width-bits:
+    type: int
+    required: true
+    description: Number of bits used for the width parameters
 
-    gdv:
-      type: uint8-array
-      required: false
-      description: Gate driving voltage values
+  gdv:
+    type: uint8-array
+    description: Gate driving voltage values
 
-    sdv:
-      type: uint8-array
-      required: false
-      description: Source driving voltage values
+  sdv:
+    type: uint8-array
+    description: Source driving voltage values
 
-    vcom:
-      type: int
-      required: false
-      description: VCOM voltage
+  vcom:
+    type: int
+    description: VCOM voltage
 
-    border-waveform:
-      type: int
-      required: false
-      description: Border waveform
+  border-waveform:
+    type: int
+    description: Border waveform
 
-    softstart:
-      type: uint8-array
-      required: false
-      description: Booster soft start values
+  softstart:
+    type: uint8-array
+    description: Booster soft start values
 
-    orientation-flipped:
-      type: boolean
-      required: false
-      description: Last column address is mapped to first segment
+  orientation-flipped:
+    type: boolean
+    description: Last column address is mapped to first segment
 
-    reset-gpios:
-      type: phandle-array
-      required: true
-      description: RESET pin.
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: RESET pin.
 
-        The RESET pin of SSD16XX is active low.
-        If connected directly the MCU pin should be configured
-        as active low.
+      The RESET pin of SSD16XX is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
 
-    dc-gpios:
-      type: phandle-array
-      required: true
-      description: DC pin.
+  dc-gpios:
+    type: phandle-array
+    required: true
+    description: DC pin.
 
-        The DC pin of SSD16XX is active low (transmission command byte).
-        If connected directly the MCU pin should be configured
-        as active low.
+      The DC pin of SSD16XX is active low (transmission command byte).
+      If connected directly the MCU pin should be configured
+      as active low.
 
-    busy-gpios:
-      type: phandle-array
-      required: true
-      description: BUSY pin.
+  busy-gpios:
+    type: phandle-array
+    required: true
+    description: BUSY pin.
 
-        The BUSY pin of SSD16XX is active high.
-        If connected directly the MCU pin should be configured
-        as active high.
+      The BUSY pin of SSD16XX is active high.
+      If connected directly the MCU pin should be configured
+      as active high.
 
-    lut-initial:
-      type: uint8-array
-      required: false
-      description: |
-        Initial LUT used when initializing the device and performing
-        clearing the screen using a full refresh operation. The
-        default LUT will be loaded from OTP if this property isn't
-        defined.
+  lut-initial:
+    type: uint8-array
+    description: |
+      Initial LUT used when initializing the device and performing
+      clearing the screen using a full refresh operation. The
+      default LUT will be loaded from OTP if this property isn't
+      defined.
 
-    lut-default:
-      type: uint8-array
-      required: false
+  lut-default:
+    type: uint8-array
 
-    tssv:
-      type: int
-      required: false
-      description: Temperature Sensor Selection Value
+  tssv:
+    type: int
+    description: Temperature Sensor Selection Value
 
-        Display controller can have integrated temperature sensor or
-        an external temperature sensor is connected to the controller.
-        The value selects which sensor should be used.
+      Display controller can have integrated temperature sensor or
+      an external temperature sensor is connected to the controller.
+      The value selects which sensor should be used.
 
-    dummy-line:
-      type: int
-      required: false
-      description: Dummy line period override.
+  dummy-line:
+    type: int
+    description: Dummy line period override.
 
-    gate-line-width:
-      type: int
-      required: false
-      description: Gate line width override.
+  gate-line-width:
+    type: int
+    description: Gate line width override.

@@ -46,6 +46,7 @@
 #define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID 7
 #define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID     9
 #define LWM2M_OBJECT_PORTFOLIO_ID               16
+#define LWM2M_OBJECT_BINARYAPPDATACONTAINER_ID	19
 #define LWM2M_OBJECT_EVENT_LOG_ID               20
 #define LWM2M_OBJECT_GATEWAY_ID                 25
 /* clang-format on */
@@ -1397,7 +1398,7 @@ void lwm2m_rd_client_update(void);
 /**
  * @brief LwM2M path maximum length
  */
-#define LWM2M_MAX_PATH_STR_LEN sizeof("65535/65535/65535/65535")
+#define LWM2M_MAX_PATH_STR_SIZE sizeof("/65535/65535/65535/65535")
 
 /**
  * @brief Helper function to print path objects' contents to log

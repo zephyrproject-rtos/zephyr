@@ -1,5 +1,7 @@
 common:
   platform_allow: native_posix native_posix_64
+  integration_platforms:
+    - native_posix_64
   tags: net traffic_class
 tests:
   net.traffic_class.1:
@@ -34,7 +36,7 @@ tests:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=8
       - CONFIG_NET_TC_RX_COUNT=8
-# TX multi queue, RX one queue
+  # TX multi queue, RX one queue
   net.traffic_class.2_no_rx:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=2
@@ -63,7 +65,7 @@ tests:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=8
       - CONFIG_NET_TC_RX_COUNT=1
-# TX one queue, RX multi queue
+  # TX one queue, RX multi queue
   net.traffic_class.2_no_tx:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=2
@@ -92,7 +94,7 @@ tests:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=8
       - CONFIG_NET_TC_TX_COUNT=1
-# Then test some hybrid combinations.
+  # Then test some hybrid combinations.
   net.traffic_class.tx_2_rx_3:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=3

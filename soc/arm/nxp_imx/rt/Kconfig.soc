@@ -609,6 +609,7 @@ config SOC_SERIES_IMX_RT10XX
 	bool "i.MX RT 10XX Series"
 	select CPU_CORTEX_M7
 	select CPU_CORTEX_M_HAS_DWT
+	select PLATFORM_SPECIFIC_INIT
 
 config SOC_SERIES_IMX_RT11XX
 	bool "i.MX RT 11XX Series"
@@ -650,7 +651,7 @@ config PM_MCUX_PMU
 
 menuconfig NXP_IMX_RT_BOOT_HEADER
 	bool "Boot header"
-	depends on !BOOTLOADER_MCUBOOT
+	depends on ((!BOOTLOADER_MCUBOOT) && (CODE_FLEXSPI || CODE_FLEXSPI2))
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.
@@ -722,6 +723,10 @@ config CODE_FLEXSPI2
 
 config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
+
+config CODE_OCRAM
+	bool "Link code into OCRAM memory (OCRAM-M4)"
+
 endchoice
 
 config OCRAM_NOCACHE
@@ -732,5 +737,15 @@ config OCRAM_NOCACHE
 	  Creates linker section and MPU region for OCRAM region with
 	  noncacheable attribute. OCRAM memory is useful for fast DMA transfers.
 
+config SECOND_CORE_MCUX
+	bool "Dual core operation on the RT11xx series"
+	depends on SOC_SERIES_IMX_RT11XX
+	help
+	  Indicates the second core will be enabled, and the part will run
+	  in dual core mode. Enables dual core operation on the RT11xx series,
+	  by booting an image targeting the Cortex-M4 from the Cortex-M7 CPU.
+	  The M4 image will be loaded from flash into RAM based off a
+	  generated header specifying the VMA and LMA of each memory section
+	  to load
 
 endif # SOC_SERIES_IMX_RT

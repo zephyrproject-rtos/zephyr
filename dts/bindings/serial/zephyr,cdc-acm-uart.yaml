@@ -8,3 +8,16 @@ compatible: "zephyr,cdc-acm-uart"
 include: uart-controller.yaml
 
 on-bus: usb
+
+properties:
+  tx-fifo-size:
+    type: int
+    default: 1024
+    description: |
+      Size of the virtual CDC ACM UART TX FIFO
+
+  rx-fifo-size:
+    type: int
+    default: 1024
+    description: |
+      Size of the virtual CDC ACM UART RX FIFO

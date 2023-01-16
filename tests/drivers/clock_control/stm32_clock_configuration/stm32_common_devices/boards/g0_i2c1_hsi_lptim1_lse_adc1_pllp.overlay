@@ -77,7 +77,7 @@
 };
 
 &adc1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>,
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00100000>,
 			<&rcc STM32_SRC_PLL_P ADC_SEL(1)>;
 	status = "okay";
 };

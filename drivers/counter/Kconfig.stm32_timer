@@ -6,5 +6,6 @@ config COUNTER_TIMER_STM32
 	default y
 	depends on DT_HAS_ST_STM32_COUNTER_ENABLED
 	select USE_STM32_LL_TIM
+	select RESET
 	help
 	  Enable the counter driver for STM32 family of processors.

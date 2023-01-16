@@ -6,6 +6,7 @@ toolchain:
   - zephyr
 ram: 64
 simulation: renode
+simulation_exec: renode
 testing:
   default: true
   ignore_tags:

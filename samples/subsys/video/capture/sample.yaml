@@ -6,3 +6,5 @@ tests:
     tags: video
     platform_allow: mimxrt1064_evk mm_swiftio
     depends_on: video
+    integration_platforms:
+      - mimxrt1064_evk

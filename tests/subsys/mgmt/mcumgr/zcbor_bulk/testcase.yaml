@@ -5,5 +5,5 @@
 #
 tests:
   mgmt.mcumgr.zcbor.bulk:
-    platform_allow: native_posix
+    platform_allow: native_posix qemu_cortex_m0 qemu_cortex_m3
     tags: zcbor_bulk mgmt mcumgr

@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt1160_cm4.dtsi>
+#include <nxp/nxp_rt11xx_cm4.dtsi>
 #include "mimxrt1160_evk.dtsi"
 
 / {
@@ -25,6 +25,8 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
+		nxp,m4-partition = &slot1_partition;
+		zephyr,ipc = &mailbox_b;
 	};
 
 
@@ -45,59 +47,22 @@
 	status = "okay";
 };
 
-&flexspi {
-	status = "okay";
-	ahb-prefetch;
-	ahb-read-addr-opt;
-	rx-clock-source = <1>;
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
-	is25wp128: is25wp128@0 {
-		compatible = "nxp,imx-flexspi-nor";
-		size = <134217728>;
-		reg = <0>;
-		spi-max-frequency = <133000000>;
-		status = "okay";
-		jedec-id = [9d 70 17];
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			boot_partition: partition@0 {
-				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(128)>;
-			};
-			/* Note slot 0 has one additional sector,
-			 * this is intended for use with the swap move algorithm
-			 */
-			slot0_partition: partition@20000 {
-				label = "image-0";
-				reg = <0x00020000 0x301000>;
-			};
-			slot1_partition: partition@321000 {
-				label = "image-1";
-				reg = <0x00321000 0x300000>;
-			};
-			scratch_partition: partition@621000 {
-				label = "image-scratch";
-				reg = <0x00621000 DT_SIZE_K(128)>;
-			};
-			storage_partition: partition@641000 {
-				label = "storage";
-				reg = <0x00641000 DT_SIZE_K(1856)>;
-			};
-		};
-	};
-};
-
-/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
- * to use systick, change this node from "gpt_hw_timer" to "systick"
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
  */
 &gpt_hw_timer {
 	status = "okay";
 };
 
+&systick {
+	status = "okay";
+};
+
 &edma_lpsr0 {
+	status = "okay";
+};
+
+&mailbox_b {
 	status = "okay";
 };

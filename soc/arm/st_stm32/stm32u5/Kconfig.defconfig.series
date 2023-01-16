@@ -10,7 +10,7 @@ source "soc/arm/st_stm32/stm32u5/Kconfig.defconfig.stm32u5*"
 config SOC_SERIES
 	default "stm32u5"
 
-config MCUBOOT_EXTRA_IMGTOOL_ARGS
-	default "--header-size 1024" if BOOTLOADER_MCUBOOT
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
 
 endif # SOC_SERIES_STM32U5X

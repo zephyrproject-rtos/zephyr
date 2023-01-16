@@ -3,10 +3,11 @@ common:
   platform_exclude: native_posix native_posix_64 nrf52_bsim
 tests:
   libraries.libc:
-    tags: ignore_faults
+    ignore_faults: true
   libraries.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
-    tags: picolibc ignore_faults
+    tags: picolibc
+    ignore_faults: true
     extra_configs:
       - CONFIG_PICOLIBC=y
   libraries.libc.minimal.strerror_table:

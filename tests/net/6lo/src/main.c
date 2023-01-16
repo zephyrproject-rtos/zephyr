@@ -219,6 +219,12 @@ static const char user_data[] =
 		"0123456789012345678901234567890123456789"
 		"0123456789012345678901234567890123456789";
 
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#define TEST_FRAG_LEN CONFIG_NET_BUF_DATA_SIZE
+#else
+#define TEST_FRAG_LEN 128
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+
 struct user_data_small {
 	char data[SIZE_OF_SMALL_DATA];
 };
@@ -474,7 +480,7 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	net_pkt_lladdr_dst(pkt)->addr = dst_mac;
 	net_pkt_lladdr_dst(pkt)->len = 8U;
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, NET_IPV6UDPH_LEN, K_FOREVER);
 	if (!frag) {
 		net_pkt_unref(pkt);
 		return NULL;
@@ -536,7 +542,7 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 		net_pkt_frag_add(pkt, frag);
 
 		if (remaining > 0) {
-			frag = net_pkt_get_frag(pkt, K_FOREVER);
+			frag = net_pkt_get_frag(pkt, TEST_FRAG_LEN, K_FOREVER);
 		}
 	}
 

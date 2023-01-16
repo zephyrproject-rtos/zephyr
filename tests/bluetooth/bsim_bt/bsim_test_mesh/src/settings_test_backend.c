@@ -39,9 +39,12 @@ static char setting_file_tmp[sizeof(setting_file) + 1];
 static int entry_check_and_copy(FILE *fin, FILE *fout, const char *name)
 {
 	char line[READ_LEN_MAX + 1];
+	char name_tmp[strlen(name) + 2];
+
+	snprintk(name_tmp, sizeof(name_tmp), "%s=", name);
 
 	while (fgets(line, sizeof(line), fin) == line) {
-		if (strstr(line, name) != NULL) {
+		if (strstr(line, name_tmp) != NULL) {
 			return 0;
 		}
 

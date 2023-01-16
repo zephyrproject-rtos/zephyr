@@ -42,6 +42,7 @@ BUILD_ASSERT(CHAN_COUNT <= RTC_CH_COUNT, "Not enough compare channels");
 static volatile uint32_t overflow_cnt;
 static volatile uint64_t anchor;
 static uint64_t last_count;
+static bool sys_busy;
 
 struct z_nrf_rtc_timer_chan_data {
 	z_nrf_rtc_timer_compare_handler_t callback;
@@ -547,6 +548,41 @@ void z_nrf_rtc_timer_chan_free(int32_t chan)
 }
 
 
+int z_nrf_rtc_timer_trigger_overflow(void)
+{
+	uint32_t mcu_critical_state;
+	int err = 0;
+
+	if (!IS_ENABLED(CONFIG_NRF_RTC_TIMER_TRIGGER_OVERFLOW) ||
+	    (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT > 0)) {
+		return -ENOTSUP;
+	}
+
+	mcu_critical_state = full_int_lock();
+	if (sys_busy) {
+		err = -EBUSY;
+		goto bail;
+	}
+
+	if (counter() >= (COUNTER_SPAN - 100)) {
+		err = -EAGAIN;
+		goto bail;
+	}
+
+	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_TRIGGER_OVERFLOW);
+	k_busy_wait(80);
+
+	uint64_t now = z_nrf_rtc_timer_read();
+
+	if (err == 0) {
+		sys_clock_timeout_handler(0, now, NULL);
+	}
+bail:
+	full_int_unlock(mcu_critical_state);
+
+	return err;
+}
+
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -558,6 +594,10 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	/* If timeout is set to max we assume that system is idle and timeout
+	 * is set to forever.
+	 */
+	sys_busy = (ticks < (MAX_TICKS - 1));
 
 	uint32_t unannounced = z_nrf_rtc_timer_read() - last_count;
 
@@ -637,8 +677,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	}
 
 	uint32_t initial_timeout = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
-		(COUNTER_HALF_SPAN - 1) :
-		(counter() + CYC_PER_TICK);
+		MAX_TICKS : (counter() + CYC_PER_TICK);
 
 	compare_set(0, initial_timeout, sys_clock_timeout_handler, NULL);
 

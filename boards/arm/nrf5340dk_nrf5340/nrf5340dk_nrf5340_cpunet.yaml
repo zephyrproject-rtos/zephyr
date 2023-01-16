@@ -10,3 +10,4 @@ ram: 64
 flash: 256
 supported:
   - watchdog
+  - gpio

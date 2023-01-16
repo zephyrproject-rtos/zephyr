@@ -14,11 +14,11 @@ CONFIG_CLOCK_CONTROL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# PRELIMINARY: Don't enable MPU to prevent random MPU faults in Zephyr LoRa driver
-#CONFIG_ARM_MPU=y
+# Enable MPU
+CONFIG_ARM_MPU=y
 
-# PRELIMINARY: Don't enable HW stack protection (only available with MPU)
-#CONFIG_HW_STACK_PROTECTION=y
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
 
 # enable pin controller
 CONFIG_PINCTRL=y

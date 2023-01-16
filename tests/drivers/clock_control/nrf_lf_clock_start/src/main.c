@@ -89,6 +89,34 @@ ZTEST(nrf_lf_clock_start, test_wait_in_thread)
 
 void *test_init(void)
 {
+	TC_PRINT("CLOCK_CONTROL_NRF_K32SRC=%s\n",
+		IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)    ? "RC" :
+		IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH) ? "SYNTH" :
+		IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL)  ? "XTAL"
+								  : "???");
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT)) {
+		TC_PRINT("SYSTEM_CLOCK_NO_WAIT=y\n");
+	}
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY)) {
+		TC_PRINT("SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY=y\n");
+	}
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_STABILITY)) {
+		TC_PRINT("SYSTEM_CLOCK_WAIT_FOR_STABILITY=y\n");
+	}
+	return NULL;
+}
+ZTEST_SUITE(nrf_lf_clock_start, NULL, test_init, NULL, NULL, NULL);
+
+/* This test needs to read the LF clock state soon after the system clock is
+ * started (to check if the starting routine waits for the LF clock or not),
+ * so do it at the beginning of the POST_KERNEL stage (the system clock is
+ * started in PRE_KERNEL_2). Reading of the clock state in the ZTEST setup
+ * function turns out to be too late.
+ */
+static int get_lfclk_state(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
 	/* Do clock state read as early as possible. When RC is already running
 	 * and XTAL has been started then LFSRCSTAT register content might be
 	 * not valid, in that case read system clock to check if it has
@@ -98,19 +126,6 @@ void *test_init(void)
 	k_busy_wait(100);
 	rtc_cnt = k_cycle_get_32();
 
-	 TC_PRINT("CLOCK_CONTROL_NRF_K32SRC=%s\n",
-		IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC) ? "RC"
-		: IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH) ? "SYNTH"
-		: IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL) ? "XTAL"
-		: "???");
-	TC_PRINT("SYSTEM_CLOCK_NO_WAIT=%c\n",
-		 IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ? 'y' : 'n');
-	TC_PRINT("SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY=%c\n",
-		 IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
-		 'y' : 'n');
-	TC_PRINT("SYSTEM_CLOCK_WAIT_FOR_STABILITY=%c\n",
-		 IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_STABILITY) ?
-		 'y' : 'n');
-	return NULL;
+	return 0;
 }
-ZTEST_SUITE(nrf_lf_clock_start, NULL, test_init, NULL, NULL, NULL);
+SYS_INIT(get_lfclk_state, POST_KERNEL, 0);

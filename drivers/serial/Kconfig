@@ -204,6 +204,8 @@ source "drivers/serial/Kconfig.xen"
 
 source "drivers/serial/Kconfig.smartbond"
 
-source "drivers/serial/Kconfig.s32"
+source "drivers/serial/Kconfig.nxp_s32"
+
+source "drivers/serial/Kconfig.cdns"
 
 endif # SERIAL

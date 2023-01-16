@@ -43,13 +43,24 @@
 		bs_trace_info_time(1, "%s PASSED\n", __func__);                \
 	} while (0)
 
-#define ASSERT_OK(cond, ...)                                                   \
+#define ASSERT_OK(cond)                                                        \
 	do {                                                                   \
 		int _err = (cond);                                             \
 		if (_err) {                                                    \
 			bst_result = Failed;                                   \
 			bs_trace_error_time_line(                              \
 				#cond " failed with error %d\n", _err);        \
+		}                                                              \
+	} while (0)
+
+#define ASSERT_OK_MSG(cond, fmt, ...)                                          \
+	do {                                                                   \
+		int _err = (cond);                                             \
+		if (_err) {                                                    \
+			bst_result = Failed;                                   \
+			bs_trace_error_time_line(                              \
+				#cond " failed with error %d\n" fmt, _err,     \
+				##__VA_ARGS__);                                \
 		}                                                              \
 	} while (0)
 

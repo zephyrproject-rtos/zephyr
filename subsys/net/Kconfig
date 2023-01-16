@@ -13,12 +13,6 @@ config NET_BUF
 
 if NET_BUF
 
-config NET_BUF_USER_DATA_SIZE
-	int "Size of user_data available in every network buffer (DEPRECATED)"
-	default 0
-	help
-	  User data size is now set on a per-pool basis at declaration point
-
 config NET_BUF_LOG
 	bool "Network buffer logging"
 	select LOG

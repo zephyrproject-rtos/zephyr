@@ -17,7 +17,8 @@ description: |
   and asymmetric configuration. MCPWMxA and MCPWMxB will share the same timer, thus having the same
   operating frequency.
 
-  The driver currently always use the timer x for operator x. Timer 0 will use operator 0 for PWM0A/B.
+  The driver currently always use the timer x for operator x. Timer 0 will use operator 0 for
+  PWM0A/B.
   Timer 1 will use operator 1 for PWM1A/B, and so on.
 
   Mapping channel ID:
@@ -93,21 +94,18 @@ properties:
 
   prescale-timer0:
     type: int
-    required: false
     description: |
       8 bit timer prescale for timer 0.
       Period of PT0_clk = Period of PWM_clk * (PWM_TIMER0_PRESCALE + 1).
 
   prescale-timer1:
     type: int
-    required: false
     description: |
       8 bit timer prescale for timer 1.
       Period of PT1_clk = Period of PWM_clk * (PWM_TIMER1_PRESCALE + 1).
 
   prescale-timer2:
     type: int
-    required: false
     description: |
       8 bit timer prescale for timer 2.
       Period of PT2_clk = Period of PWM_clk * (PWM_TIMER2_PRESCALE + 1).

@@ -125,7 +125,7 @@ CBOR data of successful response:
         (str,opt)"splitStatus" : (int)
     }
 
-In case of error the CBOR data takes form:
+In case of error the CBOR data takes the form:
 
 .. code-block:: none
 
@@ -153,12 +153,10 @@ where:
     +-----------------------+---------------------------------------------------+
     | "hash"                | hash of an upload; this is used to identify       |
     |                       | an upload session, for example to allow mcumgr    |
-    |                       | library to continue broken session                |
-    |                       |                                                   |
-    |                       | .. note::                                         |
-    |                       |    By default mcumgr-cli uses here a few          |
-    |                       |    characters of sha256 of the first uploaded     |
-    |                       |    chunk.                                         |
+    |                       | library to continue broken session. This must be  |
+    |                       | a full sha256 of the whole image being uploaded,  |
+    |                       | and is optionally used for image verification     |
+    |                       | purposes.                                         |
     +-----------------------+---------------------------------------------------+
     | "bootable"            | true if image has bootable flag set;              |
     |                       | this field does not have to be present if false   |
@@ -180,6 +178,7 @@ where:
     |                       | with application part; this is unused by Zephyr   |
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
     | "rsn"                 | optional string that clarifies reason for an      |
     |                       | error; specifically useful for error code ``1``,  |
@@ -319,13 +318,19 @@ Set state of image request header fields:
     | ``3``  | ``1``        |  ``1``         |
     +--------+--------------+----------------+
 
-CBOR data of response:
-
+CBOR data of successful response:
 
 .. code-block:: none
 
     {
         (str,opt)"off"  : (uint)
+    }
+
+In case of error the CBOR data takes the form:
+
+.. code-block:: none
+
+    {
         (str)"rc"       : (int)
         (str,opt)"rsn"  : (str)
     }
@@ -339,6 +344,7 @@ where:
     | "off"                 | offset of last successfully written byte of update|
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
     | "rsn"                 | Optional string that clarifies reason for an      |
     |                       | error; specifically useful for error code ``1``,  |
@@ -405,7 +411,8 @@ Image erase response header fields:
     | ``3``  | ``1``        |  ``5``         |
     +--------+--------------+----------------+
 
-CBOR data of response:
+The command sends an empty CBOR map as data if successful. In case of error the
+CBOR data takes the form:
 
 .. code-block:: none
 
@@ -421,6 +428,7 @@ where:
 
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
     | "rsn"                 | Optional string that clarifies reason for an      |
     |                       | error; specifically useful for error code ``1``,  |

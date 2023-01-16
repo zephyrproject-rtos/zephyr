@@ -5,7 +5,6 @@
  */
 #include <xtensa-asm2-s.h>
 #include <offsets.h>
-#include <zephyr/toolchain.h>
 #include <zsr.h>
 
 /*
@@ -152,6 +151,10 @@ _restore_context:
 	wsr a0, ZSR_EPC
 	l32i a0, a1, BSA_PS_OFF
 	wsr a0, ZSR_EPS
+
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_RESTORE
+#endif
 
 	l32i a0, a1, BSA_SAR_OFF
 	wsr a0, SAR

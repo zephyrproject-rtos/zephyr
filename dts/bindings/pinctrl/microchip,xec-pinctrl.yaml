@@ -63,59 +63,63 @@ description: |
 
 compatible: "microchip,xec-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-pull-down
-          - bias-pull-up
-          - drive-push-pull
-          - drive-open-drain
-          - low-power-enable
-          - output-high
-          - output-low
+include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
 child-binding:
-    description: |
-      This binding gives a base representation of the Microchip XEC pins
-      configuration
+  description: |
+    This binding gives a base representation of the Microchip XEC pins
+    configuration
 
-    properties:
-        pinmux:
-            type: int
-            required: true
-            description: Pinmux selection
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-push-pull
+        - drive-open-drain
+        - low-power-enable
+        - output-high
+        - output-low
 
-        slew-rate:
-          required: false
-          type: string
-          default: "low-speed"
-          enum:
-          - "low-speed"
-          - "high-speed"
-          description: |
-            Pin speed. The default value of slew-rate is the SoC power-on-reset
-            value. Please refer to the data sheet as a small number of pins
-            may have a different default and some pins do not implement
-            slew rate adjustment.
+  properties:
+    pinmux:
+      type: int
+      required: true
+      description: Pinmux selection
 
-        drive-strength:
-          required: false
-          type: string
-          default: "1x"
-          enum:
-            - "1x"
-            - "2x"
-            - "4x"
-            - "6x"
-          description: |
-            Pin output drive strength for PIO and PIO-24 pin types. Default
-            is "1x" for most pins. PIO pins are 2, 4, 8, or 12 mA. PIO-24 pins
-            are 4, 8, 16, or 24 mA. Please refer to the data sheet for each
-            pin's PIO type and default drive strength.
+    slew-rate:
+      type: string
+      default: "low-speed"
+      enum:
+        - "low-speed"
+        - "high-speed"
+      description: |
+        Pin speed. The default value of slew-rate is the SoC power-on-reset
+        value. Please refer to the data sheet as a small number of pins
+        may have a different default and some pins do not implement
+        slew rate adjustment.
+
+    drive-strength:
+      type: string
+      default: "1x"
+      enum:
+        - "1x"
+        - "2x"
+        - "4x"
+        - "6x"
+      description: |
+        Pin output drive strength for PIO and PIO-24 pin types. Default
+        is "1x" for most pins. PIO pins are 2, 4, 8, or 12 mA. PIO-24 pins
+        are 4, 8, 16, or 24 mA. Please refer to the data sheet for each
+        pin's PIO type and default drive strength.
+
+    microchip,output-func-invert:
+      type: boolean
+      description:
+        Invert polarity of an output alternate function. Input functions
+        are not affected.

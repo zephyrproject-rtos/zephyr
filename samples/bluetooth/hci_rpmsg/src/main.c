@@ -28,9 +28,9 @@
 #include <zephyr/logging/log_ctrl.h>
 #endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
 
-#define BT_DBG_ENABLED 0
-#define LOG_MODULE_NAME hci_rpmsg
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(hci_rpmsg, CONFIG_BT_LOG_LEVEL);
 
 static struct ipc_ept hci_ept;
 
@@ -211,8 +211,7 @@ static void hci_rpmsg_send(struct net_buf *buf, bool is_fatal_err)
 	uint8_t retries = 0;
 	int ret;
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
-		buf->len);
+	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Controller buffer:");
 

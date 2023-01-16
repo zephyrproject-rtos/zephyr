@@ -8,24 +8,23 @@ include: base.yaml
 bus: dmamux
 
 properties:
-    "#dma-cells":
-      type: int
-      required: true
-      description: Number of items to expect in a DMA specifier (see dma V2)
+  "#dma-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a DMA specifier (see dma V2)
 
-    dma-channels:
-      type: int
-      required: true
-      description: Number of DMAMUX output request channels supported by the controller
+  dma-channels:
+    type: int
+    required: true
+    description: Number of DMAMUX output request channels supported by the controller
 
-    dma-generators:
-      type: int
-      required: false
-      description: Number of DMAMUX Request generator supported by the controller
+  dma-generators:
+    type: int
+    description: Number of DMAMUX Request generator supported by the controller
 
-    dma-requests:
-      type: int
-      required: true
-      description: |
-        Number of DMAMUX Peripheral Request Line inputs supported by the controller
-        This is not directly the value to program in the DMAREQ_ID of the DMAMUX_CxCR
+  dma-requests:
+    type: int
+    required: true
+    description: |
+      Number of DMAMUX Peripheral Request Line inputs supported by the controller
+      This is not directly the value to program in the DMAREQ_ID of the DMAMUX_CxCR

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/sys/atomic.h>
@@ -19,9 +20,9 @@
 
 #define LOWEST_POSIX_THREAD_PRIORITY 1
 
-K_MUTEX_DEFINE(pthread_key_lock);
+K_MUTEX_DEFINE(pthread_once_lock);
 
-static const pthread_attr_t init_pthread_attrs = {
+static const struct pthread_attr init_pthread_attrs = {
 	.priority = LOWEST_POSIX_THREAD_PRIORITY,
 	.stack = NULL,
 	.stacksize = 0,
@@ -99,9 +100,9 @@ static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
  *
  * See IEEE 1003.1
  */
-int pthread_attr_setschedparam(pthread_attr_t *attr,
-			       const struct sched_param *schedparam)
+int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *schedparam)
 {
+	struct pthread_attr *attr = (struct pthread_attr *)_attr;
 	int priority = schedparam->sched_priority;
 
 	if ((attr == NULL) || (attr->initialized == 0U) ||
@@ -118,9 +119,10 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
  *
  * See IEEE 1003.1
  */
-int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
-			  size_t stacksize)
+int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksize)
 {
+	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+
 	if (stackaddr == NULL) {
 		return EACCES;
 	}
@@ -146,7 +148,7 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
  *
  * See IEEE 1003.1
  */
-int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
+int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 		   void *(*threadroutine)(void *), void *arg)
 {
 	int rv;
@@ -156,6 +158,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	k_spinlock_key_t cancel_key;
 	pthread_condattr_t cond_attr;
 	struct posix_thread *thread;
+	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
 
 	/*
 	 * FIXME: Pthread attribute must be non-null and it provides stack
@@ -352,14 +355,14 @@ int pthread_getschedparam(pthread_t pthread, int *policy,
  */
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
-	k_mutex_lock(&pthread_key_lock, K_FOREVER);
+	k_mutex_lock(&pthread_once_lock, K_FOREVER);
 
-	if (*once == PTHREAD_ONCE_INIT) {
+	if (once->is_initialized != 0 && once->init_executed == 0) {
 		init_func();
-		*once = 0;
+		once->init_executed = 1;
 	}
 
-	k_mutex_unlock(&pthread_key_lock);
+	k_mutex_unlock(&pthread_once_lock);
 
 	return 0;
 }
@@ -406,6 +409,8 @@ void pthread_exit(void *retval)
 
 	pthread_mutex_unlock(&self->state_lock);
 	pthread_mutex_destroy(&self->state_lock);
+
+	pthread_cond_destroy(&self->state_cond);
 
 	k_thread_abort((k_tid_t)self);
 }
@@ -499,8 +504,10 @@ int pthread_detach(pthread_t thread)
  *
  * See IEEE 1003.1
  */
-int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
+int pthread_attr_getdetachstate(const pthread_attr_t *_attr, int *detachstate)
 {
+	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
+
 	if ((attr == NULL) || (attr->initialized == 0U)) {
 		return EINVAL;
 	}
@@ -514,8 +521,10 @@ int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
  *
  * See IEEE 1003.1
  */
-int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
+int pthread_attr_setdetachstate(pthread_attr_t *_attr, int detachstate)
 {
+	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+
 	if ((attr == NULL) || (attr->initialized == 0U) ||
 	    (detachstate != PTHREAD_CREATE_DETACHED &&
 	     detachstate != PTHREAD_CREATE_JOINABLE)) {
@@ -532,8 +541,10 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
  *
  * See IEEE 1003.1
  */
-int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
+int pthread_attr_getschedpolicy(const pthread_attr_t *_attr, int *policy)
 {
+	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
+
 	if ((attr == NULL) || (attr->initialized == 0U)) {
 		return EINVAL;
 	}
@@ -548,8 +559,10 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
  *
  * See IEEE 1003.1
  */
-int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
+int pthread_attr_setschedpolicy(pthread_attr_t *_attr, int policy)
 {
+	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+
 	if ((attr == NULL) || (attr->initialized == 0U) ||
 	    (policy != SCHED_RR && policy != SCHED_FIFO)) {
 		return EINVAL;
@@ -564,8 +577,10 @@ int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
  *
  * See IEEE 1003.1
  */
-int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
+int pthread_attr_getstacksize(const pthread_attr_t *_attr, size_t *stacksize)
 {
+	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
+
 	if ((attr == NULL) || (attr->initialized == 0U)) {
 		return EINVAL;
 	}
@@ -580,8 +595,10 @@ int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
  *
  * See IEEE 1003.1
  */
-int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
+int pthread_attr_setstacksize(pthread_attr_t *_attr, size_t stacksize)
 {
+	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+
 	if ((attr == NULL) || (attr->initialized == 0U)) {
 		return EINVAL;
 	}
@@ -599,9 +616,10 @@ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
  *
  * See IEEE 1003.1
  */
-int pthread_attr_getstack(const pthread_attr_t *attr,
-				 void **stackaddr, size_t *stacksize)
+int pthread_attr_getstack(const pthread_attr_t *_attr, void **stackaddr, size_t *stacksize)
 {
+	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
+
 	if ((attr == NULL) || (attr->initialized == 0U)) {
 		return EINVAL;
 	}
@@ -616,9 +634,10 @@ int pthread_attr_getstack(const pthread_attr_t *attr,
  *
  * See IEEE 1003.1
  */
-int pthread_attr_getschedparam(const pthread_attr_t *attr,
-			       struct sched_param *schedparam)
+int pthread_attr_getschedparam(const pthread_attr_t *_attr, struct sched_param *schedparam)
 {
+	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+
 	if ((attr == NULL) || (attr->initialized == 0U)) {
 		return EINVAL;
 	}
@@ -632,8 +651,10 @@ int pthread_attr_getschedparam(const pthread_attr_t *attr,
  *
  * See IEEE 1003.1
  */
-int pthread_attr_destroy(pthread_attr_t *attr)
+int pthread_attr_destroy(pthread_attr_t *_attr)
 {
+	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+
 	if ((attr != NULL) && (attr->initialized != 0U)) {
 		attr->initialized = false;
 		return 0;
@@ -688,3 +709,18 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 	return 0;
 #endif
 }
+
+static int posix_thread_pool_init(const struct device *dev)
+{
+	size_t i;
+
+	ARG_UNUSED(dev);
+
+	for (i = 0; i < CONFIG_MAX_PTHREAD_COUNT; ++i) {
+		posix_thread_pool[i].state = PTHREAD_EXITED;
+	}
+
+	return 0;
+}
+
+SYS_INIT(posix_thread_pool_init, PRE_KERNEL_1, 0);

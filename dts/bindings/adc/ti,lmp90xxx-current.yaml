@@ -3,7 +3,6 @@
 include: ti,lmp90xxx-base.yaml
 
 properties:
-    rtd-current:
-      type: int
-      required: false
-      description: RTD current in microampere
+  rtd-current:
+    type: int
+    description: RTD current in microampere

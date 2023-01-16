@@ -8,35 +8,32 @@ compatible: "semtech,sx1509b"
 include: [i2c-device.yaml, gpio-controller.yaml]
 
 properties:
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
-    ngpios:
-      required: true
-      const: 16
+  ngpios:
+    required: true
+    const: 16
 
-    nint-gpios:
-      type: phandle-array
-      required: false
-      description: |
-        Connection for the NINT signal. This signal is active-low when
-        produced by sx1509b GPIO node.
+  nint-gpios:
+    type: phandle-array
+    description: |
+      Connection for the NINT signal. This signal is active-low when
+      produced by sx1509b GPIO node.
 
-    init-out-low:
-      type: int
-      required: false
-      default: 0
-      description: |
-        Bit mask identifying pins that should be initialized as outputs
-        driven low.
+  init-out-low:
+    type: int
+    default: 0
+    description: |
+      Bit mask identifying pins that should be initialized as outputs
+      driven low.
 
-    init-out-high:
-      type: int
-      required: false
-      default: 0
-      description: |
-        Bit mask identifying pins that should be initialized as outputs
-        driven high.
+  init-out-high:
+    type: int
+    default: 0
+    description: |
+      Bit mask identifying pins that should be initialized as outputs
+      driven high.
 
 gpio-cells:
   - pin

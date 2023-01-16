@@ -125,7 +125,7 @@ config MAX30101_LED2_PA
 	  0xff = 50.0 mA
 
 config MAX30101_LED3_PA
-	hex "LED2 (green) pulse amplitude"
+	hex "LED3 (green) pulse amplitude"
 	range 0 0xff
 	default 0xff
 	help

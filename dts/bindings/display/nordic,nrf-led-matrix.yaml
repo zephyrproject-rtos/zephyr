@@ -8,75 +8,74 @@ compatible: "nordic,nrf-led-matrix"
 include: display-controller.yaml
 
 properties:
-    row-gpios:
-      type: phandle-array
-      required: true
-      description: |
-        Array of GPIOs to be used as rows of the matrix.
+  row-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Array of GPIOs to be used as rows of the matrix.
 
-    col-gpios:
-      type: phandle-array
-      required: true
-      description: |
-        Array of GPIOs to be used as columns of the matrix.
+  col-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Array of GPIOs to be used as columns of the matrix.
 
-    pixel-mapping:
-      type: uint8-array
-      required: true
-      description: |
-        Array of bytes that specify which rows and columns of the matrix
-        control its particular pixels, line by line. Each byte in this
-        array corresponds to one pixel of the matrix and specifies the row
-        index in the high nibble and the column index in the low nibble.
+  pixel-mapping:
+    type: uint8-array
+    required: true
+    description: |
+      Array of bytes that specify which rows and columns of the matrix
+      control its particular pixels, line by line. Each byte in this
+      array corresponds to one pixel of the matrix and specifies the row
+      index in the high nibble and the column index in the low nibble.
 
-        For example, the following snippet (from the bbc_microbit board DTS):
+      For example, the following snippet (from the bbc_microbit board DTS):
 
-          width = <5>;
-          height = <5>;
-          pixel-mapping = [00 13 01 14 02
-                           23 24 25 26 27
-                           ...
+        width = <5>;
+        height = <5>;
+        pixel-mapping = [00 13 01 14 02
+                         23 24 25 26 27
+                         ...
 
-        specifies that:
-        - pixel (0,0) is controlled by row 0 and column 0
-        - pixel (1,0) is controlled by row 1 and column 3
-        - pixel (0,1) is controlled by row 2 and column 3
-        - pixel (1,1) is controlled by row 2 and column 4
-        and so on.
+      specifies that:
+      - pixel (0,0) is controlled by row 0 and column 0
+      - pixel (1,0) is controlled by row 1 and column 3
+      - pixel (0,1) is controlled by row 2 and column 3
+      - pixel (1,1) is controlled by row 2 and column 4
+      and so on.
 
-    refresh-frequency:
-      type: int
-      required: true
-      description: |
-        Frequency of refreshing the matrix, in Hz.
+  refresh-frequency:
+    type: int
+    required: true
+    description: |
+      Frequency of refreshing the matrix, in Hz.
 
-    timer:
-      type: phandle
-      required: true
-      description: |
-        Reference to a TIMER instance for controlling refreshing of the matrix.
+  timer:
+    type: phandle
+    required: true
+    description: |
+      Reference to a TIMER instance for controlling refreshing of the matrix.
 
-    pwm:
-      type: phandle
-      required: false
-      description: |
-        Reference to a PWM instance for generating pulse signals on column
-        GPIOs. If not provided, GPIOTE and PPI channels are allocated and
-        used instead for generating those pulses.
+  pwm:
+    type: phandle
+    description: |
+      Reference to a PWM instance for generating pulse signals on column
+      GPIOs. If not provided, GPIOTE and PPI channels are allocated and
+      used instead for generating those pulses.
 
-    pixel-group-size:
-      type: int
-      required: true
-      description: |
-        This value specifies the maximum number of LEDs in one row that can
-        be lit simultaneously.
-        If set to 1, only a single LED is turned on in a particular time slot.
-        Bigger values increase the maximum achievable brightness of the LEDs
-        and lower the CPU load by decreasing the frequency of execution of
-        the timer interrupt handler.
-        In case GPIOTE and PPI channels are used for generating the pixel pulse
-        signals, the number of channels that need to be allocated is equal to
-        this value.
-        If GPIOTE and PPI channels are used, the upper limit for the value is
-        defined by the number of CC channels in the used timer minus one.
-        If PWM is used, the upper limit is the number of PWM channels.
+  pixel-group-size:
+    type: int
+    required: true
+    description: |
+      This value specifies the maximum number of LEDs in one row that can
+      be lit simultaneously.
+      If set to 1, only a single LED is turned on in a particular time slot.
+      Bigger values increase the maximum achievable brightness of the LEDs
+      and lower the CPU load by decreasing the frequency of execution of
+      the timer interrupt handler.
+      In case GPIOTE and PPI channels are used for generating the pixel pulse
+      signals, the number of channels that need to be allocated is equal to
+      this value.
+      If GPIOTE and PPI channels are used, the upper limit for the value is
+      defined by the number of CC channels in the used timer minus one.
+      If PWM is used, the upper limit is the number of PWM channels.

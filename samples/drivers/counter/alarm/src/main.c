@@ -33,6 +33,14 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_MCUX_CTIMER)
 #define TIMER DT_NODELABEL(ctimer0)
+#elif defined(CONFIG_COUNTER_NXP_S32_SYS_TIMER)
+#define TIMER DT_NODELABEL(stm0)
+#elif defined(CONFIG_COUNTER_TIMER_GD32)
+#define TIMER DT_NODELABEL(timer0)
+#elif defined(CONFIG_COUNTER_GECKO_RTCC)
+#define TIMER DT_NODELABEL(rtcc0)
+#elif defined(CONFIG_COUNTER_GECKO_STIMER)
+#define TIMER DT_NODELABEL(stimer0)
 #endif
 
 static void test_counter_interrupt_fn(const struct device *counter_dev,

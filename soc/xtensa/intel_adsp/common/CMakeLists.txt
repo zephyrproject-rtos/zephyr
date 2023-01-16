@@ -99,3 +99,15 @@ add_custom_target(
       ${CMAKE_BINARY_DIR}/zephyr/main.mod
       ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>${NULL_FILE}
 )
+
+if(CONFIG_BUILD_OUTPUT_STRIPPED)
+add_custom_command(
+  TARGET gen_modules POST_BUILD
+    COMMAND $<TARGET_PROPERTY:bintools,strip_command>
+            $<TARGET_PROPERTY:bintools,strip_flag>
+            $<TARGET_PROPERTY:bintools,strip_flag_all>
+            $<TARGET_PROPERTY:bintools,strip_flag_infile>${CMAKE_BINARY_DIR}/zephyr/main.mod
+            $<TARGET_PROPERTY:bintools,strip_flag_outfile>${CMAKE_BINARY_DIR}/zephyr/main-stripped.mod
+            $<TARGET_PROPERTY:bintools,strip_flag_final>
+)
+endif()

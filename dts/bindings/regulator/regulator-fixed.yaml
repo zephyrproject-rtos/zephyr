@@ -3,25 +3,19 @@
 
 description: GPIO-controlled regulators
 
-include: regulator.yaml
-
-# NOTE: The driver supports "regulator-fixed-sync" as a specializing
-# variant when it's known that the GPIO state change operations are
-# isr-ok and not sleep, and both startup and off-on delays are zero.
-# This bypasses the asynchronous onoff manager which optimizes both time
-# and memory use.
-#
-# To enable this use both:
-#    compatible = "regulator-fixed-sync", "regulator-fixed";
-#
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-boot-on
+      - regulator-always-on
 
 compatible: "regulator-fixed"
 
 properties:
   regulator-name:
-    type: string
     required: true
-    description: Descriptive name for regulator outputs.
 
   enable-gpios:
     type: phandle-array
@@ -36,12 +30,10 @@ properties:
 
   startup-delay-us:
     type: int
-    required: false
     default: 0
     description: Startup time, in microseconds
 
   off-on-delay-us:
     type: int
-    required: false
     default: 0
     description: Off delay time, in microseconds

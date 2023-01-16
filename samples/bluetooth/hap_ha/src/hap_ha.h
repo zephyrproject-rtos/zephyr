@@ -23,8 +23,6 @@ int csip_set_member_init(void);
 /**
  * @brief Generate the Resolvable Set Identifier (RSI) value.
  *
- * This will generate RSI for given @p csis instance.
- *
  * @param rsi Pointer to place the 6-octet newly generated RSI data.
  *
  * @return 0 if on success, errno on error.

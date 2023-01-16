@@ -4,6 +4,8 @@ tests:
   sample.modbus.rtu_server:
     build_only: true
     platform_allow: nrf52840dk_nrf52840 frdm_k64f
+    integration_platforms:
+      - nrf52840dk_nrf52840
     tags: uart modbus
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
             dt_enabled_alias_with_parent_compat("led1", "gpio-leds") and
@@ -12,6 +14,8 @@ tests:
   sample.modbus.rtu_server.cdc_acm:
     build_only: true
     platform_allow: nrf52840dk_nrf52840 frdm_k64f
+    integration_platforms:
+      - nrf52840dk_nrf52840
     tags: usb modbus
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
             dt_enabled_alias_with_parent_compat("led1", "gpio-leds") and

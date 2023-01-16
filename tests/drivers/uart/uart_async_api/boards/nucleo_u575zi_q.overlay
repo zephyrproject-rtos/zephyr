@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usart2 {
+	dmas = <&gpdma1 0 27 0x440
+		&gpdma1 1 26 0x480>;
+	dma-names = "tx", "rx";
+};

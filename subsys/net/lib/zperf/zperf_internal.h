@@ -8,6 +8,7 @@
 
 #include <limits.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/zperf.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/__assert.h>
 
@@ -37,6 +38,12 @@
 #endif
 
 #define PACKET_SIZE_MAX CONFIG_NET_ZPERF_MAX_PACKET_SIZE
+
+#define MY_SRC_PORT 50000
+#define DEF_PORT 5001
+#define DEF_PORT_STR STRINGIFY(DEF_PORT)
+
+#define ZPERF_VERSION "1.1"
 
 struct zperf_udp_datagram {
 	int32_t id;
@@ -68,43 +75,40 @@ struct zperf_server_hdr {
 	int32_t jitter2;
 };
 
+struct zperf_async_upload_context {
+	struct k_work work;
+	struct zperf_upload_params param;
+	zperf_callback callback;
+	void *user_data;
+};
+
 static inline uint32_t time_delta(uint32_t ts, uint32_t t)
 {
 	return (t >= ts) ? (t - ts) : (ULONG_MAX - ts + t);
 }
 
-int zperf_get_ipv6_addr(const struct shell *sh, char *host,
-			char *prefix_str, struct in6_addr *addr);
+int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr);
 struct sockaddr_in6 *zperf_get_sin6(void);
 
-int zperf_get_ipv4_addr(const struct shell *sh, char *host,
-			struct in_addr *addr);
+int zperf_get_ipv4_addr(char *host, struct in_addr *addr);
 struct sockaddr_in *zperf_get_sin(void);
-
-extern void zperf_udp_upload(const struct shell *sh,
-			     int sock,
-			     int port,
-			     unsigned int duration_in_ms,
-			     unsigned int packet_size,
-			     unsigned int rate_in_kbps,
-			     struct zperf_results *results);
-
-extern void zperf_udp_receiver_init(const struct shell *sh, int port);
-
-extern void zperf_tcp_receiver_init(const struct shell *sh, int port);
-extern void zperf_tcp_uploader_init(struct k_fifo *tx_queue);
-extern void zperf_tcp_upload(const struct shell *sh,
-			     int sock,
-			     unsigned int duration_in_ms,
-			     unsigned int packet_size,
-			     struct zperf_results *results);
 
 extern void connect_ap(char *ssid);
 
 const struct in_addr *zperf_get_default_if_in4_addr(void);
 const struct in6_addr *zperf_get_default_if_in6_addr(void);
 
-void zperf_tcp_stopped(void);
-void zperf_tcp_started(void);
+int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
+			      int proto);
+
+uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
+
+void zperf_async_work_submit(struct k_work *work);
+void zperf_udp_uploader_init(void);
+void zperf_tcp_uploader_init(void);
+void zperf_udp_receiver_init(void);
+void zperf_tcp_receiver_init(void);
+
+void zperf_shell_init(void);
 
 #endif /* __ZPERF_INTERNAL_H */

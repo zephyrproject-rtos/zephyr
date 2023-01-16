@@ -554,7 +554,7 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x04240bdf" if SOC_SERIES_STM32L5X
 	default "0x70d16653" if SOC_SERIES_STM32WBX
 	default "0x5ee21072" if SOC_STM32F103XE
-	default "0x57755a57" if SOC_STM32F401XC || SOC_STM32F401XE
+	default "0x57755a57" if SOC_SERIES_STM32F4X && (!SOC_STM32F407XE) && (!SOC_STM32F407XG)
 	default "0x6d0922fa" if SOC_STM32F407XE
 	default "0x8fb060fe" if SOC_STM32F407XG
 	help
@@ -822,12 +822,12 @@ config MCUBOOT_ENCRYPTION_KEY_FILE
 	  If left empty, you must encrypt the Zephyr binaries manually.
 
 config MCUBOOT_EXTRA_IMGTOOL_ARGS
-	string "Extra arguments to pass to imgtool"
+	string "Extra arguments to pass to imgtool when signing"
 	default ""
 	help
-	  If CONFIG_MCUBOOT_SIGNATURE_KEY_FILE is a non-empty string,
-	  you can use this option to pass extra options to imgtool.
-	  For example, you could set this to "--version 1.2".
+	  When signing (CONFIG_MCUBOOT_SIGNATURE_KEY_FILE is a non-empty
+	  string) you can use this option to pass extra options to
+	  imgtool.  For example, you could set this to "--version 1.2".
 
 config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	bool "Generate unsigned binary image bootable with MCUboot"

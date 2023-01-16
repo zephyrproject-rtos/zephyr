@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	soc {
+		sram0: memory@80100000 {
+			compatible = "mmio-sram";
+			reg = <0x80100000 DT_SIZE_K(128)>;
+		};
+	};
+};
+

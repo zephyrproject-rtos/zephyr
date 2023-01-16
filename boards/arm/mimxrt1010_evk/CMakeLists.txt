@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+zephyr_library()
+zephyr_library_sources(init.c)
 
 if(CONFIG_NXP_IMX_RT_BOOT_HEADER)
-  zephyr_library()
   if(NOT DEFINED CONFIG_BOARD_MIMXRT1010_EVK)
     message(WARNING "It appears you are using the board definition for "
      "the MIMXRT1010-EVK, but targeting a custom board. You may need to "
@@ -23,4 +24,10 @@ if(CONFIG_NXP_IMX_RT_BOOT_HEADER)
     zephyr_library_sources(${RT1010_BOARD_DIR}/xip/evkmimxrt1010_flexspi_nor_config.c)
     zephyr_library_include_directories(${RT1010_BOARD_DIR}/xip)
   endif()
+endif()
+
+if(CONFIG_MCUX_GPT_TIMER)
+  message(WARNING "You appear to be using the GPT hardware timer. "
+    "This timer will enable lower power modes, but at the cost of reduced "
+    "hardware timer resolution")
 endif()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 O.S.Systems
+ * Copyright (c) 2018-2023 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,6 +68,23 @@ enum updatehub_response updatehub_probe(void);
  * @return UPDATEHUB_FLASH_INIT_ERROR fail to initialize the flash.
  */
 enum updatehub_response updatehub_update(void);
+
+/**
+ * @brief Confirm that image is running as expected.
+ *
+ * @details Must be used before the UpdateHub probe. It should be one of first
+ * actions after reboot.
+ *
+ * @return Return 0 if success otherwise a negative @errorno value.
+ */
+int updatehub_confirm(void);
+
+/**
+ * @brief Request system to reboot.
+ *
+ * @return Return 0 if success otherwise a negative @errorno value.
+ */
+int updatehub_reboot(void);
 
 /**
  * @}

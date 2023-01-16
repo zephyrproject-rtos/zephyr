@@ -47,6 +47,10 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if SOC_SERIES_IMX_RT10XX && CORTEX_M_SYSTICK
 	default 32768 if MCUX_GPT_TIMER
 
+# Disable systick if using MCUX_GPT_TIMER, as they will conflict
+config CORTEX_M_SYSTICK
+	default n if MCUX_GPT_TIMER
+
 config PM_MCUX_GPC
 	default y if HAS_MCUX_GPC
 	depends on SOC_SERIES_IMX_RT11XX && PM
@@ -103,6 +107,15 @@ config FLASH_BASE_ADDRESS
 
 endif # CODE_SRAM0
 
+if CODE_OCRAM
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/ocram@20200000,0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/ocram@20200000)
+
+endif # CODE_OCRAM
 
 if CODE_FLEXSPI
 
@@ -121,11 +134,11 @@ endif # CODE_FLEXSPI
 if CODE_FLEXSPI2
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@4000d000,1,K) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_size_int,/soc/spi@400d0000,1,K) if SOC_SERIES_IMX_RT11XX
 	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K) if SOC_SERIES_IMX_RT10XX
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@4000d000,1) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_addr_hex,/soc/spi@400d0000,1) if SOC_SERIES_IMX_RT11XX
 	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1) if SOC_SERIES_IMX_RT10XX
 
 endif # CODE_FLEXSPI2

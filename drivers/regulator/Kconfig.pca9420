@@ -9,10 +9,20 @@ config REGULATOR_PCA9420
 	help
 	  Enable the NXP PCA9420 PMIC regulator driver
 
+if REGULATOR_PCA9420
+
+config REGULATOR_PCA9420_COMMON_INIT_PRIORITY
+	int "NXP PCA9420 regulator driver init priority (common part)"
+	default 75
+	help
+	  Init priority for the NXP PCA9420 regulator driver (common part). It
+	  must be greater than I2C init priority.
+
 config REGULATOR_PCA9420_INIT_PRIORITY
 	int "NXP PCA9420 regulator driver init priority"
-	default 75
-	depends on REGULATOR_PCA9420
+	default 76
 	help
-	  Init priority for the NXP PCA9420 regulator driver. It must be greater
-	  than I2C init priority.
+	  Init priority for the NXP PCA9420 regulator driver. It must be
+	  greater than REGULATOR_PCA9420_COMMON_INIT_PRIORITY.
+
+endif

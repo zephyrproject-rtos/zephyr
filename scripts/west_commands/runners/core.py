@@ -22,6 +22,8 @@ import shutil
 import signal
 import subprocess
 import re
+from functools import partial
+from enum import Enum
 from typing import Dict, List, NamedTuple, NoReturn, Optional, Set, Type, \
     Union
 
@@ -237,19 +239,22 @@ class RunnerCaps:
                  dev_id: bool = False,
                  flash_addr: bool = False,
                  erase: bool = False,
-                 tool_opt: bool = False):
+                 tool_opt: bool = False,
+                 file: bool = False):
         self.commands = commands
         self.dev_id = dev_id
         self.flash_addr = bool(flash_addr)
         self.erase = bool(erase)
         self.tool_opt = bool(tool_opt)
+        self.file = bool(file)
 
     def __str__(self):
         return (f'RunnerCaps(commands={self.commands}, '
                 f'dev_id={self.dev_id}, '
                 f'flash_addr={self.flash_addr}, '
                 f'erase={self.erase}, '
-                f'tool_opt={self.tool_opt}'
+                f'tool_opt={self.tool_opt}, '
+                f'file={self.file}'
                 ')')
 
 
@@ -261,6 +266,13 @@ def _missing_cap(cls: Type['ZephyrBinaryRunner'], option: str) -> NoReturn:
     raise ValueError(f"{cls.name()} doesn't support {option} option")
 
 
+class FileType(Enum):
+    OTHER = 0
+    HEX = 1
+    BIN = 2
+    ELF = 3
+
+
 class RunnerConfig(NamedTuple):
     '''Runner execution-time configuration.
 
@@ -268,13 +280,15 @@ class RunnerConfig(NamedTuple):
     can register specific configuration options using their
     do_add_parser() hooks.
     '''
-    build_dir: str              # application build directory
-    board_dir: str              # board definition directory
-    elf_file: Optional[str]     # zephyr.elf path, or None
-    hex_file: Optional[str]     # zephyr.hex path, or None
-    bin_file: Optional[str]     # zephyr.bin path, or None
-    gdb: Optional[str] = None   # path to a usable gdb
-    openocd: Optional[str] = None  # path to a usable openocd
+    build_dir: str                  # application build directory
+    board_dir: str                  # board definition directory
+    elf_file: Optional[str]         # zephyr.elf path, or None
+    hex_file: Optional[str]         # zephyr.hex path, or None
+    bin_file: Optional[str]         # zephyr.bin path, or None
+    file: Optional[str]             # binary file path (provided by the user), or None
+    file_type: Optional[FileType] = FileType.OTHER  # binary file type
+    gdb: Optional[str] = None       # path to a usable gdb
+    openocd: Optional[str] = None   # path to a usable openocd
     openocd_search: List[str] = []  # add these paths to the openocd search path
 
 
@@ -298,12 +312,14 @@ class _ToggleAction(argparse.Action):
 class DeprecatedAction(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
-        _logger.warning(f'Argument {self.option_strings[0]} is deprecated, '
-                        f'use {self._replacement} instead.')
+        _logger.warning(f'Argument {self.option_strings[0]} is deprecated' +
+                        (f' for your runner {self._cls.name()}'  if self._cls is not None else '') +
+                        f', use {self._replacement} instead.')
         setattr(namespace, self.dest, values)
 
-def depr_action(*args, replacement=None, **kwargs):
+def depr_action(*args, cls=None, replacement=None, **kwargs):
     action = DeprecatedAction(*args, **kwargs)
+    setattr(action, '_cls', cls)
     setattr(action, '_replacement', replacement)
     return action
 
@@ -465,6 +481,30 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             parser.add_argument('--dt-flash', help=argparse.SUPPRESS)
 
+        if caps.file:
+            parser.add_argument('-f', '--file',
+                                dest='file',
+                                help="path to binary file")
+            parser.add_argument('-t', '--file-type',
+                                dest='file_type',
+                                help="type of binary file")
+        else:
+            parser.add_argument('-f', '--file', help=argparse.SUPPRESS)
+            parser.add_argument('-t', '--file-type', help=argparse.SUPPRESS)
+
+        parser.add_argument('--elf-file',
+                        metavar='FILE',
+                        action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
+                        help='path to zephyr.elf' if not caps.file else 'Deprecated, use -f/--file instead.')
+        parser.add_argument('--hex-file',
+                        metavar='FILE',
+                        action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
+                        help='path to zephyr.hex' if not caps.file else 'Deprecated, use -f/--file instead.')
+        parser.add_argument('--bin-file',
+                        metavar='FILE',
+                        action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
+                        help='path to zephyr.bin' if not caps.file else 'Deprecated, use -f/--file instead.')
+
         parser.add_argument('--erase', '--no-erase', nargs=0,
                             action=_ToggleAction,
                             help=("mass erase flash before loading, or don't"
@@ -500,6 +540,12 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--erase')
         if args.tool_opt and not caps.tool_opt:
             _missing_cap(cls, '--tool-opt')
+        if args.file and not caps.file:
+            _missing_cap(cls, '--file')
+        if args.file_type and not args.file:
+            raise ValueError("--file-type requires --file")
+        if args.file_type and not caps.file:
+            _missing_cap(cls, '--file-type')
 
         ret = cls.do_create(cfg, args)
         if args.erase:

@@ -92,7 +92,7 @@ int iis2dh_spi_init(const struct device *dev)
 	struct iis2dh_data *data = dev->data;
 	const struct iis2dh_device_config *config = dev->config;
 
-	if (!spi_is_ready(&config->spi)) {
+	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}

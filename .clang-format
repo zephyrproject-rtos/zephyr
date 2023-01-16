@@ -25,6 +25,7 @@ AttributeMacros:
   - __printf_like
   - __syscall
   - __subsystem
+BitFieldColonSpacing: After
 BreakBeforeBraces: Linux
 ColumnLimit: 100
 ConstructorInitializerIndentWidth: 8
@@ -76,7 +77,8 @@ IncludeCategories:
     Priority: 3
 IndentCaseLabels: false
 IndentWidth: 8
-# SpaceBeforeParens: ControlStatementsExceptControlMacros # clang-format >= 13.0
+InsertBraces: true
+SpaceBeforeParens: ControlStatementsExceptControlMacros
 SortIncludes: false
 UseTab: Always
 WhitespaceSensitiveMacros:

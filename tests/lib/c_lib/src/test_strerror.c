@@ -18,15 +18,12 @@ ZTEST(test_c_lib, test_strerror)
 	if (IS_ENABLED(CONFIG_MINIMAL_LIBC_DISABLE_STRING_ERROR_TABLE)) {
 		expected = "";
 		actual = strerror(EINVAL);
-
-		zassert_equal(0, strcmp("", strerror(EINVAL)), "");
 	} else {
 		expected = "Invalid argument";
 		actual = strerror(EINVAL);
-
-		zassert_equal(0, strcmp(expected, actual),
-			      "mismatch: exp: %s act: %s", expected, actual);
 	}
+	zassert_equal(0, strcmp(expected, actual),
+		      "mismatch: exp: %s act: %s", expected, actual);
 
 	/* do not change errno on success */
 	zassert_equal(4242, errno, "");

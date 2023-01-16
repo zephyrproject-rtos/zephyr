@@ -152,6 +152,16 @@
 					pinmux_mask = <0xff>;
 				};
 			};
+
+			test_i2c_tca6424a: tca6424a@23 {
+				compatible = "ti,tca6424a";
+				reg = <0x23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <24>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 		test_spi: spi@33334444 {

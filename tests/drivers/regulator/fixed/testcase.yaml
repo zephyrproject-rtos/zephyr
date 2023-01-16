@@ -1,27 +1,12 @@
-common:
-  tags: drivers gpio
-  depends_on: gpio
-  filter: dt_compat_enabled("test-regulator-fixed")
-  harness: ztest
-  harness_config:
-    fixture: regulator_loopback
-  integration_platforms:
-    - nrf52840dk_nrf52840
-
 tests:
-  drivers.regulator.fixed.onoff:
+  drivers.regulator.fixed:
+    tags: drivers regulator
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
     depends_on: gpio
-  drivers.regulator.fixed.onoff.on_delay:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_ON_DELAYED"
-  drivers.regulator.fixed.onoff.off_delay:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_OFF_DELAYED"
-  drivers.regulator.fixed.onoff.boot_on:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_BOOT_ON"
-  drivers.regulator.fixed.onoff.always_on:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_ALWAYS_ON"
-  drivers.regulator.fixed.sync:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_SYNC"
-  drivers.regulator.fixed.sync.boot_on:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_SYNC;-DAPP_DTS_REGULATOR_BOOT_ON"
-  drivers.regulator.fixed.sync.always_on:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_SYNC;-DAPP_DTS_REGULATOR_ALWAYS_ON"
+    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp nrf9160dk_nrf9160
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf9160dk_nrf9160

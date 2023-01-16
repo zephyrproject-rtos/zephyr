@@ -8,9 +8,8 @@ compatible: "syscon"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
-    reg-io-width:
-      type: int
-      required: false
-      description: The width of the registers in the syscon region in bytes. Default is 4 bytes.
+  reg:
+    required: true
+  reg-io-width:
+    type: int
+    description: The width of the registers in the syscon region in bytes. Default is 4 bytes.

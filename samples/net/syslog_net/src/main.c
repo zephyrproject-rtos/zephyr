@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_syslog, LOG_LEVEL_DBG);
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_ctrl.h>
 
 #include <stdlib.h>
 
@@ -17,7 +18,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_LOG_BACKEND_NET), "syslog backend not enabled");
 
 #define SLEEP_BETWEEN_PRINTS 3
 
-#if IS_ENABLED(CONFIG_LOG_BACKEND_NET)
+#if defined(CONFIG_LOG_BACKEND_NET)
 extern const struct log_backend *log_backend_net_get(void);
 #endif
 
@@ -35,11 +36,8 @@ void main(void)
 		const struct log_backend *backend = log_backend_net_get();
 
 		if (!log_backend_is_active(backend)) {
-			if (backend->api->init != NULL) {
-				backend->api->init(backend);
-			}
-
-			log_backend_activate(backend, NULL);
+			log_backend_init(backend);
+			log_backend_enable(backend, backend->cb->ctx, CONFIG_LOG_MAX_LEVEL);
 		}
 	}
 

@@ -18,7 +18,7 @@
 
 extern const struct shell *ctx_shell;
 extern struct bt_conn *default_conn;
-extern struct bt_csis *csis;
+extern struct bt_csip_set_member_svc_inst *svc_inst;
 
 #if defined(CONFIG_BT_ISO)
 extern struct bt_iso_chan iso_chan;

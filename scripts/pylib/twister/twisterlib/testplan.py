@@ -14,6 +14,7 @@ from collections import OrderedDict
 from itertools import islice
 import logging
 import copy
+import shutil
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -249,15 +250,16 @@ class TestPlan:
         return 1
 
     def report_duplicates(self):
-        all_tests = self.get_all_tests()
-
-        dupes = [item for item, count in collections.Counter(all_tests).items() if count > 1]
+        all_identifiers = []
+        for _, ts in self.testsuites.items():
+            all_identifiers.append(ts.id)
+        dupes = [item for item, count in collections.Counter(all_identifiers).items() if count > 1]
         if dupes:
             print("Tests with duplicate identifiers:")
             for dupe in dupes:
                 print("- {}".format(dupe))
                 for dc in self.get_testsuite(dupe):
-                    print("  - {}".format(dc))
+                    print("  - {}".format(dc.name))
         else:
             print("No duplicates found.")
 
@@ -516,8 +518,10 @@ class TestPlan:
                 )
 
                 instance.metrics['handler_time'] = ts.get('execution_time', 0)
-                instance.metrics['ram_size'] = ts.get("ram_size", 0)
-                instance.metrics['rom_size']  = ts.get("rom_size",0)
+                instance.metrics['used_ram'] = ts.get("used_ram", 0)
+                instance.metrics['used_rom']  = ts.get("used_rom",0)
+                instance.metrics['available_ram'] = ts.get('available_ram', 0)
+                instance.metrics['available_rom'] = ts.get('available_rom', 0)
 
                 status = ts.get('status', None)
                 reason = ts.get("reason", "Unknown")
@@ -566,6 +570,7 @@ class TestPlan:
         runnable = (self.options.device_testing or self.options.filter == 'runnable')
         force_toolchain = self.options.force_toolchain
         force_platform = self.options.force_platform
+        ignore_platform_key = self.options.ignore_platform_key
         emu_filter = self.options.emulation_only
 
         logger.debug("platform filter: " + str(platform_filter))
@@ -596,11 +601,23 @@ class TestPlan:
         elif arch_filter:
             platforms = list(filter(lambda p: p.arch in arch_filter, self.platforms))
         elif default_platforms:
-            platforms = list(filter(lambda p: p.default, self.platforms))
+            _platforms = list(filter(lambda p: p.default, self.platforms))
+            platforms = []
+            # default platforms that can't be run are dropped from the list of
+            # the default platforms list. Default platforms should always be
+            # runnable.
+            for p in _platforms:
+                if p.simulation and p.simulation_exec:
+                    if shutil.which(p.simulation_exec):
+                        platforms.append(p)
+                else:
+                    platforms.append(p)
         else:
             platforms = self.platforms
 
         logger.info("Building initial testsuite list...")
+
+        keyed_tests = {}
 
         for ts_name, ts in self.testsuites.items():
 
@@ -627,6 +644,7 @@ class TestPlan:
                 if not c:
                     platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
                                              self.platforms))
+
 
             # list of instances per testsuite, aka configurations.
             instance_list = []
@@ -731,6 +749,31 @@ class TestPlan:
 
                 if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
+
+                # platform_key is a list of unique platform attributes that form a unique key a test
+                # will match against to determine if it should be scheduled to run. A key containing a
+                # field name that the platform does not have will filter the platform.
+                #
+                # A simple example is keying on arch and simulation to run a test once per unique (arch, simulation) platform.
+                if not ignore_platform_key and hasattr(ts, 'platform_key') and len(ts.platform_key) > 0:
+                    # form a key by sorting the key fields first, then fetching the key fields from plat if they exist
+                    # if a field does not exist the test is still scheduled on that platform as its undeterminable.
+                    key_fields = sorted(set(ts.platform_key))
+                    key = [getattr(plat, key_field) for key_field in key_fields]
+                    has_all_fields = True
+                    for key_field in key_fields:
+                        if key_field is None:
+                            has_all_fields = False
+                    if has_all_fields:
+                        key.append(ts.name)
+                        key = tuple(key)
+                        keyed_test = keyed_tests.get(key)
+                        if keyed_test is not None:
+                            instance.add_filter(f"Excluded test already covered by platform_key {key} given fields {key_fields}", Filters.TESTSUITE)
+                        else:
+                            keyed_tests[key] = {'plat': plat, 'ts': ts}
+                    else:
+                        instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
 
                 test_configuration = ".".join([instance.platform.name,
                                                instance.testsuite.id])

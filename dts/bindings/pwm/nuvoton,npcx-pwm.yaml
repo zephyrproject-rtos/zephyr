@@ -8,30 +8,29 @@ compatible: "nuvoton,npcx-pwm"
 include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-        required: true
-    clocks:
-        required: true
-    pinctrl-0:
-        required: true
-    pinctrl-names:
-        required: true
-    pwm-channel:
-        type: int
-        description: |
-            A index to indicate PWM module that generates a single PWM signal.
-            Please don't overwrite it in the board-level DT driver.
-    clock-bus:
-        required: false
-        type: string
-        description: |
-            Select a specific input clock source for the PWM module. If this
-            property doesn't exist, fallback to default value in clocks property.
-        enum:
-            - NPCX_CLOCK_BUS_APB2
-            - NPCX_CLOCK_BUS_LFCLK
+  reg:
+    required: true
+  clocks:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  pwm-channel:
+    type: int
+    description: |
+        A index to indicate PWM module that generates a single PWM signal.
+        Please don't overwrite it in the board-level DT driver.
+  clock-bus:
+    type: string
+    description: |
+        Select a specific input clock source for the PWM module. If this
+        property doesn't exist, fallback to default value in clocks property.
+    enum:
+      - NPCX_CLOCK_BUS_APB2
+      - NPCX_CLOCK_BUS_LFCLK
 
 pwm-cells:
-    - channel
-    - period
-    - flags
+  - channel
+  - period
+  - flags

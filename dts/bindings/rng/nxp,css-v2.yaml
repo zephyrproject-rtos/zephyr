@@ -8,8 +8,5 @@ compatible: "nxp,css-v2"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: false
+  reg:
+    required: true

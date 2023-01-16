@@ -94,9 +94,9 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 #define ieee802154_acknowledge(...)
 #endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
 
-static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
-				   enum ieee802154_addressing_mode mode,
-				   struct ieee802154_address_field *ll)
+static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
+					    enum ieee802154_addressing_mode mode,
+					    struct ieee802154_address_field *ll)
 {
 	addr->type = NET_LINK_IEEE802154;
 
@@ -127,8 +127,9 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 		addr->addr = NULL;
 	}
 
-	/* Swap address byte order in place from little to big endian.
-	 * This is ok as the ll address field comes from the header
+	/* The net stack expects link layer addresses to be in
+	 * big endian format for posix compliance so we must swap it.
+	 * This is ok as the L2 address field comes from the header
 	 * part of the packet buffer which will not be directly accessible
 	 * once the packet reaches the upper layers.
 	 */
@@ -238,17 +239,21 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 	ieee802154_acknowledge(iface, &mpdu);
 
-	net_pkt_set_ll_proto_type(pkt, ETH_P_IEEE802154);
-
-	set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
-			mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
-
-	set_pkt_ll_addr(net_pkt_lladdr_dst(pkt), false, mpdu.mhr.fs->fc.dst_addr_mode,
-			mpdu.mhr.dst_addr);
-
 	if (!ieee802154_decipher_data_frame(iface, pkt, &mpdu)) {
 		return NET_DROP;
 	}
+
+	/* Setting L2 addresses must be done after packet authentication and internal
+	 * packet handling as it will mangle the package header to comply with upper
+	 * network layers' (POSIX) requirement to represent network addresses in big endian.
+	 */
+	swap_and_set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
+				 mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
+
+	swap_and_set_pkt_ll_addr(net_pkt_lladdr_dst(pkt), false, mpdu.mhr.fs->fc.dst_addr_mode,
+				 mpdu.mhr.dst_addr);
+
+	net_pkt_set_ll_proto_type(pkt, ETH_P_IEEE802154);
 
 	pkt_hexdump(RX_PKT_TITLE " (with ll)", pkt, true);
 

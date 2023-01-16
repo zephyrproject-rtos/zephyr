@@ -49,6 +49,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_util.h"
+#include "lwm2m_rd_client.h"
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
 #endif
@@ -61,9 +62,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #ifdef CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT
 #include "lwm2m_rw_senml_cbor.h"
 #endif
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-#include "lwm2m_rd_client.h"
-#endif
+
 /* TODO: figure out what's correct value */
 #define TIMEOUT_BLOCKWISE_TRANSFER_MS (MSEC_PER_SEC * 30)
 
@@ -398,7 +397,7 @@ cleanup:
 
 int lwm2m_send_message_async(struct lwm2m_message *msg)
 {
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED) && defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	int ret;
 
 	ret = lwm2m_rd_client_connection_resume(msg->ctx);
@@ -409,8 +408,7 @@ int lwm2m_send_message_async(struct lwm2m_message *msg)
 #endif
 	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 
-	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
-	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
 		engine_update_tx_time();
 	}
 	return 0;
@@ -418,7 +416,7 @@ int lwm2m_send_message_async(struct lwm2m_message *msg)
 
 int lwm2m_information_interface_send(struct lwm2m_message *msg)
 {
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED) && defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	int ret;
 
 	ret = lwm2m_rd_client_connection_resume(msg->ctx);
@@ -432,45 +430,10 @@ int lwm2m_information_interface_send(struct lwm2m_message *msg)
 		return 0;
 	}
 #endif
-	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 
-	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
-	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		engine_update_tx_time();
-	}
-	return 0;
+	return lwm2m_send_message_async(msg);
 }
 
-int lwm2m_send_message(struct lwm2m_message *msg)
-{
-	int rc;
-
-	if (!msg || !msg->ctx) {
-		LOG_ERR("LwM2M message is invalid.");
-		return -EINVAL;
-	}
-
-	if (msg->type == COAP_TYPE_CON) {
-		coap_pending_cycle(msg->pending);
-	}
-
-	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
-
-	if (rc < 0) {
-		LOG_ERR("Failed to send packet, err %d", errno);
-		if (msg->type != COAP_TYPE_CON) {
-			lwm2m_reset_message(msg, true);
-		}
-
-		return -errno;
-	}
-
-	if (msg->type != COAP_TYPE_CON) {
-		lwm2m_reset_message(msg, true);
-	}
-
-	return 0;
-}
 int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
 {
 	struct lwm2m_message *msg;
@@ -1295,11 +1258,9 @@ static int lwm2m_delete_handler(struct lwm2m_message *msg)
 		return ret;
 	}
 
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 	if (!msg->ctx->bootstrap_mode) {
 		engine_trigger_update(true);
 	}
-#endif
 
 	return 0;
 }
@@ -2947,9 +2908,7 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 					  sys_slist_t *lwm2m_path_list,
 					  sys_slist_t *lwm2m_path_free_list)
 {
-	struct lwm2m_obj_path temp;
 	uint32_t bytes_available = 0;
-	int ret;
 
 	/* Check do we have still pending data to send */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
@@ -2958,12 +2917,9 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 			continue;
 		}
 
-		ret = lwm2m_string_to_path(cache_temp->read_info[i].cache_data->path, &temp, '/');
-		if (ret < 0) {
-			return false;
-		}
 		/* Add to linked list */
-		if (lwm2m_engine_add_path_to_list(lwm2m_path_list, lwm2m_path_free_list, &temp)) {
+		if (lwm2m_engine_add_path_to_list(lwm2m_path_list, lwm2m_path_free_list,
+						  &cache_temp->read_info[i].cache_data->path)) {
 			return false;
 		}
 

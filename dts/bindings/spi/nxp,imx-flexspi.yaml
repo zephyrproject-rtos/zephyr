@@ -8,67 +8,60 @@ compatible: "nxp,imx-flexspi"
 include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    ahb-bufferable:
-      type: boolean
-      required: false
-      description: |
-        Enable AHB bufferable write access by setting register field
-        AHBCR[BUFFERABLEEN].
+  ahb-bufferable:
+    type: boolean
+    description: |
+      Enable AHB bufferable write access by setting register field
+      AHBCR[BUFFERABLEEN].
 
-    ahb-cacheable:
-      type: boolean
-      required: false
-      description: |
-        Enable AHB cacheable read access by setting register field
-        AHBCR[CACHEABLEEN].
+  ahb-cacheable:
+    type: boolean
+    description: |
+      Enable AHB cacheable read access by setting register field
+      AHBCR[CACHEABLEEN].
 
-    ahb-prefetch:
-      type: boolean
-      required: false
-      description: |
-        Enable AHB read prefetch by setting register field AHBCR[PREFETCHEN].
+  ahb-prefetch:
+    type: boolean
+    description: |
+      Enable AHB read prefetch by setting register field AHBCR[PREFETCHEN].
 
-    ahb-read-addr-opt:
-      type: boolean
-      required: false
-      description: |
-        Remove burst start address alignment limitation by setting register
-        field AHBCR[READADDROPT].
+  ahb-read-addr-opt:
+    type: boolean
+    description: |
+      Remove burst start address alignment limitation by setting register
+      field AHBCR[READADDROPT].
 
-    combination-mode:
-      type: boolean
-      required: false
-      description: |
-        Combine port A and port B data pins to support octal mode access by
-        setting register field MCR0[COMBINATIONEN].
+  combination-mode:
+    type: boolean
+    description: |
+      Combine port A and port B data pins to support octal mode access by
+      setting register field MCR0[COMBINATIONEN].
 
-    sck-differential-clock:
-      type: boolean
-      required: false
-      description: |
-        Enable/disable SCKB pad use as SCKA differential clock output,
-        when enabled, Port B flash access is not available.
+  sck-differential-clock:
+    type: boolean
+    description: |
+      Enable/disable SCKB pad use as SCKA differential clock output,
+      when enabled, Port B flash access is not available.
 
-    rx-clock-source:
-      type: int
-      required: false
-      default: 0
-      enum:
-        - 0 # Loopback internally
-        - 1 # Loopback from DQS pad
-        - 2 # Loopback from SCK pad
-        - 3 # External input from DQS pad
-      description: |
-        Source clock for flash read. See the RXCLKSRC field in register MCR0.
-        The default corresponds to the reset value of the register field.
+  rx-clock-source:
+    type: int
+    default: 0
+    enum:
+      - 0 # Loopback internally
+      - 1 # Loopback from DQS pad
+      - 2 # Loopback from SCK pad
+      - 3 # External input from DQS pad
+    description: |
+      Source clock for flash read. See the RXCLKSRC field in register MCR0.
+      The default corresponds to the reset value of the register field.
 
 child-binding:
-    description: NXP FlexSPI port
+  description: NXP FlexSPI port
 
-    include: nxp,imx-flexspi-device.yaml
+  include: nxp,imx-flexspi-device.yaml

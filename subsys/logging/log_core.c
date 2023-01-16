@@ -221,6 +221,7 @@ void log_core_init(void)
 {
 	panic_mode = false;
 	dropped_cnt = 0;
+	buffered_cnt = 0;
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_init();
@@ -907,4 +908,4 @@ static int enable_logger(const struct device *arg)
 	return 0;
 }
 
-SYS_INIT(enable_logger, POST_KERNEL, 0);
+SYS_INIT(enable_logger, POST_KERNEL, CONFIG_LOG_CORE_INIT_PRIORITY);

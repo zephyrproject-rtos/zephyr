@@ -20,11 +20,6 @@ LOG_MODULE_REGISTER(ucpd_stm32, CONFIG_USBC_LOG_LEVEL);
 
 #include "ucpd_stm32_priv.h"
 
-/**
- * @brief Zephyr has difficulty with shared interrupt. This flag is used to
- *        configure a shared interrupt once and is set to false afterwards.
- */
-static bool init_irq = true;
 static void config_tcpc_irq(void);
 
 /**
@@ -150,6 +145,33 @@ static void stm32_ucpd_state_init(const struct device *dev)
 }
 
 /**
+ * @brief Get the CC enable mask. The mask indicates which CC line
+ *        is enabled.
+ *
+ * @retval CC Enable mask (bit 0: CC1, bit 1: CC2)
+ */
+static uint32_t ucpd_get_cc_enable_mask(const struct device *dev)
+{
+	struct tcpc_data *data = dev->data;
+	const struct tcpc_config *const config = dev->config;
+	uint32_t mask = UCPD_CR_CCENABLE_Msk;
+
+	/*
+	 * When VCONN is enabled, it is supplied on the CC line that's
+	 * not being used for Power Delivery messages.
+	 */
+	if (data->ucpd_vconn_enable) {
+		uint32_t cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+		int pol = (cr & UCPD_CR_PHYCCSEL);
+
+		/* Dissable CC line that's used for VCONN */
+		mask &= ~BIT(UCPD_CR_CCENABLE_Pos + !pol);
+	}
+
+	return mask;
+}
+
+/**
  * @brief Get the state of the CC1 and CC2 lines
  *
  * @retval 0 on success
@@ -164,6 +186,7 @@ static int ucpd_get_cc(const struct device *dev,
 	int vstate_cc2;
 	int anamode;
 	uint32_t sr;
+	uint32_t cc_msk;
 
 	/*
 	 * cc_voltage_state is determined from vstate_cc bit field in the
@@ -211,32 +234,24 @@ static int ucpd_get_cc(const struct device *dev,
 		}
 	}
 
-	*cc1 = vstate_cc1;
-	*cc2 = vstate_cc2;
+	/* CC connection detection */
+	cc_msk = ucpd_get_cc_enable_mask(dev);
 
-	return 0;
-}
-
-/**
- * @brief Get the CC enable mask. The mask indicates which CC line
- *        is enabled.
- *
- * @retval CC Enable mask (bit 0: CC1, bit 1: CC2)
- */
-static uint32_t ucpd_get_cc_enable_mask(const struct device *dev)
-{
-	struct tcpc_data *data = dev->data;
-	const struct tcpc_config *const config = dev->config;
-	uint32_t mask = UCPD_CR_CCENABLE_Msk;
-
-	if (data->ucpd_vconn_enable) {
-		uint32_t cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
-		int pol = (cr & UCPD_CR_PHYCCSEL);
-
-		mask &= ~BIT(UCPD_CR_CCENABLE_Pos + !pol);
+	/* CC1 connection detection */
+	if (cc_msk & UCPD_CR_CCENABLE_0) {
+		*cc1 = vstate_cc1;
+	} else {
+		*cc1 = TC_CC_VOLT_OPEN;
 	}
 
-	return mask;
+	/* CC2 connection detection */
+	if (cc_msk & UCPD_CR_CCENABLE_1) {
+		*cc2 = vstate_cc2;
+	} else {
+		*cc2 = TC_CC_VOLT_OPEN;
+	}
+
+	return 0;
 }
 
 /**
@@ -271,10 +286,50 @@ static int ucpd_set_vconn(const struct device *dev, bool enable)
 	update_stm32g0x_cc_line(config->ucpd_port);
 #endif
 
+	/* Get CC line that VCONN is active on */
+	data->ucpd_vconn_cc = (cr & UCPD_CR_CCENABLE_0) ?
+				TC_POLARITY_CC2 : TC_POLARITY_CC1;
+
 	/* Call user supplied callback to set vconn */
-	ret = data->vconn_cb(dev, enable);
+	ret = data->vconn_cb(dev, data->ucpd_vconn_cc, enable);
 
 	return ret;
+}
+
+/**
+ * @brief Discharge VCONN
+ *
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOTSUP if not supported
+ */
+static int ucpd_vconn_discharge(const struct device *dev, bool enable)
+{
+	struct tcpc_data *data = dev->data;
+	const struct tcpc_config *const config = dev->config;
+
+	/* VCONN should not be discharged while it's enabled */
+	if (data->ucpd_vconn_enable) {
+		return -EIO;
+	}
+
+	if (data->vconn_discharge_cb) {
+		/* Use DPM supplied VCONN Discharge */
+		return data->vconn_discharge_cb(dev, data->ucpd_vconn_cc, enable);
+	}
+
+	/* Use TCPC VCONN Discharge */
+	if (enable) {
+		LL_UCPD_VconnDischargeEnable(config->ucpd_port);
+	} else {
+		LL_UCPD_VconnDischargeDisable(config->ucpd_port);
+	}
+
+#ifdef CONFIG_SOC_SERIES_STM32G0X
+	update_stm32g0x_cc_line(config->ucpd_port);
+#endif
+
+	return 0;
 }
 
 /**
@@ -649,6 +704,8 @@ static void ucpd_manage_tx(struct alert_info *info)
 		 */
 		if (atomic_test_and_clear_bit(&info->evt, UCPD_EVT_TX_MSG_SUCCESS)) {
 			ucpd_set_tx_state(info->dev, STATE_WAIT_CRC_ACK);
+			/* Start the GoodCRC RX Timer */
+			k_timer_start(&data->goodcrc_rx_timer, K_USEC(1000), K_NO_WAIT);
 		} else if (atomic_test_and_clear_bit(&info->evt, UCPD_EVT_TX_MSG_DISC) ||
 			  atomic_test_and_clear_bit(&info->evt, UCPD_EVT_TX_MSG_FAIL)) {
 			if (data->tx_retry_count < data->tx_retry_max) {
@@ -710,7 +767,10 @@ static void ucpd_manage_tx(struct alert_info *info)
 			/* GoodCRC with matching ID was received */
 			ucpd_notify_handler(info, TCPC_ALERT_TRANSMIT_MSG_SUCCESS);
 			ucpd_set_tx_state(info->dev, STATE_IDLE);
-		} else if (atomic_test_and_clear_bit(&info->evt, UCPD_EVT_RX_GOOD_CRC)) {
+		} else if (k_timer_status_get(&data->goodcrc_rx_timer)) {
+			/* Stop the GoodCRC RX Timer */
+			k_timer_stop(&data->goodcrc_rx_timer);
+
 			/* GoodCRC w/out match or timeout waiting */
 			if (data->tx_retry_count < data->tx_retry_max) {
 				ucpd_set_tx_state(info->dev, STATE_ACTIVE_TCPM);
@@ -814,9 +874,7 @@ static void ucpd_alert_handler(struct k_work *item)
 	 */
 	do {
 		ucpd_manage_tx(info);
-	} while (data->ucpd_tx_request &&
-		 data->ucpd_tx_state == STATE_IDLE &&
-		 !data->ucpd_rx_msg_active);
+	} while (data->ucpd_tx_state != STATE_IDLE);
 }
 
 /**
@@ -1011,7 +1069,8 @@ static void ucpd_isr(const struct device *dev_inst[])
 	struct tcpc_data *data;
 	uint32_t sr;
 	struct alert_info *info;
-	uint32_t tx_done_mask = UCPD_SR_TXMSGSENT |
+	uint32_t tx_done_mask = UCPD_SR_TXUND |
+				UCPD_SR_TXMSGSENT |
 				UCPD_SR_TXMSGABT |
 				UCPD_SR_TXMSGDISC |
 				UCPD_SR_HRSTSENT |
@@ -1022,18 +1081,25 @@ static void ucpd_isr(const struct device *dev_inst[])
 	 * Multiple UCPD ports are available
 	 */
 
-	uint32_t ucpd_base;
+	uint32_t sr0;
+	uint32_t sr1;
 
 	/*
 	 * Since the UCPD peripherals share the same interrupt line, determine
 	 * which one generated the interrupt.
 	 */
-	if (LL_SYSCFG_IsActiveFlag_UCPD1()) {
-		/* UCPD1 interrupt is pending */
-		ucpd_base = UCPD1_BASE;
-	} else if (LL_SYSCFG_IsActiveFlag_UCPD2()) {
-		/* UCPD2 interrupt is pending */
-		ucpd_base = UCPD2_BASE;
+
+	/* Read UCPD1 and UCPD2 Status Registers */
+
+	sr0 =
+	LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[0]->config)->ucpd_port, SR);
+	sr1 =
+	LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[1]->config)->ucpd_port, SR);
+
+	if (sr0) {
+		dev = dev_inst[0];
+	} else if (sr1) {
+		dev = dev_inst[1];
 	} else {
 		/*
 		 * The interrupt was triggered by some other device sharing this
@@ -1041,24 +1107,15 @@ static void ucpd_isr(const struct device *dev_inst[])
 		 */
 		return;
 	}
-
-	/* Find correct device instance for this port */
-	for (int i = 0; i < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); i++) {
-		dev = dev_inst[i];
-		config = dev->config;
-		if ((uint32_t)(config->ucpd_port) == ucpd_base) {
-			break;
-		}
-	}
 #else
 	/*
 	 * Only one UCPD port available
 	 */
 
 	dev = dev_inst[0];
-	config = dev->config;
 #endif /* Get the UCPD port that initiated that interrupt  */
 
+	config = dev->config;
 	data = dev->data;
 	info = &data->alert_info;
 
@@ -1225,6 +1282,20 @@ static void ucpd_set_vconn_cb(const struct device *dev,
 }
 
 /**
+ * @brief Sets a callback that can discharge VCONN if the TCPC is
+ *        unable to or the system is configured in a way that does not use
+ *        the VCONN discharge capabilities of the TCPC
+ *
+ */
+static void ucpd_set_vconn_discharge_cb(const struct device *dev,
+					tcpc_vconn_discharge_cb_t cb)
+{
+	struct tcpc_data *data = dev->data;
+
+	data->vconn_discharge_cb = cb;
+}
+
+/**
  * @brief UCPD interrupt init
  */
 static void ucpd_isr_init(const struct device *dev)
@@ -1232,6 +1303,9 @@ static void ucpd_isr_init(const struct device *dev)
 	const struct tcpc_config *const config = dev->config;
 	struct tcpc_data *data = dev->data;
 	struct alert_info *info = &data->alert_info;
+
+	/* Init GoodCRC Receive timer */
+	k_timer_init(&data->goodcrc_rx_timer, NULL, NULL);
 
 	/* Disable all alert bits */
 	LL_UCPD_WriteReg(config->ucpd_port, IMR, 0);
@@ -1329,7 +1403,9 @@ static const struct tcpc_driver_api driver_api = {
 	.set_cc = ucpd_set_cc,
 	.set_roles = ucpd_set_roles,
 	.set_vconn_cb = ucpd_set_vconn_cb,
+	.set_vconn_discharge_cb = ucpd_set_vconn_discharge_cb,
 	.set_vconn = ucpd_set_vconn,
+	.vconn_discharge = ucpd_vconn_discharge,
 	.set_cc_polarity = ucpd_cc_set_polarity,
 	.dump_std_reg = ucpd_dump_std_reg,
 	.set_bist_test_mode = ucpd_set_bist_test_mode,
@@ -1339,12 +1415,12 @@ static const struct tcpc_driver_api driver_api = {
 #define DEV_INST_INIT(n) dev_inst[n] = DEVICE_DT_INST_GET(n);
 static void config_tcpc_irq(void)
 {
+	static int inst_num;
 	static const struct device
 	*dev_inst[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)];
 
-	if (init_irq) {
-		/* Only configure IRQ line once */
-		init_irq = false;
+	/* Initialize and enable shared irq on last instance */
+	if (++inst_num == DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)) {
 		DT_INST_FOREACH_STATUS_OKAY(DEV_INST_INIT)
 
 		IRQ_CONNECT(DT_INST_IRQN(0),

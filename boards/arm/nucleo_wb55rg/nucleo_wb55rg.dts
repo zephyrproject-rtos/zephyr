@@ -101,6 +101,16 @@
 	status = "okay";
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk48 {
+	/* Node is disabled by default as default source is HSI48 */
+	/* To select another clock, enable the node */
+	clocks = <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+};
+
 &rcc {
 	clocks = <&clk_hse>;
 	clock-frequency = <DT_FREQ_M(32)>;
@@ -140,6 +150,10 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
 };
 
 &spi1 {
