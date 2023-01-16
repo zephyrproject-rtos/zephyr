@@ -250,6 +250,7 @@ Bluetooth Audio:
     - szymon-czapracki
     - asbjornsabo
     - fredrikdanebjer
+    - kruithofa
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
