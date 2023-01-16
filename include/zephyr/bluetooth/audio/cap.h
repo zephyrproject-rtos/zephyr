@@ -271,9 +271,17 @@ struct bt_cap_broadcast_audio_start_param {
 	 */
 	bool encrypt;
 
-	/** 16-octet broadcast code.
+	/**
+	 * @brief 16-octet broadcast code.
 	 *
 	 * Only valid if @p encrypt is true.
+	 *
+	 * If the value is a string or a the value is less than 16 octets,
+	 * the remaining octets shall be 0.
+	 *
+	 * Example:
+	 *   The string "Broadcast Code" shall be
+	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
 	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 };
@@ -344,9 +352,17 @@ struct bt_cap_unicast_to_broadcast_param {
 	 */
 	bool encrypt;
 
-	/** 16-octet broadcast code.
+	/**
+	 * @brief 16-octet broadcast code.
 	 *
 	 * Only valid if @p encrypt is true.
+	 *
+	 * If the value is a string or a the value is less than 16 octets,
+	 * the remaining octets shall be 0.
+	 *
+	 * Example:
+	 *   The string "Broadcast Code" shall be
+	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
 	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 };
