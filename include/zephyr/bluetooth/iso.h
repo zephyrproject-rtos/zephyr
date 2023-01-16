@@ -349,6 +349,13 @@ struct bt_iso_big_create_param {
 	 *
 	 *  The code used to derive the session key that is used to encrypt and
 	 *  decrypt BIS payloads.
+	 *
+	 *  If the value is a string or a the value is less than 16 octets,
+	 *  the remaining octets shall be 0.
+	 *
+	 *  Example:
+	 *    The string "Broadcast Code" shall be
+	 *    [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
 	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE];
 };
@@ -396,6 +403,13 @@ struct bt_iso_big_sync_param {
 	 *
 	 *  The code used to derive the session key that is used to encrypt and
 	 *  decrypt BIS payloads.
+	 *
+	 *  If the value is a string or a the value is less than 16 octets,
+	 *  the remaining octets shall be 0.
+	 *
+	 *  Example:
+	 *    The string "Broadcast Code" shall be
+	 *    [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
 	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE];
 };
