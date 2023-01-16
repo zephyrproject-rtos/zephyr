@@ -1196,11 +1196,6 @@ void gsm_ppp_recover_cmux(const struct device *dev)
 
 	modem_cmd_handler_disable_eol(&gsm->context.cmd_handler);
 
-	/*
-	 * See https://www.quectel.com/wp-content/uploads/2021/03/Quectel_BG96_MUX_Application_Note_V1.0.pdf
-	 * chapter 5.7. Close-down of Multiplexer
-	 * for the specification of the commands.
-	 */
 	int i;
 	for (i = 0; i < ARRAY_SIZE(disconnect_cmux); i++)
 	{
