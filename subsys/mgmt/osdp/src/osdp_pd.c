@@ -258,7 +258,7 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int ret = OSDP_PD_ERR_GENERIC;
-	int i, pos = 0;
+	int pos = 0;
 	struct osdp_cmd cmd;
 	struct osdp_event *event;
 
@@ -419,9 +419,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		    cmd.text.length > OSDP_CMD_TEXT_MAX_LEN) {
 			break;
 		}
-		for (i = 0; i < cmd.text.length; i++) {
-			cmd.text.data[i] = buf[pos++];
-		}
+		memcpy(cmd.text.data, buf + pos, cmd.text.length);
 		ret = OSDP_PD_ERR_REPLY;
 		if (!pd_cmd_cap_ok(pd, &cmd)) {
 			break;
@@ -512,9 +510,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		osdp_sc_init(pd);
 		sc_deactivate(pd);
-		for (i = 0; i < 8; i++) {
-			pd->sc.cp_random[i] = buf[pos++];
-		}
+		memcpy(pd->sc.cp_random, buf + pos, 8);
 		pd->reply_id = REPLY_CCRYPT;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -532,9 +528,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR("Out of order CMD_SCRYPT; has CP gone rogue?");
 			break;
 		}
-		for (i = 0; i < CMD_SCRYPT_DATA_LEN; i++) {
-			pd->sc.cp_cryptogram[i] = buf[pos++];
-		}
+		memcpy(pd->sc.cp_cryptogram, buf + pos, CMD_SCRYPT_DATA_LEN);
 		pd->reply_id = REPLY_RMAC_I;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -650,9 +644,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->reply_id;
 		buf[len++] = (uint8_t)event->keypress.reader_no;
 		buf[len++] = (uint8_t)event->keypress.length;
-		for (i = 0; i < event->keypress.length; i++) {
-			buf[len++] = event->keypress.data[i];
-		}
+		memcpy(buf + len, event->keypress.data, event->keypress.length);
+		len += event->keypress.length;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_RAW: {
@@ -666,9 +659,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = (uint8_t)event->cardread.format;
 		buf[len++] = BYTE_0(event->cardread.length);
 		buf[len++] = BYTE_1(event->cardread.length);
-		for (i = 0; i < len_bytes; i++) {
-			buf[len++] = event->cardread.data[i];
-		}
+		memcpy(buf + len, event->cardread.data, len_bytes);
+		len += len_bytes;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	}
@@ -679,9 +671,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = (uint8_t)event->cardread.reader_no;
 		buf[len++] = (uint8_t)event->cardread.direction;
 		buf[len++] = (uint8_t)event->cardread.length;
-		for (i = 0; i < event->cardread.length; i++) {
-			buf[len++] = event->cardread.data[i];
-		}
+		memcpy(buf + len, event->cardread.data, event->cardread.length);
+		len += event->cardread.length;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_COM:
@@ -726,15 +717,10 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		osdp_compute_session_keys(pd);
 		osdp_compute_pd_cryptogram(pd);
 		buf[len++] = pd->reply_id;
-		for (i = 0; i < 8; i++) {
-			buf[len++] = pd->sc.pd_client_uid[i];
-		}
-		for (i = 0; i < 8; i++) {
-			buf[len++] = pd->sc.pd_random[i];
-		}
-		for (i = 0; i < 16; i++) {
-			buf[len++] = pd->sc.pd_cryptogram[i];
-		}
+		memcpy(buf + len, pd->sc.pd_client_uid, 8);
+		memcpy(buf + len + 8, pd->sc.pd_random, 8);
+		memcpy(buf + len + 16, pd->sc.pd_cryptogram, 16);
+		len += 32;
 		smb[0] = 3;      /* length */
 		smb[1] = SCS_12; /* type */
 		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
@@ -747,9 +733,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		assert_buf_len(REPLY_RMAC_I_LEN, max_len);
 		osdp_compute_rmac_i(pd);
 		buf[len++] = pd->reply_id;
-		for (i = 0; i < 16; i++) {
-			buf[len++] = pd->sc.r_mac[i];
-		}
+		memcpy(buf + len, pd->sc.r_mac, 16);
+		len += 16;
 		smb[0] = 3;       /* length */
 		smb[1] = SCS_14;  /* type */
 		if (osdp_verify_cp_cryptogram(pd) == 0) {

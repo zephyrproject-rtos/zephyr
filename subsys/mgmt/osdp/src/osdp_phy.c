@@ -231,9 +231,7 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 		/* compute and extend the buf with 4 MAC bytes */
 		osdp_compute_mac(pd, is_cp_mode(pd), buf, len);
 		data = is_cp_mode(pd) ? pd->sc.c_mac : pd->sc.r_mac;
-		for (i = 0; i < 4; i++) {
-			buf[len + i] = data[i];
-		}
+		memcpy(buf + len, data, 4);
 		len += 4;
 	}
 #endif /* CONFIG_OSDP_SC_ENABLED */
