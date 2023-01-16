@@ -19,7 +19,7 @@ static void sink_power_sub_states(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	enum tc_cc_voltage_state cc;
 	enum tc_cc_voltage_state new_cc_voltage;
-	enum usbc_policy_check_t dpm_pwr_change_notify;
+	enum usbc_policy_notify_t dpm_pwr_change_notify;
 	struct tc_sm_t *tc = data->tc;
 
 	/* Get the active CC line */
