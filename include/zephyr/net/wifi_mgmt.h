@@ -41,6 +41,7 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_TWT,
 	NET_REQUEST_WIFI_CMD_PS_CONFIG,
 	NET_REQUEST_WIFI_CMD_REG_DOMAIN,
+	NET_REQUEST_WIFI_CMD_PS_TIMEOUT,
 };
 
 #define NET_REQUEST_WIFI_SCAN					\
@@ -96,6 +97,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_CONFIG);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_REG_DOMAIN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN);
+
+#define NET_REQUEST_WIFI_PS_TIMEOUT			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_TIMEOUT)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT);
 
 enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_SCAN_RESULT = 1,
@@ -182,6 +188,10 @@ struct wifi_ps_params {
 
 struct wifi_ps_mode_params {
 	enum wifi_ps_mode mode;
+};
+
+struct wifi_ps_timeout_params {
+	int timeout_ms;
 };
 
 struct wifi_twt_params {
@@ -287,6 +297,8 @@ struct net_wifi_mgmt_offload {
 	int (*set_twt)(const struct device *dev, struct wifi_twt_params *params);
 	int (*get_power_save_config)(const struct device *dev, struct wifi_ps_config *config);
 	int (*reg_domain)(const struct device *dev, struct wifi_reg_domain *reg_domain);
+	int (*set_power_save_timeout)(const struct device *dev,
+				      struct wifi_ps_timeout_params *ps_timeout);
 };
 
 /* Make sure that the network interface API is properly setup inside

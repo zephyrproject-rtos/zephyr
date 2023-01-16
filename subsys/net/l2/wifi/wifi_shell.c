@@ -531,6 +531,40 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_wifi_ps_timeout(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_ps_timeout_params params = { 0 };
+	long timeout_ms = 0;
+	int err = 0;
+
+	context.sh = sh;
+
+	if (argc != 2) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		return -ENOEXEC;
+	}
+
+	timeout_ms = shell_strtol(argv[1], 10, &err);
+
+	if (err) {
+		shell_error(sh, "Unable to parse input (err %d)", err);
+		return err;
+	}
+
+	params.timeout_ms = timeout_ms;
+
+	if (net_mgmt(NET_REQUEST_WIFI_PS_TIMEOUT, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING, "Setting power save timeout failed\n");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL,
+		"Power save timeout %d ms\n", params.timeout_ms);
+
+	return 0;
+}
+
 static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
@@ -853,6 +887,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"-f: Force to use this regulatory hint over any other regulatory hints\n"
 		"Note: This may cause regulatory compliance issues, use it at your own risk.",
 		cmd_wifi_reg_domain),
+	SHELL_CMD(ps_timeout, NULL,
+		  "Configure Wi-Fi power save inactivity timer(in ms)",
+		  cmd_wifi_ps_timeout),
 	SHELL_SUBCMD_SET_END
 );
 
