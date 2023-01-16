@@ -151,12 +151,16 @@ where:
     | "version"             | string representing image version, as set with    |
     |                       | ``imgtool``                                       |
     +-----------------------+---------------------------------------------------+
-    | "hash"                | hash of an upload; this is used to identify       |
-    |                       | an upload session, for example to allow mcumgr    |
-    |                       | library to continue broken session. This must be  |
-    |                       | a full sha256 of the whole image being uploaded,  |
-    |                       | and is optionally used for image verification     |
+    | "hash"                | SHA256 hash of the image header and body. Note    |
+    |                       | that this will not be the same as the SHA256 of   |
+    |                       | the whole file, it is the field in the MCUboot    |
+    |                       | TLV section that contains a hash of the data      |
+    |                       | which is used for signature verification          |
     |                       | purposes.                                         |
+    |                       |                                                   |
+    |                       | .. note::                                         |
+    |                       |    See ``IMAGE_TLV_SHA256`` in the MCUboot image  |
+    |                       |    format documentation link below.               |
     +-----------------------+---------------------------------------------------+
     | "bootable"            | true if image has bootable flag set;              |
     |                       | this field does not have to be present if false   |
@@ -189,6 +193,9 @@ where:
     For more information on how does image/slots function, please refer to
     the MCUBoot documentation
     https://www.mcuboot.com/documentation/design/#image-slots
+    For information on MCUboot image format, please reset to the MCUboot
+    documentation https://docs.mcuboot.com/design.html#image-format
+
 
 Set state of image request
 ==========================
@@ -280,10 +287,12 @@ where:
     +-----------------------+---------------------------------------------------+
     | "off"                 | offset of image chunk the request carries         |
     +-----------------------+---------------------------------------------------+
-    | "sha"                 | string identifying update session; it should only |
-    |                       | be present if "off" is zero; although name        |
-    |                       | suggests it might be SHA, it can actually be any  |
-    |                       | string                                            |
+    | "sha"                 | SHA256 hash of an upload; this is used to         |
+    |                       | identify an upload session, for example to allow  |
+    |                       | MCUmgr to continue a broken session. This must be |
+    |                       | a full SHA256 of the whole image being uploaded,  |
+    |                       | and is optionally used for image verification     |
+    |                       | purposes. Should only be present if "off" is zero |
     +-----------------------+---------------------------------------------------+
     | "data"                | optional image data                               |
     +-----------------------+---------------------------------------------------+
