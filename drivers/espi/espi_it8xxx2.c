@@ -9,8 +9,10 @@
 #include <assert.h>
 #include <zephyr/drivers/espi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <soc_dt.h>
 #include "soc_espi.h"
 #include "espi_utils.h"
 
@@ -28,6 +30,7 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 #define IT8XXX2_PMC1_IBF_IRQ DT_INST_IRQ_BY_IDX(0, 4, irq)
 #define IT8XXX2_PORT_80_IRQ  DT_INST_IRQ_BY_IDX(0, 5, irq)
 #define IT8XXX2_PMC2_IBF_IRQ DT_INST_IRQ_BY_IDX(0, 6, irq)
+#define IT8XXX2_TRANS_IRQ    DT_INST_IRQ_BY_IDX(0, 7, irq)
 
 /* General Capabilities and Configuration 1 */
 #define IT8XXX2_ESPI_MAX_FREQ_MASK GENMASK(2, 0)
@@ -72,6 +75,13 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 #define IT8XXX2_ESPI_PUT_FLASH_TAG_MASK        GENMASK(7, 4)
 #define IT8XXX2_ESPI_PUT_FLASH_LEN_MASK        GENMASK(6, 0)
 
+struct espi_it8xxx2_wuc {
+	/* WUC control device structure */
+	const struct device *wucs;
+	/* WUC pin mask */
+	uint8_t mask;
+};
+
 struct espi_it8xxx2_config {
 	uintptr_t base_espi_slave;
 	uintptr_t base_espi_vw;
@@ -81,6 +91,7 @@ struct espi_it8xxx2_config {
 	uintptr_t base_kbc;
 	uintptr_t base_pmc;
 	uintptr_t base_smfi;
+	const struct espi_it8xxx2_wuc wuc;
 };
 
 struct espi_it8xxx2_data {
@@ -1755,6 +1766,28 @@ void espi_it8xxx2_enable_pad_ctrl(const struct device *dev, bool enable)
 	}
 }
 
+void espi_it8xxx2_enable_trans_irq(const struct device *dev, bool enable)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+
+	if (enable) {
+		irq_enable(IT8XXX2_TRANS_IRQ);
+	} else {
+		irq_disable(IT8XXX2_TRANS_IRQ);
+		/* Clear pending interrupt */
+		it8xxx2_wuc_clear_status(config->wuc.wucs, config->wuc.mask);
+	}
+}
+
+static void espi_it8xxx2_trans_isr(const struct device *dev)
+{
+	/*
+	 * This interrupt is only used to wake up CPU, there is no need to do
+	 * anything in the isr in addition to disable interrupt.
+	 */
+	espi_it8xxx2_enable_trans_irq(dev, false);
+}
+
 void espi_it8xxx2_espi_reset_isr(const struct device *port,
 				struct gpio_callback *cb, uint32_t pins)
 {
@@ -1804,6 +1837,7 @@ static const struct espi_it8xxx2_config espi_it8xxx2_config_0 = {
 	.base_kbc = DT_INST_REG_ADDR_BY_IDX(0, 5),
 	.base_pmc = DT_INST_REG_ADDR_BY_IDX(0, 6),
 	.base_smfi = DT_INST_REG_ADDR_BY_IDX(0, 7),
+	.wuc = IT8XXX2_DT_WUC_ITEMS_FUNC(0, 0),
 };
 
 DEVICE_DT_INST_DEFINE(0, &espi_it8xxx2_init, NULL,
@@ -1884,7 +1918,15 @@ static int espi_it8xxx2_init(const struct device *dev)
 	 */
 	slave_reg->ESGCTRL2 |= IT8XXX2_ESPI_TO_WUC_ENABLE;
 
-	/* TODO: enable WU42 of WUI */
+	/* Enable WU42 of WUI */
+	it8xxx2_wuc_clear_status(config->wuc.wucs, config->wuc.mask);
+	it8xxx2_wuc_enable(config->wuc.wucs, config->wuc.mask);
+	/*
+	 * Only register isr here, the interrupt only need to be enabled
+	 * before CPU and RAM clocks gated in the idle function.
+	 */
+	IRQ_CONNECT(IT8XXX2_TRANS_IRQ, 0, espi_it8xxx2_trans_isr,
+			DEVICE_DT_INST_GET(0), 0);
 
 	return 0;
 }
