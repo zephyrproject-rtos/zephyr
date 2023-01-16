@@ -28,6 +28,8 @@ else()
 			       -Xshift_assist -Xfpus_div -Xfpu_mac -Xfpuda -Xfpus_mpy_slow
 			       -Xfpus_div_slow -Xbitstream -Xtimer0 -Xtimer1)
 
+  zephyr_ld_option_ifdef(CONFIG_SOC_NSIM_EM11D -Hlib=em9d_nrg_fpusp -Hdsplib)
+
   if(CONFIG_SOC_NSIM_EM11D)
     set_property(GLOBAL PROPERTY z_arc_dsp_options -Xxy -Xagu_large -Hfxapi -Xdsp2
               -Xdsp_accshift=full -Xdsp_divsqrt=radix2 -Xdsp_complex -Xdsp_itu
