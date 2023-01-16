@@ -171,6 +171,14 @@ config GEN_IRQ_VECTOR_TABLE
 config NUM_IRQS
 	int
 
+config RV_BOOT_HART
+	int "Starting HART ID"
+	default 0
+	help
+	  This option sets the starting HART ID for the SMP core.
+	  For RISC-V systems such as MPFS and FU540 this would be set to 1 to
+	  skip the E51 HART 0 as it is not usable in SMP configurations.
+
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	select THREAD_STACK_INFO
