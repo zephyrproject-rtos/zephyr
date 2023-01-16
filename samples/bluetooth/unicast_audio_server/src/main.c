@@ -599,6 +599,37 @@ static int set_location(void)
 	return 0;
 }
 
+static int set_supported_contexts(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
+						     AVAILABLE_SINK_CONTEXT);
+		if (err != 0) {
+			printk("Failed to set sink supported contexts (err %d)\n",
+			       err);
+
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
+						     AVAILABLE_SOURCE_CONTEXT);
+		if (err != 0) {
+			printk("Failed to set source supported contexts (err %d)\n",
+			       err);
+
+			return err;
+		}
+	}
+
+	printk("Supported contexts successfully set\n");
+
+	return 0;
+}
+
 static int set_available_contexts(void)
 {
 	int err;
@@ -648,6 +679,11 @@ void main(void)
 	}
 
 	err = set_location();
+	if (err != 0) {
+		return;
+	}
+
+	err = set_supported_contexts();
 	if (err != 0) {
 		return;
 	}
