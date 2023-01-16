@@ -6,7 +6,7 @@
 / {
 	chosen {
 		zephyr,bt-hci = &bt_hci_controller;
-		zephyr,entropy = &rng;
+		zephyr,entropy = &cryptocell;
 		zephyr,flash-controller = &flash_controller;
 	};
 
@@ -553,7 +553,7 @@
 			reg = <0x5002a000 0x1000>, <0x5002b000 0x1000>;
 			reg-names = "wrapper", "core";
 			interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
+			status = "okay";
 		};
 	};
 };

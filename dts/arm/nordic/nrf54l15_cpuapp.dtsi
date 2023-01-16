@@ -19,6 +19,7 @@ cpuflpr_vevif: &cpuflpr_vevif_remote {};
 / {
 	chosen {
 		zephyr,bt-hci = &bt_hci_controller;
+		zephyr,entropy = &psa_rng;
 	};
 
 	soc {
@@ -29,7 +30,7 @@ cpuflpr_vevif: &cpuflpr_vevif_remote {};
 
 	psa_rng: psa-rng {
 		compatible = "zephyr,psa-crypto-rng";
-		status = "disabled";
+		status = "okay";
 	};
 };
 
