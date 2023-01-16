@@ -19,13 +19,13 @@
 #define ABS_ERROR_THRESH_Q63	((q63_t)(1 << 17))
 
 static void test_zdsp_add_q15(
-	const q15_t *input1, const q15_t *input2, const q15_t *ref,
+	const DSP_DATA q15_t *input1, const DSP_DATA q15_t *input2, const q15_t *ref,
 	size_t length)
 {
-	q15_t *output;
+	DSP_DATA q15_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(q15_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(q15_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -55,13 +55,13 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_add_q15, long, in_com1, in_com2, ref_a
 		     ARRAY_SIZE(in_com1));
 
 static void test_zdsp_sub_q15(
-	const q15_t *input1, const q15_t *input2, const q15_t *ref,
+	const DSP_DATA q15_t *input1, const DSP_DATA q15_t *input2, const q15_t *ref,
 	size_t length)
 {
-	q15_t *output;
+	DSP_DATA q15_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(q15_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(q15_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -91,13 +91,13 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_sub_q15, long, in_com1, in_com2, ref_s
 		     ARRAY_SIZE(in_com1));
 
 static void test_zdsp_mult_q15(
-	const q15_t *input1, const q15_t *input2, const q15_t *ref,
+	const DSP_DATA q15_t *input1, const DSP_DATA q15_t *input2, const q15_t *ref,
 	size_t length)
 {
-	q15_t *output;
+	DSP_DATA q15_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(q15_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(q15_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -125,12 +125,12 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_mult_q15, long, in_com1, in_com2, ref_
 		     ARRAY_SIZE(in_com1));
 
 static void test_zdsp_negate_q15(
-	const q15_t *input1, const q15_t *ref, size_t length)
+	const DSP_DATA q15_t *input1, const q15_t *ref, size_t length)
 {
-	q15_t *output;
+	DSP_DATA q15_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(q15_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(q15_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -157,12 +157,12 @@ DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_negate_q15, long, in_com1, ref_negate,
 		     ARRAY_SIZE(in_com1));
 
 static void test_zdsp_offset_q15(
-	const q15_t *input1, q15_t scalar, const q15_t *ref, size_t length)
+	const DSP_DATA q15_t *input1, q15_t scalar, const q15_t *ref, size_t length)
 {
-	q15_t *output;
+	DSP_DATA q15_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(q15_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(q15_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -192,12 +192,12 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_offset_q15, long, in_com1, 0x4000, ref
 		     ARRAY_SIZE(in_com1));
 
 static void test_zdsp_scale_q15(
-	const q15_t *input1, q15_t scalar, const q15_t *ref, size_t length)
+	const DSP_DATA q15_t *input1, q15_t scalar, const q15_t *ref, size_t length)
 {
-	q15_t *output;
+	DSP_DATA q15_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(q15_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(q15_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -225,13 +225,13 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_scale_q15, long, in_com1, 0x4000, ref_
 		     ARRAY_SIZE(in_com1));
 
 static void test_zdsp_dot_prod_q15(
-	const q15_t *input1, const q15_t *input2, const q63_t *ref,
+	const DSP_DATA q15_t *input1, const DSP_DATA q15_t *input2, const q63_t *ref,
 	size_t length)
 {
-	q63_t *output;
+	DSP_DATA q63_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(1 * sizeof(q63_t));
+	output = (DSP_DATA q63_t *)malloc(1 * sizeof(q63_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -257,12 +257,12 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_dot_prod_q15, long, in_com1, in_com2, 
 		     ARRAY_SIZE(in_com1));
 
 static void test_zdsp_abs_q15(
-	const q15_t *input1, const q15_t *ref, size_t length)
+	const DSP_DATA q15_t *input1, const q15_t *ref, size_t length)
 {
-	q15_t *output;
+	DSP_DATA q15_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(q15_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(q15_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -287,12 +287,12 @@ DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_abs_q15, 23, in_com1, ref_abs, 23);
 DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_abs_q15, long, in_com1, ref_abs, ARRAY_SIZE(in_com1));
 
 static void test_zdsp_shift_q15(
-	const q15_t *input1, const q15_t *ref, size_t length)
+	const DSP_DATA q15_t *input1, const q15_t *ref, size_t length)
 {
-	q15_t *output;
+	DSP_DATA q15_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(q15_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(q15_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -316,13 +316,13 @@ DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_shift_q15, possat, in_maxpos, ref_shif
 DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_shift_q15, negsat, in_maxneg, ref_shift_negsat, 17);
 
 static void test_zdsp_and_u16(
-	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
+	const DSP_DATA uint16_t *input1, const DSP_DATA uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
-	uint16_t *output;
+	DSP_DATA uint16_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(uint16_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(uint16_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -342,13 +342,13 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_and_u16, 16, in_bitwise1, in_bitwise2,
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_and_u16, 23, in_bitwise1, in_bitwise2, ref_and, 23);
 
 static void test_zdsp_or_u16(
-	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
+	const DSP_DATA uint16_t *input1, const DSP_DATA uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
-	uint16_t *output;
+	DSP_DATA uint16_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(uint16_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(uint16_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -368,12 +368,12 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_or_u16, 16, in_bitwise1, in_bitwise2, 
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_or_u16, 23, in_bitwise1, in_bitwise2, ref_or, 23);
 
 static void test_zdsp_not_u16(
-	const uint16_t *input1, const uint16_t *ref, size_t length)
+	const DSP_DATA uint16_t *input1, const uint16_t *ref, size_t length)
 {
-	uint16_t *output;
+	DSP_DATA uint16_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(uint16_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(uint16_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -393,13 +393,13 @@ DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_not_u16, 16, in_bitwise1, ref_not, 16)
 DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_not_u16, 23, in_bitwise1, ref_not, 23);
 
 static void test_zdsp_xor_u16(
-	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
+	const DSP_DATA uint16_t *input1, const DSP_DATA uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
-	uint16_t *output;
+	DSP_DATA uint16_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(uint16_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(uint16_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -419,12 +419,12 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_xor_u16, 16, in_bitwise1, in_bitwise2,
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_xor_u16, 23, in_bitwise1, in_bitwise2, ref_xor, 23);
 
 static void test_zdsp_clip_q15(
-	const q15_t *input, const q15_t *ref, q15_t min, q15_t max, size_t length)
+	const DSP_DATA q15_t *input, const q15_t *ref, q15_t min, q15_t max, size_t length)
 {
-	q15_t *output;
+	DSP_DATA q15_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(q15_t));
+	output = (DSP_DATA q15_t *)malloc(length * sizeof(q15_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */

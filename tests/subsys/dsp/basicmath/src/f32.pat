@@ -1,4 +1,4 @@
-static const uint32_t in_com1[256] = {
+static DSP_STATIC_DATA const uint32_t in_com1[256] = {
     0x3ef42097, 0x3e86ad95, 0xbe3ea847, 0x3e18687c,
     0x3e0167c4, 0xbeed738c, 0xbe9bf9d4, 0xbb730272,
     0xbe012b5c, 0xbd8bd341, 0xbe56c288, 0x3e2b7752,
@@ -65,7 +65,7 @@ static const uint32_t in_com1[256] = {
     0xbdf916a0, 0xbefd280f, 0xbf18cbae, 0xbe7fd3b8
     };
 
-static const uint32_t in_com2[256] = {
+static DSP_STATIC_DATA const uint32_t in_com2[256] = {
     0xbf06178f, 0xbcf81646, 0x3dfd56f1, 0x3d8b675e,
     0x3e3b9e60, 0xbe581221, 0xbe9b2bdf, 0x3e27456a,
     0x3e267c7c, 0x3e4a739e, 0x3e46f38e, 0x3ead0034,
@@ -132,7 +132,7 @@ static const uint32_t in_com2[256] = {
     0xbe3bc140, 0xbd27973c, 0xbce5af1b, 0xbe943efb
     };
 
-static const uint32_t in_clip[267] = {
+static DSP_STATIC_DATA const uint32_t in_clip[267] = {
     0xbf666666, 0xbf64aaec, 0xbf62ef72, 0xbf6133f8,
     0xbf5f787e, 0xbf5dbd04, 0xbf5c018a, 0xbf5a4610,
     0xbf588a96, 0xbf56cf1c, 0xbf5513a2, 0xbf535828,

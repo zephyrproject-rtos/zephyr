@@ -1,4 +1,4 @@
-static const q31_t in_com1[256] = {
+static DSP_STATIC_DATA const q31_t in_com1[256] = {
     0xFAB7BE89, 0xD0A53F53, 0x1A111E21, 0x49953816,
     0x039D1FD3, 0xD15A0327, 0x1A0C9993, 0xC11799B2,
     0x5FF34F43, 0x2F1AAAD3, 0xC253CA7B, 0xE07AE872,
@@ -65,7 +65,7 @@ static const q31_t in_com1[256] = {
     0xE4F9F063, 0xE5FCB076, 0xD10265D4, 0xFAB3D758
     };
 
-static const q31_t in_com2[256] = {
+static DSP_STATIC_DATA const q31_t in_com2[256] = {
     0x3228AB4A, 0x08D12D9B, 0x036CDE01, 0xFBD88CAE,
     0xD5CA97A9, 0x8FAB3853, 0x26C60070, 0x101D4A07,
     0xF224215E, 0xFAE412EC, 0xD011C445, 0xE50A01DB,
@@ -132,43 +132,43 @@ static const q31_t in_com2[256] = {
     0x26915EEC, 0x01A04B4F, 0x32F6444F, 0xFEADB99A
     };
 
-static const q31_t in_bitwise1[11] = {
+static DSP_STATIC_DATA const q31_t in_bitwise1[11] = {
     0x4BCE8F92, 0xFF14D182, 0x434E2DD4, 0xB7FC2F59,
     0x048FA4A9, 0x038DCC83, 0x4ABEA434, 0xCF338938,
     0x0DC0A132, 0x12A999EF, 0x9E357213
     };
 
-static const q31_t in_bitwise2[11] = {
+static DSP_STATIC_DATA const q31_t in_bitwise2[11] = {
     0xA8B8FCB8, 0xEDCB517D, 0x434011BD, 0x40705DDA,
     0xF95571D7, 0xD4678EDB, 0x234AE04F, 0x0939EF27,
     0xBDF4A6FE, 0xEC99DE65, 0x8735465D
     };
 
-static const q31_t in_rand[9] = {
+static DSP_STATIC_DATA const q31_t in_rand[9] = {
     0x229D1A17, 0x1B4B61EA, 0x07281F85, 0x2AAAAAAB,
     0x08255585, 0xEE55B1DD, 0xECDA8C68, 0x16EC051D,
     0x050B7554
     };
 
-static const q31_t in_maxpos[9] = {
+static DSP_STATIC_DATA const q31_t in_maxpos[9] = {
     0x7FFFFFFE, 0x00000001, 0x7FFFFFFE, 0x00000001,
     0x7FFFFFFE, 0x00000001, 0x7FFFFFFE, 0x00000001,
     0x7FFFFFFE
     };
 
-static const q31_t in_maxneg[9] = {
+static DSP_STATIC_DATA const q31_t in_maxneg[9] = {
     0x80000001, 0xFFFFFFFF, 0x80000001, 0xFFFFFFFF,
     0x80000001, 0xFFFFFFFF, 0x80000001, 0xFFFFFFFF,
     0x80000001
     };
 
-static const q31_t in_maxneg2[9] = {
+static DSP_STATIC_DATA const q31_t in_maxneg2[9] = {
     0x80000000, 0xFFFFFFFE, 0x80000000, 0xFFFFFFFE,
     0x80000000, 0xFFFFFFFE, 0x80000000, 0xFFFFFFFE,
     0x80000000
     };
 
-static const q31_t in_clip[267] = {
+static DSP_STATIC_DATA const q31_t in_clip[267] = {
     0x8CCCCCCD, 0x8DAA89D1, 0x8E8846D5, 0x8F6603DA,
     0x9043C0DE, 0x91217DE2, 0x91FF3AE6, 0x92DCF7EA,
     0x93BAB4EF, 0x949871F3, 0x95762EF7, 0x9653EBFB,
@@ -536,7 +536,7 @@ static const q31_t ref_negate[256] = {
     0x1B060F9D, 0x1A034F8A, 0x2EFD9A2C, 0x054C28A8
     };
 
-static const q31_t ref_negate_possat[9] = {
+static  const q31_t ref_negate_possat[9] = {
     0x7FFFFFFF, 0x00000002, 0x7FFFFFFF, 0x00000002,
     0x7FFFFFFF, 0x00000002, 0x7FFFFFFF, 0x00000002,
     0x7FFFFFFF
@@ -702,7 +702,7 @@ static const q63_t ref_dot_prod_4[1] = {
     0x00004163DCBEB118
     };
 
-static const q63_t ref_dot_prod_4n1[1] = {
+static  const q63_t ref_dot_prod_4n1[1] = {
     0x0000570A3477CBC0
     };
 
@@ -1025,4 +1025,3 @@ static const q31_t ref_clip3[267] = {
     0x40000000, 0x40000000, 0x40000000, 0x40000000,
     0x40000000, 0x40000000, 0x40000000
     };
-
