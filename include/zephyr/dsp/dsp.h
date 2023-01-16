@@ -17,6 +17,10 @@
 #define DSP_FUNC_SCOPE
 #endif
 
+#define DSP_DATA
+
+#define DSP_STATIC_DATA DSP_DATA
+
 /**
  * @brief DSP Interface
  * @defgroup math_dsp DSP Interface
