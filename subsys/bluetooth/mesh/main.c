@@ -189,6 +189,8 @@ void bt_mesh_reset(void)
 	memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
 	atomic_set_bit(bt_mesh.flags, BT_MESH_INIT);
 
+	bt_mesh_scan_disable();
+
 	/* If this fails, the work handler will return early on the next
 	 * execution, as the device is not provisioned. If the device is
 	 * reprovisioned, the timer is always restarted.
@@ -231,7 +233,6 @@ void bt_mesh_reset(void)
 
 	(void)memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
 
-	bt_mesh_scan_disable();
 	bt_mesh_beacon_disable();
 
 	bt_mesh_comp_unprovision();
