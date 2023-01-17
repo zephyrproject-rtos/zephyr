@@ -55,7 +55,7 @@ struct pacs {
 	sys_slist_t list;
 };
 
-#if defined(CONTIG_BT_PAC_SNK)
+#if defined(CONFIG_BT_PAC_SNK)
 static uint16_t snk_available_contexts;
 static uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 #else
