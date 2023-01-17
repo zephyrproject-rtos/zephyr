@@ -381,7 +381,7 @@ static void print_codec(const struct bt_codec *codec)
 			    codec->meta[i].data.type,
 			    codec->meta[i].data.data_len);
 		shell_hexdump(ctx_shell, codec->meta[i].data.data,
-			      codec->data[i].data.data_len -
+			      codec->meta[i].data.data_len -
 				sizeof(codec->meta[i].data.type));
 	}
 }
