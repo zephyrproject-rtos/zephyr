@@ -83,20 +83,12 @@ The GD32VF103C-STARTER includes an onboard programmer/debugger (GD-Link) which
 allows flash programming and debugging over USB. There is also a JTAG header
 (JP1) which can be used with tools like Segger J-Link.
 
-.. note::
-
-   The OpenOCD shipped with Zephyr SDK does not support GD32VF103. You will need
-   to build the `riscv-openocd fork <https://github.com/riscv/riscv-openocd>`_.
-   Note that compared with OpenOCD, J-Link offers a better programming and
-   debugging experience on this board.
-
 #. Build the Zephyr kernel and the :ref:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
       :board: gd32vf103c_starter
       :goals: build
-      :gen-args: -DOPENOCD=<path/to/riscv-openocd/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/riscv-openocd/share/openocd/scripts>
       :compact:
 
 #. Run your favorite terminal program to listen for output. On Linux the
