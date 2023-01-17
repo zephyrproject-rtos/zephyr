@@ -1887,6 +1887,11 @@ static int ptp_stm32_init(const struct device *port)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+	/* Set PTP Configuration done */
+	heth->IsPtpConfigured = HAL_ETH_PTP_CONFIGURATED;
+#endif
+
 	return 0;
 }
 
