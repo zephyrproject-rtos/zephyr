@@ -56,4 +56,6 @@ source "drivers/dma/Kconfig.xec"
 
 source "drivers/dma/Kconfig.xmc4xxx"
 
+source "drivers/dma/Kconfig.rpi_pico"
+
 endif # DMA
