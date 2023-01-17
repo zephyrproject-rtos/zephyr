@@ -13,8 +13,8 @@
 /** DCKCFGR devices */
 #define CKDFSDM2A_SEL(val)	STM32_CLOCK(val, 1, 14, DCKCFGR_REG)
 #define CKDFSDM1A_SEL(val)	STM32_CLOCK(val, 1, 15, DCKCFGR_REG)
-#define SAI1A_SEL(val)		STM32_CLOCK(val, 2, 20, DCKCFGR_REG)
-#define SAI1B_SEL(val)		STM32_CLOCK(val, 2, 22, DCKCFGR_REG)
+#define SAI1A_SEL(val)		STM32_CLOCK(val, 3, 20, DCKCFGR_REG)
+#define SAI1B_SEL(val)		STM32_CLOCK(val, 3, 22, DCKCFGR_REG)
 #define CLK48M_SEL(val)		STM32_CLOCK(val, 1, 27, DCKCFGR_REG)
 #define SDMMC_SEL(val)		STM32_CLOCK(val, 1, 28, DCKCFGR_REG)
 #define DSI_SEL(val)		STM32_CLOCK(val, 1, 29, DCKCFGR_REG)
