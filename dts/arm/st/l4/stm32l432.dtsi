@@ -81,11 +81,6 @@
 			#io-channel-cells = <1>;
 		};
 
-		adc1: adc@50040000 {
-			has-temp-channel;
-			has-vref-channel;
-		};
-
 		rtc@40002800 {
 			bbram: bbram_regs {
 				compatible = "st,stm32-bbram";

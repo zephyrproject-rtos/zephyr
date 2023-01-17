@@ -374,8 +374,6 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
 		};
 
 		iwdg: watchdog@40003000 {

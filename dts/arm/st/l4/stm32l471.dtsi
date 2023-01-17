@@ -252,11 +252,6 @@
 			#io-channel-cells = <1>;
 		};
 
-		adc1: adc@50040000 {
-			has-temp-channel;
-			has-vref-channel;
-		};
-
 		adc3: adc@50040200 {
 			compatible = "st,stm32-adc";
 			reg = <0x50040200 0x100>;
@@ -264,7 +259,6 @@
 			interrupts = <47 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-temp-channel;
 			temp-channel = <17>;
 		};
 
