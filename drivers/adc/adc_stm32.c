@@ -268,9 +268,6 @@ struct adc_stm32_cfg {
 	void (*irq_cfg_func)(void);
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
-	bool has_temp_channel;
-	bool has_vref_channel;
-	bool has_vbat_channel;
 	int8_t temp_channel;
 	int8_t vref_channel;
 	int8_t vbat_channel;
@@ -1397,9 +1394,6 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
-	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
-	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
 	.temp_channel = DT_INST_PROP_OR(index, temp_channel, 0xFF),	\
 	.vref_channel = DT_INST_PROP_OR(index, vref_channel, 0xFF),	\
 	.vbat_channel = DT_INST_PROP_OR(index, vbat_channel, 0xFF),	\
