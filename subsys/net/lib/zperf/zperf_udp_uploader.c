@@ -263,7 +263,7 @@ static int udp_upload(int sock, int port,
 	/* Add result coming from the client */
 	results->nb_packets_sent = nb_packets;
 	results->client_time_in_us =
-				k_ticks_to_us_ceil32(end_time - start_time);
+				k_ticks_to_us_ceil64(end_time - start_time);
 	results->packet_size = packet_size;
 
 	return 0;

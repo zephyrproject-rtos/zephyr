@@ -81,7 +81,7 @@ const char *KBPS_UNIT[] = { "Mbps", "Kbps" };
 const uint32_t K[] = { 1024 * 1024, 1024, 0 };
 const char *K_UNIT[] = { "M", "K", "" };
 
-static void print_number(const struct shell *sh, uint32_t value,
+static void print_number(const struct shell *sh, uint64_t value,
 			 const uint32_t *divisor_arr, const char **units)
 {
 	const char **unit;
@@ -102,7 +102,7 @@ static void print_number(const struct shell *sh, uint32_t value,
 		shell_fprintf(sh, SHELL_NORMAL, "%u.%s%u %s", radix,
 			      (dec < 10) ? "0" : "", dec, *unit);
 	} else {
-		shell_fprintf(sh, SHELL_NORMAL, "%u %s", value, *unit);
+		shell_fprintf(sh, SHELL_NORMAL, "%llu %s", value, *unit);
 	}
 }
 

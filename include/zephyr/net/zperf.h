@@ -49,9 +49,9 @@ struct zperf_results {
 	uint32_t nb_packets_lost;
 	uint32_t nb_packets_outorder;
 	uint32_t total_len;
-	uint32_t time_in_us;
+	uint64_t time_in_us;
 	uint32_t jitter_in_us;
-	uint32_t client_time_in_us;
+	uint64_t client_time_in_us;
 	uint32_t packet_size;
 	uint32_t nb_packets_errors;
 };
