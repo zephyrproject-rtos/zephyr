@@ -10,6 +10,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
+#include <soc.h>
 
 #include "memc_mcux_flexspi.h"
 
@@ -75,6 +76,34 @@ int memc_flexspi_update_lut(const struct device *dev, uint32_t index,
 	FLEXSPI_UpdateLUT(data->base, index, cmd, count);
 
 	return 0;
+}
+
+int memc_flexspi_update_clock(const struct device *dev,
+		flexspi_device_config_t *device_config,
+		flexspi_port_t port, enum memc_flexspi_clock_t clock)
+{
+#if CONFIG_SOC_SERIES_IMX_RT10XX
+	struct memc_flexspi_data *data = dev->data;
+
+	memc_flexspi_wait_bus_idle(dev);
+
+	FLEXSPI_Enable(data->base, false);
+
+	flexspi_clock_set_div(clock == MEMC_FLEXSPI_CLOCK_166M ? 0 : 3);
+
+	FLEXSPI_Enable(data->base, true);
+
+	memc_flexspi_reset(dev);
+
+	device_config->flexspiRootClk = flexspi_clock_get_freq();
+	FLEXSPI_UpdateDllValue(data->base, device_config, port);
+
+	memc_flexspi_reset(dev);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 int memc_flexspi_set_device_config(const struct device *dev,
