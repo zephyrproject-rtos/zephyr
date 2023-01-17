@@ -181,6 +181,9 @@ Deprecated in this release
   :kconfig:option:`CONFIG_COUNTER_RTC_STM32_CLOCK_LSE` options are now
   deprecated.
 
+* STM32 Interrupt controller Kconfig symbols such as :kconfig:option:`CONFIG_EXTI_STM32_EXTI0_IRQ_PRI`
+  are removed. Related IRQ prioritues should now be configured in device tree.
+
 * File backend for settings APIs and Kconfig options were deprecated:
 
   :c:func:`settings_mount_fs_backend` in favor of :c:func:`settings_mount_file_backend`
@@ -383,6 +386,8 @@ Drivers and Sensors
 * IEEE 802.15.4
 
 * Interrupt Controller
+
+  * STM32: Driver configuration and initialization is now based on device tree
 
 * IPM
 
