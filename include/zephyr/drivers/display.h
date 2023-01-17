@@ -22,6 +22,7 @@
 #include <zephyr/device.h>
 #include <stddef.h>
 #include <zephyr/types.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,21 @@ enum display_pixel_format {
 	PIXEL_FORMAT_RGB_565		= BIT(4),
 	PIXEL_FORMAT_BGR_565		= BIT(5),
 };
+
+/**
+ * @brief Bits required per pixel for display format
+ *
+ * This macro expands to the number of bits required for a given display
+ * format. It can be used to allocate a framebuffer based on a given
+ * display format type
+ */
+#define DISPLAY_BITS_PER_PIXEL(fmt)						\
+	((((fmt & PIXEL_FORMAT_RGB_888) >> 0) * 24U) +				\
+	(((fmt & PIXEL_FORMAT_MONO01) >> 1) * 1U) +				\
+	(((fmt & PIXEL_FORMAT_MONO10) >> 2) * 1U) +				\
+	(((fmt & PIXEL_FORMAT_ARGB_8888) >> 3) * 32U) +				\
+	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U))
 
 enum display_screen_info {
 	/**
