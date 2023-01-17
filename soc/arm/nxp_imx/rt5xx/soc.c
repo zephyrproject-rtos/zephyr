@@ -312,9 +312,12 @@ static void clock_init(void)
 	 * (height + VSW + VFP + VBP) * (width + HSW + HFP + HBP) * frame rate.
 	 * this means the clock divider will vary depending on
 	 * the attached display.
+	 *
+	 * The root clock used here is the AUX0 PLL (PLL0 PFD2).
 	 */
 	CLOCK_SetClkDiv(kCLOCK_DivDcPixelClk,
-		DT_PROP(DT_NODELABEL(lcdif), clk_div));
+		((CLOCK_GetSysPfdFreq(kCLOCK_Pfd2) /
+		DT_PROP(DT_NODELABEL(lcdif), clock_frequency)) + 1));
 
 	CLOCK_EnableClock(kCLOCK_DisplayCtrl);
 	RESET_ClearPeripheralReset(kDISP_CTRL_RST_SHIFT_RSTn);

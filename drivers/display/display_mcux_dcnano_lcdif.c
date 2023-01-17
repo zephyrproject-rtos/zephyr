@@ -211,6 +211,12 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Convert pixel format from devicetree to the format used by HAL */
+	ret = mcux_dcnano_lcdif_set_pixel_format(dev, data->fb_config.format);
+	if (ret) {
+		return ret;
+	}
+
 	LCDIF_Init(config->base);
 
 	LCDIF_DpiModeSetConfig(config->base, 0, &config->dpi_config);
@@ -242,11 +248,8 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 	.get_framebuffer = mcux_dcnano_lcdif_get_framebuffer,
 };
 
-/* This macro evaluates to 4 when the pixel format enum is set to 4,
- * and 2 for all other enum values.
- */
 #define MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)					\
-	(((DT_INST_ENUM_IDX(n, pixel_format) / 4) * 2) + 2)
+	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(n, pixel_format)) / 8)
 
 /* When using external framebuffer mem, we should not allocate framebuffers
  * in SRAM. Instead, we use external framebuffer address and size
@@ -284,7 +287,7 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 		.fb_config = {							\
 			.enable = true,						\
 			.enableGamma = false,					\
-			.format = DT_INST_ENUM_IDX(n, pixel_format),		\
+			.format = DT_INST_PROP(n, pixel_format),		\
 		},								\
 		.pixel_bytes = MCUX_DCNANO_LCDIF_PIXEL_BYTES(n),		\
 	};									\
@@ -295,13 +298,24 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 		.dpi_config = {							\
 			.panelWidth = DT_INST_PROP(n, width),			\
 			.panelHeight = DT_INST_PROP(n, height),			\
-			.hsw = DT_INST_PROP(n, hsync),				\
-			.hfp = DT_INST_PROP(n, hfp),				\
-			.hbp = DT_INST_PROP(n, hbp),				\
-			.vsw = DT_INST_PROP(n, vsync),				\
-			.vfp = DT_INST_PROP(n, vfp),				\
-			.vbp = DT_INST_PROP(n, vbp),				\
-			.polarityFlags = DT_INST_PROP(n, polarity),		\
+			.hsw = DT_INST_PROP(n, hsync_len),			\
+			.hfp = DT_INST_PROP(n, hfront_porch),			\
+			.hbp = DT_INST_PROP(n, hback_porch),			\
+			.vsw = DT_INST_PROP(n, vsync_len),			\
+			.vfp = DT_INST_PROP(n, vfront_porch),			\
+			.vbp = DT_INST_PROP(n, vback_porch),			\
+			.polarityFlags = (DT_INST_PROP(n, de_active) ?		\
+					kLCDIF_DataEnableActiveHigh :		\
+					kLCDIF_DataEnableActiveLow) |		\
+					(DT_INST_PROP(n, pixelclk_active) ?	\
+					kLCDIF_DriveDataOnRisingClkEdge :	\
+					kLCDIF_DriveDataOnFallingClkEdge) |	\
+					(DT_INST_PROP(n, hsync_active) ?	\
+					kLCDIF_HsyncActiveHigh :		\
+					kLCDIF_HsyncActiveLow) |		\
+					(DT_INST_PROP(n, vsync_active) ?	\
+					kLCDIF_VsyncActiveHigh :		\
+					kLCDIF_VsyncActiveLow),			\
 			.format = DT_INST_ENUM_IDX(n, data_bus_width),		\
 		},								\
 		.fb_ptr = MCUX_DCNANO_LCDIF_FRAMEBUFFER(n),			\
