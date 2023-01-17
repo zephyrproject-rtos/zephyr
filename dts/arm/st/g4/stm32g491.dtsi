@@ -64,6 +64,7 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 			has-vref-channel;
+			vref-channel = <18>;
 		};
 	};
 };

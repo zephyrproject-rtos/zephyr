@@ -310,6 +310,8 @@
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
+			temp-channel = <12>;
+			vref-channel = <13>;
 		};
 
 		dac1: dac@40007400 {

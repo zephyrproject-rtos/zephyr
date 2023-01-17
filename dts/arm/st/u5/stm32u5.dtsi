@@ -593,6 +593,9 @@
 			has-vbat-channel;
 			has-temp-channel;
 			has-vref-channel;
+			temp-channel = <19>;
+			vref-channel = <0>;
+			vbat-channel = <18>;
 		};
 
 		adc4: adc@46021000 {
@@ -605,6 +608,9 @@
 			has-vbat-channel;
 			has-temp-channel;
 			has-vref-channel;
+			temp-channel = <13>;
+			vref-channel = <0>;
+			vbat-channel = <14>;
 		};
 
 		can {

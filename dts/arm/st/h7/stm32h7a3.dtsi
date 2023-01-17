@@ -20,6 +20,11 @@
 			};
 		};
 
+		adc2: adc@40022100 {
+			temp-channel = <18>;
+			vref-channel = <19>;
+		};
+
 		dmamux1: dmamux@40020800 {
 			dma-requests= <111>;
 		};

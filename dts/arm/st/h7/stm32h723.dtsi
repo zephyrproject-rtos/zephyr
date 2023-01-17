@@ -40,6 +40,11 @@
 			status = "disabled";
 		};
 
+		adc3: adc@58026000 {
+			temp-channel = <17>;
+			vref-channel = <18>;
+		};
+
 		dmamux1: dmamux@40020800 {
 			dma-requests= <129>;
 		};
