@@ -141,13 +141,14 @@ static int stm32_ltdc_set_orientation(const struct device *dev,
 static void stm32_ltdc_get_capabilities(const struct device *dev,
 				struct display_capabilities *capabilities)
 {
-	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 
-	capabilities->x_resolution = config->width;
-	capabilities->y_resolution = config->height;
+	capabilities->x_resolution = data->hltdc.LayerCfg[0].WindowX1 -
+				     data->hltdc.LayerCfg[0].WindowX0;
+	capabilities->y_resolution = data->hltdc.LayerCfg[0].WindowY1 -
+				     data->hltdc.LayerCfg[0].WindowY0;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
 					PIXEL_FORMAT_RGB_888 |
 					PIXEL_FORMAT_RGB_565;
@@ -401,8 +402,8 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 	/* frame buffer aligned to cache line width for optimal cache flushing */		\
 	FRAME_BUFFER_SECTION static uint8_t __aligned(32)					\
 				frame_buffer_##inst[STM32_LTDC_INIT_PIXEL_SIZE *		\
-						DT_INST_PROP(0, height) *			\
-						DT_INST_PROP(0, width)];			\
+						DT_INST_PROP(inst, height) *			\
+						DT_INST_PROP(inst, width)];			\
 	static struct display_stm32_ltdc_data stm32_ltdc_data_##inst = {			\
 		.frame_buffer = frame_buffer_##inst,						\
 		.hltdc = {									\
@@ -440,10 +441,12 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 					DT_INST_PROP_OR(inst, def_back_color_blue, 0xFF),	\
 			},									\
 			.LayerCfg[0] = {							\
-				.WindowX0 = 0,							\
-				.WindowX1 = DT_INST_PROP(inst, width),				\
-				.WindowY0 = 0,							\
-				.WindowY1 = DT_INST_PROP(inst, height),				\
+				.WindowX0 = DT_INST_PROP_OR(inst, window0_x0, 0),		\
+				.WindowX1 = DT_INST_PROP_OR(inst, window0_x1,			\
+								DT_INST_PROP(inst, width)),	\
+				.WindowY0 = DT_INST_PROP_OR(inst, window0_y0, 0),		\
+				.WindowY1 = DT_INST_PROP_OR(inst, window0_y1,			\
+								DT_INST_PROP(inst, height)),	\
 				.PixelFormat = STM32_LTDC_INIT_PIXEL_FORMAT,			\
 				.Alpha = 255,							\
 				.Alpha0 = 0,							\
