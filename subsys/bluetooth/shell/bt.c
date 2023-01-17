@@ -1329,7 +1329,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO) && IS_ENABLED(CONFIG_BT_EXT_ADV) && adv_ext) {
 		const bool connectable = atomic_test_bit(adv_opt, SHELL_ADV_OPT_CONNECTABLE);
-		size_t audio_ad_len;
+		ssize_t audio_ad_len;
 
 		audio_ad_len = audio_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
 						 discoverable, connectable);
@@ -1349,7 +1349,7 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 	struct bt_data ad[3];
 	bool discoverable = true;
 	bool appearance = false;
-	size_t ad_len;
+	ssize_t ad_len;
 	int err;
 
 	if (!strcmp(argv[1], "off")) {
