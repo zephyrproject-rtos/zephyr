@@ -129,6 +129,11 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
 	bl z_check_stack_sentinel
 #endif /* CONFIG_STACK_SENTINEL */
 
+	/* Disable nested interrupts while exiting, this should happens
+	 * before context switch also, to ensure interrupts are disabled.
+	 */
+	cpsid i
+
 #ifdef CONFIG_PREEMPT_ENABLED
 	/* Do not context switch if exiting a nested interrupt */
 	ldr r3, =_kernel
@@ -142,9 +147,6 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
 	blne z_arm_pendsv
 __EXIT_INT:
 #endif /* CONFIG_PREEMPT_ENABLED */
-
-	/* Disable nested interrupts while exiting */
-	cpsid i
 
 	/* Decrement interrupt nesting count */
 	ldr r2, =_kernel
