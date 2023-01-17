@@ -4327,6 +4327,11 @@ static const struct {
 	{ smp_keypress_notif,      sizeof(struct bt_smp_keypress_notif) },
 };
 
+static bool is_in_pairing_procedure(struct bt_smp *smp)
+{
+	return atomic_test_bit(smp->flags, SMP_FLAG_PAIRING);
+}
+
 static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
@@ -4369,8 +4374,8 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (!atomic_test_and_clear_bit(smp->allowed_cmds, hdr->code)) {
 		LOG_WRN("Unexpected SMP code 0x%02x", hdr->code);
-		/* Don't send error responses to error PDUs */
-		if (hdr->code != BT_SMP_CMD_PAIRING_FAIL) {
+		/* Do not send errors outside of pairing procedure. */
+		if (is_in_pairing_procedure(smp)) {
 			smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 		}
 		return 0;
