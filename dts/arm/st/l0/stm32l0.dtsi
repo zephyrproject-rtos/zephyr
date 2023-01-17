@@ -289,6 +289,7 @@
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
+			vref-channel = <17>;
 		};
 
 		dma1: dma@40020000 {
