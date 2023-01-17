@@ -10,6 +10,8 @@
 
 #include "mimxrt595_evk_cm33-pinctrl.dtsi"
 
+#include <zephyr/dt-bindings/display/panel.h>
+
 / {
 	model = "NXP MIMXRT595-EVK board";
 	compatible = "nxp,mimxrt595";
@@ -157,17 +159,28 @@
 	status = "okay";
 	width = <720>;
 	height = <1280>;
-	clk-div = <7>;
-	polarity = <12>;
-	hsync = <8>;
-	hfp = <32>;
-	hbp = <32>;
-	vsync = <2>;
-	vfp = <16>;
-	vbp = <14>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <8>;
+		hfront-porch = <32>;
+		hback-porch = <32>;
+		vsync-len = <2>;
+		vfront-porch = <16>;
+		vback-porch = <14>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <1>;
+		pixelclk-active = <1>;
+		/*
+		 * Pixel clock is given by the following formula:
+		 * (height + vsync-len + vfront-porch + vback-porch) *
+		 * (width + hsync-len + hfront-porch + hback-porch) * frame rate
+		 */
+		clock-frequency = <62346240>;
+	};
 	backlight-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 	data-bus-width = "24-bit";
-	pixel-format = "rgb-565";
+	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
 };
 
 &mipi_dsi {
