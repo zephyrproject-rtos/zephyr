@@ -366,6 +366,8 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			temp-channel = <17>;
+			vref-channel = <0>;
 		};
 
 		adc2: adc@50040100 {

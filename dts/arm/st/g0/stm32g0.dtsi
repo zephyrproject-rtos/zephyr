@@ -356,6 +356,9 @@
 			has-temp-channel;
 			has-vref-channel;
 			has-vbat-channel;
+			temp-channel = <12>;
+			vref-channel = <13>;
+			vbat-channel = <14>;
 		};
 
 		dma1: dma@40020000 {
