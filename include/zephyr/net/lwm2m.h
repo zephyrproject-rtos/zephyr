@@ -2127,18 +2127,37 @@ struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
 /** 
  * @brief Enable data cache for a resource.
  *
+ * @deprecated Use lwm2m_enable_cache instead
+ *
  * Application may enable caching of resource data by allocating buffer for LwM2M engine to use.
  * Buffer must be size of struct @ref lwm2m_time_series_elem times cache_len
  *
  * @param resource_path LwM2M resourcepath string "obj/obj-inst/res(/res-inst)"
  * @param data_cache Pointer to Data cache array
  * @param cache_len number of cached entries
- * 
+ *
  * @return 0 for success or negative in case of error.
  *
  */
+__deprecated
 int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
 			      size_t cache_len);
+
+/** 
+ * @brief Enable data cache for a resource.
+ *
+ * Application may enable caching of resource data by allocating buffer for LwM2M engine to use.
+ * Buffer must be size of struct @ref lwm2m_time_series_elem times cache_len
+ *
+ * @param path LwM2M path to resource as a struct
+ * @param data_cache Pointer to Data cache array
+ * @param cache_len number of cached entries
+ *
+ * @return 0 for success or negative in case of error.
+ *
+ */
+int lwm2m_enable_cache(struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
+		       size_t cache_len);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

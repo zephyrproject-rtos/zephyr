@@ -2073,11 +2073,10 @@ struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_object(struct lwm2m_
 
 }
 
-int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
-			    size_t cache_len)
+int lwm2m_enable_cache(struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
+		       size_t cache_len)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-	struct lwm2m_obj_path path;
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
@@ -2085,25 +2084,14 @@ int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_serie
 	int ret = 0;
 	size_t cache_entry_size = sizeof(struct lwm2m_time_series_elem);
 
-	/* translate path -> path_obj */
-	ret = lwm2m_string_to_path(resource_path, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
-		LOG_ERR("path must have at least 3 parts");
-		return -EINVAL;
-	}
-
 	/* look up resource obj */
-	ret = path_to_objs(&path, &obj_inst, &obj_field, NULL, &res_inst);
+	ret = path_to_objs(path, &obj_inst, &obj_field, NULL, &res_inst);
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (!res_inst) {
-		LOG_ERR("res instance %d not found", path.res_inst_id);
+		LOG_ERR("res instance %d not found", path->res_inst_id);
 		return -ENOENT;
 	}
 
@@ -2119,7 +2107,7 @@ int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_serie
 	case LWM2M_RES_TYPE_BOOL:
 	case LWM2M_RES_TYPE_FLOAT:
 		/* Support only fixed width resource types */
-		cache_entry = lwm2m_cache_entry_allocate(&path);
+		cache_entry = lwm2m_cache_entry_allocate(path);
 		break;
 	default:
 		cache_entry = NULL;
@@ -2133,6 +2121,31 @@ int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_serie
 	ring_buf_init(&cache_entry->rb, cache_entry_size * cache_len, (uint8_t *)data_cache);
 
 	return 0;
+#else
+	LOG_ERR("LwM2M resource cache is only supported for "
+		"CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT");
+	return -ENOTSUP;
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+}
+
+int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
+			    size_t cache_len)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	struct lwm2m_obj_path path;
+
+	/* translate path -> path_obj */
+	ret = lwm2m_string_to_path(resource_path, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
+		LOG_ERR("path must have at least 3 parts");
+		return -EINVAL;
+	}
+
+	return lwm2m_enable_cache(&path, data_cache, cache_len);
 #else
 	LOG_ERR("LwM2M resource cache is only supported for "
 		"CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT");
