@@ -427,6 +427,9 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		key = irq_lock();
 	}
 
+	(void)memc_flexspi_update_clock(data->controller, &data->config,
+					data->port, MEMC_FLEXSPI_CLOCK_42M);
+
 	while (len) {
 		/* Writing between two page sizes crashes the platform so we
 		 * have to write the part that fits in the first page and then
@@ -465,6 +468,9 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		offset += i;
 		len -= i;
 	}
+
+	(void)memc_flexspi_update_clock(data->controller, &data->config,
+					data->port, MEMC_FLEXSPI_CLOCK_166M);
 
 	if (memc_flexspi_is_running_xip(data->controller)) {
 		/* ==== EXIT CRITICAL SECTION ==== */
