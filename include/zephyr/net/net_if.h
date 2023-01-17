@@ -27,6 +27,7 @@
 #include <zephyr/net/net_linkaddr.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_l2_connectivity.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_timeout.h>
 
@@ -178,6 +179,12 @@ enum net_if_flag {
 	 * the net_eth_carrier_on() function.
 	 */
 	NET_IF_NO_AUTO_START,
+
+	/** Do not connect the interface immediately after going admin up.
+	 * For interfaces that require a connect phase after admin up, if this flag is set,
+	 * an external entity will call net_if_connect() on the interface.
+	 */
+	NET_IF_NO_AUTO_CONNECT,
 
 	/** Power management specific: interface is being suspended */
 	NET_IF_SUSPENDED,
@@ -2168,6 +2175,29 @@ static inline bool net_if_is_up(struct net_if *iface)
 }
 
 /**
+ * @brief Connect interface (if supported)
+ *
+ * @param iface Pointer to network interface
+ *
+ * @retval 0 on success
+ * @retval -ESHUTDOWN if the iface is not admin-up
+ * @retval -ENOTSUP if not implemented for iface
+ * @retval implementation-specific status code otherwise.
+ */
+int net_if_connect(struct net_if *iface);
+
+/**
+ * @brief Disconnect interface (if supported)
+ *
+ * @param iface Pointer to network interface
+ *
+ * @retval 0 on success
+ * @retval -ENOTSUP if not implemented for iface
+ * @retval implementation-specific status code otherwise
+ */
+int net_if_disconnect(struct net_if *iface);
+
+/**
  * @brief Bring interface down
  *
  * @param iface Pointer to network interface
@@ -2360,6 +2390,96 @@ void net_if_unset_promisc(struct net_if *iface);
  *         False if interface is not in in promiscuous mode.
  */
 bool net_if_is_promisc(struct net_if *iface);
+
+/**
+ * @brief Check if network interface supports connectivity (post-admin-up connect phase)
+ *
+ * @param iface Pointer to the iface to check
+ * @retval true if connectivity is supported
+ * @retval false otherwise
+ */
+bool net_if_supports_connectivity(struct net_if *iface);
+
+/**
+ * @brief Set implementation-specific connectivity options. May affect other ifaces if the
+ *	  connectivity implementation is shared.
+ *
+ * @param iface Pointer to the network interface.
+ * @param optname Integer value representing the option to set.
+ *		  The meaning of values is up to the net_l2_connectivity_api implementation.
+ * @param optval Pointer to the value to be assigned to the option.
+ * @param optlen Length (in bytes) of the value to be assigned to the option.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if not implemented.
+ * @retval -ENOBUFS if optlen is too long.
+ * @retval -EINVAL if NULL optval pointer provided.
+ * @retval -ENOPROTOOPT if the optname is not recognized.
+ * @retval implementation-specific error code otherwise.
+ */
+int net_if_set_conn_opt(struct net_if *iface, int optname, const void *optval, size_t optlen);
+
+/**
+ * @brief Get implementation-specific connectivity options.
+ *
+ * @param iface Pointer to the network interface.
+ * @param optname Integer value representing the option to set.
+ *		  The meaning of values is up to the net_l2_connectivity_api implementation.
+ * @param optval Pointer to where the retrieved value should be stored.
+ * @param optlen Pointer to length (in bytes) of the destination buffer available for storing the
+ *		 retrieved value. If the available space is less than what is needed, -ENOBUFS
+ *		 is returned. If the available space is invalid, -EINVAL is returned.
+ *
+ *		 optlen will always be set to the total number of bytes written, regardless of
+ *		 whether an error is returned, even if zero bytes were written.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if net_if_set_opt is not implemented by the iface.
+ * @retval -ENOBUFS if retrieval buffer is too small.
+ * @retval -EINVAL if invalid retrieval buffer length is provided, or if NULL optval or
+ *		   optlen pointer provided.
+ * @retval -EINVAL
+ * @retval -ENOPROTOOPT if the optname is not recognized.
+ * @retval implementation-specific error code otherwise.
+ */
+int net_if_get_conn_opt(struct net_if *iface, int optname, void *optval, size_t *optlen);
+
+/**
+ * @brief Check whether a network interface has connectivity persistence enabled.
+ *
+ * @param iface - Pointer to the network interface to check.
+ * @return True if connectivity persistence is enabled, otherwise False.
+ *	   Also returns False if the persistence value could not be retrieved or is not supported.
+ */
+bool net_if_get_conn_persistence(struct net_if *iface);
+
+/**
+ * @brief Set whether connectivity persistence is enabled for a network interface. May affect other
+ *	  ifaces if the connectivity implementation is shared.
+ *
+ * @param iface - Pointer to the network interface to modify.
+ * @param persistent - Whether connectivity persistence should be enabled.
+ * @return int - The result of the set operation.
+ */
+int net_if_set_conn_persistence(struct net_if *iface, bool persistent);
+
+/**
+ * @brief Get the connectivity timeout for a network interface
+ *
+ * @param iface - Pointer to the network interface to check.
+ * @return int - The connectivity timeout value (in seconds) if it could be retrieved, otherwise 0
+ */
+int net_if_get_conn_timeout(struct net_if *iface);
+
+/**
+ * @brief Set the connectivity timeout for a network interface. May affect other ifaces if the
+ *	  connectivity implementation is shared.
+ *
+ * @param iface - Pointer to the network interface to modify.
+ * @param timeout - The timeout value to set (in seconds).
+ * @return int - The result of the set operation.
+ */
+int net_if_set_conn_timeout(struct net_if *iface, int timeout);
 
 /**
  * @brief Check if there are any pending TX network data for a given network

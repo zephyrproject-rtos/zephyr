@@ -3,10 +3,11 @@
 #if defined(CONFIG_NETWORKING)
 #ifndef NETWORK_RAM_SECTIONS
 #define NETWORK_RAM_SECTIONS \
-	ITERABLE_SECTION_RAM(net_if, 4) \
-	ITERABLE_SECTION_RAM(net_if_dev, 4) \
-	ITERABLE_SECTION_RAM(net_l2, 4) \
-	ITERABLE_SECTION_RAM(eth_bridge, 4)
+	ITERABLE_SECTION_RAM(net_if,		4) \
+	ITERABLE_SECTION_RAM(net_if_dev,	4) \
+	ITERABLE_SECTION_RAM(net_l2,		4) \
+	ITERABLE_SECTION_RAM(net_if_conn,	4) \
+	ITERABLE_SECTION_RAM(eth_bridge,	4)
 #endif
 #endif /* NETWORKING */
 

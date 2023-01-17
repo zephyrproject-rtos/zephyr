@@ -40,6 +40,7 @@ SECTION_DATA_PROLOGUE(net_if_area,,SUBALIGN(4))                 \
 } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)            \
 ITERABLE_SECTION_RAM(net_if_dev, 4)                             \
 ITERABLE_SECTION_RAM(net_l2, 4)                                 \
+ITERABLE_SECTION_RAM(net_if_conn, 4)				\
 ITERABLE_SECTION_RAM(eth_bridge, 4)
 
 #include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>

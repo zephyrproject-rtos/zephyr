@@ -47,7 +47,8 @@ class SizeCalculator:
         "net_if_dev_area",
         "net_l2_area",
         "net_l2_data",
-        "k_queue_area",
+        "net_if_conn_area", # Reviewers: It is not clear to me whether I should add this entry.
+        "k_queue_area",     #            Neither is it clear to me that this entry is sufficient.
         "_net_buf_pool_area",
         "app_datas",
         "kobject_data",

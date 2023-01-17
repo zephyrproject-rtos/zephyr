@@ -65,10 +65,11 @@ zephyr_linker_section_configure(SECTION _net_buf_pool_area
 )
 
 if(CONFIG_NETWORKING)
-  zephyr_iterable_section(NAME net_if     GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
-  zephyr_iterable_section(NAME net_if_dev GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
-  zephyr_iterable_section(NAME net_l2     GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
-  zephyr_iterable_section(NAME eth_bridge GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME net_if      GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME net_if_dev  GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME net_l2      GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME net_if_conn GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+  zephyr_iterable_section(NAME eth_bridge  GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 endif()
 
 if(CONFIG_UART_MUX)
