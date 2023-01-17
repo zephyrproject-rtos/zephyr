@@ -432,7 +432,7 @@ static int rf2xx_set_channel(const struct device *dev, uint16_t channel)
 
 	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
 		if ((ctx->cc_page == RF2XX_TRX_CC_PAGE_0
-		     && ctx->cc_page == RF2XX_TRX_CC_PAGE_2)
+		     || ctx->cc_page == RF2XX_TRX_CC_PAGE_2)
 		    && channel > 10) {
 			LOG_ERR("Unsupported channel %u", channel);
 			return -EINVAL;
