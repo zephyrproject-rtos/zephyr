@@ -74,7 +74,11 @@
 	dpi-bllp-mode = "low-power";
 	autoinsert-eotp;
 	dphy-ref-frequency = <24000000>;
-
+	/*
+	 * PHY clock is given by the following formula:
+	 * (pixel clock * bits per pixel) / MIPI data lanes
+	 */
+	phy-clock = <748154880>;
 	rm68200@0 {
 		status = "okay";
 		compatible = "raydium,rm68200";
