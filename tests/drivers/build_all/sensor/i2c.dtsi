@@ -602,6 +602,14 @@ test_i2c_ina230: ina230@5e {
 	alert-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_ltc4162: ltc4162@68 {
+	compatible = "adi,ltc4162";
+	reg = <0x68>;
+	rsnsb-uohms = <10>;
+	rsnsi-uohms = <10>;
+	cell-count = <2>;
+};
+
 test_i2c_lm77: lm77@5f {
 	compatible = "lm77";
 	reg = <0x5f>;
