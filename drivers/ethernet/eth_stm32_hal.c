@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/crc.h>
+#include <zephyr/sys/crc.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <zephyr/net/net_pkt.h>
@@ -97,7 +97,21 @@ static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
 static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
 static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
 
+#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
+
 static struct net_if_mcast_monitor mcast_monitor;
+
+static K_MUTEX_DEFINE(multicast_addr_lock);
+
+#if defined(CONFIG_NET_NATIVE_IPV6)
+static struct in6_addr multicast_ipv6_joined_addrs[NET_IF_MAX_IPV6_MADDR] = {0};
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+
+#if defined(CONFIG_NET_NATIVE_IPV4)
+static struct in_addr multicast_ipv4_joined_addrs[NET_IF_MAX_IPV4_MADDR] = {0};
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+
+#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 
@@ -217,7 +231,7 @@ static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 }
 
-static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
+static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 {
 	__ASSERT_NO_MSG(heth != NULL);
 
@@ -225,8 +239,13 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 	ETH_MACFilterConfigTypeDef MACFilterConf;
 
 	HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
+#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 	MACFilterConf.HashMulticast = ENABLE;
 	MACFilterConf.PassAllMulticast = DISABLE;
+#else
+	MACFilterConf.HashMulticast = DISABLE;
+	MACFilterConf.PassAllMulticast = ENABLE;
+#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 	MACFilterConf.HachOrPerfectFilter = DISABLE;
 
 	HAL_ETH_SetMACFilterConfig(heth, &MACFilterConf);
@@ -237,10 +256,15 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 
 	/* disable multicast perfect filtering */
 	tmp &= ~(ETH_MULTICASTFRAMESFILTER_PERFECTHASHTABLE |
+#if !defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
+		 ETH_MULTICASTFRAMESFILTER_HASHTABLE |
+#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 		 ETH_MULTICASTFRAMESFILTER_PERFECT);
 
+#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 	/* enable multicast hash receive filter */
 	tmp |= ETH_MULTICASTFRAMESFILTER_HASHTABLE;
+#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
 	heth->Instance->MACFFR = tmp;
 
@@ -1189,6 +1213,64 @@ static int eth_initialize(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
+
+#if defined(CONFIG_NET_NATIVE_IPV6)
+static void add_ipv6_multicast_addr(const struct in6_addr *addr)
+{
+	uint32_t i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (net_ipv6_is_addr_unspecified(&multicast_ipv6_joined_addrs[i])) {
+			net_ipv6_addr_copy_raw((uint8_t *)&multicast_ipv6_joined_addrs[i],
+					(uint8_t *)addr);
+			break;
+		}
+	}
+}
+
+static void remove_ipv6_multicast_addr(const struct in6_addr *addr)
+{
+	uint32_t i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (net_ipv6_addr_cmp_raw(&multicast_ipv6_joined_addrs[i], addr)) {
+			net_ipv6_addr_copy_raw((uint8_t *)&multicast_ipv6_joined_addrs[i],
+					(uint8_t *)net_ipv6_unspecified_address);
+			break;
+		}
+	}
+}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+
+#if defined(CONFIG_NET_NATIVE_IPV4)
+static void add_ipv4_multicast_addr(const struct in_addr *addr)
+{
+	uint32_t i;
+
+	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
+		if (net_ipv4_is_addr_unspecified(&multicast_ipv4_joined_addrs[i])) {
+			net_ipv4_addr_copy_raw((uint8_t *)&multicast_ipv4_joined_addrs[i],
+					(uint8_t *)addr);
+			break;
+		}
+	}
+}
+
+static void remove_ipv4_multicast_addr(const struct in_addr *addr)
+{
+	uint32_t i;
+
+	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
+		if (net_ipv4_addr_cmp_raw((uint8_t *)&multicast_ipv4_joined_addrs[i],
+					(uint8_t *)addr)) {
+			multicast_ipv4_joined_addrs[i].s_addr = 0;
+			break;
+		}
+	}
+}
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+
 static uint32_t reverse(uint32_t val)
 {
 	uint32_t res = 0;
@@ -1203,79 +1285,112 @@ static uint32_t reverse(uint32_t val)
 	return res;
 }
 
-static void net_if_mcast_cb(struct net_if *iface,
+static void net_if_stm32_mcast_cb(struct net_if *iface,
 			    const struct net_addr *addr,
 			    bool is_joined)
 {
 	ARG_UNUSED(addr);
-	ARG_UNUSED(is_joined);
 
 	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	struct net_if_ipv6 *ipv6;
-#endif
-#if defined(CONFIG_NET_NATIVE_IPV4)
-	struct net_if_ipv4 *ipv4;
-#endif
 	struct net_eth_addr mac_addr;
 	uint32_t crc;
 	uint32_t hash_table[2];
 	uint32_t hash_index;
 	int i;
 
-	__ASSERT_NO_MSG(iface != NULL);
-
 	dev = net_if_get_device(iface);
-	__ASSERT_NO_MSG(dev != NULL);
 
-	dev_data = DEV_DATA(dev);
-	__ASSERT_NO_MSG(dev_data != NULL);
+	dev_data = (struct eth_stm32_hal_dev_data *)dev->data;
 
 	heth = &dev_data->heth;
-	__ASSERT_NO_MSG(heth != NULL);
 
 	hash_table[0] = 0;
 	hash_table[1] = 0;
 
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
-		return;
+	if (is_joined) {
+	/* Save a copy of the hash table which we update with
+	 * the hash for a single multicast address for join
+	 */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+		hash_table[0] = heth->Instance->MACHT0R;
+		hash_table[1] = heth->Instance->MACHT1R;
+#else
+		hash_table[0] = heth->Instance->MACHTLR;
+		hash_table[1] = heth->Instance->MACHTHR;
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		if (!ipv6->mcast[i].is_used) {
-			continue;
-		}
+	k_mutex_lock(&multicast_addr_lock, K_FOREVER);
 
-		net_eth_ipv6_mcast_to_mac_addr(&ipv6->mcast[i].address.in_addr,
-					       &mac_addr);
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	if (is_joined) {
+		/* When joining only update the hash filter with the joining
+		 * multicast address.
+		 */
+		add_ipv6_multicast_addr(&addr->in6_addr);
+
+		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
 		crc = reverse(crc32_ieee(mac_addr.addr,
-					 sizeof(struct net_eth_addr)));
+					sizeof(struct net_eth_addr)));
 		hash_index = (crc >> 26) & 0x3f;
 		hash_table[hash_index / 32] |= (1 << (hash_index % 32));
+	} else {
+		/* When leaving its better to compute the full hash table
+		 * for all the multicast addresses that we're aware of.
+		 */
+		remove_ipv6_multicast_addr(&addr->in6_addr);
+
+		for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+			if (net_ipv6_is_addr_unspecified(&multicast_ipv6_joined_addrs[i])) {
+				continue;
+			}
+
+			net_eth_ipv6_mcast_to_mac_addr(&multicast_ipv6_joined_addrs[i],
+							&mac_addr);
+			crc = reverse(crc32_ieee(mac_addr.addr,
+						sizeof(struct net_eth_addr)));
+			hash_index = (crc >> 26) & 0x3f;
+			hash_table[hash_index / 32] |= (1 << (hash_index % 32));
+		}
 	}
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
-	if (net_if_config_ipv4_get(iface, &ipv4) < 0) {
-		return;
-	}
+	if (is_joined) {
+		/* When joining only update the hash filter with the joining
+		 * multicast address.
+		 */
+		add_ipv4_multicast_addr(&addr->in_addr);
 
-	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		if (!ipv4->mcast[i].is_used) {
-			continue;
-		}
-
-		net_eth_ipv4_mcast_to_mac_addr(&ipv4->mcast[i].address.in_addr,
-					       &mac_addr);
+		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
 		crc = reverse(crc32_ieee(mac_addr.addr,
-					 sizeof(struct net_eth_addr)));
+						sizeof(struct net_eth_addr)));
 		hash_index = (crc >> 26) & 0x3f;
 		hash_table[hash_index / 32] |= (1 << (hash_index % 32));
+	} else {
+		/* When leaving its better to compute the full hash table
+		 * for all the multicast addresses that we're aware of.
+		 */
+		remove_ipv4_multicast_addr(&addr->in_addr);
+
+		for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
+			if (net_ipv4_is_addr_unspecified(&multicast_ipv4_joined_addrs[i])) {
+				continue;
+			}
+
+			net_eth_ipv4_mcast_to_mac_addr(&multicast_ipv4_joined_addrs[i],
+							&mac_addr);
+			crc = reverse(crc32_ieee(mac_addr.addr,
+						sizeof(struct net_eth_addr)));
+			hash_index = (crc >> 26) & 0x3f;
+			hash_table[hash_index / 32] |= (1 << (hash_index % 32));
+		}
 	}
 #endif /* CONFIG_NET_IPV4 */
+
+	k_mutex_unlock(&multicast_addr_lock);
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	heth->Instance->MACHT0R = hash_table[0];
@@ -1283,8 +1398,10 @@ static void net_if_mcast_cb(struct net_if *iface,
 #else
 	heth->Instance->MACHTLR = hash_table[0];
 	heth->Instance->MACHTHR = hash_table[1];
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 }
+
+#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
 static void eth_iface_init(struct net_if *iface)
 {
@@ -1309,7 +1426,9 @@ static void eth_iface_init(struct net_if *iface)
 		is_first_init = true;
 	}
 
-	net_if_mcast_mon_register(&mcast_monitor, iface, net_if_mcast_cb);
+#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
+	net_if_mcast_mon_register(&mcast_monitor, iface, net_if_stm32_mcast_cb);
+#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
 	/* Register Ethernet MAC Address with the upper layer */
 	net_if_set_link_addr(iface, dev_data->mac_addr,
