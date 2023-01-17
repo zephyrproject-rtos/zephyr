@@ -5,10 +5,105 @@
 '''Runner for flashing with Black Magic Probe.'''
 # https://github.com/blacksphere/blackmagic/wiki
 
+import glob
+import os
 import signal
+import sys
 from pathlib import Path
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
+
+try:
+    import serial.tools.list_ports
+    MISSING_REQUIREMENTS = False
+except ImportError:
+    MISSING_REQUIREMENTS = True
+
+# Default path for linux, based on the project udev.rules file.
+DEFAULT_LINUX_BMP_PATH = '/dev/ttyBmpGdb'
+
+# Interface descriptor for the GDB port as defined in the BMP firmware.
+BMP_GDB_INTERFACE = 'Black Magic GDB Server'
+
+# Product string as defined in the BMP firmware.
+BMP_GDB_PRODUCT = "Black Magic Probe"
+
+# BMP vendor and product ID.
+BMP_GDB_VID = 0x1d50
+BMP_GDB_PID = 0x6018
+
+LINUX_SERIAL_GLOB = '/dev/ttyACM*'
+DARWIN_SERIAL_GLOB = '/dev/cu.usbmodem*'
+
+def blackmagicprobe_gdb_serial_linux():
+    '''Guess the GDB port on Linux platforms.'''
+    if os.path.exists(DEFAULT_LINUX_BMP_PATH):
+        return DEFAULT_LINUX_BMP_PATH
+
+    if not MISSING_REQUIREMENTS:
+        for port in serial.tools.list_ports.comports():
+            if port.interface == BMP_GDB_INTERFACE:
+                return port.device
+
+    ports = glob.glob(LINUX_SERIAL_GLOB)
+    if not ports:
+        raise RuntimeError(
+                f'cannot find any valid port matching {LINUX_SERIAL_GLOB}')
+    return sorted(ports)[0]
+
+def blackmagicprobe_gdb_serial_darwin():
+    '''Guess the GDB port on Darwin platforms.'''
+    if not MISSING_REQUIREMENTS:
+        bmp_ports = []
+        for port in serial.tools.list_ports.comports():
+            if port.description and port.description.startswith(
+                    BMP_GDB_PRODUCT):
+                bmp_ports.append(port.device)
+        if bmp_ports:
+            return sorted(bmp_ports)[0]
+
+    ports = glob.glob(DARWIN_SERIAL_GLOB)
+    if not ports:
+        raise RuntimeError(
+                f'cannot find any valid port matching {DARWIN_SERIAL_GLOB}')
+    return sorted(ports)[0]
+
+def blackmagicprobe_gdb_serial_win32():
+    '''Guess the GDB port on Windows platforms.'''
+    if not MISSING_REQUIREMENTS:
+        bmp_ports = []
+        for port in serial.tools.list_ports.comports():
+            if port.vid == BMP_GDB_VID and port.pid == BMP_GDB_PID:
+                bmp_ports.append(port.device)
+        if bmp_ports:
+            return sorted(bmp_ports)[0]
+
+    return 'COM1'
+
+def blackmagicprobe_gdb_serial(port):
+    '''Guess the GDB port for the probe.
+
+    Return the port to use, in order of priority:
+        - the port specified manually
+        - the port in the BMP_GDB_SERIAL environment variable
+        - a guessed one depending on the host
+    '''
+    if port:
+        return port
+
+    if 'BMP_GDB_SERIAL' in os.environ:
+        return os.environ['BMP_GDB_SERIAL']
+
+    platform = sys.platform
+    if platform.startswith('linux'):
+        return blackmagicprobe_gdb_serial_linux()
+    elif platform.startswith('darwin'):
+        return blackmagicprobe_gdb_serial_darwin()
+    elif platform.startswith('win32'):
+        return blackmagicprobe_gdb_serial_win32()
+    else:
+        raise RuntimeError(f'unsupported platform: {platform}')
+
 
 class BlackMagicProbeRunner(ZephyrBinaryRunner):
     '''Runner front-end for Black Magic probe.'''
@@ -21,7 +116,8 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
         #
         # https://github.com/zephyrproject-rtos/zephyr/issues/50789
         self.elf_file = Path(cfg.elf_file).as_posix()
-        self.gdb_serial = gdb_serial
+        self.gdb_serial = blackmagicprobe_gdb_serial(gdb_serial)
+        self.logger.info(f'using GDB serial: {self.gdb_serial}')
         if connect_rst:
             self.connect_rst_enable_arg = [
                     '-ex', "monitor connect_rst enable",
@@ -49,8 +145,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_add_parser(cls, parser):
-        parser.add_argument('--gdb-serial', default='/dev/ttyACM0',
-                            help='GDB serial port')
+        parser.add_argument('--gdb-serial', help='GDB serial port')
         parser.add_argument('--connect-rst', '--connect-srst', action='store_true',
                             help='Assert SRST during connect? (default: no)')
 
