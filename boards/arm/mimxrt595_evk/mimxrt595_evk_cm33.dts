@@ -178,7 +178,11 @@
 	dpi-video-mode = "burst";
 	dpi-bllp-mode = "low-power";
 	autoinsert-eotp;
-	dphy-clk-div = <12>;
+	/*
+	 * PHY clock is given by the following formula:
+	 * (pixel clock * bits per pixel) / MIPI data lanes
+	 */
+	phy-clock = <748154880>;
 
 	rm68200@0 {
 		status = "okay";
