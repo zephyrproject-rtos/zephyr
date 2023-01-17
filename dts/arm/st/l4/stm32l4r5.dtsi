@@ -320,7 +320,8 @@
 		sdmmc1: sdmmc@50062400 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x50062400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x400000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x400000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2, 22U)>;
 			interrupts = <49 0>;
 			status = "disabled";
