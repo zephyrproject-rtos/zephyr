@@ -728,8 +728,6 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
 		};
 
 		adc2: adc@40022100 {
@@ -758,8 +756,6 @@
 			interrupts = <127 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
 		};
 
 		dac1: dac@40007400 {

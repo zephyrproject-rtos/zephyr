@@ -335,11 +335,6 @@
 			#io-channel-cells = <1>;
 		};
 
-		adc1: adc@50040000 {
-			has-temp-channel;
-			has-vref-channel;
-		};
-
 		octospi1: octospi@a0001000 {
 			compatible = "st,stm32-ospi";
 			reg = <0xa0001000 0x400>;

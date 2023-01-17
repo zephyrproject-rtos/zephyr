@@ -590,9 +590,6 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-vbat-channel;
-			has-temp-channel;
-			has-vref-channel;
 			temp-channel = <19>;
 			vref-channel = <0>;
 			vbat-channel = <18>;
@@ -605,9 +602,6 @@
 			interrupts = <113 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-vbat-channel;
-			has-temp-channel;
-			has-vref-channel;
 			temp-channel = <13>;
 			vref-channel = <0>;
 			vbat-channel = <14>;
