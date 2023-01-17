@@ -32,6 +32,7 @@ struct display_mcux_mipi_dsi_config {
 	MIPI_DSI_Type base;
 	dsi_dpi_config_t dpi_config;
 	bool auto_insert_eotp;
+	uint32_t phy_clock;
 };
 
 struct display_mcux_mipi_dsi_data {
@@ -69,7 +70,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	 * Note that the DSI output pixel is 24bit per pixel.
 	 */
 	uint32_t mipi_dsi_dpi_clk_hz = CLOCK_GetRootClockFreq(kCLOCK_Root_Lcdif);
-	uint32_t mipi_dsi_dphy_bit_clk_hz = mipi_dsi_dpi_clk_hz * (24 / mdev->data_lanes);
+	uint32_t mipi_dsi_dphy_bit_clk_hz = config->phy_clock;
 
 	mipi_dsi_dphy_bit_clk_hz = MIPI_DPHY_BIT_CLK_ENLARGE(mipi_dsi_dphy_bit_clk_hz);
 
@@ -195,6 +196,7 @@ static int display_mcux_mipi_dsi_init(const struct device *dev)
 			.vbp = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, vbp),			\
 		},										\
 		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
+		.phy_clock = DT_INST_PROP(id, phy_clock),					\
 	};											\
 	static struct display_mcux_mipi_dsi_data display_mcux_mipi_dsi_data_##id;		\
 	DEVICE_DT_INST_DEFINE(id,								\

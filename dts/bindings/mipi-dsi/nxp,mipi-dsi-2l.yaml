@@ -64,13 +64,6 @@ properties:
     description:
       Automatically insert an EoTp short packet when switching from HS to LP mode.
 
-  dphy-clk-div:
-    type: int
-    required: true
-    description:
-      MIPI D-PHY clock divider. Must be set to ensure clock frequency is at
-      least (pixel clock * bits per output pixel) / number of mipi data lanes
-
   dphy-ref-frequency:
     type: int
     default: 0
