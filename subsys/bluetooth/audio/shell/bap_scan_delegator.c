@@ -464,6 +464,45 @@ static int cmd_bap_scan_delegator_sync_pa(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int cmd_bap_scan_delegator_term_pa(const struct shell *sh, size_t argc,
+					  char **argv)
+{
+	struct sync_state *state;
+	unsigned long src_id;
+	int err;
+
+	err = 0;
+
+	src_id = shell_strtoul(argv[1], 16, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse src_id from %s", argv[1]);
+
+		return -ENOEXEC;
+	}
+
+	if (src_id > UINT8_MAX) {
+		shell_error(sh, "src_id shall be 0x00-0xff");
+
+		return -ENOEXEC;
+	}
+
+	state = sync_state_get_by_src_id((uint8_t)src_id);
+	if (state == NULL) {
+		shell_error(ctx_shell, "Could not get state");
+
+		return -ENOEXEC;
+	}
+
+	err = pa_sync_term(NULL);
+	if (err != 0) {
+		shell_error(ctx_shell, "Failed to terminate PA sync: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 					  char **argv)
 {
@@ -780,6 +819,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_scan_delegator_cmds,
 	SHELL_CMD_ARG(sync_pa, NULL,
 		      "Sync to PA <src_id>",
 		      cmd_bap_scan_delegator_sync_pa, 2, 0),
+	SHELL_CMD_ARG(term_pa, NULL,
+		      "Terminate PA sync <src_id>",
+		      cmd_bap_scan_delegator_term_pa, 2, 0),
 	SHELL_CMD_ARG(add_src, NULL,
 		      "Add a PA as source <broadcast_id> <enc_state> [bis_sync [metadata]]",
 		      cmd_bap_scan_delegator_add_src, 3, 2),
