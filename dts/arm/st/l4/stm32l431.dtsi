@@ -8,6 +8,14 @@
 
 / {
 	soc {
+		clocks {
+			clk_hsi48: clk-hsi48 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(48)>;
+				status = "disabled";
+			};
+		};
 
 		pinctrl: pin-controller@48000000 {
 
@@ -111,7 +119,8 @@
 		sdmmc1: sdmmc@40012800 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x40012800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			interrupts = <49 0>;
 			status = "disabled";
 		};
