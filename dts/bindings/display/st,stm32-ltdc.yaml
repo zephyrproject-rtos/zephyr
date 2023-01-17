@@ -110,3 +110,19 @@ properties:
   def-back-color-blue:
     type: int
     description: Default display background color - blue
+
+  window0-x0:
+    type: int
+    description: First pixel in x direction on layer 0. Defaults to 0.
+
+  window0-x1:
+    type: int
+    description: Last pixel in x direction on layer 0. Defaults to width.
+
+  window0-y0:
+    type: int
+    description: First pixel in y direction on layer 0. Defaults to 0.
+
+  window0-y1:
+    type: int
+    description: Last pixel in y direction on layer 0. Defaults to height.
