@@ -45,11 +45,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			status = "disabled";
 		};
-
-		adc1: adc@50040000 {
-			has-temp-channel;
-			has-vref-channel;
-		};
 	};
 
 	die_temp: dietemp {

@@ -137,11 +137,5 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
-
-		adc1: adc@50040000 {
-			has-temp-channel;
-			has-vref-channel;
-		};
-
 	};
 };
