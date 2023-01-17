@@ -139,7 +139,11 @@ class TestInstance:
 
         options = env.options
         handler = Handler(self, "")
-        if self.platform.simulation != "na":
+        if options.device_testing:
+            handler = DeviceHandler(self, "device")
+            handler.call_make_run = False
+            handler.ready = True
+        elif self.platform.simulation != "na":
             if self.platform.simulation == "qemu":
                 handler = QEMUHandler(self, "qemu")
                 handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
@@ -154,10 +158,6 @@ class TestInstance:
             handler.binary = os.path.join(self.build_dir, "testbinary")
             if options.enable_coverage:
                 handler.args.append("COVERAGE=1")
-            handler.call_make_run = False
-            handler.ready = True
-        elif options.device_testing:
-            handler = DeviceHandler(self, "device")
             handler.call_make_run = False
             handler.ready = True
 
