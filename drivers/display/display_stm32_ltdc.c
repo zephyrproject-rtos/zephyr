@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
+ * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,21 +21,37 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 
-#if defined(CONFIG_STM32_LTDC_ARGB8888)
+/* Horizontal synchronization pulse polarity */
+#define LTDC_HSPOL_ACTIVE_LOW     0x00000000
+#define LTDC_HSPOL_ACTIVE_HIGH    0x80000000
+
+/* Vertical synchronization pulse polarity */
+#define LTDC_VSPOL_ACTIVE_LOW     0x00000000
+#define LTDC_VSPOL_ACTIVE_HIGH    0x40000000
+
+/* Data enable pulse polarity */
+#define LTDC_DEPOL_ACTIVE_LOW     0x00000000
+#define LTDC_DEPOL_ACTIVE_HIGH    0x20000000
+
+/* Pixel clock polarity */
+#define LTDC_PCPOL_ACTIVE_LOW     0x00000000
+#define LTDC_PCPOL_ACTIVE_HIGH    0x10000000
+
+#if CONFIG_STM32_LTDC_ARGB8888
 #define STM32_LTDC_INIT_PIXEL_SIZE	4u
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_ARGB8888
 #define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_ARGB_8888
-#elif defined(CONFIG_STM32_LTDC_RGB888)
+#elif CONFIG_STM32_LTDC_RGB888
 #define STM32_LTDC_INIT_PIXEL_SIZE	3u
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_RGB888
 #define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_RGB_888
-#elif defined(CONFIG_STM32_LTDC_RGB565)
+#elif CONFIG_STM32_LTDC_RGB565
 #define STM32_LTDC_INIT_PIXEL_SIZE	2u
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_RGB565
 #define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_RGB_565
 #else
 #error "Invalid LTDC pixel format chosen"
-#endif /* CONFIG_STM32_LTDC_ARGB8888 */
+#endif
 
 #if defined(CONFIG_HAS_CMSIS_CORE_M)
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
@@ -409,30 +426,54 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 		.hltdc = {									\
 			.Instance = (LTDC_TypeDef *) DT_INST_REG_ADDR(inst),			\
 			.Init = {								\
-				.HSPolarity = DT_INST_PROP(inst, hsync_pol),			\
-				.VSPolarity = DT_INST_PROP(inst, vsync_pol),			\
-				.DEPolarity = DT_INST_PROP(inst, de_pol),			\
-				.PCPolarity = DT_INST_PROP(inst, pclk_pol),			\
-				.HorizontalSync = DT_INST_PROP(inst, hsync_duration) - 1,	\
-				.VerticalSync = DT_INST_PROP(inst, vsync_duration) - 1,		\
-				.AccumulatedHBP = DT_INST_PROP(inst, hbp_duration) +		\
-						DT_INST_PROP(inst, hsync_duration) - 1,		\
-				.AccumulatedVBP = DT_INST_PROP(inst, vbp_duration) +		\
-						DT_INST_PROP(inst, vsync_duration) - 1,		\
-				.AccumulatedActiveW = DT_INST_PROP(inst, hbp_duration) +	\
-						DT_INST_PROP(inst, hsync_duration) +		\
-						DT_INST_PROP(inst, width) - 1,			\
-				.AccumulatedActiveH = DT_INST_PROP(inst, vbp_duration) +	\
-						DT_INST_PROP(inst, vsync_duration) +		\
-						DT_INST_PROP(inst, height) - 1,			\
-				.TotalWidth = DT_INST_PROP(inst, hbp_duration) +		\
-						DT_INST_PROP(inst, hsync_duration) +		\
+				.HSPolarity = (DT_PROP(DT_INST_CHILD(inst, display_timings),	\
+						hsync_active) ?					\
+						LTDC_HSPOL_ACTIVE_HIGH : LTDC_HSPOL_ACTIVE_LOW),\
+				.VSPolarity = (DT_PROP(DT_INST_CHILD(inst,			\
+						display_timings), vsync_active) ?		\
+						LTDC_VSPOL_ACTIVE_HIGH : LTDC_VSPOL_ACTIVE_LOW),\
+				.DEPolarity = (DT_PROP(DT_INST_CHILD(inst,			\
+						display_timings), de_active) ?			\
+						LTDC_DEPOL_ACTIVE_HIGH : LTDC_DEPOL_ACTIVE_LOW),\
+				.PCPolarity = (DT_PROP(DT_INST_CHILD(inst,			\
+						display_timings), pixelclk_active) ?		\
+						LTDC_PCPOL_ACTIVE_HIGH : LTDC_PCPOL_ACTIVE_LOW),\
+				.HorizontalSync = DT_PROP(DT_INST_CHILD(inst,			\
+							display_timings), hsync_len) - 1,	\
+				.VerticalSync = DT_PROP(DT_INST_CHILD(inst,			\
+							display_timings), vsync_len) - 1,	\
+				.AccumulatedHBP = DT_PROP(DT_INST_CHILD(inst,			\
+							display_timings), hback_porch) +	\
+							DT_PROP(DT_INST_CHILD(inst,		\
+							display_timings), hsync_len) - 1,	\
+				.AccumulatedVBP = DT_PROP(DT_INST_CHILD(inst,			\
+							display_timings), vback_porch) +	\
+							DT_PROP(DT_INST_CHILD(inst,		\
+							display_timings), vsync_len) - 1,	\
+				.AccumulatedActiveW = DT_PROP(DT_INST_CHILD(inst,		\
+							display_timings), hback_porch) +	\
+							DT_PROP(DT_INST_CHILD(inst,		\
+							display_timings), hsync_len) +		\
+							DT_INST_PROP(inst, width) - 1,		\
+				.AccumulatedActiveH = DT_PROP(DT_INST_CHILD(inst,		\
+							display_timings), vback_porch) +	\
+							DT_PROP(DT_INST_CHILD(inst,		\
+							display_timings), vsync_len) +		\
+							DT_INST_PROP(inst, height) - 1,		\
+				.TotalWidth = DT_PROP(DT_INST_CHILD(inst,			\
+						display_timings), hback_porch) +		\
+						DT_PROP(DT_INST_CHILD(inst,			\
+						display_timings), hsync_len) +			\
 						DT_INST_PROP(inst, width) +			\
-						DT_INST_PROP(inst, hfp_duration) - 1,		\
-				.TotalHeigh = DT_INST_PROP(inst, vbp_duration) +		\
-						DT_INST_PROP(inst, vsync_duration) +		\
+						DT_PROP(DT_INST_CHILD(inst,			\
+						display_timings), hfront_porch) - 1,		\
+				.TotalHeigh = DT_PROP(DT_INST_CHILD(inst,			\
+						display_timings), vback_porch) +		\
+						DT_PROP(DT_INST_CHILD(inst,			\
+						display_timings), vsync_len) +			\
 						DT_INST_PROP(inst, height) +			\
-						DT_INST_PROP(inst, vfp_duration) - 1,		\
+						DT_PROP(DT_INST_CHILD(inst,			\
+						display_timings), vfront_porch) - 1,		\
 				.Backcolor.Red =						\
 					DT_INST_PROP_OR(inst, def_back_color_red, 0xFF),	\
 				.Backcolor.Green =						\
