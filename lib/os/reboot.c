@@ -14,6 +14,18 @@ extern void sys_arch_reboot(int type);
 FUNC_NORETURN void sys_reboot(int type)
 {
 	(void)irq_lock();
+
+	/* Disable caches to ensure all data is flushed */
+#if defined(CONFIG_ARCH_CACHE)
+#if defined(CONFIG_DCACHE)
+	sys_cache_data_disable();
+#endif /* CONFIG_DCACHE */
+
+#if defined(CONFIG_ICACHE)
+	sys_cache_instr_disable();
+#endif /* CONFIG_ICACHE */
+#endif /* CONFIG_ARCH_CACHE */
+
 	sys_clock_disable();
 
 	sys_arch_reboot(type);
