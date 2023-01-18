@@ -7,6 +7,10 @@
 #include <offsets.h>
 #include <zsr.h>
 
+#if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
+#include <xtensa/simcall.h>
+#endif
+
 /*
  * xtensa_spill_reg_windows
  *
@@ -365,7 +369,17 @@ _KernelExceptionVector:
 .pushsection .DoubleExceptionVector.text, "ax"
 .global _DoubleExceptionVector
 _DoubleExceptionVector:
-#if XCHAL_HAVE_DEBUG
+#if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
+1:
+/* Tell simulator to stop executing here, instead of trying to do
+ * an infinite loop (see below). Greatly help with using tracing in
+ * simulator so that traces will not have infinite iterations of
+ * jumps.
+ */
+	movi a3, 1
+	movi a2, SYS_exit
+	simcall
+#elif XCHAL_HAVE_DEBUG
 /* Signals an unhandled double exception */
 1:	break	1, 4
 #else
