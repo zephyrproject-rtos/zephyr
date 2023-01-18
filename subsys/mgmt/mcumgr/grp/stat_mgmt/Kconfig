@@ -19,6 +19,8 @@ menuconfig MCUMGR_GRP_STAT
 	help
 	  Enables mcumgr handlers for statistics management.
 
+if MCUMGR_GRP_STAT
+
 config MCUMGR_GRP_STAT_MAX_NAME_LEN
 	int "Maximum stat group name length"
 	default 32
@@ -28,3 +30,9 @@ config MCUMGR_GRP_STAT_MAX_NAME_LEN
 	  A buffer of this size gets allocated on the stack during handling of all
 	  stat read commands.  If a stat group's name exceeds this limit, it will
 	  be impossible to retrieve its values with a stat show command.
+
+module = MCUMGR_GRP_STAT
+module-str = mcumgr_grp_stat
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUMGR_GRP_STAT
