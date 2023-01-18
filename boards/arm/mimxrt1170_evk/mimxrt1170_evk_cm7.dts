@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_rt11xx_cm7.dtsi>
 #include "mimxrt1170_evk.dtsi"
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "NXP MIMXRT1170-EVK board";
@@ -51,18 +52,31 @@
 
 &lcdif {
 	status = "okay";
+	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
+	data-bus-width = "24-bit";
+	backlight-gpios = <&gpio9 29 GPIO_ACTIVE_HIGH>;
 	width = <720>;
 	height = <1280>;
-	hsync = <8>;
-	hfp = <32>;
-	hbp = <32>;
-	vsync = <2>;
-	vfp = <16>;
-	vbp = <14>;
-	polarity = <3>;
-	pixel-format = "bgr-565";
-	data-buswidth = "24-bit";
-	backlight-gpios = <&gpio9 29 GPIO_ACTIVE_HIGH>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <8>;
+		hfront-porch = <32>;
+		hback-porch = <32>;
+		vsync-len = <2>;
+		vfront-porch = <16>;
+		vback-porch = <14>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <1>;
+		pixelclk-active = <0>;
+		/*
+		 * Pixel clock is given by the following formula:
+		 * (height + vsync-len + vfront-porch + vback-porch) *
+		 * (width + hsync-len + hfront-porch + hback-porch) * frame rate
+		 */
+		clock-frequency = <62346240>;
+	};
 };
 
 &mipi_dsi {

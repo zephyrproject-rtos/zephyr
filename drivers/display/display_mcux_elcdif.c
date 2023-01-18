@@ -216,9 +216,6 @@ static int mcux_elcdif_init(const struct device *dev)
 
 	elcdif_rgb_mode_config_t rgb_mode = config->rgb_mode;
 
-	/* Shift the polarity bits to the appropriate location in the register */
-	rgb_mode.polarityFlags = rgb_mode.polarityFlags << LCDIF_VDCTRL0_ENABLE_POL_SHIFT;
-
 	/* Set the Pixel format */
 	if (config->pixel_format == PIXEL_FORMAT_BGR_565) {
 		rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB565;
@@ -259,7 +256,7 @@ static const struct display_driver_api mcux_elcdif_api = {
 };
 
 #define MCUX_ELCDIF_PIXEL_BYTES(id)						\
-	COND_CODE_1(DT_INST_ENUM_IDX(id, pixel_format),	(2), (3))
+	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(id, pixel_format)) / 8)
 
 #define MCUX_ELCDIF_DEVICE_INIT(id)						\
 	PINCTRL_DT_INST_DEFINE(id);						\
@@ -270,19 +267,38 @@ static const struct display_driver_api mcux_elcdif_api = {
 		.rgb_mode = {							\
 			.panelWidth = DT_INST_PROP(id, width),			\
 			.panelHeight = DT_INST_PROP(id, height),		\
-			.hsw = DT_INST_PROP(id, hsync),				\
-			.hfp = DT_INST_PROP(id, hfp),				\
-			.hbp = DT_INST_PROP(id, hbp),				\
-			.vsw = DT_INST_PROP(id, vsync),				\
-			.vfp = DT_INST_PROP(id, vfp),				\
-			.vbp = DT_INST_PROP(id, vbp),				\
-			.polarityFlags = DT_INST_PROP(id, polarity),		\
+			.hsw = DT_PROP(DT_INST_CHILD(id, display_timings),	\
+							hsync_len),		\
+			.hfp = DT_PROP(DT_INST_CHILD(id, display_timings),	\
+							hfront_porch),		\
+			.hbp = DT_PROP(DT_INST_CHILD(id, display_timings),	\
+							hback_porch),		\
+			.vsw = DT_PROP(DT_INST_CHILD(id, display_timings),	\
+						vsync_len),			\
+			.vfp = DT_PROP(DT_INST_CHILD(id, display_timings),	\
+						vfront_porch),			\
+			.vbp = DT_PROP(DT_INST_CHILD(id, display_timings),	\
+						vback_porch),			\
+			.polarityFlags = (DT_PROP(DT_INST_CHILD(id,		\
+					display_timings), hsync_active) ?	\
+					kELCDIF_HsyncActiveHigh :		\
+					kELCDIF_HsyncActiveLow) |		\
+				(DT_PROP(DT_INST_CHILD(id,			\
+					display_timings), vsync_active) ?	\
+					kELCDIF_VsyncActiveHigh :		\
+					kELCDIF_VsyncActiveLow) |		\
+				(DT_PROP(DT_INST_CHILD(id,			\
+					display_timings), de_active) ?		\
+					kELCDIF_DataEnableActiveHigh :		\
+					kELCDIF_DataEnableActiveLow) |		\
+				(DT_PROP(DT_INST_CHILD(id,			\
+					display_timings), pixelclk_active) ?	\
+					kELCDIF_DriveDataOnRisingClkEdge :	\
+					kELCDIF_DriveDataOnFallingClkEdge),	\
 			.dataBus = LCDIF_CTRL_LCD_DATABUS_WIDTH(		\
-					DT_INST_ENUM_IDX(id, data_buswidth)),	\
+					DT_INST_ENUM_IDX(id, data_bus_width)),	\
 		},								\
-		.pixel_format = COND_CODE_1(DT_INST_ENUM_IDX(id, pixel_format),	\
-			(PIXEL_FORMAT_BGR_565),					\
-			(PIXEL_FORMAT_RGB_888)),				\
+		.pixel_format = DT_INST_PROP(id, pixel_format),			\
 		.pixel_bytes = MCUX_ELCDIF_PIXEL_BYTES(id),			\
 		.fb_bytes = DT_INST_PROP(id, width) * DT_INST_PROP(id, height)	\
 			* MCUX_ELCDIF_PIXEL_BYTES(id),				\

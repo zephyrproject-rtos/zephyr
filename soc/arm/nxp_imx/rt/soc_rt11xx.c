@@ -454,7 +454,13 @@ static ALWAYS_INLINE void clock_init(void)
 
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
 	rootCfg.mux = kCLOCK_LCDIF_ClockRoot_MuxSysPll2Out;
-	rootCfg.div = 9;
+	/*
+	 * PLL2 is fixed at 528MHz. Use desired panel clock clock to
+	 * calculate LCDIF clock.
+	 */
+	rootCfg.div = ((SYS_PLL2_FREQ /
+			DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings),
+			clock_frequency)) + 1);
 	CLOCK_SetRootClock(kCLOCK_Root_Lcdif, &rootCfg);
 #endif
 

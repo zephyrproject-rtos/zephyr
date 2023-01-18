@@ -317,7 +317,8 @@ static void clock_init(void)
 	 */
 	CLOCK_SetClkDiv(kCLOCK_DivDcPixelClk,
 		((CLOCK_GetSysPfdFreq(kCLOCK_Pfd2) /
-		DT_PROP(DT_NODELABEL(lcdif), clock_frequency)) + 1));
+		DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings),
+			clock_frequency)) + 1));
 
 	CLOCK_EnableClock(kCLOCK_DisplayCtrl);
 	RESET_ClearPeripheralReset(kDISP_CTRL_RST_SHIFT_RSTn);
