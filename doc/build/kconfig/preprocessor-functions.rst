@@ -62,6 +62,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_nodelabel_path,<node label>)
    $(dt_node_parent,<node path>)
    $(dt_nodelabel_array_prop_has_val, <node label>, <prop>, <value>)
+   $(dt_gpio_hogs_enabled)
    $(shields_list_contains,<shield name>)
 
 

@@ -708,6 +708,19 @@ def dt_node_parent(kconf, _, path):
 
     return node.parent.path if node.parent else ""
 
+def dt_gpio_hogs_enabled(kconf, _):
+    """
+    Return "y" if any GPIO hog node is enabled. Otherwise, return "n".
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    for node in edt.nodes:
+        if node.gpio_hogs and node.status == "okay":
+            return "y"
+
+    return "n"
+
 def shields_list_contains(kconf, _, shield):
     """
     Return "n" if cmake environment variable 'SHIELD_AS_LIST' doesn't exist.
@@ -766,5 +779,6 @@ functions = {
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
         "dt_node_parent": (dt_node_parent, 1, 1),
         "dt_nodelabel_array_prop_has_val": (dt_nodelabel_array_prop_has_val, 3, 3),
+        "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }
