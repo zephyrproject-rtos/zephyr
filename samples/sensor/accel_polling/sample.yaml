@@ -8,7 +8,8 @@ tests:
     harness_config:
       type: one_line
       regex:
-        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
+        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
+           \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
     integration_platforms:
       - cc1352r_sensortag               # adxl362
       - blueclover_plt_demo_v2_nrf52832 # bmi270

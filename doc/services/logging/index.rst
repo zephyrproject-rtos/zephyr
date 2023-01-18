@@ -142,6 +142,8 @@ packet buffer.
 
 :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
 
+:kconfig:option:`CONFIG_LOG_CUSTOM_HEADER`: Injects an application provided header into log.h
+
 :kconfig:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
 
 Formatting options:
@@ -482,6 +484,10 @@ to functions declared in :zephyr_file:`include/zephyr/logging/log_frontend.h`.
 If option :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY` is enabled then log message is not
 created and no backend is handled. Otherwise, custom frontend can coexist with
 backends.
+
+In some cases, logs need to be redirected at the macro level. For these cases,
+:kconfig:option:`CONFIG_LOG_CUSTOM_HEADER` can be used to inject an application provided
+header named `zephyr_custom_log.h` at the end of :zephyr_file:`include/zephyr/logging/log.h`.
 
 .. _logging_strings:
 

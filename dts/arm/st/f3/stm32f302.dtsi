@@ -19,7 +19,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>,
+				 /* I2C clock source should always be defined,
+				  * even for the default value
+				  */
+				 <&rcc STM32_SRC_SYSCLK I2C2_SEL(1)>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -31,7 +35,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x40000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x40000000>,
+				 /* I2C clock source should always be defined,
+				  * even for the default value
+				  */
+				 <&rcc STM32_SRC_SYSCLK I2C3_SEL(1)>;
 			interrupts = <72 0>, <73 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -78,6 +86,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
+			resets = <&rctl STM32_RESET(APB1, 2U)>;
 			interrupts = <30 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;

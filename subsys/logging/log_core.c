@@ -221,6 +221,7 @@ void log_core_init(void)
 {
 	panic_mode = false;
 	dropped_cnt = 0;
+	buffered_cnt = 0;
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_init();

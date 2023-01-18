@@ -14,7 +14,7 @@ extern "C" {
 
 /* Architecture thread structure */
 struct _callee_saved {
-#ifdef CONFIG_CPLUSPLUS
+#ifdef CONFIG_CPP
 	/* C++ does not allow empty structs, add an extra 1 byte */
 	uint8_t c;
 #endif
@@ -23,7 +23,7 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
-#ifdef CONFIG_CPLUSPLUS
+#ifdef CONFIG_CPP
 	/* C++ does not allow empty structs, add an extra 1 byte */
 	uint8_t c;
 #endif

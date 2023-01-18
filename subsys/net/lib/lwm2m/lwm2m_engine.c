@@ -47,6 +47,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_util.h"
+#include "lwm2m_rd_client.h"
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
 #endif
@@ -59,11 +60,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #ifdef CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT
 #include "lwm2m_rw_senml_cbor.h"
 #endif
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-#include "lwm2m_rd_client.h"
-#endif
 
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #else
@@ -633,14 +631,40 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 
 static int socket_send_message(struct lwm2m_ctx *client_ctx)
 {
+	int rc;
 	sys_snode_t *msg_node = sys_slist_get(&client_ctx->pending_sends);
 	struct lwm2m_message *msg;
 
 	if (!msg_node) {
 		return 0;
 	}
+
 	msg = SYS_SLIST_CONTAINER(msg_node, msg, node);
-	return lwm2m_send_message(msg);
+	if (!msg || !msg->ctx) {
+		LOG_ERR("LwM2M message is invalid.");
+		return -EINVAL;
+	}
+
+	if (msg->type == COAP_TYPE_CON) {
+		coap_pending_cycle(msg->pending);
+	}
+
+	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
+
+	if (rc < 0) {
+		LOG_ERR("Failed to send packet, err %d", errno);
+		if (msg->type != COAP_TYPE_CON) {
+			lwm2m_reset_message(msg, true);
+		}
+
+		return -errno;
+	}
+
+	if (msg->type != COAP_TYPE_CON) {
+		lwm2m_reset_message(msg, true);
+	}
+
+	return 0;
 }
 
 static void socket_reset_pollfd_events(void)
@@ -659,20 +683,30 @@ static void socket_loop(void)
 	int i, rc;
 	int64_t timestamp;
 	int32_t timeout, next_retransmit;
+	bool rd_client_paused;
 
 	while (1) {
+		rd_client_paused = false;
 		/* Check is Thread Suspend Requested */
 		if (suspend_engine_thread) {
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
-			lwm2m_rd_client_pause();
-#endif
+			rc = lwm2m_rd_client_pause();
+			if (rc == 0) {
+				rd_client_paused = true;
+			} else {
+				LOG_ERR("Could not pause RD client");
+			}
+
 			suspend_engine_thread = false;
 			active_engine_thread = false;
 			k_thread_suspend(engine_thread_id);
 			active_engine_thread = true;
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
-			lwm2m_rd_client_resume();
-#endif
+
+			if (rd_client_paused) {
+				rc = lwm2m_rd_client_resume();
+				if (rc < 0) {
+					LOG_ERR("Could not resume RD client");
+				}
+			}
 		}
 
 		timestamp = k_uptime_get();

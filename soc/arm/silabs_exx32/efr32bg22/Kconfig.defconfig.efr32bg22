@@ -1,0 +1,10 @@
+# Silicon Labs EFR32BG22 (Blue Gecko) MCU configuration options
+
+# Copyright (c) 2021 Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_GECKO
+	default y
+
+config SOC_FLASH_GECKO
+	default n

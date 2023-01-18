@@ -35,6 +35,16 @@ static int sbs_cmd_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t
 	return 0;
 }
 
+static int sbs_cmd_reg_write(const struct device *dev, uint8_t reg_addr, uint16_t val)
+{
+	const struct sbs_gauge_config *config = dev->config;
+	uint8_t buf[2];
+
+	sys_put_le16(val, buf);
+
+	return i2c_burst_write_dt(&config->i2c, reg_addr, buf, sizeof(buf));
+}
+
 static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_property *prop)
 {
 	int rc = 0;
@@ -69,6 +79,10 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_TIME2FULL, &val);
 		prop->value.runtime_to_empty = val;
 		break;
+	case FUEL_GAUGE_SBS_MFR_ACCESS:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS, &val);
+		prop->value.sbs_mfr_access_word = val;
+		break;
 	case FUEL_GAUGE_STATE_OF_CHARGE:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ASOC, &val);
 		prop->value.state_of_charge = val;
@@ -90,6 +104,27 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 	return rc;
 }
 
+static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_property *prop)
+{
+	int rc = 0;
+	uint16_t val = 0;
+
+	switch (prop->property_type) {
+
+	case FUEL_GAUGE_SBS_MFR_ACCESS:
+		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS,
+				       prop->value.sbs_mfr_access_word);
+		prop->value.sbs_mfr_access_word = val;
+		break;
+	default:
+		rc = -ENOTSUP;
+	}
+
+	prop->status = rc;
+
+	return rc;
+}
+
 static int sbs_gauge_get_props(const struct device *dev, struct fuel_gauge_get_property *props,
 			       size_t len)
 {
@@ -97,6 +132,22 @@ static int sbs_gauge_get_props(const struct device *dev, struct fuel_gauge_get_p
 
 	for (int i = 0; i < len; i++) {
 		int ret = sbs_gauge_get_prop(dev, props + i);
+
+		err_count += ret ? 1 : 0;
+	}
+
+	err_count = (err_count == len) ? -1 : err_count;
+
+	return err_count;
+}
+
+static int sbs_gauge_set_props(const struct device *dev, struct fuel_gauge_set_property *props,
+			       size_t len)
+{
+	int err_count = 0;
+
+	for (int i = 0; i < len; i++) {
+		int ret = sbs_gauge_set_prop(dev, props + i);
 
 		err_count += ret ? 1 : 0;
 	}
@@ -127,6 +178,7 @@ static int sbs_gauge_init(const struct device *dev)
 
 static const struct battery_driver_api sbs_gauge_driver_api = {
 	.get_property = &sbs_gauge_get_props,
+	.set_property = &sbs_gauge_set_props,
 };
 
 /* FIXME: fix init priority */

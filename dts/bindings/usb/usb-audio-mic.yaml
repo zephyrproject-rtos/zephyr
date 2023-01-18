@@ -14,10 +14,10 @@ properties:
     type: int
     default: 16
     enum:
-     - 8
-     - 16
-     - 24
-     - 32
+      - 8
+      - 16
+      - 24
+      - 32
   sync-type:
     default: "Synchronous"
     type: string
@@ -26,11 +26,11 @@ properties:
       Default value is Sychronous.
       Adaptive is not supported.
     enum:
-     - "No Synchronization"
-     - "Asynchronous"
-     - "Adaptive"
-     - "Synchronous"
-# channel configuration options
+      - "No Synchronization"
+      - "Asynchronous"
+      - "Adaptive"
+      - "Synchronous"
+  # channel configuration options
   channel-l:
     type: boolean
     description: Enable (l) channel.
@@ -70,7 +70,7 @@ properties:
   channel-cfg:
     type: boolean
     description: Enable (cfg) channel.
-# feature unit configuration options
+  # feature unit configuration options
   feature-mute:
     type: boolean
     required: true

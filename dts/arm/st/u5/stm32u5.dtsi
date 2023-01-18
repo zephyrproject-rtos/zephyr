@@ -115,7 +115,7 @@
 
 	soc {
 		flash: flash-controller@40022000 {
-			compatible = "st,stm32-flash-controller", "st,stm32u5-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32l5-flash-controller";
 			reg = <0x40022000 0x400>;
 			interrupts = <6 0>;
 
@@ -408,6 +408,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>;
 			interrupts = <67 1>;
 			interrupt-names = "wakeup";
+			st,static-prescaler;
 			status = "disabled";
 		};
 
@@ -568,6 +569,7 @@
 			status = "disabled";
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;
+			has-vbat-channel;
 			has-temp-channel;
 			has-vref-channel;
 		};
@@ -579,6 +581,7 @@
 			interrupts = <113 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			has-vbat-channel;
 			has-temp-channel;
 			has-vref-channel;
 		};

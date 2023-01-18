@@ -17,8 +17,13 @@ import tempfile
 import traceback
 import shlex
 
+from yamllint import config, linter
+
 from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
 import magic
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from get_maintainer import Maintainers, MaintainersError
 
 logger = None
 
@@ -57,7 +62,13 @@ def get_shas(refspec):
 def get_files(filter=None, paths=None):
     filter_arg = (f'--diff-filter={filter}',) if filter else ()
     paths_arg = ('--', *paths) if paths else ()
-    return git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
+    out = git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
+    files = out.splitlines()
+    for file in list(files):
+        if not os.path.isfile(os.path.join(GIT_TOP, file)):
+            # Drop submodule directories from the list.
+            files.remove(file)
+    return files
 
 class FmtdFailure(Failure):
 
@@ -219,9 +230,10 @@ class DevicetreeBindingsCheck(ComplianceTest):
     path_hint = "<zephyr-base>"
 
     def run(self, full=True):
-        dts_yaml = self.parse_dt_bindings()
+        dts_bindings = self.parse_dt_bindings()
 
-        self.required_false_check(dts_yaml)
+        for dts_binding in dts_bindings:
+            self.required_false_check(dts_binding)
 
     def parse_dt_bindings(self):
         """
@@ -229,27 +241,22 @@ class DevicetreeBindingsCheck(ComplianceTest):
         """
 
         dt_bindings = []
-        for file_name in get_files():
-            if file_name.startswith('dts/bindings/') and file_name.endswith('.yaml'):
+        for file_name in get_files(filter="d"):
+            if 'dts/bindings/' in file_name and file_name.endswith('.yaml'):
                 dt_bindings.append(file_name)
 
         return dt_bindings
 
-    def required_false_check(self, dt_bindings):
-        for file_name in dt_bindings:
-            try:
-                with open(file_name) as file:
-                    line_number = 0
-                    for line in file:
-                        line_number += 1
-                        if 'required: false' in line:
-                            self.fmtd_failure(
-                                'warning', 'Devicetree Bindings', file_name,
-                                line_number, col=None,
-                                desc="'required: false' is redundant, please remove")
-            except Exception:
-                # error opening file (it was likely deleted by the commit)
-                continue
+    def required_false_check(self, dts_binding):
+        with open(dts_binding) as file:
+            line_number = 0
+            for line in file:
+                line_number += 1
+                if 'required: false' in line:
+                    self.fmtd_failure(
+                        'warning', 'Devicetree Bindings', dts_binding,
+                        line_number, col=None,
+                        desc="'required: false' is redundant, please remove")
 
 
 class KconfigCheck(ComplianceTest):
@@ -677,128 +684,6 @@ class KconfigBasicCheck(KconfigCheck):
         super().run(full=False)
 
 
-class Codeowners(ComplianceTest):
-    """
-    Check if added files have an owner.
-    """
-    name = "Codeowners"
-    doc = "See https://help.github.com/articles/about-code-owners/ for more details."
-    path_hint = "<git-top>"
-
-    def ls_owned_files(self, codeowners):
-        """Returns an OrderedDict mapping git patterns from the CODEOWNERS file
-        to the corresponding list of files found on the filesystem.  It
-        unfortunately does not seem possible to invoke git and re-use
-        how 'git ignore' and/or 'git attributes' already implement this,
-        we must re-invent it.
-        """
-
-        # TODO: filter out files not in "git ls-files" (e.g.,
-        # twister-out) _if_ the overhead isn't too high for a clean tree.
-        #
-        # pathlib.match() doesn't support **, so it looks like we can't
-        # recursively glob the output of ls-files directly, only real
-        # files :-(
-
-        pattern2files = collections.OrderedDict()
-        top_path = Path(GIT_TOP)
-
-        with open(codeowners, "r") as codeo:
-            for lineno, line in enumerate(codeo, start=1):
-
-                if line.startswith("#") or not line.strip():
-                    continue
-
-                match = re.match(r"^([^\s,]+)\s+[^\s]+", line)
-                if not match:
-                    self.failure(f"Invalid CODEOWNERS line {lineno}\n\t{line}")
-                    continue
-
-                git_patrn = match.group(1)
-                glob = self.git_pattern_to_glob(git_patrn)
-                files = []
-                for abs_path in top_path.glob(glob):
-                    # comparing strings is much faster later
-                    files.append(str(abs_path.relative_to(top_path)))
-
-                if not files:
-                    self.failure(f"Path '{git_patrn}' not found in the tree"
-                                 f"but is listed in CODEOWNERS")
-
-                pattern2files[git_patrn] = files
-
-        return pattern2files
-
-    def git_pattern_to_glob(self, git_pattern):
-        """Appends and prepends '**[/*]' when needed. Result has neither a
-        leading nor a trailing slash.
-        """
-
-        if git_pattern.startswith("/"):
-            ret = git_pattern[1:]
-        else:
-            ret = "**/" + git_pattern
-
-        if git_pattern.endswith("/"):
-            ret = ret + "**/*"
-        elif os.path.isdir(os.path.join(GIT_TOP, ret)):
-            self.failure("Expected '/' after directory '{}' "
-                             "in CODEOWNERS".format(ret))
-
-        return ret
-
-    def run(self):
-        codeowners = os.path.join(GIT_TOP, "CODEOWNERS")
-        if not os.path.exists(codeowners):
-            self.skip("CODEOWNERS not available in this repo")
-
-        name_changes = get_files(filter="ARCD")
-        owners_changes = get_files(paths=(codeowners,))
-
-        if not name_changes and not owners_changes:
-            # TODO: 1. decouple basic and cheap CODEOWNERS syntax
-            # validation from the expensive ls_owned_files() scanning of
-            # the entire tree. 2. run the former always.
-            return
-
-        logger.info("If this takes too long then cleanup and try again")
-        patrn2files = self.ls_owned_files(codeowners)
-
-        # The way git finds Renames and Copies is not "exact science",
-        # however if one is missed then it will always be reported as an
-        # Addition instead.
-        new_files = get_files(filter="ARC").splitlines()
-        logger.debug(f"New files {new_files}")
-
-        # Convert to pathlib.Path string representation (e.g.,
-        # backslashes 'dir1\dir2\' on Windows) to be consistent
-        # with self.ls_owned_files()
-        new_files = [str(Path(f)) for f in new_files]
-
-        new_not_owned = []
-        for newf in new_files:
-            f_is_owned = False
-
-            for git_pat, owned in patrn2files.items():
-                logger.debug(f"Scanning {git_pat} for {newf}")
-
-                if newf in owned:
-                    logger.info(f"{git_pat} matches new file {newf}")
-                    f_is_owned = True
-                    # Unlike github, we don't care about finding any
-                    # more specific owner.
-                    break
-
-            if not f_is_owned:
-                new_not_owned.append(newf)
-
-        if new_not_owned:
-            self.failure("New files added that are not covered in "
-                         "CODEOWNERS:\n\n" + "\n".join(new_not_owned) +
-                         "\n\nPlease add one or more entries in the "
-                         "CODEOWNERS file to cover those files")
-
-
 class Nits(ComplianceTest):
     """
     Checks various nits in added/modified files. Doesn't check stuff that's
@@ -810,7 +695,7 @@ class Nits(ComplianceTest):
 
     def run(self):
         # Loop through added/modified files
-        for fname in get_files(filter="d").splitlines():
+        for fname in get_files(filter="d"):
             if "Kconfig" in fname:
                 self.check_kconfig_header(fname)
                 self.check_redundant_zephyr_source(fname)
@@ -932,7 +817,7 @@ class PyLint(ComplianceTest):
                                                 "pylintrc"))
 
         # List of files added/modified by the commit(s).
-        files = get_files(filter="d").splitlines()
+        files = get_files(filter="d")
 
         # Filter out everything but Python files. Keep filenames
         # relative (to GIT_TOP) to stay farther from any command line
@@ -976,13 +861,8 @@ def filter_py(root, fnames):
     # Uses the python-magic library, so that we can detect Python
     # files that don't end in .py as well. python-magic is a frontend
     # to libmagic, which is also used by 'file'.
-    #
-    # The extra os.path.isfile() is necessary because git includes
-    # submodule directories in its output.
-
     return [fname for fname in fnames
-            if os.path.isfile(os.path.join(root, fname)) and
-            (fname.endswith(".py") or
+            if (fname.endswith(".py") or
              magic.from_file(os.path.join(root, fname),
                              mime=True) == "text/x-python")]
 
@@ -1060,6 +940,87 @@ class BinaryFiles(ComplianceTest):
                     fname.endswith(BINARY_ALLOW_EXT)):
                     continue
                 self.failure(f"Binary file not allowed: {fname}")
+
+
+class ImageSize(ComplianceTest):
+    """
+    Check that any added image is limited in size.
+    """
+    name = "ImageSize"
+    doc = "Check the size of image files."
+    path_hint = "<git-top>"
+
+    def run(self):
+        SIZE_LIMIT = 250 << 10
+        BOARD_SIZE_LIMIT = 100 << 10
+
+        for file in get_files(filter="d"):
+            full_path = os.path.join(GIT_TOP, file)
+            mime_type = magic.from_file(full_path, mime=True)
+
+            if not mime_type.startswith("image/"):
+                continue
+
+            size = os.path.getsize(full_path)
+
+            limit = SIZE_LIMIT
+            if file.startswith("boards/"):
+                limit = BOARD_SIZE_LIMIT
+
+            if size > limit:
+                self.failure(f"Image file too large: {file} reduce size to "
+                             f"less than {limit >> 10}kB")
+
+
+class MaintainersFormat(ComplianceTest):
+    """
+    Check that MAINTAINERS file parses correctly.
+    """
+    name = "MaintainersFormat"
+    doc = "Check that MAINTAINERS file parses correctly."
+    path_hint = "<git-top>"
+
+    def run(self):
+        MAINTAINERS_FILES = ["MAINTAINERS.yml", "MAINTAINERS.yaml"]
+
+        for file in get_files(filter="d"):
+            if file not in MAINTAINERS_FILES:
+                continue
+
+            try:
+                Maintainers(file)
+            except MaintainersError as ex:
+                self.failure(f"Error parsing {file}: {ex}")
+
+
+class YAMLLint(ComplianceTest):
+    """
+    YAMLLint
+    """
+    name = "YAMLLint"
+    doc = "Check YAML files with YAMLLint."
+    path_hint = "<git-top>"
+
+    def run(self):
+        config_file = os.path.join(ZEPHYR_BASE, ".yamllint")
+
+        for file in get_files(filter="d"):
+            if Path(file).suffix not in ['.yaml', '.yml']:
+                continue
+
+            yaml_config = config.YamlLintConfig(file=config_file)
+
+            if file.startswith(".github/"):
+                # Tweak few rules for workflow files.
+                yaml_config.rules["line-length"] = False
+                yaml_config.rules["truthy"]["allowed-values"].extend(['on', 'off'])
+            elif file == ".codecov.yml":
+                yaml_config.rules["truthy"]["allowed-values"].extend(['yes', 'no'])
+
+            with open(file, 'r') as fp:
+                for p in linter.run(fp, yaml_config):
+                    self.fmtd_failure('warning', f'YAMLLint ({p.rule})', file,
+                                      p.line, col=p.column, desc=p.desc)
 
 
 def init_logs(cli_arg):

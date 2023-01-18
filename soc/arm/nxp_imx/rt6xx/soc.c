@@ -25,7 +25,7 @@
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
 
-#ifdef CONFIG_CODE_FLEXSPI
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 #include "flash_clock_setup.h"
 #endif
 
@@ -195,7 +195,7 @@ static ALWAYS_INLINE void clock_init(void)
 	POWER_DisablePD(kPDRUNCFG_PD_SFRO);
 	CLOCK_EnableSfroClk();
 
-#ifdef CONFIG_CODE_FLEXSPI
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	/*
 	 * Call function flexspi_clock_safe_config() to move FlexSPI clock to a stable
 	 * clock source to avoid instruction/data fetch issue when updating PLL and Main
@@ -303,7 +303,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kLPOSC_to_I3C_TC_CLK);
 #endif
 
-#ifdef CONFIG_CODE_FLEXSPI
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	/*
 	 * Call function flexspi_setup_clock() to set user configured clock source/divider
 	 * for FlexSPI.

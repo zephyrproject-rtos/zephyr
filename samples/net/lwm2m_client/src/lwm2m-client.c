@@ -283,7 +283,7 @@ static void rd_client_event(struct lwm2m_ctx *client,
 static void observe_cb(enum lwm2m_observe_event event,
 		       struct lwm2m_obj_path *path, void *user_data)
 {
-	char buf[LWM2M_MAX_PATH_STR_LEN];
+	char buf[LWM2M_MAX_PATH_STR_SIZE];
 
 	switch (event) {
 

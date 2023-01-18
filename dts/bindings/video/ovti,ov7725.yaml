@@ -6,10 +6,10 @@ description: OV7725 CMOS video sensor
 compatible: "ovti,ov7725"
 
 properties:
-    reset-gpios:
-      type: phandle-array
-      description: |
-        The RESETn pin is asserted to disable the sensor causing a hard
-        reset.  The sensor receives this as an active-low signal.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset.  The sensor receives this as an active-low signal.
 
 include: i2c-device.yaml

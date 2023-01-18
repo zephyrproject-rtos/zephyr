@@ -831,12 +831,12 @@ void bt_mesh_subnet_pending_store(void)
 			continue;
 		}
 
+		update->valid = 0U;
+
 		if (update->clear) {
 			clear_net_key(update->key_idx);
 		} else {
 			store_subnet(update->key_idx);
 		}
-
-		update->valid = 0U;
 	}
 }

@@ -130,12 +130,12 @@ SECTIONS {
 #include <snippets-rodata.ld>
 #include <zephyr/linker/kobject-rom.ld>
 
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
+#if defined(CONFIG_CPP) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
 		. = ALIGN(4);
 		_fctors = .;
 		KEEP(*(.ctors*))
 		_ectors = .;
-#endif /* CONFIG_CPLUSPLUS && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
+#endif /* CONFIG_CPP && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 
 		MPU_ALIGN(ABSOLUTE(.) - __rom_region_start);
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -252,6 +252,22 @@ SECTIONS {
 	_estack = .;
 #endif /* __MWDT_LINKER_CMD__ */
 
+#ifdef CONFIG_ARC_XY_ENABLE
+	SECTION_PROLOGUE(xdata,,)
+	{
+		__xdata_start = .;
+		*(.Xdata*)
+		__xdata_end = .;
+	} GROUP_DATA_LINK_IN(XCCM, RAMABLE_REGION)
+
+	SECTION_PROLOGUE(ydata,,)
+	{
+		__ydata_start = .;
+		*(.Ydata*)
+		__ydata_end = .;
+	} GROUP_DATA_LINK_IN(YCCM, RAMABLE_REGION)
+#endif
+
 	GROUP_END(RAMABLE_REGION)
 
 /* Located in generated directory. This file is populated by the
@@ -277,11 +293,11 @@ SECTIONS {
 #endif
 
 	/DISCARD/ : {
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
+#if defined(CONFIG_CPP) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
 		*(.dtors*)
 		*(.fini*)
 		*(.eh_frame*)
-#endif /* CONFIG_CPLUSPLUS && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
+#endif /* CONFIG_CPP && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 		*(.note.GNU-stack)
 		*(.got.plt)
 		*(.igot.plt)

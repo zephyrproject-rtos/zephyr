@@ -158,6 +158,7 @@
 /boards/arm/stm32*_eval/                  @erwango @ABOSTM @FRASTM
 /boards/arm/rcar_h3ulcb/                  @aaillet @pmarzin
 /boards/arm/ubx_bmd345eval_nrf52840/      @Navin-Sankar @brec-u-blox
+/boards/arm/nrf5340_audio_dk_nrf5340      @koffes @alexsven @erikrobstad @rick1082 @gWacey
 /boards/common/                           @mbolivar-nordic
 /boards/deprecated.cmake                  @tejlmand
 /boards/mips/                             @frantony
@@ -187,6 +188,7 @@
 /boards/arm64/mimx8mm_evk/                @MrVan @JiafeiPan
 /boards/arm64/mimx8mp_evk/                @MrVan @JiafeiPan
 /boards/arm64/mimx8mn_evk/                @JiafeiPan
+/boards/arm64/mimx93_evk/                 @JiafeiPan
 /boards/arm64/nxp_ls1046ardb/             @JiafeiPan
 /boards/arm64/xenvm/                      @lorc @firscity
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
@@ -353,6 +355,7 @@
 /drivers/ps2/*xec*                        @franciscomunoz @sjvasanth1
 /drivers/ps2/*npcx*                       @MulinChao @ChiHuaL
 /drivers/pwm/*b91*                        @andy-liu-telink
+/drivers/pwm/*pca9685*                    @nixward
 /drivers/pwm/*rpi_pico*                   @burumaj
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
 /drivers/pwm/*sam0*                       @nzmichaelh
@@ -494,6 +497,7 @@
 /dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
 /dts/arm/silabs/efm32gg11b*               @oanerer
 /dts/arm/silabs/efr32bg13p*               @mnkp
+/dts/arm/silabs/efr32bg22*                @kgugala @fkokosinski @pczarnecki
 /dts/arm/silabs/efr32xg13p*               @mnkp
 /dts/arm/silabs/efm32pg1b*                @rdmeneze
 /dts/arm/silabs/efr32mg21*                @l-alfred
@@ -647,6 +651,7 @@
 /include/zephyr/toolchain/                       @dcpleung @nashif @andyross
 /include/zephyr/zephyr.h                         @dcpleung @nashif @andyross
 /kernel/                                  @dcpleung @nashif @andyross
+/lib/cpp/                                 @stephanosio
 /lib/smf/                                 @sambhurst
 /lib/util/                                @carlescufi @jakub-uC
 /lib/util/fnmatch/                        @carlescufi @jakub-uC
@@ -733,6 +738,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/twister                          @nashif
 /scripts/series-push-hook.sh              @erwango
 /scripts/utils/pinctrl_nrf_migrate.py     @gmarull
+/scripts/utils/migrate_mcumgr_kconfigs.py @de-nordic
 /scripts/west_commands/                   @mbolivar-nordic
 /scripts/west_commands/blobs.py           @carlescufi
 /scripts/west_commands/fetchers/          @carlescufi

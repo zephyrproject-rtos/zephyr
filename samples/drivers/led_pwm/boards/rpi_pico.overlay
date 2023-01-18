@@ -1,9 +1,15 @@
-&pwm_led0 {
-	status = "okay";
+/ {
+	leds {
+		status = "disabled";
+	};
+
+	pwm_leds {
+		status = "okay";
+	};
 };
 
 &pwm {
 	status = "okay";
-	divider-frac-4 = <255>;
+	divider-frac-4 = <15>;
 	divider-int-4 = <255>;
 };

@@ -30,22 +30,22 @@ include:
 
 properties:
 
-    div-m:
-      type: int
-      required: true
-      description: |
-          Division factor for PLL input clock
-          Valid range: 1 - 16
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for PLL input clock
+        Valid range: 1 - 16
 
-    mul-n:
-      type: int
-      required: true
-      description: |
-          Main PLL multiplication factor for VCO
-          Valid range: 8 - 127
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCO
+        Valid range: 8 - 127
 
-    div-p:
-      type: int
-      description: |
-          Main PLL division factor for ADC
-          Valid range: 2 - 31
+  div-p:
+    type: int
+    description: |
+        Main PLL division factor for ADC
+        Valid range: 2 - 31

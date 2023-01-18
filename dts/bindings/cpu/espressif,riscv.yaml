@@ -8,6 +8,6 @@ compatible: "espressif,riscv"
 include: cpu.yaml
 
 properties:
-    clock-source:
-      type: int
-      description: cpu clock source
+  clock-source:
+    type: int
+    description: cpu clock source

@@ -153,18 +153,6 @@ static inline void hpet_gconf_set(uint32_t val)
 }
 
 /**
- * @brief Write to General Interrupt Status Register
- *
- * This is used to acknowledge and clear interrupt bits.
- *
- * @param val Value to be written to the register
- */
-static inline void hpet_int_sts_set(uint32_t val)
-{
-	sys_write32(val, INTR_STATUS_REG);
-}
-
-/**
  * @brief Return the value of the Timer Configuration Register
  *
  * This reads and returns the value of the Timer Configuration
@@ -258,6 +246,20 @@ static __pinned_bss unsigned int cyc_per_tick;
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 #define HPET_MAX_TICKS ((int32_t)0x7fffffff)
+
+#ifdef HPET_INT_LEVEL_TRIGGER
+/**
+ * @brief Write to General Interrupt Status Register
+ *
+ * This is used to acknowledge and clear interrupt bits.
+ *
+ * @param val Value to be written to the register
+ */
+static inline void hpet_int_sts_set(uint32_t val)
+{
+	sys_write32(val, INTR_STATUS_REG);
+}
+#endif
 
 __isr
 static void hpet_isr(const void *arg)

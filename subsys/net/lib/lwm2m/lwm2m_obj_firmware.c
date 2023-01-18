@@ -97,7 +97,7 @@ uint8_t lwm2m_firmware_get_update_state(void)
 void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 {
 	bool error = false;
-	char path[LWM2M_MAX_PATH_STR_LEN];
+	char path[LWM2M_MAX_PATH_STR_SIZE];
 
 	snprintk(path, sizeof(path), "%" PRIu16 "/%" PRIu16 "/%" PRIu16,
 		LWM2M_OBJECT_FIRMWARE_ID, obj_inst_id, FIRMWARE_UPDATE_RESULT_ID);
@@ -164,7 +164,7 @@ void lwm2m_firmware_set_update_result_inst(uint16_t obj_inst_id, uint8_t result)
 {
 	uint8_t state;
 	bool error = false;
-	char path[LWM2M_MAX_PATH_STR_LEN];
+	char path[LWM2M_MAX_PATH_STR_SIZE];
 
 	/* Check LWM2M SPEC appendix E.6.1 */
 	switch (result) {

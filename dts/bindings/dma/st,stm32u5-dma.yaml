@@ -55,8 +55,8 @@ compatible: "st,stm32u5-dma"
 include: st,stm32-dma.yaml
 
 properties:
-    "#dma-cells":
-      const: 3
+  "#dma-cells":
+    const: 3
 
 dma-cells:
   - channel

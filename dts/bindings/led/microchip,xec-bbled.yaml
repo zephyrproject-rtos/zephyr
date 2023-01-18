@@ -8,24 +8,18 @@ include: [base.yaml, pinctrl-device.yaml]
 compatible: "microchip,xec-bbled"
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    pinctrl-0:
-      required: false
+  girqs:
+    type: array
+    required: true
+    description: Array of pairs of GIRQ number and bit position
 
-    pinctrl-names:
-      required: false
-
-    girqs:
-      type: array
-      required: true
-      description: Array of pairs of GIRQ number and bit position
-
-    pcrs:
-      type: array
-      required: true
-      description: BBLED PCR register index and bit position
+  pcrs:
+    type: array
+    required: true
+    description: BBLED PCR register index and bit position

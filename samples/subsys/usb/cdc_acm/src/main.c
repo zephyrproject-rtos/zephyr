@@ -29,7 +29,7 @@ uint8_t ring_buffer[RING_BUF_SIZE];
 
 struct ring_buf ringbuf;
 
-#if IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT)
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 USBD_CONFIGURATION_DEFINE(config_1,
 			  USB_SCD_SELF_POWERED,
 			  200);
@@ -162,7 +162,7 @@ void main(void)
 		return;
 	}
 
-#if IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT)
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 		ret = enable_usb_device_next();
 #else
 		ret = usb_enable(NULL);
@@ -200,8 +200,8 @@ void main(void)
 		LOG_WRN("Failed to set DSR, ret code %d", ret);
 	}
 
-	/* Wait 1 sec for the host to do all settings */
-	k_busy_wait(1000000);
+	/* Wait 100ms for the host to do all settings */
+	k_msleep(100);
 
 	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {

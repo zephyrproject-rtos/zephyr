@@ -12,6 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_H_
 
+#define WIFI_COUNTRY_CODE_LEN 2
+
 /* Not having support for legacy types is deliberate to enforce
  * higher security.
  */
@@ -244,5 +246,76 @@ static inline const char *wifi_link_mode_txt(enum wifi_link_mode link_mode)
 		return "UNKNOWN";
 	}
 }
+
+enum wifi_ps {
+	WIFI_PS_DISABLED = 0,
+	WIFI_PS_ENABLED,
+};
+
+static const char * const wifi_ps2str[] = {
+	[WIFI_PS_DISABLED] = "Power save disabled",
+	[WIFI_PS_ENABLED] = "Power save enabled",
+};
+
+enum wifi_ps_mode {
+	WIFI_PS_MODE_LEGACY = 0,
+	/* This has to be configured before connecting to the AP,
+	 * as support for ADDTS action frames is not available.
+	 */
+	WIFI_PS_MODE_WMM,
+};
+
+static const char * const wifi_ps_mode2str[] = {
+	[WIFI_PS_MODE_LEGACY] = "Legacy power save",
+	[WIFI_PS_MODE_WMM] = "WMM power save",
+};
+
+enum wifi_twt_operation {
+	WIFI_TWT_SETUP = 0,
+	WIFI_TWT_TEARDOWN,
+};
+
+static const char * const wifi_twt_operation2str[] = {
+	[WIFI_TWT_SETUP] = "TWT setup",
+	[WIFI_TWT_TEARDOWN] = "TWT teardown",
+};
+
+enum wifi_twt_negotiation_type {
+	WIFI_TWT_INDIVIDUAL = 0,
+	WIFI_TWT_BROADCAST,
+	WIFI_TWT_WAKE_TBTT
+};
+
+static const char * const wifi_twt_negotiation_type2str[] = {
+	[WIFI_TWT_INDIVIDUAL] = "TWT individual negotiation",
+	[WIFI_TWT_BROADCAST] = "TWT broadcast negotiation",
+	[WIFI_TWT_WAKE_TBTT] = "TWT wake TBTT negotiation",
+};
+
+enum wifi_twt_setup_cmd {
+	/* TWT Requests */
+	WIFI_TWT_SETUP_CMD_REQUEST = 0,
+	WIFI_TWT_SETUP_CMD_SUGGEST,
+	WIFI_TWT_SETUP_CMD_DEMAND,
+	/* TWT Responses */
+	WIFI_TWT_SETUP_CMD_GROUPING,
+	WIFI_TWT_SETUP_CMD_ACCEPT,
+	WIFI_TWT_SETUP_CMD_ALTERNATE,
+	WIFI_TWT_SETUP_CMD_DICTATE,
+	WIFI_TWT_SETUP_CMD_REJECT,
+};
+
+static const char * const wifi_twt_setup_cmd2str[] = {
+	/* TWT Requests */
+	[WIFI_TWT_SETUP_CMD_REQUEST] = "TWT request",
+	[WIFI_TWT_SETUP_CMD_SUGGEST] = "TWT suggest",
+	[WIFI_TWT_SETUP_CMD_DEMAND] = "TWT demand",
+	/* TWT Responses */
+	[WIFI_TWT_SETUP_CMD_GROUPING] = "TWT grouping",
+	[WIFI_TWT_SETUP_CMD_ACCEPT] = "TWT accept",
+	[WIFI_TWT_SETUP_CMD_ALTERNATE] = "TWT alternate",
+	[WIFI_TWT_SETUP_CMD_DICTATE] = "TWT dictate",
+	[WIFI_TWT_SETUP_CMD_REJECT] = "TWT reject",
+};
 
 #endif /* ZEPHYR_INCLUDE_NET_WIFI_H_ */

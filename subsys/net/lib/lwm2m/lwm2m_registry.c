@@ -35,9 +35,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/types.h>
 
 #include <fcntl.h>
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 #include "lwm2m_rd_client.h"
-#endif
 
 #define BINDING_OPT_MAX_LEN 3 /* "UQ" */
 #define QUEUE_OPT_MAX_LEN   2 /* "Q" */
@@ -64,8 +62,8 @@ sys_slist_t *lwm2m_engine_obj_list(void) { return &engine_obj_list; }
 sys_slist_t *lwm2m_engine_obj_inst_list(void) { return &engine_obj_inst_list; }
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field, const char *pathstr,
-				     const void *value, uint16_t len);
+static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field,
+				     struct lwm2m_obj_path *path, const void *value, uint16_t len);
 #endif
 /* Engine object */
 
@@ -308,9 +306,7 @@ int lwm2m_engine_create_obj_inst(const char *pathstr)
 		return ret;
 	}
 
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 	engine_trigger_update(true);
-#endif
 
 	return 0;
 }
@@ -338,9 +334,7 @@ int lwm2m_engine_delete_obj_inst(const char *pathstr)
 		return ret;
 	}
 
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 	engine_trigger_update(true);
-#endif
 
 	return 0;
 }
@@ -444,7 +438,7 @@ int lwm2m_engine_set_res_buf(const char *pathstr, void *buffer_ptr, uint16_t buf
 		return ret;
 	}
 
-	if (path.level < 3) {
+	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
@@ -492,6 +486,34 @@ static bool lwm2m_validate_time_resource_lenghts(uint16_t resource_length, uint1
 	return true;
 }
 
+static int lwm2m_check_buf_sizes(uint8_t data_type, uint16_t resource_length, uint16_t buf_length)
+{
+	switch (data_type) {
+	case LWM2M_RES_TYPE_OPAQUE:
+	case LWM2M_RES_TYPE_STRING:
+		if (resource_length > buf_length) {
+			return -ENOMEM;
+		}
+		break;
+	case LWM2M_RES_TYPE_U32:
+	case LWM2M_RES_TYPE_U8:
+	case LWM2M_RES_TYPE_S64:
+	case LWM2M_RES_TYPE_S32:
+	case LWM2M_RES_TYPE_S16:
+	case LWM2M_RES_TYPE_S8:
+	case LWM2M_RES_TYPE_BOOL:
+	case LWM2M_RES_TYPE_FLOAT:
+	case LWM2M_RES_TYPE_OBJLNK:
+		if (resource_length != buf_length) {
+			return -EINVAL;
+		}
+		break;
+	default:
+		return 0;
+	}
+	return 0;
+}
+
 static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len)
 {
 	struct lwm2m_obj_path path;
@@ -512,7 +534,7 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 		return ret;
 	}
 
-	if (path.level < 3) {
+	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
@@ -556,11 +578,12 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 		return -EINVAL;
 	}
 
-	/* check length (note: we add 1 to string length for NULL pad) */
-	if (len > max_data_len - (obj_field->data_type == LWM2M_RES_TYPE_STRING ? 1 : 0)) {
-		LOG_ERR("length %u is too long for res instance %d data", len, path.res_id);
+	ret = lwm2m_check_buf_sizes(obj_field->data_type, len, max_data_len);
+	if (ret) {
+		LOG_ERR("Incorrect buffer length %u for res data length %u", len,
+			max_data_len);
 		k_mutex_unlock(&registry_lock);
-		return -ENOMEM;
+		return ret;
 	}
 
 	if (memcmp(data_ptr, value, len) != 0) {
@@ -585,6 +608,13 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 		break;
 
 	case LWM2M_RES_TYPE_STRING:
+		/* check length (note: we add 1 to string length for NULL pad) */
+		if (len > max_data_len - 1) {
+			LOG_ERR("String length %u is too long for res instance %d data", len,
+				path.res_id);
+			k_mutex_unlock(&registry_lock);
+			return -ENOMEM;
+		}
 		memcpy((uint8_t *)data_ptr, value, len);
 		((uint8_t *)data_ptr)[len] = '\0';
 		break;
@@ -665,7 +695,7 @@ static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len
 
 	/* Cache Data Write */
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-	lwm2m_engine_cache_write(obj_field, pathstr, value, len);
+	lwm2m_engine_cache_write(obj_field, &path, value, len);
 #endif
 
 	if (res->post_write_cb) {
@@ -781,7 +811,7 @@ int lwm2m_engine_get_res_buf(const char *pathstr, void **buffer_ptr, uint16_t *b
 		return ret;
 	}
 
-	if (path.level < 3) {
+	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
@@ -842,7 +872,7 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 		return ret;
 	}
 
-	if (path.level < 3) {
+	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
@@ -870,17 +900,18 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 					&data_len);
 	}
 
-	/* TODO: handle data_len > buflen case */
-
 	if (data_ptr && data_len > 0) {
+		ret = lwm2m_check_buf_sizes(obj_field->data_type, data_len, buflen);
+		if (ret) {
+			LOG_ERR("Incorrect resource data length %u. Buffer length %u", data_len,
+				buflen);
+			k_mutex_unlock(&registry_lock);
+			return ret;
+		}
+
 		switch (obj_field->data_type) {
 
 		case LWM2M_RES_TYPE_OPAQUE:
-			if (data_len > buflen) {
-				k_mutex_unlock(&registry_lock);
-				return -ENOMEM;
-			}
-
 			memcpy(buf, data_ptr, data_len);
 			break;
 
@@ -1053,7 +1084,7 @@ int lwm2m_engine_get_resource(const char *pathstr, struct lwm2m_engine_res **res
 		return ret;
 	}
 
-	if (path.level < 3) {
+	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("path must have 3 parts");
 		return -EINVAL;
 	}
@@ -1183,7 +1214,7 @@ int lwm2m_engine_create_res_inst(const char *pathstr)
 		return ret;
 	}
 
-	if (path.level < 4) {
+	if (path.level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
 		LOG_ERR("path must have 4 parts");
 		return -EINVAL;
 	}
@@ -1220,7 +1251,7 @@ int lwm2m_engine_delete_res_inst(const char *pathstr)
 		return ret;
 	}
 
-	if (path.level < 4) {
+	if (path.level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
 		LOG_ERR("path must have 4 parts");
 		return -EINVAL;
 	}
@@ -1376,11 +1407,9 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 			*created = 1U;
 		}
 
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 		if (!msg->ctx->bootstrap_mode) {
 			engine_trigger_update(true);
 		}
-#endif
 	}
 
 	return ret;
@@ -1434,50 +1463,20 @@ bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj)
 static sys_slist_t lwm2m_timed_cache_list;
 static struct lwm2m_time_series_resource lwm2m_cache_entries[CONFIG_LWM2M_MAX_CACHED_RESOURCES];
 
-static void lwm2m_cache_add_path_to_list(struct lwm2m_time_series_resource *new_entry)
-{
-	struct lwm2m_time_series_resource *prev = NULL;
-	struct lwm2m_time_series_resource *entry;
-
-	if (!sys_slist_is_empty(&lwm2m_timed_cache_list)) {
-
-		/* Keep list Alphabetical order */
-		SYS_SLIST_FOR_EACH_CONTAINER(&lwm2m_timed_cache_list, entry, node) {
-
-			if (strcmp(entry->path, new_entry->path) < 0) {
-				/* Current entry have  */
-				prev = entry;
-				continue;
-			}
-
-			if (prev) {
-				sys_slist_insert(&lwm2m_timed_cache_list, &prev->node,
-						 &new_entry->node);
-			} else {
-				sys_slist_prepend(&lwm2m_timed_cache_list, &new_entry->node);
-			}
-			return;
-		}
-	}
-
-	/* Add First or new tail entry */
-	sys_slist_append(&lwm2m_timed_cache_list, &new_entry->node);
-}
-
-static struct lwm2m_time_series_resource *lwm2m_cache_entry_allocate(char const *resource_path)
+static struct lwm2m_time_series_resource *lwm2m_cache_entry_allocate(struct lwm2m_obj_path *path)
 {
 	int i;
 	struct lwm2m_time_series_resource *entry;
 
-	entry = lwm2m_cache_entry_get_by_string(resource_path);
+	entry = lwm2m_cache_entry_get_by_object(path);
 	if (entry) {
 		return entry;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(lwm2m_cache_entries); i++) {
-		if (lwm2m_cache_entries[i].path == NULL) {
-			lwm2m_cache_entries[i].path = resource_path;
-			lwm2m_cache_add_path_to_list(&lwm2m_cache_entries[i]);
+		if (lwm2m_cache_entries[i].path.level == 0) {
+			lwm2m_cache_entries[i].path = *path;
+			sys_slist_append(&lwm2m_timed_cache_list, &lwm2m_cache_entries[i].node);
 			return &lwm2m_cache_entries[i];
 		}
 	}
@@ -1485,13 +1484,13 @@ static struct lwm2m_time_series_resource *lwm2m_cache_entry_allocate(char const 
 	return NULL;
 }
 
-static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field, const char *pathstr,
-				     const void *value, uint16_t len)
+static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field,
+				     struct lwm2m_obj_path *path, const void *value, uint16_t len)
 {
 	struct lwm2m_time_series_resource *cache_entry;
 	struct lwm2m_time_series_elem elements;
 
-	cache_entry = lwm2m_cache_entry_get_by_string(pathstr);
+	cache_entry = lwm2m_cache_entry_get_by_object(path);
 	if (!cache_entry) {
 		return;
 	}
@@ -1558,45 +1557,28 @@ static void lwm2m_engine_cache_write(struct lwm2m_engine_obj_field *obj_field, c
 }
 #endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
 
-struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_string(char const *resource_path)
-{
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-	if (!sys_slist_is_empty(&lwm2m_timed_cache_list)) {
-		int ret;
-		struct lwm2m_time_series_resource *entry;
-
-		/* Keep list Alphabetical order */
-		SYS_SLIST_FOR_EACH_CONTAINER(&lwm2m_timed_cache_list, entry, node) {
-			ret = strcmp(entry->path, resource_path);
-			if (ret == 0) {
-				return entry;
-			} else if (ret > 0) {
-				return NULL;
-			}
-		}
-	}
-#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
-	return NULL;
-}
-
 struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_object(struct lwm2m_obj_path *obj_path)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-	char obj_path_str[25];
-	char const *resource_path;
+	struct lwm2m_time_series_resource *entry;
 
-	if (!obj_path || obj_path->level < LWM2M_PATH_LEVEL_RESOURCE) {
+	if (obj_path->level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("Path level wrong for cache %u", obj_path->level);
 		return NULL;
 	}
 
-	/* Decode path to string */
-	resource_path = lwm2m_path_log_buf(obj_path_str, obj_path);
+	if (sys_slist_is_empty(&lwm2m_timed_cache_list)) {
+		return NULL;
+	}
 
-	return lwm2m_cache_entry_get_by_string(resource_path);
-#else
-	return NULL;
+	SYS_SLIST_FOR_EACH_CONTAINER(&lwm2m_timed_cache_list, entry, node) {
+		if (lwm2m_obj_path_equal(&entry->path, obj_path)) {
+			return entry;
+		}
+	}
 #endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+	return NULL;
+
 }
 
 int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
@@ -1617,7 +1599,7 @@ int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_serie
 		return ret;
 	}
 
-	if (path.level < 3) {
+	if (path.level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
@@ -1645,7 +1627,7 @@ int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_serie
 	case LWM2M_RES_TYPE_BOOL:
 	case LWM2M_RES_TYPE_FLOAT:
 		/* Support only fixed width resource types */
-		cache_entry = lwm2m_cache_entry_allocate(resource_path);
+		cache_entry = lwm2m_cache_entry_allocate(&path);
 		break;
 	default:
 		cache_entry = NULL;
@@ -1674,7 +1656,7 @@ int lwm2m_engine_data_cache_init(void)
 	sys_slist_init(&lwm2m_timed_cache_list);
 
 	for (i = 0; i < ARRAY_SIZE(lwm2m_cache_entries); i++) {
-		lwm2m_cache_entries[i].path = NULL;
+		lwm2m_cache_entries[i].path.level = LWM2M_PATH_LEVEL_NONE;
 	}
 #endif
 	return 0;

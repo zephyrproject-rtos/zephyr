@@ -60,6 +60,12 @@
 		reg = <0xa0020000 DT_SIZE_K(2816)>;
 	};
 
+	sram0virtual: virtualmemory@a0020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(8192)>;
+	};
+
 	sram1: memory@a0000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
@@ -160,6 +166,78 @@
 		};
 
 		alh3: alh3@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh4: alh4@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh5: alh5@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh6: alh6@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh7: alh7@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh8: alh8@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh9: alh9@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh10: alh10@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh11: alh11@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh12: alh12@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh13: alh13@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh14: alh14@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh15: alh15@24400 {
 			compatible = "intel,alh-dai";
 			reg = <0x00024400 0x00024600>;
 			status = "okay";
@@ -342,6 +420,14 @@
 			};
 		};
 
+		ace_comm_widget: ace_comm_widget@71C00 {
+			compatible = "intel,adsp-communication-widget";
+			reg = <0x00071C00 0x100>;
+			interrupts = <0x19 0 0>;
+			interrupt-parent = <&ace_intc>;
+			status = "okay";
+		};
+
 		shim: shim@71f00 {
 			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
@@ -463,6 +549,19 @@
 			dma-copy-alignment = <4>;
 			status = "okay";
 			power-domain = <&io0_domain>;
+		};
+
+		lpgpdma2: dma@7e000 {
+			compatible = "intel,adsp-gpdma";
+			#dma-cells = <1>;
+			reg = <0x0007e000 0x1000>;
+			shim = <0x0007e800 0x1000>;
+			interrupts = <0x25 0 0>;
+			interrupt-parent = <&core_intc>;
+			dma-buf-size-alignment = <4>;
+			dma-copy-alignment = <4>;
+			power-domain = <&io0_domain>;
+			status = "okay";
 		};
 
 		sha: adsp-sha@17df00 {

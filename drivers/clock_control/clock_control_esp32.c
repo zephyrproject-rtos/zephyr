@@ -476,7 +476,7 @@ static const struct clock_control_driver_api clock_control_esp32_api = {
 
 static const struct esp32_clock_config esp32_clock_config0 = {
 	.clk_src_sel = ESP32_CLOCK_SOURCE,
-	.cpu_freq = DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency),
+	.cpu_freq = DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency) / 1000000,
 	.xtal_freq_sel = DT_INST_PROP(0, xtal_freq),
 	.xtal_div = ESP32_CLOCK_XTAL_DIV
 };
@@ -492,6 +492,6 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rtc),
 
 #ifndef CONFIG_SOC_ESP32C3
 BUILD_ASSERT((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) ==
-		    MHZ(DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency)),
+		    DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency),
 		    "SYS_CLOCK_HW_CYCLES_PER_SEC Value must be equal to CPU_Freq");
 #endif

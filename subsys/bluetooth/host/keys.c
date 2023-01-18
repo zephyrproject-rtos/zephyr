@@ -38,7 +38,7 @@ static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
 
 #define BT_KEYS_STORAGE_LEN_COMPAT (BT_KEYS_STORAGE_LEN - sizeof(uint32_t))
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 static uint32_t aging_counter_val;
 static struct bt_keys *last_keys_updated;
 
@@ -102,7 +102,7 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 		}
 	}
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (first_free_slot == ARRAY_SIZE(key_pool)) {
 		struct bt_keys *oldest = NULL;
 		bt_addr_le_t oldest_addr;
@@ -138,7 +138,7 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 		keys = &key_pool[first_free_slot];
 		keys->id = id;
 		bt_addr_le_copy(&keys->addr, addr);
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 		keys->aging_counter = ++aging_counter_val;
 		last_keys_updated = keys;
 #endif  /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
@@ -443,7 +443,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	}
 
 	LOG_DBG("Successfully restored keys for %s", bt_addr_le_str(&addr));
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (aging_counter_val < keys->aging_counter) {
 		aging_counter_val = keys->aging_counter;
 	}
@@ -478,7 +478,7 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_keys, "bt/keys", NULL, keys_set, keys_commit,
 
 #endif /* CONFIG_BT_SETTINGS */
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 void bt_keys_update_usage(uint8_t id, const bt_addr_le_t *addr)
 {
 	__ASSERT_NO_MSG(addr != NULL);
@@ -537,10 +537,15 @@ struct bt_keys *bt_keys_get_key_pool(void)
 	return key_pool;
 }
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 uint32_t bt_keys_get_aging_counter_val(void)
 {
 	return aging_counter_val;
+}
+
+struct bt_keys *bt_keys_get_last_keys_updated(void)
+{
+	return last_keys_updated;
 }
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 #endif /* ZTEST_UNITTEST */

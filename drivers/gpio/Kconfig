@@ -152,7 +152,7 @@ source "drivers/gpio/Kconfig.xmc4xxx"
 
 source "drivers/gpio/Kconfig.smartbond"
 
-source "drivers/gpio/Kconfig.s32"
+source "drivers/gpio/Kconfig.nxp_s32"
 
 source "drivers/gpio/Kconfig.tca6424a"
 
@@ -161,5 +161,7 @@ source "drivers/gpio/Kconfig.npm6001"
 source "drivers/gpio/Kconfig.rt1718s"
 
 source "drivers/gpio/Kconfig.numicro"
+
+source "drivers/gpio/Kconfig.zephyr"
 
 endif # GPIO

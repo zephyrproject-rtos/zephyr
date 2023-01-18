@@ -106,21 +106,11 @@ struct img_mgmt_upload_action {
 	bool proceed;
 	/** Whether to erase the destination flash area. */
 	bool erase;
-#ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
+#ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 	/** "rsn" string to be sent as explanation for "rc" code */
 	const char *rc_rsn;
 #endif
 };
-
-/**
- * @brief Register the image management command handler group.
- */
-void img_mgmt_register_group(void);
-
-/**
- * @brief Unregister the image management command handler group.
- */
-void img_mgmt_unregister_group(void);
 
 /*
  * @brief Read info of an image at the specified slot number
@@ -229,7 +219,7 @@ int img_mgmt_state_confirm(void);
  */
 int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b);
 
-#ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
+#ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 #define IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, rsn) ((action)->rc_rsn = (rsn))
 #define IMG_MGMT_UPLOAD_ACTION_RC_RSN(action) ((action)->rc_rsn)
 int img_mgmt_error_rsp(struct smp_streamer *ctxt, int rc, const char *rsn);

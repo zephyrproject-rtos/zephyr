@@ -11,6 +11,7 @@
 #ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
 #endif
+#include <zephyr/pm/device.h>
 
 #include "memc_mcux_flexspi.h"
 
@@ -174,12 +175,43 @@ static int memc_flexspi_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct memc_flexspi_data *data = dev->data;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
+#endif
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
+#endif
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_XIP) && defined(CONFIG_CODE_FLEXSPI)
 #define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi))
 #elif defined(CONFIG_XIP) && defined(CONFIG_CODE_FLEXSPI2)
 #define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi2))
 #elif defined(CONFIG_SOC_SERIES_IMX_RT6XX) || defined(CONFIG_SOC_SERIES_IMX_RT5XX)
-#define MEMC_FLEXSPI_CFG_XIP(node_id) IS_ENABLED(CONFIG_XIP)
+#define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi))
 #else
 #define MEMC_FLEXSPI_CFG_XIP(node_id) false
 #endif
@@ -209,9 +241,11 @@ static int memc_flexspi_init(const struct device *dev)
 		PINCTRL_INIT(n)						\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(n, memc_flexspi_pm_action);		\
+									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			      memc_flexspi_init,			\
-			      NULL,					\
+			      PM_DEVICE_DT_INST_GET(n),			\
 			      &memc_flexspi_data_##n,			\
 			      NULL,					\
 			      POST_KERNEL,				\

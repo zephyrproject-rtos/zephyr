@@ -25,8 +25,8 @@ description: |
     or application specific headers.
 
     Documentation:
-    * https://www.microchip.com/development-tools/xplained-boards
-    * http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-42091-Atmel-Xplained-Pro-Hardware-Development-Kit_User%20Guide.pdf
+    https://www.microchip.com/development-tools/xplained-boards
+    http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-42091-Atmel-Xplained-Pro-Hardware-Development-Kit_User%20Guide.pdf
 
     This binding provides a nexus mapping for 20 pins where pins are disposed
     to have a even and odd column:

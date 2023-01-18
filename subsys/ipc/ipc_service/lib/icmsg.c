@@ -11,13 +11,18 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/spsc_pbuf.h>
 
-#define CB_BUF_SIZE	CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE
+#define RX_BUF_SIZE	CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE
 #define BOND_NOTIFY_REPEAT_TO K_MSEC(CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS)
+
+#define RX_BUFFER_RELEASED	0
+#define RX_BUFFER_HELD		1
+#define SEND_BUFFER_UNUSED	0
+#define SEND_BUFFER_RESERVED	1
 
 static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
 				0x30, 0x72, 0x6e, 0x33, 0x6c, 0x69, 0x34};
-BUILD_ASSERT(sizeof(magic) <= CB_BUF_SIZE);
-BUILD_ASSERT(CB_BUF_SIZE <= UINT16_MAX);
+BUILD_ASSERT(sizeof(magic) <= RX_BUF_SIZE);
+BUILD_ASSERT(RX_BUF_SIZE <= UINT16_MAX);
 
 static int mbox_deinit(const struct icmsg_config_t *conf,
 		       struct icmsg_data_t *dev_data)
@@ -59,19 +64,97 @@ static void notify_process(struct k_work *item)
 	}
 }
 
+static bool is_endpoint_ready(struct icmsg_data_t *dev_data)
+{
+	return atomic_get(&dev_data->state) == ICMSG_STATE_READY;
+}
+
+static bool is_send_buffer_reserved(struct icmsg_data_t *dev_data)
+{
+	return atomic_get(&dev_data->send_buffer_reserved) ==
+			SEND_BUFFER_RESERVED;
+}
+
+static int reserve_send_buffer_if_unused(struct icmsg_data_t *dev_data)
+{
+	bool was_unused;
+
+	was_unused = atomic_cas(&dev_data->send_buffer_reserved,
+				  SEND_BUFFER_UNUSED, SEND_BUFFER_RESERVED);
+
+	return was_unused ? 0 : -EALREADY;
+}
+
+static int release_send_buffer(struct icmsg_data_t *dev_data)
+{
+	bool was_reserved;
+
+	was_reserved = atomic_cas(&dev_data->send_buffer_reserved,
+				  SEND_BUFFER_RESERVED, SEND_BUFFER_UNUSED);
+	return was_reserved ? 0 : -EALREADY;
+}
+
+static bool is_rx_buffer_free(struct icmsg_data_t *dev_data)
+{
+#ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
+	return atomic_get(&dev_data->rx_buffer_held) == RX_BUFFER_RELEASED;
+#else
+	return true;
+#endif
+}
+
+static bool is_rx_data_available(struct icmsg_data_t *dev_data)
+{
+	int len = spsc_pbuf_read(dev_data->rx_ib, NULL, 0);
+
+	return len > 0;
+}
+
+static void submit_mbox_work(struct icmsg_data_t *dev_data)
+{
+	if (k_work_submit(&dev_data->mbox_work) < 0) {
+		/* The mbox processing work is never canceled.
+		 * The negative error code should never be seen.
+		 */
+		__ASSERT_NO_MSG(false);
+	}
+}
+
+static void submit_work_if_buffer_free(struct icmsg_data_t *dev_data)
+{
+	if (!is_rx_buffer_free(dev_data)) {
+		return;
+	}
+
+	submit_mbox_work(dev_data);
+}
+
+static void submit_work_if_buffer_free_and_data_available(
+		struct icmsg_data_t *dev_data)
+{
+	if (!is_rx_buffer_free(dev_data)) {
+		return;
+	}
+	if (!is_rx_data_available(dev_data)) {
+		return;
+	}
+
+	submit_mbox_work(dev_data);
+}
+
 static void mbox_callback_process(struct k_work *item)
 {
 	struct icmsg_data_t *dev_data = CONTAINER_OF(item, struct icmsg_data_t, mbox_work);
-	uint8_t cb_buffer[CB_BUF_SIZE] __aligned(4);
 
 	atomic_t state = atomic_get(&dev_data->state);
-	int len = spsc_pbuf_read(dev_data->rx_ib, cb_buffer, CB_BUF_SIZE);
+	int len = spsc_pbuf_read(dev_data->rx_ib, dev_data->rx_buffer,
+				 RX_BUF_SIZE);
 
-	__ASSERT_NO_MSG(len <= CB_BUF_SIZE);
+	__ASSERT_NO_MSG(len <= RX_BUF_SIZE);
 
 	if (len == -EAGAIN) {
 		__ASSERT_NO_MSG(false);
-		(void)k_work_submit(&dev_data->mbox_work);
+		submit_mbox_work(dev_data);
 		return;
 	} else if (len <= 0) {
 		return;
@@ -79,13 +162,15 @@ static void mbox_callback_process(struct k_work *item)
 
 	if (state == ICMSG_STATE_READY) {
 		if (dev_data->cb->received) {
-			dev_data->cb->received(cb_buffer, len, dev_data->ctx);
+			dev_data->cb->received(dev_data->rx_buffer, len,
+					       dev_data->ctx);
 		}
 	} else {
 		int ret;
 
 		__ASSERT_NO_MSG(state == ICMSG_STATE_BUSY);
-		if (len != sizeof(magic) || memcmp(magic, cb_buffer, len)) {
+		if (len != sizeof(magic) ||
+		    memcmp(magic, dev_data->rx_buffer, len)) {
 			__ASSERT_NO_MSG(false);
 			return;
 		}
@@ -100,18 +185,7 @@ static void mbox_callback_process(struct k_work *item)
 		(void)ret;
 	}
 
-	/* Reading with NULL buffer to know if there are data in the
-	 * buffer to be read.
-	 */
-	len = spsc_pbuf_read(dev_data->rx_ib, NULL, 0);
-	if (len > 0) {
-		if (k_work_submit(&dev_data->mbox_work) < 0) {
-			/* The mbox processing work is never canceled.
-			 * The negative error code should never be seen.
-			 */
-			__ASSERT_NO_MSG(false);
-		}
-	}
+	submit_work_if_buffer_free_and_data_available(dev_data);
 }
 
 static void mbox_callback(const struct device *instance, uint32_t channel,
@@ -119,7 +193,7 @@ static void mbox_callback(const struct device *instance, uint32_t channel,
 {
 	struct icmsg_data_t *dev_data = user_data;
 
-	(void)k_work_submit(&dev_data->mbox_work);
+	submit_work_if_buffer_free(dev_data);
 }
 
 static int mbox_init(const struct icmsg_config_t *conf,
@@ -210,9 +284,11 @@ int icmsg_send(const struct icmsg_config_t *conf,
 	       const void *msg, size_t len)
 {
 	int ret;
+	int write_ret;
+	int release_ret;
 	int sent_bytes;
 
-	if (atomic_get(&dev_data->state) != ICMSG_STATE_READY) {
+	if (!is_endpoint_ready(dev_data)) {
 		return -EBUSY;
 	}
 
@@ -221,13 +297,21 @@ int icmsg_send(const struct icmsg_config_t *conf,
 		return -ENODATA;
 	}
 
-	ret = spsc_pbuf_write(dev_data->tx_ib, msg, len);
-	if (ret < 0) {
-		return ret;
-	} else if (ret < len) {
+	ret = reserve_send_buffer_if_unused(dev_data);
+	if (ret) {
+		return -ENOBUFS;
+	}
+
+	write_ret = spsc_pbuf_write(dev_data->tx_ib, msg, len);
+	release_ret = release_send_buffer(dev_data);
+	__ASSERT_NO_MSG(!release_ret);
+
+	if (write_ret < 0) {
+		return write_ret;
+	} else if (write_ret < len) {
 		return -EBADMSG;
 	}
-	sent_bytes = ret;
+	sent_bytes = write_ret;
 
 	__ASSERT_NO_MSG(conf->mbox_tx.dev != NULL);
 
@@ -239,10 +323,169 @@ int icmsg_send(const struct icmsg_config_t *conf,
 	return sent_bytes;
 }
 
+int icmsg_get_tx_buffer(const struct icmsg_config_t *conf,
+			struct icmsg_data_t *dev_data,
+			void **data, size_t *size)
+{
+	int ret;
+	int release_ret;
+	uint16_t requested_size;
+	int allocated_len;
+	char *allocated_buf;
+
+	if (*size == 0) {
+		/* Requested allocation of maximal size.
+		 * Try to allocate maximal buffer size from spsc,
+		 * potentially after wrapping marker.
+		 */
+		requested_size = SPSC_PBUF_MAX_LEN - 1;
+	} else {
+		requested_size = *size;
+	}
+
+	ret = reserve_send_buffer_if_unused(dev_data);
+	if (ret) {
+		return -ENOBUFS;
+	}
+
+	ret = spsc_pbuf_alloc(dev_data->tx_ib, requested_size, &allocated_buf);
+	if (ret < 0) {
+		release_ret = release_send_buffer(dev_data);
+		__ASSERT_NO_MSG(!release_ret);
+		return ret;
+	}
+	allocated_len = ret;
+
+	if (*size == 0) {
+		/* Requested allocation of maximal size.
+		 * Pass the buffer that was allocated.
+		 */
+		*size = allocated_len;
+		*data = allocated_buf;
+		return 0;
+	}
+
+	if (*size == allocated_len) {
+		/* Allocated buffer is of requested size. */
+		*data = allocated_buf;
+		return 0;
+	}
+
+	/* Allocated smaller buffer than requested.
+	 * Silently stop using the allocated buffer what is allowed by SPSC API
+	 */
+	release_send_buffer(dev_data);
+	*size = allocated_len;
+	return -ENOMEM;
+}
+
+int icmsg_drop_tx_buffer(const struct icmsg_config_t *conf,
+			 struct icmsg_data_t *dev_data,
+			 const void *data)
+{
+	/* Silently stop using the allocated buffer what is allowed by SPSC API
+	 */
+	return release_send_buffer(dev_data);
+}
+
+int icmsg_send_nocopy(const struct icmsg_config_t *conf,
+		      struct icmsg_data_t *dev_data,
+		      const void *msg, size_t len)
+{
+	int ret;
+	int sent_bytes;
+
+	if (!is_endpoint_ready(dev_data)) {
+		return -EBUSY;
+	}
+
+	/* Empty message is not allowed */
+	if (len == 0) {
+		return -ENODATA;
+	}
+
+	if (!is_send_buffer_reserved(dev_data)) {
+		return -ENXIO;
+	}
+
+	spsc_pbuf_commit(dev_data->tx_ib, len);
+	sent_bytes = len;
+
+	ret = release_send_buffer(dev_data);
+	__ASSERT_NO_MSG(!ret);
+
+	__ASSERT_NO_MSG(conf->mbox_tx.dev != NULL);
+
+	ret = mbox_send(&conf->mbox_tx, NULL);
+	if (ret) {
+		return ret;
+	}
+
+	return sent_bytes;
+}
+
+#ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
+int icmsg_hold_rx_buffer(const struct icmsg_config_t *conf,
+			 struct icmsg_data_t *dev_data,
+			 const void *data)
+{
+	bool was_released;
+
+	if (!is_endpoint_ready(dev_data)) {
+		return -EBUSY;
+	}
+
+	if (data != dev_data->rx_buffer) {
+		return -EINVAL;
+	}
+
+	was_released = atomic_cas(&dev_data->rx_buffer_held,
+				  RX_BUFFER_RELEASED, RX_BUFFER_HELD);
+	if (!was_released) {
+		return -EALREADY;
+	}
+
+	return 0;
+}
+
+int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
+			    struct icmsg_data_t *dev_data,
+			    const void *data)
+{
+	bool was_held;
+
+	if (!is_endpoint_ready(dev_data)) {
+		return -EBUSY;
+	}
+
+	if (data != dev_data->rx_buffer) {
+		return -EINVAL;
+	}
+
+	was_held = atomic_cas(&dev_data->rx_buffer_held,
+			      RX_BUFFER_HELD, RX_BUFFER_RELEASED);
+	if (!was_held) {
+		return -EALREADY;
+	}
+
+	submit_work_if_buffer_free_and_data_available(dev_data);
+
+	return 0;
+}
+#endif /* CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX */
+
 int icmsg_clear_tx_memory(const struct icmsg_config_t *conf)
 {
 	/* Clear spsc_pbuf header and a part of the magic number. */
 	memset((void *)conf->tx_shm_addr, 0, sizeof(struct spsc_pbuf) + sizeof(int));
+
+	return 0;
+}
+
+int icmsg_clear_rx_memory(const struct icmsg_config_t *conf)
+{
+	/* Clear spsc_pbuf header and a part of the magic number. */
+	memset((void *)conf->rx_shm_addr, 0, sizeof(struct spsc_pbuf) + sizeof(int));
 
 	return 0;
 }

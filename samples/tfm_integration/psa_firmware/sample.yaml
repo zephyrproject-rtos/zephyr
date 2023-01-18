@@ -1,7 +1,7 @@
 sample:
-    description: This app provides an example of using the PSA Firmware calls
-        to update to a new firmware using TF-M and MCUBoot.
-    name: TF-M PSA firmware update example
+  description: This app provides an example of using the PSA Firmware calls
+      to update to a new firmware using TF-M and MCUBoot.
+  name: TF-M PSA firmware update example
 tests:
   sample.update-success:
     tags: introduction tfm
@@ -22,7 +22,7 @@ tests:
     tags: introduction tfm
     platform_allow: mps3_an547_ns
     integration_platforms:
-    - mps3_an547_ns
+      - mps3_an547_ns
     harness: console
     timeout: 300
     extra_configs:

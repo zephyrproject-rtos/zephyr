@@ -50,62 +50,62 @@ compatible: "infineon,xmc4xxx-pinctrl"
 include: base.yaml
 
 properties:
-    "#address-cells":
-      required: true
-      const: 1
-    "#size-cells":
-      required: true
-      const: 1
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 1
 
 child-binding:
-    description: Each child node defines the configuration for a particular state.
+  description: Each child node defines the configuration for a particular state.
 
-    include:
-      - name: pincfg-node.yaml
-        property-allowlist:
-          - bias-pull-down
-          - bias-pull-up
-          - drive-push-pull
-          - drive-open-drain
-          - output-high
-          - output-low
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-pull-down
+        - bias-pull-up
+        - drive-push-pull
+        - drive-open-drain
+        - output-high
+        - output-low
 
-    properties:
-        pinmux:
-          description: |
-            Encodes port/pin and alternate function. See helper macro XMC4XX_PINMUX_SET().
-            Alternate function is only set for output pins; It selects  ALT1-ALT4
-            output line in the GPIO element. The alternate function for input pins is
-            handled separately by the peripheral. It is upto the peripheral to configure which
-            input pin to use (For example see parameter input-src in infineon,xmc4xxx-uart.yaml).
-          required: true
-          type: int
+  properties:
+    pinmux:
+      description: |
+        Encodes port/pin and alternate function. See helper macro XMC4XX_PINMUX_SET().
+        Alternate function is only set for output pins; It selects  ALT1-ALT4
+        output line in the GPIO element. The alternate function for input pins is
+        handled separately by the peripheral. It is upto the peripheral to configure which
+        input pin to use (For example see parameter input-src in infineon,xmc4xxx-uart.yaml).
+      required: true
+      type: int
 
-        drive-strength:
-          description: |
-            Drive strength of the output pin. Following options as in XMC_GPIO_OUTPUT_STRENGTH
-            See xmc4_gpio.h. This only has an effect if the pin is in drive-push-pull mode.
-          required: true
-          type: string
-          enum:
-            - "strong-sharp-edge"
-            - "strong-medium-edge"
-            - "strong-soft-edge"
-            - "strong-slow-edge"
-            - "medium"
-            - "medium-unknown1-edge"
-            - "medium-unknown2-edge"
-            - "weak"
+    drive-strength:
+      description: |
+        Drive strength of the output pin. Following options as in XMC_GPIO_OUTPUT_STRENGTH
+        See xmc4_gpio.h. This only has an effect if the pin is in drive-push-pull mode.
+      required: true
+      type: string
+      enum:
+        - "strong-sharp-edge"
+        - "strong-medium-edge"
+        - "strong-soft-edge"
+        - "strong-slow-edge"
+        - "medium"
+        - "medium-unknown1-edge"
+        - "medium-unknown2-edge"
+        - "weak"
 
-        invert-input:
-          description: Inverts the input.
-          type: boolean
+    invert-input:
+      description: Inverts the input.
+      type: boolean
 
-        hwctrl:
-          description: Pre-assigns hardware control of the pin to a certain peripheral.
-          required: true
-          type: string
-          enum:
-            - "disabled"
-            - "periph1"
-            - "periph2"
+    hwctrl:
+      description: Pre-assigns hardware control of the pin to a certain peripheral.
+      required: true
+      type: string
+      enum:
+        - "disabled"
+        - "periph1"
+        - "periph2"

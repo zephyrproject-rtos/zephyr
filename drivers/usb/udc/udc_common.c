@@ -12,7 +12,7 @@
 #include "udc_common.h"
 
 #include <zephyr/logging/log.h>
-#if IS_ENABLED(CONFIG_UDC_DRIVER_LOG_LEVEL)
+#if defined(CONFIG_UDC_DRIVER_LOG_LEVEL)
 #define UDC_COMMON_LOG_LEVEL CONFIG_UDC_DRIVER_LOG_LEVEL
 #else
 #define UDC_COMMON_LOG_LEVEL LOG_LEVEL_NONE
@@ -46,6 +46,25 @@ struct udc_ep_config *udc_get_ep_cfg(const struct device *dev, const uint8_t ep)
 	return data->ep_lut[USB_EP_LUT_IDX(ep)];
 }
 
+bool udc_ep_is_busy(const struct device *dev, const uint8_t ep)
+{
+	struct udc_ep_config *ep_cfg;
+
+	ep_cfg = udc_get_ep_cfg(dev, ep);
+	__ASSERT(ep_cfg != NULL, "ep 0x%02x is not available", ep);
+
+	return ep_cfg->stat.busy;
+}
+
+void udc_ep_set_busy(const struct device *dev, const uint8_t ep, const bool busy)
+{
+	struct udc_ep_config *ep_cfg;
+
+	ep_cfg = udc_get_ep_cfg(dev, ep);
+	__ASSERT(ep_cfg != NULL, "ep 0x%02x is not available", ep);
+	ep_cfg->stat.busy = busy;
+}
+
 int udc_register_ep(const struct device *dev, struct udc_ep_config *const cfg)
 {
 	struct udc_data *data = dev->data;
@@ -64,27 +83,16 @@ int udc_register_ep(const struct device *dev, struct udc_ep_config *const cfg)
 	return 0;
 }
 
-struct net_buf *udc_buf_get(const struct device *dev, const uint8_t ep,
-			    const bool pending)
+struct net_buf *udc_buf_get(const struct device *dev, const uint8_t ep)
 {
 	struct udc_ep_config *ep_cfg;
-	struct net_buf *buf;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 	if (ep_cfg == NULL) {
 		return NULL;
 	}
 
-	buf = net_buf_get(&ep_cfg->fifo, K_NO_WAIT);
-	if (buf != NULL) {
-		ep_cfg->stat.pending = 0;
-	} else {
-		if (pending) {
-			ep_cfg->stat.pending = 1;
-		}
-	}
-
-	return buf;
+	return net_buf_get(&ep_cfg->fifo, K_NO_WAIT);
 }
 
 struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
@@ -114,27 +122,16 @@ struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
 	return buf;
 }
 
-struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep,
-			     const bool pending)
+struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep)
 {
 	struct udc_ep_config *ep_cfg;
-	struct net_buf *buf = NULL;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
-	if (ep_cfg != NULL) {
-		buf = k_fifo_peek_head(&ep_cfg->fifo);
+	if (ep_cfg == NULL) {
+		return NULL;
 	}
 
-	if (buf == NULL && pending) {
-		ep_cfg->stat.pending = 1;
-	}
-
-	if (buf != NULL) {
-		ep_cfg->stat.pending = 0;
-	}
-
-
-	return buf;
+	return k_fifo_peek_head(&ep_cfg->fifo);
 }
 
 void udc_buf_put(struct udc_ep_config *const ep_cfg,
@@ -341,7 +338,6 @@ int udc_ep_enable_internal(const struct device *dev,
 
 	cfg->stat.odd = 0;
 	cfg->stat.halted = 0;
-	cfg->stat.pending = 0;
 	cfg->stat.data1 = false;
 	ret = api->ep_enable(dev, cfg);
 	cfg->stat.enabled = ret ? false : true;
@@ -1091,7 +1087,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 	data->stage = next_stage;
 }
 
-#if IS_ENABLED(CONFIG_UDC_WORKQUEUE)
+#if defined(CONFIG_UDC_WORKQUEUE)
 K_KERNEL_STACK_DEFINE(udc_work_q_stack, CONFIG_UDC_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q udc_work_q;

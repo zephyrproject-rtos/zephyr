@@ -1,17 +1,17 @@
 # Copyright (c) 2020, DENX Software Engineering GmbH
-#		      Lukasz Majewski <lukma@denx.de>
+#                     Lukasz Majewski <lukma@denx.de>
 # SPDX-License-Identifier: Apache-2.0
 
 child-binding:
-    description: Fixed link ethernet node
-    properties:
-       speed:
-          type: int
-          required: true
-          description: The speed of fixed link
-          enum:
-            - 100
-            - 10
-       full-duplex:
-          type: boolean
-          description: The fixed link operates in full duplex mode
+  description: Fixed link ethernet node
+  properties:
+    speed:
+      type: int
+      required: true
+      description: The speed of fixed link
+      enum:
+        - 100
+        - 10
+    full-duplex:
+      type: boolean
+      description: The fixed link operates in full duplex mode

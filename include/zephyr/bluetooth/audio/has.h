@@ -45,9 +45,9 @@ struct bt_has;
 
 /** Hearing Aid device type */
 enum bt_has_hearing_aid_type {
-	BT_HAS_HEARING_AID_TYPE_BINAURAL,
-	BT_HAS_HEARING_AID_TYPE_MONAURAL,
-	BT_HAS_HEARING_AID_TYPE_BANDED,
+	BT_HAS_HEARING_AID_TYPE_BINAURAL = 0x00,
+	BT_HAS_HEARING_AID_TYPE_MONAURAL = 0x01,
+	BT_HAS_HEARING_AID_TYPE_BANDED = 0x02,
 };
 
 /** Preset Properties values */
@@ -65,6 +65,28 @@ enum bt_has_properties {
 /** Hearing Aid device capablilities */
 enum bt_has_capabilities {
 	BT_HAS_PRESET_SUPPORT = BIT(0),
+};
+
+/** @brief Structure for registering a Hearing Access Service instance. */
+struct bt_has_register_param {
+	/** Hearing Aid Type value */
+	enum bt_has_hearing_aid_type type;
+
+	/**
+	 * @brief Preset Synchronization Support.
+	 *
+	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
+	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
+	 */
+	bool preset_sync_support;
+
+	/**
+	 * @brief Independent Presets.
+	 *
+	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
+	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
+	 */
+	bool independent_presets;
 };
 
 /** @brief Preset record definition */
@@ -314,6 +336,15 @@ struct bt_has_preset_register_param {
 	/** Preset operations structure. */
 	const struct bt_has_preset_ops *ops;
 };
+
+/**
+ * @brief Register the Hearing Access Service instance.
+ *
+ * @param param     Hearing Access Service register parameters.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_has_register(const struct bt_has_register_param *param);
 
 /**
  * @brief Register preset.

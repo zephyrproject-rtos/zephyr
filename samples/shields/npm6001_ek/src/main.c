@@ -191,8 +191,6 @@ static int cmd_regulator_get(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	volt_uv = (int32_t)strtoul(argv[1], NULL, 10) * 1000;
-
 	ret = regulator_get_voltage(dev, &volt_uv);
 	if (ret < 0) {
 		shell_error(sh, "Could not get voltage (%d)", ret);
@@ -231,6 +229,38 @@ static int cmd_regulator_modeset(const struct shell *sh, size_t argc, char **arg
 	if (ret < 0) {
 		shell_error(sh, "Could not set mode (%d)", ret);
 		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_regulator_modeget(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	regulator_mode_t mode;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	dev = name2reg(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Invalid regulator: %s", argv[1]);
+		return -ENODEV;
+	}
+
+	ret = regulator_get_mode(dev, &mode);
+	if (ret < 0) {
+		shell_error(sh, "Could not get mode (%d)", ret);
+		return ret;
+	}
+
+	if (mode == NPM6001_MODE_PWM) {
+		shell_print(sh, "PWM");
+	} else if (mode == NPM6001_MODE_HYS) {
+		shell_print(sh, "Hysteretic");
+	} else {
+		shell_error(sh, "Invalid mode: %u", mode);
+		return -EINVAL;
 	}
 
 	return 0;
@@ -438,6 +468,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_npm6001_regulator_cmds,
 					     cmd_regulator_get, 2, 0),
 			       SHELL_CMD_ARG(modeset, NULL, "Set mode PWM/HYS",
 					     cmd_regulator_modeset, 3, 0),
+			       SHELL_CMD_ARG(modeget, NULL, "Get mode PWM/HYS",
+					     cmd_regulator_modeget, 2, 0),
 			       SHELL_CMD_ARG(errors, NULL, "Get active errors",
 					     cmd_regulator_errors, 2, 0),
 			       SHELL_SUBCMD_SET_END);

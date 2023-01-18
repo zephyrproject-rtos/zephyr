@@ -37,7 +37,7 @@
  */
 #define MAX_IMG_CHARACTERISTICS 15
 
-#ifndef CONFIG_IMG_MGMT_FRUGAL_LIST
+#ifndef CONFIG_MCUMGR_GRP_IMG_FRUGAL_LIST
 #define ZCBOR_ENCODE_FLAG(zse, label, value)					\
 		(zcbor_tstr_put_lit(zse, label) && zcbor_bool_put(zse, value))
 #else
@@ -216,9 +216,9 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 	struct zcbor_string zhash = { .value = hash, .len = IMAGE_HASH_LEN };
 
 	ok = zcbor_tstr_put_lit(zse, "images") &&
-	     zcbor_list_start_encode(zse, 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER);
+	     zcbor_list_start_encode(zse, 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER);
 
-	for (i = 0; ok && i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; ok && i < 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		int rc = img_mgmt_read_info(i, &ver, hash, &flags);
 		if (rc != 0) {
 			continue;
@@ -227,7 +227,7 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 		state_flags = img_mgmt_state_flags(i);
 
 		ok = zcbor_map_start_encode(zse, MAX_IMG_CHARACTERISTICS)	&&
-		     (CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1	||
+		     (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1	||
 		      (zcbor_tstr_put_lit(zse, "image")			&&
 		       zcbor_int32_put(zse, i >> 1)))				&&
 		     zcbor_tstr_put_lit(zse, "slot")				&&
@@ -257,9 +257,9 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 		     zcbor_map_end_encode(zse, MAX_IMG_CHARACTERISTICS);
 	}
 
-	ok = ok && zcbor_list_end_encode(zse, 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER);
+	ok = ok && zcbor_list_end_encode(zse, 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER);
 	/* splitStatus is always 0 so in frugal list it is not present at all */
-	if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) && ok) {
+	if (!IS_ENABLED(CONFIG_MCUMGR_GRP_IMG_FRUGAL_LIST) && ok) {
 		ok = zcbor_tstr_put_lit(zse, "splitStatus") &&
 		     zcbor_int32_put(zse, 0);
 	}

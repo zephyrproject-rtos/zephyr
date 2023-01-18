@@ -109,6 +109,10 @@ enum usbc_policy_notify_t {
 	POWER_CHANGE_1A5,
 	/** Sink SubPower state a 5V / 3A */
 	POWER_CHANGE_3A0,
+	/** Sender Response Timeout */
+	SENDER_RESPONSE_TIMEOUT,
+	/** Source Capabilities Received */
+	SOURCE_CAPABILITIES_RECEIVED,
 };
 
 /**
@@ -123,6 +127,8 @@ enum usbc_policy_check_t {
 	CHECK_DATA_ROLE_SWAP_TO_UFP,
 	/** Check if Sink is at default level */
 	CHECK_SNK_AT_DEFAULT_LEVEL,
+	/** Check if should control VCONN */
+	CHECK_VCONN_CONTROL,
 };
 
 /**
@@ -212,6 +218,15 @@ void *usbc_get_dpm_data(const struct device *dev);
  */
 void usbc_set_vconn_control_cb(const struct device *dev,
 			       const tcpc_vconn_control_cb_t cb);
+
+/**
+ * @brief Set the callback used to discharge VCONN
+ *
+ * @param dev Runtime device structure
+ * @param cb VCONN discharge callback
+ */
+void usbc_set_vconn_discharge_cb(const struct device *dev,
+				 const tcpc_vconn_discharge_cb_t cb);
 
 /**
  * @brief Set the callback used to check a policy

@@ -19,8 +19,8 @@ include(python)
 # It looks for: <module>/zephyr/module.yml or
 #               <module>/zephyr/CMakeLists.txt
 # to load the Zephyr module into Zephyr build system.
-# If west is available, it uses `west list` to obtain a list of projects to
-# search for zephyr/module.yml
+# If west is installed, it uses west's APIs to obtain a list of projects to
+# search for zephyr/module.yml from the current workspace's manifest.
 #
 # If the module.yml file specifies that build files are located in a
 # MODULE_EXT_ROOT then the variables:

@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
 
+#include "addr_internal.h"
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "direction_internal.h"
@@ -453,10 +454,8 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	if (addr->type == BT_ADDR_LE_PUBLIC_ID ||
-	    addr->type == BT_ADDR_LE_RANDOM_ID) {
-		bt_addr_le_copy(&id_addr, addr);
-		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+	if (bt_addr_le_is_resolved(addr)) {
+		bt_addr_le_copy_resolved(&id_addr, addr);
 	} else if (addr->type == BT_HCI_PEER_ADDR_ANONYMOUS) {
 		bt_addr_le_copy(&id_addr, BT_ADDR_LE_ANY);
 	} else {
@@ -607,7 +606,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			 */
 			create_ext_adv_info(evt, &scan_info);
 			le_adv_recv(&evt->addr, &scan_info, &buf->b, evt->length);
-			continue;
+			goto cont;
 		}
 
 		is_new_advertiser = reassembling_advertiser.state == FRAG_ADV_INACTIVE ||
@@ -620,7 +619,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			 */
 			create_ext_adv_info(evt, &scan_info);
 			le_adv_recv(&evt->addr, &scan_info, &buf->b, evt->length);
-			continue;
+			goto cont;
 		}
 
 		if (is_new_advertiser && reassembling_advertiser.state == FRAG_ADV_REASSEMBLING) {
@@ -629,8 +628,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 				"report is discarded and future scan results may be incomplete. "
 				"Interleaving of fragmented advertising reports from different "
 				"advertisers is not yet supported.");
-			(void)net_buf_pull_mem(buf, evt->length);
-			continue;
+			goto cont;
 		}
 
 		if (data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE) {
@@ -638,9 +636,8 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			 * We do not need to keep track of this advertiser.
 			 * Discard this report.
 			 */
-			(void)net_buf_pull_mem(buf, evt->length);
 			reset_reassembling_advertiser();
-			continue;
+			goto cont;
 		}
 
 		if (is_new_advertiser) {
@@ -660,14 +657,13 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		}
 
 		if (reassembling_advertiser.state == FRAG_ADV_DISCARDING) {
-			(void)net_buf_pull_mem(buf, evt->length);
 			if (!more_to_come) {
 				/* We do no longer need to keep track of this advertiser as
 				 * all the expected data is received.
 				 */
 				reset_reassembling_advertiser();
 			}
-			continue;
+			goto cont;
 		}
 
 		net_buf_simple_add_mem(&ext_scan_buf, buf->data, evt->length);
@@ -686,6 +682,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		/* We do no longer need to keep track of this advertiser. */
 		reset_reassembling_advertiser();
 
+cont:
 		net_buf_pull(buf, evt->length);
 	}
 }
@@ -887,6 +884,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	struct bt_le_per_adv_sync_synced_info sync_info;
 	struct bt_le_per_adv_sync *pending_per_adv_sync;
 	struct bt_le_per_adv_sync_cb *listener;
+	bt_addr_le_t id_addr;
 	bool unexpected_evt;
 	int err;
 
@@ -913,11 +911,19 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		return;
 	}
 
+	if (bt_addr_le_is_resolved(&evt->adv_addr)) {
+		bt_addr_le_copy_resolved(&id_addr, &evt->adv_addr);
+	} else {
+		bt_addr_le_copy(&id_addr,
+				bt_lookup_id_addr(BT_ID_DEFAULT,
+						  &evt->adv_addr));
+	}
+
 	if (!pending_per_adv_sync ||
 	    (!atomic_test_bit(pending_per_adv_sync->flags,
 			      BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
 	     ((pending_per_adv_sync->sid != evt->sid) ||
-	      !bt_addr_le_eq(&pending_per_adv_sync->addr, &evt->adv_addr)))) {
+	      !bt_addr_le_eq(&pending_per_adv_sync->addr, &id_addr)))) {
 		LOG_ERR("Unexpected per adv sync established event");
 		/* Request terminate of pending periodic advertising in controller */
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->handle));
@@ -938,7 +944,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 				 * Already set if not using the sync list
 				 */
 				bt_addr_le_copy(&pending_per_adv_sync->addr,
-						&evt->adv_addr);
+						&id_addr);
 				pending_per_adv_sync->sid = evt->sid;
 			}
 
@@ -970,13 +976,13 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	if (atomic_test_bit(pending_per_adv_sync->flags,
 			    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
 		/* Now we know which address and SID we synchronized to. */
-		bt_addr_le_copy(&pending_per_adv_sync->addr, &evt->adv_addr);
 		pending_per_adv_sync->sid = evt->sid;
 
-		/* Translate "enhanced" identity address type to normal one */
-		if (pending_per_adv_sync->addr.type == BT_ADDR_LE_PUBLIC_ID ||
-		    pending_per_adv_sync->addr.type == BT_ADDR_LE_RANDOM_ID) {
-			pending_per_adv_sync->addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		if (bt_addr_le_is_resolved(&pending_per_adv_sync->addr)) {
+			bt_addr_le_copy_resolved(&pending_per_adv_sync->addr,
+						 &id_addr);
+		} else {
+			bt_addr_le_copy(&pending_per_adv_sync->addr, &id_addr);
 		}
 	}
 
@@ -1020,6 +1026,7 @@ void bt_hci_le_past_received(struct net_buf *buf)
 	struct bt_le_per_adv_sync_synced_info sync_info;
 	struct bt_le_per_adv_sync_cb *listener;
 	struct bt_le_per_adv_sync *per_adv_sync;
+	bt_addr_le_t id_addr;
 
 	if (evt->status) {
 		/* No sync created, don't notify app */
@@ -1045,11 +1052,18 @@ void bt_hci_le_past_received(struct net_buf *buf)
 
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED);
 
+	if (bt_addr_le_is_resolved(&evt->addr)) {
+		bt_addr_le_copy_resolved(&id_addr, &evt->addr);
+	} else {
+		bt_addr_le_copy(&id_addr,
+				bt_lookup_id_addr(BT_ID_DEFAULT, &evt->addr));
+	}
+
 	per_adv_sync->handle = sys_le16_to_cpu(evt->sync_handle);
 	per_adv_sync->interval = sys_le16_to_cpu(evt->interval);
 	per_adv_sync->clock_accuracy = sys_le16_to_cpu(evt->clock_accuracy);
 	per_adv_sync->phy = evt->phy;
-	bt_addr_le_copy(&per_adv_sync->addr, &evt->addr);
+	bt_addr_le_copy(&per_adv_sync->addr, &id_addr);
 	per_adv_sync->sid = evt->adv_sid;
 
 	sync_info.interval = per_adv_sync->interval;

@@ -665,12 +665,12 @@ void bt_mesh_app_key_pending_store(void)
 			continue;
 		}
 
+		update->valid = 0U;
+
 		if (update->clear) {
 			clear_app_key(update->key_idx);
 		} else {
 			store_app_key(update->key_idx);
 		}
-
-		update->valid = 0U;
 	}
 }

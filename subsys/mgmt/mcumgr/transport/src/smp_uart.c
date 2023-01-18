@@ -20,7 +20,7 @@
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
 
-BUILD_ASSERT(CONFIG_MCUMGR_SMP_UART_MTU != 0, "CONFIG_MCUMGR_SMP_UART_MTU must be > 0");
+BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_UART_MTU != 0, "CONFIG_MCUMGR_TRANSPORT_UART_MTU must be > 0");
 
 struct device;
 
@@ -77,7 +77,7 @@ static void smp_uart_rx_frag(struct uart_mcumgr_rx_buf *rx_buf)
 
 static uint16_t smp_uart_get_mtu(const struct net_buf *nb)
 {
-	return CONFIG_MCUMGR_SMP_UART_MTU;
+	return CONFIG_MCUMGR_TRANSPORT_UART_MTU;
 }
 
 static int smp_uart_tx_pkt(struct net_buf *nb)

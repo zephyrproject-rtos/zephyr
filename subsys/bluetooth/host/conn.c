@@ -27,6 +27,7 @@
 
 #include "common/assert.h"
 
+#include "addr_internal.h"
 #include "hci_core.h"
 #include "id.h"
 #include "adv.h"
@@ -138,6 +139,7 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 		return &bt_dev.br.pkts;
 	}
 #endif /* CONFIG_BT_BREDR */
+
 #if defined(CONFIG_BT_ISO)
 	/* Use ISO pkts semaphore if LE Read Buffer Size command returned
 	 * dedicated ISO buffers.
@@ -150,11 +152,14 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 		return NULL;
 	}
 #endif /* CONFIG_BT_ISO */
+
 #if defined(CONFIG_BT_CONN)
-	return &bt_dev.le.acl_pkts;
-#else
-	return NULL;
+	if (bt_dev.le.acl_mtu) {
+		return &bt_dev.le.acl_pkts;
+	}
 #endif /* CONFIG_BT_CONN */
+
+	return NULL;
 }
 
 static inline const char *state2str(bt_conn_state_t state)
@@ -507,12 +512,13 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 static inline uint16_t conn_mtu(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR || !bt_dev.le.acl_mtu) {
+	if (conn->type == BT_CONN_TYPE_BR ||
+	    (conn->type != BT_CONN_TYPE_ISO && !bt_dev.le.acl_mtu)) {
 		return bt_dev.br.mtu;
 	}
 #endif /* CONFIG_BT_BREDR */
 #if defined(CONFIG_BT_ISO)
-	if (conn->type == BT_CONN_TYPE_ISO && bt_dev.le.iso_mtu) {
+	if (conn->type == BT_CONN_TYPE_ISO) {
 		return bt_dev.le.iso_mtu;
 	}
 #endif /* CONFIG_BT_ISO */
@@ -774,7 +780,16 @@ static int conn_prepare_events(struct bt_conn *conn,
 
 	LOG_DBG("Adding conn %p to poll list", conn);
 
-	bool buffers_available = k_sem_count_get(bt_conn_get_pkts(conn)) > 0;
+	/* ISO Synchronized Receiver only builds do not transmit and hence
+	 * may not have any tx buffers allocated in a Controller.
+	 */
+	struct k_sem *conn_pkts = bt_conn_get_pkts(conn);
+
+	if (!conn_pkts) {
+		return -ENOTCONN;
+	}
+
+	bool buffers_available = k_sem_count_get(conn_pkts) > 0;
 	bool packets_waiting = !k_fifo_is_empty(&conn->tx_queue);
 
 	if (packets_waiting && !buffers_available) {
@@ -785,7 +800,7 @@ static int conn_prepare_events(struct bt_conn *conn,
 		k_poll_event_init(&events[0],
 				  K_POLL_TYPE_SEM_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
-				  bt_conn_get_pkts(conn));
+				  conn_pkts);
 	} else {
 		/* Wait until there is more data to send. */
 		LOG_DBG("wait on host fifo");
@@ -2163,7 +2178,7 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 		}
 	}
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (!err && conn->sec_level >= BT_SECURITY_L2) {
 		if (conn->type == BT_CONN_TYPE_LE) {
 			bt_keys_update_usage(conn->id, bt_conn_get_dst(conn));
@@ -2803,10 +2818,8 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
-	if (peer->type == BT_ADDR_LE_PUBLIC_ID ||
-	    peer->type == BT_ADDR_LE_RANDOM_ID) {
-		bt_addr_le_copy(&dst, peer);
-		dst.type -= BT_ADDR_LE_PUBLIC_ID;
+	if (bt_addr_le_is_resolved(peer)) {
+		bt_addr_le_copy_resolved(&dst, peer);
 	} else {
 		bt_addr_le_copy(&dst, bt_lookup_id_addr(BT_ID_DEFAULT, peer));
 	}

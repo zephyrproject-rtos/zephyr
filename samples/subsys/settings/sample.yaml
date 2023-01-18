@@ -33,4 +33,5 @@ tests:
         - "direct.length_2 = 54"
         - "<gamma> = 5"
         - "The settings destination off the key <alpha/beta/source> has got value: \"RT\""
-        - "String value \"rtos\" was retrieved from the settings destination off the key <alpha/beta/source>"
+        - "String value \"rtos\" was retrieved from the settings destination off the key \
+           <alpha/beta/source>"

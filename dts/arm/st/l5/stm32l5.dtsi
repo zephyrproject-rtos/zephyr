@@ -361,6 +361,7 @@
 			compatible = "st,stm32-sdmmc";
 			reg = <0x420c8000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00400000>;
+			resets = <&rctl STM32_RESET(AHB2, 22U)>;
 			interrupts = <78 0>;
 			status = "disabled";
 		};
@@ -607,7 +608,8 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
 			status = "disabled";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00200000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00200000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			phys = <&usb_fs_phy>;
 		};
 

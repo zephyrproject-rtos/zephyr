@@ -8,27 +8,16 @@
 
 # File System management group public API is exposed by MCUmgr API
 # interface, when File System management is enabled.
-add_library(mgmt_mcumgr_grp_fs src/fs_mgmt.c)
+zephyr_library(mgmt_mcumgr_grp_fs)
+zephyr_library_sources(src/fs_mgmt.c)
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH src/fs_mgmt_hash_checksum.c)
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32 src/fs_mgmt_hash_checksum_crc32.c)
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_GRP_FS_HASH_SHA256 src/fs_mgmt_hash_checksum_sha256.c)
 
-target_sources_ifdef(CONFIG_FS_MGMT_CHECKSUM_HASH
-	mgmt_mcumgr_grp_fs PRIVATE src/fs_mgmt_hash_checksum.c
-)
-target_sources_ifdef(CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32
-	mgmt_mcumgr_grp_fs PRIVATE src/fs_mgmt_hash_checksum_crc32.c
-)
-target_sources_ifdef(CONFIG_FS_MGMT_HASH_SHA256
-	mgmt_mcumgr_grp_fs PRIVATE src/fs_mgmt_hash_checksum_sha256.c)
-
-if (CONFIG_FS_MGMT_CHECKSUM_HASH AND CONFIG_FS_MGMT_HASH_SHA256)
+if (CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH AND CONFIG_MCUMGR_GRP_FS_HASH_SHA256)
   if (NOT CONFIG_TINYCRYPT)
-    target_link_libraries(mgmt_mcumgr_grp_fs PRIVATE mbedTLS)
+    zephyr_library_link_libraries(mbedTLS)
   endif()
 endif()
 
-target_include_directories(mgmt_mcumgr_grp_fs PUBLIC include)
-
-target_link_libraries(mgmt_mcumgr_grp_fs PRIVATE
-  zephyr_interface mgmt_mcumgr_mgmt mgmt_mcumgr_util
-)
-
-target_link_libraries(mgmt_mcumgr INTERFACE mgmt_mcumgr_grp_fs)
+zephyr_library_include_directories(include)

@@ -3,11 +3,13 @@ common:
 
 tests:
   libraries.cmsis_dsp.filtering:
-    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or
+      CONFIG_ARCH_POSIX
     tags: cmsis_dsp
     skip: true
   libraries.cmsis_dsp.filtering.biquad:
-    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or
+      CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -20,7 +22,8 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_FILTERING_BIQUAD=y
   libraries.cmsis_dsp.filtering.biquad.fpu:
-    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and
+      TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
       - mps3_an547
@@ -32,7 +35,8 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_FILTERING_BIQUAD=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.filtering.decim:
-    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or
+      CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -45,7 +49,8 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_FILTERING_DECIM=y
   libraries.cmsis_dsp.filtering.decim.fpu:
-    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and
+      TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
       - mps3_an547
@@ -57,7 +62,8 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_FILTERING_DECIM=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.filtering.fir:
-    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or
+      CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -70,7 +76,8 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_FILTERING_FIR=y
   libraries.cmsis_dsp.filtering.fir.fpu:
-    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and
+      TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
       - mps3_an547
@@ -82,7 +89,8 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_FILTERING_FIR=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.filtering.misc:
-    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or
+      CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -95,7 +103,8 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_FILTERING_MISC=y
   libraries.cmsis_dsp.filtering.misc.fpu:
-    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and
+      TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
       - mps3_an547

@@ -150,17 +150,11 @@ static int counter_stm32_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-/* Return true if value equals 2^n - 1 */
-static inline bool counter_stm32_is_bit_mask(uint32_t val)
-{
-	return !(val & (val + 1U));
-}
-
 static uint32_t counter_stm32_ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
 {
 	uint32_t to_top;
 
-	if (likely(counter_stm32_is_bit_mask(top))) {
+	if (likely(IS_BIT_MASK(top))) {
 		return (val1 + val2) & top;
 	}
 
@@ -171,7 +165,7 @@ static uint32_t counter_stm32_ticks_add(uint32_t val1, uint32_t val2, uint32_t t
 
 static uint32_t counter_stm32_ticks_sub(uint32_t val, uint32_t old, uint32_t top)
 {
-	if (likely(counter_stm32_is_bit_mask(top))) {
+	if (likely(IS_BIT_MASK(top))) {
 		return (val - old) & top;
 	}
 

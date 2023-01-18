@@ -34,13 +34,11 @@ properties:
 
   slave:
     type: boolean
-    required: false
     description: |
       Select if the SPI module is intended to be used in slave mode.
 
   spi-sck-cs-delay:
     type: int
-    required: false
     description: |
       A delay in nanoseconds between the stop of clock signal and
       deactivating Chip Select at the stop of transfer. If CS remains
@@ -51,7 +49,6 @@ properties:
 
   spi-cs-sck-delay:
     type: int
-    required: false
     description: |
       A delay in nanoseconds between activating Chip Select and the start
       of clock signal at the start of transfer. If CS remains asserted
@@ -62,7 +59,6 @@ properties:
 
   spi-cs-cs-delay:
     type: int
-    required: false
     description: |
       A delay in nanoseconds between deactivating Chip Select at the stop
       of previous transfer and activating Chip Select at the start of

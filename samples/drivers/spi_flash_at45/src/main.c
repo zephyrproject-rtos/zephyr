@@ -147,7 +147,7 @@ void main(void)
 
 	printk("OK\n");
 
-#if IS_ENABLED(CONFIG_PM_DEVICE)
+#if defined(CONFIG_PM_DEVICE)
 	printk("Putting the flash device into suspended state... ");
 	err = pm_device_action_run(flash_dev, PM_DEVICE_ACTION_SUSPEND);
 	if (err != 0) {

@@ -102,11 +102,10 @@ CBOR data of successful response:
     {
         (str)"off"      : (uint)
         (str)"data"     : (byte str)
-        (str)"rc"       : (int)
         (str,opt)"len"  : (uint)
     }
 
-In case of error the CBOR data takes form:
+In case of error the CBOR data takes the form:
 
 .. code-block:: none
 
@@ -130,6 +129,7 @@ where:
     |                       | when "off" is 0                                   |
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
@@ -218,13 +218,20 @@ File upload response header:
     | ``3``  | ``8``        |  ``0``         |
     +--------+--------------+----------------+
 
-CBOR data of request:
+CBOR data of successful response:
 
 .. code-block:: none
 
     {
-        (str,opt)"off"      : (uint)
-        (str)"rc"           : (int)
+        (str)"off"      : (uint)
+    }
+
+In case of error the CBOR data takes the form:
+
+.. code-block:: none
+
+    {
+        (str)"rc"       : (int)
     }
 
 where:
@@ -233,10 +240,10 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "off"                 | offset of last successfully written data;         |
-    |                       | appears only when "rc" is 0                       |
+    | "off"                 | offset of last successfully written data.         |
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
 
 File status
@@ -314,8 +321,8 @@ where:
     +-----------------------+---------------------------------------------------+
     | "len"                 | length of file (in bytes)                         |
     +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes` (only     |
-    |                       | present if an error occurred)                     |
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
@@ -417,7 +424,7 @@ CBOR data of successful response:
         (str)"output"   : (uint or bstr)
     }
 
-In case of error the CBOR data takes form:
+In case of error the CBOR data takes the form:
 
 .. code-block:: none
 
@@ -431,8 +438,8 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes` (only     |
-    |                       | present if an error occurred)                     |
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
     | "type"                | type of hash/checksum that was performed          |
     |                       | :ref:`mcumgr_group_8_hash_checksum_types`         |

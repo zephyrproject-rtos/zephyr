@@ -166,6 +166,7 @@ class BinaryHandler(Handler):
 
         self.call_west_flash = False
         self.seed = None
+        self.extra_test_args = None
         self.line = b""
 
     def try_kill_process_by_pid(self):
@@ -246,7 +247,9 @@ class BinaryHandler(Handler):
 
         # Only valid for native_posix
         if self.seed is not None:
-            command = command + ["--seed="+str(self.seed)]
+            command.append(f"--seed={self.seed}")
+        if self.extra_test_args is not None:
+            command.extend(self.extra_test_args)
 
         logger.debug("Spawning process: " +
                      " ".join(shlex.quote(word) for word in command) + os.linesep +
@@ -442,7 +445,6 @@ class DeviceHandler(Handler):
 
         hardware = self.device_is_available(self.instance)
         while not hardware:
-            logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
             time.sleep(1)
             hardware = self.device_is_available(self.instance)
 

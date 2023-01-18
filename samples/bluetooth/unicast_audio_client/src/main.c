@@ -33,8 +33,10 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT,
 static struct bt_audio_stream streams[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT +
 				      CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 static size_t configured_sink_stream_count;
-static size_t configured_stream_count;
+static size_t configured_source_stream_count;
 
+#define configured_stream_count (configured_sink_stream_count + \
+				 configured_source_stream_count)
 
 /* Select a codec configuration to apply that is mandatory to support by both client and server.
  * Allows this sample application to work without logic to parse the codec capabilities of the
@@ -51,7 +53,7 @@ static K_SEM_DEFINE(sem_security_updated, 0, 1);
 static K_SEM_DEFINE(sem_sinks_discovered, 0, 1);
 static K_SEM_DEFINE(sem_sources_discovered, 0, 1);
 static K_SEM_DEFINE(sem_stream_configured, 0, 1);
-static K_SEM_DEFINE(sem_stream_qos, 0, 1);
+static K_SEM_DEFINE(sem_stream_qos, 0, ARRAY_SIZE(sinks) + ARRAY_SIZE(sources));
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
 
@@ -328,25 +330,6 @@ static void audio_timer_timeout(struct k_work *work)
 }
 
 #endif
-
-
-static enum bt_audio_dir stream_dir(const struct bt_audio_stream *stream)
-{
-	for (size_t i = 0U; i < ARRAY_SIZE(sinks); i++) {
-		if (sinks[i].ep != NULL && stream->ep == sinks[i].ep) {
-			return BT_AUDIO_DIR_SINK;
-		}
-	}
-
-	for (size_t i = 0U; i < ARRAY_SIZE(sources); i++) {
-		if (sources[i] != NULL && stream->ep == sources[i]) {
-			return BT_AUDIO_DIR_SOURCE;
-		}
-	}
-
-	__ASSERT(false, "Invalid stream");
-	return 0;
-}
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
@@ -880,7 +863,6 @@ static int configure_streams(void)
 		}
 
 		printk("Configured sink stream[%zu]\n", i);
-		configured_stream_count++;
 		configured_sink_stream_count++;
 	}
 
@@ -900,7 +882,7 @@ static int configure_streams(void)
 		}
 
 		printk("Configured source stream[%zu]\n", i);
-		configured_stream_count++;
+		configured_source_stream_count++;
 	}
 
 	return 0;
@@ -908,17 +890,37 @@ static int configure_streams(void)
 
 static int create_group(void)
 {
-	struct bt_audio_unicast_group_param params[ARRAY_SIZE(streams)];
+	const size_t params_count = MAX(configured_sink_stream_count,
+					configured_source_stream_count);
+	struct bt_audio_unicast_group_stream_pair_param pair_params[params_count];
+	struct bt_audio_unicast_group_stream_param stream_params[configured_stream_count];
+	struct bt_audio_unicast_group_param param;
 	int err;
 
 	for (size_t i = 0U; i < configured_stream_count; i++) {
-		params[i].stream = &streams[i];
-		params[i].qos = &codec_configuration.qos;
-		params[i].dir = stream_dir(params[i].stream);
+		stream_params[i].stream = &streams[i];
+		stream_params[i].qos = &codec_configuration.qos;
 	}
 
-	err = bt_audio_unicast_group_create(params, configured_stream_count,
-					    &unicast_group);
+	for (size_t i = 0U; i < params_count; i++) {
+		if (i < configured_sink_stream_count) {
+			pair_params[i].tx_param = &stream_params[i];
+		} else {
+			pair_params[i].tx_param = NULL;
+		}
+
+		if (i < configured_source_stream_count) {
+			pair_params[i].rx_param = &stream_params[i + configured_sink_stream_count];
+		} else {
+			pair_params[i].rx_param = NULL;
+		}
+	}
+
+	param.params = pair_params;
+	param.params_count = params_count;
+	param.packing = BT_ISO_PACKING_SEQUENTIAL;
+
+	err = bt_audio_unicast_group_create(&param, &unicast_group);
 	if (err != 0) {
 		printk("Could not create unicast group (err %d)\n", err);
 		return err;
@@ -950,10 +952,9 @@ static int set_stream_qos(void)
 		return err;
 	}
 
-	err = k_sem_take(&sem_stream_qos, K_FOREVER);
-	if (err != 0) {
-		printk("failed to take sem_stream_qos (err %d)\n", err);
-		return err;
+	for (size_t i = 0U; i < configured_stream_count; i++) {
+		printk("QoS: waiting for %zu streams\n", configured_stream_count);
+		k_sem_take(&sem_stream_qos, K_FOREVER);
 	}
 
 	return 0;
@@ -965,7 +966,7 @@ static int enable_streams(void)
 		init_lc3();
 	}
 
-	for (size_t i = 0; i < configured_stream_count; i++) {
+	for (size_t i = 0U; i < configured_stream_count; i++) {
 		int err;
 
 		err = bt_audio_stream_enable(&streams[i],
@@ -988,7 +989,7 @@ static int enable_streams(void)
 
 static int start_streams(void)
 {
-	for (size_t i = 0; i < configured_stream_count; i++) {
+	for (size_t i = 0U; i < configured_stream_count; i++) {
 		int err;
 
 		err = bt_audio_stream_start(&streams[i]);
@@ -1021,7 +1022,7 @@ static void reset_data(void)
 	k_sem_reset(&sem_stream_started);
 
 	configured_sink_stream_count = 0;
-	configured_stream_count = 0;
+	configured_source_stream_count = 0;
 }
 
 void main(void)

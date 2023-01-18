@@ -13,11 +13,11 @@ tests:
     integration_platforms:
       - nucleo_f746zg
     harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "Counter alarm sample"
-            - "Set alarm in 2 sec"
-            - "!!! Alarm !!!"
-            - "Now: [2|3]"
+      type: multi_line
+      ordered: true
+      regex:
+        - "Counter alarm sample"
+        - "Set alarm in 2 sec"
+        - "!!! Alarm !!!"
+        - "Now: [2|3]"
     depends_on: counter

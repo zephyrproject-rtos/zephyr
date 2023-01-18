@@ -11,7 +11,18 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/zbus/zbus.h>
+
+#if defined(CONFIG_ARCH_POSIX)
+#include "native_rtc.h"
+#define GET_ARCH_TIME_NS() (native_rtc_gettime_us(RTC_CLOCK_PSEUDOHOSTREALTIME) * NSEC_PER_USEC)
+#else
+#define GET_ARCH_TIME_NS() (k_cyc_to_ns_near32(sys_clock_cycle_get_32()))
+#endif
+
 LOG_MODULE_DECLARE(zbus, CONFIG_ZBUS_LOG_LEVEL);
+
+#define CONSUMER_STACK_SIZE (CONFIG_IDLE_STACK_SIZE + CONFIG_BM_MESSAGE_SIZE)
+#define PRODUCER_STACK_SIZE (CONFIG_MAIN_STACK_SIZE + CONFIG_BM_MESSAGE_SIZE)
 
 ZBUS_CHAN_DEFINE(bm_channel,		   /* Name */
 		 struct external_data_msg, /* Message type */
@@ -91,8 +102,7 @@ ZBUS_SUBSCRIBER_DEFINE(s16, 4);
 		}                                                                                  \
 	}                                                                                          \
                                                                                                    \
-	K_THREAD_DEFINE(name##_id, CONFIG_BM_MESSAGE_SIZE + 196, name##_task, NULL, NULL, NULL, 3, \
-			0, 0);
+	K_THREAD_DEFINE(name##_id, CONSUMER_STACK_SIZE, name##_task, NULL, NULL, NULL, 3, 0, 0);
 
 S_TASK(s1)
 #if (CONFIG_BM_ONE_TO >= 2LLU)
@@ -183,7 +193,7 @@ static void producer_thread(void)
 
 	zbus_chan_finish(&bm_channel);
 
-	uint32_t start = k_uptime_get_32();
+	uint32_t start_ns = GET_ARCH_TIME_NS();
 
 	for (uint64_t internal_count = BYTES_TO_BE_SENT / CONFIG_BM_ONE_TO; internal_count > 0;
 	     internal_count -= CONFIG_BM_MESSAGE_SIZE) {
@@ -197,20 +207,24 @@ static void producer_thread(void)
 
 		zbus_chan_notify(&bm_channel, K_MSEC(200));
 	}
-	uint32_t duration = (k_uptime_get_32() - start);
+
+	uint32_t end_ns = GET_ARCH_TIME_NS();
+
+	uint32_t duration = end_ns - start_ns;
 
 	if (duration == 0) {
 		LOG_ERR("Something wrong. Duration is zero!\n");
 		k_oops();
 	}
-	uint64_t i = (BYTES_TO_BE_SENT * 1000) / duration;
-	uint64_t f = ((BYTES_TO_BE_SENT * 100000) / duration) % 100;
+	uint64_t i = ((BYTES_TO_BE_SENT * NSEC_PER_SEC) / MB(1)) / duration;
+	uint64_t f = ((BYTES_TO_BE_SENT * NSEC_PER_SEC * 100) / MB(1) / duration) % 100;
 
 	LOG_INF("Bytes sent = %lld, received = %llu", BYTES_TO_BE_SENT, count);
-	LOG_INF("Average data rate: %llu.%lluB/s", i, f);
-	LOG_INF("Duration: %ums", duration);
+	LOG_INF("Average data rate: %llu.%lluMB/s", i, f);
+	LOG_INF("Duration: %u.%uus", duration / NSEC_PER_USEC, duration % NSEC_PER_USEC);
 
 	printk("\n@%u\n", duration);
 }
 
-K_THREAD_DEFINE(producer_thread_id, 1024, producer_thread, NULL, NULL, NULL, 5, 0, 0);
+K_THREAD_DEFINE(producer_thread_id, PRODUCER_STACK_SIZE, producer_thread,
+		NULL, NULL, NULL, 5, 0, 0);

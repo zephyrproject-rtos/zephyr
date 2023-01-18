@@ -70,6 +70,8 @@
 #endif /* __GNUC__ */
 #elif defined(CONFIG_SPARC)
 #include "float_regs_sparc.h"
+#elif defined(CONFIG_XTENSA)
+#include "float_regs_xtensa.h"
 #endif
 
 #include "float_context.h"

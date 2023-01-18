@@ -1,0 +1,5 @@
+common:
+    tags: test_framework bluetooth host
+tests:
+  bluetooth.host.bt_id_get.default:
+     type: unit

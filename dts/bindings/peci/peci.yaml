@@ -8,11 +8,11 @@ include: base.yaml
 bus: peci
 
 properties:
-    "#address-cells":
-      type: int
-      required: true
-      const: 1
-    "#size-cells":
-      type: int
-      required: true
-      const: 0
+  "#address-cells":
+    type: int
+    required: true
+    const: 1
+  "#size-cells":
+    type: int
+    required: true
+    const: 0

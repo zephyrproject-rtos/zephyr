@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/f4/stm32f411.dtsi>
+#include <st/f4/stm32f410.dtsi>
+
+/delete-node/ &dac1;
+/delete-node/ &rng;
 
 / {
-	chosen {
-		zephyr,entropy = &rng;
-	};
-
 	soc {
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x1c00>;
@@ -41,20 +40,27 @@
 			status = "disabled";
 		};
 
-		timers6: timers@40001000 {
-			compatible = "st,stm32-timers";
-			reg = <0x40001000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
-			resets = <&rctl STM32_RESET(APB1, 4U)>;
-			interrupts = <54 0>;
-			interrupt-names = "global";
-			st,prescaler = <0>;
+		spi4: spi@40013400 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
+			interrupts = <84 5>;
 			status = "disabled";
+		};
 
-			counter {
-				compatible = "st,stm32-counter";
-				status = "disabled";
-			};
+		i2s4: i2s@40013400 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
+			interrupts = <84 5>;
+			dmas = <&dma2 1 4 0x400 0x3
+				&dma2 0 4 0x400 0x3>;
+			dma-names = "tx", "rx";
+			status = "disabled";
 		};
 
 		timers7: timers@40001400 {

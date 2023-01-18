@@ -77,6 +77,10 @@
 	cpu-power-states = <&idle &suspend_to_ram>;
 };
 
+&pcr {
+	status = "okay";
+};
+
 &uart2 {
 	status = "okay";
 	current-speed = <115200>;

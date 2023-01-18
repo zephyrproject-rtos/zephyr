@@ -8,8 +8,6 @@
 #define DT_DRV_COMPAT nxp_kinetis_lpuart
 
 #include <errno.h>
-#include <soc.h>
-#include <fsl_lpuart.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
@@ -22,9 +20,10 @@
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
 #endif
-
-
 #include <zephyr/logging/log.h>
+
+#include <fsl_lpuart.h>
+
 LOG_MODULE_REGISTER(uart_mcux_lpuart, LOG_LEVEL_ERR);
 
 #ifdef CONFIG_UART_ASYNC_API

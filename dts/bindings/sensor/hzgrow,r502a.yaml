@@ -8,21 +8,19 @@ compatible: "hzgrow,r502a"
 include: [sensor-device.yaml, uart-device.yaml]
 
 properties:
-    reg:
-      required: true
-    int-gpios:
-      type: phandle-array
-      required: true
-      description: |
-        Interrupt pin. When the sensor is touched, the GPIO is set to high.
-        It is used to trigger a fingerprint enroll or match operations.
-    vin-gpios:
-      type: phandle-array
-      required: false
-      description: |
-        Voltage input pin to the fingerprint sensor.
-    act-gpios:
-      type: phandle-array
-      required: false
-      description: |
-        Finger detection power pin to detect the presence of finger.
+  reg:
+    required: true
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin. When the sensor is touched, the GPIO is set to high.
+      It is used to trigger a fingerprint enroll or match operations.
+  vin-gpios:
+    type: phandle-array
+    description: |
+      Voltage input pin to the fingerprint sensor.
+  act-gpios:
+    type: phandle-array
+    description: |
+      Finger detection power pin to detect the presence of finger.

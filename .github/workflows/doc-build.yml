@@ -30,7 +30,7 @@ env:
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
-  DOXYGEN_VERSION: 1.9.4
+  DOXYGEN_VERSION: 1.9.6
 
 jobs:
   doc-build-html:

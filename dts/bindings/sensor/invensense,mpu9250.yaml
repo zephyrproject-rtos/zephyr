@@ -10,75 +10,75 @@ compatible: "invensense,mpu9250"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      description: |
-        The INT signal default configuration is active-high.  The
-        property value should ensure the flags properly describe the
-        signal that is presented to the driver.
-        This property is required when the trigger mode is used.
+  irq-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-high.  The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+      This property is required when the trigger mode is used.
 
-    gyro-sr-div:
-      type: int
-      required: true
-      description: |
-        Default gyrscope sample rate divider. This divider is only effective
-        when gyro-dlpf is in range 5-184.
-        rate = sample_rate / (1 + gyro-sr-div)
-        Valid range: 0 - 255
+  gyro-sr-div:
+    type: int
+    required: true
+    description: |
+      Default gyrscope sample rate divider. This divider is only effective
+      when gyro-dlpf is in range 5-184.
+      rate = sample_rate / (1 + gyro-sr-div)
+      Valid range: 0 - 255
 
-    gyro-dlpf:
-      type: int
-      required: true
-      description: |
-        Default digital low pass filter frequency of gyroscope.
-        Maps to DLPF_CFG field in Configuration setting.
-      enum:
-        - 250
-        - 184
-        - 92
-        - 41
-        - 20
-        - 10
-        - 5
-        - 3600
+  gyro-dlpf:
+    type: int
+    required: true
+    description: |
+      Default digital low pass filter frequency of gyroscope.
+      Maps to DLPF_CFG field in Configuration setting.
+    enum:
+      - 250
+      - 184
+      - 92
+      - 41
+      - 20
+      - 10
+      - 5
+      - 3600
 
-    gyro-fs:
-      type: int
-      required: true
-      description: |
-        Default full scale of gyroscope. (Unit - DPS).
-        Maps to GYRO_FS_SEL field in Gyroscope Configuration setting.
-      enum:
-        - 250
-        - 500
-        - 1000
-        - 2000
+  gyro-fs:
+    type: int
+    required: true
+    description: |
+      Default full scale of gyroscope. (Unit - DPS).
+      Maps to GYRO_FS_SEL field in Gyroscope Configuration setting.
+    enum:
+      - 250
+      - 500
+      - 1000
+      - 2000
 
-    accel-fs:
-      type: int
-      required: true
-      description: |
-        Default full scale of accelerometer. (Unit - g)
-        Maps to ACCEL_FS_SEL field in Accelerometer Configuration setting
-      enum:
-        - 2
-        - 4
-        - 8
-        - 16
+  accel-fs:
+    type: int
+    required: true
+    description: |
+      Default full scale of accelerometer. (Unit - g)
+      Maps to ACCEL_FS_SEL field in Accelerometer Configuration setting
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
 
-    accel-dlpf:
-      type: string
-      required: true
-      description: |
-        Default digital low pass filter frequency of accelerometer.
-        Maps to DLPF_CFG field in Accelerometer Configuration 2 setting.
-      enum:
-        - "218.1"
-        - "218.1a"
-        - "99"
-        - "44.8"
-        - "21.2"
-        - "10.2"
-        - "5.05"
-        - "420"
+  accel-dlpf:
+    type: string
+    required: true
+    description: |
+      Default digital low pass filter frequency of accelerometer.
+      Maps to DLPF_CFG field in Accelerometer Configuration 2 setting.
+    enum:
+      - "218.1"
+      - "218.1a"
+      - "99"
+      - "44.8"
+      - "21.2"
+      - "10.2"
+      - "5.05"
+      - "420"

@@ -21,11 +21,6 @@ extern "C" {
 #define FS_MGMT_ID_HASH_CHECKSUM		2
 #define FS_MGMT_ID_SUPPORTED_HASH_CHECKSUM	3
 
-/**
- * @brief Registers the file system management command handler group.
- */
-void fs_mgmt_register_group(void);
-
 #ifdef __cplusplus
 }
 #endif

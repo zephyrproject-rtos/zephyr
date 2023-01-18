@@ -145,11 +145,17 @@
 	};
 };
 
+&dma1 {
+	status = "okay";
+};
+
 &spi5 {
 	status = "okay";
 	pinctrl-0 = <&spi5_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+	dmas = <&dma1 5 1 0 0>, <&dma1 6 1 0 0>;
+	dma-names = "tx", "rx";
 
 	nor_flash: gd25q16@0 {
 		compatible ="jedec,spi-nor";

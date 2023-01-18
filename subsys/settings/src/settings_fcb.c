@@ -26,8 +26,6 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 #define SETTINGS_FCB_VERS		1
 
 int settings_backend_init(void);
-void settings_mount_fcb_backend(struct settings_fcb *cf);
-static void *settings_fcb_storage_get(struct settings_store *cs);
 
 static int settings_fcb_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
@@ -331,13 +329,11 @@ static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
 	int len;
 	int rc = -EINVAL;
 	int i;
-	uint8_t wbs;
 
 	if (!name) {
 		return -EINVAL;
 	}
 
-	wbs = cf->cf_fcb.f_align;
 	len = settings_line_len_calc(name, val_len);
 
 	for (i = 0; i < cf->cf_fcb.f_sector_cnt; i++) {

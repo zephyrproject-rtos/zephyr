@@ -12,6 +12,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 
+#include "addr_internal.h"
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "id.h"
@@ -900,6 +901,14 @@ static uint8_t get_adv_channel_map(uint32_t options)
 	return channel_map;
 }
 
+static inline bool adv_is_directed(const struct bt_le_ext_adv *adv)
+{
+	/* The advertiser is assumed to be directed when the peer address has
+	 * been set.
+	 */
+	return !bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY);
+}
+
 static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 				 struct bt_conn **out_conn)
 {
@@ -907,7 +916,7 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 
 	bt_dev.adv_conn_id = adv->id;
 
-	if (bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY)) {
+	if (!adv_is_directed(adv)) {
 		/* Undirected advertising */
 		conn = bt_conn_add_le(adv->id, BT_ADDR_LE_NONE);
 		if (!conn) {
@@ -937,7 +946,7 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 {
 	struct bt_conn *conn;
 
-	if (bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY)) {
+	if (!adv_is_directed(adv)) {
 		conn = bt_conn_lookup_state_le(adv->id, BT_ADDR_LE_NONE,
 					       BT_CONN_CONNECTING_ADV);
 	} else {
@@ -1437,6 +1446,25 @@ int bt_le_adv_stop(void)
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
+static uint32_t adv_get_options(const struct bt_le_ext_adv *adv)
+{
+	uint32_t options = 0;
+
+	if (!atomic_test_bit(adv->flags, BT_ADV_PERSIST)) {
+		options |= BT_LE_ADV_OPT_ONE_TIME;
+	}
+
+	if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
+		options |= BT_LE_ADV_OPT_CONNECTABLE;
+	}
+
+	if (atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+		options |= BT_LE_ADV_OPT_USE_IDENTITY;
+	}
+
+	return options;
+}
+
 void bt_le_adv_resume(void)
 {
 	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
@@ -1469,6 +1497,17 @@ void bt_le_adv_resume(void)
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 		bt_id_set_adv_private_addr(adv);
+	} else {
+		uint8_t own_addr_type;
+		bool dir_adv = adv_is_directed(adv);
+		uint32_t options = adv_get_options(adv);
+
+		/* Always set the address. Don't assume it has not changed. */
+		err = bt_id_set_adv_own_addr(adv, options, dir_adv, &own_addr_type);
+		if (err) {
+			LOG_ERR("Controller cannot resume connectable advertising (%d)", err);
+			return;
+		}
 	}
 
 	err = bt_le_adv_set_enable(adv, true);
@@ -2054,10 +2093,8 @@ void bt_hci_le_scan_req_received(struct net_buf *buf)
 		struct bt_le_ext_adv_scanned_info info;
 		bt_addr_le_t id_addr;
 
-		if (evt->addr.type == BT_ADDR_LE_PUBLIC_ID ||
-		    evt->addr.type == BT_ADDR_LE_RANDOM_ID) {
-			bt_addr_le_copy(&id_addr, &evt->addr);
-			id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		if (bt_addr_le_is_resolved(&evt->addr)) {
+			bt_addr_le_copy_resolved(&id_addr, &evt->addr);
 		} else {
 			bt_addr_le_copy(&id_addr,
 					bt_lookup_id_addr(adv->id, &evt->addr));

@@ -274,6 +274,7 @@ config USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
 	depends on SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
+	select LINKER_USE_NO_RELAX
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact

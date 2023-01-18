@@ -1,0 +1,27 @@
+common:
+  tags: cpp
+  toolchain_exclude: xcc
+  integration_platforms:
+    - mps2_an385
+    - qemu_cortex_a53
+
+tests:
+  cpp.main.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  cpp.main.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    min_ram: 32
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  cpp.main.newlib_nano:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_HAS_NEWLIB_LIBC_NANO
+    min_ram: 24
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_NANO=y
+  cpp.main.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y

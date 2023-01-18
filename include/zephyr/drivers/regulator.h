@@ -53,28 +53,47 @@ typedef uint8_t regulator_error_flags_t;
 
 /** @cond INTERNAL_HIDDEN */
 
+typedef int (*regulator_dvs_state_set_t)(const struct device *dev,
+					 regulator_dvs_state_t state);
+
 /** @brief Driver-specific API functions to support parent regulator control. */
 __subsystem struct regulator_parent_driver_api {
-	int (*dvs_state_set)(const struct device *dev,
-			     regulator_dvs_state_t state);
+	regulator_dvs_state_set_t dvs_state_set;
 };
+
+typedef int (*regulator_enable_t)(const struct device *dev);
+typedef int (*regulator_disable_t)(const struct device *dev);
+typedef unsigned int (*regulator_count_voltages_t)(const struct device *dev);
+typedef int (*regulator_list_voltage_t)(const struct device *dev,
+					unsigned int idx, int32_t *volt_uv);
+typedef int (*regulator_set_voltage_t)(const struct device *dev, int32_t min_uv,
+				       int32_t max_uv);
+typedef int (*regulator_get_voltage_t)(const struct device *dev,
+				       int32_t *volt_uv);
+typedef int (*regulator_set_current_limit_t)(const struct device *dev,
+					     int32_t min_ua, int32_t max_ua);
+typedef int (*regulator_get_current_limit_t)(const struct device *dev,
+					     int32_t *curr_ua);
+typedef int (*regulator_set_mode_t)(const struct device *dev,
+				    regulator_mode_t mode);
+typedef int (*regulator_get_mode_t)(const struct device *dev,
+				    regulator_mode_t *mode);
+typedef int (*regulator_get_error_flags_t)(
+	const struct device *dev, regulator_error_flags_t *flags);
 
 /** @brief Driver-specific API functions to support regulator control. */
 __subsystem struct regulator_driver_api {
-	int (*enable)(const struct device *dev);
-	int (*disable)(const struct device *dev);
-	unsigned int (*count_voltages)(const struct device *dev);
-	int (*list_voltage)(const struct device *dev, unsigned int idx,
-			    int32_t *volt_uv);
-	int (*set_voltage)(const struct device *dev, int32_t min_uv,
-			   int32_t max_uv);
-	int (*get_voltage)(const struct device *dev, int32_t *volt_uv);
-	int (*set_current_limit)(const struct device *dev, int32_t min_ua,
-				 int32_t max_ua);
-	int (*get_current_limit)(const struct device *dev, int32_t *curr_ua);
-	int (*set_mode)(const struct device *dev, regulator_mode_t mode);
-	int (*get_error_flags)(const struct device *dev,
-			       regulator_error_flags_t *flags);
+	regulator_enable_t enable;
+	regulator_disable_t disable;
+	regulator_count_voltages_t count_voltages;
+	regulator_list_voltage_t list_voltage;
+	regulator_set_voltage_t set_voltage;
+	regulator_get_voltage_t get_voltage;
+	regulator_set_current_limit_t set_current_limit;
+	regulator_get_current_limit_t get_current_limit;
+	regulator_set_mode_t set_mode;
+	regulator_get_mode_t get_mode;
+	regulator_get_error_flags_t get_error_flags;
 };
 
 /**
@@ -125,13 +144,13 @@ struct regulator_common_config {
  */
 #define REGULATOR_DT_COMMON_CONFIG_INIT(node_id)                               \
 	{                                                                      \
-		.min_uv = DT_PROP_OR(node_id, regulator_min_microvolts,        \
+		.min_uv = DT_PROP_OR(node_id, regulator_min_microvolt,         \
 				     INT32_MIN),                               \
-		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolts,        \
+		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolt,         \
 				     INT32_MAX),                               \
-		.min_ua = DT_PROP_OR(node_id, regulator_min_microamps,         \
+		.min_ua = DT_PROP_OR(node_id, regulator_min_microamp,          \
 				     INT32_MIN),                               \
-		.max_ua = DT_PROP_OR(node_id, regulator_max_microamps,         \
+		.max_ua = DT_PROP_OR(node_id, regulator_max_microamp,          \
 				     INT32_MAX),                               \
 		.allowed_modes = (const regulator_mode_t [])                   \
 			DT_PROP_OR(node_id, regulator_allowed_modes, {}),      \
@@ -175,18 +194,27 @@ struct regulator_common_data {
 void regulator_common_data_init(const struct device *dev);
 
 /**
- * @brief Common function to enable regulator at init time.
+ * @brief Common function to initialize the regulator at init time.
  *
- * This function can be called after drivers initialize the regulator. It
- * will automatically enable the regulator if it is set to `regulator-boot-on`
- * or `regulator-always-on` and increase its usage count.
+ * This function needs to be called after drivers initialize the regulator. It
+ * will:
+ *
+ * - Automatically enable the regulator if it is set to `regulator-boot-on`
+ *   or `regulator-always-on` and increase its usage count.
+ * - Configure the regulator mode if `regulator-initial-mode` is set.
+ * - Ensure regulator voltage is set to a valid range.
+ *
+ * Regulators that are enabled by default in hardware, must set @p is_enabled to
+ * `true`.
  *
  * @param dev Regulator device instance
+ * @param is_enabled Indicate if the regulator is enabled by default in
+ * hardware.
  *
  * @retval 0 If enabled successfully.
  * @retval -errno Negative errno in case of failure.
  */
-int regulator_common_init_enable(const struct device *dev);
+int regulator_common_init(const struct device *dev, bool is_enabled);
 
 /** @endcond */
 
@@ -440,6 +468,29 @@ static inline int regulator_get_current_limit(const struct device *dev,
  * @retval -errno In case of any other error.
  */
 int regulator_set_mode(const struct device *dev, regulator_mode_t mode);
+
+/**
+ * @brief Get mode.
+ *
+ * @param dev Regulator device instance.
+ * @param[out] mode Where mode will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
+ */
+static inline int regulator_get_mode(const struct device *dev,
+				     regulator_mode_t *mode)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->get_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_mode(dev, mode);
+}
 
 /**
  * @brief Get active error flags.

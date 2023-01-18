@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Nordic Semiconductor
+# Copyright (c) 2021-2023 Nordic Semiconductor
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -80,8 +80,15 @@ while(NOT "${images_length}" EQUAL "${processed_length}")
     endif()
   endforeach()
 
-  list(LENGTH images_sysbuild_processed processed_length)
   list(LENGTH IMAGES images_length)
+  list(LENGTH images_sysbuild_processed processed_length_new)
+
+  # Check for any duplicate entries in image names to prevent an infinite loop
+  if("${processed_length_new}" EQUAL "${processed_length}")
+    # Image length was different than processed length, but no new images are processed.
+    message(FATAL_ERROR "A duplicate image name was provided, image names must be unique.")
+  endif()
+  set(processed_length ${processed_length_new})
 endwhile()
 
 include(cmake/domains.cmake)

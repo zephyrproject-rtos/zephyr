@@ -79,6 +79,14 @@ config MAX_TIMER_COUNT
 	help
 	  Mention maximum number of timers in POSIX compliant application.
 
+config TIMER_CREATE_WAIT
+	int "Time to wait for timer availability (in msec) in POSIX application"
+	default 100
+	range 0 1000
+	help
+	  This controls how long to wait for resources to come available to create
+	  a new timer in POSIX compliant application
+
 config POSIX_MQUEUE
 	bool "POSIX message queue"
 	default y if POSIX_API

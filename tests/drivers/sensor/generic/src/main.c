@@ -109,35 +109,35 @@ ZTEST(sensor_api, test_sensor_get_channels)
 	struct sensor_value data;
 
 	dev = device_get_binding(DUMMY_SENSOR_NAME);
-	zassert_not_null(dev, "failed: dev is null.");
+	zassert_not_null(dev, "failed: dev is null");
 
 	/* test fetch single channel */
 	zassert_equal(sensor_sample_fetch_chan(dev, chan_elements[0].chan),
-				RETURN_SUCCESS,	"fail to fetch sample.");
+				RETURN_SUCCESS,	"fail to fetch sample");
 	/* Get and check channel 0 value. */
 	zassert_equal(sensor_channel_get(dev, chan_elements[0].chan,
-				&data), RETURN_SUCCESS, "fail to get channel.");
+				&data), RETURN_SUCCESS, "fail to get channel");
 	zassert_equal(data.val1, chan_elements[0].data.val1,
-				"the data is not match.");
+				"the data does not match");
 	zassert_equal(data.val2, chan_elements[0].data.val2,
-				"the data is not match.");
+				"the data does not match");
 
 	/* test fetch all channel */
 	zassert_equal(sensor_sample_fetch(dev), RETURN_SUCCESS,
-			"fail to fetch sample.");
+			"fail to fetch sample");
 	/* Get and check channels value except for chanel 0. */
 	for (int i = 1; i < TOTAL_CHAN_ELEMENTS; i++) {
 		zassert_equal(sensor_channel_get(dev, chan_elements[i].chan,
-				&data), RETURN_SUCCESS, "fail to get channel.");
+				&data), RETURN_SUCCESS, "fail to get channel");
 		zassert_equal(data.val1, chan_elements[i].data.val1,
-				"the data is not match.");
+				"the data does not match");
 		zassert_equal(data.val2, chan_elements[i].data.val2,
-				"the data is not match.");
+				"the data does not match");
 	}
 
 	/* Get data with invalid channel. */
 	zassert_not_equal(sensor_channel_get(dev, SENSOR_CHAN_DISTANCE,
-				&data), RETURN_SUCCESS, "should fail for invalid channel.");
+				&data), RETURN_SUCCESS, "should fail for invalid channel");
 }
 
 static void trigger_handler(const struct device *dev,
@@ -197,10 +197,10 @@ ZTEST(sensor_api, test_sensor_handle_triggers)
 
 	dev = device_get_binding(DUMMY_SENSOR_NAME);
 	dev_no_trig = device_get_binding(DUMMY_SENSOR_NAME_NO_TRIG);
-	zassert_not_null(dev, "failed: dev is null.");
+	zassert_not_null(dev, "failed: dev is null");
 
 	zassert_equal(sensor_sample_fetch(dev), RETURN_SUCCESS,
-			"fail to fetch sample.");
+			"fail to fetch sample");
 
 	/* setup multiple triggers */
 	for (int i = 0; i < TOTAL_TRIG_ELEMENTS; i++) {
@@ -232,13 +232,13 @@ ZTEST(sensor_api, test_sensor_handle_triggers)
 		k_sem_take(&sem, K_FOREVER);
 		zassert_equal(sensor_channel_get(dev,
 				trigger_elements[i].trig.chan,
-				&data), RETURN_SUCCESS, "fail to get channel.");
+				&data), RETURN_SUCCESS, "fail to get channel");
 
 		/* check the result of the trigger channel */
 		zassert_equal(data.val1, trigger_elements[i].data.val1,
-				"retrieved data is not match.");
+				"retrieved data does not match");
 		zassert_equal(data.val2, trigger_elements[i].data.val2,
-				"retrieved data is not match.");
+				"retrieved data does not match");
 
 		/* set attributes for no trig dev */
 		zassert_equal(sensor_attr_set(dev_no_trig,
@@ -268,6 +268,8 @@ ZTEST(sensor_api, test_sensor_handle_triggers)
  * Gs to m/s^2 and from m/s^2 to Gs.  Verify helper function
  * to convert radians to degrees and degrees to radians.  Verify
  * helper function for converting struct sensor_value to double.
+ * Verify helper functions for converting to milli and micro prefix
+ * units.
  */
 ZTEST(sensor_api, test_sensor_unit_conversion)
 {
@@ -276,30 +278,30 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	/* Test acceleration unit conversion */
 	sensor_g_to_ms2(1, &data);
 	zassert_equal(data.val1, SENSOR_G/1000000LL,
-			"the data is not match.");
+			"the data does not match");
 	zassert_equal(data.val2, SENSOR_G%(data.val1 * 1000000LL),
-			"the data is not match.");
+			"the data does not match");
 	zassert_equal(sensor_ms2_to_g(&data), 1,
-			"the data is not match.");
+			"the data does not match");
 	/* set test data to negative value */
 	data.val1 = -data.val1;
 	data.val2 = -data.val2;
 	zassert_equal(sensor_ms2_to_g(&data), -1,
-			"the data is not match.");
+			"the data does not match");
 
 	/* Test the conversion between angle and radian */
 	sensor_degrees_to_rad(180, &data);
 	zassert_equal(data.val1, SENSOR_PI/1000000LL,
-			"the data is not match.");
+			"the data does not match");
 	zassert_equal(data.val2, SENSOR_PI%(data.val1 * 1000000LL),
-			"the data is not match.");
+			"the data does not match");
 	zassert_equal(sensor_rad_to_degrees(&data), 180,
-			"the data is not match.");
+			"the data does not match");
 	/* set test data to negative value */
 	data.val1 = -data.val1;
 	data.val2 = -data.val2;
 	zassert_equal(sensor_rad_to_degrees(&data), -180,
-			"the data is not match.");
+			"the data does not match");
 
 	/* reset test data to positive value */
 	data.val1 = -data.val1;
@@ -307,8 +309,29 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	/* Test struct sensor_value to double */
 #if defined(CONFIG_FPU)
 	zassert_equal((long long)(sensor_value_to_double(&data) * 1000000LL),
-			SENSOR_PI, "the data is not match.");
+			SENSOR_PI, "the data does not match");
 #endif
+	/* reset test data to positive value */
+	data.val1 = 3;
+	data.val2 = 300000;
+	zassert_equal(sensor_value_to_milli(&data), 3300LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_micro(&data), 3300000LL,
+			"the result does not match");
+	/* reset test data to negative value */
+	data.val1 = -data.val1;
+	data.val2 = -data.val2;
+	zassert_equal(sensor_value_to_milli(&data), -3300LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_micro(&data), -3300000LL,
+			"the result does not match");
+	/* Test when result is greater than 32-bit wide */
+	data.val1 = 5432109;
+	data.val2 = 876543;
+	zassert_equal(sensor_value_to_milli(&data), 5432109876LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_micro(&data), 5432109876543LL,
+			"the result does not match");
 }
 
 ZTEST_SUITE(sensor_api, NULL, NULL, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

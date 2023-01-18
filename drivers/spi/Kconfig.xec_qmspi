@@ -20,6 +20,7 @@ config SPI_XEC_QMSPI_LDMA
 
 config SPI_XEC_QMSPI_FULL_DUPLEX
 	bool "Microchip XEC MEC17xx QMSPI Full Duplex driver"
+	default y
 	depends on DT_HAS_MICROCHIP_XEC_QMSPI_FULL_DUPLEX_ENABLED
 	help
 	  Enable support for Microchip MEC17xx QMSPI full duplex driver

@@ -481,6 +481,11 @@ Example output for a failed macro from
 
 .. _mocking-fff:
 
+Ztress
+======
+
+.. doxygengroup:: ztest_ztress
+
 Mocking via FFF
 ===============
 

@@ -1,14 +1,14 @@
 common:
-    sysbuild: True
-    harness: console
-    harness_config:
-      type: multi_line
-      regex:
-        - "I: Starting bootloader"
-        - "Launching primary slot application on (.*)"
-        - "Secondary application ready for swap, rebooting"
-        - "I: Starting swap using (.*)"
-        - "Swapped application booted on (.*)"
+  sysbuild: true
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "I: Starting bootloader"
+      - "Launching primary slot application on (.*)"
+      - "Secondary application ready for swap, rebooting"
+      - "I: Starting swap using (.*)"
+      - "Swapped application booted on (.*)"
 tests:
   boot.mcuboot:
     tags: mcuboot

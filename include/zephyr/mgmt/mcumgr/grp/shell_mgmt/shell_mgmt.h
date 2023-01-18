@@ -16,12 +16,6 @@ extern "C" {
  */
 #define SHELL_MGMT_ID_EXEC   0
 
-/**
- * @brief Registers the shell management command handler group.
- */
-void
-shell_mgmt_register_group(void);
-
 #ifdef __cplusplus
 }
 #endif

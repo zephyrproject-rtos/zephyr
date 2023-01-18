@@ -113,7 +113,8 @@ struct uarte_async_cb {
 	atomic_t low_power_mask;
 	uint8_t rx_flush_buffer[UARTE_HW_RX_FIFO_SIZE];
 	uint8_t rx_flush_cnt;
-	bool rx_enabled;
+	volatile bool rx_enabled;
+	volatile bool discard_rx_fifo;
 	bool hw_rx_counting;
 	bool pending_tx;
 	/* Flag to ensure that RX timeout won't be executed during ENDRX ISR */
@@ -378,15 +379,19 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 	case 28800:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_28800;
 		break;
+#if defined(UARTE_BAUDRATE_BAUDRATE_Baud31250)
 	case 31250:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_31250;
 		break;
+#endif
 	case 38400:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_38400;
 		break;
+#if defined(UARTE_BAUDRATE_BAUDRATE_Baud56000)
 	case 56000:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_56000;
 		break;
+#endif
 	case 57600:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_57600;
 		break;
@@ -894,7 +899,11 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		return -ENOTSUP;
 	}
 
-	if (data->async->rx_enabled) {
+	/* Signal error if RX is already enabled or if the driver is waiting
+	 * for the RXTO event after a call to uart_rx_disable() to discard
+	 * data from the UARTE internal RX FIFO.
+	 */
+	if (data->async->rx_enabled || data->async->discard_rx_fifo) {
 		return -EBUSY;
 	}
 
@@ -1010,6 +1019,7 @@ static int uarte_nrfx_rx_disable(const struct device *dev)
 
 	k_timer_stop(&data->async->rx_timeout_timer);
 	data->async->rx_enabled = false;
+	data->async->discard_rx_fifo = true;
 
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
 
@@ -1331,16 +1341,17 @@ static void rxto_isr(const struct device *dev)
 	rx_buf_release(dev, &data->async->rx_buf);
 	rx_buf_release(dev, &data->async->rx_next_buf);
 
-	/* If the rx_enabled flag is still set at this point, it means that
-	 * RX is being disabled because all provided RX buffers have been
-	 * filled up. Clear the flag then, so that RX can be enabled again.
-	 *
-	 * If the flag is already cleared, it means that RX was aborted by
-	 * a call to uart_rx_disable() and data from FIFO should be discarded.
+	/* This point can be reached in two cases:
+	 * 1. RX is disabled because all provided RX buffers have been filled.
+	 * 2. RX was explicitly disabled by a call to uart_rx_disable().
+	 * In both cases, the rx_enabled flag is cleared, so that RX can be
+	 * enabled again.
+	 * In the second case, additionally, data from the UARTE internal RX
+	 * FIFO need to be discarded.
 	 */
-	if (data->async->rx_enabled) {
-		data->async->rx_enabled = false;
-	} else {
+	data->async->rx_enabled = false;
+	if (data->async->discard_rx_fifo) {
+		data->async->discard_rx_fifo = false;
 		(void)rx_flush(dev, NULL, 0);
 	}
 

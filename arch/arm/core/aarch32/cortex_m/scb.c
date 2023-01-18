@@ -19,6 +19,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/cache.h>
 
 #if defined(CONFIG_CPU_HAS_NXP_MPU)
 #include <fsl_sysmpu.h>
@@ -108,6 +109,7 @@ void z_arm_init_arch_hw_at_boot(void)
 		NVIC->ICPR[i] = 0xFFFFFFFF;
 	}
 
+#if defined(CONFIG_ARCH_CACHE)
 #if defined(CONFIG_DCACHE)
 	/* Reset D-Cache settings. If the D-Cache was enabled,
 	 * SCB_DisableDCache() takes care of cleaning and invalidating it.
@@ -115,16 +117,17 @@ void z_arm_init_arch_hw_at_boot(void)
 	 * reset it to a known clean state.
 	 */
 	if (SCB->CCR & SCB_CCR_DC_Msk) {
-		SCB_DisableDCache();
+		sys_cache_data_disable();
 	} else {
-		SCB_InvalidateDCache();
+		sys_cache_data_invd_all();
 	}
 #endif /* CONFIG_DCACHE */
 
 #if defined(CONFIG_ICACHE)
 	/* Reset I-Cache settings. */
-	SCB_DisableICache();
+	sys_cache_instr_disable();
 #endif /* CONFIG_ICACHE */
+#endif /* CONFIG_ARCH_CACHE */
 
 	/* Restore Interrupts */
 	__enable_irq();

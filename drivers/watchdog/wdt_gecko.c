@@ -9,6 +9,7 @@
 
 #include <soc.h>
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/irq.h>
 #include <em_wdog.h>
 #include <em_cmu.h>
 

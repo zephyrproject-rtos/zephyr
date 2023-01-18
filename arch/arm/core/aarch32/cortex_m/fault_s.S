@@ -29,7 +29,7 @@ GTEXT(z_arm_usage_fault)
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 GTEXT(z_arm_secure_fault)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE*/
-GTEXT(z_arm_debug_monitor)
+WTEXT(z_arm_debug_monitor)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */

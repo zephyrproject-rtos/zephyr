@@ -20,71 +20,23 @@
  * are untouched.
  */
 
-#define DT_DRV_COMPAT intel_adsp_mtl_tlb
-
-#include <zephyr/device.h>
-#include <zephyr/kernel.h>
-#include <zephyr/spinlock.h>
-#include <zephyr/sys/__assert.h>
-#include <zephyr/sys/check.h>
-#include <zephyr/sys/mem_manage.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/drivers/mm/system_mm.h>
-#include <zephyr/sys/mem_blocks.h>
-
-#include <soc.h>
-#include <adsp_memory.h>
+#include "mm_drv_intel_adsp.h"
 
 #include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
-#include "mm_drv_common.h"
-
-DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
-
-/* base address of TLB table */
-#define TLB_BASE \
-	((mm_reg_t)DEVICE_MMIO_TOPLEVEL_GET(tlb_regs))
-
-/* size of TLB table */
-#define TLB_SIZE DT_REG_SIZE_BY_IDX(DT_INST(0, intel_adsp_mtl_tlb), 0)
-
-/*
- * Number of significant bits in the page index (defines the size of
- * the table)
- */
-#define TLB_PADDR_SIZE DT_INST_PROP(0, paddr_size)
-#define TLB_EXEC_BIT   BIT(DT_INST_PROP(0, exec_bit_idx))
-#define TLB_WRITE_BIT  BIT(DT_INST_PROP(0, write_bit_idx))
-
-#define TLB_ENTRY_NUM (1 << TLB_PADDR_SIZE)
-#define TLB_PADDR_MASK ((1 << TLB_PADDR_SIZE) - 1)
-#define TLB_ENABLE_BIT BIT(TLB_PADDR_SIZE)
-
-/* This is used to translate from TLB entry back to physical address. */
-#define TLB_PHYS_BASE  \
-	(((L2_SRAM_BASE / CONFIG_MM_DRV_PAGE_SIZE) & ~TLB_PADDR_MASK) * CONFIG_MM_DRV_PAGE_SIZE)
-#define HPSRAM_SEGMENTS(hpsram_ebb_quantity) \
-	((ROUND_DOWN((hpsram_ebb_quantity) + 31u, 32u) / 32u) - 1u)
-
-#define L2_SRAM_PAGES_NUM			(L2_SRAM_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
-#define MAX_EBB_BANKS_IN_SEGMENT	32
-#define SRAM_BANK_SIZE				(128 * 1024)
-#define L2_SRAM_BANK_NUM			(L2_SRAM_SIZE / SRAM_BANK_SIZE)
-#define IS_BIT_SET(value, idx)		((value) & (1 << (idx)))
 
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
 
-/* references counter to physical pages */
 static int hpsram_ref[L2_SRAM_BANK_NUM];
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+#include <adsp_comm_widget.h>
 
-/* declare L2 physical memory block */
-SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(
-		L2_PHYS_SRAM_REGION,
-		CONFIG_MM_DRV_PAGE_SIZE,
-		L2_SRAM_PAGES_NUM,
-		(uint8_t *) L2_SRAM_BASE);
+static uint32_t used_pages;
+/* PMC uses 32 KB banks */
+static uint32_t used_pmc_banks_reported;
+#endif
 
-#ifdef CONFIG_MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
+
 /* Define a marker which is placed by the linker script just after
  * last explicitly defined section. All .text, .data, .bss and .heap
  * sections should be placed before this marker in the memory.
@@ -95,37 +47,13 @@ __attribute__((__section__(".unused_ram_start_marker")))
 static int unused_l2_sram_start_marker = 0xba0babce;
 #define UNUSED_L2_START_ALIGNED ROUND_UP(POINTER_TO_UINT(&unused_l2_sram_start_marker), \
 					 CONFIG_MM_DRV_PAGE_SIZE)
-#else
-/* If memory is not going to be remaped (and thus powered off by)
- * the driver, just define the unused memory start as the end of
- * the memory.
- */
-#define UNUSED_L2_START_ALIGNED ROUND_UP((L2_SRAM_BASE + L2_SRAM_SIZE), \
-					 CONFIG_MM_DRV_PAGE_SIZE)
-#endif
 
-/**
- * Calculate TLB entry based on physical address.
- *
- * @param pa Page-aligned virutal address.
- * @return TLB entry value.
- */
-static inline uint16_t pa_to_tlb_entry(uintptr_t pa)
-{
-	return (((pa) / CONFIG_MM_DRV_PAGE_SIZE) & TLB_PADDR_MASK);
-}
-
-/**
- * Calculate physical address based on TLB entry.
- *
- * @param tlb_entry TLB entry value.
- * @return physcial address pointer.
- */
-static inline uintptr_t tlb_entry_to_pa(uint16_t tlb_entry)
-{
-	return ((((tlb_entry) & TLB_PADDR_MASK) *
-		CONFIG_MM_DRV_PAGE_SIZE) + TLB_PHYS_BASE);
-}
+/* declare L2 physical memory block */
+SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(
+		L2_PHYS_SRAM_REGION,
+		CONFIG_MM_DRV_PAGE_SIZE,
+		L2_SRAM_PAGES_NUM,
+		(uint8_t *) L2_SRAM_BASE);
 
 /**
  * Calculate the index to the TLB table.
@@ -218,6 +146,21 @@ static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocki
 	return 0;
 }
 
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+static void sys_mm_drv_report_page_usage(void)
+{
+	/* PMC uses 32 KB banks */
+	uint32_t pmc_banks = ceiling_fraction(used_pages, KB(32) / CONFIG_MM_DRV_PAGE_SIZE);
+
+	if (used_pmc_banks_reported != pmc_banks) {
+		if (!adsp_comm_widget_pmc_send_ipc(pmc_banks)) {
+			/* Store reported value if message was sent successfully. */
+			used_pmc_banks_reported = pmc_banks;
+		}
+	}
+}
+#endif
+
 int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 {
 	k_spinlock_key_t key;
@@ -286,8 +229,12 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 
 	entry_idx = get_tlb_entry_idx(va);
 
-	bank_idx = get_hpsram_bank_idx(pa);
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+	used_pages++;
+	sys_mm_drv_report_page_usage();
+#endif
 
+	bank_idx = get_hpsram_bank_idx(pa);
 	if (!hpsram_ref[bank_idx]++) {
 		sys_mm_drv_hpsram_pwr(bank_idx, true, false);
 	}
@@ -422,6 +369,11 @@ int sys_mm_drv_unmap_page(void *virt)
 					       UINT_TO_POINTER(pa), 1);
 
 		bank_idx = get_hpsram_bank_idx(pa);
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+		used_pages--;
+		sys_mm_drv_report_page_usage();
+#endif
+
 		if (--hpsram_ref[bank_idx] == 0) {
 			sys_mm_drv_hpsram_pwr(bank_idx, false, false);
 		}
@@ -668,6 +620,10 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	L2_PHYS_SRAM_REGION.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
 
+	ret = calculate_memory_regions(UNUSED_L2_START_ALIGNED);
+	CHECKIF(ret != 0) {
+		return ret;
+	}
 	/*
 	 * Initialize memblocks that will store physical
 	 * page usage. Initially all physical pages are
@@ -690,6 +646,9 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	for (int i = 0; i < L2_SRAM_BANK_NUM; i++) {
 		hpsram_ref[i] = SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
 	}
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+	used_pages = L2_SRAM_BANK_NUM * SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
+#endif
 
 #ifdef CONFIG_MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
 	/*
@@ -698,6 +657,7 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	 */
 	if (L2_SRAM_BASE + L2_SRAM_SIZE < UNUSED_L2_START_ALIGNED ||
 	    L2_SRAM_BASE > UNUSED_L2_START_ALIGNED) {
+
 		__ASSERT(false,
 			 "unused l2 pointer is outside of l2 sram range %p\n",
 			 UNUSED_L2_START_ALIGNED);
@@ -713,6 +673,13 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
 				      unused_size);
+#endif
+
+	/*
+	 * Notify PMC about used HP-SRAM pages.
+	 */
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+	sys_mm_drv_report_page_usage();
 #endif
 
 	return 0;

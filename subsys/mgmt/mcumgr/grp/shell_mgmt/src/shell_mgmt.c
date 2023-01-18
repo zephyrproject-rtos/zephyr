@@ -7,6 +7,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/shell/shell_dummy.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
 #include <string.h>
@@ -110,7 +111,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 	/* Key="ret"; value=<status>, or rc if legacy option enabled */
 	ok = zcbor_tstr_put_lit(zse, "o")		&&
 	     zcbor_tstr_encode(zse, &cmd_out)		&&
-#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE
+#ifdef CONFIG_MCUMGR_GRP_SHELL_LEGACY_RC_RETURN_CODE
 	     zcbor_tstr_put_lit(zse, "rc")		&&
 #else
 	     zcbor_tstr_put_lit(zse, "ret")		&&
@@ -134,9 +135,9 @@ static struct mgmt_group shell_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_SHELL,
 };
 
-
-void
-shell_mgmt_register_group(void)
+static void shell_mgmt_register_group(void)
 {
 	mgmt_register_group(&shell_mgmt_group);
 }
+
+MCUMGR_HANDLER_DEFINE(shell_mgmt, shell_mgmt_register_group);

@@ -77,7 +77,8 @@ IncludeCategories:
     Priority: 3
 IndentCaseLabels: false
 IndentWidth: 8
-# SpaceBeforeParens: ControlStatementsExceptControlMacros # clang-format >= 13.0
+InsertBraces: true
+SpaceBeforeParens: ControlStatementsExceptControlMacros
 SortIncludes: false
 UseTab: Always
 WhitespaceSensitiveMacros:

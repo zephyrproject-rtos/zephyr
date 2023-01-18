@@ -570,6 +570,7 @@ class TestPlan:
         runnable = (self.options.device_testing or self.options.filter == 'runnable')
         force_toolchain = self.options.force_toolchain
         force_platform = self.options.force_platform
+        ignore_platform_key = self.options.ignore_platform_key
         emu_filter = self.options.emulation_only
 
         logger.debug("platform filter: " + str(platform_filter))
@@ -616,6 +617,8 @@ class TestPlan:
 
         logger.info("Building initial testsuite list...")
 
+        keyed_tests = {}
+
         for ts_name, ts in self.testsuites.items():
 
             if ts.build_on_all and not platform_filter:
@@ -641,6 +644,7 @@ class TestPlan:
                 if not c:
                     platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
                                              self.platforms))
+
 
             # list of instances per testsuite, aka configurations.
             instance_list = []
@@ -745,6 +749,31 @@ class TestPlan:
 
                 if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
+
+                # platform_key is a list of unique platform attributes that form a unique key a test
+                # will match against to determine if it should be scheduled to run. A key containing a
+                # field name that the platform does not have will filter the platform.
+                #
+                # A simple example is keying on arch and simulation to run a test once per unique (arch, simulation) platform.
+                if not ignore_platform_key and hasattr(ts, 'platform_key') and len(ts.platform_key) > 0:
+                    # form a key by sorting the key fields first, then fetching the key fields from plat if they exist
+                    # if a field does not exist the test is still scheduled on that platform as its undeterminable.
+                    key_fields = sorted(set(ts.platform_key))
+                    key = [getattr(plat, key_field) for key_field in key_fields]
+                    has_all_fields = True
+                    for key_field in key_fields:
+                        if key_field is None:
+                            has_all_fields = False
+                    if has_all_fields:
+                        key.append(ts.name)
+                        key = tuple(key)
+                        keyed_test = keyed_tests.get(key)
+                        if keyed_test is not None:
+                            instance.add_filter(f"Excluded test already covered by platform_key {key} given fields {key_fields}", Filters.TESTSUITE)
+                        else:
+                            keyed_tests[key] = {'plat': plat, 'ts': ts}
+                    else:
+                        instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
 
                 test_configuration = ".".join([instance.platform.name,
                                                instance.testsuite.id])

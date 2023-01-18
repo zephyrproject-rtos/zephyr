@@ -12,7 +12,7 @@ zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
 
-zephyr_sources_ifdef(CONFIG_CODE_FLEXSPI
+zephyr_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_XIP
   flash_clock_setup.c
   )
 
@@ -29,6 +29,6 @@ zephyr_linker_sources_ifdef(CONFIG_NXP_IMX_RT6XX_BOOT_HEADER
 zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER
   SECTIONS usb.ld)
 
-if(CONFIG_CODE_FLEXSPI)
-zephyr_code_relocate(flash_clock_setup.c RAM)
+if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
+  zephyr_code_relocate(FILES flash_clock_setup.c LOCATION RAM)
 endif()

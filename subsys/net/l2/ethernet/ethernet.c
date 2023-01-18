@@ -667,21 +667,6 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_lladdr_src(pkt)->len =
 						sizeof(struct net_eth_addr);
 			ptype = dst_addr->sll_protocol;
-		} else if (context && net_context_get_type(context) == SOCK_RAW &&
-			   net_context_get_proto(context) == IPPROTO_RAW) {
-			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
-
-			switch (type) {
-			case 0x60:
-				ptype = htons(NET_ETH_PTYPE_IPV6);
-				break;
-			case 0x40:
-				ptype = htons(NET_ETH_PTYPE_IP);
-				break;
-			default:
-				ret = -ENOTSUP;
-				goto error;
-			}
 		} else {
 			goto send;
 		}
@@ -747,6 +732,7 @@ error:
 
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
+	int ret = 0;
 	const struct ethernet_api *eth =
 		net_if_get_device(iface)->api;
 
@@ -758,15 +744,15 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 		net_arp_clear_cache(iface);
 
 		if (eth->stop) {
-			eth->stop(net_if_get_device(iface));
+			ret = eth->stop(net_if_get_device(iface));
 		}
 	} else {
 		if (eth->start) {
-			eth->start(net_if_get_device(iface));
+			ret = eth->start(net_if_get_device(iface));
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 enum net_l2_flags ethernet_flags(struct net_if *iface)

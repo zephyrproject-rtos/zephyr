@@ -74,12 +74,12 @@ struct udc_ep_stat {
 	uint32_t enabled : 1;
 	/** Endpoint is halted (returning STALL PID) */
 	uint32_t halted : 1;
-	/** Endpoint transfer (usually OUT) is pending for a request */
-	uint32_t pending : 1;
 	/** Last submitted PID is DATA1 */
 	uint32_t data1 : 1;
 	/** If double buffering is supported, last used buffer is odd */
 	uint32_t odd : 1;
+	/** Endpoint is busy */
+	uint32_t busy : 1;
 };
 
 /**

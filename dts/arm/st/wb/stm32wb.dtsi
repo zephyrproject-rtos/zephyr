@@ -429,7 +429,8 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
 		};
 
@@ -466,6 +467,12 @@
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	ble_rf: ble_rf {
+		compatible = "st,stm32wb-rf";
+		clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00100000>,
+				<&rcc STM32_SRC_LSE RFWKP_SEL(1)>;
 	};
 };
 

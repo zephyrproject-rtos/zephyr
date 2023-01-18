@@ -52,6 +52,45 @@ Changes in this release
   but will cause issues and failures in client software with future updates
   to Zephyr/MCUmgr such as image verification.
 
+* MCUmgr handlers no longer need to be registered by the application code,
+  handlers just need to use a define which will then call the supplied
+  registration function at boot-up. If applications register this then
+  those registrations should be removed to prevent registering the same
+  handler multiple times.
+
+* MCUmgr Bluetooth and UDP transports no longer need to be registered by the
+  application code, these will now automatically be registered at bootup (this
+  feature can be disabled or tweaked by adjusting:
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT`,
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT_WAIT`, and
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT`. If applications
+  register transports then those registrations should be removed to prevent
+  registering the same transport multiple times. If the Bluetooth stack needs
+  to be setup/initialised by another module or the application itself, then
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT` should be
+  disabled and the application should call :c:func:`smp_bt_start` at startup.
+
+* MCUmgr transport Kconfigs have changed from ``select`` to ``depends on``
+  which means that for applications using the Bluetooth transport,
+  applications will now need to enable the following:
+
+  * :kconfig:option:`CONFIG_BT`
+  * :kconfig:option:`CONFIG_BT_PERIPHERAL`
+
+  For CDC or serial transports:
+
+  * :kconfig:option:`CONFIG_CONSOLE`
+
+  For shell transport:
+
+  * :kconfig:option:`CONFIG_SHELL`
+  * :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL`
+
+  For UDP transport:
+
+  * :kconfig:option:`CONFIG_NETWORKING`
+  * :kconfig:option:`CONFIG_NET_UDP`
+
 Removed APIs in this release
 ============================
 
@@ -65,8 +104,29 @@ Removed APIs in this release
 
 * Removed :kconfig:option:`CONFIG_COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET`
 
+* Removed deprecated tinycbor module, code that uses this module should be
+  updated to use zcbor as a replacement.
+
 Deprecated in this release
 ==========================
+
+* C++ library Kconfig options have been renamed to improve consistency. See
+  below for the list of deprecated Kconfig options and their replacements:
+
+  .. table::
+     :align: center
+
+     +----------------------------------------+------------------------------------------------+
+     | Deprecated                             | Replacement                                    |
+     +========================================+================================================+
+     | :kconfig:option:`CONFIG_CPLUSPLUS`     | :kconfig:option:`CONFIG_CPP`                   |
+     +----------------------------------------+------------------------------------------------+
+     | :kconfig:option:`CONFIG_EXCEPTIONS`    | :kconfig:option:`CONFIG_CPP_EXCEPTIONS`        |
+     +----------------------------------------+------------------------------------------------+
+     | :kconfig:option:`CONFIG_RTTI`          | :kconfig:option:`CONFIG_CPP_RTTI`              |
+     +----------------------------------------+------------------------------------------------+
+     | :kconfig:option:`CONFIG_LIB_CPLUSPLUS` | :kconfig:option:`CONFIG_LIBCPP_IMPLEMENTATION` |
+     +----------------------------------------+------------------------------------------------+
 
 * MCUmgr subsystem, specifically the SMP transport API, is dropping `zephyr_`
   prefix, deprecating prefixed functions and callback type definitions with the
@@ -110,6 +170,11 @@ Deprecated in this release
      +---------------------------------------------+---------------------------------------+
 
   NOTE: Only functions are marked as ``__deprecated``, type definitions are not.
+
+* STM32 Ethernet Mac address Kconfig related symbols (:kconfig:option:`CONFIG_ETH_STM32_HAL_RANDOM_MAC`,
+  :kconfig:option:`CONFIG_ETH_STM32_HAL_MAC4`, ...) have been deprecated in favor
+  of the use of zephyr generic device tree ``local-mac-address`` and ``zephyr,random-mac-address``
+  properties.
 
 * STM32 RTC source clock should now be configured using devicetree.
   Related Kconfig :kconfig:option:`CONFIG_COUNTER_RTC_STM32_CLOCK_LSI` and
@@ -215,12 +280,41 @@ Boards & SoC Support
 
 * Removed support for these Xtensa boards:
 
+* Made these changes in ARM boards:
+
+  * The scratch partition has been removed for the following Nordic boards and
+    flash used by this area re-assigned to other partitions to free up space
+    and rely upon the swap-using-move algorithm in MCUboot (which does not
+    suffer from the same faults or stuck image issues as swap-using-scratch
+    does):
+    ``nrf21540dk_nrf52840``
+    ``nrf51dk_nrf51422``
+    ``nrf51dongle_nrf51422``
+    ``nrf52833dk_nrf52833``
+    ``nrf52840dk_nrf52811``
+    ``nrf52840dk_nrf52840``
+    ``nrf52840dongle_nrf52840``
+    ``nrf52dk_nrf52805``
+    ``nrf52dk_nrf52810``
+    ``nrf52dk_nrf52832``
+    ``nrf5340dk_nrf5340``
+    ``nrf9160dk_nrf52840``
+    ``nrf9160dk_nrf9160``
+
+    Note that MCUboot and MCUboot image updates from pre-Zephyr 3.3 might be
+    incompatible with Zephyr 3.3 onwards and vice versa.
+
 * Made these changes in other boards:
 
 * Added support for these following shields:
 
 Build system and infrastructure
 *******************************
+
+* Code relocation
+
+  * ``zephyr_code_relocate`` API has changed to accept a list of files to
+    relocate and a location to place the files.
 
 Drivers and Sensors
 *******************
@@ -241,6 +335,9 @@ Drivers and Sensors
 
 * DFU
 
+  * Remove :c:macro:`BOOT_TRAILER_IMG_STATUS_OFFS` in favor a two new functions;
+    :c:func:`boot_get_area_trailer_status_offset` and :c:func:`boot_get_trailer_status_offset`
+
 * Disk
 
 * Display
@@ -255,7 +352,12 @@ Drivers and Sensors
 
 * Ethernet
 
+  * STM32: Default Mac address configuration is now uid based. Optionally, user can
+    configure it to be random or provide its own address using device tree.
+
 * Flash
+
+  * Flash: Moved CONFIG_FLASH_FLEXSPI_XIP into the SOC level due to the flexspi clock initialization occurring in the SOC level.
 
   * NRF: Added CONFIG_SOC_FLASH_NRF_TIMEOUT_MULTIPLIER to allow tweaking the timeout of flash operations.
 
@@ -321,6 +423,18 @@ Drivers and Sensors
 
 * USB
 
+  * STM32F1: Clock bus configuration is not done automatically by driver anymore.
+    It is user's responsibility to configure the proper bus prescaler using clock_control
+    device tree node to achieve a 48MHz bus clock. Note that, in most cases, core clock
+    is 72MHz and default prescaler configuration is set to achieve 48MHz USB bus clock.
+    Prescaler only needs to be configured manually when core clock is already 48MHz.
+
+  * STM32 (non F1): Clock bus configuration is now expected to be done in device tree
+    using ``clocks`` node property. When a dedicated HSI 48MHz clock is available on target,
+    is it configured by default as the USB bus clock, but user has the ability to select
+    another 48MHz clock source. When no HSI48 is available, a specific 48MHz bus clock
+    source should be configured by user.
+
 * W1
 
 * Watchdog
@@ -350,9 +464,40 @@ Devicetree
     * STM32 SoCs:
 
       * :dtcompatible: `st,stm32-lse-clock`: new ``lse-bypass`` property
+      * :dtcompatible: `st,stm32-ethernet`: now allows ``local-mac-address`` and
+         ``zephyr,random-mac-address`` properties.
 
 Libraries / Subsystems
 **********************
+
+* C++ Library
+
+  * C++ support in Zephyr is no longer considered a "subsystem" because it
+    mainly consists of the C++ ABI runtime library and the C++ standard
+    library, which are "libraries" that are dissimilar to the existing Zephyr
+    subsystems. C++ support components are now located in ``lib/cpp`` as
+    "C++ library."
+  * C++ ABI runtime library components such as global constructor/destructor
+    and initialiser handlers, that were previously located under
+    ``subsys/cpp``, have been moved to ``lib/cpp/abi`` in order to provide a
+    clear separation between the C++ ABI runtime library and the C++ standard
+    library.
+  * C++ minimal library components have been moved to ``lib/cpp/minimal``.
+  * C++ tests have been moved to ``tests/lib/cpp``.
+  * C++ samples have been moved to ``samples/cpp``.
+  * :kconfig:option:`CONFIG_CPLUSPLUS` has been renamed to
+    :kconfig:option:`CONFIG_CPP`.
+  * :kconfig:option:`CONFIG_EXCEPTIONS` has been renamed to
+    :kconfig:option:`CONFIG_CPP_EXCEPTIONS`.
+  * :kconfig:option:`CONFIG_RTTI` has been renamed to
+    :kconfig:option:`CONFIG_CPP_RTTI`.
+  * :kconfig:option:`CONFIG_LIB_CPLUSPLUS` is deprecated. A toolchain-specific
+    C++ standard library Kconfig option from
+    :kconfig:option:`CONFIG_LIBCPP_IMPLEMENTATION` should be selected instead.
+  * Zephyr subsystems and modules that require the features from the full C++
+    standard library (e.g. Standard Template Library) can now select
+    :kconfig:option:`CONFIG_REQUIRES_FULL_LIBC`, which automatically selects
+    a compatible C++ standard library.
 
 * File systems
 
@@ -426,8 +571,188 @@ Libraries / Subsystems
     the kernel and application, allowing application-level extensibility
     see :ref:`mcumgr_os_application_info` for details.
 
- * MCUMgr :kconfig:option:`CONFIG_APP_LINK_WITH_MCUMGR` has been removed as
-   it has not been doing anything.
+  * MCUMgr :kconfig:option:`CONFIG_APP_LINK_WITH_MCUMGR` has been removed as
+    it has not been doing anything.
+
+  * MCUmgr Kconfig option names have been standardised. Script
+    :zephyr_file:`scripts/utils/migrate_mcumgr_kconfigs.py` has been provided
+    to make transition to new Kconfig options easier.
+    Below table provides information on old names and new equivalents:
+
+    .. table::
+       :align: center
+
+       +------------------------------------------------+-------------------------------------------------------+
+       | Old Kconfig option name                        | New Kconfig option name                               |
+       +================================================+=======================================================+
+       | MCUMGR_SMP_WORKQUEUE_STACK_SIZE                | MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE                 |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_WORKQUEUE_THREAD_PRIO               | MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MGMT_MAX_MAIN_MAP_ENTRIES                      | MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES                  |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MGMT_MIN_DECODING_LEVELS                       | MCUMGR_SMP_CBOR_MIN_DECODING_LEVELS                   |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MGMT_MIN_DECODING_LEVEL_1                      | MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_1                  |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MGMT_MIN_DECODING_LEVEL_2                      | MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2                  |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MGMT_MIN_DECODING_LEVEL_3                      | MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_3                  |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MGMT_MIN_DECODING_LEVEL_4                      | MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_4                  |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MGMT_MIN_DECODING_LEVEL_5                      | MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_5                  |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MGMT_MAX_DECODING_LEVELS                       | MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS                   |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_CMD_FS_MGMT                             | MCUMGR_GRP_FS                                         |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_MAX_FILE_SIZE_64KB                     | MCUMGR_GRP_FS_MAX_FILE_SIZE_64KB                      |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_MAX_FILE_SIZE_4GB                      | MCUMGR_GRP_FS_MAX_FILE_SIZE_4GB                       |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_MAX_OFFSET_LEN                         | MCUMGR_GRP_FS_MAX_OFFSET_LEN                          |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_DL_CHUNK_SIZE_LIMIT                    | MCUMGR_GRP_FS_DL_CHUNK_SIZE_LIMIT                     |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_DL_CHUNK_SIZE                          | MCUMGR_GRP_FS_DL_CHUNK_SIZE                           |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_FILE_STATUS                            | MCUMGR_GRP_FS_FILE_STATUS                             |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_CHECKSUM_HASH                          | MCUMGR_GRP_FS_CHECKSUM_HASH                           |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_CHECKSUM_HASH_CHUNK_SIZE               | MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_CHECKSUM_IEEE_CRC32                    | MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32                     |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_HASH_SHA256                            | MCUMGR_GRP_FS_HASH_SHA256                             |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_FILE_ACCESS_HOOK                       | MCUMGR_GRP_FS_FILE_ACCESS_HOOK                        |
+       +------------------------------------------------+-------------------------------------------------------+
+       | FS_MGMT_PATH_SIZE                              | MCUMGR_GRP_FS_PATH_LEN                                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_CMD_IMG_MGMT                            | MCUMGR_GRP_IMG                                        |
+       +------------------------------------------------+-------------------------------------------------------+
+       | IMG_MGMT_USE_HEAP_FOR_FLASH_IMG_CONTEXT        | MCUMGR_GRP_IMG_USE_HEAP_FOR_FLASH_IMG_CONTEXT         |
+       +------------------------------------------------+-------------------------------------------------------+
+       | IMG_MGMT_UPDATABLE_IMAGE_NUMBER                | MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER                 |
+       +------------------------------------------------+-------------------------------------------------------+
+       | IMG_MGMT_VERBOSE_ERR                           | MCUMGR_GRP_IMG_VERBOSE_ERR                            |
+       +------------------------------------------------+-------------------------------------------------------+
+       | IMG_MGMT_DUMMY_HDR                             | MCUMGR_GRP_IMG_DUMMY_HDR                              |
+       +------------------------------------------------+-------------------------------------------------------+
+       | IMG_MGMT_DIRECT_IMAGE_UPLOAD                   | MCUMGR_GRP_IMG_DIRECT_UPLOAD                          |
+       +------------------------------------------------+-------------------------------------------------------+
+       | IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT     | MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT      |
+       +------------------------------------------------+-------------------------------------------------------+
+       | IMG_MGMT_FRUGAL_LIST                           | MCUMGR_GRP_IMG_FRUGAL_LIST                            |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_CMD_OS_MGMT                             | MCUMGR_GRP_OS                                         |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_GRP_OS_OS_RESET_HOOK                    | MCUMGR_GRP_OS_RESET_HOOK                              |
+       +------------------------------------------------+-------------------------------------------------------+
+       | OS_MGMT_RESET_MS                               | MCUMGR_GRP_OS_RESET_MS                                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | OS_MGMT_TASKSTAT                               | MCUMGR_GRP_OS_TASKSTAT                                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS          | MCUMGR_GRP_OS_TASKSTAT_ONLY_SUPPORTED_STATS           |
+       +------------------------------------------------+-------------------------------------------------------+
+       | OS_MGMT_TASKSTAT_MAX_NUM_THREADS               | MCUMGR_GRP_OS_TASKSTAT_MAX_NUM_THREADS                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | OS_MGMT_TASKSTAT_THREAD_NAME_LEN               | MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_LEN                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | OS_MGMT_TASKSTAT_SIGNED_PRIORITY               | MCUMGR_GRP_OS_TASKSTAT_SIGNED_PRIORITY                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | OS_MGMT_TASKSTAT_STACK_INFO                    | MCUMGR_GRP_OS_TASKSTAT_STACK_INFO                     |
+       +------------------------------------------------+-------------------------------------------------------+
+       | OS_MGMT_ECHO                                   | MCUMGR_GRP_OS_ECHO                                    |
+       +------------------------------------------------+-------------------------------------------------------+
+       | OS_MGMT_MCUMGR_PARAMS                          | MCUMGR_GRP_OS_MCUMGR_PARAMS                           |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_CMD_SHELL_MGMT                          | MCUMGR_GRP_SHELL                                      |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE    | MCUMGR_GRP_SHELL_LEGACY_RC_RETURN_CODE                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_CMD_STAT_MGMT                           | MCUMGR_GRP_STAT                                       |
+       +------------------------------------------------+-------------------------------------------------------+
+       | STAT_MGMT_MAX_NAME_LEN                         | MCUMGR_GRP_STAT_MAX_NAME_LEN                          |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_GRP_ZEPHYR_BASIC                        | MCUMGR_GRP_ZBASIC                                     |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE             | MCUMGR_GRP_ZBASIC_STORAGE_ERASE                       |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MGMT_VERBOSE_ERR_RESPONSE                      | MCUMGR_SMP_VERBOSE_ERR_RESPONSE                       |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_REASSEMBLY                          | MCUMGR_TRANSPORT_REASSEMBLY                           |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_BUF_COUNT                               | MCUMGR_TRANSPORT_NETBUF_COUNT                         |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_BUF_SIZE                                | MCUMGR_TRANSPORT_NETBUF_SIZE                          |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_BUF_USER_DATA_SIZE                      | MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_BT                                  | MCUMGR_TRANSPORT_BT                                   |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_REASSEMBLY_BT                       | MCUMGR_TRANSPORT_BT_REASSEMBLY                        |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_REASSEMBLY_UNIT_TESTS               | MCUMGR_TRANSPORT_REASSEMBLY_UNIT_TESTS                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_BT_AUTHEN                           | MCUMGR_TRANSPORT_BT_AUTHEN                            |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_BT_CONN_PARAM_CONTROL               | MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MIN_INT       | MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MIN_INT        |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MAX_INT       | MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MAX_INT        |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_BT_CONN_PARAM_CONTROL_LATENCY       | MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_LATENCY        |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_BT_CONN_PARAM_CONTROL_TIMEOUT       | MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_TIMEOUT        |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RESTORE_TIME  | MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RESTORE_TIME   |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RETRY_TIME    | MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RETRY_TIME     |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_DUMMY                               | MCUMGR_TRANSPORT_DUMMY                                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_DUMMY_RX_BUF_SIZE                   | MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE                    |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_SHELL                               | MCUMGR_TRANSPORT_SHELL                                |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_SHELL_MTU                           | MCUMGR_TRANSPORT_SHELL_MTU                            |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_SHELL_RX_BUF_COUNT                  | MCUMGR_TRANSPORT_SHELL_RX_BUF_COUNT                   |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UART                                | MCUMGR_TRANSPORT_UART                                 |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UART_ASYNC                          | MCUMGR_TRANSPORT_UART_ASYNC                           |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UART_ASYNC_BUFS                     | MCUMGR_TRANSPORT_UART_ASYNC_BUFS                      |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UART_ASYNC_BUF_SIZE                 | MCUMGR_TRANSPORT_UART_ASYNC_BUF_SIZE                  |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UART_MTU                            | MCUMGR_TRANSPORT_UART_MTU                             |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UDP                                 | MCUMGR_TRANSPORT_UDP                                  |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UDP_IPV4                            | MCUMGR_TRANSPORT_UDP_IPV4                             |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UDP_IPV6                            | MCUMGR_TRANSPORT_UDP_IPV6                             |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UDP_PORT                            | MCUMGR_TRANSPORT_UDP_PORT                             |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UDP_STACK_SIZE                      | MCUMGR_TRANSPORT_UDP_STACK_SIZE                       |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UDP_THREAD_PRIO                     | MCUMGR_TRANSPORT_UDP_THREAD_PRIO                      |
+       +------------------------------------------------+-------------------------------------------------------+
+       | MCUMGR_SMP_UDP_MTU                             | MCUMGR_TRANSPORT_UDP_MTU                              |
+       +------------------------------------------------+-------------------------------------------------------+
+
+  * MCUmgr responses where ``rc`` (result code) is 0 (no error) will no longer
+    be present in responses and in cases where there is only an ``rc`` result,
+    the resultant response will now be an empty CBOR map. The old behaviour can
+    be restored by enabling
+    :kconfig:option:`CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR`.
 
 * LwM2M
 
@@ -443,6 +768,13 @@ HALs
 
 MCUboot
 *******
+
+Storage
+*******
+
+* Flash Map API drops ``fa_device_id`` from :c:struct:`flash_area`, as it
+  is no longer needed by MCUboot, and has not been populated for a long
+  time now.
 
 Trusted Firmware-M
 ******************

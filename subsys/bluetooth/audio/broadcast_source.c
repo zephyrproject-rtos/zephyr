@@ -532,6 +532,12 @@ static bool valid_create_param(const struct bt_audio_broadcast_source_create_par
 		return false;
 	}
 
+	CHECKIF(param->packing != BT_ISO_PACKING_SEQUENTIAL &&
+		param->packing != BT_ISO_PACKING_INTERLEAVED) {
+		LOG_DBG("param->packing %u is invalid", param->packing);
+		return false;
+	}
+
 	qos = param->qos;
 	CHECKIF(qos == NULL) {
 		LOG_DBG("param->qos is NULL");
@@ -727,6 +733,13 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 		}
 	}
 	source->qos = qos;
+	source->packing = param->packing;
+
+	source->encryption = param->encryption;
+	if (source->encryption) {
+		(void)memcpy(source->broadcast_code, param->broadcast_code,
+			     sizeof(source->broadcast_code));
+	}
 
 	LOG_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
 
@@ -765,6 +778,81 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 	return 0;
 }
 
+static void broadcast_source_store_metadata(struct bt_codec *codec,
+					    const struct bt_codec_data meta[],
+					    size_t meta_count)
+{
+	size_t old_meta_count;
+
+	old_meta_count = codec->meta_count;
+
+	/* Update metadata */
+	codec->meta_count = meta_count;
+	(void)memcpy(codec->meta, meta, meta_count * sizeof(*meta));
+	if (old_meta_count > meta_count) {
+		size_t meta_count_diff = old_meta_count - meta_count;
+
+		/* If we previously had more metadata entries we reset the
+		 * data that was not overwritten by the new metadata
+		 */
+		(void)memset(&codec->meta[meta_count],
+			     0, meta_count_diff * sizeof(*meta));
+	}
+}
+
+int bt_audio_broadcast_source_update_metadata(struct bt_audio_broadcast_source *source,
+					      const struct bt_codec_data meta[],
+					      size_t meta_count)
+{
+	struct bt_audio_broadcast_subgroup *subgroup;
+	enum bt_audio_state broadcast_state;
+
+	CHECKIF(source == NULL) {
+		LOG_DBG("source is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF((meta == NULL && meta_count != 0) ||
+		(meta != NULL && meta_count == 0)) {
+		LOG_DBG("Invalid metadata combination: %p %zu",
+			meta, meta_count);
+
+		return -EINVAL;
+	}
+
+	CHECKIF(meta_count > CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
+		LOG_DBG("Invalid meta_count: %zu (max %d)",
+			meta_count, CONFIG_BT_CODEC_MAX_METADATA_COUNT);
+
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < meta_count; i++) {
+		CHECKIF(meta[i].data.data_len > sizeof(meta[i].value)) {
+			LOG_DBG("Invalid meta[%zu] data_len %u",
+				i, meta[i].data.data_len);
+
+			return -EINVAL;
+		}
+	}
+	broadcast_state = broadcast_source_get_state(source);
+	if (broadcast_source_get_state(source) != BT_AUDIO_EP_STATE_STREAMING) {
+		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
+
+		return -EBADMSG;
+	}
+
+	/* TODO: We should probably find a way to update the metadata
+	 * for each subgroup individually
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
+		broadcast_source_store_metadata(subgroup->codec, meta, meta_count);
+	}
+
+	return 0;
+}
+
 int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source,
 				    struct bt_le_ext_adv *adv)
 {
@@ -798,9 +886,14 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source,
 	param.num_bis = bis_count;
 	param.bis_channels = bis;
 	param.framing = source->qos->framing;
-	param.packing = 0; /*  TODO: Add to QoS struct */
+	param.packing = source->packing;
 	param.interval = source->qos->interval;
 	param.latency = source->qos->latency;
+	param.encryption = source->encryption;
+	if (param.encryption) {
+		(void)memcpy(param.bcode, source->broadcast_code,
+			     sizeof(param.bcode));
+	}
 
 	err = bt_iso_big_create(adv, &param, &source->big);
 	if (err != 0) {

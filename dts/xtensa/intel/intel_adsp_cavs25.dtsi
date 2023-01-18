@@ -292,14 +292,96 @@
 		alh0: alh0@71000 {
 			compatible = "intel,alh-dai";
 			reg = <0x00071000 0x00071200>;
-
 			status = "okay";
 		};
 
 		alh1: alh1@71000 {
 			compatible = "intel,alh-dai";
 			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
 
+		alh2: alh2@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh3: alh3@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh4: alh4@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh5: alh5@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh6: alh6@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh7: alh7@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh8: alh8@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh9: alh9@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh10: alh10@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh11: alh11@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh12: alh12@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh13: alh13@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh14: alh14@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh15: alh15@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
 			status = "okay";
 		};
 

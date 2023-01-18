@@ -1,10 +1,10 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Copyright (c) 2018-2020, Arm Limited. All rights reserved.
 # Copyright (c) 2021, Nordic Semiconductor ASA. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 {
   "psa_framework_version": 1.0,
@@ -26,15 +26,18 @@
   ],
 
   # Service definitions for IPC mode.
-  "services" : [{
+  "services": [{
     "name": "TFM_DP_SECRET_DIGEST",
-    "sid": "0xFFFFF001", # Bits [31:12] denote the vendor (change this),
-                         # bits [11:0] are arbitrary at the discretion of the
-                         # vendor.
+
+    # Bits [31:12] denote the vendor (change this),
+    # bits [11:0] are arbitrary at the discretion of the
+    # vendor.
+    "sid": "0xFFFFF001",
+
     "non_secure_clients": true,
     "version": 1,
     "version_policy": "STRICT"
-   }
+  }
   ],
 
   "dependencies": [

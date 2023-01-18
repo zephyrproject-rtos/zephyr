@@ -16,4 +16,8 @@
 	device_c: device_c {
 		compatible = "test-device-pm";
 	};
+
+	device_d: device_d {
+		compatible = "test-device-pm";
+	};
 };

@@ -95,6 +95,7 @@ static const uint32_t table_resolution[] = {
 	defined(STM32F3X_ADC_V2_5)
 	RES(12),
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	RES(6),
 	RES(8),
 	RES(10),
 	RES(12),
@@ -557,9 +558,32 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 		}
 #endif
 	}
+#elif CONFIG_SOC_SERIES_STM32U5X
+	if (config->has_temp_channel) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id)
+		    && (config->base == ADC1)) {
+			adc_stm32_disable(adc);
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+			/* Wait for the sensor stabilization */
+			k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+		}
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc4), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC4) == channel_id)
+		   && (config->base == ADC4)) {
+			adc_stm32_disable(adc);
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+			LL_ADC_SetCommonPathInternalChAdd(__LL_ADC_COMMON_INSTANCE(adc),
+							  LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+			/* Wait for the sensor stabilization */
+			k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+		}
+#endif
+	}
 #else
 	if (config->has_temp_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id)) {
 		adc_stm32_disable(adc);
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 #ifdef LL_ADC_DELAY_TEMPSENSOR_STAB_US
@@ -578,8 +602,11 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 	}
 #if defined(LL_ADC_CHANNEL_VBAT)
 	/* Enable the bridge divider only when needed for ADC conversion. */
-	if (config->has_vbat_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id) {
+	if (config->has_vbat_channel && (
+#if defined(LL_ADC_CHANNEL_VBAT_ADC4)
+		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT_ADC4) == channel_id) ||
+#endif /* LL_ADC_CHANNEL_VBAT_ADC4 */
+		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id))) {
 		adc_stm32_disable(adc);
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
 	}
@@ -621,6 +648,23 @@ static void adc_stm32_teardown_channels(const struct device *dev, uint8_t channe
 		}
 #endif
 	}
+#elif CONFIG_SOC_SERIES_STM32U5X
+	if (config->has_temp_channel) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id)
+		    && (config->base == ADC1)) {
+			adc_stm32_disable(adc);
+			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		}
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc4), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC4) == channel_id)
+		   && (config->base == ADC4)) {
+			adc_stm32_disable(adc);
+			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		}
+#endif
+	}
 #else
 	if (config->has_temp_channel &&
 		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id)) {
@@ -636,8 +680,11 @@ static void adc_stm32_teardown_channels(const struct device *dev, uint8_t channe
 	}
 #if defined(LL_ADC_CHANNEL_VBAT)
 	/* Enable the bridge divider only when needed for ADC conversion. */
-	if (config->has_vbat_channel &&
-		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id)) {
+	if (config->has_vbat_channel && (
+#if defined(LL_ADC_CHANNEL_VBAT_ADC4)
+		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT_ADC4) == channel_id) ||
+#endif /* LL_ADC_CHANNEL_VBAT_ADC4 */
+		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id))) {
 		adc_stm32_disable(adc);
 		adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
 	}
@@ -661,17 +708,20 @@ static int start_read(const struct device *dev,
 		resolution = table_resolution[0];
 		break;
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	case 8:
+	case 6:
 		resolution = table_resolution[0];
 		break;
-	case 10:
+	case 8:
 		resolution = table_resolution[1];
 		break;
-	case 12:
+	case 10:
 		resolution = table_resolution[2];
 		break;
-	case 14:
+	case 12:
 		resolution = table_resolution[3];
+		break;
+	case 14:
+		resolution = table_resolution[4];
 		break;
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	case 6:
@@ -759,7 +809,15 @@ static int start_read(const struct device *dev,
 	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 	}
 	LL_ADC_ClearFlag_CCRDY(adc);
-
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc != ADC4) {
+		LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
+		LL_ADC_REG_SetSequencerLength(adc, table_seq_len[0]);
+	} else {
+		LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_FIXED);
+		LL_ADC_REG_SetSequencerLength(adc,
+					      BIT(__LL_ADC_CHANNEL_TO_DECIMAL_NB(channel)));
+	}
 #else
 	LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
 	LL_ADC_REG_SetSequencerLength(adc, table_seq_len[0]);
@@ -1006,6 +1064,16 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 	LL_ADC_SetSamplingTimeCommonChannels(adc,
 					     __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
 					     table_samp_time[acq_time_index]);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc != ADC4) {
+		LL_ADC_SetChannelSamplingTime(adc,
+					      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+					      table_samp_time[acq_time_index]);
+	} else {
+		LL_ADC_SetSamplingTimeCommonChannels(adc,
+						     LL_ADC_SAMPLINGTIME_COMMON_1,
+				       table_samp_time[acq_time_index]);
+	}
 #else
 	LL_ADC_SetChannelSamplingTime(adc,
 		__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
@@ -1293,7 +1361,11 @@ static const struct adc_driver_api api_stm32_driver_api = {
 
 bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
 {
+#if defined(CONFIG_SOC_SERIES_STM32G4X)
+	return LL_ADC_IsActiveFlag_EOC(adc) ||
+#else
 	return LL_ADC_IsActiveFlag_EOCS(adc) ||
+#endif /* CONFIG_SOC_SERIES_STM32G4X */
 	       LL_ADC_IsActiveFlag_OVR(adc) ||
 	       LL_ADC_IsActiveFlag_JEOS(adc) ||
 	       LL_ADC_IsActiveFlag_AWD1(adc);

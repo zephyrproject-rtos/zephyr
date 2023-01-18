@@ -8,11 +8,11 @@ compatible: "skyworks,sky13351"
 include: base.yaml
 
 properties:
-    vctl1-gpios:
-        type: phandle-array
-        required: true
-        description: VCTL1 pin
-    vctl2-gpios:
-        type: phandle-array
-        required: true
-        description: VCTL2 pin
+  vctl1-gpios:
+    type: phandle-array
+    required: true
+    description: VCTL1 pin
+  vctl2-gpios:
+    type: phandle-array
+    required: true
+    description: VCTL2 pin

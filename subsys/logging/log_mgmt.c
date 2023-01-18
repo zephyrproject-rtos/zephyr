@@ -137,6 +137,7 @@ static int link_filters_init(const struct log_link *link)
 	if (link->ctrl_blk->filters == NULL) {
 		LOG_ERR("Failed to allocate buffer for runtime filtering.");
 		__ASSERT(0, "Failed to allocate buffer.");
+		return -ENOMEM;
 	}
 
 	memset(link->ctrl_blk->filters, 0, sizeof(uint32_t) * total_cnt);
@@ -358,8 +359,9 @@ void z_log_runtime_filters_init(void)
 int log_source_id_get(const char *name)
 {
 	for (int i = 0; i < log_src_cnt_get(Z_LOG_LOCAL_DOMAIN_ID); i++) {
-		if (strcmp(log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, i),
-			   name) == 0) {
+		const char *sname = log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, i);
+
+		if ((sname != NULL) && (strcmp(sname, name) == 0)) {
 			return i;
 		}
 	}

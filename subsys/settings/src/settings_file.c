@@ -28,7 +28,6 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 #endif
 
 int settings_backend_init(void);
-void settings_mount_file_backend(struct settings_file *cf);
 
 static int settings_file_load(struct settings_store *cs,
 			      const struct settings_load_arg *arg);

@@ -17,6 +17,10 @@
 #include <zephyr/arch/riscv/syscall.h>
 #include "asm_macros.inc"
 
+#ifdef CONFIG_RISCV_SOC_HAS_ISR_STACKING
+#include <soc_isr_stacking.h>
+#endif
+
 /* Convenience macros for loading/storing register states. */
 
 #define DO_FP_CALLER_SAVED(op, reg) \
@@ -138,9 +142,13 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 1:
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_ISR_STACKING
+	SOC_ISR_SW_STACKING
+#else
 	/* Save caller-saved registers on current thread stack. */
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 	DO_CALLER_SAVED(sr)		;
+#endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
 	/* Save s0 in the esf and load it with &_current_cpu. */
 	sr s0, __z_arch_esf_t_s0_OFFSET(sp)
@@ -592,8 +600,12 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	/* Restore s0 (it is no longer ours) */
 	lr s0, __z_arch_esf_t_s0_OFFSET(sp)
 
+#ifdef CONFIG_RISCV_SOC_HAS_ISR_STACKING
+	SOC_ISR_SW_UNSTACKING
+#else
 	/* Restore caller-saved registers from thread stack */
 	DO_CALLER_SAVED(lr)
+#endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
 #ifdef CONFIG_USERSPACE
 	/* retrieve saved stack pointer */

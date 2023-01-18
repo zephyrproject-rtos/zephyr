@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
@@ -42,30 +43,14 @@ struct bt_audio_ep {
 	struct bt_codec_qos qos;
 	struct bt_codec_qos_pref qos_pref;
 	struct bt_audio_iso *iso;
-	struct bt_gatt_subscribe_params subscribe;
-	struct bt_gatt_discover_params discover;
 
 	/* FIXME: Replace with metastate */
 	bool receiver_ready;
-
-	/* TODO: Consider client/server container split */
-	union {
-		struct {
-			uint16_t handle;
-			uint16_t cp_handle;
-		} client;
-		struct {
-			const struct bt_gatt_attr *attr;
-		} server;
-	};
 
 	/* TODO: Create a union to reduce memory usage */
 	struct bt_audio_unicast_group *unicast_group;
 	struct bt_audio_broadcast_source *broadcast_source;
 	struct bt_audio_broadcast_sink *broadcast_sink;
-
-	/* ASCS ASE Control Point Work */
-	struct k_work work;
 };
 
 struct bt_audio_unicast_group {
@@ -90,6 +75,8 @@ struct bt_audio_broadcast_stream_data {
 
 struct bt_audio_broadcast_source {
 	uint8_t stream_count;
+	uint8_t packing;
+	bool encryption;
 	uint32_t broadcast_id; /* 24 bit */
 
 	struct bt_iso_big *big;
@@ -97,6 +84,8 @@ struct bt_audio_broadcast_source {
 
 	/* The codec specific configured data for each stream in the subgroup */
 	struct bt_audio_broadcast_stream_data stream_data[BROADCAST_STREAM_CNT];
+
+	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
 
 	/* The subgroups containing the streams used to create the broadcast source */
 	sys_slist_t subgroups;
@@ -144,3 +133,4 @@ static inline const char *bt_audio_ep_state_str(uint8_t state)
 
 bool bt_audio_ep_is_broadcast_snk(const struct bt_audio_ep *ep);
 bool bt_audio_ep_is_broadcast_src(const struct bt_audio_ep *ep);
+bool bt_audio_ep_is_unicast_client(const struct bt_audio_ep *ep);

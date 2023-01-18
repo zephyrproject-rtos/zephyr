@@ -163,7 +163,6 @@
 		data-rate = <OSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
 		status = "okay";
-
 		sfdp-bfp = [
 			53 46 44 50 06 01 02 ff
 			00 06 01 10 30 00 00 ff
@@ -190,15 +189,15 @@
 			00 00 00 00 00 00 00 00
 			00 00 00 00 00 00 00 00
 			7f ef ff ff 21 5c dc ff
-	];
+		];
+
 		partitions {
 			   compatible = "fixed-partitions";
 			   #address-cells = <1>;
 			   #size-cells = <1>;
 
 			   partition@0 {
-			       label = "nor";
-			       reg = <0x00000000 DT_SIZE_M(4)>;
+			       reg = <0x00000000 DT_SIZE_M(64)>;
 			   };
 		};
 	};

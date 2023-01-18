@@ -8,13 +8,13 @@ compatible: "nxp,kinetis-ke1xf-sim"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    clkout-source:
-      type: int
-      description: clkout clock source
+  clkout-source:
+    type: int
+    description: clkout clock source
 
-    clkout-divider:
-      type: int
-      description: clkout divider
+  clkout-divider:
+    type: int
+    description: clkout divider
