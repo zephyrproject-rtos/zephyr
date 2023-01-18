@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_rt1050.dtsi>
 #include "mimxrt1050_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "NXP MIMXRT1050-EVK board";
@@ -172,15 +173,22 @@ arduino_serial: &lpuart3 {
 	status = "okay";
 	width = <480>;
 	height = <272>;
-	hsync = <41>;
-	hfp = <4>;
-	hbp = <8>;
-	vsync = <10>;
-	vfp = <4>;
-	vbp = <2>;
-	polarity = <3>;
-	pixel-format = "bgr-565";
-	data-buswidth = "16-bit";
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <41>;
+		hfront-porch = <4>;
+		hback-porch = <8>;
+		vsync-len = <10>;
+		vfront-porch = <4>;
+		vback-porch = <2>;
+		de-active= <1>;
+		pixelclk-active = <1>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		clock-frequency = <9210240>;
+	};
+	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
+	data-bus-width = "16-bit";
 	pinctrl-0 = <&pinmux_lcdif>;
 	pinctrl-names = "default";
 	backlight-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
