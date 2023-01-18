@@ -765,6 +765,15 @@ Libraries / Subsystems
     be restored by enabling
     :kconfig:option:`CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR`.
 
+  * MCUMGR now has log outputting on most errors from the included fs, img,
+    os, shell, stat and zephyr_basic group commands. The level of logging can be
+    controlled by adjusting: :kconfig:option:`CONFIG_MCUMGR_GRP_FS_LOG_LEVEL`,
+    :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL`,
+    :kconfig:option:`CONFIG_MCUMGR_GRP_OS_LOG_LEVEL`,
+    :kconfig:option:`CONFIG_MCUMGR_GRP_SHELL_LOG_LEVEL`,
+    :kconfig:option:`CONFIG_MCUMGR_GRP_STAT_LOG_LEVEL` and
+    :kconfig:option:`CONFIG_MCUMGR_GRP_ZBASIC_LOG_LEVEL`.
+
 * LwM2M
 
   * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
