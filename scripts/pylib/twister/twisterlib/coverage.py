@@ -104,7 +104,9 @@ class CoverageTool:
                     "csv": "CSV report generated: {}".format(os.path.join(outdir, "coverage", "coverage.csv")),
                     "txt": "TXT report generated: {}".format(os.path.join(outdir, "coverage", "coverage.txt")),
                     "coveralls": "Coveralls report generated: {}".format(os.path.join(outdir, "coverage", "coverage.coveralls.json")),
-                    "sonarqube": "Sonarqube report generated: {}".format(os.path.join(outdir, "coverage", "coverage.sonarqube.xml"))
+                    "sonarqube": "Sonarqube report generated: {}".format(os.path.join(outdir, "coverage", "coverage.sonarqube.xml")),
+                    "summary": "Printing coverage summary"
+
                 }
                 for r in self.output_formats.split(','):
                     logger.info(report_log[r])
@@ -223,7 +225,8 @@ class Gcovr(CoverageTool):
             "csv": ["--csv", os.path.join(subdir, "coverage.csv")],
             "txt": ["--txt", os.path.join(subdir, "coverage.txt")],
             "coveralls": ["--coveralls", os.path.join(subdir, "coverage.coveralls.json"), "--coveralls-pretty"],
-            "sonarqube": ["--sonarqube", os.path.join(subdir, "coverage.sonarqube.xml")]
+            "sonarqube": ["--sonarqube", os.path.join(subdir, "coverage.sonarqube.xml")],
+            "summary": ["--print-summary"]
         }
         gcovr_options = self._flatten_list([report_options[r] for r in self.output_formats.split(',')])
 
