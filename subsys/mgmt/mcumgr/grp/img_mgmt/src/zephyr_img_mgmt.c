@@ -4,15 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
-
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
+#include <zephyr/logging/log.h>
 #include <bootutil/bootutil_public.h>
 #include <assert.h>
 
@@ -22,6 +20,8 @@ LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_impl.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
+
+LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 #define SLOT0_PARTITION		slot0_partition
 #define SLOT1_PARTITION		slot1_partition
@@ -107,6 +107,7 @@ static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa)
 
 		rc = flash_area_read(fa, addr, data, bytes_to_read);
 		if (rc < 0) {
+			LOG_ERR("Failed to read data from flash area: %d", rc);
 			return rc;
 		}
 
@@ -137,6 +138,8 @@ static int img_mgmt_flash_check_empty(uint8_t fa_id)
 		rc = img_mgmt_flash_check_empty_inner(fa);
 
 		flash_area_close(fa);
+	} else {
+		LOG_ERR("Failed to open flash area ID %u: %d", fa_id, rc);
 	}
 
 	return rc;
@@ -294,6 +297,7 @@ img_mgmt_erase_slot(int slot)
 	rc = flash_area_open(area_id, &fa);
 
 	if (rc < 0) {
+		LOG_ERR("Failed to open flash area ID %u: %d", area_id, rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -301,6 +305,10 @@ img_mgmt_erase_slot(int slot)
 
 	if (rc == 0) {
 		rc = flash_area_erase(fa, 0, fa->fa_size);
+
+		if (rc != 0) {
+			LOG_ERR("Failed to erase flash area: %d", rc);
+		}
 	}
 
 	flash_area_close(fa);
@@ -319,6 +327,7 @@ img_mgmt_write_pending(int slot, bool permanent)
 
 	rc = boot_request_upgrade_multi(img_mgmt_slot_to_image(slot), permanent);
 	if (rc != 0) {
+		LOG_ERR("Failed to write pending flag for slot %d: %d", slot, rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -332,6 +341,7 @@ img_mgmt_write_confirmed(void)
 
 	rc = boot_write_img_confirmed();
 	if (rc != 0) {
+		LOG_ERR("Failed to write confirmed flag: %d", rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -351,6 +361,7 @@ img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_bytes)
 
 	rc = flash_area_open(area_id, &fa);
 	if (rc != 0) {
+		LOG_ERR("Failed to open flash area ID %u: %d", area_id, rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -358,6 +369,7 @@ img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_bytes)
 	flash_area_close(fa);
 
 	if (rc != 0) {
+		LOG_ERR("Failed to read data from flash: %d", rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -616,6 +628,8 @@ img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			if (rc) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_flash_open_failed);
+				LOG_ERR("Failed to open flash area ID %u: %d", action->area_id,
+					rc);
 				return MGMT_ERR_EUNKNOWN;
 			}
 
@@ -689,6 +703,7 @@ img_mgmt_erased_val(int slot, uint8_t *erased_val)
 
 	rc = flash_area_open(area_id, &fa);
 	if (rc != 0) {
+		LOG_ERR("Failed to open flash area ID %u: %d", area_id, rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 

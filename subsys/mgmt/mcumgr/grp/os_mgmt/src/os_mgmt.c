@@ -14,6 +14,7 @@
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
+#include <zephyr/logging/log.h>
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -40,6 +41,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #endif
 #endif
+
+LOG_MODULE_REGISTER(mcumgr_os_grp, CONFIG_MCUMGR_GRP_OS_LOG_LEVEL);
 
 #ifdef CONFIG_REBOOT
 static void os_mgmt_reset_work_handler(struct k_work *work);
@@ -287,6 +290,10 @@ static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
 
 	/* Iterate the list of tasks, encoding each. */
 	k_thread_foreach(os_mgmt_taskstat_encode_one, (void *)&iterator_ctx);
+
+	if (!iterator_ctx.ok) {
+		LOG_ERR("Task iterator status is not OK");
+	}
 
 	if (!iterator_ctx.ok ||
 	    !zcbor_map_end_encode(zse, CONFIG_MCUMGR_GRP_OS_TASKSTAT_MAX_NUM_THREADS)) {

@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell_dummy.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
@@ -16,6 +17,8 @@
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
+
+LOG_MODULE_REGISTER(mcumgr_shell_grp, CONFIG_MCUMGR_GRP_SHELL_LOG_LEVEL);
 
 static int
 shell_exec(const char *line)
@@ -101,6 +104,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 	/* Failed to compose command line? */
 	if (len == 0) {
 		/* We do not bother to close decoder */
+		LOG_ERR("Failed to compose command line");
 		return MGMT_ERR_EINVAL;
 	}
 

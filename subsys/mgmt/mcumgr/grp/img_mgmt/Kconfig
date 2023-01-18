@@ -111,7 +111,7 @@ config MCUMGR_GRP_IMG_STATUS_HOOKS
 	  or prevent it, CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK must be used.
 
 module = MCUMGR_GRP_IMG
-module-str = mcumgr_img_mgmt
+module-str = mcumgr_grp_img
 source "subsys/logging/Kconfig.template.log_config"
 
 endif
