@@ -821,6 +821,7 @@ attaching:
 	LOG_DBG("modem attach returned %d, %s", ret, "read RSSI");
 	gsm->state = GSM_PPP_ATTACHED;
 	gsm->retries = GSM_RSSI_RETRIES;
+	gsm->minfo.mdm_rssi = GSM_RSSI_INVALID;
 
  attached:
 
@@ -886,10 +887,6 @@ attaching:
 		}
 
 		modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
-		if (gsm->state != GSM_PPP_STATE_ERROR) {
-			(void)gsm_work_reschedule(&gsm->rssi_work_handle,
-						K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
-		}
 	}
 
 unlock:
