@@ -816,6 +816,10 @@ class PyLint(ComplianceTest):
         pylintrc = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 "pylintrc"))
 
+        # Path to additional pylint check scripts
+        check_script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                        "../pylint/checkers"))
+
         # List of files added/modified by the commit(s).
         files = get_files(filter="d")
 
@@ -826,14 +830,23 @@ class PyLint(ComplianceTest):
         if not py_files:
             return
 
-        pylintcmd = ["pylint", "--rcfile=" + pylintrc] + py_files
+        python_environment = os.environ.copy()
+        if "PYTHONPATH" in python_environment:
+            python_environment["PYTHONPATH"] = check_script_dir + ":" + \
+                                               python_environment["PYTHONPATH"]
+        else:
+            python_environment["PYTHONPATH"] = check_script_dir
+
+        pylintcmd = ["pylint", "--rcfile=" + pylintrc,
+                     "--load-plugins=argparse-checker"] + py_files
         logger.info(cmd2str(pylintcmd))
         try:
             subprocess.run(pylintcmd,
                            check=True,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT,
-                           cwd=GIT_TOP)
+                           cwd=GIT_TOP,
+                           env=python_environment)
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
             regex = r'^\s*(\S+):(\d+):(\d+):\s*([A-Z]\d{4}):\s*(.*)$'
