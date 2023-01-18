@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+# Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+
+
+config XLNX_TMRCTR
+	bool "Xilinx AXI Timer/Counter"
+	select TICKLESS_CAPABLE
+	default y if MICROBLAZE
+	help
+		This module implements a kernel device driver for the MICROBLAZE AXI Timer devices.
+		AXI timer is not capable of matching against a preloaded value. Thus, it's not
+		capable of providing TICKLESS_KERNEL.
+
+config XLNX_TMRCTR_TIMER_INDEX
+	int "Xilinx TMRCTR timer index"
+	default 0
+	depends on XLNX_TMRCTR
+	help
+		This is the index of timer/counter picked to provide system clock.
