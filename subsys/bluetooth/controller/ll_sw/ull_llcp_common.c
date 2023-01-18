@@ -600,9 +600,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		if (lp_comm_tx_proxy(conn, ctx, false)) {
-			conn->llcp.fex.sent = 1;
-		}
+		lp_comm_tx_proxy(conn, ctx, false);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
@@ -1192,9 +1190,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		/* Always respond on remote feature exchange */
-		if (rp_comm_tx_proxy(conn, ctx, true)) {
-			conn->llcp.fex.sent = 1;
-		}
+		rp_comm_tx_proxy(conn, ctx, true);
 		break;
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one
