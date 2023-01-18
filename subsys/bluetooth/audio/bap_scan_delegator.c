@@ -855,7 +855,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bt_bap_bass_cp_mod_src) - 1) {
-		LOG_DBG("Invalid length %u", buf->size);
+		LOG_DBG("Invalid length %u", buf->len);
 
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
