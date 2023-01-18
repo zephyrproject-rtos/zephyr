@@ -142,6 +142,8 @@ Drivers and Sensors
 
 * EEPROM
 
+  * Switched from :dtcompatible:`atmel,at24` to dedicated :dtcompatible:`zephyr,i2c-target-eeprom` for I2C EEPROM target driver.
+
 * Entropy
 
 * ESPI
