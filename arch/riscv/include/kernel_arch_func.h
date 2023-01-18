@@ -80,6 +80,11 @@ extern FUNC_NORETURN void z_riscv_userspace_enter(k_thread_entry_t user_entry,
 int z_irq_do_offload(void);
 #endif
 
+#ifdef CONFIG_FPU_SHARING
+void z_riscv_flush_local_fpu(void);
+void z_riscv_flush_fpu_ipi(unsigned int cpu);
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
