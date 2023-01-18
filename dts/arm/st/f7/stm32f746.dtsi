@@ -5,7 +5,7 @@
  */
 
 #include <st/f7/stm32f745.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	soc {
