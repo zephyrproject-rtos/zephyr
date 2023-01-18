@@ -7,7 +7,6 @@
 /dts-v1/;
 #include <st/f4/stm32f429Xi.dtsi>
 #include <st/f4/stm32f429zitx-pinctrl.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 #include <zephyr/dt-bindings/display/ili9xxx.h>
 
 / {
@@ -204,16 +203,20 @@
 
 	width = <240>;
 	height = <320>;
-	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
-	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
-	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
-	pclk-pol = <STM32_LTDC_PCPOL_ACTIVE_LOW>;
-	hsync-duration = <10>;
-	vsync-duration = <2>;
-	hbp-duration = <20>;
-	vbp-duration = <2>;
-	hfp-duration = <10>;
-	vfp-duration = <4>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <10>;
+		vsync-len = <2>;
+		hback-porch= <20>;
+		vback-porch = <2>;
+		hfront-porch = <10>;
+		vfront-porch = <4>;
+	};
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;

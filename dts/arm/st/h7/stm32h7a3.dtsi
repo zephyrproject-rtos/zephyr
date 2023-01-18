@@ -5,7 +5,7 @@
  */
 
 #include <st/h7/stm32h7.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 / {

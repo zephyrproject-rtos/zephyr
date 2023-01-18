@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <st/l4/stm32l4r5.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	soc {
