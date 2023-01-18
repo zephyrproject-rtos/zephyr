@@ -1147,66 +1147,78 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 k_timeout_t timeout)
 #endif
 {
-	uint64_t end = sys_clock_timeout_end_calc(timeout);
-	struct net_buf_pool *pool = NULL;
-	size_t alloc_len = 0;
-	size_t hdr_len = 0;
+	uint8_t max_try_pkt_alloc_buffer = 3;
 	struct net_buf *buf;
+	size_t alloc_len = 0;
 
-	if (!size && proto == 0 && net_pkt_family(pkt) == AF_UNSPEC) {
-		return 0;
-	}
+	do {
+		uint64_t end = sys_clock_timeout_end_calc(timeout);
+		struct net_buf_pool *pool = NULL;
+		size_t hdr_len = 0;
 
-	if (k_is_in_isr()) {
-		timeout = K_NO_WAIT;
-	}
-
-	/* Verifying existing buffer and take into account free space there */
-	alloc_len = net_pkt_available_buffer(pkt);
-	if (!alloc_len) {
-		/* In case of no free space, it will account for header
-		 * space estimation
-		 */
-		hdr_len = pkt_estimate_headers_length(pkt,
-						      net_pkt_family(pkt),
-						      proto);
-	}
-
-	/* Calculate the maximum that can be allocated depending on size */
-	alloc_len = pkt_buffer_length(pkt, size + hdr_len, proto, alloc_len);
-
-	NET_DBG("Data allocation maximum size %zu (requested %zu)",
-		alloc_len, size);
-
-	if (pkt->context) {
-		pool = get_data_pool(pkt->context);
-	}
-
-	if (!pool) {
-		pool = pkt->slab == &tx_pkts ? &tx_bufs : &rx_bufs;
-	}
-
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		int64_t remaining = end - sys_clock_tick_get();
-
-		if (remaining <= 0) {
-			timeout = K_NO_WAIT;
-		} else {
-			timeout = Z_TIMEOUT_TICKS(remaining);
+		if (!size && proto == 0 && net_pkt_family(pkt) == AF_UNSPEC) {
+			return 0;
 		}
-	}
+
+		if (k_is_in_isr()) {
+			timeout = K_NO_WAIT;
+		}
+
+		/* Verifying existing buffer and take into account free space there */
+		alloc_len = net_pkt_available_buffer(pkt);
+		if (!alloc_len) {
+			/* In case of no free space, it will account for header
+			 * space estimation
+			 */
+			hdr_len = pkt_estimate_headers_length(pkt,
+							net_pkt_family(pkt),
+							proto);
+		}
+
+		/* Calculate the maximum that can be allocated depending on size */
+		alloc_len = pkt_buffer_length(pkt, size + hdr_len, proto, alloc_len);
+
+		NET_DBG("Data allocation maximum size %zu (requested %zu)",
+			alloc_len, size);
+
+		if (pkt->context) {
+			pool = get_data_pool(pkt->context);
+		}
+
+		if (!pool) {
+			pool = pkt->slab == &tx_pkts ? &tx_bufs : &rx_bufs;
+		}
+
+		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
+		!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+			int64_t remaining = end - sys_clock_tick_get();
+
+			if (remaining <= 0) {
+				timeout = K_NO_WAIT;
+			} else {
+				timeout = Z_TIMEOUT_TICKS(remaining);
+			}
+		}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	buf = pkt_alloc_buffer(pool, alloc_len, timeout, caller, line);
+		buf = pkt_alloc_buffer(pool, alloc_len, timeout, caller, line);
 #else
-	buf = pkt_alloc_buffer(pool, alloc_len, timeout);
+		buf = pkt_alloc_buffer(pool, alloc_len, timeout);
 #endif
+
+		if (!buf) {
+			/* wait and stay in the loop:
+			 * a new alloc_buffer is requested again
+			 */
+			k_sleep(K_USEC(1));
+		} else {
+			break;
+		}
+	} while (max_try_pkt_alloc_buffer-- != 0);
 
 	if (!buf) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_ERR("Data buffer (%zd) allocation failed (%s:%d)",
-			alloc_len, caller, line);
+		NET_ERR("Data buffer (%zd) allocation failed (%s:%d)", alloc_len, caller, line);
 #else
 		NET_ERR("Data buffer (%zd) allocation failed.", alloc_len);
 #endif
