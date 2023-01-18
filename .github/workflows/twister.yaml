@@ -75,6 +75,7 @@ jobs:
           west config --global update.narrow true
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
+          pip3 install pigweed
 
       - name: Generate Test Plan with Twister
         if: github.event_name == 'pull_request_target'
@@ -166,7 +167,7 @@ jobs:
             git log  --pretty=oneline | head -n 10
           fi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-
+          pip3 install pigweed
           west init -l . || true
           west config --global update.narrow true
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
