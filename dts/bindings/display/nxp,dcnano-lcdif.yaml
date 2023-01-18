@@ -5,7 +5,7 @@ description: NXP DCNano LCDIF (LCD Interface) controller
 
 compatible: "nxp,dcnano-lcdif"
 
-include: [panel-controller.yaml, pinctrl-device.yaml]
+include: [lcd-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

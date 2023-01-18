@@ -298,22 +298,32 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 		.dpi_config = {							\
 			.panelWidth = DT_INST_PROP(n, width),			\
 			.panelHeight = DT_INST_PROP(n, height),			\
-			.hsw = DT_INST_PROP(n, hsync_len),			\
-			.hfp = DT_INST_PROP(n, hfront_porch),			\
-			.hbp = DT_INST_PROP(n, hback_porch),			\
-			.vsw = DT_INST_PROP(n, vsync_len),			\
-			.vfp = DT_INST_PROP(n, vfront_porch),			\
-			.vbp = DT_INST_PROP(n, vback_porch),			\
-			.polarityFlags = (DT_INST_PROP(n, de_active) ?		\
+			.hsw = DT_PROP(DT_INST_CHILD(n, display_timings),	\
+					hsync_len),				\
+			.hfp = DT_PROP(DT_INST_CHILD(n, display_timings),	\
+					hfront_porch),				\
+			.hbp = DT_PROP(DT_INST_CHILD(n, display_timings),	\
+					hback_porch),				\
+			.vsw = DT_PROP(DT_INST_CHILD(n, display_timings),	\
+					vsync_len),				\
+			.vfp = DT_PROP(DT_INST_CHILD(n, display_timings),	\
+					vfront_porch),				\
+			.vbp = DT_PROP(DT_INST_CHILD(n, display_timings),	\
+					vback_porch),				\
+			.polarityFlags = (DT_PROP(DT_INST_CHILD(n,		\
+					display_timings), de_active) ?		\
 					kLCDIF_DataEnableActiveHigh :		\
 					kLCDIF_DataEnableActiveLow) |		\
-					(DT_INST_PROP(n, pixelclk_active) ?	\
+					(DT_PROP(DT_INST_CHILD(n,		\
+					display_timings), pixelclk_active) ?	\
 					kLCDIF_DriveDataOnRisingClkEdge :	\
 					kLCDIF_DriveDataOnFallingClkEdge) |	\
-					(DT_INST_PROP(n, hsync_active) ?	\
+					(DT_PROP(DT_INST_CHILD(n,		\
+					display_timings), hsync_active) ?	\
 					kLCDIF_HsyncActiveHigh :		\
 					kLCDIF_HsyncActiveLow) |		\
-					(DT_INST_PROP(n, vsync_active) ?	\
+					(DT_PROP(DT_INST_CHILD(n,		\
+					display_timings), vsync_active) ?	\
 					kLCDIF_VsyncActiveHigh :		\
 					kLCDIF_VsyncActiveLow),			\
 			.format = DT_INST_ENUM_IDX(n, data_bus_width),		\

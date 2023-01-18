@@ -210,17 +210,24 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 			.bllpMode = DT_INST_ENUM_IDX(id, dpi_bllp_mode),			\
 			.pixelPayloadSize = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, width),	\
 			.panelHeight = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, height),		\
-			.polarityFlags = (DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, vsync_active) ?\
+			.polarityFlags = (DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),	\
+						display_timings),  vsync_active) ?		\
 						kDSI_DpiVsyncActiveHigh :			\
 						kDSI_DpiVsyncActiveLow) |			\
-					(DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, hsync_active) ?	\
+					(DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),	\
+						display_timings),  hsync_active) ?		\
 						kDSI_DpiHsyncActiveHigh :			\
 						kDSI_DpiHsyncActiveLow),			\
-			.hfp = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, hfront_porch),		\
-			.hbp = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, hback_porch),		\
-			.hsw = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, hsync_len),		\
-			.vfp = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, vfront_porch),		\
-			.vbp = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, vback_porch),		\
+			.hfp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+						display_timings),  hfront_porch),		\
+			.hbp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+						display_timings),  hback_porch),		\
+			.hsw = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+						display_timings),  hsync_len),			\
+			.vfp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+						display_timings),  vfront_porch),		\
+			.vbp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+						display_timings),  vback_porch),		\
 		},										\
 		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
 		.dphy_ref_freq = DT_INST_PROP_OR(id, dphy_ref_frequency, 0),			\
