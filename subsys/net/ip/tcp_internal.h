@@ -107,24 +107,6 @@ static inline int net_tcp_get(struct net_context *context)
 #endif
 
 /**
- * @brief Unref TCP parts of a context
- *
- * @param context Network context
- *
- * @return 0 if successful, < 0 on error
- */
-#if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_unref(struct net_context *context);
-#else
-static inline int net_tcp_unref(struct net_context *context)
-{
-	ARG_UNUSED(context);
-
-	return -EPROTONOSUPPORT;
-}
-#endif
-
-/**
  * @brief Connect TCP connection
  *
  * @param context Network context
