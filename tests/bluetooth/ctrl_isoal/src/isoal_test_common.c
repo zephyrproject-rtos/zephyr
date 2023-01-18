@@ -253,7 +253,7 @@ void isoal_test_init_tx_pdu_buffer(struct tx_pdu_meta_buffer *buf)
  */
 void isoal_test_init_tx_sdu_buffer(struct tx_sdu_frag_buffer *buf)
 {
-	memset(buf, 0, sizeof(struct rx_sdu_frag_buffer));
+	memset(buf, 0, sizeof(struct tx_sdu_frag_buffer));
 	buf->sdu_tx.dbuf = buf->sdu_payload;
 }
 
