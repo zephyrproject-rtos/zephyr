@@ -72,6 +72,15 @@ config SDMMC_STM32_HWFC
 	  Enable SDMMC Hardware Flow Control to avoid FIFO underrun (TX mode) and
 	  overrun (RX mode) errors.
 
+config SDMMC_STM32_CLOCK_CHECK
+	bool "Runtime SDMMC 48MHz clock check"
+	depends on SDMMC_STM32
+	default y
+	help
+	  Enable SDMMC clock 48MHz configuration runtime check.
+	  In specific cases, this check might provide wrong verdict and should
+	  be disabled.
+
 module = SDMMC
 module-str = sdmmc
 source "subsys/logging/Kconfig.template.log_config"
