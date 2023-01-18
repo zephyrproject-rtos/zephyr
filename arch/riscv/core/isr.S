@@ -512,7 +512,7 @@ on_irq_stack:
 	jalr ra, t1, 0
 
 #ifdef CONFIG_TRACING_ISR
-    call sys_trace_isr_exit
+	call sys_trace_isr_exit
 #endif
 
 irq_done:
