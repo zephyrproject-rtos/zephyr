@@ -60,6 +60,7 @@ void z_riscv_secondary_cpu_init(int cpu_num)
 
 static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 #define IPI_SCHED	BIT(0)
+#define IPI_FPU_FLUSH	BIT(1)
 
 void arch_sched_ipi(void)
 {
@@ -77,6 +78,14 @@ void arch_sched_ipi(void)
 	arch_irq_unlock(key);
 }
 
+#ifdef CONFIG_FPU_SHARING
+void z_riscv_flush_fpu_ipi(unsigned int cpu)
+{
+	atomic_or(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
+	MSIP(_kernel.cpus[cpu].arch.hartid) = 1;
+}
+#endif
+
 static void ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
@@ -88,6 +97,18 @@ static void ipi_handler(const void *unused)
 	if (pending_ipi & IPI_SCHED) {
 		z_sched_ipi();
 	}
+#ifdef CONFIG_FPU_SHARING
+	if (pending_ipi & IPI_FPU_FLUSH) {
+		/* disable IRQs */
+		csr_clear(mstatus, MSTATUS_IEN);
+		/* perform the flush */
+		z_riscv_flush_local_fpu();
+		/*
+		 * No need to re-enable IRQs here as long as
+		 * this remains the last case.
+		 */
+	}
+#endif
 }
 
 static int riscv_smp_init(const struct device *dev)

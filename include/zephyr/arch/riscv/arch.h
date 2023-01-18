@@ -149,9 +149,11 @@
 #define MSTATUS_IEN     (1UL << 3)
 #define MSTATUS_MPP_M   (3UL << 11)
 #define MSTATUS_MPIE_EN (1UL << 7)
-#define MSTATUS_FS_INIT (1UL << 13)
-#define MSTATUS_FS_MASK ((1UL << 13) | (1UL << 14))
 
+#define MSTATUS_FS_OFF   (0UL << 13)
+#define MSTATUS_FS_INIT  (1UL << 13)
+#define MSTATUS_FS_CLEAN (2UL << 13)
+#define MSTATUS_FS_DIRTY (3UL << 13)
 
 /* This comes from openisa_rv32m1, but doesn't seem to hurt on other
  * platforms:

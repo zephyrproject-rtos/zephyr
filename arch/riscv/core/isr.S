@@ -21,30 +21,7 @@
 #include <soc_isr_stacking.h>
 #endif
 
-/* Convenience macros for loading/storing register states. */
-
-#define DO_FP_CALLER_SAVED(op, reg) \
-	op ft0, __z_arch_esf_t_ft0_OFFSET(reg)	 ;\
-	op ft1, __z_arch_esf_t_ft1_OFFSET(reg)	 ;\
-	op ft2, __z_arch_esf_t_ft2_OFFSET(reg)	 ;\
-	op ft3, __z_arch_esf_t_ft3_OFFSET(reg)	 ;\
-	op ft4, __z_arch_esf_t_ft4_OFFSET(reg)	 ;\
-	op ft5, __z_arch_esf_t_ft5_OFFSET(reg)	 ;\
-	op ft6, __z_arch_esf_t_ft6_OFFSET(reg)	 ;\
-	op ft7, __z_arch_esf_t_ft7_OFFSET(reg)	 ;\
-	op ft8, __z_arch_esf_t_ft8_OFFSET(reg)	 ;\
-	op ft9, __z_arch_esf_t_ft9_OFFSET(reg)	 ;\
-	op ft10, __z_arch_esf_t_ft10_OFFSET(reg) ;\
-	op ft11, __z_arch_esf_t_ft11_OFFSET(reg) ;\
-	op fa0, __z_arch_esf_t_fa0_OFFSET(reg)	 ;\
-	op fa1, __z_arch_esf_t_fa1_OFFSET(reg)	 ;\
-	op fa2, __z_arch_esf_t_fa2_OFFSET(reg)	 ;\
-	op fa3, __z_arch_esf_t_fa3_OFFSET(reg)	 ;\
-	op fa4, __z_arch_esf_t_fa4_OFFSET(reg)	 ;\
-	op fa5, __z_arch_esf_t_fa5_OFFSET(reg)	 ;\
-	op fa6, __z_arch_esf_t_fa6_OFFSET(reg)	 ;\
-	op fa7, __z_arch_esf_t_fa7_OFFSET(reg)	 ;
-
+/* Convenience macro for loading/storing register states. */
 #define DO_CALLER_SAVED(op) \
 	RV_E(	op t0, __z_arch_esf_t_t0_OFFSET(sp)	);\
 	RV_E(	op t1, __z_arch_esf_t_t1_OFFSET(sp)	);\
@@ -186,14 +163,67 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	csrr t2, mstatus
 	sr t2, __z_arch_esf_t_mstatus_OFFSET(sp)
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	/* Assess whether floating-point registers need to be saved. */
-	li t1, MSTATUS_FS_INIT
-	and t0, t2, t1
-	beqz t0, skip_store_fp_caller_saved
-	DO_FP_CALLER_SAVED(fsr, sp)
-skip_store_fp_caller_saved:
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+#if defined(CONFIG_FPU_SHARING)
+	/* determine if this is an Illegal Instruction exception */
+	csrr t0, mcause
+	li t1, 2		/* 2 = illegal instruction */
+	bne t0, t1, no_fp
+	/* determine if FPU access was disabled */
+	csrr t0, mstatus
+	li t1, MSTATUS_FS
+	and t0, t0, t1
+	bnez t0, no_fp
+	/* determine if we trapped on an FP instruction. */
+	csrr t2, mtval		/* get faulting instruction */
+	andi t0, t2, 0x7f	/* keep only the opcode bits */
+	xori t1, t0, 0b1010011	/* OP-FP */
+	beqz t1, is_fp
+	ori  t0, t0, 0b0100000
+	xori t1, t0, 0b0100111	/* LOAD-FP / STORE-FP */
+#if !defined(CONFIG_RISCV_ISA_EXT_C)
+	bnez t1, no_fp
+#else
+	beqz t1, is_fp
+	/* remaining non RVC (0b11) and RVC with 0b01 are not FP instructions */
+	andi t1, t0, 1
+	bnez t1, no_fp
+	/*
+	 * 001...........00 = C.FLD    RV32/64  (RV128 = C.LQ)
+	 * 001...........10 = C.FLDSP  RV32/64  (RV128 = C.LQSP)
+	 * 011...........00 = C.FLW    RV32     (RV64/128 = C.LD)
+	 * 011...........10 = C.FLWSPP RV32     (RV64/128 = C.LDSP)
+	 * 101...........00 = C.FSD    RV32/64  (RV128 = C.SQ)
+	 * 101...........10 = C.FSDSP  RV32/64  (RV128 = C.SQSP)
+	 * 111...........00 = C.FSW    RV32     (RV64/128 = C.SD)
+	 * 111...........10 = C.FSWSP  RV32     (RV64/128 = C.SDSP)
+	 *
+	 * so must be .01............. on RV64 and ..1............. on RV32.
+	 */
+	srli t0, t2, 8
+#if defined(CONFIG_64BIT)
+	andi t1, t0, 0b01100000
+	xori t1, t1, 0b00100000
+	bnez t1, no_fp
+#else
+	andi t1, t0, 0b00100000
+	beqz t1, no_fp
+#endif
+#endif /* CONFIG_RISCV_ISA_EXT_C */
+
+is_fp:	/* Process the FP trap and quickly return from exception */
+	la ra, fp_trap_exit
+	mv a0, sp
+	tail z_riscv_fpu_trap
+
+no_fp:	/* increment _current->arch.exception_depth */
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lb t1, _thread_offset_to_exception_depth(t0)
+	add t1, t1, 1
+	sb t1, _thread_offset_to_exception_depth(t0)
+
+	/* configure the FPU for exception mode */
+	call z_riscv_fpu_enter_exc
+#endif
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Handle context saving at SOC level. */
@@ -528,10 +558,8 @@ reschedule:
 
 z_riscv_thread_start:
 might_have_rescheduled:
-#ifdef CONFIG_SMP
-	/* reload s0 with &_current_cpu as it might have changed */
+	/* reload s0 with &_current_cpu as it might have changed or be unset */
 	get_current_cpu s0
-#endif
 
 no_reschedule:
 
@@ -541,32 +569,24 @@ no_reschedule:
 	jal ra, __soc_restore_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-	/* Restore MEPC register */
+#if defined(CONFIG_FPU_SHARING)
+	/* FPU handling upon exception mode exit */
+	mv a0, sp
+	call z_riscv_fpu_exit_exc
+
+	/* decrement _current->arch.exception_depth */
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lb t1, _thread_offset_to_exception_depth(t0)
+	add t1, t1, -1
+	sb t1, _thread_offset_to_exception_depth(t0)
+fp_trap_exit:
+#endif
+
+	/* Restore MEPC and MSTATUS registers */
 	lr t0, __z_arch_esf_t_mepc_OFFSET(sp)
-	csrw mepc, t0
-
-	/* Restore MSTATUS register */
 	lr t2, __z_arch_esf_t_mstatus_OFFSET(sp)
-	csrrw t0, mstatus, t2
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	/*
-	 * Determine if we need to restore FP regs based on the previous
-	 * (before the csr above) mstatus value available in t0.
-	 */
-	li t1, MSTATUS_FS_INIT
-	and t0, t0, t1
-	beqz t0, no_fp
-
-	/* make sure FP is enabled in the restored mstatus */
-	csrs mstatus, t1
-	DO_FP_CALLER_SAVED(flr, sp)
-	j 1f
-
-no_fp:	/* make sure this is reflected in the restored mstatus */
-	csrc mstatus, t1
-1:
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+	csrw mepc, t0
+	csrw mstatus, t2
 
 #ifdef CONFIG_USERSPACE
 	/*
