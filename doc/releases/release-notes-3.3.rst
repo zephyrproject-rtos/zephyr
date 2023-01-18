@@ -91,6 +91,17 @@ Changes in this release
   * :kconfig:option:`CONFIG_NETWORKING`
   * :kconfig:option:`CONFIG_NET_UDP`
 
+* Python's argparse argument parser usage in Zephyr scripts has been updated
+  to disable abbreviations, any future python scripts or python code updates
+  must also disable allowing abbreviations by using ``allow_abbrev=False``
+  when setting up ``ArgumentParser()``.
+
+  This may cause out-of-tree scripts or commands to fail if they have relied
+  upon their behaviour previously, these will need to be updated in order for
+  building to work. As an example, if a script argument had ``--reset-type``
+  and an out-of-tree script used this by passing ``--reset`` then it will need
+  to be updated to use the full argument name, ``--reset-type``.
+
 Removed APIs in this release
 ============================
 
