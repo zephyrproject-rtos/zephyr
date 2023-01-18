@@ -95,8 +95,8 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 	}
 
 	if (stop) {
-		nrfx_pdm_stop();
 		drv_data->stopping = true;
+		nrfx_pdm_stop();
 	}
 }
 
@@ -461,8 +461,8 @@ static int dmic_nrfx_pdm_trigger(const struct device *dev,
 	case DMIC_TRIGGER_PAUSE:
 	case DMIC_TRIGGER_STOP:
 		if (drv_data->active) {
-			nrfx_pdm_stop();
 			drv_data->stopping = true;
+			nrfx_pdm_stop();
 		}
 		break;
 
