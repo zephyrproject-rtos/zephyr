@@ -57,6 +57,10 @@
 #define TEST_GPIO_1 DT_NODELABEL(test_gpio_1)
 #define TEST_GPIO_2 DT_NODELABEL(test_gpio_2)
 
+#define TEST_GPIO_HOG_1 DT_PATH(test, gpio_deadbeef, test_gpio_hog_1)
+#define TEST_GPIO_HOG_2 DT_PATH(test, gpio_deadbeef, test_gpio_hog_2)
+#define TEST_GPIO_HOG_3 DT_PATH(test, gpio_abcd1234, test_gpio_hog_3)
+
 #define TEST_SPI DT_NODELABEL(test_spi)
 
 #define TEST_SPI_DEV_0 DT_PATH(test, spi_33334444, test_spi_dev_0)
@@ -957,6 +961,23 @@ ZTEST(devicetree_api, test_gpio)
 
 	/* DT_GPIO_FLAGS */
 	zassert_equal(DT_GPIO_FLAGS(TEST_PH, gpios), 20, "");
+
+	/* DT_NUM_GPIO_HOGS */
+	zassert_equal(DT_NUM_GPIO_HOGS(TEST_GPIO_HOG_1), 2, "");
+	zassert_equal(DT_NUM_GPIO_HOGS(TEST_GPIO_HOG_2), 1, "");
+	zassert_equal(DT_NUM_GPIO_HOGS(TEST_GPIO_HOG_3), 1, "");
+
+	/* DT_GPIO_HOG_PIN_BY_IDX */
+	zassert_equal(DT_GPIO_HOG_PIN_BY_IDX(TEST_GPIO_HOG_1, 0), 0, "");
+	zassert_equal(DT_GPIO_HOG_PIN_BY_IDX(TEST_GPIO_HOG_1, 1), 1, "");
+	zassert_equal(DT_GPIO_HOG_PIN_BY_IDX(TEST_GPIO_HOG_2, 0), 3, "");
+	zassert_equal(DT_GPIO_HOG_PIN_BY_IDX(TEST_GPIO_HOG_3, 0), 4, "");
+
+	/* DT_GPIO_HOG_FLAGS_BY_IDX */
+	zassert_equal(DT_GPIO_HOG_FLAGS_BY_IDX(TEST_GPIO_HOG_1, 0), 0x00, "");
+	zassert_equal(DT_GPIO_HOG_FLAGS_BY_IDX(TEST_GPIO_HOG_1, 1), 0x10, "");
+	zassert_equal(DT_GPIO_HOG_FLAGS_BY_IDX(TEST_GPIO_HOG_2, 0), 0x20, "");
+	zassert_equal(DT_GPIO_HOG_FLAGS_BY_IDX(TEST_GPIO_HOG_3, 0), 0x30, "");
 
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
