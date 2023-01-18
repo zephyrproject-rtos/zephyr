@@ -463,19 +463,6 @@ out:
 	return ref_count;
 }
 
-int net_tcp_unref(struct net_context *context)
-{
-	int ref_count = 0;
-
-	NET_DBG("context: %p, conn: %p", context, context->tcp);
-
-	if (context->tcp) {
-		ref_count = tcp_conn_unref(context->tcp);
-	}
-
-	return ref_count;
-}
-
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 #define tcp_conn_close(conn, status)				\
 	tcp_conn_close_debug(conn, status, __func__, __LINE__)
@@ -2580,7 +2567,7 @@ int net_tcp_put(struct net_context *context)
 
 	k_mutex_unlock(&conn->lock);
 
-	net_tcp_unref(context);
+	tcp_conn_unref(conn);
 
 	return 0;
 }
