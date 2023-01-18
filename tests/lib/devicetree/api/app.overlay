@@ -136,6 +136,18 @@
 			label = "TEST_GPIO_1";
 			interrupts = <4 3>;
 			status = "okay";
+
+			test_gpio_hog_1 {
+				gpio-hog;
+				gpios = <0x0 0x00>, <0x1 0x10>;
+				output-high;
+			};
+
+			test_gpio_hog_2 {
+				gpio-hog;
+				gpios = <0x3 0x20>;
+				output-low;
+			};
 		};
 
 		test_gpio_2: gpio@abcd1234 {
@@ -149,6 +161,13 @@
 			interrupts = <5 2>;
 			label = "TEST_GPIO_2";
 			status = "okay";
+
+			test_gpio_hog_3 {
+				gpio-hog;
+				gpios = <0x4 0x30>;
+				input;
+				line-name = "TEST_GPIO_HOG_3";
+			};
 		};
 
 		test_gpio_3: gpio@1234 {
