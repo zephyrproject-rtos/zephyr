@@ -62,6 +62,19 @@ config BT_EATT_AUTO_CONNECT
 
 endif # BT_EATT
 
+config BT_GATT_AUTO_RESUBSCRIBE
+	bool "Automatic re-subscription to characteristics"
+	default y
+	imply BT_GATT_AUTO_SEC_REQ
+	depends on BT_GATT_CLIENT
+	help
+	  Quirk: upon re-establishing a bonded connection, assumes the remote
+	  forgot the CCC values and sets them again. If this behavior is not
+	  desired for a particular subscription, set the
+	  `BT_GATT_SUBSCRIBE_FLAG_NO_RESUB` flag.
+	  This also means that upon a reconnection, the application will get an
+	  unprompted call to its `subscribe` callback.
+
 config BT_GATT_AUTO_SEC_REQ
 	bool "Automatic security re-establishment request as a peripheral"
 	default y
