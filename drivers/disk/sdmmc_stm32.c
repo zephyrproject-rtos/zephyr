@@ -74,7 +74,7 @@ struct stm32_sdmmc_priv {
 	struct gpio_callback cd_cb;
 	struct gpio_dt_spec cd;
 	struct gpio_dt_spec pe;
-	struct stm32_pclken pclken;
+	struct stm32_pclken *pclken;
 	const struct pinctrl_dev_config *pcfg;
 	const struct reset_dt_spec reset;
 
@@ -133,49 +133,37 @@ void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd)
 static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 {
 	const struct device *clock;
-
-#if CONFIG_SOC_SERIES_STM32L4X
-	LL_RCC_PLLSAI1_Disable();
-	/* Configure PLLSA11 to enable 48M domain */
-	LL_RCC_PLLSAI1_ConfigDomain_48M(LL_RCC_PLLSOURCE_HSI,
-					LL_RCC_PLLM_DIV_1,
-					8, LL_RCC_PLLSAI1Q_DIV_8);
-
-	/* Enable PLLSA1 */
-	LL_RCC_PLLSAI1_Enable();
-
-	/*  Enable PLLSAI1 output mapped on 48MHz domain clock */
-	LL_RCC_PLLSAI1_EnableDomain_48M();
-
-	/* Wait for PLLSA1 ready flag */
-	while (LL_RCC_PLLSAI1_IsReady() != 1)
-		;
-
-	LL_RCC_SetSDMMCClockSource(LL_RCC_SDMMC1_CLKSOURCE_PLLSAI1);
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
-#if !STM32_HSI48_ENABLED
-	/* Deprecated: enable HSI48 using device tree */
-#warning USB device requires HSI48 clock to be enabled using device tree
-	/*
-	 * Keeping this sequence for legacy :
-	 * By default the SDMMC clock source is set to 0 --> 48MHz, must be enabled
-	 */
-	LL_RCC_HSI48_Enable();
-	while (!LL_RCC_HSI48_IsReady()) {
-	}
-#endif /* !STM32_HSI48_ENABLED */
-#endif /* CONFIG_SOC_SERIES_STM32L5X ||
-	* CONFIG_SOC_SERIES_STM32U5X
-	*/
+	int res;
 
 	/* HSI48 Clock is enabled through using the device tree */
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
+	if (DT_INST_NUM_CLOCKS(0) > 1) {
+		if (clock_control_configure(clock,
+					      (clock_control_subsys_t *)&priv->pclken[1],
+					      NULL) != 0) {
+			LOG_ERR("Failed to enable SDMMC domain clock");
+			return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_SDMMC_STM32_CLOCK_CHECK)) {
+		uint32_t sdmmc_clock_rate;
+
+		if (clock_control_get_rate(clk,
+					   (clock_control_subsys_t *)&pclken[1],
+					   &sdmmc_clock_rate) != 0) {
+			LOG_ERR("Failed to get SDMMC domain clock rate");
+			return -EIO;
+		}
+
+		if (sdmmc_clock_rate != MHZ(48)) {
+			LOG_ERR("SDMMC Clock is not 48MHz (%d)", sdmmc_clock_rate);
+			return -ENOTSUP;
+		}
+	}
+
 	/* Enable the APB clock for stm32_sdmmc */
-	return clock_control_on(clock, (clock_control_subsys_t *)&priv->pclken);
+	return clock_control_on(clock, (clock_control_subsys_t *)&priv->pclken[0]);
 }
 
 static int stm32_sdmmc_clock_disable(struct stm32_sdmmc_priv *priv)
