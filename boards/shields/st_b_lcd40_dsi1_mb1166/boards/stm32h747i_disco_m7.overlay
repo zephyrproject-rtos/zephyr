@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/display/panel.h>
+
 / {
 	chosen {
 		zephyr,display = &ltdc;
@@ -17,20 +19,24 @@
 	/* orisetech, otm8009a */
 	width = <800>;
 	height = <480>;
-	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
-	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
-	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
-	pclk-pol = <STM32_LTDC_PCPOL_ACTIVE_LOW>;
-	hsync-duration = <2>;
-	vsync-duration = <1>;
-	hbp-duration = <34>;
-	vbp-duration = <15>;
-	hfp-duration = <34>;
-	vfp-duration = <16>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-len = <2>;
+		vsync-len = <1>;
+		hback-porch = <34>;
+		vback-porch = <15>;
+		hfront-porch = <34>;
+		vfront-porch = <16>;
+	};
 
 	def-back-color-red = <0>;
 	def-back-color-green = <0>;
 	def-back-color-blue = <0>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 };
 
 /* ltdc uses pll3_r as pixel clock */
