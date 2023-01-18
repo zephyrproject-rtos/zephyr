@@ -45,14 +45,6 @@ struct soc_esf {
 };
 #endif
 
-#if !defined(RV_FP_TYPE) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
-#define RV_FP_TYPE uint64_t
-#else
-#define RV_FP_TYPE uint32_t
-#endif
-#endif
-
 #if defined(CONFIG_RISCV_SOC_HAS_ISR_STACKING)
 	SOC_ISR_STACKING_ESF_DECLARE;
 #else
@@ -87,29 +79,6 @@ struct __esf {
 
 #ifdef CONFIG_USERSPACE
 	unsigned long sp;		/* preserved (user or kernel) stack pointer */
-#endif
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	RV_FP_TYPE ft0;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft1;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft2;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft3;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft4;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft5;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft6;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft7;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft8;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft9;		/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft10;	/* Caller-saved temporary floating register */
-	RV_FP_TYPE ft11;	/* Caller-saved temporary floating register */
-	RV_FP_TYPE fa0;		/* function argument/return value */
-	RV_FP_TYPE fa1;		/* function argument/return value */
-	RV_FP_TYPE fa2;		/* function argument */
-	RV_FP_TYPE fa3;		/* function argument */
-	RV_FP_TYPE fa4;		/* function argument */
-	RV_FP_TYPE fa5;		/* function argument */
-	RV_FP_TYPE fa6;		/* function argument */
-	RV_FP_TYPE fa7;		/* function argument */
 #endif
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE

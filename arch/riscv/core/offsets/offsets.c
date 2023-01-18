@@ -43,21 +43,48 @@ GEN_OFFSET_SYM(_callee_saved_t, s10);
 GEN_OFFSET_SYM(_callee_saved_t, s11);
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-GEN_OFFSET_SYM(_callee_saved_t, fcsr);
-GEN_OFFSET_SYM(_callee_saved_t, fs0);
-GEN_OFFSET_SYM(_callee_saved_t, fs1);
-GEN_OFFSET_SYM(_callee_saved_t, fs2);
-GEN_OFFSET_SYM(_callee_saved_t, fs3);
-GEN_OFFSET_SYM(_callee_saved_t, fs4);
-GEN_OFFSET_SYM(_callee_saved_t, fs5);
-GEN_OFFSET_SYM(_callee_saved_t, fs6);
-GEN_OFFSET_SYM(_callee_saved_t, fs7);
-GEN_OFFSET_SYM(_callee_saved_t, fs8);
-GEN_OFFSET_SYM(_callee_saved_t, fs9);
-GEN_OFFSET_SYM(_callee_saved_t, fs10);
-GEN_OFFSET_SYM(_callee_saved_t, fs11);
-#endif
+#if defined(CONFIG_FPU_SHARING)
+
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fa0);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fa1);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fa2);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fa3);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fa4);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fa5);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fa6);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fa7);
+
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft0);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft1);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft2);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft3);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft4);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft5);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft6);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft7);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft8);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft9);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft10);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, ft11);
+
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs0);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs1);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs2);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs3);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs4);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs5);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs6);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs7);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs8);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs9);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs10);
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fs11);
+
+GEN_OFFSET_SYM(z_riscv_fp_context_t, fcsr);
+
+GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
+
+#endif /* CONFIG_FPU_SHARING */
 
 /* esf member offsets */
 GEN_OFFSET_SYM(z_arch_esf_t, ra);
@@ -87,29 +114,6 @@ GEN_OFFSET_SYM(z_arch_esf_t, s0);
 
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(z_arch_esf_t, sp);
-#endif
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-GEN_OFFSET_SYM(z_arch_esf_t, ft0);
-GEN_OFFSET_SYM(z_arch_esf_t, ft1);
-GEN_OFFSET_SYM(z_arch_esf_t, ft2);
-GEN_OFFSET_SYM(z_arch_esf_t, ft3);
-GEN_OFFSET_SYM(z_arch_esf_t, ft4);
-GEN_OFFSET_SYM(z_arch_esf_t, ft5);
-GEN_OFFSET_SYM(z_arch_esf_t, ft6);
-GEN_OFFSET_SYM(z_arch_esf_t, ft7);
-GEN_OFFSET_SYM(z_arch_esf_t, ft8);
-GEN_OFFSET_SYM(z_arch_esf_t, ft9);
-GEN_OFFSET_SYM(z_arch_esf_t, ft10);
-GEN_OFFSET_SYM(z_arch_esf_t, ft11);
-GEN_OFFSET_SYM(z_arch_esf_t, fa0);
-GEN_OFFSET_SYM(z_arch_esf_t, fa1);
-GEN_OFFSET_SYM(z_arch_esf_t, fa2);
-GEN_OFFSET_SYM(z_arch_esf_t, fa3);
-GEN_OFFSET_SYM(z_arch_esf_t, fa4);
-GEN_OFFSET_SYM(z_arch_esf_t, fa5);
-GEN_OFFSET_SYM(z_arch_esf_t, fa6);
-GEN_OFFSET_SYM(z_arch_esf_t, fa7);
 #endif
 
 #if defined(CONFIG_RISCV_SOC_CONTEXT_SAVE)
