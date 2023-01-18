@@ -18,6 +18,10 @@ struct _cpu_arch {
 	unsigned long hartid;
 	bool online;
 #endif
+#ifdef CONFIG_FPU_SHARING
+	atomic_ptr_val_t fpu_owner;
+	uint32_t fpu_state;
+#endif
 };
 
 #endif /* ZEPHYR_INCLUDE_RISCV_STRUCTS_H_ */
