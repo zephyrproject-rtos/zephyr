@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/atomic.h>
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -54,47 +55,46 @@ void z_riscv_secondary_cpu_init(int cpu_num)
 }
 
 #ifdef CONFIG_SMP
-static uint32_t *get_hart_msip(int hart_id)
-{
-	return (uint32_t *)(unsigned long)(RISCV_MSIP_BASE + (hart_id * 4));
-}
+
+#define MSIP(hartid) ((volatile uint32_t *)RISCV_MSIP_BASE)[hartid]
+
+static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
+#define IPI_SCHED	BIT(0)
 
 void arch_sched_ipi(void)
 {
-	unsigned int key;
-	uint32_t i;
-	uint8_t id;
-
-	key = arch_irq_lock();
-
-	id = _current_cpu->id;
+	unsigned int key = arch_irq_lock();
+	unsigned int id = _current_cpu->id;
 	unsigned int num_cpus = arch_num_cpus();
 
-	for (i = 0U; i < num_cpus; i++) {
+	for (unsigned int i = 0; i < num_cpus; i++) {
 		if (i != id && _kernel.cpus[i].arch.online) {
-			volatile uint32_t *r = get_hart_msip(_kernel.cpus[i].arch.hartid);
-			*r = 1U;
+			atomic_or(&cpu_pending_ipi[i], IPI_SCHED);
+			MSIP(_kernel.cpus[i].arch.hartid) = 1;
 		}
 	}
 
 	arch_irq_unlock(key);
 }
 
-static void sched_ipi_handler(const void *unused)
+static void ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
-	volatile uint32_t *r = get_hart_msip(csr_read(mhartid));
-	*r = 0U;
+	MSIP(csr_read(mhartid)) = 0;
 
-	z_sched_ipi();
+	atomic_val_t pending_ipi = atomic_get(&cpu_pending_ipi[_current_cpu->id]);
+
+	if (pending_ipi & IPI_SCHED) {
+		z_sched_ipi();
+	}
 }
 
 static int riscv_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(RISCV_MACHINE_SOFT_IRQ, 0, sched_ipi_handler, NULL, 0);
+	IRQ_CONNECT(RISCV_MACHINE_SOFT_IRQ, 0, ipi_handler, NULL, 0);
 	irq_enable(RISCV_MACHINE_SOFT_IRQ);
 
 	return 0;
