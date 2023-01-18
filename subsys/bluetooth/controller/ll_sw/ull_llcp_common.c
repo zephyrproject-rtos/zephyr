@@ -1094,15 +1094,6 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
-#if !defined(CONFIG_BT_CTLR_CENTRAL_ISO) || !defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-	case PROC_CIS_TERMINATE:
-		/* Only possible response to LL_CIS_TERMINATE is if a central or peripheral
-		 * does not have ISO support. Then reject with error 'unsupported feature'.
-		 */
-		llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND,
-					       BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
-		break;
-#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO || !CONFIG_BT_CTLR_PERIPHERAL_ISO */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -1260,17 +1251,10 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	case PROC_CIS_TERMINATE:
-		/* Make sure role is configured for ISO, otherwise reject */
-		if ((!IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO) &&
-			conn->lll.role == BT_HCI_ROLE_CENTRAL) ||
-		    (!IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO) &&
-			conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
-			rp_comm_tx(conn, ctx);
-			/* Fall through */
-		}
-
+		/* No response */
 		llcp_rr_complete(conn);
 		ctx->state = RP_COMMON_STATE_IDLE;
+
 		break;
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
