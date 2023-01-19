@@ -887,11 +887,13 @@ static int nvs_startup(struct nvs_fs *fs)
 		fs->data_wra = fs->ate_wra & ADDR_SECT_MASK;
 	}
 
-#ifdef CONFIG_NVS_LOOKUP_CACHE
-	rc = nvs_lookup_cache_rebuild(fs);
-#endif
-
 end:
+
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	if (!rc) {
+		rc = nvs_lookup_cache_rebuild(fs);
+	}
+#endif
 	/* If the sector is empty add a gc done ate to avoid having insufficient
 	 * space when doing gc.
 	 */
