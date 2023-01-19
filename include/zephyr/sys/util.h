@@ -61,6 +61,13 @@ extern "C" {
 #define GENMASK(h, l) \
 	(((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
 
+/**
+ * @brief Create a contiguous 64-bit bitmask starting at bit position @p l
+ *        and ending at position @p h.
+ */
+#define GENMASK64(h, l) \
+	(((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
+
 /** @brief Extract the Least Significant Bit from @p value. */
 #define LSB_GET(value) ((value) & -(value))
 
