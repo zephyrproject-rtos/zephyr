@@ -2468,6 +2468,7 @@ struct net_if_api {
 				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
 		.mtu = _mtu,						\
+		.l2 = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),		\
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
 		NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS]	\

@@ -15,6 +15,7 @@
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/wifi.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/offloaded_netdev.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -288,7 +289,7 @@ struct net_wifi_mgmt_offload {
 #ifdef CONFIG_WIFI_USE_NATIVE_NETWORKING
 	struct ethernet_api wifi_iface;
 #else
-	struct net_if_api wifi_iface;
+	struct offloaded_if_api wifi_iface;
 #endif
 
 	/* cb parameter is the cb that should be called for each
