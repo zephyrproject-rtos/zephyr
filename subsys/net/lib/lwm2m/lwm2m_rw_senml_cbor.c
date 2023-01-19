@@ -713,7 +713,10 @@ static int do_write_op_item(struct lwm2m_message *msg, struct record *rec)
 	/* Composite op - name with basename */
 	char name[SENML_MAX_NAME_SIZE] = { 0 }; /* Null terminated name */
 	int len = 0;
-	char fqn[MAX_RESOURCE_LEN + 1] = {0};
+	/* Compiler requires reserving space for full length basename and name even though those two
+	 * combined do not exceed MAX_RESOURCE_LEN
+	 */
+	char fqn[MAX_RESOURCE_LEN + SENML_MAX_NAME_SIZE + 1] = {0};
 
 	fd = engine_get_in_user_data(&msg->in);
 	if (!fd) {
@@ -819,7 +822,10 @@ static uint8_t parse_composite_read_paths(struct lwm2m_message *msg,
 {
 	char basename[MAX_RESOURCE_LEN + 1] = {0}; /* to include terminating null */
 	char name[MAX_RESOURCE_LEN + 1] = {0}; /* to include terminating null */
-	char fqn[MAX_RESOURCE_LEN + 1] = {0};
+	/* Compiler requires reserving space for full length basename and name even though those two
+	 * combined do not exceed MAX_RESOURCE_LEN
+	 */
+	char fqn[2 * MAX_RESOURCE_LEN + 1] = {0};
 	struct lwm2m_obj_path path;
 	struct cbor_in_fmt_data *fd;
 	uint8_t paths = 0;
