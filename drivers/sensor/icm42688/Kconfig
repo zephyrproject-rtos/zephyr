@@ -11,3 +11,11 @@ config ICM42688
 	select SPI
 	help
 	  Enable driver for ICM42688 SPI-based six-axis motion tracking device.
+
+config EMUL_ICM42688
+	bool "Emulator for the ICM42688"
+	depends on ICM42688
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the ICM42688. Doing so allows exercising
+	  sensor APIs for this IMU in native_posix and qemu.
