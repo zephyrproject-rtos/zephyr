@@ -1217,13 +1217,13 @@ static void esp_iface_init(struct net_if *iface)
 }
 
 static const struct net_wifi_mgmt_offload esp_api = {
-	.wifi_iface.init = esp_iface_init,
-	.scan		= esp_mgmt_scan,
-	.connect	= esp_mgmt_connect,
-	.disconnect	= esp_mgmt_disconnect,
-	.ap_enable	= esp_mgmt_ap_enable,
-	.ap_disable	= esp_mgmt_ap_disable,
-	.iface_status	= esp_mgmt_iface_status,
+	.wifi_iface.iface_api.init = esp_iface_init,
+	.scan			   = esp_mgmt_scan,
+	.connect		   = esp_mgmt_connect,
+	.disconnect		   = esp_mgmt_disconnect,
+	.ap_enable		   = esp_mgmt_ap_enable,
+	.ap_disable		   = esp_mgmt_ap_disable,
+	.iface_status		   = esp_mgmt_iface_status,
 };
 
 static int esp_init(const struct device *dev);

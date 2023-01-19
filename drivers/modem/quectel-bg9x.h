@@ -15,6 +15,7 @@
 #include <zephyr/init.h>
 
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/socket_offload.h>
 
