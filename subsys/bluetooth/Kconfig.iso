@@ -114,6 +114,14 @@ config BT_ISO_RX_MTU
 	help
 	  Maximum MTU for Isochronous channels RX buffers.
 
+config BT_ISO_ADVANCED
+	bool "Advanced ISO parameters"
+	help
+	  Enabling advanced ISO parameters will allow the use of the ISO test
+	  parameters for creating a CIG or a BIG. These test parameters were
+	  intended for testing, but can be used to allow the host to set more
+	  settings that are otherwise usually controlled by the controller.
+
 if BT_ISO_UNICAST
 
 config BT_ISO_MAX_CIG
