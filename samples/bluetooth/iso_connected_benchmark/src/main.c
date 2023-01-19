@@ -35,8 +35,16 @@ enum benchmark_role {
 #define DEFAULT_CIS_SDU_SIZE    CONFIG_BT_ISO_TX_MTU
 #define DEFAULT_CIS_PACKING     0
 #define DEFAULT_CIS_FRAMING     0
-#define DEFAULT_CIS_COUNT       CONFIG_BT_ISO_MAX_CHAN
+#define DEFAULT_CIS_COUNT       1U
 #define DEFAULT_CIS_SEC_LEVEL   BT_SECURITY_L1
+
+#if defined(CONFIG_BT_ISO_ADVANCED)
+#define DEFAULT_CIS_NSE          BT_ISO_NSE_MIN
+#define DEFAULT_CIS_BN           BT_ISO_BN_MIN
+#define DEFAULT_CIS_PDU_SIZE     CONFIG_BT_ISO_TX_MTU
+#define DEFAULT_CIS_FT           BT_ISO_FT_MIN
+#define DEFAULT_CIS_ISO_INTERVAL DEFAULT_CIS_INTERVAL_US / 1250U /* N * 1.25 ms */
+#endif /* CONFIG_BT_ISO_ADVANCED */
 
 #define BUFFERS_ENQUEUED 2 /* Number of buffers enqueue for each channel */
 
@@ -83,17 +91,28 @@ static struct bt_iso_chan_io_qos iso_tx_qos = {
 	.sdu = DEFAULT_CIS_SDU_SIZE, /* bytes */
 	.rtn = DEFAULT_CIS_RTN,
 	.phy = DEFAULT_CIS_PHY,
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	.max_pdu = DEFAULT_CIS_PDU_SIZE,
+	.burst_number = DEFAULT_CIS_BN,
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 static struct bt_iso_chan_io_qos iso_rx_qos = {
 	.sdu = DEFAULT_CIS_SDU_SIZE, /* bytes */
 	.rtn = DEFAULT_CIS_RTN,
 	.phy = DEFAULT_CIS_PHY,
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	.max_pdu = DEFAULT_CIS_PDU_SIZE,
+	.burst_number = DEFAULT_CIS_BN,
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 static struct bt_iso_chan_qos iso_qos = {
 	.tx = &iso_tx_qos,
 	.rx = &iso_rx_qos,
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	.num_subevents = DEFAULT_CIS_NSE,
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 static struct bt_iso_cig_param cig_create_param = {
@@ -103,7 +122,12 @@ static struct bt_iso_cig_param cig_create_param = {
 	.packing = DEFAULT_CIS_PACKING,
 	.framing = DEFAULT_CIS_FRAMING,
 	.cis_channels = cis,
-	.num_cis = DEFAULT_CIS_COUNT
+	.num_cis = DEFAULT_CIS_COUNT,
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	.c_to_p_ft = DEFAULT_CIS_FT,
+	.p_to_c_ft = DEFAULT_CIS_FT,
+	.iso_interval = DEFAULT_CIS_ISO_INTERVAL,
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 static enum benchmark_role device_role_select(void)
@@ -608,6 +632,154 @@ static int parse_sdu_arg(struct bt_iso_chan_io_qos *qos)
 	return (int)sdu;
 }
 
+#if defined(CONFIG_BT_ISO_ADVANCED)
+static int parse_c_to_p_ft_arg(void)
+{
+	char buffer[4];
+	size_t char_count;
+	uint64_t c_to_p_ft;
+
+	printk("Set central to peripheral flush timeout (current %u, default %u)\n",
+	       cig_create_param.c_to_p_ft, DEFAULT_CIS_FT);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_CIS_FT;
+	}
+
+	c_to_p_ft = strtoul(buffer, NULL, 0);
+	if (!IN_RANGE(c_to_p_ft, BT_ISO_FT_MIN, BT_ISO_FT_MAX)) {
+		printk("Invalid central to peripheral flush timeout %llu",
+		       c_to_p_ft);
+
+		return -EINVAL;
+	}
+
+	return (int)c_to_p_ft;
+}
+
+static int parse_p_to_c_ft_arg(void)
+{
+	char buffer[4];
+	size_t char_count;
+	uint64_t p_to_c_ft;
+
+	printk("Set peripheral to central flush timeout (current %u, default %u)\n",
+	       cig_create_param.p_to_c_ft, DEFAULT_CIS_FT);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_CIS_FT;
+	}
+
+	p_to_c_ft = strtoul(buffer, NULL, 0);
+	if (!IN_RANGE(p_to_c_ft, BT_ISO_FT_MIN, BT_ISO_FT_MAX)) {
+		printk("Invalid peripheral to central flush timeout %llu",
+		       p_to_c_ft);
+
+		return -EINVAL;
+	}
+
+	return (int)p_to_c_ft;
+}
+
+static int parse_iso_interval_arg(void)
+{
+	char buffer[8];
+	size_t char_count;
+	uint64_t iso_interval;
+
+	printk("Set ISO interval (current %u, default %u)\n",
+	       cig_create_param.iso_interval, DEFAULT_CIS_ISO_INTERVAL);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_CIS_ISO_INTERVAL;
+	}
+
+	iso_interval = strtoul(buffer, NULL, 0);
+	if (IN_RANGE(iso_interval, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX)) {
+		printk("Invalid ISO interval %llu", iso_interval);
+
+		return -EINVAL;
+	}
+
+	return (int)iso_interval;
+}
+
+static int parse_nse_arg(struct bt_iso_chan_qos *qos)
+{
+	char buffer[4];
+	size_t char_count;
+	uint64_t nse;
+
+	printk("Set number of subevents (current %u, default %u)\n",
+	       qos->num_subevents, DEFAULT_CIS_NSE);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_CIS_NSE;
+	}
+
+	nse = strtoul(buffer, NULL, 0);
+	if (IN_RANGE(nse, BT_ISO_NSE_MIN, BT_ISO_NSE_MAX)) {
+		printk("Invalid number of subevents %llu", nse);
+
+		return -EINVAL;
+	}
+
+	return (int)nse;
+}
+
+static int parse_pdu_arg(const struct bt_iso_chan_io_qos *qos)
+{
+	char buffer[6];
+	size_t char_count;
+	uint64_t pdu;
+
+	printk("Set PDU (current %u, default %u)\n",
+	       qos->max_pdu, DEFAULT_CIS_PDU_SIZE);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_CIS_PDU_SIZE;
+	}
+
+	pdu = strtoul(buffer, NULL, 0);
+	if (pdu > BT_ISO_PDU_MAX) {
+		printk("Invalid PDU %llu", pdu);
+
+		return -EINVAL;
+	}
+
+	return (int)pdu;
+}
+
+static int parse_bn_arg(const struct bt_iso_chan_io_qos *qos)
+{
+	char buffer[4];
+	size_t char_count;
+	uint64_t bn;
+
+	printk("Set burst number (current %u, default %u)\n",
+	       qos->burst_number, DEFAULT_CIS_BN);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_CIS_PDU_SIZE;
+	}
+
+	bn = strtoul(buffer, NULL, 0);
+	if (!IN_RANGE(bn, BT_ISO_BN_MIN, BT_ISO_BN_MAX)) {
+		printk("Invalid burst number %llu", bn);
+
+		return -EINVAL;
+	}
+
+	return (int)bn;
+}
+#endif /* CONFIG_BT_ISO_ADVANCED */
+
 static int parse_cis_count_arg(void)
 {
 	char buffer[4];
@@ -636,6 +808,12 @@ static int parse_cig_args(void)
 	int interval;
 	int latency;
 	int cis_count;
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	int c_to_p_ft;
+	int p_to_c_ft;
+	int iso_interval;
+	int num_subevents;
+#endif /* CONFIG_BT_ISO_ADVANCED */
 
 	printk("Follow the prompts. Press enter to use default values.\n");
 
@@ -654,9 +832,37 @@ static int parse_cig_args(void)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	c_to_p_ft = parse_c_to_p_ft_arg();
+	if (c_to_p_ft < 0) {
+		return -EINVAL;
+	}
+
+	p_to_c_ft = parse_p_to_c_ft_arg();
+	if (p_to_c_ft < 0) {
+		return -EINVAL;
+	}
+
+	iso_interval = parse_iso_interval_arg();
+	if (iso_interval < 0) {
+		return -EINVAL;
+	}
+
+	num_subevents = parse_nse_arg(&iso_qos);
+	if (num_subevents < 0) {
+		return -EINVAL;
+	}
+#endif /* CONFIG_BT_ISO_ADVANCED */
+
 	cig_create_param.interval = interval;
 	cig_create_param.latency = latency;
 	cig_create_param.num_cis = cis_count;
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	cig_create_param.c_to_p_ft = c_to_p_ft;
+	cig_create_param.p_to_c_ft = p_to_c_ft;
+	cig_create_param.iso_interval = iso_interval;
+	iso_qos.num_subevents = num_subevents;
+#endif /* CONFIG_BT_ISO_ADVANCED */
 
 	return 0;
 }
@@ -666,6 +872,10 @@ static int parse_cis_args(struct bt_iso_chan_io_qos *qos)
 	int rtn;
 	int phy;
 	int sdu;
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	int max_pdu;
+	int burst_number;
+#endif /* CONFIG_BT_ISO_ADVANCED */
 
 	printk("Follow the prompts. Press enter to use default values.\n");
 
@@ -684,9 +894,25 @@ static int parse_cis_args(struct bt_iso_chan_io_qos *qos)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	max_pdu = parse_pdu_arg(qos);
+	if (max_pdu < 0) {
+		return -EINVAL;
+	}
+
+	burst_number = parse_bn_arg(qos);
+	if (burst_number < 0) {
+		return -EINVAL;
+	}
+#endif /* CONFIG_BT_ISO_ADVANCED */
+
 	qos->rtn = rtn;
 	qos->phy = phy;
 	qos->sdu = sdu;
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	qos->max_pdu = max_pdu;
+	qos->burst_number = burst_number;
+#endif /* CONFIG_BT_ISO_ADVANCED */
 
 	return 0;
 }
