@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_offload.h>
+#include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket_offload.h>
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
@@ -2103,8 +2104,8 @@ static void modem_net_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, offload_socket);
 }
 
-static struct net_if_api api_funcs = {
-	.init = modem_net_iface_init,
+static struct offloaded_if_api api_funcs = {
+	.iface_api.init = modem_net_iface_init,
 };
 
 static const struct modem_cmd response_cmds[] = {

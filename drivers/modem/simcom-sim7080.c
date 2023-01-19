@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT simcom_sim7080
 
 #include <zephyr/logging/log.h>
+#include <zephyr/net/offloaded_netdev.h>
 LOG_MODULE_REGISTER(modem_simcom_sim7080, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/drivers/modem/simcom-sim7080.h>
@@ -760,8 +761,8 @@ const struct socket_dns_offload offload_dns_ops = {
 	.freeaddrinfo = offload_freeaddrinfo,
 };
 
-static struct net_if_api api_funcs = {
-	.init = modem_net_iface_init,
+static struct offloaded_if_api api_funcs = {
+	.iface_api.init = modem_net_iface_init,
 };
 
 static bool offload_is_supported(int family, int type, int proto)

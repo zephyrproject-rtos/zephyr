@@ -4187,10 +4187,6 @@ int net_if_up(struct net_if *iface)
 		goto out;
 	}
 
-	if (is_iface_offloaded(iface)) {
-		goto done;
-	}
-
 	/* If the L2 does not support enable just set the flag */
 	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {
 		goto done;
@@ -4230,10 +4226,6 @@ int net_if_down(struct net_if *iface)
 
 	leave_mcast_all(iface);
 	leave_ipv4_mcast_all(iface);
-
-	if (is_iface_offloaded(iface)) {
-		goto done;
-	}
 
 	/* If the L2 does not support enable just clear the flag */
 	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {

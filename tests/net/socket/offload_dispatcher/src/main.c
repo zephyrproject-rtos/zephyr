@@ -8,6 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket.h>
 #include <sockets_internal.h>
 #include <zephyr/sys/fdtable.h>
@@ -306,8 +307,8 @@ static void offloaded_1_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, offload_1_socket);
 }
 
-static struct net_if_api offloaded_1_if_api = {
-	.init = offloaded_1_iface_init,
+static struct offloaded_if_api offloaded_1_if_api = {
+	.iface_api.init = offloaded_1_iface_init,
 };
 
 NET_DEVICE_OFFLOAD_INIT(offloaded_1, "offloaded_1", offloaded_1_init, NULL,
@@ -376,8 +377,8 @@ static void offloaded_2_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, offload_2_socket);
 }
 
-static struct net_if_api offloaded_2_if_api = {
-	.init = offloaded_2_iface_init,
+static struct offloaded_if_api offloaded_2_if_api = {
+	.iface_api.init = offloaded_2_iface_init,
 };
 
 NET_DEVICE_OFFLOAD_INIT(offloaded_2, "offloaded_2", offloaded_2_init, NULL,

@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_offload.h>
+#include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/net_pkt.h>
 #if defined(CONFIG_NET_IPV6)
 #include "ipv6.h"
@@ -1773,8 +1774,8 @@ static void offload_iface_init(struct net_if *iface)
 	ctx->iface = iface;
 }
 
-static struct net_if_api api_funcs = {
-	.init	= offload_iface_init,
+static struct offloaded_if_api api_funcs = {
+	.iface_api.init = offload_iface_init,
 };
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, wncm14a2a_init, NULL,
