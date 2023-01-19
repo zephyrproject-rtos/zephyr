@@ -443,4 +443,105 @@
 			syscon = <&tts>;
 		};
 	};
+
+	hdas {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		hda0: hda@0 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0>;
+		};
+		hda1: hda@1 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <1>;
+		};
+		hda2: hda@2 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <2>;
+		};
+		hda3: hda@3 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <3>;
+		};
+		hda4: hda@4 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <4>;
+		};
+		hda5: hda@5 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <5>;
+		};
+		hda6: hda@6 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <6>;
+		};
+		hda7: hda@7 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <7>;
+		};
+		hda8: hda@8 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <8>;
+		};
+		hda9: hda@9 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <9>;
+		};
+		hda10: hda@a {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0a>;
+		};
+		hda11: hda@b {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0b>;
+		};
+		hda12: hda@c {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0c>;
+		};
+		hda13: hda@d {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0d>;
+		};
+		hda14: hda@e {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0e>;
+		};
+		hda15: hda@f {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0f>;
+		};
+		hda16: hda@10 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x10>;
+		};
+		hda17: hda@11 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x11>;
+		};
+		hda18: hda@12 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x12>;
+		};
+	};
 };
