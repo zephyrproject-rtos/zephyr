@@ -1344,49 +1344,28 @@ void gsm_ppp_set_ring_indicator(const struct device *dev,
 	}
 }
 
+static const struct setup_cmd sms_configure_cmds[] = {
+	SETUP_CMD_NOHANDLE("AT+CMGF=1"),
+	SETUP_CMD_NOHANDLE("AT+CNMI=2,1"),
+	SETUP_CMD_NOHANDLE("AT+CSCS=\"IRA\""),
+	SETUP_CMD_NOHANDLE("AT+CREG=2"),
+	SETUP_CMD_NOHANDLE("AT+QRIR"),
+};
+
 void gsm_ppp_configure_sms_reception(const struct device *dev)
 {
 	struct gsm_modem *gsm = dev->data;
 	int ret;
 
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CMGF=1",
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
+						  &gsm->context.cmd_handler,
+						  sms_configure_cmds,
+						  ARRAY_SIZE(sms_configure_cmds),
+						  &gsm->sem_response,
+						  GSM_CMD_SETUP_TIMEOUT);
 
 	if (ret < 0) {
-		LOG_DBG("Could not set SMS message format");
-	}
-
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CNMI=2,1",
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
-
-	if (ret < 0) {
-		LOG_DBG("Could not set SMS event reporting configuration");
-	}
-
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CSCS=\"IRA\"",
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
-
-	if (ret < 0) {
-		LOG_DBG("Could not set SMS character set");
-	}
-
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CREG=2",
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
-
-	if (ret < 0) {
-		LOG_DBG("Could not set network registration setting");
-	}
-
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+QRIR",
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
-
-	if (ret < 0) {
-		LOG_DBG("Could not clear any pending ring indicators");
+		LOG_DBG("Could not set SMS configuration");
 	}
 }
 
