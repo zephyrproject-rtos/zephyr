@@ -1285,6 +1285,67 @@ const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev)
 	return &gsm->minfo;
 }
 
+char * gsm_ppp_get_ring_indicator_behaviour_text(enum ring_indicator_behaviour ring)
+{
+	switch (ring) {
+		case OFF:
+			return "off";
+		case PULSE:
+			return "pulse";
+		case ALWAYS:
+			return "always";
+		case AUTO:
+			return "auto";
+		case WAVE:
+			return "wave";
+		default:
+			LOG_WRN("Unknown ring indicator type");
+			return "";
+	}
+}
+
+int gsm_ppp_set_ring_indicator(const struct device *dev,
+					   enum ring_indicator_behaviour ring,
+					   enum ring_indicator_behaviour other,
+					   enum ring_indicator_behaviour sms)
+{
+	struct gsm_modem *gsm = dev->data;
+	int ret;
+	char cmd_buffer[64];
+
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+QCFG=\"urc/ri/ring\",\"%s\"",
+		gsm_ppp_get_ring_indicator_behaviour_text(ring));
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("No answer to extended ring configuration setting");
+	}
+
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+QCFG=\"urc/ri/other\",\"%s\"",
+		gsm_ppp_get_ring_indicator_behaviour_text(other));
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("No answer to extended other ring configuration setting");
+	}
+
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+QCFG=\"urc/ri/smsincoming\",\"%s\"",
+		gsm_ppp_get_ring_indicator_behaviour_text(sms));
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("No answer to extended sms ring configuration setting");
+	}
+
+	return 1;
+}
+
 static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 			  uint32_t mgmt_event, struct net_if *iface)
 {

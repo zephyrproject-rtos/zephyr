@@ -30,6 +30,14 @@ struct gsm_ppp_modem_info {
 	int  mdm_rssi;
 };
 
+enum ring_indicator_behaviour {
+	OFF,
+	PULSE,
+	ALWAYS,
+	AUTO,
+	WAVE,
+};
+
 /** @cond INTERNAL_HIDDEN */
 struct device;
 typedef void (*gsm_modem_power_cb)(const struct device *, void *);
@@ -62,6 +70,11 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
  * @retval struct gsm_ppp_modem_info * pointer to modem information structure.
  */
 const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev);
+
+int gsm_ppp_set_ring_indicator(const struct device *dev,
+					   enum ring_indicator_behaviour ring,
+					   enum ring_indicator_behaviour other,
+					   enum ring_indicator_behaviour sms);
 
 #ifdef __cplusplus
 }
