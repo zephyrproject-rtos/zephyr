@@ -1304,10 +1304,10 @@ char * gsm_ppp_get_ring_indicator_behaviour_text(enum ring_indicator_behaviour r
 	}
 }
 
-int gsm_ppp_set_ring_indicator(const struct device *dev,
+void gsm_ppp_set_ring_indicator(const struct device *dev,
 					   enum ring_indicator_behaviour ring,
-					   enum ring_indicator_behaviour other,
-					   enum ring_indicator_behaviour sms)
+					   enum ring_indicator_behaviour sms,
+					   enum ring_indicator_behaviour other)
 {
 	struct gsm_modem *gsm = dev->data;
 	int ret;
@@ -1320,17 +1320,7 @@ int gsm_ppp_set_ring_indicator(const struct device *dev,
 		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
 	if (ret < 0) {
-		LOG_DBG("No answer to extended ring configuration setting");
-	}
-
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+QCFG=\"urc/ri/other\",\"%s\"",
-		gsm_ppp_get_ring_indicator_behaviour_text(other));
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
-
-	if (ret < 0) {
-		LOG_DBG("No answer to extended other ring configuration setting");
+		LOG_DBG("Could not set ring indicator setting");
 	}
 
 	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+QCFG=\"urc/ri/smsincoming\",\"%s\"",
@@ -1340,10 +1330,78 @@ int gsm_ppp_set_ring_indicator(const struct device *dev,
 		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
 	if (ret < 0) {
-		LOG_DBG("No answer to extended sms ring configuration setting");
+		LOG_DBG("Could not set ring indicator setting for sms");
 	}
 
-	return 1;
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+QCFG=\"urc/ri/other\",\"%s\"",
+		gsm_ppp_get_ring_indicator_behaviour_text(other));
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("Could not set ring indicator setting");
+	}
+}
+
+void gsm_ppp_configure_sms_reception(const struct device *dev)
+{
+	struct gsm_modem *gsm = dev->data;
+	int ret;
+
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CMGF=1",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("Could not set SMS message format");
+	}
+
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CNMI=2,1",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("Could not set SMS event reporting configuration");
+	}
+
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CSCS=\"IRA\"",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("Could not set SMS character set");
+	}
+
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CREG=2",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("Could not set network registration setting");
+	}
+
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+QRIR",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("Could not clear any pending ring indicators");
+	}
+}
+
+void gsm_ppp_read_sms(const struct device *dev)
+{
+	struct gsm_modem *gsm = dev->data;
+	int ret;
+
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CMGL=\"REC UNREAD\"",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("No answer from reading sms messages");
+	}
 }
 
 static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,

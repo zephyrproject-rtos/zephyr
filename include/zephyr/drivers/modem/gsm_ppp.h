@@ -71,10 +71,32 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
  */
 const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev);
 
-int gsm_ppp_set_ring_indicator(const struct device *dev,
+/**
+ * @brief Set modem ring indicator behaviour.
+ *
+ * @param dev: GSM modem device.
+ * @param ring: Ring indicator behaviour when ring is presented.
+ * @param sms: Ring indicator behaviour when SMS is presented.
+ * @param other: Ring indicator behaviour when other is presented.
+ */
+void gsm_ppp_set_ring_indicator(const struct device *dev,
 					   enum ring_indicator_behaviour ring,
-					   enum ring_indicator_behaviour other,
-					   enum ring_indicator_behaviour sms);
+					   enum ring_indicator_behaviour sms,
+					   enum ring_indicator_behaviour other);
+
+/**
+ * @brief Configure modem for receiving SMS messages.
+ *
+ * @param dev: GSM modem device.
+ */
+void gsm_ppp_configure_sms_reception(const struct device *dev);
+
+/**
+ * @brief Read a SMS message from the modem.
+ *
+ * @param dev: GSM modem device.
+ */
+void gsm_ppp_read_sms(const struct device *dev);
 
 #ifdef __cplusplus
 }
