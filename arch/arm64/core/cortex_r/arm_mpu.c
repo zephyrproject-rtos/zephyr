@@ -449,8 +449,9 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 					     partition->start,
 					     partition->size,
 					     &partition->attr);
-			CHECKIF(ret2 != 0) {
+			CHECKIF(ret2 < 0) {
 				ret = ret2;
+				goto out;
 			}
 
 			region_num = (uint8_t)ret2;
@@ -466,8 +467,9 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 				     thread->stack_info.start,
 				     thread->stack_info.size,
 				     &K_MEM_PARTITION_P_RW_U_RW);
-		CHECKIF(ret2 != 0) {
+		CHECKIF(ret2 < 0) {
 			ret = ret2;
+			goto out;
 		}
 
 		region_num = (uint8_t)ret2;
