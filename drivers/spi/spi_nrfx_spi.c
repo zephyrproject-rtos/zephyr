@@ -152,6 +152,19 @@ static int configure(const struct device *dev,
 	return 0;
 }
 
+static void finish_transaction(const struct device *dev, int error)
+{
+	struct spi_nrfx_data *dev_data = dev->data;
+	struct spi_context *ctx = &dev_data->ctx;
+
+	spi_context_cs_control(ctx, false);
+
+	LOG_DBG("Transaction finished with status %d", error);
+
+	spi_context_complete(ctx, dev, error);
+	dev_data->busy = false;
+}
+
 static void transfer_next_chunk(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
@@ -179,12 +192,7 @@ static void transfer_next_chunk(const struct device *dev)
 		error = -EIO;
 	}
 
-	spi_context_cs_control(ctx, false);
-
-	LOG_DBG("Transaction finished with status %d", error);
-
-	spi_context_complete(ctx, dev, error);
-	dev_data->busy = false;
+	finish_transaction(dev, error);
 }
 
 static void event_handler(const nrfx_spi_evt_t *p_event, void *p_context)
@@ -192,6 +200,14 @@ static void event_handler(const nrfx_spi_evt_t *p_event, void *p_context)
 	struct spi_nrfx_data *dev_data = p_context;
 
 	if (p_event->type == NRFX_SPI_EVENT_DONE) {
+		/* Chunk length is set to 0 when a transaction is aborted
+		 * due to a timeout.
+		 */
+		if (dev_data->chunk_len == 0) {
+			finish_transaction(dev_data->dev, -ETIMEDOUT);
+			return;
+		}
+
 		spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
 		spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
 
@@ -208,6 +224,7 @@ static int transceive(const struct device *dev,
 		      void *userdata)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	int error;
 
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
@@ -222,6 +239,27 @@ static int transceive(const struct device *dev,
 		transfer_next_chunk(dev);
 
 		error = spi_context_wait_for_completion(&dev_data->ctx);
+		if (error == -ETIMEDOUT) {
+			/* Set the chunk length to 0 so that event_handler()
+			 * knows that the transaction timed out and is to be
+			 * aborted.
+			 */
+			dev_data->chunk_len = 0;
+			/* Abort the current transfer by deinitializing
+			 * the nrfx driver.
+			 */
+			nrfx_spi_uninit(&dev_config->spi);
+			dev_data->initialized = false;
+
+			/* Make sure the transaction is finished (it may be
+			 * already finished if it actually did complete before
+			 * the nrfx driver was deinitialized).
+			 */
+			finish_transaction(dev, -ETIMEDOUT);
+
+			/* Clean up the driver state. */
+			k_sem_reset(&dev_data->ctx.sync);
+		}
 	}
 
 	spi_context_release(&dev_data->ctx, error);
