@@ -205,12 +205,15 @@ void arch_sched_ipi(void)
 void mem_cfg_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
+	unsigned int key = arch_irq_lock();
 
 	/*
 	 * Make sure a domain switch by another CPU is effective on this CPU.
 	 * This is a no-op if the page table is already the right one.
+	 * Lock irq to prevent the interrupt during mem region switch.
 	 */
 	z_arm64_swap_mem_domains(_current);
+	arch_irq_unlock(key);
 }
 
 void z_arm64_mem_cfg_ipi(void)
