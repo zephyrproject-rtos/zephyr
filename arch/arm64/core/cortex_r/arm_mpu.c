@@ -222,6 +222,28 @@ struct dynamic_region_info {
 static struct dynamic_region_info sys_dyn_regions[MPU_DYNAMIC_REGION_AREAS_NUM];
 static int sys_dyn_regions_num;
 
+static void arm_core_mpu_background_region_enable(void)
+{
+	uint64_t val;
+
+	val = read_sctlr_el1();
+	val |= SCTLR_BR_BIT;
+	write_sctlr_el1(val);
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+}
+
+static void arm_core_mpu_background_region_disable(void)
+{
+	uint64_t val;
+
+	val = read_sctlr_el1();
+	val &= ~SCTLR_BR_BIT;
+	write_sctlr_el1(val);
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+}
+
 static int dynamic_areas_init(uintptr_t start, size_t size)
 {
 	const struct arm_mpu_region *region;
@@ -474,9 +496,9 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 		region_num = (uint8_t)ret2;
 	}
 
-	arm_core_mpu_disable();
+	arm_core_mpu_background_region_enable();
 	ret = flush_dynamic_regions_to_mpu(dyn_regions, region_num);
-	arm_core_mpu_enable();
+	arm_core_mpu_background_region_disable();
 
 out:
 	return ret;
