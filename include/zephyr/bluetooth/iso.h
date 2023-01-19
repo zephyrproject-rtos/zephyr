@@ -49,6 +49,10 @@ extern "C" {
 #define BT_ISO_SDU_INTERVAL_MIN     0x0000FFU
 /** Maximum interval value in microseconds */
 #define BT_ISO_SDU_INTERVAL_MAX     0x0FFFFFU
+/** Minimum ISO interval (N * 1.25 ms) */
+#define BT_ISO_ISO_INTERVAL_MIN     0x0004U
+/** Maximum ISO interval (N * 1.25 ms) */
+#define BT_ISO_ISO_INTERVAL_MAX     0x0C80U
 /** Minimum latency value in milliseconds */
 #define BT_ISO_LATENCY_MIN          0x0005
 /** Maximum latency value in milliseconds */
@@ -63,8 +67,28 @@ extern "C" {
 #define BT_ISO_FRAMING_FRAMED       0x01
 /** Maximum number of isochronous channels in a single group */
 #define BT_ISO_MAX_GROUP_ISO_COUNT  0x1F
+/** Minimum SDU size */
+#define BT_ISO_MIN_SDU              0x0001
 /** Maximum SDU size */
 #define BT_ISO_MAX_SDU              0x0FFF
+/** Minimum PDU size */
+#define BT_ISO_CONNECTED_PDU_MIN    0x0000U
+/** Minimum PDU size */
+#define BT_ISO_BROADCAST_PDU_MIN    0x0001U
+/** Maximum PDU size */
+#define BT_ISO_PDU_MAX              0x00FBU
+/** Minimum burst number */
+#define BT_ISO_BN_MIN               0x01U
+/** Maximum burst number */
+#define BT_ISO_BN_MAX               0x0FU
+/** Minimum flush timeout */
+#define BT_ISO_FT_MIN               0x01U
+/** Maximum flush timeout */
+#define BT_ISO_FT_MAX               0xFFU
+/** Minimum number of subevents */
+#define BT_ISO_NSE_MIN              0x01U
+/** Maximum number of subevents */
+#define BT_ISO_NSE_MAX              0x1FU
 /** Minimum BIG sync timeout value (N * 10 ms) */
 #define BT_ISO_SYNC_TIMEOUT_MIN     0x000A
 /** Maximum BIG sync timeout value (N * 10 ms) */
@@ -154,7 +178,10 @@ struct bt_iso_chan_io_qos {
 	 *  Setting BT_GAP_LE_PHY_NONE is invalid.
 	 */
 	uint8_t				phy;
-	/** Channel Retransmission Number. */
+	/** @brief Channel Retransmission Number.
+	 *
+	 * This value is ignored if any advanced ISO parameters are set.
+	 */
 	uint8_t				rtn;
 	/** @brief Channel data path reference
 	 *
@@ -162,6 +189,27 @@ struct bt_iso_chan_io_qos {
 	 *  to BT_ISO_DATA_PATH_HCI).
 	 */
 	struct bt_iso_chan_path		*path;
+
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	/** @brief Maximum PDU size
+	 *
+	 *  Maximum size, in octets, of the payload from link layer to link
+	 *  layer.
+	 *
+	 *  Value range @ref BT_ISO_CONNECTED_PDU_MIN to @ref BT_ISO_PDU_MAX for
+	 *  connected ISO.
+	 *
+	 *  Value range @ref BT_ISO_BROADCAST_PDU_MIN to @ref BT_ISO_PDU_MAX for
+	 *  broadcast ISO.
+	 */
+	uint16_t max_pdu;
+
+	/** @brief Burst number
+	 *
+	 *  Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
+	 */
+	uint8_t burst_number;
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 /** @brief ISO Channel QoS structure. */
@@ -182,6 +230,16 @@ struct bt_iso_chan_qos {
 	 *  isochronous transmitter.
 	 */
 	struct bt_iso_chan_io_qos	*tx;
+
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	/** @brief Number of subevents
+	 *
+	 *  Maximum number of subevents in each CIS or BIS event.
+	 *
+	 *  Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
+	 */
+	uint8_t num_subevents;
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 /** @brief ISO Channel Data Path structure. */
@@ -276,6 +334,8 @@ struct bt_iso_cig_param {
 	/** @brief Channel Latency in ms.
 	 *
 	 *  Value range BT_ISO_LATENCY_MIN - BT_ISO_LATENCY_MAX.
+	 *
+	 *  This value is ignored if any advanced ISO parameters are set.
 	 */
 	uint16_t latency;
 
@@ -300,6 +360,36 @@ struct bt_iso_cig_param {
 	 * BT_ISO_FRAMING_FRAMED for framed.
 	 */
 	uint8_t framing;
+
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	/** @brief Central to Peripheral flush timeout
+	 *
+	 *  The flush timeout in multiples of ISO_Interval for each payload sent
+	 *  from the Central to Peripheral.
+	 *
+	 *  Value range from @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX
+	 */
+	uint8_t c_to_p_ft;
+
+	/** @brief Peripheral to Central flush timeout
+	 *
+	 *  The flush timeout in multiples of ISO_Interval for each payload sent
+	 *  from the Peripheral to Central.
+	 *
+	 *  Value range from @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX.
+	 */
+	uint8_t p_to_c_ft;
+
+	/** @brief ISO interval
+	 *
+	 *  Time between consecutive CIS anchor points.
+	 *
+	 *  Value range from @ref BT_ISO_ISO_INTERVAL_MIN to
+	 *  @ref BT_ISO_ISO_INTERVAL_MAX.
+	 */
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_ADVANCED */
+
 };
 
 /** ISO connection parameters structure */
