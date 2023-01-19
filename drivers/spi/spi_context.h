@@ -129,6 +129,9 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 #endif /* CONFIG_SPI_ASYNC */
 }
 
+static inline size_t spi_context_total_tx_len(struct spi_context *ctx);
+static inline size_t spi_context_total_rx_len(struct spi_context *ctx);
+
 static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 {
 	int status = 0;
@@ -141,9 +144,11 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 	if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(ctx)) {
 		timeout = K_FOREVER;
 	} else {
+		uint32_t tx_len = spi_context_total_tx_len(ctx);
+		uint32_t rx_len = spi_context_total_rx_len(ctx);
 		uint32_t timeout_ms;
 
-		timeout_ms = MAX(ctx->tx_len, ctx->rx_len) * 8 * 1000 /
+		timeout_ms = MAX(tx_len, rx_len) * 8 * 1000 /
 			     ctx->config->frequency;
 		timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
 
