@@ -214,9 +214,7 @@ struct qspi_cmd {
 static int qspi_nor_write_protection_set(const struct device *dev,
 					 bool write_protect);
 
-#ifdef CONFIG_PM_DEVICE
 static int exit_dpd(const struct device *const dev);
-#endif
 
 /**
  * @brief Test whether offset is aligned.
@@ -702,18 +700,21 @@ static int qspi_nrfx_configure(const struct device *dev)
 	}
 #endif
 
-#ifdef CONFIG_PM_DEVICE
 	/* It may happen that after the flash chip was previously put into
 	 * the DPD mode, the system was reset but the flash chip was not.
 	 * Consequently, the flash chip can be in the DPD mode at this point.
 	 * Some flash chips will just exit the DPD mode on the first CS pulse,
 	 * but some need to receive the dedicated command to do it, so send it.
+	 * This can be the case even if the current image does not have
+	 * CONFIG_PM_DEVICE set to enter DPD mode, as a previously executing image
+	 * (for example the main image if the currently executing image is the
+	 * bootloader) might have set DPD mode before reboot. As a result,
+	 * attempt to exit DPD mode regardless of whether CONFIG_PM_DEVICE is set.
 	 */
 	ret = exit_dpd(dev);
 	if (ret < 0) {
 		return ret;
 	}
-#endif
 
 	/* Set QE to match transfer mode.  If not using quad
 	 * it's OK to leave QE set, but doing so prevents use
@@ -1287,6 +1288,7 @@ static int enter_dpd(const struct device *const dev)
 
 	return 0;
 }
+#endif /* CONFIG_PM_DEVICE */
 
 static int exit_dpd(const struct device *const dev)
 {
@@ -1313,6 +1315,7 @@ static int exit_dpd(const struct device *const dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
 static int qspi_nor_pm_action(const struct device *dev,
 			      enum pm_device_action action)
 {
