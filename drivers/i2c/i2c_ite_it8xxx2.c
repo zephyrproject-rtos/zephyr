@@ -735,6 +735,22 @@ bool __soc_ram_code fifo_mode_allowed(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_I2C_SHELL
+void __soc_ram_code i2c_scan_transaction_detect(const struct device *dev,
+						struct i2c_msg *msgs)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+
+	if (data->num_msgs == 1 && (msgs[0].len == 0) &&
+	    ((msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) &&
+	    (msgs[0].flags & I2C_MSG_STOP)) {
+		/* Introduce the use of I2C read transfer for I2C scan test. */
+		msgs[0].flags |= I2C_MSG_READ;
+		msgs[0].len = 1;
+	}
+}
+#endif
+
 int __soc_ram_code i2c_tran_read(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
@@ -955,6 +971,18 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 		start_msg->flags |= I2C_MSG_START;
 	}
+#ifdef CONFIG_I2C_SHELL
+	/*
+	 * The I2C scan test in the i2c_shell.c uses I2C write format without
+	 * data. But one byte must be written in the I2C write transfer flow of
+	 * I2C port 0/1/2, which will cause some connected target device to
+	 * return NACK due to the wrong value written.
+	 *
+	 * When we detect that scan command is in write format and without data,
+	 * we will change it to read format with one byte data.
+	 */
+	i2c_scan_transaction_detect(dev, msgs);
+#endif
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
 	/* Store num_msgs to data struct. */
 	data->num_msgs = num_msgs;
