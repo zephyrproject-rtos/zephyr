@@ -1096,8 +1096,8 @@ static void modem_net_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, offload_socket);
 }
 
-static struct net_if_api api_funcs = {
-	.init = modem_net_iface_init,
+static struct offloaded_if_api api_funcs = {
+	.iface_api.init = modem_net_iface_init,
 };
 
 static bool offload_is_supported(int family, int type, int proto)
