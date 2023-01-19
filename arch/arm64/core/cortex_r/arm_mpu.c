@@ -18,10 +18,6 @@ LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
 #define MPU_DYNAMIC_REGION_AREAS_NUM	1
 
-#define _MAX_DYNAMIC_MPU_REGIONS_NUM                                                               \
-	((IS_ENABLED(CONFIG_USERSPACE) ? (CONFIG_MAX_DOMAIN_PARTITIONS + 1) : 0) +                 \
-	 (IS_ENABLED(CONFIG_MPU_STACK_GUARD) ? 1 : 0))
-
 #ifdef CONFIG_USERSPACE
 static int dynamic_areas_init(uintptr_t start, size_t size);
 #define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&_app_smem_start)
@@ -215,11 +211,6 @@ void z_arm64_mm_init(bool is_primary_core)
 
 #ifdef CONFIG_USERSPACE
 
-struct dynamic_region_info {
-	int index;
-	struct arm_mpu_region region_conf;
-};
-
 static struct dynamic_region_info sys_dyn_regions[MPU_DYNAMIC_REGION_AREAS_NUM];
 static int sys_dyn_regions_num;
 
@@ -392,6 +383,7 @@ static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 	int reg_avail_idx = static_regions_num;
 	int ret = 0;
 
+	arm_core_mpu_background_region_enable();
 	/*
 	 * Clean the dynamic regions
 	 */
@@ -426,19 +418,15 @@ static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 
 		region_init(region_idx, &(dyn_regions[i].region_conf));
 	}
+	arm_core_mpu_background_region_disable();
 
 	return ret;
 }
 
 static int configure_dynamic_mpu_regions(struct k_thread *thread)
 {
-	/*
-	 * Allocate double space for dyn_regions. Because when split
-	 * the background dynamic regions, it will cause double regions numbers
-	 * generated.
-	 */
-	struct dynamic_region_info dyn_regions[_MAX_DYNAMIC_MPU_REGIONS_NUM * 2];
-	const uint8_t max_region_num = ARRAY_SIZE(dyn_regions);
+	struct dynamic_region_info *dyn_regions = thread->arch.regions;
+	const uint8_t max_region_num = CONFIG_ARM_MPU_MAX_DYNAMIC_REGIONS - static_regions_num;
 	uint8_t region_num;
 	int ret = 0, ret2;
 
@@ -498,9 +486,11 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 		region_num = (uint8_t)ret2;
 	}
 
-	arm_core_mpu_background_region_enable();
-	ret = flush_dynamic_regions_to_mpu(dyn_regions, region_num);
-	arm_core_mpu_background_region_disable();
+	thread->arch.region_num = region_num;
+
+	if (thread == _current) {
+		ret = flush_dynamic_regions_to_mpu(dyn_regions, region_num);
+	}
 
 out:
 	return ret;
@@ -517,31 +507,47 @@ int arch_mem_domain_max_partitions_get(void)
 	return max_parts;
 }
 
-int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partition_id)
+static int configure_domain_partitions(struct k_mem_domain *domain)
 {
-	ARG_UNUSED(domain);
-	ARG_UNUSED(partition_id);
+	struct k_thread *thread;
+	int ret;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&domain->mem_domain_q, thread,
+				     mem_domain_info.mem_domain_q_node) {
+		ret = configure_dynamic_mpu_regions(thread);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#ifdef CONFIG_SMP
+	/* the thread could be running on another CPU right now */
+	z_arm64_mem_cfg_ipi();
+#endif
 
 	return 0;
 }
 
-int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t partition_id)
+int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partition_id)
 {
-	ARG_UNUSED(domain);
 	ARG_UNUSED(partition_id);
 
-	return 0;
+	return configure_domain_partitions(domain);
+}
+
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t partition_id)
+{
+	ARG_UNUSED(partition_id);
+
+	return configure_domain_partitions(domain);
 }
 
 int arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	int ret = 0;
 
-	if (thread == _current) {
-		ret = configure_dynamic_mpu_regions(thread);
-	}
+	ret = configure_dynamic_mpu_regions(thread);
 #ifdef CONFIG_SMP
-	else {
+	if (ret == 0 && thread != _current) {
 		/* the thread could be running on another CPU right now */
 		z_arm64_mem_cfg_ipi();
 	}
@@ -554,11 +560,9 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	int ret = 0;
 
-	if (thread == _current) {
-		ret = configure_dynamic_mpu_regions(thread);
-	}
+	ret = configure_dynamic_mpu_regions(thread);
 #ifdef CONFIG_SMP
-	else {
+	if (ret == 0 && thread != _current) {
 		/* the thread could be running on another CPU right now */
 		z_arm64_mem_cfg_ipi();
 	}
@@ -574,7 +578,11 @@ void z_arm64_thread_mem_domains_init(struct k_thread *thread)
 
 void z_arm64_swap_mem_domains(struct k_thread *thread)
 {
-	configure_dynamic_mpu_regions(thread);
+	if (thread->arch.region_num == 0) {
+		(void)flush_dynamic_regions_to_mpu(sys_dyn_regions, sys_dyn_regions_num);
+	} else {
+		(void)flush_dynamic_regions_to_mpu(thread->arch.regions, thread->arch.region_num);
+	}
 }
 
 #endif /* CONFIG_USERSPACE */

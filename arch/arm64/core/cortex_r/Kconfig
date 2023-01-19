@@ -41,6 +41,13 @@ config ARM_MPU
 	  of full partitioning the default behavior for the ARMv8-R MPU
 	  driver.
 
+config ARM_MPU_MAX_DYNAMIC_REGIONS
+	int
+	depends on ARM_MPU
+	default 32
+	help
+	  The max number of mpu dynamic regions that a thread supported.
+
 config ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 	int
 	default 64 if ARM_MPU
