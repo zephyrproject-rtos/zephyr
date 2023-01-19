@@ -384,7 +384,7 @@
 /drivers/sensor/qdec_stm32/               @valeriosetti
 /drivers/sensor/st*/                      @avisconti
 /drivers/serial/*b91*                     @andy-liu-telink
-/drivers/serial/uart_altera_jtag.c        @nashif
+/drivers/serial/uart_altera_jtag.c        @nashif @gohshunjing
 /drivers/serial/*ns16550*                 @dcpleung @nashif @jenmwms @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
