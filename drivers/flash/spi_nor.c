@@ -835,7 +835,7 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	return ret;
 }
 
-#if defined(CONFIG_FLASH_JESD216_API)
+#if defined(CONFIG_FLASH_JESD216_API) || defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
 static int spi_nor_sfdp_read(const struct device *dev, off_t addr,
 			     void *dest, size_t size)
@@ -849,7 +849,7 @@ static int spi_nor_sfdp_read(const struct device *dev, off_t addr,
 	return ret;
 }
 
-#endif /* CONFIG_FLASH_JESD216_API */
+#endif /* CONFIG_FLASH_JESD216_API || CONFIG_SPI_NOR_SFDP_RUNTIME */
 
 static int spi_nor_read_jedec_id(const struct device *dev,
 				 uint8_t *id)
