@@ -32,13 +32,9 @@ void serial_cb(const struct device *dev, void *user_data)
 {
 	uint8_t c;
 
-	if (!uart_irq_update(uart_dev)) {
-		return;
-	}
+	while (uart_irq_update(dev) && uart_irq_rx_ready(dev)) {
 
-	while (uart_irq_rx_ready(uart_dev)) {
-
-		uart_fifo_read(uart_dev, &c, 1);
+		uart_fifo_read(dev, &c, 1);
 
 		if ((c == '\n' || c == '\r') && rx_buf_pos > 0) {
 			/* terminate string */
