@@ -1,0 +1,32 @@
+# Copyright (c) 2023 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: This binding gives a base representation of the ITE gpio
+
+compatible: "ite,it8xxx2-gpio-v2"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  has-volt-sel:
+    type: array
+    description: |
+      Selection of support input voltage 3.3V or 1.8V.
+
+  wuc-base:
+    type: array
+    description: |
+      WUCs are mapped to the pins of GPIO.
+      The WUC groups internal and external inputs, and asserts
+      a wake-up signal to the INTC, allowing the CPU to exit
+      Doze/Deep Doze/Sleep modes.
+
+  wuc-mask:
+    type: array
+
+gpio-cells:
+  - pin
+  - flags
