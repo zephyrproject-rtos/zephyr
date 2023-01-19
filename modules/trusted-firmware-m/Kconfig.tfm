@@ -283,16 +283,6 @@ choice TFM_MODEL
 	  The Firmware Framework M (FF-M) provides different programming models
 	  for Secure Partitions.
 
-config TFM_LIBRARY
-	bool "Library Model"
-	help
-	  Use the library model instead of PSA API.
-
-	  The library model conforms to the PSA Firmware Framework for M (FF-M)
-	  v1.0.
-
-	  NOTE: The Library Model will be removed and replaced by the SFN model.
-
 config TFM_IPC
 	bool "IPC Model"
 	help
