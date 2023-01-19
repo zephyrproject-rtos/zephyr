@@ -734,16 +734,18 @@ class TestPlan:
                     key = [getattr(plat, key_field) for key_field in key_fields]
                     has_all_fields = True
                     for key_field in key_fields:
-                        if key_field is None:
+                        if key_field is None or key_field == 'na':
                             has_all_fields = False
                     if has_all_fields:
-                        key.append(ts.name)
-                        key = tuple(key)
-                        keyed_test = keyed_tests.get(key)
+                        test_key = copy.deepcopy(key)
+                        test_key.append(ts.name)
+                        test_key = tuple(test_key)
+                        keyed_test = keyed_tests.get(test_key)
                         if keyed_test is not None:
-                            instance.add_filter(f"Excluded test already covered by platform_key {key} given fields {key_fields}", Filters.TESTSUITE)
+                            plat_key = {key_field: getattr(keyed_test['plat'], key_field) for key_field in key_fields}
+                            instance.add_filter(f"Excluded test already covered for key {tuple(key)} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.TESTSUITE)
                         else:
-                            keyed_tests[key] = {'plat': plat, 'ts': ts}
+                            keyed_tests[test_key] = {'plat': plat, 'ts': ts}
                     else:
                         instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
 
