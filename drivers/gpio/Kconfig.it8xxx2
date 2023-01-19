@@ -8,6 +8,13 @@ config GPIO_ITE_IT8XXX2
 	help
 	  Enable driver for the ite GPIO controller.
 
+config GPIO_ITE_IT8XXX2_V2
+	bool "ITE IT8XXX2 GPIO driver V2"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_GPIO_V2_ENABLED
+	help
+	  Enable driver for the ite GPIO V2 controller.
+
 config GPIO_KSCAN_ITE_IT8XXX2
 	bool "ITE IT8XXX2 GPIO KSCAN driver"
 	default y
