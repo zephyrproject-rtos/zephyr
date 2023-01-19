@@ -53,7 +53,7 @@
 
 		red_pwm_led: red_pwm_led {
 			pwms = <&pwm1 2 PWM_MSEC(20) (PWM_POLARITY_NORMAL |
-						      PWM_STM32_COMPLEMENTARY)>;
+						      STM32_PWM_COMPLEMENTARY)>;
 		};
 	};
 
