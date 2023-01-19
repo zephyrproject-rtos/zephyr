@@ -23,3 +23,7 @@ tests:
 
   sample.tfm.regression_ipc_lvl2:
     timeout: 200
+
+  sample.tfm.regression_sfn:
+    extra_args: CONFIG_TFM_SFN=y CONFIG_TFM_ISOLATION_LEVEL=1
+    timeout: 200
