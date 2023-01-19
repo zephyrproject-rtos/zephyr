@@ -256,6 +256,16 @@ typedef struct arm_mpu_region_attr k_mem_partition_attr_t;
  */
 extern const struct arm_mpu_config mpu_config;
 
+struct dynamic_region_info {
+	int index;
+	struct arm_mpu_region region_conf;
+};
+
+#define ARM64_MPU_MAX_DYNAMIC_REGIONS						\
+	1 + /* data section */							\
+	(CONFIG_MAX_DOMAIN_PARTITIONS + 2) +					\
+	2   /* user stack */
+
 #endif	/* _ASMLANGUAGE */
 
 #endif	/* ZEPHYR_INCLUDE_ARCH_ARM64_CORTEX_R_MPU_ARM_MPU_H_ */
