@@ -113,7 +113,7 @@ CBOR data of successful response:
                 (str,opt)"image"        : (int)
                 (str)"slot"             : (int)
                 (str)"version"          : (str)
-                (str)"hash"             ; (str)
+                (str)"hash"             : (byte str)
                 (str,opt)"bootable"     : (bool)
                 (str,opt)"pending"      : (bool)
                 (str,opt)"confirmed"    : (bool)
