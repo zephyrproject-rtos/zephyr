@@ -445,7 +445,7 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "PS status: %s\n",
-				wifi_ps_mode2str[config.enabled]);
+				wifi_ps2str[config.enabled]);
 		if (config.enabled) {
 			shell_fprintf(sh, SHELL_NORMAL, "PS mode: %s\n",
 					wifi_ps_mode2str[config.mode]);
