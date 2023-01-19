@@ -8,7 +8,7 @@ tests:
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
        CONFIG_SOC_SERIES_IMX_RT6XX or CONFIG_SOC_SERIES_IMX_RT5XX or
        CONFIG_SOC_FAMILY_GD32 or SOC_SERIES_GD32VF103)
-    platform_exclude: mec15xxevb_assy6853
+    platform_exclude: mec15xxevb_assy6853 s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
@@ -54,3 +54,6 @@ tests:
         gd32vf103v_eval longan_nano
     integration_platforms:
       - gd32e103v_eval
+  drivers.watchdog.s32z270dc2_r52:
+    build_only: true
+    platform_allow: s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52
