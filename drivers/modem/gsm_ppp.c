@@ -118,6 +118,7 @@ static struct gsm_modem {
 
 	int retries;
 	bool modem_info_queried : 1;
+	bool kept_AT_channel : 1;
 
 	void *user_data;
 
@@ -1161,6 +1162,15 @@ void gsm_ppp_start(const struct device *dev)
 	gsm->state = GSM_PPP_START;
 
 	/* Re-init underlying UART comms */
+	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->kept_AT_channel) {
+		/* Lower mux_enabled flag to trigger re-sending AT+CMUX etc */
+		gsm->mux_enabled = false;
+
+		if (gsm->ppp_dev) {
+			uart_mux_disable(gsm->ppp_dev);
+		}
+	}
+
 	ret = modem_iface_uart_init_dev(&gsm->context.iface, DEVICE_DT_GET(GSM_UART_NODE));
 	if (ret < 0) {
 		LOG_ERR("modem_iface_uart_init returned %d", ret);
@@ -1207,7 +1217,7 @@ void gsm_ppp_recover_cmux(const struct device *dev)
 	modem_cmd_handler_restore_eol(&gsm->context.cmd_handler);
 }
 
-void gsm_ppp_stop(const struct device *dev)
+void gsm_ppp_stop(const struct device *dev, bool keep_AT_channel)
 {
 	struct gsm_modem *gsm = dev->data;
 	struct net_if *iface = gsm->iface;
@@ -1227,15 +1237,21 @@ void gsm_ppp_stop(const struct device *dev)
 		(void)k_sem_take(&gsm->sem_if_down, K_FOREVER);
 	}
 
-	if (IS_ENABLED(CONFIG_GSM_MUX)) {
-		if (gsm->ppp_dev != NULL) {
-			uart_mux_disable(gsm->ppp_dev);
+	if (!keep_AT_channel) {
+		if (IS_ENABLED(CONFIG_GSM_MUX)) {
+			if (gsm->ppp_dev != NULL) {
+				uart_mux_disable(gsm->ppp_dev);
+			}
+
+			if (modem_cmd_handler_tx_lock(&gsm->context.cmd_handler,
+									GSM_CMD_LOCK_TIMEOUT) < 0) {
+				LOG_WRN("Failed locking modem cmds!");
+			}
 		}
 
-		if (modem_cmd_handler_tx_lock(&gsm->context.cmd_handler,
-								GSM_CMD_LOCK_TIMEOUT) < 0) {
-			LOG_WRN("Failed locking modem cmds!");
-		}
+		gsm->kept_AT_channel = false;
+	} else {
+		gsm->kept_AT_channel = true;
 	}
 
 	if (gsm->modem_off_cb != NULL) {
