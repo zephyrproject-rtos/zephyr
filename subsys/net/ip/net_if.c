@@ -4162,8 +4162,8 @@ exit:
 static void init_igmp(struct net_if *iface)
 {
 #if defined(CONFIG_NET_IPV4_IGMP)
-	/* Ensure IPv4 is enabled for this interface */
-	if (iface->config.ip.ipv4 == NULL) {
+	/* Ensure IPv4 is enabled for this interface. */
+	if (net_if_config_ipv4_get(iface, NULL)) {
 		return;
 	}
 
