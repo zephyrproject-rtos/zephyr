@@ -12,7 +12,7 @@
 ---
 BasedOnStyle: LLVM
 AlignConsecutiveMacros: AcrossComments
-AllowShortBlocksOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: None
@@ -79,7 +79,7 @@ IndentCaseLabels: false
 IndentWidth: 8
 InsertBraces: true
 SpaceBeforeParens: ControlStatementsExceptControlMacros
-SortIncludes: false
+SortIncludes: Never
 UseTab: Always
 WhitespaceSensitiveMacros:
   - STRINGIFY
