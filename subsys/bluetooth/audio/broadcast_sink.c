@@ -316,7 +316,6 @@ static void pa_term(struct bt_le_per_adv_sync *sync,
 	}
 
 	LOG_DBG("PA sync with broadcast source with ID 0x%06X lost", sink->broadcast_id);
-	broadcast_sink_cleanup(sink);
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->pa_sync_lost != NULL) {
 			listener->pa_sync_lost(sink);
