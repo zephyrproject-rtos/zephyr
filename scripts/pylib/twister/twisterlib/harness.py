@@ -3,6 +3,7 @@ from asyncio.log import logger
 import re
 import os
 import subprocess
+import shlex
 from collections import OrderedDict
 import xml.etree.ElementTree as ET
 import logging
@@ -207,6 +208,9 @@ class Pytest(Harness):
         outs = []
         errs = []
 
+        logger.debug(
+                "Running pytest command: %s",
+                " ".join(shlex.quote(a) for a in cmd))
         with subprocess.Popen(cmd,
                               stdout = subprocess.PIPE,
                               stderr = subprocess.PIPE) as proc:
