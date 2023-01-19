@@ -17,10 +17,6 @@ sample:
   name: "TFM Regression Test"
 
 tests:
-  sample.tfm.regression_lib_mode:
-    extra_args: CONFIG_TFM_LIBRARY=y CONFIG_TFM_ISOLATION_LEVEL=1 CONFIG_TFM_PARTITION_AUDIT_LOG=y
-    timeout: 200
-
   sample.tfm.regression_ipc_lvl1:
     extra_args: CONFIG_TFM_IPC=y CONFIG_TFM_ISOLATION_LEVEL=1
     timeout: 200

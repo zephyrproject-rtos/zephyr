@@ -65,20 +65,6 @@ config TFM_PARTITION_PLATFORM
 	  options are handled by the build system in the trusted-firmware-m
 	  repository.
 
-config TFM_PARTITION_AUDIT_LOG
-	bool "Secure partition 'Audit Log'"
-	depends on TFM_LIBRARY
-	default y
-	help
-	  Setting this option will cause '-DTFM_PARTITION_AUDIT_LOG'
-	  to be passed to the TF-M build system. Look at 'config_default.cmake'
-	  in the trusted-firmware-m repository for details regarding this
-	  parameter. Any dependencies between the various TFM_PARTITION_*
-	  options are handled by the build system in the trusted-firmware-m
-	  repository.
-	  Note: the Audit Log service does not implement the IPC model
-	  interface so it may not be enabled together with IPC option.
-
 config TFM_PARTITION_FIRMWARE_UPDATE
 	bool "Include the secure parition 'Firmware Update'"
 	select TFM_MCUBOOT_DATA_SHARING
