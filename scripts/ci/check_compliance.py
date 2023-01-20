@@ -1084,6 +1084,8 @@ def parse_args():
     parser.add_argument('-o', '--output', default="compliance.xml",
                         help='''Name of outfile in JUnit format,
                         default is ./compliance.xml''')
+    parser.add_argument('-n', '--no-case-output', action="store_true",
+                        help="Do not store the individual test case output.")
     parser.add_argument('-l', '--list', action="store_true",
                         help="List all checks and exit")
     parser.add_argument("-v", "--loglevel", choices=['DEBUG', 'INFO', 'WARNING',
@@ -1184,10 +1186,11 @@ def _main(args):
 
         suite.add_testcase(test.case)
 
-    xml = JUnitXml()
-    xml.add_testsuite(suite)
-    xml.update_statistics()
-    xml.write(args.output, pretty=True)
+    if args.output:
+        xml = JUnitXml()
+        xml.add_testsuite(suite)
+        xml.update_statistics()
+        xml.write(args.output, pretty=True)
 
     failed_cases = []
     name2doc = {testcase.name: testcase.doc
@@ -1208,16 +1211,20 @@ def _main(args):
     if n_fails:
         print(f"{n_fails} checks failed")
         for case in failed_cases:
-            errmsg = ""
+            for res in case.result:
+                errmsg = res.text.strip()
+                logging.error(f"Test {case.name} failed: \n{errmsg}")
+            if args.no_case_output:
+                continue
             with open(f"{case.name}.txt", "w") as f:
                 docs = name2doc.get(case.name)
                 f.write(f"{docs}\n")
                 for res in case.result:
                     errmsg = res.text.strip()
-                    logging.error(f"Test {case.name} failed: \n{errmsg}")
                     f.write(f'\n {errmsg}')
 
-    print(f"\nComplete results in {args.output}")
+    if args.output:
+        print(f"\nComplete results in {args.output}")
     return n_fails
 
 
