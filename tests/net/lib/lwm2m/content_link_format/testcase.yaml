@@ -2,4 +2,5 @@ common:
   depends_on: netif
 tests:
   net.lwm2m.content_link_format:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
     tags: lwm2m net
