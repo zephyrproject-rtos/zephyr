@@ -15,6 +15,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/cache.h>
+#include <kernel_internal.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
@@ -27,11 +28,24 @@ BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
 	      NODE_HAS_PROP_AND_OR, zephyr_memory_region_mpu) false) == false,
 	      "`zephyr,memory-region-mpu` was deprecated in favor of `zephyr,memory-attr`");
 
-#define MPU_DYNAMIC_REGION_AREAS_NUM	1
+#define MPU_DYNAMIC_REGION_AREAS_NUM	3
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
+static struct dynamic_region_info
+	      sys_dyn_regions[CONFIG_MP_MAX_NUM_CPUS][MPU_DYNAMIC_REGION_AREAS_NUM];
+static int sys_dyn_regions_num[CONFIG_MP_MAX_NUM_CPUS];
+
+static void dynamic_regions_init(void);
 static int dynamic_areas_init(uintptr_t start, size_t size);
+static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
+					uint8_t region_num);
+
+#if defined(CONFIG_USERSPACE)
 #define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&_app_smem_start)
+#else
+#define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&__kernel_ram_start)
+#endif
+
 #define MPU_DYNAMIC_REGIONS_AREA_SIZE  ((size_t)((uintptr_t)&__kernel_ram_end - \
 	MPU_DYNAMIC_REGIONS_AREA_START))
 #endif
@@ -58,7 +72,7 @@ static int dynamic_areas_init(uintptr_t start, size_t size);
 static uint8_t static_regions_num;
 
 /* Get the number of supported MPU regions. */
-static inline uint8_t get_num_regions(void)
+static ALWAYS_INLINE uint8_t get_num_regions(void)
 {
 	uint64_t type;
 
@@ -140,7 +154,7 @@ static ALWAYS_INLINE void mpu_set_region(uint32_t rnr, uint64_t rbar,
 	barrier_isync_fence_full();
 }
 
-static inline void mpu_clr_region(uint32_t rnr)
+static ALWAYS_INLINE void mpu_clr_region(uint32_t rnr)
 {
 	write_prselr_el1(rnr);
 	barrier_dsync_fence_full();
@@ -248,6 +262,7 @@ FUNC_NO_STACK_PROTECTOR void z_arm64_mm_init(bool is_primary_core)
 {
 	uint64_t val;
 	uint32_t r_index;
+	uint8_t tmp_static_num;
 
 	/* Current MPU code supports only EL1 */
 	val = read_currentel();
@@ -287,10 +302,10 @@ FUNC_NO_STACK_PROTECTOR void z_arm64_mm_init(bool is_primary_core)
 	}
 
 	/* Update the number of programmed MPU regions. */
-	static_regions_num = mpu_config.num_regions;
+	tmp_static_num = mpu_config.num_regions;
 
 	/* DT-defined MPU regions. */
-	if (mpu_configure_regions_from_dt(&static_regions_num) == -EINVAL) {
+	if (mpu_configure_regions_from_dt(&tmp_static_num) == -EINVAL) {
 		__ASSERT(0, "Failed to allocate MPU regions from DT\n");
 		return;
 	}
@@ -298,25 +313,38 @@ FUNC_NO_STACK_PROTECTOR void z_arm64_mm_init(bool is_primary_core)
 	arm_core_mpu_enable();
 
 	if (!is_primary_core) {
-		return;
+		/*
+		 * primary core might reprogram the sys_regions, so secondary cores
+		 * should re-flush the sys regions
+		 */
+		goto out;
 	}
 
-#ifdef CONFIG_USERSPACE
+	/* Only primary core init the static_regions_num */
+	static_regions_num = tmp_static_num;
+
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
+	dynamic_regions_init();
 	/* Only primary core do the dynamic_areas_init. */
 	int rc = dynamic_areas_init(MPU_DYNAMIC_REGIONS_AREA_START,
 				    MPU_DYNAMIC_REGIONS_AREA_SIZE);
-	if (rc <= 0) {
+	if (rc < 0) {
 		__ASSERT(0, "Dynamic areas init fail");
 		return;
 	}
 #endif
 
+out:
+#if defined(CONFIG_ARM64_STACK_PROTECTION)
+	(void)flush_dynamic_regions_to_mpu(sys_dyn_regions[arch_curr_cpu()->id],
+					   sys_dyn_regions_num[arch_curr_cpu()->id]);
+#endif
+	return;
 }
 
-#ifdef CONFIG_USERSPACE
-
-static struct dynamic_region_info sys_dyn_regions[MPU_DYNAMIC_REGION_AREAS_NUM];
-static int sys_dyn_regions_num;
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
+static int insert_region(struct dynamic_region_info *dyn_regions, uint8_t region_num,
+			 uintptr_t start, size_t size, struct arm_mpu_region_attr *attr);
 
 static void arm_core_mpu_background_region_enable(void)
 {
@@ -333,6 +361,8 @@ static void arm_core_mpu_background_region_disable(void)
 {
 	uint64_t val;
 
+	/* Force any outstanding transfers to complete before disabling MPU */
+	barrier_dmem_fence_full();
 	val = read_sctlr_el1();
 	val &= ~SCTLR_BR_BIT;
 	write_sctlr_el1(val);
@@ -340,51 +370,63 @@ static void arm_core_mpu_background_region_disable(void)
 	barrier_isync_fence_full();
 }
 
+static void dynamic_regions_init(void)
+{
+	for (int cpuid = 0; cpuid < arch_num_cpus(); cpuid++) {
+		for (int i = 0; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
+			sys_dyn_regions[cpuid][i].index = -1;
+		}
+	}
+}
+
 static int dynamic_areas_init(uintptr_t start, size_t size)
 {
 	const struct arm_mpu_region *region;
 	struct dynamic_region_info *tmp_info;
+	int ret = -ENOENT;
 
 	uint64_t base = start;
 	uint64_t limit = base + size;
 
-	if (sys_dyn_regions_num + 1 > MPU_DYNAMIC_REGION_AREAS_NUM) {
-		return -1;
-	}
-
-	for (size_t i = 0; i < mpu_config.num_regions; i++) {
-		region = &mpu_config.mpu_regions[i];
-		tmp_info = &sys_dyn_regions[sys_dyn_regions_num];
-		if (base >= region->base && limit <= region->limit) {
-			tmp_info->index = i;
-			tmp_info->region_conf = *region;
-			return ++sys_dyn_regions_num;
+	for (int cpuid = 0; cpuid < arch_num_cpus(); cpuid++) {
+		/* Check the following searching does not overflow the room */
+		if (sys_dyn_regions_num[cpuid] + 1 > MPU_DYNAMIC_REGION_AREAS_NUM) {
+			return -ENOSPC;
 		}
+
+		ret = -ENOENT;
+
+		for (int i = 0; i < mpu_config.num_regions; i++) {
+			region = &mpu_config.mpu_regions[i];
+			tmp_info = &sys_dyn_regions[cpuid][sys_dyn_regions_num[cpuid]];
+
+			if (base >= region->base && limit <= region->limit) {
+				tmp_info->index = i;
+				tmp_info->region_conf = *region;
+				sys_dyn_regions_num[cpuid] += 1;
+				/* find the region, reset ret to no error */
+				ret = 0;
+				break;
+			}
+		}
+#if defined(CONFIG_ARM64_STACK_PROTECTION)
+		ret = insert_region(sys_dyn_regions[cpuid],
+				    MPU_DYNAMIC_REGION_AREAS_NUM,
+				    (uintptr_t)z_interrupt_stacks[cpuid],
+				    Z_ARM64_STACK_GUARD_SIZE,
+				    NULL /* delete this region */);
+		if (ret < 0) {
+			break;
+		}
+		/*
+		 * No need to check here if (sys_dyn_regions[cpuid] + ret) overflows,
+		 * because the insert_region has checked it.
+		 */
+		sys_dyn_regions_num[cpuid] += ret;
+#endif
 	}
 
-	return -1;
-}
-
-static int dup_dynamic_regions(struct dynamic_region_info *dst, int len)
-{
-	size_t i;
-	int ret = sys_dyn_regions_num;
-
-	CHECKIF(!(sys_dyn_regions_num < len)) {
-		LOG_ERR("system dynamic region nums too large.");
-		ret = -EINVAL;
-		goto out;
-	}
-
-	for (i = 0; i < sys_dyn_regions_num; i++) {
-		dst[i] = sys_dyn_regions[i];
-	}
-	for (; i < len; i++) {
-		dst[i].index = -1;
-	}
-
-out:
-	return ret;
+	return ret < 0 ? ret : 0;
 }
 
 static void set_region(struct arm_mpu_region *region,
@@ -393,91 +435,150 @@ static void set_region(struct arm_mpu_region *region,
 {
 	region->base = base;
 	region->limit = limit;
-	region->attr = *attr;
+	if (attr != NULL) {
+		region->attr = *attr;
+	} else {
+		memset(&region->attr, 0, sizeof(struct arm_mpu_region_attr));
+	}
 }
 
-static int get_underlying_region_idx(struct dynamic_region_info *dyn_regions,
-				     uint8_t region_num, uint64_t base,
-				     uint64_t limit)
+static void clear_region(struct arm_mpu_region *region)
 {
-	for (size_t idx = 0; idx < region_num; idx++) {
+	set_region(region, 0, 0, NULL);
+}
+
+static int dup_dynamic_regions(struct dynamic_region_info *dst, int len)
+{
+	size_t i;
+	int num = sys_dyn_regions_num[arch_curr_cpu()->id];
+
+	if (num >= len) {
+		LOG_ERR("system dynamic region nums too large.");
+		return -EINVAL;
+	}
+
+	for (i = 0; i < num; i++) {
+		dst[i] = sys_dyn_regions[arch_curr_cpu()->id][i];
+	}
+	for (; i < len; i++) {
+		clear_region(&dst[i].region_conf);
+		dst[i].index = -1;
+	}
+
+	return num;
+}
+
+static struct dynamic_region_info *get_underlying_region(struct dynamic_region_info *dyn_regions,
+							 uint8_t region_num, uint64_t base,
+							 uint64_t limit)
+{
+	for (int idx = 0; idx < region_num; idx++) {
 		struct arm_mpu_region *region = &(dyn_regions[idx].region_conf);
 
 		if (base >= region->base && limit <= region->limit) {
-			return idx;
+			return &(dyn_regions[idx]);
 		}
 	}
-	return -1;
+
+	return NULL;
 }
 
-static int insert_region(struct dynamic_region_info *dyn_regions,
-			 uint8_t region_idx, uint8_t region_num,
-			 uintptr_t start, size_t size,
-			 struct arm_mpu_region_attr *attr)
+static struct dynamic_region_info *find_available_region(struct dynamic_region_info *dyn_regions,
+							 uint8_t region_num)
+{
+	return get_underlying_region(dyn_regions, region_num, 0, 0);
+}
+
+/*
+ * return -ENOENT if there is no more available region
+ * do nothing if attr is NULL
+ */
+static int _insert_region(struct dynamic_region_info *dyn_regions, uint8_t region_num,
+			  uint64_t base, uint64_t limit, struct arm_mpu_region_attr *attr)
+{
+	struct dynamic_region_info *tmp_region;
+
+	if (attr == NULL) {
+		return 0;
+	}
+
+	tmp_region = find_available_region(dyn_regions, region_num);
+
+	if (tmp_region == NULL) {
+		return -ENOENT;
+	}
+
+	set_region(&tmp_region->region_conf, base, limit, attr);
+
+	return 0;
+}
+
+static int insert_region(struct dynamic_region_info *dyn_regions, uint8_t region_num,
+			 uintptr_t start, size_t size, struct arm_mpu_region_attr *attr)
 {
 
+	int ret = 0;
 	/* base: inclusive, limit: exclusive */
 	uint64_t base = (uint64_t)start;
 	uint64_t limit = base + size;
-	int u_idx;
-	struct arm_mpu_region *u_region;
+	struct dynamic_region_info *u_region;
 	uint64_t u_base;
 	uint64_t u_limit;
-	struct arm_mpu_region_attr *u_attr;
-	int ret = 0;
+	struct arm_mpu_region_attr u_attr;
 
-	CHECKIF(!(region_idx < region_num)) {
-		LOG_ERR("Out-of-bounds error for dynamic region map. "
-			"region idx: %d, region num: %d",
-			region_idx, region_num);
-		ret = -EINVAL;
-		goto out;
+	int count = 0;
+
+	u_region = get_underlying_region(dyn_regions, region_num, base, limit);
+
+	if (u_region == NULL) {
+		return -ENOENT;
 	}
 
-	u_idx = get_underlying_region_idx(dyn_regions, region_idx, base, limit);
+	/* restore the underlying region range and attr */
+	u_base = u_region->region_conf.base;
+	u_limit = u_region->region_conf.limit;
+	u_attr = u_region->region_conf.attr;
 
-	CHECKIF(!(u_idx >= 0)) {
-		LOG_ERR("Invalid underlying region index");
-		ret = -ENOENT;
-		goto out;
-	}
+	clear_region(&u_region->region_conf);
+	count--;
 
-	/* Get underlying region range and attr */
-	u_region = &(dyn_regions[u_idx].region_conf);
-	u_base = u_region->base;
-	u_limit = u_region->limit;
-	u_attr = &u_region->attr;
-
-	/* Temporally holding new region available to be configured */
-	struct arm_mpu_region *curr_region = &(dyn_regions[region_idx].region_conf);
-
+	/* if attr is NULL, meaning we are going to delete a region */
 	if (base == u_base && limit == u_limit) {
 		/*
 		 * The new region overlaps entirely with the
 		 * underlying region. Simply update the attr.
 		 */
-		set_region(u_region, base, limit, attr);
+		ret += _insert_region(dyn_regions, region_num, base, limit, attr);
+		count++;
 	} else if (base == u_base) {
-		set_region(curr_region, base, limit, attr);
-		set_region(u_region, limit, u_limit, u_attr);
-		region_idx++;
+		ret += _insert_region(dyn_regions, region_num, limit, u_limit, &u_attr);
+		count++;
+		ret += _insert_region(dyn_regions, region_num, base, limit, attr);
+		count++;
 	} else if (limit == u_limit) {
-		set_region(u_region, u_base, base, u_attr);
-		set_region(curr_region, base, limit, attr);
-		region_idx++;
+		ret += _insert_region(dyn_regions, region_num, u_base, base, &u_attr);
+		count++;
+		ret += _insert_region(dyn_regions, region_num, base, limit, attr);
+		count++;
 	} else {
-		set_region(u_region, u_base, base, u_attr);
-		set_region(curr_region, base, limit, attr);
-		region_idx++;
-		curr_region = &(dyn_regions[region_idx].region_conf);
-		set_region(curr_region, limit, u_limit, u_attr);
-		region_idx++;
+		ret += _insert_region(dyn_regions, region_num, u_base, base, &u_attr);
+		count++;
+		ret += _insert_region(dyn_regions, region_num, base, limit, attr);
+		count++;
+		ret += _insert_region(dyn_regions, region_num, limit, u_limit, &u_attr);
+		count++;
 	}
 
-	ret = region_idx;
+	if (ret < 0) {
+		return -ENOENT;
+	}
 
-out:
-	return ret;
+	if (attr == NULL) {
+		/* meanning we removed a region, so fix the count by decreasing 1 */
+		count--;
+	}
+
+	return count;
 }
 
 static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
@@ -486,7 +587,13 @@ static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "mpu flushing must be called with IRQs disabled");
 
 	int reg_avail_idx = static_regions_num;
-	int ret = 0;
+
+	if (region_num >= get_num_regions()) {
+		LOG_ERR("Out-of-bounds error for mpu regions. "
+			"region num: %d, total mpu regions: %d",
+			region_num, get_num_regions());
+		return -ENOENT;
+	}
 
 	arm_core_mpu_background_region_enable();
 
@@ -518,18 +625,12 @@ static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 		if (region_idx < 0) {
 			region_idx = reg_avail_idx++;
 		}
-		CHECKIF(!(region_idx < get_num_regions())) {
-			LOG_ERR("Out-of-bounds error for mpu regions. "
-				"region idx: %d, total mpu regions: %d",
-				region_idx, get_num_regions());
-			ret = -ENOENT;
-		}
 
 		region_init(region_idx, &(dyn_regions[i].region_conf));
 	}
 	arm_core_mpu_background_region_disable();
 
-	return ret;
+	return 0;
 }
 
 static int configure_dynamic_mpu_regions(struct k_thread *thread)
@@ -538,21 +639,24 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 
 	struct dynamic_region_info *dyn_regions = thread->arch.regions;
 	const uint8_t max_region_num = ARM64_MPU_MAX_DYNAMIC_REGIONS;
-	uint8_t region_num;
-	int ret = 0, ret2;
+	int region_num;
+	int ret = 0;
 
 	/* Busy wait if it is flushing somewhere else */
 	while (!atomic_cas(&thread->arch.flushing, 0, 1)) {
 	}
 
-	ret2 = dup_dynamic_regions(dyn_regions, max_region_num);
-	CHECKIF(ret2 < 0) {
-		ret = ret2;
+	thread->arch.region_num = 0;
+
+	ret = dup_dynamic_regions(dyn_regions, max_region_num);
+
+	if (ret < 0) {
 		goto out;
 	}
 
-	region_num = (uint8_t)ret2;
+	region_num = ret;
 
+#if defined(CONFIG_USERSPACE)
 	struct k_mem_domain *mem_domain = thread->mem_domain_info.mem_domain;
 
 	if (mem_domain) {
@@ -567,41 +671,61 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 			if (partition->size == 0) {
 				continue;
 			}
-			LOG_DBG("set region 0x%lx 0x%lx",
+			LOG_DBG("set region 0x%lx 0x%lx\n",
 				partition->start, partition->size);
-			ret2 = insert_region(dyn_regions,
-					     region_num,
-					     max_region_num,
-					     partition->start,
-					     partition->size,
-					     &partition->attr);
-			CHECKIF(ret2 < 0) {
-				ret = ret2;
+			ret = insert_region(dyn_regions,
+					    max_region_num,
+					    partition->start,
+					    partition->size,
+					    &partition->attr);
+
+			if (ret < 0) {
 				goto out;
 			}
 
-			region_num = (uint8_t)ret2;
+			region_num += ret;
 		}
 	}
 
 	LOG_DBG("configure user thread %p's context", thread);
 	if ((thread->base.user_options & K_USER) != 0) {
 		/* K_USER thread stack needs a region */
-		ret2 = insert_region(dyn_regions,
-				     region_num,
-				     max_region_num,
-				     thread->stack_info.start,
-				     thread->stack_info.size,
-				     &K_MEM_PARTITION_P_RW_U_RW);
-		CHECKIF(ret2 < 0) {
-			ret = ret2;
+		ret = insert_region(dyn_regions,
+				    max_region_num,
+				    thread->stack_info.start,
+				    thread->stack_info.size,
+				    &K_MEM_PARTITION_P_RW_U_RW);
+		if (ret < 0) {
 			goto out;
 		}
 
-		region_num = (uint8_t)ret2;
+		region_num += ret;
 	}
+#endif
 
-	thread->arch.region_num = region_num;
+#if defined(CONFIG_ARM64_STACK_PROTECTION)
+	uintptr_t guard_start;
+
+	if (thread->arch.stack_limit != 0) {
+		guard_start = (uintptr_t)thread->arch.stack_limit - Z_ARM64_STACK_GUARD_SIZE;
+		ret = insert_region(dyn_regions,
+				    max_region_num,
+				    guard_start,
+				    Z_ARM64_STACK_GUARD_SIZE,
+				    NULL);
+		if (ret < 0) {
+			goto out;
+		}
+		region_num += ret;
+	}
+#endif
+
+	/*
+	 * There is no need to check if region_num is overflow the uint8_t,
+	 * because the insert_region make sure there is enough room to store a region,
+	 * otherwise the insert_region will return a negtive error number
+	 */
+	thread->arch.region_num = (uint8_t)region_num;
 
 	if (thread == _current) {
 		ret = flush_dynamic_regions_to_mpu(dyn_regions, region_num);
@@ -609,9 +733,11 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 
 out:
 	atomic_clear(&thread->arch.flushing);
-	return ret;
+	return ret < 0 ? ret : 0;
 }
+#endif /* defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION) */
 
+#if defined(CONFIG_USERSPACE)
 int arch_mem_domain_max_partitions_get(void)
 {
 	int remaining_regions = get_num_regions() - static_regions_num + 1;
@@ -692,7 +818,9 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	return ret;
 }
+#endif /* CONFIG_USERSPACE */
 
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
 void z_arm64_thread_mem_domains_init(struct k_thread *thread)
 {
 	unsigned int key = arch_irq_lock();
@@ -703,18 +831,20 @@ void z_arm64_thread_mem_domains_init(struct k_thread *thread)
 
 void z_arm64_swap_mem_domains(struct k_thread *thread)
 {
+	int cpuid = arch_curr_cpu()->id;
 
 	/* Busy wait if it is configuring somewhere else */
 	while (!atomic_cas(&thread->arch.flushing, 0, 1)) {
 	}
 
 	if (thread->arch.region_num == 0) {
-		(void)flush_dynamic_regions_to_mpu(sys_dyn_regions, sys_dyn_regions_num);
+		(void)flush_dynamic_regions_to_mpu(sys_dyn_regions[cpuid],
+						   sys_dyn_regions_num[cpuid]);
 	} else {
-		(void)flush_dynamic_regions_to_mpu(thread->arch.regions, thread->arch.region_num);
+		(void)flush_dynamic_regions_to_mpu(thread->arch.regions,
+						   thread->arch.region_num);
 	}
 
 	atomic_clear(&thread->arch.flushing);
 }
-
-#endif /* CONFIG_USERSPACE */
+#endif
