@@ -53,6 +53,9 @@ struct _thread_arch {
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_ARM_MMU)
 	struct arm_mmu_ptables *ptables;
 #endif
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	uint64_t stack_limit;
+#endif
 #ifdef CONFIG_FPU_SHARING
 	struct z_arm64_fp_context saved_fp_context;
 #endif
