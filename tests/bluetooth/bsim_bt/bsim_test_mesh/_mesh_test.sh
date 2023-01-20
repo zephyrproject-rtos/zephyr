@@ -66,8 +66,15 @@ function RunTest(){
 
     echo "Starting $testid as device #$idx"
     conf=${conf:-prj_conf}
+
+    if [ ${overlay} ]; then
+        exe_name=./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_mesh_${conf}_${overlay}
+    else
+        exe_name=./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_mesh_${conf}
+    fi
+
     Execute \
-      ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_mesh_${conf} \
+      ${exe_name} \
       -v=${verbosity_level} -s=$s_id -d=$idx -RealEncryption=1 \
       -testid=$testid ${test_options}
     let idx=idx+1

@@ -18,5 +18,5 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # Submit the advertiser buffer using bt_mesh_adv_send().
 # With the separate scanner, observe that the submitted buffer is transmitted
 # at least 6 times. Then, observe GATT Proxy beacons resuming.
-conf=prj_gatt_conf
+overlay=overlay_gatt_conf
 RunTest mesh_adv_proxy_mixin adv_tx_proxy_mixin adv_rx_proxy_mixin

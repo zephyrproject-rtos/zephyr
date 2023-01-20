@@ -9,11 +9,11 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # First test: saves data; second test: verifies it.
 
 # Provision, configure and reset a device
-conf=prj_pst_conf
+overlay=overlay_pst_conf
 RunTest mesh_persistence_reprovisioning persistence_reprovisioning_device \
 	persistence_reprovisioning_provisioner -- -argstest clear-settings=1
 
 # Repeat the test
-conf=prj_pst_conf
+overlay=overlay_pst_conf
 RunTest mesh_persistence_reprovisioning persistence_reprovisioning_device \
 	persistence_reprovisioning_provisioner

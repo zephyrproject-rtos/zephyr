@@ -13,13 +13,22 @@ function compile(){
   local ninja_args="${ninja_args:-""}"
   local cc_flags="${cc_flags:-"-Werror"}"
 
-  local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
+  if [ "${conf_overlay}" ]; then
+    local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${conf_overlay}}"
+  else
+    local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
+  fi
+
   local exe_name=${exe_name//\//_}
   local exe_name=${exe_name//./_}
   local exe_name=${BSIM_OUT_PATH}/bin/$exe_name
   local map_file_name=${exe_name}.Tsymbols
 
-  local this_dir=${WORK_DIR}/${app}/${conf_file}
+  if [ "${conf_overlay}" ]; then
+    local this_dir=${WORK_DIR}/${app}/${conf_file}_${conf_overlay}
+  else
+    local this_dir=${WORK_DIR}/${app}/${conf_file}
+  fi
 
   local modules_arg="${ZEPHYR_MODULES:+-DZEPHYR_MODULES=${ZEPHYR_MODULES}}"
 
