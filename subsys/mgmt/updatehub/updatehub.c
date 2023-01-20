@@ -16,8 +16,8 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/data/json.h>
+#include <zephyr/mgmt/updatehub.h>
 
-#include "include/updatehub.h"
 #include "updatehub_priv.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"

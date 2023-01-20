@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <updatehub.h>
+#include <zephyr/mgmt/updatehub.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_conn_mgr.h>
