@@ -18,6 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/poweroff.h>
+#include <kernel_arch_func.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -233,6 +234,47 @@ static void esf_unwind(const z_arch_esf_t *esf)
 
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
+#ifdef CONFIG_ARM64_STACK_PROTECTION
+static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr, uint64_t far)
+{
+	uint64_t sp, sp_limit, guard_start;
+	/* 0x25 means data abort from current EL */
+	if (GET_ESR_EC(esr) == 0x25) {
+		sp_limit = arch_curr_cpu()->arch.current_stack_limit;
+		guard_start = sp_limit - Z_ARM64_STACK_GUARD_SIZE;
+		sp = arch_curr_cpu()->arch.corrupted_sp;
+		if ((sp != 0 && sp <= sp_limit) || (guard_start <= far && far <= sp_limit)) {
+#ifdef CONFIG_FPU_SHARING
+			/*
+			 * We are in exception stack, and now we are sure the stack does overflow,
+			 * so flush the fpu context to its owner, and then set no fpu trap to avoid
+			 * a new nested exception triggered by FPU accessing (var_args).
+			 */
+			z_arm64_flush_local_fpu();
+			write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN_NOTRAP);
+#endif
+			arch_curr_cpu()->arch.corrupted_sp = 0UL;
+			LOG_ERR("STACK OVERFLOW FROM KERNEL, SP: 0x%llx OR FAR: 0x%llx INVALID,"
+				" SP LIMIT: 0x%llx", sp, far, sp_limit);
+			return true;
+		}
+	}
+#ifdef CONFIG_USERSPACE
+	else if ((_current->base.user_options & K_USER) != 0 && GET_ESR_EC(esr) == 0x24) {
+		sp_limit = (uint64_t)_current->stack_info.start;
+		guard_start = sp_limit - Z_ARM64_STACK_GUARD_SIZE;
+		sp = esf->sp;
+		if (sp <= sp_limit || (guard_start <= far && far <= sp_limit)) {
+			LOG_ERR("STACK OVERFLOW FROM USERSPACE, SP: 0x%llx OR FAR: 0x%llx INVALID,"
+				" SP LIMIT: 0x%llx", sp, far, sp_limit);
+			return true;
+		}
+	}
+#endif
+	return false;
+}
+#endif
+
 static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
@@ -278,6 +320,12 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			break;
 		}
 
+#ifdef CONFIG_ARM64_STACK_PROTECTION
+		if (z_arm64_stack_corruption_check(esf, esr, far)) {
+			reason = K_ERR_STACK_CHK_FAIL;
+		}
+#endif
+
 		if (GET_EL(el) != MODE_EL0) {
 #ifdef CONFIG_EXCEPTION_DEBUG
 			bool dump_far = false;
@@ -292,8 +340,10 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			LOG_ERR("TPIDRRO: 0x%016llx", read_tpidrro_el0());
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-			if (is_recoverable(esf, esr, far, elr))
+			if (is_recoverable(esf, esr, far, elr) &&
+			    reason != K_ERR_STACK_CHK_FAIL) {
 				return;
+			}
 		}
 	}
 
