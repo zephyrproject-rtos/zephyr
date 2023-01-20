@@ -743,19 +743,19 @@ static void probe_cb(char *metadata, size_t metadata_size)
 	LOG_INF("Probe metadata received");
 }
 
-int updatehub_confirm(void)
+int z_impl_updatehub_confirm(void)
 {
 	return updatehub_storage_mark_partition_as_confirmed(UPDATEHUB_SLOT_PARTITION_0);
 }
 
-int updatehub_reboot(void)
+int z_impl_updatehub_reboot(void)
 {
 	sys_reboot(SYS_REBOOT_WARM);
 
 	return 0;
 }
 
-enum updatehub_response updatehub_probe(void)
+enum updatehub_response z_impl_updatehub_probe(void)
 {
 	struct probe request;
 	struct resp_probe_some_boards metadata_some_boards = { 0 };
@@ -919,7 +919,7 @@ error:
 	return ctx.code_status;
 }
 
-enum updatehub_response updatehub_update(void)
+enum updatehub_response z_impl_updatehub_update(void)
 {
 	if (report(UPDATEHUB_STATE_DOWNLOADING) < 0) {
 		LOG_ERR("Could not reporting downloading state");
@@ -1005,7 +1005,7 @@ static void autohandler(struct k_work *work)
 	k_work_reschedule(&updatehub_work_handle, UPDATEHUB_POLL_INTERVAL);
 }
 
-void updatehub_autohandler(void)
+void z_impl_updatehub_autohandler(void)
 {
 #if defined(CONFIG_UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION)
 	LOG_INF("SHA-256 verification on download only");
