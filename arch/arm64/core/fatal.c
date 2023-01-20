@@ -193,6 +193,36 @@ static void esf_dump(const z_arch_esf_t *esf)
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
+#ifdef CONFIG_ARM64_STACK_PROTECTION
+static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr)
+{
+	uint64_t sp, sp_limit;
+	/* 0x25 means data abort from current EL */
+	if (GET_ESR_EC(esr) == 0x25) {
+		sp_limit = arch_curr_cpu()->arch.current_stack_limit;
+		sp = arch_curr_cpu()->arch.corrupted_sp;
+		if (sp != 0  && sp <= sp_limit) {
+			arch_curr_cpu()->arch.corrupted_sp = 0UL;
+			LOG_ERR("STACK OVERFLOW FROM KERNEL, SP: 0x%llx <= SP LIMIT: 0x%llx",
+				sp, sp_limit);
+			return true;
+		}
+	}
+#ifdef CONFIG_USERSPACE
+	else if ((_current->base.user_options & K_USER) != 0 && GET_ESR_EC(esr) == 0x24) {
+		sp_limit = (uint64_t)_current->stack_info.start;
+		sp = esf->sp;
+		if (sp <= sp_limit) {
+			LOG_ERR("STACK OVERFLOW FROM USERSPACE, SP: 0x%llx <= SP LIMIT: 0x%llx",
+				sp, sp_limit);
+			return true;
+		}
+	}
+#endif
+	return false;
+}
+#endif
+
 static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
@@ -238,6 +268,12 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			break;
 		}
 
+#ifdef CONFIG_ARM64_STACK_PROTECTION
+		if (z_arm64_stack_corruption_check(esf, esr)) {
+			reason = K_ERR_STACK_CHK_FAIL;
+		}
+#endif
+
 		if (GET_EL(el) != MODE_EL0) {
 #ifdef CONFIG_EXCEPTION_DEBUG
 			bool dump_far = false;
@@ -252,8 +288,10 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			LOG_ERR("TPIDRRO: 0x%016llx", read_tpidrro_el0());
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-			if (is_recoverable(esf, esr, far, elr))
+			if (is_recoverable(esf, esr, far, elr) &&
+			    reason != K_ERR_STACK_CHK_FAIL) {
 				return;
+			}
 		}
 	}
 
