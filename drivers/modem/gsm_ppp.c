@@ -1364,7 +1364,6 @@ static const struct setup_cmd sms_configure_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CNMI=2,1"),
 	SETUP_CMD_NOHANDLE("AT+CSCS=\"IRA\""),
 	SETUP_CMD_NOHANDLE("AT+CREG=2"),
-	SETUP_CMD_NOHANDLE("AT+QRIR"),
 };
 
 void gsm_ppp_configure_sms_reception(const struct device *dev)
@@ -1382,6 +1381,8 @@ void gsm_ppp_configure_sms_reception(const struct device *dev)
 	if (ret < 0) {
 		LOG_DBG("Could not set SMS configuration");
 	}
+
+	gsm_ppp_clear_ring_indicator(dev);
 }
 
 static struct gsm_ppp_sms_message sms_message;
@@ -1440,6 +1441,34 @@ struct gsm_ppp_sms_message * gsm_ppp_read_sms(const struct device *dev)
 	}
 
 	return &sms_message;
+}
+
+void gsm_ppp_delete_all_sms(const struct device *dev)
+{
+	struct gsm_modem *gsm = dev->data;
+	int ret;
+
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CMGD=0,4",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("Could not delete all SMS messages");
+	}
+}
+
+void gsm_ppp_clear_ring_indicator(const struct device *dev)
+{
+	struct gsm_modem *gsm = dev->data;
+	int ret;
+
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+QRIR",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_DBG("Could not clear ring indicator");
+	}
 }
 
 static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,

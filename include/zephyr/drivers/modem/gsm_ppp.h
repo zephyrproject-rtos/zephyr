@@ -119,6 +119,20 @@ void gsm_ppp_configure_sms_reception(const struct device *dev);
  */
 struct gsm_ppp_sms_message * gsm_ppp_read_sms(const struct device *dev);
 
+/**
+ * @brief Delete all SMS messages from the modem storage.
+ *
+ * @param dev: GSM modem device.
+ */
+void gsm_ppp_delete_all_sms(const struct device *dev);
+
+/**
+ * @brief Clear the ring indicator of the modem.
+ *
+ * @param dev: GSM modem device.
+ */
+void gsm_ppp_clear_ring_indicator(const struct device *dev);
+
 #ifdef __cplusplus
 }
 #endif
