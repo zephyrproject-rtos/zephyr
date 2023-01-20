@@ -11,8 +11,8 @@
  * @{
  */
 
-#ifndef _UPDATEHUB_H_
-#define _UPDATEHUB_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_UPDATEHUB_H_
+#define ZEPHYR_INCLUDE_MGMT_UPDATEHUB_H_
 
 /**
  * @brief Responses messages from UpdateHub.
@@ -75,14 +75,14 @@ enum updatehub_response updatehub_update(void);
  * @details Must be used before the UpdateHub probe. It should be one of first
  * actions after reboot.
  *
- * @return Return 0 if success otherwise a negative @errorno value.
+ * @return Return 0 if success otherwise a negative 'errno' value.
  */
 int updatehub_confirm(void);
 
 /**
  * @brief Request system to reboot.
  *
- * @return Return 0 if success otherwise a negative @errorno value.
+ * @return Return 0 if success otherwise a negative 'errno' value.
  */
 int updatehub_reboot(void);
 
@@ -90,4 +90,4 @@ int updatehub_reboot(void);
  * @}
  */
 
-#endif /* _UPDATEHUB_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_UPDATEHUB_H_ */
