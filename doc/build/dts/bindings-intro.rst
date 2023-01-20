@@ -115,7 +115,9 @@ subdirectories of the following places:
 - the zephyr repository
 - your :ref:`application source directory <application>`
 - your :ref:`board directory <board_porting_guide>`
-- any directories in the :ref:`DTS_ROOT <dts_root>` CMake variable
+- any :ref:`shield directories <shields>`
+- any directories manually included in the :ref:`DTS_ROOT <dts_root>`
+  CMake variable
 - any :ref:`module <modules>` that defines a ``dts_root`` in its
   :ref:`modules_build_settings`
 
