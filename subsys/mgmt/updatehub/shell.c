@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
+
 #include <zephyr/shell/shell.h>
 #include <zephyr/mgmt/updatehub.h>
 
@@ -56,6 +59,15 @@ static int cmd_info(const struct shell *shell, size_t argc, char **argv)
 
 	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
 	char *firmware_version = k_malloc(FIRMWARE_IMG_VER_STRLEN_MAX);
+	int ret = 0;
+
+	if (device_id == NULL || firmware_version == NULL) {
+		LOG_ERR("Could not alloc device_id or firmware_version memory");
+
+		ret = -ENOMEM;
+
+		goto updatehub_shell_error;
+	}
 
 	updatehub_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE);
 	updatehub_get_firmware_version(UPDATEHUB_SLOT_PARTITION_0,
@@ -71,9 +83,16 @@ static int cmd_info(const struct shell *shell, size_t argc, char **argv)
 	shell_fprintf(shell, SHELL_NORMAL, "UpdateHub Server: %s\n",
 		      UPDATEHUB_SERVER);
 
-	k_free(device_id);
-	k_free(firmware_version);
-	return 0;
+updatehub_shell_error:
+	if (device_id) {
+		k_free(device_id);
+	}
+
+	if (firmware_version) {
+		k_free(firmware_version);
+	}
+
+	return ret;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_updatehub, SHELL_CMD(info, NULL, "Dump UpdateHub information",
