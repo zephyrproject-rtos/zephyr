@@ -9,11 +9,11 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # First test: saves data; second test: verifies it.
 
 # SKIP=(persistence_provisioning_data_save)
-conf=prj_pst_conf
+overlay=overlay_pst_conf
 RunTest mesh_persistence_provisioning_data_check persistence_provisioning_data_save
 
 # SKIP=(persistence_provisioning_data_load)
-conf=prj_pst_conf
+overlay=overlay_pst_conf
 RunTest mesh_persistence_provisioning_data_check persistence_provisioning_data_load
 
 
