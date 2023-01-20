@@ -25,6 +25,8 @@
 
 #include "ticker/ticker.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -54,7 +56,7 @@
 #include "ull_sched_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_conn_internal.h"
-#include "ull_periph_internal.h"
+#include "ull_peripheral_internal.h"
 #include "ull_central_internal.h"
 
 #include "ull_iso_internal.h"
@@ -2341,7 +2343,7 @@ void ull_pdu_data_init(struct pdu_data *pdu)
 {
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	pdu->cp = 0U;
-	pdu->resv = 0U;
+	pdu->octet3.resv[0] = 0U;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 }
 

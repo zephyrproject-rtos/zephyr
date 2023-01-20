@@ -40,7 +40,10 @@
 #include "hal/radio.h"
 #endif /* CONFIG_SOC_FAMILY_NRF */
 
+#include "ll_sw/pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "ll_sw/pdu.h"
+
 #include "ll_sw/lll.h"
 #include "lll/lll_df_types.h"
 #include "ll_sw/lll_sync_iso.h"

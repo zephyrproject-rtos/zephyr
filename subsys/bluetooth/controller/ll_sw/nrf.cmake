@@ -101,6 +101,7 @@ zephyr_library_sources_ifdef(
   )
 
 zephyr_library_include_directories(
+  ll_sw
   ll_sw/nordic
   hci/nordic
 )

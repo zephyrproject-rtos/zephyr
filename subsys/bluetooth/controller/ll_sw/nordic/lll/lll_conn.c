@@ -24,6 +24,8 @@
 #include "util/mfifo.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -295,9 +297,9 @@ void lll_conn_isr_rx(void *param)
 			pdu_scratch = (struct pdu_data *)radio_pkt_scratch_get();
 
 			if (pdu_scratch->cp) {
-				(void)memcpy((void *)&pdu_data_rx->cte_info,
-					     (void *)&pdu_scratch->cte_info,
-					     sizeof(pdu_data_rx->cte_info));
+				(void)memcpy((void *)&pdu_data_rx->octet3.cte_info,
+					     (void *)&pdu_scratch->octet3.cte_info,
+					     sizeof(pdu_data_rx->octet3.cte_info));
 			}
 		}
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX && defined(CONFIG_BT_CTLR_LE_ENC) */
@@ -308,10 +310,12 @@ void lll_conn_isr_rx(void *param)
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	if (pdu_data_tx->cp) {
-		cte_len = CTE_LEN_US(pdu_data_tx->cte_info.time);
+		cte_len = CTE_LEN_US(pdu_data_tx->octet3.cte_info.time);
 
-		lll_df_cte_tx_configure(pdu_data_tx->cte_info.type, pdu_data_tx->cte_info.time,
-					lll->df_tx_cfg.ant_sw_len, lll->df_tx_cfg.ant_ids);
+		lll_df_cte_tx_configure(pdu_data_tx->octet3.cte_info.type,
+					pdu_data_tx->octet3.cte_info.time,
+					lll->df_tx_cfg.ant_sw_len,
+					lll->df_tx_cfg.ant_ids);
 	} else
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 	{
@@ -576,7 +580,7 @@ void lll_conn_isr_tx(void *param)
 	LL_ASSERT(pdu_tx);
 
 	if (pdu_tx->cp) {
-		cte_len = CTE_LEN_US(pdu_tx->cte_info.time);
+		cte_len = CTE_LEN_US(pdu_tx->octet3.cte_info.time);
 	} else {
 		cte_len = 0U;
 	}
@@ -789,7 +793,7 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 			 * with CONTINUE PDUs if fragmentation is performed.
 			 */
 			p->cp = 0U;
-			p->resv = 0U;
+			p->octet3.resv[0] = 0U;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 		}
 
@@ -813,7 +817,10 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
 #if !defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) && !defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
-		p->resv = 0U;
+		/* Initialize only if vendor PDU octet3 present */
+		if (sizeof(p->octet3.resv)) {
+			p->octet3.resv[0] = 0U;
+		}
 #endif /* !CONFIG_BT_CTLR_DF_CONN_CTE_TX && !CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 	}

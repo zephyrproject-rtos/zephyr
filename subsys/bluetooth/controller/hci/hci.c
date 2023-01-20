@@ -35,6 +35,8 @@
 
 #include "ticker/ticker.h"
 
+#include "ll_sw/pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "ll_sw/pdu.h"
 
 #include "ll_sw/lll.h"
@@ -52,7 +54,7 @@
 #include "ll_sw/isoal.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ull_tx_queue.h"
+#include "ll_sw/ull_tx_queue.h"
 #endif
 
 #include "ll_sw/ull_adv_types.h"
