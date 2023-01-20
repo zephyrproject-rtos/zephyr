@@ -27,7 +27,7 @@ def test_testplan_add_testsuites(class_testplan):
     class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
     class_testplan.add_testsuites()
 
-    tests_rel_dir = 'zephyr/scripts/tests/twister/test_data/testsuites/tests/'
+    tests_rel_dir = 'scripts/tests/twister/test_data/testsuites/tests/'
     expected_testsuites = ['test_b.check_1',
                           'test_b.check_2',
                           'test_c.check_1',

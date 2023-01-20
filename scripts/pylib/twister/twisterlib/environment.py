@@ -26,19 +26,6 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.exit("$ZEPHYR_BASE environment variable undefined")
 
-try:
-    subproc = subprocess.run(['west', 'topdir'], check = True, stdout=subprocess.PIPE)
-    if subproc.returncode == 0:
-        topdir = subproc.stdout.strip().decode()
-        logger.debug(f"Project's top directory: {topdir}")
-except FileNotFoundError:
-    topdir = ZEPHYR_BASE
-    logger.warning(f"West is not installed. Using ZEPHYR_BASE {ZEPHYR_BASE} as project's top directory")
-except subprocess.CalledProcessError as e:
-    topdir = ZEPHYR_BASE
-    logger.warning(e)
-    logger.warning(f"Using ZEPHYR_BASE {ZEPHYR_BASE} as project's top directory")
-
 # Use this for internal comparisons; that's what canonicalization is
 # for. Don't use it when invoking other components of the build system
 # to avoid confusing and hard to trace inconsistencies in error messages
@@ -46,7 +33,7 @@ except subprocess.CalledProcessError as e:
 # components directly.
 # Note "normalization" is different from canonicalization, see os.path.
 canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
-canonical_topdir = os.path.realpath(topdir)
+
 
 def add_parse_arguments(parser = None):
     if parser is None:
