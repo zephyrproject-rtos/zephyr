@@ -1,12 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(DEFINED TOOLCHAIN_HOME)
-  set(find_program_clang_args PATHS ${TOOLCHAIN_HOME} ${ONEAPI_PYTHON_PATH} NO_DEFAULT_PATH)
+  set(find_program_clang_args PATHS ${TOOLCHAIN_HOME} ${ONEAPI_LLVM_BIN_PATH} NO_DEFAULT_PATH)
   set(find_program_binutils_args PATHS ${TOOLCHAIN_HOME} )
 endif()
 
+find_package(oneApi 2023.0.0 REQUIRED)
+
 find_program(CMAKE_AR      llvm-ar      ${find_program_clang_args}   )
-find_program(CMAKE_NM      llvm-nm      ${find_program_clang_args}   )
+if(ONEAPI_VERSION VERSION_LESS_EQUAL "2023.0.0")
+  find_program(CMAKE_NM      nm           ${find_program_binutils_args}   )
+else()
+  find_program(CMAKE_NM      llvm-nm      ${find_program_clang_args}   )
+endif()
 # In OneApi installation directory on Windows, there is no llvm-objdump
 # binary, so would better use objdump from system environment both
 # on Linux and Windows.
