@@ -7,6 +7,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
+#include <offsets.h>
 #include "boot.h"
 #include "macro_priv.inc"
 
@@ -143,7 +144,7 @@ resetwait:
 primary_core:
 #endif
 	/* load primary stack and entry point */
-	ldr	x24, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
+	ldr	x24, =(z_interrupt_stacks + __z_interrupt_stack_SIZEOF)
 	ldr	x25, =z_arm64_prep_c
 2:
 	/* Prepare for calling C code */
@@ -155,7 +156,7 @@ primary_core:
 	 * so that we don't clobber any data.
 	 */
 #ifdef CONFIG_INIT_STACKS
-	ldr	x0, =(z_interrupt_stacks)
+	ldr	x0, =(z_interrupt_stacks + ARCH_KERNEL_STACK_RESERVED)
 	sub     x9, sp, #8
 	mov     x10, 0xaaaaaaaaaaaaaaaa
 stack_init_loop:
