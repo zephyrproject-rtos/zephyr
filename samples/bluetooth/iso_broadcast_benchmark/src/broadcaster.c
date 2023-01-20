@@ -14,14 +14,22 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(iso_broadcast_broadcaster, LOG_LEVEL_DBG);
 
-#define DEFAULT_BIS_RTN         2
-#define DEFAULT_BIS_INTERVAL_US 7500
-#define DEFAULT_BIS_LATENCY_MS  10
-#define DEFAULT_BIS_PHY         BT_GAP_LE_PHY_2M
-#define DEFAULT_BIS_SDU         CONFIG_BT_ISO_TX_MTU
-#define DEFAULT_BIS_PACKING     0
-#define DEFAULT_BIS_FRAMING     0
-#define DEFAULT_BIS_COUNT       CONFIG_BT_ISO_MAX_CHAN
+#define DEFAULT_BIS_RTN           2
+#define DEFAULT_BIS_INTERVAL_US   7500
+#define DEFAULT_BIS_LATENCY_MS    10
+#define DEFAULT_BIS_PHY           BT_GAP_LE_PHY_2M
+#define DEFAULT_BIS_SDU           CONFIG_BT_ISO_TX_MTU
+#define DEFAULT_BIS_PACKING       0
+#define DEFAULT_BIS_FRAMING       0
+#define DEFAULT_BIS_COUNT         CONFIG_BT_ISO_MAX_CHAN
+#if defined(CONFIG_BT_ISO_ADVANCED)
+#define DEFAULT_BIS_NSE           BT_ISO_NSE_MIN
+#define DEFAULT_BIS_BN            BT_ISO_BN_MIN
+#define DEFAULT_BIS_PDU_SIZE      CONFIG_BT_ISO_TX_MTU
+#define DEFAULT_BIS_IRC           BT_ISO_IRC_MIN
+#define DEFAULT_BIS_PTO           BT_ISO_PTO_MIN
+#define DEFAULT_BIS_ISO_INTERVAL  DEFAULT_BIS_INTERVAL_US / 1250U /* N * 10 ms */
+#endif /* CONFIG_BT_ISO_ADVANCED */
 
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
@@ -45,6 +53,11 @@ static struct bt_iso_big_create_param big_create_param = {
 	.framing = DEFAULT_BIS_FRAMING, /* 0 - unframed, 1 - framed */
 	.interval = DEFAULT_BIS_INTERVAL_US, /* in microseconds */
 	.latency = DEFAULT_BIS_LATENCY_MS, /* milliseconds */
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	.irc = DEFAULT_BIS_IRC,
+	.pto = DEFAULT_BIS_PTO,
+	.iso_interval = DEFAULT_BIS_ISO_INTERVAL,
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 static void iso_connected(struct bt_iso_chan *chan)
@@ -78,10 +91,17 @@ static struct bt_iso_chan_io_qos iso_tx_qos = {
 	.sdu = DEFAULT_BIS_SDU, /* bytes */
 	.rtn = DEFAULT_BIS_RTN,
 	.phy = DEFAULT_BIS_PHY,
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	.max_pdu = DEFAULT_BIS_PDU_SIZE,
+	.burst_number = DEFAULT_BIS_BN,
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 static struct bt_iso_chan_qos bis_iso_qos = {
 	.tx = &iso_tx_qos,
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	.num_subevents = DEFAULT_BIS_NSE,
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 static size_t get_chars(char *buffer, size_t max_size)
@@ -221,6 +241,152 @@ static int parse_sdu_arg(void)
 	return (int)sdu;
 }
 
+#if defined(CONFIG_BT_ISO_ADVANCED)
+static int parse_irc_arg(void)
+{
+	size_t char_count;
+	char buffer[4];
+	uint64_t irc;
+
+	printk("Set IRC (current %u, default %u)\n",
+	       big_create_param.irc, DEFAULT_BIS_IRC);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_BIS_IRC;
+	}
+
+	irc = strtoul(buffer, NULL, 0);
+	if (!IN_RANGE(irc, BT_ISO_IRC_MIN, BT_ISO_IRC_MAX)) {
+		printk("Invalid IRC %llu", irc);
+
+		return -EINVAL;
+	}
+
+	return (int)irc;
+}
+
+static int parse_pto_arg(void)
+{
+	size_t char_count;
+	char buffer[4];
+	uint64_t pto;
+
+	printk("Set PTO (current %u, default %u)\n",
+	       big_create_param.pto, DEFAULT_BIS_PTO);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_BIS_PTO;
+	}
+
+	pto = strtoul(buffer, NULL, 0);
+	if (!IN_RANGE(pto, BT_ISO_PTO_MIN, BT_ISO_PTO_MAX)) {
+		printk("Invalid PTO %llu", pto);
+
+		return -EINVAL;
+	}
+
+	return (int)pto;
+}
+
+static int parse_iso_interval_arg(void)
+{
+	uint64_t iso_interval;
+	size_t char_count;
+	char buffer[8];
+
+	printk("Set ISO interval (current %u, default %u)\n",
+	       big_create_param.iso_interval, DEFAULT_BIS_ISO_INTERVAL);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_BIS_ISO_INTERVAL;
+	}
+
+	iso_interval = strtoul(buffer, NULL, 0);
+	if (!IN_RANGE(iso_interval, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX)) {
+		printk("Invalid ISO interval %llu", iso_interval);
+
+		return -EINVAL;
+	}
+
+	return (int)iso_interval;
+}
+
+static int parse_nse_arg(void)
+{
+	uint64_t num_subevents;
+	size_t char_count;
+	char buffer[4];
+
+	printk("Set number of subevents (current %u, default %u)\n",
+	       bis_iso_qos.num_subevents, DEFAULT_BIS_NSE);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_BIS_NSE;
+	}
+
+	num_subevents = strtoul(buffer, NULL, 0);
+	if (!IN_RANGE(num_subevents, BT_ISO_NSE_MIN, BT_ISO_NSE_MAX)) {
+		printk("Invalid number of subevents %llu", num_subevents);
+
+		return -EINVAL;
+	}
+
+	return (int)num_subevents;
+}
+
+static int parse_max_pdu_arg(void)
+{
+	size_t char_count;
+	uint64_t max_pdu;
+	char buffer[6];
+
+	printk("Set max PDU (current %u, default %u)\n",
+	       iso_tx_qos.max_pdu, DEFAULT_BIS_PDU_SIZE);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_BIS_PDU_SIZE;
+	}
+
+	max_pdu = strtoul(buffer, NULL, 0);
+	if (max_pdu > BT_ISO_PDU_MAX) {
+		printk("Invalid max PDU %llu", max_pdu);
+
+		return -EINVAL;
+	}
+
+	return (int)max_pdu;
+}
+
+static int parse_bn_arg(void)
+{
+	uint64_t burst_number;
+	size_t char_count;
+	char buffer[4];
+
+	printk("Set burst number (current %u, default %u)\n",
+	       iso_tx_qos.burst_number, DEFAULT_BIS_BN);
+
+	char_count = get_chars(buffer, sizeof(buffer) - 1);
+	if (char_count == 0) {
+		return DEFAULT_BIS_PDU_SIZE;
+	}
+
+	burst_number = strtoul(buffer, NULL, 0);
+	if (!IN_RANGE(burst_number, BT_ISO_BN_MIN, BT_ISO_BN_MAX)) {
+		printk("Invalid burst number %llu", burst_number);
+
+		return -EINVAL;
+	}
+
+	return (int)burst_number;
+}
+#endif /* CONFIG_BT_ISO_ADVANCED */
+
 static int parse_packing_arg(void)
 {
 	char buffer[3];
@@ -302,6 +468,14 @@ static int parse_args(void)
 	int packing;
 	int framing;
 	int bis_count;
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	int num_subevents;
+	int iso_interval;
+	int burst_number;
+	int max_pdu;
+	int irc;
+	int pto;
+#endif /* CONFIG_BT_ISO_ADVANCED */
 
 	printk("Follow the prompts. Press enter to use default values.\n");
 
@@ -345,6 +519,38 @@ static int parse_args(void)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	irc = parse_irc_arg();
+	if (irc < 0) {
+		return -EINVAL;
+	}
+
+	pto = parse_pto_arg();
+	if (pto < 0) {
+		return -EINVAL;
+	}
+
+	iso_interval = parse_iso_interval_arg();
+	if (iso_interval < 0) {
+		return -EINVAL;
+	}
+
+	num_subevents = parse_nse_arg();
+	if (num_subevents < 0) {
+		return -EINVAL;
+	}
+
+	max_pdu = parse_max_pdu_arg();
+	if (max_pdu < 0) {
+		return -EINVAL;
+	}
+
+	burst_number = parse_bn_arg();
+	if (burst_number < 0) {
+		return -EINVAL;
+	}
+#endif /* CONFIG_BT_ISO_ADVANCED */
+
 	iso_tx_qos.rtn = rtn;
 	iso_tx_qos.phy = phy;
 	iso_tx_qos.sdu = sdu;
@@ -353,6 +559,14 @@ static int parse_args(void)
 	big_create_param.packing = packing;
 	big_create_param.framing = framing;
 	big_create_param.num_bis = bis_count;
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	bis_iso_qos.num_subevents = num_subevents;
+	iso_tx_qos.max_pdu = max_pdu;
+	iso_tx_qos.burst_number = burst_number;
+	big_create_param.irc = irc;
+	big_create_param.pto = pto;
+	big_create_param.iso_interval = iso_interval;
+#endif /* CONFIG_BT_ISO_ADVANCED */
 
 	return 0;
 }
