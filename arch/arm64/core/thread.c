@@ -28,18 +28,34 @@
  *   normal execution. When at exception is taken or a syscall is called the
  *   stack pointer switches to SP_EL1 and the execution starts using the
  *   privileged portion of the user stack without touching SP_EL0. This portion
- *   is marked as not user accessible in the MMU.
+ *   is marked as not user accessible in the MMU/MPU.
+ *
+ * - a stack guard region will be added bellow the kernel stack when
+ *   ARM64_STACK_PROTECTION is enabled. In this case, SP_EL0 will always point
+ *   to the safe exception stack in the kernel space. For the kernel thread,
+ *   SP_EL0 will not change always pointing to safe exception stack. For the
+ *   userspace thread, SP_EL0 will switch from the user stack to the safe
+ *   exception stack when entering the EL1 mode, and restore to the user stack
+ *   when backing to userspace (EL0).
  *
  *   Kernel threads:
+ *
+ * High memory addresses
  *
  *    +---------------+ <- stack_ptr
  *  E |     ESF       |
  *  L |<<<<<<<<<<<<<<<| <- SP_EL1
  *  1 |               |
- *    +---------------+
-
+ *    +---------------+ <- stack limit
+ *    |  Stack guard  | } Z_ARM64_STACK_GUARD_SIZE (protected by MMU/MPU)
+ *    +---------------+ <- stack_obj
+ *
+ * Low Memory addresses
+ *
  *
  *   User threads:
+ *
+ * High memory addresses
  *
  *    +---------------+ <- stack_ptr
  *  E |               |
@@ -49,7 +65,11 @@
  *  E |     ESF       |               |  Privileged portion of the stack
  *  L +>>>>>>>>>>>>>>>+ <- SP_EL1     |_ used during exceptions and syscalls
  *  1 |               |               |  of size ARCH_THREAD_STACK_RESERVED
- *    +---------------+ <- stack_obj..|
+ *    +---------------+ <- stack limit|
+ *    |  Stack guard  | } Z_ARM64_STACK_GUARD_SIZE (protected by MMU/MPU)
+ *    +---------------+ <- stack_obj
+ *
+ * Low Memory addresses
  *
  *  When a kernel thread switches to user mode the SP_EL0 and SP_EL1
  *  values are reset accordingly in arch_user_mode_enter().
