@@ -18,7 +18,10 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "ll.h"
 #include "ll_settings.h"
 
@@ -726,7 +729,7 @@ void llcp_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 
 void llcp_pdu_decode_cte_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu)
 {
-	if (pdu->cp == 0U || pdu->cte_info.time == 0U) {
+	if (pdu->cp == 0U || pdu->octet3.cte_info.time == 0U) {
 		ctx->data.cte_remote_rsp.has_cte = false;
 	} else {
 		ctx->data.cte_remote_rsp.has_cte = true;
@@ -761,8 +764,8 @@ void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu)
 	pdu->cp = 1U;
 	pdu->rfu = 0U;
 
-	pdu->cte_info.time = ctx->data.cte_remote_req.min_cte_len;
-	pdu->cte_info.type = ctx->data.cte_remote_req.cte_type;
+	pdu->octet3.cte_info.time = ctx->data.cte_remote_req.min_cte_len;
+	pdu->octet3.cte_info.type = ctx->data.cte_remote_req.cte_type;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
