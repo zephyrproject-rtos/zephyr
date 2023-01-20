@@ -13,13 +13,17 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <kernel_internal.h>
 
 LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
 #define MPU_DYNAMIC_REGION_AREAS_NUM	1
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
 static int dynamic_areas_init(uintptr_t start, size_t size);
+#endif
+
+#if defined(CONFIG_USERSPACE)
 #define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&_app_smem_start)
 #else
 #define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&__kernel_ram_start)
@@ -122,6 +126,16 @@ static inline void mpu_set_region(uint32_t rnr, uint64_t rbar,
 	isb();
 }
 
+static inline void mpu_clear_region(uint32_t rnr)
+{
+	write_prselr_el1(rnr);
+	dsb();
+	write_prlar_el1(0);
+	write_prbar_el1(0);
+	dsb();
+	isb();
+}
+
 /* This internal functions performs MPU region initialization. */
 static void region_init(const uint32_t index,
 			const struct arm_mpu_region *region_conf)
@@ -197,7 +211,7 @@ void z_arm64_mm_init(bool is_primary_core)
 		return;
 	}
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
 	/* Only primary core do the dynamic_areas_init. */
 	int rc = dynamic_areas_init(MPU_DYNAMIC_REGIONS_AREA_START,
 				    MPU_DYNAMIC_REGIONS_AREA_SIZE);
@@ -209,7 +223,7 @@ void z_arm64_mm_init(bool is_primary_core)
 
 }
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
 
 static struct dynamic_region_info sys_dyn_regions[MPU_DYNAMIC_REGION_AREAS_NUM];
 static int sys_dyn_regions_num;
@@ -388,7 +402,7 @@ static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 	 * Clean the dynamic regions
 	 */
 	for (size_t i = reg_avail_idx; i < get_num_regions(); i++) {
-		mpu_set_region(i, 0, 0);
+		mpu_clear_region(i);
 	}
 
 	/*
@@ -430,14 +444,17 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 	uint8_t region_num;
 	int ret = 0, ret2;
 
+	thread->arch.region_num = 0;
+
 	ret2 = dup_dynamic_regions(dyn_regions, max_region_num);
 	CHECKIF(ret2 < 0) {
 		ret = ret2;
 		goto out;
 	}
-
 	region_num = (uint8_t)ret2;
+	thread->arch.region_num = region_num;
 
+#if defined(CONFIG_USERSPACE)
 	struct k_mem_domain *mem_domain = thread->mem_domain_info.mem_domain;
 
 	if (mem_domain) {
@@ -485,6 +502,41 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 
 		region_num = (uint8_t)ret2;
 	}
+#endif
+
+#if defined(CONFIG_ARM64_STACK_PROTECTION)
+	uintptr_t guard_start;
+
+	if (thread->arch.stack_limit != 0) {
+		guard_start = (uintptr_t)thread->arch.stack_limit - Z_ARM64_STACK_GUARD_SIZE;
+		ret2 = insert_region(dyn_regions,
+				     region_num,
+				     max_region_num,
+				     guard_start,
+				     Z_ARM64_STACK_GUARD_SIZE,
+				     &K_MEM_PARTITION_P_RO_U_NA);
+		CHECKIF(ret2 < 0) {
+			ret = ret2;
+			goto out;
+		}
+		region_num = (uint8_t)ret2;
+	}
+
+	for (int i = 0; i < arch_num_cpus(); i++) {
+		guard_start = (uintptr_t)z_interrupt_stacks[i],
+		ret2 = insert_region(dyn_regions,
+				     region_num,
+				     max_region_num,
+				     guard_start,
+				     Z_ARM64_STACK_GUARD_SIZE,
+				     &K_MEM_PARTITION_P_RO_U_NA);
+		CHECKIF(ret2 < 0) {
+			ret = ret2;
+			goto out;
+		}
+		region_num = (uint8_t)ret2;
+	}
+#endif
 
 	thread->arch.region_num = region_num;
 
@@ -495,7 +547,9 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 out:
 	return ret;
 }
+#endif /* defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION) */
 
+#if defined(CONFIG_USERSPACE)
 int arch_mem_domain_max_partitions_get(void)
 {
 	int max_parts = get_num_regions() - static_regions_num;
@@ -570,7 +624,9 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	return ret;
 }
+#endif /* CONFIG_USERSPACE */
 
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
 void z_arm64_thread_mem_domains_init(struct k_thread *thread)
 {
 	configure_dynamic_mpu_regions(thread);
@@ -584,5 +640,4 @@ void z_arm64_swap_mem_domains(struct k_thread *thread)
 		(void)flush_dynamic_regions_to_mpu(thread->arch.regions, thread->arch.region_num);
 	}
 }
-
-#endif /* CONFIG_USERSPACE */
+#endif
