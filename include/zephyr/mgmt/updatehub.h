@@ -14,6 +14,10 @@
 #ifndef ZEPHYR_INCLUDE_MGMT_UPDATEHUB_H_
 #define ZEPHYR_INCLUDE_MGMT_UPDATEHUB_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Responses messages from UpdateHub.
  *
@@ -41,7 +45,7 @@ enum updatehub_response {
  * @details The updatehub_autohandler handles the whole process
  * in pre-determined time intervals.
  */
-void updatehub_autohandler(void);
+__syscall void updatehub_autohandler(void);
 
 /**
  * @brief The UpdateHub probe verify if there is some update to be performed.
@@ -52,7 +56,7 @@ void updatehub_autohandler(void);
  * @return UPDATEHUB_INCOMPATIBLE_HARDWARE if Incompatible hardware.
  * @return UPDATEHUB_METADATA_ERROR fail to parse or to encode the metadata.
  */
-enum updatehub_response updatehub_probe(void);
+__syscall enum updatehub_response updatehub_probe(void);
 
 /**
  * @brief Apply the update package.
@@ -67,7 +71,7 @@ enum updatehub_response updatehub_probe(void);
  * @return UPDATEHUB_INSTALL_ERROR fail while installing the update package.
  * @return UPDATEHUB_FLASH_INIT_ERROR fail to initialize the flash.
  */
-enum updatehub_response updatehub_update(void);
+__syscall enum updatehub_response updatehub_update(void);
 
 /**
  * @brief Confirm that image is running as expected.
@@ -77,17 +81,22 @@ enum updatehub_response updatehub_update(void);
  *
  * @return Return 0 if success otherwise a negative 'errno' value.
  */
-int updatehub_confirm(void);
+__syscall int updatehub_confirm(void);
 
 /**
  * @brief Request system to reboot.
  *
  * @return Return 0 if success otherwise a negative 'errno' value.
  */
-int updatehub_reboot(void);
+__syscall int updatehub_reboot(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
  */
 
+#include <syscalls/updatehub.h>
 #endif /* ZEPHYR_INCLUDE_MGMT_UPDATEHUB_H_ */
