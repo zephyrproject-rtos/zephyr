@@ -2114,6 +2114,17 @@ or fails with an error:
 
 The error message can help diagnose errors.
 
+Here, "invalid" means that the syntax of the manifest file doesn't follow the
+rules documented on this page.
+
+If your manifest is valid but it's not working the way you want it to, turning
+up the verbosity with ``-v`` is a good way to get detailed information about
+what decisions west made about your manifest, and why:
+
+.. code-block:: none
+
+   west -v manifest --validate
+
 .. _west-manifest-path:
 
 Get the manifest path
