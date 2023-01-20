@@ -84,7 +84,7 @@ TESTDATA_3 = [
             ZEPHYR_BASE,
             ZEPHYR_BASE,
             'test_a.check_1',
-            'zephyr/test_a.check_1'
+            'test_a.check_1'
         ),
         (
             ZEPHYR_BASE,
@@ -96,13 +96,13 @@ TESTDATA_3 = [
             os.path.join(ZEPHYR_BASE, 'scripts/tests'),
             os.path.join(ZEPHYR_BASE, 'scripts/tests'),
             'test_b.check_1',
-            'zephyr/scripts/tests/test_b.check_1'
+            'scripts/tests/test_b.check_1'
         ),
         (
             ZEPHYR_BASE,
             ZEPHYR_BASE,
             'test_a.check_1.check_2',
-            'zephyr/test_a.check_1.check_2'
+            'test_a.check_1.check_2'
         ),
         (
             os.path.join(ZEPHYR_BASE, '..', 'module_A', 'samples', 'hello_world'),
