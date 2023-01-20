@@ -583,12 +583,12 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+#if defined(CONFIG_BT_SMP)
+		if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
-			LOG_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
 		}
-
+#endif
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
@@ -656,12 +656,12 @@ static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+#if defined(CONFIG_BT_SMP)
+		if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
-			LOG_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
 		}
-
+#endif
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
