@@ -145,6 +145,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.lr = (uint64_t)z_arm64_exit_exc;
 
 	thread->switch_handle = thread;
+#if defined(CONFIG_ARM64_STACK_PROTECTION)
+	thread->arch.stack_limit = (uint64_t)stack + Z_ARM64_STACK_GUARD_SIZE;
+	z_arm64_thread_mem_domains_init(thread);
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
