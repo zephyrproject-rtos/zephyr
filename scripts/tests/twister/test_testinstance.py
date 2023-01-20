@@ -33,7 +33,7 @@ def test_check_build_or_run(class_testplan, monkeypatch, all_testsuites_dict, pl
     Scenario 2: Test if build_only is enabled when the OS is Windows"""
 
     class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get('zephyr/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1')
+    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1')
     print(testsuite)
 
     class_testplan.platforms = platforms_list
@@ -69,7 +69,7 @@ def test_create_overlay(class_testplan, all_testsuites_dict, platforms_list, ena
     """Test correct content is written to testcase_extra.conf based on if conditions
     TO DO: Add extra_configs to the input list"""
     class_testplan.testsuites = all_testsuites_dict
-    testcase = class_testplan.testsuites.get('zephyr/scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app')
+    testcase = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app')
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
 
@@ -80,7 +80,7 @@ def test_create_overlay(class_testplan, all_testsuites_dict, platforms_list, ena
 def test_calculate_sizes(class_testplan, all_testsuites_dict, platforms_list):
     """ Test Calculate sizes method for zephyr elf"""
     class_testplan.testsuites = all_testsuites_dict
-    testcase = class_testplan.testsuites.get('zephyr/scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app')
+    testcase = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app')
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
     testinstance = TestInstance(testcase, platform, class_testplan.env.outdir)
