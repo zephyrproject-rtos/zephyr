@@ -109,6 +109,16 @@ extern "C" {
 #define BT_ISO_BIS_INDEX_MIN        0x01
 /** Highest BIS index */
 #define BT_ISO_BIS_INDEX_MAX        0x1F
+/** Minimum Immediate Repetition Count */
+#define BT_ISO_IRC_MIN              0x01U
+/** Maximum Immediate Repetition Count */
+#define BT_ISO_IRC_MAX              0x0FU
+/** Minimum pre-transmission offset */
+#define BT_ISO_PTO_MIN              0x00U
+/** Maximum pre-transmission offset */
+#define BT_ISO_PTO_MAX              0x0FU
+
+
 /** Omit time stamp when sending to controller
  *
  * Using this value will enqueue the ISO SDU in a FIFO manner, instead of
@@ -416,6 +426,8 @@ struct bt_iso_big_create_param {
 	/** @brief Channel Latency in ms.
 	 *
 	 *  Value range BT_ISO_LATENCY_MIN - BT_ISO_LATENCY_MAX.
+	 *
+	 *  This value is ignored if any advanced ISO parameters are set.
 	 */
 	uint16_t latency;
 
@@ -448,6 +460,34 @@ struct bt_iso_big_create_param {
 	 *    [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
 	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE];
+
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	/** @brief Immediate Repetition Count
+	 *
+	 *  The number of times the scheduled payloads are transmitted in a
+	 *  given event.
+	 *
+	 *  Value range from @ref BT_ISO_MIN_IRC to @ref BT_ISO_MAX_IRC.
+	 */
+	uint8_t irc;
+
+	/** @brief Pre-transmission offset
+	 *
+	 *  Offset used for pre-transmissions.
+	 *
+	 *  Value range from @ref BT_ISO_MIN_PTO to @ref BT_ISO_MAX_PTO.
+	 */
+	uint8_t pto;
+
+	/** @brief ISO interval
+	 *
+	 *  Time between consecutive BIS anchor points.
+	 *
+	 *  Value range from @ref BT_ISO_ISO_INTERVAL_MIN to
+	 *  @ref BT_ISO_ISO_INTERVAL_MAX.
+	 */
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_ADVANCED */
 };
 
 struct bt_iso_big_sync_param {
