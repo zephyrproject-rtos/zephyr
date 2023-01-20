@@ -21,6 +21,8 @@
 #include "hal/radio.h"
 #include "hal/ticker.h"
 
+#include "ll_sw/pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "ll_sw/pdu.h"
 
 #include "radio_internal.h"

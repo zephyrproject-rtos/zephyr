@@ -751,7 +751,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -906,7 +906,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_ts_wrap1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -1023,7 +1023,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_ts_wrap2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -1134,7 +1134,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should not be emitted */
@@ -1175,7 +1175,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -1284,7 +1284,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should be not emitted */
@@ -1321,7 +1321,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -1371,7 +1371,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should not be emitted */
@@ -1408,7 +1408,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -1462,7 +1462,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -1570,7 +1570,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should not be emitted */
@@ -1604,7 +1604,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should not be emitted */
@@ -1638,7 +1638,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should not be emitted */
@@ -1672,7 +1672,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should not be emitted */
@@ -1709,7 +1709,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -1818,7 +1818,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split_on_border)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should not be emitted */
@@ -1855,7 +1855,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split_on_border)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -1906,7 +1906,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split_on_border)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -1953,7 +1953,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split_on_border)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should not be emitted */
@@ -1990,7 +1990,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split_on_border)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -2108,7 +2108,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_long_pdu_short_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[0], &rx_sdu_frag_buf[0],         /* SDU buffer */
-						 &rx_pdu_meta_buf.pdu[2],     /* PDU payload */
+						 &rx_pdu_meta_buf.pdu[3],     /* PDU payload */
 						 20);                         /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(history[0], &isoal_global.sink_state[sink_hdl],/* Sink */
@@ -2133,7 +2133,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_long_pdu_short_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[1], &rx_sdu_frag_buf[1],        /* SDU buffer */
-						 &rx_pdu_meta_buf.pdu[2+20], /* PDU payload */
+						 &rx_pdu_meta_buf.pdu[3+20], /* PDU payload */
 						 20);                        /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(history[1], &isoal_global.sink_state[sink_hdl],/* Sink */
@@ -2244,7 +2244,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_prem)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -2297,7 +2297,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_prem)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -2408,7 +2408,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -2463,7 +2463,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -2571,7 +2571,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
 	/* SDU should not be emitted */
@@ -2617,7 +2617,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -2674,7 +2674,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -2779,7 +2779,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -2823,7 +2823,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -2880,7 +2880,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -2922,7 +2922,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -3037,7 +3037,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -3095,7 +3095,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -3151,7 +3151,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -3193,7 +3193,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -3303,7 +3303,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -3342,7 +3342,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -3508,7 +3508,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_no_end)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -3682,7 +3682,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -3848,7 +3848,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -4018,7 +4018,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -4055,7 +4055,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -4303,7 +4303,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err_zero_length)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -4346,7 +4346,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err_zero_length)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -4517,7 +4517,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_no_end)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -4554,7 +4554,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_no_end)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -4747,7 +4747,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -4868,7 +4868,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2_pdu_err)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
 
@@ -4906,7 +4906,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2_pdu_err)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2],          /* PDU payload */
+					  &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val, &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -5024,7 +5024,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_pdu_single_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -5144,7 +5144,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_pdu_single_sdu_ts_wrap1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -5265,7 +5265,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_pdu_single_sdu_ts_wrap2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -5382,7 +5382,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
@@ -5419,7 +5419,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should not be emitted */
@@ -5459,7 +5459,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[2]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
@@ -5578,7 +5578,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -5635,7 +5635,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[1], &rx_sdu_frag_buf[0],       /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  10);                              /* Size */
 	/* SDU should be emitted */
@@ -5657,7 +5657,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[1],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[2]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -5697,7 +5697,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[1],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -5820,7 +5820,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -5890,7 +5890,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[1], &rx_sdu_frag_buf[0],       /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  10);                              /* Size */
 
@@ -5935,7 +5935,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[2],       /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -5976,7 +5976,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[2],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -6097,7 +6097,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_padding)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -6186,7 +6186,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_padding)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -6364,7 +6364,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -6544,7 +6544,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -6670,7 +6670,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -6844,7 +6844,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -6922,7 +6922,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -7160,7 +7160,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -7278,7 +7278,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -7404,7 +7404,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -7522,7 +7522,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -7560,7 +7560,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -7656,7 +7656,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -7774,7 +7774,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -7879,7 +7879,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -7997,7 +7997,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -8102,7 +8102,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -8291,7 +8291,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[1],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[2]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -8332,7 +8332,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[1],                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -8394,7 +8394,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[4]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -8515,7 +8515,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -8664,7 +8664,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[4]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -8784,7 +8784,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -8841,7 +8841,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[1], &rx_sdu_frag_buf[0],       /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  10);                              /* Size */
 
@@ -8864,7 +8864,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[1],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[2]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -8962,7 +8962,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[4]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -9082,7 +9082,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -9203,7 +9203,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],               /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[4]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -9324,7 +9324,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -9445,7 +9445,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_seq_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[4]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -9583,17 +9583,17 @@ ZTEST(test_rx_framed, test_rx_framed_single_invalid_pdu_single_sdu)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[0], &rx_sdu_frag_buf,          /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  13);                              /* Size */
 
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[1], &rx_sdu_frag_buf,          /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  5);                               /* Size */
 
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[2]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -9747,27 +9747,27 @@ ZTEST(test_rx_framed, test_rx_framed_single_invalid_pdu_single_sdu_hdr_err)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[0], &rx_sdu_frag_buf,          /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  3);                               /* Size */
 
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[1], &rx_sdu_frag_buf,          /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  4);                               /* Size */
 
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[2], &rx_sdu_frag_buf,          /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[2]],
 									    /* PDU payload */
 					  4);                               /* Size */
 
 	ZASSERT_ISOAL_SDU_WRITE_TEST(history[3], &rx_sdu_frag_buf,          /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  4);                               /* Size */
 
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf,                 /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[4]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -9967,7 +9967,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[1],              /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[2]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -10008,7 +10008,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err1)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[1],               /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[3]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -10134,7 +10134,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],               /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[0]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 
@@ -10194,7 +10194,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],               /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[1]],
 									    /* PDU payload */
 					  10);                              /* Size */
 
@@ -10309,7 +10309,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err2)
 
 	/* SDU payload should be written */
 	ZASSERT_ISOAL_SDU_WRITE_TEST(val, &rx_sdu_frag_buf[0],               /* SDU buffer */
-					  &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]],
+					  &rx_pdu_meta_buf.pdu[3+pdu_data_loc[4]],
 									    /* PDU payload */
 					  (testdata_size - testdata_indx)); /* Size */
 

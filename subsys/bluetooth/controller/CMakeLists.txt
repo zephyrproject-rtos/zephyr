@@ -171,7 +171,6 @@ zephyr_library_sources_ifdef(
 zephyr_library_include_directories(
   .
   include
-  ll_sw
   )
 
 zephyr_library_compile_options_ifdef(

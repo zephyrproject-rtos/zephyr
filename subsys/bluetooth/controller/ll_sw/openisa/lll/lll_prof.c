@@ -12,6 +12,7 @@
 
 #include "util/memq.h"
 
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
