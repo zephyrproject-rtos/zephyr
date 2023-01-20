@@ -289,6 +289,7 @@ isoal_status_t isoal_sink_create(
  */
 struct isoal_sink_config *isoal_get_sink_param_ref(isoal_sink_handle_t hdl)
 {
+	LL_ASSERT(hdl < CONFIG_BT_CTLR_ISOAL_SINKS);
 	LL_ASSERT(isoal_global.sink_allocated[hdl] == ISOAL_ALLOC_STATE_TAKEN);
 
 	return &isoal_global.sink_state[hdl].session.param;
@@ -1351,6 +1352,7 @@ isoal_status_t isoal_source_create(
  */
 struct isoal_source_config *isoal_get_source_param_ref(isoal_source_handle_t hdl)
 {
+	LL_ASSERT(hdl < CONFIG_BT_CTLR_ISOAL_SOURCES);
 	LL_ASSERT(isoal_global.source_allocated[hdl] == ISOAL_ALLOC_STATE_TAKEN);
 
 	return &isoal_global.source_state[hdl].session.param;
