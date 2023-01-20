@@ -231,6 +231,21 @@ static int unquoted_atoi(const char *s, int base)
 	return strtol(s, NULL, base);
 }
 
+static char * unquoted_strncpy(char *dest, const char * src, size_t num)
+{
+	if (*src == '"') {
+		src++;
+	}
+
+	strncpy(dest, src, num);
+	dest[num - 1] = '\0';
+	if (dest[strlen(dest) - 1] == '\"') {
+		dest[strlen(dest) - 1] = '\0';
+	}
+
+	return dest;
+}
+
 /*
  * Handler: +COPS: <mode>[0],<format>[1],<oper>[2]
  */
@@ -1369,18 +1384,62 @@ void gsm_ppp_configure_sms_reception(const struct device *dev)
 	}
 }
 
-void gsm_ppp_read_sms(const struct device *dev)
+static struct gsm_ppp_sms_message sms_message;
+
+/* Handler: <SMS message> */
+MODEM_CMD_DEFINE(on_cmd_atcmd_read_sms)
+{
+	if (argc >= 1 && strncmp(argv[0], "+CMGL: ", strlen("+CMGL: ")) == 0) {
+		sms_message.index = atoi(strchr(argv[0], ' '));
+
+		unquoted_strncpy(sms_message.status, argv[1], GSM_PPP_SMS_STATUS_LENGTH);
+
+		unquoted_strncpy(sms_message.origin_address, argv[2], GSM_PPP_SMS_OA_LENGTH);
+
+		unquoted_strncpy(sms_message.origin_name, argv[3], GSM_PPP_SMS_OA_NAME_LENGTH);
+
+		unquoted_strncpy(sms_message.date, argv[4], GSM_PPP_SMS_DATE_LENGTH);
+
+		unquoted_strncpy(sms_message.time, argv[5], GSM_PPP_SMS_TIME_LENGTH);
+	} else if(argc == 1) {
+		size_t out_len;
+
+		sms_message.has_data = true;
+		out_len = net_buf_linearize(sms_message.data,
+						sizeof(sms_message.data) - 1,
+						data->rx_buf, 0, len);
+		sms_message.data[out_len] = '\0';
+	} else {
+		LOG_DBG("Invalid SMS received");
+		sms_message.valid = false;
+	}
+	return 0;
+}
+
+static const struct setup_cmd read_sms_cmds[] = {
+	SETUP_CMD_ARGS_MAX("AT+CMGL=\"REC UNREAD\"", "", on_cmd_atcmd_read_sms, 0U, 8U, ","),
+};
+
+struct gsm_ppp_sms_message * gsm_ppp_read_sms(const struct device *dev)
 {
 	struct gsm_modem *gsm = dev->data;
 	int ret;
 
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CMGL=\"REC UNREAD\"",
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+	memset(&sms_message, 0, sizeof(sms_message));
+	sms_message.valid = true;
+
+	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
+						  &gsm->context.cmd_handler,
+						  read_sms_cmds,
+						  ARRAY_SIZE(read_sms_cmds),
+						  &gsm->sem_response,
+						  GSM_CMD_SETUP_TIMEOUT);
 
 	if (ret < 0) {
 		LOG_DBG("No answer from reading sms messages");
 	}
+
+	return &sms_message;
 }
 
 static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,

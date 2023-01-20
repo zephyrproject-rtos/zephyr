@@ -87,6 +87,11 @@ struct modem_cmd {
 	MODEM_CMD(match_cmd_, func_cb_, num_param_, delim_) \
 }
 
+#define SETUP_CMD_ARGS_MAX(cmd_send_, match_cmd_, func_cb_, num_param_min, num_param_max, delim_) { \
+	.send_cmd = cmd_send_, \
+	MODEM_CMD_ARGS_MAX(match_cmd_, func_cb_, num_param_min, num_param_max, delim_) \
+}
+
 #define SETUP_CMD_NOHANDLE(send_cmd_) \
 		SETUP_CMD(send_cmd_, NULL, NULL, 0U, NULL)
 

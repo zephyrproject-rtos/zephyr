@@ -18,6 +18,13 @@ extern "C" {
 #define GSM_PPP_MDM_IMSI_LENGTH          16
 #define GSM_PPP_MDM_ICCID_LENGTH         32
 
+#define GSM_PPP_SMS_STATUS_LENGTH        16
+#define GSM_PPP_SMS_OA_LENGTH            16
+#define GSM_PPP_SMS_OA_NAME_LENGTH       32
+#define GSM_PPP_SMS_DATE_LENGTH          16
+#define GSM_PPP_SMS_TIME_LENGTH          16
+#define GSM_PPP_SMS_DATA_LENGTH         180
+
 struct gsm_ppp_modem_info {
 	char mdm_manufacturer[GSM_PPP_MDM_MANUFACTURER_LENGTH];
 	char mdm_model[GSM_PPP_MDM_MODEL_LENGTH];
@@ -28,6 +35,18 @@ struct gsm_ppp_modem_info {
 	char mdm_iccid[GSM_PPP_MDM_ICCID_LENGTH];
 #endif
 	int  mdm_rssi;
+};
+
+struct gsm_ppp_sms_message {
+	bool valid;
+	bool has_data;
+	int index;
+	char status[GSM_PPP_SMS_STATUS_LENGTH];
+	char origin_address[GSM_PPP_SMS_OA_LENGTH];
+	char origin_name[GSM_PPP_SMS_OA_NAME_LENGTH];
+	char date[GSM_PPP_SMS_DATE_LENGTH];
+	char time[GSM_PPP_SMS_TIME_LENGTH];
+	char data[GSM_PPP_SMS_DATA_LENGTH];
 };
 
 enum ring_indicator_behaviour {
@@ -95,8 +114,10 @@ void gsm_ppp_configure_sms_reception(const struct device *dev);
  * @brief Read a SMS message from the modem.
  *
  * @param dev: GSM modem device.
+ *
+ * @retval struct gsm_ppp_sms_message * pointer to the received SMS information
  */
-void gsm_ppp_read_sms(const struct device *dev);
+struct gsm_ppp_sms_message * gsm_ppp_read_sms(const struct device *dev);
 
 #ifdef __cplusplus
 }
