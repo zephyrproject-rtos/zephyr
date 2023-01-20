@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/device.h>
+#include <zephyr/debug/sparse.h>
 #include <cpu_init.h>
 
 #include <xtensa/corebits.h>
@@ -197,7 +198,8 @@ __imr void pm_state_imr_restore(void)
 {
 	struct imr_layout *imr_layout = (struct imr_layout *)(IMR_LAYOUT_ADDRESS);
 	/* restore lpsram power and contents */
-	bmemcpy(z_soc_uncached_ptr(UINT_TO_POINTER(LP_SRAM_BASE)),
+	bmemcpy(z_soc_uncached_ptr((__sparse_force void __sparse_cache *)
+				   UINT_TO_POINTER(LP_SRAM_BASE)),
 		imr_layout->imr_state.header.imr_ram_storage,
 		LP_SRAM_SIZE);
 
