@@ -69,6 +69,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--softreset', required=False,
                             action='store_true',
                             help='use reset instead of pinreset')
+        parser.add_argument('--snr', required=False, dest='dev_id',
+                            help='obsolete synonym for -i/--dev-id')
         parser.add_argument('--force', required=False,
                             action='store_true',
                             help='Flash even if the result cannot be guaranteed.')

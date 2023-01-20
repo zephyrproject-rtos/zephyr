@@ -94,6 +94,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # Optional:
         parser.add_argument('--loader', required=False, dest='loader',
                             help='specifies a loader type')
+        parser.add_argument('--id', required=False, dest='dev_id',
+                            help='obsolete synonym for -i/--dev-id')
         parser.add_argument('--iface', default='swd',
                             help='interface to use, default is swd')
         parser.add_argument('--speed', default='auto',
