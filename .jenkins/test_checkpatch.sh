@@ -15,7 +15,7 @@ do
   ret=`expr $ret + $?`
 done < "$filename"
 else
-echo "patch file is empty."
-exit 1
+echo "patch file is empty, checkpatch is skipped."
+exit 0
 fi
 exit $ret
