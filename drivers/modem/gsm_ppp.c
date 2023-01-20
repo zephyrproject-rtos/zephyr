@@ -839,26 +839,24 @@ attaching:
 	gsm->retries = GSM_RSSI_RETRIES;
 	gsm->minfo.mdm_rssi = GSM_RSSI_INVALID;
 
- attached:
+attached:
 
-	if (!IS_ENABLED(CONFIG_GSM_MUX)) {
-		/* Read connection quality (RSSI) before PPP carrier is ON */
-		query_rssi_nolock(gsm);
+	/* Read connection quality (RSSI) before PPP carrier is ON */
+	query_rssi_nolock(gsm);
 
-		if (!((gsm->minfo.mdm_rssi > 0) && (gsm->minfo.mdm_rssi != GSM_RSSI_INVALID) &&
-			(gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL))) {
+	if (!((gsm->minfo.mdm_rssi) > 0 && (gsm->minfo.mdm_rssi != GSM_RSSI_INVALID) &&
+		(gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL))) {
 
-			LOG_DBG("Not valid RSSI, %s", "retrying...");
-			if (gsm->retries-- > 0) {
-				(void)gsm_work_reschedule(&gsm->gsm_configure_work,
-							K_MSEC(GSM_RSSI_RETRY_DELAY_MSEC));
-				goto unlock;
-			}
+		LOG_DBG("Not valid RSSI, %s", "retrying...");
+		if (gsm->rssi_retries-- > 0) {
+			(void)gsm_work_reschedule(&gsm->gsm_configure_work,
+						K_MSEC(GSM_RSSI_RETRY_DELAY_MSEC));
+			goto unlock;
 		}
-#if defined(CONFIG_MODEM_CELL_INFO)
-		(void)gsm_query_cellinfo(gsm);
-#endif
 	}
+#if defined(CONFIG_MODEM_CELL_INFO)
+	(void)gsm_query_cellinfo(gsm);
+#endif
 
 	LOG_DBG("modem RSSI: %d, %s", gsm->minfo.mdm_rssi, "enable PPP");
 
@@ -1293,9 +1291,13 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
 	gsm_ppp_unlock(gsm);
 }
 
-const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev)
+const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev, bool update_rssi)
 {
 	struct gsm_modem *gsm = dev->data;
+
+	if (update_rssi) {
+		request_rssi_value(gsm);
+	}
 
 	return &gsm->minfo;
 }

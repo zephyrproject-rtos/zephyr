@@ -85,10 +85,11 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
  * @brief Get GSM modem information.
  *
  * @param dev: GSM modem device.
+ * @param update_rssi: Whether to update the rssi before obtaining the modem info.
  *
  * @retval struct gsm_ppp_modem_info * pointer to modem information structure.
  */
-const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev);
+const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev, bool update_rssi);
 
 /**
  * @brief Set modem ring indicator behaviour.
