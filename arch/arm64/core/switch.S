@@ -108,6 +108,13 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x4, lr, [x0, #_thread_offset_to_callee_saved_sp_elx_lr]
 	mov	sp, x4
 
+#if defined(CONFIG_ARM64_SAFE_EXCEPTION_STACK)
+	/* arch_curr_cpu()->arch.current_stack_limit = thread->arch.stack_limit */
+	get_cpu	x4
+	ldr	x2, [x0, #_thread_offset_to_stack_limit]
+	str	x2, [x4, #_cpu_offset_to_current_stack_limit]
+#endif
+
 #ifdef CONFIG_USERSPACE
 	str     lr, [sp, #-16]!
 	bl      z_arm64_swap_mem_domains
@@ -184,6 +191,11 @@ offload:
 	mov	x4, sp
 	mov	sp, x3
 	str	x4, [sp, #-16]!
+#if defined(CONFIG_ARM64_SAFE_EXCEPTION_STACK)
+	/* update the stack limit with IRQ stack limit */
+	sub	x3, x3, #CONFIG_ISR_STACK_SIZE
+	str	x3, [x2, #_cpu_offset_to_current_stack_limit]
+#endif
 1:
 	/* Execute provided routine (argument is in x0 already). */
 	blr	x1
