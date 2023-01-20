@@ -404,7 +404,8 @@ zephyr_compile_options(${COMPILER_OPT_AS_LIST})
 
 # TODO: Include arch compiler options at this point.
 
-if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" AND
+   NOT CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
   # GCC assumed
   zephyr_cc_option(-fno-reorder-functions)
 
