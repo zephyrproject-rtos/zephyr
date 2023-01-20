@@ -327,10 +327,8 @@ if BT_SMP
 config BT_PRIVACY
 	bool "Privacy Feature"
 	help
-	  Enable Privacy Feature support. This makes it possible to generate and use
-	  Resolvable Private Addresses (RPAs).
-
-	  Disabling this will remove the capability to resolve private addresses.
+	  Enable local Privacy Feature support. This makes it possible
+	  to use Resolvable Private Addresses (RPAs).
 
 config BT_PRIVACY_RANDOMIZE_IR
 	bool "Randomize identity root for fallback identities"
