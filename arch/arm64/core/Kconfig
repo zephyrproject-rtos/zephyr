@@ -168,6 +168,17 @@ config ARM64_FALLBACK_ON_RESERVED_CORES
 	  then that core will be skipped and the next core in the device tree
 	  will be used.
 
+config ARM64_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	depends on ARM_MPU
+	select THREAD_STACK_INFO
+	select ARM64_SAFE_EXCEPTION_STACK
+	help
+	  This option leverages the MMU or MPU to cause a system fatal error if
+	  the bounds of the current process stack are overflowed. This is done
+	  by preceding all stack areas with a fixed guard region.
+
 if CPU_CORTEX_A
 
 config ARMV8_A_NS
