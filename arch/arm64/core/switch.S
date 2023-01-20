@@ -115,7 +115,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	str	x2, [x4, #_cpu_offset_to_current_stack_limit]
 #endif
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
 	str     lr, [sp, #-16]!
 	bl      z_arm64_swap_mem_domains
 	ldr     lr, [sp], #16
