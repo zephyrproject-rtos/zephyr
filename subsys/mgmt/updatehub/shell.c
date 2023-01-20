@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/shell/shell.h>
+#include <zephyr/mgmt/updatehub.h>
 
-#include "include/updatehub.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
 #include "updatehub_storage.h"
