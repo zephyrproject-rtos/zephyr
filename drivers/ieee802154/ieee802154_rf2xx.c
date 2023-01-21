@@ -326,7 +326,8 @@ static void rf2xx_thread_main(void *arg)
 				rf2xx_iface_sram_read(ctx->dev, 0,
 						      &ctx->rx_phr, 1);
 			}
-		} else if (isr_status & (1 << RF2XX_TRX_END)) {
+		}
+		if (isr_status & (1 << RF2XX_TRX_END)) {
 			rf2xx_process_trx_end(ctx->dev);
 		}
 	}
