@@ -21,33 +21,30 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
  * Specification Revision 3.1, Version 1.3
  */
 
-/**
- * @brief Protocol Layer Flags
- *
- * @note: These flags are used in multiple state machines and could have
- *	  different meanings in each state machine.
- */
-enum prl_flags {
-	/** Flag to note message transmission completed */
-	PRL_FLAGS_TX_COMPLETE = 0,
-	/** Flag to note message was discarded */
-	PRL_FLAGS_TX_DISCARDED = 1,
-	/** Flag to note PRL waited for SINK_OK CC state before transmitting */
-	PRL_FLAGS_WAIT_SINK_OK = 2,
-	/** Flag to note transmission error occurred */
-	PRL_FLAGS_TX_ERROR = 3,
-	/** Flag to note PE triggered a hard reset */
-	PRL_FLAGS_PE_HARD_RESET = 4,
-	/** Flag to note hard reset has completed */
-	PRL_FLAGS_HARD_RESET_COMPLETE = 5,
-	/** Flag to note port partner sent a hard reset */
-	PRL_FLAGS_PORT_PARTNER_HARD_RESET = 6,
-	/**
-	 * Flag to note a message transmission has been requested. It is only
-	 * cleared when the message is sent to the TCPC layer.
-	 */
-	PRL_FLAGS_MSG_XMIT = 7,
-};
+static void prl_hr_wait_for_request_entry(void *obj);
+static void prl_hr_wait_for_request_run(void *obj);
+static void prl_hr_reset_layer_entry(void *obj);
+static void prl_hr_wait_for_phy_hard_reset_complete_entry(void *obj);
+static void prl_hr_wait_for_phy_hard_reset_complete_run(void *obj);
+static void prl_hr_wait_for_phy_hard_reset_complete_exit(void *obj);
+static void prl_hr_wait_for_pe_hard_reset_complete_entry(void *obj);
+static void prl_hr_wait_for_pe_hard_reset_complete_run(void *obj);
+static void prl_hr_suspend_entry(void *obj);
+static void prl_hr_suspend_run(void *obj);
+
+static void prl_tx_phy_layer_reset_entry(void *obj);
+static void prl_tx_wait_for_message_request_entry(void *obj);
+static void prl_tx_wait_for_message_request_run(void *obj);
+static void prl_tx_layer_reset_for_transmit_entry(void *obj);
+static void prl_tx_wait_for_phy_response_entry(void *obj);
+static void prl_tx_wait_for_phy_response_run(void *obj);
+static void prl_tx_wait_for_phy_response_exit(void *obj);
+static void prl_tx_snk_start_ams_entry(void *obj);
+static void prl_tx_snk_start_ams_run(void *obj);
+static void prl_tx_snk_pending_entry(void *obj);
+static void prl_tx_snk_pending_run(void *obj);
+static void prl_tx_suspend_entry(void *obj);
+static void prl_tx_suspend_run(void *obj);
 
 /**
  * @brief Protocol Layer Transmission States
@@ -95,8 +92,107 @@ enum usbc_prl_hr_state_t {
 	PRL_HR_STATE_COUNT
 };
 
-static const struct smf_state prl_tx_states[];
-static const struct smf_state prl_hr_states[];
+/**
+ * @brief Protocol Layer Transmit State table
+ */
+static const struct smf_state prl_tx_states[] = {
+	[PRL_TX_PHY_LAYER_RESET] = SMF_CREATE_STATE(
+		prl_tx_phy_layer_reset_entry,
+		NULL,
+		NULL,
+		NULL),
+	[PRL_TX_WAIT_FOR_MESSAGE_REQUEST] = SMF_CREATE_STATE(
+		prl_tx_wait_for_message_request_entry,
+		prl_tx_wait_for_message_request_run,
+		NULL,
+		NULL),
+	[PRL_TX_LAYER_RESET_FOR_TRANSMIT] = SMF_CREATE_STATE(
+		prl_tx_layer_reset_for_transmit_entry,
+		NULL,
+		NULL,
+		NULL),
+	[PRL_TX_WAIT_FOR_PHY_RESPONSE] = SMF_CREATE_STATE(
+		prl_tx_wait_for_phy_response_entry,
+		prl_tx_wait_for_phy_response_run,
+		prl_tx_wait_for_phy_response_exit,
+		NULL),
+	[PRL_TX_SNK_START_AMS] = SMF_CREATE_STATE(
+		prl_tx_snk_start_ams_entry,
+		prl_tx_snk_start_ams_run,
+		NULL,
+		NULL),
+	[PRL_TX_SNK_PENDING] = SMF_CREATE_STATE(
+		prl_tx_snk_pending_entry,
+		prl_tx_snk_pending_run,
+		NULL,
+		NULL),
+	[PRL_TX_SUSPEND] = SMF_CREATE_STATE(
+		prl_tx_suspend_entry,
+		prl_tx_suspend_run,
+		NULL,
+		NULL),
+};
+BUILD_ASSERT(ARRAY_SIZE(prl_tx_states) == PRL_TX_STATE_COUNT);
+
+/**
+ * @brief Protocol Layer Hard Reset State table
+ */
+static const struct smf_state prl_hr_states[] = {
+	[PRL_HR_WAIT_FOR_REQUEST] = SMF_CREATE_STATE(
+		prl_hr_wait_for_request_entry,
+		prl_hr_wait_for_request_run,
+		NULL,
+		NULL),
+	[PRL_HR_RESET_LAYER] = SMF_CREATE_STATE(
+		prl_hr_reset_layer_entry,
+		NULL,
+		NULL,
+		NULL),
+	[PRL_HR_WAIT_FOR_PHY_HARD_RESET_COMPLETE] = SMF_CREATE_STATE(
+		prl_hr_wait_for_phy_hard_reset_complete_entry,
+		prl_hr_wait_for_phy_hard_reset_complete_run,
+		prl_hr_wait_for_phy_hard_reset_complete_exit,
+		NULL),
+	[PRL_HR_WAIT_FOR_PE_HARD_RESET_COMPLETE] = SMF_CREATE_STATE(
+		prl_hr_wait_for_pe_hard_reset_complete_entry,
+		prl_hr_wait_for_pe_hard_reset_complete_run,
+		NULL,
+		NULL),
+	[PRL_HR_SUSPEND] = SMF_CREATE_STATE(
+		prl_hr_suspend_entry,
+		prl_hr_suspend_run,
+		NULL,
+		NULL),
+};
+BUILD_ASSERT(ARRAY_SIZE(prl_hr_states) == PRL_HR_STATE_COUNT);
+
+/**
+ * @brief Protocol Layer Flags
+ *
+ * @note: These flags are used in multiple state machines and could have
+ *	  different meanings in each state machine.
+ */
+enum prl_flags {
+	/** Flag to note message transmission completed */
+	PRL_FLAGS_TX_COMPLETE = 0,
+	/** Flag to note message was discarded */
+	PRL_FLAGS_TX_DISCARDED = 1,
+	/** Flag to note PRL waited for SINK_OK CC state before transmitting */
+	PRL_FLAGS_WAIT_SINK_OK = 2,
+	/** Flag to note transmission error occurred */
+	PRL_FLAGS_TX_ERROR = 3,
+	/** Flag to note PE triggered a hard reset */
+	PRL_FLAGS_PE_HARD_RESET = 4,
+	/** Flag to note hard reset has completed */
+	PRL_FLAGS_HARD_RESET_COMPLETE = 5,
+	/** Flag to note port partner sent a hard reset */
+	PRL_FLAGS_PORT_PARTNER_HARD_RESET = 6,
+	/**
+	 * Flag to note a message transmission has been requested. It is only
+	 * cleared when the message is sent to the TCPC layer.
+	 */
+	PRL_FLAGS_MSG_XMIT = 7,
+};
 
 static void prl_tx_construct_message(const struct device *dev);
 static void prl_rx_wait_for_phy_message(const struct device *dev);
@@ -1124,77 +1220,3 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 	/* Pass message to Policy Engine */
 	pe_message_received(dev);
 }
-
-/**
- * @brief Protocol Layer Transmit State table
- */
-static const struct smf_state prl_tx_states[] = {
-	[PRL_TX_PHY_LAYER_RESET] = SMF_CREATE_STATE(
-		prl_tx_phy_layer_reset_entry,
-		NULL,
-		NULL,
-		NULL),
-	[PRL_TX_WAIT_FOR_MESSAGE_REQUEST] = SMF_CREATE_STATE(
-		prl_tx_wait_for_message_request_entry,
-		prl_tx_wait_for_message_request_run,
-		NULL,
-		NULL),
-	[PRL_TX_LAYER_RESET_FOR_TRANSMIT] = SMF_CREATE_STATE(
-		prl_tx_layer_reset_for_transmit_entry,
-		NULL,
-		NULL,
-		NULL),
-	[PRL_TX_WAIT_FOR_PHY_RESPONSE] = SMF_CREATE_STATE(
-		prl_tx_wait_for_phy_response_entry,
-		prl_tx_wait_for_phy_response_run,
-		prl_tx_wait_for_phy_response_exit,
-		NULL),
-	[PRL_TX_SNK_START_AMS] = SMF_CREATE_STATE(
-		prl_tx_snk_start_ams_entry,
-		prl_tx_snk_start_ams_run,
-		NULL,
-		NULL),
-	[PRL_TX_SNK_PENDING] = SMF_CREATE_STATE(
-		prl_tx_snk_pending_entry,
-		prl_tx_snk_pending_run,
-		NULL,
-		NULL),
-	[PRL_TX_SUSPEND] = SMF_CREATE_STATE(
-		prl_tx_suspend_entry,
-		prl_tx_suspend_run,
-		NULL,
-		NULL),
-};
-BUILD_ASSERT(ARRAY_SIZE(prl_tx_states) == PRL_TX_STATE_COUNT);
-
-/**
- * @brief Protocol Layer Hard Reset State table
- */
-static const struct smf_state prl_hr_states[] = {
-	[PRL_HR_WAIT_FOR_REQUEST] = SMF_CREATE_STATE(
-		prl_hr_wait_for_request_entry,
-		prl_hr_wait_for_request_run,
-		NULL,
-		NULL),
-	[PRL_HR_RESET_LAYER] = SMF_CREATE_STATE(
-		prl_hr_reset_layer_entry,
-		NULL,
-		NULL,
-		NULL),
-	[PRL_HR_WAIT_FOR_PHY_HARD_RESET_COMPLETE] = SMF_CREATE_STATE(
-		prl_hr_wait_for_phy_hard_reset_complete_entry,
-		prl_hr_wait_for_phy_hard_reset_complete_run,
-		prl_hr_wait_for_phy_hard_reset_complete_exit,
-		NULL),
-	[PRL_HR_WAIT_FOR_PE_HARD_RESET_COMPLETE] = SMF_CREATE_STATE(
-		prl_hr_wait_for_pe_hard_reset_complete_entry,
-		prl_hr_wait_for_pe_hard_reset_complete_run,
-		NULL,
-		NULL),
-	[PRL_HR_SUSPEND] = SMF_CREATE_STATE(
-		prl_hr_suspend_entry,
-		prl_hr_suspend_run,
-		NULL,
-		NULL),
-};
-BUILD_ASSERT(ARRAY_SIZE(prl_hr_states) == PRL_HR_STATE_COUNT);

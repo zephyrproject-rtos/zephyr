@@ -11,7 +11,56 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_tc_snk_states_internal.h"
 #include "usbc_tc_common_internal.h"
 
-static const struct smf_state tc_states[];
+static void tc_disabled_entry(void *obj);
+static void tc_disabled_run(void *obj);
+static void tc_cc_open_entry(void *obj);
+static void tc_error_recovery_entry(void *obj);
+static void tc_error_recovery_run(void *obj);
+
+/**
+ * @brief Type-C State Table
+ */
+static const struct smf_state tc_states[] = {
+	/* Super States */
+	[TC_CC_OPEN_SUPER_STATE] = SMF_CREATE_STATE(
+		tc_cc_open_entry,
+		NULL,
+		NULL,
+		NULL),
+	[TC_CC_RD_SUPER_STATE] = SMF_CREATE_STATE(
+		tc_cc_rd_entry,
+		NULL,
+		NULL,
+		NULL),
+	/* Normal States */
+	[TC_UNATTACHED_SNK_STATE] = SMF_CREATE_STATE(
+		tc_unattached_snk_entry,
+		tc_unattached_snk_run,
+		NULL,
+		&tc_states[TC_CC_RD_SUPER_STATE]),
+	[TC_ATTACH_WAIT_SNK_STATE] = SMF_CREATE_STATE(
+		tc_attach_wait_snk_entry,
+		tc_attach_wait_snk_run,
+		tc_attach_wait_snk_exit,
+		&tc_states[TC_CC_RD_SUPER_STATE]),
+	[TC_ATTACHED_SNK_STATE] = SMF_CREATE_STATE(
+		tc_attached_snk_entry,
+		tc_attached_snk_run,
+		tc_attached_snk_exit,
+		NULL),
+	[TC_DISABLED_STATE] = SMF_CREATE_STATE(
+		tc_disabled_entry,
+		tc_disabled_run,
+		NULL,
+		&tc_states[TC_CC_OPEN_SUPER_STATE]),
+	[TC_ERROR_RECOVERY_STATE] = SMF_CREATE_STATE(
+		tc_error_recovery_entry,
+		tc_error_recovery_run,
+		NULL,
+		&tc_states[TC_CC_OPEN_SUPER_STATE]),
+};
+BUILD_ASSERT(ARRAY_SIZE(tc_states) == TC_STATE_COUNT);
+
 static void tc_init(const struct device *dev);
 
 /**
@@ -219,47 +268,3 @@ static void tc_error_recovery_run(void *obj)
 	/* Transition to Unattached.SNK */
 	tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
 }
-
-/**
- * @brief Type-C State Table
- */
-static const struct smf_state tc_states[] = {
-	/* Super States */
-	[TC_CC_OPEN_SUPER_STATE] = SMF_CREATE_STATE(
-		tc_cc_open_entry,
-		NULL,
-		NULL,
-		NULL),
-	[TC_CC_RD_SUPER_STATE] = SMF_CREATE_STATE(
-		tc_cc_rd_entry,
-		NULL,
-		NULL,
-		NULL),
-	/* Normal States */
-	[TC_UNATTACHED_SNK_STATE] = SMF_CREATE_STATE(
-		tc_unattached_snk_entry,
-		tc_unattached_snk_run,
-		NULL,
-		&tc_states[TC_CC_RD_SUPER_STATE]),
-	[TC_ATTACH_WAIT_SNK_STATE] = SMF_CREATE_STATE(
-		tc_attach_wait_snk_entry,
-		tc_attach_wait_snk_run,
-		tc_attach_wait_snk_exit,
-		&tc_states[TC_CC_RD_SUPER_STATE]),
-	[TC_ATTACHED_SNK_STATE] = SMF_CREATE_STATE(
-		tc_attached_snk_entry,
-		tc_attached_snk_run,
-		tc_attached_snk_exit,
-		NULL),
-	[TC_DISABLED_STATE] = SMF_CREATE_STATE(
-		tc_disabled_entry,
-		tc_disabled_run,
-		NULL,
-		&tc_states[TC_CC_OPEN_SUPER_STATE]),
-	[TC_ERROR_RECOVERY_STATE] = SMF_CREATE_STATE(
-		tc_error_recovery_entry,
-		tc_error_recovery_run,
-		NULL,
-		&tc_states[TC_CC_OPEN_SUPER_STATE]),
-};
-BUILD_ASSERT(ARRAY_SIZE(tc_states) == TC_STATE_COUNT);
