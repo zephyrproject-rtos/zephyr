@@ -517,10 +517,15 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn *conn;
+	int err;
 
 	/* Handles have been verified prior to calling this function */
 	conn = ll_connected_get(acl_handle);
 	cis = ll_conn_iso_stream_get(cis_handle);
+
+	/* Create access address */
+	err = util_aa_le32(cis->lll.access_addr);
+	LL_ASSERT(!err);
 
 	/* Initialize TX link */
 	if (!cis->lll.link_tx_free) {
@@ -628,7 +633,6 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	uint16_t handle_iter;
 	uint32_t cis_offset;
 	uint16_t instant;
-	int err;
 
 	cis = ll_conn_iso_stream_get(cis_handle);
 	if (!cis) {
@@ -678,10 +682,6 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->lll.event_count = -1;
 	cis->lll.tx.payload_count = 0U;
 	cis->lll.rx.payload_count = 0U;
-
-	/* Create access address */
-	err = util_aa_le32(cis->lll.access_addr);
-	LL_ASSERT(!err);
 
 	/* Transfer to caller */
 	*cig_sync_delay = cig->sync_delay;
