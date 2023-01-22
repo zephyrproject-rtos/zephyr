@@ -67,7 +67,6 @@ if BT_ISO
 config BT_ISO_MAX_CHAN
 	int "Maximum number of simultaneous ISO channels"
 	depends on BT_ISO
-	default BT_MAX_CONN if BT_CONN
 	default 1
 	range 1 64
 	help
