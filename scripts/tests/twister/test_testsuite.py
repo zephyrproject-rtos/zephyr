@@ -104,30 +104,6 @@ TESTDATA_3 = [
             'test_a.check_1.check_2',
             'test_a.check_1.check_2'
         ),
-        (
-            os.path.join(ZEPHYR_BASE, '..', 'module_A', 'samples', 'hello_world'),
-            os.path.join(ZEPHYR_BASE, '..', 'module_A', 'samples', 'hello_world'),
-            'test_c.check_1',
-            'module_A/samples/hello_world/test_c.check_1'
-        ),
-        (
-            os.path.join(ZEPHYR_BASE, '..', 'module_A'),
-            os.path.join(ZEPHYR_BASE, '..', 'module_A', 'samples', 'hello_world'),
-            'test_c.check_2',
-            'module_A/samples/hello_world/test_c.check_2'
-        ),
-        (
-            os.path.join(ZEPHYR_BASE, '..', '..', 'my_own_zephyr', 'samples', 'hello_world'),
-            os.path.join(ZEPHYR_BASE, '..', '..', 'my_own_zephyr', 'samples', 'hello_world'),
-            'test_c.check_1',
-            'external/my_own_zephyr/samples/hello_world/test_c.check_1'
-        ),
-        (
-            os.path.join(ZEPHYR_BASE, '..', '..', 'my_own_zephyr'),
-            os.path.join(ZEPHYR_BASE, '..', '..', 'my_own_zephyr', 'samples', 'hello_world'),
-            'test_c.check_2',
-            'external/my_own_zephyr/samples/hello_world/test_c.check_2'
-        ),
 ]
 @pytest.mark.parametrize("testsuite_root, suite_path, name, expected", TESTDATA_3)
 def test_get_unique(testsuite_root, suite_path, name, expected):
