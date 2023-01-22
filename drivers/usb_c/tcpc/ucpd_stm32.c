@@ -553,6 +553,8 @@ static void ucpd_start_transmit(const struct device *dev,
 
 		imr = LL_UCPD_ReadReg(config->ucpd_port, IMR);
 		imr |= UCPD_IMR_HRSTDISCIE | UCPD_IMR_HRSTSENTIE;
+		LL_UCPD_WriteReg(config->ucpd_port, IMR, imr);
+
 		/* Initiate Hard Reset */
 		cr |= UCPD_CR_TXHRST;
 		LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
