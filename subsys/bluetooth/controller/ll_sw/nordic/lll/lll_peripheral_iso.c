@@ -507,6 +507,8 @@ static void isr_rx(void *param)
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
 				radio_tmr_aa_restore() -
 				addr_us_get(cis_lll->rx.phy);
+			iso_meta->timestamp %=
+				HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
 			iso_meta->status = 0U;
 
 			ull_iso_pdu_rx_alloc();
@@ -996,6 +998,8 @@ static void isr_done(void *param)
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
 				radio_tmr_ready_restore();
 		}
+		iso_meta->timestamp %=
+			HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
 		iso_meta->status = 1U;
 
 		ull_iso_pdu_rx_alloc();

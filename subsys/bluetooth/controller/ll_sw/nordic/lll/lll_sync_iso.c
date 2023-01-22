@@ -1118,6 +1118,8 @@ static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
 			      ((stream->bis_index - 1U) *
 			       lll->sub_interval * ((lll->irc * lll->bn) +
 						    lll->ptc));
+	iso_meta->timestamp %=
+		HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
 	iso_meta->status = 0U;
 }
 
@@ -1140,6 +1142,8 @@ static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
 			      ((stream->bis_index - 1U) *
 			       lll->sub_interval * ((lll->irc * lll->bn) +
 						    lll->ptc));
+	iso_meta->timestamp %=
+		HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
 	iso_meta->status = 1U;
 }
 
