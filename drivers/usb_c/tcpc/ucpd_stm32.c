@@ -1135,7 +1135,7 @@ static void ucpd_isr(const struct device *dev_inst[])
 	 */
 	if (sr & tx_done_mask) {
 		/* Check for tx message complete */
-		if (sr & (UCPD_SR_TXMSGSENT | UCPD_SR_HRSTSENT)) {
+		if (sr & UCPD_SR_TXMSGSENT) {
 			atomic_set_bit(&info->evt, UCPD_EVT_TX_MSG_SUCCESS);
 		} else if (sr & (UCPD_SR_TXMSGABT | UCPD_SR_TXUND)) {
 			atomic_set_bit(&info->evt, UCPD_EVT_TX_MSG_FAIL);
