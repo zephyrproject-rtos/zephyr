@@ -185,6 +185,8 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe
 # but it has PIE disabled by default - so no extra flags are required here.
 set_compiler_property(PROPERTY no_position_independent "")
 
+set_compiler_property(PROPERTY no_global_merge "")
+
 #################################
 # This section covers asm flags #
 #################################

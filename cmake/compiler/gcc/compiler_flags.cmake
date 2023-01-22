@@ -201,3 +201,5 @@ set_compiler_property(PROPERTY no_position_independent
                       -fno-pic
                       -fno-pie
 )
+
+set_compiler_property(PROPERTY no_global_merge "")
