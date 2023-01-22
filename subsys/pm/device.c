@@ -174,38 +174,36 @@ int pm_device_power_domain_add(const struct device *dev,
 	return power_domain_add_or_remove(dev, domain, true);
 }
 
+struct pm_visitor_context {
+	pm_device_action_failed_cb_t failure_cb;
+	enum pm_device_action action;
+};
+
+static int pm_device_children_visitor(const struct device *dev, void *context)
+{
+	struct pm_visitor_context *visitor_context = context;
+	int rc;
+
+	rc = pm_device_action_run(dev, visitor_context->action);
+	if ((visitor_context->failure_cb != NULL) && (rc < 0)) {
+		/* Stop the iteration if the callback requests it */
+		if (!visitor_context->failure_cb(dev, rc)) {
+			return rc;
+		}
+	}
+	return 0;
+}
+
 void pm_device_children_action_run(const struct device *dev,
 				   enum pm_device_action action,
 				   pm_device_action_failed_cb_t failure_cb)
 {
-	const device_handle_t *handles;
-	size_t handle_count = 0U;
-	int rc = 0;
+	struct pm_visitor_context visitor_context = {
+		.failure_cb = failure_cb,
+		.action = action
+	};
 
-	/*
-	 * We don't use device_supported_foreach here because we don't want the
-	 * early exit behaviour of that function. Even if the N'th device fails
-	 * to PM_DEVICE_ACTION_TURN_ON for example, we still want to run the
-	 * action on the N+1'th device.
-	 */
-	handles = device_supported_handles_get(dev, &handle_count);
-
-	for (size_t i = 0U; i < handle_count; ++i) {
-		device_handle_t dh = handles[i];
-		const struct device *cdev = device_from_handle(dh);
-
-		if (cdev == NULL) {
-			continue;
-		}
-
-		rc = pm_device_action_run(cdev, action);
-		if ((failure_cb != NULL) && (rc < 0)) {
-			/* Stop the iteration if the callback requests it */
-			if (!failure_cb(cdev, rc)) {
-				break;
-			}
-		}
-	}
+	(void)device_supported_foreach(dev, pm_device_children_visitor, &visitor_context);
 }
 
 int pm_device_state_get(const struct device *dev,
