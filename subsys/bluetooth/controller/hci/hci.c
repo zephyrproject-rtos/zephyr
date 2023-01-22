@@ -7956,10 +7956,14 @@ void hci_disconn_complete_process(uint16_t handle)
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	/* Clear any pending packets upon disconnection */
 	/* Note: This requires linear handle values starting from 0 */
-	LL_ASSERT(handle < ARRAY_SIZE(hci_hbuf_pend));
+	if (handle >= ARRAY_SIZE(hci_hbuf_pend)) {
+		return;
+	}
+
 	hci_hbuf_acked += hci_hbuf_pend[handle];
 	hci_hbuf_pend[handle] = 0U;
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
 	conn_count--;
 }
 
