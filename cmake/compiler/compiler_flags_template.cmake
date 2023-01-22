@@ -115,3 +115,8 @@ set_compiler_property(PROPERTY warning_no_pointer_arithmetic)
 
 # Compiler flags for disabling position independent code / executable
 set_compiler_property(PROPERTY no_position_independent)
+
+# Compiler flag to avoid combine more than one global variable into a single aggregate.
+# gen_kobject_list.py is does not understand it and end up identifying objects as if
+# they had the same address.
+set_compiler_property(PROPERTY no_global_merge)

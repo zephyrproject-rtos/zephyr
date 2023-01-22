@@ -388,6 +388,10 @@ include(cmake/extra_flags.cmake)
 
 zephyr_cc_option(-fno-asynchronous-unwind-tables)
 
+if(CONFIG_USERSPACE)
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,no_global_merge>)
+endif()
+
 if(CONFIG_THREAD_LOCAL_STORAGE)
 # Only support local exec TLS model at this point.
 zephyr_cc_option(-ftls-model=local-exec)
