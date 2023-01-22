@@ -35,6 +35,7 @@
 
 #include "lll_internal.h"
 #include "lll_adv_iso_internal.h"
+#include "lll_prof_internal.h"
 
 #include "ll_feat.h"
 
@@ -401,6 +402,11 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1U, ticks_at_start, remainder);
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		/* setup capture of PDU end timestamp */
+		radio_tmr_end_capture();
+	}
+
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
 
@@ -457,6 +463,10 @@ static void isr_tx_common(void *param,
 	uint8_t data_chan_use;
 	uint8_t crc_init[3];
 	uint8_t bis;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
 
 	lll = param;
 	/* FIXME: Sequential or Interleaved BIS subevents decision */
@@ -543,6 +553,10 @@ static void isr_tx_common(void *param,
 		memq_link_t *link;
 		uint16_t handle;
 
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_cputime_capture();
+		}
+
 		for (uint8_t bis_idx = 0U; bis_idx < lll->num_bis; bis_idx++) {
 			stream_handle = lll->stream_handle[bis_idx];
 			handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
@@ -574,6 +588,10 @@ static void isr_tx_common(void *param,
 		/* Close the BIG event as no more subevents */
 		radio_isr_set(isr_done, lll);
 		radio_disable();
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_send();
+		}
 
 		return;
 	}
@@ -696,13 +714,26 @@ static void isr_tx_common(void *param,
 		radio_isr_set(isr_tx, lll);
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		/* setup capture of PDU end timestamp */
+		radio_tmr_end_capture();
+	}
+
 	/* assert if radio packet ptr is not set and radio started rx */
 	LL_ASSERT(!radio_is_ready());
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
 
 	/* Calculate ahead the next subevent channel index */
 	const uint16_t event_counter = (lll->payload_count / lll->bn) - 1U;
 
 	next_chan_calc(lll, event_counter, data_chan_id);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
 }
 
 static void next_chan_calc(struct lll_adv_iso *lll, uint16_t event_counter,

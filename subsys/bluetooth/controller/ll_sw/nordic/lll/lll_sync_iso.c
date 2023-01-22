@@ -31,6 +31,7 @@
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
+#include "lll_prof_internal.h"
 
 #include "ll_feat.h"
 
@@ -425,6 +426,10 @@ static void isr_rx_estab(void *param)
 	uint8_t trx_done;
 	uint8_t crc_ok;
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
+
 	/* Read radio status and events */
 	trx_done = radio_is_done();
 	if (trx_done) {
@@ -436,6 +441,10 @@ static void isr_rx_estab(void *param)
 
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
 
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
@@ -461,6 +470,10 @@ static void isr_rx_estab(void *param)
 	}
 
 	lll_isr_cleanup(param);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
 }
 
 static void isr_rx(void *param)
@@ -485,6 +498,10 @@ static void isr_rx(void *param)
 	uint8_t bis;
 	uint8_t nse;
 	uint8_t bn;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
@@ -610,6 +627,10 @@ static void isr_rx(void *param)
 	}
 
 isr_rx_done:
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
+
 	new_burst = 0U;
 	skipped = 0U;
 
@@ -903,6 +924,11 @@ isr_rx_find_subevent:
 	}
 
 	lll_isr_cleanup(param);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
+
 	return;
 
 isr_rx_next_subevent:
@@ -1069,10 +1095,18 @@ isr_rx_next_subevent:
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
+
 	/* Calculate ahead the next subevent channel index */
 	const uint16_t event_counter = (lll->payload_count / lll->bn) - 1U;
 
 	next_chan_calc(lll, event_counter, data_chan_id);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
 }
 
 static void next_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter,
