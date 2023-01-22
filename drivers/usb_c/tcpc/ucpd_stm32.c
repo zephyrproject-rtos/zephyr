@@ -794,12 +794,11 @@ static void ucpd_manage_tx(struct alert_info *info)
 		break;
 
 	case STATE_HARD_RESET:
-		if (atomic_test_and_clear_bit(&info->evt, UCPD_EVT_HR_DONE)) {
+		if (atomic_test_bit(&info->evt, UCPD_EVT_HR_DONE) ||
+		    atomic_test_bit(&info->evt, UCPD_EVT_HR_FAIL)) {
+			atomic_clear_bit(&info->evt, UCPD_EVT_HR_DONE);
+			atomic_clear_bit(&info->evt, UCPD_EVT_HR_FAIL);
 			/* HR complete, reset tx state values */
-			ucpd_set_tx_state(info->dev, STATE_IDLE);
-			data->ucpd_tx_request = 0;
-			data->tx_retry_count = 0;
-		} else if (atomic_test_and_clear_bit(&info->evt, UCPD_EVT_HR_FAIL)) {
 			ucpd_set_tx_state(info->dev, STATE_IDLE);
 			data->ucpd_tx_request = 0;
 			data->tx_retry_count = 0;
