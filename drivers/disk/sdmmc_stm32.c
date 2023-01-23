@@ -133,24 +133,24 @@ void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd)
 static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 {
 	const struct device *clock;
-	int res;
 
 	/* HSI48 Clock is enabled through using the device tree */
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
 		if (clock_control_configure(clock,
-					      (clock_control_subsys_t *)&priv->pclken[1],
-					      NULL) != 0) {
+					    (clock_control_subsys_t *)&priv->pclken[1],
+					    NULL) != 0) {
 			LOG_ERR("Failed to enable SDMMC domain clock");
 			return -EIO;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_SDMMC_STM32_CLOCK_CHECK)) {
 		uint32_t sdmmc_clock_rate;
 
-		if (clock_control_get_rate(clk,
-					   (clock_control_subsys_t *)&pclken[1],
+		if (clock_control_get_rate(clock,
+					   (clock_control_subsys_t *)&priv->pclken[1],
 					   &sdmmc_clock_rate) != 0) {
 			LOG_ERR("Failed to get SDMMC domain clock rate");
 			return -EIO;
@@ -678,6 +678,8 @@ static void stm32_sdmmc_irq_config_func(const struct device *dev)
 #define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_8B
 #endif /* DT_INST_PROP(0, bus_width) */
 
+static struct stm32_pclken pclken_sdmmc[] = STM32_DT_INST_CLOCKS(0);
+
 static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.irq_config = stm32_sdmmc_irq_config_func,
 	.hsd = {
@@ -690,10 +692,7 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 #if DT_INST_NODE_HAS_PROP(0, pwr_gpios)
 	.pe = GPIO_DT_SPEC_INST_GET(0, pwr_gpios),
 #endif
-	.pclken = {
-		.bus = DT_INST_CLOCKS_CELL(0, bus),
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-	},
+	.pclken = pclken_sdmmc,
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.reset = RESET_DT_SPEC_INST_GET(0),
 	SDMMC_DMA_CHANNEL(rx, RX)
