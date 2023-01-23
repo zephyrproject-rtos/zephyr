@@ -14,6 +14,8 @@
 
 #define WDT_FEED_TRIES 5
 
+/* twister, please re-test this! */
+
 /*
  * To use this sample the devicetree's /aliases must have a 'watchdog0' property.
  */
