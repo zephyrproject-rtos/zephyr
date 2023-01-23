@@ -185,11 +185,26 @@ void gsm_ppp_clear_ring_indicator(const struct device *dev);
 #endif /* defined(CONFIG_MODEM_GMS_ENABLE_SMS) */
 
 /**
- * @brief Clear the ring indicator of the modem.
+ * @brief Starts the modem in gnss operation mode.
  *
- * @param dev: GSM modem device.
+ * @return 0 on success. Otherwise <0 is returned.
+ */
+int gsm_ppp_start_gnss(void);
+
+/**
+ * @brief Query gnss position form the modem.
+ *
+ * @return 0 on success. If no fix is acquired yet -EAGAIN is returned.
+ *         Otherwise <0 is returned.
  */
 int gsm_ppp_query_gnss(struct gsm_ppp_gnss_data *data);
+
+/**
+ * @brief Stops the gnss operation mode of the modem.
+ *
+ * @return 0 on success. Otherwise <0 is returned.
+ */
+int gsm_ppp_stop_gnss(void);
 
 #ifdef __cplusplus
 }

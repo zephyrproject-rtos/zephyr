@@ -513,6 +513,17 @@ MODEM_CMD_DEFINE(on_cmd_gnss_loc)
 	return parse_gnss_location(gps_buf);
 }
 
+int gsm_ppp_start_gnss(void)
+{
+	int ret = modem_cmd_send(&gsm.context.iface, &gsm.context.cmd_handler, NULL, 0U, "AT+QGPS=1,3",
+			     &gsm.sem_response, GSM_CMD_AT_TIMEOUT);
+	if (ret < 0) {
+		return -1;
+	}
+
+	return 0;
+}
+
 int gsm_ppp_query_gnss(struct gsm_ppp_gnss_data *data)
 {
 	struct modem_cmd cmd = MODEM_CMD("+QGPSLOC: ", on_cmd_gnss_loc, 0U, NULL);
@@ -528,6 +539,17 @@ int gsm_ppp_query_gnss(struct gsm_ppp_gnss_data *data)
 	}
 
 	memset(&gnss_data, 0, sizeof(gnss_data));
+
+	return 0;
+}
+
+int gsm_ppp_stop_gnss(void)
+{
+	int ret = modem_cmd_send(&gsm.context.iface, &gsm.context.cmd_handler, NULL, 0U, "AT+QGPSEND",
+			     &gsm.sem_response, GSM_CMD_AT_TIMEOUT);
+	if (ret < 0) {
+		return -1;
+	}
 
 	return 0;
 }
