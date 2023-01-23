@@ -2085,13 +2085,23 @@ static void unicast_client_ep_reset(struct bt_conn *conn, uint8_t reason)
 }
 
 static void bt_audio_codec_qos_to_cig_param(struct bt_iso_cig_param *cig_param,
-					    const struct bt_audio_codec_qos *qos)
+					    const struct bt_audio_codec_qos *qos,
+					    const struct bt_bap_unicast_group_param *group_param)
 {
 	cig_param->framing = qos->framing;
 	cig_param->packing = BT_ISO_PACKING_SEQUENTIAL; /*  TODO: Add to QoS struct */
 	cig_param->interval = qos->interval;
 	cig_param->latency = qos->latency;
 	cig_param->sca = BT_GAP_SCA_UNKNOWN;
+
+	if (group_param != NULL) {
+		cig_param->packing = group_param->packing;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		cig_param->c_to_p_ft = group_param->c_to_p_ft;
+		cig_param->p_to_c_ft = group_param->p_to_c_ft;
+		cig_param->iso_interval = group_param->iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	}
 }
 
 /* FIXME: Remove `qos` parameter. Some of the QoS related CIG can be different
@@ -2099,7 +2109,8 @@ static void bt_audio_codec_qos_to_cig_param(struct bt_iso_cig_param *cig_param,
  * unicast_group instead.
  */
 static int bt_audio_cig_create(struct bt_bap_unicast_group *group,
-			       const struct bt_audio_codec_qos *qos)
+			       const struct bt_audio_codec_qos *qos,
+			       const struct bt_bap_unicast_group_param *group_param)
 {
 	struct bt_iso_cig_param param;
 	uint8_t cis_count;
@@ -2119,7 +2130,7 @@ static int bt_audio_cig_create(struct bt_bap_unicast_group *group,
 
 	param.num_cis = cis_count;
 	param.cis_channels = group->cis;
-	bt_audio_codec_qos_to_cig_param(&param, qos);
+	bt_audio_codec_qos_to_cig_param(&param, qos, group_param);
 
 	err = bt_iso_cig_create(&param, &group->cig);
 	if (err != 0) {
@@ -2153,7 +2164,7 @@ static int bt_audio_cig_reconfigure(struct bt_bap_unicast_group *group,
 
 	param.num_cis = cis_count;
 	param.cis_channels = group->cis;
-	bt_audio_codec_qos_to_cig_param(&param, qos);
+	bt_audio_codec_qos_to_cig_param(&param, qos, NULL);
 
 	err = bt_iso_cig_reconfigure(group->cig, &param);
 	if (err != 0) {
@@ -2301,6 +2312,9 @@ static void unicast_client_codec_qos_to_iso_qos(struct bt_bap_iso *iso,
 	}
 
 	bt_audio_codec_qos_to_iso_qos(io_qos, qos);
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	iso->chan.qos->num_subevents = qos->num_subevents;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	if (other_io_qos != NULL) {
 		/* If the opposing ASE of the CIS is not yet configured, we
@@ -2591,7 +2605,7 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 		}
 	}
 
-	err = bt_audio_cig_create(unicast_group, group_qos);
+	err = bt_audio_cig_create(unicast_group, group_qos, param);
 	if (err != 0) {
 		LOG_DBG("bt_audio_cig_create failed: %d", err);
 		unicast_group_free(unicast_group);
