@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Meta
+
+source "Kconfig.zephyr"
+
+config THRIFTTEST_SERVER_STACK_SIZE
+	int "ThriftTest Server stack size"
+	default 2048
+
+config THRIFTTEST_LOG_LEVEL
+	int "ThriftTest log level"
+	default 4
+
+config THRIFT_COMPACT_PROTOCOL
+	bool "Use TCompactProtocol for tests"
+	depends on THRIFT
+	default y
+	help
+	  Enable this option to include TCompactProtocol in tests
