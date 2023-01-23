@@ -58,6 +58,15 @@
 				interrupt-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_pcf8575: pcf8575@21 {
+				compatible = "nxp,pcf8575";
+				reg = <0x21>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_pcf8574: pcf8574@27 {
 				compatible = "nxp,pcf8574";
 				reg = <0x27>;

@@ -1,0 +1,21 @@
+# PCF8575 GPIO configuration options
+
+# Copyright (c)
+# 2023 Amrith Venkat Kesavamoorthi <amrith@mr-beam.org>
+# 2023 Mr Beam Lasers GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_PCF8575
+	bool "PCF8575 I2C GPIO chip"
+	default y
+	depends on DT_HAS_NXP_PCF8575_ENABLED
+	select I2C
+	help
+	  Enable driver for PCF8575 I2C GPIO chip.
+
+config GPIO_PCF8575_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_PCF8575
+	help
+	  Device driver initialization priority.
