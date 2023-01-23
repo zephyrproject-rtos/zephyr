@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Peripheral HIDs
+  description: Bluetooth Low Energy HID-over-GATT service sample
 tests:
   sample.bluetooth.peripheral_hids:
     harness: bluetooth

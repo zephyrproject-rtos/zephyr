@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Peripheral ESP
+  description: Demonstrates the ESP (Environmental Sensing Profile) GATT Service
 tests:
   sample.bluetooth.peripheral_esp:
     harness: bluetooth
