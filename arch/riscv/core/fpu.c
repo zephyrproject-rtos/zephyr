@@ -74,6 +74,22 @@ static void z_riscv_fpu_disable(void)
 	}
 }
 
+static void z_riscv_fpu_load(void)
+{
+	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
+		 "must be called with IRQs disabled");
+	__ASSERT((csr_read(mstatus) & MSTATUS_FS) == 0,
+		 "must be called with FPU access disabled");
+
+	/* become new owner */
+	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
+
+	/* restore our content */
+	csr_set(mstatus, MSTATUS_FS_INIT);
+	z_riscv_fpu_restore(&_current->arch.saved_fp_context);
+	DBG("restore", _current);
+}
+
 /*
  * Flush FPU content and clear ownership. If the saved FPU state is "clean"
  * then we know the in-memory copy is up to date and skip the FPU content
@@ -100,6 +116,9 @@ void z_riscv_flush_local_fpu(void)
 			/* save current owner's content */
 			z_riscv_fpu_save(&owner->arch.saved_fp_context);
 		}
+
+		/* dirty means active use */
+		owner->arch.fpu_recently_used = dirty;
 
 		/* disable FPU access */
 		csr_clear(mstatus, MSTATUS_FS);
@@ -217,16 +236,11 @@ void z_riscv_fpu_trap(z_arch_esf_t *esf)
 	flush_owned_fpu(_current);
 #endif
 
-	/* become new owner */
-	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
-
 	/* make it accessible and clean to the returning context */
 	esf->mstatus |= MSTATUS_FS_CLEAN;
 
-	/* restore our content */
-	csr_set(mstatus, MSTATUS_FS_INIT);
-	z_riscv_fpu_restore(&_current->arch.saved_fp_context);
-	DBG("restore", _current);
+	/* and load it with corresponding content */
+	z_riscv_fpu_load();
 }
 
 /*
@@ -244,7 +258,28 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 
 	if (_current->arch.exception_depth == exc_update_level) {
 		/* We're about to execute non-exception code */
-		return (_current_cpu->arch.fpu_owner == _current);
+		if (_current_cpu->arch.fpu_owner == _current) {
+			/* everything is already in place */
+			return true;
+		}
+		if (_current->arch.fpu_recently_used) {
+			/*
+			 * Before this thread was context-switched out,
+			 * it made active use of the FPU, but someone else
+			 * took it away in the mean time. Let's preemptively
+			 * claim it back to avoid the likely exception trap
+			 * to come otherwise.
+			 */
+			z_riscv_fpu_disable();
+			z_riscv_flush_local_fpu();
+#ifdef CONFIG_SMP
+			flush_owned_fpu(_current);
+#endif
+			z_riscv_fpu_load();
+			_current_cpu->arch.fpu_state = MSTATUS_FS_CLEAN;
+			return true;
+		}
+		return false;
 	}
 	/*
 	 * Any new exception level should always trap on FPU
