@@ -736,6 +736,12 @@ int usbd_handle_ctrl_xfer(struct usbd_contex *const uds_ctx,
 	}
 
 	if (err && err != -ENOMEM && !bi->setup) {
+		if (err == -ECONNABORTED) {
+			LOG_INF("Transfer 0x%02x aborted (bus reset?)", bi->ep);
+			net_buf_unref(buf);
+			return 0;
+		}
+
 		LOG_ERR("Control transfer for 0x%02x has error %d, halt",
 			bi->ep, err);
 		net_buf_unref(buf);
