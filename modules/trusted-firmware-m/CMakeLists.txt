@@ -1,22 +1,22 @@
-# Copyright (c) 2019, 2020 Linaro
-# Copyright (c) 2020, 2021 Nordic Semiconductor ASA
+# Copyright (c) 2019 - 2023 Linaro
+# Copyright (c) 2020 - 2023 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
 # List of all partitions supported by TF-M
-# Name must match name in 'trusted-firmware-m/config/config_default.cmake'
+# Name must match name in 'trusted-firmware-m/tools/tfm_manifest_list.yaml'
 set(TFM_VALID_PARTITIONS
+  TFM_PARTITION_NS_AGENT_MAILBOX
   TFM_PARTITION_PROTECTED_STORAGE
   TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
   TFM_PARTITION_CRYPTO
-  TFM_PARTITION_INITIAL_ATTESTATION
   TFM_PARTITION_PLATFORM
-  TFM_PARTITION_AUDIT_LOG
+  TFM_PARTITION_INITIAL_ATTESTATION
   TFM_PARTITION_FIRMWARE_UPDATE
   )
 
 # List of all crypto modules that can be enabled/disabled
-# Corresponds to the *_MODULE_DISABLED configs in 'trusted-firmware-m/config/config_default.cmake'
+# Corresponds to the *_MODULE_DISABLED configs in 'trusted-firmware-m/secure_fw/partitions/crypto/Kconfig'
 set(TFM_CRYPTO_MODULES
   CRYPTO_RNG_MODULE
   CRYPTO_KEY_MODULE
@@ -24,8 +24,8 @@ set(TFM_CRYPTO_MODULES
   CRYPTO_MAC_MODULE
   CRYPTO_HASH_MODULE
   CRYPTO_CIPHER_MODULE
-  CRYPTO_ASYM_ENCRYPT_MODULE
   CRYPTO_ASYM_SIGN_MODULE
+  CRYPTO_ASYM_ENCRYPT_MODULE
   CRYPTO_KEY_DERIVATION_MODULE
   )
 
@@ -47,6 +47,8 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
   if (CONFIG_TFM_BL2)
     list(APPEND TFM_CMAKE_ARGS -DBL2=TRUE)
+    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_S=${CONFIG_TFM_IMAGE_VERSION_S})
+    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_NS=${CONFIG_TFM_IMAGE_VERSION_NS})
   else()
     list(APPEND TFM_CMAKE_ARGS -DBL2=FALSE)
   endif()
@@ -157,7 +159,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   set(VENEERS_FILE ${TFM_BINARY_DIR}/secure_fw/s_veneers.o)
   set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/tf-m-tests/app/libtfm_api_ns.a)
-  set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/libplatform_ns.a)
+  set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/ns/libplatform_ns.a)
   set(TFM_GENERATED_INCLUDES ${TFM_BINARY_DIR}/generated/interface/include)
   set(TFM_INTERFACE_SOURCE_DIR ${TFM_BINARY_DIR}/install/interface/src)
 
@@ -206,13 +208,11 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_NS_SIGNED_BIN_FILE}
     ${TFM_S_NS_SIGNED_BIN_FILE}
 
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_ipc_api.c
-
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c
 
     # Specific to nordic_nrf platform
@@ -369,12 +369,12 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
 
   if(NOT CONFIG_TFM_BUILD_NS)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_ipc_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_ipc_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_ipc_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_ipc_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_ipc_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_ipc_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
 
     zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c)
 
@@ -395,6 +395,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   target_include_directories(tfm_api PRIVATE
     ${TFM_BINARY_DIR}/install/interface/include
+    ${TFM_BINARY_DIR}/install/interface/include/crypto_keys
     )
 
   zephyr_library_link_libraries(
@@ -443,6 +444,7 @@ if (CONFIG_BUILD_WITH_TFM)
       ${HEX_ADDR_ARGS_${SUFFIX}}
       ${ADD_${SUFFIX}_IMAGE_MIN_VER}
       -s auto
+      --measured-boot-record
       -H ${CONFIG_ROM_START_OFFSET}
       ${INPUT_FILE}
       ${OUTPUT_FILE}
