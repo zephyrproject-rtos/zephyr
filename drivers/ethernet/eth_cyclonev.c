@@ -1143,29 +1143,28 @@ const struct ethernet_api eth_cyclonev_api = {.iface_api.init = eth_cyclonev_ifa
 					      .stop = eth_cyclonev_stop,
 					      .set_config = eth_cyclonev_set_config};
 
-#define CYCLONEV_ETH_INIT(inst)                                           \
-                                              \
-	static struct eth_cyclonev_priv eth_cyclonev_##inst##_data;                                \
-	static void eth_cyclonev_##inst##_irq_config(void);			\
-	\
-		static const struct eth_cyclonev_config eth_cyclonev_##inst##_cfg = { \
-			.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),               \
-			.size = DT_INST_REG_SIZE(inst),                           \
+#define CYCLONEV_ETH_INIT(inst) \
+	static struct eth_cyclonev_priv eth_cyclonev_##inst##_data; \
+	static void eth_cyclonev_##inst##_irq_config(void); \
+ \
+	static const struct eth_cyclonev_config eth_cyclonev_##inst##_cfg = { \
+			.base = (uint8_t *)(DT_INST_REG_ADDR(inst)), \
+			.size = DT_INST_REG_SIZE(inst), \
 			.emac_index = DT_INST_PROP(inst, emac_index), \
-			.irq_config = eth_cyclonev_##inst##_irq_config,         \
-	};   \
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_cyclonev_probe, NULL,			\
-					&eth_cyclonev_##inst##_data, \
-					&eth_cyclonev_##inst##_cfg,		\
-					CONFIG_ETH_INIT_PRIORITY,		\
-					&eth_cyclonev_api,           \
-					NET_ETH_MTU);                   \
-					\
-	static void eth_cyclonev_##inst##_irq_config(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(inst),				\
-			    DT_INST_IRQ(inst, priority), eth_cyclonev_isr,	\
-			    DEVICE_DT_INST_GET(inst),			\
-			    0);			\
-		irq_enable(DT_INST_IRQN(inst));				\
+			.irq_config = eth_cyclonev_##inst##_irq_config, \
+	}; \
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_cyclonev_probe, NULL, \
+			&eth_cyclonev_##inst##_data, \
+			&eth_cyclonev_##inst##_cfg, \
+			CONFIG_ETH_INIT_PRIORITY, \
+			&eth_cyclonev_api, \
+			NET_ETH_MTU); \
+ \
+	static void eth_cyclonev_##inst##_irq_config(void) \
+	{ \
+		IRQ_CONNECT(DT_INST_IRQN(inst), \
+			    DT_INST_IRQ(inst, priority), eth_cyclonev_isr, \
+			    DEVICE_DT_INST_GET(inst), \
+			    0); \
+		irq_enable(DT_INST_IRQN(inst)); \
 DT_INST_FOREACH_STATUS_OKAY(CYCLONEV_ETH_INIT)
