@@ -109,6 +109,11 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 		return ret;
 	}
 
+	/* There might be pending data stage transfer */
+	if (usbd_ep_dequeue(uds_ctx, USB_CONTROL_EP_IN)) {
+		LOG_ERR("Failed to dequeue control IN");
+	}
+
 	LOG_INF("Actual device speed %d", udc_device_speed(uds_ctx->dev));
 	uds_ctx->ch9_data.state = USBD_STATE_DEFAULT;
 
