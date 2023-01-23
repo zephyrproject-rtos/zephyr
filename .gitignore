@@ -65,12 +65,15 @@ tags
 .idea
 
 # from check_compliance.py
-Gitlint.txt
+BinaryFiles.txt
 Checkpatch.txt
+DevicetreeBindings.txt
+Gitlint.txt
+Identity.txt
+ImageSize.txt
 Kconfig.txt
 KconfigBasic.txt
-Codeowners.txt
+MaintainersFormat.txt
 Nits.txt
 Pylint.txt
-Identity.txt
-DevicetreeBindings.txt
+YAMLLint.txt
