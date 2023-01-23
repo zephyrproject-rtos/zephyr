@@ -52,7 +52,7 @@
 	pinctrl-names = "default";
 
 	i2c0_pcf8574@21 {
-		 compatible = "nxp,pcf8574";
+		 compatible = "nxp,pcf857x";
 		 reg = <0x21>;
 		 gpio-controller;
 		 #gpio-cells = <2>;
@@ -60,7 +60,7 @@
 	};
 
 	i2c0_pcf8574@22 {
-		 compatible = "nxp,pcf8574";
+		 compatible = "nxp,pcf857x";
 		 reg = <0x22>;
 		 gpio-controller;
 		 #gpio-cells = <2>;
@@ -68,7 +68,7 @@
 	};
 
 	i2c0_pcf8574@24 {
-		 compatible = "nxp,pcf8574";
+		 compatible = "nxp,pcf857x";
 		 reg = <0x24>;
 		 gpio-controller;
 		 #gpio-cells = <2>;
@@ -76,7 +76,7 @@
 	};
 
 	i2c0_pcf8574@25 {
-		 compatible = "nxp,pcf8574";
+		 compatible = "nxp,pcf857x";
 		 reg = <0x25>;
 		 gpio-controller;
 		 #gpio-cells = <2>;
@@ -93,7 +93,7 @@
 	pinctrl-names = "default";
 
 	i2c1_pcf8574@21 {
-		compatible = "nxp,pcf8574";
+		compatible = "nxp,pcf857x";
 		reg = <0x21>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -101,7 +101,7 @@
 	};
 
 	i2c1_pcf8574@22 {
-		compatible = "nxp,pcf8574";
+		compatible = "nxp,pcf857x";
 		reg = <0x22>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -109,7 +109,7 @@
 	};
 
 	i2c1_pcf8574@24 {
-		compatible = "nxp,pcf8574";
+		compatible = "nxp,pcf857x";
 		reg = <0x24>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -117,7 +117,7 @@
 	};
 
 	i2c1_pcf8574@25 {
-		compatible = "nxp,pcf8574";
+		compatible = "nxp,pcf857x";
 		reg = <0x25>;
 		gpio-controller;
 		#gpio-cells = <2>;

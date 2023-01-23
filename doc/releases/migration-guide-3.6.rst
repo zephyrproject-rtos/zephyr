@@ -56,6 +56,35 @@ enable all optional modules, and then run ``west update`` again.
 Device Drivers and Device Tree
 ==============================
 
+* The :dtcompatible:`nxp,pcf8574` driver has been renamed to
+  :dtcompatible:`nxp,pcf857x`. (:github:`67054`) to support pcf8574 and pcf8575.
+  The Kconfig option has been renamed from :kconfig:option:`CONFIG_GPIO_PCF8574` to
+  :kconfig:option:`CONFIG_GPIO_PCF857X`.
+  The Device Tree can be configured as follows:
+
+  .. code-block:: devicetree
+
+    &i2c {
+      status = "okay";
+      pcf8574: pcf857x@20 {
+          compatible = "nxp,pcf857x";
+          status = "okay";
+          reg = <0x20>;
+          gpio-controller;
+          #gpio-cells = <2>;
+          ngpios = <8>;
+      };
+
+      pcf8575: pcf857x@21 {
+          compatible = "nxp,pcf857x";
+          status = "okay";
+          reg = <0x21>;
+          gpio-controller;
+          #gpio-cells = <2>;
+          ngpios = <16>;
+      };
+    };
+
 * The :dtcompatible:`st,lsm6dsv16x` sensor driver has been changed to support
   configuration of both int1 and int2 pins. The DT attribute ``irq-gpios`` has been
   removed and substituted by two new attributes, ``int1-gpios`` and ``int2-gpios``.
