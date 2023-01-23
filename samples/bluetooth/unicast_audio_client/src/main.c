@@ -366,51 +366,65 @@ static void print_codec_capabilities(const struct bt_codec *codec)
 static bool check_audio_support_and_connect(struct bt_data *data,
 					    void *user_data)
 {
+	struct net_buf_simple ascs_svc_data;
 	bt_addr_le_t *addr = user_data;
-	int i;
+	uint8_t announcement_type;
+	uint32_t audio_contexts;
+	struct bt_uuid *uuid;
+	uint16_t uuid_val;
+	uint8_t meta_len;
+	size_t min_size;
+	int err;
 
 	printk("[AD]: %u data_len %u\n", data->type, data->data_len);
 
-	switch (data->type) {
-	case BT_DATA_UUID16_SOME:
-	case BT_DATA_UUID16_ALL:
-		if (data->data_len % sizeof(uint16_t) != 0U) {
-			printk("AD malformed\n");
-			return true; /* Continue */
-		}
-
-		for (i = 0; i < data->data_len; i += sizeof(uint16_t)) {
-			struct bt_uuid *uuid;
-			uint16_t uuid_val;
-			int err;
-
-			memcpy(&uuid_val, &data->data[i], sizeof(uuid_val));
-			uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(uuid_val));
-			if (bt_uuid_cmp(uuid, BT_UUID_ASCS) != 0) {
-				continue;
-			}
-
-			err = bt_le_scan_stop();
-			if (err != 0) {
-				printk("Failed to stop scan: %d\n", err);
-				return false;
-			}
-
-			printk("Audio server found; connecting\n");
-
-			err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-						BT_LE_CONN_PARAM_DEFAULT,
-						&default_conn);
-			if (err != 0) {
-				printk("Create conn to failed (%u)\n", err);
-				start_scan();
-			}
-
-			return false; /* Stop parsing */
-		}
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true; /* Continue parsing to next AD data type */
 	}
 
-	return true;
+	if (data->data_len < sizeof(uuid_val)) {
+		printk("AD invalid size %u\n", data->data_len);
+		return true; /* Continue parsing to next AD data type */
+	}
+
+	net_buf_simple_init_with_data(&ascs_svc_data, (void *)data->data,
+				      data->data_len);
+
+	uuid_val = net_buf_simple_pull_le16(&ascs_svc_data);
+	uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(uuid_val));
+	if (bt_uuid_cmp(uuid, BT_UUID_ASCS) != 0) {
+		/* We are looking for the ASCS service data */
+		return true; /* Continue parsing to next AD data type */
+	}
+
+	min_size = sizeof(announcement_type) + sizeof(audio_contexts) + sizeof(meta_len);
+	if (ascs_svc_data.len < min_size) {
+		printk("AD invalid size %u\n", data->data_len);
+		return false; /* Stop parsing */
+	}
+
+	announcement_type = net_buf_simple_pull_u8(&ascs_svc_data);
+	audio_contexts = net_buf_simple_pull_le32(&ascs_svc_data);
+	meta_len = net_buf_simple_pull_u8(&ascs_svc_data);
+
+	err = bt_le_scan_stop();
+	if (err != 0) {
+		printk("Failed to stop scan: %d\n", err);
+		return false; /* Stop parsing */
+	}
+
+	printk("Audio server found with type %u, contexts 0x%08x and meta_len %u; connecting\n",
+	       announcement_type, audio_contexts, meta_len);
+
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM_DEFAULT,
+				&default_conn);
+	if (err != 0) {
+		printk("Create conn to failed (%u)\n", err);
+		start_scan();
+	}
+
+	return false; /* Stop parsing */
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
