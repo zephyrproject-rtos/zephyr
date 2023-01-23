@@ -219,8 +219,11 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 
 /** @brief Function safely sets absolute alarm.
  *
- * It assumes that provided value is at most COUNTER_HALF_SPAN cycles from now.
- * It detects late setting and also handle +1 cycle case.
+ * It assumes that provided value is at most COUNTER_HALF_SPAN cycles from now
+ * (other values are considered to be from the past). It detects late setting
+ * and properly adjusts CC values that are too near in the future to guarantee
+ * triggering a COMPARE event soon, not after 512 seconds when the RTC wraps
+ * around first.
  *
  * @param[in] chan A channel for which a new CC value is to be set.
  *
@@ -233,8 +236,18 @@ static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
 	 */
 	BUILD_ASSERT(NRF_RTC_TIMER_MAX_SCHEDULE_SPAN <= COUNTER_HALF_SPAN);
 
+	/* According to product specifications, when the current counter value
+	 * is N, a value of N+2 written to the CC register is guaranteed to
+	 * trigger a COMPARE event at N+2, but tests show that this compare
+	 * value can be missed when the previous CC value is N+1 and the write
+	 * occurs in the second half of the RTC clock cycle (such situation can
+	 * be provoked by test_next_cycle_timeouts in the nrf_rtc_timer suite).
+	 * This never happens when the written value is N+3. Use 3 cycles as
+	 * for the nearest scheduling then.
+	 */
+	enum { MIN_CYCLES_FROM_NOW = 3 };
 	uint32_t cc_val = abs_val & COUNTER_MAX;
-	uint32_t cc_inc = 2;
+	uint32_t cc_inc = MIN_CYCLES_FROM_NOW;
 
 	/* Disable event routing for the channel to avoid getting a COMPARE
 	 * event for the previous CC value before the new one takes effect
@@ -261,18 +274,18 @@ static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
 
 		now = counter();
 
-		/* RTC may not generate a COMPARE event if its COUNTER value
-		 * is N and a given CC register is set to N or N+1. If it turns
-		 * out that the above configuration of the comparator resulted
-		 * in such CC value or even in a value that is considered to be
-		 * from the past, repeat the operation using a CC value that is
-		 * guaranteed to generate the event. Start with 2 RTC ticks from
-		 * now and if that fails (because the operation gets delayed),
-		 * go even futher in the next attempt.
+		/* Check if the CC register was successfully set to a value
+		 * that will for sure trigger a COMPARE event as expected.
+		 * If not, try again, adjusting the CC value accordingly.
+		 * Increase the CC value by a larger number of cycles in each
+		 * trial to avoid spending too much time in this loop if it
+		 * continuously gets interrupted and delayed by something.
 		 * But if the COMPARE event turns out to be already generated,
 		 * there is obviously no need to continue the loop.
 		 */
-		if ((counter_sub(cc_val, now + 2) > (COUNTER_HALF_SPAN - 2)) &&
+		if ((counter_sub(cc_val, now + MIN_CYCLES_FROM_NOW) >
+		     (COUNTER_HALF_SPAN - MIN_CYCLES_FROM_NOW))
+		    &&
 		    !event_check(chan)) {
 			cc_val = now + cc_inc;
 			cc_inc++;
