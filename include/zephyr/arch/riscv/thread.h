@@ -68,6 +68,7 @@ typedef struct z_riscv_fp_context z_riscv_fp_context_t;
 struct _thread_arch {
 #ifdef CONFIG_FPU_SHARING
 	struct z_riscv_fp_context saved_fp_context;
+	bool fpu_recently_used;
 	uint8_t exception_depth;
 #endif
 #ifdef CONFIG_USERSPACE
