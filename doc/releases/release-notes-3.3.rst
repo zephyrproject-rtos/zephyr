@@ -60,15 +60,10 @@ Changes in this release
 
 * MCUmgr Bluetooth and UDP transports no longer need to be registered by the
   application code, these will now automatically be registered at bootup (this
-  feature can be disabled or tweaked by adjusting:
-  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT`,
-  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT_WAIT`, and
-  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT`. If applications
-  register transports then those registrations should be removed to prevent
-  registering the same transport multiple times. If the Bluetooth stack needs
-  to be setup/initialised by another module or the application itself, then
-  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT` should be
-  disabled and the application should call :c:func:`smp_bt_start` at startup.
+  feature can be disabled for the UDP transport by setting
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT`). If
+  applications register transports then those registrations should be removed
+  to prevent registering the same transport multiple times.
 
 * MCUmgr transport Kconfigs have changed from ``select`` to ``depends on``
   which means that for applications using the Bluetooth transport,
