@@ -40,6 +40,13 @@ LOG_MODULE_REGISTER(usbfsotg, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define USBFSOTG_REV		0x33
 
 /*
+ * There is no real advantage to change control enpoint size
+ * but we can use it for testing UDC driver API and higher layers.
+ */
+#define USBFSOTG_MPS0		UDC_MPS0_64
+#define USBFSOTG_EP0_SIZE	64
+
+/*
  * Buffer Descriptor (BD) entry provides endpoint buffer control
  * information for USBFSOTG controller. Every endpoint direction requires
  * two BD entries.
@@ -867,7 +874,7 @@ static int usbfsotg_ep_enable(const struct device *dev,
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
 		struct net_buf *buf;
 
-		buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, 64);
+		buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, USBFSOTG_EP0_SIZE);
 		usbfsotg_bd_set_ctrl(bd_even, buf->size, buf->data, false);
 		priv->out_buf[0] = buf;
 	}
@@ -1002,13 +1009,15 @@ static int usbfsotg_init(const struct device *dev)
 		       USB_INTEN_USBRSTEN_MASK);
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
+				   USB_EP_TYPE_CONTROL,
+				   USBFSOTG_EP0_SIZE, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
+				   USB_EP_TYPE_CONTROL,
+				   USBFSOTG_EP0_SIZE, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
@@ -1108,6 +1117,7 @@ static int usbfsotg_driver_preinit(const struct device *dev)
 	}
 
 	data->caps.rwup = false;
+	data->caps.mps0 = USBFSOTG_MPS0;
 
 	return 0;
 }

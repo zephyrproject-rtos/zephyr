@@ -551,6 +551,7 @@ static int udc_vrt_driver_preinit(const struct device *dev)
 	k_fifo_init(&priv->fifo);
 
 	data->caps.rwup = true;
+	data->caps.mps0 = UDC_MPS0_64;
 	if (config->speed_idx == 2) {
 		data->caps.hs = true;
 		mps = 1024;
