@@ -11,7 +11,7 @@ steps required:
 
    .. code-block:: bash
 
-     $ west build -p auto -t mps2_an521_ns samples/tfm_integration/psa_crypto/ -t run
+     $ west build -p auto -b mps2_an521_ns samples/tfm_integration/psa_protected_storage/ -t run
 
 The outputs and certain key steps in this build process are described here,
 however, since you will need to understand and interact with the outputs, and
