@@ -191,6 +191,8 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 | PWM       | on-chip    | pwm                                 |
 | die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
+| AES       | on-chip    | crypto                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
