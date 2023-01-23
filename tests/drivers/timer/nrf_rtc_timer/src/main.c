@@ -427,6 +427,56 @@ ZTEST(nrf_rtc_timer, test_overflow)
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
+static void next_cycle_timeout_handler(int32_t chan,
+				       uint64_t expire_time,
+				       void *user_data)
+{
+	static uint32_t delay;
+	uint32_t *timeouts_left = (uint32_t *)user_data;
+
+	if (--*timeouts_left) {
+		k_busy_wait(delay);
+		++delay;
+
+		z_nrf_rtc_timer_set(chan, z_nrf_rtc_timer_read() + 1,
+			next_cycle_timeout_handler, user_data);
+	}
+}
+
+ZTEST(nrf_rtc_timer, test_next_cycle_timeouts)
+{
+	enum {
+		MAX_TIMEOUTS = 60,
+		/* Allow 5 cycles per each expected timeout. */
+		CYCLES_TO_WAIT = 5 * MAX_TIMEOUTS,
+	};
+	volatile uint32_t timeouts_left = MAX_TIMEOUTS;
+	int32_t chan;
+	uint32_t start;
+
+	chan = z_nrf_rtc_timer_chan_alloc();
+	zassert_true(chan > 0, "Failed to allocate RTC channel.");
+
+	/* First timeout is scheduled here, all further ones are scheduled
+	 * from the timeout handler, always on the next cycle of the system
+	 * timer but after a delay that increases 1 microsecond each time.
+	 */
+	z_nrf_rtc_timer_set(chan, z_nrf_rtc_timer_read() + 1,
+		next_cycle_timeout_handler, (void *)&timeouts_left);
+
+	start = k_cycle_get_32();
+	while (timeouts_left) {
+		if ((k_cycle_get_32() - start) > CYCLES_TO_WAIT) {
+			break;
+		}
+	}
+
+	zassert_equal(0, timeouts_left,
+		"Failed to get %u timeouts.", timeouts_left);
+
+	z_nrf_rtc_timer_chan_free(chan);
+}
+
 static void *rtc_timer_setup(void)
 {
 	init_zli_timer0();
