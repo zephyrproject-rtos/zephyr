@@ -36,5 +36,6 @@ source "drivers/display/Kconfig.ls0xx"
 source "drivers/display/Kconfig.rm68200"
 source "drivers/display/Kconfig.max7219"
 source "drivers/display/Kconfig.intel_multibootfb"
+source "drivers/display/Kconfig.gc9a01a"
 
 endif # DISPLAY
