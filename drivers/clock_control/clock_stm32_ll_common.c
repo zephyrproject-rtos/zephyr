@@ -381,6 +381,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = STM32_HSI_FREQ;
 		break;
 #endif
+#if defined(STM32_SRC_MSI)
+	case STM32_SRC_MSI:
+		*rate = get_msi_frequency();
+		break;
+#endif
 #if defined(STM32_SRC_HSE)
 	case STM32_SRC_HSE:
 		*rate = STM32_HSE_FREQ;
