@@ -112,11 +112,11 @@ static int spi_smartbond_configure(const struct spi_smartbond_cfg *cfg,
 				   const struct spi_config *spi_cfg)
 {
 	int rc = 0;
-
+	
 	if (spi_context_configured(&data->ctx, spi_cfg)) {
 		return 0;
 	}
-
+	
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
 		LOG_ERR("Slave mode not yet supported");
 		return -ENOTSUP;
@@ -160,7 +160,7 @@ static int spi_smartbond_configure(const struct spi_smartbond_cfg *cfg,
 		return rc;
 	}
 
-	cfg->regs->SPI_CTRL_REG |= (3UL << SPI_SPI_CTRL_REG_SPI_FIFO_MODE_Pos);
+	cfg->regs->SPI_CTRL_REG &= ~(SPI_SPI_CTRL_REG_SPI_FIFO_MODE_Msk);
 
 	spi_smartbond_enable(cfg, true);
 
