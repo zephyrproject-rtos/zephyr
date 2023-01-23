@@ -638,16 +638,14 @@ static inline void icm42688_temp_c(int32_t in, int32_t *out_c, uint32_t *out_uc)
 {
 	int64_t sensitivity = 13248; /* value equivalent for x100 1c */
 
-	int64_t in100 = in * 100;
+	/* Offset by 25 degrees Celsius */
+	int64_t in100 = (in * 100) + (25 * sensitivity);
 
 	/* Whole celsius */
 	*out_c = in100 / sensitivity;
 
 	/* Micro celsius */
-	*out_uc = ((llabs(in100) - (llabs(*out_c)) * sensitivity) * 1000000LL) / sensitivity;
-
-	/* Shift whole celsius 25 degress */
-	*out_c = *out_c + 25;
+	*out_uc = ((in100 - (*out_c) * sensitivity) * INT64_C(1000000)) / sensitivity;
 }
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_H_ */
