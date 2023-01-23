@@ -720,7 +720,11 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	.dma_rx_channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),				\
 	.dma_rx_perid = DT_INST_DMAS_CELL_BY_NAME(n, rx, perid),
 
-#define SPI_SAM_USE_DMA(inst) DT_INST_DMAS_HAS_NAME(n, tx) && IS_ENABLED(CONFIG_SPI_SAM_DMA)
+#ifdef CONFIG_SPI_SAM_DMA
+#define SPI_SAM_USE_DMA(n) DT_INST_DMAS_HAS_NAME(n, tx)
+#else
+#define SPI_SAM_USE_DMA(n) 0
+#endif
 
 #define SPI_SAM_DEFINE_CONFIG(n)								\
 	static const struct spi_sam_config spi_sam_config_##n = {				\
