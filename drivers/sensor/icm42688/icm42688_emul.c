@@ -86,7 +86,7 @@ static const struct spi_emul_api icm42688_emul_spi_api = {
 
 #define ICM42688_EMUL_DEFINE(n, api)                                                               \
 	EMUL_DT_INST_DEFINE(n, icm42688_emul_init, &icm42688_emul_data_##n,                        \
-			    &icm42688_emul_cfg_##n, &api)
+			    &icm42688_emul_cfg_##n, &api, NULL)
 
 #define ICM42688_EMUL_SPI(n)                                                                       \
 	static struct icm42688_emul_data icm42688_emul_data_##n;                                   \
