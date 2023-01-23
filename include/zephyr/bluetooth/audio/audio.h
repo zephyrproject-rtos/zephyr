@@ -479,6 +479,31 @@ struct bt_audio_codec_qos {
 	 *  Value range 0 to @ref BT_AUDIO_PD_MAX.
 	 */
 	uint32_t pd;
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	/** @brief Maximum PDU size
+	 *
+	 *  Maximum size, in octets, of the payload from link layer to link
+	 *  layer.
+	 *
+	 *  Value range @ref BT_ISO_PDU_MIN to @ref BT_ISO_PDU_MAX.
+	 */
+	uint16_t max_pdu;
+
+	/** @brief Burst number
+	 *
+	 *  Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
+	 */
+	uint8_t burst_number;
+
+	/** @brief Number of subevents
+	 *
+	 *  Maximum number of subevents in each CIS or BIS event.
+	 *
+	 *  Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
+	 */
+	uint8_t num_subevents;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /**

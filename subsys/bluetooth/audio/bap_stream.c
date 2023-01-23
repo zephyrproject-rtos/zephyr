@@ -51,6 +51,10 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 	io->sdu = codec_qos->sdu;
 	io->phy = codec_qos->phy;
 	io->rtn = codec_qos->rtn;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	io->burst_number = codec_qos->burst_number;
+	io->max_pdu = codec_qos->max_pdu;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT ||                                                          \
 	* CONFIG_BT_BAP_BROADCAST_SOURCE ||                                                        \
