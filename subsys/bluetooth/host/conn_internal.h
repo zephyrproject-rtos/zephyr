@@ -57,7 +57,13 @@ enum {
 struct bt_conn_le {
 	bt_addr_le_t dst;
 
+	/** Initiator address. aka "InitA". This is the on-air address of the
+	  * Central, as in the CONN_IND LL-PDU.
+	  */
 	bt_addr_le_t init_addr;
+	/** Responder address. aka "AdvA". This is the on-air address of the
+	  * Peripheral, as in the CONN_IND LL-PDU.
+	  */
 	bt_addr_le_t resp_addr;
 
 	uint16_t interval;
