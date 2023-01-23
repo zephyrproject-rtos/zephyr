@@ -513,10 +513,11 @@ MODEM_CMD_DEFINE(on_cmd_gnss_loc)
 	return parse_gnss_location(gps_buf);
 }
 
-int gsm_ppp_start_gnss(void)
+int gsm_ppp_start_gnss(const struct device *dev)
 {
-	int ret = modem_cmd_send(&gsm.context.iface, &gsm.context.cmd_handler, NULL, 0U, "AT+QGPS=1,3",
-			     &gsm.sem_response, GSM_CMD_AT_TIMEOUT);
+	struct gsm_modem *gsm = dev->data;
+	int ret = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler, NULL, 0U, "AT+QGPS=1",
+			     &gsm->sem_response, GSM_CMD_AT_TIMEOUT);
 	if (ret < 0) {
 		return -1;
 	}
@@ -524,11 +525,12 @@ int gsm_ppp_start_gnss(void)
 	return 0;
 }
 
-int gsm_ppp_query_gnss(struct gsm_ppp_gnss_data *data)
+int gsm_ppp_query_gnss(const struct device *dev, struct gsm_ppp_gnss_data *data)
 {
+	struct gsm_modem *gsm = dev->data;
 	struct modem_cmd cmd = MODEM_CMD("+QGPSLOC: ", on_cmd_gnss_loc, 0U, NULL);
-	int ret = modem_cmd_send(&gsm.context.iface, &gsm.context.cmd_handler, &cmd, 1U, "AT+QGPSLOC=2",
-			     &gsm.sem_response, GSM_CMD_AT_TIMEOUT);
+	int ret = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler, &cmd, 1U, "AT+QGPSLOC=2",
+			     &gsm->sem_response, GSM_CMD_AT_TIMEOUT);
 
 	if (ret < 0) {
 		return -EAGAIN;
@@ -543,10 +545,11 @@ int gsm_ppp_query_gnss(struct gsm_ppp_gnss_data *data)
 	return 0;
 }
 
-int gsm_ppp_stop_gnss(void)
+int gsm_ppp_stop_gnss(const struct device *dev)
 {
-	int ret = modem_cmd_send(&gsm.context.iface, &gsm.context.cmd_handler, NULL, 0U, "AT+QGPSEND",
-			     &gsm.sem_response, GSM_CMD_AT_TIMEOUT);
+	struct gsm_modem *gsm = dev->data;
+	int ret = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler, NULL, 0U, "AT+QGPSEND",
+			     &gsm->sem_response, GSM_CMD_AT_TIMEOUT);
 	if (ret < 0) {
 		return -1;
 	}

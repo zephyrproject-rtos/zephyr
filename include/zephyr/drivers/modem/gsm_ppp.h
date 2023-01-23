@@ -189,7 +189,7 @@ void gsm_ppp_clear_ring_indicator(const struct device *dev);
  *
  * @return 0 on success. Otherwise <0 is returned.
  */
-int gsm_ppp_start_gnss(void);
+int gsm_ppp_start_gnss(const struct device *dev);
 
 /**
  * @brief Query gnss position form the modem.
@@ -197,14 +197,14 @@ int gsm_ppp_start_gnss(void);
  * @return 0 on success. If no fix is acquired yet -EAGAIN is returned.
  *         Otherwise <0 is returned.
  */
-int gsm_ppp_query_gnss(struct gsm_ppp_gnss_data *data);
+int gsm_ppp_query_gnss(const struct device *dev, struct gsm_ppp_gnss_data *data);
 
 /**
  * @brief Stops the gnss operation mode of the modem.
  *
  * @return 0 on success. Otherwise <0 is returned.
  */
-int gsm_ppp_stop_gnss(void);
+int gsm_ppp_stop_gnss(const struct device *dev);
 
 #ifdef __cplusplus
 }
