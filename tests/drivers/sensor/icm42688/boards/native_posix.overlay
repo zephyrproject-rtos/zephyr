@@ -1,0 +1,11 @@
+/* Copyright (c) 2023 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	icm42688: icm42688@3 {
+		compatible = "invensense,icm42688";
+		spi-max-frequency = <50000000>;
+		reg = <3>;
+	};
+};
