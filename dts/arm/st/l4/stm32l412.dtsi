@@ -17,6 +17,11 @@
 			};
 		};
 
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
+
 		usb: usb@40006800 {
 			compatible = "st,stm32-usb";
 			reg = <0x40006800 0x40000>;
@@ -27,7 +32,7 @@
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>,
-				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
 		};
 
