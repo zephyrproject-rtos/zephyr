@@ -25,7 +25,7 @@ static inline size_t nvs_lookup_cache_pos(uint16_t id)
 {
 	size_t pos;
 
-#if CONFIG_NVS_LOOKUP_CACHE_SIZE <= UINT8_MAX
+#if CONFIG_NVS_LOOKUP_CACHE_SIZE <= (UINT8_MAX + 1)
 	/*
 	 * CRC8-CCITT is used for ATE checksums and it also acts well as a hash
 	 * function, so it can be a good choice from the code size perspective.
