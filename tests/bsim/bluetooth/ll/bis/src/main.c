@@ -58,6 +58,7 @@ static const struct bt_data per_ad_data2[] = {
 static uint8_t chan_map[] = { 0x1F, 0XF1, 0x1F, 0xF1, 0x1F };
 
 static bool volatile is_iso_connected;
+static uint8_t volatile is_iso_disconnected;
 static bool volatile deleting_pa_sync;
 static void iso_connected(struct bt_iso_chan *chan);
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason);
@@ -260,7 +261,7 @@ static void terminate_ll_big(uint8_t big_handle)
 
 static void create_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
 {
-	struct bt_iso_big_create_param big_create_param;
+	struct bt_iso_big_create_param big_create_param = { 0 };
 	int err;
 
 	printk("Creating BIG...\n");
@@ -290,6 +291,47 @@ static void create_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
 	printk("ISO connected\n");
 }
 
+#if defined(CONFIG_BT_ISO_ADVANCED)
+static void create_advanced_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
+{
+	struct bt_iso_big_create_param big_create_param;
+	int err;
+
+	printk("Creating BIG...\n");
+	big_create_param.bis_channels = bis_channels;
+	big_create_param.num_bis = BIS_ISO_CHAN_COUNT;
+	big_create_param.encryption = false;
+	big_create_param.interval = 10000; /* us */
+	big_create_param.packing = 0; /* 0 - sequential; 1 - interleaved */
+	big_create_param.framing = 0; /* 0 - unframed; 1 - framed */
+	big_create_param.irc = BT_ISO_IRC_MIN;
+	big_create_param.pto = BT_ISO_PTO_MIN;
+	big_create_param.iso_interval = big_create_param.interval / 1250U; /* N * 10 ms */
+
+	iso_tx_qos.sdu = 502; /* bytes */
+	iso_tx_qos.phy = BT_GAP_LE_PHY_2M;
+	iso_tx_qos.max_pdu = BT_ISO_PDU_MAX;
+	iso_tx_qos.burst_number = BT_ISO_BN_MIN;
+
+	bis_iso_qos.tx = &iso_tx_qos;
+	bis_iso_qos.rx = NULL;
+	bis_iso_qos.num_subevents = BT_ISO_NSE_MIN;
+
+	err = bt_iso_big_create(adv, &big_create_param, big);
+	if (err) {
+		FAIL("Could not create BIG: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Wait for ISO connected callback...");
+	while (!is_iso_connected) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("ISO connected\n");
+}
+#endif /* CONFIG_BT_ISO_ADVANCED */
+
 static void terminate_big(struct bt_iso_big *big)
 {
 	int err;
@@ -301,6 +343,12 @@ static void terminate_big(struct bt_iso_big *big)
 		return;
 	}
 	printk("success.\n");
+
+	printk("Wait for ISO disconnected callback...");
+	while (is_iso_disconnected == 0U) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("ISO disconnected\n");
 }
 
 static void send_iso_data(void)
@@ -391,6 +439,16 @@ static void test_iso_main(void)
 	terminate_big(big);
 	big = NULL;
 
+#if defined(CONFIG_BT_ISO_ADVANCED)
+	/* Quick check to just verify that creating a BIG using advanced/test
+	 * parameters work
+	 */
+	create_advanced_big(adv, &big);
+
+	terminate_big(big);
+	big = NULL;
+#endif /* CONFIG_BT_ISO_ADVANCED */
+
 	k_sleep(K_MSEC(10000));
 
 	teardown_ext_adv(adv);
@@ -426,8 +484,6 @@ static void iso_connected(struct bt_iso_chan *chan)
 	seq_num = 0U;
 	is_iso_connected = true;
 }
-
-static uint8_t volatile is_iso_disconnected;
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
