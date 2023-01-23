@@ -243,5 +243,22 @@
 				status = "disabled";
 			};
 		};
+
+		can {
+			can2: can@4000a800 {
+				compatible = "st,stm32-fdcan";
+				reg = <0x4000a800 0x400>, <0x4000af50 0x350>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <109 0>, <110 0>;
+				interrupt-names = "LINE_0", "LINE_1";
+				/* common clock FDCAN 1 & 2 */
+				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
+				status = "disabled";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+			};
+		};
 	};
 };
