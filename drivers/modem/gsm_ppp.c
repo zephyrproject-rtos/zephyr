@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_RETRY_DELAY                 K_MSEC(CONFIG_MODEM_GSM_RETRY_DELAY)
 
 #define GSM_RSSI_RETRY_DELAY_MSEC       2000
-#define GSM_RSSI_RETRIES                10
+#define GSM_RSSI_RETRIES                3
 #define GSM_RSSI_INVALID                -1000
 
 #if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
