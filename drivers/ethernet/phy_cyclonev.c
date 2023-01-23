@@ -47,7 +47,7 @@
 #define PHY_RESTART_AUTONEGOTIATION BIT(9)
 
 /* Basic Status Register */
-#define PHY_BSR		      (1)
+#define PHY_BSR		      BIT(0)
 #define PHY_AUTOCAP	      BIT(3) /* Auto-negotiation capability */
 #define PHY_LINKED_STATUS     BIT(2)
 #define PHY_AUTONEGO_COMPLETE BIT(5)
