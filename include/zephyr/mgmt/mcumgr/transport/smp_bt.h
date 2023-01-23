@@ -34,14 +34,6 @@ int smp_bt_register(void);
 int smp_bt_unregister(void);
 
 /**
- * @brief	Sets up the Bluetooth SMP (MCUmgr) transport. This should be called if the Kconfig
- *		option ``CONFIG_MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT`` is not enabled, this will
- *		register the transport and add it to the Bluetooth registered services so that
- *		clients can access registered MCUmgr commands.
- */
-void smp_bt_start(void);
-
-/**
  * @brief	Transmits an SMP command/response over the specified Bluetooth connection as a
  *		notification.
  *
