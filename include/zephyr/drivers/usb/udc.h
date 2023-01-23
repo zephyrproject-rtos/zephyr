@@ -19,6 +19,16 @@
 #include <zephyr/usb/usb_ch9.h>
 
 /**
+ * @brief Maximum packet size of control endpoint supported by the controller.
+ */
+enum udc_mps0 {
+	UDC_MPS0_8,
+	UDC_MPS0_16,
+	UDC_MPS0_32,
+	UDC_MPS0_64,
+};
+
+/**
  * USB device controller capabilities
  *
  * This structure is mainly intended for the USB device stack.
@@ -30,6 +40,8 @@ struct udc_device_caps {
 	uint32_t rwup : 1;
 	/** Controller performs status OUT stage automatically */
 	uint32_t out_ack : 1;
+	/** Maximum packet size for control endpoint */
+	enum udc_mps0 mps0 : 2;
 };
 
 /**
