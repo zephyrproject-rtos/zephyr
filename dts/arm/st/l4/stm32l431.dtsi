@@ -37,6 +37,11 @@
 
 		};
 
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
+
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v2";
 			#address-cells = <1>;
