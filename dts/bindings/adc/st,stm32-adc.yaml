@@ -44,5 +44,17 @@ properties:
     type: boolean
     description: Indicates if the ADC has a dedicated internal vbat monitoring channel.
 
+  temp-channel:
+    type: int
+    description: Indicates the ADC channel of the internal temperature sensor.
+
+  vref-channel:
+    type: int
+    description: Indicates the ADC channel of the internal voltage reference.
+
+  vbat-channel:
+    type: int
+    description: Indicates the ADC channel of the internal vbat monitoring.
+
 io-channel-cells:
   - input
