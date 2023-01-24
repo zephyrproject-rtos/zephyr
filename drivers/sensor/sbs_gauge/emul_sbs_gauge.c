@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(sbs_sbs_gauge);
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <sbs_gauge.h>
+#include "sbs_gauge.h"
 
 /** Run-time data used by the emulator */
 struct sbs_gauge_emul_data {
