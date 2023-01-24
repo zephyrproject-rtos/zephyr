@@ -41,6 +41,27 @@ config EEPROM_AT2X
 	  Enable support for Atmel AT2x (and compatible) I2C/SPI
 	  EEPROMs.
 
+config EEPROM_AT2X_EMUL
+	bool "Emulate an Atmel AT24 I2C chip"
+	depends on EMUL
+	help
+	  This is an emulator for the Atmel AT24 series of I2C-attached EEPROMs.
+
+	  At present it only supports 8-bit addressing. The size of the EEPROM
+	  is given by the 'size' property. See the binding for further details.
+
+config EMUL_EEPROM_AT2X
+	bool "[DEPRECATED] Emulate an Atmel AT24 I2C chip"
+	select EEPROM_AT2X_EMUL
+	select DEPRECATED
+	help
+	  This is an emulator for the Atmel AT24 series of I2C-attached EEPROMs.
+
+	  At present it only supports 8-bit addressing. The size of the EEPROM
+	  is given by the 'size' property. See the binding for further details.
+
+	  [DEPRECATED] Select EEPROM_AT2X_EMUL instead.
+
 config EEPROM_AT24
 	bool "Atmel AT24 (and compatible) I2C EEPROM support"
 	default y
