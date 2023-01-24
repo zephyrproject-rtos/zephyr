@@ -113,6 +113,38 @@ config LWM2M_COAP_MAX_MSG_SIZE
 	  CoAP message size used by LWM2M. Minimum is the block size used
 	  in blockwise transfers.
 
+config LWM2M_COAP_BLOCK_TRANSFER
+	bool "CoAP block transfer support for big outgoing LwM2M messages [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  LwM2M messages with a big body that exceed the block size will be split
+	  into blocks for sending.
+
+if LWM2M_COAP_BLOCK_TRANSFER
+config LWM2M_COAP_ENCODE_BUFFER_SIZE
+	int "LwM2M CoAP buffer size for encoding the full message for block-wise transfer"
+	default 1024
+	help
+	  Size of buffers for serializing big LwM2M CoAP messages that need to be
+	  split into blocks for sending.
+
+config LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
+	int "Maximum # of LWM2M block contexts used for outgoing messages"
+	default 3
+	help
+	  Maximum number of CoAP block contexts needed to split messages into blocks for
+	  sending. This limits the numer of messages that need block transfer that can be
+	  handled at the same time.
+
+config LWM2M_LOG_ENCODE_BUFFER_ALLOCATIONS
+	bool "Log allocations of encode buffers for block wise transfer"
+	select MEM_SLAB_TRACE_MAX_UTILIZATION
+	help
+	  The allocation of encode buffers can be tracked to analyse the usage and
+	  to optimize the configuration of number of block contexts and indirectly
+	  the number of available encode buffers.
+endif # LWM2M_COAP_BLOCK_TRANSFER
+
 config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
 	int "Size of the validation buffer for the incoming data"
 	default 64
