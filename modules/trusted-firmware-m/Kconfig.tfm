@@ -231,6 +231,18 @@ config TFM_USE_NS_APP
 	  This option is intended for testing purposes only, since this is the
 	  easiest way to integrate and run the TF-M regression tests in the
 	  zephyr build system.
+
+config TFM_CONNECTION_BASED_SERVICE_API
+	bool "TF-M use connection based service APIs"
+	help
+	  The TF-M build system produces an interface source file for accessing
+	  connection based services.
+	  Select this option when TF-M service models requires this source file.
+
+	  Note: This is an auto-generated configuration in the TF-M build
+	  system. When this option is not enabled in the TF-M build system this
+	  will result in compilation error.
+
 if TFM_BL2
 
 config TFM_MCUBOOT_IMAGE_NUMBER
