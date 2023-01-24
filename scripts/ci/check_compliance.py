@@ -1086,7 +1086,7 @@ def resolve_path_hint(hint):
         return hint
 
 
-def parse_args():
+def parse_args(argv):
 
     default_range = 'HEAD~1..HEAD'
     parser = argparse.ArgumentParser(
@@ -1116,7 +1116,7 @@ def parse_args():
     parser.add_argument('--annotate', action="store_true",
                         help="Print GitHub Actions-compatible annotations.")
 
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 def _main(args):
     # The "real" main(), which is wrapped to catch exceptions and report them
@@ -1241,8 +1241,8 @@ def _main(args):
     return n_fails
 
 
-def main():
-    args = parse_args()
+def main(argv=None):
+    args = parse_args(argv)
 
     try:
         # pylint: disable=unused-import
@@ -1280,4 +1280,4 @@ def err(msg):
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
