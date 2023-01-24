@@ -84,7 +84,7 @@ properties:
     description: |
       Delay (in microseconds) after releasing CRESET_B to clear internal configuration memory.
       Example usage / default:
-      config-delay-us = <300>;
+      config-delay-us = <1200>;
   leading-clocks:
     type: int
     description: |
