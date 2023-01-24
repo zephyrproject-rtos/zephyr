@@ -24,12 +24,21 @@ static int storage_erase(void)
 	int rc = flash_area_open(ERASE_TARGET_ID, &fa);
 
 	if (rc < 0) {
-		LOG_ERR("failed to open flash area");
+		LOG_ERR("Failed to open flash area");
+		rc = ZEPHYR_MGMT_GRP_CMD_RC_FLASH_OPEN_FAILED;
 	} else {
-		if (flash_area_get_device(fa) == NULL ||
-		    flash_area_erase(fa, 0, fa->fa_size) < 0) {
-			LOG_ERR("failed to erase flash area");
+		if (flash_area_get_device(fa) == NULL) {
+			LOG_ERR("Failed to get flash area device");
+			rc = ZEPHYR_MGMT_GRP_CMD_RC_FLASH_CONFIG_QUERY_FAIL;
+		} else {
+			rc = flash_area_erase(fa, 0, fa->fa_size);
+
+			if (rc < 0) {
+				LOG_ERR("Failed to erase flash area");
+				rc = ZEPHYR_MGMT_GRP_CMD_RC_FLASH_ERASE_FAILED;
+			}
 		}
+
 		flash_area_close(fa);
 	}
 
@@ -38,13 +47,21 @@ static int storage_erase(void)
 
 static int storage_erase_handler(struct smp_streamer *ctxt)
 {
-	int rc = storage_erase();
+	zcbor_state_t *zse = ctxt->writer->zs;
+	int rc;
+	bool ok = true;
 
-	/* No point to self encode "rc" here, the SMP can do that for us */
-	/* TODO: Decent error reporting for subsystems instead of using the
-	 * "rc" from SMP.
-	 */
-	return rc;
+	rc = storage_erase();
+
+	if (rc != ZEPHYR_MGMT_GRP_CMD_RC_OK) {
+		ok = smp_add_cmd_ret(zse, ZEPHYR_MGMT_GRP_BASIC, rc);
+	}
+
+	if (!ok) {
+		return MGMT_ERR_EMSGSIZE;
+	}
+
+	return MGMT_ERR_EOK;
 }
 
 static const struct mgmt_handler zephyr_mgmt_basic_handlers[] = {
@@ -64,5 +81,28 @@ static void zephyr_basic_mgmt_init(void)
 {
 	mgmt_register_group(&zephyr_basic_mgmt_group);
 }
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+int zephyr_basic_group_translate_error_code(uint16_t ret)
+{
+	int rc;
+
+	switch (ret) {
+	case ZEPHYR_MGMT_GRP_CMD_RC_FLASH_OPEN_FAILED:
+	rc = MGMT_ERR_ENOENT;
+	break;
+
+	case ZEPHYR_MGMT_GRP_CMD_RC_FLASH_CONFIG_QUERY_FAIL:
+	case ZEPHYR_MGMT_GRP_CMD_RC_FLASH_ERASE_FAILED:
+	rc = MGMT_ERR_EOK;
+	break;
+
+	default:
+	rc = MGMT_ERR_EUNKNOWN;
+	}
+
+	return rc;
+}
+#endif
 
 MCUMGR_HANDLER_DEFINE(zephyr_basic_mgmt, zephyr_basic_mgmt_init);
