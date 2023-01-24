@@ -60,6 +60,44 @@ extern "C" {
 #define IMG_MGMT_ID_ERASE	5
 
 /**
+ * Command result codes for image management group.
+ */
+enum img_mgmt_ret_code_t {
+	/** No error, this is implied if there is no ret value in the response */
+	IMG_MGMT_RET_RC_OK = 0,
+
+	IMG_MGMT_RET_RC_UNKNOWN,
+	IMG_MGMT_RET_RC_FLASH_CONFIG_QUERY_FAIL,
+	IMG_MGMT_RET_RC_NO_IMAGE,
+	IMG_MGMT_RET_RC_NO_TLVS,
+	IMG_MGMT_RET_RC_INVALID_TLV,
+	IMG_MGMT_RET_RC_TLV_MULTIPLE_HASHES_FOUND,
+	IMG_MGMT_RET_RC_TLV_INVALID_SIZE,
+	IMG_MGMT_RET_RC_HASH_NOT_FOUND,
+	IMG_MGMT_RET_RC_NO_FREE_SLOT,
+	IMG_MGMT_RET_RC_FLASH_OPEN_FAILED,
+	IMG_MGMT_RET_RC_FLASH_READ_FAILED,
+	IMG_MGMT_RET_RC_FLASH_WRITE_FAILED,
+	IMG_MGMT_RET_RC_FLASH_ERASE_FAILED,
+	IMG_MGMT_RET_RC_INVALID_SLOT,
+	IMG_MGMT_RET_RC_NO_FREE_MEMORY,
+	IMG_MGMT_RET_RC_FLASH_CONTEXT_ALREADY_SET,
+	IMG_MGMT_RET_RC_FLASH_CONTEXT_NOT_SET,
+	IMG_MGMT_RET_RC_FLASH_AREA_DEVICE_NULL,
+	IMG_MGMT_RET_RC_INVALID_PAGE_OFFSET,
+	IMG_MGMT_RET_RC_INVALID_OFFSET,
+	IMG_MGMT_RET_RC_INVALID_LENGTH,
+	IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER,
+	IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER_MAGIC,
+	IMG_MGMT_RET_RC_INVALID_HASH,
+	IMG_MGMT_RET_RC_INVALID_FLASH_ADDRESS,
+	IMG_MGMT_RET_RC_VERSION_GET_FAILED,
+	IMG_MGMT_RET_RC_CURRENT_VERSION_IS_NEWER,
+	IMG_MGMT_RET_RC_IMAGE_ALREADY_PENDING,
+	IMG_MGMT_RET_RC_INVALID_IMAGE_VECTOR_TABLE,
+};
+
+/**
  * IMG_MGMT_ID_UPLOAD statuses.
  */
 enum img_mgmt_id_upload_t {
@@ -236,6 +274,17 @@ int img_mgmt_state_confirm(void);
  * @return	1 if a > b
  */
 int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b);
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+/*
+ * @brief	Translate IMG mgmt group error code into MCUmgr error code
+ *
+ * @param ret	#img_mgmt_ret_code_t error code
+ *
+ * @return	#mcumgr_err_t error code
+ */
+int img_mgmt_translate_error_code(uint16_t ret);
+#endif
 
 #ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 #define IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, rsn) ((action)->rc_rsn = (rsn))

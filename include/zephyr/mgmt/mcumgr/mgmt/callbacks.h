@@ -48,24 +48,54 @@ extern "C" {
 #define MGMT_EVT_GET_ID(event) (event & MGMT_EVT_OP_ID_ALL)
 
 /**
+ * MGMT event callback return value.
+ */
+enum mgmt_cb_return {
+	/** No error. */
+	MGMT_CB_OK,
+
+	/** SMP protocol error and ``ret_rc`` contains the #mcumgr_err_t error code. */
+	MGMT_CB_ERROR_RC,
+
+	/**
+	 * Group (application-level) error and ``ret_group`` contains the group ID that caused
+	 * the error and ``ret_rc`` contians the error code of that group to return.
+	 */
+	MGMT_CB_ERROR_RET,
+};
+
+/**
  * @typedef mgmt_cb
  * @brief Function to be called on MGMT notification/event.
  *
- * This callback function is used to notify an application or system about a mcumgr mgmt event.
+ * This callback function is used to notify an application or system about a MCUmgr mgmt event.
  *
  * @param event		#mcumgr_op_t.
- * @param rc		#mcumgr_err_t of the previous handler calls, if it is an error then it
+ * @param prev_status	#mgmt_cb_return of the previous handler calls, if it is an error then it
  *			will be the first error that was returned by a handler (i.e. this handler
  *			is being called for a notification only, the return code will be ignored).
+ * @param rc		If ``prev_status`` is #MGMT_CB_ERROR_RC then this is the SMP error that
+ *			was returned by the first handler that failed. If ``prev_status`` is
+ *			#MGMT_CB_ERROR_RET then this will be the group error rc code returned by
+ *			the first handler that failed. If the handler wishes to raise an SMP
+ *			error, this must be set to the #mcumgr_err_t status and #MGMT_CB_ERROR_RC
+ *			must be returned by the function, if the handler wishes to raise a ret
+ *			error, this must be set to the group ret status and #MGMT_CB_ERROR_RET
+ *			must be returned by the function.
+ * @param group		If ``prev_status`` is #MGMT_CB_ERROR_RET then this is the group of the
+ *			ret error that was returned by the first handler that failed. If the
+ *			handler wishes to raise a ret error, this must be set to the group ret
+ *			status and #MGMT_CB_ERROR_RET must be returned by the function.
  * @param abort_more	Set to true to abort further processing by additional handlers.
  * @param data		Optional event argument.
  * @param data_size	Size of optional event argument (0 if no data is provided).
  *
- * @return		#mcumgr_err_t of the status to return to the calling code (only checked
- *			when failed is false).
+ * @return		#mgmt_cb_return indicating the status to return to the calling code (only
+ *			checked when this is the first failure reported by a handler).
  */
-typedef int32_t (*mgmt_cb)(uint32_t event, int32_t rc, bool *abort_more, void *data,
-			   size_t data_size);
+typedef enum mgmt_cb_return (*mgmt_cb)(uint32_t event, enum mgmt_cb_return prev_status,
+				       int32_t *rc, uint16_t *group, bool *abort_more, void *data,
+				       size_t data_size);
 
 /**
  * MGMT event callback group IDs. Note that this is not a 1:1 mapping with #mcumgr_group_t values.
@@ -203,11 +233,18 @@ struct mgmt_evt_op_cmd_arg {
  * @param event		#mcumgr_op_t.
  * @param data		Optional event argument.
  * @param data_size	Size of optional event argument (0 if none).
+ * @param ret_rc	Pointer to rc value.
+ * @param ret_group	Pointer to group value.
  *
- * @return		#mcumgr_err_t either #MGMT_ERR_EOK if all handlers returned it, or the
- *			error code of the first handler that returned an error.
+ * @return		#mgmt_cb_return either #MGMT_CB_OK if all handlers returned it, or
+ *			#MGMT_CB_ERROR_RC if the first failed handler returned an SMP error (in
+ *			which case ``ret_rc`` will be updated with the SMP error) or
+ *			#MGMT_CB_ERROR_RET if the first failed handler returned a ret group and
+ *			error (in which case ``ret_group`` will be updated with the failed group
+ *			ID and ``ret_rc`` will be updated with the group-specific error code).
  */
-int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size);
+enum mgmt_cb_return mgmt_callback_notify(uint32_t event, void *data, size_t data_size,
+					 int32_t *ret_rc, uint16_t *ret_group);
 
 /**
  * @brief Register event callback function.
