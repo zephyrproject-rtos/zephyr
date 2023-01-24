@@ -21,6 +21,8 @@
 #define ADC_REFERENCE ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID 26
+#define COUNTER_NODE_NAME pit0
+#define HW_TRIGGER_INTERVAL (2U)
 
 #elif defined(CONFIG_BOARD_FRDM_K82F)
 
@@ -30,15 +32,19 @@
 #define ADC_REFERENCE ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID 26
+#define COUNTER_NODE_NAME pit0
+#define HW_TRIGGER_INTERVAL (2U)
 
 #endif
 
-#define HW_TRIGGER_INTERVAL (2U)
 /* for DMA HW trigger interval need large than HW trigger interval*/
 #define SAMPLE_INTERVAL_US (10000U)
 
 #define BUFFER_SIZE 24
+#ifndef ALIGNMENT
 #define ALIGNMENT DMA_BUF_ADDR_ALIGNMENT(DT_NODELABEL(test_dma))
+#endif
+
 static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer[BUFFER_SIZE];
 static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer2[2][BUFFER_SIZE];
 static int current_buf_inx;
@@ -78,6 +84,7 @@ const struct device *get_adc_device(void)
 
 const struct device *get_count_device(void)
 {
+#if defined(COUNTER_NODE_NAME)
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
 
 	if (!device_is_ready(dev)) {
@@ -86,12 +93,16 @@ const struct device *get_count_device(void)
 	}
 
 	return dev;
+#else
+	return NULL;
+#endif
 }
 
-static void init_pit(void)
+#if defined(COUNTER_NODE_NAME)
+static void init_counter(void)
 {
 	int err;
-	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(COUNTER_NODE_NAME));
 	struct counter_top_cfg top_cfg = { .callback = NULL,
 					   .user_data = NULL,
 					   .flags = 0 };
@@ -104,6 +115,7 @@ static void init_pit(void)
 	zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)",
 		      dev->name, err);
 }
+#endif
 
 static const struct device *init_adc(void)
 {
@@ -126,7 +138,9 @@ static const struct device *init_adc(void)
 
 	(void)memset(m_sample_buffer, 0, sizeof(m_sample_buffer));
 
-	init_pit();
+#if defined(COUNTER_NODE_NAME)
+	init_counter();
+#endif
 
 	return adc_dev;
 }
@@ -245,7 +259,7 @@ static int test_task_asynchronous_call(void)
 	const struct adc_sequence_options options = {
 		.extra_samplings = 4,
 		/* Start consecutive samplings as fast as possible. */
-		.interval_us = HW_TRIGGER_INTERVAL,
+		.interval_us = 0,
 	};
 	const struct adc_sequence sequence = {
 		.options = &options,
