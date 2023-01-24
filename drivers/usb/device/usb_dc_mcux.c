@@ -241,7 +241,6 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 {
 	uint8_t ep_abs_idx =  EP_ABS_IDX(cfg->ep_addr);
 	usb_device_endpoint_init_struct_t ep_init;
-	struct k_mem_block *block;
 	struct usb_ep_ctrl_data *eps = &dev_state.eps[ep_abs_idx];
 	usb_status_t status;
 	uint8_t ep;
@@ -269,19 +268,25 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		LOG_WRN("Failed to un-initialize endpoint (status=%d)", (int)status);
 	}
 
-	block = &(eps->block);
-	if (block->data) {
-		k_heap_free(&ep_buf_pool, block->data);
-		block->data = NULL;
+	/* Allocate buffers used during read operation */
+	if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
+		struct k_mem_block *block;
+
+		block = &(eps->block);
+		if (block->data) {
+			k_heap_free(&ep_buf_pool, block->data);
+			block->data = NULL;
+		}
+
+		block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_NO_WAIT);
+		if (block->data == NULL) {
+			LOG_ERR("Failed to allocate memory");
+			return -ENOMEM;
+		}
+
+		memset(block->data, 0, cfg->ep_mps);
 	}
 
-	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_NO_WAIT);
-	if (block->data == NULL) {
-		LOG_ERR("Failed to allocate memory");
-		return -ENOMEM;
-	}
-
-	memset(block->data, 0, cfg->ep_mps);
 	dev_state.eps[ep_abs_idx].ep_mps = cfg->ep_mps;
 	status = dev_state.dev_struct.controllerInterface->deviceControl(
 			dev_state.dev_struct.controllerHandle,
@@ -486,8 +491,6 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		    const uint32_t data_len, uint32_t *const ret_bytes)
 {
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
-	uint8_t *buffer = (uint8_t *)dev_state.eps[ep_abs_idx].block.data;
-	uint32_t len_to_send;
 	usb_status_t status;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
@@ -500,29 +503,19 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		return -EINVAL;
 	}
 
-	if (data_len > dev_state.eps[ep_abs_idx].ep_mps) {
-		len_to_send = dev_state.eps[ep_abs_idx].ep_mps;
-	} else {
-		len_to_send = data_len;
-	}
-
-	for (uint32_t n = 0; n < len_to_send; n++) {
-		buffer[n] = data[n];
-	}
-
-#if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
-	DCACHE_CleanByRange((uint32_t)buffer, len_to_send);
+#if defined(CONFIG_HAS_MCUX_CACHE)
+	DCACHE_CleanByRange((uint32_t)data, data_len);
 #endif
 	status = dev_state.dev_struct.controllerInterface->deviceSend(
 						dev_state.dev_struct.controllerHandle,
-						ep, buffer, len_to_send);
+						ep, (uint8_t *)data, data_len);
 	if (kStatus_USB_Success != status) {
 		LOG_ERR("Failed to fill ep 0x%02x buffer", ep);
 		return -EIO;
 	}
 
 	if (ret_bytes) {
-		*ret_bytes = len_to_send;
+		*ret_bytes = data_len;
 	}
 
 	return 0;
