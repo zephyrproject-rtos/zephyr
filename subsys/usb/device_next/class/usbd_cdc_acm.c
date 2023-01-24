@@ -393,6 +393,12 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 
 static int usbd_cdc_acm_init(struct usbd_class_node *const c_nd)
 {
+	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+
+	desc->iad_cdc.bFirstInterface = desc->if0.bInterfaceNumber;
+	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
+	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
+
 	return 0;
 }
 
