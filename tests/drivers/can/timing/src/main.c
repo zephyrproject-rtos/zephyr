@@ -232,22 +232,24 @@ ZTEST_USER(can_timing, test_timing)
 /**
  * @brief Test all CAN timing values for the data phase.
  */
-#ifdef CONFIG_CAN_FD_MODE
 ZTEST_USER(can_timing, test_timing_data)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	can_mode_t cap;
+	int err;
 	int i;
+
+	err = can_get_capabilities(dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN controller capabilities (err %d)", err);
+
+	if ((cap & CAN_MODE_FD) == 0) {
+		ztest_test_skip();
+	}
 
 	for (i = 0; i < ARRAY_SIZE(can_timing_data_tests); i++) {
 		test_timing_values(dev, &can_timing_data_tests[i], true);
 	}
 }
-#else /* CONFIG_CAN_FD_MODE */
-ZTEST_USER(can_timing, test_timing_data)
-{
-	ztest_test_skip();
-}
-#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Test that the minimum timing values can be set.
@@ -259,11 +261,26 @@ ZTEST_USER(can_timing, test_set_timing_min)
 
 	err = can_set_timing(dev, can_get_timing_min(dev));
 	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
+}
 
-	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
-		err = can_set_timing_data(dev, can_get_timing_data_min(dev));
-		zassert_equal(err, 0, "failed to set minimum timing data parameters (err %d)", err);
+/**
+ * @brief Test that the minimum timing values for the data phase can be set.
+ */
+ZTEST_USER(can_timing, test_set_timing_data_min)
+{
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	can_mode_t cap;
+	int err;
+
+	err = can_get_capabilities(dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN controller capabilities (err %d)", err);
+
+	if ((cap & CAN_MODE_FD) == 0) {
+		ztest_test_skip();
 	}
+
+	err = can_set_timing_data(dev, can_get_timing_data_min(dev));
+	zassert_equal(err, 0, "failed to set minimum timing data parameters (err %d)", err);
 }
 
 /**
@@ -276,11 +293,26 @@ ZTEST_USER(can_timing, test_set_timing_max)
 
 	err = can_set_timing(dev, can_get_timing_max(dev));
 	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
+}
 
-	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
-		err = can_set_timing_data(dev, can_get_timing_data_max(dev));
-		zassert_equal(err, 0, "failed to set maximum timing data parameters (err %d)", err);
+/**
+ * @brief Test that the maximum timing values for the data phase can be set.
+ */
+ZTEST_USER(can_timing, test_set_timing_data_max)
+{
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	can_mode_t cap;
+	int err;
+
+	err = can_get_capabilities(dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN controller capabilities (err %d)", err);
+
+	if ((cap & CAN_MODE_FD) == 0) {
+		ztest_test_skip();
 	}
+
+	err = can_set_timing_data(dev, can_get_timing_data_max(dev));
+	zassert_equal(err, 0, "failed to set maximum timing data parameters (err %d)", err);
 }
 
 void *can_timing_setup(void)
