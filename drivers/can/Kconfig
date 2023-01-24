@@ -55,17 +55,10 @@ config CAN_STATS
 	help
 	  Enable CAN controller device statistics.
 
-config CAN_HAS_CANFD
-	bool
-	help
-	  driver supports CAN-FD
-
 config CAN_FD_MODE
 	bool "CAN-FD"
-	default y
-	depends on CAN_HAS_CANFD
 	help
-	  Enable CAN-FD compatible API
+	  Enable CAN-FD support. Not all CAN controllers support CAN-FD.
 
 config CAN_RX_TIMESTAMP
 	bool "Receiving timestamps"
