@@ -5,16 +5,20 @@ tests:
   sample.net.lwm2m_client:
     harness: net
     depends_on: netif
-    platform_allow: qemu_x86 frdm_k64f pinnacle_100_dvk mg100
+    platform_allow: qemu_cortex_m3 qemu_x86 native_posix frdm_k64f pinnacle_100_dvk mg100
     integration_platforms:
       - qemu_x86
+      - qemu_cortex_m3
+      - native_posix
     tags: net lwm2m
   sample.net.lwm2m_client.all_objects:
     harness: net
     depends_on: netif
-    platform_allow: qemu_x86
+    platform_allow: qemu_cortex_m3 qemu_x86 native_posix
     integration_platforms:
       - qemu_x86
+      - qemu_cortex_m3
+      - native_posix
     tags: net lwm2m
     extra_configs:
       - CONFIG_LWM2M_CONN_MON_OBJ_SUPPORT=y
@@ -30,9 +34,11 @@ tests:
     harness: net
     depends_on: netif
     extra_args: OVERLAY_CONFIG=overlay-dtls.conf
-    platform_allow: qemu_x86 frdm_k64f pinnacle_100_dvk mg100
+    platform_allow: qemu_cortex_m3 qemu_x86 native_posix frdm_k64f pinnacle_100_dvk mg100
     integration_platforms:
       - qemu_x86
+      - qemu_cortex_m3
+      - native_posix
     tags: net lwm2m
   sample.net.lwm2m_client.bt:
     harness: net
@@ -45,9 +51,11 @@ tests:
     harness: net
     depends_on: netif
     extra_args: OVERLAY_CONFIG=overlay-queue.conf
-    platform_allow: qemu_x86
+    platform_allow: qemu_cortex_m3 qemu_x86 native_posix
     integration_platforms:
       - qemu_x86
+      - qemu_cortex_m3
+      - native_posix
     tags: net lwm2m
   sample.net.lwm2m_client.wnc_m14a2a:
     harness: net
