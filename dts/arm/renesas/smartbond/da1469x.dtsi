@@ -8,6 +8,10 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -84,6 +88,14 @@
 			interrupts = <5 0>;
 			status = "disabled";
 		};
+
+		trng: trng@50040c00 {
+			compatible = "renesas,smartbond-trng";
+			reg = <0x50040c00 0x0C>;
+			interrupts = <24 0>;
+			status = "okay";
+		};
+
 	};
 };
 
