@@ -139,10 +139,6 @@ extern const struct emul __emul_list_end[];
 				&(Z_EMUL_REG_BUS_IDENTIFIER(node_id))},                            \
 	};
 
-#define Z_MAYBE_EMUL_DECLARE_INTERNAL(node_id) extern const struct emul EMUL_DT_NAME_GET(node_id);
-
-DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
-
 /**
  * @brief Like EMUL_DT_DEFINE(), but uses an instance of a DT_DRV_COMPAT compatible instead of a
  *        node identifier.
@@ -170,7 +166,7 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
 #define EMUL_DT_GET(node_id) (&EMUL_DT_NAME_GET(node_id))
 
 /**
- * Set up a list of emulators
+ * @brief Set up a list of emulators
  *
  * @param dev Device the emulators are attached to (e.g. an I2C controller)
  * @return 0 if OK
@@ -192,12 +188,18 @@ int emul_init_for_bus(const struct device *dev);
  */
 const struct emul *emul_get_binding(const char *name);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
 /**
  * @}
  */
+
+#if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
+#define Z_MAYBE_EMUL_DECLARE_INTERNAL(node_id) extern const struct emul EMUL_DT_NAME_GET(node_id);
+
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
+#endif /* CONFIG_HAS_DTS || __DOXYGEN__ */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_EMUL_H_ */
