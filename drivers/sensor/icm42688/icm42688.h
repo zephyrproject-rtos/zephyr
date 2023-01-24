@@ -573,7 +573,7 @@ static inline void icm42688_accel_ms(struct icm42688_cfg *cfg, int32_t in, int32
 	*out_ms = in_ms / (sensitivity * 1000000LL);
 
 	/* micrometers/s^2 */
-	*out_ums = ((llabs(in_ms) - (llabs(*out_ms) * sensitivity * 1000000LL)) / sensitivity);
+	*out_ums = (in_ms - (*out_ms * sensitivity * 1000000LL)) / sensitivity;
 }
 
 /**
@@ -622,8 +622,8 @@ static inline void icm42688_gyro_rads(struct icm42688_cfg *cfg, int32_t in, int3
 	*out_rads = in10_rads / (sensitivity * 180LL * 1000000LL);
 
 	/* microrad/s */
-	*out_urads = ((llabs(in10_rads) - (llabs((*out_rads)) * sensitivity * 180LL * 1000000LL))) /
-		     (sensitivity * 180LL);
+	*out_urads =
+		(in10_rads - (*out_rads * sensitivity * 180LL * 1000000LL)) / (sensitivity * 180LL);
 }
 
 /**
