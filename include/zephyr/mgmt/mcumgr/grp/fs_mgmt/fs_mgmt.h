@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018-2022 mcumgr authors
  * Copyright (c) 2022 Laird Connectivity
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,70 @@ extern "C" {
 #define FS_MGMT_ID_HASH_CHECKSUM		2
 #define FS_MGMT_ID_SUPPORTED_HASH_CHECKSUM	3
 #define FS_MGMT_ID_OPENED_FILE			4
+
+/**
+ * Command result codes for file system management group.
+ */
+enum fs_mgmt_ret_code_t {
+	/** No error, this is implied if there is no ret value in the response */
+	FS_MGMT_RET_RC_OK = 0,
+
+	/** Unknown error occurred. */
+	FS_MGMT_RET_RC_UNKNOWN,
+
+	/** The specified file name is not valid. */
+	FS_MGMT_RET_RC_FILE_INVALID_NAME,
+
+	/** The specified file does not exist. */
+	FS_MGMT_RET_RC_FILE_NOT_FOUND,
+
+	/** The specified file is a directory, not a file. */
+	FS_MGMT_RET_RC_FILE_IS_DIRECTORY,
+
+	/** Error occurred whilst attempting to open a file. */
+	FS_MGMT_RET_RC_FILE_OPEN_FAILED,
+
+	/** Error occurred whilst attempting to seek to an offset in a file. */
+	FS_MGMT_RET_RC_FILE_SEEK_FAILED,
+
+	/** Error occurred whilst attempting to read data from a file. */
+	FS_MGMT_RET_RC_FILE_READ_FAILED,
+
+	/** Error occurred whilst trying to truncate file. */
+	FS_MGMT_RET_RC_FILE_TRUNCATE_FAILED,
+
+	/** Error occurred whilst trying to delete file. */
+	FS_MGMT_RET_RC_FILE_DELETE_FAILED,
+
+	/** Error occurred whilst attempting to write data to a file. */
+	FS_MGMT_RET_RC_FILE_WRITE_FAILED,
+
+	/**
+	 * The specified data offset is not valid, this could indicate that the file on the device
+	 * has changed since the previous command. The length of the current file on the device is
+	 * returned as "len", the user application needs to decide how to handle this (e.g. the
+	 * hash of the file could be requested and compared with the hash of the length of the
+	 * file being uploaded to see if they match or not).
+	 */
+	FS_MGMT_RET_RC_FILE_OFFSET_NOT_VALID,
+
+	/** The requested offset is larger than the size of the file on the device. */
+	FS_MGMT_RET_RC_FILE_OFFSET_LARGER_THAN_FILE,
+
+	/** The requested checksum or hash type was not found or is not supported by this build. */
+	FS_MGMT_RET_RC_CHECKSUM_HASH_NOT_FOUND,
+};
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+/*
+ * @brief	Translate FS mgmt group error code into MCUmgr error code
+ *
+ * @param ret	#fs_mgmt_ret_code_t error code
+ *
+ * @return	#mcumgr_err_t error code
+ */
+int fs_mgmt_translate_error_code(uint16_t ret);
+#endif
 
 #ifdef __cplusplus
 }

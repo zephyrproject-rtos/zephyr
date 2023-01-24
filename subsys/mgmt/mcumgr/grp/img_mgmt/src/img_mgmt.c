@@ -69,9 +69,7 @@ const char *img_mgmt_err_str_image_bad_flash_addr = "img addr mismatch";
 /**
  * Finds the TLVs in the specified image slot, if any.
  */
-static int
-img_mgmt_find_tlvs(int slot, size_t *start_off, size_t *end_off,
-				   uint16_t magic)
+static int img_mgmt_find_tlvs(int slot, size_t *start_off, size_t *end_off, uint16_t magic)
 {
 	struct image_tlv_info tlv_info;
 	int rc;
@@ -79,18 +77,18 @@ img_mgmt_find_tlvs(int slot, size_t *start_off, size_t *end_off,
 	rc = img_mgmt_read(slot, *start_off, &tlv_info, sizeof(tlv_info));
 	if (rc != 0) {
 		/* Read error. */
-		return MGMT_ERR_EUNKNOWN;
+		return rc;
 	}
 
 	if (tlv_info.it_magic != magic) {
 		/* No TLVs. */
-		return MGMT_ERR_ENOENT;
+		return IMG_MGMT_RET_RC_NO_TLVS;
 	}
 
 	*start_off += sizeof(tlv_info);
 	*end_off = *start_off + tlv_info.it_tlv_tot;
 
-	return 0;
+	return IMG_MGMT_RET_RC_OK;
 }
 
 int img_mgmt_active_slot(int image)
@@ -121,8 +119,7 @@ int img_mgmt_active_image(void)
 /*
  * Reads the version and build hash from the specified image slot.
  */
-int
-img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
+int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 				   uint32_t *flags)
 {
 	struct image_header hdr;
@@ -136,12 +133,12 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 
 	rc = img_mgmt_erased_val(image_slot, &erased_val);
 	if (rc != 0) {
-		return MGMT_ERR_EUNKNOWN;
+		return IMG_MGMT_RET_RC_FLASH_CONFIG_QUERY_FAIL;
 	}
 
 	rc = img_mgmt_read(image_slot, 0, &hdr, sizeof(hdr));
 	if (rc != 0) {
-		return MGMT_ERR_EUNKNOWN;
+		return rc;
 	}
 
 	if (ver != NULL) {
@@ -153,9 +150,9 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 			memcpy(ver, &hdr.ih_ver, sizeof(*ver));
 		}
 	} else if (hdr.ih_magic == erased_val_32) {
-		return MGMT_ERR_ENOENT;
+		return IMG_MGMT_RET_RC_NO_IMAGE;
 	} else {
-		return MGMT_ERR_EUNKNOWN;
+		return IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER_MAGIC;
 	}
 
 	if (flags != NULL) {
@@ -179,17 +176,17 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 
 	rc = img_mgmt_find_tlvs(image_slot, &data_off, &data_end, IMAGE_TLV_INFO_MAGIC);
 	if (rc != 0) {
-		return MGMT_ERR_EUNKNOWN;
+		return IMG_MGMT_RET_RC_NO_TLVS;
 	}
 
 	hash_found = false;
 	while (data_off + sizeof(tlv) <= data_end) {
 		rc = img_mgmt_read(image_slot, data_off, &tlv, sizeof(tlv));
 		if (rc != 0) {
-			return MGMT_ERR_EUNKNOWN;
+			return rc;
 		}
 		if (tlv.it_type == 0xff && tlv.it_len == 0xffff) {
-			return MGMT_ERR_EUNKNOWN;
+			return IMG_MGMT_RET_RC_INVALID_TLV;
 		}
 		if (tlv.it_type != IMAGE_TLV_SHA256 || tlv.it_len != IMAGE_HASH_LEN) {
 			/* Non-hash TLV.  Skip it. */
@@ -199,25 +196,24 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 
 		if (hash_found) {
 			/* More than one hash. */
-			return MGMT_ERR_EUNKNOWN;
+			return IMG_MGMT_RET_RC_TLV_MULTIPLE_HASHES_FOUND;
 		}
 		hash_found = true;
 
 		data_off += sizeof(tlv);
 		if (hash != NULL) {
 			if (data_off + IMAGE_HASH_LEN > data_end) {
-				return MGMT_ERR_EUNKNOWN;
+				return IMG_MGMT_RET_RC_TLV_INVALID_SIZE;
 			}
-			rc = img_mgmt_read(image_slot, data_off, hash,
-									IMAGE_HASH_LEN);
+			rc = img_mgmt_read(image_slot, data_off, hash, IMAGE_HASH_LEN);
 			if (rc != 0) {
-				return MGMT_ERR_EUNKNOWN;
+				return rc;
 			}
 		}
 	}
 
 	if (!hash_found) {
-		return MGMT_ERR_EUNKNOWN;
+		return IMG_MGMT_RET_RC_HASH_NOT_FOUND;
 	}
 
 	return 0;
@@ -300,6 +296,7 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 {
 	struct image_version ver;
 	int rc;
+	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok;
 	uint32_t slot = img_mgmt_get_other_slot();
@@ -326,7 +323,9 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 		/* Image info is valid. */
 		if (img_mgmt_slot_in_use(slot)) {
 			/* No free slot. */
-			return MGMT_ERR_EBADSTATE;
+			ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_IMAGE,
+					     IMG_MGMT_RET_RC_NO_FREE_SLOT);
+			goto end;
 		}
 	}
 
@@ -335,19 +334,23 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 
 	if (rc != 0) {
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0);
+		int32_t ret_rc;
+		uint16_t ret_group;
+
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0, &ret_rc,
+					   &ret_group);
 #endif
-		return rc;
+		ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_IMAGE, rc);
+		goto end;
 	}
 
 	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
-		zcbor_state_t *zse = ctxt->writer->zs;
-
 		if (!zcbor_tstr_put_lit(zse, "rc") || !zcbor_int32_put(zse, 0)) {
 			return MGMT_ERR_EMSGSIZE;
 		}
 	}
 
+end:
 	return MGMT_ERR_EOK;
 }
 
@@ -403,6 +406,7 @@ img_mgmt_upload_log(bool is_first, bool is_last, int status)
 static int
 img_mgmt_upload(struct smp_streamer *ctxt)
 {
+	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok;
 	size_t decoded = 0;
@@ -420,8 +424,13 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 	bool reset = false;
 
 #ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
-	zcbor_state_t *zse = ctxt->writer->zs;
 	bool data_match = false;
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK) || defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+	enum mgmt_cb_return status;
+	int32_t ret_rc;
+	uint16_t ret_group;
 #endif
 
 	struct zcbor_map_decode_key_val image_upload_decode[] = {
@@ -460,12 +469,14 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 	rc = img_mgmt_upload_inspect(&req, &action);
 	if (rc != 0) {
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0);
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0, &ret_rc,
+					   &ret_group);
 #endif
 
 		MGMT_CTXT_SET_RC_RSN(ctxt, IMG_MGMT_UPLOAD_ACTION_RC_RSN(&action));
 		LOG_ERR("Image upload inspect failed: %d", rc);
-		return rc;
+		ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_IMAGE, rc);
+		goto end;
 	}
 
 	if (!action.proceed) {
@@ -479,11 +490,20 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 	/* Request is valid.  Give the application a chance to reject this upload
 	 * request.
 	 */
-	rc = mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK, &upload_check_data,
-				  sizeof(upload_check_data));
+	status = mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK, &upload_check_data,
+				      sizeof(upload_check_data), &ret_rc, &ret_group);
 
-	if (rc != MGMT_ERR_EOK) {
+	if (status != MGMT_CB_OK) {
 		IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action, img_mgmt_err_str_app_reject);
+
+		if (status == MGMT_CB_ERROR_RC) {
+			rc = ret_rc;
+			ok = zcbor_tstr_put_lit(zse, "rc")	&&
+			     zcbor_int32_put(zse, rc);
+		} else {
+			ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
+		}
+
 		goto end;
 	}
 #endif
@@ -504,7 +524,8 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 		g_img_mgmt_state.off = 0;
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STARTED, NULL, 0);
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STARTED, NULL, 0, &ret_rc,
+					   &ret_group);
 #endif
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
@@ -556,6 +577,7 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 			if (rc != 0) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 					img_mgmt_err_str_flash_erase_failed);
+				ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_IMAGE, rc);
 				goto end;
 			}
 		}
@@ -591,6 +613,7 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 
 			LOG_ERR("Irrecoverable error: flash write failed: %d", rc);
 
+			ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_IMAGE, rc);
 			goto end;
 		}
 
@@ -618,7 +641,8 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 #endif
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-			(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_PENDING, NULL, 0);
+			(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_PENDING, NULL, 0,
+						   &ret_rc, &ret_group);
 #endif
 		}
 	}
@@ -628,39 +652,41 @@ end:
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 	(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_STATUS, &cmd_status_arg,
-				   sizeof(cmd_status_arg));
+				   sizeof(cmd_status_arg), &ret_rc, &ret_group);
 #endif
 
 	if (rc != 0) {
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0);
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0, &ret_rc,
+					   &ret_group);
 #endif
 
 		img_mgmt_reset_upload();
-
-		return rc;
-	}
-
-	rc = img_mgmt_upload_good_rsp(ctxt);
+	} else {
+		rc = img_mgmt_upload_good_rsp(ctxt);
 
 #ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
-	if (last && rc == MGMT_ERR_EOK) {
-		/* Append status to last packet */
-		ok = zcbor_tstr_put_lit(zse, "match")	&&
-		     zcbor_bool_put(zse, data_match);
-	}
+		if (last && rc == MGMT_ERR_EOK) {
+			/* Append status to last packet */
+			ok = zcbor_tstr_put_lit(zse, "match")	&&
+			     zcbor_bool_put(zse, data_match);
+		}
 #endif
 
-	if (reset) {
-		/* Reset the upload state struct back to default */
-		img_mgmt_reset_upload();
+		if (reset) {
+			/* Reset the upload state struct back to default */
+			img_mgmt_reset_upload();
+		}
 	}
 
-	return rc;
+	if (!ok) {
+		return MGMT_ERR_EMSGSIZE;
+	}
+
+	return MGMT_ERR_EOK;
 }
 
-int
-img_mgmt_my_version(struct image_version *ver)
+int img_mgmt_my_version(struct image_version *ver)
 {
 	return img_mgmt_read_info(img_mgmt_active_slot(img_mgmt_active_image()),
 				  ver, NULL, NULL);
@@ -699,5 +725,60 @@ static void img_mgmt_register_group(void)
 {
 	mgmt_register_group(&img_mgmt_group);
 }
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+int img_mgmt_translate_error_code(uint16_t ret)
+{
+	int rc;
+
+	switch (ret) {
+	case IMG_MGMT_RET_RC_NO_IMAGE:
+	case IMG_MGMT_RET_RC_NO_TLVS:
+	rc = MGMT_ERR_ENOENT;
+	break;
+
+	case IMG_MGMT_RET_RC_NO_FREE_SLOT:
+	case IMG_MGMT_RET_RC_CURRENT_VERSION_IS_NEWER:
+	case IMG_MGMT_RET_RC_IMAGE_ALREADY_PENDING:
+	rc = MGMT_ERR_EBADSTATE;
+	break;
+
+	case IMG_MGMT_RET_RC_NO_FREE_MEMORY:
+	rc = MGMT_ERR_ENOMEM;
+	break;
+
+	case IMG_MGMT_RET_RC_INVALID_SLOT:
+	case IMG_MGMT_RET_RC_INVALID_PAGE_OFFSET:
+	case IMG_MGMT_RET_RC_INVALID_OFFSET:
+	case IMG_MGMT_RET_RC_INVALID_LENGTH:
+	case IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER:
+	case IMG_MGMT_RET_RC_INVALID_HASH:
+	case IMG_MGMT_RET_RC_INVALID_FLASH_ADDRESS:
+	rc = MGMT_ERR_EINVAL;
+	break;
+
+	case IMG_MGMT_RET_RC_FLASH_CONFIG_QUERY_FAIL:
+	case IMG_MGMT_RET_RC_VERSION_GET_FAILED:
+	case IMG_MGMT_RET_RC_TLV_MULTIPLE_HASHES_FOUND:
+	case IMG_MGMT_RET_RC_TLV_INVALID_SIZE:
+	case IMG_MGMT_RET_RC_HASH_NOT_FOUND:
+	case IMG_MGMT_RET_RC_INVALID_TLV:
+	case IMG_MGMT_RET_RC_FLASH_OPEN_FAILED:
+	case IMG_MGMT_RET_RC_FLASH_READ_FAILED:
+	case IMG_MGMT_RET_RC_FLASH_WRITE_FAILED:
+	case IMG_MGMT_RET_RC_FLASH_ERASE_FAILED:
+	case IMG_MGMT_RET_RC_FLASH_CONTEXT_ALREADY_SET:
+	case IMG_MGMT_RET_RC_FLASH_CONTEXT_NOT_SET:
+	case IMG_MGMT_RET_RC_FLASH_AREA_DEVICE_NULL:
+	case IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER_MAGIC:
+	case IMG_MGMT_RET_RC_INVALID_IMAGE_VECTOR_TABLE:
+	case IMG_MGMT_RET_RC_UNKNOWN:
+	default:
+	rc = MGMT_ERR_EUNKNOWN;
+	}
+
+	return rc;
+}
+#endif
 
 MCUMGR_HANDLER_DEFINE(img_mgmt, img_mgmt_register_group);

@@ -87,7 +87,9 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 			 * to buffer, but should be rather MGMT_ERR_ENOMEM.
 			 */
 			if ((len + value.len) >= (ARRAY_SIZE(line) - 1)) {
-				return MGMT_ERR_EINVAL;
+				ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_SHELL,
+						     SHELL_MGMT_RET_RC_COMMAND_TOO_LONG);
+				goto end;
 			}
 
 			memcpy(&line[len], value.value, value.len);
@@ -105,7 +107,8 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 	if (len == 0) {
 		/* We do not bother to close decoder */
 		LOG_ERR("Failed to compose command line");
-		return MGMT_ERR_EINVAL;
+		ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_SHELL, SHELL_MGMT_RET_RC_EMPTY_COMMAND);
+		goto end;
 	}
 
 	rc = shell_exec(line);
@@ -124,6 +127,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 
 	zcbor_map_end_decode(zsd);
 
+end:
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
@@ -143,5 +147,24 @@ static void shell_mgmt_register_group(void)
 {
 	mgmt_register_group(&shell_mgmt_group);
 }
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+int shell_mgmt_translate_error_code(uint16_t ret)
+{
+	int rc;
+
+	switch (ret) {
+	case SHELL_MGMT_RET_RC_COMMAND_TOO_LONG:
+	case SHELL_MGMT_RET_RC_EMPTY_COMMAND:
+	rc = MGMT_ERR_EINVAL;
+	break;
+
+	default:
+	rc = MGMT_ERR_EUNKNOWN;
+	}
+
+	return rc;
+}
+#endif
 
 MCUMGR_HANDLER_DEFINE(shell_mgmt, shell_mgmt_register_group);

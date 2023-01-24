@@ -78,8 +78,9 @@ stat_mgmt_walk_cb(struct stats_hdr *hdr, void *arg, const char *name, uint16_t o
 		entry.value = *(uint64_t *) stat_val;
 		break;
 	default:
-		return MGMT_ERR_EINVAL;
+		return STAT_MGMT_RET_RC_INVALID_STAT_SIZE;
 	}
+
 	entry.name = name;
 
 	return walk_arg->cb(walk_arg->zse, &entry);
@@ -93,7 +94,7 @@ stat_mgmt_foreach_entry(zcbor_state_t *zse, const char *group_name, stat_mgmt_fo
 
 	hdr = stats_group_find(group_name);
 	if (hdr == NULL) {
-		return MGMT_ERR_ENOENT;
+		return STAT_MGMT_RET_RC_INVALID_GROUP;
 	}
 
 	walk_arg = (struct stat_mgmt_walk_arg) {
@@ -157,7 +158,9 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 
 	if (stat_mgmt_count(stat_name, &counter) != 0) {
 		LOG_ERR("Invalid stat name: %s", stat_name);
-		return MGMT_ERR_EUNKNOWN;
+		ok = smp_add_cmd_ret(zse, ZEPHYR_MGMT_GRP_BASIC,
+				     STAT_MGMT_RET_RC_INVALID_STAT_NAME);
+		goto end;
 	}
 
 	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
@@ -176,12 +179,19 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 		int rc = stat_mgmt_foreach_entry(zse, stat_name,
 						 stat_mgmt_cb_encode);
 
-		if (rc != MGMT_ERR_EOK) {
-			return rc;
+		if (rc != STAT_MGMT_RET_RC_OK) {
+			if (rc != STAT_MGMT_RET_RC_INVALID_GROUP &&
+			    rc != STAT_MGMT_RET_RC_INVALID_STAT_SIZE) {
+				rc = STAT_MGMT_RET_RC_WALK_ABORTED;
+			}
+
+			ok = smp_add_cmd_ret(zse, ZEPHYR_MGMT_GRP_BASIC, rc);
 		}
 	}
 
 	ok = ok && zcbor_map_end_encode(zse, counter);
+
+end:
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
@@ -246,5 +256,29 @@ static void stat_mgmt_register_group(void)
 {
 	mgmt_register_group(&stat_mgmt_group);
 }
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+int stat_mgmt_translate_error_code(uint16_t ret)
+{
+	int rc;
+
+	switch (ret) {
+	case STAT_MGMT_RET_RC_INVALID_GROUP:
+	case STAT_MGMT_RET_RC_INVALID_STAT_NAME:
+	rc = MGMT_ERR_ENOENT;
+	break;
+
+	case STAT_MGMT_RET_RC_INVALID_STAT_SIZE:
+	rc = MGMT_ERR_EINVAL;
+	break;
+
+	case STAT_MGMT_RET_RC_WALK_ABORTED:
+	default:
+	rc = MGMT_ERR_EUNKNOWN;
+	}
+
+	return rc;
+}
+#endif
 
 MCUMGR_HANDLER_DEFINE(stat_mgmt, stat_mgmt_register_group);

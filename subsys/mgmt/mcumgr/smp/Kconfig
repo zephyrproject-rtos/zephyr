@@ -90,3 +90,13 @@ config MCUMGR_SMP_VERBOSE_ERR_RESPONSE
 	  Note that the "rsn" is string additional to "rc" code,
 	  so MCUMGR_TRANSPORT_NETBUF_SIZE should be large enough to be able
 	  to encode both.
+
+config MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	bool "Support original protocol"
+	default y
+	help
+	  This option will enable supporting the original SMP protocol whereby
+	  all errors are returned in the "rc" field as well as the new protocol
+	  whereby there is a dedicated entry for command error/result codes.
+	  The protocol selection is indicated by the request header sent by the
+	  client.
