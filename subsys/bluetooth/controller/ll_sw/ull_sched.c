@@ -228,7 +228,7 @@ void ull_sched_mfy_win_offset_use(void *param)
 	/*
 	 * TODO: update calculationg of the win_offset
 	 * when updating the connection update procedure
-	 * see the legacy code from Zephyr v3.2 for inspiration
+	 * see the legacy code from Zephyr v3.3 for inspiration
 	 */
 }
 
@@ -242,7 +242,7 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 
 	/*
 	 * TODO: update when updating the connection update procedure
-	 * see the legacy code from Zephyr v3.2 for inspiration
+	 * see the legacy code from Zephyr v3.3 for inspiration
 	 */
 }
 
@@ -254,7 +254,7 @@ void ull_sched_mfy_win_offset_select(void *param)
 	/*
 	 * TODO: update calculation of win_offset when
 	 * updating the connection update procedure
-	 * see the legacy code from Zephyr v3.2 for inspiration
+	 * see the legacy code from Zephyr v3.3 for inspiration
 	 */
 
 #undef OFFSET_S_MAX
@@ -263,7 +263,7 @@ void ull_sched_mfy_win_offset_select(void *param)
 
 /*
  * TODO: probably we need a function for calculating the window offset
- * see the legacy code from Zephyr v3.2 for inspiration
+ * see the legacy code from Zephyr v3.3 for inspiration
  */
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
