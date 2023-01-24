@@ -560,7 +560,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	uint32_t data_len;
 	uint8_t *bufp = NULL;
 
-	while (dev_state.eps[ep_abs_idx].ep_occupied) {
+	if (dev_state.eps[ep_abs_idx].ep_occupied) {
 		LOG_ERR("Endpoint is occupied by the controller");
 		return -EBUSY;
 	}
