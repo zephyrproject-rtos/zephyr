@@ -1311,50 +1311,72 @@ char * gsm_ppp_get_ring_indicator_behaviour_text(enum ring_indicator_behaviour r
 			return "pulse";
 		case ALWAYS:
 			return "always";
-		case AUTO:
-			return "auto";
-		case WAVE:
-			return "wave";
 		default:
 			LOG_WRN("Unknown ring indicator type");
 			return "";
 	}
 }
 
+void gsm_ppp_generate_ring_indicator_at_cmd(char * cmd_buffer,
+					    size_t max_len,
+					    char * ring_type,
+					    enum ring_indicator_behaviour setting,
+					    uint16_t pule_duration)
+{
+	if (setting == PULSE) {
+		snprintf(cmd_buffer, max_len, "AT+QCFG=\"%s\",\"%s\",%d",
+			 ring_type,
+			 gsm_ppp_get_ring_indicator_behaviour_text(setting),
+			 pule_duration);
+	} else {
+		snprintf(cmd_buffer, max_len, "AT+QCFG=\"%s\",\"%s\"",
+			 ring_type,
+			 gsm_ppp_get_ring_indicator_behaviour_text(setting));
+	}
+}
+
 void gsm_ppp_set_ring_indicator(const struct device *dev,
-					   enum ring_indicator_behaviour ring,
-					   enum ring_indicator_behaviour sms,
-					   enum ring_indicator_behaviour other)
+				enum ring_indicator_behaviour ring,
+				uint16_t ring_pulse_duration,
+				enum ring_indicator_behaviour sms,
+				uint16_t sms_pulse_duration,
+				enum ring_indicator_behaviour other,
+				uint16_t other_pulse_duration)
 {
 	struct gsm_modem *gsm = dev->data;
 	int ret;
 	char cmd_buffer[64];
 
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+QCFG=\"urc/ri/ring\",\"%s\"",
-		gsm_ppp_get_ring_indicator_behaviour_text(ring));
+	gsm_ppp_generate_ring_indicator_at_cmd(cmd_buffer, sizeof(cmd_buffer),
+					       "urc/ri/ring", ring, ring_pulse_duration);
 	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+				    &response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+				    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
 	if (ret < 0) {
 		LOG_DBG("Could not set ring indicator setting");
 	}
 
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+QCFG=\"urc/ri/smsincoming\",\"%s\"",
-		gsm_ppp_get_ring_indicator_behaviour_text(sms));
+	gsm_ppp_generate_ring_indicator_at_cmd(cmd_buffer, sizeof(cmd_buffer),
+					       "urc/ri/smsincoming", sms, sms_pulse_duration);
 	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+				    &response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+				    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
 	if (ret < 0) {
 		LOG_DBG("Could not set ring indicator setting for sms");
 	}
 
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+QCFG=\"urc/ri/other\",\"%s\"",
-		gsm_ppp_get_ring_indicator_behaviour_text(other));
+	if (other == ALWAYS) {
+		LOG_ERR("Incorrect setting for other ring indicator, setting to OFF");
+		other = OFF;
+	}
+
+	gsm_ppp_generate_ring_indicator_at_cmd(cmd_buffer, sizeof(cmd_buffer),
+					       "urc/ri/other", other, other_pulse_duration);
 	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+				    &response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+				    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
 	if (ret < 0) {
 		LOG_DBG("Could not set ring indicator setting");

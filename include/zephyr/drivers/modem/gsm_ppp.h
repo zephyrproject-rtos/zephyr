@@ -53,8 +53,6 @@ enum ring_indicator_behaviour {
 	OFF,
 	PULSE,
 	ALWAYS,
-	AUTO,
-	WAVE,
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -96,13 +94,19 @@ const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev, bo
  *
  * @param dev: GSM modem device.
  * @param ring: Ring indicator behaviour when ring is presented.
+ * @param ring_pulse_duration: Ring indicator pulse duration when ring behavior set to pulse.
  * @param sms: Ring indicator behaviour when SMS is presented.
+ * @param sms_pulse_duration: SMS indicator pulse duration when SMS behavior set to pulse.
  * @param other: Ring indicator behaviour when other is presented.
+ * @param other_pulse_duration: Other indicator pulse duration when other behavior set to pulse.
  */
 void gsm_ppp_set_ring_indicator(const struct device *dev,
-					   enum ring_indicator_behaviour ring,
-					   enum ring_indicator_behaviour sms,
-					   enum ring_indicator_behaviour other);
+				enum ring_indicator_behaviour ring,
+				uint16_t ring_pulse_duration,
+				enum ring_indicator_behaviour sms,
+				uint16_t sms_pulse_duration,
+				enum ring_indicator_behaviour other,
+				uint16_t other_pulse_duration);
 
 /**
  * @brief Configure modem for receiving SMS messages.
