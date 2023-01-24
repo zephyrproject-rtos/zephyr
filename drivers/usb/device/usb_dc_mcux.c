@@ -85,7 +85,6 @@ struct usb_ep_ctrl_data {
 	struct k_mem_block block;
 	usb_dc_ep_callback callback;
 	uint16_t ep_mps;
-	uint8_t ep_type;
 	uint8_t ep_enabled : 1;
 	uint8_t ep_occupied : 1;
 };
@@ -97,7 +96,6 @@ struct usb_dc_state {
 	struct usb_ep_ctrl_data *eps;
 	bool attached;
 	uint8_t setup_data_stage;
-
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_USB_MCUX_THREAD_STACK_SIZE);
 
 	struct k_thread thread;
@@ -252,7 +250,6 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	ep_init.endpointAddress = cfg->ep_addr;
 	ep_init.maxPacketSize = cfg->ep_mps;
 	ep_init.transferType = cfg->ep_type;
-	dev_state.eps[ep_abs_idx].ep_type = cfg->ep_type;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("Wrong endpoint index/address");
@@ -498,6 +495,11 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		return -EINVAL;
 	}
 
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_IN) {
+		LOG_ERR("Wrong endpoint direction");
+		return -EINVAL;
+	}
+
 	if (data_len > dev_state.eps[ep_abs_idx].ep_mps) {
 		len_to_send = dev_state.eps[ep_abs_idx].ep_mps;
 	} else {
@@ -626,8 +628,9 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
 	usb_status_t status;
 
-	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+	if (ep_abs_idx >= NUM_OF_EP_MAX ||
+	    USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
+		LOG_ERR("Wrong endpoint index/address/direction");
 		return -EINVAL;
 	}
 
