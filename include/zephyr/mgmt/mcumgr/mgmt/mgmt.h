@@ -123,6 +123,12 @@ enum mcumgr_err_t {
 	/** Access to specific function, command or resource denied */
 	MGMT_ERR_EACCESSDENIED,
 
+	/** Requested SMP MCUmgr protocol version is not supported (too old) */
+	MGMT_ERR_UNSUPPORTED_TOO_OLD,
+
+	/** Requested SMP MCUmgr protocol version is not supported (too new) */
+	MGMT_ERR_UNSUPPORTED_TOO_NEW,
+
 	/** User errors defined from 256 onwards */
 	MGMT_ERR_EPERUSER	= 256
 };
