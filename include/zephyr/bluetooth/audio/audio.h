@@ -1356,8 +1356,14 @@ struct bt_audio_stream {
 	/** Audio stream operations */
 	struct bt_audio_stream_ops *ops;
 
-	/** Audio ISO reference */
+#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+	/** @brief Audio ISO reference
+	 *
+	 *  This is only used for Unicast Client streams,
+	 *  and is handled internally.
+	 */
 	struct bt_audio_iso *audio_iso;
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 
 	union {
 		void *group;
