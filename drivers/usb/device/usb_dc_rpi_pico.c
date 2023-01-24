@@ -370,8 +370,7 @@ int usb_dc_ep_start_read(uint8_t ep, size_t len)
 
 	LOG_DBG("ep 0x%02x len %d", ep, len);
 
-	/* we flush USB_CONTROL_EP_IN by doing a 0 length receive on it */
-	if (!USB_EP_DIR_IS_OUT(ep) && (ep != USB_CONTROL_EP_IN || len)) {
+	if (!USB_EP_DIR_IS_OUT(ep)) {
 		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
