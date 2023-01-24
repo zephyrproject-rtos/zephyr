@@ -365,7 +365,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 	/* Wait a minimum of 200ns */
 	LOG_DBG("Delay %u ns (%u us)", config->creset_delay_ns, delay_us);
-	fpga_ice40_delay(2 * config->mhz_delay_count * delay_us);
+	k_usleep(delay_us);
 
 	__ASSERT(gpio_pin_get_dt(&config->cdone) == 0, "CDONE was not high");
 
