@@ -118,3 +118,8 @@ Here are some examples present in Zephyr:
       :app: tests/drivers/eeprom
       :board: native_posix
       :goals: build
+
+API Reference
+*************
+
+.. doxygengroup:: io_emulators
