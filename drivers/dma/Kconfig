@@ -52,4 +52,6 @@ source "drivers/dma/Kconfig.gd32"
 
 source "drivers/dma/Kconfig.esp32"
 
+source "drivers/dma/Kconfig.xec"
+
 endif # DMA

@@ -467,17 +467,32 @@
 			status = "disabled";
 		};
 		dmac: dmac@40002400 {
+			compatible = "microchip,xec-dmac";
 			reg = <0x40002400 0xc00>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>,
 				     <28 0>, <29 0>, <30 0>, <31 0>,
 				     <32 0>, <33 0>, <34 0>, <35 0>,
 				     <36 0>, <37 0>, <38 0>, <39 0>;
-			girqs = <14 0>, <14 1>, <14 2>, <14 3>,
-				<14 4>, <14 5>, <14 6>, <14 7>,
-				<14 8>, <14 9>, <14 10>, <14 11>,
-				<14 12>, <14 13>, <14 14>, <14 15>;
+			girqs = < MCHP_XEC_ECIA(14, 0, 6, 24)
+				  MCHP_XEC_ECIA(14, 1, 6, 25)
+				  MCHP_XEC_ECIA(14, 2, 6, 26)
+				  MCHP_XEC_ECIA(14, 3, 6, 27)
+				  MCHP_XEC_ECIA(14, 4, 6, 28)
+				  MCHP_XEC_ECIA(14, 5, 6, 29)
+				  MCHP_XEC_ECIA(14, 6, 6, 30)
+				  MCHP_XEC_ECIA(14, 7, 6, 31)
+				  MCHP_XEC_ECIA(14, 8, 6, 32)
+				  MCHP_XEC_ECIA(14, 9, 6, 33)
+				  MCHP_XEC_ECIA(14, 10, 6, 34)
+				  MCHP_XEC_ECIA(14, 11, 6, 35)
+				  MCHP_XEC_ECIA(14, 12, 6, 36)
+				  MCHP_XEC_ECIA(14, 13, 6, 37)
+				  MCHP_XEC_ECIA(14, 14, 6, 38)
+				  MCHP_XEC_ECIA(14, 15, 6, 39) >;
 			pcrs = <1 6>;
 			#dma-cells = <2>;
+			dma-channels = <16>;
+			dma-requests = <16>;
 			status = "disabled";
 		};
 		eeprom: eeprom@40002c00 {
