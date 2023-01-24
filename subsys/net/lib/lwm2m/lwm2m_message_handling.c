@@ -66,11 +66,21 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define TIMEOUT_BLOCKWISE_TRANSFER_MS (MSEC_PER_SEC * 30)
 
 #define LWM2M_DP_CLIENT_URI "dp"
-/* Resources */
+
 
 /* Shared set of in-flight LwM2M messages */
 static struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
 static struct lwm2m_block_context block1_contexts[NUM_BLOCK1_CONTEXT];
+
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+/* we need 1 more buffer as the payload is encoded in that buffer first even if
+ * block transfer is not required for the message.
+ */
+#define ENCODE_BUFFER_POOL_SIZE (CONFIG_LWM2M_NUM_OUTPUT_BLOCK_CONTEXT + 1)
+/* buffers for serializing big message bodies */
+K_MEM_SLAB_DEFINE_STATIC(body_encode_buffer_slab, CONFIG_LWM2M_COAP_ENCODE_BUFFER_SIZE,
+			 ENCODE_BUFFER_POOL_SIZE, 4);
+#endif
 
 /* External resources */
 sys_slist_t *lwm2m_engine_obj_list(void);
@@ -176,6 +186,36 @@ static void free_block_ctx(struct lwm2m_block_context *ctx)
 
 	ctx->tkl = 0U;
 }
+
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+static inline void log_buffer_usage(void)
+{
+#if defined(CONFIG_LWM2M_LOG_ENCODE_BUFFER_ALLOCATIONS)
+	LOG_PRINTK("body_encode_buffer_slab: free: %u, allocated: %u, max. allocated: %u\n",
+		 k_mem_slab_num_free_get(&body_encode_buffer_slab),
+		 k_mem_slab_num_used_get(&body_encode_buffer_slab),
+		 k_mem_slab_max_used_get(&body_encode_buffer_slab));
+#endif
+}
+
+static inline int request_body_encode_buffer(uint8_t **buffer)
+{
+	int r;
+
+	r = k_mem_slab_alloc(&body_encode_buffer_slab, (void **)buffer, K_NO_WAIT);
+	log_buffer_usage();
+	return r;
+}
+
+static inline void release_body_encode_buffer(uint8_t **buffer)
+{
+	if (buffer && *buffer) {
+		k_mem_slab_free(&body_encode_buffer_slab, (void **)buffer);
+		log_buffer_usage();
+	}
+}
+
+#endif
 
 void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 {
@@ -315,6 +355,9 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 	}
 
 	if (release) {
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+		release_body_encode_buffer(&msg->body_encode_buffer.data);
+#endif
 		(void)memset(msg, 0, sizeof(*msg));
 	} else {
 		msg->message_timeout_cb = NULL;
@@ -329,6 +372,8 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 {
 	uint8_t tokenlen = 0U;
 	uint8_t *token = NULL;
+	uint8_t *body_data;
+	uint16_t body_data_max_len;
 	int r = 0;
 
 	if (!msg || !msg->ctx) {
@@ -348,9 +393,28 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	msg->cache_info = NULL;
 #endif
-
-	r = coap_packet_init(&msg->cpkt, msg->msg_data, sizeof(msg->msg_data), COAP_VERSION_1,
-			     msg->type, tokenlen, token, msg->code, msg->mid);
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+	if (msg->body_encode_buffer.data == NULL) {
+		/* Get new big buffer for serializing the message */
+		r = request_body_encode_buffer(&body_data);
+		if (r < 0) {
+			LOG_ERR("coap packet init error: no msg buffer available");
+			goto cleanup;
+		}
+		/*  in case of failure the buffer is released with this pointer */
+		msg->body_encode_buffer.data = body_data;
+		body_data_max_len = CONFIG_LWM2M_COAP_ENCODE_BUFFER_SIZE;
+	} else {
+		/* We have already a big buffer. The message is reused for each block. */
+		body_data = msg->msg_data;
+		body_data_max_len = sizeof(msg->msg_data);
+	}
+#else
+	body_data = msg->msg_data;
+	body_data_max_len = sizeof(msg->msg_data);
+#endif
+	r = coap_packet_init(&msg->cpkt, body_data, body_data_max_len, COAP_VERSION_1, msg->type,
+			     tokenlen, token, msg->code, msg->mid);
 	if (r < 0) {
 		LOG_ERR("coap packet init error (err:%d)", r);
 		goto cleanup;
