@@ -769,7 +769,15 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
+			struct bt_iso_chan_io_qos *iso_qos;
+
+			iso_qos = stream->ep->iso->chan.qos->tx;
+
 			bt_audio_stream_attach(NULL, stream, stream->ep, codec);
+
+			bt_audio_codec_qos_to_iso_qos(iso_qos, qos);
+			bt_audio_codec_to_iso_path(iso_qos->path, codec);
+			stream->qos = qos;
 		}
 	}
 
