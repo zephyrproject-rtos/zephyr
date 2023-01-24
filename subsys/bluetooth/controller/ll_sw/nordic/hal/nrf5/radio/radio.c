@@ -643,7 +643,7 @@ void *radio_pkt_scratch_get(void)
 	return _pkt_scratch;
 }
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+#if defined(CONFIG_SOC_NRF52832) && \
 	defined(CONFIG_BT_CTLR_LE_ENC) && \
 	defined(HAL_RADIO_PDU_LEN_MAX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
@@ -1587,7 +1587,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 #endif /* !CONFIG_SOC_SERIES_NRF51X */
 
 #if !defined(CONFIG_SOC_SERIES_NRF51X) && \
-	!defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+	!defined(CONFIG_SOC_NRF52832) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
 	uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
@@ -1633,7 +1633,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 #endif
 
 #if !defined(CONFIG_SOC_SERIES_NRF51X) && \
-	!defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+	!defined(CONFIG_SOC_NRF52832) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4)))
 	uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
