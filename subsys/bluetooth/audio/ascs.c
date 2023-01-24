@@ -1206,7 +1206,7 @@ static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 		.id = id,
 	};
 
-	if (ep == NULL && codec == NULL) {
+	if (ep == NULL) {
 		return -EINVAL;
 	}
 
