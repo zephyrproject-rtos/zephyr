@@ -20,23 +20,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define APP_BANNER "Run LWM2M client"
 
-#if !defined(CONFIG_NET_CONFIG_PEER_IPV4_ADDR)
-#define CONFIG_NET_CONFIG_PEER_IPV4_ADDR ""
-#endif
-
-#if !defined(CONFIG_NET_CONFIG_PEER_IPV6_ADDR)
-#define CONFIG_NET_CONFIG_PEER_IPV6_ADDR ""
-#endif
-
-#if defined(CONFIG_NET_IPV6)
-#define SERVER_ADDR CONFIG_NET_CONFIG_PEER_IPV6_ADDR
-#elif defined(CONFIG_NET_IPV4)
-#define SERVER_ADDR CONFIG_NET_CONFIG_PEER_IPV4_ADDR
-#else
-#error LwM2M requires either IPV6 or IPV4 support
-#endif
-
-
 #define WAIT_TIME	K_SECONDS(10)
 #define CONNECT_TIME	K_SECONDS(10)
 
@@ -44,10 +27,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CLIENT_MODEL_NUMBER	"OMA-LWM2M Sample Client"
 #define CLIENT_SERIAL_NUMBER	"345000123"
 #define CLIENT_FIRMWARE_VER	"1.0"
-#define CLIENT_DEVICE_TYPE	"OMA-LWM2M Client"
 #define CLIENT_HW_VER		"1.0.1"
-
-#define ENDPOINT_LEN		32
 
 static uint8_t bat_idx = LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT;
 static int bat_mv = 3800;
@@ -62,17 +42,8 @@ static int mem_total = 25;
 
 static struct lwm2m_ctx client;
 
-#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-#define TLS_TAG			1
-
-/* "000102030405060708090a0b0c0d0e0f" */
-static unsigned char client_psk[] = {
-	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-};
-
-static const char client_psk_id[] = "Client_identity";
-#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+static const char *endpoint =
+	(sizeof(CONFIG_LWM2M_APP_ID) > 1 ? CONFIG_LWM2M_APP_ID : CONFIG_BOARD);
 
 static struct k_sem quit_lock;
 
@@ -103,32 +74,25 @@ static int device_factory_default_cb(uint16_t obj_inst_id,
 
 static int lwm2m_setup(void)
 {
-	int ret;
-	char *server_url;
-	uint16_t server_url_len;
-
 	/* setup SECURITY object */
 
 	/* Server URL */
-	ret = lwm2m_get_res_buf(&LWM2M_OBJ(0, 0, 0), (void **)&server_url, &server_url_len, NULL,
-				NULL);
-	if (ret < 0) {
-		return ret;
-	}
-
-	server_url_len = snprintk(server_url, server_url_len, "coap%s//%s%s%s",
-				  IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? "s:" : ":",
-				  strchr(SERVER_ADDR, ':') ? "[" : "", SERVER_ADDR,
-				  strchr(SERVER_ADDR, ':') ? "]" : "");
-
-	lwm2m_set_res_data_len(&LWM2M_OBJ(0, 0, 0), server_url_len + 1);
+	lwm2m_set_string(&LWM2M_OBJ(0, 0, 0), CONFIG_LWM2M_APP_SERVER);
 
 	/* Security Mode */
 	lwm2m_set_u8(&LWM2M_OBJ(0, 0, 2), IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? 0 : 3);
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	lwm2m_set_string(&LWM2M_OBJ(0, 0, 3), (char *)client_psk_id);
-	lwm2m_set_opaque(&LWM2M_OBJ(0, 0, 5),
-				(void *)client_psk, sizeof(client_psk));
+	lwm2m_set_string(&LWM2M_OBJ(0, 0, 3), endpoint);
+	if (sizeof(CONFIG_LWM2M_APP_PSK) > 1) {
+		char psk[1 + sizeof(CONFIG_LWM2M_APP_PSK) / 2];
+		/* Need to skip the nul terminator from string */
+		size_t len = hex2bin(CONFIG_LWM2M_APP_PSK, sizeof(CONFIG_LWM2M_APP_PSK) - 1, psk,
+				     sizeof(psk));
+		if (len <= 0) {
+			return -EINVAL;
+		}
+		lwm2m_set_opaque(&LWM2M_OBJ(0, 0, 5), (void *)psk, len);
+	}
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
@@ -161,8 +125,8 @@ static int lwm2m_setup(void)
 	lwm2m_register_exec_callback(&LWM2M_OBJ(3, 0, 5), device_factory_default_cb);
 	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 9), &bat_level, sizeof(bat_level), sizeof(bat_level), 0);
 	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 10), &mem_free, sizeof(mem_free), sizeof(mem_free), 0);
-	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 17), CLIENT_DEVICE_TYPE, sizeof(CLIENT_DEVICE_TYPE),
-			  sizeof(CLIENT_DEVICE_TYPE), LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 17), CONFIG_BOARD, sizeof(CONFIG_BOARD),
+			  sizeof(CONFIG_BOARD), LWM2M_RES_DATA_FLAG_RO);
 	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 18), CLIENT_HW_VER, sizeof(CLIENT_HW_VER),
 			  sizeof(CLIENT_HW_VER), LWM2M_RES_DATA_FLAG_RO);
 	lwm2m_set_res_buf(&LWM2M_OBJ(3, 0, 20), &bat_status, sizeof(bat_status),
@@ -307,35 +271,11 @@ void main(void)
 
 	(void)memset(&client, 0x0, sizeof(client));
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	client.tls_tag = TLS_TAG;
+	client.tls_tag = CONFIG_LWM2M_APP_TLS_TAG;
 #endif
 
-#if defined(CONFIG_HWINFO)
-	uint8_t dev_id[16];
-	char dev_str[33];
-	ssize_t length;
-	int i;
-
-	(void)memset(dev_id, 0x0, sizeof(dev_id));
-
-	/* Obtain the device id */
-	length = hwinfo_get_device_id(dev_id, sizeof(dev_id));
-
-	/* If this fails for some reason, use all zeros instead */
-	if (length <= 0) {
-		length = sizeof(dev_id);
-	}
-
-	/* Render the obtained serial number in hexadecimal representation */
-	for (i = 0 ; i < length ; i++) {
-		sprintf(&dev_str[i*2], "%02x", dev_id[i]);
-	}
-
-	lwm2m_rd_client_start(&client, dev_str, flags, rd_client_event, observe_cb);
-#else
 	/* client.sec_obj_inst is 0 as a starting point */
-	lwm2m_rd_client_start(&client, CONFIG_BOARD, flags, rd_client_event, observe_cb);
-#endif
+	lwm2m_rd_client_start(&client, endpoint, flags, rd_client_event, observe_cb);
 
 	k_sem_take(&quit_lock, K_FOREVER);
 }
