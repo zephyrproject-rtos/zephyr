@@ -25,3 +25,4 @@ zephyr_library_sources_ifdef(CONFIG_DMA_INTEL_ADSP_HDA_LINK_OUT dma_intel_adsp_h
 zephyr_library_sources_ifdef(CONFIG_DMA_INTEL_ADSP_GPDMA	dma_intel_adsp_gpdma.c dma_dw_common.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_GD32		dma_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_ESP32		dma_esp32_gdma.c)
+zephyr_library_sources_ifdef(CONFIG_DMA_MCHP_XEC	dma_mchp_xec.c)
