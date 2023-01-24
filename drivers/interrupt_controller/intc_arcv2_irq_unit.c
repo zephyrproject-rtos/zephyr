@@ -40,6 +40,9 @@ static void arc_shared_intc_init(void)
 		 * TODO: don't use z_arc_connect_idu* functions to avoid
 		 * locking/unlocking every time.
 		 */
+
+		/* Disable (mask) line */
+		z_arc_connect_idu_set_mask(i, 0x1);
 		z_arc_connect_idu_set_mode(i, ARC_CONNECT_INTRPT_TRIGGER_LEVEL,
 					   ARC_CONNECT_DISTRI_MODE_ROUND_ROBIN);
 
@@ -48,9 +51,6 @@ static void arc_shared_intc_init(void)
 		 * secondary cores may be not initialized yet.
 		 */
 		z_arc_connect_idu_set_dest(i, BIT(ARC_MP_PRIMARY_CPU_ID));
-
-		/* Disable (mask) line */
-		z_arc_connect_idu_set_mask(i, 0x1);
 	}
 
 	z_arc_connect_idu_enable();
