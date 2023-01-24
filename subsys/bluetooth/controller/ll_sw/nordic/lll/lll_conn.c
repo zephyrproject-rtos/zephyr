@@ -422,7 +422,7 @@ lll_conn_isr_rx_exit:
 	}
 
 	if (is_rx_enqueue) {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+#if defined(CONFIG_SOC_NRF52832) && \
 	defined(CONFIG_BT_CTLR_LE_ENC) && \
 	defined(HAL_RADIO_PDU_LEN_MAX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
@@ -676,7 +676,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 				    RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC, phy,
 							 RADIO_PKT_CONF_CTE_DISABLED));
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+#if defined(CONFIG_SOC_NRF52832) && \
 	defined(HAL_RADIO_PDU_LEN_MAX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < (HAL_RADIO_PDU_LEN_MAX - 4)))
@@ -897,7 +897,7 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			     uint8_t *is_rx_enqueue,
 			     struct node_tx **tx_release, uint8_t *is_done)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+#if defined(CONFIG_SOC_NRF52832) && \
 	defined(CONFIG_BT_CTLR_LE_ENC) && \
 	defined(HAL_RADIO_PDU_LEN_MAX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
