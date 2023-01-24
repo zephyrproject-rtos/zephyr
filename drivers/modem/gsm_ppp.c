@@ -231,6 +231,7 @@ static int unquoted_atoi(const char *s, int base)
 	return strtol(s, NULL, base);
 }
 
+#if defined(CONFIG_MODEM_GMS_ENABLE_SMS)
 static char * unquoted_strncpy(char *dest, const char * src, size_t num)
 {
 	if (*src == '"') {
@@ -245,6 +246,7 @@ static char * unquoted_strncpy(char *dest, const char * src, size_t num)
 
 	return dest;
 }
+#endif
 
 /*
  * Handler: +COPS: <mode>[0],<format>[1],<oper>[2]
@@ -1302,6 +1304,7 @@ const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev, bo
 	return &gsm->minfo;
 }
 
+#if defined(CONFIG_MODEM_GMS_ENABLE_SMS)
 char * gsm_ppp_get_ring_indicator_behaviour_text(enum ring_indicator_behaviour ring)
 {
 	switch (ring) {
@@ -1475,8 +1478,8 @@ void gsm_ppp_delete_all_sms(const struct device *dev)
 	int ret;
 
 	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CMGD=0,4",
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+				    &response_cmds[0], ARRAY_SIZE(response_cmds), "AT+CMGD=0,4",
+				    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
 	if (ret < 0) {
 		LOG_DBG("Could not delete all SMS messages");
@@ -1489,16 +1492,17 @@ void gsm_ppp_clear_ring_indicator(const struct device *dev)
 	int ret;
 
 	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&response_cmds[0], ARRAY_SIZE(response_cmds), "AT+QRIR",
-		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+				    &response_cmds[0], ARRAY_SIZE(response_cmds), "AT+QRIR",
+				    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
 	if (ret < 0) {
 		LOG_DBG("Could not clear ring indicator");
 	}
 }
+#endif /* defined(CONFIG_MODEM_GMS_ENABLE_SMS) */
 
 static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+				   uint32_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & NET_EVENT_IF_DOWN) != mgmt_event) {
 		return;

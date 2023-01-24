@@ -142,4 +142,12 @@ config GSM_PPP_WORKQ_PRIORITY
 	help
 	  Workqueue scheduling commands configuring the modem.
 
+config MODEM_GMS_ENABLE_SMS
+	bool "SMS support for GSM PPP driver"
+	depends on MODEM_GSM_QUECTEL
+	default n
+	help
+	  Enable SMS messages support such that they can be received.
+	  Currently only BG9X is supported.
+
 endif
