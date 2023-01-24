@@ -60,11 +60,6 @@ config CAN_HAS_CANFD
 	help
 	  driver supports CAN-FD
 
-config CAN_HAS_RX_TIMESTAMP
-	bool
-	help
-	  driver supports RX timestamps
-
 config CAN_FD_MODE
 	bool "CAN-FD"
 	default y
@@ -74,11 +69,10 @@ config CAN_FD_MODE
 
 config CAN_RX_TIMESTAMP
 	bool "Receiving timestamps"
-	depends on CAN_HAS_RX_TIMESTAMP
 	help
 	  This option enables a timestamp value of the CAN free running timer.
 	  The value is incremented every bit time and starts when the controller
-	  is initialized.
+	  is initialized. Not all CAN controllers support timestamps.
 
 config CAN_AUTO_BUS_OFF_RECOVERY
 	bool "Automatic recovery from bus-off"
