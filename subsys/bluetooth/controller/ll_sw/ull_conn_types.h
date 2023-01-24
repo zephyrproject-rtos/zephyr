@@ -33,8 +33,6 @@ enum llcp {
 };
 
 /*
- * This is for the refactored LLCP
- *
  * to reduce length and unreadability of the ll_conn struct the
  * structures inside it have been defined first
  */
