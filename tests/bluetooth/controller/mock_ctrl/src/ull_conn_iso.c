@@ -86,8 +86,3 @@ void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t 
 {
 
 }
-
-struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle)
-{
-	return NULL;
-}
