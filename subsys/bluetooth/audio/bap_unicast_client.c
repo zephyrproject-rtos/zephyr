@@ -91,6 +91,44 @@ static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, void *data, uint
 
 static int unicast_client_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uint16_t vid,
 				       void *data, uint8_t len, struct bt_codec *codec);
+static int unicast_client_ep_start(struct bt_bap_ep *ep,
+				   struct net_buf_simple *buf);
+
+static int unicast_client_send_start(struct bt_bap_ep *ep)
+{
+	if (ep->receiver_ready != true || ep->dir != BT_AUDIO_DIR_SOURCE) {
+		LOG_DBG("Invalid ep %p %u %s",
+			ep, ep->receiver_ready, bt_audio_dir_str(ep->dir));
+
+		return -EINVAL;
+	}
+
+	struct bt_ascs_start_op *req;
+	struct net_buf_simple *buf;
+	int err;
+
+	buf = bt_bap_unicast_client_ep_create_pdu(BT_ASCS_START_OP);
+
+	req = net_buf_simple_add(buf, sizeof(*req));
+	req->num_ases = 1U;
+
+	err = unicast_client_ep_start(ep, buf);
+	if (err != 0) {
+		LOG_DBG("unicast_client_ep_start failed: %d",
+			err);
+
+		return err;
+	}
+
+	err = bt_bap_unicast_client_ep_send(ep->stream->conn, ep, buf);
+	if (err != 0) {
+		LOG_DBG("bt_bap_unicast_client_ep_send failed: %d", err);
+
+		return err;
+	}
+
+	return 0;
+}
 
 static void unicast_client_ep_idle_state(struct bt_bap_ep *ep);
 
@@ -224,7 +262,21 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 		return;
 	}
 
-	LOG_DBG("stream %p ep %p dir %s", stream, ep, bt_audio_dir_str(ep->dir));
+	LOG_DBG("stream %p ep %p dir %s",
+		stream, ep, bt_audio_dir_str(ep->dir));
+
+	LOG_ERR("ep->receiver_ready %u", ep->receiver_ready);
+
+	if (ep->receiver_ready && ep->dir == BT_AUDIO_DIR_SOURCE) {
+		const int err = unicast_client_send_start(ep);
+
+		if (err != 0) {
+			LOG_DBG("Failed to send start: %d", err);
+
+			/* TBD: Should we release the stream then? */
+			ep->receiver_ready = false;
+		}
+	}
 }
 
 static void unicast_client_iso_connected(struct bt_iso_chan *chan)
@@ -2474,24 +2526,33 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 	 * Central Establishment procedure.
 	 */
 	err = unicast_client_stream_connect(stream);
-	if (err && err != -EALREADY) {
-		LOG_DBG("unicast_client_stream_connect failed: %d", err);
-		return err;
+	if (err == 0) {
+		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+			/* Set bool and wait for ISO to be connected to send the
+			 * receiver start ready
+			 */
+			stream->ep->receiver_ready = true;
+		}
 	} else if (err == -EALREADY) {
 		LOG_DBG("ISO %p already connected", bt_bap_stream_iso_chan_get(stream));
-	}
 
-	/* When initiated by the client, valid only if Direction field
-	 * parameter value = 0x02 (Server is Audio Source)
-	 */
-	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-		err = unicast_client_ep_start(ep, buf);
-		if (err) {
-			return err;
+		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+			stream->ep->receiver_ready = true;
+
+			err = unicast_client_send_start(ep);
+			if (err != 0) {
+				LOG_DBG("Failed to send start: %d", err);
+
+				/* TBD: Should we release the stream then? */
+				stream->ep->receiver_ready = false;
+
+				return err;
+			}
 		}
-		req->num_ases++;
+	} else {
+		LOG_DBG("unicast_client_stream_connect failed: %d", err);
 
-		return bt_bap_unicast_client_ep_send(stream->conn, ep, buf);
+		return err;
 	}
 
 	return 0;
