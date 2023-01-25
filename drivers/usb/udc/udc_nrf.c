@@ -592,20 +592,6 @@ static int udc_nrf_ep_clear_halt(const struct device *dev,
 	return 0;
 }
 
-static int udc_nrf_ep_flush(const struct device *dev,
-				struct udc_ep_config *cfg)
-{
-	LOG_INF("Flush ep 0x%02x", cfg->addr);
-
-	/*
-	 * nrfx_usbd_ep_disable() in udc_nrf_ep_disable()
-	 * flushes endpoint buffer as well.
-	 */
-	nrfx_usbd_ep_abort(cfg->addr);
-
-	return 0;
-}
-
 static int udc_nrf_set_address(const struct device *dev, const uint8_t addr)
 {
 	/**
@@ -846,7 +832,6 @@ static const struct udc_api udc_nrf_api = {
 	.ep_disable = udc_nrf_ep_disable,
 	.ep_set_halt = udc_nrf_ep_set_halt,
 	.ep_clear_halt = udc_nrf_ep_clear_halt,
-	.ep_flush = udc_nrf_ep_flush,
 	.ep_enqueue = udc_nrf_ep_enqueue,
 	.ep_dequeue = udc_nrf_ep_dequeue,
 };
