@@ -982,6 +982,10 @@ static int spi_nor_process_bfp(const struct device *dev,
 			}
 		}
 	}
+	if (addr_mode == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B) {
+		data->flag_access_32bit = true;
+		LOG_INF("Flash - address mode: 4B");
+	}
 
 	/*
 	 * Only check if the 1-4-4 (i.e. 4READ) or 1-1-4 (QREAD)
