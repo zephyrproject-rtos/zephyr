@@ -1569,6 +1569,22 @@ enum {
 
 	/** Only sync to packets with constant tone extension */
 	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_ONLY_CTE = BIT(3),
+
+	/**
+	 * @brief Sync to received PAST packets but don't generate sync reports
+	 *
+	 * This option must not be set at the same time as
+	 * @ref BT_LE_PER_ADV_SYNC_TRANSFER_OPT_FILTER_DUPLICATES.
+	 */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_REPORTING_INITIALLY_DISABLED = BIT(4),
+
+	/**
+	 * @brief Sync to received PAST packets and generate sync reports with duplicate filtering
+	 *
+	 * This option must not be set at the same time as
+	 * @ref BT_LE_PER_ADV_SYNC_TRANSFER_OPT_REPORTING_INITIALLY_DISABLED.
+	 */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_FILTER_DUPLICATES = BIT(5),
 };
 
 struct bt_le_per_adv_sync_transfer_param {

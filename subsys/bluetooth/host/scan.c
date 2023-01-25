@@ -1707,6 +1707,10 @@ static bool valid_past_param(
 	    param->timeout > 0x4000) {
 		return false;
 	}
+	if ((param->options & BT_LE_PER_ADV_SYNC_TRANSFER_OPT_REPORTING_INITIALLY_DISABLED) &&
+	    (param->options & BT_LE_PER_ADV_SYNC_TRANSFER_OPT_FILTER_DUPLICATES)) {
+		return false;
+	}
 
 	return true;
 }
@@ -1761,6 +1765,7 @@ int bt_le_per_adv_sync_transfer_subscribe(
 	const struct bt_le_per_adv_sync_transfer_param *param)
 {
 	uint8_t cte_type = 0;
+	uint8_t mode = BT_HCI_LE_PAST_MODE_SYNC;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -1788,13 +1793,16 @@ int bt_le_per_adv_sync_transfer_subscribe(
 		cte_type |= BT_HCI_LE_PAST_CTE_TYPE_ONLY_CTE;
 	}
 
+	if (param->options & BT_LE_PER_ADV_SYNC_TRANSFER_OPT_REPORTING_INITIALLY_DISABLED) {
+		mode = BT_HCI_LE_PAST_MODE_NO_REPORTS;
+	} else if (param->options & BT_LE_PER_ADV_SYNC_TRANSFER_OPT_FILTER_DUPLICATES) {
+		mode = BT_HCI_LE_PAST_MODE_SYNC_FILTER_DUPLICATES;
+	}
+
 	if (conn) {
-		return past_param_set(conn, BT_HCI_LE_PAST_MODE_SYNC,
-				      param->skip, param->timeout, cte_type);
+		return past_param_set(conn, mode, param->skip, param->timeout, cte_type);
 	} else {
-		return default_past_param_set(BT_HCI_LE_PAST_MODE_SYNC,
-					      param->skip, param->timeout,
-					      cte_type);
+		return default_past_param_set(mode, param->skip, param->timeout, cte_type);
 	}
 }
 
