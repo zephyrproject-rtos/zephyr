@@ -908,6 +908,7 @@ static void cis_disabled_cb(void *param)
 				*((uint8_t *)node_terminate->pdu) = cis->terminate_reason;
 
 				ll_rx_put_sched(node_terminate->hdr.link, node_terminate);
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 			} else {
 				conn = ll_conn_get(cis->lll.acl_handle);
 
@@ -915,6 +916,7 @@ static void cis_disabled_cb(void *param)
 				if (ull_cp_cc_awaiting_established(conn)) {
 					ull_cp_cc_established(conn, cis->terminate_reason);
 				}
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 			}
 
 			if (cig->lll.resume_cis == cis->lll.handle) {
