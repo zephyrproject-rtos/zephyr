@@ -289,27 +289,22 @@ static int codec_configure_stream(struct bt_audio_stream *stream,
 	return 0;
 }
 
-static size_t codec_configure_streams(void)
+static void codec_configure_streams(size_t stream_cnt)
 {
-	size_t stream_cnt;
-
-	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
-		struct bt_audio_stream *stream = &g_streams[stream_cnt];
+	for (size_t i = 0U; i < stream_cnt; i++) {
+		struct bt_audio_stream *stream = &g_streams[i];
 		int err;
 
-		if (g_sinks[stream_cnt] == NULL) {
+		if (g_sinks[i] == NULL) {
 			break;
 		}
 
-		err = codec_configure_stream(stream, g_sinks[stream_cnt]);
+		err = codec_configure_stream(stream, g_sinks[i]);
 		if (err != 0) {
-			FAIL("Unable to configure stream[%zu]: %d",
-			     stream_cnt, err);
-			return 0;
+			FAIL("Unable to configure stream[%zu]: %d", i, err);
+			return;
 		}
 	}
-
-	return stream_cnt;
 }
 
 static void qos_configure_streams(struct bt_audio_unicast_group *unicast_group,
@@ -389,19 +384,31 @@ static size_t release_streams(size_t stream_cnt)
 }
 
 
-static void create_unicast_group(struct bt_audio_unicast_group **unicast_group)
+static size_t create_unicast_group(struct bt_audio_unicast_group **unicast_group)
 {
-	const size_t stream_cnt = ARRAY_SIZE(g_streams);
-	struct bt_audio_unicast_group_stream_pair_param pair_params[stream_cnt];
-	struct bt_audio_unicast_group_stream_param stream_params[stream_cnt];
+	struct bt_audio_unicast_group_stream_pair_param pair_params[ARRAY_SIZE(g_streams)];
+	struct bt_audio_unicast_group_stream_param stream_params[ARRAY_SIZE(g_streams)];
 	struct bt_audio_unicast_group_param param;
+	size_t stream_cnt = 0;
 	int err;
 
-	for (size_t i = 0U; i < stream_cnt; i++) {
-		stream_params[i].stream = &g_streams[i];
-		stream_params[i].qos = &preset_16_2_1.qos;
-		pair_params[i].rx_param = NULL;
-		pair_params[i].tx_param = &stream_params[i];
+	for (stream_cnt = 0U;
+	     stream_cnt < MIN(ARRAY_SIZE(g_sinks), ARRAY_SIZE(g_streams));
+	     stream_cnt++) {
+		if (g_sinks[stream_cnt] == NULL) {
+			break;
+		}
+
+		stream_params[stream_cnt].stream = &g_streams[stream_cnt];
+		stream_params[stream_cnt].qos = &preset_16_2_1.qos;
+		pair_params[stream_cnt].rx_param = NULL;
+		pair_params[stream_cnt].tx_param = &stream_params[stream_cnt];
+	}
+
+	if (stream_cnt == 0U) {
+		FAIL("No streams added to group");
+
+		return 0;
 	}
 
 	param.params = pair_params;
@@ -413,8 +420,11 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group)
 	err = bt_audio_unicast_group_create(&param, unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
-		return;
+
+		return 0;
 	}
+
+	return stream_cnt;
 }
 
 static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group)
@@ -432,8 +442,6 @@ static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group)
 static void test_main(void)
 {
 	const unsigned int iterations = 3;
-	struct bt_audio_unicast_group *unicast_group;
-	size_t stream_cnt;
 
 	init();
 
@@ -447,13 +455,16 @@ static void test_main(void)
 	 * set and reset
 	 */
 	for (unsigned int i = 0U; i < iterations; i++) {
+		struct bt_audio_unicast_group *unicast_group;
+		size_t stream_cnt;
+
 		printk("\n########### Running iteration #%u\n\n", i);
 
 		printk("Creating unicast group\n");
-		create_unicast_group(&unicast_group);
+		stream_cnt = create_unicast_group(&unicast_group);
 
 		printk("Codec configuring streams\n");
-		stream_cnt = codec_configure_streams();
+		codec_configure_streams(stream_cnt);
 
 		printk("QoS configuring streams\n");
 		qos_configure_streams(unicast_group, stream_cnt);
