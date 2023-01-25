@@ -2292,7 +2292,6 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		}
 	}
 
-	LOG_DBG("checking for reply from [%s]", lwm2m_sprint_ip_addr(from_addr));
 	reply = coap_response_received(&response, from_addr, client_ctx->replies,
 				       ARRAY_SIZE(client_ctx->replies));
 	if (reply) {
