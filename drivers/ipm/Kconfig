@@ -47,6 +47,14 @@ config IPM_IVSHMEM
 	help
 	  Interprocessor driver using IVSHMEM Doorbell mechanism.
 
+config XLNX_IPI
+	bool "AMD-Xilinx IPM driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_IPI_MAILBOX_ENABLED
+	help
+	  Inter Processor Interrupt driver for AMD-Xilinx
+	  platforms such as ZynqMP Ultrascale+.
+
 source "drivers/ipm/Kconfig.nrfx"
 source "drivers/ipm/Kconfig.imx"
 source "drivers/ipm/Kconfig.stm32"
