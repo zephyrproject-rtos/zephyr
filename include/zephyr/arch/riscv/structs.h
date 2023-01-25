@@ -14,7 +14,7 @@ struct _cpu_arch {
 	unsigned long user_exc_tmp0;
 	unsigned long user_exc_tmp1;
 #endif
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS > 1)
 	unsigned long hartid;
 	bool online;
 #endif
