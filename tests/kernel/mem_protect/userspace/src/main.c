@@ -28,11 +28,11 @@ extern void arm_core_mpu_disable(void);
 #endif
 
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-#define PERMISSION_EXCEPTION K_ERR_ARM_PERMISSION_FAULT
+#define EXPECT_PERMISSION_EXCEPTION() set_fault(K_ERR_ARM_PERMISSION_FAULT)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-#define PERMISSION_EXCEPTION K_ERR_ARM_MEM_DATA_ACCESS
+#define EXPECT_PERMISSION_EXCEPTION() set_fault(K_ERR_ARM_MEM_DATA_ACCESS)
 #else
-#define PERMISSION_EXCEPTION K_ERR_CPU_EXCEPTION
+#define EXPECT_PERMISSION_EXCEPTION() set_fault(K_ERR_CPU_EXCEPTION)
 #endif
 
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -47,8 +47,7 @@ K_SEM_DEFINE(test_revoke_sem, 0, 1);
  */
 struct k_mem_domain alternate_domain;
 
-ZTEST_BMEM static volatile bool expect_fault;
-ZTEST_BMEM static volatile unsigned int expected_reason;
+static ZTEST_BMEM volatile int accepted_faults[4] = {-1, -1, -1, -1};
 
 /* Partition unique to default domain */
 K_APPMEM_PARTITION_DEFINE(default_part);
@@ -62,14 +61,13 @@ static K_THREAD_STACK_DEFINE(test_stack, STACKSIZE);
 
 static void clear_fault(void)
 {
-	expect_fault = false;
+	accepted_faults[0] = -1;
 	compiler_barrier();
 }
 
 static void set_fault(unsigned int reason)
 {
-	expect_fault = true;
-	expected_reason = reason;
+	accepted_faults[0] = reason;
 	compiler_barrier();
 }
 
@@ -77,18 +75,30 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
 	INFO("Caught system error -- reason %d\n", reason);
 
-	if (expect_fault) {
-		if (expected_reason == reason) {
-			printk("System error was expected\n");
-			clear_fault();
-		} else {
-			printk("Wrong fault reason, expecting %d\n",
-			       expected_reason);
-			k_fatal_halt(reason);
-		}
-	} else {
+	if (accepted_faults[0] == -1) {
 		printk("Unexpected fault during test\n");
 		k_fatal_halt(reason);
+	}
+
+	/* Check acceptable reasons */
+	for (int i = 0; i <= ARRAY_SIZE(accepted_faults); i++) {
+		if ((i == ARRAY_SIZE(accepted_faults)) ||
+		    (accepted_faults[i] == -1)) {
+			/* End of acceptable reasons */
+			printk("Wrong crash type got %d expected value in [%d, %d, %d, %d]",
+				reason,
+				accepted_faults[0], accepted_faults[1],
+				accepted_faults[2], accepted_faults[3]);
+			k_fatal_halt(reason);
+		}
+		if (accepted_faults[i] == reason) {
+			break;
+		}
+	}
+
+	/* Clear reason array */
+	for (int i = 0; i < ARRAY_SIZE(accepted_faults); i++) {
+		accepted_faults[i] = -1;
 	}
 }
 
@@ -276,7 +286,7 @@ ZTEST_USER(userspace, test_read_kernram)
 	/* Try to read from kernel RAM. */
 	void *p;
 
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	p = _current->init_data;
 	printk("%p\n", p);
@@ -291,7 +301,7 @@ ZTEST_USER(userspace, test_read_kernram)
 ZTEST_USER(userspace, test_write_kernram)
 {
 	/* Try to write to kernel RAM. */
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	_current->init_data = NULL;
 	zassert_unreachable("Write to kernel RAM did not fault");
@@ -326,7 +336,7 @@ ZTEST_USER(userspace, test_write_kernro)
 	zassert_true(in_rodata,
 		     "_k_neg_eagain is not in rodata");
 
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	_k_neg_eagain = -EINVAL;
 	zassert_unreachable("Write to kernel RO did not fault");
@@ -340,7 +350,7 @@ ZTEST_USER(userspace, test_write_kernro)
 ZTEST_USER(userspace, test_write_kerntext)
 {
 	/* Try to write to kernel text. */
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	memset(&z_is_thread_essential, 0, 4);
 	zassert_unreachable("Write to kernel text did not fault");
@@ -355,7 +365,7 @@ static int kernel_data;
  */
 ZTEST_USER(userspace, test_read_kernel_data)
 {
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	printk("%d\n", kernel_data);
 	zassert_unreachable("Read from data did not fault");
@@ -368,7 +378,7 @@ ZTEST_USER(userspace, test_read_kernel_data)
  */
 ZTEST_USER(userspace, test_write_kernel_data)
 {
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	kernel_data = 1;
 	zassert_unreachable("Write to  data did not fault");
@@ -401,7 +411,7 @@ ZTEST_USER(userspace, test_read_priv_stack)
 #else
 #error "Not implemented for this architecture"
 #endif
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	printk("%c\n", *priv_stack_ptr);
 	zassert_unreachable("Read from privileged stack did not fault");
@@ -425,7 +435,7 @@ ZTEST_USER(userspace, test_write_priv_stack)
 #else
 #error "Not implemented for this architecture"
 #endif
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	*priv_stack_ptr = 42;
 	zassert_unreachable("Write to privileged stack did not fault");
@@ -490,7 +500,7 @@ static void uthread_read_body(void *p1, void *p2, void *p3)
 {
 	unsigned int *vptr = p1;
 
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 	printk("%u\n", *vptr);
 	zassert_unreachable("Read from other thread stack did not fault");
 }
@@ -499,7 +509,7 @@ static void uthread_write_body(void *p1, void *p2, void *p3)
 {
 	unsigned int *vptr = p1;
 
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 	*vptr = 2U;
 	zassert_unreachable("Write to other thread stack did not fault");
 }
@@ -655,9 +665,9 @@ static void user_half(void *arg1, void *arg2, void *arg3)
 
 	*bool_ptr = true;
 	compiler_barrier();
-	if (expect_fault) {
+	if (accepted_faults[0] != -1) {
 		printk("Expecting a fatal error %d but succeeded instead\n",
-		       expected_reason);
+		       accepted_faults[0]);
 		ztest_test_fail();
 	}
 }
@@ -709,7 +719,7 @@ ZTEST(userspace_domain, test_1st_init_and_access_other_memdomain)
 	 * contains default_bool. This should fault when we try to write it.
 	 */
 	k_mem_domain_add_thread(&alternate_domain, k_current_get());
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 	spawn_user(&default_bool);
 }
 
@@ -760,7 +770,7 @@ ZTEST(userspace_domain, test_domain_remove_part_drop_to_user)
 	/* We added alt_part to the default domain in the previous test,
 	 * remove it, and then try to access again.
 	 */
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	zassert_equal(
 		k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part),
@@ -810,7 +820,7 @@ ZTEST(userspace_domain_ctx, test_domain_remove_part_context_switch)
 	/* We added alt_part to the default domain in the previous test,
 	 * remove it, and then try to access again.
 	 */
-	set_fault(PERMISSION_EXCEPTION);
+	EXPECT_PERMISSION_EXCEPTION();
 
 	zassert_equal(
 		k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part),
@@ -903,8 +913,7 @@ ZTEST(userspace, test_object_recycle)
 }
 
 #define test_oops(provided, expected) do { \
-	expect_fault = true; \
-	expected_reason = expected; \
+	accepted_faults[0] = expected; \
 	z_except_reason(provided); \
 } while (false)
 
