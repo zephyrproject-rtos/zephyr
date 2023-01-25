@@ -225,6 +225,7 @@ int usb_get_str_descriptor_idx(void *ptr)
  */
 static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 				    struct usb_cfg_data * const cfg_data,
+				    uint32_t *fixed_entries,
 				    uint32_t *requested_ep)
 {
 	for (unsigned int i = 0; i < cfg_data->num_endpoints; i++) {
@@ -234,6 +235,11 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 		 * Trying to find the right entry in the usb_ep_cfg_data.
 		 */
 		if (ep_descr->bEndpointAddress != ep_data[i].ep_addr) {
+			continue;
+		}
+
+		/* Skip already fixed entries */
+		if (*fixed_entries & BIT(i)) {
 			continue;
 		}
 
@@ -269,6 +275,7 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 					*requested_ep |= (1U << idx);
 				}
 				LOG_DBG("endpoint 0x%x", ep_data[i].ep_addr);
+				*fixed_entries |= BIT(i);
 				return 0;
 			}
 		}
@@ -374,6 +381,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 	uint8_t numof_ifaces = 0U;
 	uint8_t str_descr_idx = 0U;
 	uint32_t requested_ep = BIT(16) | BIT(0);
+	uint32_t fixed_entries = 0U;
 
 	while (head->bLength != 0U) {
 		switch (head->bDescriptorType) {
@@ -394,6 +402,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 
 			if (if_descr->bInterfaceNumber == 0U) {
 				cfg_data = usb_get_cfg_data(if_descr);
+				fixed_entries = 0U;
 				if (!cfg_data) {
 					LOG_ERR("There is no usb_cfg_data "
 						"for %p", head);
@@ -419,6 +428,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			ep_descr = (struct usb_ep_descriptor *)head;
 			if (usb_validate_ep_cfg_data(ep_descr,
 						     cfg_data,
+						     &fixed_entries,
 						     &requested_ep)) {
 				LOG_ERR("Failed to validate endpoints");
 				return -1;
