@@ -30,7 +30,9 @@ extern void arm_core_mpu_disable(void);
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #define EXPECT_PERMISSION_EXCEPTION() set_fault(K_ERR_ARM_PERMISSION_FAULT)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-#define EXPECT_PERMISSION_EXCEPTION() set_fault(K_ERR_ARM_MEM_DATA_ACCESS)
+#define EXPECT_PERMISSION_EXCEPTION() set_faults(K_ERR_ARM_MEM_DATA_ACCESS, \
+						 K_ERR_ARM_BUS_PRECISE_DATA_BUS, \
+						 -1, -1)
 #else
 #define EXPECT_PERMISSION_EXCEPTION() set_fault(K_ERR_CPU_EXCEPTION)
 #endif
@@ -65,10 +67,21 @@ static void clear_fault(void)
 	compiler_barrier();
 }
 
+static void set_faults(unsigned int reason_1,
+		       unsigned int reason_2,
+		       unsigned int reason_3,
+		       unsigned int reason_4)
+{
+	accepted_faults[0] = reason_1;
+	accepted_faults[1] = reason_2;
+	accepted_faults[2] = reason_3;
+	accepted_faults[3] = reason_4;
+	compiler_barrier();
+}
+
 static void set_fault(unsigned int reason)
 {
-	accepted_faults[0] = reason;
-	compiler_barrier();
+	set_faults(reason, -1, -1, -1);
 }
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
