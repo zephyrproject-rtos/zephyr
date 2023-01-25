@@ -126,9 +126,7 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
 		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr, buf, sizeof(buf));
 	}
 
-	LOG_ERR("Unknown IP address family:%d", addr->sa_family);
-	strcpy(buf, "unk");
-	return buf;
+	return "::";
 }
 
 static uint8_t to_hex_digit(uint8_t digit)
