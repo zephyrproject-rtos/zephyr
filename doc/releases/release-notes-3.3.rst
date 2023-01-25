@@ -20,6 +20,10 @@ API Changes
 Changes in this release
 =======================
 
+* Bluetooth: Add extra options to bt_le_per_adv_sync_transfer_subscribe to
+  allow disabling sync reports, and enable sync report filtering. these two
+  options are mutually exclusive.
+
 * Bluetooth: :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER`
   and :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER` have been
   added to enable the PAST implementation rather than
