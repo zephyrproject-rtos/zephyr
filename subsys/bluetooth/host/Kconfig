@@ -330,6 +330,10 @@ config BT_PRIVACY
 	  Enable local Privacy Feature support. This makes it possible
 	  to use Resolvable Private Addresses (RPAs).
 
+	  Note: Without privacy support in the controller establishing
+	  connections as a directed advertiser, or to a directed advertiser is
+	  not possible.
+
 config BT_PRIVACY_RANDOMIZE_IR
 	bool "Randomize identity root for fallback identities"
 	depends on BT_PRIVACY
