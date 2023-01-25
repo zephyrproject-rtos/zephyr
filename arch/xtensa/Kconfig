@@ -114,11 +114,29 @@ config XTENSA_MMU
 
 if XTENSA_MMU
 
-	config XTENSA_MMU_PTEVADDR
-		hex "PageTable virtual adddress"
-		default 0x20000000
+	choice
+		prompt "PageTable virtual adddress"
+		default XTENSA_MMU_PTEVADDR_20000000
 		help
 		  The virtual address for Xtensa page table (PTEVADDR).
+
+	config XTENSA_MMU_PTEVADDR_20000000
+		bool "0x20000000"
+
+	endchoice
+
+	config XTENSA_MMU_PTEVADDR
+		hex
+		default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
+		help
+		  The virtual address for Xtensa page table (PTEVADDR).
+
+	config XTENSA_MMU_PTEVADDR_SHIFT
+		int
+		default 29 if XTENSA_MMU_PTEVADDR_20000000
+		help
+		  The bit shift number for the virtual address for Xtensa
+		  page table (PTEVADDR).
 
 	config XTENSA_MMU_NUM_L2_TABLES
 		int "Number of L2 page tables"
