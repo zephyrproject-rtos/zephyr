@@ -957,10 +957,78 @@ void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 {
-	/* Do nothing */
-	/* Do not log errors. If errors are reported du to high traffic,
+	/* Do not log errors. If errors are reported due to high traffic,
 	 * logging errors will only increase traffic issues
 	 */
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	__ASSERT_NO_MSG(heth != NULL);
+
+	uint32_t dma_error;
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	uint32_t mac_error;
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+	const uint32_t error_code = HAL_ETH_GetError(heth);
+
+	struct eth_stm32_hal_dev_data *dev_data =
+		CONTAINER_OF(heth, struct eth_stm32_hal_dev_data, heth);
+
+	switch (error_code) {
+	case HAL_ETH_ERROR_DMA:
+		dma_error = HAL_ETH_GetDMAError(heth);
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+		if ((dma_error & ETH_DMA_RX_WATCHDOG_TIMEOUT_FLAG)   ||
+			(dma_error & ETH_DMA_RX_PROCESS_STOPPED_FLAG)    ||
+			(dma_error & ETH_DMA_RX_BUFFER_UNAVAILABLE_FLAG)) {
+			eth_stats_update_errors_rx(dev_data->iface);
+		}
+		if ((dma_error & ETH_DMA_EARLY_TX_IT_FLAG) ||
+			(dma_error & ETH_DMA_TX_PROCESS_STOPPED_FLAG)) {
+			eth_stats_update_errors_tx(dev_data->iface);
+		}
+#else
+		if ((dma_error & ETH_DMASR_RWTS) ||
+			(dma_error & ETH_DMASR_RPSS) ||
+			(dma_error & ETH_DMASR_RBUS)) {
+			eth_stats_update_errors_rx(dev_data->iface);
+		}
+		if ((dma_error & ETH_DMASR_ETS)  ||
+			(dma_error & ETH_DMASR_TPSS) ||
+			(dma_error & ETH_DMASR_TJTS)) {
+			eth_stats_update_errors_tx(dev_data->iface);
+		}
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+		break;
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	case HAL_ETH_ERROR_MAC:
+		mac_error = HAL_ETH_GetMACError(heth);
+
+		if (mac_error & ETH_RECEIVE_WATCHDOG_TIMEOUT) {
+			eth_stats_update_errors_rx(dev_data->iface);
+		}
+
+		if ((mac_error & ETH_EXECESSIVE_COLLISIONS)  ||
+			(mac_error & ETH_LATE_COLLISIONS)        ||
+			(mac_error & ETH_EXECESSIVE_DEFERRAL)    ||
+			(mac_error & ETH_TRANSMIT_JABBR_TIMEOUT) ||
+			(mac_error & ETH_LOSS_OF_CARRIER)        ||
+			(mac_error & ETH_NO_CARRIER)) {
+			eth_stats_update_errors_tx(dev_data->iface);
+		}
+		break;
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+	}
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	dev_data->stats.error_details.rx_crc_errors = heth->Instance->MMCRCRCEPR;
+	dev_data->stats.error_details.rx_align_errors = heth->Instance->MMCRAEPR;
+#else
+	dev_data->stats.error_details.rx_crc_errors = heth->Instance->MMCRFCECR;
+	dev_data->stats.error_details.rx_align_errors = heth->Instance->MMCRFAECR;
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 }
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 /* DMA and MAC errors callback only appear in H7 series */
@@ -1532,6 +1600,15 @@ static const struct device *eth_stm32_get_ptp_clock(const struct device *dev)
 }
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+
+	return &dev_data->stats;
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
+
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth_iface_init,
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
@@ -1540,6 +1617,9 @@ static const struct ethernet_api eth_api = {
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
 	.send = eth_tx,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats = eth_stm32_hal_get_stats,
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 };
 
 static void eth0_irq_config(void)
