@@ -326,7 +326,7 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
-#if STM32_SDMMC_USE_DMA
+#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
 	err = HAL_SD_ReadBlocks_DMA(&priv->hsd, data_buf, start_sector,
 				num_sector);
 #else
@@ -365,7 +365,7 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
-#if STM32_SDMMC_USE_DMA
+#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
 	err = HAL_SD_WriteBlocks_DMA(&priv->hsd, (uint8_t *)data_buf, start_sector,
 				 num_sector);
 #else
