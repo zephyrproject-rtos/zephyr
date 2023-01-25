@@ -91,4 +91,9 @@ while(NOT "${images_length}" EQUAL "${processed_length}")
   set(processed_length ${processed_length_new})
 endwhile()
 
+# This should check to see if there is a SoC-level ordering file to include
+if(EXISTS "${BOARD_DIR}/order.cmake")
+  include(${BOARD_DIR}/order.cmake)
+endif()
+
 include(cmake/domains.cmake)
