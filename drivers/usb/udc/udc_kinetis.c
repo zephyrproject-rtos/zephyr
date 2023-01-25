@@ -736,12 +736,6 @@ static int usbfsotg_ep_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int usbfsotg_ep_flush(const struct device *dev,
-			     struct udc_ep_config *const cfg)
-{
-	return -ENOTSUP;
-}
-
 static void ctrl_drop_out_successor(const struct device *dev)
 {
 	struct usbfsotg_data *priv = udc_get_private(dev);
@@ -1121,7 +1115,6 @@ static int usbfsotg_driver_preinit(const struct device *dev)
 static const struct udc_api usbfsotg_api = {
 	.ep_enqueue = usbfsotg_ep_enqueue,
 	.ep_dequeue = usbfsotg_ep_dequeue,
-	.ep_flush = usbfsotg_ep_flush,
 	.ep_set_halt = usbfsotg_ep_set_halt,
 	.ep_clear_halt = usbfsotg_ep_clear_halt,
 	.ep_try_config = NULL,

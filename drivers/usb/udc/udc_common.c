@@ -493,33 +493,6 @@ ep_clear_halt_error:
 	return ret;
 }
 
-int udc_ep_flush(const struct device *dev, const uint8_t ep)
-{
-	const struct udc_api *api = dev->api;
-	struct udc_ep_config *cfg;
-	int ret;
-
-	api->lock(dev);
-
-	if (!udc_is_enabled(dev)) {
-		ret = -EPERM;
-		goto ep_flush_error;
-	}
-
-	cfg = udc_get_ep_cfg(dev, ep);
-	if (cfg == NULL) {
-		ret = -ENODEV;
-		goto ep_flush_error;
-	}
-
-	ret = api->ep_flush(dev, cfg);
-
-ep_flush_error:
-	api->unlock(dev);
-
-	return ret;
-}
-
 static void udc_debug_ep_enqueue(const struct device *dev,
 				 struct udc_ep_config *const cfg)
 {
