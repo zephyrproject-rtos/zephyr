@@ -36,6 +36,20 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	_kernel.cpus[0].arch.hartid = csr_read(mhartid);
 	_kernel.cpus[0].arch.online = true;
 #endif
+#if ((CONFIG_MP_MAX_NUM_CPUS) > 1)
+	unsigned int cpu_node_list[] = {
+		DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
+	};
+	unsigned int cpu_num, hart_x;
+
+	for (cpu_num = 1, hart_x = 0; cpu_num < arch_num_cpus(); cpu_num++) {
+		if (cpu_node_list[hart_x] == _kernel.cpus[0].arch.hartid) {
+			hart_x++;
+		}
+		_kernel.cpus[cpu_num].arch.hartid = cpu_node_list[hart_x];
+		hart_x++;
+	}
+#endif
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
 #endif
