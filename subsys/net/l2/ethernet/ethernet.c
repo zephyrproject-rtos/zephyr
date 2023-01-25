@@ -144,11 +144,9 @@ static inline void ethernet_update_length(struct net_if *iface,
 }
 
 static void ethernet_update_rx_stats(struct net_if *iface,
-				     struct net_pkt *pkt, size_t length)
+				     struct net_eth_hdr *hdr, size_t length)
 {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
 	eth_stats_update_bytes_rx(iface, length);
 	eth_stats_update_pkts_rx(iface);
 
@@ -213,7 +211,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		net_pkt_lladdr_dst(pkt)->addr = hdr->dst.addr;
 		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 		net_pkt_lladdr_dst(pkt)->type = NET_LINK_ETHERNET;
-		ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt));
+		ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt));
 		return net_eth_bridge_input(ctx, pkt);
 	}
 
@@ -263,7 +261,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		}
 
 		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
-		goto drop;
+		eth_stats_update_unknown_protocol(iface);
+		return NET_DROP;
 	}
 
 	/* Set the pointers to ll src and dst addresses */
@@ -320,7 +319,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		goto drop;
 	}
 
-	ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt) + hdr_len);
+	ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt) + hdr_len);
 
 	if (IS_ENABLED(CONFIG_NET_ARP) &&
 	    family == AF_INET && type == NET_ETH_PTYPE_ARP) {
