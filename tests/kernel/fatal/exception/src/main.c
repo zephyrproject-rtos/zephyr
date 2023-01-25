@@ -44,14 +44,13 @@ static k_thread_stack_t *overflow_stack =
 static struct k_thread alt_thread;
 volatile int rv;
 
-static ZTEST_DMEM volatile int expected_reason = -1;
-static ZTEST_DMEM volatile int alternate_reason = -1;
+static ZTEST_DMEM volatile int accepted_faults[4] = {-1, -1, -1, -1};
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
 	TC_PRINT("Caught system error -- reason %d\n", reason);
 
-	if (expected_reason == -1) {
+	if (accepted_faults[0] == -1) {
 		printk("Was not expecting a crash\n");
 		k_fatal_halt(reason);
 	}
@@ -61,33 +60,42 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		k_fatal_halt(reason);
 	}
 
-	if ((reason != expected_reason) && (reason != alternate_reason)) {
-		if (alternate_reason != -1) {
-			printk("Wrong crash type got %d expected %d or %d\n", reason,
-				expected_reason, alternate_reason);
-		} else {
-			printk("Wrong crash type got %d expected %d\n", reason,
-				expected_reason);
+	/* Check acceptable reasons */
+	for (int i = 0; i <= ARRAY_SIZE(accepted_faults); i++) {
+		if ((i == ARRAY_SIZE(accepted_faults)) ||
+		    (accepted_faults[i] == -1)) {
+			/* End of acceptable reasons */
+			printk("Wrong crash type got %d expected value in [%d, %d, %d, %d]",
+				reason,
+				accepted_faults[0], accepted_faults[1],
+				accepted_faults[2], accepted_faults[3]);
+			k_fatal_halt(reason);
 		}
-		k_fatal_halt(reason);
+		if (accepted_faults[i] == reason) {
+			break;
+		}
 	}
 
-	expected_reason = -1;
-	alternate_reason = -1;
+	/* Clear reason array */
+	for (int i = 0; i < ARRAY_SIZE(accepted_faults); i++) {
+		accepted_faults[i] = -1;
+	}
 }
 
 void entry_cpu_exception(void *p1, void *p2, void *p3)
 {
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-	expected_reason = K_ERR_ARM_UNDEFINED_INSTRUCTION;
+	accepted_faults[0] = K_ERR_ARM_UNDEFINED_INSTRUCTION;
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* The generated exception depends on whether address 0 is valid and it is executed.
 	 * It is not feasible to generically check that here, so accept either faulting reason.
 	 */
-	expected_reason = K_ERR_ARM_USAGE_ILLEGAL_EPSR;
-	alternate_reason = K_ERR_ARM_MEM_INSTRUCTION_ACCESS;
+	accepted_faults[0] = K_ERR_ARM_USAGE_ILLEGAL_EPSR;
+	accepted_faults[1] = K_ERR_ARM_MEM_INSTRUCTION_ACCESS;
+	accepted_faults[2] = K_ERR_ARM_BUS_INSTRUCTION_BUS;
+
 #else
-	expected_reason = K_ERR_CPU_EXCEPTION;
+	accepted_faults[0] = K_ERR_CPU_EXCEPTION;
 #endif
 
 #if defined(CONFIG_X86)
@@ -114,9 +122,9 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 {
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-	expected_reason = K_ERR_ARM_DEBUG_EVENT;
+	accepted_faults[0] = K_ERR_ARM_DEBUG_EVENT;
 #else
-	expected_reason = K_ERR_CPU_EXCEPTION;
+	accepted_faults[0] = K_ERR_CPU_EXCEPTION;
 #endif
 
 #if defined(CONFIG_ARM64)
@@ -150,7 +158,7 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 
 void entry_oops(void *p1, void *p2, void *p3)
 {
-	expected_reason = K_ERR_KERNEL_OOPS;
+	accepted_faults[0] = K_ERR_KERNEL_OOPS;
 
 	k_oops();
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
@@ -159,7 +167,7 @@ void entry_oops(void *p1, void *p2, void *p3)
 
 void entry_panic(void *p1, void *p2, void *p3)
 {
-	expected_reason = K_ERR_KERNEL_PANIC;
+	accepted_faults[0] = K_ERR_KERNEL_PANIC;
 
 	k_panic();
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
@@ -168,7 +176,7 @@ void entry_panic(void *p1, void *p2, void *p3)
 
 void entry_zephyr_assert(void *p1, void *p2, void *p3)
 {
-	expected_reason = K_ERR_KERNEL_PANIC;
+	accepted_faults[0] = K_ERR_KERNEL_PANIC;
 
 	__ASSERT(0, "intentionally failed assertion");
 	rv = TC_FAIL;
@@ -176,7 +184,7 @@ void entry_zephyr_assert(void *p1, void *p2, void *p3)
 
 void entry_arbitrary_reason(void *p1, void *p2, void *p3)
 {
-	expected_reason = INT_MAX;
+	accepted_faults[0] = INT_MAX;
 
 	z_except_reason(INT_MAX);
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
@@ -185,7 +193,7 @@ void entry_arbitrary_reason(void *p1, void *p2, void *p3)
 
 void entry_arbitrary_reason_negative(void *p1, void *p2, void *p3)
 {
-	expected_reason = -2;
+	accepted_faults[0] = -2;
 
 	z_except_reason(-2);
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
@@ -198,7 +206,7 @@ __no_optimization void blow_up_stack(void)
 {
 	char buf[OVERFLOW_STACKSIZE];
 
-	expected_reason = K_ERR_STACK_CHK_FAIL;
+	accepted_faults[0] = K_ERR_STACK_CHK_FAIL;
 	TC_PRINT("posting %zu bytes of junk to stack...\n", sizeof(buf));
 	(void)memset(buf, 0xbb, sizeof(buf));
 }
@@ -223,7 +231,7 @@ __no_optimization int stack_smasher(int val)
 
 void blow_up_stack(void)
 {
-	expected_reason = K_ERR_STACK_CHK_FAIL;
+	accepted_faults[0] = K_ERR_STACK_CHK_FAIL;
 
 	stack_smasher(37);
 }
@@ -502,8 +510,8 @@ static void *fatal_setup(void)
 	k_mem_pin(UINT_TO_POINTER(pin_addr), pin_size);
 
 	k_mem_region_align(&pin_addr, &pin_size,
-			   POINTER_TO_UINT((void *)&expected_reason),
-			   sizeof(expected_reason),
+			   POINTER_TO_UINT((void *)accepted_faults),
+			   sizeof(accepted_faults),
 			   CONFIG_MMU_PAGE_SIZE);
 
 	k_mem_pin(UINT_TO_POINTER(pin_addr), pin_size);
