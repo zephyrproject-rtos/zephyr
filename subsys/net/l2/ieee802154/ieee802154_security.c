@@ -115,12 +115,14 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 	struct cipher_aead_pkt apkt;
 	struct cipher_pkt pkt;
 	uint8_t nonce[13];
-	uint8_t level = sec_ctx->level;
+	uint8_t level;
 	int ret;
 
-	if (!sec_ctx || level == IEEE802154_SECURITY_LEVEL_NONE) {
+	if (!sec_ctx || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
 		return true;
 	}
+
+	level = sec_ctx->level;
 
 	if (level == IEEE802154_SECURITY_LEVEL_ENC) {
 		/* See comment in ieee802154_encrypt_auth(). */
@@ -152,12 +154,14 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 	struct cipher_aead_pkt apkt;
 	struct cipher_pkt pkt;
 	uint8_t nonce[13];
-	uint8_t level = sec_ctx->level;
+	uint8_t level;
 	int ret;
 
-	if (!sec_ctx || level == IEEE802154_SECURITY_LEVEL_NONE) {
+	if (!sec_ctx || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
 		return true;
 	}
+
+	level = sec_ctx->level;
 
 	if (level == IEEE802154_SECURITY_LEVEL_ENC) {
 		/* TODO: We currently use CCM rather than CCM* as crypto.h does
