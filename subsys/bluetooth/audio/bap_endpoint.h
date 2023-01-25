@@ -44,7 +44,7 @@ struct bt_bap_ep {
 	struct bt_codec_qos_pref qos_pref;
 	struct bt_bap_iso *iso;
 
-	/* Used by the unicast server */
+	/* Used by the unicast server and client */
 	bool receiver_ready;
 
 	/* TODO: Create a union to reduce memory usage */
