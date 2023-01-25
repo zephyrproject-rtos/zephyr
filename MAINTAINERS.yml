@@ -2248,6 +2248,15 @@ West:
     - manifest-canopennode
     - "area: CAN"
 
+"West project: chre":
+  status: maintained
+  maintainers:
+    - yperess
+  files:
+    - samples/modules/chre/
+  labels:
+    - manifest-chre
+
 "West project: cmsis":
   status: maintained
   maintainers:
