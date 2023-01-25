@@ -291,11 +291,11 @@ jobs:
       - if: github.event_name == 'push' || github.event_name == 'schedule'
         name: Upload to opensearch
         run: |
-          pip3 install opensearch-py
+          pip3 install elasticsearch
           if [ "${{github.event_name}}" = "push" ]; then
-            python3 ./scripts/ci/upload_test_results.py --index zephyr-main-2 artifacts/*/*/twister.json
+            python3 ./scripts/ci/upload_test_results_es.py --index zephyr-main-ci-push-1 artifacts/*/*/twister.json
           elif [ "${{github.event_name}}" = "schedule" ]; then
-            python3 ./scripts/ci/upload_test_results.py --index zephyr-weekly artifacts/*/*/twister.json
+            python3 ./scripts/ci/upload_test_results_es.py --index zephyr-main-ci-weekly-1 artifacts/*/*/twister.json
           fi
 
       - name: Merge Test Results
