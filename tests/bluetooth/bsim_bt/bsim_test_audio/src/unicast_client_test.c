@@ -342,6 +342,7 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group)
 	struct bt_audio_unicast_group_stream_pair_param pair_params[stream_cnt];
 	struct bt_audio_unicast_group_stream_param stream_params[stream_cnt];
 	struct bt_audio_unicast_group_param param;
+	int err;
 
 	for (size_t i = 0U; i < stream_cnt; i++) {
 		stream_params[i].stream = &g_streams[i];
@@ -354,9 +355,6 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group)
 	param.params_count = stream_cnt;
 	param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
-#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-	int err;
-
 	/* Require controller support for CIGs */
 	printk("Creating unicast group\n");
 	err = bt_audio_unicast_group_create(&param, unicast_group);
@@ -364,20 +362,18 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group)
 		FAIL("Unable to create unicast group: %d", err);
 		return;
 	}
-#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }
 
 static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group)
 {
-#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 	int err;
+
 	/* Require controller support for CIGs */
 	err = bt_audio_unicast_group_delete(unicast_group);
 	if (err != 0) {
 		FAIL("Unable to delete unicast group: %d", err);
 		return;
 	}
-#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }
 
 static void test_main(void)
