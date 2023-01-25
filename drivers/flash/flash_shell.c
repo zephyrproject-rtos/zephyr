@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2023 Nordic Semiconductor ASA
  * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -17,7 +17,6 @@
 
 /* Buffer is only needed for bytes that follow command and offset */
 #define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 2)
-#define TEST_ARR_SIZE 0x1000
 
 /* This only issues compilation error when it would not be possible
  * to extract at least one byte from command line arguments, yet
@@ -29,7 +28,7 @@ BUILD_ASSERT(BUF_ARRAY_CNT >= 1);
 static const struct device *const zephyr_flash_controller =
 	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_flash_controller));
 
-static uint8_t __aligned(4) test_arr[TEST_ARR_SIZE];
+static uint8_t __aligned(4) test_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE];
 
 static int parse_helper(const struct shell *shell, size_t *argc,
 		char **argv[], const struct device * *flash_dev,
@@ -216,9 +215,9 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 
 	size = strtoul(argv[2], NULL, 16);
 	repeat = strtoul(argv[3], NULL, 16);
-	if (size > TEST_ARR_SIZE) {
+	if (size > CONFIG_FLASH_SHELL_BUFFER_SIZE) {
 		shell_error(shell, "<size> must be at most 0x%x.",
-			    TEST_ARR_SIZE);
+			    CONFIG_FLASH_SHELL_BUFFER_SIZE);
 		return -EINVAL;
 	}
 
@@ -254,6 +253,251 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 
 	return result;
 }
+
+#ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
+const static uint8_t speed_types[][4] = { "B", "KiB", "MiB", "GiB" };
+const static uint32_t speed_divisor = 1024;
+
+static int read_write_erase_validate(const struct shell *sh, size_t argc, char *argv[],
+				     uint32_t *size, uint32_t *repeat)
+{
+	if (argc < 4) {
+		shell_error(sh, "Missing parameters: <device> <offset> <size> <repeat>");
+		return -EINVAL;
+	}
+
+	*size = strtoul(argv[2], NULL, 0);
+	*repeat = strtoul(argv[3], NULL, 0);
+
+	if (*size == 0 || *size > CONFIG_FLASH_SHELL_BUFFER_SIZE) {
+		shell_error(sh, "<size> must be between 0x1 and 0x%x.",
+			    CONFIG_FLASH_SHELL_BUFFER_SIZE);
+		return -EINVAL;
+	}
+
+	if (*repeat == 0 || *repeat > 10) {
+		shell_error(sh, "<repeat> must be between 1 and 10.");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void speed_output(const struct shell *sh, uint64_t total_time, double loops, double size)
+{
+	double time_per_loop = (double)total_time / loops;
+	double throughput = size;
+	uint8_t speed_index = 0;
+
+	if (time_per_loop > 0) {
+		throughput /= (time_per_loop / 1000.0);
+	}
+
+	while (throughput >= (double)speed_divisor && speed_index < ARRAY_SIZE(speed_types)) {
+		throughput /= (double)speed_divisor;
+		++speed_index;
+	}
+
+	shell_print(sh, "Total: %llums, Per loop: ~%.0fms, Speed: ~%.1f%sps",
+		    total_time, time_per_loop, throughput, speed_types[speed_index]);
+}
+
+static int cmd_read_test(const struct shell *sh, size_t argc, char *argv[])
+{
+
+	const struct device *flash_dev;
+	uint32_t repeat;
+	int result;
+	uint32_t addr;
+	uint32_t size;
+	uint64_t start_time;
+	uint64_t loop_time;
+	uint64_t total_time = 0;
+	uint32_t loops = 0;
+
+	result = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
+	if (result) {
+		return result;
+	}
+
+	result = read_write_erase_validate(sh, argc, argv, &size, &repeat);
+	if (result) {
+		return result;
+	}
+
+	while (repeat--) {
+		start_time = k_uptime_get();
+		result = flash_read(flash_dev, addr, test_arr, size);
+		loop_time = k_uptime_delta(&start_time);
+
+		if (result) {
+			shell_error(sh, "Read failed: %d", result);
+			break;
+		}
+
+		++loops;
+		total_time += loop_time;
+		shell_print(sh, "Loop #%u done in %llums.", loops, loop_time);
+	}
+
+	if (result == 0) {
+		speed_output(sh, total_time, (double)loops, (double)size);
+	}
+
+	return result;
+}
+
+static int cmd_write_test(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *flash_dev;
+	uint32_t repeat;
+	int result;
+	uint32_t addr;
+	uint32_t size;
+	uint64_t start_time;
+	uint64_t loop_time;
+	uint64_t total_time = 0;
+	uint32_t loops = 0;
+
+	result = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
+	if (result) {
+		return result;
+	}
+
+	result = read_write_erase_validate(sh, argc, argv, &size, &repeat);
+	if (result) {
+		return result;
+	}
+
+	for (uint32_t i = 0; i < size; i++) {
+		test_arr[i] = (uint8_t)i;
+	}
+
+	while (repeat--) {
+		start_time = k_uptime_get();
+		result = flash_write(flash_dev, addr, test_arr, size);
+		loop_time = k_uptime_delta(&start_time);
+
+		if (result) {
+			shell_error(sh, "Write failed: %d", result);
+			break;
+		}
+
+		++loops;
+		total_time += loop_time;
+		shell_print(sh, "Loop #%u done in %llu ticks.", loops, loop_time);
+	}
+
+	if (result == 0) {
+		speed_output(sh, total_time, (double)loops, (double)size);
+	}
+
+	return result;
+}
+
+static int cmd_erase_test(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *flash_dev;
+	uint32_t repeat;
+	int result;
+	uint32_t addr;
+	uint32_t size;
+	uint64_t start_time;
+	uint64_t loop_time;
+	uint64_t total_time = 0;
+	uint32_t loops = 0;
+
+	result = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
+	if (result) {
+		return result;
+	}
+
+	result = read_write_erase_validate(sh, argc, argv, &size, &repeat);
+	if (result) {
+		return result;
+	}
+
+	for (uint32_t i = 0; i < size; i++) {
+		test_arr[i] = (uint8_t)i;
+	}
+
+	while (repeat--) {
+		start_time = k_uptime_get();
+		result = flash_erase(flash_dev, addr, size);
+		loop_time = k_uptime_delta(&start_time);
+
+		if (result) {
+			shell_error(sh, "Erase failed: %d", result);
+			break;
+		}
+
+		++loops;
+		total_time += loop_time;
+		shell_print(sh, "Loop #%u done in %llums.", loops, loop_time);
+	}
+
+	if (result == 0) {
+		speed_output(sh, total_time, (double)loops, (double)size);
+	}
+
+	return result;
+}
+
+static int cmd_erase_write_test(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *flash_dev;
+	uint32_t repeat;
+	int result_erase = 0;
+	int result_write = 0;
+	uint32_t addr;
+	uint32_t size;
+	uint64_t start_time;
+	uint64_t loop_time;
+	uint64_t total_time = 0;
+	uint32_t loops = 0;
+
+	result_erase = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
+	if (result_erase) {
+		return result_erase;
+	}
+
+	result_erase = read_write_erase_validate(sh, argc, argv, &size, &repeat);
+	if (result_erase) {
+		return result_erase;
+	}
+
+	for (uint32_t i = 0; i < size; i++) {
+		test_arr[i] = (uint8_t)i;
+	}
+
+	while (repeat--) {
+		start_time = k_uptime_get();
+		result_erase = flash_erase(flash_dev, addr, size);
+		result_write = flash_write(flash_dev, addr, test_arr, size);
+		loop_time = k_uptime_delta(&start_time);
+
+		if (result_erase) {
+			shell_error(sh, "Erase failed: %d", result_erase);
+			break;
+		}
+
+		if (result_write) {
+			shell_error(sh, "Write failed: %d", result_write);
+			break;
+		}
+
+		++loops;
+		total_time += loop_time;
+		shell_print(sh, "Loop #%u done in %llums.", loops, loop_time);
+	}
+
+	if (result_erase == 0 && result_write == 0) {
+		speed_output(sh, total_time, (double)loops, (double)size);
+	}
+
+	return (result_erase != 0 ? result_erase : result_write);
+}
+#endif
 
 static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 {
@@ -462,6 +706,22 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
 	SHELL_CMD_ARG(page_info, &dsub_device_name,
 		"[<device>] <address>",
 		cmd_page_info, 2, 1),
+
+#ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
+	SHELL_CMD_ARG(read_test, &dsub_device_name,
+		"[<device>] <address> <size> <repeat count>",
+		cmd_read_test, 4, 1),
+	SHELL_CMD_ARG(write_test, &dsub_device_name,
+		"[<device>] <address> <size> <repeat count>",
+		cmd_write_test, 4, 1),
+	SHELL_CMD_ARG(erase_test, &dsub_device_name,
+		"[<device>] <address> <size> <repeat count>",
+		cmd_erase_test, 4, 1),
+	SHELL_CMD_ARG(erase_write_test, &dsub_device_name,
+		"[<device>] <address> <size> <repeat count>",
+		cmd_erase_write_test, 4, 1),
+#endif
+
 	SHELL_SUBCMD_SET_END
 );
 

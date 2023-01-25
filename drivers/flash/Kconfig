@@ -51,6 +51,26 @@ config FLASH_SHELL
 	  Enable the flash shell with flash related commands such as test,
 	  write, read and erase.
 
+if FLASH_SHELL
+
+config FLASH_SHELL_TEST_COMMANDS
+	bool "Flash read/write/erase test commands"
+	select CBPRINTF_FP_SUPPORT
+	help
+	  Enable additional flash shell commands for performing
+	  read/write/erase tests with speed output.
+
+config FLASH_SHELL_BUFFER_SIZE
+	hex "Flash shell buffer size"
+	default 0x4000 if FLASH_SHELL_TEST_COMMANDS
+	default 0x1000
+	range 0x400 0x1000000
+	help
+	  Size of the buffer used for flash commands, will determine the
+	  maximum size that can be used with a read/write test.
+
+endif # FLASH_SHELL
+
 config FLASH_PAGE_LAYOUT
 	bool "API for retrieving the layout of pages"
 	depends on FLASH_HAS_PAGE_LAYOUT
