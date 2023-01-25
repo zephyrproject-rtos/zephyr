@@ -92,7 +92,7 @@ static void ipi_handler(const void *unused)
 
 	MSIP(csr_read(mhartid)) = 0;
 
-	atomic_val_t pending_ipi = atomic_get(&cpu_pending_ipi[_current_cpu->id]);
+	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[_current_cpu->id]);
 
 	if (pending_ipi & IPI_SCHED) {
 		z_sched_ipi();
