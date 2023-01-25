@@ -1529,10 +1529,23 @@ int bt_unicast_client_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 static void unicast_client_reset(struct bt_audio_ep *ep)
 {
 	struct bt_unicast_client_ep *client_ep = CONTAINER_OF(ep, struct bt_unicast_client_ep, ep);
+	struct bt_audio_stream *stream = ep->stream;
 
 	LOG_DBG("ep %p", ep);
 
-	bt_audio_stream_reset(ep->stream);
+	if (stream != NULL && ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
+		const struct bt_audio_stream_ops *ops;
+
+		/* Notify upper layer */
+		ops = stream->ops;
+		if (ops != NULL && ops->released != NULL) {
+			ops->released(stream);
+		} else {
+			LOG_WRN("No callback for released set");
+		}
+	}
+
+	bt_audio_stream_reset(stream);
 
 	(void)memset(ep, 0, sizeof(*ep));
 
