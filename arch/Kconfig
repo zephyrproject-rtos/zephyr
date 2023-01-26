@@ -501,6 +501,18 @@ config EXTRA_EXCEPTION_INFO
 	  register state, when a fault occurs. This information can be useful
 	  to collect for post-mortem analysis and debug of issues.
 
+config SIMPLIFIED_EXCEPTION_CODES
+	bool "Convert arch specific exception codes to K_ERR_CPU_EXCEPTION"
+	default y if ZTEST
+	help
+	  The same piece of faulty code (NULL dereference, etc) can result in
+	  a multitude of potential exception codes at the CPU level, depending
+	  upon whether addresses exist, an MPU is configured, the particular
+	  implementation of the CPU or any number of other reasons. Enabling
+	  this option collapses all the architecture specific exception codes
+	  down to the generic K_ERR_CPU_EXCEPTION, which makes testing code
+	  much more portable.
+
 endmenu # Interrupt configuration
 
 config INIT_ARCH_HW_AT_BOOT
