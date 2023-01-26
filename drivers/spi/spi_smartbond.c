@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Renesas Electronics Corporation
+ * Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,7 @@ static inline void spi_smartbond_enable(const struct spi_smartbond_cfg *cfg, boo
 
 static inline bool spi_smartbond_isenabled(const struct spi_smartbond_cfg *cfg)
 {
-	return (!!(cfg->regs->SPI_CTRL_REG & SPI_SPI_CTRL_REG_SPI_ON_Msk)) 
+	return (!!(cfg->regs->SPI_CTRL_REG & SPI_SPI_CTRL_REG_SPI_ON_Msk))
 		&& (!(cfg->regs->SPI_CTRL_REG & SPI_SPI_CTRL_REG_SPI_RST_Msk));
 }
 
@@ -112,11 +112,11 @@ static int spi_smartbond_configure(const struct spi_smartbond_cfg *cfg,
 				   const struct spi_config *spi_cfg)
 {
 	int rc = 0;
-	
+
 	if (spi_context_configured(&data->ctx, spi_cfg)) {
 		return 0;
 	}
-	
+
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
 		LOG_ERR("Slave mode not yet supported");
 		return -ENOTSUP;
