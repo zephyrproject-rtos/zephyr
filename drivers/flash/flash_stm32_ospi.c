@@ -931,14 +931,9 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 
 	if (stm32_ospi_mem_ready(&dev_data->hospi,
 		dev_cfg->data_mode, dev_cfg->data_rate) != 0) {
+		ospi_unlock_thread(dev);
 		LOG_ERR("Erase failed : flash busy");
 		return -EBUSY;
-	}
-
-	if (stm32_ospi_write_enable(&dev_data->hospi,
-		dev_cfg->data_mode, dev_cfg->data_rate) != 0) {
-		LOG_ERR("Erase failed : write enable");
-		return -EIO;
 	}
 
 	cmd_erase.InstructionMode    = (dev_cfg->data_mode == OSPI_OPI_MODE)
@@ -952,6 +947,14 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 					: HAL_OSPI_INSTRUCTION_8_BITS;
 
 	while ((size > 0) && (ret == 0)) {
+
+		ret = stm32_ospi_write_enable(&dev_data->hospi,
+			dev_cfg->data_mode, dev_cfg->data_rate);
+		if (ret != 0) {
+			LOG_ERR("Erase failed : write enable");
+			break;
+		}
+
 		if (size == dev_cfg->flash_size) {
 			/* Chip erase */
 			LOG_DBG("Chip Erase");
@@ -966,6 +969,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		} else {
 			/* Sector erase */
 			LOG_DBG("Sector Erase");
+
 			cmd_erase.Address = addr;
 			const struct jesd216_erase_type *erase_types =
 							dev_data->erase_types;
@@ -1002,6 +1006,10 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 						? stm32_ospi_hal_address_size(dev)
 						: HAL_OSPI_ADDRESS_24_BITS;
 					cmd_erase.Address = addr;
+					/* Avoid using wrong erase type,
+					 * if zero entries are found in erase_types
+					 */
+					bet = NULL;
 				}
 			}
 
@@ -1180,6 +1188,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	ret = stm32_ospi_mem_ready(&dev_data->hospi,
 				   dev_cfg->data_mode, dev_cfg->data_rate);
 	if (ret != 0) {
+		ospi_unlock_thread(dev);
 		LOG_ERR("OSPI: write not ready");
 		return -EIO;
 	}

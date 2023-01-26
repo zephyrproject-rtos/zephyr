@@ -89,7 +89,8 @@ static void subscriber_task(void)
 	}
 }
 
-K_THREAD_DEFINE(subscriber_task_id, 512, subscriber_task, NULL, NULL, NULL, 3, 0, 0);
+K_THREAD_DEFINE(subscriber_task_id, CONFIG_MAIN_STACK_SIZE,
+		subscriber_task, NULL, NULL, NULL, 3, 0, 0);
 
 #if defined(CONFIG_ZBUS_STRUCTS_ITERABLE_ACCESS)
 static int count;

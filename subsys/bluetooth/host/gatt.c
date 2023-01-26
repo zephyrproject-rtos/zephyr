@@ -3408,6 +3408,8 @@ static void remove_subscriptions(struct bt_conn *conn)
 
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
+		atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_SENT);
+
 		if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst) ||
 		    (atomic_test_bit(params->flags,
 				     BT_GATT_SUBSCRIBE_FLAG_VOLATILE))) {
@@ -4960,6 +4962,11 @@ static int gatt_write_ccc(struct bt_conn *conn,
 
 	LOG_DBG("handle 0x%04x value 0x%04x", params->ccc_handle, params->value);
 
+	/* The value of the params doesn't matter, this is just so we don't
+	 * repeat CCC writes when the AUTO_RESUBSCRIBE quirk is enabled.
+	 */
+	atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_SENT);
+
 	return gatt_req_send(conn, gatt_write_ccc_rsp, params,
 			     gatt_write_ccc_buf, BT_ATT_OP_WRITE_REQ, len,
 			     BT_ATT_CHAN_OPT(params));
@@ -5204,10 +5211,15 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params)
 	}
 }
 
+#if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
 static void add_subscriptions(struct bt_conn *conn)
 {
 	struct gatt_sub *sub;
 	struct bt_gatt_subscribe_params *params;
+
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		return;
+	}
 
 	sub = gatt_sub_find(conn);
 	if (!sub) {
@@ -5216,7 +5228,8 @@ static void add_subscriptions(struct bt_conn *conn)
 
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, params, node) {
-		if (bt_addr_le_is_bonded(conn->id, &conn->le.dst) &&
+		if (!atomic_test_bit(params->flags,
+				     BT_GATT_SUBSCRIBE_FLAG_SENT) &&
 		    !atomic_test_bit(params->flags,
 				     BT_GATT_SUBSCRIBE_FLAG_NO_RESUB)) {
 			/* Force write to CCC to workaround devices that don't
@@ -5226,6 +5239,7 @@ static void add_subscriptions(struct bt_conn *conn)
 		}
 	}
 }
+#endif	/* CONFIG_BT_GATT_AUTO_RESUBSCRIBE */
 
 #if defined(CONFIG_BT_GATT_AUTO_UPDATE_MTU)
 static void gatt_exchange_mtu_func(struct bt_conn *conn, uint8_t err,
@@ -5498,8 +5512,6 @@ void bt_gatt_connected(struct bt_conn *conn)
 		}
 	}
 
-#if defined(CONFIG_BT_GATT_CLIENT)
-	add_subscriptions(conn);
 #if defined(CONFIG_BT_GATT_AUTO_UPDATE_MTU)
 	int err;
 
@@ -5508,7 +5520,6 @@ void bt_gatt_connected(struct bt_conn *conn)
 		LOG_WRN("MTU Exchange failed (err %d)", err);
 	}
 #endif /* CONFIG_BT_GATT_AUTO_UPDATE_MTU */
-#endif /* CONFIG_BT_GATT_CLIENT */
 }
 
 void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
@@ -5530,6 +5541,10 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 
 	data.conn = conn;
 	data.sec = BT_SECURITY_L1;
+
+#if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
+	add_subscriptions(conn);
+#endif	/* CONFIG_BT_GATT_AUTO_RESUBSCRIBE */
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 }

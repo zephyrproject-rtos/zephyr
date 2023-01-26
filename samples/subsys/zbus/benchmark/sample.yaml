@@ -19,6 +19,8 @@ tests:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_ASYNC=y
+      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_IDLE_STACK_SIZE=1024
   sample.zbus.benchmark_sync:
     tags: zbus
     min_ram: 16
@@ -37,3 +39,5 @@ tests:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_ASYNC=n
+      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_IDLE_STACK_SIZE=1024

@@ -1778,8 +1778,22 @@ enum {
 	 *
 	 *  If set, indicates write operation is pending waiting remote end to
 	 *  respond.
+	 *
+	 *  @note Internal use only.
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING,
+
+	/** @brief Sent flag
+	 *
+	 *  If set, indicates that a subscription request (CCC write) has
+	 *  already been sent in the active connection.
+	 *
+	 *  Used to avoid sending subscription requests multiple times when the
+	 *  @kconfig{CONFIG_BT_GATT_AUTO_RESUBSCRIBE} quirk is enabled.
+	 *
+	 *  @note Internal use only.
+	 */
+	BT_GATT_SUBSCRIBE_FLAG_SENT,
 
 	BT_GATT_SUBSCRIBE_NUM_FLAGS
 };
