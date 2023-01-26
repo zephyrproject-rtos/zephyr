@@ -154,6 +154,12 @@ void main(void)
 		return;
 	}
 
+	ret = can_start(can_dev);
+	if (ret != 0) {
+		printk("CAN: Failed to start device [%d]\n", ret);
+		return;
+	}
+
 	tid = k_thread_create(&rx_8_0_thread_data, rx_8_0_thread_stack,
 			      K_THREAD_STACK_SIZEOF(rx_8_0_thread_stack),
 			      rx_8_0_thread, NULL, NULL, NULL,
