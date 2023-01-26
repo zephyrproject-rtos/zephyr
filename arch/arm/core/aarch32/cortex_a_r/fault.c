@@ -194,8 +194,12 @@ bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
 	/* Print fault information */
 	LOG_ERR("***** UNDEFINED INSTRUCTION ABORT *****");
 
+	uint32_t reason = IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) ?
+			  K_ERR_CPU_EXCEPTION :
+			  K_ERR_ARM_UNDEFINED_INSTRUCTION;
+
 	/* Invoke kernel fatal exception handler */
-	z_arm_fatal_error(K_ERR_ARM_UNDEFINED_INSTRUCTION, esf);
+	z_arm_fatal_error(reason, esf);
 
 	/* All undefined instructions are treated as fatal for now */
 	return true;
@@ -221,6 +225,11 @@ bool z_arm_fault_prefetch(z_arch_esf_t *esf)
 	LOG_ERR("***** PREFETCH ABORT *****");
 	if (FAULT_DUMP_VERBOSE) {
 		reason = dump_fault(fs, ifar);
+	}
+
+	/* Simplify exception codes if requested */
+	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {
+		reason = K_ERR_CPU_EXCEPTION;
 	}
 
 	/* Invoke kernel fatal exception handler */
@@ -288,6 +297,11 @@ bool z_arm_fault_data(z_arch_esf_t *esf)
 	LOG_ERR("***** DATA ABORT *****");
 	if (FAULT_DUMP_VERBOSE) {
 		reason = dump_fault(fs, dfar);
+	}
+
+	/* Simplify exception codes if requested */
+	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {
+		reason = K_ERR_CPU_EXCEPTION;
 	}
 
 	/* Invoke kernel fatal exception handler */

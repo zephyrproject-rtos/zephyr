@@ -1124,6 +1124,10 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 		esf_copy.basic.xpsr &= ~(IPSR_ISR_Msk);
 	}
 
+	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {
+		reason = K_ERR_CPU_EXCEPTION;
+	}
+
 	z_arm_fatal_error(reason, &esf_copy);
 }
 
