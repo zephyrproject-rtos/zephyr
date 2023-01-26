@@ -8,3 +8,8 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_friendship_re_establish \
 	friendship_friend_est \
 	friendship_lpn_re_est
+
+conf=prj_mesh1d1_conf
+RunTest mesh_friendship_re_establish \
+	friendship_friend_est \
+	friendship_lpn_re_est

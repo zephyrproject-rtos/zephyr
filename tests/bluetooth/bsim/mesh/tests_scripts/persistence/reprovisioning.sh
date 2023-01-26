@@ -17,3 +17,13 @@ RunTest mesh_persistence_reprovisioning persistence_reprovisioning_device \
 overlay=overlay_pst_conf
 RunTest mesh_persistence_reprovisioning persistence_reprovisioning_device \
 	persistence_reprovisioning_provisioner
+
+conf=prj_mesh1d1_conf
+overlay=overlay_pst_conf
+RunTest mesh_persistence_reprovisioning persistence_reprovisioning_device \
+	persistence_reprovisioning_provisioner -- -argstest clear-settings=1
+
+conf=prj_mesh1d1_conf
+overlay=overlay_pst_conf
+RunTest mesh_persistence_reprovisioning persistence_reprovisioning_device \
+	persistence_reprovisioning_provisioner
