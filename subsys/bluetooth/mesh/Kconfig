@@ -935,6 +935,19 @@ config BT_MESH_HEALTH_CLI_TIMEOUT
 
 endif # BT_MESH_HEALTH_CLI
 
+menuconfig BT_MESH_V1d1
+	bool "Bluetooth mesh v1.1 support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth mesh v1.1 support. Bluetooth mesh v1.1
+	  is backward compatible with v1.0.1. The stack cannot be qualified
+	  with this option enabled because the Bluetooth mesh v1.1 specification
+	  is in a draft state.
+
+if BT_MESH_V1d1
+
+endif # BT_MESH_V1d1
+
 rsource "shell/Kconfig"
 
 config BT_MESH_MODEL_EXTENSIONS
