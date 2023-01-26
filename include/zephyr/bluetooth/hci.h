@@ -718,7 +718,6 @@ struct bt_hci_rp_read_bd_addr {
 #define BT_HCI_DATAPATH_ID_HCI      0x00
 #define BT_HCI_DATAPATH_ID_VS       0x01
 #define BT_HCI_DATAPATH_ID_VS_END   0xfe
-#define BT_HCI_DATAPATH_ID_DISABLED 0xff
 
 /* coding format assigned numbers, used for codec IDs */
 #define BT_HCI_CODING_FORMAT_ULAW_LOG    0x00
