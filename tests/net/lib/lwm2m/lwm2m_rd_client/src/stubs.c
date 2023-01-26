@@ -86,6 +86,10 @@ int lwm2m_get_u32_val(const struct lwm2m_obj_path *path, uint32_t *val)
 
 /* subsys/net/lib/lwm2m/lwm2m_engine.h */
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_start, struct lwm2m_ctx *);
+int lwm2m_socket_start_fake_fail(struct lwm2m_ctx *client_ctx)
+{
+	return -1;
+}
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_close, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_close_socket, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_suspend, struct lwm2m_ctx *);
@@ -93,6 +97,16 @@ DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_inst_id_to_index, uint16_t);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_engine_connection_resume, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_push_queued_buffers, struct lwm2m_ctx *);
 DEFINE_FAKE_VOID_FUNC(lwm2m_engine_context_init, struct lwm2m_ctx *);
+struct lwm2m_ctx *client_ctx_fake;
+void lwm2m_engine_context_init_fake1(struct lwm2m_ctx *client_ctx)
+{
+	client_ctx_fake = client_ctx;
+}
+void test_throw_network_error_from_engine(int err)
+{
+	client_ctx_fake->fault_cb(err);
+}
+
 DEFINE_FAKE_VOID_FUNC(lwm2m_engine_context_close, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(char *, lwm2m_sprint_ip_addr, const struct sockaddr *);
 char *lwm2m_sprint_ip_addr_fake_default(const struct sockaddr *addr)
