@@ -7,3 +7,8 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_provision_pb_adv_reprovision \
 	prov_device_pb_adv_reprovision \
 	prov_provisioner_pb_adv_reprovision
+
+conf=prj_mesh1d1_conf
+RunTest mesh_provision_pb_adv_reprovision \
+	prov_device_pb_adv_reprovision \
+	prov_provisioner_pb_adv_reprovision

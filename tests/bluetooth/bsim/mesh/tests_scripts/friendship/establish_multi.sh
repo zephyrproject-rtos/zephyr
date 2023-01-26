@@ -13,3 +13,12 @@ RunTest mesh_friendship_establish_multi \
 	friendship_lpn_est \
 	friendship_lpn_est \
 	friendship_lpn_est
+
+conf=prj_mesh1d1_conf
+RunTest mesh_friendship_establish_multi \
+	friendship_friend_est_multi \
+	friendship_lpn_est \
+	friendship_lpn_est \
+	friendship_lpn_est \
+	friendship_lpn_est \
+	friendship_lpn_est

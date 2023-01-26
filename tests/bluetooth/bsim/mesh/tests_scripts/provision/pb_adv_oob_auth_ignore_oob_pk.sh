@@ -8,3 +8,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # but provisioner doesn't have OOB public key
 RunTest mesh_provision_pb_adv_device_w_oob_pk_prvnr_wt_pk \
 	prov_device_pb_adv_oob_public_key prov_provisioner_pb_adv_oob_auth_no_oob_public_key
+
+conf=prj_mesh1d1_conf
+RunTest mesh_provision_pb_adv_device_w_oob_pk_prvnr_wt_pk \
+	prov_device_pb_adv_oob_public_key prov_provisioner_pb_adv_oob_auth_no_oob_public_key

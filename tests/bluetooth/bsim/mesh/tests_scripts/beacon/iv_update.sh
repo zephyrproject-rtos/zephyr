@@ -7,3 +7,8 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_beacon_on_iv_update \
 	beacon_tx_on_iv_update \
 	beacon_rx_on_iv_update
+
+conf=prj_mesh1d1_conf
+RunTest mesh_beacon_on_iv_update \
+	beacon_tx_on_iv_update \
+	beacon_rx_on_iv_update

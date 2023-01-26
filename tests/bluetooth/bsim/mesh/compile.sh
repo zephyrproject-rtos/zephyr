@@ -24,5 +24,12 @@ app=tests/bluetooth/bsim/mesh compile &
 app=tests/bluetooth/bsim/mesh conf_overlay=overlay_low_lat.conf compile &
 app=tests/bluetooth/bsim/mesh conf_overlay=overlay_pst.conf compile &
 app=tests/bluetooth/bsim/mesh conf_overlay=overlay_gatt.conf compile &
+app=tests/bluetooth/bsim/mesh conf_file=prj_mesh1d1.conf compile &
+app=tests/bluetooth/bsim/mesh \
+  conf_file=prj_mesh1d1.conf conf_overlay=overlay_pst.conf compile &
+app=tests/bluetooth/bsim/mesh \
+  conf_file=prj_mesh1d1.conf conf_overlay=overlay_gatt.conf compile &
+app=tests/bluetooth/bsim/mesh \
+  conf_file=prj_mesh1d1.conf conf_overlay=overlay_low_lat.conf compile &
 
 wait

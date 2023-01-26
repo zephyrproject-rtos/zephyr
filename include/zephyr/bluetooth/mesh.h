@@ -25,6 +25,5 @@
 #include <zephyr/bluetooth/mesh/proxy.h>
 #include <zephyr/bluetooth/mesh/heartbeat.h>
 #include <zephyr/bluetooth/mesh/cdb.h>
-#include <zephyr/bluetooth/mesh/cfg.h>
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_ */

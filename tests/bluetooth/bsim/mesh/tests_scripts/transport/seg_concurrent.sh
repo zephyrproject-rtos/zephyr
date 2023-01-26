@@ -5,3 +5,6 @@
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 RunTest mesh_transport_seg_concurrent transport_tx_seg_concurrent transport_rx_seg_concurrent
+
+conf=prj_mesh1d1_conf
+RunTest mesh_transport_seg_concurrent transport_tx_seg_concurrent transport_rx_seg_concurrent
