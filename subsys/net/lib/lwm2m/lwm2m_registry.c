@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_obj_access_control.h"
 #include "lwm2m_util.h"
+#include "lwm2m_rd_client.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -33,9 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <time.h>
 
 #include <zephyr/types.h>
-
-#include <fcntl.h>
-#include "lwm2m_rd_client.h"
+#include <zephyr/posix/fcntl.h>
 
 #define BINDING_OPT_MAX_LEN 3 /* "UQ" */
 #define QUEUE_OPT_MAX_LEN   2 /* "Q" */
