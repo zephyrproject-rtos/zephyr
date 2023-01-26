@@ -166,13 +166,7 @@ ZTEST(arm_interrupt, test_arm_esf_collection)
 	expected_msp = __get_MSP();
 
 	run_esf_validation = 1;
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-	expected_reason = K_ERR_ARM_UNDEFINED_INSTRUCTION;
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	expected_reason = K_ERR_ARM_USAGE_UNDEFINED_INSTRUCTION;
-#else
 	expected_reason = K_ERR_CPU_EXCEPTION;
-#endif
 
 	/* Run test thread and main thread at same priority to guarantee the
 	 * crashy thread we create below runs to completion before we get
@@ -474,7 +468,7 @@ ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 
 	struct test_struct *test_struct_null_pointer = 0x0;
 
-	expected_reason = K_ERR_ARM_MEM_DATA_ACCESS;
+	expected_reason = K_ERR_CPU_EXCEPTION;
 
 	printk("Reading a null pointer value: 0x%0x\n",
 		test_struct_null_pointer->val[1]);
