@@ -392,7 +392,7 @@ def dump_header_file(header_file, code_generation):
     if code_generation["copy_code"]:
         code_string += DATA_COPY_FUNCTION.format(code_generation["copy_code"])
     else:
-        code_string += DATA_COPY_FUNCTION.format("void;")
+        code_string += DATA_COPY_FUNCTION.format("return;")
     if code_generation["zero_code"]:
         code_string += BSS_ZEROING_FUNCTION.format(code_generation["zero_code"])
     else:
