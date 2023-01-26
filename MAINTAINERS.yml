@@ -2159,7 +2159,7 @@ USB:
   maintainers:
     - jfischer-no
   collaborators:
-    - desowin
+    - tmon-nordic
   files:
     - drivers/usb/
     - dts/bindings/usb/
