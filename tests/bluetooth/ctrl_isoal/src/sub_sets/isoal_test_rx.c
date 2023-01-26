@@ -5604,7 +5604,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 				(testdata_size - testdata_indx),
 				&rx_pdu_meta_buf.pdu_meta);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[1] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[1] = seqn[0] + 1;
@@ -5846,7 +5846,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 				(testdata_size - testdata_indx),
 				&rx_pdu_meta_buf.pdu_meta);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[1] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[1] = seqn[0] + 1;
@@ -5858,7 +5858,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 				(testdata_size - testdata_indx),
 				sdu_timeoffset, &rx_pdu_meta_buf.pdu_meta);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[2] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[2] = seqn[1] + 1;
@@ -6153,7 +6153,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_padding)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn++;
@@ -6331,7 +6331,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err1)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn++;
@@ -6511,7 +6511,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err2)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn++;
@@ -6873,7 +6873,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_seq_err1)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	/* ISO-AL has no concept of time and is unable to detect than an SDU
@@ -6889,7 +6889,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_seq_err1)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn++;
@@ -7127,7 +7127,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err1)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn++;
@@ -7371,7 +7371,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err2)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn++;
@@ -7623,7 +7623,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn++;
@@ -7846,7 +7846,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_seq_err1)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn++;
@@ -8069,7 +8069,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_seq_err1)
 
 	payload_number++;
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn++;
@@ -8257,7 +8257,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 				(testdata_size - testdata_indx),
 				&rx_pdu_meta_buf.pdu_meta);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[1] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[1] = seqn[0] + 1;
@@ -8361,7 +8361,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 	payload_number++;
 	pdu_timestamp = 9249 + (iso_interval_int * CONN_INT_UNIT_US);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[0] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[0] = seqn[1] + 1;
@@ -8544,7 +8544,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err2)
 				(testdata_size - testdata_indx),
 				&rx_pdu_meta_buf.pdu_meta);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[1] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[1] = seqn[0];
@@ -8631,7 +8631,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err2)
 	payload_number++;
 	pdu_timestamp = 9249 + (iso_interval_int * CONN_INT_UNIT_US);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[0] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[0] = seqn[1] + 1;
@@ -8810,7 +8810,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 				(testdata_size - testdata_indx),
 				&rx_pdu_meta_buf.pdu_meta);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[1] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[1] = seqn[0] + 1;
@@ -8929,7 +8929,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 	payload_number++;
 	pdu_timestamp = 9249 + (iso_interval_int * CONN_INT_UNIT_US);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[0] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[0] = seqn[1] + 1;
@@ -9102,7 +9102,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seq_err1)
 	testdata_size += 10;
 	/* No change in SDU 1 size */
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[1] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	/* ISO-AL has no concept of time and is unable to detect than an SDU
@@ -9170,7 +9170,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seq_err1)
 	payload_number++;
 	pdu_timestamp = 9249 + (iso_interval_int * CONN_INT_UNIT_US);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[0] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[0] = seqn[1] + 1;
@@ -9344,7 +9344,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_seq_err1)
 	testdata_size += 10;
 	/* No change in SDU 1 size */
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[1] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	/* ISO-AL has no concept of time and is unable to detect than an SDU
@@ -9412,7 +9412,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_seq_err1)
 	payload_number++;
 	pdu_timestamp = 9249 + (iso_interval_int * CONN_INT_UNIT_US);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[0] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[0] = seqn[1] + 1;
@@ -9931,7 +9931,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err1)
 				(testdata_size - testdata_indx),
 				&rx_pdu_meta_buf.pdu_meta);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[1] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[1] = seqn[0] + 1;
@@ -10160,7 +10160,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err2)
 				(testdata_size - testdata_indx),
 				&rx_pdu_meta_buf.pdu_meta);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[1] = sdu_timestamp[0] + sdu_interval;
 	seqn[1] = seqn[0] + 1;
@@ -10276,7 +10276,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err2)
 	payload_number++;
 	pdu_timestamp = 9249 + (iso_interval_int * CONN_INT_UNIT_US);
 
-	sdu_timeoffset = sdu_timeoffset - sdu_interval > 0 ? sdu_timeoffset - sdu_interval :
+	sdu_timeoffset = sdu_timeoffset > sdu_interval ? sdu_timeoffset - sdu_interval :
 		sdu_timeoffset + (iso_interval_int * CONN_INT_UNIT_US) - sdu_interval;
 	sdu_timestamp[0] = (uint32_t)((int64_t)pdu_timestamp + latency - sdu_timeoffset);
 	seqn[0] = seqn[1] + 1;
