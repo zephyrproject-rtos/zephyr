@@ -150,8 +150,6 @@ config MODEM_GMS_ENABLE_SMS
 	  Enable SMS messages support such that they can be received.
 	  Currently only BG9X is supported.
 
-endif
-
 config MODEM_GSM_ENABLE_GNSS
 	bool "GNSS support for GSM PPP driver"
 	select MODEM_GNSS_PARSER
