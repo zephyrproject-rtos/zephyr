@@ -128,7 +128,7 @@ CA certificate and hostname can be set:
 
    char host[] = "google.com";
 
-   ret = setsockopt(sock, SOL_TLS, TLS_HOSTNAME, host, sizeof(host) - 1);
+   ret = setsockopt(sock, SOL_TLS, TLS_HOSTNAME, host, sizeof(host));
 
 Once configured, socket can be used just like a regular TCP socket.
 
