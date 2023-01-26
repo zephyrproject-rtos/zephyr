@@ -271,8 +271,8 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		}
 
 		/* Calculate SE_Length */
-		mpt_c = PDU_CIS_MAX_US(cis->lll.tx.max_pdu, tx ? 1 : 0, cis->lll.tx.phy);
-		mpt_p = PDU_CIS_MAX_US(cis->lll.rx.max_pdu, rx ? 1 : 0, cis->lll.rx.phy);
+		mpt_c = PDU_CIS_MAX_US(cis->lll.tx.max_pdu, tx, cis->lll.tx.phy);
+		mpt_p = PDU_CIS_MAX_US(cis->lll.rx.max_pdu, rx, cis->lll.rx.phy);
 
 		se[i].length = mpt_c + EVENT_IFS_US + mpt_p + EVENT_MSS_US;
 		max_se_length = MAX(max_se_length, se[i].length);
@@ -440,16 +440,11 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ll_cig_parameters_test_open(uint8_t cig_id,
-				    uint32_t c_interval,
-				    uint32_t p_interval,
-				    uint8_t  c_ft,
-				    uint8_t  p_ft,
-				    uint16_t iso_interval,
-				    uint8_t  sca,
-				    uint8_t  packing,
-				    uint8_t  framing,
-				    uint8_t  num_cis)
+uint8_t ll_cig_parameters_test_open(uint8_t cig_id, uint32_t c_interval,
+				    uint32_t p_interval, uint8_t c_ft,
+				    uint8_t p_ft, uint16_t iso_interval,
+				    uint8_t sca, uint8_t packing,
+				    uint8_t framing, uint8_t num_cis)
 {
 	memset(&ll_iso_setup, 0, sizeof(ll_iso_setup));
 
@@ -535,6 +530,7 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	if (!cis->lll.link_tx_free) {
 		cis->lll.link_tx_free = &cis->lll.link_tx;
 	}
+
 	memq_init(cis->lll.link_tx_free, &cis->lll.memq_tx.head, &cis->lll.memq_tx.tail);
 	cis->lll.link_tx_free = NULL;
 
@@ -745,12 +741,12 @@ static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 			   uint32_t sdu_interval, uint16_t max_sdu, uint8_t *bn,
 			   uint8_t *max_pdu)
 {
-	uint32_t ceil_f_x_max_sdu;
-	uint16_t max_pdu_bn1;
-	uint32_t max_drift;
-	uint32_t ceil_f;
-
 	if (framed) {
+		uint32_t ceil_f_x_max_sdu;
+		uint16_t max_pdu_bn1;
+		uint32_t max_drift;
+		uint32_t ceil_f;
+
 		/* Framed (From ES-18002):
 		 *   Max_PDU >= ((ceil(F) x 5 + ceil(F x Max_SDU)) / BN) + 2
 		 *   F = (1 + MaxDrift) x ISO_Interval / SDU_Interval
