@@ -89,9 +89,10 @@ const clock_frg_clk_config_t g_frg12Config_clock_init = {
 
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
+/* Main stack pointer */
+extern char z_main_stack[];
 
 #ifdef CONFIG_NXP_IMX_RT5XX_BOOT_HEADER
-extern char z_main_stack[];
 extern char _flash_used[];
 
 extern void z_arm_reset(void);
@@ -199,6 +200,21 @@ static void usb_device_clock_init(void)
 
 void z_arm_platform_init(void)
 {
+#ifndef CONFIG_NXP_IMX_RT5XX_BOOT_HEADER
+	/*
+	 * If boot did not proceed using a boot header, we should not assume
+	 * the core is in reset state. Disable the MPU and correctly
+	 * set the stack pointer, since we are about to push to
+	 * the stack when we call SystemInit
+	 */
+	 /* Clear stack limit registers */
+	 __set_MSPLIM(0);
+	 __set_PSPLIM(0);
+	/* Disable MPU */
+	 MPU->CTRL &= ~MPU_CTRL_ENABLE_Msk;
+	 /* Set stack pointer */
+	 __set_MSP((uint32_t)(z_main_stack + CONFIG_MAIN_STACK_SIZE));
+#endif /* !CONFIG_NXP_IMX_RT5XX_BOOT_HEADER */
 	/* This is provided by the SDK */
 	SystemInit();
 }
