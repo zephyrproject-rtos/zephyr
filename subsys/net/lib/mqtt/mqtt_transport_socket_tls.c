@@ -72,7 +72,7 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 	if (tls_config->hostname) {
 		ret = zsock_setsockopt(client->transport.tls.sock, SOL_TLS,
 				       TLS_HOSTNAME, tls_config->hostname,
-				       strlen(tls_config->hostname));
+				       strlen(tls_config->hostname) + 1);
 		if (ret < 0) {
 			goto error;
 		}
