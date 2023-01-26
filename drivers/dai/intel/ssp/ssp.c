@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define dai_base(dai) dai->plat_data.base
 #define dai_ip_base(dai) dai->plat_data.ip_base
 #define dai_shim_base(dai) dai->plat_data.shim_base
-#define dai_shim2_base(dai) dai->plat_data.shim2_base
+#define dai_hdamlssp_base(dai) dai->plat_data.hdamlssp_base
 
 #define DAI_DIR_PLAYBACK 0
 #define DAI_DIR_CAPTURE 1
@@ -725,11 +725,11 @@ static void dai_ssp_pm_runtime_en_ssp_power(struct dai_intel_ssp *dp, uint32_t i
 					      I2SLCTL_CPA(index), 0,
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
 #elif CONFIG_SOC_INTEL_ACE20_LNL
-	sys_write32(sys_read32(dai_shim2_base(dp) + I2SLCTL_OFFSET) |
+	sys_write32(sys_read32(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET) |
 			       I2SLCTL_SPA(index) | I2SLCTL_OFLEN,
-			       dai_shim2_base(dp) + I2SLCTL_OFFSET);
+			       dai_hdamlssp_base(dp) + I2SLCTL_OFFSET);
 	/* Check if powered on. */
-	ret = dai_ssp_poll_for_register_delay(dai_shim2_base(dp) + I2SLCTL_OFFSET,
+	ret = dai_ssp_poll_for_register_delay(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET,
 					      I2SLCTL_CPA(index), 0,
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
 #else
@@ -761,11 +761,11 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 					      I2SLCTL_CPA(index), I2SLCTL_CPA(index),
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
 #elif CONFIG_SOC_INTEL_ACE20_LNL
-	sys_write32(sys_read32(dai_shim2_base(dp) + I2SLCTL_OFFSET) & (~I2SLCTL_SPA(index)) &
-		    (~I2SLCTL_OFLEN), dai_shim2_base(dp) + I2SLCTL_OFFSET);
+	sys_write32(sys_read32(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET) & (~I2SLCTL_SPA(index)) &
+		    (~I2SLCTL_OFLEN), dai_hdamlssp_base(dp) + I2SLCTL_OFFSET);
 
 	/* Check if powered off. */
-	ret = dai_ssp_poll_for_register_delay(dai_shim2_base(dp) + I2SLCTL_OFFSET,
+	ret = dai_ssp_poll_for_register_delay(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET,
 					      I2SLCTL_CPA(index), I2SLCTL_CPA(index),
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
 #else
@@ -2238,10 +2238,10 @@ static const char irq_name_level5_z[] = "level5";
 		.plat_data = {							\
 			.base =	DT_INST_REG_ADDR_BY_IDX(n, 0),			\
 			IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(sspbase)),	\
-			(.ip_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(sspbase), 0),))	\
+			(.ip_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(sspbase), 0),))\
 			.shim_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(shim), 0),	\
-			IF_ENABLED(CONFIG_SOC_INTEL_ACE20_LNL,			\
-				(.shim2_base = DT_INST_PROP_BY_IDX(n, shim2, 0),))\
+			IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(hdamlssp)),	\
+				(.hdamlssp_base = DT_REG_ADDR(DT_NODELABEL(hdamlssp)),))\
 			.irq = n,						\
 			.irq_name = irq_name_level5_z,				\
 			.fifo[DAI_DIR_PLAYBACK].offset =			\

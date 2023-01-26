@@ -318,7 +318,7 @@ struct dai_intel_ssp_plat_data {
 	uint32_t ip_base;
 	uint32_t shim_base;
 #ifdef CONFIG_SOC_INTEL_ACE20_LNL
-	uint32_t shim2_base;
+	uint32_t hdamlssp_base;
 #endif
 	int irq;
 	const char *irq_name;
