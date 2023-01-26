@@ -394,6 +394,15 @@
 #define RADIO_TXPOWER_TXPOWER_Pos3dBm (0x03UL)
 #endif
 
+/* SoC specific NRF_RADIO power-on reset value. Refer to Product Specification,
+ * RADIO Registers section for the documented reset values.
+ *
+ * NOTE: Only implementation used values defined here.
+ *       In the future if MDK or nRFx header include these, use them instead.
+ */
+#define HAL_RADIO_RESET_VALUE_DFEMODE       0x00000000UL
+#define HAL_RADIO_RESET_VALUE_CTEINLINECONF 0x00002800UL
+
 static inline void hal_radio_tx_power_high_voltage_clear(void);
 
 static inline void hal_radio_reset(void)

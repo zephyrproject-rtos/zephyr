@@ -1,31 +1,22 @@
+common:
+  tags: fpu kernel userspace
 tests:
-  kernel.fpu_sharing.float_disable.arm:
-    arch_allow: arm
-    filter: CONFIG_ARMV7_M_ARMV8_M_FP or CONFIG_ARMV7_R_FP
+  kernel.fpu_sharing.float_disable:
+    arch_allow: arm sparc
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP or CONFIG_ARMV7_R_FP or CONFIG_CPU_HAS_FPU
     extra_configs:
-      - CONFIG_DYNAMIC_INTERRUPTS=y
-    tags: fpu kernel userspace
-  kernel.fpu_sharing.float_disable.riscv32:
-    filter: CONFIG_CPU_HAS_FPU
-    arch_allow: riscv32
-    tags: fpu kernel userspace
-  kernel.fpu_sharing.float_disable.riscv64:
-    filter: CONFIG_CPU_HAS_FPU
-    arch_allow: riscv64
-    tags: fpu kernel userspace
-  kernel.fpu_sharing.float_disable.sparc:
-    filter: CONFIG_CPU_HAS_FPU
-    arch_allow: sparc
-    tags: kernel userspace
+      - arch:arm:CONFIG_DYNAMIC_INTERRUPTS=y
   kernel.fpu_sharing.float_disable.x86.fpu:
     extra_args: CONF_FILE=prj_x86.conf
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=n
     platform_allow: qemu_x86 qemu_x86_lakemont ehl_crb acrn_ehl_crb
-    tags: fpu kernel userspace
+    integration_platforms:
+      - qemu_x86
   kernel.fpu_sharing.float_disable.x86.sse:
     extra_args: CONF_FILE=prj_x86.conf
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=y
     platform_allow: qemu_x86 qemu_x86_lakemont ehl_crb acrn_ehl_crb
-    tags: fpu kernel userspace
+    integration_platforms:
+      - qemu_x86

@@ -8,8 +8,5 @@ compatible: "ite,it8xxx2-pwmprs"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: false
+  reg:
+    required: true

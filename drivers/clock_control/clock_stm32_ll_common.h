@@ -61,6 +61,10 @@
 #define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
 #define pllr(v) z_pllr(v)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(STM32_PLL_ENABLED)
 void config_pll_sysclock(void);
 uint32_t get_pllout_frequency(void);
@@ -73,5 +77,9 @@ void config_enable_default_clocks(void);
 
 /* function exported to the soc power.c */
 int stm32_clock_control_init(const struct device *dev);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_STM32_LL_CLOCK_H_ */

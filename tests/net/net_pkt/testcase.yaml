@@ -11,5 +11,5 @@ tests:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
   net.packet.large_buffer:
     extra_configs:
-     - CONFIG_NET_BUF_FIXED_DATA_SIZE=y
-     - CONFIG_NET_BUF_DATA_SIZE=512
+      - CONFIG_NET_BUF_FIXED_DATA_SIZE=y
+      - CONFIG_NET_BUF_DATA_SIZE=512

@@ -46,6 +46,49 @@ config INCLUDE_RESET_VECTOR
 	  Include the reset vector stub, which initializes the stack and
 	  prepares for running C code.
 
+config RISCV_SOC_HAS_ISR_STACKING
+	bool
+	depends on !USERSPACE
+	help
+	  Enable low-level SOC-specific hardware stacking / unstacking
+	  operations during ISR. This hidden option needs to be selected by SoC
+	  if this feature is supported.
+
+	  Some SOCs implement a mechanism for which, on interrupt handling,
+	  part of the context is automatically saved by the hardware on the
+	  stack according to a custom ESF format. The same part of the context
+	  is automatically restored by hardware on mret.
+
+	  Enabling this option requires that the SoC provides a
+	  soc_isr_stacking.h header which defines the following:
+
+	  - SOC_ISR_SW_STACKING: macro guarded by _ASMLANGUAGE called by the
+	    IRQ wrapper assembly code on ISR entry to save in the ESF the
+	    remaining part of the context not pushed already on the stack by
+	    the hardware.
+
+	  - SOC_ISR_SW_UNSTACKING: macro guarded by _ASMLANGUAGE called by the
+	    IRQ wrapper assembly code on ISR exit to restore the part of the
+	    context from the ESF that won't be restored by hardware on mret.
+
+	  - SOC_ISR_STACKING_ESF_DECLARE: structure declaration for the ESF
+	    guarded by !_ASMLANGUAGE. The ESF should be defined to account for
+	    the hardware stacked registers in the proper order as they are
+	    saved on the stack by the hardware, and the registers saved by the
+	    software macros. The structure must be called '__esf'.
+
+config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	bool
+	help
+	  Hidden option to allow SoC to overwrite arch_irq_lock(),
+	  arch_irq_unlock() and arch_irq_unlocked() functions with
+	  platform-specific versions named z_soc_irq_lock(), z_soc_irq_unlock()
+	  and z_soc_irq_unlocked().
+
+	  Enable this hidden option and specialize the z_soc_* functions when
+	  the RISC-V SoC needs to do something different and more than reading and
+	  writing the mstatus register to lock and unlock the IRQs.
+
 config RISCV_SOC_CONTEXT_SAVE
 	bool "SOC-based context saving in IRQ handlers"
 	select RISCV_SOC_OFFSETS

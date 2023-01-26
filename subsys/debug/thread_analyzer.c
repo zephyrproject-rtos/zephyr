@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 
-#if IS_ENABLED(CONFIG_THREAD_ANALYZER_USE_PRINTK)
+#if defined(CONFIG_THREAD_ANALYZER_USE_PRINTK)
 #define THREAD_ANALYZER_PRINT(...) printk(__VA_ARGS__)
 #define THREAD_ANALYZER_FMT(str)   str "\n"
 #define THREAD_ANALYZER_VSTR(str)  (str)
@@ -169,7 +169,7 @@ void thread_analyzer_print(void)
 	thread_analyzer_run(thread_print_cb);
 }
 
-#if IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO)
+#if defined(CONFIG_THREAD_ANALYZER_AUTO)
 
 void thread_analyzer_auto(void)
 {

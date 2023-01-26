@@ -54,6 +54,97 @@ extern "C" {
 #define PD_MAX_EXTENDED_MSG_CHUNK_LEN    26
 
 /**
+ * @name USB PD 3.1 Rev 1.6, Table 6-70 Counter Parameters
+ * @{
+ */
+
+/**
+ * @brief The CapsCounter is used to count the number of Source_Capabilities
+ *	  Messages which have been sent by a Source at power up or after a
+ *	  Hard Reset.
+ *	  Parameter Name: nCapsCounter
+ */
+#define PD_N_CAPS_COUNT 50
+
+/**
+ * @brief The HardResetCounter is used to retry the Hard Reset whenever there
+ *	  is no response from the remote device (see Section 6.6.6)
+ *	  Parameter Name: nHardResetCounter
+ */
+#define PD_N_HARD_RESET_COUNT 2
+
+/** @} */
+
+/**
+ * @name USB PD 3.1 Rev 1.6, Table 6-68 Time Values
+ * @{
+ */
+
+/**
+ * @brief The NoResponseTimer is used by the Policy Engine in a Source to
+ *	  determine that its Port Partner is not responding after a Hard Reset.
+ *	  Parameter Name: tNoResponseTimer
+ */
+#define PD_T_NO_RESPONSE_MIN_MS 4500
+
+/**
+ * @brief The NoResponseTimer is used by the Policy Engine in a Source to
+ *	  determine that its Port Partner is not responding after a Hard Reset.
+ *	  Parameter Name: tNoResponseTimer
+ */
+#define PD_T_NO_RESPONSE_MAX_MS 5500
+
+/**
+ * @brief Min time the Source waits to ensure that the Sink has had
+ *	  sufficient time to process Hard Reset Signaling before
+ *	  turning off its power supply to VBUS
+ *	  Parameter Name: tPSHardReset
+ */
+#define PD_T_PS_HARD_RESET_MIN_MS 25
+
+/**
+ * @brief Max time the Source waits to ensure that the Sink has had
+ *	  sufficient time to process Hard Reset Signaling before
+ *	  turning off its power supply to VBUS
+ *	  Parameter Name: tPSHardReset
+ */
+#define PD_T_PS_HARD_RESET_MAX_MS 35
+
+/**
+ * @brief Minimum time a Source waits after changing Rp from SinkTxOk to SinkTxNG
+ *	  before initiating an AMS by sending a Message.
+ *	  Parameter Name: tSinkTx
+ */
+#define PD_T_SINK_TX_MIN_MS 16
+
+/**
+ * @brief Maximum time a Source waits after changing Rp from SinkTxOk to SinkTxNG
+ *	  before initiating an AMS by sending a Message.
+ *	  Parameter Name: tSinkTx
+ */
+#define PD_T_SINK_TX_MAX_MS 20
+
+/**
+ * @brief Minimum time a source shall wait before sending a
+ *	  Source_Capabilities message while the following is true:
+ *	  1) The Port is Attached.
+ *	  2) The Source is not in an active connection with a PD Sink Port.
+ *	  Parameter Name: tTypeCSendSourceCap
+ */
+#define PD_T_TYPEC_SEND_SOURCE_CAP_MIN_MS 100
+
+/**
+ * @brief Maxmimum time a source shall wait before sending a
+ *	  Source_Capabilities message while the following is true:
+ *	  1) The Port is Attached.
+ *	  2) The Source is not in an active connection with a PD Sink Port.
+ *	  Parameter Name: tTypeCSendSourceCap
+ */
+#define PD_T_TYPEC_SEND_SOURCE_CAP_MAX_MS 200
+
+/** @} */
+
+/**
  * @brief Minimum time a sink shall wait for a Source_Capabilities message
  *	  before sending a Hard Reset
  *	  See Table 6-61 Time Values

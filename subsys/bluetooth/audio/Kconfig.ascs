@@ -35,4 +35,13 @@ config BT_ASCS_ASE_SNK
 config BT_ASCS_ASE_SRC
 	def_bool BT_ASCS_ASE_SRC_COUNT > 0
 	select BT_PAC_SRC
+
+config BT_ASCS_MAX_ACTIVE_ASES
+	int "Number of simultaneously supported ASE sessions"
+	default BT_ISO_MAX_CHAN
+	range 1 65535
+	help
+	  The number of simultanesouly supported active ASEs, in particular
+	  meaning the number of ASEs that are allowed to be in a non-idle state at
+	  a single time.
 endif # BT_ASCS

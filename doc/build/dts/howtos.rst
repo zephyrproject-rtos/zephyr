@@ -232,8 +232,8 @@ to use. Here is an :ref:`example <west-building-dtc-overlay-file>` using
 ``using west build``.
 
 If you don't set :makevar:`DTC_OVERLAY_FILE`, the build system will follow
-these steps, looking for files in your application source directory to use
-as devicetree overlays:
+these steps, looking for files in your application configuration directory to
+use as devicetree overlays:
 
 #. If the file :file:`boards/<BOARD>.overlay` exists, it will be used.
 #. If the current board has :ref:`multiple revisions <porting_board_revisions>`
@@ -245,6 +245,13 @@ as devicetree overlays:
 #. Otherwise, if :file:`<BOARD>.overlay` exists, it will be used, and the build
    system will stop looking for more files.
 #. Otherwise, if :file:`app.overlay` exists, it will be used.
+
+All configuration files will be taken from the application's configuration
+directory except for files with an absolute path that are given with the
+``DTC_OVERLAY_FILE`` argument.
+
+See :ref:`Application Configuration Directory <application-configuration-directory>`
+on how the application configuration directory is defined.
 
 Using :ref:`shields` will also add devicetree overlay files.
 

@@ -53,10 +53,13 @@
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_iso
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
+
 #include "hal/debug.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_ctlr_ull_iso);
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
 #define BT_CTLR_CONN_ISO_STREAMS CONFIG_BT_CTLR_CONN_ISO_STREAMS
@@ -107,10 +110,11 @@ static void *datapath_free;
  * - mem_iso_rx:      Backing data pool for PDU buffer elements
  * - mem_link_iso_rx: Pool of memq_link_t elements
  *
+ * One extra rx buffer is reserved for empty ISO PDU reception.
  * Two extra links are reserved for use by the ll_iso_rx and ull_iso_rx memq.
  */
-static RXFIFO_DEFINE(iso_rx, NODE_RX_HEADER_SIZE + ISO_RX_BUFFER_SIZE,
-			     CONFIG_BT_CTLR_ISO_RX_BUFFERS, 2);
+static RXFIFO_DEFINE(iso_rx, ((NODE_RX_HEADER_SIZE) + (ISO_RX_BUFFER_SIZE)),
+			     (CONFIG_BT_CTLR_ISO_RX_BUFFERS + 1U), 2U);
 
 static MEMQ_DECLARE(ll_iso_rx);
 #if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
@@ -194,11 +198,13 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 }
 
 /* Must be implemented by vendor */
-__weak bool ll_data_path_sink_create(struct ll_iso_datapath *datapath,
+__weak bool ll_data_path_sink_create(uint16_t handle,
+				     struct ll_iso_datapath *datapath,
 				     isoal_sink_sdu_alloc_cb *sdu_alloc,
 				     isoal_sink_sdu_emit_cb *sdu_emit,
 				     isoal_sink_sdu_write_cb *sdu_write)
 {
+	ARG_UNUSED(handle);
 	ARG_UNUSED(datapath);
 
 	*sdu_alloc = NULL;
@@ -256,10 +262,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
-	isoal_source_handle_t source_handle;
-	uint8_t max_octets;
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
 	isoal_sink_handle_t sink_handle;
 	uint32_t stream_sync_delay;
 	uint32_t group_sync_delay;
@@ -272,11 +274,10 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	uint8_t role;
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
-	struct ll_iso_datapath *dp_in = NULL;
-	struct ll_iso_datapath *dp_out = NULL;
-
 	struct ll_conn_iso_stream *cis = NULL;
 	struct ll_conn_iso_group *cig = NULL;
+	isoal_source_handle_t source_handle;
+	uint8_t max_octets;
 
 	if (IS_CIS_HANDLE(handle)) {
 		struct ll_conn *conn;
@@ -307,8 +308,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		}
 
 		cig = cis->group;
-		dp_in = cis->hdr.datapath_in;
-		dp_out = cis->hdr.datapath_out;
 	}
 
 	/* If the Host attempts to set a data path with a Connection Handle
@@ -319,8 +318,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if ((path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR  && dp_in) ||
-	    (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST && dp_out)) {
+	if ((path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR && cis->hdr.datapath_in) ||
+	    (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST && cis->hdr.datapath_out)) {
 		/* Data path has been set up, can only do setup once */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -410,7 +409,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			isoal_sink_sdu_write_cb sdu_write;
 
 			/* Request vendor sink callbacks for path */
-			if (ll_data_path_sink_create(dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
+			if (ll_data_path_sink_create(handle, dp, &sdu_alloc, &sdu_emit,
+						     &sdu_write)) {
 				err = isoal_sink_create(handle, role, framed,
 							burst_number, flush_timeout,
 							sdu_interval, iso_interval,
@@ -510,7 +510,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		isoal_sink_sdu_write_cb sdu_write;
 
 		/* Request vendor sink callbacks for path */
-		if (ll_data_path_sink_create(dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
+		if (ll_data_path_sink_create(handle, dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
 			err = isoal_sink_create(handle, role, framed,
 						burst_number, flush_timeout,
 						sdu_interval, iso_interval,
@@ -739,7 +739,12 @@ static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink             *
 			break;
 		}
 
-		if (framed) {
+		/* In framed mode, we may start incrementing the SDU counter when rx_sdu_counter
+		 * becomes non zero (initial state), or in case of zero-based counting, if zero
+		 * is actually the first valid SDU counter received.
+		 */
+		if (framed && (cis->hdr.test_mode.rx_sdu_counter ||
+			       (sdu_frag->sdu.status == ISOAL_SDU_STATUS_VALID))) {
 			cis->hdr.test_mode.rx_sdu_counter++;
 		}
 
@@ -1538,6 +1543,11 @@ void ll_iso_rx_mem_release(void **node_rx)
 }
 #endif /* CONFIG_BT_CTLR_SYNC_ISO) || CONFIG_BT_CTLR_CONN_ISO */
 
+struct ll_iso_datapath *ull_iso_datapath_alloc(void)
+{
+	return mem_acquire(&datapath_free);
+}
+
 void ull_iso_datapath_release(struct ll_iso_datapath *dp)
 {
 	mem_release(dp, &datapath_free);
@@ -1562,7 +1572,7 @@ static isoal_status_t ll_iso_pdu_alloc(struct isoal_pdu_buffer *pdu_buffer)
 
 	node_tx = ll_iso_tx_mem_acquire();
 	if (!node_tx) {
-		BT_ERR("Tx Buffer Overflow");
+		LOG_ERR("Tx Buffer Overflow");
 		/* TODO: Report overflow to HCI and remove assert
 		 * data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO)
 		 */

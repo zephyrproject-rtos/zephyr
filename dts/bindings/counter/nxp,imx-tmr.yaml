@@ -58,7 +58,6 @@ properties:
 
   secondary_source:
     type: string
-    required: false
     description: Secondary source of the timer, see qtmr_input_source_t enumerator type
       of the MCUXpresso SDK
     enum:
@@ -69,15 +68,12 @@ properties:
 
   filter_count:
     type: int
-    required: false
     description: Fault filter count (0-255).
 
   filter_period:
     type: int
-    required: false
     description: Fault filter period (0-255).
 
   freq:
     type: int
-    required: false
     description: clock frequency (only used for external clock sources)

@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+# Copyright (c) 2021-2022 Arm Limited (or its affiliates). All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 set(armfvp_bin_path $ENV{ARMFVP_BIN_PATH})
@@ -39,7 +39,7 @@ elseif(CONFIG_ARMV8_A_NS)
     if ((NOT DEFINED ARMFVP_${filetype}_FILE) AND (EXISTS "$ENV{ARMFVP_${filetype}_FILE}"))
       set(ARMFVP_${filetype}_FILE "$ENV{ARMFVP_${filetype}_FILE}" CACHE FILEPATH
         "ARM FVP ${filetype} File specified in environment"
-	)
+        )
     endif()
 
     if(NOT EXISTS "${ARMFVP_${filetype}_FILE}")
@@ -60,10 +60,16 @@ else()
     )
 endif()
 
+# Use flags passed in from the environment
+set(env_fvp $ENV{ARMFVP_EXTRA_FLAGS})
+separate_arguments(env_fvp)
+list(APPEND ARMFVP_EXTRA_FLAGS ${env_fvp})
+
 add_custom_target(run_armfvp
   COMMAND
   ${ARMFVP}
   ${ARMFVP_FLAGS}
+  ${ARMFVP_EXTRA_FLAGS}
   DEPENDS ${logical_target_for_zephyr_elf}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
   COMMENT "${ARMFVP_BIN_NAME}: ${armfvp_version}"

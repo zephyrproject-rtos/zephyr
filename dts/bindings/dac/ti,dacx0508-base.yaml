@@ -4,80 +4,80 @@
 include: [dac-controller.yaml, spi-device.yaml]
 
 properties:
-    voltage-reference:
-      type: int
-      required: true
-      description: |
-        DAC voltage reference select
+  voltage-reference:
+    type: int
+    required: true
+    description: |
+      DAC voltage reference select
 
-        See constants in dt-bindings/dac/dacx0508.h.
+      See constants in dt-bindings/dac/dacx0508.h.
 
-    channel0-gain:
-      type: int
-      required: true
-      description: |
-        Channel 0 gain select
+  channel0-gain:
+    type: int
+    required: true
+    description: |
+      Channel 0 gain select
 
-        See constants in dt-bindings/dac/dacx0508.h.
+      See constants in dt-bindings/dac/dacx0508.h.
 
-    channel1-gain:
-      type: int
-      required: true
-      description: |
-        Channel 1 gain select
+  channel1-gain:
+    type: int
+    required: true
+    description: |
+      Channel 1 gain select
 
-        See constants in dt-bindings/dac/dacx0508.h.
+      See constants in dt-bindings/dac/dacx0508.h.
 
-    channel2-gain:
-      type: int
-      required: true
-      description: |
-        Channel 2 gain select
+  channel2-gain:
+    type: int
+    required: true
+    description: |
+      Channel 2 gain select
 
-        See constants in dt-bindings/dac/dacx0508.h.
+      See constants in dt-bindings/dac/dacx0508.h.
 
-    channel3-gain:
-      type: int
-      required: true
-      description: |
-        Channel 3 gain select
+  channel3-gain:
+    type: int
+    required: true
+    description: |
+      Channel 3 gain select
 
-        See constants in dt-bindings/dac/dacx0508.h.
+      See constants in dt-bindings/dac/dacx0508.h.
 
-    channel4-gain:
-      type: int
-      required: true
-      description: |
-        Channel 4 gain select
+  channel4-gain:
+    type: int
+    required: true
+    description: |
+      Channel 4 gain select
 
-        See constants in dt-bindings/dac/dacx0508.h.
+      See constants in dt-bindings/dac/dacx0508.h.
 
-    channel5-gain:
-      type: int
-      required: true
-      description: |
-        Channel 5 gain select
+  channel5-gain:
+    type: int
+    required: true
+    description: |
+      Channel 5 gain select
 
-        See constants in dt-bindings/dac/dacx0508.h.
+      See constants in dt-bindings/dac/dacx0508.h.
 
-    channel6-gain:
-      type: int
-      required: true
-      description: |
-        Channel 6 gain select
+  channel6-gain:
+    type: int
+    required: true
+    description: |
+      Channel 6 gain select
 
-        See constants in dt-bindings/dac/dacx0508.h.
+      See constants in dt-bindings/dac/dacx0508.h.
 
-    channel7-gain:
-      type: int
-      required: true
-      description: |
-        Channel 7 gain select
+  channel7-gain:
+    type: int
+    required: true
+    description: |
+      Channel 7 gain select
 
-        See constants in dt-bindings/dac/dacx0508.h.
+      See constants in dt-bindings/dac/dacx0508.h.
 
-    "#io-channel-cells":
-      const: 1
+  "#io-channel-cells":
+    const: 1
 
 io-channel-cells:
-    - output
+  - output

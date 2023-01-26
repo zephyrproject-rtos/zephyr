@@ -9,3 +9,5 @@ flash: 64
 ram: 20
 supported:
   - watchdog
+  - dma
+  - spi

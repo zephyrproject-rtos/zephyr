@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,18 +12,17 @@
 #ifndef LWM2M_SENML_CBOR_TYPES_H__
 #define LWM2M_SENML_CBOR_TYPES_H__
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 #include "zcbor_common.h"
-
 
 enum lwm2m_senml_cbor_key {
 	lwm2m_senml_cbor_key_bn = -2,
 	lwm2m_senml_cbor_key_bt = -3,
-	lwm2m_senml_cbor_key_n  = 0,
-	lwm2m_senml_cbor_key_t  = 6,
+	lwm2m_senml_cbor_key_n = 0,
+	lwm2m_senml_cbor_key_t = 6,
 	lwm2m_senml_cbor_key_vi = 2,
 	lwm2m_senml_cbor_key_vf = 2,
 	lwm2m_senml_cbor_key_vs = 3,
@@ -73,6 +72,9 @@ struct record_union_ {
 		struct {
 			struct zcbor_string _union_vd;
 		};
+		struct {
+			struct zcbor_string _union_vlo;
+		};
 	};
 	enum {
 		_union_vi,
@@ -80,6 +82,7 @@ struct record_union_ {
 		_union_vs,
 		_union_vb,
 		_union_vd,
+		_union_vlo,
 	} _record_union_choice;
 };
 

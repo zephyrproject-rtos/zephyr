@@ -1,11 +1,12 @@
 # Copyright Runtime.io 2018. All rights reserved.
-# Copyright Nordic Semiconductor ASA 2020. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MCUMGR
 	bool "mcumgr Support"
 	select NET_BUF
 	select ZCBOR
+	select CRC
 	help
 	  This option enables the mcumgr management library.
 
@@ -15,95 +16,25 @@ module = MCUMGR
 module-str = mcumgr
 source "subsys/logging/Kconfig.template.log_config"
 
-config MCUMGR_SMP_WORKQUEUE_STACK_SIZE
-	int "MCUMGR SMP workqueue stack size"
-	default 2048
+rsource "mgmt/Kconfig"
+
+rsource "smp/Kconfig"
+
+config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
+	bool "Legacy rc (result code) response behaviour"
 	help
-	  Stack size of the MCUMGR SMP work queue.
+	  This will enable legacy result code response behaviour of having rc
+	  present in responses when the status is 0. With this option disabled,
+	  mcumgr acts with new behaviour and will only return rc is the result
+	  code is non-zero (i.e. an error occurred).
 
-config MCUMGR_SMP_WORKQUEUE_THREAD_PRIO
-	int "MCUMGR SMP workqueue thread priority"
-	default 3
-	help
-	  Scheduling priority of the MCUMGR SMP work queue.
-
-config APP_LINK_WITH_MCUMGR
-	bool "Link 'app' with MCUMGR"
-	default y
-	help
-	  Add MCUMGR header files to the 'app' include path. It may be
-	  disabled if the include paths for MCUMGR are causing aliasing
-	  issues for 'app'.
-
-rsource "lib/mgmt/Kconfig"
-
-config MGMT_MAX_MAIN_MAP_ENTRIES
-	int "Number of predicted maximum entries to main response map"
-	default 15
-	help
-	  This is number of predicted entries in main response map,
-	  the one that encapsulates everything within response.
-	  This value is used by zcbor to predict needed map encoding,
-	  and does not affect memory allocation or usage.
-	  Builtin command processors rarely add large amounts of
-	  data directly to main map, creating sub-maps instead so
-	  the default value works fine with them.
-	  If your app directly adds fields to main map, without
-	  encapsulating them, you may want to increase this value
-	  in case when encoding starts to fail.
-
-config MGMT_MIN_DECODING_LEVELS
-	int
-	help
-	  Minimal decoding levels, map/list encapsulation, required
-	  to be supported by zcbor decoding of SMP responses
-	  is auto genereated from MGMT_MIN_DECODING_LEVEL_? options.
-	  A group or command that adds additional maps/lists above the
-	  base map, which is already taken into account, should
-	  select one of the MGMT_MIN_DECODING_LEVEL_?.
-	default 5 if MGMT_MIN_DECODING_LEVEL_5
-	default 4 if MGMT_MIN_DECODING_LEVEL_4
-	default 3 if MGMT_MIN_DECODING_LEVEL_3
-	default 2 if MGMT_MIN_DECODING_LEVEL_2
-	default 1 if MGMT_MIN_DECODING_LEVEL_1
-	default 0
-
-
-config MGMT_MIN_DECODING_LEVEL_1
-	bool
-
-config MGMT_MIN_DECODING_LEVEL_2
-	bool
-
-config MGMT_MIN_DECODING_LEVEL_3
-	bool
-
-config MGMT_MIN_DECODING_LEVEL_4
-	bool
-
-config MGMT_MIN_DECODING_LEVEL_5
-	bool
-
-config MGMT_MAX_DECODING_LEVELS
-	int "Number of map/list encapsulations allowed by SMP encoding"
-	range MGMT_MIN_DECODING_LEVELS 15
-	default MGMT_MIN_DECODING_LEVELS
-	help
-	  This is a maximum number of levels of maps/lists that will
-	  be expected to be decoded within different command groups.
-	  SMP commands/groups that provide no CBOR encoded payload
-	  have no requirements.
-	  Commands that provide CBOR payload require at least 1 level,
-	  and additional levels for each map/list encapsulation.
-	  For example if command accepts payload of map of parameters
-	  it will need 2 levels.
-	  This number translates to zcbor backup states, it increases
-	  size of cbor_nb_reader structure by zcbor_state_t size per
-	  one unit selected here.
+	  If a command only returns a result code, this will mean that the
+	  response will be empty with the new behaviour enabled, as opposed to
+	  the old behaviour where the rc field will be present in the response.
 
 menu "Command Handlers"
 
-rsource "lib/cmd/Kconfig"
+rsource "grp/Kconfig"
 
 endmenu
 
@@ -112,9 +43,5 @@ menu "Transports and Transport Related Configuration Options"
 rsource "transport/Kconfig"
 
 endmenu
-
-module = MCUMGR_SMP
-module-str = mcumgr_smp
-source "subsys/logging/Kconfig.template.log_config"
 
 endif # MCUMGR

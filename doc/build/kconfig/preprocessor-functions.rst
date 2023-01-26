@@ -51,13 +51,17 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_chosen_enabled,<property in /chosen>)
    $(dt_node_bool_prop,<node path>,<prop>)
    $(dt_nodelabel_bool_prop,<node label>,<prop>)
+   $(dt_chosen_bool_prop, <property in /chosen>, <prop>)
    $(dt_node_has_prop,<node path>,<prop>)
    $(dt_nodelabel_has_prop,<node label>,<prop>)
    $(dt_node_int_prop_int,<node path>,<prop>[,<unit>])
    $(dt_node_int_prop_hex,<node path>,<prop>[,<unit>])
    $(dt_node_str_prop_equals,<node path>,<prop>,<value>)
    $(dt_nodelabel_has_compat,<node label>,<compatible string>)
+   $(dt_node_has_compat,<node path>,<compatible string>)
    $(dt_nodelabel_path,<node label>)
+   $(dt_node_parent,<node path>)
+   $(dt_nodelabel_array_prop_has_val, <node label>, <prop>, <value>)
    $(shields_list_contains,<shield name>)
 
 

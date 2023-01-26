@@ -65,9 +65,6 @@
 #include "ull_llcp.h"
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_central
-#include "common/log.h"
 #include "hal/debug.h"
 
 static void ticker_op_stop_scan_cb(uint32_t status, void *param);
@@ -287,8 +284,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->connect_expire = CONN_ESTAB_COUNTDOWN;
 	conn->supervision_expire = 0U;
 	conn_interval_us = (uint32_t)interval * CONN_INT_UNIT_US;
-	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U,
-							 conn_interval_us);
+	conn->supervision_timeout = timeout;
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	conn->procedure_expire = 0U;
@@ -318,6 +314,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
 	conn->llcp_rx = NULL;
 	conn->llcp_cu.req = conn->llcp_cu.ack = 0;
+	conn->llcp_cu.pause_tx = 0U;
 	conn->llcp_feature.req = conn->llcp_feature.ack = 0;
 	conn->llcp_feature.features_conn = ll_feat_get();
 	conn->llcp_feature.features_peer = 0;
@@ -346,6 +343,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	conn->llcp_conn_param.req = 0U;
 	conn->llcp_conn_param.ack = 0U;
+	conn->llcp_conn_param.cache.timeout = 0U;
 	conn->llcp_conn_param.disabled = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
@@ -956,8 +954,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		}
 	}
 
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);

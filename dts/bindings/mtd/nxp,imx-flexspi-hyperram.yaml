@@ -1,8 +1,0 @@
-# Copyright 2021 Basalte bv
-# SPDX-License-Identifier: Apache-2.0
-
-description: NXP FlexSPI HyperRAM
-
-compatible: "nxp,imx-flexspi-hyperram"
-
-include: nxp,imx-flexspi-device.yaml

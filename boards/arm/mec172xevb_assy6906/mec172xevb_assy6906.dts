@@ -66,6 +66,7 @@
 &cpu0 {
 	clock-frequency = <96000000>;
 	status = "okay";
+	cpu-power-states = <&idle &suspend_to_ram>;
 };
 
 /* Initialize ECIA. Does not initialize child devices */

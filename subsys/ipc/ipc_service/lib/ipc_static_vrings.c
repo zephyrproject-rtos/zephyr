@@ -39,8 +39,7 @@ static void virtio_set_status(struct virtio_device *p_vdev, unsigned char status
 	vr = CONTAINER_OF(p_vdev, struct ipc_static_vrings, vdev);
 
 	sys_write8(status, vr->status_reg_addr);
-	sys_cache_data_range((void *) vr->status_reg_addr,
-			     sizeof(status), K_CACHE_WB);
+	sys_cache_data_flush_range((void *) vr->status_reg_addr, sizeof(status));
 }
 
 static uint32_t virtio_get_features(struct virtio_device *vdev)
@@ -58,8 +57,7 @@ static unsigned char virtio_get_status(struct virtio_device *p_vdev)
 	ret = VIRTIO_CONFIG_STATUS_DRIVER_OK;
 
 	if (p_vdev->role == VIRTIO_DEV_DEVICE) {
-		sys_cache_data_range((void *) vr->status_reg_addr,
-				     sizeof(ret), K_CACHE_INVD);
+		sys_cache_data_invd_range((void *) vr->status_reg_addr, sizeof(ret));
 		ret = sys_read8(vr->status_reg_addr);
 	}
 

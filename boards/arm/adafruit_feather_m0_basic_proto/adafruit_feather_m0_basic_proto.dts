@@ -7,7 +7,6 @@
 /dts-v1/;
 #include <atmel/samd21.dtsi>
 #include "adafruit_feather_m0_basic_proto-pinctrl.dtsi"
-
 #include "feather_connector.dtsi"
 
 / {
@@ -83,13 +82,13 @@
 
 		boot_partition: partition@0 {
 			label = "sam-ba";
-			reg = <0x00000000 0x2000>;
+			reg = <0x00000000 DT_SIZE_K(8)>;
 			read-only;
 		};
 
 		code_partition: partition@2000 {
 			label = "code";
-			reg = <0x2000 0x3A000>;
+			reg = <0x2000 DT_SIZE_K(232)>;
 			read-only;
 		};
 
@@ -100,7 +99,7 @@
 		 */
 		storage_partition: partition@3c000 {
 			label = "storage";
-			reg = <0x0003c000 0x00004000>;
+			reg = <0x0003c000 DT_SIZE_K(16)>;
 		};
 	};
 };

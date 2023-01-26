@@ -5,7 +5,7 @@ common:
   platform_allow: twr_ke18f mimxrt1170_evk_cm7 mimxrt1170_evk_cm4
   integration_platforms:
     - twr_ke18f
-  tags: drivers
+  tags: drivers sensor
 tests:
   sample.sensor.mcux_acmp:
     harness: console

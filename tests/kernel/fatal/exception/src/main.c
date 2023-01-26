@@ -45,6 +45,7 @@ static struct k_thread alt_thread;
 volatile int rv;
 
 static ZTEST_DMEM volatile int expected_reason = -1;
+static ZTEST_DMEM volatile int alternate_reason = -1;
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
@@ -60,18 +61,34 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		k_fatal_halt(reason);
 	}
 
-	if (reason != expected_reason) {
-		printk("Wrong crash type got %d expected %d\n", reason,
-		       expected_reason);
+	if ((reason != expected_reason) && (reason != alternate_reason)) {
+		if (alternate_reason != -1) {
+			printk("Wrong crash type got %d expected %d or %d\n", reason,
+				expected_reason, alternate_reason);
+		} else {
+			printk("Wrong crash type got %d expected %d\n", reason,
+				expected_reason);
+		}
 		k_fatal_halt(reason);
 	}
 
 	expected_reason = -1;
+	alternate_reason = -1;
 }
 
 void entry_cpu_exception(void *p1, void *p2, void *p3)
 {
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+	expected_reason = K_ERR_ARM_UNDEFINED_INSTRUCTION;
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	/* The generated exception depends on whether address 0 is valid and it is executed.
+	 * It is not feasible to generically check that here, so accept either faulting reason.
+	 */
+	expected_reason = K_ERR_ARM_USAGE_ILLEGAL_EPSR;
+	alternate_reason = K_ERR_ARM_MEM_INSTRUCTION_ACCESS;
+#else
 	expected_reason = K_ERR_CPU_EXCEPTION;
+#endif
 
 #if defined(CONFIG_X86)
 	__asm__ volatile ("ud2");
@@ -96,7 +113,11 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 
 void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 {
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+	expected_reason = K_ERR_ARM_DEBUG_EVENT;
+#else
 	expected_reason = K_ERR_CPU_EXCEPTION;
+#endif
 
 #if defined(CONFIG_ARM64)
 	__asm__ volatile ("svc 0");

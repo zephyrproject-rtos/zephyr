@@ -62,6 +62,10 @@
 	};
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_hsi {
 	status = "okay";
 };
@@ -154,6 +158,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

@@ -543,7 +543,7 @@ ZTEST(spi_loopback, test_spi_loopback)
 					  &async_evt, &caller, NULL,
 					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
-	zassert_true(spi_is_ready(&spi_slow), "Slow spi lookback device is not ready");
+	zassert_true(spi_is_ready_dt(&spi_slow), "Slow spi lookback device is not ready");
 
 	LOG_INF("SPI test slow config");
 
@@ -560,7 +560,7 @@ ZTEST(spi_loopback, test_spi_loopback)
 		goto end;
 	}
 
-	zassert_true(spi_is_ready(&spi_fast), "Fast spi lookback device is not ready");
+	zassert_true(spi_is_ready_dt(&spi_fast), "Fast spi lookback device is not ready");
 
 	LOG_INF("SPI test fast config");
 

@@ -1,6 +1,6 @@
 common:
   build_only: true
-  tags: drivers
+  tags: drivers gpio
 tests:
   drivers.gpio.build:
     min_ram: 32

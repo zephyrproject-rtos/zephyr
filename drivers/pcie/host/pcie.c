@@ -9,6 +9,8 @@
 LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/check.h>
 #include <stdbool.h>
 #include <zephyr/drivers/pcie/pcie.h>
 
@@ -28,7 +30,7 @@ bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id)
 
 	data = pcie_conf_read(bdf, PCIE_CONF_ID);
 
-	if (data == PCIE_ID_NONE) {
+	if (!PCIE_ID_IS_VALID(data)) {
 		return false;
 	}
 
@@ -344,27 +346,198 @@ void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 	irq_enable(irq);
 }
 
+struct lookup_data {
+	pcie_bdf_t bdf;
+	pcie_id_t id;
+};
+
+static bool lookup_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
+{
+	struct lookup_data *data = cb_data;
+
+	if (id == data->id) {
+		data->bdf = bdf;
+		return false;
+	}
+
+	return true;
+}
+
 pcie_bdf_t pcie_bdf_lookup(pcie_id_t id)
 {
-	int bus, dev, func;
+	struct lookup_data data = {
+		.bdf = PCIE_BDF_NONE,
+		.id = id,
+	};
+	struct pcie_scan_opt opt = {
+		.cb = lookup_cb,
+		.cb_data = &data,
+		.flags = (PCIE_SCAN_RECURSIVE | PCIE_SCAN_CB_ALL),
+	};
 
-	for (bus = 0; bus <= PCIE_MAX_BUS; bus++) {
-		for (dev = 0; dev <= PCIE_MAX_DEV; dev++) {
-			for (func = 0; func <= PCIE_MAX_FUNC; func++) {
-				pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
-				uint32_t data;
+	pcie_scan(&opt);
 
-				data = pcie_conf_read(bdf, PCIE_CONF_ID);
-				if (data == PCIE_ID_NONE) {
-					continue;
-				}
+	return data.bdf;
+}
 
-				if (data == id) {
-					return bdf;
-				}
+static bool scan_flag(const struct pcie_scan_opt *opt, uint32_t flag)
+{
+	return ((opt->flags & flag) != 0U);
+}
+
+/* Forward declaration needed since scanning a device may reveal a bridge */
+static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt);
+
+static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
+{
+	for (uint8_t func = 0; func <= PCIE_MAX_FUNC; func++) {
+		pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
+		uint32_t secondary = 0;
+		uint32_t id, type;
+		bool do_cb;
+
+		id = pcie_conf_read(bdf, PCIE_CONF_ID);
+		if (!PCIE_ID_IS_VALID(id)) {
+			continue;
+		}
+
+		type = pcie_conf_read(bdf, PCIE_CONF_TYPE);
+		switch (PCIE_CONF_TYPE_GET(type)) {
+		case PCIE_CONF_TYPE_STANDARD:
+			do_cb = true;
+			break;
+		case PCIE_CONF_TYPE_PCI_BRIDGE:
+			if (scan_flag(opt, PCIE_SCAN_RECURSIVE)) {
+				uint32_t num = pcie_conf_read(bdf,
+							      PCIE_BUS_NUMBER);
+				secondary = PCIE_BUS_SECONDARY_NUMBER(num);
 			}
+			__fallthrough;
+		default:
+			do_cb = scan_flag(opt, PCIE_SCAN_CB_ALL);
+			break;
+		}
+
+		if (do_cb && !opt->cb(bdf, id, opt->cb_data)) {
+			return false;
+		}
+
+		if (scan_flag(opt, PCIE_SCAN_RECURSIVE) && secondary != 0) {
+			if (!scan_bus(secondary, opt)) {
+				return false;
+			}
+		}
+
+		/* Only function 0 is valid for non-multifunction devices */
+		if (func == 0 && !PCIE_CONF_MULTIFUNCTION(type)) {
+			break;
 		}
 	}
 
-	return PCIE_BDF_NONE;
+	return true;
 }
+
+static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt)
+{
+	for (uint8_t dev = 0; dev <= PCIE_MAX_DEV; dev++) {
+		if (!scan_dev(bus, dev, opt)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+int pcie_scan(const struct pcie_scan_opt *opt)
+{
+	uint32_t type;
+	bool multi;
+
+	CHECKIF(opt->cb == NULL) {
+		return -EINVAL;
+	}
+
+	type = pcie_conf_read(PCIE_HOST_CONTROLLER(0), PCIE_CONF_TYPE);
+	multi = PCIE_CONF_MULTIFUNCTION(type);
+	if (opt->bus == 0 && scan_flag(opt, PCIE_SCAN_RECURSIVE) && multi) {
+		/* Each function on the host controller represents a portential bus */
+		for (uint8_t bus = 0; bus <= PCIE_MAX_FUNC; bus++) {
+			pcie_bdf_t bdf = PCIE_HOST_CONTROLLER(bus);
+
+			if (pcie_conf_read(bdf, PCIE_CONF_ID) == PCIE_ID_NONE) {
+				continue;
+			}
+
+			if (!scan_bus(bus, opt)) {
+				break;
+			}
+		}
+	} else {
+		/* Single PCI host controller */
+		scan_bus(opt->bus, opt);
+	}
+
+	return 0;
+}
+
+struct scan_data {
+	size_t found;
+	size_t max_dev;
+};
+
+static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
+{
+	struct scan_data *data = cb_data;
+
+	STRUCT_SECTION_FOREACH(pcie_dev, dev) {
+		if (dev->bdf != PCIE_BDF_NONE) {
+			continue;
+		}
+
+		if (dev->id == id) {
+			dev->bdf = bdf;
+			data->found++;
+			break;
+		}
+	}
+
+	/* Continue if we've not yet found all devices */
+	return (data->found != data->max_dev);
+}
+
+static int pcie_init(const struct device *dev)
+{
+	struct scan_data data;
+	struct pcie_scan_opt opt = {
+		.cb = pcie_dev_cb,
+		.cb_data = &data,
+		.flags = PCIE_SCAN_RECURSIVE,
+	};
+
+	ARG_UNUSED(dev);
+
+	STRUCT_SECTION_COUNT(pcie_dev, &data.max_dev);
+	/* Don't bother calling pcie_scan() if there are no devices to look for */
+	if (data.max_dev == 0) {
+		return 0;
+	}
+
+	data.found = 0;
+
+	pcie_scan(&opt);
+
+	return 0;
+}
+
+
+/*
+ * If a pcie controller is employed, pcie_scan() depends on it for working.
+ * Thus, pcie must be bumped to the next level
+ */
+#ifdef CONFIG_PCIE_CONTROLLER
+#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_2
+#else
+#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_1
+#endif
+
+SYS_INIT(pcie_init, PCIE_SYS_INIT_LEVEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

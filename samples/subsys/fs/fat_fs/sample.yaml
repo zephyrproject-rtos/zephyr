@@ -19,4 +19,4 @@ tests:
     tags: shield
     harness: console
     harness_config:
-        fixture: fixture_shield_adafruit_2_8_tft_touch_v2
+      fixture: fixture_shield_adafruit_2_8_tft_touch_v2

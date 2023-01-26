@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUMGR_GRP_ZBASIC
+	bool "Zephyr specific basic group of commands"
+	help
+	  Enables mcumgr to processing of Zephyr specific groups.
+
+if MCUMGR_GRP_ZBASIC
+
+config MCUMGR_GRP_ZBASIC_STORAGE_ERASE
+	bool "Storage erase command"
+	help
+	  Enables command that allows to erase storage partition.
+
+module = MCUMGR_GRP_ZBASIC
+module-str = mcumgr_grp_zbasic
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

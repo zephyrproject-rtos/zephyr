@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+
+	zephyr_uhc0: max3421e@0 {
+		compatible = "maxim,max3421e_spi";
+		spi-max-frequency = <26000000>;
+		int-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		reset-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;	/* D7 */
+		status = "okay";
+		reg = <0>;
+	};
+};

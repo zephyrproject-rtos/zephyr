@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
@@ -35,9 +36,6 @@
 
 #include "ll_feat.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_lll_adv_iso
-#include "common/log.h"
 #include "hal/debug.h"
 
 #define TEST_WITH_DUMMY_PDU 0
@@ -54,6 +52,8 @@ static void isr_tx_normal(void *param);
 static void isr_tx_common(void *param,
 			  radio_isr_cb_t isr_tx,
 			  radio_isr_cb_t isr_done);
+static void next_chan_calc(struct lll_adv_iso *lll, uint16_t event_counter,
+			   uint16_t data_chan_id);
 static void isr_done_create(void *param);
 static void isr_done_term(void *param);
 
@@ -231,7 +231,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(lll->tx_pwr_lvl);
+	radio_tx_power_set(lll->adv->tx_pwr_lvl);
 #else
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif
@@ -402,6 +402,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		LL_ASSERT(!ret);
 	}
 
+	/* Calculate ahead the next subevent channel index */
+	next_chan_calc(lll, event_counter, data_chan_id);
+
 	return 0;
 }
 
@@ -505,6 +508,7 @@ static void isr_tx_common(void *param,
 		/* control subevent to use bis = 0 and se_n = 1 */
 		bis = 0U;
 		data_chan_use = lll->ctrl_chan_use;
+
 	} else {
 		struct lll_adv_iso_stream *stream;
 		uint16_t stream_handle;
@@ -600,6 +604,8 @@ static void isr_tx_common(void *param,
 		} else {
 			pdu = (void *)tx->pdu;
 		}
+		pdu->cssn = lll->cssn;
+		pdu->cstf = 0U;
 
 #else /* TEST_WITH_DUMMY_PDU */
 		pdu = radio_pkt_scratch_get();
@@ -618,14 +624,7 @@ static void isr_tx_common(void *param,
 		pdu->payload[3] = lll->bis_curr;
 #endif /* TEST_WITH_DUMMY_PDU */
 
-		/* Calculate the radio channel to use for ISO event */
-		data_chan_use =
-			lll_chan_iso_subevent(data_chan_id,
-					      lll->data_chan_map,
-					      lll->data_chan_count,
-					      &lll->data_chan_prn_s,
-					      &lll->data_chan_remap_idx);
-
+		data_chan_use = lll->next_chan_use;
 	}
 	pdu->rfu = 0U;
 
@@ -655,6 +654,42 @@ static void isr_tx_common(void *param,
 
 	/* assert if radio packet ptr is not set and radio started rx */
 	LL_ASSERT(!radio_is_ready());
+
+	/* Calculate ahead the next subevent channel index */
+	const uint16_t event_counter = (lll->payload_count / lll->bn) - 1U;
+
+	next_chan_calc(lll, event_counter, data_chan_id);
+}
+
+static void next_chan_calc(struct lll_adv_iso *lll, uint16_t event_counter,
+			   uint16_t data_chan_id)
+{
+	/* Calculate ahead the next subevent channel index */
+	if ((lll->bn_curr < lll->bn) ||
+	    (lll->irc_curr < lll->irc) ||
+	    (lll->ptc_curr < lll->ptc)) {
+		/* Calculate the radio channel to use for next subevent */
+		lll->next_chan_use = lll_chan_iso_subevent(data_chan_id,
+						lll->data_chan_map,
+						lll->data_chan_count,
+						&lll->data_chan_prn_s,
+						&lll->data_chan_remap_idx);
+	} else if (lll->bis_curr < lll->num_bis) {
+		uint8_t access_addr[4];
+
+		/* Calculate the Access Address for the next BIS subevent */
+		util_bis_aa_le32((lll->bis_curr + 1U), lll->seed_access_addr,
+				 access_addr);
+		data_chan_id = lll_chan_id(access_addr);
+
+		/* Calculate the radio channel to use for next BIS */
+		lll->next_chan_use = lll_chan_iso_event(event_counter,
+						data_chan_id,
+						lll->data_chan_map,
+						lll->data_chan_count,
+						&lll->data_chan_prn_s,
+						&lll->data_chan_remap_idx);
+	}
 }
 
 static void isr_done_create(void *param)
@@ -716,8 +751,7 @@ static void isr_done_term(void *param)
 				rx->type = NODE_RX_TYPE_BIG_CHM_COMPLETE;
 				rx->rx_ftr.param = lll;
 
-				ull_rx_put(rx->link, rx);
-				ull_rx_sched();
+				ull_rx_put_sched(rx->link, rx);
 			}
 
 			/* Use new channel map */

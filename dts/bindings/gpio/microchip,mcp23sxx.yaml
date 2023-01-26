@@ -13,16 +13,16 @@ compatible: "microchip,mcp23sxx"
 include: [gpio-controller.yaml, spi-device.yaml]
 
 properties:
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
-    ngpios:
-      type: int
-      required: true
-      enum:
-        - 8
-        - 16
-      description: Number of gpios supported
+  ngpios:
+    type: int
+    required: true
+    enum:
+      - 8
+      - 16
+    description: Number of gpios supported
 
 gpio-cells:
   - pin

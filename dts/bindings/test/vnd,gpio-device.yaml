@@ -12,15 +12,14 @@ include:
       - label
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    label:
-        type: string
-        required: false
+  label:
+    type: string
 
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
 gpio-cells:
   - pin

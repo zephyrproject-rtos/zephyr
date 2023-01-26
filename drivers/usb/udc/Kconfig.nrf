@@ -1,0 +1,28 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_NRF
+	bool "Nordic Semiconductor USB device controller driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_USBD_ENABLED
+	select NRFX_USBD
+	select NRFX_POWER
+	help
+	  nRF USB device controller driver.
+
+if UDC_NRF
+
+config UDC_NRF_THREAD_STACK_SIZE
+	int "nRF UDC driver internal thread stack size"
+	default 512
+	help
+	  Size of the stack used in the driver for nRF USBD ISR event handling.
+
+config UDC_NRF_MAX_QMESSAGES
+	int "nRF UDC driver maximum number of ISR event messages"
+	range 4 64
+	default 8
+	help
+	  Maximum number of messages for handling of nRF USBD ISR events.
+
+endif # UDC_NRF

@@ -396,6 +396,20 @@ struct i2c_target_config {
 	const struct i2c_target_callbacks *callbacks;
 };
 
+/**
+ * @brief Validate that I2C bus is ready.
+ *
+ * @param spec I2C specification from devicetree
+ *
+ * @retval true if the I2C bus is ready for use.
+ * @retval false if the I2C bus is not ready for use.
+ */
+static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	return device_is_ready(spec->bus);
+}
+
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
 
 #include <zephyr/stats/stats.h>
@@ -688,6 +702,103 @@ static inline int i2c_transfer_cb(const struct device *dev,
 	}
 
 	return api->transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
+}
+
+/**
+ * @brief Perform data transfer to another I2C device in master mode asynchronously.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_transfer_cb(spec->bus, msgs, num_msgs, spec->addr, cb, userdata);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @return a value from i2c_transfer_cb()
+ */
+static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
+				struct i2c_msg *msgs,
+				uint8_t num_msgs,
+				i2c_callback_t cb,
+				void *userdata)
+{
+	return i2c_transfer_cb(spec->bus, msgs, num_msgs, spec->addr, cb, userdata);
+}
+
+/**
+ * @brief Write then read data from an I2C device asynchronously.
+ *
+ * This supports the common operation "this is what I want", "now give
+ * it to me" transaction pair through a combined write-then-read bus
+ * transaction but using i2c_transfer_cb. This helper function expects
+ * caller to pass a message pointer with 2 and only 2 size.
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ * driver configured in master mode.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param addr Address of the I2C device
+ * @param write_buf Pointer to the data to be written
+ * @param num_write Number of bytes to write
+ * @param read_buf Pointer to storage for read data
+ * @param num_read Number of bytes to read
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @retval 0 if successful
+ * @retval negative on error.
+ */
+static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *msgs,
+				 uint8_t num_msgs, uint16_t addr, const void *write_buf,
+				 size_t num_write, void *read_buf, size_t num_read,
+				 i2c_callback_t cb, void *userdata)
+{
+	if ((msgs == NULL) || (num_msgs != 2)) {
+		return -EINVAL;
+	}
+
+	msgs[0].buf = (uint8_t *)write_buf;
+	msgs[0].len = num_write;
+	msgs[0].flags = I2C_MSG_WRITE;
+
+	msgs[1].buf = (uint8_t *)read_buf;
+	msgs[1].len = num_read;
+	msgs[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
+
+	return i2c_transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
+}
+
+/**
+ * @brief Write then read data from an I2C device asynchronously.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_write_read_cb(spec->bus, msgs, num_msgs,
+ *                    spec->addr, write_buf,
+ *                    num_write, read_buf, num_read);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param write_buf Pointer to the data to be written
+ * @param num_write Number of bytes to write
+ * @param read_buf Pointer to storage for read data
+ * @param num_read Number of bytes to read
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @return a value from i2c_write_read_cb()
+ */
+static inline int i2c_write_read_cb_dt(const struct i2c_dt_spec *spec, struct i2c_msg *msgs,
+				       uint8_t num_msgs, const void *write_buf, size_t num_write,
+				       void *read_buf, size_t num_read, i2c_callback_t cb,
+				       void *userdata)
+{
+	return i2c_write_read_cb(spec->bus, msgs, num_msgs, spec->addr, write_buf, num_write,
+				 read_buf, num_read, cb, userdata);
 }
 
 #ifdef CONFIG_POLL

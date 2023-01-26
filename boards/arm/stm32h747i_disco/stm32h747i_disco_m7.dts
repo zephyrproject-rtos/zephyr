@@ -43,6 +43,11 @@
 		};
 	};
 
+	otghs_ulpi_phy: otghs_ulpis_phy {
+		compatible = "usb-ulpi-phy";
+		#phy-cells = <0>;
+	};
+
 	aliases {
 		led0 = &green_led_1;
 		led1 = &orange_led_2;
@@ -52,6 +57,10 @@
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&clk_hsi48 {
 	status = "okay";
 };
 
@@ -163,6 +172,28 @@
 			st,sdram-timing = <2 6 4 6 2 2 2>;
 		};
 	};
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_ulpi_ck_pa5
+			&usb_otg_hs_ulpi_d0_pa3
+			&usb_otg_hs_ulpi_d1_pb0
+			&usb_otg_hs_ulpi_d2_pb1
+			&usb_otg_hs_ulpi_d3_pb10
+			&usb_otg_hs_ulpi_d4_pb11
+			&usb_otg_hs_ulpi_d5_pb12
+			&usb_otg_hs_ulpi_d6_pb13
+			&usb_otg_hs_ulpi_d7_pb5
+			&usb_otg_hs_ulpi_stp_pc0
+			&usb_otg_hs_ulpi_dir_pi11
+			&usb_otg_hs_ulpi_nxt_ph4>;
+	pinctrl-names = "default";
+	maximum-speed = "high-speed";
+	/* Include the USB1ULPIEN clock enable bit */
+	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x06000000>,
+		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+	phys = <&otghs_ulpi_phy>;
+	status = "okay";
 };
 
 &sdmmc1 {

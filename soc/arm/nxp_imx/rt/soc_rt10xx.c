@@ -13,7 +13,9 @@
 #include <fsl_clock.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
+#endif
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <fsl_iomuxc.h>
 #if CONFIG_USB_DC_NXP_EHCI
@@ -288,26 +290,6 @@ static int imxrt_init(const struct device *arg)
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
-	/* Watchdog disable */
-	if ((WDOG1->WCR & WDOG_WCR_WDE_MASK) != 0) {
-		WDOG1->WCR &= ~WDOG_WCR_WDE_MASK;
-	}
-
-	if ((WDOG2->WCR & WDOG_WCR_WDE_MASK) != 0) {
-		WDOG2->WCR &= ~WDOG_WCR_WDE_MASK;
-	}
-
-	RTWDOG->CNT = 0xD928C520U; /* 0xD928C520U is the update key */
-	RTWDOG->TOVAL = 0xFFFF;
-	RTWDOG->CS = (uint32_t) ((RTWDOG->CS) & ~RTWDOG_CS_EN_MASK)
-		| RTWDOG_CS_UPDATE_MASK;
-
-	/* Disable Systick which might be enabled by bootrom */
-	if ((SysTick->CTRL & SysTick_CTRL_ENABLE_Msk) != 0) {
-		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
-	}
-
-	SCB_EnableICache();
 	if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
 		SCB_EnableDCache();
 	}
@@ -337,6 +319,8 @@ void z_arm_platform_init(void)
 	/* Zero BSS region */
 	memset(&__ocram_bss_start, 0, (&__ocram_bss_end - &__ocram_bss_start));
 #endif
+	/* Call CMSIS SystemInit */
+	SystemInit();
 }
 #endif
 

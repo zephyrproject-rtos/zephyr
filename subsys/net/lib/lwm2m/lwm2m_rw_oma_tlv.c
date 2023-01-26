@@ -69,9 +69,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_engine.h"
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 #include "lwm2m_rd_client.h"
-#endif
 #include "lwm2m_util.h"
 
 enum {
@@ -1003,11 +1001,9 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 					return ret;
 				}
 
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 				if (!msg->ctx->bootstrap_mode) {
 					engine_trigger_update(true);
 				}
-#endif
 			}
 
 			while (pos < tlv.length &&

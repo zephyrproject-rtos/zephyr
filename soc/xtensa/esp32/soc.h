@@ -52,8 +52,8 @@ extern int esp_rom_gpio_matrix_out(uint32_t gpio, uint32_t signal_index,
 
 extern void esp_rom_uart_attach(void);
 extern void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
-extern STATUS esp_rom_uart_tx_one_char(uint8_t chr);
-extern STATUS esp_rom_uart_rx_one_char(uint8_t *chr);
+extern int esp_rom_uart_tx_one_char(uint8_t chr);
+extern int esp_rom_uart_rx_one_char(uint8_t *chr);
 
 extern void esp_rom_Cache_Flush(int cpu);
 extern void esp_rom_Cache_Read_Enable(int cpu);

@@ -53,9 +53,6 @@
 
 #include "ll.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
-#define LOG_MODULE_NAME bt_ctlr_ull_df
-#include "common/log.h"
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) || \
@@ -493,8 +490,9 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 			/* Extend sync event by maximum CTE duration.
 			 * CTE duration depends on transmitter configuration
 			 * so it is unknown for receiver upfront.
+			 * BT_HCI_LE_CTE_LEN_MAX is in 8us units.
 			 */
-			slot_plus_us = BT_HCI_LE_CTE_LEN_MAX;
+			slot_plus_us = BT_HCI_LE_CTE_LEN_MAX * 8U;
 		}
 	}
 

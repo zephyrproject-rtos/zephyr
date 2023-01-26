@@ -572,6 +572,24 @@ struct bt_uuid_128 {
 #define BT_UUID_HAS \
 	BT_UUID_DECLARE_16(BT_UUID_HAS_VAL)
 /**
+ *  @brief Telephony and Media Audio Service value
+ */
+#define BT_UUID_TMAS_VAL 0x1855
+/**
+ *  @brief Telephony and Media Audio Service
+ */
+#define BT_UUID_TMAS \
+	BT_UUID_DECLARE_16(BT_UUID_TMAS_VAL)
+/**
+ *  @brief Public Broadcast Announcement Service value
+ */
+#define BT_UUID_PBA_VAL 0x1856
+/**
+ *  @brief Public Broadcast Announcement Service
+ */
+#define BT_UUID_PBA \
+	BT_UUID_DECLARE_16(BT_UUID_PBA_VAL)
+/**
  *  @brief GATT Primary Service UUID value
  */
 #define BT_UUID_GATT_PRIMARY_VAL 0x2800

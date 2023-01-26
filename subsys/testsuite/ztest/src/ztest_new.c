@@ -64,8 +64,11 @@ static ZTEST_BMEM enum ztest_status test_status = ZTEST_STATUS_OK;
 
 extern ZTEST_DMEM const struct ztest_arch_api ztest_api;
 
-void end_report(void)
+static void __ztest_show_suite_summary(void);
+
+static void end_report(void)
 {
+	__ztest_show_suite_summary();
 	if (test_status) {
 		TC_END_REPORT(TC_FAIL);
 	} else {
@@ -129,15 +132,14 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 
 	k_sem_give(&cpuhold_sem);
 
-#if defined(CONFIG_ARM64) && defined(CONFIG_FPU_SHARING)
+#if (defined(CONFIG_ARM64) || defined(CONFIG_RISCV)) && defined(CONFIG_FPU_SHARING)
 	/*
 	 * We'll be spinning with IRQs disabled. The flush-your-FPU request
 	 * IPI will never be serviced during that time. Therefore we flush
 	 * the FPU preemptively here to prevent any other CPU waiting after
 	 * this CPU forever and deadlock the system.
 	 */
-	extern void z_arm64_flush_local_fpu(void);
-	z_arm64_flush_local_fpu();
+	k_float_disable(_current_cpu->arch.fpu_owner);
 #endif
 
 	while (cpuhold_active) {
@@ -848,14 +850,15 @@ static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
 	flush_log();
 }
 
-#ifdef CONFIG_ZTEST_VERBOSE_SUMMARY
 static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 {
 	struct ztest_unit_test *test = NULL;
 	int tc_result = TC_PASS;
 	int flush_frequency = 0;
 
-	__ztest_show_suite_summary_oneline(suite);
+	if (IS_ENABLED(CONFIG_ZTEST_VERBOSE_SUMMARY) == 0) {
+		return;
+	}
 
 	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
 		if (test->stats->skip_count == test->stats->run_count) {
@@ -881,10 +884,12 @@ static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 	TC_SUMMARY_PRINT("\n");
 	flush_log();
 }
-#endif
 
 static void __ztest_show_suite_summary(void)
 {
+	if (IS_ENABLED(CONFIG_ZTEST_SUMMARY) == 0) {
+		return;
+	}
 	/* Flush the log a lot to ensure that no summary content
 	 * is dropped if it goes through the logging subsystem.
 	 */
@@ -894,11 +899,8 @@ static void __ztest_show_suite_summary(void)
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
 
-#ifdef CONFIG_ZTEST_VERBOSE_SUMMARY
-		__ztest_show_suite_summary_verbose(ptr);
-#else
 		__ztest_show_suite_summary_oneline(ptr);
-#endif
+		__ztest_show_suite_summary_verbose(ptr);
 	}
 	TC_SUMMARY_PRINT("------ TESTSUITE SUMMARY END ------\n\n");
 	flush_log();
@@ -909,10 +911,9 @@ static int __ztest_run_test_suite(struct ztest_suite_node *ptr, const void *stat
 	struct ztest_suite_stats *stats = ptr->stats;
 	int count = 0;
 
-	__ztest_init_unit_test_result_for_suite(ptr);
-
 	for (int i = 0; i < NUM_ITER_PER_SUITE; i++) {
 		if (ztest_api.should_suite_run(state, ptr)) {
+			__ztest_init_unit_test_result_for_suite(ptr);
 			int fail = z_ztest_run_test_suite_ptr(ptr);
 
 			count++;
@@ -963,8 +964,6 @@ int z_impl_ztest_run_test_suites(const void *state)
 		}
 	}
 #endif
-
-	__ztest_show_suite_summary();
 
 	return count;
 }

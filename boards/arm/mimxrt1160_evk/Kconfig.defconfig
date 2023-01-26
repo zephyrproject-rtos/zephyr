@@ -11,8 +11,24 @@ config BOARD
 
 choice CODE_LOCATION
 	default CODE_FLEXSPI if BOARD_MIMXRT1160_EVK_CM7
+	default CODE_OCRAM if BOARD_MIMXRT1160_EVK_CM4 && SECOND_CORE_MCUX
 	default CODE_SRAM0 if BOARD_MIMXRT1160_EVK_CM4
 endchoice
+
+if SECOND_CORE_MCUX && BOARD_MIMXRT1160_EVK_CM4
+
+config BUILD_OUTPUT_INFO_HEADER
+	default y
+
+DT_CHOSEN_IMAGE_M4 = nxp,m4-partition
+
+# Adjust the offset of the output image if building for RT11xx SOC
+config BUILD_OUTPUT_ADJUST_LMA
+	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4)) + \
+	$(dt_node_reg_addr_hex,/soc/spi@400cc000,1)) - \
+	$(dt_node_reg_addr_hex,/soc/ocram@20200000)"
+
+endif
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 240000000 if BOARD_MIMXRT1160_EVK_CM4 && CORTEX_M_SYSTICK

@@ -18,9 +18,12 @@
 #include <zephyr/irq.h>
 #include <zephyr/linker/sections.h>
 #include <soc.h>
-#include "flash_clock_setup.h"
 #include "fsl_power.h"
 #include "fsl_clock.h"
+
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
+#include "flash_clock_setup.h"
+#endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
@@ -144,7 +147,7 @@ static void usb_device_clock_init(void)
 		BOARD_USB_PHY_TXCAL45DM,
 	};
 
-	/* Make sure USDHC ram buffer and usb1 phy has power up */
+	/* Make sure USBHS ram buffer and usb1 phy has power up */
 	POWER_DisablePD(kPDRUNCFG_APD_USBHS_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USBHS_SRAM);
 	POWER_DisablePD(kPDRUNCFG_LP_HSPAD_FSPI0_VDET);
@@ -214,12 +217,14 @@ static void clock_init(void)
 	/* Enable all FRO outputs */
 	CLOCK_EnableFroClk(kCLOCK_FroAllOutEn);
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	/*
 	 * Call function flexspi_clock_safe_config() to move FlexSPI clock to a stable
 	 * clock source to avoid instruction/data fetch issue when updating PLL and Main
 	 * clock if XIP(execute code on FLEXSPI memory).
 	 */
 	flexspi_clock_safe_config();
+#endif
 
 	/* Let CPU run on FRO with divider 2 for safe switching. */
 	CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 2);
@@ -284,6 +289,21 @@ static void clock_init(void)
 	/* Switch CLKOUT to FRO_DIV2 */
 	CLOCK_AttachClk(kFRO_DIV2_to_CLKOUT);
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC
+	/* Make sure USDHC ram buffer has been power up*/
+	POWER_DisablePD(kPDRUNCFG_APD_USDHC0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_USDHC0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PD_LPOSC);
+	POWER_ApplyPD();
+
+	/* usdhc depend on 32K clock also */
+	CLOCK_AttachClk(kLPOSC_DIV32_to_32KHZWAKE_CLK);
+	CLOCK_AttachClk(kAUX0_PLL_to_SDIO0_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivSdio0Clk, 1);
+	CLOCK_EnableClock(kCLOCK_Sdio0);
+	RESET_PeripheralReset(kSDIO0_RST_SHIFT_RSTn);
+#endif
+
 	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 	/* Set up dividers. */
@@ -300,12 +320,25 @@ static void clock_init(void)
 	/* Set CLKOUTFCLKDIV divider to value 100 */
 	CLOCK_SetClkDiv(kCLOCK_DivClockOut, 100U);
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	/*
 	 * Call function flexspi_setup_clock() to set user configured clock source/divider
 	 * for FlexSPI.
 	 */
 	flexspi_setup_clock(FLEXSPI0, 0U, 2U);
+#endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexspi2), nxp_imx_flexspi, okay)
+	/* Power up FlexSPI1 SRAM */
+	POWER_DisablePD(kPDRUNCFG_APD_FLEXSPI1_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_FLEXSPI1_SRAM);
+	POWER_ApplyPD();
+	/* Setup clock frequency for FlexSPI1 */
+	CLOCK_AttachClk(kMAIN_CLK_to_FLEXSPI1_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexspi1Clk, 1);
+	/* Reset peripheral module */
+	RESET_PeripheralReset(kFLEXSPI1_RST_SHIFT_RSTn);
+#endif
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 

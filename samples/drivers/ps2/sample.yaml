@@ -2,12 +2,12 @@ sample:
   name: PS2 driver  sample
 tests:
   sample.drivers.espi.ps2:
-    tags: drivers
+    tags: drivers ps2
     harness: console
     harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "mb data(.*)"
-        fixture: fixture_connect_mouse
+      type: multi_line
+      ordered: true
+      regex:
+        - "mb data(.*)"
+      fixture: fixture_connect_mouse
     filter: dt_compat_enabled("microchip,xec-ps2")

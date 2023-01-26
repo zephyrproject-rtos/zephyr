@@ -851,12 +851,12 @@ static int i2c_dw_initialize(const struct device *dev)
 	if (rom->pcie) {
 		struct pcie_bar mbar;
 
-		if (!pcie_probe(rom->pcie_bdf, rom->pcie_id)) {
+		if (rom->pcie->bdf == PCIE_BDF_NONE) {
 			return -EINVAL;
 		}
 
-		pcie_probe_mbar(rom->pcie_bdf, 0, &mbar);
-		pcie_set_cmd(rom->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
+		pcie_probe_mbar(rom->pcie->bdf, 0, &mbar);
+		pcie_set_cmd(rom->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr,
 			   mbar.size, K_MEM_CACHE_NONE);
@@ -868,7 +868,7 @@ static int i2c_dw_initialize(const struct device *dev)
 
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	uint32_t reg_base = get_regs(dev);
-
+	clear_bit_enable_en(reg_base);
 	/* verify that we have a valid DesignWare register first */
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {
 		LOG_DBG("I2C: DesignWare magic key not found, check base "
@@ -913,12 +913,14 @@ static int i2c_dw_initialize(const struct device *dev)
 #endif
 
 #define I2C_DW_INIT_PCIE0(n)
-#define I2C_DW_INIT_PCIE1(n)                                                  \
-		.pcie = true,                                                 \
-		.pcie_bdf = DT_INST_REG_ADDR(n),                              \
-		.pcie_id = DT_INST_REG_SIZE(n),
+#define I2C_DW_INIT_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie),
 #define I2C_DW_INIT_PCIE(n) \
 	_CONCAT(I2C_DW_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+
+#define I2C_DEFINE_PCIE0(n)
+#define I2C_DEFINE_PCIE1(n) DEVICE_PCIE_INST_DECLARE(n)
+#define I2C_PCIE_DEFINE(n) \
+	_CONCAT(I2C_DEFINE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #define I2C_DW_IRQ_FLAGS_SENSE0(n) 0
 #define I2C_DW_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
@@ -940,31 +942,37 @@ static int i2c_dw_initialize(const struct device *dev)
 #define I2C_DW_IRQ_CONFIG_PCIE1(n)                                            \
 	static void i2c_config_##n(const struct device *port)                 \
 	{                                                                     \
-		ARG_UNUSED(port);                                             \
 		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,              \
 			     "Only runtime IRQ configuration is supported");  \
 		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),           \
 			     "DW I2C PCI needs CONFIG_DYNAMIC_INTERRUPTS");   \
-		unsigned int irq = pcie_alloc_irq(DT_INST_REG_ADDR(n));       \
+		const struct i2c_dw_rom_config * const dev_cfg = port->config;\
+		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);        \
 		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                         \
 			return;                                               \
 		}                                                             \
-		pcie_connect_dynamic_irq(DT_INST_REG_ADDR(n), irq,	      \
+		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq,	      \
 				     DT_INST_IRQ(n, priority),		      \
 				    (void (*)(const void *))i2c_dw_isr,       \
 				    DEVICE_DT_INST_GET(n),                    \
 				    I2C_DW_IRQ_FLAGS(n));                     \
-		pcie_irq_enable(DT_INST_REG_ADDR(n), irq);                    \
+		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                     \
 	}
 
 #define I2C_DW_IRQ_CONFIG(n) \
 	_CONCAT(I2C_DW_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
+#define I2C_CONFIG_REG_INIT_PCIE0(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
+#define I2C_CONFIG_REG_INIT_PCIE1(n)
+#define I2C_CONFIG_REG_INIT(n) \
+	_CONCAT(I2C_CONFIG_REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+
 #define I2C_DEVICE_INIT_DW(n)                                                 \
 	PINCTRL_DW_DEFINE(n);                                                 \
+	I2C_PCIE_DEFINE(n);                                                   \
 	static void i2c_config_##n(const struct device *port);                \
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {           \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                         \
+		I2C_CONFIG_REG_INIT(n)                                        \
 		.config_func = i2c_config_##n,                                \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                  \
 		PINCTRL_DW_CONFIG(n)                                          \

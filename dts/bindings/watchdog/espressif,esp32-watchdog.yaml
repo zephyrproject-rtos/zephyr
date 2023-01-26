@@ -10,8 +10,5 @@ compatible: "espressif,esp32-watchdog"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: false
+  reg:
+    required: true

@@ -3,69 +3,64 @@
 include: base.yaml
 
 properties:
-    bus-speed:
-      type: int
-      required: true
-      description: bus speed in Baud/s
-    sjw:
-      type: int
-      required: true
-      description: Resynchronization jump width (ISO 11898-1)
-    prop-seg:
-      type: int
-      required: false
-      description: Time quantums of propagation segment (ISO 11898-1)
-    phase-seg1:
-      type: int
-      required: false
-      description: Time quantums of phase buffer 1 segment (ISO 11898-1)
-    phase-seg2:
-      type: int
-      required: false
-      description: Time quantums of phase buffer 2 segment (ISO 11898-1)
-    sample-point:
-      type: int
-      required: false
-      description: >
-        Sample point in permille.
-        This param is required if segments are not given.
-        If the sample point is given, the segments are ignored.
-    phys:
-      type: phandle
-      required: false
-      description: |
-        Actively controlled CAN transceiver.
-
-        Example:
-          transceiver0: can-phy0 {
-            compatible = "nxp,tja1040", "can-transceiver-gpio";
-            standby-gpios = <gpioa 0 GPIO_ACTIVE_HIGH>;
-            max-bitrate = <1000000>;
-            #phy-cells = <0>;
-          };
-
-          &can0 {
-            status = "okay";
-
-            phys = <&transceiver0>;
-          };
-
-child-binding:
+  bus-speed:
+    type: int
+    required: true
+    description: bus speed in Baud/s
+  sjw:
+    type: int
+    required: true
+    description: Resynchronization jump width (ISO 11898-1)
+  prop-seg:
+    type: int
+    description: Time quantums of propagation segment (ISO 11898-1)
+  phase-seg1:
+    type: int
+    description: Time quantums of phase buffer 1 segment (ISO 11898-1)
+  phase-seg2:
+    type: int
+    description: Time quantums of phase buffer 2 segment (ISO 11898-1)
+  sample-point:
+    type: int
+    description: >
+      Sample point in permille.
+      This param is required if segments are not given.
+      If the sample point is given, the segments are ignored.
+  phys:
+    type: phandle
     description: |
-      Passive CAN transceiver. The child node must be named "can-transceiver".
+      Actively controlled CAN transceiver.
 
       Example:
+        transceiver0: can-phy0 {
+          compatible = "nxp,tja1040", "can-transceiver-gpio";
+          standby-gpios = <gpioa 0 GPIO_ACTIVE_HIGH>;
+          max-bitrate = <1000000>;
+          #phy-cells = <0>;
+        };
+
         &can0 {
           status = "okay";
 
-          can-transceiver {
-            max-bitrate = <1000000>;
-          };
+          phys = <&transceiver0>;
         };
 
-    properties:
-      max-bitrate:
-        type: int
-        required: true
-        description: |
-          The maximum bitrate supported by the CAN transceiver in bits/s.
+child-binding:
+  description: |
+    Passive CAN transceiver. The child node must be named "can-transceiver".
+
+    Example:
+      &can0 {
+        status = "okay";
+
+        can-transceiver {
+          max-bitrate = <1000000>;
+        };
+      };
+
+  properties:
+    max-bitrate:
+      type: int
+      required: true
+      description: |
+        The maximum bitrate supported by the CAN transceiver in bits/s.

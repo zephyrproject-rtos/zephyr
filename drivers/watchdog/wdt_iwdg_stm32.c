@@ -21,7 +21,12 @@
 #include "wdt_iwdg_stm32.h"
 
 #define IWDG_PRESCALER_MIN	(4U)
-#define IWDG_PRESCALER_MAX	(256U)
+
+#if defined(LL_IWDG_PRESCALER_1024)
+#define IWDG_PRESCALER_MAX (1024U)
+#else
+#define IWDG_PRESCALER_MAX (256U)
+#endif
 
 #define IWDG_RELOAD_MIN		(0x0000U)
 #define IWDG_RELOAD_MAX		(0x0FFFU)
@@ -41,7 +46,7 @@
 
 /*
  * Status register needs 5 LSI clock cycles divided by prescaler to be updated.
- * With highest prescaler (256) and considering clock variation, we will wait
+ * With highest prescaler and considering clock variation, we will wait
  * maximum 6 cycles (48 ms at 32 kHz) for register update.
  */
 #define IWDG_SR_UPDATE_TIMEOUT	(6U * IWDG_PRESCALER_MAX * \
@@ -79,7 +84,7 @@ static void iwdg_stm32_convert_timeout(uint32_t timeout,
 
 static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 {
-	ARG_UNUSED(dev);
+	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
 	/* Deactivate running when debugger is attached. */
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
@@ -101,7 +106,9 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 		return -ENOTSUP;
 	}
 
-	/* Enable the IWDG only when the timeout is installed */
+	/* Enable the IWDG now (timeout has been installed previoulsy) */
+	LL_IWDG_Enable(iwdg); /* No need to Reload counter */
+
 	return 0;
 }
 
@@ -136,21 +143,16 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 
 	tickstart = k_uptime_get_32();
 
-	LL_IWDG_Enable(iwdg);
+	/* Do not enable the wdg during install but during wdt_setup() */
 	LL_IWDG_EnableWriteAccess(iwdg);
-
 	LL_IWDG_SetPrescaler(iwdg, prescaler);
-	LL_IWDG_SetReloadCounter(iwdg, reload);
 
 	/* Wait for the update operation completed */
-	while (LL_IWDG_IsReady(iwdg) == 0) {
+	while (LL_IWDG_IsActiveFlag_PVU(iwdg) == 0) {
 		if ((k_uptime_get_32() - tickstart) > IWDG_SR_UPDATE_TIMEOUT) {
 			return -ENODEV;
 		}
 	}
-
-	/* Reload counter just before leaving */
-	LL_IWDG_ReloadCounter(iwdg);
 
 	return 0;
 }

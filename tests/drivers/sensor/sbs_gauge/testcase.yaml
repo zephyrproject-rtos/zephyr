@@ -9,6 +9,6 @@ tests:
   drivers.sbs_gauge.emulated:
     tags: test_framework
     filter: dt_compat_enabled("sbs,sbs-gauge")
-    platform_allow:
-      native_posix
-      qemu_cortex_a9
+    platform_allow: native_posix qemu_cortex_a9
+    integration_platforms:
+      - native_posix

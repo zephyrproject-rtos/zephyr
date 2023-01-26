@@ -10,7 +10,7 @@
 #include <zephyr/fs/fs.h>
 
 #define FATFS_MNTP	"/NAND:"
-#if IS_ENABLED(CONFIG_FS_FATFS_LFN)
+#if defined(CONFIG_FS_FATFS_LFN)
 #define TEST_FILE	FATFS_MNTP \
 	"/testlongfilenamethatsmuchlongerthan8.3chars.text"
 #else

@@ -41,9 +41,8 @@
 #include "ll.h"
 #include "ll_feat.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_adv_iso
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
+
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -105,6 +104,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	uint32_t ret;
 	uint8_t err;
 	uint8_t bn;
+	int res;
 
 	adv_iso = adv_iso_get(big_handle);
 
@@ -296,7 +296,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_iso->sdu_interval = sdu_interval;
 	lll_adv_iso->max_sdu = max_sdu;
 
-	util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
+	res = util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
+	LL_ASSERT(!res);
 
 	lll_csrand_get(lll_adv_iso->base_crc_init,
 		       sizeof(lll_adv_iso->base_crc_init));
@@ -673,8 +674,7 @@ void ull_adv_iso_done_complete(struct node_rx_event_done *done)
 	rx->handle = lll->handle;
 	rx->rx_ftr.param = adv_iso;
 
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 }
 
 void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
@@ -860,7 +860,8 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	if (!err) {
 		ticks_anchor += HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
-					    EVENT_OVERHEAD_START_US) +
+					    EVENT_OVERHEAD_START_US) -
+					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 	} else {
 		ticks_anchor = ticker_ticks_now_get() +
@@ -1271,6 +1272,5 @@ static void tx_lll_flush(void *param)
 	rx->hdr.link = NULL;
 
 	/* Enqueue the terminate towards ULL context */
-	ull_rx_put(link, rx);
-	ull_rx_sched();
+	ull_rx_put_sched(link, rx);
 }

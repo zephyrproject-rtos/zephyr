@@ -118,7 +118,7 @@ config HWINFO_SAM0
 config HWINFO_ESP32
 	bool "ESP32 device ID"
 	default y
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32C3
 	help
 	  Enable ESP32 hwinfo driver.
 
@@ -139,7 +139,7 @@ config HWINFO_PSOC6
 config HWINFO_GECKO
 	bool "GECKO hwinfo"
 	default y
-	depends on SOC_FAMILY_EXX32 && !SOC_SERIES_EFR32MG21
+	depends on SOC_FAMILY_EXX32 && !SOC_SERIES_EFR32MG21  && !SOC_SERIES_EFR32BG22
 	select SOC_GECKO_RMU
 	help
 	  Enable Silabs GECKO hwinfo driver.

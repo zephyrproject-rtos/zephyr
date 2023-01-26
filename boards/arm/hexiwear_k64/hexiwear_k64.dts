@@ -62,21 +62,21 @@
 	};
 
 	en_bat_sens: enable-battery-sense {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "en_bat_sens";
 		enable-gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
 
 	en_ldo: enable-ldo {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "en_ldo";
 		enable-gpios = <&gpioa 29 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
 
 	en_3v3b: enable-3v3b {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "en_3v3b";
 		enable-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;

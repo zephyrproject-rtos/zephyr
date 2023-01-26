@@ -8,5 +8,6 @@ tests:
     tags: driver entropy bluetooth
   drivers.entropy.psa_crypto:
     filter: CONFIG_BUILD_WITH_TFM
-    extra_args: DTC_OVERLAY_FILE=./entropy_psa_crypto.overlay OVERLAY_CONFIG=./entropy_psa_crypto.conf
+    extra_args: DTC_OVERLAY_FILE=./entropy_psa_crypto.overlay
+      OVERLAY_CONFIG=./entropy_psa_crypto.conf
     tags: driver entropy psa-crypto

@@ -5,40 +5,39 @@ compatible: "microchip,mcp4728"
 include: [dac-controller.yaml, i2c-device.yaml]
 
 properties:
-    "#io-channel-cells":
-      const: 1
+  "#io-channel-cells":
+    const: 1
 
-    voltage_reference:
-      type: array
-      required: true
-      description: |
-        DAC voltage reference select.
-        0 - Vdd
-        1 - Internal voltage reference (2.048V)
-        Note: array entries correspond to the successive channels
+  voltage_reference:
+    type: array
+    required: true
+    description: |
+      DAC voltage reference select.
+      0 - Vdd
+      1 - Internal voltage reference (2.048V)
+      Note: array entries correspond to the successive channels
 
-    power_down_mode:
-      type: array
-      required: true
-      description: |
-        Power-down mode select.
-        0 - normal mode
-        1 - Vout is loaded with 1 kOhm resistor to ground
-        2 - Vout is loaded 100 kOhm resistor to ground
-        3 - Vout is loaded with 500 kOhm resistor to ground
-        Note: with values bigger than 0 most of channel circuits are powered off
-        Note: array entries correspond to the successive channels
+  power_down_mode:
+    type: array
+    required: true
+    description: |
+      Power-down mode select.
+      0 - normal mode
+      1 - Vout is loaded with 1 kOhm resistor to ground
+      2 - Vout is loaded 100 kOhm resistor to ground
+      3 - Vout is loaded with 500 kOhm resistor to ground
+      Note: with values bigger than 0 most of channel circuits are powered off
+      Note: array entries correspond to the successive channels
 
-    gain:
-      type: array
-      required: false
-      default: [0, 0, 0, 0]
-      description: |
-        Gain selection bit.
-        0 = x1 (gain of 1)
-        1 = x2 (gain of 2)
-        Note: applicable only when internal Vref is selected
-        Note: array entries correspond to the successive channels
+  gain:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Gain selection bit.
+      0 = x1 (gain of 1)
+      1 = x2 (gain of 2)
+      Note: applicable only when internal Vref is selected
+      Note: array entries correspond to the successive channels
 
 io-channel-cells:
-    - output
+  - output

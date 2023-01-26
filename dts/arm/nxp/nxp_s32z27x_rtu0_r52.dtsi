@@ -15,4 +15,68 @@
 		/delete-node/ cpu@7;
 	};
 
+	soc {
+		stm0: stm@76200000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76200000 0x10000>;
+			interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		stm1: stm@76210000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76210000 0x10000>;
+			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		stm2: stm@76020000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76020000 0x10000>;
+			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		stm3: stm@76030000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76030000 0x10000>;
+			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt0: watchdog@76000000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76000000 0x10000>;
+			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt1: watchdog@76010000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76010000 0x10000>;
+			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt2: watchdog@76220000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76220000 0x10000>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt3: watchdog@76230000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76230000 0x10000>;
+			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt4: watchdog@76140000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76140000 0x10000>;
+			interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+	};
 };

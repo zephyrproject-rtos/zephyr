@@ -440,7 +440,7 @@ SECTIONS
 
   .rodata : ALIGN(4)
   {
-    _rodata_start = ABSOLUTE(.);
+    __rodata_region_start = ABSOLUTE(.);
     *(.rodata)
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
@@ -482,7 +482,7 @@ SECTIONS
     LONG(_bss_start)
     LONG(_bss_end)
     _bss_table_end = ABSOLUTE(.);
-    _rodata_end = ABSOLUTE(.);
+    __rodata_region_end = ABSOLUTE(.);
   } >RAM :sram0_phdr
 
   .sram.text : ALIGN(4)

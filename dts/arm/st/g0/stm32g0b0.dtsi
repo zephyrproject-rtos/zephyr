@@ -22,6 +22,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40005000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000100>;
+			resets = <&rctl STM32_RESET(APB1L, 8U)>;
 			interrupts = <29 0>;
 			status = "disabled";
 		};
@@ -30,6 +31,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000200>;
+			resets = <&rctl STM32_RESET(APB1L, 9U)>;
 			interrupts = <29 0>;
 			status = "disabled";
 		};
@@ -38,6 +40,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
+			resets = <&rctl STM32_RESET(APB1L, 2U)>;
 			interrupts = <16 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -95,7 +98,8 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <2048>;
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00002000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00002000>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(0)>;
 			status = "disabled";
 		};
 	};

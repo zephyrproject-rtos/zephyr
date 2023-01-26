@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
 #include "dhcpv4.h"
 #include "ipv4.h"
+#include "net_stats.h"
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
@@ -389,6 +390,8 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		goto fail;
 	}
 
+	net_stats_update_udp_sent(iface);
+
 	NET_DBG("send request dst=%s xid=0x%x ciaddr=%s%s%s timeout=%us",
 		net_sprint_ipv4_addr(server_addr),
 		iface->config.dhcpv4.xid,
@@ -426,6 +429,8 @@ static uint32_t dhcpv4_send_discover(struct net_if *iface)
 	if (net_send_data(pkt) < 0) {
 		goto fail;
 	}
+
+	net_stats_update_udp_sent(iface);
 
 	timeout = dhcpv4_update_message_timeout(&iface->config.dhcpv4);
 

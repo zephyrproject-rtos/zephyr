@@ -8,12 +8,10 @@ compatible: "nordic,nrf-spi"
 include: nordic,nrf-spi-common.yaml
 
 properties:
-    miso-pull-up:
-      type: boolean
-      required: false
-      description: Enable pull-up on MISO line
+  miso-pull-up:
+    type: boolean
+    description: Enable pull-up on MISO line
 
-    miso-pull-down:
-      type: boolean
-      required: false
-      description: Enable pull-down on MISO line
+  miso-pull-down:
+    type: boolean
+    description: Enable pull-down on MISO line

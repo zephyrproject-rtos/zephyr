@@ -123,13 +123,13 @@ struct pm_device {
 	/** Pointer to the device */
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
-	struct k_mutex lock;
+	struct k_sem lock;
+	/** Event var to listen to the sync request events */
+	struct k_event event;
 	/** Device usage count */
 	uint32_t usage;
 	/** Work object for asynchronous calls */
 	struct k_work_delayable work;
-	/** Event conditional var to listen to the sync request events */
-	struct k_condvar condvar;
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
 	/** Power Domain it belongs */
@@ -147,8 +147,8 @@ struct pm_device {
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)			\
-	.lock = Z_MUTEX_INITIALIZER(obj.lock),		\
-	.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),
+	.lock = Z_SEM_INITIALIZER(obj.lock, 1, 1),	\
+	.event = Z_EVENT_INITIALIZER(obj.event),
 #else
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_RUNTIME */

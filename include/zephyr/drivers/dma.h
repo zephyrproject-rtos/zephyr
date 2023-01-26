@@ -66,6 +66,14 @@ enum dma_channel_filter {
 	DMA_CHANNEL_PERIODIC, /* can be triggered by periodic sources */
 };
 
+/* DMA attributes */
+enum dma_attribute_type {
+	DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT,
+	DMA_ATTR_BUFFER_SIZE_ALIGNMENT,
+	DMA_ATTR_COPY_ALIGNMENT,
+	DMA_ATTR_MAX_BLOCK_COUNT,
+};
+
 /**
  * @struct dma_block_config
  * @brief DMA block configuration structure.
@@ -226,6 +234,7 @@ struct dma_status {
 	uint32_t free;
 	uint32_t write_position;
 	uint32_t read_position;
+	uint64_t total_copied;
 };
 
 /**
@@ -275,6 +284,8 @@ typedef int (*dma_api_resume)(const struct device *dev, uint32_t channel);
 typedef int (*dma_api_get_status)(const struct device *dev, uint32_t channel,
 				  struct dma_status *status);
 
+typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, uint32_t *value);
+
 /**
  * @typedef dma_chan_filter
  * @brief channel filter function call
@@ -299,6 +310,7 @@ __subsystem struct dma_driver_api {
 	dma_api_suspend suspend;
 	dma_api_resume resume;
 	dma_api_get_status get_status;
+	dma_api_get_attribute get_attribute;
 	dma_api_chan_filter chan_filter;
 };
 /**
@@ -363,6 +375,9 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
  * Implementations must check the validity of the channel ID passed in and
  * return -EINVAL if it is invalid.
  *
+ * Start is allowed on channels that have already been started and must report
+ * success.
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer will
  *                be processed
@@ -385,6 +400,9 @@ static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
  *
  * Implementations must check the validity of the channel ID passed in and
  * return -EINVAL if it is invalid.
+ *
+ * Stop is allowed on channels that have already been stopped and must report
+ * success.
  *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer was
@@ -583,6 +601,32 @@ static inline int dma_get_status(const struct device *dev, uint32_t channel,
 }
 
 /**
+ * @brief get attribute of a dma controller
+ *
+ * This function allows to get a device specific static or runtime attribute like required address
+ * and size alignment of a buffer.
+ * Implementations must check the validity of the type passed in and
+ * return -EINVAL if it is invalid or -ENOSYS if not supported.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param type    Numeric identification of the attribute
+ * @param value   A non-NULL pointer to the variable where the read value is to be placed
+ *
+ * @retval non-negative if successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
+{
+	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+
+	if (api->get_attribute) {
+		return api->get_attribute(dev, type, value);
+	}
+
+	return -ENOSYS;
+}
+
+/**
  * @brief Look-up generic width index to be used in registers
  *
  * WARNING: This look-up works for most controllers, but *may* not work for
@@ -641,7 +685,7 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 }
 
 /**
- * Get the device tree property describing the buffer alignment
+ * Get the device tree property describing the buffer address alignment
  *
  * Useful when statically defining or allocating buffers for DMA usage where
  * memory alignment often matters.
@@ -649,7 +693,26 @@ static inline uint32_t dma_burst_index(uint32_t burst)
  * @param node Node identifier, e.g. DT_NODELABEL(dma_0)
  * @return alignment Memory byte alignment required for DMA buffers
  */
-#define DMA_BUF_ALIGNMENT(node) DT_PROP(node, dma_buf_alignment)
+#define DMA_BUF_ADDR_ALIGNMENT(node) DT_PROP(node, dma_buf_addr_alignment)
+
+/**
+ * Get the device tree property describing the buffer size alignment
+ *
+ * Useful when statically defining or allocating buffers for DMA usage where
+ * memory alignment often matters.
+ *
+ * @param node Node identifier, e.g. DT_NODELABEL(dma_0)
+ * @return alignment Memory byte alignment required for DMA buffers
+ */
+#define DMA_BUF_SIZE_ALIGNMENT(node) DT_PROP(node, dma_buf_size_alignment)
+
+/**
+ * Get the device tree property describing the minimal chunk of data possible to be copied
+ *
+ * @param node Node identifier, e.g. DT_NODELABEL(dma_0)
+ * @return minimal Minimal chunk of data possible to be copied
+ */
+#define DMA_COPY_ALIGNMENT(node) DT_PROP(node, dma_copy_alignment)
 
 /**
  * @}

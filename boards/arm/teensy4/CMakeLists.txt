@@ -5,5 +5,10 @@
 #
 
 zephyr_library()
-zephyr_library_sources(flexspi_nor_config.c)
-zephyr_library_sources_ifdef(CONFIG_DEVICE_CONFIGURATION_DATA teensy4_sdram_ini_dcd.c)
+if(CONFIG_NXP_IMX_RT_BOOT_HEADER)
+  zephyr_compile_definitions(XIP_BOOT_HEADER_ENABLE=1)
+  zephyr_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)
+  zephyr_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
+  zephyr_library_sources(flexspi_nor_config.c)
+  zephyr_library_sources_ifdef(CONFIG_DEVICE_CONFIGURATION_DATA teensy4_sdram_ini_dcd.c)
+endif()

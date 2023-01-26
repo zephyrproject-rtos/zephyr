@@ -12,10 +12,10 @@ coverage:
     patch: yes
     changes: no
 
-#ignore:
-#  - "tests/**/*"
-#  - "samples/**/*"
-#  - "ext/hal/**/*"
+# ignore:
+#   - "tests/**/*"
+#   - "samples/**/*"
+#   - "ext/hal/**/*"
 
 parsers:
   gcov:

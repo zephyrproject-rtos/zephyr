@@ -10,7 +10,6 @@ include: [base.yaml]
 properties:
   leak-gpios:
     type: phandle-array
-    required: false
     description: |
       Array of IOs that have leakage current. The user can overwrite this
       property at the board level DT file to save more power consumption.

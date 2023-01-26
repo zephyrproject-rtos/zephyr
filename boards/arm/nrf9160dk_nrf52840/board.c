@@ -39,7 +39,7 @@ struct switch_cfg {
 	gpio_pin_t pin;
 	gpio_dt_flags_t flags;
 	bool on;
-#if IS_ENABLED(CONFIG_LOG)
+#if defined(CONFIG_LOG)
 	uint8_t port;
 	bool info;
 	const char *name;
@@ -175,7 +175,7 @@ static int init(const struct device *dev)
 		flags |= (cfg->on ? GPIO_OUTPUT_ACTIVE
 				  : GPIO_OUTPUT_INACTIVE);
 		rc = gpio_pin_configure(cfg->gpio, cfg->pin, flags);
-#if IS_ENABLED(CONFIG_LOG)
+#if defined(CONFIG_LOG)
 		LOG_DBG("Configuring P%d.%02d with flags: 0x%08x",
 			cfg->port, cfg->pin, flags);
 		if (rc) {

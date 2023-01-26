@@ -53,6 +53,8 @@ source "drivers/sensor/ak8975/Kconfig"
 
 source "drivers/sensor/amg88xx/Kconfig"
 
+source "drivers/sensor/ams_as5600/Kconfig"
+
 source "drivers/sensor/ams_iAQcore/Kconfig"
 
 source "drivers/sensor/apds9960/Kconfig"
@@ -95,6 +97,8 @@ source "drivers/sensor/fxos8700/Kconfig"
 
 source "drivers/sensor/grove/Kconfig"
 
+source "drivers/sensor/grow_r502a/Kconfig"
+
 source "drivers/sensor/ti_hdc/Kconfig"
 
 source "drivers/sensor/ti_hdc20xx/Kconfig"
@@ -110,6 +114,10 @@ source "drivers/sensor/i3g4250d/Kconfig"
 source "drivers/sensor/icm42605/Kconfig"
 
 source "drivers/sensor/icm42670/Kconfig"
+
+source "drivers/sensor/icm42688/Kconfig"
+
+source "drivers/sensor/icp10125/Kconfig"
 
 source "drivers/sensor/iis2dh/Kconfig"
 
@@ -195,6 +203,8 @@ source "drivers/sensor/opt3001/Kconfig"
 
 source "drivers/sensor/pms7003/Kconfig"
 
+source "drivers/sensor/qdec_mcux/Kconfig"
+
 source "drivers/sensor/qdec_nrfx/Kconfig"
 
 source "drivers/sensor/qdec_sam/Kconfig"
@@ -260,5 +270,9 @@ source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
 source "drivers/sensor/ite_vcmp_it8xxx2/Kconfig"
 
 source "drivers/sensor/pcnt_esp32/Kconfig"
+
+source "drivers/sensor/esp32_temp/Kconfig"
+
+source "drivers/sensor/rpi_pico_temp/Kconfig"
 
 endif # SENSOR

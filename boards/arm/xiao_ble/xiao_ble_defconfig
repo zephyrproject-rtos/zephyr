@@ -19,6 +19,9 @@ CONFIG_SERIAL=y
 # enable console
 CONFIG_CONSOLE=y
 
+# Logger cannot use itself to log
+CONFIG_USB_CDC_ACM_LOG_LEVEL_OFF=y
+
 # enable USB
 CONFIG_USB_DEVICE_STACK=y
 

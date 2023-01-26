@@ -1,0 +1,25 @@
+# M5StickC PLUS board configuration
+
+# Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "m5stickc_plus"
+	depends on BOARD_M5STICKC_PLUS
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+config ENTROPY_GENERATOR
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT

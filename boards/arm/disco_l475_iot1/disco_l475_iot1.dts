@@ -78,12 +78,22 @@
 	cpu-power-states = <&stop0 &stop1 &stop2>;
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_lse {
 	status = "okay";
 };
 
 &clk_hsi {
 	status = "okay";
+};
+
+&clk_msi {
+	status = "okay";
+	msi-pll-mode;
+	msi-range = <11>; /* 48MHz USB bus clk */
 };
 
 &pll {
@@ -250,6 +260,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

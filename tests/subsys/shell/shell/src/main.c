@@ -445,8 +445,8 @@ static int cmd_handler_dict_2(const struct shell *sh, size_t argc, char **argv, 
 	return n + n;
 }
 
-SHELL_SUBCMD_DICT_SET_CREATE(dict1, cmd_handler_dict_1, (one, 1), (two, 2));
-SHELL_SUBCMD_DICT_SET_CREATE(dict2, cmd_handler_dict_2, (one, 1), (two, 2));
+SHELL_SUBCMD_DICT_SET_CREATE(dict1, cmd_handler_dict_1, (one, 1, "one"), (two, 2, "two"));
+SHELL_SUBCMD_DICT_SET_CREATE(dict2, cmd_handler_dict_2, (one, 1, "one"), (two, 2, "two"));
 
 SHELL_CMD_REGISTER(dict1, &dict1, NULL, NULL);
 SHELL_CMD_REGISTER(dict2, &dict2, NULL, NULL);

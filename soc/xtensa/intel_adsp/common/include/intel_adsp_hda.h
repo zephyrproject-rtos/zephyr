@@ -118,7 +118,7 @@
 /**
  * @brief Initialize an HDA stream for use with the firmware
  *
- * @param hda Stream set to work with
+ * @param base Base address of the IP register block
  * @param sid Stream ID
  */
 static inline void intel_adsp_hda_init(uint32_t base, uint32_t regblock_size, uint32_t sid)
@@ -136,7 +136,7 @@ static inline void intel_adsp_hda_init(uint32_t base, uint32_t regblock_size, ui
  * that is required. It must be set *after* the host has configured its own buffers.
  *
  *
- * @param hda Stream set to work with
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  * @param buf Buffer address to use for the shared FIFO. Must be in L2 and 128 byte aligned.
@@ -187,7 +187,7 @@ static inline int intel_adsp_hda_set_buffer(uint32_t base,
 /**
  * @brief Get the buffer size
  *
- * @param hda Stream set to work with
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  *
@@ -197,14 +197,13 @@ static inline uint32_t intel_adsp_hda_get_buffer_size(uint32_t base,
 					    uint32_t regblock_size,
 					    uint32_t sid)
 {
-
 	return *DGBS(base, regblock_size, sid);
 }
 
 /**
  * @brief Enable the stream
  *
- * @param hda HDA stream set
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  */
@@ -216,7 +215,7 @@ static inline void intel_adsp_hda_enable(uint32_t base, uint32_t regblock_size, 
 /**
  * @brief Disable stream
  *
- * @param hda HDA stream set
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  */
@@ -224,6 +223,20 @@ static inline void intel_adsp_hda_disable(uint32_t base, uint32_t regblock_size,
 {
 	*DGCS(base, regblock_size, sid) &= ~(DGCS_GEN | DGCS_FIFORDY);
 }
+
+
+/**
+ * @brief Check if stream is enabled
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ */
+static inline bool intel_adsp_hda_is_enabled(uint32_t base, uint32_t regblock_size, uint32_t sid)
+{
+	return *DGCS(base, regblock_size, sid) & (DGCS_GEN | DGCS_FIFORDY);
+}
+
 
 /**
  * @brief Determine the number of unused bytes in the buffer
@@ -344,6 +357,30 @@ static inline bool intel_adsp_hda_buf_full(uint32_t base, uint32_t regblock_size
 static inline bool intel_adsp_hda_wp_rp_eq(uint32_t base, uint32_t regblock_size, uint32_t sid)
 {
 	return *DGBWP(base, regblock_size, sid) == *DGBRP(base, regblock_size, sid);
+}
+
+static inline bool intel_adsp_hda_is_buffer_overrun(uint32_t base, uint32_t regblock_size,
+						    uint32_t sid)
+{
+	return (*DGCS(base, regblock_size, sid) & DGCS_BOR) == DGCS_BOR ? 1 : 0;
+}
+
+static inline bool intel_adsp_hda_is_buffer_underrun(uint32_t base, uint32_t regblock_size,
+						     uint32_t sid)
+{
+	return (*DGCS(base, regblock_size, sid) & DGCS_BUR) == DGCS_BUR ? 1 : 0;
+}
+
+static inline void intel_adsp_hda_overrun_clear(uint32_t base, uint32_t regblock_size,
+						uint32_t sid)
+{
+	*DGCS(base, regblock_size, sid) |= DGCS_BOR;
+}
+
+static inline void intel_adsp_hda_underrun_clear(uint32_t base, uint32_t regblock_size,
+						 uint32_t sid)
+{
+	*DGCS(base, regblock_size, sid) |= DGCS_BUR;
 }
 
 #endif /* ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H */

@@ -12,6 +12,15 @@
 	};
 
 	soc {
+		clocks {
+			clk_hsi48: clk-hsi48 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(48)>;
+				status = "disabled";
+			};
+		};
+
 		usb: usb@40005c00 {
 			compatible = "st,stm32-usb";
 			reg = <0x40005c00 0x400>;
@@ -21,7 +30,8 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>,
+				 <&rcc STM32_SRC_HSI48 HSI48_SEL(1)>;
 			status = "disabled";
 		};
 

@@ -16,6 +16,7 @@
 #include <mem.h>
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/pcie/pcie.h>
 
 / {
 	#address-cells = <2>;
@@ -71,6 +72,14 @@
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
+			#size-cells = <0x02>;
+			#address-cells = <0x02>;
+
+			its: its@8080000 {
+				compatible = "arm,gic-v3-its";
+				reg = <0x00 0x8080000 0x00 0x20000>;
+				msi-controller;
+			};
 		};
 
 		uart0: uart@9000000 {
@@ -90,6 +99,40 @@
 			 * second flash bank for now
 			 */
 			reg = <0x0 0x0 0x0 DT_SIZE_M(64) /* 0x4000000 DT_SIZE_M(64) */>;
+		};
+
+		pcie: pcie@4010000000 {
+			compatible = "pci-host-ecam-generic";
+			device_type = "pci";
+			reg = <0x40 0x10000000 0x00 0x10000000>;
+			#size-cells = <0x02>;
+			#address-cells = <0x03>;
+			ranges = <0x1000000 0x00 0x00        0x00 0x3eff0000  0x00 0x10000
+				  0x2000000 0x00 0x10000000  0x00 0x10000000  0x00 0x2eff0000
+				  0x3000000 0x80 0x00        0x80 0x00        0x80 0x00>;
+			#interrupt-cells = <0x01>;
+			interrupt-map-mask = <0x1800 0x00 0x00 0x07>;
+			interrupt-map = <0x00   0x00 0x00 1 &gic 0 0 GIC_SPI 0x03 IRQ_TYPE_EDGE
+					 0x00   0x00 0x00 2 &gic 0 0 GIC_SPI 0x04 IRQ_TYPE_EDGE
+					 0x00   0x00 0x00 3 &gic 0 0 GIC_SPI 0x05 IRQ_TYPE_EDGE
+					 0x00   0x00 0x00 4 &gic 0 0 GIC_SPI 0x06 IRQ_TYPE_EDGE
+
+					 0x800  0x00 0x00 1 &gic 0 0 GIC_SPI 0x04 IRQ_TYPE_EDGE
+					 0x800  0x00 0x00 2 &gic 0 0 GIC_SPI 0x05 IRQ_TYPE_EDGE
+					 0x800  0x00 0x00 3 &gic 0 0 GIC_SPI 0x06 IRQ_TYPE_EDGE
+					 0x800  0x00 0x00 4 &gic 0 0 GIC_SPI 0x03 IRQ_TYPE_EDGE
+
+					 0x1000 0x00 0x00 1 &gic 0 0 GIC_SPI 0x05 IRQ_TYPE_EDGE
+					 0x1000 0x00 0x00 2 &gic 0 0 GIC_SPI 0x06 IRQ_TYPE_EDGE
+					 0x1000 0x00 0x00 3 &gic 0 0 GIC_SPI 0x03 IRQ_TYPE_EDGE
+					 0x1000 0x00 0x00 4 &gic 0 0 GIC_SPI 0x04 IRQ_TYPE_EDGE
+
+					 0x1800 0x00 0x00 1 &gic 0 0 GIC_SPI 0x06 IRQ_TYPE_EDGE
+					 0x1800 0x00 0x00 2 &gic 0 0 GIC_SPI 0x03 IRQ_TYPE_EDGE
+					 0x1800 0x00 0x00 3 &gic 0 0 GIC_SPI 0x04 IRQ_TYPE_EDGE
+					 0x1800 0x00 0x00 4 &gic 0 0 GIC_SPI 0x05 IRQ_TYPE_EDGE>;
+			msi-parent = <&its>;
+			bus-range = <0x00 0xff>;
 		};
 	};
 };

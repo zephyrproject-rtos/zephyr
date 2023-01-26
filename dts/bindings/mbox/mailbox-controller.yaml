@@ -4,7 +4,7 @@
 # Common fields for mailbox / IPM controllers
 
 properties:
-    "#mbox-cells":
-      type: int
-      required: true
-      description: Number of items to expect in a Mailbox specifier
+  "#mbox-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a Mailbox specifier

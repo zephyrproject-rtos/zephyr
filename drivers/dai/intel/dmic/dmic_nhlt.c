@@ -253,7 +253,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 
 	/* Channel_ctlr_mask bits indicate the FIFOs enabled*/
 	channel_ctrl_mask = ((struct nhlt_dmic_channel_ctrl_mask *)p)->channel_ctrl_mask;
-	num_fifos = popcount(channel_ctrl_mask); /* Count set bits */
+	num_fifos = POPCOUNT(channel_ctrl_mask); /* Count set bits */
 	p += sizeof(struct nhlt_dmic_channel_ctrl_mask);
 	LOG_DBG("dmic_set_config_nhlt(): channel_ctrl_mask = %d", channel_ctrl_mask);
 
@@ -336,7 +336,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 
 	/* Get PDMx registers */
 	pdm_ctrl_mask = ((struct nhlt_pdm_ctrl_mask *)p)->pdm_ctrl_mask;
-	num_pdm = popcount(pdm_ctrl_mask); /* Count set bits */
+	num_pdm = POPCOUNT(pdm_ctrl_mask); /* Count set bits */
 	p += sizeof(struct nhlt_pdm_ctrl_mask);
 	LOG_DBG("dmic_set_config_nhlt(): pdm_ctrl_mask = %d", pdm_ctrl_mask);
 	if (num_pdm < 1 || num_pdm > CONFIG_DAI_DMIC_HW_CONTROLLERS) {

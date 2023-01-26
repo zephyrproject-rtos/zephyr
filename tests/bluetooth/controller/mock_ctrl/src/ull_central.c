@@ -5,6 +5,7 @@
  */
 
 #include "zephyr/types.h"
+#include <zephyr/ztest.h>
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
@@ -14,7 +15,7 @@
 
 #include "hal/ccm.h"
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 
 void ull_central_setup(memq_link_t *link, struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
@@ -34,6 +35,23 @@ uint8_t ull_central_chm_update(void)
 
 
 int ull_central_reset(void)
+{
+	return 0;
+}
+
+uint16_t ull_central_iso_cis_offset_get(uint16_t cis_handle, uint32_t *cis_offset_min,
+					uint32_t *cis_offset_max)
+{
+	return 0;
+}
+
+uint8_t ull_central_iso_setup(uint16_t cis_handle,
+			      uint32_t *cig_sync_delay,
+			      uint32_t *cis_sync_delay,
+			      uint32_t *cis_offset_min,
+			      uint32_t *cis_offset_max,
+			      uint16_t *conn_event_count,
+			      uint8_t  *access_addr)
 {
 	return 0;
 }

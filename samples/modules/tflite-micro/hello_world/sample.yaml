@@ -15,9 +15,12 @@ common:
 tests:
   sample.tensorflow.helloworld:
     platform_allow: qemu_x86 qemu_x86_64
+    integration_platforms:
+      - qemu_x86
     tags: tensorflow
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
   sample.tensorflow.helloworld.cmsis_nn:
     tags: tensorflow
     platform_allow: mps3_an547
     extra_configs:
-    - CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y
+      - CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y

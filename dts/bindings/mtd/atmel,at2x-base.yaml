@@ -6,24 +6,23 @@
 include: eeprom-base.yaml
 
 properties:
-    size:
-      required: true
-    pagesize:
-      type: int
-      required: true
-      description: EEPROM page size in bytes
-    address-width:
-      type: int
-      required: true
-      description: EEPROM address width in bits
-    timeout:
-      type: int
-      required: true
-      description: EEPROM write cycle timeout in milliseconds
-    wp-gpios:
-      type: phandle-array
-      required: false
-      description: |
-        GPIO to which the write-protect pin of the chip is connected.
+  size:
+    required: true
+  pagesize:
+    type: int
+    required: true
+    description: EEPROM page size in bytes
+  address-width:
+    type: int
+    required: true
+    description: EEPROM address width in bits
+  timeout:
+    type: int
+    required: true
+    description: EEPROM write cycle timeout in milliseconds
+  wp-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the write-protect pin of the chip is connected.
 
-        The device will interpret this signal as active-low.
+      The device will interpret this signal as active-low.

@@ -69,6 +69,8 @@ enum uart_rx_stop_reason {
 	 * support collision checking.
 	 */
 	UART_ERROR_COLLISION = (1 << 4),
+	/** @brief Noise error */
+	UART_ERROR_NOISE = (1 << 5),
 };
 
 /** @brief Parity modes */
@@ -108,6 +110,7 @@ enum uart_config_flow_control {
 	UART_CFG_FLOW_CTRL_NONE,
 	UART_CFG_FLOW_CTRL_RTS_CTS,
 	UART_CFG_FLOW_CTRL_DTR_DSR,
+	UART_CFG_FLOW_CTRL_RS485,
 };
 
 /**
@@ -1159,10 +1162,14 @@ static inline int z_impl_uart_irq_update(const struct device *dev)
  * @param dev UART device instance.
  * @param cb Pointer to the callback function.
  * @param user_data Data to pass to callback function.
+ *
+ * @retval 0 On success.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
  */
-static inline void uart_irq_callback_user_data_set(const struct device *dev,
-						   uart_irq_callback_user_data_t cb,
-						   void *user_data)
+static inline int uart_irq_callback_user_data_set(const struct device *dev,
+						  uart_irq_callback_user_data_t cb,
+						  void *user_data)
 {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_driver_api *api =
@@ -1170,11 +1177,15 @@ static inline void uart_irq_callback_user_data_set(const struct device *dev,
 
 	if ((api != NULL) && (api->irq_callback_set != NULL)) {
 		api->irq_callback_set(dev, cb, user_data);
+		return 0;
+	} else {
+		return -ENOSYS;
 	}
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(cb);
 	ARG_UNUSED(user_data);
+	return -ENOTSUP;
 #endif
 }
 
@@ -1186,11 +1197,15 @@ static inline void uart_irq_callback_user_data_set(const struct device *dev,
  *
  * @param dev UART device instance.
  * @param cb Pointer to the callback function.
+ *
+ * @retval 0 On success.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
  */
-static inline void uart_irq_callback_set(const struct device *dev,
+static inline int uart_irq_callback_set(const struct device *dev,
 					 uart_irq_callback_user_data_t cb)
 {
-	uart_irq_callback_user_data_set(dev, cb, NULL);
+	return uart_irq_callback_user_data_set(dev, cb, NULL);
 }
 
 /**

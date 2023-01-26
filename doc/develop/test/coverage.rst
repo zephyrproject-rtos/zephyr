@@ -153,3 +153,18 @@ which produces a report in the same location as non-unit testing.
 
 .. _gcov:
    https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
+
+Using different toolchains
+==========================
+
+Twister looks at the environment variable ``ZEPHYR_TOOLCHAIN_VARIANT``
+to check which gcov tool to use by default. The following are used as the
+default for the Twister ``--gcov-tool`` argument default:
+
++-----------+-----------------------+
+| Toolchain | ``--gcov-tool`` value |
++-----------+-----------------------+
+| host      | ``gcov``              |
+| llvm      | ``llvm-cov gcov``     |
+| zephyr    | ``gcov``              |
++-----------+-----------------------+

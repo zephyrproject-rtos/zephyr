@@ -284,7 +284,6 @@ static int intel_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 static int intel_sha_device_set_hash_type(const struct device *dev, struct hash_ctx *ctx,
 					  enum hash_algo algo)
 {
-	int ret;
 	int ctx_idx;
 	struct sha_container *self = (struct sha_container *const)(dev)->data;
 
@@ -305,7 +304,7 @@ static int intel_sha_device_set_hash_type(const struct device *dev, struct hash_
 	sha_sessions[ctx_idx].algo = algo;
 
 	ctx->hash_hndlr = intel_sha_compute;
-	return ret;
+	return 0;
 }
 
 static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)

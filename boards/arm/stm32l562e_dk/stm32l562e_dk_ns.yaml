@@ -6,6 +6,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - counter
   - gpio
   - i2c
   - lptim
@@ -13,5 +14,7 @@ supported:
   - spi
   - arduino_spi
   - sdhc
+  - usb
+  - usb_device
 ram: 192
 flash: 512

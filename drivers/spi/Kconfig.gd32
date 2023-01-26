@@ -13,7 +13,16 @@ if SPI_GD32
 config SPI_GD32_INTERRUPT
 	bool "GD32 MCU SPI Interrupt Support"
 	default y if SPI_ASYNC
+	default y if SPI_GD32_DMA
 	help
 	  Enable the interrupt driven mode for SPI instances
+
+config SPI_GD32_DMA
+	bool "GD32 MCU SPI DMA Support"
+	select DMA
+	select SPI_GD32_INTERRUPT
+	help
+	  Use the DMA for SPI transfer
+	  that enable dma channels in their device tree node.
 
 endif # SPI_GD32

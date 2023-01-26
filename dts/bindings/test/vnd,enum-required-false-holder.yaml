@@ -10,7 +10,6 @@ include: [base.yaml]
 properties:
   val:
     type: string
-    required: false
     enum:
       - "zero"
       - "one"

@@ -1,0 +1,37 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PA8_DSPI_0_SOUT>, <PA6_DSPI_0_SCK_O>, <PA2_DSPI_0_PCS0_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PA7_DSPI_0_SIN>;
+			input-enable;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <100000000>;
+	status = "okay";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};

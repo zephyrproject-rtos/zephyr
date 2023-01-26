@@ -13,6 +13,5 @@ include:
       - label
 
 properties:
-    label:
-        type: string
-        required: false
+  label:
+    type: string

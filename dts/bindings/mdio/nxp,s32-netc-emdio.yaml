@@ -1,0 +1,18 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 NETC External MDIO controller
+
+compatible: "nxp,s32-netc-emdio"
+
+include: [mdio-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

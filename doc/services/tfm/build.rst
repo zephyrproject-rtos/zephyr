@@ -122,6 +122,18 @@ following CMake snippet in your CMakeLists.txt file.
    options. Also CMake generator expressions are supported, such as
    ``$<1:-DFOO=bar>``
 
+Since ``TFM_CMAKE_OPTIONS`` is a list argument it will be expanded before it is
+passed to the TF-M build system.
+Options that have list arguments must therefore be properly escaped to avoid
+being expanded as a list.
+
+   .. code-block:: cmake
+
+     set_property(TARGET zephyr_property_target
+                  APPEND PROPERTY TFM_CMAKE_OPTIONS
+                  -DFOO="bar\\\;baz"
+     )
+
 Footprint and Memory Usage
 **************************
 

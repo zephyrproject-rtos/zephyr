@@ -7,15 +7,15 @@ compatible: "microchip,xec-pinmux"
 include: base.yaml
 
 child-binding:
-    description: pinmux child node
-    properties:
-       ph-reg:
-          type: phandle
-          required: true
+  description: pinmux child node
+  properties:
+    ph-reg:
+      type: phandle
+      required: true
 
-       port-num:
-         type: int
-         required: true
-         description: |
-           Zero based GPIO port number. Pin group 000 - 036 is port 0,
-           040 - 076 is port 1, etc.
+    port-num:
+      type: int
+      required: true
+      description: |
+        Zero based GPIO port number. Pin group 000 - 036 is port 0,
+        040 - 076 is port 1, etc.

@@ -47,12 +47,18 @@ static void ipc_isr(void *arg)
 
 unsigned int soc_num_cpus;
 
-void soc_mp_init(void)
+static __imr int soc_num_cpus_init(const struct device *dev)
 {
 	/* Need to set soc_num_cpus early to arch_num_cpus() works properly */
 	soc_num_cpus = ((sys_read32(DFIDCCP) >> CAP_INST_SHIFT) & CAP_INST_MASK) + 1;
 	soc_num_cpus = MIN(CONFIG_MP_MAX_NUM_CPUS, soc_num_cpus);
 
+	return 0;
+}
+SYS_INIT(soc_num_cpus_init, EARLY, 1);
+
+void soc_mp_init(void)
+{
 	IRQ_CONNECT(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA), 0, ipc_isr, 0, 0);
 
 	irq_enable(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA));
@@ -87,13 +93,13 @@ void soc_start_core(int cpu_num)
 		}
 
 		/* Tell the ACE ROM that it should use secondary core flow */
-		DFDSPBRCP.bootctl[cpu_num].battr |= DFDSPBRCP_BATTR_LPSCTL_BATTR_SLAVE_CORE;
+		DSPCS.bootctl[cpu_num].battr |= DSPBR_BATTR_LPSCTL_BATTR_SLAVE_CORE;
 	}
 
-	DFDSPBRCP.capctl[cpu_num].ctl |= DFDSPBRCP_CTL_SPA;
+	DSPCS.capctl[cpu_num].ctl |= DSPCS_CTL_SPA;
 
 	/* Waiting for power up */
-	while (((DFDSPBRCP.capctl[cpu_num].ctl & DFDSPBRCP_CTL_CPA) != DFDSPBRCP_CTL_CPA) &&
+	while (((DSPCS.capctl[cpu_num].ctl & DSPCS_CTL_CPA) != DSPCS_CTL_CPA) &&
 	       (retry > 0)) {
 		k_busy_wait(HW_STATE_CHECK_DELAY);
 		retry--;
@@ -110,11 +116,11 @@ void soc_mp_startup(uint32_t cpu)
 	z_xtensa_irq_enable(ACE_INTC_IRQ);
 
 	/* Prevent idle from powering us off */
-	DFDSPBRCP.bootctl[cpu].bctl |=
-		DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
+	DSPCS.bootctl[cpu].bctl |=
+		DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 	/* checking if WDT was stopped during D3 transition */
-	if (DFDSPBRCP.bootctl[cpu].wdtcs & DFDSPBRCP_WDT_RESUME) {
-		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESUME;
+	if (DSPCS.bootctl[cpu].wdtcs & DSPBR_WDT_RESUME) {
+		DSPCS.bootctl[cpu].wdtcs = DSPBR_WDT_RESUME;
 		/* TODO: delete this IF when FW starts using imr restore vector */
 	}
 }
@@ -146,14 +152,14 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-	CHECKIF(!soc_cpus_active[id]) {
+	CHECKIF(soc_cpus_active[id]) {
 		return -EINVAL;
 	}
 
-	DFDSPBRCP.capctl[id].ctl &= ~DFDSPBRCP_CTL_SPA;
+	DSPCS.capctl[id].ctl &= ~DSPCS_CTL_SPA;
 
 	/* Waiting for power off */
-	while (((DFDSPBRCP.capctl[id].ctl & DFDSPBRCP_CTL_CPA) == DFDSPBRCP_CTL_CPA) &&
+	while (((DSPCS.capctl[id].ctl & DSPCS_CTL_CPA) == DSPCS_CTL_CPA) &&
 	       (retry > 0)) {
 		k_busy_wait(HW_STATE_CHECK_DELAY);
 		retry--;
@@ -163,9 +169,6 @@ int soc_adsp_halt_cpu(int id)
 		__ASSERT(false, "%s secondary core has not powered down", __func__);
 		return -EINVAL;
 	}
-
-	/* Stop sending IPIs to this core */
-	soc_cpus_active[id] = false;
 
 	return 0;
 }

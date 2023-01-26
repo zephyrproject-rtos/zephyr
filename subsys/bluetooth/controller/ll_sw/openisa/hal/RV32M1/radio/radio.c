@@ -26,12 +26,14 @@
 #include "hal/swi.h"
 #include "fsl_cau3_ble.h"	/* must be after irq.h */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_openisa_radio
-#include "common/log.h"
 #include "common/assert.h"
+
 #include <soc.h>
 #include "hal/debug.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_openisa_radio);
 
 static radio_isr_cb_t isr_cb;
 static void *isr_cb_param;
@@ -217,7 +219,7 @@ static void ar_execute(void *pkt)
 					kCAU3_TaskDoneEvent);
 		if (status != kStatus_Success) {
 			radio_ar_ctx.irk_idx = RPA_NO_IRK_MATCH;
-			BT_ERR("CAUv3 RPA table search failed %d", status);
+			LOG_ERR("CAUv3 RPA table search failed %d", status);
 			return;
 		}
 	}
@@ -578,7 +580,7 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_1MBPS);
 		if (err) {
-			BT_ERR("Failed to change PHY to 1 Mbps");
+			LOG_ERR("Failed to change PHY to 1 Mbps");
 			BT_ASSERT(0);
 		}
 
@@ -595,7 +597,7 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_2MBPS);
 		if (err) {
-			BT_ERR("Failed to change PHY to 2 Mbps");
+			LOG_ERR("Failed to change PHY to 2 Mbps");
 			BT_ASSERT(0);
 		}
 
@@ -1263,9 +1265,9 @@ void *radio_ccm_rx_pkt_set_ut(struct ccm *ccm, uint8_t phy, void *pkt)
 	radio_ccm_is_done();
 
 	if (ctx_ccm.auth_mic_valid == 1 && ((uint8_t *)pkt)[2] == 0x06) {
-		BT_INFO("Passed decrypt\n");
+		LOG_INF("Passed decrypt\n");
 	} else {
-		BT_INFO("Failed decrypt\n");
+		LOG_INF("Failed decrypt\n");
 	}
 
 	return result;
@@ -1298,7 +1300,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	/* Loads the key into CAU3's DMEM and expands the AES key schedule. */
 	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
 	if (status != kStatus_Success) {
-		BT_ERR("CAUv3 AES key set failed %d", status);
+		LOG_ERR("CAUv3 AES key set failed %d", status);
 		return NULL;
 	}
 
@@ -1360,9 +1362,9 @@ void *radio_ccm_tx_pkt_set_ut(struct ccm *ccm, void *pkt)
 	result = radio_ccm_tx_pkt_set(ccm, pkt);
 
 	if (memcmp(result, data_ref_out, sizeof(data_ref_out))) {
-		BT_INFO("Failed encrypt\n");
+		LOG_INF("Failed encrypt\n");
 	} else {
-		BT_INFO("Passed encrypt\n");
+		LOG_INF("Passed encrypt\n");
 	}
 
 	return result;
@@ -1397,7 +1399,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	/* Loads the key into CAU3's DMEM and expands the AES key schedule. */
 	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
 	if (status != kStatus_Success) {
-		BT_ERR("CAUv3 AES key set failed %d", status);
+		LOG_ERR("CAUv3 AES key set failed %d", status);
 		return NULL;
 	}
 
@@ -1410,7 +1412,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 				 ctx_ccm.nonce.bytes, 13,
 				 &aad, 1, auth_mic, CAU3_BLE_MIC_SIZE);
 	if (status != kStatus_Success) {
-		BT_ERR("CAUv3 AES CCM decrypt failed %d", status);
+		LOG_ERR("CAUv3 AES CCM decrypt failed %d", status);
 		return 0;
 	}
 
@@ -1441,7 +1443,7 @@ uint32_t radio_ccm_is_done(void)
 				ctx_ccm.nonce.bytes, 13,
 				&aad, 1, auth_mic, CAU3_BLE_MIC_SIZE);
 		if (status != kStatus_Success) {
-			BT_ERR("CAUv3 AES CCM decrypt failed %d", status);
+			LOG_ERR("CAUv3 AES CCM decrypt failed %d", status);
 			return 0;
 		}
 
@@ -1479,14 +1481,13 @@ void radio_ar_configure(uint32_t nirk, void *irk)
 	/* Initialize CAUv3 RPA table */
 	status = CAU3_RPAtableInit(CAU3, kCAU3_TaskDoneEvent);
 	if (kStatus_Success != status) {
-		BT_ERR("CAUv3 RPA table init failed");
+		LOG_ERR("CAUv3 RPA table init failed");
 		return;
 	}
 
 	/* CAUv3 RPA table is limited to CONFIG_BT_CTLR_RL_SIZE entries */
 	if (nirk > CONFIG_BT_CTLR_RL_SIZE) {
-		BT_WARN("Max CAUv3 RPA table size is %d",
-			CONFIG_BT_CTLR_RL_SIZE);
+		LOG_WRN("Max CAUv3 RPA table size is %d", CONFIG_BT_CTLR_RL_SIZE);
 		nirk = CONFIG_BT_CTLR_RL_SIZE;
 	}
 
@@ -1497,7 +1498,7 @@ void radio_ar_configure(uint32_t nirk, void *irk)
 		status = CAU3_RPAtableInsertKey(CAU3, (uint32_t *)&pirk,
 						kCAU3_TaskDoneEvent);
 		if (kStatus_Success != status) {
-			BT_ERR("CAUv3 RPA table insert failed");
+			LOG_ERR("CAUv3 RPA table insert failed");
 			return;
 		}
 	}

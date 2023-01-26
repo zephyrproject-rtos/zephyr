@@ -320,6 +320,14 @@ void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
 	LL_DMA_EnableStream(dma, dma_stm32_id_to_stream(id));
 }
 
+bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id)
+{
+	if (LL_DMA_IsEnabledStream(dma, dma_stm32_id_to_stream(id)) == 1) {
+		return true;
+	}
+	return false;
+}
+
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 	LL_DMA_DisableStream(dma, dma_stm32_id_to_stream(id));
@@ -402,7 +410,6 @@ uint32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph)
  * compatible. If they are not compatible, refer to the 'FIFO'
  * section in the 'DMA' chapter in the Reference Manual for more
  * information.
- * break is emitted since every path of the code has 'return'.
  * This function does not have the obligation of checking the parameters.
  */
 bool stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef *DMAx)
@@ -420,44 +427,39 @@ bool stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef *DMAx)
 			if (fifo_level == LL_DMA_FIFOTHRESHOLD_1_2 ||
 			    fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
 				return true;
-			} else {
-				return false;
 			}
+			break;
 		case LL_DMA_MBURST_INC16:
 			if (fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
 				return true;
-			} else {
-				return false;
 			}
+			break;
 		}
+		break;
 	case LL_DMA_MDATAALIGN_HALFWORD:
 		switch (mburst) {
 		case LL_DMA_MBURST_INC4:
 			if (fifo_level == LL_DMA_FIFOTHRESHOLD_1_2 ||
 			    fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
 				return true;
-			} else {
-				return false;
 			}
+			break;
 		case LL_DMA_MBURST_INC8:
 			if (fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
 				return true;
-			} else {
-				return false;
 			}
-		case LL_DMA_MBURST_INC16:
-			return false;
+			break;
 		}
+		break;
 	case LL_DMA_MDATAALIGN_WORD:
 		if (mburst == LL_DMA_MBURST_INC4 &&
 		    fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
 			return true;
-		} else {
-			return false;
 		}
-	default:
-		return false;
 	}
+
+	/* Other combinations are forbidden. */
+	return false;
 }
 
 uint32_t stm32_dma_get_fifo_threshold(uint16_t fifo_mode_control)

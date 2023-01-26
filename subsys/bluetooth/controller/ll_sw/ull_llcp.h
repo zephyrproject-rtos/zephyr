@@ -182,9 +182,19 @@ uint8_t ull_cp_cis_terminate(struct ll_conn *conn, struct ll_conn_iso_stream *ci
 			     uint8_t error_code);
 
 /**
+ * @brief Initiate a CIS Create Procedure.
+ */
+uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis);
+
+/**
  * @brief Is ongoing create cis procedure expecting a reply?
  */
 bool ull_cp_cc_awaiting_reply(struct ll_conn *conn);
+
+/**
+ * @brief Is ongoing create cis procedure expecting an established event?
+ */
+bool ull_cp_cc_awaiting_established(struct ll_conn *conn);
 
 /**
  * @brief Get handle of ongoing create cis procedure.
@@ -198,9 +208,19 @@ uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn);
 void ull_cp_cc_accept(struct ll_conn *conn);
 
 /**
- * @brief Rejset the remote device’s request to create cis.
+ * @brief Reject the remote device’s request to create cis.
  */
 void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code);
+
+/**
+ * @brief CIS was established.
+ */
+void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code);
+
+/**
+ * @brief CIS creation ongoing.
+ */
+bool ull_lp_cc_is_active(struct ll_conn *conn);
 
 /**
  * @brief Initiate a Channel Map Update Procedure.

@@ -47,6 +47,16 @@
 	status = "disabled";
 };
 
+&pll2 {
+	/delete-property/ div-m;
+	/delete-property/ mul-n;
+	/delete-property/ div-p;
+	/delete-property/ div-q;
+	/delete-property/ div-r;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
 &pll3 {
 	/delete-property/ div-m;
 	/delete-property/ mul-n;

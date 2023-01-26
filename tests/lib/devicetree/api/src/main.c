@@ -1774,6 +1774,15 @@ ZTEST(devicetree_api, test_parent)
 }
 
 #undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_i2c_mux_controller
+ZTEST(devicetree_api, test_gparent)
+{
+	zassert_true(DT_SAME_NODE(DT_GPARENT(TEST_I2C_MUX_CTLR_1), TEST_I2C), "");
+	zassert_true(DT_SAME_NODE(DT_INST_GPARENT(0), TEST_I2C), "");
+	zassert_true(DT_SAME_NODE(DT_INST_GPARENT(1), TEST_I2C), "");
+}
+
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_child_bindings
 ZTEST(devicetree_api, test_children)
 {

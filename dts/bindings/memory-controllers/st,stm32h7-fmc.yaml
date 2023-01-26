@@ -32,19 +32,18 @@ compatible: "st,stm32h7-fmc"
 include: ["st,stm32-fmc.yaml"]
 
 properties:
-    st,mem-swap:
-      type: string
-      required: false
-      default: "disable" # reset state
-      enum:
-        - "disable"
-        - "sdram-sram"
-        - "sdramb2"
-      description: |
-        The FMC bank mapping configuration (BMAP bits of FMC_BCR1).
+  st,mem-swap:
+    type: string
+    default: "disable" # reset state
+    enum:
+      - "disable"
+      - "sdram-sram"
+      - "sdramb2"
+    description: |
+      The FMC bank mapping configuration (BMAP bits of FMC_BCR1).
 
-        * disable    - Default mapping.
-        * sdram-sram - Swap the NOR/PSRAM bank with SDRAM.
-        * sdramb2    - Remaps the SDRAM bank2.
+      * disable    - Default mapping.
+      * sdram-sram - Swap the NOR/PSRAM bank with SDRAM.
+      * sdramb2    - Remaps the SDRAM bank2.
 
-        If absent, then default mapping (disable) is used (reset state).
+      If absent, then default mapping (disable) is used (reset state).

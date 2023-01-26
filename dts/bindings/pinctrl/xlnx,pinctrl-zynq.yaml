@@ -47,19 +47,7 @@ description: |
 
 compatible: "xlnx,pinctrl-zynq"
 
-include:
-  - name: base.yaml
-  - name: pincfg-node-group.yaml
-    child-binding:
-      child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-high-impedance
-          - bias-pull-up
-          - low-power-enable
-          - low-power-disable
-          - power-source
-          - slew-rate
+include: base.yaml
 
 properties:
   reg:
@@ -81,10 +69,20 @@ child-binding:
     description: |
       Xilinx Zynq 7000 SoC pin configuration node
 
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-high-impedance
+          - bias-pull-up
+          - low-power-enable
+          - low-power-disable
+          - power-source
+          - slew-rate
+
     properties:
       groups:
         type: string-array
-        required: false
         description: |
           Specify list of pin groups to select for this configuration node.
 
@@ -126,7 +124,6 @@ child-binding:
 
       pins:
         type: string-array
-        required: false
         description: |
           Specify list of pin names to select for this configuration node. Valid pin names are
           "MIO0" to "MIO53".
@@ -136,7 +133,6 @@ child-binding:
 
       function:
         type: string
-        required: false
         enum: ["ethernet0", "ethernet1", "mdio0", "mdio1", "qspi0", "qspi1", "qspi_fbclk",
                "qspi_cs1", "spi0", "spi0_ss", "spi1", "spi1_ss", "sdio0", "sdio0_pc",
                "sdio0_cd", "sdio0_wp", "sdio1", "sdio1_pc", "sdio1_cd", "sdio1_wp",

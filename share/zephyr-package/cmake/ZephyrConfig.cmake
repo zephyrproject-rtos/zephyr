@@ -137,7 +137,7 @@ if(NOT IS_INCLUDED)
     # common path with the current sample.
     # and if so, we will return here, and let CMake call into the other registered package for real
     # version checking.
-    check_zephyr_package(CURRENT_WORKSPACE_DIR ${CURRENT_WORKSPACE_DIR})
+    check_zephyr_package(WORKSPACE_DIR ${CURRENT_WORKSPACE_DIR})
 
     if(ZEPHYR_PREFER)
       check_zephyr_package(SEARCH_PARENTS CANDIDATES_PREFERENCE_LIST ${ZEPHYR_PREFER})

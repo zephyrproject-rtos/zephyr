@@ -5,11 +5,8 @@ description: Kvaser PCIcan
 
 compatible: "kvaser,pcican"
 
-include: can-controller.yaml
+include: [can-controller.yaml, pcie-device.yaml]
 
 properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: true
+  interrupts:
+    required: true

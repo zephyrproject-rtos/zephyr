@@ -86,7 +86,7 @@ static void config_leds(CO_NMT_t *nmt)
 					    GPIO_OUTPUT_INACTIVE);
 		if (err) {
 			LOG_ERR("failed to configure Red LED gpio: %d", err);
-			led_green_gpio.port = NULL;
+			led_red_gpio.port = NULL;
 		}
 	}
 

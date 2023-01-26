@@ -16,13 +16,15 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/iso.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
-#define LOG_MODULE_NAME bt_hci_raw
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
 
 #include "hci_ecc.h"
 #include "monitor.h"
 #include "hci_raw_internal.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_hci_raw);
 
 #define H4_CMD 0x01
 #define H4_ACL 0x02
@@ -65,7 +67,7 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv)
 
 	bt_dev.drv = drv;
 
-	BT_DBG("Registered %s", drv->name ? drv->name : "");
+	LOG_DBG("Registered %s", drv->name ? drv->name : "");
 
 	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, drv->bus,
 			     BT_ADDR_ANY, drv->name ? drv->name : "bt0");
@@ -83,7 +85,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 	case BT_BUF_ISO_IN:
 		break;
 	default:
-		BT_ERR("Invalid rx type: %u", type);
+		LOG_ERR("Invalid rx type: %u", type);
 		return NULL;
 	}
 
@@ -146,7 +148,7 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 		}
 		__fallthrough;
 	default:
-		BT_ERR("Invalid tx type: %u", type);
+		LOG_ERR("Invalid tx type: %u", type);
 		return NULL;
 	}
 
@@ -182,7 +184,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeou
 
 int bt_recv(struct net_buf *buf)
 {
-	BT_DBG("buf %p len %u", buf, buf->len);
+	LOG_DBG("buf %p len %u", buf, buf->len);
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
@@ -202,7 +204,7 @@ int bt_recv(struct net_buf *buf)
 			}
 			__fallthrough;
 		default:
-			BT_ERR("Unknown type %u", bt_buf_get_type(buf));
+			LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
 			return -EINVAL;
 		}
 	}
@@ -262,13 +264,13 @@ static uint8_t bt_send_ext(struct net_buf *buf)
 	net_buf_simple_save(&buf->b, &state);
 
 	if (buf->len < sizeof(*hdr)) {
-		BT_ERR("No HCI Command header");
+		LOG_ERR("No HCI Command header");
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	if (buf->len < hdr->param_len) {
-		BT_ERR("Invalid HCI CMD packet length");
+		LOG_ERR("Invalid HCI CMD packet length");
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
@@ -300,7 +302,7 @@ static uint8_t bt_send_ext(struct net_buf *buf)
 
 int bt_send(struct net_buf *buf)
 {
-	BT_DBG("buf %p len %u", buf, buf->len);
+	LOG_DBG("buf %p len %u", buf, buf->len);
 
 	if (buf->len == 0) {
 		return BT_HCI_ERR_INVALID_PARAM;
@@ -327,7 +329,7 @@ int bt_send(struct net_buf *buf)
 
 int bt_hci_raw_set_mode(uint8_t mode)
 {
-	BT_DBG("mode %u", mode);
+	LOG_DBG("mode %u", mode);
 
 	if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4)) {
 		switch (mode) {
@@ -363,22 +365,22 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 	const struct bt_hci_driver *drv = bt_dev.drv;
 	int err;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	raw_rx = rx_queue;
 
 	if (!bt_dev.drv) {
-		BT_ERR("No HCI driver registered");
+		LOG_ERR("No HCI driver registered");
 		return -ENODEV;
 	}
 
 	err = drv->open();
 	if (err) {
-		BT_ERR("HCI driver open failed (%d)", err);
+		LOG_ERR("HCI driver open failed (%d)", err);
 		return err;
 	}
 
-	BT_INFO("Bluetooth enabled in RAW mode");
+	LOG_INF("Bluetooth enabled in RAW mode");
 
 	return 0;
 }

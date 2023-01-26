@@ -296,7 +296,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 	boot_banner();
 
-#if defined(CONFIG_CPLUSPLUS)
+#if defined(CONFIG_CPP)
 	void z_cpp_init_static(void);
 	z_cpp_init_static();
 #endif
@@ -498,6 +498,7 @@ sys_rand_fallback:
  * @return Does not return
  */
 __boot_func
+FUNC_NO_STACK_PROTECTOR
 FUNC_NORETURN void z_cstart(void)
 {
 	/* gcov hook needed to get the coverage report.*/

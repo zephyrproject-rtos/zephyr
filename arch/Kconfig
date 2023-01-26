@@ -274,6 +274,7 @@ config USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
 	depends on SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
+	select LINKER_USE_NO_RELAX
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
@@ -841,8 +842,8 @@ config CACHE_MANAGEMENT
 	bool "Cache management features"
 	depends on DCACHE || ICACHE
 	help
-	  This links in the cache management functions (for d-cache and i-cache
-	  where possible).
+	  This option enables the cache management functions backed by arch or
+	  driver code.
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
@@ -892,17 +893,17 @@ config ICACHE_LINE_SIZE
 choice CACHE_TYPE
 	prompt "Cache type"
 	depends on CACHE_MANAGEMENT
-	default HAS_ARCH_CACHE
+	default ARCH_CACHE
 
-config HAS_ARCH_CACHE
+config ARCH_CACHE
 	bool "Integrated cache controller"
 	help
-	  "Integrated on-core cache controller"
+	  Integrated on-core cache controller
 
-config HAS_EXTERNAL_CACHE
+config EXTERNAL_CACHE
 	bool "External cache controller"
 	help
-	  "External cache controller or cache management system"
+	  External cache controller
 
 endchoice
 

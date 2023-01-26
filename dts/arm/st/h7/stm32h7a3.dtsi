@@ -20,6 +20,11 @@
 			};
 		};
 
+		adc2: adc@40022100 {
+			temp-channel = <18>;
+			vref-channel = <19>;
+		};
+
 		dmamux1: dmamux@40020800 {
 			dma-requests= <111>;
 		};
@@ -32,7 +37,8 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 		};
@@ -50,6 +56,7 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x52005000 0x1000>;
 			interrupts = <92 0>;
+			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
@@ -61,6 +68,7 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x5200a000 0x1000>;
 			interrupts = <150 0>;
+			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x000080000>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;

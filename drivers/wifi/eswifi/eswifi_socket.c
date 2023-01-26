@@ -221,7 +221,10 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 		LOG_ERR("Unable to start TCP/UDP client");
 		return -EIO;
 	}
+
+#if !defined(CONFIG_NET_SOCKETS_OFFLOAD)
 	net_context_set_state(socket->context, NET_CONTEXT_CONNECTED);
+#endif
 
 	return 0;
 }

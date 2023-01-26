@@ -13,6 +13,7 @@
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_system.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <stm32_ll_utils.h>
@@ -121,6 +122,7 @@ static int enabled_clock(uint32_t src_clk)
 	if ((src_clk == STM32_SRC_SYSCLK) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI16) && IS_ENABLED(STM32_HSI_ENABLED)) ||
++	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_MSIS) && IS_ENABLED(STM32_MSIS_ENABLED)) ||
@@ -144,8 +146,6 @@ static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	volatile uint32_t *reg;
-	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
@@ -154,10 +154,8 @@ static inline int stm32_clock_control_on(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
-	reg_val = *reg;
-	reg_val |= pclken->enr;
-	*reg = reg_val;
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
+		     pclken->enr);
 
 	return 0;
 }
@@ -166,8 +164,6 @@ static inline int stm32_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	volatile uint32_t *reg;
-	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
@@ -176,10 +172,8 @@ static inline int stm32_clock_control_off(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
-	reg_val = *reg;
-	reg_val &= ~pclken->enr;
-	*reg = reg_val;
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
+		       pclken->enr);
 
 	return 0;
 }
@@ -189,8 +183,6 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 						void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	volatile uint32_t *reg;
-	uint32_t reg_val, dt_val;
 	int err;
 
 	ARG_UNUSED(dev);
@@ -202,13 +194,8 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
-	dt_val = STM32_CLOCK_VAL_GET(pclken->enr) <<
-					STM32_CLOCK_SHIFT_GET(pclken->enr);
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) +
-					STM32_CLOCK_REG_GET(pclken->enr));
-	reg_val = *reg;
-	reg_val |= dt_val;
-	*reg = reg_val;
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
+		     STM32_CLOCK_VAL_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
 
 	return 0;
 }
@@ -283,6 +270,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = STM32_LSI_FREQ;
 		break;
 #endif /* STM32_LSI_ENABLED */
+#if defined(STM32_HSI48_ENABLED)
+	case STM32_SRC_HSI48:
+		*rate = STM32_HSI48_FREQ;
+		break;
+#endif /* STM32_HSI48_ENABLED */
 #if defined(STM32_PLL_ENABLED)
 	case STM32_SRC_PLL1_P:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
@@ -390,6 +382,62 @@ static void set_regu_voltage(uint32_t hclk_freq)
 	}
 }
 
+#if defined(STM32_PLL_ENABLED)
+/*
+ * Dynamic voltage scaling:
+ * Enable the Booster mode before enabling then PLL for sysclock above 55MHz
+ * The goal of this function is to set the epod prescaler, so that epod clock freq
+ * is between 4MHz and 16MHz.
+ * Up to now only MSI as PLL1 source clock can be > 16MHz, requiring a epod prescaler > 1
+ * For HSI16, epod prescaler is default (div1, not divided).
+ * Once HSE is > 16MHz, the epod prescaler would also be also required.
+ */
+static void set_epod_booster(void)
+{
+	/* Reset Epod Prescaler in case it was set earlier with another DIV value */
+	LL_PWR_DisableEPODBooster();
+	while (LL_PWR_IsActiveFlag_BOOST() == 1) {
+	}
+
+	LL_RCC_SetPll1EPodPrescaler(LL_RCC_PLL1MBOOST_DIV_1);
+
+	if (MHZ(55) <= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
+		/*
+		 * Set EPOD clock prescaler based on PLL1 input freq
+		 * (MSI/PLLM  or HSE/PLLM when HSE is > 16MHz
+		 * Booster clock frequency should be between 4 and 16MHz
+		 * This is done in following steps:
+		 * Read MSI Frequency or HSE oscillaor freq
+		 * Divide PLL1 input freq (MSI/PLL or HSE/PLLM)
+		 * by the targeted freq (8MHz).
+		 * Make sure value is not higher than 16
+		 * Shift in the register space (/2)
+		 */
+		int tmp;
+
+		if (IS_ENABLED(STM32_PLL_SRC_MSIS)) {
+			tmp = __LL_RCC_CALC_MSIS_FREQ(LL_RCC_MSIRANGESEL_RUN,
+			 STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
+		} else if (IS_ENABLED(STM32_PLL_SRC_HSE) && (MHZ(16) < STM32_HSE_FREQ)) {
+			tmp = STM32_HSE_FREQ;
+		} else {
+			return;
+		}
+
+		tmp = MIN(tmp / STM32_PLL_M_DIVISOR / 8000000, 16);
+		tmp = tmp / 2;
+
+		/* Configure the epod clock frequency between 4 and 16 MHz */
+		LL_RCC_SetPll1EPodPrescaler(tmp << RCC_PLL1CFGR_PLL1MBOOST_Pos);
+
+		/* Enable EPOD booster and wait for booster ready flag set */
+		LL_PWR_EnableEPODBooster();
+		while (LL_PWR_IsActiveFlag_BOOST() == 0) {
+		}
+	}
+}
+#endif /* STM32_PLL_ENABLED */
+
 __unused
 static void clock_switch_to_hsi(void)
 {
@@ -432,8 +480,7 @@ static int set_up_plls(void)
 
 	LL_RCC_PLL1_Disable();
 
-	/* Configure PLL source */
-	/* Can be HSE , HSI  MSI */
+	/* Configure PLL source : Can be HSE, HSI, MSIS */
 	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL1_SetMainSource(LL_RCC_PLL1SOURCE_HSE);
@@ -447,6 +494,13 @@ static int set_up_plls(void)
 		return -ENOTSUP;
 	}
 
+	/*
+	 * Configure the EPOD booster
+	 * before increasing the system clock freq
+	 * and after pll clock source is set
+	 */
+	set_epod_booster();
+
 	r = get_vco_input_range(STM32_PLL_M_DIVISOR, &vco_input_range, PLL1_ID);
 	if (r < 0) {
 		return r;
@@ -454,6 +508,7 @@ static int set_up_plls(void)
 
 	LL_RCC_PLL1_SetDivider(STM32_PLL_M_DIVISOR);
 
+	/* Set VCO Input before enabling the PLL, depends on freq used for PLL1 */
 	LL_RCC_PLL1_SetVCOInputRange(vco_input_range);
 
 	LL_RCC_PLL1_SetN(STM32_PLL_N_MULTIPLIER);
@@ -628,6 +683,11 @@ static void set_up_fixed_clock_sources(void)
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
 
+		if (IS_ENABLED(STM32_LSE_BYPASS)) {
+			/* Configure LSE bypass */
+			LL_RCC_LSE_EnableBypass();
+		}
+
 		/* Enable LSE Oscillator */
 		LL_RCC_LSE_Enable();
 		/* Wait for LSE ready */
@@ -699,6 +759,11 @@ static void set_up_fixed_clock_sources(void)
 		}
 	}
 
+	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
+		LL_RCC_HSI48_Enable();
+		while (LL_RCC_HSI48_IsReady() != 1) {
+		}
+	}
 }
 
 int stm32_clock_control_init(const struct device *dev)

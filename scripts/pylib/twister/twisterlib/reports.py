@@ -250,8 +250,10 @@ class Reporting:
             device_log = os.path.join(instance.build_dir, "device.log")
 
             handler_time = instance.metrics.get('handler_time', 0)
-            ram_size = instance.metrics.get ("ram_size", 0)
-            rom_size  = instance.metrics.get("rom_size",0)
+            used_ram = instance.metrics.get ("used_ram", 0)
+            used_rom  = instance.metrics.get("used_rom",0)
+            available_ram = instance.metrics.get("available_ram", 0)
+            available_rom = instance.metrics.get("available_rom", 0)
             suite = {
                 "name": instance.testsuite.name,
                 "arch": instance.platform.arch,
@@ -264,13 +266,17 @@ class Reporting:
             if instance.status != 'filtered':
                 suite["runnable"] = instance.run
 
-            if ram_size:
-                suite["ram_size"] = ram_size
-            if rom_size:
-                suite["rom_size"] = rom_size
+            if used_ram:
+                suite["used_ram"] = used_ram
+            if used_rom:
+                suite["used_rom"] = used_rom
 
             suite['retries'] = instance.retries
 
+            if available_ram:
+                suite["available_ram"] = available_ram
+            if available_rom:
+                suite["available_rom"] = available_rom
             if instance.status in ["error", "failed"]:
                 suite['status'] = instance.status
                 suite["reason"] = instance.reason
@@ -341,8 +347,8 @@ class Reporting:
 
     def compare_metrics(self, filename):
         # name, datatype, lower results better
-        interesting_metrics = [("ram_size", int, True),
-                               ("rom_size", int, True)]
+        interesting_metrics = [("used_ram", int, True),
+                               ("used_rom", int, True)]
 
         if not os.path.exists(filename):
             logger.error("Cannot compare metrics, %s not found" % filename)

@@ -1,0 +1,4 @@
+tests:
+  drivers.udc:
+    tags: usb drivers
+    platform_allow: nrf52840dk_nrf52840

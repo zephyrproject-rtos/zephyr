@@ -8,16 +8,16 @@ compatible: "nxp,kinetis-flexcan"
 include: ["can-controller.yaml", "pinctrl-device.yaml"]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    clk-source:
-      type: int
-      required: true
-      description: CAN engine clock source
+  clk-source:
+    type: int
+    required: true
+    description: CAN engine clock source

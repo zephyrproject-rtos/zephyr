@@ -433,5 +433,230 @@
 				status = "disabled";
 			};
 		};
+
+		spi0: spi@40130000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40130000 0x10000>;
+			interrupts = <GIC_SPI 191 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40140000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40140000 0x10000>;
+			interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@40930000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40930000 0x10000>;
+			interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi3: spi@40940000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40940000 0x10000>;
+			interrupts = <GIC_SPI 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi4: spi@40950000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40950000 0x10000>;
+			interrupts = <GIC_SPI 195 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi5: spi@42130000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42130000 0x10000>;
+			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi6: spi@42140000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42140000 0x10000>;
+			interrupts = <GIC_SPI 197 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi7: spi@42150000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42150000 0x10000>;
+			interrupts = <GIC_SPI 198 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi8: spi@42930000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42930000 0x10000>;
+			interrupts = <GIC_SPI 199 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi9: spi@42940000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42940000 0x10000>;
+			interrupts = <GIC_SPI 200 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		mru0: mbox@76070000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76070000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru1: mbox@76090000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76090000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru2: mbox@76270000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76270000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru3: mbox@76290000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76290000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru4: mbox@76870000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76870000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru5: mbox@76890000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76890000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru6: mbox@76a70000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76a70000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru7: mbox@76a90000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76a90000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		netc: ethernet@74000000 {
+			reg = <0x74000000 0x1000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			emdio: mdio@74b60000 {
+				compatible = "nxp,s32-netc-emdio";
+				reg = <0x74b60000 0x1c44>;
+				status = "disabled";
+			};
+
+			enetc_psi0: ethernet@74b00000 {
+				compatible = "nxp,s32-netc-psi";
+				reg = <0x74b00000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi1: ethernet@74bc0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74bc0000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi2: ethernet@74bd0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74bd0000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi3: ethernet@74be0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74be0000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi4: ethernet@74bf0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74bf0000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi5: ethernet@74c00000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74c00000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi6: ethernet@74c10000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74c10000 0x10000>;
+				status = "disabled";
+			};
+
+			enetc_vsi7: ethernet@74c20000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74c20000 0x10000>;
+				status = "disabled";
+			};
+		};
 	};
 };

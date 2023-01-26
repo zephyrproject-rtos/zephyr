@@ -10,12 +10,6 @@ config BOARD
 
 config FLASH_MCUX_FLEXSPI_MX25UM51345G
 	default y if FLASH
-config FLASH_SIZE
-	default $(dt_node_int_prop_int,/soc/spi@134000/mx25um51345g@0,size,Kb)
-
-config FLASH_MCUX_FLEXSPI_XIP
-	default y if FLASH
-	depends on MEMC_MCUX_FLEXSPI
 
 choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
 	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM

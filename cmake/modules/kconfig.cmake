@@ -65,6 +65,9 @@ else()
 endif()
 
 set_ifndef(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
+if((DEFINED BOARD_REVISION) AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
+  set_ifndef(BOARD_REVISION_CONFIG ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
+endif()
 set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)
 set(PARSED_KCONFIG_SOURCES_TXT ${PROJECT_BINARY_DIR}/kconfig/sources.txt)
 
@@ -79,9 +82,6 @@ if(OVERLAY_CONFIG)
   string(REPLACE " " ";" OVERLAY_CONFIG_AS_LIST "${OVERLAY_CONFIG_EXPANDED}")
 endif()
 
-if((DEFINED BOARD_REVISION) AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
-  list(INSERT CONF_FILE_AS_LIST 0 ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
-endif()
 
 # DTS_ROOT_BINDINGS is a semicolon separated list, this causes
 # problems when invoking kconfig_target since semicolon is a special
@@ -238,6 +238,7 @@ list(SORT config_files)
 set(
   merge_config_files
   ${BOARD_DEFCONFIG}
+  ${BOARD_REVISION_CONFIG}
   ${CONF_FILE_AS_LIST}
   ${shield_conf_files}
   ${OVERLAY_CONFIG_AS_LIST}

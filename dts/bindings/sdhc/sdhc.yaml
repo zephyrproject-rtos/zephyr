@@ -10,7 +10,6 @@ bus: sd
 properties:
   max-current-330:
     type: int
-    required: false
     default: 0
     description: |
       Max drive current in mA at 3.3V. A value of zero indicates no maximum
@@ -18,7 +17,6 @@ properties:
 
   max-current-300:
     type: int
-    required: false
     default: 0
     description: |
       Max drive current in mA at 3.0V. A value of zero indicates no maximum
@@ -26,7 +24,6 @@ properties:
 
   max-current-180:
     type: int
-    required: false
     default: 0
     description: |
       Max drive current in mA at 1.8V. A value of zero indicates no maximum
@@ -34,7 +31,6 @@ properties:
 
   max-bus-freq:
     type: int
-    required: false
     default: 400000
     description: |
       Maximum bus frequency for SD card. This should be the highest frequency
@@ -42,7 +38,6 @@ properties:
 
   min-bus-freq:
     type: int
-    required: false
     default: 400000
     description: |
       Minimum bus frequency for SD card. This should be the frequency that
@@ -50,8 +45,17 @@ properties:
 
   power-delay-ms:
     type: int
-    required: false
     default: 500
     description: |
       time in ms for SDHC to delay when toggling power to the SD card. This
       delay gives the card time to power up or down fully
+
+  mmc-hs200-1_8v:
+    type: boolean
+    description: |
+      The host controller supports HS200 at 1.8V
+
+  mmc-hs400-1_8v:
+    type: boolean
+    description: |
+      The host controller supports HS400 at 1.8V

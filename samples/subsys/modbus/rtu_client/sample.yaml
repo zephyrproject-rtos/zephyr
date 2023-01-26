@@ -4,5 +4,7 @@ tests:
   sample.modbus.rtu_client:
     build_only: true
     platform_allow: nrf52840dk_nrf52840 frdm_k64f
+    integration_platforms:
+      - nrf52840dk_nrf52840
     tags: uart modbus
     depends_on: gpio arduino_serial

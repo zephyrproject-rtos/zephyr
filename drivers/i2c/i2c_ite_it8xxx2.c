@@ -140,14 +140,14 @@ static int i2c_parsing_return_value(const struct device *dev)
 		LOG_ERR("I2C ch%d Address:0x%X Transaction time out.",
 			config->port, data->addr_16bit);
 	} else {
-		LOG_ERR("I2C ch%d Address:0x%X Host error bits message:",
+		LOG_DBG("I2C ch%d Address:0x%X Host error bits message:",
 			config->port, data->addr_16bit);
 		/* Host error bits message*/
 		if (data->err & HOSTA_TMOE) {
 			LOG_ERR("Time-out error: hardware time-out error.");
 		}
 		if (data->err & HOSTA_NACK) {
-			LOG_ERR("NACK error: device does not response ACK.");
+			LOG_DBG("NACK error: device does not response ACK.");
 		}
 		if (data->err & HOSTA_FAIL) {
 			LOG_ERR("Fail: a processing transmission is killed.");

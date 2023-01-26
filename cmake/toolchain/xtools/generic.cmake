@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+find_package(Deprecated COMPONENTS XTOOLS)
+
 zephyr_get(XTOOLS_TOOLCHAIN_PATH)
 assert(    XTOOLS_TOOLCHAIN_PATH      "XTOOLS_TOOLCHAIN_PATH is not set")
 

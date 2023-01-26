@@ -6,8 +6,8 @@ description: NPCX-MIWU Wake-Up Unit Input (WUI) mapping child node
 compatible: "nuvoton,npcx-miwu-wui-map"
 
 child-binding:
-    description: Child node to present the mapping between input of MIWU and its source device
-    properties:
-       miwus:
-            type: phandle-array
-            required: true
+  description: Child node to present the mapping between input of MIWU and its source device
+  properties:
+    miwus:
+      type: phandle-array
+      required: true

@@ -571,12 +571,10 @@ static void do_deregister_timeout_cb(struct lwm2m_message *msg)
 
 static bool sm_bootstrap_verify(bool bootstrap_server, int sec_obj_inst)
 {
-	char pathstr[MAX_RESOURCE_LEN];
 	bool bootstrap;
 	int ret;
 
-	snprintk(pathstr, sizeof(pathstr), "0/%d/1", sec_obj_inst);
-	ret = lwm2m_engine_get_bool(pathstr, &bootstrap);
+	ret = lwm2m_get_bool(&LWM2M_OBJ(0, sec_obj_inst, 1), &bootstrap);
 	if (ret < 0) {
 		LOG_WRN("Failed to check bootstrap, err %d", ret);
 		return false;
@@ -591,11 +589,9 @@ static bool sm_bootstrap_verify(bool bootstrap_server, int sec_obj_inst)
 
 static bool sm_update_lifetime(int srv_obj_inst, uint32_t *lifetime)
 {
-	char pathstr[MAX_RESOURCE_LEN];
 	uint32_t new_lifetime;
 
-	snprintk(pathstr, sizeof(pathstr), "1/%d/1", srv_obj_inst);
-	if (lwm2m_engine_get_u32(pathstr, &new_lifetime) < 0) {
+	if (lwm2m_get_u32(&LWM2M_OBJ(1, srv_obj_inst, 1), &new_lifetime) < 0) {
 		new_lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
 		LOG_INF("Using default lifetime: %u", new_lifetime);
 	}
@@ -611,12 +607,10 @@ static bool sm_update_lifetime(int srv_obj_inst, uint32_t *lifetime)
 static int sm_select_server_inst(int sec_obj_inst, int *srv_obj_inst,
 				 uint32_t *lifetime)
 {
-	char pathstr[MAX_RESOURCE_LEN];
 	uint16_t server_id;
 	int ret, obj_inst_id;
 
-	snprintk(pathstr, sizeof(pathstr), "0/%d/10", sec_obj_inst);
-	ret = lwm2m_engine_get_u16(pathstr, &server_id);
+	ret = lwm2m_get_u16(&LWM2M_OBJ(0, sec_obj_inst, 10), &server_id);
 	if (ret < 0) {
 		LOG_WRN("Failed to obtain Short Server ID, err %d", ret);
 		return -EINVAL;
@@ -1115,6 +1109,13 @@ static int sm_do_deregister(void)
 	struct lwm2m_message *msg;
 	int ret;
 
+	if (lwm2m_engine_connection_resume(client.ctx)) {
+		lwm2m_engine_context_close(client.ctx);
+		/* Connection failed, enter directly to deregistered state */
+		set_sm_state(ENGINE_DEREGISTERED);
+		return 0;
+	}
+
 	msg = rd_get_message();
 	if (!msg) {
 		LOG_ERR("Unable to get a lwm2m message!");
@@ -1503,7 +1504,7 @@ bool lwm2m_rd_client_is_registred(struct lwm2m_ctx *client_ctx)
 	return true;
 }
 
-static int lwm2m_rd_client_init(const struct device *dev)
+int lwm2m_rd_client_init(void)
 {
 	client.ctx = NULL;
 	client.rd_message.ctx = NULL;
@@ -1515,5 +1516,13 @@ static int lwm2m_rd_client_init(const struct device *dev)
 
 }
 
-SYS_INIT(lwm2m_rd_client_init, APPLICATION,
+static int sys_lwm2m_rd_client_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return lwm2m_rd_client_init();
+}
+
+
+SYS_INIT(sys_lwm2m_rd_client_init, APPLICATION,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

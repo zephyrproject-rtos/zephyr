@@ -286,6 +286,26 @@ struct bt_tbs_in_uri {
 } __packed;
 
 #if defined(CONFIG_BT_TBS_CLIENT)
+
+/* Features which may require long string reads */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) || \
+	defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI) || \
+	defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST) || \
+	defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI) || \
+	defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) || \
+	defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) || \
+	defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS)
+#define BT_TBS_CLIENT_INST_READ_BUF_SIZE (BT_ATT_MAX_ATTRIBUTE_LEN)
+#else
+/* Need only be the size of call state reads which is the largest of the
+ * remaining characteristic values
+ */
+#define BT_TBS_CLIENT_INST_READ_BUF_SIZE \
+		MIN(BT_ATT_MAX_ATTRIBUTE_LEN, \
+			(CONFIG_BT_TBS_CLIENT_MAX_CALLS \
+			* sizeof(struct bt_tbs_client_call_state)))
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
+
 struct bt_tbs_instance {
 	struct bt_tbs_client_call_state calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
 
@@ -357,7 +377,7 @@ struct bt_tbs_instance {
 	struct bt_gatt_subscribe_params termination_sub_params;
 	struct bt_gatt_discover_params termination_sub_disc_params;
 	struct bt_gatt_read_params read_params;
-	uint8_t read_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
+	uint8_t read_buf[BT_TBS_CLIENT_INST_READ_BUF_SIZE];
 	struct net_buf_simple net_buf;
 };
 #endif /* CONFIG_BT_TBS_CLIENT */

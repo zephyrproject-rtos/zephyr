@@ -8,8 +8,15 @@
 
 / {
 	soc {
+		sdmmc1: sdmmc@40012c00 {
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>,
+				 <&rcc STM32_SRC_SYSCLK SDMMC_SEL(1)>;
+		};
+
 		usbotg_fs: usb@50000000 {
 			num-bidir-endpoints = <6>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>,
+				 <&rcc STM32_SRC_PLL_Q CLK48M_SEL(0)>;
 		};
 
 		usbotg_hs: usb@40040000 {

@@ -7,4 +7,4 @@ Bluetooth Audio Volume Control
 API Reference
 *************
 
-.. doxygengroup:: bt_gatt_vcs
+.. doxygengroup:: bt_gatt_vcp

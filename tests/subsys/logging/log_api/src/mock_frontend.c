@@ -122,8 +122,8 @@ void log_frontend_msg(const void *source,
 
 	char str[128];
 	struct test_str s = { .str = str };
-	size_t len = cbpprintf(out, &s, package);
 
+	int len = cbpprintf(out, &s, package);
 	if (len > 0) {
 		str[len] = '\0';
 	}

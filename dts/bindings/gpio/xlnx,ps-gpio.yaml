@@ -38,8 +38,8 @@ compatible: "xlnx,ps-gpio"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true

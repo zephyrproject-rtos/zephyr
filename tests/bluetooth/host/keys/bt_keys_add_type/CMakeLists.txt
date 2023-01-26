@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.20.0)
+
+project(bt_keys_add_type)
+find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
+
+add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)
+add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host/keys/mocks mocks)
+
+target_link_libraries(testbinary PRIVATE mocks host_mocks)
+
+target_sources(testbinary
+    PRIVATE
+    src/main.c
+    src/test_suite_add_type_invalid_inputs.c
+
+    # Unit under test
+    $ENV{ZEPHYR_BASE}/subsys/bluetooth/host/keys.c
+    $ENV{ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
+)

@@ -20,14 +20,16 @@ BUILD_ASSERT((GD32_OTYPE_PP == GPIO_OTYPE_PP) &&
 	     "pinctrl output type definitions != HAL definitions");
 
 BUILD_ASSERT((GD32_OSPEED_2MHZ == GPIO_OSPEED_2MHZ) &&
-#ifdef CONFIG_SOC_SERIES_GD32F3X0
+#if defined(CONFIG_SOC_SERIES_GD32F3X0) || \
+	defined(CONFIG_SOC_SERIES_GD32A50X) || \
+	defined(CONFIG_SOC_SERIES_GD32L23X)
 	     (GD32_OSPEED_10MHZ == GPIO_OSPEED_10MHZ) &&
 	     (GD32_OSPEED_50MHZ == GPIO_OSPEED_50MHZ) &&
 #else
 	     (GD32_OSPEED_25MHZ == GPIO_OSPEED_25MHZ) &&
 	     (GD32_OSPEED_50MHZ == GPIO_OSPEED_50MHZ) &&
 	     (GD32_OSPEED_MAX == GPIO_OSPEED_MAX) &&
-#endif /* CONFIG_SOC_SERIES_GD32F3X0 */
+#endif
 	     1U,
 	     "pinctrl output speed definitions != HAL definitions");
 

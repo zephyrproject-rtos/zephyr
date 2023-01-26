@@ -23,7 +23,7 @@ void main(void)
 {
 	int ret;
 
-	if (!device_is_ready(led.port)) {
+	if (!gpio_is_ready_dt(&led)) {
 		return;
 	}
 

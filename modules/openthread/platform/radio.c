@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define FRAME_TYPE_MASK 0x07
 #define FRAME_TYPE_ACK 0x02
 
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define OT_WORKER_PRIORITY K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 #else
 #define OT_WORKER_PRIORITY K_PRIO_PREEMPT(CONFIG_OPENTHREAD_THREAD_PRIORITY)
@@ -83,7 +83,8 @@ static const struct device *const radio_dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
 static struct ieee802154_radio_api *radio_api;
 
-static int8_t tx_power;
+/* Get the default tx output power from Kconfig */
+static int8_t tx_power = CONFIG_OPENTHREAD_DEFAULT_TX_POWER;
 static uint16_t channel;
 static bool promiscuous;
 
@@ -239,7 +240,8 @@ static void dataInit(void)
 	tx_pkt = net_pkt_alloc(K_NO_WAIT);
 	__ASSERT_NO_MSG(tx_pkt != NULL);
 
-	tx_payload = net_pkt_get_reserve_tx_data(K_NO_WAIT);
+	tx_payload = net_pkt_get_reserve_tx_data(IEEE802154_MAX_PHY_PACKET_SIZE,
+						 K_NO_WAIT);
 	__ASSERT_NO_MSG(tx_payload != NULL);
 
 	net_pkt_append_buffer(tx_pkt, tx_payload);
@@ -1043,16 +1045,20 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 #if defined(CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE)
 	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_KEY_REF);
 	size_t keyLen;
+	otError error;
 
-	__ASSERT_NO_MSG(otPlatCryptoExportKey(aPrevKey->mKeyMaterial.mKeyRef,
-					      (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8,
-					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
-	__ASSERT_NO_MSG(otPlatCryptoExportKey(aCurrKey->mKeyMaterial.mKeyRef,
-					      (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8,
-					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
-	__ASSERT_NO_MSG(otPlatCryptoExportKey(aNextKey->mKeyMaterial.mKeyRef,
-					      (uint8_t *)aNextKey->mKeyMaterial.mKey.m8,
-					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+	error = otPlatCryptoExportKey(aPrevKey->mKeyMaterial.mKeyRef,
+				      (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE,
+				      &keyLen);
+	__ASSERT_NO_MSG(error == OT_ERROR_NONE);
+	error = otPlatCryptoExportKey(aCurrKey->mKeyMaterial.mKeyRef,
+				      (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE,
+				      &keyLen);
+	__ASSERT_NO_MSG(error == OT_ERROR_NONE);
+	error = otPlatCryptoExportKey(aNextKey->mKeyMaterial.mKeyRef,
+				      (uint8_t *)aNextKey->mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE,
+				      &keyLen);
+	__ASSERT_NO_MSG(error == OT_ERROR_NONE);
 #else
 	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
 #endif

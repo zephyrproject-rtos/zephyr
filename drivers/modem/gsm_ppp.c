@@ -391,6 +391,11 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cereg)
 			gsm.context.data_cellid);
 	}
 
+	if (argc >= 5) {
+		gsm.context.data_act = unquoted_atoi(argv[4], 10);
+		LOG_INF("act: %u", gsm.context.data_act);
+	}
+
 	return 0;
 }
 
@@ -821,7 +826,7 @@ attaching:
 		/* Read connection quality (RSSI) before PPP carrier is ON */
 		query_rssi_nolock(gsm);
 
-		if (!((gsm->minfo.mdm_rssi > 0) && (gsm->minfo.mdm_rssi != GSM_RSSI_INVALID) &&
+		if (!((gsm->minfo.mdm_rssi) && (gsm->minfo.mdm_rssi != GSM_RSSI_INVALID) &&
 			(gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL))) {
 
 			LOG_DBG("Not valid RSSI, %s", "retrying...");
@@ -1359,5 +1364,5 @@ static int gsm_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_INST(0, zephyr_gsm_ppp), gsm_init, NULL, &gsm, NULL,
+DEVICE_DT_DEFINE(DT_DRV_INST(0), gsm_init, NULL, &gsm, NULL,
 		 POST_KERNEL, CONFIG_MODEM_GSM_INIT_PRIORITY, NULL);

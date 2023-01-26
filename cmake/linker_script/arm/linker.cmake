@@ -84,7 +84,7 @@ zephyr_linker_section_configure(SECTION .text INPUT ".glue_7")
 zephyr_linker_section_configure(SECTION .text INPUT ".vfp11_veneer")
 zephyr_linker_section_configure(SECTION .text INPUT ".v4_bx")
 
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   zephyr_linker_section(NAME .ARM.extab GROUP ROM_REGION)
   zephyr_linker_section_configure(SECTION .ARM.extab INPUT ".gnu.linkonce.armextab.*")
 endif()

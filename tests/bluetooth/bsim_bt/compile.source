@@ -1,6 +1,12 @@
 # Copyright 2018 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
+function print_error_info(){
+  echo -e "\033[0;31mFailure building ${app} ${conf_file} for ${BOARD}\033[0m\n\
+  You can rebuild it with\n\
+  ${cmake_cmd[@]} && ninja ${ninja_args}"
+}
+
 function compile(){
   : "${app:?app must be defined}"
 
@@ -13,13 +19,22 @@ function compile(){
   local ninja_args="${ninja_args:-""}"
   local cc_flags="${cc_flags:-"-Werror"}"
 
-  local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
+  if [ "${conf_overlay}" ]; then
+    local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${conf_overlay}}"
+  else
+    local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
+  fi
+
   local exe_name=${exe_name//\//_}
   local exe_name=${exe_name//./_}
   local exe_name=${BSIM_OUT_PATH}/bin/$exe_name
   local map_file_name=${exe_name}.Tsymbols
 
-  local this_dir=${WORK_DIR}/${app}/${conf_file}
+  if [ "${conf_overlay}" ]; then
+    local this_dir=${WORK_DIR}/${app}/${conf_file}_${conf_overlay}
+  else
+    local this_dir=${WORK_DIR}/${app}/${conf_file}
+  fi
 
   local modules_arg="${ZEPHYR_MODULES:+-DZEPHYR_MODULES=${ZEPHYR_MODULES}}"
 
@@ -27,19 +42,22 @@ function compile(){
 
   local ret=0
 
+  local cmake_cmd=(cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
+            -DCONF_FILE=${conf_file} -DOVERLAY_CONFIG=${conf_overlay} \
+            ${modules_arg} \
+            ${cmake_args} -DCMAKE_C_FLAGS=\"${cc_flags}\" ${app_root}/${app})
+
   # Set INCR_BUILD when calling to only do an incremental build
   if [ ! -v INCR_BUILD ] || [ ! -d "${this_dir}" ]; then
       [ -d "${this_dir}" ] && rm ${this_dir} -rf
       mkdir -p ${this_dir} && cd ${this_dir}
-      cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
-            -DCONF_FILE=${conf_file} -DOVERLAY_CONFIG=${conf_overlay} \
-            ${modules_arg} \
-            ${cmake_args} -DCMAKE_C_FLAGS="${cc_flags}" ${app_root}/${app} \
-            &> cmake.out || { ret="$?"; cat cmake.out && return $ret; }
+      ${cmake_cmd[@]} &> cmake.out || \
+      { ret="$?"; print_error_info ; cat cmake.out && return $ret; }
   else
       cd ${this_dir}
   fi
-  ninja ${ninja_args} &> ninja.out || { ret="$?"; cat ninja.out && return $ret; }
+  ninja ${ninja_args} &> ninja.out || \
+  { ret="$?"; print_error_info ; cat ninja.out && return $ret; }
   cp ${this_dir}/zephyr/zephyr.exe ${exe_name}
 
   nm ${exe_name} | grep -v " [U|w] " | sort | cut -d" " -f1,3 > ${map_file_name}

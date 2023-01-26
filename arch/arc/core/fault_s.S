@@ -34,9 +34,6 @@ GTEXT(__ev_extension)
 GTEXT(__ev_div_zero)
 GTEXT(__ev_dc_error)
 GTEXT(__ev_maligned)
-#ifdef CONFIG_IRQ_OFFLOAD
-GTEXT(z_irq_do_offload);
-#endif
 
 .macro _save_exc_regs_into_stack
 #ifdef CONFIG_ARC_HAS_SECURE
@@ -231,38 +228,4 @@ valid_syscall_id:
 
 _do_non_syscall_trap:
 #endif /* CONFIG_USERSPACE */
-#ifdef CONFIG_IRQ_OFFLOAD
-	/*
-	 * IRQ_OFFLOAD is to simulate interrupt handling through exception,
-	 * so its entry is different with normal exception handling, it is
-	 * handled in isr stack
-	 */
-	CMPR ilink, _TRAP_S_SCALL_IRQ_OFFLOAD
-	bne _exc_entry
-	/* save caller saved registers */
-	_create_irq_stack_frame
-
-	_save_exc_regs_into_stack
-
-	/* check whether irq stack is used */
-	_check_and_inc_int_nest_counter r0, r1
-
-	bne.d exc_nest_handle
-	MOVR r0, sp
-
-	_get_curr_cpu_irq_stack sp
-exc_nest_handle:
-	PUSHR r0
-
-	jl z_irq_do_offload
-
-	POPR sp
-
-	_dec_int_nest_counter r0, r1
-
-	_pop_irq_stack_frame
-
-	/* ERSTATUS, ERET are not changed, so ok to rtie */
-	rtie
-#endif /* CONFIG_IRQ_OFFLOAD */
 	b _exc_entry

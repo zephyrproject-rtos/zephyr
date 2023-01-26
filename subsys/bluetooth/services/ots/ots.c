@@ -42,6 +42,12 @@ LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 #define OACP_FEAT_BIT_DELETE 0
 #endif
 
+#if defined(BT_OTS_OACP_CHECKSUM_SUPPORT)
+#define OACP_FEAT_BIT_CRC BIT(BT_OTS_OACP_FEAT_CHECKSUM)
+#else
+#define OACP_FEAT_BIT_CRC 0
+#endif
+
 #if defined(CONFIG_BT_OTS_OACP_READ_SUPPORT)
 #define OACP_FEAT_BIT_READ BIT(BT_OTS_OACP_FEAT_READ)
 #else
@@ -64,6 +70,7 @@ LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 #define OACP_FEAT (		\
 	OACP_FEAT_BIT_CREATE |	\
 	OACP_FEAT_BIT_DELETE |	\
+	OACP_FEAT_BIT_CRC |     \
 	OACP_FEAT_BIT_READ |	\
 	OACP_FEAT_BIT_WRITE |	\
 	OACP_FEAT_BIT_PATCH)
@@ -443,6 +450,10 @@ int bt_ots_init(struct bt_ots *ots,
 	__ASSERT(ots_init->cb->obj_deleted ||
 		 !BT_OTS_OACP_GET_FEAT_CREATE(ots_init->features.oacp),
 		 "Callback for object deletion is not set and object creation is enabled");
+#if defined(CONFIG_BT_OTS_OACP_CHECKSUM_SUPPORT)
+	__ASSERT(ots_init->cb->obj_cal_checksum,
+		 "Callback for object calculate checksum is not set");
+#endif
 	__ASSERT(ots_init->cb->obj_read ||
 		 !BT_OTS_OACP_GET_FEAT_READ(ots_init->features.oacp),
 		 "Callback for object reading is not set");

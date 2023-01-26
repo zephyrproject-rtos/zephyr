@@ -8,6 +8,20 @@
 
 / {
 	soc {
+		clocks {
+			clk_hsi48: clk-hsi48 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(48)>;
+				status = "disabled";
+			};
+		};
+
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
+
 		usb: usb@40006800 {
 			compatible = "st,stm32-usb";
 			reg = <0x40006800 0x40000>;
@@ -17,23 +31,19 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
 		};
 
 		spi2: spi@40003800 {
-			compatible = "st,stm32-spi";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
 			interrupts = <36 5>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			status = "disabled";
-		};
-
-		adc1: adc@50040000 {
-			has-temp-channel;
-			has-vref-channel;
 		};
 	};
 

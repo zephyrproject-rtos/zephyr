@@ -249,6 +249,6 @@ tests:
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
        rv32m1_vega_ri5cy
     integration_platforms:
-       - nrf52840dk_nrf52840
-       - nrf52dk_nrf52832
-       - rv32m1_vega_ri5cy
+      - nrf52840dk_nrf52840
+      - nrf52dk_nrf52832
+      - rv32m1_vega_ri5cy

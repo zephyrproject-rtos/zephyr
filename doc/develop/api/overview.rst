@@ -42,7 +42,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 1.10
 
    * - :ref:`can_api`
-     - Unstable
+     - Stable
      - 1.14
 
    * - :ref:`counter_api`
@@ -108,6 +108,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`fcb_api`
      - Stable
      - 1.11
+
+   * - :ref:`fuel_gauge_api`
+     - Experimental
+     - 3.3
 
    * - :ref:`flash_map_api`
      - Stable
@@ -312,3 +316,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`watchdog_api`
      - Stable
      - 1.0
+
+   * - :ref:`zdsp_api`
+     - Experimental
+     - 3.3

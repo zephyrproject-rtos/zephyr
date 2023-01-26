@@ -43,3 +43,5 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv);
 int bt_id_set_private_addr(uint8_t id);
 
 void bt_id_pending_keys_update(void);
+
+void bt_id_adv_limited_stopped(struct bt_le_ext_adv *adv);

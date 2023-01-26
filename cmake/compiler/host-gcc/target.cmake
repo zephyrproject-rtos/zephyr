@@ -4,7 +4,7 @@
 
 find_program(CMAKE_C_COMPILER gcc)
 
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   set(cplusplus_compiler g++)
 else()
   if(EXISTS g++)

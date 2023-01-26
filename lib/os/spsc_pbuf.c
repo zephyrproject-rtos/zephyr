@@ -47,7 +47,7 @@ static inline void cache_wb(void *data, size_t len, uint32_t flags)
 {
 	if (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_ALWAYS) ||
 	    (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_FLAG) && (flags & SPSC_PBUF_CACHE))) {
-		sys_cache_data_range(data, len, K_CACHE_WB);
+		sys_cache_data_flush_range(data, len);
 	}
 }
 
@@ -55,7 +55,7 @@ static inline void cache_inv(void *data, size_t len, uint32_t flags)
 {
 	if (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_ALWAYS) ||
 	    (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_FLAG) && (flags & SPSC_PBUF_CACHE))) {
-		sys_cache_data_range(data, len, K_CACHE_INVD);
+		sys_cache_data_invd_range(data, len);
 	}
 }
 
@@ -346,7 +346,7 @@ void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len)
 
 	*rd_idx_loc = rd_idx;
 	__sync_synchronize();
-	cache_wb(&rd_idx_loc, sizeof(*rd_idx_loc), flags);
+	cache_wb(rd_idx_loc, sizeof(*rd_idx_loc), flags);
 }
 
 int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len)

@@ -3,5 +3,7 @@ tests:
     platform_allow: native_posix
     harness: pytest
     harness_config:
-      pytest_args: [ "--custom-pytest-arg", "foo" ]
+      pytest_args: ["--custom-pytest-arg", "foo"]
     tags: testing pytest
+    integration_platforms:
+      - native_posix

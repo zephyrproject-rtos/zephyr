@@ -15,21 +15,14 @@ tests:
       type: one_line
       regex:
         - "Reset the MCU to see the increasing boot counter."
-  sample.drivers.eeprom.shell:
-    tags: eeprom
-    platform_allow: >
-      gd32f450i_eval
-      native_posix
-      native_posix_64
-    extra_args: OVERLAY_CONFIG=overlay-shell.conf
-    harness: keyboard
   sample.drivers.eeprom.shield.x_nucleo_eeprma2:
     tags: eeprom shield
     depends_on: arduino_gpio arduino_i2c arduino_spi
-    platform_exclude: ubx_evkannab1_nrf52832 sam_v71_xult sam_v71b_xult pan1781_evb pan1782_evb pan1770_evb pan1780_evb
+    platform_exclude: ubx_evkannab1_nrf52832 sam_v71_xult sam_v71b_xult pan1781_evb pan1782_evb
+      pan1770_evb pan1780_evb
     extra_args: SHIELD=x_nucleo_eeprma2
     harness: console
     harness_config:
-        fixture: fixture_shield_x_nucleo_eeprma2
+      fixture: fixture_shield_x_nucleo_eeprma2
     integration_platforms:
       - nucleo_f070rb

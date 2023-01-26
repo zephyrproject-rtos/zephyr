@@ -74,6 +74,23 @@ extern "C" {
 #define BIT64_MASK(n) (BIT64(n) - 1ULL)
 
 /**
+ * @brief Check if bits are set continuously from the specified bit
+ *
+ * The macro is not dependent on the bit-width.
+ *
+ * @param m Check whether the bits are set continuously or not.
+ * @param s Specify the lowest bit for that is continuously set bits.
+ */
+#define IS_SHIFTED_BIT_MASK(m, s) (!(((m) >> (s)) & (((m) >> (s)) + 1U)))
+
+/**
+ * @brief Check if bits are set continuously from the LSB.
+ *
+ * @param m Check whether the bits are set continuously from LSB.
+ */
+#define IS_BIT_MASK(m) IS_SHIFTED_BIT_MASK(m, 0)
+
+/**
  * @brief Check for macro definition in compiler-visible expressions
  *
  * This trick was pioneered in Linux as the config_enabled() macro. It
@@ -93,6 +110,9 @@ extern "C" {
  *
  * This is cleaner since the compiler can generate errors and warnings
  * for @p do_something_with_foo even when @p CONFIG_FOO is undefined.
+ *
+ * Note: Use of IS_ENABLED in a <tt>\#if</tt> statement is discouraged
+ *       as it doesn't provide any benefit vs plain <tt>\#if defined()</tt>
  *
  * @param config_macro Macro to check
  * @return 1 if @p config_macro is defined to 1, 0 otherwise (including
@@ -370,33 +390,6 @@ extern "C" {
  * behavior.
  */
 #define LISTIFY(LEN, F, sep, ...) UTIL_CAT(Z_UTIL_LISTIFY_, LEN)(F, sep, __VA_ARGS__)
-
-/**
- * @brief Generates a sequence of code. Deprecated, use @ref LISTIFY.
- *
- * @deprecated Use @ref LISTIFY instead.
- *
- * Example:
- *
- *     #define FOO(i, _) MY_PWM ## i ,
- *     { UTIL_LISTIFY(PWM_COUNT, FOO) }
- *
- * The above two lines expand to:
- *
- *    { MY_PWM0 , MY_PWM1 , }
- *
- * @param LEN The length of the sequence. Must be an integer literal less
- *            than 255.
- * @param F A macro function that accepts at least two arguments:
- *          <tt>F(i, ...)</tt>. @p F is called repeatedly in the expansion.
- *          Its first argument @p i is the index in the sequence, and
- *          the variable list of arguments passed to UTIL_LISTIFY are passed
- *          through to @p F.
- *
- * @note Calling UTIL_LISTIFY with undefined arguments has undefined
- * behavior.
- */
-#define UTIL_LISTIFY(LEN, F, ...) LISTIFY(LEN, F, (), __VA_ARGS__) __DEPRECATED_MACRO
 
 /**
  * @brief Call a macro @p F on each provided argument with a given

@@ -21,13 +21,14 @@ Information included in the image information header:
 '''
 
 import argparse
+import re
 from elftools.elf.elffile import ELFFile
 
 
 def write_header(filename, segments, adjusted_lma):
     content = []
 
-    filename_we = filename.split('.h')[0].upper()
+    filename_we = re.sub(r'[\W]','_', filename).upper()
     content.append(f'#ifndef {filename_we}_H')
     content.append(f'#define {filename_we}_H')
     content.append(f'')

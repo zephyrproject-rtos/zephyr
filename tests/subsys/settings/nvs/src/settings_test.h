@@ -17,10 +17,6 @@
 extern "C" {
 #endif
 
-#define SETTINGS_TEST_NVS_VAL_STR_CNT   64
-#define SETTINGS_TEST_NVS_FLASH_CNT   4
-
-
 extern uint8_t val8;
 extern uint8_t val8_un;
 extern uint32_t val32;
@@ -30,9 +26,6 @@ extern int test_get_called;
 extern int test_set_called;
 extern int test_commit_called;
 extern int test_export_block;
-
-extern char val_string[SETTINGS_TEST_NVS_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
-extern char test_ref_value[SETTINGS_TEST_NVS_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
 
 extern struct settings_handler c_test_handlers[];
 

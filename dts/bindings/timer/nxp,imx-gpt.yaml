@@ -8,13 +8,13 @@ compatible: "nxp,imx-gpt"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    gptfreq:
-      type: int
-      required: true
-      description: gpt frequences
+  gptfreq:
+    type: int
+    required: true
+    description: gpt frequences

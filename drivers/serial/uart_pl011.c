@@ -15,7 +15,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/irq.h>
-#if IS_ENABLED(CONFIG_PINCTRL)
+#if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
@@ -51,7 +51,7 @@ struct pl011_regs {
 struct pl011_config {
 	DEVICE_MMIO_ROM;
 	uint32_t sys_clk_freq;
-#if IS_ENABLED(CONFIG_PINCTRL)
+#if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -395,7 +395,7 @@ static int pl011_init(const struct device *dev)
 	 * virtualization software).
 	 */
 	if (!data->sbsa) {
-#if IS_ENABLED(CONFIG_PINCTRL)
+#if defined(CONFIG_PINCTRL)
 		ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (ret) {
 			return ret;
@@ -442,7 +442,7 @@ static int pl011_init(const struct device *dev)
 	return 0;
 }
 
-#if IS_ENABLED(CONFIG_PINCTRL)
+#if defined(CONFIG_PINCTRL)
 #define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
 #define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
 #else

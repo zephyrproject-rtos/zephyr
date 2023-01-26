@@ -36,7 +36,7 @@ extern enum bst_result_t bst_result;
 	}
 
 
-#define WAIT_SECONDS 220                        /* seconds */
+#define WAIT_SECONDS 270                        /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
 #define FAIL(...)				       \

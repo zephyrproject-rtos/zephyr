@@ -99,7 +99,7 @@ void z_arm_platform_init(void)
 		(void)memset(__bss_nc_start__, 0, __bss_nc_end__ - __bss_nc_start__);
 	}
 
-	cache_instr_enable();
+	sys_cache_instr_enable();
 }
 
 void aspeed_print_abr_wdt_mode(void)

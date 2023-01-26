@@ -5,19 +5,19 @@ compatible: "microchip,xec-ecia-girq"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    girq-id:
-       type: int
-       required: true
-       description: GIRQ ID number [0, 18]
+  girq-id:
+    type: int
+    required: true
+    description: GIRQ ID number [0, 18]
 
-    sources:
-      type: array
-      required: true
-      description: |
-        Bit positions of each source implemented by this GIRQ.
+  sources:
+    type: array
+    required: true
+    description: |
+      Bit positions of each source implemented by this GIRQ.

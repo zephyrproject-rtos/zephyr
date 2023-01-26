@@ -99,9 +99,6 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 	uint32_t actual_freq = 0xffffffff, target_freq, deviation, cxcprs, ctr;
 	uint64_t pwm_clk_src;
 
-	/* PWM channel clock source gating before configuring */
-	pwm_enable(dev, 0);
-
 	/* Select PWM inverted polarity (ex. active-low pulse) */
 	if (flags & PWM_POLARITY_INVERTED) {
 		*reg_pwmpol |= BIT(ch);

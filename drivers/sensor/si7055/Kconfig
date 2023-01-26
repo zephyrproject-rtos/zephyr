@@ -7,6 +7,7 @@ menuconfig SI7055
 	default y
 	depends on DT_HAS_SILABS_SI7055_ENABLED
 	select I2C
+	select CRC
 	help
 	  Enable I2C-based driver for Si7055 Temperature Sensor.
 

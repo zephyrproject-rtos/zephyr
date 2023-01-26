@@ -16,6 +16,6 @@ void function_in_sram(int32_t value)
 
 	printk("Hello World! %s\n", CONFIG_BOARD);
 	memcpy(dst, src, 8);
-	printk("Address of memcpy %p\n", &memcpy);
+	printk("Address of memcpy %p\n\n", &memcpy);
 	zassert_mem_equal(src, dst, 8, "memcpy compare error");
 }

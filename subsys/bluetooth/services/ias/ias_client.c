@@ -8,13 +8,12 @@
 #include <stdint.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_ias_client, CONFIG_BT_IAS_CLIENT_LOG_LEVEL);
+
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ias.h>
-
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_IAS_CLIENT)
-#define LOG_MODULE_NAME bt_ias_client
-#include "../../common/log.h"
 
 enum {
 	IAS_DISCOVER_IN_PROGRESS,
@@ -51,11 +50,11 @@ static void client_cleanup(struct bt_ias_client *ias_client)
 
 static void discover_complete(struct bt_conn *conn, int err)
 {
-	BT_DBG("conn %p", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	if (err) {
 		client_cleanup(client_by_conn(conn));
-		BT_DBG("Discover failed (err %d\n)", err);
+		LOG_DBG("Discover failed (err %d\n)", err);
 	}
 
 	if (ias_client_cb != NULL && ias_client_cb->discover != NULL) {
@@ -79,7 +78,7 @@ int bt_ias_client_alert_write(struct bt_conn *conn, enum bt_ias_alert_lvl lvl)
 	lvl_u8 = (uint8_t)lvl;
 
 	if (lvl_u8 < BT_IAS_ALERT_LVL_NO_ALERT || lvl_u8 > BT_IAS_ALERT_LVL_HIGH_ALERT) {
-		BT_ERR("Invalid alert value: %u", lvl_u8);
+		LOG_ERR("Invalid alert value: %u", lvl_u8);
 		return -EINVAL;
 	}
 
@@ -87,7 +86,7 @@ int bt_ias_client_alert_write(struct bt_conn *conn, enum bt_ias_alert_lvl lvl)
 					     client_by_conn(conn)->alert_level_handle,
 					     &lvl_u8, sizeof(lvl_u8), false);
 	if (err < 0) {
-		BT_ERR("IAS client level %d write failed: %d", lvl, err);
+		LOG_ERR("IAS client level %d write failed: %d", lvl, err);
 	}
 
 	return err;
@@ -97,7 +96,7 @@ static uint8_t bt_ias_alert_lvl_disc_cb(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
 					struct bt_gatt_discover_params *discover)
 {
-	const struct bt_gatt_chrc *chrc = (struct bt_gatt_chrc *)attr->user_data;
+	const struct bt_gatt_chrc *chrc;
 
 	atomic_clear_bit(client_by_conn(conn)->flags, IAS_DISCOVER_IN_PROGRESS);
 
@@ -106,6 +105,8 @@ static uint8_t bt_ias_alert_lvl_disc_cb(struct bt_conn *conn,
 
 		return BT_GATT_ITER_STOP;
 	}
+
+	chrc = (struct bt_gatt_chrc *)attr->user_data;
 
 	client_by_conn(conn)->alert_level_handle = chrc->value_handle;
 	discover_complete(conn, 0);

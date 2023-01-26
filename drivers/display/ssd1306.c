@@ -93,7 +93,7 @@ static inline bool ssd1306_bus_ready(const struct device *dev)
 		return false;
 	}
 
-	return spi_is_ready(&config->bus);
+	return spi_is_ready_dt(&config->bus);
 }
 
 static inline int ssd1306_write_bus(const struct device *dev,

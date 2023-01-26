@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
- * Copyright (c) 2019 NXP
+ * Copyright (c) 2019, 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@ struct mcux_flexcomm_config {
 struct mcux_flexcomm_data {
 	i2c_master_handle_t handle;
 	struct k_sem device_sync_sem;
+	struct k_sem lock;
 	status_t callback_status;
 #ifdef CONFIG_I2C_TARGET
 	i2c_slave_handle_t target_handle;
@@ -50,6 +51,7 @@ static int mcux_flexcomm_configure(const struct device *dev,
 				   uint32_t dev_config_raw)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
 	I2C_Type *base = config->base;
 	uint32_t clock_freq;
 	uint32_t baudrate;
@@ -82,7 +84,9 @@ static int mcux_flexcomm_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
+	k_sem_take(&data->lock, K_FOREVER);
 	I2C_MasterSetBaudRate(base, baudrate, clock_freq);
+	k_sem_give(&data->lock);
 
 	return 0;
 }
@@ -125,11 +129,15 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 	I2C_Type *base = config->base;
 	i2c_master_transfer_t transfer;
 	status_t status;
+	int ret = 0;
+
+	k_sem_take(&data->lock, K_FOREVER);
 
 	/* Iterate over all the messages */
 	for (int i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs->flags) {
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			break;
 		}
 
 		/* Initialize the transfer descriptor */
@@ -159,7 +167,8 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		 */
 		if (status != kStatus_Success) {
 			I2C_MasterTransferAbort(base, &data->handle);
-			return -EIO;
+			ret = -EIO;
+			break;
 		}
 
 		/* Wait for the transfer to complete */
@@ -170,14 +179,17 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		 */
 		if (data->callback_status != kStatus_Success) {
 			I2C_MasterTransferAbort(base, &data->handle);
-			return -EIO;
+			ret = -EIO;
+			break;
 		}
 
 		/* Move to the next message */
 		msgs++;
 	}
 
-	return 0;
+	k_sem_give(&data->lock);
+
+	return ret;
 }
 
 #if defined(CONFIG_I2C_TARGET)
@@ -334,6 +346,7 @@ static int mcux_flexcomm_init(const struct device *dev)
 	}
 #endif
 
+	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	if (!device_is_ready(config->clock_dev)) {

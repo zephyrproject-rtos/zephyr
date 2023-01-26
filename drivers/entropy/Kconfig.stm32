@@ -53,4 +53,15 @@ config ENTROPY_STM32_ISR_THRESHOLD
 	  buffer goes below this number hardware entropy generation will be
 	  started.
 
+config ENTROPY_STM32_CLK_CHECK
+	bool "Runtime clock configuration check"
+	default y
+	help
+	  Enables a check on RNG clock configuration. Correct clock
+	  configuration depends on STM32 series. Check reference manual if an
+	  error is reported.
+	  This check assumes CED (Clock Error Detected) bit is enabled (when
+	  available, CED is enabeld by default). Disable this check if CED is
+	  disabled.
+
 endif # ENTROPY_STM32_RNG

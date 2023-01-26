@@ -51,9 +51,6 @@
 
 #include "ll.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_scan
-#include "common/log.h"
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -1123,8 +1120,7 @@ static void ext_disabled_cb(void *param)
 	/* NOTE: parameters are already populated on disable,
 	 * just enqueue here
 	 */
-	ll_rx_put(rx_hdr->link, rx_hdr);
-	ll_rx_sched();
+	ll_rx_put_sched(rx_hdr->link, rx_hdr);
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 

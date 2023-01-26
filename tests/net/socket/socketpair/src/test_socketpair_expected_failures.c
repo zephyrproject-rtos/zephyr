@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_ARCH_POSIX
 #include <fcntl.h>
+#else
+#include <zephyr/posix/fcntl.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);

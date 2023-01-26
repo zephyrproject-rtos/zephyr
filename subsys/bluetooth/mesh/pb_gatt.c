@@ -16,10 +16,13 @@
 #include "pb_gatt_srv.h"
 #include "pb_gatt_cli.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
-#define LOG_MODULE_NAME bt_mesh_pb_gatt
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
+
 #include "common/bt_str.h"
+
+#define LOG_LEVEL CONFIG_BT_MESH_PROV_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_mesh_pb_gatt);
 
 struct prov_bearer_send_cb {
 	prov_bearer_send_complete_t cb;
@@ -74,22 +77,22 @@ static void protocol_timeout(struct k_work *work)
 		}
 	}
 
-	BT_DBG("Protocol timeout");
+	LOG_DBG("Protocol timeout");
 
 	link_closed(PROV_BEARER_LINK_STATUS_TIMEOUT);
 }
 
 int bt_mesh_pb_gatt_recv(struct bt_conn *conn, struct net_buf_simple *buf)
 {
-	BT_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
+	LOG_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	if (link.conn != conn || !link.cb) {
-		BT_WARN("Data for unexpected connection");
+		LOG_WRN("Data for unexpected connection");
 		return -ENOTCONN;
 	}
 
 	if (buf->len < 1) {
-		BT_WARN("Too short provisioning packet (len %u)", buf->len);
+		LOG_WRN("Too short provisioning packet (len %u)", buf->len);
 		return -EINVAL;
 	}
 
@@ -102,7 +105,7 @@ int bt_mesh_pb_gatt_recv(struct bt_conn *conn, struct net_buf_simple *buf)
 
 int bt_mesh_pb_gatt_start(struct bt_conn *conn)
 {
-	BT_DBG("conn %p", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	if (link.conn) {
 		return -EBUSY;
@@ -118,10 +121,10 @@ int bt_mesh_pb_gatt_start(struct bt_conn *conn)
 
 int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 {
-	BT_DBG("conn %p", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	if (link.conn != conn) {
-		BT_DBG("Not connected");
+		LOG_DBG("Not connected");
 		return -ENOTCONN;
 	}
 
@@ -133,7 +136,7 @@ int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 #if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 int bt_mesh_pb_gatt_cli_start(struct bt_conn *conn)
 {
-	BT_DBG("conn %p", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	if (link.conn) {
 		return -EBUSY;
@@ -147,10 +150,10 @@ int bt_mesh_pb_gatt_cli_start(struct bt_conn *conn)
 
 int bt_mesh_pb_gatt_cli_open(struct bt_conn *conn)
 {
-	BT_DBG("conn %p", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	if (link.conn != conn) {
-		BT_DBG("Not connected");
+		LOG_DBG("Not connected");
 		return -ENOTCONN;
 	}
 
@@ -162,7 +165,7 @@ int bt_mesh_pb_gatt_cli_open(struct bt_conn *conn)
 static int prov_link_open(const uint8_t uuid[16], k_timeout_t timeout,
 			  const struct prov_bearer_cb *cb, void *cb_data)
 {
-	BT_DBG("uuid %s", bt_hex(uuid, 16));
+	LOG_DBG("uuid %s", bt_hex(uuid, 16));
 
 	link.cb = cb;
 	link.cb_data = cb_data;
@@ -185,7 +188,7 @@ static int link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 
 	err = bt_mesh_adv_enable();
 	if (err) {
-		BT_ERR("Failed enabling advertiser");
+		LOG_ERR("Failed enabling advertiser");
 		return err;
 	}
 

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_fxas21002
+
 #include <zephyr/logging/log.h>
 
 #include "fxas21002.h"
@@ -55,8 +57,8 @@ static void fxas21002_handle_int(const struct device *dev)
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (i2c_reg_read_byte_dt(&config->i2c, FXAS21002_REG_INT_SOURCE,
-				 &int_source)) {
+	if (config->ops->byte_read(dev, FXAS21002_REG_INT_SOURCE,
+				   &int_source)) {
 		LOG_ERR("Could not read interrupt source");
 		int_source = 0U;
 	}
@@ -136,8 +138,8 @@ int fxas21002_trigger_set(const struct device *dev,
 	}
 
 	/* Configure the sensor interrupt */
-	if (i2c_reg_update_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG2, mask,
-				   handler ? mask : 0)) {
+	if (config->ops->reg_field_update(dev, FXAS21002_REG_CTRLREG2, mask,
+					  handler ? mask : 0)) {
 		LOG_ERR("Could not configure interrupt");
 		ret = -EIO;
 		goto exit;
@@ -188,8 +190,8 @@ int fxas21002_trigger_init(const struct device *dev)
 	ctrl_reg2 |= FXAS21002_CTRLREG2_CFG_DRDY_MASK;
 #endif
 
-	if (i2c_reg_write_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG2,
-				  ctrl_reg2)) {
+	if (config->ops->byte_write(dev, FXAS21002_REG_CTRLREG2,
+				    ctrl_reg2)) {
 		LOG_ERR("Could not configure interrupt pin routing");
 		return -EIO;
 	}

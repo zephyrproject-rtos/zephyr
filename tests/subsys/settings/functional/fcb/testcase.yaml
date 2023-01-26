@@ -1,8 +1,12 @@
 tests:
   system.settings.functional.fcb:
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832 native_posix native_posix_64
+    integration_platforms:
+      - nrf52840dk_nrf52840
     tags: settings_fcb
   system.settings.functional.fcb.chosen:
     extra_args: DTC_OVERLAY_FILE=./chosen.overlay
     platform_allow: native_posix native_posix_64
+    integration_platforms:
+      - native_posix
     tags: settings_fcb

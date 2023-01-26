@@ -5,7 +5,7 @@ common:
   platform_allow: npcx9m6f_evb
   integration_platforms:
     - npcx9m6f_evb
-  tags: drivers
+  tags: drivers adc
 tests:
   sample.sensor.adc_cmp:
     harness: console

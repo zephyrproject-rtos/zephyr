@@ -7,7 +7,6 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -27,7 +26,7 @@
 #include "ll_feat.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -58,4 +57,10 @@ uint32_t lll_radio_tx_ready_delay_get(uint8_t phy, uint8_t flags)
 
 void lll_disable(void *param)
 {
+}
+
+
+uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags)
+{
+	return 0;
 }

@@ -10,24 +10,22 @@ compatible: "ethernet-phy"
 include: phy.yaml
 
 properties:
-    address:
-      type: int
-      required: true
-      description: PHY address
-    mdio:
-      type: phandle
-      required: true
-      description: MDIO driver node
-    no-reset:
-      type: boolean
-      required: false
-      description: Do not reset the PHY during initialization
-    fixed-link:
-      type: string
-      required: false
-      description: This link is fixed and does not require PHY configuration
-      enum:
-        - "10BASE-T Half-Duplex"
-        - "10BASE-T Full-Duplex"
-        - "100BASE-T Half-Duplex"
-        - "100BASE-T Full-Duplex"
+  address:
+    type: int
+    required: true
+    description: PHY address
+  mdio:
+    type: phandle
+    required: true
+    description: MDIO driver node
+  no-reset:
+    type: boolean
+    description: Do not reset the PHY during initialization
+  fixed-link:
+    type: string
+    description: This link is fixed and does not require PHY configuration
+    enum:
+      - "10BASE-T Half-Duplex"
+      - "10BASE-T Full-Duplex"
+      - "100BASE-T Half-Duplex"
+      - "100BASE-T Full-Duplex"

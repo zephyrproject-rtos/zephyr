@@ -29,7 +29,7 @@
 #define PAYLOAD_MULTIPLE_ARGS "4465627567206D657373616765206578616D706C652C2025642C2025642C20256"\
 	"400010000000200000003000000"
 
-MOCK_LOG_BACKEND_DEFINE(backend1, false);
+LOG_BACKEND_DEFINE(log_backend_mock, mock_log_backend_api, false);
 
 #define LOG_MODULE_NAME test
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
@@ -129,4 +129,32 @@ ZTEST(log_syst, test_log_syst_float_data)
 #endif
 /* test case main entry */
 
-ZTEST_SUITE(log_syst, NULL, NULL, NULL, NULL, NULL);
+static void before(void *unused)
+{
+	const struct log_backend *backend;
+
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		backend = log_backend_get(i);
+		if (backend == &log_backend_mock) {
+			log_backend_enable(backend, NULL, 4);
+		} else {
+			log_backend_disable(backend);
+		}
+	}
+}
+
+static void after(void *unused)
+{
+	const struct log_backend *backend;
+
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		backend = log_backend_get(i);
+		if (backend == &log_backend_mock) {
+			log_backend_disable(backend);
+		} else {
+			log_backend_enable(backend, NULL, 4);
+		}
+	}
+}
+
+ZTEST_SUITE(log_syst, NULL, NULL, before, after, NULL);

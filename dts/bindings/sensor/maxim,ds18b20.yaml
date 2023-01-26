@@ -8,9 +8,9 @@ compatible: "maxim,ds18b20"
 include: [sensor-device.yaml, w1-slave.yaml]
 
 properties:
-    resolution:
-      type: int
-      required: true
-      description: |
-          Resolution of the temperature reading in bit.
-          Valid configurations are from 9 to 12 bits.
+  resolution:
+    type: int
+    required: true
+    description: |
+        Resolution of the temperature reading in bit.
+        Valid configurations are from 9 to 12 bits.

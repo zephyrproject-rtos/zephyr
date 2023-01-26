@@ -46,23 +46,23 @@ description: |
 
 compatible: "nxp,mcux-rt11xx-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - drive-open-drain
-            - input-enable
-            - bias-disable
-            - bias-pull-down
-            - bias-pull-up
+include: base.yaml
 
 child-binding:
   description: MCUX RT pin controller pin group
   child-binding:
     description: |
       MCUX RT pin controller pin configuration node.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-open-drain
+          - input-enable
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+
     properties:
       pinmux:
         required: true
@@ -71,7 +71,6 @@ child-binding:
           Pin mux selections for this group. See the soc level iomuxc DTSI file
           for a defined list of these options.
       drive-strength:
-        required: false
         type: string
         enum:
           - "normal"
@@ -81,7 +80,6 @@ child-binding:
           0 (normal) - sets pin to normal drive strength
           1 (high) - sets pin to high drive strength
       slew-rate:
-        required: false
         type: string
         enum:
           - "fast"

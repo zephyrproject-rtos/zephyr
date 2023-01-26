@@ -8,9 +8,3 @@ project(functional_nvs)
 target_sources(app PRIVATE settings_test_nvs.c)
 
 add_subdirectory(../src func_test_bindir)
-
-if(TEST)
-	target_compile_definitions(app PRIVATE
-		-DTEST_${TEST}
-		)
-endif()

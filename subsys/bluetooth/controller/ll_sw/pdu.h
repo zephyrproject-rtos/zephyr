@@ -102,6 +102,76 @@
 #define PDU_DC_PAYLOAD_TIME_MAX       2120
 #endif /* !CONFIG_BT_CTLR_DF */
 
+/* Data channel control PDU maximum payload size */
+#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+/* Isochronous Central and Peripheral */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_req)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_req)
+#elif defined(CONFIG_BT_CENTRAL)
+/* Isochronous Central */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_req)
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_param_req)
+#elif defined(CONFIG_BT_CTLR_LE_ENC)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_rsp)
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_rsp)
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+#elif defined(CONFIG_BT_PERIPHERAL)
+/* Isochronous Peripheral */
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_param_req)
+#elif defined(CONFIG_BT_CTLR_LE_ENC)
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_rsp)
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_rsp)
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(cis_req)
+#endif /* !CONFIG_BT_PERIPHERAL */
+
+#elif defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+/* Central and Peripheral with Connection Parameter Request */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_param_req)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_param_req)
+
+#elif defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+/* Central and Peripheral with encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_req)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_req)
+#elif defined(CONFIG_BT_CENTRAL)
+/* Central with encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_req)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_rsp)
+#elif defined(CONFIG_BT_PERIPHERAL)
+/* Peripheral with encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_rsp)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(enc_req)
+#endif /* !CONFIG_BT_PERIPHERAL */
+
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+/* Central and Peripheral without encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_update_ind)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_update_ind)
+#elif defined(CONFIG_BT_CENTRAL)
+/* Central without encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_update_ind)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(feature_rsp)
+#elif defined(CONFIG_BT_PERIPHERAL)
+/* Peripheral without encryption */
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(feature_rsp)
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(conn_update_ind)
+#endif /* !CONFIG_BT_PERIPHERAL */
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+
+#else /* !CONFIG_BT_CONN */
+#define PDU_DC_CTRL_TX_SIZE_MAX       0U
+#define PDU_DC_CTRL_RX_SIZE_MAX       0U
+#endif /* !CONFIG_BT_CONN */
+
 /* Link Layer header size of Data PDU. Assumes pdu_data is packed */
 #define PDU_DC_LL_HEADER_SIZE  (offsetof(struct pdu_data, lldata))
 
@@ -264,6 +334,11 @@
 #define PDU_BIS_US(octets, enc, phy, s8) PDU_US((octets), \
 						((enc) ? (PDU_MIC_SIZE) : 0), \
 						(phy), (s8))
+
+#define PDU_CIS_MAX_US(octets, enc, phy) PDU_MAX_US((octets), \
+						    ((enc) ? \
+						     (PDU_MIC_SIZE) : 0), \
+						    (phy))
 
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
@@ -635,6 +710,26 @@ struct pdu_data_llctrl_conn_param_rsp {
 	uint16_t offset5;
 } __packed;
 
+/*
+ * According to Spec Core v5.3, section 2.4.2.17
+ * LL_CONNECTION_PARAM_RSP and LL_CONNECTION_PARAM_REQ are identical
+ * This is utilized in pdu encode/decode, and for this is needed a common struct
+ */
+struct pdu_data_llctrl_conn_param_req_rsp_common {
+	uint16_t interval_min;
+	uint16_t interval_max;
+	uint16_t latency;
+	uint16_t timeout;
+	uint8_t  preferred_periodicity;
+	uint16_t reference_conn_event_count;
+	uint16_t offset0;
+	uint16_t offset1;
+	uint16_t offset2;
+	uint16_t offset3;
+	uint16_t offset4;
+	uint16_t offset5;
+} __packed;
+
 struct pdu_data_llctrl_reject_ext_ind {
 	uint8_t reject_opcode;
 	uint8_t error_code;
@@ -656,6 +751,18 @@ struct pdu_data_llctrl_length_req {
 } __packed;
 
 struct pdu_data_llctrl_length_rsp {
+	uint16_t max_rx_octets;
+	uint16_t max_rx_time;
+	uint16_t max_tx_octets;
+	uint16_t max_tx_time;
+} __packed;
+
+/*
+ * According to Spec Core v5.3, section 2.4.2.21
+ * LL_LENGTH_REQ and LL_LENGTH_RSP are identical
+ * This is utilized in pdu encode/decode, and for this is needed a common struct
+ */
+struct pdu_data_llctrl_length_req_rsp_common {
 	uint16_t max_rx_octets;
 	uint16_t max_rx_time;
 	uint16_t max_tx_octets;

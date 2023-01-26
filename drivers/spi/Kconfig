@@ -107,4 +107,6 @@ source "drivers/spi/Kconfig.andes_atcspi200"
 
 source "drivers/spi/Kconfig.smartbond"
 
+source "drivers/spi/Kconfig.nxp_s32"
+
 endif # SPI

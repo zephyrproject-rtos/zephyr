@@ -83,8 +83,15 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
+#ifdef CONFIG_COUNTER_GECKO_RTCC
 	DEVS_FOR_DT_COMPAT(silabs_gecko_rtcc)
+#endif
+#ifdef CONFIG_COUNTER_RTC_STM32
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
+#endif
+#ifdef CONFIG_COUNTER_GECKO_STIMER
+	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_PIT
 	DEVS_FOR_DT_COMPAT(nxp_kinetis_pit)
 #endif
@@ -93,6 +100,12 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_TMR_ESP32
 	DEVS_FOR_DT_COMPAT(espressif_esp32_timer)
+#endif
+#ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
+	DEVS_FOR_DT_COMPAT(nxp_s32_sys_timer)
+#endif
+#ifdef CONFIG_COUNTER_TIMER_GD32
+	DEVS_FOR_DT_COMPAT(gd_gd32_timer)
 #endif
 };
 
@@ -972,8 +985,18 @@ static bool reliable_cancel_capable(const struct device *dev)
 		return true;
 	}
 #endif
+#ifdef CONFIG_COUNTER_TIMER_GD32
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
 #ifdef CONFIG_COUNTER_NATIVE_POSIX
 	if (dev == DEVICE_DT_GET(DT_NODELABEL(counter0))) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
+	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}
 #endif

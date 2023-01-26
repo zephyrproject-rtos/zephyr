@@ -12,3 +12,4 @@ supported:
   - counter
   - pwm
   - netif:openthread
+  - gpio

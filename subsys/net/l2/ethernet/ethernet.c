@@ -144,11 +144,9 @@ static inline void ethernet_update_length(struct net_if *iface,
 }
 
 static void ethernet_update_rx_stats(struct net_if *iface,
-				     struct net_pkt *pkt, size_t length)
+				     struct net_eth_hdr *hdr, size_t length)
 {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
 	eth_stats_update_bytes_rx(iface, length);
 	eth_stats_update_pkts_rx(iface);
 
@@ -213,7 +211,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		net_pkt_lladdr_dst(pkt)->addr = hdr->dst.addr;
 		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 		net_pkt_lladdr_dst(pkt)->type = NET_LINK_ETHERNET;
-		ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt));
+		ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt));
 		return net_eth_bridge_input(ctx, pkt);
 	}
 
@@ -263,7 +261,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		}
 
 		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
-		goto drop;
+		eth_stats_update_unknown_protocol(iface);
+		return NET_DROP;
 	}
 
 	/* Set the pointers to ll src and dst addresses */
@@ -320,7 +319,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		goto drop;
 	}
 
-	ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt) + hdr_len);
+	ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt) + hdr_len);
 
 	if (IS_ENABLED(CONFIG_NET_ARP) &&
 	    family == AF_INET && type == NET_ETH_PTYPE_ARP) {
@@ -508,8 +507,11 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 {
 	struct net_buf *hdr_frag;
 	struct net_eth_hdr *hdr;
+	size_t hdr_len = IS_ENABLED(CONFIG_NET_VLAN) ?
+			 sizeof(struct net_eth_vlan_hdr) :
+			 sizeof(struct net_eth_hdr);
 
-	hdr_frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+	hdr_frag = net_pkt_get_frag(pkt, hdr_len, NET_BUF_TIMEOUT);
 	if (!hdr_frag) {
 		return NULL;
 	}
@@ -729,6 +731,7 @@ error:
 
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
+	int ret = 0;
 	const struct ethernet_api *eth =
 		net_if_get_device(iface)->api;
 
@@ -740,15 +743,15 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 		net_arp_clear_cache(iface);
 
 		if (eth->stop) {
-			eth->stop(net_if_get_device(iface));
+			ret = eth->stop(net_if_get_device(iface));
 		}
 	} else {
 		if (eth->start) {
-			eth->start(net_if_get_device(iface));
+			ret = eth->start(net_if_get_device(iface));
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 enum net_l2_flags ethernet_flags(struct net_if *iface)

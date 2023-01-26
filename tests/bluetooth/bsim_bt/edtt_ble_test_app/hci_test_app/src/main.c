@@ -27,7 +27,7 @@
 #include "bs_tracing.h"
 #include "commands.h"
 
-#if IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
+#if defined(CONFIG_BT_HCI_CORE_LOG_LEVEL_DBG)
 #define LOG_LEVEL LOG_LEVEL_DBG
 #else
 #define LOG_LEVEL CONFIG_BT_LOG_LEVEL

@@ -35,7 +35,7 @@
 		compatible = "pwm-leds";
 
 		green_pwm_led: green_pwm_led {
-			pwms = <&flexpwm1_pwm2 0 PWM_MSEC(20)>;
+			pwms = <&flexpwm1_pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };
@@ -78,6 +78,54 @@
 		 */
 		int1-gpios = <&gpio11 14 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpio11 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	is25wp128: is25wp128@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <134217728>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [9d 70 17];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* Note slot 0 has one additional sector,
+			 * this is intended for use with the swap move algorithm
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 0x301000>;
+			};
+			slot1_partition: partition@321000 {
+				label = "image-1";
+				reg = <0x00321000 0x300000>;
+			};
+			scratch_partition: partition@621000 {
+				label = "image-scratch";
+				reg = <0x00621000 DT_SIZE_K(128)>;
+			};
+			storage_partition: partition@641000 {
+				label = "storage";
+				reg = <0x00641000 DT_SIZE_K(1856)>;
+			};
+		};
 	};
 };
 

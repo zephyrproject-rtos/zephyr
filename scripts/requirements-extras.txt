@@ -10,7 +10,7 @@ gitlint
 junit2html
 
 # helper for developers - code formatter
-clang-format>=1.13x
+clang-format>=15.0.0
 
 # Script used to build firmware images for NXP LPC MCUs.
 lpc_checksum
@@ -29,3 +29,6 @@ PyGithub
 
 # used to generate devicetree dependency graphs
 graphviz
+
+# used to generate CBOR encoders and decoders, e.g. lwm2m_senml_cbor.
+zcbor>=0.6.0

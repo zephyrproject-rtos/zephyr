@@ -5,7 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+
 #include <zephyr/types.h>
+#include <zephyr/ztest.h>
 
 #include "hci_err.h"
 #include "util/mem.h"

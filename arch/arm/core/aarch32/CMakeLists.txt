@@ -15,15 +15,13 @@ zephyr_library_sources(
 )
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
-zephyr_library_sources_ifdef(CONFIG_CPLUSPLUS __aeabi_atexit.c)
+zephyr_library_sources_ifdef(CONFIG_CPP __aeabi_atexit.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_SW_VECTOR_RELAY irq_relay.S)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE ../common/tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 
-if(CONFIG_HAS_ARCH_CACHE)
-  zephyr_library_sources_ifdef(CONFIG_CACHE_MANAGEMENT cache.c)
-endif()
+zephyr_library_sources_ifdef(CONFIG_ARCH_CACHE cache.c)
 
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M cortex_m)
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M_HAS_CMSE cortex_m/cmse)

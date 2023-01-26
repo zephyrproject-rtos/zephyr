@@ -215,7 +215,7 @@ config UART_MCUMGR_RX_BUF_COUNT
 	  buffers hold received mcumgr fragments prior to reassembly.  This
 	  setting's value must satisfy the following relation:
 	  UART_MCUMGR_RX_BUF_COUNT * UART_MCUMGR_RX_BUF_SIZE >=
-	  MCUMGR_SMP_UART_MTU
+	  MCUMGR_TRANSPORT_UART_MTU
 
 endif # UART_MCUMGR
 

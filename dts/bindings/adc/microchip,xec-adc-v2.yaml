@@ -9,30 +9,30 @@ compatible: "microchip,xec-adc-v2"
 include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    "#io-channel-cells":
-      const: 1
+  "#io-channel-cells":
+    const: 1
 
-    girqs:
-      type: array
-      required: true
-      description: Array of pairs of GIRQ number and bit position
+  girqs:
+    type: array
+    required: true
+    description: Array of pairs of GIRQ number and bit position
 
-    pcrs:
-      type: array
-      required: true
-      description: ADC PCR register index and bit position
+  pcrs:
+    type: array
+    required: true
+    description: ADC PCR register index and bit position
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
 io-channel-cells:
-    - input
+  - input

@@ -3,6 +3,8 @@
 
 source "lib/libc/Kconfig"
 
+source "lib/cpp/Kconfig"
+
 menu "Additional libraries"
 
 source "lib/os/Kconfig"

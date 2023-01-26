@@ -20,9 +20,9 @@
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include "../audio/media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
-#define LOG_MODULE_NAME bt_media_controller_shell
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_media_controller_shell, CONFIG_BT_MCS_LOG_LEVEL);
 
 static struct media_proxy_ctrl_cbs cbs;
 
@@ -374,7 +374,7 @@ static void content_ctrl_id_cb(struct media_player *plr, int err, uint8_t ccid)
 	shell_print(ctx_shell, "Player: %p, Content Control ID: %u", plr, ccid);
 }
 
-int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
@@ -720,25 +720,453 @@ static int cmd_media_read_media_state(const struct shell *sh, size_t argc, char 
 	return err;
 }
 
-static int cmd_media_send_command(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_media_play(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct mpl_cmd cmd;
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PLAY,
+		.use_param = false,
+		.param = 0,
+	};
 	int err;
 
-	cmd.opcode = strtol(argv[1], NULL, 0);
-
-	if (argc > 2) {
-		cmd.use_param = true;
-		cmd.param = strtol(argv[2], NULL, 0);
-	} else {
-		cmd.use_param = false;
-		cmd.param = 0;
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller play failed: %d", err);
 	}
 
-	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	return err;
+}
 
-	if (err) {
-		shell_error(ctx_shell, "Command send failed (%d)", err);
+static int cmd_media_pause(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PAUSE,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller pause failed: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_media_fast_rewind(const struct shell *sh, size_t argc,
+				 char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FAST_REWIND,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller fast rewind failed: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_media_fast_forward(const struct shell *sh, size_t argc,
+				  char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FAST_FORWARD,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller fast forward failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_stop(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_STOP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller stop failed: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_media_move_relative(const struct shell *sh, size_t argc,
+				   char *argv[])
+{
+	struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_MOVE_RELATIVE,
+		.use_param = true,
+	};
+	long offset;
+	int err;
+
+	err = 0;
+	offset = shell_strtol(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse offset: %d", err);
+
+		return err;
+	}
+
+	if (!IN_RANGE(offset, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid offset: %ld", offset);
+
+		return -ENOEXEC;
+	}
+
+	cmd.param = (int32_t)offset;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller move relative failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_prev_segment(const struct shell *sh, size_t argc,
+				  char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PREV_SEGMENT,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller previous segment failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_next_segment(const struct shell *sh, size_t argc,
+				  char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_NEXT_SEGMENT,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller next segment failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_first_segment(const struct shell *sh, size_t argc,
+				   char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FIRST_SEGMENT,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller first segment failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_last_segment(const struct shell *sh, size_t argc,
+				  char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_LAST_SEGMENT,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller last segment failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_goto_segment(const struct shell *sh, size_t argc,
+				  char *argv[])
+{
+	struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_GOTO_SEGMENT,
+		.use_param = true,
+	};
+	long segment;
+	int err;
+
+	err = 0;
+	segment = shell_strtol(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse segment: %d", err);
+
+		return err;
+	}
+
+	if (!IN_RANGE(segment, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid segment: %ld", segment);
+
+		return -ENOEXEC;
+	}
+
+	cmd.param = (int32_t)segment;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller goto segment failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_prev_track(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PREV_TRACK,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller previous track failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_next_track(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_NEXT_TRACK,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller next track failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_first_track(const struct shell *sh, size_t argc,
+				 char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FIRST_TRACK,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller first track failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_last_track(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_LAST_TRACK,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller last track failed: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_media_goto_track(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_GOTO_TRACK,
+		.use_param = true,
+	};
+	long track;
+	int err;
+
+	err = 0;
+	track = shell_strtol(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse track: %d", err);
+
+		return err;
+	}
+
+	if (!IN_RANGE(track, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid track: %ld", track);
+
+		return -ENOEXEC;
+	}
+
+	cmd.param = (int32_t)track;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller goto track failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_prev_group(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PREV_GROUP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller previous group failed: %d",
+			    err);
+	}
+
+	return err;
+}
+
+static int cmd_media_next_group(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_NEXT_GROUP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller next group failed: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_media_first_group(const struct shell *sh, size_t argc,
+				 char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FIRST_GROUP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller first group failed: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_media_last_group(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_LAST_GROUP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller last group failed: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_media_goto_group(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_GOTO_GROUP,
+		.use_param = true,
+	};
+	long group;
+	int err;
+
+	err = 0;
+	group = shell_strtol(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse group: %d", err);
+
+		return err;
+	}
+
+	if (!IN_RANGE(group, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid group: %ld", group);
+
+		return -ENOEXEC;
+	}
+
+	cmd.param = (int32_t)group;
+
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	if (err != 0) {
+		shell_error(sh, "Media Controller goto group failed: %d",
+			    err);
 	}
 
 	return err;
@@ -756,7 +1184,7 @@ static int cmd_media_read_commands_supported(const struct shell *sh, size_t argc
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 {
 	/* TODO: Currently takes the raw search as input - add parameters
 	 * and build the search item here
@@ -767,7 +1195,7 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 
 	search.len = strlen(argv[1]);
 	memcpy(search.search, argv[1], search.len);
-	BT_DBG("Search string: %s", argv[1]);
+	LOG_DBG("Search string: %s", argv[1]);
 
 	err = media_proxy_ctrl_send_search(current_player, &search);
 	if (err) {
@@ -869,8 +1297,52 @@ SHELL_STATIC_SUBCMD_SET_CREATE(media_cmds,
 		      cmd_media_read_playing_orders_supported, 1, 0),
 	SHELL_CMD_ARG(read_media_state, NULL, "Read Media State",
 		      cmd_media_read_media_state, 1, 0),
-	SHELL_CMD_ARG(send_command, NULL, "Send command <opcode> [argument]",
-		      cmd_media_send_command, 2, 1),
+	SHELL_CMD_ARG(play, NULL, "Send the play command", cmd_media_play, 1,
+		      0),
+	SHELL_CMD_ARG(pause, NULL, "Send the pause command",
+		      cmd_media_pause, 1, 0),
+	SHELL_CMD_ARG(fast_rewind, NULL, "Send the fast rewind command",
+		      cmd_media_fast_rewind, 1, 0),
+	SHELL_CMD_ARG(fast_forward, NULL, "Send the fast forward command",
+		      cmd_media_fast_forward, 1, 0),
+	SHELL_CMD_ARG(stop, NULL, "Send the stop command", cmd_media_stop, 1,
+		      0),
+	SHELL_CMD_ARG(move_relative, NULL,
+		      "Send the move relative command <int32_t: offset>",
+		      cmd_media_move_relative, 2, 0),
+	SHELL_CMD_ARG(prev_segment, NULL, "Send the prev segment command",
+		      cmd_media_prev_segment, 1, 0),
+	SHELL_CMD_ARG(next_segment, NULL, "Send the next segment command",
+		      cmd_media_next_segment, 1, 0),
+	SHELL_CMD_ARG(first_segment, NULL, "Send the first segment command",
+		      cmd_media_first_segment, 1, 0),
+	SHELL_CMD_ARG(last_segment, NULL, "Send the last segment command",
+		      cmd_media_last_segment, 1, 0),
+	SHELL_CMD_ARG(goto_segment, NULL,
+		      "Send the goto segment command <int32_t: segment>",
+		      cmd_media_goto_segment, 2, 0),
+	SHELL_CMD_ARG(prev_track, NULL, "Send the prev track command",
+		      cmd_media_prev_track, 1, 0),
+	SHELL_CMD_ARG(next_track, NULL, "Send the next track command",
+		      cmd_media_next_track, 1, 0),
+	SHELL_CMD_ARG(first_track, NULL, "Send the first track command",
+		      cmd_media_first_track, 1, 0),
+	SHELL_CMD_ARG(last_track, NULL, "Send the last track command",
+		      cmd_media_last_track, 1, 0),
+	SHELL_CMD_ARG(goto_track, NULL,
+		      "Send the goto track command  <int32_t: track>",
+		      cmd_media_goto_track, 2, 0),
+	SHELL_CMD_ARG(prev_group, NULL, "Send the prev group command",
+		      cmd_media_prev_group, 1, 0),
+	SHELL_CMD_ARG(next_group, NULL, "Send the next group command",
+		      cmd_media_next_group, 1, 0),
+	SHELL_CMD_ARG(first_group, NULL, "Send the first group command",
+		      cmd_media_first_group, 1, 0),
+	SHELL_CMD_ARG(last_group, NULL, "Send the last group command",
+		      cmd_media_last_group, 1, 0),
+	SHELL_CMD_ARG(goto_group, NULL,
+		      "Send the goto group command <int32_t: group>",
+		      cmd_media_goto_group, 2, 0),
 	SHELL_CMD_ARG(read_commands_supported, NULL, "Read Commands Supported",
 		      cmd_media_read_commands_supported, 1, 0),
 #ifdef CONFIG_BT_OTS

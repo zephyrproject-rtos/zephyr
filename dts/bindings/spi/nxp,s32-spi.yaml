@@ -1,0 +1,69 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 SPI controller
+
+compatible: "nxp,s32-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  num-cs:
+    type: int
+    required: true
+    description: |
+      The number of the Chip Select signals.
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Module clock frequency in Hz.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  slave:
+    type: boolean
+    description: |
+      Select if the SPI module is intended to be used in slave mode.
+
+  spi-sck-cs-delay:
+    type: int
+    description: |
+      A delay in nanoseconds between the stop of clock signal and
+      deactivating Chip Select at the stop of transfer. If CS remains
+      asserted between transfer, this delay will be inserted between transfer.
+      If not set, the minimum supported delay is used.
+      This value will affect to all inner CS signals of SPI module when active.
+      This value will not be applied for CS lines controlled by GPIO.
+
+  spi-cs-sck-delay:
+    type: int
+    description: |
+      A delay in nanoseconds between activating Chip Select and the start
+      of clock signal at the start of transfer. If CS remains asserted
+      between transfer, this delay will be inserted between transfer.
+      If not set, the minimum supported delay is used.
+      This value will affect to all inner CS signals of SPI module when active.
+      This value will not be applied for CS lines controlled by GPIO.
+
+  spi-cs-cs-delay:
+    type: int
+    description: |
+      A delay in nanoseconds between deactivating Chip Select at the stop
+      of previous transfer and activating Chip Select at the start of
+      next transfer. If CS remains asserted between transfer, this delay
+      will not be inserted.
+      If not set, the minimum supported delay is used.
+      This value will affect to all inner CS signals of SPI module when active.
+      This value will not be applied for CS lines controlled by GPIO.

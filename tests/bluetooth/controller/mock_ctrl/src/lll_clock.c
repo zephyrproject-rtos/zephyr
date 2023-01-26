@@ -5,11 +5,9 @@
  */
 
 #include <zephyr/types.h>
+#include <zephyr/ztest.h>
 #include <soc.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_lll_clock
-#include "common/log.h"
 #include "hal/debug.h"
 
 /* Clock setup timeouts are unlikely, below values are experimental */

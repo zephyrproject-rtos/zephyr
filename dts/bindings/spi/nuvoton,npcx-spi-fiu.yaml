@@ -8,7 +8,7 @@ compatible: "nuvoton,npcx-spi-fiu"
 include: [spi-controller.yaml]
 
 properties:
-    reg:
-        required: true
-    clocks:
-        required: true
+  reg:
+    required: true
+  clocks:
+    required: true

@@ -17,7 +17,8 @@
 			num-bidir-endpoints = <6>;
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00004000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00004000>,
+				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
 			phys = <&otgfs_phy>;
 			status = "disabled";
 		};

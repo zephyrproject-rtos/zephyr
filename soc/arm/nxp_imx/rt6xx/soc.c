@@ -25,11 +25,17 @@
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
+#include "flash_clock_setup.h"
+#endif
+
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
 #include "usb.h"
 #endif
 
+/* Core clock frequency: 250105263Hz */
+#define CLOCK_INIT_CORE_CLOCK                     250105263U
 
 #define SYSTEM_IS_XIP_FLEXSPI() \
 	((((uint32_t)nxp_rt600_init >= 0x08000000U) &&		\
@@ -67,6 +73,9 @@ const clock_audio_pll_config_t g_audioPllConfig = {
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
+
+/* System clock frequency. */
+extern uint32_t SystemCoreClock;
 
 #ifdef CONFIG_NXP_IMX_RT6XX_BOOT_HEADER
 extern char z_main_stack[];
@@ -186,6 +195,15 @@ static ALWAYS_INLINE void clock_init(void)
 	POWER_DisablePD(kPDRUNCFG_PD_SFRO);
 	CLOCK_EnableSfroClk();
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	/*
+	 * Call function flexspi_clock_safe_config() to move FlexSPI clock to a stable
+	 * clock source to avoid instruction/data fetch issue when updating PLL and Main
+	 * clock if XIP(execute code on FLEXSPI memory).
+	 */
+	flexspi_clock_safe_config();
+#endif
+
 	/* Let CPU run on FFRO for safe switching. */
 	CLOCK_AttachClk(kFFRO_to_MAIN_CLK);
 
@@ -284,6 +302,17 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kFFRO_to_I3C_CLK);
 	CLOCK_AttachClk(kLPOSC_to_I3C_TC_CLK);
 #endif
+
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	/*
+	 * Call function flexspi_setup_clock() to set user configured clock source/divider
+	 * for FlexSPI.
+	 */
+	flexspi_setup_clock(FLEXSPI, 1U, 9U);
+#endif
+
+	/* Set SystemCoreClock variable. */
+	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }

@@ -18,6 +18,6 @@ struct ina23x_trigger {
 };
 
 int ina23x_trigger_mode_init(struct ina23x_trigger *trigg,
-			     const struct gpio_dt_spec *gpio_alert);
+			     const struct gpio_dt_spec *alert_gpio);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_INA23X_TRIGGER_H_ */

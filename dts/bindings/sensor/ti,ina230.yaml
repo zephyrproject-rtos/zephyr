@@ -16,21 +16,14 @@ compatible: "ti,ina230"
 include: ti,ina23x-common.yaml
 
 properties:
-    mask:
-      type: int
-      required: false
-      default: 0
-      # default all alert sources to disabled
-      description: Mask register, default matches the power-on reset value
+  mask:
+    type: int
+    default: 0
+    # default all alert sources to disabled
+    description: Mask register, default matches the power-on reset value
 
-    alert-limit:
-      type: int
-      required: false
-      default: 0
-      # default alert limit is 0V
-      description: Alert register, default matches the power-on reset value
-
-    irq-gpios:
-      type: phandle-array
-      required: false
-      description: IRQ Alert pin
+  alert-limit:
+    type: int
+    default: 0
+    # default alert limit is 0V
+    description: Alert register, default matches the power-on reset value

@@ -28,27 +28,27 @@ ZTEST(stm32_syclck_config, test_sysclk_src)
 
 #if STM32_SYSCLK_SRC_PLL
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src,
-			"Expected sysclk src: PLL. Actual sysclk src: %d",
-			sys_clk_src);
+			"Expected sysclk src: PLL (0x%x). Actual: 0x%x",
+			RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSE
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src,
-			"Expected sysclk src: HSE. Actual sysclk src: %d",
-			sys_clk_src);
+			"Expected sysclk src: HSE (0x%x). Actual: 0x%x",
+			RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSI
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src,
-			"Expected sysclk src: HSI. Actual sysclk src: %d",
-			sys_clk_src);
+			"Expected sysclk src: HSI (0x%x). Actual: 0x%x",
+			RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
 #elif STM32_SYSCLK_SRC_CSI
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_CSI, sys_clk_src,
-			"Expected sysclk src: CSI. Actual sysclk src: %d",
-			sys_clk_src);
+			"Expected sysclk src: CSI (0x%x). Actual: 0x%x",
+			RCC_SYSCLKSOURCE_STATUS_CSI, sys_clk_src);
 #else
 	/* Case not expected */
 	zassert_true((STM32_SYSCLK_SRC_PLL ||
 		      STM32_SYSCLK_SRC_HSE ||
 		      STM32_SYSCLK_SRC_HSI ||
 		      STM32_SYSCLK_SRC_CSI),
-		      "Not expected. sys_clk_src: %d\n", sys_clk_src);
+		      "Not expected. sys_clk_src: 0x%x\n", sys_clk_src);
 #endif
 
 }

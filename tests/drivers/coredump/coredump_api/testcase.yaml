@@ -1,9 +1,12 @@
 # Copyright Meta Platforms, Inc. and its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 
+common:
+  tags: coredump
+  ignore_faults: true
+  ignore_qemu_crash: true
 tests:
   drivers.coredump.api.qemu_riscv32:
-    tags: ignore_faults ignore_qemu_crash
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_allow: qemu_riscv32
     harness: console
@@ -27,7 +30,6 @@ tests:
         - "E: #CD:babababa"
         - "E: #CD:END#"
   drivers.coredump.api:
-    tags: ignore_faults ignore_qemu_crash
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_exclude: qemu_riscv32
     harness: console

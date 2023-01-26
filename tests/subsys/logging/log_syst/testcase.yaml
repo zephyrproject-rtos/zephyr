@@ -1,5 +1,5 @@
 common:
-    filter: not CONFIG_64BIT
+  filter: not CONFIG_64BIT
 tests:
   logging.log_syst.mipi_syst:
     tags: log_syst logging

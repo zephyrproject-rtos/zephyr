@@ -473,7 +473,7 @@ def test_nrfjprog_create(check_call, get_snr, require, test_case,
     if test_case.softreset:
         args.append('--softreset')
     if test_case.snr:
-        args.extend(['--snr', TEST_OVR_SNR])
+        args.extend(['--dev-id', TEST_OVR_SNR])
     if test_case.erase:
         args.append('--erase')
     if test_case.recover:

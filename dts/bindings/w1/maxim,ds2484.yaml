@@ -10,6 +10,5 @@ include: [i2c-device.yaml, w1-master.yaml]
 properties:
   slpz-gpios:
     type: phandle-array
-    required: false
     description: |
       Enable sleep mode, only available on DS4284. Active low.

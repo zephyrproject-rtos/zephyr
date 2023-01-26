@@ -30,4 +30,15 @@ choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_LPCIP3511
 endchoice
 
+# Enable the MEMC FlexSPI driver when using device power
+# management so we can reconfigure the FlexSPI pins to
+# save power. The MEMC FlexSPI driver is enabled when we
+# enable the Flash subsystem, however we would like to
+# reconfigure the FlexSPI pins even when the Flash driver
+# is disabled, hence MEMC is selected when PM_DEVICE
+# is turned on.
+config MEMC
+	default y if PM_DEVICE
+	select MEMC_MCUX_FLEXSPI
+
 endif # SOC_MIMXRT685S_CM33

@@ -224,6 +224,43 @@
 			status = "disabled";
 		};
 
+		coretemp: coretemp@60040058 {
+			compatible = "espressif,esp32-temp";
+			friendly-name = "coretemp";
+			reg = <0x60040058 0x4>;
+			status = "disabled";
+		};
+
+		adc0: adc@60040000 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x60040000 4>;
+			unit = <1>;
+			channel-count = <5>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@60040004 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x60040004 4>;
+			unit = <2>;
+			channel-count = <2>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		dma: dma@6003f000 {
+			compatible = "espressif,esp32-gdma";
+			reg = <0x6003f000 DT_SIZE_K(4)>;
+			#dma-cells = <1>;
+			interrupts = <DMA_CH0_INTR_SOURCE DMA_CH1_INTR_SOURCE DMA_CH2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_GDMA_MODULE>;
+			dma-channels = <6>;
+			dma-buf-addr-alignment = <4>;
+			status = "disabled";
+		};
+
 	};
 
 };

@@ -78,6 +78,10 @@ struct e1000_dev {
 	volatile struct e1000_tx tx __aligned(16);
 	volatile struct e1000_rx rx __aligned(16);
 	mm_reg_t address;
+
+	/* BDF & DID/VID */
+	struct pcie_dev *pcie;
+
 	/* If VLAN is enabled, there can be multiple VLAN interfaces related to
 	 * this physical device. In that case, this iface pointer value is not
 	 * really used for anything.
@@ -90,6 +94,10 @@ struct e1000_dev {
 	const struct device *ptp_clock;
 	float clk_ratio;
 #endif
+};
+
+struct e1000_config {
+	void (*config_func)(const struct e1000_dev *dev);
 };
 
 static const char *e1000_reg_to_string(enum e1000_reg_t r)

@@ -5,3 +5,5 @@ tests:
     platform_allow: intel_adsp_cavs25 intel_adsp_cavs20 intel_adsp_cavs18 intel_adsp_cavs15
      frdm_k64f mimxrt1060_evk
     filter: dt_alias_exists("dma0")
+    integration_platforms:
+      - intel_adsp_cavs25

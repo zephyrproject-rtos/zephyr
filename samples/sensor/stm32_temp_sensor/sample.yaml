@@ -4,8 +4,7 @@ sample:
 tests:
   sample.sensor.stm32_temp_sensor:
     depends_on: adc
-    tags: sensors
-    tags: tests
+    tags: sensors tests
     filter: dt_compat_enabled("st,stm32-temp-cal") or dt_compat_enabled("st,stm32-temp")
     harness: console
     harness_config:

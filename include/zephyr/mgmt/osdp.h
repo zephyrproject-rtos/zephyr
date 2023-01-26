@@ -18,17 +18,7 @@ extern "C" {
 
 #define OSDP_CMD_TEXT_MAX_LEN          32
 #define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
-
-/**
- * @brief Various card formats that a PD can support. This is sent to CP
- * when a PD must report a card read.
- */
-enum osdp_card_formats_e {
-	OSDP_CARD_FMT_RAW_UNSPECIFIED,
-	OSDP_CARD_FMT_RAW_WIEGAND,
-	OSDP_CARD_FMT_ASCII,
-	OSDP_CARD_FMT_SENTINEL
-};
+#define OSDP_EVENT_MAX_DATALEN         64
 
 /**
  * @brief Command sent from CP to Control digital output of PD.
@@ -211,23 +201,161 @@ struct osdp_cmd {
 	};
 };
 
+/**
+ * @brief Various card formats that a PD can support. This is sent to CP
+ * when a PD must report a card read.
+ */
+enum osdp_event_cardread_format_e {
+	OSDP_CARD_FMT_RAW_UNSPECIFIED,
+	OSDP_CARD_FMT_RAW_WIEGAND,
+	OSDP_CARD_FMT_ASCII,
+	OSDP_CARD_FMT_SENTINEL
+};
+
+/**
+ * @brief OSDP event cardread
+ *
+ * @param reader_no In context of readers attached to current PD, this number
+ *        indicated this number. This is not supported by LibOSDP.
+ * @param format Format of the card being read.
+ *        see `enum osdp_event_cardread_format_e`
+ * @param direction Card read direction of PD 0 - Forward; 1 - Backward
+ * @param length Length of card data in bytes or bits depending on `format`
+ *        (see note).
+ * @param data Card data of `length` bytes or bits bits depending on `format`
+ *        (see note).
+ *
+ * @note When `format` is set to OSDP_CARD_FMT_RAW_UNSPECIFIED or
+ * OSDP_CARD_FMT_RAW_WIEGAND, the length is expressed in bits. OTOH, when it is
+ * set to OSDP_CARD_FMT_ASCII, the length is in bytes. The number of bytes to
+ * read from the `data` field must be interpreted accordingly.
+ */
+struct osdp_event_cardread {
+	int reader_no;
+	enum osdp_event_cardread_format_e format;
+	int direction;
+	int length;
+	uint8_t data[OSDP_EVENT_MAX_DATALEN];
+};
+
+/**
+ * @brief OSDP Event Keypad
+ *
+ * @param reader_no In context of readers attached to current PD, this number
+ *                  indicated this number. This is not supported by LibOSDP.
+ * @param length Length of keypress data in bytes
+ * @param data keypress data of `length` bytes
+ */
+struct osdp_event_keypress {
+	int reader_no;
+	int length;
+	uint8_t data[OSDP_EVENT_MAX_DATALEN];
+};
+
+/**
+ * @brief OSDP PD Events
+ */
+enum osdp_event_type {
+	OSDP_EVENT_CARDREAD,
+	OSDP_EVENT_KEYPRESS,
+	OSDP_EVENT_SENTINEL
+};
+
+/**
+ * @brief OSDP Event structure.
+ *
+ * @param type used to select specific event in union. See: enum osdp_event_type
+ * @param keypress keypress event structure
+ * @param cardread cardread event structure
+ */
+struct osdp_event {
+	sys_snode_t node;
+	enum osdp_event_type type;
+	union {
+		struct osdp_event_keypress keypress;
+		struct osdp_event_cardread cardread;
+	};
+};
+
+/**
+ * @brief Callback for PD command notifications. After it has been registered
+ * with `osdp_pd_set_command_callback`, this method is invoked when the PD
+ * receives a command from the CP.
+ *
+ * @param arg pointer that will was passed to the arg param of
+ * `osdp_pd_set_command_callback`.
+ * @param cmd pointer to the received command.
+ *
+ * @retval 0 if LibOSDP must send a `osdp_ACK` response
+ * @retval -ve if LibOSDP must send a `osdp_NAK` response
+ * @retval +ve and modify the passed `struct osdp_cmd *cmd` if LibOSDP must send
+ * a specific response. This is useful for sending manufacturer specific
+ * reply ``osdp_MFGREP``.
+ */
+typedef int (*pd_command_callback_t)(void *arg, struct osdp_cmd *cmd);
+
+/**
+ * @brief Callback for CP event notifications. After it has been registered with
+ * `osdp_cp_set_event_callback`, this method is invoked when the CP receives an
+ * event from the PD.
+ *
+ * @param arg Opaque pointer provided by the application during callback
+ *            registration.
+ * @param pd the offset (0-indexed) of this PD in kconfig `OSDP_PD_ADDRESS_LIST`
+ * @param ev pointer to osdp_event struct (filled by libosdp).
+ *
+ * @retval 0 on handling the event successfully.
+ * @retval -ve on errors.
+ */
+typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
+
 #ifdef CONFIG_OSDP_MODE_PD
 
 /**
- * @param cmd pointer to a command structure that was received by the driver.
+ * @brief Set callback method for PD command notification. This callback is
+ * invoked when the PD receives a command from the CP.
  *
- * @retval 0 on success.
- * @retval -1 on failure.
+ * @param cb The callback function's pointer
+ * @param arg A pointer that will be passed as the first argument of `cb`
  */
-int osdp_pd_get_cmd(struct osdp_cmd *cmd);
+void osdp_pd_set_command_callback(pd_command_callback_t cb, void *arg);
+
+/**
+ * @brief API to notify PD events to CP. These events are sent to the CP as an
+ * alternate response to a POLL command.
+ *
+ * @param event pointer to event struct. Must be filled by application.
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ */
+int osdp_pd_notify_event(const struct osdp_event *event);
 
 #else /* CONFIG_OSDP_MODE_PD */
 
-int osdp_cp_set_callback_key_press(
-	int (*cb)(int address, uint8_t key));
-int osdp_cp_set_callback_card_read(
-	int (*cb)(int address, int format, uint8_t *data, int len));
+/**
+ * @brief Generic command enqueue API.
+ *
+ * @param pd the offset (0-indexed) of this PD in kconfig `OSDP_PD_ADDRESS_LIST`
+ * @param cmd command pointer. Must be filled by application.
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ *
+ * @note This method only adds the command on to a particular PD's command
+ * queue. The command itself can fail due to various reasons.
+ */
 int osdp_cp_send_command(int pd, struct osdp_cmd *cmd);
+
+
+/**
+ * @brief Set callback method for CP event notification. This callback is
+ * invoked when the CP receives an event from the PD.
+ *
+ * @param cb The callback function's pointer
+ * @param arg A pointer that will be passed as the first argument of `cb`
+ */
+void osdp_cp_set_event_callback(cp_event_callback_t cb, void *arg);
 
 #endif /* CONFIG_OSDP_MODE_PD */
 

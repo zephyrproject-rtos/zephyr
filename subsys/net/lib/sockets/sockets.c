@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* libc headers */
-#include <fcntl.h>
-
 /* Zephyr headers */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -17,6 +14,11 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_types.h>
+#ifdef CONFIG_ARCH_POSIX
+#include <fcntl.h>
+#else
+#include <zephyr/posix/fcntl.h>
+#endif
 #include <zephyr/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/math_extras.h>
@@ -2167,6 +2169,9 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 		}
 
+		case SO_LINGER:
+			/* ignored. for compatibility purposes only */
+			return 0;
 		}
 
 		break;

@@ -180,9 +180,13 @@ void arm_core_mpu_disable(void)
 void arm_core_mpu_enable(void)
 {
 	/* Enable MPU and use the default memory map as a
-	 * background region for privileged software access.
+	 * background region for privileged software access if desired.
 	 */
+#if defined(CONFIG_MPU_DISABLE_BACKGROUND_MAP)
+	MPU->CTRL = MPU_CTRL_ENABLE_Msk;
+#else
 	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
+#endif
 
 	/* Make sure that all the registers are set before proceeding */
 	__DSB();
@@ -346,10 +350,16 @@ int z_arm_mpu_init(void)
 	/* Clean and invalidate data cache if it is enabled and
 	 * that was not already done at boot
 	 */
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	if (__get_SCTLR() & SCTLR_C_Msk) {
+		L1C_CleanInvalidateDCacheAll();
+	}
+#else
 #if !defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
 	if (SCB->CCR & SCB_CCR_DC_Msk) {
 		SCB_CleanInvalidateDCache();
 	}
+#endif
 #endif
 #endif /* CONFIG_NOCACHE_MEMORY */
 

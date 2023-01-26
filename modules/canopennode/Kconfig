@@ -8,6 +8,7 @@ config ZEPHYR_CANOPENNODE_MODULE
 
 config CANOPENNODE
 	bool "CANopenNode support"
+	select CRC
 	depends on CAN && !CAN_FD_MODE
 	help
 	  This option enables the CANopenNode library.

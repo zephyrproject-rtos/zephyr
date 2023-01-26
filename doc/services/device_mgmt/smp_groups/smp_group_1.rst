@@ -113,7 +113,7 @@ CBOR data of successful response:
                 (str,opt)"image"        : (int)
                 (str)"slot"             : (int)
                 (str)"version"          : (str)
-                (str)"hash"             ; (str)
+                (str)"hash"             : (byte str)
                 (str,opt)"bootable"     : (bool)
                 (str,opt)"pending"      : (bool)
                 (str,opt)"confirmed"    : (bool)
@@ -125,7 +125,7 @@ CBOR data of successful response:
         (str,opt)"splitStatus" : (int)
     }
 
-In case of error the CBOR data takes form:
+In case of error the CBOR data takes the form:
 
 .. code-block:: none
 
@@ -151,14 +151,16 @@ where:
     | "version"             | string representing image version, as set with    |
     |                       | ``imgtool``                                       |
     +-----------------------+---------------------------------------------------+
-    | "hash"                | hash of an upload; this is used to identify       |
-    |                       | an upload session, for example to allow mcumgr    |
-    |                       | library to continue broken session                |
+    | "hash"                | SHA256 hash of the image header and body. Note    |
+    |                       | that this will not be the same as the SHA256 of   |
+    |                       | the whole file, it is the field in the MCUboot    |
+    |                       | TLV section that contains a hash of the data      |
+    |                       | which is used for signature verification          |
+    |                       | purposes.                                         |
     |                       |                                                   |
     |                       | .. note::                                         |
-    |                       |    By default mcumgr-cli uses here a few          |
-    |                       |    characters of sha256 of the first uploaded     |
-    |                       |    chunk.                                         |
+    |                       |    See ``IMAGE_TLV_SHA256`` in the MCUboot image  |
+    |                       |    format documentation link below.               |
     +-----------------------+---------------------------------------------------+
     | "bootable"            | true if image has bootable flag set;              |
     |                       | this field does not have to be present if false   |
@@ -180,6 +182,7 @@ where:
     |                       | with application part; this is unused by Zephyr   |
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
     | "rsn"                 | optional string that clarifies reason for an      |
     |                       | error; specifically useful for error code ``1``,  |
@@ -190,6 +193,9 @@ where:
     For more information on how does image/slots function, please refer to
     the MCUBoot documentation
     https://www.mcuboot.com/documentation/design/#image-slots
+    For information on MCUboot image format, please reset to the MCUboot
+    documentation https://docs.mcuboot.com/design.html#image-format
+
 
 Set state of image request
 ==========================
@@ -281,10 +287,12 @@ where:
     +-----------------------+---------------------------------------------------+
     | "off"                 | offset of image chunk the request carries         |
     +-----------------------+---------------------------------------------------+
-    | "sha"                 | string identifying update session; it should only |
-    |                       | be present if "off" is zero; although name        |
-    |                       | suggests it might be SHA, it can actually be any  |
-    |                       | string                                            |
+    | "sha"                 | SHA256 hash of an upload; this is used to         |
+    |                       | identify an upload session, for example to allow  |
+    |                       | MCUmgr to continue a broken session. This must be |
+    |                       | a full SHA256 of the whole image being uploaded,  |
+    |                       | and is optionally used for image verification     |
+    |                       | purposes. Should only be present if "off" is zero |
     +-----------------------+---------------------------------------------------+
     | "data"                | optional image data                               |
     +-----------------------+---------------------------------------------------+
@@ -319,13 +327,19 @@ Set state of image request header fields:
     | ``3``  | ``1``        |  ``1``         |
     +--------+--------------+----------------+
 
-CBOR data of response:
-
+CBOR data of successful response:
 
 .. code-block:: none
 
     {
         (str,opt)"off"  : (uint)
+    }
+
+In case of error the CBOR data takes the form:
+
+.. code-block:: none
+
+    {
         (str)"rc"       : (int)
         (str,opt)"rsn"  : (str)
     }
@@ -339,6 +353,7 @@ where:
     | "off"                 | offset of last successfully written byte of update|
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
     | "rsn"                 | Optional string that clarifies reason for an      |
     |                       | error; specifically useful for error code ``1``,  |
@@ -405,7 +420,8 @@ Image erase response header fields:
     | ``3``  | ``1``        |  ``5``         |
     +--------+--------------+----------------+
 
-CBOR data of response:
+The command sends an empty CBOR map as data if successful. In case of error the
+CBOR data takes the form:
 
 .. code-block:: none
 
@@ -421,6 +437,7 @@ where:
 
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
     | "rsn"                 | Optional string that clarifies reason for an      |
     |                       | error; specifically useful for error code ``1``,  |

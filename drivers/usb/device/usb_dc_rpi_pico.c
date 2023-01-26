@@ -10,6 +10,7 @@
 #include <hardware/structs/usb.h>
 #include <hardware/resets.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
@@ -136,7 +137,7 @@ static void udc_rpi_handle_buff_status(void)
 {
 	struct udc_rpi_ep_state *ep_state;
 	enum usb_dc_ep_cb_status_code status_code;
-	uint8_t status = usb_hw->buf_status;
+	uint32_t status = usb_hw->buf_status;
 	unsigned int bit = 1U;
 	struct cb_msg msg;
 

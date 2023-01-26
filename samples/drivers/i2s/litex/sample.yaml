@@ -3,9 +3,9 @@ sample:
 
   name: i2s example
 common:
-    tags: introduction
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "i2s example (.*)"
+  tags: introduction
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "i2s example (.*)"

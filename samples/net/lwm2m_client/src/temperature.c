@@ -45,7 +45,7 @@ static void temp_work_cb(struct k_work *work)
 		v = 20.0 + (double)sys_rand32_get() / UINT32_MAX * 5.0;
 	}
 
-	lwm2m_engine_set_float("3303/0/5700", &v);
+	lwm2m_set_f64(&LWM2M_OBJ(3303, 0, 5700), v);
 
 out:
 	k_work_schedule(&temp_work, PERIOD);
@@ -53,7 +53,7 @@ out:
 
 void init_temp_sensor(void)
 {
-	if (lwm2m_engine_create_obj_inst("3303/0") == 0) {
+	if (lwm2m_create_object_inst(&LWM2M_OBJ(3303, 0)) == 0) {
 		k_work_init_delayable(&temp_work, temp_work_cb);
 		k_work_schedule(&temp_work, K_NO_WAIT);
 	}

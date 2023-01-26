@@ -8,8 +8,8 @@ compatible: "litex,eth0"
 include: ethernet.yaml
 
 properties:
-    reg:
-        required: true
+  reg:
+    required: true
 
-    interrupts:
-        required: true
+  interrupts:
+    required: true

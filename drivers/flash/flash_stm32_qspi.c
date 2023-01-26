@@ -1189,7 +1189,8 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	__ASSERT_NO_MSG(prescaler <= STM32_QSPI_CLOCK_PRESCALER_MAX);
 	/* Initialize QSPI HAL */
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
-	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size);
+	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
+	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
 
 	HAL_QSPI_Init(&dev_data->hqspi);
 

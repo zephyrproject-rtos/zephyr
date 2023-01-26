@@ -93,10 +93,10 @@ TESTDATA_3 = [
             '/scripts/tests/twister/test_data/testsuites/test_b/test_b.check_1'
         ),
         (
-            os.path.join(ZEPHYR_BASE, '/scripts/tests'),
-            os.path.join(ZEPHYR_BASE, '/scripts/tests'),
+            os.path.join(ZEPHYR_BASE, 'scripts/tests'),
+            os.path.join(ZEPHYR_BASE, 'scripts/tests'),
             'test_b.check_1',
-            'test_b.check_1'
+            'scripts/tests/test_b.check_1'
         ),
         (
             ZEPHYR_BASE,

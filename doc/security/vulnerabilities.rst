@@ -1242,3 +1242,16 @@ This has been fixed in main for v3.2.0
 
 - `PR 47959 fix for v2.7.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/47959>`_
+
+CVE-2022-2993
+--------------
+
+bt: host: Wrong key validation check
+
+This has been fixed in main for v3.2.0
+
+- `Zephyr project bug tracker GHSA-3286-jgjx-8cvr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3286-jgjx-8cvr>`_
+
+- `PR 48733 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/48733>`_

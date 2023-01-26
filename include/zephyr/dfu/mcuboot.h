@@ -5,13 +5,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief MCUboot public API for MCUboot control of image boot process
+ *
+ * The header declares API functions that can be used to get information
+ * on and select application images for boot.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DFU_MCUBOOT_H_
 #define ZEPHYR_INCLUDE_DFU_MCUBOOT_H_
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <sys/types.h>
 
 #include <zephyr/types.h>
+
+/**
+ * @brief MCUboot public API for MCUboot control of image boot process
+ *
+ * @defgroup mcuboot_api MCUboot image control API
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,9 +80,7 @@ extern "C" {
 
 #define BOOT_IMG_VER_STRLEN_MAX 25  /* 255.255.65535.4294967295\0 */
 
-#define BOOT_TRAILER_IMG_STATUS_OFFS(bank_area) ((bank_area)->fa_size -\
-						  BOOT_MAGIC_SZ -\
-						  BOOT_MAX_ALIGN * 2)
+
 /**
  * @brief MCUboot image header representation for image version
  *
@@ -248,8 +262,29 @@ int boot_request_upgrade_multi(int image_index, int permanent);
  */
 int boot_erase_img_bank(uint8_t area_id);
 
+/**
+ * @brief Get the offset of the status in the image bank
+ *
+ * @param area_id flash_area ID of image bank to get the status offset
+ * @return a positive offset on success, negative errno code on fail
+ */
+ssize_t boot_get_area_trailer_status_offset(uint8_t area_id);
+
+/**
+ * @brief Get the offset of the status from an image bank size
+ *
+ * @param area_size size of image bank
+ * @return offset of the status. When negative the status will not fit
+ * the given size
+ */
+ssize_t boot_get_trailer_status_offset(size_t area_size);
+
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif  /* ZEPHYR_INCLUDE_DFU_MCUBOOT_H_ */

@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l4r5Xi.dtsi>
-#include <st/l4/stm32l4r5z(g-i)tx-pinctrl.dtsi>
+#include <st/l4/stm32l4r5z(g-i)yx-pinctrl.dtsi>
 #include "feather_connector.dtsi"
 
 / {
@@ -42,7 +42,7 @@
 	};
 
 	supply-3v3 {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "supply-3v3";
 		enable-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -52,6 +52,14 @@
 		led0 = &led0;
 		sw0 = &user_button;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -161,6 +169,8 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

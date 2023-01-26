@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ *
+ * @brief Zephyr testing framework ztress macros
+ */
+
 #ifndef TESTSUITE_ZTEST_INCLUDE_ZTRESS_H__
 #define TESTSUITE_ZTEST_INCLUDE_ZTRESS_H__
 
@@ -16,6 +23,15 @@ extern "C" {
 /** @internal Internal ID's to distinguish context type. */
 #define ZTRESS_ID_THREAD 0
 #define ZTRESS_ID_K_TIMER 1
+
+/**
+ * @defgroup ztest_ztress Ztest ztress macros
+ * @ingroup ztest
+ *
+ * This module provides test stress when using Ztest.
+ *
+ * @{
+ */
 
 /** @brief Descriptor of a k_timer handler execution context.
  *
@@ -236,6 +252,10 @@ int ztress_preempt_count(uint32_t id);
  * @return Optimized timeout base.
  */
 uint32_t ztress_optimized_ticks(uint32_t id);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

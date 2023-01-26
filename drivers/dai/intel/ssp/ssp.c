@@ -1348,8 +1348,8 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		 */
 		sspsp |= SSPSP_SFRMP(!inverted_frame);
 
-		active_tx_slots = popcount(ssp->params.tx_slots);
-		active_rx_slots = popcount(ssp->params.rx_slots);
+		active_tx_slots = POPCOUNT(ssp->params.tx_slots);
+		active_rx_slots = POPCOUNT(ssp->params.rx_slots);
 
 		/*
 		 * handle TDM mode, TDM mode has padding at the end of
@@ -1571,7 +1571,7 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 	LOG_INF("%s sscr2 = 0x%08x, sspsp2 = 0x%08x, sscr3 = 0x%08x", __func__,
 		blob->i2s_driver_config.i2s_config.ssc2, blob->i2s_driver_config.i2s_config.sspsp2,
 		blob->i2s_driver_config.i2s_config.ssc3);
-	LOG_ERR("%s ssioc = 0x%08x, ssrsa = 0x%08x, sstsa = 0x%08x", __func__,
+	LOG_INF("%s ssioc = 0x%08x, ssrsa = 0x%08x, sstsa = 0x%08x", __func__,
 		blob->i2s_driver_config.i2s_config.ssioc, ssrsa, sstsa);
 
 	ssp->params.sample_valid_bits = SSCR0_DSIZE_GET(ssc0);
@@ -1766,7 +1766,7 @@ static void dai_ssp_stop(struct dai_intel_ssp *dp, int direction)
 	    ssp->state[DAI_DIR_PLAYBACK] == DAI_STATE_PRE_RUNNING) {
 		bool clear_rse_bits = COND_CODE_1(CONFIG_INTEL_ADSP_CAVS,
 						 (!(ssp->clk_active & SSP_CLK_BCLK_ES_REQ)),
-						 (false));
+						 (true));
 		if (clear_rse_bits) {
 			/* clear TRSE/RSRE before SSE */
 			dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE | SSCR1_RSRE, 0);
@@ -1837,9 +1837,9 @@ static const struct dai_config *dai_ssp_config_get(const struct device *dev, enu
 	params->rate = ssp->params.fsync_rate;
 
 	if (dir == DAI_DIR_PLAYBACK) {
-		params->channels = popcount(ssp->params.tx_slots);
+		params->channels = POPCOUNT(ssp->params.tx_slots);
 	} else {
-		params->channels = popcount(ssp->params.rx_slots);
+		params->channels = POPCOUNT(ssp->params.rx_slots);
 	}
 
 	params->word_size = ssp->params.sample_valid_bits;

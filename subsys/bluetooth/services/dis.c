@@ -25,9 +25,9 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SERVICE)
-#define LOG_MODULE_NAME bt_dis
-#include "common/log.h"
+#define LOG_LEVEL CONFIG_BT_SERVICE_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_dis);
 
 #if CONFIG_BT_DIS_PNP
 struct dis_pnp {
@@ -153,24 +153,24 @@ static int dis_set(const char *name, size_t len_rd,
 	if (!strncmp(name, "manuf", nlen)) {
 		len = read_cb(store, &dis_manuf, sizeof(dis_manuf) - 1);
 		if (len < 0) {
-			BT_ERR("Failed to read manufacturer from storage"
+			LOG_ERR("Failed to read manufacturer from storage"
 				       " (err %zd)", len);
 		} else {
 			dis_manuf[len] = '\0';
 
-			BT_DBG("Manufacturer set to %s", dis_manuf);
+			LOG_DBG("Manufacturer set to %s", dis_manuf);
 		}
 		return 0;
 	}
 	if (!strncmp(name, "model", nlen)) {
 		len = read_cb(store, &dis_model, sizeof(dis_model) - 1);
 		if (len < 0) {
-			BT_ERR("Failed to read model from storage"
+			LOG_ERR("Failed to read model from storage"
 				       " (err %zd)", len);
 		} else {
 			dis_model[len] = '\0';
 
-			BT_DBG("Model set to %s", dis_model);
+			LOG_DBG("Model set to %s", dis_model);
 		}
 		return 0;
 	}
@@ -179,12 +179,12 @@ static int dis_set(const char *name, size_t len_rd,
 		len = read_cb(store, &dis_serial_number,
 			   sizeof(dis_serial_number) - 1);
 		if (len < 0) {
-			BT_ERR("Failed to read serial number from storage"
+			LOG_ERR("Failed to read serial number from storage"
 				       " (err %zd)", len);
 		} else {
 			dis_serial_number[len] = '\0';
 
-			BT_DBG("Serial number set to %s", dis_serial_number);
+			LOG_DBG("Serial number set to %s", dis_serial_number);
 		}
 		return 0;
 	}
@@ -193,12 +193,12 @@ static int dis_set(const char *name, size_t len_rd,
 	if (!strncmp(name, "fw", nlen)) {
 		len = read_cb(store, &dis_fw_rev, sizeof(dis_fw_rev) - 1);
 		if (len < 0) {
-			BT_ERR("Failed to read firmware revision from storage"
+			LOG_ERR("Failed to read firmware revision from storage"
 				       " (err %zd)", len);
 		} else {
 			dis_fw_rev[len] = '\0';
 
-			BT_DBG("Firmware revision set to %s", dis_fw_rev);
+			LOG_DBG("Firmware revision set to %s", dis_fw_rev);
 		}
 		return 0;
 	}
@@ -207,12 +207,12 @@ static int dis_set(const char *name, size_t len_rd,
 	if (!strncmp(name, "hw", nlen)) {
 		len = read_cb(store, &dis_hw_rev, sizeof(dis_hw_rev) - 1);
 		if (len < 0) {
-			BT_ERR("Failed to read hardware revision from storage"
+			LOG_ERR("Failed to read hardware revision from storage"
 				       " (err %zd)", len);
 		} else {
 			dis_hw_rev[len] = '\0';
 
-			BT_DBG("Hardware revision set to %s", dis_hw_rev);
+			LOG_DBG("Hardware revision set to %s", dis_hw_rev);
 		}
 		return 0;
 	}
@@ -221,12 +221,12 @@ static int dis_set(const char *name, size_t len_rd,
 	if (!strncmp(name, "sw", nlen)) {
 		len = read_cb(store, &dis_sw_rev, sizeof(dis_sw_rev) - 1);
 		if (len < 0) {
-			BT_ERR("Failed to read software revision from storage"
+			LOG_ERR("Failed to read software revision from storage"
 				       " (err %zd)", len);
 		} else {
 			dis_sw_rev[len] = '\0';
 
-			BT_DBG("Software revision set to %s", dis_sw_rev);
+			LOG_DBG("Software revision set to %s", dis_sw_rev);
 		}
 		return 0;
 	}

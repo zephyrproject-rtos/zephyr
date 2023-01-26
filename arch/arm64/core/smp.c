@@ -92,9 +92,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	/* store mpid last as this is our synchronization point */
 	arm64_cpu_boot_params.mpid = cpu_mpid;
 
-	arch_dcache_range((void *)&arm64_cpu_boot_params,
-			  sizeof(arm64_cpu_boot_params),
-			  K_CACHE_WB_INVD);
+	sys_cache_data_invd_range((void *)&arm64_cpu_boot_params,
+				  sizeof(arm64_cpu_boot_params));
 
 	if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
 		printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",

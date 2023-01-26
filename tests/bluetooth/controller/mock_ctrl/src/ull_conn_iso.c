@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/ztest.h>
+
 #include <zephyr/kernel.h>
 
 #include "hal/ccm.h"
@@ -37,9 +39,6 @@
 #include "ull_internal.h"
 #include "lll/lll_vendor.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_conn_iso
-#include "common/log.h"
 #include "hal/debug.h"
 
 static struct ll_conn_iso_group cig = { 0 };
@@ -51,6 +50,11 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_acl(struct ll_conn *conn, u
 }
 
 struct ll_conn_iso_stream *ll_conn_iso_stream_get(uint16_t handle)
+{
+	return &cis;
+}
+
+struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle)
 {
 	return &cis;
 }
@@ -74,6 +78,11 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 }
 
 void ull_conn_iso_cis_stop_by_id(uint8_t cig_id, uint8_t cis_id, uint8_t reason)
+{
+
+}
+
+void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t cis_handle)
 {
 
 }

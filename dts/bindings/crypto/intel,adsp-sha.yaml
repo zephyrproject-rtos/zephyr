@@ -8,5 +8,5 @@ compatible: "intel,adsp-sha"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true

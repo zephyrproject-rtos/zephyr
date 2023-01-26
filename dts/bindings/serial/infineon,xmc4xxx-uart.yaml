@@ -5,78 +5,78 @@ compatible: "infineon,xmc4xxx-uart"
 include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    input-src:
-      description: |
-        Connects the UART receive line (USIC DX0 input) to a specific GPIO pin.
-        The USIC DX0 input is a multiplexer which connects to different GPIO pins.
-        Refer to the XMC4XXX reference manual for the GPIO pin/mux mappings. DX0G
-        is the loopback input line.
-      type: string
-      required: true
-      enum:
-        - "DX0A"
-        - "DX0B"
-        - "DX0C"
-        - "DX0D"
-        - "DX0E"
-        - "DX0F"
-        - "DX0G"
+  input-src:
+    description: |
+      Connects the UART receive line (USIC DX0 input) to a specific GPIO pin.
+      The USIC DX0 input is a multiplexer which connects to different GPIO pins.
+      Refer to the XMC4XXX reference manual for the GPIO pin/mux mappings. DX0G
+      is the loopback input line.
+    type: string
+    required: true
+    enum:
+      - "DX0A"
+      - "DX0B"
+      - "DX0C"
+      - "DX0D"
+      - "DX0E"
+      - "DX0F"
+      - "DX0G"
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
-    fifo-start-offset:
-      description: |
-        Each USIC0..2 has a fifo that is shared between two channels. For example,
-        usic0ch0 and usic0ch1 will share the same fifo. This parameter defines an offset
-        where the tx and rx fifos will start. When sharing the fifo, the user must properly
-        define the offset based on the configuration of the other channel. The fifo has a
-        capacity of 64 entries. The tx/rx fifos are created on fifo-xx-size aligned
-        boundaries.
+  fifo-start-offset:
+    description: |
+      Each USIC0..2 has a fifo that is shared between two channels. For example,
+      usic0ch0 and usic0ch1 will share the same fifo. This parameter defines an offset
+      where the tx and rx fifos will start. When sharing the fifo, the user must properly
+      define the offset based on the configuration of the other channel. The fifo has a
+      capacity of 64 entries. The tx/rx fifos are created on fifo-xx-size aligned
+      boundaries.
 
-      required: true
-      type: int
+    required: true
+    type: int
 
-    fifo-tx-size:
-      description: |
-        Fifo size used for buffering transmit bytes. A value of 0 implies that
-        the fifo is not used while transmitting.
-      required: true
-      type: int
-      enum:
-        - 0
-        - 2
-        - 4
-        - 8
-        - 16
-        - 32
-        - 64
+  fifo-tx-size:
+    description: |
+      Fifo size used for buffering transmit bytes. A value of 0 implies that
+      the fifo is not used while transmitting.
+    required: true
+    type: int
+    enum:
+      - 0
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
 
-    fifo-rx-size:
-      description: |
-        Fifo size used for buffering received bytes. A value of 0 implies that
-        the fifo is not used while receiving.
-      required: true
-      type: int
-      enum:
-        - 0
-        - 2
-        - 4
-        - 8
-        - 16
-        - 32
-        - 64
+  fifo-rx-size:
+    description: |
+      Fifo size used for buffering received bytes. A value of 0 implies that
+      the fifo is not used while receiving.
+    required: true
+    type: int
+    enum:
+      - 0
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
 
-    interrupts:
-      description: |
-        IRQ number and priority to use for interrupt driven UART.
-        USIC0..2 have their own interrupt range as follows:
-        USIC0 = [84, 89]
-        USIC1 = [90, 95]
-        USIC2 = [96, 101]
+  interrupts:
+    description: |
+      IRQ number and priority to use for interrupt driven UART.
+      USIC0..2 have their own interrupt range as follows:
+      USIC0 = [84, 89]
+      USIC1 = [90, 95]
+      USIC2 = [96, 101]

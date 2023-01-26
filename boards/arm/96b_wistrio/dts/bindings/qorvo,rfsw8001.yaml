@@ -11,17 +11,17 @@ compatible: "qorvo,rfsw8001"
 include: base.yaml
 
 properties:
-    rf1-gpios:
-      type: phandle-array
-      required: true
-      description: Pin used to control the RF1 switch
+  rf1-gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to control the RF1 switch
 
-    rf2-gpios:
-      type: phandle-array
-      required: true
-      description: Pin used to control the RF2 switch
+  rf2-gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to control the RF2 switch
 
-    rf3-gpios:
-      type: phandle-array
-      required: true
-      description: Pin used to control the RF3 switch
+  rf3-gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to control the RF3 switch

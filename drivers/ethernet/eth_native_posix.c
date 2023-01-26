@@ -436,7 +436,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	ctx->init_done = true;
 
-#if IS_ENABLED(CONFIG_ETH_NATIVE_POSIX_RANDOM_MAC)
+#if defined(CONFIG_ETH_NATIVE_POSIX_RANDOM_MAC)
 	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
 	gen_random_mac(ctx->mac_addr, 0x00, 0x00, 0x5E);
 
@@ -650,7 +650,7 @@ LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEVICE, (;), _);
 
 #if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
 
-#if IS_ENABLED(CONFIG_NET_GPTP)
+#if defined(CONFIG_NET_GPTP)
 BUILD_ASSERT(								\
 	CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT == CONFIG_NET_GPTP_NUM_PORTS, \
 	"Number of network interfaces must match gPTP port count");

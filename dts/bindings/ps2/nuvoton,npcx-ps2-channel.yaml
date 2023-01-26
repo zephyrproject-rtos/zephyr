@@ -8,13 +8,13 @@ compatible: "nuvoton,npcx-ps2-channel"
 include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-    channel:
-        type: int
-        required: true
-        description: index of i2c channel
+  channel:
+    type: int
+    required: true
+    description: index of i2c channel
 
-    pinctrl-0:
-        required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-        required: true
+  pinctrl-names:
+    required: true

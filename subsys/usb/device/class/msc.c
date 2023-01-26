@@ -43,9 +43,8 @@
 #include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
-#define LOG_LEVEL CONFIG_USB_MASS_STORAGE_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_msc);
+LOG_MODULE_REGISTER(usb_msc, CONFIG_USB_MASS_STORAGE_LOG_LEVEL);
 
 /* max USB packet size */
 #define MAX_PACKET	CONFIG_MASS_STORAGE_BULK_EP_MPS

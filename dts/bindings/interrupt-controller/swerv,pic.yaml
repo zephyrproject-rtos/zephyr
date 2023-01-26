@@ -8,12 +8,12 @@ include: [interrupt-controller.yaml, base.yaml]
 
 properties:
   reg:
-      required: true
+    required: true
 
   riscv,max-priority:
-      type: int
-      description: maximum interrupt priority
-      required: true
+    type: int
+    description: maximum interrupt priority
+    required: true
 
 interrupt-cells:
   - irq

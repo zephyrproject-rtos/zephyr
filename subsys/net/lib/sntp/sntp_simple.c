@@ -17,7 +17,7 @@ int sntp_simple(const char *server, uint32_t timeout, struct sntp_time *time)
 	uint64_t deadline;
 	uint32_t iter_timeout;
 
-	hints.ai_family = AF_INET;
+	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = 0;
 	/* 123 is the standard SNTP port per RFC4330 */

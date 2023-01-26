@@ -8,15 +8,21 @@ compatible: "st,stm32-lse-clock"
 include: [fixed-clock.yaml]
 
 properties:
-    driving-capability:
-      type: int
-      required: true
-      description: |
-        LSE driving capability, within the range 0 to 3.
-        0 represents the lowests driving capability, 3
-        the highest.
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
+  driving-capability:
+    type: int
+    required: true
+    description: |
+      LSE driving capability, within the range 0 to 3.
+      0 represents the lowests driving capability, 3
+      the highest.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  lse-bypass:
+    type: boolean
+    description: |
+      LSE crystal oscillator bypass
+      Set the property to by-pass the oscillator with an external clock.

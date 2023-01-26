@@ -217,11 +217,9 @@ struct adc_channel_cfg {
 	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
 	.channel_id       = DT_REG_ADDR(node_id), \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
-	(COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
-		(.differential   = true, \
-		 .input_positive = DT_PROP(node_id, zephyr_input_positive), \
-		 .input_negative = DT_PROP(node_id, zephyr_input_negative),), \
-		(.input_positive = DT_PROP(node_id, zephyr_input_positive),)))) \
+	(.differential    = DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
+	 .input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
+	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
 }
 
 /**
@@ -501,6 +499,7 @@ struct adc_sequence {
 	 * of this sequence.
 	 * All selected channels must be configured with adc_channel_setup()
 	 * before they are used in a sequence.
+	 * The least significant bit corresponds to channel 0.
 	 */
 	uint32_t channels;
 
@@ -509,6 +508,8 @@ struct adc_sequence {
 	 * from subsequent samplings are written sequentially in the buffer.
 	 * The number of samples written for each sampling is determined by
 	 * the number of channels selected in the "channels" field.
+	 * The values written to the buffer represent a sample from each
+	 * selected channel starting from the one with the lowest ID.
 	 * The buffer must be of an appropriate size, taking into account
 	 * the number of selected channels and the ADC resolution used,
 	 * as well as the number of samplings contained in the sequence.

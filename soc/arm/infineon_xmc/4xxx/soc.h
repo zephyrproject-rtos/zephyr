@@ -6,5 +6,4 @@
  *
  */
 
-#include <system_XMC4500.h>
-#include <XMC4500.h>
+#include <xmc_device.h>

@@ -149,9 +149,11 @@
 #define MSTATUS_IEN     (1UL << 3)
 #define MSTATUS_MPP_M   (3UL << 11)
 #define MSTATUS_MPIE_EN (1UL << 7)
-#define MSTATUS_FS_INIT (1UL << 13)
-#define MSTATUS_FS_MASK ((1UL << 13) | (1UL << 14))
 
+#define MSTATUS_FS_OFF   (0UL << 13)
+#define MSTATUS_FS_INIT  (1UL << 13)
+#define MSTATUS_FS_CLEAN (2UL << 13)
+#define MSTATUS_FS_DIRTY (3UL << 13)
 
 /* This comes from openisa_rv32m1, but doesn't seem to hurt on other
  * platforms:
@@ -220,6 +222,9 @@ extern void z_irq_spurious(const void *unused);
  */
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	return z_soc_irq_lock();
+#else
 	unsigned int key;
 
 	__asm__ volatile ("csrrc %0, mstatus, %1"
@@ -228,6 +233,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 			  : "memory");
 
 	return key;
+#endif
 }
 
 /*
@@ -236,15 +242,23 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
  */
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	z_soc_irq_unlock(key);
+#else
 	__asm__ volatile ("csrs mstatus, %0"
 			  :
 			  : "r" (key & MSTATUS_IEN)
 			  : "memory");
+#endif
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	return z_soc_irq_unlocked(key);
+#else
 	return (key & MSTATUS_IEN) != 0;
+#endif
 }
 
 static ALWAYS_INLINE void arch_nop(void)

@@ -1,7 +1,14 @@
 /* i2s_speed with CONFIG_I2S_TEST_SEPARATE_DEVICES=y uses two I2S peripherals:
- *	I2S_0 is the receiver    - uses SAI1 peripheral on RT1170
- *	I2S_1 is the transmitter - uses SAI4 peripheral
+ *	i2s-node0 is the receiver    - uses SAI1 peripheral on RT1170
+ *	i2s-node1 is the transmitter - uses SAI4 peripheral
  */
+
+/ {
+	aliases {
+		i2s-node0 = &sai1;
+		i2s-node1 = &sai4;
+	};
+};
 
 /* Enable SAI4, and set clocks to match SAI1 */
 &sai4 {

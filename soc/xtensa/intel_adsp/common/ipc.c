@@ -171,11 +171,7 @@ bool intel_adsp_ipc_send_message_sync(const struct device *dev,
 #if defined(CONFIG_SOC_SERIES_INTEL_ACE)
 static inline void ace_ipc_intc_unmask(void)
 {
-	unsigned int num_cpus = arch_num_cpus();
-
-	for (int i = 0; i < num_cpus; i++) {
-		ACE_DINT[i].ie[ACE_INTL_HIPC] = BIT(0);
-	}
+	ACE_DINT[0].ie[ACE_INTL_HIPC] = BIT(0);
 }
 #else
 static inline void ace_ipc_intc_unmask(void) {}

@@ -12,4 +12,6 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - counter
   - watchdog
+  - dma

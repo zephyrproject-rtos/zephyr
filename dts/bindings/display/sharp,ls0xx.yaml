@@ -8,28 +8,25 @@ compatible: "sharp,ls0xx"
 include: [spi-device.yaml, display-controller.yaml]
 
 properties:
-    extcomin-gpios:
-      type: phandle-array
-      required: false
-      description: EXTCOMIN pin
+  extcomin-gpios:
+    type: phandle-array
+    description: EXTCOMIN pin
 
-        The EXTCOMIN pin is where a square pulse for toggling VCOM will
-        be given
+      The EXTCOMIN pin is where a square pulse for toggling VCOM will
+      be given
 
-    extcomin-frequency:
-      type: int
-      required: false
-      description: EXTCOMIN pin toggle frequency
+  extcomin-frequency:
+    type: int
+    description: EXTCOMIN pin toggle frequency
 
-        The frequency with which the EXTCOMIN pin should be toggled. See
-        datasheet of particular display. Higher frequency gives better
-        contrast while low frequency saves power.
+      The frequency with which the EXTCOMIN pin should be toggled. See
+      datasheet of particular display. Higher frequency gives better
+      contrast while low frequency saves power.
 
-    disp-en-gpios:
-      type: phandle-array
-      required: false
-      description: DISPLAY pin
+  disp-en-gpios:
+    type: phandle-array
+    description: DISPLAY pin
 
-        The DISPLAY pin controls if the LCD displays memory contents or
-        white screen. If defined, the pin will be set high during driver
-        initialization. display blanking apis can be used to control it.
+      The DISPLAY pin controls if the LCD displays memory contents or
+      white screen. If defined, the pin will be set high during driver
+      initialization. display blanking apis can be used to control it.

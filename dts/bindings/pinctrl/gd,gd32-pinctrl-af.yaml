@@ -97,7 +97,6 @@ child-binding:
       The grandchild nodes group pins that share the same pin configuration.
     properties:
       slew-rate:
-        required: false
         type: string
         default: "max-speed-2mhz"
         enum:

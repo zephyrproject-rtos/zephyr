@@ -10,6 +10,10 @@
 #ifndef ZEPHYR_INCLUDE_LINKER_DEVICETREE_REGIONS_H_
 #define ZEPHYR_INCLUDE_LINKER_DEVICETREE_REGIONS_H_
 
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+
 /**
  * @brief Get the linker memory-region name in a token form
  *

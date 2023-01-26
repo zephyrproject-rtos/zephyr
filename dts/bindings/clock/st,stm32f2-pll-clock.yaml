@@ -22,40 +22,39 @@ compatible: "st,stm32f2-pll-clock"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    "#clock-cells":
-      const: 0
+  "#clock-cells":
+    const: 0
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    div-m:
-      type: int
-      required: true
-      description: |
-          Division factor for the PLL input clock
-          Valid range: 2 - 63
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for the PLL input clock
+        Valid range: 2 - 63
 
-    mul-n:
-      type: int
-      required: true
-      description: |
-          PLL multiplication factor for VCO
-          Valid range: 192 - 432
+  mul-n:
+    type: int
+    required: true
+    description: |
+        PLL multiplication factor for VCO
+        Valid range: 192 - 432
 
-    div-p:
-      type: int
-      required: true
-      description: |
-          PLL division factor for PLLCLK
-      enum:
-        - 2
-        - 4
-        - 6
-        - 8
+  div-p:
+    type: int
+    required: true
+    description: |
+        PLL division factor for PLLCLK
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
 
-    div-q:
-      type: int
-      required: false
-      description: |
-          PLL division factor for PLL48CK
-          Valid range: 2 - 15
+  div-q:
+    type: int
+    description: |
+        PLL division factor for PLL48CK
+        Valid range: 2 - 15

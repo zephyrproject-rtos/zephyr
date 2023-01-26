@@ -8,6 +8,20 @@
 
 / {
 	soc {
+		clocks {
+			clk_hsi48: clk-hsi48 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(48)>;
+				status = "disabled";
+			};
+		};
+
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
+
 		i2c4: i2c@40008400 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -39,6 +53,16 @@
 			interrupts = <47 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		usbotg_fs: otgfs@50000000 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
+
+		sdmmc1: sdmmc@40012800 {
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 	};
 

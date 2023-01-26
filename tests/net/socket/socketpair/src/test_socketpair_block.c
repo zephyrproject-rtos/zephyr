@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_ARCH_POSIX
 #include <fcntl.h>
+#else
+#include <zephyr/posix/fcntl.h>
+#endif
+
 #include <string.h>
 
 #include <zephyr/logging/log.h>

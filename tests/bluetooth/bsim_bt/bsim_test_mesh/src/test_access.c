@@ -471,9 +471,9 @@ static void test_sub_capacity_ext_model(void)
 	 * in the extension linked list.
 	 */
 	for (i = 0; i < 5 * CONFIG_BT_MESH_MODEL_GROUP_COUNT; i++) {
-		ASSERT_OK(bt_mesh_cfg_cli_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
-			GROUP_ADDR + i, TEST_MODEL_ID_2, &status),
-			"Can't deliver subscription on address %#4x", GROUP_ADDR + i);
+		ASSERT_OK_MSG(bt_mesh_cfg_cli_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
+							  GROUP_ADDR + i, TEST_MODEL_ID_2, &status),
+			      "Can't deliver subscription on address %#4x", GROUP_ADDR + i);
 
 		ASSERT_EQUAL(STATUS_SUCCESS, status);
 	}
@@ -482,9 +482,9 @@ static void test_sub_capacity_ext_model(void)
 			TEST_MODEL_ID_3, TEST_MODEL_ID_4, TEST_MODEL_ID_5};
 
 	for (int j = 0; j < ARRAY_SIZE(model_ids); j++) {
-		ASSERT_OK(bt_mesh_cfg_cli_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
-			GROUP_ADDR + i, model_ids[j], &status),
-			"Can't deliver subscription on address %#4x", GROUP_ADDR + i);
+		ASSERT_OK_MSG(bt_mesh_cfg_cli_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
+							  GROUP_ADDR + i, model_ids[j], &status),
+			      "Can't deliver subscription on address %#4x", GROUP_ADDR + i);
 
 		ASSERT_EQUAL(STATUS_INSUFF_RESOURCES, status);
 	}

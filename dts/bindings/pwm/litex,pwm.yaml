@@ -11,11 +11,11 @@ include: [pwm-controller.yaml, base.yaml]
 compatible: "litex,pwm"
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    "#pwm-cells":
-      const: 2
+  "#pwm-cells":
+    const: 2
 
 pwm-cells:
   - channel

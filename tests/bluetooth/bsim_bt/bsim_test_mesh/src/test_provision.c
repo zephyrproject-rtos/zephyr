@@ -562,26 +562,18 @@ static void test_provisioner_pb_adv_reprovision(void)
 						  &status));
 		ASSERT_EQUAL(0, status);
 
-		k_sleep(K_SECONDS(1));
-
 		ASSERT_OK(bt_mesh_cfg_cli_mod_app_bind(0, current_dev_addr, current_dev_addr, 0x0,
 						   BT_MESH_MODEL_ID_HEALTH_SRV, &status));
 		ASSERT_EQUAL(0, status);
-
-		k_sleep(K_SECONDS(1));
 
 		ASSERT_OK(bt_mesh_cfg_cli_mod_sub_add(0, current_dev_addr, current_dev_addr, 0xc000,
 						  BT_MESH_MODEL_ID_HEALTH_SRV, &status));
 		ASSERT_EQUAL(0, status);
 
-		k_sleep(K_SECONDS(1));
-
 		ASSERT_OK(bt_mesh_cfg_cli_mod_pub_set(0, current_dev_addr, current_dev_addr,
 						  BT_MESH_MODEL_ID_HEALTH_SRV, &healthpub,
 						  &status));
 		ASSERT_EQUAL(0, status);
-
-		k_sleep(K_SECONDS(1));
 
 		ASSERT_OK(bt_mesh_cfg_cli_node_reset(0, current_dev_addr, (bool *)&status));
 

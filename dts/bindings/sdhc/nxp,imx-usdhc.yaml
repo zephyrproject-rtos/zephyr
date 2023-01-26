@@ -13,38 +13,33 @@ properties:
 
   data-timeout:
     type: int
-    required: false
     default: 0xF
     description: |
       Data timeout, as multiple of the SD clock. See DTOCV field of USDHC
 
   read-watermark:
     type: int
-    required: false
     default: 0x80
     description: |
       Number of words used as read watermark level in FIFO queue for USDHC
 
   write-watermark:
     type: int
-    required: false
     default: 0x80
     description: |
       Number of words used as write watermark level in FIFO queue for USDHC
 
   max_current_330:
     type: int
-    required: false
     default: 0
     description: |
       Max drive current in mA at 3.3V. A value of zero indicates no maximum
       is specified by the driver.
   clocks:
-      required: true
+    required: true
 
   pwr-gpios:
     type: phandle-array
-    required: false
     description: |
       Power pin
       This pin defaults to active high when consumed by the SD card. The
@@ -53,7 +48,6 @@ properties:
 
   cd-gpios:
     type: phandle-array
-    required: false
     description: |
       Detect pin
       This pin defaults to active low when produced by the SD card. The
@@ -62,14 +56,12 @@ properties:
 
   no-1-8-v:
     type: boolean
-    required: false
     description: |
       When the external SD card circuit does not support 1.8V, add this
       property to disable 1.8v card voltage of SD card controller.
 
   detect-dat3:
     type: boolean
-    required: false
     description: |
       Enable the host to detect an SD card via the DAT3 line of the SD card
       connection. Requires the board to define a function to pull DAT3 low or

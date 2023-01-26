@@ -268,6 +268,7 @@ int lsm6dso_init_interrupt(const struct device *dev)
 			(k_thread_entry_t)lsm6dso_thread, lsm6dso,
 			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSO_THREAD_PRIORITY),
 			0, K_NO_WAIT);
+	k_thread_name_set(&lsm6dso->thread, "lsm6dso");
 #elif defined(CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD)
 	lsm6dso->work.handler = lsm6dso_work_cb;
 #endif /* CONFIG_LSM6DSO_TRIGGER_OWN_THREAD */
@@ -287,10 +288,16 @@ int lsm6dso_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	/* enable interrupt on int1/int2 in pulse mode */
-	if (lsm6dso_int_notification_set(ctx, LSM6DSO_ALL_INT_PULSED) < 0) {
-		LOG_DBG("Could not set pulse mode");
-		return -EIO;
+
+	/* set data ready mode on int1/int2 */
+	LOG_DBG("drdy_pulsed is %d", (int)cfg->drdy_pulsed);
+	lsm6dso_dataready_pulsed_t mode = cfg->drdy_pulsed ? LSM6DSO_DRDY_PULSED :
+							     LSM6DSO_DRDY_LATCHED;
+
+	ret = lsm6dso_data_ready_mode_set(ctx, mode);
+	if (ret < 0) {
+		LOG_ERR("drdy_pulsed config error %d", (int)cfg->drdy_pulsed);
+		return ret;
 	}
 
 	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,

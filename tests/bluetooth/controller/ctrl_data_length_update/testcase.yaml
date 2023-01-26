@@ -1,12 +1,12 @@
 common:
-    tags: test_framework bluetooth bt_data_length_update bt_ull_llcp
+  tags: test_framework bluetooth bt_data_length_update bt_ull_llcp
 tests:
   bluetooth.controller.ctrl_data_length_update.test:
-     type: unit
-     extra_args: CONFIG_BT_CTLR_PHY=y
+    type: unit
+    extra_args: CONFIG_BT_CTLR_PHY=y
   bluetooth.controller.ctrl_data_length_update.test_codedphy:
-     type: unit
-     extra_args: CONFIG_BT_CTLR_PHY=y CONFIG_BT_CTLR_PHY_CODED=y
+    type: unit
+    extra_args: CONFIG_BT_CTLR_PHY=y CONFIG_BT_CTLR_PHY_CODED=y
   bluetooth.controller.ctrl_data_length_update.test_nophy:
-     type: unit
-     extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override.h"
+    type: unit
+    extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override.h"

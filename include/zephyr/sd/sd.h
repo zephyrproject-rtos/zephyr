@@ -36,6 +36,7 @@ enum card_type {
 	CARD_SDMMC = 0, /*!< SD memory card */
 	CARD_SDIO = 1, /*!< SD I/O card */
 	CARD_COMBO = 2, /*!< SD memory and I/O card */
+	CARD_MMC = 3, /*!< MMC memory card */
 };
 
 
@@ -59,7 +60,7 @@ struct sd_card {
 	uint32_t block_count; /*!< Number of blocks in SD card */
 	uint32_t block_size; /*!< SD block size */
 	uint32_t sd_version; /*!< SD specification version */
-	enum sd_timing_mode card_speed; /*!< Card timing mode */
+	uint32_t card_speed; /*!< Card timing mode */
 	enum card_status status; /*!< Card status */
 	enum card_type type; /*!< Card type */
 	uint32_t flags; /*!< Card flags */

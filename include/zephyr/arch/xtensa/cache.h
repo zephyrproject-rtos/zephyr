@@ -177,7 +177,7 @@ static inline void __sparse_cache *arch_xtensa_cached_ptr(void *ptr)
  */
 static inline void *arch_xtensa_uncached_ptr(void __sparse_cache *ptr)
 {
-	return (void *)z_xtrpoflip((uint32_t) ptr,
+	return (void *)z_xtrpoflip((__sparse_force uint32_t)ptr,
 				   CONFIG_XTENSA_UNCACHED_REGION,
 				   CONFIG_XTENSA_CACHED_REGION);
 }

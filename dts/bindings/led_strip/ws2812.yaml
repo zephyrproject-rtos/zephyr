@@ -55,7 +55,6 @@ properties:
 
   reset-delay:
     type: int
-    required: false
     default: 8
     description: |
       Minimum delay to wait (in microseconds) to make sure that the strip has

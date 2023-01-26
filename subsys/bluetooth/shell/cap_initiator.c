@@ -20,7 +20,7 @@
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
-			    const struct bt_csis_client_csis_inst *csis_inst)
+			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "discover failed (%d)", err);

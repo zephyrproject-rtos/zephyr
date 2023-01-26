@@ -22,7 +22,7 @@
 /* This l2cap is the only OTS-file in use for OTC.
  * If only OTC is used, the OTS log module must be registered here.
  */
-#if IS_ENABLED(CONFIG_BT_OTS)
+#if defined(CONFIG_BT_OTS)
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 #elif IS_ENABLED(CONFIG_BT_OTS_CLIENT)
 LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);

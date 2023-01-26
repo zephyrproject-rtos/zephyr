@@ -5,8 +5,11 @@
  */
 #include <xtensa-asm2-s.h>
 #include <offsets.h>
-#include <zephyr/toolchain.h>
 #include <zsr.h>
+
+#if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
+#include <xtensa/simcall.h>
+#endif
 
 /*
  * xtensa_spill_reg_windows
@@ -152,6 +155,10 @@ _restore_context:
 	wsr a0, ZSR_EPC
 	l32i a0, a1, BSA_PS_OFF
 	wsr a0, ZSR_EPS
+
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_RESTORE
+#endif
 
 	l32i a0, a1, BSA_SAR_OFF
 	wsr a0, SAR
@@ -362,7 +369,17 @@ _KernelExceptionVector:
 .pushsection .DoubleExceptionVector.text, "ax"
 .global _DoubleExceptionVector
 _DoubleExceptionVector:
-#if XCHAL_HAVE_DEBUG
+#if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
+1:
+/* Tell simulator to stop executing here, instead of trying to do
+ * an infinite loop (see below). Greatly help with using tracing in
+ * simulator so that traces will not have infinite iterations of
+ * jumps.
+ */
+	movi a3, 1
+	movi a2, SYS_exit
+	simcall
+#elif XCHAL_HAVE_DEBUG
 /* Signals an unhandled double exception */
 1:	break	1, 4
 #else

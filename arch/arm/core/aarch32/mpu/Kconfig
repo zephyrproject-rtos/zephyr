@@ -11,7 +11,7 @@ config ARM_MPU
 	select SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
 	select ARCH_HAS_EXECUTABLE_PAGE_BIT
-	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if !(CPU_HAS_NXP_MPU || ARMV8_M_BASELINE || ARMV8_M_MAINLINE)
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if !(CPU_HAS_NXP_MPU || ARMV8_M_BASELINE || ARMV8_M_MAINLINE || AARCH32_ARMV8_R)
 	select MPU_REQUIRES_NON_OVERLAPPING_REGIONS if CPU_HAS_ARM_MPU && (ARMV8_M_BASELINE || ARMV8_M_MAINLINE || AARCH32_ARMV8_R)
 	select MPU_GAP_FILLING if AARCH32_ARMV8_R
 	help
@@ -81,6 +81,12 @@ config MPU_ALLOW_FLASH_WRITE
 	bool "Add MPU access to write to flash"
 	help
 	  Enable this to allow MPU RWX access to flash memory
+
+config MPU_DISABLE_BACKGROUND_MAP
+	bool "Disables the default background address map"
+	help
+	  Enable this to turn off the default background MPU address map. Your
+	  SoC definition should likely provide its own custom MPU regions.
 
 config CUSTOM_SECTION_ALIGN
 	bool "Custom Section Align"

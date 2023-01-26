@@ -56,7 +56,7 @@
 		 * and for external devices(Grove, header).
 		 * Requires closed J15 (D9)
 		 */
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "pwr-3v3-ctrl";
 		enable-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -68,7 +68,7 @@
 		 * Available for external devices on header J2
 		 * Requires closed J6 (D10)
 		 */
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "pwr-5v-ctrl";
 		enable-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -167,6 +167,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

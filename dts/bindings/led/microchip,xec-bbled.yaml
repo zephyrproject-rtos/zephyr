@@ -1,0 +1,25 @@
+# Copyright (c) 2022, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC BBLED
+
+include: [base.yaml, pinctrl-device.yaml]
+
+compatible: "microchip,xec-bbled"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: Array of pairs of GIRQ number and bit position
+
+  pcrs:
+    type: array
+    required: true
+    description: BBLED PCR register index and bit position

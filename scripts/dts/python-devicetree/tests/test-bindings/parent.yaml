@@ -7,7 +7,17 @@ compatible: "binding-include-test"
 include: child.yaml
 
 properties:
+  foo:
+    # Changed from not being required in grandchild-1.yaml
+    required: true
+    # Type set in grandchild
+
+child-binding:
+  # child.yaml included at child-binding level
+  include: child.yaml
+
+  properties:
     foo:
-        # Changed from not being required in grandchild-1.yaml
-        required: true
-        # Type set in grandchild
+      # Changed from not being required in grandchild-1.yaml
+      required: true
+      # Type set in grandchild

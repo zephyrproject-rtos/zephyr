@@ -221,7 +221,7 @@ zephyr_compile_options(${OPTIMIZATION_FLAG})
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,required>>)
 
 # @Intent: Obtain compiler specific flags for compiling under different ISO standards of C++
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   # From kconfig choice, pick a single dialect.
   # Kconfig choice ensures only one of these CONFIG_STD_CPP* is set.
   if(CONFIG_STD_CPP98)
@@ -253,12 +253,12 @@ if(CONFIG_CPLUSPLUS)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${STD_CPP_DIALECT_FLAGS}>)
 endif()
 
-if(NOT CONFIG_EXCEPTIONS)
+if(NOT CONFIG_CPP_EXCEPTIONS)
   # @Intent: Obtain compiler specific flags related to C++ Exceptions
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_exceptions>>)
 endif()
 
-if(NOT CONFIG_RTTI)
+if(NOT CONFIG_CPP_RTTI)
   # @Intent: Obtain compiler specific flags related to C++ Run Time Type Information
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_rtti>>)
 endif()
@@ -339,7 +339,7 @@ if(NOT CONFIG_NATIVE_APPLICATION)
   toolchain_ld_baremetal()
 endif()
 
-if(CONFIG_LIB_CPLUSPLUS)
+if(CONFIG_CPP AND NOT CONFIG_MINIMAL_LIBCPP)
   # @Intent: Set linker specific flags for C++
   toolchain_ld_cpp()
 endif()
@@ -1290,6 +1290,7 @@ if(CONFIG_USERSPACE)
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_OBJ_RENAMED}
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.literal=.kobject_data.literal
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.data=.kobject_data.data
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.sdata=.kobject_data.sdata
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.text=.kobject_data.text
@@ -1478,7 +1479,7 @@ if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
     )
 endif()
 
-if(NOT CONFIG_EXCEPTIONS)
+if(NOT CONFIG_CPP_EXCEPTIONS)
   set(eh_frame_section ".eh_frame")
 else()
   set(eh_frame_section "")
@@ -1717,6 +1718,11 @@ if(CONFIG_BOOTLOADER_MCUBOOT)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
 endif()
 
+# Generate USB-C VIF policies in XML format
+if (CONFIG_BUILD_OUTPUT_VIF)
+  include(${CMAKE_CURRENT_LIST_DIR}/cmake/vif.cmake)
+endif()
+
 get_property(extra_post_build_commands
   GLOBAL PROPERTY
   extra_post_build_commands
@@ -1875,7 +1881,7 @@ endif()
 zephyr_compile_options($<TARGET_PROPERTY:compiler,nostdinc>)
 target_include_directories(zephyr_interface SYSTEM INTERFACE $<TARGET_PROPERTY:compiler,nostdinc_include>)
 
-if(NOT CONFIG_LIB_CPLUSPLUS)
+if(CONFIG_MINIMAL_LIBCPP)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,nostdincxx>>)
 endif()
 

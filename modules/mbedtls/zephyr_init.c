@@ -45,6 +45,7 @@ static void init_heap(void)
 #define init_heap(...)
 #endif /* CONFIG_MBEDTLS_ENABLE_HEAP && MBEDTLS_MEMORY_BUFFER_ALLOC_C */
 
+#if defined(CONFIG_MBEDTLS_ZEPHYR_ENTROPY)
 static const struct device *const entropy_dev =
 			DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
 
@@ -80,6 +81,7 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len,
 
 	return 0;
 }
+#endif /* CONFIG_MBEDTLS_ZEPHYR_ENTROPY */
 
 static int _mbedtls_init(const struct device *device)
 {

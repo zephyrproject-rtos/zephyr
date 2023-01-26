@@ -33,6 +33,8 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #define ISR_HANDLER intr_handler_t
 #endif
 
+#define SPI_DMA_MAX_BUFFER_SIZE 4092
+
 static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
 {
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
@@ -64,7 +66,9 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	spi_hal_dev_config_t *hal_dev = &data->dev_config;
 	spi_hal_trans_config_t *hal_trans = &data->trans_config;
 	size_t chunk_len = spi_context_max_continuous_chunk(&data->ctx);
-	chunk_len = MIN(chunk_len, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+	size_t max_buf_sz =
+		cfg->dma_enabled ? SPI_DMA_MAX_BUFFER_SIZE : SOC_SPI_MAXIMUM_BUFFER_SIZE;
+	chunk_len = MIN(chunk_len, max_buf_sz);
 	size_t bit_len = chunk_len << 3;
 	uint8_t *rx_temp = NULL;
 	uint8_t *tx_temp = NULL;

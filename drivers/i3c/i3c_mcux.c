@@ -1925,7 +1925,7 @@ static int mcux_i3c_configure(const struct device *dev,
 	 *
 	 * Currently, must be the primary controller.
 	 */
-	if ((!ctrl_cfg->is_primary) ||
+	if ((ctrl_cfg->is_secondary) ||
 	    (ctrl_cfg->scl.i2c == 0U) ||
 	    (ctrl_cfg->scl.i3c == 0U)) {
 		ret = -EINVAL;
@@ -2038,7 +2038,7 @@ static int mcux_i3c_init(const struct device *dev)
 	}
 
 	/* Currently can only act as primary controller. */
-	data->ctrl_config.is_primary = true;
+	data->ctrl_config.is_secondary = false;
 
 	/* HDR mode not supported at the moment. */
 	data->ctrl_config.supported_hdr = 0U;

@@ -109,7 +109,7 @@ int adxl372_spi_init(const struct device *dev)
 
 	data->hw_tf = &adxl372_spi_transfer_fn;
 
-	if (!spi_is_ready(&config->spi)) {
+	if (!spi_is_ready_dt(&config->spi)) {
 		return -ENODEV;
 	}
 

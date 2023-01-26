@@ -28,9 +28,6 @@
 #include "lll_df.h"
 #include "lll_df_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
-#define LOG_MODULE_NAME bt_ctlr_lll_df
-#include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 

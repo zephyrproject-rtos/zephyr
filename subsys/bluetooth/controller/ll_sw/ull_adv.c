@@ -66,9 +66,6 @@
 #include "ull_llcp.h"
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_adv
-#include "common/log.h"
 #include "hal/debug.h"
 
 inline struct ll_adv_set *ull_adv_set_get(uint8_t handle);
@@ -1124,6 +1121,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
 		conn->llcp_rx = NULL;
 		conn->llcp_cu.req = conn->llcp_cu.ack = 0;
+		conn->llcp_cu.pause_tx = 0U;
 		conn->llcp_feature.req = conn->llcp_feature.ack = 0;
 		conn->llcp_feature.features_conn = ll_feat_get();
 		conn->llcp_feature.features_peer = 0;
@@ -1151,10 +1149,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		conn->llcp_conn_param.req = 0;
-		conn->llcp_conn_param.ack = 0;
-		conn->llcp_conn_param.disabled = 0;
-		conn->periph.ticks_to_offset = 0;
+		conn->llcp_conn_param.req = 0U;
+		conn->llcp_conn_param.ack = 0U;
+		conn->llcp_conn_param.disabled = 0U;
+		conn->llcp_conn_param.cache.timeout = 0U;
+		conn->periph.ticks_to_offset = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -1463,7 +1462,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 				ticks_anchor + ticks_slot +
 				HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
-					    EVENT_OVERHEAD_START_US) +
+					    EVENT_OVERHEAD_START_US) -
+					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 
 			ticks_slot_overhead_aux =
@@ -1503,7 +1503,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 					ticks_anchor_aux + ticks_slot_aux +
 					HAL_TICKER_US_TO_TICKS(
 						MAX(EVENT_MAFS_US,
-						    EVENT_OVERHEAD_START_US) +
+						    EVENT_OVERHEAD_START_US) -
+						EVENT_OVERHEAD_START_US +
 						(EVENT_TICKER_RES_MARGIN_US << 1));
 
 				ret = ull_adv_sync_start(adv, sync,
@@ -1996,7 +1997,7 @@ void ull_adv_done(struct node_rx_event_done *done)
 	lll = &adv->lll;
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	if (done->extra.result != DONE_COMPLETED) {
+	if (done->extra.type == EVENT_DONE_EXTRA_TYPE_ADV && done->extra.result != DONE_COMPLETED) {
 		/* Event aborted or too late - try to re-schedule */
 		uint32_t ticks_elapsed;
 		uint32_t ticks_now;
@@ -2062,6 +2063,12 @@ void ull_adv_done(struct node_rx_event_done *done)
 			adv->lll.hdr.score -= 1;
 		}
 	}
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (done->extra.type == EVENT_DONE_EXTRA_TYPE_ADV && adv->lll.aux) {
+		/* Primary event of extended advertising done - wait for aux done */
+		return;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -2527,8 +2534,7 @@ static void disabled_cb(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 }
 
 static void conn_release(struct ll_adv_set *adv)
@@ -2698,8 +2704,7 @@ static void ext_disabled_cb(void *param)
 
 	/* NOTE: parameters are already populated on disable, just enqueue here
 	 */
-	ll_rx_put(rx_hdr->link, rx_hdr);
-	ll_rx_sched();
+	ll_rx_put_sched(rx_hdr->link, rx_hdr);
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 

@@ -40,7 +40,6 @@ properties:
   sck-pin:
     type: int
     deprecated: true
-    required: false
     description: |
       IMPORTANT: This option will only be used if the new pin control driver
       is not enabled.
@@ -58,7 +57,6 @@ properties:
           sck-pin = <34>;  /* 32 + 2 */
   io-pins:
     type: array
-    required: false
     description: |
       IMPORTANT: This option will only be used if the new pin control driver
       is not enabled.
@@ -76,7 +74,6 @@ properties:
       sck-pin property's.
   csn-pins:
     type: array
-    required: false
     description: |
       IMPORTANT: This option will only be used if the new pin control driver
       is not enabled.

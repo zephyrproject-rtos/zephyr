@@ -17,6 +17,10 @@ void z_arm_platform_init(void)
 {
 	uint32_t temp;
 
+	/* unaligned trap bit is enabled on reset. disable it here and set later via */
+	/* CONFIG_TRAP_UNALIGNED_ACCESS if needed. */
+	SCB->CCR &= ~SCB_CCR_UNALIGN_TRP_Msk;
+
 	/* setup flash wait state */
 	temp = FLASH0->FCON;
 	temp &= ~FLASH_FCON_WSPFLASH_Msk;

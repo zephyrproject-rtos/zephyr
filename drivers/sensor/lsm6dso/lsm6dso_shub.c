@@ -54,6 +54,13 @@ static int lsm6dso_shub_read_slave_reg(const struct device *dev,
 				       uint8_t *value, uint16_t len);
 static void lsm6dso_shub_enable(const struct device *dev, uint8_t enable);
 
+
+/* ST HAL skips this register, only supports it via the slower lsm6dso_sh_status_get() */
+static int32_t lsm6dso_sh_status_mainpage_get(stmdev_ctx_t *ctx, lsm6dso_status_master_t *val)
+{
+	return lsm6dso_read_reg(ctx, LSM6DSO_STATUS_MASTER_MAINPAGE, (uint8_t *)val, 1);
+}
+
 /*
  * LIS2MDL magn device specific part
  */
@@ -415,25 +422,30 @@ static struct lsm6dso_shub_slist {
 #endif /* CONFIG_LSM6DSO_EXT_LPS22HH */
 };
 
-static inline void lsm6dso_shub_wait_completed(stmdev_ctx_t *ctx)
+static int lsm6dso_shub_wait_completed(stmdev_ctx_t *ctx)
 {
 	lsm6dso_status_master_t status;
+	int tries = 200; /* Should be max ~160 ms, from 2 cycles at slowest ODR 12.5 Hz */
 
 	do {
+		if (!--tries) {
+			LOG_DBG("shub: Timeout waiting for operation to complete");
+			return -ETIMEDOUT;
+		}
 		k_msleep(1);
-		lsm6dso_sh_status_get(ctx, &status);
+		lsm6dso_sh_status_mainpage_get(ctx, &status);
 	} while (status.sens_hub_endop == 0);
+
+	return 1;
 }
 
 static inline void lsm6dso_shub_embedded_en(stmdev_ctx_t *ctx, bool on)
 {
-	if (on) {
-		(void) lsm6dso_mem_bank_set(ctx, LSM6DSO_SENSOR_HUB_BANK);
-	} else {
-		(void) lsm6dso_mem_bank_set(ctx, LSM6DSO_USER_BANK);
-	}
+	lsm6dso_func_cfg_access_t reg = {
+		.reg_access = on ? LSM6DSO_SENSOR_HUB_BANK : LSM6DSO_USER_BANK
+	};
 
-	k_busy_wait(150);
+	lsm6dso_write_reg(ctx, LSM6DSO_FUNC_CFG_ACCESS, (uint8_t *)&reg, 1);
 }
 
 static int lsm6dso_shub_read_embedded_regs(stmdev_ctx_t *ctx,
@@ -486,7 +498,12 @@ static void lsm6dso_shub_enable(const struct device *dev, uint8_t enable)
 		}
 	}
 
-	lsm6dso_shub_embedded_en(ctx, true);
+	if (enable) {
+		lsm6dso_status_master_t status;
+
+		/* Clear any pending status flags */
+		lsm6dso_sh_status_mainpage_get(ctx, &status);
+	}
 
 	if (lsm6dso_sh_master_set(ctx, enable) < 0) {
 		LOG_DBG("shub: failed to set master on");
@@ -494,7 +511,10 @@ static void lsm6dso_shub_enable(const struct device *dev, uint8_t enable)
 		return;
 	}
 
-	lsm6dso_shub_embedded_en(ctx, false);
+	if (!enable) {
+		/* Necessary per AN5192 §7.2.1 */
+		k_busy_wait(300);
+	}
 }
 
 /* must be called with master on */
@@ -537,7 +557,7 @@ static int lsm6dso_shub_read_slave_reg(const struct device *dev,
 		return -EIO;
 	}
 
-	/* turn SH on */
+	/* turn SH on, wait for shub i2c read to finish */
 	lsm6dso_shub_enable(dev, 1);
 	lsm6dso_shub_wait_completed(ctx);
 
@@ -590,7 +610,7 @@ static int lsm6dso_shub_write_slave_reg(const struct device *dev,
 			return -EIO;
 		}
 
-		/* turn SH on */
+		/* turn SH on, wait for shub i2c write to finish */
 		lsm6dso_shub_enable(dev, 1);
 		lsm6dso_shub_wait_completed(ctx);
 
@@ -658,17 +678,9 @@ static int lsm6dso_shub_set_data_channel(const struct device *dev)
 		return -EIO;
 	}
 
-	lsm6dso_write_once_t wo = LSM6DSO_ONLY_FIRST_CYCLE;
 
-	if (lsm6dso_sh_write_mode_set(ctx, wo) < 0) {
-		LOG_DBG("shub: error setting write once");
-		return -EIO;
-	}
-
-
-	/* turn SH on */
+	/* turn SH on, no need to wait for 1st shub i2c read, if any, to complete */
 	lsm6dso_shub_enable(dev, 1);
-	lsm6dso_shub_wait_completed(ctx);
 
 	return 0;
 }
@@ -750,11 +762,20 @@ int lsm6dso_shub_config(const struct device *dev, enum sensor_channel chan,
 int lsm6dso_shub_init(const struct device *dev)
 {
 	struct lsm6dso_data *data = dev->data;
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t i, n = 0, regn;
 	uint8_t chip_id;
 	struct lsm6dso_shub_slist *sp;
 
 	LOG_INF("shub: start sensorhub for %s", dev->name);
+
+	/* This must be set or lsm6dso_shub_write_slave_reg() will repeatedly write the same reg */
+	if (lsm6dso_sh_write_mode_set(ctx, LSM6DSO_ONLY_FIRST_CYCLE) < 0) {
+		LOG_DBG("shub: error setting write once");
+		return -EIO;
+	}
+
 	for (n = 0; n < ARRAY_SIZE(lsm6dso_shub_slist); n++) {
 		if (data->num_ext_dev >= LSM6DSO_SHUB_MAX_NUM_SLVS) {
 			break;

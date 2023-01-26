@@ -50,4 +50,6 @@ source "drivers/dma/Kconfig.intel_adsp_hda"
 
 source "drivers/dma/Kconfig.gd32"
 
+source "drivers/dma/Kconfig.esp32"
+
 endif # DMA

@@ -251,6 +251,11 @@ html_redirect_pages = redirects.REDIRECTS
 
 warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
 
+# -- Options for zephyr.link-roles ----------------------------------------
+
+link_roles_manifest_project = "zephyr"
+link_roles_manifest_baseurl = "https://github.com/zephyrproject-rtos/zephyr"
+
 # -- Options for notfound.extension ---------------------------------------
 
 notfound_urls_prefix = f"/{version}/" if is_release else "/latest/"

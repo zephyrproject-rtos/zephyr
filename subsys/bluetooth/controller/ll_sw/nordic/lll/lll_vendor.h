@@ -80,3 +80,8 @@
 #define EVENT_TICKS_TO_US_FRAC(ticks)       HAL_TICKER_TICKS_TO_US(ticks)
 #define EVENT_US_FRAC_TO_TICKS(us_frac)     HAL_TICKER_US_TO_TICKS(us_frac)
 #define EVENT_US_FRAC_TO_REMAINDER(us_frac) HAL_TICKER_REMAINDER(us_frac)
+
+/* Time needed to set up a CIS from ACL instant to prepare (incl. radio). Used
+ * for CIS_Offset_Min.
+ */
+#define EVENT_OVERHEAD_CIS_SETUP_US         MAX(EVENT_OVERHEAD_START_US, 500U)

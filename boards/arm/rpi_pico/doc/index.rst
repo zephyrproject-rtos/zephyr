@@ -78,6 +78,9 @@ hardware features:
    * - PWM
      - :kconfig:option:`CONFIG_PWM`
      - :dtcompatible:`raspberrypi,pico-pwm`
+   * - Flash
+     - :kconfig:option:`CONFIG_FLASH`
+     - :dtcompatible:`raspberrypi,pico-flash`
 
 Pin Mapping
 ===========

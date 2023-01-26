@@ -1,0 +1,79 @@
+# Copyright (c) 2022 Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The Silabs pin controller is a singleton node responsible for controlling
+    pin function selection and pin properties. For example, you can use this
+    node to route UART0 RX to pin P0.1 and enable the pull-up resistor on the
+    pin.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+      &pinctrl {
+        /* configuration for usart0 device, default state */
+        usart0_default: usart0_default {
+          /* group 1 ('group1' name is arbitrary) */
+          group1 {
+            /* configure P0.1 as UART_TX and P0.2 as UART_RTS */
+            psels = <GECKO_PSEL(UART_TX, A, 1)>, <GECKO_PSEL(UART_RTS, A, 2)>;
+          };
+          /* group 2 */
+          group2 {
+            /* configure P0.3 as UART_RX and P0.4 as UART_CTS */
+            psels = <GECKO_PSEL(UART_RX, A, 3)>, <GECKO_PSEL(UART_CTS, A, 4)>;
+          };
+        };
+      };
+
+    The 'usart0_default' child node encodes the pin configurations for a
+    particular state of a device; in this case, the default (that is, active)
+    state. You would specify the low-power configuration for the same device
+    in a separate child node.
+
+    As shown, pin configurations are organized in groups within each child node.
+    Each group can specify a list of pin function selections in the 'psels'
+    property. The GECKO_PSEL macro is used to specify a pin function selection.
+    Available pin functions can be found in the
+    include/dt-bindings/pinctrl/gecko-pinctrl.h header file.
+
+    To link this pin configuration with a device, use a pinctrl-N property
+    for some number N, like this example you could place in your board's DTS
+    file:
+
+       #include "board-pinctrl.dtsi"
+
+       &usart0 {
+             pinctrl-0 = <&usart0_default>;
+             pinctrl-names = "default";
+       };
+
+compatible: "silabs,gecko-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Silabs pin controller pin configuration state nodes.
+  include: pincfg-node.yaml
+  child-binding:
+    description: |
+      Silabs pin controller pin configuration group.
+    properties:
+      psels:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using the GECKO_PSEL utility macro that encodes the port,
+          pin and function.

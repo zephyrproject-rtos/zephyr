@@ -45,10 +45,12 @@ static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static struct bt_audio_unicast_group *default_unicast_group;
 static struct bt_codec *rcodecs[2][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 static struct bt_audio_ep *snks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
-
-static uint8_t stream_dir(const struct bt_audio_stream *stream);
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
@@ -62,7 +64,7 @@ static struct bt_audio_broadcast_sink *default_sink;
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 static struct bt_audio_stream *default_stream;
 static uint16_t seq_num;
-static bool connecting;
+static size_t rx_cnt;
 
 struct named_lc3_preset {
 	const char *name;
@@ -189,6 +191,8 @@ static int frame_duration_us;
 static int frame_duration_100us;
 static int frames_per_sdu;
 static int octets_per_frame;
+static int64_t lc3_start_time;
+static int32_t lc3_sdu_cnt;
 
 /**
  * Use the math lib to generate a sine-wave using 16 bit samples into a buffer.
@@ -263,8 +267,6 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 	 */
 	const uint8_t prime_count = 2;
 	static bool lc3_initialized;
-	static int64_t start_time;
-	static int32_t sdu_cnt;
 	int64_t run_time_100us;
 	int32_t sdu_goal_cnt;
 	int64_t run_time_ms;
@@ -283,16 +285,16 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 	k_work_schedule(k_work_delayable_from_work(work),
 			K_USEC(default_preset->preset.qos.interval));
 
-	if (start_time == 0) {
+	if (lc3_start_time == 0) {
 		/* Read start time and produce the number of frames needed to catch up with any
 		 * inaccuracies in the timer. by calculating the number of frames we should
 		 * have sent and compare to how many were actually sent.
 		 */
-		start_time = k_uptime_get();
+		lc3_start_time = k_uptime_get();
 	}
 
 	uptime = k_uptime_get();
-	run_time_ms = uptime - start_time;
+	run_time_ms = uptime - lc3_start_time;
 
 	/* PDU count calculations done in 100us units to allow 7.5ms framelength in fixed-point */
 	run_time_100us = run_time_ms * 10;
@@ -301,15 +303,15 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 	/* Add primer value to ensure the controller do not run low on data due to jitter */
 	sdu_goal_cnt += prime_count;
 
-	if ((sdu_cnt % 100) == 0) {
+	if ((lc3_sdu_cnt % 100) == 0) {
 		printk("LC3 encode %d frames in %d SDUs\n",
-		       (sdu_goal_cnt - sdu_cnt) * frames_per_sdu,
-		       (sdu_goal_cnt - sdu_cnt));
+		       (sdu_goal_cnt - lc3_sdu_cnt) * frames_per_sdu,
+		       (sdu_goal_cnt - lc3_sdu_cnt));
 	}
 
 	seq_num = get_next_seq_num(default_preset->preset.qos.interval);
 
-	while (sdu_cnt < sdu_goal_cnt) {
+	while (lc3_sdu_cnt < sdu_goal_cnt) {
 		const uint16_t tx_sdu_len = frames_per_sdu * octets_per_frame;
 		struct net_buf *buf;
 		uint8_t *net_buffer;
@@ -347,10 +349,10 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 			return;
 		}
 
-		if ((sdu_cnt % 100) == 0) {
+		if ((lc3_sdu_cnt % 100) == 0) {
 			printk("TX LC3: %zu\n", tx_sdu_len);
 		}
-		sdu_cnt++;
+		lc3_sdu_cnt++;
 		seq_num++;
 	}
 }
@@ -379,7 +381,7 @@ static void print_codec(const struct bt_codec *codec)
 			    codec->meta[i].data.type,
 			    codec->meta[i].data.data_len);
 		shell_hexdump(ctx_shell, codec->meta[i].data.data,
-			      codec->data[i].data.data_len -
+			      codec->meta[i].data.data_len -
 				sizeof(codec->meta[i].data.type));
 	}
 }
@@ -661,8 +663,6 @@ static int lc3_release(struct bt_audio_stream *stream)
 		default_stream = NULL;
 	}
 
-	connecting = false;
-
 	return 0;
 }
 
@@ -691,21 +691,95 @@ static struct bt_pacs_cap cap_sink = {
 static struct bt_pacs_cap cap_source = {
 	.codec = &lc3_codec,
 };
+#if defined(CONFIG_BT_AUDIO_UNICAST)
+
+
+static uint16_t strmeta(const char *name)
+{
+	if (strcmp(name, "Unspecified") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
+	} else if (strcmp(name, "Conversational") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL;
+	} else if (strcmp(name, "Media") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_MEDIA;
+	} else if (strcmp(name, "Game") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_GAME;
+	} else if (strcmp(name, "Instructional") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL;
+	} else if (strcmp(name, "VoiceAssistants") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS;
+	} else if (strcmp(name, "Live") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_LIVE;
+	} else if (strcmp(name, "SoundEffects") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS;
+	} else if (strcmp(name, "Notifications") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS;
+	} else if (strcmp(name, "Ringtone") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_RINGTONE;
+	} else if (strcmp(name, "Alerts") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_ALERTS;
+	} else if (strcmp(name, "EmergencyAlarm") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM;
+	}
+
+	return 0u;
+}
+
+static int handle_metadata_update(const char *meta_str,
+				  struct bt_codec_data *meta_out[],
+				  size_t *meta_count_out)
+{
+	static struct bt_codec_data meta[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
+	size_t meta_count;
+
+	/* We create a copy of the preset meta, as the presets cannot be modified */
+	meta_count = default_preset->preset.codec.meta_count;
+	(void)memset(meta, 0, sizeof(meta));
+	for (size_t i = 0U; i < meta_count; i++) {
+		(void)memcpy(meta[i].value,
+			     default_preset->preset.codec.meta[i].data.data,
+			     default_preset->preset.codec.meta[i].data.data_len);
+		meta[i].data.type = default_preset->preset.codec.meta[i].data.type;
+		meta[i].data.data_len = default_preset->preset.codec.meta[i].data.data_len;
+		meta[i].data.data = meta[i].value;
+	}
+
+	if (meta_str != NULL) {
+		uint16_t context;
+
+		context = strmeta(meta_str);
+		if (context == 0) {
+			return -ENOEXEC;
+		}
+
+		/* TODO: Check the type and only overwrite the streaming context */
+		sys_put_le16(context, meta[0].value);
+	}
+
+	*meta_count_out = meta_count;
+	*meta_out = meta;
+
+	return 0;
+}
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static uint8_t stream_dir(const struct bt_audio_stream *stream)
 {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	for (size_t i = 0; i < ARRAY_SIZE(snks); i++) {
 		if (snks[i] != NULL && stream->ep == snks[i]) {
 			return BT_AUDIO_DIR_SINK;
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	for (size_t i = 0; i < ARRAY_SIZE(srcs); i++) {
 		if (srcs[i] != NULL && stream->ep == srcs[i]) {
 			return BT_AUDIO_DIR_SOURCE;
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 	__ASSERT(false, "Invalid stream");
 	return 0;
@@ -726,19 +800,23 @@ static void add_codec(struct bt_codec *codec, uint8_t index, enum bt_audio_dir d
 	}
 }
 
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 static void add_sink(struct bt_audio_ep *ep, uint8_t index)
 {
 	shell_print(ctx_shell, "Sink #%u: ep %p", index, ep);
 
 	snks[index] = ep;
 }
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 static void add_source(struct bt_audio_ep *ep, uint8_t index)
 {
 	shell_print(ctx_shell, "Source #%u: ep %p", index, ep);
 
 	srcs[index] = ep;
 }
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 			struct bt_audio_ep *ep,
@@ -750,11 +828,17 @@ static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 	}
 
 	if (ep) {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SINK) {
 			add_sink(ep, params->num_eps);
-		} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
+		}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+		if (params->dir == BT_AUDIO_DIR_SOURCE) {
 			add_source(ep, params->num_eps);
 		}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
 
 		return;
 	}
@@ -774,11 +858,17 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 	}
 
 	if (ep) {
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 		if (params->dir == BT_AUDIO_DIR_SINK) {
 			add_sink(ep, params->num_eps);
-		} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
+		}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+		if (params->dir == BT_AUDIO_DIR_SOURCE) {
 			add_source(ep, params->num_eps);
 		}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0*/
 
 		return;
 	}
@@ -866,29 +956,6 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 	return bt_audio_discover(default_conn, &params);
 }
 
-static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct named_lc3_preset *named_preset;
-
-	named_preset = default_preset;
-
-	if (argc > 1) {
-		named_preset = set_preset(true, argc - 1, argv + 1);
-		if (named_preset == NULL) {
-			shell_error(sh, "Unable to parse named_preset %s",
-				    argv[1]);
-			return -ENOEXEC;
-		}
-	}
-
-	shell_print(sh, "%s", named_preset->name);
-
-	print_codec(&named_preset->preset.codec);
-	print_qos(&named_preset->preset.qos);
-
-	return 0;
-}
-
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
 	int32_t index, dir;
@@ -906,12 +973,20 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!strcmp(argv[1], "sink")) {
+	if (false) {
+
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	} else if (!strcmp(argv[1], "sink")) {
 		dir = BT_AUDIO_DIR_SINK;
 		ep = snks[index];
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	} else if (!strcmp(argv[1], "source")) {
 		dir = BT_AUDIO_DIR_SOURCE;
 		ep = srcs[index];
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+
 	} else {
 		shell_error(sh, "Unsupported dir: %s", argv[1]);
 		return -ENOEXEC;
@@ -964,31 +1039,18 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err;
-
-	if (default_stream == NULL) {
-		shell_print(sh, "Not connected");
-		return -ENOEXEC;
-	}
-
-	err = bt_audio_stream_release(default_stream);
-	if (err) {
-		shell_error(sh, "Unable to release Channel");
-		return -ENOEXEC;
-	}
-
-	return 0;
-}
-
 static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	struct named_lc3_preset *named_preset = NULL;
 
 	if (default_stream == NULL) {
-		shell_print(sh, "Not connected");
+		shell_print(sh, "No stream selected");
+		return -ENOEXEC;
+	}
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -1004,13 +1066,26 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (default_unicast_group == NULL) {
-		struct bt_audio_unicast_group_param params = {
+		struct bt_audio_unicast_group_stream_param stream_param = {
 			.stream = default_stream,
 			.qos = &default_preset->preset.qos,
-			.dir = stream_dir(default_stream)
+		};
+		struct bt_audio_unicast_group_stream_pair_param pair_param;
+		struct bt_audio_unicast_group_param param = {
+			.packing = BT_ISO_PACKING_SEQUENTIAL,
+			.params = &pair_param,
+			.params_count = 1,
 		};
 
-		err = bt_audio_unicast_group_create(&params, 1, &default_unicast_group);
+		if (stream_dir(default_stream) == BT_AUDIO_DIR_SOURCE) {
+			pair_param.rx_param = &stream_param;
+			pair_param.tx_param = NULL;
+		} else {
+			pair_param.rx_param = NULL;
+			pair_param.tx_param = &stream_param;
+		}
+
+		err = bt_audio_unicast_group_create(&param, &default_unicast_group);
 		if (err != 0) {
 			shell_error(sh, "Unable to create default unicast group: %d", err);
 			return -ENOEXEC;
@@ -1028,73 +1103,6 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static uint16_t strmeta(const char *name)
-{
-	if (strcmp(name, "Unspecified") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
-	} else if (strcmp(name, "Conversational") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL;
-	} else if (strcmp(name, "Media") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_MEDIA;
-	} else if (strcmp(name, "Game") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_GAME;
-	} else if (strcmp(name, "Instructional") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL;
-	} else if (strcmp(name, "VoiceAssistants") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS;
-	} else if (strcmp(name, "Live") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_LIVE;
-	} else if (strcmp(name, "SoundEffects") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS;
-	} else if (strcmp(name, "Notifications") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS;
-	} else if (strcmp(name, "Ringtone") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_RINGTONE;
-	} else if (strcmp(name, "Alerts") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_ALERTS;
-	} else if (strcmp(name, "EmergencyAlarm") == 0) {
-		return BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM;
-	}
-
-	return 0u;
-}
-
-static int handle_metadata_update(const char *meta_str,
-				  struct bt_codec_data *meta_out[],
-				  size_t *meta_count_out)
-{
-	static struct bt_codec_data meta[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
-	size_t meta_count;
-
-	/* We create a copy of the preset meta, as the presets cannot be modified */
-	meta_count = default_preset->preset.codec.meta_count;
-	(void)memset(meta, 0, sizeof(meta));
-	for (size_t i = 0U; i < meta_count; i++) {
-		(void)memcpy(meta[i].value,
-			     default_preset->preset.codec.meta[i].data.data,
-			     default_preset->preset.codec.meta[i].data.data_len);
-		meta[i].data.data_len = default_preset->preset.codec.meta[i].data.data_len;
-		meta[i].data.data = meta[i].value;
-	}
-
-	if (meta_str != NULL) {
-		uint16_t context;
-
-		context = strmeta(meta_str);
-		if (context == 0) {
-			return -ENOEXEC;
-		}
-
-		/* TODO: Check the type and only overwrite the streaming context */
-		sys_put_le16(context, meta[0].value);
-	}
-
-	*meta_count_out = meta_count;
-	*meta_out = meta;
-
-	return 0;
-}
-
 static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_codec_data *meta;
@@ -1102,7 +1110,7 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
+		shell_error(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
@@ -1126,6 +1134,48 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	if (default_stream == NULL) {
+		shell_error(sh, "No stream selected");
+		return -ENOEXEC;
+	}
+
+	err = bt_audio_stream_stop(default_stream);
+	if (err) {
+		shell_error(sh, "Unable to stop Channel");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+
+static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct named_lc3_preset *named_preset;
+
+	named_preset = default_preset;
+
+	if (argc > 1) {
+		named_preset = set_preset(true, argc - 1, argv + 1);
+		if (named_preset == NULL) {
+			shell_error(sh, "Unable to parse named_preset %s",
+				    argv[1]);
+			return -ENOEXEC;
+		}
+	}
+
+	shell_print(sh, "%s", named_preset->name);
+
+	print_codec(&named_preset->preset.codec);
+	print_qos(&named_preset->preset.qos);
+
+	return 0;
+}
+
 #define MAX_META_DATA \
 	(CONFIG_BT_CODEC_MAX_METADATA_COUNT * sizeof(struct bt_codec_data))
 
@@ -1136,7 +1186,7 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
+		shell_error(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
@@ -1167,7 +1217,7 @@ static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
+		shell_error(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
@@ -1185,31 +1235,13 @@ static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
+		shell_error(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
 	err = bt_audio_stream_disable(default_stream);
 	if (err) {
 		shell_error(sh, "Unable to disable Channel");
-		return -ENOEXEC;
-	}
-
-	return 0;
-}
-
-static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err;
-
-	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
-		return -ENOEXEC;
-	}
-
-	err = bt_audio_stream_stop(default_stream);
-	if (err) {
-		shell_error(sh, "Unable to start Channel");
 		return -ENOEXEC;
 	}
 
@@ -1226,12 +1258,14 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 		struct bt_audio_stream *stream = &streams[i];
 
 		if (stream->conn) {
-			shell_print(sh, "  %s#%u: stream %p dir 0x%02x group %p",
-				    stream == default_stream ? "*" : " ", i, stream,
-				    stream_dir(stream), stream->group);
+			shell_print(sh, "  %s#%u: stream %p ep %p group %p",
+				    stream == default_stream ? "*" : " ", i,
+				    stream, stream->ep, stream->group);
 		}
 	}
 
+#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	shell_print(sh, "Sinks:");
 
 	for (i = 0; i < ARRAY_SIZE(snks); i++) {
@@ -1241,7 +1275,9 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 			shell_print(sh, "  #%u: ep %p", i, ep);
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
+#if CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	shell_print(sh, "Sources:");
 
 	for (i = 0; i < ARRAY_SIZE(srcs); i++) {
@@ -1251,24 +1287,30 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 			shell_print(sh, "  #%u: ep %p", i, ep);
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 
 	return 0;
 }
 
-static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
-	err = cmd_config(sh, argc, argv);
-	if (err) {
-		return err;
+	if (default_stream == NULL) {
+		shell_print(sh, "No stream selected");
+		return -ENOEXEC;
 	}
 
-	connecting = true;
+	err = bt_audio_stream_release(default_stream);
+	if (err) {
+		shell_error(sh, "Unable to release Channel");
+		return -ENOEXEC;
+	}
 
 	return 0;
 }
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#endif /* CONFIG_BT_AUDIO_UNICAST */
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 static uint32_t accepted_broadcast_id;
@@ -1419,7 +1461,29 @@ static void audio_recv(struct bt_audio_stream *stream,
 		       const struct bt_iso_recv_info *info,
 		       struct net_buf *buf)
 {
-	shell_print(ctx_shell, "Incoming audio on stream %p len %u\n", stream, buf->len);
+	static struct bt_iso_recv_info last_info;
+
+	/* TODO: Make it possible to only print every X packets, and make X settable by the shell */
+	if ((rx_cnt % 100) == 0) {
+		shell_print(ctx_shell,
+			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u",
+			    rx_cnt, stream, buf->len, info->ts, info->seq_num,
+			    info->flags);
+	}
+
+	if (info->ts == last_info.ts) {
+		shell_error(ctx_shell, "[%zu]: Duplicate TS: %u",
+			    rx_cnt, info->ts);
+	}
+
+	if (info->seq_num == last_info.seq_num) {
+		shell_error(ctx_shell, "[%zu]: Duplicate seq_num: %u",
+			    rx_cnt, info->seq_num);
+	}
+
+	(void)memcpy(&last_info, info, sizeof(last_info));
+
+	rx_cnt++;
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SINK */
 
@@ -1435,6 +1499,9 @@ static void stream_stopped_cb(struct bt_audio_stream *stream)
 
 #if defined(CONFIG_LIBLC3)
 	if (stream == default_stream) {
+		lc3_start_time = 0;
+		lc3_sdu_cnt = 0;
+
 		k_work_cancel_delayable(&audio_send_work);
 	}
 #endif /* CONFIG_LIBLC3 */
@@ -1462,6 +1529,16 @@ static void stream_released_cb(struct bt_audio_stream *stream)
 		}
 	}
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+
+#if defined(CONFIG_LIBLC3)
+	/* stop sending */
+	if (stream == default_stream) {
+		lc3_start_time = 0;
+		lc3_sdu_cnt = 0;
+
+		k_work_cancel_delayable(&audio_send_work);
+	}
+#endif /* CONFIG_LIBLC3 */
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
@@ -1499,7 +1576,10 @@ static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
+	struct bt_audio_broadcast_source_stream_param
+		stream_params[ARRAY_SIZE(broadcast_source_streams)];
+	struct bt_audio_broadcast_source_subgroup_param subgroup_param;
+	struct bt_audio_broadcast_source_create_param create_param = { 0 };
 	struct named_lc3_preset *named_preset;
 	int err;
 
@@ -1510,24 +1590,66 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 
 	named_preset = default_preset;
 
-	if (argc > 1) {
-		named_preset = set_preset(false, 1, &argv[1]);
-		if (named_preset == NULL) {
-			shell_error(sh, "Unable to parse named_preset %s",
-				    argv[1]);
-			return -ENOEXEC;
+	for (size_t i = 1U; i < argc; i++) {
+		char *arg = argv[i];
+
+		if (strcmp(arg, "enc") == 0) {
+			if (argc > i) {
+				size_t bcode_len;
+
+				i++;
+				arg = argv[i];
+
+				bcode_len = hex2bin(arg, strlen(arg),
+						    create_param.broadcast_code,
+						    sizeof(create_param.broadcast_code));
+
+				if (bcode_len != sizeof(create_param.broadcast_code)) {
+					shell_error(sh, "Invalid Broadcast Code Length: %zu",
+						    bcode_len);
+
+					return -ENOEXEC;
+				}
+
+				create_param.encryption = true;
+			} else {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+		} else if (strcmp(arg, "preset") == 0) {
+			if (argc > i) {
+
+				i++;
+				arg = argv[i];
+
+				named_preset = set_preset(false, 1, &arg);
+				if (named_preset == NULL) {
+					shell_error(sh, "Unable to parse named_preset %s",
+						    arg);
+
+					return -ENOEXEC;
+				}
+			} else {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
 		}
 	}
 
-	(void)memset(streams, 0, sizeof(streams));
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		streams[i] = &broadcast_source_streams[i];
+	(void)memset(stream_params, 0, sizeof(stream_params));
+	for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
+		stream_params[i].stream = &broadcast_source_streams[i];
 	}
+	subgroup_param.params_count = ARRAY_SIZE(stream_params);
+	subgroup_param.params = stream_params;
+	subgroup_param.codec = &named_preset->preset.codec;
+	create_param.params_count = 1U;
+	create_param.params = &subgroup_param;
+	create_param.qos = &named_preset->preset.qos;
 
-	err = bt_audio_broadcast_source_create(streams, ARRAY_SIZE(streams),
-					       &named_preset->preset.codec,
-					       &named_preset->preset.qos,
-					       &default_source);
+	err = bt_audio_broadcast_source_create(&create_param, &default_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcast source: %d", err);
 		return err;
@@ -1537,7 +1659,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		    named_preset->name);
 
 	if (default_stream == NULL) {
-		default_stream = streams[0];
+		default_stream = &broadcast_source_streams[0];
 	}
 
 	return 0;
@@ -1774,10 +1896,21 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	err = bt_pacs_set_available_contexts(dir, ctx);
-	if (err) {
-		shell_error(ctx_shell, "Set available contexts err %d", err);
-		return err;
+	if (!strcmp(argv[3], "supported")) {
+		err = bt_pacs_set_supported_contexts(dir, ctx);
+		if (err) {
+			shell_error(ctx_shell, "Set supported contexts err %d", err);
+			return err;
+		}
+	} else if (!strcmp(argv[3], "available")) {
+		err = bt_pacs_set_available_contexts(dir, ctx);
+		if (err) {
+			shell_error(ctx_shell, "Set available contexts err %d", err);
+			return err;
+		}
+	} else {
+		shell_error(sh, "Unsupported context type: %s", argv[3]);
+		return -ENOEXEC;
 	}
 
 	return 0;
@@ -1811,6 +1944,10 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, LOCATION);
 		__ASSERT(err == 0, "Failed to set sink location");
 
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
+						     CONTEXT);
+		__ASSERT(err == 0, "Failed to set sink supported contexts");
+
 		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
 						     CONTEXT);
 		__ASSERT(err == 0, "Failed to set sink available contexts");
@@ -1819,6 +1956,10 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE, LOCATION);
 		__ASSERT(err == 0, "Failed to set source location");
+
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
+						     CONTEXT);
+		__ASSERT(err == 0, "Failed to set sink supported contexts");
 
 		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
 						     CONTEXT);
@@ -1903,6 +2044,9 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 {
+	lc3_start_time = 0;
+	lc3_sdu_cnt = 0;
+
 	k_work_cancel_delayable(&audio_send_work);
 
 	return 0;
@@ -1914,7 +2058,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 	SHELL_CMD_ARG(select_broadcast, NULL, "<stream>",
 		      cmd_select_broadcast_source, 2, 0),
-	SHELL_CMD_ARG(create_broadcast, NULL, "[codec] [preset]",
+	SHELL_CMD_ARG(create_broadcast, NULL,
+		      "[preset <preset_name>] [enc <broadcast_code>]",
 		      cmd_create_broadcast, 1, 2),
 	SHELL_CMD_ARG(start_broadcast, NULL, "", cmd_start_broadcast, 1, 0),
 	SHELL_CMD_ARG(stop_broadcast, NULL, "", cmd_stop_broadcast, 1, 0),
@@ -1934,10 +2079,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_CMD_ARG(term_broadcast_sink, NULL, "",
 		      cmd_term_broadcast_sink, 1, 0),
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
+#if defined(CONFIG_BT_AUDIO_UNICAST)
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 	SHELL_CMD_ARG(discover, NULL, "[dir: sink, source]",
 		      cmd_discover, 1, 1),
-	SHELL_CMD_ARG(preset, NULL, "[preset]", cmd_preset, 1, 1),
 	SHELL_CMD_ARG(config, NULL,
 		      "<direction: sink, source> <index> [codec] [preset]",
 		      cmd_config, 3, 2),
@@ -1945,18 +2090,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 		      "[preset] [interval] [framing] [latency] [pd] [sdu] [phy]"
 		      " [rtn]", cmd_qos, 1, 8),
 	SHELL_CMD_ARG(enable, NULL, NULL, cmd_enable, 1, 1),
+	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+	SHELL_CMD_ARG(preset, NULL, "[preset]", cmd_preset, 1, 1),
 	SHELL_CMD_ARG(metadata, NULL, "[context]", cmd_metadata, 1, 1),
 	SHELL_CMD_ARG(start, NULL, NULL, cmd_start, 1, 0),
 	SHELL_CMD_ARG(disable, NULL, NULL, cmd_disable, 1, 0),
-	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
 	SHELL_CMD_ARG(release, NULL, NULL, cmd_release, 1, 0),
 	SHELL_CMD_ARG(list, NULL, NULL, cmd_list, 1, 0),
-	SHELL_CMD_ARG(connect, NULL,
-		      "<direction: sink, source> <index>  [codec] [preset]",
-		      cmd_connect, 3, 2),
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
-	SHELL_COND_CMD_ARG(CONFIG_BT_AUDIO_UNICAST, select_unicast, NULL,
-			   "<stream>", cmd_select_unicast, 2, 0),
+	SHELL_CMD_ARG(select_unicast, NULL, "<stream>",
+		      cmd_select_unicast, 2, 0),
+#endif /* CONFIG_BT_AUDIO_UNICAST */
 	SHELL_CMD_ARG(send, NULL, "Send to Audio Stream [data]",
 		      cmd_send, 1, 1),
 #if defined(CONFIG_LIBLC3)
@@ -1968,9 +2112,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_location, NULL,
 			   "<direction: sink, source> <location bitmask>",
 			   cmd_set_loc, 3, 0),
-	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, add_context, NULL,
-			   "<direction: sink, source> <context bitmask>",
-			   cmd_context, 3, 0),
+	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_context, NULL,
+			   "<direction: sink, source>"
+			   "<context bitmask> <type: supported, available>",
+			   cmd_context, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 
@@ -1989,24 +2134,20 @@ static int cmd_audio(const struct shell *sh, size_t argc, char **argv)
 SHELL_CMD_ARG_REGISTER(audio, &audio_cmds, "Bluetooth audio shell commands",
 		       cmd_audio, 1, 1);
 
-ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-			  const bool discoverable, const bool connectable)
+static ssize_t connectable_ad_data_add(struct bt_data *data_array,
+				       size_t data_array_size)
 {
 	static const uint8_t ad_ext_uuid16[] = {
 		IF_ENABLED(CONFIG_BT_MICP_MIC_DEV, (BT_UUID_16_ENCODE(BT_UUID_MICS_VAL),))
 		IF_ENABLED(CONFIG_BT_ASCS, (BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),))
-		IF_ENABLED(CONFIG_BT_BASS, (BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),))
+		IF_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR, (BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),))
 		IF_ENABLED(CONFIG_BT_PACS, (BT_UUID_16_ENCODE(BT_UUID_PACS_VAL),))
 		IF_ENABLED(CONFIG_BT_GTBS, (BT_UUID_16_ENCODE(BT_UUID_GTBS_VAL),))
 		IF_ENABLED(CONFIG_BT_TBS, (BT_UUID_16_ENCODE(BT_UUID_TBS_VAL),))
-		IF_ENABLED(CONFIG_BT_VCS, (BT_UUID_16_ENCODE(BT_UUID_VCS_VAL),))
-		IF_ENABLED(CONFIG_BT_HAS, (BT_UUID_16_ENCODE(BT_UUID_HAS_VAL),))
+		IF_ENABLED(CONFIG_BT_VCP_VOL_REND, (BT_UUID_16_ENCODE(BT_UUID_VCS_VAL),))
+		IF_ENABLED(CONFIG_BT_HAS, (BT_UUID_16_ENCODE(BT_UUID_HAS_VAL),)) /* Shall be last */
 	};
 	size_t ad_len = 0;
-
-	if (!discoverable) {
-		return 0;
-	}
 
 	if (IS_ENABLED(CONFIG_BT_ASCS)) {
 		static uint8_t ad_bap_announcement[8] = {
@@ -2052,13 +2193,13 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 
 		data_array[ad_len].type = BT_DATA_UUID16_SOME;
 
-		if (IS_ENABLED(CONFIG_BT_HAS) && IS_ENABLED(CONFIG_BT_PRIVACY) && connectable) {
+		if (IS_ENABLED(CONFIG_BT_HAS) && IS_ENABLED(CONFIG_BT_PRIVACY)) {
 			/* If the HA is in one of the GAP connectable modes and is using a
 			 * resolvable private address, the HA shall not include the Hearing Access
 			 * Service UUID in the Service UUID AD type field of the advertising data
 			 * or scan response.
 			 */
-			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16) - 1;
+			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16) - BT_UUID_SIZE_16;
 		} else {
 			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16);
 		}
@@ -2066,6 +2207,114 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 		data_array[ad_len].data = &ad_ext_uuid16[0];
 		ad_len++;
 	}
+
+	return ad_len;
+}
+
+static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
+					  const size_t data_array_size)
+{
+	static const uint8_t ad_ext_uuid16[] = {
+		IF_ENABLED(CONFIG_BT_PACS, (BT_UUID_16_ENCODE(BT_UUID_PACS_VAL),))
+		IF_ENABLED(CONFIG_BT_CAP_ACCEPTOR, (BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),))
+	};
+	size_t ad_len = 0;
+
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
+		static const uint8_t ad_cap_announcement[3] = {
+			BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
+			BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
+		};
+
+		__ASSERT(data_array_size > ad_len, "No space for AD_CAP_ANNOUNCEMENT");
+		data_array[ad_len].type = BT_DATA_SVC_DATA16;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_cap_announcement);
+		data_array[ad_len].data = &ad_cap_announcement[0];
+		ad_len++;
+	}
+
+#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+	if (default_source) {
+		static uint8_t ad_bap_broadcast_announcement[5] = {
+			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
+		};
+		uint32_t broadcast_id;
+		int err;
+
+		err = bt_audio_broadcast_source_get_id(default_source,
+						       &broadcast_id);
+		if (err != 0) {
+			printk("Unable to get broadcast ID: %d\n", err);
+
+			return -1;
+		}
+
+		ad_bap_broadcast_announcement[2] = (uint8_t)(broadcast_id >> 16);
+		ad_bap_broadcast_announcement[3] = (uint8_t)(broadcast_id >> 8);
+		ad_bap_broadcast_announcement[4] = (uint8_t)(broadcast_id >> 0);
+		data_array[ad_len].type = BT_DATA_SVC_DATA16;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_bap_broadcast_announcement);
+		data_array[ad_len].data = ad_bap_broadcast_announcement;
+		ad_len++;
+	}
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+
+	if (ARRAY_SIZE(ad_ext_uuid16) > 0) {
+		if (data_array_size <= ad_len) {
+			shell_warn(ctx_shell, "No space for AD_UUID16");
+			return ad_len;
+		}
+
+		data_array[ad_len].type = BT_DATA_UUID16_SOME;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16);
+		data_array[ad_len].data = &ad_ext_uuid16[0];
+		ad_len++;
+	}
+
+	return ad_len;
+}
+
+ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+			  const bool discoverable, const bool connectable)
+{
+	if (!discoverable) {
+		return 0;
+	}
+
+	if (connectable) {
+		return connectable_ad_data_add(data_array, data_array_size);
+	} else {
+		return nonconnectable_ad_data_add(data_array, data_array_size);
+	}
+}
+
+ssize_t audio_pa_data_add(struct bt_data *data_array,
+			  const size_t data_array_size)
+{
+	size_t ad_len = 0;
+
+#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+	if (default_source) {
+		/* Required size of the buffer depends on what has been
+		 * configured. We just use the maximum size possible.
+		 */
+		NET_BUF_SIMPLE_DEFINE_STATIC(base_buf, UINT8_MAX);
+		int err;
+
+		err = bt_audio_broadcast_source_get_base(default_source,
+							 &base_buf);
+		if (err != 0) {
+			printk("Unable to get BASE: %d\n", err);
+
+			return -1;
+		}
+
+		data_array[ad_len].type = BT_DATA_SVC_DATA16;
+		data_array[ad_len].data_len = base_buf.len;
+		data_array[ad_len].data = base_buf.data;
+		ad_len++;
+	}
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
 	return ad_len;
 }

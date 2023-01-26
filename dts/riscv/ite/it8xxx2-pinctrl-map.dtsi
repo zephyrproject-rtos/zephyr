@@ -90,6 +90,118 @@
 	};
 
 	/* Keyboard alternate function */
+	ksi0_default: ksi0_default {
+		pinmuxs = <&pinctrlksi 0 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	ksi1_default: ksi1_default {
+		pinmuxs = <&pinctrlksi 1 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	ksi2_default: ksi2_default {
+		pinmuxs = <&pinctrlksi 2 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	ksi3_default: ksi3_default {
+		pinmuxs = <&pinctrlksi 3 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	ksi4_default: ksi4_default {
+		pinmuxs = <&pinctrlksi 4 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	ksi5_default: ksi5_default {
+		pinmuxs = <&pinctrlksi 5 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	ksi6_default: ksi6_default {
+		pinmuxs = <&pinctrlksi 6 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	ksi7_default: ksi7_default {
+		pinmuxs = <&pinctrlksi 7 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	kso0_default: kso0_default {
+		pinmuxs = <&pinctrlksol 0 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso1_default: kso1_default {
+		pinmuxs = <&pinctrlksol 1 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso2_default: kso2_default {
+		pinmuxs = <&pinctrlksol 2 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso3_default: kso3_default {
+		pinmuxs = <&pinctrlksol 3 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso4_default: kso4_default {
+		pinmuxs = <&pinctrlksol 4 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso5_default: kso5_default {
+		pinmuxs = <&pinctrlksol 5 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso6_default: kso6_default {
+		pinmuxs = <&pinctrlksol 6 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso7_default: kso7_default {
+		pinmuxs = <&pinctrlksol 7 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso8_default: kso8_default {
+		pinmuxs = <&pinctrlksoh 0 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso9_default: kso9_default {
+		pinmuxs = <&pinctrlksoh 1 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso10_default: kso10_default {
+		pinmuxs = <&pinctrlksoh 2 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso11_default: kso11_default {
+		pinmuxs = <&pinctrlksoh 3 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso12_default: kso12_default {
+		pinmuxs = <&pinctrlksoh 4 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso13_default: kso13_default {
+		pinmuxs = <&pinctrlksoh 5 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso14_default: kso14_default {
+		pinmuxs = <&pinctrlksoh 6 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kso15_default: kso15_default {
+		pinmuxs = <&pinctrlksoh 7 IT8XXX2_ALT_FUNC_1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
 	kso16_gpc3_default: kso16_gpc3_default {
 		pinmuxs = <&pinctrlc 3 IT8XXX2_ALT_FUNC_1>;
 		bias-pull-up;

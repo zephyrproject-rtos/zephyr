@@ -61,35 +61,38 @@ description: |
 
 compatible: "ite,it8xxx2-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
-        property-allowlist:
-          - bias-high-impedance
-          - bias-pull-pin-default
-          - bias-pull-up
-          - bias-pull-down
-          - input-enable
+include: base.yaml
 
 child-binding:
-    description: |
-        This binding gives a base representation of the ITE IT8XXX2 pins configration.
-    properties:
-        pinmuxs:
-          required: true
-          type: phandle-array
-          description: |
-              ITE IT8XXX2 pin's configuration (pinctrl node, pin and function).
+  description: |
+      This binding gives a base representation of the ITE IT8XXX2 pins configration.
 
-        gpio-voltage:
-          required: false
-          type: string
-          description: |
-              Pin input voltage selection 3.3V or 1.8V. All gpio pins support 3.3V.
-              This property only needs to be configured if the board specifies a
-              pin as 1.8V. So the default is 3.3V
-          default: "3v3"
-          enum:
-          - "3v3"
-          - "1v8"
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-high-impedance
+        - bias-pull-pin-default
+        - bias-pull-up
+        - bias-pull-down
+        - input-enable
+        - drive-push-pull
+        - drive-open-drain
+
+  properties:
+    pinmuxs:
+      required: true
+      type: phandle-array
+      description: |
+          ITE IT8XXX2 pin's configuration (pinctrl node, pin and function).
+
+    gpio-voltage:
+      type: string
+      description: |
+          Pin input voltage selection 3.3V or 1.8V. All gpio pins support 3.3V.
+          This property only needs to be configured if the board specifies a
+          pin as 1.8V. So the default is 3.3V.
+          kSI[7:0] and KSO[15:0] pins only support 3.3V.
+      default: "3v3"
+      enum:
+        - "3v3"
+        - "1v8"

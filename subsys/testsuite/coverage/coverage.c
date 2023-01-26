@@ -8,20 +8,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
+#include <string.h>
 #include "coverage.h"
 
-
-#if defined(CONFIG_X86) || defined(CONFIG_SOC_SERIES_MPS2)
-#define MALLOC_MAX_HEAP_SIZE 32768
-#define MALLOC_MIN_BLOCK_SIZE 128
-#else
-#define MALLOC_MAX_HEAP_SIZE 16384
-#define MALLOC_MIN_BLOCK_SIZE 64
-#endif
-
-
-K_HEAP_DEFINE(gcov_heap, MALLOC_MAX_HEAP_SIZE);
-
+K_HEAP_DEFINE(gcov_heap, CONFIG_COVERAGE_GCOV_HEAP_SIZE);
 
 static struct gcov_info *gcov_info_head;
 
@@ -49,12 +39,9 @@ void __gcov_exit(void)
  * buff_write_u64 - Store 64 bit data on a buffer and return the size
  */
 
-#define MASK_32BIT (0xffffffffUL)
 static inline void buff_write_u64(void *buffer, size_t *off, uint64_t v)
 {
-	*((uint32_t *)((uint8_t *)buffer + *off) + 0) = (uint32_t)(v & MASK_32BIT);
-	*((uint32_t *)((uint8_t *)buffer + *off) + 1) = (uint32_t)((v >> 32) &
-							  MASK_32BIT);
+	memcpy((uint8_t *)buffer + *off, (uint8_t *)&v, sizeof(v));
 	*off = *off + sizeof(uint64_t);
 }
 
@@ -63,7 +50,7 @@ static inline void buff_write_u64(void *buffer, size_t *off, uint64_t v)
  */
 static inline void buff_write_u32(void *buffer, size_t *off, uint32_t v)
 {
-	*((uint32_t *)((uint8_t *)buffer + *off)) = v;
+	memcpy((uint8_t *)buffer + *off, (uint8_t *)&v, sizeof(v));
 	*off = *off + sizeof(uint32_t);
 }
 

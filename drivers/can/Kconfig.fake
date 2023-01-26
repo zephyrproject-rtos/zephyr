@@ -7,7 +7,5 @@ config CAN_FAKE
 	bool "Fake CAN driver"
 	default y
 	depends on DT_HAS_ZEPHYR_FAKE_CAN_ENABLED
-	select CAN_HAS_CANFD
-	select CAN_HAS_RX_TIMESTAMP
 	help
 	  Enable support for the FFF-based fake CAN driver.

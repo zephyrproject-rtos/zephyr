@@ -93,17 +93,11 @@ static int get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-/* Return true if value equals 2^n - 1 */
-static inline bool is_bit_mask(uint32_t val)
-{
-	return !(val & (val + 1));
-}
-
 static uint32_t ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
 {
 	uint32_t to_top;
 
-	if (likely(is_bit_mask(top))) {
+	if (likely(IS_BIT_MASK(top))) {
 		return (val1 + val2) & top;
 	}
 
@@ -114,7 +108,7 @@ static uint32_t ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
 
 static uint32_t ticks_sub(uint32_t val, uint32_t old, uint32_t top)
 {
-	if (likely(is_bit_mask(top))) {
+	if (likely(IS_BIT_MASK(top))) {
 		return (val - old) & top;
 	}
 

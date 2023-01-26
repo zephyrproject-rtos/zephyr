@@ -8,66 +8,62 @@ compatible: "nordic,nrf-pdm"
 include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    clk-pin:
-      type: int
-      deprecated: true
-      required: false
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  clk-pin:
+    type: int
+    deprecated: true
+    description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
 
-        The CLK pin to use.
+      The CLK pin to use.
 
-        For pins P0.0 through P0.31, use the pin number. For example,
-        to use P0.16 for CLK, set:
+      For pins P0.0 through P0.31, use the pin number. For example,
+      to use P0.16 for CLK, set:
 
-            clk-pin = <16>;
+          clk-pin = <16>;
 
-        For pins P1.0 through P1.31, add 32 to the pin number. For
-        example, to use P1.2 for CLK, set:
+      For pins P1.0 through P1.31, add 32 to the pin number. For
+      example, to use P1.2 for CLK, set:
 
-            clk-pin = <34>;  /* 32 + 2 */
+          clk-pin = <34>;  /* 32 + 2 */
 
-    din-pin:
-      type: int
-      deprecated: true
-      required: false
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  din-pin:
+    type: int
+    deprecated: true
+    description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
 
-        The DIN pin to use. The pin numbering scheme is the same as
-        the clk-pin property's.
+      The DIN pin to use. The pin numbering scheme is the same as
+      the clk-pin property's.
 
-    clock-source:
-      type: string
-      required: false
-      default: "PCLK32M_HFXO"
-      description: |
-        Clock source to be used by the PDM peripheral. The following options
-        are available:
-        - "PCLK32M": 32 MHz peripheral clock, synchronous to HFCLK
-        - "PCLK32M_HFXO": PCLK32M running off the 32 MHz crystal oscillator
-          (HFXO) for better clock accuracy and jitter performance
-        - "ACLK": Audio PLL clock with configurable frequency (frequency for
-          this clock must be set via the "hfclkaudio-frequency" property
-          in the "nordic,nrf-clock" node); this clock source is only available
-          in the nRF53 Series SoCs and it requires the use of HFXO
-      enum:
-        - "PCLK32M"
-        - "PCLK32M_HFXO"
-        - "ACLK"
+  clock-source:
+    type: string
+    default: "PCLK32M_HFXO"
+    description: |
+      Clock source to be used by the PDM peripheral. The following options
+      are available:
+      - "PCLK32M": 32 MHz peripheral clock, synchronous to HFCLK
+      - "PCLK32M_HFXO": PCLK32M running off the 32 MHz crystal oscillator
+        (HFXO) for better clock accuracy and jitter performance
+      - "ACLK": Audio PLL clock with configurable frequency (frequency for
+        this clock must be set via the "hfclkaudio-frequency" property
+        in the "nordic,nrf-clock" node); this clock source is only available
+        in the nRF53 Series SoCs and it requires the use of HFXO
+    enum:
+      - "PCLK32M"
+      - "PCLK32M_HFXO"
+      - "ACLK"
 
-    queue-size:
-      type: int
-      required: false
-      default: 4
-      description: |
-        Size of the queue of received audio data blocks to be used
-        by the driver.
+  queue-size:
+    type: int
+    default: 4
+    description: |
+      Size of the queue of received audio data blocks to be used
+      by the driver.

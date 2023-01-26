@@ -8,6 +8,7 @@
 #ifndef __SETTINGS_FILE_H_
 #define __SETTINGS_FILE_H_
 
+#include <zephyr/toolchain.h>
 #include <zephyr/settings/settings.h>
 
 #ifdef __cplusplus
@@ -29,7 +30,12 @@ int settings_file_src(struct settings_file *cf);
 /* settings saves go to a file */
 int settings_file_dst(struct settings_file *cf);
 
-void settings_mount_fs_backend(struct settings_file *cf);
+void settings_mount_file_backend(struct settings_file *cf);
+
+__deprecated static inline void settings_mount_fs_backend(struct settings_file *cf)
+{
+	settings_mount_file_backend(cf);
+}
 
 #ifdef __cplusplus
 }

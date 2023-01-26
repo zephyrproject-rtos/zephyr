@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
 from twisterlib.testplan import TestPlan
 from twisterlib.testinstance import TestInstance
-from twisterlib.environment import TwisterEnv, parse_arguments
+from twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
 
 def new_get_toolchain(*args, **kwargs):
     return 'zephyr'
@@ -35,7 +35,8 @@ def testsuites_directory():
 @pytest.fixture(name='class_env')
 def tesenv_obj(test_data, testsuites_dir, tmpdir_factory):
     """ Pytest fixture to initialize and return the class TestPlan object"""
-    options = parse_arguments([])
+    parser = add_parse_arguments()
+    options = parse_arguments(parser, [])
     env = TwisterEnv(options)
     env.board_roots = [test_data +"board_config/1_level/2_level/"]
     env.test_roots = [testsuites_dir + '/tests', testsuites_dir + '/samples']

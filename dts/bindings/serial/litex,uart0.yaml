@@ -8,8 +8,8 @@ compatible: "litex,uart0"
 include: uart-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true

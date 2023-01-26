@@ -84,7 +84,7 @@ static int apa102_init(const struct device *dev)
 {
 	const struct apa102_config *config = dev->config;
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		return -ENODEV;
 	}
 

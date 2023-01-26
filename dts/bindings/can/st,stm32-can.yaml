@@ -5,22 +5,21 @@ compatible: "st,stm32-can"
 include: [can-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
-    master-can-reg:
-      type: int
-      required: false
-      description: master can reg when different from current instance
+  master-can-reg:
+    type: int
+    description: master can reg when different from current instance

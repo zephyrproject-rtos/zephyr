@@ -1,6 +1,6 @@
 common:
   build_only: true
-  tags: drivers
+  tags: drivers eeprom
 tests:
   drivers.eeprom.build:
     min_ram: 32

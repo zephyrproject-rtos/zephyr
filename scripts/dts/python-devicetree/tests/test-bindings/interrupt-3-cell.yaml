@@ -5,6 +5,6 @@ description: Interrupt controller with three cells
 compatible: "interrupt-three-cell"
 
 interrupt-cells:
-    - one
-    - two
-    - three
+  - one
+  - two
+  - three

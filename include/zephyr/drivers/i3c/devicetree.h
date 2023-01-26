@@ -68,7 +68,7 @@ extern "C" {
 		       | DT_PROP_BY_IDX(node_id, reg, 2),		\
 		.init_dynamic_addr =					\
 			DT_PROP_OR(node_id, assigned_address, 0),	\
-	}
+	},
 
 /**
  * @brief Structure initializer for i3c_device_desc from devicetree instance
@@ -173,7 +173,7 @@ extern "C" {
 		.bus = DEVICE_DT_GET(DT_BUS(node_id)),			\
 		.addr = DT_PROP_BY_IDX(node_id, reg, 0),		\
 		.lvr = DT_PROP_BY_IDX(node_id, reg, 2),			\
-	}
+	},
 
 /**
  * @brief Structure initializer for i3c_i2c_device_desc from devicetree instance

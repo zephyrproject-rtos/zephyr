@@ -1,0 +1,9 @@
+sample:
+  name: Remote mock
+tests:
+  sample.zbus.remote_mock:
+    build_only: true
+    tags: zbus
+    platform_allow: native_posix hifive1_revb
+    integration_platforms:
+      - native_posix

@@ -8,9 +8,9 @@ compatible: "arm,beetle-syscon"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    "#clock-cells":
-      required: true
-      const: 0
+  "#clock-cells":
+    required: true
+    const: 0

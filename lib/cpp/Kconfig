@@ -1,0 +1,146 @@
+# C++ configuration options
+
+# Copyright (c) 2018 B. Leforestier
+# SPDX-License-Identifier: Apache-2.0
+
+menu "C++ Language Support"
+
+config CPP
+	bool "C++ support for the application"
+	help
+	  This option enables the use of applications built with C++.
+
+if CPP
+
+choice
+	prompt "C++ Standard"
+	default STD_CPP11
+	help
+	  C++ Standards.
+
+config STD_CPP98
+	bool "C++ 98"
+	help
+	  1998 C++ standard as modified by the 2003 technical corrigendum
+	  and some later defect reports.
+
+config STD_CPP11
+	bool "C++ 11"
+	help
+	  2011 C++ standard, previously known as C++0x.
+
+config STD_CPP14
+	bool "C++ 14"
+	help
+	  2014 C++ standard.
+
+config STD_CPP17
+	bool "C++ 17"
+	help
+	  2017 C++ standard, previously known as C++0x.
+
+config STD_CPP2A
+	bool "C++ 2a"
+	help
+	  Next revision of the C++ standard, which is expected to be published in 2020.
+
+config STD_CPP20
+	bool "C++ 20"
+	help
+	  2020 C++ standard, previously known as C++2A.
+
+config STD_CPP2B
+	bool "C++ 2b"
+	help
+	  Next revision of the C++ standard, which is expected to be published in 2023.
+
+endchoice
+
+config REQUIRES_FULL_LIBCPP
+	bool
+	select REQUIRES_FULL_LIBC
+	help
+	  Helper symbol to indicate that a full C++ standard library
+	  implementation is required.
+
+	  Select this from a symbol that enables a feature requiring a full
+	  C++ standard library implementation.
+
+choice LIBCPP_IMPLEMENTATION
+	prompt "C++ Standard Library Implementation"
+	default EXTERNAL_LIBCPP if REQUIRES_FULL_LIBCPP && NATIVE_APPLICATION
+	default GLIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP
+	default MINIMAL_LIBCPP
+
+config MINIMAL_LIBCPP
+	bool "Minimal C++ Library"
+	depends on !REQUIRES_FULL_LIBCPP
+	help
+	  Build with the minimal C++ library provided by Zephyr.
+
+	  The Zephyr minimal C++ library only provides a very limited subset
+	  of the standard C++ library and is mainly intended for use with the
+	  applications that do not require the Standard Template Library (STL).
+
+config GLIBCXX_LIBCPP
+	bool "GNU C++ Standard Library"
+	depends on !NATIVE_APPLICATION
+	depends on NEWLIB_LIBC || PICOLIBC
+	help
+	  Build with GNU C++ Standard Library (libstdc++) provided by the GNU
+	  Compiler Collection (GCC)-based toolchain.
+
+config ARCMWDT_LIBCPP
+	bool "ARC MWDT C++ Library"
+	depends on !NATIVE_APPLICATION
+	depends on ARCMWDT_LIBC
+	help
+	  Build with ARC MetaWare C++ Standard Library provided by the ARC
+	  MetaWare Development Tools (MWDT) toolchain.
+
+config EXTERNAL_LIBCPP
+	bool "External C++ standard library"
+	help
+	  Build with an external/user-provided C++ standard library.
+
+endchoice # LIBCPP_IMPLEMENTATION
+
+config CPP_MAIN
+	bool "C++ main() function definition"
+	help
+	  This option instructs the Zephyr kernel to call the 'int main(void)'
+	  instead of the 'void main(void)', which is the default main() type
+	  for Zephyr.
+
+	  C++ does not allow the main() to be defined with 'void' return type,
+	  and any applications defining its main() in a C++ source file must
+	  enable this option.
+
+if !MINIMAL_LIBCPP
+
+config CPP_EXCEPTIONS
+	bool "C++ exceptions support"
+	depends on !NEWLIB_LIBC_NANO
+	help
+	  This option enables support of C++ exceptions.
+
+config CPP_RTTI
+	bool "C++ RTTI support"
+	help
+	  This option enables support of C++ RTTI.
+
+endif # !MINIMAL_LIBCPP
+
+config CPP_STATIC_INIT_GNU
+	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
+	# initialization of CPP static objects, new toolchains can be added
+	# here if required.
+	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+	help
+	  GNU-compatible initialization of CPP static objects
+
+endif # CPP
+
+rsource "Kconfig.deprecated"
+
+endmenu

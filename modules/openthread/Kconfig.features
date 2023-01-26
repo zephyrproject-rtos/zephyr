@@ -24,8 +24,17 @@ config OPENTHREAD_THREAD_VERSION
 	default "1.3" if OPENTHREAD_THREAD_VERSION_1_3
 	default "unknown"
 
+config OPENTHREAD_ANYCAST_LOCATOR
+	bool "Anycast locator support"
+
 config OPENTHREAD_BACKBONE_ROUTER
 	bool "Backbone Router functionality"
+
+config OPENTHREAD_BACKBONE_ROUTER_DUA_NDPROXYING
+	bool "BBR DUA ND Proxy support"
+
+config OPENTHREAD_BACKBONE_ROUTER_MULTICAST_ROUTING
+	bool "BBR MR support"
 
 config OPENTHREAD_BORDER_AGENT
 	bool "Border Agent support"
@@ -33,23 +42,36 @@ config OPENTHREAD_BORDER_AGENT
 config OPENTHREAD_BORDER_ROUTER
 	bool "Border Router support"
 
-config OPENTHREAD_BORDER_ROUTING_NAT64
-	bool "Border routing NAT64 support"
+config OPENTHREAD_BORDER_ROUTING
+	bool "Border routing support"
+
+config OPENTHREAD_BORDER_ROUTING_COUNTERS
+	bool "Border routing counters support"
+
+config OPENTHREAD_CHANNEL_MONITOR
+	bool "Channel monitor support"
+
+config OPENTHREAD_CHANNEL_MANAGER
+	bool "Channel manager support"
+	depends on OPENTHREAD_CHANNEL_MONITOR
+
+config OPENTHREAD_CHILD_SUPERVISION
+	bool "Child supervision support"
 
 config OPENTHREAD_COAP
 	bool "OpenThread CoAP support"
 	help
 	  Enable CoAP API for the application with use of OpenThread stack
 
-config OPENTHREAD_COAPS
-	bool "Secure CoAP API support"
-	depends on OPENTHREAD_COAP
-
 config OPENTHREAD_COAP_BLOCK
 	bool "CoAP Block-wise option support"
 
 config OPENTHREAD_COAP_OBSERVE
 	bool "CoAP Observe option support"
+
+config OPENTHREAD_COAPS
+	bool "Secure CoAP API support"
+	depends on OPENTHREAD_COAP
 
 config OPENTHREAD_COMMISSIONER
 	bool "Commissioner functions support"
@@ -59,20 +81,16 @@ config OPENTHREAD_COMMISSIONER
 	  mbedTLS heap than the default value. A minimum recommended value of
 	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
-config OPENTHREAD_CHANNEL_MANAGER
-	bool "Channel manager support"
-	depends on OPENTHREAD_CHANNEL_MONITOR
-
-config OPENTHREAD_CHANNEL_MONITOR
-	bool "Channel monitor support"
-
-config OPENTHREAD_CHILD_SUPERVISION
-	bool "Child supervision support"
+config OPENTHREAD_CSL_DEBUG
+	bool "CSL debugging"
 
 config OPENTHREAD_CSL_RECEIVER
 	bool "CSL Receiver support"
 	help
 	  Enable CSL Receiver support for Thread 1.2
+
+config OPENTHREAD_DATASET_UPDATER
+	bool "Dataset updater"
 
 config OPENTHREAD_DHCP6_CLIENT
 	bool "DHCPv6 client support"
@@ -99,17 +117,25 @@ config OPENTHREAD_DUA
 	help
 	  Enable Domain Unicast Address feature for Thread 1.2
 
-config OPENTHREAD_LOG_LEVEL_DYNAMIC
-	bool "Dynamic log level control"
-
 config OPENTHREAD_ECDSA
 	bool "ECDSA support"
+
+config OPENTHREAD_ENABLE_SERVICE
+	bool "Service support"
+	help
+	  Enable Thread Services capability in OpenThread stack
 
 config OPENTHREAD_EXCLUDE_TCPLP_LIB
 	bool "Exclude TCPlp library from build"
 
 config OPENTHREAD_EXTERNAL_HEAP
 	bool "External heap support"
+
+config OPENTHREAD_FIREWALL
+	bool "Firewall support"
+
+config OPENTHREAD_FULL_LOGS
+	bool "OpenThread full logs"
 
 config OPENTHREAD_IP6_FRAGM
 	bool "IPv6 fragmentation support"
@@ -128,11 +154,20 @@ config OPENTHREAD_JOINER
 config OPENTHREAD_LEGACY
 	bool "Legacy network support"
 
-config OPENTHREAD_RAW
-	bool "Raw Link support"
+config OPENTHREAD_LINK_METRICS_INITIATOR
+	bool "Link Metrics initiator"
+
+config OPENTHREAD_LINK_METRICS_SUBJECT
+	bool "Link Metrics subject"
+
+config OPENTHREAD_LOG_LEVEL_DYNAMIC
+	bool "Dynamic log level control"
 
 config OPENTHREAD_MAC_FILTER
 	bool "MAC filter support"
+
+config OPENTHREAD_MESSAGE_USE_HEAP
+	bool "Heap allocator for message buffers"
 
 config OPENTHREAD_MLE_LONG_ROUTES
 	bool "MLE long routes extension (experimental)"
@@ -150,30 +185,40 @@ config OPENTHREAD_MTD_NETDIAG
 config OPENTHREAD_MULTIPLE_INSTANCE
 	bool "OpenThread multiple instances"
 
+config OPENTHREAD_NAT64_BORDER_ROUTING
+	bool "Border routing NAT64 support"
+
+config OPENTHREAD_NAT64_TRANSLATOR
+	bool "NAT64 translator support"
+
 config OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT
 	bool "Neighbor discovery agent support"
 
 config OPENTHREAD_NETDATA_PUBLISHER
 	bool "Thread Network Data publisher"
 
+config OPENTHREAD_OTNS
+	bool "OTNS support"
+
 config OPENTHREAD_PING_SENDER
 	bool "Ping sender support"
+
+config OPENTHREAD_PLATFORM_NETIF
+	bool "Platform netif support"
 
 config OPENTHREAD_PLATFORM_UDP
 	bool "Platform UDP support"
 
-config OPENTHREAD_PLATFORM_NETIF
-	bool "Platform netif support"
+config OPENTHREAD_RAW
+	bool "Raw Link support"
 
 config OPENTHREAD_REFERENCE_DEVICE
 	bool "Reference Device support"
 	help
 	  Enable Thread Certification reference device support in OpenThread stack
 
-config OPENTHREAD_ENABLE_SERVICE
-	bool "Service support"
-	help
-	  Enable Thread Services capability in OpenThread stack
+config OPENTHREAD_SETTINGS_RAM
+	bool "Volatile-only storage of settings"
 
 config OPENTHREAD_SLAAC
 	bool "SLAAC support"
@@ -181,43 +226,26 @@ config OPENTHREAD_SLAAC
 config OPENTHREAD_SNTP_CLIENT
 	bool "SNTP Client support"
 
-config OPENTHREAD_TIME_SYNC
-	bool "The time synchronization service feature"
-
-config OPENTHREAD_TREL
-	bool "TREL radio link for Thread over Infrastructure feature"
-
-config OPENTHREAD_UDP_FORWARD
-	bool "UDP forward support"
-
-config OPENTHREAD_SETTINGS_RAM
-	bool "Volatile-only storage of settings"
-
-config OPENTHREAD_OTNS
-	bool "OTNS support"
-
-config OPENTHREAD_FULL_LOGS
-	bool "OpenThread full logs"
-
-config OPENTHREAD_LINK_METRICS_INITIATOR
-	bool "Link Metrics initiator"
-
-config OPENTHREAD_LINK_METRICS_SUBJECT
-	bool "Link Metrics subject"
-
 config OPENTHREAD_SRP_CLIENT
 	bool "SRP Client support"
 	select OPENTHREAD_ECDSA
 
 config OPENTHREAD_SRP_SERVER
 	bool "SRP Server support"
+	select OPENTHREAD_NETDATA_PUBLISHER
 	select OPENTHREAD_ECDSA
 
-config OPENTHREAD_CSL_DEBUG
-	bool "CSL debugging"
+config OPENTHREAD_TIME_SYNC
+	bool "The time synchronization service feature"
 
-config OPENTHREAD_DATSET_UPDATER
-	bool "Dataset updater"
+config OPENTHREAD_TREL
+	bool "TREL radio link for Thread over Infrastructure feature"
+
+config OPENTHREAD_TX_BEACON_PAYLOAD
+	bool "TX beacon payload support"
+
+config OPENTHREAD_UDP_FORWARD
+	bool "UDP forward support"
 
 config OPENTHREAD_UPTIME
 	bool "Openthread uptime counter"

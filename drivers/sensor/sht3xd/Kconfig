@@ -8,6 +8,7 @@ menuconfig SHT3XD
 	default y
 	depends on DT_HAS_SENSIRION_SHT3XD_ENABLED
 	select I2C
+	select CRC
 	help
 	  Enable driver for SHT3xD temperature and humidity sensors.
 

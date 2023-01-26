@@ -25,9 +25,8 @@ LOG_MODULE_REGISTER(can_kvaser_pci, CONFIG_CAN_LOG_LEVEL);
 #define XLNX_VERINT_VERSION_POS 4U
 
 struct can_kvaser_pci_config {
-	pcie_bdf_t pcie_bdf;
-	pcie_id_t pcie_id;
 	void (*irq_config_func)(const struct device *dev);
+	struct pcie_dev *pcie;
 };
 
 struct can_kvaser_pci_data {
@@ -74,15 +73,15 @@ static int can_kvaser_pci_init(const struct device *dev)
 	uint32_t intcsr;
 	int err;
 
-	if (!pcie_probe(kvaser_config->pcie_bdf, kvaser_config->pcie_id)) {
-		LOG_ERR("failed to probe PCI(e)");
+	if (kvaser_config->pcie->bdf == PCIE_BDF_NONE) {
+		LOG_ERR("failed to find PCIe device");
 		return -ENODEV;
 	}
 
-	pcie_set_cmd(kvaser_config->pcie_bdf, PCIE_CONF_CMDSTAT_IO, true);
+	pcie_set_cmd(kvaser_config->pcie->bdf, PCIE_CONF_CMDSTAT_IO, true);
 
 	/* AMCC S5920 registers */
-	if (!pcie_probe_iobar(kvaser_config->pcie_bdf, 0, &iobar)) {
+	if (!pcie_probe_iobar(kvaser_config->pcie->bdf, 0, &iobar)) {
 		LOG_ERR("failed to probe AMCC S5920 I/O BAR");
 		return -ENODEV;
 	}
@@ -90,7 +89,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 	amcc_base = iobar.phys_addr;
 
 	/* SJA1000 registers */
-	if (!pcie_probe_iobar(kvaser_config->pcie_bdf, 1, &iobar)) {
+	if (!pcie_probe_iobar(kvaser_config->pcie->bdf, 1, &iobar)) {
 		LOG_ERR("failed to probe SJA1000 I/O BAR");
 		return -ENODEV;
 	}
@@ -98,7 +97,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 	kvaser_data->sja1000_base = iobar.phys_addr;
 
 	/* Xilinx registers */
-	if (!pcie_probe_iobar(kvaser_config->pcie_bdf, 2, &iobar)) {
+	if (!pcie_probe_iobar(kvaser_config->pcie->bdf, 2, &iobar)) {
 		LOG_ERR("failed to probe Xilinx I/O BAR");
 		return -ENODEV;
 	}
@@ -160,10 +159,10 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
 
 #define CAN_KVASER_PCI_INIT(inst)                                                                  \
 	static void can_kvaser_pci_config_func_##inst(const struct device *dev);                   \
+	DEVICE_PCIE_INST_DECLARE(inst);                                                            \
                                                                                                    \
 	static const struct can_kvaser_pci_config can_kvaser_pci_config_##inst = {                 \
-		.pcie_bdf = DT_INST_REG_ADDR(inst),                                                \
-		.pcie_id = DT_INST_REG_SIZE(inst),                                                 \
+		DEVICE_PCIE_INST_INIT(inst, pcie),                                                 \
 		.irq_config_func = can_kvaser_pci_config_func_##inst                               \
 	};                                                                                         \
                                                                                                    \
@@ -172,7 +171,7 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
 					       can_kvaser_pci_read_reg, can_kvaser_pci_write_reg,  \
 					       CAN_KVASER_PCI_OCR, CAN_KVASER_PCI_CDR);            \
                                                                                                    \
-	static struct can_kvaser_pci_config can_kvaser_pci_data_##inst;                            \
+	static struct can_kvaser_pci_data can_kvaser_pci_data_##inst;                              \
                                                                                                    \
 	static struct can_sja1000_data can_sja1000_data_##inst =                                   \
 		CAN_SJA1000_DATA_INITIALIZER(&can_kvaser_pci_data_##inst);                         \

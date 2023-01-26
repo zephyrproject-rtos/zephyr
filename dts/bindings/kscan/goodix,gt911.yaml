@@ -8,9 +8,7 @@ compatible: "goodix,gt911"
 include: [kscan.yaml, i2c-device.yaml]
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      required: false
-    reset-gpios:
-      type: phandle-array
-      required: false
+  irq-gpios:
+    type: phandle-array
+  reset-gpios:
+    type: phandle-array

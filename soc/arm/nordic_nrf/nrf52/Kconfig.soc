@@ -22,13 +22,13 @@ config SOC_NRF52820
 config SOC_NRF52832
 	depends on SOC_SERIES_NRF52X
 	bool
-	select SOC_COMPATIBLE_NRF52832
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 
 config SOC_NRF52833
 	depends on SOC_SERIES_NRF52X
 	bool
+	select SOC_COMPATIBLE_NRF52833
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 
@@ -118,3 +118,12 @@ config NRF52_ANOMALY_132_DELAY_US
 	  depending on application, workaround may also need to be applied.
 	  Additional drivers initialization increases initialization time and delay
 	  may be shortened. Workaround is disabled by setting delay to 0.
+
+config NRF52_ANOMALY_198_WORKAROUND
+	bool "Anomaly 198 workaround"
+	default y
+	depends on SOC_NRF52840
+	depends on NRFX_SPIM3
+	help
+	  This anomaly applies to IC revisions "Engineering B" up to "3", the most
+	  recent one.

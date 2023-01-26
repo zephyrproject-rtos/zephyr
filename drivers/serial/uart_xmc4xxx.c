@@ -138,7 +138,7 @@ static int uart_xmc4xxx_fifo_fill(const struct device *dev, const uint8_t *tx_da
 	for (i = 0; i < len; i++) {
 		bool fifo_full;
 
-		XMC_UART_CH_Transmit(config->uart, tx_data[0]);
+		XMC_UART_CH_Transmit(config->uart, tx_data[i]);
 		if (config->fifo_tx_size == 0) {
 			return 1;
 		}

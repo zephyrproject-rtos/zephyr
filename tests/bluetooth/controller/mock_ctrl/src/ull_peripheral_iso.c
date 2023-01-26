@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/ztest.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
@@ -22,7 +24,7 @@
 
 #include "lll.h"
 #include "lll/lll_vendor.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -54,11 +56,6 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 				 uint8_t cig_id, uint16_t cis_handle)
 {
 	return 0;
-}
-
-void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
-			      uint16_t cis_handle)
-{
 }
 
 void ull_peripheral_iso_update_peer_sca(struct ll_conn *acl)

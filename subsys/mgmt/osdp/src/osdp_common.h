@@ -10,10 +10,12 @@
 #include <zephyr/mgmt/osdp.h>
 #include <zephyr/sys/__assert.h>
 
+#define STR(x) #x
+
 #define OSDP_RESP_TOUT_MS              (200)
 
-#define OSDP_CMD_SLAB_BUF_SIZE \
-	(sizeof(struct osdp_cmd) * CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE)
+#define OSDP_QUEUE_SLAB_SIZE \
+	(sizeof(union osdp_ephemeral_data) * CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE)
 
 #define ISSET_FLAG(p, f)               (((p)->flags & (f)) == (f))
 #define SET_FLAG(p, f)                 ((p)->flags |= (f))
@@ -24,22 +26,15 @@
 #define BYTE_2(x)                      (uint8_t)(((x) >> 16) & 0xFF)
 #define BYTE_3(x)                      (uint8_t)(((x) >> 24) & 0xFF)
 
-/* casting helpers */
-#define TO_OSDP(p)                     ((struct osdp *)p)
-#define TO_CP(p)                       (((struct osdp *)(p))->cp)
-#define TO_PD(p, i)                    (((struct osdp *)(p))->pd + i)
-#define TO_CTX(p)                      ((struct osdp *)p->__parent)
-
-#define GET_CURRENT_PD(p)              (TO_CP(p)->current_pd)
+#define GET_CURRENT_PD(p)              ((p)->current_pd)
 #define SET_CURRENT_PD(p, i)                                    \
 	do {                                                    \
-		TO_CP(p)->current_pd = TO_PD(p, i);             \
-		TO_CP(p)->pd_offset = i;                        \
+		(p)->current_pd = osdp_to_pd(p, i);             \
 	} while (0)
 #define PD_MASK(ctx) \
-	(uint32_t)((1 << (TO_CP(ctx)->num_pd)) - 1)
+	(uint32_t)((1 << ((ctx)->num_pd)) - 1)
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))
-#define NUM_PD(ctx)                    (TO_CP(ctx)->num_pd)
+#define NUM_PD(ctx)                    ((ctx)->num_pd)
 #define OSDP_COMMAND_DATA_MAX_LEN      sizeof(struct osdp_cmd)
 
 /**
@@ -318,6 +313,12 @@ enum osdp_pd_cap_function_code_e {
 	OSDP_PD_CAP_SENTINEL
 };
 
+/* Unused type only to estimate ephemeral_data size */
+union osdp_ephemeral_data {
+	struct osdp_cmd cmd;
+	struct osdp_event event;
+};
+
 /**
  * @brief PD capability structure. Each PD capability has a 3 byte
  * representation.
@@ -386,15 +387,10 @@ struct osdp_channel {
 	void (*flush)(void *data);
 };
 
-struct osdp_cmd_queue {
+struct osdp_queue {
 	sys_slist_t queue;
 	struct k_mem_slab slab;
-	uint8_t slab_buf[OSDP_CMD_SLAB_BUF_SIZE];
-};
-
-struct osdp_notifiers {
-	int (*keypress)(int address, uint8_t key);
-	int (*cardread)(int address, int format, uint8_t *data, int len);
+	uint8_t slab_buf[OSDP_QUEUE_SLAB_SIZE];
 };
 
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -414,8 +410,8 @@ struct osdp_secure_channel {
 #endif
 
 struct osdp_pd {
-	void *__parent;
-	int offset;
+	void *osdp_ctx;
+	int idx;
 	uint32_t flags;
 
 	/* OSDP specified data */
@@ -442,30 +438,34 @@ struct osdp_pd {
 	uint8_t cmd_data[OSDP_COMMAND_DATA_MAX_LEN];
 
 	struct osdp_channel channel;
-	struct osdp_cmd_queue cmd;
+
+	union {
+		struct osdp_queue cmd;    /* Command queue (CP Mode only) */
+		struct osdp_queue event;  /* Command queue (PD Mode only) */
+	};
+
+	/* PD command callback to app with opaque arg pointer as passed by app */
+	void *command_callback_arg;
+	pd_command_callback_t command_callback;
+
 #ifdef CONFIG_OSDP_SC_ENABLED
 	int64_t sc_tstamp;
 	struct osdp_secure_channel sc;
 #endif
 };
 
-struct osdp_cp {
-	void *__parent;
-	uint32_t flags;
-	int num_pd;
-	struct osdp_pd *current_pd;	/* current operational pd's pointer */
-	int pd_offset;			/* current pd's offset into ctx->pd */
-	struct osdp_notifiers notifier;
-};
-
 struct osdp {
 	int magic;
 	uint32_t flags;
-	struct osdp_cp *cp;
+	int num_pd;
+	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	struct osdp_pd *pd;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t sc_master_key[16];
 #endif
+	/* CP event callback to app with opaque arg pointer as passed by app */
+	void *event_callback_arg;
+	cp_event_callback_t event_callback;
 };
 
 /* from osdp_phy.c */
@@ -482,11 +482,6 @@ int64_t osdp_millis_now(void);
 int64_t osdp_millis_since(int64_t last);
 void osdp_dump(const char *head, uint8_t *buf, int len);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
-struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd);
-void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd);
-void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd);
-int osdp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd);
-struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd);
 
 /* from osdp.c */
 struct osdp *osdp_get_ctx();
@@ -503,7 +498,7 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 
 /* from osdp_sc.c */
 void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk);
-void osdp_compute_session_keys(struct osdp *ctx);
+void osdp_compute_session_keys(struct osdp_pd *pd);
 void osdp_compute_cp_cryptogram(struct osdp_pd *pd);
 int osdp_verify_cp_cryptogram(struct osdp_pd *pd);
 void osdp_compute_pd_cryptogram(struct osdp_pd *pd);
@@ -519,5 +514,45 @@ void osdp_fill_random(uint8_t *buf, int len);
 /* must be implemented by CP or PD */
 int osdp_setup(struct osdp *ctx, uint8_t *key);
 void osdp_update(struct osdp *ctx);
+
+static inline struct osdp *pd_to_osdp(struct osdp_pd *pd)
+{
+	return pd->osdp_ctx;
+}
+
+static inline struct osdp_pd *osdp_to_pd(struct osdp *ctx, int pd_idx)
+{
+	return ctx->pd + pd_idx;
+}
+
+static inline bool is_pd_mode(struct  osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_PD_MODE);
+}
+
+static inline bool is_cp_mode(struct  osdp_pd *pd)
+{
+	return !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
+}
+
+static inline bool sc_is_capable(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE);
+}
+
+static inline bool sc_is_active(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
+
+static inline void sc_activate(struct osdp_pd *pd)
+{
+	SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
+
+static inline void sc_deactivate(struct osdp_pd *pd)
+{
+	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
 
 #endif	/* _OSDP_COMMON_H_ */

@@ -38,168 +38,168 @@ description: |
 compatible: "atmel,sam-i2c-twim"
 
 include:
-    - name: i2c-controller.yaml
-    - name: pinctrl-device.yaml
+  - name: i2c-controller.yaml
+  - name: pinctrl-device.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    peripheral-id:
-      type: int
-      required: true
-      description: peripheral ID
+  peripheral-id:
+    type: int
+    required: true
+    description: peripheral ID
 
-    std-clk-slew-lim:
-      type: int
-      required: true
-      description: |
-        Slew limit of the TWCK output buffer.  This should be adjusted with
-        std-clk-strength-low to fine tune the TWCK slope.
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
+  std-clk-slew-lim:
+    type: int
+    required: true
+    description: |
+      Slew limit of the TWCK output buffer.  This should be adjusted with
+      std-clk-strength-low to fine tune the TWCK slope.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
 
-    std-clk-strength-low:
-      type: string
-      required: true
-      description: |
-        Pull-down drive strength of the TWCK output buffer in fast/fast plus
-        mode.  This should be adjusted to provide proper TWCK line fall time.
-        The value represents the port output current in mA when signal on
-        low level.
-      enum:
-        - "0.5"
-        - "1.0"
-        - "1.6"
-        - "3.1"
-        - "6.2"
-        - "9.3"
-        - "15.5"
-        - "21.8"
+  std-clk-strength-low:
+    type: string
+    required: true
+    description: |
+      Pull-down drive strength of the TWCK output buffer in fast/fast plus
+      mode.  This should be adjusted to provide proper TWCK line fall time.
+      The value represents the port output current in mA when signal on
+      low level.
+    enum:
+      - "0.5"
+      - "1.0"
+      - "1.6"
+      - "3.1"
+      - "6.2"
+      - "9.3"
+      - "15.5"
+      - "21.8"
 
-    std-data-slew-lim:
-      type: int
-      required: true
-      description: |
-        Slew limit of the TWD output buffer.  This should be adjusted with
-        std-data-strength-low to fine tune the TWD slope.
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
+  std-data-slew-lim:
+    type: int
+    required: true
+    description: |
+      Slew limit of the TWD output buffer.  This should be adjusted with
+      std-data-strength-low to fine tune the TWD slope.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
 
-    std-data-strength-low:
-      type: string
-      required: true
-      description: |
-        Pull-down drive strength of the TWD output buffer in fast/fast plus
-        mode.  This should be adjusted to provide proper TWD line fall time.
-        The value represents the port output current in mA when signal on
-        low level.
-      enum:
-        - "0.5"
-        - "1.0"
-        - "1.6"
-        - "3.1"
-        - "6.2"
-        - "9.3"
-        - "15.5"
-        - "21.8"
+  std-data-strength-low:
+    type: string
+    required: true
+    description: |
+      Pull-down drive strength of the TWD output buffer in fast/fast plus
+      mode.  This should be adjusted to provide proper TWD line fall time.
+      The value represents the port output current in mA when signal on
+      low level.
+    enum:
+      - "0.5"
+      - "1.0"
+      - "1.6"
+      - "3.1"
+      - "6.2"
+      - "9.3"
+      - "15.5"
+      - "21.8"
 
-    hs-clk-slew-lim:
-      type: int
-      required: true
-      description: |
-        Slew limit of the TWCK output buffer in high speed mode.  This
-        should be adjusted with both hs-clk-strength-high and
-        hs-clk-strength-low to fine tune the TWCK slope.
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
+  hs-clk-slew-lim:
+    type: int
+    required: true
+    description: |
+      Slew limit of the TWCK output buffer in high speed mode.  This
+      should be adjusted with both hs-clk-strength-high and
+      hs-clk-strength-low to fine tune the TWCK slope.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
 
-    hs-clk-strength-high:
-      type: string
-      required: true
-      description: |
-        Pull-up drive strength of the TWCK output buffer in high speed
-        mode.  This should be adjusted to provide proper TWCK line rise time.
-        The value represents the port output current in mA when signal on
-        high level.
-      enum:
-        - "0.5"
-        - "1.0"
-        - "1.5"
-        - "3.0"
+  hs-clk-strength-high:
+    type: string
+    required: true
+    description: |
+      Pull-up drive strength of the TWCK output buffer in high speed
+      mode.  This should be adjusted to provide proper TWCK line rise time.
+      The value represents the port output current in mA when signal on
+      high level.
+    enum:
+      - "0.5"
+      - "1.0"
+      - "1.5"
+      - "3.0"
 
-    hs-clk-strength-low:
-      type: string
-      required: true
-      description: |
-        Pull-down drive strength of the TWCK output buffer in high speed
-        mode.  This should be adjusted to provide proper TWCK line fall time.
-        The value represents the port output current in mA when signal on
-        low level.
-      enum:
-        - "0.5"
-        - "1.0"
-        - "1.6"
-        - "3.1"
-        - "6.2"
-        - "9.3"
-        - "15.5"
-        - "21.8"
+  hs-clk-strength-low:
+    type: string
+    required: true
+    description: |
+      Pull-down drive strength of the TWCK output buffer in high speed
+      mode.  This should be adjusted to provide proper TWCK line fall time.
+      The value represents the port output current in mA when signal on
+      low level.
+    enum:
+      - "0.5"
+      - "1.0"
+      - "1.6"
+      - "3.1"
+      - "6.2"
+      - "9.3"
+      - "15.5"
+      - "21.8"
 
-    hs-data-slew-lim:
-      type: int
-      required: true
-      description: |
-        Slew limit of the TWD output buffer in high speed mode.  This
-        should be adjusted with hs-data-strength-low to fine tune the TWD
-        slope.
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
+  hs-data-slew-lim:
+    type: int
+    required: true
+    description: |
+      Slew limit of the TWD output buffer in high speed mode.  This
+      should be adjusted with hs-data-strength-low to fine tune the TWD
+      slope.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
 
-    hs-data-strength-low:
-      type: string
-      description: |
-        Pull-down drive strength of the TWD output buffer in high speed
-        mode.  This should be adjusted to provide proper TWD line fall time.
-        The value represents the port output current in mA when signal on
-        low level.
-      enum:
-        - "0.5"
-        - "1.0"
-        - "1.6"
-        - "3.1"
-        - "6.2"
-        - "9.3"
-        - "15.5"
-        - "21.8"
+  hs-data-strength-low:
+    type: string
+    description: |
+      Pull-down drive strength of the TWD output buffer in high speed
+      mode.  This should be adjusted to provide proper TWD line fall time.
+      The value represents the port output current in mA when signal on
+      low level.
+    enum:
+      - "0.5"
+      - "1.0"
+      - "1.6"
+      - "3.1"
+      - "6.2"
+      - "9.3"
+      - "15.5"
+      - "21.8"
 
-    hs-master-code:
-      type: int
-      required: true
-      description: |
-        3-bit code to be prefixed with 0b00001 to form a unique
-        8-bit HS-mode master code (0000 1XXX)
-      enum:
-        - 0   # 000
-        - 1   # 001
-        - 2   # 010
-        - 3   # 011
-        - 4   # 100
-        - 5   # 101
-        - 6   # 110
-        - 7   # 111
+  hs-master-code:
+    type: int
+    required: true
+    description: |
+      3-bit code to be prefixed with 0b00001 to form a unique
+      8-bit HS-mode master code (0000 1XXX)
+    enum:
+      - 0   # 000
+      - 1   # 001
+      - 2   # 010
+      - 3   # 011
+      - 4   # 100
+      - 5   # 101
+      - 6   # 110
+      - 7   # 111

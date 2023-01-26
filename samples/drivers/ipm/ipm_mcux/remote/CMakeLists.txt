@@ -1,17 +1,13 @@
 cmake_minimum_required(VERSION 3.20.0)
-# Copyright (c) 2017, NXP
+# Copyright (c) 2017-2022, NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if(("${BOARD}" STREQUAL "lpcxpresso54114_m0")
-	OR "${BOARD}" STREQUAL "lpcxpresso55s69_cpu1")
-	message(STATUS "${BOARD} compiles as remote in this sample")
-else()
-	message(FATAL_ERROR "${BOARD} was not supported for this sample")
-endif()
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+message(STATUS "${BOARD} compiles as remote in this sample")
 project(ipm_mcux_remote)
 
 target_sources(app PRIVATE src/main_remote.c)

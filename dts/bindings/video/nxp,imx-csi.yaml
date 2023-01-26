@@ -11,10 +11,10 @@ compatible: "nxp,imx-csi"
 include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    sensor:
-      required: true
-      type: phandle
-      description: phandle of connected sensor device
+  sensor:
+    required: true
+    type: phandle
+    description: phandle of connected sensor device

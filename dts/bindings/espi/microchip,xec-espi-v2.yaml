@@ -9,27 +9,27 @@ compatible: "microchip,xec-espi-v2"
 include: [espi-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      description: mmio register space
-      required: true
+  reg:
+    description: mmio register space
+    required: true
 
-    reg-names:
-      required: true
-      description: Name of each register space
+  reg-names:
+    required: true
+    description: Name of each register space
 
-    girqs:
-      type: array
-      required: true
-      description: |
-        Array of encoded interrupt information
+  girqs:
+    type: array
+    required: true
+    description: |
+      Array of encoded interrupt information
 
-    pcrs:
-      type: array
-      required: true
-      description: eSPI PCR register index and bit position
+  pcrs:
+    type: array
+    required: true
+    description: eSPI PCR register index and bit position
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true

@@ -96,4 +96,11 @@ config EEPROM_SIMULATOR_MIN_WRITE_TIME_US
 
 endif # EEPROM_SIMULATOR_SIMULATE_TIMING
 
+config EEPROM_FAKE
+	bool "Fake EEPROM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_EEPROM_ENABLED
+	help
+	  Enable support for the FFF-based fake EEPROM driver.
+
 endif # EEPROM

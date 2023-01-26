@@ -21,6 +21,7 @@ struct NRF_bsim_args_t {
 	BS_BASIC_DEVICE_OPTIONS_FIELDS
 	char *test_case_argv[MAXPARAMS_TESTCASES];
 	int test_case_argc;
+	bool delay_init;
 	nrf_hw_sub_args_t nrf_hw;
 };
 

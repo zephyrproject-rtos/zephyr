@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+
+extends: default
+
+rules:
+  line-length:
+    max: 100
+  comments:
+    min-spaces-from-content: 1
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+  document-start:
+    present: false
+  truthy:
+    check-keys: false

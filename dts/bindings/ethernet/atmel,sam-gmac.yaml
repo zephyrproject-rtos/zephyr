@@ -8,11 +8,11 @@ compatible: "atmel,sam-gmac"
 include: atmel,gmac-common.yaml
 
 properties:
-    peripheral-id:
-      type: int
-      required: true
-      description: |
-        The peripheral identifier is required for Atmel SAMs MCUs to indicate
-        which is the clock line associated with a specific peripheral.  This
-        clock line is defined at Power Management Controller (PMC) and it
-        enables the peripheral.
+  peripheral-id:
+    type: int
+    required: true
+    description: |
+      The peripheral identifier is required for Atmel SAMs MCUs to indicate
+      which is the clock line associated with a specific peripheral.  This
+      clock line is defined at Power Management Controller (PMC) and it
+      enables the peripheral.

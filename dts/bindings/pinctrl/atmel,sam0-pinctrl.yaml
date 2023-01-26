@@ -75,29 +75,15 @@ description: |
 
 compatible: "atmel,sam0-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - bias-pull-up
-            - bias-pull-down
-            - drive-strength
-            - input-enable
-            - output-enable
+include: base.yaml
 
 properties:
-    reg:
-      required: true
-
-properties:
-    "#address-cells":
-      required: true
-      const: 1
-    "#size-cells":
-      required: true
-      const: 1
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 1
 
 child-binding:
   description: |
@@ -105,6 +91,16 @@ child-binding:
   child-binding:
     description: |
       The grandchild nodes group pins that share the same pin configuration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+          - drive-strength
+          - input-enable
+          - output-enable
+
     properties:
       pinmux:
         required: true

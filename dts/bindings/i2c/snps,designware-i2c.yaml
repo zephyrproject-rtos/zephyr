@@ -5,11 +5,8 @@ description: Synopsys DesignWare I2C node
 
 compatible: "snps,designware-i2c"
 
-include: [i2c-controller.yaml, pinctrl-device.yaml]
+include: [i2c-controller.yaml, pinctrl-device.yaml, pcie-device.yaml]
 
 properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: true
+  interrupts:
+    required: true

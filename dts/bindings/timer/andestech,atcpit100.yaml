@@ -12,33 +12,32 @@ compatible: "andestech,atcpit100"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    clock-frequency:
-      type: int
-      required: true
-      description: channel clock source
+  clock-frequency:
+    type: int
+    required: true
+    description: channel clock source
 
-    prescaler:
-      type: int
-      default: 1
-      required: false
-      description: |
-        The prescaler value defines the counter frequency
-        (clock-frequency/prescaler) in atcpit100 counter driver, the prescaler
-        value could be in range [1 .. clock-frequency] and 1 means no prescaler
-        for the PIT clock-frequency.
+  prescaler:
+    type: int
+    default: 1
+    description: |
+      The prescaler value defines the counter frequency
+      (clock-frequency/prescaler) in atcpit100 counter driver, the prescaler
+      value could be in range [1 .. clock-frequency] and 1 means no prescaler
+      for the PIT clock-frequency.
 
-        Defaults to 1 to use the PIT clock-frequency as the counter frequency.
+      Defaults to 1 to use the PIT clock-frequency as the counter frequency.
 
-        Setting the prescaler value if the system overhead is close to or
-        larger than a counter tick period, reducing the counter frequency to
-        avoid imprecise counter value.
+      Setting the prescaler value if the system overhead is close to or
+      larger than a counter tick period, reducing the counter frequency to
+      avoid imprecise counter value.
 
-        For example, andes_v5_ae350 platform takes about 200 ~ 300 PIT
-        clock cycles for counter interface, setting prescaler value to 600 in
-        this case.
+      For example, andes_v5_ae350 platform takes about 200 ~ 300 PIT
+      clock cycles for counter interface, setting prescaler value to 600 in
+      this case.

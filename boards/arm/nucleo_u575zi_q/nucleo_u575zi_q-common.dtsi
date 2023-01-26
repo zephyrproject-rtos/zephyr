@@ -34,6 +34,10 @@
 	};
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_lse {
 	status = "okay";
 };
@@ -106,6 +110,12 @@
 
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pc0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in18_pb0>;
 	pinctrl-names = "default";
 	status = "okay";
 };

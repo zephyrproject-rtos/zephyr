@@ -62,17 +62,16 @@ bool edtt_start(void)
 	return true;
 }
 
-bool edtt_stop(void)
+void edtt_stop(void)
 {
 	if (edtt_mode_enabled == false) {
 		/* otherwise we don't try to open the EDTT interface */
-		return true;
+		return;
 	}
 
 	bs_trace_raw(9, "EDTTT: %s called\n", __func__);
 	edttd_clean_up();
 	edtt_mode_enabled = false;
-	return true;
 }
 
 #if defined(NATIVE_TASK)

@@ -8,30 +8,28 @@ compatible: "nordic,nrf-rtc"
 include: rtc.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    cc-num:
-      type: int
-      required: true
-      description: |
-        Number of compare (CC) registers available.
+  cc-num:
+    type: int
+    required: true
+    description: |
+      Number of compare (CC) registers available.
 
-        On nRF53 these registers can also be used for capture.
+      On nRF53 these registers can also be used for capture.
 
-    # If enabled, overflow different than full range (24 bits) is handled
-    # through PPI channel which ensures precise timing. If disabled then
-    # counter is cleared in the interrupt which results in accumulative error
-    # of counter period if top value is different than maximal.
-    ppi-wrap:
-      type: boolean
-      description: Enable wrapping with PPI
-      required: false
+  # If enabled, overflow different than full range (24 bits) is handled
+  # through PPI channel which ensures precise timing. If disabled then
+  # counter is cleared in the interrupt which results in accumulative error
+  # of counter period if top value is different than maximal.
+  ppi-wrap:
+    type: boolean
+    description: Enable wrapping with PPI
 
-   # If enabled then counter based on nRF RTC peripheral supports only maximal
-   # top value. That results in code optimizations and availability of one more
-   # channel
-    fixed-top:
-      type: boolean
-      description: Enable fixed top value
-      required: false
+  # If enabled then counter based on nRF RTC peripheral supports only maximal
+  # top value. That results in code optimizations and availability of one more
+  # channel
+  fixed-top:
+    type: boolean
+    description: Enable fixed top value

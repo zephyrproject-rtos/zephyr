@@ -14,9 +14,9 @@
 #include <zephyr/device.h>
 #include <zephyr/ipc/ipc_service.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_hci_driver
-#include "common/log.h"
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_hci_driver);
 
 #define RPMSG_CMD 0x01
 #define RPMSG_ACL 0x02
@@ -73,7 +73,7 @@ static struct net_buf *bt_rpmsg_evt_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		BT_ERR("Not enough data for event header");
+		LOG_ERR("Not enough data for event header");
 		return NULL;
 	}
 
@@ -84,19 +84,19 @@ static struct net_buf *bt_rpmsg_evt_recv(const uint8_t *data, size_t remaining)
 	remaining -= sizeof(hdr);
 
 	if (remaining != hdr.len) {
-		BT_ERR("Event payload length is not correct");
+		LOG_ERR("Event payload length is not correct");
 		return NULL;
 	}
-	BT_DBG("len %u", hdr.len);
+	LOG_DBG("len %u", hdr.len);
 
 	do {
 		buf = bt_buf_get_evt(hdr.evt, discardable, discardable ? K_NO_WAIT : K_SECONDS(10));
 		if (!buf) {
 			if (discardable) {
-				BT_DBG("Discardable buffer pool full, ignoring event");
+				LOG_DBG("Discardable buffer pool full, ignoring event");
 				return buf;
 			}
-			BT_WARN("Couldn't allocate a buffer after waiting 10 seconds.");
+			LOG_WRN("Couldn't allocate a buffer after waiting 10 seconds.");
 		}
 	} while (!buf);
 
@@ -104,8 +104,7 @@ static struct net_buf *bt_rpmsg_evt_recv(const uint8_t *data, size_t remaining)
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < remaining) {
-		BT_ERR("Not enough space in buffer %zu/%zu",
-		       remaining, buf_tailroom);
+		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -122,7 +121,7 @@ static struct net_buf *bt_rpmsg_acl_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		BT_ERR("Not enough data for ACL header");
+		LOG_ERR("Not enough data for ACL header");
 		return NULL;
 	}
 
@@ -134,25 +133,24 @@ static struct net_buf *bt_rpmsg_acl_recv(const uint8_t *data, size_t remaining)
 
 		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
-		BT_ERR("No available ACL buffers!");
+		LOG_ERR("No available ACL buffers!");
 		return NULL;
 	}
 
 	if (remaining != sys_le16_to_cpu(hdr.len)) {
-		BT_ERR("ACL payload length is not correct");
+		LOG_ERR("ACL payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < remaining) {
-		BT_ERR("Not enough space in buffer %zu/%zu",
-		       remaining, buf_tailroom);
+		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
 
-	BT_DBG("len %u", remaining);
+	LOG_DBG("len %u", remaining);
 	net_buf_add_mem(buf, data, remaining);
 
 	return buf;
@@ -165,7 +163,7 @@ static struct net_buf *bt_rpmsg_iso_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		BT_ERR("Not enough data for ISO header");
+		LOG_ERR("Not enough data for ISO header");
 		return NULL;
 	}
 
@@ -177,25 +175,24 @@ static struct net_buf *bt_rpmsg_iso_recv(const uint8_t *data, size_t remaining)
 
 		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
-		BT_ERR("No available ISO buffers!");
+		LOG_ERR("No available ISO buffers!");
 		return NULL;
 	}
 
 	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
-		BT_ERR("ISO payload length is not correct");
+		LOG_ERR("ISO payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < remaining) {
-		BT_ERR("Not enough space in buffer %zu/%zu",
-		       remaining, buf_tailroom);
+		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
 
-	BT_DBG("len %zu", remaining);
+	LOG_DBG("len %zu", remaining);
 	net_buf_add_mem(buf, data, remaining);
 
 	return buf;
@@ -226,12 +223,12 @@ static void bt_rpmsg_rx(const uint8_t *data, size_t len)
 		break;
 
 	default:
-		BT_ERR("Unknown HCI type %u", pkt_indicator);
+		LOG_ERR("Unknown HCI type %u", pkt_indicator);
 		return;
 	}
 
 	if (buf) {
-		BT_DBG("Calling bt_recv(%p)", buf);
+		LOG_DBG("Calling bt_recv(%p)", buf);
 
 		bt_recv(buf);
 
@@ -244,7 +241,7 @@ static int bt_rpmsg_send(struct net_buf *buf)
 	int err;
 	uint8_t pkt_indicator;
 
-	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
@@ -257,7 +254,7 @@ static int bt_rpmsg_send(struct net_buf *buf)
 		pkt_indicator = RPMSG_ISO;
 		break;
 	default:
-		BT_ERR("Unknown type %u", bt_buf_get_type(buf));
+		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
 		goto done;
 	}
 	net_buf_push_u8(buf, pkt_indicator);
@@ -265,7 +262,7 @@ static int bt_rpmsg_send(struct net_buf *buf)
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 	err = ipc_service_send(&hci_ept, buf->data, buf->len);
 	if (err < 0) {
-		BT_ERR("Failed to send (err %d)", err);
+		LOG_ERR("Failed to send (err %d)", err);
 	}
 
 done:
@@ -297,23 +294,23 @@ static int bt_rpmsg_open(void)
 	const struct device *hci_ipc_instance =
 		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	err = ipc_service_open_instance(hci_ipc_instance);
 	if (err && (err != -EALREADY)) {
-		BT_ERR("IPC service instance initialization failed: %d\n", err);
+		LOG_ERR("IPC service instance initialization failed: %d\n", err);
 		return err;
 	}
 
 	err = ipc_service_register_endpoint(hci_ipc_instance, &hci_ept, &hci_ept_cfg);
 	if (err) {
-		BT_ERR("Registering endpoint failed with %d", err);
+		LOG_ERR("Registering endpoint failed with %d", err);
 		return err;
 	}
 
 	err = k_sem_take(&ipc_bound_sem, IPC_BOUND_TIMEOUT_IN_MS);
 	if (err) {
-		BT_ERR("Endpoint binding failed with %d", err);
+		LOG_ERR("Endpoint binding failed with %d", err);
 		return err;
 	}
 
@@ -338,7 +335,7 @@ static int bt_rpmsg_init(const struct device *unused)
 
 	err = bt_hci_driver_register(&drv);
 	if (err < 0) {
-		BT_ERR("Failed to register BT HIC driver (err %d)", err);
+		LOG_ERR("Failed to register BT HIC driver (err %d)", err);
 	}
 
 	return err;

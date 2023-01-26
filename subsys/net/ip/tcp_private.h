@@ -33,7 +33,7 @@
 	_x;								\
 })
 
-#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
+#if defined(CONFIG_NET_TEST_PROTOCOL)
 #define tcp_malloc(_size) \
 	tp_malloc(_size, tp_basename(__FILE__), __LINE__, __func__)
 #define tcp_calloc(_nmemb, _size) \
@@ -98,7 +98,7 @@
 })
 
 
-#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
+#if defined(CONFIG_NET_TEST_PROTOCOL)
 #define conn_seq(_conn, _req) \
 	tp_seq_track(TP_SEQ, &(_conn)->seq, (_req), tp_basename(__FILE__), \
 			__LINE__, __func__)

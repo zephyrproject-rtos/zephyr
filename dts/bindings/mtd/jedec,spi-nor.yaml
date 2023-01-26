@@ -14,13 +14,10 @@ include: [spi-device.yaml, "jedec,spi-nor-common.yaml"]
 properties:
   wp-gpios:
     type: phandle-array
-    required: false
     description: WPn pin
   hold-gpios:
     type: phandle-array
-    required: false
     description: HOLDn pin
   reset-gpios:
     type: phandle-array
-    required: false
     description: RESETn pin

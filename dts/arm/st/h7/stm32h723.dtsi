@@ -26,6 +26,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40011800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000040>;
+			resets = <&rctl STM32_RESET(APB2, 6U)>;
 			interrupts = <155 0>;
 			status = "disabled";
 		};
@@ -34,8 +35,14 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
+			resets = <&rctl STM32_RESET(APB2, 7U)>;
 			interrupts = <156 0>;
 			status = "disabled";
+		};
+
+		adc3: adc@58026000 {
+			temp-channel = <17>;
+			vref-channel = <18>;
 		};
 
 		dmamux1: dmamux@40020800 {
@@ -45,6 +52,20 @@
 		rng: rng@48021800 {
 			health-test-magic = <0x17590abc>;
 			health-test-config = <0xaa74>;
+		};
+
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <77 0>, <74 0>, <75 0>;
+			interrupt-names = "otghs", "ep1_out", "ep1_in";
+			num-bidir-endpoints = <9>;
+			ram-size = <DT_SIZE_K(4)>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+			phys = <&otghs_fs_phy>;
+			status = "disabled";
 		};
 
 		ltdc: display-controller@50001000 {
@@ -60,6 +81,7 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x52005000 0x1000>;
 			interrupts = <92 0>;
+			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
@@ -71,11 +93,54 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x5200a000 0x1000>;
 			interrupts = <150 0>;
+			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x000080000>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		can {
+			can2: can@4000A400 {
+				compatible = "st,stm32h7-fdcan";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				reg = <0x4000A400 0x400>, <0x4000ac00 0x350>;
+				reg-names = "m_can", "message_ram";
+				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+				interrupts = <20 0>, <22 0>, <63 0>;
+				interrupt-names = "LINE_0", "LINE_1", "CALIB";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+				status = "disabled";
+			};
+
+			can3: can@4000D400 {
+				compatible = "st,stm32h7-fdcan";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				reg = <0x4000D400 0x400>, <0x4000ac00 0x350>;
+				reg-names = "m_can", "message_ram";
+				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+				interrupts = <159 0>, <160 0>, <63 0>;
+				interrupt-names = "LINE_0", "LINE_1", "CALIB";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+				status = "disabled";
+			};
+		};
+
+		rtc@58004000 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <32>;
+				status = "disabled";
+			};
 		};
 	};
 
@@ -118,6 +183,11 @@
 		compatible = "zephyr,memory-region", "arm,itcm";
 		reg = <0x00000000 DT_SIZE_K(64)>;
 		zephyr,memory-region = "ITCM";
+	};
+
+	otghs_fs_phy: otghs_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 
 	die_temp: dietemp {

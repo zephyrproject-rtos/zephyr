@@ -8,53 +8,49 @@ compatible: "ite,it8xxx2-pwm"
 include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: false
+  channel:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    description: |
+      0 = PWM_CHANNEL_0, 1 = PWM_CHANNEL_1, 2 = PWM_CHANNEL_2,
+      3 = PWM_CHANNEL_3, 4 = PWM_CHANNEL_4, 5 = PWM_CHANNEL_5,
+      6 = PWM_CHANNEL_6, 7 = PWM_CHANNEL_7
 
-    channel:
-      type: int
-      required: true
-      enum:
-            - 0
-            - 1
-            - 2
-            - 3
-            - 4
-            - 5
-            - 6
-            - 7
-      description: |
-        0 = PWM_CHANNEL_0, 1 = PWM_CHANNEL_1, 2 = PWM_CHANNEL_2,
-        3 = PWM_CHANNEL_3, 4 = PWM_CHANNEL_4, 5 = PWM_CHANNEL_5,
-        6 = PWM_CHANNEL_6, 7 = PWM_CHANNEL_7
+  pwmctrl:
+    type: phandle
+    required: true
+    description: PWM prescaler controller
 
-    pwmctrl:
-        type: phandle
-        required: true
-        description: PWM prescaler controller
+  prescaler-cx:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 3
+    description: 1 = PWM_PRESCALER_C4, 2 = PWM_PRESCALER_C6, 3 = PWM_PRESCALER_C7
 
-    prescaler-cx:
-      type: int
-      required: true
-      enum:
-            - 1
-            - 2
-            - 3
-      description: 1 = PWM_PRESCALER_C4, 2 = PWM_PRESCALER_C6, 3 = PWM_PRESCALER_C7
+  pwm-output-frequency:
+    type: int
+    description: PWM output frequency for operation
 
-    pwm-output-frequency:
-      type: int
-      required: false
-      description: PWM output frequency for operation
+  pinctrl-0:
+    required: true
 
-    pinctrl-0:
-      required: true
-
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
 pwm-cells:
   - channel

@@ -38,7 +38,7 @@ if(ret)
   '${CMAKE_C_COMPILER} --version'"
   )
 else()
-  set(ARCMWDT_MIN_REQUIRED_VERS "2022.06")
+  set(ARCMWDT_MIN_REQUIRED_VERS "2022.09")
 #
 # Regular version has format: "T-2022.06"
 # Engineering builds: "ENG-2022.06-001"

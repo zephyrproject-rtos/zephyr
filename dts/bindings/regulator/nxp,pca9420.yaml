@@ -1,0 +1,105 @@
+# Copyright (c), 2021 NXP
+# SPDX -License-Identifier: Apache-2.0
+
+description: |
+  NXP PCA9420 PMIC
+
+  The PMIC has two buck converters and two LDOs. All need to be defined as
+  children nodes, strictly following the BUCK1, BUCK2, LDO1 and LDO2 node names.
+  For example:
+
+  pmic@61 {
+    reg = <0x61>;
+    ...
+    BUCK1 {
+      /* all properties for BUCK1 */
+    };
+    BUCK2 {
+      /* all properties for BUCK2 */
+    };
+    LDO1 {
+      /* all properties for LDO1 */
+    };
+    LDO2 {
+      /* all properties for LDO2 */
+    };
+  };
+
+
+compatible: "nxp,pca9420"
+
+include: base.yaml
+
+properties:
+  nxp,enable-modesel-pins:
+    type: boolean
+    description:
+      When enabled, the PMIC will be configured to allow mode selection using
+      the MODESEL0/1 inputs.
+
+  nxp,vin-ilim-microamp:
+    type: int
+    default: 425000
+    enum:
+      - 85000
+      - 255000
+      - 425000
+      - 595000
+      - 765000
+      - 935000
+      - 1105000
+    description: |
+      VIN input current limit, in microamperes. Value reflects typical value,
+      below you can find min/typical/max values:
+
+      - 74 mA/85 mA/98 mA
+      - 222 mA/255 mA/293 mA
+      - 370 mA/425 mA/489 mA
+      - 517 mA/595 mA/684 mA
+      - 665 mA/765 mA/880 mA
+      - 813 mA/935 mA/1075 mA
+      - 961 mA/1105 mA/1271 mA
+
+      To disable current limit, set property to zero. Defaults to 425mA, the IC
+      default value.
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+
+  description: Voltage output of PMIC controller regulator
+  properties:
+    enable-inverted:
+      type: boolean
+      description: |
+        If the enable bit should be zero to turn the regulator on, add this
+        property.
+
+    nxp,mode0-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 0, in microvolts. Setting
+        this value to zero will disable the source in mode 0.
+
+    nxp,mode1-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 1, in microvolts. Setting
+        this value to zero will disable the source in mode 1.
+
+    nxp,mode2-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 2, in microvolts. Setting
+        this value to zero will disable the source in mode 2.
+
+    nxp,mode3-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 3, in microvolts. Setting
+        this value to zero will disable the source in mode 3.

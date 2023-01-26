@@ -18,7 +18,7 @@ CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
-				      const struct bt_csis_client_csis_inst *csis_inst)
+				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
 		FAIL("Failed to discover CAS: %d", err);

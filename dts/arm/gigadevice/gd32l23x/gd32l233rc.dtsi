@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2022 BrainCo Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <gigadevice/gd32l23x/gd32l23x.dtsi>
+
+/ {
+	soc {
+		sram1: memory@20004000 {
+			compatible = "mmio-sram";
+			reg = <0x20004000 DT_SIZE_K(16)>;
+		};
+
+		/* Combine SRAM0(16K) and SRAM1(16K), since its address is continuous. */
+		sram: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(32)>;
+		};
+
+		uart4: usart@40005000 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40005000 0x400>;
+			interrupts = <30 0>;
+			clocks = <&cctl GD32_CLOCK_UART4>;
+			resets = <&rctl GD32_RESET_UART4>;
+			status = "disabled";
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(256)>;
+	/* GD32L23X DataSheet not defined the maximum page erase time
+	 * for flash memory.
+	 * From other GD32 DataSheets, we can find 1KB page normally have a
+	 * 300ms max time.
+	 * Assume GD32L23X use the worst implementation, set the max erase
+	 * time to 4 times of 1KB page.
+	 */
+	max-erase-time-ms = <1200>;
+	page-size = <DT_SIZE_K(4)>;
+};

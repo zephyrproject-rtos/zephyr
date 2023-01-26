@@ -8,29 +8,28 @@ compatible: "st,stm32-otghs"
 include: [usb-ep.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
-    ram-size:
-      type: int
-      required: true
-      description: |
-        Size of USB dedicated RAM. STM32 SOC's reference
-        manual defines a shared FIFO size.
+  ram-size:
+    type: int
+    required: true
+    description: |
+      Size of USB dedicated RAM. STM32 SOC's reference
+      manual defines a shared FIFO size.
 
-    phys:
-      type: phandle
-      required: false
-      description: PHY provider specifier
+  phys:
+    type: phandle
+    description: PHY provider specifier
 
-    clocks:
-      required: true
+  clocks:
+    required: true

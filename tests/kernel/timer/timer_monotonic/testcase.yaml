@@ -5,9 +5,9 @@ tests:
     #        See foss-for-synopsys-dwc-arc-processors/qemu#67.
     platform_exclude: qemu_arc_hs
   kernel.timer.monotonic.apic.tsc:
-     tags: kernel timer apic_tsc
-     platform_allow: ehl_crb
-     extra_configs:
+    tags: kernel timer apic_tsc
+    platform_allow: ehl_crb
+    extra_configs:
       - CONFIG_APIC_TSC_DEADLINE_TIMER=y
       - CONFIG_HPET_TIMER=n
   kernel.timer.monotonic.linker_generator:

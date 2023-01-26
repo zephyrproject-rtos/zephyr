@@ -1,6 +1,6 @@
 # Flash Circular Buffer module
 
-# Copyright (c) 2017 Nordic Semiconductor ASA
+# Copyright (c) 2017-2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 #
@@ -10,5 +10,16 @@
 config FCB
 	bool "Flash Circular Buffer support"
 	depends on FLASH_MAP
+	select CRC
 	help
 	  Enable support of Flash Circular Buffer.
+
+if FCB
+
+config FCB_ALLOW_FIXED_ENDMARKER
+	bool "Allow FCB instances to have a fixed endmarker"
+	help
+	  This allows the FCB instances to disable CRC checks in
+	  favor of increased write throughput.
+
+endif

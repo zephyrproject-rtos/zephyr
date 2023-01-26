@@ -53,7 +53,7 @@ void main(void)
 		}
 	}
 
-	printk("Done calibrating; maximum/minimum periods %u/%lu usec\n",
+	printk("Done calibrating; maximum/minimum periods %u/%lu nsec\n",
 	       max_period, MIN_PERIOD);
 
 	period = max_period;

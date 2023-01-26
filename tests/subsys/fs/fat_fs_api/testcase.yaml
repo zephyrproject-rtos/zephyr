@@ -8,3 +8,6 @@ tests:
   filesystem.fat.api.lfn:
     extra_args: CONF_FILE="prj_lfn.conf"
     platform_allow: native_posix
+  filesystem.fat.api.mmc:
+    extra_args: CONF_FILE="prj_mmc.conf"
+    filter: dt_compat_enabled("zephyr,mmc-disk")

@@ -473,7 +473,7 @@ static int w5500_init(const struct device *dev)
 	const struct w5500_config *config = dev->config;
 	struct w5500_runtime *ctx = dev->data;
 
-	if (!spi_is_ready(&config->spi)) {
+	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}

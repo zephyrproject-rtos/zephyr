@@ -34,4 +34,10 @@ config INIT_CLOCK_AT_BOOT_TIME
 	  driver's configurator, instead of using the default SoC clock configuration
 	  at reset.
 
+config NXP_S32_RTU_INDEX
+	int
+	range 0 1
+	help
+	  This option indicates the index of the target RTU (Real-Time Unit) subsystem.
+
 endif # SOC_SERIES_S32ZE_R52

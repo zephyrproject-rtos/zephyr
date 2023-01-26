@@ -15,8 +15,8 @@ description: |
 compatible: "st,stm32-clock-mux"
 
 include:
-    - name: base.yaml
-      property-allowlist:
-          - status
-          - compatible
-          - clocks
+  - name: base.yaml
+    property-allowlist:
+      - status
+      - compatible
+      - clocks

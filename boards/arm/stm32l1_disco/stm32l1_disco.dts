@@ -46,6 +46,10 @@
 	};
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_hsi {
 	status = "okay";
 };
@@ -113,4 +117,14 @@
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
 };

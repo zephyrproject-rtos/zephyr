@@ -299,8 +299,20 @@ struct bt_conn_le_info {
 #endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
 };
 
-/* Multiply bt 1.25 to get MS */
-#define BT_CONN_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
+/** @brief Convert connection interval to milliseconds
+ *
+ *  Multiply by 1.25 to get milliseconds.
+ *
+ *  Note that this may be inaccurate, as something like 7.5 ms cannot be
+ *  accurately presented with integers.
+ */
+#define BT_CONN_INTERVAL_TO_MS(interval) ((interval) * 5U / 4U)
+
+/** @brief Convert connection interval to microseconds
+ *
+ *  Multiply by 1250 to get microseconds.
+ */
+#define BT_CONN_INTERVAL_TO_US(interval) ((interval) * 1250U)
 
 /** BR/EDR Connection Info Structure */
 struct bt_conn_br_info {
@@ -660,11 +672,6 @@ struct bt_conn_le_create_param {
  *
  *  The application must disable explicit scanning before initiating
  *  a new LE connection.
- *
- *  When @kconfig{CONFIG_BT_PRIVACY} enabled and @p peer is an identity address
- *  from a local bond, this API will connect to an advertisement with either:
- *    - the address being an RPA resolved from the IRK obtained during bonding.
- *    - the passed identity address, if the local identity is not in Network Privacy Mode.
  *
  *  @param[in]  peer         Remote address.
  *  @param[in]  create_param Create connection parameters.

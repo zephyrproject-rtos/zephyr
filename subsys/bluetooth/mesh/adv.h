@@ -29,6 +29,7 @@ enum bt_mesh_adv_tag {
 	BT_MESH_LOCAL_ADV = BIT(0),
 	BT_MESH_RELAY_ADV = BIT(1),
 	BT_MESH_PROXY_ADV = BIT(2),
+	BT_MESH_FRIEND_ADV = BIT(3),
 };
 
 struct bt_mesh_adv {
@@ -38,7 +39,7 @@ struct bt_mesh_adv {
 	uint8_t      type:2,
 		  started:1,
 		  busy:1,
-		  tag:3;
+		  tag:4;
 
 	uint8_t      xmit;
 };
@@ -73,6 +74,8 @@ int bt_mesh_adv_enable(void);
 void bt_mesh_adv_buf_local_ready(void);
 
 void bt_mesh_adv_buf_relay_ready(void);
+
+void bt_mesh_adv_buf_friend_ready(void);
 
 int bt_mesh_adv_gatt_send(void);
 

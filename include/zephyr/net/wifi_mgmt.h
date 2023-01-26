@@ -36,6 +36,12 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_ENABLE,
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
 	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
+	NET_REQUEST_WIFI_CMD_PS,
+	NET_REQUEST_WIFI_CMD_PS_MODE,
+	NET_REQUEST_WIFI_CMD_TWT,
+	NET_REQUEST_WIFI_CMD_PS_CONFIG,
+	NET_REQUEST_WIFI_CMD_REG_DOMAIN,
+	NET_REQUEST_WIFI_CMD_PS_TIMEOUT,
 };
 
 #define NET_REQUEST_WIFI_SCAN					\
@@ -68,12 +74,42 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
 
+#define NET_REQUEST_WIFI_PS				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS);
+
+#define NET_REQUEST_WIFI_PS_MODE			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_MODE)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_MODE);
+
+#define NET_REQUEST_WIFI_TWT			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_TWT)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_TWT);
+
+#define NET_REQUEST_WIFI_PS_CONFIG				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_CONFIG)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_CONFIG);
+#define NET_REQUEST_WIFI_REG_DOMAIN				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_REG_DOMAIN)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN);
+
+#define NET_REQUEST_WIFI_PS_TIMEOUT			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_TIMEOUT)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT);
+
 enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_SCAN_RESULT = 1,
 	NET_EVENT_WIFI_CMD_SCAN_DONE,
 	NET_EVENT_WIFI_CMD_CONNECT_RESULT,
 	NET_EVENT_WIFI_CMD_DISCONNECT_RESULT,
 	NET_EVENT_WIFI_CMD_IFACE_STATUS,
+	NET_EVENT_WIFI_CMD_TWT,
 };
 
 #define NET_EVENT_WIFI_SCAN_RESULT				\
@@ -91,6 +127,8 @@ enum net_event_wifi_cmd {
 #define NET_EVENT_WIFI_IFACE_STATUS						\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_IFACE_STATUS)
 
+#define NET_EVENT_WIFI_TWT					\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT)
 
 /* Each result is provided to the net_mgmt_event_callback
  * via its info attribute (see net_mgmt.h)
@@ -144,6 +182,83 @@ struct wifi_iface_status {
 	int rssi;
 };
 
+struct wifi_ps_params {
+	enum wifi_ps enabled;
+};
+
+struct wifi_ps_mode_params {
+	enum wifi_ps_mode mode;
+};
+
+struct wifi_ps_timeout_params {
+	int timeout_ms;
+};
+
+struct wifi_twt_params {
+	enum wifi_twt_operation operation;
+	enum wifi_twt_negotiation_type negotiation_type;
+	enum wifi_twt_setup_cmd setup_cmd;
+	/* Map requests to responses */
+	uint8_t dialog_token;
+	/* Map setup with teardown */
+	uint8_t flow_id;
+	union {
+		struct {
+			/* Interval = Wake up time + Sleeping time */
+			uint32_t twt_interval_ms;
+			bool responder;
+			bool trigger;
+			bool implicit;
+			bool announce;
+			/* Wake up time */
+			uint8_t twt_wake_interval_ms;
+		} setup;
+		struct {
+			/* Only for Teardown */
+			bool teardown_all;
+		} teardown;
+	};
+};
+
+/* Flow ID is only 3 bits */
+#define WIFI_MAX_TWT_FLOWS 8
+#define WIFI_MAX_TWT_INTERVAL_MS 0x7FFFFFFF
+struct wifi_twt_flow_info {
+	/* Interval = Wake up time + Sleeping time */
+	uint32_t  twt_interval_ms;
+	/* Map requests to responses */
+	uint8_t dialog_token;
+	/* Map setup with teardown */
+	uint8_t flow_id;
+	enum wifi_twt_negotiation_type negotiation_type;
+	bool responder;
+	bool trigger;
+	bool implicit;
+	bool announce;
+	/* Wake up time */
+	uint8_t twt_wake_interval_ms;
+};
+
+struct wifi_ps_config {
+	struct wifi_twt_flow_info twt_flows[WIFI_MAX_TWT_FLOWS];
+	bool enabled;
+	enum wifi_ps_mode mode;
+	char num_twt_flows;
+};
+
+/* Generic get/set operation for any command*/
+enum wifi_mgmt_op {
+	WIFI_MGMT_GET = 0,
+	WIFI_MGMT_SET = 1,
+};
+
+struct wifi_reg_domain {
+	enum wifi_mgmt_op oper;
+	/* Ignore all other regulatory hints */
+	bool force;
+	uint8_t country_code[WIFI_COUNTRY_CODE_LEN];
+};
+
 #include <zephyr/net/net_if.h>
 
 typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
@@ -177,6 +292,13 @@ struct net_wifi_mgmt_offload {
 #ifdef CONFIG_NET_STATISTICS_WIFI
 	int (*get_stats)(const struct device *dev, struct net_stats_wifi *stats);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
+	int (*set_power_save)(const struct device *dev, struct wifi_ps_params *params);
+	int (*set_power_save_mode)(const struct device *dev, struct wifi_ps_mode_params *params);
+	int (*set_twt)(const struct device *dev, struct wifi_twt_params *params);
+	int (*get_power_save_config)(const struct device *dev, struct wifi_ps_config *config);
+	int (*reg_domain)(const struct device *dev, struct wifi_reg_domain *reg_domain);
+	int (*set_power_save_timeout)(const struct device *dev,
+				      struct wifi_ps_timeout_params *ps_timeout);
 };
 
 /* Make sure that the network interface API is properly setup inside
@@ -188,6 +310,8 @@ void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
 void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
 void wifi_mgmt_raise_iface_status_event(struct net_if *iface,
 		struct wifi_iface_status *iface_status);
+void wifi_mgmt_raise_twt_event(struct net_if *iface,
+		struct wifi_twt_params *twt_params);
 #ifdef __cplusplus
 }
 #endif

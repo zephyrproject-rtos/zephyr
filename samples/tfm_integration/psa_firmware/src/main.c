@@ -244,6 +244,12 @@ void update_firmware(void)
 		printk("Installed New Firmware; Reboot Needed; Rebooting\n");
 		break;
 	}
+
+	/* Flush all logs in the deferred mode. */
+	while (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) && log_data_pending()) {
+		k_msleep(100);
+	}
+
 	psa_fwu_request_reboot();
 }
 
@@ -253,9 +259,6 @@ void main(void)
 {
 	/* Initialize the TFM NS interface */
 	tfm_ns_interface_init();
-
-	/* Initialise the logger subsys and dump the current buffer. */
-	log_init();
 
 	printk("PSA Firmware API test\n");
 

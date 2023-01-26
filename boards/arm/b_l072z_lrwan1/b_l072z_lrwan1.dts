@@ -71,6 +71,14 @@
 	cpu-power-states = <&stop>;
 };
 
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_hsi {
 	status = "okay";
 };
@@ -149,6 +157,8 @@ arduino_i2c: &i2c1 {};
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 

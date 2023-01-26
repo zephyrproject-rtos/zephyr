@@ -38,6 +38,7 @@ class Platform:
         self.arch = ""
         self.type = "na"
         self.simulation = "na"
+        self.simulation_exec = None
         self.supported_toolchains = []
         self.env = []
         self.env_satisfied = True
@@ -57,6 +58,7 @@ class Platform:
         self.ignore_tags = testing.get("ignore_tags", [])
         self.only_tags = testing.get("only_tags", [])
         self.default = testing.get("default", False)
+        self.binaries = testing.get("binaries", [])
         # if no flash size is specified by the board, take a default of 512K
         self.flash = data.get("flash", 512)
         self.supported = set()
@@ -67,6 +69,7 @@ class Platform:
         self.arch = data['arch']
         self.type = data.get('type', "na")
         self.simulation = data.get('simulation', "na")
+        self.simulation_exec = data.get('simulation_exec')
         self.supported_toolchains = data.get("toolchain", [])
         self.env = data.get("env", [])
         self.env_satisfied = True

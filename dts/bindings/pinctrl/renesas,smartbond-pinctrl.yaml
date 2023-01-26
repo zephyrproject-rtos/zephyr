@@ -71,21 +71,21 @@ description: |
 
 compatible: "renesas,smartbond-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - bias-pull-down
-            - bias-pull-up
-            - output-enable
-            - input-enable
+include: base.yaml
 
 child-binding:
   description: |
     Definitions for a pinctrl state.
   child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+          - output-enable
+          - input-enable
+
     properties:
       pinmux:
         required: true

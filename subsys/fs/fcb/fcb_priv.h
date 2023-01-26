@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2023 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -70,7 +70,7 @@ struct flash_sector *fcb_getnext_sector(struct fcb *fcb,
 int fcb_getnext_nolock(struct fcb *fcb, struct fcb_entry *loc);
 
 int fcb_elem_info(struct fcb *fcb, struct fcb_entry *loc);
-int fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, uint8_t *crc8p);
+int fcb_elem_endmarker(struct fcb *fcb, struct fcb_entry *loc, uint8_t *crc8p);
 
 int fcb_sector_hdr_init(struct fcb *fcb, struct flash_sector *sector, uint16_t id);
 int fcb_sector_hdr_read(struct fcb *fcb, struct flash_sector *sector,

@@ -29,7 +29,6 @@
 
 #include <zephyr/drivers/pcie/pcie.h>
 
-/* This expands to "PCIE_BDF(0, 0x18, 0)" on this platform */
-#define X86_SOC_EARLY_SERIAL_PCIDEV DT_REG_ADDR(DT_CHOSEN(zephyr_console))
+#define X86_SOC_EARLY_SERIAL_PCIDEV PCIE_BDF(0, 0x18, 0) /* uart0 */
 
 #endif /* __SOC_H_ */

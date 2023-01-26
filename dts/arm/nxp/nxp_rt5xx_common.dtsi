@@ -362,7 +362,7 @@
 		clk-divider = <1>;
 	};
 
-	usdhc1: usdhc@136000 {
+	usdhc0: usdhc@136000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x136000 0x1000>;
 		status = "disabled";
@@ -374,7 +374,7 @@
 		min-bus-freq = <400000>;
 	};
 
-	usdhc2: usdhc@137000 {
+	usdhc1: usdhc@137000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x137000 0x1000>;
 		status = "disabled";
@@ -463,6 +463,14 @@
 };
 
 &flexspi {
+	compatible = "nxp,imx-flexspi";
+	status = "disabled";
+	interrupts = <42 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&flexspi2 {
 	compatible = "nxp,imx-flexspi";
 	status = "disabled";
 	interrupts = <42 0>;

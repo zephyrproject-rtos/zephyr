@@ -35,6 +35,27 @@ config MAX_PTHREAD_COUNT
 	help
 	  Maximum number of simultaneously active threads in a POSIX application.
 
+config MAX_PTHREAD_MUTEX_COUNT
+	int "Maximum simultaneously active mutex count in POSIX application"
+	default 5
+	range 0 255
+	help
+	  Maximum number of simultaneously active mutexes in a POSIX application.
+
+config MAX_PTHREAD_COND_COUNT
+	int "Maximum simultaneously active condition variables in a POSIX application"
+	default 5
+	range 0 255
+	help
+	  Maximum number of simultaneously active condition variables in a POSIX application.
+
+config MAX_PTHREAD_KEY_COUNT
+	int "Maximum simultaneously active keys in a POSIX application"
+	default 5
+	range 0 255
+	help
+	  Maximum number of simultaneously active keys in a POSIX application.
+
 config SEM_VALUE_MAX
 	int "Maximum semaphore limit"
 	default 32767
@@ -57,6 +78,14 @@ config MAX_TIMER_COUNT
 	range 0 255
 	help
 	  Mention maximum number of timers in POSIX compliant application.
+
+config TIMER_CREATE_WAIT
+	int "Time to wait for timer availability (in msec) in POSIX application"
+	default 100
+	range 0 1000
+	help
+	  This controls how long to wait for resources to come available to create
+	  a new timer in POSIX compliant application
 
 config POSIX_MQUEUE
 	bool "POSIX message queue"
@@ -114,6 +143,7 @@ config APP_LINK_WITH_POSIX_SUBSYS
 config EVENTFD
 	bool "Support for eventfd"
 	depends on !ARCH_POSIX
+	default y if POSIX_API
 	help
 	  Enable support for event file descriptors, eventfd. An eventfd can
 	  be used as an event wait/notify mechanism together with POSIX calls

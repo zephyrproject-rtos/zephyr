@@ -97,6 +97,7 @@ aa_loop:
 	call _PrepC
 
 boot_secondary_core:
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	la t0, riscv_cpu_wake_flag
 	lr t0, 0(t0)
 	bne a0, t0, boot_secondary_core
@@ -108,3 +109,6 @@ boot_secondary_core:
 	la t0, riscv_cpu_wake_flag
 	sr zero, 0(t0)
 	j z_riscv_secondary_cpu_init
+#else
+	j loop_unconfigured_cores
+#endif

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, G-Technologies Sdn. Bhd.
+ * Copyright (c) 2021 Linumiz.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -14,4 +15,14 @@ test_uart_mhz19b {
 
 test_uart_pms7003 {
 	compatible = "plantower,pms7003";
+};
+
+test_uart_grow_r502a {
+	#address-cells=<1>;
+	#size-cells=<0>;
+	grow_r502a@0 {
+		compatible = "hzgrow,r502a";
+		reg = <0x0>;
+		int-gpios = <&test_gpio 0 0>;
+	};
 };

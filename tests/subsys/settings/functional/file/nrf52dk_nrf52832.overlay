@@ -5,7 +5,7 @@
  */
 
 /delete-node/ &storage_partition;
-/delete-node/ &scratch_partition;
+/delete-node/ &slot1_partition;
 
 &flash0 {
 

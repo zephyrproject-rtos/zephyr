@@ -185,8 +185,13 @@ static const struct ilm_config ilm_config = {
 		SCAR_REG(14),
 		SCAR_REG(15),
 	}};
+#if defined(CONFIG_SOC_IT81202_CX) || defined(CONFIG_SOC_IT81302_CX)
+BUILD_ASSERT(ARRAY_SIZE(ilm_config.scar_regs) * ILM_BLOCK_SIZE == KB(60),
+	     "Maximum number of SCAR registers defined for 60k RAM size");
+#else
 BUILD_ASSERT(ARRAY_SIZE(ilm_config.scar_regs) * ILM_BLOCK_SIZE == KB(RAM_SIZE),
 	     "Wrong number of SCAR registers defined for RAM size");
+#endif
 BUILD_ASSERT(ARRAY_SIZE(ilm_config.scar_regs) <= DT_REG_SIZE_BY_IDX(ILM_NODE, 0) * 8,
 	     "Size of ILM control register block is too small for number of SCARs");
 

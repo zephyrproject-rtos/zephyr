@@ -22,9 +22,17 @@ extern "C" {
 /*
  * Will be called with the command line arguments for the testcase.
  * This is BEFORE any SW has run, and before the HW has been initialized
+ * This is also before a possible initialization delay.
+ * Note that this function can be used for test pre-initialization steps
+ * like opening the back-channels. But you should not interact yet with the
+ * test ticker or other HW models.
  */
 typedef void (*bst_test_args_t)(int, char**);
-/* It will be called (in the HW models thread) before the CPU is booted */
+/* It will be called (in the HW models thread) before the CPU is booted,
+ * after the HW models have been initialized. Note that a possible delayed
+ * initialization may delay the execution of this function vs other devices
+ * tests pre-initialization
+ */
 typedef void (*bst_test_pre_init_t)(void);
 /*
  * It will be called (in the HW models thread) when the CPU goes to sleep

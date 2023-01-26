@@ -4,30 +4,28 @@
 # Properties for nodes with controllable power supplies.
 
 properties:
-    supply-gpios:
-      type: phandle-array
-      required: false
-      description: |
-        GPIO specifier that controls power to the device.
+  supply-gpios:
+    type: phandle-array
+    description: |
+      GPIO specifier that controls power to the device.
 
-        This property should be provided when the device has a dedicated
-        switch that controls power to the device.  The supply state is
-        entirely the responsibility of the device driver.
+      This property should be provided when the device has a dedicated
+      switch that controls power to the device.  The supply state is
+      entirely the responsibility of the device driver.
 
-        Contrast with vin-supply.
+      Contrast with vin-supply.
 
-    vin-supply:
-      type: phandle
-      required: false
-      description: |
-        Reference to the regulator that controls power to the device.
-        The referenced devicetree node must have a regulator compatible.
+  vin-supply:
+    type: phandle
+    description: |
+      Reference to the regulator that controls power to the device.
+      The referenced devicetree node must have a regulator compatible.
 
-        This property should be provided when device power is supplied
-        by a shared regulator.  The supply state is dependent on the
-        request status of all devices fed by the regulator.
+      This property should be provided when device power is supplied
+      by a shared regulator.  The supply state is dependent on the
+      request status of all devices fed by the regulator.
 
-        Contrast with supply-gpios.  If both properties are provided
-        then the regulator must be requested before the supply GPIOS is
-        set to an active state, and the supply GPIOS must be set to an
-        inactive state before releasing the regulator.
+      Contrast with supply-gpios.  If both properties are provided
+      then the regulator must be requested before the supply GPIOS is
+      set to an active state, and the supply GPIOS must be set to an
+      inactive state before releasing the regulator.

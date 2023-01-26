@@ -51,6 +51,14 @@ config COVERAGE_GCOV
 	  gen_gcov_files.py which creates the required .gcda files. These
 	  can be read by gcov utility. For more details see gcovr.com .
 
+config COVERAGE_GCOV_HEAP_SIZE
+	int "Size of heap allocated for gcov coverage data dump"
+	default 32768 if X86 || SOC_SERIES_MPS2
+	default 16384
+	help
+	  This option configures the heap size allocated for gcov coverage
+	  data to be dumped over serial.
+
 config COVERAGE_DUMP
 	bool "Dump coverage data on exit"
 	depends on COVERAGE_GCOV

@@ -149,6 +149,9 @@ struct bt_mesh_lpn {
 	/* Duration reported for last advertising packet */
 	uint16_t adv_duration;
 
+	/* Advertising start time. */
+	uint32_t adv_start_time;
+
 	/* Next LPN related action timer */
 	struct k_work_delayable timer;
 
@@ -167,6 +170,7 @@ struct bt_mesh_lpn {
 
 /* bt_mesh_net.flags */
 enum {
+	BT_MESH_INIT,            /* We have been initialized */
 	BT_MESH_VALID,           /* We have been provisioned */
 	BT_MESH_SUSPENDED,       /* Network is temporarily suspended */
 	BT_MESH_IVU_IN_PROGRESS, /* IV Update in Progress */

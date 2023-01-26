@@ -8,7 +8,7 @@ compatible: "st,stm32wl-subghz-radio"
 include: semtech,sx126x-base.yaml
 
 properties:
-    interrupts:
-      required: true
-      description: |
-        Position of the "Radio IRQ, Busy" interrupt line.
+  interrupts:
+    required: true
+    description: |
+      Position of the "Radio IRQ, Busy" interrupt line.

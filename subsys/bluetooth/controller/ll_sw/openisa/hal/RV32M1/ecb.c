@@ -8,15 +8,19 @@
 
 #include <string.h>
 
+#include <zephyr/bluetooth/hci.h>
+
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/ecb.h"
 
-#define LOG_MODULE_NAME bt_ctlr_rv32m1_ecb
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
 #include "hal/debug.h"
 #include "fsl_cau3_ble.h"
+
+LOG_MODULE_REGISTER(bt_ctlr_rv32m1_ecb, LOG_LEVEL_DBG);
 
 void ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,
 		    uint8_t *const cipher_text_be)

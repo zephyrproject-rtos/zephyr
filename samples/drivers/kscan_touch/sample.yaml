@@ -2,11 +2,11 @@ sample:
   name: KSCAN touch driver api sample
 tests:
   sample.drivers.kscan_touch:
-    tags: drivers
+    tags: drivers kscan_touch
     harness: console
     harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "kb data(.*)"
+      type: multi_line
+      ordered: true
+      regex:
+        - "kb data(.*)"
     depends_on: kscan:touch

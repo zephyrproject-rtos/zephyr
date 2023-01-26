@@ -8,8 +8,8 @@ compatible: "vnd,interrupt-holder"
 include: [base.yaml]
 
 properties:
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    interrupt-names:
-      required: true
+  interrupt-names:
+    required: true

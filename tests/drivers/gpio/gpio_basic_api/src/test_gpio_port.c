@@ -647,7 +647,7 @@ static int pin_get_config(void)
 	}
 
 	zassert_equal(rc, 0, "pin get config failed");
-	zassert_equal(flags_get & ~GPIO_VOLTAGE_MASK, flags_set, "flags are different");
+	zassert_equal(flags_get, flags_set, "flags are different");
 
 	return TC_PASS;
 }

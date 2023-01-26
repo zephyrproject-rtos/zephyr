@@ -1,9 +1,13 @@
 tests:
   drivers.clock.clock_control_nrf5:
-    tags: drivers
+    tags: drivers cloc
     platform_allow: nrf51dk_nrf51422 nrf52dk_nrf52832 nrf52840dk_nrf52840
                         nrf9160dk_nrf9160
+    integration_platforms:
+      - nrf51dk_nrf51422
   drivers.clock.clock_control_nrf5_lfclk_rc:
-    tags: drivers
+    tags: drivers clock
     platform_allow: nrf51dk_nrf51422 nrf52dk_nrf52832 nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf51dk_nrf51422
     extra_args: CONF_FILE="nrf_lfclk_rc.conf"

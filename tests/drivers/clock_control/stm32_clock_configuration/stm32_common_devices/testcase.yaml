@@ -1,5 +1,5 @@
 common:
-    timeout: 5
+  timeout: 5
 tests:
   drivers.stm32_clock_configuration.common_device.wb.i2c1_hsi_lptim1_lse:
     extra_args: DTC_OVERLAY_FILE="boards/wb_i2c1_hsi_lptim1_lse.overlay"

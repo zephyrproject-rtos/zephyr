@@ -53,6 +53,8 @@
 	MAKE_REG_HELPER(reg##_el2) \
 	MAKE_REG_HELPER(reg##_el3)
 
+MAKE_REG_HELPER(ccsidr_el1);
+MAKE_REG_HELPER(clidr_el1);
 MAKE_REG_HELPER(cntfrq_el0);
 MAKE_REG_HELPER(cnthctl_el2);
 MAKE_REG_HELPER(cnthp_ctl_el2);
@@ -62,17 +64,16 @@ MAKE_REG_HELPER(cntv_cval_el0)
 MAKE_REG_HELPER(cntvct_el0);
 MAKE_REG_HELPER(cntvoff_el2);
 MAKE_REG_HELPER(currentel);
+MAKE_REG_HELPER(csselr_el1);
 MAKE_REG_HELPER(daif)
 MAKE_REG_HELPER(hcr_el2);
 MAKE_REG_HELPER(id_aa64pfr0_el1);
 MAKE_REG_HELPER(id_aa64mmfr0_el1);
+MAKE_REG_HELPER(mpidr_el1);
+MAKE_REG_HELPER(par_el1)
 MAKE_REG_HELPER(scr_el3);
 MAKE_REG_HELPER(tpidrro_el0);
-MAKE_REG_HELPER(clidr_el1);
-MAKE_REG_HELPER(csselr_el1);
-MAKE_REG_HELPER(ccsidr_el1);
 MAKE_REG_HELPER(vmpidr_el2);
-MAKE_REG_HELPER(mpidr_el1);
 
 MAKE_REG_HELPER_EL123(actlr)
 MAKE_REG_HELPER_EL123(cpacr)

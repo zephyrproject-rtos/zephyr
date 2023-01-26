@@ -10,5 +10,5 @@ compatible: "usb-nop-xceiv"
 include: phy-controller.yaml
 
 properties:
-    "#phy-cells":
-      const: 0
+  "#phy-cells":
+    const: 0

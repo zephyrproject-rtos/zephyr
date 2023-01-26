@@ -74,6 +74,10 @@
 	};
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_hse {
 	hse-bypass;
 	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
@@ -163,7 +167,13 @@ zephyr_udc0: &usb {
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
 };
 
 &can1 {

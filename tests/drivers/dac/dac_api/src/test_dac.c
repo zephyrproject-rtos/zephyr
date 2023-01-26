@@ -60,6 +60,13 @@
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
+#elif defined(CONFIG_BOARD_ESP32) || \
+	defined(CONFIG_BOARD_ESP32S2_SAOLA)
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac)
+#define DAC_RESOLUTION		12
+#define DAC_CHANNEL_ID		0
+
 #else
 #error "Unsupported board."
 #endif

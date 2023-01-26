@@ -57,6 +57,6 @@ struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
 						    proxy_recv_cb_t recv);
 void bt_mesh_proxy_role_cleanup(struct bt_mesh_proxy_role *role);
 
-int bt_mesh_proxy_conn_count_get(void);
+bool bt_mesh_proxy_has_avail_conn(void);
 
 #endif /* ZEPHYR_SUBSYS_BLUETOOTH_MESH_PROXY_MSG_H_ */

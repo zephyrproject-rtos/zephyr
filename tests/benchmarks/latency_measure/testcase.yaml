@@ -14,9 +14,9 @@ tests:
         - "PROJECT EXECUTION SUCCESSFUL"
 
 
-# Cortex-M has 24bit systick, so default 1 TICK per seconds
-# is achievable only if frequency is below 0x00FFFFFF (around 16MHz)
-# 20 Ticks per secondes allows a frequency up to 335544300Hz (335MHz)
+  # Cortex-M has 24bit systick, so default 1 TICK per seconds
+  # is achievable only if frequency is below 0x00FFFFFF (around 16MHz)
+  # 20 Ticks per secondes allows a frequency up to 335544300Hz (335MHz)
   benchmark.kernel.latency.stm32:
     filter: CONFIG_PRINTK and CONFIG_SOC_FAMILY_STM32
     # FIXME: no DWT and no RTC_TIMER

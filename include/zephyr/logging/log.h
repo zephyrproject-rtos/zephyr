@@ -427,6 +427,11 @@ void z_log_vprintk(const char *fmt, va_list ap);
 #define LOG_LEVEL_SET(level) static const uint32_t __log_level __unused = \
 				Z_LOG_RESOLVED_LEVEL(level, 0)
 
+#ifdef CONFIG_LOG_CUSTOM_HEADER
+/* This include must always be at the end of log.h */
+#include <zephyr_custom_log.h>
+#endif
+
 /*
  * Eclipse CDT or JetBrains Clion parser is sometimes confused by logging API
  * code and freezes the whole IDE. Following lines hides LOG_x macros from them.

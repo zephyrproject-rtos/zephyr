@@ -5,7 +5,6 @@
  */
 
 
-/delete-node/ &scratch_partition;
 /delete-node/ &storage_partition;
 /delete-node/ &slot0_partition;
 /delete-node/ &slot1_partition;

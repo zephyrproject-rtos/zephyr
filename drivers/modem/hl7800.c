@@ -195,6 +195,8 @@ struct xmodem_packet {
 #define MDM_MTU 1500
 #define MDM_MAX_RESP_SIZE 128
 #define MDM_IP_INFO_RESP_SIZE 256
+#define MDM_EID_LENGTH	       33
+#define MDM_CCID_RESP_MAX_SIZE (MDM_HL7800_ICCID_MAX_SIZE + MDM_EID_LENGTH)
 
 #define MDM_HANDLER_MATCH_MAX_LEN 100
 
@@ -477,7 +479,7 @@ struct hl7800_iface_ctx {
 	char mdm_imei[MDM_HL7800_IMEI_SIZE];
 	char mdm_sn[MDM_HL7800_SERIAL_NUMBER_SIZE];
 	char mdm_network_status[MDM_NETWORK_STATUS_LENGTH];
-	char mdm_iccid[MDM_HL7800_ICCID_SIZE];
+	char mdm_iccid[MDM_HL7800_ICCID_MAX_SIZE];
 	enum mdm_hl7800_startup_state mdm_startup_state;
 	enum mdm_hl7800_radio_mode mdm_rat;
 	char mdm_active_bands_string[MDM_HL7800_LTE_BAND_STR_SIZE];
@@ -970,7 +972,7 @@ static int send_at_cmd(struct hl7800_socket *sock, const uint8_t *data,
 			ictx.search_no_id_resp = true;
 		}
 
-		LOG_DBG("OUT: [%s]", data);
+		LOG_DBG("OUT: [%s]", (char *)data);
 		mdm_receiver_send(&ictx.mdm_ctx, data, strlen(data));
 		mdm_receiver_send(&ictx.mdm_ctx, "\r", 1);
 
@@ -1754,35 +1756,39 @@ done:
 	return true;
 }
 
-/* Handler: +CCID: <ICCID> */
+/* Handler: +CCID: <ICCID>,<EID>
+ * NOTE: EID will only be present for eSIM
+ */
 static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 {
-	struct net_buf *frag = NULL;
+	int ret;
+	char value[MDM_CCID_RESP_MAX_SIZE];
+	char *delim;
 	size_t out_len;
 
-	/* make sure ICCID data is received
-	 *  waiting for: <ICCID>\r\n
-	 */
-	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf),
-					MDM_HL7800_ICCID_SIZE);
+	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	value[out_len] = 0;
 
-	frag = NULL;
-	len = net_buf_findcrlf(*buf, &frag);
-	if (!frag) {
-		LOG_ERR("Unable to find ICCID end");
-		goto done;
-	}
-	if (len > MDM_HL7800_ICCID_STRLEN) {
-		LOG_WRN("ICCID too long (len:%d)", len);
-		len = MDM_HL7800_ICCID_STRLEN;
+	LOG_DBG("+CCID: %s", value);
+
+	if (len > MDM_HL7800_ICCID_MAX_STRLEN) {
+		delim = strchr(value, ',');
+		if (!delim) {
+			LOG_ERR("Could not process +CCID");
+			return true;
+		}
+		/* Replace ',' with null so value contains two null terminated strings */
+		*delim = 0;
+		LOG_INF("EID: %s", delim + 1);
 	}
 
-	out_len = net_buf_linearize(ictx.mdm_iccid, MDM_HL7800_ICCID_STRLEN,
-				    *buf, 0, len);
-	ictx.mdm_iccid[out_len] = 0;
+	ret = snprintk(ictx.mdm_iccid, sizeof(ictx.mdm_iccid), "%s", value);
+	if (ret > MDM_HL7800_ICCID_MAX_STRLEN) {
+		LOG_WRN("ICCID too long: %d", ret);
+	}
 
 	LOG_INF("ICCID: %s", ictx.mdm_iccid);
-done:
+
 	return true;
 }
 
@@ -5093,6 +5099,7 @@ static int modem_reset_and_configure(void)
 #endif
 
 	ictx.restarting = true;
+	ictx.dns_ready = false;
 	if (ictx.iface) {
 		net_if_carrier_off(ictx.iface);
 	}
@@ -5469,6 +5476,7 @@ static int hl7800_power_off(void)
 	}
 	/* bring the iface down */
 	if (ictx.iface) {
+		ictx.dns_ready = false;
 		net_if_carrier_off(ictx.iface);
 	}
 	LOG_INF("Modem powered off");
@@ -6026,17 +6034,12 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 	struct fs_dirent file_info;
 	char cmd1[sizeof("AT+WDSD=24643584")];
 
-	/* HL7800 will stay locked for the duration of the FW update */
-	hl7800_lock();
-
 	/* get file info */
 	ret = fs_stat(file_path, &file_info);
 	if (ret >= 0) {
-		LOG_DBG("file '%s' size %zu", file_info.name,
-			file_info.size);
+		LOG_DBG("file '%s' size %zu", file_info.name, file_info.size);
 	} else {
-		LOG_ERR("Failed to get file [%s] info: %d",
-			file_path, ret);
+		LOG_ERR("Failed to get file [%s] info: %d", file_path, ret);
 		goto err;
 	}
 
@@ -6052,25 +6055,30 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 		goto err;
 	}
 
+	notify_all_tcp_sockets_closed();
+	hl7800_stop_rssi_work();
+	k_work_cancel_delayable(&ictx.iface_status_work);
+	k_work_cancel_delayable(&ictx.dns_work);
+	k_work_cancel_delayable(&ictx.mdm_reset_work);
+	k_work_cancel_delayable(&ictx.allow_sleep_work);
+	k_work_cancel_delayable(&ictx.delete_untracked_socket_work);
+	ictx.dns_ready = false;
 	if (ictx.iface) {
 		LOG_DBG("HL7800 iface DOWN");
-		hl7800_stop_rssi_work();
 		net_if_carrier_off(ictx.iface);
-		notify_all_tcp_sockets_closed();
 	}
+
+	/* HL7800 will stay locked for the duration of the FW update */
+	hl7800_lock();
 
 	/* start firmware update process */
 	LOG_INF("Initiate FW update, total packets: %zd",
 		((file_info.size / XMODEM_DATA_SIZE) + 1));
 	set_fota_state(HL7800_FOTA_START);
-	snprintk(cmd1, sizeof(cmd1), "AT+WDSD=%zd", file_info.size);
-	send_at_cmd(NULL, cmd1, K_NO_WAIT, 0, false);
-
-	goto done;
+	(void)snprintk(cmd1, sizeof(cmd1), "AT+WDSD=%zd", file_info.size);
+	(void)send_at_cmd(NULL, cmd1, K_NO_WAIT, 0, false);
 
 err:
-	hl7800_unlock();
-done:
 	return ret;
 }
 #endif

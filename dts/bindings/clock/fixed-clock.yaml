@@ -8,15 +8,14 @@ compatible: "fixed-clock"
 include: clock-controller.yaml
 
 properties:
-    clock-frequency:
-      type: int
-      description: output clock frequency (Hz)
-      required: true
+  clock-frequency:
+    type: int
+    description: output clock frequency (Hz)
+    required: true
 
-    clocks:
-      type: array
-      required: false
-      description: input clock source
+  clocks:
+    type: array
+    description: input clock source
 
-    "#clock-cells":
-      const: 0
+  "#clock-cells":
+    const: 0

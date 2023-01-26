@@ -19,6 +19,11 @@
 			};
 		};
 
+		adc3: adc@58026000 {
+			temp-channel = <18>;
+			vref-channel = <19>;
+		};
+
 		dmamux1: dmamux@40020800 {
 			dma-requests= <107>;
 		};
@@ -31,7 +36,8 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x08000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x08000000>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 		};
@@ -43,6 +49,14 @@
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
 			status = "disabled";
+		};
+
+		rtc@58004000 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <32>;
+				status = "disabled";
+			};
 		};
 	};
 

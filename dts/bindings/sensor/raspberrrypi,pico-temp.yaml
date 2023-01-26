@@ -1,0 +1,35 @@
+# Copyright (c) 2023 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: RaspberryPi Pico family temperature sensor node
+
+compatible: "raspberrypi,pico-temp"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: ADC channel for CPU temperature sensor
+
+  vbe:
+    type: int
+    default: 706000
+    description: |
+      Vbe voltage in microvolts at 27 degrees C. Vbe = 0.706V typically.
+      The temperature sensor measures the Vbe voltage of a biased bipolar diode.
+      The temperature calculates from the Vbe voltage measured by the sensor
+      using the following equation typical case.
+
+        T = 27 - (ADC_Voltage - 0.706)/0.001721
+
+      See also the vbe-slope section.
+
+  vbe-slope:
+    type: int
+    default: -1721
+    description: |
+      The slope of Vbe voltage in microvolts per degree C.
+      Typically, a slope of -1.721mV per degree.
+
+      See also the vbe section.

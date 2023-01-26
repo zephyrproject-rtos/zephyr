@@ -18,7 +18,7 @@
 
 extern const struct shell *ctx_shell;
 extern struct bt_conn *default_conn;
-extern struct bt_csis *csis;
+extern struct bt_csip_set_member_svc_inst *svc_inst;
 
 #if defined(CONFIG_BT_ISO)
 extern struct bt_iso_chan iso_chan;
@@ -35,6 +35,8 @@ extern struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
 void conn_addr_str(struct bt_conn *conn, char *addr, size_t len);
 ssize_t audio_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable,
 			  const bool connectable);
+ssize_t audio_pa_data_add(struct bt_data *data_array,
+			  const size_t data_array_size);
 ssize_t csis_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable);
 
 #endif /* __BT_H */

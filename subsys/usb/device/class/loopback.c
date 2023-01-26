@@ -12,9 +12,8 @@
 #include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_loopback);
+LOG_MODULE_REGISTER(usb_loopback, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #define LOOPBACK_OUT_EP_ADDR		0x01
 #define LOOPBACK_IN_EP_ADDR		0x81

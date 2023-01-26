@@ -34,6 +34,12 @@ config NRF_RTC_TIMER_LOCK_ZERO_LATENCY_IRQS
 	  handler and call nrf_rtc_timer API from destroying the internal state
 	  in nrf_rtc_timer.
 
+config NRF_RTC_TIMER_TRIGGER_OVERFLOW
+	bool "Trigger overflow"
+	help
+	  When enabled, a function can be used to trigger RTC overflow and
+	  effectively shift time into the future.
+
 choice
 	prompt "Clock startup policy"
 	default SYSTEM_CLOCK_WAIT_FOR_STABILITY

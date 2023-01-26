@@ -260,6 +260,10 @@ static void port1_notify(const struct device *dev,
 		break;
 	case HARD_RESET_RECEIVED:
 		break;
+	case SENDER_RESPONSE_TIMEOUT:
+		break;
+	case SOURCE_CAPABILITIES_RECEIVED:
+		break;
 	}
 }
 /* usbc.rst notify end */

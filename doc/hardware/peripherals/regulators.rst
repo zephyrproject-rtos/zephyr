@@ -14,14 +14,6 @@ inherently asynchronous.  To maximize flexibility the
 the regulator subsystem.  Nodes with a devicetree compatible of
 ``regulator-fixed`` are the most common flexible regulators.
 
-In some cases the transitions are close enough to instantaneous that the
-the asynchronous driver implementation is not needed, and the resource
-cost in RAM is not justified.  Such a regulator still uses the
-asynchronous API, but may be implemented internally in a way that
-ensures the result of the operation is presented before the transition
-completes.  Zephyr recognizes devicetree nodes with a compatible of
-``regulator-fixed-sync`` as devices with synchronous transitions.
-
 The ``vin-supply`` devicetree property is used to identify the
 regulator(s) that a devicetree node directly depends on.  Within the
 driver for the node the regulator API is used to issue requests for

@@ -1,0 +1,47 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pinmux_lpi2c3: pinmux_lpi2c3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_06_lpi2c3_sda>,
+				<&iomuxc_gpio_ad_b1_07_lpi2c3_scl>;
+			drive-strength = "r0-6";
+			drive-open-drain;
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+			input-enable;
+		};
+	};
+};
+
+/* To test this sample, connect J22.2 <-> J24.9 and J22.1 <-> J24.10 */
+
+&lpi2c1 {
+	status = "okay";
+	eeprom0: eeprom@54 {
+		compatible = "atmel,at24";
+		reg = <0x54>;
+		size = <1024>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};
+
+&lpi2c3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
+	eeprom1: eeprom@56 {
+		compatible = "atmel,at24";
+		reg = <0x56>;
+		size = <1024>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};

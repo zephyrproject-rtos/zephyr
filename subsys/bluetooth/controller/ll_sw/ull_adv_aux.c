@@ -43,9 +43,6 @@
 
 #include "ll.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_adv_aux
-#include "common/log.h"
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -2475,7 +2472,8 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 		*ticks_anchor = ticks_anchor_aux;
 		*ticks_anchor += HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
-					    EVENT_OVERHEAD_START_US) +
+					    EVENT_OVERHEAD_START_US) -
+					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 	}
 #endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
@@ -2913,6 +2911,16 @@ static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			PDU_AC_US(pdu_scan->len, lll->phy_s, lll->phy_flags);
 
 		time_us += EVENT_IFS_MAX_US * 2 + scan_req_us + scan_rsp_us;
+
+		/* FIXME: Calculate additional time reservations for scan
+		 *        response chain PDUs, if any.
+		 */
+	} else {
+		/* Non-connectable Non-Scannable */
+
+		/* FIXME: Calculate additional time reservations for chain PDUs,
+		 *        if any.
+		 */
 	}
 
 	return time_us;

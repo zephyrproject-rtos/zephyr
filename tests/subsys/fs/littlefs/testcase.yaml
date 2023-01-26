@@ -1,6 +1,8 @@
 common:
   tags: filesystem
   platform_allow: nrf52840dk_nrf52840 native_posix native_posix_64 mimxrt1060_evk
+  integration_platforms:
+    - nrf52840dk_nrf52840
   modules:
     - littlefs
 tests:

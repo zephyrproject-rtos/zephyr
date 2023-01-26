@@ -68,19 +68,19 @@
 #endif
 
 /**
- * @def GCC_VERSION
+ * @def TOOLCHAIN_GCC_VERSION
  * @brief GCC version in xxyyzz for xx.yy.zz. Zero if not GCC compatible.
  */
-#ifndef GCC_VERSION
-#define GCC_VERSION 0
+#ifndef TOOLCHAIN_GCC_VERSION
+#define TOOLCHAIN_GCC_VERSION 0
 #endif
 
 /**
- * @def CLANG_VERSION
+ * @def TOOLCHAIN_CLANG_VERSION
  * @brief Clang version in xxyyzz for xx.yy.zz. Zero if not Clang compatible.
  */
-#ifndef CLANG_VERSION
-#define CLANG_VERSION 0
+#ifndef TOOLCHAIN_CLANG_VERSION
+#define TOOLCHAIN_CLANG_VERSION 0
 #endif
 
 /**

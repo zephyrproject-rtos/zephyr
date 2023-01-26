@@ -10,6 +10,7 @@ OS Services
    crypto/index
    debugging/index.rst
    device_mgmt/index
+   dsp/index.rst
    file_system/index.rst
    formatted_output.rst
    ipc/index.rst
@@ -29,4 +30,5 @@ OS Services
    usb/index.rst
    virtualization/index.rst
    rtio/index.rst
+   zbus/index.rst
    misc.rst

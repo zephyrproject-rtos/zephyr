@@ -274,7 +274,7 @@ static int mcp320x_init(const struct device *dev)
 
 	k_sem_init(&data->sem, 0, 1);
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI bus is not ready");
 		return -ENODEV;
 	}

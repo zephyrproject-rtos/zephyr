@@ -5,25 +5,21 @@ include: base.yaml
 bus: uart
 
 properties:
-    clock-frequency:
-      type: int
-      required: false
-      description: Clock frequency information for UART operation
-    current-speed:
-      type: int
-      required: false
-      description: Initial baud rate setting for UART
-    hw-flow-control:
-      type: boolean
-      required: false
-      description: Set to enable RTS/CTS flow control at boot time
-    parity:
-      required: false
-      type: string
-      description: |
-        Configures the parity of the adapter. Enumeration id 0 for none, 1 for odd
-        and 2 for even parity. Default to none if not specified.
-      enum:
-        - "none"
-        - "odd"
-        - "even"
+  clock-frequency:
+    type: int
+    description: Clock frequency information for UART operation
+  current-speed:
+    type: int
+    description: Initial baud rate setting for UART
+  hw-flow-control:
+    type: boolean
+    description: Set to enable RTS/CTS flow control at boot time
+  parity:
+    type: string
+    description: |
+      Configures the parity of the adapter. Enumeration id 0 for none, 1 for odd
+      and 2 for even parity. Default to none if not specified.
+    enum:
+      - "none"
+      - "odd"
+      - "even"

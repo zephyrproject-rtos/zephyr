@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
 #include <errno.h>
+
+#include <zephyr/ztest.h>
+
 #include <pthread.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -33,21 +35,17 @@ void *normal_mutex_entry(void *p1)
 
 	zassert_false(rc, "try lock failed");
 	TC_PRINT("mutex lock is taken\n");
-	zassert_false(pthread_mutex_unlock(&mutex1),
-		      "mutex unlock is failed");
+	zassert_false(pthread_mutex_unlock(&mutex1), "mutex unlock is failed");
 	return NULL;
 }
 
 void *recursive_mutex_entry(void *p1)
 {
 	zassert_false(pthread_mutex_lock(&mutex2), "mutex is not taken");
-	zassert_false(pthread_mutex_lock(&mutex2),
-		      "mutex is not taken 2nd time");
+	zassert_false(pthread_mutex_lock(&mutex2), "mutex is not taken 2nd time");
 	TC_PRINT("recursive mutex lock is taken\n");
-	zassert_false(pthread_mutex_unlock(&mutex2),
-		      "mutex is not unlocked");
-	zassert_false(pthread_mutex_unlock(&mutex2),
-		      "mutex is not unlocked");
+	zassert_false(pthread_mutex_unlock(&mutex2), "mutex is not unlocked");
+	zassert_false(pthread_mutex_unlock(&mutex2), "mutex is not unlocked");
 	return NULL;
 }
 
@@ -72,8 +70,7 @@ ZTEST(posix_apis, test_posix_normal_mutex)
 	if (ret != 0) {
 		zassert_false(pthread_attr_destroy(&attr),
 			      "Unable to destroy pthread object attrib");
-		zassert_false(pthread_attr_init(&attr),
-			      "Unable to create pthread object attrib");
+		zassert_false(pthread_attr_init(&attr), "Unable to create pthread object attrib");
 	}
 
 	pthread_attr_setstack(&attr, &stack, STACK_SIZE);
@@ -92,11 +89,9 @@ ZTEST(posix_apis, test_posix_normal_mutex)
 
 	pthread_mutex_lock(&mutex1);
 
-	zassert_equal(type, PTHREAD_MUTEX_NORMAL,
-		      "mutex type is not normal");
+	zassert_equal(type, PTHREAD_MUTEX_NORMAL, "mutex type is not normal");
 
-	zassert_equal(protocol, PTHREAD_PRIO_NONE,
-		      "mutex protocol is not prio_none");
+	zassert_equal(protocol, PTHREAD_PRIO_NONE, "mutex protocol is not prio_none");
 	ret = pthread_create(&thread_1, &attr, &normal_mutex_entry, NULL);
 
 	if (ret) {
@@ -131,8 +126,7 @@ ZTEST(posix_apis, test_posix_recursive_mutex)
 	if (ret != 0) {
 		zassert_false(pthread_attr_destroy(&attr2),
 			      "Unable to destroy pthread object attrib");
-		zassert_false(pthread_attr_init(&attr2),
-			      "Unable to create pthread object attrib");
+		zassert_false(pthread_attr_init(&attr2), "Unable to create pthread object attrib");
 	}
 
 	pthread_attr_setstack(&attr2, &stack, STACK_SIZE);
@@ -149,11 +143,9 @@ ZTEST(posix_apis, test_posix_recursive_mutex)
 	temp = pthread_mutexattr_getprotocol(&mut_attr2, &protocol);
 	zassert_false(temp, "reading mutex2 protocol is failed");
 
-	zassert_equal(type, PTHREAD_MUTEX_RECURSIVE,
-		      "mutex2 type is not recursive");
+	zassert_equal(type, PTHREAD_MUTEX_RECURSIVE, "mutex2 type is not recursive");
 
-	zassert_equal(protocol, PTHREAD_PRIO_NONE,
-		      "mutex2 protocol is not prio_none");
+	zassert_equal(protocol, PTHREAD_PRIO_NONE, "mutex2 protocol is not prio_none");
 	ret = pthread_create(&thread_2, &attr2, &recursive_mutex_entry, NULL);
 
 	zassert_false(ret, "Thread2 creation failed");
@@ -161,4 +153,43 @@ ZTEST(posix_apis, test_posix_recursive_mutex)
 	pthread_join(thread_2, NULL);
 	temp = pthread_mutex_destroy(&mutex2);
 	zassert_false(temp, "Destroying mutex2 is failed");
+}
+
+/**
+ * @brief Test to demonstrate limited mutex resources
+ *
+ * @details Exactly CONFIG_MAX_PTHREAD_MUTEX_COUNT can be in use at once.
+ */
+ZTEST(posix_apis, test_posix_mutex_resource_exhausted)
+{
+	size_t i;
+	pthread_mutex_t m[CONFIG_MAX_PTHREAD_MUTEX_COUNT + 1];
+
+	for (i = 0; i < CONFIG_MAX_PTHREAD_MUTEX_COUNT; ++i) {
+		zassert_ok(pthread_mutex_init(&m[i], NULL), "failed to init mutex %zu", i);
+	}
+
+	/* try to initialize one more than CONFIG_MAX_PTHREAD_MUTEX_COUNT */
+	zassert_equal(i, CONFIG_MAX_PTHREAD_MUTEX_COUNT);
+	zassert_not_equal(0, pthread_mutex_init(&m[i], NULL),
+			  "should not have initialized mutex %zu", i);
+
+	for (; i > 0; --i) {
+		zassert_ok(pthread_mutex_destroy(&m[i - 1]), "failed to destroy mutex %zu", i - 1);
+	}
+}
+
+/**
+ * @brief Test to that there are no mutex resource leaks
+ *
+ * @details Demonstrate that mutexes may be used over and over again.
+ */
+ZTEST(posix_apis, test_posix_mutex_resource_leak)
+{
+	pthread_mutex_t m;
+
+	for (size_t i = 0; i < 2 * CONFIG_MAX_PTHREAD_MUTEX_COUNT; ++i) {
+		zassert_ok(pthread_mutex_init(&m, NULL), "failed to init mutex %zu", i);
+		zassert_ok(pthread_mutex_destroy(&m), "failed to destroy mutex %zu", i);
+	}
 }

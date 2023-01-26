@@ -195,7 +195,7 @@ static void setup(void)
 
 	lll->interval = 0;
 	lll->latency = 0;
-	conn.supervision_reload = 1U;
+	conn.supervision_timeout = 1U;
 	lll->event_counter = 0;
 }
 
@@ -2467,6 +2467,7 @@ void test_conn_update_periph_rem_apm_accept_right_away(void)
 #if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
 	struct node_tx *tx;
 	uint16_t instant;
+	uint8_t error = 0U;
 	/* Default conn_param_req PDU */
 	struct pdu_data_llctrl_conn_param_req conn_param_req_apm = { .interval_min = INTVL_MIN,
 								 .interval_max = INTVL_MAX,
@@ -2494,7 +2495,6 @@ void test_conn_update_periph_rem_apm_accept_right_away(void)
 								 .offset3 = 0xffffU,
 								 .offset4 = 0xffffU,
 								 .offset5 = 0xffffU };
-	uint8_t error = 0;
 
 	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
 	/* No APM deferance, accept with error == 0 */
@@ -2509,8 +2509,7 @@ void test_conn_update_periph_rem_apm_accept_right_away(void)
 
 	conn.lll.interval = conn_param_req_apm.interval_max;
 	conn.lll.latency = conn_param_req_apm.latency;
-	conn.supervision_reload = RADIO_CONN_EVENTS(TIMEOUT * 10000U, conn.lll.interval *
-						    CONN_INT_UNIT_US);
+	conn.supervision_timeout = TIMEOUT;
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -2638,7 +2637,6 @@ void test_conn_update_periph_rem_apm_reject_right_away(void)
 	ztest_returns_value(ull_handle_cpr_anchor_point_move, false);
 	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
 
-
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
@@ -2647,8 +2645,7 @@ void test_conn_update_periph_rem_apm_reject_right_away(void)
 
 	conn.lll.interval = conn_param_req_apm.interval_max;
 	conn.lll.latency = conn_param_req_apm.latency;
-	conn.supervision_reload = RADIO_CONN_EVENTS(TIMEOUT * 10000U, conn.lll.interval *
-						    CONN_INT_UNIT_US);
+	conn.supervision_timeout = TIMEOUT;
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -2740,6 +2737,7 @@ void test_conn_update_periph_rem_apm_accept_defered(void)
 	};
 	struct node_tx *tx;
 	uint16_t instant;
+	uint8_t error = 0U;
 	/* Default conn_param_req PDU */
 	struct pdu_data_llctrl_conn_param_req conn_param_req_apm = { .interval_min = INTVL_MIN,
 								 .interval_max = INTVL_MAX,
@@ -2767,7 +2765,6 @@ void test_conn_update_periph_rem_apm_accept_defered(void)
 								 .offset3 = 0xffffU,
 								 .offset4 = 0xffffU,
 								 .offset5 = 0xffffU };
-	uint8_t error = 0;
 
 	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
 	/* Defer APM */
@@ -2782,8 +2779,7 @@ void test_conn_update_periph_rem_apm_accept_defered(void)
 
 	conn.lll.interval = conn_param_req_apm.interval_max;
 	conn.lll.latency = conn_param_req_apm.latency;
-	conn.supervision_reload = RADIO_CONN_EVENTS(TIMEOUT * 10000U, conn.lll.interval *
-						    CONN_INT_UNIT_US);
+	conn.supervision_timeout = TIMEOUT;
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -2796,7 +2792,6 @@ void test_conn_update_periph_rem_apm_accept_defered(void)
 
 	/* Done */
 	event_done(&conn);
-
 
 	/* Run a few events */
 	for (int i = 0; i < 10; i++) {
@@ -2906,6 +2901,7 @@ void test_conn_update_periph_rem_apm_reject_defered(void)
 {
 #if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
 	struct node_tx *tx;
+	uint8_t error = 0U;
 	/* Default conn_param_req PDU */
 	struct pdu_data_llctrl_conn_param_req conn_param_req_apm = { .interval_min = INTVL_MIN,
 								 .interval_max = INTVL_MAX,
@@ -2923,13 +2919,11 @@ void test_conn_update_periph_rem_apm_reject_defered(void)
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
 		.error_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL
 	};
-	uint8_t error = 0U;
 
 	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
 	/* Defer APM */
 	ztest_returns_value(ull_handle_cpr_anchor_point_move, true);
 	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
-
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -2939,8 +2933,7 @@ void test_conn_update_periph_rem_apm_reject_defered(void)
 
 	conn.lll.interval = conn_param_req_apm.interval_max;
 	conn.lll.latency = conn_param_req_apm.latency;
-	conn.supervision_reload = RADIO_CONN_EVENTS(TIMEOUT * 10000U, conn.lll.interval *
-						    CONN_INT_UNIT_US);
+	conn.supervision_timeout = TIMEOUT;
 
 	/* Prepare */
 	event_prepare(&conn);

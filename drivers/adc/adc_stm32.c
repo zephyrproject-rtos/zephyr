@@ -4,6 +4,7 @@
  * Copyright (c) 2019 Endre Karlson
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2021 Marius Scholtz, RIC Electronics
+ * Copyright (c) 2023 Hein Wessels, Nobleo Technology
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +25,7 @@
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+#define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #include "adc_context.h"
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
@@ -69,6 +71,7 @@ static const uint32_t table_rank[] = {
 };
 
 #define SEQ_LEN(n)	LL_ADC_REG_SEQ_SCAN_ENABLE_##n##RANKS
+/* Length of this array signifies the maximum sequence length */
 static const uint32_t table_seq_len[] = {
 	LL_ADC_REG_SEQ_SCAN_DISABLE,
 	SEQ_LEN(2),
@@ -95,6 +98,7 @@ static const uint32_t table_resolution[] = {
 	defined(STM32F3X_ADC_V2_5)
 	RES(12),
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	RES(6),
 	RES(8),
 	RES(10),
 	RES(12),
@@ -249,7 +253,9 @@ struct adc_stm32_data {
 	uint16_t *repeat_buffer;
 
 	uint8_t resolution;
+	uint32_t channels;
 	uint8_t channel_count;
+	uint8_t samples_count;
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
@@ -262,9 +268,9 @@ struct adc_stm32_cfg {
 	void (*irq_cfg_func)(void);
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
-	bool has_temp_channel;
-	bool has_vref_channel;
-	bool has_vbat_channel;
+	int8_t temp_channel;
+	int8_t vref_channel;
+	int8_t vbat_channel;
 };
 
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
@@ -533,57 +539,31 @@ static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInt
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
 }
 
-static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_id)
+static void adc_stm32_setup_channel(const struct device *dev, uint8_t channel_id)
 {
 	const struct adc_stm32_cfg *config = dev->config;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 
-#ifdef CONFIG_SOC_SERIES_STM32G4X
-	if (config->has_temp_channel) {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
-		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
-		    && (config->base == ADC1)) {
-			adc_stm32_disable(adc);
-			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-			k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
-		}
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
-		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
-		   && (config->base == ADC5)) {
-			adc_stm32_disable(adc);
-			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-			k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
-		}
-#endif
-	}
-#else
-	if (config->has_temp_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+	if (config->temp_channel == channel_id) {
 		adc_stm32_disable(adc);
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-#ifdef LL_ADC_DELAY_TEMPSENSOR_STAB_US
 		k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
-#endif
 	}
-#endif /* CONFIG_SOC_SERIES_STM32G4X */
 
-	if (config->has_vref_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id) {
+	if (config->vref_channel == channel_id) {
 		adc_stm32_disable(adc);
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
 #ifdef LL_ADC_DELAY_VREFINT_STAB_US
 		k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
 #endif
 	}
+
 #if defined(LL_ADC_CHANNEL_VBAT)
 	/* Enable the bridge divider only when needed for ADC conversion. */
-	if (config->has_vbat_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id) {
+	if (config->vbat_channel == channel_id) {
 		adc_stm32_disable(adc);
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
 	}
-
 #endif /* LL_ADC_CHANNEL_VBAT */
 }
 
@@ -599,49 +579,34 @@ static void adc_stm32_unset_common_path(const struct device *dev, uint32_t PathI
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
 }
 
-static void adc_stm32_teardown_channels(const struct device *dev, uint8_t channel_id)
+static void adc_stm32_teardown_channels(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
+	struct adc_stm32_data *data = dev->data;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	uint8_t channel_id;
 
-#ifdef CONFIG_SOC_SERIES_STM32G4X
-	if (config->has_temp_channel) {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
-		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
-		    && (config->base == ADC1)) {
+	for (uint32_t channels = data->channels; channels; channels &= ~BIT(channel_id)) {
+		channel_id = find_lsb_set(channels) - 1;
+		if (config->temp_channel == channel_id) {
 			adc_stm32_disable(adc);
 			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 		}
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
-		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
-		   && (config->base == ADC5)) {
-			adc_stm32_disable(adc);
-			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-		}
-#endif
-	}
-#else
-	if (config->has_temp_channel &&
-		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id)) {
-		adc_stm32_disable(adc);
-		adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-	}
-#endif /* CONFIG_SOC_SERIES_STM32G4X */
 
-	if (config->has_vref_channel &&
-		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id)) {
-		adc_stm32_disable(adc);
-		adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
-	}
+		if (config->vref_channel == channel_id) {
+			adc_stm32_disable(adc);
+			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+		}
+
 #if defined(LL_ADC_CHANNEL_VBAT)
-	/* Enable the bridge divider only when needed for ADC conversion. */
-	if (config->has_vbat_channel &&
-		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id)) {
-		adc_stm32_disable(adc);
-		adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
-	}
+		/* Enable the bridge divider only when needed for ADC conversion. */
+		if (config->vbat_channel == channel_id) {
+			adc_stm32_disable(adc);
+			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
+		}
 #endif /* LL_ADC_CHANNEL_VBAT */
+	}
+
 	adc_stm32_enable(adc);
 }
 
@@ -661,17 +626,20 @@ static int start_read(const struct device *dev,
 		resolution = table_resolution[0];
 		break;
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	case 8:
+	case 6:
 		resolution = table_resolution[0];
 		break;
-	case 10:
+	case 8:
 		resolution = table_resolution[1];
 		break;
-	case 12:
+	case 10:
 		resolution = table_resolution[2];
 		break;
-	case 14:
+	case 12:
 		resolution = table_resolution[3];
+		break;
+	case 14:
+		resolution = table_resolution[4];
 		break;
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	case 6:
@@ -708,63 +676,104 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-	uint32_t channels = sequence->channels;
-	uint8_t index = find_lsb_set(channels) - 1;
+	data->buffer = sequence->buffer;
+	data->channels = sequence->channels;
+	data->channel_count = POPCOUNT(data->channels);
+	data->samples_count = 0;
 
-	if (channels > BIT(index)) {
-		LOG_ERR("Only single channel supported");
-		return -ENOTSUP;
+	if (data->channel_count == 0) {
+		LOG_ERR("No channels selected");
+		return -EINVAL;
 	}
 
-	adc_stm32_setup_channels(dev, index);
+	if (data->channels > BIT(STM32_CHANNEL_COUNT) - 1) {
+		LOG_ERR("Channels bitmask uses out of range channel");
+		return -EINVAL;
+	}
 
-	data->buffer = sequence->buffer;
-
-	uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(index);
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/*
-	 * Each channel in the sequence must be previously enabled in PCSEL.
-	 * This register controls the analog switch integrated in the IO level.
-	 */
-	LL_ADC_SetChannelPreSelection(adc, channel);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	/*
-	 * Each channel in the sequence must be previously enabled in PCSEL.
-	 * This register controls the analog switch integrated in the IO level.
-	 * Only for ADC1 instance (ADC4 has no Channel preselection capability).
-	 */
-	if (adc == ADC1) {
-		LL_ADC_SetChannelPreselection(adc, channel);
+#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32WLX)
+	if (data->channel_count > ARRAY_SIZE(table_seq_len)) {
+		LOG_ERR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
+		return -EINVAL;
+	}
+#else
+	if (data->channel_count > 1) {
+		LOG_ERR("This device only supports single channel sampling");
+		return -EINVAL;
 	}
 #endif
+
+	uint8_t channel_id;
+	uint8_t channel_index = 0;
+
+	/* Iterate over selected channels in bitmask keeping track of:
+	 * - channel_index: ranging from 0 -> ( data->channel_count - 1 )
+	 * - channel_id: ordinal position of channel in data->channels bitmask
+	 */
+	for (uint32_t channels = data->channels; channels;
+		      channels &= ~BIT(channel_id), channel_index++) {
+		channel_id = find_lsb_set(channels) - 1;
+
+		uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+
+		adc_stm32_setup_channel(dev, channel_id);
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+		/*
+		 * Each channel in the sequence must be previously enabled in PCSEL.
+		 * This register controls the analog switch integrated in the IO level.
+		 */
+		LL_ADC_SetChannelPreSelection(adc, channel);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+		/*
+		 * Each channel in the sequence must be previously enabled in PCSEL.
+		 * This register controls the analog switch integrated in the IO level.
+		 * Only for ADC1 instance (ADC4 has no Channel preselection capability).
+		 */
+		if (adc == ADC1) {
+			LL_ADC_SetChannelPreselection(adc, channel);
+		}
+#endif
+
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
-	LL_ADC_REG_SetSequencerChannels(adc, channel);
+		LL_ADC_REG_SetSequencerChannels(adc, channel);
 #elif defined(CONFIG_SOC_SERIES_STM32WLX)
-	/* Init the the ADC group for REGULAR conversion*/
-	LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_CONFIGURABLE);
-	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
-	LL_ADC_REG_SetSequencerLength(adc, LL_ADC_REG_SEQ_SCAN_DISABLE);
-	LL_ADC_REG_SetOverrun(adc, LL_ADC_REG_OVR_DATA_OVERWRITTEN);
-	LL_ADC_REG_SetSequencerRanks(adc, LL_ADC_REG_RANK_1, channel);
-	LL_ADC_REG_SetSequencerChannels(adc, channel);
-	/* Wait for config complete config is ready */
-	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
-	}
-	LL_ADC_ClearFlag_CCRDY(adc);
+		/* Init the the ADC group for REGULAR conversion*/
+		LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_CONFIGURABLE);
+		LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
+		LL_ADC_REG_SetSequencerLength(adc, LL_ADC_REG_SEQ_SCAN_DISABLE);
+		LL_ADC_REG_SetOverrun(adc, LL_ADC_REG_OVR_DATA_OVERWRITTEN);
+		LL_ADC_REG_SetSequencerRanks(adc, LL_ADC_REG_RANK_1, channel);
+		LL_ADC_REG_SetSequencerChannels(adc, channel);
+		/* Wait for config complete config is ready */
+		while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
+		}
+		LL_ADC_ClearFlag_CCRDY(adc);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
-	/* STM32G0 in "not fully configurable" sequencer mode */
-	LL_ADC_REG_SetSequencerChannels(adc, channel);
-	LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_FIXED);
-	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
-	}
-	LL_ADC_ClearFlag_CCRDY(adc);
-
+		/* STM32G0 in "not fully configurable" sequencer mode */
+		LL_ADC_REG_SetSequencerChannels(adc, channel);
+		LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_FIXED);
+		while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
+		}
+		LL_ADC_ClearFlag_CCRDY(adc);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+		if (adc != ADC4) {
+			LL_ADC_REG_SetSequencerRanks(adc, table_rank[channel_index], channel);
+			LL_ADC_REG_SetSequencerLength(adc, table_seq_len[channel_index]);
+		} else {
+			LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_FIXED);
+			LL_ADC_REG_SetSequencerLength(adc,
+						      BIT(__LL_ADC_CHANNEL_TO_DECIMAL_NB(channel)));
+		}
 #else
-	LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
-	LL_ADC_REG_SetSequencerLength(adc, table_seq_len[0]);
+		LL_ADC_REG_SetSequencerRanks(adc, table_rank[channel_index], channel);
+		LL_ADC_REG_SetSequencerLength(adc, table_seq_len[channel_index]);
 #endif
-	data->channel_count = 1;
+	}
 
 	err = check_buffer_size(sequence, data->channel_count);
 	if (err) {
@@ -890,11 +899,9 @@ static int start_read(const struct device *dev,
 
 	adc_context_start_read(&data->ctx, sequence);
 
-	err = adc_context_wait_for_completion(&data->ctx);
+	int result = adc_context_wait_for_completion(&data->ctx);
 
-	adc_stm32_teardown_channels(dev, index);
-
-	return err;
+	return result;
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)
@@ -927,9 +934,23 @@ static void adc_stm32_isr(const struct device *dev)
 
 	*data->buffer++ = LL_ADC_REG_ReadConversionData32(adc);
 
-	adc_context_on_sampling_done(&data->ctx, dev);
+	/* ISR is triggered after each conversion, and at the end-of-sequence. */
+	if (++data->samples_count == data->channel_count) {
+		data->samples_count = 0;
+		adc_context_on_sampling_done(&data->ctx, dev);
+	}
 
 	LOG_DBG("%s ISR triggered.", dev->name);
+}
+
+static void adc_context_on_complete(struct adc_context *ctx, int status)
+{
+	struct adc_stm32_data *data =
+		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
+
+	ARG_UNUSED(status);
+
+	adc_stm32_teardown_channels(data->dev);
 }
 
 static int adc_stm32_read(const struct device *dev,
@@ -1006,6 +1027,16 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 	LL_ADC_SetSamplingTimeCommonChannels(adc,
 					     __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
 					     table_samp_time[acq_time_index]);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc != ADC4) {
+		LL_ADC_SetChannelSamplingTime(adc,
+					      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+					      table_samp_time[acq_time_index]);
+	} else {
+		LL_ADC_SetSamplingTimeCommonChannels(adc,
+						     LL_ADC_SAMPLINGTIME_COMMON_1,
+				       table_samp_time[acq_time_index]);
+	}
 #else
 	LL_ADC_SetChannelSamplingTime(adc,
 		__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
@@ -1293,7 +1324,11 @@ static const struct adc_driver_api api_stm32_driver_api = {
 
 bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
 {
+#if defined(CONFIG_SOC_SERIES_STM32G4X)
+	return LL_ADC_IsActiveFlag_EOC(adc) ||
+#else
 	return LL_ADC_IsActiveFlag_EOCS(adc) ||
+#endif /* CONFIG_SOC_SERIES_STM32G4X */
 	       LL_ADC_IsActiveFlag_OVR(adc) ||
 	       LL_ADC_IsActiveFlag_JEOS(adc) ||
 	       LL_ADC_IsActiveFlag_AWD1(adc);
@@ -1325,48 +1360,44 @@ static void adc_stm32_irq_init(void)
 	}
 }
 
-#define ADC_STM32_CONFIG(index)						\
-static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
-	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
+#define ADC_STM32_IRQ_CONFIG(index)
+#define ADC_STM32_IRQ_FUNC(index)					\
 	.irq_cfg_func = adc_stm32_irq_init,				\
-	.pclken = {							\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
-		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
-	},								\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
-	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
-	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
-};
+
 #else
-#define ADC_STM32_CONFIG(index)						\
+
+#define ADC_STM32_IRQ_CONFIG(index)					\
 static void adc_stm32_cfg_func_##index(void)				\
 {									\
 	IRQ_CONNECT(DT_INST_IRQN(index),				\
 		    DT_INST_IRQ(index, priority),			\
 		    adc_stm32_isr, DEVICE_DT_INST_GET(index), 0);	\
 	irq_enable(DT_INST_IRQN(index));				\
-}									\
+}
+#define ADC_STM32_IRQ_FUNC(index)					\
+	.irq_cfg_func = adc_stm32_cfg_func_##index,
+
+#endif /* CONFIG_ADC_STM32_SHARED_IRQS */
+
+
+#define ADC_STM32_INIT(index)						\
+									\
+PINCTRL_DT_INST_DEFINE(index);						\
+									\
+ADC_STM32_IRQ_CONFIG(index)						\
 									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
-	.irq_cfg_func = adc_stm32_cfg_func_##index,			\
+	ADC_STM32_IRQ_FUNC(index)					\
 	.pclken = {							\
 		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
-	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
-	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
-};
-#endif /* CONFIG_ADC_STM32_SHARED_IRQS */
-
-#define STM32_ADC_INIT(index)						\
-									\
-PINCTRL_DT_INST_DEFINE(index);						\
-									\
-ADC_STM32_CONFIG(index)							\
+	.temp_channel = DT_INST_PROP_OR(index, temp_channel, 0xFF),	\
+	.vref_channel = DT_INST_PROP_OR(index, vref_channel, 0xFF),	\
+	.vbat_channel = DT_INST_PROP_OR(index, vbat_channel, 0xFF),	\
+};									\
 									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),		\
@@ -1380,4 +1411,4 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 		    &api_stm32_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(STM32_ADC_INIT)
+DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_INIT)

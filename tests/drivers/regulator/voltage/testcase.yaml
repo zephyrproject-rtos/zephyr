@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags: drivers regulator
+  harness: ztest
+
+tests:
+  drivers.regulator.voltage.nrf52840dk_nrf52840_npm6001:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_npm6001.overlay SHIELD=npm6001_ek
+    harness_config:
+      fixture: npm6001_ek_to_adc

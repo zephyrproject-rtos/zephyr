@@ -5,11 +5,8 @@ description: Intel E1000 Ethernet controller
 
 compatible: "intel,e1000"
 
-include: base.yaml
+include: [base.yaml, pcie-device.yaml]
 
 properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: true
+  interrupts:
+    required: true

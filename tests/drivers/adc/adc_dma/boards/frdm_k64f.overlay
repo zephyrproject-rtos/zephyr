@@ -12,7 +12,7 @@
 };
 
 &edma0 {
-	dma-buf-alignment = <4>;
+	dma-buf-addr-alignment = <4>;
 };
 
 test_dma: &edma0 { };

@@ -65,6 +65,17 @@ void main(void)
 		return;
 	}
 
+#if defined(CONFIG_LORAMAC_REGION_EU868)
+	/* If more than one region Kconfig is selected, app should set region
+	 * before calling lorawan_start()
+	 */
+	ret = lorawan_set_region(LORAWAN_REGION_EU868);
+	if (ret < 0) {
+		LOG_ERR("lorawan_set_region failed: %d", ret);
+		return;
+	}
+#endif
+
 	ret = lorawan_start();
 	if (ret < 0) {
 		LOG_ERR("lorawan_start failed: %d", ret);
@@ -86,6 +97,10 @@ void main(void)
 		LOG_ERR("lorawan_join_network failed: %d", ret);
 		return;
 	}
+
+#ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
+	lorawan_clock_sync_run();
+#endif
 
 	LOG_INF("Sending data...");
 	while (1) {

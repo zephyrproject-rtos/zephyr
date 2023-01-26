@@ -58,6 +58,7 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
+	/* usbpre not set: USB clock = 72 / 1.5: 48MHz */
 };
 
 &usart1 {

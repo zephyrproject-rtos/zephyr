@@ -31,7 +31,6 @@ properties:
 
   zephyr,priority:
     type: array
-    required: false
     description: |
       WQ priority for the instance. This property is an array composed by the
       priority level and the type of priority (PRIO_COOP for cooperative or
@@ -47,7 +46,6 @@ properties:
 
   zephyr,buffer-size:
     type: int
-    required: false
     description: |
       The size of the buffer used to send data between host and remote. Default
       value is RPMSG_BUFFER_SIZE. This property must be the same for host and remote.

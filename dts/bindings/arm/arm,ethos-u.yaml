@@ -1,0 +1,32 @@
+# Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The Arm Ethos-U is a micro NPU that enables neural networks to be hardware
+    accelerated on embedded devices. The Ethos-U NPU driver is provided as a
+    Zephyr module that is hooked up into the Tensorflow Lite Micro framework
+    as a 'TFLM custom operation'.
+
+    This device tree entry defines board specific properties like the register
+    map address and interrupt line, and is therefore expected to be included
+    into the device specific device tree file.
+
+compatible: "arm,ethos-u"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  secure-enable:
+    type: boolean
+    description: Configure Ethos-U NPU to operate in secure- or non-secure mode
+
+  privilege-enable:
+    type: boolean
+    description: Configure Ethos-U NPU to operate in privileged- or non-privileged mode

@@ -573,12 +573,8 @@ workflow here:
    you want to open a pull request with.
 
 #. Review the pull request changes, and verify that you are opening a
-   pull request for the appropriate branch. The title and message from your
-   commit message should appear as well.
-
-#. If you're working on a subsystem branch that's not ``main``,
-   you may need to change the intended branch for the pull request
-   here, for example, by changing the base branch from ``main`` to ``net``.
+   pull request for the appropriate branch (if unsure, use `main`). The title
+   and message from your commit message should appear as well.
 
 #. GitHub will assign one or more suggested reviewers (based on the
    CODEOWNERS file in the repo). If you are a project member, you can
@@ -587,6 +583,13 @@ workflow here:
 #. Click on the submit button and your pull request is sent and awaits
    review.  Email will be sent as review comments are made, or you can check
    on your pull request at https://github.com/zephyrproject-rtos/zephyr/pulls.
+
+   .. note:: As more commits are merged upstream, the GitHub PR page will show
+      a ``This branch is out-of-date with the base branch`` message and a
+      ``Update branch`` button on the PR page. That message should be ignored,
+      as the commits will be rebased as part of merging anyway, and triggering
+      a branch update from the GitHub UI will cause the PR approvals to be
+      dropped.
 
 #. While you're waiting for your pull request to be accepted and merged, you
    can create another branch to work on another issue. (Be sure to make your

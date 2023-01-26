@@ -19,7 +19,7 @@ tests:
     tags: pwm_mcux_pwt
     extra_configs:
       - CONFIG_PWM_CAPTURE=y
-  drivers.pwm.mcux.ftm.build:
+  drivers.pwm.mcux.tpm.build:
     platform_allow: frdm_kw41z
     tags: pwm_mcux_tpm
   drivers.pwm.mcux.build:
@@ -43,6 +43,10 @@ tests:
   drivers.pwm.nrf.build:
     platform_allow: nrf52840dk_nrf52840
     tags: pwm_nrfx
+  drivers.pwm.pca9685.build:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=adafruit_pca9685
+    tags: pwm_pca9685
   drivers.pwm.sam0.tcc.build:
     platform_allow: atsame54_xpro
     tags: pwm_sam0_tcc

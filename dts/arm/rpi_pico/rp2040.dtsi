@@ -12,6 +12,10 @@
 #include "rpi_pico_common.dtsi"
 
 / {
+	aliases {
+		die-temp0 = &die_temp;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -33,10 +37,18 @@
 			reg = <0x20000000 DT_SIZE_K(264)>;
 		};
 
-		flash0: flash@10000000 {
-			compatible = "soc-nv-flash";
+		ssi: flash-controller@18000000 {
+			compatible = "raspberrypi,pico-flash-controller";
+			reg = <0x18000000 0xfc>;
 
-			write-block-size = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				write-block-size = <1>;
+				erase-block-size = <DT_SIZE_K(4)>;
+			};
 		};
 
 		peripheral_clk: peripheral-clk {
@@ -57,12 +69,6 @@
 			reg-width = <4>;
 			active-low = <0>;
 			#reset-cells = <1>;
-		};
-
-		pinctrl: pin-controller@40014000 {
-			compatible = "raspberrypi,pico-pinctrl";
-			reg = <0x40014000 DT_SIZE_K(4)>;
-			status = "okay";
 		};
 
 		gpio0: gpio@40014000 {
@@ -178,6 +184,16 @@
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
+	};
+
+	pinctrl: pin-controller {
+		compatible = "raspberrypi,pico-pinctrl";
+	};
+
+	die_temp: dietemp {
+		compatible = "raspberrypi,pico-temp";
+		io-channels = <&adc 4>;
+		status = "disabled";
 	};
 };
 

@@ -297,6 +297,12 @@ static int mcux_lpadc_init(const struct device *dev)
 	CLOCK_AttachClk(kSFRO_to_ADC_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, config->clock_div);
 
+#elif	defined(CONFIG_SOC_SERIES_IMX_RT5XX)
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_PD_MASK;
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_LP_MASK;
+	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
+	CLOCK_AttachClk(kFRO_DIV4_to_ADC_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1);
 #else
 
 	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk, config->clock_div, true);
@@ -385,7 +391,9 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #define ASSERT_WITHIN_RANGE(val, min, max, str)	\
 	BUILD_ASSERT(val >= min && val <= max, str)
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT11XX) || defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+#if defined(CONFIG_SOC_SERIES_IMX_RT11XX) || \
+	defined(CONFIG_SOC_SERIES_IMX_RT6XX) || \
+	defined(CONFIG_SOC_SERIES_IMX_RT5XX)
 #define TO_LPADC_CLOCK_SOURCE(val) 0
 #else
 #define TO_LPADC_CLOCK_SOURCE(val) \

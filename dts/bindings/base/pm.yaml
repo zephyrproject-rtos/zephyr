@@ -4,25 +4,23 @@
 # Properties for Power Management (PM)
 
 properties:
-    wakeup-source:
-      required: false
-      type: boolean
-      description: |
-        Property to identify that a device can be used as wake up source.
+  wakeup-source:
+    type: boolean
+    description: |
+      Property to identify that a device can be used as wake up source.
 
-        When this property is provided a specific flag is set into the
-        device that tells the system that the device is capable of
-        wake up the system.
+      When this property is provided a specific flag is set into the
+      device that tells the system that the device is capable of
+      wake up the system.
 
-        Wake up capable devices are disabled (interruptions will not wake up
-        the system) by default but they can be enabled at runtime if necessary.
+      Wake up capable devices are disabled (interruptions will not wake up
+      the system) by default but they can be enabled at runtime if necessary.
 
-    power-domain:
-      required: false
-      type: phandle
-      description: |
+  power-domain:
+    type: phandle
+    description: |
 
-        Power domain the device belongs to.
+      Power domain the device belongs to.
 
-        The device will be notified when the power domain it belongs to is either
-        suspended or resumed.
+      The device will be notified when the power domain it belongs to is either
+      suspended or resumed.

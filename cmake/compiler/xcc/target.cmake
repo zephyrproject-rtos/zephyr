@@ -7,7 +7,7 @@ set_ifndef(C++ g++)
 
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   set(cplusplus_compiler ${CROSS_COMPILE}${C++})
 else()
   if(EXISTS ${CROSS_COMPILE}${C++})

@@ -882,13 +882,10 @@ static int cmd_net_send(const struct shell *sh, size_t argc, char *argv[])
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 32);
 
-	struct bt_mesh_msg_ctx ctx = {
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-		.net_idx = bt_mesh_shell_target_ctx.net_idx,
-		.addr = bt_mesh_shell_target_ctx.dst,
-		.app_idx = bt_mesh_shell_target_ctx.app_idx,
-
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT(bt_mesh_shell_target_ctx.net_idx,
+							  bt_mesh_shell_target_ctx.app_idx,
+							  bt_mesh_shell_target_ctx.dst,
+							  BT_MESH_TTL_DEFAULT);
 	struct bt_mesh_net_tx tx = {
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),

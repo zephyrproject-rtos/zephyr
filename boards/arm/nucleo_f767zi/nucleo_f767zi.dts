@@ -63,6 +63,10 @@
 	};
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_hse {
 	hse-bypass;
 	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
@@ -71,19 +75,19 @@
 
 &pll {
 	div-m = <4>;
-	mul-n = <72>;
+	mul-n = <216>;
 	div-p = <2>;
-	div-q = <3>;
+	div-q = <9>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(72)>;
+	clock-frequency = <DT_FREQ_M(216)>;
 	ahb-prescaler = <1>;
-	apb1-prescaler = <2>;
-	apb2-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
 };
 
 &usart2 {
@@ -149,6 +153,8 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

@@ -86,7 +86,7 @@ CBOR data of successful response:
         (str)"ret"          : (int)
     }
 
-In case of error the CBOR data takes form:
+In case of error the CBOR data takes the form:
 
 .. code-block:: none
 
@@ -100,17 +100,15 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes` (only     |
-    |                       | present if an error occurred)                     |
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
     | "o"                   | command output                                    |
     +-----------------------+---------------------------------------------------+
     | "ret"                 | return code from shell command execution          |
     +-----------------------+---------------------------------------------------+
 
-In case when "rc" is not 0, success, the other fields will not appear.
-
 .. note::
     In older versions of Zephyr, "rc" was used for both the mcumgr status code
     and shell command execution return code, this legacy behaviour can be
-    restored by enabling :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE`
+    restored by enabling :kconfig:option:`CONFIG_MCUMGR_GRP_SHELL_LEGACY_RC_RETURN_CODE`

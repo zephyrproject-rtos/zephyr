@@ -37,30 +37,6 @@ extern "C" {
  */
 
 /**
- * @deprecated Use the GPIO controller/SoC specific `*_GPIO_DEBOUNCE` flag instead.
- */
-#define GPIO_INT_DEBOUNCE (1U << 8) __DEPRECATED_MACRO
-
-/**
- * @deprecated Use the GPIO controller/SoC specific `*_GPIO_DS_*` flags instead.
- * @{
- */
-/** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_LOW_POS   9                                      __DEPRECATED_MACRO
-#define GPIO_DS_LOW_MASK  (0x1U << GPIO_DS_LOW_POS)              __DEPRECATED_MACRO
-#define GPIO_DS_HIGH_POS  10                                     __DEPRECATED_MACRO
-#define GPIO_DS_HIGH_MASK (0x1U << GPIO_DS_HIGH_POS)             __DEPRECATED_MACRO
-#define GPIO_DS_MASK      (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK) __DEPRECATED_MACRO
-/** @endcond */
-#define GPIO_DS_DFLT_LOW  (0x0U << GPIO_DS_LOW_POS)              __DEPRECATED_MACRO
-#define GPIO_DS_ALT_LOW   (0x1U << GPIO_DS_LOW_POS)              __DEPRECATED_MACRO
-#define GPIO_DS_DFLT_HIGH (0x0U << GPIO_DS_HIGH_POS)             __DEPRECATED_MACRO
-#define GPIO_DS_ALT_HIGH  (0x1U << GPIO_DS_HIGH_POS)             __DEPRECATED_MACRO
-#define GPIO_DS_DFLT      (GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH) __DEPRECATED_MACRO
-#define GPIO_DS_ALT       (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)   __DEPRECATED_MACRO
-/** @} */
-
-/**
  * @name GPIO input/output configuration flags
  * @{
  */
@@ -412,8 +388,10 @@ struct gpio_dt_spec {
  * @return static initializer for a struct gpio_dt_spec for the property
  * @see GPIO_DT_SPEC_GET_BY_IDX()
  */
-#define GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, idx, default_value)	\
-	GPIO_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), prop, idx, default_value)
+#define GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, idx, default_value)		\
+	COND_CODE_1(DT_PROP_HAS_IDX(DT_DRV_INST(inst), prop, idx),		\
+		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), prop, idx)),	\
+		    (default_value))
 
 /**
  * @brief Equivalent to GPIO_DT_SPEC_INST_GET_BY_IDX(inst, prop, 0).
@@ -580,6 +558,20 @@ __subsystem struct gpio_driver_api {
  */
 
 /**
+ * @brief Validate that GPIO port is ready.
+ *
+ * @param spec GPIO specification from devicetree
+ *
+ * @retval true if the GPIO spec is ready for use.
+ * @retval false if the GPIO spec is not ready for use.
+ */
+static inline bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
+{
+	/* Validate port is ready */
+	return device_is_ready(spec->port);
+}
+
+/**
  * @brief Configure pin interrupt.
  *
  * @note This function can also be used to configure interrupts on pins
@@ -706,9 +698,8 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 		 (GPIO_PULL_UP | GPIO_PULL_DOWN),
 		 "Pull Up and Pull Down should not be enabled simultaneously");
 
-	__ASSERT((flags & GPIO_OUTPUT) != 0 || (flags & GPIO_SINGLE_ENDED) == 0,
-		 "Output needs to be enabled for 'Open Drain', 'Open Source' "
-		 "mode to be supported");
+	__ASSERT(!((flags & GPIO_INPUT) && !(flags & GPIO_OUTPUT) && (flags & GPIO_SINGLE_ENDED)),
+		 "Input cannot be enabled for 'Open Drain', 'Open Source' modes without Output");
 
 	__ASSERT_NO_MSG((flags & GPIO_SINGLE_ENDED) != 0 ||
 			(flags & GPIO_LINE_OPEN_DRAIN) == 0);

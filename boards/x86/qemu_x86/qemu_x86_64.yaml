@@ -11,5 +11,5 @@ supported:
 testing:
   default: true
   ignore_tags:
-     - net
-     - bluetooth
+    - net
+    - bluetooth

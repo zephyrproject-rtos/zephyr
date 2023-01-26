@@ -25,7 +25,7 @@ static inline size_t nvs_lookup_cache_pos(uint16_t id)
 {
 	size_t pos;
 
-#if CONFIG_NVS_LOOKUP_CACHE_SIZE <= UINT8_MAX
+#if CONFIG_NVS_LOOKUP_CACHE_SIZE <= (UINT8_MAX + 1)
 	/*
 	 * CRC8-CCITT is used for ATE checksums and it also acts well as a hash
 	 * function, so it can be a good choice from the code size perspective.
@@ -887,11 +887,13 @@ static int nvs_startup(struct nvs_fs *fs)
 		fs->data_wra = fs->ate_wra & ADDR_SECT_MASK;
 	}
 
-#ifdef CONFIG_NVS_LOOKUP_CACHE
-	rc = nvs_lookup_cache_rebuild(fs);
-#endif
-
 end:
+
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	if (!rc) {
+		rc = nvs_lookup_cache_rebuild(fs);
+	}
+#endif
 	/* If the sector is empty add a gc done ate to avoid having insufficient
 	 * space when doing gc.
 	 */

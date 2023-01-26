@@ -50,6 +50,12 @@ extern int net_bt_shell_init(void);
 #define net_bt_shell_init(...)
 #endif
 
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#define IPSP_FRAG_LEN CONFIG_NET_BUF_DATA_SIZE
+#else
+#define IPSP_FRAG_LEN L2CAP_IPSP_MTU
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+
 struct bt_if_conn {
 	struct net_if *iface;
 	struct bt_l2cap_le_chan ipsp_chan;
@@ -130,13 +136,7 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 
 static int net_bt_enable(struct net_if *iface, bool state)
 {
-	struct bt_if_conn *conn = net_bt_get_conn(iface);
-
 	NET_DBG("iface %p %s", iface, state ? "up" : "down");
-
-	if (state && conn->ipsp_chan.state != BT_L2CAP_CONNECTED) {
-		return -ENETDOWN;
-	}
 
 	return 0;
 }
@@ -259,7 +259,7 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_pkt_get_reserve_rx_data(BUF_TIMEOUT);
+	return net_pkt_get_reserve_rx_data(IPSP_FRAG_LEN, BUF_TIMEOUT);
 }
 
 static const struct bt_l2cap_chan_ops ipsp_ops = {

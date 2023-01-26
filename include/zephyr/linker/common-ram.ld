@@ -110,6 +110,10 @@
 	NETWORK_RAM_SECTIONS
 #endif /* NETWORKING */
 
+#if defined(CONFIG_PCIE)
+	ITERABLE_SECTION_RAM(pcie_dev, 4)
+#endif /* PCIE */
+
 #if defined(CONFIG_UART_MUX)
 	SECTION_DATA_PROLOGUE(uart_mux,,SUBALIGN(4))
 	{

@@ -5,47 +5,47 @@ description: Device.props test
 compatible: "props"
 
 properties:
-    nonexistent-boolean:
-        type: boolean
+  nonexistent-boolean:
+    type: boolean
 
-    existent-boolean:
-        type: boolean
+  existent-boolean:
+    type: boolean
 
-    int:
-        type: int
-        const: 1
+  int:
+    type: int
+    const: 1
 
-    array:
-        type: array
+  array:
+    type: array
 
-    uint8-array:
-        type: uint8-array
+  uint8-array:
+    type: uint8-array
 
-    string:
-        type: string
-        const: "foo"
+  string:
+    type: string
+    const: "foo"
 
-    string-array:
-        type: string-array
-        const: ['foo', 'bar', 'baz']
+  string-array:
+    type: string-array
+    const: ['foo', 'bar', 'baz']
 
-    phandle-ref:
-        type: phandle
+  phandle-ref:
+    type: phandle
 
-    phandle-refs:
-        type: phandles
+  phandle-refs:
+    type: phandles
 
-    phandle-array-foos:
-        type: phandle-array
+  phandle-array-foos:
+    type: phandle-array
 
-    phandle-array-foo-names:
-        type: string-array
+  phandle-array-foo-names:
+    type: string-array
 
-    # There's some slight special-casing for GPIOs in that 'foo-gpios = ...'
-    # gets resolved to #gpio-cells rather than #foo-gpio-cells, so test that
-    # too
-    foo-gpios:
-        type: phandle-array
+  # There's some slight special-casing for GPIOs in that 'foo-gpios = ...'
+  # gets resolved to #gpio-cells rather than #foo-gpio-cells, so test that
+  # too
+  foo-gpios:
+    type: phandle-array
 
-    path:
-        type: path
+  path:
+    type: path

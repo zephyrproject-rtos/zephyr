@@ -1,0 +1,8 @@
+common:
+    tags: test_framework bluetooth host
+tests:
+  bluetooth.host.bt_keys_store.default:
+     type: unit
+     extra_configs:
+      - CONFIG_SETTINGS=y
+      - CONFIG_BT_SETTINGS=y

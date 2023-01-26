@@ -507,3 +507,8 @@ gpio1: gpio@842800 {
 	status = "disabled";
 	port = <1>;
 };
+
+ieee802154: ieee802154 {
+	compatible = "nordic,nrf-ieee802154";
+	status = "disabled";
+};

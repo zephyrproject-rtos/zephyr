@@ -77,24 +77,24 @@ description: |
 
 compatible: "raspberrypi,pico-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node-group.yaml
-      child-binding:
-        child-binding:
-          property-allowlist:
-            - bias-disable
-            - bias-pull-down
-            - bias-pull-up
-            - input-enable
-            - input-schmitt-enable
-            - drive-strength
-            - slew-rate
+include: base.yaml
 
 child-binding:
   description: |
     Definitions for a pinctrl state.
   child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - input-enable
+          - input-schmitt-enable
+          - drive-strength
+          - slew-rate
+
     properties:
       pinmux:
         required: true

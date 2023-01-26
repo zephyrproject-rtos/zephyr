@@ -8,11 +8,11 @@ compatible: "gpio-i2c"
 include: i2c-controller.yaml
 
 properties:
-    scl-gpios:
-      type: phandle-array
-      required: true
-      description: GPIO to which the SCL pin of the I2C bus is connected.
-    sda-gpios:
-      type: phandle-array
-      required: true
-      description: GPIO to which the SDA pin of the I2C bus is connected.
+  scl-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to which the SCL pin of the I2C bus is connected.
+  sda-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to which the SDA pin of the I2C bus is connected.

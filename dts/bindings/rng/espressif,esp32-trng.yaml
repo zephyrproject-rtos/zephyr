@@ -12,8 +12,5 @@ compatible: "espressif,esp32-trng"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: false
+  reg:
+    required: true

@@ -481,6 +481,11 @@ Example output for a failed macro from
 
 .. _mocking-fff:
 
+Ztress
+======
+
+.. doxygengroup:: ztest_ztress
+
 Mocking via FFF
 ===============
 
@@ -494,6 +499,7 @@ driver instances are configured via :ref:`devicetree` and :ref:`kconfig`. See th
 devicetree bindings for more information:
 
  - :dtcompatible:`zephyr,fake-can`
+ - :dtcompatible:`zephyr,fake-eeprom`
 
 Customizing Test Output
 ***********************

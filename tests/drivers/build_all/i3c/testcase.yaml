@@ -1,0 +1,9 @@
+common:
+  build_only: true
+  tags: drivers i3c
+tests:
+  drivers.i3c.build:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    tags: i3c_cdns
+    extra_args: "CONFIG_I3C=y"

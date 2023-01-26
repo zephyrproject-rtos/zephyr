@@ -8,10 +8,9 @@ compatible: "adi,adxl372"
 include: ["i2c-device.yaml", "adi,adxl372-common.yaml"]
 
 properties:
-    int1-gpios:
-      type: phandle-array
-      required: false
-      description: |
-        The INT1 signal defaults to active high as produced by the
-        sensor.  The property value should ensure the flags properly
-        describe the signal that is presented to the driver.
+  int1-gpios:
+    type: phandle-array
+    description: |
+      The INT1 signal defaults to active high as produced by the
+      sensor.  The property value should ensure the flags properly
+      describe the signal that is presented to the driver.

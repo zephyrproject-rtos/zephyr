@@ -30,12 +30,12 @@ env:
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
-  DOXYGEN_VERSION: 1.9.4
+  DOXYGEN_VERSION: 1.9.6
 
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
     concurrency:
       group: doc-build-html-${{ github.ref }}
@@ -48,8 +48,8 @@ jobs:
     - name: install-pkgs
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build graphviz libclang1-9 libclang-cpp9
-        wget --no-verbose https://downloads.sourceforge.net/project/doxygen/rel-${DOXYGEN_VERSION}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+        sudo apt-get install -y ninja-build graphviz
+        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
         tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
@@ -115,9 +115,10 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-20.04
     container: texlive/texlive:latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     concurrency:
       group: doc-build-pdf-${{ github.ref }}
       cancel-in-progress: true

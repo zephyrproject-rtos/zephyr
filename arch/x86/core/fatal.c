@@ -33,6 +33,8 @@ FUNC_NORETURN void arch_system_halt(unsigned int reason)
 }
 #endif
 
+#ifdef CONFIG_THREAD_STACK_INFO
+
 static inline uintptr_t esf_get_sp(const z_arch_esf_t *esf)
 {
 #ifdef CONFIG_X86_64
@@ -42,16 +44,6 @@ static inline uintptr_t esf_get_sp(const z_arch_esf_t *esf)
 #endif
 }
 
-static inline uintptr_t esf_get_code(const z_arch_esf_t *esf)
-{
-#ifdef CONFIG_X86_64
-	return esf->code;
-#else
-	return esf->errorCode;
-#endif
-}
-
-#ifdef CONFIG_THREAD_STACK_INFO
 __pinned_func
 bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 {
@@ -95,6 +87,16 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 #endif
 
 #ifdef CONFIG_EXCEPTION_DEBUG
+
+static inline uintptr_t esf_get_code(const z_arch_esf_t *esf)
+{
+#ifdef CONFIG_X86_64
+	return esf->code;
+#else
+	return esf->errorCode;
+#endif
+}
+
 #if defined(CONFIG_X86_EXCEPTION_STACK_TRACE)
 struct stack_frame {
 	uintptr_t next;

@@ -16,7 +16,6 @@ include: "jedec,jesd216.yaml"
 properties:
   requires-ulbpr:
     type: boolean
-    required: false
     description: |
       Indicates the device requires the ULBPR (0x98) command.
 
@@ -27,7 +26,6 @@ properties:
 
   has-dpd:
     type: boolean
-    required: false
     description: |
       Indicates the device supports the DPD (0xB9) command.
 
@@ -40,7 +38,6 @@ properties:
 
   dpd-wakeup-sequence:
     type: array
-    required: false
     description: |
       Specifies wakeup durations for devices without RDPD.
 
@@ -57,7 +54,6 @@ properties:
 
   t-enter-dpd:
     type: int
-    required: false
     description: |
       Duration required to complete the DPD command.
 
@@ -69,7 +65,6 @@ properties:
 
   t-exit-dpd:
     type: int
-    required: false
     description: |
       Duration required to complete the RDPD command.
 
@@ -81,7 +76,6 @@ properties:
 
   has-lock:
     type: int
-    required: false
     description: |
       Bit mask of bits of the status register that should be cleared on
       startup.
@@ -95,3 +89,16 @@ properties:
 
       This value, when present, identifies bits in the status register
       that should be cleared when the device is initialized.
+
+  mxicy,mx25r-power-mode:
+    type: string
+    enum:
+      - "low-power"
+      - "high-performance"
+    description:
+      Select to configure flash to use ultra low power mode or high
+      performance mode (L/H switch). The high performance mode has
+      faster write and erase performance, but use more power than ultra
+      low power mode.
+
+      Only supported on Macronix MX25R Ultra Low Power series.

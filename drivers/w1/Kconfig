@@ -6,6 +6,7 @@
 menuconfig W1
 	bool
 	prompt "1-Wire Drivers"
+	select CRC
 	help
 	  Enable 1-Wire Drivers
 

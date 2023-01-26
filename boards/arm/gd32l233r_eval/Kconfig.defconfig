@@ -1,0 +1,9 @@
+# Copyright (c) 2022 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_GD32L233R_EVAL
+
+config BOARD
+	default "gd32l233r_eval"
+
+endif # BOARD_GD32L233R_EVAL

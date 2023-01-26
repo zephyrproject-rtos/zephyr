@@ -18,7 +18,6 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,entropy = &rng;
 	};
 
 	leds {
@@ -76,6 +75,10 @@
 };
 
 &clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
 	status = "okay";
 };
 

@@ -10,7 +10,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/mgmt/mcumgr/smp_shell.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_shell.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,9 +25,9 @@ struct shell_uart_ctrl_blk {
 	void *context;
 	atomic_t tx_busy;
 	bool blocking_tx;
-#ifdef CONFIG_MCUMGR_SMP_SHELL
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 	struct smp_shell_data smp;
-#endif /* CONFIG_MCUMGR_SMP_SHELL */
+#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 };
 
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN

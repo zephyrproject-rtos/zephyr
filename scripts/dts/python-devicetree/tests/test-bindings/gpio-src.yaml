@@ -5,5 +5,5 @@ description: GPIO source for mapping test
 compatible: "gpio-src"
 
 properties:
-    foo-gpios:
-        type: phandle-array
+  foo-gpios:
+    type: phandle-array

@@ -10,6 +10,15 @@ documentation.
 Additional information that is only relevant to Bluetooth applications can be
 found in this page.
 
+Thread safety
+*************
+
+Calling into the Bluetooth API is intended to be thread safe, unless otherwise
+noted in the documentation of the API function. The effort to ensure that this
+is the case for all API calls is an ongoing one, but the overall goal is
+formally stated in this paragraph. Bug reports and Pull Requests that move the
+subsystem in the direction of such goal are welcome.
+
 .. _bluetooth-hw-setup:
 
 Hardware setup

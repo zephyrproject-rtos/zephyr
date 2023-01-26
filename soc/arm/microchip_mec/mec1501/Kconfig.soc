@@ -26,41 +26,6 @@ config SOC_MEC1501_PROC_CLK_DIV
 	  HCLK = MCK / PROC_CLK_DIV
 	  Allowed divider values: 1, 3, 4, 16, and 48.
 
-config SOC_MEC1501_EXT_32K
-	bool "Use external 32KHz clock source"
-	help
-	  Use an external 32768 Hz clock source for PLL reference
-	  clock.
-
-	  Say y if you want to use an external source for the PLL
-	  32KHz reference clock.
-
-	  Say n to use the +/-2% internal silicon oscillator.
-
-config SOC_MEC1501_EXT_32K_CRYSTAL
-	bool "External 32KHz is a crystal"
-	depends on SOC_MEC1501_EXT_32K
-	help
-	  Choose a crystal as the external 32KHz source.
-
-	  Say y if you wish to use a crystal as the external
-	  32KHz clock source.
-
-	  Saying n will select the 32KHZ_IN pin as the external
-	  32KHz clock source.
-
-config SOC_MEC1501_EXT_32K_PARALLEL_CRYSTAL
-	bool "Use parallel connected 32KHz crystal"
-	depends on SOC_MEC1501_EXT_32K_CRYSTAL
-	help
-	  Choose external 32KHz crystal connection.
-
-	  Say y if the crystal is connected parallel between
-	  the XTAL1 and XTAL pins.
-
-	  Say n if the crystal is connected single ended to
-	  the XTAL2 pin or a 32KHz square wave is on XTAL2.
-
 config SOC_MEC1501_VTR3_1_8V
 	bool "VTR3 power rail is tied to 1.8V"
 	help
@@ -73,11 +38,6 @@ config SOC_MEC1501_VCI_PINS_AS_GPIOS
 	  By default these pins are not GPIOs, but HW controlled.
 	  Set this if VCI pin block HW logic is not required in the board
 	  design.
-
-config SOC_MEC1501_TEST_CLK_OUT
-	bool "Test clock out pin"
-	help
-	  Enables a test clock out pin
 
 choice
 	prompt "MEC1501 debug interface general configuration"

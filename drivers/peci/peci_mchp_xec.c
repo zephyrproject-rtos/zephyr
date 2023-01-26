@@ -444,6 +444,7 @@ static int peci_xec_init(const struct device *dev)
 {
 	const struct peci_xec_config * const cfg = dev->config;
 	struct peci_regs * const regs = cfg->regs;
+	struct ecs_regs * const ecs_regs = (struct ecs_regs *)(DT_REG_ADDR(DT_NODELABEL(ecs)));
 
 #ifdef CONFIG_PINCTRL
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -459,6 +460,8 @@ static int peci_xec_init(const struct device *dev)
 #endif
 
 	peci_clr_slp_en(dev);
+
+	ecs_regs->PECI_DIS = 0x00u;
 
 	/* Reset PECI interface */
 	regs->CONTROL |= MCHP_PECI_CTRL_RST;

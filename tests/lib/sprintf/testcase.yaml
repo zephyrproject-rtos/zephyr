@@ -5,7 +5,8 @@ tests:
     integration_platforms:
     - qemu_x86
     platform_exclude: native_posix native_posix_64 nrf52_bsim
-    tags: libc ignore_faults
+    tags: libc
+    ignore_faults: true
     testcases:
     - sprintf_integer
     - sprintf_double
@@ -28,7 +29,8 @@ tests:
     - EOF
   libraries.picolibc.sprintf:
     extra_args: CONF_FILE=prj_picolibc.conf
-    tags: libc ignore_faults picolibc
+    tags: libc picolibc
+    ignore_faults: true
     filter: CONFIG_PICOLIBC_SUPPORTED
   libraries.picolibc.sprintf_new:
     extra_args: CONF_FILE=prj_picolibc_new.conf

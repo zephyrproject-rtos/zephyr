@@ -1,0 +1,8 @@
+tests:
+  # section.subsection
+  drivers.sbs_gauge_new_api:
+    tags: test_framework
+    filter: dt_compat_enabled("sbs,sbs-gauge-new-api")
+    platform_allow: native_posix qemu_cortex_a9 nucleo_f070rb
+    integration_platforms:
+      - nucleo_f070rb

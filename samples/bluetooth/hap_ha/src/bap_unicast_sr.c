@@ -425,6 +425,25 @@ int bap_unicast_sr_init(void)
 
 	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
 
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
+		if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BANDED)) {
+			/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
+			 * A Banded Hearing Aid in the HA role shall set the
+			 * Front Left and the Front Right bits to a value of 0b1
+			 * in the Sink Audio Locations characteristic value.
+			 */
+			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					     (BT_AUDIO_LOCATION_FRONT_LEFT |
+					      BT_AUDIO_LOCATION_FRONT_RIGHT));
+		} else if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_LEFT)) {
+			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					     BT_AUDIO_LOCATION_FRONT_LEFT);
+		} else {
+			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					     BT_AUDIO_LOCATION_FRONT_RIGHT);
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
 		bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
 	}

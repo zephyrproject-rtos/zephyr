@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ot-uart = &uart0;
+		zephyr,console = &uart1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};

@@ -9,14 +9,6 @@
 
 #include <offsets.h>
 
-/* kernel */
-
-/* nothing for now */
-
-/* end - kernel */
-
-/* threads */
-
 #define _thread_offset_to_sp \
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_sp_OFFSET)
 
@@ -65,56 +57,30 @@
 #define _thread_offset_to_swap_return_value \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_swap_return_value_OFFSET)
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU_SHARING)
 
-#define _thread_offset_to_fcsr \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fcsr_OFFSET)
+#define _thread_offset_to_exception_depth \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_exception_depth_OFFSET)
 
-#define _thread_offset_to_fs0 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs0_OFFSET)
-
-#define _thread_offset_to_fs1 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs1_OFFSET)
-
-#define _thread_offset_to_fs2 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs2_OFFSET)
-
-#define _thread_offset_to_fs3 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs3_OFFSET)
-
-#define _thread_offset_to_fs4 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs4_OFFSET)
-
-#define _thread_offset_to_fs5 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs5_OFFSET)
-
-#define _thread_offset_to_fs6 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs6_OFFSET)
-
-#define _thread_offset_to_fs7 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs7_OFFSET)
-
-#define _thread_offset_to_fs8 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs8_OFFSET)
-
-#define _thread_offset_to_fs9 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs9_OFFSET)
-
-#define _thread_offset_to_fs10 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs10_OFFSET)
-
-#define _thread_offset_to_fs11 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs11_OFFSET)
-
-#endif /* defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) */
-
-#ifdef CONFIG_USERSPACE
-#define _thread_offset_to_priv_stack_start \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
-#define _thread_offset_to_user_sp \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_user_sp_OFFSET)
 #endif
 
-/* end - threads */
+#ifdef CONFIG_USERSPACE
+
+#define _thread_offset_to_priv_stack_start \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
+
+#define _thread_offset_to_user_sp \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_user_sp_OFFSET)
+
+#define _curr_cpu_arch_user_exc_sp \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_user_exc_sp_OFFSET)
+
+#define _curr_cpu_arch_user_exc_tmp0 \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_user_exc_tmp0_OFFSET)
+
+#define _curr_cpu_arch_user_exc_tmp1 \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_user_exc_tmp1_OFFSET)
+
+#endif
 
 #endif /* ZEPHYR_ARCH_RISCV_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

@@ -76,7 +76,6 @@ __asm__(".section .imr.z_boot_asm_entry, \"x\" \n\t"
 	"  movi  a1, " IMRSTACK    "\n\t"
 	"  call4 boot_core0   \n\t");
 
-
 static __imr void parse_module(struct sof_man_fw_header *hdr,
 			       struct sof_man_module *mod)
 {

@@ -5,7 +5,11 @@ tests:
   drivers.pinctrl.api:
     tags: drivers pinctrl
     platform_allow: native_posix native_posix_64
+    integration_platforms:
+      - native_posix
   drivers.pinctrl.api_reg:
     tags: drivers pinctrl
     platform_allow: native_posix native_posix_64
     extra_args: CONF_FILE="prj.conf;reg.conf"
+    integration_platforms:
+      - native_posix

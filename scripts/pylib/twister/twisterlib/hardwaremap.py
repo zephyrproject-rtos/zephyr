@@ -320,10 +320,16 @@ class HardwareMap:
 
                     for _detected in self.detected:
                         for h in hwm:
-                            if _detected.id == h['id'] and _detected.product == h['product'] and not _detected.match:
+                            if all([
+                                _detected.id == h['id'],
+                                _detected.product == h['product'],
+                                _detected.match is False,
+                                h['connected'] is False
+                            ]):
                                 h['connected'] = True
                                 h['serial'] = _detected.serial
                                 _detected.match = True
+                                break
 
                 new_duts = list(filter(lambda d: not d.match, self.detected))
                 new = []

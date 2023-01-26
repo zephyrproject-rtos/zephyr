@@ -14,9 +14,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG)
-#define LOG_MODULE_NAME bt_mesh_main
-#include "common/log.h"
+#include <zephyr/logging/log.h>
 
 #include "test.h"
 #include "adv.h"
@@ -41,16 +39,22 @@
 #include "mesh.h"
 #include "gatt_cli.h"
 
+LOG_MODULE_REGISTER(bt_mesh_main, CONFIG_BT_MESH_LOG_LEVEL);
+
 int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		      uint8_t flags, uint32_t iv_index, uint16_t addr,
 		      const uint8_t dev_key[16])
 {
 	int err;
+
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_INIT)) {
+		return -ENODEV;
+	}
+
 	struct bt_mesh_cdb_subnet *subnet = NULL;
 
-	BT_INFO("Primary Element: 0x%04x", addr);
-	BT_DBG("net_idx 0x%04x flags 0x%02x iv_index 0x%04x",
-	       net_idx, flags, iv_index);
+	LOG_INF("Primary Element: 0x%04x", addr);
+	LOG_DBG("net_idx 0x%04x flags 0x%02x iv_index 0x%04x", net_idx, flags, iv_index);
 
 	if (atomic_test_and_set_bit(bt_mesh.flags, BT_MESH_VALID)) {
 		return -EALREADY;
@@ -64,14 +68,14 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 
 		comp = bt_mesh_comp_get();
 		if (comp == NULL) {
-			BT_ERR("Failed to get node composition");
+			LOG_ERR("Failed to get node composition");
 			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 			return -EINVAL;
 		}
 
 		subnet = bt_mesh_cdb_subnet_get(net_idx);
 		if (!subnet) {
-			BT_ERR("No subnet with idx %d", net_idx);
+			LOG_ERR("No subnet with idx %d", net_idx);
 			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 			return -ENOENT;
 		}
@@ -80,7 +84,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		node = bt_mesh_cdb_node_alloc(prov->uuid, addr,
 					      comp->elem_count, net_idx);
 		if (node == NULL) {
-			BT_ERR("Failed to allocate database node");
+			LOG_ERR("Failed to allocate database node");
 			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 			return -ENOMEM;
 		}
@@ -173,7 +177,8 @@ int bt_mesh_provision_gatt(const uint8_t uuid[16], uint16_t net_idx, uint16_t ad
 
 void bt_mesh_reset(void)
 {
-	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID) ||
+	    !atomic_test_bit(bt_mesh.flags, BT_MESH_INIT)) {
 		return;
 	}
 
@@ -182,6 +187,9 @@ void bt_mesh_reset(void)
 	bt_mesh.seq = 0U;
 
 	memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
+	atomic_set_bit(bt_mesh.flags, BT_MESH_INIT);
+
+	bt_mesh_scan_disable();
 
 	/* If this fails, the work handler will return early on the next
 	 * execution, as the device is not provisioned. If the device is
@@ -225,7 +233,6 @@ void bt_mesh_reset(void)
 
 	(void)memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
 
-	bt_mesh_scan_disable();
 	bt_mesh_beacon_disable();
 
 	bt_mesh_comp_unprovision();
@@ -271,7 +278,7 @@ int bt_mesh_suspend(void)
 	err = bt_mesh_scan_disable();
 	if (err) {
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
-		BT_WARN("Disabling scanning failed (err %d)", err);
+		LOG_WRN("Disabling scanning failed (err %d)", err);
 		return err;
 	}
 
@@ -317,7 +324,7 @@ int bt_mesh_resume(void)
 
 	err = bt_mesh_scan_enable();
 	if (err) {
-		BT_WARN("Re-enabling scanning failed (err %d)", err);
+		LOG_WRN("Re-enabling scanning failed (err %d)", err);
 		atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
 		return err;
 	}
@@ -337,6 +344,10 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 		 const struct bt_mesh_comp *comp)
 {
 	int err;
+
+	if (atomic_test_and_set_bit(bt_mesh.flags, BT_MESH_INIT)) {
+		return -EALREADY;
+	}
 
 	err = bt_mesh_test();
 	if (err) {
@@ -383,7 +394,7 @@ int bt_mesh_start(void)
 
 	err = bt_mesh_adv_enable();
 	if (err) {
-		BT_ERR("Failed enabling advertiser");
+		LOG_ERR("Failed enabling advertiser");
 		return err;
 	}
 

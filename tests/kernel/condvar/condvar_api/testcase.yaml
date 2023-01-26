@@ -1,3 +1,4 @@
 tests:
   kernel.condvar:
-    tags: kernel userspace condition_variables ignore_faults
+    ignore_faults: true
+    tags: kernel userspace condition_variables

@@ -23,10 +23,11 @@
 #define STM32_SRC_LSE		0x002
 #define STM32_SRC_LSI		0x003
 #define STM32_SRC_HSI		0x004
+#define STM32_SRC_HSI48		0x005
 /** System clock */
-#define STM32_SRC_SYSCLK	0x005
+#define STM32_SRC_SYSCLK	0x006
 /** Bus clock */
-#define STM32_SRC_PCLK		0x006
+#define STM32_SRC_PCLK		0x007
 
 #define STM32_CLOCK_REG_MASK    0xFFU
 #define STM32_CLOCK_REG_SHIFT   0U
@@ -59,6 +60,9 @@
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x4C
 
+/** @brief RCC_CSR register offset */
+#define CSR_REG		0x50
+
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR_REG)
@@ -68,5 +72,9 @@
 #define I2C3_SEL(val)		STM32_CLOCK(val, 3, 16, CCIPR_REG)
 #define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 18, CCIPR_REG)
 #define HSI48_SEL(val)		STM32_CLOCK(val, 1, 26, CCIPR_REG)
+/** CSR devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 16, CSR_REG)
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L0_CLOCK_H_ */

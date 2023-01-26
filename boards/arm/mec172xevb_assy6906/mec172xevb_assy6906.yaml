@@ -19,3 +19,9 @@ supported:
   - adc
   - pwm
   - counter
+testing:
+  binaries:
+    - spi_image.bin
+  ignore_tags:
+    - bluetooth
+    - net

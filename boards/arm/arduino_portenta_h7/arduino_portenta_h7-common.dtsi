@@ -25,6 +25,11 @@
 	};
 };
 
+&clk_hsi48 {
+	/* HSI48 required for USB */
+	status = "okay";
+};
+
 &rcc {
 	d1cpre = <1>;
 	hpre = <1>;

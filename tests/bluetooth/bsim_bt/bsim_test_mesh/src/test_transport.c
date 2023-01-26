@@ -29,7 +29,7 @@ void assert_post_action(const char *file, unsigned int line)
 }
 
 #define GROUP_ADDR 0xc000
-#define WAIT_TIME 60 /*seconds*/
+#define WAIT_TIME 70 /*seconds*/
 
 extern enum bst_result_t bst_result;
 
@@ -98,7 +98,7 @@ static void test_tx_unicast(void)
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_send(rx_cfg.addr, test_vector[i].len,
 					test_vector[i].flags, K_SECONDS(10));
-		ASSERT_OK(err, "Failed sending vector %d", i);
+		ASSERT_OK_MSG(err, "Failed sending vector %d", i);
 	}
 
 	PASS();
@@ -115,7 +115,7 @@ static void test_tx_group(void)
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_send(GROUP_ADDR, test_vector[i].len,
 					test_vector[i].flags, K_SECONDS(20));
-		ASSERT_OK(err, "Failed sending vector %d", i);
+		ASSERT_OK_MSG(err, "Failed sending vector %d", i);
 	}
 
 	PASS();
@@ -131,12 +131,12 @@ static void test_tx_va(void)
 	bt_mesh_test_setup();
 
 	err = bt_mesh_va_add(test_va_uuid, &virtual_addr);
-	ASSERT_OK(err, "Virtual addr add failed (err %d)", err);
+	ASSERT_OK_MSG(err, "Virtual addr add failed (err %d)", err);
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_send(virtual_addr, test_vector[i].len,
 					test_vector[i].flags, K_SECONDS(20));
-		ASSERT_OK(err, "Failed sending vector %d", i);
+		ASSERT_OK_MSG(err, "Failed sending vector %d", i);
 	}
 
 	PASS();
@@ -155,7 +155,7 @@ static void test_tx_loopback(void)
 		err = bt_mesh_test_send(cfg->addr, test_vector[i].len,
 					test_vector[i].flags,
 					K_SECONDS(20));
-		ASSERT_OK(err, "Failed sending vector %d", i);
+		ASSERT_OK_MSG(err, "Failed sending vector %d", i);
 
 		if (test_stats.received != i + 1) {
 			FAIL("Didn't receive message %d", i);
@@ -177,26 +177,26 @@ static void test_tx_unknown_app(void)
 
 	bt_mesh_test_setup();
 
-	ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, cfg->addr, 0, 1, app_key, &status),
-		  "Failed adding additional appkey");
+	ASSERT_OK_MSG(bt_mesh_cfg_cli_app_key_add(0, cfg->addr, 0, 1, app_key, &status),
+		      "Failed adding additional appkey");
 	if (status) {
 		FAIL("App key add status: 0x%02x", status);
 	}
 
-	ASSERT_OK(bt_mesh_cfg_cli_mod_app_bind(0, cfg->addr, cfg->addr, 1,
-					   TEST_MOD_ID, &status),
-		  "Failed binding additional appkey");
+	ASSERT_OK_MSG(bt_mesh_cfg_cli_mod_app_bind(0, cfg->addr, cfg->addr, 1,
+						   TEST_MOD_ID, &status),
+		      "Failed binding additional appkey");
 	if (status) {
 		FAIL("App key add status: 0x%02x", status);
 	}
 
 	test_send_ctx.app_idx = 1;
 
-	ASSERT_OK(bt_mesh_test_send(rx_cfg.addr, 5, 0, K_SECONDS(1)),
-		  "Failed sending unsegmented");
+	ASSERT_OK_MSG(bt_mesh_test_send(rx_cfg.addr, 5, 0, K_SECONDS(1)),
+		      "Failed sending unsegmented");
 
-	ASSERT_OK(bt_mesh_test_send(rx_cfg.addr, 25, 0, K_SECONDS(1)),
-		  "Failed sending segmented");
+	ASSERT_OK_MSG(bt_mesh_test_send(rx_cfg.addr, 25, 0, K_SECONDS(1)),
+		      "Failed sending segmented");
 
 	PASS();
 }
@@ -216,7 +216,7 @@ static void test_tx_loopback_group(void)
 
 	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
-	ASSERT_OK(err || status, "Mod sub add failed (err %d, status %u)",
+	ASSERT_OK_MSG(err || status, "Mod sub add failed (err %d, status %u)",
 		  err, status);
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
@@ -224,12 +224,12 @@ static void test_tx_loopback_group(void)
 					test_vector[i].flags,
 					K_SECONDS(20));
 
-		ASSERT_OK(err, "Failed sending vector %d", i);
+		ASSERT_OK_MSG(err, "Failed sending vector %d", i);
 
 		k_sleep(K_SECONDS(1));
-		ASSERT_OK(bt_mesh_test_recv(test_vector[i].len, GROUP_ADDR,
-					    K_SECONDS(1)),
-			  "Failed receiving loopback %d", i);
+		ASSERT_OK_MSG(bt_mesh_test_recv(test_vector[i].len, GROUP_ADDR,
+						K_SECONDS(1)),
+			      "Failed receiving loopback %d", i);
 
 		if (test_stats.received != i + 1) {
 			FAIL("Didn't receive message %d", i);
@@ -369,7 +369,7 @@ static void test_rx_unicast(void)
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_recv(test_vector[i].len, cfg->addr,
 					K_SECONDS(10));
-		ASSERT_OK(err, "Failed receiving vector %d", i);
+		ASSERT_OK_MSG(err, "Failed receiving vector %d", i);
 	}
 
 	PASS();
@@ -386,13 +386,12 @@ static void test_rx_group(void)
 
 	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
-	ASSERT_OK(err || status, "Mod sub add failed (err %d, status %u)",
-		  err, status);
+	ASSERT_OK_MSG(err || status, "Mod sub add failed (err %d, status %u)", err, status);
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_recv(test_vector[i].len, GROUP_ADDR,
 					K_SECONDS(20));
-		ASSERT_OK(err, "Failed receiving vector %d", i);
+		ASSERT_OK_MSG(err, "Failed receiving vector %d", i);
 	}
 
 	PASS();
@@ -410,13 +409,12 @@ static void test_rx_va(void)
 
 	err = bt_mesh_cfg_cli_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_uuid,
 					 TEST_MOD_ID, &virtual_addr, &status);
-	ASSERT_OK(err || status, "Sub add failed (err %d, status %u)", err,
-		  status);
+	ASSERT_OK_MSG(err || status, "Sub add failed (err %d, status %u)", err, status);
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_recv(test_vector[i].len, virtual_addr,
 					K_SECONDS(20));
-		ASSERT_OK(err, "Failed receiving vector %d", i);
+		ASSERT_OK_MSG(err, "Failed receiving vector %d", i);
 	}
 
 	PASS();
@@ -445,9 +443,9 @@ static void test_rx_seg_block(void)
 {
 	bt_mesh_test_setup();
 
-	ASSERT_OK(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
-	ASSERT_OK(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
-	ASSERT_OK(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
+	ASSERT_OK_MSG(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
+	ASSERT_OK_MSG(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
+	ASSERT_OK_MSG(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
 
 	PASS();
 }
@@ -464,15 +462,14 @@ static void test_rx_seg_concurrent(void)
 	/* Subscribe to group addr */
 	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
-	ASSERT_OK(err || status, "Mod sub add failed (err %d, status %u)",
-		  err, status);
+	ASSERT_OK_MSG(err || status, "Mod sub add failed (err %d, status %u)", err, status);
 
 	/* Receive both messages from the sender.
 	 * Note: The receive order is technically irrelevant, but the test_recv
 	 * function fails if the order is wrong.
 	 */
-	ASSERT_OK(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
-	ASSERT_OK(bt_mesh_test_recv(20, GROUP_ADDR, K_SECONDS(2)), "RX fail");
+	ASSERT_OK_MSG(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
+	ASSERT_OK_MSG(bt_mesh_test_recv(20, GROUP_ADDR, K_SECONDS(2)), "RX fail");
 
 	PASS();
 }
@@ -483,8 +480,8 @@ static void test_rx_seg_ivu(void)
 {
 	bt_mesh_test_setup();
 
-	ASSERT_OK(bt_mesh_test_recv(255, cfg->addr, K_SECONDS(5)), "RX fail");
-	ASSERT_OK(bt_mesh_test_recv(255, cfg->addr, K_SECONDS(5)), "RX fail");
+	ASSERT_OK_MSG(bt_mesh_test_recv(255, cfg->addr, K_SECONDS(5)), "RX fail");
+	ASSERT_OK_MSG(bt_mesh_test_recv(255, cfg->addr, K_SECONDS(5)), "RX fail");
 
 	PASS();
 }

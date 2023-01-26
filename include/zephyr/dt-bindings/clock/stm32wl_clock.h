@@ -66,6 +66,9 @@
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x88
 
+/** @brief RCC_BDCR register offset */
+#define BDCR_REG		0x90
+
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR_REG)
@@ -80,5 +83,9 @@
 #define LPTIM3_SEL(val)		STM32_CLOCK(val, 3, 22, CCIPR_REG)
 #define ADC_SEL(val)		STM32_CLOCK(val, 3, 28, CCIPR_REG)
 #define RNG_SEL(val)		STM32_CLOCK(val, 3, 30, CCIPR_REG)
+/** BDCR devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WL_CLOCK_H_ */

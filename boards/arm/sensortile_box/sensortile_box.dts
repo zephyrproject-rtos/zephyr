@@ -51,6 +51,14 @@
 	};
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(16)>;
 	status = "okay";
@@ -174,6 +182,8 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

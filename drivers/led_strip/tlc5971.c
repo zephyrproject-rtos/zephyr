@@ -292,7 +292,7 @@ static int tlc5971_init(const struct device *dev)
 	const struct tlc5971_config *cfg = dev->config;
 	struct tlc5971_data *data = dev->data;
 
-	if (!spi_is_ready(&cfg->bus)) {
+	if (!spi_is_ready_dt(&cfg->bus)) {
 		LOG_ERR("%s: SPI device %s not ready", dev->name, cfg->bus.bus->name);
 		return -ENODEV;
 	}

@@ -352,7 +352,13 @@ config CORTEX_M_DWT
 	  Enable and use the Data Watchpoint and Trace (DWT) unit for
 	  timing functions.
 
-# Additional stack for tests when building with FPU_SHARING
+config CORTEX_M_DEBUG_MONITOR_HOOK
+	bool "Debug monitor interrupt for debugging"
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	help
+	  Enable this option to configure debug monitor exception to low priority
+	  for debugging purposes.
+
 # enabled, which may increase ESF stacking requirements for
 # threads.
 config TEST_EXTRA_STACK_SIZE

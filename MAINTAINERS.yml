@@ -243,13 +243,14 @@ Bluetooth Audio:
   maintainers:
     - Thalley
   collaborators:
-    - Vudentz
     - jhedberg
     - Casper-Bonde-Bose
     - MariuszSkamra
-    - rymanluk
     - sjanc
+    - szymon-czapracki
     - asbjornsabo
+    - fredrikdanebjer
+    - kruithofa
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -286,9 +287,9 @@ Build system:
     - alexanderwachter
     - cfriedt
   files:
-    - subsys/cpp/
-    - tests/subsys/cpp/
-    - samples/subsys/cpp/
+    - lib/cpp/
+    - tests/lib/cpp/
+    - samples/cpp/
   labels:
     - "area: C++"
 
@@ -298,8 +299,6 @@ C library:
     - stephanosio
   collaborators:
     - nashif
-    - enjiamai
-    - KangJianX
     - keith-packard
     - cfriedt
   files:
@@ -321,6 +320,17 @@ CMSIS API layer:
   labels:
     - "area: CMSIS API Layer"
     - "area: Portability"
+
+DSP subsystem:
+  status: maintained
+  maintainers:
+    - stephanosio
+    - yperess
+  files:
+    - subsys/dsp/
+    - tests/subsys/dsp/
+  labels:
+    - "area: DSP"
 
 CMSIS-DSP integration:
   status: maintained
@@ -359,9 +369,7 @@ Common Architecture Interface:
     - "area: Architectures"
 
 Console:
-  status: maintained
-  maintainers:
-    - pfalcon
+  status: odd fixes
   files:
     - include/zephyr/console/
     - subsys/console/
@@ -374,7 +382,6 @@ Debug:
     - nashif
   collaborators:
     - dcpleung
-    - chen-png
     - mrkhldn
   files:
     - include/zephyr/debug/
@@ -529,7 +536,6 @@ Release Notes:
   collaborators:
     - lyakh
     - lgirdwood
-    - mengxianglinx
     - marc-hb
     - kv2019i
   files:
@@ -585,8 +591,6 @@ Release Notes:
 
 "Drivers: Console":
   status: odd fixes
-  collaborators:
-    - pfalcon
   files:
     - drivers/console/
     - include/zephyr/drivers/console/
@@ -725,8 +729,6 @@ Release Notes:
   status: maintained
   maintainers:
     - tbursztyka
-  collaborators:
-    - pfalcon
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -747,6 +749,35 @@ Release Notes:
     - tests/drivers/flash/
   labels:
     - "area: Flash"
+
+"Drivers: FPGA":
+  status: maintained
+  maintainers:
+    - cfriedt
+  collaborators:
+    - tgorochowik
+    - fkokosinski
+    - msierszulski
+  files:
+    - drivers/fpga/
+    - dts/bindings/fpga/
+    - include/zephyr/drivers/fpga.h
+    - samples/drivers/fpga/
+  labels:
+    - "area: FPGA"
+
+"Drivers: Fuel Gauge":
+  status: maintained
+  maintainers:
+    - aaronemassey
+    - teburd
+  files:
+    - drivers/fuel_gauge/
+    - dts/bindings/fuel-gauge/
+    - include/zephyr/drivers/fuel_gauge.h
+    - tests/drivers/fuel_gauge/
+  labels:
+    - "area: Fuel Gauge"
 
 "Drivers: GPIO":
   status: maintained
@@ -931,6 +962,21 @@ Release Notes:
   labels:
     - "area: Neural Networks"
 
+"Drivers: Regulators":
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - danieldegrasse
+  files:
+    - drivers/regulator/
+    - include/zephyr/drivers/regulator/
+    - include/zephyr/drivers/regulator.h
+    - include/zephyr/dt-bindings/regulator/
+    - tests/drivers/regulator/
+  labels:
+    - "area: Regulators"
+
 "Drivers: PCI":
   status: maintained
   maintainers:
@@ -1069,7 +1115,6 @@ Release Notes:
   maintainers:
     - andyross
   collaborators:
-    - KangJianX
     - teburd
   files:
     - drivers/timer/
@@ -1207,6 +1252,14 @@ Formatted Output:
   labels:
     - "area: Formatting Output"
 
+Google Platforms:
+  status: maintained
+  maintainers:
+    - fabiobaltieri
+    - keith-zephyr
+  files:
+    - boards/*/google_*/
+
 IPC:
   status: maintained
   maintainers:
@@ -1264,6 +1317,8 @@ Kernel:
     - tests/kernel/
     - include/zephyr/sys_clock.h
     - samples/kernel/
+  files-exclude:
+    - tests/kernel/mem_protect/
   labels:
     - "area: Kernel"
 
@@ -1318,7 +1373,6 @@ Logging:
   maintainers:
     - nordic-krch
   collaborators:
-    - chen-png
     - aasthagr
     - dcpleung
   files:
@@ -1384,9 +1438,12 @@ Modbus:
     - "area: modbus"
 
 OSDP:
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - sidcha
+  collaborators:
+    - adakus
+    - r2r0
   files:
     - subsys/mgmt/osdp/
     - include/zephyr/mgmt/osdp.h
@@ -1442,8 +1499,6 @@ Networking:
     - rlubos
   collaborators:
     - tbursztyka
-    - pfalcon
-    - mengxianglinx
   files:
     - drivers/net/
     - include/zephyr/net/
@@ -1461,9 +1516,7 @@ Networking:
     - "area: Networking"
 
 "Networking: BSD sockets":
-  status: maintained
-  maintainers:
-    - pfalcon
+  status: odd fixes
   collaborators:
     - rlubos
   files:
@@ -1578,10 +1631,6 @@ POSIX API layer:
   status: maintained
   maintainers:
     - cfriedt
-  collaborators:
-    - pfalcon
-    - enjiamai
-    - KangJianX
   files:
     - include/zephyr/posix/
     - lib/posix/
@@ -1595,10 +1644,9 @@ Power management:
     - ceolin
   collaborators:
     - nashif
-    - mengxianglinx
     - gmarull
     - teburd
-    - yinfangw
+    - tmleman
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
@@ -1632,10 +1680,8 @@ Twister:
   maintainers:
     - nashif
   collaborators:
-    - chen-png
     - galak
     - PerMac
-    - enjiamai
     - hakehuang
     - gopiotr
   files:
@@ -1760,7 +1806,6 @@ Nuvoton NPCX Platforms:
     - keith-zephyr
     - jackrosenthal
     - fabiobaltieri
-    - yperess
   files:
     - soc/arm/nuvoton_npcx/
     - boards/arm/npcx*/
@@ -1797,9 +1842,9 @@ SiLabs Platforms:
 Intel Platforms (X86):
   status: maintained
   maintainers:
-    - enjiamai
-  collaborators:
     - jhedberg
+  collaborators:
+    - tbursztyka
     - aasthagr
     - laurenmurphyx64
     - MaureenHelm
@@ -1818,11 +1863,15 @@ Intel Platforms (Xtensa):
     - dcpleung
     - lyakh
     - lgirdwood
-    - mengxianglinx
     - marc-hb
     - kv2019i
     - MaureenHelm
     - ceolin
+    - aborisovich
+    - tmleman
+    - softwarecki
+    - jxstelter
+    - marcinszkudlinski
   files:
     - boards/xtensa/intel_*/
     - soc/xtensa/intel_*/
@@ -1930,6 +1979,7 @@ STM32 Platforms:
   collaborators:
     - ABOSTM
     - FRASTM
+    - gautierg-st
     - GeorgeCGV
   files:
     - boards/arm/nucleo_*/
@@ -1953,11 +2003,10 @@ Espressif Platforms:
   status: maintained
   maintainers:
     - sylvioalves
-    - glaubermaroto
-    - uLipe
   collaborators:
     - LucasTambor
     - marekmatej
+    - uLipe
   files:
     - drivers/*/*esp32*.c
     - boards/xtensa/esp32*/
@@ -1985,7 +2034,6 @@ ITE Platforms:
     - jackrosenthal
     - keith-zephyr
     - brockus-zephyr
-    - yperess
     - sjg20
   files:
     - boards/riscv/it8xxx2_evb/
@@ -2120,6 +2168,7 @@ USB:
     - samples/subsys/usb/
     - subsys/usb/
     - tests/subsys/usb/
+    - tests/drivers/udc/
   labels:
     - "area: USB"
 
@@ -2144,7 +2193,7 @@ Userspace:
   maintainers:
     - dcpleung
   collaborators:
-    - enjiamai
+    - ceolin
   files:
     - doc/kernel/usermode/kernelobjects.rst
     - include/zephyr/app_memory/
@@ -2198,6 +2247,15 @@ West:
   labels:
     - manifest-canopennode
     - "area: CAN"
+
+"West project: chre":
+  status: maintained
+  maintainers:
+    - yperess
+  files:
+    - samples/modules/chre/
+  labels:
+    - manifest-chre
 
 "West project: cmsis":
   status: maintained
@@ -2493,8 +2551,8 @@ West:
     - manifest-loramac-node
 
 "West project: lvgl":
-  status: maintained
-  maintainers:
+  status: odd fixes
+  collaborators:
     - brgl
   files:
     - modules/Kconfig.lvgl
@@ -2634,13 +2692,6 @@ West:
   labels:
     - manifest-tflite-micro
 
-"West project: tinycbor":
-  status: obsolete
-  files:
-    - modules/Kconfig.tinycbor
-  labels:
-    - manifest-tinycbor
-
 "West project: tinycrypt":
   status: odd fixes
   files:
@@ -2707,14 +2758,14 @@ West:
     - manifest-psa-arch-tests
 
 "West project: uoscore-uedhoc":
-    status: maintained
-    maintainers:
-        - rlubos
-        - StefanHri
-    files:
-        - modules/uoscore-uedhoc/
-    labels:
-        - manifest-uoscore-uedhoc
+  status: maintained
+  maintainers:
+    - rlubos
+    - StefanHri
+  files:
+    - modules/uoscore-uedhoc/
+  labels:
+    - manifest-uoscore-uedhoc
 
 "West project: zcbor":
   status: maintained
@@ -2752,11 +2803,11 @@ x86 arch:
   maintainers:
     - jhedberg
   collaborators:
+    - tbursztyka
     - andyross
     - nashif
     - dcpleung
     - ceolin
-    - enjiamai
     - aasthagr
     - laurenmurphyx64
   files:

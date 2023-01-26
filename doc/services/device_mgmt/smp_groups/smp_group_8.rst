@@ -20,6 +20,8 @@ File management group defines following commands:
     +-------------------+-----------------------------------------------+
     | ``2``             | File hash/checksum                            |
     +-------------------+-----------------------------------------------+
+    | ``3``             | Supported file hash/checksum types            |
+    +-------------------+-----------------------------------------------+
 
 File download
 *************
@@ -100,11 +102,10 @@ CBOR data of successful response:
     {
         (str)"off"      : (uint)
         (str)"data"     : (byte str)
-        (str)"rc"       : (int)
         (str,opt)"len"  : (uint)
     }
 
-In case of error the CBOR data takes form:
+In case of error the CBOR data takes the form:
 
 .. code-block:: none
 
@@ -128,6 +129,7 @@ where:
     |                       | when "off" is 0                                   |
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
@@ -216,13 +218,20 @@ File upload response header:
     | ``3``  | ``8``        |  ``0``         |
     +--------+--------------+----------------+
 
-CBOR data of request:
+CBOR data of successful response:
 
 .. code-block:: none
 
     {
-        (str,opt)"off"      : (uint)
-        (str)"rc"           : (int)
+        (str)"off"      : (uint)
+    }
+
+In case of error the CBOR data takes the form:
+
+.. code-block:: none
+
+    {
+        (str)"rc"       : (int)
     }
 
 where:
@@ -231,10 +240,10 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "off"                 | offset of last successfully written data;         |
-    |                       | appears only when "rc" is 0                       |
+    | "off"                 | offset of last successfully written data.         |
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
 
 File status
@@ -312,8 +321,8 @@ where:
     +-----------------------+---------------------------------------------------+
     | "len"                 | length of file (in bytes)                         |
     +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes` (only     |
-    |                       | present if an error occurred)                     |
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.
@@ -415,6 +424,89 @@ CBOR data of successful response:
         (str)"output"   : (uint or bstr)
     }
 
+In case of error the CBOR data takes the form:
+
+.. code-block:: none
+
+    {
+        (str)"rc"       : (int)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +-----------------------+---------------------------------------------------+
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    |                       | only appears if non-zero (error condition).       |
+    +-----------------------+---------------------------------------------------+
+    | "type"                | type of hash/checksum that was performed          |
+    |                       | :ref:`mcumgr_group_8_hash_checksum_types`         |
+    +-----------------------+---------------------------------------------------+
+    | "off"                 | offset that hash/checksum calculation started at  |
+    |                       | (only present if off is not 0)                    |
+    +-----------------------+---------------------------------------------------+
+    | "len"                 | length of input data used for hash/checksum       |
+    |                       | generation (in bytes)                             |
+    +-----------------------+---------------------------------------------------+
+    | "output"              | output hash/checksum                              |
+    +-----------------------+---------------------------------------------------+
+
+In case when "rc" is not 0, success, the other fields will not appear.
+
+Supported file hash/checksum types
+**********************************
+
+Command allows listing which hash and checksum types are available on a device.
+Requires Kconfig :kconfig:option:`CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_CMD`
+to be enabled.
+
+Supported file hash/checksum types request
+==========================================
+
+Supported file hash/checksum types request header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``0``  | ``8``        |  ``3``         |
+    +--------+--------------+----------------+
+
+The command sends empty CBOR map as data.
+
+Supported file hash/checksum types response
+===========================================
+
+Supported file hash/checksum types response header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``1``  | ``8``        |  ``3``         |
+    +--------+--------------+----------------+
+
+CBOR data of successful response:
+
+.. code-block:: none
+
+    format (0 = int, 1 = byte array)
+    {
+        (str)"types" : {
+            (str)<hash_checksum_name> : {
+                (str)"format"       : (uint)
+                (str)"size"         : (uint)
+            }
+            ...
+        }
+    }
+
 In case of error the CBOR data takes form:
 
 .. code-block:: none
@@ -429,19 +521,13 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes` (only     |
-    |                       | present if an error occurred)                     |
-    +-----------------------+---------------------------------------------------+
-    | "type"                | type of hash/checksum that was performed          |
+    | <hash_checksum_name>  | name of the hash/checksum type                    |
     |                       | :ref:`mcumgr_group_8_hash_checksum_types`         |
     +-----------------------+---------------------------------------------------+
-    | "off"                 | offset that hash/checksum calculation started at  |
-    |                       | (only present if off is not 0)                    |
+    | "format"              | format that the hash/checksum returns where 0 is  |
+    |                       | for numerical and 1 is for byte array.            |
     +-----------------------+---------------------------------------------------+
-    | "len"                 | length of input data used for hash/checksum       |
-    |                       | generation (in bytes)                             |
-    +-----------------------+---------------------------------------------------+
-    | "output"              | output hash/checksum                              |
+    | "size"                | size (in bytes) of output hash/checksum response. |
     +-----------------------+---------------------------------------------------+
 
 In case when "rc" is not 0, success, the other fields will not appear.

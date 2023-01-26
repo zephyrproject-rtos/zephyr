@@ -296,11 +296,26 @@ static void set_available_contexts(void)
 {
 	int err;
 
+	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
+					     BT_AUDIO_CONTEXT_TYPE_MEDIA |
+					     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
+		FAIL("Failed to set sink supported contexts (err %d)\n", err);
+		return;
+	}
+
 	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
 					     BT_AUDIO_CONTEXT_TYPE_MEDIA |
 					     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
 		FAIL("Failed to set sink available contexts (err %d)\n", err);
+		return;
+	}
+
+	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
+					     BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS);
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC) && err != 0) {
+		FAIL("Failed to set source supported contexts (err %d)\n", err);
 		return;
 	}
 

@@ -9,6 +9,7 @@ menuconfig OSDP
 	select RING_BUFFER
 	imply SERIAL_SUPPORT_INTERRUPT
 	imply UART_INTERRUPT_DRIVEN
+	select CRC
 	help
 	  Add support for Open Supervised Device Protocol (OSDP)
 

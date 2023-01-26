@@ -6,9 +6,9 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/net/buf.h>
-#include <mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/smp_dummy.h>
-#include <os_mgmt/os_mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_dummy.h>
+#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
 
 #define SMP_RESPONSE_WAIT_TIME 3
 
@@ -37,9 +37,6 @@ static const uint8_t expected_response[] = {
 ZTEST(os_mgmt_echo, test_echo)
 {
 	struct net_buf *nb;
-
-	/* Register os_mgmt mcumgr group */
-	os_mgmt_register_group();
 
 	/* Enable dummy SMP backend and ready for usage */
 	smp_dummy_enable();

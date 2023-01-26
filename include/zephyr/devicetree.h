@@ -351,13 +351,6 @@
 #define DT_PARENT(node_id) UTIL_CAT(node_id, _PARENT)
 
 /**
- * @brief Get a `DT_DRV_COMPAT` parent's node identifier
- * @param inst instance number
- * @return a node identifier for the instance's parent
- */
-#define DT_INST_PARENT(inst) DT_PARENT(DT_DRV_INST(inst))
-
-/**
  * @brief Get a node identifier for a grandparent node
  *
  * Example devicetree fragment:
@@ -3055,6 +3048,24 @@
 #define DT_DRV_INST(inst) DT_INST(inst, DT_DRV_COMPAT)
 
 /**
+ * @brief Get a `DT_DRV_COMPAT` parent's node identifier
+ * @param inst instance number
+ * @return a node identifier for the instance's parent
+ *
+ * @see DT_PARENT
+ */
+#define DT_INST_PARENT(inst) DT_PARENT(DT_DRV_INST(inst))
+
+/**
+ * @brief Get a `DT_DRV_COMPAT` grandparent's node identifier
+ * @param inst instance number
+ * @return a node identifier for the instance's grandparent
+ *
+ * @see DT_GPARENT
+ */
+#define DT_INST_GPARENT(inst) DT_GPARENT(DT_DRV_INST(inst))
+
+/**
  * @brief Get a node identifier for a child node of DT_DRV_INST(inst)
  *
  * @param inst instance number
@@ -3928,7 +3939,6 @@
 #include <zephyr/devicetree/dma.h>
 #include <zephyr/devicetree/pwms.h>
 #include <zephyr/devicetree/fixed-partitions.h>
-#include <zephyr/devicetree/zephyr.h>
 #include <zephyr/devicetree/ordinals.h>
 #include <zephyr/devicetree/pinctrl.h>
 #include <zephyr/devicetree/can.h>

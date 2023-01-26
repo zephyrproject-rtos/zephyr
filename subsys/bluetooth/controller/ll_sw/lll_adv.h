@@ -27,6 +27,7 @@ struct lll_adv_iso {
 	uint16_t latency_event;
 	uint16_t data_chan_prn_s;
 	uint16_t data_chan_remap_idx;
+	uint8_t  next_chan_use;
 
 	uint64_t payload_count:39;
 	uint64_t enc:1;

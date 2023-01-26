@@ -6,9 +6,9 @@ tests:
     harness: console
     depends_on: spi
     harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "Temperature: ([0-9\\.]+) C"
-        fixture: fixture_spi_max6675
+      type: multi_line
+      ordered: true
+      regex:
+        - "Temperature: ([0-9\\.]+) C"
+      fixture: fixture_spi_max6675
     filter: dt_compat_enabled("maxim,max6675")

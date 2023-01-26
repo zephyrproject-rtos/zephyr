@@ -8,7 +8,7 @@
 #include <OsIf_Cfg_TypesDef.h>
 
 #if defined(CONFIG_SOC_S32Z27_R52)
-#include <S32Z27_MSCM.h>
+#include <S32Z2_MSCM.h>
 #endif
 
 /* Required by OsIf timer initialization but not used with Zephyr, so no values configured */

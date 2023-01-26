@@ -68,14 +68,14 @@ static void test_rx_init(void)
 
 static void bt_init(void)
 {
-	ASSERT_OK(bt_enable(NULL), "Bluetooth init failed");
+	ASSERT_OK_MSG(bt_enable(NULL), "Bluetooth init failed");
 	LOG_INF("Bluetooth initialized");
 }
 
 static void adv_init(void)
 {
 	bt_mesh_adv_init();
-	ASSERT_OK(bt_mesh_adv_enable(), "Mesh adv init failed");
+	ASSERT_OK_MSG(bt_mesh_adv_enable(), "Mesh adv init failed");
 }
 
 static void allocate_all_array(struct net_buf **buf, size_t num_buf, uint8_t xmit)
@@ -306,7 +306,7 @@ static void send_order_start_cb(uint16_t duration, int err, void *user_data)
 {
 	struct net_buf *buf = (struct net_buf *)user_data;
 
-	ASSERT_OK(err, "Failed adv start cb err (%d)", err);
+	ASSERT_OK_MSG(err, "Failed adv start cb err (%d)", err);
 	ASSERT_EQUAL(2, buf->len);
 
 	uint8_t current = buf->data[0];
@@ -322,7 +322,7 @@ static void send_order_end_cb(int err, void *user_data)
 {
 	struct net_buf *buf = (struct net_buf *)user_data;
 
-	ASSERT_OK(err, "Failed adv start cb err (%d)", err);
+	ASSERT_OK_MSG(err, "Failed adv start cb err (%d)", err);
 	ASSERT_TRUE(!buf->data, "Data not cleared!");
 	seq_checker++;
 	LOG_INF("tx end: seq(%d)", seq_checker);
@@ -372,7 +372,7 @@ static void receive_order(int expect_adv)
 	previous_checker = 0xff;
 	for (int i = 0; i < expect_adv; i++) {
 		err = k_sem_take(&observer_sem, K_SECONDS(10));
-		ASSERT_OK(err, "Didn't receive adv in time");
+		ASSERT_OK_MSG(err, "Didn't receive adv in time");
 	}
 
 	err = bt_le_scan_stop();
@@ -438,7 +438,7 @@ static void test_tx_cb_single(void)
 	net_buf_unref(buf);
 
 	err = k_sem_take(&observer_sem, K_SECONDS(1));
-	ASSERT_OK(err, "Didn't call end tx cb.");
+	ASSERT_OK_MSG(err, "Didn't call end tx cb.");
 
 	PASS();
 }
@@ -476,7 +476,7 @@ static void test_tx_cb_multi(void)
 	net_buf_unref(buf[0]);
 
 	err = k_sem_take(&observer_sem, K_SECONDS(1));
-	ASSERT_OK(err, "Didn't call the end tx cb that reallocates buffer one more time.");
+	ASSERT_OK_MSG(err, "Didn't call the end tx cb that reallocates buffer one more time.");
 
 	/* Start multi advs to check that all buffers are sent and cbs are triggered. */
 	send_cb.start = seq_start_cb;
@@ -490,7 +490,7 @@ static void test_tx_cb_multi(void)
 	}
 
 	err = k_sem_take(&observer_sem, K_SECONDS(10));
-	ASSERT_OK(err, "Didn't call the last end tx cb.");
+	ASSERT_OK_MSG(err, "Didn't call the last end tx cb.");
 
 	PASS();
 }
@@ -506,7 +506,7 @@ static void test_tx_proxy_mixin(void)
 	/* Initialize mesh stack and enable pb gatt bearer to emit beacons. */
 	bt_mesh_device_setup(&prov, &comp);
 	err = bt_mesh_prov_enable(BT_MESH_PROV_GATT);
-	ASSERT_OK(err, "Failed to enable GATT provisioner");
+	ASSERT_OK_MSG(err, "Failed to enable GATT provisioner");
 
 	/* Let the tester to measure an interval between advertisements.
 	 * The node should advertise pb gatt service with 100 msec interval.
@@ -588,8 +588,8 @@ static void test_tx_send_order(void)
 	send_adv_array(&buf[0], ARRAY_SIZE(buf), false);
 
 	/* Wait for no message receive window to end. */
-	ASSERT_OK(k_sem_take(&observer_sem, K_SECONDS(10)),
-		  "Didn't call the last end tx cb.");
+	ASSERT_OK_MSG(k_sem_take(&observer_sem, K_SECONDS(10)),
+		      "Didn't call the last end tx cb.");
 
 	/* Verify buffer allocation/deallocation after sending */
 	allocate_all_array(buf, ARRAY_SIZE(buf), xmit);
@@ -618,8 +618,8 @@ static void test_tx_reverse_order(void)
 	send_adv_array(&buf[CONFIG_BT_MESH_ADV_BUF_COUNT - 1], ARRAY_SIZE(buf), true);
 
 	/* Wait for no message receive window to end. */
-	ASSERT_OK(k_sem_take(&observer_sem, K_SECONDS(10)),
-		  "Didn't call the last end tx cb.");
+	ASSERT_OK_MSG(k_sem_take(&observer_sem, K_SECONDS(10)),
+		      "Didn't call the last end tx cb.");
 
 	PASS();
 }
@@ -653,8 +653,8 @@ static void test_tx_random_order(void)
 	send_adv_buf(buf[1], 1, 2);
 
 	/* Wait for no message receive window to end. */
-	ASSERT_OK(k_sem_take(&observer_sem, K_SECONDS(10)),
-		  "Didn't call the last end tx cb.");
+	ASSERT_OK_MSG(k_sem_take(&observer_sem, K_SECONDS(10)),
+		      "Didn't call the last end tx cb.");
 
 	PASS();
 }

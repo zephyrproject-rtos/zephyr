@@ -27,20 +27,20 @@ tests:
   logging.log_stack_deferred_cpp:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
-      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CPP=y
   logging.log_stack_deferred_cpp_no_opt:
     filter: not CONFIG_MIPS
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_NO_OPTIMIZATIONS=y
-      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CPP=y
   logging.log_stack_immediate_cpp:
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
-      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CPP=y
   logging.log_stack_immediate_cpp_no_opt:
     filter: not CONFIG_MIPS
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_NO_OPTIMIZATIONS=y
-      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CPP=y

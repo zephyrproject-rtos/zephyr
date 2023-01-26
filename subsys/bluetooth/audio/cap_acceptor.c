@@ -7,12 +7,12 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/tbs.h>
-#include <zephyr/bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include "cap_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CAP_ACCEPTOR)
-#define LOG_MODULE_NAME bt_cap_acceptor
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_cap_acceptor, CONFIG_BT_CAP_ACCEPTOR_LOG_LEVEL);
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)
 
@@ -21,26 +21,26 @@ static struct bt_gatt_attr svc_attrs[] = {
 	BT_GATT_INCLUDE_SERVICE(NULL) /* To be overwritten */
 };
 
-int bt_cap_acceptor_register(const struct bt_csis_register_param *param,
-			     struct bt_csis **csis)
+int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *param,
+			     struct bt_csip_set_member_svc_inst **svc_inst)
 {
 	static struct bt_gatt_service cas;
 	int err;
 
-	err = bt_csis_register(param, csis);
+	err = bt_csip_set_member_register(param, svc_inst);
 	if (err != 0) {
-		BT_DBG("Failed to register CSIS");
+		LOG_DBG("Failed to register CSIP");
 		return err;
 	}
 
 	cas = (struct bt_gatt_service)BT_GATT_SERVICE(svc_attrs);
 
-	/* Overwrite the include definition with the CSIS */
-	cas.attrs[1].user_data = bt_csis_svc_decl_get(*csis);
+	/* Overwrite the include definition with the CSIP */
+	cas.attrs[1].user_data = bt_csip_set_member_svc_decl_get(*svc_inst);
 
 	err = bt_gatt_service_register(&cas);
 	if (err) {
-		BT_DBG("Failed to register CAS");
+		LOG_DBG("Failed to register CAS");
 		return err;
 	}
 
@@ -51,7 +51,7 @@ int bt_cap_acceptor_register(const struct bt_csis_register_param *param,
 
 BT_GATT_SERVICE_DEFINE(cas_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CAS)
-	/* TODO: Add support for included CSIS */
+	/* TODO: Add support for included CSIP */
 );
 
 #endif /* CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER */

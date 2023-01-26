@@ -5,12 +5,10 @@ compatible: "st,stm32wb-flash-controller"
 include: flash-controller.yaml
 
 properties:
-    single-bank:
-      type: boolean
-      description: dual-bank mode not enabled (page erase 4096k)
-      required: false
+  single-bank:
+    type: boolean
+    description: dual-bank mode not enabled (page erase 4096k)
 
-    dual-bank:
-      type: boolean
-      description: dual-bank mode enabled (page erase 2048k)
-      required: false
+  dual-bank:
+    type: boolean
+    description: dual-bank mode enabled (page erase 2048k)

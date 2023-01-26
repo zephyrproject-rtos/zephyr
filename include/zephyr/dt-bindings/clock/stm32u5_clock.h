@@ -25,7 +25,7 @@
 #define STM32_SRC_LSE		0x00B
 #define STM32_SRC_LSI		0x00C
 #define STM32_SRC_HSI16		0x00D
-/* #define STM32_SRC_HSI48	0x00E */
+#define STM32_SRC_HSI48		0x00E
 #define STM32_SRC_MSIS		0x00F
 #define STM32_SRC_MSIK		0x010
 /** Core clock */
@@ -79,6 +79,9 @@
 #define CCIPR2_REG		0xE4
 #define CCIPR3_REG		0xE8
 
+/** @brief RCC_BDCR register offset */
+#define BDCR_REG		0xF0
+
 /** @brief Device domain clocks selection helpers */
 /** CCIPR1 devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR1_REG)
@@ -113,5 +116,7 @@
 #define ADCDAC_SEL(val)		STM32_CLOCK(val, 7, 12, CCIPR3_REG)
 #define DAC1_SEL(val)		STM32_CLOCK(val, 1, 15, CCIPR3_REG)
 #define ADF1_SEL(val)		STM32_CLOCK(val, 7, 16, CCIPR3_REG)
+/** BDCR devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_ */

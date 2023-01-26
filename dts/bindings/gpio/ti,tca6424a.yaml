@@ -1,0 +1,27 @@
+# Copyright (c) 2022 Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI TCA6424A I2C-based GPIO expander
+
+compatible: "ti,tca6424a"
+
+include: [gpio-controller.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+        GPIO connected to the controller INT pin. This pin is active-low
+        and open-drain.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+        GPIO connected to the controller RESET pin. This pin is active-low.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
