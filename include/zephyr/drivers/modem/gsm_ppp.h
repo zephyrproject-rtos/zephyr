@@ -61,6 +61,7 @@ enum ring_indicator_behaviour {
 };
 #endif
 
+#if defined(CONFIG_MODEM_GSM_ENABLE_GNSS)
 struct gsm_ppp_gnss_data {
 	/**
 	 * UTC in format ddmmyyhhmmss.s
@@ -95,6 +96,7 @@ struct gsm_ppp_gnss_data {
 	 */
 	uint16_t nsat;
 };
+#endif /* CONFIG_MODEM_GSM_ENABLE_GNSS */
 
 /** @cond INTERNAL_HIDDEN */
 struct device;

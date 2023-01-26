@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_context.h"
 #include "modem_iface_uart.h"
 #include "modem_cmd_handler.h"
-#ifdef CONFIG_MODEM_GSM_ENABLE_GNSS
+#if defined(CONFIG_MODEM_GSM_ENABLE_GNSS)
 #include "modem_gnss_parser.h"
 #endif
 #include "../console/gsm_mux.h"
