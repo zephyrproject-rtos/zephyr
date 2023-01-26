@@ -787,6 +787,10 @@ static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 {
 #ifdef CONFIG_SOC_INTEL_ACE20_LNL
 	uint16_t pcmsycm = cfg->link_config;
+	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
+
+	/* Set upper slot number from configuration */
+	pcmsycm = pcmsycm | (ssp->params.tdm_slots - 1) << 4;
 
 	if (DAI_INTEL_SSP_IS_BIT_SET(pcmsycm, 15)) {
 		uint32_t reg_add = dai_ip_base(dp) + 0x1000 * index + PCMS0CM_OFFSET;
@@ -2082,14 +2086,15 @@ static int dai_ssp_config_set(const struct device *dev, const struct dai_config 
 			      const void *bespoke_cfg)
 {
 	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
+	int ret;
 
 	if (cfg->type == DAI_INTEL_SSP) {
-		dai_ssp_program_channel_map(dp, cfg, dp->index);
-		return dai_ssp_set_config_tplg(dp, cfg, bespoke_cfg);
+		ret = dai_ssp_set_config_tplg(dp, cfg, bespoke_cfg);
 	} else {
-		dai_ssp_program_channel_map(dp, cfg, dp->index);
-		return dai_ssp_set_config_blob(dp, cfg, bespoke_cfg);
+		ret = dai_ssp_set_config_blob(dp, cfg, bespoke_cfg);
 	}
+	dai_ssp_program_channel_map(dp, cfg, dp->index);
+	return ret;
 }
 
 static const struct dai_properties *dai_ssp_get_properties(const struct device *dev,
