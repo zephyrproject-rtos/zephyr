@@ -163,13 +163,18 @@
 			reg = <0x28000 0x1000>;
 		};
 
+		hdamlssp: hdamlssp@d00 {
+			compatible = "intel,adsp-hda-ssp-cap";
+			reg = <0xD00 0x40>;
+			status = "okay";
+		};
+
 		ssp0: ssp@28100 {
 			compatible = "intel,ssp-dai";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00028100 0x1000
 				   0x00079C00 0x200>;
-			shim2 = <0x0D00 0x10>;
 			interrupts = <0x00 0 0>;
 			interrupt-parent = <&ace_intc>;
 			dmas = <&hda_link_out 1
@@ -185,7 +190,6 @@
 			#size-cells = <0>;
 			reg = <0x00029100 0x1000
 				   0x00079C00 0x200>;
-			shim2 = <0x0D00 0x10>;
 			interrupts = <0x01 0 0>;
 			interrupt-parent = <&ace_intc>;
 			dmas = <&hda_link_out 2
@@ -201,7 +205,6 @@
 			#size-cells = <0>;
 			reg = <0x0002a100 0x1000
 				   0x00079C00 0x200>;
-			shim2 = <0x0D00 0x10>;
 			interrupts = <0x02 0 0>;
 			interrupt-parent = <&ace_intc>;
 			dmas = <&hda_link_out 3
@@ -217,7 +220,6 @@
 			#size-cells = <0>;
 			reg = <0x0002b100 0x1000
 				   0x00079C00 0x200>;
-			shim2 = <0x0D00 0x10>;
 			interrupts = <0x03 0 0>;
 			interrupt-parent = <&ace_intc>;
 			dmas = <&hda_link_out 4
@@ -233,7 +235,6 @@
 			#size-cells = <0>;
 			reg = <0x0002c100 0x1000
 				   0x00079C00 0x200>;
-			shim2 = <0x0D00 0x10>;
 			interrupts = <0x04 0 0>;
 			interrupt-parent = <&ace_intc>;
 			dmas = <&hda_link_out 5
@@ -249,7 +250,6 @@
 			#size-cells = <0>;
 			reg = <0x0002d100 0x1000
 				   0x00079C00 0x200>;
-			shim2 = <0x0D00 0x10>;
 			interrupts = <0x04 0 0>;
 			interrupt-parent = <&ace_intc>;
 			dmas = <&hda_link_out 6
