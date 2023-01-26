@@ -37,8 +37,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
-
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
