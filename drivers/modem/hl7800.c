@@ -633,7 +633,7 @@ static int modem_reset_and_configure(void);
 
 static int read_pin(int default_state, const struct gpio_dt_spec *spec)
 {
-	int state = gpio_pin_get_dt(spec);
+	int state = gpio_pin_get_raw(spec->port, spec->pin);
 
 	if (state < 0) {
 		LOG_ERR("Unable to read port: %s pin: %d status: %d",
@@ -4742,7 +4742,12 @@ void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb,
 		 * This can occur, for example, during a modem reset.
 		 */
 		power_on_uart();
+		/* Keep the modem awake to see if it has anything to send to us. */
 		allow_sleep(false);
+		/* Allow the modem to go back to sleep if it was the one who
+		 * sourced the CTS transition.
+		 */
+		allow_sleep(true);
 	}
 
 	/* When the network state changes a semaphore must be taken.
@@ -4862,9 +4867,16 @@ void mdm_uart_cts_callback(const struct device *port, struct gpio_callback *cb, 
 			shutdown_uart();
 		}
 	} else {
-		power_on_uart();
-		if (ictx.sleep_state == HL7800_SLEEP_SLEEP) {
-			allow_sleep(false);
+		if (ictx.desired_sleep_level != HL7800_SLEEP_HIBERNATE) {
+			power_on_uart();
+			if (ictx.sleep_state == HL7800_SLEEP_SLEEP) {
+				/* Wake up the modem to see if it has anything to send to us. */
+				allow_sleep(false);
+				/* Allow the modem to go back to sleep if it was the one who
+				 * sourced the CTS transition.
+				 */
+				allow_sleep(true);
+			}
 		}
 	}
 #endif
