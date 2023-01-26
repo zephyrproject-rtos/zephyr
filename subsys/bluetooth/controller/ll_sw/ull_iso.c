@@ -259,10 +259,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	ARG_UNUSED(controller_delay);
 	ARG_UNUSED(codec_config);
 
-	if (path_id == BT_HCI_DATAPATH_ID_DISABLED) {
-		return BT_HCI_ERR_SUCCESS;
-	}
-
 	if (false) {
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
