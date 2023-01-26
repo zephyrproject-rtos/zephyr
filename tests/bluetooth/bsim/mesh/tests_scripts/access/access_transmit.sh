@@ -6,3 +6,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 RunTest mesh_access_publication_retransmission \
 	access_tx_transmit access_rx_transmit
+
+conf=prj_mesh1d1_conf
+RunTest mesh_access_publication_retransmission \
+	access_tx_transmit access_rx_transmit

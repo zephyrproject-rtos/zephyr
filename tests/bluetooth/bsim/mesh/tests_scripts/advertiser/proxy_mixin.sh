@@ -20,3 +20,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # at least 6 times. Then, observe GATT Proxy beacons resuming.
 overlay=overlay_gatt_conf
 RunTest mesh_adv_proxy_mixin adv_tx_proxy_mixin adv_rx_proxy_mixin
+
+conf=prj_mesh1d1_conf
+overlay=overlay_gatt_conf
+RunTest mesh_adv_proxy_mixin adv_tx_proxy_mixin adv_rx_proxy_mixin

@@ -13,3 +13,15 @@ overlay=overlay_pst_conf
 RunTest mesh_replay_attack \
 	rpc_tx_power_replay_attack \
 	rpc_rx_power_replay_attack
+
+conf=prj_mesh1d1_conf
+overlay=overlay_pst_conf
+RunTest mesh_replay_attack \
+	rpc_tx_immediate_replay_attack \
+	rpc_rx_immediate_replay_attack
+
+conf=prj_mesh1d1_conf
+overlay=overlay_pst_conf
+RunTest mesh_replay_attack \
+	rpc_tx_power_replay_attack \
+	rpc_rx_power_replay_attack

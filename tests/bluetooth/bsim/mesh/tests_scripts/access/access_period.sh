@@ -6,3 +6,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 RunTest mesh_access_periodic_publication \
 	access_tx_period access_rx_period
+
+conf=prj_mesh1d1_conf
+RunTest mesh_access_periodic_publication \
+	access_tx_period access_rx_period

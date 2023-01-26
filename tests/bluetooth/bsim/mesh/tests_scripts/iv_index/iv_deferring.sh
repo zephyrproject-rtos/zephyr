@@ -4,8 +4,8 @@
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
-# test tx callbacks sequence for multiple advs
-RunTest mesh_adv_tx_cb_multi adv_tx_cb_multi
+# test deferring of the IV index update procedure
+RunTest mesh_ivi_deferring ivi_ivu_deferring
 
 conf=prj_mesh1d1_conf
-RunTest mesh_adv_tx_cb_multi adv_tx_cb_multi
+RunTest mesh_ivi_deferring ivi_ivu_deferring

@@ -11,4 +11,11 @@ RunTest mesh_provision_pb_adv_multi \
 	prov_provisioner_pb_adv_multi \
 	prov_device_pb_adv_no_oob \
 	prov_device_pb_adv_no_oob \
+	prov_device_pb_adv_no_oob
+
+conf=prj_mesh1d1_conf
+RunTest mesh_provision_pb_adv_multi \
+	prov_provisioner_pb_adv_multi \
 	prov_device_pb_adv_no_oob \
+	prov_device_pb_adv_no_oob \
+	prov_device_pb_adv_no_oob
