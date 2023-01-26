@@ -374,6 +374,7 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 		      k_timeout_t timeout)
 {
 	struct _pipe_desc  pipe_desc[2];
+	struct _pipe_desc  isr_desc;
 	struct _pipe_desc *src_desc;
 	sys_dlist_t        dest_list;
 	sys_dlist_t        src_list;
@@ -429,7 +430,12 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 		return -EIO;
 	}
 
-	src_desc = &_current->pipe_desc;
+	/*
+	 * Do not use the pipe descriptor stored within k_thread if
+	 * invoked from within an ISR as that is not safe to do.
+	 */
+
+	src_desc = k_is_in_isr() ? &isr_desc : &_current->pipe_desc;
 
 	src_desc->buffer        = data;
 	src_desc->bytes_to_xfer = bytes_to_write;
@@ -521,6 +527,7 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 {
 	sys_dlist_t         src_list;
 	struct _pipe_desc   pipe_desc[2];
+	struct _pipe_desc   isr_desc;
 	struct _pipe_desc  *dest_desc;
 	struct _pipe_desc  *src_desc;
 	size_t         num_bytes_read = 0U;
@@ -561,7 +568,12 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 		return -EIO;
 	}
 
-	dest_desc = &_current->pipe_desc;
+	/*
+	 * Do not use the pipe descriptor stored within k_thread if
+	 * invoked from within an ISR as that is not safe to do.
+	 */
+
+	dest_desc = k_is_in_isr() ? &isr_desc : &_current->pipe_desc;
 
 	dest_desc->buffer = data;
 	dest_desc->bytes_to_xfer = bytes_to_read;
