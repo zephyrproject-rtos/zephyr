@@ -80,9 +80,6 @@ def process_pr(gh, maintainer_file, number):
     ac = dict(sorted(area_counter.items(), key=lambda item: item[1], reverse=True))
     log(f"Area matches: {ac}")
     log(f"labels: {labels}")
-    if len(labels) > 10:
-        log(f"Too many labels to be applied")
-        return
 
     # Create a list of collaborators ordered by the area match
     collab = list()
@@ -143,11 +140,14 @@ def process_pr(gh, maintainer_file, number):
     log("+++++++++++++++++++++++++")
 
     # Set labels
-    if labels and len(labels) < 10:
-        for l in labels:
-            log(f"adding label {l}...")
-            if not args.dry_run:
-                pr.add_to_labels(l)
+    if labels:
+        if len(labels) < 10:
+            for l in labels:
+                log(f"adding label {l}...")
+                if not args.dry_run:
+                    pr.add_to_labels(l)
+        else:
+            log(f"Too many labels to be applied")
 
     if collab:
         reviewers = []
