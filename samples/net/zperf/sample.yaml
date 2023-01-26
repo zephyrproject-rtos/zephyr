@@ -18,6 +18,12 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     tags: usb net zperf
     depends_on: usb_device
+  sample.net.zperf.device_next_ecm:
+    extra_args: OVERLAY_CONFIG="overlay-usbd_next_ecm.conf"
+                DTC_OVERLAY_FILE="usbd_next_ecm.overlay"
+    platform_allow: nrf52840dk_nrf52840 frdm_k64f
+    tags: usb net zperf
+    depends_on: usb_device
   sample.net.zperf.netusb_eem:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
