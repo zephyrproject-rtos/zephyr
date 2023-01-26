@@ -505,6 +505,10 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		return websocket_poll_offload(fds, nfds, timeout);
 	}
 
+	case ZFD_IOCTL_SET_LOCK:
+		/* Ignore, don't want to overwrite underlying socket lock. */
+		return 0;
+
 	default: {
 		const struct fd_op_vtable *vtable;
 		void *core_obj;
