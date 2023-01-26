@@ -23,12 +23,14 @@
 #include "mm_drv_intel_adsp.h"
 
 #include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
+#include <zephyr/drivers/mm/mm_drv_bank.h>
 #include <zephyr/debug/sparse.h>
 
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
 
-static int hpsram_ref[L2_SRAM_BANK_NUM];
+static struct mem_drv_bank hpsram_bank[L2_SRAM_BANK_NUM];
+
 #ifdef CONFIG_SOC_INTEL_COMM_WIDGET
 #include <adsp_comm_widget.h>
 
@@ -236,7 +238,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 #endif
 
 	bank_idx = get_hpsram_bank_idx(pa);
-	if (!hpsram_ref[bank_idx]++) {
+	if (sys_mm_drv_bank_page_mapped(&hpsram_bank[bank_idx]) == 1) {
 		sys_mm_drv_hpsram_pwr(bank_idx, true, false);
 	}
 
@@ -375,7 +377,7 @@ int sys_mm_drv_unmap_page(void *virt)
 		sys_mm_drv_report_page_usage();
 #endif
 
-		if (--hpsram_ref[bank_idx] == 0) {
+		if (sys_mm_drv_bank_page_unmapped(&hpsram_bank[bank_idx]) == 0) {
 			sys_mm_drv_hpsram_pwr(bank_idx, false, false);
 		}
 	}
@@ -645,7 +647,8 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	 * of pages within single memory bank.
 	 */
 	for (int i = 0; i < L2_SRAM_BANK_NUM; i++) {
-		hpsram_ref[i] = SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
+		sys_mm_drv_bank_init(&hpsram_bank[i],
+				     SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE);
 	}
 #ifdef CONFIG_SOC_INTEL_COMM_WIDGET
 	used_pages = L2_SRAM_BANK_NUM * SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
