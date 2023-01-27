@@ -533,6 +533,13 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_pipe_block_put_enter(pipe, sem)
 #define sys_port_trace_k_pipe_block_put_exit(pipe, sem)
 
+#define sys_port_trace_k_event_init(event)
+#define sys_port_trace_k_event_post_enter(event, events, events_mask)
+#define sys_port_trace_k_event_post_exit(event, events, events_mask)
+#define sys_port_trace_k_event_wait_enter(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_blocking(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_exit(event, events, ret)
+
 #define sys_port_trace_k_heap_init(heap)                                                           \
 	SEGGER_SYSVIEW_RecordU32(TID_HEAP_INIT, (uint32_t)(uintptr_t)heap)
 
