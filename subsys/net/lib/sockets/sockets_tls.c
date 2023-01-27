@@ -6,7 +6,7 @@
  */
 
 #include <stdbool.h>
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
