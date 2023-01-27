@@ -38,6 +38,11 @@ struct k_spinlock _track_list_k_pipe_lock;
 struct k_queue *_track_list_k_queue;
 struct k_spinlock _track_list_k_queue_lock;
 
+#ifdef CONFIG_EVENTS
+struct k_event *_track_list_k_event;
+struct k_spinlock _track_list_k_event_lock;
+#endif
+
 #define SYS_TRACK_LIST_PREPEND(list, obj) \
 	do { \
 		k_spinlock_key_t key = k_spin_lock(&list ## _lock); \
@@ -111,6 +116,14 @@ void sys_track_k_queue_init(struct k_queue *queue)
 			SYS_TRACK_LIST_PREPEND(_track_list_k_queue, queue));
 }
 
+#ifdef CONFIG_EVENTS
+void sys_track_k_event_init(struct k_event *event)
+{
+	SYS_PORT_TRACING_TYPE_MASK(k_event,
+			SYS_TRACK_LIST_PREPEND(_track_list_k_event, event));
+}
+#endif
+
 static int sys_track_static_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
@@ -143,6 +156,11 @@ static int sys_track_static_init(const struct device *arg)
 
 	SYS_PORT_TRACING_TYPE_MASK(k_queue,
 			SYS_TRACK_STATIC_INIT(k_queue));
+
+#ifdef CONFIG_EVENTS
+	SYS_PORT_TRACING_TYPE_MASK(k_event,
+			SYS_TRACK_STATIC_INIT(k_event));
+#endif
 
 	return 0;
 }
