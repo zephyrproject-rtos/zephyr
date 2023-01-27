@@ -5738,6 +5738,22 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		sdu_frag_tx.target_event = cis->lll.event_count +
 					   ((cis->lll.tx.ft > 1U) ? 0U : 1U);
 
+		/* FIXME: Remove the below temporary hack to buffer up ISO data
+		 * if the SDU interval and ISO interval misalign.
+		 */
+		uint64_t pkt_seq_num = cis->lll.event_count + 1U;
+
+		if (((pkt_seq_num - cis->lll.tx.payload_count) &
+		     BIT64_MASK(39)) <= BIT64_MASK(38)) {
+			cis->lll.tx.payload_count = pkt_seq_num;
+		} else {
+			pkt_seq_num = cis->lll.tx.payload_count;
+		}
+
+		sdu_frag_tx.target_event = pkt_seq_num;
+
+		cis->lll.tx.payload_count++;
+
 		sdu_frag_tx.grp_ref_point = cig->cig_ref_point;
 
 		/* Get controller's input data path for CIS */
@@ -5809,7 +5825,22 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		 * than LL bisPayloadCounter or no data is sent.
 		 */
 		lll_iso = &adv_iso->lll;
-		sdu_frag_tx.target_event = (lll_iso->payload_count / lll_iso->bn);
+
+		/* FIXME: Remove the below temporary hack to buffer up ISO data
+		 * if the SDU interval and ISO interval misalign.
+		 */
+		uint64_t pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
+
+		if (((pkt_seq_num - stream->pkt_seq_num) & BIT64_MASK(39)) <=
+		    BIT64_MASK(38)) {
+			stream->pkt_seq_num = pkt_seq_num;
+		} else {
+			pkt_seq_num = stream->pkt_seq_num;
+		}
+
+		sdu_frag_tx.target_event = pkt_seq_num;
+
+		stream->pkt_seq_num++;
 
 		/* Start Fragmentation */
 		/* FIXME: need to ensure ISO-AL returns proper isoal_status.
