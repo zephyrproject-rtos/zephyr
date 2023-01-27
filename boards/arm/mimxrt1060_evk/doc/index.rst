@@ -118,7 +118,7 @@ already supported, which can also be re-used on this mimxrt1060_evk board:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
-| CAN       | on-chip    | can                                 |
+| CAN/CAN-FD| on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
@@ -299,6 +299,12 @@ Serial Port
 The MIMXRT1060 SoC has eight UARTs. ``LPUART1`` is configured for the console,
 ``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
+
+CAN / CAN-FD
+============
+
+The MIMXRT1060 SoC has 3 FlexCAN modules. ``FlexCAN1`` & ``FlexCAN2`` support
+only CAN 2.0 protocol whereas the ``FlexCAN3`` supports the CAN-FD protocol.
 
 Programming and Debugging
 *************************

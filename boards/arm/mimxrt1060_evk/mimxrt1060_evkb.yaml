@@ -28,5 +28,6 @@ supported:
   - kscan:touch
   - dma
   - can
+  - canfd
   - watchdog
   - adc

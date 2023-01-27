@@ -30,7 +30,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
-		zephyr,canbus = &flexcan2;
+		zephyr,canbus = &flexcan3;
 		zephyr,display = &lcdif;
 		zephyr,keyboard-scan = &touch_controller;
 	};
@@ -237,9 +237,23 @@ zephyr_udc0: &usb1 {
 };
 
 &flexcan2 {
-	status = "okay";
+	/* Cannot be used together with flexcan3 due to pinmux conflict. */
+	status = "disabled";
 	bus-speed = <125000>;
 	pinctrl-0 = <&pinmux_flexcan2>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&flexcan3 {
+	status = "okay";
+	bus-speed = <125000>;
+	bus-speed-data = <5000000>;
+	pinctrl-0 = <&pinmux_flexcan3>;
+	clk-source = <1>;
 	pinctrl-names = "default";
 
 	can-transceiver {
@@ -295,4 +309,15 @@ zephyr_udc0: &usb1 {
 &itm {
 	pinctrl-0 = <&pinmux_swo>;
 	pinctrl-names = "default";
+};
+
+
+/* Option 1 */
+&pinctrl {
+pinmux_flexcan3: pinmux_flexcan3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b0_14_flexcan3_tx>,
+			<&iomuxc_gpio_ad_b0_15_flexcan3_rx>;
+		};
+	};
 };
