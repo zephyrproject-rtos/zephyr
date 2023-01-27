@@ -187,8 +187,11 @@
  */
 #define Z_DECL_ALIGN(type) __aligned(__alignof(type)) type
 
+/* Check if a pointer is aligned for against a specific byte boundary  */
+#define IS_PTR_ALIGNED_BYTES(ptr, bytes) ((((uintptr_t)ptr) % bytes) == 0)
+
 /* Check if a pointer is aligned enough for a particular data type. */
-#define IS_PTR_ALIGNED(ptr, type) ((((uintptr_t)ptr) % __alignof(type)) == 0)
+#define IS_PTR_ALIGNED(ptr, type) IS_PTR_ALIGNED_BYTES(ptr, __alignof(type))
 
 /**
  * @brief Iterable Sections APIs
