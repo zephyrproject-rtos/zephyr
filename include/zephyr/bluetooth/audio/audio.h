@@ -32,6 +32,10 @@ extern "C" {
 #endif
 
 #define BT_AUDIO_BROADCAST_ID_SIZE               3 /* octets */
+/** Indicates that the server have no preference for the presentation delay */
+#define BT_AUDIO_PD_PREF_NONE                    0x000000U
+/** Maximum presentation delay in microseconds */
+#define BT_AUDIO_PD_MAX                          0xFFFFFFU
 
 /** Endpoint states */
 enum bt_audio_state {
@@ -476,7 +480,11 @@ struct bt_codec_qos {
 
 	/** QoS Frame Interval */
 	uint32_t interval;
-	/** QoS Presentation Delay */
+
+	/** @brief QoS Presentation Delay in microseconds
+	 *
+	 *  Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 */
 	uint32_t pd;
 };
 
@@ -523,10 +531,13 @@ struct bt_codec_qos_pref {
 	/** Preferred Transport Latency */
 	uint16_t latency;
 
-	/** @brief Minimum Presentation Delay
+	/** @brief Minimum Presentation Delay in microseconds
 	 *
 	 *  Unlike the other fields, this is not a preference but a minimum
 	 *  requirement.
+	 *
+	 *  Value range 0 to @ref BT_AUDIO_PD_MAX, or @ref BT_AUDIO_PD_PREF_NONE
+	 *  to indicate no preference.
 	 */
 	uint32_t pd_min;
 
@@ -534,13 +545,22 @@ struct bt_codec_qos_pref {
 	 *
 	 *  Unlike the other fields, this is not a preference but a maximum
 	 *  requirement.
+	 *
+	 *  Value range 0 to @ref BT_AUDIO_PD_MAX, or @ref BT_AUDIO_PD_PREF_NONE
+	 *  to indicate no preference.
 	 */
 	uint32_t pd_max;
 
-	/** @brief Preferred minimum Presentation Delay */
+	/** @brief Preferred minimum Presentation Delay
+	 *
+	 *  Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 */
 	uint32_t pref_pd_min;
 
-	/** @brief Preferred maximum Presentation Delay	*/
+	/** @brief Preferred maximum Presentation Delay
+	 *
+	 *  Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 */
 	uint32_t pref_pd_max;
 };
 
