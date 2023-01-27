@@ -624,14 +624,15 @@ static int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 static int cmd_mcc_discover_mcs(const struct shell *sh, size_t argc,
 				char **argv)
 {
-	int result;
-	int subscribe = 1;
+	bool subscribe = true;
+	int result = 0;
 
 	if (argc > 1) {
-		subscribe = strtol(argv[1], NULL, 0);
+		subscribe = shell_strtobool(argv[1], 0, &result);
+		if (result != 0) {
+			shell_error(sh, "Could not parse subscribe: %d",
+				    result);
 
-		if (subscribe < 0 || subscribe > 1) {
-			shell_error(sh, "Invalid parameter");
 			return -ENOEXEC;
 		}
 	}
@@ -720,10 +721,21 @@ static int cmd_mcc_read_track_position(const struct shell *sh, size_t argc,
 static int cmd_mcc_set_track_position(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
-	int result;
-	int32_t pos = strtol(argv[1], NULL, 0);
+	int result = 0;
+	long pos;
 
-	/* Todo: Check input "pos" for validity, or for errors in conversion? */
+	pos = shell_strtol(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse pos: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(pos, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid pos: %ld", pos);
+
+		return -ENOEXEC;
+	}
 
 	result = bt_mcc_set_track_position(default_conn, pos);
 	if (result) {
@@ -749,8 +761,21 @@ static int cmd_mcc_read_playback_speed(const struct shell *sh, size_t argc,
 static int cmd_mcc_set_playback_speed(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
-	int result;
-	int8_t speed = strtol(argv[1], NULL, 0);
+	int result = 0;
+	long speed;
+
+	speed = shell_strtol(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse speed: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(speed, INT8_MIN, INT8_MAX)) {
+		shell_error(sh, "Invalid speed: %ld", speed);
+
+		return -ENOEXEC;
+	}
 
 	result = bt_mcc_set_playback_speed(default_conn, speed);
 	if (result) {
@@ -801,10 +826,21 @@ static int cmd_mcc_read_current_track_obj_id(const struct shell *sh,
 static int cmd_mcc_set_current_track_obj_id(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
-	int result;
-	uint64_t id = strtoul(argv[1], NULL, 0);
+	unsigned long id;
+	int result = 0;
 
-	id = id & 0x0000FFFFFFFFFFFFUL; /* 48 bits only */
+	id = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse id: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		shell_error(sh, "Invalid id: %lu", id);
+
+		return -ENOEXEC;
+	}
 
 	result = bt_mcc_set_current_track_obj_id(default_conn, id);
 	if (result) {
@@ -828,10 +864,21 @@ static int cmd_mcc_read_next_track_obj_id(const struct shell *sh, size_t argc,
 static int cmd_mcc_set_next_track_obj_id(const struct shell *sh, size_t argc,
 					 char *argv[])
 {
-	int result;
-	uint64_t id = strtoul(argv[1], NULL, 0);
+	unsigned long id;
+	int result = 0;
 
-	id = id & 0x0000FFFFFFFFFFFFUL; /* 48 bits only */
+	id = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse id: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		shell_error(sh, "Invalid id: %lu", id);
+
+		return -ENOEXEC;
+	}
 
 	result = bt_mcc_set_next_track_obj_id(default_conn, id);
 	if (result) {
@@ -867,10 +914,21 @@ static int cmd_mcc_read_current_group_obj_id(const struct shell *sh,
 static int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
-	int result;
-	uint64_t id = strtoul(argv[1], NULL, 0);
+	unsigned long id;
+	int result = 0;
 
-	id = id & 0x0000FFFFFFFFFFFFUL; /* 48 bits only */
+	id = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse id: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		shell_error(sh, "Invalid id: %lu", id);
+
+		return -ENOEXEC;
+	}
 
 	result = bt_mcc_set_current_group_obj_id(default_conn, id);
 	if (result) {
@@ -895,8 +953,21 @@ static int cmd_mcc_read_playing_order(const struct shell *sh, size_t argc,
 static int cmd_mcc_set_playing_order(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
-	int result;
-	uint8_t order = strtol(argv[1], NULL, 0);
+	unsigned long order;
+	int result = 0;
+
+	order = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse order: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (order > UINT8_MAX) {
+		shell_error(sh, "Invalid order: %lu", order);
+
+		return -ENOEXEC;
+	}
 
 	result = bt_mcc_set_playing_order(default_conn, order);
 	if (result) {
@@ -1395,15 +1466,18 @@ static int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
 {
 	/* Implementation follows Media control service testspec 0.9.0r13 */
 	/* Testcase MCS/SR/SCP/BV-01-C [Search Control Point], rounds 1 - 9 */
-
-	int result;
-	uint8_t testround;
 	struct mpl_sci sci_1 = {0};
 	struct mpl_sci sci_2 = {0};
 	struct mpl_search search;
+	unsigned long testround;
+	int result = 0;
 
+	testround = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse testround: %d", result);
 
-	testround = strtol(argv[1], NULL, 0);
+		return -ENOEXEC;
+	}
 
 	switch (testround) {
 	case 1:
@@ -1606,13 +1680,19 @@ static int cmd_mcc_otc_read_metadata(const struct shell *sh, size_t argc,
 
 static int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
 {
-	int result;
-	uint64_t id;
+	unsigned long id;
+	int result = 0;
 
-	if (argc > 1) {
-		id = strtol(argv[1], NULL, 0);
-	} else {
-		shell_error(sh, "Invalid parameter, requires the Object ID");
+	id = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse id: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		shell_error(sh, "Invalid id: %lu", id);
+
 		return -ENOEXEC;
 	}
 
