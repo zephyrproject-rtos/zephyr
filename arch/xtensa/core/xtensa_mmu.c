@@ -8,7 +8,10 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/mem_manage.h>
+#include <xtensa/corebits.h>
 #include <xtensa_mmu_priv.h>
+
+#include <kernel_arch_func.h>
 
 /* Kernel specific ASID. Ring field in the PTE */
 #define MMU_KERNEL_RING 0
@@ -253,6 +256,15 @@ static void xtensa_mmu_init(bool is_core0)
 		Z_XTENSA_TLB_ENTRY(
 			Z_XTENSA_PTEVADDR + MB(4), 3));
 
+	/* Temporarily uses KernelExceptionVector for level 1 interrupts
+	 * handling. This is due to UserExceptionVector needing to jump to
+	 * _Level1Vector. The jump ('j') instruction offset is incorrect
+	 * when we move VECBASE below.
+	 */
+	__asm__ volatile("rsr.ps %0" : "=r"(ps));
+	ps &= ~PS_UM;
+	__asm__ volatile("wsr.ps %0; rsync" :: "a"(ps));
+
 	__asm__ volatile("wsr.vecbase %0; rsync\n\t"
 			:: "a"(Z_XTENSA_PTEVADDR + MB(4)));
 
@@ -276,6 +288,13 @@ static void xtensa_mmu_init(bool is_core0)
 	 */
 	__asm__ volatile("wsr.vecbase %0; rsync\n\t"
 			:: "a"(vecbase));
+
+	/* Restore PS_UM so that level 1 interrupt handling will go to
+	 * UserExceptionVector.
+	 */
+	__asm__ volatile("rsr.ps %0" : "=r"(ps));
+	ps |= PS_UM;
+	__asm__ volatile("wsr.ps %0; rsync" :: "a"(ps));
 
 	xtensa_dtlb_entry_invalidate_sync(Z_XTENSA_TLB_ENTRY(Z_XTENSA_PTEVADDR + MB(4), 3));
 	xtensa_itlb_entry_invalidate_sync(Z_XTENSA_TLB_ENTRY(Z_XTENSA_PTEVADDR + MB(4), 3));
