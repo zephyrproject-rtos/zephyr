@@ -109,6 +109,7 @@ config XTENSA_MMU
 	bool "Xtensa MMU Support"
 	default n
 	select MMU
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	help
 	  Enable support for Xtensa Memory Management Unit.
 
