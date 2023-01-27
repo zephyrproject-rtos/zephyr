@@ -163,27 +163,28 @@ Abstract code for this task would look like this:
 
 .. code-block:: c
 
-        static int gain_cmd_handler(const struct shell *shell,
-                                    size_t argc, char **argv, void *data)
-        {
-                int gain;
+	static int gain_cmd_handler(const struct shell *shell,
+				    size_t argc, char **argv, void *data)
+	{
+		int gain;
 
-                /* data is a value corresponding to called command syntax */
-                gain = (int)data;
-                adc_set_gain(gain);
+		/* data is a value corresponding to called command syntax */
+		gain = (int)data;
+		adc_set_gain(gain);
 
-                shell_print(shell, "ADC gain set to: %s\n"
-                                   "Value send to ADC driver: %d",
-                                   argv[0],
-                                   gain);
+		shell_print(shell, "ADC gain set to: %s\n"
+				   "Value send to ADC driver: %d",
+				   argv[0],
+				   gain);
 
-                return 0;
-        }
+		return 0;
+	}
 
-        SHELL_SUBCMD_DICT_SET_CREATE(sub_gain, gain_cmd_handler,
-                (gain_1, 1), (gain_2, 2), (gain_1_2, 3), (gain_1_4, 4)
-        );
-        SHELL_CMD_REGISTER(gain, &sub_gain, "Set ADC gain", NULL);
+	SHELL_SUBCMD_DICT_SET_CREATE(sub_gain, gain_cmd_handler,
+		(gain_1, 1, "gain 1"), (gain_2, 2, "gain 2"),
+		(gain_1_2, 3, "gain 1/2"), (gain_1_4, 4, "gain 1/4")
+	);
+	SHELL_CMD_REGISTER(gain, &sub_gain, "Set ADC gain", NULL);
 
 
 This is how it would look like in the shell:
