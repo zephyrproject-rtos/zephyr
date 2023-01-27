@@ -2112,6 +2112,8 @@ struct k_event {
 	_wait_q_t         wait_q;
 	uint32_t          events;
 	struct k_spinlock lock;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_event)
 };
 
 #define Z_EVENT_INITIALIZER(obj) \
