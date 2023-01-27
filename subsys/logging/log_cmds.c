@@ -363,14 +363,17 @@ static int cmd_log_mem(const struct shell *sh, size_t argc, char **argv)
 	err = log_mem_get_usage(&size, &used);
 	if (err < 0) {
 		shell_error(sh, "Failed to get usage (mode does not support it?)");
+		return -ENOEXEC;
 	}
 
 	shell_print(sh, "Log message buffer utilization report:");
 	shell_print(sh, "\tCapacity: %u bytes", size);
 	shell_print(sh, "\tCurrently in use: %u bytes", used);
+
 	err = log_mem_get_max_usage(&max);
 	if (err < 0) {
 		shell_print(sh, "Enable CONFIG_LOG_MEM_UTILIZATION to get maximum usage");
+		return 0;
 	}
 
 	shell_print(sh, "\tMaximum usage: %u bytes", max);
