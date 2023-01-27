@@ -32,6 +32,8 @@
 #include <zephyr/arch/posix/arch_inlines.h>
 #elif defined(CONFIG_SPARC)
 #include <zephyr/arch/sparc/arch_inlines.h>
+#elif defined(CONFIG_MICROBLAZE)
+#include <zephyr/arch/microblaze/arch_inlines.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_INLINES_H_ */
