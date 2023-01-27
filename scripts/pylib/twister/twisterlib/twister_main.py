@@ -223,6 +223,8 @@ def main(options):
         options.platform_reports,
     )
 
+    report.synopsis()
+
     if options.package_artifacts:
         artifacts = Artifacts(env)
         artifacts.package()
