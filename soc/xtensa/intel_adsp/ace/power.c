@@ -277,6 +277,11 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			power_down(true, uncache_to_cache(&hpsram_mask),
 				   true);
 		} else {
+			/* Temporary re-enabling interrupts before going to waiti. Right now
+			 * secondary cores don't have proper context restore flow and after leaving
+			 * D3 state core will return here and stuck.
+			 */
+			z_xt_ints_on(core_desc[cpu].intenable);
 			k_cpu_idle();
 		}
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
