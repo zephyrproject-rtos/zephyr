@@ -102,7 +102,9 @@
 	status = "okay";
 	pinctrl-0 = <&adc00_gpio200 &adc03_gpio203
 		     &adc04_gpio204 &adc05_gpio205>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&adc00_gpio200_sleep &adc03_gpio203_sleep
+		     &adc04_gpio204_sleep &adc05_gpio205_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &espi0 {
