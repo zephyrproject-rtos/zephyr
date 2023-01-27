@@ -74,12 +74,15 @@ void gsm_ppp_stop(const struct device *dev, bool keep_AT_channel);
  * @param dev: gsm modem device
  * @param modem_on: callback function to
  *		execute during gsm ppp configuring.
+ * @param modem_configured: callback function to
+ *		execute when modem is configured.
  * @param modem_off: callback function to
  *		execute during gsm ppp stopping.
  * @param user_data: user specified data
  */
 void gsm_ppp_register_modem_power_callback(const struct device *dev,
 					   gsm_modem_power_cb modem_on,
+					   gsm_modem_power_cb modem_configured,
 					   gsm_modem_power_cb modem_off,
 					   void *user_data);
 

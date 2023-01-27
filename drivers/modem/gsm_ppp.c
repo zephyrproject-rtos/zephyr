@@ -115,6 +115,7 @@ static struct gsm_modem {
 	void *user_data;
 
 	gsm_modem_power_cb modem_on_cb;
+	gsm_modem_power_cb modem_configured_cb;
 	gsm_modem_power_cb modem_off_cb;
 	struct net_mgmt_event_callback gsm_mgmt_cb;
 } gsm;
@@ -897,6 +898,9 @@ attached:
 		modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
 	}
 
+	if (gsm->modem_configured_cb) {
+		gsm->modem_configured_cb(gsm->dev, gsm->user_data);
+	}
 unlock:
 	gsm_ppp_unlock(gsm);
 }
@@ -1283,6 +1287,7 @@ void gsm_ppp_stop(const struct device *dev, bool keep_AT_channel)
 
 void gsm_ppp_register_modem_power_callback(const struct device *dev,
 					   gsm_modem_power_cb modem_on,
+					   gsm_modem_power_cb modem_configured,
 					   gsm_modem_power_cb modem_off,
 					   void *user_data)
 {
@@ -1291,6 +1296,7 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
 	gsm_ppp_lock(gsm);
 
 	gsm->modem_on_cb = modem_on;
+	gsm->modem_configured_cb = modem_configured;
 	gsm->modem_off_cb = modem_off;
 
 	gsm->user_data = user_data;
