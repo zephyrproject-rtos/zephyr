@@ -1,0 +1,32 @@
+# Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+# Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: AMD Xilinx MicroBlaze
+
+compatible: "xlnx,microblaze"
+
+include: cpu.yaml
+
+properties:
+  i-cache-base:
+    type: int
+    description: i-cache base
+      ICACHE_BASEADDR parameter defined in xparameters.
+  d-cache-base:
+    type: int
+    description: d-cache base
+      DCACHE_BASEADDR parameter defined in xparameters.
+  i-cache-size:
+    type: int
+    description: i-cache size in bytes
+      ICACHE_BYTE_SIZE parameter defined in xparameters.
+  d-cache-size:
+    type: int
+    description: d-cache size in bytes
+      DCACHE_BYTE_SIZE parameter defined in xparameters.
+  d-cache-use-writeback:
+    type: int
+    description: If CPU supports flushing without invalidating
+      C_DCACHE_USE_WRITEBACK parameter defined in xparameters.
