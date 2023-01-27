@@ -111,6 +111,11 @@ ZTEST(x86_pagetables, test_ram_perms)
 		} else if (IN_REGION(__gcov_bss, pos)) {
 			expected = MMU_P | MMU_RW | MMU_US | MMU_XD;
 #endif
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION) && \
+	!defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+		} else if (IN_REGION(_app_smem_pinned, pos)) {
+			expected = MMU_P | MMU_RW | MMU_US | MMU_XD;
+#endif
 #if !defined(CONFIG_X86_KPTI) && !defined(CONFIG_X86_COMMON_PAGE_TABLE) && \
 				  defined(CONFIG_USERSPACE)
 		} else if (IN_REGION(_app_smem, pos)) {
