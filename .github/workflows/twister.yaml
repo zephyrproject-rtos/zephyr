@@ -267,8 +267,7 @@ jobs:
   twister-test-results:
     name: "Publish Unit Tests Results"
     env:
-      OPENSEARCH_USER: ${{ secrets.OPENSEARCH_USER }}
-      OPENSEARCH_PASS: ${{ secrets.OPENSEARCH_PASS }}
+      ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
     needs: twister-build
     runs-on: ubuntu-20.04
     # the build-and-test job might be skipped, we don't need to run this job then
