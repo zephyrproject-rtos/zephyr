@@ -1423,7 +1423,9 @@ static struct gsm_ppp_sms_message sms_message;
 /* Handler: <SMS message> */
 MODEM_CMD_DEFINE(on_cmd_atcmd_read_sms)
 {
-	if (argc >= 1 && strncmp(argv[0], "+CMGL: ", strlen("+CMGL: ")) == 0) {
+	if (strncmp(argv[0], "+CMTI: ", strlen("+CMTI: ")) == 0) {
+		LOG_DBG("SMS message received by modem");
+	} else if (argc >= 1 && strncmp(argv[0], "+CMGL: ", strlen("+CMGL: ")) == 0) {
 		sms_message.index = atoi(strchr(argv[0], ' '));
 
 		unquoted_strncpy(sms_message.status, argv[1], GSM_PPP_SMS_STATUS_LENGTH);
