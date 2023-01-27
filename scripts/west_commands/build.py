@@ -156,7 +156,12 @@ class Build(Forceable):
         self._parse_remainder(remainder)
         # Parse testcase.yaml or sample.yaml files for additional options.
         if self.args.test_item:
-            if not self._parse_test_item():
+            # we get path + testitem
+            item = os.path.basename(self.args.test_item)
+            test_path = os.path.dirname(self.args.test_item)
+            if test_path:
+                self.args.source_dir = test_path
+            if not self._parse_test_item(item):
                 log.die("No test metadata found")
         if source_dir:
             if self.args.source_dir:
@@ -246,7 +251,7 @@ class Build(Forceable):
         except IndexError:
             return
 
-    def _parse_test_item(self):
+    def _parse_test_item(self, test_item):
         found_test_metadata = False
         for yp in ['sample.yaml', 'testcase.yaml']:
             yf = os.path.join(self.args.source_dir, yp)
@@ -261,9 +266,9 @@ class Build(Forceable):
             tests = y.get('tests')
             if not tests:
                 log.die(f"No tests found in {yf}")
-            item = tests.get(self.args.test_item)
+            item = tests.get(test_item)
             if not item:
-                log.die(f"Test item {self.args.test_item} not found in {yf}")
+                log.die(f"Test item {test_item} not found in {yf}")
 
             for data in ['extra_args', 'extra_configs']:
                 extra = item.get(data)
