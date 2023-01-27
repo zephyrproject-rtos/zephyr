@@ -723,11 +723,11 @@ static int gsm_dlci_opening(struct gsm_dlci *dlci, dlci_command_cb_t cb)
 					   cb);
 }
 
-int gsm_mux_disconnect(struct gsm_mux *mux, k_timeout_t timeout)
+int gsm_mux_disconnect(struct gsm_mux *mux, uint8_t dlci_address, k_timeout_t timeout)
 {
 	struct gsm_dlci *dlci;
 
-	dlci = gsm_dlci_get(mux, 0);
+	dlci = gsm_dlci_get(mux, dlci_address);
 	if (dlci == NULL) {
 		return -ENOENT;
 	}

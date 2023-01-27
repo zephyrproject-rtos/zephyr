@@ -50,13 +50,6 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 	#define GSM_RSSI_MAXVAL         -51
 #endif
 
-const uint8_t disconnect_cmux[4][9] = {
-	{ 0xF9, 0x07, 0x53, 0x01, 0x3F, 0xF9, 0x00, 0x00, 0x00 },
-	{ 0xF9, 0x0B, 0x53, 0x01, 0xB8, 0xF9, 0x00, 0x00, 0x00 },
-	{ 0xF9, 0x0F, 0x53, 0x01, 0x7A, 0xF9, 0x00, 0x00, 0x00 },
-	{ 0xF9, 0x03, 0xEF, 0x05, 0xC3, 0x01, 0xF2, 0xF9, 0x00 },
-};
-
 /* Modem network registration state */
 enum network_state {
 	GSM_NET_INIT = -1,
@@ -118,7 +111,6 @@ static struct gsm_modem {
 
 	int retries;
 	bool modem_info_queried : 1;
-	bool kept_AT_channel : 1;
 
 	void *user_data;
 
@@ -1019,6 +1011,12 @@ static void mux_setup(struct k_work *work)
 			uart_mux_enable(gsm->ppp_dev);
 		}
 
+		if (gsm->at_dev != NULL) {
+			uart_mux_enable(gsm->at_dev);
+		}
+		if (gsm->control_dev != NULL) {
+			uart_mux_enable(gsm->control_dev);
+		
 		/* Get UART device. There is one dev / DLCI */
 		if (gsm->control_dev == NULL) {
 			gsm->control_dev = uart_mux_alloc();
@@ -1105,6 +1103,37 @@ unlock:
 	gsm_ppp_unlock(gsm);
 }
 
+void mux_disable(struct gsm_modem *gsm)
+{
+	int r;
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		if (gsm->at_dev) {
+			uart_mux_disconnect(gsm->at_dev, DLCI_AT);
+		}
+		if (gsm->ppp_dev) {
+			uart_mux_disconnect(gsm->ppp_dev, DLCI_PPP);
+		}
+		if (gsm->control_dev) {
+			uart_mux_disconnect(gsm->control_dev, DLCI_CONTROL);
+		}
+		if (gsm->at_dev) {
+			uart_mux_disable(gsm->at_dev);
+		}
+		if (gsm->ppp_dev) {
+			uart_mux_disable(gsm->ppp_dev);
+		}
+		if (gsm->control_dev) {
+			uart_mux_disable(gsm->control_dev);
+		}
+		gsm->mux_enabled = false;
+		r = modem_iface_uart_init_dev(&gsm->context.iface,
+					      DEVICE_DT_GET(GSM_UART_NODE));
+		if (r) {
+			LOG_ERR("modem_iface_uart_init returned %d", r);
+		}
+	}
+}
+
 static void gsm_configure(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -1176,16 +1205,6 @@ void gsm_ppp_start(const struct device *dev)
 
 	gsm->state = GSM_PPP_START;
 
-	/* Re-init underlying UART comms */
-	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->kept_AT_channel) {
-		/* Lower mux_enabled flag to trigger re-sending AT+CMUX etc */
-		gsm->mux_enabled = false;
-
-		if (gsm->ppp_dev) {
-			uart_mux_disable(gsm->ppp_dev);
-		}
-	}
-
 	ret = modem_iface_uart_init_dev(&gsm->context.iface, DEVICE_DT_GET(GSM_UART_NODE));
 	if (ret < 0) {
 		LOG_ERR("modem_iface_uart_init returned %d", ret);
@@ -1216,20 +1235,9 @@ void gsm_ppp_recover_cmux(const struct device *dev)
 
 	gsm_ppp_cancel(gsm);
 
-	modem_cmd_handler_disable_eol(&gsm->context.cmd_handler);
-
-	int i;
-	for (i = 0; i < ARRAY_SIZE(disconnect_cmux); i++)
-	{
-		(void)modem_cmd_send_nolock(&gsm->context.iface,
-				    &gsm->context.cmd_handler,
-				    NULL, 0,
-				    disconnect_cmux[i], &gsm->sem_response,
-				    GSM_CMD_AT_TIMEOUT);
-		k_msleep(1);
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		mux_disable(gsm);
 	}
-
-	modem_cmd_handler_restore_eol(&gsm->context.cmd_handler);
 }
 
 void gsm_ppp_stop(const struct device *dev, bool keep_AT_channel)
@@ -1252,21 +1260,17 @@ void gsm_ppp_stop(const struct device *dev, bool keep_AT_channel)
 		(void)k_sem_take(&gsm->sem_if_down, K_FOREVER);
 	}
 
-	if (!keep_AT_channel) {
-		if (IS_ENABLED(CONFIG_GSM_MUX)) {
-			if (gsm->ppp_dev != NULL) {
-				uart_mux_disable(gsm->ppp_dev);
-			}
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		mux_disable(gsm);
+	}
 
+	if (!keep_AT_channel) {
 			if (modem_cmd_handler_tx_lock(&gsm->context.cmd_handler,
 									GSM_CMD_LOCK_TIMEOUT) < 0) {
 				LOG_WRN("Failed locking modem cmds!");
 			}
 		}
 
-		gsm->kept_AT_channel = false;
-	} else {
-		gsm->kept_AT_channel = true;
 	}
 
 	if (gsm->modem_off_cb != NULL) {
@@ -1389,7 +1393,7 @@ void gsm_ppp_set_ring_indicator(const struct device *dev,
 static const struct setup_cmd sms_configure_cmds[] = {
 	/* Set SMS message format to text */
 	SETUP_CMD_NOHANDLE("AT+CMGF=1"),
-	/* Set SMS message reporting to message the receiver*/
+	/* Set SMS message reporting to message the receiver */
 	SETUP_CMD_NOHANDLE("AT+CNMI=2,1"),
 	/* Set SMS message character set */
 	SETUP_CMD_NOHANDLE("AT+CSCS=\"IRA\""),

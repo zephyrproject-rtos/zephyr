@@ -670,21 +670,3 @@ int modem_cmd_handler_init(struct modem_cmd_handler *handler,
 
 	return 0;
 }
-
-void modem_cmd_handler_disable_eol(struct modem_cmd_handler *handler)
-{
-	struct modem_cmd_handler_data *data;
-	data = (struct modem_cmd_handler_data *)(handler->cmd_handler_data);
-	data->eol_len = 0;
-}
-
-void modem_cmd_handler_restore_eol(struct modem_cmd_handler *handler)
-{
-	struct modem_cmd_handler_data *data;
-	data = (struct modem_cmd_handler_data *)(handler->cmd_handler_data);
-	if (data->eol == NULL) {
-		data->eol_len = 0;
-	} else {
-		data->eol_len = strlen(data->eol);
-	}
-}

@@ -84,6 +84,8 @@ static inline int uart_mux_attach(const struct device *mux,
 	return api->attach(mux, uart, dlci_address, cb, user_data);
 }
 
+void uart_mux_disconnect(const struct device *dev, uint8_t dlci_address);
+
 /**
  * @brief Get UART related to a specific DLCI channel
  *
