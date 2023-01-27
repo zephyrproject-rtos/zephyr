@@ -22,7 +22,6 @@ config PICOLIBC_SUPPORTED
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
 	depends on !(CPP && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr")
 	# picolibc text is outside .pinned.text on this board. #54148
-	depends on !BOARD_QEMU_X86_TINY
 	default y
 	help
 	  Selected when the target has support for picolibc.
