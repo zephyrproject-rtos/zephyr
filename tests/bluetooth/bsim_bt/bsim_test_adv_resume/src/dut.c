@@ -52,3 +52,15 @@ void dut_procedure(void)
 
 	PASS("PASS\n");
 }
+
+void dut_procedure_2(void)
+{
+	bs_bt_utils_setup();
+
+	printk("DUT start\n");
+
+	/* Start a resumable advertiser. */
+	advertise_connectable(0, true);
+
+	PASS("DUT done\n");
+}

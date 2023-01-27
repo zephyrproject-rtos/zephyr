@@ -14,6 +14,9 @@ BUILD_ASSERT(CONFIG_BT_ID_MAX == 2, "CONFIG_BT_ID_MAX should be 2.");
 #define BS_SECONDS(dur_sec)    ((bs_time_t)dur_sec * USEC_PER_SEC)
 #define TEST_TIMEOUT_SIMULATED BS_SECONDS(60)
 
+DEFINE_FLAG(flag_is_connected);
+DEFINE_FLAG(flag_test_end);
+
 void test_tick(bs_time_t HW_device_time)
 {
 	bs_trace_debug_time(0, "Simulation ends now.\n");
@@ -28,8 +31,6 @@ void test_init(void)
 	bst_ticker_set_next_tick_absolute(TEST_TIMEOUT_SIMULATED);
 	bst_result = In_progress;
 }
-
-DEFINE_FLAG(flag_is_connected);
 
 void wait_connected(void)
 {
@@ -67,6 +68,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 void bs_bt_utils_setup(void)
 {
 	int err;
+
+	UNSET_FLAG(flag_test_end);
 
 	err = bt_enable(NULL);
 	ASSERT(!err, "bt_enable failed.\n");

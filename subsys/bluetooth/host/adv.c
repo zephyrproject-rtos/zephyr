@@ -2069,8 +2069,14 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 		}
 	}
 
-	if (!atomic_test_bit(adv->flags, BT_ADV_PERSIST) && adv == bt_dev.adv) {
-		bt_le_adv_delete_legacy();
+	if (adv == bt_dev.adv) {
+		if (atomic_test_bit(adv->flags, BT_ADV_PERSIST)) {
+#if defined(CONFIG_BT_PERIPHERAL)
+			bt_le_adv_resume();
+#endif
+		} else {
+			bt_le_adv_delete_legacy();
+		}
 	}
 }
 

@@ -24,6 +24,7 @@
 
 extern enum bst_result_t bst_result;
 
+#define DECLARE_FLAG(flag) extern atomic_t flag
 #define DEFINE_FLAG(flag)  atomic_t flag = (atomic_t) false
 #define SET_FLAG(flag)	   (void)atomic_set(&flag, (atomic_t) true)
 #define UNSET_FLAG(flag)   (void)atomic_set(&flag, (atomic_t) false)
@@ -47,16 +48,20 @@ extern enum bst_result_t bst_result;
 		}                                                                                  \
 	} while (0)
 
-#define FAIL(...)                                                                                  \
-	do {                                                                                       \
-		bst_result = Failed;                                                               \
-		bs_trace_error_time_line(__VA_ARGS__);                                             \
+DECLARE_FLAG(flag_test_end);
+
+#define FAIL(...)					\
+	SET_FLAG(flag_test_end);			\
+	do {						\
+		bst_result = Failed;			\
+		bs_trace_error_time_line(__VA_ARGS__);	\
 	} while (0)
 
-#define PASS(...)                                                                                  \
-	do {                                                                                       \
-		bst_result = Passed;                                                               \
-		bs_trace_info_time(1, __VA_ARGS__);                                                \
+#define PASS(...)					\
+	SET_FLAG(flag_test_end);			\
+	do {						\
+		bst_result = Passed;			\
+		bs_trace_info_time(1, __VA_ARGS__);	\
 	} while (0)
 
 void test_tick(bs_time_t HW_device_time);
