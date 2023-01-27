@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 	.text
 	.globl	microblaze_enable_exceptions
 	.ent	microblaze_enable_exceptions

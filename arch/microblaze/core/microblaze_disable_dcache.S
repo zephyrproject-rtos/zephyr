@@ -5,48 +5,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-
-
 	.text
 	.globl	microblaze_disable_dcache
 	.ent	microblaze_disable_dcache
 	.balign 4
 microblaze_disable_dcache:
 #if CONFIG_MICROBLAZE_USE_MSR_INSTR == 1
-
-#if CONFIG_MICROBLAZE_DCACHE_USE_WRITEBACK != 0
-	addik   r1, r1, -8
-	swi     r15, r1, 0
-	/* microblaze_flush_dcache does not use r1*/
-	brlid   r15, microblaze_flush_dcache
-	nop
-	lwi     r15, r1, 0
-	addik    r1, r1, 8
-#endif /* CONFIG_MICROBLAZE_DCACHE_USE_WRITEBACK != 0 */
 	rtsd	r15, 8
 	msrclr r0, 0x80
-
 #else /* CONFIG_MICROBLAZE_USE_MSR_INSTR == 1 */
-
 	addik   r1, r1, -8
-
-#if CONFIG_MICROBLAZE_DCACHE_USE_WRITEBACK != 0
-	swi     r15, r1, 0
-	brlid   r15, microblaze_flush_dcache
-	nop
-#endif /* CONFIG_MICROBLAZE_DCACHE_USE_WRITEBACK != 0 */
 	mfs	r11, rmsr
 	andi	r11, r11, ~(0x80)
 	mts	rmsr, r11
-
-#if CONFIG_MICROBLAZE_DCACHE_USE_WRITEBACK != 0
-	lwi     r15, r1, 0
-#endif /* CONFIG_MICROBLAZE_DCACHE_USE_WRITEBACK != 0 */
-
 	addik	r1, r1, 8
 	rtsd	r15, 8
 	nop
-
 #endif /*CONFIG_MICROBLAZE_USE_MSR_INSTR == 1*/
-		.end	microblaze_disable_dcache
+	.end	microblaze_disable_dcache

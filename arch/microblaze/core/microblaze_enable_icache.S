@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-
 	.text
 	.globl	microblaze_enable_icache
 	.ent	microblaze_enable_icache
