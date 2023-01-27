@@ -20,6 +20,7 @@ K_MSGQ_DEFINE(msgq_s, sizeof(int), 2, 4);
 K_MBOX_DEFINE(mbox_s);
 K_PIPE_DEFINE(pipe_s, 64, 4);
 K_QUEUE_DEFINE(queue_s);
+K_EVENT_DEFINE(event_s);
 
 unsigned char __aligned(4) pipe_buffer[64];
 char __aligned(4) slab_buffer[8 * 4];
@@ -37,6 +38,7 @@ ZTEST(obj_tracking, test_obj_tracking_sanity)
 	struct k_mbox mbox;
 	struct k_pipe pipe;
 	struct k_queue queue;
+	struct k_event event;
 	void *list;
 	int count;
 
@@ -138,6 +140,19 @@ ZTEST(obj_tracking, test_obj_tracking_sanity)
 		list = SYS_PORT_TRACK_NEXT((struct k_queue *)list);
 	}
 	zassert_equal(count, 2, "Wrong number of queue objects");
+
+	k_event_init(&event);
+	count = 0;
+	list = _track_list_k_event;
+	while (list != NULL) {
+		if (list == &event || list == &event_s) {
+			count++;
+		}
+		list = SYS_PORT_TRACK_NEXT((struct k_event *)list);
+	}
+	zassert_equal(count, 2, "Wrong number of queue objects");
+
+
 }
 
 ZTEST_SUITE(obj_tracking, NULL, NULL, NULL, NULL, NULL);
