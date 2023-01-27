@@ -467,7 +467,7 @@ class FilterBuilder(CMake):
 class ProjectBuilder(FilterBuilder):
 
     def __init__(self, instance, env, jobserver, **kwargs):
-        super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver=None)
+        super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver)
 
         self.log = "build.log"
         self.instance = instance
