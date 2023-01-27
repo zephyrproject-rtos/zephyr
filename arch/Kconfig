@@ -289,6 +289,7 @@ config USERSPACE
 
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
+	default 2048 if EMUL
 	default 1024
 	depends on ARCH_HAS_USERSPACE
 	help
