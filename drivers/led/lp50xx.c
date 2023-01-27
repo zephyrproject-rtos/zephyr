@@ -13,7 +13,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
-#include <zephyr/drivers/led/lp503x.h>
+#include <zephyr/drivers/led/lp50xx.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 

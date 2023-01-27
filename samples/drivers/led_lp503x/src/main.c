@@ -7,7 +7,7 @@
 #include <zephyr/device.h>
 #include <errno.h>
 #include <zephyr/drivers/led.h>
-#include <zephyr/drivers/led/lp503x.h>
+#include <zephyr/drivers/led/lp50xx.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 
