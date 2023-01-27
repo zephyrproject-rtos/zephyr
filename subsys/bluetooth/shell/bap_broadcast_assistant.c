@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include "bt.h"
 #include "../host/hci_core.h"
@@ -269,10 +270,13 @@ static int cmd_bap_broadcast_assistant_scan_start(const struct shell *sh,
 	int start_scan = false;
 
 	if (argc > 1) {
-		start_scan = strtol(argv[1], NULL, 0);
+		result = 0;
 
-		if (start_scan != 0 && start_scan != 1) {
-			shell_error(sh, "Value shall be boolean");
+		start_scan = shell_strtobool(argv[1], 0, &result);
+		if (result != 0) {
+			shell_error(sh, "Could not parse start_scan: %d",
+				    result);
+
 			return -ENOEXEC;
 		}
 	}
@@ -302,61 +306,117 @@ static int cmd_bap_broadcast_assistant_scan_stop(const struct shell *sh,
 static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 					       size_t argc, char **argv)
 {
-	int result;
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	unsigned long broadcast_id;
+	unsigned long adv_sid;
+	int result;
 
 	result = bt_addr_le_from_str(argv[1], argv[2], &param.addr);
 	if (result) {
 		shell_error(sh, "Invalid peer address (err %d)", result);
+
 		return -ENOEXEC;
 	}
 
-	param.adv_sid = strtol(argv[3], NULL, 0);
-	if (param.adv_sid < 0 || param.adv_sid > 0x0F) {
-		shell_error(sh, "adv_sid shall be 0x00-0x0f");
+	adv_sid = shell_strtoul(argv[3], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse adv_sid: %d", result);
+
 		return -ENOEXEC;
 	}
 
-	param.pa_sync = strtol(argv[4], NULL, 0);
-	if (param.pa_sync < 0 || param.pa_sync > 1) {
-		shell_error(sh, "pa_sync shall be boolean");
+	if (adv_sid > BT_GAP_SID_MAX) {
+		shell_error(sh, "Invalid adv_sid: %lu", adv_sid);
+
 		return -ENOEXEC;
 	}
 
-	param.broadcast_id = strtol(argv[5], NULL, 0);
-	if (param.broadcast_id < 0 ||
-	    param.broadcast_id > 0xFFFFFF /* 24 bits */) {
-		shell_error(sh, "Broadcast ID maximum 24 bits (was %x)",
-			    param.broadcast_id);
+	param.adv_sid = adv_sid;
+
+	param.pa_sync = shell_strtobool(argv[4], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse adv_sid: %d", result);
+
 		return -ENOEXEC;
 	}
+
+	broadcast_id = shell_strtoul(argv[5], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse broadcast_id: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
+		shell_error(sh, "Invalid broadcast_id: %lu", broadcast_id);
+
+		return -ENOEXEC;
+	}
+
+	param.broadcast_id = broadcast_id;
 
 	if (argc > 6) {
-		param.pa_interval = strtol(argv[6], NULL, 0);
+		unsigned long pa_interval;
+
+		pa_interval = shell_strtoul(argv[6], 0, &result);
+		if (result) {
+			shell_error(sh, "Could not parse pa_interval: %d",
+				    result);
+
+			return -ENOEXEC;
+		}
+
+		if (!IN_RANGE(pa_interval,
+			      BT_GAP_PER_ADV_MIN_INTERVAL,
+			      BT_GAP_PER_ADV_MAX_INTERVAL)) {
+			shell_error(sh, "Invalid pa_interval: %lu",
+				    pa_interval);
+
+			return -ENOEXEC;
+		}
+
+		param.pa_interval = pa_interval;
 	} else {
 		param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
 	}
 
 	/* TODO: Support multiple subgroups */
 	if (argc > 7) {
-		subgroup.bis_sync = strtoul(argv[7], NULL, 0);
-		if (subgroup.bis_sync > UINT32_MAX) {
-			shell_error(sh,
-				    "bis_sync shall be 0x00000000 to 0xFFFFFFFF");
+		unsigned long bis_sync;
+
+		bis_sync = shell_strtoul(argv[7], 0, &result);
+		if (result) {
+			shell_error(sh, "Could not parse bis_sync: %d", result);
+
 			return -ENOEXEC;
 		}
+
+		if (!IN_RANGE(bis_sync, 0, UINT32_MAX)) {
+			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
+
+			return -ENOEXEC;
+		}
+
+		subgroup.bis_sync = bis_sync;
 	}
 
 	if (argc > 8) {
-		subgroup.metadata_len = hex2bin(argv[8], strlen(argv[8]),
-						subgroup.metadata,
-						sizeof(subgroup.metadata));
+		size_t metadata_len;
 
-		if (!subgroup.metadata_len) {
+		metadata_len = hex2bin(argv[8], strlen(argv[8]),
+				       subgroup.metadata,
+				       sizeof(subgroup.metadata));
+
+		if (metadata_len == 0U) {
 			shell_error(sh, "Could not parse metadata");
+
 			return -ENOEXEC;
 		}
+
+		/* sizeof(subgroup.metadata) can always fit in uint8_t */
+
+		subgroup.metadata_len = metadata_len;
 	}
 
 	param.num_subgroups = 1;
@@ -373,47 +433,90 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 					       size_t argc, char **argv)
 {
-	int result;
 	struct bt_bap_broadcast_assistant_mod_src_param param = { 0 };
 	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	unsigned long src_id;
+	int result = 0;
 
-	param.src_id = strtol(argv[1], NULL, 0);
-	if (param.src_id < 0 || param.src_id > UINT8_MAX) {
-		shell_error(sh, "adv_sid shall be 0x00-0xff");
+	src_id = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse src_id: %d", result);
+
 		return -ENOEXEC;
 	}
 
-	param.pa_sync = strtol(argv[2], NULL, 0);
-	if (param.pa_sync < 0 || param.pa_sync > 1) {
-		shell_error(sh, "pa_sync shall be boolean");
+	if (src_id > UINT8_MAX) {
+		shell_error(sh, "Invalid src_id: %lu", src_id);
+
+		return -ENOEXEC;
+	}
+
+	param.pa_sync = shell_strtobool(argv[2], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse adv_sid: %d", result);
+
 		return -ENOEXEC;
 	}
 
 	if (argc > 3) {
-		param.pa_interval = strtol(argv[3], NULL, 0);
+		unsigned long pa_interval;
+
+		pa_interval = shell_strtoul(argv[3], 0, &result);
+		if (result) {
+			shell_error(sh, "Could not parse pa_interval: %d", result);
+
+			return -ENOEXEC;
+		}
+
+		if (!IN_RANGE(pa_interval,
+			      BT_GAP_PER_ADV_MIN_INTERVAL,
+			      BT_GAP_PER_ADV_MAX_INTERVAL)) {
+			shell_error(sh, "Invalid pa_interval: %lu", pa_interval);
+
+			return -ENOEXEC;
+		}
+
+		param.pa_interval = pa_interval;
 	} else {
 		param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
 	}
 
 	/* TODO: Support multiple subgroups */
-	if (argc > 3) {
-		subgroup.bis_sync = strtoul(argv[3], NULL, 0);
-		if (subgroup.bis_sync > UINT32_MAX) {
-			shell_error(sh,
-				    "bis_sync shall be 0x00000000 to 0xFFFFFFFF");
+	if (argc > 4) {
+		unsigned long bis_sync;
+
+		bis_sync = shell_strtoul(argv[4], 0, &result);
+		if (result) {
+			shell_error(sh, "Could not parse bis_sync: %d", result);
+
 			return -ENOEXEC;
 		}
+
+		if (!IN_RANGE(bis_sync, 0, UINT32_MAX)) {
+			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
+
+			return -ENOEXEC;
+		}
+
+		subgroup.bis_sync = bis_sync;
 	}
 
 	if (argc > 5) {
-		subgroup.metadata_len = hex2bin(argv[5], strlen(argv[5]),
-						subgroup.metadata,
-						sizeof(subgroup.metadata));
+		size_t metadata_len;
 
-		if (!subgroup.metadata_len) {
+		metadata_len = hex2bin(argv[5], strlen(argv[5]),
+				       subgroup.metadata,
+				       sizeof(subgroup.metadata));
+
+		if (metadata_len == 0U) {
 			shell_error(sh, "Could not parse metadata");
+
 			return -ENOEXEC;
 		}
+
+		/* sizeof(subgroup.metadata) can always fit in uint8_t */
+
+		subgroup.metadata_len = metadata_len;
 	}
 
 	param.num_subgroups = 1;
@@ -430,18 +533,32 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
 						      size_t argc, char **argv)
 {
-	int result;
-	int src_id;
 	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE] = { 0 };
+	size_t broadcast_code_len;
+	unsigned long src_id;
+	int result = 0;
 
-	src_id = strtol(argv[1], NULL, 0);
-	if (src_id < 0 || src_id > UINT8_MAX) {
-		shell_error(sh, "adv_sid shall be 0x00-0xff");
+	src_id = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse src_id: %d", result);
+
 		return -ENOEXEC;
 	}
 
-	for (int i = 0; i < argc - 2; i++) {
-		broadcast_code[i] = strtol(argv[i + 2], NULL, 0);
+	if (src_id > UINT8_MAX) {
+		shell_error(sh, "Invalid src_id: %lu", src_id);
+
+		return -ENOEXEC;
+	}
+
+	broadcast_code_len = hex2bin(argv[2], strlen(argv[2]),
+				     broadcast_code,
+				     sizeof(broadcast_code));
+
+	if (broadcast_code_len == 0U) {
+		shell_error(sh, "Could not parse broadcast code");
+
+		return -ENOEXEC;
 	}
 
 	result = bt_bap_broadcast_assistant_set_broadcast_code(default_conn,
@@ -457,12 +574,19 @@ static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
 static int cmd_bap_broadcast_assistant_rem_src(const struct shell *sh,
 					       size_t argc, char **argv)
 {
-	int result;
-	int src_id;
+	unsigned long src_id;
+	int result = 0;
 
-	src_id = strtol(argv[1], NULL, 0);
-	if (src_id < 0 || src_id > UINT8_MAX) {
-		shell_error(sh, "adv_sid shall be 0x00-0xff");
+	src_id = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse src_id: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (src_id > UINT8_MAX) {
+		shell_error(sh, "Invalid src_id: %lu", src_id);
+
 		return -ENOEXEC;
 	}
 
@@ -477,12 +601,19 @@ static int cmd_bap_broadcast_assistant_rem_src(const struct shell *sh,
 static int cmd_bap_broadcast_assistant_read_recv_state(const struct shell *sh,
 						       size_t argc, char **argv)
 {
-	int result;
-	int idx;
+	unsigned long idx;
+	int result = 0;
 
-	idx = strtol(argv[1], NULL, 0);
-	if (idx < 0 || idx > UINT8_MAX) {
-		shell_error(sh, "adv_sid shall be 0x00-0xff");
+	idx = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse idx: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (idx > UINT8_MAX) {
+		shell_error(sh, "Invalid idx: %lu", idx);
+
 		return -ENOEXEC;
 	}
 
