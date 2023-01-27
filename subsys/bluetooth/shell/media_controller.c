@@ -566,11 +566,23 @@ static int cmd_media_read_track_position(const struct shell *sh, size_t argc, ch
 static int cmd_media_set_track_position(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	/* Todo: Check input "pos" for validity, or for errors in conversion? */
-	int32_t position = strtol(argv[1], NULL, 0);
+	long position;
+	int err = 0;
 
-	int err = media_proxy_ctrl_set_track_position(current_player, position);
+	position = shell_strtol(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse position: %d", err);
 
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(position, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid position: %ld", position);
+
+		return -ENOEXEC;
+	}
+
+	err = media_proxy_ctrl_set_track_position(current_player, position);
 	if (err) {
 		shell_error(ctx_shell, "Track position set failed (%d)", err);
 	}
@@ -592,9 +604,23 @@ static int cmd_media_read_playback_speed(const struct shell *sh, size_t argc, ch
 
 static int cmd_media_set_playback_speed(const struct shell *sh, size_t argc, char *argv[])
 {
-	int8_t speed = strtol(argv[1], NULL, 0);
-	int err = media_proxy_ctrl_set_playback_speed(current_player, speed);
+	long speed;
+	int err = 0;
 
+	speed = shell_strtol(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse speed: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(speed, INT8_MIN, INT8_MAX)) {
+		shell_error(sh, "Invalid speed: %ld", speed);
+
+		return -ENOEXEC;
+	}
+
+	err = media_proxy_ctrl_set_playback_speed(current_player, speed);
 	if (err) {
 		shell_error(ctx_shell, "Playback speed set failed (%d)", err);
 	}
@@ -686,10 +712,23 @@ static int cmd_media_read_playing_order(const struct shell *sh, size_t argc, cha
 
 static int cmd_media_set_playing_order(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint8_t order = strtol(argv[1], NULL, 0);
+	unsigned long order;
+	int err = 0;
 
-	int err = media_proxy_ctrl_set_playing_order(current_player, order);
+	order = shell_strtoul(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse order: %d", err);
 
+		return -ENOEXEC;
+	}
+
+	if (order > UINT8_MAX) {
+		shell_error(sh, "Invalid order: %ld", order);
+
+		return -ENOEXEC;
+	}
+
+	err = media_proxy_ctrl_set_playing_order(current_player, order);
 	if (err) {
 		shell_error(ctx_shell, "Playing order set failed (%d)", err);
 	}
