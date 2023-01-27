@@ -830,6 +830,14 @@ static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 		return false;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
+	    is_broadcast &&
+	    io_qos->rtn > BT_ISO_BROADCAST_RTN_MAX) {
+		LOG_DBG("Invalid RTN %u", io_qos->phy);
+
+		return false;
+	}
+
 #if defined(CONFIG_BT_ISO_ADVANCED)
 	if (advanced) {
 		if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && is_broadcast) {
