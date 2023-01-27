@@ -13,6 +13,8 @@ LOG_MODULE_REGISTER(adc_mchp_xec);
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <soc.h>
 #include <errno.h>
 #include <zephyr/irq.h>
@@ -42,10 +44,24 @@ struct adc_xec_config {
 	const struct pinctrl_dev_config *pcfg;
 };
 
+/* ADC implements two interrupt signals:
+ * One-shot(single) conversion of a set of channels
+ * Repeat conversion of a set of channels
+ * Channel sets for single and repeat may be different.
+ */
+enum adc_pm_policy_state_flag {
+	ADC_PM_POLICY_STATE_SINGLE_FLAG,
+	ADC_PM_POLICY_STATE_REPEAT_FLAG,
+	ADC_PM_POLICY_STATE_FLAG_COUNT,
+};
+
 struct adc_xec_data {
 	struct adc_context ctx;
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
+#ifdef CONFIG_PM_DEVICE
+	ATOMIC_DEFINE(pm_policy_state_flag, ADC_PM_POLICY_STATE_FLAG_COUNT);
+#endif
 };
 
 struct adc_xec_regs {
@@ -74,12 +90,34 @@ struct adc_xec_regs {
 #define ADC_XEC_0_REG_BASE						\
 	(struct adc_xec_regs *)(DT_INST_REG_ADDR(0))
 
+#ifdef CONFIG_PM_DEVICE
+static void adc_xec_pm_policy_state_lock_get(struct adc_xec_data *data,
+					       enum adc_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_set_bit(data->pm_policy_state_flag, flag) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
+static void adc_xec_pm_policy_state_lock_put(struct adc_xec_data *data,
+					    enum adc_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, flag) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif
+
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_xec_data *data = CONTAINER_OF(ctx, struct adc_xec_data, ctx);
 	struct adc_xec_regs *adc_regs = ADC_XEC_0_REG_BASE;
 
 	data->repeat_buffer = data->buffer;
+
+#ifdef CONFIG_PM_DEVICE
+	adc_xec_pm_policy_state_lock_get(data, ADC_PM_POLICY_STATE_SINGLE_FLAG);
+#endif
 
 	adc_regs->single_reg = ctx->sequence.channels;
 	adc_regs->control_reg |= XEC_ADC_CTRL_START_SINGLE;
@@ -288,10 +326,46 @@ static void adc_xec_isr(const struct device *dev)
 
 	xec_adc_get_sample(dev);
 
+#ifdef CONFIG_PM_DEVICE
+	adc_xec_pm_policy_state_lock_put(data, ADC_PM_POLICY_STATE_SINGLE_FLAG);
+#endif
+
 	adc_context_on_sampling_done(&data->ctx, dev);
 
 	LOG_DBG("ADC ISR triggered.");
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int adc_xec_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct adc_xec_config *const devcfg = dev->config;
+	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE(dev);
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
+		/* ADC activate  */
+		adc_regs->control_reg |= XEC_ADC_CTRL_ACTIVATE;
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* ADC deactivate  */
+		adc_regs->control_reg &= ~(XEC_ADC_CTRL_ACTIVATE);
+		/* If application does not want to turn off ADC pins it will
+		 * not define pinctrl-1 for this node.
+		 */
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret == -ENOENT) { /* pinctrl-1 does not exist.  */
+			ret = 0;
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 struct adc_driver_api adc_xec_api = {
 	.channel_setup = adc_xec_channel_setup,
@@ -355,7 +429,9 @@ static struct adc_xec_data adc_xec_dev_data_0 = {
 	ADC_CONTEXT_INIT_SYNC(adc_xec_dev_data_0, ctx),
 };
 
-DEVICE_DT_INST_DEFINE(0, adc_xec_init, NULL,
+PM_DEVICE_DT_INST_DEFINE(0, adc_xec_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, adc_xec_init, PM_DEVICE_DT_INST_GET(0),
 		    &adc_xec_dev_data_0, &adc_xec_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY,
 		    &adc_xec_api);
