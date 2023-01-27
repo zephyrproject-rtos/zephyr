@@ -85,7 +85,7 @@ properties:
 
   disctrl:
     type: uint8-array
-    default: [0x0a, 0x82, 0x27]
+    default: [0x0a, 0x82, 0x27, 0x04]
     description:
       Display function control (DISCTRL) register value. Note that changing
       default SS bit value (0) may interfere with display rotation.
