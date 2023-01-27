@@ -181,6 +181,7 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
+	ACE_PWRCTL->wpdsphpxpg &= ~BIT(id);
 	return 0;
 }
 #endif
