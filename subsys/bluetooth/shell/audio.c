@@ -390,6 +390,7 @@ static struct named_lc3_preset *set_preset(bool is_unicast, size_t argc,
 					   char **argv)
 {
 	static struct named_lc3_preset named_preset;
+	int err = 0;
 	int i;
 
 	if (is_unicast) {
@@ -425,31 +426,116 @@ static struct named_lc3_preset *set_preset(bool is_unicast, size_t argc,
 	default_preset = &named_preset;
 
 	if (argc > 1) {
-		named_preset.preset.qos.interval = strtol(argv[1], NULL, 0);
+		unsigned long interval;
+
+		interval = shell_strtoul(argv[1], 0, &err);
+		if (err != 0) {
+			return NULL;
+		}
+
+		if (!IN_RANGE(interval,
+			      BT_ISO_SDU_INTERVAL_MIN,
+			      BT_ISO_SDU_INTERVAL_MAX)) {
+			return NULL;
+		}
+
+		named_preset.preset.qos.interval = interval;
 	}
 
 	if (argc > 2) {
-		named_preset.preset.qos.framing = strtol(argv[2], NULL, 0);
+		unsigned long framing;
+
+		framing = shell_strtoul(argv[2], 0, &err);
+		if (err != 0) {
+			return NULL;
+		}
+
+		if (!IN_RANGE(framing,
+			      BT_ISO_FRAMING_UNFRAMED,
+			      BT_ISO_FRAMING_FRAMED)) {
+			return NULL;
+		}
+
+		named_preset.preset.qos.framing = framing;
 	}
 
 	if (argc > 3) {
-		named_preset.preset.qos.latency = strtol(argv[3], NULL, 0);
+		unsigned long latency;
+
+		latency = shell_strtoul(argv[3], 0, &err);
+		if (err != 0) {
+			return NULL;
+		}
+
+		if (!IN_RANGE(latency,
+			      BT_ISO_LATENCY_MIN,
+			      BT_ISO_LATENCY_MAX)) {
+			return NULL;
+		}
+
+		named_preset.preset.qos.latency = latency;
 	}
 
 	if (argc > 4) {
-		named_preset.preset.qos.pd = strtol(argv[4], NULL, 0);
+		unsigned long pd;
+
+		pd = shell_strtoul(argv[4], 0, &err);
+		if (err != 0) {
+			return NULL;
+		}
+
+		if (pd > BT_AUDIO_PD_MAX) {
+			return NULL;
+		}
+
+		named_preset.preset.qos.pd = pd;
 	}
 
 	if (argc > 5) {
-		named_preset.preset.qos.sdu = strtol(argv[5], NULL, 0);
+		unsigned long sdu;
+
+		sdu = shell_strtoul(argv[5], 0, &err);
+		if (err != 0) {
+			return NULL;
+		}
+
+		if (sdu > BT_ISO_MAX_SDU) {
+			return NULL;
+		}
+
+		named_preset.preset.qos.sdu = sdu;
 	}
 
 	if (argc > 6) {
-		named_preset.preset.qos.phy = strtol(argv[6], NULL, 0);
+		unsigned long phy;
+
+		phy = shell_strtoul(argv[6], 0, &err);
+		if (err != 0) {
+			return NULL;
+		}
+
+		if (phy != BT_GAP_LE_PHY_1M &&
+		    phy != BT_GAP_LE_PHY_2M &&
+		    phy != BT_GAP_LE_PHY_CODED) {
+			return NULL;
+		}
+
+		named_preset.preset.qos.phy = phy;
 	}
 
 	if (argc > 7) {
-		named_preset.preset.qos.rtn = strtol(argv[7], NULL, 0);
+		unsigned long rtn;
+
+		rtn = shell_strtoul(argv[7], 0, &err);
+		if (err != 0) {
+			return NULL;
+		}
+
+		if (rtn > BT_ISO_CONNECTED_RTN_MAX) {
+			return NULL;
+		}
+
+		named_preset.preset.qos.rtn = rtn;
 	}
 
 	return default_preset;
@@ -479,11 +565,19 @@ static void print_qos(const struct bt_codec_qos *qos)
 static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_stream *stream;
-	uint8_t index;
+	unsigned long index;
+	int err = 0;
 
-	index = strtol(argv[1], NULL, 0);
-	if (index < 0 || index > ARRAY_SIZE(streams)) {
-		shell_error(sh, "Invalid index: %d", index);
+	index = shell_strtoul(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse index: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (index > ARRAY_SIZE(streams)) {
+		shell_error(sh, "Invalid index: %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -958,18 +1052,27 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
-	int32_t index, dir;
 	struct bt_audio_ep *ep = NULL;
 	struct named_lc3_preset *named_preset;
+	enum bt_audio_dir dir;
+	unsigned long index;
+	int err = 0;
 
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
-	index = strtol(argv[2], NULL, 0);
-	if (index < 0) {
-		shell_error(sh, "Invalid index");
+	index = shell_strtoul(argv[2], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse index: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (index > ARRAY_SIZE(streams)) {
+		shell_error(sh, "Invalid index: %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -1558,11 +1661,19 @@ static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
 	struct bt_audio_stream *stream;
-	uint8_t index;
+	unsigned long index;
+	int err = 0;
 
-	index = strtol(argv[1], NULL, 0);
-	if (index < 0 || index > ARRAY_SIZE(broadcast_source_streams)) {
-		shell_error(sh, "Invalid index: %d", index);
+	index = shell_strtoul(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse index: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (index > ARRAY_SIZE(broadcast_source_streams)) {
+		shell_error(sh, "Invalid index: %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -1767,7 +1878,23 @@ static int cmd_broadcast_scan(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_accept_broadcast(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	accepted_broadcast_id = strtoul(argv[1], NULL, 16);
+	unsigned long broadcast_id;
+	int err = 0;
+
+	broadcast_id = shell_strtoul(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse broadcast_id: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
+		shell_error(sh, "Invalid broadcast_id: %lu", broadcast_id);
+
+		return -ENOEXEC;
+	}
+
+	accepted_broadcast_id = broadcast_id;
 
 	return 0;
 }
@@ -1780,11 +1907,25 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 
 	bis_bitfield = 0;
 	for (int i = 1; i < argc; i++) {
-		unsigned long val = strtoul(argv[i], NULL, 16);
+		unsigned long val;
+		int err = 0;
 
-		if (val < 0x01 || val > 0x1F) {
-			shell_error(sh, "Invalid index: %ld", val);
+		val = shell_strtoul(argv[i], 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parse BIS index val: %d",
+				    err);
+
+			return -ENOEXEC;
 		}
+
+		if (!IN_RANGE(val,
+			      BT_ISO_BIS_INDEX_MIN,
+			      BT_ISO_BIS_INDEX_MAX)) {
+			shell_error(sh, "Invalid index: %lu", val);
+
+			return -ENOEXEC;
+		}
+
 		bis_bitfield |= BIT(val);
 	}
 
@@ -1855,6 +1996,7 @@ static int cmd_set_loc(const struct shell *sh, size_t argc, char *argv[])
 	int err = 0;
 	enum bt_audio_dir dir;
 	enum bt_audio_location loc;
+	unsigned long loc_val;
 
 	if (!strcmp(argv[1], "sink")) {
 		dir = BT_AUDIO_DIR_SINK;
@@ -1865,7 +2007,22 @@ static int cmd_set_loc(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	loc = shell_strtoul(argv[2], 16, &err);
+	loc_val = shell_strtoul(argv[2], 16, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse loc_val: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (loc_val == BT_AUDIO_LOCATION_PROHIBITED ||
+	    loc_val > BT_AUDIO_LOCATION_ANY) {
+		shell_error(sh, "Invalid location: %lu", loc_val);
+
+		return -ENOEXEC;
+	}
+
+	loc = loc_val;
+
 	err = bt_pacs_set_location(dir, loc);
 	if (err) {
 		shell_error(ctx_shell, "Set available contexts err %d", err);
@@ -1880,6 +2037,7 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 	int err = 0;
 	enum bt_audio_dir dir;
 	enum bt_audio_context ctx;
+	unsigned long ctx_val;
 
 	if (!strcmp(argv[1], "sink")) {
 		dir = BT_AUDIO_DIR_SINK;
@@ -1890,11 +2048,21 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	ctx = shell_strtoul(argv[2], 16, &err);
+	ctx_val = shell_strtoul(argv[2], 16, &err);
 	if (err) {
-		shell_error(sh, "Invalid command parameter (err %d)", err);
+		shell_error(sh, "Could not parse context: %d", err);
+
 		return err;
 	}
+
+	if (ctx_val == BT_AUDIO_CONTEXT_TYPE_PROHIBITED ||
+	    ctx_val > BT_AUDIO_CONTEXT_TYPE_ANY) {
+		shell_error(sh, "Invalid context: %lu", ctx_val);
+
+		return -ENOEXEC;
+	}
+
+	ctx = ctx_val;
 
 	if (!strcmp(argv[3], "supported")) {
 		err = bt_pacs_set_supported_contexts(dir, ctx);
