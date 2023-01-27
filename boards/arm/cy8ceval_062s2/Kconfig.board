@@ -1,0 +1,7 @@
+# CY8CEVAL-062S2-MUR-43439M2 PSoC™ 62S2 Evaluation Kit
+
+# Copyright (c) 2021 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CY8CKIT_062S2_MUR_43439M2
+	bool "CY8CEVAL-062S2-MUR-43439M2 PSoC™ 62S2 Evaluation Kit"

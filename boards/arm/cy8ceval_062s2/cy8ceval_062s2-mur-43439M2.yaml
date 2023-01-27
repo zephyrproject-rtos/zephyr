@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: cy8ceval_062s2-mur-43439m2
+name: CY8CEVAL-062S2 PSoC 62S2 evaluation kit
+arch: arm
+ram: 288
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - bluetooth
+  - counter
+  - gpio
+  - uart
+  - i2c
+  - cyw43xxx
