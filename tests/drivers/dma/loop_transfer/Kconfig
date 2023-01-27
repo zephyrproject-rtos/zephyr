@@ -8,3 +8,7 @@ source "Kconfig.zephyr"
 config DMA_LOOP_TRANSFER_CHANNEL_NR
 	int "DMA channel to use"
 	default 0
+
+config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
+	int "Number of DMAs to test"
+	default 1
