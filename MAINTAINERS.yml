@@ -1563,7 +1563,7 @@ Networking:
     - SeppoTakalo
   files:
     - samples/net/lwm2m_client/
-    - tests/subsys/net/lib/lwm2m/
+    - tests/net/lib/lwm2m/
     - subsys/net/lib/lwm2m/
   labels:
     - "area: LWM2M"
