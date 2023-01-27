@@ -32,6 +32,8 @@ extern "C" {
 #endif
 
 #define BT_AUDIO_BROADCAST_ID_SIZE               3 /* octets */
+/** Maximum broadcast ID value */
+#define BT_AUDIO_BROADCAST_ID_MAX                0xFFFFFFU
 /** Indicates that the server have no preference for the presentation delay */
 #define BT_AUDIO_PD_PREF_NONE                    0x000000U
 /** Maximum presentation delay in microseconds */
