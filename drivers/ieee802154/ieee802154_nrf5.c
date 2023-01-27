@@ -723,7 +723,7 @@ static int nrf5_stop(const struct device *dev)
 }
 
 #if !IS_ENABLED(CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT)
-static void nrf5_radio_irq(void *arg)
+static void nrf5_radio_irq(const void *arg)
 {
 	ARG_UNUSED(arg);
 
