@@ -21,6 +21,7 @@ mkdir -p ${WORK_DIR}
 source ${ZEPHYR_BASE}/tests/bluetooth/bsim_bt/compile.source
 
 app=tests/bluetooth/bsim_bt/bsim_test_adv_resume compile &
+app=tests/bluetooth/bsim_bt/bsim_test_adv_resume conf_file=prj_2.conf compile &
 app=tests/bluetooth/bsim_bt/bsim_test_bond_overwrite_allowed compile &
 app=tests/bluetooth/bsim_bt/bsim_test_bond_overwrite_denied compile &
 app=tests/bluetooth/bsim_bt/bsim_test_notify compile &

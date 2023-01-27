@@ -64,3 +64,20 @@ void tester_peripheral_procedure(void)
 
 	PASS("PASS\n");
 }
+
+void tester_procedure_2(void)
+{
+	bs_bt_utils_setup();
+
+	printk("Tester start\n");
+
+	scan_connect_to_first_result();
+	wait_connected();
+
+	/* Verify DUT advertiser was able to resume after the connection was
+	 * established.
+	 */
+	scan_expect_same_address();
+
+	WAIT_FOR_FLAG(flag_test_end);
+}
