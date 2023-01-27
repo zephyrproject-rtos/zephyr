@@ -67,36 +67,62 @@ static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
 static int cmd_bap_scan_delegator_synced(const struct shell *sh, size_t argc,
 					 char **argv)
 {
-	int result;
-	long src_id;
-	long pa_sync_state;
-	long bis_synced;
-	long encrypted;
 	uint32_t bis_syncs[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
+	unsigned long pa_sync_state;
+	unsigned long bis_synced;
+	unsigned long src_id;
+	bool encrypted;
+	int result = 0;
 
-	src_id = strtol(argv[1], NULL, 0);
-	if (src_id < 0 || src_id > UINT8_MAX) {
-		shell_error(sh, "adv_sid shall be 0x00-0xff");
+	src_id = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse src_id: %d", result);
+
 		return -ENOEXEC;
 	}
 
-	pa_sync_state = strtol(argv[2], NULL, 0);
-	if (pa_sync_state < 0 ||
-	    pa_sync_state > BT_BAP_PA_STATE_NO_PAST) {
+	if (src_id > UINT8_MAX) {
+		shell_error(sh, "Invalid src_id: %lu", src_id);
+
+		return -ENOEXEC;
+	}
+
+	pa_sync_state = shell_strtoul(argv[2], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse pa_sync_state: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (pa_sync_state > BT_BAP_PA_STATE_NO_PAST) {
 		shell_error(sh, "Invalid pa_sync_state %ld", pa_sync_state);
+
 		return -ENOEXEC;
 	}
 
-	bis_synced = strtol(argv[3], NULL, 0);
-	if (bis_synced < 0 || bis_synced > UINT32_MAX) {
-		shell_error(sh, "Invalid bis_synced %ld", bis_synced);
+	bis_synced = shell_strtoul(argv[3], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse bis_synced: %d", result);
+
 		return -ENOEXEC;
 	}
-	for (int i = 0; i < ARRAY_SIZE(bis_syncs); i++) {
+
+	if (bis_synced > UINT32_MAX) {
+		shell_error(sh, "Invalid bis_synced %ld", bis_synced);
+
+		return -ENOEXEC;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(bis_syncs); i++) {
 		bis_syncs[i] = bis_synced;
 	}
 
-	encrypted = strtol(argv[4], NULL, 0);
+	encrypted = shell_strtobool(argv[4], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse encrypted: %d", result);
+
+		return -ENOEXEC;
+	}
 
 	result = bt_bap_scan_delegator_set_sync_state(src_id, pa_sync_state,
 						      bis_syncs, encrypted);
