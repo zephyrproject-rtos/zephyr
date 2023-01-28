@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2025 Aesc Silicon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Aesc Silicon GPIO (General Purpose Input/Output)
+
+description: |
+  The GPIO (General-Purpose Input/Output) IP Core with tri-state pins is a digital interface
+  that allows each pin to be configured as either an input or an output, with additional control
+  for setting the direction of data flow.
+
+compatible: "aesc,gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
