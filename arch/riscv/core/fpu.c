@@ -220,7 +220,7 @@ void z_riscv_fpu_trap(z_arch_esf_t *esf)
 		 * by disabling IRQs as we wouldn't be able to preserve the
 		 * interrupted exception's FPU context.
 		 */
-		esf->mstatus &= ~MSTATUS_IEN;
+		esf->mstatus &= ~MSTATUS_MPIE_EN;
 
 		/* make it accessible to the returning context */
 		esf->mstatus |= MSTATUS_FS_INIT;
@@ -296,6 +296,7 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 void z_riscv_fpu_exit_exc(z_arch_esf_t *esf)
 {
 	if (fpu_access_allowed(1)) {
+		esf->mstatus &= ~MSTATUS_FS;
 		esf->mstatus |= _current_cpu->arch.fpu_state;
 	} else {
 		esf->mstatus &= ~MSTATUS_FS;
