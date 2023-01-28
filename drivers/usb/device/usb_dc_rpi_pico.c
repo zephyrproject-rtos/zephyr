@@ -102,10 +102,6 @@ static int udc_rpi_start_xfer(uint8_t ep, const void *data, size_t len)
 		}
 	} else {
 		ep_state->read_offset = 0;
-
-		if (USB_EP_GET_IDX(ep) == 0) {
-			ep_state->next_pid = 1;
-		}
 	}
 
 	LOG_DBG("xfer ep %d len %d pid: %d", ep, len, ep_state->next_pid);
@@ -125,6 +121,7 @@ static void udc_rpi_handle_setup(void)
 
 	/* Set DATA1 PID for the next (data or status) stage */
 	udc_rpi_get_ep_state(USB_CONTROL_EP_IN)->next_pid = 1;
+	udc_rpi_get_ep_state(USB_CONTROL_EP_OUT)->next_pid = 1;
 
 	msg.ep = USB_CONTROL_EP_OUT;
 	msg.type = USB_DC_EP_SETUP;
