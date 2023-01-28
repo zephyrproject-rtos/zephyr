@@ -235,6 +235,30 @@ static void udc_rpi_isr(const void *arg)
 		handled |= USB_INTS_ERROR_DATA_SEQ_BITS;
 	}
 
+	if (status & USB_INTS_ERROR_RX_TIMEOUT_BITS) {
+		LOG_WRN("rx timeout");
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_RX_TIMEOUT_BITS;
+		handled |= USB_INTS_ERROR_RX_TIMEOUT_BITS;
+	}
+
+	if (status & USB_INTS_ERROR_RX_OVERFLOW_BITS) {
+		LOG_WRN("rx overflow");
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_RX_OVERFLOW_BITS;
+		handled |= USB_INTS_ERROR_RX_OVERFLOW_BITS;
+	}
+
+	if (status & USB_INTS_ERROR_BIT_STUFF_BITS) {
+		LOG_WRN("bit stuff error");
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_BIT_STUFF_ERROR_BITS;
+		handled |= USB_INTS_ERROR_BIT_STUFF_BITS;
+	}
+
+	if (status & USB_INTS_ERROR_CRC_BITS) {
+		LOG_ERR("crc error");
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_CRC_ERROR_BITS;
+		handled |= USB_INTS_ERROR_CRC_BITS;
+	}
+
 	if (status ^ handled) {
 		LOG_ERR("unhandled IRQ: 0x%x", (uint)(status ^ handled));
 	}
