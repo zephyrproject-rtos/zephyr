@@ -11,6 +11,10 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/uart.h>
 
+#define DT_DRV_COMPAT shakti_uart0
+
+#define CONFIG_UART_SHAKTI_PORT_0 1
+
 #define RXDATA_EMPTY   (1 << 31)   /* Receive FIFO Empty */
 #define RXDATA_MASK    0xFF        /* Receive Data Mask */
 
@@ -23,6 +27,22 @@
 #define IE_TXWM        (1 << 0)    /* TX Interrupt Enable/Pending */
 #define IE_RXWM        (1 << 1)    /* RX Interrupt Enable/Pending */
 
+#define UART_TX_OFFSET        0x04
+#define UART_RX_OFFSET        0x08
+#define UART_STATUS_OFFSET      0x0c
+#define UART_EV_ENABLE_OFFSET   0x18
+#define UART_BAUD_OFFSET        0x00
+
+#define BREAK_ERROR	    1 << 7
+#define FRAME_ERROR	    1 << 6
+#define OVERRUN        	    1 << 5
+#define PARITY_ERROR        1 << 4
+#define STS_RX_FULL 	    1 << 3
+#define STS_RX_NOT_EMPTY    1 << 2
+#define STS_TX_FULL 	    1 << 1
+#define STS_TX_EMPTY 	    1 << 0
+
+
 /*
  * RX/TX Threshold count to generate TX/RX Interrupts.
  * Used by txctrl and rxctrl registers
@@ -30,6 +50,7 @@
 #define CTRL_CNT(x)    (((x) & 0x07) << 16)
 
 struct uart_shakti_regs_t {
+	uint32_t base_addr;
 	uint32_t tx;
 	uint32_t rx;
 	uint32_t txctrl;
@@ -63,7 +84,7 @@ struct uart_shakti_data {
 
 #define DEV_CFG(dev)						\
 	((const struct uart_shakti_device_config * const)	\
-	 (dev)->config->config_info)
+	 (dev)->config)
 #define DEV_UART(dev)						\
 	((struct uart_shakti_regs_t *)(DEV_CFG(dev))->port)
 #define DEV_DATA(dev)						\
@@ -84,11 +105,13 @@ static unsigned char uart_shakti_poll_out(struct device *dev,
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
+	volatile uint16_t* status = (volatile uint16_t *)(uart->base_addr + UART_STATUS_OFFSET);
+
 	/* Wait while TX FIFO is full */
-	while (uart->tx & TXDATA_FULL)
+	while (*status & STS_TX_FULL)
 		;
 
-	uart->tx = (int)c;
+	*(volatile uint32_t *)(uart->base_addr + UART_TX_OFFSET) = (int)c;
 
 	return c;
 }
@@ -104,12 +127,12 @@ static unsigned char uart_shakti_poll_out(struct device *dev,
 static int uart_shakti_poll_in(struct device *dev, unsigned char *c)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
-	uint32_t val = uart->rx;
+	volatile uint16_t val = *(volatile uint16_t *)(uart->base_addr + UART_STATUS_OFFSET);
 
-	if (val & RXDATA_EMPTY)
+	if (val & STS_RX_NOT_EMPTY)
 		return -1;
-
-	*c = (unsigned char)(val & RXDATA_MASK);
+	volatile uint32_t read_val = *(volatile uint32_t *)(uart->base_addr + UART_RX_OFFSET);
+	*c = (unsigned char)(read_val & RXDATA_MASK);
 
 	return 0;
 }
@@ -334,6 +357,8 @@ static int uart_shakti_init(struct device *dev)
 	const struct uart_shakti_device_config * const cfg = DEV_CFG(dev);
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
+	uart->base_addr = 0x11300;
+
 	/* Enable TX and RX channels */
 	uart->txctrl = TXCTRL_TXEN | CTRL_CNT(cfg->rxcnt_irq);
 	uart->rxctrl = RXCTRL_RXEN | CTRL_CNT(cfg->txcnt_irq);
@@ -374,7 +399,7 @@ static const struct uart_driver_api uart_shakti_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_UART_shakti_PORT_0
+#ifdef CONFIG_UART_SHAKTI_PORT_0
 
 static struct uart_shakti_data uart_shakti_data_0;
 
@@ -382,38 +407,41 @@ static struct uart_shakti_data uart_shakti_data_0;
 static void uart_shakti_irq_cfg_func_0(void);
 #endif
 
+// PINCTRL_DT_INST_DEFINE(0);
+
 static const struct uart_shakti_device_config uart_shakti_dev_cfg_0 = {
-	.port         = DT_SHAKTI_UART_0_BASE_ADDR,
-	.sys_clk_freq = DT_SHAKTI_UART_0_CLK_FREQ,
-	.baud_rate    = DT_SHAKTI_UART_0_CURRENT_SPEED,
-	.rxcnt_irq    = CONFIG_UART_SHAKTI_PORT_0_RXCNT_IRQ,
-	.txcnt_irq    = CONFIG_UART_SHAKTI_PORT_0_TXCNT_IRQ,
+	.port         = 0X11300,
+	.sys_clk_freq = 50000000,
+	.baud_rate    = 19200,
+	.rxcnt_irq    = 0,
+	.txcnt_irq    = 0,
+	// .pcfg	      = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.cfg_func     = uart_shakti_irq_cfg_func_0,
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_shakti_0, DT_SHAKTI_UART_0_LABEL,
+DEVICE_DT_INST_DEFINE(0,
 		    uart_shakti_init,
+		    NULL,
 		    &uart_shakti_data_0, &uart_shakti_dev_cfg_0,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
 		    (void *)&uart_shakti_driver_api);
+
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_shakti_irq_cfg_func_0(void)
 {
-	IRQ_CONNECT(DT_SHAKTI_UART_0_IRQ_0,
-		    CONFIG_UART_SHAKTI_PORT_0_IRQ_PRIORITY,
-		    uart_shakti_irq_handler, DEVICE_GET(uart_shakti_0),
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
+		    uart_shakti_irq_handler, DEVICE_DT_INST_GET(0),
 		    0);
 
-	irq_enable(DT_SHAKTI_UART_0_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
 #endif
+#endif /* CONFIG_UART_SHAKTI_PORT_0 */
 
-#endif /* CONFIG_UART_shakti_PORT_0 */
-
-#ifdef CONFIG_UART_shakti_PORT_1
+#ifdef CONFIG_UART_SHAKTI_PORT_1
 
 static struct uart_shakti_data uart_shakti_data_1;
 
@@ -450,4 +478,4 @@ static void uart_shakti_irq_cfg_func_1(void)
 }
 #endif
 
-#endif /* CONFIG_UART_shakti_PORT_1 */
+#endif /* CONFIG_UART_SHAKTI_PORT_1 */
