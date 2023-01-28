@@ -39,3 +39,34 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-dma.conf"
     platform_allow: gd32f403z_eval gd32f407v_start gd32f450i_eval gd32f450v_start
       gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval longan_nano longan_nano_lite
+  driver.pl022_spi_interrupt.loopback:
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=y
+      - CONFIG_SPI_PL022_DMA=n
+    platform_allow: rpi_pico
+  driver.pl022_spi_dma.loopback:
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=n
+      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_DMA=y
+    platform_allow: rpi_pico
+  driver.pl022_spi_dma_and_interrupt.loopback:
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=y
+      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_DMA=y
+    platform_allow: rpi_pico
+  driver.pl022_spi_dma_no_dma_props.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=n
+      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_DMA=y
+    platform_allow: rpi_pico
+  driver.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_configs:
+      - CONFIG_SPI_PL022_INTERRUPT=y
+      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_DMA=y
+    platform_allow: rpi_pico
