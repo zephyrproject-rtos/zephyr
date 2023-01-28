@@ -53,23 +53,23 @@ static K_QUEUE_DEFINE(bt_mesh_adv_queue);
 static K_QUEUE_DEFINE(bt_mesh_relay_queue);
 static K_QUEUE_DEFINE(bt_mesh_friend_queue);
 
-K_MEM_SLAB_DEFINE(adv_buf_pool, sizeof(struct bt_mesh_buf),
-		  CONFIG_BT_MESH_ADV_BUF_COUNT, __alignof__(struct bt_mesh_buf));
+K_MEM_SLAB_DEFINE(adv_buf_pool, sizeof(struct bt_mesh_adv),
+		  CONFIG_BT_MESH_ADV_BUF_COUNT, __alignof__(struct bt_mesh_adv));
 
-K_MEM_SLAB_DEFINE(relay_buf_pool, sizeof(struct bt_mesh_buf),
-		  CONFIG_BT_MESH_RELAY_BUF_COUNT, __alignof__(struct bt_mesh_buf));
+K_MEM_SLAB_DEFINE(relay_buf_pool, sizeof(struct bt_mesh_adv),
+		  CONFIG_BT_MESH_RELAY_BUF_COUNT, __alignof__(struct bt_mesh_adv));
 
-K_MEM_SLAB_DEFINE(friend_buf_pool, sizeof(struct bt_mesh_buf),
-		  CONFIG_BT_MESH_FRIEND_LPN_COUNT, __alignof__(struct bt_mesh_buf));
+K_MEM_SLAB_DEFINE(friend_buf_pool, sizeof(struct bt_mesh_adv),
+		  CONFIG_BT_MESH_FRIEND_LPN_COUNT, __alignof__(struct bt_mesh_adv));
 
-static struct bt_mesh_buf *adv_create_from_pool(struct k_mem_slab *buf_pool,
+static struct bt_mesh_adv *adv_create_from_pool(struct k_mem_slab *buf_pool,
 						enum bt_mesh_adv_type type,
 						enum bt_mesh_adv_tag tag,
 						uint8_t xmit, uint8_t prio,
 						k_timeout_t timeout)
 {
+	struct bt_mesh_adv_meta *meta;
 	struct bt_mesh_adv *adv;
-	struct bt_mesh_buf *buf;
 	int err;
 
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_SUSPENDED)) {
@@ -77,69 +77,69 @@ static struct bt_mesh_buf *adv_create_from_pool(struct k_mem_slab *buf_pool,
 		return NULL;
 	}
 
-	err = k_mem_slab_alloc(buf_pool, (void **)&buf, timeout);
+	err = k_mem_slab_alloc(buf_pool, (void **)&adv, timeout);
 	if (err) {
 		return NULL;
 	}
 
-	buf->ref = 1;
+	adv->ref = 1;
 
-	net_buf_simple_init_with_data(&buf->b, buf->_bufs, BT_MESH_ADV_DATA_SIZE);
-	net_buf_simple_reset(&buf->b);
+	net_buf_simple_init_with_data(&adv->b, adv->_bufs, BT_MESH_ADV_DATA_SIZE);
+	net_buf_simple_reset(&adv->b);
 
-	adv = &buf->adv;
+	meta = &adv->meta;
 
-	(void)memset(adv, 0, sizeof(*adv));
+	(void)memset(meta, 0, sizeof(*meta));
 
-	adv->type         = type;
-	adv->tag          = tag;
-	adv->xmit         = xmit;
-	adv->prio         = prio;
+	meta->type         = type;
+	meta->tag          = tag;
+	meta->xmit         = xmit;
+	meta->prio         = prio;
 
-	return buf;
+	return adv;
 }
 
-struct bt_mesh_buf *bt_mesh_buf_ref(struct bt_mesh_buf *buf)
+struct bt_mesh_adv *bt_mesh_adv_ref(struct bt_mesh_adv *adv)
 {
-	buf->ref++;
+	adv->ref++;
 
-	return buf;
+	return adv;
 }
 
-void bt_mesh_buf_unref(struct bt_mesh_buf *buf)
+void bt_mesh_adv_unref(struct bt_mesh_adv *adv)
 {
-	if (--buf->ref > 0) {
+	if (--adv->ref > 0) {
 		return;
 	}
 
 	struct k_mem_slab *slab;
-	struct bt_mesh_adv adv = *(&buf->adv);
+	struct bt_mesh_adv_meta meta = *(&adv->meta);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_RELAY) &&
-	    adv.tag == BT_MESH_RELAY_ADV) {
+	    meta.tag == BT_MESH_RELAY_ADV) {
 		slab = &relay_buf_pool;
 	} else if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) &&
-		   adv.tag == BT_MESH_FRIEND_ADV) {
+		   meta.tag == BT_MESH_FRIEND_ADV) {
 		slab = &friend_buf_pool;
 	} else {
 		slab = &adv_buf_pool;
 	}
 
-	k_mem_slab_free(slab, (void **)&buf);
-	bt_mesh_adv_send_end(0, &adv);
+	k_mem_slab_free(slab, (void **)&adv);
+	bt_mesh_adv_send_end(0, &meta);
 }
 
-struct bt_mesh_buf *bt_mesh_adv_relay_create(uint8_t prio, uint8_t xmit)
+struct bt_mesh_adv *bt_mesh_adv_relay_create(uint8_t prio, uint8_t xmit)
 {
 	void *lowest = NULL, *prev = NULL, *curr;
 	uint8_t prio_cur = prio;
-	struct bt_mesh_buf *buf;
+	struct bt_mesh_adv *adv;
 
-	buf = adv_create_from_pool(&relay_buf_pool,
+	adv = adv_create_from_pool(&relay_buf_pool,
 				   BT_MESH_ADV_DATA, BT_MESH_RELAY_ADV,
 				   xmit, prio, K_NO_WAIT);
-	if (buf) {
-		return buf;
+	if (adv) {
+		return adv;
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_RELAY_PRIORITY) || !prio_cur) {
@@ -147,10 +147,10 @@ struct bt_mesh_buf *bt_mesh_adv_relay_create(uint8_t prio, uint8_t xmit)
 	}
 
 	K_QUEUE_FOR_EACH(&bt_mesh_relay_queue, curr) {
-		buf = CONTAINER_OF(curr, struct bt_mesh_buf, node);
+		adv = CONTAINER_OF(curr, struct bt_mesh_adv, node);
 
-		if (buf->adv.prio < prio_cur) {
-			prio_cur = buf->adv.prio;
+		if (adv->meta.prio < prio_cur) {
+			prio_cur = adv->meta.prio;
 			lowest = curr;
 		}
 
@@ -163,17 +163,17 @@ struct bt_mesh_buf *bt_mesh_adv_relay_create(uint8_t prio, uint8_t xmit)
 
 	k_queue_remove(&bt_mesh_relay_queue, lowest);
 
-	buf = CONTAINER_OF(lowest, struct bt_mesh_buf, node);
+	adv = CONTAINER_OF(lowest, struct bt_mesh_adv, node);
 
-	bt_mesh_adv_send_start(0, -ECANCELED, &buf->adv);
-	bt_mesh_buf_unref(buf);
+	bt_mesh_adv_send_start(0, -ECANCELED, &adv->meta);
+	bt_mesh_adv_unref(adv);
 
 	return adv_create_from_pool(&relay_buf_pool,
 				    BT_MESH_ADV_DATA, BT_MESH_RELAY_ADV,
 				    xmit, prio, K_NO_WAIT);
 }
 
-struct bt_mesh_buf *bt_mesh_adv_main_create(enum bt_mesh_adv_type type,
+struct bt_mesh_adv *bt_mesh_adv_main_create(enum bt_mesh_adv_type type,
 					    uint8_t xmit, k_timeout_t timeout)
 {
 	LOG_DBG("");
@@ -183,7 +183,7 @@ struct bt_mesh_buf *bt_mesh_adv_main_create(enum bt_mesh_adv_type type,
 				    xmit, 0, timeout);
 }
 
-struct bt_mesh_buf *bt_mesh_adv_frnd_create(uint8_t xmit, k_timeout_t timeout)
+struct bt_mesh_adv *bt_mesh_adv_frnd_create(uint8_t xmit, k_timeout_t timeout)
 {
 	struct k_mem_slab *slab;
 
@@ -200,7 +200,7 @@ struct bt_mesh_buf *bt_mesh_adv_frnd_create(uint8_t xmit, k_timeout_t timeout)
 }
 
 #if CONFIG_BT_MESH_RELAY_ADV_SETS || CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE
-static struct bt_mesh_buf *process_events(struct k_poll_event *ev, int count)
+static struct bt_mesh_adv *process_events(struct k_poll_event *ev, int count)
 {
 	for (; count; ev++, count--) {
 		LOG_DBG("ev->state %u", ev->state);
@@ -220,7 +220,7 @@ static struct bt_mesh_buf *process_events(struct k_poll_event *ev, int count)
 	return NULL;
 }
 
-struct bt_mesh_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
+struct bt_mesh_adv *bt_mesh_adv_get(k_timeout_t timeout)
 {
 	int err;
 	struct k_poll_event events[] = {
@@ -244,18 +244,18 @@ struct bt_mesh_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
 	return process_events(events, ARRAY_SIZE(events));
 }
 
-struct bt_mesh_buf *bt_mesh_adv_buf_relay_get(k_timeout_t timeout)
+struct bt_mesh_adv *bt_mesh_adv_buf_relay_get(k_timeout_t timeout)
 {
 	return k_queue_get(&bt_mesh_relay_queue, timeout);
 }
 
-struct bt_mesh_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout)
+struct bt_mesh_adv *bt_mesh_adv_get_by_tag(uint8_t tag, k_timeout_t timeout)
 {
 	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) &&
 	    tag & BT_MESH_FRIEND_ADV) {
 		return k_queue_get(&bt_mesh_friend_queue, timeout);
 	} else if (tag & BT_MESH_LOCAL_ADV) {
-		return bt_mesh_adv_buf_get(timeout);
+		return bt_mesh_adv_get(timeout);
 	} else if (tag & BT_MESH_RELAY_ADV) {
 		return bt_mesh_adv_buf_relay_get(timeout);
 	} else {
@@ -263,21 +263,21 @@ struct bt_mesh_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout)
 	}
 }
 
-static void relay_send(struct bt_mesh_buf *buf)
+static void relay_send(struct bt_mesh_adv *adv)
 {
-	uint8_t prio = buf->adv.prio;
+	uint8_t prio = adv->meta.prio;
 	void *curr, *prev = NULL;
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_RELAY_PRIORITY) || !prio) {
-		k_queue_append(&bt_mesh_relay_queue, bt_mesh_buf_ref(buf));
-		bt_mesh_adv_buf_relay_ready();
+		k_queue_append(&bt_mesh_relay_queue, bt_mesh_adv_ref(adv));
+		bt_mesh_adv_relay_ready();
 		return;
 	}
 
 	K_QUEUE_FOR_EACH(&bt_mesh_relay_queue, curr) {
-		struct bt_mesh_buf *buf_curr = CONTAINER_OF(curr, struct bt_mesh_buf, node);
+		struct bt_mesh_adv *adv_curr = CONTAINER_OF(curr, struct bt_mesh_adv, node);
 
-		if (buf_curr->adv.prio < prio) {
+		if (adv_curr->meta.prio < prio) {
 			break;
 		}
 
@@ -287,25 +287,25 @@ static void relay_send(struct bt_mesh_buf *buf)
 	/* The messages with the highest priority are always placed at the head, and
 	 * the messages with the same priority are arranged in chronological order.
 	 */
-	k_queue_insert(&bt_mesh_relay_queue, prev, bt_mesh_buf_ref(buf));
+	k_queue_insert(&bt_mesh_relay_queue, prev, bt_mesh_adv_ref(adv));
 
-	bt_mesh_adv_buf_relay_ready();
+	bt_mesh_adv_relay_ready();
 }
 #else /* !(CONFIG_BT_MESH_RELAY_ADV_SETS || CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) */
-struct bt_mesh_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
+struct bt_mesh_adv *bt_mesh_adv_get(k_timeout_t timeout)
 {
 	return k_queue_get(&bt_mesh_adv_queue, timeout);
 }
 
-struct bt_mesh_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout)
+struct bt_mesh_adv *bt_mesh_adv_get_by_tag(uint8_t tag, k_timeout_t timeout)
 {
 	ARG_UNUSED(tag);
 
-	return bt_mesh_adv_buf_get(timeout);
+	return bt_mesh_adv_get(timeout);
 }
 #endif /* CONFIG_BT_MESH_RELAY_ADV_SETS || CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE */
 
-void bt_mesh_adv_buf_get_cancel(void)
+void bt_mesh_adv_get_cancel(void)
 {
 	LOG_DBG("");
 
@@ -320,32 +320,32 @@ void bt_mesh_adv_buf_get_cancel(void)
 	}
 }
 
-void bt_mesh_adv_send(struct bt_mesh_buf *buf, const struct bt_mesh_send_cb *cb,
+void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
 		      void *cb_data)
 {
-	LOG_DBG("type 0x%02x len %u: %s", buf->adv.type, buf->b.len,
-		bt_hex(buf->b.data, buf->b.len));
+	LOG_DBG("type 0x%02x len %u: %s", adv->meta.type, adv->b.len,
+		bt_hex(adv->b.data, adv->b.len));
 
-	buf->adv.cb = cb;
-	buf->adv.cb_data = cb_data;
-	buf->adv.busy = 1U;
+	adv->meta.cb = cb;
+	adv->meta.cb_data = cb_data;
+	adv->meta.busy = 1U;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) &&
-	    buf->adv.tag == BT_MESH_FRIEND_ADV) {
-		k_queue_append(&bt_mesh_friend_queue, bt_mesh_buf_ref(buf));
-		bt_mesh_adv_buf_friend_ready();
+	    adv->meta.tag == BT_MESH_FRIEND_ADV) {
+		k_queue_append(&bt_mesh_friend_queue, bt_mesh_adv_ref(adv));
+		bt_mesh_adv_friend_ready();
 		return;
 	}
 
 #if CONFIG_BT_MESH_RELAY_ADV_SETS
-	if (buf->adv.tag == BT_MESH_RELAY_ADV) {
-		relay_send(buf);
+	if (adv->meta.tag == BT_MESH_RELAY_ADV) {
+		relay_send(adv);
 		return;
 	}
 #endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
 
-	k_queue_append(&bt_mesh_adv_queue, bt_mesh_buf_ref(buf));
-	bt_mesh_adv_buf_local_ready();
+	k_queue_append(&bt_mesh_adv_queue, bt_mesh_adv_ref(adv));
+	bt_mesh_adv_local_ready();
 }
 
 int bt_mesh_adv_gatt_send(void)

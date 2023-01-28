@@ -100,7 +100,7 @@ static bool secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 		.end = beacon_complete,
 	};
 	uint32_t now = k_uptime_get_32();
-	struct bt_mesh_buf *buf;
+	struct bt_mesh_adv *adv;
 	uint32_t time_diff;
 	uint32_t time_since_last_recv;
 
@@ -114,17 +114,17 @@ static bool secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 		return false;
 	}
 
-	buf = bt_mesh_adv_main_create(BT_MESH_ADV_BEACON,
+	adv = bt_mesh_adv_main_create(BT_MESH_ADV_BEACON,
 				      PROV_XMIT, K_NO_WAIT);
-	if (!buf) {
+	if (!adv) {
 		LOG_ERR("Unable to allocate beacon buffer");
 		return true; /* Bail out */
 	}
 
-	bt_mesh_beacon_create(sub, &buf->b);
+	bt_mesh_beacon_create(sub, &adv->b);
 
-	bt_mesh_adv_send(buf, &send_cb, sub);
-	bt_mesh_buf_unref(buf);
+	bt_mesh_adv_send(adv, &send_cb, sub);
+	bt_mesh_adv_unref(adv);
 
 	return false;
 }
@@ -133,22 +133,22 @@ static int unprovisioned_beacon_send(void)
 {
 	const struct bt_mesh_prov *prov;
 	uint8_t uri_hash[16] = { 0 };
-	struct bt_mesh_buf *buf;
+	struct bt_mesh_adv *adv;
 	uint16_t oob_info;
 
 	LOG_DBG("");
 
-	buf = bt_mesh_adv_main_create(BT_MESH_ADV_BEACON,
+	adv = bt_mesh_adv_main_create(BT_MESH_ADV_BEACON,
 				      UNPROV_XMIT, K_NO_WAIT);
-	if (!buf) {
+	if (!adv) {
 		LOG_ERR("Unable to allocate beacon buffer");
 		return -ENOBUFS;
 	}
 
 	prov = bt_mesh_prov_get();
 
-	net_buf_simple_add_u8(&buf->b, BEACON_TYPE_UNPROVISIONED);
-	net_buf_simple_add_mem(&buf->b, prov->uuid, 16);
+	net_buf_simple_add_u8(&adv->b, BEACON_TYPE_UNPROVISIONED);
+	net_buf_simple_add_mem(&adv->b, prov->uuid, 16);
 
 	if (prov->uri && bt_mesh_s1(prov->uri, uri_hash) == 0) {
 		oob_info = prov->oob_info | BT_MESH_PROV_OOB_URI;
@@ -156,31 +156,31 @@ static int unprovisioned_beacon_send(void)
 		oob_info = prov->oob_info;
 	}
 
-	net_buf_simple_add_be16(&buf->b, oob_info);
-	net_buf_simple_add_mem(&buf->b, uri_hash, 4);
+	net_buf_simple_add_be16(&adv->b, oob_info);
+	net_buf_simple_add_mem(&adv->b, uri_hash, 4);
 
-	bt_mesh_adv_send(buf, NULL, NULL);
-	bt_mesh_buf_unref(buf);
+	bt_mesh_adv_send(adv, NULL, NULL);
+	bt_mesh_adv_unref(adv);
 
 	if (prov->uri) {
 		size_t len;
 
-		buf = bt_mesh_adv_main_create(BT_MESH_ADV_URI,
+		adv = bt_mesh_adv_main_create(BT_MESH_ADV_URI,
 					      UNPROV_XMIT, K_NO_WAIT);
-		if (!buf) {
+		if (!adv) {
 			LOG_ERR("Unable to allocate URI buffer");
 			return -ENOBUFS;
 		}
 
 		len = strlen(prov->uri);
-		if (net_buf_simple_tailroom(&buf->b) < len) {
+		if (net_buf_simple_tailroom(&adv->b) < len) {
 			LOG_WRN("Too long URI to fit advertising data");
 		} else {
-			net_buf_simple_add_mem(&buf->b, prov->uri, len);
-			bt_mesh_adv_send(buf, NULL, NULL);
+			net_buf_simple_add_mem(&adv->b, prov->uri, len);
+			bt_mesh_adv_send(adv, NULL, NULL);
 		}
 
-		bt_mesh_buf_unref(buf);
+		bt_mesh_adv_unref(adv);
 	}
 
 	return 0;

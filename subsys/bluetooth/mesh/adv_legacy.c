@@ -40,7 +40,7 @@ static struct k_thread adv_thread_data;
 static K_KERNEL_STACK_DEFINE(adv_thread_stack, CONFIG_BT_MESH_ADV_STACK_SIZE);
 static int32_t adv_timeout;
 
-static inline void adv_send(struct bt_mesh_buf *buf)
+static inline void adv_send(struct bt_mesh_adv *adv)
 {
 	const int32_t adv_int_min =
 		((bt_dev.hci_version >= BT_HCI_VERSION_5_0) ?
@@ -52,7 +52,7 @@ static inline void adv_send(struct bt_mesh_buf *buf)
 	int err;
 
 	adv_int = MAX(adv_int_min,
-		      BT_MESH_TRANSMIT_INT(buf->adv.xmit));
+		      BT_MESH_TRANSMIT_INT(adv->meta.xmit));
 
 	/* Zephyr Bluetooth Low Energy Controller for mesh stack uses
 	 * pre-emptible continuous scanning, allowing advertising events to be
@@ -63,7 +63,7 @@ static inline void adv_send(struct bt_mesh_buf *buf)
 	 * advertising interval to the total advertising duration.
 	 */
 	duration = adv_int +
-		   ((BT_MESH_TRANSMIT_COUNT(buf->adv.xmit) + 1) *
+		   ((BT_MESH_TRANSMIT_COUNT(adv->meta.xmit) + 1) *
 		    (adv_int + 10));
 
 	/* Zephyr Bluetooth Low Energy Controller built for nRF51x SoCs use
@@ -77,14 +77,14 @@ static inline void adv_send(struct bt_mesh_buf *buf)
 		duration += BT_MESH_SCAN_WINDOW_MS;
 	}
 
-	LOG_DBG("type %u len %u: %s", buf->adv.type, buf->b.len,
-		bt_hex(buf->b.data, buf->b.len));
+	LOG_DBG("type %u len %u: %s", adv->meta.type, adv->b.len,
+		bt_hex(adv->b.data, adv->b.len));
 	LOG_DBG("count %u interval %ums duration %ums",
-		BT_MESH_TRANSMIT_COUNT(buf->adv.xmit) + 1, adv_int, duration);
+		BT_MESH_TRANSMIT_COUNT(adv->meta.xmit) + 1, adv_int, duration);
 
-	ad.type = bt_mesh_adv_type[buf->adv.type];
-	ad.data_len = buf->b.len;
-	ad.data = buf->b.data;
+	ad.type = bt_mesh_adv_type[adv->meta.type];
+	ad.data_len = adv->b.len;
+	ad.data = adv->b.data;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)) {
 		param.options = BT_LE_ADV_OPT_USE_IDENTITY;
@@ -102,7 +102,7 @@ static inline void adv_send(struct bt_mesh_buf *buf)
 
 	err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
 
-	bt_mesh_adv_send_start(duration, err, &buf->adv);
+	bt_mesh_adv_send_start(duration, err, &adv->meta);
 
 	if (err) {
 		LOG_ERR("Advertising failed: err %d", err);
@@ -127,11 +127,11 @@ static void adv_thread(void *p1, void *p2, void *p3)
 	LOG_DBG("started");
 
 	while (1) {
-		struct bt_mesh_buf *buf;
+		struct bt_mesh_adv *adv;
 
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
-			buf = bt_mesh_adv_buf_get(K_NO_WAIT);
-			while (!buf) {
+			adv = bt_mesh_adv_get(K_NO_WAIT);
+			while (!adv) {
 
 				/* Adv timeout may be set by a call from proxy
 				 * to bt_mesh_adv_gatt_start:
@@ -139,43 +139,43 @@ static void adv_thread(void *p1, void *p2, void *p3)
 				adv_timeout = SYS_FOREVER_MS;
 				(void)bt_mesh_adv_gatt_send();
 
-				buf = bt_mesh_adv_buf_get(SYS_TIMEOUT_MS(adv_timeout));
+				adv = bt_mesh_adv_get(SYS_TIMEOUT_MS(adv_timeout));
 				bt_le_adv_stop();
 			}
 		} else {
-			buf = bt_mesh_adv_buf_get(K_FOREVER);
+			adv = bt_mesh_adv_get(K_FOREVER);
 		}
 
-		if (!buf) {
+		if (!adv) {
 			continue;
 		}
 
 		/* busy == 0 means this was canceled */
-		if (buf->adv.busy) {
-			buf->adv.busy = 0U;
-			adv_send(buf);
+		if (adv->meta.busy) {
+			adv->meta.busy = 0U;
+			adv_send(adv);
 		}
 
-		bt_mesh_buf_unref(buf);
+		bt_mesh_adv_unref(adv);
 
 		/* Give other threads a chance to run */
 		k_yield();
 	}
 }
 
-void bt_mesh_adv_buf_local_ready(void)
+void bt_mesh_adv_local_ready(void)
 {
 	/* Will be handled automatically */
 }
 
-void bt_mesh_adv_buf_relay_ready(void)
+void bt_mesh_adv_relay_ready(void)
 {
 	/* Will be handled automatically */
 }
 
 void bt_mesh_adv_gatt_update(void)
 {
-	bt_mesh_adv_buf_get_cancel();
+	bt_mesh_adv_get_cancel();
 }
 
 void bt_mesh_adv_init(void)

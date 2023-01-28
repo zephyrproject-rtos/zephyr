@@ -100,7 +100,7 @@ struct pb_adv {
 		uint8_t pending_ack;
 
 		/* Pending outgoing buffer(s) */
-		struct bt_mesh_buf *buf[3];
+		struct bt_mesh_adv *adv[3];
 
 		prov_bearer_send_complete_t cb;
 
@@ -166,17 +166,17 @@ static void free_segments(void)
 {
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(link.tx.buf); i++) {
-		struct bt_mesh_buf *buf = link.tx.buf[i];
+	for (i = 0; i < ARRAY_SIZE(link.tx.adv); i++) {
+		struct bt_mesh_adv *adv = link.tx.adv[i];
 
-		if (!buf) {
+		if (!adv) {
 			break;
 		}
 
-		link.tx.buf[i] = NULL;
+		link.tx.adv[i] = NULL;
 		/* Mark as canceled */
-		buf->adv.busy = 0U;
-		bt_mesh_buf_unref(buf);
+		adv->meta.busy = 0U;
+		bt_mesh_adv_unref(adv);
 	}
 }
 
@@ -243,19 +243,19 @@ static void close_link(enum prov_bearer_link_status reason)
 	cb->link_closed(&bt_mesh_pb_adv, cb_data, reason);
 }
 
-static struct bt_mesh_buf *adv_buf_create(uint8_t retransmits)
+static struct bt_mesh_adv *adv_buf_create(uint8_t retransmits)
 {
-	struct bt_mesh_buf *buf;
+	struct bt_mesh_adv *adv;
 
-	buf = bt_mesh_adv_main_create(BT_MESH_ADV_PROV,
+	adv = bt_mesh_adv_main_create(BT_MESH_ADV_PROV,
 				      BT_MESH_TRANSMIT(retransmits, 20),
 				      BUF_TIMEOUT);
-	if (!buf) {
+	if (!adv) {
 		LOG_ERR("Out of provisioning buffers");
 		return NULL;
 	}
 
-	return buf;
+	return adv;
 }
 
 static void ack_complete(uint16_t duration, int err, void *user_data)
@@ -317,7 +317,7 @@ static void gen_prov_ack_send(uint8_t xact_id)
 		.start = ack_complete,
 	};
 	const struct bt_mesh_send_cb *complete;
-	struct bt_mesh_buf *buf;
+	struct bt_mesh_adv *adv;
 	bool pending = atomic_test_and_set_bit(link.flags, ADV_ACK_PENDING);
 
 	LOG_DBG("xact_id 0x%x", xact_id);
@@ -327,8 +327,8 @@ static void gen_prov_ack_send(uint8_t xact_id)
 		return;
 	}
 
-	buf = adv_buf_create(RETRANSMITS_ACK);
-	if (!buf) {
+	adv = adv_buf_create(RETRANSMITS_ACK);
+	if (!adv) {
 		atomic_clear_bit(link.flags, ADV_ACK_PENDING);
 		return;
 	}
@@ -340,12 +340,12 @@ static void gen_prov_ack_send(uint8_t xact_id)
 		complete = &cb;
 	}
 
-	net_buf_simple_add_be32(&buf->b, link.id);
-	net_buf_simple_add_u8(&buf->b, xact_id);
-	net_buf_simple_add_u8(&buf->b, GPC_ACK);
+	net_buf_simple_add_be32(&adv->b, link.id);
+	net_buf_simple_add_u8(&adv->b, xact_id);
+	net_buf_simple_add_u8(&adv->b, GPC_ACK);
 
-	bt_mesh_adv_send(buf, complete, NULL);
-	bt_mesh_buf_unref(buf);
+	bt_mesh_adv_send(adv, complete, NULL);
+	bt_mesh_adv_unref(adv);
 }
 
 static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
@@ -420,7 +420,7 @@ static void gen_prov_ack(struct prov_rx *rx, struct net_buf_simple *buf)
 {
 	LOG_DBG("len %u", buf->len);
 
-	if (!link.tx.buf[0]) {
+	if (!link.tx.adv[0]) {
 		return;
 	}
 
@@ -585,20 +585,20 @@ static void send_reliable(void)
 {
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(link.tx.buf); i++) {
-		struct bt_mesh_buf *buf = link.tx.buf[i];
+	for (i = 0; i < ARRAY_SIZE(link.tx.adv); i++) {
+		struct bt_mesh_adv *adv = link.tx.adv[i];
 
-		if (!buf) {
+		if (!adv) {
 			break;
 		}
 
-		if (buf->adv.busy) {
+		if (adv->meta.busy) {
 			continue;
 		}
 
-		LOG_DBG("%u bytes: %s", buf->b.len, bt_hex(buf->b.data, buf->b.len));
+		LOG_DBG("%u bytes: %s", adv->b.len, bt_hex(adv->b.data, adv->b.len));
 
-		bt_mesh_adv_send(buf, NULL, NULL);
+		bt_mesh_adv_send(adv, NULL, NULL);
 	}
 
 	k_work_reschedule(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
@@ -622,30 +622,30 @@ static void prov_retransmit(struct k_work *work)
 	send_reliable();
 }
 
-static struct bt_mesh_buf *ctl_buf_create(uint8_t op, const void *data,
+static struct bt_mesh_adv *ctl_buf_create(uint8_t op, const void *data,
 					  uint8_t data_len, uint8_t retransmits)
 {
-	struct bt_mesh_buf *buf;
+	struct bt_mesh_adv *adv;
 
 	LOG_DBG("op 0x%02x data_len %u", op, data_len);
 
-	buf = adv_buf_create(retransmits);
-	if (!buf) {
+	adv = adv_buf_create(retransmits);
+	if (!adv) {
 		return NULL;
 	}
 
-	net_buf_simple_add_be32(&buf->b, link.id);
+	net_buf_simple_add_be32(&adv->b, link.id);
 	/* Transaction ID, always 0 for Bearer messages */
-	net_buf_simple_add_u8(&buf->b, 0x00);
-	net_buf_simple_add_u8(&buf->b, GPC_CTL(op));
-	net_buf_simple_add_mem(&buf->b, data, data_len);
+	net_buf_simple_add_u8(&adv->b, 0x00);
+	net_buf_simple_add_u8(&adv->b, GPC_CTL(op));
+	net_buf_simple_add_mem(&adv->b, data, data_len);
 
-	return buf;
+	return adv;
 }
 
-static int bearer_ctl_send(struct bt_mesh_buf *buf)
+static int bearer_ctl_send(struct bt_mesh_adv *adv)
 {
-	if (!buf) {
+	if (!adv) {
 		return -ENOMEM;
 	}
 
@@ -653,23 +653,23 @@ static int bearer_ctl_send(struct bt_mesh_buf *buf)
 	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
 	link.tx.start = k_uptime_get();
-	link.tx.buf[0] = buf;
+	link.tx.adv[0] = adv;
 	send_reliable();
 
 	return 0;
 }
 
-static int bearer_ctl_send_unacked(struct bt_mesh_buf *buf)
+static int bearer_ctl_send_unacked(struct bt_mesh_adv *adv)
 {
-	if (!buf) {
+	if (!adv) {
 		return -ENOMEM;
 	}
 
 	prov_clear_tx();
 	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
-	bt_mesh_adv_send(buf, &buf_sent_cb, NULL);
-	bt_mesh_buf_unref(buf);
+	bt_mesh_adv_send(adv, &buf_sent_cb, NULL);
+	bt_mesh_adv_unref(adv);
 
 	return 0;
 }
@@ -677,7 +677,7 @@ static int bearer_ctl_send_unacked(struct bt_mesh_buf *buf)
 static int prov_send_adv(struct net_buf_simple *msg,
 			 prov_bearer_send_complete_t cb, void *cb_data)
 {
-	struct bt_mesh_buf *start, *buf;
+	struct bt_mesh_adv *start, *adv;
 	uint8_t seg_len, seg_id;
 
 	prov_clear_tx();
@@ -696,7 +696,7 @@ static int prov_send_adv(struct net_buf_simple *msg,
 	net_buf_simple_add_be16(&start->b, msg->len);
 	net_buf_simple_add_u8(&start->b, bt_mesh_fcs_calc(msg->data, msg->len));
 
-	link.tx.buf[0] = start;
+	link.tx.adv[0] = start;
 	link.tx.cb = cb;
 	link.tx.cb_data = cb_data;
 	link.tx.start = k_uptime_get();
@@ -708,30 +708,30 @@ static int prov_send_adv(struct net_buf_simple *msg,
 	net_buf_simple_add_mem(&start->b, msg->data, seg_len);
 	net_buf_simple_pull(msg, seg_len);
 
-	buf = start;
+	adv = start;
 	for (seg_id = 1U; msg->len > 0; seg_id++) {
-		if (seg_id >= ARRAY_SIZE(link.tx.buf)) {
+		if (seg_id >= ARRAY_SIZE(link.tx.adv)) {
 			LOG_ERR("Too big message");
 			free_segments();
 			return -E2BIG;
 		}
 
-		buf = adv_buf_create(RETRANSMITS_RELIABLE);
-		if (!buf) {
+		adv = adv_buf_create(RETRANSMITS_RELIABLE);
+		if (!adv) {
 			free_segments();
 			return -ENOBUFS;
 		}
 
-		link.tx.buf[seg_id] = buf;
+		link.tx.adv[seg_id] = adv;
 
 		seg_len = MIN(msg->len, CONT_PAYLOAD_MAX);
 
 		LOG_DBG("seg %u len %u: %s", seg_id, seg_len, bt_hex(msg->data, seg_len));
 
-		net_buf_simple_add_be32(&buf->b, link.id);
-		net_buf_simple_add_u8(&buf->b, link.tx.id);
-		net_buf_simple_add_u8(&buf->b, GPC_CONT(seg_id));
-		net_buf_simple_add_mem(&buf->b, msg->data, seg_len);
+		net_buf_simple_add_be32(&adv->b, link.id);
+		net_buf_simple_add_u8(&adv->b, link.tx.id);
+		net_buf_simple_add_u8(&adv->b, GPC_CONT(seg_id));
+		net_buf_simple_add_mem(&adv->b, msg->data, seg_len);
 		net_buf_simple_pull(msg, seg_len);
 	}
 

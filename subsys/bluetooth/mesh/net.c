@@ -510,19 +510,19 @@ static int net_loopback(const struct bt_mesh_net_tx *tx, const uint8_t *data,
 	return 0;
 }
 
-int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct bt_mesh_buf *buf,
+int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct bt_mesh_adv *adv,
 		     const struct bt_mesh_send_cb *cb, void *cb_data)
 {
 	const struct bt_mesh_net_cred *cred;
 	int err;
 
 	LOG_DBG("src 0x%04x dst 0x%04x len %u headroom %zu tailroom %zu", tx->src, tx->ctx->addr,
-		buf->b.len, net_buf_simple_headroom(&buf->b), net_buf_simple_tailroom(&buf->b));
-	LOG_DBG("Payload len %u: %s", buf->b.len, bt_hex(buf->b.data, buf->b.len));
+		adv->b.len, net_buf_simple_headroom(&adv->b), net_buf_simple_tailroom(&adv->b));
+	LOG_DBG("Payload len %u: %s", adv->b.len, bt_hex(adv->b.data, adv->b.len));
 	LOG_DBG("Seq 0x%06x", bt_mesh.seq);
 
 	cred = net_tx_cred_get(tx);
-	err = net_header_encode(tx, cred->nid, &buf->b);
+	err = net_header_encode(tx, cred->nid, &adv->b);
 	if (err) {
 		goto done;
 	}
@@ -530,7 +530,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct bt_mesh_buf *buf,
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
 	    bt_mesh_has_addr(tx->ctx->addr)) {
-		err = net_loopback(tx, buf->b.data, buf->b.len);
+		err = net_loopback(tx, adv->b.data, adv->b.len);
 
 		/* Local unicast messages should not go out to network */
 		if (BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr) ||
@@ -553,17 +553,17 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct bt_mesh_buf *buf,
 		goto done;
 	}
 
-	err = net_encrypt(&buf->b, cred, BT_MESH_NET_IVI_TX, false);
+	err = net_encrypt(&adv->b, cred, BT_MESH_NET_IVI_TX, false);
 	if (err) {
 		goto done;
 	}
 
-	buf->adv.cb = cb;
-	buf->adv.cb_data = cb_data;
+	adv->meta.cb = cb;
+	adv->meta.cb_data = cb_data;
 
 	/* Deliver to GATT Proxy Clients if necessary. */
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    bt_mesh_proxy_relay(buf, tx->ctx->addr) &&
+	    bt_mesh_proxy_relay(adv, tx->ctx->addr) &&
 	    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
 
 		err = 0;
@@ -572,13 +572,13 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct bt_mesh_buf *buf,
 
 	/* Deliver to GATT Proxy Servers if necessary. */
 	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_CLIENT)) {
-		(void)bt_mesh_proxy_cli_relay(buf);
+		(void)bt_mesh_proxy_cli_relay(adv);
 	}
 
-	bt_mesh_adv_send(buf, cb, cb_data);
+	bt_mesh_adv_send(adv, cb, cb_data);
 
 done:
-	bt_mesh_buf_unref(buf);
+	bt_mesh_adv_unref(adv);
 	return err;
 }
 
@@ -661,7 +661,7 @@ static void outbound_bearer_all(struct net_buf_simple *sbuf,
 				struct bt_mesh_net_rx *rx)
 {
 	const struct bt_mesh_net_cred *cred;
-	struct bt_mesh_buf *buf;
+	struct bt_mesh_adv *buf;
 
 	if ((!rx->friend_cred &&
 	     bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_ENABLED)) {
@@ -698,7 +698,7 @@ static void outbound_bearer_all(struct net_buf_simple *sbuf,
 		bt_mesh_proxy_relay(buf, rx->ctx.recv_dst);
 	}
 
-	bt_mesh_buf_unref(buf);
+	bt_mesh_adv_unref(buf);
 }
 #endif /* CONFIG_BT_MESH_FRIEND || CONFIG_BT_MESH_PROXY */
 
@@ -706,7 +706,7 @@ static void outbound_bearer_all(struct net_buf_simple *sbuf,
 static void outbound_bearer_adv(struct net_buf_simple *sbuf,
 				struct bt_mesh_net_rx *rx)
 {
-	struct bt_mesh_buf *buf;
+	struct bt_mesh_adv *buf;
 	uint8_t prio = 0;
 
 	/* If the Relay feature is supported and enabled, the Network PDU shall be tagged
@@ -731,7 +731,7 @@ static void outbound_bearer_adv(struct net_buf_simple *sbuf,
 
 	bt_mesh_adv_send(buf, NULL, NULL);
 
-	bt_mesh_buf_unref(buf);
+	bt_mesh_adv_unref(buf);
 }
 #endif /* CONFIG_BT_MESH_RELAY */
 
@@ -739,7 +739,7 @@ static void outbound_bearer_adv(struct net_buf_simple *sbuf,
 static void outbound_bearer_proxy(struct net_buf_simple *sbuf,
 				  struct bt_mesh_net_rx *rx)
 {
-	struct bt_mesh_buf *buf;
+	struct bt_mesh_adv *buf;
 
 	if (bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_ENABLED) {
 		return;
@@ -759,7 +759,7 @@ static void outbound_bearer_proxy(struct net_buf_simple *sbuf,
 	 */
 	bt_mesh_proxy_relay(buf, rx->ctx.recv_dst);
 
-	bt_mesh_buf_unref(buf);
+	bt_mesh_adv_unref(buf);
 }
 #endif /* CONFIG_BT_MESH_PROXY */
 

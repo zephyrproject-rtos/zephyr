@@ -27,7 +27,7 @@ enum bt_mesh_adv_tag {
 	BT_MESH_FRIEND_ADV = BIT(3),
 };
 
-struct bt_mesh_adv {
+struct bt_mesh_adv_meta {
 	const struct bt_mesh_send_cb *cb;
 	void *cb_data;
 
@@ -40,7 +40,7 @@ struct bt_mesh_adv {
 	uint8_t      prio;
 };
 
-struct bt_mesh_buf {
+struct bt_mesh_adv {
 	sys_snode_t node;
 
 	struct net_buf_simple b;
@@ -48,32 +48,32 @@ struct bt_mesh_buf {
 
 	uint8_t ref;
 
-	struct bt_mesh_adv adv;
+	struct bt_mesh_adv_meta meta;
 };
 
 /* Lookup table for Advertising data types for bt_mesh_adv_type: */
 extern const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES];
 
-struct bt_mesh_buf *bt_mesh_buf_ref(struct bt_mesh_buf *buf);
-void bt_mesh_buf_unref(struct bt_mesh_buf *buf);
+struct bt_mesh_adv *bt_mesh_adv_ref(struct bt_mesh_adv *adv);
+void bt_mesh_adv_unref(struct bt_mesh_adv *adv);
 
 /* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
-struct bt_mesh_buf *bt_mesh_adv_main_create(enum bt_mesh_adv_type type,
+struct bt_mesh_adv *bt_mesh_adv_main_create(enum bt_mesh_adv_type type,
 					    uint8_t xmit, k_timeout_t timeout);
 
-struct bt_mesh_buf *bt_mesh_adv_relay_create(uint8_t prio, uint8_t xmit);
-struct bt_mesh_buf *bt_mesh_adv_frnd_create(uint8_t xmit, k_timeout_t timeout);
+struct bt_mesh_adv *bt_mesh_adv_relay_create(uint8_t prio, uint8_t xmit);
+struct bt_mesh_adv *bt_mesh_adv_frnd_create(uint8_t xmit, k_timeout_t timeout);
 
-void bt_mesh_adv_send(struct bt_mesh_buf *buf, const struct bt_mesh_send_cb *cb,
+void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
 		      void *cb_data);
 
-struct bt_mesh_buf *bt_mesh_adv_buf_get(k_timeout_t timeout);
+struct bt_mesh_adv *bt_mesh_adv_get(k_timeout_t timeout);
 
-struct bt_mesh_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout);
+struct bt_mesh_adv *bt_mesh_adv_get_by_tag(uint8_t tag, k_timeout_t timeout);
 
 void bt_mesh_adv_gatt_update(void);
 
-void bt_mesh_adv_buf_get_cancel(void);
+void bt_mesh_adv_get_cancel(void);
 
 void bt_mesh_adv_init(void);
 
@@ -83,11 +83,11 @@ int bt_mesh_scan_disable(void);
 
 int bt_mesh_adv_enable(void);
 
-void bt_mesh_adv_buf_local_ready(void);
+void bt_mesh_adv_local_ready(void);
 
-void bt_mesh_adv_buf_relay_ready(void);
+void bt_mesh_adv_relay_ready(void);
 
-void bt_mesh_adv_buf_friend_ready(void);
+void bt_mesh_adv_friend_ready(void);
 
 int bt_mesh_adv_gatt_send(void);
 
@@ -96,25 +96,25 @@ int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param, int32_t duration
 			   const struct bt_data *sd, size_t sd_len);
 
 static inline void bt_mesh_adv_send_start(uint16_t duration, int err,
-					  struct bt_mesh_adv *adv)
+					  struct bt_mesh_adv_meta *meta)
 {
-	if (!adv->started) {
-		adv->started = 1;
+	if (!meta->started) {
+		meta->started = 1;
 
-		if (adv->cb && adv->cb->start) {
-			adv->cb->start(duration, err, adv->cb_data);
+		if (meta->cb && meta->cb->start) {
+			meta->cb->start(duration, err, meta->cb_data);
 		}
 
 		if (err) {
-			adv->cb = NULL;
+			meta->cb = NULL;
 		}
 	}
 }
 
 static inline void bt_mesh_adv_send_end(
-	int err, struct bt_mesh_adv const *adv)
+	int err, struct bt_mesh_adv_meta const *meta)
 {
-	if (adv->started && adv->cb && adv->cb->end) {
-		adv->cb->end(err, adv->cb_data);
+	if (meta->started && meta->cb && meta->cb->end) {
+		meta->cb->end(err, meta->cb_data);
 	}
 }
