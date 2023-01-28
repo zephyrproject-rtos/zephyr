@@ -508,9 +508,18 @@ class RimageSigner(Signer):
 
         components = [ ] if (target in ('imx8', 'imx8m')) else [ bootloader ]
         components += [ kernel ]
-        sign_base += (args.tool_args +
-                     ['-o', out_bin] + conf_path_cmd + extra_ri_args +
-                     components)
+
+        sign_config_extra_args = config_get_words(command.config, 'rimage.extra-args', [])
+
+        if '-k' not in sign_config_extra_args + args.tool_args:
+            cmake_default_key = cache.get('RIMAGE_SIGN_KEY')
+            extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
+
+        # Warning: while not officially supported (yet?), the rimage --option that is last
+        # on the command line currently wins in case of duplicate options. So pay
+        # attention to the _args order below.
+        sign_base += (['-o', out_bin] + sign_config_extra_args + conf_path_cmd +
+                      extra_ri_args + args.tool_args + components)
 
         if not args.quiet:
             log.inf(quote_sh_list(sign_base))
