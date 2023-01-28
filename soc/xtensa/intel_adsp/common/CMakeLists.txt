@@ -56,6 +56,8 @@ endif()
 add_custom_target(
   gen_modules ALL
   DEPENDS ${ZEPHYR_FINAL_EXECUTABLE}
+  BYPRODUCTS ${CMAKE_BINARY_DIR}/zephyr/main.mod
+  ${CMAKE_BINARY_DIR}/zephyr/boot.mod
 
   # The .fw_metadata section may not be present (xcc's older linker
   # will remove it if empty).  Extract it here (which will create an
@@ -99,6 +101,20 @@ add_custom_target(
       ${CMAKE_BINARY_DIR}/zephyr/main.mod
       ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>${NULL_FILE}
 )
+
+# west sign
+
+# TODO: align with zephyr/cmake/mcuboot.cmake, maybe share some code?
+
+if(ZEPHYR_WEST_SIGN_CONFIG)
+  set(sign_config_opt "-c;${ZEPHYR_WEST_SIGN_CONFIG}")
+endif()
+
+add_custom_target(rimage_target ALL
+  DEPENDS ${CMAKE_BINARY_DIR}/zephyr/boot.mod ${CMAKE_BINARY_DIR}/zephyr/main.mod ${ZEPHYR_WEST_SIGN_CONFIG}
+  COMMAND west sign ${sign_config_opt} --tool rimage --build-dir ${CMAKE_BINARY_DIR}
+  )
+
 
 if(CONFIG_BUILD_OUTPUT_STRIPPED)
 add_custom_command(

@@ -14,12 +14,14 @@ import sys
 
 from west import log
 from west.util import quote_sh_list
+from west.configuration import config as west_config
 
 from build_helpers import find_build_dir, is_zephyr_build, \
     FIND_BUILD_DIR_DESCRIPTION
 from runners.core import BuildConfiguration
 from zcmake import CMakeCache
 from zephyr_ext_common import Forceable, ZEPHYR_SCRIPTS
+from zephyr_ext_common import ZEPHYR_BASE
 
 # This is needed to load edt.pickle files.
 sys.path.insert(0, str(ZEPHYR_SCRIPTS / 'dts' / 'python-devicetree' / 'src'))
@@ -72,6 +74,34 @@ For this to work, either rimage must be installed or you must pass
 the path to rimage using the -p option.'''
 
 
+
+cfg_dict = { }
+
+def load_tool_config(cfg):
+    global cfg_dict
+    try:
+        import tomllib # Python >= 3.11
+    except ModuleNotFoundError:
+        import tomli as tomllib
+
+    with open(cfg, "rb") as f:
+        try:
+            toml_dict = tomllib.load(f)
+        except tomllib.TOMLDecodeError as parse_error:
+            log.die(f'Invalid {cfg}: {parse_error}')
+
+    log.dbg(f'{cfg} = {toml_dict}')
+    # For consistency with west config and future-proofness
+    if not 'sign' in toml_dict:
+        log.die(f'{cfg} has no [sign] section')
+
+    cfg_dict = toml_dict['sign']
+
+
+def config_get(option, fallback=None):
+    from_west = west_config.get('sign', option, fallback=fallback)
+    return cfg_dict[option] if option in cfg_dict else from_west
+
 class ToggleAction(argparse.Action):
 
     def __call__(self, parser, args, ignored, option):
@@ -104,15 +134,19 @@ class Sign(Forceable):
         # general options
         group = parser.add_argument_group('tool control options')
         group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
-                           required=True,
                            help='''image signing tool name; imgtool and rimage
                            are currently supported''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
         group.add_argument('-D', '--tool-data', default=None,
-                           help='''path to tool data/configuration directory, if needed''')
+                           help='''path to a tool-specific data/configuration directory, if needed''')
         group.add_argument('tool_args', nargs='*', metavar='tool_opt',
                            help='extra option(s) to pass to the signing tool')
+        group.add_argument('-c', '--tool-config',
+                           help='''path to a generic single .toml file that supports all the options
+above and more with a single parameter.  Note the same options can also be specified in the [sign]
+section of west config. However west config cannot be build directory-specific and its .ini files
+support neither lists nor whitespace.''')
 
         # bin file options
         group = parser.add_argument_group('binary (.bin) file options')
@@ -152,6 +186,12 @@ class Sign(Forceable):
                          'directory'.format(build_dir))
         build_conf = BuildConfiguration(build_dir)
 
+        if self.args.tool_config:
+            load_tool_config(self.args.tool_config)
+
+        if not args.tool:
+            args.tool = config_get('tool')
+
         # Decide on output formats.
         formats = []
         bin_exists = build_conf.getboolean('CONFIG_BUILD_OUTPUT_BIN')
@@ -181,7 +221,7 @@ class Sign(Forceable):
             signer = RimageSigner()
         # (Add support for other signers here in elif blocks)
         else:
-            raise RuntimeError("can't happen")
+            log.die("tool is required")
 
         signer.sign(self, build_dir, build_conf, formats)
 
@@ -390,6 +430,10 @@ class ImgtoolSigner(Signer):
 
 class RimageSigner(Signer):
 
+    DEFAULT_SOF_MOD_DIR=os.path.join(ZEPHYR_BASE, '../modules/audio/sof')
+    DEFAULT_CONFIG_DIR=os.path.join(DEFAULT_SOF_MOD_DIR, 'rimage/config')
+    DEFAULT_KEY_DIR=os.path.join(DEFAULT_SOF_MOD_DIR, 'keys')
+
     def sign(self, command, build_dir, build_conf, formats):
         args = command.args
 
@@ -398,6 +442,9 @@ class RimageSigner(Signer):
                                 '--tool-path {}: not an executable'.
                                 format(args.tool_path))
             tool_path = args.tool_path
+        elif config_get('tool-path', None):
+            # TODO: command.check_force
+            tool_path = config_get('tool-path', None)
         else:
             tool_path = shutil.which('rimage')
             if not tool_path:
@@ -444,12 +491,20 @@ class RimageSigner(Signer):
             conf_dir = pathlib.Path(args.tool_data)
             conf_path = str(conf_dir / cmake_toml)
             conf_path_cmd = ['-c', conf_path]
+        # TODO: imgtool too
+        elif config_get('tool-data', None):
+            conf_dir = pathlib.Path(config_get('tool-data', None))
+            conf_path = str(conf_dir / cmake_toml)
+            conf_path_cmd =  ['-c', conf_path]
         elif cache.get('RIMAGE_CONFIG_PATH'):
             rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
             conf_path = str(rimage_conf / cmake_toml)
             conf_path_cmd = ['-c', conf_path]
         else:
-            log.die('-c configuration not found')
+            conf_dir = pathlib.Path(self.DEFAULT_CONFIG_DIR)
+            conf_path = str(conf_dir / cmake_toml)
+            conf_path_cmd = ['-c', conf_path]
+
 
         log.inf('Signing for SOC target ' + target + ' using ' + conf_path)
 
@@ -463,6 +518,29 @@ class RimageSigner(Signer):
             extra_ri_args = [ ]
         else:
             extra_ri_args = ['-e']
+
+        if config_get('key-dir', None):
+            key_dir = config_get('key-dir', None)
+        else:
+            key_dir = self.DEFAULT_KEY_DIR
+
+        if config_get('key-file', None):
+            key_file = config_get('key-file', None)
+        else:
+            key_file = cache.get("RIMAGE_SIGN_KEY")
+
+        extra_ri_args += [ '-k', str(pathlib.Path(key_dir) / key_file)]
+
+        config_args = config_get('tool-extra-args', None)
+        if config_args:
+            # west config .ini files do not support arrays
+            if isinstance(config_args, str):
+                config_args = config_args.split()
+
+            if not isinstance(config_args, list):
+                log.die(f"tool-extra-args = {config_args} is a string nor an array")
+
+            extra_ri_args += config_args
 
         sign_base = [tool_path]
 

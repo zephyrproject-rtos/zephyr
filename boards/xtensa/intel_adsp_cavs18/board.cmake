@@ -7,7 +7,7 @@ endif()
 
 board_set_flasher_ifnset(intel_adsp)
 
-set(RIMAGE_SIGN_KEY otc_private_key.pem)
+set(RIMAGE_SIGN_KEY "otc_private_key.pem" CACHE STRING "default rimage key")
 
 board_set_rimage_target(cnl)
 

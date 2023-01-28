@@ -14,6 +14,8 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 from zephyr_ext_common import ZEPHYR_BASE
 
 DEFAULT_CAVSTOOL='soc/xtensa/intel_adsp/tools/cavstool_client.py'
+
+# This is being moved to `west sign` where it belongs
 DEFAULT_SOF_MOD_DIR=os.path.join(ZEPHYR_BASE, '../modules/audio/sof')
 DEFAULT_RIMAGE_TOOL=shutil.which('rimage')
 DEFAULT_CONFIG_DIR=os.path.join(DEFAULT_SOF_MOD_DIR, 'rimage/config')
@@ -113,6 +115,8 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
             sys.exit(1)
 
     def sign(self, **kwargs):
+        return # this is being moved to build time and
+               # soc/xtensa/intel_adsp/common/CMakeLists.txt
         path_opt = ['-p', f'{self.rimage_tool}'] if self.rimage_tool else []
         sign_cmd = (
             ['west', 'sign', '-d', f'{self.cfg.build_dir}', '-t', 'rimage']
