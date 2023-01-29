@@ -1642,7 +1642,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	struct bt_data ad[9];
 	struct bt_data sd[9];
 	size_t hex_data_len;
-	size_t ad_len;
+	size_t ad_len = 0;
 	size_t sd_len = 0;
 	bool discoverable = false;
 	size_t *data_len;
@@ -1707,8 +1707,11 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	atomic_set_bit_to(adv_set_opt[selected_adv], SHELL_ADV_OPT_APPEARANCE,
 			  appearance);
 
-	ad_len = ad_init(ad, ARRAY_SIZE(ad), adv_set_opt[selected_adv]);
+	ad_len = ad_init(&ad[*data_len], ARRAY_SIZE(ad) - *data_len,
+			 adv_set_opt[selected_adv]);
 	if (ad_len < 0) {
+		shell_error(sh, "Failed to initialize stack advertising data");
+
 		return -ENOEXEC;
 	}
 
