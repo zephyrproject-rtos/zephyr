@@ -312,7 +312,7 @@
 		compatible = "nxp,mcux-usbd";
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;
-		num-bidir-endpoints = <5>;
+		num-bidir-endpoints = <6>;
 		usb-controller-index = "LpcIp3511Hs0";
 		status = "disabled";
 	};
