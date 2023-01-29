@@ -178,6 +178,7 @@ struct wifi_iface_status {
 	unsigned int ssid_len;
 	char ssid[WIFI_SSID_MAX_LEN];
 	char bssid[WIFI_MAC_ADDR_LEN];
+	char fw_ver[WIFI_FW_LEN];
 	enum wifi_frequency_bands band;
 	unsigned int channel;
 	enum wifi_iface_mode iface_mode;
