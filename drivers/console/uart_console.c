@@ -444,6 +444,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 {
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
+	static uint8_t last_char = '\0';
 
 	while (uart_irq_update(uart_console_dev) &&
 	       uart_irq_is_pending(uart_console_dev)) {
@@ -516,6 +517,11 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 			case ESC:
 				atomic_set_bit(&esc_state, ESC_ESC);
 				break;
+			case '\n':
+				if (last_char == '\r') {
+					/* break to avoid double line*/
+					break;
+				}
 			case '\r':
 				cmd->line[cur + end] = '\0';
 				uart_poll_out(uart_console_dev, '\r');
@@ -534,6 +540,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 				break;
 			}
 
+			last_char = byte;
 			continue;
 		}
 
