@@ -164,17 +164,25 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	sr t2, __z_arch_esf_t_mstatus_OFFSET(sp)
 
 #if defined(CONFIG_FPU_SHARING)
-	/* determine if this is an Illegal Instruction exception */
-	csrr t0, mcause
-	li t1, 2		/* 2 = illegal instruction */
-	bne t0, t1, no_fp
 	/* determine if FPU access was disabled */
-	csrr t0, mstatus
 	li t1, MSTATUS_FS
-	and t0, t0, t1
-	bnez t0, no_fp
+	and t1, t1, t2
+	bnez t1, no_fp
+	/* determine if this is an Illegal Instruction exception */
+	csrr t2, mcause
+	li t1, 2		/* 2 = illegal instruction */
+	bne t1, t2, no_fp
 	/* determine if we trapped on an FP instruction. */
 	csrr t2, mtval		/* get faulting instruction */
+#ifdef CONFIG_QEMU_TARGET
+	/*
+	 * Some implementations may not support MTVAL in this capacity.
+	 * Notably QEMU when a CSR instruction is involved.
+	 */
+	bnez t2, 1f
+	lw t2, 0(t0)		/* t0 = mepc */
+1:
+#endif
 	andi t0, t2, 0x7f	/* keep only the opcode bits */
 	xori t1, t0, 0b1010011	/* OP-FP */
 	beqz t1, is_fp
