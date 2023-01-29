@@ -29,7 +29,21 @@ LOG_MODULE_REGISTER(bt_mpl_shell, CONFIG_BT_MPL_LOG_LEVEL);
 int cmd_mpl_test_set_media_state(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
-	uint8_t state = strtol(argv[1], NULL, 0);
+	unsigned long state;
+	int err = 0;
+
+	state = shell_strtoul(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse state: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (state > UINT8_MAX) {
+		shell_error(sh, "Invalid state %lu", state);
+
+		return -ENOEXEC;
+	}
 
 	mpl_test_media_state_set(state);
 
