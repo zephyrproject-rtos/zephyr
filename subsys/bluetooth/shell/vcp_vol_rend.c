@@ -249,12 +249,19 @@ static int cmd_vcp_vol_rend_init(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_volume_step(const struct shell *sh, size_t argc,
 					char **argv)
 {
-	int result;
-	int step = strtol(argv[1], NULL, 0);
+	unsigned long step;
+	int result = 0;
 
-	if (step > UINT8_MAX || step == 0) {
-		shell_error(sh, "Step size out of range; 1-255, was %u",
-			    step);
+	step = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse step: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(step, 1, UINT8_MAX)) {
+		shell_error(sh, "Invalid step %lu", step);
+
 		return -ENOEXEC;
 	}
 
@@ -343,11 +350,19 @@ static int cmd_vcp_vol_rend_volume_set(const struct shell *sh, size_t argc,
 				       char **argv)
 
 {
-	int result;
-	int volume = strtol(argv[1], NULL, 0);
+	unsigned long volume;
+	int result = 0;
+
+	volume = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse volume: %d", result);
+
+		return -ENOEXEC;
+	}
 
 	if (volume > UINT8_MAX) {
-		shell_error(sh, "Volume shall be 0-255, was %d", volume);
+		shell_error(sh, "Invalid volume %lu", volume);
+
 		return -ENOEXEC;
 	}
 
@@ -387,14 +402,19 @@ static int cmd_vcp_vol_rend_mute(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_vocs_state_get(const struct shell *sh, size_t argc,
 					   char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	/* TODO: For here, and the following VOCS and AICS, default index to 0 */
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
 
-	if (index > CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) {
-		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT, index);
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.vocs_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -409,12 +429,19 @@ static int cmd_vcp_vol_rend_vocs_state_get(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_vocs_location_get(const struct shell *sh,
 					      size_t argc, char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index > CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) {
-		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.vocs_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -429,24 +456,43 @@ static int cmd_vcp_vol_rend_vocs_location_get(const struct shell *sh,
 static int cmd_vcp_vol_rend_vocs_location_set(const struct shell *sh,
 					      size_t argc, char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
-	int location = strtol(argv[2], NULL, 0);
+	unsigned long location;
+	unsigned long index;
+	int result = 0;
 
-	if (index > CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) {
-		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT, index);
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
-	if (location > UINT32_MAX || location < 0) {
-		shell_error(sh, "Invalid location (%u-%u), was %u",
-			    0, UINT32_MAX, location);
-		return -ENOEXEC;
 
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
 	}
 
-	result = bt_vocs_location_set(vcp_included.vocs[index],
-					  location);
+	if (index >= vcp_included.vocs_cnt) {
+		shell_error(sh, "Index shall be less than %u, was %lu",
+			    vcp_included.vocs_cnt, index);
+
+		return -ENOEXEC;
+	}
+
+	location = shell_strtoul(argv[2], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse location: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (location > UINT32_MAX) {
+		shell_error(sh, "Invalid location %lu", location);
+
+		return -ENOEXEC;
+	}
+
+	result = bt_vocs_location_set(vcp_included.vocs[index], location);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -457,13 +503,33 @@ static int cmd_vcp_vol_rend_vocs_location_set(const struct shell *sh,
 static int cmd_vcp_vol_rend_vocs_offset_set(const struct shell *sh, size_t argc,
 					    char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
-	int offset = strtol(argv[2], NULL, 0);
+	unsigned long index;
+	int result = 0;
+	long offset;
 
-	if (index > CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) {
-		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT, index);
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index >= vcp_included.vocs_cnt) {
+		shell_error(sh, "Index shall be less than %u, was %lu",
+			    vcp_included.vocs_cnt, index);
+
+		return -ENOEXEC;
+	}
+
+	offset = shell_strtol(argv[2], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse offset: %d", result);
+
 		return -ENOEXEC;
 	}
 
@@ -485,12 +551,19 @@ static int cmd_vcp_vol_rend_vocs_output_description_get(const struct shell *sh,
 							size_t argc,
 							char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index > CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) {
-		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.vocs_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -506,18 +579,23 @@ static int cmd_vcp_vol_rend_vocs_output_description_set(const struct shell *sh,
 							size_t argc,
 							char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
-	char *description = argv[2];
+	unsigned long index;
+	int result = 0;
 
-	if (index > CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) {
-		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
 		return -ENOEXEC;
 	}
 
-	result = bt_vocs_description_set(vcp_included.vocs[index],
-					     description);
+	if (index > vcp_included.vocs_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
+		return -ENOEXEC;
+	}
+
+	result = bt_vocs_description_set(vcp_included.vocs[index], argv[2]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -530,12 +608,19 @@ static int cmd_vcp_vol_rend_vocs_output_description_set(const struct shell *sh,
 static int cmd_vcp_vol_rend_aics_input_state_get(const struct shell *sh,
 						 size_t argc, char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -550,12 +635,19 @@ static int cmd_vcp_vol_rend_aics_input_state_get(const struct shell *sh,
 static int cmd_vcp_vol_rend_aics_gain_setting_get(const struct shell *sh,
 						  size_t argc, char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -570,12 +662,19 @@ static int cmd_vcp_vol_rend_aics_gain_setting_get(const struct shell *sh,
 static int cmd_vcp_vol_rend_aics_input_type_get(const struct shell *sh,
 						size_t argc, char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -590,12 +689,19 @@ static int cmd_vcp_vol_rend_aics_input_type_get(const struct shell *sh,
 static int cmd_vcp_vol_rend_aics_input_status_get(const struct shell *sh,
 						  size_t argc, char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -610,12 +716,19 @@ static int cmd_vcp_vol_rend_aics_input_status_get(const struct shell *sh,
 static int cmd_vcp_vol_rend_aics_input_unmute(const struct shell *sh,
 					      size_t argc, char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -630,12 +743,19 @@ static int cmd_vcp_vol_rend_aics_input_unmute(const struct shell *sh,
 static int cmd_vcp_vol_rend_aics_input_mute(const struct shell *sh, size_t argc,
 					    char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -651,12 +771,19 @@ static int cmd_vcp_vol_rend_aics_manual_input_gain_set(const struct shell *sh,
 						       size_t argc,
 						       char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -672,12 +799,19 @@ static int cmd_vcp_vol_rend_aics_auto_input_gain_set(const struct shell *sh,
 						     size_t argc,
 						     char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
+		return -ENOEXEC;
+	}
+
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
 		return -ENOEXEC;
 	}
 
@@ -692,19 +826,35 @@ static int cmd_vcp_vol_rend_aics_auto_input_gain_set(const struct shell *sh,
 static int cmd_vcp_vol_rend_aics_gain_set(const struct shell *sh, size_t argc,
 					  char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
-	int gain = strtol(argv[2], NULL, 0);
+	unsigned long index;
+	int result = 0;
+	long gain;
+
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse index: %d", result);
+
+		return -ENOEXEC;
+	}
 
 	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
 			    vcp_included.aics_cnt, index);
+
+		return -ENOEXEC;
+	}
+
+	gain = shell_strtol(argv[2], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Could not parse gain: %d", result);
+
 		return -ENOEXEC;
 	}
 
 	if (gain > INT8_MAX || gain < INT8_MIN) {
-		shell_error(sh, "Offset shall be %d-%d, was %d",
+		shell_error(sh, "Gain shall be %d-%d, was %d",
 			    INT8_MIN, INT8_MAX, gain);
+
 		return -ENOEXEC;
 	}
 
@@ -719,15 +869,21 @@ static int cmd_vcp_vol_rend_aics_gain_set(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_aics_input_description_get(const struct shell *sh,
 						       size_t argc, char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
 		return -ENOEXEC;
 	}
 
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
+		return -ENOEXEC;
+	}
 	result = bt_aics_description_get(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -739,18 +895,23 @@ static int cmd_vcp_vol_rend_aics_input_description_get(const struct shell *sh,
 static int cmd_vcp_vol_rend_aics_input_description_set(const struct shell *sh,
 						       size_t argc, char **argv)
 {
-	int result;
-	int index = strtol(argv[1], NULL, 0);
-	char *description = argv[2];
+	unsigned long index;
+	int result = 0;
 
-	if (index >= vcp_included.aics_cnt) {
-		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcp_included.aics_cnt, index);
+	index = shell_strtoul(argv[1], 0, &result);
+	if (result != 0) {
+		shell_error(sh, "Failed to parse index: %d", result);
+
 		return -ENOEXEC;
 	}
 
-	result = bt_aics_description_set(vcp_included.aics[index],
-					     description);
+	if (index > vcp_included.aics_cnt) {
+		shell_error(sh, "Invalid index %lu", index);
+
+		return -ENOEXEC;
+	}
+
+	result = bt_aics_description_set(vcp_included.aics[index], argv[2]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
