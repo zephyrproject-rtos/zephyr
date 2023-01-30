@@ -157,7 +157,7 @@ static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 	return true;
 
 fail:
-	__ASSERT(true, "No space for %p", cap);
+	__ASSERT(false, "No space for %p", cap);
 
 	net_buf_simple_restore(buf, &state);
 
