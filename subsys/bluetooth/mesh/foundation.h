@@ -116,6 +116,8 @@ void bt_mesh_attention(struct bt_mesh_model *model, uint8_t time);
 
 #include <zephyr/sys/byteorder.h>
 
+int bt_mesh_comp_get_page_0(struct net_buf_simple *buf);
+
 static inline void key_idx_pack(struct net_buf_simple *buf,
 				uint16_t idx1, uint16_t idx2)
 {

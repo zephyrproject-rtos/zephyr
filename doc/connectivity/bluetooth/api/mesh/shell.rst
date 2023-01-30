@@ -903,6 +903,444 @@ The Health Client may use the general messages parameters set by ``mesh target d
 
 	* ``timer``: Duration of the attention state, in seconds (``0`` to ``255``)
 
+
+Binary Large Object (BLOB) Transfer Client model
+------------------------------------------------
+
+The :ref:`bluetooth_mesh_blob_cli` can be added to the mesh shell by enabling the :kconfig:option:`CONFIG_BT_MESH_BLOB_CLI` option, and disabling the :kconfig:option:`CONFIG_BT_MESH_DFU_CLI` option.
+
+``mesh models blob cli target <addr>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Add a Target node for the next BLOB transfer.
+
+	* ``addr``: Unicast address of the Target node's BLOB Transfer Server model.
+
+
+``mesh models blob cli bounds [<group>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the total boundary parameters of all Target nodes.
+
+	* ``group``: Optional group address to use when communicating with Target nodes. If omitted, the BLOB Transfer Client will address each Target node individually.
+
+
+``mesh models blob cli tx <id> <size> <block size log> <chunk size> [<group> [<mode: push, pull>]]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Perform a BLOB transfer to Target nodes. The BLOB Transfer Client will send a dummy BLOB to all Target nodes, then post a message when the transfer is completed. Note that all Target nodes must first be configured to receive the transfer using the ``mesh models blob srv rx`` command.
+
+	* ``id``: 64-bit BLOB transfer ID.
+	* ``size``: Size of the BLOB in bytes.
+	* ``block size log`` Logarithmic representation of the BLOB's block size. The final block size will be ``1 << block size log`` bytes.
+	* ``chunk size``: Chunk size in bytes.
+	* ``group``: Optional group address to use when communicating with Target nodes. If omitted or set to 0, the BLOB Transfer Client will address each Target node individually.
+	* ``mode``: BLOB transfer mode to use. Must be either ``push`` (Push BLOB Transfer Mode) or ``pull`` (Pull BLOB Transfer Mode). If omitted, ``push`` will be used by default.
+
+
+``mesh models blob cli tx-cancel``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Cancel an ongoing BLOB transfer.
+
+``mesh models blob cli tx-get [group]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Determine the progress of a previously running BLOB transfer. Can be used when not performing a BLOB transfer.
+
+	* ``group``: Optional group address to use when communicating with Target nodes. If omitted or set to 0, the BLOB Transfer Client will address each Target node individually.
+
+
+``mesh models blob cli tx-suspend``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Suspend the ongoing BLOB transfer.
+
+
+``mesh models blob cli tx-resume``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Resume the suspended BLOB transfer.
+
+``mesh models blob cli instance-set <elem_idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Use the BLOB Transfer Client model instance on the specified element when using the other BLOB Transfer Client model commands.
+
+	* ``elem_idx``: The element on which to find the BLOB Transfer Client model instance to use.
+
+``mesh models blob cli instance-get-all``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a list of all BLOB Transfer Client model instances on the node.
+
+
+BLOB Transfer Server model
+--------------------------
+
+The :ref:`bluetooth_mesh_blob_srv` can be added to the mesh shell by enabling the :kconfig:option:`CONFIG_BT_MESH_BLOB_SRV` option. The BLOB Transfer Server model is capable of receiving any BLOB data, but the implementation in the mesh shell will discard the incoming data.
+
+
+``mesh models blob srv rx <id> [<timeout base>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Prepare to receive a BLOB transfer.
+
+	* ``id``: 64-bit BLOB transfer ID to receive.
+	* ``timeout base``: Optional additional time to wait for client messages, in 10-second increments.
+
+
+``mesh models blob srv rx-cancel``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Cancel an ongoing BLOB transfer.
+
+``mesh models blob srv instance-set <elem_idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Use the BLOB Transfer Server model instance on the specified element when using the other BLOB Transfer Server model commands.
+
+	* ``elem_idx``: The element on which to find the BLOB Transfer Server model instance to use.
+
+``mesh models blob srv instance-get-all``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a list of all BLOB Transfer Server model instances on the node.
+
+
+Firmware Update Client model
+----------------------------
+
+The Firmware Update Client model can be added to the mesh shell by enabling configuration options :kconfig:option:`CONFIG_BT_MESH_BLOB_CLI` and :kconfig:option:`CONFIG_BT_MESH_DFU_CLI`. The Firmware Update Client demonstrates the firmware update Distributor role by transferring a dummy firmware update to a set of Target nodes.
+
+
+``mesh models dfu slot add <size> [<fwid> [<metadata> [<uri>]]]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Add a virtual DFU image slot that can be transferred as a DFU image. The image slot will be assigned an image slot index, which is printed as a response, and can be used to reference the slot in other commands. To update the image slot, remove it using the ``mesh models dfu slot del`` shell command and then add it again.
+
+	* ``size``: DFU image slot size in bytes.
+	* ``fwid``: Optional firmware ID, formatted as a hexstring.
+	* ``metadata``: Optional firmware metadata, formatted as a hexstring.
+	* ``uri``: Optional URI for the firmware.
+
+
+``mesh models dfu slot del <slot idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Delete the DFU image slot at the given index.
+
+	* ``slot idx``: Index of the slot to delete.
+
+
+``mesh models dfu slot get <slot-idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get all available information about a DFU image slot.
+
+	* ``slot idx``: Index of the slot to get.
+
+
+``mesh models dfu cli target <addr> <img idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Add a Target node.
+
+	* ``addr``: Unicast address of the Target node.
+	* ``img idx``: Image index to address on the Target node.
+
+
+``mesh models dfu cli target-state``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Check the DFU Target state of the device at the configured destination address.
+
+
+``mesh models dfu cli target-imgs [<max count>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a list of DFU images on the device at the configured destination address.
+
+	* ``max count``: Optional maximum number of images to return. If omitted, there's no limit on the number of returned images.
+
+
+``mesh models dfu cli target-check <slot idx> <target img idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Check whether the device at the configured destination address will accept a DFU transfer from the given DFU image slot to the Target node's DFU image at the given index, and what the effect would be.
+
+	* ``slot idx``: Index of the local DFU image slot to check.
+	* ``target img idx``: Index of the Target node's DFU image to check.
+
+
+``mesh models dfu cli send <slot idx> [<group>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Start a DFU transfer to all added Target nodes.
+
+	* ``slot idx``: Index of the local DFU image slot to send.
+	* ``group``: Optional group address to use when communicating with the Target nodes. If omitted, the Firmware Update Client will address each Target node individually.
+
+
+``mesh models dfu cli apply``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Apply the most recent DFU transfer on all Target nodes. Can only be called after a DFU transfer is completed.
+
+
+``mesh models dfu cli confirm``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Confirm that the most recent DFU transfer was successfully applied on all Target nodes. Can only be called after a DFU transfer is completed and applied.
+
+
+``mesh models dfu cli progress``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Check the progress of the current transfer.
+
+
+``mesh models dfu cli suspend``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Suspend the ongoing DFU transfer.
+
+
+``mesh models dfu cli resume``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Resume the suspended DFU transfer.
+
+``mesh models dfu srv progress``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Check the progress of the current transfer.
+
+``mesh models dfu cli instance-set <elem_idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Use the Firmware Update Client model instance on the specified element when using the other Firmware Update Client model commands.
+
+	* ``elem_idx``: The element on which to find the Firmware Update Client model instance to use.
+
+``mesh models dfu cli instance-get-all``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a list of all Firmware Update Client model instances on the node.
+
+
+Firmware Update Server model
+----------------------------
+
+The Firmware Update Server model can be added to the mesh shell by enabling configuration options :kconfig:option:`CONFIG_BT_MESH_BLOB_SRV` and :kconfig:option:`CONFIG_BT_MESH_DFU_SRV`. The Firmware Update Server demonstrates the firmware update Target role by accepting any firmware update. The mesh shell Firmware Update Server will discard the incoming firmware data, but otherwise behave as a proper firmware update Target node.
+
+
+``mesh models dfu srv applied``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Mark the most recent DFU transfer as applied. Can only be called after a DFU transfer is completed, and the Distributor has requested that the transfer is applied.
+
+	As the mesh shell Firmware Update Server doesn't actually apply the incoming firmware image, this command can be used to emulate an applied status, to notify the Distributor that the transfer was successful.
+
+
+``mesh models dfu srv progress``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Check the progress of the current transfer.
+
+``mesh models dfu srv rx-cancel``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Cancel incoming DFU transfer.
+
+``mesh models dfu srv instance-set <elem_idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Use the Firmware Update Server model instance on the specified element when using the other Firmware Update Server model commands.
+
+	* ``elem_idx``: The element on which to find the Firmware Update Server model instance to use.
+
+``mesh models dfu srv instance-get-all``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a list of all Firmware Update Server model instances on the node.
+
+
+.. _bluetooth_mesh_shell_dfd_server:
+
+Firmware Distribution Server model
+----------------------------------
+
+The Firmware Distribution Server model commands can be added to the mesh shell by enabling the :kconfig:option:`CONFIG_BT_MESH_DFD_SRV` configuration option.
+The shell commands for this model mirror the messages sent to the server by a Firmware Distribution Client model.
+To use these commands, a Firmware Distribution Server must be instantiated by the application.
+
+``mesh models dfd receivers-add <addr>,<fw_idx>[;<addr>,<fw_idx>]...``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Add receivers to the Firmware Distribution Server.
+	Supply receivers as a list of comma-separated addr,fw_idx pairs, separated by semicolons, for example, ``0x0001,0;0x0002,0;0x0004,1``.
+	Do not use spaces in the receiver list.
+	Repeated calls to this command will continue populating the receivers list until ``mesh models dfd receivers-delete-all`` is called.
+
+	* ``addr``: Address of the receiving node(s).
+	* ``fw_idx``: Index of the firmware slot to send to ``addr``.
+
+``mesh models dfd receivers-delete-all``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Delete all receivers from the server.
+
+``mesh models dfd receivers-get <first> <count>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a list of info about firmware receivers.
+
+	* ``first``: Index of the first receiver to get from the receiver list.
+	* ``count``: The number of recievers for which to get info.
+
+``mesh models dfd capabilities-get``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the capabilities of the server.
+
+``mesh models dfd get``
+^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get information about the current distribution state, phase and the transfer parameters.
+
+``mesh models dfd start <app_idx> <slot_idx> [<group> [<policy_apply> [<ttl> [<timeout_base> [<xfer_mode>]]]]]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Start the firmware distribution.
+
+	* ``app_idx``: Application index to use for sending. The common application key should be bound to the Firmware Update and BLOB Transfer models on the Distributor and Target nodes.
+	* ``slot_idx``: Index of the local image slot to send.
+	* ``group``: Optional group address to use when communicating with the Target nodes. If omitted, the Firmware Distribution Server will address each Target node individually. To keep addressing each Target node individually while changing other arguments, set this argument value to 0.
+	* ``policy_apply``: Optional field that corresponds to the update policy. Setting this to ``true`` will make the Firmware Distribution Server apply the image immediately after the transfer is completed.
+	* ``ttl``: Optional. TTL value to use when sending. Defaults to configured default TTL.
+	* ``timeout_base``: Optional additional value used to calculate timeout values in the firmware distribution process. See :ref:`bluetooth_mesh_blob_timeout` for information about how ``timeout_base`` is used to calculate the transfer timeout. Defaults to 0.
+	* ``xfer_mode``: Optional BLOB transfer mode. 1 = Push mode (Push BLOB Transfer Mode), 2 = Pull mode (Pull BLOB Transfer Mode). Defaults to Push mode.
+
+``mesh models dfd suspend``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Suspends the ongoing distribution.
+
+``mesh models dfd cancel``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Cancel the ongoing distribution.
+
+``mesh models dfd apply``
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Apply the distributed firmware.
+
+``mesh models dfd fw-get <fwid>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get information about the firmware image uploaded to the server.
+
+	* ``fwid``: Firmware ID of the image to get.
+
+``mesh models dfd fw-get-by-idx <idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get information about the firmware image uploaded to the server in a specific slot.
+
+	* ``idx``: Index of the slot to get the image from.
+
+``mesh models dfd fw-delete <fwid>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Delete a firmware image from the server.
+
+	* ``fwid``: Firmware ID of the image to delete.
+
+``mesh models dfd fw-delete-all``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Delete all firmware images from the server.
+
+``mesh models dfd instance-set <elem_idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Use the Firmware Distribution Server model instance on the specified element when using the other Firmware Distribution Server model commands.
+
+	* ``elem_idx``: The element on which to find the Firmware Distribution Server model instance to use.
+
+``mesh models dfd instance-get-all``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a list of all Firmware Distribution Server model instances on the node.
+
+
+.. _bluetooth_mesh_shell_dfu_metadata:
+
+DFU metadata
+------------
+
+The DFU metadata commands allow generating metadata that can be used by a Target node to check the firmware before accepting it. The commands are enabled through the :kconfig:option:`CONFIG_BT_MESH_DFU_METADATA` configuration option.
+
+``mesh models dfu metadata comp-clear``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Clear the stored composition data to be used for the Target node.
+
+``mesh models dfu metadata comp-add <cid> <pid> <vid> <crpl> <features>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Create a header of the Composition Data Page 0.
+
+	* ``cid``: Company identifier assigned by Bluetooth SIG.
+	* ``pid``: Vendor-assigned product identifier.
+	* ``vid``: Vendor-assigned version identifier.
+	* ``crpl``: The size of the replay protection list.
+	* ``features``: Features supported by the node in bit field format:
+		* ``0``: Relay.
+		* ``1``: Proxy.
+		* ``2``: Friend.
+		* ``3``: Low Power.
+
+``mesh models dfu metadata comp-elem-add <loc> <nums> <numv> {<sig model id>|<vnd company id> <vnd model id>}...``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Add element description of the Target node.
+
+	* ``loc``: Element location.
+	* ``nums``: Number of SIG models instantiated on the element.
+	* ``numv``: Number of vendor models instantiated on the element.
+	* ``sig model id``: SIG Model ID.
+	* ``vnd company id``: Vendor model company identifier.
+	* ``vnd model id``: Vendor model identifier.
+
+``mesh models dfu metadata comp-hash-get [<128-bit key>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Generate a hash of the stored Composition Data to be used in metadata.
+
+	* ``128-bit key``: Optional 128-bit key to be used to generate the hash.
+
+``mesh models dfu metadata encode <major> <minor> <rev> <build_num> <size> <core type> <hash> <elems> [<user data>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Encode metadata for the DFU.
+
+	* ``major``: Major version of the firmware.
+	* ``minor``: Minor version of the firmware.
+	* ``rev``: Revision number of the firmware.
+	* ``build_num``: Build number.
+	* ``size``: Size of the signed bin file.
+	* ``core type``: New firmware core type in bit field format:
+		* ``0``: Application core.
+		* ``1``: Network core.
+		* ``2``: Applications specific BLOB.
+	* ``hash``: Hash of the composition data generated using ``mesh models dfu metadata comp-hash-get`` command.
+	* ``elems``: Number of elements on the new firmware.
+	* ``user data``: User data supplied with the metadata.
+
+
 Configuration database
 ======================
 

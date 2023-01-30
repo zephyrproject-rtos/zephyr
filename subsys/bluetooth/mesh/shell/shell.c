@@ -26,6 +26,8 @@
 #include "mesh/settings.h"
 #include "mesh/access.h"
 #include "utils.h"
+#include "dfu.h"
+#include "blob.h"
 
 #define CID_NVAL   0xffff
 
@@ -206,6 +208,14 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 	bt_mesh_shell_ctx_shell = sh;
 	shell_print(sh, "Mesh shell initialized");
+
+#if defined(CONFIG_BT_MESH_SHELL_DFU_CLI) || defined(CONFIG_BT_MESH_SHELL_DFU_SRV)
+	bt_mesh_shell_dfu_cmds_init();
+#endif
+#if defined(CONFIG_BT_MESH_SHELL_BLOB_CLI) || defined(CONFIG_BT_MESH_SHELL_BLOB_SRV) || \
+	defined(CONFIG_BT_MESH_SHELL_BLOB_IO_FLASH)
+	bt_mesh_shell_blob_cmds_init();
+#endif
 
 	return 0;
 }
