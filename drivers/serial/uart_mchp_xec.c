@@ -915,7 +915,7 @@ static void uart_xec_irq_callback_set(const struct device *dev,
 static void uart_xec_isr(const struct device *dev)
 {
 	struct uart_xec_dev_data * const dev_data = dev->data;
-#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+#if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
 	const struct uart_xec_device_config * const dev_cfg = dev->config;
 	struct uart_regs *regs = dev_cfg->regs;
 	int rx_ready = 0;
