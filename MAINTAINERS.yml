@@ -1089,6 +1089,7 @@ Release Notes:
   collaborators:
     - avisconti
     - teburd
+    - yperess
   files:
     - drivers/sensor/
     - include/zephyr/drivers/sensor.h
