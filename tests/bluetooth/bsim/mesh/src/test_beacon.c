@@ -623,7 +623,7 @@ static void test_rx_kr_old_key(void)
 		{ .phase = BT_MESH_KR_NORMAL, .ivu = false, .ivi = 1 },
 	};
 
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(8));
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		status = bt_mesh_subnet_kr_phase_get(0, &phase);

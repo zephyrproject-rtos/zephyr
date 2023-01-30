@@ -77,10 +77,57 @@ static void rx_ended(uint8_t *data, size_t len)
 	LOG_INF("Receiving succeeded");
 }
 
+static void tx_sar_conf(void)
+{
+#ifdef CONFIG_BT_MESH_V1d1
+	/* Reconfigure SAR Transmitter state so that the transport layer doesn't
+	 * retransmit.
+	 */
+	struct bt_mesh_sar_tx tx_set = {
+		.seg_int_step = CONFIG_BT_MESH_SAR_TX_SEG_INT_STEP,
+		.unicast_retrans_count = 0,
+		.unicast_retrans_without_prog_count = 0,
+		.unicast_retrans_int_step = CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_STEP,
+		.unicast_retrans_int_inc = CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_INC,
+		.multicast_retrans_count = CONFIG_BT_MESH_SAR_TX_MULTICAST_RETRANS_COUNT,
+		.multicast_retrans_int = CONFIG_BT_MESH_SAR_TX_MULTICAST_RETRANS_INT,
+	};
+
+#if defined(CONFIG_BT_MESH_SAR_CFG)
+	bt_mesh_test_sar_conf_set(&tx_set, NULL);
+#else
+	bt_mesh.sar_tx = tx_set;
+#endif
+#endif
+}
+
+static void rx_sar_conf(void)
+{
+#ifdef CONFIG_BT_MESH_V1d1
+	/* Reconfigure SAR Receiver state so that the transport layer does
+	 * generate Segmented Acks as rarely as possible.
+	 */
+	struct bt_mesh_sar_rx rx_set = {
+		.seg_thresh = 0x1f,
+		.ack_delay_inc = 0x7,
+		.discard_timeout = CONFIG_BT_MESH_SAR_RX_DISCARD_TIMEOUT,
+		.rx_seg_int_step = 0xf,
+		.ack_retrans_count = CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT,
+	};
+
+#if defined(CONFIG_BT_MESH_SAR_CFG)
+	bt_mesh_test_sar_conf_set(NULL, &rx_set);
+#else
+	bt_mesh.sar_rx = rx_set;
+#endif
+#endif
+}
+
 static void test_tx_immediate_replay_attack(void)
 {
 	settings_test_backend_clear();
 	bt_mesh_test_setup();
+	tx_sar_conf();
 
 	static const struct bt_mesh_send_cb send_cb = {
 		.start = tx_started,
@@ -129,6 +176,7 @@ static void test_rx_immediate_replay_attack(void)
 {
 	settings_test_backend_clear();
 	bt_mesh_test_setup();
+	rx_sar_conf();
 	bt_mesh_test_ra_cb_setup(rx_ended);
 
 	k_sleep(K_SECONDS(6 * TEST_DATA_WAITING_TIME));
@@ -142,6 +190,7 @@ static void test_tx_power_replay_attack(void)
 {
 	settings_test_backend_clear();
 	bt_mesh_test_setup();
+	tx_sar_conf();
 
 	static const struct bt_mesh_send_cb send_cb = {
 		.start = tx_started,
@@ -185,6 +234,7 @@ static void test_tx_power_replay_attack(void)
 static void test_rx_power_replay_attack(void)
 {
 	bt_mesh_test_setup();
+	rx_sar_conf();
 	bt_mesh_test_ra_cb_setup(rx_ended);
 
 	k_sleep(K_SECONDS(6 * TEST_DATA_WAITING_TIME));
