@@ -2033,7 +2033,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 {
 	int err;
 
-	CHECKIF(param == NULL || count == 0) {
+	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
 		return -EINVAL;
 	}
