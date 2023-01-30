@@ -54,4 +54,6 @@
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
 
+extern uint8_t mfg_data[254];
+
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_ */

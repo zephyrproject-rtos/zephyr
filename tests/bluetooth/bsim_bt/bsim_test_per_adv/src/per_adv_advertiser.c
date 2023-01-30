@@ -145,6 +145,25 @@ static void start_per_adv_set(struct bt_le_ext_adv *adv)
 	printk("done.\n");
 }
 
+#if (CONFIG_BT_CTLR_ADV_DATA_CHAIN)
+static void set_per_adv_data(struct bt_le_ext_adv *adv)
+{
+	int err;
+	const struct bt_data ad[] = {
+		BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, ARRAY_SIZE(mfg_data)),
+		BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, ARRAY_SIZE(mfg_data))};
+
+	printk("Setting Periodic Advertising Data...");
+	err = bt_le_per_adv_set_data(adv, ad, ARRAY_SIZE(ad));
+	if (err) {
+		printk("Failed to set periodic advertising data: %d\n",
+		       err);
+		return;
+	}
+	printk("done.\n");
+}
+#endif
+
 static void stop_ext_adv_set(struct bt_le_ext_adv *adv)
 {
 	int err;
@@ -276,6 +295,31 @@ static void main_per_adv_conn_privacy_advertiser(void)
 	PASS("Periodic advertiser passed\n");
 }
 
+static void main_per_adv_long_data_advertiser(void)
+{
+#if (CONFIG_BT_CTLR_ADV_DATA_CHAIN)
+	struct bt_le_ext_adv *per_adv;
+
+	common_init();
+
+	create_per_adv_set(&per_adv);
+
+	set_per_adv_data(per_adv);
+	start_per_adv_set(per_adv);
+	start_ext_adv_set(per_adv);
+
+	/* Advertise for a bit */
+	k_sleep(K_SECONDS(10));
+
+	stop_per_adv_set(per_adv);
+	stop_ext_adv_set(per_adv);
+
+	delete_adv_set(per_adv);
+	per_adv = NULL;
+#endif
+	PASS("Periodic long data advertiser passed\n");
+}
+
 static const struct bst_test_instance per_adv_advertiser[] = {
 	{
 		.test_id = "per_adv_advertiser",
@@ -300,6 +344,14 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_privacy_advertiser
+	},
+	{
+		.test_id = "per_adv_long_data_advertiser",
+		.test_descr = "Periodic advertising test with a longer data length. "
+			      "To test the syncers reassembly of large data packets",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = main_per_adv_long_data_advertiser
 	},
 	BSTEST_END_MARKER
 };
