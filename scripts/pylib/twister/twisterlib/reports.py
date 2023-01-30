@@ -416,7 +416,7 @@ class Reporting:
 
     def synopsis(self):
         cnt = 0
-        instance = None
+        example_instance = None
         for instance in self.instances.values():
             if instance.status not in ["passed", "filtered", "skipped"]:
                 cnt = cnt + 1
@@ -425,17 +425,18 @@ class Reporting:
                     logger.info("The following issues were found (showing the top 10 items):")
 
                 logger.info(f"{cnt}) {instance.testsuite.name} on {instance.platform.name} {instance.status} ({instance.reason})")
+                example_instance = instance
             if cnt == 10:
                 break
 
-        if cnt:
+        if cnt and example_instance:
             logger.info("")
             logger.info("To rerun the tests, call twister using the following commandline:")
-            logger.info("./scripts/twister -p <PLATFORM> -s <TEST PATH>, for example:")
+            logger.info("west twister -p <PLATFORM> -s <TEST ID>, for example:")
             logger.info("")
-            logger.info(f"./scripts/twister -p {instance.platform.name} -s {instance.testsuite.name}")
+            logger.info(f"west twister -p {example_instance.platform.name} -s {example_instance.testsuite.name}")
             logger.info(f"or with west:")
-            logger.info(f"west build -b {instance.platform.name} -T {instance.testsuite.name}")
+            logger.info(f"west build -p -b {example_instance.platform.name} -T {example_instance.testsuite.name}")
             logger.info("-+" * 40)
 
     def summary(self, results, unrecognized_sections, duration):
