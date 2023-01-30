@@ -633,7 +633,6 @@ fp_trap_exit:
 #else
 	/* Restore caller-saved registers from thread stack */
 	DO_CALLER_SAVED(lr)
-#endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
 #ifdef CONFIG_USERSPACE
 	/* retrieve saved stack pointer */
@@ -642,5 +641,7 @@ fp_trap_exit:
 	/* remove esf from the stack */
 	addi sp, sp, __z_arch_esf_t_SIZEOF
 #endif
+
+#endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
 	mret
