@@ -1466,12 +1466,12 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 {
 	struct bt_audio_ep *ep;
 
-	LOG_DBG("stream %p ep %p qos %p", stream, stream->ep, qos);
-
 	if (stream == NULL || stream->ep == NULL || qos == NULL) {
 		LOG_DBG("Invalid input stream, ep or qos pointers");
 		return -EINVAL;
 	}
+
+	LOG_DBG("stream %p ep %p qos %p", stream, stream->ep, qos);
 
 	ep = stream->ep;
 
