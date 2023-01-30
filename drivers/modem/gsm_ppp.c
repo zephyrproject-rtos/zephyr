@@ -1329,22 +1329,26 @@ char * gsm_ppp_get_ring_indicator_behaviour_text(enum ring_indicator_behaviour r
 	}
 }
 
-void gsm_ppp_generate_ring_indicator_at_cmd(char * cmd_buffer,
+bool gsm_ppp_generate_ring_indicator_at_cmd(char * cmd_buffer,
 					    size_t max_len,
 					    char * ring_type,
 					    enum ring_indicator_behaviour setting,
 					    uint16_t pule_duration)
 {
+	int ret;
+
 	if (setting == PULSE) {
-		snprintf(cmd_buffer, max_len, "AT+QCFG=\"%s\",\"%s\",%d",
-			 ring_type,
-			 gsm_ppp_get_ring_indicator_behaviour_text(setting),
-			 pule_duration);
+		ret = snprintf(cmd_buffer, max_len, "AT+QCFG=\"%s\",\"%s\",%d",
+			       ring_type,
+			       gsm_ppp_get_ring_indicator_behaviour_text(setting),
+			       pule_duration);
 	} else {
-		snprintf(cmd_buffer, max_len, "AT+QCFG=\"%s\",\"%s\"",
-			 ring_type,
-			 gsm_ppp_get_ring_indicator_behaviour_text(setting));
+		ret = snprintf(cmd_buffer, max_len, "AT+QCFG=\"%s\",\"%s\"",
+			       ring_type,
+			       gsm_ppp_get_ring_indicator_behaviour_text(setting));
 	}
+
+	return (ret > 0) && (ret < max_len);
 }
 
 void gsm_ppp_set_ring_indicator(const struct device *dev,
@@ -1357,26 +1361,35 @@ void gsm_ppp_set_ring_indicator(const struct device *dev,
 {
 	struct gsm_modem *gsm = dev->data;
 	int ret;
+	bool bret;
 	char cmd_buffer[64];
 
-	gsm_ppp_generate_ring_indicator_at_cmd(cmd_buffer, sizeof(cmd_buffer),
-					       "urc/ri/ring", ring, ring_pulse_duration);
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-				    &response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
-				    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+	bret = gsm_ppp_generate_ring_indicator_at_cmd(cmd_buffer, sizeof(cmd_buffer),
+						      "urc/ri/ring", ring, ring_pulse_duration);
+	if (bret) {
+		ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+					    &response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+					    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
-	if (ret < 0) {
-		LOG_DBG("Could not set ring indicator setting");
+		if (ret < 0) {
+			LOG_DBG("Could not set ring indicator setting");
+		}
+	} else {
+		LOG_DBG("Could not generate ring indicator AT command string");
 	}
 
-	gsm_ppp_generate_ring_indicator_at_cmd(cmd_buffer, sizeof(cmd_buffer),
-					       "urc/ri/smsincoming", sms, sms_pulse_duration);
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-				    &response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
-				    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+	bret = gsm_ppp_generate_ring_indicator_at_cmd(cmd_buffer, sizeof(cmd_buffer),
+						      "urc/ri/smsincoming", sms, sms_pulse_duration);
+	if (bret) {
+		ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+					    &response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+					    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
-	if (ret < 0) {
-		LOG_DBG("Could not set ring indicator setting for sms");
+		if (ret < 0) {
+			LOG_DBG("Could not set ring indicator setting for sms");
+		}
+	} else {
+		LOG_DBG("Could not generate ring indicator AT command string");
 	}
 
 	if (other == ALWAYS) {
@@ -1384,14 +1397,18 @@ void gsm_ppp_set_ring_indicator(const struct device *dev,
 		other = OFF;
 	}
 
-	gsm_ppp_generate_ring_indicator_at_cmd(cmd_buffer, sizeof(cmd_buffer),
-					       "urc/ri/other", other, other_pulse_duration);
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-				    &response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
-				    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+	bret = gsm_ppp_generate_ring_indicator_at_cmd(cmd_buffer, sizeof(cmd_buffer),
+						      "urc/ri/other", other, other_pulse_duration);
+	if (bret) {
+		ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+					    &response_cmds[0], ARRAY_SIZE(response_cmds), cmd_buffer,
+					    &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
-	if (ret < 0) {
-		LOG_DBG("Could not set ring indicator setting");
+		if (ret < 0) {
+			LOG_DBG("Could not set ring indicator setting");
+		}
+	} else {
+		LOG_DBG("Could not generate ring indicator AT command string");
 	}
 }
 
